@@ -8,8 +8,9 @@ import (
 	"testing"
 
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
+
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -24,22 +25,22 @@ func TestNamespaces(t *testing.T) {
 		// Call to add a datastore entry under the supplied namespace.
 		addNamespace := func(ns string) {
 			if ns != "" {
-				ctx = info.Get(ctx).MustNamespace(ns)
+				ctx = info.MustNamespace(ctx, ns)
 			}
 
-			err := datastore.Get(ctx).Raw().PutMulti(
-				[]*datastore.Key{
-					datastore.Get(ctx).NewKey("Warblegarble", "", 1, nil),
+			err := ds.Raw(ctx).PutMulti(
+				[]*ds.Key{
+					ds.NewKey(ctx, "Warblegarble", "", 1, nil),
 				},
-				[]datastore.PropertyMap{
-					make(datastore.PropertyMap),
+				[]ds.PropertyMap{
+					make(ds.PropertyMap),
 				},
-				func(*datastore.Key, error) error { return nil })
+				func(*ds.Key, error) error { return nil })
 			if err != nil {
 				panic(err)
 			}
 
-			datastore.Get(ctx).Testable().CatchupIndexes()
+			ds.GetTestable(ctx).CatchupIndexes()
 		}
 
 		Convey(`A datastore with no namespaces returns {}.`, func() {

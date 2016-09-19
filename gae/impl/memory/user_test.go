@@ -7,10 +7,12 @@ package memory
 import (
 	"testing"
 
-	userS "github.com/luci/gae/service/user"
+	"github.com/luci/gae/service/user"
+
+	"golang.org/x/net/context"
+
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
 func TestUser(t *testing.T) {
@@ -18,69 +20,68 @@ func TestUser(t *testing.T) {
 
 	Convey("user", t, func() {
 		c := Use(context.Background())
-		user := userS.Get(c)
 
 		Convey("default state is anonymous", func() {
-			So(user.Current(), ShouldBeNil)
+			So(user.Current(c), ShouldBeNil)
 
-			usr, err := user.CurrentOAuth("something")
+			usr, err := user.CurrentOAuth(c, "something")
 			So(err, ShouldBeNil)
 			So(usr, ShouldBeNil)
 
-			So(user.IsAdmin(), ShouldBeFalse)
+			So(user.IsAdmin(c), ShouldBeFalse)
 		})
 
 		Convey("can login (normal)", func() {
-			user.Testable().Login("hello@world.com", "", false)
-			So(user.Current(), ShouldResemble, &userS.User{
+			user.GetTestable(c).Login("hello@world.com", "", false)
+			So(user.Current(c), ShouldResemble, &user.User{
 				Email:      "hello@world.com",
 				AuthDomain: "world.com",
 				ID:         "14628837901535854097",
 			})
 
-			usr, err := user.CurrentOAuth("scope")
+			usr, err := user.CurrentOAuth(c, "scope")
 			So(usr, ShouldBeNil)
 			So(err, ShouldBeNil)
 
 			Convey("and logout", func() {
-				user.Testable().Logout()
-				So(user.Current(), ShouldBeNil)
+				user.GetTestable(c).Logout()
+				So(user.Current(c), ShouldBeNil)
 
-				usr, err := user.CurrentOAuth("scope")
+				usr, err := user.CurrentOAuth(c, "scope")
 				So(usr, ShouldBeNil)
 				So(err, ShouldBeNil)
 			})
 		})
 
 		Convey("can be admin", func() {
-			user.Testable().Login("hello@world.com", "", true)
-			So(user.Current(), ShouldResemble, &userS.User{
+			user.GetTestable(c).Login("hello@world.com", "", true)
+			So(user.Current(c), ShouldResemble, &user.User{
 				Email:      "hello@world.com",
 				AuthDomain: "world.com",
 				ID:         "14628837901535854097",
 				Admin:      true,
 			})
-			So(user.IsAdmin(), ShouldBeTrue)
+			So(user.IsAdmin(c), ShouldBeTrue)
 		})
 
 		Convey("can login (oauth)", func() {
-			user.Testable().Login("hello@world.com", "clientID", false)
-			usr, err := user.CurrentOAuth("scope")
+			user.GetTestable(c).Login("hello@world.com", "clientID", false)
+			usr, err := user.CurrentOAuth(c, "scope")
 			So(err, ShouldBeNil)
-			So(usr, ShouldResemble, &userS.User{
+			So(usr, ShouldResemble, &user.User{
 				Email:      "hello@world.com",
 				AuthDomain: "world.com",
 				ID:         "14628837901535854097",
 				ClientID:   "clientID",
 			})
 
-			So(user.Current(), ShouldBeNil)
+			So(user.Current(c), ShouldBeNil)
 
 			Convey("and logout", func() {
-				user.Testable().Logout()
-				So(user.Current(), ShouldBeNil)
+				user.GetTestable(c).Logout()
+				So(user.Current(c), ShouldBeNil)
 
-				usr, err := user.CurrentOAuth("scope")
+				usr, err := user.CurrentOAuth(c, "scope")
 				So(usr, ShouldBeNil)
 				So(err, ShouldBeNil)
 			})
@@ -88,26 +89,26 @@ func TestUser(t *testing.T) {
 
 		Convey("panics on bad email", func() {
 			So(func() {
-				user.Testable().Login("bademail", "", false)
+				user.GetTestable(c).Login("bademail", "", false)
 			}, ShouldPanicLike, `mail: missing phrase`)
 		})
 
 		Convey("fake URLs", func() {
-			url, err := user.LoginURL("https://funky.example.com")
+			url, err := user.LoginURL(c, "https://funky.example.com")
 			So(err, ShouldBeNil)
 			So(url, ShouldEqual, "https://fakeapp.example.com/_ah/login?redirect=https%3A%2F%2Ffunky.example.com")
 
-			url, err = user.LogoutURL("https://funky.example.com")
+			url, err = user.LogoutURL(c, "https://funky.example.com")
 			So(err, ShouldBeNil)
 			So(url, ShouldEqual, "https://fakeapp.example.com/_ah/logout?redirect=https%3A%2F%2Ffunky.example.com")
 		})
 
 		Convey("Some stuff is deprecated", func() {
-			url, err := user.LoginURLFederated("https://something", "something")
+			url, err := user.LoginURLFederated(c, "https://something", "something")
 			So(err, ShouldErrLike, "LoginURLFederated is deprecated")
 			So(url, ShouldEqual, "")
 
-			key, err := user.OAuthConsumerKey()
+			key, err := user.OAuthConsumerKey(c)
 			So(err, ShouldErrLike, "OAuthConsumerKey is deprecated")
 			So(key, ShouldEqual, "")
 		})

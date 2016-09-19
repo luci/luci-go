@@ -18,10 +18,10 @@ type MailCounter struct {
 type mailCounter struct {
 	c *MailCounter
 
-	m mail.Interface
+	m mail.RawInterface
 }
 
-var _ mail.Interface = (*mailCounter)(nil)
+var _ mail.RawInterface = (*mailCounter)(nil)
 
 func (m *mailCounter) Send(msg *mail.Message) error {
 	return m.c.Send.up(m.m.Send(msg))
@@ -31,14 +31,14 @@ func (m *mailCounter) SendToAdmins(msg *mail.Message) error {
 	return m.c.SendToAdmins.up(m.m.SendToAdmins(msg))
 }
 
-func (m *mailCounter) Testable() mail.Testable {
-	return m.m.Testable()
+func (m *mailCounter) GetTestable() mail.Testable {
+	return m.m.GetTestable()
 }
 
 // FilterMail installs a counter Mail filter in the context.
 func FilterMail(c context.Context) (context.Context, *MailCounter) {
 	state := &MailCounter{}
-	return mail.AddFilters(c, func(ic context.Context, u mail.Interface) mail.Interface {
+	return mail.AddFilters(c, func(ic context.Context, u mail.RawInterface) mail.RawInterface {
 		return &mailCounter{state, u}
 	}), state
 }

@@ -154,8 +154,8 @@ func GetBinaryBounds(fq *ds.FinalizedQuery) (lower, upper []byte) {
 	return
 }
 
-func reduce(fq *ds.FinalizedQuery, aid, ns string, isTxn bool) (*reducedQuery, error) {
-	if err := fq.Valid(aid, ns); err != nil {
+func reduce(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool) (*reducedQuery, error) {
+	if err := fq.Valid(kc); err != nil {
 		return nil, err
 	}
 	if isTxn && fq.Ancestor() == nil {
@@ -169,8 +169,7 @@ func reduce(fq *ds.FinalizedQuery, aid, ns string, isTxn bool) (*reducedQuery, e
 	}
 
 	ret := &reducedQuery{
-		aid:          aid,
-		ns:           ns,
+		kc:           kc,
 		kind:         fq.Kind(),
 		suffixFormat: fq.Orders(),
 	}

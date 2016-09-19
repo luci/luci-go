@@ -4,8 +4,12 @@
 
 package user
 
-// Interface provides access to the "appengine/users" API methods.
-type Interface interface {
+import (
+	"golang.org/x/net/context"
+)
+
+// RawInterface provides access to the "appengine/users" API methods.
+type RawInterface interface {
 	Current() *User
 	CurrentOAuth(scopes ...string) (*User, error)
 
@@ -21,5 +25,60 @@ type Interface interface {
 	// Testable object for this service, which will let you 'log in' virtual users
 	// in your test cases. If the implementation doesn't support it, it will
 	// return nil.
-	Testable() Testable
+	GetTestable() Testable
+}
+
+// Current returns the currently logged-in user, or nil if the user is not
+// signed in.
+func Current(c context.Context) *User {
+	return Raw(c).Current()
+}
+
+// CurrentOAuth returns the user associated with the OAuth consumer making this
+// request.
+//
+// If the OAuth consumer did not make a valid OAuth request, or the scopes is
+// non-empty and the current user does not have at least one of the scopes, this
+// method will return an error.
+func CurrentOAuth(c context.Context, scopes ...string) (*User, error) {
+	return Raw(c).CurrentOAuth(scopes...)
+}
+
+// IsAdmin returns true if the current user is an administrator for this
+// AppEngine project.
+func IsAdmin(c context.Context) bool {
+	return Raw(c).IsAdmin()
+}
+
+// LoginURL returns a URL that, when visited, prompts the user to sign in, then
+// redirects the user to the URL specified by dest.
+func LoginURL(c context.Context, dest string) (string, error) {
+	return Raw(c).LoginURL(dest)
+}
+
+// LoginURLFederated is like LoginURL but accepts a user's OpenID identifier.
+func LoginURLFederated(c context.Context, dest, identity string) (string, error) {
+	return Raw(c).LoginURLFederated(dest, identity)
+}
+
+// LogoutURL returns a URL that, when visited, signs the user out, then redirects
+// the user to the URL specified by dest.
+func LogoutURL(c context.Context, dest string) (string, error) {
+	return Raw(c).LogoutURL(dest)
+}
+
+// OAuthConsumerKey returns the OAuth consumer key provided with the current
+// request.
+//
+// This method will return an error if the OAuth request was invalid.
+func OAuthConsumerKey(c context.Context) (string, error) {
+	return Raw(c).OAuthConsumerKey()
+}
+
+// GetTestable returns a Testable for the current task queue service in c, or
+// nil if it does not offer one.
+//
+// The Testable instance will let you 'log in' virtual users in your test cases.
+func GetTestable(c context.Context) Testable {
+	return Raw(c).GetTestable()
 }

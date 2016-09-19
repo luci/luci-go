@@ -36,8 +36,7 @@ func (e *ErrMissingIndex) Error() string {
 //   deduplication is applied externally
 //   projection / keysonly / entity retrieval is done externally
 type reducedQuery struct {
-	aid  string
-	ns   string
+	kc   ds.KeyContext
 	kind string
 
 	// eqFilters indicate the set of all prefix constraints which need to be
@@ -197,7 +196,7 @@ func (idxs *indexDefinitionSortableSlice) maybeAddDefinition(q *reducedQuery, s 
 	// a builtin and it doesn't exist, it still needs to be one of the 'possible'
 	// indexes... it just means that the user's query will end up with no results.
 	coll := s.GetCollection(
-		fmt.Sprintf("idx:%s:%s", q.ns, serialize.ToBytes(*id.PrepForIdxTable())))
+		fmt.Sprintf("idx:%s:%s", q.kc.Namespace, serialize.ToBytes(*id.PrepForIdxTable())))
 
 	// First, see if it's a perfect match. If it is, then our search is over.
 	//
@@ -319,7 +318,7 @@ func getRelevantIndexes(q *reducedQuery, s memStore) (indexDefinitionSortableSli
 			impossible(
 				fmt.Errorf("recommended missing index would be a builtin: %s", remains))
 		}
-		return nil, &ErrMissingIndex{q.ns, remains}
+		return nil, &ErrMissingIndex{q.kc.Namespace, remains}
 	}
 
 	return idxs, nil
@@ -471,7 +470,7 @@ func calculateConstraints(q *reducedQuery) *constraints {
 func getIndexes(q *reducedQuery, s memStore) ([]*iterDefinition, error) {
 	relevantIdxs := indexDefinitionSortableSlice(nil)
 	if q.kind == "" {
-		if coll := s.GetCollection("ents:" + q.ns); coll != nil {
+		if coll := s.GetCollection("ents:" + q.kc.Namespace); coll != nil {
 			relevantIdxs = indexDefinitionSortableSlice{{coll: coll}}
 		}
 	} else {

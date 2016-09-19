@@ -21,8 +21,7 @@ func dsR2F(k *datastore.Key) *ds.Key {
 	if k == nil {
 		return nil
 	}
-	aid := k.AppID()
-	ns := k.Namespace()
+	kc := ds.KeyContext{k.AppID(), k.Namespace()}
 
 	count := 0
 	for nk := k; nk != nil; nk = nk.Parent() {
@@ -37,7 +36,7 @@ func dsR2F(k *datastore.Key) *ds.Key {
 		toks[count].StringID = k.StringID()
 		toks[count].IntID = k.IntID()
 	}
-	return ds.NewKeyToks(aid, ns, toks)
+	return kc.NewKeyToks(toks)
 }
 
 // dsF2R (DS fake-to-real) converts a DSKey back to an SDK *Key.

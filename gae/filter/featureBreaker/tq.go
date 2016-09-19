@@ -34,8 +34,8 @@ func (t *tqState) Stats(queueNames []string, cb tq.RawStatsCB) error {
 	return t.run(func() error { return t.tq.Stats(queueNames, cb) })
 }
 
-func (t *tqState) Testable() tq.Testable {
-	return t.tq.Testable()
+func (t *tqState) GetTestable() tq.Testable {
+	return t.tq.GetTestable()
 }
 
 // FilterTQ installs a featureBreaker TaskQueue filter in the context.

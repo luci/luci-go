@@ -16,18 +16,17 @@ import (
 func TestModule(t *testing.T) {
 	Convey("NumInstances", t, func() {
 		c := Use(context.Background())
-		m := module.Get(c)
 
-		i, err := m.NumInstances("foo", "bar")
+		i, err := module.NumInstances(c, "foo", "bar")
 		So(i, ShouldEqual, 1)
 		So(err, ShouldBeNil)
 
-		So(m.SetNumInstances("foo", "bar", 42), ShouldBeNil)
-		i, err = m.NumInstances("foo", "bar")
+		So(module.SetNumInstances(c, "foo", "bar", 42), ShouldBeNil)
+		i, err = module.NumInstances(c, "foo", "bar")
 		So(i, ShouldEqual, 42)
 		So(err, ShouldBeNil)
 
-		i, err = m.NumInstances("foo", "baz")
+		i, err = module.NumInstances(c, "foo", "baz")
 		So(i, ShouldEqual, 1)
 		So(err, ShouldBeNil)
 	})

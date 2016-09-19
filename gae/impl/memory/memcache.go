@@ -9,11 +9,13 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/net/context"
-
+	"github.com/luci/gae/service/info"
 	mc "github.com/luci/gae/service/memcache"
+
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
+
+	"golang.org/x/net/context"
 )
 
 type mcItem struct {
@@ -165,7 +167,7 @@ func useMC(c context.Context) context.Context {
 		lck.Lock()
 		defer lck.Unlock()
 
-		ns, _ := curGID(ic).getNamespace()
+		ns := info.GetNamespace(ic)
 		mcd, ok := mcdMap[ns]
 		if !ok {
 			mcd = &memcacheData{items: map[string]*mcDataItem{}}

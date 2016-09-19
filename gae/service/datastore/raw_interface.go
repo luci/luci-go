@@ -184,7 +184,16 @@ type RawInterface interface {
 	//   - cb is not nil
 	DeleteMulti(keys []*Key, cb DeleteMultiCB) error
 
-	// Testable returns the Testable interface for the implementation, or nil if
-	// there is none.
-	Testable() Testable
+	// WithoutTransaction returns a derived Context without a transaction applied.
+	// This may be called even when outside of a transaction, in which case the
+	// input Context is a valid return value.
+	WithoutTransaction() context.Context
+
+	// CurrentTransaction returns a reference to the current Transaction, or nil
+	// if the Context does not have a current Transaction.
+	CurrentTransaction() Transaction
+
+	// GetTestable returns the Testable interface for the implementation, or nil
+	// if there is none.
+	GetTestable() Testable
 }

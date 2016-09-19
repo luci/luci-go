@@ -13,12 +13,12 @@ import (
 type modState struct {
 	*state
 
-	module.Interface
+	module.RawInterface
 }
 
 func (m *modState) List() (ret []string, err error) {
 	err = m.run(func() (err error) {
-		ret, err = m.Interface.List()
+		ret, err = m.RawInterface.List()
 		return
 	})
 	return
@@ -26,7 +26,7 @@ func (m *modState) List() (ret []string, err error) {
 
 func (m *modState) NumInstances(mod, ver string) (ret int, err error) {
 	err = m.run(func() (err error) {
-		ret, err = m.Interface.NumInstances(mod, ver)
+		ret, err = m.RawInterface.NumInstances(mod, ver)
 		return
 	})
 	return
@@ -34,13 +34,13 @@ func (m *modState) NumInstances(mod, ver string) (ret int, err error) {
 
 func (m *modState) SetNumInstances(mod, ver string, instances int) error {
 	return m.run(func() (err error) {
-		return m.Interface.SetNumInstances(mod, ver, instances)
+		return m.RawInterface.SetNumInstances(mod, ver, instances)
 	})
 }
 
 func (m *modState) Versions(mod string) (ret []string, err error) {
 	err = m.run(func() (err error) {
-		ret, err = m.Interface.Versions(mod)
+		ret, err = m.RawInterface.Versions(mod)
 		return
 	})
 	return
@@ -48,7 +48,7 @@ func (m *modState) Versions(mod string) (ret []string, err error) {
 
 func (m *modState) DefaultVersion(mod string) (ret string, err error) {
 	err = m.run(func() (err error) {
-		ret, err = m.Interface.DefaultVersion(mod)
+		ret, err = m.RawInterface.DefaultVersion(mod)
 		return
 	})
 	return
@@ -56,20 +56,20 @@ func (m *modState) DefaultVersion(mod string) (ret string, err error) {
 
 func (m *modState) Start(mod, ver string) error {
 	return m.run(func() (err error) {
-		return m.Interface.Start(mod, ver)
+		return m.RawInterface.Start(mod, ver)
 	})
 }
 
 func (m *modState) Stop(mod, ver string) error {
 	return m.run(func() (err error) {
-		return m.Interface.Stop(mod, ver)
+		return m.RawInterface.Stop(mod, ver)
 	})
 }
 
 // FilterModule installs a featureBreaker module filter in the context.
 func FilterModule(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)
-	return module.AddFilters(c, func(ic context.Context, i module.Interface) module.Interface {
+	return module.AddFilters(c, func(ic context.Context, i module.RawInterface) module.RawInterface {
 		return &modState{state, i}
 	}), state
 }

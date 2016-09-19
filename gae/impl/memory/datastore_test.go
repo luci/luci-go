@@ -5,40 +5,42 @@
 package memory
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"time"
 
-	dsS "github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
 	infoS "github.com/luci/gae/service/info"
+
+	"golang.org/x/net/context"
+
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
 type MetaGroup struct {
-	_id    int64    `gae:"$id,1"`
-	_kind  string   `gae:"$kind,__entity_group__"`
-	Parent *dsS.Key `gae:"$parent"`
+	_id    int64   `gae:"$id,1"`
+	_kind  string  `gae:"$kind,__entity_group__"`
+	Parent *ds.Key `gae:"$parent"`
 
 	Version int64 `gae:"__version__"`
 }
 
-func testGetMeta(c context.Context, k *dsS.Key) int64 {
-	ds := dsS.Get(c)
+func testGetMeta(c context.Context, k *ds.Key) int64 {
 	mg := &MetaGroup{Parent: k.Root()}
-	if err := ds.Get(mg); err != nil {
+	if err := ds.Get(c, mg); err != nil {
 		panic(err)
 	}
 	return mg.Version
 }
 
-var pls = dsS.GetPLS
+var pls = ds.GetPLS
 
 type Foo struct {
-	ID     int64    `gae:"$id"`
-	Parent *dsS.Key `gae:"$parent"`
+	ID     int64   `gae:"$id"`
+	Parent *ds.Key `gae:"$parent"`
 
 	Val   int
 	Name  string
@@ -50,73 +52,71 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 	Convey("Datastore single reads and writes", t, func() {
 		c := Use(context.Background())
-		ds := dsS.Get(c)
-		So(ds, ShouldNotBeNil)
+		So(ds.Raw(c), ShouldNotBeNil)
 
 		Convey("getting objects that DNE is an error", func() {
-			So(ds.Get(&Foo{ID: 1}), ShouldEqual, dsS.ErrNoSuchEntity)
+			So(ds.Get(c, &Foo{ID: 1}), ShouldEqual, ds.ErrNoSuchEntity)
 		})
 
 		Convey("bad namespaces fail", func() {
-			_, err := infoS.Get(c).Namespace("$$blzyall")
+			_, err := infoS.Namespace(c, "$$blzyall")
 			So(err.Error(), ShouldContainSubstring, "namespace \"$$blzyall\" does not match")
 		})
 
 		Convey("Can Put stuff", func() {
 			// with an incomplete key!
 			f := &Foo{Val: 10, Multi: []string{"foo", "bar"}}
-			So(ds.Put(f), ShouldBeNil)
-			k := ds.KeyForObj(f)
+			So(ds.Put(c, f), ShouldBeNil)
+			k := ds.KeyForObj(c, f)
 			So(k.String(), ShouldEqual, "dev~app::/Foo,1")
 
 			Convey("and Get it back", func() {
 				newFoo := &Foo{ID: 1}
-				So(ds.Get(newFoo), ShouldBeNil)
+				So(ds.Get(c, newFoo), ShouldBeNil)
 				So(newFoo, ShouldResemble, f)
 
 				Convey("but it's hidden from a different namespace", func() {
-					c, err := infoS.Get(c).Namespace("whombat")
+					c, err := infoS.Namespace(c, "whombat")
 					So(err, ShouldBeNil)
-					ds = dsS.Get(c)
-					So(ds.Get(f), ShouldEqual, dsS.ErrNoSuchEntity)
+					So(ds.Get(c, f), ShouldEqual, ds.ErrNoSuchEntity)
 				})
 
 				Convey("and we can Delete it", func() {
-					So(ds.Delete(k), ShouldBeNil)
-					So(ds.Get(newFoo), ShouldEqual, dsS.ErrNoSuchEntity)
+					So(ds.Delete(c, k), ShouldBeNil)
+					So(ds.Get(c, newFoo), ShouldEqual, ds.ErrNoSuchEntity)
 				})
 
 			})
 			Convey("Can Get it back as a PropertyMap", func() {
-				pmap := dsS.PropertyMap{
+				pmap := ds.PropertyMap{
 					"$id":   propNI(1),
 					"$kind": propNI("Foo"),
 				}
-				So(ds.Get(pmap), ShouldBeNil)
-				So(pmap, ShouldResemble, dsS.PropertyMap{
+				So(ds.Get(c, pmap), ShouldBeNil)
+				So(pmap, ShouldResemble, ds.PropertyMap{
 					"$id":   propNI(1),
 					"$kind": propNI("Foo"),
 					"Name":  prop(""),
 					"Val":   prop(10),
-					"Multi": dsS.PropertySlice{prop("foo"), prop("bar")},
+					"Multi": ds.PropertySlice{prop("foo"), prop("bar")},
 				})
 			})
 			Convey("Deleteing with a bogus key is bad", func() {
-				So(ds.Delete(ds.NewKey("Foo", "wat", 100, nil)), ShouldEqual, dsS.ErrInvalidKey)
+				So(ds.Delete(c, ds.NewKey(c, "Foo", "wat", 100, nil)), ShouldEqual, ds.ErrInvalidKey)
 			})
 			Convey("Deleteing a DNE entity is fine", func() {
-				So(ds.Delete(ds.NewKey("Foo", "wat", 0, nil)), ShouldBeNil)
+				So(ds.Delete(c, ds.NewKey(c, "Foo", "wat", 0, nil)), ShouldBeNil)
 			})
 
 			Convey("Deleting entities from a nonexistant namespace works", func() {
-				aid := infoS.Get(c).FullyQualifiedAppID()
-				keys := make([]*dsS.Key, 10)
+				c := infoS.MustNamespace(c, "noexist")
+				keys := make([]*ds.Key, 10)
 				for i := range keys {
-					keys[i] = ds.MakeKey(aid, "noexist", "Kind", i+1)
+					keys[i] = ds.MakeKey(c, "Kind", i+1)
 				}
-				So(ds.DeleteMulti(keys), ShouldBeNil)
+				So(ds.Delete(c, keys), ShouldBeNil)
 				count := 0
-				So(ds.Raw().DeleteMulti(keys, func(err error) error {
+				So(ds.Raw(c).DeleteMulti(keys, func(err error) error {
 					count++
 					So(err, ShouldBeNil)
 					return nil
@@ -132,44 +132,44 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					foos[i].Val = 10
 					foos[i].Parent = k
 				}
-				So(ds.PutMulti(foos), ShouldBeNil)
+				So(ds.Put(c, foos), ShouldBeNil)
 				So(testGetMeta(c, k), ShouldEqual, 11)
 
-				keys := make([]*dsS.Key, len(foos))
+				keys := make([]*ds.Key, len(foos))
 				for i, f := range foos {
-					keys[i] = ds.KeyForObj(&f)
+					keys[i] = ds.KeyForObj(c, &f)
 				}
 
 				Convey("ensure that group versions persist across deletes", func() {
-					So(ds.DeleteMulti(append(keys, k)), ShouldBeNil)
+					So(ds.Delete(c, append(keys, k)), ShouldBeNil)
 
-					ds.Testable().CatchupIndexes()
+					ds.GetTestable(c).CatchupIndexes()
 
 					count := 0
-					So(ds.Run(dsS.NewQuery(""), func(_ *dsS.Key) {
+					So(ds.Run(c, ds.NewQuery(""), func(_ *ds.Key) {
 						count++
 					}), ShouldBeNil)
 					So(count, ShouldEqual, 3)
 
 					So(testGetMeta(c, k), ShouldEqual, 22)
 
-					So(ds.Put(&Foo{ID: 1}), ShouldBeNil)
+					So(ds.Put(c, &Foo{ID: 1}), ShouldBeNil)
 					So(testGetMeta(c, k), ShouldEqual, 23)
 				})
 
 				Convey("can Get", func() {
-					vals := make([]dsS.PropertyMap, len(keys))
+					vals := make([]ds.PropertyMap, len(keys))
 					for i := range vals {
-						vals[i] = dsS.PropertyMap{}
+						vals[i] = ds.PropertyMap{}
 						So(vals[i].SetMeta("key", keys[i]), ShouldBeTrue)
 					}
-					So(ds.GetMulti(vals), ShouldBeNil)
+					So(ds.Get(c, vals), ShouldBeNil)
 
 					for i, val := range vals {
-						So(val, ShouldResemble, dsS.PropertyMap{
-							"Val":  dsS.MkProperty(10),
-							"Name": dsS.MkProperty(""),
-							"$key": dsS.MkPropertyNI(keys[i]),
+						So(val, ShouldResemble, ds.PropertyMap{
+							"Val":  ds.MkProperty(10),
+							"Name": ds.MkProperty(""),
+							"$key": ds.MkPropertyNI(keys[i]),
 						})
 					}
 				})
@@ -177,8 +177,8 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 			})
 
 			Convey("allocating ids prevents their use", func() {
-				keys := ds.NewIncompleteKeys(100, "Foo", nil)
-				So(ds.AllocateIDs(keys), ShouldBeNil)
+				keys := ds.NewIncompleteKeys(c, 100, "Foo", nil)
+				So(ds.AllocateIDs(c, keys), ShouldBeNil)
 				So(len(keys), ShouldEqual, 100)
 
 				// Assert that none of our keys share the same ID.
@@ -190,8 +190,8 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 				// Put a new object and ensure that it is allocated an unused ID.
 				f := &Foo{Val: 10}
-				So(ds.Put(f), ShouldBeNil)
-				k := ds.KeyForObj(f)
+				So(ds.Put(c, f), ShouldBeNil)
+				k := ds.KeyForObj(c, f)
 				So(k.String(), ShouldEqual, "dev~app::/Foo,102")
 
 				_, ok := ids[k.IntID()]
@@ -202,98 +202,104 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 		Convey("implements DSTransactioner", func() {
 			Convey("Put", func() {
 				f := &Foo{Val: 10}
-				So(ds.Put(f), ShouldBeNil)
-				k := ds.KeyForObj(f)
+				So(ds.Put(c, f), ShouldBeNil)
+				k := ds.KeyForObj(c, f)
 				So(k.String(), ShouldEqual, "dev~app::/Foo,1")
 
-				Convey("can Put new entity groups", func() {
-					err := ds.RunInTransaction(func(c context.Context) error {
-						ds := dsS.Get(c)
+				Convey("can describe its transaction state", func() {
+					So(ds.CurrentTransaction(c), ShouldBeNil)
 
+					err := ds.RunInTransaction(c, func(c context.Context) error {
+						So(ds.CurrentTransaction(c), ShouldNotBeNil)
+
+						// Can reset to nil.
+						nc := ds.WithoutTransaction(c)
+						So(ds.CurrentTransaction(nc), ShouldBeNil)
+						return nil
+					}, nil)
+					So(err, ShouldBeNil)
+				})
+
+				Convey("can Put new entity groups", func() {
+					err := ds.RunInTransaction(c, func(c context.Context) error {
 						f := &Foo{Val: 100}
-						So(ds.Put(f), ShouldBeNil)
+						So(ds.Put(c, f), ShouldBeNil)
 						So(f.ID, ShouldEqual, 2)
 
 						f.ID = 0
 						f.Val = 200
-						So(ds.Put(f), ShouldBeNil)
+						So(ds.Put(c, f), ShouldBeNil)
 						So(f.ID, ShouldEqual, 3)
 
 						return nil
-					}, &dsS.TransactionOptions{XG: true})
+					}, &ds.TransactionOptions{XG: true})
 					So(err, ShouldBeNil)
 
 					f := &Foo{ID: 2}
-					So(ds.Get(f), ShouldBeNil)
+					So(ds.Get(c, f), ShouldBeNil)
 					So(f.Val, ShouldEqual, 100)
 
 					f.ID = 3
-					So(ds.Get(f), ShouldBeNil)
+					So(ds.Get(c, f), ShouldBeNil)
 					So(f.Val, ShouldEqual, 200)
 				})
 
 				Convey("can Put new entities in a current group", func() {
-					err := ds.RunInTransaction(func(c context.Context) error {
-						ds := dsS.Get(c)
-
+					err := ds.RunInTransaction(c, func(c context.Context) error {
 						f := &Foo{Val: 100, Parent: k}
-						So(ds.Put(f), ShouldBeNil)
-						So(ds.KeyForObj(f).String(), ShouldEqual, "dev~app::/Foo,1/Foo,1")
+						So(ds.Put(c, f), ShouldBeNil)
+						So(ds.KeyForObj(c, f).String(), ShouldEqual, "dev~app::/Foo,1/Foo,1")
 
 						f.ID = 0
 						f.Val = 200
-						So(ds.Put(f), ShouldBeNil)
-						So(ds.KeyForObj(f).String(), ShouldEqual, "dev~app::/Foo,1/Foo,2")
+						So(ds.Put(c, f), ShouldBeNil)
+						So(ds.KeyForObj(c, f).String(), ShouldEqual, "dev~app::/Foo,1/Foo,2")
 
 						return nil
 					}, nil)
 					So(err, ShouldBeNil)
 
 					f := &Foo{ID: 1, Parent: k}
-					So(ds.Get(f), ShouldBeNil)
+					So(ds.Get(c, f), ShouldBeNil)
 					So(f.Val, ShouldEqual, 100)
 
 					f.ID = 2
-					So(ds.Get(f), ShouldBeNil)
+					So(ds.Get(c, f), ShouldBeNil)
 					So(f.Val, ShouldEqual, 200)
 				})
 
 				Convey("Deletes work too", func() {
-					err := ds.RunInTransaction(func(c context.Context) error {
-						return dsS.Get(c).Delete(k)
+					err := ds.RunInTransaction(c, func(c context.Context) error {
+						return ds.Delete(c, k)
 					}, nil)
 					So(err, ShouldBeNil)
-					So(ds.Get(&Foo{ID: 1}), ShouldEqual, dsS.ErrNoSuchEntity)
+					So(ds.Get(c, &Foo{ID: 1}), ShouldEqual, ds.ErrNoSuchEntity)
 				})
 
 				Convey("A Get counts against your group count", func() {
-					err := ds.RunInTransaction(func(c context.Context) error {
-						ds := dsS.Get(c)
-
-						pm := dsS.PropertyMap{}
-						So(pm.SetMeta("key", ds.NewKey("Foo", "", 20, nil)), ShouldBeTrue)
-						So(ds.Get(pm), ShouldEqual, dsS.ErrNoSuchEntity)
+					err := ds.RunInTransaction(c, func(c context.Context) error {
+						pm := ds.PropertyMap{}
+						So(pm.SetMeta("key", ds.NewKey(c, "Foo", "", 20, nil)), ShouldBeTrue)
+						So(ds.Get(c, pm), ShouldEqual, ds.ErrNoSuchEntity)
 
 						So(pm.SetMeta("key", k), ShouldBeTrue)
-						So(ds.Get(pm).Error(), ShouldContainSubstring, "cross-group")
+						So(ds.Get(c, pm).Error(), ShouldContainSubstring, "cross-group")
 						return nil
 					}, nil)
 					So(err, ShouldBeNil)
 				})
 
 				Convey("Get takes a snapshot", func() {
-					err := ds.RunInTransaction(func(c context.Context) error {
-						ds := dsS.Get(c)
-
-						So(ds.Get(f), ShouldBeNil)
+					err := ds.RunInTransaction(c, func(c context.Context) error {
+						So(ds.Get(c, f), ShouldBeNil)
 						So(f.Val, ShouldEqual, 10)
 
 						// Don't ever do this in a real program unless you want to guarantee
 						// a failed transaction :)
 						f.Val = 11
-						So(dsS.GetNoTxn(c).Put(f), ShouldBeNil)
+						So(ds.Put(ds.WithoutTransaction(c), f), ShouldBeNil)
 
-						So(ds.Get(f), ShouldBeNil)
+						So(ds.Get(c, f), ShouldBeNil)
 						So(f.Val, ShouldEqual, 10)
 
 						return nil
@@ -301,61 +307,91 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					f := &Foo{ID: 1}
-					So(ds.Get(f), ShouldBeNil)
+					So(ds.Get(c, f), ShouldBeNil)
 					So(f.Val, ShouldEqual, 11)
 				})
 
 				Convey("and snapshots are consistent even after Puts", func() {
-					err := ds.RunInTransaction(func(c context.Context) error {
-						ds := dsS.Get(c)
-
+					err := ds.RunInTransaction(c, func(c context.Context) error {
 						f := &Foo{ID: 1}
-						So(ds.Get(f), ShouldBeNil)
+						So(ds.Get(c, f), ShouldBeNil)
 						So(f.Val, ShouldEqual, 10)
 
 						// Don't ever do this in a real program unless you want to guarantee
 						// a failed transaction :)
 						f.Val = 11
-						So(dsS.GetNoTxn(c).Put(f), ShouldBeNil)
+						So(ds.Put(ds.WithoutTransaction(c), f), ShouldBeNil)
 
-						So(ds.Get(f), ShouldBeNil)
+						So(ds.Get(c, f), ShouldBeNil)
 						So(f.Val, ShouldEqual, 10)
 
 						f.Val = 20
-						So(ds.Put(f), ShouldBeNil)
+						So(ds.Put(c, f), ShouldBeNil)
 
-						So(ds.Get(f), ShouldBeNil)
+						So(ds.Get(c, f), ShouldBeNil)
 						So(f.Val, ShouldEqual, 10) // still gets 10
 
 						return nil
-					}, &dsS.TransactionOptions{Attempts: 1})
+					}, &ds.TransactionOptions{Attempts: 1})
 					So(err.Error(), ShouldContainSubstring, "concurrent")
 
 					f := &Foo{ID: 1}
-					So(ds.Get(f), ShouldBeNil)
+					So(ds.Get(c, f), ShouldBeNil)
 					So(f.Val, ShouldEqual, 11)
 				})
 
 				Convey("Reusing a transaction context is bad news", func() {
-					txnDS := dsS.Interface(nil)
-					err := ds.RunInTransaction(func(c context.Context) error {
-						txnDS = dsS.Get(c)
-						So(txnDS.Get(f), ShouldBeNil)
+					var txnCtx context.Context
+					err := ds.RunInTransaction(c, func(c context.Context) error {
+						txnCtx = c
+						So(ds.Get(c, f), ShouldBeNil)
 						return nil
 					}, nil)
 					So(err, ShouldBeNil)
-					So(txnDS.Get(f).Error(), ShouldContainSubstring, "expired")
+					So(ds.Get(txnCtx, f).Error(), ShouldContainSubstring, "expired")
 				})
 
 				Convey("Nested transactions are rejected", func() {
-					err := ds.RunInTransaction(func(c context.Context) error {
-						err := dsS.Get(c).RunInTransaction(func(c context.Context) error {
+					err := ds.RunInTransaction(c, func(c context.Context) error {
+						err := ds.RunInTransaction(c, func(c context.Context) error {
 							panic("noooo")
 						}, nil)
 						So(err.Error(), ShouldContainSubstring, "nested transactions")
 						return nil
 					}, nil)
 					So(err, ShouldBeNil)
+				})
+
+				Convey("Transactions can be escaped.", func() {
+					testError := errors.New("test error")
+					noTxnPM := ds.PropertyMap{
+						"$kind": ds.MkProperty("Test"),
+						"$id":   ds.MkProperty("no txn"),
+					}
+
+					err := ds.RunInTransaction(c, func(c context.Context) error {
+						So(ds.CurrentTransaction(c), ShouldNotBeNil)
+
+						pmap := ds.PropertyMap{
+							"$kind": ds.MkProperty("Test"),
+							"$id":   ds.MkProperty("quux"),
+						}
+						if err := ds.Put(c, pmap); err != nil {
+							return err
+						}
+
+						// Put an entity outside of the transaction so we can confirm that
+						// it was added even when the transaction fails.
+						if err := ds.Put(ds.WithoutTransaction(c), noTxnPM); err != nil {
+							return err
+						}
+						return testError
+					}, nil)
+					So(err, ShouldEqual, testError)
+
+					// Confirm that noTxnPM was added.
+					So(ds.CurrentTransaction(c), ShouldBeNil)
+					So(ds.Get(c, noTxnPM), ShouldBeNil)
 				})
 
 				Convey("Concurrent transactions only accept one set of changes", func() {
@@ -366,11 +402,11 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					// entity group as soon as something observes/affects it.
 					//
 					// That said... I'm not sure if there's really a semantic difference.
-					err := ds.RunInTransaction(func(c context.Context) error {
-						So(dsS.Get(c).Put(&Foo{ID: 1, Val: 21}), ShouldBeNil)
+					err := ds.RunInTransaction(c, func(c context.Context) error {
+						So(ds.Put(c, &Foo{ID: 1, Val: 21}), ShouldBeNil)
 
-						err := dsS.GetNoTxn(c).RunInTransaction(func(c context.Context) error {
-							So(dsS.Get(c).Put(&Foo{ID: 1, Val: 27}), ShouldBeNil)
+						err := ds.RunInTransaction(ds.WithoutTransaction(c), func(c context.Context) error {
+							So(ds.Put(c, &Foo{ID: 1, Val: 27}), ShouldBeNil)
 							return nil
 						}, nil)
 						So(err, ShouldBeNil)
@@ -380,19 +416,18 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					So(err.Error(), ShouldContainSubstring, "concurrent")
 
 					f := &Foo{ID: 1}
-					So(ds.Get(f), ShouldBeNil)
+					So(ds.Get(c, f), ShouldBeNil)
 					So(f.Val, ShouldEqual, 27)
 				})
 
 				Convey("XG", func() {
 					Convey("Modifying two groups with XG=false is invalid", func() {
-						err := ds.RunInTransaction(func(c context.Context) error {
-							ds := dsS.Get(c)
+						err := ds.RunInTransaction(c, func(c context.Context) error {
 							f := &Foo{ID: 1, Val: 200}
-							So(ds.Put(f), ShouldBeNil)
+							So(ds.Put(c, f), ShouldBeNil)
 
 							f.ID = 2
-							err := ds.Put(f)
+							err := ds.Put(c, f)
 							So(err.Error(), ShouldContainSubstring, "cross-group")
 							return err
 						}, nil)
@@ -400,59 +435,56 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					})
 
 					Convey("Modifying >25 groups with XG=true is invald", func() {
-						err := ds.RunInTransaction(func(c context.Context) error {
-							ds := dsS.Get(c)
+						err := ds.RunInTransaction(c, func(c context.Context) error {
 							foos := make([]Foo, 25)
 							for i := int64(1); i < 26; i++ {
 								foos[i-1].ID = i
 								foos[i-1].Val = 200
 							}
-							So(ds.PutMulti(foos), ShouldBeNil)
-							err := ds.Put(&Foo{ID: 26})
+							So(ds.Put(c, foos), ShouldBeNil)
+							err := ds.Put(c, &Foo{ID: 26})
 							So(err.Error(), ShouldContainSubstring, "too many entity groups")
 							return err
-						}, &dsS.TransactionOptions{XG: true})
+						}, &ds.TransactionOptions{XG: true})
 						So(err.Error(), ShouldContainSubstring, "too many entity groups")
 					})
 				})
 
 				Convey("Errors and panics", func() {
 					Convey("returning an error aborts", func() {
-						err := ds.RunInTransaction(func(c context.Context) error {
-							ds := dsS.Get(c)
-							So(ds.Put(&Foo{ID: 1, Val: 200}), ShouldBeNil)
+						err := ds.RunInTransaction(c, func(c context.Context) error {
+							So(ds.Put(c, &Foo{ID: 1, Val: 200}), ShouldBeNil)
 							return fmt.Errorf("thingy")
 						}, nil)
 						So(err.Error(), ShouldEqual, "thingy")
 
 						f := &Foo{ID: 1}
-						So(ds.Get(f), ShouldBeNil)
+						So(ds.Get(c, f), ShouldBeNil)
 						So(f.Val, ShouldEqual, 10)
 					})
 
 					Convey("panicing aborts", func() {
 						So(func() {
-							So(ds.RunInTransaction(func(c context.Context) error {
-								ds := dsS.Get(c)
-								So(ds.Put(&Foo{Val: 200}), ShouldBeNil)
+							So(ds.RunInTransaction(c, func(c context.Context) error {
+								So(ds.Put(c, &Foo{Val: 200}), ShouldBeNil)
 								panic("wheeeeee")
 							}, nil), ShouldBeNil)
 						}, ShouldPanic)
 
 						f := &Foo{ID: 1}
-						So(ds.Get(f), ShouldBeNil)
+						So(ds.Get(c, f), ShouldBeNil)
 						So(f.Val, ShouldEqual, 10)
 					})
 				})
 
 				Convey("Transaction retries", func() {
-					tst := ds.Testable()
+					tst := ds.GetTestable(c)
 					Reset(func() { tst.SetTransactionRetryCount(0) })
 
 					Convey("SetTransactionRetryCount set to zero", func() {
 						tst.SetTransactionRetryCount(0)
 						calls := 0
-						So(ds.RunInTransaction(func(c context.Context) error {
+						So(ds.RunInTransaction(c, func(c context.Context) error {
 							calls++
 							return nil
 						}, nil), ShouldBeNil)
@@ -462,27 +494,27 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					Convey("default TransactionOptions is 3 attempts", func() {
 						tst.SetTransactionRetryCount(100) // more than 3
 						calls := 0
-						So(ds.RunInTransaction(func(c context.Context) error {
+						So(ds.RunInTransaction(c, func(c context.Context) error {
 							calls++
 							return nil
-						}, nil), ShouldEqual, dsS.ErrConcurrentTransaction)
+						}, nil), ShouldEqual, ds.ErrConcurrentTransaction)
 						So(calls, ShouldEqual, 3)
 					})
 
 					Convey("non-default TransactionOptions ", func() {
 						tst.SetTransactionRetryCount(100) // more than 20
 						calls := 0
-						So(ds.RunInTransaction(func(c context.Context) error {
+						So(ds.RunInTransaction(c, func(c context.Context) error {
 							calls++
 							return nil
-						}, &dsS.TransactionOptions{Attempts: 20}), ShouldEqual, dsS.ErrConcurrentTransaction)
+						}, &ds.TransactionOptions{Attempts: 20}), ShouldEqual, ds.ErrConcurrentTransaction)
 						So(calls, ShouldEqual, 20)
 					})
 
 					Convey("SetTransactionRetryCount is respected", func() {
 						tst.SetTransactionRetryCount(1) // less than 3
 						calls := 0
-						So(ds.RunInTransaction(func(c context.Context) error {
+						So(ds.RunInTransaction(c, func(c context.Context) error {
 							calls++
 							return nil
 						}, nil), ShouldBeNil)
@@ -492,7 +524,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					Convey("fatal errors are not retried", func() {
 						tst.SetTransactionRetryCount(1)
 						calls := 0
-						So(ds.RunInTransaction(func(c context.Context) error {
+						So(ds.RunInTransaction(c, func(c context.Context) error {
 							calls++
 							return fmt.Errorf("omg")
 						}, nil).Error(), ShouldEqual, "omg")
@@ -504,55 +536,55 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 		Convey("Testable.Consistent", func() {
 			Convey("false", func() {
-				ds.Testable().Consistent(false) // the default
+				ds.GetTestable(c).Consistent(false) // the default
 				for i := 0; i < 10; i++ {
-					So(ds.Put(&Foo{ID: int64(i + 1), Val: i + 1}), ShouldBeNil)
+					So(ds.Put(c, &Foo{ID: int64(i + 1), Val: i + 1}), ShouldBeNil)
 				}
-				q := dsS.NewQuery("Foo").Gt("Val", 3)
-				count, err := ds.Count(q)
+				q := ds.NewQuery("Foo").Gt("Val", 3)
+				count, err := ds.Count(c, q)
 				So(err, ShouldBeNil)
 				So(count, ShouldEqual, 0)
 
-				So(ds.Delete(ds.MakeKey("Foo", 4)), ShouldBeNil)
+				So(ds.Delete(c, ds.MakeKey(c, "Foo", 4)), ShouldBeNil)
 
-				count, err = ds.Count(q)
+				count, err = ds.Count(c, q)
 				So(err, ShouldBeNil)
 				So(count, ShouldEqual, 0)
 
-				ds.Testable().Consistent(true)
-				count, err = ds.Count(q)
+				ds.GetTestable(c).Consistent(true)
+				count, err = ds.Count(c, q)
 				So(err, ShouldBeNil)
 				So(count, ShouldEqual, 6)
 			})
 
 			Convey("true", func() {
-				ds.Testable().Consistent(true)
+				ds.GetTestable(c).Consistent(true)
 				for i := 0; i < 10; i++ {
-					So(ds.Put(&Foo{ID: int64(i + 1), Val: i + 1}), ShouldBeNil)
+					So(ds.Put(c, &Foo{ID: int64(i + 1), Val: i + 1}), ShouldBeNil)
 				}
-				q := dsS.NewQuery("Foo").Gt("Val", 3)
-				count, err := ds.Count(q)
+				q := ds.NewQuery("Foo").Gt("Val", 3)
+				count, err := ds.Count(c, q)
 				So(err, ShouldBeNil)
 				So(count, ShouldEqual, 7)
 
-				So(ds.Delete(ds.MakeKey("Foo", 4)), ShouldBeNil)
+				So(ds.Delete(c, ds.MakeKey(c, "Foo", 4)), ShouldBeNil)
 
-				count, err = ds.Count(q)
+				count, err = ds.Count(c, q)
 				So(err, ShouldBeNil)
 				So(count, ShouldEqual, 6)
 			})
 		})
 
 		Convey("Testable.DisableSpecialEntities", func() {
-			ds.Testable().DisableSpecialEntities(true)
+			ds.GetTestable(c).DisableSpecialEntities(true)
 
-			So(ds.Put(&Foo{}), ShouldErrLike, "allocateIDs is disabled")
+			So(ds.Put(c, &Foo{}), ShouldErrLike, "allocateIDs is disabled")
 
-			So(ds.Put(&Foo{ID: 1}), ShouldBeNil)
+			So(ds.Put(c, &Foo{ID: 1}), ShouldBeNil)
 
-			ds.Testable().CatchupIndexes()
+			ds.GetTestable(c).CatchupIndexes()
 
-			count, err := ds.Count(dsS.NewQuery(""))
+			count, err := ds.Count(c, ds.NewQuery(""))
 			So(err, ShouldBeNil)
 			So(count, ShouldEqual, 1) // normally this would include __entity_group__
 		})
@@ -562,28 +594,27 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 				var foo Foo
 
 				putFunc := func(doC context.Context) error {
-					return dsS.Get(doC).Put(&foo)
+					return ds.Put(doC, &foo)
 				}
 
 				doFunc := func(doC context.Context) {
-					ds := dsS.Get(doC)
-					getErr = ds.Get(&foo)
+					getErr = ds.Get(doC, &foo)
 
-					q := dsS.NewQuery("Foo").Ancestor(ds.KeyForObj(&foo))
-					queryErr = ds.Run(q, func(f *Foo) error { return nil })
-					_, countErr = ds.Count(q)
+					q := ds.NewQuery("Foo").Ancestor(ds.KeyForObj(doC, &foo))
+					queryErr = ds.Run(doC, q, func(f *Foo) error { return nil })
+					_, countErr = ds.Count(doC, q)
 				}
 
 				if txn {
-					putErr = dsS.Get(rc).RunInTransaction(func(ic context.Context) error {
+					putErr = ds.RunInTransaction(rc, func(ic context.Context) error {
 						return putFunc(ic)
 					}, nil)
 					if putErr != nil {
 						return
 					}
 
-					dsS.Get(rc).Testable().CatchupIndexes()
-					dsS.Get(rc).RunInTransaction(func(ic context.Context) error {
+					ds.GetTestable(rc).CatchupIndexes()
+					ds.RunInTransaction(rc, func(ic context.Context) error {
 						doFunc(ic)
 						return nil
 					}, nil)
@@ -592,7 +623,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					if putErr != nil {
 						return
 					}
-					dsS.Get(rc).Testable().CatchupIndexes()
+					ds.GetTestable(rc).CatchupIndexes()
 					doFunc(rc)
 				}
 				return
@@ -601,8 +632,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 			for _, txn := range []bool{false, true} {
 				Convey(fmt.Sprintf("In transaction? %v", txn), func() {
 					Convey("With no namespace installed, can Put, Get, Query, and Count.", func() {
-						_, has := infoS.Get(c).GetNamespace()
-						So(has, ShouldBeFalse)
+						So(infoS.GetNamespace(c), ShouldEqual, "")
 
 						putErr, getErr, queryErr, countErr := run(c, txn)
 						So(putErr, ShouldBeNil)
@@ -612,7 +642,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					})
 
 					Convey("With a namespace installed, can Put, Get, Query, and Count.", func() {
-						putErr, getErr, queryErr, countErr := run(infoS.Get(c).MustNamespace("foo"), txn)
+						putErr, getErr, queryErr, countErr := run(infoS.MustNamespace(c, "foo"), txn)
 						So(putErr, ShouldBeNil)
 						So(getErr, ShouldBeNil)
 						So(queryErr, ShouldBeNil)
@@ -627,7 +657,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 func TestCompoundIndexes(t *testing.T) {
 	t.Parallel()
 
-	idxKey := func(def dsS.IndexDefinition) string {
+	idxKey := func(def ds.IndexDefinition) string {
 		So(def, ShouldNotBeNil)
 		return "idx::" + string(serialize.ToBytes(*def.PrepForIdxTable()))
 	}
@@ -646,15 +676,14 @@ func TestCompoundIndexes(t *testing.T) {
 		}
 
 		c := Use(context.Background())
-		ds := dsS.Get(c)
-		t := ds.Testable().(*dsImpl)
+		t := ds.GetTestable(c).(*dsImpl)
 		head := t.data.head
 
-		So(ds.Put(&Model{1, []string{"hello", "world"}, []int64{10, 11}}), ShouldBeNil)
+		So(ds.Put(c, &Model{1, []string{"hello", "world"}, []int64{10, 11}}), ShouldBeNil)
 
-		idx := dsS.IndexDefinition{
+		idx := ds.IndexDefinition{
 			Kind: "Model",
-			SortBy: []dsS.IndexColumn{
+			SortBy: []ds.IndexColumn{
 				{Property: "Field2"},
 			},
 		}
@@ -668,7 +697,7 @@ func TestCompoundIndexes(t *testing.T) {
 		So(coll, ShouldNotBeNil)
 		So(numItms(coll), ShouldEqual, 2)
 
-		idx.SortBy = append(idx.SortBy, dsS.IndexColumn{Property: "Field1"})
+		idx.SortBy = append(idx.SortBy, ds.IndexColumn{Property: "Field1"})
 		So(head.GetCollection(idxKey(idx)), ShouldBeNil)
 
 		t.AddIndexes(&idx)
@@ -688,13 +717,13 @@ func TestDefaultTimeField(t *testing.T) {
 			ID   int64 `gae:"$id"`
 			Time time.Time
 		}
-		ds := dsS.Get(Use(context.Background()))
+		c := Use(context.Background())
 		m := Model{ID: 1}
-		So(ds.Put(&m), ShouldBeNil)
+		So(ds.Put(c, &m), ShouldBeNil)
 
 		// Reset to something non zero to ensure zero is fetched.
 		m.Time = time.Now().UTC()
-		So(ds.Get(&m), ShouldBeNil)
+		So(ds.Get(c, &m), ShouldBeNil)
 		So(m.Time.IsZero(), ShouldBeTrue)
 	})
 }
@@ -704,10 +733,12 @@ func TestNewDatastore(t *testing.T) {
 
 	Convey("Can get and use a NewDatastore", t, func() {
 		c := UseWithAppID(context.Background(), "dev~aid")
-		c = infoS.Get(c).MustNamespace("ns")
-		ds := NewDatastore(infoS.Get(c))
+		c = infoS.MustNamespace(c, "ns")
 
-		k := ds.MakeKey("Something", 1)
+		dsInst := NewDatastore(c, infoS.Raw(c))
+		c = ds.SetRaw(c, dsInst)
+
+		k := ds.MakeKey(c, "Something", 1)
 		So(k.AppID(), ShouldEqual, "dev~aid")
 		So(k.Namespace(), ShouldEqual, "ns")
 
@@ -715,10 +746,10 @@ func TestNewDatastore(t *testing.T) {
 			ID    int64 `gae:"$id"`
 			Value []int64
 		}
-		So(ds.Put(&Model{ID: 1, Value: []int64{20, 30}}), ShouldBeNil)
+		So(ds.Put(c, &Model{ID: 1, Value: []int64{20, 30}}), ShouldBeNil)
 
-		vals := []dsS.PropertyMap{}
-		So(ds.GetAll(dsS.NewQuery("Model").Project("Value"), &vals), ShouldBeNil)
+		vals := []ds.PropertyMap{}
+		So(ds.GetAll(c, ds.NewQuery("Model").Project("Value"), &vals), ShouldBeNil)
 		So(len(vals), ShouldEqual, 2)
 
 		So(vals[0].Slice("Value")[0].Value(), ShouldEqual, 20)
@@ -740,25 +771,25 @@ func TestAddIndexes(t *testing.T) {
 				{ID: 3, Val: 2, Name: "baz"},
 			}
 			for _, ns := range namespaces {
-				So(dsS.Get(infoS.Get(ctx).MustNamespace(ns)).PutMulti(foos), ShouldBeNil)
+				So(ds.Put(infoS.MustNamespace(ctx, ns), foos), ShouldBeNil)
 			}
 
 			// Initial query, no indexes, will fail.
-			dsS.Get(ctx).Testable().CatchupIndexes()
+			ds.GetTestable(ctx).CatchupIndexes()
 
 			var results []*Foo
-			q := dsS.NewQuery("Foo").Eq("Val", 2).Gte("Name", "bar")
-			So(dsS.Get(ctx).GetAll(q, &results), ShouldErrLike, "Insufficient indexes")
+			q := ds.NewQuery("Foo").Eq("Val", 2).Gte("Name", "bar")
+			So(ds.GetAll(ctx, q, &results), ShouldErrLike, "Insufficient indexes")
 
 			// Add index for default namespace.
-			dsS.Get(ctx).Testable().AddIndexes(&dsS.IndexDefinition{
+			ds.GetTestable(ctx).AddIndexes(&ds.IndexDefinition{
 				Kind: "Foo",
-				SortBy: []dsS.IndexColumn{
+				SortBy: []ds.IndexColumn{
 					{Property: "Val"},
 					{Property: "Name"},
 				},
 			})
-			dsS.Get(ctx).Testable().CatchupIndexes()
+			ds.GetTestable(ctx).CatchupIndexes()
 
 			for _, ns := range namespaces {
 				if ns == "" {
@@ -767,16 +798,16 @@ func TestAddIndexes(t *testing.T) {
 				}
 
 				results = nil
-				So(dsS.Get(infoS.Get(ctx).MustNamespace(ns)).GetAll(q, &results), ShouldBeNil)
+				So(ds.GetAll(infoS.MustNamespace(ctx, ns), q, &results), ShouldBeNil)
 				So(len(results), ShouldEqual, 2)
 			}
 
 			// Add "foos" to a new namespace, then confirm that it gets indexed.
-			So(dsS.Get(infoS.Get(ctx).MustNamespace("qux")).PutMulti(foos), ShouldBeNil)
-			dsS.Get(ctx).Testable().CatchupIndexes()
+			So(ds.Put(infoS.MustNamespace(ctx, "qux"), foos), ShouldBeNil)
+			ds.GetTestable(ctx).CatchupIndexes()
 
 			results = nil
-			So(dsS.Get(infoS.Get(ctx).MustNamespace("qux")).GetAll(q, &results), ShouldBeNil)
+			So(ds.GetAll(infoS.MustNamespace(ctx, "qux"), q, &results), ShouldBeNil)
 			So(len(results), ShouldEqual, 2)
 		})
 	})

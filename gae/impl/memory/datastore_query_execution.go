@@ -97,18 +97,17 @@ func (s *keysOnlyStrategy) handle(rawData [][]byte, _ []ds.Property, key *ds.Key
 type normalStrategy struct {
 	cb ds.RawRunCB
 
-	aid   string
-	ns    string
+	kc    ds.KeyContext
 	head  memCollection
 	dedup stringset.Set
 }
 
-func newNormalStrategy(aid, ns string, cb ds.RawRunCB, head memStore) queryStrategy {
-	coll := head.GetCollection("ents:" + ns)
+func newNormalStrategy(kc ds.KeyContext, cb ds.RawRunCB, head memStore) queryStrategy {
+	coll := head.GetCollection("ents:" + kc.Namespace)
 	if coll == nil {
 		return nil
 	}
-	return &normalStrategy{cb, aid, ns, coll, stringset.New(0)}
+	return &normalStrategy{cb, kc, coll, stringset.New(0)}
 }
 
 func (s *normalStrategy) handle(rawData [][]byte, _ []ds.Property, key *ds.Key, gc func() (ds.Cursor, error)) error {
@@ -122,7 +121,7 @@ func (s *normalStrategy) handle(rawData [][]byte, _ []ds.Property, key *ds.Key, 
 		// entity doesn't exist at head
 		return nil
 	}
-	pm, err := serialize.ReadPropertyMap(bytes.NewBuffer(rawEnt), serialize.WithoutContext, s.aid, s.ns)
+	pm, err := serialize.ReadPropertyMap(bytes.NewBuffer(rawEnt), serialize.WithoutContext, s.kc)
 	memoryCorruption(err)
 
 	return s.cb(key, pm, gc)
@@ -135,7 +134,7 @@ func pickQueryStrategy(fq *ds.FinalizedQuery, rq *reducedQuery, cb ds.RawRunCB, 
 	if len(fq.Project()) > 0 {
 		return newProjectionStrategy(fq, rq, cb)
 	}
-	return newNormalStrategy(rq.aid, rq.ns, cb, head)
+	return newNormalStrategy(rq.kc, cb, head)
 }
 
 func parseSuffix(aid, ns string, suffixFormat []ds.IndexColumn, suffix []byte, count int) (raw [][]byte, decoded []ds.Property) {
@@ -144,6 +143,7 @@ func parseSuffix(aid, ns string, suffixFormat []ds.IndexColumn, suffix []byte, c
 	raw = make([][]byte, len(suffixFormat))
 
 	err := error(nil)
+	kc := ds.KeyContext{aid, ns}
 	for i := range decoded {
 		if count >= 0 && i >= count {
 			break
@@ -151,7 +151,7 @@ func parseSuffix(aid, ns string, suffixFormat []ds.IndexColumn, suffix []byte, c
 		needInvert := suffixFormat[i].Descending
 
 		buf.SetInvert(needInvert)
-		decoded[i], err = serialize.ReadProperty(buf, serialize.WithoutContext, aid, ns)
+		decoded[i], err = serialize.ReadProperty(buf, serialize.WithoutContext, kc)
 		memoryCorruption(err)
 
 		offset := len(suffix) - buf.Len()
@@ -165,21 +165,21 @@ func parseSuffix(aid, ns string, suffixFormat []ds.IndexColumn, suffix []byte, c
 	return
 }
 
-func countQuery(fq *ds.FinalizedQuery, aid, ns string, isTxn bool, idx, head memStore) (ret int64, err error) {
+func countQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool, idx, head memStore) (ret int64, err error) {
 	if len(fq.Project()) == 0 && !fq.KeysOnly() {
 		fq, err = fq.Original().KeysOnly(true).Finalize()
 		if err != nil {
 			return
 		}
 	}
-	err = executeQuery(fq, aid, ns, isTxn, idx, head, func(_ *ds.Key, _ ds.PropertyMap, _ ds.CursorCB) error {
+	err = executeQuery(fq, kc, isTxn, idx, head, func(_ *ds.Key, _ ds.PropertyMap, _ ds.CursorCB) error {
 		ret++
 		return nil
 	})
 	return
 }
 
-func executeNamespaceQuery(fq *ds.FinalizedQuery, aid string, head memStore, cb ds.RawRunCB) error {
+func executeNamespaceQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, head memStore, cb ds.RawRunCB) error {
 	// these objects have no properties, so any filters on properties cause an
 	// empty result.
 	if len(fq.EqFilters()) > 0 || len(fq.Project()) > 0 || len(fq.Orders()) > 1 {
@@ -197,6 +197,8 @@ func executeNamespaceQuery(fq *ds.FinalizedQuery, aid string, head memStore, cb 
 	if !(start == nil && end == nil) {
 		return cursErr
 	}
+
+	kc.Namespace = ""
 	for _, ns := range namespaces(head) {
 		if hasOffset && offset > 0 {
 			offset--
@@ -212,9 +214,9 @@ func executeNamespaceQuery(fq *ds.FinalizedQuery, aid string, head memStore, cb 
 		if ns == "" {
 			// Datastore uses an id of 1 to indicate the default namespace in its
 			// metadata API.
-			k = ds.MakeKey(aid, "", "__namespace__", 1)
+			k = kc.MakeKey("__namespace__", 1)
 		} else {
-			k = ds.MakeKey(aid, "", "__namespace__", ns)
+			k = kc.MakeKey("__namespace__", ns)
 		}
 		if err := cb(k, nil, cursFn); err != nil {
 			return err
@@ -223,8 +225,8 @@ func executeNamespaceQuery(fq *ds.FinalizedQuery, aid string, head memStore, cb 
 	return nil
 }
 
-func executeQuery(fq *ds.FinalizedQuery, aid, ns string, isTxn bool, idx, head memStore, cb ds.RawRunCB) error {
-	rq, err := reduce(fq, aid, ns, isTxn)
+func executeQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool, idx, head memStore, cb ds.RawRunCB) error {
+	rq, err := reduce(fq, kc, isTxn)
 	if err == ds.ErrNullQuery {
 		return nil
 	}
@@ -233,7 +235,7 @@ func executeQuery(fq *ds.FinalizedQuery, aid, ns string, isTxn bool, idx, head m
 	}
 
 	if rq.kind == "__namespace__" {
-		return executeNamespaceQuery(fq, aid, head, cb)
+		return executeNamespaceQuery(fq, kc, head, cb)
 	}
 
 	idxs, err := getIndexes(rq, idx)
@@ -286,7 +288,7 @@ func executeQuery(fq *ds.FinalizedQuery, aid, ns string, isTxn bool, idx, head m
 			limit--
 		}
 
-		rawData, decodedProps := parseSuffix(aid, ns, rq.suffixFormat, suffix, -1)
+		rawData, decodedProps := parseSuffix(kc.AppID, kc.Namespace, rq.suffixFormat, suffix, -1)
 
 		keyProp := decodedProps[len(decodedProps)-1]
 		if keyProp.Type() != ds.PTKey {

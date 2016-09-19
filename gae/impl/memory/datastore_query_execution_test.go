@@ -19,6 +19,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func mkKey(appID, namespace string, elems ...interface{}) *ds.Key {
+	return ds.KeyContext{appID, namespace}.MakeKey(elems...)
+}
+
 type qExpect struct {
 	q     *ds.Query
 	inTxn bool
@@ -85,8 +89,8 @@ var stage2Data = []ds.PropertyMap{
 		"Val", 3, 4, 2, 1, Next,
 		"Extra", "nuts",
 	),
-	pmap("$key", ds.MakeKey("dev~app", "", "Kind", "id")),
-	pmap("$key", ds.MakeKey("dev~app", "bob", "Kind", "id")),
+	pmap("$key", mkKey("dev~app", "", "Kind", "id")),
+	pmap("$key", mkKey("dev~app", "bob", "Kind", "id")),
 }
 
 var collapsedData = []ds.PropertyMap{
@@ -149,7 +153,7 @@ var queryExecutionTests = []qExTest{
 					key("Kind", 3, "Child", "seven"),
 				}, inTxn: true},
 				{q: nq("__namespace__"), get: []ds.PropertyMap{
-					pmap("$key", ds.MakeKey("dev~app", "", "__namespace__", "ns")),
+					pmap("$key", mkKey("dev~app", "", "__namespace__", "ns")),
 				}},
 				{q: nq("__namespace__").Offset(1), get: []ds.PropertyMap{}},
 				{q: nq("__namespace__").Offset(1).Limit(1), get: []ds.PropertyMap{}},
@@ -351,27 +355,26 @@ var queryExecutionTests = []qExTest{
 					stage1Data[2],
 				}},
 				{q: nq("__namespace__"), get: []ds.PropertyMap{
-					pmap("$key", ds.MakeKey("dev~app", "", "__namespace__", 1)),
-					pmap("$key", ds.MakeKey("dev~app", "", "__namespace__", "bob")),
-					pmap("$key", ds.MakeKey("dev~app", "", "__namespace__", "ns")),
+					pmap("$key", mkKey("dev~app", "", "__namespace__", 1)),
+					pmap("$key", mkKey("dev~app", "", "__namespace__", "bob")),
+					pmap("$key", mkKey("dev~app", "", "__namespace__", "ns")),
 				}},
 				{q: nq("__namespace__").Offset(1), get: []ds.PropertyMap{
-					pmap("$key", ds.MakeKey("dev~app", "", "__namespace__", "bob")),
-					pmap("$key", ds.MakeKey("dev~app", "", "__namespace__", "ns")),
+					pmap("$key", mkKey("dev~app", "", "__namespace__", "bob")),
+					pmap("$key", mkKey("dev~app", "", "__namespace__", "ns")),
 				}},
 				{q: nq("__namespace__").Offset(1).Limit(1), get: []ds.PropertyMap{
-					pmap("$key", ds.MakeKey("dev~app", "", "__namespace__", "bob")),
+					pmap("$key", mkKey("dev~app", "", "__namespace__", "bob")),
 				}},
 			},
 
 			extraFns: []func(context.Context){
 				func(c context.Context) {
-					data := ds.Get(c)
 					curs := ds.Cursor(nil)
 
 					q := nq("").Gt("__key__", key("Kind", 2))
 
-					err := data.Run(q, func(pm ds.PropertyMap, gc ds.CursorCB) error {
+					err := ds.Run(c, q, func(pm ds.PropertyMap, gc ds.CursorCB) error {
 						So(pm, ShouldResemble, pmap(
 							"$key", key("Kind", 2, "__entity_group__", 1), Next,
 							"__version__", 1))
@@ -383,7 +386,7 @@ var queryExecutionTests = []qExTest{
 					})
 					So(err, shouldBeSuccessful)
 
-					err = data.Run(q.Start(curs), func(pm ds.PropertyMap) error {
+					err = ds.Run(c, q.Start(curs), func(pm ds.PropertyMap) error {
 						So(pm, ShouldResemble, stage1Data[2])
 						return ds.Stop
 					})
@@ -391,9 +394,8 @@ var queryExecutionTests = []qExTest{
 				},
 
 				func(c context.Context) {
-					data := ds.Get(c)
 					q := nq("Something").Eq("Does", 2).Order("Not", "-Work")
-					So(data.Run(q, func(ds.Key) {}), ShouldErrLike, strings.Join([]string{
+					So(ds.Run(c, q, func(ds.Key) {}), ShouldErrLike, strings.Join([]string{
 						"Consider adding:",
 						"- kind: Something",
 						"  properties:",
@@ -405,9 +407,8 @@ var queryExecutionTests = []qExTest{
 				},
 
 				func(c context.Context) {
-					data := ds.Get(c)
 					q := nq("Something").Ancestor(key("Kind", 3)).Order("Val")
-					So(data.Run(q, func(ds.Key) {}), ShouldErrLike, strings.Join([]string{
+					So(ds.Run(c, q, func(ds.Key) {}), ShouldErrLike, strings.Join([]string{
 						"Consider adding:",
 						"- kind: Something",
 						"  ancestor: yes",
@@ -488,18 +489,15 @@ func TestQueryExecution(t *testing.T) {
 	t.Parallel()
 
 	Convey("Test query execution", t, func() {
-		c, err := info.Get(Use(context.Background())).Namespace("ns")
+		c, err := info.Namespace(Use(context.Background()), "ns")
 		if err != nil {
 			panic(err)
 		}
 
-		So(info.Get(c).FullyQualifiedAppID(), ShouldEqual, "dev~app")
-		ns, has := info.Get(c).GetNamespace()
-		So(ns, ShouldEqual, "ns")
-		So(has, ShouldBeTrue)
+		So(info.FullyQualifiedAppID(c), ShouldEqual, "dev~app")
+		So(info.GetNamespace(c), ShouldEqual, "ns")
 
-		data := ds.Get(c)
-		testing := data.Testable()
+		testing := ds.GetTestable(c)
 
 		for _, tc := range queryExecutionTests {
 			Convey(tc.name, func() {
@@ -514,26 +512,25 @@ func TestQueryExecution(t *testing.T) {
 						byNs[k.Namespace()] = append(byNs[k.Namespace()], ent)
 					}
 					for ns, ents := range byNs {
-						c := info.Get(c).MustNamespace(ns)
-						data := ds.Get(c)
-						if err := data.PutMulti(ents); err != nil {
+						c := info.MustNamespace(c, ns)
+						if err := ds.Put(c, ents); err != nil {
 							// prevent Convey from thinking this assertion should show up in
 							// every test loop.
 							panic(err)
 						}
 					}
 
-					if err := data.DeleteMulti(stage.delEnts); err != nil {
+					if err := ds.Delete(c, stage.delEnts); err != nil {
 						panic(err)
 					}
 
 					Convey(fmt.Sprintf("stage %d", i), func() {
 						for j, expect := range stage.expect {
-							runner := func(f func(ic context.Context) error, _ *ds.TransactionOptions) error {
+							runner := func(c context.Context, f func(ic context.Context) error, _ *ds.TransactionOptions) error {
 								return f(c)
 							}
 							if expect.inTxn {
-								runner = data.RunInTransaction
+								runner = ds.RunInTransaction
 							}
 
 							if expect.count == 0 {
@@ -546,14 +543,13 @@ func TestQueryExecution(t *testing.T) {
 
 							if expect.keys != nil {
 								Convey(fmt.Sprintf("expect %d (keys)", j), func() {
-									err := runner(func(c context.Context) error {
-										data := ds.Get(c)
-										count, err := data.Count(expect.q)
+									err := runner(c, func(c context.Context) error {
+										count, err := ds.Count(c, expect.q)
 										So(err, shouldBeSuccessful)
 										So(count, ShouldEqual, expect.count)
 
 										rslt := []*ds.Key(nil)
-										So(data.GetAll(expect.q, &rslt), shouldBeSuccessful)
+										So(ds.GetAll(c, expect.q, &rslt), shouldBeSuccessful)
 										So(len(rslt), ShouldEqual, len(expect.keys))
 										for i, r := range rslt {
 											So(r, ShouldResemble, expect.keys[i])
@@ -566,14 +562,13 @@ func TestQueryExecution(t *testing.T) {
 
 							if expect.get != nil {
 								Convey(fmt.Sprintf("expect %d (data)", j), func() {
-									err := runner(func(c context.Context) error {
-										data := ds.Get(c)
-										count, err := data.Count(expect.q)
+									err := runner(c, func(c context.Context) error {
+										count, err := ds.Count(c, expect.q)
 										So(err, shouldBeSuccessful)
 										So(count, ShouldEqual, expect.count)
 
 										rslt := []ds.PropertyMap(nil)
-										So(data.GetAll(expect.q, &rslt), shouldBeSuccessful)
+										So(ds.GetAll(c, expect.q, &rslt), shouldBeSuccessful)
 										So(len(rslt), ShouldEqual, len(expect.get))
 										for i, r := range rslt {
 											So(r, ShouldResemble, expect.get[i])
@@ -597,33 +592,32 @@ func TestQueryExecution(t *testing.T) {
 	})
 
 	Convey("Test AutoIndex", t, func() {
-		c, err := info.Get(Use(context.Background())).Namespace("ns")
+		c, err := info.Namespace(Use(context.Background()), "ns")
 		if err != nil {
 			panic(err)
 		}
 
-		data := ds.Get(c)
-		testing := data.Testable()
+		testing := ds.GetTestable(c)
 		testing.Consistent(true)
 
-		So(data.Put(pmap("$key", key("Kind", 1), Next,
+		So(ds.Put(c, pmap("$key", key("Kind", 1), Next,
 			"Val", 1, 2, 3, Next,
 			"Extra", "hello",
 		)), shouldBeSuccessful)
 
-		So(data.Put(pmap("$key", key("Kind", 2), Next,
+		So(ds.Put(c, pmap("$key", key("Kind", 2), Next,
 			"Val", 2, 3, 9, Next,
 			"Extra", "ace", "hello", "there",
 		)), shouldBeSuccessful)
 
 		q := nq("Kind").Gt("Val", 2).Order("Val", "Extra")
 
-		count, err := data.Count(q)
+		count, err := ds.Count(c, q)
 		So(err, ShouldErrLike, "Insufficient indexes")
 
 		testing.AutoIndex(true)
 
-		count, err = data.Count(q)
+		count, err = ds.Count(c, q)
 		So(err, shouldBeSuccessful)
 		So(count, ShouldEqual, 2)
 	})

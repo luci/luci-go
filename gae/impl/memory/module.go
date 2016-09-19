@@ -18,18 +18,18 @@ type moduleVersion struct {
 }
 
 type modImpl struct {
-	c            context.Context
 	numInstances map[moduleVersion]int
 }
 
 // useMod adds a Module interface to the context
 func useMod(c context.Context) context.Context {
-	return module.SetFactory(c, func(ic context.Context) module.Interface {
-		return &modImpl{ic, map[moduleVersion]int{}}
+	modMap := map[moduleVersion]int{}
+	return module.SetFactory(c, func(ic context.Context) module.RawInterface {
+		return &modImpl{modMap}
 	})
 }
 
-var _ = module.Interface((*modImpl)(nil))
+var _ = module.RawInterface((*modImpl)(nil))
 
 func (mod *modImpl) List() ([]string, error) {
 	return []string{"testModule1", "testModule2"}, nil
@@ -55,10 +55,5 @@ func (mod *modImpl) DefaultVersion(module string) (string, error) {
 	return "testVersion1", nil
 }
 
-func (mod *modImpl) Start(module, version string) error {
-	return nil
-}
-
-func (mod *modImpl) Stop(module, version string) error {
-	return nil
-}
+func (mod *modImpl) Start(module, version string) error { return nil }
+func (mod *modImpl) Stop(module, version string) error  { return nil }

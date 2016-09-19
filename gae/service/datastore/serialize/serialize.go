@@ -75,16 +75,16 @@ func WriteKey(buf Buffer, context KeyContext, k *ds.Key) (err error) {
 // the value of context that was passed to WriteKey when the key was encoded.
 // If context == WithoutContext, then the appid and namespace parameters are
 // used in the decoded Key. Otherwise they're ignored.
-func ReadKey(buf Buffer, context KeyContext, appid, namespace string) (ret *ds.Key, err error) {
+func ReadKey(buf Buffer, context KeyContext, inKC ds.KeyContext) (ret *ds.Key, err error) {
 	defer recoverTo(&err)
 	actualCtx, e := buf.ReadByte()
 	panicIf(e)
 
-	actualAid, actualNS := "", ""
+	var kc ds.KeyContext
 	if actualCtx == 1 {
-		actualAid, _, e = cmpbin.ReadString(buf)
+		kc.AppID, _, e = cmpbin.ReadString(buf)
 		panicIf(e)
-		actualNS, _, e = cmpbin.ReadString(buf)
+		kc.Namespace, _, e = cmpbin.ReadString(buf)
 		panicIf(e)
 	} else if actualCtx != 0 {
 		err = fmt.Errorf("helper: expected actualCtx to be 0 or 1, got %d", actualCtx)
@@ -93,8 +93,7 @@ func ReadKey(buf Buffer, context KeyContext, appid, namespace string) (ret *ds.K
 
 	if context == WithoutContext {
 		// overrwrite with the supplied ones
-		actualAid = appid
-		actualNS = namespace
+		kc = inKC
 	}
 
 	toks := []ds.KeyTok{}
@@ -117,7 +116,7 @@ func ReadKey(buf Buffer, context KeyContext, appid, namespace string) (ret *ds.K
 		toks = append(toks, tok)
 	}
 
-	return ds.NewKeyToks(actualAid, actualNS, toks), nil
+	return kc.NewKeyToks(toks), nil
 }
 
 // WriteKeyTok writes a KeyTok to the buffer. You usually want WriteKey
@@ -277,10 +276,10 @@ func writeIndexValue(buf Buffer, context KeyContext, v interface{}) (err error) 
 	return
 }
 
-// ReadProperty reads a Property from the buffer. `context`, `appid`, and
-// `namespace` behave the same way they do for ReadKey, but only have an
-// effect if the decoded property has a Key value.
-func ReadProperty(buf Buffer, context KeyContext, appid, namespace string) (p ds.Property, err error) {
+// ReadProperty reads a Property from the buffer. `context` and `kc` behave the
+// same way they do for ReadKey, but only have an effect if the decoded property
+// has a Key value.
+func ReadProperty(buf Buffer, context KeyContext, kc ds.KeyContext) (p ds.Property, err error) {
 	val := interface{}(nil)
 	b, err := buf.ReadByte()
 	if err != nil {
@@ -308,7 +307,7 @@ func ReadProperty(buf Buffer, context KeyContext, appid, namespace string) (p ds
 	case ds.PTGeoPoint:
 		val, err = ReadGeoPoint(buf)
 	case ds.PTKey:
-		val, err = ReadKey(buf, context, appid, namespace)
+		val, err = ReadKey(buf, context, kc)
 	case ds.PTBlobKey:
 		s := ""
 		if s, _, err = cmpbin.ReadString(buf); err != nil {
@@ -376,7 +375,7 @@ func WritePropertyMap(buf Buffer, context KeyContext, pm ds.PropertyMap) (err er
 
 // ReadPropertyMap reads a PropertyMap from the buffer. `context` and
 // friends behave the same way that they do for ReadKey.
-func ReadPropertyMap(buf Buffer, context KeyContext, appid, namespace string) (pm ds.PropertyMap, err error) {
+func ReadPropertyMap(buf Buffer, context KeyContext, kc ds.KeyContext) (pm ds.PropertyMap, err error) {
 	defer recoverTo(&err)
 
 	numRows := uint64(0)
@@ -399,7 +398,7 @@ func ReadPropertyMap(buf Buffer, context KeyContext, appid, namespace string) (p
 		switch {
 		case numProps < 0:
 			// Single property.
-			prop, err = ReadProperty(buf, context, appid, namespace)
+			prop, err = ReadProperty(buf, context, kc)
 			panicIf(err)
 			pm[name] = prop
 
@@ -410,7 +409,7 @@ func ReadPropertyMap(buf Buffer, context KeyContext, appid, namespace string) (p
 		default:
 			props := make(ds.PropertySlice, 0, numProps)
 			for j := int64(0); j < numProps; j++ {
-				prop, err = ReadProperty(buf, context, appid, namespace)
+				prop, err = ReadProperty(buf, context, kc)
 				panicIf(err)
 				props = append(props, prop)
 			}

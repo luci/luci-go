@@ -18,16 +18,16 @@ func TestMustNamespace(t *testing.T) {
 		c := UseWithAppID(context.Background(), "dev~app-id")
 
 		// Default value.
-		So(info.Get(c).AppID(), ShouldEqual, "app-id")
-		So(info.Get(c).FullyQualifiedAppID(), ShouldEqual, "dev~app-id")
-		So(info.Get(c).RequestID(), ShouldEqual, "test-request-id")
+		So(info.AppID(c), ShouldEqual, "app-id")
+		So(info.FullyQualifiedAppID(c), ShouldEqual, "dev~app-id")
+		So(info.RequestID(c), ShouldEqual, "test-request-id")
 
 		// Setting to "override" applies to initial context.
-		c = info.Get(c).Testable().SetRequestID("override")
-		So(info.Get(c).RequestID(), ShouldEqual, "override")
+		c = info.GetTestable(c).SetRequestID("override")
+		So(info.RequestID(c), ShouldEqual, "override")
 
 		// Derive inner context, "override" applies.
-		c = info.Get(c).MustNamespace("valid_namespace_name")
-		So(info.Get(c).RequestID(), ShouldEqual, "override")
+		c = info.MustNamespace(c, "valid_namespace_name")
+		So(info.RequestID(c), ShouldEqual, "override")
 	})
 }

@@ -17,7 +17,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
+
 	"golang.org/x/net/context"
 )
 
@@ -29,13 +30,13 @@ type Key struct {
 
 // A PropFilterMap maps from Kind+PropertyName tuples to a formatting function. You
 // may use this to specially format particular properties.
-type PropFilterMap map[Key]func(datastore.Property) string
+type PropFilterMap map[Key]func(ds.Property) string
 
 // KindFilterMap maps from a Kind to a formatting function. You may use this to
 // specially format particular Kinds. If this function returns an empty string,
 // the default formatting function (including any PropFilterMap entries) will be
 // used.
-type KindFilterMap map[string]func(*datastore.Key, datastore.PropertyMap) string
+type KindFilterMap map[string]func(*ds.Key, ds.PropertyMap) string
 
 // Config is a configured dumper.
 type Config struct {
@@ -60,11 +61,9 @@ type Config struct {
 //
 // If the provided query is nil, a kindless query without any filters will be
 // used.
-func (cfg Config) Query(c context.Context, q *datastore.Query) (n int, err error) {
-	ds := datastore.Get(c)
-
+func (cfg Config) Query(c context.Context, q *ds.Query) (n int, err error) {
 	if q == nil {
-		q = datastore.NewQuery("")
+		q = ds.NewQuery("")
 	}
 
 	out := cfg.OutStream
@@ -72,7 +71,7 @@ func (cfg Config) Query(c context.Context, q *datastore.Query) (n int, err error
 		out = os.Stdout
 	}
 
-	fmtVal := func(kind, name string, prop datastore.Property) string {
+	fmtVal := func(kind, name string, prop ds.Property) string {
 		if fn := cfg.PropFilters[Key{kind, name}]; fn != nil {
 			return fn(prop)
 		}
@@ -86,12 +85,12 @@ func (cfg Config) Query(c context.Context, q *datastore.Query) (n int, err error
 		return
 	}
 
-	prop := func(kind, name string, pdata datastore.PropertyData) (err error) {
+	prop := func(kind, name string, pdata ds.PropertyData) (err error) {
 		switch t := pdata.(type) {
-		case datastore.Property:
+		case ds.Property:
 			return prnt("  %q: %s\n", name, fmtVal(kind, name, t))
 
-		case datastore.PropertySlice:
+		case ds.PropertySlice:
 			if len(t) <= 1 {
 				return prnt("  %q: [%s]\n", name, fmtVal(kind, name, t[0]))
 			}
@@ -110,8 +109,8 @@ func (cfg Config) Query(c context.Context, q *datastore.Query) (n int, err error
 		return prnt("\n  ]\n")
 	}
 
-	err = ds.Run(q, func(pm datastore.PropertyMap) error {
-		key := datastore.GetMetaDefault(pm, "key", nil).(*datastore.Key)
+	err = ds.Run(c, q, func(pm ds.PropertyMap) error {
+		key := ds.GetMetaDefault(pm, "key", nil).(*ds.Key)
 		if !cfg.WithSpecial && strings.HasPrefix(key.Kind(), "__") && strings.HasSuffix(key.Kind(), "__") {
 			return nil
 		}
@@ -149,7 +148,7 @@ func (cfg Config) Query(c context.Context, q *datastore.Query) (n int, err error
 
 // Query dumps the provided query to stdout without special entities and with
 // default rendering.
-func Query(c context.Context, q *datastore.Query) {
+func Query(c context.Context, q *ds.Query) {
 	Config{}.Query(c, q)
 }
 

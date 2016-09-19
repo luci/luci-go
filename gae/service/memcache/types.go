@@ -26,7 +26,7 @@ type Statistics struct {
 // return the original Item (e.g. they mutate the original), due to
 // implementation constraints. They return the original item to allow easy
 // chaining, e.g.:
-//   itm := memcache.Get(c).NewItem("foo").SetValue([]byte("stuff"))
+//   itm := memcache.NewItem(c, "foo").SetValue([]byte("stuff"))
 type Item interface {
 	Key() string
 	Value() []byte

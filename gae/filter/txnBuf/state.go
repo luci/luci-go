@@ -105,8 +105,7 @@ type txnBufState struct {
 	roots     stringset.Set
 	rootLimit int
 
-	aid      string
-	ns       string
+	kc       datastore.KeyContext
 	parentDS datastore.RawInterface
 
 	// sizeBudget is the number of bytes that this transaction has to operate
@@ -122,9 +121,6 @@ type txnBufState struct {
 }
 
 func withTxnBuf(ctx context.Context, cb func(context.Context) error, opts *datastore.TransactionOptions) error {
-	inf := info.Get(ctx)
-	ns, _ := inf.GetNamespace()
-
 	parentState, _ := ctx.Value(dsTxnBufParent).(*txnBufState)
 	roots := stringset.New(0)
 	rootLimit := 1
@@ -147,12 +143,11 @@ func withTxnBuf(ctx context.Context, cb func(context.Context) error, opts *datas
 
 	state := &txnBufState{
 		entState:         &sizeTracker{},
-		bufDS:            memory.NewDatastore(inf).Raw(),
+		bufDS:            memory.NewDatastore(ctx, info.Raw(ctx)),
 		roots:            roots,
 		rootLimit:        rootLimit,
-		ns:               ns,
-		aid:              inf.FullyQualifiedAppID(),
-		parentDS:         datastore.Get(context.WithValue(ctx, dsTxnBufHaveLock, true)).Raw(),
+		kc:               datastore.GetKeyContext(ctx),
+		parentDS:         datastore.Raw(context.WithValue(ctx, dsTxnBufHaveLock, true)),
 		sizeBudget:       sizeBudget,
 		writeCountBudget: writeCountBudget,
 	}
@@ -512,7 +507,7 @@ func (t *txnBufState) effect() (toPut []datastore.PropertyMap, toPutKeys, toDel 
 
 	for keyStr, size := range t.entState.keyToSize {
 		if size == 0 {
-			k, err := serialize.ReadKey(bytes.NewBufferString(keyStr), serialize.WithoutContext, t.aid, t.ns)
+			k, err := serialize.ReadKey(bytes.NewBufferString(keyStr), serialize.WithoutContext, t.kc)
 			memoryCorruption(err)
 			toDel = append(toDel, k)
 		}

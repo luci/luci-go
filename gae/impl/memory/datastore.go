@@ -19,27 +19,14 @@ import (
 // useRDS adds a gae.Datastore implementation to context, accessible
 // by gae.GetDS(c)
 func useRDS(c context.Context) context.Context {
-	return ds.SetRawFactory(c, func(ic context.Context, wantTxn bool) ds.RawInterface {
-		ns, hasNS := curGID(ic).getNamespace()
-		maybeTxnCtx := cur(ic)
-
-		needResetCtx := false
-		if !wantTxn {
-			rootctx := curNoTxn(ic)
-			if rootctx != maybeTxnCtx {
-				needResetCtx = true
-				maybeTxnCtx = rootctx
-			}
+	return ds.SetRawFactory(c, func(ic context.Context) ds.RawInterface {
+		kc := ds.GetKeyContext(ic)
+		memCtx, isTxn := cur(ic)
+		dsd := memCtx.Get(memContextDSIdx)
+		if isTxn {
+			return &txnDsImpl{ic, dsd.(*txnDataStoreData), kc}
 		}
-
-		dsd := maybeTxnCtx.Get(memContextDSIdx)
-		if x, ok := dsd.(*dataStoreData); ok {
-			if needResetCtx {
-				ic = context.WithValue(ic, memContextKey, maybeTxnCtx)
-			}
-			return &dsImpl{x, ns, hasNS, ic}
-		}
-		return &txnDsImpl{dsd.(*txnDataStoreData), ns, hasNS}
+		return &dsImpl{ic, dsd.(*dataStoreData), kc}
 	})
 }
 
@@ -51,18 +38,17 @@ func useRDS(c context.Context) context.Context {
 //   * Consistent(true)
 //   * DisableSpecialEntities(true)
 //
-// These settings can of course be changed by using the Testable() interface.
-func NewDatastore(inf info.Interface) ds.Interface {
-	fqAppID := inf.FullyQualifiedAppID()
-	ns, hasNS := inf.GetNamespace()
+// These settings can of course be changed by using the Testable interface.
+func NewDatastore(c context.Context, inf info.RawInterface) ds.RawInterface {
+	kc := ds.GetKeyContext(c)
 
-	memctx := newMemContext(fqAppID)
+	memctx := newMemContext(kc.AppID)
 
 	dsCtx := info.Set(context.Background(), inf)
-	rds := &dsImpl{memctx.Get(memContextDSIdx).(*dataStoreData), ns, hasNS, dsCtx}
+	rds := &dsImpl{dsCtx, memctx.Get(memContextDSIdx).(*dataStoreData), kc}
 
-	ret := ds.Get(ds.SetRaw(dsCtx, rds))
-	t := ret.Testable()
+	ret := ds.Raw(ds.SetRaw(dsCtx, rds))
+	t := ret.GetTestable()
 	t.AutoIndex(true)
 	t.Consistent(true)
 	t.DisableSpecialEntities(true)
@@ -74,10 +60,10 @@ func NewDatastore(inf info.Interface) ds.Interface {
 
 // dsImpl exists solely to bind the current c to the datastore data.
 type dsImpl struct {
-	data  *dataStoreData
-	ns    string
-	hasNS bool
-	c     context.Context
+	context.Context
+
+	data *dataStoreData
+	kc   ds.KeyContext
 }
 
 var _ ds.RawInterface = (*dsImpl)(nil)
@@ -106,23 +92,30 @@ func (d *dsImpl) DecodeCursor(s string) (ds.Cursor, error) {
 
 func (d *dsImpl) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
 	idx, head := d.data.getQuerySnaps(!fq.EventuallyConsistent())
-	err := executeQuery(fq, d.data.aid, d.ns, false, idx, head, cb)
+	err := executeQuery(fq, d.kc, false, idx, head, cb)
 	if d.data.maybeAutoIndex(err) {
 		idx, head = d.data.getQuerySnaps(!fq.EventuallyConsistent())
-		err = executeQuery(fq, d.data.aid, d.ns, false, idx, head, cb)
+		err = executeQuery(fq, d.kc, false, idx, head, cb)
 	}
 	return err
 }
 
 func (d *dsImpl) Count(fq *ds.FinalizedQuery) (ret int64, err error) {
 	idx, head := d.data.getQuerySnaps(!fq.EventuallyConsistent())
-	ret, err = countQuery(fq, d.data.aid, d.ns, false, idx, head)
+	ret, err = countQuery(fq, d.kc, false, idx, head)
 	if d.data.maybeAutoIndex(err) {
 		idx, head := d.data.getQuerySnaps(!fq.EventuallyConsistent())
-		ret, err = countQuery(fq, d.data.aid, d.ns, false, idx, head)
+		ret, err = countQuery(fq, d.kc, false, idx, head)
 	}
 	return
 }
+
+func (d *dsImpl) WithoutTransaction() context.Context {
+	// Already not in a Transaction.
+	return d
+}
+
+func (*dsImpl) CurrentTransaction() ds.Transaction { return nil }
 
 func (d *dsImpl) AddIndexes(idxs ...*ds.IndexDefinition) {
 	if len(idxs) == 0 {
@@ -166,16 +159,15 @@ func (d *dsImpl) DisableSpecialEntities(enabled bool) {
 	d.data.setDisableSpecialEntities(enabled)
 }
 
-func (d *dsImpl) Testable() ds.Testable {
-	return d
-}
+func (d *dsImpl) GetTestable() ds.Testable { return d }
 
 ////////////////////////////////// txnDsImpl ///////////////////////////////////
 
 type txnDsImpl struct {
-	data  *txnDataStoreData
-	ns    string
-	hasNS bool
+	context.Context
+
+	data *txnDataStoreData
+	kc   ds.KeyContext
 }
 
 var _ ds.RawInterface = (*txnDsImpl)(nil)
@@ -203,9 +195,7 @@ func (d *txnDsImpl) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 	})
 }
 
-func (d *txnDsImpl) DecodeCursor(s string) (ds.Cursor, error) {
-	return newCursor(s)
-}
+func (d *txnDsImpl) DecodeCursor(s string) (ds.Cursor, error) { return newCursor(s) }
 
 func (d *txnDsImpl) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
 	// note that autoIndex has no effect inside transactions. This is because
@@ -217,17 +207,23 @@ func (d *txnDsImpl) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
 	// It's possible that if you have full-consistency and also auto index enabled
 	// that this would make sense... but at that point you should probably just
 	// add the index up front.
-	return executeQuery(q, d.data.parent.aid, d.ns, true, d.data.snap, d.data.snap, cb)
+	return executeQuery(q, d.kc, true, d.data.snap, d.data.snap, cb)
 }
 
 func (d *txnDsImpl) Count(fq *ds.FinalizedQuery) (ret int64, err error) {
-	return countQuery(fq, d.data.parent.aid, d.ns, true, d.data.snap, d.data.snap)
+	return countQuery(fq, d.kc, true, d.data.snap, d.data.snap)
 }
 
 func (*txnDsImpl) RunInTransaction(func(c context.Context) error, *ds.TransactionOptions) error {
 	return errors.New("datastore: nested transactions are not supported")
 }
 
-func (*txnDsImpl) Testable() ds.Testable {
-	return nil
+func (d *txnDsImpl) WithoutTransaction() context.Context {
+	return context.WithValue(d, currentTxnKey, nil)
 }
+
+func (d *txnDsImpl) CurrentTransaction() ds.Transaction {
+	return d.data.txn
+}
+
+func (d *txnDsImpl) GetTestable() ds.Testable { return nil }

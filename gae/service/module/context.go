@@ -17,24 +17,24 @@ var (
 
 // Factory is the function signature for factory methods compatible with
 // SetFactory.
-type Factory func(context.Context) Interface
+type Factory func(context.Context) RawInterface
 
 // Filter is the function signature for a filter module implementation. It gets
 // the current module implementation, and returns a new module implementation
 // backed by the one passed in.
-type Filter func(context.Context, Interface) Interface
+type Filter func(context.Context, RawInterface) RawInterface
 
-// getUnfiltered gets gets the Interface implementation from context without
+// getUnfiltered gets gets the RawInterface implementation from context without
 // any of the filters applied.
-func getUnfiltered(c context.Context) Interface {
+func getUnfiltered(c context.Context) RawInterface {
 	if f, ok := c.Value(moduleKey).(Factory); ok && f != nil {
 		return f(c)
 	}
 	return nil
 }
 
-// Get gets the Interface implementation from context.
-func Get(c context.Context) Interface {
+// Raw gets the RawInterface implementation from context.
+func Raw(c context.Context) RawInterface {
 	ret := getUnfiltered(c)
 	if ret == nil {
 		return nil
@@ -45,17 +45,17 @@ func Get(c context.Context) Interface {
 	return ret
 }
 
-// SetFactory sets the function to produce Interface instances, as returned
+// SetFactory sets the function to produce RawInterface instances, as returned
 // by the Get method.
 func SetFactory(c context.Context, gif Factory) context.Context {
 	return context.WithValue(c, moduleKey, gif)
 }
 
-// Set sets the current Interface object in the context. Useful for testing
+// Set sets the current RawInterface object in the context. Useful for testing
 // with a quick mock. This is just a shorthand SetFactory invocation to set
 // a factory which always returns the same object.
-func Set(c context.Context, gi Interface) context.Context {
-	return SetFactory(c, func(context.Context) Interface { return gi })
+func Set(c context.Context, gi RawInterface) context.Context {
+	return SetFactory(c, func(context.Context) RawInterface { return gi })
 }
 
 func getCurFilters(c context.Context) []Filter {
@@ -66,7 +66,7 @@ func getCurFilters(c context.Context) []Filter {
 	return nil
 }
 
-// AddFilters adds Interface filters to the context.
+// AddFilters adds RawInterface filters to the context.
 func AddFilters(c context.Context, filts ...Filter) context.Context {
 	if len(filts) == 0 {
 		return c

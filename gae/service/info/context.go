@@ -33,8 +33,8 @@ func getUnfiltered(c context.Context) RawInterface {
 	return nil
 }
 
-// Get gets the Interface implementation from context.
-func Get(c context.Context) Interface {
+// Raw returns the current filtered RawInterface installed in the Context.
+func Raw(c context.Context) RawInterface {
 	ret := getUnfiltered(c)
 	if ret == nil {
 		return nil
@@ -42,7 +42,7 @@ func Get(c context.Context) Interface {
 	for _, f := range getCurFilters(c) {
 		ret = f(c, ret)
 	}
-	return infoImpl{ret}
+	return ret
 }
 
 // SetFactory sets the function to produce RawInterface instances, as returned

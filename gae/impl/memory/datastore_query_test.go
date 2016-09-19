@@ -10,8 +10,10 @@ import (
 
 	dstore "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
+
 	"github.com/luci/luci-go/common/data/cmpbin"
 	"github.com/luci/luci-go/common/data/stringset"
+
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -116,7 +118,8 @@ var queryTests = []queryTest{
 			End(curs("Foo", 20, "__key__", key("Something", 20)))),
 		nil,
 		&reducedQuery{
-			"dev~app", "ns", "Foo", map[string]stringset.Set{}, []dstore.IndexColumn{
+			dstore.KeyContext{"dev~app", "ns"},
+			"Foo", map[string]stringset.Set{}, []dstore.IndexColumn{
 				{Property: "Foo"},
 				{Property: "__key__"},
 			},
@@ -137,10 +140,12 @@ func TestQueries(t *testing.T) {
 	t.Parallel()
 
 	Convey("queries have tons of condition checking", t, func() {
+		kc := dstore.KeyContext{"dev~app", "ns"}
+
 		Convey("non-ancestor queries in a transaction", func() {
 			fq, err := nq().Finalize()
 			So(err, ShouldErrLike, nil)
-			_, err = reduce(fq, "dev~app", "ns", true)
+			_, err = reduce(fq, kc, true)
 			So(err, ShouldErrLike, "must include an Ancestor")
 		})
 
@@ -151,7 +156,7 @@ func TestQueries(t *testing.T) {
 			}
 			fq, err := q.Finalize()
 			So(err, ShouldErrLike, nil)
-			_, err = reduce(fq, "dev~app", "ns", false)
+			_, err = reduce(fq, kc, false)
 			So(err, ShouldErrLike, "query is too large")
 		})
 
@@ -161,9 +166,9 @@ func TestQueries(t *testing.T) {
 					rq := (*reducedQuery)(nil)
 					fq, err := tc.q.Finalize()
 					if err == nil {
-						err = fq.Valid("s~aid", "ns")
+						err = fq.Valid(kc)
 						if err == nil {
-							rq, err = reduce(fq, "dev~app", "ns", false)
+							rq, err = reduce(fq, kc, false)
 						}
 					}
 					So(err, ShouldErrLike, tc.err)

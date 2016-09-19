@@ -1,3 +1,7 @@
+// Copyright 2016 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
 // +build !native_appengine
 
 package demo
@@ -18,12 +22,11 @@ func TestGAE(t *testing.T) {
 	} // HL
 	Convey("Put/Get w/ gae", t, func() {
 		ctx := memory.Use(context.Background())
-		ds := datastore.Get(ctx) // get datastore client
-		So(ds.Put(               // HL
+		So(datastore.Put(ctx, // HL
 			&Model{"one thing", 10, 20},                // HL
 			&Model{"or another", 20, 30}), ShouldBeNil) // HL
 		ms := []*Model{{ID: "one thing"}, {ID: "or another"}}
-		So(ds.Get(ms), ShouldBeNil) // HL
+		So(datastore.Get(ctx, ms), ShouldBeNil) // HL
 		So(ms, ShouldResemble, []*Model{{"one thing", 10, 20}, {"or another", 20, 30}})
 	})
 }

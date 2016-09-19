@@ -8,10 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
-	"github.com/luci/gae/service/memcache"
+	mc "github.com/luci/gae/service/memcache"
+
 	"github.com/luci/luci-go/common/clock"
+
 	"golang.org/x/net/context"
 )
 
@@ -74,12 +76,12 @@ func IsGloballyEnabled(c context.Context) bool {
 	}
 
 	// always go to the default namespace
-	c, err := info.Get(c).Namespace("")
+	c, err := info.Namespace(c, "")
 	if err != nil {
 		return true
 	}
 	cfg := &GlobalConfig{Enable: true}
-	if err := datastore.Get(c).Get(cfg); err != nil && err != datastore.ErrNoSuchEntity {
+	if err := ds.Get(c, cfg); err != nil && err != ds.ErrNoSuchEntity {
 		return true
 	}
 	globalEnabled = cfg.Enable
@@ -93,14 +95,13 @@ func IsGloballyEnabled(c context.Context) bool {
 // functionality on or off in emergencies.
 func SetGlobalEnable(c context.Context, memcacheEnabled bool) error {
 	// always go to the default namespace
-	c, err := info.Get(c).Namespace("")
+	c, err := info.Namespace(c, "")
 	if err != nil {
 		return err
 	}
-	return datastore.Get(c).RunInTransaction(func(c context.Context) error {
-		ds := datastore.Get(c)
+	return ds.RunInTransaction(c, func(c context.Context) error {
 		cfg := &GlobalConfig{Enable: true}
-		if err := ds.Get(cfg); err != nil && err != datastore.ErrNoSuchEntity {
+		if err := ds.Get(c, cfg); err != nil && err != ds.ErrNoSuchEntity {
 			return err
 		}
 		if cfg.Enable == memcacheEnabled {
@@ -109,10 +110,10 @@ func SetGlobalEnable(c context.Context, memcacheEnabled bool) error {
 		cfg.Enable = memcacheEnabled
 		if memcacheEnabled {
 			// when going false -> true, wipe memcache.
-			if err := memcache.Get(c).Flush(); err != nil {
+			if err := mc.Flush(c); err != nil {
 				return err
 			}
 		}
-		return ds.Put(cfg)
+		return ds.Put(c, cfg)
 	}, nil)
 }

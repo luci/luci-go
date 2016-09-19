@@ -11,9 +11,10 @@ import (
 )
 
 // useMail adds a mail service implementation to context, accessible
-// by "github.com/luci/gae/service/mail".Get(c)
+// by "github.com/luci/gae/service/mail".Raw(c) or the exported mail service
+// methods.
 func useMail(c context.Context) context.Context {
-	return gae_mail.SetFactory(c, func(ci context.Context) gae_mail.Interface {
+	return gae_mail.SetFactory(c, func(ci context.Context) gae_mail.RawInterface {
 		return mailImpl{AEContext(ci)}
 	})
 }
@@ -30,6 +31,4 @@ func (m mailImpl) SendToAdmins(msg *gae_mail.Message) error {
 	return mail.Send(m.aeCtx, msg.ToSDKMessage())
 }
 
-func (m mailImpl) Testable() gae_mail.Testable {
-	return nil
-}
+func (m mailImpl) GetTestable() gae_mail.Testable { return nil }

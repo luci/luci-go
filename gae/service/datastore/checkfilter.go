@@ -7,19 +7,19 @@ package datastore
 import (
 	"fmt"
 
-	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/errors"
+
 	"golang.org/x/net/context"
 )
 
 type checkFilter struct {
 	RawInterface
 
-	aid string
-	ns  string
+	kc KeyContext
 }
 
 func (tcf *checkFilter) RunInTransaction(f func(c context.Context) error, opts *TransactionOptions) error {
+
 	if f == nil {
 		return fmt.Errorf("datastore: RunInTransaction function is nil")
 	}
@@ -45,7 +45,7 @@ func (tcf *checkFilter) GetMulti(keys []*Key, meta MultiMetaGetter, cb GetMultiC
 	}
 	lme := errors.NewLazyMultiError(len(keys))
 	for i, k := range keys {
-		if k.IsIncomplete() || !k.Valid(true, tcf.aid, tcf.ns) {
+		if k.IsIncomplete() || !k.Valid(true, tcf.kc) {
 			lme.Assign(i, ErrInvalidKey)
 		}
 	}
@@ -70,7 +70,7 @@ func (tcf *checkFilter) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) e
 	}
 	lme := errors.NewLazyMultiError(len(keys))
 	for i, k := range keys {
-		if !k.PartialValid(tcf.aid, tcf.ns) {
+		if !k.PartialValid(tcf.kc) {
 			lme.Assign(i, ErrInvalidKey)
 			continue
 		}
@@ -98,7 +98,7 @@ func (tcf *checkFilter) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
 	}
 	lme := errors.NewLazyMultiError(len(keys))
 	for i, k := range keys {
-		if k.IsIncomplete() || !k.Valid(false, tcf.aid, tcf.ns) {
+		if k.IsIncomplete() || !k.Valid(false, tcf.kc) {
 			lme.Assign(i, ErrInvalidKey)
 		}
 	}
@@ -112,7 +112,8 @@ func (tcf *checkFilter) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
 }
 
 func applyCheckFilter(c context.Context, i RawInterface) RawInterface {
-	inf := info.Get(c)
-	ns, _ := inf.GetNamespace()
-	return &checkFilter{i, inf.FullyQualifiedAppID(), ns}
+	return &checkFilter{
+		RawInterface: i,
+		kc:           GetKeyContext(c),
+	}
 }

@@ -73,8 +73,16 @@ func (r *dsState) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB
 	})
 }
 
-func (r *dsState) Testable() ds.Testable {
-	return r.rds.Testable()
+func (r *dsState) WithoutTransaction() context.Context {
+	return r.rds.WithoutTransaction()
+}
+
+func (r *dsState) CurrentTransaction() ds.Transaction {
+	return r.rds.CurrentTransaction()
+}
+
+func (r *dsState) GetTestable() ds.Testable {
+	return r.rds.GetTestable()
 }
 
 // FilterRDS installs a featureBreaker datastore filter in the context.

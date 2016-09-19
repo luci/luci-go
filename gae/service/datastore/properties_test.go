@@ -91,7 +91,7 @@ func TestProperties(t *testing.T) {
 					So(pv.Type().String(), ShouldEqual, "PTBlobKey")
 				})
 				Convey("datastore Key is distinguished", func() {
-					k := MakeKey("appid", "ns", "kind", "1")
+					k := KeyContext{"appid", "ns"}.MakeKey("kind", "1")
 					pv := MkProperty(k)
 					So(pv.Value(), ShouldHaveSameTypeAs, k)
 					So(pv.Value().(*Key).Equal(k), ShouldBeTrue)

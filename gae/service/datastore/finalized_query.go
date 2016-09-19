@@ -312,8 +312,8 @@ func (q *FinalizedQuery) String() string {
 	return q.GQL()
 }
 
-// Valid returns true iff this FinalizedQuery is valid in the provided appID and
-// namespace.
+// Valid returns true iff this FinalizedQuery is valid in the provided
+// KeyContext's App ID and Namespace.
 //
 // This checks the ancestor filter (if any), as well as the inequality filters
 // if they filter on '__key__'.
@@ -321,17 +321,17 @@ func (q *FinalizedQuery) String() string {
 // In particular, it does NOT validate equality filters which happen to have
 // values of type PTKey, nor does it validate inequality filters that happen to
 // have values of type PTKey (but don't filter on the magic '__key__' field).
-func (q *FinalizedQuery) Valid(aid, ns string) error {
+func (q *FinalizedQuery) Valid(kc KeyContext) error {
 	anc := q.Ancestor()
-	if anc != nil && (!anc.Valid(false, aid, ns) || anc.IsIncomplete()) {
+	if anc != nil && (!anc.Valid(false, kc) || anc.IsIncomplete()) {
 		return ErrInvalidKey
 	}
 
 	if q.ineqFiltProp == "__key__" {
-		if q.ineqFiltLowSet && !q.ineqFiltLow.Value().(*Key).Valid(false, aid, ns) {
+		if q.ineqFiltLowSet && !q.ineqFiltLow.Value().(*Key).Valid(false, kc) {
 			return ErrInvalidKey
 		}
-		if q.ineqFiltHighSet && !q.ineqFiltHigh.Value().(*Key).Valid(false, aid, ns) {
+		if q.ineqFiltHighSet && !q.ineqFiltHigh.Value().(*Key).Valid(false, kc) {
 			return ErrInvalidKey
 		}
 	}

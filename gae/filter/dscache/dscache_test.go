@@ -14,14 +14,17 @@ import (
 
 	"github.com/luci/gae/filter/featureBreaker"
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
-	"github.com/luci/gae/service/memcache"
+	mc "github.com/luci/gae/service/memcache"
+
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/data/rand/mathrand"
-	. "github.com/smartystreets/goconvey/convey"
+
 	"golang.org/x/net/context"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 type object struct {
@@ -63,10 +66,9 @@ func TestDSCache(t *testing.T) {
 		c = clock.Set(c, clk)
 		c = memory.Use(c)
 
-		dsUnder := datastore.Get(c)
-		mc := memcache.Get(c)
+		underCtx := c
 
-		shardsForKey := func(k *datastore.Key) int {
+		shardsForKey := func(k *ds.Key) int {
 			last := k.LastTok()
 			if last.Kind == "shardObj" {
 				return int(last.IntID)
@@ -78,40 +80,36 @@ func TestDSCache(t *testing.T) {
 		}
 
 		numMemcacheItems := func() uint64 {
-			stats, err := mc.Stats()
+			stats, err := mc.Stats(c)
 			So(err, ShouldBeNil)
 			return stats.Items
 		}
 
 		Convey("enabled cases", func() {
 			c = FilterRDS(c, shardsForKey)
-			ds := datastore.Get(c)
-			So(dsUnder, ShouldNotBeNil)
-			So(ds, ShouldNotBeNil)
-			So(mc, ShouldNotBeNil)
 
 			Convey("basically works", func() {
-				pm := datastore.PropertyMap{
-					"BigData": datastore.MkProperty([]byte("")),
-					"Value":   datastore.MkProperty("hi"),
+				pm := ds.PropertyMap{
+					"BigData": ds.MkProperty([]byte("")),
+					"Value":   ds.MkProperty("hi"),
 				}
 				encoded := append([]byte{0}, serialize.ToBytes(pm)...)
 
 				o := object{ID: 1, Value: "hi"}
-				So(ds.Put(&o), ShouldBeNil)
+				So(ds.Put(c, &o), ShouldBeNil)
 
 				o = object{ID: 1}
-				So(dsUnder.Get(&o), ShouldBeNil)
+				So(ds.Get(underCtx, &o), ShouldBeNil)
 				So(o.Value, ShouldEqual, "hi")
 
-				itm, err := mc.Get(MakeMemcacheKey(0, ds.KeyForObj(&o)))
-				So(err, ShouldEqual, memcache.ErrCacheMiss)
+				itm, err := mc.GetKey(c, MakeMemcacheKey(0, ds.KeyForObj(c, &o)))
+				So(err, ShouldEqual, mc.ErrCacheMiss)
 
 				o = object{ID: 1}
-				So(ds.Get(&o), ShouldBeNil)
+				So(ds.Get(c, &o), ShouldBeNil)
 				So(o.Value, ShouldEqual, "hi")
 
-				itm, err = mc.Get(itm.Key())
+				itm, err = mc.GetKey(c, itm.Key())
 				So(err, ShouldBeNil)
 				So(itm.Value(), ShouldResemble, encoded)
 
@@ -120,30 +118,30 @@ func TestDSCache(t *testing.T) {
 
 					// delete it, bypassing the cache filter. Don't do this in production
 					// unless you want a crappy cache.
-					So(dsUnder.Delete(ds.KeyForObj(&o)), ShouldBeNil)
+					So(ds.Delete(underCtx, ds.KeyForObj(underCtx, &o)), ShouldBeNil)
 
-					itm, err := mc.Get(MakeMemcacheKey(0, ds.KeyForObj(&o)))
+					itm, err := mc.GetKey(c, MakeMemcacheKey(0, ds.KeyForObj(c, &o)))
 					So(err, ShouldBeNil)
 					So(itm.Value(), ShouldResemble, encoded)
 
-					So(ds.Get(&o), ShouldBeNil)
+					So(ds.Get(c, &o), ShouldBeNil)
 					So(o.Value, ShouldEqual, "hi")
 				})
 
 				Convey("deleting it properly records that fact, however", func() {
 					o := object{ID: 1}
-					So(ds.Delete(ds.KeyForObj(&o)), ShouldBeNil)
+					So(ds.Delete(c, ds.KeyForObj(c, &o)), ShouldBeNil)
 
-					itm, err := mc.Get(MakeMemcacheKey(0, ds.KeyForObj(&o)))
-					So(err, ShouldEqual, memcache.ErrCacheMiss)
-					So(ds.Get(&o), ShouldEqual, datastore.ErrNoSuchEntity)
+					itm, err := mc.GetKey(c, MakeMemcacheKey(0, ds.KeyForObj(c, &o)))
+					So(err, ShouldEqual, mc.ErrCacheMiss)
+					So(ds.Get(c, &o), ShouldEqual, ds.ErrNoSuchEntity)
 
-					itm, err = mc.Get(itm.Key())
+					itm, err = mc.GetKey(c, itm.Key())
 					So(err, ShouldBeNil)
 					So(itm.Value(), ShouldResemble, []byte{})
 
 					// this one hits memcache
-					So(ds.Get(&o), ShouldEqual, datastore.ErrNoSuchEntity)
+					So(ds.Get(c, &o), ShouldEqual, ds.ErrNoSuchEntity)
 				})
 			})
 
@@ -156,20 +154,20 @@ func TestDSCache(t *testing.T) {
 				}
 				o.BigData = data
 
-				So(ds.Put(&o), ShouldBeNil)
-				So(ds.Get(&o), ShouldBeNil)
+				So(ds.Put(c, &o), ShouldBeNil)
+				So(ds.Get(c, &o), ShouldBeNil)
 
-				itm, err := mc.Get(MakeMemcacheKey(0, ds.KeyForObj(&o)))
+				itm, err := mc.GetKey(c, MakeMemcacheKey(0, ds.KeyForObj(c, &o)))
 				So(err, ShouldBeNil)
 
 				So(itm.Value()[0], ShouldEqual, ZlibCompression)
 				So(len(itm.Value()), ShouldEqual, 653) // a bit smaller than 4k
 
 				// ensure the next Get comes from the cache
-				So(dsUnder.Delete(ds.KeyForObj(&o)), ShouldBeNil)
+				So(ds.Delete(underCtx, ds.KeyForObj(underCtx, &o)), ShouldBeNil)
 
 				o = object{ID: 2}
-				So(ds.Get(&o), ShouldBeNil)
+				So(ds.Get(c, &o), ShouldBeNil)
 				So(o.Value, ShouldEqual, `¯\_(ツ)_/¯`)
 				So(o.BigData, ShouldResemble, data)
 			})
@@ -177,56 +175,54 @@ func TestDSCache(t *testing.T) {
 			Convey("transactions", func() {
 				Convey("work", func() {
 					// populate an object @ ID1
-					So(ds.Put(&object{ID: 1, Value: "something"}), ShouldBeNil)
-					So(ds.Get(&object{ID: 1}), ShouldBeNil)
+					So(ds.Put(c, &object{ID: 1, Value: "something"}), ShouldBeNil)
+					So(ds.Get(c, &object{ID: 1}), ShouldBeNil)
 
-					So(ds.Put(&object{ID: 2, Value: "nurbs"}), ShouldBeNil)
-					So(ds.Get(&object{ID: 2}), ShouldBeNil)
+					So(ds.Put(c, &object{ID: 2, Value: "nurbs"}), ShouldBeNil)
+					So(ds.Get(c, &object{ID: 2}), ShouldBeNil)
 
 					// memcache now has the wrong value (simulated race)
-					So(dsUnder.Put(&object{ID: 1, Value: "else"}), ShouldBeNil)
-					So(ds.RunInTransaction(func(c context.Context) error {
-						ds := datastore.Get(c)
+					So(ds.Put(underCtx, &object{ID: 1, Value: "else"}), ShouldBeNil)
+					So(ds.RunInTransaction(c, func(c context.Context) error {
 						o := &object{ID: 1}
-						So(ds.Get(o), ShouldBeNil)
+						So(ds.Get(c, o), ShouldBeNil)
 						So(o.Value, ShouldEqual, "else")
 						o.Value = "txn"
-						So(ds.Put(o), ShouldBeNil)
+						So(ds.Put(c, o), ShouldBeNil)
 
-						So(ds.Delete(ds.KeyForObj(&object{ID: 2})), ShouldBeNil)
+						So(ds.Delete(c, ds.KeyForObj(c, &object{ID: 2})), ShouldBeNil)
 						return nil
-					}, &datastore.TransactionOptions{XG: true}), ShouldBeNil)
+					}, &ds.TransactionOptions{XG: true}), ShouldBeNil)
 
-					_, err := mc.Get(MakeMemcacheKey(0, ds.KeyForObj(&object{ID: 1})))
-					So(err, ShouldEqual, memcache.ErrCacheMiss)
-					_, err = mc.Get(MakeMemcacheKey(0, ds.KeyForObj(&object{ID: 2})))
-					So(err, ShouldEqual, memcache.ErrCacheMiss)
+					_, err := mc.GetKey(c, MakeMemcacheKey(0, ds.KeyForObj(c, &object{ID: 1})))
+					So(err, ShouldEqual, mc.ErrCacheMiss)
+					_, err = mc.GetKey(c, MakeMemcacheKey(0, ds.KeyForObj(c, &object{ID: 2})))
+					So(err, ShouldEqual, mc.ErrCacheMiss)
 					o := &object{ID: 1}
-					So(ds.Get(o), ShouldBeNil)
+					So(ds.Get(c, o), ShouldBeNil)
 					So(o.Value, ShouldEqual, "txn")
 				})
 
 				Convey("errors don't invalidate", func() {
 					// populate an object @ ID1
-					So(ds.Put(&object{ID: 1, Value: "something"}), ShouldBeNil)
-					So(ds.Get(&object{ID: 1}), ShouldBeNil)
+					So(ds.Put(c, &object{ID: 1, Value: "something"}), ShouldBeNil)
+					So(ds.Get(c, &object{ID: 1}), ShouldBeNil)
 					So(numMemcacheItems(), ShouldEqual, 1)
 
-					So(ds.RunInTransaction(func(c context.Context) error {
-						ds := datastore.Get(c)
+					So(ds.RunInTransaction(c, func(c context.Context) error {
 						o := &object{ID: 1}
-						So(ds.Get(o), ShouldBeNil)
+						So(ds.Get(c, o), ShouldBeNil)
 						So(o.Value, ShouldEqual, "something")
 						o.Value = "txn"
-						So(ds.Put(o), ShouldBeNil)
+						So(ds.Put(c, o), ShouldBeNil)
 						return errors.New("OH NOES")
 					}, nil).Error(), ShouldContainSubstring, "OH NOES")
 
 					// memcache still has the original
 					So(numMemcacheItems(), ShouldEqual, 1)
-					So(dsUnder.Delete(ds.KeyForObj(&object{ID: 1})), ShouldBeNil)
+					So(ds.Delete(underCtx, ds.KeyForObj(underCtx, &object{ID: 1})), ShouldBeNil)
 					o := &object{ID: 1}
-					So(ds.Get(o), ShouldBeNil)
+					So(ds.Get(c, o), ShouldBeNil)
 					So(o.Value, ShouldEqual, "something")
 				})
 			})
@@ -234,39 +230,39 @@ func TestDSCache(t *testing.T) {
 			Convey("control", func() {
 				Convey("per-model bypass", func() {
 					type model struct {
-						ID         string           `gae:"$id"`
-						UseDSCache datastore.Toggle `gae:"$dscache.enable,false"`
+						ID         string    `gae:"$id"`
+						UseDSCache ds.Toggle `gae:"$dscache.enable,false"`
 
 						Value string
 					}
 
 					itms := []model{
 						{ID: "hi", Value: "something"},
-						{ID: "there", Value: "else", UseDSCache: datastore.On},
+						{ID: "there", Value: "else", UseDSCache: ds.On},
 					}
 
-					So(ds.PutMulti(itms), ShouldBeNil)
-					So(ds.GetMulti(itms), ShouldBeNil)
+					So(ds.Put(c, itms), ShouldBeNil)
+					So(ds.Get(c, itms), ShouldBeNil)
 
 					So(numMemcacheItems(), ShouldEqual, 1)
 				})
 
 				Convey("per-key shard count", func() {
 					s := &shardObj{ID: 4, Value: "hi"}
-					So(ds.Put(s), ShouldBeNil)
-					So(ds.Get(s), ShouldBeNil)
+					So(ds.Put(c, s), ShouldBeNil)
+					So(ds.Get(c, s), ShouldBeNil)
 
 					So(numMemcacheItems(), ShouldEqual, 1)
 					for i := 0; i < 20; i++ {
-						So(ds.Get(s), ShouldBeNil)
+						So(ds.Get(c, s), ShouldBeNil)
 					}
 					So(numMemcacheItems(), ShouldEqual, 4)
 				})
 
 				Convey("per-key cache disablement", func() {
 					n := &noCacheObj{ID: "nurbs", Value: true}
-					So(ds.Put(n), ShouldBeNil)
-					So(ds.Get(n), ShouldBeNil)
+					So(ds.Put(c, n), ShouldBeNil)
+					So(ds.Get(c, n), ShouldBeNil)
 					So(numMemcacheItems(), ShouldEqual, 0)
 				})
 
@@ -278,32 +274,32 @@ func TestDSCache(t *testing.T) {
 						Value string
 					}
 
-					So(ds.Put(&model{ID: 1, Value: "mooo"}), ShouldBeNil)
-					So(ds.Get(&model{ID: 1}), ShouldBeNil)
+					So(ds.Put(c, &model{ID: 1, Value: "mooo"}), ShouldBeNil)
+					So(ds.Get(c, &model{ID: 1}), ShouldBeNil)
 
-					itm, err := mc.Get(MakeMemcacheKey(0, ds.KeyForObj(&model{ID: 1})))
+					itm, err := mc.GetKey(c, MakeMemcacheKey(0, ds.KeyForObj(c, &model{ID: 1})))
 					So(err, ShouldBeNil)
 
 					clk.Add(10 * time.Second)
-					_, err = mc.Get(itm.Key())
-					So(err, ShouldEqual, memcache.ErrCacheMiss)
+					_, err = mc.GetKey(c, itm.Key())
+					So(err, ShouldEqual, mc.ErrCacheMiss)
 				})
 			})
 
 			Convey("screw cases", func() {
 				Convey("memcache contains bogus value (simulated failed AddMulti)", func() {
 					o := &object{ID: 1, Value: "spleen"}
-					So(ds.Put(o), ShouldBeNil)
+					So(ds.Put(c, o), ShouldBeNil)
 
 					sekret := []byte("I am a banana")
-					itm := mc.NewItem(MakeMemcacheKey(0, ds.KeyForObj(o))).SetValue(sekret)
-					So(mc.Set(itm), ShouldBeNil)
+					itm := mc.NewItem(c, MakeMemcacheKey(0, ds.KeyForObj(c, o))).SetValue(sekret)
+					So(mc.Set(c, itm), ShouldBeNil)
 
 					o = &object{ID: 1}
-					So(ds.Get(o), ShouldBeNil)
+					So(ds.Get(c, o), ShouldBeNil)
 					So(o.Value, ShouldEqual, "spleen")
 
-					itm, err := mc.Get(itm.Key())
+					itm, err := mc.GetKey(c, itm.Key())
 					So(err, ShouldBeNil)
 					So(itm.Flags(), ShouldEqual, ItemUKNONWN)
 					So(itm.Value(), ShouldResemble, sekret)
@@ -311,19 +307,19 @@ func TestDSCache(t *testing.T) {
 
 				Convey("memcache contains bogus value (corrupt entry)", func() {
 					o := &object{ID: 1, Value: "spleen"}
-					So(ds.Put(o), ShouldBeNil)
+					So(ds.Put(c, o), ShouldBeNil)
 
 					sekret := []byte("I am a banana")
-					itm := (mc.NewItem(MakeMemcacheKey(0, ds.KeyForObj(o))).
+					itm := (mc.NewItem(c, MakeMemcacheKey(0, ds.KeyForObj(c, o))).
 						SetValue(sekret).
 						SetFlags(uint32(ItemHasData)))
-					So(mc.Set(itm), ShouldBeNil)
+					So(mc.Set(c, itm), ShouldBeNil)
 
 					o = &object{ID: 1}
-					So(ds.Get(o), ShouldBeNil)
+					So(ds.Get(c, o), ShouldBeNil)
 					So(o.Value, ShouldEqual, "spleen")
 
-					itm, err := mc.Get(itm.Key())
+					itm, err := mc.GetKey(c, itm.Key())
 					So(err, ShouldBeNil)
 					So(itm.Flags(), ShouldEqual, ItemHasData)
 					So(itm.Value(), ShouldResemble, sekret)
@@ -331,19 +327,19 @@ func TestDSCache(t *testing.T) {
 
 				Convey("other entity has the lock", func() {
 					o := &object{ID: 1, Value: "spleen"}
-					So(ds.Put(o), ShouldBeNil)
+					So(ds.Put(c, o), ShouldBeNil)
 
 					sekret := []byte("r@vmarod!#)%9T")
-					itm := (mc.NewItem(MakeMemcacheKey(0, ds.KeyForObj(o))).
+					itm := (mc.NewItem(c, MakeMemcacheKey(0, ds.KeyForObj(c, o))).
 						SetValue(sekret).
 						SetFlags(uint32(ItemHasLock)))
-					So(mc.Set(itm), ShouldBeNil)
+					So(mc.Set(c, itm), ShouldBeNil)
 
 					o = &object{ID: 1}
-					So(ds.Get(o), ShouldBeNil)
+					So(ds.Get(c, o), ShouldBeNil)
 					So(o.Value, ShouldEqual, "spleen")
 
-					itm, err := mc.Get(itm.Key())
+					itm, err := mc.GetKey(c, itm.Key())
 					So(err, ShouldBeNil)
 					So(itm.Flags(), ShouldEqual, ItemHasLock)
 					So(itm.Value(), ShouldResemble, sekret)
@@ -358,12 +354,12 @@ func TestDSCache(t *testing.T) {
 						So(binary.Write(&buf, binary.LittleEndian, mr.Int63()), ShouldBeNil)
 					}
 					o.BigData = buf.Bytes()
-					So(ds.Put(o), ShouldBeNil)
+					So(ds.Put(c, o), ShouldBeNil)
 
 					o.BigData = nil
-					So(ds.Get(o), ShouldBeNil)
+					So(ds.Get(c, o), ShouldBeNil)
 
-					itm, err := mc.Get(MakeMemcacheKey(0, ds.KeyForObj(o)))
+					itm, err := mc.GetKey(c, MakeMemcacheKey(0, ds.KeyForObj(c, o)))
 					So(err, ShouldBeNil)
 
 					// Is locked until the next put, forcing all access to the datastore.
@@ -371,10 +367,10 @@ func TestDSCache(t *testing.T) {
 					So(itm.Flags(), ShouldEqual, ItemHasLock)
 
 					o.BigData = []byte("hi :)")
-					So(ds.Put(o), ShouldBeNil)
-					So(ds.Get(o), ShouldBeNil)
+					So(ds.Put(c, o), ShouldBeNil)
+					So(ds.Get(c, o), ShouldBeNil)
 
-					itm, err = mc.Get(itm.Key())
+					itm, err = mc.GetKey(c, itm.Key())
 					So(err, ShouldBeNil)
 					So(itm.Flags(), ShouldEqual, ItemHasData)
 				})
@@ -382,16 +378,14 @@ func TestDSCache(t *testing.T) {
 				Convey("failure on Setting memcache locks is a hard stop", func() {
 					c, fb := featureBreaker.FilterMC(c, nil)
 					fb.BreakFeatures(nil, "SetMulti")
-					ds := datastore.Get(c)
-					So(ds.Put(&object{ID: 1}).Error(), ShouldContainSubstring, "SetMulti")
+					So(ds.Put(c, &object{ID: 1}).Error(), ShouldContainSubstring, "SetMulti")
 				})
 
 				Convey("failure on Setting memcache locks in a transaction is a hard stop", func() {
 					c, fb := featureBreaker.FilterMC(c, nil)
 					fb.BreakFeatures(nil, "SetMulti")
-					ds := datastore.Get(c)
-					So(ds.RunInTransaction(func(c context.Context) error {
-						So(datastore.Get(c).Put(&object{ID: 1}), ShouldBeNil)
+					So(ds.RunInTransaction(c, func(c context.Context) error {
+						So(ds.Put(c, &object{ID: 1}), ShouldBeNil)
 						// no problems here... memcache operations happen after the function
 						// body quits.
 						return nil
@@ -403,7 +397,7 @@ func TestDSCache(t *testing.T) {
 			Convey("misc", func() {
 				Convey("verify numShards caps at MaxShards", func() {
 					sc := supportContext{shardsForKey: shardsForKey}
-					So(sc.numShards(ds.KeyForObj(&shardObj{ID: 9001})), ShouldEqual, MaxShards)
+					So(sc.numShards(ds.KeyForObj(c, &shardObj{ID: 9001})), ShouldEqual, MaxShards)
 				})
 
 				Convey("CompressionType.String", func() {
@@ -430,7 +424,7 @@ func TestDSCache(t *testing.T) {
 			clk.Add(time.Minute*5 + time.Second)
 			So(IsGloballyEnabled(c), ShouldBeFalse)
 
-			So(mc.Set(mc.NewItem("test").SetValue([]byte("hi"))), ShouldBeNil)
+			So(mc.Set(c, mc.NewItem(c, "test").SetValue([]byte("hi"))), ShouldBeNil)
 			So(numMemcacheItems(), ShouldEqual, 1)
 			So(SetGlobalEnable(c, true), ShouldBeNil)
 			// memcache gets flushed as a side effect

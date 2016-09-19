@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"golang.org/x/net/context"
 )
 
@@ -23,7 +23,6 @@ func TestRace(t *testing.T) {
 	t.Parallel()
 
 	c := FilterRDS(memory.Use(context.Background()))
-	ds := datastore.Get(c)
 
 	wg := sync.WaitGroup{}
 	for i := 0; i < 100; i++ {
@@ -32,19 +31,15 @@ func TestRace(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			err := ds.RunInTransaction(func(c context.Context) error {
-				ds := datastore.Get(c)
-
+			err := ds.RunInTransaction(c, func(c context.Context) error {
 				for i := 0; i < 100; i++ {
-					err := ds.RunInTransaction(func(c context.Context) error {
-						ds := datastore.Get(c)
-
+					err := ds.RunInTransaction(c, func(c context.Context) error {
 						ctr := &Counter{ID: id}
-						if err := ds.Get(ctr); err != nil && err != datastore.ErrNoSuchEntity {
+						if err := ds.Get(c, ctr); err != nil && err != ds.ErrNoSuchEntity {
 							t.Fatal("bad Get", err)
 						}
 						ctr.Value++
-						return ds.Put(ctr)
+						return ds.Put(c, ctr)
 					}, nil)
 					if err != nil {
 						t.Fatal("bad inner RIT", err)

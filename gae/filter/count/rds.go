@@ -64,8 +64,15 @@ func (r *dsCounter) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKey
 	return r.c.PutMulti.upFilterStop(r.ds.PutMulti(keys, vals, cb))
 }
 
-func (r *dsCounter) Testable() ds.Testable {
-	return r.ds.Testable()
+func (r *dsCounter) CurrentTransaction() ds.Transaction {
+	return r.ds.CurrentTransaction()
+}
+func (r *dsCounter) WithoutTransaction() context.Context {
+	return r.ds.WithoutTransaction()
+}
+
+func (r *dsCounter) GetTestable() ds.Testable {
+	return r.ds.GetTestable()
 }
 
 // FilterRDS installs a counter datastore filter in the context.

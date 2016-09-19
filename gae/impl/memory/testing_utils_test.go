@@ -116,7 +116,7 @@ var (
 )
 
 func key(elems ...interface{}) *ds.Key {
-	return ds.MakeKey("dev~app", "ns", elems...)
+	return ds.KeyContext{"dev~app", "ns"}.MakeKey(elems...)
 }
 
 func die(err error) {

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/memcache"
+	mc "github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
@@ -21,7 +21,6 @@ type supportContext struct {
 	ns  string
 
 	c            context.Context
-	mc           memcache.Interface
 	mr           *rand.Rand
 	shardsForKey func(*ds.Key) int
 }
@@ -109,7 +108,7 @@ func (s *supportContext) mutation(keys []*ds.Key, f func() error) error {
 	if lockItems == nil {
 		return f()
 	}
-	if err := s.mc.SetMulti(lockItems); err != nil {
+	if err := mc.Set(s.c, lockItems...); err != nil {
 		// this is a hard failure. No mutation can occur if we're unable to set
 		// locks out. See "DANGER ZONE" in the docs.
 		(log.Fields{log.ErrorKey: err}).Errorf(
@@ -118,26 +117,26 @@ func (s *supportContext) mutation(keys []*ds.Key, f func() error) error {
 	}
 	err := f()
 	if err == nil {
-		if err := errors.Filter(s.mc.DeleteMulti(lockKeys), memcache.ErrCacheMiss); err != nil {
+		if err := errors.Filter(mc.Delete(s.c, lockKeys...), mc.ErrCacheMiss); err != nil {
 			(log.Fields{log.ErrorKey: err}).Debugf(
-				s.c, "dscache: mc.DeleteMulti")
+				s.c, "dscache: mc.Delete")
 		}
 	}
 	return err
 }
 
-func (s *supportContext) mkRandLockItems(keys []*ds.Key, metas ds.MultiMetaGetter) ([]memcache.Item, []byte) {
+func (s *supportContext) mkRandLockItems(keys []*ds.Key, metas ds.MultiMetaGetter) ([]mc.Item, []byte) {
 	mcKeys := s.mkRandKeys(keys, metas)
 	if len(mcKeys) == 0 {
 		return nil, nil
 	}
 	nonce := s.crappyNonce()
-	ret := make([]memcache.Item, len(mcKeys))
+	ret := make([]mc.Item, len(mcKeys))
 	for i, k := range mcKeys {
 		if k == "" {
 			continue
 		}
-		ret[i] = (s.mc.NewItem(k).
+		ret[i] = (mc.NewItem(s.c, k).
 			SetFlags(uint32(ItemHasLock)).
 			SetExpiration(time.Second * time.Duration(LockTimeSeconds)).
 			SetValue(nonce))
@@ -145,14 +144,14 @@ func (s *supportContext) mkRandLockItems(keys []*ds.Key, metas ds.MultiMetaGette
 	return ret, nonce
 }
 
-func (s *supportContext) mkAllLockItems(keys []*ds.Key) ([]memcache.Item, []string) {
+func (s *supportContext) mkAllLockItems(keys []*ds.Key) ([]mc.Item, []string) {
 	mcKeys := s.mkAllKeys(keys)
 	if mcKeys == nil {
 		return nil, nil
 	}
-	ret := make([]memcache.Item, len(mcKeys))
+	ret := make([]mc.Item, len(mcKeys))
 	for i := range ret {
-		ret[i] = (s.mc.NewItem(mcKeys[i]).
+		ret[i] = (mc.NewItem(s.c, mcKeys[i]).
 			SetFlags(uint32(ItemHasLock)).
 			SetExpiration(time.Second * time.Duration(LockTimeSeconds)))
 	}

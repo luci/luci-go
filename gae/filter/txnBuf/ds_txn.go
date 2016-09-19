@@ -116,6 +116,15 @@ func (d *dsTxnBuf) RunInTransaction(cb func(context.Context) error, opts *ds.Tra
 	return withTxnBuf(d.ic, cb, opts)
 }
 
-func (d *dsTxnBuf) Testable() ds.Testable {
-	return d.state.parentDS.Testable()
+func (d *dsTxnBuf) CurrentTransaction() ds.Transaction { return d.state.parentDS.CurrentTransaction() }
+
+func (d *dsTxnBuf) WithoutTransaction() context.Context {
+	c := d.state.parentDS.WithoutTransaction()
+	c = context.WithValue(c, dsTxnBufParent, nil)
+	c = context.WithValue(c, dsTxnBufHaveLock, nil)
+	return c
+}
+
+func (d *dsTxnBuf) GetTestable() ds.Testable {
+	return d.state.parentDS.GetTestable()
 }

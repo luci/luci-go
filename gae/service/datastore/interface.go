@@ -5,313 +5,690 @@
 package datastore
 
 import (
+	"fmt"
+	"reflect"
+
+	"github.com/luci/luci-go/common/errors"
 	"golang.org/x/net/context"
 )
 
-// Interface is the 'user-friendly' interface to access the current filtered
-// datastore service implementation.
+func runParseCallback(cbIface interface{}) (isKey, hasErr, hasCursorCB bool, mat *multiArgType) {
+	badSig := func() {
+		panic(fmt.Errorf(
+			"cb does not match the required callback signature: `%T` != `func(TYPE, [CursorCB]) [error]`",
+			cbIface))
+	}
+
+	if cbIface == nil {
+		badSig()
+	}
+
+	// TODO(riannucci): Profile and determine if any of this is causing a real
+	// slowdown. Could potentially cache reflection stuff by cbTyp?
+	cbTyp := reflect.TypeOf(cbIface)
+
+	if cbTyp.Kind() != reflect.Func {
+		badSig()
+	}
+
+	numIn := cbTyp.NumIn()
+	if numIn != 1 && numIn != 2 {
+		badSig()
+	}
+
+	firstArg := cbTyp.In(0)
+	if firstArg == typeOfKey {
+		isKey = true
+	} else {
+		mat = mustParseArg(firstArg, false)
+		if mat.newElem == nil {
+			badSig()
+		}
+	}
+
+	hasCursorCB = numIn == 2
+	if hasCursorCB && cbTyp.In(1) != typeOfCursorCB {
+		badSig()
+	}
+
+	if cbTyp.NumOut() > 1 {
+		badSig()
+	} else if cbTyp.NumOut() == 1 && cbTyp.Out(0) != typeOfError {
+		badSig()
+	}
+	hasErr = cbTyp.NumOut() == 1
+
+	return
+}
+
+// AllocateIDs allows you to allocate IDs from the datastore without putting
+// any data.
 //
-// Note that in exchange for userfriendliness, this interface ends up doing
-// a lot of reflection.
+// A partial valid key will be constructed from each entity's kind and parent,
+// if present. An allocation will then be performed against the datastore for
+// each key, and the partial key will be populated with a unique integer ID.
+// The resulting keys will be applied to their objects using PopulateKey. If
+// successful, any existing ID will be destroyed.
 //
-// Methods taking 'interface{}' objects describe what a valid type for that
-// interface are in the comments.
+// If the object is supplied that cannot accept an integer key, this method
+// will panic.
 //
-// Struct objects passed in will be converted to PropertyLoadSaver interfaces
-// using this package's GetPLS function.
-type Interface interface {
-	// AllocateIDs allows you to allocate IDs from the datastore without putting
-	// any data.
-	//
-	// A partial valid key will be constructed from each entity's kind and parent,
-	// if present. An allocation will then be performed against the datastore for
-	// each key, and the partial key will be populated with a unique integer ID.
-	// The resulting keys will be applied to their objects using PopulateKey. If
-	// successful, any existing ID will be destroyed.
-	//
-	// If the object is supplied that cannot accept an integer key, this method
-	// will panic.
-	//
-	// ent must be one of:
-	//	- *S where S is a struct
-	//	- *P where *P is a concrete type implementing PropertyLoadSaver
-	//	- []S or []*S where S is a struct
-	//	- []P or []*P where *P is a concrete type implementing PropertyLoadSaver
-	//	- []I where i is some interface type. Each element of the slice must
-	//	  be non-nil, and its underlying type must be either *S or *P.
-	//	- []*Key, to populate a slice of partial-valid keys.
-	//
-	// If an error is encountered, the returned error value will depend on the
-	// input arguments. If one argument is supplied, the result will be the
-	// encountered error type. If multiple arguments are supplied, the result will
-	// be a MultiError whose error index corresponds to the argument in which the
-	// error was encountered.
-	//
-	// If an ent argument is a slice, its error type will be a MultiError. Note
-	// that in the scenario where multiple slices are provided, this will return a
-	// MultiError containing a nested MultiError for each slice argument.
-	AllocateIDs(ent ...interface{}) error
+// ent must be one of:
+//	- *S where S is a struct
+//	- *P where *P is a concrete type implementing PropertyLoadSaver
+//	- []S or []*S where S is a struct
+//	- []P or []*P where *P is a concrete type implementing PropertyLoadSaver
+//	- []I where i is some interface type. Each element of the slice must
+//	  be non-nil, and its underlying type must be either *S or *P.
+//	- []*Key, to populate a slice of partial-valid keys.
+//
+// If an error is encountered, the returned error value will depend on the
+// input arguments. If one argument is supplied, the result will be the
+// encountered error type. If multiple arguments are supplied, the result will
+// be a MultiError whose error index corresponds to the argument in which the
+// error was encountered.
+//
+// If an ent argument is a slice, its error type will be a MultiError. Note
+// that in the scenario where multiple slices are provided, this will return a
+// MultiError containing a nested MultiError for each slice argument.
+func AllocateIDs(c context.Context, ent ...interface{}) error {
+	if len(ent) == 0 {
+		return nil
+	}
 
-	// KeyForObj extracts a key from src.
-	//
-	// It is the same as KeyForObjErr, except that if KeyForObjErr would have
-	// returned an error, this method panics. It's safe to use if you know that
-	// src statically meets the metadata constraints described by KeyForObjErr.
-	KeyForObj(src interface{}) *Key
+	mma, err := makeMetaMultiArg(ent, mmaWriteKeys)
+	if err != nil {
+		panic(err)
+	}
 
-	// MakeKey is a convenience method for manufacturing a *Key. It should only be
-	// used when elems... is known statically (e.g. in the code) to be correct.
-	//
-	// elems is pairs of (string, string|int|int32|int64) pairs, which correspond
-	// to Kind/id pairs. Example:
-	//   dstore.MakeKey("Parent", 1, "Child", "id")
-	//
-	// Would create the key:
-	//   <current appID>:<current Namespace>:/Parent,1/Child,id
-	//
-	// If elems is not parsable (e.g. wrong length, wrong types, etc.) this method
-	// will panic.
-	MakeKey(elems ...interface{}) *Key
+	keys, _, err := mma.getKeysPMs(GetKeyContext(c), false)
+	if err != nil {
+		return maybeSingleError(err, ent)
+	}
+	if len(keys) == 0 {
+		return nil
+	}
 
-	// NewKey constructs a new key in the current appID/Namespace, using the
-	// specified parameters.
-	NewKey(kind, stringID string, intID int64, parent *Key) *Key
+	// Convert each key to be partial valid, assigning an integer ID of 0. Confirm
+	// that each object can be populated with such a key.
+	for i, key := range keys {
+		keys[i] = key.Incomplete()
+	}
 
-	// NewIncompleteKeys allocates count incomplete keys sharing the same kind and
-	// parent. It is useful as input to AllocateIDs.
-	NewIncompleteKeys(count int, kind string, parent *Key) []*Key
+	var et errorTracker
+	it := mma.iterator(et.init(mma))
+	err = filterStop(Raw(c).AllocateIDs(keys, func(key *Key, err error) error {
+		it.next(func(mat *multiArgType, v reflect.Value) error {
+			if err != nil {
+				return err
+			}
 
-	// NewKeyToks constructs a new key in the current appID/Namespace, using the
-	// specified key tokens.
-	NewKeyToks([]KeyTok) *Key
+			if !mat.setKey(v, key) {
+				return ErrInvalidKey
+			}
+			return nil
+		})
 
-	// KeyForObjErr extracts a key from src.
-	//
-	// src must be one of:
-	//   - *S, where S is a struct
-	//   - a PropertyLoadSaver
-	//
-	// It is expected that the struct exposes the following metadata (as retrieved
-	// by MetaGetter.GetMeta):
-	//   - "key" (type: Key) - The full datastore key to use. Must not be nil.
-	//     OR
-	//   - "id" (type: int64 or string) - The id of the Key to create
-	//   - "kind" (optional, type: string) - The kind of the Key to create. If
-	//     blank or not present, KeyForObjErr will extract the name of the src
-	//     object's type.
-	//   - "parent" (optional, type: Key) - The parent key to use.
-	//
-	// By default, the metadata will be extracted from the struct and its tagged
-	// properties. However, if the struct implements MetaGetterSetter it is
-	// wholly responsible for exporting the required fields. A struct that
-	// implements GetMeta to make some minor tweaks can evoke the defualt behavior
-	// by using GetPLS(s).GetMeta.
-	//
-	// If a required metadata item is missing or of the wrong type, then this will
-	// return an error.
-	KeyForObjErr(src interface{}) (*Key, error)
+		return nil
+	}))
+	if err == nil {
+		err = et.error()
+	}
+	return maybeSingleError(err, ent)
+}
 
-	// RunInTransaction runs f inside of a transaction. See the appengine SDK's
-	// documentation for full details on the behavior of transactions in the
-	// datastore.
-	//
-	// Note that the behavior of transactions may change depending on what filters
-	// have been installed. It's possible that we'll end up implementing things
-	// like nested/buffered transactions as filters.
-	RunInTransaction(f func(c context.Context) error, opts *TransactionOptions) error
+// KeyForObj extracts a key from src.
+//
+// It is the same as KeyForObjErr, except that if KeyForObjErr would have
+// returned an error, this method panics. It's safe to use if you know that
+// src statically meets the metadata constraints described by KeyForObjErr.
+func KeyForObj(c context.Context, src interface{}) *Key {
+	ret, err := KeyForObjErr(c, src)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
 
-	// Run executes the given query, and calls `cb` for each successfully
-	// retrieved item.
-	//
-	// cb is a callback function whose signature is
-	//   func(obj TYPE[, getCursor CursorCB]) [error]
-	//
-	// Where TYPE is one of:
-	//   - S or *S, where S is a struct
-	//   - P or *P, where *P is a concrete type implementing PropertyLoadSaver
-	//   - *Key (implies a keys-only query)
-	//
-	// If the error is omitted from the signature, this will run until the query
-	// returns all its results, or has an error/times out.
-	//
-	// If error is in the signature, the query will continue as long as the
-	// callback returns nil. If it returns `Stop`, the query will stop and Run
-	// will return nil. Otherwise, the query will stop and Run will return the
-	// user's error.
-	//
-	// Run may also stop on the first datastore error encountered, which can occur
-	// due to flakiness, timeout, etc. If it encounters such an error, it will
-	// be returned.
-	Run(q *Query, cb interface{}) error
+// KeyForObjErr extracts a key from src.
+//
+// src must be one of:
+//   - *S, where S is a struct
+//   - a PropertyLoadSaver
+//
+// It is expected that the struct exposes the following metadata (as retrieved
+// by MetaGetter.GetMeta):
+//   - "key" (type: Key) - The full datastore key to use. Must not be nil.
+//     OR
+//   - "id" (type: int64 or string) - The id of the Key to create
+//   - "kind" (optional, type: string) - The kind of the Key to create. If
+//     blank or not present, KeyForObjErr will extract the name of the src
+//     object's type.
+//   - "parent" (optional, type: Key) - The parent key to use.
+//
+// By default, the metadata will be extracted from the struct and its tagged
+// properties. However, if the struct implements MetaGetterSetter it is
+// wholly responsible for exporting the required fields. A struct that
+// implements GetMeta to make some minor tweaks can evoke the defualt behavior
+// by using GetPLS(s).GetMeta.
+//
+// If a required metadata item is missing or of the wrong type, then this will
+// return an error.
+func KeyForObjErr(c context.Context, src interface{}) (*Key, error) {
+	return newKeyObjErr(GetKeyContext(c), getMGS(src))
+}
 
-	// Count executes the given query and returns the number of entries which
-	// match it.
-	Count(q *Query) (int64, error)
+// MakeKey is a convenience method for manufacturing a *Key. It should only be
+// used when elems... is known statically (e.g. in the code) to be correct.
+//
+// elems is pairs of (string, string|int|int32|int64) pairs, which correspond
+// to Kind/id pairs. Example:
+//   dstore.MakeKey("Parent", 1, "Child", "id")
+//
+// Would create the key:
+//   <current appID>:<current Namespace>:/Parent,1/Child,id
+//
+// If elems is not parsable (e.g. wrong length, wrong types, etc.) this method
+// will panic.
+func MakeKey(c context.Context, elems ...interface{}) *Key {
+	kc := GetKeyContext(c)
+	return kc.MakeKey(elems...)
+}
 
-	// DecodeCursor converts a string returned by a Cursor into a Cursor instance.
-	// It will return an error if the supplied string is not valid, or could not
-	// be decoded by the implementation.
-	DecodeCursor(string) (Cursor, error)
+// NewKey constructs a new key in the current appID/Namespace, using the
+// specified parameters.
+func NewKey(c context.Context, kind, stringID string, intID int64, parent *Key) *Key {
+	kc := GetKeyContext(c)
+	return kc.NewKey(kind, stringID, intID, parent)
+}
 
-	// GetAll retrieves all of the Query results into dst.
-	//
-	// dst must be one of:
-	//   - *[]S or *[]*S, where S is a struct
-	//   - *[]P or *[]*P, where *P is a concrete type implementing
-	//     PropertyLoadSaver
-	//   - *[]*Key implies a keys-only query.
-	GetAll(q *Query, dst interface{}) error
+// NewIncompleteKeys allocates count incomplete keys sharing the same kind and
+// parent. It is useful as input to AllocateIDs.
+func NewIncompleteKeys(c context.Context, count int, kind string, parent *Key) (keys []*Key) {
+	kc := GetKeyContext(c)
+	if count > 0 {
+		keys = make([]*Key, count)
+		for i := range keys {
+			keys[i] = kc.NewKey(kind, "", 0, parent)
+		}
+	}
+	return
+}
 
-	// Exists tests if the supplied objects are present in the datastore.
-	//
-	// ent must be one of:
-	//	- *S, where S is a struct
-	//	- *P, where *P is a concrete type implementing PropertyLoadSaver
-	//	- []S or []*S, where S is a struct
-	//	- []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
-	//	- []I, where I is some interface type. Each element of the slice must
-	//	  be non-nil, and its underlying type must be either *S or *P.
-	//	- *Key, to check a specific key from the datastore.
-	//	- []*Key, to check a slice of keys from the datastore.
-	//
-	// If an error is encountered, the returned error value will depend on the
-	// input arguments. If one argument is supplied, the result will be the
-	// encountered error type. If multiple arguments are supplied, the result will
-	// be a MultiError whose error index corresponds to the argument in which the
-	// error was encountered.
-	//
-	// If an ent argument is a slice, its error type will be a MultiError. Note
-	// that in the scenario, where multiple slices are provided, this will return a
-	// MultiError containing a nested MultiError for each slice argument.
-	Exists(ent ...interface{}) (*ExistsResult, error)
+// NewKeyToks constructs a new key in the current appID/Namespace, using the
+// specified key tokens.
+func NewKeyToks(c context.Context, toks []KeyTok) *Key {
+	kc := GetKeyContext(c)
+	return kc.NewKeyToks(toks)
+}
 
-	// Does a GetMulti for thes keys and returns true iff they exist. Will only
-	// return an error if it's not ErrNoSuchEntity. This is slightly more
-	// efficient than using Get directly, because it uses the underlying
-	// RawInterface to avoid some reflection and copies.
-	//
-	// If an error is encountered, the returned error will be a MultiError whose
-	// error index corresponds to the key for which the error was encountered.
-	//
-	// NOTE: ExistsMulti is obsolete. The vararg-accepting Exists should be used
-	// instead. This is left for backwards compatibility, but will be removed from
-	// this interface at some point in the future.
-	ExistsMulti(k []*Key) (BoolList, error)
+// PopulateKey loads key into obj.
+//
+// obj is any object that Interface.Get is able to accept.
+//
+// Upon successful application, this method will return true. If the key could
+// not be applied to the object, this method will return false. It will panic if
+// obj is an invalid datastore model.
+//
+// This method will panic if obj is an invalid datastore model. If the key could
+// not be applied to the object, nothing will happen.
+func PopulateKey(obj interface{}, key *Key) bool {
+	return populateKeyMGS(getMGS(obj), key)
+}
 
-	// Get retrieves objects from the datastore.
-	//
-	// Each element in dst must be one of:
-	//	- *S, where S is a struct
-	//	- *P, where *P is a concrete type implementing PropertyLoadSaver
-	//	- []S or []*S, where S is a struct
-	//	- []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
-	//	- []I, where I is some interface type. Each element of the slice must
-	//	  be non-nil, and its underlying type must be either *S or *P.
-	//
-	// If an error is encountered, the returned error value will depend on the
-	// input arguments. If one argument is supplied, the result will be the
-	// encountered error type. If multiple arguments are supplied, the result will
-	// be a MultiError whose error index corresponds to the argument in which the
-	// error was encountered.
-	//
-	// If a dst argument is a slice, its error type will be a MultiError. Note
-	// that in the scenario where multiple slices are provided, this will return a
-	// MultiError containing a nested MultiError for each slice argument.
-	Get(dst ...interface{}) error
+func populateKeyMGS(mgs MetaGetterSetter, key *Key) bool {
+	if mgs.SetMeta("key", key) {
+		return true
+	}
 
-	// GetMulti retrieves items from the datastore.
-	//
-	// dst must be one of:
-	//   - []S or []*S, where S is a struct
-	//   - []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
-	//   - []I, where I is some interface type. Each element of the slice must
-	//     be non-nil, and its underlying type must be either *S or *P.
-	//
-	// NOTE: GetMulti is obsolete. The vararg-accepting Get should be used
-	// instead. This is left for backwards compatibility, but will be removed from
-	// this interface at some point in the future.
-	GetMulti(dst interface{}) error
+	lst := key.LastTok()
+	if lst.StringID != "" {
+		if !mgs.SetMeta("id", lst.StringID) {
+			return false
+		}
+	} else {
+		if !mgs.SetMeta("id", lst.IntID) {
+			return false
+		}
+	}
 
-	// Put writes objects into the datastore.
-	//
-	// src must be one of:
-	//	- *S, where S is a struct
-	//	- *P, where *P is a concrete type implementing PropertyLoadSaver
-	//	- []S or []*S, where S is a struct
-	//	- []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
-	//	- []I, where I is some interface type. Each element of the slice must
-	//	  be non-nil, and its underlying type must be either *S or *P.
-	//
-	// A *Key will be extracted from src via KeyForObj. If
-	// extractedKey.Incomplete() is true, then Put will write the resolved (i.e.
-	// automatic datastore-populated) *Key back to src.
-	//
-	// If an error is encountered, the returned error value will depend on the
-	// input arguments. If one argument is supplied, the result will be the
-	// encountered error type. If multiple arguments are supplied, the result will
-	// be a MultiError whose error index corresponds to the argument in which the
-	// error was encountered.
-	//
-	// If a src argument is a slice, its error type will be a MultiError. Note
-	// that in the scenario where multiple slices are provided, this will return a
-	// MultiError containing a nested MultiError for each slice argument.
-	Put(src ...interface{}) error
+	mgs.SetMeta("kind", lst.Kind)
+	mgs.SetMeta("parent", key.Parent())
+	return true
+}
 
-	// PutMulti writes items to the datastore.
-	//
-	// src must be one of:
-	//	- []S or []*S, where S is a struct
-	//	- []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
-	//	- []I, where I is some interface type. Each element of the slice must
-	//	  be non-nil, and its underlying type must be either *S or *P.
-	//
-	// If items in src resolve to Incomplete keys, PutMulti will write the
-	// resolved keys back to the items in src.
-	//
-	// NOTE: PutMulti is obsolete. The vararg-accepting Put should be used
-	// instead. This is left for backwards compatibility, but will be removed from
-	// this interface at some point in the future.
-	PutMulti(src interface{}) error
+// RunInTransaction runs f inside of a transaction. See the appengine SDK's
+// documentation for full details on the behavior of transactions in the
+// datastore.
+//
+// Note that the behavior of transactions may change depending on what filters
+// have been installed. It's possible that we'll end up implementing things
+// like nested/buffered transactions as filters.
+func RunInTransaction(c context.Context, f func(c context.Context) error, opts *TransactionOptions) error {
+	return Raw(c).RunInTransaction(f, opts)
+}
 
-	// Delete removes the supplied entities from the datastore.
-	//
-	// ent must be one of:
-	//	- *S, where S is a struct
-	//	- *P, where *P is a concrete type implementing PropertyLoadSaver
-	//	- []S or []*S, where S is a struct
-	//	- []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
-	//	- []I, where I is some interface type. Each element of the slice must
-	//	  be non-nil, and its underlying type must be either *S or *P.
-	//	- *Key, to remove a specific key from the datastore.
-	//	- []*Key, to remove a slice of keys from the datastore.
-	//
-	// If an error is encountered, the returned error value will depend on the
-	// input arguments. If one argument is supplied, the result will be the
-	// encountered error type. If multiple arguments are supplied, the result will
-	// be a MultiError whose error index corresponds to the argument in which the
-	// error was encountered.
-	//
-	// If an ent argument is a slice, its error type will be a MultiError. Note
-	// that in the scenario where multiple slices are provided, this will return a
-	// MultiError containing a nested MultiError for each slice argument.
-	Delete(ent ...interface{}) error
+// Run executes the given query, and calls `cb` for each successfully
+// retrieved item.
+//
+// cb is a callback function whose signature is
+//   func(obj TYPE[, getCursor CursorCB]) [error]
+//
+// Where TYPE is one of:
+//   - S or *S, where S is a struct
+//   - P or *P, where *P is a concrete type implementing PropertyLoadSaver
+//   - *Key (implies a keys-only query)
+//
+// If the error is omitted from the signature, this will run until the query
+// returns all its results, or has an error/times out.
+//
+// If error is in the signature, the query will continue as long as the
+// callback returns nil. If it returns `Stop`, the query will stop and Run
+// will return nil. Otherwise, the query will stop and Run will return the
+// user's error.
+//
+// Run may also stop on the first datastore error encountered, which can occur
+// due to flakiness, timeout, etc. If it encounters such an error, it will
+// be returned.
+func Run(c context.Context, q *Query, cb interface{}) error {
+	isKey, hasErr, hasCursorCB, mat := runParseCallback(cb)
 
-	// DeleteMulti removes keys from the datastore.
-	//
-	// If an error is encountered, the returned error will be a MultiError whose
-	// error index corresponds to the key for which the error was encountered.
-	//
-	// NOTE: DeleteMulti is obsolete. The vararg-accepting Delete should be used
-	// instead. This is left for backwards compatibility, but will be removed from
-	// this interface at some point in the future.
-	DeleteMulti(keys []*Key) error
+	if isKey {
+		q = q.KeysOnly(true)
+	}
+	fq, err := q.Finalize()
+	if err != nil {
+		return err
+	}
 
-	// Testable returns the Testable interface for the implementation, or nil if
-	// there is none.
-	Testable() Testable
+	cbVal := reflect.ValueOf(cb)
+	var cbFunc func(reflect.Value, CursorCB) error
+	switch {
+	case hasErr && hasCursorCB:
+		cbFunc = func(v reflect.Value, cb CursorCB) error {
+			err := cbVal.Call([]reflect.Value{v, reflect.ValueOf(cb)})[0].Interface()
+			if err != nil {
+				return err.(error)
+			}
+			return nil
+		}
 
-	// Raw returns the underlying RawInterface. The Interface and RawInterface may
-	// be used interchangably; there's no danger of interleaving access to the
-	// datastore via the two.
-	Raw() RawInterface
+	case hasErr && !hasCursorCB:
+		cbFunc = func(v reflect.Value, _ CursorCB) error {
+			err := cbVal.Call([]reflect.Value{v})[0].Interface()
+			if err != nil {
+				return err.(error)
+			}
+			return nil
+		}
+
+	case !hasErr && hasCursorCB:
+		cbFunc = func(v reflect.Value, cb CursorCB) error {
+			cbVal.Call([]reflect.Value{v, reflect.ValueOf(cb)})
+			return nil
+		}
+
+	case !hasErr && !hasCursorCB:
+		cbFunc = func(v reflect.Value, _ CursorCB) error {
+			cbVal.Call([]reflect.Value{v})
+			return nil
+		}
+	}
+
+	raw := Raw(c)
+	if isKey {
+		err = raw.Run(fq, func(k *Key, _ PropertyMap, gc CursorCB) error {
+			return cbFunc(reflect.ValueOf(k), gc)
+		})
+	} else {
+		err = raw.Run(fq, func(k *Key, pm PropertyMap, gc CursorCB) error {
+			itm := mat.newElem()
+			if err := mat.setPM(itm, pm); err != nil {
+				return err
+			}
+			mat.setKey(itm, k)
+			return cbFunc(itm, gc)
+		})
+	}
+	return filterStop(err)
+}
+
+// Count executes the given query and returns the number of entries which
+// match it.
+func Count(c context.Context, q *Query) (int64, error) {
+	fq, err := q.Finalize()
+	if err != nil {
+		return 0, err
+	}
+	v, err := Raw(c).Count(fq)
+	return v, filterStop(err)
+}
+
+// DecodeCursor converts a string returned by a Cursor into a Cursor instance.
+// It will return an error if the supplied string is not valid, or could not
+// be decoded by the implementation.
+func DecodeCursor(c context.Context, s string) (Cursor, error) {
+	return Raw(c).DecodeCursor(s)
+}
+
+// GetAll retrieves all of the Query results into dst.
+//
+// dst must be one of:
+//   - *[]S or *[]*S, where S is a struct
+//   - *[]P or *[]*P, where *P is a concrete type implementing
+//     PropertyLoadSaver
+//   - *[]*Key implies a keys-only query.
+func GetAll(c context.Context, q *Query, dst interface{}) error {
+	v := reflect.ValueOf(dst)
+	if v.Kind() != reflect.Ptr {
+		panic(fmt.Errorf("invalid GetAll dst: must have a ptr-to-slice: %T", dst))
+	}
+	if !v.IsValid() || v.IsNil() {
+		panic(errors.New("invalid GetAll dst: <nil>"))
+	}
+
+	raw := Raw(c)
+	if keys, ok := dst.(*[]*Key); ok {
+		fq, err := q.KeysOnly(true).Finalize()
+		if err != nil {
+			return err
+		}
+
+		return raw.Run(fq, func(k *Key, _ PropertyMap, _ CursorCB) error {
+			*keys = append(*keys, k)
+			return nil
+		})
+	}
+	fq, err := q.Finalize()
+	if err != nil {
+		return err
+	}
+
+	slice := v.Elem()
+	mat := mustParseMultiArg(slice.Type())
+	if mat.newElem == nil {
+		panic(fmt.Errorf("invalid GetAll dst (non-concrete element type): %T", dst))
+	}
+
+	errs := map[int]error{}
+	i := 0
+	err = filterStop(raw.Run(fq, func(k *Key, pm PropertyMap, _ CursorCB) error {
+		slice.Set(reflect.Append(slice, mat.newElem()))
+		itm := slice.Index(i)
+		mat.setKey(itm, k)
+		err := mat.setPM(itm, pm)
+		if err != nil {
+			errs[i] = err
+		}
+		i++
+		return nil
+	}))
+	if err == nil {
+		if len(errs) > 0 {
+			me := make(errors.MultiError, slice.Len())
+			for i, e := range errs {
+				me[i] = e
+			}
+			err = me
+		}
+	}
+	return err
+}
+
+// Exists tests if the supplied objects are present in the datastore.
+//
+// ent must be one of:
+//	- *S, where S is a struct
+//	- *P, where *P is a concrete type implementing PropertyLoadSaver
+//	- []S or []*S, where S is a struct
+//	- []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
+//	- []I, where I is some interface type. Each element of the slice must
+//	  be non-nil, and its underlying type must be either *S or *P.
+//	- *Key, to check a specific key from the datastore.
+//	- []*Key, to check a slice of keys from the datastore.
+//
+// If an error is encountered, the returned error value will depend on the
+// input arguments. If one argument is supplied, the result will be the
+// encountered error type. If multiple arguments are supplied, the result will
+// be a MultiError whose error index corresponds to the argument in which the
+// error was encountered.
+//
+// If an ent argument is a slice, its error type will be a MultiError. Note
+// that in the scenario, where multiple slices are provided, this will return a
+// MultiError containing a nested MultiError for each slice argument.
+func Exists(c context.Context, ent ...interface{}) (*ExistsResult, error) {
+	if len(ent) == 0 {
+		return nil, nil
+	}
+
+	mma, err := makeMetaMultiArg(ent, mmaKeysOnly)
+	if err != nil {
+		panic(err)
+	}
+
+	keys, _, err := mma.getKeysPMs(GetKeyContext(c), false)
+	if err != nil {
+		return nil, maybeSingleError(err, ent)
+	}
+	if len(keys) == 0 {
+		return nil, nil
+	}
+
+	var bt boolTracker
+	it := mma.iterator(bt.init(mma))
+	err = filterStop(Raw(c).GetMulti(keys, nil, func(_ PropertyMap, err error) error {
+		it.next(func(*multiArgType, reflect.Value) error {
+			return err
+		})
+		return nil
+	}))
+	if err == nil {
+		err = bt.error()
+	}
+	return bt.result(), maybeSingleError(err, ent)
+}
+
+// Get retrieves objects from the datastore.
+//
+// Each element in dst must be one of:
+//	- *S, where S is a struct
+//	- *P, where *P is a concrete type implementing PropertyLoadSaver
+//	- []S or []*S, where S is a struct
+//	- []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
+//	- []I, where I is some interface type. Each element of the slice must
+//	  be non-nil, and its underlying type must be either *S or *P.
+//
+// If an error is encountered, the returned error value will depend on the
+// input arguments. If one argument is supplied, the result will be the
+// encountered error type. If multiple arguments are supplied, the result will
+// be a MultiError whose error index corresponds to the argument in which the
+// error was encountered.
+//
+// If a dst argument is a slice, its error type will be a MultiError. Note
+// that in the scenario where multiple slices are provided, this will return a
+// MultiError containing a nested MultiError for each slice argument.
+func Get(c context.Context, dst ...interface{}) error {
+	if len(dst) == 0 {
+		return nil
+	}
+
+	mma, err := makeMetaMultiArg(dst, mmaReadWrite)
+	if err != nil {
+		panic(err)
+	}
+
+	keys, pms, err := mma.getKeysPMs(GetKeyContext(c), true)
+	if err != nil {
+		return maybeSingleError(err, dst)
+	}
+	if len(keys) == 0 {
+		return nil
+	}
+
+	var et errorTracker
+	it := mma.iterator(et.init(mma))
+	meta := NewMultiMetaGetter(pms)
+	err = filterStop(Raw(c).GetMulti(keys, meta, func(pm PropertyMap, err error) error {
+		it.next(func(mat *multiArgType, slot reflect.Value) error {
+			if err != nil {
+				return err
+			}
+			return mat.setPM(slot, pm)
+		})
+		return nil
+	}))
+
+	if err == nil {
+		err = et.error()
+	}
+	return maybeSingleError(err, dst)
+}
+
+// Put writes objects into the datastore.
+//
+// src must be one of:
+//	- *S, where S is a struct
+//	- *P, where *P is a concrete type implementing PropertyLoadSaver
+//	- []S or []*S, where S is a struct
+//	- []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
+//	- []I, where I is some interface type. Each element of the slice must
+//	  be non-nil, and its underlying type must be either *S or *P.
+//
+// A *Key will be extracted from src via KeyForObj. If
+// extractedKey.Incomplete() is true, then Put will write the resolved (i.e.
+// automatic datastore-populated) *Key back to src.
+//
+// If an error is encountered, the returned error value will depend on the
+// input arguments. If one argument is supplied, the result will be the
+// encountered error type. If multiple arguments are supplied, the result will
+// be a MultiError whose error index corresponds to the argument in which the
+// error was encountered.
+//
+// If a src argument is a slice, its error type will be a MultiError. Note
+// that in the scenario where multiple slices are provided, this will return a
+// MultiError containing a nested MultiError for each slice argument.
+func Put(c context.Context, src ...interface{}) error {
+	if len(src) == 0 {
+		return nil
+	}
+
+	mma, err := makeMetaMultiArg(src, mmaReadWrite)
+	if err != nil {
+		panic(err)
+	}
+
+	keys, vals, err := mma.getKeysPMs(GetKeyContext(c), false)
+	if err != nil {
+		return maybeSingleError(err, src)
+	}
+	if len(keys) == 0 {
+		return nil
+	}
+
+	i := 0
+	var et errorTracker
+	it := mma.iterator(et.init(mma))
+	err = filterStop(Raw(c).PutMulti(keys, vals, func(key *Key, err error) error {
+		it.next(func(mat *multiArgType, slot reflect.Value) error {
+			if err != nil {
+				return err
+			}
+			if key != keys[i] {
+				mat.setKey(slot, key)
+			}
+			return nil
+		})
+
+		i++
+		return nil
+	}))
+
+	if err == nil {
+		err = et.error()
+	}
+	return maybeSingleError(err, src)
+}
+
+// Delete removes the supplied entities from the datastore.
+//
+// ent must be one of:
+//	- *S, where S is a struct
+//	- *P, where *P is a concrete type implementing PropertyLoadSaver
+//	- []S or []*S, where S is a struct
+//	- []P or []*P, where *P is a concrete type implementing PropertyLoadSaver
+//	- []I, where I is some interface type. Each element of the slice must
+//	  be non-nil, and its underlying type must be either *S or *P.
+//	- *Key, to remove a specific key from the datastore.
+//	- []*Key, to remove a slice of keys from the datastore.
+//
+// If an error is encountered, the returned error value will depend on the
+// input arguments. If one argument is supplied, the result will be the
+// encountered error type. If multiple arguments are supplied, the result will
+// be a MultiError whose error index corresponds to the argument in which the
+// error was encountered.
+//
+// If an ent argument is a slice, its error type will be a MultiError. Note
+// that in the scenario where multiple slices are provided, this will return a
+// MultiError containing a nested MultiError for each slice argument.
+func Delete(c context.Context, ent ...interface{}) error {
+	if len(ent) == 0 {
+		return nil
+	}
+
+	mma, err := makeMetaMultiArg(ent, mmaKeysOnly)
+	if err != nil {
+		panic(err)
+	}
+
+	keys, _, err := mma.getKeysPMs(GetKeyContext(c), false)
+	if err != nil {
+		return maybeSingleError(err, ent)
+	}
+	if len(keys) == 0 {
+		return nil
+	}
+
+	var et errorTracker
+	it := mma.iterator(et.init(mma))
+	err = filterStop(Raw(c).DeleteMulti(keys, func(err error) error {
+		it.next(func(*multiArgType, reflect.Value) error {
+			return err
+		})
+
+		return nil
+	}))
+	if err == nil {
+		err = et.error()
+	}
+	return maybeSingleError(err, ent)
+}
+
+// GetTestable returns the Testable interface for the implementation, or nil if
+// there is none.
+func GetTestable(c context.Context) Testable {
+	return Raw(c).GetTestable()
+}
+
+// maybeSingleError normalizes the error experience between single- and
+// multi-element API calls.
+//
+// Single-element API calls will return a single error for that element, while
+// multi-element API calls will return a MultiError, one for each element. This
+// accepts the slice of elements that is being operated on and determines what
+// sort of error to return.
+func maybeSingleError(err error, elems []interface{}) error {
+	if err == nil {
+		return nil
+	}
+	if len(elems) == 1 {
+		return errors.SingleError(err)
+	}
+	return err
+}
+
+func filterStop(err error) error {
+	if err == Stop {
+		err = nil
+	}
+	return err
 }

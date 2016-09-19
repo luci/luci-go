@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/urlfetch"
 	"golang.org/x/net/context"
 	gOAuth "golang.org/x/oauth2/google"
@@ -29,9 +28,8 @@ var RemoteAPIScopes = []string{
 type key int
 
 var (
-	prodContextKey      key
-	prodContextNoTxnKey key = 1
-	probeCacheKey       key = 2
+	prodStateKey  = "contains the current *prodState"
+	probeCacheKey = "contains the current *infoProbeCache"
 )
 
 // AEContext retrieves the raw "google.golang.org/appengine" compatible Context.
@@ -40,40 +38,15 @@ var (
 // RPCs. Doesn't transfer cancelation ability though (since it's ignored by GAE
 // anyway).
 func AEContext(c context.Context) context.Context {
-	aeCtx, _ := c.Value(prodContextKey).(context.Context)
-	if aeCtx == nil {
-		return nil
-	}
-	if deadline, ok := c.Deadline(); ok {
-		aeCtx, _ = context.WithDeadline(aeCtx, deadline)
-	}
-	return aeCtx
-}
-
-// AEContextNoTxn retrieves the raw "google.golang.org/appengine" compatible
-// Context that's not part of a transaction.
-func AEContextNoTxn(c context.Context) context.Context {
-	aeCtx, _ := c.Value(prodContextNoTxnKey).(context.Context)
-	if aeCtx == nil {
-		return nil
-	}
-
-	if ns, has := info.Get(c).GetNamespace(); has {
-		var err error
-		aeCtx, err = appengine.Namespace(aeCtx, ns)
-		if err != nil {
-			panic(err)
-		}
-	}
-	if deadline, ok := c.Deadline(); ok {
-		aeCtx, _ = context.WithDeadline(aeCtx, deadline)
-	}
-	return aeCtx
+	ps := getProdState(c)
+	return ps.context(c)
 }
 
 func setupAECtx(c, aeCtx context.Context) context.Context {
-	c = context.WithValue(c, prodContextKey, aeCtx)
-	c = context.WithValue(c, prodContextNoTxnKey, aeCtx)
+	c = withProdState(c, prodState{
+		ctx:      aeCtx,
+		noTxnCtx: aeCtx,
+	})
 	return useModule(useMail(useUser(useURLFetch(useRDS(useMC(useTQ(useGI(useLogging(c)))))))))
 }
 
@@ -123,9 +96,11 @@ func Use(c context.Context, r *http.Request) context.Context {
 //       - "https://www.googleapis.com/auth/cloud.platform"
 func UseRemote(inOutCtx *context.Context, host string, client *http.Client) (err error) {
 	if client == nil {
+		aeCtx := AEContext(*inOutCtx)
+
 		if strings.HasPrefix(host, "localhost") {
 			transp := http.DefaultTransport
-			if aeCtx := AEContextNoTxn(*inOutCtx); aeCtx != nil {
+			if aeCtx != nil {
 				transp = urlfetch.Get(*inOutCtx)
 			}
 
@@ -147,7 +122,6 @@ func UseRemote(inOutCtx *context.Context, host string, client *http.Client) (err
 			}
 			defer rsp.Body.Close()
 		} else {
-			aeCtx := AEContextNoTxn(*inOutCtx)
 			if aeCtx == nil {
 				aeCtx = context.Background()
 			}
@@ -164,4 +138,49 @@ func UseRemote(inOutCtx *context.Context, host string, client *http.Client) (err
 	}
 	*inOutCtx = setupAECtx(*inOutCtx, aeCtx)
 	return nil
+}
+
+// prodState is the current production state.
+type prodState struct {
+	// ctx is the current derived GAE context.
+	ctx context.Context
+
+	// noTxnCtx is a Context maintained alongside ctx. When a transaction is
+	// entered, ctx will be updated, but noTxnCtx will not, allowing extra-
+	// transactional Context access.
+	noTxnCtx context.Context
+
+	// inTxn if true if this is in a transaction, false otherwise.
+	inTxn bool
+}
+
+func getProdState(c context.Context) prodState {
+	if v := c.Value(&prodStateKey).(*prodState); v != nil {
+		return *v
+	}
+	return prodState{}
+}
+
+func withProdState(c context.Context, ps prodState) context.Context {
+	return context.WithValue(c, &prodStateKey, &ps)
+}
+
+// context returns the current AppEngine-bound Context. Prior to returning,
+// the deadline from "c" (if any) is applied.
+//
+// Note that this does not (currently) apply any other Done state or propagate
+// cancellation from "c".
+//
+// Tracking at:
+// https://github.com/luci/gae/issues/59
+func (ps *prodState) context(c context.Context) context.Context {
+	aeCtx := ps.ctx
+	if aeCtx == nil {
+		return nil
+	}
+
+	if deadline, ok := c.Deadline(); ok {
+		aeCtx, _ = context.WithDeadline(aeCtx, deadline)
+	}
+	return aeCtx
 }

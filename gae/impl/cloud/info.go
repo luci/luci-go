@@ -5,10 +5,12 @@
 package cloud
 
 import (
-	"errors"
 	"time"
 
 	infoS "github.com/luci/gae/service/info"
+	"github.com/luci/gae/service/info/support"
+
+	"github.com/luci/luci-go/common/errors"
 
 	"golang.org/x/net/context"
 )
@@ -43,9 +45,8 @@ func (ci *infoState) derive(mutate func(*infoState)) *infoState {
 }
 
 type infoService struct {
+	context.Context
 	*infoState
-
-	ic context.Context
 }
 
 func useInfo(c context.Context) context.Context {
@@ -54,51 +55,51 @@ func useInfo(c context.Context) context.Context {
 
 	return infoS.SetFactory(c, func(ic context.Context) infoS.RawInterface {
 		return &infoService{
+			Context:   ic,
 			infoState: getInfoState(ic),
-			ic:        ic,
 		}
 	})
 }
 
-func (i *infoService) AppID() string                { panic(errNotImplemented) }
-func (i *infoService) FullyQualifiedAppID() string  { return "" }
-func (i *infoService) GetNamespace() (string, bool) { return i.namespace, (i.namespace != "") }
+func (*infoService) AppID() string               { panic(errNotImplemented) }
+func (*infoService) FullyQualifiedAppID() string { return "" }
+func (i *infoService) GetNamespace() string      { return i.namespace }
 
-func (i *infoService) Datacenter() string             { panic(errNotImplemented) }
-func (i *infoService) DefaultVersionHostname() string { panic(errNotImplemented) }
-func (i *infoService) InstanceID() string             { panic(errNotImplemented) }
-func (i *infoService) IsDevAppServer() bool           { panic(errNotImplemented) }
-func (i *infoService) IsOverQuota(err error) bool     { panic(errNotImplemented) }
-func (i *infoService) IsTimeoutError(err error) bool  { panic(errNotImplemented) }
-func (i *infoService) ModuleHostname(module, version, instance string) (string, error) {
+func (*infoService) Datacenter() string             { panic(errNotImplemented) }
+func (*infoService) DefaultVersionHostname() string { panic(errNotImplemented) }
+func (*infoService) InstanceID() string             { panic(errNotImplemented) }
+func (*infoService) IsDevAppServer() bool           { panic(errNotImplemented) }
+func (*infoService) IsOverQuota(err error) bool     { panic(errNotImplemented) }
+func (*infoService) IsTimeoutError(err error) bool  { panic(errNotImplemented) }
+func (*infoService) ModuleHostname(module, version, instance string) (string, error) {
 	return "", errNotImplemented
 }
-func (i *infoService) ModuleName() string              { panic(errNotImplemented) }
-func (i *infoService) RequestID() string               { panic(errNotImplemented) }
-func (i *infoService) ServerSoftware() string          { panic(errNotImplemented) }
-func (i *infoService) ServiceAccount() (string, error) { return "", errNotImplemented }
-func (i *infoService) VersionID() string               { panic(errNotImplemented) }
+func (*infoService) ModuleName() string              { panic(errNotImplemented) }
+func (*infoService) RequestID() string               { panic(errNotImplemented) }
+func (*infoService) ServerSoftware() string          { panic(errNotImplemented) }
+func (*infoService) ServiceAccount() (string, error) { return "", errNotImplemented }
+func (*infoService) VersionID() string               { panic(errNotImplemented) }
 
 func (i *infoService) Namespace(namespace string) (context.Context, error) {
-	return i.MustNamespace(namespace), nil
-}
+	if err := support.ValidNamespace(namespace); err != nil {
+		return i, err
+	}
 
-func (i *infoService) MustNamespace(namespace string) context.Context {
 	return i.derive(func(ci *infoState) {
 		ci.namespace = namespace
-	}).use(i.ic)
+	}).use(i), nil
 }
 
-func (i *infoService) AccessToken(scopes ...string) (token string, expiry time.Time, err error) {
+func (*infoService) AccessToken(scopes ...string) (token string, expiry time.Time, err error) {
 	return "", time.Time{}, errNotImplemented
 }
 
-func (i *infoService) PublicCertificates() ([]infoS.Certificate, error) {
+func (*infoService) PublicCertificates() ([]infoS.Certificate, error) {
 	return nil, errNotImplemented
 }
 
-func (i *infoService) SignBytes(bytes []byte) (keyName string, signature []byte, err error) {
+func (*infoService) SignBytes(bytes []byte) (keyName string, signature []byte, err error) {
 	return "", nil, errNotImplemented
 }
 
-func (i *infoService) Testable() infoS.Testable { return nil }
+func (*infoService) GetTestable() infoS.Testable { return nil }

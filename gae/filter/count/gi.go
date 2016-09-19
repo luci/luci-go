@@ -53,7 +53,7 @@ func (g *infoCounter) FullyQualifiedAppID() string {
 	return g.gi.FullyQualifiedAppID()
 }
 
-func (g *infoCounter) GetNamespace() (string, bool) {
+func (g *infoCounter) GetNamespace() string {
 	_ = g.c.GetNamespace.up()
 	return g.gi.GetNamespace()
 }
@@ -118,9 +118,10 @@ func (g *infoCounter) VersionID() string {
 	return g.gi.VersionID()
 }
 
-func (g *infoCounter) Namespace(namespace string) (context.Context, error) {
-	ret, err := g.gi.Namespace(namespace)
-	return ret, g.c.Namespace.up(err)
+func (g *infoCounter) Namespace(namespace string) (c context.Context, err error) {
+	c, err = g.gi.Namespace(namespace)
+	g.c.Namespace.up(err)
+	return
 }
 
 func (g *infoCounter) AccessToken(scopes ...string) (string, time.Time, error) {
@@ -138,8 +139,8 @@ func (g *infoCounter) SignBytes(bytes []byte) (string, []byte, error) {
 	return keyName, signature, g.c.SignBytes.up(err)
 }
 
-func (g *infoCounter) Testable() info.Testable {
-	return g.gi.Testable()
+func (g *infoCounter) GetTestable() info.Testable {
+	return g.gi.GetTestable()
 }
 
 // FilterGI installs a counter GlobalInfo filter in the context.

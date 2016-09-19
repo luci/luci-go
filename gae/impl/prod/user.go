@@ -11,9 +11,10 @@ import (
 )
 
 // useUser adds a user service implementation to context, accessible
-// by "github.com/luci/gae/service/user".Get(c)
+// by "github.com/luci/gae/service/user".Raw(c) or the exported user service
+// methods.
 func useUser(c context.Context) context.Context {
-	return gae_user.SetFactory(c, func(ci context.Context) gae_user.Interface {
+	return gae_user.SetFactory(c, func(ci context.Context) gae_user.RawInterface {
 		return userImpl{AEContext(ci)}
 	})
 }
@@ -54,6 +55,6 @@ func (u userImpl) OAuthConsumerKey() (string, error) {
 	return user.OAuthConsumerKey(u.aeCtx)
 }
 
-func (u userImpl) Testable() gae_user.Testable {
+func (u userImpl) GetTestable() gae_user.Testable {
 	return nil
 }

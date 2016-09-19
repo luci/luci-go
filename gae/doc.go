@@ -63,9 +63,8 @@
 //   }
 //
 //   func innerHandler(c context.Context, w http.ResponseWriter) {
-//     rds := datastore.Get(c)
 //     obj := &CoolStruct{Value: "hello"}
-//     if err := rds.Put(obj); err != nil {
+//     if err := rds.Put(c, obj); err != nil {
 //       http.Error(w, err.String(), http.StatusInternalServerError)
 //     }
 //     fmt.Fprintf(w, "I wrote: %s", ds.KeyForObj(obj))
@@ -123,10 +122,6 @@
 //                           implementations directly.
 //
 // And common functions are:
-//    service.Get           - Retrieve the current, filtered Interface
-//                            implementation from the context. This is the most
-//                            frequently used service function by far.
-//
 //    service.GetRaw        - Retrieve the current, filtered RawInterface
 //                            implementation from the context. This is less
 //                            frequently used, but can be useful if you want to
@@ -178,15 +173,10 @@
 //   }
 //
 //   func CoolFunc(c context.Context, ...) {
-//     ds := datastore.Get(c)  // returns a datastore.Interface object
-//     mc := memcache.Get(c)   // returns a memcache.Interface object
-//     // use them here
-//
-//     // don't pass ds/mc/etc. directly, pass the context instead.
 //     SomeOtherFunction(c, ...)
 //
 //     // because you might need to:
-//     ds.RunInTransaction(func (c context.Context) error {
+//     ds.RunInTransaction(c, func (c context.Context) error {
 //       SomeOtherFunction(c, ...)  // c contains transactional versions of everything
 //     }, nil)
 //   }
@@ -202,15 +192,6 @@
 //    <dscache filter (attempts to use memcache as a cache for datastore)>
 //    <count filter (counts how many times each API is actually hit)>
 //    memory datastore.RawInterface implementation
-//
-// So datastore.Get would return the full stack. In code, this would look
-// like:
-//   func HTTPHandler(r *http.Request) {
-//     c := prod.UseRequest(r)							  // production datastore
-//     c, rawCount := count.FilterRDS(c)      // add count filter
-//     c = dscache.FilterRDS(c)               // add dscache filter
-//     c, userCount := count.FilterRDS(c)     // add another count filter
-//   }
 //
 // Filters may or may not have state, it's up to the filter itself. In the case
 // of the count filter, it returns its state from the Filter<Service> method,

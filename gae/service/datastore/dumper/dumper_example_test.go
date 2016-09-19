@@ -8,14 +8,15 @@ import (
 	"fmt"
 
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
+
 	"golang.org/x/net/context"
 )
 
 type ExampleModel struct {
-	Kind   string         `gae:"$kind,Example"`
-	ID     int64          `gae:"$id"`
-	Parent *datastore.Key `gae:"$parent"`
+	Kind   string  `gae:"$kind,Example"`
+	ID     int64   `gae:"$id"`
+	Parent *ds.Key `gae:"$parent"`
 
 	Vals      []string
 	Number    int64
@@ -26,28 +27,27 @@ func ExampleConfig_Query() {
 	c := context.Background()
 	c = memory.Use(c)
 
-	ds := datastore.Get(c)
-	root := ds.MakeKey("Parent", 1)
+	root := ds.MakeKey(c, "Parent", 1)
 	models := []*ExampleModel{
 		{ID: 1, Vals: []string{"hi", "there"}, Number: 10, HexNumber: 20},
 		{ID: 2, Vals: []string{"other"}, Number: 11, HexNumber: 21},
 		{ID: 1, Parent: root, Vals: []string{"child", "ent"}},
 		{Kind: "Other", ID: 1, Vals: []string{"other"}, Number: 11, HexNumber: 21},
 	}
-	if err := ds.Put(models); err != nil {
+	if err := ds.Put(c, models); err != nil {
 		panic(err)
 	}
 	// indexes must be up-to-date here.
-	ds.Testable().CatchupIndexes()
+	ds.GetTestable(c).CatchupIndexes()
 
 	_, err := Config{
 		PropFilters: PropFilterMap{
-			{"Example", "HexNumber"}: func(p datastore.Property) string {
+			{"Example", "HexNumber"}: func(p ds.Property) string {
 				return fmt.Sprintf("0x%04x", p.Value())
 			},
 		},
 		KindFilters: KindFilterMap{
-			"Other": func(key *datastore.Key, pm datastore.PropertyMap) string {
+			"Other": func(key *ds.Key, pm ds.PropertyMap) string {
 				return "I AM A BANANA"
 			},
 		},

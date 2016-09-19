@@ -11,6 +11,7 @@ import (
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/logging/memlogger"
+
 	"golang.org/x/net/context"
 )
 
@@ -128,7 +129,6 @@ func UseWithAppID(c context.Context, aid string) context.Context {
 
 	memctx := newMemContext(fqAppID)
 	c = context.WithValue(c, memContextKey, memctx)
-	c = context.WithValue(c, memContextNoTxnKey, memctx)
 	c = useGID(c, func(mod *globalInfoData) {
 		mod.appID = aid
 		mod.fqAppID = fqAppID
@@ -136,21 +136,19 @@ func UseWithAppID(c context.Context, aid string) context.Context {
 	return useMod(useMail(useUser(useTQ(useRDS(useMC(useGI(c)))))))
 }
 
-func cur(c context.Context) (p *memContext) {
-	p, _ = c.Value(memContextKey).(*memContext)
-	return
-}
-
-func curNoTxn(c context.Context) (p *memContext) {
-	p, _ = c.Value(memContextNoTxnKey).(*memContext)
-	return
+func cur(c context.Context) (*memContext, bool) {
+	if txn := c.Value(currentTxnKey); txn != nil {
+		// We are in a Transaction.
+		return txn.(*memContext), true
+	}
+	return c.Value(memContextKey).(*memContext), false
 }
 
 type memContextKeyType int
 
 var (
-	memContextKey      memContextKeyType
-	memContextNoTxnKey memContextKeyType = 1
+	memContextKey memContextKeyType
+	currentTxnKey = 1
 )
 
 // weird stuff
@@ -174,7 +172,10 @@ func (d *dsImpl) RunInTransaction(f func(context.Context) error, o *ds.Transacti
 
 	// Keep in separate function for defers.
 	loopBody := func(applyForReal bool) error {
-		curMC := cur(d.c)
+		curMC, inTxn := cur(d)
+		if inTxn {
+			return errors.New("datastore: nested transactions are not supported")
+		}
 
 		txnMC := curMC.mkTxn(o)
 
@@ -185,7 +186,7 @@ func (d *dsImpl) RunInTransaction(f func(context.Context) error, o *ds.Transacti
 			txnMC.endTxn()
 		}()
 
-		if err := f(context.WithValue(d.c, memContextKey, txnMC)); err != nil {
+		if err := f(context.WithValue(d, currentTxnKey, txnMC)); err != nil {
 			return err
 		}
 
@@ -193,7 +194,7 @@ func (d *dsImpl) RunInTransaction(f func(context.Context) error, o *ds.Transacti
 		defer txnMC.Unlock()
 
 		if applyForReal && curMC.canApplyTxn(txnMC) {
-			curMC.applyTxn(d.c, txnMC)
+			curMC.applyTxn(d, txnMC)
 		} else {
 			return ds.ErrConcurrentTransaction
 		}

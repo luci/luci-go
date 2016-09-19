@@ -33,8 +33,8 @@ func getUnfiltered(c context.Context) RawInterface {
 	return nil
 }
 
-// GetRaw gets the current memcache implementation from the context.
-func GetRaw(c context.Context) RawInterface {
+// Raw gets the current memcache implementation from the context.
+func Raw(c context.Context) RawInterface {
 	ret := getUnfiltered(c)
 	if ret == nil {
 		return nil

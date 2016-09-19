@@ -73,4 +73,10 @@
 //   - The changing of namespace inside of a transaction is undefined... This is
 //     just generally a terrible idea anyway, but I thought it was worth
 //     mentioning.
+//
+//   - Currently, the soft transactions are not directly accessible using the
+//     CurrentTransaction interface; it returns the wrapped datastore's
+//     transaction. While this is still correct, it could definitely be made
+//     more useful by adding transaction buffer metadata to the returned
+//     object.
 package txnBuf

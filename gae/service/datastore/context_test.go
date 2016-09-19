@@ -8,15 +8,17 @@ import (
 	"testing"
 
 	"github.com/luci/gae/service/info"
-	. "github.com/smartystreets/goconvey/convey"
+
 	"golang.org/x/net/context"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
-type fakeInfo struct{ info.Interface }
+type fakeInfo struct{ info.RawInterface }
 
-func (fakeInfo) GetNamespace() (string, bool) { return "ns", true }
-func (fakeInfo) AppID() string                { return "aid" }
-func (fakeInfo) FullyQualifiedAppID() string  { return "s~aid" }
+func (fakeInfo) GetNamespace() string        { return "ns" }
+func (fakeInfo) AppID() string               { return "aid" }
+func (fakeInfo) FullyQualifiedAppID() string { return "s~aid" }
 
 type fakeService struct{ RawInterface }
 
@@ -38,14 +40,17 @@ func TestServices(t *testing.T) {
 	Convey("Test service interfaces", t, func() {
 		c := context.Background()
 		Convey("without adding anything", func() {
-			So(GetRaw(c), ShouldBeNil)
+			So(Raw(c), ShouldBeNil)
 		})
 
 		Convey("adding a basic implementation", func() {
 			c = SetRaw(info.Set(c, fakeInfo{}), fakeService{})
 
 			Convey("lets you pull them back out", func() {
-				So(GetRaw(c), ShouldResemble, &checkFilter{fakeService{}, "s~aid", "ns"})
+				So(Raw(c), ShouldResemble, &checkFilter{
+					RawInterface: fakeService{},
+					kc:           KeyContext{"s~aid", "ns"},
+				})
 			})
 
 			Convey("and lets you add filters", func() {
@@ -53,7 +58,7 @@ func TestServices(t *testing.T) {
 					return fakeFilt{rds}
 				})
 
-				curs, err := Get(c).DecodeCursor("pants")
+				curs, err := DecodeCursor(c, "pants")
 				So(err, ShouldBeNil)
 				So(curs.String(), ShouldEqual, "pants")
 			})

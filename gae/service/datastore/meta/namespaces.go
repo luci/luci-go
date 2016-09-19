@@ -8,7 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
+
 	"golang.org/x/net/context"
 )
 
@@ -28,10 +29,10 @@ type NamespacesCallback func(string) error
 //	  callback as "".
 //	- Other namespaces will have non-zero string IDs.
 func Namespaces(c context.Context, cb NamespacesCallback) error {
-	q := datastore.NewQuery("__namespace__").KeysOnly(true)
+	q := ds.NewQuery("__namespace__").KeysOnly(true)
 
 	// Query our datastore for the full set of namespaces.
-	return datastore.Get(c).Run(q, func(k *datastore.Key) error {
+	return ds.Run(c, q, func(k *ds.Key) error {
 		switch {
 		case k.IntID() == 1:
 			return cb("")
@@ -52,7 +53,7 @@ func NamespacesWithPrefix(c context.Context, p string, cb NamespacesCallback) er
 	return Namespaces(c, func(ns string) error {
 		if !strings.HasPrefix(ns, p) {
 			if any {
-				return datastore.Stop
+				return ds.Stop
 			}
 			return nil
 		}

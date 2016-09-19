@@ -41,8 +41,8 @@ type multiArgType struct {
 	newElem func() reflect.Value
 }
 
-func (mat *multiArgType) getKey(aid, ns string, slot reflect.Value) (*Key, error) {
-	return newKeyObjErr(aid, ns, mat.getMGS(slot))
+func (mat *multiArgType) getKey(kc KeyContext, slot reflect.Value) (*Key, error) {
+	return newKeyObjErr(kc, mat.getMGS(slot))
 }
 
 func (mat *multiArgType) getPM(slot reflect.Value) (PropertyMap, error) {
@@ -237,7 +237,7 @@ func mustParseArg(et reflect.Type, sliceArg bool) *multiArgType {
 	panic(fmt.Errorf("invalid argument type: %s is not a PLS or pointer-to-struct", et))
 }
 
-func newKeyObjErr(aid, ns string, mgs MetaGetterSetter) (*Key, error) {
+func newKeyObjErr(kc KeyContext, mgs MetaGetterSetter) (*Key, error) {
 	if key, _ := GetMetaDefault(mgs, "key", nil).(*Key); key != nil {
 		return key, nil
 	}
@@ -255,7 +255,7 @@ func newKeyObjErr(aid, ns string, mgs MetaGetterSetter) (*Key, error) {
 	// get parent
 	par, _ := GetMetaDefault(mgs, "parent", nil).(*Key)
 
-	return NewKey(aid, ns, kind, sid, iid, par), nil
+	return kc.NewKey(kind, sid, iid, par), nil
 }
 
 func isOKSingleType(t reflect.Type, allowKey bool) error {
@@ -401,8 +401,8 @@ func (mma *metaMultiArg) iterator(cb metaMultiArgIteratorCallback) *metaMultiArg
 	}
 }
 
-// getKeysPMs returns the
-func (mma *metaMultiArg) getKeysPMs(aid, ns string, meta bool) ([]*Key, []PropertyMap, error) {
+// getKeysPMs returns the keys and PropertyMap for the supplied argument items.
+func (mma *metaMultiArg) getKeysPMs(kc KeyContext, meta bool) ([]*Key, []PropertyMap, error) {
 	var et errorTracker
 	it := mma.iterator(et.init(mma))
 
@@ -415,7 +415,7 @@ func (mma *metaMultiArg) getKeysPMs(aid, ns string, meta bool) ([]*Key, []Proper
 
 	for i := 0; i < mma.count; i++ {
 		it.next(func(mat *multiArgType, slot reflect.Value) error {
-			key, err := mat.getKey(aid, ns, slot)
+			key, err := mat.getKey(kc, slot)
 			if err != nil {
 				return err
 			}

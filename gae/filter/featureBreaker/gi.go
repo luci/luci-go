@@ -34,9 +34,9 @@ func (g *infoState) ServiceAccount() (ret string, err error) {
 	return
 }
 
-func (g *infoState) Namespace(namespace string) (ret context.Context, err error) {
+func (g *infoState) Namespace(namespace string) (c context.Context, err error) {
 	err = g.run(func() (err error) {
-		ret, err = g.RawInterface.Namespace(namespace)
+		c, err = g.RawInterface.Namespace(namespace)
 		return
 	})
 	return

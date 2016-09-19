@@ -6,9 +6,9 @@ package dscache
 
 import (
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
-	mc "github.com/luci/gae/service/memcache"
+
 	"github.com/luci/luci-go/common/data/rand/mathrand"
+
 	"golang.org/x/net/context"
 )
 
@@ -44,23 +44,21 @@ func FilterRDS(c context.Context, shardsForKey func(*ds.Key) int) context.Contex
 // Unlike FilterRDS it doesn't check GlobalConfig via IsGloballyEnabled call,
 // assuming caller already knows whether filter should be applied or not.
 func AlwaysFilterRDS(c context.Context, shardsForKey func(*ds.Key) int) context.Context {
-	return ds.AddRawFilters(c, func(c context.Context, ds ds.RawInterface) ds.RawInterface {
-		i := info.Get(c)
-		ns, _ := i.GetNamespace()
+	return ds.AddRawFilters(c, func(c context.Context, rds ds.RawInterface) ds.RawInterface {
+		kc := ds.GetKeyContext(c)
 
 		sc := &supportContext{
-			i.AppID(),
-			ns,
+			kc.AppID,
+			kc.Namespace,
 			c,
-			mc.Get(c),
 			mathrand.Get(c),
 			shardsForKey,
 		}
 
 		v := c.Value(dsTxnCacheKey)
 		if v == nil {
-			return &dsCache{ds, sc}
+			return &dsCache{rds, sc}
 		}
-		return &dsTxnCache{ds, v.(*dsTxnState), sc}
+		return &dsTxnCache{rds, v.(*dsTxnState), sc}
 	})
 }

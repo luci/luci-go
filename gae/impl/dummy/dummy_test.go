@@ -31,74 +31,74 @@ func TestContextAccess(t *testing.T) {
 		c := context.Background()
 
 		Convey("blank", func() {
-			So(dsS.GetRaw(c), ShouldBeNil)
-			So(mcS.GetRaw(c), ShouldBeNil)
-			So(tqS.GetRaw(c), ShouldBeNil)
-			So(infoS.Get(c), ShouldBeNil)
+			So(dsS.Raw(c), ShouldBeNil)
+			So(mcS.Raw(c), ShouldBeNil)
+			So(tqS.Raw(c), ShouldBeNil)
+			So(infoS.Raw(c), ShouldBeNil)
 		})
 
 		// needed for everything else
 		c = infoS.Set(c, Info())
 
 		Convey("Info", func() {
-			So(infoS.Get(c), ShouldNotBeNil)
+			So(infoS.Raw(c), ShouldNotBeNil)
 			So(func() {
 				defer p()
-				infoS.Get(c).Datacenter()
+				infoS.Raw(c).Datacenter()
 			}, ShouldPanicWith, "dummy: method Info.Datacenter is not implemented")
 		})
 
 		Convey("Datastore", func() {
 			c = dsS.SetRaw(c, Datastore())
-			So(dsS.Get(c), ShouldNotBeNil)
+			So(dsS.Raw(c), ShouldNotBeNil)
 			So(func() {
 				defer p()
-				_, _ = dsS.Get(c).DecodeCursor("wut")
+				_, _ = dsS.Raw(c).DecodeCursor("wut")
 			}, ShouldPanicWith, "dummy: method Datastore.DecodeCursor is not implemented")
 		})
 
 		Convey("Memcache", func() {
 			c = mcS.SetRaw(c, Memcache())
-			So(mcS.Get(c), ShouldNotBeNil)
+			So(mcS.Raw(c), ShouldNotBeNil)
 			So(func() {
 				defer p()
-				_ = mcS.Get(c).Add(nil)
+				_ = mcS.Add(c, nil)
 			}, ShouldPanicWith, "dummy: method Memcache.AddMulti is not implemented")
 		})
 
 		Convey("TaskQueue", func() {
 			c = tqS.SetRaw(c, TaskQueue())
-			So(tqS.Get(c), ShouldNotBeNil)
+			So(tqS.Raw(c), ShouldNotBeNil)
 			So(func() {
 				defer p()
-				_ = tqS.Get(c).Purge("")
+				_ = tqS.Purge(c, "")
 			}, ShouldPanicWith, "dummy: method TaskQueue.Purge is not implemented")
 		})
 
 		Convey("User", func() {
 			c = userS.Set(c, User())
-			So(userS.Get(c), ShouldNotBeNil)
+			So(userS.Raw(c), ShouldNotBeNil)
 			So(func() {
 				defer p()
-				_ = userS.Get(c).IsAdmin()
+				_ = userS.IsAdmin(c)
 			}, ShouldPanicWith, "dummy: method User.IsAdmin is not implemented")
 		})
 
 		Convey("Mail", func() {
 			c = mailS.Set(c, Mail())
-			So(mailS.Get(c), ShouldNotBeNil)
+			So(mailS.Raw(c), ShouldNotBeNil)
 			So(func() {
 				defer p()
-				_ = mailS.Get(c).Send(nil)
+				_ = mailS.Send(c, nil)
 			}, ShouldPanicWith, "dummy: method Mail.Send is not implemented")
 		})
 
 		Convey("Module", func() {
 			c = modS.Set(c, Module())
-			So(modS.Get(c), ShouldNotBeNil)
+			So(modS.Raw(c), ShouldNotBeNil)
 			So(func() {
 				defer p()
-				modS.Get(c).List()
+				modS.List(c)
 			}, ShouldPanicWith, "dummy: method Module.List is not implemented")
 		})
 	})

@@ -23,10 +23,10 @@ type UserCounter struct {
 type userCounter struct {
 	c *UserCounter
 
-	u user.Interface
+	u user.RawInterface
 }
 
-var _ user.Interface = (*userCounter)(nil)
+var _ user.RawInterface = (*userCounter)(nil)
 
 func (u *userCounter) Current() *user.User {
 	u.c.Current.up()
@@ -63,14 +63,14 @@ func (u *userCounter) OAuthConsumerKey() (string, error) {
 	return ret, u.c.OAuthConsumerKey.up(err)
 }
 
-func (u *userCounter) Testable() user.Testable {
-	return u.u.Testable()
+func (u *userCounter) GetTestable() user.Testable {
+	return u.u.GetTestable()
 }
 
 // FilterUser installs a counter User filter in the context.
 func FilterUser(c context.Context) (context.Context, *UserCounter) {
 	state := &UserCounter{}
-	return user.AddFilters(c, func(ic context.Context, u user.Interface) user.Interface {
+	return user.AddFilters(c, func(ic context.Context, u user.RawInterface) user.RawInterface {
 		return &userCounter{state, u}
 	}), state
 }

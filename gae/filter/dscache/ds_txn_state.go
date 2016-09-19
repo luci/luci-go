@@ -8,7 +8,8 @@ import (
 	"sync"
 
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/memcache"
+	mc "github.com/luci/gae/service/memcache"
+
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 )
@@ -16,7 +17,7 @@ import (
 type dsTxnState struct {
 	sync.Mutex
 
-	toLock   []memcache.Item
+	toLock   []mc.Item
 	toDelete map[string]struct{}
 }
 
@@ -41,10 +42,10 @@ func (s *dsTxnState) apply(sc *supportContext) error {
 
 	// this is a hard failure. No mutation can occur if we're unable to set
 	// locks out. See "DANGER ZONE" in the docs.
-	err := sc.mc.SetMulti(s.toLock)
+	err := mc.Set(sc.c, s.toLock...)
 	if err != nil {
 		(log.Fields{log.ErrorKey: err}).Errorf(
-			sc.c, "dscache: HARD FAILURE: dsTxnState.apply(): mc.SetMulti")
+			sc.c, "dscache: HARD FAILURE: dsTxnState.apply(): mc.Set")
 	}
 	return err
 }
@@ -61,9 +62,9 @@ func (s *dsTxnState) release(sc *supportContext) {
 		delKeys = append(delKeys, k)
 	}
 
-	if err := errors.Filter(sc.mc.DeleteMulti(delKeys), memcache.ErrCacheMiss); err != nil {
+	if err := errors.Filter(mc.Delete(sc.c, delKeys...), mc.ErrCacheMiss); err != nil {
 		(log.Fields{log.ErrorKey: err}).Warningf(
-			sc.c, "dscache: txn.release: memcache.DeleteMulti")
+			sc.c, "dscache: txn.release: memcache.Delete")
 	}
 }
 

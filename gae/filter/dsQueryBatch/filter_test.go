@@ -30,10 +30,10 @@ func TestRun(t *testing.T) {
 		for i := range items {
 			items[i] = &Item{int64(i + 1)}
 		}
-		if err := ds.Get(c).PutMulti(items); err != nil {
+		if err := ds.Put(c, items); err != nil {
 			panic(err)
 		}
-		ds.Get(c).Testable().CatchupIndexes()
+		ds.GetTestable(c).CatchupIndexes()
 
 		for _, sizeBase := range []int{
 			1,
@@ -54,7 +54,7 @@ func TestRun(t *testing.T) {
 
 					Convey(`Can retrieve all of the items.`, func() {
 						var got []*Item
-						So(ds.Get(c).GetAll(q, &got), ShouldBeNil)
+						So(ds.GetAll(c, q, &got), ShouldBeNil)
 						So(got, ShouldResemble, items)
 
 						// One call for every sub-query, plus one to hit Stop.
@@ -67,7 +67,7 @@ func TestRun(t *testing.T) {
 						q = q.Limit(int32(limit))
 
 						var got []*Item
-						So(ds.Get(c).GetAll(q, &got), ShouldBeNil)
+						So(ds.GetAll(c, q, &got), ShouldBeNil)
 						So(got, ShouldResemble, items[:limit])
 
 						// One call for every sub-query, plus one to hit Stop.

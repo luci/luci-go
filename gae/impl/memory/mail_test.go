@@ -8,11 +8,13 @@ import (
 	net_mail "net/mail"
 	"testing"
 
-	mailS "github.com/luci/gae/service/mail"
-	userS "github.com/luci/gae/service/user"
+	"github.com/luci/gae/service/mail"
+	"github.com/luci/gae/service/user"
+
+	"golang.org/x/net/context"
+
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
 func TestMail(t *testing.T) {
@@ -20,16 +22,14 @@ func TestMail(t *testing.T) {
 
 	Convey("mail", t, func() {
 		c := Use(context.Background())
-		user := userS.Get(c)
-		mail := mailS.Get(c)
 
 		Convey("good cases", func() {
 			Convey("start with an empty set of messages", func() {
-				So(mail.Testable().SentMessages(), ShouldBeEmpty)
+				So(mail.GetTestable(c).SentMessages(), ShouldBeEmpty)
 			})
 
 			Convey("can send a message from the admin", func() {
-				So(mail.Send(&mailS.Message{
+				So(mail.Send(c, &mail.Message{
 					Sender:  "admin@example.com",
 					To:      []string{"Valued Customer <customer@example.com>"},
 					Subject: "You are valued.",
@@ -37,8 +37,8 @@ func TestMail(t *testing.T) {
 				}), ShouldBeNil)
 
 				Convey("and it shows up in sent messages", func() {
-					So(mail.Testable().SentMessages(), ShouldResemble, []*mailS.TestMessage{
-						{Message: mailS.Message{
+					So(mail.GetTestable(c).SentMessages(), ShouldResemble, []*mail.TestMessage{
+						{Message: mail.Message{
 							Sender:  "admin@example.com",
 							To:      []string{"Valued Customer <customer@example.com>"},
 							Subject: "You are valued.",
@@ -47,15 +47,15 @@ func TestMail(t *testing.T) {
 					})
 
 					Convey("which can be reset", func() {
-						mail.Testable().Reset()
-						So(mail.Testable().SentMessages(), ShouldBeEmpty)
+						mail.GetTestable(c).Reset()
+						So(mail.GetTestable(c).SentMessages(), ShouldBeEmpty)
 					})
 				})
 			})
 
 			Convey("can send a message on behalf of a user", func() {
-				user.Testable().Login("dood@example.com", "", false)
-				So(mail.Send(&mailS.Message{
+				user.GetTestable(c).Login("dood@example.com", "", false)
+				So(mail.Send(c, &mail.Message{
 					Sender:  "Friendly Person <dood@example.com>",
 					To:      []string{"Other Friendly Person <dudette@example.com>"},
 					Subject: "Hi",
@@ -64,14 +64,14 @@ func TestMail(t *testing.T) {
 			})
 
 			Convey("can send a message to the admins", func() {
-				So(mail.SendToAdmins(&mailS.Message{
+				So(mail.SendToAdmins(c, &mail.Message{
 					Sender:  "admin@example.com",
 					Subject: "Reminder",
 					Body:    "I forgot",
 				}), ShouldBeNil)
 
-				So(mail.Testable().SentMessages(), ShouldResemble, []*mailS.TestMessage{
-					{Message: mailS.Message{
+				So(mail.GetTestable(c).SentMessages(), ShouldResemble, []*mail.TestMessage{
+					{Message: mail.Message{
 						Sender:  "admin@example.com",
 						To:      []string{"admin@example.com"},
 						Subject: "Reminder",
@@ -81,19 +81,19 @@ func TestMail(t *testing.T) {
 			})
 
 			Convey("can set admin emails", func() {
-				mail.Testable().SetAdminEmails(
+				mail.GetTestable(c).SetAdminEmails(
 					"Friendly <hello@example.com>",
 					"Epic <nerdsnipe@example.com>",
 				)
 
-				So(mail.SendToAdmins(&mailS.Message{
+				So(mail.SendToAdmins(c, &mail.Message{
 					Sender:  "hello@example.com",
 					Subject: "Reminder",
 					Body:    "I forgot",
 				}), ShouldBeNil)
 
-				So(mail.Testable().SentMessages(), ShouldResemble, []*mailS.TestMessage{
-					{Message: mailS.Message{
+				So(mail.GetTestable(c).SentMessages(), ShouldResemble, []*mail.TestMessage{
+					{Message: mail.Message{
 						Sender: "hello@example.com",
 						To: []string{
 							"Friendly <hello@example.com>",
@@ -106,24 +106,24 @@ func TestMail(t *testing.T) {
 			})
 
 			Convey("attachments get mimetypes assigned to them", func() {
-				So(mail.SendToAdmins(&mailS.Message{
+				So(mail.SendToAdmins(c, &mail.Message{
 					Sender:  "admin@example.com",
 					Subject: "Reminder",
 					Body:    "I forgot",
-					Attachments: []mailS.Attachment{
+					Attachments: []mail.Attachment{
 						{Name: "reminder.txt", Data: []byte("bananas")},
 						{Name: "coolthing", Data: []byte("bananas")},
 					},
 				}), ShouldBeNil)
 
-				So(mail.Testable().SentMessages(), ShouldResemble, []*mailS.TestMessage{
+				So(mail.GetTestable(c).SentMessages(), ShouldResemble, []*mail.TestMessage{
 					{
-						Message: mailS.Message{
+						Message: mail.Message{
 							Sender:  "admin@example.com",
 							To:      []string{"admin@example.com"},
 							Subject: "Reminder",
 							Body:    "I forgot",
-							Attachments: []mailS.Attachment{
+							Attachments: []mail.Attachment{
 								{Name: "reminder.txt", Data: []byte("bananas")},
 								{Name: "coolthing", Data: []byte("bananas")},
 							},
@@ -133,7 +133,7 @@ func TestMail(t *testing.T) {
 			})
 
 			Convey("can have headers", func() {
-				So(mail.SendToAdmins(&mailS.Message{
+				So(mail.SendToAdmins(c, &mail.Message{
 					Sender:  "admin@example.com",
 					Subject: "Reminder",
 					Body:    "I forgot",
@@ -143,8 +143,8 @@ func TestMail(t *testing.T) {
 					},
 				}), ShouldBeNil)
 
-				So(mail.Testable().SentMessages(), ShouldResemble, []*mailS.TestMessage{
-					{Message: mailS.Message{
+				So(mail.GetTestable(c).SentMessages(), ShouldResemble, []*mail.TestMessage{
+					{Message: mail.Message{
 						Sender:  "admin@example.com",
 						To:      []string{"admin@example.com"},
 						Subject: "Reminder",
@@ -161,14 +161,14 @@ func TestMail(t *testing.T) {
 
 		Convey("errors", func() {
 			Convey("setting a non-email is a panic", func() {
-				So(func() { mail.Testable().SetAdminEmails("i am a banana") },
+				So(func() { mail.GetTestable(c).SetAdminEmails("i am a banana") },
 					ShouldPanicLike, `invalid email ("i am a banana"): mail: missing phrase`)
 			})
 
 			Convey("sending from a non-user, non-admin is an error", func() {
-				mail.Testable().SetAdminEmails("Friendly <hello@example.com>")
+				mail.GetTestable(c).SetAdminEmails("Friendly <hello@example.com>")
 
-				So(mail.Send(&mailS.Message{
+				So(mail.Send(c, &mail.Message{
 					Sender:  "someone_else@example.com",
 					Subject: "Reminder",
 					Body:    "I forgot",
@@ -176,54 +176,54 @@ func TestMail(t *testing.T) {
 			})
 
 			Convey("sending from a bogus address is a problem", func() {
-				So(mail.Send(&mailS.Message{
+				So(mail.Send(c, &mail.Message{
 					Sender: "lalal",
 				}), ShouldErrLike, "unparsable Sender address: lalal: mail: missing phrase")
 			})
 
 			Convey("sending with no recipients is a problem", func() {
-				So(mail.Send(&mailS.Message{
+				So(mail.Send(c, &mail.Message{
 					Sender: "admin@example.com",
 				}), ShouldErrLike, "one of To, Cc or Bcc must be non-empty")
 			})
 
 			Convey("bad addresses are a problem", func() {
-				So(mail.Send(&mailS.Message{
+				So(mail.Send(c, &mail.Message{
 					Sender: "admin@example.com",
 					To:     []string{"wut"},
 				}), ShouldErrLike, `invalid email ("wut"): mail: missing phrase`)
 
-				So(mail.Send(&mailS.Message{
+				So(mail.Send(c, &mail.Message{
 					Sender: "admin@example.com",
 					Cc:     []string{"wut"},
 				}), ShouldErrLike, `invalid email ("wut"): mail: missing phrase`)
 
-				So(mail.Send(&mailS.Message{
+				So(mail.Send(c, &mail.Message{
 					Sender: "admin@example.com",
 					Bcc:    []string{"wut"},
 				}), ShouldErrLike, `invalid email ("wut"): mail: missing phrase`)
 			})
 
 			Convey("no body is a problem", func() {
-				So(mail.Send(&mailS.Message{
+				So(mail.Send(c, &mail.Message{
 					Sender: "admin@example.com",
 					To:     []string{"wut@example.com"},
 				}), ShouldErrLike, `one of Body or HTMLBody must be non-empty`)
 			})
 
 			Convey("bad attachments are a problem", func() {
-				So(mail.Send(&mailS.Message{
+				So(mail.Send(c, &mail.Message{
 					Sender: "admin@example.com",
 					To:     []string{"wut@example.com"},
 					Body:   "nice thing",
-					Attachments: []mailS.Attachment{
+					Attachments: []mail.Attachment{
 						{Name: "nice.exe", Data: []byte("boom")},
 					},
 				}), ShouldErrLike, `illegal attachment extension for "nice.exe"`)
 			})
 
 			Convey("bad headers are a problem", func() {
-				So(mail.SendToAdmins(&mailS.Message{
+				So(mail.SendToAdmins(c, &mail.Message{
 					Sender:  "admin@example.com",
 					Subject: "Reminder",
 					Body:    "I forgot",

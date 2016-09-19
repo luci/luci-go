@@ -12,17 +12,20 @@ import (
 
 	"github.com/luci/gae/filter/count"
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
+
 	"github.com/luci/luci-go/common/data/cmpbin"
 	"github.com/luci/luci-go/common/errors"
+
+	"golang.org/x/net/context"
+
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
 type Foo struct {
-	ID     int64          `gae:"$id"`
-	Parent *datastore.Key `gae:"$parent"`
+	ID     int64   `gae:"$id"`
+	Parent *ds.Key `gae:"$parent"`
 
 	Value   []int64
 	ValueNI []byte `gae:",noindex"`
@@ -51,12 +54,12 @@ func toInt64(thing interface{}) int64 {
 	}
 }
 
-func fooShouldHave(ds datastore.Interface) func(interface{}, ...interface{}) string {
+func fooShouldHave(c context.Context) func(interface{}, ...interface{}) string {
 	return func(id interface{}, values ...interface{}) string {
 		f := &Foo{ID: toInt64(id)}
-		err := ds.Get(f)
+		err := ds.Get(c, f)
 		if len(values) == 0 {
-			return ShouldEqual(err, datastore.ErrNoSuchEntity)
+			return ShouldEqual(err, ds.ErrNoSuchEntity)
 		}
 
 		ret := ShouldBeNil(err)
@@ -71,18 +74,18 @@ func fooShouldHave(ds datastore.Interface) func(interface{}, ...interface{}) str
 	}
 }
 
-func fooSetTo(ds datastore.Interface) func(interface{}, ...interface{}) string {
+func fooSetTo(c context.Context) func(interface{}, ...interface{}) string {
 	return func(id interface{}, values ...interface{}) string {
 		f := &Foo{ID: toInt64(id)}
 		if len(values) == 0 {
-			return ShouldBeNil(ds.Delete(ds.KeyForObj(f)))
+			return ShouldBeNil(ds.Delete(c, ds.KeyForObj(c, f)))
 		}
 		if data, ok := values[0].([]byte); ok {
 			f.ValueNI = data
 		} else {
 			f.Value = toIntSlice(values)
 		}
-		return ShouldBeNil(ds.Put(f))
+		return ShouldBeNil(ds.Put(c, f))
 	}
 }
 
@@ -91,7 +94,7 @@ var (
 	dataSingleRoot = make([]*Foo, 20)
 	hugeField      = make([]byte, DefaultSizeBudget/8)
 	hugeData       = make([]*Foo, 11)
-	root           = datastore.MakeKey("something~else", "", "Parent", 1)
+	root           = ds.KeyContext{"something~else", ""}.MakeKey("Parent", 1)
 )
 
 func init() {
@@ -102,7 +105,6 @@ func init() {
 	}
 
 	rs := rand.NewSource(0)
-	root := datastore.MakeKey("something~else", "", "Parent", 1)
 	nums := make([]string, 20)
 	for i := range dataMultiRoot {
 		id := int64(i + 1)
@@ -127,22 +129,20 @@ func init() {
 	}
 }
 
-func mkds(data []*Foo) (under, over *count.DSCounter, ds datastore.Interface) {
-	c := memory.UseWithAppID(context.Background(), "something~else")
-	ds = datastore.Get(c)
+func mkds(data []*Foo) (under, over *count.DSCounter, c context.Context) {
+	c = memory.UseWithAppID(context.Background(), "something~else")
 
-	dataKey := ds.KeyForObj(data[0])
-	if err := ds.AllocateIDs(ds.NewIncompleteKeys(100, dataKey.Kind(), dataKey.Parent())); err != nil {
+	dataKey := ds.KeyForObj(c, data[0])
+	if err := ds.AllocateIDs(c, ds.NewIncompleteKeys(c, 100, dataKey.Kind(), dataKey.Parent())); err != nil {
 		panic(err)
 	}
-	if err := ds.PutMulti(data); err != nil {
+	if err := ds.Put(c, data); err != nil {
 		panic(err)
 	}
 
 	c, under = count.FilterRDS(c)
 	c = FilterRDS(c)
 	c, over = count.FilterRDS(c)
-	ds = datastore.Get(c)
 	return
 }
 
@@ -150,52 +150,46 @@ func TestTransactionBuffers(t *testing.T) {
 	t.Parallel()
 
 	Convey("Get/Put/Delete", t, func() {
-		under, over, ds := mkds(dataMultiRoot)
-		ds.Testable().SetTransactionRetryCount(1)
+		under, over, c := mkds(dataMultiRoot)
+		ds.GetTestable(c).SetTransactionRetryCount(1)
 
 		So(under.PutMulti.Total(), ShouldEqual, 0)
 		So(over.PutMulti.Total(), ShouldEqual, 0)
 
 		Convey("Good", func() {
 			Convey("read-only", func() {
-				So(ds.RunInTransaction(func(c context.Context) error {
-					ds := datastore.Get(c)
-
-					So(4, fooShouldHave(ds), dataMultiRoot[3].Value)
+				So(ds.RunInTransaction(c, func(c context.Context) error {
+					So(4, fooShouldHave(c), dataMultiRoot[3].Value)
 					return nil
 				}, nil), ShouldBeNil)
 			})
 
 			Convey("single-level read/write", func() {
-				So(ds.RunInTransaction(func(c context.Context) error {
-					ds := datastore.Get(c)
+				So(ds.RunInTransaction(c, func(c context.Context) error {
+					So(4, fooShouldHave(c), dataMultiRoot[3].Value)
 
-					So(4, fooShouldHave(ds), dataMultiRoot[3].Value)
+					So(4, fooSetTo(c), 1, 2, 3, 4)
 
-					So(4, fooSetTo(ds), 1, 2, 3, 4)
-
-					So(3, fooSetTo(ds), 1, 2, 3, 4)
+					So(3, fooSetTo(c), 1, 2, 3, 4)
 
 					// look! it remembers :)
-					So(4, fooShouldHave(ds), 1, 2, 3, 4)
+					So(4, fooShouldHave(c), 1, 2, 3, 4)
 					return nil
-				}, &datastore.TransactionOptions{XG: true}), ShouldBeNil)
+				}, &ds.TransactionOptions{XG: true}), ShouldBeNil)
 
 				// 2 because we are simulating a transaction failure
 				So(under.PutMulti.Total(), ShouldEqual, 2)
 
-				So(3, fooShouldHave(ds), 1, 2, 3, 4)
-				So(4, fooShouldHave(ds), 1, 2, 3, 4)
+				So(3, fooShouldHave(c), 1, 2, 3, 4)
+				So(4, fooShouldHave(c), 1, 2, 3, 4)
 			})
 
 			Convey("multi-level read/write", func() {
-				So(ds.RunInTransaction(func(c context.Context) error {
-					ds := datastore.Get(c)
+				So(ds.RunInTransaction(c, func(c context.Context) error {
+					So(3, fooShouldHave(c), dataMultiRoot[2].Value)
 
-					So(3, fooShouldHave(ds), dataMultiRoot[2].Value)
-
-					So(3, fooSetTo(ds), 1, 2, 3, 4)
-					So(7, fooSetTo(ds))
+					So(3, fooSetTo(c), 1, 2, 3, 4)
+					So(7, fooSetTo(c))
 
 					vals := []*Foo{
 						{ID: 793},
@@ -203,9 +197,9 @@ func TestTransactionBuffers(t *testing.T) {
 						{ID: 3},
 						{ID: 4},
 					}
-					So(ds.GetMulti(vals), ShouldResemble, errors.NewMultiError(
-						datastore.ErrNoSuchEntity,
-						datastore.ErrNoSuchEntity,
+					So(ds.Get(c, vals), ShouldResemble, errors.NewMultiError(
+						ds.ErrNoSuchEntity,
+						ds.ErrNoSuchEntity,
 						nil,
 						nil,
 					))
@@ -216,33 +210,30 @@ func TestTransactionBuffers(t *testing.T) {
 					So(vals[3].Value, ShouldResemble, dataSingleRoot[3].Value)
 
 					// inner, failing, transaction
-					So(ds.RunInTransaction(func(c context.Context) error {
-						ds := datastore.Get(c)
-
+					So(ds.RunInTransaction(c, func(c context.Context) error {
 						// we can see stuff written in the outer txn
-						So(7, fooShouldHave(ds))
-						So(3, fooShouldHave(ds), 1, 2, 3, 4)
+						So(7, fooShouldHave(c))
+						So(3, fooShouldHave(c), 1, 2, 3, 4)
 
-						So(3, fooSetTo(ds), 10, 20, 30, 40)
+						So(3, fooSetTo(c), 10, 20, 30, 40)
 
 						// disaster strikes!
 						return errors.New("whaaaa")
 					}, nil), ShouldErrLike, "whaaaa")
 
-					So(3, fooShouldHave(ds), 1, 2, 3, 4)
+					So(3, fooShouldHave(c), 1, 2, 3, 4)
 
 					// inner, successful, transaction
-					So(ds.RunInTransaction(func(c context.Context) error {
-						ds := datastore.Get(c)
-						So(3, fooShouldHave(ds), 1, 2, 3, 4)
-						So(3, fooSetTo(ds), 10, 20, 30, 40)
+					So(ds.RunInTransaction(c, func(c context.Context) error {
+						So(3, fooShouldHave(c), 1, 2, 3, 4)
+						So(3, fooSetTo(c), 10, 20, 30, 40)
 						return nil
 					}, nil), ShouldBeNil)
 
 					// now we see it
-					So(3, fooShouldHave(ds), 10, 20, 30, 40)
+					So(3, fooShouldHave(c), 10, 20, 30, 40)
 					return nil
-				}, &datastore.TransactionOptions{XG: true}), ShouldBeNil)
+				}, &ds.TransactionOptions{XG: true}), ShouldBeNil)
 
 				// 2 because we are simulating a transaction failure
 				So(under.PutMulti.Total(), ShouldEqual, 2)
@@ -250,30 +241,27 @@ func TestTransactionBuffers(t *testing.T) {
 
 				So(over.PutMulti.Total(), ShouldEqual, 8)
 
-				So(7, fooShouldHave(ds))
-				So(3, fooShouldHave(ds), 10, 20, 30, 40)
+				So(7, fooShouldHave(c))
+				So(3, fooShouldHave(c), 10, 20, 30, 40)
 			})
 
 			Convey("can allocate IDs from an inner transaction", func() {
 				nums := []int64{4, 8, 15, 16, 23, 42}
-				k := (*datastore.Key)(nil)
-				So(ds.RunInTransaction(func(c context.Context) error {
-					ds := datastore.Get(c)
-
-					So(ds.RunInTransaction(func(c context.Context) error {
-						ds := datastore.Get(c)
+				k := (*ds.Key)(nil)
+				So(ds.RunInTransaction(c, func(c context.Context) error {
+					So(ds.RunInTransaction(c, func(c context.Context) error {
 						f := &Foo{Value: nums}
-						So(ds.Put(f), ShouldBeNil)
-						k = ds.KeyForObj(f)
+						So(ds.Put(c, f), ShouldBeNil)
+						k = ds.KeyForObj(c, f)
 						return nil
 					}, nil), ShouldBeNil)
 
-					So(k.IntID(), fooShouldHave(ds), nums)
+					So(k.IntID(), fooShouldHave(c), nums)
 
 					return nil
 				}, nil), ShouldBeNil)
 
-				So(k.IntID(), fooShouldHave(ds), nums)
+				So(k.IntID(), fooShouldHave(c), nums)
 			})
 
 		})
@@ -281,33 +269,29 @@ func TestTransactionBuffers(t *testing.T) {
 		Convey("Bad", func() {
 
 			Convey("too many roots", func() {
-				So(ds.RunInTransaction(func(c context.Context) error {
-					ds := datastore.Get(c)
-
+				So(ds.RunInTransaction(c, func(c context.Context) error {
 					f := &Foo{ID: 7}
-					So(ds.Get(f), ShouldBeNil)
+					So(ds.Get(c, f), ShouldBeNil)
 					So(f, ShouldResemble, dataMultiRoot[6])
 
-					So(ds.RunInTransaction(func(c context.Context) error {
-						return datastore.Get(c).Get(&Foo{ID: 6})
+					So(ds.RunInTransaction(c, func(c context.Context) error {
+						return ds.Get(c, &Foo{ID: 5})
 					}, nil), ShouldErrLike, "too many entity groups")
 
 					f.Value = []int64{9}
-					So(ds.Put(f), ShouldBeNil)
+					So(ds.Put(c, f), ShouldBeNil)
 
 					return nil
 				}, nil), ShouldBeNil)
 
 				f := &Foo{ID: 7}
-				So(ds.Get(f), ShouldBeNil)
+				So(ds.Get(c, f), ShouldBeNil)
 				So(f.Value, ShouldResemble, []int64{9})
 			})
 
 			Convey("buffered errors never reach the datastore", func() {
-				So(ds.RunInTransaction(func(c context.Context) error {
-					ds := datastore.Get(c)
-
-					So(ds.Put(&Foo{ID: 1, Value: []int64{1, 2, 3, 4}}), ShouldBeNil)
+				So(ds.RunInTransaction(c, func(c context.Context) error {
+					So(ds.Put(c, &Foo{ID: 1, Value: []int64{1, 2, 3, 4}}), ShouldBeNil)
 					return errors.New("boop")
 				}, nil), ShouldErrLike, "boop")
 				So(under.PutMulti.Total(), ShouldEqual, 0)
@@ -323,72 +307,63 @@ func TestHuge(t *testing.T) {
 	t.Parallel()
 
 	Convey("testing datastore enforces thresholds", t, func() {
-		_, _, ds := mkds(dataMultiRoot)
+		_, _, c := mkds(dataMultiRoot)
 
 		Convey("exceeding inner txn size threshold still allows outer", func() {
-			So(ds.RunInTransaction(func(c context.Context) error {
-				ds := datastore.Get(c)
+			So(ds.RunInTransaction(c, func(c context.Context) error {
+				So(18, fooSetTo(c), hugeField)
 
-				So(18, fooSetTo(ds), hugeField)
-
-				So(ds.RunInTransaction(func(c context.Context) error {
-					ds := datastore.Get(c)
-					So(ds.PutMulti(hugeData), ShouldBeNil)
+				So(ds.RunInTransaction(c, func(c context.Context) error {
+					So(ds.Put(c, hugeData), ShouldBeNil)
 					return nil
 				}, nil), ShouldErrLike, ErrTransactionTooLarge)
 
 				return nil
-			}, &datastore.TransactionOptions{XG: true}), ShouldBeNil)
+			}, &ds.TransactionOptions{XG: true}), ShouldBeNil)
 
-			So(18, fooShouldHave(ds), hugeField)
+			So(18, fooShouldHave(c), hugeField)
 		})
 
 		Convey("exceeding inner txn count threshold still allows outer", func() {
-			So(ds.RunInTransaction(func(c context.Context) error {
-				ds := datastore.Get(c)
+			So(ds.RunInTransaction(c, func(c context.Context) error {
+				So(18, fooSetTo(c), hugeField)
 
-				So(18, fooSetTo(ds), hugeField)
-
-				So(ds.RunInTransaction(func(c context.Context) error {
-					ds := datastore.Get(c)
-					p := ds.MakeKey("mom", 1)
+				So(ds.RunInTransaction(c, func(c context.Context) error {
+					p := ds.MakeKey(c, "mom", 1)
 
 					// This will exceed the budget, since we've already done one write in
 					// the parent.
 					for i := 1; i <= DefaultWriteCountBudget; i++ {
-						So(ds.Put(&Foo{ID: int64(i), Parent: p}), ShouldBeNil)
+						So(ds.Put(c, &Foo{ID: int64(i), Parent: p}), ShouldBeNil)
 					}
 					return nil
 				}, nil), ShouldErrLike, ErrTransactionTooLarge)
 
 				return nil
-			}, &datastore.TransactionOptions{XG: true}), ShouldBeNil)
+			}, &ds.TransactionOptions{XG: true}), ShouldBeNil)
 
-			So(18, fooShouldHave(ds), hugeField)
+			So(18, fooShouldHave(c), hugeField)
 		})
 
 		Convey("exceeding threshold in the parent, then retreating in the child is okay", func() {
-			So(ds.RunInTransaction(func(c context.Context) error {
-				ds := datastore.Get(c)
-
-				So(ds.PutMulti(hugeData), ShouldBeNil)
-				So(18, fooSetTo(ds), hugeField)
+			So(ds.RunInTransaction(c, func(c context.Context) error {
+				So(ds.Put(c, hugeData), ShouldBeNil)
+				So(18, fooSetTo(c), hugeField)
 
 				// We're over threshold! But the child will delete most of this and
 				// bring us back to normal.
-				So(ds.RunInTransaction(func(c context.Context) error {
-					ds := datastore.Get(c)
-					keys := make([]*datastore.Key, len(hugeData))
+				So(ds.RunInTransaction(c, func(c context.Context) error {
+					keys := make([]*ds.Key, len(hugeData))
 					for i, d := range hugeData {
-						keys[i] = ds.KeyForObj(d)
+						keys[i] = ds.KeyForObj(c, d)
 					}
-					return ds.DeleteMulti(keys)
+					return ds.Delete(c, keys)
 				}, nil), ShouldBeNil)
 
 				return nil
-			}, &datastore.TransactionOptions{XG: true}), ShouldBeNil)
+			}, &ds.TransactionOptions{XG: true}), ShouldBeNil)
 
-			So(18, fooShouldHave(ds), hugeField)
+			So(18, fooShouldHave(c), hugeField)
 		})
 	})
 }
@@ -398,44 +373,42 @@ func TestQuerySupport(t *testing.T) {
 
 	Convey("Queries", t, func() {
 		Convey("Good", func() {
-			q := datastore.NewQuery("Foo").Ancestor(root)
+			q := ds.NewQuery("Foo").Ancestor(root)
 
 			Convey("normal", func() {
-				_, _, ds := mkds(dataSingleRoot)
-				ds.Testable().AddIndexes(&datastore.IndexDefinition{
+				_, _, c := mkds(dataSingleRoot)
+				ds.GetTestable(c).AddIndexes(&ds.IndexDefinition{
 					Kind:     "Foo",
 					Ancestor: true,
-					SortBy: []datastore.IndexColumn{
+					SortBy: []ds.IndexColumn{
 						{Property: "Value"},
 					},
 				})
 
-				So(ds.RunInTransaction(func(c context.Context) error {
-					ds := datastore.Get(c)
-
+				So(ds.RunInTransaction(c, func(c context.Context) error {
 					q = q.Lt("Value", 400000000000000000)
 
 					vals := []*Foo{}
-					So(ds.GetAll(q, &vals), ShouldBeNil)
+					So(ds.GetAll(c, q, &vals), ShouldBeNil)
 					So(len(vals), ShouldEqual, 8)
 
-					count, err := ds.Count(q)
+					count, err := ds.Count(c, q)
 					So(err, ShouldBeNil)
 					So(count, ShouldEqual, 8)
 
 					f := &Foo{ID: 1, Parent: root}
-					So(ds.Get(f), ShouldBeNil)
+					So(ds.Get(c, f), ShouldBeNil)
 					f.Value = append(f.Value, 100)
-					So(ds.Put(f), ShouldBeNil)
+					So(ds.Put(c, f), ShouldBeNil)
 
 					// Wowee, zowee, merged queries!
 					vals2 := []*Foo{}
-					So(ds.GetAll(q, &vals2), ShouldBeNil)
+					So(ds.GetAll(c, q, &vals2), ShouldBeNil)
 					So(len(vals2), ShouldEqual, 9)
 					So(vals2[0], ShouldResemble, f)
 
 					vals2 = []*Foo{}
-					So(ds.GetAll(q.Limit(2).Offset(1), &vals2), ShouldBeNil)
+					So(ds.GetAll(c, q.Limit(2).Offset(1), &vals2), ShouldBeNil)
 					So(len(vals2), ShouldEqual, 2)
 					So(vals2, ShouldResemble, vals[:2])
 
@@ -444,33 +417,31 @@ func TestQuerySupport(t *testing.T) {
 			})
 
 			Convey("keysOnly", func() {
-				_, _, ds := mkds([]*Foo{
+				_, _, c := mkds([]*Foo{
 					{ID: 2, Parent: root, Value: []int64{1, 2, 3, 4, 5, 6, 7}},
 					{ID: 3, Parent: root, Value: []int64{3, 4, 5, 6, 7, 8, 9}},
 					{ID: 4, Parent: root, Value: []int64{3, 5, 7, 9, 11, 100, 1}},
 					{ID: 5, Parent: root, Value: []int64{1, 70, 101}},
 				})
 
-				So(ds.RunInTransaction(func(c context.Context) error {
-					ds := datastore.Get(c)
-
+				So(ds.RunInTransaction(c, func(c context.Context) error {
 					q = q.Eq("Value", 1).KeysOnly(true)
-					vals := []*datastore.Key{}
-					So(ds.GetAll(q, &vals), ShouldBeNil)
+					vals := []*ds.Key{}
+					So(ds.GetAll(c, q, &vals), ShouldBeNil)
 					So(len(vals), ShouldEqual, 3)
-					So(vals[2], ShouldResemble, ds.MakeKey("Parent", 1, "Foo", 5))
+					So(vals[2], ShouldResemble, ds.MakeKey(c, "Parent", 1, "Foo", 5))
 
 					// can remove keys
-					So(ds.Delete(ds.MakeKey("Parent", 1, "Foo", 2)), ShouldBeNil)
-					vals = []*datastore.Key{}
-					So(ds.GetAll(q, &vals), ShouldBeNil)
+					So(ds.Delete(c, ds.MakeKey(c, "Parent", 1, "Foo", 2)), ShouldBeNil)
+					vals = []*ds.Key{}
+					So(ds.GetAll(c, q, &vals), ShouldBeNil)
 					So(len(vals), ShouldEqual, 2)
 
 					// and add new ones
-					So(ds.Put(&Foo{ID: 1, Parent: root, Value: []int64{1, 7, 100}}), ShouldBeNil)
-					So(ds.Put(&Foo{ID: 7, Parent: root, Value: []int64{20, 1}}), ShouldBeNil)
-					vals = []*datastore.Key{}
-					So(ds.GetAll(q, &vals), ShouldBeNil)
+					So(ds.Put(c, &Foo{ID: 1, Parent: root, Value: []int64{1, 7, 100}}), ShouldBeNil)
+					So(ds.Put(c, &Foo{ID: 7, Parent: root, Value: []int64{20, 1}}), ShouldBeNil)
+					vals = []*ds.Key{}
+					So(ds.GetAll(c, q, &vals), ShouldBeNil)
 					So(len(vals), ShouldEqual, 4)
 
 					So(vals[0].IntID(), ShouldEqual, 1)
@@ -483,32 +454,30 @@ func TestQuerySupport(t *testing.T) {
 			})
 
 			Convey("project", func() {
-				_, _, ds := mkds([]*Foo{
+				_, _, c := mkds([]*Foo{
 					{ID: 2, Parent: root, Value: []int64{1, 2, 3, 4, 5, 6, 7}},
 					{ID: 3, Parent: root, Value: []int64{3, 4, 5, 6, 7, 8, 9}},
 					{ID: 4, Parent: root, Value: []int64{3, 5, 7, 9, 11, 100, 1}},
 					{ID: 5, Parent: root, Value: []int64{1, 70, 101}},
 				})
 
-				ds.Testable().AddIndexes(&datastore.IndexDefinition{
+				ds.GetTestable(c).AddIndexes(&ds.IndexDefinition{
 					Kind:     "Foo",
 					Ancestor: true,
-					SortBy: []datastore.IndexColumn{
+					SortBy: []ds.IndexColumn{
 						{Property: "Value"},
 					},
 				})
 
-				So(ds.RunInTransaction(func(c context.Context) error {
-					ds := datastore.Get(c)
-
-					count, err := ds.Count(q.Project("Value"))
+				So(ds.RunInTransaction(c, func(c context.Context) error {
+					count, err := ds.Count(c, q.Project("Value"))
 					So(err, ShouldBeNil)
 					So(count, ShouldEqual, 24)
 
 					q = q.Project("Value").Offset(4).Limit(10)
 
-					vals := []datastore.PropertyMap{}
-					So(ds.GetAll(q, &vals), ShouldBeNil)
+					vals := []ds.PropertyMap{}
+					So(ds.GetAll(c, q, &vals), ShouldBeNil)
 					So(len(vals), ShouldEqual, 10)
 
 					expect := []struct {
@@ -528,16 +497,16 @@ func TestQuerySupport(t *testing.T) {
 					}
 
 					for i, pm := range vals {
-						So(datastore.GetMetaDefault(pm, "key", nil), ShouldResemble,
-							ds.MakeKey("Parent", 1, "Foo", expect[i].id))
+						So(ds.GetMetaDefault(pm, "key", nil), ShouldResemble,
+							ds.MakeKey(c, "Parent", 1, "Foo", expect[i].id))
 						So(pm.Slice("Value")[0].Value(), ShouldEqual, expect[i].val)
 					}
 
 					// should remove 4 entries, but there are plenty more to fill
-					So(ds.Delete(ds.MakeKey("Parent", 1, "Foo", 2)), ShouldBeNil)
+					So(ds.Delete(c, ds.MakeKey(c, "Parent", 1, "Foo", 2)), ShouldBeNil)
 
-					vals = []datastore.PropertyMap{}
-					So(ds.GetAll(q, &vals), ShouldBeNil)
+					vals = []ds.PropertyMap{}
+					So(ds.GetAll(c, q, &vals), ShouldBeNil)
 					So(len(vals), ShouldEqual, 10)
 
 					expect = []struct {
@@ -559,15 +528,15 @@ func TestQuerySupport(t *testing.T) {
 					}
 
 					for i, pm := range vals {
-						So(datastore.GetMetaDefault(pm, "key", nil), ShouldResemble,
-							ds.MakeKey("Parent", 1, "Foo", expect[i].id))
+						So(ds.GetMetaDefault(pm, "key", nil), ShouldResemble,
+							ds.MakeKey(c, "Parent", 1, "Foo", expect[i].id))
 						So(pm.Slice("Value")[0].Value(), ShouldEqual, expect[i].val)
 					}
 
-					So(ds.Put(&Foo{ID: 1, Parent: root, Value: []int64{3, 9}}), ShouldBeNil)
+					So(ds.Put(c, &Foo{ID: 1, Parent: root, Value: []int64{3, 9}}), ShouldBeNil)
 
-					vals = []datastore.PropertyMap{}
-					So(ds.GetAll(q, &vals), ShouldBeNil)
+					vals = []ds.PropertyMap{}
+					So(ds.GetAll(c, q, &vals), ShouldBeNil)
 					So(len(vals), ShouldEqual, 10)
 
 					expect = []struct {
@@ -589,8 +558,8 @@ func TestQuerySupport(t *testing.T) {
 					}
 
 					for i, pm := range vals {
-						So(datastore.GetMetaDefault(pm, "key", nil), ShouldResemble,
-							ds.MakeKey("Parent", 1, "Foo", expect[i].id))
+						So(ds.GetMetaDefault(pm, "key", nil), ShouldResemble,
+							ds.MakeKey(c, "Parent", 1, "Foo", expect[i].id))
 						So(pm.Slice("Value")[0].Value(), ShouldEqual, expect[i].val)
 					}
 
@@ -600,28 +569,26 @@ func TestQuerySupport(t *testing.T) {
 			})
 
 			Convey("project+distinct", func() {
-				_, _, ds := mkds([]*Foo{
+				_, _, c := mkds([]*Foo{
 					{ID: 2, Parent: root, Value: []int64{1, 2, 3, 4, 5, 6, 7}},
 					{ID: 3, Parent: root, Value: []int64{3, 4, 5, 6, 7, 8, 9}},
 					{ID: 4, Parent: root, Value: []int64{3, 5, 7, 9, 11, 100, 1}},
 					{ID: 5, Parent: root, Value: []int64{1, 70, 101}},
 				})
 
-				ds.Testable().AddIndexes(&datastore.IndexDefinition{
+				ds.GetTestable(c).AddIndexes(&ds.IndexDefinition{
 					Kind:     "Foo",
 					Ancestor: true,
-					SortBy: []datastore.IndexColumn{
+					SortBy: []ds.IndexColumn{
 						{Property: "Value"},
 					},
 				})
 
-				So(ds.RunInTransaction(func(c context.Context) error {
-					ds := datastore.Get(c)
-
+				So(ds.RunInTransaction(c, func(c context.Context) error {
 					q = q.Project("Value").Distinct(true)
 
-					vals := []datastore.PropertyMap{}
-					So(ds.GetAll(q, &vals), ShouldBeNil)
+					vals := []ds.PropertyMap{}
+					So(ds.GetAll(c, q, &vals), ShouldBeNil)
 					So(len(vals), ShouldEqual, 13)
 
 					expect := []struct {
@@ -645,8 +612,8 @@ func TestQuerySupport(t *testing.T) {
 
 					for i, pm := range vals {
 						So(pm.Slice("Value")[0].Value(), ShouldEqual, expect[i].val)
-						So(datastore.GetMetaDefault(pm, "key", nil), ShouldResemble,
-							ds.MakeKey("Parent", 1, "Foo", expect[i].id))
+						So(ds.GetMetaDefault(pm, "key", nil), ShouldResemble,
+							ds.MakeKey(c, "Parent", 1, "Foo", expect[i].id))
 					}
 
 					return nil
@@ -661,35 +628,33 @@ func TestQuerySupport(t *testing.T) {
 					{ID: 5, Parent: root, Value: []int64{1, 70, 101}},
 				}
 
-				_, _, ds := mkds(data)
+				_, _, c := mkds(data)
 
 				q = q.Eq("Value", 2, 3)
 
-				So(ds.RunInTransaction(func(c context.Context) error {
-					ds := datastore.Get(c)
-
+				So(ds.RunInTransaction(c, func(c context.Context) error {
 					vals := []*Foo{}
-					So(ds.GetAll(q, &vals), ShouldBeNil)
+					So(ds.GetAll(c, q, &vals), ShouldBeNil)
 					So(len(vals), ShouldEqual, 2)
 
 					So(vals[0], ShouldResemble, data[0])
 					So(vals[1], ShouldResemble, data[2])
 
 					foo2 := &Foo{ID: 2, Parent: root, Value: []int64{2, 3}}
-					So(ds.Put(foo2), ShouldBeNil)
+					So(ds.Put(c, foo2), ShouldBeNil)
 
 					vals = []*Foo{}
-					So(ds.GetAll(q, &vals), ShouldBeNil)
+					So(ds.GetAll(c, q, &vals), ShouldBeNil)
 					So(len(vals), ShouldEqual, 2)
 
 					So(vals[0], ShouldResemble, foo2)
 					So(vals[1], ShouldResemble, data[2])
 
 					foo1 := &Foo{ID: 1, Parent: root, Value: []int64{2, 3}}
-					So(ds.Put(foo1), ShouldBeNil)
+					So(ds.Put(c, foo1), ShouldBeNil)
 
 					vals = []*Foo{}
-					So(ds.GetAll(q, &vals), ShouldBeNil)
+					So(ds.GetAll(c, q, &vals), ShouldBeNil)
 					So(len(vals), ShouldEqual, 3)
 
 					So(vals[0], ShouldResemble, foo1)
@@ -709,26 +674,24 @@ func TestQuerySupport(t *testing.T) {
 
 			Convey("project+extra orders", func() {
 
-				_, _, ds := mkds(projectData)
-				ds.Testable().AddIndexes(&datastore.IndexDefinition{
+				_, _, c := mkds(projectData)
+				ds.GetTestable(c).AddIndexes(&ds.IndexDefinition{
 					Kind:     "Foo",
 					Ancestor: true,
-					SortBy: []datastore.IndexColumn{
+					SortBy: []ds.IndexColumn{
 						{Property: "Sort", Descending: true},
 						{Property: "Value", Descending: true},
 					},
 				})
 
 				q = q.Project("Value").Order("-Sort", "-Value").Distinct(true)
-				So(ds.RunInTransaction(func(c context.Context) error {
-					ds = datastore.Get(c)
-
-					So(ds.Put(&Foo{
+				So(ds.RunInTransaction(c, func(c context.Context) error {
+					So(ds.Put(c, &Foo{
 						ID: 1, Parent: root, Value: []int64{0, 1, 1000},
 						Sort: []string{"zz"}}), ShouldBeNil)
 
-					vals := []datastore.PropertyMap{}
-					So(ds.GetAll(q, &vals), ShouldBeNil)
+					vals := []ds.PropertyMap{}
+					So(ds.GetAll(c, q, &vals), ShouldBeNil)
 
 					expect := []struct {
 						id  int64
@@ -753,8 +716,8 @@ func TestQuerySupport(t *testing.T) {
 
 					for i, pm := range vals {
 						So(pm.Slice("Value")[0].Value(), ShouldEqual, expect[i].val)
-						So(datastore.GetMetaDefault(pm, "key", nil), ShouldResemble,
-							ds.MakeKey("Parent", 1, "Foo", expect[i].id))
+						So(ds.GetMetaDefault(pm, "key", nil), ShouldResemble,
+							ds.MakeKey(c, "Parent", 1, "Foo", expect[i].id))
 					}
 
 					return nil
@@ -770,25 +733,23 @@ func TestQuerySupport(t *testing.T) {
 					{ID: 2, Parent: root, Value: []int64{2, 3, 5, 6}, Sort: []string{"z"}},
 				}
 
-				_, _, ds := mkds(data)
-				ds.Testable().AddIndexes(&datastore.IndexDefinition{
+				_, _, c := mkds(data)
+				ds.GetTestable(c).AddIndexes(&ds.IndexDefinition{
 					Kind:     "Foo",
 					Ancestor: true,
-					SortBy: []datastore.IndexColumn{
+					SortBy: []ds.IndexColumn{
 						{Property: "Value"},
 					},
 				})
 
 				q = q.Gt("Value", 2).Limit(2)
 
-				So(ds.RunInTransaction(func(c context.Context) error {
-					ds = datastore.Get(c)
-
+				So(ds.RunInTransaction(c, func(c context.Context) error {
 					foo1 := &Foo{ID: 3, Parent: root, Value: []int64{0, 2, 3, 4}}
-					So(ds.Put(foo1), ShouldBeNil)
+					So(ds.Put(c, foo1), ShouldBeNil)
 
 					vals := []*Foo{}
-					So(ds.GetAll(q, &vals), ShouldBeNil)
+					So(ds.GetAll(c, q, &vals), ShouldBeNil)
 					So(len(vals), ShouldEqual, 2)
 
 					So(vals[0], ShouldResemble, data[0])
@@ -799,38 +760,37 @@ func TestQuerySupport(t *testing.T) {
 			})
 
 			Convey("keysOnly+extra orders", func() {
-				_, _, ds := mkds(projectData)
-				ds.Testable().AddIndexes(&datastore.IndexDefinition{
+				_, _, c := mkds(projectData)
+				ds.GetTestable(c).AddIndexes(&ds.IndexDefinition{
 					Kind:     "Foo",
 					Ancestor: true,
-					SortBy: []datastore.IndexColumn{
+					SortBy: []ds.IndexColumn{
 						{Property: "Sort"},
 					},
 				})
 
 				q = q.Order("Sort").KeysOnly(true)
 
-				So(ds.RunInTransaction(func(c context.Context) error {
-					ds = datastore.Get(c)
-
-					So(ds.Put(&Foo{
+				So(ds.RunInTransaction(c, func(c context.Context) error {
+					So(ds.Put(c, &Foo{
 						ID: 1, Parent: root, Value: []int64{0, 1, 1000},
 						Sort: []string{"x", "zz"}}), ShouldBeNil)
 
-					So(ds.Put(&Foo{
+					So(ds.Put(c, &Foo{
 						ID: 2, Parent: root, Value: []int64{0, 1, 1000},
 						Sort: []string{"zz", "zzz", "zzzz"}}), ShouldBeNil)
 
-					vals := []*datastore.Key{}
-					So(ds.GetAll(q, &vals), ShouldBeNil)
+					vals := []*ds.Key{}
+					So(ds.GetAll(c, q, &vals), ShouldBeNil)
 					So(len(vals), ShouldEqual, 5)
 
-					So(vals, ShouldResemble, []*datastore.Key{
-						ds.MakeKey("Parent", 1, "Foo", 4),
-						ds.MakeKey("Parent", 1, "Foo", 3),
-						ds.MakeKey("Parent", 1, "Foo", 5),
-						ds.MakeKey("Parent", 1, "Foo", 1),
-						ds.MakeKey("Parent", 1, "Foo", 2),
+					kc := ds.GetKeyContext(c)
+					So(vals, ShouldResemble, []*ds.Key{
+						kc.MakeKey("Parent", 1, "Foo", 4),
+						kc.MakeKey("Parent", 1, "Foo", 3),
+						kc.MakeKey("Parent", 1, "Foo", 5),
+						kc.MakeKey("Parent", 1, "Foo", 1),
+						kc.MakeKey("Parent", 1, "Foo", 2),
 					})
 
 					return nil
@@ -838,67 +798,60 @@ func TestQuerySupport(t *testing.T) {
 			})
 
 			Convey("query accross nested transactions", func() {
-				_, _, ds := mkds(projectData)
+				_, _, c := mkds(projectData)
 				q = q.Eq("Value", 2, 3)
 
 				foo1 := &Foo{ID: 1, Parent: root, Value: []int64{2, 3}}
 				foo7 := &Foo{ID: 7, Parent: root, Value: []int64{2, 3}}
 
-				So(ds.RunInTransaction(func(c context.Context) error {
-					ds := datastore.Get(c)
-
-					So(ds.Put(foo1), ShouldBeNil)
+				So(ds.RunInTransaction(c, func(c context.Context) error {
+					So(ds.Put(c, foo1), ShouldBeNil)
 
 					vals := []*Foo{}
-					So(ds.GetAll(q, &vals), ShouldBeNil)
+					So(ds.GetAll(c, q, &vals), ShouldBeNil)
 					So(vals, ShouldResemble, []*Foo{foo1, projectData[0], projectData[2]})
 
-					So(ds.RunInTransaction(func(c context.Context) error {
-						ds := datastore.Get(c)
-
+					So(ds.RunInTransaction(c, func(c context.Context) error {
 						vals := []*Foo{}
-						So(ds.GetAll(q, &vals), ShouldBeNil)
+						So(ds.GetAll(c, q, &vals), ShouldBeNil)
 						So(vals, ShouldResemble, []*Foo{foo1, projectData[0], projectData[2]})
 
-						So(ds.Delete(ds.MakeKey("Parent", 1, "Foo", 4)), ShouldBeNil)
-						So(ds.Put(foo7), ShouldBeNil)
+						So(ds.Delete(c, ds.MakeKey(c, "Parent", 1, "Foo", 4)), ShouldBeNil)
+						So(ds.Put(c, foo7), ShouldBeNil)
 
 						vals = []*Foo{}
-						So(ds.GetAll(q, &vals), ShouldBeNil)
+						So(ds.GetAll(c, q, &vals), ShouldBeNil)
 						So(vals, ShouldResemble, []*Foo{foo1, projectData[0], foo7})
 
 						return nil
 					}, nil), ShouldBeNil)
 
 					vals = []*Foo{}
-					So(ds.GetAll(q, &vals), ShouldBeNil)
+					So(ds.GetAll(c, q, &vals), ShouldBeNil)
 					So(vals, ShouldResemble, []*Foo{foo1, projectData[0], foo7})
 
 					return nil
 				}, nil), ShouldBeNil)
 
 				vals := []*Foo{}
-				So(ds.GetAll(q, &vals), ShouldBeNil)
+				So(ds.GetAll(c, q, &vals), ShouldBeNil)
 				So(vals, ShouldResemble, []*Foo{foo1, projectData[0], foo7})
 
 			})
 
 			Convey("start transaction from inside query", func() {
-				_, _, ds := mkds(projectData)
-				So(ds.RunInTransaction(func(c context.Context) error {
-					ds := datastore.Get(c)
-
-					q := datastore.NewQuery("Foo").Ancestor(root)
-					return ds.Run(q, func(pm datastore.PropertyMap) {
-						So(ds.RunInTransaction(func(c context.Context) error {
-							ds := datastore.Get(c)
-							pm["Value"] = append(pm.Slice("Value"), datastore.MkProperty("wat"))
-							return ds.Put(pm)
+				_, _, c := mkds(projectData)
+				So(ds.RunInTransaction(c, func(c context.Context) error {
+					q := ds.NewQuery("Foo").Ancestor(root)
+					return ds.Run(c, q, func(pm ds.PropertyMap) {
+						So(ds.RunInTransaction(c, func(c context.Context) error {
+							pm["Value"] = append(pm.Slice("Value"), ds.MkProperty("wat"))
+							return ds.Put(c, pm)
 						}, nil), ShouldBeNil)
 					})
-				}, &datastore.TransactionOptions{XG: true}), ShouldBeNil)
+				}, &ds.TransactionOptions{XG: true}), ShouldBeNil)
 
-				So(ds.Run(datastore.NewQuery("Foo"), func(pm datastore.PropertyMap) {
+				So(ds.Run(c, ds.NewQuery("Foo"), func(pm ds.PropertyMap) {
 					val := pm.Slice("Value")
 					So(val[len(val)-1].Value(), ShouldResemble, "wat")
 				}), ShouldBeNil)

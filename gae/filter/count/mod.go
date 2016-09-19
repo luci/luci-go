@@ -24,10 +24,10 @@ type ModuleCounter struct {
 type modCounter struct {
 	c *ModuleCounter
 
-	mod module.Interface
+	mod module.RawInterface
 }
 
-var _ module.Interface = (*modCounter)(nil)
+var _ module.RawInterface = (*modCounter)(nil)
 
 func (m *modCounter) List() ([]string, error) {
 	ret, err := m.mod.List()
@@ -64,7 +64,7 @@ func (m *modCounter) Stop(mod, ver string) error {
 // FilterModule installs a counter Module filter in the context.
 func FilterModule(c context.Context) (context.Context, *ModuleCounter) {
 	state := &ModuleCounter{}
-	return module.AddFilters(c, func(ic context.Context, mod module.Interface) module.Interface {
+	return module.AddFilters(c, func(ic context.Context, mod module.RawInterface) module.RawInterface {
 		return &modCounter{state, mod}
 	}), state
 }

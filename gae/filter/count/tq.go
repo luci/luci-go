@@ -42,8 +42,8 @@ func (t *tqCounter) Stats(queueNames []string, cb tq.RawStatsCB) error {
 	return t.c.Stats.up(t.tq.Stats(queueNames, cb))
 }
 
-func (t *tqCounter) Testable() tq.Testable {
-	return t.tq.Testable()
+func (t *tqCounter) GetTestable() tq.Testable {
+	return t.tq.GetTestable()
 }
 
 // FilterTQ installs a counter TaskQueue filter in the context.

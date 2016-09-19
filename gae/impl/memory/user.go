@@ -28,14 +28,14 @@ type userImpl struct {
 	data *userData
 }
 
-var _ user.Interface = (*userImpl)(nil)
+var _ user.RawInterface = (*userImpl)(nil)
 
-// useUser adds a user.Interface implementation to context, accessible
-// by user.Get(c)
+// useUser adds a user.RawInterface implementation to context, accessible
+// by user.Raw(c) or the exported user methods.
 func useUser(c context.Context) context.Context {
 	data := &userData{}
 
-	return user.SetFactory(c, func(ic context.Context) user.Interface {
+	return user.SetFactory(c, func(ic context.Context) user.RawInterface {
 		return &userImpl{data}
 	})
 }
@@ -83,9 +83,7 @@ func (u *userImpl) OAuthConsumerKey() (string, error) {
 	return "", fmt.Errorf("OAuthConsumerKey is deprecated")
 }
 
-func (u *userImpl) Testable() user.Testable {
-	return u
-}
+func (u *userImpl) GetTestable() user.Testable { return u }
 
 func (u *userImpl) SetUser(user *user.User) {
 	u.data.Lock()

@@ -9,7 +9,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
+
 	"golang.org/x/net/context"
 )
 
@@ -19,7 +20,7 @@ func TestRaceGetPut(t *testing.T) {
 	value := int32(0)
 	num := int32(0)
 
-	ds := datastore.Get(Use(context.Background()))
+	c := Use(context.Background())
 
 	wg := sync.WaitGroup{}
 
@@ -28,13 +29,11 @@ func TestRaceGetPut(t *testing.T) {
 		go func() {
 			defer wg.Done()
 
-			err := ds.RunInTransaction(func(c context.Context) error {
+			err := ds.RunInTransaction(c, func(c context.Context) error {
 				atomic.AddInt32(&num, 1)
 
-				ds := datastore.Get(c)
-
-				obj := pmap("$key", ds.MakeKey("Obj", 1))
-				if err := ds.Get(obj); err != nil && err != datastore.ErrNoSuchEntity {
+				obj := pmap("$key", ds.MakeKey(c, "Obj", 1))
+				if err := ds.Get(c, obj); err != nil && err != ds.ErrNoSuchEntity {
 					t.Fatal("error get", err)
 				}
 				cur := int64(0)
@@ -45,8 +44,8 @@ func TestRaceGetPut(t *testing.T) {
 				cur++
 				obj["Value"] = prop(cur)
 
-				return ds.Put(obj)
-			}, &datastore.TransactionOptions{Attempts: 200})
+				return ds.Put(c, obj)
+			}, &ds.TransactionOptions{Attempts: 200})
 
 			if err != nil {
 				t.Fatal("error during transaction", err)
@@ -57,8 +56,8 @@ func TestRaceGetPut(t *testing.T) {
 	}
 	wg.Wait()
 
-	obj := pmap("$key", ds.MakeKey("Obj", 1))
-	if ds.Get(obj) != nil {
+	obj := pmap("$key", ds.MakeKey(c, "Obj", 1))
+	if ds.Get(c, obj) != nil {
 		t.FailNow()
 	}
 	t.Logf("Ran %d inner functions", num)
@@ -70,7 +69,7 @@ func TestRaceGetPut(t *testing.T) {
 func TestRaceNonConflictingPuts(t *testing.T) {
 	t.Parallel()
 
-	ds := datastore.Get(Use(context.Background()))
+	c := Use(context.Background())
 
 	num := int32(0)
 
@@ -81,9 +80,8 @@ func TestRaceNonConflictingPuts(t *testing.T) {
 		go func() {
 			defer wg.Done()
 
-			err := ds.RunInTransaction(func(c context.Context) error {
-				ds := datastore.Get(c)
-				return ds.Put(pmap(
+			err := ds.RunInTransaction(c, func(c context.Context) error {
+				return ds.Put(c, pmap(
 					"$kind", "Thing", Next,
 					"Value", 100))
 			}, nil)

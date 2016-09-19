@@ -5,7 +5,8 @@
 package meta
 
 import (
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
+
 	"golang.org/x/net/context"
 )
 
@@ -13,9 +14,9 @@ import (
 // appengine. You shouldn't need to use this struct directly, but instead should
 // use GetEntityGroupVersion.
 type EntityGroupMeta struct {
-	kind   string         `gae:"$kind,__entity_group__"`
-	id     int64          `gae:"$id,1"`
-	Parent *datastore.Key `gae:"$parent"`
+	kind   string  `gae:"$kind,__entity_group__"`
+	id     int64   `gae:"$id,1"`
+	Parent *ds.Key `gae:"$parent"`
 
 	Version int64 `gae:"__version__"`
 }
@@ -23,12 +24,11 @@ type EntityGroupMeta struct {
 // GetEntityGroupVersion returns the entity group version for the entity group
 // containing root. If the entity group doesn't exist, this function will return
 // zero and a nil error.
-func GetEntityGroupVersion(c context.Context, key *datastore.Key) (int64, error) {
-	ds := datastore.Get(c)
+func GetEntityGroupVersion(c context.Context, key *ds.Key) (int64, error) {
 	egm := &EntityGroupMeta{Parent: key.Root()}
-	err := ds.Get(egm)
+	err := ds.Get(c, egm)
 	ret := egm.Version
-	if err == datastore.ErrNoSuchEntity {
+	if err == ds.ErrNoSuchEntity {
 		// this is OK for callers. The version of the entity group is effectively 0
 		// in this case.
 		err = nil

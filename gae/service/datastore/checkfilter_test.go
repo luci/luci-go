@@ -28,7 +28,7 @@ func TestCheckFilter(t *testing.T) {
 		// the panics observed in the tests below would actually be sucessful calls
 		// to the implementation.
 		c := SetRaw(info.Set(context.Background(), fakeInfo{}), fakeRDS{})
-		rds := GetRaw(c) // has checkFilter
+		rds := Raw(c) // has checkFilter
 		So(rds, ShouldNotBeNil)
 
 		Convey("RunInTransaction", func() {
@@ -64,7 +64,7 @@ func TestCheckFilter(t *testing.T) {
 			So(rds.GetMulti([]*Key{mkKey("", "", "", "")}, nil, nil).Error(), ShouldContainSubstring, "is nil")
 
 			// this is in the wrong aid/ns
-			keys := []*Key{MakeKey("wut", "wrong", "Kind", 1)}
+			keys := []*Key{KeyContext{"wut", "wrong"}.MakeKey("Kind", 1)}
 			So(rds.GetMulti(keys, nil, func(pm PropertyMap, err error) error {
 				So(pm, ShouldBeNil)
 				So(err, ShouldEqual, ErrInvalidKey)

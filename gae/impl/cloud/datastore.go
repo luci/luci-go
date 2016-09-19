@@ -12,9 +12,10 @@ import (
 
 	"github.com/luci/luci-go/common/errors"
 
-	"cloud.google.com/go/datastore"
 	ds "github.com/luci/gae/service/datastore"
-	infoS "github.com/luci/gae/service/info"
+	"github.com/luci/gae/service/info"
+
+	"cloud.google.com/go/datastore"
 
 	"golang.org/x/net/context"
 )
@@ -24,34 +25,31 @@ type cloudDatastore struct {
 }
 
 func (cds *cloudDatastore) use(c context.Context) context.Context {
-	return ds.SetRawFactory(c, func(ic context.Context, wantTxn bool) ds.RawInterface {
-		inf := infoS.Get(ic)
-		if ns, ok := inf.GetNamespace(); ok {
+	return ds.SetRawFactory(c, func(ic context.Context) ds.RawInterface {
+		if ns := info.GetNamespace(ic); ns != "" {
 			ic = datastore.WithNamespace(ic, ns)
 		}
 
-		bds := boundDatastore{
+		return &boundDatastore{
 			Context:        ic,
 			cloudDatastore: cds,
-			appID:          inf.FullyQualifiedAppID(),
+			transaction:    datastoreTransaction(ic),
+			kc:             ds.GetKeyContext(ic),
 		}
-		if wantTxn {
-			bds.transaction = datastoreTransaction(ic)
-		}
-		return &bds
 	})
 }
 
 // boundDatastore is a bound instance of the cloudDatastore installed in the
 // Context.
 type boundDatastore struct {
+	context.Context
+
 	// Context is the bound user Context. It includes the datastore namespace, if
 	// one is set.
-	context.Context
 	*cloudDatastore
 
-	appID       string
 	transaction *datastore.Transaction
+	kc          ds.KeyContext
 }
 
 func (bds *boundDatastore) AllocateIDs(keys []*ds.Key, cb ds.NewKeyCB) error {
@@ -119,7 +117,11 @@ func (bds *boundDatastore) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
 			return normalizeError(err)
 		}
 
-		if err := cb(bds.nativeKeysToGAE(nativeKey)[0], npls.pmap, cursorFn); err != nil {
+		var pmap ds.PropertyMap
+		if npls != nil {
+			pmap = npls.pmap
+		}
+		if err := cb(bds.nativeKeysToGAE(nativeKey)[0], pmap, cursorFn); err != nil {
 			if err == ds.Stop {
 				return nil
 			}
@@ -166,9 +168,9 @@ func (bds *boundDatastore) GetMulti(keys []*ds.Key, _meta ds.MultiMetaGetter, cb
 	}
 
 	var err error
-	if tx := bds.transaction; tx != nil {
+	if bds.transaction != nil {
 		// Transactional GetMulti.
-		err = tx.GetMulti(nativeKeys, nativePLS)
+		err = bds.transaction.GetMulti(nativeKeys, nativePLS)
 	} else {
 		// Non-transactional GetMulti.
 		err = bds.client.GetMulti(bds, nativeKeys, nativePLS)
@@ -187,7 +189,7 @@ func (bds *boundDatastore) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds
 	}
 
 	var err error
-	if tx := bds.transaction; tx != nil {
+	if bds.transaction != nil {
 		// Transactional PutMulti.
 		//
 		// In order to simulate the presence of mid-transaction key allocation, we
@@ -219,7 +221,7 @@ func (bds *boundDatastore) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds
 			}
 		}
 
-		_, err = tx.PutMulti(nativeKeys, nativePLS)
+		_, err = bds.transaction.PutMulti(nativeKeys, nativePLS)
 	} else {
 		// Non-transactional PutMulti.
 		nativeKeys, err = bds.client.PutMulti(bds, nativeKeys, nativePLS)
@@ -237,9 +239,9 @@ func (bds *boundDatastore) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) erro
 	nativeKeys := bds.gaeKeysToNative(keys...)
 
 	var err error
-	if tx := bds.transaction; tx != nil {
+	if bds.transaction != nil {
 		// Transactional DeleteMulti.
-		err = tx.DeleteMulti(nativeKeys)
+		err = bds.transaction.DeleteMulti(nativeKeys)
 	} else {
 		// Non-transactional DeleteMulti.
 		err = bds.client.DeleteMulti(bds, nativeKeys)
@@ -250,9 +252,13 @@ func (bds *boundDatastore) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) erro
 	})
 }
 
-func (bds *boundDatastore) Testable() ds.Testable {
-	return nil
+func (bds *boundDatastore) WithoutTransaction() context.Context {
+	return withDatastoreTransaction(bds, nil)
 }
+
+func (bds *boundDatastore) CurrentTransaction() ds.Transaction { return bds.transaction }
+
+func (bds *boundDatastore) GetTestable() ds.Testable { return nil }
 
 func (bds *boundDatastore) prepareNativeQuery(fq *ds.FinalizedQuery) *datastore.Query {
 	nq := datastore.NewQuery(fq.Kind())
@@ -330,10 +336,15 @@ func (bds *boundDatastore) prepareNativeQuery(fq *ds.FinalizedQuery) *datastore.
 }
 
 func (bds *boundDatastore) mkNPLS(base ds.PropertyMap) *nativePropertyLoadSaver {
-	return &nativePropertyLoadSaver{bds: bds, pmap: clonePropertyMap(base)}
+	return &nativePropertyLoadSaver{
+		bds:  bds,
+		pmap: clonePropertyMap(base),
+	}
 }
 
-func (bds *boundDatastore) gaePropertyToNative(name string, pdata ds.PropertyData) (nativeProp datastore.Property, err error) {
+func (bds *boundDatastore) gaePropertyToNative(name string, pdata ds.PropertyData) (
+	nativeProp datastore.Property, err error) {
+
 	nativeProp.Name = name
 
 	convert := func(prop *ds.Property) (interface{}, error) {
@@ -382,7 +393,9 @@ func (bds *boundDatastore) gaePropertyToNative(name string, pdata ds.PropertyDat
 	return
 }
 
-func (bds *boundDatastore) nativePropertyToGAE(nativeProp datastore.Property) (name string, pdata ds.PropertyData, err error) {
+func (bds *boundDatastore) nativePropertyToGAE(nativeProp datastore.Property) (
+	name string, pdata ds.PropertyData, err error) {
+
 	name = nativeProp.Name
 
 	convert := func(nv interface{}, prop *ds.Property) error {
@@ -455,6 +468,8 @@ func (bds *boundDatastore) gaeKeysToNative(keys ...*ds.Key) []*datastore.Key {
 func (bds *boundDatastore) nativeKeysToGAE(nativeKeys ...*datastore.Key) []*ds.Key {
 	keys := make([]*ds.Key, len(nativeKeys))
 	toks := make([]ds.KeyTok, 1)
+
+	kc := bds.kc
 	for i, nativeKey := range nativeKeys {
 		toks = toks[:0]
 		cur := nativeKey
@@ -471,7 +486,8 @@ func (bds *boundDatastore) nativeKeysToGAE(nativeKeys ...*datastore.Key) []*ds.K
 			ri := len(toks) - i - 1
 			toks[i], toks[ri] = toks[ri], toks[i]
 		}
-		keys[i] = ds.NewKeyToks(bds.appID, nativeKey.Namespace(), toks)
+		kc.Namespace = nativeKey.Namespace()
+		keys[i] = kc.NewKeyToks(toks)
 	}
 	return keys
 }

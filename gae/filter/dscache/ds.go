@@ -8,9 +8,11 @@ import (
 	"time"
 
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/memcache"
+	mc "github.com/luci/gae/service/memcache"
+
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
+
 	"golang.org/x/net/context"
 )
 
@@ -40,14 +42,14 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 		return d.RawInterface.GetMulti(keys, metas, cb)
 	}
 
-	if err := d.mc.AddMulti(lockItems); err != nil {
+	if err := mc.Add(d.c, lockItems...); err != nil {
 		// Ignore this error. Either we couldn't add them because they exist
 		// (so, not an issue), or because memcache is having sad times (in which
-		// case we'll see so in the GetMulti which immediately follows this).
+		// case we'll see so in the Get which immediately follows this).
 	}
-	if err := errors.Filter(d.mc.GetMulti(lockItems), memcache.ErrCacheMiss); err != nil {
+	if err := errors.Filter(mc.Get(d.c, lockItems...), mc.ErrCacheMiss); err != nil {
 		(log.Fields{log.ErrorKey: err}).Debugf(
-			d.c, "dscache: GetMulti: memcache.GetMulti")
+			d.c, "dscache: GetMulti: memcache.Get")
 	}
 
 	p := makeFetchPlan(d.c, d.aid, d.ns, &facts{keys, metas, lockItems, nonce})
@@ -56,7 +58,7 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 		// looks like we have something to pull from datastore, and maybe some work
 		// to save stuff back to memcache.
 
-		toCas := []memcache.Item{}
+		toCas := []mc.Item{}
 		j := 0
 		err := d.RawInterface.GetMulti(p.toGet, p.toGetMeta, func(pm ds.PropertyMap, err error) error {
 			i := p.idxMap[j]
@@ -109,9 +111,9 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 		}
 		if len(toCas) > 0 {
 			// we have entries to save back to memcache.
-			if err := d.mc.CompareAndSwapMulti(toCas); err != nil {
+			if err := mc.CompareAndSwap(d.c, toCas...); err != nil {
 				(log.Fields{log.ErrorKey: err}).Debugf(
-					d.c, "dscache: GetMulti: memcache.CompareAndSwapMulti")
+					d.c, "dscache: GetMulti: memcache.CompareAndSwap")
 			}
 		}
 	}

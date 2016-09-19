@@ -14,7 +14,9 @@ import (
 	"golang.org/x/net/context"
 
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/info"
 	tq "github.com/luci/gae/service/taskqueue"
+
 	"github.com/luci/luci-go/common/clock"
 )
 
@@ -127,7 +129,7 @@ func (t *taskQueueData) purgeLocked(queueName string) error {
 	return nil
 }
 
-func (t *taskQueueData) prepTask(c context.Context, ns string, task *tq.Task, queueName string) (*tq.Task, error) {
+func (t *taskQueueData) prepTask(c context.Context, task *tq.Task, queueName string) (*tq.Task, error) {
 	toSched := task.Duplicate()
 
 	if toSched.Path == "" {
@@ -158,7 +160,7 @@ func (t *taskQueueData) prepTask(c context.Context, ns string, task *tq.Task, qu
 	}
 
 	if _, ok := toSched.Header[currentNamespace]; !ok {
-		if ns != "" {
+		if ns := info.GetNamespace(c); ns != "" {
 			if toSched.Header == nil {
 				toSched.Header = http.Header{}
 			}

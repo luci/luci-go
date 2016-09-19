@@ -30,5 +30,5 @@ type RawInterface interface {
 
 	Stats(queueNames []string, cb RawStatsCB) error
 
-	Testable() Testable
+	GetTestable() Testable
 }

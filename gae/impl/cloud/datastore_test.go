@@ -89,31 +89,30 @@ func TestDatastore(t *testing.T) {
 
 			// Clear all used entities from all namespaces.
 			for _, ns := range namespaces {
-				nsCtx := info.Get(c).MustNamespace(ns)
-				di := ds.Get(nsCtx)
+				nsCtx := info.MustNamespace(c, ns)
 
 				keys := make([]*ds.Key, len(namespaces))
 				for i := range keys {
-					keys[i] = di.MakeKey("Test", i+1)
+					keys[i] = ds.MakeKey(nsCtx, "Test", i+1)
 				}
-				So(errors.Filter(di.DeleteMulti(keys), ds.ErrNoSuchEntity), ShouldBeNil)
+				So(errors.Filter(ds.Delete(nsCtx, keys), ds.ErrNoSuchEntity), ShouldBeNil)
 			}
 
 			// Put one entity per namespace.
 			for i, ns := range namespaces {
-				nsCtx := info.Get(c).MustNamespace(ns)
+				nsCtx := info.MustNamespace(c, ns)
 
 				pmap := ds.PropertyMap{"$kind": mkp("Test"), "$id": mkp(i + 1), "Value": mkp(i)}
-				So(ds.Get(nsCtx).Put(pmap), ShouldBeNil)
+				So(ds.Put(nsCtx, pmap), ShouldBeNil)
 			}
 
 			// Make sure that entity only exists in that namespace.
 			for _, ns := range namespaces {
-				nsCtx := info.Get(c).MustNamespace(ns)
+				nsCtx := info.MustNamespace(c, ns)
 
 				for i := range namespaces {
 					pmap := ds.PropertyMap{"$kind": mkp("Test"), "$id": mkp(i + 1)}
-					err := ds.Get(nsCtx).Get(pmap)
+					err := ds.Get(nsCtx, pmap)
 
 					if namespaces[i] == ns {
 						So(err, ShouldBeNil)
@@ -130,28 +129,27 @@ func TestDatastore(t *testing.T) {
 			if _, err := rand.Read(randNamespace); err != nil {
 				panic(err)
 			}
-			c = info.Get(c).MustNamespace(fmt.Sprintf("testing-%s", hex.EncodeToString(randNamespace)))
-			di := ds.Get(c)
+			c = info.MustNamespace(c, fmt.Sprintf("testing-%s", hex.EncodeToString(randNamespace)))
 
 			// Execute a kindless query to clear the namespace.
 			q := ds.NewQuery("").KeysOnly(true)
 			var allKeys []*ds.Key
-			So(di.GetAll(q, &allKeys), ShouldBeNil)
-			So(di.DeleteMulti(allKeys), ShouldBeNil)
+			So(ds.GetAll(c, q, &allKeys), ShouldBeNil)
+			So(ds.Delete(c, allKeys), ShouldBeNil)
 
 			Convey(`Can allocate an ID range`, func() {
 				var keys []*ds.Key
-				keys = append(keys, di.NewIncompleteKeys(10, "Bar", di.MakeKey("Foo", 12))...)
-				keys = append(keys, di.NewIncompleteKeys(10, "Baz", di.MakeKey("Foo", 12))...)
+				keys = append(keys, ds.NewIncompleteKeys(c, 10, "Bar", ds.MakeKey(c, "Foo", 12))...)
+				keys = append(keys, ds.NewIncompleteKeys(c, 10, "Baz", ds.MakeKey(c, "Foo", 12))...)
 
 				seen := map[string]struct{}{}
-				So(di.AllocateIDs(keys), ShouldBeNil)
+				So(ds.AllocateIDs(c, keys), ShouldBeNil)
 				for _, k := range keys {
 					So(k.IsIncomplete(), ShouldBeFalse)
 					seen[k.String()] = struct{}{}
 				}
 
-				So(di.AllocateIDs(keys), ShouldBeNil)
+				So(ds.AllocateIDs(c, keys), ShouldBeNil)
 				for _, k := range keys {
 					So(k.IsIncomplete(), ShouldBeFalse)
 
@@ -167,13 +165,13 @@ func TestDatastore(t *testing.T) {
 					{"$kind": mkp("test"), "$id": mkp("bar"), "Value": mkp(42)},
 					{"$kind": mkp("test"), "$id": mkp("baz"), "Value": mkp(0xd065)},
 				}
-				So(di.PutMulti(put), ShouldBeNil)
+				So(ds.Put(c, put), ShouldBeNil)
 				delete(put[0], "$key")
 				delete(put[1], "$key")
 				delete(put[2], "$key")
 
 				// Delete: "bar".
-				So(di.Delete(di.MakeKey("test", "bar")), ShouldBeNil)
+				So(ds.Delete(c, ds.MakeKey(c, "test", "bar")), ShouldBeNil)
 
 				// Get: "foo", "bar", "baz"
 				get := []ds.PropertyMap{
@@ -182,7 +180,7 @@ func TestDatastore(t *testing.T) {
 					{"$kind": mkp("test"), "$id": mkp("baz")},
 				}
 
-				err := di.GetMulti(get)
+				err := ds.Get(c, get)
 				So(err, ShouldHaveSameTypeAs, errors.MultiError(nil))
 
 				merr := err.(errors.MultiError)
@@ -206,30 +204,30 @@ func TestDatastore(t *testing.T) {
 					"Bytes":     mkp([]byte("world")),
 					"Time":      mkp(testTime),
 					"Float":     mkpNI(3.14),
-					"Key":       mkp(di.MakeKey("Parent", "ParentID", "Child", 1337)),
+					"Key":       mkp(ds.MakeKey(c, "Parent", "ParentID", "Child", 1337)),
 					"Null":      mkp(nil),
 					"NullSlice": mkp(nil, nil),
 
 					"ComplexSlice": mkp(1337, "string", []byte("bytes"), testTime, float32(3.14),
-						float64(2.71), true, nil, di.MakeKey("SomeKey", "SomeID")),
+						float64(2.71), true, nil, ds.MakeKey(c, "SomeKey", "SomeID")),
 
 					"Single":      mkp("single"),
 					"SingleSlice": mkProperties(true, true, "single"), // Force a single "multi" value.
 					"EmptySlice":  ds.PropertySlice(nil),
 				}
-				So(di.Put(put), ShouldBeNil)
+				So(ds.Put(c, put), ShouldBeNil)
 				delete(put, "$key")
 
 				get := ds.PropertyMap{
 					"$id":   mkpNI("foo"),
 					"$kind": mkpNI("FooType"),
 				}
-				So(di.Get(get), ShouldBeNil)
+				So(ds.Get(c, get), ShouldBeNil)
 				So(get, ShouldResemble, put)
 			})
 
 			Convey(`With several entities installed`, func() {
-				So(di.PutMulti([]ds.PropertyMap{
+				So(ds.Put(c, []ds.PropertyMap{
 					{"$kind": mkp("Test"), "$id": mkp("foo"), "FooBar": mkp(true)},
 					{"$kind": mkp("Test"), "$id": mkp("bar"), "FooBar": mkp(true)},
 					{"$kind": mkp("Test"), "$id": mkp("baz")},
@@ -241,42 +239,40 @@ func TestDatastore(t *testing.T) {
 				Convey(`Can query for entities with FooBar == true.`, func() {
 					var results []ds.PropertyMap
 					q = q.Eq("FooBar", true)
-					So(di.GetAll(q, &results), ShouldBeNil)
+					So(ds.GetAll(c, q, &results), ShouldBeNil)
 
 					So(results, ShouldResemble, []ds.PropertyMap{
-						{"$key": mkpNI(di.MakeKey("Test", "bar")), "FooBar": mkp(true)},
-						{"$key": mkpNI(di.MakeKey("Test", "foo")), "FooBar": mkp(true)},
+						{"$key": mkpNI(ds.MakeKey(c, "Test", "bar")), "FooBar": mkp(true)},
+						{"$key": mkpNI(ds.MakeKey(c, "Test", "foo")), "FooBar": mkp(true)},
 					})
 				})
 
 				Convey(`Can query for entities whose __key__ > "baz".`, func() {
 					var results []ds.PropertyMap
-					q = q.Gt("__key__", di.MakeKey("Test", "baz"))
-					So(di.GetAll(q, &results), ShouldBeNil)
+					q = q.Gt("__key__", ds.MakeKey(c, "Test", "baz"))
+					So(ds.GetAll(c, q, &results), ShouldBeNil)
 
 					So(results, ShouldResemble, []ds.PropertyMap{
-						{"$key": mkpNI(di.MakeKey("Test", "foo")), "FooBar": mkp(true)},
-						{"$key": mkpNI(di.MakeKey("Test", "qux"))},
+						{"$key": mkpNI(ds.MakeKey(c, "Test", "foo")), "FooBar": mkp(true)},
+						{"$key": mkpNI(ds.MakeKey(c, "Test", "qux"))},
 					})
 				})
 
 				Convey(`Can transactionally get and put.`, func() {
-					err := di.RunInTransaction(func(c context.Context) error {
-						di := ds.Get(c)
-
+					err := ds.RunInTransaction(c, func(c context.Context) error {
 						pmap := ds.PropertyMap{"$kind": mkp("Test"), "$id": mkp("qux")}
-						if err := di.Get(pmap); err != nil {
+						if err := ds.Get(c, pmap); err != nil {
 							return err
 						}
 
 						pmap["ExtraField"] = mkp("Present!")
-						return di.Put(pmap)
+						return ds.Put(c, pmap)
 					}, nil)
 					So(err, ShouldBeNil)
 
 					pmap := ds.PropertyMap{"$kind": mkp("Test"), "$id": mkp("qux")}
-					err = di.RunInTransaction(func(c context.Context) error {
-						return ds.Get(c).Get(pmap)
+					err = ds.RunInTransaction(c, func(c context.Context) error {
+						return ds.Get(c, pmap)
 					}, nil)
 					So(err, ShouldBeNil)
 					So(pmap, ShouldResemble, ds.PropertyMap{"$kind": mkp("Test"), "$id": mkp("qux"), "ExtraField": mkp("Present!")})
@@ -285,20 +281,31 @@ func TestDatastore(t *testing.T) {
 				Convey(`Can fail in a transaction with no effect.`, func() {
 					testError := errors.New("test error")
 
-					err := di.RunInTransaction(func(c context.Context) error {
-						di := ds.Get(c)
+					noTxnPM := ds.PropertyMap{"$kind": mkp("Test"), "$id": mkp("no txn")}
+					err := ds.RunInTransaction(c, func(c context.Context) error {
+						So(ds.CurrentTransaction(c), ShouldNotBeNil)
 
 						pmap := ds.PropertyMap{"$kind": mkp("Test"), "$id": mkp("quux")}
-						if err := di.Put(pmap); err != nil {
+						if err := ds.Put(c, pmap); err != nil {
+							return err
+						}
+
+						// Put an entity outside of the transaction so we can confirm that
+						// it was added even when the transaction fails.
+						if err := ds.Put(ds.WithoutTransaction(c), noTxnPM); err != nil {
 							return err
 						}
 						return testError
 					}, nil)
 					So(err, ShouldEqual, testError)
 
+					// Confirm that noTxnPM was added.
+					So(ds.CurrentTransaction(c), ShouldBeNil)
+					So(ds.Get(c, noTxnPM), ShouldBeNil)
+
 					pmap := ds.PropertyMap{"$kind": mkp("Test"), "$id": mkp("quux")}
-					err = di.RunInTransaction(func(c context.Context) error {
-						return ds.Get(c).Get(pmap)
+					err = ds.RunInTransaction(c, func(c context.Context) error {
+						return ds.Get(c, pmap)
 					}, nil)
 					So(err, ShouldEqual, ds.ErrNoSuchEntity)
 				})
