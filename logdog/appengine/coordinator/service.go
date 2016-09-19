@@ -25,6 +25,7 @@ import (
 	gcps "cloud.google.com/go/pubsub"
 	"golang.org/x/net/context"
 	"google.golang.org/api/option"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -187,10 +188,10 @@ func (s *prodServicesInst) IntermediateStorage(c context.Context) (storage.Stora
 	}
 
 	// Get an Authenticator bound to the token scopes that we need for BigTable.
-	transport, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(bigtable.StorageScopes...))
+	creds, err := auth.GetPerRPCCredentials(auth.AsSelf, auth.WithScopes(bigtable.StorageScopes...))
 	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create BigTable authenticator.")
-		return nil, errors.New("failed to create BigTable authenticator")
+		log.WithError(err).Errorf(c, "Failed to create BigTable credentials.")
+		return nil, errors.New("failed to create BigTable credentials")
 	}
 
 	// Explicitly clear gRPC metadata from the Context. It is forwarded to
@@ -203,7 +204,7 @@ func (s *prodServicesInst) IntermediateStorage(c context.Context) (storage.Stora
 		Instance: bt.Instance,
 		LogTable: bt.LogTableName,
 		ClientOptions: []option.ClientOption{
-			option.WithHTTPClient(&http.Client{Transport: transport}),
+			option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
 		},
 	})
 	if err != nil {
