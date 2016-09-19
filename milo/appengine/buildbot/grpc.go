@@ -93,12 +93,13 @@ func (s *BuildbotService) GetCompressedMasterJSON(
 	// And re-compress it.
 	gzbs := bytes.Buffer{}
 	gsw := gzip.NewWriter(&gzbs)
-	defer gsw.Close()
 	cw := iotools.CountingWriter{Writer: gsw}
 	e := json.NewEncoder(&cw)
 	if err := e.Encode(master); err != nil {
+		gsw.Close()
 		return nil, err
 	}
+	gsw.Close()
 
 	logging.Infof(c, "Returning %d bytes", cw.Count)
 
