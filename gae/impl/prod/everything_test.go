@@ -36,9 +36,9 @@ type TestStruct struct {
 	ValueS           []string
 	ValueF           []float64
 	ValueBS          [][]byte // "ByteString"
-	ValueK           []*datastore.Key
+	ValueK           []*ds.Key
 	ValueBK          []blobstore.Key
-	ValueGP          []datastore.GeoPoint
+	ValueGP          []ds.GeoPoint
 	ValueSingle      string
 	ValueSingleSlice []string
 }
@@ -138,13 +138,13 @@ func TestBasicDatastore(t *testing.T) {
 			So(ret, ShouldResemble, orig)
 
 			// make sure single- and multi- properties are preserved.
-			pmap := datastore.PropertyMap{
+			pmap := ds.PropertyMap{
 				"$id":   mpNI(orig.ID),
 				"$kind": mpNI("TestStruct"),
 			}
-			So(ds.Get(pmap), ShouldBeNil)
-			So(pmap["ValueSingle"], ShouldHaveSameTypeAs, datastore.Property{})
-			So(pmap["ValueSingleSlice"], ShouldHaveSameTypeAs, datastore.PropertySlice(nil))
+			So(ds.Get(ctx, pmap), ShouldBeNil)
+			So(pmap["ValueSingle"], ShouldHaveSameTypeAs, ds.Property{})
+			So(pmap["ValueSingleSlice"], ShouldHaveSameTypeAs, ds.PropertySlice(nil))
 
 			// can't be sure the indexes have caught up... so sleep
 			time.Sleep(time.Second)
@@ -234,9 +234,9 @@ func TestBasicDatastore(t *testing.T) {
 
 		Convey("Can Put/Get (time)", func() {
 			// time comparisons in Go are wonky, so this is pulled out
-			pm := datastore.PropertyMap{
+			pm := ds.PropertyMap{
 				"$key": mpNI(ds.NewKey(ctx, "Something", "value", 0, nil)),
-				"Time": datastore.PropertySlice{
+				"Time": ds.PropertySlice{
 					mp(time.Date(1938, time.January, 1, 1, 1, 1, 1, time.UTC)),
 					mp(time.Time{}),
 				},
@@ -254,17 +254,17 @@ func TestBasicDatastore(t *testing.T) {
 			So(ds.GetAll(ctx, q, &all), ShouldBeNil)
 			So(len(all), ShouldEqual, 2)
 			prop := all[0].Slice("Time")[0]
-			So(prop.Type(), ShouldEqual, datastore.PTInt)
+			So(prop.Type(), ShouldEqual, ds.PTInt)
 
 			tval, err := prop.Project(ds.PTTime)
 			So(err, ShouldBeNil)
 			So(tval, ShouldResemble, time.Time{}.UTC())
 
-			tval, err = all[1].Slice("Time")[0].Project(datastore.PTTime)
+			tval, err = all[1].Slice("Time")[0].Project(ds.PTTime)
 			So(err, ShouldBeNil)
 			So(tval, ShouldResemble, pm.Slice("Time")[0].Value())
 
-			ent := datastore.PropertyMap{
+			ent := ds.PropertyMap{
 				"$key": mpNI(ds.MakeKey(ctx, "Something", "value")),
 			}
 			So(ds.Get(ctx, &ent), ShouldBeNil)
@@ -278,5 +278,49 @@ func TestBasicDatastore(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(bob.Value(), ShouldResemble, []byte{})
 		})
+	})
+}
+
+func BenchmarkTransactionsParallel(b *testing.B) {
+	type Counter struct {
+		ID    int `gae:"$id"`
+		Count int
+	}
+
+	inst, err := aetest.NewInstance(&aetest.Options{
+		StronglyConsistentDatastore: true,
+	})
+	if err != nil {
+		b.Fatalf("failed to initialize aetest: %v", err)
+	}
+	defer inst.Close()
+
+	req, err := inst.NewRequest("GET", "/", nil)
+	if err != nil {
+		b.Fatalf("failed to create GET request: %v", err)
+	}
+
+	ctx := Use(context.Background(), req)
+
+	b.ResetTimer()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			ctr := Counter{ID: 1}
+
+			err := ds.RunInTransaction(ctx, func(ctx context.Context) error {
+				switch err := ds.Get(ctx, &ctr); err {
+				case nil, ds.ErrNoSuchEntity:
+					ctr.Count++
+					return ds.Put(ctx, &ctr)
+
+				default:
+					return err
+				}
+			}, &ds.TransactionOptions{Attempts: 9999999})
+			if err != nil {
+				b.Fatalf("failed to run transaction: %v", err)
+			}
+		}
 	})
 }
