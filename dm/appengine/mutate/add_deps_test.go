@@ -8,12 +8,14 @@ import (
 	"testing"
 
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/datastore"
-	. "github.com/luci/luci-go/common/testing/assertions"
+	ds "github.com/luci/gae/service/datastore"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
-	. "github.com/smartystreets/goconvey/convey"
+
 	"golang.org/x/net/context"
+
+	. "github.com/luci/luci-go/common/testing/assertions"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestAddDeps(t *testing.T) {
@@ -22,14 +24,12 @@ func TestAddDeps(t *testing.T) {
 	Convey("AddDeps", t, func() {
 		c := memory.Use(context.Background())
 
-		ds := datastore.Get(c)
-
 		aid := dm.NewAttemptID("quest", 1)
 		a := model.MakeAttempt(c, aid)
 		a.CurExecution = 1
 		a.State = dm.Attempt_EXECUTING
 		ex := &model.Execution{
-			ID: 1, Attempt: ds.KeyForObj(a), Token: []byte("sup"),
+			ID: 1, Attempt: ds.KeyForObj(c, a), Token: []byte("sup"),
 			State: dm.Execution_RUNNING}
 
 		ad := &AddDeps{
@@ -54,7 +54,7 @@ func TestAddDeps(t *testing.T) {
 
 			Convey("Bad", func() {
 				Convey("Bad ExecutionKey", func() {
-					So(ds.Put(a, ex), ShouldBeNil)
+					So(ds.Put(c, a, ex), ShouldBeNil)
 
 					ad.Auth.Token = []byte("nerp")
 					muts, err := ad.RollForward(c)
@@ -64,10 +64,10 @@ func TestAddDeps(t *testing.T) {
 			})
 
 			Convey("Good", func() {
-				So(ds.Put(a, ex), ShouldBeNil)
+				So(ds.Put(c, a, ex), ShouldBeNil)
 
 				Convey("All added already", func() {
-					So(ds.Put(fds), ShouldBeNil)
+					So(ds.Put(c, fds), ShouldBeNil)
 
 					muts, err := ad.RollForward(c)
 					So(err, ShouldBeNil)
@@ -82,7 +82,7 @@ func TestAddDeps(t *testing.T) {
 					So(muts[0], ShouldResemble, &AddBackDep{
 						Dep: fds[0].Edge(), NeedsAck: true})
 
-					So(ds.Get(a, fds), ShouldBeNil)
+					So(ds.Get(c, a, fds), ShouldBeNil)
 					So(a.DepMap.Size(), ShouldEqual, len(fds))
 					So(a.State, ShouldEqual, dm.Attempt_EXECUTING)
 					So(fds[0].ForExecution, ShouldEqual, 1)
@@ -93,7 +93,7 @@ func TestAddDeps(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(muts, ShouldBeNil)
 
-					So(ds.Get(a), ShouldBeNil)
+					So(ds.Get(c, a), ShouldBeNil)
 					So(a.State, ShouldEqual, dm.Attempt_WAITING)
 				})
 
@@ -111,7 +111,7 @@ func TestAddDeps(t *testing.T) {
 					So(muts[1], ShouldResemble, &AddBackDep{
 						Dep: fds[0].Edge(), NeedsAck: true})
 
-					So(ds.Get(a, fds), ShouldBeNil)
+					So(ds.Get(c, a, fds), ShouldBeNil)
 					So(a.DepMap.Size(), ShouldEqual, len(fds))
 					So(a.State, ShouldEqual, dm.Attempt_EXECUTING)
 					So(fds[0].ForExecution, ShouldEqual, 1)
@@ -122,7 +122,7 @@ func TestAddDeps(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(muts, ShouldBeNil)
 
-					So(ds.Get(a), ShouldBeNil)
+					So(ds.Get(c, a), ShouldBeNil)
 					So(a.State, ShouldEqual, dm.Attempt_WAITING)
 				})
 			})

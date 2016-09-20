@@ -8,7 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
 	"github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
@@ -27,12 +27,12 @@ func AddToJournal(c context.Context, m ...Mutation) error {
 
 type addToJournalMutation []Mutation
 
-func (a addToJournalMutation) Root(c context.Context) *datastore.Key {
+func (a addToJournalMutation) Root(c context.Context) *ds.Key {
 	hsh := sha256.New()
 	for _, m := range a {
 		hsh.Write(serialize.ToBytesWithContext(m.Root(c)))
 	}
-	return datastore.Get(c).MakeKey("tumble.temp", hex.EncodeToString(hsh.Sum(nil)))
+	return ds.MakeKey(c, "tumble.temp", hex.EncodeToString(hsh.Sum(nil)))
 }
 
 func (a addToJournalMutation) RollForward(c context.Context) ([]Mutation, error) {

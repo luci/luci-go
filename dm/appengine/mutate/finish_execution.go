@@ -9,8 +9,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/filter/txnBuf"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 
 	"github.com/luci/luci-go/common/logging"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
@@ -26,7 +25,7 @@ type FinishExecution struct {
 }
 
 // Root implements tumble.Mutation
-func (f *FinishExecution) Root(c context.Context) *datastore.Key {
+func (f *FinishExecution) Root(c context.Context) *ds.Key {
 	return model.ExecutionKeyFromID(c, f.EID)
 }
 
@@ -40,8 +39,8 @@ func shouldRetry(c context.Context, a *model.Attempt, stat dm.AbnormalFinish_Sta
 		return
 	}
 	q := model.QuestFromID(a.ID.Quest)
-	dsNoTxn := txnBuf.GetNoTxn(c)
-	if err = dsNoTxn.Get(q); err != nil {
+
+	if err = ds.Get(ds.WithoutTransaction(c), q); err != nil {
 		return
 	}
 	var cur, max uint32
@@ -70,8 +69,7 @@ func (f *FinishExecution) RollForward(c context.Context) (muts []tumble.Mutation
 	a := model.AttemptFromID(f.EID.AttemptID())
 	e := model.ExecutionFromID(c, f.EID)
 
-	ds := datastore.Get(c)
-	if err = ds.Get(a, e); err != nil {
+	if err = ds.Get(c, a, e); err != nil {
 		return
 	}
 
@@ -140,7 +138,7 @@ func (f *FinishExecution) RollForward(c context.Context) (muts []tumble.Mutation
 	// best-effort reset execution timeout
 	_ = ResetExecutionTimeout(c, e)
 
-	err = ds.Put(a, e)
+	err = ds.Put(c, a, e)
 	return
 }
 

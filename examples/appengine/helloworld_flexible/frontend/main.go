@@ -40,7 +40,7 @@ var templateBundle = &templates.Bundle{
 			return nil, err
 		}
 		return templates.Args{
-			"AppVersion":  strings.Split(info.Get(c).VersionID(), ".")[0],
+			"AppVersion":  strings.Split(info.VersionID(c), ".")[0],
 			"IsAnonymous": auth.CurrentIdentity(c) == "anonymous:anonymous",
 			"IsAdmin":     isAdmin,
 			"User":        auth.CurrentUser(c),

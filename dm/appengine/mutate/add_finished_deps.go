@@ -5,7 +5,7 @@
 package mutate
 
 import (
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
 	"github.com/luci/luci-go/tumble"
@@ -27,7 +27,7 @@ type AddFinishedDeps struct {
 }
 
 // Root implements tumble.Mutation
-func (f *AddFinishedDeps) Root(c context.Context) *datastore.Key {
+func (f *AddFinishedDeps) Root(c context.Context) *ds.Key {
 	return model.AttemptKeyFromID(c, f.Auth.Id.AttemptID())
 }
 
@@ -52,7 +52,7 @@ func (f *AddFinishedDeps) RollForward(c context.Context) (muts []tumble.Mutation
 		muts = append(muts, &MergeQuest{Quest: q})
 	}
 
-	return muts, datastore.Get(c).Put(fwdDeps)
+	return muts, ds.Put(c, fwdDeps)
 }
 
 func init() {

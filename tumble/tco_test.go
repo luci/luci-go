@@ -7,9 +7,11 @@ package tumble
 import (
 	"testing"
 
-	"github.com/luci/gae/service/datastore"
-	. "github.com/smartystreets/goconvey/convey"
+	ds "github.com/luci/gae/service/datastore"
+
 	"golang.org/x/net/context"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 type BigObjectGroup struct {
@@ -19,8 +21,8 @@ type BigObjectGroup struct {
 }
 
 type BigObject struct {
-	ID    int64          `gae:"$id"`
-	Group *datastore.Key `gae:"$parent"`
+	ID    int64   `gae:"$id"`
+	Group *ds.Key `gae:"$parent"`
 
 	Data []byte `gae:",noindex"`
 }
@@ -29,8 +31,8 @@ type SlowMutation struct {
 	Count int64
 }
 
-func (s *SlowMutation) Root(c context.Context) *datastore.Key {
-	return datastore.Get(c).MakeKey("BigObjectGroup", 1)
+func (s *SlowMutation) Root(c context.Context) *ds.Key {
+	return ds.MakeKey(c, "BigObjectGroup", 1)
 }
 
 var JunkBytes = make([]byte, 512*1024)
@@ -42,20 +44,18 @@ func init() {
 }
 
 func (s *SlowMutation) RollForward(c context.Context) (muts []Mutation, err error) {
-	ds := datastore.Get(c)
-
 	grp := &BigObjectGroup{}
-	err = ds.Get(grp)
-	if err == datastore.ErrNoSuchEntity {
-		err = ds.Put(grp)
+	err = ds.Get(c, grp)
+	if err == ds.ErrNoSuchEntity {
+		err = ds.Put(c, grp)
 	}
 	if err != nil {
 		return
 	}
 
 	grp.Count++
-	bo := &BigObject{ID: grp.Count, Group: ds.KeyForObj(grp), Data: JunkBytes}
-	err = ds.Put(grp, bo)
+	bo := &BigObject{ID: grp.Count, Group: ds.KeyForObj(c, grp), Data: JunkBytes}
+	err = ds.Put(c, grp, bo)
 
 	retMut := *s
 	retMut.Count--
@@ -87,10 +87,8 @@ func TestTailCallOptimization(t *testing.T) {
 		// 4 processed shards shows that we did 4 transactions (of 10 each).
 		So(testing.Drain(c), ShouldEqual, 4)
 
-		ds := datastore.Get(c)
-
 		bog := &BigObjectGroup{}
-		So(ds.Get(bog), ShouldBeNil)
+		So(ds.Get(c, bog), ShouldBeNil)
 
 		// Hey look at that, bog shows all 40 :)
 		So(bog.Count, ShouldEqual, 40)

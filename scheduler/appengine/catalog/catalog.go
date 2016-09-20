@@ -198,7 +198,7 @@ func (cat *catalog) configFile(c context.Context) string {
 	if cat.configFileName != "" {
 		return cat.configFileName
 	}
-	return info.Get(c).AppID() + ".cfg"
+	return info.AppID(c) + ".cfg"
 }
 
 // getRevisionURL derives URL to a config file revision, given URL of a config

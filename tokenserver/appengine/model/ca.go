@@ -14,7 +14,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/caching/lazyslot"
 	"github.com/luci/luci-go/common/data/caching/proccache"
@@ -92,7 +92,7 @@ func StoreCAUniqueIDToCNMap(c context.Context, mapping map[int64]string) error {
 	}
 	// Note that in practice 'mapping' is usually very small, so we are not
 	// concerned about 1MB entity size limit.
-	return errors.WrapTransient(datastore.Get(c).Put(&CAUniqueIDToCNMap{
+	return errors.WrapTransient(ds.Put(c, &CAUniqueIDToCNMap{
 		GobEncodedMap: buf.Bytes(),
 	}))
 }
@@ -100,8 +100,8 @@ func StoreCAUniqueIDToCNMap(c context.Context, mapping map[int64]string) error {
 // LoadCAUniqueIDToCNMap loads CAUniqueIDToCNMap from the datastore.
 func LoadCAUniqueIDToCNMap(c context.Context) (map[int64]string, error) {
 	ent := CAUniqueIDToCNMap{}
-	switch err := datastore.Get(c).Get(&ent); {
-	case err == datastore.ErrNoSuchEntity:
+	switch err := ds.Get(c, &ent); {
+	case err == ds.ErrNoSuchEntity:
 		return nil, nil
 	case err != nil:
 		return nil, errors.WrapTransient(err)

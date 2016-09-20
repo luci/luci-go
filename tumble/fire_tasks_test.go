@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/gae/service/taskqueue"
+	tq "github.com/luci/gae/service/taskqueue"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/memlogger"
@@ -62,11 +62,10 @@ func TestFireTasks(t *testing.T) {
 	Convey("fireTasks works as expected", t, func() {
 		tt := &Testing{}
 		ctx := tt.Context()
-		tq := taskqueue.Get(ctx)
 
 		Convey("empty", func() {
 			So(fireTasks(ctx, tt.GetConfig(ctx), nil), ShouldBeTrue)
-			So(len(tq.Testable().GetScheduledTasks()[baseName]), ShouldEqual, 0)
+			So(len(tq.GetTestable(ctx).GetScheduledTasks()[baseName]), ShouldEqual, 0)
 		})
 
 		Convey("basic", func() {
@@ -77,20 +76,20 @@ func TestFireTasks(t *testing.T) {
 				// since DelayedMutations is false, this timew will be reset
 				taskShard{5, mkTimestamp(tt.GetConfig(ctx), testclock.TestTimeUTC.Add(time.Minute))}: {},
 			}), ShouldBeTrue)
-			q := tq.Testable().GetScheduledTasks()[baseName]
-			So(q["-62132730888_2"], ShouldResemble, &taskqueue.Task{
+			q := tq.GetTestable(ctx).GetScheduledTasks()[baseName]
+			So(q["-62132730888_2"], ShouldResemble, &tq.Task{
 				Name:   "-62132730888_2",
 				Method: "POST",
 				Path:   processURL(-62132730888, 2),
 				ETA:    testclock.TestTimeUTC.Add(6 * time.Second).Round(time.Second),
 			})
-			So(q["-62132730888_7"], ShouldResemble, &taskqueue.Task{
+			So(q["-62132730888_7"], ShouldResemble, &tq.Task{
 				Name:   "-62132730888_7",
 				Method: "POST",
 				Path:   processURL(-62132730888, 7),
 				ETA:    testclock.TestTimeUTC.Add(6 * time.Second).Round(time.Second),
 			})
-			So(q["-62132730888_5"], ShouldResemble, &taskqueue.Task{
+			So(q["-62132730888_5"], ShouldResemble, &tq.Task{
 				Name:   "-62132730888_5",
 				Method: "POST",
 				Path:   processURL(-62132730888, 5),
@@ -106,8 +105,8 @@ func TestFireTasks(t *testing.T) {
 			So(fireTasks(ctx, cfg, map[taskShard]struct{}{
 				taskShard{1, delayedTS}: {},
 			}), ShouldBeTrue)
-			q := tq.Testable().GetScheduledTasks()[baseName]
-			So(q["-62132730288_1"], ShouldResemble, &taskqueue.Task{
+			q := tq.GetTestable(ctx).GetScheduledTasks()[baseName]
+			So(q["-62132730288_1"], ShouldResemble, &tq.Task{
 				Name:   "-62132730288_1",
 				Method: "POST",
 				Path:   processURL(-62132730288, 1),

@@ -51,7 +51,7 @@ func mkIsolated(c context.Context, params *sv1.Parameters, prevFile, descFile, a
 		"${DM.PREVIOUS.EXECUTION.STATE:PATH}", prevPath,
 		"${DM.QUEST.DATA.DESC:PATH}", descPath,
 		"${DM.EXECUTION.AUTH:PATH}", exAuthPath,
-		"${DM.HOST}", info.Get(c).DefaultVersionHostname(),
+		"${DM.HOST}", info.DefaultVersionHostname(c),
 	)
 
 	iso := isolated.New()

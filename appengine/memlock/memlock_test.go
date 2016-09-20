@@ -12,24 +12,30 @@ import (
 
 	"github.com/luci/gae/filter/featureBreaker"
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/memcache"
+	mc "github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
-	. "github.com/smartystreets/goconvey/convey"
+
 	"golang.org/x/net/context"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
-type getBlockerFilter struct {
-	memcache.RawInterface
+type getBlockerFilterContext struct {
 	sync.Mutex
 
 	dropAll bool
 }
 
-func (f *getBlockerFilter) GetMulti(keys []string, cb memcache.RawItemCB) error {
-	f.Lock()
-	defer f.Unlock()
-	if f.dropAll {
+type getBlockerFilter struct {
+	mc.RawInterface
+	gbfc *getBlockerFilterContext
+}
+
+func (f *getBlockerFilter) GetMulti(keys []string, cb mc.RawItemCB) error {
+	f.gbfc.Lock()
+	defer f.gbfc.Unlock()
+	if f.gbfc.dropAll {
 		for _, key := range keys {
 			cb(f.NewItem(key), nil)
 		}
@@ -68,7 +74,6 @@ func TestSimple(t *testing.T) {
 		}
 
 		ctx, fb := featureBreaker.FilterMC(memory.Use(ctx), nil)
-		mc := memcache.Get(ctx)
 
 		Convey("fails to acquire when memcache is down", func() {
 			fb.BreakFeatures(nil, "AddMulti")
@@ -121,7 +126,7 @@ func TestSimple(t *testing.T) {
 
 				Convey("but sometimes we might lose it", func() {
 					Convey("because it was evicted", func() {
-						mc.Delete(key)
+						mc.Delete(ctx, key)
 						clk.Add(memcacheLockTime)
 						waitFalse(ctx)
 					})
@@ -137,12 +142,13 @@ func TestSimple(t *testing.T) {
 		})
 
 		Convey("can lose it when it gets stolen", func() {
-			gbf := &getBlockerFilter{}
-			ctx = memcache.AddRawFilters(ctx, func(_ context.Context, mc memcache.RawInterface) memcache.RawInterface {
-				gbf.RawInterface = mc
-				return gbf
+			gbfc := getBlockerFilterContext{}
+			ctx = mc.AddRawFilters(ctx, func(_ context.Context, raw mc.RawInterface) mc.RawInterface {
+				return &getBlockerFilter{
+					RawInterface: raw,
+					gbfc:         &gbfc,
+				}
 			})
-			mc = memcache.Get(ctx)
 			err := TryWithLock(ctx, "testkey", "id", func(ctx context.Context) error {
 				// simulate waiting for 64*delay time, and ensuring that checkLoop
 				// runs that many times.
@@ -150,9 +156,9 @@ func TestSimple(t *testing.T) {
 					<-blocker
 					clk.Add(delay)
 				}
-				gbf.Lock()
-				mc.Set(mc.NewItem(key).SetValue([]byte("wat")))
-				gbf.Unlock()
+				gbfc.Lock()
+				mc.Set(ctx, mc.NewItem(ctx, key).SetValue([]byte("wat")))
+				gbfc.Unlock()
 				waitFalse(ctx)
 				return nil
 			})
@@ -160,15 +166,19 @@ func TestSimple(t *testing.T) {
 		})
 
 		Convey("can lose it when it gets preemptively released", func() {
-			gbf := &getBlockerFilter{}
-			ctx = memcache.AddRawFilters(ctx, func(_ context.Context, mc memcache.RawInterface) memcache.RawInterface {
-				gbf.RawInterface = mc
-				return gbf
+			gbfc := getBlockerFilterContext{}
+			ctx = mc.AddRawFilters(ctx, func(_ context.Context, raw mc.RawInterface) mc.RawInterface {
+				return &getBlockerFilter{
+					RawInterface: raw,
+					gbfc:         &gbfc,
+				}
 			})
 			ctx = context.WithValue(ctx, testStopCBKey, func() {
-				gbf.dropAll = true
+				gbfc.Lock()
+				defer gbfc.Unlock()
+
+				gbfc.dropAll = true
 			})
-			mc = memcache.Get(ctx)
 			err := TryWithLock(ctx, "testkey", "id", func(ctx context.Context) error {
 				// simulate waiting for 64*delay time, and ensuring that checkLoop
 				// runs that many times.

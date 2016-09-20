@@ -9,15 +9,17 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logging"
 	milocfg "github.com/luci/luci-go/milo/common/config"
 	"github.com/luci/luci-go/server/router"
+
 	"golang.org/x/net/context"
 )
 
+// Project is a LUCI project.
 type Project struct {
 	// The ID of the project, as per self defined.  This is not the luci-cfg
 	// name.
@@ -28,6 +30,7 @@ type Project struct {
 	Data []byte `gae:",noindex"`
 }
 
+// UpdateHandler is an HTTP handler that handles configuration update requests.
 func UpdateHandler(ctx *router.Context) {
 	c, h := ctx.Context, ctx.Writer
 	err := Update(c)
@@ -43,7 +46,7 @@ func UpdateHandler(ctx *router.Context) {
 // update updates Milo's configuration based off luci config.  This includes
 // scanning through all project and extract all console configs.
 func Update(c context.Context) error {
-	cfgName := info.Get(c).AppID() + ".cfg"
+	cfgName := info.AppID(c) + ".cfg"
 	cfgs, err := config.GetProjectConfigs(c, cfgName, false)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Encountered error while getting project config for %s", cfgName)
@@ -80,37 +83,37 @@ func Update(c context.Context) error {
 	}
 
 	// Now load all the data into the datastore.
-	ds := datastore.Get(c)
 	projs := make([]*Project, 0, len(projects))
 	for _, proj := range projects {
 		projs = append(projs, proj)
 	}
-	err = ds.Put(projs)
+	err = ds.Put(c, projs)
 	if err != nil {
 		return err
 	}
 
 	// Delete entries that no longer exist.
-	q := datastore.NewQuery("Project").KeysOnly(true)
+	q := ds.NewQuery("Project").KeysOnly(true)
 	allProjs := []Project{}
-	ds.GetAll(q, &allProjs)
+	ds.GetAll(c, q, &allProjs)
 	toDelete := []Project{}
 	for _, proj := range allProjs {
 		if _, ok := projects[proj.ID]; !ok {
 			toDelete = append(toDelete, proj)
 		}
 	}
-	ds.Delete(toDelete)
+	ds.Delete(c, toDelete)
 
 	return nil
 }
 
+// GetAllProjects returns all registered projects.
 func GetAllProjects(c context.Context) ([]*milocfg.Project, error) {
-	q := datastore.NewQuery("Project")
+	q := ds.NewQuery("Project")
 	q.Order("ID")
-	ds := datastore.Get(c)
+
 	ps := []*Project{}
-	err := ds.GetAll(q, &ps)
+	err := ds.GetAll(c, q, &ps)
 	if err != nil {
 		return nil, err
 	}
@@ -124,11 +127,11 @@ func GetAllProjects(c context.Context) ([]*milocfg.Project, error) {
 	return results, nil
 }
 
+// GetProject returns the requested project.
 func GetProject(c context.Context, projName string) (*milocfg.Project, error) {
 	// Next, Try datastore
-	ds := datastore.Get(c)
 	p := Project{ID: projName}
-	if err := ds.Get(&p); err != nil {
+	if err := ds.Get(c, &p); err != nil {
 		return nil, err
 	}
 	mp := milocfg.Project{}
@@ -139,6 +142,7 @@ func GetProject(c context.Context, projName string) (*milocfg.Project, error) {
 	return &mp, nil
 }
 
+// GetConsole returns the requested console instance.
 func GetConsole(c context.Context, projName, consoleName string) (*milocfg.Console, error) {
 	p, err := GetProject(c, projName)
 	if err != nil {

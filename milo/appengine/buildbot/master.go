@@ -13,7 +13,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/settings"
@@ -45,10 +45,9 @@ var errMasterNotFound = miloerror.Error{
 // current user.
 func getMasterEntry(c context.Context, name string) (*buildbotMasterEntry, error) {
 	entry := buildbotMasterEntry{Name: name}
-	ds := datastore.Get(c)
-	err := ds.Get(&entry)
+	err := ds.Get(c, &entry)
 	switch {
-	case err == datastore.ErrNoSuchEntity:
+	case err == ds.ErrNoSuchEntity:
 		return nil, errMasterNotFound
 	case err != nil:
 		logging.WithError(err).Errorf(
@@ -90,11 +89,10 @@ func getMasterJSON(c context.Context, name string) (
 func GetAllBuilders(c context.Context) (*resp.Module, error) {
 	result := &resp.Module{Name: "Buildbot"}
 	// Fetch all Master entries from datastore
-	ds := datastore.Get(c)
-	q := datastore.NewQuery("buildbotMasterEntry")
+	q := ds.NewQuery("buildbotMasterEntry")
 	// TODO(hinoka): Maybe don't look past like a month or so?
 	entries := []*buildbotMasterEntry{}
-	err := ds.GetAll(q, &entries)
+	err := ds.GetAll(c, q, &entries)
 	if err != nil {
 		return nil, err
 	}

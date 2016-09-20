@@ -8,14 +8,16 @@ import (
 	"testing"
 
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/errors"
-	. "github.com/luci/luci-go/common/testing/assertions"
 	"github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
 	"github.com/luci/luci-go/tumble"
-	. "github.com/smartystreets/goconvey/convey"
+
 	"golang.org/x/net/context"
+
+	. "github.com/luci/luci-go/common/testing/assertions"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestAddFinishedDeps(t *testing.T) {
@@ -44,26 +46,25 @@ func TestAddFinishedDeps(t *testing.T) {
 		base := f.Auth.Id.AttemptID()
 		fs := model.FwdDepsFromList(c, base, f.FinishedAttempts)
 
-		ds := datastore.Get(c)
 		fs[1].ForExecution = 1
-		So(ds.Put(fs[1]), ShouldBeNil)
+		So(ds.Put(c, fs[1]), ShouldBeNil)
 
 		a := &model.Attempt{ID: *base, State: dm.Attempt_EXECUTING, CurExecution: 7}
-		ak := ds.KeyForObj(a)
+		ak := ds.KeyForObj(c, a)
 		e := &model.Execution{
 			ID: 7, Attempt: ak, State: dm.Execution_RUNNING, Token: []byte("sup")}
-		So(ds.Put(a, e), ShouldBeNil)
+		So(ds.Put(c, a, e), ShouldBeNil)
 
 		Convey("Root", func() {
 			So(f.Root(c).String(), ShouldEqual, `dev~app::/Attempt,"quest|fffffffe"`)
 		})
 
 		Convey("RollForward", func() {
-			err := ds.Get(fs)
+			err := ds.Get(c, fs)
 			So(err, ShouldResemble, errors.MultiError{
-				datastore.ErrNoSuchEntity,
+				ds.ErrNoSuchEntity,
 				nil,
-				datastore.ErrNoSuchEntity,
+				ds.ErrNoSuchEntity,
 			})
 
 			muts, err := f.RollForward(c)
@@ -74,7 +75,7 @@ func TestAddFinishedDeps(t *testing.T) {
 				&MergeQuest{f.MergeQuests[0], nil},
 			})
 
-			So(ds.Get(fs), ShouldBeNil)
+			So(ds.Get(c, fs), ShouldBeNil)
 			So(fs[0].ForExecution, ShouldEqual, 7)
 			So(fs[1].ForExecution, ShouldEqual, 1)
 			So(fs[2].ForExecution, ShouldEqual, 7)
@@ -85,7 +86,7 @@ func TestAddFinishedDeps(t *testing.T) {
 		})
 
 		Convey("RollForward (bad)", func() {
-			So(ds.Delete(ak), ShouldBeNil)
+			So(ds.Delete(c, ak), ShouldBeNil)
 			_, err := f.RollForward(c)
 			So(err, ShouldBeRPCInternal, "execution Auth")
 		})

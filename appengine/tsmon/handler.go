@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
@@ -27,7 +27,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 // cron on App Engine.  It assigns task numbers to datastore entries, and runs
 // any global metric callbacks.
 func housekeepingHandler(c *router.Context) {
-	if !info.Get(c.Context).IsDevAppServer() && c.Request.Header.Get("X-Appengine-Cron") != "true" {
+	if !info.IsDevAppServer(c.Context) && c.Request.Header.Get("X-Appengine-Cron") != "true" {
 		c.Writer.WriteHeader(http.StatusForbidden)
 		http.Error(c.Writer, "request not made from cron", http.StatusForbidden)
 		return
@@ -44,24 +44,23 @@ func housekeepingHandler(c *router.Context) {
 // Engine instances - assigning unique task numbers to those without ones set,
 // and expiring old entities.
 func assignTaskNumbers(c context.Context) error {
-	c = info.Get(c).MustNamespace(instanceNamespace)
-	ds := datastore.Get(c)
+	c = info.MustNamespace(c, instanceNamespace)
 
 	logger := logging.Get(c)
 	now := clock.Now(c)
 	expiredTime := now.Add(-instanceExpirationTimeout)
 
 	usedTaskNums := map[int]struct{}{}
-	var expiredKeys []*datastore.Key
+	var expiredKeys []*ds.Key
 	var unassigned []*instance
 
 	// Query all instances from datastore.
-	if err := ds.Run(datastore.NewQuery("Instance"), func(i *instance) {
+	if err := ds.Run(c, ds.NewQuery("Instance"), func(i *instance) {
 		if i.TaskNum >= 0 {
 			usedTaskNums[i.TaskNum] = struct{}{}
 		}
 		if i.LastUpdated.Before(expiredTime) {
-			expiredKeys = append(expiredKeys, ds.NewKey("Instance", i.ID, 0, nil))
+			expiredKeys = append(expiredKeys, ds.NewKey(c, "Instance", i.ID, 0, nil))
 			logger.Debugf("Expiring %s task_num %d, inactive since %s",
 				i.ID, i.TaskNum, i.LastUpdated.String())
 		} else if i.TaskNum < 0 {
@@ -85,10 +84,10 @@ func assignTaskNumbers(c context.Context) error {
 	// Update all the entities in datastore.
 	if err := parallel.FanOutIn(func(gen chan<- func() error) {
 		gen <- func() error {
-			return ds.Put(unassigned)
+			return ds.Put(c, unassigned)
 		}
 		gen <- func() error {
-			return ds.Delete(expiredKeys)
+			return ds.Delete(c, expiredKeys)
 		}
 	}); err != nil {
 		logging.WithError(err).Errorf(c, "Failed to update task numbers")

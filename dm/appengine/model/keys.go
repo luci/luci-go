@@ -10,13 +10,13 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 )
 
 // QuestKeyFromID makes a datastore.Key given the QuestID.
-func QuestKeyFromID(c context.Context, qid string) *datastore.Key {
-	return datastore.Get(c).MakeKey("Quest", qid)
+func QuestKeyFromID(c context.Context, qid string) *ds.Key {
+	return ds.MakeKey(c, "Quest", qid)
 }
 
 // QuestFromID produces an empty Quest model from the QuestID.
@@ -26,7 +26,7 @@ func QuestFromID(qid string) *Quest {
 
 // QuestIDFromKey makes a QuestID from the given datastore.Key. It panics if the
 // Key does not point to a Quest.
-func QuestIDFromKey(k *datastore.Key) string {
+func QuestIDFromKey(k *ds.Key) string {
 	if k.Kind() != "Quest" || k.Parent() != nil {
 		panic(fmt.Errorf("invalid Quest key: %s", k))
 	}
@@ -34,8 +34,8 @@ func QuestIDFromKey(k *datastore.Key) string {
 }
 
 // AttemptKeyFromID makes a datastore.Key given the AttemptID.
-func AttemptKeyFromID(c context.Context, aid *dm.Attempt_ID) *datastore.Key {
-	return datastore.Get(c).MakeKey("Attempt", aid.DMEncoded())
+func AttemptKeyFromID(c context.Context, aid *dm.Attempt_ID) *ds.Key {
+	return ds.MakeKey(c, "Attempt", aid.DMEncoded())
 }
 
 // AttemptFromID produces an empty Attempt model from the AttemptID.
@@ -47,7 +47,7 @@ func AttemptFromID(aid *dm.Attempt_ID) *Attempt {
 
 // AttemptIDFromKey makes a AttemptID from the given datastore.Key. It panics if the
 // Key does not point to a Attempt.
-func AttemptIDFromKey(k *datastore.Key) *dm.Attempt_ID {
+func AttemptIDFromKey(k *ds.Key) *dm.Attempt_ID {
 	if k.Kind() != "Attempt" || k.Parent() != nil {
 		panic(fmt.Errorf("invalid Attempt key: %s", k))
 	}
@@ -59,8 +59,8 @@ func AttemptIDFromKey(k *datastore.Key) *dm.Attempt_ID {
 }
 
 // ExecutionKeyFromID makes a datastore.Key given the ExecutionID.
-func ExecutionKeyFromID(c context.Context, eid *dm.Execution_ID) *datastore.Key {
-	return datastore.Get(c).MakeKey("Attempt", eid.AttemptID().DMEncoded(), "Execution", eid.Id)
+func ExecutionKeyFromID(c context.Context, eid *dm.Execution_ID) *ds.Key {
+	return ds.MakeKey(c, "Attempt", eid.AttemptID().DMEncoded(), "Execution", eid.Id)
 }
 
 // ExecutionFromID produces an empty Execution model from the ExecutionID.
@@ -73,7 +73,7 @@ func ExecutionFromID(c context.Context, eid *dm.Execution_ID) *Execution {
 
 // ExecutionIDFromKey makes a ExecutionID from the given datastore.Key. It panics if the
 // Key does not point to a Execution.
-func ExecutionIDFromKey(k *datastore.Key) *dm.Execution_ID {
+func ExecutionIDFromKey(k *ds.Key) *dm.Execution_ID {
 	if k.Kind() != "Execution" || k.Parent() == nil {
 		panic(fmt.Errorf("invalid Execution key: %s", k))
 	}

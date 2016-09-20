@@ -25,7 +25,7 @@ func (settingsUIPage) Title(c context.Context) (string, error) {
 }
 
 func (settingsUIPage) Overview(c context.Context) (template.HTML, error) {
-	serviceAcc, err := info.Get(c).ServiceAccount()
+	serviceAcc, err := info.ServiceAccount(c)
 	if err != nil {
 		return "", err
 	}
@@ -89,7 +89,7 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 
 func (settingsUIPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
 	authServiceURL := values["AuthServiceURL"]
-	baseURL := "https://" + info.Get(c).DefaultVersionHostname()
+	baseURL := "https://" + info.DefaultVersionHostname(c)
 	return authdbimpl.ConfigureAuthService(c, baseURL, authServiceURL)
 }
 

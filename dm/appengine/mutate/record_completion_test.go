@@ -8,12 +8,14 @@ import (
 	"testing"
 
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
 	"github.com/luci/luci-go/tumble"
-	. "github.com/smartystreets/goconvey/convey"
+
 	"golang.org/x/net/context"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestRecordCompletion(t *testing.T) {
@@ -24,8 +26,6 @@ func TestRecordCompletion(t *testing.T) {
 		rc := &RecordCompletion{dm.NewAttemptID("quest", 1)}
 
 		bdg := &model.BackDepGroup{Dependee: *rc.For}
-
-		ds := datastore.Get(c)
 
 		Convey("Root", func() {
 			So(rc.Root(c).String(), ShouldEqual, `dev~app::/BackDepGroup,"quest|fffffffe"`)
@@ -39,18 +39,18 @@ func TestRecordCompletion(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(muts, ShouldBeEmpty)
 
-					So(ds.Get(bdg), ShouldBeNil)
+					So(ds.Get(c, bdg), ShouldBeNil)
 					So(bdg.AttemptFinished, ShouldBeTrue)
 				})
 
 				Convey("BDG exists, no deps", func() {
-					So(ds.Put(bdg), ShouldBeNil)
+					So(ds.Put(c, bdg), ShouldBeNil)
 
 					muts, err := rc.RollForward(c)
 					So(err, ShouldBeNil)
 					So(muts, ShouldBeEmpty)
 
-					So(ds.Get(bdg), ShouldBeNil)
+					So(ds.Get(c, bdg), ShouldBeNil)
 					So(bdg.AttemptFinished, ShouldBeTrue)
 				})
 
@@ -59,13 +59,13 @@ func TestRecordCompletion(t *testing.T) {
 						Depender:      *dm.NewAttemptID("from", 1),
 						DependeeGroup: rc.Root(c),
 					}
-					So(ds.Put(bdg, bd), ShouldBeNil)
+					So(ds.Put(c, bdg, bd), ShouldBeNil)
 
 					muts, err := rc.RollForward(c)
 					So(err, ShouldBeNil)
 					So(muts, ShouldResemble, []tumble.Mutation{&AckFwdDep{bd.Edge()}})
 
-					So(ds.Get(bdg, bd), ShouldBeNil)
+					So(ds.Get(c, bdg, bd), ShouldBeNil)
 					So(bdg.AttemptFinished, ShouldBeTrue)
 					So(bd.Propagated, ShouldBeTrue)
 				})
@@ -76,13 +76,13 @@ func TestRecordCompletion(t *testing.T) {
 						DependeeGroup: rc.Root(c),
 						Propagated:    true,
 					}
-					So(ds.Put(bdg, bd), ShouldBeNil)
+					So(ds.Put(c, bdg, bd), ShouldBeNil)
 
 					muts, err := rc.RollForward(c)
 					So(err, ShouldBeNil)
 					So(muts, ShouldBeEmpty)
 
-					So(ds.Get(bdg, bd), ShouldBeNil)
+					So(ds.Get(c, bdg, bd), ShouldBeNil)
 					So(bdg.AttemptFinished, ShouldBeTrue)
 					So(bd.Propagated, ShouldBeTrue)
 				})
@@ -97,9 +97,9 @@ func TestRecordCompletion(t *testing.T) {
 							DependeeGroup: rc.Root(c),
 						}
 						bd.Depender.Id = uint32(i + 1)
-						So(ds.Put(bd), ShouldBeNil)
+						So(ds.Put(c, bd), ShouldBeNil)
 					}
-					So(ds.Put(bdg), ShouldBeNil)
+					So(ds.Put(c, bdg), ShouldBeNil)
 
 					muts, err := rc.RollForward(c)
 					So(err, ShouldBeNil)

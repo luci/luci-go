@@ -21,7 +21,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/gaetesting"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -300,7 +300,7 @@ func TestLuciMachineToken(t *testing.T) {
 			CN:    "Fake CA: fake.ca",
 			Ready: true,
 		}
-		datastore.Get(ctx).Put(&ca)
+		ds.Put(ctx, &ca)
 		model.StoreCAUniqueIDToCNMap(ctx, map[int64]string{
 			123: "Fake CA: fake.ca",
 		})

@@ -15,8 +15,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 
-	"github.com/luci/gae/filter/txnBuf"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/taskqueue"
 
 	"github.com/luci/luci-go/common/logging"
@@ -44,7 +43,7 @@ func (j *jobsimDist) parsePayload(payload string) (*jobsimExecution, error) {
 func (j *jobsimDist) Run(desc *dm.Quest_Desc, exAuth *dm.Execution_Auth, prev *dm.JsonResult) (tok distributor.Token, _ time.Duration, err error) {
 	// TODO(riannucci): Fix luci-gae so we can truly escape the transaction when
 	// we build the jobsimDist instance. See luci/gae#23.
-	ds := txnBuf.GetNoTxn(j.c)
+	c := ds.WithoutTransaction(j.c)
 
 	logging.Fields{
 		"eid": exAuth.Id,
@@ -61,23 +60,22 @@ func (j *jobsimDist) Run(desc *dm.Quest_Desc, exAuth *dm.Execution_Auth, prev *d
 	}
 	jtsk.CfgName = j.cfg.Name
 
-	key := []*datastore.Key{
-		ds.MakeKey(datastore.GetMetaDefault(datastore.GetPLS(jtsk), "kind", ""), 0)}
-	if err = ds.AllocateIDs(key); err != nil {
+	key := []*ds.Key{
+		ds.MakeKey(c, ds.GetMetaDefault(ds.GetPLS(jtsk), "kind", ""), 0)}
+	if err = ds.AllocateIDs(c, key); err != nil {
 		return
 	}
 
 	// transactionally commit the job and a taskqueue task to execute it
 	jtsk.ID = fmt.Sprintf("%s|%d", j.jsConfig().Pool, key[0].IntID())
 	logging.Infof(j.c, "jobsim: entering transaction")
-	err = ds.RunInTransaction(func(c context.Context) error {
-		ds := datastore.Get(c)
-		if err := ds.Get(jtsk); err == nil {
+	err = ds.RunInTransaction(c, func(c context.Context) error {
+		if err := ds.Get(c, jtsk); err == nil {
 			return nil
 		}
 		logging.Infof(j.c, "jobsim: got jtsk: %s", err)
 
-		if err := ds.Put(jtsk); err != nil {
+		if err := ds.Put(c, jtsk); err != nil {
 			return err
 		}
 		logging.Infof(j.c, "jobsim: put jtsk")
@@ -100,8 +98,8 @@ func (j *jobsimDist) Run(desc *dm.Quest_Desc, exAuth *dm.Execution_Auth, prev *d
 func (j *jobsimDist) Cancel(_ *dm.Quest_Desc, tok distributor.Token) error {
 	jtsk := &jobsimExecution{ID: string(tok)}
 
-	cancelBody := func(ds datastore.Interface) (needWrite bool, err error) {
-		if err = ds.Get(jtsk); err != nil {
+	cancelBody := func(c context.Context) (needWrite bool, err error) {
+		if err = ds.Get(c, jtsk); err != nil {
 			return
 		}
 		if jtsk.Status != jobsimRunnable {
@@ -111,18 +109,16 @@ func (j *jobsimDist) Cancel(_ *dm.Quest_Desc, tok distributor.Token) error {
 		return
 	}
 
-	ds := datastore.Get(j.c)
-	if needWrite, err := cancelBody(ds); err != nil || !needWrite {
+	if needWrite, err := cancelBody(j.c); err != nil || !needWrite {
 		return err
 	}
 
-	return ds.RunInTransaction(func(c context.Context) error {
-		ds := datastore.Get(c)
-		if needWrite, err := cancelBody(ds); err != nil || !needWrite {
+	return ds.RunInTransaction(j.c, func(c context.Context) error {
+		if needWrite, err := cancelBody(c); err != nil || !needWrite {
 			return err
 		}
 		jtsk.Status = jobsimCancelled
-		return ds.Put(jtsk)
+		return ds.Put(c, jtsk)
 	}, nil)
 }
 
@@ -154,9 +150,8 @@ func loadTask(c context.Context, rawTok string) (*jobsimExecution, error) {
 		"jobsimId": rawTok,
 	}.Infof(c, "jobsim: loading task")
 
-	ds := datastore.Get(c)
 	jtsk := &jobsimExecution{ID: string(rawTok)}
-	if err := ds.Get(jtsk); err != nil {
+	if err := ds.Get(c, jtsk); err != nil {
 		logging.WithError(err).Errorf(c, "jobsim: failed to load task")
 		return nil, err
 	}
@@ -188,8 +183,7 @@ func (j *jobsimDist) HandleTaskQueueTask(r *http.Request) (notes []*distributor.
 		return
 	}
 	jtsk.Status = jobsimRunning
-	ds := datastore.Get(j.c)
-	if err := ds.Put(jtsk); err != nil {
+	if err := ds.Put(j.c, jtsk); err != nil {
 		logging.WithError(err).Warningf(j.c, "jobsim: failed to update task to Execution_Running")
 	}
 
@@ -213,7 +207,7 @@ func (j *jobsimDist) HandleTaskQueueTask(r *http.Request) (notes []*distributor.
 	}
 
 	err = retry.Retry(j.c, retry.Default, func() error {
-		return ds.Put(jtsk)
+		return ds.Put(j.c, jtsk)
 	}, func(err error, wait time.Duration) {
 		logging.Fields{
 			logging.ErrorKey: err,

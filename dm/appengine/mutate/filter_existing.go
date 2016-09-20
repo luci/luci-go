@@ -5,9 +5,10 @@
 package mutate
 
 import (
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/dm/appengine/model"
+
 	"golang.org/x/net/context"
 )
 
@@ -17,7 +18,7 @@ import (
 func filterExisting(c context.Context, fwdDeps []*model.FwdDep) ([]*model.FwdDep, error) {
 	ret := make([]*model.FwdDep, 0, len(fwdDeps))
 
-	err := datastore.Get(c).Get(fwdDeps)
+	err := ds.Get(c, fwdDeps)
 	if err == nil {
 		return nil, nil
 	}

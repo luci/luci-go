@@ -12,7 +12,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
@@ -115,10 +115,9 @@ func validateAndStoreCRL(c context.Context, crlDer []byte, etag string, ca *mode
 	// Update the CRL entity. Use EntityVersion to make sure we are not
 	// overwriting someone else's changes.
 	var updated *model.CRL
-	err = datastore.Get(c).RunInTransaction(func(c context.Context) error {
-		ds := datastore.Get(c)
+	err = ds.RunInTransaction(c, func(c context.Context) error {
 		entity := *prev
-		if err := ds.Get(&entity); err != nil && err != datastore.ErrNoSuchEntity {
+		if err := ds.Get(c, &entity); err != nil && err != ds.ErrNoSuchEntity {
 			return err
 		}
 		if entity.EntityVersion != prev.EntityVersion {
@@ -135,8 +134,8 @@ func validateAndStoreCRL(c context.Context, crlDer []byte, etag string, ca *mode
 
 		// Mark CA entity as ready for usage.
 		curCA := model.CA{CN: ca.CN}
-		switch err := ds.Get(&curCA); {
-		case err == datastore.ErrNoSuchEntity:
+		switch err := ds.Get(c, &curCA); {
+		case err == ds.ErrNoSuchEntity:
 			return fmt.Errorf("CA entity for %q is unexpectedly gone", ca.CN)
 		case err != nil:
 			return err
@@ -146,7 +145,7 @@ func validateAndStoreCRL(c context.Context, crlDer []byte, etag string, ca *mode
 			curCA.Ready = true
 			toPut = append(toPut, &curCA)
 		}
-		return ds.Put(toPut)
+		return ds.Put(c, toPut)
 	}, nil)
 	if err != nil {
 		return nil, errors.WrapTransient(err)

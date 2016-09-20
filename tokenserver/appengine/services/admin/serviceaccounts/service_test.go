@@ -15,7 +15,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/gaetesting"
 	"github.com/luci/luci-go/common/clock/testclock"
 
@@ -234,7 +234,7 @@ func setupTest(fakes http.Handler) (context.Context, *Server, func()) {
 		Ready:  true,
 		Config: blob,
 	}
-	if err = datastore.Get(ctx).Put(&caEntity); err != nil {
+	if err = ds.Put(ctx, &caEntity); err != nil {
 		panic(err)
 	}
 

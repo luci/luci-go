@@ -95,10 +95,8 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 	}
 
 	// Load our Prefix. It must be registered.
-	di := ds.Get(c)
-
 	pfx := &coordinator.LogPrefix{ID: coordinator.LogPrefixID(prefix)}
-	if err := di.Get(pfx); err != nil {
+	if err := ds.Get(c, pfx); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
 			"id":         pfx.ID,
@@ -139,9 +137,9 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 	// Check for registration, and that the prefix did not expire
 	// (non-transactional).
 	ls := &coordinator.LogStream{ID: logStreamID}
-	lst := ls.State(di)
+	lst := ls.State(c)
 
-	if err := di.Get(ls, lst); err != nil {
+	if err := ds.Get(c, ls, lst); err != nil {
 		if !anyNoSuchEntity(err) {
 			log.WithError(err).Errorf(c, "Failed to check for log stream.")
 			return nil, err
@@ -152,13 +150,13 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 		//
 		// Determine which hierarchy components we need to add.
 		comps := hierarchy.Components(path, true)
-		if comps, err = hierarchy.Missing(di, comps); err != nil {
+		if comps, err = hierarchy.Missing(c, comps); err != nil {
 			log.WithError(err).Warningf(c, "Failed to probe for missing hierarchy components.")
 		}
 
 		// Before we go into transaction, try and put these entries. This should not
 		// be contested, since components don't share an entity root.
-		if err := hierarchy.PutMulti(di, comps); err != nil {
+		if err := hierarchy.PutMulti(c, comps); err != nil {
 			log.WithError(err).Errorf(c, "Failed to add missing hierarchy components.")
 			return nil, grpcutil.Internal
 		}
@@ -200,10 +198,8 @@ type registerStreamMutation struct {
 }
 
 func (m *registerStreamMutation) RollForward(c context.Context) ([]tumble.Mutation, error) {
-	di := ds.Get(c)
-
 	// Load our state and stream (transactional).
-	switch err := di.Get(m.ls, m.lst); {
+	switch err := ds.Get(c, m.ls, m.lst); {
 	case err == nil:
 		// The stream is already registered.
 		return nil, nil
@@ -246,7 +242,7 @@ func (m *registerStreamMutation) RollForward(c context.Context) ([]tumble.Mutati
 		m.lst.TerminalIndex = -1
 	}
 
-	if err := di.Put(m.ls, m.lst); err != nil {
+	if err := ds.Put(c, m.ls, m.lst); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
 		}.Errorf(c, "Failed to Put LogStream.")
@@ -290,7 +286,7 @@ func (m *registerStreamMutation) RollForward(c context.Context) ([]tumble.Mutati
 		}.Debugf(c, "Scheduling archival mutation.")
 	}
 
-	aeParent, aeName := cat.TaskName(di)
+	aeParent, aeName := cat.TaskName(c)
 	if err := tumble.PutNamedMutations(c, aeParent, map[string]tumble.Mutation{aeName: &cat}); err != nil {
 		log.WithError(err).Errorf(c, "Failed to write named mutations.")
 		return nil, grpcutil.Internal
@@ -300,5 +296,5 @@ func (m *registerStreamMutation) RollForward(c context.Context) ([]tumble.Mutati
 }
 
 func (m *registerStreamMutation) Root(c context.Context) *ds.Key {
-	return ds.Get(c).KeyForObj(m.ls)
+	return ds.KeyForObj(c, m.ls)
 }

@@ -23,7 +23,7 @@ const maxProjectWorkers = 32
 //
 // A given project's configuration is named after the current App ID.
 func ProjectConfigPath(c context.Context) string {
-	return fmt.Sprintf("%s.cfg", info.Get(c).AppID())
+	return fmt.Sprintf("%s.cfg", info.AppID(c))
 }
 
 // ProjectConfig loads the project config protobuf from the config service.

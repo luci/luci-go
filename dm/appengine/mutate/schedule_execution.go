@@ -7,14 +7,14 @@ package mutate
 import (
 	"fmt"
 
-	"github.com/luci/gae/filter/txnBuf"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/distributor"
 	"github.com/luci/luci-go/dm/appengine/model"
 	"github.com/luci/luci-go/tumble"
+
 	"golang.org/x/net/context"
 )
 
@@ -25,15 +25,14 @@ type ScheduleExecution struct {
 }
 
 // Root implements tumble.Mutation
-func (s *ScheduleExecution) Root(c context.Context) *datastore.Key {
+func (s *ScheduleExecution) Root(c context.Context) *ds.Key {
 	return model.AttemptKeyFromID(c, s.For)
 }
 
 // RollForward implements tumble.Mutation
 func (s *ScheduleExecution) RollForward(c context.Context) (muts []tumble.Mutation, err error) {
-	ds := datastore.Get(c)
 	a := model.AttemptFromID(s.For)
-	if err = ds.Get(a); err != nil {
+	if err = ds.Get(c, a); err != nil {
 		logging.WithError(err).Errorf(c, "loading attempt")
 		return
 	}
@@ -44,7 +43,7 @@ func (s *ScheduleExecution) RollForward(c context.Context) (muts []tumble.Mutati
 	}
 
 	q := model.QuestFromID(s.For.Quest)
-	if err = txnBuf.GetNoTxn(c).Get(q); err != nil {
+	if err = ds.Get(ds.WithoutTransaction(c), q); err != nil {
 		logging.WithError(err).Errorf(c, "loading quest")
 		return
 	}
@@ -52,7 +51,7 @@ func (s *ScheduleExecution) RollForward(c context.Context) (muts []tumble.Mutati
 	prevResult := (*dm.JsonResult)(nil)
 	if a.LastSuccessfulExecution != 0 {
 		prevExecution := model.ExecutionFromID(c, s.For.Execution(a.LastSuccessfulExecution))
-		if err = ds.Get(prevExecution); err != nil {
+		if err = ds.Get(c, prevExecution); err != nil {
 			logging.Errorf(c, "loading previous execution: %s", err)
 			return
 		}
@@ -96,7 +95,7 @@ func (s *ScheduleExecution) RollForward(c context.Context) (muts []tumble.Mutati
 
 		// put a and e to the transaction buffer, so that
 		// FinishExecution.RollForward can see them.
-		if err = ds.Put(a, e); err != nil {
+		if err = ds.Put(c, a, e); err != nil {
 			logging.WithError(err).Errorf(c, "putting attempt+execution for non-transient distributor error")
 			return
 		}
@@ -111,7 +110,7 @@ func (s *ScheduleExecution) RollForward(c context.Context) (muts []tumble.Mutati
 		return
 	}
 
-	if err = ds.Put(a, e); err != nil {
+	if err = ds.Put(c, a, e); err != nil {
 		logging.WithError(err).Errorf(c, "putting attempt+execution")
 	}
 

@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/memcache"
+	mc "github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/settings"
 )
@@ -132,7 +132,7 @@ func (settingsUIPage) WriteSettings(c context.Context, values map[string]string,
 	}
 	if existing.DisableDSCache && !modified.DisableDSCache {
 		logging.Warningf(c, "DSCache was reenabled, wiping memcache")
-		if err := memcache.Get(c).Flush(); err != nil {
+		if err := mc.Flush(c); err != nil {
 			return err
 		}
 	}

@@ -16,8 +16,8 @@ import (
 	"google.golang.org/api/pubsub/v1"
 
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/taskqueue"
+	ds "github.com/luci/gae/service/datastore"
+	tq "github.com/luci/gae/service/taskqueue"
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -39,7 +39,6 @@ func TestGetAllProjects(t *testing.T) {
 	Convey("works", t, func() {
 		c := newTestContext(epoch)
 		e, _ := newTestEngine()
-		ds := datastore.Get(c)
 
 		// Empty.
 		projects, err := e.GetAllProjects(c)
@@ -47,13 +46,13 @@ func TestGetAllProjects(t *testing.T) {
 		So(len(projects), ShouldEqual, 0)
 
 		// Non empty.
-		So(ds.Put(
+		So(ds.Put(c,
 			&Job{JobID: "abc/1", ProjectID: "abc", Enabled: true},
 			&Job{JobID: "abc/2", ProjectID: "abc", Enabled: true},
 			&Job{JobID: "def/1", ProjectID: "def", Enabled: true},
 			&Job{JobID: "xyz/1", ProjectID: "xyz", Enabled: false},
 		), ShouldBeNil)
-		ds.Testable().CatchupIndexes()
+		ds.GetTestable(c).CatchupIndexes()
 		projects, err = e.GetAllProjects(c)
 		So(err, ShouldBeNil)
 		So(projects, ShouldResemble, []string{"abc", "def"})
@@ -94,7 +93,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 		task := ensureOneTask(c, "timers-q")
 		So(task.Path, ShouldEqual, "/timers")
 		So(task.ETA, ShouldResemble, epoch.Add(5*time.Second))
-		taskqueue.Get(c).Testable().ResetTasks()
+		tq.GetTestable(c).ResetTasks()
 
 		// Readding same job in with exact same config revision -> noop.
 		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{
@@ -131,7 +130,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 		task = ensureOneTask(c, "timers-q")
 		So(task.Path, ShouldEqual, "/timers")
 		So(task.ETA, ShouldResemble, epoch.Add(1*time.Second))
-		taskqueue.Get(c).Testable().ResetTasks()
+		tq.GetTestable(c).ResetTasks()
 
 		// Removed -> goes to disabled state.
 		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{}), ShouldBeNil)
@@ -158,7 +157,7 @@ func TestTransactionRetries(t *testing.T) {
 		e, _ := newTestEngine()
 
 		// Adding a new job with transaction retry, should enqueue one task.
-		datastore.Get(c).Testable().SetTransactionRetryCount(2)
+		ds.GetTestable(c).SetTransactionRetryCount(2)
 		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{
 			{
 				JobID:    "abc/1",
@@ -183,7 +182,7 @@ func TestTransactionRetries(t *testing.T) {
 		task := ensureOneTask(c, "timers-q")
 		So(task.Path, ShouldEqual, "/timers")
 		So(task.ETA, ShouldResemble, epoch.Add(5*time.Second))
-		taskqueue.Get(c).Testable().ResetTasks()
+		tq.GetTestable(c).ResetTasks()
 	})
 
 	Convey("collision is handled", t, func() {
@@ -191,7 +190,7 @@ func TestTransactionRetries(t *testing.T) {
 		e, _ := newTestEngine()
 
 		// Pretend collision happened in all retries.
-		datastore.Get(c).Testable().SetTransactionRetryCount(15)
+		ds.GetTestable(c).SetTransactionRetryCount(15)
 		err := e.UpdateProjectJobs(c, "abc", []catalog.Definition{
 			{
 				JobID:    "abc/1",
@@ -285,7 +284,7 @@ func TestFullFlow(t *testing.T) {
 		tsk := ensureOneTask(c, "timers-q")
 		So(tsk.Path, ShouldEqual, "/timers")
 		So(tsk.ETA, ShouldResemble, epoch.Add(5*time.Second))
-		taskqueue.Get(c).Testable().ResetTasks()
+		tq.GetTestable(c).ResetTasks()
 
 		// Tick time comes, the tick task is executed, job is added to queue.
 		clock.Get(c).(testclock.TestClock).Add(5 * time.Second)
@@ -319,7 +318,7 @@ func TestFullFlow(t *testing.T) {
 		invTask := ensureOneTask(c, "invs-q")
 		So(invTask.Path, ShouldEqual, "/invs")
 		So(invTask.ETA, ShouldResemble, epoch.Add(6*time.Second))
-		taskqueue.Get(c).Testable().ResetTasks()
+		tq.GetTestable(c).ResetTasks()
 
 		// Time to run the job and it fails to launch with a transient error.
 		mgr.launchTask = func(ctl task.Controller) error {
@@ -354,11 +353,11 @@ func TestFullFlow(t *testing.T) {
 				},
 			},
 		})
-		jobKey := datastore.Get(c).KeyForObj(&jobs[0])
+		jobKey := ds.KeyForObj(c, &jobs[0])
 
 		// Check Invocation fields.
 		inv := Invocation{ID: 9200093518582666224, JobKey: jobKey}
-		So(datastore.Get(c).Get(&inv), ShouldBeNil)
+		So(ds.Get(c, &inv), ShouldBeNil)
 		inv.JobKey = nil // for easier ShouldResemble below
 		So(inv, ShouldResemble, Invocation{
 			ID:              9200093518582666224,
@@ -402,7 +401,7 @@ func TestFullFlow(t *testing.T) {
 				},
 			})
 			inv := Invocation{ID: 9200093518581789696, JobKey: jobKey}
-			So(datastore.Get(c).Get(&inv), ShouldBeNil)
+			So(ds.Get(c, &inv), ShouldBeNil)
 			inv.JobKey = nil // for easier ShouldResemble below
 			So(inv, ShouldResemble, Invocation{
 				ID:              9200093518581789696,
@@ -429,7 +428,7 @@ func TestFullFlow(t *testing.T) {
 
 		// After final save.
 		inv = Invocation{ID: 9200093518581789696, JobKey: jobKey}
-		So(datastore.Get(c).Get(&inv), ShouldBeNil)
+		So(ds.Get(c, &inv), ShouldBeNil)
 		inv.JobKey = nil // for easier ShouldResemble below
 		So(inv, ShouldResemble, Invocation{
 			ID:              9200093518581789696,
@@ -450,7 +449,7 @@ func TestFullFlow(t *testing.T) {
 
 		// Previous invocation is canceled.
 		inv = Invocation{ID: 9200093518582666224, JobKey: jobKey}
-		So(datastore.Get(c).Get(&inv), ShouldBeNil)
+		So(ds.Get(c, &inv), ShouldBeNil)
 		inv.JobKey = nil // for easier ShouldResemble below
 		So(inv, ShouldResemble, Invocation{
 			ID:              9200093518582666224,
@@ -490,7 +489,7 @@ func TestFullFlow(t *testing.T) {
 func TestGenerateInvocationID(t *testing.T) {
 	Convey("generateInvocationID does not collide", t, func() {
 		c := newTestContext(epoch)
-		k := datastore.Get(c).NewKey("Job", "", 123, nil)
+		k := ds.NewKey(c, "Job", "", 123, nil)
 
 		// Bunch of ids generated at the exact same moment in time do not collide.
 		ids := map[int64]struct{}{}
@@ -504,7 +503,7 @@ func TestGenerateInvocationID(t *testing.T) {
 
 	Convey("generateInvocationID gen IDs with most recent first", t, func() {
 		c := newTestContext(epoch)
-		k := datastore.Get(c).NewKey("Job", "", 123, nil)
+		k := ds.NewKey(c, "Job", "", 123, nil)
 
 		older, err := generateInvocationID(c, k)
 		So(err, ShouldBeNil)
@@ -522,18 +521,17 @@ func TestQueries(t *testing.T) {
 	Convey("with mock data", t, func() {
 		c := newTestContext(epoch)
 		e, _ := newTestEngine()
-		ds := datastore.Get(c)
 
-		So(ds.Put(
+		So(ds.Put(c,
 			&Job{JobID: "abc/1", ProjectID: "abc", Enabled: true},
 			&Job{JobID: "abc/2", ProjectID: "abc", Enabled: true},
 			&Job{JobID: "def/1", ProjectID: "def", Enabled: true},
 			&Job{JobID: "def/2", ProjectID: "def", Enabled: false},
 		), ShouldBeNil)
 
-		job1 := ds.NewKey("Job", "abc/1", 0, nil)
-		job2 := ds.NewKey("Job", "abc/2", 0, nil)
-		So(ds.Put(
+		job1 := ds.NewKey(c, "Job", "abc/1", 0, nil)
+		job2 := ds.NewKey(c, "Job", "abc/2", 0, nil)
+		So(ds.Put(c,
 			&Invocation{ID: 1, JobKey: job1, InvocationNonce: 123},
 			&Invocation{ID: 2, JobKey: job1, InvocationNonce: 123},
 			&Invocation{ID: 3, JobKey: job1},
@@ -542,7 +540,7 @@ func TestQueries(t *testing.T) {
 			&Invocation{ID: 3, JobKey: job2},
 		), ShouldBeNil)
 
-		ds.Testable().CatchupIndexes()
+		ds.GetTestable(c).CatchupIndexes()
 
 		Convey("GetAllJobs works", func() {
 			jobs, err := e.GetAllJobs(c)
@@ -632,7 +630,7 @@ func TestPrepareTopic(t *testing.T) {
 			manager: &noop.TaskManager{},
 			saved: Invocation{
 				ID:     123456,
-				JobKey: datastore.Get(c).NewKey("Job", "job_id", 0, nil),
+				JobKey: ds.NewKey(c, "Job", "job_id", 0, nil),
 			},
 		}
 		ctl.populateState()
@@ -661,9 +659,8 @@ func TestProcessPubSubPush(t *testing.T) {
 	Convey("with mock invocation", t, func() {
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
-		ds := datastore.Get(c)
 
-		So(ds.Put(&Job{
+		So(ds.Put(c, &Job{
 			JobID:     "abc/1",
 			ProjectID: "abc",
 			Enabled:   true,
@@ -676,10 +673,10 @@ func TestProcessPubSubPush(t *testing.T) {
 
 		inv := Invocation{
 			ID:     1,
-			JobKey: ds.NewKey("Job", "abc/1", 0, nil),
+			JobKey: ds.NewKey(c, "Job", "abc/1", 0, nil),
 			Task:   task,
 		}
-		So(ds.Put(&inv), ShouldBeNil)
+		So(ds.Put(c, &inv), ShouldBeNil)
 
 		// Skip talking to PubSub for real.
 		e.configureTopic = func(c context.Context, topic, sub, pushURL, publisher string) error {
@@ -731,7 +728,7 @@ func TestProcessPubSubPush(t *testing.T) {
 		})
 
 		Convey("ProcessPubSubPush handles missing invocation", func() {
-			ds.Delete(ds.KeyForObj(&inv))
+			ds.Delete(c, ds.KeyForObj(c, &inv))
 			msg := pubsub.PubsubMessage{
 				Attributes: map[string]string{"auth_token": token},
 			}
@@ -746,7 +743,6 @@ func TestAborts(t *testing.T) {
 	Convey("with mock invocation", t, func() {
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
-		ds := datastore.Get(c)
 
 		taskBlob, err := proto.Marshal(&messages.Task{
 			Noop: &messages.NoopTask{},
@@ -756,7 +752,7 @@ func TestAborts(t *testing.T) {
 		// A job in "QUEUED" state (about to run an invocation).
 		const jobID = "abc/1"
 		const invNonce = int64(12345)
-		So(ds.Put(&Job{
+		So(ds.Put(c, &Job{
 			JobID:     jobID,
 			ProjectID: "abc",
 			Enabled:   true,
@@ -829,19 +825,17 @@ func newTestContext(now time.Time) context.Context {
 	c = mathrand.Set(c, rand.New(rand.NewSource(1000)))
 	c = testsecrets.Use(c)
 
-	ds := datastore.Get(c)
-	ds.Testable().AddIndexes(&datastore.IndexDefinition{
+	ds.GetTestable(c).AddIndexes(&ds.IndexDefinition{
 		Kind: "Job",
-		SortBy: []datastore.IndexColumn{
+		SortBy: []ds.IndexColumn{
 			{Property: "Enabled"},
 			{Property: "ProjectID"},
 		},
 	})
-	ds.Testable().CatchupIndexes()
+	ds.GetTestable(c).CatchupIndexes()
 
-	tq := taskqueue.Get(c)
-	tq.Testable().CreateQueue("timers-q")
-	tq.Testable().CreateQueue("invs-q")
+	tq.GetTestable(c).CreateQueue("timers-q")
+	tq.GetTestable(c).CreateQueue("invs-q")
 	return c
 }
 
@@ -899,10 +893,9 @@ func noopTaskBytes() []byte {
 }
 
 func allJobs(c context.Context) []Job {
-	ds := datastore.Get(c)
-	ds.Testable().CatchupIndexes()
+	ds.GetTestable(c).CatchupIndexes()
 	entities := []Job{}
-	if err := ds.GetAll(datastore.NewQuery("Job"), &entities); err != nil {
+	if err := ds.GetAll(c, ds.NewQuery("Job"), &entities); err != nil {
 		panic(err)
 	}
 	// Strip UTC location pointers from zero time.Time{} so that ShouldResemble
@@ -920,13 +913,13 @@ func allJobs(c context.Context) []Job {
 }
 
 func ensureZeroTasks(c context.Context, q string) {
-	tqt := taskqueue.Get(c).Testable()
+	tqt := tq.GetTestable(c)
 	tasks := tqt.GetScheduledTasks()[q]
 	So(tasks == nil || len(tasks) == 0, ShouldBeTrue)
 }
 
-func ensureOneTask(c context.Context, q string) *taskqueue.Task {
-	tqt := taskqueue.Get(c).Testable()
+func ensureOneTask(c context.Context, q string) *tq.Task {
+	tqt := tq.GetTestable(c)
 	tasks := tqt.GetScheduledTasks()[q]
 	So(len(tasks), ShouldEqual, 1)
 	for _, t := range tasks {

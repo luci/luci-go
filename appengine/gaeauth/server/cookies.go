@@ -20,7 +20,7 @@ type UsersAPIAuthMethod struct{}
 
 // Authenticate extracts peer's identity from the incoming request.
 func (m UsersAPIAuthMethod) Authenticate(c context.Context, r *http.Request) (*auth.User, error) {
-	u := user.Get(c).Current()
+	u := user.Current(c)
 	if u == nil {
 		return nil, nil
 	}
@@ -38,11 +38,11 @@ func (m UsersAPIAuthMethod) Authenticate(c context.Context, r *http.Request) (*a
 // LoginURL returns a URL that, when visited, prompts the user to sign in,
 // then redirects the user to the URL specified by dest.
 func (m UsersAPIAuthMethod) LoginURL(c context.Context, dest string) (string, error) {
-	return user.Get(c).LoginURL(dest)
+	return user.LoginURL(c, dest)
 }
 
 // LogoutURL returns a URL that, when visited, signs the user out,
 // then redirects the user to the URL specified by dest.
 func (m UsersAPIAuthMethod) LogoutURL(c context.Context, dest string) (string, error) {
-	return user.Get(c).LogoutURL(dest)
+	return user.LogoutURL(c, dest)
 }

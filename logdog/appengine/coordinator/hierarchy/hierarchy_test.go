@@ -120,9 +120,8 @@ func TestHierarchy(t *testing.T) {
 				"proj-foo", "proj-bar", "proj-exclusive",
 			} {
 				// Bypass access check.
-				ic := info.Get(c).MustNamespace(coordinator.ProjectNamespace(proj))
+				ic := info.MustNamespace(c, coordinator.ProjectNamespace(proj))
 
-				di := ds.Get(ic)
 				for _, p := range []types.StreamPath{
 					"foo/+/baz",
 					"foo/+/qux",
@@ -137,19 +136,19 @@ func TestHierarchy(t *testing.T) {
 					"bar/+/baz",
 					"bar/+/baz/qux",
 				} {
-					comps, err := Missing(di, Components(p, true))
+					comps, err := Missing(ic, Components(p, true))
 					if err != nil {
 						panic(err)
 					}
 
 					for _, c := range comps {
-						if err := c.Put(di); err != nil {
+						if err := c.Put(ic); err != nil {
 							panic(err)
 						}
 					}
 				}
 			}
-			ds.Get(c).Testable().CatchupIndexes()
+			ds.GetTestable(c).CatchupIndexes()
 
 			Convey(`Can list the hierarchy immediate paths (discrete).`, func() {
 				r.Project = "proj-foo"

@@ -14,6 +14,8 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/common/types"
+
+	"golang.org/x/net/context"
 )
 
 // CurrentSchemaVersion is the current schema version of the LogStream.
@@ -125,14 +127,14 @@ func (s *LogStream) LogPrefix() *LogPrefix {
 
 // PopulateState populates the datastore key fields for the supplied
 // LogStreamState, binding them to the current LogStream.
-func (s *LogStream) PopulateState(di ds.Interface, lst *LogStreamState) {
-	lst.Parent = di.KeyForObj(s)
+func (s *LogStream) PopulateState(c context.Context, lst *LogStreamState) {
+	lst.Parent = ds.KeyForObj(c, s)
 }
 
 // State returns the LogStreamState keyed for this LogStream.
-func (s *LogStream) State(di ds.Interface) *LogStreamState {
+func (s *LogStream) State(c context.Context) *LogStreamState {
 	var lst LogStreamState
-	s.PopulateState(di, &lst)
+	s.PopulateState(c, &lst)
 	return &lst
 }
 

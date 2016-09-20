@@ -21,7 +21,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/config"
@@ -123,8 +123,8 @@ func (s *Server) ImportConfig(c context.Context, _ *google.Empty) (*admin.Import
 
 	// Find CAs that were removed from the config.
 	toRemove := []string{}
-	q := datastore.NewQuery("CA").Eq("Removed", false).KeysOnly(true)
-	err = datastore.Get(c).Run(q, func(k *datastore.Key) {
+	q := ds.NewQuery("CA").Eq("Removed", false).KeysOnly(true)
+	err = ds.Run(c, q, func(k *ds.Key) {
 		if !seenCAs.Has(k.StringID()) {
 			toRemove = append(toRemove, k.StringID())
 		}
@@ -158,12 +158,10 @@ func (s *Server) ImportConfig(c context.Context, _ *google.Empty) (*admin.Import
 
 // FetchCRL makes the server fetch a CRL for some CA.
 func (s *Server) FetchCRL(c context.Context, r *admin.FetchCRLRequest) (*admin.FetchCRLResponse, error) {
-	ds := datastore.Get(c)
-
 	// Grab a corresponding CA entity. It contains URL of CRL to fetch.
 	ca := &model.CA{CN: r.Cn}
-	switch err := ds.Get(ca); {
-	case err == datastore.ErrNoSuchEntity:
+	switch err := ds.Get(c, ca); {
+	case err == ds.ErrNoSuchEntity:
 		return nil, grpc.Errorf(codes.NotFound, "no such CA %q", ca.CN)
 	case err != nil:
 		return nil, grpc.Errorf(codes.Internal, "datastore error - %s", err)
@@ -179,8 +177,8 @@ func (s *Server) FetchCRL(c context.Context, r *admin.FetchCRLRequest) (*admin.F
 	}
 
 	// Grab info about last processed CRL, if any.
-	crl := &model.CRL{Parent: ds.KeyForObj(ca)}
-	if err = ds.Get(crl); err != nil && err != datastore.ErrNoSuchEntity {
+	crl := &model.CRL{Parent: ds.KeyForObj(c, ca)}
+	if err = ds.Get(c, crl); err != nil && err != ds.ErrNoSuchEntity {
 		return nil, grpc.Errorf(codes.Internal, "datastore error - %s", err)
 	}
 
@@ -218,11 +216,10 @@ func (s *Server) FetchCRL(c context.Context, r *admin.FetchCRLRequest) (*admin.F
 
 // ListCAs returns a list of Common Names of registered CAs.
 func (s *Server) ListCAs(c context.Context, _ *google.Empty) (*admin.ListCAsResponse, error) {
-	ds := datastore.Get(c)
-	keys := []*datastore.Key{}
+	keys := []*ds.Key{}
 
-	q := datastore.NewQuery("CA").Eq("Removed", false).KeysOnly(true)
-	if err := ds.GetAll(q, &keys); err != nil {
+	q := ds.NewQuery("CA").Eq("Removed", false).KeysOnly(true)
+	if err := ds.GetAll(c, q, &keys); err != nil {
 		return nil, grpc.Errorf(codes.Internal, "transient datastore error - %s", err)
 	}
 
@@ -237,26 +234,23 @@ func (s *Server) ListCAs(c context.Context, _ *google.Empty) (*admin.ListCAsResp
 
 // GetCAStatus returns configuration of some CA defined in the config.
 func (s *Server) GetCAStatus(c context.Context, r *admin.GetCAStatusRequest) (*admin.GetCAStatusResponse, error) {
-	ds := datastore.Get(c)
-
 	// Entities to fetch.
 	ca := model.CA{CN: r.Cn}
-	crl := model.CRL{Parent: ds.KeyForObj(&ca)}
+	crl := model.CRL{Parent: ds.KeyForObj(c, &ca)}
 
 	// Fetch them at the same revision. It is fine if CRL is not there yet. Don't
 	// bother doing it in parallel: GetCAStatus is used only by admins, manually.
-	err := ds.RunInTransaction(func(c context.Context) error {
-		ds := datastore.Get(c)
-		if err := ds.Get(&ca); err != nil {
+	err := ds.RunInTransaction(c, func(c context.Context) error {
+		if err := ds.Get(c, &ca); err != nil {
 			return err // can be ErrNoSuchEntity
 		}
-		if err := ds.Get(&crl); err != nil && err != datastore.ErrNoSuchEntity {
+		if err := ds.Get(c, &crl); err != nil && err != ds.ErrNoSuchEntity {
 			return err // only transient errors
 		}
 		return nil
 	}, nil)
 	switch {
-	case err == datastore.ErrNoSuchEntity:
+	case err == ds.ErrNoSuchEntity:
 		return &admin.GetCAStatusResponse{}, nil
 	case err != nil:
 		return nil, grpc.Errorf(codes.Internal, "datastore error - %s", err)
@@ -340,7 +334,7 @@ func (s *Server) CheckCertificate(c context.Context, r *admin.CheckCertificateRe
 
 // fetchConfigFile fetches a file from this services' config set.
 func fetchConfigFile(c context.Context, path string) (*config.Config, error) {
-	configSet := "services/" + info.Get(c).AppID()
+	configSet := "services/" + info.AppID(c)
 	logging.Infof(c, "Reading %q from config set %q", path, configSet)
 	c, _ = context.WithTimeout(c, 30*time.Second) // URL fetch deadline
 	return config.GetConfig(c, configSet, path, false)
@@ -373,17 +367,16 @@ func (s *Server) importCA(c context.Context, ca *admin.CertificateAuthorityConfi
 	}
 
 	// Create or update the entity.
-	return datastore.Get(c).RunInTransaction(func(c context.Context) error {
-		ds := datastore.Get(c)
+	return ds.RunInTransaction(c, func(c context.Context) error {
 		existing := model.CA{CN: ca.Cn}
-		err := ds.Get(&existing)
-		if err != nil && err != datastore.ErrNoSuchEntity {
+		err := ds.Get(c, &existing)
+		if err != nil && err != ds.ErrNoSuchEntity {
 			return err
 		}
 		// New one?
-		if err == datastore.ErrNoSuchEntity {
+		if err == ds.ErrNoSuchEntity {
 			logging.Infof(c, "Adding new CA %q", ca.Cn)
-			return ds.Put(&model.CA{
+			return ds.Put(c, &model.CA{
 				CN:         ca.Cn,
 				Config:     cfgBlob,
 				Cert:       certDer,
@@ -403,16 +396,15 @@ func (s *Server) importCA(c context.Context, ca *admin.CertificateAuthorityConfi
 		existing.Removed = false
 		existing.UpdatedRev = rev
 		existing.RemovedRev = ""
-		return ds.Put(&existing)
+		return ds.Put(c, &existing)
 	}, nil)
 }
 
 // removeCA marks the CA in the datastore as removed.
 func (s *Server) removeCA(c context.Context, name string, rev string) error {
-	return datastore.Get(c).RunInTransaction(func(c context.Context) error {
-		ds := datastore.Get(c)
+	return ds.RunInTransaction(c, func(c context.Context) error {
 		existing := model.CA{CN: name}
-		if err := ds.Get(&existing); err != nil {
+		if err := ds.Get(c, &existing); err != nil {
 			return err
 		}
 		if existing.Removed {
@@ -421,6 +413,6 @@ func (s *Server) removeCA(c context.Context, name string, rev string) error {
 		logging.Infof(c, "Removing CA %q", name)
 		existing.Removed = true
 		existing.RemovedRev = rev
-		return ds.Put(&existing)
+		return ds.Put(c, &existing)
 	}, nil)
 }

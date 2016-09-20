@@ -11,7 +11,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/gae/service/info"
-	"github.com/luci/gae/service/taskqueue"
+	tq "github.com/luci/gae/service/taskqueue"
 	"github.com/luci/luci-go/common/gcloud/pubsub"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 )
@@ -37,9 +37,9 @@ type Config struct {
 
 // EnqueueTask allows a Distributor to enqueue a TaskQueue task that will be
 // handled by the Distributor's HandleTaskQueueTask method.
-func (cfg *Config) EnqueueTask(c context.Context, tsk *taskqueue.Task) error {
+func (cfg *Config) EnqueueTask(c context.Context, tsk *tq.Task) error {
 	tsk.Path = handlerPath(cfg.Name)
-	return taskqueue.Get(c).Add(tsk, "")
+	return tq.Add(c, "", tsk)
 }
 
 // PrepareTopic returns a pubsub topic that notifications should be sent to, and
@@ -50,7 +50,7 @@ func (cfg *Config) EnqueueTask(c context.Context, tsk *taskqueue.Task) error {
 // instructed to put the token into the 'auth_token' attribute of PubSub
 // messages. DM will know how to route such messages to D.HandleNotification.
 func (cfg *Config) PrepareTopic(c context.Context, eid *dm.Execution_ID) (topic pubsub.Topic, token string, err error) {
-	topic = pubsub.NewTopic(info.Get(c).TrimmedAppID(), notifyTopicSuffix)
+	topic = pubsub.NewTopic(info.TrimmedAppID(c), notifyTopicSuffix)
 	if err := topic.Validate(); err != nil {
 		panic(fmt.Errorf("failed to validate Topic %q: %s", topic, err))
 	}

@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/luci/gae/filter/dsQueryBatch"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/sync/parallel"
@@ -57,7 +57,7 @@ func (g *graphWalker) runAttemptListQuery(send func(*dm.Attempt_ID) error) func(
 				if !g.req.Include.Attempt.Expired {
 					qry = qry.Eq("IsExpired", false)
 				}
-				err := datastore.Get(g).Run(qry, func(k *datastore.Key) error {
+				err := ds.Run(g, qry, func(k *ds.Key) error {
 					aid := &dm.Attempt_ID{}
 					if err := aid.SetDMEncoded(k.StringID()); err != nil {
 						logging.WithError(err).Errorf(g, "Attempt_ID.SetDMEncoded returned an error with input: %q", k.StringID())
@@ -97,8 +97,8 @@ func (g *graphWalker) runAttemptRangeQuery(send func(*dm.Attempt_ID) error, ar *
 func (g *graphWalker) questDataLoader(qid string, dst *dm.Quest) func() error {
 	return func() error {
 		qst := &model.Quest{ID: qid}
-		if err := datastore.Get(g).Get(qst); err != nil {
-			if err == datastore.ErrNoSuchEntity {
+		if err := ds.Get(g, qst); err != nil {
+			if err == ds.ErrNoSuchEntity {
 				dst.DNE = true
 				dst.Partial = false
 				return nil
@@ -112,10 +112,10 @@ func (g *graphWalker) questDataLoader(qid string, dst *dm.Quest) func() error {
 	}
 }
 
-func (g *graphWalker) loadEdges(send func(*dm.Attempt_ID) error, typ string, base *datastore.Key, fan *dm.AttemptList, doSend bool) error {
-	return datastore.Get(g).Run(datastore.NewQuery(typ).Ancestor(base), func(k *datastore.Key) error {
+func (g *graphWalker) loadEdges(send func(*dm.Attempt_ID) error, typ string, base *ds.Key, fan *dm.AttemptList, doSend bool) error {
+	return ds.Run(g, ds.NewQuery(typ).Ancestor(base), func(k *ds.Key) error {
 		if g.Err() != nil {
-			return datastore.Stop
+			return ds.Stop
 		}
 		aid := &dm.Attempt_ID{}
 		if err := aid.SetDMEncoded(k.StringID()); err != nil {
@@ -134,15 +134,14 @@ func (g *graphWalker) loadEdges(send func(*dm.Attempt_ID) error, typ string, bas
 	})
 }
 
-func (g *graphWalker) loadExecutions(includeResult bool, atmpt *model.Attempt, akey *datastore.Key, dst *dm.Attempt) error {
+func (g *graphWalker) loadExecutions(includeResult bool, atmpt *model.Attempt, akey *ds.Key, dst *dm.Attempt) error {
 	numEx := g.req.Include.NumExecutions
 	if atmpt.CurExecution < numEx {
 		numEx = atmpt.CurExecution
 	}
 
 	dst.Executions = map[uint32]*dm.Execution{}
-	ds := datastore.Get(g)
-	q := datastore.NewQuery("Execution").Ancestor(akey)
+	q := ds.NewQuery("Execution").Ancestor(akey)
 	if numEx > math.MaxInt32 {
 		q = q.Limit(math.MaxInt32)
 	} else {
@@ -155,9 +154,9 @@ func (g *graphWalker) loadExecutions(includeResult bool, atmpt *model.Attempt, a
 		q = q.Eq("IsExpired", false)
 	}
 
-	return ds.Run(q, func(e *model.Execution) error {
+	return ds.Run(g, q, func(e *model.Execution) error {
 		if g.Err() != nil {
-			return datastore.Stop
+			return ds.Stop
 		}
 		p := e.ToProto(g.req.Include.Execution.Ids)
 		d, err := g.getDist(p.Data.DistributorInfo.ConfigName)
@@ -175,10 +174,8 @@ func (g *graphWalker) loadExecutions(includeResult bool, atmpt *model.Attempt, a
 	})
 }
 
-func (g *graphWalker) attemptResultLoader(aid *dm.Attempt_ID, rsltSize uint32, akey *datastore.Key, dst *dm.Attempt) func() error {
+func (g *graphWalker) attemptResultLoader(aid *dm.Attempt_ID, rsltSize uint32, akey *ds.Key, dst *dm.Attempt) func() error {
 	return func() error {
-		ds := datastore.Get(g)
-
 		siz := rsltSize
 		if !g.lim.PossiblyOK(siz) {
 			dst.Partial.Result = dm.Attempt_Partial_DATA_SIZE_LIMIT
@@ -186,7 +183,7 @@ func (g *graphWalker) attemptResultLoader(aid *dm.Attempt_ID, rsltSize uint32, a
 			return nil
 		}
 		r := &model.AttemptResult{Attempt: akey}
-		if err := ds.Get(r); err != nil {
+		if err := ds.Get(g, r); err != nil {
 			logging.Fields{ek: err, "aid": aid}.Errorf(g, "failed to load AttemptResult")
 			return err
 		}
@@ -211,9 +208,8 @@ func (g *graphWalker) checkCanLoadResultData(aid *dm.Attempt_ID) (bool, error) {
 	// a dependency, so we need to verify that the dependency exists.
 	from := g.req.Auth.Id.AttemptID().DMEncoded()
 	to := aid.DMEncoded()
-	ds := datastore.Get(g)
-	fdepKey := ds.MakeKey("Attempt", from, "FwdDep", to)
-	exist, err := ds.Exists(fdepKey)
+	fdepKey := ds.MakeKey(g, "Attempt", from, "FwdDep", to)
+	exist, err := ds.Exists(g, fdepKey)
 	if err != nil {
 		logging.Fields{ek: err, "key": fdepKey}.Errorf(g, "failed to determine if FwdDep exists")
 		return false, err
@@ -227,12 +223,10 @@ func (g *graphWalker) checkCanLoadResultData(aid *dm.Attempt_ID) (bool, error) {
 
 func (g *graphWalker) attemptLoader(aid *dm.Attempt_ID, authedForResult bool, dst *dm.Attempt, send func(aid *dm.Attempt_ID, fwd bool) error) func() error {
 	return func() error {
-		ds := datastore.Get(g)
-
 		atmpt := &model.Attempt{ID: *aid}
-		akey := ds.KeyForObj(atmpt)
-		if err := ds.Get(atmpt); err != nil {
-			if err == datastore.ErrNoSuchEntity {
+		akey := ds.KeyForObj(g, atmpt)
+		if err := ds.Get(g, atmpt); err != nil {
+			if err == ds.ErrNoSuchEntity {
 				dst.DNE = true
 				dst.Partial = nil
 				return nil
@@ -329,7 +323,7 @@ func (g *graphWalker) attemptLoader(aid *dm.Attempt_ID, authedForResult bool, ds
 					return send(aid, false)
 				}
 				bdg := &model.BackDepGroup{Dependee: atmpt.ID}
-				bdgKey := ds.KeyForObj(bdg)
+				bdgKey := ds.KeyForObj(g, bdg)
 				ch <- func() error {
 					err := g.loadEdges(subSend, "BackDep", bdgKey, dst.BackDeps, walkBack)
 					if err == nil && dst.Partial != nil {

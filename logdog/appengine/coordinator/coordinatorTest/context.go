@@ -191,7 +191,7 @@ func Install() (context.Context, *Environment) {
 		}
 		indexes[i] = &ds.IndexDefinition{Kind: "LogStream", SortBy: cols}
 	}
-	ds.Get(c).Testable().AddIndexes(indexes...)
+	ds.GetTestable(c).AddIndexes(indexes...)
 
 	// Setup clock.
 	e.Clock = clock.Get(c).(testclock.TestClock)
@@ -204,7 +204,7 @@ func Install() (context.Context, *Environment) {
 	c = luciConfig.SetImplementation(c, e.ConfigIface)
 
 	// luci-config: Projects.
-	projectName := info.Get(c).AppID()
+	projectName := info.AppID(c)
 	addProjectConfig := func(proj luciConfig.ProjectName, access ...string) {
 		e.ModProjectConfig(c, proj, func(pcfg *svcconfig.ProjectConfig) {
 			for _, a := range access {

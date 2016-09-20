@@ -10,7 +10,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/service/info"
-	"github.com/luci/gae/service/memcache"
+	mc "github.com/luci/gae/service/memcache"
 
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/server/auth"
@@ -27,8 +27,10 @@ var _ auth.GlobalCache = (*Memcache)(nil)
 //
 // Any returned error is transient error.
 func (m *Memcache) Get(c context.Context, key string) ([]byte, error) {
-	switch itm, err := m.cache(c).Get(key); {
-	case err == memcache.ErrCacheMiss:
+	c = m.cacheContext(c)
+
+	switch itm, err := mc.GetKey(c, key); {
+	case err == mc.ErrCacheMiss:
 		return nil, nil
 	case err != nil:
 		return nil, errors.WrapTransient(err)
@@ -43,16 +45,16 @@ func (m *Memcache) Get(c context.Context, key string) ([]byte, error) {
 //
 // Any returned error is transient error.
 func (m *Memcache) Set(c context.Context, key string, value []byte, exp time.Duration) error {
-	cache := m.cache(c)
-	item := cache.NewItem(key).SetValue(value).SetExpiration(exp)
-	if err := cache.Set(item); err != nil {
+	c = m.cacheContext(c)
+
+	item := mc.NewItem(c, key).SetValue(value).SetExpiration(exp)
+	if err := mc.Set(c, item); err != nil {
 		return errors.WrapTransient(err)
 	}
 	return nil
 }
 
 // cache returns properly namespaced memcache.Interface.
-func (m *Memcache) cache(c context.Context) memcache.Interface {
-	c = info.Get(c).MustNamespace(m.Namespace)
-	return memcache.Get(c)
+func (m *Memcache) cacheContext(c context.Context) context.Context {
+	return info.MustNamespace(c, m.Namespace)
 }

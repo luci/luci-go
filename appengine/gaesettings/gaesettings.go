@@ -15,8 +15,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/filter/txnBuf"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
@@ -35,24 +34,24 @@ type Storage struct{}
 // with parent being (gaesettings.Settings, latest). Version is monotonically
 // increasing integer starting from 1.
 type settingsEntity struct {
-	Kind    string         `gae:"$kind"`
-	ID      string         `gae:"$id"`
-	Parent  *datastore.Key `gae:"$parent"`
-	Version int            `gae:",noindex"`
-	Value   string         `gae:",noindex"`
-	Who     string         `gae:",noindex"`
-	Why     string         `gae:",noindex"`
-	When    time.Time      `gae:",noindex"`
+	Kind    string    `gae:"$kind"`
+	ID      string    `gae:"$id"`
+	Parent  *ds.Key   `gae:"$parent"`
+	Version int       `gae:",noindex"`
+	Value   string    `gae:",noindex"`
+	Who     string    `gae:",noindex"`
+	Why     string    `gae:",noindex"`
+	When    time.Time `gae:",noindex"`
 
 	// Disable dscache, since settings must remain functional in case memcache is
 	// malfunctioning.
-	_ datastore.Toggle `gae:"$dscache.enable,false"`
+	_ ds.Toggle `gae:"$dscache.enable,false"`
 }
 
-// defaultDS returns datastore interface configured to use default namespace and
-// escape any current transaction.
-func defaultDS(c context.Context) datastore.Interface {
-	return txnBuf.GetNoTxn(info.Get(c).MustNamespace(""))
+// defaultContext returns datastore interface configured to use default
+// namespace and escape any current transaction.
+func defaultContext(c context.Context) context.Context {
+	return ds.WithoutTransaction(info.MustNamespace(c, ""))
 }
 
 // latestSettings returns settingsEntity with prefilled key pointing to latest
@@ -66,7 +65,7 @@ func latestSettings() settingsEntity {
 // One minute in prod, one second on dev server (since long expiration time on
 // dev server is very annoying).
 func (s Storage) expirationDuration(c context.Context) time.Duration {
-	if info.Get(c).IsDevAppServer() {
+	if info.IsDevAppServer(c) {
 		return time.Second
 	}
 	return time.Minute
@@ -74,11 +73,12 @@ func (s Storage) expirationDuration(c context.Context) time.Duration {
 
 // FetchAllSettings fetches all latest settings at once.
 func (s Storage) FetchAllSettings(c context.Context) (*settings.Bundle, error) {
+	c = defaultContext(c)
 	logging.Debugf(c, "Fetching app settings from the datastore")
 
 	latest := latestSettings()
-	switch err := defaultDS(c).Get(&latest); {
-	case err == datastore.ErrNoSuchEntity:
+	switch err := ds.Get(c, &latest); {
+	case err == ds.ErrNoSuchEntity:
 		break
 	case err != nil:
 		return nil, errors.WrapTransient(err)
@@ -99,12 +99,10 @@ func (s Storage) FetchAllSettings(c context.Context) (*settings.Bundle, error) {
 // UpdateSetting updates a setting at the given key.
 func (s Storage) UpdateSetting(c context.Context, key string, value json.RawMessage, who, why string) error {
 	var fatalFail error // set in transaction on fatal errors
-	err := defaultDS(c).RunInTransaction(func(c context.Context) error {
-		ds := datastore.Get(c)
-
+	err := ds.RunInTransaction(c, func(c context.Context) error {
 		// Fetch the most recent values.
 		latest := latestSettings()
-		if err := ds.Get(&latest); err != nil && err != datastore.ErrNoSuchEntity {
+		if err := ds.Get(c, &latest); err != nil && err != ds.ErrNoSuchEntity {
 			return err
 		}
 
@@ -122,7 +120,7 @@ func (s Storage) UpdateSetting(c context.Context, key string, value json.RawMess
 		auditCopy := latest
 		auditCopy.Kind = "gaesettings.SettingsLog"
 		auditCopy.ID = strconv.Itoa(latest.Version)
-		auditCopy.Parent = ds.KeyForObj(&latest)
+		auditCopy.Parent = ds.KeyForObj(c, &latest)
 
 		// Prepare a new version.
 		buf, err := json.MarshalIndent(pairs, "", "  ")
@@ -143,9 +141,9 @@ func (s Storage) UpdateSetting(c context.Context, key string, value json.RawMess
 
 		// Don't store copy of "no settings at all", it's useless.
 		if latest.Version == 1 {
-			return ds.Put(&latest)
+			return ds.Put(c, &latest)
 		}
-		return ds.Put(&latest, &auditCopy)
+		return ds.Put(c, &latest, &auditCopy)
 	}, nil)
 
 	if fatalFail != nil {
@@ -161,11 +159,12 @@ func (s Storage) UpdateSetting(c context.Context, key string, value json.RawMess
 //
 // Returns zero time if there are no settings stored.
 func (s Storage) GetConsistencyTime(c context.Context) (time.Time, error) {
+	c = defaultContext(c)
 	latest := latestSettings()
-	switch err := defaultDS(c).Get(&latest); err {
+	switch err := ds.Get(c, &latest); err {
 	case nil:
 		return latest.When.Add(s.expirationDuration(c)), nil
-	case datastore.ErrNoSuchEntity:
+	case ds.ErrNoSuchEntity:
 		return time.Time{}, nil
 	default:
 		return time.Time{}, errors.WrapTransient(err)

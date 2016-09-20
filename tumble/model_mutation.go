@@ -16,11 +16,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/meta"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
+
 	"golang.org/x/net/context"
 )
 
@@ -48,7 +49,7 @@ type Mutation interface {
 	// together Entries for more efficient processing.
 	//
 	// Returning nil is an error.
-	Root(c context.Context) *datastore.Key
+	Root(c context.Context) *ds.Key
 
 	// RollForward performs the action of the Mutation.
 	//
@@ -108,13 +109,13 @@ type DelayedMutation interface {
 type realMutation struct {
 	// TODO(riannucci): add functionality to luci/gae/service/datastore so that
 	// GetMeta/SetMeta may be overridden by the struct.
-	_kind  string         `gae:"$kind,tumble.Mutation"`
-	ID     string         `gae:"$id"`
-	Parent *datastore.Key `gae:"$parent"`
+	_kind  string  `gae:"$kind,tumble.Mutation"`
+	ID     string  `gae:"$id"`
+	Parent *ds.Key `gae:"$parent"`
 
 	ExpandedShard int64
 	ProcessAfter  time.Time
-	TargetRoot    *datastore.Key
+	TargetRoot    *ds.Key
 
 	Version string
 	Type    string
@@ -131,8 +132,8 @@ func (r *realMutation) shard(cfg *Config) taskShard {
 	return taskShard{ret, mkTimestamp(cfg, r.ProcessAfter)}
 }
 
-func putMutations(c context.Context, cfg *Config, fromRoot *datastore.Key, muts []Mutation, round uint64) (
-	shardSet map[taskShard]struct{}, mutKeys []*datastore.Key, err error) {
+func putMutations(c context.Context, cfg *Config, fromRoot *ds.Key, muts []Mutation, round uint64) (
+	shardSet map[taskShard]struct{}, mutKeys []*ds.Key, err error) {
 	if len(muts) == 0 {
 		return
 	}
@@ -142,13 +143,11 @@ func putMutations(c context.Context, cfg *Config, fromRoot *datastore.Key, muts 
 		return
 	}
 
-	ds := datastore.Get(c)
-
 	now := clock.Now(c).UTC()
 
 	shardSet = map[taskShard]struct{}{}
 	toPut := make([]*realMutation, len(muts))
-	mutKeys = make([]*datastore.Key, len(muts))
+	mutKeys = make([]*ds.Key, len(muts))
 	for i, m := range muts {
 		id := fmt.Sprintf("%016x_%08x_%08x", version, round, i)
 		toPut[i], err = newRealMutation(c, cfg, id, fromRoot, m, now)
@@ -156,12 +155,12 @@ func putMutations(c context.Context, cfg *Config, fromRoot *datastore.Key, muts 
 			logging.Errorf(c, "error creating real mutation for %v: %s", m, err)
 			return
 		}
-		mutKeys[i] = ds.KeyForObj(toPut[i])
+		mutKeys[i] = ds.KeyForObj(c, toPut[i])
 
 		shardSet[toPut[i].shard(cfg)] = struct{}{}
 	}
 
-	if err = ds.Put(toPut); err != nil {
+	if err = ds.Put(c, toPut); err != nil {
 		logging.Errorf(c, "error putting %d new mutations: %s", len(toPut), err)
 	}
 	return
@@ -174,7 +173,7 @@ var appVersion = struct {
 
 func getAppVersion(c context.Context) string {
 	appVersion.Do(func() {
-		appVersion.version = info.Get(c).VersionID()
+		appVersion.version = info.VersionID(c)
 
 		// AppEngine version is <app-yaml-version>.<unique-upload-id>
 		//
@@ -188,7 +187,7 @@ func getAppVersion(c context.Context) string {
 	return appVersion.version
 }
 
-func newRealMutation(c context.Context, cfg *Config, id string, parent *datastore.Key, m Mutation, now time.Time) (*realMutation, error) {
+func newRealMutation(c context.Context, cfg *Config, id string, parent *ds.Key, m Mutation, now time.Time) (*realMutation, error) {
 	when := now
 	if cfg.DelayedMutations {
 		if dm, ok := m.(DelayedMutation); ok {

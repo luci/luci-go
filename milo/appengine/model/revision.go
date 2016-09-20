@@ -5,35 +5,33 @@
 package model
 
 import (
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
+
 	"golang.org/x/net/context"
 )
 
 // Repository represents a repository that a Revision belongs to.
 type Repository struct {
-	datastore.Key
+	ds.Key
 }
 
 // GetRepository returns the repository object for a given repository URL.
 // TODO(martiniss): convert this to luci project name by 2016-01
 func GetRepository(c context.Context, repositoryURL string) *Repository {
-	ds := datastore.Get(c)
 	return &Repository{
-		*ds.NewKey("Repository", repositoryURL, 0, nil),
+		*ds.NewKey(c, "Repository", repositoryURL, 0, nil),
 	}
 }
 
 // GetRevision returns the corresponding Revision object for a particular
 // revision hash in this repository.
 func (r *Repository) GetRevision(c context.Context, digest string) (*Revision, error) {
-	ds := datastore.Get(c)
-
 	rev := &Revision{
 		Digest:     digest,
 		Repository: &r.Key,
 	}
 
-	err := ds.Get(rev)
+	err := ds.Get(c, rev)
 	return rev, err
 }
 
@@ -55,7 +53,7 @@ type Revision struct {
 
 	// Repository is the repository this Revision is associated with. See the
 	// Repository struct for more info.
-	Repository *datastore.Key `gae:"$parent"`
+	Repository *ds.Key `gae:"$parent"`
 
 	// Metadata is any metadata (commit message, files changed, etc.)
 	// associated with this Revision.

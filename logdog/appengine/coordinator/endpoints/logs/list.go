@@ -124,14 +124,13 @@ func (s *server) List(c context.Context, req *logdog.ListRequest) (*logdog.ListR
 			logStreams := make([]coordinator.LogStream, len(streams))
 			logStreamStates := make([]coordinator.LogStreamState, len(streams))
 
-			di := ds.Get(c)
 			for i, id := range streams {
 				logStreams[i].ID = id
-				logStreams[i].PopulateState(di, &logStreamStates[i])
+				logStreams[i].PopulateState(c, &logStreamStates[i])
 				entities = append(entities, &logStreams[i], &logStreamStates[i])
 			}
 
-			if err := di.Get(entities); err != nil {
+			if err := ds.Get(c, entities); err != nil {
 				log.Fields{
 					log.ErrorKey: err,
 					"count":      len(streams),

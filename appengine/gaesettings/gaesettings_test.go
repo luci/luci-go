@@ -14,7 +14,7 @@ import (
 	"github.com/luci/gae/filter/count"
 	"github.com/luci/gae/filter/dscache"
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 
@@ -60,10 +60,9 @@ func TestWorks(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Check all log entities is there.
-		ds := datastore.Get(c)
-		ds.Testable().CatchupIndexes()
+		ds.GetTestable(c).CatchupIndexes()
 		entities := []settingsEntity{}
-		So(ds.GetAll(datastore.NewQuery("gaesettings.SettingsLog"), &entities), ShouldBeNil)
+		So(ds.GetAll(c, ds.NewQuery("gaesettings.SettingsLog"), &entities), ShouldBeNil)
 		So(len(entities), ShouldEqual, 2)
 		asMap := map[string]settingsEntity{}
 		for _, e := range entities {

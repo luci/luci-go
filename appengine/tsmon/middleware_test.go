@@ -10,8 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/store"
@@ -19,6 +18,8 @@ import (
 	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/common/tsmon/types"
 	"github.com/luci/luci-go/server/router"
+
+	"github.com/golang/protobuf/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -38,9 +39,8 @@ func TestMiddleware(t *testing.T) {
 	Convey("Creates instance entity", t, func() {
 		c, _ := buildGAETestContext()
 		state, monitor := buildTestState()
-		ds := datastore.Get(c)
 
-		exists, err := ds.Exists(ds.NewKey("Instance", instanceEntityID(c), 0, nil))
+		exists, err := ds.Exists(c, ds.NewKey(c, "Instance", instanceEntityID(c), 0, nil))
 		So(err, ShouldBeNil)
 		So(exists.All(), ShouldBeFalse)
 
@@ -52,7 +52,7 @@ func TestMiddleware(t *testing.T) {
 		)
 		So(rec.Code, ShouldEqual, http.StatusOK)
 
-		exists, err = ds.Exists(ds.NewKey("Instance", instanceEntityID(c), 0, nil))
+		exists, err = ds.Exists(c, ds.NewKey(c, "Instance", instanceEntityID(c), 0, nil))
 		So(err, ShouldBeNil)
 		So(exists.All(), ShouldBeTrue)
 
@@ -64,14 +64,12 @@ func TestMiddleware(t *testing.T) {
 		c, clock := buildGAETestContext()
 		state, monitor := buildTestState()
 
-		ds := datastore.Get(c)
-
 		i := instance{
 			ID:          instanceEntityID(c),
 			TaskNum:     0,
 			LastUpdated: clock.Now().Add(-2 * time.Minute).UTC(),
 		}
-		So(ds.Put(&i), ShouldBeNil)
+		So(ds.Put(c, &i), ShouldBeNil)
 
 		state.lastFlushed = clock.Now().Add(-2 * time.Minute)
 

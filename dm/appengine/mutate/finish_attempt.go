@@ -7,7 +7,7 @@ package mutate
 import (
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/logging"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
@@ -26,7 +26,7 @@ type FinishAttempt struct {
 }
 
 // Root implements tumble.Mutation
-func (f *FinishAttempt) Root(c context.Context) *datastore.Key {
+func (f *FinishAttempt) Root(c context.Context) *ds.Key {
 	return model.AttemptKeyFromID(c, f.Auth.Id.AttemptID())
 }
 
@@ -54,8 +54,7 @@ func (f *FinishAttempt) RollForward(c context.Context) (muts []tumble.Mutation, 
 	atmpt.Result.Data = &rslt
 	atmpt.Result.Data.Object = ""
 
-	ds := datastore.Get(c)
-	err = grpcutil.Annotate(ds.Put(atmpt, ar), codes.Internal).Reason("during Put").Err()
+	err = grpcutil.Annotate(ds.Put(c, atmpt, ar), codes.Internal).Reason("during Put").Err()
 	return
 }
 

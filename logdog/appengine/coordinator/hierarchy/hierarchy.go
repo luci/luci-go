@@ -220,15 +220,13 @@ func Get(c context.Context, r Request) (*List, error) {
 	}
 
 	// Determine our ancestor component.
-	di := ds.Get(c)
-
 	q := ds.NewQuery("_StreamNameComponent")
 	q = q.Eq("p", componentEntityParent(l.PathBase))
 	if r.StreamOnly {
 		q = q.Eq("s", true)
 	}
 	if r.Next != "" {
-		k, err := keyForCursor(di, r.Next)
+		k, err := keyForCursor(c, r.Next)
 		if err != nil {
 			return nil, grpcutil.Errf(codes.InvalidArgument, "invalid cursor: %s", err)
 		}
@@ -243,14 +241,14 @@ func Get(c context.Context, r Request) (*List, error) {
 		q = q.Limit(int32(limit))
 	}
 
-	err := di.Run(q, func(e *componentEntity) error {
+	err := ds.Run(c, q, func(e *componentEntity) error {
 		l.Comp = append(l.Comp, &ListComponent{
 			Name:   e.ID.name,
 			Stream: e.ID.stream,
 		})
 
 		if limit > 0 && len(l.Comp) >= limit {
-			l.Next = cursorForKey(di, e)
+			l.Next = cursorForKey(c, e)
 			return ds.Stop
 		}
 		return nil
@@ -265,18 +263,18 @@ func Get(c context.Context, r Request) (*List, error) {
 // keyForCursor returns the component key for the supplied cursor.
 //
 // If the cursor string is not valid, an error will be returned.
-func keyForCursor(di ds.Interface, c string) (*ds.Key, error) {
-	d, err := base64.URLEncoding.DecodeString(c)
+func keyForCursor(c context.Context, curs string) (*ds.Key, error) {
+	d, err := base64.URLEncoding.DecodeString(curs)
 	if err != nil {
 		return nil, err
 	}
 
-	return di.NewKey("_StreamNameComponent", string(d), 0, nil), nil
+	return ds.NewKey(c, "_StreamNameComponent", string(d), 0, nil), nil
 }
 
 // cursorForKey returns a cursor for the supplied componentID. This cursor will
 // start new queries at the component immediately following this ID.
-func cursorForKey(di ds.Interface, e *componentEntity) string {
-	key := di.KeyForObj(e)
+func cursorForKey(c context.Context, e *componentEntity) string {
+	key := ds.KeyForObj(c, e)
 	return base64.URLEncoding.EncodeToString([]byte(key.StringID()))
 }

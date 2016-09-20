@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/luci/gae/service/datastore/serialize"
-	"github.com/luci/gae/service/memcache"
+	mc "github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/memlogger"
@@ -26,10 +26,9 @@ func TestTumbleFiddlyBits(t *testing.T) {
 		l := logging.Get(ctx).(*memlogger.MemLogger)
 
 		Convey("early exit logic works", func() {
-			mc := memcache.Get(ctx)
 			future := clock.Now(ctx).UTC().Add(time.Hour)
-			itm := mc.NewItem(fmt.Sprintf("%s.%d.last", baseName, 10)).SetValue(serialize.ToBytes(future))
-			So(mc.Set(itm), ShouldBeNil)
+			itm := mc.NewItem(ctx, fmt.Sprintf("%s.%d.last", baseName, 10)).SetValue(serialize.ToBytes(future))
+			So(mc.Set(ctx, itm), ShouldBeNil)
 
 			So(fireTasks(ctx, tt.GetConfig(ctx), map[taskShard]struct{}{
 				taskShard{10, minTS}: {},

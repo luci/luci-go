@@ -45,7 +45,7 @@ func ProjectFromNamespace(ns string) luciConfig.ProjectName {
 // If there is no current namespace, or if the current namespace is not a valid
 // project namespace, an empty string will be returned.
 func CurrentProject(c context.Context) luciConfig.ProjectName {
-	if ns, ok := info.Get(c).GetNamespace(); ok {
+	if ns := info.GetNamespace(c); ns != "" {
 		return ProjectFromNamespace(ns)
 	}
 	return ""

@@ -92,7 +92,7 @@ func (settingsUIPage) Title(c context.Context) (string, error) {
 }
 
 func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
-	serviceAcc, err := info.Get(c).ServiceAccount()
+	serviceAcc, err := info.ServiceAccount(c)
 	if err != nil {
 		return nil, err
 	}

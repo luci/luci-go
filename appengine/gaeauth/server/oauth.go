@@ -47,7 +47,7 @@ func (m *OAuth2Method) Authenticate(c context.Context, r *http.Request) (*auth.U
 	if header == "" || len(m.Scopes) == 0 {
 		return nil, nil // this method is not applicable
 	}
-	if info.Get(c).IsDevAppServer() {
+	if info.IsDevAppServer(c) {
 		return m.authenticateDevServer(c, header, m.Scopes)
 	}
 	return m.authenticateProd(c, m.Scopes)
@@ -59,7 +59,7 @@ func (m *OAuth2Method) authenticateProd(c context.Context, scopes []string) (*au
 	var err error
 	for attemp := 0; attemp < 4; attemp++ {
 		var u *user.User
-		u, err = user.Get(c).CurrentOAuth(scopes...)
+		u, err = user.CurrentOAuth(c, scopes...)
 		if err != nil {
 			logging.Warningf(c, "oauth: failed to execute GetOAuthUser - %s", err)
 			continue

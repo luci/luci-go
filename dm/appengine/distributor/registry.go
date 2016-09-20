@@ -122,7 +122,7 @@ func (r *registry) MakeDistributor(c context.Context, cfgName string) (d D, ver 
 // loadConfig loads the named distributor configuration from luci-config,
 // possibly using the in-memory or memcache version.
 func loadConfig(c context.Context, cfgName string) (ret *Config, err error) {
-	aid := info.Get(c).TrimmedAppID()
+	aid := info.TrimmedAppID(c)
 	distCfgObj, err := config.GetConfig(c, fmt.Sprintf("services/%s", aid), "distributors.cfg", false)
 	if err != nil {
 		return
@@ -163,7 +163,7 @@ func loadConfig(c context.Context, cfgName string) (ret *Config, err error) {
 	implConfig := dVal.Elem().Field(0).Interface().(proto.Message)
 
 	ret = &Config{
-		info.Get(c).DefaultVersionHostname(),
+		info.DefaultVersionHostname(c),
 		cfgName,
 		cfgVersion,
 		implConfig,

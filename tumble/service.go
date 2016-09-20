@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/common/errors"
@@ -85,10 +85,8 @@ func (s *Service) FireAllTasks(c context.Context) error {
 
 		for _, ns := range nspaces {
 			c := c
-			ds := datastore.Get(c)
 			if ns != "" {
-				c = info.Get(c).MustNamespace(ns)
-				ds = datastore.Get(c)
+				c = info.MustNamespace(c, ns)
 			}
 
 			for shrd := range missingShards {
@@ -104,7 +102,6 @@ func (s *Service) FireAllTasks(c context.Context) error {
 				}
 
 				c := c
-				ds := ds
 				shrd := shrd
 				ch <- func() error {
 					shardsLock.RLock()
@@ -114,7 +111,7 @@ func (s *Service) FireAllTasks(c context.Context) error {
 						return nil
 					}
 
-					amt, err := ds.Count(processShardQuery(c, cfg, shrd.shard).Limit(1))
+					amt, err := ds.Count(c, processShardQuery(c, cfg, shrd.shard).Limit(1))
 					if err != nil {
 						logging.Fields{
 							logging.ErrorKey: err,
@@ -236,11 +233,11 @@ func (s *Service) ProcessShardHandler(ctx *router.Context) {
 //
 //	- Other namespaces will have string IDs.
 func getDatastoreNamespaces(c context.Context) ([]string, error) {
-	q := datastore.NewQuery("__namespace__").KeysOnly(true)
+	q := ds.NewQuery("__namespace__").KeysOnly(true)
 
 	// Query our datastore for the full set of namespaces.
-	var namespaceKeys []*datastore.Key
-	if err := datastore.Get(c).GetAll(q, &namespaceKeys); err != nil {
+	var namespaceKeys []*ds.Key
+	if err := ds.GetAll(c, q, &namespaceKeys); err != nil {
 		logging.WithError(err).Errorf(c, "Failed to execute namespace query.")
 		return nil, err
 	}

@@ -5,7 +5,7 @@
 package mutate
 
 import (
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
@@ -19,16 +19,14 @@ type AckFwdDep struct {
 }
 
 // Root implements tumble.Mutation.
-func (f *AckFwdDep) Root(c context.Context) *datastore.Key {
+func (f *AckFwdDep) Root(c context.Context) *ds.Key {
 	return model.AttemptKeyFromID(c, f.Dep.From)
 }
 
 // RollForward implements tumble.Mutation.
 func (f *AckFwdDep) RollForward(c context.Context) (muts []tumble.Mutation, err error) {
-	ds := datastore.Get(c)
-
 	atmpt, fdep := f.Dep.Fwd(c)
-	err = ds.Get(atmpt, fdep)
+	err = ds.Get(c, atmpt, fdep)
 	if err != nil {
 		return
 	}
@@ -51,7 +49,7 @@ func (f *AckFwdDep) RollForward(c context.Context) (muts []tumble.Mutation, err 
 			muts = append(muts, &ScheduleExecution{For: f.Dep.From})
 		}
 
-		err = ds.Put(atmpt)
+		err = ds.Put(c, atmpt)
 	}
 
 	return

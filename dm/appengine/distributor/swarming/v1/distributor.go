@@ -146,7 +146,7 @@ func (d *swarmingDist) Run(desc *dm.Quest_Desc, auth *dm.Execution_Auth, prev *d
 
 	tags := []string{
 		"requestor:DM",
-		"requestor:" + info.Get(d).TrimmedAppID(),
+		"requestor:" + info.TrimmedAppID(d),
 		"requestor:swarming_v1",
 		fmt.Sprintf("quest:%s", id.Quest),
 		fmt.Sprintf("attempt:%s|%d", id.Quest, id.Attempt),

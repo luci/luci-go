@@ -6,8 +6,6 @@ package registration
 
 import (
 	ds "github.com/luci/gae/service/datastore"
-	"golang.org/x/net/context"
-	"google.golang.org/grpc/codes"
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/rand/cryptorand"
@@ -19,6 +17,9 @@ import (
 	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/hierarchy"
 	"github.com/luci/luci-go/logdog/common/types"
+
+	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
 )
 
 func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixRequest) (*logdog.RegisterPrefixResponse, error) {
@@ -40,8 +41,7 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 	pfx := &coordinator.LogPrefix{ID: coordinator.LogPrefixID(prefix)}
 
 	// Check for existing prefix registration (non-transactional).
-	di := ds.Get(c)
-	switch exists, err := di.Exists(di.KeyForObj(pfx)); {
+	switch exists, err := ds.Exists(c, ds.KeyForObj(c, pfx)); {
 	case err != nil:
 		log.WithError(err).Errorf(c, "Failed to check for existing prefix (non-transactional).")
 		return nil, grpcutil.Internal
@@ -103,7 +103,7 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 	//
 	// Determine which hierarchy components we need to add.
 	comps := hierarchy.Components(prefix.AsPathPrefix(""), false)
-	if comps, err = hierarchy.Missing(di, comps); err != nil {
+	if comps, err = hierarchy.Missing(c, comps); err != nil {
 		log.WithError(err).Warningf(c, "Failed to probe for missing hierarchy components.")
 	}
 
@@ -112,7 +112,7 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 	//
 	// If this fails, that's okay; we'll handle this when the stream gets
 	// registered.
-	if err := hierarchy.PutMulti(di, comps); err != nil {
+	if err := hierarchy.PutMulti(c, comps); err != nil {
 		log.WithError(err).Infof(c, "Failed to add missing hierarchy components.")
 	}
 
@@ -132,11 +132,9 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 	}
 
 	// Transactionally register the prefix.
-	err = di.RunInTransaction(func(c context.Context) error {
-		di := ds.Get(c)
-
+	err = ds.RunInTransaction(c, func(c context.Context) error {
 		// Check if this Prefix exists (transactional).
-		switch exists, err := di.Exists(di.KeyForObj(pfx)); {
+		switch exists, err := ds.Exists(c, ds.KeyForObj(c, pfx)); {
 		case err != nil:
 			log.WithError(err).Errorf(c, "Failed to check for existing prefix (transactional).")
 			return grpcutil.Internal
@@ -153,7 +151,7 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 		pfx.Secret = []byte(secret)
 		pfx.Expiration = now.Add(expiration)
 
-		if err := di.Put(pfx); err != nil {
+		if err := ds.Put(c, pfx); err != nil {
 			log.WithError(err).Errorf(c, "Failed to register prefix.")
 			return grpcutil.Internal
 		}

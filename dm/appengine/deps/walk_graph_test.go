@@ -9,23 +9,25 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	google_pb "github.com/luci/luci-go/common/proto/google"
-	. "github.com/luci/luci-go/common/testing/assertions"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/distributor/fake"
 	"github.com/luci/luci-go/dm/appengine/model"
-	. "github.com/smartystreets/goconvey/convey"
+
 	"golang.org/x/net/context"
+
+	. "github.com/luci/luci-go/common/testing/assertions"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 type breakFwdDepLoads struct {
-	datastore.RawInterface
+	ds.RawInterface
 }
 
-func (b breakFwdDepLoads) GetMulti(keys []*datastore.Key, mg datastore.MultiMetaGetter, cb datastore.GetMultiCB) error {
+func (b breakFwdDepLoads) GetMulti(keys []*ds.Key, mg ds.MultiMetaGetter, cb ds.GetMultiCB) error {
 	for _, k := range keys {
 		if k.Kind() == "FwdDep" {
 			return fmt.Errorf("Loading FwdDeps is currently broken")
@@ -50,8 +52,6 @@ func TestWalkGraph(t *testing.T) {
 	Convey("WalkGraph", t, func() {
 		ttest, c, dist, s := testSetup()
 
-		ds := datastore.Get(c)
-
 		req := &dm.WalkGraphReq{
 			Query: dm.AttemptListQueryL(map[string][]uint32{"quest": {1}}),
 		}
@@ -75,7 +75,7 @@ func TestWalkGraph(t *testing.T) {
 		})
 
 		Convey("good", func() {
-			ds.Testable().Consistent(true)
+			ds.GetTestable(c).Consistent(true)
 
 			wDesc := fake.QuestDesc("w")
 			w := s.ensureQuest(c, "w", 1)
@@ -229,7 +229,7 @@ func TestWalkGraph(t *testing.T) {
 				})
 				ttest.Drain(c)
 
-				exp := datastore.RoundTime(clock.Now(c).Add(time.Hour * 24 * 4))
+				exp := ds.RoundTime(clock.Now(c).Add(time.Hour * 24 * 4))
 
 				x1data := `{"data":["I can see this"]}`
 				dist.RunTask(c, dm.NewExecutionID(x, 1, 1), func(tsk *fake.Task) error {
@@ -253,7 +253,7 @@ func TestWalkGraph(t *testing.T) {
 
 				wEID := dm.NewExecutionID(w, 1, 2)
 				wEx := model.ExecutionFromID(c, wEID)
-				So(ds.Get(wEx), ShouldBeNil)
+				So(ds.Get(c, wEx), ShouldBeNil)
 
 				dist.RunTask(c, wEID, func(tsk *fake.Task) error {
 					So(tsk.State, ShouldResemble, dm.NewJsonResult(`{"originalState":true}`))
@@ -302,7 +302,7 @@ func TestWalkGraph(t *testing.T) {
 				})
 				ttest.Drain(c)
 
-				exp := datastore.RoundTime(clock.Now(c).Add(time.Hour * 24 * 4))
+				exp := ds.RoundTime(clock.Now(c).Add(time.Hour * 24 * 4))
 
 				x1data := `{"data":["I can see this"]}`
 				dist.RunTask(c, dm.NewExecutionID(x, 1, 1), func(tsk *fake.Task) error {
@@ -335,7 +335,7 @@ func TestWalkGraph(t *testing.T) {
 
 					// This filter ensures that WalkShouldReturn is using the optimized
 					// path for deps traversal when starting from an authed attempt.
-					c = datastore.AddRawFilters(c, func(c context.Context, ri datastore.RawInterface) datastore.RawInterface {
+					c = ds.AddRawFilters(c, func(c context.Context, ri ds.RawInterface) ds.RawInterface {
 						return breakFwdDepLoads{ri}
 					})
 

@@ -28,7 +28,7 @@ import (
 	"google.golang.org/appengine"
 
 	"github.com/luci/gae/service/info"
-	"github.com/luci/gae/service/taskqueue"
+	tq "github.com/luci/gae/service/taskqueue"
 
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
@@ -102,7 +102,7 @@ var globalInit sync.Once
 // initializeGlobalState does one time initialization for stuff that needs
 // active GAE context.
 func initializeGlobalState(c context.Context) {
-	if info.Get(c).IsDevAppServer() {
+	if info.IsDevAppServer(c) {
 		// Dev app server doesn't preserve the state of task queues across restarts,
 		// need to reset datastore state accordingly, otherwise everything gets stuck.
 		if err := globalEngine.ResetAllJobsOnDevServer(c); err != nil {
@@ -254,14 +254,13 @@ func readConfigCron(c *router.Context) {
 
 	// Handle each project in its own task to avoid "bad" projects (e.g. ones with
 	// lots of jobs) to slow down "good" ones.
-	tasks := make([]*taskqueue.Task, 0, len(projectsToVisit))
+	tasks := make([]*tq.Task, 0, len(projectsToVisit))
 	for projectID := range projectsToVisit {
-		tasks = append(tasks, &taskqueue.Task{
+		tasks = append(tasks, &tq.Task{
 			Path: "/internal/tasks/read-project-config?projectID=" + url.QueryEscape(projectID),
 		})
 	}
-	tq := taskqueue.Get(rc.Context)
-	if err = tq.AddMulti(tasks, "read-project-config"); err != nil {
+	if err = tq.Add(rc.Context, "read-project-config", tasks...); err != nil {
 		rc.err(errors.WrapTransient(err), "Failed to add tasks to task queue")
 	} else {
 		rc.ok()

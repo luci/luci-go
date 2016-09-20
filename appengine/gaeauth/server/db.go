@@ -42,7 +42,7 @@ func GetAuthDB(c context.Context, prev authdb.DB) (authdb.DB, error) {
 
 	// If auth_service URL is not configured, use default db implementation.
 	if latest == nil {
-		if info.Get(c).IsDevAppServer() {
+		if info.IsDevAppServer(c) {
 			return devServerDB{}, nil
 		}
 		return authdb.ErroringDB{Error: errNotConfigured}, nil
@@ -81,14 +81,14 @@ func GetAuthDB(c context.Context, prev authdb.DB) (authdb.DB, error) {
 type devServerDB struct{}
 
 func (devServerDB) IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error) {
-	if !info.Get(c).IsDevAppServer() {
+	if !info.IsDevAppServer(c) {
 		return false, errNotConfigured
 	}
 	return true, nil
 }
 
 func (devServerDB) IsMember(c context.Context, id identity.Identity, group string) (bool, error) {
-	if !info.Get(c).IsDevAppServer() {
+	if !info.IsDevAppServer(c) {
 		return false, errNotConfigured
 	}
 	return id.Kind() != identity.Anonymous, nil

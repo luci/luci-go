@@ -97,7 +97,7 @@ func defaultTags(c context.Context, ctl task.Controller, cfg *messages.Buildbuck
 			"builder":                 cfg.GetBuilder(),
 			"scheduler_invocation_id": fmt.Sprintf("%d", ctl.InvocationID()),
 			"scheduler_job_id":        ctl.JobID(),
-			"user_agent":              info.Get(c).AppID(),
+			"user_agent":              info.AppID(c),
 		}
 	}
 	return map[string]string{

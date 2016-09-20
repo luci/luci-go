@@ -7,6 +7,8 @@ package hierarchy
 import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/logdog/common/types"
+
+	"golang.org/x/net/context"
 )
 
 // Component is a log stream hierarchy component.
@@ -63,22 +65,22 @@ func Components(p types.StreamPath, isFullStream bool) []*Component {
 // If {Stream=true}, we would get "foo/bar/baz$".
 //
 // Two Components with the same String result reference the same path component.
-func (c *Component) String() string {
-	s := string(c.Path())
-	if c.Stream {
+func (comp *Component) String() string {
+	s := string(comp.Path())
+	if comp.Stream {
 		s += "$"
 	}
 	return s
 }
 
 // Path returns the StreamPath for this Component.
-func (c *Component) Path() types.StreamPath {
-	return c.Parent.Append(c.Name)
+func (comp *Component) Path() types.StreamPath {
+	return comp.Parent.Append(comp.Name)
 }
 
 // Exists checks whether this Component exists in the datastore.
-func (c *Component) Exists(di ds.Interface) (bool, error) {
-	er, err := di.Exists(di.KeyForObj(c.entity()))
+func (comp *Component) Exists(c context.Context) (bool, error) {
+	er, err := ds.Exists(c, ds.KeyForObj(c, comp.entity()))
 	if err != nil {
 		return false, err
 	}
@@ -89,17 +91,17 @@ func (c *Component) Exists(di ds.Interface) (bool, error) {
 //
 // Prior to writing, it will verify that the Component represents a valid
 // partial log stream path.
-func (c *Component) Put(di ds.Interface) error {
-	path := c.Path()
+func (comp *Component) Put(c context.Context) error {
+	path := comp.Path()
 	if err := path.ValidatePartial(); err != nil {
 		return err
 	}
-	return di.Put(c.entity())
+	return ds.Put(c, comp.entity())
 }
 
 // entity returns the componentEntity that this Component describes.
-func (c *Component) entity() *componentEntity {
-	return mkComponentEntity(c.Parent, c.Name, c.Stream)
+func (comp *Component) entity() *componentEntity {
+	return mkComponentEntity(comp.Parent, comp.Name, comp.Stream)
 }
 
 // Missing checks the status of the supplied Components in the datastore.
@@ -109,12 +111,12 @@ func (c *Component) entity() *componentEntity {
 //
 // If Missing failed, it will return the original components array and the
 // failure error.
-func Missing(di ds.Interface, components []*Component) ([]*Component, error) {
+func Missing(c context.Context, components []*Component) ([]*Component, error) {
 	exists := make([]*ds.Key, len(components))
-	for i, c := range components {
-		exists[i] = di.KeyForObj(c.entity())
+	for i, comp := range components {
+		exists[i] = ds.KeyForObj(c, comp.entity())
 	}
-	er, err := di.Exists(exists)
+	er, err := ds.Exists(c, exists)
 	if err != nil {
 		return nil, err
 	}
@@ -132,10 +134,10 @@ func Missing(di ds.Interface, components []*Component) ([]*Component, error) {
 
 // PutMulti performs a datastore PutMulti on all of the hierarchy entities for
 // components.
-func PutMulti(di ds.Interface, components []*Component) error {
+func PutMulti(c context.Context, components []*Component) error {
 	ents := make([]*componentEntity, len(components))
 	for i, comp := range components {
 		ents[i] = comp.entity()
 	}
-	return di.Put(ents)
+	return ds.Put(c, ents)
 }

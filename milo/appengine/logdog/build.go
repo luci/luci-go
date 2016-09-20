@@ -26,7 +26,7 @@ import (
 	"github.com/luci/luci-go/milo/common/miloerror"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/gae/service/memcache"
+	mc "github.com/luci/gae/service/memcache"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )
@@ -94,7 +94,7 @@ func (as *annotationStreamRequest) load(c context.Context) error {
 	// Load from memcache, if possible. If an error occurs, we will proceed as if
 	// no CachedStep was available.
 	mcKey := as.memcacheKey()
-	mcItem, err := memcache.Get(c).Get(mcKey)
+	mcItem, err := mc.GetKey(c, mcKey)
 	switch err {
 	case nil:
 		if err := proto.Unmarshal(mcItem.Value(), &as.cs); err == nil {
@@ -107,11 +107,11 @@ func (as *annotationStreamRequest) load(c context.Context) error {
 			log.ErrorKey:  err,
 			"memcacheKey": mcKey,
 		}.Warningf(c, "Failed to unmarshal cached annotation protobuf.")
-		if err := memcache.Get(c).Delete(mcKey); err != nil {
+		if err := mc.Delete(c, mcKey); err != nil {
 			log.WithError(err).Warningf(c, "Failed to delete invalid annotation protobuf memcache entry.")
 		}
 
-	case memcache.ErrCacheMiss:
+	case mc.ErrCacheMiss:
 		break
 
 	default:
@@ -264,12 +264,12 @@ func (as *annotationStreamRequest) load(c context.Context) error {
 	// If this fails, it is non-fatal.
 	mcData, err := proto.Marshal(&as.cs)
 	if err == nil {
-		mcItem = memcache.Get(c).NewItem(mcKey)
+		mcItem = mc.NewItem(c, mcKey)
 		if !as.cs.Finished {
 			mcItem.SetExpiration(intermediateCacheLifetime)
 		}
 		mcItem.SetValue(mcData)
-		if err := memcache.Get(c).Set(mcItem); err != nil {
+		if err := mc.Set(c, mcItem); err != nil {
 			log.WithError(err).Warningf(c, "Failed to cache annotation protobuf CachedStep.")
 		}
 	} else {

@@ -19,8 +19,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/filter/txnBuf"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/caching/proccache"
@@ -89,21 +88,21 @@ func (s *storeImpl) GetSecret(k secrets.Key) (secrets.Secret, error) {
 // secret.
 func (s *storeImpl) getSecretFromDatastore(k secrets.Key) (secrets.Secret, error) {
 	// Switch to default namespace.
-	c, err := info.Get(s.ctx).Namespace("")
+	c, err := info.Namespace(s.ctx, "")
 	if err != nil {
 		panic(err) // should not happen, Namespace errors only on bad namespace name
 	}
-	ds := txnBuf.GetNoTxn(c)
+	c = ds.WithoutTransaction(c)
 
 	// Grab existing.
 	ent := secretEntity{ID: s.cfg.Prefix + ":" + string(k)}
-	err = ds.Get(&ent)
-	if err != nil && err != datastore.ErrNoSuchEntity {
+	err = ds.Get(c, &ent)
+	if err != nil && err != ds.ErrNoSuchEntity {
 		return secrets.Secret{}, errors.WrapTransient(err)
 	}
 
 	// Autogenerate and put into the datastore.
-	if err == datastore.ErrNoSuchEntity {
+	if err == ds.ErrNoSuchEntity {
 		if s.cfg.NoAutogenerate {
 			return secrets.Secret{}, secrets.ErrNoSuchSecret
 		}
@@ -114,15 +113,14 @@ func (s *storeImpl) getSecretFromDatastore(k secrets.Key) (secrets.Secret, error
 		if ent.SecretID, err = s.generateSecretID(ent.Created); err != nil {
 			return secrets.Secret{}, errors.WrapTransient(err)
 		}
-		err = ds.RunInTransaction(func(c context.Context) error {
-			ds := datastore.Get(c)
+		err = ds.RunInTransaction(c, func(c context.Context) error {
 			newOne := secretEntity{ID: ent.ID}
-			switch err := ds.Get(&newOne); err {
+			switch err := ds.Get(c, &newOne); err {
 			case nil:
 				ent = newOne
 				return nil
-			case datastore.ErrNoSuchEntity:
-				return ds.Put(&ent)
+			case ds.ErrNoSuchEntity:
+				return ds.Put(c, &ent)
 			default:
 				return err
 			}

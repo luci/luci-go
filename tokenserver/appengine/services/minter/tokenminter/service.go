@@ -90,7 +90,7 @@ func NewServer(sa *serviceaccounts.Server) *Server {
 			return auth.IsMember(c, "administrators")
 		},
 		signerServiceAccount: func(c context.Context) (string, error) {
-			return info.Get(c).ServiceAccount()
+			return info.ServiceAccount(c)
 		},
 	}
 }
@@ -122,9 +122,8 @@ func (s *Server) ensureInitialized(c context.Context) (out initializedState, err
 
 	// serviceVersion is returned in MintTokenResponse, it identifies the app
 	// and its version to the client. Used for monitoring purposes.
-	i := info.Get(c)
-	appVersion := strings.Split(i.VersionID(), ".")[0]
-	out.serviceVersion = fmt.Sprintf("%s/%s", i.AppID(), appVersion)
+	appVersion := strings.Split(info.VersionID(c), ".")[0]
+	out.serviceVersion = fmt.Sprintf("%s/%s", info.AppID(c), appVersion)
 
 	// Success! Remember this.
 	s.initialized = &out

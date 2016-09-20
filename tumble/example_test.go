@@ -14,16 +14,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/data/bit_field"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/memlogger"
+
+	"golang.org/x/net/context"
+
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
 type User struct {
@@ -31,46 +33,44 @@ type User struct {
 }
 
 type TimeoutMessageSend struct {
-	Out       *datastore.Key
+	Out       *ds.Key
 	WaitUntil time.Time
 }
 
 func (t *TimeoutMessageSend) ProcessAfter() time.Time { return t.WaitUntil }
 func (t *TimeoutMessageSend) HighPriority() bool      { return false }
 
-func (t *TimeoutMessageSend) Root(context.Context) *datastore.Key {
+func (t *TimeoutMessageSend) Root(context.Context) *ds.Key {
 	return t.Out.Root()
 }
 
 func (t *TimeoutMessageSend) RollForward(c context.Context) ([]Mutation, error) {
 	logging.Warningf(c, "TimeoutMessageSend.RollForward(%s)", t.Out)
-	ds := datastore.Get(c)
 	out := &OutgoingMessage{}
-	datastore.PopulateKey(out, t.Out)
-	if err := ds.Get(out); err != nil {
+	ds.PopulateKey(out, t.Out)
+	if err := ds.Get(c, out); err != nil {
 		return nil, err
 	}
 	if out.Notified || out.TimedOut {
 		return nil, nil
 	}
 	out.TimedOut = true
-	return nil, ds.Put(out)
+	return nil, ds.Put(c, out)
 }
 
 type WriteMessage struct {
 	Out *OutgoingMessage
 }
 
-func (w *WriteMessage) Root(context.Context) *datastore.Key {
+func (w *WriteMessage) Root(context.Context) *ds.Key {
 	return w.Out.FromUser
 }
 
 func (w *WriteMessage) RollForward(c context.Context) ([]Mutation, error) {
-	ds := datastore.Get(c)
-	if err := ds.Put(w.Out); err != nil {
+	if err := ds.Put(c, w.Out); err != nil {
 		return nil, err
 	}
-	outKey := ds.KeyForObj(w.Out)
+	outKey := ds.KeyForObj(c, w.Out)
 	muts := make([]Mutation, len(w.Out.Recipients))
 	for i, p := range w.Out.Recipients {
 		muts[i] = &SendMessage{outKey, p, time.Time{}}
@@ -87,7 +87,7 @@ func (u *User) MakeOutgoingMessage(c context.Context, msg string, toUsers ...str
 	sort.Strings(toUsers)
 
 	return &OutgoingMessage{
-		FromUser:   datastore.Get(c).KeyForObj(u),
+		FromUser:   ds.KeyForObj(c, u),
 		Message:    msg,
 		Recipients: toUsers,
 		Success:    bit_field.Make(uint32(len(toUsers))),
@@ -107,8 +107,8 @@ func (u *User) SendMessage(c context.Context, msg string, toUsers ...string) (*O
 
 type OutgoingMessage struct {
 	// datastore-assigned
-	ID       int64          `gae:"$id"`
-	FromUser *datastore.Key `gae:"$parent"`
+	ID       int64   `gae:"$id"`
+	FromUser *ds.Key `gae:"$parent"`
 
 	Message    string   `gae:",noindex"`
 	Recipients []string `gae:",noindex"`
@@ -122,58 +122,56 @@ type OutgoingMessage struct {
 
 type IncomingMessage struct {
 	// OtherUser|OutgoingMessageID
-	ID      string         `gae:"$id"`
-	ForUser *datastore.Key `gae:"$parent"`
+	ID      string  `gae:"$id"`
+	ForUser *ds.Key `gae:"$parent"`
 }
 
 type SendMessage struct {
-	Message   *datastore.Key
+	Message   *ds.Key
 	ToUser    string
 	WaitUntil time.Time
 }
 
-func (m *SendMessage) Root(ctx context.Context) *datastore.Key {
-	return datastore.Get(ctx).KeyForObj(&User{Name: m.ToUser})
+func (m *SendMessage) Root(ctx context.Context) *ds.Key {
+	return ds.KeyForObj(ctx, &User{Name: m.ToUser})
 }
 
 func (m *SendMessage) ProcessAfter() time.Time { return m.WaitUntil }
 func (m *SendMessage) HighPriority() bool      { return false }
 
 func (m *SendMessage) RollForward(c context.Context) ([]Mutation, error) {
-	ds := datastore.Get(c)
 	u := &User{Name: m.ToUser}
-	if err := ds.Get(u); err != nil {
-		if err == datastore.ErrNoSuchEntity {
+	if err := ds.Get(c, u); err != nil {
+		if err == ds.ErrNoSuchEntity {
 			return []Mutation{&WriteReceipt{m.Message, m.ToUser, false}}, nil
 		}
 		return nil, err
 	}
 	im := &IncomingMessage{
 		ID:      fmt.Sprintf("%s|%d", m.Message.Parent().StringID(), m.Message.IntID()),
-		ForUser: ds.KeyForObj(&User{Name: m.ToUser}),
+		ForUser: ds.KeyForObj(c, &User{Name: m.ToUser}),
 	}
-	err := ds.Get(im)
-	if err == datastore.ErrNoSuchEntity {
-		err = ds.Put(im)
+	err := ds.Get(c, im)
+	if err == ds.ErrNoSuchEntity {
+		err = ds.Put(c, im)
 		return []Mutation{&WriteReceipt{m.Message, m.ToUser, true}}, err
 	}
 	return nil, err
 }
 
 type WriteReceipt struct {
-	Message   *datastore.Key
+	Message   *ds.Key
 	Recipient string
 	Success   bool
 }
 
-func (w *WriteReceipt) Root(ctx context.Context) *datastore.Key {
+func (w *WriteReceipt) Root(ctx context.Context) *ds.Key {
 	return w.Message.Root()
 }
 
 func (w *WriteReceipt) RollForward(c context.Context) ([]Mutation, error) {
-	ds := datastore.Get(c)
 	m := &OutgoingMessage{ID: w.Message.IntID(), FromUser: w.Message.Parent()}
-	if err := ds.Get(m); err != nil {
+	if err := ds.Get(c, m); err != nil {
 		return nil, err
 	}
 
@@ -184,7 +182,7 @@ func (w *WriteReceipt) RollForward(c context.Context) ([]Mutation, error) {
 		m.Failure.Set(idx)
 	}
 
-	err := ds.Put(m)
+	err := ds.Put(c, m)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +199,7 @@ func (w *WriteReceipt) RollForward(c context.Context) ([]Mutation, error) {
 }
 
 type ReminderMessage struct {
-	Message   *datastore.Key
+	Message   *ds.Key
 	Recipient string
 	When      time.Time
 }
@@ -210,22 +208,21 @@ var _ DelayedMutation = (*ReminderMessage)(nil)
 var _ DelayedMutation = (*TimeoutMessageSend)(nil)
 var _ DelayedMutation = (*SendMessage)(nil)
 
-func (r *ReminderMessage) Root(ctx context.Context) *datastore.Key {
+func (r *ReminderMessage) Root(ctx context.Context) *ds.Key {
 	return r.Message.Root()
 }
 
 func (r *ReminderMessage) RollForward(c context.Context) ([]Mutation, error) {
-	ds := datastore.Get(c)
 	m := &OutgoingMessage{}
-	datastore.PopulateKey(m, r.Message)
-	if err := ds.Get(m); err != nil {
+	ds.PopulateKey(m, r.Message)
+	if err := ds.Get(c, m); err != nil {
 		return nil, err
 	}
 	if m.Notified {
 		return nil, nil
 	}
 	m.Notified = true
-	return nil, ds.Put(m)
+	return nil, ds.Put(c, m)
 }
 
 func (r *ReminderMessage) HighPriority() bool      { return false }
@@ -239,8 +236,8 @@ type Embedder struct {
 	Next Mutation
 }
 
-func (*Embedder) Root(c context.Context) *datastore.Key {
-	return datastore.Get(c).MakeKey("GeneralBookkeeping", 1)
+func (*Embedder) Root(c context.Context) *ds.Key {
+	return ds.MakeKey(c, "GeneralBookkeeping", 1)
 }
 
 func (e *Embedder) RollForward(context.Context) ([]Mutation, error) {
@@ -252,7 +249,7 @@ func (e *Embedder) RollForward(context.Context) ([]Mutation, error) {
 // gob.Register Mutations
 type NotRegistered struct{}
 
-func (*NotRegistered) Root(c context.Context) *datastore.Key           { return nil }
+func (*NotRegistered) Root(c context.Context) *ds.Key                  { return nil }
 func (*NotRegistered) RollForward(context.Context) ([]Mutation, error) { return nil, nil }
 
 func init() {
@@ -300,7 +297,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				for i, ns := range namespaces {
 					nc := c
 					if ns != "" {
-						nc = info.Get(c).MustNamespace(ns)
+						nc = info.MustNamespace(c, ns)
 					}
 					f(nc, i)
 				}
@@ -313,11 +310,11 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 
 			charlie := &User{Name: "charlie"}
 			forEachNS(ctx, func(ctx context.Context, i int) {
-				So(datastore.Get(ctx).Put(charlie), ShouldBeNil)
+				So(ds.Put(ctx, charlie), ShouldBeNil)
 			})
 
-			// gds is a default-namespace datastore instance for global operations.
-			gds := datastore.Get(ctx)
+			// gctx is a default-namespace Context for global operations.
+			gctx := ctx
 
 			Convey("can't send to someone who doesn't exist", func() {
 				forEachNS(ctx, func(ctx context.Context, i int) {
@@ -329,7 +326,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				testing.Drain(ctx)
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
-					So(datastore.Get(ctx).Get(outMsgs[i]), ShouldBeNil)
+					So(ds.Get(ctx, outMsgs[i]), ShouldBeNil)
 					So(outMsgs[i].Failure.All(true), ShouldBeTrue)
 				})
 			})
@@ -346,7 +343,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
-					So(datastore.Get(ctx).Get(outMsgs[i]), ShouldBeNil)
+					So(ds.Get(ctx, outMsgs[i]), ShouldBeNil)
 					So(outMsgs[i].Success.All(true), ShouldBeTrue)
 				})
 			})
@@ -357,15 +354,14 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 					outMsgs[i], err = charlie.SendMessage(ctx, "Hey there", "charlie")
 					So(err, ShouldBeNil)
 
-					ds := datastore.Get(ctx)
 					rm := &realMutation{
 						ID:     "0000000000000001_00000000_00000000",
-						Parent: ds.KeyForObj(charlie),
+						Parent: ds.KeyForObj(ctx, charlie),
 					}
-					So(ds.Get(rm), ShouldBeNil)
+					So(ds.Get(ctx, rm), ShouldBeNil)
 					So(rm.Version, ShouldEqual, "testVersionID")
 					rm.Version = "otherCodeVersion"
-					So(ds.Put(rm), ShouldBeNil)
+					So(ds.Put(ctx, rm), ShouldBeNil)
 				})
 
 				l.Reset()
@@ -383,13 +379,13 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				}
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
-					So(datastore.Get(ctx).Get(outMsgs[i]), ShouldBeNil)
+					So(ds.Get(ctx, outMsgs[i]), ShouldBeNil)
 					So(outMsgs[i].Success.All(true), ShouldBeTrue)
 				})
 			})
 
 			Convey("sending to 100 people is no big deal", func() {
-				gds.Testable().Consistent(false)
+				ds.GetTestable(gctx).Consistent(false)
 
 				users := make([]User, 100)
 				recipients := make([]string, 100)
@@ -400,7 +396,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				}
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
-					So(datastore.Get(ctx).Put(users), ShouldBeNil)
+					So(ds.Put(ctx, users), ShouldBeNil)
 
 					var err error
 					outMsgs[i], err = charlie.SendMessage(ctx, "Hey there", recipients...)
@@ -408,13 +404,13 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				})
 
 				// do all the SendMessages
-				gds.Testable().CatchupIndexes()
+				ds.GetTestable(gctx).CatchupIndexes()
 				testing.AdvanceTime(ctx)
 				testing.Iterate(ctx)
 
 				// do all the WriteReceipts
 				l.Reset()
-				gds.Testable().CatchupIndexes()
+				ds.GetTestable(gctx).CatchupIndexes()
 				testing.AdvanceTime(ctx)
 				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
 
@@ -433,20 +429,20 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				}
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
-					So(datastore.Get(ctx).Get(outMsgs[i]), ShouldBeNil)
+					So(ds.Get(ctx, outMsgs[i]), ShouldBeNil)
 					So(outMsgs[i].Success.All(true), ShouldBeTrue)
 					So(outMsgs[i].Success.Size(), ShouldEqual, 100)
 				})
 			})
 
 			Convey("delaying messages works", func() {
-				gds.Testable().Consistent(false)
+				ds.GetTestable(gctx).Consistent(false)
 				cfg := testing.GetConfig(ctx)
 				cfg.DelayedMutations = true
 				testing.UpdateSettings(ctx, cfg)
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
-					So(datastore.Get(ctx).Put(
+					So(ds.Put(ctx,
 						&User{"recipient"},
 					), ShouldBeNil)
 				})
@@ -459,29 +455,29 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 
 				// do all the SendMessages
 				l.Reset()
-				gds.Testable().CatchupIndexes()
+				ds.GetTestable(gctx).CatchupIndexes()
 				testing.AdvanceTime(ctx)
 
 				// forgot to add the extra index!
 				So(func() { testing.Iterate(ctx) }, ShouldPanicLike, "Insufficient indexes")
-				gds.Testable().AddIndexes(&datastore.IndexDefinition{
+				ds.GetTestable(gctx).AddIndexes(&ds.IndexDefinition{
 					Kind: "tumble.Mutation",
-					SortBy: []datastore.IndexColumn{
+					SortBy: []ds.IndexColumn{
 						{Property: "TargetRoot"},
 						{Property: "ProcessAfter"},
 					},
 				})
-				gds.Testable().CatchupIndexes()
+				ds.GetTestable(gctx).CatchupIndexes()
 
 				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
 
 				// do all the WriteReceipts
-				gds.Testable().CatchupIndexes()
+				ds.GetTestable(gctx).CatchupIndexes()
 				testing.AdvanceTime(ctx)
 				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
-					So(datastore.Get(ctx).Get(outMsgs[i]), ShouldBeNil)
+					So(ds.Get(ctx, outMsgs[i]), ShouldBeNil)
 					So(outMsgs[i].Success.All(true), ShouldBeTrue)
 					So(outMsgs[i].Success.Size(), ShouldEqual, 1)
 					So(outMsgs[i].Notified, ShouldBeFalse)
@@ -489,7 +485,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 
 				// Running another iteration should find nothing
 				l.Reset()
-				gds.Testable().CatchupIndexes()
+				ds.GetTestable(gctx).CatchupIndexes()
 				testing.AdvanceTime(ctx)
 				So(testing.Iterate(ctx), ShouldEqual, 0)
 
@@ -503,12 +499,12 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				}
 
 				// Now it'll find something
-				gds.Testable().CatchupIndexes()
+				ds.GetTestable(gctx).CatchupIndexes()
 				clock.Get(ctx).(testclock.TestClock).Add(time.Minute * 5)
 				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
-					So(datastore.Get(ctx).Get(outMsgs[i]), ShouldBeNil)
+					So(ds.Get(ctx, outMsgs[i]), ShouldBeNil)
 					So(outMsgs[i].Notified, ShouldBeTrue)
 				})
 			})
@@ -519,7 +515,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				testing.UpdateSettings(ctx, cfg)
 				testing.EnableDelayedMutations(ctx)
 
-				So(gds.Put(
+				So(ds.Put(gctx,
 					&User{"recipient"},
 					&User{"slowmojoe"},
 				), ShouldBeNil)
@@ -540,7 +536,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 					return strings.Contains(ent.Msg, "TimeoutMessageSend")
 				}), ShouldBeTrue)
 
-				So(gds.Get(outMsg), ShouldBeNil)
+				So(ds.Get(gctx, outMsg), ShouldBeNil)
 				So(outMsg.TimedOut, ShouldBeTrue)
 				So(outMsg.Notified, ShouldBeFalse)
 				So(outMsg.Success.CountSet(), ShouldEqual, 1)
@@ -550,14 +546,14 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 
 				testing.AdvanceTime(ctx)
 				So(testing.Iterate(ctx), ShouldEqual, 1) // Notification submitted
-				So(gds.Get(outMsg), ShouldBeNil)
+				So(ds.Get(gctx, outMsg), ShouldBeNil)
 				So(outMsg.Failure.CountSet(), ShouldEqual, 0)
 				So(outMsg.Success.CountSet(), ShouldEqual, 2)
 
 				testing.AdvanceTime(ctx)
 				clock.Get(ctx).(testclock.TestClock).Add(time.Minute * 5)
 				So(testing.Iterate(ctx), ShouldEqual, 1) // ReminderMessage set
-				So(gds.Get(outMsg), ShouldBeNil)
+				So(ds.Get(gctx, outMsg), ShouldBeNil)
 				So(outMsg.Notified, ShouldBeTrue)
 
 			})
@@ -568,7 +564,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				testing.UpdateSettings(ctx, cfg)
 				testing.EnableDelayedMutations(ctx)
 
-				So(gds.Put(
+				So(ds.Put(gctx,
 					&User{"recipient"},
 					&User{"other"},
 				), ShouldBeNil)
@@ -590,7 +586,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				clock.Get(ctx).(testclock.TestClock).Add(time.Minute * 5)
 				So(testing.Iterate(ctx), ShouldEqual, 0) // Nothing else
 
-				So(gds.Get(outMsg), ShouldBeNil)
+				So(ds.Get(gctx, outMsg), ShouldBeNil)
 				So(outMsg.TimedOut, ShouldBeFalse)
 				So(outMsg.Notified, ShouldBeTrue)
 				So(outMsg.Success.CountSet(), ShouldEqual, 2)

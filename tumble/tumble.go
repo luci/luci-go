@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/luci/gae/filter/txnBuf"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
@@ -32,7 +32,7 @@ func RunMutation(c context.Context, m Mutation) error {
 	return nil
 }
 
-func enterTransactionInternal(c context.Context, cfg *Config, m Mutation, round uint64) (map[taskShard]struct{}, []Mutation, []*datastore.Key, error) {
+func enterTransactionInternal(c context.Context, cfg *Config, m Mutation, round uint64) (map[taskShard]struct{}, []Mutation, []*ds.Key, error) {
 	fromRoot := m.Root(c)
 
 	if fromRoot == nil {
@@ -41,12 +41,12 @@ func enterTransactionInternal(c context.Context, cfg *Config, m Mutation, round 
 
 	shardSet := map[taskShard]struct{}(nil)
 	retMuts := []Mutation(nil)
-	retMutKeys := []*datastore.Key(nil)
+	retMutKeys := []*ds.Key(nil)
 
-	err := datastore.Get(c).RunInTransaction(func(c context.Context) error {
+	err := ds.RunInTransaction(c, func(c context.Context) error {
 		// do a Get on the fromRoot to ensure that this transaction is associated
 		// with that entity group.
-		_, _ = datastore.Get(c).Exists(fromRoot)
+		_, _ = ds.Exists(c, fromRoot)
 
 		muts, err := m.RollForward(c)
 		if err != nil {
@@ -87,7 +87,7 @@ func enterTransactionInternal(c context.Context, cfg *Config, m Mutation, round 
 //
 // If called multiple times with the same name, the newly named mutation will
 // overwrite the existing mutation (assuming it hasn't run already).
-func PutNamedMutations(c context.Context, parent *datastore.Key, muts map[string]Mutation) error {
+func PutNamedMutations(c context.Context, parent *ds.Key, muts map[string]Mutation) error {
 	cfg := getConfig(c)
 
 	now := clock.Now(c).UTC()
@@ -104,19 +104,18 @@ func PutNamedMutations(c context.Context, parent *datastore.Key, muts map[string
 		shardSet[realMut.shard(cfg)] = struct{}{}
 	}
 
-	err := datastore.Get(c).Put(toPut)
+	err := ds.Put(c, toPut)
 	fireTasks(c, getConfig(c), shardSet)
 	return err
 }
 
 // CancelNamedMutations does a best-effort cancellation of the named mutations.
-func CancelNamedMutations(c context.Context, parent *datastore.Key, names ...string) error {
-	ds := datastore.Get(c)
-	toDel := make([]*datastore.Key, 0, len(names))
+func CancelNamedMutations(c context.Context, parent *ds.Key, names ...string) error {
+	toDel := make([]*ds.Key, 0, len(names))
 	nameSet := stringset.NewFromSlice(names...)
 	nameSet.Iter(func(name string) bool {
-		toDel = append(toDel, ds.NewKey("tumble.Mutation", "n:"+name, 0, parent))
+		toDel = append(toDel, ds.NewKey(c, "tumble.Mutation", "n:"+name, 0, parent))
 		return true
 	})
-	return errors.Filter(ds.Delete(toDel), datastore.ErrNoSuchEntity)
+	return errors.Filter(ds.Delete(c, toDel), ds.ErrNoSuchEntity)
 }

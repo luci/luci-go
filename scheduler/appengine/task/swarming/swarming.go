@@ -117,7 +117,7 @@ func defaultTags(c context.Context, ctl task.Controller) map[string]string {
 		return map[string]string{
 			"scheduler_invocation_id": fmt.Sprintf("%d", ctl.InvocationID()),
 			"scheduler_job_id":        ctl.JobID(),
-			"user_agent":              info.Get(c).AppID(),
+			"user_agent":              info.AppID(c),
 		}
 	}
 	return map[string]string{

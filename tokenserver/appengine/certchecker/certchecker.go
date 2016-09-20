@@ -14,7 +14,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/caching/lazyslot"
@@ -136,8 +136,7 @@ func GetCertChecker(c context.Context, cn string) (*CertChecker, error) {
 		// To avoid storing CertChecker for non-existent CAs in local memory forever,
 		// we do a datastore check when creating the checker. It happens once during
 		// the process lifetime.
-		ds := datastore.Get(c)
-		switch exists, err := ds.Exists(ds.NewKey("CA", cn, 0, nil)); {
+		switch exists, err := ds.Exists(c, ds.NewKey(c, "CA", cn, 0, nil)); {
 		case err != nil:
 			return nil, 0, errors.WrapTransient(err)
 		case !exists.All():
@@ -253,7 +252,7 @@ func (ch *CertChecker) CheckCertificate(c context.Context, cert *x509.Certificat
 //
 // On dev server we cache for a very short duration to simplify local testing.
 func refetchCAPeriod(c context.Context) time.Duration {
-	if info.Get(c).IsDevAppServer() {
+	if info.IsDevAppServer(c) {
 		return 100 * time.Millisecond
 	}
 	return RefetchCAPeriod
@@ -263,7 +262,7 @@ func refetchCAPeriod(c context.Context) time.Duration {
 //
 // On dev server we cache for a very short duration to simplify local testing.
 func refetchCRLPeriod(c context.Context) time.Duration {
-	if info.Get(c).IsDevAppServer() {
+	if info.IsDevAppServer(c) {
 		return 100 * time.Millisecond
 	}
 	return RefetchCRLPeriod
@@ -278,8 +277,8 @@ func refetchCRLPeriod(c context.Context) time.Duration {
 // forbidden (per lazyslot.Slot API).
 func (ch *CertChecker) refetchCA(c context.Context) (*model.CA, error) {
 	ca := &model.CA{CN: ch.CN}
-	switch err := datastore.Get(c).Get(ca); {
-	case err == datastore.ErrNoSuchEntity:
+	switch err := ds.Get(c, ca); {
+	case err == ds.ErrNoSuchEntity:
 		return &model.CA{}, nil // GetCA knows that empty struct means "no such CA"
 	case err != nil:
 		return nil, errors.WrapTransient(err)

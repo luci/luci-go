@@ -134,7 +134,7 @@ func warmupHandler(c *router.Context) {
 // readConfigCron is handler for /internal/cron/read-config GAE cron task.
 func readConfigCron(c *router.Context) {
 	// Don't override manually imported configs with 'nil' on devserver.
-	if info.Get(c.Context).IsDevAppServer() {
+	if info.IsDevAppServer(c.Context) {
 		c.Writer.WriteHeader(http.StatusOK)
 		return
 	}

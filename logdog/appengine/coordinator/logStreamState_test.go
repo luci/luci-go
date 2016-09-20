@@ -13,6 +13,7 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/logdog/common/types"
+
 	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -29,12 +30,11 @@ func TestLogStreamState(t *testing.T) {
 		if err := WithProjectNamespace(&c, "proj-foo", NamespaceAccessAllTesting); err != nil {
 			panic(err)
 		}
-		di := ds.Get(c)
-		di.Testable().Consistent(true)
+		ds.GetTestable(c).Consistent(true)
 
 		now := ds.RoundTime(tc.Now().UTC())
 		ls := LogStream{ID: LogStreamID("testing/+/log/stream")}
-		lst := ls.State(di)
+		lst := ls.State(c)
 
 		lst.Schema = CurrentSchemaVersion
 		lst.Created = now.UTC()
@@ -70,7 +70,7 @@ func TestLogStreamState(t *testing.T) {
 		})
 
 		Convey(`Can write to the Datastore.`, func() {
-			So(di.Put(lst), ShouldBeNil)
+			So(ds.Put(c, lst), ShouldBeNil)
 
 			Convey(`Can be queried`, func() {
 				q := ds.NewQuery("LogStreamState")
@@ -79,7 +79,7 @@ func TestLogStreamState(t *testing.T) {
 				// single record, "lst", was returned.
 				runQuery := func(q *ds.Query) bool {
 					var states []*LogStreamState
-					if err := di.GetAll(q, &states); err != nil {
+					if err := ds.GetAll(c, q, &states); err != nil {
 						panic(err)
 					}
 					return len(states) > 0
@@ -93,7 +93,7 @@ func TestLogStreamState(t *testing.T) {
 				Convey(`A terminated stream will satisfy Terminated, but !Archived`, func() {
 					lst.TerminalIndex = 1337
 					lst.TerminatedTime = now
-					So(di.Put(lst), ShouldBeNil)
+					So(ds.Put(c, lst), ShouldBeNil)
 
 					So(runQuery(q.Eq("_Terminated", true)), ShouldBeTrue)
 					So(runQuery(q.Eq("_ArchivalState", NotArchived)), ShouldBeTrue)
@@ -103,7 +103,7 @@ func TestLogStreamState(t *testing.T) {
 					lst.TerminalIndex = 10
 					lst.ArchiveLogEntryCount = 9
 					lst.ArchivedTime = now
-					So(di.Put(lst), ShouldBeNil)
+					So(ds.Put(c, lst), ShouldBeNil)
 
 					So(runQuery(q.Eq("_Terminated", true)), ShouldBeTrue)
 					So(runQuery(q.Eq("_ArchivalState", ArchivedPartial)), ShouldBeTrue)
@@ -113,7 +113,7 @@ func TestLogStreamState(t *testing.T) {
 					lst.TerminalIndex = 10
 					lst.ArchiveLogEntryCount = 11
 					lst.ArchivedTime = now
-					So(di.Put(lst), ShouldBeNil)
+					So(ds.Put(c, lst), ShouldBeNil)
 
 					So(runQuery(q.Eq("_Terminated", true)), ShouldBeTrue)
 					So(runQuery(q.Eq("_ArchivalState", ArchivedComplete)), ShouldBeTrue)

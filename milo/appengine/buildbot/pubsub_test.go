@@ -17,20 +17,22 @@ import (
 	"testing"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock/testclock"
 	lucicfg "github.com/luci/luci-go/common/config"
 	memcfg "github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/common/logging/gologger"
-	. "github.com/luci/luci-go/common/testing/assertions"
 	"github.com/luci/luci-go/milo/appengine/settings"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/router"
-	. "github.com/smartystreets/goconvey/convey"
+
+	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
+
+	. "github.com/luci/luci-go/common/testing/assertions"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var (
@@ -83,7 +85,7 @@ func TestPubSub(t *testing.T) {
 		c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
 		c = gologger.StdConfig.Use(c)
 		c, _ = testclock.UseTime(c, fakeTime)
-		ds := datastore.Get(c)
+
 		rand.Seed(5)
 
 		Convey("Save build entry", func() {
@@ -94,8 +96,8 @@ func TestPubSub(t *testing.T) {
 				Currentstep: "this is a string",
 				Finished:    true,
 			}
-			err := ds.Put(build)
-			ds.Testable().CatchupIndexes()
+			err := ds.Put(c, build)
+			ds.GetTestable(c).CatchupIndexes()
 
 			So(err, ShouldBeNil)
 			Convey("Load build entry", func() {
@@ -104,7 +106,7 @@ func TestPubSub(t *testing.T) {
 					Buildername: "Fake buildername",
 					Number:      1234,
 				}
-				err = ds.Get(loadB)
+				err = ds.Get(c, loadB)
 				So(err, ShouldBeNil)
 				So(loadB.Master, ShouldEqual, "Fake Master")
 				So(loadB.Internal, ShouldEqual, false)
@@ -113,9 +115,9 @@ func TestPubSub(t *testing.T) {
 			})
 
 			Convey("Query build entry", func() {
-				q := datastore.NewQuery("buildbotBuild")
+				q := ds.NewQuery("buildbotBuild")
 				buildbots := []*buildbotBuild{}
-				err = ds.GetAll(q, &buildbots)
+				err = ds.GetAll(c, q, &buildbots)
 				So(err, ShouldBeNil)
 
 				So(len(buildbots), ShouldEqual, 1)
@@ -123,22 +125,22 @@ func TestPubSub(t *testing.T) {
 				Convey("Query for finished entries should be 1", func() {
 					q = q.Eq("finished", true)
 					buildbots = []*buildbotBuild{}
-					err = ds.GetAll(q, &buildbots)
+					err = ds.GetAll(c, q, &buildbots)
 					So(err, ShouldBeNil)
 					So(len(buildbots), ShouldEqual, 1)
 				})
 				Convey("Query for unfinished entries should be 0", func() {
 					q = q.Eq("finished", false)
 					buildbots = []*buildbotBuild{}
-					err = ds.GetAll(q, &buildbots)
+					err = ds.GetAll(c, q, &buildbots)
 					So(err, ShouldBeNil)
 					So(len(buildbots), ShouldEqual, 0)
 				})
 			})
 
 			Convey("Save a few more entries", func() {
-				ds.Testable().Consistent(true)
-				ds.Testable().AutoIndex(true)
+				ds.GetTestable(c).Consistent(true)
+				ds.GetTestable(c).AutoIndex(true)
 				for i := 1235; i < 1240; i++ {
 					build := &buildbotBuild{
 						Master:      "Fake Master",
@@ -147,16 +149,16 @@ func TestPubSub(t *testing.T) {
 						Currentstep: "this is a string",
 						Finished:    i%2 == 0,
 					}
-					err := ds.Put(build)
+					err := ds.Put(c, build)
 					So(err, ShouldBeNil)
 				}
-				q := datastore.NewQuery("buildbotBuild")
+				q := ds.NewQuery("buildbotBuild")
 				q = q.Eq("finished", true)
 				q = q.Eq("master", "Fake Master")
 				q = q.Eq("builder", "Fake buildername")
 				q = q.Order("-number")
 				buildbots := []*buildbotBuild{}
-				err = ds.GetAll(q, &buildbots)
+				err = ds.GetAll(c, q, &buildbots)
 				So(err, ShouldBeNil)
 				So(len(buildbots), ShouldEqual, 3) // 1235, 1237, 1239
 			})
@@ -166,7 +168,7 @@ func TestPubSub(t *testing.T) {
 			build := &buildbotBuild{
 				Master: "Fake Master",
 			}
-			So(func() { ds.Put(build) }, ShouldPanicLike, "No Master or Builder found")
+			So(func() { ds.Put(c, build) }, ShouldPanicLike, "No Master or Builder found")
 		})
 
 		b := &buildbotBuild{
@@ -215,7 +217,7 @@ func TestPubSub(t *testing.T) {
 					Buildername: "Fake buildername",
 					Number:      1234,
 				}
-				err := ds.Get(loadB)
+				err := ds.Get(c, loadB)
 				So(err, ShouldBeNil)
 				So(loadB.Master, ShouldEqual, "Fake Master")
 				So(loadB.Currentstep.(string), ShouldEqual, "this is a string")
@@ -270,7 +272,7 @@ func TestPubSub(t *testing.T) {
 					Buildername: "Fake buildername",
 					Number:      1234,
 				}
-				err := ds.Get(loadB)
+				err := ds.Get(c, loadB)
 				So(err, ShouldBeNil)
 				So(*loadB.Times[0], ShouldEqual, 123.0)
 				So(*loadB.Times[1], ShouldEqual, 124.0)
@@ -293,7 +295,7 @@ func TestPubSub(t *testing.T) {
 						Buildername: "Fake buildername",
 						Number:      1234,
 					}
-					err := ds.Get(loadB)
+					err := ds.Get(c, loadB)
 					So(err, ShouldBeNil)
 					So(*loadB.Times[0], ShouldEqual, 123.0)
 					So(*loadB.Times[1], ShouldEqual, 124.0)
@@ -377,7 +379,7 @@ func TestPubSub(t *testing.T) {
 					Buildername: "Fake buildername",
 					Number:      1234,
 				}
-				err = ds.Get(loadB)
+				err = ds.Get(c, loadB)
 				So(err, ShouldBeNil)
 				So(loadB.Master, ShouldEqual, "Fake Master")
 				So(loadB.Internal, ShouldEqual, true)

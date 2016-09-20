@@ -10,7 +10,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
 )
@@ -38,8 +38,7 @@ type instance struct {
 // instanceEntityID returns a string unique to this appengine module, version
 // and instance, to be used as the datastore ID for an "instance" entity.
 func instanceEntityID(c context.Context) string {
-	i := info.Get(c)
-	return fmt.Sprintf("%s.%s.%s", i.InstanceID(), i.VersionID(), i.ModuleName())
+	return fmt.Sprintf("%s.%s.%s", info.InstanceID(c), info.VersionID(c), info.ModuleName(c))
 }
 
 // getOrCreateInstanceEntity returns the instance entity for this appengine
@@ -53,17 +52,15 @@ func getOrCreateInstanceEntity(c context.Context) (*instance, error) {
 		TaskNum:     -1,
 		LastUpdated: clock.Get(c).Now().UTC(),
 	}
-	ds := datastore.Get(c)
-	err := ds.Get(&entity)
-	if err == datastore.ErrNoSuchEntity {
-		err = ds.RunInTransaction(func(c context.Context) error {
-			ds := datastore.Get(c)
-			switch err := ds.Get(&entity); err {
+	err := ds.Get(c, &entity)
+	if err == ds.ErrNoSuchEntity {
+		err = ds.RunInTransaction(c, func(c context.Context) error {
+			switch err := ds.Get(c, &entity); err {
 			case nil:
 				return nil
-			case datastore.ErrNoSuchEntity:
+			case ds.ErrNoSuchEntity:
 				// Insert it into datastore if it didn't exist.
-				return ds.Put(&entity)
+				return ds.Put(c, &entity)
 			default:
 				return err
 			}
@@ -77,12 +74,11 @@ func getOrCreateInstanceEntity(c context.Context) (*instance, error) {
 // It does it in a transaction to avoid overwriting TaskNum.
 func refreshLastUpdatedTime(c context.Context, t time.Time) error {
 	entity := instance{ID: instanceEntityID(c)}
-	return datastore.Get(c).RunInTransaction(func(c context.Context) error {
-		ds := datastore.Get(c)
-		if err := ds.Get(&entity); err != nil {
+	return ds.RunInTransaction(c, func(c context.Context) error {
+		if err := ds.Get(c, &entity); err != nil {
 			return err
 		}
 		entity.LastUpdated = t.UTC()
-		return ds.Put(&entity)
+		return ds.Put(c, &entity)
 	}, nil)
 }

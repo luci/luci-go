@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/logging"
@@ -104,7 +104,7 @@ func filterAttemptsByDNE(gd *dm.GraphData, newAttempts *dm.AttemptList, newQuest
 	return
 }
 
-func depsFromMissing(c context.Context, fwdDepKeys []*datastore.Key, exists datastore.BoolList) (ret *dm.AttemptList) {
+func depsFromMissing(c context.Context, fwdDepKeys []*ds.Key, exists ds.BoolList) (ret *dm.AttemptList) {
 	ret = dm.NewAttemptList(nil)
 	tmpAID := &dm.Attempt_ID{}
 	for i, fkey := range fwdDepKeys {
@@ -148,11 +148,9 @@ func journalQuestAttempts(c context.Context, newQuests []*model.Quest, newAttemp
 }
 
 func (d *deps) ensureGraphData(c context.Context, req *dm.EnsureGraphDataReq, newQuests []*model.Quest, newAttempts *dm.AttemptList, rsp *dm.EnsureGraphDataRsp) (err error) {
-	ds := datastore.Get(c)
-
 	var (
-		fwdDepExists *datastore.ExistsResult
-		fwdDepKeys   []*datastore.Key
+		fwdDepExists *ds.ExistsResult
+		fwdDepKeys   []*ds.Key
 	)
 	if req.ForExecution != nil {
 		fwdDepKeys = model.FwdDepKeysFromList(c, req.ForExecution.Id.AttemptID(), newAttempts)
@@ -169,7 +167,7 @@ func (d *deps) ensureGraphData(c context.Context, req *dm.EnsureGraphDataReq, ne
 		}
 		if req.ForExecution != nil {
 			gen <- func() (err error) {
-				fwdDepExists, err = ds.Exists(fwdDepKeys)
+				fwdDepExists, err = ds.Exists(c, fwdDepKeys)
 				if err != nil {
 					err = fmt.Errorf("while finding FwdDeps: %s", err)
 				}

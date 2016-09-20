@@ -71,7 +71,7 @@ func TestTerminateStream(t *testing.T) {
 						ID:         tls.Stream.ID,
 						Expiration: env.Clock.Now().Add(time.Hour),
 					}
-					arParent, arName := areq.TaskName(ds.Get(c))
+					arParent, arName := areq.TaskName(c)
 					err := tumble.PutNamedMutations(c, arParent, map[string]tumble.Mutation{
 						arName: &areq,
 					})
@@ -79,16 +79,16 @@ func TestTerminateStream(t *testing.T) {
 						panic(err)
 					}
 				})
-				ds.Get(c).Testable().CatchupIndexes()
+				ds.GetTestable(c).CatchupIndexes()
 
 				Convey(`Can be marked terminal and schedules an archival mutation.`, func() {
 					_, err := svr.TerminateStream(c, &req)
 					So(err, ShouldBeRPCOK)
-					ds.Get(c).Testable().CatchupIndexes()
+					ds.GetTestable(c).CatchupIndexes()
 
 					// Reload the state and confirm.
 					tls.WithProjectNamespace(c, func(c context.Context) {
-						So(ds.Get(c).Get(tls.State), ShouldBeNil)
+						So(ds.Get(c, tls.State), ShouldBeNil)
 					})
 					So(tls.State.TerminalIndex, ShouldEqual, 1337)
 					So(tls.State.Terminated(), ShouldBeTrue)

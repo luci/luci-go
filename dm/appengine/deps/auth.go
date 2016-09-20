@@ -23,7 +23,7 @@ import (
 
 func getTrimmedAppID(c context.Context) string {
 	// custom domains show up as "foo.com:appid"
-	toks := strings.Split(info.Get(c).AppID(), ":")
+	toks := strings.Split(info.AppID(c), ":")
 	return toks[len(toks)-1]
 }
 

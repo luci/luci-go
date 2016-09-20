@@ -40,7 +40,7 @@ type Config struct {
 // ServiceConfigPath returns the config set and path for this application's
 // service configuration.
 func ServiceConfigPath(c context.Context) (string, string) {
-	appID := info.Get(c).AppID()
+	appID := info.AppID(c)
 	return fmt.Sprintf("services/%s", appID), svcconfig.ServiceConfigFilename
 }
 

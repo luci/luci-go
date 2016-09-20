@@ -5,8 +5,7 @@
 package distributor
 
 import (
-	"github.com/luci/gae/filter/txnBuf"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/dm/appengine/model"
@@ -23,7 +22,7 @@ type NotifyExecution struct {
 }
 
 // Root implements tumble.Mutation.
-func (f *NotifyExecution) Root(c context.Context) *datastore.Key {
+func (f *NotifyExecution) Root(c context.Context) *ds.Key {
 	return model.ExecutionKeyFromID(c, f.Notification.ID)
 }
 
@@ -38,9 +37,9 @@ func (f *NotifyExecution) RollForward(c context.Context) (muts []tumble.Mutation
 		}.Errorf(c, "Failed to make distributor")
 		return
 	}
-	dsNoTx := txnBuf.GetNoTxn(c)
+
 	q := &model.Quest{ID: f.Notification.ID.Quest}
-	if err := dsNoTx.Get(q); err != nil {
+	if err := ds.Get(ds.WithoutTransaction(c), q); err != nil {
 		return nil, errors.Annotate(err).Reason("getting Quest").Err()
 	}
 	rslt, err := dist.HandleNotification(&q.Desc, f.Notification)

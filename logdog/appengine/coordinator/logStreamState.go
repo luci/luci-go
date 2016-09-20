@@ -11,6 +11,8 @@ import (
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/logdog/common/types"
+
+	"golang.org/x/net/context"
 )
 
 // ArchivalState describes the archival state of a LogStream.
@@ -126,8 +128,8 @@ type LogStreamState struct {
 
 // NewLogStreamState returns a LogStreamState with its parent key populated to
 // the LogStream with the supplied ID.
-func NewLogStreamState(di ds.Interface, id HashID) *LogStreamState {
-	return &LogStreamState{Parent: di.NewKey("LogStream", string(id), 0, nil)}
+func NewLogStreamState(c context.Context, id HashID) *LogStreamState {
+	return &LogStreamState{Parent: ds.NewKey(c, "LogStream", string(id), 0, nil)}
 }
 
 // ID returns the LogStream ID for the LogStream that owns this LogStreamState.

@@ -71,7 +71,7 @@ func New(c context.Context) config.Interface {
 	}
 
 	if settings.ConfigServiceURL == "" {
-		if inf := info.Get(c); inf.IsDevAppServer() {
+		if info.IsDevAppServer(c) {
 			return devServerConfig()
 		}
 		return erroring.New(ErrNotConfigured)

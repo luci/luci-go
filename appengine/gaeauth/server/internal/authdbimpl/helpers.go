@@ -7,8 +7,6 @@ package authdbimpl
 import (
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/filter/txnBuf"
-	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/server/auth/service"
 )
@@ -50,11 +48,5 @@ func getAuthService(c context.Context, url string) authService {
 //
 // Idempotent.
 func defaultNS(c context.Context) context.Context {
-	return info.Get(c).MustNamespace("")
-}
-
-// noTxnDS returns datastore interface configured to escape any current
-// transaction.
-func noTxnDS(c context.Context) datastore.Interface {
-	return txnBuf.GetNoTxn(c)
+	return info.MustNamespace(c, "")
 }

@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/dm/api/service/v1"
 )
 
@@ -27,7 +27,7 @@ import (
 // Represents the OTHER_QUEST|2 depending on QUEST|1.
 type FwdDep struct {
 	// Attempt that this points from.
-	Depender *datastore.Key `gae:"$parent"`
+	Depender *ds.Key `gae:"$parent"`
 
 	// A FwdDep's ID is the Attempt ID that it points to.
 	Dependee dm.Attempt_ID `gae:"$id"`
@@ -56,7 +56,7 @@ func (f *FwdDep) Edge() *FwdEdge {
 // FwdDepsFromList creates a slice of *FwdDep given an originating base
 // Attempt_ID, and a list of dependency Attempts.
 func FwdDepsFromList(c context.Context, base *dm.Attempt_ID, list *dm.AttemptList) []*FwdDep {
-	from := datastore.Get(c).KeyForObj(&Attempt{ID: *base})
+	from := ds.KeyForObj(c, &Attempt{ID: *base})
 	keys := make(sort.StringSlice, 0, len(list.To))
 	amt := 0
 	for qst, nums := range list.To {
@@ -81,8 +81,7 @@ func FwdDepsFromList(c context.Context, base *dm.Attempt_ID, list *dm.AttemptLis
 
 // FwdDepKeysFromList makes a list of datastore.Key's that correspond to all
 // of the FwdDeps expressed by the <base, list> pair.
-func FwdDepKeysFromList(c context.Context, base *dm.Attempt_ID, list *dm.AttemptList) []*datastore.Key {
-	ds := datastore.Get(c)
+func FwdDepKeysFromList(c context.Context, base *dm.Attempt_ID, list *dm.AttemptList) []*ds.Key {
 	keys := make(sort.StringSlice, 0, len(list.To))
 	amt := 0
 	for qst, nums := range list.To {
@@ -90,10 +89,10 @@ func FwdDepKeysFromList(c context.Context, base *dm.Attempt_ID, list *dm.Attempt
 		amt += len(nums.Nums)
 	}
 	keys.Sort()
-	ret := make([]*datastore.Key, 0, amt)
+	ret := make([]*ds.Key, 0, amt)
 	for _, key := range keys {
 		for _, num := range list.To[key].Nums {
-			ret = append(ret, ds.MakeKey(
+			ret = append(ret, ds.MakeKey(c,
 				"Attempt", base.DMEncoded(),
 				"FwdDep", dm.NewAttemptID(key, num).DMEncoded()))
 		}

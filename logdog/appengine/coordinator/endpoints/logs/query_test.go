@@ -61,7 +61,7 @@ func TestQuery(t *testing.T) {
 		c, env := ct.Install()
 		c, fb := featureBreaker.FilterRDS(c, nil)
 
-		ds.Get(c).Testable().Consistent(true)
+		ds.GetTestable(c).Consistent(true)
 
 		var svrBase server
 		svr := newService(&svrBase)
@@ -146,7 +146,7 @@ func TestQuery(t *testing.T) {
 			purgedStreamPaths = append(purgedStreamPaths, string(v))
 			env.Clock.Add(time.Second)
 		}
-		ds.Get(c).Testable().CatchupIndexes()
+		ds.GetTestable(c).CatchupIndexes()
 
 		// Invert streamPaths since we will return results in descending Created
 		// order.
@@ -244,7 +244,7 @@ func TestQuery(t *testing.T) {
 					if err := tls.Put(c); err != nil {
 						panic(err)
 					}
-					ds.Get(c).Testable().CatchupIndexes()
+					ds.GetTestable(c).CatchupIndexes()
 
 					_, err := svr.Query(c, &req)
 					So(err, ShouldBeRPCInternal)

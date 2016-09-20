@@ -10,26 +10,25 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/metric"
 	"github.com/luci/luci-go/common/tsmon/types"
 	"github.com/luci/luci-go/server/router"
+
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func flushNowWithMiddleware(c context.Context, state *State) {
-	ds := datastore.Get(c)
-
 	i := instance{
 		ID:          instanceEntityID(c),
 		TaskNum:     0,
 		LastUpdated: clock.Now(c).Add(-2 * time.Minute).UTC(),
 	}
-	So(ds.Put(&i), ShouldBeNil)
+	So(ds.Put(c, &i), ShouldBeNil)
 
 	state.lastFlushed = clock.Now(c).Add(-2 * time.Minute)
 

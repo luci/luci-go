@@ -10,7 +10,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/gaeauth/server/internal/authdbimpl"
 	"github.com/luci/luci-go/appengine/gaetesting"
 	"github.com/luci/luci-go/server/auth/authdb"
@@ -67,11 +67,10 @@ func bumpAuthDB(c context.Context, rev int64) {
 		AuthServiceURL: "https://fake-auth-service",
 		Rev:            rev,
 	}
-	ds := datastore.Get(c)
-	if err = ds.Put(&info); err != nil {
+	if err = ds.Put(c, &info); err != nil {
 		panic(err)
 	}
-	err = ds.Put(&authdbimpl.Snapshot{
+	err = ds.Put(c, &authdbimpl.Snapshot{
 		ID:             info.GetSnapshotID(),
 		AuthDBDeflated: blob,
 	})

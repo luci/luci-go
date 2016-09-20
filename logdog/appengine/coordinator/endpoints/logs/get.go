@@ -69,14 +69,13 @@ func (s *server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 		return nil, grpcutil.Errf(codes.InvalidArgument, "invalid path value")
 	}
 
-	di := ds.Get(c)
 	ls := &coordinator.LogStream{ID: coordinator.LogStreamID(path)}
-	lst := ls.State(di)
+	lst := ls.State(c)
 	log.Fields{
 		"id": ls.ID,
 	}.Debugf(c, "Loading stream.")
 
-	if err := di.Get(ls, lst); err != nil {
+	if err := ds.Get(c, ls, lst); err != nil {
 		if isNoSuchEntity(err) {
 			log.Errorf(c, "Log stream does not exist.")
 			return nil, grpcutil.Errf(codes.NotFound, "path not found")

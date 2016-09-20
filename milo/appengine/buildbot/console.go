@@ -8,19 +8,19 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/milo/api/resp"
+
 	"golang.org/x/net/context"
 )
 
 // getFullBuilds fetches all of the recent builds from the datastore.
 func getFullBuilds(c context.Context, masterName, builderName string, finished bool) ([]*buildbotBuild, error) {
 	// TODO(hinoka): Builder specific structs.
-	ds := datastore.Get(c)
-	q := datastore.NewQuery("buildbotBuild")
+	q := ds.NewQuery("buildbotBuild")
 	q = q.Eq("finished", finished)
 	q = q.Eq("master", masterName)
 	q = q.Eq("builder", builderName)
@@ -28,7 +28,7 @@ func getFullBuilds(c context.Context, masterName, builderName string, finished b
 	q = q.Order("-number")
 	q.Finalize()
 	buildbots := make([]*buildbotBuild, 0, 25)
-	err := ds.GetAll(q, &buildbots)
+	err := ds.GetAll(c, q, &buildbots)
 	return buildbots, err
 }
 

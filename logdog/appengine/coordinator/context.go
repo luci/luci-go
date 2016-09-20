@@ -127,7 +127,7 @@ func WithProjectNamespace(c *context.Context, project luciConfig.ProjectName, at
 	}
 
 	pns := ProjectNamespace(project)
-	nc, err := info.Get(ctx).Namespace(pns)
+	nc, err := info.Namespace(ctx, pns)
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,
@@ -162,7 +162,7 @@ func getProjectConfig(ctx context.Context, project luciConfig.ProjectName) (*svc
 // namespace conforming to ProjectNamespace. If this is not the case, this
 // method will panic.
 func Project(c context.Context) luciConfig.ProjectName {
-	ns, _ := info.Get(c).GetNamespace()
+	ns := info.GetNamespace(c)
 	project := ProjectFromNamespace(ns)
 	if project != "" {
 		return project

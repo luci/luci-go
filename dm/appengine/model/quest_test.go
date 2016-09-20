@@ -12,7 +12,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock/testclock"
 	google_pb "github.com/luci/luci-go/common/proto/google"
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -97,31 +97,30 @@ func TestQuest(t *testing.T) {
 			qd := dm.NewQuestDesc("swarming", `{"key": ["value"]}`, "{}", nil)
 			So(qd.Normalize(), ShouldBeNil)
 			q := NewQuest(c, qd)
-			ds := datastore.Get(c)
-			So(ds.Put(q), ShouldBeNil)
-			ds.Testable().CatchupIndexes()
+			So(ds.Put(c, q), ShouldBeNil)
+			ds.GetTestable(c).CatchupIndexes()
 
 			as := []*Attempt(nil)
-			So(ds.GetAll(QueryAttemptsForQuest(c, q.ID), &as), ShouldBeNil)
+			So(ds.GetAll(c, QueryAttemptsForQuest(c, q.ID), &as), ShouldBeNil)
 			So(as, ShouldBeNil)
 
 			a := &Attempt{ID: *dm.NewAttemptID(q.ID, 1)}
-			So(ds.Put(a), ShouldBeNil)
+			So(ds.Put(c, a), ShouldBeNil)
 			a.ID.Id = 2
-			So(ds.Put(a), ShouldBeNil)
+			So(ds.Put(c, a), ShouldBeNil)
 			a.ID.Quest = "eMpqiyje5ItTX8IistN7IlAMVxyCsJcez4DAHKvhm7X" // one less
 			a.ID.Id = 1
-			So(ds.Put(a), ShouldBeNil)
+			So(ds.Put(c, a), ShouldBeNil)
 			a.ID.Quest = "eMpqiyje5ItTX8IistN7IlAMVxyCsJcez4DAHKvhm7Z" // one more
-			So(ds.Put(a), ShouldBeNil)
+			So(ds.Put(c, a), ShouldBeNil)
 
 			as = nil
-			So(ds.GetAll(QueryAttemptsForQuest(c, q.ID), &as), ShouldBeNil)
+			So(ds.GetAll(c, QueryAttemptsForQuest(c, q.ID), &as), ShouldBeNil)
 			So(as, ShouldBeNil)
 
-			ds.Testable().CatchupIndexes()
+			ds.GetTestable(c).CatchupIndexes()
 			as = nil
-			So(ds.GetAll(QueryAttemptsForQuest(c, q.ID), &as), ShouldBeNil)
+			So(ds.GetAll(c, QueryAttemptsForQuest(c, q.ID), &as), ShouldBeNil)
 			So(as, ShouldResemble, []*Attempt{
 				{ID: *dm.NewAttemptID("1258phYs8GW6qM5AQopQ_L3A5cZhO7iaYQZyFkNusVw", 2)},
 				{ID: *dm.NewAttemptID("1258phYs8GW6qM5AQopQ_L3A5cZhO7iaYQZyFkNusVw", 1)},

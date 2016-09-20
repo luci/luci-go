@@ -11,7 +11,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
@@ -65,10 +65,10 @@ type Snapshot struct {
 // If no such entity is stored, returns (nil, nil).
 func GetLatestSnapshotInfo(c context.Context) (*SnapshotInfo, error) {
 	logging.Debugf(c, "Fetching AuthDB snapshot info from the datastore")
-	c = defaultNS(c)
+	c = ds.WithoutTransaction(defaultNS(c))
 	info := SnapshotInfo{}
-	switch err := noTxnDS(c).Get(&info); {
-	case err == datastore.ErrNoSuchEntity:
+	switch err := ds.Get(c, &info); {
+	case err == ds.ErrNoSuchEntity:
 		return nil, nil
 	case err != nil:
 		return nil, errors.WrapTransient(err)
@@ -81,8 +81,8 @@ func GetLatestSnapshotInfo(c context.Context) (*SnapshotInfo, error) {
 //
 // Used to detach the service from auth_service.
 func deleteSnapshotInfo(c context.Context) error {
-	ds := noTxnDS(c)
-	return ds.Delete(ds.KeyForObj(&SnapshotInfo{}))
+	c = ds.WithoutTransaction(c)
+	return ds.Delete(c, ds.KeyForObj(c, &SnapshotInfo{}))
 }
 
 // GetAuthDBSnapshot fetches, inflates and deserializes AuthDB snapshot.
@@ -90,10 +90,10 @@ func GetAuthDBSnapshot(c context.Context, id string) (*protocol.AuthDB, error) {
 	logging.Debugf(c, "Fetching AuthDB snapshot from the datastore")
 	defer logging.Debugf(c, "AuthDB snapshot fetched")
 
-	c = defaultNS(c)
+	c = ds.WithoutTransaction(defaultNS(c))
 	snap := Snapshot{ID: id}
-	switch err := noTxnDS(c).Get(&snap); {
-	case err == datastore.ErrNoSuchEntity:
+	switch err := ds.Get(c, &snap); {
+	case err == ds.ErrNoSuchEntity:
 		return nil, err // not transient
 	case err != nil:
 		return nil, errors.WrapTransient(err)
@@ -158,7 +158,7 @@ func ConfigureAuthService(c context.Context, baseURL, authServiceURL string) err
 	// All is configured. Switch SnapshotInfo entity to point to new snapshot.
 	// It makes syncAuthDB fetch changes from `authServiceURL`, thus promoting
 	// `authServiceURL` to the status of main auth service.
-	if err := noTxnDS(c).Put(info); err != nil {
+	if err := ds.Put(ds.WithoutTransaction(c), info); err != nil {
 		return errors.WrapTransient(err)
 	}
 
@@ -192,7 +192,7 @@ func fetchSnapshot(c context.Context, info *SnapshotInfo) error {
 		FetchedAt:      clock.Now(c).UTC(),
 	}
 	logging.Infof(c, "Lag: %s", ent.FetchedAt.Sub(ent.CreatedAt))
-	return errors.WrapTransient(noTxnDS(c).Put(&ent))
+	return errors.WrapTransient(ds.Put(ds.WithoutTransaction(c), &ent))
 }
 
 // syncAuthDB fetches latest AuthDB snapshot from the configured auth service,
@@ -243,11 +243,10 @@ func syncAuthDB(c context.Context) (*SnapshotInfo, error) {
 	// Move pointer to the latest snapshot only if it is more recent than what is
 	// already in the datastore.
 	var latest *SnapshotInfo
-	err = noTxnDS(c).RunInTransaction(func(c context.Context) error {
-		ds := datastore.Get(c)
+	err = ds.RunInTransaction(ds.WithoutTransaction(c), func(c context.Context) error {
 		latest = &SnapshotInfo{}
-		switch err := ds.Get(latest); {
-		case err == datastore.ErrNoSuchEntity:
+		switch err := ds.Get(c, latest); {
+		case err == ds.ErrNoSuchEntity:
 			logging.Warningf(c, "No longer need to fetch AuthDB, not configured anymore")
 			return nil
 		case err != nil:
@@ -262,7 +261,7 @@ func syncAuthDB(c context.Context) (*SnapshotInfo, error) {
 			return nil
 		}
 		latest = info
-		return ds.Put(info)
+		return ds.Put(c, info)
 	}, nil)
 
 	if err != nil {

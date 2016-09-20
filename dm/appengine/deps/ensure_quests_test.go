@@ -8,11 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -30,7 +31,6 @@ func TestEnsureQuests(t *testing.T) {
 	Convey("EnsureGraphData (Ensure Quests)", t, func() {
 		ttest, c, _, s := testSetup()
 		c = writer(c)
-		ds := datastore.Get(c)
 		clk := clock.Get(c).(testclock.TestClock)
 
 		Convey("bad", func() {
@@ -91,7 +91,7 @@ func TestEnsureQuests(t *testing.T) {
 			})
 
 			Convey("1/2 exist", func() {
-				So(ds.Put(q), ShouldBeNil)
+				So(ds.Put(c, q), ShouldBeNil)
 
 				clk.Add(time.Minute)
 
@@ -112,17 +112,17 @@ func TestEnsureQuests(t *testing.T) {
 				ttest.Drain(c)
 
 				qNew := &model.Quest{ID: q.ID}
-				So(ds.Get(qNew), ShouldBeNil)
+				So(ds.Get(c, qNew), ShouldBeNil)
 				So(qNew.Created, ShouldResemble, q.Created)
 
 				q2New := &model.Quest{ID: q2.ID}
-				So(ds.Get(q2New), ShouldBeNil)
+				So(ds.Get(c, q2New), ShouldBeNil)
 				So(q2New.Created, ShouldResemble, now.Round(time.Microsecond))
 			})
 
 			Convey("all exist", func() {
-				So(ds.Put(q), ShouldBeNil)
-				So(ds.Put(q2), ShouldBeNil)
+				So(ds.Put(c, q), ShouldBeNil)
+				So(ds.Put(c, q2), ShouldBeNil)
 
 				rsp, err := s.EnsureGraphData(c, req)
 				So(err, ShouldBeNil)
@@ -143,7 +143,7 @@ func TestEnsureQuests(t *testing.T) {
 				})
 
 				qNew := &model.Quest{ID: q.ID}
-				So(ds.Get(qNew), ShouldBeNil)
+				So(ds.Get(c, qNew), ShouldBeNil)
 				So(qNew.Created, ShouldResemble, q.Created)
 			})
 		})

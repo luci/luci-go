@@ -14,11 +14,13 @@ import (
 	"testing"
 
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/milo/common/miloerror"
-	. "github.com/smartystreets/goconvey/convey"
+
 	"golang.org/x/net/context"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var generate = flag.Bool("test.generate", false, "Generate expectations instead of running tests.")
@@ -44,7 +46,7 @@ func TestBuild(t *testing.T) {
 
 	if *generate {
 		for _, tc := range testCases {
-			fmt.Printf("Generating expectations for %s/%d\n", tc.builder, tc.build)
+			fmt.Printf("Generating expectations for %s/%s\n", tc.builder, tc.build)
 			build, err := build(c, "debug", tc.builder, tc.build)
 			if err != nil {
 				panic(fmt.Errorf("Could not run build() for %s/%s: %s", tc.builder, tc.build, err))
@@ -75,8 +77,7 @@ func TestBuild(t *testing.T) {
 		}
 
 		Convey(`Disallow anonomyous users from accessing internal builds`, func() {
-			ds := datastore.Get(c)
-			ds.Put(&buildbotBuild{
+			ds.Put(c, &buildbotBuild{
 				Master:      "fake",
 				Buildername: "fake",
 				Number:      1,

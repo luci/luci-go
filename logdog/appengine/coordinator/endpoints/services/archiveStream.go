@@ -39,20 +39,18 @@ func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamReque
 		return nil, grpcutil.Errf(codes.InvalidArgument, "missing required stream archive URL")
 	}
 
-	di := ds.Get(c)
-	lst := coordinator.NewLogStreamState(di, id)
+	lst := coordinator.NewLogStreamState(c, id)
 
 	// Post the archival results to the Coordinator.
 	now := clock.Now(c).UTC()
 	var ierr error
-	err := di.RunInTransaction(func(c context.Context) error {
+	err := ds.RunInTransaction(c, func(c context.Context) error {
 		ierr = nil
 
 		// Note that within this transaction, we have two return values:
 		// - Non-nil to abort the transaction.
 		// - Specific error via "ierr".
-		di := ds.Get(c)
-		if err := di.Get(lst); err != nil {
+		if err := ds.Get(c, lst); err != nil {
 			return err
 		}
 
@@ -104,7 +102,7 @@ func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamReque
 		lst.ArchiveDataSize = req.DataSize
 
 		// Update the log stream.
-		if err := di.Put(lst); err != nil {
+		if err := ds.Put(c, lst); err != nil {
 			log.WithError(err).Errorf(c, "Failed to update log stream.")
 			return err
 		}

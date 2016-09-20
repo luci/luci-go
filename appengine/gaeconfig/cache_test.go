@@ -12,9 +12,10 @@ import (
 
 	"github.com/luci/gae/filter/featureBreaker"
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/memcache"
+	mc "github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/data/caching/proccache"
+
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -31,7 +32,6 @@ func TestCache(t *testing.T) {
 		c, clk := testclock.UseTime(c, testclock.TestTimeUTC)
 		_ = clk
 
-		mc := memcache.Get(c)
 		c, mcFB := featureBreaker.FilterMC(c, nil)
 
 		cache := &cache{}
@@ -39,7 +39,7 @@ func TestCache(t *testing.T) {
 		Convey("Should be able to store stuff", func() {
 			Convey("memcache+proccache", func() {
 				cache.Store(c, "item", time.Second, []byte("foobar"))
-				itm, err := mc.Get(string(cacheKey("item")))
+				itm, err := mc.GetKey(c, string(cacheKey("item")))
 				So(err, ShouldBeNil)
 				So(itm.Value(), ShouldResemble, []byte("\xff\xf4\xea\x9c\xf7\xd8\xde\xdc\x01foobar"))
 				val, ok := proccache.Get(c, cacheKey("item"))
@@ -65,7 +65,7 @@ func TestCache(t *testing.T) {
 						proccache.GetCache(c).Mutate(cacheKey("item"), func(*proccache.Entry) *proccache.Entry {
 							return nil
 						})
-						err := mc.Set(mc.NewItem(string(cacheKey("item"))).SetValue([]byte("\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff")))
+						err := mc.Set(c, mc.NewItem(c, string(cacheKey("item"))).SetValue([]byte("\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff")))
 						So(err, ShouldBeNil)
 
 						So(cache.Retrieve(c, "item"), ShouldBeNil)
@@ -78,8 +78,8 @@ func TestCache(t *testing.T) {
 				mcFB.BreakFeatures(nil, "SetMulti")
 
 				cache.Store(c, "item", time.Second, []byte("foobar"))
-				_, err := mc.Get(string(cacheKey("item")))
-				So(err, ShouldErrLike, memcache.ErrCacheMiss)
+				_, err := mc.GetKey(c, string(cacheKey("item")))
+				So(err, ShouldErrLike, mc.ErrCacheMiss)
 
 				val, ok := proccache.Get(c, cacheKey("item"))
 				So(ok, ShouldBeTrue)

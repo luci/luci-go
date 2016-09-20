@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/dumper"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/distributor/fake"
@@ -17,6 +17,7 @@ import (
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/tumble"
+
 	"golang.org/x/net/context"
 )
 
@@ -64,25 +65,24 @@ func (s testDepsServer) ensureQuest(c context.Context, name string, aids ...uint
 }
 
 func dumpDatastore(c context.Context) {
-	ds := datastore.Get(c)
-	snap := ds.Testable().TakeIndexSnapshot()
-	ds.Testable().CatchupIndexes()
-	defer ds.Testable().SetIndexSnapshot(snap)
+	snap := ds.GetTestable(c).TakeIndexSnapshot()
+	ds.GetTestable(c).CatchupIndexes()
+	defer ds.GetTestable(c).SetIndexSnapshot(snap)
 
 	fmt.Println("dumping datastore")
 	dumper.Config{
 		PropFilters: dumper.PropFilterMap{
-			{"Quest", "Desc"}: func(prop datastore.Property) string {
+			dumper.Key{"Quest", "Desc"}: func(prop ds.Property) string {
 				desc := &dm.Quest_Desc{}
 				if err := proto.Unmarshal(prop.Value().([]byte), desc); err != nil {
 					panic(err)
 				}
 				return desc.String()
 			},
-			{"Attempt", "State"}: func(prop datastore.Property) string {
+			dumper.Key{"Attempt", "State"}: func(prop ds.Property) string {
 				return dm.Attempt_State(int32(prop.Value().(int64))).String()
 			},
-			{"Execution", "State"}: func(prop datastore.Property) string {
+			dumper.Key{"Execution", "State"}: func(prop ds.Property) string {
 				return dm.Execution_State(int32(prop.Value().(int64))).String()
 			},
 		},

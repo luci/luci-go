@@ -7,7 +7,7 @@ package tumble
 import (
 	"testing"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/memlogger"
@@ -20,7 +20,6 @@ func TestAddToJournal(t *testing.T) {
 	Convey("Test AddToJournal", t, func() {
 		ttest := &Testing{}
 		c := ttest.Context()
-		ds := datastore.Get(c)
 		ml := logging.Get(c).(*memlogger.MemLogger)
 
 		Convey("with no mutations", func() {
@@ -32,15 +31,15 @@ func TestAddToJournal(t *testing.T) {
 
 		Convey("with some mutations", func() {
 			from := &User{Name: "fromUser"}
-			So(ds.Put(from), ShouldBeNil)
+			So(ds.Put(c, from), ShouldBeNil)
 			So(AddToJournal(c, &WriteMessage{
 				from.MakeOutgoingMessage(c, "hey there", "a", "b")}), ShouldBeNil)
 
-			qry := datastore.NewQuery("tumble.Mutation").Ancestor(ds.MakeKey("tumble.temp", "8c60aac4ffd6e66142bef4e745d9d91546c115d18cc8283723699d964422a47a"))
-			pmaps := []datastore.PropertyMap{}
-			So(ds.GetAll(qry, &pmaps), ShouldBeNil)
+			qry := ds.NewQuery("tumble.Mutation").Ancestor(ds.MakeKey(c, "tumble.temp", "8c60aac4ffd6e66142bef4e745d9d91546c115d18cc8283723699d964422a47a"))
+			pmaps := []ds.PropertyMap{}
+			So(ds.GetAll(c, qry, &pmaps), ShouldBeNil)
 			So(len(pmaps), ShouldEqual, 1)
-			So(pmaps[0].Slice("$key")[0].Value().(*datastore.Key).String(), ShouldEqual,
+			So(pmaps[0].Slice("$key")[0].Value().(*ds.Key).String(), ShouldEqual,
 				`dev~app::/tumble.temp,"8c60aac4ffd6e66142bef4e745d9d91546c115d18cc8283723699d964422a47a"/tumble.Mutation,"0000000000000000_00000000_00000000"`)
 		})
 	})

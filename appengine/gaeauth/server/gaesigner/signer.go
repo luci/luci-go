@@ -27,7 +27,7 @@ type Signer struct{}
 //
 // Returns the signature and name of the key used.
 func (Signer) SignBytes(c context.Context, blob []byte) (keyName string, signature []byte, err error) {
-	return info.Get(c).SignBytes(blob)
+	return info.SignBytes(c, blob)
 }
 
 // Certificates returns a bundle with public certificates for all active keys.
@@ -57,7 +57,7 @@ type cacheKey int
 
 // cachedCerts caches this app certs in local memory for 1 hour.
 var cachedCerts = proccache.Cached(cacheKey(0), func(c context.Context, key interface{}) (interface{}, time.Duration, error) {
-	aeCerts, err := info.Get(c).PublicCertificates()
+	aeCerts, err := info.PublicCertificates(c)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -78,16 +78,15 @@ var cachedCerts = proccache.Cached(cacheKey(0), func(c context.Context, key inte
 //
 // This info is static during lifetime of the process.
 var cachedInfo = proccache.Cached(cacheKey(1), func(c context.Context, key interface{}) (interface{}, time.Duration, error) {
-	i := info.Get(c)
-	account, err := i.ServiceAccount()
+	account, err := info.ServiceAccount(c)
 	if err != nil {
 		return nil, 0, err
 	}
 	return &signing.ServiceInfo{
-		AppID:              i.AppID(),
+		AppID:              info.AppID(c),
 		AppRuntime:         "go",
 		AppRuntimeVersion:  runtime.Version(),
-		AppVersion:         strings.Split(i.VersionID(), ".")[0],
+		AppVersion:         strings.Split(info.VersionID(c), ".")[0],
 		ServiceAccountName: account,
 	}, 0, nil
 })

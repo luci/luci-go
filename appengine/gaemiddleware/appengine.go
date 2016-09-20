@@ -15,7 +15,7 @@ import (
 )
 
 var devAppserverBypassFn = func(c context.Context) bool {
-	return info.Get(c).IsDevAppServer()
+	return info.IsDevAppServer(c)
 }
 
 // RequireCron ensures that the request is from the appengine 'cron'

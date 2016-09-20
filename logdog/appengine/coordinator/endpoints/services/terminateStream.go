@@ -58,14 +58,11 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 	params := standardArchivalParams(cfg, pcfg)
 
 	// Initialize our log stream state.
-	di := ds.Get(c)
-	lst := coordinator.NewLogStreamState(di, id)
+	lst := coordinator.NewLogStreamState(c, id)
 
 	// Transactionally validate and update the terminal index.
-	err = di.RunInTransaction(func(c context.Context) error {
-		di := ds.Get(c)
-
-		if err := di.Get(lst); err != nil {
+	err = ds.RunInTransaction(c, func(c context.Context) error {
+		if err := ds.Get(c, lst); err != nil {
 			if err == ds.ErrNoSuchEntity {
 				log.Debugf(c, "Log stream state not found.")
 				return grpcutil.Errf(codes.NotFound, "Log stream %q is not registered", id)
@@ -101,7 +98,7 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 			lst.TerminalIndex = req.TerminalIndex
 			lst.TerminatedTime = now
 
-			if err := di.Put(lst); err != nil {
+			if err := ds.Put(c, lst); err != nil {
 				log.Fields{
 					log.ErrorKey: err,
 				}.Errorf(c, "Failed to Put() LogStream.")
@@ -120,7 +117,7 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 				// Schedule this mutation to execute after our settle delay.
 				Expiration: now.Add(params.SettleDelay),
 			}
-			aeParent, aeName := cat.TaskName(di)
+			aeParent, aeName := cat.TaskName(c)
 			if err := tumble.PutNamedMutations(c, aeParent, map[string]tumble.Mutation{aeName: &cat}); err != nil {
 				log.WithError(err).Errorf(c, "Failed to replace archive expiration mutation.")
 				return grpcutil.Internal

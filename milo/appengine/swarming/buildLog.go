@@ -12,7 +12,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/memcache"
+	mc "github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/api/swarming/swarming/v1"
 	"github.com/luci/luci-go/common/logging"
 )
@@ -21,10 +21,9 @@ import (
 // a swarming build via annotee.  It returns the full text of the specific log,
 // and whether or not it has been closed.
 func swarmingBuildLogImpl(c context.Context, server, taskID, logname string) (string, bool, error) {
-	mc := memcache.Get(c)
-	cached, err := mc.Get(path.Join("swarmingLog", server, taskID, logname))
+	cached, err := mc.GetKey(c, path.Join("swarmingLog", server, taskID, logname))
 	switch {
-	case err == memcache.ErrCacheMiss:
+	case err == mc.ErrCacheMiss:
 
 	case err != nil:
 		logging.WithError(err).Errorf(c, "failed to fetch log with key %s from memcache", cached.Key())
@@ -70,7 +69,7 @@ func swarmingBuildLogImpl(c context.Context, server, taskID, logname string) (st
 
 	if stream.Closed && !debug {
 		cached.SetValue([]byte(stream.Text))
-		if err := mc.Set(cached); err != nil {
+		if err := mc.Set(c, cached); err != nil {
 			logging.Errorf(c, "Failed to write log with key %s to memcache: %s", cached.Key(), err)
 		}
 	}

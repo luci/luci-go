@@ -15,7 +15,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/caching/lazyslot"
 	"github.com/luci/luci-go/common/errors"
@@ -44,7 +44,7 @@ type CRL struct {
 	_id string `gae:"$id,crl"`
 
 	// Parent is pointing to parent CA entity.
-	Parent *datastore.Key `gae:"$parent"`
+	Parent *ds.Key `gae:"$parent"`
 
 	// EntityVersion is used for simple concurrency control.
 	//
@@ -105,9 +105,9 @@ type CRLShardHeader struct {
 type CRLShardBody struct {
 	_id string `gae:"$id,1"`
 
-	Parent     *datastore.Key `gae:"$parent"`  // key of CRLShardHeader
-	SHA1       string         `gae:",noindex"` // SHA1 of serialized shard data (before compression)
-	ZippedData []byte         `gae:",noindex"` // zlib-compressed serialized shards.Shard.
+	Parent     *ds.Key `gae:"$parent"`  // key of CRLShardHeader
+	SHA1       string  `gae:",noindex"` // SHA1 of serialized shard data (before compression)
+	ZippedData []byte  `gae:",noindex"` // zlib-compressed serialized shards.Shard.
 }
 
 // UpdateCRLSet splits a set of revoked certificate serial numbers into shards,
@@ -145,10 +145,9 @@ func updateCRLShard(c context.Context, cn string, shard shards.Shard, count, idx
 	digest := hex.EncodeToString(hash[:])
 
 	// Have it already?
-	ds := datastore.Get(c)
 	header := CRLShardHeader{ID: shardEntityID(cn, count, idx)}
-	switch err := ds.Get(&header); {
-	case err != nil && err != datastore.ErrNoSuchEntity:
+	switch err := ds.Get(c, &header); {
+	case err != nil && err != ds.ErrNoSuchEntity:
 		return err
 	case err == nil && header.SHA1 == digest:
 		logging.Infof(c, "CRL for %q: shard %d/%d is up-to-date", cn, idx, count)
@@ -165,15 +164,14 @@ func updateCRLShard(c context.Context, cn string, shard shards.Shard, count, idx
 		cn, idx, count, len(zipped), 100*len(zipped)/len(blob))
 
 	// Upload, updating the header and the body at once.
-	return ds.RunInTransaction(func(c context.Context) error {
-		ds := datastore.Get(c)
+	return ds.RunInTransaction(c, func(c context.Context) error {
 		header.SHA1 = digest
 		body := CRLShardBody{
-			Parent:     ds.KeyForObj(&header),
+			Parent:     ds.KeyForObj(c, &header),
 			SHA1:       digest,
 			ZippedData: zipped,
 		}
-		return ds.Put(&header, &body)
+		return ds.Put(c, &header, &body)
 	}, nil)
 }
 
@@ -262,8 +260,6 @@ func (ch *CRLChecker) shard(c context.Context, idx int) (shards.Shard, error) {
 
 // refetchShard is called by lazyslot.Slot to fetch a new version of a shard.
 func (ch *CRLChecker) refetchShard(c context.Context, idx int, prev lazyslot.Value) (lazyslot.Value, error) {
-	ds := datastore.Get(c)
-
 	prevState := shardCache{}
 	if prev.Value != nil {
 		prevState = prev.Value.(shardCache)
@@ -273,8 +269,8 @@ func (ch *CRLChecker) refetchShard(c context.Context, idx int, prev lazyslot.Val
 	// whether we need to pull a heavy CRLShardBody.
 	hdr := CRLShardHeader{ID: shardEntityID(ch.cn, ch.shardCount, idx)}
 	if prevState.sha1 != "" {
-		switch err := ds.Get(&hdr); {
-		case err == datastore.ErrNoSuchEntity:
+		switch err := ds.Get(c, &hdr); {
+		case err == ds.ErrNoSuchEntity:
 			return lazyslot.Value{}, fmt.Errorf("shard header %q is missing", hdr.ID)
 		case err != nil:
 			return lazyslot.Value{}, errors.WrapTransient(err)
@@ -291,9 +287,9 @@ func (ch *CRLChecker) refetchShard(c context.Context, idx int, prev lazyslot.Val
 	// Nothing is cached, or the datastore copy is fresher than what we have in
 	// the cache. Need to fetch a new copy, unzip and deserialize it. This entity
 	// is prepared by updateCRLShard.
-	body := CRLShardBody{Parent: ds.KeyForObj(&hdr)}
-	switch err := ds.Get(&body); {
-	case err == datastore.ErrNoSuchEntity:
+	body := CRLShardBody{Parent: ds.KeyForObj(c, &hdr)}
+	switch err := ds.Get(c, &body); {
+	case err == ds.ErrNoSuchEntity:
 		return lazyslot.Value{}, fmt.Errorf("shard body %q is missing", hdr.ID)
 	case err != nil:
 		return lazyslot.Value{}, errors.WrapTransient(err)

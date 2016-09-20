@@ -97,7 +97,7 @@ func GetTemplateBundles() []NamedBundle {
 						return nil, err
 					}
 					return templates.Args{
-						"AppVersion":  strings.Split(info.Get(c).VersionID(), ".")[0],
+						"AppVersion":  strings.Split(info.VersionID(c), ".")[0],
 						"IsAnonymous": auth.CurrentIdentity(c) == "anonymous:anonymous",
 						"User":        auth.CurrentUser(c),
 						"LoginURL":    loginURL,

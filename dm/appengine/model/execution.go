@@ -16,7 +16,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/rand/cryptorand"
 	"github.com/luci/luci-go/common/logging"
@@ -31,16 +31,16 @@ type invertedHexUint32 uint32
 
 const invertedHexUint32RenderFmt = "%08x"
 
-var _ datastore.PropertyConverter = (*invertedHexUint32)(nil)
+var _ ds.PropertyConverter = (*invertedHexUint32)(nil)
 
-func (i *invertedHexUint32) ToProperty() (ret datastore.Property, err error) {
+func (i *invertedHexUint32) ToProperty() (ret ds.Property, err error) {
 	err = ret.SetValue(fmt.Sprintf(
-		invertedHexUint32RenderFmt, (*i)^math.MaxUint32), datastore.NoIndex)
+		invertedHexUint32RenderFmt, (*i)^math.MaxUint32), ds.NoIndex)
 	return
 }
 
-func (i *invertedHexUint32) FromProperty(p datastore.Property) (err error) {
-	sVal, err := p.Project(datastore.PTString)
+func (i *invertedHexUint32) FromProperty(p ds.Property) (err error) {
+	sVal, err := p.Project(ds.PTString)
 	if err != nil {
 		return
 	}
@@ -57,7 +57,7 @@ func (i *invertedHexUint32) FromProperty(p datastore.Property) (err error) {
 // distributor, or is a placeholder for an already-completed Execution.
 type Execution struct {
 	ID      invertedHexUint32 `gae:"$id"`
-	Attempt *datastore.Key    `gae:"$parent"`
+	Attempt *ds.Key           `gae:"$parent"`
 
 	Created  time.Time
 	Modified time.Time
@@ -167,15 +167,13 @@ func (e *Execution) Revoke(c context.Context) error {
 	if err := e.ModifyState(c, dm.Execution_STOPPING); err != nil {
 		return err
 	}
-	return datastore.Get(c).Put(e)
+	return ds.Put(c, e)
 }
 
 func loadExecution(c context.Context, eid *dm.Execution_ID) (a *Attempt, e *Execution, err error) {
-	ds := datastore.Get(c)
-
 	a = &Attempt{ID: *eid.AttemptID()}
-	e = &Execution{ID: invertedHexUint32(eid.Id), Attempt: ds.KeyForObj(a)}
-	err = datastore.Get(c).Get(a, e)
+	e = &Execution{ID: invertedHexUint32(eid.Id), Attempt: ds.KeyForObj(c, a)}
+	err = ds.Get(c, a, e)
 
 	if err != nil {
 		err = grpcutil.Errf(codes.Internal,
@@ -272,7 +270,7 @@ func verifyExecutionAndActivate(c context.Context, auth *dm.Execution_Auth, actT
 
 		e.State.MustEvolve(dm.Execution_RUNNING)
 		e.Token = actTok
-		err = datastore.Get(c).Put(e)
+		err = ds.Put(c, e)
 		logging.Infof(c, "activated execution %s: was SCHEDULING now RUNNING", auth.Id)
 
 	case dm.Execution_RUNNING:

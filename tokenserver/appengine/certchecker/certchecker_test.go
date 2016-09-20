@@ -45,7 +45,7 @@ func TestCertChecker(t *testing.T) {
 			Cert:  caCert,
 			Ready: true,
 		}
-		err = datastore.Get(ctx).Put(&caEntity)
+		err = datastore.Put(ctx, &caEntity)
 		So(err, ShouldBeNil)
 
 		// In the datastore now.

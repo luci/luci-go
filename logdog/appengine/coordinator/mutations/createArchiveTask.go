@@ -13,6 +13,7 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/tumble"
+
 	"golang.org/x/net/context"
 )
 
@@ -48,10 +49,9 @@ func (m *CreateArchiveTask) RollForward(c context.Context) ([]tumble.Mutation, e
 	}
 
 	// Get the log stream.
-	di := ds.Get(c)
-	state := m.logStream().State(di)
+	state := m.logStream().State(c)
 
-	if err := di.Get(state); err != nil {
+	if err := ds.Get(c, state); err != nil {
 		if err == ds.ErrNoSuchEntity {
 			log.Warningf(c, "Log stream no longer exists.")
 			return nil, nil
@@ -62,7 +62,7 @@ func (m *CreateArchiveTask) RollForward(c context.Context) ([]tumble.Mutation, e
 	}
 
 	params := coordinator.ArchivalParams{
-		RequestID:      info.Get(c).RequestID(),
+		RequestID:      info.RequestID(c),
 		SettleDelay:    m.SettleDelay,
 		CompletePeriod: m.CompletePeriod,
 	}
@@ -76,7 +76,7 @@ func (m *CreateArchiveTask) RollForward(c context.Context) ([]tumble.Mutation, e
 		return nil, err
 	}
 
-	if err := di.Put(state); err != nil {
+	if err := ds.Put(c, state); err != nil {
 		log.WithError(err).Errorf(c, "Failed to update datastore.")
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (m *CreateArchiveTask) RollForward(c context.Context) ([]tumble.Mutation, e
 
 // Root implements tumble.DelayedMutation.
 func (m *CreateArchiveTask) Root(c context.Context) *ds.Key {
-	return ds.Get(c).KeyForObj(m.logStream())
+	return ds.KeyForObj(c, m.logStream())
 }
 
 // ProcessAfter implements tumble.DelayedMutation.
@@ -97,8 +97,8 @@ func (m *CreateArchiveTask) ProcessAfter() time.Time { return m.Expiration }
 func (m *CreateArchiveTask) HighPriority() bool { return false }
 
 // TaskName returns the task's name, which is derived from its log stream ID.
-func (m *CreateArchiveTask) TaskName(di ds.Interface) (*ds.Key, string) {
-	return di.KeyForObj(m.logStream()), fmt.Sprintf("archive-expired-%s", m.ID)
+func (m *CreateArchiveTask) TaskName(c context.Context) (*ds.Key, string) {
+	return ds.KeyForObj(c, m.logStream()), fmt.Sprintf("archive-expired-%s", m.ID)
 }
 
 // logStream returns the log stream associated with this task.

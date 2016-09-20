@@ -7,7 +7,7 @@ package model
 import (
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/dm/api/service/v1"
 )
 
@@ -23,7 +23,7 @@ type FwdEdge struct {
 func (e *FwdEdge) Fwd(c context.Context) (*Attempt, *FwdDep) {
 	atmpt := &Attempt{ID: *e.From}
 	return atmpt, &FwdDep{
-		Depender: datastore.Get(c).KeyForObj(atmpt),
+		Depender: ds.KeyForObj(c, atmpt),
 		Dependee: *e.To,
 	}
 }
@@ -33,7 +33,7 @@ func (e *FwdEdge) Fwd(c context.Context) (*Attempt, *FwdDep) {
 func (e *FwdEdge) Back(c context.Context) (*BackDepGroup, *BackDep) {
 	bdg := &BackDepGroup{Dependee: *e.To}
 	return bdg, &BackDep{
-		DependeeGroup: datastore.Get(c).KeyForObj(bdg),
+		DependeeGroup: ds.KeyForObj(c, bdg),
 		Depender:      *e.From,
 	}
 }

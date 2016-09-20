@@ -66,9 +66,8 @@ func TestLogStream(t *testing.T) {
 	Convey(`A testing log stream`, t, func() {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		c = memory.Use(c)
-		di := ds.Get(c)
-		di.Testable().AutoIndex(true)
-		di.Testable().Consistent(true)
+		ds.GetTestable(c).AutoIndex(true)
+		ds.GetTestable(c).Consistent(true)
 
 		now := ds.RoundTime(tc.Now().UTC())
 
@@ -156,11 +155,11 @@ func TestLogStream(t *testing.T) {
 			})
 
 			Convey(`Can write the LogStream to the Datastore.`, func() {
-				So(di.Put(&ls), ShouldBeNil)
+				So(ds.Put(c, &ls), ShouldBeNil)
 
 				Convey(`Can read the LogStream back from the Datastore.`, func() {
 					ls2 := LogStream{ID: ls.ID}
-					So(di.Get(&ls2), ShouldBeNil)
+					So(ds.Get(c, &ls2), ShouldBeNil)
 					So(ls2, ShouldResemble, ls)
 				})
 			})
@@ -193,7 +192,7 @@ func TestLogStream(t *testing.T) {
 				if err := lsCopy.LoadDescriptor(&descCopy); err != nil {
 					panic(err)
 				}
-				So(di.Put(&lsCopy), ShouldBeNil)
+				So(ds.Put(c, &lsCopy), ShouldBeNil)
 
 				times[name] = lsCopy.Created
 			}
@@ -207,7 +206,7 @@ func TestLogStream(t *testing.T) {
 						So(err, ShouldBeNil)
 
 						var streams []*LogStream
-						So(di.GetAll(q, &streams), ShouldBeNil)
+						So(ds.GetAll(c, q, &streams), ShouldBeNil)
 						So(streams, shouldHaveLogStreams, "foo/bar")
 					})
 
@@ -216,7 +215,7 @@ func TestLogStream(t *testing.T) {
 						So(err, ShouldBeNil)
 
 						var streams []*LogStream
-						So(di.GetAll(q, &streams), ShouldBeNil)
+						So(ds.GetAll(c, q, &streams), ShouldBeNil)
 						So(streams, shouldHaveLogStreams, "foo/bar/baz")
 					})
 
@@ -225,7 +224,7 @@ func TestLogStream(t *testing.T) {
 						So(err, ShouldBeNil)
 
 						var streams []*LogStream
-						So(di.GetAll(q, &streams), ShouldBeNil)
+						So(ds.GetAll(c, q, &streams), ShouldBeNil)
 						So(streams, shouldHaveLogStreams, "foo/bar/baz", "foo/bar")
 					})
 
@@ -234,7 +233,7 @@ func TestLogStream(t *testing.T) {
 						So(err, ShouldBeNil)
 
 						var streams []*LogStream
-						So(di.GetAll(q, &streams), ShouldBeNil)
+						So(ds.GetAll(c, q, &streams), ShouldBeNil)
 						So(streams, shouldHaveLogStreams, "cat/bird/dog", "cat/dog")
 					})
 				})
@@ -247,7 +246,7 @@ func TestLogStream(t *testing.T) {
 					}
 
 					var streams []*LogStream
-					So(di.GetAll(q, &streams), ShouldBeNil)
+					So(ds.GetAll(c, q, &streams), ShouldBeNil)
 					So(streams, shouldHaveLogStreams, si...)
 				})
 
@@ -256,7 +255,7 @@ func TestLogStream(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					var streams []*LogStream
-					So(di.GetAll(q, &streams), ShouldBeNil)
+					So(ds.GetAll(c, q, &streams), ShouldBeNil)
 					So(streams, shouldHaveLogStreams, "cat/bird/dog", "cat/dog")
 				})
 
@@ -264,7 +263,7 @@ func TestLogStream(t *testing.T) {
 					q = AddOlderFilter(q, times["baz/qux"])
 
 					var streams []*LogStream
-					So(di.GetAll(q, &streams), ShouldBeNil)
+					So(ds.GetAll(c, q, &streams), ShouldBeNil)
 					So(streams, shouldHaveLogStreams, "foo/bar/baz", "foo/bar")
 				})
 
@@ -272,7 +271,7 @@ func TestLogStream(t *testing.T) {
 					q = AddNewerFilter(q, times["cat/dog"])
 
 					var streams []*LogStream
-					So(di.GetAll(q, &streams), ShouldBeNil)
+					So(ds.GetAll(c, q, &streams), ShouldBeNil)
 					So(streams, shouldHaveLogStreams, "bird/plane", "cat/bird/dog")
 				})
 
@@ -283,7 +282,7 @@ func TestLogStream(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					var streams []*LogStream
-					So(di.GetAll(q, &streams), ShouldBeNil)
+					So(ds.GetAll(c, q, &streams), ShouldBeNil)
 					So(streams, shouldHaveLogStreams, "cat/bird/dog")
 				})
 			})

@@ -5,7 +5,7 @@
 package mutate
 
 import (
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/data/bit_field"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/dm/api/service/v1"
@@ -30,7 +30,7 @@ type AddDeps struct {
 }
 
 // Root implements tumble.Mutation
-func (a *AddDeps) Root(c context.Context) *datastore.Key {
+func (a *AddDeps) Root(c context.Context) *ds.Key {
 	return model.AttemptKeyFromID(c, a.Auth.Id.AttemptID())
 }
 
@@ -55,8 +55,6 @@ func (a *AddDeps) RollForward(c context.Context) (muts []tumble.Mutation, err er
 		return
 	}
 
-	ds := datastore.Get(c)
-
 	logging.Fields{"aid": atmpt.ID, "count": len(fwdDeps)}.Infof(c, "added deps")
 	atmpt.DepMap = bit_field.Make(uint32(len(fwdDeps)))
 
@@ -65,7 +63,7 @@ func (a *AddDeps) RollForward(c context.Context) (muts []tumble.Mutation, err er
 		fdp.ForExecution = atmpt.CurExecution
 	}
 
-	if err = ds.Put(fwdDeps, atmpt, ex); err != nil {
+	if err = ds.Put(c, fwdDeps, atmpt, ex); err != nil {
 		err = grpcutil.Annotate(err, codes.Internal).Reason("putting stuff").Err()
 		return
 	}

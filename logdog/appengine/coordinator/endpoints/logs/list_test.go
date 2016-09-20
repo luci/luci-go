@@ -57,7 +57,6 @@ func TestList(t *testing.T) {
 			"testing/+/foo",
 			"testing/+/foo/bar",
 		} {
-			// di is a datastore bound to the test project namespace.
 			tls := ct.MakeStream(c, project, v)
 
 			ct.WithProjectNamespace(c, project, func(c context.Context) {
@@ -65,15 +64,14 @@ func TestList(t *testing.T) {
 					panic(fmt.Errorf("failed to put log stream %d: %v", i, err))
 				}
 
-				di := ds.Get(c)
-				for _, c := range hierarchy.Components(tls.Path, true) {
-					if err := c.Put(di); err != nil {
+				for _, comp := range hierarchy.Components(tls.Path, true) {
+					if err := comp.Put(c); err != nil {
 						panic(fmt.Errorf("failed to put log component %d: %v", i, err))
 					}
 				}
 			})
 		}
-		ds.Get(c).Testable().CatchupIndexes()
+		ds.GetTestable(c).CatchupIndexes()
 
 		var req logdog.ListRequest
 

@@ -28,7 +28,7 @@ var (
 // not depend on the state of the particular process that happens to report
 // them.
 func collectGlobalMetrics(c context.Context) {
-	version, err := module.Get(c).DefaultVersion("")
+	version, err := module.DefaultVersion(c, "")
 	if err != nil {
 		logging.Errorf(c, "Error getting default appengine version: %s", err)
 		defaultVersion.Set(c, "(unknown)")

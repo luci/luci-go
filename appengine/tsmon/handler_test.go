@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaetesting"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -19,6 +19,7 @@ import (
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/monitor"
 	"github.com/luci/luci-go/server/router"
+
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -67,8 +68,8 @@ func TestFindGaps(t *testing.T) {
 func buildGAETestContext() (context.Context, testclock.TestClock) {
 	c := gaetesting.TestingContext()
 	c, clock := testclock.UseTime(c, testclock.TestTimeUTC)
-	datastore.Get(c).Testable().Consistent(true)
-	c = info.Get(c).MustNamespace(instanceNamespace)
+	ds.GetTestable(c).Consistent(true)
+	c = info.MustNamespace(c, instanceNamespace)
 	c = gologger.StdConfig.Use(c)
 
 	c = info.AddFilters(c, func(c context.Context, base info.RawInterface) info.RawInterface {
@@ -119,7 +120,7 @@ func TestHousekeepingHandler(t *testing.T) {
 			TaskNum:     0,
 			LastUpdated: clock.Now(),
 		}
-		So(datastore.Get(c).Put(&otherInstance), ShouldBeNil)
+		So(ds.Put(c, &otherInstance), ShouldBeNil)
 
 		getOrCreateInstanceEntity(c)
 
@@ -138,15 +139,14 @@ func TestHousekeepingHandler(t *testing.T) {
 
 	Convey("Expires old instances", t, func() {
 		c, clock := buildGAETestContext()
-		ds := datastore.Get(c)
 
 		oldInstance := instance{
 			ID:          "foobar",
 			TaskNum:     0,
 			LastUpdated: clock.Now(),
 		}
-		So(ds.Put(&oldInstance), ShouldBeNil)
-		exists, err := ds.Exists(ds.NewKey("Instance", "foobar", 0, nil))
+		So(ds.Put(c, &oldInstance), ShouldBeNil)
+		exists, err := ds.Exists(c, ds.NewKey(c, "Instance", "foobar", 0, nil))
 		So(err, ShouldBeNil)
 		So(exists.All(), ShouldBeTrue)
 
@@ -160,7 +160,7 @@ func TestHousekeepingHandler(t *testing.T) {
 		})
 		So(rec.Code, ShouldEqual, http.StatusOK)
 
-		exists, err = ds.Exists(ds.NewKey("Instance", "foobar", 0, nil))
+		exists, err = ds.Exists(c, ds.NewKey(c, "Instance", "foobar", 0, nil))
 		So(err, ShouldBeNil)
 		So(exists.All(), ShouldBeFalse)
 	})

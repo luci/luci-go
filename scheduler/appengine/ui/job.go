@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/luci/gae/service/memcache"
+	mc "github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
@@ -53,22 +53,21 @@ func jobPage(ctx *router.Context) {
 	// Cheesy way of implementing bidirectional pagination with forward-only
 	// datastore cursors: store mapping from a page cursor to a previous page
 	// cursor in the memcache.
-	mc := memcache.Get(c)
 	prevCursor := ""
 	if cursor != "" {
-		if itm, err := mc.Get(memcacheKey(cursor)); err == nil {
+		if itm, err := mc.GetKey(c, memcacheKey(cursor)); err == nil {
 			prevCursor = string(itm.Value())
 		}
 	}
 	if nextCursor != "" {
-		itm := mc.NewItem(memcacheKey(nextCursor))
+		itm := mc.NewItem(c, memcacheKey(nextCursor))
 		if cursor == "" {
 			itm.SetValue([]byte("NULL"))
 		} else {
 			itm.SetValue([]byte(cursor))
 		}
 		itm.SetExpiration(24 * time.Hour)
-		mc.Set(itm)
+		mc.Set(c, itm)
 	}
 
 	now := clock.Now(c).UTC()

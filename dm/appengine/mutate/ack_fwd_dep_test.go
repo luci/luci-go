@@ -8,14 +8,16 @@ import (
 	"testing"
 
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/data/bit_field"
-	. "github.com/luci/luci-go/common/testing/assertions"
 	"github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
 	"github.com/luci/luci-go/tumble"
-	. "github.com/smartystreets/goconvey/convey"
+
 	"golang.org/x/net/context"
+
+	. "github.com/luci/luci-go/common/testing/assertions"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestAckFwdDep(t *testing.T) {
@@ -23,7 +25,6 @@ func TestAckFwdDep(t *testing.T) {
 
 	Convey("AckFwdDep", t, func() {
 		c := memory.Use(context.Background())
-		ds := datastore.Get(c)
 
 		afd := &AckFwdDep{
 			Dep: &model.FwdEdge{
@@ -33,7 +34,7 @@ func TestAckFwdDep(t *testing.T) {
 		}
 
 		Convey("Root", func() {
-			So(afd.Root(c), ShouldResemble, ds.MakeKey("Attempt", "quest|fffffffe"))
+			So(afd.Root(c), ShouldResemble, ds.MakeKey(c, "Attempt", "quest|fffffffe"))
 		})
 
 		Convey("RollForward", func() {
@@ -43,28 +44,28 @@ func TestAckFwdDep(t *testing.T) {
 				Convey("good", func() {
 					a.State = dm.Attempt_WAITING
 					a.DepMap = bit_field.Make(2)
-					So(ds.Put(a, fwd), ShouldBeNil)
+					So(ds.Put(c, a, fwd), ShouldBeNil)
 
 					Convey("not-last", func() {
 						muts, err := afd.RollForward(c)
 						So(err, ShouldBeNil)
 						So(muts, ShouldBeNil)
 
-						So(ds.Get(a, fwd), ShouldBeNil)
+						So(ds.Get(c, a, fwd), ShouldBeNil)
 						So(a.State, ShouldEqual, dm.Attempt_WAITING)
 						So(a.DepMap.CountSet(), ShouldEqual, 1)
 					})
 
 					Convey("last-finished", func() {
 						a.DepMap.Set(1)
-						So(ds.Put(a), ShouldBeNil)
+						So(ds.Put(c, a), ShouldBeNil)
 
 						muts, err := afd.RollForward(c)
 						So(err, ShouldBeNil)
 						So(muts, ShouldResemble, []tumble.Mutation{
 							&ScheduleExecution{&a.ID}})
 
-						So(ds.Get(a, fwd), ShouldBeNil)
+						So(ds.Get(c, a, fwd), ShouldBeNil)
 						So(a.State, ShouldEqual, dm.Attempt_SCHEDULING)
 						So(a.DepMap.CountSet(), ShouldEqual, 0) // was reset
 					})
@@ -74,23 +75,23 @@ func TestAckFwdDep(t *testing.T) {
 					a.State = dm.Attempt_WAITING
 					a.DepMap = bit_field.Make(2)
 					a.CurExecution = 1
-					So(ds.Put(a, fwd), ShouldBeNil)
+					So(ds.Put(c, a, fwd), ShouldBeNil)
 
 					Convey("CurExecution mismatch -> NOP", func() {
 						muts, err := afd.RollForward(c)
 						So(err, ShouldBeNil)
 						So(muts, ShouldBeNil)
 
-						So(ds.Get(a, fwd), ShouldBeNil)
+						So(ds.Get(c, a, fwd), ShouldBeNil)
 						So(a.State, ShouldEqual, dm.Attempt_WAITING)
 						So(a.DepMap.CountSet(), ShouldEqual, 0)
 					})
 
 					Convey("Missing data", func() {
-						So(ds.Delete(ds.KeyForObj(a)), ShouldBeNil)
+						So(ds.Delete(c, ds.KeyForObj(c, a)), ShouldBeNil)
 
 						_, err := afd.RollForward(c)
-						So(err, ShouldErrLike, datastore.ErrNoSuchEntity)
+						So(err, ShouldErrLike, ds.ErrNoSuchEntity)
 					})
 				})
 

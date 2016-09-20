@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
@@ -62,20 +62,19 @@ func getBuildSummary(b *buildbotBuild) *resp.BuildSummary {
 	}
 }
 
-// getBuilds fetches all of the recent builds from the datastore.  Note that
+// getBuilds fetches all of the recent builds from the .  Note that
 // getBuilds() does not perform ACL checks.
 func getBuilds(c context.Context, masterName, builderName string, finished bool) ([]*resp.BuildSummary, error) {
 	// TODO(hinoka): Builder specific structs.
 	result := []*resp.BuildSummary{}
-	ds := datastore.Get(c)
-	q := datastore.NewQuery("buildbotBuild")
+	q := ds.NewQuery("buildbotBuild")
 	q = q.Eq("finished", finished)
 	q = q.Eq("master", masterName)
 	q = q.Eq("builder", builderName)
 	q = q.Limit(25) // TODO(hinoka): This should be adjustable
 	q = q.Order("-number")
 	buildbots := []*buildbotBuild{}
-	err := ds.GetAll(q, &buildbots)
+	err := ds.GetAll(c, q, &buildbots)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +118,7 @@ func builderImpl(c context.Context, masterName, builderName string) (*resp.Build
 	result := &resp.Builder{}
 	master, t, err := getMasterJSON(c, masterName)
 	switch {
-	case err == datastore.ErrNoSuchEntity:
+	case err == ds.ErrNoSuchEntity:
 		return nil, errMasterNotFound
 	case err != nil:
 		return nil, err

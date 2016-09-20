@@ -27,7 +27,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
@@ -523,7 +523,7 @@ func storeAccountInfo(c context.Context, project, accountID, fqdn string, acc *i
 		FQDN:           fqdn,
 		Registered:     clock.Now(c).UTC(),
 	}
-	if err := datastore.Get(c).Put(&entity); err != nil {
+	if err := ds.Put(c, &entity); err != nil {
 		return nil, err
 	}
 	return entity.GetProto(), nil
@@ -536,8 +536,8 @@ func fetchAccountInfo(c context.Context, project, accountID string) (*tokenserve
 	entity := model.ServiceAccount{
 		ID: project + "/" + accountID,
 	}
-	switch err := datastore.Get(c).Get(&entity); {
-	case err == datastore.ErrNoSuchEntity:
+	switch err := ds.Get(c, &entity); {
+	case err == ds.ErrNoSuchEntity:
 		return nil, nil
 	case err != nil:
 		return nil, errors.WrapTransient(err)

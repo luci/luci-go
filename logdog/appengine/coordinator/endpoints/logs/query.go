@@ -108,7 +108,7 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 
 	// Determine which entity to query against based on our sorting constraints.
 	if r.Next != "" {
-		cursor, err := ds.Get(r).DecodeCursor(r.Next)
+		cursor, err := ds.DecodeCursor(r, r.Next)
 		if err != nil {
 			log.Fields{
 				log.ErrorKey: err,
@@ -191,8 +191,7 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 	cursor := ds.Cursor(nil)
 	logStreams := make([]*coordinator.LogStream, 0, r.limit)
 
-	di := ds.Get(r)
-	err := di.Run(q, func(sk *ds.Key, cb ds.CursorCB) error {
+	err := ds.Run(r, q, func(sk *ds.Key, cb ds.CursorCB) error {
 		var ls coordinator.LogStream
 		ds.PopulateKey(&ls, sk)
 		logStreams = append(logStreams, &ls)
@@ -223,7 +222,7 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 		// Don't fetch our states unless requested.
 		var logStreamStates []coordinator.LogStreamState
 		if !r.State {
-			if err := di.Get(logStreams); err != nil {
+			if err := ds.Get(r, logStreams); err != nil {
 				log.WithError(err).Errorf(r, "Failed to load entry content.")
 				return grpcutil.Internal
 			}
@@ -231,12 +230,12 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 			entities := make([]interface{}, 0, 2*len(logStreams))
 			logStreamStates = make([]coordinator.LogStreamState, len(logStreams))
 			for i, ls := range logStreams {
-				ls.PopulateState(di, &logStreamStates[i])
+				ls.PopulateState(r, &logStreamStates[i])
 				entities = append(entities, ls, &logStreamStates[i])
 
 			}
 
-			if err := di.Get(entities); err != nil {
+			if err := ds.Get(r, entities); err != nil {
 				log.WithError(err).Errorf(r, "Failed to load entry and state content.")
 				return grpcutil.Internal
 			}

@@ -11,7 +11,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 
 	"github.com/luci/luci-go/dm/api/service/v1"
 )
@@ -22,7 +22,7 @@ func TestBackdepEdge(t *testing.T) {
 	Convey("BackDep.Edge", t, func() {
 		bd := &BackDep{
 			*dm.NewAttemptID("depender", 5),
-			datastore.MakeKey("aid", "ns", "BackDepGroup", "quest|fffffffe"),
+			ds.MkKeyContext("aid", "ns").MakeKey("BackDepGroup", "quest|fffffffe"),
 			true,
 		}
 		So(bd.Edge(), ShouldResemble, &FwdEdge{
@@ -38,7 +38,7 @@ func TestFwdDepEdge(t *testing.T) {
 	Convey("FwdDep.Edge", t, func() {
 		bd := &FwdDep{
 			Dependee: *dm.NewAttemptID("quest", 1),
-			Depender: datastore.MakeKey("aid", "ns", "Attempt", "depender|fffffffa"),
+			Depender: ds.MkKeyContext("aid", "ns").MakeKey("Attempt", "depender|fffffffa"),
 		}
 		So(bd.Edge(), ShouldResemble, &FwdEdge{
 			dm.NewAttemptID("depender", 5),
@@ -90,9 +90,9 @@ func TestFwdDepsFromList(t *testing.T) {
 		}}
 		base := dm.NewAttemptID("quest", 1)
 
-		ds := datastore.Get(c)
+		kctx := ds.GetKeyContext(c)
 
-		root := ds.MakeKey("Attempt", "quest|fffffffe")
+		root := kctx.MakeKey("Attempt", "quest|fffffffe")
 
 		So(FwdDepsFromList(c, base, list), ShouldResemble, []*FwdDep{
 			{Depender: root, Dependee: *dm.NewAttemptID("a", 1), BitIndex: 0},
@@ -100,11 +100,11 @@ func TestFwdDepsFromList(t *testing.T) {
 			{Depender: root, Dependee: *dm.NewAttemptID("b", 2), BitIndex: 2},
 			{Depender: root, Dependee: *dm.NewAttemptID("c", 1), BitIndex: 3},
 		})
-		So(FwdDepKeysFromList(c, base, list), ShouldResemble, []*datastore.Key{
-			ds.MakeKey("Attempt", "quest|fffffffe", "FwdDep", "a|fffffffe"),
-			ds.MakeKey("Attempt", "quest|fffffffe", "FwdDep", "b|fffffffe"),
-			ds.MakeKey("Attempt", "quest|fffffffe", "FwdDep", "b|fffffffd"),
-			ds.MakeKey("Attempt", "quest|fffffffe", "FwdDep", "c|fffffffe"),
+		So(FwdDepKeysFromList(c, base, list), ShouldResemble, []*ds.Key{
+			kctx.MakeKey("Attempt", "quest|fffffffe", "FwdDep", "a|fffffffe"),
+			kctx.MakeKey("Attempt", "quest|fffffffe", "FwdDep", "b|fffffffe"),
+			kctx.MakeKey("Attempt", "quest|fffffffe", "FwdDep", "b|fffffffd"),
+			kctx.MakeKey("Attempt", "quest|fffffffe", "FwdDep", "c|fffffffe"),
 		})
 	})
 

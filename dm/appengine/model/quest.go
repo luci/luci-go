@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	google_pb "github.com/luci/luci-go/common/proto/google"
 
@@ -37,11 +37,10 @@ type Quest struct {
 }
 
 // QueryAttemptsForQuest returns all Attempt objects that exist for this Quest.
-func QueryAttemptsForQuest(c context.Context, qid string) *datastore.Query {
-	ds := datastore.Get(c)
-	from := ds.MakeKey("Attempt", qid+"|")
-	to := ds.MakeKey("Attempt", qid+"~")
-	return datastore.NewQuery("Attempt").Gt("__key__", from).Lt("__key__", to)
+func QueryAttemptsForQuest(c context.Context, qid string) *ds.Query {
+	from := ds.MakeKey(c, "Attempt", qid+"|")
+	to := ds.MakeKey(c, "Attempt", qid+"~")
+	return ds.NewQuery("Attempt").Gt("__key__", from).Lt("__key__", to)
 }
 
 // ToProto converts this Quest into its display equivalent.

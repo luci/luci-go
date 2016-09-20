@@ -5,11 +5,12 @@
 package mutate
 
 import (
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
 	"github.com/luci/luci-go/tumble"
+
 	"golang.org/x/net/context"
 )
 
@@ -20,20 +21,18 @@ type EnsureAttempt struct {
 }
 
 // Root implements tumble.Mutation.
-func (e *EnsureAttempt) Root(c context.Context) *datastore.Key {
+func (e *EnsureAttempt) Root(c context.Context) *ds.Key {
 	return model.AttemptKeyFromID(c, e.ID)
 }
 
 // RollForward implements tumble.Mutation.
 func (e *EnsureAttempt) RollForward(c context.Context) (muts []tumble.Mutation, err error) {
-	ds := datastore.Get(c)
-
 	a := model.MakeAttempt(c, e.ID)
-	if err = ds.Get(a); err != datastore.ErrNoSuchEntity {
+	if err = ds.Get(c, a); err != ds.ErrNoSuchEntity {
 		return
 	}
 
-	if err = ds.Put(a); err != nil {
+	if err = ds.Put(c, a); err != nil {
 		logging.WithError(err).Errorf(logging.SetField(c, "id", e.ID), "in put")
 	}
 	muts = append(muts, &ScheduleExecution{e.ID})

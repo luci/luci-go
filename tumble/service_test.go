@@ -9,9 +9,10 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
-	"github.com/luci/gae/service/taskqueue"
+	tq "github.com/luci/gae/service/taskqueue"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -24,21 +25,21 @@ func TestGetDatastoreNamespaces(t *testing.T) {
 
 		// Call to add a datastore entry under the supplied namespace.
 		addNamespace := func(ns string) {
-			c := info.Get(ctx).MustNamespace(ns)
+			c := info.MustNamespace(ctx, ns)
 
-			err := datastore.Get(c).Raw().PutMulti(
-				[]*datastore.Key{
-					datastore.Get(c).NewKey("Warblegarble", "", 1, nil),
+			err := ds.Raw(c).PutMulti(
+				[]*ds.Key{
+					ds.NewKey(c, "Warblegarble", "", 1, nil),
 				},
-				[]datastore.PropertyMap{
-					make(datastore.PropertyMap),
+				[]ds.PropertyMap{
+					make(ds.PropertyMap),
 				},
-				func(*datastore.Key, error) error { return nil })
+				func(*ds.Key, error) error { return nil })
 			if err != nil {
 				panic(err)
 			}
 
-			datastore.Get(ctx).Testable().CatchupIndexes()
+			ds.GetTestable(ctx).CatchupIndexes()
 		}
 
 		Convey(`A datastore with no namespaces returns {}.`, func() {
@@ -65,27 +66,25 @@ func TestFireAllTasks(t *testing.T) {
 		tt := &Testing{}
 		c := tt.Context()
 		s := &Service{}
-		tq := taskqueue.Get(c)
 
 		Convey("with no work is a noop", func() {
 			So(s.FireAllTasks(c), ShouldBeNil)
 
-			for _, tsks := range tq.Testable().GetScheduledTasks() {
+			for _, tsks := range tq.GetTestable(c).GetScheduledTasks() {
 				So(tsks, ShouldBeEmpty)
 			}
 		})
 
 		Convey("with some work emits a task", func() {
-			ds := datastore.Get(c)
-			So(ds.Put(&realMutation{ID: "bogus", Parent: ds.MakeKey("Parent", 1)}), ShouldBeNil)
+			So(ds.Put(c, &realMutation{ID: "bogus", Parent: ds.MakeKey(c, "Parent", 1)}), ShouldBeNil)
 
 			So(s.FireAllTasks(c), ShouldBeNil)
-			So(tq.Testable().GetScheduledTasks()["tumble"], ShouldHaveLength, 1)
+			So(tq.GetTestable(c).GetScheduledTasks()["tumble"], ShouldHaveLength, 1)
 		})
 
 		Convey("with some work in a different namespace emits a task", func() {
-			ds := datastore.Get(info.Get(c).MustNamespace("other"))
-			So(ds.Put(&realMutation{ID: "bogus", Parent: ds.MakeKey("Parent", 1)}), ShouldBeNil)
+			c = info.MustNamespace(c, "other")
+			So(ds.Put(c, &realMutation{ID: "bogus", Parent: ds.MakeKey(c, "Parent", 1)}), ShouldBeNil)
 
 			cfg := tt.GetConfig(c)
 			cfg.Namespaced = true
@@ -94,8 +93,7 @@ func TestFireAllTasks(t *testing.T) {
 				return []string{"other"}, nil
 			}
 			So(s.FireAllTasks(c), ShouldBeNil)
-			tq := taskqueue.Get(info.Get(c).MustNamespace(TaskNamespace))
-			So(tq.Testable().GetScheduledTasks()["tumble"], ShouldHaveLength, 1)
+			So(tq.GetTestable(info.MustNamespace(c, TaskNamespace)).GetScheduledTasks()["tumble"], ShouldHaveLength, 1)
 		})
 	})
 }

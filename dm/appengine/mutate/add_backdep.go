@@ -5,7 +5,7 @@
 package mutate
 
 import (
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/dm/appengine/model"
 	"github.com/luci/luci-go/tumble"
 	"golang.org/x/net/context"
@@ -21,19 +21,17 @@ type AddBackDep struct {
 }
 
 // Root implements tumble.Mutation.
-func (a *AddBackDep) Root(c context.Context) *datastore.Key {
+func (a *AddBackDep) Root(c context.Context) *ds.Key {
 	bdg, _ := a.Dep.Back(c)
-	return datastore.Get(c).KeyForObj(bdg)
+	return ds.KeyForObj(c, bdg)
 }
 
 // RollForward implements tumble.Mutation.
 func (a *AddBackDep) RollForward(c context.Context) (muts []tumble.Mutation, err error) {
-	ds := datastore.Get(c)
-
 	bdg, bd := a.Dep.Back(c)
-	err = ds.Get(bdg)
-	if err == datastore.ErrNoSuchEntity {
-		err = ds.Put(bdg)
+	err = ds.Get(c, bdg)
+	if err == ds.ErrNoSuchEntity {
+		err = ds.Put(c, bdg)
 	}
 	if err != nil {
 		return
@@ -41,7 +39,7 @@ func (a *AddBackDep) RollForward(c context.Context) (muts []tumble.Mutation, err
 
 	bd.Propagated = bdg.AttemptFinished
 
-	err = ds.Put(bd)
+	err = ds.Put(c, bd)
 
 	if a.NeedsAck && bdg.AttemptFinished {
 		muts = append(muts, &AckFwdDep{a.Dep})

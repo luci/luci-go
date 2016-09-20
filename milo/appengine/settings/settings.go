@@ -10,13 +10,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/model"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/xsrf"
 	"github.com/luci/luci-go/server/router"
+
 	"golang.org/x/net/context"
 )
 
@@ -42,9 +43,8 @@ func getUserSettings(c context.Context) *model.UserConfig {
 	if cu.Identity == identity.AnonymousIdentity {
 		return nil
 	}
-	ds := datastore.Get(c)
 	userSettings := &model.UserConfig{UserID: cu.Identity}
-	ds.Get(userSettings)
+	ds.Get(c, userSettings)
 	// Even if the get fails (No user found) we still want to return an empty
 	// UserConfig with defaults.
 	return userSettings
@@ -131,8 +131,7 @@ func changeUserSettings(c context.Context, u *updateReq) error {
 	if err != nil {
 		return err
 	}
-	ds := datastore.Get(c)
-	return ds.Put(cfg)
+	return ds.Put(c, cfg)
 }
 
 func getSettings(c context.Context, r *http.Request) (*resp.Settings, error) {

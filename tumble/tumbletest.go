@@ -14,8 +14,8 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/taskqueue"
+	ds "github.com/luci/gae/service/datastore"
+	tq "github.com/luci/gae/service/taskqueue"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/data/rand/cryptorand"
@@ -64,17 +64,16 @@ func (t *Testing) Context() context.Context {
 	ctx = cryptorand.MockForTest(ctx, 765589025) // as chosen by fair dice roll
 	t.UpdateSettings(ctx, nil)
 
-	taskqueue.Get(ctx).Testable().CreateQueue(baseName)
+	tq.GetTestable(ctx).CreateQueue(baseName)
 
-	ds := datastore.Get(ctx)
-	ds.Testable().AddIndexes(&datastore.IndexDefinition{
+	ds.GetTestable(ctx).AddIndexes(&ds.IndexDefinition{
 		Kind: "tumble.Mutation",
-		SortBy: []datastore.IndexColumn{
+		SortBy: []ds.IndexColumn{
 			{Property: "ExpandedShard"},
 			{Property: "TargetRoot"},
 		},
 	})
-	ds.Testable().Consistent(true)
+	ds.GetTestable(ctx).Consistent(true)
 
 	return ctx
 }
@@ -84,9 +83,9 @@ func (t *Testing) EnableDelayedMutations(c context.Context) {
 	cfg := t.GetConfig(c)
 	if !cfg.DelayedMutations {
 		cfg.DelayedMutations = true
-		datastore.Get(c).Testable().AddIndexes(&datastore.IndexDefinition{
+		ds.GetTestable(c).AddIndexes(&ds.IndexDefinition{
 			Kind: "tumble.Mutation",
-			SortBy: []datastore.IndexColumn{
+			SortBy: []ds.IndexColumn{
 				{Property: "TargetRoot"},
 				{Property: "ProcessAfter"},
 			},
@@ -101,12 +100,11 @@ func (t *Testing) EnableDelayedMutations(c context.Context) {
 // It will skip all work items if the test clock hasn't advanced in time
 // enough.
 func (t *Testing) Iterate(c context.Context) int {
-	tq := taskqueue.Get(c)
 	clk := clock.Get(c).(testclock.TestClock)
 	logging.Debugf(c, "tumble.Testing.Iterate: time(%d|%s)", timestamp(clk.Now().Unix()), clk.Now().UTC())
 
 	ret := 0
-	tsks := tq.Testable().GetScheduledTasks()[baseName]
+	tsks := tq.GetTestable(c).GetScheduledTasks()[baseName]
 	logging.Debugf(c, "got tasks: %v", tsks)
 	for _, tsk := range tsks {
 		logging.Debugf(c, "found task: %v", tsk)
@@ -131,7 +129,7 @@ func (t *Testing) Iterate(c context.Context) int {
 			})
 		})
 
-		if err := tq.Delete(tsk, baseName); err != nil {
+		if err := tq.Delete(c, baseName, tsk); err != nil {
 			panic(fmt.Errorf("Deleting task failed: %s", err))
 		}
 		ret++

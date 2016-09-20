@@ -9,13 +9,15 @@ import (
 
 	"github.com/luci/gae/filter/featureBreaker"
 	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/datastore"
-	. "github.com/luci/luci-go/common/testing/assertions"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
 	"github.com/luci/luci-go/tumble"
-	. "github.com/smartystreets/goconvey/convey"
+
 	"golang.org/x/net/context"
+
+	. "github.com/luci/luci-go/common/testing/assertions"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestAddBackDep(t *testing.T) {
@@ -23,7 +25,6 @@ func TestAddBackDep(t *testing.T) {
 
 	Convey("AddBackDep", t, func() {
 		c := memory.Use(context.Background())
-		ds := datastore.Get(c)
 
 		abd := &AddBackDep{
 			Dep: &model.FwdEdge{
@@ -42,14 +43,14 @@ func TestAddBackDep(t *testing.T) {
 
 			Convey("attempt finished", func() {
 				bdg.AttemptFinished = true
-				So(ds.Put(bdg), ShouldBeNil)
+				So(ds.Put(c, bdg), ShouldBeNil)
 
 				Convey("no need completion", func() {
 					muts, err := abd.RollForward(c)
 					So(err, ShouldBeNil)
 					So(muts, ShouldBeNil)
 
-					So(ds.Get(bdg, bd), ShouldBeNil)
+					So(ds.Get(c, bdg, bd), ShouldBeNil)
 					So(bd.Edge(), ShouldResemble, abd.Dep)
 					So(bd.Propagated, ShouldBeTrue)
 				})
@@ -60,14 +61,14 @@ func TestAddBackDep(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(muts, ShouldResemble, []tumble.Mutation{&AckFwdDep{abd.Dep}})
 
-					So(ds.Get(bdg, bd), ShouldBeNil)
+					So(ds.Get(c, bdg, bd), ShouldBeNil)
 					So(bd.Edge(), ShouldResemble, abd.Dep)
 					So(bd.Propagated, ShouldBeTrue)
 				})
 			})
 
 			Convey("attempt not finished, need completion", func() {
-				ex, err := ds.Exists(ds.KeyForObj(bdg))
+				ex, err := ds.Exists(c, ds.KeyForObj(c, bdg))
 				So(err, ShouldBeNil)
 				So(ex.Any(), ShouldBeFalse)
 
@@ -77,7 +78,7 @@ func TestAddBackDep(t *testing.T) {
 				So(muts, ShouldBeNil)
 
 				// Note that bdg was created as a side effect.
-				So(ds.Get(bdg, bd), ShouldBeNil)
+				So(ds.Get(c, bdg, bd), ShouldBeNil)
 				So(bd.Edge(), ShouldResemble, abd.Dep)
 				So(bd.Propagated, ShouldBeFalse)
 				So(bdg.AttemptFinished, ShouldBeFalse)

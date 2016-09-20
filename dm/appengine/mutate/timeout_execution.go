@@ -10,8 +10,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/filter/txnBuf"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
@@ -38,7 +37,7 @@ const maxTimeoutAttempts = 3
 var _ tumble.DelayedMutation = (*TimeoutExecution)(nil)
 
 // Root implements tumble.Mutation
-func (t *TimeoutExecution) Root(c context.Context) *datastore.Key {
+func (t *TimeoutExecution) Root(c context.Context) *ds.Key {
 	return model.AttemptKeyFromID(c, t.For.AttemptID())
 }
 
@@ -46,8 +45,7 @@ func (t *TimeoutExecution) Root(c context.Context) *datastore.Key {
 func (t *TimeoutExecution) RollForward(c context.Context) (muts []tumble.Mutation, err error) {
 	e := model.ExecutionFromID(c, t.For)
 
-	ds := datastore.Get(c)
-	if err = ds.Get(e); err != nil {
+	if err = ds.Get(c, e); err != nil {
 		return
 	}
 	if e.State != t.State {
@@ -88,7 +86,7 @@ func (t *TimeoutExecution) RollForward(c context.Context) (muts []tumble.Mutatio
 		}
 		var realRslt *dm.Result
 		q := model.QuestFromID(t.For.Quest)
-		if err = txnBuf.GetNoTxn(c).Get(q); err != nil {
+		if err = ds.Get(ds.WithoutTransaction(c), q); err != nil {
 			err = errors.Annotate(err).Reason("loading quest").Err()
 			return
 		}

@@ -8,11 +8,12 @@ import (
 	"testing"
 
 	"github.com/luci/gae/filter/featureBreaker"
-	"github.com/luci/gae/service/datastore"
-	. "github.com/luci/luci-go/common/testing/assertions"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
 	"github.com/luci/luci-go/tumble"
+
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -22,7 +23,6 @@ func TestMergeQuest(t *testing.T) {
 	Convey("MergeQuest", t, func() {
 		ttest := &tumble.Testing{}
 		c := ttest.Context()
-		ds := datastore.Get(c)
 
 		desc := dm.NewQuestDesc("distributor", `{"data":"yes"}`, "{}", nil)
 		So(desc.Normalize(), ShouldBeNil)
@@ -32,7 +32,7 @@ func TestMergeQuest(t *testing.T) {
 		mq := &MergeQuest{qst, nil}
 
 		Convey("root", func() {
-			So(mq.Root(c), ShouldResemble, ds.MakeKey("Quest", qst.ID))
+			So(mq.Root(c), ShouldResemble, ds.MakeKey(c, "Quest", qst.ID))
 		})
 
 		Convey("quest doesn't exist", func() {
@@ -41,12 +41,12 @@ func TestMergeQuest(t *testing.T) {
 			So(muts, ShouldBeEmpty)
 
 			q := &model.Quest{ID: qst.ID}
-			So(ds.Get(q), ShouldBeNil)
+			So(ds.Get(c, q), ShouldBeNil)
 			So(q, ShouldResemble, qst)
 		})
 
 		Convey("assuming it exists", func() {
-			So(ds.Put(qst), ShouldBeNil)
+			So(ds.Put(c, qst), ShouldBeNil)
 			Convey("noop merge", func() {
 				muts, err := mq.RollForward(c)
 				So(err, ShouldBeNil)
@@ -62,7 +62,7 @@ func TestMergeQuest(t *testing.T) {
 				So(muts, ShouldBeEmpty)
 
 				q := &model.Quest{ID: qst.ID}
-				So(ds.Get(q), ShouldBeNil)
+				So(ds.Get(c, q), ShouldBeNil)
 				So(len(q.BuiltBy), ShouldEqual, 2)
 				So(q.Created, ShouldResemble, qst.Created)
 			})

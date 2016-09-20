@@ -7,10 +7,11 @@ package deps
 import (
 	"testing"
 
-	"github.com/luci/gae/service/datastore"
-	. "github.com/luci/luci-go/common/testing/assertions"
+	ds "github.com/luci/gae/service/datastore"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
+
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -19,7 +20,6 @@ func TestEnsureAttempt(t *testing.T) {
 
 	Convey("EnsureGraphData (Ensuring attempts)", t, func() {
 		ttest, c, _, s := testSetup()
-		ds := datastore.Get(c)
 
 		Convey("bad", func() {
 			Convey("no quest", func() {
@@ -56,7 +56,7 @@ func TestEnsureAttempt(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(rsp.Accepted, ShouldBeTrue)
 			ttest.Drain(c)
-			So(ds.Get(&model.Attempt{ID: *dm.NewAttemptID(q.ID, 1)}), ShouldBeNil)
+			So(ds.Get(c, &model.Attempt{ID: *dm.NewAttemptID(q.ID, 1)}), ShouldBeNil)
 		})
 
 	})

@@ -37,7 +37,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 // setupPubSub creates a subscription to AuthDB service notification stream.
 func setupPubSub(c context.Context, baseURL, authServiceURL string) error {
 	pushURL := ""
-	if !info.Get(c).IsDevAppServer() {
+	if !info.IsDevAppServer(c) {
 		pushURL = baseURL + pubSubPushURLPath // push in prod, pull on dev server
 	}
 	service := getAuthService(c, authServiceURL)
@@ -53,16 +53,15 @@ func killPubSub(c context.Context, authServiceURL string) error {
 // subscriptionName returns full PubSub subscription name for AuthDB
 // change notifications stream from given auth service.
 func subscriptionName(c context.Context, authServiceURL string) string {
-	gaeInfo := info.Get(c)
 	subIDPrefix := "gae-v1"
-	if gaeInfo.IsDevAppServer() {
+	if info.IsDevAppServer(c) {
 		subIDPrefix = "dev-app-server-v1"
 	}
 	serviceURL, err := url.Parse(authServiceURL)
 	if err != nil {
 		panic(err)
 	}
-	return fmt.Sprintf("projects/%s/subscriptions/%s+%s", gaeInfo.AppID(), subIDPrefix, serviceURL.Host)
+	return fmt.Sprintf("projects/%s/subscriptions/%s+%s", info.AppID(c), subIDPrefix, serviceURL.Host)
 }
 
 // pubSubPull is HTTP handler that pulls PubSub messages from AuthDB change

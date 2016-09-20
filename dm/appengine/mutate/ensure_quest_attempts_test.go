@@ -7,10 +7,11 @@ package mutate
 import (
 	"testing"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
 	"github.com/luci/luci-go/tumble"
+
 	//. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -21,7 +22,6 @@ func TestEnsureQuestAttempts(t *testing.T) {
 	Convey("EnsureQuestAttempts", t, func() {
 		ttest := &tumble.Testing{}
 		c := ttest.Context()
-		ds := datastore.Get(c)
 
 		desc := dm.NewQuestDesc("distributor", `{"data":"yes"}`, "{}", nil)
 		So(desc.Normalize(), ShouldBeNil)
@@ -30,7 +30,7 @@ func TestEnsureQuestAttempts(t *testing.T) {
 		eqa := EnsureQuestAttempts{qst, []uint32{1, 2, 3, 4}, false}
 
 		Convey("root", func() {
-			So(eqa.Root(c), ShouldResemble, ds.MakeKey("Quest", qst.ID))
+			So(eqa.Root(c), ShouldResemble, ds.MakeKey(c, "Quest", qst.ID))
 		})
 
 		Convey("quest dne", func() {

@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/iotools"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
@@ -20,11 +20,14 @@ import (
 	"golang.org/x/net/context"
 )
 
-type BuildbotService struct{}
+// Service is a service implementation that displays BuildBot builds.
+type Service struct{}
 
 var errNotFoundGRPC = grpc.Errorf(codes.NotFound, "Master Not Found")
 
-func (s *BuildbotService) GetCompressedMasterJSON(
+// GetCompressedMasterJSON assembles a CompressedMasterJSON object from the
+// provided MasterRequest.
+func (s *Service) GetCompressedMasterJSON(
 	c context.Context, req *milo.MasterRequest) (*milo.CompressedMasterJSON, error) {
 
 	if req.Name == "" {
@@ -44,7 +47,6 @@ func (s *BuildbotService) GetCompressedMasterJSON(
 	if err = decodeMasterEntry(c, entry, master); err != nil {
 		return nil, err
 	}
-	ds := datastore.Get(c)
 	for _, slave := range master.Slaves {
 		numBuilds := 0
 		for _, builds := range slave.RunningbuildsMap {
@@ -60,7 +62,7 @@ func (s *BuildbotService) GetCompressedMasterJSON(
 				})
 			}
 		}
-		if err := ds.Get(slave.Runningbuilds); err != nil {
+		if err := ds.Get(c, slave.Runningbuilds); err != nil {
 			logging.WithError(err).Errorf(c,
 				"Encountered error while trying to fetch running builds for %s: %s",
 				master.Name, slave.Runningbuilds)
@@ -72,7 +74,7 @@ func (s *BuildbotService) GetCompressedMasterJSON(
 	for builderName, builder := range master.Builders {
 		// Get the most recent 50 buildNums on the builder to simulate what the
 		// cachedBuilds field looks like from the real buildbot master json.
-		q := datastore.NewQuery("buildbotBuild").
+		q := ds.NewQuery("buildbotBuild").
 			Eq("finished", true).
 			Eq("master", req.Name).
 			Eq("builder", builderName).
@@ -80,7 +82,7 @@ func (s *BuildbotService) GetCompressedMasterJSON(
 			Order("-number").
 			KeysOnly(true)
 		var builds []*buildbotBuild
-		err := ds.GetAll(q, &builds)
+		err := ds.GetAll(c, q, &builds)
 		if err != nil {
 			return nil, err
 		}

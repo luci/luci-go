@@ -60,7 +60,7 @@ func IsProjectWriter(c context.Context, pcfg *svcconfig.ProjectConfig) error {
 func checkMember(c context.Context, groups ...string) error {
 	// On dev-appserver, the superuser has implicit group membership to
 	// everything.
-	if info.Get(c).IsDevAppServer() {
+	if info.IsDevAppServer(c) {
 		if u := auth.CurrentUser(c); u.Superuser {
 			log.Fields{
 				"identity": u.Identity,

@@ -46,7 +46,7 @@ func GetAccessToken(c context.Context, scopes []string) (auth.Token, error) {
 
 	// The token needs to be refreshed.
 	logging.Debugf(c, "Getting an access token for scopes %q", strings.Join(scopes, ", "))
-	accessToken, exp, err := info.Get(c).AccessToken(scopes...)
+	accessToken, exp, err := info.AccessToken(c, scopes...)
 	if err != nil {
 		return auth.Token{}, errors.WrapTransient(err)
 	}

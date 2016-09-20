@@ -13,7 +13,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaetesting"
 	"github.com/luci/luci-go/server/auth"
@@ -125,7 +125,7 @@ func TestImportConfig(t *testing.T) {
 		`), nil)
 		So(err, ShouldBeNil)
 
-		datastore.Get(ctx).Testable().CatchupIndexes()
+		ds.GetTestable(ctx).CatchupIndexes()
 
 		// Appears.
 		listResp, err = srv.ListCAs(ctx, nil)
@@ -142,7 +142,7 @@ func TestImportConfig(t *testing.T) {
 		`), nil)
 		So(err, ShouldBeNil)
 
-		datastore.Get(ctx).Testable().CatchupIndexes()
+		ds.GetTestable(ctx).CatchupIndexes()
 
 		// fake.ca is removed.
 		resp, err := srv.GetCAStatus(ctx, &admin.GetCAStatusRequest{
@@ -242,11 +242,10 @@ func TestFetchCRL(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// CRL is there.
-		ds := datastore.Get(ctx)
 		crl := model.CRL{
-			Parent: ds.NewKey("CA", "Puppet CA: fake.ca", 0, nil),
+			Parent: ds.NewKey(ctx, "CA", "Puppet CA: fake.ca", 0, nil),
 		}
-		err = ds.Get(&crl)
+		err = ds.Get(ctx, &crl)
 		So(err, ShouldBeNil)
 		So(crl.RevokedCertsCount, ShouldEqual, 1) // fakeCACrl has only 1 SN
 
@@ -291,11 +290,10 @@ func TestFetchCRL(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// CRL is there.
-		ds := datastore.Get(ctx)
 		crl := model.CRL{
-			Parent: ds.NewKey("CA", "Puppet CA: fake.ca", 0, nil),
+			Parent: ds.NewKey(ctx, "CA", "Puppet CA: fake.ca", 0, nil),
 		}
-		err = ds.Get(&crl)
+		err = ds.Get(ctx, &crl)
 		So(err, ShouldBeNil)
 		So(crl.LastFetchETag, ShouldEqual, `"etag1"`)
 		So(crl.EntityVersion, ShouldEqual, 1)
@@ -307,7 +305,7 @@ func TestFetchCRL(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Entity isn't touched.
-		err = ds.Get(&crl)
+		err = ds.Get(ctx, &crl)
 		So(err, ShouldBeNil)
 		So(crl.LastFetchETag, ShouldEqual, `"etag1"`)
 		So(crl.EntityVersion, ShouldEqual, 1)
@@ -320,7 +318,7 @@ func TestFetchCRL(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Entity is updated.
-		err = ds.Get(&crl)
+		err = ds.Get(ctx, &crl)
 		So(err, ShouldBeNil)
 		So(crl.LastFetchETag, ShouldEqual, `"etag2"`)
 		So(crl.EntityVersion, ShouldEqual, 2)
@@ -434,7 +432,7 @@ PkoYH9WC8tSbqNof3g==
 // config files.
 func prepareCfg(c context.Context, configFile string) context.Context {
 	return config.SetImplementation(c, memory.New(map[string]memory.ConfigSet{
-		"services/" + info.Get(c).AppID(): {
+		"services/" + info.AppID(c): {
 			"tokenserver.cfg":           configFile,
 			"certs/fake.ca.crt":         fakeCACrt,
 			"certs/another-fake.ca.crt": anotherFakeCACrt,

@@ -6,11 +6,13 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/luci/gae/filter/featureBreaker"
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
@@ -18,6 +20,7 @@ import (
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	ct "github.com/luci/luci-go/logdog/appengine/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/hierarchy"
+	"github.com/luci/luci-go/logdog/common/types"
 	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -70,7 +73,7 @@ func TestRegisterStream(t *testing.T) {
 
 			Convey(`When the Prefix is registered`, func() {
 				tls.WithProjectNamespace(c, func(c context.Context) {
-					if err := ds.Get(c).Put(tls.Prefix); err != nil {
+					if err := ds.Put(c, tls.Prefix); err != nil {
 						panic(err)
 					}
 				})
@@ -90,7 +93,7 @@ func TestRegisterStream(t *testing.T) {
 					resp, err := svr.RegisterStream(c, &req)
 					So(err, ShouldBeRPCOK)
 					So(resp, ShouldResemble, expResp)
-					ds.Get(c).Testable().CatchupIndexes()
+					ds.GetTestable(c).CatchupIndexes()
 					env.IterateTumbleAll(c)
 
 					So(tls.Get(c), ShouldBeNil)
@@ -141,7 +144,7 @@ func TestRegisterStream(t *testing.T) {
 						So(resp, ShouldResemble, expResp)
 
 						tls.WithProjectNamespace(c, func(c context.Context) {
-							So(ds.Get(c).Get(tls.Stream, tls.State), ShouldBeNil)
+							So(ds.Get(c, tls.Stream, tls.State), ShouldBeNil)
 						})
 						So(tls.State.Created, ShouldResemble, created)
 						So(tls.Stream.Created, ShouldResemble, created)
@@ -172,7 +175,7 @@ func TestRegisterStream(t *testing.T) {
 					resp, err := svr.RegisterStream(c, &req)
 					So(err, ShouldBeRPCOK)
 					So(resp, ShouldResemble, expResp)
-					ds.Get(c).Testable().CatchupIndexes()
+					ds.GetTestable(c).CatchupIndexes()
 					env.IterateTumbleAll(c)
 
 					So(tls.Get(c), ShouldBeNil)
@@ -213,7 +216,7 @@ func TestRegisterStream(t *testing.T) {
 
 						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCOK)
-						ds.Get(c).Testable().CatchupIndexes()
+						ds.GetTestable(c).CatchupIndexes()
 
 						// The cleanup archival should be scheduled for 24 hours, so advance
 						// 12, confirm no archival, then advance another 12 and confirm that
@@ -237,7 +240,7 @@ func TestRegisterStream(t *testing.T) {
 
 						_, err := svr.RegisterStream(c, &req)
 						So(err, ShouldBeRPCOK)
-						ds.Get(c).Testable().CatchupIndexes()
+						ds.GetTestable(c).CatchupIndexes()
 
 						// The cleanup archival should be scheduled immediately.
 						env.IterateTumbleAll(c)
@@ -337,4 +340,54 @@ func TestRegisterStream(t *testing.T) {
 			})
 		})
 	})
+}
+
+func BenchmarkRegisterStream(b *testing.B) {
+	c, env := ct.Install()
+
+	// Set our archival delays. The project delay is smaller than the service
+	// delay, so it should be used.
+	env.ModServiceConfig(c, func(cfg *svcconfig.Config) {
+		cfg.Coordinator.ArchiveSettleDelay = google.NewDuration(10 * time.Minute)
+		cfg.Coordinator.ArchiveDelayMax = google.NewDuration(24 * time.Hour)
+	})
+	env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
+		pcfg.MaxStreamAge = google.NewDuration(time.Hour)
+	})
+
+	// By default, the testing user is a service.
+	env.JoinGroup("services")
+
+	const (
+		prefix  = types.StreamName("testing")
+		project = config.ProjectName("proj-foo")
+	)
+
+	tls := ct.MakeStream(c, project, prefix.Join(types.StreamName(fmt.Sprintf("foo/bar"))))
+	tls.WithProjectNamespace(c, func(c context.Context) {
+		if err := ds.Put(c, tls.Prefix); err != nil {
+			b.Fatalf("failed to register prefix: %v", err)
+		}
+	})
+
+	svr := New()
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		tls := ct.MakeStream(c, project, prefix.Join(types.StreamName(fmt.Sprintf("foo/bar/%d", i))))
+
+		req := logdog.RegisterStreamRequest{
+			Project:       string(tls.Project),
+			Secret:        tls.Prefix.Secret,
+			ProtoVersion:  logpb.Version,
+			Desc:          tls.DescBytes(),
+			TerminalIndex: -1,
+		}
+
+		_, err := svr.RegisterStream(c, &req)
+		if err != nil {
+			b.Fatalf("failed to get OK response (%s)", err)
+		}
+	}
 }

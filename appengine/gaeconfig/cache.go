@@ -10,13 +10,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/memcache"
+	ds "github.com/luci/gae/service/datastore"
+	mc "github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/config/filters/caching"
 	"github.com/luci/luci-go/common/data/caching/proccache"
 	log "github.com/luci/luci-go/common/logging"
+
 	"golang.org/x/net/context"
 )
 
@@ -42,13 +43,12 @@ func (c *cache) Store(ctx context.Context, baseKey string, expire time.Duration,
 	//
 	// This is because memcache doesn't populate the .Expiration field of the
 	// memcache Item on Get operations :(
-	stamp := datastore.TimeToInt(clock.Now(ctx).UTC().Add(expire))
+	stamp := ds.TimeToInt(clock.Now(ctx).UTC().Add(expire))
 	buf := make([]byte, binary.MaxVarintLen64)
 	value = append(buf[:binary.PutVarint(buf, stamp)], value...)
 
-	mc := memcache.Get(ctx)
-	itm := mc.NewItem(string(k)).SetExpiration(expire).SetValue(value)
-	if err := mc.Set(itm); err != nil {
+	itm := mc.NewItem(ctx, string(k)).SetExpiration(expire).SetValue(value)
+	if err := mc.Set(ctx, itm); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
 			"key":        baseKey,
@@ -60,9 +60,9 @@ func (c *cache) Store(ctx context.Context, baseKey string, expire time.Duration,
 func (c *cache) Retrieve(ctx context.Context, baseKey string) []byte {
 	k := cacheKey(baseKey)
 	ret, err := proccache.GetOrMake(ctx, k, func() (value interface{}, exp time.Duration, err error) {
-		item, err := memcache.Get(ctx).Get(string(k))
+		item, err := mc.GetKey(ctx, string(k))
 		if err != nil {
-			if err != memcache.ErrCacheMiss {
+			if err != mc.ErrCacheMiss {
 				log.Fields{
 					log.ErrorKey: err,
 					"key":        baseKey,
@@ -82,7 +82,7 @@ func (c *cache) Retrieve(ctx context.Context, baseKey string) []byte {
 		}
 
 		// proccache will ignore this value if exp is in the past
-		exp = datastore.IntToTime(expStamp).Sub(clock.Now(ctx))
+		exp = ds.IntToTime(expStamp).Sub(clock.Now(ctx))
 		value = buf.Bytes()
 		return
 	})

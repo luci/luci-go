@@ -27,7 +27,7 @@ func New() logdog.AdminServer {
 				log.WithError(err).Warningf(c, "User is not an administrator.")
 
 				// If we're on development server, any user can access this endpoint.
-				if info.Get(c).IsDevAppServer() {
+				if info.IsDevAppServer(c) {
 					log.Infof(c, "On development server, allowing admin access.")
 					return c, nil
 				}

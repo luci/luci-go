@@ -102,7 +102,7 @@ func (ts *TestStream) Reload(c context.Context) {
 	// LogStreamState
 	ts.State.Updated = ds.RoundTime(clock.Now(c)).UTC()
 	ts.WithProjectNamespace(c, func(c context.Context) {
-		ts.State.Parent = ds.Get(c).KeyForObj(ts.Stream)
+		ts.State.Parent = ds.KeyForObj(c, ts.Stream)
 	})
 }
 
@@ -118,7 +118,7 @@ func (ts *TestStream) DescBytes() []byte {
 // Put adds all of the entities for this TestStream to the datastore.
 func (ts *TestStream) Put(c context.Context) (err error) {
 	ts.WithProjectNamespace(c, func(c context.Context) {
-		err = ds.Get(c).Put(ts.Prefix, ts.State, ts.Stream)
+		err = ds.Put(c, ts.Prefix, ts.State, ts.Stream)
 	})
 	return
 }
@@ -126,7 +126,7 @@ func (ts *TestStream) Put(c context.Context) (err error) {
 // Get reloads all of the entities for this TestStream.
 func (ts *TestStream) Get(c context.Context) (err error) {
 	ts.WithProjectNamespace(c, func(c context.Context) {
-		err = ds.Get(c).Get(ts.Prefix, ts.State, ts.Stream)
+		err = ds.Get(c, ts.Prefix, ts.State, ts.Stream)
 	})
 	return
 }

@@ -7,11 +7,12 @@ package deps
 import (
 	"testing"
 
-	"github.com/luci/gae/service/datastore"
-	. "github.com/luci/luci-go/common/testing/assertions"
+	ds "github.com/luci/gae/service/datastore"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/distributor/fake"
 	"github.com/luci/luci-go/dm/appengine/model"
+
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -21,7 +22,6 @@ func TestAddDeps(t *testing.T) {
 	Convey("EnsureGraphData (Adding deps)", t, func() {
 		ttest, c, dist, s := testSetup()
 		c = writer(c)
-		ds := datastore.Get(c)
 
 		qid := s.ensureQuest(c, "quest", 1)
 
@@ -110,7 +110,7 @@ func TestAddDeps(t *testing.T) {
 
 				ttest.Drain(c)
 
-				So(ds.Get(fwd), ShouldBeNil)
+				So(ds.Get(c, fwd), ShouldBeNil)
 			})
 
 			Convey("adding new deps", func() {
@@ -124,12 +124,12 @@ func TestAddDeps(t *testing.T) {
 						ShouldHalt: true,
 					})
 
-					So(ds.Get(fwd), ShouldBeNil)
+					So(ds.Get(c, fwd), ShouldBeNil)
 					a := model.AttemptFromID(dm.NewAttemptID(qid, 1))
-					So(ds.Get(a), ShouldBeNil)
+					So(ds.Get(c, a), ShouldBeNil)
 					So(a.State, ShouldEqual, dm.Attempt_EXECUTING)
 					e := model.ExecutionFromID(c, dm.NewExecutionID(qid, 1, 1))
-					So(ds.Get(e), ShouldBeNil)
+					So(ds.Get(c, e), ShouldBeNil)
 					So(e.State, ShouldEqual, dm.Execution_STOPPING)
 					return nil
 				})

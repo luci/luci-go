@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/settings"
@@ -34,18 +34,19 @@ func getBuild(c context.Context, master, builder, buildNum string) (*buildbotBui
 		Master:      master,
 		Buildername: builder,
 	}
-	if num, err := strconv.Atoi(buildNum); err != nil {
+
+	num, err := strconv.Atoi(buildNum)
+	if err != nil {
 		return nil, miloerror.Error{
 			Message: fmt.Sprintf("%s does not look like a number", buildNum),
 			Code:    http.StatusBadRequest,
 		}
-	} else {
-		result.Number = num
 	}
-	ds := datastore.Get(c)
-	err := ds.Get(result)
+	result.Number = num
+
+	err = ds.Get(c, result)
 	switch {
-	case err == datastore.ErrNoSuchEntity:
+	case err == ds.ErrNoSuchEntity:
 		return nil, errBuildNotFound
 	case err != nil:
 		return nil, err

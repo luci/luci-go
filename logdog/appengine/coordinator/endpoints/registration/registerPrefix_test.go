@@ -34,7 +34,7 @@ func TestRegisterPrefix(t *testing.T) {
 	Convey(`With a testing configuration`, t, func() {
 		c, env := ct.Install()
 		c, fb := featureBreaker.FilterRDS(c, nil)
-		ds.Get(c).Testable().Consistent(true)
+		ds.GetTestable(c).Consistent(true)
 
 		// Mock random number generator so we can predict secrets.
 		c = cryptorand.MockForTest(c, 0)
@@ -71,7 +71,7 @@ func TestRegisterPrefix(t *testing.T) {
 			})
 
 			ct.WithProjectNamespace(c, project, func(c context.Context) {
-				So(ds.Get(c).Get(pfx), ShouldBeNil)
+				So(ds.Get(c, pfx), ShouldBeNil)
 			})
 			So(pfx, ShouldResemble, &coordinator.LogPrefix{
 				Schema:  coordinator.CurrentSchemaVersion,
@@ -120,7 +120,7 @@ func TestRegisterPrefix(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				ct.WithProjectNamespace(c, project, func(c context.Context) {
-					So(ds.Get(c).Get(pfx), ShouldBeNil)
+					So(ds.Get(c, pfx), ShouldBeNil)
 				})
 				So(pfx.Expiration, ShouldResemble, clock.Now(c).Add(time.Minute))
 			})
@@ -134,7 +134,7 @@ func TestRegisterPrefix(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				ct.WithProjectNamespace(c, project, func(c context.Context) {
-					So(ds.Get(c).Get(pfx), ShouldBeNil)
+					So(ds.Get(c, pfx), ShouldBeNil)
 				})
 				So(pfx.Expiration, ShouldResemble, clock.Now(c).Add(time.Hour))
 			})

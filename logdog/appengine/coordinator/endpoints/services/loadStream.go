@@ -30,11 +30,10 @@ func (s *server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid ID (%s): %s", id, err)
 	}
 
-	di := ds.Get(c)
 	ls := &coordinator.LogStream{ID: coordinator.HashID(req.Id)}
-	lst := ls.State(di)
+	lst := ls.State(c)
 
-	if err := di.Get(lst, ls); err != nil {
+	if err := ds.Get(c, lst, ls); err != nil {
 		if anyNoSuchEntity(err) {
 			log.WithError(err).Errorf(c, "No such entity in datastore.")
 

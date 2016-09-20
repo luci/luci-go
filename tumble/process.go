@@ -12,16 +12,17 @@ import (
 	"time"
 
 	"github.com/luci/gae/filter/txnBuf"
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
 	"github.com/luci/gae/service/info"
-	"github.com/luci/gae/service/memcache"
+	mc "github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/appengine/memlock"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/sync/parallel"
+
 	"golang.org/x/net/context"
 )
 
@@ -46,13 +47,13 @@ func expandedShardBounds(c context.Context, cfg *Config, shard uint64) (low, hig
 	return
 }
 
-func processShardQuery(c context.Context, cfg *Config, shard uint64) *datastore.Query {
+func processShardQuery(c context.Context, cfg *Config, shard uint64) *ds.Query {
 	low, high := expandedShardBounds(c, cfg, shard)
 	if low > high {
 		return nil
 	}
 
-	return datastore.NewQuery("tumble.Mutation").
+	return ds.NewQuery("tumble.Mutation").
 		Gte("ExpandedShard", low).Lte("ExpandedShard", high).
 		Project("TargetRoot").Distinct(true).
 		Limit(cfg.ProcessMaxBatchSize)
@@ -135,18 +136,17 @@ func makeProcessTask(namespace string, timestamp time.Time, shard uint64) *proce
 	}
 }
 
-func (t *processTask) process(c context.Context, cfg *Config, q *datastore.Query) error {
+func (t *processTask) process(c context.Context, cfg *Config, q *ds.Query) error {
 	if t.namespace != "" {
 		c = logging.SetField(c, "namespace", t.namespace)
-		c = info.Get(c).MustNamespace(t.namespace)
+		c = info.MustNamespace(c, t.namespace)
 	}
 
 	// this last key allows buffered tasks to early exit if some other shard
 	// processor has already processed past this task's target timestamp.
-	mc := memcache.Get(c)
-	lastItm, err := mc.Get(t.lastKey)
+	lastItm, err := mc.GetKey(c, t.lastKey)
 	if err != nil {
-		if err != memcache.ErrCacheMiss {
+		if err != mc.ErrCacheMiss {
 			logging.Warningf(c, "couldn't obtain last timestamp: %s", err)
 		}
 	} else {
@@ -167,8 +167,8 @@ func (t *processTask) process(c context.Context, cfg *Config, q *datastore.Query
 	for {
 		processCounters := []*int64{}
 		err := parallel.WorkPool(int(cfg.NumGoroutines), func(ch chan<- func() error) {
-			err := datastore.Get(c).Run(q, func(pm datastore.PropertyMap) error {
-				root := pm.Slice("TargetRoot")[0].Value().(*datastore.Key)
+			err := ds.Run(c, q, func(pm ds.PropertyMap) error {
+				root := pm.Slice("TargetRoot")[0].Value().(*ds.Key)
 				encRoot := root.Encode()
 
 				// TODO(riannucci): make banSets remove keys from the banSet which
@@ -188,7 +188,7 @@ func (t *processTask) process(c context.Context, cfg *Config, q *datastore.Query
 					case nil:
 						return nil
 
-					case datastore.ErrConcurrentTransaction:
+					case ds.ErrConcurrentTransaction:
 						logging.Fields{
 							logging.ErrorKey: err,
 							"root":           root,
@@ -206,7 +206,7 @@ func (t *processTask) process(c context.Context, cfg *Config, q *datastore.Query
 
 				if c.Err() != nil {
 					logging.Warningf(c, "Lost lock! %s", c.Err())
-					return datastore.Stop
+					return ds.Stop
 				}
 				return nil
 			})
@@ -239,7 +239,7 @@ func (t *processTask) process(c context.Context, cfg *Config, q *datastore.Query
 			break
 		}
 
-		err = mc.Set(mc.NewItem(t.lastKey).SetValue(serialize.ToBytes(clock.Now(c).UTC())))
+		err = mc.Set(c, mc.NewItem(c, t.lastKey).SetValue(serialize.ToBytes(clock.Now(c).UTC())))
 		if err != nil {
 			logging.Warningf(c, "could not update last process memcache key %s: %s", t.lastKey, err)
 		}
@@ -252,15 +252,14 @@ func (t *processTask) process(c context.Context, cfg *Config, q *datastore.Query
 	return nil
 }
 
-func getBatchByRoot(c context.Context, cfg *Config, root *datastore.Key, banSet stringset.Set) ([]*realMutation, error) {
-	ds := datastore.Get(c)
-	q := datastore.NewQuery("tumble.Mutation").Eq("TargetRoot", root)
+func getBatchByRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.Set) ([]*realMutation, error) {
+	q := ds.NewQuery("tumble.Mutation").Eq("TargetRoot", root)
 	if cfg.DelayedMutations {
 		q = q.Lte("ProcessAfter", clock.Now(c).UTC())
 	}
 
 	toFetch := make([]*realMutation, 0, cfg.ProcessMaxBatchSize)
-	err := ds.Run(q, func(k *datastore.Key) error {
+	err := ds.Run(c, q, func(k *ds.Key) error {
 		if !banSet.Has(k.Encode()) {
 			toFetch = append(toFetch, &realMutation{
 				ID:     k.StringID(),
@@ -270,17 +269,15 @@ func getBatchByRoot(c context.Context, cfg *Config, root *datastore.Key, banSet 
 		if len(toFetch) < cap(toFetch) {
 			return nil
 		}
-		return datastore.Stop
+		return ds.Stop
 	})
 	return toFetch, err
 }
 
-func loadFilteredMutations(c context.Context, rms []*realMutation) ([]*datastore.Key, []Mutation, error) {
-	ds := datastore.Get(c)
-
-	mutKeys := make([]*datastore.Key, 0, len(rms))
+func loadFilteredMutations(c context.Context, rms []*realMutation) ([]*ds.Key, []Mutation, error) {
+	mutKeys := make([]*ds.Key, 0, len(rms))
 	muts := make([]Mutation, 0, len(rms))
-	err := ds.Get(rms)
+	err := ds.Get(c, rms)
 	me, ok := err.(errors.MultiError)
 	if !ok && err != nil {
 		return nil, nil, err
@@ -304,8 +301,8 @@ func loadFilteredMutations(c context.Context, rms []*realMutation) ([]*datastore
 				continue
 			}
 			muts = append(muts, m)
-			mutKeys = append(mutKeys, ds.KeyForObj(rm))
-		} else if err != datastore.ErrNoSuchEntity {
+			mutKeys = append(mutKeys, ds.KeyForObj(c, rm))
+		} else if err != ds.ErrNoSuchEntity {
 			return nil, nil, me
 		}
 	}
@@ -316,14 +313,14 @@ func loadFilteredMutations(c context.Context, rms []*realMutation) ([]*datastore
 type overrideRoot struct {
 	Mutation
 
-	root *datastore.Key
+	root *ds.Key
 }
 
-func (o overrideRoot) Root(context.Context) *datastore.Key {
+func (o overrideRoot) Root(context.Context) *ds.Key {
 	return o.root
 }
 
-func processRoot(c context.Context, cfg *Config, root *datastore.Key, banSet stringset.Set, counter *int64) error {
+func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.Set, counter *int64) error {
 	l := logging.Get(c)
 
 	toFetch, err := getBatchByRoot(c, cfg, root, banSet)
@@ -343,11 +340,11 @@ func processRoot(c context.Context, cfg *Config, root *datastore.Key, banSet str
 
 	allShards := map[taskShard]struct{}{}
 
-	toDel := make([]*datastore.Key, 0, len(muts))
+	toDel := make([]*ds.Key, 0, len(muts))
 	numMuts := uint64(0)
 	deletedMuts := uint64(0)
 	processedMuts := uint64(0)
-	err = datastore.Get(txnBuf.FilterRDS(c)).RunInTransaction(func(c context.Context) error {
+	err = ds.RunInTransaction(txnBuf.FilterRDS(c), func(c context.Context) error {
 		toDel = toDel[:0]
 		numMuts = 0
 		deletedMuts = 0
@@ -383,7 +380,7 @@ func processRoot(c context.Context, cfg *Config, root *datastore.Key, banSet str
 			key := iterMutKeys[i]
 			if key.HasAncestor(root) {
 				// try to delete it as part of the same transaction.
-				if err := datastore.Get(c).Delete(key); err == nil {
+				if err := ds.Delete(c, key); err == nil {
 					deletedMuts++
 				} else {
 					toDel = append(toDel, key)
@@ -415,7 +412,7 @@ func processRoot(c context.Context, cfg *Config, root *datastore.Key, banSet str
 		for _, k := range toDel {
 			banSet.Add(k.Encode())
 		}
-		if err := datastore.Get(c).Delete(toDel); err != nil {
+		if err := ds.Delete(c, toDel); err != nil {
 			l.Warningf("error deleting finished mutations: %s", err)
 		}
 	}

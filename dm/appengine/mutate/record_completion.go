@@ -5,7 +5,7 @@
 package mutate
 
 import (
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
 	"github.com/luci/luci-go/tumble"
@@ -37,27 +37,25 @@ type RecordCompletion struct {
 }
 
 // Root implements tumble.Mutation.
-func (r *RecordCompletion) Root(c context.Context) *datastore.Key {
-	return datastore.Get(c).KeyForObj(&model.BackDepGroup{Dependee: *r.For})
+func (r *RecordCompletion) Root(c context.Context) *ds.Key {
+	return ds.KeyForObj(c, &model.BackDepGroup{Dependee: *r.For})
 }
 
 // RollForward implements tumble.Mutation.
 func (r *RecordCompletion) RollForward(c context.Context) (muts []tumble.Mutation, err error) {
-	ds := datastore.Get(c)
-
 	bdg := &model.BackDepGroup{Dependee: *r.For}
-	if err = ds.Get(bdg); err != nil && err != datastore.ErrNoSuchEntity {
+	if err = ds.Get(c, bdg); err != nil && err != ds.ErrNoSuchEntity {
 		return
 	}
 
 	needProp := make([]*model.BackDep, 0, completionLimit)
 
-	q := (datastore.NewQuery("BackDep").
-		Ancestor(ds.KeyForObj(bdg)).
+	q := (ds.NewQuery("BackDep").
+		Ancestor(ds.KeyForObj(c, bdg)).
 		Eq("Propagated", false).
 		Limit(completionLimit))
 
-	if err = ds.GetAll(q, &needProp); err != nil {
+	if err = ds.GetAll(c, q, &needProp); err != nil {
 		return
 	}
 
@@ -74,14 +72,14 @@ func (r *RecordCompletion) RollForward(c context.Context) (muts []tumble.Mutatio
 			muts = append(muts, r)
 		}
 
-		if err = ds.Put(needProp); err != nil {
+		if err = ds.Put(c, needProp); err != nil {
 			return
 		}
 	}
 
 	if !bdg.AttemptFinished {
 		bdg.AttemptFinished = true
-		if err = ds.Put(bdg); err != nil {
+		if err = ds.Put(c, bdg); err != nil {
 			return
 		}
 	}

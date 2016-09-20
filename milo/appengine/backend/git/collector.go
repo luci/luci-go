@@ -9,9 +9,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/appengine/model"
+
 	"golang.org/x/net/context"
 )
 
@@ -111,14 +112,13 @@ func GetRevisions(contents string) ([]*model.Revision, error) {
 // SaveRevisions saves the given Revision entities in batches of 100.
 // TODO(estaab): Parallelize this and make it a gae filter.
 func SaveRevisions(ctx context.Context, revisions []*model.Revision) error {
-	ds := datastore.Get(ctx)
 	for lower := 0; lower < len(revisions); lower += 100 {
 		upper := lower + 100
 		if len(revisions) < upper {
 			upper = len(revisions)
 		}
 		log.Infof(ctx, "Writing revisions [%d, %d) to datastore.", lower, upper)
-		if err := ds.Put(revisions[lower:upper]); err != nil {
+		if err := ds.Put(ctx, revisions[lower:upper]); err != nil {
 			return fmt.Errorf("%s", err)
 		}
 	}

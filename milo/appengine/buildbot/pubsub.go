@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luci/gae/service/datastore"
+	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/iotools"
 	"github.com/luci/luci-go/common/logging"
@@ -92,7 +92,7 @@ func putDSMasterJSON(
 	entry.Data = gzbs.Bytes()
 	logging.Debugf(c, "Length of json data: %d", cw.Count)
 	logging.Debugf(c, "Length of gzipped data: %d", len(entry.Data))
-	return datastore.Get(c).Put(&entry)
+	return ds.Put(c, &entry)
 }
 
 // GetData returns the expanded form of Data (decoded from base64).
@@ -142,8 +142,7 @@ func getOSInfo(c context.Context, b *buildbotBuild, m *buildbotMaster) (
 	if m.Name == "" {
 		logging.Infof(c, "Fetching info for master %s", b.Master)
 		entry := buildbotMasterEntry{Name: b.Master}
-		ds := datastore.Get(c)
-		err := ds.Get(&entry)
+		err := ds.Get(c, &entry)
 		if err != nil {
 			logging.WithError(err).Errorf(
 				c, "Encountered error while fetching entry for %s", b.Master)
@@ -221,7 +220,6 @@ func PubSubHandler(ctx *router.Context) {
 		return
 	}
 	logging.Infof(c, "There are %d builds and master %s", len(builds), master.Name)
-	ds := datastore.Get(c)
 	// This is used to cache the master used for extracting OS information.
 	cachedMaster := buildbotMaster{}
 	// Do not use PutMulti because we might hit the 1MB limit.
@@ -239,7 +237,7 @@ func PubSubHandler(ctx *router.Context) {
 			Number:      build.Number,
 		}
 		buildExists := false
-		if err := ds.Get(existingBuild); err == nil {
+		if err := ds.Get(c, existingBuild); err == nil {
 			if existingBuild.Finished {
 				// Never replace a completed build.
 				buildCounter.Add(
@@ -259,7 +257,7 @@ func PubSubHandler(ctx *router.Context) {
 		// Try to get the OS information on a best-effort basis.  This assumes that all
 		// builds come from one master.
 		build.OSFamily, build.OSVersion = getOSInfo(c, build, &cachedMaster)
-		err = ds.Put(build)
+		err = ds.Put(c, build)
 		if err != nil {
 			if _, ok := err.(errTooBig); ok {
 				// This will never work, we don't want PubSub to retry.

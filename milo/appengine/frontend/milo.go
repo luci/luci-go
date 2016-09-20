@@ -71,7 +71,7 @@ func init() {
 	// pRPC style endpoints.
 	var api prpc.Server
 	milo.RegisterBuildbotServer(&api, &milo.DecoratedBuildbot{
-		Service: &buildbot.BuildbotService{},
+		Service: &buildbot.Service{},
 		Prelude: emptyPrelude,
 	})
 	discovery.Enable(&api)

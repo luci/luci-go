@@ -162,12 +162,11 @@ func (s *State) checkSettings(c context.Context) (*tsmon.State, *tsmonSettings) 
 //
 // Called with 's.lock' locked.
 func (s *State) enableTsMon(c context.Context) {
-	i := info.Get(c)
 	s.state.SetStore(store.NewInMemory(&target.Task{
 		DataCenter:  proto.String(targetDataCenter),
-		ServiceName: proto.String(i.AppID()),
-		JobName:     proto.String(i.ModuleName()),
-		HostName:    proto.String(strings.SplitN(i.VersionID(), ".", 2)[0]),
+		ServiceName: proto.String(info.AppID(c)),
+		JobName:     proto.String(info.ModuleName(c)),
+		HostName:    proto.String(strings.SplitN(info.VersionID(c), ".", 2)[0]),
 		TaskNum:     proto.Int32(-1),
 	}))
 
@@ -237,7 +236,7 @@ func (s *State) flushIfNeeded(c context.Context, state *tsmon.State, settings *t
 // updateInstanceEntityAndFlush waits for instance to get assigned a task number and
 // flushes the metrics.
 func (s *State) updateInstanceEntityAndFlush(c context.Context, state *tsmon.State, settings *tsmonSettings) error {
-	c = info.Get(c).MustNamespace(instanceNamespace)
+	c = info.MustNamespace(c, instanceNamespace)
 
 	defTarget := state.S.DefaultTarget()
 	task, ok := defTarget.(*target.Task)
@@ -260,7 +259,7 @@ func (s *State) updateInstanceEntityAndFlush(c context.Context, state *tsmon.Sta
 			// We used to have a task number but we don't any more (we were inactive
 			// for too long), so clear our state.
 			logging.Warningf(c, "Instance %s got purged from Datastore, but is still alive. "+
-				"Clearing cumulative metrics", info.Get(c).InstanceID())
+				"Clearing cumulative metrics", info.InstanceID(c))
 			state.ResetCumulativeMetrics(c)
 		}
 		task.TaskNum = proto.Int32(-1)
@@ -270,7 +269,7 @@ func (s *State) updateInstanceEntityAndFlush(c context.Context, state *tsmon.Sta
 		shouldHaveTaskNumBy := entity.LastUpdated.Add(instanceExpectedToHaveTaskNum)
 		if shouldHaveTaskNumBy.Before(now) {
 			logging.Warningf(c, "Instance %s is %s old with no task_num.",
-				info.Get(c).InstanceID(), now.Sub(shouldHaveTaskNumBy).String())
+				info.InstanceID(c), now.Sub(shouldHaveTaskNumBy).String())
 		}
 
 		// Non-assigned TaskNum is expected situation, pretend the flush succeeded,
@@ -303,7 +302,7 @@ func (s *State) doFlush(c context.Context, state *tsmon.State, settings *tsmonSe
 
 	if s.testingMonitor != nil {
 		mon = s.testingMonitor
-	} else if info.Get(c).IsDevAppServer() || settings.PubsubProject == "" || settings.PubsubTopic == "" {
+	} else if info.IsDevAppServer(c) || settings.PubsubProject == "" || settings.PubsubTopic == "" {
 		mon = monitor.NewDebugMonitor("")
 	} else {
 		topic := gcps.NewTopic(settings.PubsubProject, settings.PubsubTopic)

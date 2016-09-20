@@ -13,7 +13,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/luci/gae/service/memcache"
+	mc "github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
 	"golang.org/x/net/context"
@@ -76,7 +76,6 @@ func TryWithLock(ctx context.Context, key, clientID string, f func(context.Conte
 			"key":      key,
 			"clientID": clientID,
 		}))
-	mc := memcache.Get(ctx)
 
 	key = memlockKeyPrefix + key
 	cid := []byte(clientID)
@@ -93,7 +92,7 @@ func TryWithLock(ctx context.Context, key, clientID string, f func(context.Conte
 	// another lock observing an empty clientID will know that the lock is
 	// obtainable.
 	checkAnd := func(op checkOp) bool {
-		itm, err := mc.Get(key)
+		itm, err := mc.GetKey(ctx, key)
 		if err != nil {
 			log.Warningf("error getting: %s", err)
 			return false
@@ -115,7 +114,7 @@ func TryWithLock(ctx context.Context, key, clientID string, f func(context.Conte
 			itm.SetValue([]byte{}).SetExpiration(delay)
 		}
 
-		if err := mc.CompareAndSwap(itm); err != nil {
+		if err := mc.CompareAndSwap(ctx, itm); err != nil {
 			log.Warningf("failed to %s lock: %q", op, err)
 			return false
 		}
@@ -126,9 +125,9 @@ func TryWithLock(ctx context.Context, key, clientID string, f func(context.Conte
 	// Now the actual logic begins. First we 'Add' the item, which will set it if
 	// it's not present in the memcache, otherwise leaves it alone.
 
-	err := mc.Add(mc.NewItem(key).SetValue(cid).SetExpiration(memcacheLockTime))
+	err := mc.Add(ctx, mc.NewItem(ctx, key).SetValue(cid).SetExpiration(memcacheLockTime))
 	if err != nil {
-		if err != memcache.ErrNotStored {
+		if err != mc.ErrNotStored {
 			log.Warningf("error adding: %s", err)
 		}
 		if !checkAnd(refresh) {
