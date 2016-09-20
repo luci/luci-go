@@ -396,7 +396,7 @@ func TestPopulateKey(t *testing.T) {
 	t.Parallel()
 
 	Convey("Test PopulateKey", t, func() {
-		k := KeyContext{"app", "namespace"}.NewKey("kind", "", 1337, nil)
+		k := MkKeyContext("app", "namespace").NewKey("kind", "", 1337, nil)
 
 		Convey("Can set the key of a common struct.", func() {
 			var cs CommonStruct

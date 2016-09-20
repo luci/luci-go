@@ -176,15 +176,15 @@ func (d *dataStoreData) namespaces() []string {
 /////////////////////////// indexes(dataStoreData) ////////////////////////////
 
 func groupMetaKey(key *ds.Key) []byte {
-	return keyBytes(ds.KeyContext{}.NewKey("__entity_group__", "", 1, key.Root()))
+	return keyBytes(ds.MkKeyContext("", "").NewKey("__entity_group__", "", 1, key.Root()))
 }
 
 func groupIDsKey(key *ds.Key) []byte {
-	return keyBytes(ds.KeyContext{}.NewKey("__entity_group_ids__", "", 1, key.Root()))
+	return keyBytes(ds.MkKeyContext("", "").NewKey("__entity_group_ids__", "", 1, key.Root()))
 }
 
 func rootIDsKey(kind string) []byte {
-	return keyBytes(ds.KeyContext{}.NewKey("__entity_root_ids__", kind, 0, nil))
+	return keyBytes(ds.MkKeyContext("", "").NewKey("__entity_root_ids__", kind, 0, nil))
 }
 
 func curVersion(ents memCollection, key []byte) int64 {
@@ -412,7 +412,7 @@ func (d *dataStoreData) canApplyTxn(obj memContextObj) bool {
 		if len(muts) == 0 { // read-only
 			continue
 		}
-		prop, err := serialize.ReadProperty(bytes.NewBufferString(rk), serialize.WithContext, ds.KeyContext{})
+		prop, err := serialize.ReadProperty(bytes.NewBufferString(rk), serialize.WithContext, ds.MkKeyContext("", ""))
 		memoryCorruption(err)
 
 		k := prop.Value().(*ds.Key)
@@ -603,7 +603,7 @@ func keyBytes(key *ds.Key) []byte {
 
 func rpm(data []byte) (ds.PropertyMap, error) {
 	return serialize.ReadPropertyMap(bytes.NewBuffer(data),
-		serialize.WithContext, ds.KeyContext{})
+		serialize.WithContext, ds.MkKeyContext("", ""))
 }
 
 func namespaces(store memStore) []string {

@@ -118,7 +118,7 @@ var queryTests = []queryTest{
 			End(curs("Foo", 20, "__key__", key("Something", 20)))),
 		nil,
 		&reducedQuery{
-			dstore.KeyContext{"dev~app", "ns"},
+			dstore.MkKeyContext("dev~app", "ns"),
 			"Foo", map[string]stringset.Set{}, []dstore.IndexColumn{
 				{Property: "Foo"},
 				{Property: "__key__"},
@@ -140,7 +140,7 @@ func TestQueries(t *testing.T) {
 	t.Parallel()
 
 	Convey("queries have tons of condition checking", t, func() {
-		kc := dstore.KeyContext{"dev~app", "ns"}
+		kc := dstore.MkKeyContext("dev~app", "ns")
 
 		Convey("non-ancestor queries in a transaction", func() {
 			fq, err := nq().Finalize()

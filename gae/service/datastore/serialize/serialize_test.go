@@ -34,7 +34,7 @@ type dspmapTC struct {
 }
 
 func mkKey(appID, namespace string, elems ...interface{}) *ds.Key {
-	return ds.KeyContext{appID, namespace}.MakeKey(elems...)
+	return ds.MkKeyContext(appID, namespace).MakeKey(elems...)
 }
 
 func mkBuf(data []byte) Buffer {
@@ -114,7 +114,7 @@ func TestPropertyMapSerialization(t *testing.T) {
 				tc := tc
 				Convey(tc.name, func() {
 					data := ToBytesWithContext(tc.props)
-					dec, err := ReadPropertyMap(mkBuf(data), WithContext, ds.KeyContext{})
+					dec, err := ReadPropertyMap(mkBuf(data), WithContext, ds.MkKeyContext("", ""))
 					So(err, ShouldBeNil)
 					So(dec, ShouldResemble, tc.props)
 				})
@@ -207,28 +207,28 @@ func TestSerializationReadMisc(t *testing.T) {
 				Convey("w/ ctx decodes normally w/ ctx", func() {
 					k := mkKey("aid", "ns", "knd", "yo", "other", 10)
 					data := ToBytesWithContext(k)
-					dk, err := ReadKey(mkBuf(data), WithContext, ds.KeyContext{})
+					dk, err := ReadKey(mkBuf(data), WithContext, ds.MkKeyContext("", ""))
 					So(err, ShouldBeNil)
 					So(dk, ShouldEqualKey, k)
 				})
 				Convey("w/ ctx decodes normally w/o ctx", func() {
 					k := mkKey("aid", "ns", "knd", "yo", "other", 10)
 					data := ToBytesWithContext(k)
-					dk, err := ReadKey(mkBuf(data), WithoutContext, ds.KeyContext{"spam", "nerd"})
+					dk, err := ReadKey(mkBuf(data), WithoutContext, ds.MkKeyContext("spam", "nerd"))
 					So(err, ShouldBeNil)
 					So(dk, ShouldEqualKey, mkKey("spam", "nerd", "knd", "yo", "other", 10))
 				})
 				Convey("w/o ctx decodes normally w/ ctx", func() {
 					k := mkKey("aid", "ns", "knd", "yo", "other", 10)
 					data := ToBytes(k)
-					dk, err := ReadKey(mkBuf(data), WithContext, ds.KeyContext{"spam", "nerd"})
+					dk, err := ReadKey(mkBuf(data), WithContext, ds.MkKeyContext("spam", "nerd"))
 					So(err, ShouldBeNil)
 					So(dk, ShouldEqualKey, mkKey("", "", "knd", "yo", "other", 10))
 				})
 				Convey("w/o ctx decodes normally w/o ctx", func() {
 					k := mkKey("aid", "ns", "knd", "yo", "other", 10)
 					data := ToBytes(k)
-					dk, err := ReadKey(mkBuf(data), WithoutContext, ds.KeyContext{"spam", "nerd"})
+					dk, err := ReadKey(mkBuf(data), WithoutContext, ds.MkKeyContext("spam", "nerd"))
 					So(err, ShouldBeNil)
 					So(dk, ShouldEqualKey, mkKey("spam", "nerd", "knd", "yo", "other", 10))
 				})
@@ -248,31 +248,31 @@ func TestSerializationReadMisc(t *testing.T) {
 			Convey("err cases", func() {
 				buf := mkBuf(nil)
 				Convey("nil", func() {
-					_, err := ReadKey(buf, WithContext, ds.KeyContext{})
+					_, err := ReadKey(buf, WithContext, ds.MkKeyContext("", ""))
 					So(err, ShouldEqual, io.EOF)
 				})
 				Convey("str", func() {
 					_, err := buf.WriteString("sup")
 					die(err)
-					_, err = ReadKey(buf, WithContext, ds.KeyContext{})
+					_, err = ReadKey(buf, WithContext, ds.MkKeyContext("", ""))
 					So(err, ShouldErrLike, "expected actualCtx")
 				})
 				Convey("truncated 1", func() {
 					die(buf.WriteByte(1)) // actualCtx == 1
-					_, err := ReadKey(buf, WithContext, ds.KeyContext{})
+					_, err := ReadKey(buf, WithContext, ds.MkKeyContext("", ""))
 					So(err, ShouldEqual, io.EOF)
 				})
 				Convey("truncated 2", func() {
 					die(buf.WriteByte(1)) // actualCtx == 1
 					ws(buf, "aid")
-					_, err := ReadKey(buf, WithContext, ds.KeyContext{})
+					_, err := ReadKey(buf, WithContext, ds.MkKeyContext("", ""))
 					So(err, ShouldEqual, io.EOF)
 				})
 				Convey("truncated 3", func() {
 					die(buf.WriteByte(1)) // actualCtx == 1
 					ws(buf, "aid")
 					ws(buf, "ns")
-					_, err := ReadKey(buf, WithContext, ds.KeyContext{})
+					_, err := ReadKey(buf, WithContext, ds.MkKeyContext("", ""))
 					So(err, ShouldEqual, io.EOF)
 				})
 				Convey("huge key", func() {
@@ -284,7 +284,7 @@ func TestSerializationReadMisc(t *testing.T) {
 						die(WriteKeyTok(buf, ds.KeyTok{Kind: "sup", IntID: int64(i)}))
 					}
 					die(buf.WriteByte(0))
-					_, err := ReadKey(buf, WithContext, ds.KeyContext{})
+					_, err := ReadKey(buf, WithContext, ds.MkKeyContext("", ""))
 					So(err, ShouldErrLike, "huge key")
 				})
 				Convey("insufficient tokens", func() {
@@ -292,7 +292,7 @@ func TestSerializationReadMisc(t *testing.T) {
 					ws(buf, "aid")
 					ws(buf, "ns")
 					wui(buf, 2)
-					_, err := ReadKey(buf, WithContext, ds.KeyContext{})
+					_, err := ReadKey(buf, WithContext, ds.MkKeyContext("", ""))
 					So(err, ShouldEqual, io.EOF)
 				})
 				Convey("partial token 1", func() {
@@ -301,7 +301,7 @@ func TestSerializationReadMisc(t *testing.T) {
 					ws(buf, "ns")
 					die(buf.WriteByte(1))
 					ws(buf, "hi")
-					_, err := ReadKey(buf, WithContext, ds.KeyContext{})
+					_, err := ReadKey(buf, WithContext, ds.MkKeyContext("", ""))
 					So(err, ShouldEqual, io.EOF)
 				})
 				Convey("partial token 2", func() {
@@ -311,7 +311,7 @@ func TestSerializationReadMisc(t *testing.T) {
 					die(buf.WriteByte(1))
 					ws(buf, "hi")
 					die(buf.WriteByte(byte(ds.PTString)))
-					_, err := ReadKey(buf, WithContext, ds.KeyContext{})
+					_, err := ReadKey(buf, WithContext, ds.MkKeyContext("", ""))
 					So(err, ShouldEqual, io.EOF)
 				})
 				Convey("bad token (invalid type)", func() {
@@ -321,7 +321,7 @@ func TestSerializationReadMisc(t *testing.T) {
 					die(buf.WriteByte(1))
 					ws(buf, "hi")
 					die(buf.WriteByte(byte(ds.PTBlobKey)))
-					_, err := ReadKey(buf, WithContext, ds.KeyContext{})
+					_, err := ReadKey(buf, WithContext, ds.MkKeyContext("", ""))
 					So(err, ShouldErrLike, "invalid type PTBlobKey")
 				})
 				Convey("bad token (invalid IntID)", func() {
@@ -332,7 +332,7 @@ func TestSerializationReadMisc(t *testing.T) {
 					ws(buf, "hi")
 					die(buf.WriteByte(byte(ds.PTInt)))
 					wi(buf, -2)
-					_, err := ReadKey(buf, WithContext, ds.KeyContext{})
+					_, err := ReadKey(buf, WithContext, ds.MkKeyContext("", ""))
 					So(err, ShouldErrLike, "zero/negative")
 				})
 			})
@@ -377,24 +377,24 @@ func TestSerializationReadMisc(t *testing.T) {
 		Convey("ReadProperty", func() {
 			buf := mkBuf(nil)
 			Convey("trunc 1", func() {
-				p, err := ReadProperty(buf, WithContext, ds.KeyContext{})
+				p, err := ReadProperty(buf, WithContext, ds.MkKeyContext("", ""))
 				So(err, ShouldEqual, io.EOF)
 				So(p.Type(), ShouldEqual, ds.PTNull)
 				So(p.Value(), ShouldBeNil)
 			})
 			Convey("trunc (PTBytes)", func() {
 				die(buf.WriteByte(byte(ds.PTBytes)))
-				_, err := ReadProperty(buf, WithContext, ds.KeyContext{})
+				_, err := ReadProperty(buf, WithContext, ds.MkKeyContext("", ""))
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("trunc (PTBlobKey)", func() {
 				die(buf.WriteByte(byte(ds.PTBlobKey)))
-				_, err := ReadProperty(buf, WithContext, ds.KeyContext{})
+				_, err := ReadProperty(buf, WithContext, ds.MkKeyContext("", ""))
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("invalid type", func() {
 				die(buf.WriteByte(byte(ds.PTUnknown + 1)))
-				_, err := ReadProperty(buf, WithContext, ds.KeyContext{})
+				_, err := ReadProperty(buf, WithContext, ds.MkKeyContext("", ""))
 				So(err, ShouldErrLike, "unknown type!")
 			})
 		})
@@ -402,37 +402,37 @@ func TestSerializationReadMisc(t *testing.T) {
 		Convey("ReadPropertyMap", func() {
 			buf := mkBuf(nil)
 			Convey("trunc 1", func() {
-				_, err := ReadPropertyMap(buf, WithContext, ds.KeyContext{})
+				_, err := ReadPropertyMap(buf, WithContext, ds.MkKeyContext("", ""))
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("too many rows", func() {
 				wui(buf, 1000000)
-				_, err := ReadPropertyMap(buf, WithContext, ds.KeyContext{})
+				_, err := ReadPropertyMap(buf, WithContext, ds.MkKeyContext("", ""))
 				So(err, ShouldErrLike, "huge number of rows")
 			})
 			Convey("trunc 2", func() {
 				wui(buf, 10)
-				_, err := ReadPropertyMap(buf, WithContext, ds.KeyContext{})
+				_, err := ReadPropertyMap(buf, WithContext, ds.MkKeyContext("", ""))
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("trunc 3", func() {
 				wui(buf, 10)
 				ws(buf, "ohai")
-				_, err := ReadPropertyMap(buf, WithContext, ds.KeyContext{})
+				_, err := ReadPropertyMap(buf, WithContext, ds.MkKeyContext("", ""))
 				So(err, ShouldEqual, io.EOF)
 			})
 			Convey("too many values", func() {
 				wui(buf, 10)
 				ws(buf, "ohai")
 				wui(buf, 100000)
-				_, err := ReadPropertyMap(buf, WithContext, ds.KeyContext{})
+				_, err := ReadPropertyMap(buf, WithContext, ds.MkKeyContext("", ""))
 				So(err, ShouldErrLike, "huge number of properties")
 			})
 			Convey("trunc 4", func() {
 				wui(buf, 10)
 				ws(buf, "ohai")
 				wui(buf, 10)
-				_, err := ReadPropertyMap(buf, WithContext, ds.KeyContext{})
+				_, err := ReadPropertyMap(buf, WithContext, ds.MkKeyContext("", ""))
 				So(err, ShouldEqual, io.EOF)
 			})
 		})

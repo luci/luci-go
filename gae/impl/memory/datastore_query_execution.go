@@ -143,7 +143,7 @@ func parseSuffix(aid, ns string, suffixFormat []ds.IndexColumn, suffix []byte, c
 	raw = make([][]byte, len(suffixFormat))
 
 	err := error(nil)
-	kc := ds.KeyContext{aid, ns}
+	kc := ds.MkKeyContext(aid, ns)
 	for i := range decoded {
 		if count >= 0 && i >= count {
 			break

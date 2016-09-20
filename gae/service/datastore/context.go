@@ -90,5 +90,5 @@ func AddRawFilters(c context.Context, filts ...RawFilter) context.Context {
 // installed in the supplied Context.
 func GetKeyContext(c context.Context) KeyContext {
 	ri := info.Raw(c)
-	return KeyContext{ri.FullyQualifiedAppID(), ri.GetNamespace()}
+	return MkKeyContext(ri.FullyQualifiedAppID(), ri.GetNamespace())
 }

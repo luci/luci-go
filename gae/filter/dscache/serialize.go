@@ -56,5 +56,5 @@ func decodeItemValue(val []byte, ns, aid string) (ds.PropertyMap, error) {
 		}
 		buf = bytes.NewBuffer(data)
 	}
-	return serialize.ReadPropertyMap(buf, serialize.WithoutContext, ds.KeyContext{ns, aid})
+	return serialize.ReadPropertyMap(buf, serialize.WithoutContext, ds.MkKeyContext(ns, aid))
 }

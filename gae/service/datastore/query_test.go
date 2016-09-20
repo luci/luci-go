@@ -82,7 +82,7 @@ func nq(kinds ...string) *Query {
 }
 
 func mkKey(elems ...interface{}) *Key {
-	return KeyContext{"s~aid", "ns"}.MakeKey(elems...)
+	return MkKeyContext("s~aid", "ns").MakeKey(elems...)
 }
 
 var queryTests = []queryTest{
@@ -321,7 +321,7 @@ func TestQueries(t *testing.T) {
 			Convey(tc.name, func() {
 				fq, err := tc.q.Finalize()
 				if err == nil {
-					err = fq.Valid(KeyContext{"s~aid", "ns"})
+					err = fq.Valid(MkKeyContext("s~aid", "ns"))
 				}
 				So(err, ShouldErrLike, tc.err)
 

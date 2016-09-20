@@ -32,7 +32,7 @@ var estimateSizeTests = []struct {
 	{PropertyMap{"Something": mps(100.1, "sup")}, 22},
 	{PropertyMap{
 		"Something": mps(100, "sup"),
-		"Keys":      mps(KeyContext{"aid", "ns"}.MakeKey("parent", "something", "kind", int64(20))),
+		"Keys":      mps(MkKeyContext("aid", "ns").MakeKey("parent", "something", "kind", int64(20))),
 	}, 59},
 	{PropertyMap{
 		"Null":   mps(nil),

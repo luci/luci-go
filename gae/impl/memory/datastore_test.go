@@ -100,7 +100,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					"Name":  prop(""),
 					"Val":   prop(10),
 					"Multi": ds.PropertySlice{prop("foo"), prop("bar")},
-					"Key":   prop(ds.KeyContext{"dev~app", ""}.MakeKey("Bar", "Baz")),
+					"Key":   prop(ds.MkKeyContext("dev~app", "").MakeKey("Bar", "Baz")),
 				})
 			})
 			Convey("Deleteing with a bogus key is bad", func() {

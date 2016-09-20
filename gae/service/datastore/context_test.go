@@ -49,7 +49,7 @@ func TestServices(t *testing.T) {
 			Convey("lets you pull them back out", func() {
 				So(Raw(c), ShouldResemble, &checkFilter{
 					RawInterface: fakeService{},
-					kc:           KeyContext{"s~aid", "ns"},
+					kc:           MkKeyContext("s~aid", "ns"),
 				})
 			})
 

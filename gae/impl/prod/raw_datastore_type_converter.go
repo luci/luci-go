@@ -82,7 +82,7 @@ func maybeIndexValue(val interface{}) interface{} {
 									toks[i].StringID = sid.Elem().String()
 								}
 							}
-							return ds.KeyContext{aid, ns}.NewKeyToks(toks)
+							return ds.MkKeyContext(aid, ns).NewKeyToks(toks)
 						}
 						panic(fmt.Errorf(
 							"UNKNOWN datastore.indexValue field type: %s", field.Type()))

@@ -240,7 +240,7 @@ func addIndexes(store memStore, aid string, compIdx []*ds.IndexDefinition) {
 				pm, err := rpm(i.Val)
 				memoryCorruption(err)
 
-				prop, err := serialize.ReadProperty(bytes.NewBuffer(i.Key), serialize.WithoutContext, ds.KeyContext{aid, ns})
+				prop, err := serialize.ReadProperty(bytes.NewBuffer(i.Key), serialize.WithoutContext, ds.MkKeyContext(aid, ns))
 				memoryCorruption(err)
 
 				k := prop.Value().(*ds.Key)

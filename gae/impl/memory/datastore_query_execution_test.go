@@ -20,7 +20,7 @@ import (
 )
 
 func mkKey(appID, namespace string, elems ...interface{}) *ds.Key {
-	return ds.KeyContext{appID, namespace}.MakeKey(elems...)
+	return ds.MkKeyContext(appID, namespace).MakeKey(elems...)
 }
 
 type qExpect struct {

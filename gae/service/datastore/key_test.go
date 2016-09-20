@@ -26,7 +26,7 @@ func ShouldEqualKey(actual interface{}, expected ...interface{}) string {
 func TestKeyEncode(t *testing.T) {
 	t.Parallel()
 
-	kc := KeyContext{"appid", "ns"}
+	kc := MkKeyContext("appid", "ns")
 	keys := []*Key{
 		kc.MakeKey("kind", 1),
 		kc.MakeKey("nerd", "moo"),
@@ -62,16 +62,16 @@ func TestKeyEncode(t *testing.T) {
 
 	Convey("NewKey", t, func() {
 		Convey("single", func() {
-			k := KeyContext{"appid", "ns"}.NewKey("kind", "", 1, nil)
+			k := MkKeyContext("appid", "ns").NewKey("kind", "", 1, nil)
 			So(k, ShouldEqualKey, keys[0])
 		})
 
 		Convey("empty", func() {
-			So(KeyContext{"appid", "ns"}.NewKeyToks(nil), ShouldBeNil)
+			So(MkKeyContext("appid", "ns").NewKeyToks(nil), ShouldBeNil)
 		})
 
 		Convey("nest", func() {
-			kc := KeyContext{"appid", "ns"}
+			kc := MkKeyContext("appid", "ns")
 			k := kc.NewKey("renerd", "moo", 0, kc.NewKey("parent", "", 10, nil))
 			So(k, ShouldEqualKey, keys[2])
 		})
@@ -105,7 +105,7 @@ func TestKeyValidity(t *testing.T) {
 	t.Parallel()
 
 	Convey("keys validity", t, func() {
-		kc := KeyContext{"aid", "ns"}
+		kc := MkKeyContext("aid", "ns")
 
 		Convey("incomplete", func() {
 			So(kc.MakeKey("kind", 1).IsIncomplete(), ShouldBeFalse)
@@ -116,8 +116,8 @@ func TestKeyValidity(t *testing.T) {
 			So(kc.MakeKey("hat", "face", "__kind__", 1).Valid(true, kc), ShouldBeTrue)
 
 			bads := []*Key{
-				KeyContext{"aid", "ns"}.NewKeyToks([]KeyTok{{"Kind", 1, "1"}}),
-				KeyContext{"", "ns"}.MakeKey("", "ns", "hat", "face"),
+				MkKeyContext("aid", "ns").NewKeyToks([]KeyTok{{"Kind", 1, "1"}}),
+				MkKeyContext("", "ns").MakeKey("", "ns", "hat", "face"),
 				kc.MakeKey("base", 1, "", "id"),
 				kc.MakeKey("hat", "face", "__kind__", 1),
 				kc.MakeKey("hat", 0, "kind", 1),
@@ -140,7 +140,7 @@ func TestMiscKey(t *testing.T) {
 	t.Parallel()
 
 	Convey("KeyRoot", t, func() {
-		kc := KeyContext{"appid", "ns"}
+		kc := MkKeyContext("appid", "ns")
 
 		k := kc.MakeKey("parent", 10, "renerd", "moo")
 		r := kc.MakeKey("parent", 10)
@@ -148,7 +148,7 @@ func TestMiscKey(t *testing.T) {
 	})
 
 	Convey("KeysEqual", t, func() {
-		kc := KeyContext{"a", "n"}
+		kc := MkKeyContext("a", "n")
 
 		k1 := kc.MakeKey("knd", 1)
 		k2 := kc.MakeKey("knd", 1)
@@ -158,19 +158,19 @@ func TestMiscKey(t *testing.T) {
 	})
 
 	Convey("KeyString", t, func() {
-		kc := KeyContext{"a", "n"}
+		kc := MkKeyContext("a", "n")
 
 		k1 := kc.MakeKey("knd", 1, "other", "wat")
 		So(k1.String(), ShouldEqual, "a:n:/knd,1/other,\"wat\"")
 	})
 
 	Convey("HasAncestor", t, func() {
-		kc := KeyContext{"a", "n"}
+		kc := MkKeyContext("a", "n")
 
 		k1 := kc.MakeKey("kind", 1)
 		k2 := kc.MakeKey("kind", 1, "other", "wat")
 		k3 := kc.MakeKey("kind", 1, "other", "wat", "extra", "data")
-		k4 := KeyContext{"something", "n"}.MakeKey("kind", 1)
+		k4 := MkKeyContext("something", "n").MakeKey("kind", 1)
 		k5 := kc.MakeKey("kind", 1, "other", "meep")
 
 		So(k1.HasAncestor(k1), ShouldBeTrue)
@@ -188,8 +188,8 @@ func TestMiscKey(t *testing.T) {
 			Key *Key
 		}
 		t := &TestStruct{
-			KeyContext{"aid", "ns"}.NewKey("kind", "id", 0,
-				KeyContext{"aid", "ns"}.NewKey("parent", "", 1, nil),
+			MkKeyContext("aid", "ns").NewKey("kind", "id", 0,
+				MkKeyContext("aid", "ns").NewKey("parent", "", 1, nil),
 			)}
 		d, err := json.Marshal(t)
 		So(err, ShouldBeNil)
@@ -237,17 +237,17 @@ func TestKeySort(t *testing.T) {
 
 	Convey("Key comparison works", t, func() {
 		s := []*Key{
-			KeyContext{"A", ""}.MakeKey("kind", 1),
-			KeyContext{"A", "n"}.MakeKey("kind", 1),
-			KeyContext{"A", "n"}.MakeKey("kind", 1, "something", "else"),
-			KeyContext{"A", "n"}.MakeKey("kind", "1"),
-			KeyContext{"A", "n"}.MakeKey("kind", "1", "something", "else"),
-			KeyContext{"A", "n"}.MakeKey("other", 1, "something", "else"),
-			KeyContext{"a", ""}.MakeKey("kind", 1),
-			KeyContext{"a", "n"}.MakeKey("kind", 1),
-			KeyContext{"a", "n"}.MakeKey("kind", 2),
-			KeyContext{"a", "p"}.MakeKey("aleph", 1),
-			KeyContext{"b", "n"}.MakeKey("kind", 2),
+			MkKeyContext("A", "").MakeKey("kind", 1),
+			MkKeyContext("A", "n").MakeKey("kind", 1),
+			MkKeyContext("A", "n").MakeKey("kind", 1, "something", "else"),
+			MkKeyContext("A", "n").MakeKey("kind", "1"),
+			MkKeyContext("A", "n").MakeKey("kind", "1", "something", "else"),
+			MkKeyContext("A", "n").MakeKey("other", 1, "something", "else"),
+			MkKeyContext("a", "").MakeKey("kind", 1),
+			MkKeyContext("a", "n").MakeKey("kind", 1),
+			MkKeyContext("a", "n").MakeKey("kind", 2),
+			MkKeyContext("a", "p").MakeKey("aleph", 1),
+			MkKeyContext("b", "n").MakeKey("kind", 2),
 		}
 
 		for i := 1; i < len(s); i++ {

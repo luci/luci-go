@@ -64,7 +64,7 @@ func TestCheckFilter(t *testing.T) {
 			So(rds.GetMulti([]*Key{mkKey("", "", "", "")}, nil, nil).Error(), ShouldContainSubstring, "is nil")
 
 			// this is in the wrong aid/ns
-			keys := []*Key{KeyContext{"wut", "wrong"}.MakeKey("Kind", 1)}
+			keys := []*Key{MkKeyContext("wut", "wrong").MakeKey("Kind", 1)}
 			So(rds.GetMulti(keys, nil, func(pm PropertyMap, err error) error {
 				So(pm, ShouldBeNil)
 				So(err, ShouldEqual, ErrInvalidKey)

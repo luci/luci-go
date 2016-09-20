@@ -59,6 +59,14 @@ type KeyContext struct {
 	Namespace string
 }
 
+// MkKeyContext is a helper function to create a new KeyContext.
+//
+// It is preferable to field-based struct initialization because, as a function,
+// it has the ability to enforce an exact number of parameters.
+func MkKeyContext(appID, namespace string) KeyContext {
+	return KeyContext{AppID: appID, Namespace: namespace}
+}
+
 // Matches returns true iff the AppID and Namespace parameters are the same for
 // the two KeyContext instances.
 func (kc KeyContext) Matches(o KeyContext) bool {
@@ -102,7 +110,7 @@ func (kc KeyContext) NewKey(kind, stringID string, intID int64, parent *Key) *Ke
 //
 // elems is pairs of (string, string|int|int32|int64) pairs, which correspond to
 // Kind/id pairs. Example:
-//   KeyContext{"aid", "namespace"}.MakeKey("Parent", 1, "Child", "id")
+//   MkKeyContext("aid", "namespace").MakeKey("Parent", 1, "Child", "id")
 //
 // Would create the key:
 //   aid:namespace:/Parent,1/Child,id
@@ -178,10 +186,7 @@ func NewKeyEncoded(encoded string) (ret *Key, err error) {
 		return
 	}
 
-	ret.kc = KeyContext{
-		AppID:     r.GetApp(),
-		Namespace: r.GetNameSpace(),
-	}
+	ret.kc = MkKeyContext(r.GetApp(), r.GetNameSpace())
 	ret.toks = make([]KeyTok, len(r.Path.Element))
 	for i, e := range r.Path.Element {
 		ret.toks[i] = KeyTok{

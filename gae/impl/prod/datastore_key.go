@@ -21,7 +21,7 @@ func dsR2F(k *datastore.Key) *ds.Key {
 	if k == nil {
 		return nil
 	}
-	kc := ds.KeyContext{k.AppID(), k.Namespace()}
+	kc := ds.MkKeyContext(k.AppID(), k.Namespace())
 
 	count := 0
 	for nk := k; nk != nil; nk = nk.Parent() {

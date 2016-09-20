@@ -94,7 +94,7 @@ var (
 	dataSingleRoot = make([]*Foo, 20)
 	hugeField      = make([]byte, DefaultSizeBudget/8)
 	hugeData       = make([]*Foo, 11)
-	root           = ds.KeyContext{"something~else", ""}.MakeKey("Parent", 1)
+	root           = ds.MkKeyContext("something~else", "").MakeKey("Parent", 1)
 )
 
 func init() {
