@@ -289,7 +289,7 @@ func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.Ne
 
 	for i, k := range keys {
 		pmap, _ := vals[i].Save(false)
-		dataBytes := serialize.ToBytes(pmap)
+		dataBytes := serialize.ToBytesWithContext(pmap)
 
 		k, err := func() (ret *ds.Key, err error) {
 			d.Lock()

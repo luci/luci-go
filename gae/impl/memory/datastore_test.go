@@ -45,6 +45,7 @@ type Foo struct {
 	Val   int
 	Name  string
 	Multi []string
+	Key   *ds.Key
 }
 
 func TestDatastoreSingleReadWriter(t *testing.T) {
@@ -65,7 +66,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 		Convey("Can Put stuff", func() {
 			// with an incomplete key!
-			f := &Foo{Val: 10, Multi: []string{"foo", "bar"}}
+			f := &Foo{Val: 10, Multi: []string{"foo", "bar"}, Key: ds.MakeKey(c, "Bar", "Baz")}
 			So(ds.Put(c, f), ShouldBeNil)
 			k := ds.KeyForObj(c, f)
 			So(k.String(), ShouldEqual, "dev~app::/Foo,1")
@@ -99,6 +100,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					"Name":  prop(""),
 					"Val":   prop(10),
 					"Multi": ds.PropertySlice{prop("foo"), prop("bar")},
+					"Key":   prop(ds.KeyContext{"dev~app", ""}.MakeKey("Bar", "Baz")),
 				})
 			})
 			Convey("Deleteing with a bogus key is bad", func() {
@@ -170,6 +172,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 							"Val":  ds.MkProperty(10),
 							"Name": ds.MkProperty(""),
 							"$key": ds.MkPropertyNI(keys[i]),
+							"Key":  ds.MkProperty(nil),
 						})
 					}
 				})
