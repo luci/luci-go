@@ -19,7 +19,7 @@ import (
 	"github.com/luci/luci-go/common/isolatedclient"
 	"github.com/luci/luci-go/common/sync/parallel"
 	sv1 "github.com/luci/luci-go/dm/api/distributor/swarming/v1"
-	"github.com/luci/luci-go/dm/appengine/distributor"
+	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"golang.org/x/net/context"
 )
 
@@ -115,14 +115,14 @@ func pushIsolate(c context.Context, isolateURL string, chunks []isoChunk) error 
 	})
 }
 
-func prepIsolate(c context.Context, isolateURL string, tsk *distributor.TaskDescription, params *sv1.Parameters) (*swarm.SwarmingRpcsFilesRef, error) {
+func prepIsolate(c context.Context, isolateURL string, desc *dm.Quest_Desc, auth *dm.Execution_Auth, prev *dm.JsonResult, params *sv1.Parameters) (*swarm.SwarmingRpcsFilesRef, error) {
 	prevData := []byte("{}")
-	if tsk.PreviousResult() != nil {
-		prevData = []byte(tsk.PreviousResult().Object)
+	if prev != nil {
+		prevData = []byte(prev.Object)
 	}
 	prevFile := mkFile(prevData)
-	authData, authFile := mkMsgFile(tsk.ExecutionAuth())
-	descData, descFile := mkMsgFile(tsk.Payload())
+	authData, authFile := mkMsgFile(auth)
+	descData, descFile := mkMsgFile(desc)
 	isoData, isoFile := mkIsolated(c, params, prevFile, descFile, authFile)
 
 	err := pushIsolate(c, isolateURL, []isoChunk{

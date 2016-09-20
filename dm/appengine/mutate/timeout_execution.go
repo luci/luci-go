@@ -10,8 +10,10 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/gae/filter/txnBuf"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/distributor"
@@ -85,7 +87,12 @@ func (t *TimeoutExecution) RollForward(c context.Context) (muts []tumble.Mutatio
 			return
 		}
 		var realRslt *dm.Result
-		realRslt, err = dist.GetStatus(distributor.Token(e.DistributorToken))
+		q := model.QuestFromID(t.For.Quest)
+		if err = txnBuf.GetNoTxn(c).Get(q); err != nil {
+			err = errors.Annotate(err).Reason("loading quest").Err()
+			return
+		}
+		realRslt, err = dist.GetStatus(&q.Desc, distributor.Token(e.DistributorToken))
 		if (err != nil || realRslt == nil) && t.TimeoutAttempt < maxTimeoutAttempts {
 			logging.Fields{
 				logging.ErrorKey:  err,

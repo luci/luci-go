@@ -5,10 +5,15 @@
 package distributor
 
 import (
+	"fmt"
+
 	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/luci/gae/service/info"
 	"github.com/luci/gae/service/taskqueue"
+	"github.com/luci/luci-go/common/gcloud/pubsub"
+	dm "github.com/luci/luci-go/dm/api/service/v1"
 )
 
 // Config represents the configuration for a single instance of a given
@@ -35,4 +40,20 @@ type Config struct {
 func (cfg *Config) EnqueueTask(c context.Context, tsk *taskqueue.Task) error {
 	tsk.Path = handlerPath(cfg.Name)
 	return taskqueue.Get(c).Add(tsk, "")
+}
+
+// PrepareTopic returns a pubsub topic that notifications should be sent to, and
+// is meant to be called from the D.Run method.
+//
+// It returns the full name of the topic and a token that will be used to route
+// PubSub messages back to the Distributor. The publisher to the topic must be
+// instructed to put the token into the 'auth_token' attribute of PubSub
+// messages. DM will know how to route such messages to D.HandleNotification.
+func (cfg *Config) PrepareTopic(c context.Context, eid *dm.Execution_ID) (topic pubsub.Topic, token string, err error) {
+	topic = pubsub.NewTopic(info.Get(c).TrimmedAppID(), notifyTopicSuffix)
+	if err := topic.Validate(); err != nil {
+		panic(fmt.Errorf("failed to validate Topic %q: %s", topic, err))
+	}
+	token, err = encodeAuthToken(c, eid, cfg.Name)
+	return
 }

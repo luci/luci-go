@@ -80,8 +80,7 @@ func (s *ScheduleExecution) RollForward(c context.Context) (muts []tumble.Mutati
 	exAuth := &dm.Execution_Auth{Id: eid, Token: e.Token}
 
 	var distTok distributor.Token
-	distTok, e.TimeToStop, err = dist.Run(
-		distributor.NewTaskDescription(c, &q.Desc, exAuth, prevResult))
+	distTok, e.TimeToStop, err = dist.Run(&q.Desc, exAuth, prevResult)
 	if e.TimeToStop <= 0 {
 		e.TimeToStop = q.Desc.Meta.Timeouts.Stop.Duration()
 	}

@@ -67,8 +67,10 @@ func Setup(fn distributor.FinishExecutionFn) (ttest *tumble.Testing, c context.C
 		Identity: identity.AnonymousIdentity,
 	})
 	dist = &Distributor{}
-	reg := distributor.NewTestingRegistry(map[string]distributor.D{
-		"fakeDistributor": dist,
+	reg := distributor.NewTestingRegistry(distributor.TestFactoryMap{
+		"fakeDistributor": func(c context.Context, cfg *distributor.Config) distributor.D {
+			return &BoundDistributor{dist, c, cfg}
+		},
 	}, fn)
 	c = distributor.WithRegistry(c, reg)
 	return
@@ -228,6 +230,14 @@ type Distributor struct {
 	tasks map[distributor.Token]*DistributorData
 }
 
+// BoundDistributor binds the fake.Distributor to a Context and
+// a distributor.Config. It implements distributor.D.
+type BoundDistributor struct {
+	*Distributor
+	c   context.Context
+	cfg *distributor.Config
+}
+
 // MkToken makes a distributor Token out of an Execution_ID. In this
 // implementation of a Distributor there's a 1:1 mapping between Execution_ID
 // and distributor task. This is not always the case for real distributor
@@ -238,37 +248,36 @@ func MkToken(eid *dm.Execution_ID) distributor.Token {
 }
 
 // Run implements distributor.D
-func (f *Distributor) Run(desc *distributor.TaskDescription) (tok distributor.Token, pollbackTime time.Duration, err error) {
-	if err = f.RunError; err != nil {
+func (d *BoundDistributor) Run(desc *dm.Quest_Desc, exAuth *dm.Execution_Auth, prev *dm.JsonResult) (tok distributor.Token, pollbackTime time.Duration, err error) {
+	if err = d.RunError; err != nil {
 		return
 	}
-	pollbackTime = f.PollbackTime
+	pollbackTime = d.PollbackTime
 
-	exAuth := desc.ExecutionAuth()
 	tok = MkToken(exAuth.Id)
 
 	tsk := &DistributorData{
 		Auth:  exAuth,
-		Desc:  desc.Payload(),
-		State: desc.PreviousResult(),
+		Desc:  desc,
+		State: prev,
 	}
-	tsk.NotifyTopic, tsk.NotifyAuth, err = desc.PrepareTopic()
+	tsk.NotifyTopic, tsk.NotifyAuth, err = d.cfg.PrepareTopic(d.c, exAuth.Id)
 	panicIf(err)
 
-	f.Lock()
-	defer f.Unlock()
-	if f.tasks == nil {
-		f.tasks = map[distributor.Token]*DistributorData{}
+	d.Lock()
+	defer d.Unlock()
+	if d.tasks == nil {
+		d.tasks = map[distributor.Token]*DistributorData{}
 	}
-	f.tasks[tok] = tsk
+	d.tasks[tok] = tsk
 	return
 }
 
 // Cancel implements distributor.D
-func (f *Distributor) Cancel(tok distributor.Token) (err error) {
-	f.Lock()
-	defer f.Unlock()
-	if tsk, ok := f.tasks[tok]; ok {
+func (d *BoundDistributor) Cancel(_ *dm.Quest_Desc, tok distributor.Token) (err error) {
+	d.Lock()
+	defer d.Unlock()
+	if tsk, ok := d.tasks[tok]; ok {
 		tsk.done = true
 		tsk.abnorm = &dm.AbnormalFinish{
 			Status: dm.AbnormalFinish_CANCELLED,
@@ -280,10 +289,10 @@ func (f *Distributor) Cancel(tok distributor.Token) (err error) {
 }
 
 // GetStatus implements distributor.D
-func (f *Distributor) GetStatus(tok distributor.Token) (rslt *dm.Result, err error) {
-	f.Lock()
-	defer f.Unlock()
-	if tsk, ok := f.tasks[tok]; ok {
+func (d *BoundDistributor) GetStatus(_ *dm.Quest_Desc, tok distributor.Token) (rslt *dm.Result, err error) {
+	d.Lock()
+	defer d.Unlock()
+	if tsk, ok := d.tasks[tok]; ok {
 		if tsk.done {
 			if tsk.abnorm != nil {
 				rslt = &dm.Result{AbnormalFinish: tsk.abnorm}
@@ -310,24 +319,24 @@ func InfoURL(e *dm.Execution_ID) string {
 }
 
 // InfoURL implements distributor.D
-func (f *Distributor) InfoURL(tok distributor.Token) string {
+func (d *BoundDistributor) InfoURL(tok distributor.Token) string {
 	return FakeURLPrefix + string(tok)
 }
 
 // HandleNotification implements distributor.D
-func (f *Distributor) HandleNotification(n *distributor.Notification) (rslt *dm.Result, err error) {
-	return f.GetStatus(distributor.Token(n.Attrs["token"]))
+func (d *BoundDistributor) HandleNotification(q *dm.Quest_Desc, n *distributor.Notification) (rslt *dm.Result, err error) {
+	return d.GetStatus(q, distributor.Token(n.Attrs["token"]))
 }
 
 // HandleTaskQueueTask is not implemented, and shouldn't be needed for most
 // tests. It could be implemented if some new test required it, however.
-func (f *Distributor) HandleTaskQueueTask(r *http.Request) ([]*distributor.Notification, error) {
+func (d *BoundDistributor) HandleTaskQueueTask(r *http.Request) ([]*distributor.Notification, error) {
 	panic("not implemented")
 }
 
 // Validate implements distributor.D (by returning a nil error for every
 // payload).
-func (f *Distributor) Validate(payload string) error {
+func (d *BoundDistributor) Validate(payload string) error {
 	return nil
 }
 
@@ -347,11 +356,11 @@ func (f *Distributor) Validate(payload string) error {
 // read+write; when the callback exits, the final value of Task.State will be
 // passed back to the DM instance under test. A re-execution of the attempt will
 // start with the new value.
-func (f *Distributor) RunTask(c context.Context, eid *dm.Execution_ID, cb func(*Task) error) (err error) {
+func (d *Distributor) RunTask(c context.Context, eid *dm.Execution_ID, cb func(*Task) error) (err error) {
 	tok := MkToken(eid)
 
-	f.Lock()
-	tsk := f.tasks[tok]
+	d.Lock()
+	tsk := d.tasks[tok]
 	if tsk == nil {
 		err = fmt.Errorf("cannot RunTask(%q): doesn't exist", tok)
 	} else {
@@ -361,7 +370,7 @@ func (f *Distributor) RunTask(c context.Context, eid *dm.Execution_ID, cb func(*
 			tsk.done = true
 		}
 	}
-	f.Unlock()
+	d.Unlock()
 
 	if err != nil {
 		return
@@ -376,7 +385,7 @@ func (f *Distributor) RunTask(c context.Context, eid *dm.Execution_ID, cb func(*
 	}
 
 	defer func() {
-		f.Lock()
+		d.Lock()
 		{
 			tsk.abnorm = abnorm
 			tsk.State = usrTsk.State
@@ -388,7 +397,7 @@ func (f *Distributor) RunTask(c context.Context, eid *dm.Execution_ID, cb func(*
 				}
 			}
 		}
-		f.Unlock()
+		d.Unlock()
 
 		err = tumble.RunMutation(c, &distributor.NotifyExecution{
 			CfgName: "fakeDistributor",
@@ -415,7 +424,7 @@ func panicIf(err error) {
 	}
 }
 
-var _ distributor.D = (*Distributor)(nil)
+var _ distributor.D = (*BoundDistributor)(nil)
 
 // QuestDesc generates a normalized generic QuestDesc of the form:
 //   Quest_Desc{

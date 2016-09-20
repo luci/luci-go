@@ -41,22 +41,24 @@ func (j *jobsimDist) parsePayload(payload string) (*jobsimExecution, error) {
 	return ret, err
 }
 
-func (j *jobsimDist) Run(tsk *distributor.TaskDescription) (tok distributor.Token, _ time.Duration, err error) {
+func (j *jobsimDist) Run(desc *dm.Quest_Desc, exAuth *dm.Execution_Auth, prev *dm.JsonResult) (tok distributor.Token, _ time.Duration, err error) {
 	// TODO(riannucci): Fix luci-gae so we can truly escape the transaction when
 	// we build the jobsimDist instance. See luci/gae#23.
 	ds := txnBuf.GetNoTxn(j.c)
 
 	logging.Fields{
-		"eid": tsk.ExecutionAuth().Id,
+		"eid": exAuth.Id,
 	}.Infof(j.c, "jobsim: running new task")
 
-	jtsk, err := j.parsePayload(tsk.Payload().Parameters)
+	jtsk, err := j.parsePayload(desc.Parameters)
 	if err != nil {
 		return
 	}
-	jtsk.ExAuth = *tsk.ExecutionAuth()
+	jtsk.ExAuth = *exAuth
 	jtsk.Status = jobsimRunnable
-	jtsk.StateOrReason = tsk.PreviousResult().Object
+	if prev != nil {
+		jtsk.StateOrReason = prev.Object
+	}
 	jtsk.CfgName = j.cfg.Name
 
 	key := []*datastore.Key{
@@ -95,7 +97,7 @@ func (j *jobsimDist) Run(tsk *distributor.TaskDescription) (tok distributor.Toke
 	return
 }
 
-func (j *jobsimDist) Cancel(tok distributor.Token) error {
+func (j *jobsimDist) Cancel(_ *dm.Quest_Desc, tok distributor.Token) error {
 	jtsk := &jobsimExecution{ID: string(tok)}
 
 	cancelBody := func(ds datastore.Interface) (needWrite bool, err error) {
@@ -124,7 +126,7 @@ func (j *jobsimDist) Cancel(tok distributor.Token) error {
 	}, nil)
 }
 
-func (j *jobsimDist) GetStatus(tok distributor.Token) (*dm.Result, error) {
+func (j *jobsimDist) GetStatus(_ *dm.Quest_Desc, tok distributor.Token) (*dm.Result, error) {
 	jtsk, err := loadTask(j.c, string(tok))
 	if err != nil {
 		return nil, err
@@ -137,7 +139,7 @@ func (j *jobsimDist) InfoURL(tok distributor.Token) string {
 	return fmt.Sprintf("jobsim://%s/ver/%s/tok/%s", j.cfg.Name, j.cfg.Version, tok)
 }
 
-func (j *jobsimDist) HandleNotification(note *distributor.Notification) (*dm.Result, error) {
+func (j *jobsimDist) HandleNotification(_ *dm.Quest_Desc, note *distributor.Notification) (*dm.Result, error) {
 	n := &notification{}
 	err := json.Unmarshal(note.Data, n)
 	if err != nil {

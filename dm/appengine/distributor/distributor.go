@@ -12,10 +12,9 @@
 //     DM always interacts with the same distributor in the same way (barring
 //     code changes in DM's adapter logic itself).
 //   * DM uses the selected distributor implementation to start a task and
-//     record its Token. Additionally, the distributor MUST subscribe to publish
-//     on DM's pubsub topic for updates. When publishing updates, the
-//     distributor MUST include 2 attributes (execution_id, pubsub_key), which
-//     are provided as part of TaskDescription.
+//     record its Token. Additionally, the distributor SHOULD subscribe to
+//     publish on DM's pubsub topic for updates. When publishing updates, the
+//     distributor MUST include the token returned from PrepareTopic.
 //   * When DM gets a hit on pubsub, it will load the Execution, load its cached
 //     distributor configuration, and then call HandleNotification for the
 //     adapter to parse the notification body and return the state of the task.
@@ -63,9 +62,9 @@ type Notification struct {
 // a non-Transient error (or nil) DM will make a best effort not to duplicate
 // calls, but it can't guarantee that.
 type D interface {
-	// Run prepares and runs a new Task from the given TaskDescription.
+	// Run prepares and runs a new Task from the given parameters.
 	//
-	// Scheduling the same TaskDescription multiple times SHOULD return the same
+	// Scheduling the same execution ID multiple times SHOULD return the same
 	// Token. It's OK if this doesn't happen, but only one of the scheduled tasks
 	// will be able to invoke ActivateExecution; the other one(s) will
 	// early-abort and/or timeout.
@@ -91,11 +90,11 @@ type D interface {
 	// If you have the choice between pubsub or not, prefer to use pubsub as it
 	// allows DM to more proactively update the graph state (and unblock waiting
 	// Attempts, etc.)
-	Run(*TaskDescription) (tok Token, pollTimeout time.Duration, err error)
+	Run(qst *dm.Quest_Desc, auth *dm.Execution_Auth, prevResult *dm.JsonResult) (tok Token, pollTimeout time.Duration, err error)
 
 	// Cancel attempts to cancel a running task. If a task is canceled more than
 	// once, this should return nil.
-	Cancel(Token) error
+	Cancel(*dm.Quest_Desc, Token) error
 
 	// GetStatus retrieves the current state of the task from the distributor.
 	//
@@ -103,7 +102,7 @@ type D interface {
 	// was Run(), the execution will be marked Missing with the returned error
 	// message as the 'Reason'. If it returns a non-Transient error within 30
 	// seconds of being run, DM will automatically treat that as Transient.
-	GetStatus(Token) (*dm.Result, error)
+	GetStatus(*dm.Quest_Desc, Token) (*dm.Result, error)
 
 	// InfoURL calculates a user-presentable information url for the task
 	// identified by Token. This should be a local operation, so it is not the
@@ -112,7 +111,7 @@ type D interface {
 	InfoURL(Token) string
 
 	// HandleNotification is called whenever DM receives a PubSub message sent to
-	// a topic created with TaskDescription.PrepareTopic. The Attrs map will omit
+	// a topic created with Config.PrepareTopic. The Attrs map will omit
 	// the 'auth_token' field.
 	//
 	// Returning (nil, nil) will indicate that DM should ignore this notification.
@@ -123,14 +122,14 @@ type D interface {
 	//
 	// DM will ignore any notifications for executions which it doesn't know
 	// about.
-	HandleNotification(notification *Notification) (*dm.Result, error)
+	HandleNotification(qst *dm.Quest_Desc, notification *Notification) (*dm.Result, error)
 
 	// HandleTaskQueueTask is called if the distributor used Config.EnqueueTask.
 	//
 	// It may return zero or more Notifications for DM about arbitrary Executions.
 	// These notifications will be handled 'later' by the HandleNotification
 	// implementation.
-	HandleTaskQueueTask(r *http.Request) ([]*Notification, error)
+	HandleTaskQueueTask(*http.Request) ([]*Notification, error)
 
 	// Validate should return a non-nil error if the given distributor parameters
 	// are not appropriate for this Distributor. Payload is guaranteed to be

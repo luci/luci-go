@@ -5,7 +5,9 @@
 package distributor
 
 import (
+	"github.com/luci/gae/filter/txnBuf"
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/dm/appengine/model"
 	"github.com/luci/luci-go/tumble"
@@ -36,7 +38,12 @@ func (f *NotifyExecution) RollForward(c context.Context) (muts []tumble.Mutation
 		}.Errorf(c, "Failed to make distributor")
 		return
 	}
-	rslt, err := dist.HandleNotification(f.Notification)
+	dsNoTx := txnBuf.GetNoTxn(c)
+	q := &model.Quest{ID: f.Notification.ID.Quest}
+	if err := dsNoTx.Get(q); err != nil {
+		return nil, errors.Annotate(err).Reason("getting Quest").Err()
+	}
+	rslt, err := dist.HandleNotification(&q.Desc, f.Notification)
 	if err != nil {
 		// TODO(riannucci): check for transient/non-transient
 		logging.Fields{

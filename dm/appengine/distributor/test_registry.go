@@ -12,9 +12,13 @@ import (
 	"golang.org/x/net/context"
 )
 
+type TestFactoryFn func(context.Context, *Config) D
+
+type TestFactoryMap map[string]TestFactoryFn
+
 type testRegistry struct {
 	finishExecutionImpl FinishExecutionFn
-	data                map[string]D
+	data                TestFactoryMap
 }
 
 var _ Registry = (*testRegistry)(nil)
@@ -23,7 +27,7 @@ var _ Registry = (*testRegistry)(nil)
 //
 // The mocks dictionary maps from cfgName to a mock implementation of the
 // distributor.
-func NewTestingRegistry(mocks map[string]D, fFn FinishExecutionFn) Registry {
+func NewTestingRegistry(mocks TestFactoryMap, fFn FinishExecutionFn) Registry {
 	return &testRegistry{fFn, mocks}
 }
 
@@ -31,10 +35,14 @@ func (t *testRegistry) FinishExecution(c context.Context, eid *dm.Execution_ID, 
 	return t.finishExecutionImpl(c, eid, rslt)
 }
 
-func (t *testRegistry) MakeDistributor(_ context.Context, cfgName string) (D, string, error) {
+func (t *testRegistry) MakeDistributor(c context.Context, cfgName string) (D, string, error) {
 	ret, ok := t.data[cfgName]
 	if !ok {
 		return nil, "", fmt.Errorf("unknown distributor configuration: %q", cfgName)
 	}
-	return ret, "testing", nil
+	return ret(c, &Config{
+		DMHost:  "test-dm-host.example.com",
+		Version: "test-version",
+		Name:    cfgName,
+	}), "testing", nil
 }
