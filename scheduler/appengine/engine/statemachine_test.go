@@ -19,19 +19,19 @@ func TestStateMachine(t *testing.T) {
 		m := newTestStateMachine("*/5 * * * * * *")
 
 		// Noop when in disabled state.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnTimerTick(1) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnTimerTick(1) })
 		So(m.state.State, ShouldEqual, JobStateDisabled)
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(1, 1, 0) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnInvocationStarting(1, 1, 0) })
 		So(m.state.State, ShouldEqual, JobStateDisabled)
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarted(1) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnInvocationStarted(1) })
 		So(m.state.State, ShouldEqual, JobStateDisabled)
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationDone(1) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnInvocationDone(1) })
 		So(m.state.State, ShouldEqual, JobStateDisabled)
-		So(m.roll(func(sm *StateMachine) error { return sm.OnScheduleChange() }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnScheduleChange() })
 		So(m.state.State, ShouldEqual, JobStateDisabled)
 
 		// Enabling schedules a tick.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnJobEnabled() }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnJobEnabled() })
 		So(m.state.State, ShouldEqual, JobStateScheduled)
 		So(m.actions, ShouldResemble, []Action{
 			TickLaterAction{epoch.Add(5 * time.Second), 1},
@@ -39,23 +39,23 @@ func TestStateMachine(t *testing.T) {
 		m.actions = nil
 
 		// Re enabling does nothing.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnJobEnabled() }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnJobEnabled() })
 		So(m.state.State, ShouldEqual, JobStateScheduled)
 		So(m.actions, ShouldBeNil)
 
 		// Wrong tick ID is skipped.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnTimerTick(2) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnTimerTick(2) })
 		So(m.state.State, ShouldEqual, JobStateScheduled)
 		So(m.actions, ShouldBeNil)
 
 		// Early tick causes retry.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnTimerTick(1) }), ShouldNotBeNil)
+		So(m.rollWithErr(func(sm *StateMachine) error { return sm.OnTimerTick(1) }), ShouldNotBeNil)
 		So(m.state.State, ShouldEqual, JobStateScheduled)
 		So(m.actions, ShouldBeNil)
 
 		// Tick on time moves to JobStateQueued, schedules next tick.
 		m.now = m.now.Add(5 * time.Second)
-		So(m.roll(func(sm *StateMachine) error { return sm.OnTimerTick(1) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnTimerTick(1) })
 		So(m.state.State, ShouldEqual, JobStateQueued)
 		So(m.actions, ShouldResemble, []Action{
 			TickLaterAction{epoch.Add(10 * time.Second), 2},
@@ -64,35 +64,35 @@ func TestStateMachine(t *testing.T) {
 		m.actions = nil
 
 		// Wrong invocation nonce is skipped.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(333, 1000, 0) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnInvocationStarting(333, 1000, 0) })
 		So(m.state.State, ShouldEqual, JobStateQueued)
 		So(m.actions, ShouldBeNil)
 
 		// Time to run.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(3, 1000, 0) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnInvocationStarting(3, 1000, 0) })
 		So(m.state.State, ShouldEqual, JobStateQueued)
 		So(m.state.InvocationID, ShouldEqual, 1000)
 
 		// Skip wrong invocation ID.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarted(1001) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnInvocationStarted(1001) })
 		So(m.state.State, ShouldEqual, JobStateQueued)
 
 		// Started.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarted(1000) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnInvocationStarted(1000) })
 		So(m.state.State, ShouldEqual, JobStateRunning)
 
 		// Skip wrong invocation ID.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationDone(1001) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnInvocationDone(1001) })
 		So(m.state.State, ShouldEqual, JobStateRunning)
 
 		// End of the cycle. Ends up in scheduled state, waiting for the tick added
 		// when StartInvocationAction was issued.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationDone(1000) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnInvocationDone(1000) })
 		So(m.state.State, ShouldEqual, JobStateScheduled)
 		So(m.state.TickNonce, ShouldEqual, 2)
 
 		// Disable cancels the timer.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnJobDisabled() }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnJobDisabled() })
 		So(m.state.State, ShouldEqual, JobStateDisabled)
 		So(m.state.InvocationNonce, ShouldEqual, 0)
 	})
@@ -101,7 +101,7 @@ func TestStateMachine(t *testing.T) {
 		m := newTestStateMachine("*/5 * * * * * *")
 
 		// Enabling schedules a tick.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnJobEnabled() }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnJobEnabled() })
 		So(m.state.State, ShouldEqual, JobStateScheduled)
 		So(m.actions, ShouldResemble, []Action{
 			TickLaterAction{epoch.Add(5 * time.Second), 1},
@@ -110,7 +110,7 @@ func TestStateMachine(t *testing.T) {
 
 		// Tick on time moves to JobStateQueued
 		m.now = m.now.Add(5 * time.Second)
-		So(m.roll(func(sm *StateMachine) error { return sm.OnTimerTick(1) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnTimerTick(1) })
 		So(m.state.State, ShouldEqual, JobStateQueued)
 		So(m.actions, ShouldResemble, []Action{
 			TickLaterAction{epoch.Add(10 * time.Second), 2},
@@ -120,7 +120,7 @@ func TestStateMachine(t *testing.T) {
 
 		// Overrun when queued.
 		m.now = m.now.Add(5 * time.Second)
-		So(m.roll(func(sm *StateMachine) error { return sm.OnTimerTick(2) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnTimerTick(2) })
 		So(m.state.State, ShouldEqual, JobStateSlowQueue)
 		So(m.state.Overruns, ShouldEqual, 1)
 		So(m.actions, ShouldResemble, []Action{
@@ -130,13 +130,13 @@ func TestStateMachine(t *testing.T) {
 		m.actions = nil
 
 		// Time to run. Moves to JobStateOverrun because was stuck in queue.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(3, 100, 0) }), ShouldBeNil)
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarted(100) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnInvocationStarting(3, 100, 0) })
+		m.roll(func(sm *StateMachine) { sm.OnInvocationStarted(100) })
 		So(m.state.State, ShouldEqual, JobStateOverrun)
 		So(m.state.Overruns, ShouldEqual, 1)
 
 		// End of the cycle.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationDone(100) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnInvocationDone(100) })
 		So(m.state.State, ShouldEqual, JobStateScheduled)
 	})
 
@@ -144,7 +144,7 @@ func TestStateMachine(t *testing.T) {
 		m := newTestStateMachine("*/5 * * * * * *")
 
 		// Enabling schedules a tick.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnJobEnabled() }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnJobEnabled() })
 		So(m.state.State, ShouldEqual, JobStateScheduled)
 		So(m.actions, ShouldResemble, []Action{
 			TickLaterAction{epoch.Add(5 * time.Second), 1},
@@ -153,7 +153,7 @@ func TestStateMachine(t *testing.T) {
 
 		// Tick on time moves to JobStateQueued
 		m.now = m.now.Add(5 * time.Second)
-		So(m.roll(func(sm *StateMachine) error { return sm.OnTimerTick(1) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnTimerTick(1) })
 		So(m.state.State, ShouldEqual, JobStateQueued)
 		So(m.actions, ShouldResemble, []Action{
 			TickLaterAction{epoch.Add(10 * time.Second), 2},
@@ -162,13 +162,13 @@ func TestStateMachine(t *testing.T) {
 		m.actions = nil
 
 		// Time to run.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(3, 100, 0) }), ShouldBeNil)
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarted(100) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnInvocationStarting(3, 100, 0) })
+		m.roll(func(sm *StateMachine) { sm.OnInvocationStarted(100) })
 		So(m.state.State, ShouldEqual, JobStateRunning)
 
 		// Next tick comes while job is running.
 		m.now = m.now.Add(5 * time.Second)
-		So(m.roll(func(sm *StateMachine) error { return sm.OnTimerTick(2) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnTimerTick(2) })
 		So(m.state.State, ShouldEqual, JobStateOverrun)
 		So(m.state.Overruns, ShouldEqual, 1)
 		So(m.actions, ShouldResemble, []Action{
@@ -178,7 +178,7 @@ func TestStateMachine(t *testing.T) {
 		m.actions = nil
 
 		// End of the cycle.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationDone(100) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnInvocationDone(100) })
 		So(m.state.State, ShouldEqual, JobStateScheduled)
 	})
 
@@ -186,7 +186,7 @@ func TestStateMachine(t *testing.T) {
 		m := newTestStateMachine("with 10s interval")
 
 		// Enabling schedules the first tick at some random moment in time.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnJobEnabled() }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnJobEnabled() })
 		So(m.state.State, ShouldEqual, JobStateScheduled)
 		So(m.actions, ShouldResemble, []Action{
 			TickLaterAction{epoch.Add(9*time.Second + 451961492*time.Nanosecond), 1},
@@ -195,7 +195,7 @@ func TestStateMachine(t *testing.T) {
 
 		// Tick on time moves to JobStateQueued and does NOT schedule a tick.
 		m.now = m.now.Add(9*time.Second + 451961492*time.Nanosecond)
-		So(m.roll(func(sm *StateMachine) error { return sm.OnTimerTick(1) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnTimerTick(1) })
 		So(m.state.State, ShouldEqual, JobStateQueued)
 		So(m.state.TickNonce, ShouldEqual, 0)
 		So(m.actions, ShouldResemble, []Action{
@@ -204,19 +204,19 @@ func TestStateMachine(t *testing.T) {
 		m.actions = nil
 
 		// Time to run.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(2, 1000, 0) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnInvocationStarting(2, 1000, 0) })
 		So(m.state.State, ShouldEqual, JobStateQueued)
 		So(m.state.InvocationID, ShouldEqual, 1000)
 
 		// Started.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarted(1000) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnInvocationStarted(1000) })
 		So(m.state.State, ShouldEqual, JobStateRunning)
 
 		// Let it run for some time.
 		m.now = epoch.Add(20 * time.Second)
 
 		// End of the cycle. New tick is scheduled, 10s from current time.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationDone(1000) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnInvocationDone(1000) })
 		So(m.state.State, ShouldEqual, JobStateScheduled)
 		So(m.state.TickNonce, ShouldEqual, 3)
 		So(m.state.TickTime, ShouldResemble, m.now.Add(10*time.Second))
@@ -226,7 +226,7 @@ func TestStateMachine(t *testing.T) {
 		m := newTestStateMachine("*/5 * * * * * *")
 
 		// Enabling schedules a tick after 5 sec.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnJobEnabled() }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnJobEnabled() })
 		So(m.state.State, ShouldEqual, JobStateScheduled)
 		So(m.state.TickNonce, ShouldEqual, 1)
 		So(m.state.TickTime, ShouldResemble, epoch.Add(5*time.Second))
@@ -236,7 +236,7 @@ func TestStateMachine(t *testing.T) {
 		m.actions = nil
 
 		// Rescheduling event with same next tick time is noop.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnScheduleChange() }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnScheduleChange() })
 		So(m.state.State, ShouldEqual, JobStateScheduled)
 		So(m.state.TickNonce, ShouldEqual, 1)
 		So(m.state.TickTime, ShouldResemble, epoch.Add(5*time.Second))
@@ -247,7 +247,7 @@ func TestStateMachine(t *testing.T) {
 		m.schedule = sched
 
 		// Should be rescheduled to run earlier
-		So(m.roll(func(sm *StateMachine) error { return sm.OnScheduleChange() }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnScheduleChange() })
 		So(m.state.State, ShouldEqual, JobStateScheduled)
 		So(m.state.TickNonce, ShouldEqual, 2)
 		So(m.state.TickTime, ShouldResemble, epoch.Add(1*time.Second))
@@ -258,11 +258,11 @@ func TestStateMachine(t *testing.T) {
 
 		// Starts running.
 		m.now = m.now.Add(time.Second)
-		So(m.roll(func(sm *StateMachine) error { return sm.OnTimerTick(2) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnTimerTick(2) })
 		So(m.state.State, ShouldEqual, JobStateQueued)
 		So(m.state.InvocationNonce, ShouldEqual, 4)
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(4, 123, 0) }), ShouldBeNil)
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarted(123) }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnInvocationStarting(4, 123, 0) })
+		m.roll(func(sm *StateMachine) { sm.OnInvocationStarted(123) })
 		So(m.state.State, ShouldEqual, JobStateRunning)
 
 		// Next tick is scheduled based on absolute schedule.
@@ -275,7 +275,7 @@ func TestStateMachine(t *testing.T) {
 		m.schedule = sched
 
 		// Cancels pending tick.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnScheduleChange() }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnScheduleChange() })
 		So(m.state.State, ShouldEqual, JobStateRunning)
 		So(m.state.TickNonce, ShouldEqual, 0)
 		So(m.actions, ShouldBeNil)
@@ -285,7 +285,7 @@ func TestStateMachine(t *testing.T) {
 		m.schedule = sched
 
 		// Reschedules the tick again.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnScheduleChange() }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnScheduleChange() })
 		So(m.state.State, ShouldEqual, JobStateRunning)
 		So(m.state.TickNonce, ShouldEqual, 5)
 		So(m.state.TickTime, ShouldResemble, epoch.Add(2*time.Second))
@@ -299,7 +299,7 @@ func TestStateMachine(t *testing.T) {
 		m := newTestStateMachine("*/5 * * * * * *")
 
 		// Enabling schedules a tick after 5 sec.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnJobEnabled() }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnJobEnabled() })
 		So(m.state.State, ShouldEqual, JobStateScheduled)
 		So(m.actions, ShouldResemble, []Action{
 			TickLaterAction{epoch.Add(5 * time.Second), 1},
@@ -307,7 +307,7 @@ func TestStateMachine(t *testing.T) {
 		m.actions = nil
 
 		// Asking to run the job works. It doesn't touch job's schedule.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnManualInvocation("user:abc") }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnManualInvocation("user:abc") })
 		So(m.state.State, ShouldEqual, JobStateQueued)
 		So(m.actions, ShouldResemble, []Action{
 			StartInvocationAction{
@@ -318,7 +318,7 @@ func TestStateMachine(t *testing.T) {
 		m.actions = nil
 
 		// Second call doesn't work. The job is queued already.
-		err := m.roll(func(sm *StateMachine) error { return sm.OnManualInvocation("user:abc") })
+		err := m.rollWithErr(func(sm *StateMachine) error { return sm.OnManualInvocation("user:abc") })
 		So(err, ShouldNotBeNil)
 	})
 
@@ -326,14 +326,14 @@ func TestStateMachine(t *testing.T) {
 		m := newTestStateMachine("with 5s interval")
 
 		// Enabling schedules a tick after random amount of seconds.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnJobEnabled() }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnJobEnabled() })
 		So(m.state.State, ShouldEqual, JobStateScheduled)
 		So(m.state.TickNonce, ShouldEqual, 1)
 		m.actions = nil
 
 		// Asking to run the job works. It resets the tick (to be enabled again when
 		// job finishes).
-		So(m.roll(func(sm *StateMachine) error { return sm.OnManualInvocation("user:abc") }), ShouldBeNil)
+		m.roll(func(sm *StateMachine) { sm.OnManualInvocation("user:abc") })
 		So(m.state.State, ShouldEqual, JobStateQueued)
 		So(m.state.TickNonce, ShouldEqual, 0) // reset
 		So(m.actions, ShouldResemble, []Action{
@@ -346,7 +346,7 @@ func TestStateMachine(t *testing.T) {
 		m.actions = nil
 
 		// Second call doesn't work. The job is queued already.
-		err := m.roll(func(sm *StateMachine) error { return sm.OnManualInvocation("user:abc") })
+		err := m.rollWithErr(func(sm *StateMachine) error { return sm.OnManualInvocation("user:abc") })
 		So(err, ShouldNotBeNil)
 	})
 }
@@ -371,7 +371,7 @@ func newTestStateMachine(scheduleExpr string) *testStateMachine {
 	}
 }
 
-func (t *testStateMachine) roll(cb func(sm *StateMachine) error) error {
+func (t *testStateMachine) rollWithErr(cb func(sm *StateMachine) error) error {
 	nonce := t.nonce
 	sm := StateMachine{
 		State:    t.state,
@@ -389,4 +389,11 @@ func (t *testStateMachine) roll(cb func(sm *StateMachine) error) error {
 	t.nonce = nonce
 	t.actions = append(t.actions, sm.Actions...)
 	return nil
+}
+
+func (t *testStateMachine) roll(cb func(sm *StateMachine)) {
+	t.rollWithErr(func(sm *StateMachine) error {
+		cb(sm)
+		return nil
+	})
 }

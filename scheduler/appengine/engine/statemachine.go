@@ -171,20 +171,18 @@ type StateMachine struct {
 
 // OnJobEnabled happens when a new job (never seen before) was discovered or
 // a previously disabled job was enabled.
-func (m *StateMachine) OnJobEnabled() error {
+func (m *StateMachine) OnJobEnabled() {
 	if m.State.State == JobStateDisabled {
 		m.State = JobState{State: JobStateScheduled} // clean state
 		m.scheduleTick()
 		m.maybeSuspendOrResume()
 	}
-	return nil
 }
 
 // OnJobDisabled happens when job was disabled or removed. It clears the state
 // and cancels any pending invocations (running ones continue to run though).
-func (m *StateMachine) OnJobDisabled() error {
+func (m *StateMachine) OnJobDisabled() {
 	m.State = JobState{State: JobStateDisabled} // clean state
-	return nil
 }
 
 // OnTimerTick happens when scheduled timer (added with TickLaterAction) ticks.
@@ -248,16 +246,15 @@ func (m *StateMachine) OnTimerTick(tickNonce int64) error {
 // attempts to start it. Engine calls OnInvocationStarted when it succeeds at
 // launching the invocation. Engine calls OnInvocationStarting again with
 // another invocationID if previous launch attempt failed.
-func (m *StateMachine) OnInvocationStarting(invocationNonce, invocationID int64, retryCount int) error {
+func (m *StateMachine) OnInvocationStarting(invocationNonce, invocationID int64, retryCount int) {
 	if m.State.IsExpectingInvocation(invocationNonce) {
 		m.State.InvocationID = invocationID
 		m.State.InvocationRetryCount = retryCount
 	}
-	return nil
 }
 
 // OnInvocationStarted happens when enqueued invocation finally starts to run.
-func (m *StateMachine) OnInvocationStarted(invocationID int64) error {
+func (m *StateMachine) OnInvocationStarted(invocationID int64) {
 	if m.State.InvocationID == invocationID {
 		switch m.State.State {
 		case JobStateQueued:
@@ -268,33 +265,31 @@ func (m *StateMachine) OnInvocationStarted(invocationID int64) error {
 			impossible("impossible state %s", m.State.State)
 		}
 	}
-	return nil
 }
 
 // OnInvocationDone happens when invocation completes.
-func (m *StateMachine) OnInvocationDone(invocationID int64) error {
+func (m *StateMachine) OnInvocationDone(invocationID int64) {
 	// Ignore unexpected events. Can happen if job was moved to disabled state
 	// while invocation was still running.
 	if m.State.State != JobStateRunning && m.State.State != JobStateOverrun {
-		return nil
+		return
 	}
 	if m.State.InvocationID != invocationID {
-		return nil
+		return
 	}
 	m.State.State = JobStateScheduled
 	m.State.PrevTime = m.Now
 	m.resetInvocation()      // forget about just finished invocation
 	m.scheduleTick()         // start waiting for a new one
 	m.maybeSuspendOrResume() // switch back to suspended state if necessary
-	return nil
 }
 
 // OnScheduleChange happens when job's schedule changes (and the job potentially
 // needs to be rescheduled).
-func (m *StateMachine) OnScheduleChange() error {
+func (m *StateMachine) OnScheduleChange() {
 	// Do not touch timers on disabled jobs.
 	if m.State.State == JobStateDisabled {
-		return nil
+		return
 	}
 
 	// If the job was running on a relative schedule (and thus has no pending
@@ -305,7 +300,7 @@ func (m *StateMachine) OnScheduleChange() error {
 		if m.Schedule.IsAbsolute() {
 			m.scheduleTick()
 		}
-		return nil
+		return
 	}
 
 	// When switching from an absolute to a relative schedule, cancel pending
@@ -315,7 +310,7 @@ func (m *StateMachine) OnScheduleChange() error {
 	isWaiting := m.State.State == JobStateScheduled || m.State.State == JobStateSuspended
 	if !m.Schedule.IsAbsolute() && !isWaiting {
 		m.resetTick()
-		return nil
+		return
 	}
 
 	// At this point we know that the job must have a tick enabled, because
@@ -325,7 +320,6 @@ func (m *StateMachine) OnScheduleChange() error {
 	// the tick if it changed.
 	m.scheduleTick()
 	m.maybeSuspendOrResume()
-	return nil
 }
 
 // OnManualInvocation happens when user starts invocation via "Run now" button.

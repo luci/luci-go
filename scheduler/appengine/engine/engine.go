@@ -931,7 +931,10 @@ func (e *engineImpl) setPausedFlag(c context.Context, jobID string, paused bool,
 			logging.Warningf(c, "Job is resumed by %s", who)
 		}
 		job.Paused = paused
-		return e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnScheduleChange() })
+		return e.rollSM(c, job, func(sm *StateMachine) error {
+			sm.OnScheduleChange()
+			return nil
+		})
 	})
 }
 
@@ -1023,14 +1026,20 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 
 		// Do state machine transitions.
 		if !oldEnabled {
-			err := e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnJobEnabled() })
+			err := e.rollSM(c, job, func(sm *StateMachine) error {
+				sm.OnJobEnabled()
+				return nil
+			})
 			if err != nil {
 				return err
 			}
 		}
 		if job.effectiveSchedule() != oldEffectiveSchedule {
 			logging.Infof(c, "Job's schedule changed")
-			return e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnScheduleChange() })
+			return e.rollSM(c, job, func(sm *StateMachine) error {
+				sm.OnScheduleChange()
+				return nil
+			})
 		}
 		return nil
 	})
@@ -1043,7 +1052,10 @@ func (e *engineImpl) disableJob(c context.Context, jobID string) error {
 			return errSkipPut
 		}
 		job.Enabled = false
-		return e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnJobDisabled() })
+		return e.rollSM(c, job, func(sm *StateMachine) error {
+			sm.OnJobDisabled()
+			return nil
+		})
 	})
 }
 
@@ -1057,11 +1069,17 @@ func (e *engineImpl) resetJobOnDevServer(c context.Context, jobID string) error 
 			return errSkipPut
 		}
 		logging.Infof(c, "Resetting job")
-		err := e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnJobDisabled() })
+		err := e.rollSM(c, job, func(sm *StateMachine) error {
+			sm.OnJobDisabled()
+			return nil
+		})
 		if err != nil {
 			return err
 		}
-		return e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnJobEnabled() })
+		return e.rollSM(c, job, func(sm *StateMachine) error {
+			sm.OnJobEnabled()
+			return nil
+		})
 	})
 }
 
@@ -1656,7 +1674,8 @@ func (ctl *taskController) saveImpl(updateJob bool) (err error) {
 		// Make the state machine transitions.
 		if hasStartedOrFailed {
 			err := ctl.eng.rollSM(c, job, func(sm *StateMachine) error {
-				return sm.OnInvocationStarted(saving.ID)
+				sm.OnInvocationStarted(saving.ID)
+				return nil
 			})
 			if err != nil {
 				return err
@@ -1664,7 +1683,8 @@ func (ctl *taskController) saveImpl(updateJob bool) (err error) {
 		}
 		if hasFinished {
 			return ctl.eng.rollSM(c, job, func(sm *StateMachine) error {
-				return sm.OnInvocationDone(saving.ID)
+				sm.OnInvocationDone(saving.ID)
+				return nil
 			})
 		}
 		return nil
