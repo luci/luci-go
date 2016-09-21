@@ -83,8 +83,8 @@ const (
 	// expiration time (in seconds) for an entity type.
 	CacheExpirationMeta = "dscache.expiration"
 
-	// NonceUint32s is the number of 32 bit uints to use in the 'lock' nonce.
-	NonceUint32s = 2
+	// NonceBytes is the number of bytes to use in the 'lock' nonce.
+	NonceBytes = 8
 
 	// GlobalEnabledCheckInterval is how frequently IsGloballyEnabled should check
 	// the globalEnabled datastore entry.

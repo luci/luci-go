@@ -83,26 +83,6 @@ func (s *supportContext) mkAllKeys(keys []*ds.Key) []string {
 	return ret
 }
 
-// crappyNonce creates a really crappy nonce using math/rand. This is generally
-// unacceptable for cryptographic purposes, but since mathrand is the only
-// mocked randomness source, we use that.
-//
-// The random values here are controlled entriely by the application, will never
-// be shown to, or provided by, the user, so this should be fine.
-//
-// Do not use this function for anything other than mkRandLockItems or your hair
-// will fall out. You've been warned.
-func (s *supportContext) crappyNonce() []byte {
-	ret := make([]byte, NonceUint32s*4)
-	for w := uint(0); w < NonceUint32s; w++ {
-		word := s.mr.Uint32()
-		for i := uint(0); i < 4; i++ {
-			ret[(w*4)+i] = byte(word >> (8 * i))
-		}
-	}
-	return ret
-}
-
 func (s *supportContext) mutation(keys []*ds.Key, f func() error) error {
 	lockItems, lockKeys := s.mkAllLockItems(keys)
 	if lockItems == nil {
@@ -130,7 +110,7 @@ func (s *supportContext) mkRandLockItems(keys []*ds.Key, metas ds.MultiMetaGette
 	if len(mcKeys) == 0 {
 		return nil, nil
 	}
-	nonce := s.crappyNonce()
+	nonce := generateNonce()
 	ret := make([]mc.Item, len(mcKeys))
 	for i, k := range mcKeys {
 		if k == "" {
@@ -156,4 +136,15 @@ func (s *supportContext) mkAllLockItems(keys []*ds.Key) ([]mc.Item, []string) {
 			SetExpiration(time.Second * time.Duration(LockTimeSeconds)))
 	}
 	return ret, mcKeys
+}
+
+// generateNonce creates a pseudo-random sequence of bytes for use as a nonce
+// usingthe non-cryptographic PRNG in "math/rand".
+//
+// The random values here are controlled entriely by the application, will never
+// be shown to, or provided by, the user, so this should be fine.
+func generateNonce() []byte {
+	nonce := make([]byte, NonceBytes)
+	_, _ = rand.Read(nonce) // This Read will always return len(nonce), nil.
+	return nonce
 }
