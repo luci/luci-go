@@ -5,6 +5,10 @@
 -->
 
 <link rel="import" href="../../inc/bower_components/polymer/polymer.html">
+
+<link rel="import" href="../../inc/bower_components/paper-styles/default-theme.html">
+<link rel="import" href="../../inc/bower_components/paper-styles/typography.html">
+
 <link rel="import" href="../../inc/logdog-app-base/logdog-app-base.html">
 <link rel="import" href="../../inc/logdog-stream-view/logdog-stream-view.html">
 <link rel="import" href="../../inc/auth/auth-signin.html">
@@ -18,53 +22,70 @@ An element for the LogDog lightweight view app of a single set of streams.
 The streams are specified by full path using the "s=" query parameter.
 -->
 <dom-module id="logdog-view">
-<style>
-  .banner {
-    width:100%;
-    height:40px;
-  }
-  .banner-left {
-    width:auto;
-    overflow:hidden;
-  }
-  .banner-right {
-    width:auto;
-    float:right;
-  }
-
-  #dev-message {
-    background-color: #FFE0B2;
-    text-align: center;
-    vertical-align: middle;
-    border-style: groove;
-    border-width: 1px;
-    font-family: 'Roboto', 'Noto', sans-serif;
-    font-size: 16px;
-  }
-</style>
 
 <template>
-  <div id="banner" class="banner">
-    <template is="dom-if" if="{{clientId}}">
-      <div class="banner-right">
-        <auth-signin
-            client-id="[[clientId]]"></auth-signin>
-      </div>
-    </template>
+  <style>
+    :host {
+      @apply(--paper-font-common-base);
+    }
 
-    <div class="banner-left">
-      <div id="dev-message">
-        The LogDog log streaming system and this stream viewer are in early
-        developer preview. For more information,
-        <a href="/app/">visit the home page</a>.
-      </div>
+    #banner {
+      background-color: #FAFAFA;
+      overflow: hidden;
+      vertical-align: center;
+    }
+
+    .banner-content {
+      width: auto;
+      display: inline-block;
+      padding-left: 5px;
+      padding-right: 5px;
+      overflow: hidden;
+    }
+
+    .banner-content h1 {
+      font-size: 18px;
+    }
+
+    #auth-bubble {
+      float: right;
+      display: inline-block;
+      border: solid #AAAAAA;
+      border-radius: 5px;
+      border-width: 1px;
+      padding: 2px;
+      margin-left: auto;
+      margin-right: 0;
+    }
+  </style>
+
+  <div>
+    <div id="banner">
+      <span class="banner-content">
+        <h1><a href="/">LogDog</a>
+          <template is="dom-if" if="{{_hasStreams}}">
+            : [[streams]]
+          </template>
+          <template is="dom-if" if="{{!_hasStreams}}">
+            (No Streams Provided)
+          </template>
+        </h1>
+      </span>
+      <template is="dom-if" if="{{clientId}}">
+        <span id="auth-bubble">
+          <auth-signin
+              client-id="[[clientId]]"></auth-signin>
+        </span>
+      </template>
     </div>
-  </div>
 
-  <logdog-stream-view
-    id="view"
-    host="[[host]]"
-    streams="[[streams]]"></logdog-stream-view>
+    <template is="dom-if" if="{{_hasStreams}}">
+      <logdog-stream-view
+        id="view"
+        host="[[host]]"
+        streams="[[streams]]"></logdog-stream-view>
+    </template>
+  </div>
 </template>
 
 </dom-module>
@@ -91,6 +112,10 @@ The streams are specified by full path using the "s=" query parameter.
         notify: true,
         readOnly: true,
       },
+
+      _hasStreams: {
+        computed: '_arrayHasElements(streams)',
+      },
     },
 
     attached: function() {
@@ -106,6 +131,10 @@ The streams are specified by full path using the "s=" query parameter.
     },
     _onSignout: function(e) {
       this._setAccessToken(null);
+    },
+
+    _arrayHasElements: function(v) {
+      return (v && v.length);
     },
   });
 
