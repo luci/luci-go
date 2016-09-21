@@ -21,7 +21,7 @@ func TestStateMachine(t *testing.T) {
 		// Noop when in disabled state.
 		So(m.roll(func(sm *StateMachine) error { return sm.OnTimerTick(1) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateDisabled)
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(1, 1) }), ShouldBeNil)
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(1, 1, 0) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateDisabled)
 		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarted(1) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateDisabled)
@@ -64,12 +64,12 @@ func TestStateMachine(t *testing.T) {
 		m.actions = nil
 
 		// Wrong invocation nonce is skipped.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(333, 1000) }), ShouldBeNil)
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(333, 1000, 0) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateQueued)
 		So(m.actions, ShouldBeNil)
 
 		// Time to run.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(3, 1000) }), ShouldBeNil)
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(3, 1000, 0) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateQueued)
 		So(m.state.InvocationID, ShouldEqual, 1000)
 
@@ -130,7 +130,7 @@ func TestStateMachine(t *testing.T) {
 		m.actions = nil
 
 		// Time to run. Moves to JobStateOverrun because was stuck in queue.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(3, 100) }), ShouldBeNil)
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(3, 100, 0) }), ShouldBeNil)
 		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarted(100) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateOverrun)
 		So(m.state.Overruns, ShouldEqual, 1)
@@ -162,7 +162,7 @@ func TestStateMachine(t *testing.T) {
 		m.actions = nil
 
 		// Time to run.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(3, 100) }), ShouldBeNil)
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(3, 100, 0) }), ShouldBeNil)
 		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarted(100) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateRunning)
 
@@ -204,7 +204,7 @@ func TestStateMachine(t *testing.T) {
 		m.actions = nil
 
 		// Time to run.
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(2, 1000) }), ShouldBeNil)
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(2, 1000, 0) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateQueued)
 		So(m.state.InvocationID, ShouldEqual, 1000)
 
@@ -261,7 +261,7 @@ func TestStateMachine(t *testing.T) {
 		So(m.roll(func(sm *StateMachine) error { return sm.OnTimerTick(2) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateQueued)
 		So(m.state.InvocationNonce, ShouldEqual, 4)
-		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(4, 123) }), ShouldBeNil)
+		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarting(4, 123, 0) }), ShouldBeNil)
 		So(m.roll(func(sm *StateMachine) error { return sm.OnInvocationStarted(123) }), ShouldBeNil)
 		So(m.state.State, ShouldEqual, JobStateRunning)
 

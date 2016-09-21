@@ -40,10 +40,8 @@ var stateToLabelClass = map[engine.StateKind]string{
 	engine.JobStateDisabled:  "label-default",
 	engine.JobStateScheduled: "label-primary",
 	engine.JobStateSuspended: "label-default",
-	engine.JobStateQueued:    "label-primary",
 	engine.JobStateRunning:   "label-info",
 	engine.JobStateOverrun:   "label-warning",
-	engine.JobStateSlowQueue: "label-warning",
 }
 
 func makeJob(j *engine.Job, now time.Time) *schedulerJob {
@@ -57,6 +55,32 @@ func makeJob(j *engine.Job, now time.Time) *schedulerJob {
 		nextRun = "not scheduled yet"
 	}
 
+	// Internal state names aren't very user friendly. Introduce some aliases.
+	state := ""
+	labelClass := ""
+	switch {
+	case j.State.IsRetrying():
+		// Retries happen when invocation fails to launch (move from STARTING to
+		// RUNNING state). Such invocation is retried (as new invocation). When
+		// a retry is enqueued, we display the job state as "RETRYING" (even though
+		// technically it is still "QUEUED").
+		state = "RETRYING"
+		labelClass = "label-danger"
+	case j.State.State == engine.JobStateQueued:
+		// An invocation has been added to the task queue, but didn't move to
+		// RUNNING state yet.
+		state = "STARTING"
+		labelClass = "label-default"
+	case j.State.State == engine.JobStateSlowQueue:
+		// Job invocation is still in the task queue, but new invocation should be
+		// starting now (so the queue is lagging for some reason).
+		state = "STARTING"
+		labelClass = "label-warning"
+	default:
+		state = string(j.State.State)
+		labelClass = stateToLabelClass[j.State.State]
+	}
+
 	// JobID has form <project>/<id>. Split it into components.
 	chunks := strings.Split(j.JobID, "/")
 
@@ -67,11 +91,11 @@ func makeJob(j *engine.Job, now time.Time) *schedulerJob {
 		Definition:  taskToText(j.Task),
 		Revision:    j.Revision,
 		RevisionURL: j.RevisionURL,
-		State:       string(j.State.State),
+		State:       state,
 		Overruns:    j.State.Overruns,
 		NextRun:     nextRun,
 		Paused:      j.Paused,
-		LabelClass:  stateToLabelClass[j.State.State],
+		LabelClass:  labelClass,
 
 		sortKey: j.JobID,
 	}

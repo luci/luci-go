@@ -76,6 +76,10 @@ type JobState struct {
 	// will end up in Running state though.
 	InvocationNonce int64 `gae:",noindex"`
 
+	// InvocationRetryCount is how many times an invocation request (identified by
+	// InvocationNonce) was attempted to start and failed.
+	InvocationRetryCount int `gae:",noindex"`
+
 	// InvocationTime is when the current invocation request was queued.
 	InvocationTime time.Time `gae:",noindex"`
 
@@ -87,6 +91,15 @@ type JobState struct {
 // OnInvocationStarting event with given nonce.
 func (s *JobState) IsExpectingInvocation(invocationNonce int64) bool {
 	return (s.State == JobStateQueued || s.State == JobStateSlowQueue) && s.InvocationNonce == invocationNonce
+}
+
+// IsRetrying is true if there some invocation queued that is a retry of
+// a previously attempted invocation.
+//
+// An invocation is retried when it fails to transition out from STARTING state
+// (e.g. crashes before switching to RUNNING or any of the final states).
+func (s *JobState) IsRetrying() bool {
+	return (s.State == JobStateQueued || s.State == JobStateSlowQueue) && s.InvocationRetryCount != 0
 }
 
 // Action is a particular action to perform when switching the state. Can be
@@ -235,9 +248,10 @@ func (m *StateMachine) OnTimerTick(tickNonce int64) error {
 // attempts to start it. Engine calls OnInvocationStarted when it succeeds at
 // launching the invocation. Engine calls OnInvocationStarting again with
 // another invocationID if previous launch attempt failed.
-func (m *StateMachine) OnInvocationStarting(invocationNonce, invocationID int64) error {
+func (m *StateMachine) OnInvocationStarting(invocationNonce, invocationID int64, retryCount int) error {
 	if m.State.IsExpectingInvocation(invocationNonce) {
 		m.State.InvocationID = invocationID
+		m.State.InvocationRetryCount = retryCount
 	}
 	return nil
 }
@@ -370,6 +384,7 @@ func (m *StateMachine) resetTick() {
 func (m *StateMachine) queueInvocation(triggeredBy identity.Identity) {
 	m.State.InvocationTime = m.Now
 	m.State.InvocationNonce = m.Nonce()
+	m.State.InvocationRetryCount = 0
 	m.State.InvocationID = 0
 	m.State.Overruns = 0
 	m.emitAction(StartInvocationAction{
@@ -381,6 +396,7 @@ func (m *StateMachine) queueInvocation(triggeredBy identity.Identity) {
 // resetInvocation clears invocation related part of the state.
 func (m *StateMachine) resetInvocation() {
 	m.State.InvocationNonce = 0
+	m.State.InvocationRetryCount = 0
 	m.State.InvocationTime = time.Time{}
 	m.State.InvocationID = 0
 	m.State.Overruns = 0

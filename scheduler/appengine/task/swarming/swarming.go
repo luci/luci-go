@@ -216,6 +216,10 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	ctl.DebugLog("Swarming task request:\n%s", string(blob))
 	request.PubsubAuthToken = authToken // can put the token now
 
+	// The next call may take a while. Dump the current log to the datastore.
+	// Ignore errors here, it is best effort attempt to update the log.
+	ctl.Save()
+
 	// Trigger the task.
 	service, err := m.createSwarmingService(c, ctl)
 	if err != nil {

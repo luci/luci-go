@@ -89,7 +89,8 @@ type Engine interface {
 	// produced by job state machine transition. These actions are POSTed
 	// to TimersQueue and InvocationsQueue defined in Config by Engine.
 	// 'retryCount' is 0 on first attempt, 1 if task queue service retries
-	// request once, 2 - if twice, and so on.
+	// request once, 2 - if twice, and so on. Returning transient errors here
+	// causes the task queue to retry the task.
 	ExecuteSerializedAction(c context.Context, body []byte, retryCount int) error
 
 	// ProcessPubSubPush is called whenever incoming PubSub message is received.
@@ -157,6 +158,14 @@ func NewEngine(conf Config) Engine {
 }
 
 //// Implementation.
+
+// invocationRetryLimit is how many times to retry an invocation before giving
+// up and resuming the job's schedule.
+const invocationRetryLimit = 5
+
+// maxInvocationRetryBackoff is how long to wait before retrying a failed
+// invocation.
+const maxInvocationRetryBackoff = 10 * time.Second
 
 // actionTaskPayload is payload for task queue jobs emitted by the engine.
 // Serialized as JSON, produced by enqueueActions, used as inputs in
@@ -812,6 +821,13 @@ func (e *engineImpl) enqueueActions(c context.Context, jobID string, actions []A
 				Path:    e.InvocationsQueuePath,
 				Delay:   time.Second, // give the transaction time to land
 				Payload: payload,
+				RetryOptions: &tq.RetryOptions{
+					// Give 5 attempts to mark the job as failed. See 'startInvocation'.
+					RetryLimit: invocationRetryLimit + 5,
+					MinBackoff: time.Second,
+					MaxBackoff: maxInvocationRetryBackoff,
+					AgeLimit:   time.Duration(invocationRetryLimit+5) * maxInvocationRetryBackoff,
+				},
 			})
 		case RecordOverrunAction:
 			payload, err := json.Marshal(actionTaskPayload{
@@ -1104,7 +1120,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	//
 	// Task queue guarantees not to execute same task concurrently (i.e. retry
 	// happens only if previous attempt finished already).
-	// There are 3 possibilities here:
+	// There are 4 possibilities here:
 	// 1) It is a first attempt. In that case we generate new Invocation in
 	//    state STARTING and update Job with a reference to it.
 	// 2) It is a retry and previous attempt is still starting (indicated by
@@ -1113,18 +1129,22 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	// 3) It is a retry and previous attempt has already started (in this case
 	//    the job is in RUNNING state and IsExpectingInvocation returns
 	//    false). Assume this retry was unnecessary and skip it.
-	var inv Invocation
-	var skip bool
+	// 4) It is a retry and we have retried too many times. Mark the invocation
+	//    as failed and resume the job's schedule. This branch executes only if
+	//    retryCount check at the end of this function failed to run (e.g. request
+	//    handler crashed).
+	inv := Invocation{}
+	skipRunning := false
 	err := e.txn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
 		if isNew {
 			logging.Errorf(c, "Queued job is unexpectedly gone")
-			skip = true
+			skipRunning = true
 			return errSkipPut
 		}
 		if !job.State.IsExpectingInvocation(invocationNonce) {
 			logging.Errorf(c, "No longer need to start invocation with nonce %d", invocationNonce)
-			skip = true
-			return nil
+			skipRunning = true
+			return errSkipPut
 		}
 		jobKey := ds.KeyForObj(c, job)
 		invID, err := generateInvocationID(c, jobKey)
@@ -1148,6 +1168,13 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 		if triggeredBy != "" {
 			inv.debugLog(c, "Manually triggered by %s", triggeredBy)
 		}
+		if retryCount >= invocationRetryLimit {
+			logging.Errorf(c, "Too many attempts, giving up")
+			inv.debugLog(c, "Too many attempts, giving up")
+			inv.Status = task.StatusFailed
+			inv.Finished = clock.Now(c).UTC()
+			skipRunning = true
+		}
 		if err := ds.Put(c, &inv); err != nil {
 			return err
 		}
@@ -1163,7 +1190,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 				return err
 			}
 			if err == nil && !prev.Status.Final() {
-				prev.debugLog(c, "New invocation is running (%d), marking this one as failed.", inv.ID)
+				prev.debugLog(c, "New invocation is starting (%d), marking this one as failed.", inv.ID)
 				prev.Status = task.StatusFailed
 				prev.Finished = clock.Now(c).UTC()
 				prev.MutationsCount++
@@ -1172,14 +1199,28 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 				}
 			}
 		}
-		// Store the reference to the new invocation ID.
+		// Store the reference to the new invocation ID. Unblock the job if we are
+		// giving up on retrying.
 		return e.rollSM(c, job, func(sm *StateMachine) error {
-			return sm.OnInvocationStarting(invocationNonce, inv.ID)
+			sm.OnInvocationStarting(invocationNonce, inv.ID, retryCount)
+			if inv.Status == task.StatusFailed {
+				sm.OnInvocationStarted(inv.ID)
+				sm.OnInvocationDone(inv.ID)
+			}
+			return nil
 		})
 	})
-	if err != nil || skip {
+
+	if err != nil {
+		logging.WithError(err).Errorf(c, "Failed to update job state")
 		return err
 	}
+
+	if skipRunning {
+		logging.Warningf(c, "No need to start the invocation anymore")
+		return nil
+	}
+
 	c = logging.SetField(c, "InvID", inv.ID)
 
 	// Now we have a new Invocation entity in the datastore in StatusStarting
@@ -1199,25 +1240,32 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	// it returns an error, invocation is forcefully moved to StatusFailed state.
 	// In either case, invocation never ends up in StatusStarting state.
 	err = ctl.manager.LaunchTask(c, ctl)
-	retryInvocation := false
 	if ctl.State().Status == task.StatusStarting {
 		ctl.State().Status = task.StatusFailed
-		if err != nil {
-			retryInvocation = errors.IsTransient(err)
-		} else {
+		if err == nil {
 			err = fmt.Errorf("LaunchTask didn't move invocation out of StatusStarting")
-			retryInvocation = false
 		}
 	}
 
-	// If asked to retry the invocation, do not touch Job entity when saving
-	// the current (failed) invocation. That way Job stays in "QUEUED" state
-	// (indicating it's queued for a new invocation).
+	// Give up retrying on transient errors after some number of attempts.
+	if errors.IsTransient(err) && retryCount+1 >= invocationRetryLimit {
+		err = fmt.Errorf("Too many retries, giving up (original error - %s)", err)
+	}
+
+	// If asked to retry the invocation (by returning a transient error), do not
+	// touch Job entity when saving the current (failed) invocation. That way Job
+	// stays in "QUEUED" state (indicating it's queued for a new invocation).
+	retryInvocation := errors.IsTransient(err)
 	if saveErr := ctl.saveImpl(!retryInvocation); saveErr != nil {
 		logging.Errorf(ctl.ctx, "Failed to save invocation state - %s", saveErr)
 		if err == nil {
 			err = saveErr
 		}
+	}
+
+	// Returning transient error here causes the task queue to retry the task.
+	if err != nil {
+		logging.WithError(err).Errorf(ctl.ctx, "Invocation failed to start")
 	}
 	return err
 }

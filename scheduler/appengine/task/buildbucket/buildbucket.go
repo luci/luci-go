@@ -167,6 +167,10 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	ctl.DebugLog("Buildbucket request:\n%s", string(blob))
 	request.PubsubCallback.AuthToken = authToken // can put the token now
 
+	// The next call may take a while. Dump the current log to the datastore.
+	// Ignore errors here, it is best effort attempt to update the log.
+	ctl.Save()
+
 	// Send the request.
 	service, err := m.createBuildbucketService(c, ctl)
 	if err != nil {
