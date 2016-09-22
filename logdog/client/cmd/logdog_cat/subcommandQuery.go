@@ -222,16 +222,14 @@ func (p *jsonQueryOutput) emit(s *coordinator.LogStream) error {
 		Project: string(s.Project),
 		Path:    string(s.Path),
 	}
-	if s.State != nil {
-		o.Created = clockflag.Time(s.State.Created)
-		o.Updated = clockflag.Time(s.State.Updated)
-		o.TerminalIndex = int64(s.State.TerminalIndex)
-		o.ArchiveIndexURL = s.State.ArchiveIndexURL
-		o.ArchiveStreamURL = s.State.ArchiveStreamURL
-		o.ArchiveDataURL = s.State.ArchiveDataURL
-		o.Purged = s.State.Purged
-		o.Descriptor = s.Desc
-	}
+	o.Created = clockflag.Time(s.State.Created)
+	o.Updated = clockflag.Time(s.State.Updated)
+	o.TerminalIndex = int64(s.State.TerminalIndex)
+	o.ArchiveIndexURL = s.State.ArchiveIndexURL
+	o.ArchiveStreamURL = s.State.ArchiveStreamURL
+	o.ArchiveDataURL = s.State.ArchiveDataURL
+	o.Purged = s.State.Purged
+	o.Descriptor = &s.Desc
 
 	if p.enc == nil {
 		p.enc = json.NewEncoder(p)

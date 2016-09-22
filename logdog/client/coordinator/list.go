@@ -5,6 +5,8 @@
 package coordinator
 
 import (
+	"fmt"
+
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
 	"github.com/luci/luci-go/logdog/common/types"
@@ -86,7 +88,10 @@ func (c *Client) List(ctx context.Context, project config.ProjectName, pathBase 
 			case logdog.ListResponse_Component_STREAM:
 				lr.Stream = true
 				if s.State != nil {
-					lr.State = loadLogStream(resp.Project, lr.FullPath(), s.State, s.Desc)
+					lr.State, err = loadLogStream(resp.Project, lr.FullPath(), s.State, s.Desc)
+					if err != nil {
+						return fmt.Errorf("failed to load stream state: %v", err)
+					}
 				}
 
 			case logdog.ListResponse_Component_PROJECT:

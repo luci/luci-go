@@ -108,42 +108,38 @@ func (*listCommandRun) attributes(lr *coordinator.ListResult) string {
 	var parts []string
 
 	if s := lr.State; s != nil {
-		if d := s.Desc; d != nil {
-			p := []string{
-				d.GetTimestamp().Time().String(),
-				fmt.Sprintf("type:%s", d.StreamType.String()),
-			}
-
-			if t := d.GetTags(); len(t) > 0 {
-				tstr := make([]string, 0, len(t))
-				for k, v := range t {
-					if v == "" {
-						tstr = append(tstr, k)
-					} else {
-						tstr = append(tstr, fmt.Sprintf("%s=%s", k, v))
-					}
-				}
-				sort.Strings(tstr)
-				p = append(p, fmt.Sprintf("tags:{%s}", strings.Join(tstr, ", ")))
-			}
-
-			parts = append(parts, p...)
+		p := []string{
+			s.Desc.GetTimestamp().Time().String(),
+			fmt.Sprintf("type:%s", s.Desc.StreamType.String()),
 		}
 
-		if st := s.State; st != nil {
-			if st.TerminalIndex >= 0 {
-				parts = append(parts, fmt.Sprintf("terminal:%d", st.TerminalIndex))
-			} else {
-				parts = append(parts, "streaming")
+		if t := s.Desc.GetTags(); len(t) > 0 {
+			tstr := make([]string, 0, len(t))
+			for k, v := range t {
+				if v == "" {
+					tstr = append(tstr, k)
+				} else {
+					tstr = append(tstr, fmt.Sprintf("%s=%s", k, v))
+				}
 			}
+			sort.Strings(tstr)
+			p = append(p, fmt.Sprintf("tags:{%s}", strings.Join(tstr, ", ")))
+		}
 
-			if st.Archived {
-				parts = append(parts, "archived")
-			}
+		parts = append(parts, p...)
 
-			if st.Purged {
-				parts = append(parts, "purged")
-			}
+		if s.State.TerminalIndex >= 0 {
+			parts = append(parts, fmt.Sprintf("terminal:%d", s.State.TerminalIndex))
+		} else {
+			parts = append(parts, "streaming")
+		}
+
+		if s.State.Archived {
+			parts = append(parts, "archived")
+		}
+
+		if s.State.Purged {
+			parts = append(parts, "purged")
 		}
 	}
 

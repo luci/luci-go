@@ -101,6 +101,10 @@ func TestClientQuery(t *testing.T) {
 				State:       true,
 			}
 
+			st := logdog.LogStreamState{
+				Created: google.NewTimestamp(now),
+			}
+
 			var results []*LogStream
 			accumulate := func(s *LogStream) bool {
 				results = append(results, s)
@@ -115,15 +119,16 @@ func TestClientQuery(t *testing.T) {
 					r := logdog.QueryResponse{
 						Project: string(project),
 					}
+
 					switch req.Next {
 					case "":
-						r.Streams = append(r.Streams, gen("a", nil))
+						r.Streams = append(r.Streams, gen("a", &st))
 						r.Next = "b"
 					case "b":
-						r.Streams = append(r.Streams, gen("b", nil))
+						r.Streams = append(r.Streams, gen("b", &st))
 						r.Next = "final"
 					case "final":
-						r.Streams = append(r.Streams, gen("final", nil))
+						r.Streams = append(r.Streams, gen("final", &st))
 					default:
 						return nil, errors.New("invalid cursor")
 					}
@@ -139,9 +144,9 @@ func TestClientQuery(t *testing.T) {
 				svc.H = func(*logdog.QueryRequest) (*logdog.QueryResponse, error) {
 					return &logdog.QueryResponse{
 						Streams: []*logdog.QueryResponse_Stream{
-							gen("a", nil),
-							gen("b", nil),
-							gen("c", nil),
+							gen("a", &st),
+							gen("b", &st),
+							gen("c", &st),
 						},
 						Next: "infiniteloop",
 					}, nil
@@ -170,8 +175,8 @@ func TestClientQuery(t *testing.T) {
 				So(results, shouldHaveLogStreams, "test/+/a")
 				So(results[0], ShouldResemble, &LogStream{
 					Path: "test/+/a",
-					Desc: &logpb.LogStreamDescriptor{Prefix: "test", Name: "a"},
-					State: &StreamState{
+					Desc: logpb.LogStreamDescriptor{Prefix: "test", Name: "a"},
+					State: StreamState{
 						Created: now.UTC(),
 					},
 				})

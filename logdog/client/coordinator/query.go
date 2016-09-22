@@ -5,6 +5,7 @@
 package coordinator
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/luci/luci-go/common/config"
@@ -155,8 +156,13 @@ func (c *Client) Query(ctx context.Context, project config.ProjectName, path str
 			return normalizeError(err)
 		}
 
-		for _, s := range resp.Streams {
-			if !cb(loadLogStream(resp.Project, types.StreamPath(s.Path), s.State, s.Desc)) {
+		for i, s := range resp.Streams {
+			st, err := loadLogStream(resp.Project, types.StreamPath(s.Path), s.State, s.Desc)
+			if err != nil {
+				return fmt.Errorf("failed to load stream state #%d: %v", i, err)
+			}
+
+			if !cb(st) {
 				return nil
 			}
 		}

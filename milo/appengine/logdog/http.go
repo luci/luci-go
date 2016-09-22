@@ -11,6 +11,8 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/grpc/prpc"
+	"github.com/luci/luci-go/logdog/client/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/milo/appengine/settings"
 	"github.com/luci/luci-go/milo/common/miloerror"
@@ -53,14 +55,18 @@ func (s *AnnotationStream) Render(c context.Context, req *http.Request, p httpro
 		project: config.ProjectName(p.ByName("project")),
 		path:    types.StreamPath(strings.Trim(p.ByName("path"), "/")),
 		host:    req.FormValue("host"),
-
-		logDogClient: http.Client{
-			Transport: t,
-		},
 	}
 	if err := as.normalize(); err != nil {
 		return nil, err
 	}
+
+	// Setup our LogDog client.
+	as.logDogClient = coordinator.NewClient(&prpc.Client{
+		C: &http.Client{
+			Transport: t,
+		},
+		Host: as.host,
+	})
 
 	// Load the Milo annotation protobuf from the annotation stream.
 	if err := as.load(c); err != nil {
