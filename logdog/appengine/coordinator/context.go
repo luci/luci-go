@@ -12,6 +12,9 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
+	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
+	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/identity"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
@@ -42,11 +45,6 @@ const (
 	NamespaceAccessWRITE
 )
 
-var (
-	errProjectAccessDenied = grpcutil.Errf(codes.NotFound,
-		"The project is invalid, or you do not have permission to access it.")
-)
-
 type servicesKeyType int
 
 // WithServices installs the supplied Services instance into a Context.
@@ -67,11 +65,16 @@ func GetServices(c context.Context) Services {
 
 // WithProjectNamespace sets the current namespace to the project name.
 //
-// It will return a wrapped gRPC error if the project name or the project's
-// namespace is invalid.
-//
-// If the current user does not have the requested permission for the project, a
-// MembershipError will be returned.
+// It will return a user-facing wrapped gRPC error on failure:
+//	- InvalidArgument if the project name is invalid.
+//	- If the project exists, then
+//	  - nil, if the user has the requested access.
+//	  - Unauthenticated if the user does not have the requested access, but is
+//	    also not authenticated. This lets them know they should try again after
+//	    authenticating.
+//	  - PermissionDenied if the user does not have the requested access.
+//	- PermissionDenied if the project doesn't exist.
+//	- Internal if an internal error occurred.
 func WithProjectNamespace(c *context.Context, project luciConfig.ProjectName, at NamespaceAccessType) error {
 	ctx := *c
 
@@ -80,46 +83,84 @@ func WithProjectNamespace(c *context.Context, project luciConfig.ProjectName, at
 		return grpcutil.Errf(codes.InvalidArgument, "Project name is invalid: %s", err)
 	}
 
-	// Validate the current user has the requested access.
+	// Return gRPC error for when the user is denied access and does not have READ
+	// access. Returns either Unauthenticated if the user is not authenticated
+	// or PermissionDenied if the user is authenticated.
+	getAccessDeniedError := func() error {
+		if id := auth.CurrentIdentity(ctx); id.Kind() == identity.Anonymous {
+			return grpcutil.Unauthenticated
+		}
+
+		// Deny the existence of the project.
+		return grpcutil.Errf(codes.PermissionDenied,
+			"The project is invalid, or you do not have permission to access it.")
+	}
+
+	// Returns the project config, or "read denied" error if the project does not
+	// exist.
+	getProjectConfig := func() (*svcconfig.ProjectConfig, error) {
+		pcfg, err := GetServices(ctx).ProjectConfig(ctx, project)
+		switch err {
+		case nil:
+			// Successfully loaded project config.
+			return pcfg, nil
+
+		case luciConfig.ErrNoConfig, config.ErrInvalidConfig:
+			// If the configuration request was valid, but no configuration could be
+			// loaded, treat this as the user not having READ access to the project.
+			// Otherwise, the user could use this error response to confirm a
+			// project's existence.
+			log.Fields{
+				log.ErrorKey: err,
+				"project":    project,
+			}.Errorf(ctx, "Could not load config for project.")
+			return nil, getAccessDeniedError()
+
+		default:
+			// The configuration attempt failed to load. This is an internal error,
+			// and is safe to return because it's not contingent on the existence (or
+			// lack thereof) of the project.
+			return nil, grpcutil.Internal
+		}
+	}
+
+	// Validate that the current user has the requested access.
 	switch at {
 	case NamespaceAccessNoAuth:
 		// Assert that the project exists and has a configuration.
-		if _, err := getProjectConfig(ctx, project); err != nil {
+		if _, err := getProjectConfig(); err != nil {
 			return err
 		}
 
 	case NamespaceAccessAllTesting:
+		// Sanity check: this should only be used on development instances.
+		if !info.IsDevAppServer(ctx) {
+			panic("Testing access requested on non-development instance.")
+		}
 		break
 
 	case NamespaceAccessREAD:
-		pcfg, err := getProjectConfig(ctx, project)
+		// Assert that the current user has READ access.
+		pcfg, err := getProjectConfig()
 		if err != nil {
 			return err
 		}
 
 		if err := IsProjectReader(*c, pcfg); err != nil {
 			log.WithError(err).Errorf(*c, "User denied READ access to requested project.")
-
-			// Deny the existence of the project to the user.
-			return errProjectAccessDenied
+			return getAccessDeniedError()
 		}
 
 	case NamespaceAccessWRITE:
-		pcfg, err := getProjectConfig(ctx, project)
+		// Assert that the current user has WRITE access.
+		pcfg, err := getProjectConfig()
 		if err != nil {
 			return err
 		}
 
 		if err := IsProjectWriter(*c, pcfg); err != nil {
 			log.WithError(err).Errorf(*c, "User denied WRITE access to requested project.")
-
-			// If the user is a project reader, return PermissionDenied, since they
-			// have permission to see the project. Otherwise, return NotFound to deny
-			// the existence of the project.
-			if err := IsProjectReader(*c, pcfg); err == nil {
-				return grpcutil.Errf(codes.PermissionDenied, "User does not have WRITE access to this project.")
-			}
-			return errProjectAccessDenied
+			return getAccessDeniedError()
 		}
 
 	default:
@@ -139,20 +180,6 @@ func WithProjectNamespace(c *context.Context, project luciConfig.ProjectName, at
 
 	*c = nc
 	return nil
-}
-
-func getProjectConfig(ctx context.Context, project luciConfig.ProjectName) (*svcconfig.ProjectConfig, error) {
-	pcfg, err := GetServices(ctx).ProjectConfig(ctx, project)
-	if err != nil {
-		log.WithError(err).Errorf(ctx, "Failed to load project config.")
-
-		if err == luciConfig.ErrNoConfig {
-			return nil, errProjectAccessDenied
-		}
-		return nil, grpcutil.Internal
-	}
-
-	return pcfg, nil
 }
 
 // Project returns the current project installed in the supplied Context's

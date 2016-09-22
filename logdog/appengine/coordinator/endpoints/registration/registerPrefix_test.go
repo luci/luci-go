@@ -54,12 +54,30 @@ func TestRegisterPrefix(t *testing.T) {
 		}
 		pfx := &coordinator.LogPrefix{ID: coordinator.LogPrefixID(types.StreamName(req.Prefix))}
 
-		Convey(`Returns PermissionDenied error if not user does not have write access.`, func() {
+		Convey(`If user is logged in`, func() {
+			// "proj-bar" does not have anonymous write.
+			req.Project = "proj-bar"
+			env.LogIn()
+
+			Convey(`Succeeds if the user has write access.`, func() {
+				env.JoinGroup("auth")
+
+				_, err := svr.RegisterPrefix(c, &req)
+				So(err, ShouldBeRPCOK)
+			})
+
+			Convey(`Returns PermissionDenied if the user does not have write access.`, func() {
+				_, err := svr.RegisterPrefix(c, &req)
+				So(err, ShouldBeRPCPermissionDenied)
+			})
+		})
+
+		Convey(`Returns Unauthenticated if not user does not have write access.`, func() {
 			// "proj-bar" does not have anonymous write.
 			req.Project = "proj-bar"
 
 			_, err := svr.RegisterPrefix(c, &req)
-			So(err, ShouldBeRPCPermissionDenied)
+			So(err, ShouldBeRPCUnauthenticated)
 		})
 
 		Convey(`Will register a new prefix.`, func() {

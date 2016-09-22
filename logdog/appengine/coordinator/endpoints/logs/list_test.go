@@ -164,18 +164,47 @@ func TestList(t *testing.T) {
 			})
 		})
 
-		Convey(`If the project does not exist, will return NotFound.`, func() {
+		Convey(`If the user is logged in`, func() {
+			env.LogIn()
+
+			Convey(`When accessing a restricted project`, func() {
+				req.Project = "proj-exclusive"
+
+				Convey(`Will succeed if the user can access the project.`, func() {
+					env.JoinGroup("auth")
+
+					_, err := svc.List(c, &req)
+					So(err, ShouldBeRPCOK)
+				})
+
+				Convey(`If the user can't access the project, will return PermissionDenied.`, func() {
+					req.Project = "proj-exclusive"
+
+					_, err := svc.List(c, &req)
+					So(err, ShouldBeRPCPermissionDenied)
+				})
+			})
+
+			Convey(`If the project does not exist, will return PermissionDenied.`, func() {
+				req.Project = "does-not-exist"
+
+				_, err := svc.List(c, &req)
+				So(err, ShouldBeRPCPermissionDenied)
+			})
+		})
+
+		Convey(`If the project does not exist, will return Unauthenticated.`, func() {
 			req.Project = "does-not-exist"
 
 			_, err := svc.List(c, &req)
-			So(err, ShouldBeRPCNotFound)
+			So(err, ShouldBeRPCUnauthenticated)
 		})
 
-		Convey(`If the user can't access the project, will return NotFound.`, func() {
+		Convey(`If the user can't access the project, will return Unauthenticated.`, func() {
 			req.Project = "proj-exclusive"
 
 			_, err := svc.List(c, &req)
-			So(err, ShouldBeRPCNotFound)
+			So(err, ShouldBeRPCUnauthenticated)
 		})
 	})
 }

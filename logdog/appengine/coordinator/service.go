@@ -51,6 +51,8 @@ type Services interface {
 	//
 	// The production instance will cache the results for the duration of the
 	// request.
+	//
+	// Returns the same error codes as config.ProjectConfig.
 	ProjectConfig(context.Context, luciConfig.ProjectName) (*svcconfig.ProjectConfig, error)
 
 	// Storage returns an intermediate storage instance for use by this service.

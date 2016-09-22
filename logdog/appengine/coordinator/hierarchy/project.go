@@ -11,6 +11,7 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
+
 	"golang.org/x/net/context"
 )
 

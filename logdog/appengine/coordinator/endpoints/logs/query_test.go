@@ -165,18 +165,45 @@ func TestQuery(t *testing.T) {
 			So(resp, shouldHaveLogPaths, streamPaths)
 		})
 
-		Convey(`An empty query to a non-existent project fails with NotFound.`, func() {
+		Convey(`If the user is logged in`, func() {
+			env.LogIn()
+
+			Convey(`When accessing a restricted project`, func() {
+				req.Project = "proj-exclusive"
+
+				Convey(`Will succeed if the user can access the project.`, func() {
+					env.JoinGroup("auth")
+
+					_, err := svr.Query(c, &req)
+					So(err, ShouldBeRPCOK)
+				})
+
+				Convey(`Will fail with PermissionDenied if the user can't access the project.`, func() {
+					_, err := svr.Query(c, &req)
+					So(err, ShouldBeRPCPermissionDenied)
+				})
+			})
+
+			Convey(`Will fail with PermissionDenied if the project does not exist.`, func() {
+				req.Project = "does-not-exist"
+
+				_, err := svr.Query(c, &req)
+				So(err, ShouldBeRPCPermissionDenied)
+			})
+		})
+
+		Convey(`Will fail with Unauthenticated if the project does not exist.`, func() {
 			req.Project = "does-not-exist"
 
 			_, err := svr.Query(c, &req)
-			So(err, ShouldBeRPCNotFound)
+			So(err, ShouldBeRPCUnauthenticated)
 		})
 
-		Convey(`An empty query to a project without access fails with NotFound.`, func() {
+		Convey(`Will fail with Unauthenticated if the user can't access the project.`, func() {
 			req.Project = "proj-exclusive"
 
 			_, err := svr.Query(c, &req)
-			So(err, ShouldBeRPCNotFound)
+			So(err, ShouldBeRPCUnauthenticated)
 		})
 
 		Convey(`An empty query will include purged streams if admin.`, func() {

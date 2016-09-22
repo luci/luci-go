@@ -28,30 +28,44 @@ func ProjectConfigPath(c context.Context) string {
 
 // ProjectConfig loads the project config protobuf from the config service.
 //
-// If the configuration was not present, config.ErrNoConfig will be returned.
+// This function will return:
+//	- nil, if the project exists and the configuration successfully loaded
+//	- config.ErrNoConfig if the project configuration was not present.
+//	- ErrInvalidConfig if the project configuration was present, but could not
+//	  be loaded.
+//	- Some other error if an error occurred that does not fit one of the
+//	  previous categories.
 func ProjectConfig(c context.Context, project config.ProjectName) (*svcconfig.ProjectConfig, error) {
 	if project == "" {
 		return nil, config.ErrNoConfig
 	}
 
+	// Get the config from the config service. If the configuration doesn't exist,
+	// this will return config.ErrNoConfig.
 	configSet, configPath := config.ProjectConfigSet(project), ProjectConfigPath(c)
 	cfg, err := config.GetConfig(c, configSet, configPath, false)
 	if err != nil {
+		log.Fields{
+			log.ErrorKey: err,
+			"project":    project,
+			"configSet":  configSet,
+			"configPath": configPath,
+		}.Errorf(c, "Failed to load project configuration content.")
 		return nil, err
 	}
 
-	var pcfg svcconfig.ProjectConfig
-	if err := proto.UnmarshalText(cfg.Content, &pcfg); err != nil {
+	pcfg, err := unmarshalProjectConfig(cfg)
+	if err != nil {
 		log.Fields{
 			log.ErrorKey:  err,
+			"project":     project,
 			"configSet":   cfg.ConfigSet,
 			"path":        cfg.Path,
 			"contentHash": cfg.ContentHash,
 		}.Errorf(c, "Failed to unmarshal project configuration.")
 		return nil, ErrInvalidConfig
 	}
-
-	return &pcfg, nil
+	return pcfg, nil
 }
 
 // AllProjectConfigs returns the project configurations for all projects that
@@ -82,7 +96,7 @@ func AllProjectConfigs(c context.Context) (map[config.ProjectName]*svcconfig.Pro
 		}
 
 		// Unmarshal the project's configuration.
-		pcfg, err := loadProjectConfig(&cfg)
+		pcfg, err := unmarshalProjectConfig(&cfg)
 		if err != nil {
 			log.Fields{
 				log.ErrorKey:  err,
@@ -98,7 +112,7 @@ func AllProjectConfigs(c context.Context) (map[config.ProjectName]*svcconfig.Pro
 	return result, nil
 }
 
-func loadProjectConfig(cfg *config.Config) (*svcconfig.ProjectConfig, error) {
+func unmarshalProjectConfig(cfg *config.Config) (*svcconfig.ProjectConfig, error) {
 	var pcfg svcconfig.ProjectConfig
 	if err := proto.UnmarshalText(cfg.Content, &pcfg); err != nil {
 		return nil, err

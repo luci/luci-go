@@ -44,6 +44,7 @@ func TestHierarchy(t *testing.T) {
 			})
 
 			Convey(`An authenticated user will see all projects.`, func() {
+				env.LogIn()
 				env.JoinGroup("auth")
 
 				allProjects := []interface{}{"proj-bar", "proj-exclusive", "proj-foo"}
@@ -93,11 +94,45 @@ func TestHierarchy(t *testing.T) {
 			})
 		})
 
-		Convey(`Get within a project that the user cannot access will return NotFound.`, func() {
+		Convey(`If the user is logged in`, func() {
+			env.LogIn()
+
+			Convey(`When accessing a restricted project`, func() {
+				r.Project = "proj-exclusive"
+
+				Convey(`Will succeed if the user can access the project.`, func() {
+					env.JoinGroup("auth")
+
+					_, err := Get(c, r)
+					So(err, ShouldBeRPCOK)
+				})
+
+				Convey(`Will fail with PermissionDenied if the user can't access the project.`, func() {
+					_, err := Get(c, r)
+					So(err, ShouldBeRPCPermissionDenied)
+				})
+			})
+
+			Convey(`Will fail with PermissionDenied if the project does not exist.`, func() {
+				r.Project = "does-not-exist"
+
+				_, err := Get(c, r)
+				So(err, ShouldBeRPCPermissionDenied)
+			})
+		})
+
+		Convey(`Get within a project that the user cannot access will return Unauthenticated.`, func() {
 			r.Project = "proj-exclusive"
 
 			_, err := Get(c, r)
-			So(err, ShouldBeRPCNotFound)
+			So(err, ShouldBeRPCUnauthenticated)
+		})
+
+		Convey(`Get within a project that does not exist will return Unauthenticated.`, func() {
+			r.Project = "proj-does-not-exist"
+
+			_, err := Get(c, r)
+			So(err, ShouldBeRPCUnauthenticated)
 		})
 
 		Convey(`Get will return nothing when no components are registered.`, func() {

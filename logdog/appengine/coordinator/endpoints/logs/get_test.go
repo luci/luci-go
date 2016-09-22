@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/luci/gae/filter/featureBreaker"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/data/recordio"
@@ -23,6 +22,8 @@ import (
 	"github.com/luci/luci-go/logdog/common/archive"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/types"
+
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -185,16 +186,45 @@ func testGetImpl(t *testing.T, archived bool) {
 				So(err, ShouldBeRPCInvalidArgument)
 			})
 
-			Convey(`Will fail with PermissionDenied if the project does not exist.`, func() {
-				req.Project = "does-not-exist"
-				_, err := svr.Get(c, &req)
-				So(err, ShouldBeRPCNotFound)
+			Convey(`If the user is logged in`, func() {
+				env.LogIn()
+
+				Convey(`When accessing a restricted project`, func() {
+					req.Project = "proj-exclusive"
+					tls = ct.MakeStream(c, "proj-exclusive", "testing/+/foo/bar")
+					putLogStream(c)
+
+					Convey(`Will succeed if the user can access the project.`, func() {
+						env.JoinGroup("auth")
+
+						_, err := svr.Get(c, &req)
+						So(err, ShouldBeRPCOK)
+					})
+
+					Convey(`Will fail with PermissionDenied if the user can't access the project.`, func() {
+						req.Project = "proj-exclusive"
+						_, err := svr.Get(c, &req)
+						So(err, ShouldBeRPCPermissionDenied)
+					})
+				})
+
+				Convey(`Will fail with PermissionDenied if the project does not exist.`, func() {
+					req.Project = "does-not-exist"
+					_, err := svr.Get(c, &req)
+					So(err, ShouldBeRPCPermissionDenied)
+				})
 			})
 
-			Convey(`Will fail with PermissionDenied if the user can't access the project.`, func() {
+			Convey(`Will fail with Unauthenticated if the project does not exist.`, func() {
+				req.Project = "does-not-exist"
+				_, err := svr.Get(c, &req)
+				So(err, ShouldBeRPCUnauthenticated)
+			})
+
+			Convey(`Will fail with Unauthenticated if the user can't access the project.`, func() {
 				req.Project = "proj-exclusive"
 				_, err := svr.Get(c, &req)
-				So(err, ShouldBeRPCNotFound)
+				So(err, ShouldBeRPCUnauthenticated)
 			})
 
 			Convey(`Will fail with NotFound if the log path does not exist (different path).`, func() {
@@ -217,16 +247,45 @@ func testGetImpl(t *testing.T, archived bool) {
 				So(resp, shouldHaveLogs)
 			})
 
-			Convey(`Will fail with PermissionDenied if the project does not exist.`, func() {
-				req.Project = "does-not-exist"
-				_, err := svr.Tail(c, &req)
-				So(err, ShouldBeRPCNotFound)
+			Convey(`If the user is logged in`, func() {
+				env.LogIn()
+
+				Convey(`When accessing a restricted project`, func() {
+					req.Project = "proj-exclusive"
+					tls = ct.MakeStream(c, "proj-exclusive", "testing/+/foo/bar")
+					putLogStream(c)
+
+					Convey(`Will succeed if the user can access the project.`, func() {
+						env.JoinGroup("auth")
+
+						_, err := svr.Tail(c, &req)
+						So(err, ShouldBeRPCOK)
+					})
+
+					Convey(`Will fail with PermissionDenied if the user can't access the project.`, func() {
+						req.Project = "proj-exclusive"
+						_, err := svr.Tail(c, &req)
+						So(err, ShouldBeRPCPermissionDenied)
+					})
+				})
+
+				Convey(`Will fail with PermissionDenied if the project does not exist.`, func() {
+					req.Project = "does-not-exist"
+					_, err := svr.Tail(c, &req)
+					So(err, ShouldBeRPCPermissionDenied)
+				})
 			})
 
-			Convey(`Will fail with PermissionDenied if the user can't access the project.`, func() {
+			Convey(`Will fail with Unauthenticated if the project does not exist.`, func() {
+				req.Project = "does-not-exist"
+				_, err := svr.Tail(c, &req)
+				So(err, ShouldBeRPCUnauthenticated)
+			})
+
+			Convey(`Will fail with Unauthenticated if the user can't access the project.`, func() {
 				req.Project = "proj-exclusive"
 				_, err := svr.Tail(c, &req)
-				So(err, ShouldBeRPCNotFound)
+				So(err, ShouldBeRPCUnauthenticated)
 			})
 
 			Convey(`Will fail with NotFound if the log path does not exist (different path).`, func() {

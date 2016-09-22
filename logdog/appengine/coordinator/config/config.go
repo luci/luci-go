@@ -5,13 +5,13 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"net/url"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/config"
+	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
 	"golang.org/x/net/context"

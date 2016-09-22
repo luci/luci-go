@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
@@ -28,8 +27,11 @@ import (
 	memoryStorage "github.com/luci/luci-go/logdog/common/storage/memory"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
+	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/settings"
 	"github.com/luci/luci-go/tumble"
+
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 )
 
@@ -63,6 +65,15 @@ type Environment struct {
 	// ArchivalPublisher is the test ArchivalPublisher instance installed (by
 	// default) into Services.
 	ArchivalPublisher ArchivalPublisher
+}
+
+// LogIn installs an testing identity into the testing auth state.
+func (e *Environment) LogIn() {
+	id, err := identity.MakeIdentity("user:testing@example.com")
+	if err != nil {
+		panic(err)
+	}
+	e.AuthState.Identity = id
 }
 
 // JoinGroup adds the named group the to the list of groups for the current
