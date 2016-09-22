@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -90,6 +91,11 @@ type analyticsSettings struct {
 }
 
 func TestPages(t *testing.T) {
+	fixZeroDurationRE := regexp.MustCompile(`(Running for:|waiting) 0s?`)
+	fixZeroDuration := func(text string) string {
+		return fixZeroDurationRE.ReplaceAllLiteralString(text, "[ZERO DURATION]")
+	}
+
 	Convey("Testing basic rendering.", t, func() {
 		// Load all the bundles.
 		c := context.Background()
@@ -122,7 +128,7 @@ func TestPages(t *testing.T) {
 								} else {
 									localBuf, err := load(fname)
 									So(err, ShouldBeNil)
-									So(string(buf), ShouldEqual, string(localBuf))
+									So(fixZeroDuration(string(buf)), ShouldEqual, fixZeroDuration(string(localBuf)))
 								}
 							})
 						}
