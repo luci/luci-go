@@ -359,6 +359,8 @@ func TestFullFlow(t *testing.T) {
 		inv := Invocation{ID: 9200093518582666224, JobKey: jobKey}
 		So(ds.Get(c, &inv), ShouldBeNil)
 		inv.JobKey = nil // for easier ShouldResemble below
+		debugLog := inv.DebugLog
+		inv.DebugLog = ""
 		So(inv, ShouldResemble, Invocation{
 			ID:              9200093518582666224,
 			InvocationNonce: 631000787647335445,
@@ -366,13 +368,14 @@ func TestFullFlow(t *testing.T) {
 			Started:         epoch.Add(5 * time.Second),
 			Finished:        epoch.Add(5 * time.Second),
 			Task:            taskBytes,
-			DebugLog: "[22:42:05.000] Invocation initiated (attempt 1)\n" +
-				"[22:42:05.000] oops, fail\n" +
-				"[22:42:05.000] Invocation finished in 0 with status FAILED\n" +
-				"[22:42:05.000] It will probably be retried\n",
-			Status:         task.StatusFailed,
-			MutationsCount: 1,
+			DebugLog:        "",
+			Status:          task.StatusFailed,
+			MutationsCount:  1,
 		})
+		So(debugLog, ShouldContainSubstring, "[22:42:05.000] Invocation initiated (attempt 1)")
+		So(debugLog, ShouldContainSubstring, "[22:42:05.000] oops, fail")
+		So(debugLog, ShouldContainSubstring, "with status FAILED")
+		So(debugLog, ShouldContainSubstring, "[22:42:05.000] It will probably be retried")
 
 		// Second attempt. Now starts, hangs midway, they finishes.
 		mgr.launchTask = func(ctl task.Controller) error {
@@ -431,6 +434,8 @@ func TestFullFlow(t *testing.T) {
 		inv = Invocation{ID: 9200093518581789696, JobKey: jobKey}
 		So(ds.Get(c, &inv), ShouldBeNil)
 		inv.JobKey = nil // for easier ShouldResemble below
+		debugLog = inv.DebugLog
+		inv.DebugLog = ""
 		So(inv, ShouldResemble, Invocation{
 			ID:              9200093518581789696,
 			InvocationNonce: 631000787647335445,
@@ -438,20 +443,23 @@ func TestFullFlow(t *testing.T) {
 			Started:         epoch.Add(5 * time.Second),
 			Finished:        epoch.Add(5 * time.Second),
 			Task:            taskBytes,
-			DebugLog: "[22:42:05.000] Invocation initiated (attempt 2)\n" +
-				"[22:42:05.000] Starting\n" +
-				"[22:42:05.000] Invocation finished in 0 with status SUCCEEDED\n",
-			RetryCount:     1,
-			Status:         task.StatusSucceeded,
-			ViewURL:        "http://view_url",
-			TaskData:       []byte("blah"),
-			MutationsCount: 2,
+			DebugLog:        "",
+			RetryCount:      1,
+			Status:          task.StatusSucceeded,
+			ViewURL:         "http://view_url",
+			TaskData:        []byte("blah"),
+			MutationsCount:  2,
 		})
+		So(debugLog, ShouldContainSubstring, "[22:42:05.000] Invocation initiated (attempt 2)")
+		So(debugLog, ShouldContainSubstring, "[22:42:05.000] Starting")
+		So(debugLog, ShouldContainSubstring, "with status SUCCEEDED")
 
 		// Previous invocation is canceled.
 		inv = Invocation{ID: 9200093518582666224, JobKey: jobKey}
 		So(ds.Get(c, &inv), ShouldBeNil)
 		inv.JobKey = nil // for easier ShouldResemble below
+		debugLog = inv.DebugLog
+		inv.DebugLog = ""
 		So(inv, ShouldResemble, Invocation{
 			ID:              9200093518582666224,
 			InvocationNonce: 631000787647335445,
@@ -459,13 +467,14 @@ func TestFullFlow(t *testing.T) {
 			Started:         epoch.Add(5 * time.Second),
 			Finished:        epoch.Add(5 * time.Second),
 			Task:            taskBytes,
-			DebugLog: "[22:42:05.000] Invocation initiated (attempt 1)\n" +
-				"[22:42:05.000] oops, fail\n" +
-				"[22:42:05.000] Invocation finished in 0 with status FAILED\n" +
-				"[22:42:05.000] It will probably be retried\n",
-			Status:         task.StatusFailed,
-			MutationsCount: 1,
+			DebugLog:        "",
+			Status:          task.StatusFailed,
+			MutationsCount:  1,
 		})
+		So(debugLog, ShouldContainSubstring, "[22:42:05.000] Invocation initiated (attempt 1)")
+		So(debugLog, ShouldContainSubstring, "[22:42:05.000] oops, fail")
+		So(debugLog, ShouldContainSubstring, "with status FAILED")
+		So(debugLog, ShouldContainSubstring, "[22:42:05.000] It will probably be retried")
 
 		// Job is in scheduled state again.
 		So(allJobs(c), ShouldResemble, []Job{

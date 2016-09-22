@@ -90,10 +90,8 @@ func TestLaunchTask(t *testing.T) {
 			SaveCallback: func() error { return nil },
 		}
 		So(tm.LaunchTask(ctx, ctl), ShouldBeNil)
-		So(ctl.Log[:2], ShouldResemble, []string{
-			"GET " + ts.URL,
-			"Finished with overall status SUCCEEDED in 0",
-		})
+		So(ctl.Log[0], ShouldEqual, "GET "+ts.URL)
+		So(ctl.Log[1], ShouldStartWith, "Finished with overall status SUCCEEDED in 0")
 	})
 }
 
