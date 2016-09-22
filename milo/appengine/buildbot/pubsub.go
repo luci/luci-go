@@ -23,7 +23,6 @@ import (
 
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/metric"
-	"github.com/luci/luci-go/common/tsmon/types"
 )
 
 var (
@@ -36,7 +35,7 @@ var (
 	buildCounter = metric.NewCounter(
 		"luci/milo/buildbot_pubsub/builds",
 		"The number of buildbot builds received by Milo from PubSub",
-		types.MetricMetadata{},
+		nil,
 		field.Bool("internal"),
 		field.String("master"),
 		field.String("builder"),

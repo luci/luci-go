@@ -24,27 +24,27 @@ var (
 	// Some per-process memory allocator stats.
 	// See https://golang.org/pkg/runtime/#MemStats
 
-	MemAlloc       = metric.NewInt("go/mem/alloc", "Bytes allocated and not yet freed.", types.MetricMetadata{types.Bytes})
-	MemTotalAlloc  = metric.NewCounter("go/mem/total_alloc", "Bytes allocated (even if freed).", types.MetricMetadata{types.Bytes})
-	MemMallocs     = metric.NewCounter("go/mem/mallocs", "Number of mallocs.", types.MetricMetadata{})
-	MemFrees       = metric.NewCounter("go/mem/frees", "Number of frees.", types.MetricMetadata{})
-	MemNextGC      = metric.NewInt("go/mem/next_gc", "Next GC will happen when go/mem/alloc > this amount.", types.MetricMetadata{})
-	MemNumGC       = metric.NewCounter("go/mem/num_gc", "Number of garbage collections.", types.MetricMetadata{})
-	MemPauseTotal  = metric.NewCounter("go/mem/pause_total", "Total GC pause, in microseconds.", types.MetricMetadata{})
-	MemHeapSys     = metric.NewInt("go/mem/heap_sys", "Bytes obtained from system.", types.MetricMetadata{types.Bytes})
-	MemHeapIdle    = metric.NewInt("go/mem/heap_idle", "Bytes in idle spans.", types.MetricMetadata{types.Bytes})
-	MemHeapInuse   = metric.NewInt("go/mem/heap_in_use", "Bytes in non-idle span.", types.MetricMetadata{types.Bytes})
-	MemHeapObjects = metric.NewCounter("go/mem/heap_objects", "total number of allocated objects.", types.MetricMetadata{})
-	MemStackInuse  = metric.NewInt("go/mem/stack_in_use", "Bytes used by stack allocator.", types.MetricMetadata{types.Bytes})
-	MemStackSys    = metric.NewInt("go/mem/stack_in_sys", "Bytes allocated to stack allocator.", types.MetricMetadata{types.Bytes})
-	MemMSpanInuse  = metric.NewInt("go/mem/mspan_in_use", "Bytes used by mspan structures.", types.MetricMetadata{types.Bytes})
-	MemMSpanSys    = metric.NewInt("go/mem/mspan_in_sys", "Bytes allocated to mspan structures.", types.MetricMetadata{types.Bytes})
-	MemMCacheInuse = metric.NewInt("go/mem/mcache_in_use", "Bytes used by mcache structures.", types.MetricMetadata{types.Bytes})
-	MemMCacheSys   = metric.NewInt("go/mem/mcache_in_sys", "Bytes allocated to mcache structures.", types.MetricMetadata{types.Bytes})
+	MemAlloc       = metric.NewInt("go/mem/alloc", "Bytes allocated and not yet freed.", &types.MetricMetadata{types.Bytes})
+	MemTotalAlloc  = metric.NewCounter("go/mem/total_alloc", "Bytes allocated (even if freed).", &types.MetricMetadata{types.Bytes})
+	MemMallocs     = metric.NewCounter("go/mem/mallocs", "Number of mallocs.", nil)
+	MemFrees       = metric.NewCounter("go/mem/frees", "Number of frees.", nil)
+	MemNextGC      = metric.NewInt("go/mem/next_gc", "Next GC will happen when go/mem/alloc > this amount.", nil)
+	MemNumGC       = metric.NewCounter("go/mem/num_gc", "Number of garbage collections.", nil)
+	MemPauseTotal  = metric.NewCounter("go/mem/pause_total", "Total GC pause, in microseconds.", nil)
+	MemHeapSys     = metric.NewInt("go/mem/heap_sys", "Bytes obtained from system.", &types.MetricMetadata{types.Bytes})
+	MemHeapIdle    = metric.NewInt("go/mem/heap_idle", "Bytes in idle spans.", &types.MetricMetadata{types.Bytes})
+	MemHeapInuse   = metric.NewInt("go/mem/heap_in_use", "Bytes in non-idle span.", &types.MetricMetadata{types.Bytes})
+	MemHeapObjects = metric.NewCounter("go/mem/heap_objects", "total number of allocated objects.", nil)
+	MemStackInuse  = metric.NewInt("go/mem/stack_in_use", "Bytes used by stack allocator.", &types.MetricMetadata{types.Bytes})
+	MemStackSys    = metric.NewInt("go/mem/stack_in_sys", "Bytes allocated to stack allocator.", &types.MetricMetadata{types.Bytes})
+	MemMSpanInuse  = metric.NewInt("go/mem/mspan_in_use", "Bytes used by mspan structures.", &types.MetricMetadata{types.Bytes})
+	MemMSpanSys    = metric.NewInt("go/mem/mspan_in_sys", "Bytes allocated to mspan structures.", &types.MetricMetadata{types.Bytes})
+	MemMCacheInuse = metric.NewInt("go/mem/mcache_in_use", "Bytes used by mcache structures.", &types.MetricMetadata{types.Bytes})
+	MemMCacheSys   = metric.NewInt("go/mem/mcache_in_sys", "Bytes allocated to mcache structures.", &types.MetricMetadata{types.Bytes})
 
 	// Other runtime stats.
 
-	GoroutineNum = metric.NewInt("go/goroutine/num", "The number of goroutines that currently exist.", types.MetricMetadata{})
+	GoroutineNum = metric.NewInt("go/goroutine/num", "The number of goroutines that currently exist.", nil)
 )
 
 // Report updates runtime stats metrics.

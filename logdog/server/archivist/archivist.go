@@ -46,7 +46,7 @@ var (
 	// processed, regardless of success/failure.
 	tsCount = metric.NewCounter("logdog/archivist/archive/count",
 		"The number of archival tasks processed.",
-		tsmon_types.MetricMetadata{},
+		nil,
 		field.Bool("successful"))
 
 	// tsSize tracks the archive binary file size distribution of completed
@@ -58,7 +58,7 @@ var (
 	// The "stream" field is the type of log stream that is being archived.
 	tsSize = metric.NewCumulativeDistribution("logdog/archivist/archive/size",
 		"The size (in bytes) of each archive file.",
-		tsmon_types.MetricMetadata{Units: tsmon_types.Bytes},
+		&tsmon_types.MetricMetadata{Units: tsmon_types.Bytes},
 		distribution.DefaultBucketer,
 		field.String("archive"),
 		field.String("stream"))
@@ -72,7 +72,7 @@ var (
 	// The "stream" field is the type of log stream that is being archived.
 	tsTotalBytes = metric.NewCounter("logdog/archivist/archive/total_bytes",
 		"The total number of archived bytes.",
-		tsmon_types.MetricMetadata{Units: tsmon_types.Bytes},
+		&tsmon_types.MetricMetadata{Units: tsmon_types.Bytes},
 		field.String("archive"),
 		field.String("stream"))
 
@@ -82,7 +82,7 @@ var (
 	// The "stream" field is the type of log stream that is being archived.
 	tsLogEntries = metric.NewCumulativeDistribution("logdog/archivist/archive/log_entries",
 		"The total number of log entries per archive.",
-		tsmon_types.MetricMetadata{},
+		nil,
 		distribution.DefaultBucketer,
 		field.String("stream"))
 
@@ -92,7 +92,7 @@ var (
 	// The "stream" field is the type of log stream that is being archived.
 	tsTotalLogEntries = metric.NewCounter("logdog/archivist/archive/total_log_entries",
 		"The total number of log entries.",
-		tsmon_types.MetricMetadata{},
+		nil,
 		field.String("stream"))
 )
 

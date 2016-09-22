@@ -37,23 +37,23 @@ var (
 	// have been submitted for collection.
 	tsBundles = metric.NewCounter("logdog/collector/bundles",
 		"The number of individual log entry bundles that have been ingested.",
-		tsmon_types.MetricMetadata{})
+		nil)
 	// tsLogs tracks the number of logpb.LogEntry entries that have been
 	// written to intermediate storage.
 	tsLogs = metric.NewCounter("logdog/collector/logs",
 		"The number of individual log entries that have been ingested.",
-		tsmon_types.MetricMetadata{})
+		nil)
 
 	// tsBundleSize tracks the size, in bytes, of a given log bundle.
 	tsBundleSize = metric.NewCumulativeDistribution("logdog/collector/bundle/size",
 		"The size (in bytes) of the bundle.",
-		tsmon_types.MetricMetadata{Units: tsmon_types.Bytes},
+		&tsmon_types.MetricMetadata{Units: tsmon_types.Bytes},
 		distribution.DefaultBucketer)
 	// tsBundleEntriesPerBundle tracks the number of ButlerLogBundle.Entry entries
 	// in each bundle that have been collected.
 	tsBundleEntriesPerBundle = metric.NewCumulativeDistribution("logdog/collector/bundle/entries_per_bundle",
 		"The number of log bundle entries per bundle.",
-		tsmon_types.MetricMetadata{},
+		nil,
 		distribution.DefaultBucketer)
 
 	// tsBundleEntries tracks the total number of ButlerLogBundle.Entry entries
@@ -62,19 +62,19 @@ var (
 	// The "stream" field is the type of log stream for each tracked bundle entry.
 	tsBundleEntries = metric.NewCounter("logdog/collector/bundle/entries",
 		"The number of Butler bundle entries pulled.",
-		tsmon_types.MetricMetadata{},
+		nil,
 		field.String("stream"))
 	// tsBundleEntryLogs tracks the number of LogEntry ingested per bundle.
 	//
 	// The "stream" field is the type of log stream.
 	tsBundleEntryLogs = metric.NewCumulativeDistribution("logdog/collector/bundle/entry/logs",
 		"The number of log entries per bundle.",
-		tsmon_types.MetricMetadata{},
+		nil,
 		distribution.DefaultBucketer,
 		field.String("stream"))
 	tsBundleEntryProcessingTime = metric.NewCumulativeDistribution("logdog/collector/bundle/entry/processing_time_ms",
 		"The amount of time in milliseconds that a bundle entry takes to process.",
-		tsmon_types.MetricMetadata{Units: tsmon_types.Milliseconds},
+		&tsmon_types.MetricMetadata{Units: tsmon_types.Milliseconds},
 		distribution.DefaultBucketer,
 		field.String("stream"))
 )

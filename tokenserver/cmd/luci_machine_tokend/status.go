@@ -140,13 +140,13 @@ var (
 	metricVersion = metric.NewString(
 		"luci/machine_tokend/version",
 		"Major version of luci_machine_tokend executable",
-		types.MetricMetadata{})
+		nil)
 
 	// E.g. "luci-token-server/2123-abcdef" (<appid>/<version>).
 	metricServiceVersion = metric.NewString(
 		"luci/machine_tokend/service_version",
 		"Identifier of the server version that generated the token",
-		types.MetricMetadata{})
+		nil)
 
 	// This should be >=30 min in the future if everything is ok. If update
 	// process fails repeatedly, it will be in the past (and the token is unusable
@@ -154,13 +154,13 @@ var (
 	metricTokenExpiry = metric.NewInt(
 		"luci/machine_tokend/token_expiry_ts",
 		"Unix timestamp of when the token expires, in microsec",
-		types.MetricMetadata{Units: types.Microseconds})
+		&types.MetricMetadata{Units: types.Microseconds})
 
 	// This should be no longer than 30 min in the past if everything is ok.
 	metricTokenLastUpdate = metric.NewInt(
 		"luci/machine_tokend/last_update_ts",
 		"Unix timestamp of when the token was successfully updated, in microsec",
-		types.MetricMetadata{Units: types.Microseconds})
+		&types.MetricMetadata{Units: types.Microseconds})
 
 	// This should be [0-30] min in the future if everything ok. If update process
 	// fails (at least once), it will be in the past. It's not a fatal condition
@@ -168,7 +168,7 @@ var (
 	metricTokenNextUpdate = metric.NewInt(
 		"luci/machine_tokend/next_update_ts",
 		"Unix timestamp of when the token must be updated next time, in microsec",
-		types.MetricMetadata{Units: types.Microseconds})
+		&types.MetricMetadata{Units: types.Microseconds})
 
 	// See UpdateOutcome enum and OutcomeFromRPCError for possible values.
 	//
@@ -176,23 +176,23 @@ var (
 	metricUpdateOutcome = metric.NewString(
 		"luci/machine_tokend/update_outcome",
 		"Overall outcome of the luci_machine_tokend invocation",
-		types.MetricMetadata{})
+		nil)
 
 	// See UpdateReason enum for possible values.
 	metricUpdateReason = metric.NewString(
 		"luci/machine_tokend/update_reason",
 		"Why the token was updated or 'TOKEN_IS_GOOD' if token is still valid",
-		types.MetricMetadata{})
+		nil)
 
 	metricTotalDuration = metric.NewInt(
 		"luci/machine_tokend/duration_total_us",
 		"For how long luci_machine_tokend ran (including all local IO) in microsec",
-		types.MetricMetadata{Units: types.Microseconds})
+		&types.MetricMetadata{Units: types.Microseconds})
 
 	metricRPCDuration = metric.NewInt(
 		"luci/machine_tokend/duration_rpc_us",
 		"For how long an RPC to backend ran in microsec",
-		types.MetricMetadata{Units: types.Microseconds})
+		&types.MetricMetadata{Units: types.Microseconds})
 )
 
 // SendMetrics is called at the end of the token update process.

@@ -38,7 +38,7 @@ var (
 	// false if it was not.
 	tsTaskProcessingTime = metric.NewCumulativeDistribution("logdog/archivist/task_processing_time_ms",
 		"The amount of time (in milliseconds) that a single task takes to process.",
-		types.MetricMetadata{Units: types.Milliseconds},
+		&types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer,
 		field.Bool("consumed"))
 )

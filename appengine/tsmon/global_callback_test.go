@@ -14,7 +14,6 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/metric"
-	"github.com/luci/luci-go/common/tsmon/types"
 	"github.com/luci/luci-go/server/router"
 
 	"golang.org/x/net/context"
@@ -46,7 +45,7 @@ func TestGlobalCallbacks(t *testing.T) {
 		c, _ := buildGAETestContext()
 		state, mon := buildTestState()
 
-		m := metric.NewCallbackStringIn(c, "foo", "", types.MetricMetadata{})
+		m := metric.NewCallbackStringIn(c, "foo", "", nil)
 
 		tsmon.RegisterGlobalCallbackIn(c, func(c context.Context) {
 			m.Set(c, "bar")

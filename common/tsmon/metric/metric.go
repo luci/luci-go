@@ -137,12 +137,15 @@ type CallbackDistribution interface {
 
 // NewInt returns a new non-cumulative integer gauge metric.  This will panic if
 // another metric already exists with this name.
-func NewInt(name string, description string, metadata types.MetricMetadata, fields ...field.Field) Int {
+func NewInt(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) Int {
 	return NewIntIn(context.Background(), name, description, metadata, fields...)
 }
 
 // NewIntIn is like NewInt but registers in a given context.
-func NewIntIn(c context.Context, name string, description string, metadata types.MetricMetadata, fields ...field.Field) Int {
+func NewIntIn(c context.Context, name string, description string, metadata *types.MetricMetadata, fields ...field.Field) Int {
+	if metadata == nil {
+		metadata = &types.MetricMetadata{}
+	}
 	m := &intMetric{metric{
 		MetricInfo: types.MetricInfo{
 			Name:        name,
@@ -150,7 +153,7 @@ func NewIntIn(c context.Context, name string, description string, metadata types
 			Fields:      fields,
 			ValueType:   types.NonCumulativeIntType,
 		},
-		MetricMetadata: metadata,
+		MetricMetadata: *metadata,
 	}}
 	tsmon.Register(c, m)
 	return m
@@ -158,110 +161,146 @@ func NewIntIn(c context.Context, name string, description string, metadata types
 
 // NewCounter returns a new cumulative integer metric.  This will panic if
 // another metric already exists with this name.
-func NewCounter(name string, description string, metadata types.MetricMetadata, fields ...field.Field) Counter {
+func NewCounter(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) Counter {
 	return NewCounterIn(context.Background(), name, description, metadata, fields...)
 }
 
 // NewCounterIn is like NewCounter but registers in a given context.
-func NewCounterIn(c context.Context, name string, description string, metadata types.MetricMetadata, fields ...field.Field) Counter {
-	m := &counter{intMetric{metric{MetricInfo: types.MetricInfo{
-		Name:        name,
-		Description: description,
-		Fields:      fields,
-		ValueType:   types.CumulativeIntType,
-	}}}}
+func NewCounterIn(c context.Context, name string, description string, metadata *types.MetricMetadata, fields ...field.Field) Counter {
+	if metadata == nil {
+		metadata = &types.MetricMetadata{}
+	}
+	m := &counter{intMetric{metric{
+		MetricInfo: types.MetricInfo{
+			Name:        name,
+			Description: description,
+			Fields:      fields,
+			ValueType:   types.CumulativeIntType,
+		},
+		MetricMetadata: *metadata,
+	}}}
 	tsmon.Register(c, m)
 	return m
 }
 
 // NewFloat returns a new non-cumulative floating-point gauge metric.  This will
 // panic if another metric already exists with this name.
-func NewFloat(name string, description string, metadata types.MetricMetadata, fields ...field.Field) Float {
+func NewFloat(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) Float {
 	return NewFloatIn(context.Background(), name, description, metadata, fields...)
 }
 
 // NewFloatIn is like NewFloat but registers in a given context.
-func NewFloatIn(c context.Context, name string, description string, metadata types.MetricMetadata, fields ...field.Field) Float {
-	m := &floatMetric{metric{MetricInfo: types.MetricInfo{
-		Name:        name,
-		Description: description,
-		Fields:      fields,
-		ValueType:   types.NonCumulativeFloatType,
-	}}}
+func NewFloatIn(c context.Context, name string, description string, metadata *types.MetricMetadata, fields ...field.Field) Float {
+	if metadata == nil {
+		metadata = &types.MetricMetadata{}
+	}
+	m := &floatMetric{metric{
+		MetricInfo: types.MetricInfo{
+			Name:        name,
+			Description: description,
+			Fields:      fields,
+			ValueType:   types.NonCumulativeFloatType,
+		},
+		MetricMetadata: *metadata,
+	}}
 	tsmon.Register(c, m)
 	return m
 }
 
 // NewFloatCounter returns a new cumulative floating-point metric.  This will
 // panic if another metric already exists with this name.
-func NewFloatCounter(name string, description string, metadata types.MetricMetadata, fields ...field.Field) FloatCounter {
+func NewFloatCounter(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) FloatCounter {
 	return NewFloatCounterIn(context.Background(), name, description, metadata, fields...)
 }
 
 // NewFloatCounterIn is like NewFloatCounter but registers in a given context.
-func NewFloatCounterIn(c context.Context, name string, description string, metadata types.MetricMetadata, fields ...field.Field) FloatCounter {
-	m := &floatCounter{floatMetric{metric{MetricInfo: types.MetricInfo{
-		Name:        name,
-		Description: description,
-		Fields:      fields,
-		ValueType:   types.CumulativeFloatType,
-	}}}}
+func NewFloatCounterIn(c context.Context, name string, description string, metadata *types.MetricMetadata, fields ...field.Field) FloatCounter {
+	if metadata == nil {
+		metadata = &types.MetricMetadata{}
+	}
+	m := &floatCounter{floatMetric{metric{
+		MetricInfo: types.MetricInfo{
+			Name:        name,
+			Description: description,
+			Fields:      fields,
+			ValueType:   types.CumulativeFloatType,
+		},
+		MetricMetadata: *metadata,
+	}}}
 	tsmon.Register(c, m)
 	return m
 }
 
 // NewString returns a new string-valued metric.  This will panic if another
 // metric already exists with this name.
-func NewString(name string, description string, metadata types.MetricMetadata, fields ...field.Field) String {
+func NewString(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) String {
 	return NewStringIn(context.Background(), name, description, metadata, fields...)
 }
 
 // NewStringIn is like NewString but registers in a given context.
-func NewStringIn(c context.Context, name string, description string, metadata types.MetricMetadata, fields ...field.Field) String {
-	m := &stringMetric{metric{MetricInfo: types.MetricInfo{
-		Name:        name,
-		Description: description,
-		Fields:      fields,
-		ValueType:   types.StringType,
-	}}}
+func NewStringIn(c context.Context, name string, description string, metadata *types.MetricMetadata, fields ...field.Field) String {
+	if metadata == nil {
+		metadata = &types.MetricMetadata{}
+	}
+	m := &stringMetric{metric{
+		MetricInfo: types.MetricInfo{
+			Name:        name,
+			Description: description,
+			Fields:      fields,
+			ValueType:   types.StringType,
+		},
+		MetricMetadata: *metadata,
+	}}
 	tsmon.Register(c, m)
 	return m
 }
 
 // NewBool returns a new bool-valued metric.  This will panic if another
 // metric already exists with this name.
-func NewBool(name string, description string, metadata types.MetricMetadata, fields ...field.Field) Bool {
+func NewBool(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) Bool {
 	return NewBoolIn(context.Background(), name, description, metadata, fields...)
 }
 
 // NewBoolIn is like NewBool but registers in a given context.
-func NewBoolIn(c context.Context, name string, description string, metadata types.MetricMetadata, fields ...field.Field) Bool {
-	m := &boolMetric{metric{MetricInfo: types.MetricInfo{
-		Name:        name,
-		Description: description,
-		Fields:      fields,
-		ValueType:   types.BoolType,
-	}}}
+func NewBoolIn(c context.Context, name string, description string, metadata *types.MetricMetadata, fields ...field.Field) Bool {
+	if metadata == nil {
+		metadata = &types.MetricMetadata{}
+	}
+	m := &boolMetric{metric{
+		MetricInfo: types.MetricInfo{
+			Name:        name,
+			Description: description,
+			Fields:      fields,
+			ValueType:   types.BoolType,
+		},
+		MetricMetadata: *metadata,
+	}}
 	tsmon.Register(c, m)
 	return m
 }
 
 // NewCumulativeDistribution returns a new cumulative-distribution-valued
 // metric.  This will panic if another metric already exists with this name.
-func NewCumulativeDistribution(name string, description string, metadata types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) CumulativeDistribution {
+func NewCumulativeDistribution(name string, description string, metadata *types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) CumulativeDistribution {
 	return NewCumulativeDistributionIn(context.Background(), name, description, metadata, bucketer, fields...)
 }
 
 // NewCumulativeDistributionIn is like NewCumulativeDistribution but registers in a given context.
-func NewCumulativeDistributionIn(c context.Context, name string, description string, metadata types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) CumulativeDistribution {
+func NewCumulativeDistributionIn(c context.Context, name string, description string, metadata *types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) CumulativeDistribution {
+	if metadata == nil {
+		metadata = &types.MetricMetadata{}
+	}
 	m := &cumulativeDistributionMetric{
 		nonCumulativeDistributionMetric{
-			metric: metric{MetricInfo: types.MetricInfo{
-				Name:        name,
-				Description: description,
-				Fields:      fields,
-				ValueType:   types.CumulativeDistributionType,
-			}},
+			metric: metric{
+				MetricInfo: types.MetricInfo{
+					Name:        name,
+					Description: description,
+					Fields:      fields,
+					ValueType:   types.CumulativeDistributionType,
+				},
+				MetricMetadata: *metadata,
+			},
 			bucketer: bucketer,
 		},
 	}
@@ -271,19 +310,25 @@ func NewCumulativeDistributionIn(c context.Context, name string, description str
 
 // NewNonCumulativeDistribution returns a new non-cumulative-distribution-valued
 // metric.  This will panic if another metric already exists with this name.
-func NewNonCumulativeDistribution(name string, description string, metadata types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) NonCumulativeDistribution {
+func NewNonCumulativeDistribution(name string, description string, metadata *types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) NonCumulativeDistribution {
 	return NewNonCumulativeDistributionIn(context.Background(), name, description, metadata, bucketer, fields...)
 }
 
 // NewNonCumulativeDistributionIn is like NewNonCumulativeDistribution but registers in a given context.
-func NewNonCumulativeDistributionIn(c context.Context, name string, description string, metadata types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) NonCumulativeDistribution {
+func NewNonCumulativeDistributionIn(c context.Context, name string, description string, metadata *types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) NonCumulativeDistribution {
+	if metadata == nil {
+		metadata = &types.MetricMetadata{}
+	}
 	m := &nonCumulativeDistributionMetric{
-		metric: metric{MetricInfo: types.MetricInfo{
-			Name:        name,
-			Description: description,
-			Fields:      fields,
-			ValueType:   types.NonCumulativeDistributionType,
-		}},
+		metric: metric{
+			MetricInfo: types.MetricInfo{
+				Name:        name,
+				Description: description,
+				Fields:      fields,
+				ValueType:   types.NonCumulativeDistributionType,
+			},
+			MetricMetadata: *metadata,
+		},
 		bucketer: bucketer,
 	}
 	tsmon.Register(c, m)
@@ -292,56 +337,56 @@ func NewNonCumulativeDistributionIn(c context.Context, name string, description 
 
 // NewCallbackInt returns a new integer metric whose value is populated by a
 // callback at collection time.
-func NewCallbackInt(name string, description string, metadata types.MetricMetadata, fields ...field.Field) CallbackInt {
+func NewCallbackInt(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) CallbackInt {
 	return NewInt(name, description, metadata, fields...)
 }
 
 // NewCallbackFloat returns a new float metric whose value is populated by a
 // callback at collection time.
-func NewCallbackFloat(name string, description string, metadata types.MetricMetadata, fields ...field.Field) CallbackFloat {
+func NewCallbackFloat(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) CallbackFloat {
 	return NewFloat(name, description, metadata, fields...)
 }
 
 // NewCallbackString returns a new string metric whose value is populated by a
 // callback at collection time.
-func NewCallbackString(name string, description string, metadata types.MetricMetadata, fields ...field.Field) CallbackString {
+func NewCallbackString(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) CallbackString {
 	return NewString(name, description, metadata, fields...)
 }
 
 // NewCallbackBool returns a new bool metric whose value is populated by a
 // callback at collection time.
-func NewCallbackBool(name string, description string, metadata types.MetricMetadata, fields ...field.Field) CallbackBool {
+func NewCallbackBool(name string, description string, metadata *types.MetricMetadata, fields ...field.Field) CallbackBool {
 	return NewBool(name, description, metadata, fields...)
 }
 
 // NewCallbackDistribution returns a new distribution metric whose value is
 // populated by a callback at collection time.
-func NewCallbackDistribution(name string, description string, metadata types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) CallbackDistribution {
+func NewCallbackDistribution(name string, description string, metadata *types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) CallbackDistribution {
 	return NewNonCumulativeDistribution(name, description, metadata, bucketer, fields...)
 }
 
 // NewCallbackIntIn is like NewCallbackInt but registers in a given context.
-func NewCallbackIntIn(c context.Context, name string, description string, metadata types.MetricMetadata, fields ...field.Field) CallbackInt {
+func NewCallbackIntIn(c context.Context, name string, description string, metadata *types.MetricMetadata, fields ...field.Field) CallbackInt {
 	return NewIntIn(c, name, description, metadata, fields...)
 }
 
 // NewCallbackFloatIn is like NewCallbackFloat but registers in a given context.
-func NewCallbackFloatIn(c context.Context, name string, description string, metadata types.MetricMetadata, fields ...field.Field) CallbackFloat {
+func NewCallbackFloatIn(c context.Context, name string, description string, metadata *types.MetricMetadata, fields ...field.Field) CallbackFloat {
 	return NewFloatIn(c, name, description, metadata, fields...)
 }
 
 // NewCallbackStringIn is like NewCallbackString but registers in a given context.
-func NewCallbackStringIn(c context.Context, name string, description string, metadata types.MetricMetadata, fields ...field.Field) CallbackString {
+func NewCallbackStringIn(c context.Context, name string, description string, metadata *types.MetricMetadata, fields ...field.Field) CallbackString {
 	return NewStringIn(c, name, description, metadata, fields...)
 }
 
 // NewCallbackBoolIn is like NewCallbackBool but registers in a given context.
-func NewCallbackBoolIn(c context.Context, name string, description string, metadata types.MetricMetadata, fields ...field.Field) CallbackBool {
+func NewCallbackBoolIn(c context.Context, name string, description string, metadata *types.MetricMetadata, fields ...field.Field) CallbackBool {
 	return NewBoolIn(c, name, description, metadata, fields...)
 }
 
 // NewCallbackDistributionIn is like NewCallbackDistribution but registers in a given context.
-func NewCallbackDistributionIn(c context.Context, name string, description string, metadata types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) CallbackDistribution {
+func NewCallbackDistributionIn(c context.Context, name string, description string, metadata *types.MetricMetadata, bucketer *distribution.Bucketer, fields ...field.Field) CallbackDistribution {
 	return NewNonCumulativeDistributionIn(c, name, description, metadata, bucketer, fields...)
 }
 

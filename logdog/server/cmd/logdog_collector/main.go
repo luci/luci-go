@@ -44,14 +44,14 @@ var (
 	// "transient_failure".
 	tsPubsubCount = metric.NewCounter("logdog/collector/subscription/count",
 		"The number of Pub/Sub messages pulled.",
-		types.MetricMetadata{},
+		nil,
 		field.String("result"))
 
 	// tsTaskProcessingTime tracks the amount of time a single subscription
 	// message takes to process, in milliseconds.
 	tsTaskProcessingTime = metric.NewCumulativeDistribution("logdog/collector/subscription/processing_time_ms",
 		"Amount of time in milliseconds that a single Pub/Sub message takes to process.",
-		types.MetricMetadata{types.Milliseconds},
+		&types.MetricMetadata{types.Milliseconds},
 		distribution.DefaultBucketer)
 )
 

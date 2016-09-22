@@ -21,14 +21,14 @@ var (
 	grpcServerCount = metric.NewCounter(
 		"grpc/server/count",
 		"Total number of RPCs.",
-		types.MetricMetadata{},
+		nil,
 		field.String("method"), // full name of the grpc method
 		field.Int("code"))      // grpc.Code of the result
 
 	grpcServerDuration = metric.NewCumulativeDistribution(
 		"grpc/server/duration",
 		"Distribution of server-side RPC duration (in milliseconds).",
-		types.MetricMetadata{},
+		&types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer,
 		field.String("method"), // full name of the grpc method
 		field.Int("code"))      // grpc.Code of the result
