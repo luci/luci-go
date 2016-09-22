@@ -53,7 +53,7 @@ func TestPromise(t *testing.T) {
 			ctx, _ = clock.WithTimeout(ctx, 1*time.Second)
 			data, err := p.Get(ctx)
 			So(data, ShouldBeNil)
-			So(err, ShouldEqual, context.DeadlineExceeded)
+			So(err.Error(), ShouldEqual, context.DeadlineExceeded.Error())
 		})
 
 		Convey(`With data already added`, func() {

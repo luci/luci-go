@@ -149,7 +149,7 @@ func TestClient(t *testing.T) {
 
 				ctx, _ = context.WithDeadline(ctx, clock.Now(ctx))
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(err, ShouldEqual, context.DeadlineExceeded)
+				So(err.Error(), ShouldEqual, context.DeadlineExceeded.Error())
 			})
 
 			Convey("With a deadline in the future, sets the deadline header.", func(c C) {

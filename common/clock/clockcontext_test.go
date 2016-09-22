@@ -82,7 +82,7 @@ func TestClockContext(t *testing.T) {
 
 				cctx, _ := context.WithCancel(Set(context.Background(), &mc))
 				ctx, _ := WithTimeout(cctx, 10*time.Millisecond)
-				So(wait(ctx), ShouldEqual, context.DeadlineExceeded)
+				So(wait(ctx).Error(), ShouldEqual, context.DeadlineExceeded.Error())
 			})
 
 			Convey(`Will successfully cancel with its cancel func.`, func() {
@@ -115,7 +115,7 @@ func TestClockContext(t *testing.T) {
 					return d == 10*time.Millisecond
 				}
 
-				So(wait(ctx), ShouldEqual, context.DeadlineExceeded)
+				So(wait(ctx).Error(), ShouldEqual, context.DeadlineExceeded.Error())
 			})
 
 			Convey(`Will successfully cancel with its cancel func.`, func() {
@@ -130,7 +130,7 @@ func TestClockContext(t *testing.T) {
 			ctx, _ := WithDeadline(context.Background(), mc.now.Add(-time.Second))
 
 			Convey(`Will time out immediately.`, func() {
-				So(wait(ctx), ShouldEqual, context.DeadlineExceeded)
+				So(wait(ctx).Error(), ShouldEqual, context.DeadlineExceeded.Error())
 			})
 		})
 	})
