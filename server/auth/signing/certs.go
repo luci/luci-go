@@ -37,6 +37,8 @@ type Certificate struct {
 // PublicCertificates is a bundle of recent certificates of some service. Must
 // not be mutated once initialized.
 type PublicCertificates struct {
+	// ServiceAccountName is name of a service account that owns the key.
+	ServiceAccountName string `json:"service_account_name,omitempty"`
 	// Certificates is the list of certificates.
 	Certificates []Certificate `json:"certificates"`
 	// Timestamp is Unix time (microseconds) of when this list was generated.
@@ -154,7 +156,7 @@ func FetchCertificatesForServiceAccount(c context.Context, email string) (*Publi
 		sort.Strings(keys)
 
 		// Convert to PublicCertificates struct.
-		certs := &PublicCertificates{}
+		certs := &PublicCertificates{ServiceAccountName: email}
 		for _, key := range keys {
 			certs.Certificates = append(certs.Certificates, Certificate{
 				KeyName:            key,

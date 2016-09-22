@@ -31,6 +31,7 @@ func TestFetchCertificates(t *testing.T) {
 	Convey("Works", t, func() {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(fmt.Sprintf(`{
+				"service_account_name": "blah@blah.com",
 				"certificates": [{
 					"key_name": "abc",
 					"x509_certificate_pem": %q
@@ -40,6 +41,7 @@ func TestFetchCertificates(t *testing.T) {
 		}))
 		certs, err := FetchCertificates(context.Background(), ts.URL)
 		So(err, ShouldBeNil)
+		So(certs.ServiceAccountName, ShouldEqual, "blah@blah.com")
 		So(len(certs.Certificates), ShouldEqual, 1)
 	})
 
@@ -81,6 +83,7 @@ func TestFetchCertificatesForServiceAccount(t *testing.T) {
 		c := context.WithValue(context.Background(), robotCertURLKey(0), ts.URL+"/")
 		certs, err := FetchCertificatesForServiceAccount(c, "robot@robots.gserviceaccount.com")
 		So(err, ShouldBeNil)
+		So(certs.ServiceAccountName, ShouldEqual, "robot@robots.gserviceaccount.com")
 		So(certs.Certificates, ShouldResemble, []Certificate{
 			{
 				KeyName:            "0392f9886770640357cbb29e57d3698291b1e805",
