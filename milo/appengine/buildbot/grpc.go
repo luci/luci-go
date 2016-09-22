@@ -36,7 +36,7 @@ func (s *Service) GetBuildbotBuildJSON(
 		return nil, grpc.Errorf(codes.InvalidArgument, "No builder specified")
 	}
 
-	b, err := build(c, req.Master, req.Builder, int(req.BuildNum))
+	b, err := getBuild(c, req.Master, req.Builder, int(req.BuildNum))
 	switch {
 	case err == errBuildNotFound:
 		return nil, grpc.Errorf(codes.NotFound, "Build not found")
