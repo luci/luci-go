@@ -361,7 +361,7 @@ An element for rendering muxed LogDog log streams.
           });
           return result;
         }.bind(this)).catch(function(error) {
-          if (error instanceof LogDogError && error.isPermissionDenied()) {
+          if (error instanceof LogDogError && error.isUnauthenticated()) {
             // Retry on auth event.
             this._loadStatusBar("Not authorized to execute query. Log in " +
                 "with an authorized account.");
@@ -1008,7 +1008,7 @@ An element for rendering muxed LogDog log streams.
       // If this is a "not found" error, we assume that the stream is valid, but
       // hasn't been ingested into LogDog yet. Return "null".
       if (error instanceof LogDogError) {
-        if (error.isPermissionDenied()) {
+        if (error.isUnauthenticated()) {
           this.waiting = true;
           this.auth = true;
         } else if (error.isNotFound()) {
@@ -1049,7 +1049,7 @@ An element for rendering muxed LogDog log streams.
       if (tidx >= 0) {
         pieces.push(this._lastFetchIndex + " / " + tidx);
       } else {
-        pieces.push(this._lastFetchIndex + " ?");
+        pieces.push(this._lastFetchIndex + "...");
       }
     }
 

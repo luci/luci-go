@@ -26,7 +26,7 @@
   LogDogError.prototype.isNotFound = function() {
     return (this.isGrpcError() && this.base.code === 5);
   };
-  LogDogError.prototype.isPermissionDenied = function() {
-    return (this.isGrpcError() && this.base.code === 7);
+  LogDogError.prototype.isUnauthenticated = function() {
+    return (this.isGrpcError() && this.base.code === 16);
   };
 </script>
