@@ -13,23 +13,31 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+var (
+	fixSkip        = regexp.MustCompile(`skipped \d+ frames`)
+	fixNum         = regexp.MustCompile(`^#\d+`)
+	fixTestingLine = regexp.MustCompile(`(testing/\w+.go):\d+`)
+)
+
+func FixForTest(lines Lines) Lines {
+	for i, l := range lines {
+		switch {
+		case strings.HasPrefix(l, "goroutine"):
+			l = "GOROUTINE LINE"
+		case strings.HasPrefix(l, "... skipped"):
+			l = fixSkip.ReplaceAllLiteralString(l, "skipped SOME frames")
+		}
+		l = fixNum.ReplaceAllLiteralString(l, "#?")
+		if strings.HasPrefix(l, "#? testing/") {
+			l = fixTestingLine.ReplaceAllString(l, "$1:XXX")
+		}
+		lines[i] = l
+	}
+	return lines
+}
+
 func TestAnnotation(t *testing.T) {
 	t.Parallel()
-
-	fixSkip := regexp.MustCompile(`skipped \d+ frames`)
-	fixNum := regexp.MustCompile(`^#\d+`)
-
-	fix := func(lines Lines) {
-		for i, l := range lines {
-			switch {
-			case strings.HasPrefix(l, "goroutine"):
-				l = "GOROUTINE LINE"
-			case strings.HasPrefix(l, "... skipped"):
-				l = fixSkip.ReplaceAllLiteralString(l, "skipped SOME frames")
-			}
-			lines[i] = fixNum.ReplaceAllLiteralString(l, "#?")
-		}
-	}
 
 	Convey("Test annotation struct", t, func() {
 		e := (Annotate(New("bad thing")).
@@ -47,13 +55,13 @@ func TestAnnotation(t *testing.T) {
 			lines := RenderStack(e).ToLines(
 				`runtime`, `github.com/jtolds/gls`,
 				`github.com/smartystreets/goconvey/convey`)
-			fix(lines)
+			FixForTest(lines)
 
 			So(lines, ShouldResemble, Lines{
 				`original error: bad thing`,
 				``,
 				`GOROUTINE LINE`,
-				`#? github.com/luci/luci-go/common/errors/annotate_test.go:39 - errors.TestAnnotation.func2()`,
+				`#? github.com/luci/luci-go/common/errors/annotate_test.go:47 - errors.TestAnnotation.func1()`,
 				`  reason: "20 some error: \"stringy\""`,
 				`  "extra" = 8.200`,
 				`  "first" = 0x00000014`,
@@ -63,8 +71,8 @@ func TestAnnotation(t *testing.T) {
 				`... skipped SOME frames in pkg "github.com/jtolds/gls"...`,
 				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
 				``,
-				`#? github.com/luci/luci-go/common/errors/annotate_test.go:102 - errors.TestAnnotation()`,
-				`#? testing/testing.go:473 - testing.tRunner()`,
+				`#? github.com/luci/luci-go/common/errors/annotate_test.go:110 - errors.TestAnnotation()`,
+				`#? testing/testing.go:XXX - testing.tRunner()`,
 				`... skipped SOME frames in pkg "runtime"...`,
 			})
 		})
@@ -74,13 +82,13 @@ func TestAnnotation(t *testing.T) {
 			lines := RenderStack(e).ToLines(
 				`runtime`, `github.com/jtolds/gls`,
 				`github.com/smartystreets/goconvey/convey`)
-			fix(lines)
+			FixForTest(lines)
 
 			So(lines, ShouldResemble, Lines{
 				`original error: bad thing`,
 				``,
 				`GOROUTINE LINE`,
-				`#? github.com/luci/luci-go/common/errors/annotate_test.go:39 - errors.TestAnnotation.func2()`,
+				`#? github.com/luci/luci-go/common/errors/annotate_test.go:47 - errors.TestAnnotation.func1()`,
 				`  annotation #0:`,
 				`    reason: "outer frame outer"`,
 				`    "first" = "outer"`,
@@ -94,8 +102,8 @@ func TestAnnotation(t *testing.T) {
 				`... skipped SOME frames in pkg "github.com/jtolds/gls"...`,
 				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
 				``,
-				`#? github.com/luci/luci-go/common/errors/annotate_test.go:102 - errors.TestAnnotation()`,
-				`#? testing/testing.go:473 - testing.tRunner()`,
+				`#? github.com/luci/luci-go/common/errors/annotate_test.go:110 - errors.TestAnnotation()`,
+				`#? testing/testing.go:XXX - testing.tRunner()`,
 				`... skipped SOME frames in pkg "runtime"...`,
 			})
 		})

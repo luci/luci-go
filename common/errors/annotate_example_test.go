@@ -6,7 +6,6 @@ package errors
 
 import (
 	"fmt"
-	"regexp"
 )
 
 func someProcessingFunction(val int) error {
@@ -62,18 +61,8 @@ func ExampleAnnotate() {
 		err = Annotate(err).Reason("top level").Err()
 		fmt.Println("Public-facing error:\n ", err)
 		fmt.Println("\nfull error:")
-		goroutineFixer := regexp.MustCompile(`goroutine \d*`)
-		for _, l := range RenderStack(err).ToLines("runtime", "_test") {
-			if l == "" {
-				fmt.Println()
-			} else {
-				fmt.Println("  " + goroutineFixer.ReplaceAllStringFunc(l, func(match string) string {
-					if match == "goroutine 1" {
-						return "goroutine [main goroutine]"
-					}
-					return "goroutine [child goroutine]"
-				}))
-			}
+		for _, l := range FixForTest(RenderStack(err).ToLines("runtime", "_test")) {
+			fmt.Println(l)
 		}
 	}
 
@@ -82,47 +71,48 @@ func ExampleAnnotate() {
 	//   top level: while processing [3]: could not process: super wrapper(processing 3: bad number: 1)
 	//
 	// full error:
-	//   goroutine [child goroutine]:
-	//   #0 github.com/luci/luci-go/common/errors/annotate_example_test.go:15 - errors.someProcessingFunction()
-	//     reason: "bad number: 1"
-	//     "val" = 1
+	// GOROUTINE LINE
+	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:14 - errors.someProcessingFunction()
+	//   reason: "bad number: 1"
+	//   "val" = 1
 	//
-	//   #1 github.com/luci/luci-go/common/errors/annotate_example_test.go:17 - errors.someProcessingFunction()
-	//     "val" = 2
+	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:16 - errors.someProcessingFunction()
+	//   "val" = 2
 	//
-	//   #2 github.com/luci/luci-go/common/errors/annotate_example_test.go:17 - errors.someProcessingFunction()
-	//     "val" = 3
+	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:16 - errors.someProcessingFunction()
+	//   "val" = 3
 	//
-	//   From frame 2 to 3, the following wrappers were found:
-	//     unknown wrapper *errors.MiscWrappedError
+	// From frame 2 to 3, the following wrappers were found:
+	//   unknown wrapper *errors.MiscWrappedError
 	//
-	//   #3 github.com/luci/luci-go/common/errors/annotate_example_test.go:26 - errors.someLibFunc()
-	//     reason: "processing 3"
-	//     "i" = 0
-	//     "secret" = value
-	//     "val" = 3
+	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:25 - errors.someLibFunc()
+	//   reason: "processing 3"
+	//   "i" = 0
+	//   "secret" = value
+	//   "val" = 3
 	//
-	//   From frame 3 to 4, the following wrappers were found:
-	//     MultiError 1/1: following first non-nil error.
-	//       "non-nil" = 1
-	//       "total" = 1
+	// From frame 3 to 4, the following wrappers were found:
+	//   MultiError 1/1: following first non-nil error.
+	//     "non-nil" = 1
+	//     "total" = 1
 	//
-	//   #4 github.com/luci/luci-go/common/errors/annotate_example_test.go:52 - errors.someIntermediateFunc.func1()
-	//     reason: "could not process"
+	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:51 - errors.someIntermediateFunc.func1()
+	//   reason: "could not process"
 	//
-	//   ... skipped 1 frames in pkg "runtime"...
+	// ... skipped SOME frames in pkg "runtime"...
 	//
-	//   goroutine [main goroutine]:
-	//   #0 github.com/luci/luci-go/common/errors/annotate_example_test.go:55 - errors.someIntermediateFunc()
-	//     reason: "while processing [3]"
-	//     "vals" = []int{3}
+	// GOROUTINE LINE
+	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:54 - errors.someIntermediateFunc()
+	//   reason: "while processing [3]"
+	//   "vals" = []int{3}
 	//
-	//   #1 github.com/luci/luci-go/common/errors/annotate_example_test.go:61 - errors.ExampleAnnotate()
-	//     reason: "top level"
+	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:60 - errors.ExampleAnnotate()
+	//   reason: "top level"
 	//
-	//   #2 testing/example.go:98 - testing.runExample()
-	//   #3 testing/example.go:36 - testing.RunExamples()
-	//   #4 testing/testing.go:516 - testing.(*M).Run()
-	//   ... skipped 1 frames in pkg "_test"...
-	//   ... skipped 2 frames in pkg "runtime"...
+	// #? testing/example.go:XXX - testing.runExample()
+	// #? testing/example.go:XXX - testing.RunExamples()
+	// #? testing/testing.go:XXX - testing.(*M).Run()
+	// ... skipped SOME frames in pkg "_test"...
+	// ... skipped SOME frames in pkg "runtime"...
+
 }
