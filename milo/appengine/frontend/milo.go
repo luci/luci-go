@@ -31,8 +31,9 @@ func emptyPrelude(c context.Context, methodName string, req proto.Message) (cont
 func init() {
 	// Register plain ol' http handlers.
 	r := router.New()
+	gaemiddleware.InstallHandlers(r, gaemiddleware.BaseProd())
+
 	basemw := settings.Base()
-	gaemiddleware.InstallHandlers(r, basemw)
 	r.GET("/", basemw, settings.Wrap(frontpage{}))
 
 	// Admin and cron endpoints.

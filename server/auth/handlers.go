@@ -20,27 +20,8 @@ import (
 // If you are using appengine/gaeauth/server, these handlers are already
 // installed.
 func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
-	r.GET("/auth/api/v1/accounts/self", base.Extend(Authenticate), accountsSelfHandler)
 	r.GET("/auth/api/v1/server/certificates", base, certsHandler)
 	r.GET("/auth/api/v1/server/info", base, infoHandler)
-}
-
-// accountsSelfHandler returns JSON with information about the caller.
-//
-// It can be used to verify callers' IP, access tokens, etc.
-func accountsSelfHandler(c *router.Context) {
-	state := GetState(c.Context)
-	if state == nil {
-		httpReplyError(c, http.StatusNotImplemented, "Auth state is not available, application is probably using auth library wrong.")
-		return
-	}
-	var reply struct {
-		Identity string `json:"identity,omitempty"`
-		IP       string `json:"ip,omitempty"`
-	}
-	reply.Identity = string(state.User().Identity)
-	reply.IP = state.PeerIP().String()
-	httpReply(c, http.StatusOK, &reply)
 }
 
 // certsHandler servers public certificates of the signer in the context.
