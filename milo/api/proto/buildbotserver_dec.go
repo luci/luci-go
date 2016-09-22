@@ -36,3 +36,18 @@ func (s *DecoratedBuildbot) GetCompressedMasterJSON(c context.Context, req *Mast
 	}
 	return
 }
+
+func (s *DecoratedBuildbot) GetBuildbotBuildJSON(c context.Context, req *BuildbotBuildRequest) (rsp *BuildbotBuildJSON, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "GetBuildbotBuildJSON", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.GetBuildbotBuildJSON(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "GetBuildbotBuildJSON", rsp, err)
+	}
+	return
+}

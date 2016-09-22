@@ -11,6 +11,7 @@ import "google/protobuf/timestamp.proto";
 // The buildbot service definition.
 service Buildbot {
   rpc GetCompressedMasterJSON(MasterRequest) returns (CompressedMasterJSON) {}
+  rpc GetBuildbotBuildJSON(BuildbotBuildRequest) returns (BuildbotBuildJSON) {}
 }
 
 // The request containing the name of the master.
@@ -28,4 +29,17 @@ message CompressedMasterJSON {
 
   // Gzipped json data of the master.
   bytes data = 3;
+}
+
+// The request for a specific build.
+message BuildbotBuildRequest {
+  string master = 1;
+  string builder = 2;
+  int64 build_num = 3;
+}
+
+// The response message for a specific build.
+message BuildbotBuildJSON {
+  // Json data of the build.
+  bytes data = 1;
 }

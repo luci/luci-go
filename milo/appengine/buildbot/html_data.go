@@ -18,10 +18,10 @@ import (
 // We put this here because _test.go files are sometimes not built.
 var testCases = []struct {
 	builder string
-	build   string
+	build   int
 }{
-	{"CrWinGoma", "30608"},
-	{"win_chromium_rel_ng", "246309"},
+	{"CrWinGoma", 30608},
+	{"win_chromium_rel_ng", 246309},
 }
 
 // TestableBuild is a subclass of Build that interfaces with TestableHandler and
@@ -45,7 +45,7 @@ func (b Build) TestData() []settings.TestBundle {
 				tc.builder, tc.build, err))
 		}
 		bundles = append(bundles, settings.TestBundle{
-			Description: fmt.Sprintf("Debug page: %s/%s", tc.builder, tc.build),
+			Description: fmt.Sprintf("Debug page: %s/%d", tc.builder, tc.build),
 			Data: templates.Args{
 				"Build": build,
 			},

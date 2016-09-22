@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
@@ -51,8 +52,15 @@ func (b Build) Render(c context.Context, r *http.Request, p httprouter.Params) (
 			Code:    http.StatusBadRequest,
 		}
 	}
+	num, err := strconv.Atoi(buildNum)
+	if err != nil {
+		return nil, &miloerror.Error{
+			Message: fmt.Sprintf("%s does not look like a number", buildNum),
+			Code:    http.StatusBadRequest,
+		}
+	}
 
-	result, err := build(c, master, builder, buildNum)
+	result, err := build(c, master, builder, num)
 	if err != nil {
 		return nil, err
 	}

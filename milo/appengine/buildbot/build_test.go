@@ -71,7 +71,7 @@ func TestBuild(t *testing.T) {
 			Convey(fmt.Sprintf("Test Case: %s/%s", tc.builder, tc.build), func() {
 				build, err := build(c, "debug", tc.builder, tc.build)
 				So(err, ShouldBeNil)
-				fname := fmt.Sprintf("%s.%s.build.json", tc.builder, tc.build)
+				fname := fmt.Sprintf("%s.%d.build.json", tc.builder, tc.build)
 				So(build, shouldMatchExpectationsFor, fname)
 			})
 		}
@@ -83,7 +83,7 @@ func TestBuild(t *testing.T) {
 				Number:      1,
 				Internal:    true,
 			})
-			b, err := getBuild(c, "fake", "fake", "1")
+			b, err := getBuild(c, "fake", "fake", 1)
 			So(b, ShouldBeNil)
 			So(err, ShouldResemble, miloerror.Error{
 				Message: "Cannot fetch project buildbot-internal:\ndatastore: no such entity",

@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -29,22 +28,14 @@ var errBuildNotFound = miloerror.Error{
 }
 
 // getBuild fetches a buildbot build from the datastore and checks ACLs.
-func getBuild(c context.Context, master, builder, buildNum string) (*buildbotBuild, error) {
+func getBuild(c context.Context, master, builder string, buildNum int) (*buildbotBuild, error) {
 	result := &buildbotBuild{
 		Master:      master,
 		Buildername: builder,
+		Number:      buildNum,
 	}
 
-	num, err := strconv.Atoi(buildNum)
-	if err != nil {
-		return nil, miloerror.Error{
-			Message: fmt.Sprintf("%s does not look like a number", buildNum),
-			Code:    http.StatusBadRequest,
-		}
-	}
-	result.Number = num
-
-	err = ds.Get(c, result)
+	err := ds.Get(c, result)
 	switch {
 	case err == ds.ErrNoSuchEntity:
 		return nil, errBuildNotFound
@@ -408,8 +399,8 @@ func sourcestamp(c context.Context, b *buildbotBuild) *resp.SourceStamp {
 	return ss
 }
 
-func getDebugBuild(c context.Context, builder, buildNum string) (*buildbotBuild, error) {
-	fname := fmt.Sprintf("%s.%s.json", builder, buildNum)
+func getDebugBuild(c context.Context, builder string, buildNum int) (*buildbotBuild, error) {
+	fname := fmt.Sprintf("%s.%d.json", builder, buildNum)
 	// ../buildbot below assumes that
 	// - this code is not executed by tests outside of this dir
 	// - this dir is a sibling of frontend dir
@@ -423,7 +414,7 @@ func getDebugBuild(c context.Context, builder, buildNum string) (*buildbotBuild,
 }
 
 // build fetches a buildbot build and translates it into a miloBuild.
-func build(c context.Context, master, builder, buildNum string) (*resp.MiloBuild, error) {
+func build(c context.Context, master, builder string, buildNum int) (*resp.MiloBuild, error) {
 	var b *buildbotBuild
 	var err error
 	if master == "debug" {

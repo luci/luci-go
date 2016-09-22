@@ -25,6 +25,34 @@ type Service struct{}
 
 var errNotFoundGRPC = grpc.Errorf(codes.NotFound, "Master Not Found")
 
+func (s *Service) GetBuildbotBuildJSON(
+	c context.Context, req *milo.BuildbotBuildRequest) (
+	*milo.BuildbotBuildJSON, error) {
+
+	if req.Master == "" {
+		return nil, grpc.Errorf(codes.InvalidArgument, "No master specified")
+	}
+	if req.Builder == "" {
+		return nil, grpc.Errorf(codes.InvalidArgument, "No builder specified")
+	}
+
+	b, err := build(c, req.Master, req.Builder, int(req.BuildNum))
+	switch {
+	case err == errBuildNotFound:
+		return nil, grpc.Errorf(codes.NotFound, "Build not found")
+	case err != nil:
+		return nil, err
+	}
+
+	bs, err := json.Marshal(b)
+	if err != nil {
+		return nil, err
+	}
+
+	// Marshal the build back into JSON format.
+	return &milo.BuildbotBuildJSON{Data: bs}, nil
+}
+
 // GetCompressedMasterJSON assembles a CompressedMasterJSON object from the
 // provided MasterRequest.
 func (s *Service) GetCompressedMasterJSON(
