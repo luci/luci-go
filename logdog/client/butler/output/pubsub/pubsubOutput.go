@@ -27,8 +27,8 @@ import (
 //
 // pubsub.Topic implements Topic.
 type Topic interface {
-	// Name returns the name of the topic.
-	Name() string
+	// String returns the name of the topic.
+	String() string
 
 	// Publish mirrors the pubsub.Connection Publish method.
 	Publish(context.Context, ...*pubsub.Message) ([]string, error)
@@ -90,7 +90,7 @@ func New(ctx context.Context, c Config) output.Output {
 }
 
 func (o *pubSubOutput) String() string {
-	return fmt.Sprintf("pubsub(%s)", o.Topic.Name())
+	return fmt.Sprintf("pubsub(%s)", o.Topic.String())
 }
 
 func (o *pubSubOutput) SendBundle(bundle *logpb.ButlerLogBundle) error {

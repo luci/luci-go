@@ -35,7 +35,7 @@ type testTopic struct {
 	nextMessageID int
 }
 
-func (t *testTopic) Name() string { return "test" }
+func (t *testTopic) String() string { return "test" }
 
 func (t *testTopic) Publish(c context.Context, msgs ...*pubsub.Message) ([]string, error) {
 	if t.err != nil {
