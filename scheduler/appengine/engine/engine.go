@@ -132,8 +132,8 @@ type Engine interface {
 	// Does nothing if invocation is already in some final state.
 	AbortInvocation(c context.Context, jobID string, invID int64, who identity.Identity) error
 
-	// AbortJob finds the currently running invocation of a job (if any) and aborts
-	// it by calling AbortInvocation.
+	// AbortJob resets the job to scheduled state, aborting a currently pending or
+	// running invocation (if any).
 	//
 	// Returns nil if the job is not currently running.
 	AbortJob(c context.Context, jobID string, who identity.Identity) error
@@ -975,21 +975,35 @@ func (e *engineImpl) AbortInvocation(c context.Context, jobID string, invID int6
 	return nil
 }
 
-// AbortJob finds the currently running invocation of a job (if any) and aborts
-// it by calling AbortInvocation.
+// AbortJob resets the job to scheduled state, aborting a currently pending or
+// running invocation (if any).
 //
-// Returns nil if the job is not currently running or doesn't exist at all.
+// Returns nil if the job is not currently running.
 func (e *engineImpl) AbortJob(c context.Context, jobID string, who identity.Identity) error {
-	switch job, err := e.GetJob(c, jobID); {
-	case err != nil:
+	// First we switch the job to the default state and disassociate the running
+	// invocation (if any) from the job entity.
+	var invID int64
+	err := e.txn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
+		if isNew {
+			return errSkipPut // the job was removed, nothing to abort
+		}
+		invID = job.State.InvocationID
+		return e.rollSM(c, job, func(sm *StateMachine) error {
+			sm.OnManualAbort()
+			return nil
+		})
+	})
+	if err != nil {
 		return err
-	case job == nil:
-		return nil
-	case job.State.InvocationID == 0:
-		return nil
-	default:
-		return e.AbortInvocation(c, jobID, job.State.InvocationID, who)
 	}
+
+	// Now we kill the invocation. We do it separately because it may involve
+	// an RPC to remote service (e.g. to cancel a task) that can't be done from
+	// the transaction.
+	if invID != 0 {
+		return e.AbortInvocation(c, jobID, invID, who)
+	}
+	return nil
 }
 
 // updateJob updates an existing job if its definition has changed, adds

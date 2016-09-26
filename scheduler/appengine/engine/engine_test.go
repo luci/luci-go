@@ -774,52 +774,71 @@ func TestAborts(t *testing.T) {
 			},
 		}), ShouldBeNil)
 
-		// Launch new invocation.
-		var invID int64
-		mgr.launchTask = func(ctl task.Controller) error {
-			invID = ctl.InvocationID()
-			ctl.State().Status = task.StatusRunning
-			So(ctl.Save(), ShouldBeNil)
-			return nil
-		}
-		So(e.startInvocation(c, jobID, invNonce, "", 0), ShouldBeNil)
+		launchInv := func() int64 {
+			var invID int64
+			mgr.launchTask = func(ctl task.Controller) error {
+				invID = ctl.InvocationID()
+				ctl.State().Status = task.StatusRunning
+				So(ctl.Save(), ShouldBeNil)
+				return nil
+			}
+			So(e.startInvocation(c, jobID, invNonce, "", 0), ShouldBeNil)
 
-		// It is alive and the job entity tracks it.
-		inv, err := e.GetInvocation(c, jobID, invID)
-		So(err, ShouldBeNil)
-		So(inv.Status, ShouldEqual, task.StatusRunning)
-		job, err := e.GetJob(c, jobID)
-		So(err, ShouldBeNil)
-		So(job.State.State, ShouldEqual, JobStateRunning)
-		So(job.State.InvocationID, ShouldEqual, invID)
+			// It is alive and the job entity tracks it.
+			inv, err := e.GetInvocation(c, jobID, invID)
+			So(err, ShouldBeNil)
+			So(inv.Status, ShouldEqual, task.StatusRunning)
+			job, err := e.GetJob(c, jobID)
+			So(err, ShouldBeNil)
+			So(job.State.State, ShouldEqual, JobStateRunning)
+			So(job.State.InvocationID, ShouldEqual, invID)
+
+			return invID
+		}
 
 		Convey("AbortInvocation works", func() {
+			// Actually launch the queued invocation.
+			invID := launchInv()
+
 			// Kill it.
 			So(e.AbortInvocation(c, jobID, invID, ""), ShouldBeNil)
 
 			// It is dead.
-			inv, err = e.GetInvocation(c, jobID, invID)
+			inv, err := e.GetInvocation(c, jobID, invID)
 			So(err, ShouldBeNil)
 			So(inv.Status, ShouldEqual, task.StatusAborted)
 
 			// The job moved on with its life.
-			job, err = e.GetJob(c, jobID)
+			job, err := e.GetJob(c, jobID)
 			So(err, ShouldBeNil)
 			So(job.State.State, ShouldEqual, JobStateSuspended)
 			So(job.State.InvocationID, ShouldEqual, 0)
 		})
 
-		Convey("AbortJob works", func() {
+		Convey("AbortJob kills running invocation", func() {
+			// Actually launch the queued invocation.
+			invID := launchInv()
+
 			// Kill it.
 			So(e.AbortJob(c, jobID, ""), ShouldBeNil)
 
 			// It is dead.
-			inv, err = e.GetInvocation(c, jobID, invID)
+			inv, err := e.GetInvocation(c, jobID, invID)
 			So(err, ShouldBeNil)
 			So(inv.Status, ShouldEqual, task.StatusAborted)
 
 			// The job moved on with its life.
-			job, err = e.GetJob(c, jobID)
+			job, err := e.GetJob(c, jobID)
+			So(err, ShouldBeNil)
+			So(job.State.State, ShouldEqual, JobStateSuspended)
+			So(job.State.InvocationID, ShouldEqual, 0)
+		})
+
+		Convey("AbortJob kills queued invocation", func() {
+			So(e.AbortJob(c, jobID, ""), ShouldBeNil)
+
+			// The job moved on with its life.
+			job, err := e.GetJob(c, jobID)
 			So(err, ShouldBeNil)
 			So(job.State.State, ShouldEqual, JobStateSuspended)
 			So(job.State.InvocationID, ShouldEqual, 0)

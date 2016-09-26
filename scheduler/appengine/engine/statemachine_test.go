@@ -349,6 +349,43 @@ func TestStateMachine(t *testing.T) {
 		err := m.rollWithErr(func(sm *StateMachine) error { return sm.OnManualInvocation("user:abc") })
 		So(err, ShouldNotBeNil)
 	})
+
+	Convey("OnManualAbort works with rel schedule", t, func() {
+		m := newTestStateMachine("with 5s interval")
+
+		// Enabling schedules a tick after random amount of seconds.
+		m.roll(func(sm *StateMachine) { sm.OnJobEnabled() })
+		So(m.state.State, ShouldEqual, JobStateScheduled)
+		So(m.state.TickNonce, ShouldEqual, 1)
+		So(m.actions, ShouldResemble, []Action{
+			TickLaterAction{epoch.Add(4*time.Second + 725980746*time.Nanosecond), 1},
+		})
+		m.actions = nil
+
+		// Nothing to abort yet. Doesn't change the state.
+		m.roll(func(sm *StateMachine) { sm.OnManualAbort() })
+		So(m.state.State, ShouldEqual, JobStateScheduled)
+		So(m.state.TickNonce, ShouldEqual, 1)
+
+		// The tick comes. New invocation is queued.
+		m.now = m.now.Add(4*time.Second + 725980746*time.Nanosecond)
+		m.roll(func(sm *StateMachine) { sm.OnTimerTick(1) })
+		So(m.state.State, ShouldEqual, JobStateQueued)
+		So(m.state.TickNonce, ShouldEqual, 0)
+		So(m.actions, ShouldResemble, []Action{
+			StartInvocationAction{InvocationNonce: 2},
+		})
+		m.actions = nil
+
+		// Aborting the job moves it back to scheduled state and schedules a tick.
+		m.roll(func(sm *StateMachine) { sm.OnManualAbort() })
+		So(m.state.State, ShouldEqual, JobStateScheduled)
+		So(m.state.TickNonce, ShouldEqual, 3)
+		So(m.actions, ShouldResemble, []Action{
+			TickLaterAction{epoch.Add(9*time.Second + 725980746*time.Nanosecond), 3},
+		})
+		m.actions = nil
+	})
 }
 
 type testStateMachine struct {

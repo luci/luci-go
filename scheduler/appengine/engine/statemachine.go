@@ -277,11 +277,7 @@ func (m *StateMachine) OnInvocationDone(invocationID int64) {
 	if m.State.InvocationID != invocationID {
 		return
 	}
-	m.State.State = JobStateScheduled
-	m.State.PrevTime = m.Now
-	m.resetInvocation()      // forget about just finished invocation
-	m.scheduleTick()         // start waiting for a new one
-	m.maybeSuspendOrResume() // switch back to suspended state if necessary
+	m.invocationFinished()
 }
 
 // OnScheduleChange happens when job's schedule changes (and the job potentially
@@ -337,6 +333,15 @@ func (m *StateMachine) OnManualInvocation(triggeredBy identity.Identity) error {
 	return nil
 }
 
+// OnManualAbort happens when users aborts the queued or running invocation.
+func (m *StateMachine) OnManualAbort() {
+	// Pretend that it is finished. InvocationNonce is not 0 only if an invocation
+	// is running or queued.
+	if m.State.InvocationNonce != 0 {
+		m.invocationFinished()
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // scheduleTick emits TickLaterAction action according to job's schedule. Does
@@ -353,6 +358,16 @@ func (m *StateMachine) scheduleTick() {
 			})
 		}
 	}
+}
+
+// invocationFinished is called after invocation is finished to return the
+// job to scheduled (or suspended) state and emit a timer tick (if necessary).
+func (m *StateMachine) invocationFinished() {
+	m.State.State = JobStateScheduled
+	m.State.PrevTime = m.Now
+	m.resetInvocation()      // forget about just finished invocation
+	m.scheduleTick()         // start waiting for a new one
+	m.maybeSuspendOrResume() // switch back to suspended state if necessary
 }
 
 // maybeSuspendOrResume switches SCHEDULED state to SUSPENDED state in case
