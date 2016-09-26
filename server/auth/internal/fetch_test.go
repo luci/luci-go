@@ -71,7 +71,7 @@ func TestFetch(t *testing.T) {
 			var val struct{}
 			req := Request{
 				Method: "GET",
-				URL:    "http://localhost:???",
+				URL:    "http://localhost:12345678",
 				Out:    &val,
 			}
 			So(req.Do(ctx), ShouldErrLike, "dial tcp")
