@@ -12,9 +12,10 @@
 //     DM always interacts with the same distributor in the same way (barring
 //     code changes in DM's adapter logic itself).
 //   * DM uses the selected distributor implementation to start a task and
-//     record its Token. Additionally, the distributor SHOULD subscribe to
-//     publish on DM's pubsub topic for updates. When publishing updates, the
-//     distributor MUST include the token returned from PrepareTopic.
+//     record its Token. Additionally, the distributor SHOULD publish on DM's
+//     pubsub topic to update DM's state. When publishing updates, the
+//     distributor MUST include the token returned from PrepareTopic (or else
+//     the published update will be ignored).
 //   * When DM gets a hit on pubsub, it will load the Execution, load its cached
 //     distributor configuration, and then call HandleNotification for the
 //     adapter to parse the notification body and return the state of the task.

@@ -51,7 +51,7 @@ func TestScheduleExecution(t *testing.T) {
 
 				So(ds.Get(c, a, e), ShouldBeNil)
 				Convey("distributor information is saved", func() {
-					tok := fake.MkToken(dm.NewExecutionID(qid, 1, 1))
+					tok := fake.MakeToken(dm.NewExecutionID(qid, 1, 1))
 
 					So(a.State, ShouldEqual, dm.Attempt_EXECUTING)
 					So(e.State, ShouldEqual, dm.Execution_SCHEDULING)

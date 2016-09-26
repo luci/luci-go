@@ -40,7 +40,7 @@ func addDistributorInfo(id *dm.Execution_ID, e *dm.Execution) *dm.Execution {
 	e.Data.DistributorInfo = &dm.Execution_Data_DistributorInfo{
 		ConfigName:    "fakeDistributor",
 		ConfigVersion: "testing",
-		Token:         string(fake.MkToken(id)),
+		Token:         string(fake.MakeToken(id)),
 		Url:           fake.InfoURL(id),
 	}
 	return e

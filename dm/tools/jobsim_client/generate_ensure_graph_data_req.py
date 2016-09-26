@@ -7,7 +7,7 @@
 This is a dumb script that will:
   * compile jobsim_client (for linux-amd64)
   * upload a simple cipd package containing only jobsim_client with the 'latest'
-    ref. The packaeg name is 'infra/experimental/dm/jobsim_client/linux-amd64'.
+    ref. The package name is 'infra/experimental/dm/jobsim_client/linux-amd64'.
   * Print a JSONPB-encoded EnsureGraphDataReq that runs jobsim_client with the
     provided strings to calculate edit-distance(a, b, transposition?).
 """

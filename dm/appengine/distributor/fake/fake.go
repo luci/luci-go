@@ -238,11 +238,11 @@ type BoundDistributor struct {
 	cfg *distributor.Config
 }
 
-// MkToken makes a distributor Token out of an Execution_ID. In this
+// MakeToken makes a distributor Token out of an Execution_ID. In this
 // implementation of a Distributor there's a 1:1 mapping between Execution_ID
 // and distributor task. This is not always the case for real distributor
 // implementations.
-func MkToken(eid *dm.Execution_ID) distributor.Token {
+func MakeToken(eid *dm.Execution_ID) distributor.Token {
 	return distributor.Token(fmt.Sprintf("fakeDistributor:%s|%d|%d", eid.Quest,
 		eid.Attempt, eid.Id))
 }
@@ -254,7 +254,7 @@ func (d *BoundDistributor) Run(desc *dm.Quest_Desc, exAuth *dm.Execution_Auth, p
 	}
 	pollbackTime = d.PollbackTime
 
-	tok = MkToken(exAuth.Id)
+	tok = MakeToken(exAuth.Id)
 
 	tsk := &DistributorData{
 		Auth:  exAuth,
@@ -315,7 +315,7 @@ const FakeURLPrefix = "https://info.example.com/"
 
 // InfoURL builds a fake InfoURL for the given Execution_ID
 func InfoURL(e *dm.Execution_ID) string {
-	return FakeURLPrefix + string(MkToken(e))
+	return FakeURLPrefix + string(MakeToken(e))
 }
 
 // InfoURL implements distributor.D
@@ -357,7 +357,7 @@ func (d *BoundDistributor) Validate(payload string) error {
 // passed back to the DM instance under test. A re-execution of the attempt will
 // start with the new value.
 func (d *Distributor) RunTask(c context.Context, eid *dm.Execution_ID, cb func(*Task) error) (err error) {
-	tok := MkToken(eid)
+	tok := MakeToken(eid)
 
 	d.Lock()
 	tsk := d.tasks[tok]
