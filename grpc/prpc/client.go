@@ -229,7 +229,16 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 				if len(body) > bodySize {
 					body = body[:bodySize] + "..."
 				}
-				return fmt.Errorf("HTTP %d: no gRPC code. Body: %q", res.StatusCode, body)
+				err := fmt.Errorf("HTTP %d: no gRPC code. Body: %q", res.StatusCode, body)
+
+				// Some HTTP codes are returned directly by hosting platforms (e.g.,
+				// AppEngine), and should be automatically retried even if a gRPC code
+				// header is not supplied.
+				switch res.StatusCode {
+				case http.StatusInternalServerError, http.StatusServiceUnavailable:
+					err = errors.WrapTransient(err)
+				}
+				return err
 			}
 
 			codeInt, err := strconv.Atoi(codeHeader)

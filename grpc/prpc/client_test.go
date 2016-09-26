@@ -68,11 +68,13 @@ func doPanicHandler(w http.ResponseWriter, r *http.Request) {
 	panic("test panic")
 }
 
-func transientErrors(count int, then http.Handler) http.HandlerFunc {
+func transientErrors(count int, grpcHeader bool, then http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if count > 0 {
 			count--
-			w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(codes.Internal)))
+			if grpcHeader {
+				w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(codes.Internal)))
+			}
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintln(w, "Server misbehaved")
 			return
@@ -183,7 +185,7 @@ func TestClient(t *testing.T) {
 			})
 
 			Convey("HTTP 500 x2", func(c C) {
-				client, server := setUp(transientErrors(2, sayHello(c)))
+				client, server := setUp(transientErrors(2, true, sayHello(c)))
 				defer server.Close()
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
@@ -202,12 +204,34 @@ func TestClient(t *testing.T) {
 			})
 
 			Convey("HTTP 500 many", func(c C) {
-				client, server := setUp(transientErrors(10, sayHello(c)))
+				client, server := setUp(transientErrors(10, true, sayHello(c)))
 				defer server.Close()
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
 				So(grpc.Code(err), ShouldEqual, codes.Internal)
 				So(grpc.ErrorDesc(err), ShouldEqual, "Server misbehaved")
+
+				So(log, shouldHaveMessagesLike,
+					expectedCallLogEntry(client),
+					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently. Will retry in 0"},
+
+					expectedCallLogEntry(client),
+					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently. Will retry in 0"},
+
+					expectedCallLogEntry(client),
+					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently. Will retry in 0"},
+
+					expectedCallLogEntry(client),
+					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed permanently"},
+				)
+			})
+
+			Convey("HTTP 500 without gRPC header", func(c C) {
+				client, server := setUp(transientErrors(10, false, sayHello(c)))
+				defer server.Close()
+
+				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
+				So(grpc.Code(err), ShouldEqual, codes.Unknown)
 
 				So(log, shouldHaveMessagesLike,
 					expectedCallLogEntry(client),
