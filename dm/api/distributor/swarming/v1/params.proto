@@ -6,6 +6,7 @@ syntax = "proto3";
 
 import "google/protobuf/duration.proto";
 
+import "github.com/luci/luci-go/dm/api/distributor/swarming/v1/cipd.proto";
 import "github.com/luci/luci-go/dm/api/distributor/swarming/v1/isolate_ref.proto";
 
 package swarmingV1;
@@ -33,9 +34,17 @@ message Parameters {
     // pool, etc. See the swarming service instance for available dimensions.
     map<string, string> dimensions = 2;
 
+    // These dimensions will be snapshotted from the first execution of each
+    // attempt, and will be subsequently re-used for all following executions of
+    // that attempt.
+    //
+    // The most-specific value for these dimensions will be taken for tasks
+    // where a given dimension has multiple values.
+    repeated string snapshot_dimensions = 3;
+
     // This indicates the maximum amount of time that an Execution may run
     // without emitting IO on stdout/err. 0 means 'no timeout'.
-    google.protobuf.Duration io_timeout = 3;
+    google.protobuf.Duration io_timeout = 4;
   }
   Scheduling scheduling = 1;
 
@@ -58,19 +67,13 @@ message Parameters {
       // prepended with "https://").
       repeated swarmingV1.IsolatedRef isolated = 1;
 
-      message CipdPackage {
-        string name = 1;
-        string path = 2;
-        string version = 3;
-      }
-      // 0 or more cipd packages for the job.
-      repeated CipdPackage packages = 2;
-
-      // Server to use for cipd packages. Required (though it may be specified
-      // by the quest's designated distributor config). This must be
-      // scheme://<hostname>, e.g. "https://example.appspot.com". The only
-      // supported schemes are http and https.
-      string cipd_server = 3;
+      // CIPD packages to use for the job. These specs may contain templated
+      // parameters for package names or non-instance_ids for the package
+      // versions. The first successful execution for each attempt will
+      // resolve+snapshot all package names and versions. These package names
+      // and versions will be used for all subsequent executions of that
+      // attempt.
+      swarmingV1.CipdSpec cipd = 2;
     }
     Inputs inputs = 1;
 

@@ -21,17 +21,17 @@ type IsolatedRef struct {
 func (m *IsolatedRef) Reset()                    { *m = IsolatedRef{} }
 func (m *IsolatedRef) String() string            { return proto.CompactTextString(m) }
 func (*IsolatedRef) ProtoMessage()               {}
-func (*IsolatedRef) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (*IsolatedRef) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
 func init() {
 	proto.RegisterType((*IsolatedRef)(nil), "swarmingV1.IsolatedRef")
 }
 
 func init() {
-	proto.RegisterFile("github.com/luci/luci-go/dm/api/distributor/swarming/v1/isolate_ref.proto", fileDescriptor1)
+	proto.RegisterFile("github.com/luci/luci-go/dm/api/distributor/swarming/v1/isolate_ref.proto", fileDescriptor2)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor2 = []byte{
 	// 147 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0xf2, 0x48, 0xcf, 0x2c, 0xc9,
 	0x28, 0x4d, 0xd2, 0x4b, 0xce, 0xcf, 0xd5, 0xcf, 0x29, 0x4d, 0xce, 0x04, 0x13, 0xba, 0xe9, 0xf9,

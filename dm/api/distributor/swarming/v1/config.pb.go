@@ -2,21 +2,6 @@
 // source: github.com/luci/luci-go/dm/api/distributor/swarming/v1/config.proto
 // DO NOT EDIT!
 
-/*
-Package swarmingV1 is a generated protocol buffer package.
-
-It is generated from these files:
-	github.com/luci/luci-go/dm/api/distributor/swarming/v1/config.proto
-	github.com/luci/luci-go/dm/api/distributor/swarming/v1/isolate_ref.proto
-	github.com/luci/luci-go/dm/api/distributor/swarming/v1/params.proto
-	github.com/luci/luci-go/dm/api/distributor/swarming/v1/result.proto
-
-It has these top-level messages:
-	Config
-	IsolatedRef
-	Parameters
-	Result
-*/
 package swarmingV1
 
 import proto "github.com/golang/protobuf/proto"
@@ -29,12 +14,6 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the proto package it is being compiled against.
-// A compilation error at this line likely means your copy of the
-// proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
-
 type Config struct {
 	Swarming *Config_Swarming `protobuf:"bytes,1,opt,name=swarming" json:"swarming,omitempty"`
 	Isolate  *Config_Isolate  `protobuf:"bytes,2,opt,name=isolate" json:"isolate,omitempty"`
@@ -43,7 +22,7 @@ type Config struct {
 func (m *Config) Reset()                    { *m = Config{} }
 func (m *Config) String() string            { return proto.CompactTextString(m) }
 func (*Config) ProtoMessage()               {}
-func (*Config) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+func (*Config) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
 func (m *Config) GetSwarming() *Config_Swarming {
 	if m != nil {
@@ -66,7 +45,7 @@ type Config_Swarming struct {
 func (m *Config_Swarming) Reset()                    { *m = Config_Swarming{} }
 func (m *Config_Swarming) String() string            { return proto.CompactTextString(m) }
 func (*Config_Swarming) ProtoMessage()               {}
-func (*Config_Swarming) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 0} }
+func (*Config_Swarming) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 0} }
 
 type Config_Isolate struct {
 	// The host of the isolate service, e.g. isolateserver.appspot.com.
@@ -78,7 +57,7 @@ type Config_Isolate struct {
 func (m *Config_Isolate) Reset()                    { *m = Config_Isolate{} }
 func (m *Config_Isolate) String() string            { return proto.CompactTextString(m) }
 func (*Config_Isolate) ProtoMessage()               {}
-func (*Config_Isolate) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 1} }
+func (*Config_Isolate) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 1} }
 
 func (m *Config_Isolate) GetExpiration() *google_protobuf.Duration {
 	if m != nil {
@@ -94,10 +73,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("github.com/luci/luci-go/dm/api/distributor/swarming/v1/config.proto", fileDescriptor0)
+	proto.RegisterFile("github.com/luci/luci-go/dm/api/distributor/swarming/v1/config.proto", fileDescriptor1)
 }
 
-var fileDescriptor0 = []byte{
+var fileDescriptor1 = []byte{
 	// 232 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x6c, 0x8f, 0x3d, 0x4b, 0xc4, 0x40,
 	0x10, 0x86, 0x89, 0xc2, 0xdd, 0x39, 0x36, 0xb2, 0xd5, 0x19, 0x45, 0xc4, 0xca, 0xc6, 0x19, 0x4e,

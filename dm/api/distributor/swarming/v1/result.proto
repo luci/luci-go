@@ -4,6 +4,7 @@
 
 syntax = "proto3";
 
+import "github.com/luci/luci-go/dm/api/distributor/swarming/v1/cipd.proto";
 import "github.com/luci/luci-go/dm/api/distributor/swarming/v1/isolate_ref.proto";
 
 package swarmingV1;
@@ -11,5 +12,13 @@ package swarmingV1;
 // This is the swarming-specific result for Executions run via swarming.
 message Result {
   int64 exit_code = 1;
+
+  // The isolated hash of the output directory
   swarmingV1.IsolatedRef isolated_outdir = 2;
+
+  // The pinned cipd packages that this task actually used.
+  swarmingV1.CipdSpec cipd_pins = 3;
+
+  // The captured snapshot dimensions that the bot actually had.
+  map<string, string> snapshot_dimensions = 4;
 }

@@ -75,22 +75,45 @@ func (j *Parameters_Job) Normalize() (err error) {
 }
 
 // Normalize normalizes and checks for input violations.
+func (p *CipdPackage) Normalize() error {
+	if p.Name == "" {
+		return errors.New("missing name")
+	}
+	if p.Version == "" {
+		return errors.New("missing version")
+	}
+	return nil
+}
+
+// Normalize normalizes and checks for input violations.
+func (c *CipdSpec) Normalize() error {
+	if err := schemaHostURLValidate(c.Server); err != nil {
+		return fmt.Errorf("job.inputs.cipd.server: %s", err)
+	}
+	if c.Client != nil {
+		if err := c.Client.Normalize(); err != nil {
+			return fmt.Errorf("job.inputs.cipd.client: %s", err)
+		}
+	}
+	for path, pkgs := range c.ByPath {
+		for i, p := range pkgs.Pkg {
+			if err := p.Normalize(); err != nil {
+				return fmt.Errorf("job.inputs.cipd.by_path[%s].pkg[%d]: %s", path, i, err)
+			}
+		}
+	}
+	return nil
+}
+
+// Normalize normalizes and checks for input violations.
 func (i *Parameters_Job_Inputs) Normalize() (err error) {
-	if len(i.Packages) == 0 && len(i.Isolated) == 0 {
+	if i.Cipd == nil && len(i.Isolated) == 0 {
 		return errors.New(
 			"job.inputs: at least one of packages and isolated must be specified")
 	}
-	if len(i.Packages) > 0 {
-		if err = schemaHostURLValidate(i.CipdServer); err != nil {
-			return fmt.Errorf("job.inputs.cipd_server: %s", err)
-		}
-		for i, p := range i.Packages {
-			if p.Name == "" {
-				return fmt.Errorf("job.inputs.packages[%d]: missing name", i)
-			}
-			if p.Version == "" {
-				return fmt.Errorf("job.inputs.packages[%d]: missing version", i)
-			}
+	if i.Cipd != nil {
+		if err = i.Cipd.Normalize(); err != nil {
+			return
 		}
 	}
 	return

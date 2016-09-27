@@ -1,0 +1,32 @@
+// Copyright 2016 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package swarmingV1;
+
+message CipdPackage {
+  string name = 1;
+  string version = 2;
+}
+
+message CipdSpec {
+  // Server to use for cipd packages. Required (though it may be specified
+  // by the quest's designated distributor config). This must be
+  // scheme://<hostname>, e.g. "https://example.appspot.com". The only
+  // supported schemes are http and https.
+  string server = 1;
+
+  // Specifies the CIPD package to use for the job to obtain the actual CIPD
+  // client binary. You usually want to omit this.
+  CipdPackage client = 2;
+
+  message CipdPackages {
+    repeated CipdPackage pkg = 1;
+  }
+  // A mapping from path-to-install to a list of cipd packages to install at
+  // that location. To install packages in the root of the job, use the path
+  // ''.
+  map<string, CipdPackages> by_path = 3;
+}

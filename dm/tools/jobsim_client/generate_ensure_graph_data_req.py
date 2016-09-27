@@ -101,6 +101,9 @@ def print_req(opts, pkg_name, version):
     }
   }
 
+  if opts.snapshot_dimension:
+    distParams['scheduling']['snapshot_dimensions'] = opts.snapshot_dimension
+
   params = {
     'a': opts.a,
     'b': opts.b,
@@ -148,6 +151,13 @@ def main():
   plat_grp.add_argument('--pin', action='store_true', default=False,
                         help='Emit the request with a pinned package version'
                         ' instead of "latest".')
+  plat_grp.add_argument(
+    '--snapshot-dimension', action='append', help=(
+      'Pin this dimension on re-executions. This will cause re-executions to '
+      'copy the most-specific value of this dependency from the first '
+      'execution to all subsequent re-executions of the same Attempt. May be '
+      'specified multiple times.'
+    ))
 
   cipd_grp = parser.add_argument_group('cipd', 'cipd packaging options')
   cipd_grp.add_argument('--cipd-service-url', default=None,
