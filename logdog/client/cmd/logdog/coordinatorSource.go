@@ -31,8 +31,9 @@ const (
 type coordinatorSource struct {
 	sync.Mutex
 
-	stream *coordinator.Stream
-	tidx   types.MessageIndex
+	stream    *coordinator.Stream
+	tidx      types.MessageIndex
+	tailFirst bool
 
 	streamState *coordinator.LogStream
 }

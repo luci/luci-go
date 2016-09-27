@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"time"
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
@@ -17,6 +18,7 @@ import (
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
+	"github.com/luci/luci-go/common/clock/clockflag"
 	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
@@ -26,7 +28,7 @@ import (
 )
 
 func init() {
-	prpc.DefaultUserAgent = "logdog_cat"
+	prpc.DefaultUserAgent = "logdog CLI"
 }
 
 type application struct {
@@ -41,6 +43,7 @@ type application struct {
 	authFlags   authcli.Flags
 	coordinator string
 	insecure    bool
+	timeout     clockflag.Duration
 
 	coord *coordinator.Client
 }
@@ -52,6 +55,10 @@ func (a *application) addToFlagSet(ctx context.Context, fs *flag.FlagSet) {
 		"Use insecure transport for RPC.")
 	fs.Var(&a.project, "project",
 		"The log stream's project.")
+
+	fs.Var(&a.timeout, "timeout",
+		"If >0, a duration string for the maximum amount of time to wait for a log entry "+
+			"before exiting with a 2. "+clockflag.DurationHelp)
 }
 
 // splitPath converts between a possible user-facing "unified" stream path
@@ -80,6 +87,13 @@ func (a *application) splitPath(p string) (config.ProjectName, string, bool, err
 	return project, p, true, nil
 }
 
+func (a *application) timeoutCtx(c context.Context) (context.Context, context.CancelFunc) {
+	if a.timeout <= 0 {
+		return context.WithCancel(c)
+	}
+	return context.WithTimeout(c, time.Duration(a.timeout))
+}
+
 func mainImpl() int {
 	ctx := context.Background()
 	ctx = gologger.StdConfig.Use(ctx)
@@ -99,6 +113,7 @@ func mainImpl() int {
 				newCatCommand(),
 				newQueryCommand(),
 				newListCommand(),
+				newLatestCommand(),
 				authcli.SubcommandLogin(authOptions, "auth-login"),
 				authcli.SubcommandLogout(authOptions, "auth-logout"),
 				authcli.SubcommandInfo(authOptions, "auth-info"),

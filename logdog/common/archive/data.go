@@ -30,8 +30,8 @@ func (cs channelRendererSource) NextLogEntry() (*logpb.LogEntry, error) {
 func archiveData(w io.Writer, dataC <-chan *logpb.LogEntry) error {
 	entryC := make(chan *logpb.LogEntry)
 	r := renderer.Renderer{
-		Source:    channelRendererSource(entryC),
-		Reproduce: true,
+		Source: channelRendererSource(entryC),
+		Raw:    true,
 	}
 
 	// Run our Renderer in a goroutine.

@@ -20,17 +20,18 @@ type testSource struct {
 	err  error
 }
 
-func (ts *testSource) NextLogEntry() (*logpb.LogEntry, error) {
+func (ts *testSource) NextLogEntry() (le *logpb.LogEntry, err error) {
 	if ts.err != nil {
 		return nil, ts.err
 	}
-	if len(ts.logs) == 0 {
-		return nil, io.EOF
-	}
 
-	var le *logpb.LogEntry
-	le, ts.logs = ts.logs[0], ts.logs[1:]
-	return le, nil
+	if len(ts.logs) > 0 {
+		le, ts.logs = ts.logs[0], ts.logs[1:]
+	}
+	if len(ts.logs) == 0 {
+		err = io.EOF
+	}
+	return
 }
 
 func (ts *testSource) loadLogEntry(le *logpb.LogEntry) {
@@ -95,14 +96,14 @@ func TestRenderer(t *testing.T) {
 			ts.loadText("1", "DELIM")
 			ts.loadText("2", "DELIM")
 
-			Convey(`When not configured to reproduce, renders "1\n2\n".`, func() {
+			Convey(`When not configured to render raw, renders "1\n2\n".`, func() {
 				_, err := b.ReadFrom(r)
 				So(err, ShouldBeNil)
 				So(b.String(), ShouldEqual, "1\n2\n")
 			})
 
-			Convey(`When configured to reproduce, renders "1DELIM2DELIM".`, func() {
-				r.Reproduce = true
+			Convey(`When configured to render raw, renders "1DELIM2DELIM".`, func() {
+				r.Raw = true
 
 				_, err := b.ReadFrom(r)
 				So(err, ShouldBeNil)
@@ -119,10 +120,19 @@ func TestRenderer(t *testing.T) {
 			Convey(`Renders {0x00, 0x01, 0x02, 0x03}.`, func() {
 				_, err := b.ReadFrom(r)
 				So(err, ShouldBeNil)
+				So(b.Bytes(), ShouldResemble, []byte("00010203"))
+			})
+
+			Convey(`Renders raw {0x00, 0x01, 0x02, 0x03}.`, func() {
+				r.Raw = true
+
+				_, err := b.ReadFrom(r)
+				So(err, ShouldBeNil)
 				So(b.Bytes(), ShouldResemble, []byte{0x00, 0x01, 0x02, 0x03})
 			})
 
-			Convey(`Can read the stream byte-by-byte.`, func() {
+			Convey(`Can read the raw stream byte-by-byte.`, func() {
+				r.Raw = true
 				b := [1]byte{}
 
 				c, err := r.Read(b[:])
@@ -141,13 +151,9 @@ func TestRenderer(t *testing.T) {
 				So(b[0], ShouldEqual, 0x02)
 
 				c, err = r.Read(b[:])
-				So(err, ShouldBeNil)
+				So(err, ShouldEqual, io.EOF)
 				So(c, ShouldEqual, 1)
 				So(b[0], ShouldEqual, 0x03)
-
-				c, err = r.Read(b[:])
-				So(err, ShouldEqual, io.EOF)
-				So(c, ShouldEqual, 0)
 			})
 		})
 

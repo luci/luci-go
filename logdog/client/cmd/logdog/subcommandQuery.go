@@ -15,7 +15,9 @@ import (
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
 	"github.com/luci/luci-go/logdog/client/coordinator"
+
 	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
 )
 
 const (
@@ -115,8 +117,9 @@ func (cmd *queryCommandRun) Run(scApp subcommands.Application, args []string) in
 	count := 0
 	log.Debugf(a, "Issuing query...")
 
+	tctx, _ := a.timeoutCtx(a)
 	ierr := error(nil)
-	err = a.coord.Query(a, project, path, qo, func(s *coordinator.LogStream) bool {
+	err = a.coord.Query(tctx, project, path, qo, func(s *coordinator.LogStream) bool {
 		if err := o.emit(s); err != nil {
 			ierr = err
 			return false
@@ -134,6 +137,10 @@ func (cmd *queryCommandRun) Run(scApp subcommands.Application, args []string) in
 			log.ErrorKey: err,
 			"count":      count,
 		}.Errorf(a, "Query failed.")
+
+		if err == context.DeadlineExceeded {
+			return 2
+		}
 		return 1
 	}
 	log.Fields{

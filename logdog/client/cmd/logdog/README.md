@@ -1,29 +1,27 @@
-LogDog Cat
+LogDog CLI
 ==========
 
-LogDog `cat` is a command-line tool that is used to query and view LogDog log
-streams. It interfaces with a **Coordinator** instance to perform these
-operations.
+LogDog's `logdog` tool is a command-line LogDog **Coordinator** client.
 
 ## Subcommands
 
-The `logdog_cat` tool supports several subcommands.
+The `logdog` tool supports several subcommands.
 
 ### cat
 
 The `cat` subcommand allows a log stream to be viewed. If the log stream is
-still streaming, `logdog_cat` will block, showing new stream data as it becomes
+still streaming, `logdog` will block, showing new stream data as it becomes
 available.
 
 ```shell
-$ logdog_cat -project <project> cat <prefix>/+/<name>
+$ logdog -project <project> cat <prefix>/+/<name>
 ```
 
 The project may also be integrated into the log stream path. For example, the
 previous command is equivalent to:
 
 ```shell
-$ logdog_cat cat <project>/<prefix>/+/<name>
+$ logdog cat <project>/<prefix>/+/<name>
 ```
 
 ### query
@@ -32,7 +30,7 @@ The `query` subcommand allows queries to be executed against a **Coordinator**
 instance.
 
 ```shell
-$ logdog_cat query <params>...
+$ logdog query <params>...
 ```
 
 The `-json` parameter can be supplied to cause the query to produce detailed
@@ -73,7 +71,7 @@ time strings.
 
 For example:
 ```shell
-$ logdog_cat query -after '1985-04-12T23:20:50.52Z'
+$ logdog query -after '1985-04-12T23:20:50.52Z'
 ```
 
 #### Tags
@@ -96,20 +94,20 @@ were a hierarchial directory structure.
 To view project-level streams:
 
 ```shell
-$ logdog_cat ls
+$ logdog ls
 myproject
 
-$ logdog_cat ls myproject
+$ logdog ls myproject
 foo
 bar
 
-$ logdog_cat ls myproject/foo
+$ logdog ls myproject/foo
 +
 
-$ logdog_cat ls myproject/foo/+
+$ logdog ls myproject/foo/+
 baz
 
-$ logdog_cat ls myproject/foo/+/baz
+$ logdog ls myproject/foo/+/baz
 ```
 
 The `-l` flag may be supplied to cause metadata about each hierarchy component

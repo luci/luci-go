@@ -16,31 +16,34 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-
-	"github.com/luci/luci-go/logdog/api/logpb"
 )
 
-// Source returns successive LogEntry records for the Renderer to render.
-type Source interface {
-	// NextLogEntry returns the next successive LogEntry record to render, or an
-	// error if it could not be retrieved.
-	NextLogEntry() (*logpb.LogEntry, error)
-}
+// DatagramWriter is a callback function that, given datagram bytes, writes them
+// to the specified io.Writer.
+//
+// Returns true if the datagram was successfully rendered, false if it could not
+// be.
+type DatagramWriter func(io.Writer, []byte) bool
 
 // Renderer is a stateful instance that provides an io.Reader interface to a
 // log stream.
 type Renderer struct {
 	// Source is the log Source to use to retrieve the logs to render.
 	Source Source
-	// Reproduce, if true, attempts to reproduce the original stream data.
+
+	// Raw, if true, attempts to reproduce the original stream data rather
+	// than pretty-rendering it.
 	//
-	// For text streams, this means using the original streams' encoding and
-	// newline delimiters. If this is false, UTF8 and "\n" will be used.
-	Reproduce bool
+	// - For text streams, this means using the original streams' encoding and
+	//   newline delimiters. If this is false, UTF8 and "\n" will be used.
+	// - For binary and datagram streams, this skips any associated
+	//   DatagramWriters and hex translation and dumps data directly to output.
+	Raw bool
+
 	// DatagramWriter is a function to call to render a complete datagram stream.
 	// If it returns false, or if nil, a hex dump renderer will be used to
 	// render the datagram.
-	DatagramWriter func(io.Writer, []byte) bool
+	DatagramWriter DatagramWriter
 
 	// Currently-buffered data.
 	buf bytes.Buffer
@@ -84,7 +87,7 @@ func (r *Renderer) bufferNext() error {
 		case le.GetText() != nil:
 			for _, line := range le.GetText().Lines {
 				r.buf.WriteString(line.Value)
-				if !r.Reproduce {
+				if !r.Raw {
 					r.buf.WriteRune('\n')
 				} else {
 					r.buf.WriteString(line.Delimiter)
@@ -92,10 +95,21 @@ func (r *Renderer) bufferNext() error {
 			}
 
 		case le.GetBinary() != nil:
-			r.buf.Write(le.GetBinary().Data)
+			data := le.GetBinary().Data
+			if !r.Raw {
+				r.buf.WriteString(hex.EncodeToString(data))
+			} else {
+				r.buf.Write(data)
+			}
 
 		case le.GetDatagram() != nil:
 			dg := le.GetDatagram()
+			if r.Raw {
+				r.buf.Write(dg.Data)
+				break
+			}
+
+			// Buffer the datagram until it's complete.
 			if _, err := r.dgBuf.Write(dg.Data); err != nil {
 				return err
 			}
@@ -120,6 +134,7 @@ func (r *Renderer) bufferNext() error {
 			}
 		}
 	}
+
 	return err
 }
 

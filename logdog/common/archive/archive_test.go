@@ -63,7 +63,7 @@ func (s *testSource) NextLogEntry() (le *logpb.LogEntry, err error) {
 		return
 	}
 	if len(s.logs) == 0 {
-		err = ErrEndOfStream
+		err = io.EOF
 		return
 	}
 

@@ -12,25 +12,15 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/logdog/api/logpb"
+	"github.com/luci/luci-go/logdog/common/renderer"
 )
 
-// ErrEndOfStream is a sentinel error returned by LogEntrySource to indicate
-// that the end of the log stream has been encountered.
-var ErrEndOfStream = errors.New("end of stream")
-
-// A LogEntrySource returns ordered log entries for archival.
-type LogEntrySource interface {
-	// NextLogEntry returns the next sequential log entry. If there are no more
-	// log entries, it should return ErrEndOfStream.
-	NextLogEntry() (*logpb.LogEntry, error)
-}
-
-// safeLogEntrySource wraps a LogEntrySource and guarantees that all emitted log
-// entries' index parameters are >= those of the previous entry.
+// safeLogEntrySource wraps a renderer.Source and guarantees that all emitted
+// log entries' index parameters are >= those of the previous entry.
 //
 // Any LogEntry that violates this will be silently discarded.
 type safeLogEntrySource struct {
-	LogEntrySource
+	renderer.Source
 	*Manifest
 
 	lastPrefixIndex uint64
@@ -42,44 +32,45 @@ type safeLogEntrySource struct {
 func (s *safeLogEntrySource) NextLogEntry() (*logpb.LogEntry, error) {
 	// Loop until we find a LogEntry to return.
 	for {
-		le, err := s.LogEntrySource.NextLogEntry()
-		if err != nil {
-			return nil, err
+		le, err := s.Source.NextLogEntry()
+		if le != nil {
+			// Ingest the log entry.
+			if err := s.normalizeLogEntry(le); err != nil {
+				s.logger().Warningf("Discarding out-of-order log stream entry %d: %v", le.StreamIndex, err)
+				continue
+			}
+		} else if err == nil {
+			err = errors.New("source returned nil LogEntry and no error")
 		}
-		if le == nil {
-			return nil, errors.New("source returned nil LogEntry")
-		}
-
-		// Calculate the time offset Duration once.
-		timeOffset := le.TimeOffset.Duration()
-
-		// Are any of our order constraints violated?
-		switch {
-		case le.PrefixIndex < s.lastPrefixIndex:
-			err = fmt.Errorf("prefix index is out of order (%d < %d)", le.PrefixIndex, s.lastPrefixIndex)
-		case le.StreamIndex < s.lastStreamIndex:
-			err = fmt.Errorf("stream index is out of order (%d < %d)", le.StreamIndex, s.lastStreamIndex)
-		case le.Sequence < s.lastSequence:
-			err = fmt.Errorf("sequence is out of order (%d < %d)", le.Sequence, s.lastSequence)
-		}
-		if err != nil {
-			s.logger().Warningf("Discarding out-of-order log stream entry %d: %v", le.StreamIndex, err)
-			continue
-		}
-
-		s.lastPrefixIndex = le.PrefixIndex
-		s.lastStreamIndex = le.StreamIndex
-		s.lastSequence = le.Sequence
-
-		if timeOffset < s.lastTimeOffset {
-			s.logger().Warningf("Adjusting out-of-order timestamp (%s < %s) for log stream entry %d.",
-				timeOffset, s.lastTimeOffset, le.StreamIndex)
-
-			le.TimeOffset = le.TimeOffset.Load(s.lastTimeOffset)
-		} else {
-			s.lastTimeOffset = timeOffset
-		}
-
-		return le, nil
+		return le, err
 	}
+}
+
+func (s *safeLogEntrySource) normalizeLogEntry(le *logpb.LogEntry) error {
+	// Calculate the time offset Duration once.
+	timeOffset := le.TimeOffset.Duration()
+
+	// Are any of our order constraints violated?
+	switch {
+	case le.PrefixIndex < s.lastPrefixIndex:
+		return fmt.Errorf("prefix index is out of order (%d < %d)", le.PrefixIndex, s.lastPrefixIndex)
+	case le.StreamIndex < s.lastStreamIndex:
+		return fmt.Errorf("stream index is out of order (%d < %d)", le.StreamIndex, s.lastStreamIndex)
+	case le.Sequence < s.lastSequence:
+		return fmt.Errorf("sequence is out of order (%d < %d)", le.Sequence, s.lastSequence)
+	}
+
+	s.lastPrefixIndex = le.PrefixIndex
+	s.lastStreamIndex = le.StreamIndex
+	s.lastSequence = le.Sequence
+
+	if timeOffset < s.lastTimeOffset {
+		s.logger().Warningf("Adjusting out-of-order timestamp (%s < %s) for log stream entry %d.",
+			timeOffset, s.lastTimeOffset, le.StreamIndex)
+
+		le.TimeOffset = le.TimeOffset.Load(s.lastTimeOffset)
+	} else {
+		s.lastTimeOffset = timeOffset
+	}
+	return nil
 }

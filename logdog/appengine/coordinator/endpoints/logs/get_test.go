@@ -20,6 +20,7 @@ import (
 	"github.com/luci/luci-go/logdog/api/logpb"
 	ct "github.com/luci/luci-go/logdog/appengine/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/logdog/common/archive"
+	"github.com/luci/luci-go/logdog/common/renderer"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/types"
 
@@ -29,17 +30,6 @@ import (
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-type staticArchiveSource []*logpb.LogEntry
-
-func (s *staticArchiveSource) NextLogEntry() (le *logpb.LogEntry, err error) {
-	if len(*s) == 0 {
-		err = archive.ErrEndOfStream
-	} else {
-		le, *s = (*s)[0], (*s)[1:]
-	}
-	return
-}
 
 func shouldHaveLogs(actual interface{}, expected ...interface{}) string {
 	resp := actual.(*logdog.GetResponse)
@@ -312,7 +302,7 @@ func testGetImpl(t *testing.T, archived bool) {
 			} else {
 				// Archive this log stream. We will generate one index entry for every
 				// 2 log entries.
-				src := staticArchiveSource(entries)
+				src := renderer.StaticSource(entries)
 				var lbuf, ibuf bytes.Buffer
 				m := archive.Manifest{
 					Desc:             tls.Desc,

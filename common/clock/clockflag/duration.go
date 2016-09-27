@@ -11,6 +11,10 @@ import (
 	"time"
 )
 
+// DurationHelp is generic Duration help.
+const DurationHelp = "A duration string is a sequence of <number><unit> such as 2h15m. " +
+	"Supported units are 'ns', 'us'/'µs', 'ms', 's', 'm', and 'h'."
+
 // Duration is a Flag- and JSON-compatible Duration value.
 type Duration time.Duration
 

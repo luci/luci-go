@@ -15,14 +15,15 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/logdog/api/logpb"
+	"github.com/luci/luci-go/logdog/common/renderer"
 )
 
 // Manifest is a set of archival parameters.
 type Manifest struct {
 	// Desc is the logpb.LogStreamDescriptor for the stream.
 	Desc *logpb.LogStreamDescriptor
-	// Source is the LogEntry source for the stream.
-	Source LogEntrySource
+	// Source is the LogEntry Source for the stream.
+	Source renderer.Source
 
 	// LogWriter, if not nil, is the Writer to which the log stream record stream
 	// will be written.
@@ -65,8 +66,8 @@ func (m *Manifest) logger() logging.Logger {
 func Archive(m Manifest) error {
 	// Wrap our log source in a safeLogEntrySource to protect our index order.
 	m.Source = &safeLogEntrySource{
-		Manifest:       &m,
-		LogEntrySource: m.Source,
+		Manifest: &m,
+		Source:   m.Source,
 	}
 
 	// If no constraints are applied, index every LogEntry.
@@ -134,15 +135,18 @@ func Archive(m Manifest) error {
 
 			for {
 				le, err := m.Source.NextLogEntry()
+				if le != nil {
+					sendLog(le)
+				}
+
 				if err != nil {
-					if err == ErrEndOfStream {
+					if err == io.EOF {
 						return nil
 					}
 
 					return err
 				}
 
-				sendLog(le)
 			}
 		}
 	})

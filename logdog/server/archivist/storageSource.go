@@ -5,18 +5,19 @@
 package archivist
 
 import (
+	"io"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/api/logpb"
-	"github.com/luci/luci-go/logdog/common/archive"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/types"
 	"golang.org/x/net/context"
 )
 
-// storageSource is an archive.LogEntrySource that pulls log entries from
-// intermediate storage via its storage.Storage instance.
+// storageSource is a renderer.Source that pulls log entries from intermediate
+// storage via its storage.Storage instance.
 type storageSource struct {
 	context.Context
 
@@ -61,7 +62,7 @@ func (s *storageSource) NextLogEntry() (*logpb.LogEntry, error) {
 		if err := s.bufferEntries(s.lastIndex + 1); err != nil {
 			if err == storage.ErrDoesNotExist {
 				log.Warningf(s, "Archive target stream does not exist in intermediate storage.")
-				return nil, archive.ErrEndOfStream
+				return nil, io.EOF
 			}
 
 			log.WithError(err).Errorf(s, "Failed to retrieve log stream from storage.")
@@ -84,7 +85,7 @@ func (s *storageSource) NextLogEntry() (*logpb.LogEntry, error) {
 			}.Debugf(s, "Encountered end of stream.")
 		}
 
-		return nil, archive.ErrEndOfStream
+		return nil, io.EOF
 	}
 
 	// Pop the next log entry and advance the stream.
@@ -99,7 +100,7 @@ func (s *storageSource) NextLogEntry() (*logpb.LogEntry, error) {
 			"index":         sidx,
 			"terminalIndex": s.terminalIndex,
 		}.Warningf(s, "Discarding log entries beyond expected terminal index.")
-		return nil, archive.ErrEndOfStream
+		return nil, io.EOF
 	}
 
 	s.lastIndex = sidx

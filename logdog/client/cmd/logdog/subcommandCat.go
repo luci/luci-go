@@ -14,10 +14,13 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/milo"
 	"github.com/luci/luci-go/logdog/api/logpb"
+	"github.com/luci/luci-go/logdog/client/coordinator"
 	"github.com/luci/luci-go/logdog/common/fetcher"
 	"github.com/luci/luci-go/logdog/common/renderer"
 	"github.com/luci/luci-go/logdog/common/types"
+
 	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
 )
 
 var errDatagramNotSupported = errors.New("datagram not supported")
@@ -25,12 +28,12 @@ var errDatagramNotSupported = errors.New("datagram not supported")
 type catCommandRun struct {
 	subcommands.CommandRunBase
 
-	index        int64
-	count        int64
-	buffer       int
-	fetchSize    int
-	fetchBytes   int
-	originalText bool
+	index      int64
+	count      int64
+	buffer     int
+	fetchSize  int
+	fetchBytes int
+	raw        bool
 }
 
 func newCatCommand() *subcommands.Command {
@@ -47,8 +50,8 @@ func newCatCommand() *subcommands.Command {
 					"a larger buffer will have higher throughput.")
 			cmd.Flags.IntVar(&cmd.fetchSize, "fetch-size", 0, "Constrains the number of log entries to fetch per request.")
 			cmd.Flags.IntVar(&cmd.fetchBytes, "fetch-bytes", 0, "Constrains the number of bytes to fetch per request.")
-			cmd.Flags.BoolVar(&cmd.originalText, "original-text", false,
-				"Reproduce original text log stream, instead of converting for native rendering.")
+			cmd.Flags.BoolVar(&cmd.raw, "raw", false,
+				"Reproduce original log stream, instead of attempting to render for humans.")
 			return cmd
 		},
 	}
@@ -63,7 +66,7 @@ func (cmd *catCommandRun) Run(scApp subcommands.Application, args []string) int 
 	}
 
 	// Validate and construct our cat paths.
-	catPaths := make([]*catPath, len(args))
+	paths := make([]*streamPath, len(args))
 	for i, arg := range args {
 		// User-friendly: trim any leading or trailing slashes from the path.
 		project, path, _, err := a.splitPath(arg)
@@ -72,18 +75,18 @@ func (cmd *catCommandRun) Run(scApp subcommands.Application, args []string) int 
 			return 1
 		}
 
-		cp := catPath{project, types.StreamPath(path)}
-		if err := cp.path.Validate(); err != nil {
+		sp := streamPath{project, types.StreamPath(path)}
+		if err := sp.path.Validate(); err != nil {
 			log.Fields{
 				log.ErrorKey: err,
 				"index":      i,
-				"project":    cp.project,
-				"path":       cp.path,
+				"project":    sp.project,
+				"path":       sp.path,
 			}.Errorf(a, "Invalid command-line stream path.")
 			return 1
 		}
 
-		catPaths[i] = &cp
+		paths[i] = &sp
 	}
 	if cmd.buffer <= 0 {
 		log.Fields{
@@ -91,14 +94,19 @@ func (cmd *catCommandRun) Run(scApp subcommands.Application, args []string) int 
 		}.Errorf(a, "Buffer size must be >0.")
 	}
 
-	for i, cp := range catPaths {
-		if err := cmd.catPath(a, cp); err != nil {
+	tctx, _ := a.timeoutCtx(a)
+	for i, sp := range paths {
+		if err := cmd.catPath(tctx, a.coord, sp); err != nil {
 			log.Fields{
 				log.ErrorKey: err,
-				"project":    cp.project,
-				"path":       cp.path,
+				"project":    sp.project,
+				"path":       sp.path,
 				"index":      i,
 			}.Errorf(a, "Failed to fetch log stream.")
+
+			if err == context.DeadlineExceeded {
+				return 2
+			}
 			return 1
 		}
 	}
@@ -106,20 +114,20 @@ func (cmd *catCommandRun) Run(scApp subcommands.Application, args []string) int 
 	return 0
 }
 
-// catPath is a single path to fetch.
-type catPath struct {
+// streamPath is a single path to fetch.
+type streamPath struct {
 	project config.ProjectName
 	path    types.StreamPath
 }
 
-func (cmd *catCommandRun) catPath(a *application, cp *catPath) error {
+func (cmd *catCommandRun) catPath(c context.Context, coord *coordinator.Client, sp *streamPath) error {
 	// Pull stream information.
 	src := coordinatorSource{
-		stream: a.coord.Stream(cp.project, cp.path),
+		stream: coord.Stream(sp.project, sp.path),
 	}
 	src.tidx = -1 // Must be set to probe for state.
 
-	f := fetcher.New(a, fetcher.Options{
+	f := fetcher.New(c, fetcher.Options{
 		Source:      &src,
 		Index:       types.MessageIndex(cmd.index),
 		Count:       cmd.count,
@@ -128,23 +136,15 @@ func (cmd *catCommandRun) catPath(a *application, cp *catPath) error {
 	})
 
 	rend := renderer.Renderer{
-		Source:    f,
-		Reproduce: cmd.originalText,
+		Source: f,
+		Raw:    cmd.raw,
 		DatagramWriter: func(w io.Writer, dg []byte) bool {
 			desc, err := src.descriptor()
 			if err != nil {
-				log.WithError(err).Errorf(a, "Failed to get stream descriptor.")
+				log.WithError(err).Errorf(c, "Failed to get stream descriptor.")
 				return false
 			}
-
-			if err := writeDatagram(w, dg, desc); err != nil {
-				if err != errDatagramNotSupported {
-					log.WithError(err).Errorf(a, "Failed to render datagram.")
-				}
-				return false
-			}
-
-			return true
+			return getDatagramWriter(c, desc)(w, dg)
 		},
 	}
 	if _, err := io.CopyBuffer(os.Stdout, &rend, make([]byte, cmd.buffer)); err != nil {
@@ -153,15 +153,30 @@ func (cmd *catCommandRun) catPath(a *application, cp *catPath) error {
 	return nil
 }
 
-func writeDatagram(w io.Writer, dg []byte, desc *logpb.LogStreamDescriptor) error {
-	var pb proto.Message
-	switch desc.ContentType {
-	case milo.ContentTypeAnnotations:
-		mp := milo.Step{}
-		if err := proto.Unmarshal(dg, &mp); err != nil {
-			return err
+// getDatagramWriter returns a datagram writer function that can be used as a
+// Renderer's DatagramWriter. The writer is bound to desc.
+func getDatagramWriter(c context.Context, desc *logpb.LogStreamDescriptor) renderer.DatagramWriter {
+
+	return func(w io.Writer, dg []byte) bool {
+		var pb proto.Message
+		switch desc.ContentType {
+		case milo.ContentTypeAnnotations:
+			mp := milo.Step{}
+			if err := proto.Unmarshal(dg, &mp); err != nil {
+				log.WithError(err).Errorf(c, "Failed to unmarshal datagram data.")
+				return false
+			}
+			pb = &mp
+
+		default:
+			return false
 		}
-		pb = &mp
+
+		if err := proto.MarshalText(w, pb); err != nil {
+			log.WithError(err).Errorf(c, "Failed to marshal datagram as text.")
+			return false
+		}
+
+		return true
 	}
-	return proto.MarshalText(w, pb)
 }

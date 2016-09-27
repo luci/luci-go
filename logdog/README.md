@@ -86,7 +86,7 @@ The LogDog platform consists of several components:
 
 LogDog offers several log stream clients to query and consume log data:
 
-* [LogDog Cat](client/cmd/logdog_cat), a CLI to query and view log streams.
+* [LogDog](client/cmd/logdog), a CLI to query and view log streams.
 * [Web App](/web/apps/logdog-app), a heavy log stream navigation
   application built in [Polymer](https://www.polymer-project.org).
 * [Web Viewer](/web/apps/logdog-view), a lightweight log stream viewer built in
