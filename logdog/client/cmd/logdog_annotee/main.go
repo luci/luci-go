@@ -179,7 +179,7 @@ func mainImpl(args []string) int {
 	}
 
 	// Get the annotation project. This must be non-empty.
-	if a.project == "" {
+	if a.project == "" && a.bootstrap != nil {
 		a.project = a.bootstrap.Project
 	}
 	if err := a.project.Validate(); err != nil {
