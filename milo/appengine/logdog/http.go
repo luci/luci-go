@@ -40,8 +40,7 @@ func (s *AnnotationStream) GetTemplateName(t settings.Theme) string {
 // Render implements settings.ThemedHandler.
 func (s *AnnotationStream) Render(c context.Context, req *http.Request, p httprouter.Params) (*templates.Args, error) {
 	// Initialize the LogDog client authentication.
-	// TODO(vadimsh): Use auth.AsUser.
-	t, err := auth.GetRPCTransport(c, auth.AsSelf)
+	t, err := auth.GetRPCTransport(c, auth.AsUser)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to get transport for LogDog server.")
 		return nil, &miloerror.Error{
