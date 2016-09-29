@@ -50,6 +50,7 @@ func GetAccessToken(c context.Context, scopes []string) (auth.Token, error) {
 	if err != nil {
 		return auth.Token{}, errors.WrapTransient(err)
 	}
+	logging.Debugf(c, "The token expires in %s", exp.Sub(clock.Now(c)))
 
 	// Prematurely expire it to guarantee all returned token live for at least
 	// 'expirationMinLifetime'.
