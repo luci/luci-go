@@ -315,6 +315,11 @@ func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, 
 	return nil
 }
 
+// HandleTimer is part of Manager interface.
+func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
+	return errors.New("not implemented")
+}
+
 // createSwarmingService makes a configured Swarming API client.
 func (m TaskManager) createSwarmingService(c context.Context, ctl task.Controller) (*swarming.Service, error) {
 	client, err := ctl.GetClient(time.Minute)

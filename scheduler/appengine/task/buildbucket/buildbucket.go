@@ -284,6 +284,11 @@ func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, 
 	return nil
 }
 
+// HandleTimer is part of Manager interface.
+func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
+	return errors.New("not implemented")
+}
+
 // createBuildbucketService makes a configured Buildbucket API client.
 func (m TaskManager) createBuildbucketService(c context.Context, ctl task.Controller) (*buildbucket.Service, error) {
 	client, err := ctl.GetClient(time.Minute)

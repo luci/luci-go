@@ -8,6 +8,7 @@ package noop
 
 import (
 	"errors"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
@@ -40,7 +41,8 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 // LaunchTask is part of Manager interface.
 func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	ctl.DebugLog("Running noop task")
-	ctl.State().Status = task.StatusSucceeded
+	ctl.AddTimer(5*time.Second, "succeed-later", nil)
+	ctl.State().Status = task.StatusRunning
 	return nil
 }
 
@@ -52,4 +54,13 @@ func (m TaskManager) AbortTask(c context.Context, ctl task.Controller) error {
 // HandleNotification is part of Manager interface.
 func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, msg *pubsub.PubsubMessage) error {
 	return errors.New("not implemented")
+}
+
+// HandleTimer is part of Manager interface.
+func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
+	ctl.DebugLog("Handling timer tick %q", name)
+	if name == "succeed-later" {
+		ctl.State().Status = task.StatusSucceeded
+	}
+	return nil
 }

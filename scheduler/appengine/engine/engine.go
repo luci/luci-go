@@ -168,16 +168,35 @@ const invocationRetryLimit = 5
 const maxInvocationRetryBackoff = 10 * time.Second
 
 // actionTaskPayload is payload for task queue jobs emitted by the engine.
-// Serialized as JSON, produced by enqueueActions, used as inputs in
-// ExecuteSerializedAction. Union of all possible payloads for simplicity.
+//
+// Serialized as JSON, produced by enqueueJobActions and enqueueInvTimers, used
+// as inputs in ExecuteSerializedAction.
+//
+// Union of all possible payloads for simplicity.
 type actionTaskPayload struct {
-	JobID               string `json:",omitempty"` // ID of relevant Job
+	JobID string `json:",omitempty"` // ID of relevant Job
+	InvID int64  `json:",omitempty"` // ID of relevant Invocation
+
+	// For Job actions and timers (InvID == 0).
 	Kind                string `json:",omitempty"` // defines what fields below to examine
 	TickNonce           int64  `json:",omitempty"` // valid for "TickLaterAction" kind
 	InvocationNonce     int64  `json:",omitempty"` // valid for "StartInvocationAction" kind
 	TriggeredBy         string `json:",omitempty"` // valid for "StartInvocationAction" kind
 	Overruns            int    `json:",omitempty"` // valid for "RecordOverrunAction" kind
 	RunningInvocationID int64  `json:",omitempty"` // valid for "RecordOverrunAction" kind
+
+	// For Invocation actions and timers (InvID != 0).
+	InvTimer *invocationTimer `json:",omitempty"` // used for AddTimer calls
+}
+
+// invocationTimer is carried as part of task queue task payload for tasks
+// created by AddTimer calls.
+//
+// It will be serialized to JSON, so all fields are public.
+type invocationTimer struct {
+	Delay   time.Duration
+	Name    string
+	Payload []byte
 }
 
 // Job stores the last known definition of a scheduler job, as well as its
@@ -773,7 +792,7 @@ func (e *engineImpl) rollSM(c context.Context, job *Job, cb func(*StateMachine) 
 		return errors.WrapTransient(err)
 	}
 	if len(sm.Actions) != 0 {
-		if err := e.enqueueActions(c, job.JobID, sm.Actions); err != nil {
+		if err := e.enqueueJobActions(c, job.JobID, sm.Actions); err != nil {
 			return err
 		}
 	}
@@ -784,10 +803,10 @@ func (e *engineImpl) rollSM(c context.Context, job *Job, cb func(*StateMachine) 
 	return nil
 }
 
-// enqueueActions commits all actions emitted by a state transition by adding
-// corresponding tasks to task queues. See ExecuteSerializedAction for place
-// where these actions are interpreted.
-func (e *engineImpl) enqueueActions(c context.Context, jobID string, actions []Action) error {
+// enqueueJobActions submits all actions emitted by a job state transition by
+// adding corresponding tasks to task queues. See ExecuteSerializedAction for
+// place where these actions are interpreted.
+func (e *engineImpl) enqueueJobActions(c context.Context, jobID string, actions []Action) error {
 	// AddMulti can't put tasks into multiple queues at once, split by queue name.
 	qs := map[string][]*tq.Task{}
 	for _, a := range actions {
@@ -863,14 +882,44 @@ func (e *engineImpl) enqueueActions(c context.Context, jobID string, actions []A
 	return errors.WrapTransient(errs.Get())
 }
 
+// enqueueInvTimers submits all timers emitted by an invocation manager by
+// adding corresponding tasks to the task queue. See ExecuteSerializedAction for
+// place where these actions are interpreted.
+func (e *engineImpl) enqueueInvTimers(c context.Context, inv *Invocation, timers []invocationTimer) error {
+	tasks := make([]*tq.Task, len(timers))
+	for i, timer := range timers {
+		payload, err := json.Marshal(actionTaskPayload{
+			JobID:    inv.JobKey.StringID(),
+			InvID:    inv.ID,
+			InvTimer: &timer,
+		})
+		if err != nil {
+			return err
+		}
+		tasks[i] = &tq.Task{
+			Path:    e.TimersQueuePath,
+			ETA:     clock.Now(c).Add(timer.Delay),
+			Payload: payload,
+		}
+	}
+	return errors.WrapTransient(tq.Add(c, e.TimersQueueName, tasks...))
+}
+
 func (e *engineImpl) ExecuteSerializedAction(c context.Context, action []byte, retryCount int) error {
 	payload := actionTaskPayload{}
 	if err := json.Unmarshal(action, &payload); err != nil {
 		return err
 	}
+	if payload.InvID == 0 {
+		return e.executeJobAction(c, &payload, retryCount)
+	}
+	return e.executeInvAction(c, &payload, retryCount)
+}
+
+func (e *engineImpl) executeJobAction(c context.Context, payload *actionTaskPayload, retryCount int) error {
 	switch payload.Kind {
 	case "TickLaterAction":
-		return e.timerTick(c, payload.JobID, payload.TickNonce)
+		return e.jobTimerTick(c, payload.JobID, payload.TickNonce)
 	case "StartInvocationAction":
 		return e.startInvocation(
 			c, payload.JobID, payload.InvocationNonce,
@@ -878,7 +927,16 @@ func (e *engineImpl) ExecuteSerializedAction(c context.Context, action []byte, r
 	case "RecordOverrunAction":
 		return e.recordOverrun(c, payload.JobID, payload.Overruns, payload.RunningInvocationID)
 	default:
-		return fmt.Errorf("unexpected action kind %q", payload.Kind)
+		return fmt.Errorf("unexpected job action kind %q", payload.Kind)
+	}
+}
+
+func (e *engineImpl) executeInvAction(c context.Context, payload *actionTaskPayload, retryCount int) error {
+	switch {
+	case payload.InvTimer != nil:
+		return e.invocationTimerTick(c, payload.JobID, payload.InvID, payload.InvTimer)
+	default:
+		return fmt.Errorf("unexpected invocation action kind %q", payload)
 	}
 }
 
@@ -1097,9 +1155,9 @@ func (e *engineImpl) resetJobOnDevServer(c context.Context, jobID string) error 
 	})
 }
 
-// timerTick is invoked via task queue in a task with some ETA. It what makes
+// jobTimerTick is invoked via task queue in a task with some ETA. It what makes
 // cron tick.
-func (e *engineImpl) timerTick(c context.Context, jobID string, tickNonce int64) error {
+func (e *engineImpl) jobTimerTick(c context.Context, jobID string, tickNonce int64) error {
 	return e.txn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
 		if isNew {
 			logging.Errorf(c, "Scheduled job is unexpectedly gone")
@@ -1136,6 +1194,64 @@ func (e *engineImpl) recordOverrun(c context.Context, jobID string, overruns int
 	}
 	inv.debugLog(c, "Total overruns thus far: %d", overruns)
 	return errors.WrapTransient(ds.Put(c, &inv))
+}
+
+// invocationTimerTick is called via Task Queue to handle AddTimer callbacks.
+//
+// See also handlePubSubMessage, it is quite similar.
+func (e *engineImpl) invocationTimerTick(c context.Context, jobID string, invID int64, timer *invocationTimer) error {
+	c = logging.SetField(c, "JobID", jobID)
+	c = logging.SetField(c, "InvID", invID)
+
+	logging.Infof(c, "Handling invocation timer %q", timer.Name)
+	inv, err := e.GetInvocation(c, jobID, invID)
+	if err != nil {
+		logging.Errorf(c, "Failed to fetch the invocation - %s", err)
+		return err
+	}
+	if inv == nil {
+		return errors.New("the invocation doesn't exist")
+	}
+
+	// Finished invocations are immutable, skip the message.
+	if inv.Status.Final() {
+		logging.Infof(c, "Skipping the timer, the invocation is in final state %q", inv.Status)
+		return nil
+	}
+
+	// Build corresponding controller.
+	ctl, err := e.controllerForInvocation(c, inv)
+	if err != nil {
+		logging.Errorf(c, "Cannot get controller - %s", err)
+		return err
+	}
+
+	// Hand the message to the TaskManager.
+	err = ctl.manager.HandleTimer(c, ctl, timer.Name, timer.Payload)
+	if err != nil {
+		logging.Errorf(c, "Error when handling the timer - %s", err)
+		if !errors.IsTransient(err) && ctl.State().Status != task.StatusFailed {
+			ctl.DebugLog("Fatal error when handling timer, aborting invocation - %s", err)
+			ctl.State().Status = task.StatusFailed
+		}
+	}
+
+	// Save anyway, to preserve the invocation log.
+	saveErr := ctl.Save()
+	if saveErr != nil {
+		logging.Errorf(c, "Error when saving the invocation - %s", saveErr)
+	}
+
+	// Retry the delivery if at least one error is transient. HandleTimer must be
+	// idempotent.
+	switch {
+	case err == nil && saveErr == nil:
+		return nil
+	case errors.IsTransient(saveErr):
+		return saveErr
+	default:
+		return err // transient or fatal
+	}
 }
 
 // startInvocation is called via task queue to start running a job. This call
@@ -1475,7 +1591,7 @@ func (e *engineImpl) handlePubSubMessage(c context.Context, msg *pubsub.PubsubMe
 	c = logging.SetField(c, "InvID", invID)
 	inv, err := e.GetInvocation(c, jobID, invID)
 	if err != nil {
-		logging.Errorf(c, "Failed to fetch the invocation")
+		logging.Errorf(c, "Failed to fetch the invocation - %s", err)
 		return err
 	}
 	if inv == nil {
@@ -1484,7 +1600,7 @@ func (e *engineImpl) handlePubSubMessage(c context.Context, msg *pubsub.PubsubMe
 
 	// Finished invocations are immutable, skip the message.
 	if inv.Status.Final() {
-		logging.Warningf(c, "The invocation is in final state %q", inv.Status)
+		logging.Infof(c, "Skipping the notification, the invocation is in final state %q", inv.Status)
 		return nil
 	}
 
@@ -1532,9 +1648,10 @@ type taskController struct {
 	manager task.Manager
 	task    proto.Message // extracted from saved.Task blob
 
-	saved    Invocation // what have been given initially or saved in Save()
-	state    task.State // state mutated by TaskManager
-	debugLog string     // mutated by DebugLog
+	saved    Invocation        // what have been given initially or saved in Save()
+	state    task.State        // state mutated by TaskManager
+	debugLog string            // mutated by DebugLog
+	timers   []invocationTimer // mutated by AddTimer
 }
 
 // populateState populates 'state' using data in 'saved'.
@@ -1569,6 +1686,16 @@ func (ctl *taskController) Task() proto.Message {
 // State is part of task.Controller interface.
 func (ctl *taskController) State() *task.State {
 	return &ctl.state
+}
+
+// AddTimer is part of Controller interface.
+func (ctl *taskController) AddTimer(delay time.Duration, name string, payload []byte) {
+	ctl.DebugLog("Scheduling timer %q after %s", name, delay)
+	ctl.timers = append(ctl.timers, invocationTimer{
+		Delay:   delay,
+		Name:    name,
+		Payload: payload,
+	})
 }
 
 // PrepareTopic is part of task.Controller interface.
@@ -1618,7 +1745,7 @@ func (ctl *taskController) saveImpl(updateJob bool) (err error) {
 	saving.TaskData = append([]byte(nil), ctl.state.TaskData...)
 	saving.ViewURL = ctl.state.ViewURL
 	saving.DebugLog += ctl.debugLog
-	if saving.isEqual(&ctl.saved) { // no changes at all?
+	if saving.isEqual(&ctl.saved) && len(ctl.timers) == 0 { // no changes at all?
 		return nil
 	}
 	saving.MutationsCount++
@@ -1628,6 +1755,7 @@ func (ctl *taskController) saveImpl(updateJob bool) (err error) {
 		if err == nil {
 			ctl.saved = saving
 			ctl.debugLog = "" // debug log was successfully flushed
+			ctl.timers = nil  // timers were successfully scheduled
 		}
 	}()
 
@@ -1641,9 +1769,14 @@ func (ctl *taskController) saveImpl(updateJob bool) (err error) {
 		if !updateJob {
 			saving.debugLog(ctl.ctx, "It will probably be retried")
 		}
+		// Finished invocations can't schedule timers.
+		for _, t := range ctl.timers {
+			saving.debugLog(ctl.ctx, "Ignoring timer %s...", t.Name)
+		}
 	}
 
-	// Store the invocation entity and mutate Job state accordingly.
+	// Store the invocation entity, mutate Job state accordingly, schedule all
+	// timer ticks.
 	return ctl.eng.txn(ctl.ctx, saving.JobKey.StringID(), func(c context.Context, job *Job, isNew bool) error {
 		// Grab what's currently in the store to compare MutationsCount to what we
 		// expect it to be.
@@ -1665,11 +1798,19 @@ func (ctl *taskController) saveImpl(updateJob bool) (err error) {
 			return errUpdateConflict
 		}
 
-		// Store the invocation entity regardless of the current state of the
-		// Job entity. The table of all invocations is useful on its own (e.g. for
-		// debugging) even if Job entity state has desynchronized for some reason.
+		// Store the invocation entity and schedule invocation timers regardless of
+		// the current state of the Job entity. The table of all invocations is
+		// useful on its own (e.g. for debugging) even if Job entity state has
+		// desynchronized for some reason.
 		if err := ds.Put(c, &saving); err != nil {
 			return err
+		}
+
+		// Finished invocations can't schedule timers.
+		if !hasFinished && len(ctl.timers) > 0 {
+			if err := ctl.eng.enqueueInvTimers(c, &saving, ctl.timers); err != nil {
+				return err
+			}
 		}
 
 		// Is Job entity still have this invocation as a current one?

@@ -196,6 +196,10 @@ func (m noopTaskManager) HandleNotification(c context.Context, ctl task.Controll
 	return errors.New("not implemented")
 }
 
+func (m noopTaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
+	return errors.New("not implemented")
+}
+
 type brokenTaskManager struct {
 	noopTaskManager
 }

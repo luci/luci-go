@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"math/rand"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -754,25 +755,10 @@ func TestAborts(t *testing.T) {
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
 
-		taskBlob, err := proto.Marshal(&messages.Task{
-			Noop: &messages.NoopTask{},
-		})
-		So(err, ShouldBeNil)
-
 		// A job in "QUEUED" state (about to run an invocation).
 		const jobID = "abc/1"
 		const invNonce = int64(12345)
-		So(ds.Put(c, &Job{
-			JobID:     jobID,
-			ProjectID: "abc",
-			Enabled:   true,
-			Task:      taskBlob,
-			Schedule:  "manual",
-			State: JobState{
-				State:           JobStateQueued,
-				InvocationNonce: invNonce,
-			},
-		}), ShouldBeNil)
+		prepareQueuedJob(c, jobID, invNonce)
 
 		launchInv := func() int64 {
 			var invID int64
@@ -846,6 +832,77 @@ func TestAborts(t *testing.T) {
 	})
 }
 
+func TestAddTimer(t *testing.T) {
+	Convey("with mock job", t, func() {
+		c := newTestContext(epoch)
+		e, mgr := newTestEngine()
+
+		// A job in "QUEUED" state (about to run an invocation).
+		const jobID = "abc/1"
+		const invNonce = int64(12345)
+		prepareQueuedJob(c, jobID, invNonce)
+
+		Convey("AddTimer works", func() {
+			// Start an invocation that adds a timer.
+			mgr.launchTask = func(ctl task.Controller) error {
+				ctl.AddTimer(time.Minute, "timer-name", []byte{1, 2, 3})
+				ctl.State().Status = task.StatusRunning
+				return nil
+			}
+			So(e.startInvocation(c, jobID, invNonce, "", 0), ShouldBeNil)
+
+			// The job is running.
+			job, err := e.GetJob(c, jobID)
+			So(err, ShouldBeNil)
+			So(job.State.State, ShouldEqual, JobStateRunning)
+
+			// Added a task to the timers task queue.
+			tasks := tq.GetTestable(c).GetScheduledTasks()["timers-q"]
+			So(len(tasks), ShouldEqual, 1)
+			var tqt *tq.Task
+			for _, tqt = range tasks {
+			}
+			So(tqt.ETA, ShouldResemble, clock.Now(c).Add(time.Minute))
+
+			// Verify task body.
+			payload := actionTaskPayload{}
+			So(json.Unmarshal(tqt.Payload, &payload), ShouldBeNil)
+			So(payload, ShouldResemble, actionTaskPayload{
+				JobID: "abc/1",
+				InvID: 9200093523825174512,
+				InvTimer: &invocationTimer{
+					Delay:   time.Minute,
+					Name:    "timer-name",
+					Payload: []byte{1, 2, 3},
+				},
+			})
+
+			// Clear the queue.
+			tq.GetTestable(c).ResetTasks()
+
+			// Time comes to execute the task.
+			mgr.handleTimer = func(ctl task.Controller, name string, payload []byte) error {
+				So(name, ShouldEqual, "timer-name")
+				So(payload, ShouldResemble, []byte{1, 2, 3})
+				ctl.AddTimer(time.Minute, "ignored-timer", nil)
+				ctl.State().Status = task.StatusSucceeded
+				return nil
+			}
+			clock.Get(c).(testclock.TestClock).Add(time.Minute)
+			So(e.ExecuteSerializedAction(c, tqt.Payload, 0), ShouldBeNil)
+
+			// The job has finished (by timer handler). Moves back to SUSPENDED state.
+			job, err = e.GetJob(c, jobID)
+			So(err, ShouldBeNil)
+			So(job.State.State, ShouldEqual, JobStateSuspended)
+
+			// No new timers added for finished job.
+			tasks = tq.GetTestable(c).GetScheduledTasks()["timers-q"]
+			So(len(tasks), ShouldEqual, 0)
+		})
+	})
+}
+
 ////
 
 func newTestContext(now time.Time) context.Context {
@@ -888,6 +945,7 @@ func newTestEngine() (*engineImpl, *fakeTaskManager) {
 type fakeTaskManager struct {
 	launchTask         func(ctl task.Controller) error
 	handleNotification func(msg *pubsub.PubsubMessage) error
+	handleTimer        func(ctl task.Controller, name string, payload []byte) error
 }
 
 func (m *fakeTaskManager) Name() string {
@@ -914,7 +972,36 @@ func (m *fakeTaskManager) HandleNotification(c context.Context, ctl task.Control
 	return m.handleNotification(msg)
 }
 
+func (m fakeTaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
+	return m.handleTimer(ctl, name, payload)
+}
+
 ////
+
+// prepareQueuedJob makes datastore entries for a job in QUEUED state.
+func prepareQueuedJob(c context.Context, jobID string, invNonce int64) {
+	taskBlob, err := proto.Marshal(&messages.Task{
+		Noop: &messages.NoopTask{},
+	})
+	if err != nil {
+		panic(err)
+	}
+	chunks := strings.Split(jobID, "/")
+	err = ds.Put(c, &Job{
+		JobID:     jobID,
+		ProjectID: chunks[0],
+		Enabled:   true,
+		Task:      taskBlob,
+		Schedule:  "manual",
+		State: JobState{
+			State:           JobStateQueued,
+			InvocationNonce: invNonce,
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+}
 
 func noopTaskBytes() []byte {
 	buf, _ := proto.Marshal(&messages.Task{Noop: &messages.NoopTask{}})

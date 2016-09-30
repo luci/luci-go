@@ -158,6 +158,11 @@ func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, 
 	return errors.New("not implemented")
 }
 
+// HandleTimer is part of Manager interface.
+func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
+	return errors.New("not implemented")
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // dumpResponse converts http.Response to text for the invocation debug log.

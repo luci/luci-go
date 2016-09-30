@@ -63,6 +63,11 @@ func (c *TestController) State() *task.State {
 	return &c.TaskState
 }
 
+// AddTimer is part of Controller interface.
+func (c *TestController) AddTimer(delay time.Duration, name string, payload []byte) {
+	panic("not implemented")
+}
+
 // DebugLog is part of Controller interface.
 func (c *TestController) DebugLog(format string, args ...interface{}) {
 	c.Log = append(c.Log, fmt.Sprintf(format, args...))

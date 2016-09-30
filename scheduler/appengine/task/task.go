@@ -97,12 +97,25 @@ type Manager interface {
 	// to a topic created with Controller.PrepareTopic. Expect duplicated and
 	// out-of-order messages here. HandleNotification must be idempotent.
 	//
-	// Returns transient error to trigger a redeliver of the message, or a fatal
-	// error (or no error at all) to acknowledge the message.
+	// Returns transient error to trigger a redeliver of the message, no error to
+	// to acknowledge the message and fatal error to move the invocation to failed
+	// state.
 	//
-	// Any modifications made to the invocation state (via ctl.State()) will be
-	// saved regardless of the return value.
+	// Any modifications made to the invocation state will be saved regardless of
+	// the return value (to save the debug log).
 	HandleNotification(c context.Context, ctl Controller, msg *pubsub.PubsubMessage) error
+
+	// HandleTimer is called to process timers set up by Controller.AddTimer.
+	//
+	// Expect duplicated or delayed events here. HandleTimer must be idempotent.
+	//
+	// Returns transient error to trigger a redeliver of the event, no error to
+	// acknowledge the event and fatal error to move the invocation to failed
+	// state.
+	//
+	// Any modifications made to the invocation state will be saved regardless of
+	// the return value (to save the debug log).
+	HandleTimer(c context.Context, ctl Controller, name string, payload []byte) error
 }
 
 // Controller is passed to LaunchTask by the scheduler engine. It gives Manager
@@ -130,9 +143,27 @@ type Controller interface {
 	// return value.
 	Task() proto.Message
 
-	// State returns a mutable portion of task invocation state. TaskManager can
-	// modify it in-place and then call Controller.Save to persist the changes.
+	// State returns a mutable portion of task invocation state.
+	//
+	// TaskManager can modify it in-place and then call Controller.Save to persist
+	// the changes. The state will also be saved by the engine automatically if
+	// Manager doesn't call Save.
 	State() *State
+
+	// AddTimer sets up a new delayed call to Manager.HandleTimer.
+	//
+	// Timers are active as long as the invocation is not in one of the final
+	// states. There is no way to cancel a timer (ignore HandleTimer call
+	// instead).
+	//
+	// 'name' will be visible in logs, it should convey a purpose for this timer.
+	// It doesn't have to be unique.
+	//
+	// 'payload' is any byte blob carried verbatim to Manager.HandleTimer.
+	//
+	// All timers are actually enabled in Save(), in the same transaction that
+	// updates the job state.
+	AddTimer(delay time.Duration, name string, payload []byte)
 
 	// PrepareTopic create PubSub topic for notifications related to the task and
 	// adds given publisher to its ACL.
@@ -160,10 +191,17 @@ type Controller interface {
 	// For debugging.
 	DebugLog(format string, args ...interface{})
 
-	// Save updates the state of the task in the persistent store. Save must be
-	// called at least once, otherwise no changes will be stored. May be called
-	// multiple times (e.g. once to notify that task has started, second time to
-	// notify it has finished).
+	// Save updates the state of the task in the persistent store.
+	//
+	// It also schedules all pending timer ticks added via AddTimer.
+	//
+	// Will be called by the engine after it launches the task. May also be called
+	// by the Manager itself, even multiple times (e.g. once to notify that the
+	// task has started, a second time to notify it has finished).
+	//
+	// Returns error if it couldn't save the invocation state. It is fine to
+	// ignore it. The engine will attempt to Save the invocation at the end anyway
+	// and it will properly handle the error if it happens again.
 	Save() error
 }
 

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gorhill/cronexpr"
@@ -17,6 +18,9 @@ import (
 // DistantFuture is Jan 2116. It is used to indicate that next tick should not
 // happen.
 var DistantFuture = time.Unix(4604952467, 0).UTC()
+
+// cronexpr library is using global variables without synchronizing the access.
+var cronexprLock sync.Mutex
 
 // Schedule knows when to run a periodic job (given current time and possibly
 // a current state of the job).
@@ -142,7 +146,9 @@ func parseWithSchedule(expr string, randSeed uint64) (*Schedule, error) {
 
 // parseCronSchedule parses crontab-like schedule string.
 func parseCronSchedule(expr string, randSeed uint64) (*Schedule, error) {
+	cronexprLock.Lock()
 	exp, err := cronexpr.Parse(expr)
+	cronexprLock.Unlock()
 	if err != nil {
 		return nil, err
 	}
