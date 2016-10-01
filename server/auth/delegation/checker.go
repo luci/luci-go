@@ -19,7 +19,7 @@ import (
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/signing"
 
-	"github.com/luci/luci-go/server/auth/delegation/internal"
+	"github.com/luci/luci-go/server/auth/delegation/messages"
 )
 
 const (
@@ -107,7 +107,7 @@ func CheckToken(c context.Context, params CheckTokenParams) (identity.Identity, 
 }
 
 // deserializeToken deserializes DelegationToken proto message.
-func deserializeToken(token string) (*internal.DelegationToken, error) {
+func deserializeToken(token string) (*messages.DelegationToken, error) {
 	blob, err := base64.RawURLEncoding.DecodeString(token)
 	if err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ func deserializeToken(token string) (*internal.DelegationToken, error) {
 	if len(blob) > maxTokenSize {
 		return nil, fmt.Errorf("the delegation token is too big (%d bytes)", len(blob))
 	}
-	tok := &internal.DelegationToken{}
+	tok := &messages.DelegationToken{}
 	if err = proto.Unmarshal(blob, tok); err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func deserializeToken(token string) (*internal.DelegationToken, error) {
 // unsealToken verifies token's signature and deserializes the subtoken.
 //
 // May return transient errors.
-func unsealToken(c context.Context, tok *internal.DelegationToken, certsProvider CertificatesProvider) (*internal.Subtoken, error) {
+func unsealToken(c context.Context, tok *messages.DelegationToken, certsProvider CertificatesProvider) (*messages.Subtoken, error) {
 	// Grab the public keys of the primary auth service. It is the service that
 	// signs tokens.
 	//
@@ -139,13 +139,13 @@ func unsealToken(c context.Context, tok *internal.DelegationToken, certsProvider
 	}
 
 	// Check the signature on the token.
-	err = certs.CheckSignature(tok.GetSigningKeyId(), tok.SerializedSubtoken, tok.Pkcs1Sha256Sig)
+	err = certs.CheckSignature(tok.SigningKeyId, tok.SerializedSubtoken, tok.Pkcs1Sha256Sig)
 	if err != nil {
 		return nil, err
 	}
 
 	// The signature is correct! Deserialize the subtoken.
-	msg := &internal.Subtoken{}
+	msg := &messages.Subtoken{}
 	if err = proto.Unmarshal(tok.SerializedSubtoken, msg); err != nil {
 		return nil, err
 	}
@@ -155,8 +155,15 @@ func unsealToken(c context.Context, tok *internal.DelegationToken, certsProvider
 
 // checkSubtoken validates the delegation subtoken.
 //
-// It extracts and returns original issuer_id.
-func checkSubtoken(c context.Context, subtoken *internal.Subtoken, params *CheckTokenParams) (identity.Identity, error) {
+// It extracts and returns original delegated_identity.
+func checkSubtoken(c context.Context, subtoken *messages.Subtoken, params *CheckTokenParams) (identity.Identity, error) {
+	// TODO(vadimsh): Remove UNKNOWN_KIND from here once all services produce
+	// tokens with kind BEARER_DELEGATION_TOKEN.
+	if subtoken.Kind != messages.Subtoken_UNKNOWN_KIND && subtoken.Kind != messages.Subtoken_BEARER_DELEGATION_TOKEN {
+		logging.Warningf(c, "auth: Invalid delegation token kind - %s", subtoken.Kind)
+		return "", ErrForbiddenDelegationToken
+	}
+
 	// Do fast checks before heavy ones.
 	now := clock.Now(c).Unix()
 	if err := checkSubtokenExpiration(subtoken, now); err != nil {
@@ -179,9 +186,9 @@ func checkSubtoken(c context.Context, subtoken *internal.Subtoken, params *Check
 	}
 
 	// Grab delegated identity.
-	ident, err := identity.MakeIdentity(subtoken.GetIssuerId())
+	ident, err := identity.MakeIdentity(subtoken.DelegatedIdentity)
 	if err != nil {
-		logging.Warningf(c, "auth: Invalid issuer_id in the delegation token - %s", err)
+		logging.Warningf(c, "auth: Invalid delegated_identity in the delegation token - %s", err)
 		return "", ErrMalformedDelegationToken
 	}
 
@@ -189,26 +196,25 @@ func checkSubtoken(c context.Context, subtoken *internal.Subtoken, params *Check
 }
 
 // checkSubtokenExpiration checks 'CreationTime' and 'ValidityDuration' fields.
-func checkSubtokenExpiration(t *internal.Subtoken, now int64) error {
-	creationTime := t.GetCreationTime()
-	if creationTime <= 0 {
-		return fmt.Errorf("invalid 'creation_time' field: %d", creationTime)
+func checkSubtokenExpiration(t *messages.Subtoken, now int64) error {
+	if t.CreationTime <= 0 {
+		return fmt.Errorf("invalid 'creation_time' field: %d", t.CreationTime)
 	}
-	dur := int64(t.GetValidityDuration())
+	dur := int64(t.ValidityDuration)
 	if dur <= 0 {
 		return fmt.Errorf("invalid validity_duration: %d", dur)
 	}
-	if creationTime >= now+allowedClockDriftSec {
-		return fmt.Errorf("token is not active yet (created at %d)", creationTime)
+	if t.CreationTime >= now+allowedClockDriftSec {
+		return fmt.Errorf("token is not active yet (created at %d)", t.CreationTime)
 	}
-	if creationTime+dur < now {
-		return fmt.Errorf("token has expired %d sec ago", now-(creationTime+dur))
+	if t.CreationTime+dur < now {
+		return fmt.Errorf("token has expired %d sec ago", now-(t.CreationTime+dur))
 	}
 	return nil
 }
 
 // checkSubtokenServices makes sure the token is usable by the current service.
-func checkSubtokenServices(t *internal.Subtoken, serviceID identity.Identity) error {
+func checkSubtokenServices(t *messages.Subtoken, serviceID identity.Identity) error {
 	// Empty services field is not allowed.
 	if len(t.Services) == 0 {
 		return fmt.Errorf("the token's services list is empty")
@@ -226,7 +232,7 @@ func checkSubtokenServices(t *internal.Subtoken, serviceID identity.Identity) er
 // identity.
 //
 // May return transient errors.
-func checkSubtokenAudience(c context.Context, t *internal.Subtoken, ident identity.Identity, checker GroupsChecker) error {
+func checkSubtokenAudience(c context.Context, t *messages.Subtoken, ident identity.Identity, checker GroupsChecker) error {
 	// Empty audience field is not allowed.
 	if len(t.Audience) == 0 {
 		return fmt.Errorf("the token's audience list is empty")

@@ -4,4 +4,4 @@
 
 //go:generate cproto
 
-package internal
+package messages

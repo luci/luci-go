@@ -22,7 +22,7 @@ import (
 	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/auth/signing/signingtest"
 
-	"github.com/luci/luci-go/server/auth/delegation/internal"
+	"github.com/luci/luci-go/server/auth/delegation/messages"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -161,16 +161,14 @@ func TestCheckToken(t *testing.T) {
 
 }
 
-// subtoken returns internal.Subtoken with some fields filled in.
-func subtoken(c context.Context, issuerID, audience string) *internal.Subtoken {
-	creationTime := clock.Now(c).Unix() - 300
-	validityDuration := int32(3600)
-	return &internal.Subtoken{
-		IssuerId:         &issuerID,
-		CreationTime:     &creationTime,
-		ValidityDuration: &validityDuration,
-		Audience:         []string{audience},
-		Services:         []string{"service:service-id"},
+// subtoken returns messages.Subtoken with some fields filled in.
+func subtoken(c context.Context, delegatedID, audience string) *messages.Subtoken {
+	return &messages.Subtoken{
+		DelegatedIdentity: delegatedID,
+		CreationTime:      clock.Now(c).Unix() - 300,
+		ValidityDuration:  3600,
+		Audience:          []string{audience},
+		Services:          []string{"service:service-id"},
 	}
 }
 
@@ -194,7 +192,7 @@ func (f *fakeTokenMinter) GetAuthServiceCertificates(c context.Context) (*signin
 	return f.signer.Certificates(c)
 }
 
-func (f *fakeTokenMinter) mintToken(c context.Context, subtoken *internal.Subtoken) string {
+func (f *fakeTokenMinter) mintToken(c context.Context, subtoken *messages.Subtoken) string {
 	blob, err := proto.Marshal(subtoken)
 	if err != nil {
 		panic(err)
@@ -203,10 +201,10 @@ func (f *fakeTokenMinter) mintToken(c context.Context, subtoken *internal.Subtok
 	if err != nil {
 		panic(err)
 	}
-	tok, err := proto.Marshal(&internal.DelegationToken{
+	tok, err := proto.Marshal(&messages.DelegationToken{
 		SerializedSubtoken: blob,
-		SignerId:           &f.signerID,
-		SigningKeyId:       &keyID,
+		SignerId:           f.signerID,
+		SigningKeyId:       keyID,
 		Pkcs1Sha256Sig:     sig,
 	})
 	if err != nil {
