@@ -27,10 +27,10 @@ type FakeDB map[identity.Identity][]string
 var _ authdb.DB = (FakeDB)(nil)
 
 // Use installs the fake db into the context.
-func (d FakeDB) Use(c context.Context) context.Context {
+func (db FakeDB) Use(c context.Context) context.Context {
 	return auth.ModifyConfig(c, func(cfg *auth.Config) {
 		cfg.DBProvider = func(context.Context) (authdb.DB, error) {
-			return d, nil
+			return db, nil
 		}
 	})
 }
@@ -72,6 +72,11 @@ func (db FakeDB) GetAuthServiceURL(c context.Context) (string, error) {
 	panic("FakeDB.GetAuthServiceURL must not be called")
 }
 
+// GetTokenServiceURL is part of authdb.DB interface. Panics.
+func (db FakeDB) GetTokenServiceURL(c context.Context) (string, error) {
+	panic("FakeDB.GetTokenServiceURL must not be called")
+}
+
 // FakeErroringDB is authdb.DB with IsMember returning an error.
 type FakeErroringDB struct {
 	FakeDB
@@ -91,10 +96,10 @@ func (db *FakeErroringDB) IsMember(c context.Context, id identity.Identity, grou
 }
 
 // Use installs the fake db into the context.
-func (d *FakeErroringDB) Use(c context.Context) context.Context {
+func (db *FakeErroringDB) Use(c context.Context) context.Context {
 	return auth.ModifyConfig(c, func(cfg *auth.Config) {
 		cfg.DBProvider = func(context.Context) (authdb.DB, error) {
-			return d, nil
+			return db, nil
 		}
 	})
 }

@@ -68,3 +68,8 @@ func (db ErroringDB) IsInWhitelist(c context.Context, ip net.IP, whitelist strin
 func (db ErroringDB) GetAuthServiceURL(c context.Context) (string, error) {
 	return "", db.Error
 }
+
+// GetTokenServiceURL returns root URL ("https://<host>") of the token service.
+func (db ErroringDB) GetTokenServiceURL(c context.Context) (string, error) {
+	return "", db.Error
+}

@@ -28,6 +28,8 @@ type SnapshotDB struct {
 	AuthServiceURL string // where it was fetched from
 	Rev            int64  // its revision number
 
+	tokenServiceURL string // URL of the token server as provided by Auth service
+
 	clientIDs map[string]struct{} // set of allowed client IDs
 	groups    map[string]*group   // map of all known groups
 	secrets   secrets.StaticStore // secrets shared by all service with this DB
@@ -54,6 +56,8 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64) (*
 	db := &SnapshotDB{
 		AuthServiceURL: authServiceURL,
 		Rev:            rev,
+
+		tokenServiceURL: authDB.GetTokenServerUrl(),
 	}
 
 	// Set of all allowed clientIDs.
@@ -283,4 +287,11 @@ func (db *SnapshotDB) IsInWhitelist(c context.Context, ip net.IP, whitelist stri
 // This is needed to implement authdb.DB interface.
 func (db *SnapshotDB) GetAuthServiceURL(c context.Context) (string, error) {
 	return db.AuthServiceURL, nil
+}
+
+// GetTokenServiceURL returns root URL ("https://<host>") of the token server.
+//
+// This is needed to implement authdb.DB interface.
+func (db *SnapshotDB) GetTokenServiceURL(c context.Context) (string, error) {
+	return db.tokenServiceURL, nil
 }

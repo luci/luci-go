@@ -140,6 +140,7 @@ func strPtr(s string) *string { return &s }
 type fakeDB struct {
 	allowedClientID string
 	authServiceURL  string
+	tokenServiceURL string
 }
 
 func (db *fakeDB) IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error) {
@@ -167,4 +168,11 @@ func (db *fakeDB) GetAuthServiceURL(c context.Context) (string, error) {
 		return "", errors.New("fakeDB: GetAuthServiceURL is not configured")
 	}
 	return db.authServiceURL, nil
+}
+
+func (db *fakeDB) GetTokenServiceURL(c context.Context) (string, error) {
+	if db.authServiceURL == "" {
+		return "", errors.New("fakeDB: GetTokenServiceURL is not configured")
+	}
+	return db.tokenServiceURL, nil
 }

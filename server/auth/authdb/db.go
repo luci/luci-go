@@ -51,7 +51,13 @@ type DB interface {
 
 	// GetAuthServiceURL returns root URL ("https://<host>") of the auth service.
 	//
-	// Returns an error if the DB implementation is not using an auth service. May
-	// also return transient errors.
+	// Returns an error if the DB implementation is not using an auth service.
 	GetAuthServiceURL(c context.Context) (string, error)
+
+	// GetTokenServiceURL returns root URL ("https://<host>") of the token server.
+	//
+	// Returns an error if the DB implementation doesn't know how to retrieve it.
+	//
+	// Returns ("", nil) if the token server URL is not configured.
+	GetTokenServiceURL(c context.Context) (string, error)
 }

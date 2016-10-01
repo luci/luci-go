@@ -4,7 +4,9 @@
 
 // This file is copied from luci-py.git:
 // appengine/components/components/auth/proto/replication.proto
-// Commit: e8b23e65c9078459be9748cbe1766e46a0b07de2
+// Commit: fa51b14f344c2e31416f94b6f0d00e5129b4de3d
+//
+// Changes: renamed package to 'protocol'.
 
 // Messages for Primary <-> Replica auth DB replication protocol.
 // Used from both Primary side (i.e. auth_service) and Replica side (any service
@@ -184,6 +186,8 @@ message AuthDB {
   repeated AuthIPWhitelist ip_whitelists = 6;
   // Mapping 'account -> IP whitlist to use for that account'.
   repeated AuthIPWhitelistAssignment ip_whitelist_assignments = 7;
+  // URL of a token server to use to generate delegation tokens.
+  optional string token_server_url = 8;
 }
 
 
