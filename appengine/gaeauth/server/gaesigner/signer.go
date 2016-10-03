@@ -68,12 +68,14 @@ var cachedCerts = proccache.Cached(cacheKey(0), func(c context.Context, key inte
 			X509CertificatePEM: string(ac.Data),
 		}
 	}
-	inf, err := cachedInfo(c)
+	cached, err := cachedInfo(c)
 	if err != nil {
 		return nil, 0, err
 	}
+	inf := cached.(*signing.ServiceInfo)
 	return &signing.PublicCertificates{
-		ServiceAccountName: inf.(*signing.ServiceInfo).ServiceAccountName,
+		AppID:              inf.AppID,
+		ServiceAccountName: inf.ServiceAccountName,
 		Certificates:       certs,
 		Timestamp:          signing.JSONTime(clock.Now(c)),
 	}, time.Hour, nil

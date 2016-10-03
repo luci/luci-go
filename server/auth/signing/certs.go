@@ -37,6 +37,8 @@ type Certificate struct {
 // PublicCertificates is a bundle of recent certificates of some service. Must
 // not be mutated once initialized.
 type PublicCertificates struct {
+	// AppID is GAE app ID of a service that owns the keys if it is on GAE.
+	AppID string `json:"app_id,omitempty"`
 	// ServiceAccountName is name of a service account that owns the key.
 	ServiceAccountName string `json:"service_account_name,omitempty"`
 	// Certificates is the list of certificates.
