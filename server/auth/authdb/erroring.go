@@ -11,6 +11,7 @@ import (
 
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth/identity"
+	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/secrets"
 )
 
@@ -40,6 +41,12 @@ func (db ErroringDB) IsMember(c context.Context, id identity.Identity, group str
 // Such secrets are usually generated on central Auth Service and are known
 // to all trusted services (so that they can use them to exchange data).
 func (db ErroringDB) SharedSecrets(c context.Context) (secrets.Store, error) {
+	logging.Errorf(c, "%s", db.Error)
+	return nil, db.Error
+}
+
+// GetCertificates returns a bundle with certificates of a trusted signer.
+func (db ErroringDB) GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
 	logging.Errorf(c, "%s", db.Error)
 	return nil, db.Error
 }

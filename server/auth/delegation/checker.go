@@ -50,14 +50,19 @@ var (
 	ErrForbiddenDelegationToken = errors.New("auth: forbidden delegation token")
 )
 
-// CertificatesProvider is accepted by 'CheckToken'.
+// CertificatesProvider is used by 'CheckToken', it is implemented by authdb.DB.
+//
+// It returns certificates of services trusted to sign tokens.
 type CertificatesProvider interface {
-	// GetAuthServiceCertificates returns a bundle with certificates of a primary
-	// auth service.
-	GetAuthServiceCertificates(c context.Context) (*signing.PublicCertificates, error)
+	// GetCertificates returns a bundle with certificates of a trusted signer.
+	//
+	// Returns (nil, nil) if the given signer is not trusted.
+	//
+	// Returns errors (usually transient) if the bundle can't be fetched.
+	GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error)
 }
 
-// GroupsChecker is accepted by 'CheckToken'.
+// GroupsChecker is accepted by 'CheckToken', it is implemented by authdb.DB.
 type GroupsChecker interface {
 	// IsMember returns true if the given identity belongs to the given group.
 	//
@@ -70,7 +75,7 @@ type GroupsChecker interface {
 type CheckTokenParams struct {
 	Token                string               // the delegation token to check
 	PeerID               identity.Identity    // identity of the caller, as extracted from its credentials
-	CertificatesProvider CertificatesProvider // returns auth service certificates
+	CertificatesProvider CertificatesProvider // returns certificates with trusted keys
 	GroupsChecker        GroupsChecker        // knows how to do group lookups
 	OwnServiceIdentity   identity.Identity    // identity of the current service
 }
@@ -126,16 +131,17 @@ func deserializeToken(token string) (*messages.DelegationToken, error) {
 //
 // May return transient errors.
 func unsealToken(c context.Context, tok *messages.DelegationToken, certsProvider CertificatesProvider) (*messages.Subtoken, error) {
-	// Grab the public keys of the primary auth service. It is the service that
-	// signs tokens.
-	//
-	// TODO(vadimsh): There's 'signer_id' field in the DelegationToken proto. We
-	// ignore it for now. If we ever support multiple trusted signers, we'd need
-	// to start using it to pick the correct public key. For now only the central
-	// auth service is trusted, so we just grab its certs.
-	certs, err := certsProvider.GetAuthServiceCertificates(c)
+	// Grab the public keys of the service that signed the token, if we trust it.
+	signerID, err := identity.MakeIdentity(tok.SignerId)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("bad signer_id %q - %s", tok.SignerId, err)
+	}
+	certs, err := certsProvider.GetCertificates(c, signerID)
+	switch {
+	case err != nil:
+		return nil, fmt.Errorf("failed to grab certificates of %q - %s", tok.SignerId, err)
+	case certs == nil:
+		return nil, fmt.Errorf("the signer %q is not trusted", tok.SignerId)
 	}
 
 	// Check the signature on the token.

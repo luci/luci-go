@@ -17,6 +17,7 @@ import (
 	"github.com/luci/luci-go/server/auth/authdb"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/service/protocol"
+	"github.com/luci/luci-go/server/auth/signing"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -153,6 +154,10 @@ func (db *fakeDB) IsMember(c context.Context, id identity.Identity, group string
 
 func (db *fakeDB) SharedSecrets(c context.Context) (secrets.Store, error) {
 	return nil, errors.New("fakeDB: SharedSecrets is not implemented")
+}
+
+func (db *fakeDB) GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
+	return nil, errors.New("fakeDB: GetCertificates is not implemented")
 }
 
 func (db *fakeDB) GetWhitelistForIdentity(c context.Context, ident identity.Identity) (string, error) {

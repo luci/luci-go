@@ -10,6 +10,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/server/auth/identity"
+	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/secrets"
 )
 
@@ -33,6 +34,13 @@ type DB interface {
 	// Such secrets are usually generated on central Auth Service and are known
 	// to all trusted services (so that they can use them to exchange data).
 	SharedSecrets(c context.Context) (secrets.Store, error)
+
+	// GetCertificates returns a bundle with certificates of a trusted signer.
+	//
+	// Returns (nil, nil) if the given signer is not trusted.
+	//
+	// Returns errors (usually transient) if the bundle can't be fetched.
+	GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error)
 
 	// GetWhitelistForIdentity returns name of the IP whitelist to use to check
 	// IP of requests from given `ident`.

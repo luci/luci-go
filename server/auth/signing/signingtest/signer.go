@@ -67,6 +67,7 @@ func NewSigner(seed int64, serviceInfo *signing.ServiceInfo) *Signer {
 	return &Signer{
 		priv: priv,
 		certs: signing.PublicCertificates{
+			AppID:              serviceInfo.AppID,
 			ServiceAccountName: serviceInfo.ServiceAccountName,
 			Certificates: []signing.Certificate{
 				{

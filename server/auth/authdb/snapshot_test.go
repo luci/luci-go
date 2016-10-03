@@ -5,13 +5,18 @@
 package authdb
 
 import (
+	"encoding/json"
 	"net"
+	"net/http"
 	"testing"
 
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/server/auth/identity"
+	"github.com/luci/luci-go/server/auth/internal"
 	"github.com/luci/luci-go/server/auth/service/protocol"
+	"github.com/luci/luci-go/server/auth/signing"
+	"github.com/luci/luci-go/server/auth/signing/signingtest"
 	"github.com/luci/luci-go/server/secrets"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -130,6 +135,73 @@ func TestSnapshotDB(t *testing.T) {
 				},
 			},
 		})
+	})
+
+	Convey("GetCertificates works", t, func(c C) {
+		db, err := NewSnapshotDB(&protocol.AuthDB{
+			OauthClientId: strPtr("primary-client-id"),
+			OauthAdditionalClientIds: []string{
+				"additional-client-id-1",
+				"additional-client-id-2",
+			},
+			TokenServerUrl: strPtr("http://token-server"),
+		}, "http://auth-service", 1234)
+		So(err, ShouldBeNil)
+
+		authService := signingtest.NewSigner(0, &signing.ServiceInfo{
+			AppID:              "auth-service",
+			ServiceAccountName: "auth-service-account@example.com",
+		})
+
+		tokenService := signingtest.NewSigner(1, &signing.ServiceInfo{
+			AppID:              "token-server",
+			ServiceAccountName: "token-server-account@example.com",
+		})
+
+		calls := 0
+
+		ctx := context.Background()
+		ctx = internal.WithTestTransport(ctx, func(r *http.Request, body string) (int, string) {
+			calls++
+			var certs *signing.PublicCertificates
+			var err error
+			switch r.URL.String() {
+			case "http://auth-service/auth/api/v1/server/certificates":
+				certs, err = authService.Certificates(ctx)
+			case "http://token-server/auth/api/v1/server/certificates":
+				certs, err = tokenService.Certificates(ctx)
+			default:
+				return 404, "Wrong URL"
+			}
+			if err != nil {
+				panic(err)
+			}
+			blob, err := json.Marshal(certs)
+			if err != nil {
+				panic(err)
+			}
+			return 200, string(blob)
+		})
+
+		good := []identity.Identity{
+			"service:auth-service",
+			"service:token-server",
+			"user:auth-service-account@example.com",
+			"user:token-server-account@example.com",
+		}
+		for _, ident := range good {
+			certs, err := db.GetCertificates(ctx, ident)
+			So(err, ShouldBeNil)
+			So(certs, ShouldNotBeNil)
+		}
+
+		// Fetched two bundles, once.
+		So(calls, ShouldEqual, 2)
+
+		// For unknown signer returns (nil, nil).
+		certs, err := db.GetCertificates(ctx, "service:unknown")
+		So(err, ShouldBeNil)
+		So(certs, ShouldBeNil)
 	})
 
 	Convey("IsInWhitelist works", t, func() {

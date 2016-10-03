@@ -14,6 +14,7 @@ import (
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authdb"
 	"github.com/luci/luci-go/server/auth/identity"
+	"github.com/luci/luci-go/server/auth/signing"
 )
 
 // FakeDB implements user group checking part of db.DB (IsMember).
@@ -55,6 +56,11 @@ func (db FakeDB) IsAllowedOAuthClientID(c context.Context, email, clientID strin
 // SharedSecrets is part of authdb.DB interface. Panics.
 func (db FakeDB) SharedSecrets(c context.Context) (secrets.Store, error) {
 	panic("FakeDB.SharedSecrets must not be called")
+}
+
+// GetCertificates is part of authdb.DB interface. Panics.
+func (db FakeDB) GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
+	panic("FakeDB.GetCertificates must not be called")
 }
 
 // GetWhitelistForIdentity is part of authdb.DB interface. Panics.

@@ -71,6 +71,9 @@ func (r *Request) Do(c context.Context) error {
 		}
 	} else {
 		client = http.DefaultClient
+		if testTransport := c.Value(&testTransportKey); testTransport != nil {
+			client = &http.Client{Transport: testTransport.(http.RoundTripper)}
+		}
 	}
 
 	// Prepare a blob with the request body. Marshal it once, to avoid

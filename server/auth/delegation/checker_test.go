@@ -104,6 +104,19 @@ func TestCheckToken(t *testing.T) {
 		So(err, ShouldEqual, ErrMalformedDelegationToken)
 	})
 
+	Convey("Untrusted signer", t, func() {
+		tok := minter.mintToken(c, subtoken(c, "user:from@example.com", "user:to@example.com"))
+		minter.signerID = "service:nah-i-renamed-myself"
+		_, err := CheckToken(c, CheckTokenParams{
+			Token:                tok,
+			PeerID:               "user:to@example.com",
+			CertificatesProvider: minter,
+			GroupsChecker:        &fakeGroups{},
+			OwnServiceIdentity:   "service:service-id",
+		})
+		So(err, ShouldEqual, ErrUnsignedDelegationToken)
+	})
+
 	Convey("Bad signature", t, func() {
 		tok := minter.mintToken(c, subtoken(c, "user:from@example.com", "user:to@example.com"))
 		// An offset in serialized token that points to Subtoken field. Replace one
@@ -188,7 +201,10 @@ func newFakeTokenMinter() *fakeTokenMinter {
 	}
 }
 
-func (f *fakeTokenMinter) GetAuthServiceCertificates(c context.Context) (*signing.PublicCertificates, error) {
+func (f *fakeTokenMinter) GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
+	if string(id) != f.signerID {
+		return nil, nil
+	}
 	return f.signer.Certificates(c)
 }
 

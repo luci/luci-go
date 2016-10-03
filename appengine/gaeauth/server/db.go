@@ -16,6 +16,7 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth/authdb"
 	"github.com/luci/luci-go/server/auth/identity"
+	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/secrets"
 )
 
@@ -95,6 +96,10 @@ func (devServerDB) IsMember(c context.Context, id identity.Identity, group strin
 }
 
 func (devServerDB) SharedSecrets(c context.Context) (secrets.Store, error) {
+	return nil, errNotConfigured
+}
+
+func (devServerDB) GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error) {
 	return nil, errNotConfigured
 }
 

@@ -5,8 +5,6 @@
 package delegation
 
 import (
-	"bytes"
-	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
@@ -36,11 +34,15 @@ func TestCreateToken(t *testing.T) {
 		Intent:           "intent",
 	}
 
-	ctx, tr := withTestTransport(ctx, `{
-		"delegation_token": "tok",
-		"validity_duration": 3600,
-		"subtoken_id": "123"
-	}`)
+	lastRequestBody := ""
+	ctx = internal.WithTestTransport(ctx, func(r *http.Request, body string) (int, string) {
+		lastRequestBody = body
+		return 200, `{
+			"delegation_token": "tok",
+			"validity_duration": 3600,
+			"subtoken_id": "123"
+		}`
+	})
 
 	Convey("Works", t, func() {
 		tok, err := CreateToken(ctx, goodReq)
@@ -50,7 +52,7 @@ func TestCreateToken(t *testing.T) {
 			SubtokenID: "123",
 			Expiry:     testclock.TestRecentTimeUTC.Add(time.Hour),
 		})
-		So(tr.request, ShouldEqual,
+		So(lastRequestBody, ShouldEqual,
 			`{"audience":["user:a@example.com","group:group"],`+
 				`"services":["service:abc"],"validity_duration":3600,`+
 				`"impersonate":"user:b@example.com","intent":"intent"}`)
@@ -92,37 +94,5 @@ func TestCreateToken(t *testing.T) {
 		req.Untargeted = true
 		_, err = CreateToken(ctx, req)
 		So(err, ShouldBeNil)
-	})
-}
-
-var testTransportKey = "key for testTransport"
-
-func withTestTransport(c context.Context, response string) (context.Context, *testTransport) {
-	t := &testTransport{response: response}
-	return context.WithValue(c, &testTransportKey, t), t
-}
-
-type testTransport struct {
-	response string
-	request  string
-}
-
-func (f *testTransport) RoundTrip(r *http.Request) (*http.Response, error) {
-	body, err := ioutil.ReadAll(r.Body)
-	r.Body.Close()
-	if err != nil {
-		return nil, err
-	}
-	f.request = string(body)
-	return &http.Response{
-		StatusCode: 200,
-		Status:     "OK",
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte(f.response))),
-	}, nil
-}
-
-func init() {
-	internal.RegisterClientFactory(func(c context.Context, scopes []string) (*http.Client, error) {
-		return &http.Client{Transport: c.Value(&testTransportKey).(*testTransport)}, nil
 	})
 }

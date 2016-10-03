@@ -13,7 +13,6 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 
-	"github.com/luci/luci-go/server/auth/authdb"
 	"github.com/luci/luci-go/server/auth/delegation"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/signing"
@@ -187,7 +186,7 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 		delegatedIdentity, err := delegation.CheckToken(c, delegation.CheckTokenParams{
 			Token:                delegationTok,
 			PeerID:               s.peerIdent,
-			CertificatesProvider: certsProvider{s.db},
+			CertificatesProvider: s.db,
 			GroupsChecker:        s.db,
 			OwnServiceIdentity:   ownServiceIdentity,
 		})
@@ -233,19 +232,6 @@ func (a Authenticator) LogoutURL(c context.Context, dest string) (string, error)
 }
 
 ////
-
-// certsProvider implements delegation.CertificatesProvider.
-type certsProvider struct {
-	db authdb.DB
-}
-
-func (p certsProvider) GetAuthServiceCertificates(c context.Context) (*signing.PublicCertificates, error) {
-	serviceURL, err := p.db.GetAuthServiceURL(c)
-	if err != nil {
-		return nil, err
-	}
-	return signing.FetchCertificatesFromLUCIService(c, serviceURL)
-}
 
 // getOwnServiceIdentity returns 'service:<appID>' identity of the current
 // service.
