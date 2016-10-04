@@ -8,15 +8,20 @@ package tokenserver.minter;
 
 import "google/protobuf/timestamp.proto";
 
+import "github.com/luci/luci-go/server/auth/delegation/messages/delegation.proto";
 import "github.com/luci/luci-go/tokenserver/api/machine_token.proto";
 
-// The kinds of tokens the token server can mint.
+
+// The kinds of machine tokens the token server can mint.
+//
+// Passed to MintMachineToken.
 //
 // Reserved: 1.
-enum TokenType {
-  UNKNOWN_TYPE               = 0; // used if the field is not initialized
-  LUCI_MACHINE_TOKEN         = 2; // luci-specific short lived machine token
+enum MachineTokenType {
+  UNKNOWN_TYPE       = 0; // used if the field is not initialized
+  LUCI_MACHINE_TOKEN = 2; // luci-specific short lived machine token
 }
+
 
 // Supported ways of singing the request.
 enum SignatureAlgorithm {
@@ -24,22 +29,45 @@ enum SignatureAlgorithm {
   SHA256_RSA_ALGO = 1; // matches x509's sha256WithRSAEncryption
 }
 
+
 // Possible kinds of fatal errors.
 //
 // Non fatal errors are returned as grpc.Internal errors instead.
 enum ErrorCode {
-  SUCCESS                = 0;
-  UNSUPPORTED_SIGNATURE  = 1; // used signature_algorithm is not supported
-  UNSUPPORTED_TOKEN_TYPE = 2; // requested token_type is not supported
-  BAD_TIMESTAMP          = 3; // issued_at field is wrong
-  BAD_CERTIFICATE_FORMAT = 4; // malformed or unsupported certificate
-  BAD_SIGNATURE          = 5; // signature doesn't match or can't be verified
-  UNTRUSTED_CERTIFICATE  = 6; // invalid certificate or can't verify it yet
-  BAD_TOKEN_ARGUMENTS    = 7; // FQDN or Scopes are invalid or not whitelisted
-  TOKEN_MINTING_ERROR    = 8; // unspecified fatal error when minting a token
+  SUCCESS                     = 0;
+  UNSUPPORTED_SIGNATURE       = 1; // used signature_algorithm is not supported
+  UNSUPPORTED_TOKEN_TYPE      = 2; // requested token_type is not supported
+  BAD_TIMESTAMP               = 3; // issued_at field is wrong
+  BAD_CERTIFICATE_FORMAT      = 4; // malformed or unsupported certificate
+  BAD_SIGNATURE               = 5; // signature doesn't match or can't be verified
+  UNTRUSTED_CERTIFICATE       = 6; // invalid certificate or can't verify it yet
+  BAD_TOKEN_ARGUMENTS         = 7; // FQDN or Scopes are invalid or not whitelisted
+  MACHINE_TOKEN_MINTING_ERROR = 8; // unspecified fatal error when minting a machine token
 }
 
+
 // TokenMinter implements main API of the token server.
+//
+// It provides an interface for generating and inspecting of:
+//
+//  * Machine tokens: short lived stateless tokens used in Swarming bot
+//    authentication protocol. They are derived from PKI keys deployed on bots,
+//    and consumed primarily by Swarming.
+//
+//  * Delegation tokens: these are involved whenever something wants to act on
+//    behalf of something else. In particular, whenever a service calls other
+//    service on behalf of a user, or when a user posts a Swarming task that
+//    runs in a context of some service account. There are multiple kinds of
+//    delegation tokens:
+//      - Bearer delegation tokens: they passed via 'X-Delegation-Token-V1'
+//        HTTP header and can be used to "impersonate" the identity of a caller.
+//      - OAuth2 token grants: they are signed assertions that particular
+//        services are allowed to grab service account OAuth2 tokens. They are
+//        used in Swarming service accounts implementation. This is TODO.
+//
+//  * OAuth2 tokens: these are regular Google OAuth2 access tokens associated
+//    with various service accounts (that the token server has
+//    serviceAccountActor role in). This is TODO.
 service TokenMinter {
   // MintMachineToken generates a new token for an authenticated machine.
   //
@@ -71,7 +99,30 @@ service TokenMinter {
   //   grpc.InvalidArgument error for unsupported token kind.
   //   grpc.Internal error for transient errors.
   rpc InspectMachineToken(InspectMachineTokenRequest) returns (InspectMachineTokenResponse);
+
+  // MintDelegationToken generates a new bearer delegation token.
+  //
+  // Such token can be sent in 'X-Delegation-Token-V1' header (alongside regular
+  // credentials like OAuth2 access token) to convey that the caller should be
+  // authentication as 'delegated_identity' specified in the token.
+  //
+  // The delegation tokens are subject to multiple restrictions (embedded in
+  // the token):
+  //   * They have expiration time.
+  //   * They are usable only if presented with a credential of someone from
+  //     the 'audience' list.
+  //   * They are usable only on services specified in the 'services' list.
+  //
+  // The token server must be configured in advance with all expected
+  // combinations of (caller identity, delegated identity, audience, service)
+  // tuples. See DelegationRule in config.proto.
+  rpc MintDelegationToken(MintDelegationTokenRequest) returns (MintDelegationTokenResponse);
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Machine Tokens messages
+
 
 // MintMachineTokenRequest wraps a serialized and signed MachineTokenRequest
 // message.
@@ -88,6 +139,7 @@ message MintMachineTokenRequest {
   // See MachineTokenRequest.signature_algorithm for exact meaning.
   bytes signature = 2;
 }
+
 
 // MachineTokenRequest contains the actual request parameters.
 message MachineTokenRequest {
@@ -110,8 +162,9 @@ message MachineTokenRequest {
   // The token type being requested.
   //
   // Defines what fields of the response are set.
-  TokenType token_type = 4;
+  MachineTokenType token_type = 4;
 }
+
 
 // MintMachineTokenResponse is returned by 'MintMachineToken' if the server
 // processed the request.
@@ -137,6 +190,7 @@ message MintMachineTokenResponse {
   string service_version = 4;
 }
 
+
 // MachineTokenResponse contains a token requested by MachineTokenRequest.
 message MachineTokenResponse {
   reserved 1, 20;
@@ -156,6 +210,7 @@ message MachineTokenResponse {
   }
 }
 
+
 // LuciMachineToken is short lived machine token.
 //
 // It is understood only by LUCI backends. It is a bearer token, that embeds
@@ -172,18 +227,20 @@ message LuciMachineToken {
   google.protobuf.Timestamp expiry = 2; // when the token expires
 }
 
+
 // InspectMachineTokenRequest is body of InspectMachineToken RPC call.
 //
 // It contains machine token of some kind.
 message InspectMachineTokenRequest {
   // The type of token being checked.
   //
-  // Currently only LUCI_MACHINE_TOKEN is supported.
-  TokenType token_type = 1;
+  // Currently only LUCI_MACHINE_TOKEN is supported. This is also the default.
+  MachineTokenType token_type = 1;
 
   // The token body. Exact meaning depends on token_type.
   string token = 2;
 }
+
 
 // InspectMachineTokenResponse is return value of InspectMachineToken RPC call.
 message InspectMachineTokenResponse {
@@ -240,4 +297,68 @@ message InspectMachineTokenResponse {
   oneof token_type {
     tokenserver.MachineTokenBody luci_machine_token = 20;
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Delegation Tokens messages
+
+
+// MintDelegationTokenRequest is passed to MintDelegationToken.
+message MintDelegationTokenRequest {
+  // Identity whose authority is delegated.
+  //
+  // A string of the form "user:<email>". The token server will check its ACLs
+  // to make sure the caller is authorized to impersonate this identity.
+  //
+  // Required.
+  string delegated_identity = 1;
+
+  // How long the token should be considered valid (in seconds).
+  //
+  // Default is 3600 sec.
+  int64 validity_duration = 2;
+
+  // Who will be able to use the new token.
+  //
+  // Each item can be an identity string (e.g. "user:<email>"), a "group:<name>"
+  // string, or special "*" string which means "Any bearer can use the token".
+  //
+  // This is semantically is a set, the order of elements doesn't matter.
+  //
+  // Required.
+  repeated string audience = 3;
+
+  // What services should accept the new token.
+  //
+  // List of LUCI services (specified as service identities, e.g.
+  // "service:app-id" or as https:// root URLs e.g. "https://<host>") that
+  // should accept this token. May also contain special "*" string, which
+  // means "All LUCI services".
+  //
+  // This is semantically is a set, the order of elements doesn't matter.
+  //
+  // Required.
+  repeated string services = 4;
+
+  // Optional reason why the token is created.
+  //
+  // Used only for logging and auditing purposes. Doesn't become part of the
+  // token.
+  string intent = 5;
+}
+
+
+// MintDelegationTokenResponse is returned by 'MintDelegationToken' on success.
+//
+// Errors are returned via standard gRPC codes.
+message MintDelegationTokenResponse {
+  // The actual base64-encoded signed token.
+  string token = 1;
+
+  // Same data as in 'token' in deserialized form, just for convenience.
+  //
+  // Mostly for JSON encoding users, since they may not understand proto-encoded
+  // tokens.
+  messages.Subtoken delegation_subtoken = 2;
 }

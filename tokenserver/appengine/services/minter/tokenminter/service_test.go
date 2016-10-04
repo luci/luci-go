@@ -77,7 +77,7 @@ func TestLuciMachineToken(t *testing.T) {
 				Certificate:        getTestCertDER(),
 				SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
 				IssuedAt:           google.NewTimestamp(clock.Now(ctx)),
-				TokenType:          minter.TokenType_LUCI_MACHINE_TOKEN,
+				TokenType:          minter.MachineTokenType_LUCI_MACHINE_TOKEN,
 			}))
 			So(err, ShouldBeNil)
 
@@ -89,7 +89,7 @@ func TestLuciMachineToken(t *testing.T) {
 
 			// Works!
 			reply, err := server.InspectMachineToken(ctx, &minter.InspectMachineTokenRequest{
-				TokenType: minter.TokenType_LUCI_MACHINE_TOKEN,
+				TokenType: minter.MachineTokenType_LUCI_MACHINE_TOKEN,
 				Token:     tok,
 			})
 			So(err, ShouldBeNil)
@@ -114,7 +114,7 @@ func TestLuciMachineToken(t *testing.T) {
 
 			// "Break" signature.
 			reply, err = server.InspectMachineToken(ctx, &minter.InspectMachineTokenRequest{
-				TokenType: minter.TokenType_LUCI_MACHINE_TOKEN,
+				TokenType: minter.MachineTokenType_LUCI_MACHINE_TOKEN,
 				Token:     tok[:len(tok)-11] + "0" + tok[len(tok)-10:],
 			})
 			So(err, ShouldBeNil)
@@ -140,7 +140,7 @@ func TestLuciMachineToken(t *testing.T) {
 			// Expired.
 			tc.Add(time.Hour + 11*time.Minute)
 			reply, err = server.InspectMachineToken(ctx, &minter.InspectMachineTokenRequest{
-				TokenType: minter.TokenType_LUCI_MACHINE_TOKEN,
+				TokenType: minter.MachineTokenType_LUCI_MACHINE_TOKEN,
 				Token:     tok,
 			})
 			So(err, ShouldBeNil)
@@ -175,7 +175,7 @@ func TestLuciMachineToken(t *testing.T) {
 			})
 			tc.Add(5 * time.Minute)
 			reply, err = server.InspectMachineToken(ctx, &minter.InspectMachineTokenRequest{
-				TokenType: minter.TokenType_LUCI_MACHINE_TOKEN,
+				TokenType: minter.MachineTokenType_LUCI_MACHINE_TOKEN,
 				Token:     tok,
 			})
 			So(err, ShouldBeNil)

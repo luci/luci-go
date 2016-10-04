@@ -79,6 +79,9 @@ func (s *Server) serviceVersion(c context.Context) (string, error) {
 	return fmt.Sprintf("%s/%s", inf.AppID, inf.AppVersion), nil
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Machine tokens.
+
 // MintMachineToken generates a new token for an authenticated machine.
 func (s *Server) MintMachineToken(c context.Context, req *minter.MintMachineTokenRequest) (*minter.MintMachineTokenResponse, error) {
 	// Parse serialized portion of the request and do minimal validation before
@@ -92,7 +95,7 @@ func (s *Server) MintMachineToken(c context.Context, req *minter.MintMachineToke
 	}
 
 	switch tokenReq.TokenType {
-	case minter.TokenType_LUCI_MACHINE_TOKEN:
+	case minter.MachineTokenType_LUCI_MACHINE_TOKEN:
 		// supported
 	default:
 		return s.mintingErrorResponse(
@@ -167,7 +170,7 @@ func (s *Server) MintMachineToken(c context.Context, req *minter.MintMachineToke
 		Request: &tokenReq,
 	}
 	switch tokenReq.TokenType {
-	case minter.TokenType_LUCI_MACHINE_TOKEN:
+	case minter.MachineTokenType_LUCI_MACHINE_TOKEN:
 		return s.mintLuciMachineToken(c, args)
 	default:
 		panic("impossible") // there's a check above
@@ -216,7 +219,7 @@ func (s *Server) mintLuciMachineToken(c context.Context, args mintTokenArgs) (*m
 	case errors.IsTransient(err):
 		return nil, grpc.Errorf(codes.Internal, "failed to generate machine token - %s", err)
 	default:
-		return s.mintingErrorResponse(c, minter.ErrorCode_TOKEN_MINTING_ERROR, "%s", err)
+		return s.mintingErrorResponse(c, minter.ErrorCode_MACHINE_TOKEN_MINTING_ERROR, "%s", err)
 	}
 }
 
@@ -243,9 +246,14 @@ func (s *Server) InspectMachineToken(c context.Context, req *minter.InspectMachi
 		return nil, grpc.Errorf(codes.PermissionDenied, "not authorized")
 	}
 
+	// Defaults.
+	if req.TokenType == 0 {
+		req.TokenType = minter.MachineTokenType_LUCI_MACHINE_TOKEN
+	}
+
 	// Only LUCI_MACHINE_TOKEN is supported currently.
 	switch req.TokenType {
-	case minter.TokenType_LUCI_MACHINE_TOKEN:
+	case minter.MachineTokenType_LUCI_MACHINE_TOKEN:
 		// supported
 	default:
 		return nil, grpc.Errorf(codes.InvalidArgument, "unsupported token type %s", req.TokenType)
@@ -334,4 +342,12 @@ func (s *Server) InspectMachineToken(c context.Context, req *minter.InspectMachi
 	}
 
 	return resp, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Delegation tokens.
+
+// MintDelegationToken generates a new bearer delegation token.
+func (s *Server) MintDelegationToken(c context.Context, req *minter.MintDelegationTokenRequest) (*minter.MintDelegationTokenResponse, error) {
+	return nil, grpc.Errorf(codes.Unimplemented, "Not implemented yet")
 }

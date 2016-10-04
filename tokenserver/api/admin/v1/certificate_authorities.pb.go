@@ -24,6 +24,8 @@ It has these top-level messages:
 	TokenServerConfig
 	CertificateAuthorityConfig
 	DomainConfig
+	DelegationPermissions
+	DelegationRule
 */
 package admin
 
