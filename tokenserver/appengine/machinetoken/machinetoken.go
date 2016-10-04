@@ -45,13 +45,6 @@ type MintParams struct {
 	// CA configuration.
 	Config *admin.CertificateAuthorityConfig
 
-	// SignerServiceAccount is GAE service account email of the token server.
-	//
-	// It will be put into the token (as issued_by field). Token consumers will
-	// use it to fetch public keys from Google backends to verify the token
-	// signature.
-	SignerServiceAccount string
-
 	// Signer produces RSA-SHA256 signatures using a token server key.
 	//
 	// Usually it is using SignBytes GAE API.
@@ -121,9 +114,14 @@ func Mint(c context.Context, params MintParams) (*tokenserver.MachineTokenBody, 
 		panic("impossible") // checked in Validate already
 	}
 
+	srvInfo, err := params.Signer.ServiceInfo(c)
+	if err != nil {
+		return nil, "", errors.WrapTransient(err)
+	}
+
 	body := tokenserver.MachineTokenBody{
 		MachineFqdn: params.FQDN,
-		IssuedBy:    params.SignerServiceAccount,
+		IssuedBy:    srvInfo.ServiceAccountName,
 		IssuedAt:    uint64(clock.Now(c).Unix()),
 		Lifetime:    uint64(cfg.MachineTokenLifetime),
 		CaId:        params.Config.UniqueId,

@@ -37,7 +37,6 @@ func TestMintParamsValidation(t *testing.T) {
 					},
 				},
 			},
-			SignerServiceAccount: "token-server@example.com",
 		}
 
 		Convey("good params", func() {
@@ -95,8 +94,7 @@ func TestMint(t *testing.T) {
 						},
 					},
 				},
-				SignerServiceAccount: "token-server@example.com",
-				Signer:               fakeSigner{},
+				Signer: fakeSigner{},
 			}
 			body, token, err := Mint(ctx, params)
 			So(err, ShouldBeNil)
@@ -125,5 +123,7 @@ func (fakeSigner) Certificates(c context.Context) (*signing.PublicCertificates, 
 }
 
 func (fakeSigner) ServiceInfo(c context.Context) (*signing.ServiceInfo, error) {
-	panic("not implemented yet")
+	return &signing.ServiceInfo{
+		ServiceAccountName: "token-server@example.com",
+	}, nil
 }

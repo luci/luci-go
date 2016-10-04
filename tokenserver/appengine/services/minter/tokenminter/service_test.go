@@ -23,6 +23,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/auth/signing/signingtest"
 
 	"github.com/luci/luci-go/tokenserver/api"
@@ -54,7 +55,9 @@ func TestLuciMachineToken(t *testing.T) {
 					},
 				}, nil
 			},
-			signer:  signingtest.NewSigner(0, nil),
+			signer: signingtest.NewSigner(0, &signing.ServiceInfo{
+				ServiceAccountName: "signer@testing.host",
+			}),
 			isAdmin: func(context.Context) (bool, error) { return true, nil },
 		})
 
@@ -212,13 +215,6 @@ func makeTestServer(s *Server) *Server {
 	if s.isAdmin == nil {
 		s.isAdmin = func(context.Context) (bool, error) {
 			panic("must not be called")
-		}
-	}
-
-	// This is called in almost all test cases, make it the default.
-	if s.signerServiceAccount == nil {
-		s.signerServiceAccount = func(context.Context) (string, error) {
-			return "signer@testing.host", nil
 		}
 	}
 

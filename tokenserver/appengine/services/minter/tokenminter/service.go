@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -20,7 +19,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaeauth/server/gaesigner"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
@@ -55,22 +53,6 @@ type Server struct {
 	//
 	// Mocked in tests. In prod it is 'auth.IsMember'.
 	isAdmin func(context.Context) (bool, error)
-
-	// signerServiceAccount returns service account email of the token server.
-	//
-	// Mocked in tests. In prod it is info.Get().ServiceAccount().
-	signerServiceAccount func(context.Context) (string, error)
-
-	// initLock protects ensureInitialized and 'initialized'.
-	initLock sync.RWMutex
-
-	// initialized contains a static state set up in 'ensureInitialized'.
-	initialized *initializedState
-}
-
-type initializedState struct {
-	signerServiceAccount string // cached result of 'signerServiceAccount'
-	serviceVersion       string // put into 'ServiceVersion' field of TokenResponse
 }
 
 // NewServer returns Server configured for real production usage.
@@ -81,45 +63,20 @@ func NewServer() *Server {
 		isAdmin: func(c context.Context) (bool, error) {
 			return auth.IsMember(c, "administrators")
 		},
-		signerServiceAccount: func(c context.Context) (string, error) {
-			return info.ServiceAccount(c)
-		},
 	}
 }
 
-// ensureInitialized is called to lazy-initialize the server on first use when
-// we have active context.Context.
-func (s *Server) ensureInitialized(c context.Context) (out initializedState, err error) {
-	// We don't use sync.Once here because if initialization fails with a
-	// transient error there's no way to "undo" sync.Once.Do. Instead we use next
-	// best thing possible: RWMutex that optimistically assumes mostly reads.
-	s.initLock.RLock()
-	if s.initialized != nil {
-		out = *s.initialized
-		s.initLock.RUnlock()
-		return out, nil
+// serviceVersion returns identifier of the server version to put in responses.
+//
+// Almost never returns errors. It can return an error only when called for the
+// first time during the process lifetime. It gets cached after first successful
+// return.
+func (s *Server) serviceVersion(c context.Context) (string, error) {
+	inf, err := s.signer.ServiceInfo(c) // cached
+	if err != nil {
+		return "", err
 	}
-	s.initLock.RUnlock()
-
-	s.initLock.Lock()
-	defer s.initLock.Unlock()
-	if s.initialized != nil {
-		out = *s.initialized
-		return out, nil
-	}
-
-	if out.signerServiceAccount, err = s.signerServiceAccount(c); err != nil {
-		return out, err
-	}
-
-	// serviceVersion is returned in MintTokenResponse, it identifies the app
-	// and its version to the client. Used for monitoring purposes.
-	appVersion := strings.Split(info.VersionID(c), ".")[0]
-	out.serviceVersion = fmt.Sprintf("%s/%s", info.AppID(c), appVersion)
-
-	// Success! Remember this.
-	s.initialized = &out
-	return out, nil
+	return fmt.Sprintf("%s/%s", inf.AppID, inf.AppVersion), nil
 }
 
 // MintMachineToken generates a new token for an authenticated machine.
@@ -224,21 +181,20 @@ type mintTokenArgs struct {
 }
 
 func (s *Server) mintLuciMachineToken(c context.Context, args mintTokenArgs) (*minter.MintMachineTokenResponse, error) {
-	state, err := s.ensureInitialized(c)
-	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "can't initialize service guts - %s", err)
-	}
-
 	// Validate FQDN and whether it is allowed by config.
 	params := machinetoken.MintParams{
-		FQDN:                 strings.ToLower(args.Cert.Subject.CommonName),
-		Cert:                 args.Cert,
-		Config:               args.Config,
-		SignerServiceAccount: state.signerServiceAccount,
-		Signer:               s.signer,
+		FQDN:   strings.ToLower(args.Cert.Subject.CommonName),
+		Cert:   args.Cert,
+		Config: args.Config,
+		Signer: s.signer,
 	}
 	if err := params.Validate(); err != nil {
 		return s.mintingErrorResponse(c, minter.ErrorCode_BAD_TOKEN_ARGUMENTS, "%s", err)
+	}
+
+	serviceVersion, err := s.serviceVersion(c)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "can't grab service version - %s", err)
 	}
 
 	// Make the token.
@@ -246,9 +202,9 @@ func (s *Server) mintLuciMachineToken(c context.Context, args mintTokenArgs) (*m
 	case err == nil:
 		expiry := time.Unix(int64(body.IssuedAt), 0).Add(time.Duration(body.Lifetime) * time.Second)
 		return &minter.MintMachineTokenResponse{
-			ServiceVersion: state.serviceVersion,
+			ServiceVersion: serviceVersion,
 			TokenResponse: &minter.MachineTokenResponse{
-				ServiceVersion: state.serviceVersion,
+				ServiceVersion: serviceVersion,
 				TokenType: &minter.MachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &minter.LuciMachineToken{
 						MachineToken: signedToken,
@@ -265,14 +221,14 @@ func (s *Server) mintLuciMachineToken(c context.Context, args mintTokenArgs) (*m
 }
 
 func (s *Server) mintingErrorResponse(c context.Context, code minter.ErrorCode, msg string, args ...interface{}) (*minter.MintMachineTokenResponse, error) {
-	state, err := s.ensureInitialized(c)
+	serviceVersion, err := s.serviceVersion(c)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "can't initialize service guts - %s", err)
+		return nil, grpc.Errorf(codes.Internal, "can't grab service version - %s", err)
 	}
 	return &minter.MintMachineTokenResponse{
 		ErrorCode:      code,
 		ErrorMessage:   fmt.Sprintf(msg, args...),
-		ServiceVersion: state.serviceVersion,
+		ServiceVersion: serviceVersion,
 	}, nil
 }
 
