@@ -27,15 +27,10 @@ import (
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
 
-	"github.com/luci/luci-go/tokenserver/auth/machine"
-
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
-	"github.com/luci/luci-go/tokenserver/api/identity/v1"
 	"github.com/luci/luci-go/tokenserver/api/minter/v1"
 
 	"github.com/luci/luci-go/tokenserver/appengine/services/admin/certauthorities"
-	"github.com/luci/luci-go/tokenserver/appengine/services/admin/serviceaccounts"
-	"github.com/luci/luci-go/tokenserver/appengine/services/identity/identityfetcher"
 	"github.com/luci/luci-go/tokenserver/appengine/services/minter/tokenminter"
 )
 
@@ -49,23 +44,11 @@ var (
 		Prelude: adminPrelude("admin.CertificateAuthorities"),
 	}
 
-	// serviceAccountsServer implements admin.ServiceAccounts RPC interface.
-	serviceAccountsServerWithoutAuth = &serviceaccounts.Server{}
-
-	// serviceAccountsServerWithAuth adds admin check to serviceAccountsServer.
-	serviceAccountsServerWithAuth = &admin.DecoratedServiceAccounts{
-		Service: serviceAccountsServerWithoutAuth,
-		Prelude: adminPrelude("admin.ServiceAccounts"),
-	}
-
-	// identityFetcher implements identity.IdentityFetcher RPC interface.
-	identityFetcher = &identityfetcher.Server{}
-
 	// tokenMinterServer implements minter.TokenMinter RPC interface.
 	//
 	// It is main public API of the token server. It doesn't require any external
 	// authentication (it happens inside), and so it's installed as is.
-	tokenMinterServerWithoutAuth = tokenminter.NewServer(serviceAccountsServerWithoutAuth)
+	tokenMinterServerWithoutAuth = tokenminter.NewServer()
 )
 
 // adminPrelude returns a prelude that authorizes only administrators.
@@ -106,13 +89,10 @@ func init() {
 	api := prpc.Server{
 		Authenticator: auth.Authenticator{
 			&server.OAuth2Method{Scopes: []string{server.EmailScope}},
-			&machine.MachineTokenAuthMethod{},
 		},
 		UnaryServerInterceptor: tsmon.NewGrpcUnaryInterceptor(nil),
 	}
 	admin.RegisterCertificateAuthoritiesServer(&api, caServerWithAuth)
-	admin.RegisterServiceAccountsServer(&api, serviceAccountsServerWithAuth)
-	identity.RegisterIdentityFetcherServer(&api, identityFetcher)
 	minter.RegisterTokenMinterServer(&api, tokenMinterServerWithoutAuth) // auth inside
 	discovery.Enable(&api)
 	api.InstallHandlers(r, basemw)

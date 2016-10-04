@@ -4,9 +4,8 @@
 
 //go:generate cproto -import-path=admin
 //go:generate svcdec -type CertificateAuthoritiesServer
-//go:generate svcdec -type ServiceAccountsServer
 
-// Package admin contains The Token Server Administrative API.
+// Package admin contains The Token Server Administrative and Config API.
 //
 // Services defined here are used by service administrators.
 package admin

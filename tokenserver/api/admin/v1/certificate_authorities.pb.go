@@ -8,7 +8,6 @@ Package admin is a generated protocol buffer package.
 It is generated from these files:
 	github.com/luci/luci-go/tokenserver/api/admin/v1/certificate_authorities.proto
 	github.com/luci/luci-go/tokenserver/api/admin/v1/config.proto
-	github.com/luci/luci-go/tokenserver/api/admin/v1/service_accounts.proto
 
 It has these top-level messages:
 	ImportConfigResponse
@@ -25,8 +24,6 @@ It has these top-level messages:
 	TokenServerConfig
 	CertificateAuthorityConfig
 	DomainConfig
-	CreateServiceAccountRequest
-	CreateServiceAccountResponse
 */
 package admin
 

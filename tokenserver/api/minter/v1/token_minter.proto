@@ -9,12 +9,12 @@ package tokenserver.minter;
 import "google/protobuf/timestamp.proto";
 
 import "github.com/luci/luci-go/tokenserver/api/machine_token.proto";
-import "github.com/luci/luci-go/tokenserver/api/service_account.proto";
 
 // The kinds of tokens the token server can mint.
+//
+// Reserved: 1.
 enum TokenType {
   UNKNOWN_TYPE               = 0; // used if the field is not initialized
-  GOOGLE_OAUTH2_ACCESS_TOKEN = 1; // OAuth2 service account access token
   LUCI_MACHINE_TOKEN         = 2; // luci-specific short lived machine token
 }
 
@@ -91,6 +91,8 @@ message MintMachineTokenRequest {
 
 // MachineTokenRequest contains the actual request parameters.
 message MachineTokenRequest {
+  reserved 5;
+
   // The certificate that identifies a caller (as ASN1-serialized blob).
   //
   // It will be used to extract machine FQDN (it's CN of the cert) and CA name
@@ -109,11 +111,6 @@ message MachineTokenRequest {
   //
   // Defines what fields of the response are set.
   TokenType token_type = 4;
-
-  // The list of API scopes to grant to the OAuth2 token.
-  //
-  // It is validated against a whitelist specified in config.DomainConfig.
-  repeated string oauth2_scopes = 5;
 }
 
 // MintMachineTokenResponse is returned by 'MintMachineToken' if the server
@@ -142,8 +139,7 @@ message MintMachineTokenResponse {
 
 // MachineTokenResponse contains a token requested by MachineTokenRequest.
 message MachineTokenResponse {
-  // The service account associated with the returned token (if any).
-  tokenserver.ServiceAccount service_account = 1;
+  reserved 1, 20;
 
   // Identifier of the service and its version that produced the token.
   //
@@ -156,21 +152,8 @@ message MachineTokenResponse {
   // The exact field set here depends on a requested type of the token, see
   // MachineTokenRequest.token_type.
   oneof token_type {
-    OAuth2AccessToken google_oauth2_access_token = 20;
     LuciMachineToken luci_machine_token = 21;
   }
-}
-
-// OAuth2AccessToken represent short lived OAuth2 access token that can be put
-// into Authorization header.
-//
-// Usually it is standard OAuth2 tokens as understood by Google Cloud Platform.
-//
-// TODO(vadimsh): Remove.
-message OAuth2AccessToken {
-  string access_token = 1;              // the actual token
-  string token_type = 2;                // type of the token, usually "Bearer"
-  google.protobuf.Timestamp expiry = 3; // when the token expires
 }
 
 // LuciMachineToken is short lived machine token.

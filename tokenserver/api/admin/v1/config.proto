@@ -36,21 +36,10 @@ message CertificateAuthorityConfig {
 
 // DomainConfig is used inside CertificateAuthorityConfig.
 message DomainConfig {
-  reserved 4, 6; // deleted fields, do not reuse.
+  reserved 2, 3, 4, 6; // deleted fields, do not reuse.
 
   // Domain is domain names of hosts this config applies to.
   repeated string domain = 1;
-
-  // CloudProjectName is a name of Google Cloud Project to create service
-  // accounts in (used for OAuth2 tokens).
-  //
-  // The Token Server's own service account must have Editor permission in this
-  // project.
-  string cloud_project_name = 2;
-
-  // AllowedOauth2Scope is a whitelist of OAuth2 scopes the token server is
-  // willing to mint an OAuth2 access token with.
-  repeated string allowed_oauth2_scope = 3;
 
   // MachineTokenLifetime is how long generated machine tokens live, in seconds.
   //

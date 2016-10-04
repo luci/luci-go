@@ -11,15 +11,12 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"fmt"
 	"math/big"
 	"testing"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/appengine/gaetesting"
@@ -32,244 +29,10 @@ import (
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 	"github.com/luci/luci-go/tokenserver/api/minter/v1"
 
-	"github.com/luci/luci-go/tokenserver/appengine/certchecker"
 	"github.com/luci/luci-go/tokenserver/appengine/model"
-	"github.com/luci/luci-go/tokenserver/appengine/services/admin/serviceaccounts"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-func TestMintOAuthToken(t *testing.T) {
-	Convey("with mock context", t, func() {
-		ctx := gaetesting.TestingContext()
-		ctx, _ = testclock.UseTime(ctx, time.Date(2015, time.February, 3, 4, 5, 6, 7, time.UTC))
-
-		Convey("success", func(c C) {
-			server := makeTestServer(&Server{
-				mintOAuthToken: func(_ context.Context, p serviceaccounts.MintAccessTokenParams) (*tokenserver.ServiceAccount, *minter.OAuth2AccessToken, error) {
-					c.So(p.FQDN, ShouldEqual, "luci-token-server-test-1.fake.domain")
-					c.So(p.Scopes, ShouldResemble, []string{"scope2", "scope1"})
-					sa := &tokenserver.ServiceAccount{Email: "blah@email.com"}
-					tok := &minter.OAuth2AccessToken{AccessToken: "access-token"}
-					return sa, tok, nil
-				},
-				certChecker: func(_ context.Context, cert *x509.Certificate) (*model.CA, error) {
-					c.So(cert.Subject.CommonName, ShouldEqual, "luci-token-server-test-1.fake.domain")
-					c.So(cert.Issuer.CommonName, ShouldEqual, "Fake CA: fake.ca")
-					return &model.CA{
-						CN: cert.Issuer.CommonName,
-						ParsedConfig: &admin.CertificateAuthorityConfig{
-							KnownDomains: []*admin.DomainConfig{
-								{
-									Domain:             []string{"fake.domain"},
-									AllowedOauth2Scope: []string{"scope1", "scope2"},
-								},
-							},
-						},
-					}, nil
-				},
-			})
-
-			resp, err := server.MintMachineToken(ctx, makeTestRequest(&minter.MachineTokenRequest{
-				Certificate:        getTestCertDER(),
-				SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
-				IssuedAt:           google.NewTimestamp(clock.Now(ctx)),
-				TokenType:          minter.TokenType_GOOGLE_OAUTH2_ACCESS_TOKEN,
-				Oauth2Scopes:       []string{"scope2", "scope1"},
-			}))
-			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &minter.MintMachineTokenResponse{
-				ServiceVersion: "app/testVersionID",
-				TokenResponse: &minter.MachineTokenResponse{
-					ServiceAccount: &tokenserver.ServiceAccount{Email: "blah@email.com"},
-					ServiceVersion: "app/testVersionID",
-					TokenType: &minter.MachineTokenResponse_GoogleOauth2AccessToken{
-						GoogleOauth2AccessToken: &minter.OAuth2AccessToken{AccessToken: "access-token"},
-					},
-				},
-			})
-		})
-
-		Convey("broken serialization", func(c C) {
-			server := makeTestServer(&Server{})
-			_, err := server.MintMachineToken(ctx, &minter.MintMachineTokenRequest{
-				SerializedTokenRequest: []byte("Im not a proto"),
-			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
-		})
-
-		Convey("unsupported token kind", func(c C) {
-			server := makeTestServer(&Server{})
-			resp, err := server.MintMachineToken(ctx, makeTestRequest(&minter.MachineTokenRequest{
-				Certificate:        getTestCertDER(),
-				SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
-				IssuedAt:           google.NewTimestamp(clock.Now(ctx)),
-				TokenType:          1234, // unsupported
-			}))
-			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &minter.MintMachineTokenResponse{
-				ErrorCode:      minter.ErrorCode_UNSUPPORTED_TOKEN_TYPE,
-				ErrorMessage:   "token_type 1234 is not supported",
-				ServiceVersion: "app/testVersionID",
-			})
-		})
-
-		Convey("no timestamp", func(c C) {
-			server := makeTestServer(&Server{})
-			resp, err := server.MintMachineToken(ctx, makeTestRequest(&minter.MachineTokenRequest{
-				Certificate:        getTestCertDER(),
-				SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
-				TokenType:          minter.TokenType_GOOGLE_OAUTH2_ACCESS_TOKEN,
-			}))
-			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &minter.MintMachineTokenResponse{
-				ErrorCode:      minter.ErrorCode_BAD_TIMESTAMP,
-				ErrorMessage:   "issued_at is required",
-				ServiceVersion: "app/testVersionID",
-			})
-		})
-
-		Convey("timestamp too old", func(c C) {
-			server := makeTestServer(&Server{})
-			resp, err := server.MintMachineToken(ctx, makeTestRequest(&minter.MachineTokenRequest{
-				Certificate:        getTestCertDER(),
-				SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
-				IssuedAt:           google.NewTimestamp(clock.Now(ctx).Add(-11 * time.Minute)),
-				TokenType:          minter.TokenType_GOOGLE_OAUTH2_ACCESS_TOKEN,
-			}))
-			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &minter.MintMachineTokenResponse{
-				ErrorCode:      minter.ErrorCode_BAD_TIMESTAMP,
-				ErrorMessage:   "issued_at timestamp is not within acceptable range, check your clock",
-				ServiceVersion: "app/testVersionID",
-			})
-		})
-
-		Convey("timestamp too new", func(c C) {
-			server := makeTestServer(&Server{})
-			resp, err := server.MintMachineToken(ctx, makeTestRequest(&minter.MachineTokenRequest{
-				Certificate:        getTestCertDER(),
-				SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
-				IssuedAt:           google.NewTimestamp(clock.Now(ctx).Add(11 * time.Minute)),
-				TokenType:          minter.TokenType_GOOGLE_OAUTH2_ACCESS_TOKEN,
-			}))
-			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &minter.MintMachineTokenResponse{
-				ErrorCode:      minter.ErrorCode_BAD_TIMESTAMP,
-				ErrorMessage:   "issued_at timestamp is not within acceptable range, check your clock",
-				ServiceVersion: "app/testVersionID",
-			})
-		})
-
-		Convey("malformed certificate", func(c C) {
-			server := makeTestServer(&Server{})
-			resp, err := server.MintMachineToken(ctx, makeTestRequest(&minter.MachineTokenRequest{
-				Certificate:        []byte("Im not a certificate"),
-				SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
-				IssuedAt:           google.NewTimestamp(clock.Now(ctx)),
-				TokenType:          minter.TokenType_GOOGLE_OAUTH2_ACCESS_TOKEN,
-			}))
-			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &minter.MintMachineTokenResponse{
-				ErrorCode:      minter.ErrorCode_BAD_CERTIFICATE_FORMAT,
-				ErrorMessage:   "failed to parse the certificate (expecting x509 cert DER)",
-				ServiceVersion: "app/testVersionID",
-			})
-		})
-
-		Convey("unsupported signature algo", func(c C) {
-			server := makeTestServer(&Server{})
-			resp, err := server.MintMachineToken(ctx, makeTestRequest(&minter.MachineTokenRequest{
-				Certificate:        getTestCertDER(),
-				SignatureAlgorithm: 1234, // unsupported
-				IssuedAt:           google.NewTimestamp(clock.Now(ctx)),
-				TokenType:          minter.TokenType_GOOGLE_OAUTH2_ACCESS_TOKEN,
-			}))
-			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &minter.MintMachineTokenResponse{
-				ErrorCode:      minter.ErrorCode_UNSUPPORTED_SIGNATURE,
-				ErrorMessage:   "signature_algorithm 1234 is not supported",
-				ServiceVersion: "app/testVersionID",
-			})
-		})
-
-		Convey("broken signature", func(c C) {
-			server := makeTestServer(&Server{})
-
-			req := makeTestRequest(&minter.MachineTokenRequest{
-				Certificate:        getTestCertDER(),
-				SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
-				IssuedAt:           google.NewTimestamp(clock.Now(ctx)),
-				TokenType:          minter.TokenType_GOOGLE_OAUTH2_ACCESS_TOKEN,
-			})
-			So(req.Signature[0], ShouldNotEqual, 0)
-			req.Signature[0] = 0 // break it
-
-			resp, err := server.MintMachineToken(ctx, req)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &minter.MintMachineTokenResponse{
-				ErrorCode:      minter.ErrorCode_BAD_SIGNATURE,
-				ErrorMessage:   "signature verification failed - crypto/rsa: verification error",
-				ServiceVersion: "app/testVersionID",
-			})
-		})
-
-		Convey("revoked cert", func(c C) {
-			server := makeTestServer(&Server{
-				certChecker: func(_ context.Context, cert *x509.Certificate) (*model.CA, error) {
-					return nil, certchecker.NewError(fmt.Errorf("revoked cert"), certchecker.CertificateRevoked)
-				},
-			})
-			resp, err := server.MintMachineToken(ctx, makeTestRequest(&minter.MachineTokenRequest{
-				Certificate:        getTestCertDER(),
-				SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
-				IssuedAt:           google.NewTimestamp(clock.Now(ctx)),
-				TokenType:          minter.TokenType_GOOGLE_OAUTH2_ACCESS_TOKEN,
-				Oauth2Scopes:       []string{"scope2", "scope1"},
-			}))
-			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &minter.MintMachineTokenResponse{
-				ErrorCode:      minter.ErrorCode_UNTRUSTED_CERTIFICATE,
-				ErrorMessage:   "revoked cert",
-				ServiceVersion: "app/testVersionID",
-			})
-		})
-
-		Convey("unknown domain", func(c C) {
-			server := makeTestServer(&Server{
-				certChecker: func(_ context.Context, cert *x509.Certificate) (*model.CA, error) {
-					c.So(cert.Subject.CommonName, ShouldEqual, "luci-token-server-test-1.fake.domain")
-					return &model.CA{
-						CN: "Fake CA: fake.ca",
-						ParsedConfig: &admin.CertificateAuthorityConfig{
-							KnownDomains: []*admin.DomainConfig{
-								{
-									Domain:             []string{"something-other-than-fake.domain"},
-									AllowedOauth2Scope: []string{"scope1", "scope2"},
-								},
-							},
-						},
-					}, nil
-				},
-			})
-
-			resp, err := server.MintMachineToken(ctx, makeTestRequest(&minter.MachineTokenRequest{
-				Certificate:        getTestCertDER(),
-				SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
-				IssuedAt:           google.NewTimestamp(clock.Now(ctx)),
-				TokenType:          minter.TokenType_GOOGLE_OAUTH2_ACCESS_TOKEN,
-				Oauth2Scopes:       []string{"scope2", "scope1"},
-			}))
-			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &minter.MintMachineTokenResponse{
-				ErrorCode:      minter.ErrorCode_BAD_TOKEN_ARGUMENTS,
-				ErrorMessage:   "the domain \"fake.domain\" is not whitelisted in the config",
-				ServiceVersion: "app/testVersionID",
-			})
-		})
-
-	})
-}
 
 func TestLuciMachineToken(t *testing.T) {
 	Convey("with mock context and server", t, func() {
@@ -440,12 +203,6 @@ func TestLuciMachineToken(t *testing.T) {
 ////
 
 func makeTestServer(s *Server) *Server {
-	if s.mintOAuthToken == nil {
-		s.mintOAuthToken = func(context.Context, serviceaccounts.MintAccessTokenParams) (*tokenserver.ServiceAccount, *minter.OAuth2AccessToken, error) {
-			panic("must not be called")
-		}
-	}
-
 	if s.certChecker == nil {
 		s.certChecker = func(context.Context, *x509.Certificate) (*model.CA, error) {
 			panic("must not be called")

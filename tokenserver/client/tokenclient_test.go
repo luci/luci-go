@@ -43,8 +43,7 @@ func TestTokenClient(t *testing.T) {
 		}
 
 		resp, err := c.MintMachineToken(ctx, &minter.MachineTokenRequest{
-			TokenType:    minter.TokenType_GOOGLE_OAUTH2_ACCESS_TOKEN,
-			Oauth2Scopes: []string{"scope1", "scope2"},
+			TokenType: minter.TokenType_LUCI_MACHINE_TOKEN,
 		})
 		So(err, ShouldBeNil)
 		So(resp, ShouldResemble, expectedResp)
@@ -58,8 +57,7 @@ func TestTokenClient(t *testing.T) {
 			Certificate:        []byte("fake certificate"),
 			SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
 			IssuedAt:           google.NewTimestamp(clock.Now(ctx)),
-			TokenType:          minter.TokenType_GOOGLE_OAUTH2_ACCESS_TOKEN,
-			Oauth2Scopes:       []string{"scope1", "scope2"},
+			TokenType:          minter.TokenType_LUCI_MACHINE_TOKEN,
 		})
 	})
 
@@ -77,8 +75,7 @@ func TestTokenClient(t *testing.T) {
 		}
 
 		_, err := c.MintMachineToken(ctx, &minter.MachineTokenRequest{
-			TokenType:    minter.TokenType_GOOGLE_OAUTH2_ACCESS_TOKEN,
-			Oauth2Scopes: []string{"scope1", "scope2"},
+			TokenType: minter.TokenType_LUCI_MACHINE_TOKEN,
 		})
 		So(err.Error(), ShouldEqual, "token server error 1234 - blah")
 	})

@@ -29,25 +29,18 @@ import (
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/signing"
 
-	"github.com/luci/luci-go/tokenserver/api"
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 	"github.com/luci/luci-go/tokenserver/api/minter/v1"
 
 	"github.com/luci/luci-go/tokenserver/appengine/certchecker"
 	"github.com/luci/luci-go/tokenserver/appengine/machinetoken"
 	"github.com/luci/luci-go/tokenserver/appengine/model"
-	"github.com/luci/luci-go/tokenserver/appengine/services/admin/serviceaccounts"
 )
 
 // Server implements minter.TokenMinterServer RPC interface.
 //
 // Use NewServer to make one.
 type Server struct {
-	// mintOAuthToken is mocked in tests.
-	//
-	// In prod it is serviceaccounts.Server.DoMintAccessToken.
-	mintOAuthToken func(context.Context, serviceaccounts.MintAccessTokenParams) (*tokenserver.ServiceAccount, *minter.OAuth2AccessToken, error)
-
 	// certChecker is mocked in tests.
 	//
 	// In prod it is certchecker.CheckCertificate.
@@ -81,11 +74,10 @@ type initializedState struct {
 }
 
 // NewServer returns Server configured for real production usage.
-func NewServer(sa *serviceaccounts.Server) *Server {
+func NewServer() *Server {
 	return &Server{
-		mintOAuthToken: sa.DoMintAccessToken,
-		certChecker:    certchecker.CheckCertificate,
-		signer:         gaesigner.Signer{},
+		certChecker: certchecker.CheckCertificate,
+		signer:      gaesigner.Signer{},
 		isAdmin: func(c context.Context) (bool, error) {
 			return auth.IsMember(c, "administrators")
 		},
@@ -143,7 +135,6 @@ func (s *Server) MintMachineToken(c context.Context, req *minter.MintMachineToke
 	}
 
 	switch tokenReq.TokenType {
-	case minter.TokenType_GOOGLE_OAUTH2_ACCESS_TOKEN:
 	case minter.TokenType_LUCI_MACHINE_TOKEN:
 		// supported
 	default:
@@ -219,8 +210,6 @@ func (s *Server) MintMachineToken(c context.Context, req *minter.MintMachineToke
 		Request: &tokenReq,
 	}
 	switch tokenReq.TokenType {
-	case minter.TokenType_GOOGLE_OAUTH2_ACCESS_TOKEN:
-		return s.mintGoogleOAuth2AccessToken(c, args)
 	case minter.TokenType_LUCI_MACHINE_TOKEN:
 		return s.mintLuciMachineToken(c, args)
 	default:
@@ -232,47 +221,6 @@ type mintTokenArgs struct {
 	Config  *admin.CertificateAuthorityConfig
 	Cert    *x509.Certificate
 	Request *minter.MachineTokenRequest
-}
-
-func (s *Server) mintGoogleOAuth2AccessToken(c context.Context, args mintTokenArgs) (*minter.MintMachineTokenResponse, error) {
-	// Validate FQDN, scopes, check they are whitelisted (the whitelist is part of
-	// the config).
-	params := serviceaccounts.MintAccessTokenParams{
-		Config: args.Config,
-		FQDN:   strings.ToLower(args.Cert.Subject.CommonName),
-		Scopes: args.Request.Oauth2Scopes,
-	}
-	if err := params.Validate(); err != nil {
-		return s.mintingErrorResponse(c, minter.ErrorCode_BAD_TOKEN_ARGUMENTS, "%s", err)
-	}
-
-	// Grab 'serviceVersion' needed below.
-	state, err := s.ensureInitialized(c)
-	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "can't initialize service guts - %s", err)
-	}
-
-	// Grab the token. It returns grpc error already, but we need to convert it
-	// to MintMachineTokenResponse, unless it is a transient error (then we pass
-	// it through as is, to retain its "transience").
-	account, token, err := s.mintOAuthToken(c, params)
-	switch {
-	case err == nil:
-		return &minter.MintMachineTokenResponse{
-			ServiceVersion: state.serviceVersion,
-			TokenResponse: &minter.MachineTokenResponse{
-				ServiceAccount: account,
-				ServiceVersion: state.serviceVersion,
-				TokenType: &minter.MachineTokenResponse_GoogleOauth2AccessToken{
-					GoogleOauth2AccessToken: token,
-				},
-			},
-		}, nil
-	case grpc.Code(err) == codes.Internal:
-		return nil, err
-	default:
-		return s.mintingErrorResponse(c, minter.ErrorCode_TOKEN_MINTING_ERROR, "%s", err)
-	}
 }
 
 func (s *Server) mintLuciMachineToken(c context.Context, args mintTokenArgs) (*minter.MintMachineTokenResponse, error) {
