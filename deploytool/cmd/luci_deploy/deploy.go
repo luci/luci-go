@@ -223,8 +223,8 @@ func (dp *deploymentPlan) initialize(w *work, l *deployLayout) error {
 					D("comp", comp.String()).Err()
 			}
 		}
-		return nil
 	}
+
 	return nil
 }
 
