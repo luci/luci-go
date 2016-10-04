@@ -94,7 +94,9 @@ An element for rendering muxed LogDog log streams.
 
       #status-bar {
         /* Overlay at the bottom of the page. */
-        position: absolute;
+        position: fixed;
+        z-index: 9999;
+        overflow: hidden;
         bottom: 0;
         left: 0;
         width: 100%;
@@ -115,56 +117,59 @@ An element for rendering muxed LogDog log streams.
       host="[[host]]"></rpc-client>
 
     <!-- Stream view options. -->
-    <div class="buttons">
-      <paper-checkbox checked="{{showMetadata}}">
-        Show Metadata
-      </paper-checkbox>
-      <paper-checkbox checked="{{wrapLines}}">
-        Wrap Lines
-      </paper-checkbox>
-      <paper-checkbox checked="{{follow}}">
-        Follow
-      </paper-checkbox>
-    </div>
-
-    <!-- Display current fetching status, if stream data is still loading. -->
-    <template is="dom-if" if="{{streamStatus}}">
-      <div id="stream-status">
-        <table>
-          <template is="dom-repeat" items="{{streamStatus}}">
-            <tr>
-              <td>{{item.name}}</td>
-              <td>{{item.desc}}</td>
-            </tr>
-          </template>
-        </table>
-      </div>
-    </template>
-
-    <!-- Muxed log content. -->
-    <div id="logContent" on-mousewheel="_handleMouseWheel">
-      <div id="logs">
-        <!-- Content will be populated with JavaScript as logs are loaded.
-
-          <div class="log-entry">
-            <div class="log-entry-meta">
-              <div class="log-entry-meta-line">(Meta 0)</div>
-              ...
-              <div class="log-entry-meta-line">(Meta N)</div>
-            </div>
-            <div class="log-entry-content">
-              <div class="log-entry-line">LINE #0</div>
-              ...
-              <div class="log-entry-line">LINE #N</div>
-            </div>
-          </div>
-          ...
-
-        -->
+    <div class="main-view">
+      <div class="buttons">
+        <paper-checkbox checked="{{showMetadata}}">
+          Show Metadata
+        </paper-checkbox>
+        <paper-checkbox checked="{{wrapLines}}">
+          Wrap Lines
+        </paper-checkbox>
+        <paper-checkbox checked="{{follow}}">
+          Follow
+        </paper-checkbox>
       </div>
 
-      <!-- Current red bottom line. -->
-      <div id="bottom"></div>
+      <!-- Display current fetching status, if stream data is still loading. -->
+      <template is="dom-if" if="{{streamStatus}}">
+        <div id="stream-status">
+          <table>
+            <template is="dom-repeat" items="{{streamStatus}}">
+              <tr>
+                <td>{{item.name}}</td>
+                <td>{{item.desc}}</td>
+              </tr>
+            </template>
+          </table>
+        </div>
+      </template>
+
+      <!-- Muxed log content. -->
+      <div id="logContent" on-mousewheel="_handleMouseWheel">
+        <div id="logs">
+          <!-- Content will be populated with JavaScript as logs are loaded.
+
+            <div class="log-entry">
+              <div class="log-entry-meta">
+                <div class="log-entry-meta-line">(Meta 0)</div>
+                ...
+                <div class="log-entry-meta-line">(Meta N)</div>
+              </div>
+              <div class="log-entry-content">
+                <div class="log-entry-line">LINE #0</div>
+                ...
+                <div class="log-entry-line">LINE #N</div>
+              </div>
+            </div>
+            ...
+
+          -->
+        </div>
+
+        <!-- Current red bottom line. -->
+        <div id="bottom"></div>
+      </div>
+
     </div>
 
     <template is="dom-if" if="{{statusBar}}">
