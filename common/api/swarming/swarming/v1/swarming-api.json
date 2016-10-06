@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"zRMgE0l9nVDW4S28VYYcYQF9UW4/zKy3Yx0Xiphpk3KPq0jNrz_RoDQ\"",
+ "etag": "\"zRMgE0l9nVDW4S28VYYcYQF9UW4/lpLp9EJ_E4MR3OaOlUFM7Aa5ly0\"",
  "discoveryVersion": "v1",
  "id": "swarming:v1",
  "name": "swarming",
@@ -71,6 +71,16 @@
   }
  },
  "schemas": {
+  "SwarmingRpcsBootstrapToken": {
+   "id": "SwarmingRpcsBootstrapToken",
+   "type": "object",
+   "description": "Returns a token to bootstrap a new bot.",
+   "properties": {
+    "bootstrap_token": {
+     "type": "string"
+    }
+   }
+  },
   "SwarmingRpcsBotEvent": {
    "id": "SwarmingRpcsBotEvent",
    "type": "object",
@@ -452,6 +462,9 @@
     "pubsub_userdata": {
      "type": "string"
     },
+    "service_account_token": {
+     "type": "string"
+    },
     "tags": {
      "type": "array",
      "items": {
@@ -508,8 +521,11 @@
   "SwarmingRpcsServerDetails": {
    "id": "SwarmingRpcsServerDetails",
    "type": "object",
-   "description": "Reports the server version.",
+   "description": "Reports details about the server.",
    "properties": {
+    "bot_version": {
+     "type": "string"
+    },
     "server_version": {
      "type": "string"
     }
@@ -665,6 +681,9 @@
      "type": "string"
     },
     "pubsub_userdata": {
+     "type": "string"
+    },
+    "service_account": {
      "type": "string"
     },
     "tags": {
@@ -1235,6 +1254,18 @@
      },
      "response": {
       "$ref": "SwarmingRpcsFileContent"
+     },
+     "scopes": [
+      "https://www.googleapis.com/auth/userinfo.email"
+     ]
+    },
+    "token": {
+     "id": "swarming.server.token",
+     "path": "server/token",
+     "httpMethod": "POST",
+     "description": "Returns a token to bootstrap a new bot.",
+     "response": {
+      "$ref": "SwarmingRpcsBootstrapToken"
      },
      "scopes": [
       "https://www.googleapis.com/auth/userinfo.email"
