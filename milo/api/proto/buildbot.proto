@@ -12,6 +12,7 @@ import "google/protobuf/timestamp.proto";
 service Buildbot {
   rpc GetCompressedMasterJSON(MasterRequest) returns (CompressedMasterJSON) {}
   rpc GetBuildbotBuildJSON(BuildbotBuildRequest) returns (BuildbotBuildJSON) {}
+  rpc GetBuildbotBuildsJSON(BuildbotBuildsRequest) returns (BuildbotBuildsJSON) {}
 }
 
 // The request containing the name of the master.
@@ -42,4 +43,19 @@ message BuildbotBuildRequest {
 message BuildbotBuildJSON {
   // Json data of the build.
   bytes data = 1;
+}
+
+// The request for multiple build on a builder.
+message BuildbotBuildsRequest {
+  string master = 1;
+  string builder = 2;
+  // Limit to the number of builds to return (default: 20).
+  int32 limit = 3;
+  // Include ongoing builds (default: false).
+  bool include_current = 4;
+}
+
+// The response message for multiple builds in a builder.
+message BuildbotBuildsJSON {
+  repeated BuildbotBuildJSON builds = 1;
 }

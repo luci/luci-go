@@ -51,3 +51,18 @@ func (s *DecoratedBuildbot) GetBuildbotBuildJSON(c context.Context, req *Buildbo
 	}
 	return
 }
+
+func (s *DecoratedBuildbot) GetBuildbotBuildsJSON(c context.Context, req *BuildbotBuildsRequest) (rsp *BuildbotBuildsJSON, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "GetBuildbotBuildsJSON", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.GetBuildbotBuildsJSON(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "GetBuildbotBuildsJSON", rsp, err)
+	}
+	return
+}

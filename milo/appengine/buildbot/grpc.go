@@ -53,6 +53,60 @@ func (s *Service) GetBuildbotBuildJSON(
 	return &milo.BuildbotBuildJSON{Data: bs}, nil
 }
 
+func (s *Service) GetBuildbotBuildsJSON(
+	c context.Context, req *milo.BuildbotBuildsRequest) (
+	*milo.BuildbotBuildsJSON, error) {
+
+	if req.Master == "" {
+		return nil, grpc.Errorf(codes.InvalidArgument, "No master specified")
+	}
+	if req.Builder == "" {
+		return nil, grpc.Errorf(codes.InvalidArgument, "No builder specified")
+	}
+
+	// Perform an ACL check by fetching the master.
+	_, err := getMasterEntry(c, req.Master)
+	switch {
+	case err == errMasterNotFound:
+		return nil, grpc.Errorf(codes.NotFound, "Master not found")
+	case err != nil:
+		return nil, err
+	}
+
+	limit := req.Limit
+	if limit == 0 {
+		limit = 20
+	}
+
+	q := ds.NewQuery("buildbotBuild")
+	q = q.Eq("master", req.Master).
+		Eq("builder", req.Builder).
+		Limit(limit).
+		Order("-number")
+	if req.IncludeCurrent == false {
+		q = q.Eq("finished", true)
+	}
+	builds := []*buildbotBuild{}
+	err = ds.GetAll(c, q, &builds)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]*milo.BuildbotBuildJSON, len(builds))
+	for i, b := range builds {
+		// In theory we could do this in parallel, but it doesn't actually go faster
+		// since AppEngine is single-cored.
+		bs, err := json.Marshal(b)
+		if err != nil {
+			return nil, err
+		}
+		results[i] = &milo.BuildbotBuildJSON{Data: bs}
+	}
+	return &milo.BuildbotBuildsJSON{
+		Builds: results,
+	}, nil
+}
+
 // GetCompressedMasterJSON assembles a CompressedMasterJSON object from the
 // provided MasterRequest.
 func (s *Service) GetCompressedMasterJSON(
