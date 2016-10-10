@@ -13,11 +13,18 @@ import (
 )
 
 func TestLoadConfig(t *testing.T) {
+	Convey("No file", t, func() {
+		c, err := loadConfig("")
+		So(c.Credentials, ShouldEqual, "")
+		So(c.Endpoint, ShouldEqual, "")
+		So(err, ShouldBeNil)
+	})
+
 	Convey("Missing file", t, func() {
 		c, err := loadConfig("/does/not/exist")
 		So(c.Credentials, ShouldEqual, "")
 		So(c.Endpoint, ShouldEqual, "")
-		So(err, ShouldNotBeNil)
+		So(err, ShouldBeNil)
 	})
 
 	Convey("Empty file", t, func() {

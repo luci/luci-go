@@ -13,6 +13,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/errors"
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/tsmon/monitor"
@@ -77,7 +78,11 @@ func SetStore(c context.Context, s store.Store) {
 // Monitor (where to send the metrics to).
 func InitializeFromFlags(c context.Context, fl *Flags) error {
 	// Load the config file, and override its values with flags.
-	config, _ := loadConfig(fl.ConfigFile)
+	config, err := loadConfig(fl.ConfigFile)
+	if err != nil {
+		return errors.Annotate(err).Reason("failed to load config file at [%(path)s]").
+			D("path", fl.ConfigFile).Err()
+	}
 
 	if fl.Endpoint != "" {
 		config.Endpoint = fl.Endpoint
@@ -89,7 +94,7 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 	mon, err := initMonitor(c, config)
 	switch {
 	case err != nil:
-		return err
+		return errors.Annotate(err).Reason("failed to initialize monitor").Err()
 	case mon == nil:
 		return nil // tsmon is disabled
 	}
@@ -118,7 +123,7 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 	fl.Target.SetDefaultsFromHostname()
 	t, err := target.NewFromFlags(&fl.Target)
 	if err != nil {
-		return err
+		return errors.Annotate(err).Reason("failed to configure target from flags").Err()
 	}
 
 	Initialize(c, mon, store.NewInMemory(t))

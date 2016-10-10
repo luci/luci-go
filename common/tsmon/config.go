@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"os"
 	"runtime"
+
+	"github.com/luci/luci-go/common/errors"
 )
 
 // config is the representation of a tsmon JSON config file.
@@ -23,18 +25,30 @@ type config struct {
 func loadConfig(path string) (config, error) {
 	var ret config
 
+	if path == "" {
+		return ret, nil
+	}
+
 	file, err := os.Open(path)
-	if err != nil {
-		return ret, err
-	}
-	defer file.Close()
+	switch {
+	case err == nil:
+		defer file.Close()
 
-	decoder := json.NewDecoder(file)
-	if err = decoder.Decode(&ret); err != nil {
-		return ret, err
-	}
+		decoder := json.NewDecoder(file)
+		if err = decoder.Decode(&ret); err != nil {
+			return ret, errors.Annotate(err).Reason("failed to decode file").Err()
+		}
+		return ret, nil
 
-	return ret, nil
+	case os.IsNotExist(err):
+		// The file does not exist. We don't consider this an error, since the file
+		// is optional.
+		return ret, nil
+
+	default:
+		// An unexpected failure occurred.
+		return ret, errors.Annotate(err).Reason("failed to open file").Err()
+	}
 }
 
 func defaultConfigFilePath() string {

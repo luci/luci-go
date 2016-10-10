@@ -139,10 +139,9 @@ func realMain() int {
 	root := teelogger.Use(context.Background(), memLogFactory, gologger.StdConfig.NewLogger)
 	root = logging.SetLevel(root, logging.Debug)
 
-	// Apply tsmon config.
+	// Apply tsmon config. A failure here is non-fatal.
 	if err := tsmon.InitializeFromFlags(root, &tsmonFlags); err != nil {
 		logging.Errorf(root, "Failed to initialize tsmon - %s", err)
-		return 1
 	}
 
 	ctx, cancel := context.WithTimeout(root, opts.Timeout)
