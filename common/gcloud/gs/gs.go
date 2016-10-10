@@ -133,7 +133,7 @@ func (c *prodClient) Rename(src, dst Path) error {
 
 	// First stage: CopyTo
 	err = retry.Retry(c, retry.TransientOnly(retry.Default), func() error {
-		if _, err := srcObj.CopyTo(c, dstObj, nil); err != nil {
+		if _, err := dstObj.CopierFrom(srcObj).Run(c); err != nil {
 			// The storage library doesn't return gs.ErrObjectNotExist when Delete
 			// returns a 404. Catch that explicitly.
 			if isNotFoundError(err) {
