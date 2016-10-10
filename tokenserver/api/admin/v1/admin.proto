@@ -1,0 +1,31 @@
+// Copyright 2016 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package tokenserver.admin;
+
+import "google/protobuf/empty.proto";
+
+
+// Admin service is used by service administrators to manage the server.
+service Admin {
+  // ImportConfigs makes the server read its configs from luci-config.
+  //
+  // Note that regularly configs are read in background each 5 min.
+  // ImportConfigs can be used to force config reread immediately. It will
+  // block until the configs are read.
+  rpc ImportConfigs(google.protobuf.Empty) returns (ImportedConfigs);
+}
+
+
+// ImportedConfigs is returned by ImportConfigs methods on success.
+message ImportedConfigs {
+  message ConfigFile {
+    string name                = 1; // name of the config file
+    string revision            = 2; // the revision of the imported config
+  }
+  // The list of imported config files with their revision numbers.
+  repeated ConfigFile imported_configs = 1;
+}

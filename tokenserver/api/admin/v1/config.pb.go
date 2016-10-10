@@ -22,7 +22,7 @@ type TokenServerConfig struct {
 func (m *TokenServerConfig) Reset()                    { *m = TokenServerConfig{} }
 func (m *TokenServerConfig) String() string            { return proto.CompactTextString(m) }
 func (*TokenServerConfig) ProtoMessage()               {}
-func (*TokenServerConfig) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (*TokenServerConfig) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
 func (m *TokenServerConfig) GetCertificateAuthority() []*CertificateAuthorityConfig {
 	if m != nil {
@@ -55,7 +55,7 @@ type CertificateAuthorityConfig struct {
 func (m *CertificateAuthorityConfig) Reset()                    { *m = CertificateAuthorityConfig{} }
 func (m *CertificateAuthorityConfig) String() string            { return proto.CompactTextString(m) }
 func (*CertificateAuthorityConfig) ProtoMessage()               {}
-func (*CertificateAuthorityConfig) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (*CertificateAuthorityConfig) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
 
 func (m *CertificateAuthorityConfig) GetKnownDomains() []*DomainConfig {
 	if m != nil {
@@ -77,7 +77,7 @@ type DomainConfig struct {
 func (m *DomainConfig) Reset()                    { *m = DomainConfig{} }
 func (m *DomainConfig) String() string            { return proto.CompactTextString(m) }
 func (*DomainConfig) ProtoMessage()               {}
-func (*DomainConfig) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+func (*DomainConfig) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
 
 // DelegationPermissions is read from delegation.cfg in luci-config.
 type DelegationPermissions struct {
@@ -94,7 +94,7 @@ type DelegationPermissions struct {
 func (m *DelegationPermissions) Reset()                    { *m = DelegationPermissions{} }
 func (m *DelegationPermissions) String() string            { return proto.CompactTextString(m) }
 func (*DelegationPermissions) ProtoMessage()               {}
-func (*DelegationPermissions) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
+func (*DelegationPermissions) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
 
 func (m *DelegationPermissions) GetRules() []*DelegationRule {
 	if m != nil {
@@ -115,7 +115,7 @@ func (m *DelegationPermissions) GetRules() []*DelegationRule {
 //  * 'requestor_id' is in 'requestor' set.
 //  * 'delegated_identity' is in 'allowed_to_impersonate' set.
 //  * 'audience' is a subset of 'allowed_audience' set.
-//  * 'service' is a subset of 'target_service' set.
+//  * 'services' is a subset of 'target_service' set.
 //
 // The presence of a matching rule permits to mint the token. The rule also
 // provides an upper bound on allowed validity_duration, and the rule's name
@@ -167,7 +167,7 @@ type DelegationRule struct {
 func (m *DelegationRule) Reset()                    { *m = DelegationRule{} }
 func (m *DelegationRule) String() string            { return proto.CompactTextString(m) }
 func (*DelegationRule) ProtoMessage()               {}
-func (*DelegationRule) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{4} }
+func (*DelegationRule) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{4} }
 
 func init() {
 	proto.RegisterType((*TokenServerConfig)(nil), "tokenserver.admin.TokenServerConfig")
@@ -178,10 +178,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("github.com/luci/luci-go/tokenserver/api/admin/v1/config.proto", fileDescriptor1)
+	proto.RegisterFile("github.com/luci/luci-go/tokenserver/api/admin/v1/config.proto", fileDescriptor2)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor2 = []byte{
 	// 533 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x74, 0x53, 0x5f, 0x6f, 0xd3, 0x3e,
 	0x14, 0x55, 0xff, 0xa5, 0xad, 0x7f, 0x5b, 0x7f, 0x9d, 0x69, 0x47, 0x04, 0x48, 0x8c, 0x4a, 0x48,

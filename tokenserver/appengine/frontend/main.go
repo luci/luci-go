@@ -30,18 +30,30 @@ import (
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 	"github.com/luci/luci-go/tokenserver/api/minter/v1"
 
+	"github.com/luci/luci-go/tokenserver/appengine/services/admin/adminsrv"
 	"github.com/luci/luci-go/tokenserver/appengine/services/admin/certauthorities"
 	"github.com/luci/luci-go/tokenserver/appengine/services/minter/tokenminter"
 )
 
 var (
-	// caServer implements admin.CertificateAuthorities RPC interface.
+	// caServerWithoutAuth implements admin.CertificateAuthorities RPC interface.
 	caServerWithoutAuth = &certauthorities.Server{}
 
-	// caServerWithAuth adds admin check to caServer.
+	// caServerWithAuth adds admin check to caServerWithoutAuth.
 	caServerWithAuth = &admin.DecoratedCertificateAuthorities{
 		Service: caServerWithoutAuth,
 		Prelude: adminPrelude("admin.CertificateAuthorities"),
+	}
+
+	// adminServerWithoutAuth implements admin.Admin RPC interface.
+	adminServerWithoutAuth = &adminsrv.Server{
+		CertAuthoritiesServer: caServerWithoutAuth,
+	}
+
+	// adminServerWithAuth adds admin check to adminServerWithoutAuth.
+	adminServerWithAuth = &admin.DecoratedAdmin{
+		Service: adminServerWithoutAuth,
+		Prelude: adminPrelude("admin.Admin"),
 	}
 
 	// tokenMinterServer implements minter.TokenMinter RPC interface.
@@ -93,6 +105,7 @@ func init() {
 		UnaryServerInterceptor: tsmon.NewGrpcUnaryInterceptor(nil),
 	}
 	admin.RegisterCertificateAuthoritiesServer(&api, caServerWithAuth)
+	admin.RegisterAdminServer(&api, adminServerWithAuth)
 	minter.RegisterTokenMinterServer(&api, tokenMinterServerWithoutAuth) // auth inside
 	discovery.Enable(&api)
 	api.InstallHandlers(r, basemw)
@@ -118,7 +131,7 @@ func readConfigCron(c *router.Context) {
 		c.Writer.WriteHeader(http.StatusOK)
 		return
 	}
-	if _, err := caServerWithoutAuth.ImportConfig(c.Context, nil); err != nil {
+	if _, err := adminServerWithoutAuth.ImportConfigs(c.Context, nil); err != nil {
 		panic(err) // let panic catcher deal with it
 	}
 	c.Writer.WriteHeader(http.StatusOK)

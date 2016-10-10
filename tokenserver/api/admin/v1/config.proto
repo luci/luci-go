@@ -76,7 +76,7 @@ message DelegationPermissions {
 //  * 'requestor_id' is in 'requestor' set.
 //  * 'delegated_identity' is in 'allowed_to_impersonate' set.
 //  * 'audience' is a subset of 'allowed_audience' set.
-//  * 'service' is a subset of 'target_service' set.
+//  * 'services' is a subset of 'target_service' set.
 //
 // The presence of a matching rule permits to mint the token. The rule also
 // provides an upper bound on allowed validity_duration, and the rule's name

@@ -45,15 +45,13 @@ type Server struct {
 
 // ImportConfig makes the server read its config from luci-config right now.
 //
-// Note that regularly configs are read in background each 5 min. ImportConfig
-// can be used to force config reread immediately. It will block until configs
-// are read.
-func (s *Server) ImportConfig(c context.Context, _ *google.Empty) (*admin.ImportConfigResponse, error) {
+// This not an RPC method itself, it is called by AdminServer.ImportConfigs.
+func (s *Server) ImportConfig(c context.Context) (*admin.ImportedConfigs, error) {
 	cfg, err := fetchConfigFile(c, "tokenserver.cfg")
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "can't read config file - %s", err)
 	}
-	logging.Infof(c, "Importing config at rev %s", cfg.Revision)
+	logging.Infof(c, "Importing tokenserver.cfg at rev %s", cfg.Revision)
 
 	// Read list of CAs.
 	msg := admin.TokenServerConfig{}
@@ -151,8 +149,13 @@ func (s *Server) ImportConfig(c context.Context, _ *google.Empty) (*admin.Import
 		return nil, grpc.Errorf(codes.Internal, "datastore error - %s", err)
 	}
 
-	return &admin.ImportConfigResponse{
-		Revision: cfg.Revision,
+	return &admin.ImportedConfigs{
+		ImportedConfigs: []*admin.ImportedConfigs_ConfigFile{
+			{
+				Name:     "tokenserver.cfg",
+				Revision: cfg.Revision,
+			},
+		},
 	}, nil
 }
 

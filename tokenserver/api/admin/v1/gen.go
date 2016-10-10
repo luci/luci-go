@@ -3,6 +3,7 @@
 // that can be found in the LICENSE file.
 
 //go:generate cproto -import-path=admin
+//go:generate svcdec -type AdminServer
 //go:generate svcdec -type CertificateAuthoritiesServer
 
 // Package admin contains The Token Server Administrative and Config API.

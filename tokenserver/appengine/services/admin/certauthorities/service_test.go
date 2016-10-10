@@ -33,7 +33,7 @@ func TestImportConfig(t *testing.T) {
 	Convey("dry run", t, func() {
 		ctx := gaetesting.TestingContext()
 		srv := &Server{}
-		_, err := srv.ImportConfig(prepareCfg(ctx, ""), nil)
+		_, err := srv.ImportConfig(prepareCfg(ctx, ""))
 		So(err, ShouldBeNil)
 	})
 
@@ -49,14 +49,14 @@ func TestImportConfig(t *testing.T) {
 		So(resp.Config, ShouldBeNil)
 
 		// Import.
-		rev, err := srv.ImportConfig(prepareCfg(ctx, `
+		out, err := srv.ImportConfig(prepareCfg(ctx, `
 			certificate_authority {
 				cn: "Puppet CA: fake.ca"
 				cert_path: "certs/fake.ca.crt"
 			}
-		`), nil)
+		`))
 		So(err, ShouldBeNil)
-		firstRev := rev.Revision
+		firstRev := out.ImportedConfigs[0].Revision
 
 		// Appears.
 		resp, err = srv.GetCAStatus(ctx, &admin.GetCAStatusRequest{
@@ -69,15 +69,15 @@ func TestImportConfig(t *testing.T) {
 		So(resp.UpdatedRev, ShouldEqual, firstRev)
 
 		// Noop import.
-		rev, err = srv.ImportConfig(prepareCfg(ctx, `
+		out, err = srv.ImportConfig(prepareCfg(ctx, `
 			certificate_authority {
 				cn: "Puppet CA: fake.ca"
 				# some comment
 				cert_path: "certs/fake.ca.crt"
 			}
-		`), nil)
+		`))
 		So(err, ShouldBeNil)
-		So(rev.Revision, ShouldNotEqual, firstRev)
+		So(out.ImportedConfigs[0].Revision, ShouldNotEqual, firstRev)
 
 		// UpdateRev stays as it was, no significant changes made.
 		resp, err = srv.GetCAStatus(ctx, &admin.GetCAStatusRequest{
@@ -87,15 +87,15 @@ func TestImportConfig(t *testing.T) {
 		So(resp.UpdatedRev, ShouldEqual, firstRev)
 
 		// Change config for real now.
-		rev, err = srv.ImportConfig(prepareCfg(ctx, `
+		out, err = srv.ImportConfig(prepareCfg(ctx, `
 			certificate_authority {
 				cn: "Puppet CA: fake.ca"
 				cert_path: "certs/fake.ca.crt"
 				crl_url: "https://blah"
 			}
-		`), nil)
+		`))
 		So(err, ShouldBeNil)
-		secondRev := rev.Revision
+		secondRev := out.ImportedConfigs[0].Revision
 
 		// Assert it is updated.
 		resp, err = srv.GetCAStatus(ctx, &admin.GetCAStatusRequest{
@@ -122,7 +122,7 @@ func TestImportConfig(t *testing.T) {
 				unique_id: 1
 				cert_path: "certs/fake.ca.crt"
 			}
-		`), nil)
+		`))
 		So(err, ShouldBeNil)
 
 		ds.GetTestable(ctx).CatchupIndexes()
@@ -133,14 +133,15 @@ func TestImportConfig(t *testing.T) {
 		So(listResp.Cn, ShouldResemble, []string{"Puppet CA: fake.ca"})
 
 		// Replace it with another-fake.ca.
-		rev, err := srv.ImportConfig(prepareCfg(ctx, `
+		out, err := srv.ImportConfig(prepareCfg(ctx, `
 			certificate_authority {
 				cn: "Puppet CA: another-fake.ca"
 				unique_id: 2
 				cert_path: "certs/another-fake.ca.crt"
 			}
-		`), nil)
+		`))
 		So(err, ShouldBeNil)
+		rev := out.ImportedConfigs[0].Revision
 
 		ds.GetTestable(ctx).CatchupIndexes()
 
@@ -150,14 +151,14 @@ func TestImportConfig(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 		So(resp.Removed, ShouldBeTrue)
-		So(resp.RemovedRev, ShouldEqual, rev.Revision)
+		So(resp.RemovedRev, ShouldEqual, rev)
 
 		// another-fake.ca is added.
 		resp, err = srv.GetCAStatus(ctx, &admin.GetCAStatusRequest{
 			Cn: "Puppet CA: another-fake.ca",
 		})
 		So(err, ShouldBeNil)
-		So(resp.AddedRev, ShouldEqual, rev.Revision)
+		So(resp.AddedRev, ShouldEqual, rev)
 
 		// Listing shows only active CAs.
 		listResp, err = srv.ListCAs(ctx, nil)
@@ -178,7 +179,7 @@ func TestImportConfig(t *testing.T) {
 				cert_path: "certs/fake.ca.crt"
 				crl_url: "http://blah"
 			}
-		`), nil)
+		`))
 		So(err, ShouldErrLike, "duplicate entries in the config")
 	})
 
@@ -190,7 +191,7 @@ func TestImportConfig(t *testing.T) {
 				cn: "Puppet CA: fake.ca"
 				cert_path: "certs/another-fake.ca.crt"
 			}
-		`), nil)
+		`))
 		So(err, ShouldErrLike, "bad CN in the certificat")
 	})
 }
@@ -206,7 +207,7 @@ func TestFetchCRL(t *testing.T) {
 				cn: "Puppet CA: fake.ca"
 				cert_path: "certs/fake.ca.crt"
 			}
-		`), nil)
+		`))
 		So(err, ShouldBeNil)
 
 		// Use it, must fail.
@@ -230,7 +231,7 @@ func TestFetchCRL(t *testing.T) {
 				cert_path: "certs/fake.ca.crt"
 				crl_url: %q
 			}
-		`, ts.URL)), nil)
+		`, ts.URL)))
 		So(err, ShouldBeNil)
 
 		// Import works.
@@ -278,7 +279,7 @@ func TestFetchCRL(t *testing.T) {
 				cert_path: "certs/fake.ca.crt"
 				crl_url: %q
 			}
-		`, ts.URL)), nil)
+		`, ts.URL)))
 		So(err, ShouldBeNil)
 
 		// Initial import works.

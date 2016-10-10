@@ -16,13 +16,6 @@ import "github.com/luci/luci-go/tokenserver/api/admin/v1/config.proto";
 //
 // It is callable by the token service itself and by the admins.
 service CertificateAuthorities {
-  // ImportConfig makes the server read its config from luci-config right now.
-  //
-  // Note that regularly configs are read in background each 5 min. ImportConfig
-  // can be used to force config reread immediately. It will block until configs
-  // are read.
-  rpc ImportConfig(google.protobuf.Empty) returns (ImportConfigResponse);
-
   // FetchCRL makes the server fetch a CRL for some CA.
   rpc FetchCRL(FetchCRLRequest) returns (FetchCRLResponse);
 
@@ -37,11 +30,6 @@ service CertificateAuthorities {
 
   // CheckCertificate says whether a certificate is valid or not.
   rpc CheckCertificate(CheckCertificateRequest) returns (CheckCertificateResponse);
-}
-
-// ImportConfigResponse is returned by ImportConfig on success.
-message ImportConfigResponse {
-  string revision = 1; // revision of the imported config
 }
 
 // FetchCRLRequest identifies a name of CA to fetch CRL for.

@@ -24,21 +24,6 @@ type DecoratedCertificateAuthorities struct {
 	Postlude func(c context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedCertificateAuthorities) ImportConfig(c context.Context, req *google_protobuf.Empty) (rsp *ImportConfigResponse, err error) {
-	var newCtx context.Context
-	if s.Prelude != nil {
-		newCtx, err = s.Prelude(c, "ImportConfig", req)
-	}
-	if err == nil {
-		c = newCtx
-		rsp, err = s.Service.ImportConfig(c, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(c, "ImportConfig", rsp, err)
-	}
-	return
-}
-
 func (s *DecoratedCertificateAuthorities) FetchCRL(c context.Context, req *FetchCRLRequest) (rsp *FetchCRLResponse, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
