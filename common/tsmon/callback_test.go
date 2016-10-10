@@ -17,19 +17,41 @@ import (
 )
 
 func TestCallbacks(t *testing.T) {
-	c := context.Background()
+	t.Parallel()
 
-	Convey("Register global callback without metrics panics", t, func() {
-		So(func() {
-			RegisterGlobalCallbackIn(c, func(context.Context) {})
-		}, ShouldPanic)
-	})
+	Convey("With a testing State", t, func() {
+		c := WithState(context.Background(), NewState())
 
-	Convey("Callback is run on Flush", t, func() {
-		c, s, m := WithFakes(c)
+		Convey("Register global callback without metrics panics", func() {
+			So(func() {
+				RegisterGlobalCallbackIn(c, func(context.Context) {})
+			}, ShouldPanic)
+		})
 
-		RegisterCallbackIn(c, func(c context.Context) {
-			s.Cells = append(s.Cells, types.Cell{
+		Convey("Callback is run on Flush", func() {
+			c, s, m := WithFakes(c)
+
+			RegisterCallbackIn(c, func(c context.Context) {
+				s.Cells = append(s.Cells, types.Cell{
+					types.MetricInfo{
+						Name:      "foo",
+						Fields:    []field.Field{},
+						ValueType: types.StringType,
+					},
+					types.MetricMetadata{},
+					types.CellData{
+						FieldVals: []interface{}{},
+						ResetTime: time.Unix(1234, 1000),
+						Value:     "bar",
+					},
+				})
+			})
+
+			So(Flush(c), ShouldBeNil)
+
+			So(len(m.Cells), ShouldEqual, 1)
+			So(len(m.Cells[0]), ShouldEqual, 1)
+			So(m.Cells[0][0], ShouldResemble, types.Cell{
 				types.MetricInfo{
 					Name:      "foo",
 					Fields:    []field.Field{},
@@ -42,24 +64,6 @@ func TestCallbacks(t *testing.T) {
 					Value:     "bar",
 				},
 			})
-		})
-
-		So(Flush(c), ShouldBeNil)
-
-		So(len(m.Cells), ShouldEqual, 1)
-		So(len(m.Cells[0]), ShouldEqual, 1)
-		So(m.Cells[0][0], ShouldResemble, types.Cell{
-			types.MetricInfo{
-				Name:      "foo",
-				Fields:    []field.Field{},
-				ValueType: types.StringType,
-			},
-			types.MetricMetadata{},
-			types.CellData{
-				FieldVals: []interface{}{},
-				ResetTime: time.Unix(1234, 1000),
-				Value:     "bar",
-			},
 		})
 	})
 }

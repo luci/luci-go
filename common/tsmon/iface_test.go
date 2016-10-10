@@ -31,8 +31,11 @@ func newTestingFlags() Flags {
 }
 
 func TestInitializeFromFlags(t *testing.T) {
-	c := context.Background()
+	t.Parallel()
+
 	Convey("Initialize tsmon", t, func() {
+		c := WithState(context.Background(), NewState())
+
 		tsmonFlags := newTestingFlags()
 		tsmonFlags.Target.TargetType = target.DeviceType
 		tsmonFlags.Flush = FlushManual
