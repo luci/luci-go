@@ -38,3 +38,18 @@ func (s *DecoratedAdmin) ImportConfigs(c context.Context, req *google_protobuf.E
 	}
 	return
 }
+
+func (s *DecoratedAdmin) InspectMachineToken(c context.Context, req *InspectMachineTokenRequest) (rsp *InspectMachineTokenResponse, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "InspectMachineToken", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.InspectMachineToken(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "InspectMachineToken", rsp, err)
+	}
+	return
+}

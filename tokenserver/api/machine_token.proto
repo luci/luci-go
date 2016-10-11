@@ -6,6 +6,18 @@ syntax = "proto3";
 
 package tokenserver;
 
+
+// The kinds of machine tokens the token server can mint.
+//
+// Passed to MintMachineToken and InspectMachineToken.
+//
+// Reserved: 1.
+enum MachineTokenType {
+  UNKNOWN_TYPE       = 0; // used if the field is not initialized
+  LUCI_MACHINE_TOKEN = 2; // matches serialized MachineTokenEnvelope
+}
+
+
 // MachineTokenBody describes internal structure of the machine token.
 //
 // The token will be put in HTTP headers and its body shouldn't be too large.
@@ -46,6 +58,7 @@ message MachineTokenBody {
   // callers can rely on expiration checks only.
   uint64 cert_sn = 6;
 }
+
 
 // MachineTokenEnvelope is what is actually being serialized and represented
 // as a machine token (after being encoded using base64 standard raw encoding).

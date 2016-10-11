@@ -231,7 +231,7 @@ func run(ctx context.Context, clientParams client.Parameters, opts commandLine, 
 	// Grab a new token. MintMachineToken does retries internally, until success
 	// or context deadline.
 	resp, err := cl.MintMachineToken(ctx, &minter.MachineTokenRequest{
-		TokenType: minter.MachineTokenType_LUCI_MACHINE_TOKEN,
+		TokenType: tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN,
 	})
 	status.MintTokenDuration = clock.Now(ctx).Sub(now)
 	if err != nil {

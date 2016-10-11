@@ -17,6 +17,7 @@ import (
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/proto/google"
 
+	tokenserver "github.com/luci/luci-go/tokenserver/api"
 	"github.com/luci/luci-go/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -43,7 +44,7 @@ func TestTokenClient(t *testing.T) {
 		}
 
 		resp, err := c.MintMachineToken(ctx, &minter.MachineTokenRequest{
-			TokenType: minter.MachineTokenType_LUCI_MACHINE_TOKEN,
+			TokenType: tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN,
 		})
 		So(err, ShouldBeNil)
 		So(resp, ShouldResemble, expectedResp)
@@ -57,7 +58,7 @@ func TestTokenClient(t *testing.T) {
 			Certificate:        []byte("fake certificate"),
 			SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
 			IssuedAt:           google.NewTimestamp(clock.Now(ctx)),
-			TokenType:          minter.MachineTokenType_LUCI_MACHINE_TOKEN,
+			TokenType:          tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN,
 		})
 	})
 
@@ -75,7 +76,7 @@ func TestTokenClient(t *testing.T) {
 		}
 
 		_, err := c.MintMachineToken(ctx, &minter.MachineTokenRequest{
-			TokenType: minter.MachineTokenType_LUCI_MACHINE_TOKEN,
+			TokenType: tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN,
 		})
 		So(err.Error(), ShouldEqual, "token server error 1234 - blah")
 	})
@@ -90,10 +91,6 @@ type fakeRPCClient struct {
 func (f *fakeRPCClient) MintMachineToken(ctx context.Context, in *minter.MintMachineTokenRequest, opts ...grpc.CallOption) (*minter.MintMachineTokenResponse, error) {
 	f.In = *in
 	return &f.Out, nil
-}
-
-func (f *fakeRPCClient) InspectMachineToken(context.Context, *minter.InspectMachineTokenRequest, ...grpc.CallOption) (*minter.InspectMachineTokenResponse, error) {
-	panic("not implemented")
 }
 
 func (f *fakeRPCClient) MintDelegationToken(context.Context, *minter.MintDelegationTokenRequest, ...grpc.CallOption) (*minter.MintDelegationTokenResponse, error) {

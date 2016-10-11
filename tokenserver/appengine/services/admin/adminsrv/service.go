@@ -9,25 +9,41 @@
 package adminsrv
 
 import (
+	"github.com/luci/luci-go/appengine/gaeauth/server/gaesigner"
 	"github.com/luci/luci-go/common/proto/google"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
+	"github.com/luci/luci-go/tokenserver/appengine/machinetoken"
 	"github.com/luci/luci-go/tokenserver/appengine/services/admin/certauthorities"
 )
 
 // Server implements admin.AdminServer RPC interface.
 //
 // It assumes authorization has happened already.
+//
+// Use NewServer to make a new instance.
 type Server struct {
-	CertAuthoritiesServer *certauthorities.Server
+	machinetoken.InspectMachineTokenRPC
+
+	caServer *certauthorities.Server
 }
 
-// ImportConfig makes the server read its config from luci-config right now.
+// NewServer returns Server configured for real production usage.
+func NewServer(caServer *certauthorities.Server) *Server {
+	return &Server{
+		InspectMachineTokenRPC: machinetoken.InspectMachineTokenRPC{
+			Signer: gaesigner.Signer{},
+		},
+		caServer: caServer,
+	}
+}
+
+// ImportConfigs makes the server read its config from luci-config right now.
 //
-// Note that regularly configs are read in background each 5 min. ImportConfig
+// Note that regularly configs are read in background each 5 min. ImportConfigs
 // can be used to force config reread immediately. It will block until configs
 // are read.
 func (s *Server) ImportConfigs(c context.Context, _ *google.Empty) (*admin.ImportedConfigs, error) {
-	return s.CertAuthoritiesServer.ImportConfig(c)
+	return s.caServer.ImportConfig(c)
 }

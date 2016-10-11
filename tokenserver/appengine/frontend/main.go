@@ -46,9 +46,7 @@ var (
 	}
 
 	// adminServerWithoutAuth implements admin.Admin RPC interface.
-	adminServerWithoutAuth = &adminsrv.Server{
-		CertAuthoritiesServer: caServerWithoutAuth,
-	}
+	adminServerWithoutAuth = adminsrv.NewServer(caServerWithoutAuth)
 
 	// adminServerWithAuth adds admin check to adminServerWithoutAuth.
 	adminServerWithAuth = &admin.DecoratedAdmin{
