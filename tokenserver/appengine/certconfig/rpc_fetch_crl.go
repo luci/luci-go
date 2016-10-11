@@ -2,15 +2,18 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-package certauthorities
+package certconfig
 
 import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
@@ -19,13 +22,76 @@ import (
 	"github.com/luci/luci-go/server/auth"
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
-	"github.com/luci/luci-go/tokenserver/appengine/certconfig"
 )
 
 // List of OAuth scopes to use for token sent to CRL endpoint.
 var crlFetchScopes = []string{
 	"https://www.googleapis.com/auth/userinfo.email",
 }
+
+// FetchCRLRPC implements CertificateAuthorities.FetchCRL RPC method.
+type FetchCRLRPC struct {
+}
+
+// FetchCRL makes the server fetch a CRL for some CA.
+func (r *FetchCRLRPC) FetchCRL(c context.Context, req *admin.FetchCRLRequest) (*admin.FetchCRLResponse, error) {
+	// Grab a corresponding CA entity. It contains URL of CRL to fetch.
+	ca := &CA{CN: req.Cn}
+	switch err := ds.Get(c, ca); {
+	case err == ds.ErrNoSuchEntity:
+		return nil, grpc.Errorf(codes.NotFound, "no such CA %q", ca.CN)
+	case err != nil:
+		return nil, grpc.Errorf(codes.Internal, "datastore error - %s", err)
+	}
+
+	// Grab CRL URL from the CA config.
+	cfg, err := ca.ParseConfig()
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "broken CA config in the datastore - %s", err)
+	}
+	if cfg.CrlUrl == "" {
+		return nil, grpc.Errorf(codes.NotFound, "CA %q doesn't have CRL defined", ca.CN)
+	}
+
+	// Grab info about last processed CRL, if any.
+	crl := &CRL{Parent: ds.KeyForObj(c, ca)}
+	if err = ds.Get(c, crl); err != nil && err != ds.ErrNoSuchEntity {
+		return nil, grpc.Errorf(codes.Internal, "datastore error - %s", err)
+	}
+
+	// Fetch latest CRL blob.
+	logging.Infof(c, "Fetching CRL for %q from %s", ca.CN, cfg.CrlUrl)
+	knownETag := crl.LastFetchETag
+	if req.Force {
+		knownETag = ""
+	}
+	fetchCtx, _ := clock.WithTimeout(c, time.Minute)
+	crlDer, newEtag, err := fetchCRL(fetchCtx, cfg, knownETag)
+	switch {
+	case errors.IsTransient(err):
+		return nil, grpc.Errorf(codes.Internal, "transient error when fetching CRL - %s", err)
+	case err != nil:
+		return nil, grpc.Errorf(codes.Unknown, "can't fetch CRL - %s", err)
+	}
+
+	// No changes?
+	if knownETag != "" && knownETag == newEtag {
+		logging.Infof(c, "No changes to CRL (etag is %s), skipping", knownETag)
+	} else {
+		logging.Infof(c, "Fetched CRL size is %d bytes, etag is %s", len(crlDer), newEtag)
+		crl, err = validateAndStoreCRL(c, crlDer, newEtag, ca, crl)
+		switch {
+		case errors.IsTransient(err):
+			return nil, grpc.Errorf(codes.Internal, "transient error when storing CRL - %s", err)
+		case err != nil:
+			return nil, grpc.Errorf(codes.Unknown, "bad CRL - %s", err)
+		}
+	}
+
+	return &admin.FetchCRLResponse{CrlStatus: crl.GetStatusProto()}, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 // fetchCRL fetches a blob with der-encoded CRL from the CRL endpoint.
 //
@@ -89,7 +155,7 @@ func fetchCRL(c context.Context, cfg *admin.CertificateAuthorityConfig, knownETa
 }
 
 // validateAndStoreCRL handles incoming CRL blob fetched by 'fetchCRL'.
-func validateAndStoreCRL(c context.Context, crlDer []byte, etag string, ca *certconfig.CA, prev *certconfig.CRL) (*certconfig.CRL, error) {
+func validateAndStoreCRL(c context.Context, crlDer []byte, etag string, ca *CA, prev *CRL) (*CRL, error) {
 	// Make sure it is signed by the CA.
 	caCert, err := x509.ParseCertificate(ca.Cert)
 	if err != nil {
@@ -106,14 +172,14 @@ func validateAndStoreCRL(c context.Context, crlDer []byte, etag string, ca *cert
 	// The CRL is peachy. Update a sharded set of all revoked certs.
 	logging.Infof(c, "CRL last updated %s", crl.TBSCertList.ThisUpdate)
 	logging.Infof(c, "Found %d entries in the CRL", len(crl.TBSCertList.RevokedCertificates))
-	if err = certconfig.UpdateCRLSet(c, ca.CN, certconfig.CRLShardCount, crl); err != nil {
+	if err = UpdateCRLSet(c, ca.CN, CRLShardCount, crl); err != nil {
 		return nil, err
 	}
 	logging.Infof(c, "All CRL entries stored")
 
 	// Update the CRL entity. Use EntityVersion to make sure we are not
 	// overwriting someone else's changes.
-	var updated *certconfig.CRL
+	var updated *CRL
 	err = ds.RunInTransaction(c, func(c context.Context) error {
 		entity := *prev
 		if err := ds.Get(c, &entity); err != nil && err != ds.ErrNoSuchEntity {
@@ -132,7 +198,7 @@ func validateAndStoreCRL(c context.Context, crlDer []byte, etag string, ca *cert
 		toPut := []interface{}{updated}
 
 		// Mark CA entity as ready for usage.
-		curCA := certconfig.CA{CN: ca.CN}
+		curCA := CA{CN: ca.CN}
 		switch err := ds.Get(c, &curCA); {
 		case err == ds.ErrNoSuchEntity:
 			return fmt.Errorf("CA entity for %q is unexpectedly gone", ca.CN)

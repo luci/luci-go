@@ -37,7 +37,7 @@ import (
 
 var (
 	// caServerWithoutAuth implements admin.CertificateAuthorities RPC interface.
-	caServerWithoutAuth = &certauthorities.Server{}
+	caServerWithoutAuth = certauthorities.NewServer()
 
 	// caServerWithAuth adds admin check to caServerWithoutAuth.
 	caServerWithAuth = &admin.DecoratedCertificateAuthorities{
@@ -46,7 +46,7 @@ var (
 	}
 
 	// adminServerWithoutAuth implements admin.Admin RPC interface.
-	adminServerWithoutAuth = adminsrv.NewServer(caServerWithoutAuth)
+	adminServerWithoutAuth = adminsrv.NewServer()
 
 	// adminServerWithAuth adds admin check to adminServerWithoutAuth.
 	adminServerWithAuth = &admin.DecoratedAdmin{
@@ -129,7 +129,7 @@ func readConfigCron(c *router.Context) {
 		c.Writer.WriteHeader(http.StatusOK)
 		return
 	}
-	if _, err := adminServerWithoutAuth.ImportConfigs(c.Context, nil); err != nil {
+	if _, err := adminServerWithoutAuth.ImportCAConfigs(c.Context, nil); err != nil {
 		panic(err) // let panic catcher deal with it
 	}
 	c.Writer.WriteHeader(http.StatusOK)

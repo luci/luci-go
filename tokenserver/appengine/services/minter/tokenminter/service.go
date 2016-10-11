@@ -13,22 +13,24 @@ import (
 	"github.com/luci/luci-go/tokenserver/appengine/certchecker"
 	"github.com/luci/luci-go/tokenserver/appengine/delegation"
 	"github.com/luci/luci-go/tokenserver/appengine/machinetoken"
+
+	"github.com/luci/luci-go/tokenserver/api/minter/v1"
 )
 
 // Server implements minter.TokenMinterServer RPC interface.
 //
 // This is just an assembly of individual method implementations, properly
 // configured for use in GAE prod setting.
-//
-// Use NewServer to make a new instance.
-type Server struct {
+type serverImpl struct {
 	machinetoken.MintMachineTokenRPC
 	delegation.MintDelegationTokenRPC
 }
 
-// NewServer returns Server configured for real production usage.
-func NewServer() *Server {
-	return &Server{
+// NewServer returns prod TokenMinterServer implementation.
+//
+// It does all authorization checks inside.
+func NewServer() minter.TokenMinterServer {
+	return &serverImpl{
 		MintMachineTokenRPC: machinetoken.MintMachineTokenRPC{
 			Signer:           gaesigner.Signer{},
 			CheckCertificate: certchecker.CheckCertificate,

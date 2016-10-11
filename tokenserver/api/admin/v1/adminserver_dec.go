@@ -24,17 +24,17 @@ type DecoratedAdmin struct {
 	Postlude func(c context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedAdmin) ImportConfigs(c context.Context, req *google_protobuf.Empty) (rsp *ImportedConfigs, err error) {
+func (s *DecoratedAdmin) ImportCAConfigs(c context.Context, req *google_protobuf.Empty) (rsp *ImportedConfigs, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
-		newCtx, err = s.Prelude(c, "ImportConfigs", req)
+		newCtx, err = s.Prelude(c, "ImportCAConfigs", req)
 	}
 	if err == nil {
 		c = newCtx
-		rsp, err = s.Service.ImportConfigs(c, req)
+		rsp, err = s.Service.ImportCAConfigs(c, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ImportConfigs", rsp, err)
+		err = s.Postlude(c, "ImportCAConfigs", rsp, err)
 	}
 	return
 }

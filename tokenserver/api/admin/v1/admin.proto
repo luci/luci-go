@@ -13,12 +13,12 @@ import "github.com/luci/luci-go/tokenserver/api/machine_token.proto";
 
 // Admin service is used by service administrators to manage the server.
 service Admin {
-  // ImportConfigs makes the server read its configs from luci-config.
+  // ImportCAConfigs makes the server read CA configs from luci-config.
   //
   // Note that regularly configs are read in background each 5 min.
-  // ImportConfigs can be used to force config reread immediately. It will
+  // ImportCAConfigs can be used to force config reread immediately. It will
   // block until the configs are read.
-  rpc ImportConfigs(google.protobuf.Empty) returns (ImportedConfigs);
+  rpc ImportCAConfigs(google.protobuf.Empty) returns (ImportedConfigs);
 
   // InspectMachineToken decodes a machine token and verifies it is valid.
   //
@@ -39,7 +39,7 @@ service Admin {
 }
 
 
-// ImportedConfigs is returned by ImportConfigs methods on success.
+// ImportedConfigs is returned by ImportCAConfigs methods on success.
 message ImportedConfigs {
   message ConfigFile {
     string name                = 1; // name of the config file
