@@ -20,7 +20,7 @@ import (
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 
-	"github.com/luci/luci-go/tokenserver/appengine/model"
+	"github.com/luci/luci-go/tokenserver/appengine/certconfig"
 	"github.com/luci/luci-go/tokenserver/appengine/utils"
 
 	"github.com/luci/luci-go/common/config"
@@ -243,7 +243,7 @@ func TestFetchCRL(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// CRL is there.
-		crl := model.CRL{
+		crl := certconfig.CRL{
 			Parent: ds.NewKey(ctx, "CA", "Puppet CA: fake.ca", 0, nil),
 		}
 		err = ds.Get(ctx, &crl)
@@ -291,7 +291,7 @@ func TestFetchCRL(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// CRL is there.
-		crl := model.CRL{
+		crl := certconfig.CRL{
 			Parent: ds.NewKey(ctx, "CA", "Puppet CA: fake.ca", 0, nil),
 		}
 		err = ds.Get(ctx, &crl)

@@ -19,8 +19,7 @@ import (
 	"github.com/luci/luci-go/server/auth"
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
-
-	"github.com/luci/luci-go/tokenserver/appengine/model"
+	"github.com/luci/luci-go/tokenserver/appengine/certconfig"
 )
 
 // List of OAuth scopes to use for token sent to CRL endpoint.
@@ -90,7 +89,7 @@ func fetchCRL(c context.Context, cfg *admin.CertificateAuthorityConfig, knownETa
 }
 
 // validateAndStoreCRL handles incoming CRL blob fetched by 'fetchCRL'.
-func validateAndStoreCRL(c context.Context, crlDer []byte, etag string, ca *model.CA, prev *model.CRL) (*model.CRL, error) {
+func validateAndStoreCRL(c context.Context, crlDer []byte, etag string, ca *certconfig.CA, prev *certconfig.CRL) (*certconfig.CRL, error) {
 	// Make sure it is signed by the CA.
 	caCert, err := x509.ParseCertificate(ca.Cert)
 	if err != nil {
@@ -107,14 +106,14 @@ func validateAndStoreCRL(c context.Context, crlDer []byte, etag string, ca *mode
 	// The CRL is peachy. Update a sharded set of all revoked certs.
 	logging.Infof(c, "CRL last updated %s", crl.TBSCertList.ThisUpdate)
 	logging.Infof(c, "Found %d entries in the CRL", len(crl.TBSCertList.RevokedCertificates))
-	if err = model.UpdateCRLSet(c, ca.CN, model.CRLShardCount, crl); err != nil {
+	if err = certconfig.UpdateCRLSet(c, ca.CN, certconfig.CRLShardCount, crl); err != nil {
 		return nil, err
 	}
 	logging.Infof(c, "All CRL entries stored")
 
 	// Update the CRL entity. Use EntityVersion to make sure we are not
 	// overwriting someone else's changes.
-	var updated *model.CRL
+	var updated *certconfig.CRL
 	err = ds.RunInTransaction(c, func(c context.Context) error {
 		entity := *prev
 		if err := ds.Get(c, &entity); err != nil && err != ds.ErrNoSuchEntity {
@@ -133,7 +132,7 @@ func validateAndStoreCRL(c context.Context, crlDer []byte, etag string, ca *mode
 		toPut := []interface{}{updated}
 
 		// Mark CA entity as ready for usage.
-		curCA := model.CA{CN: ca.CN}
+		curCA := certconfig.CA{CN: ca.CN}
 		switch err := ds.Get(c, &curCA); {
 		case err == ds.ErrNoSuchEntity:
 			return fmt.Errorf("CA entity for %q is unexpectedly gone", ca.CN)

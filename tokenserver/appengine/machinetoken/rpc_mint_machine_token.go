@@ -25,7 +25,7 @@ import (
 	"github.com/luci/luci-go/tokenserver/api/minter/v1"
 
 	"github.com/luci/luci-go/tokenserver/appengine/certchecker"
-	"github.com/luci/luci-go/tokenserver/appengine/model"
+	"github.com/luci/luci-go/tokenserver/appengine/certconfig"
 )
 
 // MintMachineTokenRPC implements TokenMinter.MintMachineToken RPC method.
@@ -38,7 +38,7 @@ type MintMachineTokenRPC struct {
 	// CheckCertificate is mocked in tests.
 	//
 	// In prod it is certchecker.CheckCertificate.
-	CheckCertificate func(c context.Context, cert *x509.Certificate) (*model.CA, error)
+	CheckCertificate func(c context.Context, cert *x509.Certificate) (*certconfig.CA, error)
 }
 
 // serviceVersion returns a string that identifier the app and the version.

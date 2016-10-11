@@ -5,6 +5,8 @@
 // Package certchecker contains implementation of CertChecker.
 //
 // CertChecker knows how to check certificate signatures and revocation status.
+//
+// Uses datastore entities managed by 'certconfig' package.
 package certchecker
 
 import (
@@ -21,7 +23,7 @@ import (
 	"github.com/luci/luci-go/common/data/caching/proccache"
 	"github.com/luci/luci-go/common/errors"
 
-	"github.com/luci/luci-go/tokenserver/appengine/model"
+	"github.com/luci/luci-go/tokenserver/appengine/certconfig"
 )
 
 const (
@@ -106,8 +108,8 @@ func IsCertInvalidError(err error) bool {
 //
 // CertChecker is safe for concurrent use.
 type CertChecker struct {
-	CN  string            // Common Name of the CA
-	CRL *model.CRLChecker // knows how to query certificate revocation list
+	CN  string                 // Common Name of the CA
+	CRL *certconfig.CRLChecker // knows how to query certificate revocation list
 
 	ca lazyslot.Slot // knows how to load CA cert and config
 }
@@ -119,7 +121,7 @@ type proccacheKey string
 // It looks at the cert issuer, loads corresponding CertChecker and calls its
 // CheckCertificate method. See CertChecker.CheckCertificate documentation for
 // explanation of return values.
-func CheckCertificate(c context.Context, cert *x509.Certificate) (*model.CA, error) {
+func CheckCertificate(c context.Context, cert *x509.Certificate) (*certconfig.CA, error) {
 	checker, err := GetCertChecker(c, cert.Issuer.CommonName)
 	if err != nil {
 		return nil, err
@@ -147,7 +149,7 @@ func GetCertChecker(c context.Context, cn string) (*CertChecker, error) {
 		}
 		checker := &CertChecker{
 			CN:  cn,
-			CRL: model.NewCRLChecker(cn, model.CRLShardCount, refetchCRLPeriod(c)),
+			CRL: certconfig.NewCRLChecker(cn, certconfig.CRLShardCount, refetchCRLPeriod(c)),
 		}
 		checker.ca.Fetcher = func(c context.Context, _ lazyslot.Value) (lazyslot.Value, error) {
 			ca, err := checker.refetchCA(c)
@@ -168,13 +170,13 @@ func GetCertChecker(c context.Context, cn string) (*CertChecker, error) {
 }
 
 // GetCA returns CA entity with ParsedConfig and ParsedCert fields set.
-func (ch *CertChecker) GetCA(c context.Context) (*model.CA, error) {
+func (ch *CertChecker) GetCA(c context.Context) (*certconfig.CA, error) {
 	value, err := ch.ca.Get(c)
 	if err != nil {
 		return nil, err
 	}
-	// See Fetcher in GetCertChecker, it puts *model.CA in the ch.ca slot.
-	ca := value.Value.(*model.CA)
+	// See Fetcher in GetCertChecker, it puts *certconfig.CA in the ch.ca slot.
+	ca := value.Value.(*certconfig.CA)
 	// Empty 'ca' means 'refetchCA' could not find it in the datastore. May happen
 	// if CA entity was deleted after GetCertChecker call. It could have been also
 	// "soft-deleted" by setting Removed == true.
@@ -193,10 +195,10 @@ func (ch *CertChecker) GetCA(c context.Context) (*model.CA, error) {
 // It returns nil error iff cert was directly signed by the CA, not expired yet,
 // and its serial number is not in the CA's CRL.
 //
-// On success also returns *model.CA instance used to check the certificate,
-// since 'GetCA' may return another instance (in case model.CA cache happened
-// to expire between the calls).
-func (ch *CertChecker) CheckCertificate(c context.Context, cert *x509.Certificate) (*model.CA, error) {
+// On success also returns *certconfig.CA instance used to check the
+// certificate, since 'GetCA' may return another instance (in case certconfig.CA
+// cache happened to expire between the calls).
+func (ch *CertChecker) CheckCertificate(c context.Context, cert *x509.Certificate) (*certconfig.CA, error) {
 	// Has the cert expired already?
 	now := clock.Now(c)
 	if now.Before(cert.NotBefore) || now.After(cert.NotAfter) {
@@ -271,15 +273,15 @@ func refetchCRLPeriod(c context.Context) time.Duration {
 // refetchCA is called lazily whenever we need to fetch the CA entity.
 //
 // If CA entity has disappeared since CertChecker was created, it returns empty
-// model.CA struct (that will be cached in ch.ca as usual). It acts as an
+// certconfig.CA struct (that will be cached in ch.ca as usual). It acts as an
 // indicator to GetCA to return NoSuchCA error, since returning a error here
 // would just cause a retry of 'refetchCA' later, and returning (nil, nil) is
 // forbidden (per lazyslot.Slot API).
-func (ch *CertChecker) refetchCA(c context.Context) (*model.CA, error) {
-	ca := &model.CA{CN: ch.CN}
+func (ch *CertChecker) refetchCA(c context.Context) (*certconfig.CA, error) {
+	ca := &certconfig.CA{CN: ch.CN}
 	switch err := ds.Get(c, ca); {
 	case err == ds.ErrNoSuchEntity:
-		return &model.CA{}, nil // GetCA knows that empty struct means "no such CA"
+		return &certconfig.CA{}, nil // GetCA knows that empty struct means "no such CA"
 	case err != nil:
 		return nil, errors.WrapTransient(err)
 	}

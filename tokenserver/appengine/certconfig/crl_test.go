@@ -2,7 +2,7 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-package model
+package certconfig
 
 import (
 	"crypto/x509/pkix"
@@ -12,8 +12,8 @@ import (
 
 	"github.com/luci/luci-go/appengine/gaetesting"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/tokenserver/appengine/model/shards"
 	"github.com/luci/luci-go/tokenserver/appengine/utils"
+	"github.com/luci/luci-go/tokenserver/appengine/utils/shards"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

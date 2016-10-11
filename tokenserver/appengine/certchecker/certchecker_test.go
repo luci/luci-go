@@ -19,7 +19,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/data/rand/cryptorand"
-	"github.com/luci/luci-go/tokenserver/appengine/model"
+	"github.com/luci/luci-go/tokenserver/appengine/certconfig"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -40,7 +40,7 @@ func TestCertChecker(t *testing.T) {
 		So(err, ShouldNotBeNil)
 
 		// Put it into the datastore.
-		caEntity := model.CA{
+		caEntity := certconfig.CA{
 			CN:    "Some CA: ca-name.fake",
 			Cert:  caCert,
 			Ready: true,
@@ -53,7 +53,8 @@ func TestCertChecker(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Update associated CRL (it's empty).
-		err = model.UpdateCRLSet(ctx, "Some CA: ca-name.fake", model.CRLShardCount, &pkix.CertificateList{})
+		err = certconfig.UpdateCRLSet(ctx, "Some CA: ca-name.fake",
+			certconfig.CRLShardCount, &pkix.CertificateList{})
 		So(err, ShouldBeNil)
 
 		// Generate some certificate signed by the CA.
@@ -73,13 +74,14 @@ func TestCertChecker(t *testing.T) {
 
 		// Revoke the certificate by generating new CRL and putting it into the
 		// datastore.
-		err = model.UpdateCRLSet(ctx, "Some CA: ca-name.fake", model.CRLShardCount, &pkix.CertificateList{
-			TBSCertList: pkix.TBSCertificateList{
-				RevokedCertificates: []pkix.RevokedCertificate{
-					{SerialNumber: big.NewInt(2)},
+		err = certconfig.UpdateCRLSet(ctx, "Some CA: ca-name.fake", certconfig.CRLShardCount,
+			&pkix.CertificateList{
+				TBSCertList: pkix.TBSCertificateList{
+					RevokedCertificates: []pkix.RevokedCertificate{
+						{SerialNumber: big.NewInt(2)},
+					},
 				},
-			},
-		})
+			})
 		So(err, ShouldBeNil)
 
 		// Bump time to invalidate cert checker caches.

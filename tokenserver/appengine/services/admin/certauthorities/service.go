@@ -33,7 +33,7 @@ import (
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 
 	"github.com/luci/luci-go/tokenserver/appengine/certchecker"
-	"github.com/luci/luci-go/tokenserver/appengine/model"
+	"github.com/luci/luci-go/tokenserver/appengine/certconfig"
 	"github.com/luci/luci-go/tokenserver/appengine/utils"
 )
 
@@ -59,7 +59,7 @@ func (s *Server) ImportConfig(c context.Context) (*admin.ImportedConfigs, error)
 		return nil, grpc.Errorf(codes.Internal, "can't parse config file - %s", err)
 	}
 
-	seenIDs, err := model.LoadCAUniqueIDToCNMap(c)
+	seenIDs, err := certconfig.LoadCAUniqueIDToCNMap(c)
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "can't load unique_id map - %s", err)
 	}
@@ -92,7 +92,7 @@ func (s *Server) ImportConfig(c context.Context) (*admin.ImportedConfigs, error)
 	// various tokens in place of a full CN name to save space. This mapping is
 	// additive (all new CAs should have different IDs).
 	if seenIDsDirty {
-		if err := model.StoreCAUniqueIDToCNMap(c, seenIDs); err != nil {
+		if err := certconfig.StoreCAUniqueIDToCNMap(c, seenIDs); err != nil {
 			return nil, grpc.Errorf(codes.Internal, "can't store unique_id map - %s", err)
 		}
 	}
@@ -162,7 +162,7 @@ func (s *Server) ImportConfig(c context.Context) (*admin.ImportedConfigs, error)
 // FetchCRL makes the server fetch a CRL for some CA.
 func (s *Server) FetchCRL(c context.Context, r *admin.FetchCRLRequest) (*admin.FetchCRLResponse, error) {
 	// Grab a corresponding CA entity. It contains URL of CRL to fetch.
-	ca := &model.CA{CN: r.Cn}
+	ca := &certconfig.CA{CN: r.Cn}
 	switch err := ds.Get(c, ca); {
 	case err == ds.ErrNoSuchEntity:
 		return nil, grpc.Errorf(codes.NotFound, "no such CA %q", ca.CN)
@@ -180,7 +180,7 @@ func (s *Server) FetchCRL(c context.Context, r *admin.FetchCRLRequest) (*admin.F
 	}
 
 	// Grab info about last processed CRL, if any.
-	crl := &model.CRL{Parent: ds.KeyForObj(c, ca)}
+	crl := &certconfig.CRL{Parent: ds.KeyForObj(c, ca)}
 	if err = ds.Get(c, crl); err != nil && err != ds.ErrNoSuchEntity {
 		return nil, grpc.Errorf(codes.Internal, "datastore error - %s", err)
 	}
@@ -238,8 +238,8 @@ func (s *Server) ListCAs(c context.Context, _ *google.Empty) (*admin.ListCAsResp
 // GetCAStatus returns configuration of some CA defined in the config.
 func (s *Server) GetCAStatus(c context.Context, r *admin.GetCAStatusRequest) (*admin.GetCAStatusResponse, error) {
 	// Entities to fetch.
-	ca := model.CA{CN: r.Cn}
-	crl := model.CRL{Parent: ds.KeyForObj(c, &ca)}
+	ca := certconfig.CA{CN: r.Cn}
+	crl := certconfig.CRL{Parent: ds.KeyForObj(c, &ca)}
 
 	// Fetch them at the same revision. It is fine if CRL is not there yet. Don't
 	// bother doing it in parallel: GetCAStatus is used only by admins, manually.
@@ -371,7 +371,7 @@ func (s *Server) importCA(c context.Context, ca *admin.CertificateAuthorityConfi
 
 	// Create or update the entity.
 	return ds.RunInTransaction(c, func(c context.Context) error {
-		existing := model.CA{CN: ca.Cn}
+		existing := certconfig.CA{CN: ca.Cn}
 		err := ds.Get(c, &existing)
 		if err != nil && err != ds.ErrNoSuchEntity {
 			return err
@@ -379,7 +379,7 @@ func (s *Server) importCA(c context.Context, ca *admin.CertificateAuthorityConfi
 		// New one?
 		if err == ds.ErrNoSuchEntity {
 			logging.Infof(c, "Adding new CA %q", ca.Cn)
-			return ds.Put(c, &model.CA{
+			return ds.Put(c, &certconfig.CA{
 				CN:         ca.Cn,
 				Config:     cfgBlob,
 				Cert:       certDer,
@@ -406,7 +406,7 @@ func (s *Server) importCA(c context.Context, ca *admin.CertificateAuthorityConfi
 // removeCA marks the CA in the datastore as removed.
 func (s *Server) removeCA(c context.Context, name string, rev string) error {
 	return ds.RunInTransaction(c, func(c context.Context) error {
-		existing := model.CA{CN: name}
+		existing := certconfig.CA{CN: name}
 		if err := ds.Get(c, &existing); err != nil {
 			return err
 		}

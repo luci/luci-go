@@ -15,7 +15,7 @@ import (
 
 	tokenserver "github.com/luci/luci-go/tokenserver/api"
 	admin "github.com/luci/luci-go/tokenserver/api/admin/v1"
-	"github.com/luci/luci-go/tokenserver/appengine/model"
+	"github.com/luci/luci-go/tokenserver/appengine/certconfig"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -110,13 +110,14 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 
 		Convey("Revoked cert", func() {
 			// "Revoke" the certificate.
-			model.UpdateCRLSet(ctx, "Fake CA: fake.ca", model.CRLShardCount, &pkix.CertificateList{
-				TBSCertList: pkix.TBSCertificateList{
-					RevokedCertificates: []pkix.RevokedCertificate{
-						{SerialNumber: big.NewInt(4096)},
+			certconfig.UpdateCRLSet(ctx, "Fake CA: fake.ca", certconfig.CRLShardCount,
+				&pkix.CertificateList{
+					TBSCertList: pkix.TBSCertificateList{
+						RevokedCertificates: []pkix.RevokedCertificate{
+							{SerialNumber: big.NewInt(4096)},
+						},
 					},
-				},
-			})
+				})
 			// This makes the token expired too.
 			clock.Get(ctx).(testclock.TestClock).Add(time.Hour + 11*time.Minute)
 			reply, err := impl.InspectMachineToken(ctx, &admin.InspectMachineTokenRequest{

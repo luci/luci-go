@@ -20,7 +20,7 @@ import (
 	admin "github.com/luci/luci-go/tokenserver/api/admin/v1"
 
 	"github.com/luci/luci-go/tokenserver/appengine/certchecker"
-	"github.com/luci/luci-go/tokenserver/appengine/model"
+	"github.com/luci/luci-go/tokenserver/appengine/certconfig"
 )
 
 // InspectMachineTokenRPC implements Admin.InspectMachineToken API method.
@@ -91,7 +91,7 @@ func (r *InspectMachineTokenRPC) InspectMachineToken(c context.Context, req *adm
 
 	// Check revocation status. Find CA name that signed the certificate used when
 	// minting the token.
-	caName, err := model.GetCAByUniqueID(c, body.CaId)
+	caName, err := certconfig.GetCAByUniqueID(c, body.CaId)
 	switch {
 	case err != nil:
 		return nil, grpc.Errorf(codes.Internal, "can't resolve ca_id to CA name - %s", err)

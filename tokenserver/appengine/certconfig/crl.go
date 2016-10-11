@@ -2,7 +2,7 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-package model
+package certconfig
 
 import (
 	"crypto/sha1"
@@ -24,8 +24,8 @@ import (
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 
-	"github.com/luci/luci-go/tokenserver/appengine/model/shards"
 	"github.com/luci/luci-go/tokenserver/appengine/utils"
+	"github.com/luci/luci-go/tokenserver/appengine/utils/shards"
 )
 
 // CRLShardCount is a number of shards to use for storing CRL in the datastore.

@@ -15,7 +15,7 @@ import (
 	"github.com/luci/luci-go/common/proto/google"
 
 	minter "github.com/luci/luci-go/tokenserver/api/minter/v1"
-	"github.com/luci/luci-go/tokenserver/appengine/model"
+	"github.com/luci/luci-go/tokenserver/appengine/certconfig"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -26,7 +26,7 @@ func TestMintMachineTokenRPC(t *testing.T) {
 
 		impl := MintMachineTokenRPC{
 			Signer: testingSigner(),
-			CheckCertificate: func(_ context.Context, cert *x509.Certificate) (*model.CA, error) {
+			CheckCertificate: func(_ context.Context, cert *x509.Certificate) (*certconfig.CA, error) {
 				return &testingCA, nil
 			},
 		}

@@ -29,7 +29,7 @@ import (
 	tokenserver "github.com/luci/luci-go/tokenserver/api"
 	admin "github.com/luci/luci-go/tokenserver/api/admin/v1"
 	minter "github.com/luci/luci-go/tokenserver/api/minter/v1"
-	"github.com/luci/luci-go/tokenserver/appengine/model"
+	"github.com/luci/luci-go/tokenserver/appengine/certconfig"
 )
 
 const pkey = `-----BEGIN RSA PRIVATE KEY-----
@@ -93,7 +93,7 @@ const expectedLuciMachineToken = `CkkKJGx1Y2ktdG9rZW4tc2VydmVyLXRlc3QtMS5mYWtlLm
 
 var testingTime = time.Date(2015, time.February, 3, 4, 5, 6, 0, time.UTC)
 
-var testingCA = model.CA{
+var testingCA = certconfig.CA{
 	CN: "Fake CA: fake.ca",
 	ParsedConfig: &admin.CertificateAuthorityConfig{
 		UniqueId: 123,
@@ -113,10 +113,10 @@ func testingContext() context.Context {
 	// Put mocked CA config in the datastore.
 	ca := testingCA
 	ds.Put(ctx, &ca) // put a copy, Put modifies the object
-	model.StoreCAUniqueIDToCNMap(ctx, map[int64]string{
+	certconfig.StoreCAUniqueIDToCNMap(ctx, map[int64]string{
 		ca.ParsedConfig.UniqueId: ca.CN,
 	})
-	model.UpdateCRLSet(ctx, ca.CN, model.CRLShardCount, &pkix.CertificateList{})
+	certconfig.UpdateCRLSet(ctx, ca.CN, certconfig.CRLShardCount, &pkix.CertificateList{})
 
 	return ctx
 }
