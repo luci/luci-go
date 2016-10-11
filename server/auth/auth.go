@@ -99,9 +99,12 @@ type Authenticator []Method
 // finishes successfully, but in that case State.Identity() will return
 // AnonymousIdentity.
 func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context.Context, error) {
+	report := durationReporter(c, authenticateDuration)
+
 	// We will need working DB factory below to check IP whitelist.
 	cfg := GetConfig(c)
 	if cfg == nil || cfg.DBProvider == nil {
+		report("ERROR_NOT_CONFIGURED")
 		return nil, ErrNotConfigured
 	}
 
@@ -111,10 +114,12 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 		var err error
 		s.user, err = m.Authenticate(c, r)
 		if err != nil {
+			report("ERROR_BROKEN_CREDS") // e.g. malformed OAuth token
 			return nil, err
 		}
 		if s.user != nil {
 			if err = s.user.Identity.Validate(); err != nil {
+				report("ERROR_BROKEN_IDENTITY") // a weird looking email address
 				return nil, err
 			}
 			s.method = m
@@ -137,6 +142,7 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 	// request.
 	s.db, err = cfg.DBProvider(c)
 	if err != nil {
+		report("ERROR_NOT_CONFIGURED")
 		return nil, ErrNotConfigured
 	}
 
@@ -144,12 +150,14 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 	if s.user.ClientID != "" {
 		valid, err := s.db.IsAllowedOAuthClientID(c, s.user.Email, s.user.ClientID)
 		if err != nil {
+			report("ERROR_TRANSIENT_IN_OAUTH_WHITELIST")
 			return nil, err
 		}
 		if !valid {
 			logging.Warningf(
 				c, "auth: %q is using client_id %q not in the whitelist",
 				s.user.Email, s.user.ClientID)
+			report("ERROR_FORBIDDEN_OAUTH_CLIENT")
 			return nil, ErrBadClientID
 		}
 	}
@@ -157,12 +165,15 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 	// Some callers may be constrained by an IP whitelist.
 	switch ipWhitelist, err := s.db.GetWhitelistForIdentity(c, s.user.Identity); {
 	case err != nil:
+		report("ERROR_TRANSIENT_IN_IP_WHITELIST")
 		return nil, err
 	case ipWhitelist != "":
 		switch whitelisted, err := s.db.IsInWhitelist(c, s.peerIP, ipWhitelist); {
 		case err != nil:
+			report("ERROR_TRANSIENT_IN_IP_WHITELIST")
 			return nil, err
 		case !whitelisted:
+			report("ERROR_FORBIDDEN_IP")
 			return nil, ErrIPNotWhitelisted
 		}
 	}
@@ -181,6 +192,7 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 		// minted for consumption by us and not some other service.
 		ownServiceIdentity, err := getOwnServiceIdentity(c, cfg.Signer)
 		if err != nil {
+			report("ERROR_TRANSIENT_IN_OWN_IDENTITY")
 			return nil, err
 		}
 		delegatedIdentity, err := delegation.CheckToken(c, delegation.CheckTokenParams{
@@ -191,6 +203,11 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 			OwnServiceIdentity:   ownServiceIdentity,
 		})
 		if err != nil {
+			if errors.IsTransient(err) {
+				report("ERROR_TRANSIENT_IN_TOKEN_CHECK")
+			} else {
+				report("ERROR_BAD_DELEGATION_TOKEN")
+			}
 			return nil, err
 		}
 		// User profile information is not available when using delegation, so just
@@ -199,6 +216,7 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 	}
 
 	// Inject auth state.
+	report("SUCCESS")
 	return WithState(c, &s), nil
 }
 

@@ -64,15 +64,19 @@ type Snapshot struct {
 //
 // If no such entity is stored, returns (nil, nil).
 func GetLatestSnapshotInfo(c context.Context) (*SnapshotInfo, error) {
+	report := durationReporter(c, latestSnapshotInfoDuration)
 	logging.Debugf(c, "Fetching AuthDB snapshot info from the datastore")
 	c = ds.WithoutTransaction(defaultNS(c))
 	info := SnapshotInfo{}
 	switch err := ds.Get(c, &info); {
 	case err == ds.ErrNoSuchEntity:
+		report("SUCCESS")
 		return nil, nil
 	case err != nil:
+		report("ERROR_TRANSIENT")
 		return nil, errors.WrapTransient(err)
 	default:
+		report("SUCCESS")
 		return &info, nil
 	}
 }
@@ -87,6 +91,7 @@ func deleteSnapshotInfo(c context.Context) error {
 
 // GetAuthDBSnapshot fetches, inflates and deserializes AuthDB snapshot.
 func GetAuthDBSnapshot(c context.Context, id string) (*protocol.AuthDB, error) {
+	report := durationReporter(c, getSnapshotDuration)
 	logging.Debugf(c, "Fetching AuthDB snapshot from the datastore")
 	defer logging.Debugf(c, "AuthDB snapshot fetched")
 
@@ -94,12 +99,21 @@ func GetAuthDBSnapshot(c context.Context, id string) (*protocol.AuthDB, error) {
 	snap := Snapshot{ID: id}
 	switch err := ds.Get(c, &snap); {
 	case err == ds.ErrNoSuchEntity:
+		report("ERROR_NO_SNAPSHOT")
 		return nil, err // not transient
 	case err != nil:
+		report("ERROR_TRANSIENT")
 		return nil, errors.WrapTransient(err)
-	default:
-		return service.InflateAuthDB(snap.AuthDBDeflated)
 	}
+
+	db, err := service.InflateAuthDB(snap.AuthDBDeflated)
+	if err != nil {
+		report("ERROR_INFLATION")
+		return nil, err
+	}
+
+	report("SUCCESS")
+	return db, nil
 }
 
 // ConfigureAuthService makes initial fetch of AuthDB snapshot from the auth
@@ -203,12 +217,16 @@ func fetchSnapshot(c context.Context, info *SnapshotInfo) error {
 //
 // Returns SnapshotInfo of the most recent snapshot.
 func syncAuthDB(c context.Context) (*SnapshotInfo, error) {
+	report := durationReporter(c, syncAuthDBDuration)
+
 	// `info` is what we have in the datastore now.
 	info, err := GetLatestSnapshotInfo(c)
 	if err != nil {
+		report("ERROR_GET_LATEST_INFO")
 		return nil, err
 	}
 	if info == nil {
+		report("ERROR_NOT_CONFIGURED")
 		return nil, errors.New("auth_service URL is not configured")
 	}
 
@@ -216,12 +234,14 @@ func syncAuthDB(c context.Context) (*SnapshotInfo, error) {
 	srv := getAuthService(c, info.AuthServiceURL)
 	latestRev, err := srv.GetLatestSnapshotRevision(c)
 	if err != nil {
+		report("ERROR_GET_LATEST_REVISION")
 		return nil, err
 	}
 
 	// Nothing new?
 	if info.Rev == latestRev {
 		logging.Infof(c, "AuthDB is up-to-date at revision %d", latestRev)
+		report("SUCCESS_UP_TO_DATE")
 		return info, nil
 	}
 
@@ -230,6 +250,7 @@ func syncAuthDB(c context.Context) (*SnapshotInfo, error) {
 		logging.Errorf(
 			c, "Latest AuthDB revision on server is %d, we have %d. It should not happen",
 			latestRev, info.Rev)
+		report("SUCCESS_NEWER_ALREADY")
 		return info, nil
 	}
 
@@ -237,6 +258,7 @@ func syncAuthDB(c context.Context) (*SnapshotInfo, error) {
 	info.Rev = latestRev
 	if err = fetchSnapshot(c, info); err != nil {
 		logging.Errorf(c, "Failed to fetch snapshot %d from %q - %s", info.Rev, info.AuthServiceURL, err)
+		report("ERROR_FETCHING")
 		return nil, err
 	}
 
@@ -265,7 +287,10 @@ func syncAuthDB(c context.Context) (*SnapshotInfo, error) {
 	}, nil)
 
 	if err != nil {
+		report("ERROR_COMMITTING")
 		return nil, errors.WrapTransient(err)
 	}
+
+	report("SUCCESS_UPDATED")
 	return latest, nil
 }

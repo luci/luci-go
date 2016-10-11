@@ -12,6 +12,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth/delegation"
 	"github.com/luci/luci-go/server/auth/identity"
@@ -92,6 +93,8 @@ type DelegationTokenParams struct {
 // The token is cached internally. Same token may be returned by multiple calls,
 // if its lifetime allows.
 func MintDelegationToken(c context.Context, p DelegationTokenParams) (tok *delegation.Token, err error) {
+	report := durationReporter(c, mintDelegationTokenDuration)
+
 	// Validate TargetHost.
 	target := ""
 	if p.Untargeted {
@@ -99,6 +102,7 @@ func MintDelegationToken(c context.Context, p DelegationTokenParams) (tok *deleg
 	} else {
 		p.TargetHost = strings.ToLower(p.TargetHost)
 		if strings.IndexRune(p.TargetHost, '/') != -1 {
+			report("ERROR_BAD_HOST")
 			return nil, ErrBadTargetHost
 		}
 		target = "https://" + p.TargetHost
@@ -109,18 +113,21 @@ func MintDelegationToken(c context.Context, p DelegationTokenParams) (tok *deleg
 		p.MinTTL = 10 * time.Minute
 	}
 	if p.MinTTL < 30*time.Second || p.MinTTL > MaxDelegationTokenTTL {
+		report("ERROR_BAD_TTL")
 		return nil, ErrBadDelegationTokenTTL
 	}
 
 	// The state carries ID of the current user and URL of an auth service.
 	state := GetState(c)
 	if state == nil {
+		report("ERROR_NO_AUTH_STATE")
 		return nil, ErrNoAuthState
 	}
 
 	// Identity we want to impersonate.
 	userID := state.User().Identity
 	if userID == identity.AnonymousIdentity {
+		report("ERROR_NO_IDENTITY")
 		return nil, ErrAnonymousDelegation
 	}
 
@@ -129,6 +136,7 @@ func MintDelegationToken(c context.Context, p DelegationTokenParams) (tok *deleg
 	// of the generated token.
 	authServiceURL, err := state.DB().GetAuthServiceURL(c)
 	if err != nil {
+		report("ERROR_AUTH_DB")
 		return nil, err
 	}
 
@@ -141,9 +149,11 @@ func MintDelegationToken(c context.Context, p DelegationTokenParams) (tok *deleg
 	now := clock.Now(c).UTC()
 	switch cached, err := delegationTokenCache.Fetch(c, cacheKey); {
 	case err != nil:
+		report("ERROR_CACHE")
 		return nil, err
 	case cached != nil && cached.Expiry.After(now.Add(p.MinTTL)):
 		t := cached.Token.(delegation.Token) // let it panic on type mismatch
+		report("SUCCESS_CACHE_HIT")
 		return &t, nil
 	}
 
@@ -168,14 +178,17 @@ func MintDelegationToken(c context.Context, p DelegationTokenParams) (tok *deleg
 	// Grab ID of the currently running service, to bind the token to it.
 	cfg := GetConfig(c)
 	if cfg.Signer == nil {
+		report("ERROR_NOT_CONFIGURED")
 		return nil, ErrNotConfigured
 	}
 	us, err := cfg.Signer.ServiceInfo(c)
 	if err != nil {
+		report("ERROR_SERVICE_INFO")
 		return nil, err
 	}
 	ourOwnID, err := identity.MakeIdentity("user:" + us.ServiceAccountName)
 	if err != nil {
+		report("ERROR_BROKEN_IDENTITY")
 		return nil, err
 	}
 
@@ -191,10 +204,12 @@ func MintDelegationToken(c context.Context, p DelegationTokenParams) (tok *deleg
 	if target != "*" {
 		serviceInfo, err := signing.FetchServiceInfoFromLUCIService(c, target)
 		if err != nil {
+			report("ERROR_FETCH_INFO")
 			return nil, err
 		}
 		serviceID, err := identity.MakeIdentity("service:" + serviceInfo.AppID)
 		if err != nil {
+			report("ERROR_BROKEN_APP_ID")
 			return nil, err
 		}
 		targetServices = append(targetServices, serviceID)
@@ -215,6 +230,11 @@ func MintDelegationToken(c context.Context, p DelegationTokenParams) (tok *deleg
 	}
 	tok, err = delegation.CreateToken(c, tokenReq)
 	if err != nil {
+		if errors.IsTransient(err) {
+			report("ERROR_TRANSIENT_IN_MINTING")
+		} else {
+			report("ERROR_MINTING")
+		}
 		return nil, err
 	}
 
@@ -229,5 +249,6 @@ func MintDelegationToken(c context.Context, p DelegationTokenParams) (tok *deleg
 		logging.Errorf(c, "Failed to store delegation token in the cache - %s", err)
 	}
 
+	report("SUCCESS_CACHE_MISS")
 	return tok, nil
 }
