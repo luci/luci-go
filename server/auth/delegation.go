@@ -202,14 +202,9 @@ func MintDelegationToken(c context.Context, p DelegationTokenParams) (tok *deleg
 
 	var targetServices []identity.Identity
 	if target != "*" {
-		serviceInfo, err := signing.FetchServiceInfoFromLUCIService(c, target)
+		serviceID, err := signing.FetchLUCIServiceIdentity(c, target)
 		if err != nil {
-			report("ERROR_FETCH_INFO")
-			return nil, err
-		}
-		serviceID, err := identity.MakeIdentity("service:" + serviceInfo.AppID)
-		if err != nil {
-			report("ERROR_BROKEN_APP_ID")
+			report("ERROR_FETCH_TARGET_ID")
 			return nil, err
 		}
 		targetServices = append(targetServices, serviceID)

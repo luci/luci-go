@@ -5,11 +5,14 @@
 package signing
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/data/caching/proccache"
+	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/internal"
 )
 
@@ -31,7 +34,7 @@ type serviceInfoKey string
 // The server is expected to reply with JSON described by ServiceInfo struct
 // (like LUCI services do). Uses proccache to cache the response for 1h.
 //
-// LUCI services serve certificates at /auth/api/v1/server/info.
+// LUCI services serve the service info at /auth/api/v1/server/info.
 func FetchServiceInfo(c context.Context, url string) (*ServiceInfo, error) {
 	info, err := proccache.GetOrMake(c, serviceInfoKey(url), func() (interface{}, time.Duration, error) {
 		info := &ServiceInfo{}
@@ -56,5 +59,29 @@ func FetchServiceInfo(c context.Context, url string) (*ServiceInfo, error) {
 //
 // 'serviceURL' is root URL of the service (e.g. 'https://example.com').
 func FetchServiceInfoFromLUCIService(c context.Context, serviceURL string) (*ServiceInfo, error) {
+	serviceURL = strings.ToLower(serviceURL)
+	if !strings.HasPrefix(serviceURL, "https://") {
+		return nil, fmt.Errorf("not an https:// URL - %q", serviceURL)
+	}
+	domain := strings.TrimPrefix(serviceURL, "https://")
+	if domain == "" || strings.ContainsRune(domain, '/') {
+		return nil, fmt.Errorf("not a root URL - %q", serviceURL)
+	}
 	return FetchServiceInfo(c, serviceURL+"/auth/api/v1/server/info")
+}
+
+// FetchLUCIServiceIdentity returns "service:<app-id>" of a LUCI service.
+//
+// It is the same thing as inf.AppID returned by FetchServiceInfoFromLUCIService
+// except it is cached more aggressively because service ID is static (unlike
+// some other ServiceInfo fields).
+//
+// 'serviceURL' is root URL of the service (e.g. 'https://example.com').
+func FetchLUCIServiceIdentity(c context.Context, serviceURL string) (identity.Identity, error) {
+	// TODO(vadimsh): Cache "aggressively".
+	info, err := FetchServiceInfoFromLUCIService(c, serviceURL)
+	if err != nil {
+		return "", err
+	}
+	return identity.MakeIdentity("service:" + info.AppID)
 }

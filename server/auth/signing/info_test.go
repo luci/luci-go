@@ -11,6 +11,10 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/server/auth/identity"
+	"github.com/luci/luci-go/server/auth/internal"
+
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -18,12 +22,12 @@ func TestFetchServiceInfo(t *testing.T) {
 	Convey("Works", t, func() {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`{
-        "app_id": "some-app-id",
-        "app_runtime": "go",
-        "app_runtime_version": "go1.5.1",
-        "app_version": "1234-abcdef",
-        "service_account_name": "some-app-id@appspot.gserviceaccount.com"
-      }`))
+				"app_id": "some-app-id",
+				"app_runtime": "go",
+				"app_runtime_version": "go1.5.1",
+				"app_version": "1234-abcdef",
+				"service_account_name": "some-app-id@appspot.gserviceaccount.com"
+			}`))
 		}))
 		info, err := FetchServiceInfo(context.Background(), ts.URL)
 		So(err, ShouldBeNil)
@@ -43,5 +47,30 @@ func TestFetchServiceInfo(t *testing.T) {
 		info, err := FetchServiceInfo(context.Background(), ts.URL)
 		So(info, ShouldBeNil)
 		So(err, ShouldNotBeNil)
+	})
+}
+
+func TestFetchLUCIServiceIdentity(t *testing.T) {
+	Convey("Works", t, func() {
+		ctx := context.Background()
+		ctx = internal.WithTestTransport(ctx, func(r *http.Request, body string) (code int, response string) {
+			if r.URL.String() != "https://blah/auth/api/v1/server/info" {
+				return 400, "Wrong URL"
+			}
+			return 200, `{"app_id": "blah-app-id"}`
+		})
+
+		id, err := FetchLUCIServiceIdentity(ctx, "https://blah")
+		So(err, ShouldBeNil)
+		So(id, ShouldEqual, identity.Identity("service:blah-app-id"))
+
+		_, err = FetchLUCIServiceIdentity(ctx, "http://blah")
+		So(err, ShouldErrLike, "not an https:// URL")
+
+		_, err = FetchLUCIServiceIdentity(ctx, "https://blah/blah")
+		So(err, ShouldErrLike, "not a root URL")
+
+		_, err = FetchLUCIServiceIdentity(ctx, "https://")
+		So(err, ShouldErrLike, "not a root URL")
 	})
 }
