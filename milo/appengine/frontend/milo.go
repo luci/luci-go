@@ -11,6 +11,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
+	"github.com/luci/luci-go/appengine/tsmon"
 	"github.com/luci/luci-go/grpc/discovery"
 	"github.com/luci/luci-go/grpc/prpc"
 	milo "github.com/luci/luci-go/milo/api/proto"
@@ -70,7 +71,9 @@ func init() {
 	r.POST("/pubsub/buildbot", basemw, buildbot.PubSubHandler)
 
 	// pRPC style endpoints.
-	var api prpc.Server
+	api := prpc.Server{
+		UnaryServerInterceptor: tsmon.NewGrpcUnaryInterceptor(nil),
+	}
 	milo.RegisterBuildbotServer(&api, &milo.DecoratedBuildbot{
 		Service: &buildbot.Service{},
 		Prelude: emptyPrelude,
