@@ -26,7 +26,7 @@ const (
 	DefaultResourceType = "machine"
 
 	// WriteScope is the cloud logging OAuth write scope.
-	WriteScope = "https://www.googleapis.com/auth/logging.write"
+	WriteScope = cloudlog.LoggingWriteScope
 )
 
 // CloudLoggingScopes is the set of OAuth scopes that are required to
