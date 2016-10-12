@@ -250,11 +250,11 @@ type buildbotBuilder struct {
 	PendingBuilds int    `json:"pendingBuilds"`
 	// This one is specific to the pubsub interface.  This is limited to 75,
 	// so it could differ from PendingBuilds
-	PendingBuildStatuses []*buildbotPending `json:"pendingBuildStatuses"`
-	Category             string             `json:"category"`
-	CurrentBuilds        []int              `json:"currentBuilds"`
-	Slaves               []string           `json:"slaves"`
-	State                string             `json:"state"`
+	PendingBuildStates []*buildbotPending `json:"pendingBuildStates"`
+	Category           string             `json:"category"`
+	CurrentBuilds      []int              `json:"currentBuilds"`
+	Slaves             []string           `json:"slaves"`
+	State              string             `json:"state"`
 }
 
 // buildbotChangeSource is a changesource (ie polling source) usually tied to a master's scheduler.

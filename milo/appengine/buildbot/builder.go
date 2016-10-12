@@ -7,7 +7,6 @@ package buildbot
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 	"time"
@@ -133,7 +132,7 @@ func builderImpl(c context.Context, masterName, builderName string) (*resp.Build
 	s, _ := json.Marshal(master)
 	logging.Debugf(c, "Master: %s", s)
 
-	_, ok := master.Builders[builderName]
+	p, ok := master.Builders[builderName]
 	if !ok {
 		// This long block is just to return a good error message when an invalid
 		// buildbot builder is specified.
@@ -147,14 +146,40 @@ func builderImpl(c context.Context, masterName, builderName string) (*resp.Build
 			"Cannot find builder %s in master %s.\nAvailable builders: \n%s",
 			builderName, masterName, avail)
 	}
+	// Extract pending builds out of the master json.
+	result.PendingBuilds = make([]*resp.BuildSummary, len(p.PendingBuildStates))
+	logging.Debugf(c, "Number of pending builds: %d", len(p.PendingBuildStates))
+	for i, pb := range p.PendingBuildStates {
+		start := time.Unix(int64(pb.SubmittedAt), 0)
+		result.PendingBuilds[i] = &resp.BuildSummary{
+			PendingTime: resp.Interval{
+				Started:  start,
+				Duration: time.Now().Sub(start),
+			},
+		}
+		result.PendingBuilds[i].Blame = make([]*resp.Commit, len(pb.Source.Changes))
+		for j, cm := range pb.Source.Changes {
+			result.PendingBuilds[i].Blame[j] = &resp.Commit{
+				AuthorEmail: cm.Who,
+				CommitURL:   cm.Revlink,
+			}
+		}
+	}
 
 	recentBuilds, err := getBuilds(c, masterName, builderName, true)
 	if err != nil {
-		return nil, err // Or maybe not?
+		return nil, err
 	}
-	currentBuilds := getCurrentBuilds(c, master, builderName)
-	fmt.Fprintf(os.Stderr, "Number of current builds: %d\n", len(currentBuilds))
-	result.CurrentBuilds = currentBuilds
+	currentBuilds, err := getBuilds(c, masterName, builderName, false)
+	if err != nil {
+		return nil, err
+	}
+	logging.Debugf(c, "Number of current builds: %d", len(currentBuilds))
+	// TODO(hinoka): This works, but there's a lot of junk data from
+	// masters with unclean shutdown.  Need to implement a cleanup
+	// procedure of some sort. Once that is done, set:
+	// result.CurrentBuilds = currentBuilds
+
 	for _, fb := range recentBuilds {
 		// Yes recent builds is synonymous with finished builds.
 		// TODO(hinoka): Implement limits.
