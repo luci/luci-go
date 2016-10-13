@@ -76,8 +76,8 @@ func TestSnapshotDB(t *testing.T) {
 		}, "http://auth-service", 1234)
 		So(err, ShouldBeNil)
 
-		call := func(ident, group string) bool {
-			res, err := db.IsMember(c, identity.Identity(ident), group)
+		call := func(ident string, groups ...string) bool {
+			res, err := db.IsMember(c, identity.Identity(ident), groups...)
 			So(err, ShouldBeNil)
 			return res
 		}
@@ -94,6 +94,10 @@ func TestSnapshotDB(t *testing.T) {
 		So(call("user:abc@example.com", "cycle"), ShouldBeFalse)
 		So(call("user:abc@example.com", "unknown"), ShouldBeFalse)
 		So(call("user:abc@example.com", "unknown nested"), ShouldBeFalse)
+
+		So(call("user:abc@example.com"), ShouldBeFalse)
+		So(call("user:abc@example.com", "unknown", "direct"), ShouldBeTrue)
+		So(call("user:abc@example.com", "via glob", "direct"), ShouldBeTrue)
 	})
 
 	Convey("SharedSecrets works", t, func() {

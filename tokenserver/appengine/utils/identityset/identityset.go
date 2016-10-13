@@ -80,15 +80,11 @@ func (s *Set) IsMember(c context.Context, id identity.Identity) (bool, error) {
 	}
 
 	if len(s.Groups) != 0 {
-		db := auth.GetState(c).DB()
-		for group := range s.Groups {
-			switch found, err := db.IsMember(c, id, group); {
-			case err != nil:
-				return false, err
-			case found:
-				return true, nil
-			}
+		groups := make([]string, 0, len(s.Groups))
+		for gr := range s.Groups {
+			groups = append(groups, gr)
 		}
+		return auth.GetState(c).DB().IsMember(c, id, groups...)
 	}
 
 	return false, nil

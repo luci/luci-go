@@ -27,11 +27,11 @@ func (db ErroringDB) IsAllowedOAuthClientID(c context.Context, email, clientID s
 	return false, db.Error
 }
 
-// IsMember returns true if the given identity belongs to the given group.
+// IsMember returns true if the given identity belongs to any of the groups.
 //
 // Unknown groups are considered empty. May return errors if underlying
 // datastore has issues.
-func (db ErroringDB) IsMember(c context.Context, id identity.Identity, group string) (bool, error) {
+func (db ErroringDB) IsMember(c context.Context, id identity.Identity, groups ...string) (bool, error) {
 	logging.Errorf(c, "%s", db.Error)
 	return false, db.Error
 }

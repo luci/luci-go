@@ -86,16 +86,16 @@ func CurrentIdentity(c context.Context) identity.Identity {
 	return identity.AnonymousIdentity
 }
 
-// IsMember returns true if the current caller is in the given group.
+// IsMember returns true if the current caller is in any of the given groups.
 //
 // Unknown groups are considered empty (the function returns false).
 // If the context doesn't have State installed returns ErrNoAuthState.
 //
 // May also return errors if the check can not be performed (e.g. on datastore
 // issues).
-func IsMember(c context.Context, group string) (bool, error) {
+func IsMember(c context.Context, groups ...string) (bool, error) {
 	if s := GetState(c); s != nil {
-		return s.DB().IsMember(c, s.User().Identity, group)
+		return s.DB().IsMember(c, s.User().Identity, groups...)
 	}
 	return false, ErrNoAuthState
 }

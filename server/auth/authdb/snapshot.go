@@ -194,11 +194,25 @@ func (db *SnapshotDB) IsAllowedOAuthClientID(c context.Context, email, clientID 
 	return ok, nil
 }
 
-// IsMember returns true if the given identity belongs to the given group.
+// IsMember returns true if the given identity belongs to any of the groups.
 //
 // Unknown groups are considered empty. May return errors if underlying
 // datastore has issues.
-func (db *SnapshotDB) IsMember(c context.Context, id identity.Identity, groupName string) (bool, error) {
+func (db *SnapshotDB) IsMember(c context.Context, id identity.Identity, groups ...string) (bool, error) {
+	// TODO(vadimsh): Optimize multi-group case.
+	for _, gr := range groups {
+		switch found, err := db.isMemberImpl(c, id, gr); {
+		case err != nil:
+			return false, err
+		case found:
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// isMemberImpl implements IsMember check for a single group only.
+func (db *SnapshotDB) isMemberImpl(c context.Context, id identity.Identity, groupName string) (bool, error) {
 	// Cycle detection check uses a stack of groups currently being explored. Use
 	// stack allocated array as a backing store to avoid unnecessary dynamic
 	// allocation. If stack depth grows beyond 8, 'append' will reallocate it on

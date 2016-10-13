@@ -38,11 +38,13 @@ func (db FakeDB) Use(c context.Context) context.Context {
 
 // IsMember is part of authdb.DB interface.
 //
-// It returns true if 'group' is listed in db[id].
-func (db FakeDB) IsMember(c context.Context, id identity.Identity, group string) (bool, error) {
-	for _, gr := range db[id] {
-		if gr == group {
-			return true, nil
+// It returns true if any of 'groups' is listed in db[id].
+func (db FakeDB) IsMember(c context.Context, id identity.Identity, groups ...string) (bool, error) {
+	for _, group := range groups {
+		for _, gr := range db[id] {
+			if gr == group {
+				return true, nil
+			}
 		}
 	}
 	return false, nil
@@ -94,11 +96,11 @@ type FakeErroringDB struct {
 // IsMember is part of authdb.DB interface.
 //
 // It returns db.Error if it is not nil.
-func (db *FakeErroringDB) IsMember(c context.Context, id identity.Identity, group string) (bool, error) {
+func (db *FakeErroringDB) IsMember(c context.Context, id identity.Identity, groups ...string) (bool, error) {
 	if db.Error != nil {
 		return false, db.Error
 	}
-	return db.FakeDB.IsMember(c, id, group)
+	return db.FakeDB.IsMember(c, id, groups...)
 }
 
 // Use installs the fake db into the context.

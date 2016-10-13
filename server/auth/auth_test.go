@@ -148,8 +148,8 @@ func (db *fakeDB) IsAllowedOAuthClientID(c context.Context, email, clientID stri
 	return clientID == db.allowedClientID, nil
 }
 
-func (db *fakeDB) IsMember(c context.Context, id identity.Identity, group string) (bool, error) {
-	return true, nil
+func (db *fakeDB) IsMember(c context.Context, id identity.Identity, groups ...string) (bool, error) {
+	return len(groups) != 0, nil
 }
 
 func (db *fakeDB) SharedSecrets(c context.Context) (secrets.Store, error) {

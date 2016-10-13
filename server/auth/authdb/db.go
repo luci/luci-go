@@ -23,11 +23,11 @@ type DB interface {
 	// to authenticate access for given email.
 	IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error)
 
-	// IsMember returns true if the given identity belongs to the given group.
+	// IsMember returns true if the given identity belongs to any of the groups.
 	//
 	// Unknown groups are considered empty. May return errors if underlying
 	// datastore has issues.
-	IsMember(c context.Context, id identity.Identity, group string) (bool, error)
+	IsMember(c context.Context, id identity.Identity, groups ...string) (bool, error)
 
 	// SharedSecrets is secrets.Store with secrets in Auth DB.
 	//

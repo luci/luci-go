@@ -88,9 +88,12 @@ func (devServerDB) IsAllowedOAuthClientID(c context.Context, email, clientID str
 	return true, nil
 }
 
-func (devServerDB) IsMember(c context.Context, id identity.Identity, group string) (bool, error) {
+func (devServerDB) IsMember(c context.Context, id identity.Identity, groups ...string) (bool, error) {
 	if !info.IsDevAppServer(c) {
 		return false, errNotConfigured
+	}
+	if len(groups) == 0 {
+		return false, nil
 	}
 	return id.Kind() != identity.Anonymous, nil
 }
