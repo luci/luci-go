@@ -19,14 +19,14 @@ import (
 
 func TestFromStrings(t *testing.T) {
 	Convey("Empty", t, func() {
-		s, err := FromStrings(nil)
+		s, err := FromStrings(nil, nil)
 		So(err, ShouldBeNil)
 		So(s, ShouldResemble, &Set{})
 		So(s.IsEmpty(), ShouldBeTrue)
 	})
 
 	Convey("Universal", t, func() {
-		s, err := FromStrings([]string{"*", "user:abc@example.com"})
+		s, err := FromStrings([]string{"*", "user:abc@example.com"}, nil)
 		So(err, ShouldBeNil)
 		So(s, ShouldResemble, &Set{All: true})
 		So(s.IsEmpty(), ShouldBeFalse)
@@ -37,10 +37,11 @@ func TestFromStrings(t *testing.T) {
 			"user:abc@example.com",
 			"user:def@example.com",
 			"user:abc@example.com",
+			"skipped",
 			"group:abc",
 			"group:def",
 			"group:abc",
-		})
+		}, func(s string) bool { return s == "skipped" })
 		So(err, ShouldBeNil)
 		So(s, ShouldResemble, &Set{
 			IDs: identSet{
@@ -56,13 +57,13 @@ func TestFromStrings(t *testing.T) {
 	})
 
 	Convey("Bad group entry", t, func() {
-		s, err := FromStrings([]string{"group:"})
+		s, err := FromStrings([]string{"group:"}, nil)
 		So(err, ShouldErrLike, "invalid entry")
 		So(s, ShouldEqual, nil)
 	})
 
 	Convey("Bad ID entry", t, func() {
-		s, err := FromStrings([]string{"shrug"})
+		s, err := FromStrings([]string{"shrug"}, nil)
 		So(err, ShouldErrLike, "bad identity string")
 		So(s, ShouldEqual, nil)
 	})
@@ -90,7 +91,7 @@ func TestIsMember(t *testing.T) {
 	})
 
 	Convey("Direct hit", t, func() {
-		s, _ := FromStrings([]string{"user:abc@example.com"})
+		s, _ := FromStrings([]string{"user:abc@example.com"}, nil)
 
 		ok, err := s.IsMember(c, identity.Identity("user:abc@example.com"))
 		So(err, ShouldBeNil)
@@ -102,7 +103,7 @@ func TestIsMember(t *testing.T) {
 	})
 
 	Convey("Groups hit", t, func() {
-		s, _ := FromStrings([]string{"group:abc"})
+		s, _ := FromStrings([]string{"group:abc"}, nil)
 
 		ok, err := s.IsMember(c, identity.Identity("user:abc@example.com"))
 		So(err, ShouldBeNil)
@@ -122,25 +123,25 @@ func TestIsSubset(t *testing.T) {
 		"user:def@example.com",
 		"group:abc",
 		"group:def",
-	})
+	}, nil)
 	some1, _ := FromStrings([]string{
 		"user:abc@example.com",
 		"user:def@example.com",
-	})
+	}, nil)
 	some2, _ := FromStrings([]string{
 		"group:abc",
 		"group:def",
-	})
+	}, nil)
 	some3, _ := FromStrings([]string{
 		"user:abc@example.com",
 		"group:abc",
-	})
+	}, nil)
 	some4, _ := FromStrings([]string{
 		"user:xxx@example.com",
 		"user:yyy@example.com",
 		"group:xxx",
 		"group:yyy",
-	})
+	}, nil)
 
 	Convey("empty", t, func() {
 		So(empty.IsSubset(empty), ShouldBeTrue)
@@ -186,19 +187,19 @@ func TestUnion(t *testing.T) {
 		"user:def@example.com",
 		"group:abc",
 		"group:def",
-	})
+	}, nil)
 	some1, _ := FromStrings([]string{
 		"user:abc@example.com",
 		"user:def@example.com",
-	})
+	}, nil)
 	some2, _ := FromStrings([]string{
 		"group:abc",
 		"group:def",
-	})
+	}, nil)
 	some3, _ := FromStrings([]string{
 		"user:abc@example.com",
 		"group:abc",
-	})
+	}, nil)
 
 	Convey("empty", t, func() {
 		So(Union(), ShouldResemble, empty)
@@ -218,5 +219,40 @@ func TestUnion(t *testing.T) {
 		So(Union(all), ShouldResemble, all)
 		So(Union(all, empty), ShouldResemble, all)
 		So(Union(all, some1), ShouldResemble, all)
+	})
+}
+
+func TestExtend(t *testing.T) {
+	Convey("Empty", t, func() {
+		So(Extend(nil, "user:abc@example.com"), ShouldResemble, &Set{
+			IDs: identSet{"user:abc@example.com": struct{}{}},
+		})
+	})
+
+	Convey("All", t, func() {
+		all := &Set{All: true}
+		So(Extend(all, "user:abc@example.com"), ShouldResemble, all)
+	})
+
+	Convey("Already there", t, func() {
+		set, _ := FromStrings([]string{
+			"user:abc@example.com",
+			"group:abc",
+		}, nil)
+		So(Extend(set, "user:abc@example.com"), ShouldResemble, set)
+	})
+
+	Convey("Extends", t, func() {
+		set, _ := FromStrings([]string{
+			"user:def@example.com",
+			"group:abc",
+		}, nil)
+		So(Extend(set, "user:abc@example.com"), ShouldResemble, &Set{
+			IDs: identSet{
+				"user:abc@example.com": struct{}{},
+				"user:def@example.com": struct{}{},
+			},
+			Groups: groupSet{"abc": struct{}{}},
+		})
 	})
 }

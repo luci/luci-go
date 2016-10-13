@@ -157,9 +157,14 @@ func (s *Set) IsSuperset(subset *Set) bool {
 //  * "<kind>:<id>" identity string.
 //  * "group:<name>" group reference.
 //  * "*" token to mean "All identities".
-func FromStrings(str []string) (*Set, error) {
+//
+// Any string that matches 'skip' predicate is skipped.
+func FromStrings(str []string, skip func(string) bool) (*Set, error) {
 	set := &Set{}
 	for _, s := range str {
+		if skip != nil && skip(s) {
+			continue
+		}
 		switch {
 		case s == "*":
 			set.All = true
@@ -226,4 +231,36 @@ func Union(sets ...*Set) *Set {
 	}
 
 	return union
+}
+
+// Extend returns a throw-away set that has one additional member.
+//
+// The returned set must not be modified, since it references data of the
+// original set (to avoid unnecessary copying).
+func Extend(orig *Set, id identity.Identity) *Set {
+	if orig.IsEmpty() {
+		return &Set{
+			IDs: identSet{
+				id: struct{}{},
+			},
+		}
+	}
+	if orig.All {
+		return orig
+	}
+	if _, ok := orig.IDs[id]; ok {
+		return orig
+	}
+
+	// Need to make a copy of orig.IDs to add 'id' there.
+	extended := make(identSet, len(orig.IDs)+1)
+	for origID := range orig.IDs {
+		extended[origID] = struct{}{}
+	}
+	extended[id] = struct{}{}
+
+	return &Set{
+		IDs:    extended,
+		Groups: orig.Groups,
+	}
 }
