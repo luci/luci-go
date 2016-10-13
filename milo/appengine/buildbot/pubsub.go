@@ -118,17 +118,19 @@ func unmarshal(
 		return nil, nil, err
 	}
 	// Extract the builds out of master and append it onto builds.
-	for _, slave := range bm.Master.Slaves {
-		if slave.RunningbuildsMap == nil {
-			slave.RunningbuildsMap = map[string][]int{}
+	if bm.Master != nil {
+		for _, slave := range bm.Master.Slaves {
+			if slave.RunningbuildsMap == nil {
+				slave.RunningbuildsMap = map[string][]int{}
+			}
+			for _, build := range slave.Runningbuilds {
+				build.Master = bm.Master.Name
+				bm.Builds = append(bm.Builds, build)
+				slave.RunningbuildsMap[build.Buildername] = append(
+					slave.RunningbuildsMap[build.Buildername], build.Number)
+			}
+			slave.Runningbuilds = nil
 		}
-		for _, build := range slave.Runningbuilds {
-			build.Master = bm.Master.Name
-			bm.Builds = append(bm.Builds, build)
-			slave.RunningbuildsMap[build.Buildername] = append(
-				slave.RunningbuildsMap[build.Buildername], build.Number)
-		}
-		slave.Runningbuilds = nil
 	}
 	return bm.Builds, bm.Master, nil
 }
@@ -218,7 +220,12 @@ func PubSubHandler(ctx *router.Context) {
 		h.WriteHeader(200)
 		return
 	}
-	logging.Infof(c, "There are %d builds and master %s", len(builds), master.Name)
+	logging.Infof(c, "There are %d builds", len(builds))
+	if master != nil {
+		logging.Infof(c, "The master name is %s", master.Name)
+	} else {
+		logging.Infof(c, "No master in this message")
+	}
 	// This is used to cache the master used for extracting OS information.
 	cachedMaster := buildbotMaster{}
 	// Do not use PutMulti because we might hit the 1MB limit.
