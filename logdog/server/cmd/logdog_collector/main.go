@@ -24,6 +24,7 @@ import (
 	"golang.org/x/net/context"
 
 	"cloud.google.com/go/pubsub"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
@@ -159,7 +160,7 @@ func (a *application) runCollector(c context.Context) error {
 					return nil
 				}
 
-			case pubsub.Done, context.Canceled, context.DeadlineExceeded:
+			case iterator.Done, context.Canceled, context.DeadlineExceeded:
 				return
 
 			default:

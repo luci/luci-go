@@ -25,6 +25,7 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"golang.org/x/net/context"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
@@ -195,7 +196,7 @@ func (a *application) runArchivist(c context.Context) error {
 					return nil
 				}
 
-			case pubsub.Done, context.Canceled, context.DeadlineExceeded:
+			case iterator.Done, context.Canceled, context.DeadlineExceeded:
 				log.Infof(c, "Subscription iterator is finished.")
 				return
 
