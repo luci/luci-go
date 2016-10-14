@@ -7,13 +7,14 @@
 package isolated
 
 import (
-	"compress/zlib"
 	"crypto/sha1"
 	"hash"
 	"io"
 	"log"
-	// https://crbug.com/552697
-	//"github.com/klauspost/compress/zlib"
+
+	// TODO(tandrii): this library became part of Go 1.7, So, switch back to
+	// standard library compress/zlib once we are solidly on Go > 1.7
+	"github.com/klauspost/compress/zlib"
 )
 
 var hashLength = sha1.New().Size()
