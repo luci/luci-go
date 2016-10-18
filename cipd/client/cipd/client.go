@@ -71,7 +71,7 @@ const (
 	TagAttachTimeout = 3 * time.Minute
 
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 1.2"
+	UserAgent = "cipd 1.3"
 
 	// ServiceURL is URL of a backend to connect to by default.
 	ServiceURL = "https://chrome-infra-packages.appspot.com"
@@ -488,7 +488,7 @@ func (client *clientImpl) withTagCache(ctx context.Context, f func(*internal.Tag
 		// It's tiny in size (and protobuf can't serialize to io.Reader anyway). Dump
 		// it to disk via FileSystem object to deal with possible concurrent updates,
 		// missing directories, etc.
-		fs := local.NewFileSystem(filepath.Dir(path))
+		fs := local.NewFileSystem(filepath.Dir(path), "")
 		start = clock.Now(ctx)
 		out, err := cache.Save(ctx)
 		if err == nil {
@@ -513,7 +513,7 @@ func (client *clientImpl) getInstanceCache() *internal.InstanceCache {
 			return
 		}
 		path := filepath.Join(client.CacheDir, "instances")
-		client.instanceCache = internal.NewInstanceCache(local.NewFileSystem(path))
+		client.instanceCache = internal.NewInstanceCache(local.NewFileSystem(path, ""))
 	})
 	return client.instanceCache
 }
@@ -884,9 +884,17 @@ func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pi
 }
 
 func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, pin common.Pin) error {
+	return client.fetchAndDeployImpl(ctx, pin, true)
+}
+
+func (client *clientImpl) fetchAndDeployImpl(ctx context.Context, pin common.Pin, cleanTrash bool) error {
 	err := common.ValidatePin(pin)
 	if err != nil {
 		return err
+	}
+
+	if cleanTrash {
+		defer client.deployer.CleanupTrash(ctx)
 	}
 
 	// Use temp file for storing package file. Delete it when done.
@@ -1043,7 +1051,7 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, pins []common.Pin,
 		if !toDeploy[pin.PackageName] {
 			continue
 		}
-		err = client.FetchAndDeployInstance(ctx, pin)
+		err = client.fetchAndDeployImpl(ctx, pin, false)
 		if err != nil {
 			logging.Errorf(ctx, "Failed to install %s - %s", pin, err)
 			actions.Errors = append(actions.Errors, ActionError{
@@ -1053,6 +1061,9 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, pins []common.Pin,
 			})
 		}
 	}
+
+	// Opportunistically cleanup the trash left from previous installs.
+	client.deployer.CleanupTrash(ctx)
 
 	if len(actions.Errors) == 0 {
 		logging.Infof(ctx, "All changes applied.")

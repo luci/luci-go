@@ -9,12 +9,14 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 
 	"golang.org/x/net/context"
@@ -72,6 +74,11 @@ type FileSystem interface {
 	// If newpath already exists (be it a file or a directory), removes it first.
 	// If oldpath is a symlink, it's moved as is (e.g. as a symlink).
 	Replace(ctx context.Context, oldpath, newpath string) error
+
+	// CleanupTrash attempts to remove all files that ended up in the trash.
+	//
+	// This is best effort operation.
+	CleanupTrash(ctx context.Context) error
 }
 
 // NewFileSystem returns default FileSystem implementation.
@@ -79,12 +86,27 @@ type FileSystem interface {
 // It operates with files under a given path. All methods accept absolute paths
 // or paths relative to current working directory. FileSystem will ensure they
 // are under 'root' directory.
-func NewFileSystem(root string) FileSystem {
-	abs, err := filepath.Abs(root)
-	if err != nil {
+//
+// It can also accept a path to a directory to put "trash" into: files that
+// can't be removed because there are some processes keeping lock on them.
+// This is useful on Windows when replacing running executables. The trash
+// directory must be on the same disk as the root directory.
+//
+// It 'trash' is empty string, the trash directory will be created under
+// 'root'.
+func NewFileSystem(root, trash string) FileSystem {
+	var err error
+	if root, err = filepath.Abs(root); err != nil {
 		return &fsImplErr{err}
 	}
-	return &fsImpl{abs}
+	if trash != "" {
+		if trash, err = filepath.Abs(trash); err != nil {
+			return &fsImplErr{err}
+		}
+	} else {
+		trash = filepath.Join(root, ".cipd_trash")
+	}
+	return &fsImpl{root, trash}
 }
 
 // EnsureFile creates a file with the given content.
@@ -110,11 +132,13 @@ func (f *fsImplErr) EnsureFile(context.Context, string, func(*os.File) error) er
 func (f *fsImplErr) EnsureFileGone(context.Context, string) error                   { return f.err }
 func (f *fsImplErr) EnsureDirectoryGone(context.Context, string) error              { return f.err }
 func (f *fsImplErr) Replace(context.Context, string, string) error                  { return f.err }
+func (f *fsImplErr) CleanupTrash(context.Context) error                             { return f.err }
 
 /// Implementation.
 
 type fsImpl struct {
-	root string
+	root  string
+	trash string
 }
 
 func (f *fsImpl) Root() string {
@@ -277,35 +301,105 @@ func (f *fsImpl) Replace(ctx context.Context, oldpath, newpath string) error {
 		return nil
 	}
 
-	// Move existing path away, if it is there.
-	temp := tempFileName(newpath)
-	if err = atomicRename(newpath, temp); err != nil {
-		if !os.IsNotExist(err) {
-			logging.Warningf(ctx, "fs: failed to rename(%v, %v) - %s", newpath, temp, err)
-			return err
-		}
-		temp = ""
-	}
+	// This code path is hit it two cases:
+	//
+	// 1. 'newpath' is non-empty directory.
+	// 2. 'newpath' is locked running executable on Windows.
+	//
+	// We try to move existing path away into the trash directory. This
+	// returns "" if the path is no longer there or the file can't be moved
+	// for some reason. In later case the rename below will most probably
+	// also fail, and the error will be properly propagated.
+	//
+	// Note that this fails for files open for exclusive write on Windows,
+	// they are unmovable.
+	trash := f.moveToTrash(ctx, newpath)
 
 	// 'newpath' now should be available.
 	if err := atomicRename(oldpath, newpath); err != nil {
-		logging.Warningf(ctx, "fs: failed to rename(%v, %v) - %s", oldpath, newpath, err)
+		logging.Warningf(ctx, "fs: failed to rename(%q, %q) - %s", oldpath, newpath, err)
 		// Try to return the path back... May be too late already.
-		if temp != "" {
-			if err := atomicRename(temp, newpath); err != nil {
-				logging.Warningf(ctx, "fs: failed to rename(%v, %v) after unsuccessful move - %s", temp, newpath, err)
+		if trash != "" {
+			if err := atomicRename(trash, newpath); err != nil {
+				logging.Warningf(ctx, "fs: failed to rename(%q, %q) after unsuccessful move - %s", trash, newpath, err)
 			}
 		}
 		return err
 	}
 
-	// Cleanup the garbage left. Not a error if fails.
-	if temp != "" {
-		if err := f.EnsureDirectoryGone(ctx, temp); err != nil {
-			logging.Warningf(ctx, "fs: failed to cleanup garbage after file replace - %s", err)
+	// If 'newpath' was a directory, we can actually completely delete it now.
+	// This will fail for locked files though. They are opportunistically cleaned
+	// up in CleanupTrash.
+	if trash != "" {
+		f.cleanupTrashedFile(ctx, trash)
+	}
+
+	return nil
+}
+
+func (f *fsImpl) CleanupTrash(ctx context.Context) error {
+	trashed, err := ioutil.ReadDir(f.trash)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	if len(trashed) == 0 {
+		os.Remove(f.trash) // it's OK if it fails, not a big deal
+		return nil
+	}
+
+	logging.Infof(ctx, "fs: cleaning up trash (%d items)...", len(trashed))
+
+	var merr errors.MultiError
+	for _, file := range trashed {
+		if err := f.cleanupTrashedFile(ctx, filepath.Join(f.trash, file.Name())); err != nil {
+			merr = append(merr, err)
 		}
 	}
+
+	if len(merr) != 0 {
+		return merr
+	}
+
+	// Remove the empty directory too. Not a big deal if fails.
+	os.Remove(f.trash)
+
 	return nil
+}
+
+// moveToTrash is best-effort function to move file or dir to trash.
+//
+// It returns path to a moved file in trash, or empty string if it can't
+// be done.
+func (f *fsImpl) moveToTrash(ctx context.Context, path string) string {
+	if err := os.MkdirAll(f.trash, 0777); err != nil {
+		logging.Warningf(ctx, "fs: can't create trash directory %q - %s", f.trash, err)
+		return ""
+	}
+	trashed := filepath.Join(f.trash, pseudoRand())
+	if err := atomicRename(path, trashed); err != nil {
+		if !os.IsNotExist(err) {
+			logging.Warningf(ctx, "fs: failed to rename(%q, %q) - %s", path, trashed, err)
+		}
+		return ""
+	}
+	return trashed
+}
+
+// cleanupTrashedFile is best-effort function to remove a trashed file or dir.
+//
+// Logs errors.
+func (f *fsImpl) cleanupTrashedFile(ctx context.Context, path string) error {
+	if filepath.Dir(path) != f.trash {
+		return fmt.Errorf("not in the trash - %q", path)
+	}
+	err := os.RemoveAll(path)
+	if err != nil {
+		logging.Warningf(ctx, "fs: failed to cleanup trashed file - %s", err)
+	}
+	return err
 }
 
 /// Internal stuff.
@@ -341,7 +435,7 @@ func pseudoRand() string {
 	fmt.Fprintf(h, "%v_%v", os.Getpid(), ts)
 	sum := h.Sum(nil)
 	digest := base64.RawURLEncoding.EncodeToString(sum)
-	return digest[:8]
+	return digest[:12]
 }
 
 // tempDir is like ioutil.TempDir(dir, ""), but uses shorter path suffixes.

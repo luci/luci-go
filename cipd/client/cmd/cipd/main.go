@@ -1428,7 +1428,11 @@ func deployInstanceFile(ctx context.Context, root string, instanceFile string) (
 	}
 	defer inst.Close()
 	inspectInstance(ctx, inst, false)
-	return local.NewDeployer(root).DeployInstance(ctx, inst)
+
+	d := local.NewDeployer(root)
+	defer d.CleanupTrash(ctx)
+
+	return d.DeployInstance(ctx, inst)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1847,7 +1851,7 @@ func readCounters(ctx context.Context, pkg, version string, counters []string, o
 
 var application = &cli.Application{
 	Name:  "cipd",
-	Title: "Chrome Infra Package Deployer",
+	Title: "Chrome Infra Package Deployer (" + cipd.UserAgent + ")",
 
 	Context: func(ctx context.Context) context.Context {
 		loggerConfig := gologger.LoggerConfig{

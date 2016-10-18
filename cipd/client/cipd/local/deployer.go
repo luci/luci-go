@@ -72,8 +72,13 @@ type Deployer interface {
 	// RemoveDeployed deletes a package given its name.
 	RemoveDeployed(ctx context.Context, packageName string) error
 
-	// TempFile returns os.File located in <root>/tmp/*.
+	// TempFile returns os.File located in <root>/.cipd/tmp/*.
 	TempFile(ctx context.Context, prefix string) (*os.File, error)
+
+	// CleanupTrash attemps to remove stale files.
+	//
+	// May return errors if some files are still locked, this is fine.
+	CleanupTrash(ctx context.Context) error
 }
 
 // NewDeployer return default Deployer implementation.
@@ -87,7 +92,8 @@ func NewDeployer(root string) Deployer {
 	if err != nil {
 		return errDeployer{err}
 	}
-	return &deployerImpl{NewFileSystem(root)}
+	trashDir := filepath.Join(root, SiteServiceDir, "trash")
+	return &deployerImpl{NewFileSystem(root, trashDir)}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -106,6 +112,7 @@ func (d errDeployer) CheckDeployed(context.Context, string) (common.Pin, error) 
 func (d errDeployer) FindDeployed(context.Context) (out []common.Pin, err error) { return nil, d.err }
 func (d errDeployer) RemoveDeployed(context.Context, string) error               { return d.err }
 func (d errDeployer) TempFile(context.Context, string) (*os.File, error)         { return nil, d.err }
+func (d errDeployer) CleanupTrash(context.Context) error                         { return d.err }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Real deployer implementation.
@@ -316,6 +323,10 @@ func (d *deployerImpl) TempFile(ctx context.Context, prefix string) (*os.File, e
 		return nil, err
 	}
 	return ioutil.TempFile(dir, prefix)
+}
+
+func (d *deployerImpl) CleanupTrash(ctx context.Context) error {
+	return d.fs.CleanupTrash(ctx)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

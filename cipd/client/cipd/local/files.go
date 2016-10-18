@@ -290,7 +290,7 @@ type fileSystemDestination struct {
 // of the given FileSystem root.
 func NewFileSystemDestination(dir string, fs FileSystem) Destination {
 	if fs == nil {
-		fs = NewFileSystem(filepath.Dir(dir))
+		fs = NewFileSystem(filepath.Dir(dir), "")
 	}
 	return &fileSystemDestination{
 		dir:       dir,

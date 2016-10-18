@@ -32,7 +32,7 @@ func TestInstanceCache(t *testing.T) {
 
 		now := time.Date(2016, 1, 2, 3, 4, 5, 6, time.UTC)
 
-		fs := local.NewFileSystem(tempDir)
+		fs := local.NewFileSystem(tempDir, "")
 		cache := NewInstanceCache(fs)
 
 		put := func(cache *InstanceCache, pin common.Pin, data string) {
