@@ -263,4 +263,26 @@ message LogIndex {
    * process to choose a frequency.
    */
   repeated Entry entries = 2;
+
+  /**
+   * The last prefix index in the log stream.
+   *
+   * This is optional. If zero, there is either no information about the last
+   * prefix index, or there are zero entries in the prefix.
+   */
+  uint64 last_prefix_index = 3;
+  /**
+   * The last stream index in the log stream.
+   *
+   * This is optional. If zero, there is either no information about the last
+   * stream index, or there are zero entries in the stream.
+   */
+  uint64 last_stream_index = 4;
+  /**
+   * The number of log entries in the stream.
+   *
+   * This is optional. If zero, there is either no information about the number
+   * of log entries, or there are zero entries in the stream.
+   */
+  uint64 log_entry_count = 5;
 }

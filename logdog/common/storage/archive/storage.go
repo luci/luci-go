@@ -115,8 +115,9 @@ func (s *storageImpl) Get(req storage.GetRequest, cb storage.GetCallback) error 
 
 	// Identify the byte offsets that we want to fetch from the entries stream.
 	st := s.buildGetStrategy(&req, idx)
-	if st.lastIndex == -1 || req.Index > st.lastIndex {
-		// No records to read.
+	if st.lastIndex >= 0 && req.Index > st.lastIndex {
+		// We know the last index, and the user requested logs past it, so there are
+		// no records to read.
 		return nil
 	}
 
@@ -312,14 +313,19 @@ func (gs *getStrategy) setEndOffset(v uint64) {
 }
 
 func (s *storageImpl) buildGetStrategy(req *storage.GetRequest, idx *logpb.LogIndex) *getStrategy {
-	st := getStrategy{}
+	st := getStrategy{
+		lastIndex: -1,
+	}
 
 	if len(idx.Entries) == 0 {
-		st.lastIndex = -1
 		return &st
 	}
 
-	st.lastIndex = types.MessageIndex(idx.Entries[len(idx.Entries)-1].StreamIndex)
+	// If we have a log entry count, mark the last log index.
+	if idx.LogEntryCount > 0 {
+		st.lastIndex = types.MessageIndex(idx.Entries[len(idx.Entries)-1].StreamIndex)
+	}
+
 	startIdx := indexEntryFor(idx.Entries, req.Index)
 	if startIdx < 0 {
 		startIdx = 0

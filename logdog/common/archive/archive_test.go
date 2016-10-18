@@ -83,6 +83,16 @@ func (w *errWriter) Write(d []byte) (int, error) {
 	return w.Writer.Write(d)
 }
 
+// indexParams umarshals an index from a byte stream and removes any entries.
+func indexParams(d []byte) logpb.LogIndex {
+	var index logpb.LogIndex
+	if err := proto.Unmarshal(d, &index); err != nil {
+		panic(fmt.Errorf("failed to unmarshal index protobuf: %v", err))
+	}
+	index.Entries = nil
+	return index
+}
+
 type indexChecker struct {
 	fixedSize int
 }
@@ -229,6 +239,12 @@ func TestArchive(t *testing.T) {
 			So(Archive(m), ShouldBeNil)
 
 			So(&indexB, ic.shouldContainIndexFor, desc, &logB)
+			So(indexParams(indexB.Bytes()), ShouldResemble, logpb.LogIndex{
+				Desc:            desc,
+				LastPrefixIndex: 12,
+				LastStreamIndex: 6,
+				LogEntryCount:   7,
+			})
 			So(dataB.String(), ShouldEqual, "0\n1\n2\n3\n4\n5\n6\n")
 		})
 
@@ -237,6 +253,12 @@ func TestArchive(t *testing.T) {
 			So(Archive(m), ShouldBeNil)
 
 			So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 1, 3, 6)
+			So(indexParams(indexB.Bytes()), ShouldResemble, logpb.LogIndex{
+				Desc:            desc,
+				LastPrefixIndex: 12,
+				LastStreamIndex: 6,
+				LogEntryCount:   4,
+			})
 			So(dataB.String(), ShouldEqual, "0\n1\n3\n6\n")
 		})
 
@@ -246,6 +268,12 @@ func TestArchive(t *testing.T) {
 				So(Archive(m), ShouldBeNil)
 
 				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 2, 3)
+				So(indexParams(indexB.Bytes()), ShouldResemble, logpb.LogIndex{
+					Desc:            desc,
+					LastPrefixIndex: 6,
+					LastStreamIndex: 3,
+					LogEntryCount:   3,
+				})
 			})
 
 			Convey(`When PrefixIndex is out of order.`, func() {
@@ -257,6 +285,12 @@ func TestArchive(t *testing.T) {
 				So(Archive(m), ShouldBeNil)
 
 				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 1, 3, 4)
+				So(indexParams(indexB.Bytes()), ShouldResemble, logpb.LogIndex{
+					Desc:            desc,
+					LastPrefixIndex: 8,
+					LastStreamIndex: 4,
+					LogEntryCount:   4,
+				})
 			})
 
 			Convey(`When Sequence is out of order.`, func() {
@@ -268,6 +302,12 @@ func TestArchive(t *testing.T) {
 				So(Archive(m), ShouldBeNil)
 
 				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 1, 3, 4)
+				So(indexParams(indexB.Bytes()), ShouldResemble, logpb.LogIndex{
+					Desc:            desc,
+					LastPrefixIndex: 8,
+					LastStreamIndex: 4,
+					LogEntryCount:   4,
+				})
 			})
 		})
 
@@ -280,6 +320,12 @@ func TestArchive(t *testing.T) {
 			So(Archive(m), ShouldBeNil)
 
 			So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 1, 2, 3, 4)
+			So(indexParams(indexB.Bytes()), ShouldResemble, logpb.LogIndex{
+				Desc:            desc,
+				LastPrefixIndex: 8,
+				LastStreamIndex: 4,
+				LogEntryCount:   5,
+			})
 		})
 
 		Convey(`Source errors will be returned`, func() {
@@ -329,6 +375,12 @@ func TestArchive(t *testing.T) {
 				So(Archive(m), ShouldBeNil)
 
 				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 3)
+				So(indexParams(indexB.Bytes()), ShouldResemble, logpb.LogIndex{
+					Desc:            desc,
+					LastPrefixIndex: 10,
+					LastStreamIndex: 5,
+					LogEntryCount:   6,
+				})
 			})
 
 			Convey(`Can build an index for every 3 PrefixIndex.`, func() {
@@ -337,6 +389,12 @@ func TestArchive(t *testing.T) {
 
 				// Note that in our generated logs, PrefixIndex = 2*StreamIndex.
 				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 2, 4)
+				So(indexParams(indexB.Bytes()), ShouldResemble, logpb.LogIndex{
+					Desc:            desc,
+					LastPrefixIndex: 10,
+					LastStreamIndex: 5,
+					LogEntryCount:   6,
+				})
 			})
 
 			Convey(`Can build an index for every 13 bytes.`, func() {
@@ -349,6 +407,12 @@ func TestArchive(t *testing.T) {
 				So(Archive(m), ShouldBeNil)
 
 				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 2, 5)
+				So(indexParams(indexB.Bytes()), ShouldResemble, logpb.LogIndex{
+					Desc:            desc,
+					LastPrefixIndex: 10,
+					LastStreamIndex: 5,
+					LogEntryCount:   6,
+				})
 			})
 		})
 	})

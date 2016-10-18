@@ -29,6 +29,11 @@ func (i *indexBuilder) addLogEntry(le *logpb.LogEntry, offset int64) {
 		i.lastBytes += uint64(i.size(le))
 	}
 
+	// Update our stream properties.
+	i.index.LastPrefixIndex = le.PrefixIndex
+	i.index.LastStreamIndex = le.StreamIndex
+	i.index.LogEntryCount++
+
 	// Do we index this LogEntry?
 	if len(i.index.Entries) > 0 {
 		if !((i.StreamIndexRange > 0 && (le.StreamIndex-i.lastStreamIndex) >= uint64(i.StreamIndexRange)) ||
