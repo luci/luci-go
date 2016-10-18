@@ -23,6 +23,11 @@ import (
 	"github.com/luci/luci-go/scheduler/appengine/task/utils"
 )
 
+const (
+	statusCheckTimerName     = "check-swarming-task-status"
+	statusCheckTimerInterval = time.Minute
+)
+
 // TaskManager implements task.Manager interface for tasks defined with
 // SwarmingTask proto message.
 type TaskManager struct {
@@ -213,7 +218,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	if err != nil {
 		return err
 	}
-	ctl.DebugLog("Swarming task request:\n%s", string(blob))
+	ctl.DebugLog("Swarming task request:\n%s", blob)
 	request.PubsubAuthToken = authToken // can put the token now
 
 	// The next call may take a while. Dump the current log to the datastore.
@@ -236,7 +241,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	if err != nil {
 		return err
 	}
-	ctl.DebugLog("Swarming response:\n%s", string(blob))
+	ctl.DebugLog("Swarming response:\n%s", blob)
 
 	// Save TaskId in invocation, will be used later when handling PubSub
 	// notifications
@@ -259,6 +264,9 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 		ctl.DebugLog("Task request was deduplicated")
 		m.handleTaskResult(c, ctl, resp.TaskResult)
 	}
+
+	// This will schedule status check if the task is actually running.
+	m.checkTaskStatusLater(c, ctl)
 	return nil
 }
 
@@ -270,6 +278,57 @@ func (m TaskManager) AbortTask(c context.Context, ctl task.Controller) error {
 
 // HandleNotification is part of Manager interface.
 func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, msg *pubsub.PubsubMessage) error {
+	ctl.DebugLog("Received PubSub notification, asking swarming for the task status")
+	return m.checkTaskStatus(c, ctl)
+}
+
+// HandleTimer is part of Manager interface.
+func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
+	if name == statusCheckTimerName {
+		ctl.DebugLog("Timer tick, asking swarming for the task status")
+		if err := m.checkTaskStatus(c, ctl); err != nil {
+			// This is either a fatal or transient error. If it is fatal, no need to
+			// schedule the timer anymore. If it is transient, HandleTimer call itself
+			// will be retried and the timer when be rescheduled then.
+			return err
+		}
+		m.checkTaskStatusLater(c, ctl) // reschedule this check
+	}
+	return nil
+}
+
+// createSwarmingService makes a configured Swarming API client.
+func (m TaskManager) createSwarmingService(c context.Context, ctl task.Controller) (*swarming.Service, error) {
+	client, err := ctl.GetClient(time.Minute)
+	if err != nil {
+		return nil, err
+	}
+	service, err := swarming.New(client)
+	if err != nil {
+		return nil, err
+	}
+	cfg := ctl.Task().(*messages.SwarmingTask)
+	service.BasePath = *cfg.Server + "/_ah/api/swarming/v1/"
+	return service, nil
+}
+
+// checkTaskStatusLater schedules a delayed call to checkTaskStatus if the
+// invocation is still running.
+//
+// This is a fallback mechanism in case PubSub notifications are delayed or
+// lost for some reason.
+func (m TaskManager) checkTaskStatusLater(c context.Context, ctl task.Controller) {
+	// TODO(vadimsh): Make the check interval configurable?
+	if !ctl.State().Status.Final() {
+		ctl.AddTimer(statusCheckTimerInterval, statusCheckTimerName, nil)
+	}
+}
+
+// checkTaskStatus fetches current task status from Swarming and update the
+// invocation status based on it.
+//
+// Called on PubSub notifications and also periodically by timer.
+func (m TaskManager) checkTaskStatus(c context.Context, ctl task.Controller) error {
 	switch status := ctl.State().Status; {
 	// This can happen if Swarming manages to send PubSub message before
 	// LaunchTask finishes. Do not touch State or DebugLog to avoid collision with
@@ -289,7 +348,6 @@ func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, 
 	}
 
 	// Fetch task result from Swarming.
-	ctl.DebugLog("Received PubSub notification, asking swarming for the task status")
 	service, err := m.createSwarmingService(c, ctl)
 	if err != nil {
 		return err
@@ -304,35 +362,18 @@ func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, 
 		return err
 	}
 
-	// Dump response in full to the debug log. It doesn't contain any secrets.
 	blob, err := json.MarshalIndent(resp, "", "  ")
 	if err != nil {
 		return err
 	}
-	ctl.DebugLog("Swarming response:\n%s", string(blob))
-
 	m.handleTaskResult(c, ctl, resp)
+
+	// Dump final status in full to the debug log. It doesn't contain any secrets.
+	if ctl.State().Status.Final() {
+		ctl.DebugLog("Swarming task status:\n%s", blob)
+	}
+
 	return nil
-}
-
-// HandleTimer is part of Manager interface.
-func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
-	return errors.New("not implemented")
-}
-
-// createSwarmingService makes a configured Swarming API client.
-func (m TaskManager) createSwarmingService(c context.Context, ctl task.Controller) (*swarming.Service, error) {
-	client, err := ctl.GetClient(time.Minute)
-	if err != nil {
-		return nil, err
-	}
-	service, err := swarming.New(client)
-	if err != nil {
-		return nil, err
-	}
-	cfg := ctl.Task().(*messages.SwarmingTask)
-	service.BasePath = *cfg.Server + "/_ah/api/swarming/v1/"
-	return service, nil
 }
 
 // handleTaskResult processes swarming task results message updating the state

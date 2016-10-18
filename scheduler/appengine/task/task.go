@@ -163,6 +163,9 @@ type Controller interface {
 	//
 	// All timers are actually enabled in Save(), in the same transaction that
 	// updates the job state.
+	//
+	// TODO(vadimsh): Need a way to deduplicate/disable timers added when retrying
+	// on HandleTimer transient errors.
 	AddTimer(delay time.Duration, name string, payload []byte)
 
 	// PrepareTopic create PubSub topic for notifications related to the task and

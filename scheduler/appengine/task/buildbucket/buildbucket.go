@@ -23,6 +23,11 @@ import (
 	"github.com/luci/luci-go/scheduler/appengine/task/utils"
 )
 
+const (
+	statusCheckTimerName     = "check-buildbucket-build-status"
+	statusCheckTimerInterval = time.Minute
+)
+
 // TaskManager implements task.Manager interface for tasks defined with
 // BuildbucketTask proto message.
 type TaskManager struct {
@@ -164,7 +169,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	if err != nil {
 		return err
 	}
-	ctl.DebugLog("Buildbucket request:\n%s", string(blob))
+	ctl.DebugLog("Buildbucket request:\n%s", blob)
 	request.PubsubCallback.AuthToken = authToken // can put the token now
 
 	// The next call may take a while. Dump the current log to the datastore.
@@ -187,7 +192,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	if err != nil {
 		return err
 	}
-	ctl.DebugLog("Buildbucket response:\n%s", string(blob))
+	ctl.DebugLog("Buildbucket response:\n%s", blob)
 
 	if resp.Error != nil {
 		ctl.DebugLog("Buildbucket returned error %q: %s", resp.Error.Reason, resp.Error.Message)
@@ -216,6 +221,8 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 		m.handleBuildResult(c, ctl, resp.Build)
 	}
 
+	// This will schedule status check if the task is actually running.
+	m.checkBuildStatusLater(c, ctl)
 	return nil
 }
 
@@ -227,6 +234,53 @@ func (m TaskManager) AbortTask(c context.Context, ctl task.Controller) error {
 
 // HandleNotification is part of Manager interface.
 func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, msg *pubsub.PubsubMessage) error {
+	ctl.DebugLog("Received PubSub notification, asking Buildbucket for the build status")
+	return m.checkBuildStatus(c, ctl)
+}
+
+// HandleTimer is part of Manager interface.
+func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
+	if name == statusCheckTimerName {
+		ctl.DebugLog("Timer tick, asking Buildbucket for the build status")
+		if err := m.checkBuildStatus(c, ctl); err != nil {
+			// This is either a fatal or transient error. If it is fatal, no need to
+			// schedule the timer anymore. If it is transient, HandleTimer call itself
+			// will be retried and the timer when be rescheduled then.
+			return err
+		}
+		m.checkBuildStatusLater(c, ctl) // reschedule this check
+	}
+	return nil
+}
+
+// createBuildbucketService makes a configured Buildbucket API client.
+func (m TaskManager) createBuildbucketService(c context.Context, ctl task.Controller) (*buildbucket.Service, error) {
+	client, err := ctl.GetClient(time.Minute)
+	if err != nil {
+		return nil, err
+	}
+	service, err := buildbucket.New(client)
+	if err != nil {
+		return nil, err
+	}
+	cfg := ctl.Task().(*messages.BuildbucketTask)
+	service.BasePath = *cfg.Server + "/_ah/api/buildbucket/v1/"
+	return service, nil
+}
+
+// checkBuildStatusLater schedules a delayed call to checkBuildStatus if the
+// invocation is still running.
+//
+// This is a fallback mechanism in case PubSub notifications are delayed or
+// lost for some reason.
+func (m TaskManager) checkBuildStatusLater(c context.Context, ctl task.Controller) {
+	// TODO(vadimsh): Make the check interval configurable?
+	if !ctl.State().Status.Final() {
+		ctl.AddTimer(statusCheckTimerInterval, statusCheckTimerName, nil)
+	}
+}
+
+func (m TaskManager) checkBuildStatus(c context.Context, ctl task.Controller) error {
 	switch status := ctl.State().Status; {
 	// This can happen if Buildbucket manages to send PubSub message before
 	// LaunchTask finishes. Do not touch State or DebugLog to avoid collision with
@@ -246,7 +300,6 @@ func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, 
 	}
 
 	// Fetch build result from Buildbucket.
-	ctl.DebugLog("Received PubSub notification, asking Buildbucket for the task status")
 	service, err := m.createBuildbucketService(c, ctl)
 	if err != nil {
 		return err
@@ -266,42 +319,27 @@ func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, 
 	if err != nil {
 		return err
 	}
-	ctl.DebugLog("Buildbucket response:\n%s", string(blob))
 
 	// Give up (fail invocation) on unexpected fatal errors.
 	if resp.Error != nil {
 		ctl.DebugLog("Buildbucket returned error %q: %s", resp.Error.Reason, resp.Error.Message)
+		ctl.DebugLog("Buildbucket response:\n%s", blob)
 		ctl.State().Status = task.StatusFailed
 		return fmt.Errorf("buildbucket error %q - %s", resp.Error.Reason, resp.Error.Message)
 	}
 	if resp.Build == nil {
 		ctl.DebugLog("Buildbucket response is not valid, missing 'build'")
+		ctl.DebugLog("Buildbucket response:\n%s", blob)
 		ctl.State().Status = task.StatusFailed
 		return fmt.Errorf("bad buildbucket response, no 'build' field")
 	}
 
 	m.handleBuildResult(c, ctl, resp.Build)
+	if ctl.State().Status.Final() {
+		ctl.DebugLog("Buildbucket build:\n%s", blob)
+	}
+
 	return nil
-}
-
-// HandleTimer is part of Manager interface.
-func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
-	return errors.New("not implemented")
-}
-
-// createBuildbucketService makes a configured Buildbucket API client.
-func (m TaskManager) createBuildbucketService(c context.Context, ctl task.Controller) (*buildbucket.Service, error) {
-	client, err := ctl.GetClient(time.Minute)
-	if err != nil {
-		return nil, err
-	}
-	service, err := buildbucket.New(client)
-	if err != nil {
-		return nil, err
-	}
-	cfg := ctl.Task().(*messages.BuildbucketTask)
-	service.BasePath = *cfg.Server + "/_ah/api/buildbucket/v1/"
-	return service, nil
 }
 
 // handleBuildResult processes buildbucket results message updating the state

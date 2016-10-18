@@ -14,6 +14,13 @@ import (
 	"github.com/luci/luci-go/scheduler/appengine/task"
 )
 
+// TimerSpec correspond to single AddTimer call.
+type TimerSpec struct {
+	Delay   time.Duration
+	Name    string
+	Payload []byte
+}
+
 // TestController implements task.Controller and can be used in unit tests.
 type TestController struct {
 	OverrideJobID    string // return value of JobID() if not ""
@@ -27,6 +34,8 @@ type TestController struct {
 
 	SaveCallback         func() error                         // mock for Save()
 	PrepareTopicCallback func(string) (string, string, error) // mock for PrepareTopic()
+
+	Timers []TimerSpec
 }
 
 // JobID is part of Controller interface.
@@ -65,7 +74,11 @@ func (c *TestController) State() *task.State {
 
 // AddTimer is part of Controller interface.
 func (c *TestController) AddTimer(delay time.Duration, name string, payload []byte) {
-	panic("not implemented")
+	c.Timers = append(c.Timers, TimerSpec{
+		Delay:   delay,
+		Name:    name,
+		Payload: payload,
+	})
 }
 
 // DebugLog is part of Controller interface.

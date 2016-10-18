@@ -108,6 +108,8 @@ func TestValidateProtoMessage(t *testing.T) {
 
 func TestFullFlow(t *testing.T) {
 	Convey("LaunchTask and HandleNotification work", t, func(ctx C) {
+		mockRunning := true
+
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			resp := ""
@@ -122,13 +124,22 @@ func TestFullFlow(t *testing.T) {
 					}
 				}`
 			case r.Method == "GET" && r.URL.Path == "/_ah/api/buildbucket/v1/builds/9025781602559305888":
-				resp = `{
-					"build": {
-						"id": "9025781602559305888",
-						"status": "COMPLETED",
-						"result": "SUCCESS"
-					}
-				}`
+				if mockRunning {
+					resp = `{
+						"build": {
+							"id": "9025781602559305888",
+							"status": "STARTED"
+						}
+					}`
+				} else {
+					resp = `{
+						"build": {
+							"id": "9025781602559305888",
+							"status": "COMPLETED",
+							"result": "SUCCESS"
+						}
+					}`
+				}
 			default:
 				ctx.Printf("Unknown URL fetch - %s %s\n", r.Method, r.URL.Path)
 				w.WriteHeader(400)
@@ -164,7 +175,26 @@ func TestFullFlow(t *testing.T) {
 			ViewURL:  "https://chromium-swarm-dev.appspot.com/user/task/2bdfb7404d18ac10",
 		})
 
+		// Added the timer.
+		So(ctl.Timers, ShouldResemble, []tasktest.TimerSpec{
+			{
+				Delay: statusCheckTimerInterval,
+				Name:  statusCheckTimerName,
+			},
+		})
+		ctl.Timers = nil
+
+		// The timer is called. Checks the state, reschedules itself.
+		So(mgr.HandleTimer(c, ctl, statusCheckTimerName, nil), ShouldBeNil)
+		So(ctl.Timers, ShouldResemble, []tasktest.TimerSpec{
+			{
+				Delay: statusCheckTimerInterval,
+				Name:  statusCheckTimerName,
+			},
+		})
+
 		// Process finish notification.
+		mockRunning = false
 		So(mgr.HandleNotification(c, ctl, &pubsub.PubsubMessage{}), ShouldBeNil)
 		So(ctl.TaskState.Status, ShouldEqual, task.StatusSucceeded)
 	})
