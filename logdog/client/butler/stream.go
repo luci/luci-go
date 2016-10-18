@@ -56,15 +56,11 @@ func (s *stream) readChunk() bool {
 		break
 
 	case io.EOF:
-		log.Fields{
-			log.ErrorKey: err,
-		}.Infof(s, "Stream encountered EOF.")
+		log.WithError(err).Debugf(s, "Stream encountered EOF.")
 		return false
 
 	default:
-		log.Fields{
-			log.ErrorKey: err,
-		}.Errorf(s, "Stream encountered error during Read.")
+		log.WithError(err).Errorf(s, "Stream encountered error during Read.")
 		return false
 	}
 
