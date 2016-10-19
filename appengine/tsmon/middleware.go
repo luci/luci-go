@@ -13,8 +13,10 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
+	"google.golang.org/appengine"
 
 	"github.com/luci/gae/service/info"
+	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/common/clock"
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/iotools"
@@ -24,7 +26,6 @@ import (
 	"github.com/luci/luci-go/common/tsmon/monitor"
 	"github.com/luci/luci-go/common/tsmon/store"
 	"github.com/luci/luci-go/common/tsmon/target"
-	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
 )
 
@@ -89,7 +90,8 @@ func (s *State) Middleware(c *router.Context, next router.Handler) {
 	state, settings := s.checkSettings(c.Context)
 	if settings.Enabled {
 		started := clock.Now(c.Context)
-		userAgent, ok := c.Request.Header["User-Agent"]
+		req := c.Request
+		userAgent, ok := req.Header["User-Agent"]
 		if !ok || len(userAgent) == 0 {
 			userAgent = []string{"Unknown"}
 		}
@@ -103,7 +105,7 @@ func (s *State) Middleware(c *router.Context, next router.Handler) {
 				contentLength, nrw.Size(), userAgent[0])
 		}()
 		next(c)
-		s.flushIfNeeded(ctx, state, settings)
+		s.flushIfNeeded(ctx, req, state, settings)
 	} else {
 		next(c)
 	}
@@ -182,10 +184,13 @@ func (s *State) disableTsMon(c context.Context) {
 	s.state.SetStore(store.NewNilStore())
 }
 
+// withGAEContext is replaced in unit tests.
+var withGAEContext = appengine.WithContext
+
 // flushIfNeeded periodically flushes the accumulated metrics.
 //
 // It skips the flush if some other goroutine is already flushing. Logs errors.
-func (s *State) flushIfNeeded(c context.Context, state *tsmon.State, settings *tsmonSettings) {
+func (s *State) flushIfNeeded(c context.Context, req *http.Request, state *tsmon.State, settings *tsmonSettings) {
 	now := clock.Now(c)
 	flushTime := now.Add(-time.Duration(settings.FlushIntervalSec) * time.Second)
 
@@ -224,8 +229,11 @@ func (s *State) flushIfNeeded(c context.Context, state *tsmon.State, settings *t
 		s.lock.Unlock()
 	}()
 
-	// The flush must be fast. Limit it with by some timeout.
+	// The flush must be fast. Limit it with by some timeout. It also needs real
+	// GAE context for gRPC calls in PubSub guts, so slap it on top of luci-go
+	// context.
 	c, _ = clock.WithTimeout(c, flushTimeout)
+	c = withGAEContext(c, req)
 	if err := s.updateInstanceEntityAndFlush(c, state, settings); err != nil {
 		logging.Errorf(c, "Failed to flush tsmon metrics: %s", err)
 	} else {
@@ -299,6 +307,7 @@ func (s *State) updateInstanceEntityAndFlush(c context.Context, state *tsmon.Sta
 // doFlush actually sends the metrics to the monitor.
 func (s *State) doFlush(c context.Context, state *tsmon.State, settings *tsmonSettings) error {
 	var mon monitor.Monitor
+	var err error
 
 	if s.testingMonitor != nil {
 		mon = s.testingMonitor
@@ -308,18 +317,15 @@ func (s *State) doFlush(c context.Context, state *tsmon.State, settings *tsmonSe
 		topic := gcps.NewTopic(settings.PubsubProject, settings.PubsubTopic)
 		logging.Infof(c, "Sending metrics to %s", topic)
 
-		// Create an HTTP client with the default appengine service account. The
-		// client is bound to the context and inherits its deadline.
-		t, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gcps.PublisherScopes...))
-		if err != nil {
-			return err
-		}
-		if mon, err = monitor.NewPubsubMonitor(c, &http.Client{Transport: t}, topic); err != nil {
+		// The token source and the monitor are bound to the context and inherits
+		// its deadline.
+		ts := client.NewTokenSource(c, gcps.PublisherScopes)
+		if mon, err = monitor.NewPubsubMonitor(c, ts, topic); err != nil {
 			return err
 		}
 	}
 
-	if err := state.Flush(c, mon); err != nil {
+	if err = state.Flush(c, mon); err != nil {
 		return err
 	}
 

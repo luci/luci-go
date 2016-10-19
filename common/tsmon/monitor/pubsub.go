@@ -5,11 +5,10 @@
 package monitor
 
 import (
-	"net/http"
-
 	"cloud.google.com/go/pubsub"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
@@ -24,12 +23,12 @@ type pubSubMonitor struct {
 // NewPubsubMonitor returns a Monitor that sends metrics to the Cloud Pub/Sub
 // API.
 //
-// The provided client should implement sufficient authentication to send
+// The provided token source should emit tokens with sufficient scopes to send
 // Cloud Pub/Sub requests.
-func NewPubsubMonitor(ctx context.Context, client *http.Client, topic gcps.Topic) (Monitor, error) {
+func NewPubsubMonitor(ctx context.Context, tokens oauth2.TokenSource, topic gcps.Topic) (Monitor, error) {
 	project, name := topic.Split()
 
-	psClient, err := pubsub.NewClient(ctx, project, option.WithHTTPClient(client))
+	psClient, err := pubsub.NewClient(ctx, project, option.WithTokenSource(tokens))
 	if err != nil {
 		return nil, err
 	}

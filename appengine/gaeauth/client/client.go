@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 
 	"github.com/luci/gae/service/info"
 
@@ -64,6 +65,30 @@ func GetAccessToken(c context.Context, scopes []string) (auth.Token, error) {
 	pcache.Put(cacheKey, tok, tok.Expiry)
 
 	return tok, nil
+}
+
+// NewTokenSource makes oauth2.TokenSource implemented on top of GetAccessToken.
+//
+// It is bound to the given context.
+func NewTokenSource(ctx context.Context, scopes []string) oauth2.TokenSource {
+	return &tokenSource{ctx, scopes}
+}
+
+type tokenSource struct {
+	ctx    context.Context
+	scopes []string
+}
+
+func (ts *tokenSource) Token() (*oauth2.Token, error) {
+	tok, err := GetAccessToken(ts.ctx, ts.scopes)
+	if err != nil {
+		return nil, err
+	}
+	return &oauth2.Token{
+		AccessToken: tok.AccessToken,
+		TokenType:   tok.TokenType,
+		Expiry:      tok.Expiry,
+	}, nil
 }
 
 //// Internal stuff.

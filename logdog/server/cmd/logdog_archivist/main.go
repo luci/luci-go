@@ -85,16 +85,16 @@ func (a *application) runArchivist(c context.Context) error {
 	}
 	psProject, psSubscriptionName := taskSub.Split()
 
-	psAuth, err := a.Authenticator(c, func(o *auth.Options) {
+	tokenSource, err := a.TokenSource(c, func(o *auth.Options) {
 		o.Scopes = gcps.SubscriberScopes
 	})
 	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to get Pub/Sub authenticator.")
+		log.WithError(err).Errorf(c, "Failed to get Pub/Sub token source.")
 		return err
 	}
 
 	// Pub/Sub: TokenSource => Client
-	psClient, err := pubsub.NewClient(c, psProject, option.WithTokenSource(psAuth.TokenSource()))
+	psClient, err := pubsub.NewClient(c, psProject, option.WithTokenSource(tokenSource))
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create Pub/Sub client.")
 		return err

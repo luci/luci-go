@@ -10,6 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
+
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/field"
@@ -19,10 +22,15 @@ import (
 	"github.com/luci/luci-go/common/tsmon/types"
 	"github.com/luci/luci-go/server/router"
 
-	"github.com/golang/protobuf/proto"
-
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func init() {
+	// appengine.WithContext doesn't work in unit testing environment.
+	withGAEContext = func(c context.Context, _ *http.Request) context.Context {
+		return c
+	}
+}
 
 func TestMiddleware(t *testing.T) {
 	t.Parallel()

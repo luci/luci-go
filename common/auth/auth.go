@@ -416,8 +416,30 @@ func (a *Authenticator) GetAccessToken(lifetime time.Duration) (Token, error) {
 
 // TokenSource returns oauth2.TokenSource implementation for interoperability
 // with libraries that use it.
-func (a *Authenticator) TokenSource() oauth2.TokenSource {
-	return tokenSource{a}
+//
+// It doesn't support 'OptionalLogin' mode, since oauth2.TokenSource must return
+// some token. Otherwise its logic is similar to Transport(). In particular it
+// may return ErrLoginRequired if interactive login is required, but the
+// authenticator is in silent mode. See LoginMode enum for more details.
+func (a *Authenticator) TokenSource() (oauth2.TokenSource, error) {
+	if a.loginMode == InteractiveLogin {
+		if err := a.PurgeCredentialsCache(); err != nil {
+			return nil, err
+		}
+	}
+	// TransportIfAvailable returns ErrLoginRequired if there's no cached token.
+	switch _, err := a.TransportIfAvailable(); {
+	case err == nil:
+		return tokenSource{a}, nil // have a valid cached token
+	case err == ErrLoginRequired && a.loginMode == InteractiveLogin:
+		// Attempt to do an interactive login to get a valid token.
+		if err = a.Login(); err != nil {
+			return nil, err
+		}
+		return tokenSource{a}, nil
+	default:
+		return nil, err // unrecoverable error for the current login mode
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////

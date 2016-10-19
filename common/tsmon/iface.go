@@ -6,11 +6,11 @@ package tsmon
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 	"strings"
 
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/errors"
@@ -202,20 +202,20 @@ func initMonitor(c context.Context, config config) (monitor.Monitor, error) {
 	case "file":
 		return monitor.NewDebugMonitor(endpointURL.Path), nil
 	case "pubsub":
-		client, err := clientFactory(c, config.Credentials)
+		tokens, err := tokenSource(c, config.Credentials)
 		if err != nil {
 			return nil, err
 		}
 
-		return monitor.NewPubsubMonitor(c, client, gcps.NewTopic(endpointURL.Host, strings.TrimPrefix(endpointURL.Path, "/")))
+		return monitor.NewPubsubMonitor(
+			c, tokens, gcps.NewTopic(endpointURL.Host, strings.TrimPrefix(endpointURL.Path, "/")))
 	default:
 		return nil, fmt.Errorf("unknown tsmon endpoint url: %s", config.Endpoint)
 	}
 }
 
-// makeClient returns http.Client that knows how to send authenticated requests
-// to PubSub API.
-func clientFactory(ctx context.Context, credentials string) (*http.Client, error) {
+// tokenSource returns oauth2.TokenSource with token to use for PubSub auth.
+func tokenSource(ctx context.Context, credentials string) (oauth2.TokenSource, error) {
 	authOpts := auth.Options{
 		Scopes: gcps.PublisherScopes,
 	}
@@ -231,5 +231,5 @@ func clientFactory(ctx context.Context, credentials string) (*http.Client, error
 		authOpts.Method = auth.ServiceAccountMethod
 		authOpts.ServiceAccountJSONPath = credentials
 	}
-	return auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
+	return auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).TokenSource()
 }

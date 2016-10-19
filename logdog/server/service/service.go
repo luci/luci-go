@@ -35,6 +35,7 @@ import (
 
 	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 )
 
@@ -378,14 +379,14 @@ func (s *Service) IntermediateStorage(c context.Context) (storage.Storage, error
 	}
 
 	// Initialize Storage authentication.
-	a, err := s.Authenticator(c, func(o *auth.Options) {
+	tokenSource, err := s.TokenSource(c, func(o *auth.Options) {
 		o.Scopes = bigtable.StorageScopes
 		if s.storageCredentialJSONPath != "" {
 			o.ServiceAccountJSONPath = s.storageCredentialJSONPath
 		}
 	})
 	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create BigTable Authenticator.")
+		log.WithError(err).Errorf(c, "Failed to create BigTable TokenSource.")
 		return nil, err
 	}
 
@@ -394,7 +395,7 @@ func (s *Service) IntermediateStorage(c context.Context) (storage.Storage, error
 		Instance: btcfg.Instance,
 		LogTable: btcfg.LogTableName,
 		ClientOptions: []option.ClientOption{
-			option.WithTokenSource(a.TokenSource()),
+			option.WithTokenSource(tokenSource),
 		},
 	})
 	if err != nil {
@@ -440,7 +441,7 @@ func (s *Service) Authenticator(c context.Context, f func(o *auth.Options)) (*au
 // AuthenticatedTransport returns an authenticated http.RoundTripper transport.
 // The transport is configured from a base set of Authenticator Options.
 //
-// An optional permutation functon can be provided to modify those Options
+// An optional permutation function can be provided to modify those Options
 // before the Authenticator is created.
 func (s *Service) AuthenticatedTransport(c context.Context, f func(o *auth.Options)) (http.RoundTripper, error) {
 	a, err := s.Authenticator(c, f)
@@ -453,7 +454,7 @@ func (s *Service) AuthenticatedTransport(c context.Context, f func(o *auth.Optio
 // AuthenticatedClient returns an authenticated http.Client. The Client is
 // configured from a base set of Authenticator Options.
 //
-// An optional permutation functon can be provided to modify those Options
+// An optional permutation function can be provided to modify those Options
 // before the Authenticator is created.
 func (s *Service) AuthenticatedClient(c context.Context, f func(o *auth.Options)) (*http.Client, error) {
 	a, err := s.Authenticator(c, f)
@@ -461,4 +462,17 @@ func (s *Service) AuthenticatedClient(c context.Context, f func(o *auth.Options)
 		return nil, err
 	}
 	return a.Client()
+}
+
+// TokenSource returns oauth2.TokenSource configured from a base set of
+// Authenticator Options.
+//
+// An optional permutation function can be provided to modify those Options
+// before the Authenticator is created.
+func (s *Service) TokenSource(c context.Context, f func(o *auth.Options)) (oauth2.TokenSource, error) {
+	a, err := s.Authenticator(c, f)
+	if err != nil {
+		return nil, err
+	}
+	return a.TokenSource()
 }

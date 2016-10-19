@@ -81,15 +81,14 @@ func (a *application) runCollector(c context.Context) error {
 	}
 
 	// New PubSub instance with the authenticated client.
-	psAuth, err := a.Authenticator(c, func(o *auth.Options) {
+	tokenSource, err := a.TokenSource(c, func(o *auth.Options) {
 		o.Scopes = gcps.SubscriberScopes
 	})
 	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create Pub/Sub token source.")
+		log.WithError(err).Errorf(c, "Failed to get Pub/Sub token source.")
 		return err
 	}
-
-	psClient, err := pubsub.NewClient(c, pscfg.Project, option.WithTokenSource(psAuth.TokenSource()))
+	psClient, err := pubsub.NewClient(c, pscfg.Project, option.WithTokenSource(tokenSource))
 	if err != nil {
 		log.Fields{
 			log.ErrorKey:   err,
