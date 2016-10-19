@@ -75,6 +75,15 @@ type buildbotMasterEntry struct {
 
 func putDSMasterJSON(
 	c context.Context, master *buildbotMaster, internal bool) error {
+	// Trim pending build states.  These things are large and we can't really
+	// store more than 25 of them.  If this becomes an issue again, we'll have
+	// to trim out things from the pending build state such as the changed
+	// file list, commit comments, etc.
+	for _, builder := range master.Builders {
+		if len(builder.PendingBuildStates) > 25 {
+			builder.PendingBuildStates = builder.PendingBuildStates[0:25]
+		}
+	}
 	entry := buildbotMasterEntry{
 		Name:     master.Name,
 		Internal: internal,
