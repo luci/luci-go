@@ -903,6 +903,59 @@ func TestAddTimer(t *testing.T) {
 	})
 }
 
+func TestTrimDebugLog(t *testing.T) {
+	ctx := clock.Set(context.Background(), testclock.New(epoch))
+	junk := strings.Repeat("a", 1000)
+
+	genLines := func(start, end int) string {
+		inv := Invocation{}
+		for i := start; i < end; i++ {
+			inv.debugLog(ctx, "Line %d - %s", i, junk)
+		}
+		return inv.DebugLog
+	}
+
+	Convey("small log is not trimmed", t, func() {
+		inv := Invocation{
+			DebugLog: genLines(0, 100),
+		}
+		inv.trimDebugLog()
+		So(inv.DebugLog, ShouldEqual, genLines(0, 100))
+	})
+
+	Convey("huge log is trimmed", t, func() {
+		inv := Invocation{
+			DebugLog: genLines(0, 500),
+		}
+		inv.trimDebugLog()
+		So(inv.DebugLog, ShouldEqual,
+			genLines(0, 94)+"--- the log has been cut here ---\n"+genLines(400, 500))
+	})
+
+	Convey("writing lines to huge log and trimming", t, func() {
+		inv := Invocation{
+			DebugLog: genLines(0, 500),
+		}
+		inv.trimDebugLog()
+		for i := 0; i < 10; i++ {
+			inv.debugLog(ctx, "Line %d - %s", i, junk)
+			inv.trimDebugLog()
+		}
+		// Still single cut only. New 10 lines are at the end.
+		So(inv.DebugLog, ShouldEqual,
+			genLines(0, 94)+"--- the log has been cut here ---\n"+genLines(410, 500)+genLines(0, 10))
+	})
+
+	Convey("one huge line", t, func() {
+		inv := Invocation{
+			DebugLog: strings.Repeat("z", 300000),
+		}
+		inv.trimDebugLog()
+		const msg = "\n--- the log has been cut here ---\n"
+		So(inv.DebugLog, ShouldEqual, strings.Repeat("z", debugLogSizeLimit-len(msg))+msg)
+	})
+}
+
 ////
 
 func newTestContext(now time.Time) context.Context {

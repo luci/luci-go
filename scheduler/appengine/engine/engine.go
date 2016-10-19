@@ -159,13 +159,23 @@ func NewEngine(conf Config) Engine {
 
 //// Implementation.
 
-// invocationRetryLimit is how many times to retry an invocation before giving
-// up and resuming the job's schedule.
-const invocationRetryLimit = 5
+const (
+	// invocationRetryLimit is how many times to retry an invocation before giving
+	// up and resuming the job's schedule.
+	invocationRetryLimit = 5
 
-// maxInvocationRetryBackoff is how long to wait before retrying a failed
-// invocation.
-const maxInvocationRetryBackoff = 10 * time.Second
+	// maxInvocationRetryBackoff is how long to wait before retrying a failed
+	// invocation.
+	maxInvocationRetryBackoff = 10 * time.Second
+
+	// debugLogSizeLimit is how many bytes the invocation debug log can be before
+	// it gets trimmed. See 'trimDebugLog'. The debug log isn't supposed to be
+	// huge.
+	debugLogSizeLimit = 200000
+
+	// debugLogTailLines is how many last log lines to keep when trimming the log.
+	debugLogTailLines = 100
+)
 
 // actionTaskPayload is payload for task queue jobs emitted by the engine.
 //
@@ -377,6 +387,77 @@ func (e *Invocation) isEqual(other *Invocation) bool {
 // debugLog appends a line to DebugLog field.
 func (e *Invocation) debugLog(c context.Context, format string, args ...interface{}) {
 	debugLog(c, &e.DebugLog, format, args...)
+}
+
+// trimDebugLog makes sure DebugLog field doesn't exceed limits.
+//
+// It cuts the middle of the log. We need to do this to keep the entity small
+// enough to fit the datastore limits.
+func (e *Invocation) trimDebugLog() {
+	if len(e.DebugLog) <= debugLogSizeLimit {
+		return
+	}
+
+	const cutMsg = "--- the log has been cut here ---"
+	giveUp := func() {
+		e.DebugLog = e.DebugLog[:debugLogSizeLimit-len(cutMsg)-2] + "\n" + cutMsg + "\n"
+	}
+
+	// We take last debugLogTailLines lines of log and move them "up", so that
+	// the total log size is less than debugLogSizeLimit. We then put a line with
+	// the message that some log lines have been cut. If these operations are not
+	// possible (e.g. we have some giant lines or something), we give up and just
+	// cut the end of the log.
+
+	// Find debugLogTailLines-th "\n" from the end, e.DebugLog[tailStart:] is the
+	// log tail.
+	tailStart := len(e.DebugLog)
+	for i := 0; i < debugLogTailLines; i++ {
+		tailStart = strings.LastIndex(e.DebugLog[:tailStart-1], "\n")
+		if tailStart <= 0 {
+			giveUp()
+			return
+		}
+	}
+	tailStart++
+
+	// Figure out how many bytes of head we can keep to make trimmed log small
+	// enough.
+	tailLen := len(e.DebugLog) - tailStart + len(cutMsg) + 1
+	headSize := debugLogSizeLimit - tailLen
+	if headSize <= 0 {
+		giveUp()
+		return
+	}
+
+	// Find last "\n" in the head.
+	headEnd := strings.LastIndex(e.DebugLog[:headSize], "\n")
+	if headEnd <= 0 {
+		giveUp()
+		return
+	}
+
+	// We want to keep 50 lines of the head no matter what.
+	headLines := strings.Count(e.DebugLog[:headEnd], "\n")
+	if headLines < 50 {
+		giveUp()
+		return
+	}
+
+	// Remove duplicated 'cutMsg' lines. They may appear if 'debugLog' (followed
+	// by 'trimDebugLog') is called on already trimmed log multiple times.
+	lines := strings.Split(e.DebugLog[:headEnd], "\n")
+	lines = append(lines, cutMsg)
+	lines = append(lines, strings.Split(e.DebugLog[tailStart:], "\n")...)
+	trimmed := make([]byte, 0, debugLogSizeLimit)
+	trimmed = append(trimmed, lines[0]...)
+	for i := 1; i < len(lines); i++ {
+		if !(lines[i-1] == cutMsg && lines[i] == cutMsg) {
+			trimmed = append(trimmed, '\n')
+			trimmed = append(trimmed, lines[i]...)
+		}
+	}
+	e.DebugLog = string(trimmed)
 }
 
 // Jan 1 2015, in UTC.
@@ -1342,6 +1423,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 				prev.Status = task.StatusFailed
 				prev.Finished = clock.Now(c).UTC()
 				prev.MutationsCount++
+				prev.trimDebugLog()
 				if err := ds.Put(c, &prev); err != nil {
 					return err
 				}
@@ -1802,6 +1884,7 @@ func (ctl *taskController) saveImpl(updateJob bool) (err error) {
 		// the current state of the Job entity. The table of all invocations is
 		// useful on its own (e.g. for debugging) even if Job entity state has
 		// desynchronized for some reason.
+		saving.trimDebugLog()
 		if err := ds.Put(c, &saving); err != nil {
 			return err
 		}
