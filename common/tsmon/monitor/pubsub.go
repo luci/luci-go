@@ -17,7 +17,8 @@ import (
 )
 
 type pubSubMonitor struct {
-	topic *pubsub.Topic
+	client *pubsub.Client
+	topic  *pubsub.Topic
 }
 
 // NewPubsubMonitor returns a Monitor that sends metrics to the Cloud Pub/Sub
@@ -34,7 +35,8 @@ func NewPubsubMonitor(ctx context.Context, tokens oauth2.TokenSource, topic gcps
 	}
 
 	return &pubSubMonitor{
-		topic: psClient.Topic(name),
+		client: psClient,
+		topic:  psClient.Topic(name),
 	}, nil
 }
 
@@ -59,4 +61,8 @@ func (m *pubSubMonitor) Send(ctx context.Context, cells []types.Cell) error {
 	}
 	logging.Debugf(ctx, "Sent %d tsmon cells to PubSub, message id: %v", len(cells), ids)
 	return nil
+}
+
+func (m *pubSubMonitor) Close() error {
+	return m.client.Close()
 }

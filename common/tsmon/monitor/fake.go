@@ -25,3 +25,7 @@ func (m *Fake) Send(c context.Context, cells []types.Cell) error {
 	m.Cells = append(m.Cells, cells)
 	return nil
 }
+
+func (m *Fake) Close() error {
+	return nil
+}

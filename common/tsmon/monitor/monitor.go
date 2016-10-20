@@ -19,4 +19,9 @@ type Monitor interface {
 	ChunkSize() int
 
 	Send(ctx context.Context, cells []types.Cell) error
+
+	// Close closes any resources held by the monitor.
+	//
+	// Close need not be called at program exit.
+	Close() error
 }

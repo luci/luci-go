@@ -56,3 +56,7 @@ func (m *debugMonitor) Send(ctx context.Context, cells []types.Cell) error {
 
 	return nil
 }
+
+func (m *debugMonitor) Close() error {
+	return nil
+}

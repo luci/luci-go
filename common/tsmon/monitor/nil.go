@@ -23,3 +23,7 @@ func (m *nilMonitor) ChunkSize() int {
 func (m *nilMonitor) Send(ctx context.Context, cells []types.Cell) error {
 	return nil
 }
+
+func (m *nilMonitor) Close() error {
+	return nil
+}

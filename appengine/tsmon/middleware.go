@@ -325,6 +325,7 @@ func (s *State) doFlush(c context.Context, state *tsmon.State, settings *tsmonSe
 		}
 	}
 
+	defer mon.Close()
 	if err = state.Flush(c, mon); err != nil {
 		return err
 	}
