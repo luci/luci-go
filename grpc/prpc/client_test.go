@@ -118,7 +118,14 @@ func TestClient(t *testing.T) {
 			return client, server
 		}
 
-		ctx, _ := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
+		// These unit tests use real HTTP connections to localhost. Since go 1.7
+		// 'net/http' library uses the context deadline to derive the connection
+		// timeout: it grabs the deadline (as time.Time) from the context and
+		// compares it to the current time. So we can't put arbitrary mocked time
+		// into the testclock (as it ends up in the context deadline passed to
+		// 'net/http'). We either have to use real clock in the unit tests, or
+		// "freeze" the time at the real "now" value.
+		ctx, _ := testclock.UseTime(context.Background(), time.Now().Local())
 		ctx = memlogger.Use(ctx)
 		log := logging.Get(ctx).(*memlogger.MemLogger)
 		expectedCallLogEntry := func(c *Client) memlogger.LogEntry {

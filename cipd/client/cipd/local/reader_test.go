@@ -215,7 +215,7 @@ func TestPackageReading(t *testing.T) {
 
 		// Verify version file is correct.
 		goodVersionFile := `{
-			"instance_id": "e01c6837705d21418a61bc17c794746daa32379f",
+			"instance_id": "dd08e20d0e436c5c778ccbd87c99a05182dc5558",
 			"package_name": "testing"
 		}`
 		So(dest.files[5].name, ShouldEqual, "subpath/version.json")
