@@ -475,6 +475,8 @@ func (c *installRun) Run(a subcommands.Application, args []string) int {
 	if err = site.initClient(ctx, c.authFlags); err != nil {
 		return c.done(nil, err)
 	}
+	site.client.BeginBatch(ctx)
+	defer site.client.EndBatch(ctx)
 	return c.done(site.installPackage(ctx, pkgName, version, c.force))
 }
 

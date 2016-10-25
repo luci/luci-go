@@ -32,7 +32,6 @@ package cipd
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
 	"io"
 	"net/http"
@@ -250,6 +249,26 @@ type ActionError struct {
 
 // Client provides high-level CIPD client interface. Thread safe.
 type Client interface {
+	// BeginBatch makes the client enter into a "batch mode".
+	//
+	// In this mode various cleanup and cache updates, usually performed right
+	// away, are deferred until 'EndBatch' call.
+	//
+	// This is an optimization. Use it if you plan to call a bunch of Client
+	// methods in a short amount of time (parallel or sequentially).
+	//
+	// Batches can be nested.
+	BeginBatch(ctx context.Context)
+
+	// EndBatch ends a batch started with BeginBatch.
+	//
+	// EndBatch does various delayed maintenance tasks (like cache updates, trash
+	// cleanup and so on). This is best-effort operations, and thus this method
+	// doesn't return an errors.
+	//
+	// See also BeginBatch doc for more details.
+	EndBatch(ctx context.Context)
+
 	// FetchACL returns a list of PackageACL objects (parent paths first).
 	//
 	// Together they define the access control list for the given package subpath.
@@ -428,6 +447,11 @@ func NewClient(opts ClientOptions) Client {
 type clientImpl struct {
 	ClientOptions
 
+	// batchLock protects guts of by BeginBatch/EndBatch implementation.
+	batchLock    sync.Mutex
+	batchNesting int
+	batchPending map[batchAwareOp]struct{}
+
 	// remote knows how to call backend REST API.
 	remote remote
 
@@ -437,75 +461,63 @@ type clientImpl struct {
 	// deployer knows how to install packages to local file system. Thread safe.
 	deployer local.Deployer
 
-	// tagCacheLock is used to synchronize access to the tag cache file.
-	tagCacheLock sync.Mutex
+	// tagCache is a file-system based cache of resolved tags.
+	tagCache     *internal.TagCache
+	tagCacheInit sync.Once
 
 	// instanceCache is a file-system based cache of instances.
 	instanceCache     *internal.InstanceCache
 	instanceCacheInit sync.Once
 }
 
-// tagCachePath returns path to a tag cache file or "" if tag cache is disabled.
-func (client *clientImpl) tagCachePath() string {
-	var dir string
-	switch {
-	case client.CacheDir != "":
-		dir = client.CacheDir
+type batchAwareOp int
 
-	case client.Root != "":
-		dir = filepath.Join(client.Root, local.SiteServiceDir)
+const (
+	batchAwareOpSaveTagCache batchAwareOp = iota
+	batchAwareOpCleanupTrash
+)
 
-	default:
-		return ""
-	}
-
-	return filepath.Join(dir, "tagcache.db")
+// See https://golang.org/ref/spec#Method_expressions
+var batchAwareOps = map[batchAwareOp]func(*clientImpl, context.Context){
+	batchAwareOpSaveTagCache: (*clientImpl).saveTagCache,
+	batchAwareOpCleanupTrash: (*clientImpl).cleanupTrash,
 }
 
-// withTagCache checks if tag cache is enabled; if yes, loads it, calls f and
-// saves back if it was modified.
-// Calls are serialized.
-func (client *clientImpl) withTagCache(ctx context.Context, f func(*internal.TagCache)) {
-	path := client.tagCachePath()
-	if path == "" {
-		return
-	}
-
-	client.tagCacheLock.Lock()
-	defer client.tagCacheLock.Unlock()
-
-	start := clock.Now(ctx)
-	cache, err := internal.LoadTagCacheFromFile(ctx, path)
-	if err != nil {
-		logging.Warningf(ctx, "cipd: failed to load tag cache - %s", err)
-		cache = &internal.TagCache{}
-	}
-	loadSaveTime := clock.Now(ctx).Sub(start)
-
-	f(cache)
-
-	if cache.Dirty() {
-		// It's tiny in size (and protobuf can't serialize to io.Reader anyway). Dump
-		// it to disk via FileSystem object to deal with possible concurrent updates,
-		// missing directories, etc.
-		fs := local.NewFileSystem(filepath.Dir(path), "")
-		start = clock.Now(ctx)
-		out, err := cache.Save(ctx)
-		if err == nil {
-			err = local.EnsureFile(ctx, fs, path, bytes.NewReader(out))
-		}
-		loadSaveTime += clock.Now(ctx).Sub(start)
-		if err != nil {
-			logging.Warningf(ctx, "cipd: failed to update tag cache - %s", err)
+func (client *clientImpl) saveTagCache(ctx context.Context) {
+	if client.tagCache != nil {
+		if err := client.tagCache.Save(ctx); err != nil {
+			logging.Warningf(ctx, "cipd: failed to save tag cache - %s", err)
 		}
 	}
+}
 
-	if loadSaveTime > time.Second {
-		logging.Warningf(ctx, "cipd: loading and saving tag cache with %d entries took %s", cache.Len(), loadSaveTime)
+func (client *clientImpl) cleanupTrash(ctx context.Context) {
+	if err := client.deployer.CleanupTrash(ctx); err != nil {
+		logging.Warningf(ctx, "cipd: failed to cleanup trash (this is fine) - %s", err)
 	}
+}
+
+// getTagCache lazy-initializes tagCache and returns it.
+//
+// May return nil if tag cache is disabled.
+func (client *clientImpl) getTagCache() *internal.TagCache {
+	client.tagCacheInit.Do(func() {
+		var dir string
+		switch {
+		case client.CacheDir != "":
+			dir = client.CacheDir
+		case client.Root != "":
+			dir = filepath.Join(client.Root, local.SiteServiceDir)
+		default:
+			return
+		}
+		client.tagCache = internal.NewTagCache(local.NewFileSystem(dir, ""))
+	})
+	return client.tagCache
 }
 
 // getInstanceCache lazy-initializes instanceCache and returns it.
+//
 // May return nil if instance cache is disabled.
 func (client *clientImpl) getInstanceCache() *internal.InstanceCache {
 	client.instanceCacheInit.Do(func() {
@@ -516,6 +528,43 @@ func (client *clientImpl) getInstanceCache() *internal.InstanceCache {
 		client.instanceCache = internal.NewInstanceCache(local.NewFileSystem(path, ""))
 	})
 	return client.instanceCache
+}
+
+func (client *clientImpl) BeginBatch(ctx context.Context) {
+	client.batchLock.Lock()
+	defer client.batchLock.Unlock()
+	client.batchNesting++
+}
+
+func (client *clientImpl) EndBatch(ctx context.Context) {
+	client.batchLock.Lock()
+	defer client.batchLock.Unlock()
+	if client.batchNesting <= 0 {
+		panic("EndBatch called without corresponding BeginBatch")
+	}
+	client.batchNesting--
+	if client.batchNesting == 0 {
+		// Execute all pending batch aware calls now.
+		for op := range client.batchPending {
+			batchAwareOps[op](client, ctx)
+		}
+		client.batchPending = nil
+	}
+}
+
+func (client *clientImpl) doBatchAwareOp(ctx context.Context, op batchAwareOp) {
+	client.batchLock.Lock()
+	defer client.batchLock.Unlock()
+	if client.batchNesting == 0 {
+		// Not inside a batch, execute right now.
+		batchAwareOps[op](client, ctx)
+	} else {
+		// Schedule to execute when 'EndBatch' is called.
+		if client.batchPending == nil {
+			client.batchPending = make(map[batchAwareOp]struct{}, 1)
+		}
+		client.batchPending[op] = struct{}{}
+	}
 }
 
 func (client *clientImpl) FetchACL(ctx context.Context, packagePath string) ([]PackageACL, error) {
@@ -612,12 +661,15 @@ func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, versi
 	}
 	// Use local cache when resolving tags to avoid round trips to backend when
 	// calling same 'cipd ensure' command again and again.
-	isTag := common.ValidateInstanceTag(version) == nil
-	if isTag {
-		var cached common.Pin
-		client.withTagCache(ctx, func(tc *internal.TagCache) {
-			cached = tc.ResolveTag(ctx, packageName, version)
-		})
+	var cache *internal.TagCache
+	if common.ValidateInstanceTag(version) == nil {
+		cache = client.getTagCache()
+	}
+	if cache != nil {
+		cached, err := cache.ResolveTag(ctx, packageName, version)
+		if err != nil {
+			logging.Warningf(ctx, "cipd: could not query tag cache - %s", err)
+		}
 		if cached.InstanceID != "" {
 			logging.Debugf(ctx, "cipd: tag cache hit for %s:%s - %s", packageName, version, cached.InstanceID)
 			return cached, nil
@@ -627,10 +679,11 @@ func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, versi
 	if err != nil {
 		return pin, err
 	}
-	if isTag {
-		client.withTagCache(ctx, func(tc *internal.TagCache) {
-			tc.AddTag(ctx, pin, version)
-		})
+	if cache != nil {
+		if err := cache.AddTag(ctx, pin, version); err != nil {
+			logging.Warningf(ctx, "cipd: could not add tag to the cache")
+		}
+		client.doBatchAwareOp(ctx, batchAwareOpSaveTagCache)
 	}
 	return pin, nil
 }
@@ -908,7 +961,13 @@ func (client *clientImpl) fetchAndDeployImpl(ctx context.Context, pin common.Pin
 		if instance == nil {
 			f.Close()
 		}
-		os.Remove(f.Name())
+		if err := os.Remove(f.Name()); err != nil {
+			if !os.IsNotExist(err) {
+				logging.Warningf(ctx, "cipd: failed to remove temp file - %s", err)
+			}
+		}
+		// Opportunistically clean up trashed files.
+		client.doBatchAwareOp(ctx, batchAwareOpCleanupTrash)
 	}()
 
 	// Fetch the package data to the provided storage.
@@ -930,6 +989,9 @@ func (client *clientImpl) fetchAndDeployImpl(ctx context.Context, pin common.Pin
 }
 
 func (client *clientImpl) ProcessEnsureFile(ctx context.Context, r io.Reader) ([]common.Pin, error) {
+	client.BeginBatch(ctx)
+	defer client.EndBatch(ctx)
+
 	lineNo := 0
 	makeError := func(msg string) error {
 		return fmt.Errorf("failed to parse desired state (line %d): %s", lineNo, msg)
@@ -987,6 +1049,9 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, pins []common.Pin,
 		}
 		seen[p.PackageName] = true
 	}
+
+	client.BeginBatch(ctx)
+	defer client.EndBatch(ctx)
 
 	// Enumerate existing packages.
 	existing, err := client.deployer.FindDeployed(ctx)

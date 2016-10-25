@@ -504,6 +504,9 @@ func expandPkgDir(ctx context.Context, c cipd.Client, packagePrefix string) ([]s
 // performBatchOperation expands a package prefix into a list of packages and
 // calls callback for each of them (concurrently) gathering the results.
 func performBatchOperation(ctx context.Context, op batchOperation) ([]pinInfo, error) {
+	op.client.BeginBatch(ctx)
+	defer op.client.EndBatch(ctx)
+
 	pkgs := op.packages
 	if len(pkgs) == 0 {
 		var err error
@@ -690,10 +693,15 @@ func ensurePackages(ctx context.Context, root string, desiredStateFile string, d
 		return nil, cipd.Actions{}, err
 	}
 	defer f.Close()
+
 	client, err := clientOpts.makeCipdClient(ctx, root)
 	if err != nil {
 		return nil, cipd.Actions{}, err
 	}
+
+	client.BeginBatch(ctx)
+	defer client.EndBatch(ctx)
+
 	desiredState, err := client.ProcessEnsureFile(ctx, f)
 	if err != nil {
 		return nil, cipd.Actions{}, err
