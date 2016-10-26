@@ -294,7 +294,7 @@ func TestTransport(t *testing.T) {
 
 		// Minted token is now cached.
 		So(auth.currentToken().AccessToken, ShouldEqual, "minted")
-		cached, err := internal.UnmarshalToken(auth.cache.(*fakeTokenCache).cache)
+		cached, err := internal.UnmarshalToken(auth.cache.(*memoryCache).cache)
 		So(err, ShouldBeNil)
 		So(cached.AccessToken, ShouldEqual, "minted")
 
@@ -366,7 +366,7 @@ func TestOptionalLogin(t *testing.T) {
 
 		// Bad token is removed from the cache.
 		So(auth.currentToken(), ShouldBeNil)
-		So(auth.cache.(*fakeTokenCache).cache, ShouldBeNil)
+		So(auth.cache.(*memoryCache).cache, ShouldBeNil)
 
 		// All calls are actually made.
 		So(calls, ShouldEqual, 2)
@@ -399,8 +399,8 @@ func newTestAuthenticator(loginMode LoginMode, p internal.TokenProvider, cached 
 	}
 
 	return NewAuthenticator(ctx, loginMode, Options{
-		TokenCacheFactory: func(string) (TokenCache, error) {
-			return &fakeTokenCache{initialCache}, nil
+		tokenCacheFactory: func(string) (tokenCache, error) {
+			return &memoryCache{cache: initialCache}, nil
 		},
 		SecretsDir:          tempDir,
 		customTokenProvider: p,
@@ -451,24 +451,4 @@ func (p *fakeTokenProvider) RefreshToken(*oauth2.Token) (*oauth2.Token, error) {
 		return p.tokenToRefresh, nil
 	}
 	return &oauth2.Token{AccessToken: "some refreshed token"}, nil
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-type fakeTokenCache struct {
-	cache []byte
-}
-
-func (c *fakeTokenCache) Read() ([]byte, error) {
-	return c.cache, nil
-}
-
-func (c *fakeTokenCache) Write(tok []byte, expiry time.Time) error {
-	c.cache = append([]byte(nil), tok...)
-	return nil
-}
-
-func (c *fakeTokenCache) Clear() error {
-	c.cache = nil
-	return nil
 }

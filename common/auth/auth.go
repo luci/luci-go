@@ -168,17 +168,14 @@ type Options struct {
 	// Default: "default" account.
 	GCEAccountName string
 
-	// TokenCacheFactory is a factory method to use to grab TokenCache object.
-	//
-	// If not set, a file system cache will be used.
-	TokenCacheFactory func(entryName string) (TokenCache, error)
-
 	// SecretsDir can be used to override a path to a directory where tokens
 	// are cached and default service account key is located.
 	//
 	// If not set, SecretsDir() will be used.
 	SecretsDir string
 
+	// tokenCacheFactory is used in unit tests.
+	tokenCacheFactory func(entryName string) (tokenCache, error)
 	// customTokenProvider is used in unit tests.
 	customTokenProvider internal.TokenProvider
 }
@@ -196,26 +193,10 @@ type Authenticator struct {
 
 	// Mutable members.
 	lock     sync.RWMutex
-	cache    TokenCache
+	cache    tokenCache
 	provider internal.TokenProvider
 	err      error
 	token    *oauth2.Token
-}
-
-// TokenCache implements a scheme to cache access tokens between the calls. It
-// will be used concurrently from multiple threads. Authenticator takes care
-// of token serialization, TokenCache operates in terms of byte buffers.
-type TokenCache interface {
-	// Read returns the data previously stored with Write or (nil, nil) if not
-	// there or expired. It is also OK if token cache doesn't do expiration check
-	// itself. Cached byte buffer includes expiration time too.
-	Read() ([]byte, error)
-
-	// Write puts token data into the cache.
-	Write(tok []byte, expiry time.Time) error
-
-	// Clear clears the cache.
-	Clear() error
 }
 
 // Token represents OAuth2 access token.
@@ -228,17 +209,6 @@ type Token struct {
 
 	// TokenType is the type of token (e.g. "Bearer", which is default).
 	TokenType string `json:"token_type,omitempty"`
-}
-
-// TokenMinter is a factory for access tokens when using CustomMode. It is
-// invoked only if token is not in cache or has expired.
-type TokenMinter interface {
-	// MintToken return new access token for given scopes.
-	MintToken(scopes []string) (Token, error)
-
-	// CacheSeed is used to derive cache key name for tokens minted via
-	// this object.
-	CacheSeed() []byte
 }
 
 // NewAuthenticator returns a new instance of Authenticator given its options.
@@ -485,15 +455,23 @@ func (a *Authenticator) ensureInitialized() error {
 
 	// Setup the cache only when Method is known, cache filename depends on it.
 	cacheName := cacheEntryName(a.opts, a.provider)
-	if a.opts.TokenCacheFactory != nil {
-		a.cache, a.err = a.opts.TokenCacheFactory(cacheName)
+	if a.opts.tokenCacheFactory != nil {
+		a.cache, a.err = a.opts.tokenCacheFactory(cacheName)
 		if a.err != nil {
 			return a.err
 		}
 	} else {
-		a.cache = &tokenFileCache{
-			path: filepath.Join(a.opts.secretsDir(), cacheName+".tok"),
-			ctx:  a.ctx,
+		secretsDir, err := a.opts.secretsDir()
+		if err != nil {
+			// Note: in observed cases the 'err' here is some confusing nonsense like
+			// "exit status 1", this is fine.
+			logging.Warningf(a.ctx, "Disabling token cache, can't find HOME (the inner error is %q)", err)
+			a.cache = &memoryCache{}
+		} else {
+			a.cache = &tokenFileCache{
+				path: filepath.Join(secretsDir, cacheName+".tok"),
+				ctx:  a.ctx,
+			}
 		}
 	}
 
@@ -700,9 +678,25 @@ func (a *Authenticator) authTokenInjector(req *http.Request) error {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// tokenFileCache implementation.
+// tokenCache implementations.
 
-// tokenFileCache implements TokenCache on top of the file system file.
+// tokenCache implements a scheme to cache access tokens between the calls. It
+// will be used concurrently from multiple threads. Authenticator takes care
+// of token serialization, tokenCache operates in terms of byte buffers.
+type tokenCache interface {
+	// Read returns the data previously stored with Write or (nil, nil) if not
+	// there or expired. It is also OK if token cache doesn't do expiration check
+	// itself. Cached byte buffer includes expiration time too.
+	Read() ([]byte, error)
+
+	// Write puts token data into the cache.
+	Write(tok []byte, expiry time.Time) error
+
+	// Clear clears the cache.
+	Clear() error
+}
+
+// tokenFileCache implements tokenCache on top of the file system file.
 //
 // It caches only single token.
 type tokenFileCache struct {
@@ -743,13 +737,41 @@ func (c *tokenFileCache) Clear() error {
 	return nil
 }
 
+// memoryCache implements tokenCache on top of local process memory.
+//
+// It caches only single token.
+type memoryCache struct {
+	lock  sync.RWMutex
+	cache []byte
+}
+
+func (c *memoryCache) Read() (buf []byte, err error) {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+	return c.cache, nil
+}
+
+func (c *memoryCache) Write(buf []byte, exp time.Time) error {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	c.cache = append([]byte(nil), buf...)
+	return nil
+}
+
+func (c *memoryCache) Clear() error {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	c.cache = nil
+	return nil
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions.
 
 // secretsDir returns directory with token cache files.
-func (opts *Options) secretsDir() string {
+func (opts *Options) secretsDir() (string, error) {
 	if opts.SecretsDir != "" {
-		return opts.SecretsDir
+		return opts.SecretsDir, nil
 	}
 	return SecretsDir()
 }
@@ -777,11 +799,15 @@ func cacheEntryName(opts *Options, p internal.TokenProvider) string {
 // pickServiceAccount returns a path to a JSON key to load.
 //
 // It is either the one specified in options or default one.
-func pickServiceAccount(opts *Options) string {
+func pickServiceAccount(opts *Options) (string, error) {
 	if opts.ServiceAccountJSONPath != "" {
-		return opts.ServiceAccountJSONPath
+		return opts.ServiceAccountJSONPath, nil
 	}
-	return filepath.Join(opts.secretsDir(), "service_account.json")
+	p, err := opts.secretsDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(p, "service_account.json"), nil
 }
 
 // selectDefaultMethod is invoked in AutoSelectMethod mode.
@@ -792,10 +818,11 @@ func selectDefaultMethod(opts *Options) Method {
 	if len(opts.ServiceAccountJSON) != 0 {
 		return ServiceAccountMethod
 	}
-	serviceAccountPath := pickServiceAccount(opts)
-	info, _ := os.Stat(serviceAccountPath)
-	if info != nil && info.Mode().IsRegular() {
-		return ServiceAccountMethod
+	if serviceAccountPath, err := pickServiceAccount(opts); err == nil {
+		info, _ := os.Stat(serviceAccountPath)
+		if info != nil && info.Mode().IsRegular() {
+			return ServiceAccountMethod
+		}
 	}
 	if metadata.OnGCE() {
 		return GCEMetadataMethod
@@ -827,7 +854,11 @@ func makeTokenProvider(ctx context.Context, opts *Options) (internal.TokenProvid
 	case ServiceAccountMethod:
 		serviceAccountPath := ""
 		if len(opts.ServiceAccountJSON) == 0 {
-			serviceAccountPath = pickServiceAccount(opts)
+			var err error
+			serviceAccountPath, err = pickServiceAccount(opts)
+			if err != nil {
+				return nil, fmt.Errorf("auth: can't find default service account JSON file - %s", err)
+			}
 		}
 		return internal.NewServiceAccountTokenProvider(
 			ctx,
@@ -853,11 +884,12 @@ func DefaultClient() (clientID string, clientSecret string) {
 	return
 }
 
-// SecretsDir returns an absolute path to a directory to keep secret files in.
-func SecretsDir() string {
+// SecretsDir returns an absolute path to a directory (in $HOME) to keep secret
+// files in or an error if $HOME can't be determined.
+func SecretsDir() (string, error) {
 	home, err := homedir.Dir()
 	if err != nil {
-		panic(err.Error())
+		return "", err
 	}
-	return filepath.Join(home, ".config", "chrome_infra", "auth")
+	return filepath.Join(home, ".config", "chrome_infra", "auth"), nil
 }
