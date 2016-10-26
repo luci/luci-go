@@ -191,6 +191,75 @@ func getOSInfo(c context.Context, b *buildbotBuild, m *buildbotMaster) (
 	return
 }
 
+// Marks a build as finished and expired.
+func expireBuild(c context.Context, b *buildbotBuild) error {
+	finished := float64(clock.Now(c).Unix())
+	if b.TimeStamp != nil {
+		finished = float64(*b.TimeStamp)
+	}
+	results := int(2)
+	b.Times[1] = &finished
+	b.Finished = true
+	b.Results = &results
+	return ds.Put(c, b)
+}
+
+func doMaster(c context.Context, master *buildbotMaster, internal bool) int {
+	// Store the master json into the datastore.
+	err := putDSMasterJSON(c, master, internal)
+	if err != nil {
+		logging.WithError(err).Errorf(
+			c, "Could not save master in datastore %s", err)
+		// This is transient, we do want PubSub to retry.
+		return 500
+	}
+
+	// Extract current builds data out of the master json, and use it to
+	// clean up expired builds.
+	q := ds.NewQuery("buildbotBuild").
+		Eq("finished", false).
+		Eq("master", master.Name)
+	builds := []*buildbotBuild{}
+	err = ds.GetAll(c, q, &builds)
+	if err != nil {
+		logging.WithError(err).Errorf(c, "Could not load current builds from master %s",
+			master.Name)
+		return 500
+	}
+	for _, b := range builds {
+		builder, ok := master.Builders[b.Buildername]
+		if !ok {
+			// Mark this build due to builder being removed.
+			logging.Infof(c, "Expiring %s/%s/%d due to builder being removed",
+				master.Name, b.Buildername, b.Number)
+			err = expireBuild(c, b)
+			if err != nil {
+				logging.WithError(err).Errorf(c, "Could not expire build")
+				return 500
+			}
+		}
+
+		found := false
+		for _, bnum := range builder.CurrentBuilds {
+			if b.Number == bnum {
+				found = true
+				break
+			}
+		}
+		if !found {
+			// Mark this build due to build not current anymore.
+			logging.Infof(c, "Expiring %s/%s/%d due to build not current",
+				master.Name, b.Buildername, b.Number)
+			err = expireBuild(c, b)
+			if err != nil {
+				logging.WithError(err).Errorf(c, "Could not expire build")
+				return 500
+			}
+		}
+	}
+	return 0
+}
+
 // PubSubHandler is a webhook that stores the builds coming in from pubsub.
 func PubSubHandler(ctx *router.Context) {
 	c, h, r := ctx.Context, ctx.Writer, ctx.Request
@@ -299,12 +368,9 @@ func PubSubHandler(ctx *router.Context) {
 
 	}
 	if master != nil {
-		err = putDSMasterJSON(c, master, internal)
-		if err != nil {
-			logging.WithError(err).Errorf(
-				c, "Could not save master in datastore %s", err)
-			// This is transient, we do want PubSub to retry.
-			h.WriteHeader(500)
+		code := doMaster(c, master, internal)
+		if code != 0 {
+			h.WriteHeader(code)
 			return
 		}
 	}

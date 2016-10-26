@@ -171,12 +171,14 @@ func TestPubSub(t *testing.T) {
 			So(func() { ds.Put(c, build) }, ShouldPanicLike, "No Master or Builder found")
 		})
 
+		ts := 555
 		b := &buildbotBuild{
 			Master:      "Fake Master",
 			Buildername: "Fake buildername",
 			Number:      1234,
 			Currentstep: "this is a string",
 			Times:       buildbotTimesPending(123.0),
+			TimeStamp:   &ts,
 		}
 
 		Convey("Basic master + build pusbsub subscription", func() {
@@ -196,9 +198,14 @@ func TestPubSub(t *testing.T) {
 				},
 			}
 			ms := buildbotMaster{
-				Name:    "fakename",
-				Project: buildbotProject{Title: "some title"},
-				Slaves:  slaves,
+				Name:     "Fake Master",
+				Project:  buildbotProject{Title: "some title"},
+				Slaves:   slaves,
+				Builders: map[string]*buildbotBuilder{},
+			}
+
+			ms.Builders["Fake buildername"] = &buildbotBuilder{
+				CurrentBuilds: []int{1234},
 			}
 			r := &http.Request{
 				Body: newCombinedPsBody([]*buildbotBuild{b}, &ms, false),
@@ -221,10 +228,10 @@ func TestPubSub(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(loadB.Master, ShouldEqual, "Fake Master")
 				So(loadB.Currentstep.(string), ShouldEqual, "this is a string")
-				m, t, err := getMasterJSON(c, "fakename")
+				m, t, err := getMasterJSON(c, "Fake Master")
 				So(err, ShouldBeNil)
 				So(t.Unix(), ShouldEqual, 981173106)
-				So(m.Name, ShouldEqual, "fakename")
+				So(m.Name, ShouldEqual, "Fake Master")
 				So(m.Project.Title, ShouldEqual, "some title")
 				So(m.Slaves["testslave"].Name, ShouldEqual, "testslave")
 				So(len(m.Slaves["testslave"].Runningbuilds), ShouldEqual, 0)
@@ -247,11 +254,11 @@ func TestPubSub(t *testing.T) {
 					Params:  p,
 				})
 				So(h.Code, ShouldEqual, 200)
-				m, t, err := getMasterJSON(c, "fakename")
+				m, t, err := getMasterJSON(c, "Fake Master")
 				So(err, ShouldBeNil)
 				So(m.Project.Title, ShouldEqual, "some other title")
 				So(t.Unix(), ShouldEqual, 981173107)
-				So(m.Name, ShouldEqual, "fakename")
+				So(m.Name, ShouldEqual, "Fake Master")
 			})
 			Convey("And a new build overwrites", func() {
 				b.Times = buildbotTimesFinished(123.0, 124.0)
@@ -300,6 +307,34 @@ func TestPubSub(t *testing.T) {
 					So(*loadB.Times[0], ShouldEqual, 123.0)
 					So(*loadB.Times[1], ShouldEqual, 124.0)
 				})
+			})
+			Convey("Expire non-existant current build", func() {
+				b.Number = 1235
+				h = httptest.NewRecorder()
+				r = &http.Request{
+					Body: newCombinedPsBody([]*buildbotBuild{b}, &ms, false),
+				}
+				p = httprouter.Params{}
+				ds.GetTestable(c).Consistent(true)
+				PubSubHandler(&router.Context{
+					Context: c,
+					Writer:  h,
+					Request: r,
+					Params:  p,
+				})
+				So(h.Code, ShouldEqual, 200)
+				loadB := &buildbotBuild{
+					Master:      "Fake Master",
+					Buildername: "Fake buildername",
+					Number:      1235,
+				}
+				err := ds.Get(c, loadB)
+				So(err, ShouldBeNil)
+				So(loadB.Finished, ShouldEqual, true)
+				So(*loadB.Times[0], ShouldEqual, 123.0)
+				So(loadB.Times[1], ShouldNotEqual, nil)
+				So(*loadB.Times[1], ShouldEqual, 555.0)
+				So(*loadB.Results, ShouldEqual, 2)
 			})
 			Convey("Large pubsub message", func() {
 				// This has to be a random string, so that after gzip compresses it
@@ -351,7 +386,7 @@ func TestPubSub(t *testing.T) {
 				},
 			}
 			ms := buildbotMaster{
-				Name:    "fakename",
+				Name:    "Fake Master",
 				Project: buildbotProject{Title: "some title"},
 				Slaves:  slaves,
 			}
@@ -384,10 +419,10 @@ func TestPubSub(t *testing.T) {
 				So(loadB.Master, ShouldEqual, "Fake Master")
 				So(loadB.Internal, ShouldEqual, true)
 				So(loadB.Currentstep.(string), ShouldEqual, "this is a string")
-				m, t, err := getMasterJSON(c, "fakename")
+				m, t, err := getMasterJSON(c, "Fake Master")
 				So(err, ShouldBeNil)
 				So(t.Unix(), ShouldEqual, 981173106)
-				So(m.Name, ShouldEqual, "fakename")
+				So(m.Name, ShouldEqual, "Fake Master")
 				So(m.Project.Title, ShouldEqual, "some title")
 				So(m.Slaves["testslave"].Name, ShouldEqual, "testslave")
 				So(len(m.Slaves["testslave"].Runningbuilds), ShouldEqual, 0)
