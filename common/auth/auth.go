@@ -152,7 +152,6 @@ type Options struct {
 	// ServiceAccountJSONPath is a path to a JSON blob with a private key to use.
 	//
 	// Used only with ServiceAccountMethod.
-	// Default: ~/.config/chrome_infra/auth/service_account.json.
 	ServiceAccountJSONPath string
 
 	// ServiceAccountJSON is a body of JSON key file to use.
@@ -796,38 +795,19 @@ func cacheEntryName(opts *Options, p internal.TokenProvider) string {
 	return hex.EncodeToString(sum.Sum(nil))[:16]
 }
 
-// pickServiceAccount returns a path to a JSON key to load.
-//
-// It is either the one specified in options or default one.
-func pickServiceAccount(opts *Options) (string, error) {
-	if opts.ServiceAccountJSONPath != "" {
-		return opts.ServiceAccountJSONPath, nil
-	}
-	p, err := opts.secretsDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(p, "service_account.json"), nil
-}
-
 // selectDefaultMethod is invoked in AutoSelectMethod mode.
 //
 // It looks at the options and the environment and picks the most appropriate
 // authentication method.
 func selectDefaultMethod(opts *Options) Method {
-	if len(opts.ServiceAccountJSON) != 0 {
+	switch {
+	case opts.ServiceAccountJSONPath != "" || len(opts.ServiceAccountJSON) != 0:
 		return ServiceAccountMethod
-	}
-	if serviceAccountPath, err := pickServiceAccount(opts); err == nil {
-		info, _ := os.Stat(serviceAccountPath)
-		if info != nil && info.Mode().IsRegular() {
-			return ServiceAccountMethod
-		}
-	}
-	if metadata.OnGCE() {
+	case metadata.OnGCE():
 		return GCEMetadataMethod
+	default:
+		return UserCredentialsMethod
 	}
-	return UserCredentialsMethod
 }
 
 // makeTokenProvider creates TokenProvider implementation based on options.
@@ -854,11 +834,7 @@ func makeTokenProvider(ctx context.Context, opts *Options) (internal.TokenProvid
 	case ServiceAccountMethod:
 		serviceAccountPath := ""
 		if len(opts.ServiceAccountJSON) == 0 {
-			var err error
-			serviceAccountPath, err = pickServiceAccount(opts)
-			if err != nil {
-				return nil, fmt.Errorf("auth: can't find default service account JSON file - %s", err)
-			}
+			serviceAccountPath = opts.ServiceAccountJSONPath
 		}
 		return internal.NewServiceAccountTokenProvider(
 			ctx,
