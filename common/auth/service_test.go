@@ -69,18 +69,6 @@ func TestGroupsService(t *testing.T) {
 			So(err, ShouldNotBeNil)
 		})
 
-		Convey("FetchCallerIdentity works", func() {
-			requests.expect("https://example.com/auth/api/v1/accounts/self", 200, `{
-				"identity": "user:abc@example.com"
-			}`)
-			ident, err := service.FetchCallerIdentity(ctx)
-			So(err, ShouldBeNil)
-			So(ident, ShouldResemble, Identity{
-				Kind: IdentityKindUser,
-				Name: "abc@example.com",
-			})
-		})
-
 		Convey("FetchGroup works", func() {
 			requests.expect("https://example.com/auth/api/v1/groups/abc/name", 200, `{
 				"group": {

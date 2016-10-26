@@ -20,9 +20,6 @@ import (
 	"github.com/luci/luci-go/common/retry"
 )
 
-// ServiceURL is URL of a service to talk to by default.
-const ServiceURL string = "https://chrome-infra-auth.appspot.com"
-
 // IdentityKind is enum like type with possible kinds of identities.
 type IdentityKind string
 
@@ -103,13 +100,9 @@ type GroupsService struct {
 
 // NewGroupsService constructs new instance of GroupsService.
 //
-// It that talks to given service URL via the given http.Client. If url is empty
-// string, the default backend will be used. If httpClient is nil,
-// http.DefaultClient will be used.
+// It that talks to given service URL via the given http.Client. If httpClient
+// is nil, http.DefaultClient will be used.
 func NewGroupsService(url string, client *http.Client) *GroupsService {
-	if url == "" {
-		url = ServiceURL
-	}
 	if client == nil {
 		client = http.DefaultClient
 	}
@@ -123,18 +116,6 @@ func NewGroupsService(url string, client *http.Client) *GroupsService {
 // ServiceURL returns a string with root URL of a Groups backend.
 func (s *GroupsService) ServiceURL() string {
 	return s.serviceURL
-}
-
-// FetchCallerIdentity returns caller's own Identity as seen by the server.
-func (s *GroupsService) FetchCallerIdentity(ctx context.Context) (Identity, error) {
-	var response struct {
-		Identity string `json:"identity"`
-	}
-	err := s.doGet(ctx, "/auth/api/v1/accounts/self", &response)
-	if err != nil {
-		return Identity{}, err
-	}
-	return parseIdentity(response.Identity)
 }
 
 // FetchGroup returns a group definition.

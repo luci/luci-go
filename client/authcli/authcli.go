@@ -42,7 +42,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"sort"
 	"strings"
@@ -50,6 +52,7 @@ import (
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
+	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
@@ -148,18 +151,16 @@ func (c *loginRun) Run(a subcommands.Application, _ []string) int {
 		return 1
 	}
 	ctx := cli.GetContext(a, c)
-	client, err := auth.NewAuthenticator(ctx, auth.InteractiveLogin, opts).Client()
-	if err != nil {
+	authenticator := auth.NewAuthenticator(ctx, auth.InteractiveLogin, opts)
+	if _, err := authenticator.Client(); err != nil {
 		fmt.Fprintf(os.Stderr, "Login failed: %s\n", err.Error())
 		return 2
 	}
+	fmt.Println("Success!")
 	if canReportIdentity(opts.Scopes) {
-		err = reportIdentity(ctx, client)
-		if err != nil {
+		if err = reportIdentity(ctx, authenticator); err != nil {
 			return 3
 		}
-	} else {
-		fmt.Println("Success.")
 	}
 	return 0
 }
@@ -238,23 +239,23 @@ func (c *infoRun) Run(a subcommands.Application, args []string) int {
 		return 1
 	}
 	ctx := cli.GetContext(a, c)
-	client, err := auth.NewAuthenticator(ctx, auth.SilentLogin, opts).Client()
-	if err == auth.ErrLoginRequired {
+	authenticator := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
+	switch _, err := authenticator.Client(); {
+	case err == auth.ErrLoginRequired:
 		fmt.Fprintln(os.Stderr, "Not logged in")
 		return 2
-	} else if err != nil {
+	case err != nil:
 		fmt.Fprintln(os.Stderr, err)
 		return 3
 	}
 	if canReportIdentity(opts.Scopes) {
-		err = reportIdentity(ctx, client)
-		if err != nil {
+		if err = reportIdentity(ctx, authenticator); err != nil {
 			return 4
 		}
 	} else {
 		fmt.Printf(
-			"Refresh token exists, but it doesn't have %q scope, so can't report "+
-				"who it belongs to.\n", auth.OAuthScopeEmail)
+			"The refresh token exists, but it doesn't have %q scope, so we can't "+
+				"report who it belongs to.\n", auth.OAuthScopeEmail)
 	}
 	return 0
 }
@@ -369,15 +370,60 @@ func canReportIdentity(scopes []string) bool {
 	return false
 }
 
-// reportIdentity prints identity associated with credentials that the client
-// puts into each request (if any).
-func reportIdentity(ctx context.Context, c *http.Client) error {
-	service := auth.NewGroupsService("", c)
-	ident, err := service.FetchCallerIdentity(ctx)
+// reportIdentity prints identity associated with credentials carried by the
+// authenticator.
+//
+// Also prints errors to stderr.
+func reportIdentity(ctx context.Context, a *auth.Authenticator) error {
+	// Grab the active access token.
+	tok, err := a.GetAccessToken(time.Minute)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to fetch current identity: %s\n", err)
+		fmt.Fprintf(os.Stderr, "Can't grab an access token: %s\n", err)
 		return err
 	}
-	fmt.Printf("Logged in as %s\n", ident)
+
+	// Ask Google endpoint to verify the token.
+	q := url.Values{}
+	q.Add("access_token", tok.AccessToken)
+	resp, err := ctxhttp.Get(ctx, http.DefaultClient, "https://www.googleapis.com/oauth2/v1/tokeninfo?"+q.Encode())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to call token info endpoint: %s\n", err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	// The response is dumped to error log below, read it in full before decoding.
+	blob, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to read token info endpoint response: %s\n", err)
+		return err
+	}
+
+	if resp.StatusCode != 200 {
+		fmt.Fprintf(
+			os.Stderr, "The token info endpoint returned HTTP code %d.\nFull response:\n%s\n",
+			resp.StatusCode, blob)
+		return fmt.Errorf("tokeninfo endpoint call failed with status %d", resp.StatusCode)
+	}
+
+	// There's more stuff here, but we care only about these fields.
+	var reply struct {
+		Email    string `json:"email"`
+		IssuedTo string `json:"issued_to"`
+		Scope    string `json:"scope"`
+	}
+	if err := json.Unmarshal(blob, &reply); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to deserialize the token info (%s):\n%s\n", err, blob)
+		return err
+	}
+
+	fmt.Printf("Logged in as %s.\n", reply.Email)
+	fmt.Printf("OAuth token details:\n")
+	fmt.Printf("  Client ID: %s\n", reply.IssuedTo)
+	fmt.Printf("  Scopes:\n")
+	for _, scope := range strings.Split(reply.Scope, " ") {
+		fmt.Printf("    %s\n", scope)
+	}
+
 	return nil
 }
