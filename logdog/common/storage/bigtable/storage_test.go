@@ -149,6 +149,14 @@ func (t *btTableTest) dataMap() map[string][]byte {
 	return result
 }
 
+func mustGetIndex(e *storage.Entry) types.MessageIndex {
+	idx, err := e.GetStreamIndex()
+	if err != nil {
+		panic(err)
+	}
+	return idx
+}
+
 func TestStorage(t *testing.T) {
 	t.Parallel()
 
@@ -175,11 +183,11 @@ func TestStorage(t *testing.T) {
 				KeysOnly: keysOnly,
 			}
 			got := []string{}
-			err := s.Get(req, func(idx types.MessageIndex, d []byte) bool {
+			err := s.Get(req, func(e *storage.Entry) bool {
 				if keysOnly {
-					got = append(got, strconv.Itoa(int(idx)))
+					got = append(got, strconv.Itoa(int(mustGetIndex(e))))
 				} else {
-					got = append(got, string(d))
+					got = append(got, string(e.D))
 				}
 				return true
 			})
@@ -327,8 +335,11 @@ func TestStorage(t *testing.T) {
 
 			Convey(`Testing "Tail"...`, func() {
 				tail := func(path string) (string, error) {
-					got, _, err := s.Tail(project, types.StreamPath(path))
-					return string(got), err
+					e, err := s.Tail(project, types.StreamPath(path))
+					if err != nil {
+						return "", err
+					}
+					return string(e.D), nil
 				}
 
 				Convey(`A tail request for "A" returns A{4}.`, func() {

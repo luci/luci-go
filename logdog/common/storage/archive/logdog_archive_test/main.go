@@ -175,10 +175,13 @@ func (cmd *cmdRunDumpIndex) Run(baseApp subcommands.Application, args []string) 
 }
 
 func unmarshalAndDump(c context.Context, out io.Writer, data []byte, msg proto.Message) error {
-	if err := proto.Unmarshal(data, msg); err != nil {
-		log.WithError(err).Errorf(c, "Failed to unmarshal protobuf.")
-		return err
+	if data != nil {
+		if err := proto.Unmarshal(data, msg); err != nil {
+			log.WithError(err).Errorf(c, "Failed to unmarshal protobuf.")
+			return err
+		}
 	}
+
 	if err := proto.MarshalText(out, msg); err != nil {
 		log.WithError(err).Errorf(c, "Failed to dump protobuf to output.")
 		return err
@@ -347,13 +350,18 @@ func (cmd *cmdRunGet) Run(baseApp subcommands.Application, args []string) int {
 	err = stClient.Get(storage.GetRequest{
 		Index: types.MessageIndex(cmd.index),
 		Limit: cmd.limit,
-	}, func(idx types.MessageIndex, data []byte) bool {
+	}, func(e *storage.Entry) bool {
+		le, err := e.GetLogEntry()
+		if err != nil {
+			log.WithError(err).Errorf(c, "Failed to unmarshal log entry.")
+			return false
+		}
+
 		log.Fields{
-			"index": idx,
+			"index": le.StreamIndex,
 		}.Infof(c, "Fetched log entry.")
 
-		var log logpb.LogEntry
-		if innerErr = unmarshalAndDump(c, os.Stdout, data, &log); innerErr != nil {
+		if innerErr = unmarshalAndDump(c, os.Stdout, nil, le); innerErr != nil {
 			return false
 		}
 		return true
@@ -426,23 +434,28 @@ func (cmd *cmdRunTail) Run(baseApp subcommands.Application, args []string) int {
 	}
 	defer stClient.Close()
 
-	data, idx, err := stClient.Tail("", "")
+	e, err := stClient.Tail("", "")
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to Tail log entries.")
 		return 1
 	}
 
-	if data == nil {
+	if e == nil {
 		log.Infof(c, "No log data to tail.")
 		return 0
 	}
 
+	le, err := e.GetLogEntry()
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to unmarshal log entry.")
+		return 1
+	}
+
 	log.Fields{
-		"index": idx,
-		"size":  len(data),
+		"index": le.StreamIndex,
+		"size":  len(e.D),
 	}.Debugf(c, "Dumping tail entry.")
-	var entry logpb.LogEntry
-	if err := unmarshalAndDump(c, os.Stdout, data, &entry); err != nil {
+	if err := unmarshalAndDump(c, os.Stdout, nil, le); err != nil {
 		log.WithError(err).Errorf(c, "Failed to dump tail entry.")
 		return 1
 	}

@@ -37,6 +37,14 @@ func index(recs []*rec) map[types.MessageIndex]int {
 	return index
 }
 
+func mustGetIndex(e *storage.Entry) types.MessageIndex {
+	idx, err := e.GetStreamIndex()
+	if err != nil {
+		panic(err)
+	}
+	return idx
+}
+
 func TestBigTable(t *testing.T) {
 	t.Parallel()
 
@@ -75,10 +83,10 @@ func TestBigTable(t *testing.T) {
 			}
 
 			var getRecs []*rec
-			getAllCB := func(idx types.MessageIndex, data []byte) bool {
+			getAllCB := func(e *storage.Entry) bool {
 				getRecs = append(getRecs, &rec{
-					index: idx,
-					data:  data,
+					index: mustGetIndex(e),
+					data:  e.D,
 				})
 				return true
 			}
@@ -131,7 +139,7 @@ func TestBigTable(t *testing.T) {
 
 				Convey(`Will stop iterating if callback returns false.`, func() {
 					count := 0
-					err := st.Get(req, func(types.MessageIndex, []byte) bool {
+					err := st.Get(req, func(*storage.Entry) bool {
 						count++
 						return false
 					})
@@ -160,25 +168,25 @@ func TestBigTable(t *testing.T) {
 
 			Convey(`Tail()`, func() {
 				Convey(`Can retrieve the tail record, 10.`, func() {
-					d, idx, err := st.Tail(project, path)
+					e, err := st.Tail(project, path)
 					So(err, ShouldBeNil)
-					So(d, ShouldResemble, numRec(10).data)
-					So(idx, ShouldEqual, 10)
+					So(e.D, ShouldResemble, numRec(10).data)
+					So(mustGetIndex(e), ShouldEqual, 10)
 				})
 
 				Convey(`Will fail to retrieve records if the project doesn't exist.`, func() {
-					_, _, err := st.Tail("project-does-not-exist", path)
+					_, err := st.Tail("project-does-not-exist", path)
 					So(err, ShouldEqual, storage.ErrDoesNotExist)
 				})
 
 				Convey(`Will fail to retrieve records if the path doesn't exist.`, func() {
-					_, _, err := st.Tail(project, "testing/+/does/not/exist")
+					_, err := st.Tail(project, "testing/+/does/not/exist")
 					So(err, ShouldEqual, storage.ErrDoesNotExist)
 				})
 
 				Convey(`Will return an error if one is set.`, func() {
 					st.SetErr(errors.New("test error"))
-					_, _, err := st.Tail("", "")
+					_, err := st.Tail("", "")
 					So(err, ShouldErrLike, "test error")
 				})
 			})

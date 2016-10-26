@@ -45,7 +45,7 @@ func TestCountingReader(t *testing.T) {
 			amount, err := cr.Read(make([]byte, 10))
 			So(err, ShouldBeNil)
 			So(amount, ShouldEqual, 10)
-			So(cr.Count(), ShouldEqual, 10)
+			So(cr.Count, ShouldEqual, 10)
 		})
 
 		Convey(`When using 32 sequential ReadByte, registers a count of 32.`, func() {
@@ -53,7 +53,7 @@ func TestCountingReader(t *testing.T) {
 				b, err := cr.ReadByte()
 				So(err, ShouldBeNil)
 				So(b, ShouldEqual, 0x55)
-				So(cr.Count(), ShouldEqual, i+1)
+				So(cr.Count, ShouldEqual, i+1)
 			}
 
 			_, err := cr.ReadByte()
@@ -77,7 +77,7 @@ func TestCountingReader(t *testing.T) {
 			b, err := cr.ReadByte()
 			So(err, ShouldBeNil)
 			So(b, ShouldEqual, 0x55)
-			So(cr.Count(), ShouldEqual, 1)
+			So(cr.Count, ShouldEqual, 1)
 			So(tr.called, ShouldBeTrue)
 		})
 	})

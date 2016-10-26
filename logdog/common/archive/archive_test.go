@@ -153,7 +153,7 @@ func (ic *indexChecker) shouldContainIndexFor(actual interface{}, expected ...in
 		return "failed to skip descriptor frame"
 	}
 	for {
-		offset := cr.Count()
+		offset := cr.Count
 		d, err = r.ReadFrameAll()
 		if err == io.EOF {
 			break
@@ -374,7 +374,7 @@ func TestArchive(t *testing.T) {
 				m.StreamIndexRange = 3
 				So(Archive(m), ShouldBeNil)
 
-				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 3)
+				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 3, 5)
 				So(indexParams(indexB.Bytes()), ShouldResemble, logpb.LogIndex{
 					Desc:            desc,
 					LastPrefixIndex: 10,
@@ -388,7 +388,7 @@ func TestArchive(t *testing.T) {
 				So(Archive(m), ShouldBeNil)
 
 				// Note that in our generated logs, PrefixIndex = 2*StreamIndex.
-				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 2, 4)
+				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 2, 4, 5)
 				So(indexParams(indexB.Bytes()), ShouldResemble, logpb.LogIndex{
 					Desc:            desc,
 					LastPrefixIndex: 10,

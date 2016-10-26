@@ -61,7 +61,7 @@ func zeroRecords(d []byte) {
 			break
 		}
 
-		pos := int(cr.Count())
+		pos := int(cr.Count)
 		for i := int64(0); i < s; i++ {
 			d[pos+int(i)] = 0x00
 		}

@@ -533,7 +533,13 @@ func (sa *stagedArchival) checkComplete(c context.Context) error {
 
 	nextIndex := types.MessageIndex(0)
 	var ierr error
-	err := sa.Storage.Get(sreq, func(idx types.MessageIndex, d []byte) bool {
+	err := sa.Storage.Get(sreq, func(e *storage.Entry) bool {
+		idx, err := e.GetStreamIndex()
+		if err != nil {
+			ierr = errors.Annotate(err).Reason("could not get stream index").Err()
+			return false
+		}
+
 		switch {
 		case idx != nextIndex:
 			ierr = fmt.Errorf("missing log entry index %d (next %d)", nextIndex, idx)

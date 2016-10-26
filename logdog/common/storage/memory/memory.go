@@ -132,7 +132,7 @@ func (s *Storage) Get(req storage.GetRequest, cb storage.GetCallback) error {
 			dataCopy = make([]byte, len(r.data))
 			copy(dataCopy, r.data)
 		}
-		if !cb(r.index, dataCopy) {
+		if !cb(storage.MakeEntry(dataCopy, r.index)) {
 			break
 		}
 	}
@@ -141,7 +141,7 @@ func (s *Storage) Get(req storage.GetRequest, cb storage.GetCallback) error {
 }
 
 // Tail implements storage.Storage.
-func (s *Storage) Tail(project config.ProjectName, path types.StreamPath) ([]byte, types.MessageIndex, error) {
+func (s *Storage) Tail(project config.ProjectName, path types.StreamPath) (*storage.Entry, error) {
 	var r *rec
 
 	// Find the latest log, then return it.
@@ -158,9 +158,9 @@ func (s *Storage) Tail(project config.ProjectName, path types.StreamPath) ([]byt
 		return nil
 	})
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
-	return r.data, r.index, nil
+	return storage.MakeEntry(r.data, r.index), nil
 }
 
 // Count returns the number of log records for the given stream.

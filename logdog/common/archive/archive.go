@@ -9,13 +9,14 @@ package archive
 import (
 	"io"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/data/recordio"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/common/renderer"
+
+	"github.com/golang/protobuf/proto"
 )
 
 // Manifest is a set of archival parameters.

@@ -7,7 +7,6 @@ package archivist
 import (
 	"io"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/api/logpb"
@@ -39,19 +38,16 @@ func (s *storageSource) bufferEntries(start types.MessageIndex) error {
 		Path:    s.path,
 		Index:   start,
 	}
-	return s.st.Get(req, func(idx types.MessageIndex, d []byte) bool {
-		le := logpb.LogEntry{}
-		if err := proto.Unmarshal(d, &le); err != nil {
-			log.Fields{
-				log.ErrorKey:  err,
-				"streamIndex": idx,
-			}.Errorf(s, "Failed to unmarshal LogEntry.")
+	return s.st.Get(req, func(e *storage.Entry) bool {
+		le, err := e.GetLogEntry()
+		if err != nil {
+			log.WithError(err).Errorf(s, "Failed to unmarshal LogEntry.")
 			return false
 		}
-		s.buf = append(s.buf, &le)
+		s.buf = append(s.buf, le)
 
 		// Stop loading if we've reached or exceeded our buffer size.
-		bytes += len(d)
+		bytes += len(e.D)
 		return bytes < storageBufferSize
 	})
 }

@@ -61,7 +61,7 @@ type GetRequest struct {
 	Index types.MessageIndex
 
 	// Limit is the maximum number of records to return before stopping iteration.
-	// If zero, no maximum limit will be applied.
+	// If <= 0, no maximum limit will be applied.
 	//
 	// The Storage instance may return fewer records than the supplied Limit as an
 	// implementation detail.
@@ -74,7 +74,10 @@ type GetRequest struct {
 
 // GetCallback is invoked for each record in the Get request. If it returns
 // false, iteration should stop.
-type GetCallback func(types.MessageIndex, []byte) bool
+//
+// The MessageIndex may be -1 if the message index isn't known. In this case,
+// the caller will have to unmarshal the log entry data to determine its index.
+type GetCallback func(*Entry) bool
 
 // Storage is an abstract LogDog storage implementation. Interfaces implementing
 // this may be used to store and retrieve log records by the collection service
@@ -109,8 +112,12 @@ type Storage interface {
 	Get(GetRequest, GetCallback) error
 
 	// Tail retrieves the latest log in the stream. If the stream has no logs, it
-	// will return ErrDoesNotExist.
-	Tail(config.ProjectName, types.StreamPath) ([]byte, types.MessageIndex, error)
+	// will fail with ErrDoesNotExist.
+	//
+	// The MessageIndex may be -1 if the message index isn't known. In this case,
+	// the caller will have to unmarshal the log entry data to determine its
+	// index.
+	Tail(config.ProjectName, types.StreamPath) (*Entry, error)
 
 	// Config installs the supplied configuration parameters into the storage
 	// instance.

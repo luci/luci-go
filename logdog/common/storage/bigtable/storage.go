@@ -267,7 +267,7 @@ func (s *btStorage) Get(r storage.GetRequest, cb storage.GetCallback) error {
 				row, records = records[0], records[1:]
 			}
 
-			if !cb(types.MessageIndex(index), row) {
+			if !cb(storage.MakeEntry(row, types.MessageIndex(index))) {
 				return errStop
 			}
 			r.Index = types.MessageIndex(index + 1)
@@ -293,7 +293,7 @@ func (s *btStorage) Get(r storage.GetRequest, cb storage.GetCallback) error {
 	}
 }
 
-func (s *btStorage) Tail(project config.ProjectName, path types.StreamPath) ([]byte, types.MessageIndex, error) {
+func (s *btStorage) Tail(project config.ProjectName, path types.StreamPath) (*storage.Entry, error) {
 	ctx := log.SetFields(s, log.Fields{
 		"project": project,
 		"path":    path,
@@ -317,7 +317,7 @@ func (s *btStorage) Tail(project config.ProjectName, path types.StreamPath) ([]b
 
 	if latest == nil {
 		// No rows for the specified stream.
-		return nil, 0, storage.ErrDoesNotExist
+		return nil, storage.ErrDoesNotExist
 	}
 
 	// Fetch the latest row's data.
@@ -339,7 +339,7 @@ func (s *btStorage) Tail(project config.ProjectName, path types.StreamPath) ([]b
 		}.Errorf(ctx, "Failed to retrieve tail row.")
 	}
 
-	return d, types.MessageIndex(latest.index), nil
+	return storage.MakeEntry(d, types.MessageIndex(latest.index)), nil
 }
 
 // rowWriter facilitates writing several consecutive data values to a single

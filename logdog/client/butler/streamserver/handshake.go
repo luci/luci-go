@@ -118,9 +118,9 @@ func (p *handshakeProtocol) loadFlags(ctx context.Context, r io.Reader) (*stream
 	//
 	// We use a countReader because the 'json' library doesn't give us a way to
 	// know how many bytes it consumed when it decoded.
-	if chr.Count() != frameSize {
+	if chr.Count != frameSize {
 		log.Fields{
-			"blockSize": chr.Count(),
+			"blockSize": chr.Count,
 			"frameSize": frameSize,
 		}.Errorf(ctx, "Stream description block was not fully consumed.")
 		return nil, errors.New("handshake: stream description block was not fully consumed")

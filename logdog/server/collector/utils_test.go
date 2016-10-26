@@ -14,7 +14,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/proto/google"
@@ -23,6 +22,7 @@ import (
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/types"
 	cc "github.com/luci/luci-go/logdog/server/collector/coordinator"
+
 	"golang.org/x/net/context"
 )
 
@@ -301,12 +301,12 @@ func shouldHaveStoredStream(actual interface{}, expected ...interface{}) string 
 
 	entries := make(map[int]*logpb.LogEntry)
 	var ierr error
-	err := st.Get(req, func(idx types.MessageIndex, d []byte) bool {
-		le := logpb.LogEntry{}
-		if ierr = proto.Unmarshal(d, &le); ierr != nil {
+	err := st.Get(req, func(e *storage.Entry) bool {
+		var le *logpb.LogEntry
+		if le, ierr = e.GetLogEntry(); ierr != nil {
 			return false
 		}
-		entries[int(idx)] = &le
+		entries[int(le.StreamIndex)] = le
 		return true
 	})
 	if ierr != nil {

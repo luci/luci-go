@@ -20,6 +20,8 @@ type indexBuilder struct {
 	lastStreamIndex uint64
 	lastBytes       uint64
 
+	latestBufferedEntry *logpb.LogIndex_Entry
+
 	sizeFunc func(proto.Message) int
 }
 
@@ -34,25 +36,29 @@ func (i *indexBuilder) addLogEntry(le *logpb.LogEntry, offset int64) {
 	i.index.LastStreamIndex = le.StreamIndex
 	i.index.LogEntryCount++
 
+	entry := logpb.LogIndex_Entry{
+		Sequence:    le.Sequence,
+		PrefixIndex: le.PrefixIndex,
+		StreamIndex: le.StreamIndex,
+		Offset:      uint64(offset),
+		TimeOffset:  le.TimeOffset,
+	}
+
 	// Do we index this LogEntry?
 	if len(i.index.Entries) > 0 {
 		if !((i.StreamIndexRange > 0 && (le.StreamIndex-i.lastStreamIndex) >= uint64(i.StreamIndexRange)) ||
 			(i.PrefixIndexRange > 0 && (le.PrefixIndex-i.lastPrefixIndex) >= uint64(i.PrefixIndexRange)) ||
 			(i.ByteRange > 0 && i.lastBytes >= uint64(i.ByteRange))) {
-			// Not going to index this entry.
+			// Not going to index this entry. Buffer it as a terminator.
+			i.latestBufferedEntry = &entry
 			return
 		}
 
 		i.lastBytes = 0
 	}
 
-	i.index.Entries = append(i.index.Entries, &logpb.LogIndex_Entry{
-		Sequence:    le.Sequence,
-		PrefixIndex: le.PrefixIndex,
-		StreamIndex: le.StreamIndex,
-		Offset:      uint64(offset),
-		TimeOffset:  le.TimeOffset,
-	})
+	i.index.Entries = append(i.index.Entries, &entry)
+	i.latestBufferedEntry = nil
 
 	// Update our counters.
 	i.lastStreamIndex = le.StreamIndex
@@ -60,6 +66,11 @@ func (i *indexBuilder) addLogEntry(le *logpb.LogEntry, offset int64) {
 }
 
 func (i *indexBuilder) emit(w io.Writer) error {
+	// Always include the last stream entry in the index.
+	if i.latestBufferedEntry != nil {
+		i.index.Entries = append(i.index.Entries, i.latestBufferedEntry)
+	}
+
 	d, err := proto.Marshal(&i.index)
 	if err != nil {
 		return err
