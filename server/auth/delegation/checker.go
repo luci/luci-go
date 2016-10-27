@@ -244,21 +244,22 @@ func checkSubtokenAudience(c context.Context, t *messages.Subtoken, ident identi
 		return fmt.Errorf("the token's audience list is empty")
 	}
 	// Try to find a direct hit first, to avoid calling expensive group lookups.
+	// Collect the groups along the way for the check below.
+	groups := make([]string, 0, len(t.Audience))
 	for _, aud := range t.Audience {
 		if aud == "*" || aud == string(ident) {
 			return nil
 		}
+		if strings.HasPrefix(aud, "group:") {
+			groups = append(groups, strings.TrimPrefix(aud, "group:"))
+		}
 	}
 	// Search through groups now.
-	for _, aud := range t.Audience {
-		if strings.HasPrefix(aud, "group:") {
-			switch ok, err := checker.IsMember(c, ident, strings.TrimPrefix(aud, "group:")); {
-			case err != nil:
-				return err // transient error during group lookup
-			case ok:
-				return nil // success, 'ident' is in the target audience
-			}
-		}
+	switch ok, err := checker.IsMember(c, ident, groups...); {
+	case err != nil:
+		return err // transient error during group lookup
+	case ok:
+		return nil // success, 'ident' is in the target audience
 	}
 	return fmt.Errorf("%s is not allowed to use the token", ident)
 }

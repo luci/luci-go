@@ -231,13 +231,10 @@ func (f *fakeTokenMinter) mintToken(c context.Context, subtoken *messages.Subtok
 
 // fakeGroups implements GroupsChecker.
 type fakeGroups struct {
-	groups map[string]string // if nil == no group checks
+	groups map[string]string // if nil, IsMember always returns false
 }
 
 func (f *fakeGroups) IsMember(c context.Context, id identity.Identity, groups ...string) (bool, error) {
-	if f.groups == nil {
-		return true, nil
-	}
 	for _, group := range groups {
 		if f.groups[group] == string(id) {
 			return true, nil
