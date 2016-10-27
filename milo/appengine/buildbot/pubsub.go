@@ -75,13 +75,15 @@ type buildbotMasterEntry struct {
 
 func putDSMasterJSON(
 	c context.Context, master *buildbotMaster, internal bool) error {
-	// Trim pending build states.  These things are large and we can't really
-	// store more than 25 of them.  If this becomes an issue again, we'll have
-	// to trim out things from the pending build state such as the changed
-	// file list, commit comments, etc.
 	for _, builder := range master.Builders {
-		if len(builder.PendingBuildStates) > 25 {
-			builder.PendingBuildStates = builder.PendingBuildStates[0:25]
+		// Trim out extra info in the "Changes" portion of the pending build state,
+		// we don't actually need comments, files, and properties
+		for _, pbs := range builder.PendingBuildStates {
+			for i := range pbs.Source.Changes {
+				pbs.Source.Changes[i].Comments = ""
+				pbs.Source.Changes[i].Files = nil
+				pbs.Source.Changes[i].Properties = nil
+			}
 		}
 	}
 	entry := buildbotMasterEntry{
@@ -237,6 +239,7 @@ func doMaster(c context.Context, master *buildbotMaster, internal bool) int {
 				logging.WithError(err).Errorf(c, "Could not expire build")
 				return 500
 			}
+			continue
 		}
 
 		found := false
@@ -266,6 +269,7 @@ func PubSubHandler(ctx *router.Context) {
 
 	msg := pubSubSubscription{}
 	defer r.Body.Close()
+	logging.Infof(c, "Message is %d bytes long", r.ContentLength)
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&msg); err != nil {
 		logging.WithError(err).Errorf(
@@ -308,8 +312,6 @@ func PubSubHandler(ctx *router.Context) {
 	cachedMaster := buildbotMaster{}
 	// Do not use PutMulti because we might hit the 1MB limit.
 	for _, build := range builds {
-		logging.Debugf(
-			c, "Checking for build %s/%s/%d", build.Master, build.Buildername, build.Number)
 		if build.Master == "" {
 			logging.Errorf(c, "Invalid message, missing master name")
 			h.WriteHeader(200)
@@ -326,8 +328,6 @@ func PubSubHandler(ctx *router.Context) {
 				// Never replace a completed build.
 				buildCounter.Add(
 					c, 1, false, build.Master, build.Buildername, false, "Rejected")
-				logging.Debugf(
-					c, "Found build %s/%s/%d and it's finished, skipping", build.Master, build.Buildername, build.Number)
 				continue
 			}
 			buildExists = true
@@ -355,9 +355,6 @@ func PubSubHandler(ctx *router.Context) {
 			}
 			return
 		}
-		logging.Debugf(
-			c, "Saved build %s/%s/%d, it is %s",
-			build.Master, build.Buildername, build.Number, build.Finished)
 		if buildExists {
 			buildCounter.Add(
 				c, 1, false, build.Master, build.Buildername, build.Finished, "Replaced")
