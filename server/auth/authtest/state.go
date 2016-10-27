@@ -33,6 +33,11 @@ type FakeState struct {
 	// Error if not nil is returned by IsMember checks.
 	Error error
 
+	// FakeDB is a mock authdb.DB implementation to use.
+	//
+	// If not nil, overrides 'IdentityGroups' and 'Error'.
+	FakeDB authdb.DB
+
 	// PeerIdentityOverride may be set for PeerIdentity() to return custom value.
 	//
 	// By default PeerIdentity() returns Identity (i.e. no delegation is
@@ -49,6 +54,9 @@ var _ auth.State = (*FakeState)(nil)
 
 // DB is part of State interface.
 func (s *FakeState) DB() authdb.DB {
+	if s.FakeDB != nil {
+		return s.FakeDB
+	}
 	return &FakeErroringDB{
 		FakeDB: FakeDB{s.User().Identity: s.IdentityGroups},
 		Error:  s.Error,

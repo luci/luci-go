@@ -66,7 +66,7 @@ message DelegationPermissions {
 
 // DelegationRule describes a single allowed case of using delegation tokens.
 //
-// An incoming MintDelegationToken request is basically a tuple of:
+// An incoming MintDelegationTokenRequest is basically a tuple of:
 //  * 'requestor_id' - an identity of whoever makes the request.
 //  * 'delegated_identity' - an identity to delegate.
 //  * 'audience' - a set of identities that will be able to use the token.
@@ -90,12 +90,19 @@ message DelegationRule {
 
   // A set of callers to which this rule applies.
   //
+  // Matched against verified credentials of a caller of MintDelegationToken.
+  //
   // Each element is either:
   //  * An identity string ("user:<email>").
   //  * A group reference ("group:<name>").
+  //
+  // The groups specified here are expanded when MintDelegationTokenRequest is
+  // evaluated.
   repeated string requestor = 3;
 
   // Identities that are allowed to be delegated/impersonated by the requestor.
+  //
+  // Matched against 'delegated_identity' field of MintDelegationTokenRequest.
   //
   // Each element is either:
   //  * An identity string ("user:<email>").
@@ -105,24 +112,40 @@ message DelegationRule {
   //
   // "REQUESTOR" allows one to generate tokens that delegate their own identity
   // to some target audience.
+  //
+  // The groups specified here are expanded when MintDelegationTokenRequest is
+  // evaluated.
   repeated string allowed_to_impersonate = 4;
 
   // A set of identities that should be able to use the new token.
+  //
+  // Matched against 'audience' field of MintDelegationTokenRequest.
   //
   // Each element is either:
   //  * An identity string ("user:<email>").
   //  * A group reference ("group:<name>").
   //  * A special identifier "REQUESTOR" that is substituted by the requestor
   //    identity when evaluating the rule.
+  //  * A special token "*" that means "any bearer can use the new token,
+  //    including anonymous".
   //
   // "REQUESTOR" is typically used here for rules that allow requestors to
   // impersonate someone else. The corresponding tokens have the requestor as
   // the only allowed audience.
+  //
+  // The groups specified here are NOT expanded when MintDelegationTokenRequest
+  // is evaluated. To match the rule, MintDelegationTokenRequest must specify
+  // subset of 'allowed_audience' groups explicitly in 'audience' field.
   repeated string allowed_audience = 5;
 
   // A set of services that should be able to accept the new token.
   //
-  // Each element is a service identity string ("service:<id>").
+  // Matched against 'services' field of MintDelegationTokenRequest.
+  //
+  // Each element is either:
+  //  * A service identity string ("service:<id>").
+  //  * A special token "*" that mean "any LUCI service should accept the
+  //    token".
   repeated string target_service = 6;
 
   // Maximum allowed validity duration (sec) of minted delegation tokens.

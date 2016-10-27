@@ -23,6 +23,7 @@ func TestFromStrings(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(s, ShouldResemble, &Set{})
 		So(s.IsEmpty(), ShouldBeTrue)
+		So(s.ToStrings(), ShouldResemble, []string{})
 	})
 
 	Convey("Universal", t, func() {
@@ -30,6 +31,7 @@ func TestFromStrings(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(s, ShouldResemble, &Set{All: true})
 		So(s.IsEmpty(), ShouldBeFalse)
+		So(s.ToStrings(), ShouldResemble, []string{"*"})
 	})
 
 	Convey("Normal", t, func() {
@@ -54,6 +56,12 @@ func TestFromStrings(t *testing.T) {
 			},
 		})
 		So(s.IsEmpty(), ShouldBeFalse)
+		So(s.ToStrings(), ShouldResemble, []string{
+			"group:abc",
+			"group:def",
+			"user:abc@example.com",
+			"user:def@example.com",
+		})
 	})
 
 	Convey("Bad group entry", t, func() {

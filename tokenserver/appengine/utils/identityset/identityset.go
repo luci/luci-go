@@ -7,6 +7,7 @@ package identityset
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -149,6 +150,27 @@ func (s *Set) IsSubset(superset *Set) bool {
 // 'nil' receiver and argument values are valid and represent empty sets.
 func (s *Set) IsSuperset(subset *Set) bool {
 	return subset.IsSubset(s)
+}
+
+// ToStrings returns a sorted list of strings representing this set.
+//
+// See 'FromStrings' for the format of this list.
+func (s *Set) ToStrings() []string {
+	if s.IsEmpty() {
+		return []string{}
+	}
+	if s.All {
+		return []string{"*"}
+	}
+	out := make([]string, 0, len(s.IDs)+len(s.Groups))
+	for ident := range s.IDs {
+		out = append(out, string(ident))
+	}
+	for group := range s.Groups {
+		out = append(out, "group:"+group)
+	}
+	sort.Strings(out)
+	return out
 }
 
 // FromStrings constructs a Set by parsing a slice of strings.

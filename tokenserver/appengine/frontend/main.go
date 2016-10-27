@@ -129,10 +129,33 @@ func readConfigCron(c *router.Context) {
 		c.Writer.WriteHeader(http.StatusOK)
 		return
 	}
-	if _, err := adminServerWithoutAuth.ImportCAConfigs(c.Context, nil); err != nil {
-		panic(err) // let panic catcher deal with it
-	}
-	c.Writer.WriteHeader(http.StatusOK)
+
+	wg := sync.WaitGroup{}
+	var errs [2]error
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		_, errs[0] = adminServerWithoutAuth.ImportCAConfigs(c.Context, nil)
+		if errs[0] != nil {
+			logging.Errorf(c.Context, "ImportCAConfigs failed - %s", errs[0])
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		_, errs[1] = adminServerWithoutAuth.ImportDelegationConfigs(c.Context, nil)
+		if errs[1] != nil {
+			logging.Errorf(c.Context, "ImportDelegationConfigs failed - %s", errs[1])
+		}
+	}()
+
+	wg.Wait()
+
+	// Retry cron job only on transient errors. On fatal errors let it rerun one
+	// minute later, as usual, to avoid spamming logs with errors.
+	c.Writer.WriteHeader(statusFromErrs(errs[:]))
 }
 
 // fetchCRLCron is handler for /internal/cron/fetch-crl GAE cron task.
@@ -161,12 +184,15 @@ func fetchCRLCron(c *router.Context) {
 
 	// Retry cron job only on transient errors. On fatal errors let it rerun one
 	// minute later, as usual, to avoid spamming logs with errors.
-	status := http.StatusOK
-	for _, err = range errs {
+	c.Writer.WriteHeader(statusFromErrs(errs))
+}
+
+// statusFromErrs returns 500 if any of gRPC errors is codes.Internal.
+func statusFromErrs(errs []error) int {
+	for _, err := range errs {
 		if grpc.Code(err) == codes.Internal {
-			status = http.StatusInternalServerError
-			break
+			return http.StatusInternalServerError
 		}
 	}
-	c.Writer.WriteHeader(status)
+	return http.StatusOK
 }

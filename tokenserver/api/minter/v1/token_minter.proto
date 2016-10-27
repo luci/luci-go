@@ -208,8 +208,9 @@ message LuciMachineToken {
 message MintDelegationTokenRequest {
   // Identity whose authority is delegated.
   //
-  // A string of the form "user:<email>". The token server will check its ACLs
-  // to make sure the caller is authorized to impersonate this identity.
+  // A string of the form "user:<email>" or a special token "REQUESTOR" that
+  // means to delegate caller's own identity. The token server will check its
+  // ACLs to make sure the caller is authorized to impersonate this identity.
   //
   // Required.
   string delegated_identity = 1;
@@ -222,7 +223,9 @@ message MintDelegationTokenRequest {
   // Who will be able to use the new token.
   //
   // Each item can be an identity string (e.g. "user:<email>"), a "group:<name>"
-  // string, or special "*" string which means "Any bearer can use the token".
+  // string, special "*" string which means "Any bearer can use the token", or
+  // "REQUESTOR" string which means "Whoever is making this call can use the
+  // token".
   //
   // This is semantically is a set, the order of elements doesn't matter.
   //

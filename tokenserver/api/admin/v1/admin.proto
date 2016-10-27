@@ -15,10 +15,19 @@ import "github.com/luci/luci-go/tokenserver/api/machine_token.proto";
 service Admin {
   // ImportCAConfigs makes the server read CA configs from luci-config.
   //
+  // This reads 'tokenserver.cfg' file.
+  //
   // Note that regularly configs are read in background each 5 min.
   // ImportCAConfigs can be used to force config reread immediately. It will
   // block until the configs are read.
   rpc ImportCAConfigs(google.protobuf.Empty) returns (ImportedConfigs);
+
+  // ImportDelegationConfigs makes the server read 'delegation.cfg' config.
+  //
+  // Note that regularly configs are read in background each 5 min.
+  // ImportDelegationConfigs can be used to force config reread immediately. It
+  // will block until the configs are read.
+  rpc ImportDelegationConfigs(google.protobuf.Empty) returns (ImportedConfigs);
 
   // InspectMachineToken decodes a machine token and verifies it is valid.
   //

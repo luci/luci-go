@@ -39,6 +39,21 @@ func (s *DecoratedAdmin) ImportCAConfigs(c context.Context, req *google_protobuf
 	return
 }
 
+func (s *DecoratedAdmin) ImportDelegationConfigs(c context.Context, req *google_protobuf.Empty) (rsp *ImportedConfigs, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "ImportDelegationConfigs", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.ImportDelegationConfigs(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "ImportDelegationConfigs", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedAdmin) InspectMachineToken(c context.Context, req *InspectMachineTokenRequest) (rsp *InspectMachineTokenResponse, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {

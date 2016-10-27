@@ -12,6 +12,7 @@ import (
 	"github.com/luci/luci-go/appengine/gaeauth/server/gaesigner"
 
 	"github.com/luci/luci-go/tokenserver/appengine/certconfig"
+	"github.com/luci/luci-go/tokenserver/appengine/delegation"
 	"github.com/luci/luci-go/tokenserver/appengine/machinetoken"
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
@@ -20,6 +21,7 @@ import (
 // serverImpl implements admin.AdminServer RPC interface.
 type serverImpl struct {
 	certconfig.ImportCAConfigsRPC
+	delegation.ImportDelegationConfigsRPC
 	machinetoken.InspectMachineTokenRPC
 }
 
