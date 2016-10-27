@@ -14,6 +14,10 @@ import (
 
 // Environment is the set of configuration parameters for the bootstrap.
 type Environment struct {
+	// CoordinatorHost is the coordinator host name, or empty string if we are
+	// not outputting to a Coordinator.
+	CoordinatorHost string
+
 	// Project is the project name. If not empty, this will be exported to
 	// subprocesses.
 	Project config.ProjectName
@@ -34,6 +38,7 @@ func (e *Environment) Augment(base environ.Env) {
 		}
 	}
 
+	exportIf(bootstrap.EnvCoordinatorHost, e.CoordinatorHost)
 	exportIf(bootstrap.EnvStreamPrefix, string(e.Prefix))
 	exportIf(bootstrap.EnvStreamProject, string(e.Project))
 	exportIf(bootstrap.EnvStreamServerPath, e.StreamServerURI)

@@ -18,8 +18,19 @@ import (
 // bootstrapped.
 var ErrNotBootstrapped = errors.New("not bootstrapped")
 
-// Bootstrap contains information about the
+// Bootstrap contains information about the configured bootstrap environment.
+//
+// The bootstrap environment is loaded by probing the local application
+// environment for variables emitted by a bootstrapping Butler.
 type Bootstrap struct {
+	// CoordinatorHost is the name of the upstream Coordinator host.
+	//
+	// This is just the host name ("example.appspot.com"), not a full URL.
+	//
+	// If this instance is not configured using a production Coordinator Output,
+	// this will be empty.
+	CoordinatorHost string
+
 	// Project is the Butler instance project name.
 	Project config.ProjectName
 	// Prefix is the Butler instance prefix.
@@ -38,8 +49,9 @@ func getFromEnv(env environ.Environment, reg *streamclient.Registry) (*Bootstrap
 	}
 
 	bs := &Bootstrap{
-		Prefix:  types.StreamName(prefix),
-		Project: config.ProjectName(env[EnvStreamProject]),
+		CoordinatorHost: env[EnvCoordinatorHost],
+		Prefix:          types.StreamName(prefix),
+		Project:         config.ProjectName(env[EnvStreamProject]),
 	}
 	if err := bs.Prefix.Validate(); err != nil {
 		return nil, fmt.Errorf("bootstrap: failed to validate prefix %q: %s", prefix, err)

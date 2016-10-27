@@ -49,7 +49,12 @@ func (cmd *serveCommandRun) Run(app subcommands.Application, args []string) int 
 	}
 
 	// We think everything will work. Configure our Output instance.
-	output, err := a.configOutput()
+	of, err := a.getOutputFactory()
+	if err != nil {
+		log.WithError(err).Errorf(a, "Failed to get output factory instance.")
+		return runtimeErrorReturnCode
+	}
+	output, err := of.configOutput(a)
 	if err != nil {
 		log.WithError(err).Errorf(a, "Failed to create output instance.")
 		return runtimeErrorReturnCode

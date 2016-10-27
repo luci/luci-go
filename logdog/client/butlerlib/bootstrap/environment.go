@@ -21,4 +21,8 @@ const (
 	// EnvStreamPrefix is the environment variable set to the configured
 	// stream name prefix.
 	EnvStreamPrefix = "LOGDOG_STREAM_PREFIX"
+
+	// EnvCoordinatorHost is the environment variable set to the host name of
+	// the upstream Coordinator service.
+	EnvCoordinatorHost = "LOGDOG_COORDINATOR_HOST"
 )

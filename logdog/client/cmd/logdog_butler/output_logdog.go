@@ -18,6 +18,10 @@ func init() {
 	registerOutputFactory(new(logdogOutputFactory))
 }
 
+type coordinatorHostOutput interface {
+	getCoordinatorHost() string
+}
+
 // logdogOutputFactory for publishing logs using a LogDog Coordinator host.
 type logdogOutputFactory struct {
 	host             string
@@ -66,4 +70,5 @@ func (f *logdogOutputFactory) configOutput(a *application) (output.Output, error
 	return cfg.Register(a)
 }
 
-func (f *logdogOutputFactory) scopes() []string { return out.Scopes() }
+func (f *logdogOutputFactory) scopes() []string           { return out.Scopes() }
+func (f *logdogOutputFactory) getCoordinatorHost() string { return f.host }

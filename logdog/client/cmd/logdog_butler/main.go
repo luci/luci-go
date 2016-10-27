@@ -113,18 +113,13 @@ func (a *application) authenticator(ctx context.Context) (*auth.Authenticator, e
 	return auth.NewAuthenticator(ctx, auth.SilentLogin, opts), nil
 }
 
-func (a *application) configOutput() (output.Output, error) {
+// getOutputFactory returns the currently-configured output factory.
+func (a *application) getOutputFactory() (outputFactory, error) {
 	factory := a.outputConfig.getFactory()
 	if factory == nil {
 		return nil, errors.New("main: No output is configured")
 	}
-
-	output, err := factory.configOutput(a)
-	if err != nil {
-		return nil, err
-	}
-
-	return output, nil
+	return factory, nil
 }
 
 // runWithButler is an execution harness that adds application-level management

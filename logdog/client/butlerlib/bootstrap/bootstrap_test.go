@@ -53,17 +53,19 @@ func TestBootstrap(t *testing.T) {
 				})
 			})
 
-			Convey(`And a stream server path`, func() {
+			Convey(`And the remaining environment parameters`, func() {
 				env[EnvStreamServerPath] = "test:client:params"
+				env[EnvCoordinatorHost] = "example.appspot.com"
 
-				Convey(`Yields a Bootstrap with a Prefix and Client.`, func() {
+				Convey(`Yields a fully-populated Bootstrap.`, func() {
 					bs, err := getFromEnv(env, reg)
 					So(err, ShouldBeNil)
 
 					So(bs, ShouldResemble, &Bootstrap{
-						Project: "test-project",
-						Prefix:  "butler/prefix",
-						Client:  &sentinelClient{},
+						CoordinatorHost: "example.appspot.com",
+						Project:         "test-project",
+						Prefix:          "butler/prefix",
+						Client:          &sentinelClient{},
 					})
 					So(regSpec, ShouldEqual, "client:params")
 				})

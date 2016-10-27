@@ -162,10 +162,22 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 		cwd, _ = os.Getwd()
 	}
 
+	// Get our output factory.
+	of, err := a.getOutputFactory()
+	if err != nil {
+		log.WithError(err).Errorf(a, "Failed to get output factory instance.")
+		return runtimeErrorReturnCode
+	}
+
 	// Update our environment for the child process to inherit
 	bsEnv := bootstrap.Environment{
 		Project: a.project,
 		Prefix:  a.prefix,
+	}
+
+	// If our output factory has a Coordinator host, fill that in too.
+	if cho, ok := of.(coordinatorHostOutput); ok {
+		bsEnv.CoordinatorHost = cho.getCoordinatorHost()
 	}
 
 	// Configure stream server
@@ -269,7 +281,7 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 	// We're about ready to execute our command. Initialize our Output instance.
 	// We want to do this before we execute our subprocess so that if this fails,
 	// we don't have to interrupt an already-running process.
-	output, err := a.configOutput()
+	output, err := of.configOutput(a)
 	if err != nil {
 		log.WithError(err).Errorf(a, "Failed to create output instance.")
 		return runtimeErrorReturnCode
