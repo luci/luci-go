@@ -114,7 +114,9 @@ func getCurrentBuilds(c context.Context, master *buildbotMaster, builderName str
 // * Current Builds from querying the master json from the datastore.
 // * Recent Builds from a cron job that backfills the recent builds.
 func builderImpl(c context.Context, masterName, builderName string) (*resp.Builder, error) {
-	result := &resp.Builder{}
+	result := &resp.Builder{
+		Name: builderName,
+	}
 	master, t, err := getMasterJSON(c, masterName)
 	switch {
 	case err == ds.ErrNoSuchEntity:

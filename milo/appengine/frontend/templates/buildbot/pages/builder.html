@@ -3,6 +3,8 @@
 {{define "head"}}{{end}}
 
 {{define "body"}}
+<h1>Builder {{.Builder.Name}}</h1>
+
 {{ if .Builder.CurrentBuilds }}
   <h2>Current Builds ({{len .Builder.CurrentBuilds}}):</h2>
   <ul>
