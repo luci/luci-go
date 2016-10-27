@@ -6,12 +6,9 @@ package bigtable
 
 import (
 	"bytes"
-	"fmt"
 	"strconv"
 	"testing"
-	"time"
 
-	"github.com/luci/gkvlite"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/data/recordio"
 	"github.com/luci/luci-go/logdog/common/storage"
@@ -21,133 +18,6 @@ import (
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-// btTableTest is an in-memory implementation of btTable interface for testing.
-//
-// This is a simple implementation; not an efficient one.
-type btTableTest struct {
-	s *gkvlite.Store
-	c *gkvlite.Collection
-
-	// err, if true, is the error immediately returned by functions.
-	err error
-
-	// maxLogAge is the currently-configured maximum log age.
-	maxLogAge time.Duration
-}
-
-func (t *btTableTest) close() {
-	if t.s != nil {
-		t.s.Close()
-		t.s = nil
-	}
-}
-
-func (t *btTableTest) collection() *gkvlite.Collection {
-	if t.s == nil {
-		var err error
-		t.s, err = gkvlite.NewStore(nil)
-		if err != nil {
-			panic(err)
-		}
-		t.c = t.s.MakePrivateCollection(bytes.Compare)
-	}
-	return t.c
-}
-
-func (t *btTableTest) putLogData(c context.Context, rk *rowKey, d []byte) error {
-	if t.err != nil {
-		return t.err
-	}
-
-	// Record/count sanity check.
-	records, err := recordio.Split(d)
-	if err != nil {
-		return err
-	}
-	if int64(len(records)) != rk.count {
-		return fmt.Errorf("count mismatch (%d != %d)", len(records), rk.count)
-	}
-
-	enc := []byte(rk.encode())
-	coll := t.collection()
-	if item, _ := coll.Get(enc); item != nil {
-		return storage.ErrExists
-	}
-
-	clone := make([]byte, len(d))
-	copy(clone, d)
-	if err := coll.Set(enc, clone); err != nil {
-		panic(err)
-	}
-	return nil
-}
-
-func (t *btTableTest) getLogData(c context.Context, rk *rowKey, limit int, keysOnly bool, cb btGetCallback) error {
-	if t.err != nil {
-		return t.err
-	}
-
-	enc := []byte(rk.encode())
-	prefix := rk.pathPrefix()
-	var ierr error
-	err := t.collection().VisitItemsAscend(enc, !keysOnly, func(i *gkvlite.Item) bool {
-		var drk *rowKey
-		drk, ierr = decodeRowKey(string(i.Key))
-		if ierr != nil {
-			return false
-		}
-		if drk.pathPrefix() != prefix {
-			return false
-		}
-
-		rowData := i.Val
-		if keysOnly {
-			rowData = nil
-		}
-
-		if ierr = cb(drk, rowData); ierr != nil {
-			if ierr == errStop {
-				ierr = nil
-			}
-			return false
-		}
-
-		if limit > 0 {
-			limit--
-			if limit == 0 {
-				return false
-			}
-		}
-
-		return true
-	})
-	if err != nil {
-		panic(err)
-	}
-	return ierr
-}
-
-func (t *btTableTest) setMaxLogAge(c context.Context, d time.Duration) error {
-	if t.err != nil {
-		return t.err
-	}
-	t.maxLogAge = d
-	return nil
-}
-
-func (t *btTableTest) dataMap() map[string][]byte {
-	result := map[string][]byte{}
-
-	err := t.collection().VisitItemsAscend([]byte(nil), true, func(i *gkvlite.Item) bool {
-		result[string(i.Key)] = i.Val
-		return true
-	})
-	if err != nil {
-		panic(err)
-	}
-	return result
-}
 
 func mustGetIndex(e *storage.Entry) types.MessageIndex {
 	idx, err := e.GetStreamIndex()
@@ -161,16 +31,7 @@ func TestStorage(t *testing.T) {
 	t.Parallel()
 
 	Convey(`A BigTable storage instance bound to a testing BigTable instance`, t, func() {
-		bt := btTableTest{}
-		defer bt.close()
-
-		s := newBTStorage(context.Background(), Options{
-			Project:  "test-project",
-			Instance: "test-instance",
-			LogTable: "test-log-table",
-		}, nil, nil)
-
-		s.raw = &bt
+		s := NewMemoryInstance(context.Background(), Options{})
 		defer s.Close()
 
 		project := config.ProjectName("test-project")
@@ -230,12 +91,12 @@ func TestStorage(t *testing.T) {
 		Convey(`With an artificial maximum BigTable row size of two records`, func() {
 			// Artificially constrain row size. 4 = 2*{size/1, data/1} RecordIO
 			// entries.
-			s.maxRowSize = 4
+			s.SetMaxRowSize(4)
 
 			Convey(`Will split row data that overflows the table into multiple rows.`, func() {
 				So(put("A", 0, "0", "1", "2", "3"), ShouldBeNil)
 
-				So(bt.dataMap(), ShouldResemble, map[string][]byte{
+				So(s.DataMap(), ShouldResemble, map[string][]byte{
 					ekey("A", 1, 2): records("0", "1"),
 					ekey("A", 3, 2): records("2", "3"),
 				})
@@ -254,7 +115,7 @@ func TestStorage(t *testing.T) {
 
 			Convey(`Testing "Put"...`, func() {
 				Convey(`Loads the row data.`, func() {
-					So(bt.dataMap(), ShouldResemble, map[string][]byte{
+					So(s.DataMap(), ShouldResemble, map[string][]byte{
 						ekey("A", 2, 3):  records("0", "1", "2"),
 						ekey("A", 4, 2):  records("3", "4"),
 						ekey("B", 10, 1): records("10"),

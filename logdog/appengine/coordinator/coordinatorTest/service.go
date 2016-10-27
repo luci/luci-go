@@ -11,6 +11,7 @@ import (
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
 	"github.com/luci/luci-go/logdog/common/storage"
+	"github.com/luci/luci-go/logdog/common/storage/caching"
 	"golang.org/x/net/context"
 )
 
@@ -35,6 +36,10 @@ type Services struct {
 
 	// ArchivalPublisher returns an ArchivalPublisher instance.
 	AP func() (coordinator.ArchivalPublisher, error)
+
+	// SC returns a storage caching.Cache instance. If nil, a nil cache value
+	// will be returned.
+	SC func() caching.Cache
 }
 
 var _ coordinator.Services = (*Services)(nil)
@@ -56,7 +61,7 @@ func (s *Services) ProjectConfig(c context.Context, project luciConfig.ProjectNa
 }
 
 // IntermediateStorage implements coordinator.Services.
-func (s *Services) IntermediateStorage(context.Context) (storage.Storage, error) {
+func (s *Services) IntermediateStorage(c context.Context) (storage.Storage, error) {
 	if s.IS != nil {
 		return s.IS()
 	}
@@ -77,4 +82,12 @@ func (s *Services) ArchivalPublisher(context.Context) (coordinator.ArchivalPubli
 		return s.AP()
 	}
 	panic("not implemented")
+}
+
+// StorageCache implements coordinator.Services.
+func (s *Services) StorageCache() caching.Cache {
+	if s.SC != nil {
+		return s.SC()
+	}
+	return nil
 }

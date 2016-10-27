@@ -168,6 +168,7 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, tail bool, l
 			IndexURL:  lst.ArchiveIndexURL,
 			StreamURL: lst.ArchiveStreamURL,
 			Client:    gs,
+			Cache:     svc.StorageCache(),
 		})
 		if err != nil {
 			log.WithError(err).Errorf(c, "Failed to create Google Storage storage instance.")
@@ -219,8 +220,8 @@ func getHead(c context.Context, req *logdog.GetRequest, st storage.Storage, proj
 		Limit:   logCount,
 	}
 
-	count := 0
 	var ierr error
+	count := 0
 	err := retry.Retry(c, retry.TransientOnly(retry.Default), func() error {
 		// Issue the Get request. This may return a transient error, in which case
 		// we will retry.
@@ -234,14 +235,15 @@ func getHead(c context.Context, req *logdog.GetRequest, st storage.Storage, proj
 				// Not the first log, and we've exceeded our byte limit.
 				return false
 			}
-			byteLimit -= len(e.D)
 
 			sidx, _ := e.GetStreamIndex() // GetLogEntry succeeded, so this must.
 			if !(req.NonContiguous || sidx == sreq.Index) {
 				return false
 			}
+
 			logs = append(logs, le)
 			sreq.Index = sidx + 1
+			byteLimit -= len(e.D)
 			count++
 			return !(logCount > 0 && count >= logCount)
 		})

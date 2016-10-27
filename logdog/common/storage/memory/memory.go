@@ -57,6 +57,15 @@ func (s *Storage) Close() {
 	})
 }
 
+// ResetClose resets the storage instance, allowing it to be used another time.
+// The data stored in this instance is not changed.
+func (s *Storage) ResetClose() {
+	s.stateMu.Lock()
+	defer s.stateMu.Unlock()
+
+	s.closed = false
+}
+
 // Config implements storage.Storage.
 func (s *Storage) Config(cfg storage.Config) error {
 	return s.run(func() error {

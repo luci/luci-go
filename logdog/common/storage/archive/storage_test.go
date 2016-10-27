@@ -17,6 +17,7 @@ import (
 	"github.com/luci/luci-go/logdog/common/archive"
 	"github.com/luci/luci-go/logdog/common/renderer"
 	"github.com/luci/luci-go/logdog/common/storage"
+	"github.com/luci/luci-go/logdog/common/storage/memory"
 
 	cloudStorage "cloud.google.com/go/storage"
 	"github.com/golang/protobuf/proto"
@@ -313,13 +314,13 @@ func TestArchiveStorage(t *testing.T) {
 			title string
 			fn    func() error
 		}{
-			{"Get", func() error { return st.Get(storage.GetRequest{}, nil) }},
+			{"Get", func() error { return st.Get(storage.GetRequest{}, func(*storage.Entry) bool { return true }) }},
 			{"Tail", func() (err error) {
 				_, err = st.Tail("", "")
 				return
 			}},
 		} {
-			Convey(fmt.Sprintf("Error case: %q", tc.title), func() {
+			Convey(fmt.Sprintf("Testing retrieval: %q", tc.title), func() {
 				Convey(`With missing log stream returns ErrDoesNotExist.`, func() {
 					stImpl.streamPath = "does-not-exist"
 
@@ -354,6 +355,34 @@ func TestArchiveStorage(t *testing.T) {
 					client.stream = []byte{0x00, 0x01, 0xff}
 
 					So(tc.fn(), ShouldErrLike, "failed to unmarshal")
+				})
+
+				Convey(`With data entries and a cache, only loads the index once.`, func() {
+					var cache memory.Cache
+					stImpl.Cache = &cache
+
+					gen.generate("foo", "bar", "baz", "qux", "quux")
+					client.load(&gen)
+
+					// Assert that an attempted load will fail with an error. This is so
+					// we don't accidentally test something that doesn't follow the path
+					// we're intending to follow.
+					client.indexErr = errors.New("not using a cache")
+					So(errors.Unwrap(tc.fn()), ShouldEqual, client.indexErr)
+
+					for i := 0; i < 10; i++ {
+						if i == 0 {
+							// First time successfully reads the index.
+							client.indexErr = nil
+						} else {
+							// Subsequent attempts to load the index will result in an error.
+							// This ensures that if they are successful, it's because we're
+							// hitting the cache.
+							client.indexErr = errors.New("not using a cache")
+						}
+
+						So(tc.fn(), ShouldBeNil)
+					}
 				})
 			})
 		}

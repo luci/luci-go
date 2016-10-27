@@ -71,7 +71,7 @@ func Initialize(ctx context.Context, o Options) error {
 		return err
 	}
 
-	st := newBTStorage(ctx, o, nil, adminClient)
+	st := newBTStorage(ctx, o, nil, adminClient, nil)
 	defer st.Close()
 
 	exists, err := tableExists(ctx, st.adminClient, o.LogTable)

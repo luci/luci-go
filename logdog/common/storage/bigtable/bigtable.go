@@ -65,7 +65,7 @@ type btTable interface {
 // btTableProd is an implementation of the btTable interface that uses a real
 // production BigTable connection.
 type btTableProd struct {
-	*btStorage
+	base *btStorage
 }
 
 func (t *btTableProd) putLogData(c context.Context, rk *rowKey, data []byte) error {
@@ -74,7 +74,7 @@ func (t *btTableProd) putLogData(c context.Context, rk *rowKey, data []byte) err
 	cm := bigtable.NewCondMutation(bigtable.RowKeyFilter(rk.encode()), nil, m)
 
 	rowExists := false
-	if err := t.logTable.Apply(c, rk.encode(), cm, bigtable.GetCondMutationResult(&rowExists)); err != nil {
+	if err := t.base.logTable.Apply(c, rk.encode(), cm, bigtable.GetCondMutationResult(&rowExists)); err != nil {
 		return grpcutil.WrapIfTransient(err)
 	}
 	if rowExists {
@@ -102,7 +102,7 @@ func (t *btTableProd) getLogData(c context.Context, rk *rowKey, limit int, keysO
 	rng := bigtable.NewRange(rk.encode(), rk.pathPrefixUpperBound())
 
 	var innerErr error
-	err := t.logTable.ReadRows(c, rng, func(row bigtable.Row) bool {
+	err := t.base.logTable.ReadRows(c, rng, func(row bigtable.Row) bool {
 		data, err := getLogRowData(row)
 		if err != nil {
 			innerErr = storage.ErrBadData
@@ -135,7 +135,7 @@ func (t *btTableProd) setMaxLogAge(c context.Context, d time.Duration) error {
 	if d > 0 {
 		logGCPolicy = bigtable.MaxAgePolicy(d)
 	}
-	if err := t.adminClient.SetGCPolicy(c, t.LogTable, logColumnFamily, logGCPolicy); err != nil {
+	if err := t.base.adminClient.SetGCPolicy(c, t.base.LogTable, logColumnFamily, logGCPolicy); err != nil {
 		return grpcutil.WrapIfTransient(err)
 	}
 	return nil

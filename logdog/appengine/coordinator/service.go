@@ -19,6 +19,7 @@ import (
 	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/storage/bigtable"
+	"github.com/luci/luci-go/logdog/common/storage/caching"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
 
@@ -65,6 +66,10 @@ type Services interface {
 
 	// ArchivalPublisher returns an ArchivalPublisher instance.
 	ArchivalPublisher(context.Context) (ArchivalPublisher, error)
+
+	// StorageCache returns the storage cache instance to use, or nil for no
+	// caching.
+	StorageCache() caching.Cache
 }
 
 // ProdServices is middleware chain used by Coordinator services.
@@ -208,6 +213,7 @@ func (s *prodServicesInst) IntermediateStorage(c context.Context) (storage.Stora
 		ClientOptions: []option.ClientOption{
 			option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
 		},
+		Cache: s.StorageCache(),
 	})
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create BigTable instance.")
@@ -275,3 +281,7 @@ func (s *prodServicesInst) nextArchiveIndex() uint64 {
 	}
 	return uint64(v)
 }
+
+var storageCacheSingleton StorageCache
+
+func (s *prodServicesInst) StorageCache() caching.Cache { return &storageCacheSingleton }

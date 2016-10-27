@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	luciConfig "github.com/luci/luci-go/common/config"
@@ -23,13 +21,15 @@ import (
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
-	"github.com/luci/luci-go/logdog/common/storage"
-	memoryStorage "github.com/luci/luci-go/logdog/common/storage/memory"
+	"github.com/luci/luci-go/logdog/common/storage/caching"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/settings"
 	"github.com/luci/luci-go/tumble"
+
+	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/info"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
@@ -56,15 +56,15 @@ type Environment struct {
 	// Services is the set of installed Coordinator services.
 	Services Services
 
-	// IntermediateStorage is the memory Intermediate Storage instance
-	// installed (by default) into Services.
-	IntermediateStorage memoryStorage.Storage
 	// GSClient is the test GSClient instance installed (by default) into
 	// Services.
 	GSClient GSClient
 	// ArchivalPublisher is the test ArchivalPublisher instance installed (by
 	// default) into Services.
 	ArchivalPublisher ArchivalPublisher
+
+	// StorageCache is the default storage cache instance.
+	StorageCache StorageCache
 }
 
 // LogIn installs an testing identity into the testing auth state.
@@ -164,7 +164,11 @@ func (e *Environment) addConfigEntry(configSet, path, content string) {
 // it, returning the Environment to which they're bound.
 func Install() (context.Context, *Environment) {
 	e := Environment{
-		Config: make(map[string]memory.ConfigSet),
+		Config:   make(map[string]memory.ConfigSet),
+		GSClient: GSClient{},
+		StorageCache: StorageCache{
+			Base: &coordinator.StorageCache{},
+		},
 	}
 
 	// Get our starting context. This installs, among other things, in-memory
@@ -279,14 +283,14 @@ func Install() (context.Context, *Environment) {
 
 	// Setup our default Coordinator services.
 	e.Services = Services{
-		IS: func() (storage.Storage, error) {
-			return &e.IntermediateStorage, nil
-		},
 		GS: func() (gs.Client, error) {
 			return &e.GSClient, nil
 		},
 		AP: func() (coordinator.ArchivalPublisher, error) {
 			return &e.ArchivalPublisher, nil
+		},
+		SC: func() caching.Cache {
+			return &e.StorageCache
 		},
 	}
 	c = coordinator.WithServices(c, &e.Services)

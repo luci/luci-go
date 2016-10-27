@@ -20,16 +20,7 @@ func TestBigTable(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Testing BigTable internal functions`, t, func() {
-		var bt btTableTest
-		defer bt.close()
-
-		s := newBTStorage(context.Background(), Options{
-			Project:  "test-project",
-			Instance: "test-instance",
-			LogTable: "test-log-table",
-		}, nil, nil)
-
-		s.raw = &bt
+		s := NewMemoryInstance(context.Background(), Options{})
 		defer s.Close()
 
 		Convey(`Given a fake BigTable row`, func() {
@@ -72,13 +63,14 @@ func TestBigTable(t *testing.T) {
 
 			Convey(`Can successfully apply configuration.`, func() {
 				So(s.Config(cfg), ShouldBeNil)
-				So(bt.maxLogAge, ShouldEqual, cfg.MaxLogAge)
+				So(s.MaxLogAge(), ShouldEqual, cfg.MaxLogAge)
 			})
 
 			Convey(`With return an error if the configuration fails to apply.`, func() {
-				bt.err = errors.New("test error")
+				testErr := errors.New("test error")
+				s.SetErr(testErr)
 
-				So(s.Config(cfg), ShouldEqual, bt.err)
+				So(s.Config(cfg), ShouldEqual, testErr)
 			})
 		})
 	})
