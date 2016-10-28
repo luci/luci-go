@@ -55,7 +55,7 @@ func TestBuild(t *testing.T) {
 			if err != nil {
 				panic(fmt.Errorf("Could not JSON marshal %s/%s: %s", tc.builder, tc.build, err))
 			}
-			fname := fmt.Sprintf("%s.%s.build.json", tc.builder, tc.build)
+			fname := fmt.Sprintf("%s.%d.build.json", tc.builder, tc.build)
 			fpath := path.Join("expectations", fname)
 			err = ioutil.WriteFile(fpath, []byte(buildJSON), 0644)
 			if err != nil {
