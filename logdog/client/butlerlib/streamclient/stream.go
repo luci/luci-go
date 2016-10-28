@@ -20,12 +20,17 @@ type Stream interface {
 	// WriteDatagram writes a LogDog Butler streaming datagram to the underlying
 	// Writer.
 	WriteDatagram([]byte) error
+
+	// Properties returns a copy of this Stream's properties.
+	Properties() *streamproto.Properties
 }
 
 // streamImpl is the standard implementation of the Stream interface.
 type streamImpl struct {
-	*streamproto.Properties
 	io.WriteCloser
+
+	// props is this stream's properties.
+	props *streamproto.Properties
 
 	// rioW is a recordio.Writer bound to the WriteCloser. This will be
 	// initialized on the first writeRecord invocation.
@@ -65,5 +70,7 @@ func (s *streamImpl) writeRecord(r []byte) error {
 }
 
 func (s *streamImpl) isDatagramStream() bool {
-	return s.StreamType == logpb.StreamType_DATAGRAM
+	return s.props.StreamType == logpb.StreamType_DATAGRAM
 }
+
+func (s *streamImpl) Properties() *streamproto.Properties { return s.props.Clone() }

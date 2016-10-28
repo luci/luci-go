@@ -93,7 +93,10 @@ func New(c Config) *Bundler {
 
 // Register adds a new stream to the Bundler, returning a reference to the
 // registered stream.
-func (b *Bundler) Register(p streamproto.Properties) (Stream, error) {
+//
+// The Bundler takes ownership of the supplied Properties, and may modify them
+// as needed.
+func (b *Bundler) Register(p *streamproto.Properties) (Stream, error) {
 	// Our Properties must validate.
 	if err := p.Validate(); err != nil {
 		return nil, err
@@ -106,7 +109,7 @@ func (b *Bundler) Register(p streamproto.Properties) (Stream, error) {
 	c := streamConfig{
 		name: p.Name,
 		template: logpb.ButlerLogBundle_Entry{
-			Desc: &p.LogStreamDescriptor,
+			Desc: p.LogStreamDescriptor,
 		},
 		maximumBufferDuration: b.c.MaxBufferDelay,
 		maximumBufferedBytes:  b.c.MaxBufferedBytes,
@@ -118,7 +121,7 @@ func (b *Bundler) Register(p streamproto.Properties) (Stream, error) {
 	}
 
 	err := error(nil)
-	c.parser, err = newParser(&p, &b.prefixCounter)
+	c.parser, err = newParser(p, &b.prefixCounter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create stream parser: %s", err)
 	}

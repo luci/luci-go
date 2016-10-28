@@ -17,7 +17,7 @@ import (
 
 // In-memory datastructure to hold a fake butler client.
 type memoryStream struct {
-	*streamproto.Properties
+	props *streamproto.Properties
 
 	closed     bool
 	buf        bytes.Buffer
@@ -28,8 +28,8 @@ func (s *memoryStream) ToLogDogStream() (*logdog.Stream, error) {
 	result := &logdog.Stream{
 		Closed:     s.closed,
 		IsDatagram: s.isDatagram,
-		Path:       s.Name,
-		Prefix:     s.Prefix,
+		Path:       s.props.Name,
+		Prefix:     s.props.Prefix,
 	}
 
 	if s.isDatagram {
@@ -62,6 +62,8 @@ func (s *memoryStream) WriteDatagram(b []byte) error {
 	return err
 }
 
+func (s *memoryStream) Properties() *streamproto.Properties { return s.props.Clone() }
+
 type memoryClient struct {
 	stream map[string]*memoryStream
 }
@@ -72,12 +74,12 @@ func (c *memoryClient) NewStream(f streamproto.Flags) (streamclient.Stream, erro
 		return nil, fmt.Errorf("duplicate stream, %q", props.Name)
 	}
 	s := memoryStream{
-		Properties: props,
+		props: props,
 	}
 	if c.stream == nil {
 		c.stream = map[string]*memoryStream{}
 	}
-	c.stream[s.Name] = &s
+	c.stream[s.props.Name] = &s
 	return &s, nil
 }
 

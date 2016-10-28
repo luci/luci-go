@@ -32,7 +32,9 @@ func newUnixSocketClient(path string) (Client, error) {
 		return nil, fmt.Errorf("not a named pipe: [%s]", path)
 	}
 
-	return &clientImpl{func() (io.WriteCloser, error) {
-		return net.Dial("unix", path)
-	}}, nil
+	return &clientImpl{
+		factory: func() (io.WriteCloser, error) {
+			return net.Dial("unix", path)
+		},
+	}, nil
 }

@@ -24,7 +24,9 @@ func newNamedPipeClient(path string) (Client, error) {
 		return nil, errors.New("streamclient: cannot have empty named pipe path")
 	}
 
-	return &clientImpl{func() (io.WriteCloser, error) {
-		return npipe.Dial(fmt.Sprintf(`\\.\pipe\%s`, path))
-	}}, nil
+	return &clientImpl{
+		factory: func() (io.WriteCloser, error) {
+			return npipe.Dial(fmt.Sprintf(`\\.\pipe\%s`, path))
+		},
+	}, nil
 }

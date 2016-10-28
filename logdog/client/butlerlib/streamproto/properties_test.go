@@ -24,7 +24,9 @@ func TestProperties(t *testing.T) {
 	Convey(`A testing instance`, t, func() {
 		ctx, _ := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 		Convey(`A Properties instance with no ContentType`, func() {
-			p := Properties{}
+			p := Properties{
+				LogStreamDescriptor: &logpb.LogStreamDescriptor{},
+			}
 
 			Convey(`Returns the configured ContentType if one is set.`, func() {
 				p.ContentType = "foo/bar"
@@ -61,7 +63,7 @@ func TestFlags(t *testing.T) {
 		Convey(`Converts to Properties.`, func() {
 			p := f.Properties()
 			So(p, ShouldResemble, &Properties{
-				LogStreamDescriptor: logpb.LogStreamDescriptor{
+				LogStreamDescriptor: &logpb.LogStreamDescriptor{
 					Name:        "my/stream",
 					ContentType: "foo/bar",
 					StreamType:  logpb.StreamType_TEXT,
@@ -80,7 +82,7 @@ func TestFlagsJSON(t *testing.T) {
 			So(json.Unmarshal([]byte(t), &f), ShouldBeNil)
 
 			So(f.Properties(), ShouldResemble, &Properties{
-				LogStreamDescriptor: logpb.LogStreamDescriptor{
+				LogStreamDescriptor: &logpb.LogStreamDescriptor{
 					Name:        "my/stream",
 					ContentType: "foo/bar",
 					StreamType:  logpb.StreamType_TEXT,
@@ -99,7 +101,7 @@ func TestFlagsJSON(t *testing.T) {
 			So(json.Unmarshal([]byte(t), &f), ShouldBeNil)
 
 			So(f.Properties(), ShouldResemble, &Properties{
-				LogStreamDescriptor: logpb.LogStreamDescriptor{
+				LogStreamDescriptor: &logpb.LogStreamDescriptor{
 					Name:        "my/stream",
 					StreamType:  logpb.StreamType_BINARY,
 					ContentType: string(types.ContentTypeBinary),
@@ -113,7 +115,7 @@ func TestFlagsJSON(t *testing.T) {
 			So(json.Unmarshal([]byte(t), &f), ShouldBeNil)
 
 			So(f.Properties(), ShouldResemble, &Properties{
-				LogStreamDescriptor: logpb.LogStreamDescriptor{
+				LogStreamDescriptor: &logpb.LogStreamDescriptor{
 					Name:        "my/stream",
 					StreamType:  logpb.StreamType_DATAGRAM,
 					ContentType: string(types.ContentTypeLogdogDatagram),

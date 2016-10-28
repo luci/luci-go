@@ -10,11 +10,6 @@ import (
 	"sync"
 )
 
-var (
-	// DefaultRegistry is the default protocol registry.
-	DefaultRegistry = &Registry{}
-)
-
 // ClientFactory is a generator function that is invoked by the Registry when a
 // new Client is requested for its protocol.
 type ClientFactory func(string) (Client, error)
@@ -53,22 +48,30 @@ func (r *Registry) Register(name string, f ClientFactory) {
 // supplied protocol/address string, returning the generated Client.
 func (r *Registry) NewClient(path string) (Client, error) {
 	parts := strings.SplitN(path, ":", 2)
-	params := ""
+	value := ""
 	if len(parts) == 2 {
-		params = parts[1]
+		value = parts[1]
 	}
 
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
 	if f, ok := r.protocols[parts[0]]; ok {
-		return f(params)
+		return f(value)
 	}
 	return nil, fmt.Errorf("streamclient: no protocol registered for [%s]", parts[0])
+}
+
+// defaultRegistry is the default protocol registry.
+var defaultRegistry = &Registry{}
+
+// GetDefaultRegistry returns the default client registry instance.
+func GetDefaultRegistry() *Registry {
+	return defaultRegistry
 }
 
 // registerProtocol registers a protocol with the default (global) protocol
 // registry.
 func registerProtocol(name string, f ClientFactory) {
-	DefaultRegistry.Register(name, f)
+	defaultRegistry.Register(name, f)
 }

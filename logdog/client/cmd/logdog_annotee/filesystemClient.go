@@ -74,6 +74,7 @@ func (c *filesystemClient) getFilename(base, ext string) string {
 func (c *filesystemClient) NewStream(f streamproto.Flags) (streamclient.Stream, error) {
 	s := filesystemClientStream{
 		filesystemClient: c,
+		props:            f.Properties(),
 		baseName:         sanitize(string(f.Name)),
 		contentType:      f.ContentType,
 		streamType:       logpb.StreamType(f.Type),
@@ -86,6 +87,7 @@ func (c *filesystemClient) NewStream(f streamproto.Flags) (streamclient.Stream, 
 type filesystemClientStream struct {
 	*filesystemClient
 
+	props       *streamproto.Properties
 	baseName    string
 	contentType string
 	streamType  logpb.StreamType
@@ -172,3 +174,5 @@ func (s *filesystemClientStream) Close() error {
 	}
 	return nil
 }
+
+func (s *filesystemClientStream) Properties() *streamproto.Properties { return s.props.Clone() }

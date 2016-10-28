@@ -313,7 +313,7 @@ func (b *Butler) AddStreamServer(streamServer streamserver.StreamServer) {
 			// Add this Stream to the Butler.
 			//
 			// We run this in a function so we can ensure cleanup on failure.
-			if err := b.AddStream(rc, *config); err != nil {
+			if err := b.AddStream(rc, config); err != nil {
 				log.Fields{
 					log.ErrorKey: err,
 				}.Errorf(ctx, "Failed to add stream.")
@@ -347,7 +347,8 @@ func (b *Butler) AddStreamServer(streamServer streamserver.StreamServer) {
 //
 // If an error is occurred, the caller is still the owner of the stream and
 // is responsible for closing it.
-func (b *Butler) AddStream(rc io.ReadCloser, p streamproto.Properties) error {
+func (b *Butler) AddStream(rc io.ReadCloser, p *streamproto.Properties) error {
+	p = p.Clone()
 	if p.Timestamp == nil || p.Timestamp.Time().IsZero() {
 		p.Timestamp = google.NewTimestamp(clock.Now(b.ctx))
 	}
@@ -393,18 +394,21 @@ func (b *Butler) AddStream(rc io.ReadCloser, p streamproto.Properties) error {
 		return fmt.Errorf("invalid tee value: %v", p.Tee)
 	}
 
-	p.Prefix = string(b.c.Prefix)
 	if err := b.registerStream(p.Name); err != nil {
 		return err
 	}
 
+	// Register this stream with our Bundler. It will take ownership of "p", so
+	// we should not use it after this point.
+	streamCtx := log.SetField(b.ctx, "stream", p.Name)
 	bs, err := b.bundler.Register(p)
 	if err != nil {
 		return err
 	}
+	p = nil
 
 	b.streamC <- &stream{
-		Context: log.SetField(b.ctx, "stream", p.Name),
+		Context: streamCtx,
 		r:       reader,
 		c:       rc,
 		bs:      bs,

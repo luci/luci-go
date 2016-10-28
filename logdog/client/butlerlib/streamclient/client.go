@@ -43,7 +43,7 @@ type clientImpl struct {
 //   - net.pipe:name describes a stream server listening on Windows named pipe
 //     "\\.\pipe\name".
 func New(path string) (Client, error) {
-	return DefaultRegistry.NewClient(path)
+	return defaultRegistry.NewClient(path)
 }
 
 func (c *clientImpl) NewStream(f streamproto.Flags) (Stream, error) {
@@ -71,8 +71,8 @@ func (c *clientImpl) NewStream(f streamproto.Flags) (Stream, error) {
 
 	// Perform the handshake: magic + size(data) + data.
 	s := &streamImpl{
-		Properties:  p,
 		WriteCloser: client,
+		props:       p,
 	}
 	if _, err := s.writeRaw(streamproto.ProtocolFrameHeaderMagic); err != nil {
 		return nil, fmt.Errorf("failed to write magic number: %s", err)

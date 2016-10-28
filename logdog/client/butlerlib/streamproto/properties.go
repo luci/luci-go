@@ -11,6 +11,8 @@ import (
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/common/types"
+
+	"github.com/golang/protobuf/proto"
 )
 
 // Properties is the set of properties needed to define a LogDog Butler Stream.
@@ -19,7 +21,7 @@ type Properties struct {
 	//
 	// Note that the Prefix value, if filled, will be overridden by the Butler's
 	// Prefix.
-	logpb.LogStreamDescriptor
+	*logpb.LogStreamDescriptor
 
 	// Tee is the tee configuration for this stream. If empty, the stream will
 	// not be tee'd.
@@ -49,6 +51,13 @@ func (p *Properties) Validate() error {
 	return nil
 }
 
+// Clone returns a fully-independent clone of this Properties object.
+func (p *Properties) Clone() *Properties {
+	clone := *p
+	clone.LogStreamDescriptor = proto.Clone(p.LogStreamDescriptor).(*logpb.LogStreamDescriptor)
+	return &clone
+}
+
 // Flags is a flag- and JSON-compatible collapse of Properties. It is used
 // for stream negotiation protocol and command-line interfaces.
 type Flags struct {
@@ -74,7 +83,7 @@ func (f *Flags) Properties() *Properties {
 	}
 
 	p := &Properties{
-		LogStreamDescriptor: logpb.LogStreamDescriptor{
+		LogStreamDescriptor: &logpb.LogStreamDescriptor{
 			Name:          string(f.Name),
 			ContentType:   string(contentType),
 			StreamType:    logpb.StreamType(f.Type),
