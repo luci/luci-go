@@ -11,12 +11,27 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
+	"github.com/luci/gae/impl/memory"
 	"github.com/luci/luci-go/server/auth/delegation/messages"
 	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/auth/signing/signingtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func TestGenerateTokenID(t *testing.T) {
+	Convey("Works", t, func() {
+		ctx := memory.Use(context.Background())
+
+		id, err := GenerateTokenID(ctx)
+		So(err, ShouldBeNil)
+		So(id, ShouldEqual, 1)
+
+		id, err = GenerateTokenID(ctx)
+		So(err, ShouldBeNil)
+		So(id, ShouldEqual, 2)
+	})
+}
 
 func TestSignToken(t *testing.T) {
 	Convey("Works", t, func() {

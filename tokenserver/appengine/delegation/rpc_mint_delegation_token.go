@@ -154,13 +154,16 @@ type mintParams struct {
 
 // mint is called to make the token after the request has been authorized.
 func (r *MintDelegationTokenRPC) mint(c context.Context, p *mintParams) (*minter.MintDelegationTokenResponse, error) {
-	// TODO(vadimsh): Generate token ID, record the token in the audit log along
-	// with the rule, config revision and request details.
+	id, err := GenerateTokenID(c)
+	if err != nil {
+		logging.WithError(err).Errorf(c, "Error when generating token ID.")
+		return nil, grpc.Errorf(codes.Internal, "error when generating token ID - %s", err)
+	}
 
 	// All the stuff here has already been validated in 'MintDelegationToken'.
 	subtok := &messages.Subtoken{
 		Kind:              messages.Subtoken_BEARER_DELEGATION_TOKEN,
-		SubtokenId:        -1, // TODO(vadimsh): Generate.
+		SubtokenId:        id,
 		DelegatedIdentity: string(p.query.Delegatee),
 		RequestorIdentity: string(p.query.Requestor),
 		CreationTime:      clock.Now(c).Unix(),
@@ -174,6 +177,9 @@ func (r *MintDelegationTokenRPC) mint(c context.Context, p *mintParams) (*minter
 		logging.WithError(err).Errorf(c, "Error when signing the token.")
 		return nil, grpc.Errorf(codes.Internal, "error when signing the token - %s", err)
 	}
+
+	// TODO(vadimsh): Record the token in the audit log along with the rule,
+	// config revision and request details.
 
 	return &minter.MintDelegationTokenResponse{
 		Token:              signed,
