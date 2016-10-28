@@ -97,6 +97,12 @@
   <h2>No Recent Builds</h2>
 {{ end }}
 
-</div>
+(Show:
+<a href="{{.Builder.Name}}">default</a>
+<a href="{{.Builder.Name}}?limit=25">25</a>
+<a href="{{.Builder.Name}}?limit=50">50</a>
+<a href="{{.Builder.Name}}?limit=100">100</a>
+<a href="{{.Builder.Name}}?limit=200">200</a>
+)
 
 {{end}}

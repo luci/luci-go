@@ -5,9 +5,7 @@
 package buildbucket
 
 import (
-	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
@@ -52,23 +50,14 @@ func (b Builder) Render(c context.Context, r *http.Request, p httprouter.Params)
 		}
 	}
 
-	// numbuilds is a name of buildbot's query string parameter for specifying
+	// limit is a name of the query string parameter for specifying
 	// maximum number of builds to show.
-	// We are retaining the parameter name for user convenience.
-	numBuildsStr := r.FormValue("numbuilds")
-	numBuilds := -1
-	if numBuildsStr != "" {
-		var err error
-		numBuilds, err = strconv.Atoi(numBuildsStr)
-		if err != nil {
-			return nil, &miloerror.Error{
-				Message: fmt.Sprintf("numbuilds parameter value %q is not a number: %s", numBuildsStr, err),
-				Code:    http.StatusBadRequest,
-			}
-		}
+	limit, err := settings.GetLimit(r)
+	if err != nil {
+		return nil, err
 	}
 
-	result, err := builderImpl(c, server, bucket, builder, numBuilds)
+	result, err := builderImpl(c, server, bucket, builder, limit)
 	if err != nil {
 		return nil, err
 	}

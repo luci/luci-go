@@ -9,10 +9,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/model"
+	"github.com/luci/luci-go/milo/common/miloerror"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/xsrf"
@@ -148,4 +150,33 @@ func getSettings(c context.Context, r *http.Request) (*resp.Settings, error) {
 	}
 
 	return result, nil
+}
+
+// GetLimit extracts the "limit", "numbuilds", or "num_builds" http param from
+// the request, or returns "-1" implying no limit was specified.
+func GetLimit(r *http.Request) (int, error) {
+	sLimit := r.FormValue("limit")
+	if sLimit == "" {
+		sLimit = r.FormValue("numbuilds")
+		if sLimit == "" {
+			sLimit = r.FormValue("num_builds")
+			if sLimit == "" {
+				return -1, nil
+			}
+		}
+	}
+	limit, err := strconv.Atoi(sLimit)
+	if err != nil {
+		return -1, &miloerror.Error{
+			Message: fmt.Sprintf("limit parameter value %q is not a number: %s", sLimit, err),
+			Code:    http.StatusBadRequest,
+		}
+	}
+	if limit < 0 {
+		return -1, &miloerror.Error{
+			Message: fmt.Sprintf("limit parameter value %q is less than 0", sLimit),
+			Code:    http.StatusBadRequest,
+		}
+	}
+	return limit, nil
 }

@@ -94,8 +94,15 @@ func (b Builder) Render(c context.Context, r *http.Request, p httprouter.Params)
 			Code:    http.StatusBadRequest,
 		}
 	}
+	limit, err := settings.GetLimit(r)
+	if err != nil {
+		return nil, err
+	}
+	if limit < 0 {
+		limit = 25
+	}
 
-	result, err := builderImpl(c, master, builder)
+	result, err := builderImpl(c, master, builder, limit)
 	if err != nil {
 		return nil, err
 	}

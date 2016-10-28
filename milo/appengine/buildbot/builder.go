@@ -63,14 +63,17 @@ func getBuildSummary(b *buildbotBuild) *resp.BuildSummary {
 
 // getBuilds fetches all of the recent builds from the .  Note that
 // getBuilds() does not perform ACL checks.
-func getBuilds(c context.Context, masterName, builderName string, finished bool) ([]*resp.BuildSummary, error) {
+func getBuilds(
+	c context.Context, masterName, builderName string, finished bool, limit int) (
+	[]*resp.BuildSummary, error) {
+
 	// TODO(hinoka): Builder specific structs.
 	result := []*resp.BuildSummary{}
 	q := ds.NewQuery("buildbotBuild")
 	q = q.Eq("finished", finished)
 	q = q.Eq("master", masterName)
 	q = q.Eq("builder", builderName)
-	q = q.Limit(25) // TODO(hinoka): This should be adjustable
+	q = q.Limit(int32(limit))
 	q = q.Order("-number")
 	buildbots := []*buildbotBuild{}
 	err := ds.GetAll(c, q, &buildbots)
@@ -113,7 +116,7 @@ func getCurrentBuilds(c context.Context, master *buildbotMaster, builderName str
 // This gets:
 // * Current Builds from querying the master json from the datastore.
 // * Recent Builds from a cron job that backfills the recent builds.
-func builderImpl(c context.Context, masterName, builderName string) (*resp.Builder, error) {
+func builderImpl(c context.Context, masterName, builderName string, limit int) (*resp.Builder, error) {
 	result := &resp.Builder{
 		Name: builderName,
 	}
@@ -168,11 +171,11 @@ func builderImpl(c context.Context, masterName, builderName string) (*resp.Build
 		}
 	}
 
-	recentBuilds, err := getBuilds(c, masterName, builderName, true)
+	recentBuilds, err := getBuilds(c, masterName, builderName, true, limit)
 	if err != nil {
 		return nil, err
 	}
-	currentBuilds, err := getBuilds(c, masterName, builderName, false)
+	currentBuilds, err := getBuilds(c, masterName, builderName, false, 0)
 	if err != nil {
 		return nil, err
 	}
