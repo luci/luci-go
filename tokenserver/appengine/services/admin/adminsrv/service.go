@@ -23,15 +23,20 @@ type serverImpl struct {
 	certconfig.ImportCAConfigsRPC
 	delegation.ImportDelegationConfigsRPC
 	machinetoken.InspectMachineTokenRPC
+	delegation.InspectDelegationTokenRPC
 }
 
 // NewServer returns prod AdminServer implementation.
 //
 // It assumes authorization has happened already.
 func NewServer() admin.AdminServer {
+	signer := gaesigner.Signer{}
 	return &serverImpl{
 		InspectMachineTokenRPC: machinetoken.InspectMachineTokenRPC{
-			Signer: gaesigner.Signer{},
+			Signer: signer,
+		},
+		InspectDelegationTokenRPC: delegation.InspectDelegationTokenRPC{
+			Signer: signer,
 		},
 	}
 }

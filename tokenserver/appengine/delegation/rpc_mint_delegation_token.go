@@ -18,6 +18,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/delegation/messages"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/signing"
 
@@ -41,8 +42,7 @@ type MintDelegationTokenRPC struct {
 	// mintMock call is used in tests.
 	//
 	// In prod it is 'mint'
-	mintMock func(context.Context, *minter.MintDelegationTokenRequest,
-		*RulesQuery, *admin.DelegationRule) (*minter.MintDelegationTokenResponse, error)
+	mintMock func(context.Context, *mintParams) (*minter.MintDelegationTokenResponse, error)
 }
 
 // MintDelegationToken generates a new bearer delegation token.
@@ -132,18 +132,53 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 		return nil, grpc.Errorf(codes.PermissionDenied, "forbidden - %s", err)
 	}
 
-	if r.mintMock != nil {
-		return r.mintMock(c, req, query, rule)
+	p := mintParams{
+		request: req,
+		cfg:     cfg,
+		query:   query,
+		rule:    rule,
 	}
-	return r.mint(c, req, query, rule)
+	if r.mintMock != nil {
+		return r.mintMock(c, &p)
+	}
+	return r.mint(c, &p)
+}
+
+// mintParams are passed to 'mint' function.
+type mintParams struct {
+	request *minter.MintDelegationTokenRequest // the original RPC request
+	cfg     *DelegationConfig                  // the currently active config
+	query   *RulesQuery                        // extracted from the request
+	rule    *admin.DelegationRule              // looked up in the config based on 'query'
 }
 
 // mint is called to make the token after the request has been authorized.
-func (r *MintDelegationTokenRPC) mint(
-	c context.Context, req *minter.MintDelegationTokenRequest,
-	query *RulesQuery, rule *admin.DelegationRule) (*minter.MintDelegationTokenResponse, error) {
-	// TODO(vadimsh): Make the token, record it in the audit log.
-	return nil, grpc.Errorf(codes.Unimplemented, "Not implemented yet")
+func (r *MintDelegationTokenRPC) mint(c context.Context, p *mintParams) (*minter.MintDelegationTokenResponse, error) {
+	// TODO(vadimsh): Generate token ID, record the token in the audit log along
+	// with the rule, config revision and request details.
+
+	// All the stuff here has already been validated in 'MintDelegationToken'.
+	subtok := &messages.Subtoken{
+		Kind:              messages.Subtoken_BEARER_DELEGATION_TOKEN,
+		SubtokenId:        -1, // TODO(vadimsh): Generate.
+		DelegatedIdentity: string(p.query.Delegatee),
+		RequestorIdentity: string(p.query.Requestor),
+		CreationTime:      clock.Now(c).Unix(),
+		ValidityDuration:  int32(p.request.ValidityDuration),
+		Audience:          p.query.Audience.ToStrings(),
+		Services:          p.query.Services.ToStrings(),
+	}
+
+	signed, err := SignToken(c, r.Signer, subtok)
+	if err != nil {
+		logging.WithError(err).Errorf(c, "Error when signing the token.")
+		return nil, grpc.Errorf(codes.Internal, "error when signing the token - %s", err)
+	}
+
+	return &minter.MintDelegationTokenResponse{
+		Token:              signed,
+		DelegationSubtoken: subtok,
+	}, nil
 }
 
 // buildRulesQuery validates the request, extracts and normalizes relevant

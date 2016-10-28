@@ -68,3 +68,18 @@ func (s *DecoratedAdmin) InspectMachineToken(c context.Context, req *InspectMach
 	}
 	return
 }
+
+func (s *DecoratedAdmin) InspectDelegationToken(c context.Context, req *InspectDelegationTokenRequest) (rsp *InspectDelegationTokenResponse, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "InspectDelegationToken", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.InspectDelegationToken(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "InspectDelegationToken", rsp, err)
+	}
+	return
+}

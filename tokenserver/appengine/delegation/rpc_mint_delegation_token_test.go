@@ -14,7 +14,6 @@ import (
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/auth/identity"
-	admin "github.com/luci/luci-go/tokenserver/api/admin/v1"
 	minter "github.com/luci/luci-go/tokenserver/api/minter/v1"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -180,8 +179,7 @@ func TestMintDelegationToken(t *testing.T) {
 		`)
 		So(err, ShouldBeNil)
 
-		mintMock := func(context.Context, *minter.MintDelegationTokenRequest,
-			*RulesQuery, *admin.DelegationRule) (*minter.MintDelegationTokenResponse, error) {
+		mintMock := func(context.Context, *mintParams) (*minter.MintDelegationTokenResponse, error) {
 			return &minter.MintDelegationTokenResponse{Token: "valid_token"}, nil
 		}
 

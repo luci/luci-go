@@ -125,7 +125,7 @@ func DelegationConfigLoader() func(context.Context) (*DelegationConfig, error) {
 			// If this check fails, the service is effectively offline until config is
 			// updated. Presumably, it is better than silently using no longer valid
 			// config.
-			logging.Infof(c, "Using delegation config at ref %s", newCfg.Revision)
+			logging.Infof(c, "Using delegation config at ref %q", newCfg.Revision)
 			if err := newCfg.Initialize(); err != nil {
 				logging.Errorf(c, "Existing delegation config is invalid - %s", err)
 				return lazyslot.Value{}, err
