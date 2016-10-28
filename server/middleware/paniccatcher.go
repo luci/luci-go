@@ -19,9 +19,11 @@ func WithPanicCatcher(c *router.Context, next router.Handler) {
 	w := c.Writer
 	req := c.Request
 	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
+		// Log the reason before the stack in case appengine cuts entire log
+		// message due to size limitations.
 		log.Fields{
 			"panic.error": p.Reason,
-		}.Errorf(ctx, "Caught panic during handling of %q:\n%s", req.RequestURI, p.Stack)
+		}.Errorf(ctx, "Caught panic during handling of %q: %s\n%s", req.RequestURI, p.Reason, p.Stack)
 
 		// Note: it may be too late to send HTTP 500 if `next` already sent
 		// headers. But there's nothing else we can do at this point anyway.
