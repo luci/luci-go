@@ -263,6 +263,10 @@ type SwarmingRpcsBotInfo struct {
 
 	LastSeenTs string `json:"last_seen_ts,omitempty"`
 
+	LeaseExpirationTs string `json:"lease_expiration_ts,omitempty"`
+
+	LeaseId string `json:"lease_id,omitempty"`
+
 	Quarantined bool `json:"quarantined,omitempty"`
 
 	State string `json:"state,omitempty"`
@@ -446,6 +450,43 @@ type SwarmingRpcsBotsDimensions struct {
 
 func (s *SwarmingRpcsBotsDimensions) MarshalJSON() ([]byte, error) {
 	type noMethod SwarmingRpcsBotsDimensions
+	raw := noMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+// SwarmingRpcsCacheEntry: Describes a named cache that should be
+// present on the bot. A CacheEntry in a task specified that the task
+// prefers the cache to be present on the bot. A symlink to the cache
+// directory is created at /|path|. If cache is not present on the
+// machine, the directory is empty. If the tasks makes any changes to
+// the contents of the cache directory, they are persisted on the
+// machine. If another task runs on the same machine and requests the
+// same named cache, even if mapped to a different path, it will see the
+// changes.
+type SwarmingRpcsCacheEntry struct {
+	Name string `json:"name,omitempty"`
+
+	Path string `json:"path,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "Name") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "Name") to include in API
+	// requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *SwarmingRpcsCacheEntry) MarshalJSON() ([]byte, error) {
+	type noMethod SwarmingRpcsCacheEntry
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
@@ -872,6 +913,10 @@ func (s *SwarmingRpcsPerformanceStats) MarshalJSON() ([]byte, error) {
 type SwarmingRpcsServerDetails struct {
 	BotVersion string `json:"bot_version,omitempty"`
 
+	DisplayServerUrlTemplate string `json:"display_server_url_template,omitempty"`
+
+	MachineProviderTemplate string `json:"machine_provider_template,omitempty"`
+
 	ServerVersion string `json:"server_version,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
@@ -1031,6 +1076,16 @@ func (s *SwarmingRpcsTaskOutput) MarshalJSON() ([]byte, error) {
 // SwarmingRpcsTaskProperties: Important metadata about a particular
 // task.
 type SwarmingRpcsTaskProperties struct {
+	// Caches: Describes a named cache that should be present on the bot. A
+	// CacheEntry in a task specified that the task prefers the cache to be
+	// present on the bot. A symlink to the cache directory is created at
+	// /|path|. If cache is not present on the machine, the directory is
+	// empty. If the tasks makes any changes to the contents of the cache
+	// directory, they are persisted on the machine. If another task runs on
+	// the same machine and requests the same named cache, even if mapped to
+	// a different path, it will see the changes.
+	Caches []*SwarmingRpcsCacheEntry `json:"caches,omitempty"`
+
 	// CipdInput: Defines CIPD packages to install in $CIPD_PATH. A command
 	// may use $CIPD_PATH in its arguments. It will be expanded to the path
 	// of the CIPD site root.
@@ -1058,7 +1113,11 @@ type SwarmingRpcsTaskProperties struct {
 
 	IoTimeoutSecs int64 `json:"io_timeout_secs,omitempty,string"`
 
-	// ForceSendFields is a list of field names (e.g. "CipdInput") to
+	Outputs []string `json:"outputs,omitempty"`
+
+	SecretBytes string `json:"secret_bytes,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "Caches") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the
@@ -1066,8 +1125,8 @@ type SwarmingRpcsTaskProperties struct {
 	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "CipdInput") to include in
-	// API requests with the JSON null value. By default, fields with empty
+	// NullFields is a list of field names (e.g. "Caches") to include in API
+	// requests with the JSON null value. By default, fields with empty
 	// values are omitted from API requests. However, any field with an
 	// empty value appearing in NullFields will be sent to the server as
 	// null. It is an error if a field in this list has a non-empty value.

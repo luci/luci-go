@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"zRMgE0l9nVDW4S28VYYcYQF9UW4/lpLp9EJ_E4MR3OaOlUFM7Aa5ly0\"",
+ "etag": "\"zRMgE0l9nVDW4S28VYYcYQF9UW4/JlTs_14bir5lkJu-6b4q9sBJhSg\"",
  "discoveryVersion": "v1",
  "id": "swarming:v1",
  "name": "swarming",
@@ -173,6 +173,13 @@
      "type": "string",
      "format": "date-time"
     },
+    "lease_expiration_ts": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "lease_id": {
+     "type": "string"
+    },
     "quarantined": {
      "type": "boolean"
     },
@@ -277,6 +284,19 @@
     "ts": {
      "type": "string",
      "format": "date-time"
+    }
+   }
+  },
+  "SwarmingRpcsCacheEntry": {
+   "id": "SwarmingRpcsCacheEntry",
+   "type": "object",
+   "description": "Describes a named cache that should be present on the bot. A CacheEntry in a task specified that the task prefers the cache to be present on the bot. A symlink to the cache directory is created at /|path|. If cache is not present on the machine, the directory is empty. If the tasks makes any changes to the contents of the cache directory, they are persisted on the machine. If another task runs on the same machine and requests the same named cache, even if mapped to a different path, it will see the changes.",
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "path": {
+     "type": "string"
     }
    }
   },
@@ -526,6 +546,12 @@
     "bot_version": {
      "type": "string"
     },
+    "display_server_url_template": {
+     "type": "string"
+    },
+    "machine_provider_template": {
+     "type": "string"
+    },
     "server_version": {
      "type": "string"
     }
@@ -596,6 +622,13 @@
    "type": "object",
    "description": "Important metadata about a particular task.",
    "properties": {
+    "caches": {
+     "type": "array",
+     "description": "Describes a named cache that should be present on the bot. A CacheEntry in a task specified that the task prefers the cache to be present on the bot. A symlink to the cache directory is created at /|path|. If cache is not present on the machine, the directory is empty. If the tasks makes any changes to the contents of the cache directory, they are persisted on the machine. If another task runs on the same machine and requests the same named cache, even if mapped to a different path, it will see the changes.",
+     "items": {
+      "$ref": "SwarmingRpcsCacheEntry"
+     }
+    },
     "cipd_input": {
      "$ref": "SwarmingRpcsCipdInput",
      "description": "Defines CIPD packages to install in $CIPD_PATH. A command may use $CIPD_PATH in its arguments. It will be expanded to the path of the CIPD site root."
@@ -644,6 +677,16 @@
     "io_timeout_secs": {
      "type": "string",
      "format": "int64"
+    },
+    "outputs": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "secret_bytes": {
+     "type": "string",
+     "format": "byte"
     }
    }
   },
