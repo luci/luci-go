@@ -17,8 +17,6 @@ import (
 	"github.com/klauspost/compress/zlib"
 )
 
-var hashLength = sha1.New().Size()
-
 // GetHash returns a fresh instance of the hashing algorithm to be used to
 // calculate the HexDigest.
 //
@@ -57,7 +55,7 @@ type HexDigest string
 
 // Validate returns true if the hash is valid.
 func (d HexDigest) Validate() bool {
-	if len(d) != hashLength*2 {
+	if len(d) != sha1.Size*2 {
 		return false
 	}
 	for _, c := range d {
