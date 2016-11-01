@@ -127,7 +127,7 @@ func (tc *tokenCache) Fetch(c context.Context, key string) (*cachedToken, error)
 	// The expiration is close enough. Do the randomization.
 	// TODO(vadimsh): The distribution was picked randomly. Maybe use exponential
 	// one, as some literature suggests?
-	rnd := time.Duration(mathrand.Get(c).Int63n(int64(exp)))
+	rnd := time.Duration(mathrand.Int63n(c, int64(exp)))
 	if now.Add(rnd).After(tok.Expiry) {
 		return nil, nil
 	}

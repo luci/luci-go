@@ -127,7 +127,7 @@ func closeToExpRandomized(c context.Context, exp time.Time) bool {
 		return false // far from expiration
 	default:
 		// The expiration is close enough. Do the randomization.
-		rnd := time.Duration(mathrand.Get(c).Int63n(int64(expirationRandomization)))
+		rnd := time.Duration(mathrand.Int63n(c, int64(expirationRandomization)))
 		return now.Add(rnd).After(exp)
 	}
 }
