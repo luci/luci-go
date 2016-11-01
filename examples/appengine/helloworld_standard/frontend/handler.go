@@ -12,7 +12,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
-	"google.golang.org/appengine"
 
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaeauth/server"
@@ -29,7 +28,7 @@ import (
 // passed to all templates.
 var templateBundle = &templates.Bundle{
 	Loader:    templates.FileSystemLoader("templates"),
-	DebugMode: appengine.IsDevAppServer(),
+	DebugMode: info.IsDevAppServer,
 	DefaultArgs: func(c context.Context) (templates.Args, error) {
 		loginURL, err := auth.LoginURL(c, "/")
 		if err != nil {

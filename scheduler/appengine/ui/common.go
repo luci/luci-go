@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"golang.org/x/net/context"
-	"google.golang.org/appengine"
 
 	"github.com/luci/gae/service/info"
 
@@ -67,7 +66,7 @@ func config(c context.Context) *Config {
 func prepareTemplates(templatesPath string) *templates.Bundle {
 	return &templates.Bundle{
 		Loader:          templates.FileSystemLoader(templatesPath),
-		DebugMode:       appengine.IsDevAppServer(),
+		DebugMode:       info.IsDevAppServer,
 		DefaultTemplate: "base",
 		DefaultArgs: func(c context.Context) (templates.Args, error) {
 			loginURL, err := auth.LoginURL(c, "/")

@@ -12,8 +12,6 @@ import (
 	"sort"
 	"strings"
 
-	"google.golang.org/appengine"
-
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaeauth/server"
@@ -83,7 +81,7 @@ func GetTemplateBundles() []NamedBundle {
 			templateBundle := &templates.Bundle{
 				Loader:          templates.FileSystemLoader(path.Join("templates", name)),
 				DefaultTemplate: name,
-				DebugMode:       appengine.IsDevAppServer(),
+				DebugMode:       info.IsDevAppServer,
 				DefaultArgs: func(c context.Context) (templates.Args, error) {
 					loginURL, err := auth.LoginURL(c, "/")
 					if err != nil {
