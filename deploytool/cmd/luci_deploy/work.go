@@ -20,7 +20,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/sync/parallel"
-	"github.com/luci/luci-go/common/system/ctxcmd"
+	"github.com/luci/luci-go/common/system/exitcode"
 
 	"golang.org/x/net/context"
 )
@@ -110,9 +110,7 @@ func (x *workExecutor) run(c context.Context) (int, error) {
 	x.stderr.Reset()
 
 	// Setup / execute the command.
-	cmd := ctxcmd.CtxCmd{
-		Cmd: exec.Command(x.command, x.args...),
-	}
+	cmd := exec.CommandContext(c, x.command, x.args...)
 	cmd.Dir = x.workdir
 
 	// Setup pipes and goroutines to dump pipes periodically so we can see
@@ -208,7 +206,7 @@ func (x *workExecutor) run(c context.Context) (int, error) {
 	log.Fields{
 		"cwd": x.workdir,
 	}.Debugf(c, "Running command: %s %s.", x.command, x.args)
-	if err := cmd.Start(c); err != nil {
+	if err := cmd.Start(); err != nil {
 		return -1, errors.Annotate(err).Reason("failed to start command").
 			D("command", x.command).D("args", x.args).D("cwd", x.workdir).Err()
 	}
@@ -217,7 +215,7 @@ func (x *workExecutor) run(c context.Context) (int, error) {
 	wg.Wait()
 
 	if err := cmd.Wait(); err != nil {
-		if rc, ok := ctxcmd.ExitCode(err); ok {
+		if rc, ok := exitcode.Get(err); ok {
 			log.Fields{
 				"returnCode": rc,
 			}.Debugf(c, "Command completed with non-zero return code: %s %s", x.command, x.args)

@@ -9,7 +9,6 @@ import (
 	"github.com/luci/luci-go/logdog/client/butler"
 
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 )
 
 var subcommandServe = &subcommands.Command{
@@ -61,7 +60,7 @@ func (cmd *serveCommandRun) Run(app subcommands.Application, args []string) int 
 	}
 	defer output.Close()
 
-	err = a.runWithButler(a, output, func(ctx context.Context, b *butler.Butler) error {
+	err = a.runWithButler(output, func(b *butler.Butler) error {
 		b.AddStreamServer(streamServer)
 		return b.Wait()
 	})

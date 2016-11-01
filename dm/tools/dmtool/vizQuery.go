@@ -24,7 +24,6 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/lhttp"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/system/ctxcmd"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/grpc/prpc"
 	"github.com/maruel/subcommands"
@@ -250,13 +249,11 @@ func (r *visQueryRun) Run(a subcommands.Application, args []string) int {
 				if r.sequence {
 					outfile := fmt.Sprintf("%s%d.png", r.path, seq)
 					seq++
-					cmd := ctxcmd.CtxCmd{
-						Cmd: exec.Command("dot",
-							"-Gdpi=300", "-Glwidth=6", "-Glheight=17.6",
-							"-Tpng", "-o"+outfile),
-					}
+					cmd := exec.CommandContext(c, "dot",
+						"-Gdpi=300", "-Glwidth=6", "-Glheight=17.6",
+						"-Tpng", "-o"+outfile)
 					cmd.Stdin = strings.NewReader(newVal)
-					err := cmd.Run(c)
+					err := cmd.Run()
 					if err != nil {
 						logging.WithError(err).Errorf(c, "error running dot")
 						return 1

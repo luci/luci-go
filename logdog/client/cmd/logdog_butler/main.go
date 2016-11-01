@@ -124,8 +124,7 @@ func (a *application) getOutputFactory() (outputFactory, error) {
 
 // runWithButler is an execution harness that adds application-level management
 // to a Butler run.
-func (a *application) runWithButler(ctx context.Context, out output.Output,
-	runFunc func(context.Context, *butler.Butler) error) error {
+func (a *application) runWithButler(out output.Output, runFunc func(*butler.Butler) error) error {
 
 	// Enable CPU profiling if specified
 	if a.cpuProfile != "" {
@@ -187,7 +186,7 @@ func (a *application) runWithButler(ctx context.Context, out output.Output,
 	}()
 
 	// Execute our Butler run function with the instantiated Butler.
-	if err := runFunc(ctx, b); err != nil {
+	if err := runFunc(b); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
 		}.Errorf(a, "Butler terminated with error.")

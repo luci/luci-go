@@ -14,8 +14,8 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/flag/nestedflagset"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/system/ctxcmd"
 	"github.com/luci/luci-go/common/system/environ"
+	"github.com/luci/luci-go/common/system/exitcode"
 	"github.com/luci/luci-go/logdog/client/bootstrapResult"
 	"github.com/luci/luci-go/logdog/client/butler"
 	"github.com/luci/luci-go/logdog/client/butler/bootstrap"
@@ -207,9 +207,10 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 	bsEnv.Augment(env)
 
 	// Construct and execute the command.
-	proc := ctxcmd.CtxCmd{
-		Cmd: exec.Command(commandPath, args...),
-	}
+	procCtx, procCancelFunc := context.WithCancel(a)
+	defer procCancelFunc()
+
+	proc := exec.CommandContext(procCtx, commandPath, args...)
 	proc.Dir = cmd.chdir
 	proc.Env = env.Sorted()
 	if cmd.stdin {
@@ -294,7 +295,10 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 		returnCode = runtimeErrorReturnCode
 	)
 
-	err = a.runWithButler(a, output, func(ctx context.Context, b *butler.Butler) error {
+	err = a.runWithButler(output, func(b *butler.Butler) error {
+		// We want to kill our process early if our Butler run finishes.
+		defer procCancelFunc()
+
 		// If we have configured a stream server, add it.
 		if streamServer != nil {
 			b.AddStreamServer(streamServer)
@@ -315,11 +319,9 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 
 		// Execute the command. The bootstrapped application will begin executing
 		// in the background.
-		ctx, cancelFunc := context.WithCancel(ctx)
-		if err := proc.Start(ctx); err != nil {
+		if err := proc.Start(); err != nil {
 			return errors.Annotate(err).Reason("failed to start bootstrapped process").Err()
 		}
-		defer cancelFunc()
 
 		// Wait for the process' streams to finish. We must do this before Wait()
 		// on the process itself.
@@ -327,17 +329,17 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
 
 		// Reap the process.
 		err := proc.Wait()
-		if rc, ok := ctxcmd.ExitCode(err); ok {
+		if rc, ok := exitcode.Get(err); ok {
 			if rc != 0 {
 				log.Fields{
 					"returnCode": rc,
-				}.Errorf(ctx, "Command completed with non-zero return code.")
+				}.Errorf(a, "Command completed with non-zero return code.")
 			}
 
 			returnCode = rc
 			executed = true
 		} else {
-			log.WithError(err).Errorf(ctx, "Command failed.")
+			log.WithError(err).Errorf(a, "Command failed.")
 		}
 
 		// Wait for our Butler to finish.

@@ -18,9 +18,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"syscall"
 
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/system/exitcode"
 )
 
 func mainImpl(args []string) (int, error) {
@@ -55,11 +55,8 @@ func mainImpl(args []string) (int, error) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		if ee, ok := err.(*exec.ExitError); ok {
-			if ws, ok := ee.Sys().(syscall.WaitStatus); ok {
-				// Forward exit status.
-				return ws.ExitStatus(), nil
-			}
+		if rc, ok := exitcode.Get(err); ok {
+			return rc, nil
 		}
 		return 1, errors.Annotate(err).Reason("failed to run: %(package)s").D("package", pkg).Err()
 	}

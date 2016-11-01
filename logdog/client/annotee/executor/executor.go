@@ -9,11 +9,10 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
-	"syscall"
 
 	"github.com/golang/protobuf/proto"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/system/ctxcmd"
+	"github.com/luci/luci-go/common/system/exitcode"
 	"github.com/luci/luci-go/logdog/client/annotee"
 	"github.com/luci/luci-go/logdog/client/annotee/annotation"
 	"github.com/luci/luci-go/logdog/common/types"
@@ -76,9 +75,7 @@ func (e *Executor) Run(ctx context.Context, command []string) error {
 	}
 
 	ctx, cancelFunc := context.WithCancel(ctx)
-	cmd := ctxcmd.CtxCmd{
-		Cmd: exec.Command(command[0], command[1:]...),
-	}
+	cmd := exec.CommandContext(ctx, command[0], command[1:]...)
 
 	// STDOUT
 	stdoutRC, err := cmd.StdoutPipe()
@@ -96,20 +93,17 @@ func (e *Executor) Run(ctx context.Context, command []string) error {
 	stderr := e.configStream(stderrRC, annotee.STDERR, e.TeeStderr)
 
 	// Start our process.
-	if err := cmd.Start(ctx); err != nil {
+	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start bootstrapped process: %s", err)
 	}
 
 	// Cleanup the process on exit, and record its status and return code.
 	defer func() {
 		if err := cmd.Wait(); err != nil {
-			switch err.(type) {
-			case *exec.ExitError:
-				status := err.(*exec.ExitError).Sys().(syscall.WaitStatus)
-				e.returnCode = status.ExitStatus()
+			var ok bool
+			if e.returnCode, ok = exitcode.Get(err); ok {
 				e.executed = true
-
-			default:
+			} else {
 				log.WithError(err).Errorf(ctx, "Failed to Wait() for bootstrapped process.")
 			}
 		} else {

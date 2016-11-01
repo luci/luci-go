@@ -15,7 +15,6 @@ import (
 	"github.com/luci/luci-go/logdog/common/types"
 
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 )
 
 var subcommandStream = &subcommands.Command{
@@ -91,7 +90,7 @@ func (cmd *streamCommandRun) Run(app subcommands.Application, args []string) int
 	defer output.Close()
 
 	// Instantiate our Processor.
-	err = a.runWithButler(a, output, func(ctx context.Context, b *butler.Butler) error {
+	err = a.runWithButler(output, func(b *butler.Butler) error {
 		if err := b.AddStream(streamFile, cmd.stream.properties()); err != nil {
 			return errors.Annotate(err).Reason("failed to add stream").Err()
 		}

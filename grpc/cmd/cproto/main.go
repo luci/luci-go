@@ -14,10 +14,10 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
+	"github.com/luci/luci-go/common/system/exitcode"
 	"golang.org/x/net/context"
 )
 
@@ -242,10 +242,8 @@ func main() {
 	goPath := strings.Split(os.Getenv("GOPATH"), string(filepath.ListSeparator))
 	if err := run(c, goPath, dir); err != nil {
 		exitCode := 1
-		if exit, ok := err.(*exec.ExitError); ok {
-			if wait, ok := exit.Sys().(syscall.WaitStatus); ok {
-				exitCode = wait.ExitStatus()
-			}
+		if rc, ok := exitcode.Get(err); ok {
+			exitCode = rc
 		} else {
 			fmt.Fprintln(os.Stderr, err.Error())
 		}
