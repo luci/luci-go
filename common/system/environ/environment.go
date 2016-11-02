@@ -8,21 +8,21 @@
 package environ
 
 import (
-	"fmt"
 	"os"
 	"sort"
 	"strings"
 )
 
-// Env is a mutable map of environment variables. It preserves each
-// environment variable verbatim (even if invalid).
-//
-// The keys in an Env are case-sensitive enviornment variable keys. The values
-// are the complete enviornment variable value (e.g., "KEY=VALUE"). To get just
-// the VALUE component, use Get.
-//
-// A nil Env map is not valid.
-type Env map[string]string
+// Env contains system environment variables. It preserves each environment
+// variable verbatim (even if invalid).
+type Env struct {
+	// env is a map of envoironment key to its "KEY=VALUE" value.
+	//
+	// Note that the value here is the full "KEY=VALUE", not just the VALUE part.
+	// This allows us to reconstitute the original environment string slice
+	// without reallocating all of its composite strings.
+	env map[string]string
+}
 
 // System returns an Env instance instantiated with the current os.Environ
 // values.
@@ -33,10 +33,25 @@ func System() Env {
 // New instantiates a new Env instance from the supplied set of environment
 // KEY=VALUE strings.
 func New(s []string) Env {
-	e := make(Env, len(s))
-	for _, v := range s {
-		k, _ := Split(v)
-		e[k] = v
+	e := Env{}
+	if len(s) > 0 {
+		e.env = make(map[string]string, len(s))
+		for _, v := range s {
+			k, _ := Split(v)
+			e.env[k] = v
+		}
+	}
+	return e
+}
+
+// Make creaets a new Env from an environment key/value map.
+func Make(v map[string]string) Env {
+	e := Env{}
+	if len(v) > 0 {
+		e.env = make(map[string]string, len(v))
+		for k, v := range v {
+			e.Set(k, v)
+		}
 	}
 	return e
 }
@@ -47,38 +62,71 @@ func New(s []string) Env {
 // that this can be empty if the environment has an empty value). If the value
 // is not defined, ok will be false.
 func (e Env) Get(k string) (v string, ok bool) {
-	if v, ok = e[k]; ok {
-		_, v = Split(v)
+	if v, ok = e.env[k]; ok {
+		v = value(k, v)
 	}
 	return
 }
 
 // Set sets the supplied environment key and value.
-func (e Env) Set(k, v string) {
-	e[k] = Join(k, v)
+func (e *Env) Set(k, v string) {
+	if e.env == nil {
+		e.env = make(map[string]string)
+	}
+	e.env[k] = Join(k, v)
 }
 
 // Sorted returns the contents of the environment, sorted by key.
 func (e Env) Sorted() []string {
-	r := make([]string, 0, len(e))
-	for _, v := range e {
-		r = append(r, v)
+	var r []string
+	if len(e.env) > 0 {
+		r = make([]string, 0, len(e.env))
+		for _, v := range e.env {
+			r = append(r, v)
+		}
+		sort.Strings(r)
 	}
-	sort.Strings(r)
 	return r
 }
+
+// Map returns a map of the key/value values in the environment.
+//
+// This is a clone of the contents of e; manipulating this map will not change
+// the values in e.
+func (e Env) Map() map[string]string {
+	if len(e.env) == 0 {
+		return nil
+	}
+
+	m := make(map[string]string, len(e.env))
+	for k, v := range e.env {
+		m[k] = value(k, v)
+	}
+	return m
+}
+
+// Len returns the number of environment variables defined in e.
+func (e Env) Len() int { return len(e.env) }
 
 // Clone creates a new Env instance that is identical to, but independent from,
 // e.
 func (e Env) Clone() Env {
-	clone := make(Env, len(e))
-	for k, v := range e {
-		clone[k] = v
+	var clone Env
+	if len(e.env) > 0 {
+		clone.env = make(map[string]string, len(e.env))
+		for k, v := range e.env {
+			clone.env[k] = v
+		}
 	}
 	return clone
 }
 
 // Split splits the supplied environment variable value into a key/value pair.
+//
+// If v is of the form:
+//	- KEY, returns (KEY, "")
+//	- KEY=, returns (KEY, "")
+//	- KEY=VALUE, returns (KEY, VALUE)
 func Split(v string) (key, value string) {
 	parts := strings.SplitN(v, "=", 2)
 	switch len(parts) {
@@ -92,7 +140,24 @@ func Split(v string) (key, value string) {
 	return
 }
 
+// getValue returns the value from an internal "env" map value field.
+//
+// It assumes that the environment variable is well-formed, one of:
+// - KEY
+// - KEY=
+// - KEY=VALUE
+func value(key, v string) string {
+	prefixSize := len(key) + len("=")
+	if len(v) <= prefixSize {
+		return ""
+	}
+	return v[prefixSize:]
+}
+
 // Join creates an environment variable definition for the supplied key/value.
 func Join(k, v string) string {
-	return fmt.Sprintf("%s=%s", k, v)
+	if v == "" {
+		return k
+	}
+	return strings.Join([]string{k, v}, "=")
 }

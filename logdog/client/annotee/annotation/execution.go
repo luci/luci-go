@@ -33,14 +33,12 @@ func ProbeExecution(argv, env []string, cwd string) *Execution {
 func probeExecutionImpl(argv []string, env []string, cwd string) *Execution {
 	e := &Execution{
 		Dir: cwd,
+
+		// Unique-ify the environment variables.
+		Env: environ.New(env).Map(),
 	}
 	e.Command = make([]string, len(argv))
 	copy(e.Command, argv)
-
-	e.Env = make(map[string]string, len(env))
-	for k, v := range environ.New(env) {
-		_, e.Env[k] = environ.Split(v)
-	}
 
 	return e
 }

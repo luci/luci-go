@@ -22,11 +22,13 @@ func TestEnvironmentConversion(t *testing.T) {
 			"qux=quux=quuuuuuux",
 		})
 		So(env, ShouldResemble, Env{
-			"":    "",
-			"FOO": "FOO",
-			"BAR": "BAR=BAZ",
-			"bar": "bar=baz",
-			"qux": "qux=quux=quuuuuuux",
+			env: map[string]string{
+				"":    "",
+				"FOO": "FOO",
+				"BAR": "BAR=BAZ",
+				"bar": "bar=baz",
+				"qux": "qux=quux=quuuuuuux",
+			},
 		})
 
 		So(env.Sorted(), ShouldResemble, []string{
@@ -42,12 +44,39 @@ func TestEnvironmentConversion(t *testing.T) {
 func TestEnvironmentManipulation(t *testing.T) {
 	t.Parallel()
 
+	Convey(`A zero-valued Env`, t, func() {
+		var env Env
+		So(env.Len(), ShouldEqual, 0)
+
+		Convey(`Can be sorted.`, func() {
+			So(env.Sorted(), ShouldEqual, nil)
+		})
+
+		Convey(`Can call Get`, func() {
+			v, ok := env.Get("foo")
+			So(ok, ShouldBeFalse)
+			So(v, ShouldEqual, "")
+		})
+
+		Convey(`Can call Set`, func() {
+			env.Set("foo", "bar")
+			So(env.Len(), ShouldEqual, 1)
+			So(env.Sorted(), ShouldResemble, []string{"foo=bar"})
+		})
+
+		Convey(`Can be cloned.`, func() {
+			So(env.Clone(), ShouldResemble, env)
+		})
+	})
+
 	Convey(`A testing Env`, t, func() {
-		env := Env{
-			"PYTHONPATH": "PYTHONPATH=/foo:/bar:/baz",
-			"http_proxy": "http_proxy=http://example.com",
-			"novalue":    "novalue",
-		}
+		env := New([]string{
+			"PYTHONPATH=/foo:/bar:/baz",
+			"http_proxy=wiped-out-by-next",
+			"http_proxy=http://example.com",
+			"novalue",
+		})
+		So(env.Len(), ShouldEqual, 3)
 
 		Convey(`Can Get values.`, func() {
 			v, ok := env.Get("PYTHONPATH")
@@ -90,5 +119,33 @@ func TestEnvironmentManipulation(t *testing.T) {
 				"novalue",
 			})
 		})
+	})
+}
+
+func TestEnvironmentConstruction(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Can create a new enviornment with Make`, t, func() {
+		env := Make(map[string]string{
+			"FOO": "BAR",
+			"foo": "bar",
+		})
+
+		So(env, ShouldResemble, Env{
+			env: map[string]string{
+				"FOO": "FOO=BAR",
+				"foo": "foo=bar",
+			},
+		})
+	})
+
+	Convey(`Make with an nil/empty enviornment returns a zero value.`, t, func() {
+		So(Make(nil), ShouldResemble, Env{})
+		So(Make(map[string]string{}), ShouldResemble, Env{})
+	})
+
+	Convey(`New with a nil/empty slice returns a zero value.`, t, func() {
+		So(New(nil), ShouldResemble, Env{})
+		So(New([]string{}), ShouldResemble, Env{})
 	})
 }
