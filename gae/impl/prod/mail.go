@@ -15,7 +15,7 @@ import (
 // methods.
 func useMail(c context.Context) context.Context {
 	return gae_mail.SetFactory(c, func(ci context.Context) gae_mail.RawInterface {
-		return mailImpl{AEContext(ci)}
+		return mailImpl{getAEContext(ci)}
 	})
 }
 

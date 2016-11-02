@@ -32,12 +32,13 @@ var (
 	probeCacheKey = "contains the current *infoProbeCache"
 )
 
-// AEContext retrieves the raw "google.golang.org/appengine" compatible Context.
+// getAEContext retrieves the raw "google.golang.org/appengine" compatible
+// Context.
 //
-// It also transfers deadline of `c` to AE context, since deadline is used for
-// RPCs. Doesn't transfer cancelation ability though (since it's ignored by GAE
-// anyway).
-func AEContext(c context.Context) context.Context {
+// This is an independent Context chain from `c`. In an attempt to maintain user
+// expectations, the deadline of `c` is transferred to the returned Context,
+// RPCs. Cancelation is not transferred.
+func getAEContext(c context.Context) context.Context {
 	ps := getProdState(c)
 	return ps.context(c)
 }
@@ -51,7 +52,8 @@ func setupAECtx(c, aeCtx context.Context) context.Context {
 }
 
 // Use adds production implementations for all the gae services to the
-// context.
+// context. The implementations are all backed by the real appengine SDK
+// functionality.
 //
 // The services added are:
 //   - github.com/luci-go/common/logging
@@ -66,7 +68,13 @@ func setupAECtx(c, aeCtx context.Context) context.Context {
 //
 // These can be retrieved with the <service>.Get functions.
 //
-// The implementations are all backed by the real appengine SDK functionality,
+// It is important to note that this DOES NOT install the AppEngine SDK into the
+// supplied Context. In general, using the raw AppEngine SDK to access a service
+// that is covered by luci/gae is dangerous, leading to a number of potential
+// pitfalls including inconsistent transaction management and data corruption.
+//
+// Users who wish to access the raw AppEngine SDK must derive their own
+// AppEngine Context at their own risk.
 func Use(c context.Context, r *http.Request) context.Context {
 	return setupAECtx(c, appengine.NewContext(r))
 }
@@ -94,9 +102,12 @@ func Use(c context.Context, r *http.Request) context.Context {
 //       - "https://www.googleapis.com/auth/appengine.apis"
 //       - "https://www.googleapis.com/auth/userinfo.email"
 //       - "https://www.googleapis.com/auth/cloud.platform"
+//
+// It is important to note that this DOES NOT install the AppEngine SDK into the
+// supplied Context. See the warning in Use for more information.
 func UseRemote(inOutCtx *context.Context, host string, client *http.Client) (err error) {
 	if client == nil {
-		aeCtx := AEContext(*inOutCtx)
+		aeCtx := getAEContext(*inOutCtx)
 
 		if strings.HasPrefix(host, "localhost") {
 			transp := http.DefaultTransport

@@ -17,7 +17,7 @@ import (
 // by gae.GetMC(c)
 func useMC(c context.Context) context.Context {
 	return mc.SetRawFactory(c, func(ci context.Context) mc.RawInterface {
-		return mcImpl{AEContext(ci)}
+		return mcImpl{getAEContext(ci)}
 	})
 }
 

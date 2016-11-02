@@ -18,11 +18,11 @@ import (
 func useGI(usrCtx context.Context) context.Context {
 	probeCache := getProbeCache(usrCtx)
 	if probeCache == nil {
-		usrCtx = withProbeCache(usrCtx, probe(AEContext(usrCtx)))
+		usrCtx = withProbeCache(usrCtx, probe(getAEContext(usrCtx)))
 	}
 
 	return info.SetFactory(usrCtx, func(ci context.Context) info.RawInterface {
-		return giImpl{ci, AEContext(ci)}
+		return giImpl{ci, getAEContext(ci)}
 	})
 }
 

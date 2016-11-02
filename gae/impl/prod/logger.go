@@ -16,7 +16,7 @@ import (
 // appengine's log handler.
 func useLogging(c context.Context) context.Context {
 	return logging.SetFactory(c, func(ic context.Context) logging.Logger {
-		return &loggerImpl{AEContext(ic), ic}
+		return &loggerImpl{getAEContext(ic), ic}
 	})
 }
 

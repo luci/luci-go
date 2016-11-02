@@ -18,7 +18,7 @@ import (
 // by gae.GetTQ(c)
 func useTQ(c context.Context) context.Context {
 	return tq.SetRawFactory(c, func(ci context.Context) tq.RawInterface {
-		return tqImpl{AEContext(ci)}
+		return tqImpl{getAEContext(ci)}
 	})
 }
 

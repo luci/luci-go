@@ -13,7 +13,7 @@ import (
 // useModule adds a Module implementation to context.
 func useModule(usrCtx context.Context) context.Context {
 	return module.SetFactory(usrCtx, func(ci context.Context) module.RawInterface {
-		return modImpl{AEContext(ci)}
+		return modImpl{getAEContext(ci)}
 	})
 }
 

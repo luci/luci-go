@@ -15,7 +15,7 @@ import (
 // methods.
 func useUser(c context.Context) context.Context {
 	return gae_user.SetFactory(c, func(ci context.Context) gae_user.RawInterface {
-		return userImpl{AEContext(ci)}
+		return userImpl{getAEContext(ci)}
 	})
 }
 
