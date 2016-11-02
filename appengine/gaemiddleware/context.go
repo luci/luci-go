@@ -82,7 +82,7 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 	cachedSettings := fetchCachedSettings(c)
 	c = logging.SetLevel(c, cachedSettings.LoggingLevel)
 	if !cachedSettings.DisableDSCache {
-		c = dscache.AlwaysFilterRDS(c, nil)
+		c = dscache.AlwaysFilterRDS(c)
 	}
 
 	// The rest of the service may use applied configuration.
