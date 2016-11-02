@@ -5,60 +5,79 @@
 package dscache
 
 import (
-	ds "github.com/luci/gae/service/datastore"
+	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/data/rand/mathrand"
 
-	"golang.org/x/net/context"
+	ds "github.com/luci/gae/service/datastore"
 )
 
-type key int
+var dsTxnCacheKey = "holds a *dsCache"
+var dsShardFunctionsKey = "holds []ShardFunction"
 
-var dsTxnCacheKey key
+// ShardFunction is a user-controllable function which calculates the number of
+// shards to use for a certain datastore key. The provided key will always be
+// valid and complete. It should return ok=true if it recognized the Key, and
+// false otherwise.
+//
+// The # of shards returned may be between 1 and 256. Values above this range
+// will be clamped into that range. A return value of 0 means that NO cache
+// operations should be done for this key, regardless of the dscache.enable
+// setting.
+type ShardFunction func(*ds.Key) (shards int, ok bool)
 
 // FilterRDS installs a caching RawDatastore filter in the context.
 //
 // It does nothing if IsGloballyEnabled returns false. That way it is possible
 // to disable the cache in runtime (e.g. in case memcache service is having
 // issues).
-//
-// shardsForKey is a user-controllable function which calculates the number of
-// shards to use for a certain datastore key. The provided key will always be
-// valid and complete.
-//
-// The # of shards returned may be between 1 and 256. Values above this range
-// will be clamped into that range. A return value of 0 means that NO cache
-// operations should be done for this key, regardless of the dscache.enable
-// setting.
-//
-// If shardsForKey is nil, the value of DefaultShards is used for all keys.
-func FilterRDS(c context.Context, shardsForKey func(*ds.Key) int) context.Context {
+func FilterRDS(c context.Context) context.Context {
 	if !IsGloballyEnabled(c) {
 		return c
 	}
-	return AlwaysFilterRDS(c, shardsForKey)
+	return AlwaysFilterRDS(c)
 }
 
 // AlwaysFilterRDS installs a caching RawDatastore filter in the context.
 //
 // Unlike FilterRDS it doesn't check GlobalConfig via IsGloballyEnabled call,
 // assuming caller already knows whether filter should be applied or not.
-func AlwaysFilterRDS(c context.Context, shardsForKey func(*ds.Key) int) context.Context {
+func AlwaysFilterRDS(c context.Context) context.Context {
 	return ds.AddRawFilters(c, func(c context.Context, rds ds.RawInterface) ds.RawInterface {
-		kc := ds.GetKeyContext(c)
+		shardFns, _ := c.Value(&dsShardFunctionsKey).([]ShardFunction)
 
 		sc := &supportContext{
-			kc.AppID,
-			kc.Namespace,
+			ds.GetKeyContext(c),
 			c,
 			mathrand.Get(c),
-			shardsForKey,
+			shardFns,
 		}
 
-		v := c.Value(dsTxnCacheKey)
+		v := c.Value(&dsTxnCacheKey)
 		if v == nil {
 			return &dsCache{rds, sc}
 		}
 		return &dsTxnCache{rds, v.(*dsTxnState), sc}
 	})
+}
+
+// AddShardFunctions appends the provided shardFn functions to the internal list
+// of shard functions. They are evaluated left to right, bottom to top.
+//
+// nil functions will cause a panic.
+//
+// So:
+//   ctx = AddShardFunctions(ctx, A, B, C)
+//   ctx = AddShardFunctions(ctx, D, E, F)
+//
+// Would evaulate `D, E, F, A, B, C`
+func AddShardFunctions(c context.Context, shardFns ...ShardFunction) context.Context {
+	cur, _ := c.Value(&dsShardFunctionsKey).([]ShardFunction)
+	new := make([]ShardFunction, 0, len(cur)+len(shardFns))
+	for _, fn := range shardFns {
+		if fn == nil {
+			panic("nil function provided to AddShardFunctions")
+		}
+	}
+	return context.WithValue(c, &dsShardFunctionsKey, append(append(new, shardFns...), cur...))
 }

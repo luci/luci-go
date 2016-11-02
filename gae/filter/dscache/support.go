@@ -17,18 +17,19 @@ import (
 )
 
 type supportContext struct {
-	aid string
-	ns  string
+	ds.KeyContext
 
 	c            context.Context
 	mr           *rand.Rand
-	shardsForKey func(*ds.Key) int
+	shardsForKey []ShardFunction
 }
 
 func (s *supportContext) numShards(k *ds.Key) int {
 	ret := DefaultShards
-	if s.shardsForKey != nil {
-		ret = s.shardsForKey(k)
+	for _, fn := range s.shardsForKey {
+		if amt, ok := fn(k); ok {
+			ret = amt
+		}
 	}
 	if ret < 1 {
 		return 0 // disable caching entirely

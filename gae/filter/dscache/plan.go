@@ -11,7 +11,6 @@ import (
 	mc "github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
-	"golang.org/x/net/context"
 )
 
 type facts struct {
@@ -88,7 +87,7 @@ func (p *plan) empty() bool {
 //
 // Or some combination thereof. This also handles memcache enries with invalid
 // data in them, cases where items have caching disabled entirely, etc.
-func makeFetchPlan(c context.Context, aid, ns string, f *facts) *plan {
+func (d *dsCache) makeFetchPlan(f *facts) *plan {
 	p := plan{
 		keepMeta: f.getMeta != nil,
 		decoded:  make([]ds.PropertyMap, len(f.lockItems)),
@@ -116,14 +115,14 @@ func makeFetchPlan(c context.Context, aid, ns string, f *facts) *plan {
 			}
 
 		case ItemHasData:
-			pmap, err := decodeItemValue(lockItm.Value(), aid, ns)
+			pmap, err := decodeItemValue(lockItm.Value(), d.KeyContext)
 			switch err {
 			case nil:
 				p.decoded[i] = pmap
 			case ds.ErrNoSuchEntity:
 				p.lme.Assign(i, ds.ErrNoSuchEntity)
 			default:
-				(logging.Fields{"error": err}).Warningf(c,
+				(logging.Fields{"error": err}).Warningf(d.c,
 					"dscache: error decoding %s, %s", lockItm.Key(), getKey)
 				p.add(i, getKey, m, nil)
 			}

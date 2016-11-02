@@ -52,7 +52,7 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 			d.c, "dscache: GetMulti: memcache.Get")
 	}
 
-	p := makeFetchPlan(d.c, d.aid, d.ns, &facts{keys, metas, lockItems, nonce})
+	p := d.makeFetchPlan(&facts{keys, metas, lockItems, nonce})
 
 	if !p.empty() {
 		// looks like we have something to pull from datastore, and maybe some work
@@ -133,7 +133,7 @@ func (d *dsCache) RunInTransaction(f func(context.Context) error, opts *ds.Trans
 	txnState := dsTxnState{}
 	err := d.RawInterface.RunInTransaction(func(ctx context.Context) error {
 		txnState.reset()
-		err := f(context.WithValue(ctx, dsTxnCacheKey, &txnState))
+		err := f(context.WithValue(ctx, &dsTxnCacheKey, &txnState))
 		if err == nil {
 			err = txnState.apply(d.supportContext)
 		}

@@ -34,7 +34,7 @@ func encodeItemValue(pm ds.PropertyMap) []byte {
 	return data
 }
 
-func decodeItemValue(val []byte, ns, aid string) (ds.PropertyMap, error) {
+func decodeItemValue(val []byte, kc ds.KeyContext) (ds.PropertyMap, error) {
 	if len(val) == 0 {
 		return nil, ds.ErrNoSuchEntity
 	}
@@ -56,5 +56,5 @@ func decodeItemValue(val []byte, ns, aid string) (ds.PropertyMap, error) {
 		}
 		buf = bytes.NewBuffer(data)
 	}
-	return serialize.ReadPropertyMap(buf, serialize.WithoutContext, ds.MkKeyContext(ns, aid))
+	return serialize.ReadPropertyMap(buf, serialize.WithoutContext, kc)
 }

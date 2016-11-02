@@ -34,16 +34,31 @@ type object struct {
 	BigData []byte
 }
 
-type shardObj struct { // see shardsForKey() at top
+type shardObj struct {
 	ID int64 `gae:"$id"`
 
 	Value string
 }
 
-type noCacheObj struct { // see shardsForKey() at top
+func shardObjFn(k *ds.Key) (amt int, ok bool) {
+	if last := k.LastTok(); last.Kind == "shardObj" {
+		amt = int(last.IntID)
+		ok = true
+	}
+	return
+}
+
+type noCacheObj struct {
 	ID string `gae:"$id"`
 
 	Value bool
+}
+
+func noCacheObjFn(k *ds.Key) (amt int, ok bool) {
+	if k.Kind() == "noCacheObj" {
+		ok = true
+	}
+	return
 }
 
 func init() {
@@ -68,17 +83,6 @@ func TestDSCache(t *testing.T) {
 
 		underCtx := c
 
-		shardsForKey := func(k *ds.Key) int {
-			last := k.LastTok()
-			if last.Kind == "shardObj" {
-				return int(last.IntID)
-			}
-			if last.Kind == "noCacheObj" {
-				return 0
-			}
-			return DefaultShards
-		}
-
 		numMemcacheItems := func() uint64 {
 			stats, err := mc.Stats(c)
 			So(err, ShouldBeNil)
@@ -86,7 +90,8 @@ func TestDSCache(t *testing.T) {
 		}
 
 		Convey("enabled cases", func() {
-			c = FilterRDS(c, shardsForKey)
+			c = FilterRDS(c)
+			c = AddShardFunctions(c, shardObjFn, noCacheObjFn)
 
 			Convey("basically works", func() {
 				pm := ds.PropertyMap{
@@ -396,7 +401,7 @@ func TestDSCache(t *testing.T) {
 
 			Convey("misc", func() {
 				Convey("verify numShards caps at MaxShards", func() {
-					sc := supportContext{shardsForKey: shardsForKey}
+					sc := supportContext{shardsForKey: []ShardFunction{shardObjFn}}
 					So(sc.numShards(ds.KeyForObj(c, &shardObj{ID: 9001})), ShouldEqual, MaxShards)
 				})
 
@@ -449,7 +454,7 @@ func TestStaticEnable(t *testing.T) {
 		}()
 
 		c := context.Background()
-		newC := FilterRDS(c, nil)
+		newC := FilterRDS(c)
 		So(newC, ShouldEqual, c)
 	})
 }
