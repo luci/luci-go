@@ -1,0 +1,18 @@
+handlers:
+# RPC Explorer
+- url: /rpcexplorer/?
+  static_files: static/common/rpcexplorer/index.html
+  upload: static/common/rpcexplorer/index.html
+  secure: always
+
+# The entire subpath is globbed because RPC Explorer uses native URL redirecting
+# for sub-pages, and we want all of them to map to the same HTML file.
+- url: /rpcexplorer/services/.*
+  static_files: static/common/rpcexplorer/index.html
+  upload: static/common/rpcexplorer/index.html
+  secure: always
+
+# RPC Explorer
+- url: /rpcexplorer
+  static_dir: static/common/rpcexplorer
+  secure: always

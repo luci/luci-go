@@ -26,3 +26,6 @@ handlers:
 
 builtins:
 - remote_api: on
+
+includes:
+  - static
