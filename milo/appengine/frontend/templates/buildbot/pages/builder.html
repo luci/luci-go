@@ -10,6 +10,22 @@
   <ul>
   {{ range .Builder.CurrentBuilds }}
     <li>{{ .Link | linkify }}
+      {{ $nb := len .Blame }}
+      {{ if lt $nb 4 }}
+        {{ range $i, $c := .Blame }}
+          {{ if gt $i 0 }},{{ end }}
+          {{ if .Changelist }}
+            {{ .Changelist | linkify }}
+            {{ if .AuthorEmail }}
+              by {{ .AuthorEmail }}
+            {{ end }}
+          {{ else }}
+            (<a href="{{ .CommitURL }}">{{ .AuthorEmail }}</a>)
+          {{ end }}
+        {{ end }}
+      {{ else }}
+        ({{ $nb }} changes)
+      {{ end }}
       [Running for: {{ .ExecutionTime.Duration | humanDuration }}]
       {{ range .Text }} {{ . }}{{ end }}
     </li>

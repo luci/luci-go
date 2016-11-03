@@ -5,8 +5,8 @@
 package buildbot
 
 import (
-	"encoding/json"
 	"fmt"
+	"net/http"
 	"sort"
 	"strings"
 	"time"
@@ -16,6 +16,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
+	"github.com/luci/luci-go/milo/common/miloerror"
 	"golang.org/x/net/context"
 )
 
@@ -29,18 +30,6 @@ type builderRef struct {
 // because buildbot returns all current builds as within the slaves portion, whereas
 // it's eaiser to map thenm by builders instead.
 type buildMap map[builderRef]*buildbotBuild
-
-// createRunningBuildMap extracts all of the running builds in a master json
-// from the various slaves and dumps it into a map for easy reference.
-func createRunningBuildMap(master *buildbotMaster) buildMap {
-	result := buildMap{}
-	for _, slave := range master.Slaves {
-		for _, build := range slave.Runningbuilds {
-			result[builderRef{build.Buildername, build.Number}] = build
-		}
-	}
-	return result
-}
 
 func getBuildSummary(b *buildbotBuild) *resp.BuildSummary {
 	started, finished, duration := parseTimes(b.Times)
@@ -73,7 +62,9 @@ func getBuilds(
 	q = q.Eq("finished", finished)
 	q = q.Eq("master", masterName)
 	q = q.Eq("builder", builderName)
-	q = q.Limit(int32(limit))
+	if limit != 0 {
+		q = q.Limit(int32(limit))
+	}
 	q = q.Order("-number")
 	buildbots := []*buildbotBuild{}
 	err := ds.GetAll(c, q, &buildbots)
@@ -86,30 +77,9 @@ func getBuilds(
 	return result, nil
 }
 
-// getCurrentBuild extracts a build from a map of current builds, and translates
-// it into the milo version of the build.
-func getCurrentBuild(c context.Context, bMap buildMap, builder string, buildNum int) *resp.BuildSummary {
-	b, ok := bMap[builderRef{builder, buildNum}]
-	if !ok {
-		logging.Warningf(c, "Could not find %s/%d in builder map:\n %s", builder, buildNum, bMap)
-		return nil
-	}
-	return getBuildSummary(b)
-}
-
-// getCurrentBuilds extracts the list of all the current builds from a master json
-// from the slaves' runningBuilds portion.
-func getCurrentBuilds(c context.Context, master *buildbotMaster, builderName string) []*resp.BuildSummary {
-	b := master.Builders[builderName]
-	results := []*resp.BuildSummary{}
-	bMap := createRunningBuildMap(master)
-	for _, bn := range b.CurrentBuilds {
-		cb := getCurrentBuild(c, bMap, builderName, bn)
-		if cb != nil {
-			results = append(results, cb)
-		}
-	}
-	return results
+var errMasterNotFound = miloerror.Error{
+	Message: "Master not found",
+	Code:    http.StatusNotFound,
 }
 
 // builderImpl is the implementation for getting a milo builder page from buildbot.
@@ -121,10 +91,7 @@ func builderImpl(c context.Context, masterName, builderName string, limit int) (
 		Name: builderName,
 	}
 	master, t, err := getMasterJSON(c, masterName)
-	switch {
-	case err == ds.ErrNoSuchEntity:
-		return nil, errMasterNotFound
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	if clock.Now(c).Sub(t) > 2*time.Minute {
@@ -133,9 +100,6 @@ func builderImpl(c context.Context, masterName, builderName string, limit int) (
 		logging.Warningf(c, warning)
 		result.Warning = warning
 	}
-
-	s, _ := json.Marshal(master)
-	logging.Debugf(c, "Master: %s", s)
 
 	p, ok := master.Builders[builderName]
 	if !ok {
@@ -171,7 +135,8 @@ func builderImpl(c context.Context, masterName, builderName string, limit int) (
 		}
 	}
 
-	recentBuilds, err := getBuilds(c, masterName, builderName, true, limit)
+	// This is CPU bound anyways, so there's no need to do this in parallel.
+	finishedBuilds, err := getBuilds(c, masterName, builderName, true, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -179,15 +144,8 @@ func builderImpl(c context.Context, masterName, builderName string, limit int) (
 	if err != nil {
 		return nil, err
 	}
-	logging.Debugf(c, "Number of current builds: %d", len(currentBuilds))
-	// TODO(hinoka): This works, but there's a lot of junk data from
-	// masters with unclean shutdown.  Need to implement a cleanup
-	// procedure of some sort. Once that is done, set:
-	// result.CurrentBuilds = currentBuilds
-
-	for _, fb := range recentBuilds {
-		// Yes recent builds is synonymous with finished builds.
-		// TODO(hinoka): Implement limits.
+	result.CurrentBuilds = currentBuilds
+	for _, fb := range finishedBuilds {
 		if fb != nil {
 			result.FinishedBuilds = append(result.FinishedBuilds, fb)
 		}

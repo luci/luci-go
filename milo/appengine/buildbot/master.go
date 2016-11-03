@@ -9,7 +9,6 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"sort"
 	"time"
 
@@ -17,7 +16,6 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/settings"
-	"github.com/luci/luci-go/milo/common/miloerror"
 
 	"golang.org/x/net/context"
 )
@@ -34,11 +32,6 @@ func decodeMasterEntry(
 		return err
 	}
 	return nil
-}
-
-var errMasterNotFound = miloerror.Error{
-	Message: "Master not found",
-	Code:    http.StatusNotFound,
 }
 
 // getMasterEntry feches the named master and does an ACL check on the
