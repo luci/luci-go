@@ -87,18 +87,18 @@ message Parameters {
     //   ${DM.QUEST.DATA.DESC:PATH} - the path to the
     //     dm.Quest.Data.Desc JSONPB for the quest that this execution is part
     //     of.
-    //   ${DM.EXECUTION.AUTH:PATH} - the path to the JSONPB of a
-    //     dm.Execution.Auth for the current execution. Consuming this file is
-    //     currently required to interact with DM, making this substitution
-    //     parameter a requirement.
     //   ${DM.HOST} - the hostname to use to access DM's pRPC API.
+    //
+    // DM also provides a JSONPB encoded dm.Execution.Auth via the LUCI_CONTEXT
+    // swarming.secret_bytes value. See:
+    //   https://github.com/luci/luci-py/blob/master/client/LUCI_CONTEXT.md
     //
     // Command MUST be specified; specifying a command in any of the isolated
     // inputs WILL NOT DO ANYTHING.
     repeated string command = 2;
 
     // Environment variables for the executions.
-    map<string, string> env = 4;
+    map<string, string> env = 3;
   }
   Job job = 3;
 }

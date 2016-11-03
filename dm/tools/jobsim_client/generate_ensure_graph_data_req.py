@@ -67,7 +67,6 @@ def print_req(opts, pkg_name, version):
   }[opts.os]
 
   command = ['jobsim_client', 'edit-distance', '-dm-host', '${DM.HOST}',
-             '-execution-auth-path', '${DM.EXECUTION.AUTH:PATH}',
              '-quest-desc-path', '${DM.QUEST.DATA.DESC:PATH}']
   if opts.use_transposition:
     command.append('-use-transposition')

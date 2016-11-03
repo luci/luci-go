@@ -7,6 +7,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -24,6 +25,7 @@ import (
 	"github.com/luci/luci-go/common/retry"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/grpc/prpc"
+	"github.com/luci/luci-go/lucictx"
 )
 
 type cmdRun struct {
@@ -31,8 +33,7 @@ type cmdRun struct {
 
 	context.Context
 
-	exAuthPath string
-	exAuth     *dm.Execution_Auth
+	exAuth *dm.Execution_Auth
 
 	questDescPath string
 	questDesc     *dm.Quest_Desc
@@ -45,9 +46,6 @@ type cmdRun struct {
 }
 
 func (r *cmdRun) registerOptions() {
-	r.Flags.StringVar(&r.exAuthPath, "execution-auth-path", "",
-		"The path to a JSONPB encoded dm.Execution.Auth message for this client to"+
-			" act as a DM client")
 	r.Flags.StringVar(&r.questDescPath, "quest-desc-path", "",
 		"The path to a JSONPB encoded dm.Quest.Data.Desc message of how this client"+
 			" was invoked")
@@ -77,7 +75,13 @@ func (r *cmdRun) start(a subcommands.Application, cr subcommands.CommandRun, c *
 	r.Context = cli.GetContext(a, cr)
 
 	r.exAuth = &dm.Execution_Auth{}
-	loadJSONPB(r, "execution-auth-path", r.exAuthPath, r.exAuth)
+	s := lucictx.GetSwarming(r.Context)
+	if s == nil || s.SecretBytes == nil {
+		panic("LUCI_CONTEXT['swarming']['secret_bytes'] is missing")
+	}
+	if err := jsonpb.Unmarshal(bytes.NewReader(s.SecretBytes), r.exAuth); err != nil {
+		panic(fmt.Errorf("while decoding execution auth: %s", err))
+	}
 
 	r.questDesc = &dm.Quest_Desc{}
 	loadJSONPB(r, "quest-desc-path", r.questDescPath, r.questDesc)

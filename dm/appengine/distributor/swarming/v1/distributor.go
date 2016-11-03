@@ -5,6 +5,8 @@
 package swarming
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -137,11 +139,18 @@ func (d *swarmingDist) Run(desc *dm.Quest_Desc, auth *dm.Execution_Auth, prev *d
 	}
 
 	isoCtx, _ := context.WithTimeout(d, 30*time.Second)
-	iso, err := prepIsolate(isoCtx, d.sCfg.Isolate.Url, desc, auth, prev, params)
+	iso, err := prepIsolate(isoCtx, d.sCfg.Isolate.Url, desc, prev, params)
 	if err != nil {
 		err = errors.Annotate(err).Reason("prepping Isolated").Err()
 		return
 	}
+
+	secretBytesRaw := &bytes.Buffer{}
+	marshaller := &jsonpb.Marshaler{OrigName: true}
+	if err = marshaller.Marshal(secretBytesRaw, auth); err != nil {
+		return
+	}
+	secretBytes := base64.StdEncoding.EncodeToString(secretBytesRaw.Bytes())
 
 	cipdInput := (*swarm.SwarmingRpcsCipdInput)(nil)
 	if prevParsed != nil {
@@ -197,6 +206,7 @@ func (d *swarmingDist) Run(desc *dm.Quest_Desc, auth *dm.Execution_Auth, prev *d
 				GracePeriodSecs:      int64(desc.Meta.Timeouts.Stop.Duration().Seconds()),
 				IoTimeoutSecs:        int64(params.Scheduling.IoTimeout.Duration().Seconds()),
 				InputsRef:            iso,
+				SecretBytes:          secretBytes,
 			},
 
 			PubsubTopic:     topic.String(),

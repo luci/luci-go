@@ -24,7 +24,6 @@ import (
 )
 
 const prevPath = ".dm/previous_execution.json"
-const exAuthPath = ".dm/execution_auth.json"
 const descPath = ".dm/quest_description.json"
 
 func mkFile(data []byte) *isolated.File {
@@ -46,11 +45,10 @@ func mkMsgFile(pb proto.Message) ([]byte, *isolated.File) {
 	return data, mkFile(data)
 }
 
-func mkIsolated(c context.Context, params *sv1.Parameters, prevFile, descFile, authFile *isolated.File) ([]byte, *isolated.File) {
+func mkIsolated(c context.Context, params *sv1.Parameters, prevFile, descFile *isolated.File) ([]byte, *isolated.File) {
 	cmdReplacer := strings.NewReplacer(
 		"${DM.PREVIOUS.EXECUTION.STATE:PATH}", prevPath,
 		"${DM.QUEST.DATA.DESC:PATH}", descPath,
-		"${DM.EXECUTION.AUTH:PATH}", exAuthPath,
 		"${DM.HOST}", info.DefaultVersionHostname(c),
 	)
 
@@ -65,7 +63,6 @@ func mkIsolated(c context.Context, params *sv1.Parameters, prevFile, descFile, a
 	}
 
 	iso.Files[prevPath] = *prevFile
-	iso.Files[exAuthPath] = *authFile
 	iso.Files[descPath] = *descFile
 
 	isoData, err := json.Marshal(iso)
@@ -115,19 +112,17 @@ func pushIsolate(c context.Context, isolateURL string, chunks []isoChunk) error 
 	})
 }
 
-func prepIsolate(c context.Context, isolateURL string, desc *dm.Quest_Desc, auth *dm.Execution_Auth, prev *dm.JsonResult, params *sv1.Parameters) (*swarm.SwarmingRpcsFilesRef, error) {
+func prepIsolate(c context.Context, isolateURL string, desc *dm.Quest_Desc, prev *dm.JsonResult, params *sv1.Parameters) (*swarm.SwarmingRpcsFilesRef, error) {
 	prevData := []byte("{}")
 	if prev != nil {
 		prevData = []byte(prev.Object)
 	}
 	prevFile := mkFile(prevData)
-	authData, authFile := mkMsgFile(auth)
 	descData, descFile := mkMsgFile(desc)
-	isoData, isoFile := mkIsolated(c, params, prevFile, descFile, authFile)
+	isoData, isoFile := mkIsolated(c, params, prevFile, descFile)
 
 	err := pushIsolate(c, isolateURL, []isoChunk{
 		{data: prevData, file: prevFile},
-		{data: authData, file: authFile},
 		{data: descData, file: descFile},
 		{data: isoData, file: isoFile, isIso: true},
 	})
