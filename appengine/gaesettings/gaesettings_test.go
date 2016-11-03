@@ -24,7 +24,7 @@ import (
 func TestWorks(t *testing.T) {
 	Convey("Works", t, func() {
 		c := memory.Use(context.Background())
-		c = dscache.AlwaysFilterRDS(c, nil)
+		c = dscache.AlwaysFilterRDS(c)
 		c, tc := testclock.UseTime(c, time.Unix(1444945245, 0))
 
 		// Record access to memcache. There should be none.
