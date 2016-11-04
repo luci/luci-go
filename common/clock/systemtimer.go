@@ -51,12 +51,19 @@ func (t *systemTimer) Reset(d time.Duration) (running bool) {
 	// Start a monitor goroutine and our actual timer. Copy our channels, since
 	// future stop/reset will change the systemTimer's values and our goroutine
 	// should only operate on this round's values.
-	timerStoppedC := make(chan struct{})
-	timerMonitorResultC := make(chan bool, 1)
+	t.timerStoppedC = make(chan struct{})
+	t.timerMonitorResultC = make(chan bool, 1)
+
+	timerStoppedC, timerMonitorResultC := t.timerStoppedC, t.timerMonitorResultC
+
+	realTimer := time.NewTimer(d)
 	go func() {
+		defer realTimer.Stop()
+
 		interrupted := false
 		defer func() {
 			timerMonitorResultC <- interrupted
+			close(timerMonitorResultC)
 		}()
 
 		select {
@@ -65,13 +72,11 @@ func (t *systemTimer) Reset(d time.Duration) (running bool) {
 
 		case <-t.ctx.Done():
 			t.timerC <- TimerResult{Time: time.Now(), Err: t.ctx.Err()}
-		case now := <-time.After(d):
+		case now := <-realTimer.C:
 			t.timerC <- TimerResult{Time: now, Err: t.ctx.Err()}
 		}
 	}()
 
-	t.timerStoppedC = timerStoppedC
-	t.timerMonitorResultC = timerMonitorResultC
 	return
 }
 

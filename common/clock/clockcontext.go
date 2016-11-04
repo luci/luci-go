@@ -72,12 +72,21 @@ func WithDeadline(parent context.Context, deadline time.Time) (context.Context, 
 	// Invoke our cancelFunc after the specified time. Register the timer now, so
 	// it gets registered in the testclock heap right away (and not at some
 	// undetermined later time when the goroutine starts).
-	ch := After(c, d)
+	t := NewTimer(c)
+	t.Reset(d)
 	go func() {
-		if ar := <-ch; !ar.Incomplete() {
-			// Timer expired naturally.
-			c.setError(context.DeadlineExceeded)
-			cancelFunc()
+		defer t.Stop()
+
+		select {
+		case ar := <-t.GetC():
+			if !ar.Incomplete() {
+				// Timer expired naturally.
+				c.setError(context.DeadlineExceeded)
+				cancelFunc()
+			}
+		case <-c.Done():
+			// Context was canceled, can stop the timer / goroutine.
+			break
 		}
 	}()
 	return c, cancelFunc

@@ -26,28 +26,60 @@ func (mc *manualClock) Now() time.Time {
 	return mc.now
 }
 
-func (mc *manualClock) After(ctx context.Context, d time.Duration) <-chan TimerResult {
-	resultC := make(chan TimerResult)
+func (mc *manualClock) NewTimer(c context.Context) Timer {
+	return &manualTimer{
+		ctx:     c,
+		mc:      mc,
+		resultC: make(chan TimerResult),
+	}
+}
+
+type manualTimer struct {
+	Timer
+
+	ctx     context.Context
+	mc      *manualClock
+	resultC chan TimerResult
+
+	running bool
+	stopC   chan struct{}
+}
+
+func (mt *manualTimer) GetC() <-chan TimerResult { return mt.resultC }
+
+func (mt *manualTimer) Reset(d time.Duration) bool {
+	running := mt.Stop()
+	mt.stopC, mt.running = make(chan struct{}), true
+
 	go func() {
 		ar := TimerResult{}
 		defer func() {
-			resultC <- ar
+			mt.resultC <- ar
 		}()
 
 		// If we are instructed to immediately timeout, do so.
-		if cb := mc.timeoutCallback; cb != nil && cb(d) {
+		if cb := mt.mc.timeoutCallback; cb != nil && cb(d) {
 			return
 		}
 
 		select {
-		case <-ctx.Done():
-			ar.Err = ctx.Err()
-		case <-mc.testFinishedC:
+		case <-mt.ctx.Done():
+			ar.Err = mt.ctx.Err()
+		case <-mt.mc.testFinishedC:
 			break
 		}
 	}()
+	return running
+}
 
-	return resultC
+func (mt *manualTimer) Stop() bool {
+	if !mt.running {
+		return false
+	}
+
+	mt.running = false
+	close(mt.stopC)
+	return true
 }
 
 func wait(c context.Context) error {
