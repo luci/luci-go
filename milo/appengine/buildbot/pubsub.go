@@ -250,13 +250,17 @@ func doMaster(c context.Context, master *buildbotMaster, internal bool) int {
 			}
 		}
 		if !found {
-			// Mark this build due to build not current anymore.
-			logging.Infof(c, "Expiring %s/%s/%d due to build not current",
-				master.Name, b.Buildername, b.Number)
-			err = expireBuild(c, b)
-			if err != nil {
-				logging.WithError(err).Errorf(c, "Could not expire build")
-				return 500
+			now := int(clock.Now(c).Unix())
+			if b.TimeStamp != nil && ((*b.TimeStamp)+20*60 < now) {
+				// Expire builds after 20 minutes of not getting data.
+				// Mark this build due to build not current anymore.
+				logging.Infof(c, "Expiring %s/%s/%d due to build not current",
+					master.Name, b.Buildername, b.Number)
+				err = expireBuild(c, b)
+				if err != nil {
+					logging.WithError(err).Errorf(c, "Could not expire build")
+					return 500
+				}
 			}
 		}
 	}

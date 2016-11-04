@@ -308,8 +308,38 @@ func TestPubSub(t *testing.T) {
 					So(*loadB.Times[1], ShouldEqual, 124.0)
 				})
 			})
+			Convey("Don't Expire non-existant current build under 20 min", func() {
+				b.Number = 1235
+				ts := int(fakeTime.Unix()) - 1000
+				b.TimeStamp = &ts
+				h = httptest.NewRecorder()
+				r = &http.Request{
+					Body: newCombinedPsBody([]*buildbotBuild{b}, &ms, false),
+				}
+				p = httprouter.Params{}
+				ds.GetTestable(c).Consistent(true)
+				PubSubHandler(&router.Context{
+					Context: c,
+					Writer:  h,
+					Request: r,
+					Params:  p,
+				})
+				So(h.Code, ShouldEqual, 200)
+				loadB := &buildbotBuild{
+					Master:      "Fake Master",
+					Buildername: "Fake buildername",
+					Number:      1235,
+				}
+				err := ds.Get(c, loadB)
+				So(err, ShouldBeNil)
+				So(loadB.Finished, ShouldEqual, false)
+				So(*loadB.Times[0], ShouldEqual, 123.0)
+				So(loadB.Times[1], ShouldBeNil)
+			})
 			Convey("Expire non-existant current build", func() {
 				b.Number = 1235
+				ts := int(fakeTime.Unix()) - 1201
+				b.TimeStamp = &ts
 				h = httptest.NewRecorder()
 				r = &http.Request{
 					Body: newCombinedPsBody([]*buildbotBuild{b}, &ms, false),
@@ -333,7 +363,7 @@ func TestPubSub(t *testing.T) {
 				So(loadB.Finished, ShouldEqual, true)
 				So(*loadB.Times[0], ShouldEqual, 123.0)
 				So(loadB.Times[1], ShouldNotEqual, nil)
-				So(*loadB.Times[1], ShouldEqual, 555.0)
+				So(*loadB.Times[1], ShouldEqual, ts)
 				So(*loadB.Results, ShouldEqual, 2)
 			})
 			Convey("Large pubsub message", func() {
