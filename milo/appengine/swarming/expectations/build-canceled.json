@@ -2,9 +2,7 @@
   "Summary": {
     "ParentLabel": {
       "Label": "infra-continuous-precise-32",
-      "Img": "",
-      "URL": "/buildbucket/estaab-infra-waterfall-test/infra-continuous-precise-32?server=cr-buildbucket-dev.appspot.com",
-      "Alt": ""
+      "URL": "/buildbucket/estaab-infra-waterfall-test/infra-continuous-precise-32?server=cr-buildbucket-dev.appspot.com"
     },
     "Label": "2d8d62f6be545b10",
     "Status": "Failure",
@@ -21,28 +19,20 @@
     },
     "Bot": {
       "Label": "swarm3-c4",
-      "Img": "",
-      "URL": "https://debug/restricted/bot/swarm3-c4",
-      "Alt": ""
+      "URL": "https://debug/restricted/bot/swarm3-c4"
     },
     "Source": {
       "Label": "Task 2d8d62f6be545b10",
-      "Img": "",
-      "URL": "https://debug/user/task/2d8d62f6be545b10",
-      "Alt": ""
+      "URL": "https://debug/user/task/2d8d62f6be545b10"
     },
     "MainLink": {
       "Label": "Task 2d8d62f6be545b10",
-      "Img": "",
-      "URL": "https://debug/user/task/2d8d62f6be545b10",
-      "Alt": ""
+      "URL": "https://debug/user/task/2d8d62f6be545b10"
     },
     "SubLink": [
       {
         "Label": "stdout",
-        "Img": "",
-        "URL": "foo/stdout",
-        "Alt": ""
+        "URL": "foo/stdout"
       }
     ],
     "Progress": null,
@@ -67,9 +57,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdout",
-        "Img": "",
-        "URL": "foo/steps/recipe_bootstrap/0/stdout",
-        "Alt": ""
+        "URL": "foo/steps/recipe_bootstrap/0/stdout"
       },
       "SubLink": null,
       "Progress": null,
@@ -90,16 +78,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdout",
-        "Img": "",
-        "URL": "foo/steps/setup_build/0/stdout",
-        "Alt": ""
+        "URL": "foo/steps/setup_build/0/stdout"
       },
       "SubLink": [
         {
           "Label": "run_recipe",
-          "Img": "",
-          "URL": "foo/steps/setup_build/0/logs/run_recipe/0",
-          "Alt": ""
+          "URL": "foo/steps/setup_build/0/logs/run_recipe/0"
         }
       ],
       "Progress": null,

@@ -155,10 +155,10 @@ func parseRFC3339(s string) time.Time {
 	return time.Time{}
 }
 
-var linkifyTemplate = template.Must(
-	template.New("linkify").Parse(`<a href="{{.URL}}">
-		{{if .Img}}<img src="{{.Img}}"{{if .Alt}} alt="{{.Alt}}"{{end}}>
-		{{else}}{{.Label}}{{end}}</a>`))
+// linkifyTemplate is the template used in "linkify". Because the template,
+// itself recursively invokes "linkify", we will initialize it in explicitly
+// in "init()".
+var linkifyTemplate *template.Template
 
 // linkify turns a resp.Link struct into a canonical link.
 func linkify(link *resp.Link) template.HTML {
@@ -184,4 +184,17 @@ func shortHash(s string) string {
 		return s[0:6]
 	}
 	return s
+}
+
+func init() {
+	linkifyTemplate = template.Must(
+		template.New("linkify").
+			Funcs(template.FuncMap{
+				"linkify": linkify,
+			}).Parse(
+			`<a href="{{.URL}}">` +
+				`{{if .Img}}<img src="{{.Img}}"{{if .Alt}} alt="{{.Alt}}"{{end}}>` +
+				`{{else}}{{.Label}}{{end}}` +
+				`</a>` +
+				`{{range .Aliases}}[{{. | linkify}}]{{end}}`))
 }

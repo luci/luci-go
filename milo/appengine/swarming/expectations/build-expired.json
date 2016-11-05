@@ -2,9 +2,7 @@
   "Summary": {
     "ParentLabel": {
       "Label": "Infra Win Tester",
-      "Img": "",
-      "URL": "/buildbucket/luci.infra.try/Infra Win Tester?server=cr-buildbucket.appspot.com",
-      "Alt": ""
+      "URL": "/buildbucket/luci.infra.try/Infra Win Tester?server=cr-buildbucket.appspot.com"
     },
     "Label": "308998ca182a0210",
     "Status": "Expired",
@@ -22,15 +20,11 @@
     "Bot": null,
     "Source": {
       "Label": "Task 308998ca182a0210",
-      "Img": "",
-      "URL": "https://debug/user/task/308998ca182a0210",
-      "Alt": ""
+      "URL": "https://debug/user/task/308998ca182a0210"
     },
     "MainLink": {
       "Label": "Task 308998ca182a0210",
-      "Img": "",
-      "URL": "https://debug/user/task/308998ca182a0210",
-      "Alt": ""
+      "URL": "https://debug/user/task/308998ca182a0210"
     },
     "SubLink": null,
     "Progress": null,

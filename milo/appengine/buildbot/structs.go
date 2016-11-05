@@ -30,8 +30,8 @@ type buildbotStep struct {
 	Eta          interface{}     `json:"eta"`
 	Expectations [][]interface{} `json:"expectations"`
 	Hidden       bool            `json:"hidden"`
-	Isfinished   bool            `json:"isFinished"`
-	Isstarted    bool            `json:"isStarted"`
+	IsFinished   bool            `json:"isFinished"`
+	IsStarted    bool            `json:"isStarted"`
 	Logs         [][]string      `json:"logs"`
 	Name         string          `json:"name"`
 	Results      []interface{}   `json:"results"`
@@ -42,6 +42,11 @@ type buildbotStep struct {
 	Times      []*float64 `json:"times"`
 	Urls       struct {
 	} `json:"urls"`
+
+	// Log link aliases.  The key is a log name that is being aliases. It should,
+	// generally, exist within the Logs. The value is the set of aliases attached
+	// to that key.
+	Aliases map[string][]*buildbotLinkAlias `json:"aliases"`
 }
 
 // buildbotSourceStamp is a list of changes (commits) tagged with where the changes
@@ -58,6 +63,13 @@ type buildbotSourceStamp struct {
 type buildbotLinkAlias struct {
 	URL  string `json:"url"`
 	Text string `json:"text"`
+}
+
+func (a *buildbotLinkAlias) toLink() *resp.Link {
+	return &resp.Link{
+		Label: a.Text,
+		URL:   a.URL,
+	}
 }
 
 // buildbotBuild is a single build json on buildbot.
@@ -83,8 +95,6 @@ type buildbotBuild struct {
 	Steps       []buildbotStep       `json:"steps" gae:"-"`
 	Text        []string             `json:"text" gae:"-"`
 	Times       []*float64           `json:"times" gae:"-"`
-	// A log link alias.  The key is a log name that is expected to exist within Logs
-	Aliases map[string][]*buildbotLinkAlias `json:"aliases" gae:"-"`
 	// This one is injected by the publisher module.  Does not exist in a
 	// normal json query.
 	TimeStamp *int `json:"timeStamp" gae:"-"`

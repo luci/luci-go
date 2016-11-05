@@ -15,6 +15,7 @@ import (
 	"time"
 
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/settings"
@@ -195,9 +196,9 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 		}
 
 		// Figure out the status.
-		if !step.Isstarted {
+		if !step.IsStarted {
 			bc.Status = resp.NotRun
-		} else if !step.Isfinished {
+		} else if !step.IsFinished {
 			bc.Status = resp.Running
 		} else {
 			if len(step.Results) > 0 {
@@ -208,16 +209,56 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 			}
 		}
 
-		// Now, link to the loggings.
+		// Now, link to the logs.
+		//
+		// Any given log may have an alias link. There may also be alises that are
+		// not attached to logs (unusual, but allowed), so we need to track which
+		// aliases are unreferenced and add them as immediate links.
+		remainingAliases := stringset.New(len(step.Aliases))
+		for linkAnchor := range step.Aliases {
+			remainingAliases.Add(linkAnchor)
+		}
+
 		for _, l := range step.Logs {
 			link := &resp.Link{
 				Label: l[0],
 				URL:   l[1],
 			}
+
+			// Is this link aliased?
+			if remainingAliases.Del(link.Label) {
+				for _, alias := range step.Aliases[link.Label] {
+					link.Aliases = append(link.Aliases, alias.toLink())
+				}
+			}
+
 			if link.Label == "stdio" {
 				bc.MainLink = link
 			} else {
 				bc.SubLink = append(bc.SubLink, link)
+			}
+		}
+
+		// Add any unused aliases directly.
+		if remainingAliases.Len() > 0 {
+			unusedAliases := remainingAliases.ToSlice()
+			sort.Strings(unusedAliases)
+
+			for _, label := range unusedAliases {
+				var baseLink *resp.Link
+				for _, alias := range step.Aliases[label] {
+					aliasLink := alias.toLink()
+					if baseLink == nil {
+						baseLink = aliasLink
+						baseLink.Label = label
+					} else {
+						baseLink.Aliases = append(baseLink.Aliases, aliasLink)
+					}
+				}
+
+				if baseLink != nil {
+					bc.SubLink = append(bc.SubLink, baseLink)
+				}
 			}
 		}
 

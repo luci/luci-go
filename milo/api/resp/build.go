@@ -176,6 +176,8 @@ func (c ComponentType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(c.String())
 }
 
+// LogoBanner is a banner of logos that define the OS and devices that a
+// component is associated with.
 type LogoBanner struct {
 	OS     []Logo
 	Device []Logo
@@ -273,16 +275,21 @@ type Navigation struct {
 }
 
 // Link denotes a single labeled link.
+//
+// JSON tags here are for test expectations.
 type Link struct {
 	// Title of the link.  Shows up as the main label.
 	Label string
 
-	// An icon for the link.  Not compatible with label.  Rendered as <img>
-	Img string
-
 	// The destination for the link, stuck in a <a href> tag.
 	URL string
 
+	// An icon for the link.  Not compatible with label.  Rendered as <img>
+	Img string `json:",omitempty"`
+
 	// Alt text for the image, only supported with img.
-	Alt string
+	Alt string `json:",omitempty"`
+
+	// Aliases is the set of aliases attached to this link.
+	Aliases []*Link `json:",omitempty"`
 }

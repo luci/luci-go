@@ -2,24 +2,18 @@
   "Summary": {
     "ParentLabel": {
       "Label": "win_chromium_rel_ng",
-      "Img": "",
-      "URL": ".",
-      "Alt": ""
+      "URL": "."
     },
     "Label": "#246309",
     "Status": "Failure",
     "Banner": null,
     "Bot": {
       "Label": "vm774-m4",
-      "Img": "",
-      "URL": "https://build.chromium.org/p//buildslaves/vm774-m4",
-      "Alt": ""
+      "URL": "https://build.chromium.org/p//buildslaves/vm774-m4"
     },
     "Source": {
       "Label": "/win_chromium_rel_ng/246309",
-      "Img": "",
-      "URL": "https://build.chromium.org/p//builders/win_chromium_rel_ng/builds/246309",
-      "Alt": ""
+      "URL": "https://build.chromium.org/p//builders/win_chromium_rel_ng/builds/246309"
     },
     "MainLink": null,
     "SubLink": null,
@@ -43,9 +37,7 @@
     "Title": "",
     "Changelist": {
       "Label": "Issue 2101793003",
-      "Img": "",
-      "URL": "https://codereview.chromium.org/2101793003",
-      "Alt": ""
+      "URL": "https://codereview.chromium.org/2101793003"
     },
     "CommitURL": "",
     "File": null,
@@ -61,16 +53,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/steps/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/steps/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "preamble",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/steps/logs/preamble",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/steps/logs/preamble"
         }
       ],
       "Progress": null,
@@ -93,16 +81,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/update_scripts/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/update_scripts/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "gclient_json",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/update_scripts/logs/gclient_json",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/update_scripts/logs/gclient_json"
         }
       ],
       "Progress": null,
@@ -125,9 +109,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/setup_properties/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/setup_properties/logs/stdio"
       },
       "SubLink": null,
       "Progress": null,
@@ -150,16 +132,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/setup_build/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/setup_build/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "run_recipe",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/setup_build/logs/run_recipe",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/setup_build/logs/run_recipe"
         }
       ],
       "Progress": null,
@@ -182,9 +160,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/taskkill/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/taskkill/logs/stdio"
       },
       "SubLink": null,
       "Progress": null,
@@ -207,16 +183,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/bot_update/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/bot_update/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "json.output",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/bot_update/logs/json.output",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/bot_update/logs/json.output"
         }
       ],
       "Progress": null,
@@ -239,9 +211,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma/logs/stdio"
       },
       "SubLink": null,
       "Progress": null,
@@ -264,16 +234,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma.install%20cipd/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma.install%20cipd/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "json.output",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma.install%20cipd/logs/json.output",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma.install%20cipd/logs/json.output"
         }
       ],
       "Progress": null,
@@ -296,16 +262,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma.ensure_installed/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma.ensure_installed/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "json.output",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma.ensure_installed/logs/json.output",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma.ensure_installed/logs/json.output"
         }
       ],
       "Progress": null,
@@ -328,9 +290,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/swarming.py%20--version/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/swarming.py%20--version/logs/stdio"
       },
       "SubLink": null,
       "Progress": null,
@@ -353,9 +313,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/gclient%20runhooks%20%28with%20patch%29/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/gclient%20runhooks%20%28with%20patch%29/logs/stdio"
       },
       "SubLink": null,
       "Progress": null,
@@ -378,16 +336,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/get%20compile%20targets%20for%20scripts/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/get%20compile%20targets%20for%20scripts/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "json.output",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/get%20compile%20targets%20for%20scripts/logs/json.output",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/get%20compile%20targets%20for%20scripts/logs/json.output"
         }
       ],
       "Progress": null,
@@ -410,16 +364,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20test%20spec%20%28chromium.gpu.json%29/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20test%20spec%20%28chromium.gpu.json%29/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "json.output",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20test%20spec%20%28chromium.gpu.json%29/logs/json.output",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20test%20spec%20%28chromium.gpu.json%29/logs/json.output"
         }
       ],
       "Progress": null,
@@ -442,16 +392,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20test%20spec%20%28chromium.win.json%29/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20test%20spec%20%28chromium.win.json%29/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "json.output",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20test%20spec%20%28chromium.win.json%29/logs/json.output",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20test%20spec%20%28chromium.win.json%29/logs/json.output"
         }
       ],
       "Progress": null,
@@ -474,9 +420,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure%20git%20tooling%20on%20windows/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure%20git%20tooling%20on%20windows/logs/stdio"
       },
       "SubLink": null,
       "Progress": null,
@@ -499,16 +443,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/git%20diff%20to%20analyze%20patch/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/git%20diff%20to%20analyze%20patch/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "files",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/git%20diff%20to%20analyze%20patch/logs/files",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/git%20diff%20to%20analyze%20patch/logs/files"
         }
       ],
       "Progress": null,
@@ -531,16 +471,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20filter%20exclusion%20spec/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20filter%20exclusion%20spec/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "json.output",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20filter%20exclusion%20spec/logs/json.output",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/read%20filter%20exclusion%20spec/logs/json.output"
         }
       ],
       "Progress": null,
@@ -563,22 +499,16 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/analyze/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/analyze/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "json.output",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/analyze/logs/json.output",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/analyze/logs/json.output"
         },
         {
           "Label": "analyze_details",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/analyze/logs/analyze_details",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/analyze/logs/analyze_details"
         }
       ],
       "Progress": null,
@@ -601,9 +531,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/cleanup_temp/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/cleanup_temp/logs/stdio"
       },
       "SubLink": null,
       "Progress": null,
@@ -626,9 +554,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/clean%20isolated%20files/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/clean%20isolated%20files/logs/stdio"
       },
       "SubLink": null,
       "Progress": null,
@@ -651,16 +577,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/generate_build_files%20%28with%20patch%29/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/generate_build_files%20%28with%20patch%29/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "swarming-targets-file.txt",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/generate_build_files%20%28with%20patch%29/logs/swarming-targets-file.txt",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/generate_build_files%20%28with%20patch%29/logs/swarming-targets-file.txt"
         }
       ],
       "Progress": null,
@@ -683,16 +605,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/compile%20%28with%20patch%29/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/compile%20%28with%20patch%29/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "json.output",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/compile%20%28with%20patch%29/logs/json.output",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/compile%20%28with%20patch%29/logs/json.output"
         }
       ],
       "Progress": null,
@@ -715,9 +633,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/taskkill%20%282%29/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/taskkill%20%282%29/logs/stdio"
       },
       "SubLink": null,
       "Progress": null,
@@ -740,16 +656,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/bot_update%20%28without%20patch%29/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/bot_update%20%28without%20patch%29/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "json.output",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/bot_update%20%28without%20patch%29/logs/json.output",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/bot_update%20%28without%20patch%29/logs/json.output"
         }
       ],
       "Progress": null,
@@ -772,9 +684,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/gclient%20runhooks%20%28without%20patch%29/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/gclient%20runhooks%20%28without%20patch%29/logs/stdio"
       },
       "SubLink": null,
       "Progress": null,
@@ -797,16 +707,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/generate_build_files%20%28without%20patch%29/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/generate_build_files%20%28without%20patch%29/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "swarming-targets-file.txt",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/generate_build_files%20%28without%20patch%29/logs/swarming-targets-file.txt",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/generate_build_files%20%28without%20patch%29/logs/swarming-targets-file.txt"
         }
       ],
       "Progress": null,
@@ -829,16 +735,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/compile%20%28without%20patch%29/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/compile%20%28without%20patch%29/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "json.output",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/compile%20%28without%20patch%29/logs/json.output",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/compile%20%28without%20patch%29/logs/json.output"
         }
       ],
       "Progress": null,
@@ -861,9 +763,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/mark%3A%20before_tests/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/mark%3A%20before_tests/logs/stdio"
       },
       "SubLink": null,
       "Progress": null,
@@ -886,16 +786,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/Failure%20reason/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/Failure%20reason/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "reason",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/Failure%20reason/logs/reason",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/Failure%20reason/logs/reason"
         }
       ],
       "Progress": null,

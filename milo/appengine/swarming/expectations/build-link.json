@@ -7,22 +7,16 @@
     "Bot": null,
     "Source": {
       "Label": "Task 2d8d62f6be545b10",
-      "Img": "",
-      "URL": "https://debug/user/task/2d8d62f6be545b10",
-      "Alt": ""
+      "URL": "https://debug/user/task/2d8d62f6be545b10"
     },
     "MainLink": {
       "Label": "Task 2d8d62f6be545b10",
-      "Img": "",
-      "URL": "https://debug/user/task/2d8d62f6be545b10",
-      "Alt": ""
+      "URL": "https://debug/user/task/2d8d62f6be545b10"
     },
     "SubLink": [
       {
         "Label": "stdout",
-        "Img": "",
-        "URL": "foo/stdout",
-        "Alt": ""
+        "URL": "foo/stdout"
       }
     ],
     "Progress": null,
@@ -47,16 +41,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdout",
-        "Img": "",
-        "URL": "foo/steps/recipe_bootstrap/0/stdout",
-        "Alt": ""
+        "URL": "foo/steps/recipe_bootstrap/0/stdout"
       },
       "SubLink": [
         {
           "Label": "Confused? README here",
-          "Img": "",
-          "URL": "https://chromium.googlesource.com/external/github.com/luci/recipes-py/+/master/doc/workflow.md",
-          "Alt": ""
+          "URL": "https://chromium.googlesource.com/external/github.com/luci/recipes-py/+/master/doc/workflow.md"
         }
       ],
       "Progress": null,

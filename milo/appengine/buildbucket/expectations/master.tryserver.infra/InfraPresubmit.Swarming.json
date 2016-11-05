@@ -5,9 +5,7 @@
     {
       "Link": {
         "Label": "2fbc7169a3b9a010",
-        "Img": "",
-        "URL": "/swarming/prod/2fbc7169a3b9a010",
-        "Alt": ""
+        "URL": "/swarming/prod/2fbc7169a3b9a010"
       },
       "Status": "Running",
       "PendingTime": {
@@ -36,9 +34,7 @@
           "Title": "",
           "Changelist": {
             "Label": "Rietveld CL 2114743004",
-            "Img": "",
-            "URL": "https://codereview.chromium.org/2114743004/#ps1",
-            "Alt": ""
+            "URL": "https://codereview.chromium.org/2114743004/#ps1"
           },
           "CommitURL": "",
           "File": null

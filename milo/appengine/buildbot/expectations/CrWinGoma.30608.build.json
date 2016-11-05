@@ -2,24 +2,18 @@
   "Summary": {
     "ParentLabel": {
       "Label": "CrWinGoma",
-      "Img": "",
-      "URL": ".",
-      "Alt": ""
+      "URL": "."
     },
     "Label": "#30608",
     "Status": "Success",
     "Banner": null,
     "Bot": {
       "Label": "build28-m1",
-      "Img": "",
-      "URL": "https://build.chromium.org/p//buildslaves/build28-m1",
-      "Alt": ""
+      "URL": "https://build.chromium.org/p//buildslaves/build28-m1"
     },
     "Source": {
       "Label": "/CrWinGoma/30608",
-      "Img": "",
-      "URL": "https://build.chromium.org/p//builders/CrWinGoma/builds/30608",
-      "Alt": ""
+      "URL": "https://build.chromium.org/p//builders/CrWinGoma/builds/30608"
     },
     "MainLink": null,
     "SubLink": null,
@@ -56,16 +50,42 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/steps/logs/stdio",
-        "Alt": ""
+        "Aliases": [
+          {
+            "Label": "alias-0",
+            "URL": "https://example.com/stdio/alias-0"
+          },
+          {
+            "Label": "alias-1",
+            "URL": "https://example.com/stdio/alias-1"
+          }
+        ]
       },
       "SubLink": [
         {
           "Label": "preamble",
-          "Img": "",
           "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/steps/logs/preamble",
-          "Alt": ""
+          "Aliases": [
+            {
+              "Label": "single-alias",
+              "URL": "https://example.com/preamble/single-alias"
+            }
+          ]
+        },
+        {
+          "Label": "superfluous",
+          "URL": "https://example.com/superfluous"
+        },
+        {
+          "Label": "superfluous-2",
+          "URL": "https://example.com/superfluous-2/0",
+          "Aliases": [
+            {
+              "Label": "superfluous-2-1",
+              "URL": "https://example.com/superfluous-2/1"
+            }
+          ]
         }
       ],
       "Progress": null,
@@ -88,16 +108,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/update_scripts/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/update_scripts/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "gclient_json",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/update_scripts/logs/gclient_json",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/update_scripts/logs/gclient_json"
         }
       ],
       "Progress": null,
@@ -121,9 +137,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/setup_properties/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/setup_properties/logs/stdio"
       },
       "SubLink": null,
       "Progress": null,
@@ -146,16 +160,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/setup_build/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/setup_build/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "run_recipe",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/setup_build/logs/run_recipe",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/setup_build/logs/run_recipe"
         }
       ],
       "Progress": null,
@@ -179,9 +189,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/taskkill/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/taskkill/logs/stdio"
       },
       "SubLink": null,
       "Progress": null,
@@ -204,16 +212,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/bot_update/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/bot_update/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "json.output",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/bot_update/logs/json.output",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/bot_update/logs/json.output"
         }
       ],
       "Progress": null,
@@ -237,9 +241,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/ensure_goma/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/ensure_goma/logs/stdio"
       },
       "SubLink": null,
       "Progress": null,
@@ -262,16 +264,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/ensure_goma.install%20cipd/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/ensure_goma.install%20cipd/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "json.output",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/ensure_goma.install%20cipd/logs/json.output",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/ensure_goma.install%20cipd/logs/json.output"
         }
       ],
       "Progress": null,
@@ -295,16 +293,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/ensure_goma.ensure_installed/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/ensure_goma.ensure_installed/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "json.output",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/ensure_goma.ensure_installed/logs/json.output",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/ensure_goma.ensure_installed/logs/json.output"
         }
       ],
       "Progress": null,
@@ -327,9 +321,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/gclient%20runhooks/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/gclient%20runhooks/logs/stdio"
       },
       "SubLink": null,
       "Progress": null,
@@ -352,16 +344,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/get%20compile%20targets%20for%20scripts/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/get%20compile%20targets%20for%20scripts/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "json.output",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/get%20compile%20targets%20for%20scripts/logs/json.output",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/get%20compile%20targets%20for%20scripts/logs/json.output"
         }
       ],
       "Progress": null,
@@ -384,16 +372,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/read%20test%20spec/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/read%20test%20spec/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "json.output",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/read%20test%20spec/logs/json.output",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/read%20test%20spec/logs/json.output"
         }
       ],
       "Progress": null,
@@ -417,9 +401,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/cleanup_temp/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/cleanup_temp/logs/stdio"
       },
       "SubLink": null,
       "Progress": null,
@@ -442,9 +424,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/generate_build_files/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/generate_build_files/logs/stdio"
       },
       "SubLink": null,
       "Progress": null,
@@ -467,16 +447,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/compile/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/compile/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "json.output",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/compile/logs/json.output",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/compile/logs/json.output"
         }
       ],
       "Progress": null,
@@ -499,9 +475,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/base_unittests/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/base_unittests/logs/stdio"
       },
       "SubLink": null,
       "Progress": null,
@@ -527,9 +501,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/content_unittests/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/content_unittests/logs/stdio"
       },
       "SubLink": null,
       "Progress": null,
@@ -554,9 +526,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/process_dumps/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/process_dumps/logs/stdio"
       },
       "SubLink": null,
       "Progress": null,
@@ -579,16 +549,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdio",
-        "Img": "",
-        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/recipe%20result/logs/stdio",
-        "Alt": ""
+        "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/recipe%20result/logs/stdio"
       },
       "SubLink": [
         {
           "Label": "result",
-          "Img": "",
-          "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/recipe%20result/logs/result",
-          "Alt": ""
+          "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/recipe%20result/logs/result"
         }
       ],
       "Progress": null,
