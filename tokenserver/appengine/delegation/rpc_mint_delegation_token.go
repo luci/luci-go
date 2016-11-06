@@ -164,7 +164,7 @@ func (r *MintDelegationTokenRPC) mint(c context.Context, p *mintParams) (*minter
 	subtok := &messages.Subtoken{
 		Kind:              messages.Subtoken_BEARER_DELEGATION_TOKEN,
 		SubtokenId:        id,
-		DelegatedIdentity: string(p.query.Delegatee),
+		DelegatedIdentity: string(p.query.Delegator),
 		RequestorIdentity: string(p.query.Requestor),
 		CreationTime:      clock.Now(c).Unix(),
 		ValidityDuration:  int32(p.request.ValidityDuration),
@@ -194,14 +194,14 @@ func (r *MintDelegationTokenRPC) mint(c context.Context, p *mintParams) (*minter
 func buildRulesQuery(c context.Context, req *minter.MintDelegationTokenRequest, requestor identity.Identity) (*RulesQuery, error) {
 	// Validate 'delegated_identity'.
 	var err error
-	var delegatee identity.Identity
+	var delegator identity.Identity
 	if req.DelegatedIdentity == "" {
 		return nil, fmt.Errorf("'delegated_identity' is required")
 	}
 	if req.DelegatedIdentity == Requestor {
-		delegatee = requestor // the requestor is delegating its own identity
+		delegator = requestor // the requestor is delegating its own identity
 	} else {
-		if delegatee, err = identity.MakeIdentity(req.DelegatedIdentity); err != nil {
+		if delegator, err = identity.MakeIdentity(req.DelegatedIdentity); err != nil {
 			return nil, fmt.Errorf("bad 'delegated_identity' - %s", err)
 		}
 	}
@@ -259,7 +259,7 @@ func buildRulesQuery(c context.Context, req *minter.MintDelegationTokenRequest, 
 	// Done!
 	return &RulesQuery{
 		Requestor: requestor,
-		Delegatee: delegatee,
+		Delegator: delegator,
 		Audience:  audienceSet,
 		Services:  servicesSet,
 	}, nil

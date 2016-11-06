@@ -59,8 +59,8 @@ type DelegationConfig struct {
 // Used by 'FindMatchingRule'.
 type RulesQuery struct {
 	Requestor identity.Identity // who is requesting the token
-	Delegatee identity.Identity // what identity will be delegated/impersonated
-	Audience  *identityset.Set  // the requested audience set
+	Delegator identity.Identity // what identity will be delegated/impersonated
+	Audience  *identityset.Set  // the requested audience set (delegatees)
 	Services  *identityset.Set  // the requested target services set
 }
 
@@ -71,11 +71,11 @@ type delegationRule struct {
 	rule *admin.DelegationRule // the original unaltered rule proto
 
 	requestors *identityset.Set // matched to RulesQuery.Requestor
-	delegatees *identityset.Set // matched to RulesQuery.Delegatee
+	delegators *identityset.Set // matched to RulesQuery.Delegator
 	audience   *identityset.Set // matched to RulesQuery.Audience
 	services   *identityset.Set // matched to RulesQuery.Services
 
-	addRequestorAsDelegatee bool // if true, add RulesQuery.Requestor to 'delegatees' set
+	addRequestorAsDelegator bool // if true, add RulesQuery.Requestor to 'delegators' set
 	addRequestorToAudience  bool // if true, add RulesQuery.Requestor to 'audience' set
 }
 
@@ -188,7 +188,7 @@ func makeDelegationRule(rule *admin.DelegationRule) (*delegationRule, error) {
 	if err != nil {
 		panic(err)
 	}
-	delegatees, err := identityset.FromStrings(rule.AllowedToImpersonate, skipRequestor)
+	delegators, err := identityset.FromStrings(rule.AllowedToImpersonate, skipRequestor)
 	if err != nil {
 		panic(err)
 	}
@@ -204,10 +204,10 @@ func makeDelegationRule(rule *admin.DelegationRule) (*delegationRule, error) {
 	return &delegationRule{
 		rule:                    rule,
 		requestors:              requestors,
-		delegatees:              delegatees,
+		delegators:              delegators,
 		audience:                audience,
 		services:                services,
-		addRequestorAsDelegatee: sliceHasString(rule.AllowedToImpersonate, Requestor),
+		addRequestorAsDelegator: sliceHasString(rule.AllowedToImpersonate, Requestor),
 		addRequestorToAudience:  sliceHasString(rule.AllowedAudience, Requestor),
 	}, nil
 }
@@ -278,12 +278,12 @@ func (rule *delegationRule) matchesQuery(c context.Context, q *RulesQuery) (bool
 		return false, nil
 	}
 
-	// Rule's 'delegatee' set contains the identity being delegated/impersonated?
-	allowedDelegatees := rule.delegatees
-	if rule.addRequestorAsDelegatee {
-		allowedDelegatees = identityset.Extend(allowedDelegatees, q.Requestor)
+	// Rule's 'delegators' set contains the identity being delegated/impersonated?
+	allowedDelegators := rule.delegators
+	if rule.addRequestorAsDelegator {
+		allowedDelegators = identityset.Extend(allowedDelegators, q.Requestor)
 	}
-	switch found, err := allowedDelegatees.IsMember(c, q.Delegatee); {
+	switch found, err := allowedDelegators.IsMember(c, q.Delegator); {
 	case err != nil:
 		return false, err
 	case !found:

@@ -158,7 +158,7 @@ func TestFindMatchingRule(t *testing.T) {
 				name: "rule 2"
 				requestor: "group:requestor-group"
 				target_service: "service:some-service"
-				allowed_to_impersonate: "group:delegatees-group"
+				allowed_to_impersonate: "group:delegators-group"
 				allowed_audience: "group:audience-group"
 				max_validity_duration: 86400
 			}
@@ -198,7 +198,7 @@ func TestFindMatchingRule(t *testing.T) {
 			Identity: "user:requestor@example.com",
 			FakeDB: authtest.FakeDB{
 				"user:requestor-group-member@example.com":  []string{"requestor-group"},
-				"user:delegatees-group-member@example.com": []string{"delegatees-group"},
+				"user:delegators-group-member@example.com": []string{"delegators-group"},
 				"user:audience-group-member@example.com":   []string{"audience-group"},
 			},
 		})
@@ -207,7 +207,7 @@ func TestFindMatchingRule(t *testing.T) {
 			// Match.
 			res, err := cfg.FindMatchingRule(ctx, &RulesQuery{
 				Requestor: "user:requestor@example.com",
-				Delegatee: "user:allowed-to-impersonate@example.com",
+				Delegator: "user:allowed-to-impersonate@example.com",
 				Audience:  makeSet("user:allowed-audience@example.com"),
 				Services:  makeSet("service:some-service"),
 			})
@@ -218,17 +218,17 @@ func TestFindMatchingRule(t *testing.T) {
 			// Unknown requestor.
 			res, err = cfg.FindMatchingRule(ctx, &RulesQuery{
 				Requestor: "user:unknown-requestor@example.com",
-				Delegatee: "user:allowed-to-impersonate@example.com",
+				Delegator: "user:allowed-to-impersonate@example.com",
 				Audience:  makeSet("user:allowed-audience@example.com"),
 				Services:  makeSet("service:some-service"),
 			})
 			So(err, ShouldErrLike, "no matching delegation rules in the config")
 			So(res, ShouldBeNil)
 
-			// Unknown delegatee.
+			// Unknown delegator.
 			res, err = cfg.FindMatchingRule(ctx, &RulesQuery{
 				Requestor: "user:requestor@example.com",
-				Delegatee: "user:unknown-allowed-to-impersonate@example.com",
+				Delegator: "user:unknown-allowed-to-impersonate@example.com",
 				Audience:  makeSet("user:allowed-audience@example.com"),
 				Services:  makeSet("service:some-service"),
 			})
@@ -238,7 +238,7 @@ func TestFindMatchingRule(t *testing.T) {
 			// Unknown audience.
 			res, err = cfg.FindMatchingRule(ctx, &RulesQuery{
 				Requestor: "user:requestor@example.com",
-				Delegatee: "user:allowed-to-impersonate@example.com",
+				Delegator: "user:allowed-to-impersonate@example.com",
 				Audience:  makeSet("user:unknown-allowed-audience@example.com"),
 				Services:  makeSet("service:some-service"),
 			})
@@ -248,7 +248,7 @@ func TestFindMatchingRule(t *testing.T) {
 			// Unknown target service.
 			res, err = cfg.FindMatchingRule(ctx, &RulesQuery{
 				Requestor: "user:requestor@example.com",
-				Delegatee: "user:allowed-to-impersonate@example.com",
+				Delegator: "user:allowed-to-impersonate@example.com",
 				Audience:  makeSet("user:allowed-audience@example.com"),
 				Services:  makeSet("service:unknown-some-service"),
 			})
@@ -259,7 +259,7 @@ func TestFindMatchingRule(t *testing.T) {
 		Convey("Matches via groups", func() {
 			res, err := cfg.FindMatchingRule(ctx, &RulesQuery{
 				Requestor: "user:requestor-group-member@example.com",
-				Delegatee: "user:delegatees-group-member@example.com",
+				Delegator: "user:delegators-group-member@example.com",
 				Audience:  makeSet("group:audience-group"),
 				Services:  makeSet("service:some-service"),
 			})
@@ -270,7 +270,7 @@ func TestFindMatchingRule(t *testing.T) {
 			// Doesn't do group lookup when checking audience!
 			res, err = cfg.FindMatchingRule(ctx, &RulesQuery{
 				Requestor: "user:requestor-group-member@example.com",
-				Delegatee: "user:delegatees-group-member@example.com",
+				Delegator: "user:delegators-group-member@example.com",
 				Audience:  makeSet("user:audience-group-member@example.com"),
 				Services:  makeSet("service:some-service"),
 			})
@@ -281,7 +281,7 @@ func TestFindMatchingRule(t *testing.T) {
 		Convey("REQUESTOR rules work", func() {
 			res, err := cfg.FindMatchingRule(ctx, &RulesQuery{
 				Requestor: "user:requestor-group-member@example.com",
-				Delegatee: "user:requestor-group-member@example.com",
+				Delegator: "user:requestor-group-member@example.com",
 				Audience:  makeSet("user:requestor-group-member@example.com"),
 				Services:  makeSet("service:some-service"),
 			})
@@ -293,7 +293,7 @@ func TestFindMatchingRule(t *testing.T) {
 		Convey("'*' rules work", func() {
 			res, err := cfg.FindMatchingRule(ctx, &RulesQuery{
 				Requestor: "user:some-requestor@example.com",
-				Delegatee: "user:some-requestor@example.com",
+				Delegator: "user:some-requestor@example.com",
 				Audience:  makeSet("group:abc", "user:def@example.com"),
 				Services:  makeSet("service:unknown"),
 			})
@@ -305,7 +305,7 @@ func TestFindMatchingRule(t *testing.T) {
 		Convey("a conflict is handled", func() {
 			res, err := cfg.FindMatchingRule(ctx, &RulesQuery{
 				Requestor: "user:conflicts-with-rule-5@example.com",
-				Delegatee: "user:conflicts-with-rule-5@example.com",
+				Delegator: "user:conflicts-with-rule-5@example.com",
 				Audience:  makeSet("group:abc", "user:def@example.com"),
 				Services:  makeSet("service:unknown"),
 			})
