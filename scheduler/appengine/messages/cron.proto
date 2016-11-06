@@ -2,7 +2,7 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-syntax = "proto2";
+syntax = "proto3";
 
 package messages;
 
@@ -10,26 +10,26 @@ package messages;
 // Job specifies a single scheduler job belonging to a project.
 message Job {
   // Id is a name of the job (unique for the project).
-  optional string id = 1;
+  string id = 1;
   // Schedule in regular cron expression format.
-  optional string schedule = 2;
+  string schedule = 2;
   // Disables is true to disable this job.
-  optional bool disabled = 3;
+  bool disabled = 3;
   // Task defines what exactly to execute.
-  optional Task task = 4;
+  Task task = 4;
 }
 
 
 // Task defines what exactly to do. One and only one field must be set.
 message Task {
   // Noop is used for testing. It is "do nothing" task.
-  optional NoopTask noop = 1;
+  NoopTask noop = 1;
   // UrlFetch can be used to make a simple HTTP call.
-  optional UrlFetchTask url_fetch = 2;
+  UrlFetchTask url_fetch = 2;
   // SwarmingTask can be used to schedule swarming job.
-  optional SwarmingTask swarming_task = 3;
+  SwarmingTask swarming_task = 3;
   // BuildbucketTask can be used to schedule buildbucket job.
-  optional BuildbucketTask buildbucket_task = 4;
+  BuildbucketTask buildbucket_task = 4;
 }
 
 
@@ -40,12 +40,12 @@ message NoopTask {
 
 // UrlFetchTask specifies parameters for simple HTTP call.
 message UrlFetchTask {
-  // Method is HTTP method to use, such as "GET" or "POST".
-  optional string method = 1 [default = "GET"];
+  // Method is HTTP method to use, such as "GET" or "POST". Default is "GET".
+  string method = 1;
   // Url to send the request to.
-  optional string url = 2;
-  // Timeout is how long to wait for request to complete.
-  optional int32 timeout_sec = 3 [default = 60];
+  string url = 2;
+  // Timeout is how long to wait for request to complete. Default is 60 sec.
+  int32 timeout_sec = 3;
   // TODO: add more.
 }
 
@@ -55,17 +55,17 @@ message SwarmingTask {
   // IsolatedRef defines a data tree reference, normally a reference to
   // an .isolated file
   message IsolatedRef {
-    optional string isolated = 1;
-    optional string isolated_server = 2;
-    optional string namespace = 3;
+    string isolated = 1;
+    string isolated_server = 2;
+    string namespace = 3;
   }
 
   // Server is URL of the swarming service to use.
-  optional string server = 1;
+  string server = 1;
 
   // What to run. Only one of 'command' or 'isolated_ref' must be given.
   repeated string command = 2;
-  optional IsolatedRef isolated_ref = 3;
+  IsolatedRef isolated_ref = 3;
 
   // Additional arguments to pass to isolated command.
   repeated string extra_args = 4;
@@ -77,23 +77,23 @@ message SwarmingTask {
   // Tags is a list of tags (as "key:value" pairs) to assign to the task.
   repeated string tags = 7;
   // Priority is task priority (or niceness, lower value - higher priority).
-  optional int32 priority = 8 [default = 200];
+  int32 priority = 8;
 
   // Timeouts. All optional. The scheduler will set reasonable default values.
-  optional int32 execution_timeout_secs = 9;
-  optional int32 grace_period_secs = 10 [default = 30];
-  optional int32 io_timeout_secs = 11;
+  int32 execution_timeout_secs = 9;
+  int32 grace_period_secs = 10;
+  int32 io_timeout_secs = 11;
 }
 
 
 // BuildbucketTask specifies parameters of Buildbucket-based jobs.
 message BuildbucketTask {
   // Server is URL of the bulildbucket service to use.
-  optional string server = 1;
+  string server = 1;
   // Bucket defines what bucket to add the task to.
-  optional string bucket = 2;
+  string bucket = 2;
   // Builder defines what to run.
-  optional string builder = 3;
+  string builder = 3;
   // Properties is arbitrary "key:value" pairs describing the task.
   repeated string properties = 4;
   // Tags is a list of tags (as "key:value" pairs) to assign to the task.

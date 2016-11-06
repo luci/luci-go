@@ -47,33 +47,38 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 	if !ok {
 		return fmt.Errorf("wrong type %T, expecting *messages.UrlFetchTask", msg)
 	}
+	if cfg == nil {
+		return fmt.Errorf("expecting a non-empty UrlFetchTask")
+	}
 
 	// Validate 'method' field.
 	// TODO(vadimsh): Add more methods (POST, PUT) when 'Body' is added.
 	goodMethods := map[string]bool{"GET": true}
-	if !goodMethods[cfg.GetMethod()] {
-		return fmt.Errorf("unsupported HTTP method: %q", cfg.GetMethod())
+	if cfg.Method != "" && !goodMethods[cfg.Method] {
+		return fmt.Errorf("unsupported HTTP method: %q", cfg.Method)
 	}
 
 	// Validate 'url' field.
-	if cfg.GetUrl() == "" {
+	if cfg.Url == "" {
 		return fmt.Errorf("field 'url' is required")
 	}
-	u, err := url.Parse(cfg.GetUrl())
+	u, err := url.Parse(cfg.Url)
 	if err != nil {
-		return fmt.Errorf("invalid URL %q: %s", cfg.GetUrl(), err)
+		return fmt.Errorf("invalid URL %q: %s", cfg.Url, err)
 	}
 	if !u.IsAbs() {
-		return fmt.Errorf("not an absolute url: %q", cfg.GetUrl())
+		return fmt.Errorf("not an absolute url: %q", cfg.Url)
 	}
 
 	// Validate 'timeout_sec' field. GAE task queue request deadline is 10 min, so
 	// limit URL fetch call duration to 8 min (giving 2 min to spare).
-	if cfg.GetTimeoutSec() < 1 {
-		return fmt.Errorf("minimum allowed 'timeout_sec' is 1 sec, got %d", cfg.GetTimeoutSec())
-	}
-	if cfg.GetTimeoutSec() > 480 {
-		return fmt.Errorf("maximum allowed 'timeout_sec' is 480 sec, got %d", cfg.GetTimeoutSec())
+	if cfg.TimeoutSec != 0 {
+		if cfg.TimeoutSec < 1 {
+			return fmt.Errorf("minimum allowed 'timeout_sec' is 1 sec, got %d", cfg.TimeoutSec)
+		}
+		if cfg.TimeoutSec > 480 {
+			return fmt.Errorf("maximum allowed 'timeout_sec' is 480 sec, got %d", cfg.TimeoutSec)
+		}
 	}
 
 	return nil
@@ -83,11 +88,22 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	cfg := ctl.Task().(*messages.UrlFetchTask)
 	started := clock.Now(c)
-	ctl.DebugLog("%s %s", cfg.GetMethod(), cfg.GetUrl())
+
+	// Defaults.
+	method := cfg.Method
+	if method == "" {
+		method = "GET"
+	}
+	timeout := cfg.TimeoutSec
+	if timeout == 0 {
+		timeout = 60
+	}
+
+	ctl.DebugLog("%s %s", method, cfg.Url)
 
 	// There must be no errors here in reality, since cfg is validated already by
 	// ValidateProtoMessage.
-	u, err := url.Parse(cfg.GetUrl())
+	u, err := url.Parse(cfg.Url)
 	if err != nil {
 		return err
 	}
@@ -102,10 +118,10 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	// Do the fetch asynchronously with datastore update.
 	go func() {
 		defer close(result)
-		c, _ = clock.WithTimeout(c, time.Duration(cfg.GetTimeoutSec())*time.Second)
+		c, _ = clock.WithTimeout(c, time.Duration(timeout)*time.Second)
 		client := &http.Client{Transport: urlfetch.Get(c)}
 		resp, err := client.Do(&http.Request{
-			Method: cfg.GetMethod(),
+			Method: method,
 			URL:    u,
 		})
 		if err != nil {

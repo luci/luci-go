@@ -49,42 +49,44 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 	if !ok {
 		return fmt.Errorf("wrong type %T, expecting *messages.BuildbucketTask", msg)
 	}
+	if cfg == nil {
+		return fmt.Errorf("expecting a non-empty BuildbucketTask")
+	}
 
 	// Validate 'server' field.
-	server := cfg.GetServer()
-	if server == "" {
+	if cfg.Server == "" {
 		return fmt.Errorf("field 'server' is required")
 	}
-	u, err := url.Parse(server)
+	u, err := url.Parse(cfg.Server)
 	if err != nil {
-		return fmt.Errorf("invalid URL %q: %s", server, err)
+		return fmt.Errorf("invalid URL %q: %s", cfg.Server, err)
 	}
 	if !u.IsAbs() {
-		return fmt.Errorf("not an absolute url: %q", server)
+		return fmt.Errorf("not an absolute url: %q", cfg.Server)
 	}
 	if u.Path != "" {
-		return fmt.Errorf("not a host root url: %q", server)
+		return fmt.Errorf("not a host root url: %q", cfg.Server)
 	}
 
 	// Bucket and builder fields are required.
-	if cfg.GetBucket() == "" {
+	if cfg.Bucket == "" {
 		return fmt.Errorf("'bucket' field is required")
 	}
-	if cfg.GetBuilder() == "" {
+	if cfg.Builder == "" {
 		return fmt.Errorf("'builder' field is required")
 	}
 
 	// Validate 'properties' and 'tags'.
-	if err = utils.ValidateKVList("property", cfg.GetProperties(), ':'); err != nil {
+	if err = utils.ValidateKVList("property", cfg.Properties, ':'); err != nil {
 		return err
 	}
-	if err = utils.ValidateKVList("tag", cfg.GetTags(), ':'); err != nil {
+	if err = utils.ValidateKVList("tag", cfg.Tags, ':'); err != nil {
 		return err
 	}
 
 	// Default tags can not be overridden.
 	defTags := defaultTags(nil, nil, nil)
-	for _, kv := range utils.UnpackKVList(cfg.GetTags(), ':') {
+	for _, kv := range utils.UnpackKVList(cfg.Tags, ':') {
 		if _, ok := defTags[kv.Key]; ok {
 			return fmt.Errorf("tag %q is reserved", kv.Key)
 		}
@@ -99,7 +101,7 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 func defaultTags(c context.Context, ctl task.Controller, cfg *messages.BuildbucketTask) map[string]string {
 	if c != nil {
 		return map[string]string{
-			"builder":                 cfg.GetBuilder(),
+			"builder":                 cfg.Builder,
 			"scheduler_invocation_id": fmt.Sprintf("%d", ctl.InvocationID()),
 			"scheduler_job_id":        ctl.JobID(),
 			"user_agent":              info.AppID(c),
@@ -132,7 +134,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 		BuilderName string            `json:"builder_name"`
 		Properties  map[string]string `json:"properties"`
 	}
-	params.BuilderName = cfg.GetBuilder()
+	params.BuilderName = cfg.Builder
 	params.Properties = make(map[string]string, len(cfg.Properties))
 	for _, kv := range utils.UnpackKVList(cfg.Properties, ':') {
 		params.Properties[kv.Key] = kv.Value
@@ -144,8 +146,8 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 
 	// Make sure Buildbucket can publish PubSub messages, grab token that would
 	// identify this invocation when receiving PubSub notifications.
-	ctl.DebugLog("Preparing PubSub topic for %q", *cfg.Server)
-	topic, authToken, err := ctl.PrepareTopic(*cfg.Server)
+	ctl.DebugLog("Preparing PubSub topic for %q", cfg.Server)
+	topic, authToken, err := ctl.PrepareTopic(cfg.Server)
 	if err != nil {
 		ctl.DebugLog("Failed to prepare PubSub topic - %s", err)
 		return err
@@ -154,7 +156,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 
 	// Prepare the request.
 	request := buildbucket.ApiPutRequestMessage{
-		Bucket:            cfg.GetBucket(),
+		Bucket:            cfg.Bucket,
 		ClientOperationId: fmt.Sprintf("%d", ctl.InvocationNonce()),
 		ParametersJson:    string(paramsJSON),
 		Tags:              tags,
@@ -264,7 +266,7 @@ func (m TaskManager) createBuildbucketService(c context.Context, ctl task.Contro
 		return nil, err
 	}
 	cfg := ctl.Task().(*messages.BuildbucketTask)
-	service.BasePath = *cfg.Server + "/_ah/api/buildbucket/v1/"
+	service.BasePath = cfg.Server + "/_ah/api/buildbucket/v1/"
 	return service, nil
 }
 

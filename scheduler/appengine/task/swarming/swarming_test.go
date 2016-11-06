@@ -26,18 +26,18 @@ func TestValidateProtoMessage(t *testing.T) {
 
 	Convey("ValidateProtoMessage passes good msg", t, func() {
 		So(tm.ValidateProtoMessage(&messages.SwarmingTask{
-			Server:     strPtr("https://blah.com"),
+			Server:     "https://blah.com",
 			Command:    []string{"echo", "Hi!"},
 			Env:        []string{"A=B", "C=D"},
 			Dimensions: []string{"OS:Linux"},
 			Tags:       []string{"a:b", "c:d"},
-			Priority:   intPtr(50),
+			Priority:   50,
 		}), ShouldBeNil)
 	})
 
 	Convey("ValidateProtoMessage passes good minimal msg", t, func() {
 		So(tm.ValidateProtoMessage(&messages.SwarmingTask{
-			Server:  strPtr("https://blah.com"),
+			Server:  "https://blah.com",
 			Command: []string{"echo", "Hi!"},
 		}), ShouldBeNil)
 	})
@@ -47,13 +47,13 @@ func TestValidateProtoMessage(t *testing.T) {
 	})
 
 	Convey("ValidateProtoMessage empty", t, func() {
-		So(tm.ValidateProtoMessage(tm.ProtoMessageType()), ShouldErrLike, "field 'server' is required")
+		So(tm.ValidateProtoMessage(tm.ProtoMessageType()), ShouldErrLike, "expecting a non-empty SwarmingTask")
 	})
 
 	Convey("ValidateProtoMessage validates URL", t, func() {
 		call := func(url string) error {
 			return tm.ValidateProtoMessage(&messages.SwarmingTask{
-				Server:  &url,
+				Server:  url,
 				Command: []string{"echo", "Hi!"},
 			})
 		}
@@ -65,7 +65,7 @@ func TestValidateProtoMessage(t *testing.T) {
 
 	Convey("ValidateProtoMessage validates environ", t, func() {
 		So(tm.ValidateProtoMessage(&messages.SwarmingTask{
-			Server:  strPtr("https://blah.com"),
+			Server:  "https://blah.com",
 			Command: []string{"echo", "Hi!"},
 			Env:     []string{"not_kv_pair"},
 		}), ShouldErrLike, "bad environment variable, not a 'key=value' pair")
@@ -73,7 +73,7 @@ func TestValidateProtoMessage(t *testing.T) {
 
 	Convey("ValidateProtoMessage validates dimensions", t, func() {
 		So(tm.ValidateProtoMessage(&messages.SwarmingTask{
-			Server:     strPtr("https://blah.com"),
+			Server:     "https://blah.com",
 			Command:    []string{"echo", "Hi!"},
 			Dimensions: []string{"not_kv_pair"},
 		}), ShouldErrLike, "bad dimension, not a 'key:value' pair")
@@ -81,7 +81,7 @@ func TestValidateProtoMessage(t *testing.T) {
 
 	Convey("ValidateProtoMessage validates tags", t, func() {
 		So(tm.ValidateProtoMessage(&messages.SwarmingTask{
-			Server:  strPtr("https://blah.com"),
+			Server:  "https://blah.com",
 			Command: []string{"echo", "Hi!"},
 			Tags:    []string{"not_kv_pair"},
 		}), ShouldErrLike, "bad tag, not a 'key:value' pair")
@@ -89,7 +89,7 @@ func TestValidateProtoMessage(t *testing.T) {
 
 	Convey("ValidateProtoMessage forbids default tags overwrite", t, func() {
 		So(tm.ValidateProtoMessage(&messages.SwarmingTask{
-			Server:  strPtr("https://blah.com"),
+			Server:  "https://blah.com",
 			Command: []string{"echo", "Hi!"},
 			Tags:    []string{"scheduler_job_id:blah"},
 		}), ShouldErrLike, "tag \"scheduler_job_id\" is reserved")
@@ -98,9 +98,9 @@ func TestValidateProtoMessage(t *testing.T) {
 	Convey("ValidateProtoMessage validates priority", t, func() {
 		call := func(priority int32) error {
 			return tm.ValidateProtoMessage(&messages.SwarmingTask{
-				Server:   strPtr("https://blah.com"),
+				Server:   "https://blah.com",
 				Command:  []string{"echo", "Hi!"},
-				Priority: &priority,
+				Priority: priority,
 			})
 		}
 		So(call(-1), ShouldErrLike, "bad priority")
@@ -109,11 +109,11 @@ func TestValidateProtoMessage(t *testing.T) {
 
 	Convey("ValidateProtoMessage accepts input_ref or command, not both", t, func() {
 		So(tm.ValidateProtoMessage(&messages.SwarmingTask{
-			Server: strPtr("https://blah.com"),
+			Server: "https://blah.com",
 		}), ShouldErrLike, "one of 'command' or 'isolated_ref' is required")
 
 		So(tm.ValidateProtoMessage(&messages.SwarmingTask{
-			Server:      strPtr("https://blah.com"),
+			Server:      "https://blah.com",
 			Command:     []string{"echo", "Hi!"},
 			IsolatedRef: &messages.SwarmingTask_IsolatedRef{},
 		}), ShouldErrLike, "only one of 'command' or 'isolated_ref' must be specified")
@@ -150,16 +150,16 @@ func TestFullFlow(t *testing.T) {
 		mgr := TaskManager{}
 		ctl := &tasktest.TestController{
 			TaskMessage: &messages.SwarmingTask{
-				Server: strPtr(ts.URL),
+				Server: ts.URL,
 				IsolatedRef: &messages.SwarmingTask_IsolatedRef{
-					Isolated:       strPtr("abcdef"),
-					IsolatedServer: strPtr("https://isolated-server"),
-					Namespace:      strPtr("default-gzip"),
+					Isolated:       "abcdef",
+					IsolatedServer: "https://isolated-server",
+					Namespace:      "default-gzip",
 				},
 				Env:        []string{"A=B", "C=D"},
 				Dimensions: []string{"OS:Linux"},
 				Tags:       []string{"a:b", "c:d"},
-				Priority:   intPtr(50),
+				Priority:   50,
 			},
 			Client:       http.DefaultClient,
 			SaveCallback: func() error { return nil },
@@ -200,15 +200,4 @@ func TestFullFlow(t *testing.T) {
 		So(mgr.HandleNotification(c, ctl, &pubsub.PubsubMessage{}), ShouldBeNil)
 		So(ctl.TaskState.Status, ShouldEqual, task.StatusSucceeded)
 	})
-}
-
-//////////////
-
-func strPtr(s string) *string {
-	return &s
-}
-
-func intPtr(i int) *int32 {
-	j := int32(i)
-	return &j
 }

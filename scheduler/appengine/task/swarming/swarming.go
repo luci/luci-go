@@ -49,46 +49,48 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 	if !ok {
 		return fmt.Errorf("wrong type %T, expecting *messages.SwarmingTask", msg)
 	}
+	if cfg == nil {
+		return fmt.Errorf("expecting a non-empty SwarmingTask")
+	}
 
 	// Validate 'server' field.
-	server := cfg.GetServer()
-	if server == "" {
+	if cfg.Server == "" {
 		return fmt.Errorf("field 'server' is required")
 	}
-	u, err := url.Parse(server)
+	u, err := url.Parse(cfg.Server)
 	if err != nil {
-		return fmt.Errorf("invalid URL %q: %s", server, err)
+		return fmt.Errorf("invalid URL %q: %s", cfg.Server, err)
 	}
 	if !u.IsAbs() {
-		return fmt.Errorf("not an absolute url: %q", server)
+		return fmt.Errorf("not an absolute url: %q", cfg.Server)
 	}
 	if u.Path != "" {
-		return fmt.Errorf("not a host root url: %q", server)
+		return fmt.Errorf("not a host root url: %q", cfg.Server)
 	}
 
 	// Validate environ, dimensions, tags.
-	if err = utils.ValidateKVList("environment variable", cfg.GetEnv(), '='); err != nil {
+	if err = utils.ValidateKVList("environment variable", cfg.Env, '='); err != nil {
 		return err
 	}
-	if err = utils.ValidateKVList("dimension", cfg.GetDimensions(), ':'); err != nil {
+	if err = utils.ValidateKVList("dimension", cfg.Dimensions, ':'); err != nil {
 		return err
 	}
-	if err = utils.ValidateKVList("tag", cfg.GetTags(), ':'); err != nil {
+	if err = utils.ValidateKVList("tag", cfg.Tags, ':'); err != nil {
 		return err
 	}
 
 	// Default tags can not be overridden.
 	defTags := defaultTags(nil, nil)
-	for _, kv := range utils.UnpackKVList(cfg.GetTags(), ':') {
+	for _, kv := range utils.UnpackKVList(cfg.Tags, ':') {
 		if _, ok := defTags[kv.Key]; ok {
 			return fmt.Errorf("tag %q is reserved", kv.Key)
 		}
 	}
 
 	// Validate priority.
-	priority := cfg.GetPriority()
-	if priority < 0 || priority > 255 {
-		return fmt.Errorf("bad priority, must be [0, 255]: %d", priority)
+	priority := cfg.Priority
+	if priority != 0 && (priority < 0 || priority > 255) {
+		return fmt.Errorf("bad priority, must be (0, 255]: %d", priority)
 	}
 
 	// Can't have both 'command' and 'isolated_ref'.
@@ -168,15 +170,27 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	expirationSecs := int64(defaultExpirationTimeout(ctl) / time.Second)
 
 	// The hard deadline: how long task can run once it has started.
-	executionTimeoutSecs := int64(cfg.GetExecutionTimeoutSecs())
+	executionTimeoutSecs := int64(cfg.ExecutionTimeoutSecs)
 	if executionTimeoutSecs == 0 {
 		executionTimeoutSecs = int64(defaultExecutionTimeout(ctl) / time.Second)
 	}
 
+	// How long the task is allowed to spend in cleanup.
+	gracePeriodSecs := cfg.GracePeriodSecs
+	if gracePeriodSecs == 0 {
+		gracePeriodSecs = 30
+	}
+
+	// The task priority (or niceness, lower is more aggressive).
+	priority := cfg.Priority
+	if priority == 0 {
+		priority = 200
+	}
+
 	// Make sure Swarming can publish PubSub messages, grab token that would
 	// identify this invocation when receiving PubSub notifications.
-	ctl.DebugLog("Preparing PubSub topic for %q", *cfg.Server)
-	topic, authToken, err := ctl.PrepareTopic(*cfg.Server)
+	ctl.DebugLog("Preparing PubSub topic for %q", cfg.Server)
+	topic, authToken, err := ctl.PrepareTopic(cfg.Server)
 	if err != nil {
 		ctl.DebugLog("Failed to prepare PubSub topic - %s", err)
 		return err
@@ -187,7 +201,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	request := swarming.SwarmingRpcsNewTaskRequest{
 		Name:            fmt.Sprintf("scheduler:%s/%d", ctl.JobID(), ctl.InvocationID()),
 		ExpirationSecs:  expirationSecs,
-		Priority:        int64(cfg.GetPriority()),
+		Priority:        int64(priority),
 		PubsubAuthToken: "...", // set a bit later, after printing this struct
 		PubsubTopic:     topic,
 		Tags:            tags,
@@ -196,18 +210,18 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 			Env:                  kvListToStringPairs(cfg.Env, '='),
 			ExecutionTimeoutSecs: executionTimeoutSecs,
 			ExtraArgs:            cfg.ExtraArgs,
-			GracePeriodSecs:      int64(cfg.GetGracePeriodSecs()),
+			GracePeriodSecs:      int64(gracePeriodSecs),
 			Idempotent:           false,
-			IoTimeoutSecs:        int64(cfg.GetIoTimeoutSecs()),
+			IoTimeoutSecs:        int64(cfg.IoTimeoutSecs),
 		},
 	}
 
 	// Only one of InputsRef or Command must be set.
 	if cfg.IsolatedRef != nil {
 		request.Properties.InputsRef = &swarming.SwarmingRpcsFilesRef{
-			Isolated:       cfg.IsolatedRef.GetIsolated(),
-			Isolatedserver: cfg.IsolatedRef.GetIsolatedServer(),
-			Namespace:      cfg.IsolatedRef.GetNamespace(),
+			Isolated:       cfg.IsolatedRef.Isolated,
+			Isolatedserver: cfg.IsolatedRef.IsolatedServer,
+			Namespace:      cfg.IsolatedRef.Namespace,
 		}
 	} else {
 		request.Properties.Command = cfg.Command
@@ -254,7 +268,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 
 	// Successfully launched.
 	ctl.State().Status = task.StatusRunning
-	ctl.State().ViewURL = fmt.Sprintf("%s/user/task/%s", *cfg.Server, resp.TaskId)
+	ctl.State().ViewURL = fmt.Sprintf("%s/user/task/%s", cfg.Server, resp.TaskId)
 	ctl.DebugLog("Task URL: %s", ctl.State().ViewURL)
 
 	// Maybe the task was already finished? Can only happen when 'idempotent' is
@@ -308,7 +322,7 @@ func (m TaskManager) createSwarmingService(c context.Context, ctl task.Controlle
 		return nil, err
 	}
 	cfg := ctl.Task().(*messages.SwarmingTask)
-	service.BasePath = *cfg.Server + "/_ah/api/swarming/v1/"
+	service.BasePath = cfg.Server + "/_ah/api/swarming/v1/"
 	return service, nil
 }
 

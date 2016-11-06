@@ -28,7 +28,7 @@ func TestValidateProtoMessage(t *testing.T) {
 
 	Convey("ValidateProtoMessage passes good msg", t, func() {
 		So(tm.ValidateProtoMessage(&messages.UrlFetchTask{
-			Url: strPtr("https://blah.com"),
+			Url: "https://blah.com",
 		}), ShouldBeNil)
 	})
 
@@ -37,12 +37,12 @@ func TestValidateProtoMessage(t *testing.T) {
 	})
 
 	Convey("ValidateProtoMessage empty", t, func() {
-		So(tm.ValidateProtoMessage(tm.ProtoMessageType()), ShouldErrLike, "field 'url' is required")
+		So(tm.ValidateProtoMessage(tm.ProtoMessageType()), ShouldErrLike, "expecting a non-empty UrlFetchTask")
 	})
 
 	Convey("ValidateProtoMessage bad method", t, func() {
 		So(tm.ValidateProtoMessage(&messages.UrlFetchTask{
-			Method: strPtr("BLAH"),
+			Method: "BLAH",
 		}), ShouldErrLike, "unsupported HTTP method")
 	})
 
@@ -52,27 +52,27 @@ func TestValidateProtoMessage(t *testing.T) {
 
 	Convey("ValidateProtoMessage bad URL", t, func() {
 		So(tm.ValidateProtoMessage(&messages.UrlFetchTask{
-			Url: strPtr("%%%%"),
+			Url: "%%%%",
 		}), ShouldErrLike, "invalid URL")
 	})
 
 	Convey("ValidateProtoMessage non-absolute URL", t, func() {
 		So(tm.ValidateProtoMessage(&messages.UrlFetchTask{
-			Url: strPtr("/abc"),
+			Url: "/abc",
 		}), ShouldErrLike, "not an absolute url")
 	})
 
-	Convey("ValidateProtoMessage small timeout", t, func() {
+	Convey("ValidateProtoMessage bad timeout", t, func() {
 		So(tm.ValidateProtoMessage(&messages.UrlFetchTask{
-			Url:        strPtr("https://blah.com"),
-			TimeoutSec: intPtr(0),
+			Url:        "https://blah.com",
+			TimeoutSec: -1,
 		}), ShouldErrLike, "minimum allowed 'timeout_sec' is 1 sec")
 	})
 
 	Convey("ValidateProtoMessage large timeout", t, func() {
 		So(tm.ValidateProtoMessage(&messages.UrlFetchTask{
-			Url:        strPtr("https://blah.com"),
-			TimeoutSec: intPtr(10000),
+			Url:        "https://blah.com",
+			TimeoutSec: 10000,
 		}), ShouldErrLike, "maximum allowed 'timeout_sec' is 480 sec")
 	})
 }
@@ -85,7 +85,7 @@ func TestLaunchTask(t *testing.T) {
 		defer ts.Close()
 		ctl := &tasktest.TestController{
 			TaskMessage: &messages.UrlFetchTask{
-				Url: strPtr(ts.URL),
+				Url: ts.URL,
 			},
 			SaveCallback: func() error { return nil },
 		}
@@ -93,15 +93,6 @@ func TestLaunchTask(t *testing.T) {
 		So(ctl.Log[0], ShouldEqual, "GET "+ts.URL)
 		So(ctl.Log[1], ShouldStartWith, "Finished with overall status SUCCEEDED in 0")
 	})
-}
-
-func strPtr(s string) *string {
-	return &s
-}
-
-func intPtr(i int) *int32 {
-	j := int32(i)
-	return &j
 }
 
 func newTestContext(now time.Time) (*httptest.Server, context.Context) {

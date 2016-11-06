@@ -164,12 +164,12 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	}
 	out := make([]Definition, 0, len(cfg.Job))
 	for _, job := range cfg.Job {
-		if job.GetDisabled() {
+		if job.Disabled {
 			continue
 		}
-		id := "(nil)"
-		if job.Id != nil {
-			id = *job.Id
+		id := "(empty)"
+		if job.Id != "" {
+			id = job.Id
 		}
 		if err = cat.validateJobProto(job); err != nil {
 			logging.Errorf(c, "Invalid job definition %s/%s: %s", projectID, id, err)
@@ -181,10 +181,10 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			continue
 		}
 		out = append(out, Definition{
-			JobID:       fmt.Sprintf("%s/%s", projectID, *job.Id),
+			JobID:       fmt.Sprintf("%s/%s", projectID, job.Id),
 			Revision:    rawCfg.Revision,
 			RevisionURL: revisionURL,
-			Schedule:    *job.Schedule,
+			Schedule:    job.Schedule,
 			Task:        packed,
 		})
 	}
@@ -224,17 +224,17 @@ func (cat *catalog) validateJobProto(j *messages.Job) error {
 	if j == nil {
 		return fmt.Errorf("job must be specified")
 	}
-	if j.Id == nil {
+	if j.Id == "" {
 		return fmt.Errorf("missing 'id' field'")
 	}
-	if !jobIDRe.MatchString(*j.Id) {
-		return fmt.Errorf("%q is not valid value for 'id' field", *j.Id)
+	if !jobIDRe.MatchString(j.Id) {
+		return fmt.Errorf("%q is not valid value for 'id' field", j.Id)
 	}
-	if j.Schedule == nil {
+	if j.Schedule == "" {
 		return fmt.Errorf("missing 'schedule' field")
 	}
-	if _, err := schedule.Parse(*j.Schedule, 0); err != nil {
-		return fmt.Errorf("%s is not valid value for 'schedule' field - %s", *j.Schedule, err)
+	if _, err := schedule.Parse(j.Schedule, 0); err != nil {
+		return fmt.Errorf("%s is not valid value for 'schedule' field - %s", j.Schedule, err)
 	}
 	_, err := cat.extractTaskProto(j.Task)
 	return err

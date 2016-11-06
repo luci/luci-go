@@ -26,9 +26,9 @@ func TestValidateProtoMessage(t *testing.T) {
 
 	Convey("ValidateProtoMessage passes good msg", t, func() {
 		So(tm.ValidateProtoMessage(&messages.BuildbucketTask{
-			Server:     strPtr("https://blah.com"),
-			Bucket:     strPtr("bucket"),
-			Builder:    strPtr("builder"),
+			Server:     "https://blah.com",
+			Bucket:     "bucket",
+			Builder:    "builder",
 			Tags:       []string{"a:b", "c:d"},
 			Properties: []string{"a:b", "c:d"},
 		}), ShouldBeNil)
@@ -36,9 +36,9 @@ func TestValidateProtoMessage(t *testing.T) {
 
 	Convey("ValidateProtoMessage passes good minimal msg", t, func() {
 		So(tm.ValidateProtoMessage(&messages.BuildbucketTask{
-			Server:  strPtr("https://blah.com"),
-			Bucket:  strPtr("bucket"),
-			Builder: strPtr("builder"),
+			Server:  "https://blah.com",
+			Bucket:  "bucket",
+			Builder: "builder",
 		}), ShouldBeNil)
 	})
 
@@ -47,15 +47,15 @@ func TestValidateProtoMessage(t *testing.T) {
 	})
 
 	Convey("ValidateProtoMessage empty", t, func() {
-		So(tm.ValidateProtoMessage(tm.ProtoMessageType()), ShouldErrLike, "field 'server' is required")
+		So(tm.ValidateProtoMessage(tm.ProtoMessageType()), ShouldErrLike, "expecting a non-empty BuildbucketTask")
 	})
 
 	Convey("ValidateProtoMessage validates URL", t, func() {
 		call := func(url string) error {
 			return tm.ValidateProtoMessage(&messages.BuildbucketTask{
-				Server:  &url,
-				Bucket:  strPtr("bucket"),
-				Builder: strPtr("builder"),
+				Server:  url,
+				Bucket:  "bucket",
+				Builder: "builder",
 			})
 		}
 		So(call(""), ShouldErrLike, "field 'server' is required")
@@ -66,41 +66,41 @@ func TestValidateProtoMessage(t *testing.T) {
 
 	Convey("ValidateProtoMessage needs bucket", t, func() {
 		So(tm.ValidateProtoMessage(&messages.BuildbucketTask{
-			Server:  strPtr("https://blah.com"),
-			Builder: strPtr("builder"),
+			Server:  "https://blah.com",
+			Builder: "builder",
 		}), ShouldErrLike, "'bucket' field is required")
 	})
 
 	Convey("ValidateProtoMessage needs builder", t, func() {
 		So(tm.ValidateProtoMessage(&messages.BuildbucketTask{
-			Server: strPtr("https://blah.com"),
-			Bucket: strPtr("bucket"),
+			Server: "https://blah.com",
+			Bucket: "bucket",
 		}), ShouldErrLike, "'builder' field is required")
 	})
 
 	Convey("ValidateProtoMessage validates properties", t, func() {
 		So(tm.ValidateProtoMessage(&messages.BuildbucketTask{
-			Server:     strPtr("https://blah.com"),
-			Bucket:     strPtr("bucket"),
-			Builder:    strPtr("builder"),
+			Server:     "https://blah.com",
+			Bucket:     "bucket",
+			Builder:    "builder",
 			Properties: []string{"not_kv_pair"},
 		}), ShouldErrLike, "bad property, not a 'key:value' pair")
 	})
 
 	Convey("ValidateProtoMessage validates tags", t, func() {
 		So(tm.ValidateProtoMessage(&messages.BuildbucketTask{
-			Server:  strPtr("https://blah.com"),
-			Bucket:  strPtr("bucket"),
-			Builder: strPtr("builder"),
+			Server:  "https://blah.com",
+			Bucket:  "bucket",
+			Builder: "builder",
 			Tags:    []string{"not_kv_pair"},
 		}), ShouldErrLike, "bad tag, not a 'key:value' pair")
 	})
 
 	Convey("ValidateProtoMessage forbids default tags overwrite", t, func() {
 		So(tm.ValidateProtoMessage(&messages.BuildbucketTask{
-			Server:  strPtr("https://blah.com"),
-			Bucket:  strPtr("bucket"),
-			Builder: strPtr("builder"),
+			Server:  "https://blah.com",
+			Bucket:  "bucket",
+			Builder: "builder",
 			Tags:    []string{"scheduler_job_id:blah"},
 		}), ShouldErrLike, "tag \"scheduler_job_id\" is reserved")
 	})
@@ -154,9 +154,9 @@ func TestFullFlow(t *testing.T) {
 		mgr := TaskManager{}
 		ctl := &tasktest.TestController{
 			TaskMessage: &messages.BuildbucketTask{
-				Server:  strPtr(ts.URL),
-				Bucket:  strPtr("test-bucket"),
-				Builder: strPtr("builder"),
+				Server:  ts.URL,
+				Bucket:  "test-bucket",
+				Builder: "builder",
 				Tags:    []string{"a:b", "c:d"},
 			},
 			Client:       http.DefaultClient,
@@ -198,15 +198,4 @@ func TestFullFlow(t *testing.T) {
 		So(mgr.HandleNotification(c, ctl, &pubsub.PubsubMessage{}), ShouldBeNil)
 		So(ctl.TaskState.Status, ShouldEqual, task.StatusSucceeded)
 	})
-}
-
-//////////////
-
-func strPtr(s string) *string {
-	return &s
-}
-
-func intPtr(i int) *int32 {
-	j := int32(i)
-	return &j
 }

@@ -49,19 +49,19 @@ func TestProtoValidation(t *testing.T) {
 		c.RegisterTaskManager(noopTaskManager{})
 		So(c.validateJobProto(nil), ShouldErrLike, "job must be specified")
 		So(c.validateJobProto(&messages.Job{}), ShouldErrLike, "missing 'id' field'")
-		So(c.validateJobProto(&messages.Job{Id: strPtr("bad id")}), ShouldErrLike, "not valid value for 'id' field")
-		So(c.validateJobProto(&messages.Job{Id: strPtr("good")}), ShouldErrLike, "missing 'schedule' field")
+		So(c.validateJobProto(&messages.Job{Id: "bad id"}), ShouldErrLike, "not valid value for 'id' field")
+		So(c.validateJobProto(&messages.Job{Id: "good"}), ShouldErrLike, "missing 'schedule' field")
 		So(c.validateJobProto(&messages.Job{
-			Id:       strPtr("good"),
-			Schedule: strPtr("blah"),
+			Id:       "good",
+			Schedule: "blah",
 		}), ShouldErrLike, "not valid value for 'schedule' field")
 		So(c.validateJobProto(&messages.Job{
-			Id:       strPtr("good"),
-			Schedule: strPtr("* * * * *"),
+			Id:       "good",
+			Schedule: "* * * * *",
 		}), ShouldErrLike, "missing 'task' field")
 		So(c.validateJobProto(&messages.Job{
-			Id:       strPtr("good"),
-			Schedule: strPtr("* * * * *"),
+			Id:       "good",
+			Schedule: "* * * * *",
 			Task:     &messages.Task{Noop: &messages.NoopTask{}},
 		}), ShouldBeNil)
 	})
@@ -161,8 +161,6 @@ func TestConfigReading(t *testing.T) {
 }
 
 ////
-
-func strPtr(s string) *string { return &s }
 
 type noopTaskManager struct {
 	validationErr error
