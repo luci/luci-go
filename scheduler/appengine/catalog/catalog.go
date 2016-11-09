@@ -36,16 +36,19 @@ var (
 // that retry won't help.
 type Catalog interface {
 	// RegisterTaskManager registers a manager that knows how to deal with
-	// a particular kind of tasks (as specified by its ProtoMessageType method).
+	// a particular kind of tasks (as specified by its ProtoMessageType method,
+	// e.g. SwarmingTask proto).
 	RegisterTaskManager(m task.Manager) error
 
 	// GetTaskManager takes pointer to a proto message describing some task config
-	// and returns corresponding TaskManager implementation (or nil).
+	// (e.g. SwarmingTask proto) and returns corresponding TaskManager
+	// implementation (or nil).
 	GetTaskManager(m proto.Message) task.Manager
 
-	// UnmarshalTask takes serialized task proto (as in Definition.Task),
-	// unmarshals and validates it and returns proto.Message that represent
-	// the task to run. It can be passed to corresponding task.Manager.
+	// UnmarshalTask takes a serialized task definition (as in Definition.Task),
+	// unmarshals and validates it, and returns proto.Message that represent
+	// the concrete task to run (e.g. SwarmingTask proto). It can be passed to
+	// corresponding task.Manager.
 	UnmarshalTask(task []byte) (proto.Message, error)
 
 	// GetAllProjects returns a list of all known project ids.
@@ -78,6 +81,9 @@ type Definition struct {
 
 	// Task is serialized representation of scheduler job. It can be fed back to
 	// Catalog.UnmarshalTask(...) to get proto.Message describing the task.
+	//
+	// Internally it is TaskDefWrapper proto message, but callers must treat it as
+	// an opaque byte blob.
 	Task []byte
 }
 
@@ -115,7 +121,7 @@ func (cat *catalog) GetTaskManager(msg proto.Message) task.Manager {
 }
 
 func (cat *catalog) UnmarshalTask(task []byte) (proto.Message, error) {
-	msg := messages.Task{}
+	msg := messages.TaskDefWrapper{}
 	if err := proto.Unmarshal(task, &msg); err != nil {
 		return nil, err
 	}
@@ -171,11 +177,12 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		if job.Id != "" {
 			id = job.Id
 		}
-		if err = cat.validateJobProto(job); err != nil {
+		var task proto.Message
+		if task, err = cat.validateJobProto(job); err != nil {
 			logging.Errorf(c, "Invalid job definition %s/%s: %s", projectID, id, err)
 			continue
 		}
-		packed, err := proto.Marshal(job.Task)
+		packed, err := cat.marshalTask(task)
 		if err != nil {
 			logging.Errorf(c, "Failed to marshal the task: %s/%s: %s", projectID, id, err)
 			continue
@@ -220,57 +227,96 @@ func getRevisionURL(configSetURL *url.URL, rev, path string) string {
 }
 
 // validateJobProto verifies that messages.Job protobuf message makes sense.
-func (cat *catalog) validateJobProto(j *messages.Job) error {
+//
+// It also extracts a task definition from it (e.g. SwarmingTask proto).
+func (cat *catalog) validateJobProto(j *messages.Job) (proto.Message, error) {
 	if j == nil {
-		return fmt.Errorf("job must be specified")
+		return nil, fmt.Errorf("job must be specified")
 	}
 	if j.Id == "" {
-		return fmt.Errorf("missing 'id' field'")
+		return nil, fmt.Errorf("missing 'id' field'")
 	}
 	if !jobIDRe.MatchString(j.Id) {
-		return fmt.Errorf("%q is not valid value for 'id' field", j.Id)
+		return nil, fmt.Errorf("%q is not valid value for 'id' field", j.Id)
 	}
 	if j.Schedule == "" {
-		return fmt.Errorf("missing 'schedule' field")
+		return nil, fmt.Errorf("missing 'schedule' field")
 	}
 	if _, err := schedule.Parse(j.Schedule, 0); err != nil {
-		return fmt.Errorf("%s is not valid value for 'schedule' field - %s", j.Schedule, err)
+		return nil, fmt.Errorf("%s is not valid value for 'schedule' field - %s", j.Schedule, err)
 	}
-	_, err := cat.extractTaskProto(j.Task)
-	return err
+
+	// Old-style config uses embedded TaskDefWrapper field. New configs have task
+	// definitions right in the Job message.
+	//
+	// TODO(vadimsh): Remove this branch when all configs are updated to not use
+	// TaskDefWrapper anymore.
+	if j.Task != nil {
+		return cat.extractTaskProto(j.Task)
+	}
+	return cat.extractTaskProto(j)
 }
 
-// extractTaskProto verifies that messages.Task protobuf message makes sense. It
-// ensures only one of its fields is set, validated that field and returns it.
-func (cat *catalog) extractTaskProto(t *messages.Task) (proto.Message, error) {
-	if t == nil {
-		return nil, fmt.Errorf("missing 'task' field")
+// extractTaskProto visits all fields of a proto and sniffs ones that correspond
+// to task definitions (as registered via RegisterTaskManager). It ensures
+// there's one and only one such field, validates it, and returns it.
+func (cat *catalog) extractTaskProto(t proto.Message) (proto.Message, error) {
+	var taskMsg proto.Message
+
+	v := reflect.ValueOf(t)
+	if v.Kind() != reflect.Ptr {
+		return nil, fmt.Errorf("expecting a pointer to proto message, got %T", t)
 	}
-	var taskDef *reflect.Value
-	v := reflect.ValueOf(*t)
+	v = v.Elem()
+
 	for i := 0; i < v.NumField(); i++ {
+		// Skip unset, scalar and repeated fields and fields that do not correspond
+		// to registered task types.
 		field := v.Field(i)
-		// Skip unset fields (nil) and XXX_unrecognized (it has Slice kind).
-		if field.IsNil() || field.Type().Kind() == reflect.Slice {
+		if field.Kind() != reflect.Ptr || field.IsNil() || field.Elem().Kind() != reflect.Struct {
 			continue
 		}
-		if taskDef != nil {
-			return nil, fmt.Errorf(
-				"only one field must be set, at least two are given (%T and %T)",
-				taskDef.Interface(), field.Interface())
+		fieldVal, _ := field.Interface().(proto.Message)
+		if fieldVal != nil && cat.GetTaskManager(fieldVal) != nil {
+			if taskMsg != nil {
+				return nil, fmt.Errorf(
+					"only one field with task definition must be set, at least two are given (%T and %T)", taskMsg, fieldVal)
+			}
+			taskMsg = fieldVal
 		}
-		taskDef = &field
 	}
-	if taskDef == nil {
-		return nil, fmt.Errorf("at least one field must be set")
+
+	if taskMsg == nil {
+		return nil, fmt.Errorf("can't find a recognized task definition inside %T", t)
 	}
-	taskMsg := taskDef.Interface().(proto.Message)
+
 	taskMan := cat.GetTaskManager(taskMsg)
-	if taskMan == nil {
-		return nil, fmt.Errorf("unknown task type: %T", taskMsg)
-	}
 	if err := taskMan.ValidateProtoMessage(taskMsg); err != nil {
 		return nil, err
 	}
+
 	return taskMsg, nil
+}
+
+// marshalTask takes a concrete task definition proto (e.g. SwarmingTask), wraps
+// it into TaskDefWrapper proto and marshals this proto. The resulting blob can
+// be sent to UnmarshalTask to get back the task definition proto.
+func (cat *catalog) marshalTask(task proto.Message) ([]byte, error) {
+	if cat.GetTaskManager(task) == nil {
+		return nil, fmt.Errorf("unrecognized task definition type %T", task)
+	}
+	// Enumerate all fields of the wrapper until we find a matching type.
+	taskType := reflect.TypeOf(task)
+	wrapper := messages.TaskDefWrapper{}
+	v := reflect.ValueOf(&wrapper).Elem()
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		if field.Type() == taskType {
+			field.Set(reflect.ValueOf(task))
+			return proto.Marshal(&wrapper)
+		}
+	}
+	// This can happen only if TaskDefWrapper wasn't updated when a new task type
+	// was added. This is a developer's mistake, not a config mistake.
+	return nil, fmt.Errorf("could not find a field of type %T in TaskDefWrapper", task)
 }

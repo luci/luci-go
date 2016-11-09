@@ -25,7 +25,7 @@ import (
 func TestRegisterTaskManagerAndFriends(t *testing.T) {
 	Convey("RegisterTaskManager works", t, func() {
 		c := New("scheduler.cfg")
-		So(c.RegisterTaskManager(noopTaskManager{}), ShouldBeNil)
+		So(c.RegisterTaskManager(fakeTaskManager{}), ShouldBeNil)
 		So(c.GetTaskManager(&messages.NoopTask{}), ShouldNotBeNil)
 		So(c.GetTaskManager(&messages.UrlFetchTask{}), ShouldBeNil)
 		So(c.GetTaskManager(nil), ShouldBeNil)
@@ -38,67 +38,139 @@ func TestRegisterTaskManagerAndFriends(t *testing.T) {
 
 	Convey("RegisterTaskManager twice", t, func() {
 		c := New("scheduler.cfg")
-		So(c.RegisterTaskManager(noopTaskManager{}), ShouldBeNil)
-		So(c.RegisterTaskManager(noopTaskManager{}), ShouldNotBeNil)
+		So(c.RegisterTaskManager(fakeTaskManager{}), ShouldBeNil)
+		So(c.RegisterTaskManager(fakeTaskManager{}), ShouldNotBeNil)
 	})
 }
 
 func TestProtoValidation(t *testing.T) {
 	Convey("validateJobProto works", t, func() {
 		c := New("scheduler.cfg").(*catalog)
-		c.RegisterTaskManager(noopTaskManager{})
-		So(c.validateJobProto(nil), ShouldErrLike, "job must be specified")
-		So(c.validateJobProto(&messages.Job{}), ShouldErrLike, "missing 'id' field'")
-		So(c.validateJobProto(&messages.Job{Id: "bad id"}), ShouldErrLike, "not valid value for 'id' field")
-		So(c.validateJobProto(&messages.Job{Id: "good"}), ShouldErrLike, "missing 'schedule' field")
-		So(c.validateJobProto(&messages.Job{
+
+		call := func(j *messages.Job) error {
+			_, err := c.validateJobProto(j)
+			return err
+		}
+
+		c.RegisterTaskManager(fakeTaskManager{})
+		So(call(nil), ShouldErrLike, "job must be specified")
+		So(call(&messages.Job{}), ShouldErrLike, "missing 'id' field'")
+		So(call(&messages.Job{Id: "bad id"}), ShouldErrLike, "not valid value for 'id' field")
+		So(call(&messages.Job{Id: "good"}), ShouldErrLike, "missing 'schedule' field")
+		So(call(&messages.Job{
 			Id:       "good",
 			Schedule: "blah",
 		}), ShouldErrLike, "not valid value for 'schedule' field")
-		So(c.validateJobProto(&messages.Job{
+		So(call(&messages.Job{
 			Id:       "good",
 			Schedule: "* * * * *",
-		}), ShouldErrLike, "missing 'task' field")
-		So(c.validateJobProto(&messages.Job{
+		}), ShouldErrLike, "can't find a recognized task definition")
+		So(call(&messages.Job{
 			Id:       "good",
 			Schedule: "* * * * *",
-			Task:     &messages.Task{Noop: &messages.NoopTask{}},
+			Task:     &messages.TaskDefWrapper{Noop: &messages.NoopTask{}},
 		}), ShouldBeNil)
 	})
 
 	Convey("extractTaskProto works", t, func() {
 		c := New("scheduler.cfg").(*catalog)
-
-		msg, err := c.extractTaskProto(nil)
-		So(err, ShouldErrLike, "missing 'task' field")
-		So(msg, ShouldBeNil)
-
-		msg, err = c.extractTaskProto(&messages.Task{})
-		So(err, ShouldErrLike, "at least one field must be set")
-		So(msg, ShouldBeNil)
-
-		msg, err = c.extractTaskProto(&messages.Task{
-			Noop:     &messages.NoopTask{},
-			UrlFetch: &messages.UrlFetchTask{},
+		c.RegisterTaskManager(fakeTaskManager{
+			name: "noop",
+			task: &messages.NoopTask{},
 		})
-		So(err, ShouldErrLike, "only one field must be set")
-		So(msg, ShouldBeNil)
+		c.RegisterTaskManager(fakeTaskManager{
+			name: "url fetch",
+			task: &messages.UrlFetchTask{},
+		})
 
-		msg, err = c.extractTaskProto(&messages.Task{Noop: &messages.NoopTask{}})
-		So(err, ShouldErrLike, "unknown task type")
-		So(msg, ShouldBeNil)
+		Convey("with TaskDefWrapper", func() {
+			msg, err := c.extractTaskProto(&messages.TaskDefWrapper{
+				Noop: &messages.NoopTask{},
+			})
+			So(err, ShouldBeNil)
+			So(msg.(*messages.NoopTask), ShouldNotBeNil)
 
-		c = New("scheduler.cfg").(*catalog)
-		c.RegisterTaskManager(noopTaskManager{errors.New("boo")})
-		msg, err = c.extractTaskProto(&messages.Task{Noop: &messages.NoopTask{}})
+			msg, err = c.extractTaskProto(nil)
+			So(err, ShouldErrLike, "expecting a pointer to proto message")
+			So(msg, ShouldBeNil)
+
+			msg, err = c.extractTaskProto(&messages.TaskDefWrapper{})
+			So(err, ShouldErrLike, "can't find a recognized task definition")
+			So(msg, ShouldBeNil)
+
+			msg, err = c.extractTaskProto(&messages.TaskDefWrapper{
+				Noop:     &messages.NoopTask{},
+				UrlFetch: &messages.UrlFetchTask{},
+			})
+			So(err, ShouldErrLike, "only one field with task definition must be set")
+			So(msg, ShouldBeNil)
+		})
+
+		Convey("with Job", func() {
+			msg, err := c.extractTaskProto(&messages.Job{
+				Id:   "blah",
+				Noop: &messages.NoopTask{},
+			})
+			So(err, ShouldBeNil)
+			So(msg.(*messages.NoopTask), ShouldNotBeNil)
+
+			msg, err = c.extractTaskProto(&messages.Job{
+				Id: "blah",
+			})
+			So(err, ShouldErrLike, "can't find a recognized task definition")
+			So(msg, ShouldBeNil)
+
+			msg, err = c.extractTaskProto(&messages.Job{
+				Id:       "blah",
+				Noop:     &messages.NoopTask{},
+				UrlFetch: &messages.UrlFetchTask{},
+			})
+			So(err, ShouldErrLike, "only one field with task definition must be set")
+			So(msg, ShouldBeNil)
+		})
+	})
+
+	Convey("extractTaskProto uses task manager validation", t, func() {
+		c := New("scheduler.cfg").(*catalog)
+		c.RegisterTaskManager(fakeTaskManager{
+			name:          "broken noop",
+			validationErr: errors.New("boo"),
+		})
+		msg, err := c.extractTaskProto(&messages.TaskDefWrapper{
+			Noop: &messages.NoopTask{},
+		})
 		So(err, ShouldErrLike, "boo")
 		So(msg, ShouldBeNil)
+	})
+}
 
-		c = New("scheduler.cfg").(*catalog)
-		c.RegisterTaskManager(noopTaskManager{})
-		msg, err = c.extractTaskProto(&messages.Task{Noop: &messages.NoopTask{}})
+func TestTaskMarshaling(t *testing.T) {
+	Convey("works", t, func() {
+		c := New("scheduler.cfg").(*catalog)
+		c.RegisterTaskManager(fakeTaskManager{
+			name: "url fetch",
+			task: &messages.UrlFetchTask{},
+		})
+
+		// Round trip for a registered task.
+		blob, err := c.marshalTask(&messages.UrlFetchTask{
+			Url: "123",
+		})
 		So(err, ShouldBeNil)
-		So(msg.(*messages.NoopTask), ShouldNotBeNil)
+		task, err := c.UnmarshalTask(blob)
+		So(err, ShouldBeNil)
+		So(task, ShouldResemble, &messages.UrlFetchTask{
+			Url: "123",
+		})
+
+		// Unknown task type.
+		_, err = c.marshalTask(&messages.NoopTask{})
+		So(err, ShouldErrLike, "unrecognized task definition type *messages.NoopTask")
+
+		// Once registered, but not anymore.
+		c = New("scheduler.cfg").(*catalog)
+		_, err = c.UnmarshalTask(blob)
+		So(err, ShouldErrLike, "can't find a recognized task definition")
 	})
 }
 
@@ -106,7 +178,14 @@ func TestConfigReading(t *testing.T) {
 	Convey("with mocked config", t, func() {
 		ctx := config.SetImplementation(context.Background(), memcfg.New(mockedConfigs))
 		cat := New("scheduler.cfg")
-		cat.RegisterTaskManager(noopTaskManager{})
+		cat.RegisterTaskManager(fakeTaskManager{
+			name: "noop",
+			task: &messages.NoopTask{},
+		})
+		cat.RegisterTaskManager(fakeTaskManager{
+			name: "url_fetch",
+			task: &messages.UrlFetchTask{},
+		})
 
 		Convey("GetAllProjects works", func() {
 			projects, err := cat.GetAllProjects(ctx)
@@ -120,15 +199,39 @@ func TestConfigReading(t *testing.T) {
 			So(defs, ShouldResemble, []Definition{
 				{
 					JobID:    "project1/noop-job-1",
-					Revision: "4065e915c1d0ce93ff98b1741f202927d81157f6",
+					Revision: "776a16076543daae60a3c9df9a3ea2d7a4067045",
 					Schedule: "*/10 * * * * * *",
 					Task:     []uint8{0xa, 0x0},
 				},
 				{
 					JobID:    "project1/noop-job-2",
-					Revision: "4065e915c1d0ce93ff98b1741f202927d81157f6",
+					Revision: "776a16076543daae60a3c9df9a3ea2d7a4067045",
 					Schedule: "*/10 * * * * * *",
 					Task:     []uint8{0xa, 0x0},
+				},
+				{
+					JobID:    "project1/urlfetch-job-1",
+					Revision: "776a16076543daae60a3c9df9a3ea2d7a4067045",
+					Schedule: "*/10 * * * * * *",
+					Task:     []uint8{18, 21, 18, 19, 104, 116, 116, 112, 115, 58, 47, 47, 101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109},
+				},
+				{
+					JobID:    "project1/urlfetch-job-2",
+					Revision: "776a16076543daae60a3c9df9a3ea2d7a4067045",
+					Schedule: "*/10 * * * * * *",
+					Task:     []uint8{18, 21, 18, 19, 104, 116, 116, 112, 115, 58, 47, 47, 101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109},
+				},
+			})
+
+			// Make sure URL fetch jobs are parsed correctly and identically.
+			newStyleDef := defs[2].Task
+			oldStyleDef := defs[3].Task
+			So(newStyleDef, ShouldResemble, oldStyleDef)
+			msg := messages.TaskDefWrapper{}
+			proto.Unmarshal(newStyleDef, &msg)
+			So(msg, ShouldResemble, messages.TaskDefWrapper{
+				UrlFetch: &messages.UrlFetchTask{
+					Url: "https://example.com",
 				},
 			})
 		})
@@ -162,44 +265,51 @@ func TestConfigReading(t *testing.T) {
 
 ////
 
-type noopTaskManager struct {
+type fakeTaskManager struct {
+	name string
+	task proto.Message
+
 	validationErr error
 }
 
-func (m noopTaskManager) Name() string {
+func (m fakeTaskManager) Name() string {
+	if m.name != "" {
+		return m.name
+	}
 	return "testing"
 }
 
-func (m noopTaskManager) ProtoMessageType() proto.Message {
+func (m fakeTaskManager) ProtoMessageType() proto.Message {
+	if m.task != nil {
+		return m.task
+	}
 	return &messages.NoopTask{}
 }
 
-func (m noopTaskManager) ValidateProtoMessage(msg proto.Message) error {
-	// Let it panic on a wrong type.
-	So(msg.(*messages.NoopTask), ShouldNotBeNil)
+func (m fakeTaskManager) ValidateProtoMessage(msg proto.Message) error {
+	So(msg, ShouldNotBeNil)
 	return m.validationErr
 }
 
-func (m noopTaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
-	// Let it panic on a wrong type.
-	So(ctl.Task().(*messages.NoopTask), ShouldNotBeNil)
+func (m fakeTaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
+	So(ctl.Task(), ShouldNotBeNil)
 	return nil
 }
 
-func (m noopTaskManager) AbortTask(c context.Context, ctl task.Controller) error {
+func (m fakeTaskManager) AbortTask(c context.Context, ctl task.Controller) error {
 	return nil
 }
 
-func (m noopTaskManager) HandleNotification(c context.Context, ctl task.Controller, msg *pubsub.PubsubMessage) error {
+func (m fakeTaskManager) HandleNotification(c context.Context, ctl task.Controller, msg *pubsub.PubsubMessage) error {
 	return errors.New("not implemented")
 }
 
-func (m noopTaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
+func (m fakeTaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
 	return errors.New("not implemented")
 }
 
 type brokenTaskManager struct {
-	noopTaskManager
+	fakeTaskManager
 }
 
 func (b brokenTaskManager) ProtoMessageType() proto.Message {
@@ -212,35 +322,52 @@ const project1Cfg = `
 job {
   id: "noop-job-1"
   schedule: "*/10 * * * * * *"
-  task: {
-    noop: {}
-  }
+
+  noop: {}
 }
 
 job {
   id: "noop-job-2"
   schedule: "*/10 * * * * * *"
-  task: {
-    noop: {}
-  }
+
+  noop: {}
 }
 
 job {
   id: "noop-job-3"
   schedule: "*/10 * * * * * *"
   disabled: true
-  task: {
-    noop: {}
+
+  noop: {}
+}
+
+job {
+  id: "urlfetch-job-1"
+  schedule: "*/10 * * * * * *"
+
+  url_fetch: {
+    url: "https://example.com"
   }
 }
 
-# Will be skipped since UrlFetchTask Manager is not registered.
+# Old-style URL fetch job definition.
 job {
-  id: "noop-job-4"
+  id: "urlfetch-job-2"
   schedule: "*/10 * * * * * *"
+
   task: {
-    url_fetch: {}
+    url_fetch: {
+      url: "https://example.com"
+    }
   }
+}
+
+# Will be skipped since SwarmingTask Manager is not registered.
+job {
+  id: "swarming-job"
+  schedule: "*/10 * * * * * *"
+
+  swarming: {}
 }
 `
 
@@ -248,9 +375,7 @@ const project2Cfg = `
 job {
   id: "noop-job-1"
   schedule: "*/10 * * * * * *"
-  task: {
-    noop: {}
-  }
+  noop: {}
 }
 `
 

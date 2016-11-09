@@ -15,21 +15,23 @@ message Job {
   string schedule = 2;
   // Disables is true to disable this job.
   bool disabled = 3;
+
   // Task defines what exactly to execute.
-  Task task = 4;
-}
+  //
+  // TODO(vadimsh): Remove this field once all configs are updated not to
+  // use it.
+  TaskDefWrapper task = 4;
 
+  // One and only one field below must be set. It defines what this job does.
 
-// Task defines what exactly to do. One and only one field must be set.
-message Task {
   // Noop is used for testing. It is "do nothing" task.
-  NoopTask noop = 1;
+  NoopTask noop = 100;
   // UrlFetch can be used to make a simple HTTP call.
-  UrlFetchTask url_fetch = 2;
+  UrlFetchTask url_fetch = 101;
   // SwarmingTask can be used to schedule swarming job.
-  SwarmingTask swarming_task = 3;
+  SwarmingTask swarming = 102;
   // BuildbucketTask can be used to schedule buildbucket job.
-  BuildbucketTask buildbucket_task = 4;
+  BuildbucketTask buildbucket = 103;
 }
 
 
@@ -107,4 +109,20 @@ message ProjectConfig {
   // Job is a set of jobs defines in the project. It's singular to make
   // text-encoded proto definitions more readable.
   repeated Job job = 1;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Internal stuff.
+
+// TaskDefWrapper is a union type of all possible tasks known to the scheduler.
+//
+// It is used internally when storing jobs in the datastore.
+//
+// TODO(vadimsh): Remove '_task' suffixes once TaskDefWrapper is no longer
+// a part of 'Job' proto.
+message TaskDefWrapper {
+  NoopTask noop = 1;
+  UrlFetchTask url_fetch = 2;
+  SwarmingTask swarming_task = 3;
+  BuildbucketTask buildbucket_task = 4;
 }

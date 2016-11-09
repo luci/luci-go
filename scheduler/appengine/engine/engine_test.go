@@ -677,7 +677,7 @@ func TestProcessPubSubPush(t *testing.T) {
 			Enabled:   true,
 		}), ShouldBeNil)
 
-		task, err := proto.Marshal(&messages.Task{
+		task, err := proto.Marshal(&messages.TaskDefWrapper{
 			Noop: &messages.NoopTask{},
 		})
 		So(err, ShouldBeNil)
@@ -1033,7 +1033,7 @@ func (m fakeTaskManager) HandleTimer(c context.Context, ctl task.Controller, nam
 
 // prepareQueuedJob makes datastore entries for a job in QUEUED state.
 func prepareQueuedJob(c context.Context, jobID string, invNonce int64) {
-	taskBlob, err := proto.Marshal(&messages.Task{
+	taskBlob, err := proto.Marshal(&messages.TaskDefWrapper{
 		Noop: &messages.NoopTask{},
 	})
 	if err != nil {
@@ -1057,7 +1057,7 @@ func prepareQueuedJob(c context.Context, jobID string, invNonce int64) {
 }
 
 func noopTaskBytes() []byte {
-	buf, _ := proto.Marshal(&messages.Task{Noop: &messages.NoopTask{}})
+	buf, _ := proto.Marshal(&messages.TaskDefWrapper{Noop: &messages.NoopTask{}})
 	return buf
 }
 
