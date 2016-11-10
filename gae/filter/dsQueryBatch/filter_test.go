@@ -5,12 +5,14 @@
 package dsQueryBatch
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/luci/gae/filter/count"
 	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
+
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -23,10 +25,10 @@ type Item struct {
 func TestRun(t *testing.T) {
 	t.Parallel()
 
-	Convey("A memory with a counting filter and data set installed", t, func() {
+	Convey("A memory datastore with a counting filter and data set installed", t, func() {
 		c, cf := count.FilterRDS(memory.Use(context.Background()))
 
-		items := make([]*Item, 1024)
+		items := make([]*Item, 2048)
 		for i := range items {
 			items[i] = &Item{int64(i + 1)}
 		}
@@ -80,5 +82,45 @@ func TestRun(t *testing.T) {
 				})
 			}
 		}
+
+		Convey(`With callbacks`, func() {
+			const batchSize = 16
+			var countA, countB int
+			var errA error
+
+			c = BatchQueries(c, int32(batchSize),
+				func(context.Context) error {
+					countA++
+					return errA
+				}, func(context.Context) error {
+					countB++
+					return nil
+				})
+
+			q := ds.NewQuery("Item")
+
+			Convey(`Executes the callbacks during batching.`, func() {
+				// Get 250% of the batch size. This will result in several full batches
+				// and one partial batch, each of which should get a callback.
+				limit := 2.5 * batchSize
+				cbCount := int(limit / batchSize)
+
+				q = q.Limit(int32(limit))
+				var items []*Item
+				So(ds.GetAll(c, q, &items), ShouldBeNil)
+				So(len(items), ShouldEqual, limit)
+				So(countA, ShouldEqual, cbCount)
+				So(countB, ShouldEqual, cbCount)
+			})
+
+			Convey(`Will stop querying if a callback errors.`, func() {
+				errA = errors.New("test error")
+
+				var items []*Item
+				So(ds.GetAll(c, q, &items), ShouldEqual, errA)
+				So(countA, ShouldEqual, 1)
+				So(countB, ShouldEqual, 0)
+			})
+		})
 	})
 }

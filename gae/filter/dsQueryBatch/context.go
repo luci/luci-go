@@ -9,6 +9,9 @@ import (
 	"golang.org/x/net/context"
 )
 
+// Callback is a callback that is executed after query batches.
+type Callback func(context.Context) error
+
 // BatchQueries installs a datastore filter that causes all queries to be broken
 // into a series of iterative fixed-size queries. The batching uses cursors to
 // chain the iterations together.
@@ -18,11 +21,20 @@ import (
 //
 // Note that this expands a single query into a series of queries, which may
 // lose additional single-query consistency guarantees.
-func BatchQueries(c context.Context, batchSize int32) context.Context {
+//
+// If callbacks are supplied, they will be invoked in order in between each
+// batch of queries. These invocations guarantee that the callback will not
+// interrupt any ongoing queries, allowing potentially time-consuming operations
+// to be performed. If a callbacks returns an error, no more callbacks will be
+// invoked and the query will immediately stop and return that error.
+func BatchQueries(c context.Context, batchSize int32, cb ...Callback) context.Context {
 	return ds.AddRawFilters(c, func(ic context.Context, ri ds.RawInterface) ds.RawInterface {
 		return &iterQueryFilter{
 			RawInterface: ri,
-			batchSize:    batchSize,
+
+			ctx:       ic,
+			batchSize: batchSize,
+			callbacks: cb,
 		}
 	})
 }

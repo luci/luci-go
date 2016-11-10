@@ -8,12 +8,16 @@ import (
 	"fmt"
 
 	ds "github.com/luci/gae/service/datastore"
+
+	"golang.org/x/net/context"
 )
 
 type iterQueryFilter struct {
 	ds.RawInterface
 
+	ctx       context.Context
 	batchSize int32
+	callbacks []Callback
 }
 
 func (f *iterQueryFilter) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
@@ -75,6 +79,15 @@ func (f *iterQueryFilter) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
 			limit -= count
 			if limit <= 0 {
 				break
+			}
+		}
+
+		// Execute our callback(s).
+		for _, cb := range f.callbacks {
+			if cb != nil {
+				if err := cb(f.ctx); err != nil {
+					return err
+				}
 			}
 		}
 	}
