@@ -415,7 +415,7 @@ var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion3
+const _ = grpc.SupportPackageIsVersion4
 
 // Client API for TokenMinter service
 
@@ -592,7 +592,7 @@ var _TokenMinter_serviceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: fileDescriptor0,
+	Metadata: "github.com/luci/luci-go/tokenserver/api/minter/v1/token_minter.proto",
 }
 
 func init() {

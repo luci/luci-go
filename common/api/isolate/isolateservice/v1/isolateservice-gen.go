@@ -430,6 +430,7 @@ type FinalizeGsUploadCall struct {
 	handlersendpointsv1finalizerequest *HandlersEndpointsV1FinalizeRequest
 	urlParams_                         gensupport.URLParams
 	ctx_                               context.Context
+	header_                            http.Header
 }
 
 // FinalizeGsUpload: Informs client that large entities have been
@@ -456,8 +457,20 @@ func (c *FinalizeGsUploadCall) Context(ctx context.Context) *FinalizeGsUploadCal
 	return c
 }
 
+// Header returns an http.Header that can be modified by the caller to
+// add HTTP headers to the request.
+func (c *FinalizeGsUploadCall) Header() http.Header {
+	if c.header_ == nil {
+		c.header_ = make(http.Header)
+	}
+	return c.header_
+}
+
 func (c *FinalizeGsUploadCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
+	for k, v := range c.header_ {
+		reqHeaders[k] = v
+	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
 	body, err := googleapi.WithoutDataWrapper.JSONReader(c.handlersendpointsv1finalizerequest)
@@ -536,6 +549,7 @@ type PreuploadCall struct {
 	handlersendpointsv1digestcollection *HandlersEndpointsV1DigestCollection
 	urlParams_                          gensupport.URLParams
 	ctx_                                context.Context
+	header_                             http.Header
 }
 
 // Preupload: Checks for entry's existence and generates upload URLs.
@@ -568,8 +582,20 @@ func (c *PreuploadCall) Context(ctx context.Context) *PreuploadCall {
 	return c
 }
 
+// Header returns an http.Header that can be modified by the caller to
+// add HTTP headers to the request.
+func (c *PreuploadCall) Header() http.Header {
+	if c.header_ == nil {
+		c.header_ = make(http.Header)
+	}
+	return c.header_
+}
+
 func (c *PreuploadCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
+	for k, v := range c.header_ {
+		reqHeaders[k] = v
+	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
 	body, err := googleapi.WithoutDataWrapper.JSONReader(c.handlersendpointsv1digestcollection)
@@ -648,6 +674,7 @@ type RetrieveCall struct {
 	handlersendpointsv1retrieverequest *HandlersEndpointsV1RetrieveRequest
 	urlParams_                         gensupport.URLParams
 	ctx_                               context.Context
+	header_                            http.Header
 }
 
 // Retrieve: Retrieves content from a storage location.
@@ -673,8 +700,20 @@ func (c *RetrieveCall) Context(ctx context.Context) *RetrieveCall {
 	return c
 }
 
+// Header returns an http.Header that can be modified by the caller to
+// add HTTP headers to the request.
+func (c *RetrieveCall) Header() http.Header {
+	if c.header_ == nil {
+		c.header_ = make(http.Header)
+	}
+	return c.header_
+}
+
 func (c *RetrieveCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
+	for k, v := range c.header_ {
+		reqHeaders[k] = v
+	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
 	body, err := googleapi.WithoutDataWrapper.JSONReader(c.handlersendpointsv1retrieverequest)
@@ -753,6 +792,7 @@ type ServerDetailsCall struct {
 	s          *Service
 	urlParams_ gensupport.URLParams
 	ctx_       context.Context
+	header_    http.Header
 }
 
 // ServerDetails:
@@ -777,8 +817,20 @@ func (c *ServerDetailsCall) Context(ctx context.Context) *ServerDetailsCall {
 	return c
 }
 
+// Header returns an http.Header that can be modified by the caller to
+// add HTTP headers to the request.
+func (c *ServerDetailsCall) Header() http.Header {
+	if c.header_ == nil {
+		c.header_ = make(http.Header)
+	}
+	return c.header_
+}
+
 func (c *ServerDetailsCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
+	for k, v := range c.header_ {
+		reqHeaders[k] = v
+	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
 	c.urlParams_.Set("alt", alt)
@@ -847,6 +899,7 @@ type StoreInlineCall struct {
 	handlersendpointsv1storagerequest *HandlersEndpointsV1StorageRequest
 	urlParams_                        gensupport.URLParams
 	ctx_                              context.Context
+	header_                           http.Header
 }
 
 // StoreInline: Stores relatively small entities in the datastore.
@@ -872,8 +925,20 @@ func (c *StoreInlineCall) Context(ctx context.Context) *StoreInlineCall {
 	return c
 }
 
+// Header returns an http.Header that can be modified by the caller to
+// add HTTP headers to the request.
+func (c *StoreInlineCall) Header() http.Header {
+	if c.header_ == nil {
+		c.header_ = make(http.Header)
+	}
+	return c.header_
+}
+
 func (c *StoreInlineCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
+	for k, v := range c.header_ {
+		reqHeaders[k] = v
+	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
 	body, err := googleapi.WithoutDataWrapper.JSONReader(c.handlersendpointsv1storagerequest)

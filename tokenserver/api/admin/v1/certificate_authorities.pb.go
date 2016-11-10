@@ -191,7 +191,7 @@ var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion3
+const _ = grpc.SupportPackageIsVersion4
 
 // Client API for CertificateAuthorities service
 
@@ -448,7 +448,7 @@ var _CertificateAuthorities_serviceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: fileDescriptor1,
+	Metadata: "github.com/luci/luci-go/tokenserver/api/admin/v1/certificate_authorities.proto",
 }
 
 func init() {
