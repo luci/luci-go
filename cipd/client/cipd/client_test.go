@@ -135,9 +135,10 @@ func TestRegisterInstance(t *testing.T) {
 		// Build an empty package to be uploaded.
 		out := bytes.Buffer{}
 		err := local.BuildInstance(ctx, local.BuildInstanceOptions{
-			Input:       []local.File{},
-			Output:      &out,
-			PackageName: "testing",
+			Input:            []local.File{},
+			Output:           &out,
+			PackageName:      "testing",
+			CompressionLevel: 5,
 		})
 		So(err, ShouldBeNil)
 
@@ -733,9 +734,10 @@ func TestEnsurePackages(t *testing.T) {
 func buildInstanceInMemory(ctx context.Context, pkgName string, files []local.File) local.PackageInstance {
 	out := bytes.Buffer{}
 	err := local.BuildInstance(ctx, local.BuildInstanceOptions{
-		Input:       files,
-		Output:      &out,
-		PackageName: pkgName,
+		Input:            files,
+		Output:           &out,
+		PackageName:      pkgName,
+		CompressionLevel: 5,
 	})
 	So(err, ShouldBeNil)
 	inst, err := local.OpenInstance(ctx, bytes.NewReader(out.Bytes()), "")

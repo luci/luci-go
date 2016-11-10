@@ -286,7 +286,9 @@ func (vars *PackageVars) Set(value string) error {
 }
 
 // InputOptions defines command line arguments that specify where to get data
-// for a new package. Subcommands that build packages embed it.
+// for a new package and how to build it.
+//
+// Subcommands that build packages embed it.
 type InputOptions struct {
 	// Path to *.yaml file with package definition.
 	packageDef string
@@ -296,6 +298,11 @@ type InputOptions struct {
 	packageName string
 	inputDir    string
 	installMode local.InstallMode
+
+	// Deflate compression level (if [1-9]) or 0 to disable compression.
+	//
+	// Default is 1 (fastest).
+	compressionLevel int
 }
 
 func (opts *InputOptions) registerFlags(f *flag.FlagSet) {
@@ -310,6 +317,10 @@ func (opts *InputOptions) registerFlags(f *flag.FlagSet) {
 	f.StringVar(&opts.inputDir, "in", "", "Path to a directory with files to package (unused with -pkg-def).")
 	f.Var(&opts.installMode, "install-mode",
 		"How the package should be installed: \"copy\" or \"symlink\" (unused with -pkg-def).")
+
+	// Options for the builder.
+	f.IntVar(&opts.compressionLevel, "compression-level", 5,
+		"Deflate compression level [0-9]: 0 - disable, 1 - best speed, 9 - best compression.")
 }
 
 // prepareInput processes InputOptions by collecting all files to be added to
@@ -317,6 +328,10 @@ func (opts *InputOptions) registerFlags(f *flag.FlagSet) {
 // fill out Output field of BuildInstanceOptions.
 func (opts *InputOptions) prepareInput() (local.BuildInstanceOptions, error) {
 	empty := local.BuildInstanceOptions{}
+
+	if opts.compressionLevel < 0 || opts.compressionLevel > 9 {
+		return empty, makeCLIError("invalid -compression-level: must be in [0-9] set")
+	}
 
 	// Handle -name and -in if defined. Do not allow -pkg-def and -pkg-var in that case.
 	if opts.inputDir != "" {
@@ -337,9 +352,10 @@ func (opts *InputOptions) prepareInput() (local.BuildInstanceOptions, error) {
 			return empty, err
 		}
 		return local.BuildInstanceOptions{
-			Input:       files,
-			PackageName: opts.packageName,
-			InstallMode: opts.installMode,
+			Input:            files,
+			PackageName:      opts.packageName,
+			InstallMode:      opts.installMode,
+			CompressionLevel: opts.compressionLevel,
 		}, nil
 	}
 
@@ -371,10 +387,11 @@ func (opts *InputOptions) prepareInput() (local.BuildInstanceOptions, error) {
 			return empty, err
 		}
 		return local.BuildInstanceOptions{
-			Input:       files,
-			PackageName: pkgDef.Package,
-			VersionFile: pkgDef.VersionFile(),
-			InstallMode: pkgDef.InstallMode,
+			Input:            files,
+			PackageName:      pkgDef.Package,
+			VersionFile:      pkgDef.VersionFile(),
+			InstallMode:      pkgDef.InstallMode,
+			CompressionLevel: opts.compressionLevel,
 		}, nil
 	}
 

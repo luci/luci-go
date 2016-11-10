@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"encoding/hex"
+	"io"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -24,9 +25,10 @@ func TestBuildInstance(t *testing.T) {
 	Convey("Building empty package", t, func() {
 		out := bytes.Buffer{}
 		err := BuildInstance(ctx, BuildInstanceOptions{
-			Input:       []File{},
-			Output:      &out,
-			PackageName: "testing",
+			Input:            []File{},
+			Output:           &out,
+			PackageName:      "testing",
+			CompressionLevel: 5,
 		})
 		So(err, ShouldBeNil)
 
@@ -51,21 +53,22 @@ func TestBuildInstance(t *testing.T) {
 		})
 	})
 
-	Convey("Building package with a bunch of files", t, func() {
-		out := bytes.Buffer{}
-		err := BuildInstance(ctx, BuildInstanceOptions{
-			Input: []File{
-				NewTestFile("testing/qwerty", "12345", false),
-				NewTestFile("abc", "duh", true),
-				NewTestSymlink("rel_symlink", "abc"),
-				NewTestSymlink("abs_symlink", "/abc/def"),
-			},
-			Output:      &out,
-			PackageName: "testing",
-			VersionFile: "version.json",
-			InstallMode: "copy",
-		})
-		So(err, ShouldBeNil)
+	Convey("Building package with a bunch of files at different deflate levels", t, func() {
+		makeOpts := func(out io.Writer, level int) BuildInstanceOptions {
+			return BuildInstanceOptions{
+				Input: []File{
+					NewTestFile("testing/qwerty", "12345", false),
+					NewTestFile("abc", "duh", true),
+					NewTestSymlink("rel_symlink", "abc"),
+					NewTestSymlink("abs_symlink", "/abc/def"),
+				},
+				Output:           out,
+				PackageName:      "testing",
+				VersionFile:      "version.json",
+				InstallMode:      "copy",
+				CompressionLevel: level,
+			}
+		}
 
 		goodManifest := `{
   "format_version": "1",
@@ -74,9 +77,7 @@ func TestBuildInstance(t *testing.T) {
   "install_mode": "copy"
 }`
 
-		// The manifest and all added files.
-		files := readZip(out.Bytes())
-		So(files, ShouldResemble, []zippedFile{
+		goodFiles := []zippedFile{
 			{
 				name: "testing/qwerty",
 				size: 5,
@@ -108,7 +109,14 @@ func TestBuildInstance(t *testing.T) {
 				mode: 0600,
 				body: []byte(goodManifest),
 			},
-		})
+		}
+
+		for lvl := 0; lvl <= 9; lvl++ {
+			out := bytes.Buffer{}
+			err := BuildInstance(ctx, makeOpts(&out, lvl))
+			So(err, ShouldBeNil)
+			So(readZip(out.Bytes()), ShouldResemble, goodFiles)
+		}
 	})
 
 	Convey("Duplicate files fail", t, func() {

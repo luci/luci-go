@@ -7,6 +7,7 @@ package local
 import (
 	"archive/zip"
 	"bytes"
+	"compress/flate"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -36,6 +37,9 @@ type BuildInstanceOptions struct {
 
 	// InstallMode defines how to install the package: "copy" or "symlink".
 	InstallMode InstallMode
+
+	// CompressionLevel defines deflate compression level in range [0-9].
+	CompressionLevel int
 }
 
 // BuildInstance builds a new package instance.
@@ -76,14 +80,20 @@ func BuildInstance(ctx context.Context, opts BuildInstanceOptions) error {
 	}
 
 	// Write the final zip file.
-	return zipInputFiles(ctx, files, opts.Output)
+	return zipInputFiles(ctx, files, opts.Output, opts.CompressionLevel)
 }
 
 // zipInputFiles deterministically builds a zip archive out of input files and
 // writes it to the writer. Files are written in the order given.
-func zipInputFiles(ctx context.Context, files []File, w io.Writer) error {
+func zipInputFiles(ctx context.Context, files []File, w io.Writer, level int) error {
+	logging.Infof(ctx, "About to zip %d files with compression level %d", len(files), level)
+
 	writer := zip.NewWriter(w)
 	defer writer.Close()
+
+	writer.RegisterCompressor(zip.Deflate, func(out io.Writer) (io.WriteCloser, error) {
+		return flate.NewWriter(out, level)
+	})
 
 	// Reports zipping progress to the log each second.
 	lastReport := time.Time{}
@@ -107,6 +117,9 @@ func zipInputFiles(ctx context.Context, files []File, w io.Writer) error {
 		fh := zip.FileHeader{
 			Name:   in.Name(),
 			Method: zip.Deflate,
+		}
+		if level == 0 {
+			fh.Method = zip.Store
 		}
 
 		mode := os.FileMode(0600)

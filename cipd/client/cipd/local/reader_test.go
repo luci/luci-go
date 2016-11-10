@@ -53,8 +53,9 @@ func TestPackageReading(t *testing.T) {
 		// Build an empty package.
 		out := bytes.Buffer{}
 		err := BuildInstance(ctx, BuildInstanceOptions{
-			Output:      &out,
-			PackageName: "testing",
+			Output:           &out,
+			PackageName:      "testing",
+			CompressionLevel: 5,
 		})
 		So(err, ShouldBeNil)
 
@@ -91,8 +92,9 @@ func TestPackageReading(t *testing.T) {
 		// Build an empty package.
 		out := bytes.Buffer{}
 		err := BuildInstance(ctx, BuildInstanceOptions{
-			Output:      &out,
-			PackageName: "testing",
+			Output:           &out,
+			PackageName:      "testing",
+			CompressionLevel: 5,
 		})
 		So(err, ShouldBeNil)
 
@@ -118,8 +120,9 @@ func TestPackageReading(t *testing.T) {
 
 		// Write empty package to it.
 		err = BuildInstance(ctx, BuildInstanceOptions{
-			Output:      tempFile,
-			PackageName: "testing",
+			Output:           tempFile,
+			PackageName:      "testing",
+			CompressionLevel: 5,
 		})
 		So(err, ShouldBeNil)
 		tempFile.Close()
@@ -143,9 +146,10 @@ func TestPackageReading(t *testing.T) {
 				NewTestSymlink("rel_symlink", "abc"),
 				NewTestSymlink("abs_symlink", "/abc/def"),
 			},
-			Output:      &out,
-			PackageName: "testing",
-			VersionFile: "subpath/version.json",
+			Output:           &out,
+			PackageName:      "testing",
+			VersionFile:      "subpath/version.json",
+			CompressionLevel: 5,
 		})
 		So(err, ShouldBeNil)
 
