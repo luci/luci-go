@@ -25,14 +25,24 @@ import (
 // ConfigSet is a mapping from a file path to a config file body.
 type ConfigSet map[string]string
 
+// SetError artificially pins the error code returned by impl to err. If err is
+// nil, impl will behave normally.
+//
+// impl must be a memory config isntance created with New, else SetError will
+// panic.
+func SetError(impl config.Interface, err error) {
+	impl.(*memoryImpl).err = err
+}
+
 // New makes an implementation of the config service which takes all configs
 // from provided mapping {config set name -> map of configs}. For unit testing.
 func New(cfg map[string]ConfigSet) config.Interface {
-	return &memoryImpl{cfg}
+	return &memoryImpl{sets: cfg}
 }
 
 type memoryImpl struct {
 	sets map[string]ConfigSet
+	err  error
 }
 
 func (m *memoryImpl) ServiceURL(ctx context.Context) url.URL {
@@ -42,6 +52,10 @@ func (m *memoryImpl) ServiceURL(ctx context.Context) url.URL {
 }
 
 func (m *memoryImpl) GetConfig(ctx context.Context, configSet, path string, hashOnly bool) (*config.Config, error) {
+	if err := m.err; err != nil {
+		return nil, err
+	}
+
 	if set, ok := m.sets[configSet]; ok {
 		if cfg := set.configMaybe(configSet, path, hashOnly); cfg != nil {
 			return cfg, nil
@@ -51,6 +65,10 @@ func (m *memoryImpl) GetConfig(ctx context.Context, configSet, path string, hash
 }
 
 func (m *memoryImpl) GetConfigByHash(ctx context.Context, contentHash string) (string, error) {
+	if err := m.err; err != nil {
+		return "", err
+	}
+
 	for _, set := range m.sets {
 		for _, body := range set {
 			if hash(body) == contentHash {
@@ -62,10 +80,20 @@ func (m *memoryImpl) GetConfigByHash(ctx context.Context, contentHash string) (s
 }
 
 func (m *memoryImpl) GetConfigSetLocation(ctx context.Context, configSet string) (*url.URL, error) {
-	return url.Parse("https://example.com/fake-config/" + configSet)
+	if err := m.err; err != nil {
+		return nil, err
+	}
+	if _, ok := m.sets[configSet]; ok {
+		return url.Parse("https://example.com/fake-config/" + configSet)
+	}
+	return nil, config.ErrNoConfig
 }
 
 func (m *memoryImpl) GetProjectConfigs(ctx context.Context, path string, hashesOnly bool) ([]config.Config, error) {
+	if err := m.err; err != nil {
+		return nil, err
+	}
+
 	projects, err := m.GetProjects(ctx)
 	if err != nil {
 		return nil, err
@@ -80,6 +108,10 @@ func (m *memoryImpl) GetProjectConfigs(ctx context.Context, path string, hashesO
 }
 
 func (m *memoryImpl) GetProjects(ctx context.Context) ([]config.Project, error) {
+	if err := m.err; err != nil {
+		return nil, err
+	}
+
 	ids := stringset.New(0)
 	for configSet := range m.sets {
 		chunks := strings.Split(configSet, "/")
@@ -101,6 +133,10 @@ func (m *memoryImpl) GetProjects(ctx context.Context) ([]config.Project, error) 
 }
 
 func (m *memoryImpl) GetRefConfigs(ctx context.Context, path string, hashesOnly bool) ([]config.Config, error) {
+	if err := m.err; err != nil {
+		return nil, err
+	}
+
 	sets := []string{}
 	for configSet := range m.sets {
 		chunks := strings.Split(configSet, "/")
@@ -119,6 +155,10 @@ func (m *memoryImpl) GetRefConfigs(ctx context.Context, path string, hashesOnly 
 }
 
 func (m *memoryImpl) GetRefs(ctx context.Context, projectID string) ([]string, error) {
+	if err := m.err; err != nil {
+		return nil, err
+	}
+
 	prefix := "projects/" + projectID + "/"
 	out := []string{}
 	for configSet := range m.sets {

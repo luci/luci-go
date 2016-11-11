@@ -150,9 +150,14 @@ func (cat *catalog) GetAllProjects(c context.Context) ([]string, error) {
 
 func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Definition, error) {
 	configSetURL, err := config.GetConfigSetLocation(c, "projects/"+projectID)
-	if err != nil {
+	switch err {
+	case nil: // Continue
+	case config.ErrNoConfig:
+		return nil, nil
+	default:
 		return nil, err
 	}
+
 	rawCfg, err := config.GetConfig(c, "projects/"+projectID, cat.configFile(c), false)
 	if err == config.ErrNoConfig {
 		return nil, nil

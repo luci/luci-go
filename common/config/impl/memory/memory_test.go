@@ -10,6 +10,8 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/config"
+	"github.com/luci/luci-go/common/errors"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -76,6 +78,19 @@ func TestMemoryImpl(t *testing.T) {
 			So(err, ShouldEqual, config.ErrNoConfig)
 		})
 
+		Convey("GetConfig returns error when set", func() {
+			testErr := errors.New("test error")
+			SetError(impl, testErr)
+			_, err := impl.GetConfig(ctx, "missing/set", "path", false)
+			So(err, ShouldEqual, testErr)
+
+			// Resetting error to nil makes things work again.
+			SetError(impl, nil)
+			cfg, err := impl.GetConfig(ctx, "services/abc", "missing file", false)
+			So(cfg, ShouldBeNil)
+			So(err, ShouldEqual, config.ErrNoConfig)
+		})
+
 		Convey("GetConfigByHash works", func() {
 			body, err := impl.GetConfigByHash(ctx, "v1:fb4c35e739d53994aba7d3e0416a1082f11bfbba")
 			So(err, ShouldBeNil)
@@ -92,6 +107,11 @@ func TestMemoryImpl(t *testing.T) {
 			loc, err := impl.GetConfigSetLocation(ctx, "services/abc")
 			So(err, ShouldBeNil)
 			So(loc, ShouldNotBeNil)
+		})
+
+		Convey("GetConfigSetLocation returns ErrNoConfig for invalid config set", func() {
+			_, err := impl.GetConfigSetLocation(ctx, "services/invalid")
+			So(err, ShouldEqual, config.ErrNoConfig)
 		})
 
 		Convey("GetProjectConfigs works", func() {

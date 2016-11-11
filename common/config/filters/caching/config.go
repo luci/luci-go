@@ -158,8 +158,9 @@ func (cc *cacheConfig) GetConfigSetLocation(ctx context.Context, configSet strin
 		// Cache hit.
 		u, err := url.Parse(v)
 		if err != nil {
-			return u, nil
+			return nil, err
 		}
+		return u, nil
 
 	case errCacheMiss:
 		// Cache miss, load from service.
