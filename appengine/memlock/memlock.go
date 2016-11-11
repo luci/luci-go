@@ -153,9 +153,15 @@ func TryWithLock(ctx context.Context, key, clientID string, f func(context.Conte
 			close(finished)
 		}()
 
+		tmr := clock.NewTimer(subCtx)
+		defer tmr.Stop()
 		for {
-			if tr := <-clock.After(subCtx, delay); tr.Incomplete() {
-				log.Infof("context done: %s", tr.Err)
+			tmr.Reset(delay)
+
+			if tr := <-tmr.GetC(); tr.Incomplete() {
+				if tr.Err != context.Canceled {
+					log.Debugf("context done: %s", tr.Err)
+				}
 				break
 			}
 			if !checkAnd(refresh) {
