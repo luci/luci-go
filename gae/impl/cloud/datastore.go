@@ -13,9 +13,9 @@ import (
 	"github.com/luci/luci-go/common/errors"
 
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
 
 	"cloud.google.com/go/datastore"
+	"google.golang.org/api/iterator"
 
 	"golang.org/x/net/context"
 )
@@ -26,10 +26,6 @@ type cloudDatastore struct {
 
 func (cds *cloudDatastore) use(c context.Context) context.Context {
 	return ds.SetRawFactory(c, func(ic context.Context) ds.RawInterface {
-		if ns := info.GetNamespace(ic); ns != "" {
-			ic = datastore.WithNamespace(ic, ns)
-		}
-
 		return &boundDatastore{
 			Context:        ic,
 			cloudDatastore: cds,
@@ -111,7 +107,7 @@ func (bds *boundDatastore) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
 		}
 		nativeKey, err := it.Next(npls)
 		if err != nil {
-			if err == datastore.Done {
+			if err == iterator.Done {
 				return nil
 			}
 			return normalizeError(err)
@@ -264,6 +260,9 @@ func (bds *boundDatastore) prepareNativeQuery(fq *ds.FinalizedQuery) *datastore.
 	nq := datastore.NewQuery(fq.Kind())
 	if bds.transaction != nil {
 		nq = nq.Transaction(bds.transaction)
+	}
+	if ns := bds.kc.Namespace; ns != "" {
+		nq = nq.Namespace(ns)
 	}
 
 	// nativeFilter translates a filter field. If the translation fails, we'll
@@ -458,7 +457,13 @@ func (bds *boundDatastore) gaeKeysToNative(keys ...*ds.Key) []*datastore.Key {
 
 		var nativeKey *datastore.Key
 		for _, tok := range toks {
-			nativeKey = datastore.NewKey(bds, tok.Kind, tok.StringID, tok.IntID, nativeKey)
+			nativeKey = &datastore.Key{
+				Kind:      tok.Kind,
+				ID:        tok.IntID,
+				Name:      tok.StringID,
+				Parent:    nativeKey,
+				Namespace: key.Namespace(),
+			}
 		}
 		nativeKeys[i] = nativeKey
 	}
@@ -474,8 +479,8 @@ func (bds *boundDatastore) nativeKeysToGAE(nativeKeys ...*datastore.Key) []*ds.K
 		toks = toks[:0]
 		cur := nativeKey
 		for {
-			toks = append(toks, ds.KeyTok{Kind: cur.Kind(), IntID: cur.ID(), StringID: cur.Name()})
-			cur = cur.Parent()
+			toks = append(toks, ds.KeyTok{Kind: cur.Kind, IntID: cur.ID, StringID: cur.Name})
+			cur = cur.Parent
 			if cur == nil {
 				break
 			}
@@ -486,7 +491,7 @@ func (bds *boundDatastore) nativeKeysToGAE(nativeKeys ...*datastore.Key) []*ds.K
 			ri := len(toks) - i - 1
 			toks[i], toks[ri] = toks[ri], toks[i]
 		}
-		kc.Namespace = nativeKey.Namespace()
+		kc.Namespace = nativeKey.Namespace
 		keys[i] = kc.NewKeyToks(toks)
 	}
 	return keys
