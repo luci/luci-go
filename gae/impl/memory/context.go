@@ -117,7 +117,7 @@ func Use(c context.Context) context.Context {
 //
 // Using this more than once per context.Context will cause a panic.
 func UseWithAppID(c context.Context, aid string) context.Context {
-	if c.Value(memContextKey) != nil {
+	if c.Value(&memContextKey) != nil {
 		panic(errors.New("memory.Use: called twice on the same Context"))
 	}
 	c = memlogger.Use(c)
@@ -128,7 +128,7 @@ func UseWithAppID(c context.Context, aid string) context.Context {
 	}
 
 	memctx := newMemContext(fqAppID)
-	c = context.WithValue(c, memContextKey, memctx)
+	c = context.WithValue(c, &memContextKey, memctx)
 	c = useGID(c, func(mod *globalInfoData) {
 		mod.appID = aid
 		mod.fqAppID = fqAppID
@@ -137,18 +137,16 @@ func UseWithAppID(c context.Context, aid string) context.Context {
 }
 
 func cur(c context.Context) (*memContext, bool) {
-	if txn := c.Value(currentTxnKey); txn != nil {
+	if txn := c.Value(&currentTxnKey); txn != nil {
 		// We are in a Transaction.
 		return txn.(*memContext), true
 	}
-	return c.Value(memContextKey).(*memContext), false
+	return c.Value(&memContextKey).(*memContext), false
 }
 
-type memContextKeyType int
-
 var (
-	memContextKey memContextKeyType
-	currentTxnKey = 1
+	memContextKey = "gae:memory:context"
+	currentTxnKey = "gae:memory:currentTxn"
 )
 
 // weird stuff
@@ -186,7 +184,7 @@ func (d *dsImpl) RunInTransaction(f func(context.Context) error, o *ds.Transacti
 			txnMC.endTxn()
 		}()
 
-		if err := f(context.WithValue(d, currentTxnKey, txnMC)); err != nil {
+		if err := f(context.WithValue(d, &currentTxnKey, txnMC)); err != nil {
 			return err
 		}
 

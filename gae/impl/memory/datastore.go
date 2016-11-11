@@ -219,7 +219,7 @@ func (*txnDsImpl) RunInTransaction(func(c context.Context) error, *ds.Transactio
 }
 
 func (d *txnDsImpl) WithoutTransaction() context.Context {
-	return context.WithValue(d, currentTxnKey, nil)
+	return context.WithValue(d, &currentTxnKey, nil)
 }
 
 func (d *txnDsImpl) CurrentTransaction() ds.Transaction {
