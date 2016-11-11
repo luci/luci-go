@@ -132,22 +132,26 @@ func (r *remoteImpl) GetConfigSetLocation(ctx context.Context, configSet string)
 		return nil, err
 	}
 
-	resp, err := srv.GetMapping().ConfigSet(configSet).Context(ctx).Do()
+	resp, err := srv.GetConfigSets().ConfigSet(configSet).Context(ctx).Do()
 	if err != nil {
 		return nil, apiErr(err)
 	}
 
-	urlString := "sentinel"
-	for _, mapping := range resp.Mappings {
-		if mapping.ConfigSet == configSet {
-			if urlString != "sentinel" {
+	urlString, has := "", false
+	for _, cset := range resp.ConfigSets {
+		if cset.ConfigSet == configSet {
+			if has {
 				return nil, fmt.Errorf(
 					"duplicate entries %q and %q for location of config set %s",
-					urlString, mapping.Location, configSet)
+					urlString, cset.Location, configSet)
 			}
 
-			urlString = mapping.Location
+			urlString, has = cset.Location, true
 		}
+	}
+
+	if !has {
+		return nil, config.ErrNoConfig
 	}
 
 	url, err := url.Parse(urlString)

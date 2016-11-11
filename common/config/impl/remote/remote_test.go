@@ -76,7 +76,7 @@ func TestRemoteCalls(t *testing.T) {
 			}
 
 			server, remoteImpl := testTools(200, map[string]interface{}{
-				"mappings": [...]interface{}{map[string]string{
+				"config_sets": [...]interface{}{map[string]string{
 					"config_set": "a",
 					"location":   URL.String(),
 				}},
