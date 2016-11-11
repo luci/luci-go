@@ -143,10 +143,13 @@ func summary(c context.Context, b *buildbotBuild) resp.BuildComponent {
 	started, ended, duration := parseTimes(b.Times)
 
 	// Link to bot and original build.
+	server := "build.chromium.org/p"
+	if b.Internal {
+		server = "uberchromegw.corp.google.com/i"
+	}
 	bot := &resp.Link{
 		Label: b.Slave,
-		// TODO(hinoka): Internal builds.
-		URL: fmt.Sprintf("https://build.chromium.org/p/%s/buildslaves/%s", b.Master, b.Slave),
+		URL:   fmt.Sprintf("https://%s/%s/buildslaves/%s", server, b.Master, b.Slave),
 	}
 	source := &resp.Link{
 		Label: fmt.Sprintf("%s/%s/%d", b.Master, b.Buildername, b.Number),
