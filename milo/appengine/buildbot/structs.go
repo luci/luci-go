@@ -95,8 +95,7 @@ type buildbotBuild struct {
 	Steps       []buildbotStep       `json:"steps" gae:"-"`
 	Text        []string             `json:"text" gae:"-"`
 	Times       []*float64           `json:"times" gae:"-"`
-	// This one is injected by the publisher module.  Does not exist in a
-	// normal json query.
+	// This one is injected by Milo.  Does not exist in a normal json query.
 	TimeStamp *int `json:"timeStamp" gae:"-"`
 	// This one is marked by Milo, denotes whether or not the build is internal.
 	Internal bool `json:"internal" gae:"-"`

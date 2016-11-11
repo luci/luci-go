@@ -10,6 +10,7 @@ import (
 	"compress/zlib"
 	"encoding/base64"
 	"encoding/json"
+	"net/http"
 	"strings"
 	"time"
 
@@ -199,10 +200,12 @@ func expireBuild(c context.Context, b *buildbotBuild) error {
 	if b.TimeStamp != nil {
 		finished = float64(*b.TimeStamp)
 	}
-	results := int(2)
+	results := int(4) // InfraFailure
 	b.Times[1] = &finished
 	b.Finished = true
 	b.Results = &results
+	b.Currentstep = nil
+	b.Text = append(b.Text, "Build expired on Milo")
 	return ds.Put(c, b)
 }
 
@@ -232,6 +235,8 @@ func doMaster(c context.Context, master *buildbotMaster, internal bool) int {
 		builder, ok := master.Builders[b.Buildername]
 		if !ok {
 			// Mark this build due to builder being removed.
+			buildCounter.Add(
+				c, 1, internal, b.Master, b.Buildername, b.Finished, "Expired")
 			logging.Infof(c, "Expiring %s/%s/%d due to builder being removed",
 				master.Name, b.Buildername, b.Number)
 			err = expireBuild(c, b)
@@ -251,9 +256,11 @@ func doMaster(c context.Context, master *buildbotMaster, internal bool) int {
 		}
 		if !found {
 			now := int(clock.Now(c).Unix())
-			if b.TimeStamp != nil && ((*b.TimeStamp)+20*60 < now) {
+			if b.TimeStamp == nil || ((*b.TimeStamp)+20*60 < now) {
 				// Expire builds after 20 minutes of not getting data.
 				// Mark this build due to build not current anymore.
+				buildCounter.Add(
+					c, 1, internal, b.Master, b.Buildername, b.Finished, "Expired")
 				logging.Infof(c, "Expiring %s/%s/%d due to build not current",
 					master.Name, b.Buildername, b.Number)
 				err = expireBuild(c, b)
@@ -269,17 +276,22 @@ func doMaster(c context.Context, master *buildbotMaster, internal bool) int {
 
 // PubSubHandler is a webhook that stores the builds coming in from pubsub.
 func PubSubHandler(ctx *router.Context) {
-	c, h, r := ctx.Context, ctx.Writer, ctx.Request
+	statusCode := pubSubHandlerImpl(ctx.Context, ctx.Request)
+	ctx.Writer.WriteHeader(statusCode)
+}
 
+// This is the actual implementation of the pubsub handler.  Returns
+// a status code.  200 for okay (ACK implied, don't retry).  Anything else
+// will signal to pubsub to retry.
+func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 	msg := pubSubSubscription{}
+	now := int(clock.Now(c).Unix())
 	defer r.Body.Close()
-	logging.Infof(c, "Message is %d bytes long", r.ContentLength)
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&msg); err != nil {
 		logging.WithError(err).Errorf(
 			c, "Could not decode message.  %s", err)
-		h.WriteHeader(200) // This is a hard failure, we don't want PubSub to retry.
-		return
+		return 200 // This is a hard failure, we don't want PubSub to retry.
 	}
 	internal := true
 	switch msg.Subscription {
@@ -291,20 +303,20 @@ func PubSubHandler(ctx *router.Context) {
 		logging.Errorf(
 			c, "Subscription name %s does not match %s or %s",
 			msg.Subscription, publicSubName, internalSubName)
-		h.WriteHeader(200)
-		return
+		return 200
 	}
+	logging.Infof(
+		c, "Message ID \"%s\" from subscription %s is %d bytes long",
+		msg.Message.MessageID, msg.Subscription, r.ContentLength)
 	bbMsg, err := msg.GetData()
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Could not base64 decode message %s", err)
-		h.WriteHeader(200)
-		return
+		return 200
 	}
 	builds, master, err := unmarshal(c, bbMsg)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Could not unmarshal message %s", err)
-		h.WriteHeader(200)
-		return
+		return 200
 	}
 	logging.Infof(c, "There are %d builds", len(builds))
 	if master != nil {
@@ -318,8 +330,7 @@ func PubSubHandler(ctx *router.Context) {
 	for _, build := range builds {
 		if build.Master == "" {
 			logging.Errorf(c, "Invalid message, missing master name")
-			h.WriteHeader(200)
-			return
+			return 200
 		}
 		existingBuild := &buildbotBuild{
 			Master:      build.Master,
@@ -336,10 +347,16 @@ func PubSubHandler(ctx *router.Context) {
 			}
 			buildExists = true
 		}
-		// Also set the finished and internal bit.
+		// Also set the finished, timestamp, and internal bit.
 		build.Finished = false
+		if build.TimeStamp == nil {
+			build.TimeStamp = &now
+		}
 		if len(build.Times) == 2 && build.Times[1] != nil {
 			build.Finished = true
+			logging.Infof(
+				c, "Recording finished build %s/%s/%d", build.Master,
+				build.Buildername, build.Number)
 		}
 		build.Internal = internal
 		// Try to get the OS information on a best-effort basis.  This assumes that all
@@ -351,13 +368,11 @@ func PubSubHandler(ctx *router.Context) {
 				// This will never work, we don't want PubSub to retry.
 				logging.WithError(err).Errorf(
 					c, "Could not save build to datastore, failing permanently")
-				h.WriteHeader(200)
-			} else {
-				// This is transient, we do want PubSub to retry.
-				logging.WithError(err).Errorf(c, "Could not save build in datastore")
-				h.WriteHeader(500)
+				return 200
 			}
-			return
+			// This is transient, we do want PubSub to retry.
+			logging.WithError(err).Errorf(c, "Could not save build in datastore")
+			return 500
 		}
 		if buildExists {
 			buildCounter.Add(
@@ -371,9 +386,8 @@ func PubSubHandler(ctx *router.Context) {
 	if master != nil {
 		code := doMaster(c, master, internal)
 		if code != 0 {
-			h.WriteHeader(code)
-			return
+			return code
 		}
 	}
-	h.WriteHeader(200)
+	return 200
 }
