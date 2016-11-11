@@ -242,6 +242,22 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 			}
 		}
 
+		// Step links are stored as maps of name: url
+		// Because Go doesn't believe in nice things, we now create another array
+		// just so that we can iterate through this map in order.
+		names := make([]string, 0, len(step.Urls))
+		for name := range step.Urls {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			link := &resp.Link{
+				Label: name,
+				URL:   step.Urls[name],
+			}
+			bc.SubLink = append(bc.SubLink, link)
+		}
+
 		// Add any unused aliases directly.
 		if remainingAliases.Len() > 0 {
 			unusedAliases := remainingAliases.ToSlice()

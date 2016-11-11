@@ -37,11 +37,10 @@ type buildbotStep struct {
 	Results      []interface{}   `json:"results"`
 	Statistics   struct {
 	} `json:"statistics"`
-	StepNumber int        `json:"step_number"`
-	Text       []string   `json:"text"`
-	Times      []*float64 `json:"times"`
-	Urls       struct {
-	} `json:"urls"`
+	StepNumber int               `json:"step_number"`
+	Text       []string          `json:"text"`
+	Times      []*float64        `json:"times"`
+	Urls       map[string]string `json:"urls"`
 
 	// Log link aliases.  The key is a log name that is being aliases. It should,
 	// generally, exist within the Logs. The value is the set of aliases attached
