@@ -196,5 +196,5 @@ func init() {
 				`{{if .Img}}<img src="{{.Img}}"{{if .Alt}} alt="{{.Alt}}"{{end}}>` +
 				`{{else}}{{.Label}}{{end}}` +
 				`</a>` +
-				`{{range .Aliases}}[{{. | linkify}}]{{end}}`))
+				`{{range .Aliases}} [{{. | linkify}}]{{end}}`))
 }
