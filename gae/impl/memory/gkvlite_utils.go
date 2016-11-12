@@ -7,7 +7,6 @@ package memory
 import (
 	"bytes"
 	"runtime"
-	"sync"
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gkvlite"
@@ -23,9 +22,8 @@ func gkvCollide(o, n memCollection, f func(k, ov, nv []byte)) {
 
 	// TODO(riannucci): reimplement in terms of *iterator.
 	oldItems, newItems := make(chan *gkvlite.Item), make(chan *gkvlite.Item)
-	walker := func(c memCollection, ch chan<- *gkvlite.Item, wg *sync.WaitGroup) {
+	walker := func(c memCollection, ch chan<- *gkvlite.Item) {
 		defer close(ch)
-		defer wg.Done()
 		if c != nil {
 			c.VisitItemsAscend(nil, true, func(i *gkvlite.Item) bool {
 				ch <- i
@@ -34,24 +32,24 @@ func gkvCollide(o, n memCollection, f func(k, ov, nv []byte)) {
 		}
 	}
 
-	wg := &sync.WaitGroup{}
-	wg.Add(2)
-	go walker(o, oldItems, wg)
-	go walker(n, newItems, wg)
+	go walker(o, oldItems)
+	go walker(n, newItems)
 
 	l, r := <-oldItems, <-newItems
 	for {
-		if l == nil && r == nil {
-			break
-		}
+		switch {
+		case l == nil && r == nil:
+			return
 
-		if l == nil {
+		case l == nil:
 			f(r.Key, nil, r.Val)
 			r = <-newItems
-		} else if r == nil {
+
+		case r == nil:
 			f(l.Key, l.Val, nil)
 			l = <-oldItems
-		} else {
+
+		default:
 			switch bytes.Compare(l.Key, r.Key) {
 			case -1: // l < r
 				f(l.Key, l.Val, nil)
@@ -65,7 +63,6 @@ func gkvCollide(o, n memCollection, f func(k, ov, nv []byte)) {
 			}
 		}
 	}
-	wg.Wait()
 }
 
 // memStore is a gkvlite.Store which will panic for anything which might

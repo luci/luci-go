@@ -366,6 +366,12 @@ var queryExecutionTests = []qExTest{
 				{q: nq("__namespace__").Offset(1).Limit(1), get: []ds.PropertyMap{
 					pmap("$key", mkKey("dev~app", "", "__namespace__", "bob")),
 				}},
+				//
+				// eventual consistency; Unique/1 is deleted at HEAD. Keysonly finds it,
+				// but 'normal' doesn't.
+				{q: nq("Unique").Gt("__key__", key("AKind", 5)).Lte("__key__", key("Zeta", "prime")),
+					keys: []*ds.Key{key("Unique", 1)},
+					get:  []ds.PropertyMap{}},
 			},
 
 			extraFns: []func(context.Context){
@@ -421,18 +427,13 @@ var queryExecutionTests = []qExTest{
 
 		{
 			expect: []qExpect{
-				// eventual consistency; Unique/1 is deleted at HEAD. Keysonly finds it,
-				// but 'normal' doesn't.
-				{q: nq("Unique").Gt("__key__", key("AKind", 5)).Lte("__key__", key("Zeta", "prime")),
-					keys: []*ds.Key{key("Unique", 1)},
-					get:  []ds.PropertyMap{}},
-
 				{q: nq("Kind").Eq("Val", 1, 3), get: []ds.PropertyMap{
 					stage1Data[0], stage2Data[2],
 				}},
 			},
 		},
 	}},
+
 	{"collapsed types", []qExStage{
 		{
 			putEnts: collapsedData,
@@ -479,6 +480,33 @@ var queryExecutionTests = []qExTest{
 					get: []ds.PropertyMap{
 						collapsedData[5],
 					},
+				},
+			},
+		},
+	}},
+
+	{"regression: tombstones and limit/offset queries", []qExStage{
+		{
+			putEnts: []ds.PropertyMap{
+				pmap("$key", key("Kind", 1)),
+				pmap("$key", key("Kind", 2)),
+				pmap("$key", key("Kind", 3)),
+			},
+			delEnts: []*ds.Key{key("Kind", 2)},
+		},
+		{
+			expect: []qExpect{
+				{
+					q: nq("Kind").Limit(2),
+					get: []ds.PropertyMap{
+						pmap("$key", key("Kind", 1)),
+						pmap("$key", key("Kind", 3)),
+					},
+				},
+
+				{
+					q:   nq("Kind").Offset(2),
+					get: []ds.PropertyMap{},
 				},
 			},
 		},

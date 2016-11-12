@@ -44,8 +44,17 @@ func defaultIndexes(kind string, pmap ds.PropertyMap) []*ds.IndexDefinition {
 	return ret
 }
 
+// indexEntriesWithBuiltins generates a new memStore containing the default
+// indexes for (k, pm) combined with complexIdxs.
+//
+// If "pm" is nil, this indicates an absence of a value. This is used
+// specifically for deletion.
 func indexEntriesWithBuiltins(k *ds.Key, pm ds.PropertyMap, complexIdxs []*ds.IndexDefinition) memStore {
-	sip := serialize.PropertyMapPartially(k, pm)
+	var sip serialize.SerializedPmap
+	if pm == nil {
+		return newMemStore()
+	}
+	sip = serialize.PropertyMapPartially(k, pm)
 	return indexEntries(sip, k.Namespace(), append(defaultIndexes(k.Kind(), pm), complexIdxs...))
 }
 
@@ -133,6 +142,8 @@ func (m *matcher) match(sortBy []ds.IndexColumn, sip serialize.SerializedPmap) (
 	return m.buf, true
 }
 
+// indexEntries generates a new memStore containing index entries for sip for
+// the supplied index definitions.
 func indexEntries(sip serialize.SerializedPmap, ns string, idxs []*ds.IndexDefinition) memStore {
 	ret := newMemStore()
 	idxColl := ret.GetOrCreateCollection("idx")
@@ -256,9 +267,14 @@ func addIndexes(store memStore, aid string, compIdx []*ds.IndexDefinition) {
 	}
 }
 
+// updateIndexes updates the indexes in store to accommodate a change in entity
+// value.
+//
+// oldEnt is the previous entity value, and newEnt is the new entity value. If
+// newEnt is nil, that signifies deletion.
 func updateIndexes(store memStore, key *ds.Key, oldEnt, newEnt ds.PropertyMap) {
 	// load all current complex query index definitions.
-	compIdx := []*ds.IndexDefinition{}
+	var compIdx []*ds.IndexDefinition
 	walkCompIdxs(store.Snapshot(), nil, func(i *ds.IndexDefinition) bool {
 		compIdx = append(compIdx, i)
 		return true
