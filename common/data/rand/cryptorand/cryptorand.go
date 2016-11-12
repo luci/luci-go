@@ -12,6 +12,7 @@ import (
 	crypto "crypto/rand"
 	"io"
 	math "math/rand"
+	"sync"
 
 	"golang.org/x/net/context"
 )
@@ -40,17 +41,21 @@ func Read(c context.Context, b []byte) (n int, err error) {
 //
 // Must not be used outside of tests.
 func MockForTest(c context.Context, seed int64) context.Context {
-	return context.WithValue(c, &key, notRandom{math.New(math.NewSource(seed))})
+	return context.WithValue(c, &key, &notRandom{r: math.New(math.NewSource(seed))})
 }
 
 // notRandom is io.Reader that uses math/rand generator.
 type notRandom struct {
-	*math.Rand
+	sync.Mutex
+	r *math.Rand
 }
 
-func (r notRandom) Read(p []byte) (n int, err error) {
+func (r *notRandom) Read(p []byte) (n int, err error) {
+	r.Lock()
+	defer r.Unlock()
+
 	for i := range p {
-		p[i] = byte(r.Intn(256))
+		p[i] = byte(r.r.Intn(256))
 	}
 	return len(p), nil
 }

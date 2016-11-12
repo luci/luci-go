@@ -90,17 +90,23 @@ func BenchmarkOurDefaultSourceViaFunc(b *testing.B) {
 
 func BenchmarkOurInitializedSourceViaCtx(b *testing.B) {
 	ctx := context.Background()
-	ctx = Set(ctx, Get(ctx))
-	calcStats(b.N, func() float64 {
-		return Get(ctx).Float64()
+	WithGoRand(ctx, func(r *rand.Rand) error {
+		ctx = Set(ctx, r)
+		calcStats(b.N, func() float64 {
+			return Get(ctx).Float64()
+		})
+		return nil
 	})
 }
 
 func BenchmarkOurInitializedSourceViaFunc(b *testing.B) {
 	ctx := context.Background()
-	ctx = Set(ctx, Get(ctx))
-	calcStats(b.N, func() float64 {
-		return Float64(ctx)
+	WithGoRand(ctx, func(r *rand.Rand) error {
+		ctx = Set(ctx, r)
+		calcStats(b.N, func() float64 {
+			return Float64(ctx)
+		})
+		return nil
 	})
 }
 
