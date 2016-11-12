@@ -6,13 +6,15 @@ package dscache
 
 import (
 	"fmt"
-	"math/rand"
 	"time"
 
 	ds "github.com/luci/gae/service/datastore"
 	mc "github.com/luci/gae/service/memcache"
+
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
+
 	"golang.org/x/net/context"
 )
 
@@ -20,7 +22,7 @@ type supportContext struct {
 	ds.KeyContext
 
 	c            context.Context
-	mr           *rand.Rand
+	mr           mathrand.Rand
 	shardsForKey []ShardFunction
 }
 
@@ -111,7 +113,7 @@ func (s *supportContext) mkRandLockItems(keys []*ds.Key, metas ds.MultiMetaGette
 	if len(mcKeys) == 0 {
 		return nil, nil
 	}
-	nonce := generateNonce()
+	nonce := s.generateNonce()
 	ret := make([]mc.Item, len(mcKeys))
 	for i, k := range mcKeys {
 		if k == "" {
@@ -144,8 +146,8 @@ func (s *supportContext) mkAllLockItems(keys []*ds.Key) ([]mc.Item, []string) {
 //
 // The random values here are controlled entriely by the application, will never
 // be shown to, or provided by, the user, so this should be fine.
-func generateNonce() []byte {
+func (s *supportContext) generateNonce() []byte {
 	nonce := make([]byte, NonceBytes)
-	_, _ = rand.Read(nonce) // This Read will always return len(nonce), nil.
+	_, _ = s.mr.Read(nonce) // This Read will always return len(nonce), nil.
 	return nonce
 }

@@ -229,7 +229,7 @@ func mkName(c context.Context, cur string, queue map[string]*tq.Task) string {
 	for !ok && cur == "" {
 		name := [500]byte{}
 		for i := 0; i < 500; i++ {
-			name[i] = validTaskChars[mathrand.Get(c).Intn(len(validTaskChars))]
+			name[i] = validTaskChars[mathrand.Intn(c, len(validTaskChars))]
 		}
 		cur = string(name[:])
 		_, ok = queue[cur]
