@@ -60,7 +60,8 @@ import (
 
 // CommandParams specifies various parameters for a subcommand.
 type CommandParams struct {
-	Name string // name of the subcommand.
+	Name     string // name of the subcommand.
+	Advanced bool   // subcommands should treat this as an 'advanced' command
 
 	AuthOptions auth.Options // default auth options.
 
@@ -120,14 +121,15 @@ func (c *commandRunBase) registerBaseFlags() {
 
 // SubcommandLogin returns subcommands.Command that can be used to perform
 // interactive login.
-func SubcommandLogin(opts auth.Options, name string) *subcommands.Command {
-	return SubcommandLoginWithParams(CommandParams{Name: name, AuthOptions: opts})
+func SubcommandLogin(opts auth.Options, name string, advanced bool) *subcommands.Command {
+	return SubcommandLoginWithParams(CommandParams{Name: name, Advanced: advanced, AuthOptions: opts})
 }
 
 // SubcommandLoginWithParams returns subcommands.Command that can be used to perform
 // interactive login.
 func SubcommandLoginWithParams(params CommandParams) *subcommands.Command {
 	return &subcommands.Command{
+		Advanced:  params.Advanced,
 		UsageLine: params.Name,
 		ShortDesc: "performs interactive login flow",
 		LongDesc:  "Performs interactive login flow and caches obtained credentials",
@@ -167,14 +169,15 @@ func (c *loginRun) Run(a subcommands.Application, _ []string) int {
 
 // SubcommandLogout returns subcommands.Command that can be used to purge cached
 // credentials.
-func SubcommandLogout(opts auth.Options, name string) *subcommands.Command {
-	return SubcommandLogoutWithParams(CommandParams{Name: name, AuthOptions: opts})
+func SubcommandLogout(opts auth.Options, name string, advanced bool) *subcommands.Command {
+	return SubcommandLogoutWithParams(CommandParams{Name: name, Advanced: advanced, AuthOptions: opts})
 }
 
 // SubcommandLogoutWithParams returns subcommands.Command that can be used to purge cached
 // credentials.
 func SubcommandLogoutWithParams(params CommandParams) *subcommands.Command {
 	return &subcommands.Command{
+		Advanced:  params.Advanced,
 		UsageLine: params.Name,
 		ShortDesc: "removes cached credentials",
 		LongDesc:  "Removes cached credentials from the disk",
@@ -208,14 +211,15 @@ func (c *logoutRun) Run(a subcommands.Application, args []string) int {
 
 // SubcommandInfo returns subcommand.Command that can be used to print current
 // cached credentials.
-func SubcommandInfo(opts auth.Options, name string) *subcommands.Command {
-	return SubcommandInfoWithParams(CommandParams{Name: name, AuthOptions: opts})
+func SubcommandInfo(opts auth.Options, name string, advanced bool) *subcommands.Command {
+	return SubcommandInfoWithParams(CommandParams{Name: name, Advanced: advanced, AuthOptions: opts})
 }
 
 // SubcommandInfoWithParams returns subcommand.Command that can be used to print current
 // cached credentials.
 func SubcommandInfoWithParams(params CommandParams) *subcommands.Command {
 	return &subcommands.Command{
+		Advanced:  params.Advanced,
 		UsageLine: params.Name,
 		ShortDesc: "prints an email address associated with currently cached token",
 		LongDesc:  "Prints an email address associated with currently cached token",
@@ -270,6 +274,7 @@ func SubcommandToken(opts auth.Options, name string) *subcommands.Command {
 // access token.
 func SubcommandTokenWithParams(params CommandParams) *subcommands.Command {
 	return &subcommands.Command{
+		Advanced:  params.Advanced,
 		UsageLine: params.Name,
 		ShortDesc: "prints an access token",
 		LongDesc:  "Generates an access token if requested and prints it.",

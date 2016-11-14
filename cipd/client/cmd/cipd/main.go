@@ -734,6 +734,7 @@ func ensurePackages(ctx context.Context, root string, desiredStateFile string, d
 // 'puppet-check-updates' subcommand.
 
 var cmdPuppetCheckUpdates = &subcommands.Command{
+	Advanced:  true,
 	UsageLine: "puppet-check-updates [options]",
 	ShortDesc: "returns 0 exit code iff 'ensure' will do some actions",
 	LongDesc: "Returns 0 exit code iff 'ensure' will do some actions.\n\n" +
@@ -1199,6 +1200,7 @@ func searchInstances(ctx context.Context, packageName, tag string, clientOpts Cl
 // 'acl-list' subcommand.
 
 var cmdListACL = &subcommands.Command{
+	Advanced:  true,
 	UsageLine: "acl-list <package subpath>",
 	ShortDesc: "lists package path Access Control List",
 	LongDesc:  "Lists package path Access Control List.",
@@ -1284,6 +1286,7 @@ func (l *principalsList) Set(value string) error {
 }
 
 var cmdEditACL = &subcommands.Command{
+	Advanced:  true,
 	UsageLine: "acl-edit <package subpath> [options]",
 	ShortDesc: "modifies package path Access Control List",
 	LongDesc:  "Modifies package path Access Control List.",
@@ -1362,6 +1365,7 @@ func editACL(ctx context.Context, packagePath string, owners, writers, readers, 
 // 'pkg-build' subcommand.
 
 var cmdBuild = &subcommands.Command{
+	Advanced:  true,
 	UsageLine: "pkg-build [options]",
 	ShortDesc: "builds a package instance file",
 	LongDesc:  "Builds a package instance producing *.cipd file.",
@@ -1421,6 +1425,7 @@ func buildInstanceFile(ctx context.Context, instanceFile string, inputOpts Input
 // 'pkg-deploy' subcommand.
 
 var cmdDeploy = &subcommands.Command{
+	Advanced:  true,
 	UsageLine: "pkg-deploy <package instance file> [options]",
 	ShortDesc: "deploys a package instance file",
 	LongDesc:  "Deploys a *.cipd package instance into a site root.",
@@ -1464,6 +1469,7 @@ func deployInstanceFile(ctx context.Context, root string, instanceFile string) (
 // 'pkg-fetch' subcommand.
 
 var cmdFetch = &subcommands.Command{
+	Advanced:  true,
 	UsageLine: "pkg-fetch <package> [options]",
 	ShortDesc: "fetches a package instance file from the repository",
 	LongDesc:  "Fetches a package instance file from the repository.",
@@ -1537,6 +1543,7 @@ func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile s
 // 'pkg-inspect' subcommand.
 
 var cmdInspect = &subcommands.Command{
+	Advanced:  true,
 	UsageLine: "pkg-inspect <package instance file>",
 	ShortDesc: "inspects contents of a package instance file",
 	LongDesc:  "Reads contents *.cipd file and prints information about it.",
@@ -1592,6 +1599,7 @@ func inspectInstance(ctx context.Context, inst local.PackageInstance, listFiles 
 // 'pkg-register' subcommand.
 
 var cmdRegister = &subcommands.Command{
+	Advanced:  true,
 	UsageLine: "pkg-register <package instance file>",
 	ShortDesc: "uploads and registers package instance in the package repository",
 	LongDesc:  "Uploads and registers package instance in the package repository.",
@@ -1659,6 +1667,7 @@ func registerInstanceFile(ctx context.Context, instanceFile string, opts *regist
 // 'pkg-delete' subcommand.
 
 var cmdDelete = &subcommands.Command{
+	Advanced:  true,
 	UsageLine: "pkg-delete <package name>",
 	ShortDesc: "removes the package from the package repository on the backend",
 	LongDesc: "Removes all instances of the package, all its tags and refs.\n" +
@@ -1704,6 +1713,7 @@ func deletePackage(ctx context.Context, packageName string, opts *ClientOptions)
 // 'counter-write' subcommand.
 
 var cmdCounterWrite = &subcommands.Command{
+	Advanced:  true,
 	UsageLine: "counter-write -version <version> <package name> [-increment <counter> | -touch <counter>]",
 	ShortDesc: "updates a named counter associated with the given package version",
 	LongDesc: "Updates a named counter associated with the given package version\n" +
@@ -1776,6 +1786,7 @@ func writeCounter(ctx context.Context, pkg, version, counter string, delta int, 
 // 'counter-read' subcommand.
 
 var cmdCounterRead = &subcommands.Command{
+	Advanced:  true,
 	UsageLine: "counter-read -version <version> <package name> <counter> [<counter> ...]",
 	ShortDesc: "fetches one or more counters for the given package version",
 	LongDesc:  "Fetches one or more counters for the given package version",
@@ -1897,9 +1908,9 @@ var application = &cli.Application{
 		cmdInstalled,
 
 		// Authentication related commands.
-		authcli.SubcommandInfo(auth.Options{}, "auth-info"),
-		authcli.SubcommandLogin(auth.Options{}, "auth-login"),
-		authcli.SubcommandLogout(auth.Options{}, "auth-logout"),
+		authcli.SubcommandInfo(auth.Options{}, "auth-info", true),
+		authcli.SubcommandLogin(auth.Options{}, "auth-login", false),
+		authcli.SubcommandLogout(auth.Options{}, "auth-logout", false),
 
 		// High level commands.
 		cmdListPackages,

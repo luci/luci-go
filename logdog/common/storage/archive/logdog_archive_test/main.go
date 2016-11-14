@@ -86,9 +86,9 @@ func mainImpl(c context.Context, args []string) int {
 				&subcommandGet,
 				&subcommandTail,
 
-				authcli.SubcommandLogin(authOpts, "auth-login"),
-				authcli.SubcommandLogout(authOpts, "auth-logout"),
-				authcli.SubcommandInfo(authOpts, "auth-info"),
+				authcli.SubcommandLogin(authOpts, "auth-login", false),
+				authcli.SubcommandLogout(authOpts, "auth-logout", false),
+				authcli.SubcommandInfo(authOpts, "auth-info", false),
 			},
 		},
 	}

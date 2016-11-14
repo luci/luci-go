@@ -120,8 +120,8 @@ var application = &cli.Application{
 		cmdCall,
 		cmdShow,
 		cmdFmt,
-		authcli.SubcommandLogin(auth.Options{}, "login"),
-		authcli.SubcommandLogout(auth.Options{}, "logout"),
+		authcli.SubcommandLogin(auth.Options{}, "login", false),
+		authcli.SubcommandLogout(auth.Options{}, "logout", false),
 		subcommands.CmdHelp,
 	},
 }

@@ -26,9 +26,9 @@ var application = &subcommands.DefaultApplication{
 		cmdRequestShow,
 		cmdTrigger,
 		subcommands.CmdHelp,
-		authcli.SubcommandInfo(auth.Options{}, "whoami"),
-		authcli.SubcommandLogin(auth.Options{}, "login"),
-		authcli.SubcommandLogout(auth.Options{}, "logout"),
+		authcli.SubcommandInfo(auth.Options{}, "whoami", false),
+		authcli.SubcommandLogin(auth.Options{}, "login", false),
+		authcli.SubcommandLogout(auth.Options{}, "logout", false),
 		common.CmdVersion(version),
 	},
 }

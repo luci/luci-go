@@ -370,6 +370,7 @@ func (opts *siteRootOptions) registerFlags(f *flag.FlagSet) {
 // 'init' subcommand.
 
 var cmdInit = &subcommands.Command{
+	Advanced:  true,
 	UsageLine: "init [root dir] [options]",
 	ShortDesc: "sets up a new site root directory to install packages into",
 	LongDesc: "Sets up a new site root directory to install packages into.\n\n" +
@@ -421,6 +422,7 @@ func (c *initRun) Run(a subcommands.Application, args []string) int {
 // 'install' subcommand.
 
 var cmdInstall = &subcommands.Command{
+	Advanced:  true,
 	UsageLine: "install <package> [<version>] [options]",
 	ShortDesc: "installs or updates a package",
 	LongDesc:  "Installs or updates a package.",
@@ -484,6 +486,7 @@ func (c *installRun) Run(a subcommands.Application, args []string) int {
 // 'installed' subcommand.
 
 var cmdInstalled = &subcommands.Command{
+	Advanced:  true,
 	UsageLine: "installed [<package> <package> ...] [options]",
 	ShortDesc: "lists packages installed in the site root",
 	LongDesc:  "Lists packages installed in the site root.",

@@ -237,9 +237,9 @@ func mainImpl(ctx context.Context, argv []string) int {
 				subcommandStream,
 				subcommandServe,
 
-				authcli.SubcommandLogin(authOptions, "auth-login"),
-				authcli.SubcommandLogout(authOptions, "auth-logout"),
-				authcli.SubcommandInfo(authOptions, "auth-info"),
+				authcli.SubcommandLogin(authOptions, "auth-login", false),
+				authcli.SubcommandLogout(authOptions, "auth-logout", false),
+				authcli.SubcommandInfo(authOptions, "auth-info", false),
 			},
 		},
 	}

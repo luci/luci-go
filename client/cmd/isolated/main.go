@@ -28,9 +28,9 @@ var application = &subcommands.DefaultApplication{
 		cmdArchive,
 		cmdDownload,
 		subcommands.CmdHelp,
-		authcli.SubcommandInfo(opts, "info"),
-		authcli.SubcommandLogin(opts, "login"),
-		authcli.SubcommandLogout(opts, "logout"),
+		authcli.SubcommandInfo(opts, "info", false),
+		authcli.SubcommandLogin(opts, "login", false),
+		authcli.SubcommandLogout(opts, "logout", false),
 		common.CmdVersion(version),
 	},
 }
