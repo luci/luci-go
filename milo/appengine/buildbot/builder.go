@@ -144,7 +144,12 @@ func builderImpl(c context.Context, masterName, builderName string, limit int) (
 	if err != nil {
 		return nil, err
 	}
+	// currentBuilds is presented in reversed order, so flip it
+	for i, j := 0, len(currentBuilds)-1; i < j; i, j = i+1, j-1 {
+		currentBuilds[i], currentBuilds[j] = currentBuilds[j], currentBuilds[i]
+	}
 	result.CurrentBuilds = currentBuilds
+
 	for _, fb := range finishedBuilds {
 		if fb != nil {
 			result.FinishedBuilds = append(result.FinishedBuilds, fb)
