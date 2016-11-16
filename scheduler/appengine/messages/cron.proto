@@ -80,11 +80,23 @@ message Trigger {
 
   // Noop is used for testing. It is "do nothing" trigger.
   NoopTask noop = 100;
+  // Gitiles is used to trigger jobs for new commits on Gitiles.
+  GitilesTask gitiles = 101;
 }
 
 
 // NoopTask is used for testing. It is "do nothing" task.
 message NoopTask {
+}
+
+
+// GitilesTask specifies parameters of Swarming-based jobs.
+message GitilesTask {
+  // Repo is the URL of the Gitiles repository.
+  string repo = 1;
+
+  // List of Git references to track.
+  repeated string refs = 2;
 }
 
 
@@ -175,4 +187,5 @@ message TaskDefWrapper {
   UrlFetchTask url_fetch = 2;
   SwarmingTask swarming_task = 3;
   BuildbucketTask buildbucket_task = 4;
+  GitilesTask gitiles_task = 5;
 }

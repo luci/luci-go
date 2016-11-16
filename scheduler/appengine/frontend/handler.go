@@ -43,6 +43,7 @@ import (
 	"github.com/luci/luci-go/scheduler/appengine/engine"
 	"github.com/luci/luci-go/scheduler/appengine/task"
 	"github.com/luci/luci-go/scheduler/appengine/task/buildbucket"
+	"github.com/luci/luci-go/scheduler/appengine/task/gitiles"
 	"github.com/luci/luci-go/scheduler/appengine/task/noop"
 	"github.com/luci/luci-go/scheduler/appengine/task/swarming"
 	"github.com/luci/luci-go/scheduler/appengine/task/urlfetch"
@@ -58,6 +59,7 @@ var (
 	// Known kinds of tasks.
 	managers = []task.Manager{
 		&buildbucket.TaskManager{},
+		&gitiles.TaskManager{},
 		&noop.TaskManager{},
 		&swarming.TaskManager{},
 		&urlfetch.TaskManager{},
