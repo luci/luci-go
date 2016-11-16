@@ -79,6 +79,8 @@ func (b Builder) GetTemplateName(t settings.Theme) string {
 }
 
 // Render renders the buildbot builder page.
+// Note: The builder html template contains self links to "?limit=123", which could
+// potentially override any other request parameters set.
 func (b Builder) Render(c context.Context, r *http.Request, p httprouter.Params) (*templates.Args, error) {
 	master := p.ByName("master")
 	if master == "" {

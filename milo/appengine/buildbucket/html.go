@@ -27,6 +27,8 @@ func (b Builder) GetTemplateName(t settings.Theme) string {
 }
 
 // Render renders builder view page.
+// Note: The builder html template contains self links to "?limit=123", which could
+// potentially override any other request parameters set.
 func (b Builder) Render(c context.Context, r *http.Request, p httprouter.Params) (*templates.Args, error) {
 	// Parse URL parameters.
 	server := r.FormValue("server")
