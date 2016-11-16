@@ -172,3 +172,10 @@ var postInvocationAction = function(btn, action) {
   </div>
 </form>
 {{end}}
+
+
+{{define "job-id-ref"}}
+<span class="glyphicon {{.JobFlavorIcon}}" aria-hidden="true" title="{{.JobFlavorTitle}}">
+</span>
+<a href="/jobs/{{.ProjectID}}/{{.JobID}}">{{.JobID}}</a>
+{{end}}

@@ -14,6 +14,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/golang/protobuf/proto"
 
+	"github.com/luci/luci-go/scheduler/appengine/catalog"
 	"github.com/luci/luci-go/scheduler/appengine/engine"
 	"github.com/luci/luci-go/scheduler/appengine/messages"
 	"github.com/luci/luci-go/scheduler/appengine/schedule"
@@ -21,19 +22,21 @@ import (
 )
 
 type schedulerJob struct {
-	ProjectID   string
-	JobID       string
-	Schedule    string
-	Definition  string
-	Revision    string
-	RevisionURL string
-	State       string
-	Overruns    int
-	NextRun     string
-	Paused      bool
-	LabelClass  string
+	ProjectID      string
+	JobID          string
+	Schedule       string
+	Definition     string
+	Revision       string
+	RevisionURL    string
+	State          string
+	Overruns       int
+	NextRun        string
+	Paused         bool
+	LabelClass     string
+	JobFlavorIcon  string
+	JobFlavorTitle string
 
-	sortKey string
+	sortKey []string
 }
 
 var stateToLabelClass = map[engine.StateKind]string{
@@ -42,6 +45,18 @@ var stateToLabelClass = map[engine.StateKind]string{
 	engine.JobStateSuspended: "label-default",
 	engine.JobStateRunning:   "label-info",
 	engine.JobStateOverrun:   "label-warning",
+}
+
+var flavorToIconClass = []string{
+	catalog.JobFlavorPeriodic:  "glyphicon-time",
+	catalog.JobFlavorTriggered: "glyphicon-flash",
+	catalog.JobFlavorTrigger:   "glyphicon-bell",
+}
+
+var flavorToTitle = []string{
+	catalog.JobFlavorPeriodic:  "Periodic job",
+	catalog.JobFlavorTriggered: "Triggered job",
+	catalog.JobFlavorTrigger:   "Triggering job",
 }
 
 func makeJob(j *engine.Job, now time.Time) *schedulerJob {
@@ -76,28 +91,47 @@ func makeJob(j *engine.Job, now time.Time) *schedulerJob {
 		// starting now (so the queue is lagging for some reason).
 		state = "STARTING"
 		labelClass = "label-warning"
+	case j.Paused && j.State.State == engine.JobStateSuspended:
+		// Paused jobs don't have a schedule, so they are always in SUSPENDED state.
+		// Make it clearer that they are just paused. This applies to both triggered
+		// and periodic jobs.
+		state = "PAUSED"
+		labelClass = "label-default"
+	case j.State.State == engine.JobStateSuspended && j.Flavor == catalog.JobFlavorTriggered:
+		// Triggered jobs don't run on a schedule. They are in SUSPENDED state
+		// between triggering events, rename it to WAITING for clarity.
+		state = "WAITING"
+		labelClass = "label-default"
 	default:
 		state = string(j.State.State)
 		labelClass = stateToLabelClass[j.State.State]
+	}
+
+	// Put triggers after regular jobs.
+	sortGroup := "A"
+	if j.Flavor == catalog.JobFlavorTrigger {
+		sortGroup = "B"
 	}
 
 	// JobID has form <project>/<id>. Split it into components.
 	chunks := strings.Split(j.JobID, "/")
 
 	return &schedulerJob{
-		ProjectID:   chunks[0],
-		JobID:       chunks[1],
-		Schedule:    j.Schedule,
-		Definition:  taskToText(j.Task),
-		Revision:    j.Revision,
-		RevisionURL: j.RevisionURL,
-		State:       state,
-		Overruns:    j.State.Overruns,
-		NextRun:     nextRun,
-		Paused:      j.Paused,
-		LabelClass:  labelClass,
+		ProjectID:      chunks[0],
+		JobID:          chunks[1],
+		Schedule:       j.Schedule,
+		Definition:     taskToText(j.Task),
+		Revision:       j.Revision,
+		RevisionURL:    j.RevisionURL,
+		State:          state,
+		Overruns:       j.State.Overruns,
+		NextRun:        nextRun,
+		Paused:         j.Paused,
+		LabelClass:     labelClass,
+		JobFlavorIcon:  flavorToIconClass[j.Flavor],
+		JobFlavorTitle: flavorToTitle[j.Flavor],
 
-		sortKey: j.JobID,
+		sortKey: []string{chunks[0], sortGroup, chunks[1]},
 	}
 }
 
@@ -118,9 +152,22 @@ func taskToText(task []byte) string {
 
 type sortedJobs []*schedulerJob
 
-func (s sortedJobs) Len() int           { return len(s) }
-func (s sortedJobs) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-func (s sortedJobs) Less(i, j int) bool { return s[i].sortKey < s[j].sortKey }
+func (s sortedJobs) Len() int      { return len(s) }
+func (s sortedJobs) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s sortedJobs) Less(i, j int) bool {
+	if len(s[i].sortKey) < len(s[j].sortKey) {
+		return true
+	}
+	if len(s[i].sortKey) > len(s[j].sortKey) {
+		return false
+	}
+	for idx := range s[i].sortKey {
+		if s[i].sortKey[idx] < s[j].sortKey[idx] {
+			return true
+		}
+	}
+	return false
+}
 
 func convertToSortedJobs(jobs []*engine.Job, now time.Time) sortedJobs {
 	out := make(sortedJobs, len(jobs))

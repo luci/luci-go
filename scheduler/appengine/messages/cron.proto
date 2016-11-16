@@ -7,13 +7,36 @@ syntax = "proto3";
 package messages;
 
 
-// Job specifies a single scheduler job belonging to a project.
+// Job specifies a single regular job belonging to a project.
+//
+// Such jobs runs on a schedule or can be triggered by some trigger.
 message Job {
   // Id is a name of the job (unique for the project).
+  //
+  // Must match '^[0-9A-Za-z_\-\.]{1,100}$'.
   string id = 1;
-  // Schedule in regular cron expression format.
+
+  // Schedule describes when to run the job.
+  //
+  // Supported kinds of schedules (illustrated by examples):
+  //   - "* 0 * * * *": standard cron-like expression. Cron engine will attempt
+  //     to start a job at specified moments in time (based on UTC clock). If
+  //     when triggering a job, previous invocation is still running, an overrun
+  //     will be recorded (and next attempt to start a job happens based on the
+  //     schedule, not when the previous invocation finishes). This is absolute
+  //     schedule (i.e. doesn't depend on job state).
+  //   - "with 10s interval": runs invocations in a loop, waiting 10s after
+  //     finishing invocation before starting a new one. This is relative
+  //     schedule. Overruns are not possible.
+  //   - "continuously" is alias for "with 0s interval", meaning the job will
+  //     run in a loop without any pauses.
+  //   - "triggered" schedule indicates that job is always started via "Run now"
+  //     button or via a trigger.
+  //
+  // Default is "triggered".
   string schedule = 2;
-  // Disables is true to disable this job.
+
+  // Disabled is true to disable this job.
   bool disabled = 3;
 
   // Task defines what exactly to execute.
@@ -32,6 +55,31 @@ message Job {
   SwarmingTask swarming = 102;
   // BuildbucketTask can be used to schedule buildbucket job.
   BuildbucketTask buildbucket = 103;
+}
+
+// Trigger specifies a job that triggers other jobs.
+//
+// It is a special kind of job that periodically checks the state of the world
+// and triggers other jobs.
+message Trigger {
+  // Id is a name of the job (unique for the project).
+  //
+  // Must match '^[0-9A-Za-z_\-\.]{1,100}$'. It's in the same namespace as
+  // regular jobs.
+  string id = 1;
+
+  // Schedule describes when to run this triggering job.
+  //
+  // See Job.schedule fro more info. Default is "with 30s interval".
+  string schedule = 2;
+
+  // Disabled is true to disable this job.
+  bool disabled = 3;
+
+  // One and only one field below must be set. It defines what this job does.
+
+  // Noop is used for testing. It is "do nothing" trigger.
+  NoopTask noop = 100;
 }
 
 
@@ -106,9 +154,11 @@ message BuildbucketTask {
 // ProjectConfig defines a schema for config file that describe jobs belonging
 // to some project.
 message ProjectConfig {
-  // Job is a set of jobs defines in the project. It's singular to make
-  // text-encoded proto definitions more readable.
+  // Job is a set of jobs defined in the project.
   repeated Job job = 1;
+
+  // Trigger is a set of triggering jobs defined in the project.
+  repeated Trigger trigger = 2;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -1045,7 +1045,7 @@ func prepareQueuedJob(c context.Context, jobID string, invNonce int64) {
 		ProjectID: chunks[0],
 		Enabled:   true,
 		Task:      taskBlob,
-		Schedule:  "manual",
+		Schedule:  "triggered",
 		State: JobState{
 			State:           JobStateQueued,
 			InvocationNonce: invNonce,

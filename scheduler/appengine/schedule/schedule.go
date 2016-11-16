@@ -30,9 +30,9 @@ type Schedule struct {
 	asString string
 	randSeed uint64
 
-	cronExpr *cronexpr.Expression // set for absolute schedules
-	interval time.Duration        // set for relative schedules
-	manual   bool                 // set for manual schedule
+	cronExpr  *cronexpr.Expression // set for absolute schedules
+	interval  time.Duration        // set for relative schedules
+	triggered bool                 // set for triggered schedule
 }
 
 // IsAbsolute is true for schedules that do not depend on a job state.
@@ -45,7 +45,7 @@ type Schedule struct {
 //
 // See comment for 'Parse' for some examples.
 func (s *Schedule) IsAbsolute() bool {
-	return s.cronExpr != nil || s.manual
+	return s.cronExpr != nil || s.triggered
 }
 
 // Next tells when to run the job the next time.
@@ -53,7 +53,7 @@ func (s *Schedule) IsAbsolute() bool {
 // 'now' is current time. 'prev' is when previous invocation has finished (or
 // zero time for first invocation).
 func (s *Schedule) Next(now, prev time.Time) time.Time {
-	if s.manual {
+	if s.triggered {
 		return DistantFuture
 	}
 
@@ -100,16 +100,16 @@ func (s *Schedule) String() string {
 //     schedule. Overruns are not possible.
 //   - "continuously" is alias for "with 0s interval", meaning the job will run
 //     in a loop without any pauses.
-//   - "manual" schedule indicates that job is always started via "Run now"
+//   - "triggered" schedule indicates that job is always started via "Run now"
 //     button. 'Next' always returns DistantFuture constant.
 func Parse(expr string, randSeed uint64) (sched *Schedule, err error) {
 	toParse := ""
 	switch expr {
-	case "manual":
+	case "triggered":
 		return &Schedule{
-			asString: "manual",
-			randSeed: randSeed,
-			manual:   true,
+			asString:  "triggered",
+			randSeed:  randSeed,
+			triggered: true,
 		}, nil
 	case "continuously":
 		toParse = "with 0s interval"

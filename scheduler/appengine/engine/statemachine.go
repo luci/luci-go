@@ -29,7 +29,7 @@ const (
 	JobStateScheduled StateKind = "SCHEDULED"
 
 	// JobStateSuspended means the job is not running now, and no ticks are
-	// scheduled. It's used for jobs on "manual" schedule or for paused jobs.
+	// scheduled. It's used for jobs on "triggered" schedule or for paused jobs.
 	//
 	// Technically SUSPENDED is like SCHEDULED with the tick in the distant
 	// future.

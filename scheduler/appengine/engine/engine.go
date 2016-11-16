@@ -111,8 +111,8 @@ type Engine interface {
 	// entity, but there can be more if job fails to start with a transient error.
 	TriggerInvocation(c context.Context, jobID string, triggeredBy identity.Identity) (int64, error)
 
-	// PauseJob replaces job's schedule with "manual", effectively preventing it
-	// from running automatically (until it is resumed). Manual invocations are
+	// PauseJob replaces job's schedule with "triggered", effectively preventing
+	// it from running automatically (until it is resumed). Manual invocations are
 	// still allowed. Does nothing if job is already paused. Any pending or
 	// running invocations are still executed.
 	PauseJob(c context.Context, jobID string, who identity.Identity) error
@@ -226,6 +226,9 @@ type Job struct {
 	// ProjectID exists for indexing. It matches <projectID> portion of JobID.
 	ProjectID string
 
+	// Flavor describes what category of jobs this is, see the enum.
+	Flavor catalog.JobFlavor `gae:",noindex"`
+
 	// Enabled is false if the job was disabled or removed from config.
 	//
 	// Disabled jobs do not show up in UI at all (they are still kept in the
@@ -257,17 +260,17 @@ type Job struct {
 // effectiveSchedule returns schedule string to use for the job, considering its
 // Paused field.
 //
-// Paused jobs always use "manual" schedule.
+// Paused jobs always use "triggered" schedule.
 func (e *Job) effectiveSchedule() string {
 	if e.Paused {
-		return "manual"
+		return "triggered"
 	}
 	return e.Schedule
 }
 
 // parseSchedule returns *Schedule object, parsing e.Schedule field.
-// If job is paused e.Schedule field is ignored and manual schedule is returned
-// instead.
+// If job is paused e.Schedule field is ignored and triggered schedule is
+// returned instead.
 func (e *Job) parseSchedule() (*schedule.Schedule, error) {
 	if e.cachedSchedule == nil && e.cachedScheduleErr == nil {
 		hash := fnv.New64()
@@ -285,6 +288,7 @@ func (e *Job) parseSchedule() (*schedule.Schedule, error) {
 func (e *Job) isEqual(other *Job) bool {
 	return e == other || (e.JobID == other.JobID &&
 		e.ProjectID == other.ProjectID &&
+		e.Flavor == other.Flavor &&
 		e.Enabled == other.Enabled &&
 		e.Paused == other.Paused &&
 		e.Revision == other.Revision &&
@@ -298,7 +302,10 @@ func (e *Job) isEqual(other *Job) bool {
 // specified by catalog.Definition struct. UpdateProjectJobs skips updates for
 // such jobs (assuming they are up-to-date).
 func (e *Job) matches(def catalog.Definition) bool {
-	return e.JobID == def.JobID && e.Schedule == def.Schedule && bytes.Equal(e.Task, def.Task)
+	return e.JobID == def.JobID &&
+		e.Flavor == def.Flavor &&
+		e.Schedule == def.Schedule &&
+		bytes.Equal(e.Task, def.Task)
 }
 
 // Invocation entity stores single attempt to run a job. Its parent entity
@@ -1161,6 +1168,7 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 			*job = Job{
 				JobID:     def.JobID,
 				ProjectID: chunks[0],
+				Flavor:    def.Flavor,
 				Enabled:   false, // to trigger 'if !oldEnabled' below
 				Schedule:  def.Schedule,
 				Task:      def.Task,
@@ -1171,6 +1179,7 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 		oldEffectiveSchedule := job.effectiveSchedule()
 
 		// Update the job in full before running any state changes.
+		job.Flavor = def.Flavor
 		job.Revision = def.Revision
 		job.RevisionURL = def.RevisionURL
 		job.Enabled = true

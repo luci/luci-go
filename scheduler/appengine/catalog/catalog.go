@@ -28,7 +28,15 @@ import (
 
 var (
 	// jobIDRe is used to validate job ID field.
-	jobIDRe = regexp.MustCompile(`^[0-9A-Za-z_\-]{1,100}$`)
+	jobIDRe = regexp.MustCompile(`^[0-9A-Za-z_\-\.]{1,100}$`)
+)
+
+const (
+	// defaultJobSchedule is default value of 'schedule' field of Job proto.
+	defaultJobSchedule = "triggered"
+	// defaultTriggerSchedule is default value of 'schedule' field of Trigger
+	// proto.
+	defaultTriggerSchedule = "with 30s interval"
 )
 
 // Catalog knows how to enumerate all scheduler configs across all projects.
@@ -65,10 +73,35 @@ type Catalog interface {
 	GetProjectJobs(c context.Context, projectID string) ([]Definition, error)
 }
 
+// JobFlavor describes a category of jobs.
+type JobFlavor int
+
+const (
+	// JobFlavorPeriodic is a regular job (Swarming, Buildbucket) that runs on
+	// a schedule or via a trigger.
+	//
+	// Defined via 'job {...}' config stanza with 'schedule' field.
+	JobFlavorPeriodic JobFlavor = iota
+
+	// JobFlavorTriggered is a regular jog (Swarming, Buildbucket) that runs only
+	// when triggered.
+	//
+	// Defined via 'job {...}' config stanza with no 'schedule' field.
+	JobFlavorTriggered
+
+	// JobFlavorTrigger is a job that can trigger other jobs (e.g. git poller).
+	//
+	// Defined via 'trigger {...}' config stanza.
+	JobFlavorTrigger
+)
+
 // Definition wraps definition of a scheduler job fetched from the config.
 type Definition struct {
 	// JobID is globally unique job identifier: "<ProjectID>/<JobName>".
 	JobID string
+
+	// Flavor describes what category of jobs this is, see the enum.
+	Flavor JobFlavor
 
 	// Revision is config revision this definition was fetched from.
 	Revision string
@@ -173,7 +206,10 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	if err = proto.UnmarshalText(rawCfg.Content, &cfg); err != nil {
 		return nil, err
 	}
-	out := make([]Definition, 0, len(cfg.Job))
+
+	out := make([]Definition, 0, len(cfg.Job)+len(cfg.Trigger))
+
+	// Regular jobs, triggered jobs.
 	for _, job := range cfg.Job {
 		if job.Disabled {
 			continue
@@ -192,14 +228,57 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			logging.Errorf(c, "Failed to marshal the task: %s/%s: %s", projectID, id, err)
 			continue
 		}
+		schedule := job.Schedule
+		if schedule == "" {
+			schedule = defaultJobSchedule
+		}
+		flavor := JobFlavorTriggered
+		if schedule != "triggered" {
+			flavor = JobFlavorPeriodic
+		}
 		out = append(out, Definition{
 			JobID:       fmt.Sprintf("%s/%s", projectID, job.Id),
+			Flavor:      flavor,
 			Revision:    rawCfg.Revision,
 			RevisionURL: revisionURL,
-			Schedule:    job.Schedule,
+			Schedule:    schedule,
 			Task:        packed,
 		})
 	}
+
+	// Triggering jobs.
+	for _, trigger := range cfg.Trigger {
+		if trigger.Disabled {
+			continue
+		}
+		id := "(empty)"
+		if trigger.Id != "" {
+			id = trigger.Id
+		}
+		var task proto.Message
+		if task, err = cat.validateTriggerProto(trigger); err != nil {
+			logging.Errorf(c, "Invalid trigger definition %s/%s: %s", projectID, id, err)
+			continue
+		}
+		packed, err := cat.marshalTask(task)
+		if err != nil {
+			logging.Errorf(c, "Failed to marshal the task: %s/%s: %s", projectID, id, err)
+			continue
+		}
+		schedule := trigger.Schedule
+		if schedule == "" {
+			schedule = defaultTriggerSchedule
+		}
+		out = append(out, Definition{
+			JobID:       fmt.Sprintf("%s/%s", projectID, trigger.Id),
+			Flavor:      JobFlavorTrigger,
+			Revision:    rawCfg.Revision,
+			RevisionURL: revisionURL,
+			Schedule:    schedule,
+			Task:        packed,
+		})
+	}
+
 	return out, nil
 }
 
@@ -231,24 +310,20 @@ func getRevisionURL(configSetURL *url.URL, rev, path string) string {
 	return urlCpy.String()
 }
 
-// validateJobProto verifies that messages.Job protobuf message makes sense.
+// validateJobProto validates messages.Job protobuf message.
 //
 // It also extracts a task definition from it (e.g. SwarmingTask proto).
 func (cat *catalog) validateJobProto(j *messages.Job) (proto.Message, error) {
-	if j == nil {
-		return nil, fmt.Errorf("job must be specified")
-	}
 	if j.Id == "" {
 		return nil, fmt.Errorf("missing 'id' field'")
 	}
 	if !jobIDRe.MatchString(j.Id) {
 		return nil, fmt.Errorf("%q is not valid value for 'id' field", j.Id)
 	}
-	if j.Schedule == "" {
-		return nil, fmt.Errorf("missing 'schedule' field")
-	}
-	if _, err := schedule.Parse(j.Schedule, 0); err != nil {
-		return nil, fmt.Errorf("%s is not valid value for 'schedule' field - %s", j.Schedule, err)
+	if j.Schedule != "" {
+		if _, err := schedule.Parse(j.Schedule, 0); err != nil {
+			return nil, fmt.Errorf("%s is not valid value for 'schedule' field - %s", j.Schedule, err)
+		}
 	}
 
 	// Old-style config uses embedded TaskDefWrapper field. New configs have task
@@ -260,6 +335,24 @@ func (cat *catalog) validateJobProto(j *messages.Job) (proto.Message, error) {
 		return cat.extractTaskProto(j.Task)
 	}
 	return cat.extractTaskProto(j)
+}
+
+// validateTriggerProto validates messages.Trigger protobuf message.
+//
+// It also extracts a task definition from it.
+func (cat *catalog) validateTriggerProto(t *messages.Trigger) (proto.Message, error) {
+	if t.Id == "" {
+		return nil, fmt.Errorf("missing 'id' field'")
+	}
+	if !jobIDRe.MatchString(t.Id) {
+		return nil, fmt.Errorf("%q is not valid value for 'id' field", t.Id)
+	}
+	if t.Schedule != "" {
+		if _, err := schedule.Parse(t.Schedule, 0); err != nil {
+			return nil, fmt.Errorf("%s is not valid value for 'schedule' field - %s", t.Schedule, err)
+		}
+	}
+	return cat.extractTaskProto(t)
 }
 
 // extractTaskProto visits all fields of a proto and sniffs ones that correspond

@@ -53,10 +53,12 @@ func TestProtoValidation(t *testing.T) {
 		}
 
 		c.RegisterTaskManager(fakeTaskManager{})
-		So(call(nil), ShouldErrLike, "job must be specified")
 		So(call(&messages.Job{}), ShouldErrLike, "missing 'id' field'")
 		So(call(&messages.Job{Id: "bad id"}), ShouldErrLike, "not valid value for 'id' field")
-		So(call(&messages.Job{Id: "good"}), ShouldErrLike, "missing 'schedule' field")
+		So(call(&messages.Job{
+			Id:   "good",
+			Task: &messages.TaskDefWrapper{Noop: &messages.NoopTask{}},
+		}), ShouldBeNil)
 		So(call(&messages.Job{
 			Id:       "good",
 			Schedule: "blah",
@@ -65,11 +67,6 @@ func TestProtoValidation(t *testing.T) {
 			Id:       "good",
 			Schedule: "* * * * *",
 		}), ShouldErrLike, "can't find a recognized task definition")
-		So(call(&messages.Job{
-			Id:       "good",
-			Schedule: "* * * * *",
-			Task:     &messages.TaskDefWrapper{Noop: &messages.NoopTask{}},
-		}), ShouldBeNil)
 	})
 
 	Convey("extractTaskProto works", t, func() {

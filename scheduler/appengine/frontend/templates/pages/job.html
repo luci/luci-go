@@ -17,7 +17,7 @@
 <ol class="breadcrumb">
   <li><a href="/">All projects</a></li>
   <li><a href="/jobs/{{.Job.ProjectID}}">{{.Job.ProjectID}}</a></li>
-  <li class="active"><a href="/jobs/{{.Job.ProjectID}}/{{.Job.JobID}}">{{.Job.JobID}}</a></li>
+  <li class="active">{{template "job-id-ref" .Job}}</li>
 </ol>
 
 <div class="container">

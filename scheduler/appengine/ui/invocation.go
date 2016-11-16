@@ -8,11 +8,14 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
+
+	"github.com/luci/luci-go/scheduler/appengine/engine"
 )
 
 func invocationPage(c *router.Context) {
@@ -24,20 +27,43 @@ func invocationPage(c *router.Context) {
 		return
 	}
 
-	inv, err := config(c.Context).Engine.GetInvocation(c.Context, projectID+"/"+jobID, invID)
-	if err != nil {
-		panic(err)
-	}
-	if inv == nil {
+	var inv *engine.Invocation
+	var job *engine.Job
+	var err1, err2 error
+
+	eng := config(c.Context).Engine
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		inv, err1 = eng.GetInvocation(c.Context, projectID+"/"+jobID, invID)
+	}()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		job, err2 = eng.GetJob(c.Context, projectID+"/"+jobID)
+	}()
+	wg.Wait()
+
+	// panic on internal datastore errors to trigger HTTP 500.
+	switch {
+	case err1 != nil:
+		panic(err1)
+	case err2 != nil:
+		panic(err2)
+	case inv == nil:
 		http.Error(c.Writer, "No such invocation", http.StatusNotFound)
+		return
+	case job == nil:
+		http.Error(c.Writer, "No such job", http.StatusNotFound)
 		return
 	}
 
 	now := clock.Now(c.Context).UTC()
 	templates.MustRender(c.Context, c.Writer, "pages/invocation.html", map[string]interface{}{
-		"ProjectID": projectID,
-		"JobID":     jobID,
-		"Inv":       makeInvocation(projectID, jobID, inv, now),
+		"Job": makeJob(job, now),
+		"Inv": makeInvocation(projectID, jobID, inv, now),
 	})
 }
 
