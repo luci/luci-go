@@ -15,8 +15,12 @@ message BlobWithSHA1 {
   bytes sha1 = 2;
 }
 
-// TagCache stores a mapping (package name, tag) -> instance ID to speed up
-// subsequence ResolveVersion calls when tags are used.
+// TagCache stores a mapping (package name, tag) -> instance ID to
+// speed up subsequent ResolveVersion calls when tags are used.
+//
+// It also contains a (instance_id, file_name) -> hash mapping which is used for
+// client self-update purposes. file_name is case-senstive and must always use
+// POSIX-style slashes.
 message TagCache {
   message Entry {
     string package = 1;
@@ -26,6 +30,14 @@ message TagCache {
 
   // Capped list of entries, most recently resolved is last.
   repeated Entry entries = 1;
+
+  message FileEntry {
+    string package = 1;
+    string instance_id = 2;
+    string file_name = 3;
+    string hash = 4;
+  }
+  repeated FileEntry file_entries = 2;
 }
 
 // InstanceCache stores a list of instances in cache

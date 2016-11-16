@@ -54,6 +54,20 @@ func ValidateInstanceID(s string) error {
 	return nil
 }
 
+// ValidateFileHash returns error if a string isn't a valid exe hash.
+func ValidateFileHash(s string) error {
+	// file hashes are SHA1 hex digests currently.
+	if len(s) != 40 {
+		return fmt.Errorf("not a valid exe hash %q: not 40 bytes", s)
+	}
+	for _, c := range s {
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
+			return fmt.Errorf("not a valid exe hash %q: wrong char %c", s, c)
+		}
+	}
+	return nil
+}
+
 // ValidatePin returns error if package name or instance id are invalid.
 func ValidatePin(pin Pin) error {
 	if err := ValidatePackageName(pin.PackageName); err != nil {
