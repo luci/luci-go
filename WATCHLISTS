@@ -16,10 +16,8 @@
   'WATCHLISTS': {
     'all': [
       # Add yourself here to get explicitly spammed.
-      'maruel@chromium.org',
+      'maruel+w@chromium.org',
       'tandrii+luci-go@chromium.org',
-      'todd@cloudera.com',
-      'andrew.wang@cloudera.com',
     ],
   },
 
