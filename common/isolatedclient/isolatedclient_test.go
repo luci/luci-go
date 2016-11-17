@@ -5,13 +5,17 @@
 package isolatedclient
 
 import (
+	"errors"
 	"io"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"testing"
+	"testing/iotest"
 	"time"
 
 	"golang.org/x/net/context"
@@ -245,5 +249,87 @@ func (k *killingMux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if f() {
 		log.Printf("%-4s %s", req.Method, req.URL.Path)
 		k.server.ServeHTTP(w, req)
+	}
+}
+
+type testReadCloser struct {
+	io.Reader
+	CloseErr error // The error to return on close, if any.
+	Closed   bool  // True if close has been called.
+}
+
+func (t *testReadCloser) Close() error {
+	t.Closed = true
+	return t.CloseErr
+}
+
+func TestCompressor(t *testing.T) {
+	errBang := errors.New("bang!")
+
+	testCases := []struct {
+		Desc         string
+		Src          io.Reader // The Closer is added by the test.
+		ReadN        int64     // Bytes to read (negative to read all, zero to read none).
+		WantReadErr  error     // The expected error from reading.
+		CloseErr     error     // The error to return from close.
+		WantCloseErr error     // The expected error from close.
+	}{
+		{
+			Desc:  "all contents read",
+			Src:   strings.NewReader("I am a simple sample reader"),
+			ReadN: -1,
+		},
+		{
+			Desc:  "no contents read",
+			Src:   strings.NewReader("I am a simple sample reader"),
+			ReadN: 0,
+		},
+		{
+			Desc:  "partial contents read",
+			Src:   strings.NewReader("I am a simple sample reader"),
+			ReadN: 10,
+		},
+		{
+			Desc:         "error on source close",
+			Src:          strings.NewReader("I am a simple sample reader"),
+			ReadN:        -1,
+			CloseErr:     errBang,
+			WantCloseErr: errBang,
+		},
+		{
+			Desc:        "error on read",
+			Src:         iotest.TimeoutReader(iotest.OneByteReader(strings.NewReader("asd"))),
+			ReadN:       -1,
+			WantReadErr: iotest.ErrTimeout,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.Desc, func(t *testing.T) {
+			src := &testReadCloser{
+				Reader:   tc.Src,
+				CloseErr: tc.CloseErr,
+			}
+			comp := newCompressed(src)
+
+			var readErr error
+			switch {
+			case tc.ReadN < 0:
+				_, readErr = ioutil.ReadAll(comp)
+			case tc.ReadN > 0:
+				_, readErr = io.CopyN(ioutil.Discard, comp, tc.ReadN)
+			}
+			if readErr != tc.WantReadErr {
+				t.Fatalf("Read error: got: %v; want: %v", readErr, tc.WantReadErr)
+			}
+
+			if err := comp.Close(); err != tc.WantCloseErr {
+				t.Fatalf("Close error: got: %v; want: %v", err, tc.WantCloseErr)
+			}
+			if !src.Closed {
+				t.Errorf("Underlying source was not closed")
+			}
+		})
 	}
 }

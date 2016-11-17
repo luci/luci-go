@@ -236,23 +236,35 @@ func (i *Client) doPushGCS(c context.Context, state *PushState, source Source) (
 // compressed is an io.ReadCloser that transparently compresses source data in
 // a separate goroutine.
 type compressed struct {
-	io.ReadCloser
+	pr  *io.PipeReader
+	src io.ReadCloser
 }
 
-func newCompressed(src io.Reader) *compressed {
+func (c *compressed) Read(data []byte) (int, error) {
+	return c.pr.Read(data)
+}
+
+func (c *compressed) Close() error {
+	err := c.pr.Close()
+	if err1 := c.src.Close(); err == nil {
+		err = err1
+	}
+	return err
+}
+
+func newCompressed(src io.ReadCloser) io.ReadCloser {
 	pr, pw := io.Pipe()
 	go func() {
 		// The compressor itself is not thread safe.
 		compressor := isolated.GetCompressor(pw)
 
-		buf := [4096]byte{}
-		pw.CloseWithError(func() error {
-			if _, err := io.CopyBuffer(compressor, src, buf[:]); err != nil {
-				return err
-			}
-			return compressor.Close()
-		}())
+		buf := make([]byte, 4096)
+		if _, err := io.CopyBuffer(compressor, src, buf); err != nil {
+			pw.CloseWithError(err)
+			return
+		}
+		pw.CloseWithError(compressor.Close())
 	}()
 
-	return &compressed{pr}
+	return &compressed{pr, src}
 }
