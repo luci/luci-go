@@ -146,58 +146,50 @@ func Archive(arch *archiver.Archiver, opts *ArchiveOptions) *archiver.Item {
 	return f
 }
 
-func processing(opts *ArchiveOptions) (int, int, []string, string, *isolated.Isolated, error) {
+// ProcessIsolate parses an isolate file, returning the list of dependencies
+// (both files and directories), the root directory and the initial Isolated struct.
+func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated, error) {
 	content, err := ioutil.ReadFile(opts.Isolate)
 	if err != nil {
-		return 0, 0, nil, "", nil, err
+		return nil, "", nil, err
 	}
 	cmd, deps, readOnly, isolateDir, err := LoadIsolateForConfig(filepath.Dir(opts.Isolate), content, opts.ConfigVariables)
 	if err != nil {
-		return 0, 0, nil, "", nil, err
+		return nil, "", nil, err
 	}
 
-	// Check for variable error before doing anything.
+	// Expand variables in the commands.
 	for i := range cmd {
 		if cmd[i], err = ReplaceVariables(cmd[i], opts); err != nil {
-			return 0, 0, nil, "", nil, err
-		}
-	}
-	filesCount := 0
-	dirsCount := 0
-	for i := range deps {
-		if deps[i], err = ReplaceVariables(deps[i], opts); err != nil {
-			return 0, 0, nil, "", nil, err
-		}
-		if deps[i][len(deps[i])-1] == os.PathSeparator {
-			dirsCount++
-		} else {
-			filesCount++
+			return nil, "", nil, err
 		}
 	}
 
-	// Convert all dependencies to absolute path and find the root directory to
-	// use.
-	for i, dep := range deps {
-		clean := filepath.Clean(filepath.Join(isolateDir, dep))
-		if dep[len(dep)-1] == os.PathSeparator {
-			clean += osPathSeparator
+	// Expand variables in the deps, and convert each path to a cleaned absolute form.
+	for i := range deps {
+		dep, err := ReplaceVariables(deps[i], opts)
+		if err != nil {
+			return nil, "", nil, err
 		}
-		deps[i] = clean
+		deps[i] = join(isolateDir, dep)
 	}
+
+	// Find the root directory of all the files (the root might be above isolateDir).
 	rootDir := isolateDir
 	for _, dep := range deps {
+		// Check if the dep is outside isolateDir.
 		base := filepath.Dir(dep)
 		for {
 			rel, err := filepath.Rel(rootDir, base)
 			if err != nil {
-				return 0, 0, nil, "", nil, err
+				return nil, "", nil, err
 			}
 			if !strings.HasPrefix(rel, "..") {
 				break
 			}
 			newRootDir := filepath.Dir(rootDir)
 			if newRootDir == rootDir {
-				return 0, 0, nil, "", nil, errors.New("failed to find root dir")
+				return nil, "", nil, errors.New("failed to find root dir")
 			}
 			rootDir = newRootDir
 		}
@@ -206,25 +198,54 @@ func processing(opts *ArchiveOptions) (int, int, []string, string, *isolated.Iso
 		log.Printf("Root: %s", rootDir)
 	}
 
-	// Prepare the .isolated file.
-	i := &isolated.Isolated{
+	// Prepare the .isolated struct.
+	isol := &isolated.Isolated{
 		Algo:     "sha-1",
 		Files:    map[string]isolated.File{},
 		ReadOnly: readOnly.ToIsolated(),
 		Version:  isolated.IsolatedFormatVersion,
 	}
 	if len(cmd) != 0 {
-		i.Command = cmd
+		isol.Command = cmd
 	}
 	if rootDir != isolateDir {
 		relPath, err := filepath.Rel(rootDir, isolateDir)
 		if err != nil {
-			return 0, 0, nil, "", nil, err
+			return nil, "", nil, err
 		}
-		i.RelativeCwd = relPath
+		isol.RelativeCwd = relPath
 	}
+	return deps, rootDir, isol, nil
+}
+
+func processing(opts *ArchiveOptions) (filesCount, dirsCount int, deps []string, rootDir string, isol *isolated.Isolated, err error) {
+	deps, rootDir, isol, err = ProcessIsolate(opts)
+	if err != nil {
+		return 0, 0, nil, "", nil, err
+	}
+
+	for i := range deps {
+		if deps[i][len(deps[i])-1] == os.PathSeparator {
+			dirsCount++
+		} else {
+			filesCount++
+		}
+	}
+
 	// Processing of the .isolate file ended.
-	return filesCount, dirsCount, deps, rootDir, i, err
+	return filesCount, dirsCount, deps, rootDir, isol, nil
+}
+
+// join joins the provided pair of path elements. Unlike filepath.Join, join
+// will preserve the trailing slash of the second element, if any.
+// TODO(djd): delete this function. Preserving the slash is fragile, and we
+// can tell if a path is a dir by stat'ing it (which we need to do anyway).
+func join(p1, p2 string) string {
+	joined := filepath.Join(p1, p2)
+	if p2[len(p2)-1] == os.PathSeparator {
+		joined += osPathSeparator // Retain trailing slash.
+	}
+	return joined
 }
 
 func archive(arch *archiver.Archiver, opts *ArchiveOptions, displayName string) (*archiver.Item, error) {
