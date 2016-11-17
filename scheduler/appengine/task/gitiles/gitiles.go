@@ -91,9 +91,11 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	wg.Wait()
 
 	if headsErr != nil {
-		return fmt.Errorf("failed to load heads: %v", headsErr)
+		ctl.DebugLog("Failed to fetch heads - %s", headsErr)
+		return fmt.Errorf("failed to fetch heads: %v", headsErr)
 	}
 	if refsErr != nil {
+		ctl.DebugLog("Failed to fetch refs - %s", refsErr)
 		return fmt.Errorf("failed to fetch refs: %v", refsErr)
 	}
 
@@ -129,6 +131,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	var log gerrit.Log
 	for r := range ch {
 		if r.err != nil {
+			ctl.DebugLog("Failed to fetch log - %s", r.err)
 			if gerrit.IsNotFound(r.err) {
 				delete(heads, r.ref)
 			} else {

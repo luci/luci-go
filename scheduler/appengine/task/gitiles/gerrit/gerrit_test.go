@@ -101,12 +101,12 @@ func TestGetLog(t *testing.T) {
       "author": {
         "name": "First Last",
         "email": "firstlast@example.com",
-        "time": "Mon Jan 01 12:00:00 1970 -0000"
+        "time": "Mon Jan 01 12:00:00 1970"
       },
       "committer": {
         "name": "First Last",
         "email": "firstlast@example.com",
-        "time": "Mon Jan 01 12:00:00 1970 -0000"
+        "time": "Mon Jan 01 12:00:00 1970"
       },
       "message": "test\n"
     }

@@ -25,7 +25,17 @@ type GitTime time.Time
 
 // UnmarshalJSON parses a date and time from the input buffer.
 func (gt GitTime) UnmarshalJSON(data []byte) error {
-	t, err := time.Parse(`"Mon Jan 02 15:04:05 2006 -0700"`, string(data))
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	// Time stamps from Gitiles sometimes have a UTC offset (e.g., -7800), and
+	// sometimes not, so we try both variants before failing.
+	t, err := time.Parse(`Mon Jan 02 15:04:05 2006`, s)
+	switch err.(type) {
+	case *time.ParseError:
+		t, err = time.Parse(`Mon Jan 02 15:04:05 2006 -0700`, s)
+	}
 	if err == nil {
 		gt = GitTime(t)
 	}
