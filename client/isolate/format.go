@@ -944,7 +944,7 @@ func pythonToGoCondition(pyCond string) (string, error) {
 	//	* replacing all 'string' to "string"
 	//  * replacing `and` and `or` to `&&` and `||` operators, respectively.
 	// We work with runes to be safe against unicode.
-	left := stringToRunes(pyCond)
+	left := []rune(pyCond)
 	var err error
 	goChunk := ""
 	out := []string{}

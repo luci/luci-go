@@ -152,11 +152,3 @@ func newString(v string) *string {
 	*o = v
 	return o
 }
-
-func stringToRunes(s string) []rune {
-	out := make([]rune, 0, len(s))
-	for _, r := range s {
-		out = append(out, r)
-	}
-	return out
-}

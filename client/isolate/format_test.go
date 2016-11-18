@@ -247,7 +247,7 @@ func TestPythonToGoString(t *testing.T) {
 		{`'∀ unicode'`, `"∀ unicode"`, ``},
 	}
 	for i, e := range expectations {
-		goChunk, left, err := pythonToGoString(stringToRunes(e.in))
+		goChunk, left, err := pythonToGoString([]rune(e.in))
 		t.Logf("in: `%s` eg: `%s` g: `%s` el: `%s` l: `%s` err: %s", e.in, e.out, goChunk, e.left, string(left), err)
 		ut.AssertEqualIndex(t, i, e.left, string(left))
 		ut.AssertEqualIndex(t, i, e.out, goChunk)
@@ -259,7 +259,7 @@ func TestPythonToGoStringError(t *testing.T) {
 	t.Parallel()
 	expErr := errors.New("failed to parse Condition string")
 	for i, e := range []string{`'"`, `"'`, `'\'`, `"\"`, `'""`, `"''`} {
-		goChunk, left, err := pythonToGoString(stringToRunes(e))
+		goChunk, left, err := pythonToGoString([]rune(e))
 		t.Logf("in: `%s`, g: `%s`, l: `%s`, err: %s", e, goChunk, string(left), err)
 		ut.AssertEqualIndex(t, i, expErr, err)
 	}
@@ -278,7 +278,7 @@ func TestPythonToGoNonString(t *testing.T) {
 		{`)whatever("string...`, `)whatever(`, `"string...`},
 	}
 	for i, e := range expectations {
-		goChunk, left := pythonToGoNonString(stringToRunes(e.in))
+		goChunk, left := pythonToGoNonString([]rune(e.in))
 		t.Logf("in: `%s` eg: `%s` g: `%s` el: `%s` l: `%s`", e.in, e.out, goChunk, e.left, string(left))
 		ut.AssertEqualIndex(t, i, e.left, string(left))
 		ut.AssertEqualIndex(t, i, e.out, goChunk)
