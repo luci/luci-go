@@ -32,6 +32,7 @@ var testCases = []struct {
 	{"build-running", "build-running.json"},
 	{"build-timeout", "build-timeout.json"},
 	{"build-unicode", "build-unicode.json"},
+	{"build-nested", "build-nested.json"},
 }
 
 func getTestCases() []string {

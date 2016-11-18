@@ -1,0 +1,256 @@
+@@@CURRENT_TIMESTAMP@1479162966@@@
+@@@SEED_STEP@recipe bootstrap@@@
+@@@STEP_CURSOR@recipe bootstrap@@@
+@@@CURRENT_TIMESTAMP@1479162966@@@
+@@@STEP_STARTED@@@
+Stuff
+@@@CURRENT_TIMESTAMP@1479162972.97@@@
+@@@HONOR_ZERO_RETURN_CODE@@@
+@@@SEED_STEP@setup_build@@@
+@@@STEP_CURSOR@setup_build@@@
+@@@CURRENT_TIMESTAMP@1479162972.97@@@
+@@@STEP_STARTED@@@
+@@@STEP_LOG_LINE@run_recipe@To repro this locally, run the following line from the root of a 'magenta' checkout:@@@
+@@@STEP_LOG_LINE@run_recipe@@@@
+@@@STEP_LOG_LINE@run_recipe@./infra/recipes.py run --properties-file - magenta &lt;&lt;EOF@@@
+@@@STEP_LOG_LINE@run_recipe@{"remote": "https://fuchsia.googlesource.com/manifest", "target": "magenta-pc-x86-64", "repository": "https://fuchsia.googlesource.com/magenta", "buildername": "x86-64 Linux (GCC)", "recipe": "magenta", "gerrit": "https://fuchsia-review.googlesource.com", "manifest": "magenta", "toolchain": "gcc", "path_config": "swarmbucket"}@@@
+@@@STEP_LOG_LINE@run_recipe@EOF@@@
+@@@STEP_LOG_LINE@run_recipe@@@@
+@@@STEP_LOG_LINE@run_recipe@To run on Windows, you can put the JSON in a file and redirect the@@@
+@@@STEP_LOG_LINE@run_recipe@contents of the file into run_recipe.py, with the &lt; operator.@@@
+@@@STEP_LOG_END@run_recipe@@@
+Running recipe with {u'remote': u'https://fuchsia.googlesource.com/manifest', u'target': u'magenta-pc-x86-64', u'repository': u'https://fuchsia.googlesource.com/magenta', u'buildername': u'x86-64 Linux (GCC)', 'recipe': 'magenta', u'gerrit': u'https://fuchsia-review.googlesource.com', u'manifest': u'magenta', u'toolchain': u'gcc', u'path_config': u'swarmbucket'}
+@@@STEP_TEXT@running recipe: "magenta"@@@
+@@@CURRENT_TIMESTAMP@1479162973.02@@@
+@@@STEP_CLOSED@@@
+@@@SEED_STEP@install cipd@@@
+@@@STEP_CURSOR@install cipd@@@
+@@@CURRENT_TIMESTAMP@1479162973.02@@@
+@@@STEP_STARTED@@@
+python -u /b/swarm_slave/w/iruhikkv/magenta/checkout/infra/.recipe_deps/infra/recipe_modules/cipd/resources/bootstrap.py --platform linux-amd64 --dest-directory /b/swarm_slave/w/iruhikkv/kitchen-workdir/cipd --json-output /tmp/tmpwRlS8x.json
+in dir /b/swarm_slave/w/iruhikkv/kitchen-workdir:
+ allow_subannotations: False
+ base_name: install cipd
+ cmd: ['python', '-u', '/b/swarm_slave/w/iruhikkv/magenta/checkout/infra/.recipe_deps/infra/recipe_modules/cipd/resources/bootstrap.py', '--platform', 'linux-amd64', '--dest-directory', '/b/swarm_slave/w/iruhikkv/kitchen-workdir/cipd', '--json-output', '/tmp/tmpwRlS8x.json']
+ infra_step: False
+ name: install cipd
+ nest_level: 0
+ ok_ret: frozenset([0])
+ step_test_data: &lt;lambda&gt;(...)
+ trigger_specs: []
+full environment:
+ PATH: /usr/local/sbin:/usr/local/bin:/usr/bin:/usr/sbin:/sbin:/bin
+ PYTHONPATH: /b/swarm_slave/w/iruhikkv/third_party
+ PYTHONUNBUFFERED: 1
+ SWARMING_BOT_ID: fuchsia-bot-a07
+ SWARMING_HEADLESS: 1
+ SWARMING_TASK_ID: 327dccfcef7ff411
+
+@@@STEP_TEXT@cipd instance_id: d1ec9d904caee34beffec0a691a79991122037ba@@@
+@@@STEP_LOG_LINE@json.output@{@@@
+@@@STEP_LOG_LINE@json.output@  "executable": "/b/swarm_slave/w/iruhikkv/kitchen-workdir/cipd/cipd", @@@
+@@@STEP_LOG_LINE@json.output@  "instance_id": "d1ec9d904caee34beffec0a691a79991122037ba"@@@
+@@@STEP_LOG_LINE@json.output@}@@@
+@@@STEP_LOG_END@json.output@@@
+@@@CURRENT_TIMESTAMP@1479162973.45@@@
+@@@STEP_CLOSED@@@
+@@@SEED_STEP@ensure_installed@@@
+@@@STEP_CURSOR@ensure_installed@@@
+@@@CURRENT_TIMESTAMP@1479162973.45@@@
+@@@STEP_STARTED@@@
+/b/swarm_slave/w/iruhikkv/kitchen-workdir/cipd/cipd ensure --root /b/cache/cipd --list /tmp/tmpJAg9jB --json-output /tmp/tmphFlk5d.json
+in dir /b/swarm_slave/w/iruhikkv/kitchen-workdir:
+ allow_subannotations: False
+ base_name: ensure_installed
+ cmd: ['/b/swarm_slave/w/iruhikkv/kitchen-workdir/cipd/cipd', 'ensure', '--root', '/b/cache/cipd', '--list', '/tmp/tmpJAg9jB', '--json-output', '/tmp/tmphFlk5d.json']
+ infra_step: False
+ name: ensure_installed
+ nest_level: 0
+ ok_ret: frozenset([0])
+ step_test_data: &lt;lambda&gt;(...)
+ trigger_specs: []
+full environment:
+ PATH: /usr/local/sbin:/usr/local/bin:/usr/bin:/usr/sbin:/sbin:/bin
+ PYTHONPATH: /b/swarm_slave/w/iruhikkv/third_party
+ PYTHONUNBUFFERED: 1
+ SWARMING_BOT_ID: fuchsia-bot-a07
+ SWARMING_HEADLESS: 1
+ SWARMING_TASK_ID: 327dccfcef7ff411
+
+@@@STEP_LOG_LINE@json.output@{@@@
+@@@STEP_LOG_LINE@json.output@  "result": [@@@
+@@@STEP_LOG_LINE@json.output@    {@@@
+@@@STEP_LOG_LINE@json.output@      "instance_id": "eb2b8b0549775d618da39f6afd80731097cc15b6", @@@
+@@@STEP_LOG_LINE@json.output@      "package": "fuchsia/tools/jiri/linux-amd64"@@@
+@@@STEP_LOG_LINE@json.output@    }@@@
+@@@STEP_LOG_LINE@json.output@  ]@@@
+@@@STEP_LOG_LINE@json.output@}@@@
+@@@STEP_LOG_END@json.output@@@
+@@@CURRENT_TIMESTAMP@1479162973.68@@@
+@@@STEP_CLOSED@@@
+@@@SEED_STEP@jiri init@@@
+@@@STEP_CURSOR@jiri init@@@
+@@@CURRENT_TIMESTAMP@1479162973.68@@@
+@@@STEP_STARTED@@@
+/b/cache/cipd/jiri init -cache /b/cache/jiri
+in dir /b/swarm_slave/w/iruhikkv/kitchen-workdir:
+ allow_subannotations: False
+ base_name: jiri init
+ cmd: ['/b/cache/cipd/jiri', 'init', '-cache', '/b/cache/jiri']
+ infra_step: False
+ name: jiri init
+ nest_level: 0
+ ok_ret: frozenset([0])
+ trigger_specs: []
+full environment:
+ PATH: /usr/local/sbin:/usr/local/bin:/usr/bin:/usr/sbin:/sbin:/bin
+ PYTHONPATH: /b/swarm_slave/w/iruhikkv/third_party
+ PYTHONUNBUFFERED: 1
+ SWARMING_BOT_ID: fuchsia-bot-a07
+ SWARMING_HEADLESS: 1
+ SWARMING_TASK_ID: 327dccfcef7ff411
+
+@@@CURRENT_TIMESTAMP@1479162974.06@@@
+@@@STEP_CLOSED@@@
+@@@SEED_STEP@jiri project clean@@@
+@@@STEP_CURSOR@jiri project clean@@@
+@@@CURRENT_TIMESTAMP@1479162974.06@@@
+@@@STEP_STARTED@@@
+/b/cache/cipd/jiri project clean
+in dir /b/swarm_slave/w/iruhikkv/kitchen-workdir:
+ allow_subannotations: False
+ base_name: jiri project clean
+ cmd: ['/b/cache/cipd/jiri', 'project', 'clean']
+ infra_step: False
+ name: jiri project clean
+ nest_level: 0
+ ok_ret: frozenset([0])
+ trigger_specs: []
+full environment:
+ PATH: /usr/local/sbin:/usr/local/bin:/usr/bin:/usr/sbin:/sbin:/bin
+ PYTHONPATH: /b/swarm_slave/w/iruhikkv/third_party
+ PYTHONUNBUFFERED: 1
+ SWARMING_BOT_ID: fuchsia-bot-a07
+ SWARMING_HEADLESS: 1
+ SWARMING_TASK_ID: 327dccfcef7ff411
+
+@@@CURRENT_TIMESTAMP@1479162974.09@@@
+@@@STEP_CLOSED@@@
+@@@SEED_STEP@jiri import@@@
+@@@STEP_CURSOR@jiri import@@@
+@@@CURRENT_TIMESTAMP@1479162974.09@@@
+@@@STEP_STARTED@@@
+/b/cache/cipd/jiri import '-overwrite=true' magenta https://fuchsia.googlesource.com/manifest
+in dir /b/swarm_slave/w/iruhikkv/kitchen-workdir:
+ allow_subannotations: False
+ base_name: jiri import
+ cmd: ['/b/cache/cipd/jiri', 'import', '-overwrite=true', 'magenta', 'https://fuchsia.googlesource.com/manifest']
+ infra_step: False
+ name: jiri import
+ nest_level: 0
+ ok_ret: frozenset([0])
+ trigger_specs: []
+full environment:
+ PATH: /usr/local/sbin:/usr/local/bin:/usr/bin:/usr/sbin:/sbin:/bin
+ PYTHONPATH: /b/swarm_slave/w/iruhikkv/third_party
+ PYTHONUNBUFFERED: 1
+ SWARMING_BOT_ID: fuchsia-bot-a07
+ SWARMING_HEADLESS: 1
+ SWARMING_TASK_ID: 327dccfcef7ff411
+
+@@@CURRENT_TIMESTAMP@1479162974.09@@@
+@@@STEP_CLOSED@@@
+@@@SEED_STEP@jiri update@@@
+@@@STEP_CURSOR@jiri update@@@
+@@@CURRENT_TIMESTAMP@1479162974.09@@@
+@@@STEP_STARTED@@@
+/b/cache/cipd/jiri update '-autoupdate=false' '-gc=true'
+in dir /b/swarm_slave/w/iruhikkv/kitchen-workdir:
+ allow_subannotations: False
+ base_name: jiri update
+ cmd: ['/b/cache/cipd/jiri', 'update', '-autoupdate=false', '-gc=true']
+ infra_step: False
+ name: jiri update
+ nest_level: 0
+ ok_ret: frozenset([0])
+ trigger_specs: []
+full environment:
+ PATH: /usr/local/sbin:/usr/local/bin:/usr/bin:/usr/sbin:/sbin:/bin
+ PYTHONPATH: /b/swarm_slave/w/iruhikkv/third_party
+ PYTHONUNBUFFERED: 1
+ SWARMING_BOT_ID: fuchsia-bot-a07
+ SWARMING_HEADLESS: 1
+ SWARMING_TASK_ID: 327dccfcef7ff411
+
+[22:36:14.09] &gt;&gt; Updating all projects
+[22:36:37.17] &gt;&gt; running hook(update) for project "buildtools"
+[22:36:37.17] &gt;&gt; running hook(download-toolchain) for project "magenta"
+@@@CURRENT_TIMESTAMP@1479163034.03@@@
+@@@STEP_CLOSED@@@
+@@@SEED_STEP@build@@@
+@@@SEED_STEP@build.cleanup@@@
+@@@STEP_CURSOR@build.cleanup@@@
+@@@CURRENT_TIMESTAMP@1479163034.78@@@
+@@@STEP_STARTED@@@
+@@@STEP_NEST_LEVEL@1@@@
+make spotless
+in dir /b/swarm_slave/w/iruhikkv/kitchen-workdir/magenta:
+allow_subannotations: False
+base_name: cleanup
+cmd: ['make', 'spotless']
+cwd: /b/swarm_slave/w/iruhikkv/kitchen-workdir/magenta
+infra_step: False
+name: build.cleanup
+nest_level: 1
+ok_ret: frozenset([0])
+trigger_specs: []
+full environment:
+PATH: /usr/local/sbin:/usr/local/bin:/usr/bin:/usr/sbin:/sbin:/bin
+PYTHONPATH: /b/swarm_slave/w/iruhikkv/third_party
+PYTHONUNBUFFERED: 1
+SWARMING_BOT_ID: fuchsia-bot-a07
+SWARMING_HEADLESS: 1
+SWARMING_TASK_ID: 327dccfcef7ff411
+
+rm -rf -- "."/build-*
+@@@CURRENT_TIMESTAMP@1479163036.33@@@
+@@@STEP_CLOSED@@@
+@@@SEED_STEP@build.build@@@
+@@@STEP_CURSOR@build.build@@@
+@@@CURRENT_TIMESTAMP@1479163036.33@@@
+@@@STEP_STARTED@@@
+@@@STEP_NEST_LEVEL@1@@@
+make -j4 magenta-pc-x86-64
+in dir /b/swarm_slave/w/iruhikkv/kitchen-workdir/magenta:
+allow_subannotations: False
+base_name: build
+cmd: ['make', '-j4', 'magenta-pc-x86-64']
+cwd: /b/swarm_slave/w/iruhikkv/kitchen-workdir/magenta
+infra_step: False
+name: build.build
+nest_level: 1
+ok_ret: frozenset([0])
+trigger_specs: []
+full environment:
+PATH: /usr/local/sbin:/usr/local/bin:/usr/bin:/usr/sbin:/sbin:/bin
+PYTHONPATH: /b/swarm_slave/w/iruhikkv/third_party
+PYTHONUNBUFFERED: 1
+SWARMING_BOT_ID: fuchsia-bot-a07
+SWARMING_HEADLESS: 1
+SWARMING_TASK_ID: 327dccfcef7ff411
+
+PROJECT = magenta-pc-x86-64
+PLATFORM = pc
+TARGET = pc-x86
+EXPORT system/ulib/ddk static
+EXPORT system/ulib/ddk include
+EXPORT system/ulib/driver shared
+step returned non-zero exit code: 2
+@@@STEP_FAILURE@@@
+@@@CURRENT_TIMESTAMP@1479163078.5@@@
+@@@STEP_CLOSED@@@
+@@@STEP_CURSOR@build@@@
+@@@CURRENT_TIMESTAMP@1479163078.5@@@
+@@@STEP_STARTED@@@
+@@@CURRENT_TIMESTAMP@1479163078.5@@@
+@@@STEP_CLOSED@@@

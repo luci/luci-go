@@ -33,7 +33,7 @@ var builtIn = map[string]struct{}{
 
 // miloBuildStep converts a logdog/milo step to a BuildComponent struct.
 // buildCompletedTime must be zero if build did not complete yet.
-func miloBuildStep(ub URLBuilder, anno *miloProto.Step, buildCompletedTime, now time.Time) *resp.BuildComponent {
+func miloBuildStep(ub URLBuilder, anno *miloProto.Step, buildCompletedTime, now time.Time) []*resp.BuildComponent {
 
 	comp := &resp.BuildComponent{Label: anno.Name}
 	switch anno.Status {
@@ -145,7 +145,26 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, buildCompletedTime, now 
 	// This should be the exact same thing.
 	comp.Text = append(comp.Text, anno.Text...)
 
-	return comp
+	ss := anno.GetSubstep()
+	results := []*resp.BuildComponent{}
+	results = append(results, comp)
+	// Process nested steps.
+	for _, substep := range ss {
+		var subanno *miloProto.Step
+		switch s := substep.GetSubstep().(type) {
+		case *miloProto.Step_Substep_Step:
+			subanno = s.Step
+		case *miloProto.Step_Substep_AnnotationStream:
+			panic("Non-inline substeps not supported")
+		default:
+			panic(fmt.Errorf("Unknown type %v", s))
+		}
+		for _, subcomp := range miloBuildStep(ub, subanno, buildCompletedTime, now) {
+			results = append(results, subcomp)
+		}
+	}
+
+	return results
 }
 
 // AddLogDogToBuild takes a set of logdog streams and populate a milo build.
@@ -157,7 +176,7 @@ func AddLogDogToBuild(
 	// Now fill in each of the step components.
 	// TODO(hinoka): This is totes cachable.
 	buildCompletedTime := mainAnno.Ended.Time()
-	build.Summary = *(miloBuildStep(ub, mainAnno, buildCompletedTime, now))
+	build.Summary = *(miloBuildStep(ub, mainAnno, buildCompletedTime, now)[0])
 	for _, substepContainer := range mainAnno.Substep {
 		anno := substepContainer.GetStep()
 		if anno == nil {
@@ -165,20 +184,22 @@ func AddLogDogToBuild(
 			continue
 		}
 
-		bs := miloBuildStep(ub, anno, buildCompletedTime, now)
-		if bs.Status != resp.Success {
-			build.Summary.Text = append(
-				build.Summary.Text, fmt.Sprintf("%s %s", bs.Status, bs.Label))
+		bss := miloBuildStep(ub, anno, buildCompletedTime, now)
+		for _, bs := range bss {
+			if bs.Status != resp.Success {
+				build.Summary.Text = append(
+					build.Summary.Text, fmt.Sprintf("%s %s", bs.Status, bs.Label))
+			}
+			build.Components = append(build.Components, bs)
+			propGroup := &resp.PropertyGroup{GroupName: bs.Label}
+			for _, prop := range anno.Property {
+				propGroup.Property = append(propGroup.Property, &resp.Property{
+					Key:   prop.Name,
+					Value: prop.Value,
+				})
+			}
+			build.PropertyGroup = append(build.PropertyGroup, propGroup)
 		}
-		build.Components = append(build.Components, bs)
-		propGroup := &resp.PropertyGroup{GroupName: bs.Label}
-		for _, prop := range anno.Property {
-			propGroup.Property = append(propGroup.Property, &resp.Property{
-				Key:   prop.Name,
-				Value: prop.Value,
-			})
-		}
-		build.PropertyGroup = append(build.PropertyGroup, propGroup)
 	}
 
 	// Take care of properties

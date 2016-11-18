@@ -1,0 +1,340 @@
+{
+  "Summary": {
+    "ParentLabel": null,
+    "Label": "2d8d62f6be545b10",
+    "Status": "Running",
+    "Banner": null,
+    "Bot": null,
+    "Source": {
+      "Label": "Task 2d8d62f6be545b10",
+      "URL": "https://debug/user/task/2d8d62f6be545b10"
+    },
+    "MainLink": {
+      "Label": "Task 2d8d62f6be545b10",
+      "URL": "https://debug/user/task/2d8d62f6be545b10"
+    },
+    "SubLink": null,
+    "Progress": null,
+    "Started": "2016-03-14T10:00:01.85071Z",
+    "Finished": "0001-01-01T00:00:00Z",
+    "Duration": 3598149290000,
+    "Type": "Recipe",
+    "LevelsDeep": 0,
+    "Verbosity": 0,
+    "Text": [
+      "Running recipe bootstrap",
+      "Failure build",
+      "Failure build.build"
+    ]
+  },
+  "SourceStamp": null,
+  "Components": [
+    {
+      "ParentLabel": null,
+      "Label": "recipe bootstrap",
+      "Status": "Running",
+      "Banner": null,
+      "Bot": null,
+      "Source": null,
+      "MainLink": {
+        "Label": "stdout",
+        "URL": "foo/steps/recipe_bootstrap/0/stdout"
+      },
+      "SubLink": null,
+      "Progress": null,
+      "Started": "2016-11-14T22:36:06Z",
+      "Finished": "0001-01-01T00:00:00Z",
+      "Duration": 0,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Verbosity": 0,
+      "Text": null
+    },
+    {
+      "ParentLabel": null,
+      "Label": "setup_build",
+      "Status": "Success",
+      "Banner": null,
+      "Bot": null,
+      "Source": null,
+      "MainLink": {
+        "Label": "stdout",
+        "URL": "foo/steps/setup_build/0/stdout"
+      },
+      "SubLink": [
+        {
+          "Label": "run_recipe",
+          "URL": "foo/steps/setup_build/0/logs/run_recipe/0"
+        }
+      ],
+      "Progress": null,
+      "Started": "2016-11-14T22:36:12.970000128Z",
+      "Finished": "2016-11-14T22:36:13.02Z",
+      "Duration": 49999872,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Verbosity": 1,
+      "Text": [
+        "running recipe: \"magenta\""
+      ]
+    },
+    {
+      "ParentLabel": null,
+      "Label": "install cipd",
+      "Status": "Success",
+      "Banner": null,
+      "Bot": null,
+      "Source": null,
+      "MainLink": {
+        "Label": "stdout",
+        "URL": "foo/steps/install_cipd/0/stdout"
+      },
+      "SubLink": [
+        {
+          "Label": "json.output",
+          "URL": "foo/steps/install_cipd/0/logs/json.output/0"
+        }
+      ],
+      "Progress": null,
+      "Started": "2016-11-14T22:36:13.02Z",
+      "Finished": "2016-11-14T22:36:13.450000128Z",
+      "Duration": 430000128,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Verbosity": 0,
+      "Text": [
+        "cipd instance_id: d1ec9d904caee34beffec0a691a79991122037ba"
+      ]
+    },
+    {
+      "ParentLabel": null,
+      "Label": "ensure_installed",
+      "Status": "Success",
+      "Banner": null,
+      "Bot": null,
+      "Source": null,
+      "MainLink": {
+        "Label": "stdout",
+        "URL": "foo/steps/ensure_installed/0/stdout"
+      },
+      "SubLink": [
+        {
+          "Label": "json.output",
+          "URL": "foo/steps/ensure_installed/0/logs/json.output/0"
+        }
+      ],
+      "Progress": null,
+      "Started": "2016-11-14T22:36:13.450000128Z",
+      "Finished": "2016-11-14T22:36:13.68Z",
+      "Duration": 229999872,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Verbosity": 0,
+      "Text": null
+    },
+    {
+      "ParentLabel": null,
+      "Label": "jiri init",
+      "Status": "Success",
+      "Banner": null,
+      "Bot": null,
+      "Source": null,
+      "MainLink": {
+        "Label": "stdout",
+        "URL": "foo/steps/jiri_init/0/stdout"
+      },
+      "SubLink": null,
+      "Progress": null,
+      "Started": "2016-11-14T22:36:13.68Z",
+      "Finished": "2016-11-14T22:36:14.06Z",
+      "Duration": 380000000,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Verbosity": 0,
+      "Text": null
+    },
+    {
+      "ParentLabel": null,
+      "Label": "jiri project clean",
+      "Status": "Success",
+      "Banner": null,
+      "Bot": null,
+      "Source": null,
+      "MainLink": {
+        "Label": "stdout",
+        "URL": "foo/steps/jiri_project_clean/0/stdout"
+      },
+      "SubLink": null,
+      "Progress": null,
+      "Started": "2016-11-14T22:36:14.06Z",
+      "Finished": "2016-11-14T22:36:14.089999872Z",
+      "Duration": 29999872,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Verbosity": 0,
+      "Text": null
+    },
+    {
+      "ParentLabel": null,
+      "Label": "jiri import",
+      "Status": "Success",
+      "Banner": null,
+      "Bot": null,
+      "Source": null,
+      "MainLink": {
+        "Label": "stdout",
+        "URL": "foo/steps/jiri_import/0/stdout"
+      },
+      "SubLink": null,
+      "Progress": null,
+      "Started": "2016-11-14T22:36:14.089999872Z",
+      "Finished": "2016-11-14T22:36:14.089999872Z",
+      "Duration": 0,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Verbosity": 0,
+      "Text": null
+    },
+    {
+      "ParentLabel": null,
+      "Label": "jiri update",
+      "Status": "Success",
+      "Banner": null,
+      "Bot": null,
+      "Source": null,
+      "MainLink": {
+        "Label": "stdout",
+        "URL": "foo/steps/jiri_update/0/stdout"
+      },
+      "SubLink": null,
+      "Progress": null,
+      "Started": "2016-11-14T22:36:14.089999872Z",
+      "Finished": "2016-11-14T22:37:14.029999872Z",
+      "Duration": 59940000000,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Verbosity": 0,
+      "Text": null
+    },
+    {
+      "ParentLabel": null,
+      "Label": "build",
+      "Status": "Failure",
+      "Banner": null,
+      "Bot": null,
+      "Source": null,
+      "MainLink": null,
+      "SubLink": null,
+      "Progress": null,
+      "Started": "2016-11-14T22:37:58.5Z",
+      "Finished": "2016-11-14T22:37:58.5Z",
+      "Duration": 0,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Verbosity": 2,
+      "Text": null
+    },
+    {
+      "ParentLabel": null,
+      "Label": "build.cleanup",
+      "Status": "Success",
+      "Banner": null,
+      "Bot": null,
+      "Source": null,
+      "MainLink": {
+        "Label": "stdout",
+        "URL": "foo/steps/build/0/steps/cleanup/0/stdout"
+      },
+      "SubLink": null,
+      "Progress": null,
+      "Started": "2016-11-14T22:37:14.78Z",
+      "Finished": "2016-11-14T22:37:16.329999872Z",
+      "Duration": 1549999872,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Verbosity": 0,
+      "Text": null
+    },
+    {
+      "ParentLabel": null,
+      "Label": "build.build",
+      "Status": "Failure",
+      "Banner": null,
+      "Bot": null,
+      "Source": null,
+      "MainLink": {
+        "Label": "stdout",
+        "URL": "foo/steps/build/0/steps/build/0/stdout"
+      },
+      "SubLink": null,
+      "Progress": null,
+      "Started": "2016-11-14T22:37:16.329999872Z",
+      "Finished": "2016-11-14T22:37:58.5Z",
+      "Duration": 42170000128,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Verbosity": 2,
+      "Text": null
+    }
+  ],
+  "PropertyGroup": [
+    {
+      "GroupName": "recipe bootstrap",
+      "Property": null
+    },
+    {
+      "GroupName": "setup_build",
+      "Property": null
+    },
+    {
+      "GroupName": "install cipd",
+      "Property": null
+    },
+    {
+      "GroupName": "ensure_installed",
+      "Property": null
+    },
+    {
+      "GroupName": "jiri init",
+      "Property": null
+    },
+    {
+      "GroupName": "jiri project clean",
+      "Property": null
+    },
+    {
+      "GroupName": "jiri import",
+      "Property": null
+    },
+    {
+      "GroupName": "jiri update",
+      "Property": null
+    },
+    {
+      "GroupName": "build",
+      "Property": null
+    },
+    {
+      "GroupName": "build.cleanup",
+      "Property": null
+    },
+    {
+      "GroupName": "build.build",
+      "Property": null
+    },
+    {
+      "GroupName": "Main",
+      "Property": null
+    },
+    {
+      "GroupName": "Swarming Tags",
+      "Property": [
+        {
+          "Key": "allow_milo",
+          "Value": "1"
+        }
+      ]
+    }
+  ],
+  "Blame": null
+}
