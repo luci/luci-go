@@ -5,6 +5,8 @@
 package taskqueue
 
 import (
+	"time"
+
 	"github.com/luci/luci-go/common/errors"
 
 	"golang.org/x/net/context"
@@ -56,11 +58,10 @@ func Delete(c context.Context, queueName string, tasks ...*Task) error {
 	return err
 }
 
-// NOTE(riannucci): No support for pull taskqueues. We're not planning on
-// making pull-queue clients which RUN in appengine (e.g. they'd all be
-// external REST consumers). If someone needs this, it will need to be added
-// here and in RawInterface. The theory is that a good lease API might look
-// like:
+// NOTE(riannucci): Pull task queues API can be extended to support automatic
+// lease management.
+//
+// The theory is that a good lease API might look like:
 //
 //   func Lease(queueName, tag string, batchSize int, duration time.Time, cb func(*Task, error<-))
 //
@@ -74,6 +75,33 @@ func Delete(c context.Context, queueName string, tasks ...*Task) error {
 // Lease would also take care of calling ModifyLease as necessary to ensure
 // that each call to cb would have 'duration' amount of time to work on the
 // task, as well as releasing as many leased tasks as it can on a failure.
+
+// Lease leases tasks from a queue.
+//
+// leaseTime has seconds precision. The number of tasks fetched will be at most
+// maxTasks.
+func Lease(c context.Context, maxTasks int, queueName string, leaseTime time.Duration) ([]*Task, error) {
+	return Raw(c).Lease(maxTasks, queueName, leaseTime)
+}
+
+// LeaseByTag leases tasks from a queue, grouped by tag.
+//
+// If tag is empty, then the returned tasks are grouped by the tag of the task
+// with earliest ETA.
+//
+// leaseTime has seconds precision. The number of tasks fetched will be at most
+// maxTasks.
+func LeaseByTag(c context.Context, maxTasks int, queueName string, leaseTime time.Duration, tag string) ([]*Task, error) {
+	return Raw(c).LeaseByTag(maxTasks, queueName, leaseTime, tag)
+}
+
+// ModifyLease modifies the lease of a task.
+//
+// Used to request more processing time, or to abandon processing. leaseTime has
+// seconds precision and must not be negative.
+func ModifyLease(c context.Context, task *Task, queueName string, leaseTime time.Duration) error {
+	return Raw(c).ModifyLease(task, queueName, leaseTime)
+}
 
 // Purge purges all tasks form the named queue.
 func Purge(c context.Context, queueName string) error {

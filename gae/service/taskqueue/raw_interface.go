@@ -4,6 +4,8 @@
 
 package taskqueue
 
+import "time"
+
 // RawCB is a simple callback for RawInterface.DeleteMulti, getting the error
 // for the attempted deletion.
 type RawCB func(error)
@@ -25,6 +27,10 @@ type RawInterface interface {
 	// anonymous (e.g. the Name field was blank).
 	AddMulti(tasks []*Task, queueName string, cb RawTaskCB) error
 	DeleteMulti(tasks []*Task, queueName string, cb RawCB) error
+
+	Lease(maxTasks int, queueName string, leaseTime time.Duration) ([]*Task, error)
+	LeaseByTag(maxTasks int, queueName string, leaseTime time.Duration, tag string) ([]*Task, error)
+	ModifyLease(task *Task, queueName string, leaseTime time.Duration) error
 
 	Purge(queueName string) error
 

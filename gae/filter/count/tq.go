@@ -5,6 +5,8 @@
 package count
 
 import (
+	"time"
+
 	"golang.org/x/net/context"
 
 	tq "github.com/luci/gae/service/taskqueue"
@@ -14,6 +16,9 @@ import (
 type TQCounter struct {
 	AddMulti    Entry
 	DeleteMulti Entry
+	Lease       Entry
+	LeaseByTag  Entry
+	ModifyLease Entry
 	Purge       Entry
 	Stats       Entry
 }
@@ -32,6 +37,22 @@ func (t *tqCounter) AddMulti(tasks []*tq.Task, queueName string, cb tq.RawTaskCB
 
 func (t *tqCounter) DeleteMulti(tasks []*tq.Task, queueName string, cb tq.RawCB) error {
 	return t.c.DeleteMulti.up(t.tq.DeleteMulti(tasks, queueName, cb))
+}
+
+func (t *tqCounter) Lease(maxTasks int, queueName string, leaseTime time.Duration) ([]*tq.Task, error) {
+	tasks, err := t.tq.Lease(maxTasks, queueName, leaseTime)
+	t.c.Lease.up(err)
+	return tasks, err
+}
+
+func (t *tqCounter) LeaseByTag(maxTasks int, queueName string, leaseTime time.Duration, tag string) ([]*tq.Task, error) {
+	tasks, err := t.tq.LeaseByTag(maxTasks, queueName, leaseTime, tag)
+	t.c.LeaseByTag.up(err)
+	return tasks, err
+}
+
+func (t *tqCounter) ModifyLease(task *tq.Task, queueName string, leaseTime time.Duration) error {
+	return t.c.ModifyLease.up(t.tq.ModifyLease(task, queueName, leaseTime))
 }
 
 func (t *tqCounter) Purge(queueName string) error {

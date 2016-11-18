@@ -7,6 +7,7 @@ package prod
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	tq "github.com/luci/gae/service/taskqueue"
 	"golang.org/x/net/context"
@@ -85,6 +86,15 @@ func tqMF2R(ns []*tq.Task) []*taskqueue.Task {
 	return ret
 }
 
+// tqMR2F (TQ multi-real-to-fake) converts []*taskqueue.Task to []*tq.Task.
+func tqMR2F(ns []*taskqueue.Task) []*tq.Task {
+	ret := make([]*tq.Task, len(ns))
+	for i, t := range ns {
+		ret[i] = tqR2F(t)
+	}
+	return ret
+}
+
 func (t tqImpl) AddMulti(tasks []*tq.Task, queueName string, cb tq.RawTaskCB) error {
 	realTasks, err := taskqueue.AddMulti(t.aeCtx, tqMF2R(tasks), queueName)
 	if err != nil {
@@ -115,6 +125,26 @@ func (t tqImpl) DeleteMulti(tasks []*tq.Task, queueName string, cb tq.RawCB) err
 		err = nil
 	}
 	return err
+}
+
+func (t tqImpl) Lease(maxTasks int, queueName string, leaseTime time.Duration) ([]*tq.Task, error) {
+	tasks, err := taskqueue.Lease(t.aeCtx, maxTasks, queueName, int(leaseTime/time.Second))
+	if err != nil {
+		return nil, err
+	}
+	return tqMR2F(tasks), nil
+}
+
+func (t tqImpl) LeaseByTag(maxTasks int, queueName string, leaseTime time.Duration, tag string) ([]*tq.Task, error) {
+	tasks, err := taskqueue.LeaseByTag(t.aeCtx, maxTasks, queueName, int(leaseTime/time.Second), tag)
+	if err != nil {
+		return nil, err
+	}
+	return tqMR2F(tasks), nil
+}
+
+func (t tqImpl) ModifyLease(task *tq.Task, queueName string, leaseTime time.Duration) error {
+	return taskqueue.ModifyLease(t.aeCtx, tqF2R(task), queueName, int(leaseTime/time.Second))
 }
 
 func (t tqImpl) Purge(queueName string) error {

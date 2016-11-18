@@ -6,6 +6,7 @@ package memory
 
 import (
 	"regexp"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -103,6 +104,18 @@ func (t *taskqueueImpl) DeleteMulti(tasks []*tq.Task, queueName string, cb tq.Ra
 		cb(t.deleteLocked(task, queueName))
 	}
 	return nil
+}
+
+func (t *taskqueueImpl) Lease(maxTasks int, queueName string, leaseTime time.Duration) ([]*tq.Task, error) {
+	panic("not implemented yet")
+}
+
+func (t *taskqueueImpl) LeaseByTag(maxTasks int, queueName string, leaseTime time.Duration, tag string) ([]*tq.Task, error) {
+	panic("not implemented yet")
+}
+
+func (t *taskqueueImpl) ModifyLease(task *tq.Task, queueName string, leaseTime time.Duration) error {
+	panic("not implemented yet")
 }
 
 func (t *taskqueueImpl) Purge(queueName string) error {
@@ -206,6 +219,18 @@ func (t *taskqueueTxnImpl) AddMulti(tasks []*tq.Task, queueName string, cb tq.Ra
 
 func (t *taskqueueTxnImpl) DeleteMulti([]*tq.Task, string, tq.RawCB) error {
 	return errors.New("taskqueue: cannot DeleteMulti from a transaction")
+}
+
+func (t *taskqueueTxnImpl) Lease(maxTasks int, queueName string, leaseTime time.Duration) ([]*tq.Task, error) {
+	return nil, errors.New("taskqueue: cannot Lease from a transaction")
+}
+
+func (t *taskqueueTxnImpl) LeaseByTag(maxTasks int, queueName string, leaseTime time.Duration, tag string) ([]*tq.Task, error) {
+	return nil, errors.New("taskqueue: cannot LeaseByTag from a transaction")
+}
+
+func (t *taskqueueTxnImpl) ModifyLease(task *tq.Task, queueName string, leaseTime time.Duration) error {
+	return errors.New("taskqueue: cannot ModifyLease from a transaction")
 }
 
 func (t *taskqueueTxnImpl) Purge(string) error {

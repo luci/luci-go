@@ -125,11 +125,14 @@ func Memcache() memcache.RawInterface { return dummyMCInst }
 
 type tq struct{}
 
-func (tq) AddMulti([]*taskqueue.Task, string, taskqueue.RawTaskCB) error { panic(ni()) }
-func (tq) DeleteMulti([]*taskqueue.Task, string, taskqueue.RawCB) error  { panic(ni()) }
-func (tq) Purge(string) error                                            { panic(ni()) }
-func (tq) Stats([]string, taskqueue.RawStatsCB) error                    { panic(ni()) }
-func (tq) GetTestable() taskqueue.Testable                               { return nil }
+func (tq) AddMulti([]*taskqueue.Task, string, taskqueue.RawTaskCB) error            { panic(ni()) }
+func (tq) DeleteMulti([]*taskqueue.Task, string, taskqueue.RawCB) error             { panic(ni()) }
+func (tq) Lease(int, string, time.Duration) ([]*taskqueue.Task, error)              { panic(ni()) }
+func (tq) LeaseByTag(int, string, time.Duration, string) ([]*taskqueue.Task, error) { panic(ni()) }
+func (tq) ModifyLease(*taskqueue.Task, string, time.Duration) error                 { panic(ni()) }
+func (tq) Purge(string) error                                                       { panic(ni()) }
+func (tq) Stats([]string, taskqueue.RawStatsCB) error                               { panic(ni()) }
+func (tq) GetTestable() taskqueue.Testable                                          { return nil }
 
 var dummyTQInst = tq{}
 

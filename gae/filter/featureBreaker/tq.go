@@ -5,6 +5,8 @@
 package featureBreaker
 
 import (
+	"time"
+
 	"golang.org/x/net/context"
 
 	tq "github.com/luci/gae/service/taskqueue"
@@ -24,6 +26,32 @@ func (t *tqState) AddMulti(tasks []*tq.Task, queueName string, cb tq.RawTaskCB) 
 
 func (t *tqState) DeleteMulti(tasks []*tq.Task, queueName string, cb tq.RawCB) error {
 	return t.run(func() error { return t.tq.DeleteMulti(tasks, queueName, cb) })
+}
+
+func (t *tqState) Lease(maxTasks int, queueName string, leaseTime time.Duration) (tasks []*tq.Task, err error) {
+	err = t.run(func() (err error) {
+		tasks, err = t.tq.Lease(maxTasks, queueName, leaseTime)
+		return
+	})
+	if err != nil {
+		tasks = nil
+	}
+	return
+}
+
+func (t *tqState) LeaseByTag(maxTasks int, queueName string, leaseTime time.Duration, tag string) (tasks []*tq.Task, err error) {
+	err = t.run(func() (err error) {
+		tasks, err = t.tq.LeaseByTag(maxTasks, queueName, leaseTime, tag)
+		return
+	})
+	if err != nil {
+		tasks = nil
+	}
+	return
+}
+
+func (t *tqState) ModifyLease(task *tq.Task, queueName string, leaseTime time.Duration) error {
+	return t.run(func() error { return t.tq.ModifyLease(task, queueName, leaseTime) })
 }
 
 func (t *tqState) Purge(queueName string) error {
