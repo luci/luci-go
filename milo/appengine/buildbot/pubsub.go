@@ -10,6 +10,7 @@ import (
 	"compress/zlib"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -42,6 +43,15 @@ var (
 		field.String("builder"),
 		field.Bool("finished"),
 		// Status can be one of 3 options.  "New", "Replaced", "Rejected".
+		field.String("status"))
+
+	masterCounter = metric.NewCounter(
+		"luci/milo/buildbot_pubsub/masters",
+		"The number of buildbot master jsons received by Milo from PubSub",
+		nil,
+		field.Bool("internal"),
+		field.String("master"),
+		// Status can be one of 2 options.  "success", "failure".
 		field.String("status"))
 )
 
@@ -147,8 +157,8 @@ func unmarshal(
 	return bm.Builds, bm.Master, nil
 }
 
-// getOSInfo fetches the os family and version of hte build from the
-// master json on a best-effort basis.
+// getOSInfo fetches the os family and version of the slave the build was
+// running on from the master json on a best-effort basis.
 func getOSInfo(c context.Context, b *buildbotBuild, m *buildbotMaster) (
 	family, version string) {
 	// Fetch the master info from datastore if not provided.
@@ -212,12 +222,15 @@ func expireBuild(c context.Context, b *buildbotBuild) error {
 func doMaster(c context.Context, master *buildbotMaster, internal bool) int {
 	// Store the master json into the datastore.
 	err := putDSMasterJSON(c, master, internal)
+	fullname := fmt.Sprintf("master.%s", master.Name)
 	if err != nil {
 		logging.WithError(err).Errorf(
 			c, "Could not save master in datastore %s", err)
+		masterCounter.Add(c, 1, internal, fullname, "failure")
 		// This is transient, we do want PubSub to retry.
 		return 500
 	}
+	masterCounter.Add(c, 1, internal, fullname, "success")
 
 	// Extract current builds data out of the master json, and use it to
 	// clean up expired builds.
