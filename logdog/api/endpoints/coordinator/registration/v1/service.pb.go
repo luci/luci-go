@@ -61,6 +61,27 @@ func (m *RegisterPrefixRequest) String() string            { return proto.Compac
 func (*RegisterPrefixRequest) ProtoMessage()               {}
 func (*RegisterPrefixRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *RegisterPrefixRequest) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *RegisterPrefixRequest) GetPrefix() string {
+	if m != nil {
+		return m.Prefix
+	}
+	return ""
+}
+
+func (m *RegisterPrefixRequest) GetSourceInfo() []string {
+	if m != nil {
+		return m.SourceInfo
+	}
+	return nil
+}
+
 func (m *RegisterPrefixRequest) GetExpiration() *google_protobuf.Duration {
 	if m != nil {
 		return m.Expiration
@@ -82,6 +103,20 @@ func (m *RegisterPrefixResponse) Reset()                    { *m = RegisterPrefi
 func (m *RegisterPrefixResponse) String() string            { return proto.CompactTextString(m) }
 func (*RegisterPrefixResponse) ProtoMessage()               {}
 func (*RegisterPrefixResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+
+func (m *RegisterPrefixResponse) GetSecret() []byte {
+	if m != nil {
+		return m.Secret
+	}
+	return nil
+}
+
+func (m *RegisterPrefixResponse) GetLogBundleTopic() string {
+	if m != nil {
+		return m.LogBundleTopic
+	}
+	return ""
+}
 
 func init() {
 	proto.RegisterType((*RegisterPrefixRequest)(nil), "logdog.RegisterPrefixRequest")

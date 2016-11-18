@@ -92,6 +92,34 @@ func (m *LogStreamDescriptor) String() string            { return proto.CompactT
 func (*LogStreamDescriptor) ProtoMessage()               {}
 func (*LogStreamDescriptor) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
+func (m *LogStreamDescriptor) GetPrefix() string {
+	if m != nil {
+		return m.Prefix
+	}
+	return ""
+}
+
+func (m *LogStreamDescriptor) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *LogStreamDescriptor) GetStreamType() StreamType {
+	if m != nil {
+		return m.StreamType
+	}
+	return StreamType_TEXT
+}
+
+func (m *LogStreamDescriptor) GetContentType() string {
+	if m != nil {
+		return m.ContentType
+	}
+	return ""
+}
+
 func (m *LogStreamDescriptor) GetTimestamp() *google_protobuf.Timestamp {
 	if m != nil {
 		return m.Timestamp
@@ -104,6 +132,13 @@ func (m *LogStreamDescriptor) GetTags() map[string]string {
 		return m.Tags
 	}
 	return nil
+}
+
+func (m *LogStreamDescriptor) GetBinaryFileExt() string {
+	if m != nil {
+		return m.BinaryFileExt
+	}
+	return ""
 }
 
 // Text stream content.
@@ -140,6 +175,20 @@ func (m *Text_Line) String() string            { return proto.CompactTextString(
 func (*Text_Line) ProtoMessage()               {}
 func (*Text_Line) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1, 0} }
 
+func (m *Text_Line) GetValue() string {
+	if m != nil {
+		return m.Value
+	}
+	return ""
+}
+
+func (m *Text_Line) GetDelimiter() string {
+	if m != nil {
+		return m.Delimiter
+	}
+	return ""
+}
+
 // Binary stream content.
 type Binary struct {
 	// The byte offset in the stream of the first byte of data.
@@ -153,6 +202,20 @@ func (m *Binary) String() string            { return proto.CompactTextString(m) 
 func (*Binary) ProtoMessage()               {}
 func (*Binary) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
 
+func (m *Binary) GetOffset() uint64 {
+	if m != nil {
+		return m.Offset
+	}
+	return 0
+}
+
+func (m *Binary) GetData() []byte {
+	if m != nil {
+		return m.Data
+	}
+	return nil
+}
+
 // Datagram stream content type.
 type Datagram struct {
 	// This datagram data.
@@ -164,6 +227,13 @@ func (m *Datagram) Reset()                    { *m = Datagram{} }
 func (m *Datagram) String() string            { return proto.CompactTextString(m) }
 func (*Datagram) ProtoMessage()               {}
 func (*Datagram) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
+
+func (m *Datagram) GetData() []byte {
+	if m != nil {
+		return m.Data
+	}
+	return nil
+}
 
 func (m *Datagram) GetPartial() *Datagram_Partial {
 	if m != nil {
@@ -190,6 +260,27 @@ func (m *Datagram_Partial) Reset()                    { *m = Datagram_Partial{} 
 func (m *Datagram_Partial) String() string            { return proto.CompactTextString(m) }
 func (*Datagram_Partial) ProtoMessage()               {}
 func (*Datagram_Partial) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3, 0} }
+
+func (m *Datagram_Partial) GetIndex() uint32 {
+	if m != nil {
+		return m.Index
+	}
+	return 0
+}
+
+func (m *Datagram_Partial) GetSize() uint64 {
+	if m != nil {
+		return m.Size
+	}
+	return 0
+}
+
+func (m *Datagram_Partial) GetLast() bool {
+	if m != nil {
+		return m.Last
+	}
+	return false
+}
 
 // *
 // An individual log entry.
@@ -271,6 +362,27 @@ func (m *LogEntry) GetTimeOffset() *google_protobuf1.Duration {
 		return m.TimeOffset
 	}
 	return nil
+}
+
+func (m *LogEntry) GetPrefixIndex() uint64 {
+	if m != nil {
+		return m.PrefixIndex
+	}
+	return 0
+}
+
+func (m *LogEntry) GetStreamIndex() uint64 {
+	if m != nil {
+		return m.StreamIndex
+	}
+	return 0
+}
+
+func (m *LogEntry) GetSequence() uint64 {
+	if m != nil {
+		return m.Sequence
+	}
+	return 0
 }
 
 func (m *LogEntry) GetText() *Text {
@@ -451,6 +563,27 @@ func (m *LogIndex) GetEntries() []*LogIndex_Entry {
 	return nil
 }
 
+func (m *LogIndex) GetLastPrefixIndex() uint64 {
+	if m != nil {
+		return m.LastPrefixIndex
+	}
+	return 0
+}
+
+func (m *LogIndex) GetLastStreamIndex() uint64 {
+	if m != nil {
+		return m.LastStreamIndex
+	}
+	return 0
+}
+
+func (m *LogIndex) GetLogEntryCount() uint64 {
+	if m != nil {
+		return m.LogEntryCount
+	}
+	return 0
+}
+
 //
 // Entry is a single index entry.
 //
@@ -495,6 +628,34 @@ func (m *LogIndex_Entry) Reset()                    { *m = LogIndex_Entry{} }
 func (m *LogIndex_Entry) String() string            { return proto.CompactTextString(m) }
 func (*LogIndex_Entry) ProtoMessage()               {}
 func (*LogIndex_Entry) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{5, 0} }
+
+func (m *LogIndex_Entry) GetOffset() uint64 {
+	if m != nil {
+		return m.Offset
+	}
+	return 0
+}
+
+func (m *LogIndex_Entry) GetSequence() uint64 {
+	if m != nil {
+		return m.Sequence
+	}
+	return 0
+}
+
+func (m *LogIndex_Entry) GetPrefixIndex() uint64 {
+	if m != nil {
+		return m.PrefixIndex
+	}
+	return 0
+}
+
+func (m *LogIndex_Entry) GetStreamIndex() uint64 {
+	if m != nil {
+		return m.StreamIndex
+	}
+	return 0
+}
 
 func (m *LogIndex_Entry) GetTimeOffset() *google_protobuf1.Duration {
 	if m != nil {

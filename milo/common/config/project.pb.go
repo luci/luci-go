@@ -49,6 +49,27 @@ func (m *Project) String() string            { return proto.CompactTextString(m)
 func (*Project) ProtoMessage()               {}
 func (*Project) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *Project) GetID() string {
+	if m != nil {
+		return m.ID
+	}
+	return ""
+}
+
+func (m *Project) GetReaders() []string {
+	if m != nil {
+		return m.Readers
+	}
+	return nil
+}
+
+func (m *Project) GetWriters() []string {
+	if m != nil {
+		return m.Writers
+	}
+	return nil
+}
+
 func (m *Project) GetConsoles() []*Console {
 	if m != nil {
 		return m.Consoles
@@ -77,6 +98,34 @@ func (m *Console) String() string            { return proto.CompactTextString(m)
 func (*Console) ProtoMessage()               {}
 func (*Console) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
+func (m *Console) GetID() string {
+	if m != nil {
+		return m.ID
+	}
+	return ""
+}
+
+func (m *Console) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *Console) GetRepoURL() string {
+	if m != nil {
+		return m.RepoURL
+	}
+	return ""
+}
+
+func (m *Console) GetBranch() string {
+	if m != nil {
+		return m.Branch
+	}
+	return ""
+}
+
 func (m *Console) GetBuilders() []*Builder {
 	if m != nil {
 		return m.Builders
@@ -102,6 +151,34 @@ func (m *Builder) Reset()                    { *m = Builder{} }
 func (m *Builder) String() string            { return proto.CompactTextString(m) }
 func (*Builder) ProtoMessage()               {}
 func (*Builder) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+
+func (m *Builder) GetModule() string {
+	if m != nil {
+		return m.Module
+	}
+	return ""
+}
+
+func (m *Builder) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *Builder) GetCategory() string {
+	if m != nil {
+		return m.Category
+	}
+	return ""
+}
+
+func (m *Builder) GetShortName() string {
+	if m != nil {
+		return m.ShortName
+	}
+	return ""
+}
 
 func init() {
 	proto.RegisterType((*Project)(nil), "config.Project")

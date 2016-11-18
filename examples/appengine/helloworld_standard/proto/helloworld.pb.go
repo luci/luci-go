@@ -46,6 +46,13 @@ func (m *HelloRequest) String() string            { return proto.CompactTextStri
 func (*HelloRequest) ProtoMessage()               {}
 func (*HelloRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *HelloRequest) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
 // The response message containing the greetings
 type HelloReply struct {
 	Message string `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
@@ -55,6 +62,13 @@ func (m *HelloReply) Reset()                    { *m = HelloReply{} }
 func (m *HelloReply) String() string            { return proto.CompactTextString(m) }
 func (*HelloReply) ProtoMessage()               {}
 func (*HelloReply) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+
+func (m *HelloReply) GetMessage() string {
+	if m != nil {
+		return m.Message
+	}
+	return ""
+}
 
 func init() {
 	proto.RegisterType((*HelloRequest)(nil), "helloworld.HelloRequest")

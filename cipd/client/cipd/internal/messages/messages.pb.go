@@ -43,6 +43,20 @@ func (m *BlobWithSHA1) String() string            { return proto.CompactTextStri
 func (*BlobWithSHA1) ProtoMessage()               {}
 func (*BlobWithSHA1) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *BlobWithSHA1) GetBlob() []byte {
+	if m != nil {
+		return m.Blob
+	}
+	return nil
+}
+
+func (m *BlobWithSHA1) GetSha1() []byte {
+	if m != nil {
+		return m.Sha1
+	}
+	return nil
+}
+
 // TagCache stores a mapping (package name, tag) -> instance ID to
 // speed up subsequent ResolveVersion calls when tags are used.
 //
@@ -85,6 +99,27 @@ func (m *TagCache_Entry) String() string            { return proto.CompactTextSt
 func (*TagCache_Entry) ProtoMessage()               {}
 func (*TagCache_Entry) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1, 0} }
 
+func (m *TagCache_Entry) GetPackage() string {
+	if m != nil {
+		return m.Package
+	}
+	return ""
+}
+
+func (m *TagCache_Entry) GetTag() string {
+	if m != nil {
+		return m.Tag
+	}
+	return ""
+}
+
+func (m *TagCache_Entry) GetInstanceId() string {
+	if m != nil {
+		return m.InstanceId
+	}
+	return ""
+}
+
 type TagCache_FileEntry struct {
 	Package    string `protobuf:"bytes,1,opt,name=package" json:"package,omitempty"`
 	InstanceId string `protobuf:"bytes,2,opt,name=instance_id,json=instanceId" json:"instance_id,omitempty"`
@@ -96,6 +131,34 @@ func (m *TagCache_FileEntry) Reset()                    { *m = TagCache_FileEntr
 func (m *TagCache_FileEntry) String() string            { return proto.CompactTextString(m) }
 func (*TagCache_FileEntry) ProtoMessage()               {}
 func (*TagCache_FileEntry) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1, 1} }
+
+func (m *TagCache_FileEntry) GetPackage() string {
+	if m != nil {
+		return m.Package
+	}
+	return ""
+}
+
+func (m *TagCache_FileEntry) GetInstanceId() string {
+	if m != nil {
+		return m.InstanceId
+	}
+	return ""
+}
+
+func (m *TagCache_FileEntry) GetFileName() string {
+	if m != nil {
+		return m.FileName
+	}
+	return ""
+}
+
+func (m *TagCache_FileEntry) GetHash() string {
+	if m != nil {
+		return m.Hash
+	}
+	return ""
+}
 
 // InstanceCache stores a list of instances in cache
 // and their last access time.

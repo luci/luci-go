@@ -58,6 +58,27 @@ func (m *ArchiveIndexConfig) String() string            { return proto.CompactTe
 func (*ArchiveIndexConfig) ProtoMessage()               {}
 func (*ArchiveIndexConfig) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *ArchiveIndexConfig) GetStreamRange() int32 {
+	if m != nil {
+		return m.StreamRange
+	}
+	return 0
+}
+
+func (m *ArchiveIndexConfig) GetPrefixRange() int32 {
+	if m != nil {
+		return m.PrefixRange
+	}
+	return 0
+}
+
+func (m *ArchiveIndexConfig) GetByteRange() int32 {
+	if m != nil {
+		return m.ByteRange
+	}
+	return 0
+}
+
 func init() {
 	proto.RegisterType((*ArchiveIndexConfig)(nil), "svcconfig.ArchiveIndexConfig")
 }

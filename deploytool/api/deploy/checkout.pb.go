@@ -197,6 +197,13 @@ func (*SourceLayout_Init_PythonScript) Descriptor() ([]byte, []int) {
 	return fileDescriptor0, []int{0, 0, 0}
 }
 
+func (m *SourceLayout_Init_PythonScript) GetPath() string {
+	if m != nil {
+		return m.Path
+	}
+	return ""
+}
+
 // *
 // SourceInitResult is a protobuf that can be emitted from a SourceInit Script
 // to describe how to link the results of that initialization into the
@@ -241,6 +248,20 @@ func (m *GoPath) Reset()                    { *m = GoPath{} }
 func (m *GoPath) String() string            { return proto.CompactTextString(m) }
 func (*GoPath) ProtoMessage()               {}
 func (*GoPath) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+
+func (m *GoPath) GetPath() string {
+	if m != nil {
+		return m.Path
+	}
+	return ""
+}
+
+func (m *GoPath) GetGoPackage() string {
+	if m != nil {
+		return m.GoPackage
+	}
+	return ""
+}
 
 func init() {
 	proto.RegisterType((*SourceLayout)(nil), "deploy.SourceLayout")

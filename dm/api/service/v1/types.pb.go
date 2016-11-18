@@ -296,6 +296,13 @@ func (m *AttemptList_Nums) String() string            { return proto.CompactText
 func (*AttemptList_Nums) ProtoMessage()               {}
 func (*AttemptList_Nums) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{2, 0} }
 
+func (m *AttemptList_Nums) GetNums() []uint32 {
+	if m != nil {
+		return m.Nums
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*MultiPropertyValue)(nil), "dm.MultiPropertyValue")
 	proto.RegisterType((*PropertyValue)(nil), "dm.PropertyValue")

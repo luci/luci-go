@@ -51,6 +51,13 @@ func (m *MasterRequest) String() string            { return proto.CompactTextStr
 func (*MasterRequest) ProtoMessage()               {}
 func (*MasterRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *MasterRequest) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
 // The response message containing master information.
 type CompressedMasterJSON struct {
 	// Whether the master is internal or not.
@@ -66,9 +73,23 @@ func (m *CompressedMasterJSON) String() string            { return proto.Compact
 func (*CompressedMasterJSON) ProtoMessage()               {}
 func (*CompressedMasterJSON) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
+func (m *CompressedMasterJSON) GetInternal() bool {
+	if m != nil {
+		return m.Internal
+	}
+	return false
+}
+
 func (m *CompressedMasterJSON) GetModified() *google_protobuf.Timestamp {
 	if m != nil {
 		return m.Modified
+	}
+	return nil
+}
+
+func (m *CompressedMasterJSON) GetData() []byte {
+	if m != nil {
+		return m.Data
 	}
 	return nil
 }
@@ -85,6 +106,27 @@ func (m *BuildbotBuildRequest) String() string            { return proto.Compact
 func (*BuildbotBuildRequest) ProtoMessage()               {}
 func (*BuildbotBuildRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
+func (m *BuildbotBuildRequest) GetMaster() string {
+	if m != nil {
+		return m.Master
+	}
+	return ""
+}
+
+func (m *BuildbotBuildRequest) GetBuilder() string {
+	if m != nil {
+		return m.Builder
+	}
+	return ""
+}
+
+func (m *BuildbotBuildRequest) GetBuildNum() int64 {
+	if m != nil {
+		return m.BuildNum
+	}
+	return 0
+}
+
 // The response message for a specific build.
 type BuildbotBuildJSON struct {
 	// Json data of the build.
@@ -95,6 +137,13 @@ func (m *BuildbotBuildJSON) Reset()                    { *m = BuildbotBuildJSON{
 func (m *BuildbotBuildJSON) String() string            { return proto.CompactTextString(m) }
 func (*BuildbotBuildJSON) ProtoMessage()               {}
 func (*BuildbotBuildJSON) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
+func (m *BuildbotBuildJSON) GetData() []byte {
+	if m != nil {
+		return m.Data
+	}
+	return nil
+}
 
 // The request for multiple build on a builder.
 type BuildbotBuildsRequest struct {
@@ -110,6 +159,34 @@ func (m *BuildbotBuildsRequest) Reset()                    { *m = BuildbotBuilds
 func (m *BuildbotBuildsRequest) String() string            { return proto.CompactTextString(m) }
 func (*BuildbotBuildsRequest) ProtoMessage()               {}
 func (*BuildbotBuildsRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+
+func (m *BuildbotBuildsRequest) GetMaster() string {
+	if m != nil {
+		return m.Master
+	}
+	return ""
+}
+
+func (m *BuildbotBuildsRequest) GetBuilder() string {
+	if m != nil {
+		return m.Builder
+	}
+	return ""
+}
+
+func (m *BuildbotBuildsRequest) GetLimit() int32 {
+	if m != nil {
+		return m.Limit
+	}
+	return 0
+}
+
+func (m *BuildbotBuildsRequest) GetIncludeCurrent() bool {
+	if m != nil {
+		return m.IncludeCurrent
+	}
+	return false
+}
 
 // The response message for multiple builds in a builder.
 type BuildbotBuildsJSON struct {

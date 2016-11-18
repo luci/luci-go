@@ -298,6 +298,13 @@ func (m *Component) GetBuild() []*Component_Build {
 	return nil
 }
 
+func (m *Component) GetBuildPath() []string {
+	if m != nil {
+		return m.BuildPath
+	}
+	return nil
+}
+
 func (m *Component) GetAppengineModule() *AppEngineModule {
 	if x, ok := m.GetComponent().(*Component_AppengineModule); ok {
 		return x.AppengineModule
@@ -427,6 +434,13 @@ func (m *Component_Build) GetOperation() isComponent_Build_Operation {
 	return nil
 }
 
+func (m *Component_Build) GetDirKey() string {
+	if m != nil {
+		return m.DirKey
+	}
+	return ""
+}
+
 func (m *Component_Build) GetPythonScript() *Component_Build_PythonScript {
 	if x, ok := m.GetOperation().(*Component_Build_PythonScript_); ok {
 		return x.PythonScript
@@ -518,6 +532,20 @@ func (*Component_Build_PythonScript) Descriptor() ([]byte, []int) {
 	return fileDescriptor1, []int{0, 0, 0}
 }
 
+func (m *Component_Build_PythonScript) GetPath() string {
+	if m != nil {
+		return m.Path
+	}
+	return ""
+}
+
+func (m *Component_Build_PythonScript) GetExtraArgs() []string {
+	if m != nil {
+		return m.ExtraArgs
+	}
+	return nil
+}
+
 // *
 // A BuildPath is a path that is relative to either a source root or, if
 // specified, a Build `dir_key`.
@@ -534,6 +562,20 @@ func (m *BuildPath) Reset()                    { *m = BuildPath{} }
 func (m *BuildPath) String() string            { return proto.CompactTextString(m) }
 func (*BuildPath) ProtoMessage()               {}
 func (*BuildPath) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+
+func (m *BuildPath) GetDirKey() string {
+	if m != nil {
+		return m.DirKey
+	}
+	return ""
+}
+
+func (m *BuildPath) GetPath() string {
+	if m != nil {
+		return m.Path
+	}
+	return ""
+}
 
 // *
 // Describes an AppEngine module.
@@ -597,6 +639,13 @@ func (m *AppEngineModule) GetRuntime() isAppEngineModule_Runtime {
 	return nil
 }
 
+func (m *AppEngineModule) GetModuleName() string {
+	if m != nil {
+		return m.ModuleName
+	}
+	return ""
+}
+
 func (m *AppEngineModule) GetGoModule() *AppEngineModule_GoModule {
 	if x, ok := m.GetRuntime().(*AppEngineModule_GoModule_); ok {
 		return x.GoModule
@@ -625,9 +674,23 @@ func (m *AppEngineModule) GetHandlers() *AppEngineModule_HandlerSet {
 	return nil
 }
 
+func (m *AppEngineModule) GetHandlerPath() []string {
+	if m != nil {
+		return m.HandlerPath
+	}
+	return nil
+}
+
 func (m *AppEngineModule) GetResources() *AppEngineResources {
 	if m != nil {
 		return m.Resources
+	}
+	return nil
+}
+
+func (m *AppEngineModule) GetResourcePath() []string {
+	if m != nil {
+		return m.ResourcePath
 	}
 	return nil
 }
@@ -720,6 +783,13 @@ func (m *AppEngineModule_GoModule) String() string            { return proto.Com
 func (*AppEngineModule_GoModule) ProtoMessage()               {}
 func (*AppEngineModule_GoModule) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2, 0} }
 
+func (m *AppEngineModule_GoModule) GetEntryPackage() string {
+	if m != nil {
+		return m.EntryPackage
+	}
+	return ""
+}
+
 // *
 // A module that is really hosting static content via handlers and uploads.
 type AppEngineModule_StaticModule struct {
@@ -741,6 +811,13 @@ func (m *AppEngineModule_ManagedVmParams) String() string { return proto.Compact
 func (*AppEngineModule_ManagedVmParams) ProtoMessage()    {}
 func (*AppEngineModule_ManagedVmParams) Descriptor() ([]byte, []int) {
 	return fileDescriptor1, []int{2, 2}
+}
+
+func (m *AppEngineModule_ManagedVmParams) GetScopes() []string {
+	if m != nil {
+		return m.Scopes
+	}
+	return nil
 }
 
 // * Handler is the set of handlers.
@@ -789,6 +866,27 @@ func (m *AppEngineModule_Handler) GetContent() isAppEngineModule_Handler_Content
 		return m.Content
 	}
 	return nil
+}
+
+func (m *AppEngineModule_Handler) GetUrl() string {
+	if m != nil {
+		return m.Url
+	}
+	return ""
+}
+
+func (m *AppEngineModule_Handler) GetLogin() AppEngineModule_Handler_LoginOption {
+	if m != nil {
+		return m.Login
+	}
+	return AppEngineModule_Handler_LOGIN_OPTIONAL
+}
+
+func (m *AppEngineModule_Handler) GetSecure() AppEngineModule_Handler_SecureOption {
+	if m != nil {
+		return m.Secure
+	}
+	return AppEngineModule_Handler_SECURE_ALWAYS
 }
 
 func (m *AppEngineModule_Handler) GetScript() string {
@@ -984,6 +1082,20 @@ func (m *AppEngineModule_Handler_StaticFiles) GetBuild() *BuildPath {
 	return nil
 }
 
+func (m *AppEngineModule_Handler_StaticFiles) GetUpload() string {
+	if m != nil {
+		return m.Upload
+	}
+	return ""
+}
+
+func (m *AppEngineModule_Handler_StaticFiles) GetUrlMap() string {
+	if m != nil {
+		return m.UrlMap
+	}
+	return ""
+}
+
 // XXX_OneofFuncs is for the internal use of the proto package.
 func (*AppEngineModule_Handler_StaticFiles) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
 	return _AppEngineModule_Handler_StaticFiles_OneofMarshaler, _AppEngineModule_Handler_StaticFiles_OneofUnmarshaler, _AppEngineModule_Handler_StaticFiles_OneofSizer, []interface{}{
@@ -1104,6 +1216,13 @@ func (m *AppEngineResources) GetIndex() []*AppEngineResources_Index {
 	return nil
 }
 
+func (m *AppEngineResources) GetDispatch() []string {
+	if m != nil {
+		return m.Dispatch
+	}
+	return nil
+}
+
 func (m *AppEngineResources) GetTaskQueue() []*AppEngineResources_TaskQueue {
 	if m != nil {
 		return m.TaskQueue
@@ -1133,11 +1252,25 @@ func (m *AppEngineResources_Index) String() string            { return proto.Com
 func (*AppEngineResources_Index) ProtoMessage()               {}
 func (*AppEngineResources_Index) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3, 0} }
 
+func (m *AppEngineResources_Index) GetKind() string {
+	if m != nil {
+		return m.Kind
+	}
+	return ""
+}
+
 func (m *AppEngineResources_Index) GetProperty() []*AppEngineResources_Index_Property {
 	if m != nil {
 		return m.Property
 	}
 	return nil
+}
+
+func (m *AppEngineResources_Index) GetAncestor() bool {
+	if m != nil {
+		return m.Ancestor
+	}
+	return false
 }
 
 // Single property definition.
@@ -1151,6 +1284,20 @@ func (m *AppEngineResources_Index_Property) String() string { return proto.Compa
 func (*AppEngineResources_Index_Property) ProtoMessage()    {}
 func (*AppEngineResources_Index_Property) Descriptor() ([]byte, []int) {
 	return fileDescriptor1, []int{3, 0, 0}
+}
+
+func (m *AppEngineResources_Index_Property) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *AppEngineResources_Index_Property) GetDirection() AppEngineResources_Index_Direction {
+	if m != nil {
+		return m.Direction
+	}
+	return AppEngineResources_Index_ASCENDING
 }
 
 // Defines a task queue.
@@ -1181,6 +1328,13 @@ func (m *AppEngineResources_TaskQueue) GetType() isAppEngineResources_TaskQueue_
 		return m.Type
 	}
 	return nil
+}
+
+func (m *AppEngineResources_TaskQueue) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
 }
 
 func (m *AppEngineResources_TaskQueue) GetPush() *AppEngineResources_TaskQueue_Push {
@@ -1265,6 +1419,48 @@ func (*AppEngineResources_TaskQueue_Push) Descriptor() ([]byte, []int) {
 	return fileDescriptor1, []int{3, 1, 0}
 }
 
+func (m *AppEngineResources_TaskQueue_Push) GetRate() string {
+	if m != nil {
+		return m.Rate
+	}
+	return ""
+}
+
+func (m *AppEngineResources_TaskQueue_Push) GetBucketSize() int32 {
+	if m != nil {
+		return m.BucketSize
+	}
+	return 0
+}
+
+func (m *AppEngineResources_TaskQueue_Push) GetRetryTaskAgeLimit() string {
+	if m != nil {
+		return m.RetryTaskAgeLimit
+	}
+	return ""
+}
+
+func (m *AppEngineResources_TaskQueue_Push) GetRetryMinBackoffSeconds() int32 {
+	if m != nil {
+		return m.RetryMinBackoffSeconds
+	}
+	return 0
+}
+
+func (m *AppEngineResources_TaskQueue_Push) GetRetryMaxBackoffSeconds() int32 {
+	if m != nil {
+		return m.RetryMaxBackoffSeconds
+	}
+	return 0
+}
+
+func (m *AppEngineResources_TaskQueue_Push) GetRetryMaxDoublings() int32 {
+	if m != nil {
+		return m.RetryMaxDoublings
+	}
+	return 0
+}
+
 // *
 // Defines a cron entry.
 //
@@ -1283,6 +1479,27 @@ func (m *AppEngineResources_Cron) String() string            { return proto.Comp
 func (*AppEngineResources_Cron) ProtoMessage()               {}
 func (*AppEngineResources_Cron) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3, 2} }
 
+func (m *AppEngineResources_Cron) GetUrl() string {
+	if m != nil {
+		return m.Url
+	}
+	return ""
+}
+
+func (m *AppEngineResources_Cron) GetDescription() string {
+	if m != nil {
+		return m.Description
+	}
+	return ""
+}
+
+func (m *AppEngineResources_Cron) GetSchedule() string {
+	if m != nil {
+		return m.Schedule
+	}
+	return ""
+}
+
 // * A Google Container Engine deployment.
 type ContainerEnginePod struct {
 	// * The pod definition.
@@ -1299,6 +1516,13 @@ func (*ContainerEnginePod) Descriptor() ([]byte, []int) { return fileDescriptor1
 func (m *ContainerEnginePod) GetKubePod() *KubernetesPod {
 	if m != nil {
 		return m.KubePod
+	}
+	return nil
+}
+
+func (m *ContainerEnginePod) GetScopes() []string {
+	if m != nil {
+		return m.Scopes
 	}
 	return nil
 }
@@ -1344,6 +1568,20 @@ func (m *KubernetesPod) Reset()                    { *m = KubernetesPod{} }
 func (m *KubernetesPod) String() string            { return proto.CompactTextString(m) }
 func (*KubernetesPod) ProtoMessage()               {}
 func (*KubernetesPod) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{5} }
+
+func (m *KubernetesPod) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *KubernetesPod) GetRestartPolicy() KubernetesPod_RestartPolicy {
+	if m != nil {
+		return m.RestartPolicy
+	}
+	return KubernetesPod_RESTART_ALWAYS
+}
 
 func (m *KubernetesPod) GetTerminationGracePeriod() *google_protobuf.Duration {
 	if m != nil {
@@ -1456,6 +1694,13 @@ func (m *KubernetesPod_Container) GetDockerfile() isKubernetesPod_Container_Dock
 	return nil
 }
 
+func (m *KubernetesPod_Container) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
 func (m *KubernetesPod_Container) GetPath() string {
 	if x, ok := m.GetDockerfile().(*KubernetesPod_Container_Path); ok {
 		return x.Path
@@ -1468,6 +1713,34 @@ func (m *KubernetesPod_Container) GetBuild() *BuildPath {
 		return x.Build
 	}
 	return nil
+}
+
+func (m *KubernetesPod_Container) GetType() KubernetesPod_Container_Type {
+	if m != nil {
+		return m.Type
+	}
+	return KubernetesPod_Container_GO
+}
+
+func (m *KubernetesPod_Container) GetCommand() []string {
+	if m != nil {
+		return m.Command
+	}
+	return nil
+}
+
+func (m *KubernetesPod_Container) GetArgs() []string {
+	if m != nil {
+		return m.Args
+	}
+	return nil
+}
+
+func (m *KubernetesPod_Container) GetWorkingDir() string {
+	if m != nil {
+		return m.WorkingDir
+	}
+	return ""
 }
 
 func (m *KubernetesPod_Container) GetPorts() []*KubernetesPod_Container_ContainerPort {
@@ -1614,6 +1887,27 @@ func (*KubernetesPod_Container_ContainerPort) Descriptor() ([]byte, []int) {
 	return fileDescriptor1, []int{5, 0, 0}
 }
 
+func (m *KubernetesPod_Container_ContainerPort) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *KubernetesPod_Container_ContainerPort) GetContainerPort() int32 {
+	if m != nil {
+		return m.ContainerPort
+	}
+	return 0
+}
+
+func (m *KubernetesPod_Container_ContainerPort) GetProtocol() KubernetesPod_Container_ContainerPort_Protocol {
+	if m != nil {
+		return m.Protocol
+	}
+	return KubernetesPod_Container_ContainerPort_TCP
+}
+
 // * Resources is a resource requirements specification.
 type KubernetesPod_Container_Resources struct {
 	// * CPU resource requirements, between [0.0 and 100.0].
@@ -1626,6 +1920,13 @@ func (m *KubernetesPod_Container_Resources) String() string { return proto.Compa
 func (*KubernetesPod_Container_Resources) ProtoMessage()    {}
 func (*KubernetesPod_Container_Resources) Descriptor() ([]byte, []int) {
 	return fileDescriptor1, []int{5, 0, 2}
+}
+
+func (m *KubernetesPod_Container_Resources) GetCpu() float32 {
+	if m != nil {
+		return m.Cpu
+	}
+	return 0
 }
 
 func (m *KubernetesPod_Container_Resources) GetMemory() *KubernetesPod_Container_Resources_Memory {
@@ -1652,6 +1953,20 @@ func (*KubernetesPod_Container_Resources_Memory) Descriptor() ([]byte, []int) {
 	return fileDescriptor1, []int{5, 0, 2, 0}
 }
 
+func (m *KubernetesPod_Container_Resources_Memory) GetUnit() KubernetesPod_Container_Resources_Unit {
+	if m != nil {
+		return m.Unit
+	}
+	return KubernetesPod_Container_Resources_BYTE
+}
+
+func (m *KubernetesPod_Container_Resources_Memory) GetAmount() int32 {
+	if m != nil {
+		return m.Amount
+	}
+	return 0
+}
+
 // *
 // HTTP Get specification.
 //
@@ -1673,6 +1988,34 @@ func (m *KubernetesPod_Container_HttpGet) String() string { return proto.Compact
 func (*KubernetesPod_Container_HttpGet) ProtoMessage()    {}
 func (*KubernetesPod_Container_HttpGet) Descriptor() ([]byte, []int) {
 	return fileDescriptor1, []int{5, 0, 3}
+}
+
+func (m *KubernetesPod_Container_HttpGet) GetPath() string {
+	if m != nil {
+		return m.Path
+	}
+	return ""
+}
+
+func (m *KubernetesPod_Container_HttpGet) GetPort() int32 {
+	if m != nil {
+		return m.Port
+	}
+	return 0
+}
+
+func (m *KubernetesPod_Container_HttpGet) GetHost() string {
+	if m != nil {
+		return m.Host
+	}
+	return ""
+}
+
+func (m *KubernetesPod_Container_HttpGet) GetScheme() string {
+	if m != nil {
+		return m.Scheme
+	}
+	return ""
 }
 
 func (m *KubernetesPod_Container_HttpGet) GetHeaders() []*KubernetesPod_Container_HttpGet_Header {
@@ -1702,6 +2045,20 @@ func (*KubernetesPod_Container_HttpGet_Header) Descriptor() ([]byte, []int) {
 	return fileDescriptor1, []int{5, 0, 3, 0}
 }
 
+func (m *KubernetesPod_Container_HttpGet_Header) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *KubernetesPod_Container_HttpGet_Header) GetValue() string {
+	if m != nil {
+		return m.Value
+	}
+	return ""
+}
+
 // *
 // Probe defines a Kubernetes probe type.
 //
@@ -1725,6 +2082,13 @@ func (m *KubernetesPod_Container_Probe) String() string { return proto.CompactTe
 func (*KubernetesPod_Container_Probe) ProtoMessage()    {}
 func (*KubernetesPod_Container_Probe) Descriptor() ([]byte, []int) {
 	return fileDescriptor1, []int{5, 0, 4}
+}
+
+func (m *KubernetesPod_Container_Probe) GetExec() []string {
+	if m != nil {
+		return m.Exec
+	}
+	return nil
 }
 
 func (m *KubernetesPod_Container_Probe) GetHttpGet() *KubernetesPod_Container_HttpGet {
@@ -1755,6 +2119,20 @@ func (m *KubernetesPod_Container_Probe) GetPeriod() *google_protobuf.Duration {
 	return nil
 }
 
+func (m *KubernetesPod_Container_Probe) GetSuccessThreshold() int32 {
+	if m != nil {
+		return m.SuccessThreshold
+	}
+	return 0
+}
+
+func (m *KubernetesPod_Container_Probe) GetFailureThreshold() int32 {
+	if m != nil {
+		return m.FailureThreshold
+	}
+	return 0
+}
+
 // *
 // A handler.
 //
@@ -1771,6 +2149,13 @@ func (m *KubernetesPod_Container_Handler) String() string { return proto.Compact
 func (*KubernetesPod_Container_Handler) ProtoMessage()    {}
 func (*KubernetesPod_Container_Handler) Descriptor() ([]byte, []int) {
 	return fileDescriptor1, []int{5, 0, 5}
+}
+
+func (m *KubernetesPod_Container_Handler) GetExecCommand() []string {
+	if m != nil {
+		return m.ExecCommand
+	}
+	return nil
 }
 
 func (m *KubernetesPod_Container_Handler) GetHttpGet() *KubernetesPod_Container_HttpGet {

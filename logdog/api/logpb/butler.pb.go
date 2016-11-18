@@ -104,6 +104,27 @@ func (m *ButlerMetadata) String() string            { return proto.CompactTextSt
 func (*ButlerMetadata) ProtoMessage()               {}
 func (*ButlerMetadata) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *ButlerMetadata) GetType() ButlerMetadata_ContentType {
+	if m != nil {
+		return m.Type
+	}
+	return ButlerMetadata_Invalid
+}
+
+func (m *ButlerMetadata) GetCompression() ButlerMetadata_Compression {
+	if m != nil {
+		return m.Compression
+	}
+	return ButlerMetadata_NONE
+}
+
+func (m *ButlerMetadata) GetProtoVersion() string {
+	if m != nil {
+		return m.ProtoVersion
+	}
+	return ""
+}
+
 //
 // A message containing log data in transit from the Butler.
 //
@@ -156,6 +177,13 @@ func (m *ButlerLogBundle) String() string            { return proto.CompactTextS
 func (*ButlerLogBundle) ProtoMessage()               {}
 func (*ButlerLogBundle) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
+func (m *ButlerLogBundle) GetDeprecatedSource() string {
+	if m != nil {
+		return m.DeprecatedSource
+	}
+	return ""
+}
+
 func (m *ButlerLogBundle) GetTimestamp() *google_protobuf.Timestamp {
 	if m != nil {
 		return m.Timestamp
@@ -166,6 +194,27 @@ func (m *ButlerLogBundle) GetTimestamp() *google_protobuf.Timestamp {
 func (m *ButlerLogBundle) GetEntries() []*ButlerLogBundle_Entry {
 	if m != nil {
 		return m.Entries
+	}
+	return nil
+}
+
+func (m *ButlerLogBundle) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *ButlerLogBundle) GetPrefix() string {
+	if m != nil {
+		return m.Prefix
+	}
+	return ""
+}
+
+func (m *ButlerLogBundle) GetSecret() []byte {
+	if m != nil {
+		return m.Secret
 	}
 	return nil
 }
@@ -214,6 +263,27 @@ func (m *ButlerLogBundle_Entry) GetDesc() *LogStreamDescriptor {
 		return m.Desc
 	}
 	return nil
+}
+
+func (m *ButlerLogBundle_Entry) GetDeprecatedEntrySecret() []byte {
+	if m != nil {
+		return m.DeprecatedEntrySecret
+	}
+	return nil
+}
+
+func (m *ButlerLogBundle_Entry) GetTerminal() bool {
+	if m != nil {
+		return m.Terminal
+	}
+	return false
+}
+
+func (m *ButlerLogBundle_Entry) GetTerminalIndex() uint64 {
+	if m != nil {
+		return m.TerminalIndex
+	}
+	return 0
 }
 
 func (m *ButlerLogBundle_Entry) GetLogs() []*LogEntry {

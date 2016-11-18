@@ -64,6 +64,27 @@ func (m *GetConfigResponse) String() string            { return proto.CompactTex
 func (*GetConfigResponse) ProtoMessage()               {}
 func (*GetConfigResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *GetConfigResponse) GetConfigServiceUrl() string {
+	if m != nil {
+		return m.ConfigServiceUrl
+	}
+	return ""
+}
+
+func (m *GetConfigResponse) GetConfigSet() string {
+	if m != nil {
+		return m.ConfigSet
+	}
+	return ""
+}
+
+func (m *GetConfigResponse) GetServiceConfigPath() string {
+	if m != nil {
+		return m.ServiceConfigPath
+	}
+	return ""
+}
+
 // RegisterStreamRequest is the set of caller-supplied data for the
 // RegisterStream Coordinator service endpoint.
 type RegisterStreamRequest struct {
@@ -86,6 +107,41 @@ func (m *RegisterStreamRequest) String() string            { return proto.Compac
 func (*RegisterStreamRequest) ProtoMessage()               {}
 func (*RegisterStreamRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
+func (m *RegisterStreamRequest) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *RegisterStreamRequest) GetSecret() []byte {
+	if m != nil {
+		return m.Secret
+	}
+	return nil
+}
+
+func (m *RegisterStreamRequest) GetProtoVersion() string {
+	if m != nil {
+		return m.ProtoVersion
+	}
+	return ""
+}
+
+func (m *RegisterStreamRequest) GetDesc() []byte {
+	if m != nil {
+		return m.Desc
+	}
+	return nil
+}
+
+func (m *RegisterStreamRequest) GetTerminalIndex() int64 {
+	if m != nil {
+		return m.TerminalIndex
+	}
+	return 0
+}
+
 // The response message for the RegisterStream RPC.
 type RegisterStreamResponse struct {
 	// The Coordinator ID of the log stream.
@@ -98,6 +154,13 @@ func (m *RegisterStreamResponse) Reset()                    { *m = RegisterStrea
 func (m *RegisterStreamResponse) String() string            { return proto.CompactTextString(m) }
 func (*RegisterStreamResponse) ProtoMessage()               {}
 func (*RegisterStreamResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+
+func (m *RegisterStreamResponse) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
 
 func (m *RegisterStreamResponse) GetState() *LogStreamState {
 	if m != nil {
@@ -120,6 +183,27 @@ func (m *LoadStreamRequest) Reset()                    { *m = LoadStreamRequest{
 func (m *LoadStreamRequest) String() string            { return proto.CompactTextString(m) }
 func (*LoadStreamRequest) ProtoMessage()               {}
 func (*LoadStreamRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
+func (m *LoadStreamRequest) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *LoadStreamRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *LoadStreamRequest) GetDesc() bool {
+	if m != nil {
+		return m.Desc
+	}
+	return false
+}
 
 // The response message for the LoadStream RPC.
 type LoadStreamResponse struct {
@@ -147,9 +231,23 @@ func (m *LoadStreamResponse) GetState() *LogStreamState {
 	return nil
 }
 
+func (m *LoadStreamResponse) GetDesc() []byte {
+	if m != nil {
+		return m.Desc
+	}
+	return nil
+}
+
 func (m *LoadStreamResponse) GetAge() *google_protobuf.Duration {
 	if m != nil {
 		return m.Age
+	}
+	return nil
+}
+
+func (m *LoadStreamResponse) GetArchivalKey() []byte {
+	if m != nil {
+		return m.ArchivalKey
 	}
 	return nil
 }
@@ -171,6 +269,34 @@ func (m *TerminateStreamRequest) Reset()                    { *m = TerminateStre
 func (m *TerminateStreamRequest) String() string            { return proto.CompactTextString(m) }
 func (*TerminateStreamRequest) ProtoMessage()               {}
 func (*TerminateStreamRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+
+func (m *TerminateStreamRequest) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *TerminateStreamRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *TerminateStreamRequest) GetSecret() []byte {
+	if m != nil {
+		return m.Secret
+	}
+	return nil
+}
+
+func (m *TerminateStreamRequest) GetTerminalIndex() int64 {
+	if m != nil {
+		return m.TerminalIndex
+	}
+	return 0
+}
 
 // ArchiveStreamRequest is the set of caller-supplied data for the ArchiveStream
 // service endpoint.
@@ -207,6 +333,83 @@ func (m *ArchiveStreamRequest) Reset()                    { *m = ArchiveStreamRe
 func (m *ArchiveStreamRequest) String() string            { return proto.CompactTextString(m) }
 func (*ArchiveStreamRequest) ProtoMessage()               {}
 func (*ArchiveStreamRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
+
+func (m *ArchiveStreamRequest) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *ArchiveStreamRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *ArchiveStreamRequest) GetLogEntryCount() int64 {
+	if m != nil {
+		return m.LogEntryCount
+	}
+	return 0
+}
+
+func (m *ArchiveStreamRequest) GetTerminalIndex() int64 {
+	if m != nil {
+		return m.TerminalIndex
+	}
+	return 0
+}
+
+func (m *ArchiveStreamRequest) GetError() string {
+	if m != nil {
+		return m.Error
+	}
+	return ""
+}
+
+func (m *ArchiveStreamRequest) GetStreamUrl() string {
+	if m != nil {
+		return m.StreamUrl
+	}
+	return ""
+}
+
+func (m *ArchiveStreamRequest) GetStreamSize() int64 {
+	if m != nil {
+		return m.StreamSize
+	}
+	return 0
+}
+
+func (m *ArchiveStreamRequest) GetIndexUrl() string {
+	if m != nil {
+		return m.IndexUrl
+	}
+	return ""
+}
+
+func (m *ArchiveStreamRequest) GetIndexSize() int64 {
+	if m != nil {
+		return m.IndexSize
+	}
+	return 0
+}
+
+func (m *ArchiveStreamRequest) GetDataUrl() string {
+	if m != nil {
+		return m.DataUrl
+	}
+	return ""
+}
+
+func (m *ArchiveStreamRequest) GetDataSize() int64 {
+	if m != nil {
+		return m.DataSize
+	}
+	return 0
+}
 
 func init() {
 	proto.RegisterType((*GetConfigResponse)(nil), "logdog.GetConfigResponse")

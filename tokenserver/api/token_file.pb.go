@@ -50,6 +50,69 @@ func (m *TokenFile) String() string            { return proto.CompactTextString(
 func (*TokenFile) ProtoMessage()               {}
 func (*TokenFile) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
+func (m *TokenFile) GetAccessToken() string {
+	if m != nil {
+		return m.AccessToken
+	}
+	return ""
+}
+
+func (m *TokenFile) GetTokenType() string {
+	if m != nil {
+		return m.TokenType
+	}
+	return ""
+}
+
+func (m *TokenFile) GetLuciMachineToken() string {
+	if m != nil {
+		return m.LuciMachineToken
+	}
+	return ""
+}
+
+func (m *TokenFile) GetExpiry() int64 {
+	if m != nil {
+		return m.Expiry
+	}
+	return 0
+}
+
+func (m *TokenFile) GetLastUpdate() int64 {
+	if m != nil {
+		return m.LastUpdate
+	}
+	return 0
+}
+
+func (m *TokenFile) GetNextUpdate() int64 {
+	if m != nil {
+		return m.NextUpdate
+	}
+	return 0
+}
+
+func (m *TokenFile) GetServiceAccountEmail() string {
+	if m != nil {
+		return m.ServiceAccountEmail
+	}
+	return ""
+}
+
+func (m *TokenFile) GetServiceAccountUniqueId() string {
+	if m != nil {
+		return m.ServiceAccountUniqueId
+	}
+	return ""
+}
+
+func (m *TokenFile) GetTokendState() []byte {
+	if m != nil {
+		return m.TokendState
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*TokenFile)(nil), "tokenserver.TokenFile")
 }

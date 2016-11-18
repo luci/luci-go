@@ -32,6 +32,20 @@ func (m *TemplateInstantiation) String() string            { return proto.Compac
 func (*TemplateInstantiation) ProtoMessage()               {}
 func (*TemplateInstantiation) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
+func (m *TemplateInstantiation) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *TemplateInstantiation) GetRef() string {
+	if m != nil {
+		return m.Ref
+	}
+	return ""
+}
+
 func (m *TemplateInstantiation) GetSpecifier() *templateproto.Specifier {
 	if m != nil {
 		return m.Specifier
@@ -175,6 +189,13 @@ func (m *EnsureGraphDataReq_Limit) String() string            { return proto.Com
 func (*EnsureGraphDataReq_Limit) ProtoMessage()               {}
 func (*EnsureGraphDataReq_Limit) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1, 0} }
 
+func (m *EnsureGraphDataReq_Limit) GetMaxDataSize() uint32 {
+	if m != nil {
+		return m.MaxDataSize
+	}
+	return 0
+}
+
 type EnsureGraphDataReq_Include struct {
 	Attempt *EnsureGraphDataReq_Include_Options `protobuf:"bytes,4,opt,name=attempt" json:"attempt,omitempty"`
 }
@@ -201,6 +222,13 @@ func (m *EnsureGraphDataReq_Include_Options) String() string { return proto.Comp
 func (*EnsureGraphDataReq_Include_Options) ProtoMessage()    {}
 func (*EnsureGraphDataReq_Include_Options) Descriptor() ([]byte, []int) {
 	return fileDescriptor1, []int{1, 1, 0}
+}
+
+func (m *EnsureGraphDataReq_Include_Options) GetResult() bool {
+	if m != nil {
+		return m.Result
+	}
+	return false
 }
 
 type EnsureGraphDataRsp struct {
@@ -262,6 +290,13 @@ func (m *EnsureGraphDataRsp) String() string            { return proto.CompactTe
 func (*EnsureGraphDataRsp) ProtoMessage()               {}
 func (*EnsureGraphDataRsp) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
 
+func (m *EnsureGraphDataRsp) GetAccepted() bool {
+	if m != nil {
+		return m.Accepted
+	}
+	return false
+}
+
 func (m *EnsureGraphDataRsp) GetQuestIds() []*Quest_ID {
 	if m != nil {
 		return m.QuestIds
@@ -276,11 +311,25 @@ func (m *EnsureGraphDataRsp) GetTemplateIds() []*Quest_ID {
 	return nil
 }
 
+func (m *EnsureGraphDataRsp) GetTemplateError() []string {
+	if m != nil {
+		return m.TemplateError
+	}
+	return nil
+}
+
 func (m *EnsureGraphDataRsp) GetResult() *GraphData {
 	if m != nil {
 		return m.Result
 	}
 	return nil
+}
+
+func (m *EnsureGraphDataRsp) GetShouldHalt() bool {
+	if m != nil {
+		return m.ShouldHalt
+	}
+	return false
 }
 
 func init() {

@@ -64,6 +64,34 @@ func (m *Layout) String() string            { return proto.CompactTextString(m) 
 func (*Layout) ProtoMessage()               {}
 func (*Layout) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
+func (m *Layout) GetSourcesPath() string {
+	if m != nil {
+		return m.SourcesPath
+	}
+	return ""
+}
+
+func (m *Layout) GetApplicationsPath() string {
+	if m != nil {
+		return m.ApplicationsPath
+	}
+	return ""
+}
+
+func (m *Layout) GetDeploymentsPath() string {
+	if m != nil {
+		return m.DeploymentsPath
+	}
+	return ""
+}
+
+func (m *Layout) GetWorkingPath() string {
+	if m != nil {
+		return m.WorkingPath
+	}
+	return ""
+}
+
 // *
 // Source represents a single source configuration file.
 //
@@ -136,6 +164,20 @@ func (m *Source) GetGoPath() []*GoPath {
 		return m.GoPath
 	}
 	return nil
+}
+
+func (m *Source) GetRunScripts() bool {
+	if m != nil {
+		return m.RunScripts
+	}
+	return false
+}
+
+func (m *Source) GetTainted() bool {
+	if m != nil {
+		return m.Tainted
+	}
+	return false
 }
 
 // XXX_OneofFuncs is for the internal use of the proto package.
@@ -215,6 +257,20 @@ func (m *Source_GitRepo) String() string            { return proto.CompactTextSt
 func (*Source_GitRepo) ProtoMessage()               {}
 func (*Source_GitRepo) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1, 0} }
 
+func (m *Source_GitRepo) GetUrl() string {
+	if m != nil {
+		return m.Url
+	}
+	return ""
+}
+
+func (m *Source_GitRepo) GetRef() string {
+	if m != nil {
+		return m.Ref
+	}
+	return ""
+}
+
 // *
 // Application represents a single application.
 //
@@ -270,6 +326,34 @@ func (m *Application_Component) String() string            { return proto.Compac
 func (*Application_Component) ProtoMessage()               {}
 func (*Application_Component) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2, 0} }
 
+func (m *Application_Component) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *Application_Component) GetSource() string {
+	if m != nil {
+		return m.Source
+	}
+	return ""
+}
+
+func (m *Application_Component) GetPath() string {
+	if m != nil {
+		return m.Path
+	}
+	return ""
+}
+
+func (m *Application_Component) GetOtherSource() []string {
+	if m != nil {
+		return m.OtherSource
+	}
+	return nil
+}
+
 // *
 // A Deployment represents a single cloud project deployment. It binds a
 // set of Application configurations to a set of Sources and provides
@@ -298,6 +382,20 @@ func (m *Deployment) Reset()                    { *m = Deployment{} }
 func (m *Deployment) String() string            { return proto.CompactTextString(m) }
 func (*Deployment) ProtoMessage()               {}
 func (*Deployment) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
+
+func (m *Deployment) GetSourceGroup() string {
+	if m != nil {
+		return m.SourceGroup
+	}
+	return ""
+}
+
+func (m *Deployment) GetApplication() string {
+	if m != nil {
+		return m.Application
+	}
+	return ""
+}
 
 func (m *Deployment) GetCloudProject() *Deployment_CloudProject {
 	if m != nil {
@@ -329,6 +427,20 @@ func (m *Deployment_CloudProject) String() string            { return proto.Comp
 func (*Deployment_CloudProject) ProtoMessage()               {}
 func (*Deployment_CloudProject) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3, 0} }
 
+func (m *Deployment_CloudProject) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *Deployment_CloudProject) GetVersionScheme() Deployment_CloudProject_VersionScheme {
+	if m != nil {
+		return m.VersionScheme
+	}
+	return Deployment_CloudProject_DEFAULT
+}
+
 func (m *Deployment_CloudProject) GetResourceRef() []*Deployment_CloudProject_ResourceRef {
 	if m != nil {
 		return m.ResourceRef
@@ -357,6 +469,20 @@ func (*Deployment_CloudProject_ResourceRef) Descriptor() ([]byte, []int) {
 	return fileDescriptor2, []int{3, 0, 0}
 }
 
+func (m *Deployment_CloudProject_ResourceRef) GetSource() string {
+	if m != nil {
+		return m.Source
+	}
+	return ""
+}
+
+func (m *Deployment_CloudProject_ResourceRef) GetPath() string {
+	if m != nil {
+		return m.Path
+	}
+	return ""
+}
+
 // *
 // Defines a Google Container Engine (GKE) cluster within this cloud
 // project.
@@ -379,6 +505,41 @@ func (m *Deployment_CloudProject_GKECluster) String() string { return proto.Comp
 func (*Deployment_CloudProject_GKECluster) ProtoMessage()    {}
 func (*Deployment_CloudProject_GKECluster) Descriptor() ([]byte, []int) {
 	return fileDescriptor2, []int{3, 0, 1}
+}
+
+func (m *Deployment_CloudProject_GKECluster) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *Deployment_CloudProject_GKECluster) GetZone() string {
+	if m != nil {
+		return m.Zone
+	}
+	return ""
+}
+
+func (m *Deployment_CloudProject_GKECluster) GetNodes() int32 {
+	if m != nil {
+		return m.Nodes
+	}
+	return 0
+}
+
+func (m *Deployment_CloudProject_GKECluster) GetDiskSizeGb() int32 {
+	if m != nil {
+		return m.DiskSizeGb
+	}
+	return 0
+}
+
+func (m *Deployment_CloudProject_GKECluster) GetMachineType() string {
+	if m != nil {
+		return m.MachineType
+	}
+	return ""
 }
 
 func (m *Deployment_CloudProject_GKECluster) GetPod() []*Deployment_CloudProject_GKECluster_PodBinding {
@@ -407,6 +568,20 @@ func (m *Deployment_CloudProject_GKECluster_PodBinding) String() string {
 func (*Deployment_CloudProject_GKECluster_PodBinding) ProtoMessage() {}
 func (*Deployment_CloudProject_GKECluster_PodBinding) Descriptor() ([]byte, []int) {
 	return fileDescriptor2, []int{3, 0, 1, 0}
+}
+
+func (m *Deployment_CloudProject_GKECluster_PodBinding) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *Deployment_CloudProject_GKECluster_PodBinding) GetReplicas() int32 {
+	if m != nil {
+		return m.Replicas
+	}
+	return 0
 }
 
 func init() {

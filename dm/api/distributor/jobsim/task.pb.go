@@ -30,6 +30,20 @@ func (m *Phrase) String() string            { return proto.CompactTextString(m) 
 func (*Phrase) ProtoMessage()               {}
 func (*Phrase) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
+func (m *Phrase) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *Phrase) GetSeed() int64 {
+	if m != nil {
+		return m.Seed
+	}
+	return 0
+}
+
 func (m *Phrase) GetStages() []*Stage {
 	if m != nil {
 		return m.Stages
@@ -56,6 +70,13 @@ func (m *ReturnStage) Reset()                    { *m = ReturnStage{} }
 func (m *ReturnStage) String() string            { return proto.CompactTextString(m) }
 func (*ReturnStage) ProtoMessage()               {}
 func (*ReturnStage) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
+
+func (m *ReturnStage) GetRetval() int64 {
+	if m != nil {
+		return m.Retval
+	}
+	return 0
+}
 
 func (m *ReturnStage) GetExpiration() *google_protobuf.Timestamp {
 	if m != nil {
@@ -236,6 +257,13 @@ func (m *FailureStage) String() string            { return proto.CompactTextStri
 func (*FailureStage) ProtoMessage()               {}
 func (*FailureStage) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
 
+func (m *FailureStage) GetChance() float32 {
+	if m != nil {
+		return m.Chance
+	}
+	return 0
+}
+
 // StallStage delays the phrase for the provided Duration. This could be used
 // to simulate long-running tasks (like builds).
 type StallStage struct {
@@ -318,6 +346,13 @@ func (m *Dependency) GetAttemptStrategy() isDependency_AttemptStrategy {
 	return nil
 }
 
+func (m *Dependency) GetShards() uint64 {
+	if m != nil {
+		return m.Shards
+	}
+	return 0
+}
+
 func (m *Dependency) GetAttempts() *SparseRange {
 	if x, ok := m.GetAttemptStrategy().(*Dependency_Attempts); ok {
 		return x.Attempts
@@ -330,6 +365,13 @@ func (m *Dependency) GetRetries() uint32 {
 		return x.Retries
 	}
 	return 0
+}
+
+func (m *Dependency) GetMixSeed() bool {
+	if m != nil {
+		return m.MixSeed
+	}
+	return false
 }
 
 func (m *Dependency) GetPhrase() *Phrase {
@@ -552,6 +594,20 @@ func (m *Range) Reset()                    { *m = Range{} }
 func (m *Range) String() string            { return proto.CompactTextString(m) }
 func (*Range) ProtoMessage()               {}
 func (*Range) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{9} }
+
+func (m *Range) GetLow() uint32 {
+	if m != nil {
+		return m.Low
+	}
+	return 0
+}
+
+func (m *Range) GetHigh() uint32 {
+	if m != nil {
+		return m.High
+	}
+	return 0
+}
 
 func init() {
 	proto.RegisterType((*Phrase)(nil), "jobsim.Phrase")

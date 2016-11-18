@@ -125,6 +125,20 @@ func (m *FailureDetails) String() string            { return proto.CompactTextSt
 func (*FailureDetails) ProtoMessage()               {}
 func (*FailureDetails) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *FailureDetails) GetType() FailureDetails_Type {
+	if m != nil {
+		return m.Type
+	}
+	return FailureDetails_GENERAL
+}
+
+func (m *FailureDetails) GetText() string {
+	if m != nil {
+		return m.Text
+	}
+	return ""
+}
+
 func (m *FailureDetails) GetFailedDmDependency() []*DMLink {
 	if m != nil {
 		return m.FailedDmDependency
@@ -173,11 +187,25 @@ func (m *Step) String() string            { return proto.CompactTextString(m) }
 func (*Step) ProtoMessage()               {}
 func (*Step) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
+func (m *Step) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
 func (m *Step) GetCommand() *Step_Command {
 	if m != nil {
 		return m.Command
 	}
 	return nil
+}
+
+func (m *Step) GetStatus() Status {
+	if m != nil {
+		return m.Status
+	}
+	return Status_RUNNING
 }
 
 func (m *Step) GetFailureDetails() *FailureDetails {
@@ -218,6 +246,13 @@ func (m *Step) GetStarted() *google_protobuf.Timestamp {
 func (m *Step) GetEnded() *google_protobuf.Timestamp {
 	if m != nil {
 		return m.Ended
+	}
+	return nil
+}
+
+func (m *Step) GetText() []string {
+	if m != nil {
+		return m.Text
 	}
 	return nil
 }
@@ -264,6 +299,20 @@ func (m *Step_Command) Reset()                    { *m = Step_Command{} }
 func (m *Step_Command) String() string            { return proto.CompactTextString(m) }
 func (*Step_Command) ProtoMessage()               {}
 func (*Step_Command) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1, 0} }
+
+func (m *Step_Command) GetCommandLine() []string {
+	if m != nil {
+		return m.CommandLine
+	}
+	return nil
+}
+
+func (m *Step_Command) GetCwd() string {
+	if m != nil {
+		return m.Cwd
+	}
+	return ""
+}
 
 func (m *Step_Command) GetEnviron() map[string]string {
 	if m != nil {
@@ -416,6 +465,20 @@ func (m *Step_Progress) String() string            { return proto.CompactTextStr
 func (*Step_Progress) ProtoMessage()               {}
 func (*Step_Progress) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1, 2} }
 
+func (m *Step_Progress) GetTotal() int32 {
+	if m != nil {
+		return m.Total
+	}
+	return 0
+}
+
+func (m *Step_Progress) GetCompleted() int32 {
+	if m != nil {
+		return m.Completed
+	}
+	return 0
+}
+
 // Property is an arbitrary key/value (build) property.
 type Step_Property struct {
 	// name is the property name.
@@ -428,6 +491,20 @@ func (m *Step_Property) Reset()                    { *m = Step_Property{} }
 func (m *Step_Property) String() string            { return proto.CompactTextString(m) }
 func (*Step_Property) ProtoMessage()               {}
 func (*Step_Property) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1, 3} }
+
+func (m *Step_Property) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *Step_Property) GetValue() string {
+	if m != nil {
+		return m.Value
+	}
+	return ""
+}
 
 // A Link is an optional label followed by a typed link to an external
 // resource.
@@ -477,6 +554,20 @@ func (m *Link) GetValue() isLink_Value {
 		return m.Value
 	}
 	return nil
+}
+
+func (m *Link) GetLabel() string {
+	if m != nil {
+		return m.Label
+	}
+	return ""
+}
+
+func (m *Link) GetAliasLabel() string {
+	if m != nil {
+		return m.AliasLabel
+	}
+	return ""
 }
 
 func (m *Link) GetUrl() string {
@@ -632,6 +723,27 @@ func (m *LogdogStream) String() string            { return proto.CompactTextStri
 func (*LogdogStream) ProtoMessage()               {}
 func (*LogdogStream) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
+func (m *LogdogStream) GetServer() string {
+	if m != nil {
+		return m.Server
+	}
+	return ""
+}
+
+func (m *LogdogStream) GetPrefix() string {
+	if m != nil {
+		return m.Prefix
+	}
+	return ""
+}
+
+func (m *LogdogStream) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
 // IsolateObject is an Isolate service object specification.
 type IsolateObject struct {
 	// The Isolate server. If empty, this is the default Isolate server specified
@@ -645,6 +757,20 @@ func (m *IsolateObject) Reset()                    { *m = IsolateObject{} }
 func (m *IsolateObject) String() string            { return proto.CompactTextString(m) }
 func (*IsolateObject) ProtoMessage()               {}
 func (*IsolateObject) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+
+func (m *IsolateObject) GetServer() string {
+	if m != nil {
+		return m.Server
+	}
+	return ""
+}
+
+func (m *IsolateObject) GetHash() string {
+	if m != nil {
+		return m.Hash
+	}
+	return ""
+}
 
 // DMLink is a Dungeon Master execution specification.
 type DMLink struct {
@@ -663,6 +789,34 @@ func (m *DMLink) Reset()                    { *m = DMLink{} }
 func (m *DMLink) String() string            { return proto.CompactTextString(m) }
 func (*DMLink) ProtoMessage()               {}
 func (*DMLink) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+
+func (m *DMLink) GetServer() string {
+	if m != nil {
+		return m.Server
+	}
+	return ""
+}
+
+func (m *DMLink) GetQuest() string {
+	if m != nil {
+		return m.Quest
+	}
+	return ""
+}
+
+func (m *DMLink) GetAttempt() int64 {
+	if m != nil {
+		return m.Attempt
+	}
+	return 0
+}
+
+func (m *DMLink) GetExecution() int64 {
+	if m != nil {
+		return m.Execution
+	}
+	return 0
+}
 
 func init() {
 	proto.RegisterType((*FailureDetails)(nil), "milo.FailureDetails")

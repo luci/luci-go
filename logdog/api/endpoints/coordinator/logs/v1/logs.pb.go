@@ -155,6 +155,55 @@ func (m *GetRequest) String() string            { return proto.CompactTextString
 func (*GetRequest) ProtoMessage()               {}
 func (*GetRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *GetRequest) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *GetRequest) GetPath() string {
+	if m != nil {
+		return m.Path
+	}
+	return ""
+}
+
+func (m *GetRequest) GetState() bool {
+	if m != nil {
+		return m.State
+	}
+	return false
+}
+
+func (m *GetRequest) GetIndex() int64 {
+	if m != nil {
+		return m.Index
+	}
+	return 0
+}
+
+func (m *GetRequest) GetByteCount() int32 {
+	if m != nil {
+		return m.ByteCount
+	}
+	return 0
+}
+
+func (m *GetRequest) GetLogCount() int32 {
+	if m != nil {
+		return m.LogCount
+	}
+	return 0
+}
+
+func (m *GetRequest) GetNonContiguous() bool {
+	if m != nil {
+		return m.NonContiguous
+	}
+	return false
+}
+
 // TailRequest is the request structure for the user Tail endpoint. It returns
 // the last log in a given log stream at the time of the request.
 type TailRequest struct {
@@ -177,6 +226,27 @@ func (m *TailRequest) Reset()                    { *m = TailRequest{} }
 func (m *TailRequest) String() string            { return proto.CompactTextString(m) }
 func (*TailRequest) ProtoMessage()               {}
 func (*TailRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+
+func (m *TailRequest) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *TailRequest) GetPath() string {
+	if m != nil {
+		return m.Path
+	}
+	return ""
+}
+
+func (m *TailRequest) GetState() bool {
+	if m != nil {
+		return m.State
+	}
+	return false
+}
 
 // GetResponse is the response structure for the user Get endpoint.
 type GetResponse struct {
@@ -202,6 +272,13 @@ func (m *GetResponse) Reset()                    { *m = GetResponse{} }
 func (m *GetResponse) String() string            { return proto.CompactTextString(m) }
 func (*GetResponse) ProtoMessage()               {}
 func (*GetResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+
+func (m *GetResponse) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
 
 func (m *GetResponse) GetState() *LogStreamState {
 	if m != nil {
@@ -294,6 +371,55 @@ func (m *QueryRequest) String() string            { return proto.CompactTextStri
 func (*QueryRequest) ProtoMessage()               {}
 func (*QueryRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
+func (m *QueryRequest) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *QueryRequest) GetPath() string {
+	if m != nil {
+		return m.Path
+	}
+	return ""
+}
+
+func (m *QueryRequest) GetState() bool {
+	if m != nil {
+		return m.State
+	}
+	return false
+}
+
+func (m *QueryRequest) GetProto() bool {
+	if m != nil {
+		return m.Proto
+	}
+	return false
+}
+
+func (m *QueryRequest) GetNext() string {
+	if m != nil {
+		return m.Next
+	}
+	return ""
+}
+
+func (m *QueryRequest) GetMaxResults() int32 {
+	if m != nil {
+		return m.MaxResults
+	}
+	return 0
+}
+
+func (m *QueryRequest) GetContentType() string {
+	if m != nil {
+		return m.ContentType
+	}
+	return ""
+}
+
 func (m *QueryRequest) GetStreamType() *QueryRequest_StreamTypeFilter {
 	if m != nil {
 		return m.StreamType
@@ -315,11 +441,25 @@ func (m *QueryRequest) GetOlder() *google_protobuf.Timestamp {
 	return nil
 }
 
+func (m *QueryRequest) GetProtoVersion() string {
+	if m != nil {
+		return m.ProtoVersion
+	}
+	return ""
+}
+
 func (m *QueryRequest) GetTags() map[string]string {
 	if m != nil {
 		return m.Tags
 	}
 	return nil
+}
+
+func (m *QueryRequest) GetPurged() QueryRequest_Trinary {
+	if m != nil {
+		return m.Purged
+	}
+	return QueryRequest_BOTH
 }
 
 // The stream type to filter on.
@@ -333,6 +473,13 @@ func (m *QueryRequest_StreamTypeFilter) String() string { return proto.CompactTe
 func (*QueryRequest_StreamTypeFilter) ProtoMessage()    {}
 func (*QueryRequest_StreamTypeFilter) Descriptor() ([]byte, []int) {
 	return fileDescriptor0, []int{3, 0}
+}
+
+func (m *QueryRequest_StreamTypeFilter) GetValue() logpb.StreamType {
+	if m != nil {
+		return m.Value
+	}
+	return logpb.StreamType_TEXT
 }
 
 // QueryResponse is the response structure for the user Query endpoint.
@@ -352,11 +499,25 @@ func (m *QueryResponse) String() string            { return proto.CompactTextStr
 func (*QueryResponse) ProtoMessage()               {}
 func (*QueryResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
 
+func (m *QueryResponse) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
 func (m *QueryResponse) GetStreams() []*QueryResponse_Stream {
 	if m != nil {
 		return m.Streams
 	}
 	return nil
+}
+
+func (m *QueryResponse) GetNext() string {
+	if m != nil {
+		return m.Next
+	}
+	return ""
 }
 
 // Stream represents a single query response stream.
@@ -386,6 +547,13 @@ func (m *QueryResponse_Stream) String() string            { return proto.Compact
 func (*QueryResponse_Stream) ProtoMessage()               {}
 func (*QueryResponse_Stream) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4, 0} }
 
+func (m *QueryResponse_Stream) GetPath() string {
+	if m != nil {
+		return m.Path
+	}
+	return ""
+}
+
 func (m *QueryResponse_Stream) GetState() *LogStreamState {
 	if m != nil {
 		return m.State
@@ -396,6 +564,13 @@ func (m *QueryResponse_Stream) GetState() *LogStreamState {
 func (m *QueryResponse_Stream) GetDesc() *logpb.LogStreamDescriptor {
 	if m != nil {
 		return m.Desc
+	}
+	return nil
+}
+
+func (m *QueryResponse_Stream) GetDescProto() []byte {
+	if m != nil {
+		return m.DescProto
 	}
 	return nil
 }
@@ -453,6 +628,62 @@ func (m *ListRequest) String() string            { return proto.CompactTextStrin
 func (*ListRequest) ProtoMessage()               {}
 func (*ListRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
 
+func (m *ListRequest) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *ListRequest) GetPathBase() string {
+	if m != nil {
+		return m.PathBase
+	}
+	return ""
+}
+
+func (m *ListRequest) GetState() bool {
+	if m != nil {
+		return m.State
+	}
+	return false
+}
+
+func (m *ListRequest) GetNext() string {
+	if m != nil {
+		return m.Next
+	}
+	return ""
+}
+
+func (m *ListRequest) GetStreamOnly() bool {
+	if m != nil {
+		return m.StreamOnly
+	}
+	return false
+}
+
+func (m *ListRequest) GetIncludePurged() bool {
+	if m != nil {
+		return m.IncludePurged
+	}
+	return false
+}
+
+func (m *ListRequest) GetOffset() int32 {
+	if m != nil {
+		return m.Offset
+	}
+	return 0
+}
+
+func (m *ListRequest) GetMaxResults() int32 {
+	if m != nil {
+		return m.MaxResults
+	}
+	return 0
+}
+
 // ListResponse is the response structure for the user List endpoint.
 type ListResponse struct {
 	// The project that the streams belong to.
@@ -473,6 +704,27 @@ func (m *ListResponse) Reset()                    { *m = ListResponse{} }
 func (m *ListResponse) String() string            { return proto.CompactTextString(m) }
 func (*ListResponse) ProtoMessage()               {}
 func (*ListResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
+
+func (m *ListResponse) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *ListResponse) GetPathBase() string {
+	if m != nil {
+		return m.PathBase
+	}
+	return ""
+}
+
+func (m *ListResponse) GetNext() string {
+	if m != nil {
+		return m.Next
+	}
+	return ""
+}
 
 func (m *ListResponse) GetComponents() []*ListResponse_Component {
 	if m != nil {
@@ -508,6 +760,20 @@ func (m *ListResponse_Component) Reset()                    { *m = ListResponse_
 func (m *ListResponse_Component) String() string            { return proto.CompactTextString(m) }
 func (*ListResponse_Component) ProtoMessage()               {}
 func (*ListResponse_Component) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6, 0} }
+
+func (m *ListResponse_Component) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *ListResponse_Component) GetType() ListResponse_Component_Type {
+	if m != nil {
+		return m.Type
+	}
+	return ListResponse_Component_PATH
+}
 
 func (m *ListResponse_Component) GetState() *LogStreamState {
 	if m != nil {

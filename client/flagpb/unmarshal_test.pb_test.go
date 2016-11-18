@@ -66,6 +66,48 @@ func (m *M1) String() string            { return proto.CompactTextString(m) }
 func (*M1) ProtoMessage()               {}
 func (*M1) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *M1) GetS() string {
+	if m != nil {
+		return m.S
+	}
+	return ""
+}
+
+func (m *M1) GetI() int32 {
+	if m != nil {
+		return m.I
+	}
+	return 0
+}
+
+func (m *M1) GetRi() []int32 {
+	if m != nil {
+		return m.Ri
+	}
+	return nil
+}
+
+func (m *M1) GetB() bool {
+	if m != nil {
+		return m.B
+	}
+	return false
+}
+
+func (m *M1) GetRb() []bool {
+	if m != nil {
+		return m.Rb
+	}
+	return nil
+}
+
+func (m *M1) GetBb() []byte {
+	if m != nil {
+		return m.Bb
+	}
+	return nil
+}
+
 type M2 struct {
 	M1 *M1 `protobuf:"bytes,1,opt,name=m1" json:"m1,omitempty"`
 	E  E   `protobuf:"varint,2,opt,name=e,enum=flagpb.E" json:"e,omitempty"`
@@ -81,6 +123,13 @@ func (m *M2) GetM1() *M1 {
 		return m.M1
 	}
 	return nil
+}
+
+func (m *M2) GetE() E {
+	if m != nil {
+		return m.E
+	}
+	return E_V0
 }
 
 type M3 struct {
@@ -106,6 +155,27 @@ func (m *M3) GetM1() []*M1 {
 func (m *M3) GetM2() *M2 {
 	if m != nil {
 		return m.M2
+	}
+	return nil
+}
+
+func (m *M3) GetB() bool {
+	if m != nil {
+		return m.B
+	}
+	return false
+}
+
+func (m *M3) GetS() string {
+	if m != nil {
+		return m.S
+	}
+	return ""
+}
+
+func (m *M3) GetBt() []byte {
+	if m != nil {
+		return m.Bt
 	}
 	return nil
 }

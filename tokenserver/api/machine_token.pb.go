@@ -98,6 +98,48 @@ func (m *MachineTokenBody) String() string            { return proto.CompactText
 func (*MachineTokenBody) ProtoMessage()               {}
 func (*MachineTokenBody) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *MachineTokenBody) GetMachineFqdn() string {
+	if m != nil {
+		return m.MachineFqdn
+	}
+	return ""
+}
+
+func (m *MachineTokenBody) GetIssuedBy() string {
+	if m != nil {
+		return m.IssuedBy
+	}
+	return ""
+}
+
+func (m *MachineTokenBody) GetIssuedAt() uint64 {
+	if m != nil {
+		return m.IssuedAt
+	}
+	return 0
+}
+
+func (m *MachineTokenBody) GetLifetime() uint64 {
+	if m != nil {
+		return m.Lifetime
+	}
+	return 0
+}
+
+func (m *MachineTokenBody) GetCaId() int64 {
+	if m != nil {
+		return m.CaId
+	}
+	return 0
+}
+
+func (m *MachineTokenBody) GetCertSn() uint64 {
+	if m != nil {
+		return m.CertSn
+	}
+	return 0
+}
+
 // MachineTokenEnvelope is what is actually being serialized and represented
 // as a machine token (after being encoded using base64 standard raw encoding).
 //
@@ -112,6 +154,27 @@ func (m *MachineTokenEnvelope) Reset()                    { *m = MachineTokenEnv
 func (m *MachineTokenEnvelope) String() string            { return proto.CompactTextString(m) }
 func (*MachineTokenEnvelope) ProtoMessage()               {}
 func (*MachineTokenEnvelope) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+
+func (m *MachineTokenEnvelope) GetTokenBody() []byte {
+	if m != nil {
+		return m.TokenBody
+	}
+	return nil
+}
+
+func (m *MachineTokenEnvelope) GetKeyId() string {
+	if m != nil {
+		return m.KeyId
+	}
+	return ""
+}
+
+func (m *MachineTokenEnvelope) GetRsaSha256() []byte {
+	if m != nil {
+		return m.RsaSha256
+	}
+	return nil
+}
 
 func init() {
 	proto.RegisterType((*MachineTokenBody)(nil), "tokenserver.MachineTokenBody")

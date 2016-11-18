@@ -46,6 +46,13 @@ func (m *Req) String() string            { return proto.CompactTextString(m) }
 func (*Req) ProtoMessage()               {}
 func (*Req) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *Req) GetX() int64 {
+	if m != nil {
+		return m.X
+	}
+	return 0
+}
+
 type Res struct {
 	X int64 `protobuf:"varint,1,opt,name=x" json:"x,omitempty"`
 }
@@ -54,6 +61,13 @@ func (m *Res) Reset()                    { *m = Res{} }
 func (m *Res) String() string            { return proto.CompactTextString(m) }
 func (*Res) ProtoMessage()               {}
 func (*Res) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+
+func (m *Res) GetX() int64 {
+	if m != nil {
+		return m.X
+	}
+	return 0
+}
 
 func init() {
 	proto.RegisterType((*Req)(nil), "test.Req")

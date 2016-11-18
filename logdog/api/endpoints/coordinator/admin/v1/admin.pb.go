@@ -60,6 +60,34 @@ func (m *SetConfigRequest) String() string            { return proto.CompactText
 func (*SetConfigRequest) ProtoMessage()               {}
 func (*SetConfigRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *SetConfigRequest) GetConfigServiceUrl() string {
+	if m != nil {
+		return m.ConfigServiceUrl
+	}
+	return ""
+}
+
+func (m *SetConfigRequest) GetConfigSet() string {
+	if m != nil {
+		return m.ConfigSet
+	}
+	return ""
+}
+
+func (m *SetConfigRequest) GetConfigPath() string {
+	if m != nil {
+		return m.ConfigPath
+	}
+	return ""
+}
+
+func (m *SetConfigRequest) GetStorageServiceAccountJson() []byte {
+	if m != nil {
+		return m.StorageServiceAccountJson
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*SetConfigRequest)(nil), "logdog.SetConfigRequest")
 }

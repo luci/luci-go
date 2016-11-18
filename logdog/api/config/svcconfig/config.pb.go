@@ -121,11 +121,39 @@ func (m *Coordinator) String() string            { return proto.CompactTextStrin
 func (*Coordinator) ProtoMessage()               {}
 func (*Coordinator) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
 
+func (m *Coordinator) GetAdminAuthGroup() string {
+	if m != nil {
+		return m.AdminAuthGroup
+	}
+	return ""
+}
+
+func (m *Coordinator) GetServiceAuthGroup() string {
+	if m != nil {
+		return m.ServiceAuthGroup
+	}
+	return ""
+}
+
+func (m *Coordinator) GetRpcAllowOrigins() []string {
+	if m != nil {
+		return m.RpcAllowOrigins
+	}
+	return nil
+}
+
 func (m *Coordinator) GetPrefixExpiration() *google_protobuf.Duration {
 	if m != nil {
 		return m.PrefixExpiration
 	}
 	return nil
+}
+
+func (m *Coordinator) GetArchiveTopic() string {
+	if m != nil {
+		return m.ArchiveTopic
+	}
+	return ""
 }
 
 func (m *Coordinator) GetArchiveSettleDelay() *google_protobuf.Duration {
@@ -162,6 +190,27 @@ func (m *Collector) Reset()                    { *m = Collector{} }
 func (m *Collector) String() string            { return proto.CompactTextString(m) }
 func (*Collector) ProtoMessage()               {}
 func (*Collector) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+
+func (m *Collector) GetMaxConcurrentMessages() int32 {
+	if m != nil {
+		return m.MaxConcurrentMessages
+	}
+	return 0
+}
+
+func (m *Collector) GetMaxMessageWorkers() int32 {
+	if m != nil {
+		return m.MaxMessageWorkers
+	}
+	return 0
+}
+
+func (m *Collector) GetStateCacheSize() int32 {
+	if m != nil {
+		return m.StateCacheSize
+	}
+	return 0
+}
 
 func (m *Collector) GetStateCacheExpiration() *google_protobuf.Duration {
 	if m != nil {
@@ -216,11 +265,39 @@ func (m *Archivist) String() string            { return proto.CompactTextString(
 func (*Archivist) ProtoMessage()               {}
 func (*Archivist) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
 
+func (m *Archivist) GetSubscription() string {
+	if m != nil {
+		return m.Subscription
+	}
+	return ""
+}
+
+func (m *Archivist) GetTasks() int32 {
+	if m != nil {
+		return m.Tasks
+	}
+	return 0
+}
+
+func (m *Archivist) GetGsStagingBucket() string {
+	if m != nil {
+		return m.GsStagingBucket
+	}
+	return ""
+}
+
 func (m *Archivist) GetArchiveIndexConfig() *ArchiveIndexConfig {
 	if m != nil {
 		return m.ArchiveIndexConfig
 	}
 	return nil
+}
+
+func (m *Archivist) GetRenderAllStreams() bool {
+	if m != nil {
+		return m.RenderAllStreams
+	}
+	return false
 }
 
 func init() {

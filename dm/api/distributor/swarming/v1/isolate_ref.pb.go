@@ -23,6 +23,20 @@ func (m *IsolatedRef) String() string            { return proto.CompactTextStrin
 func (*IsolatedRef) ProtoMessage()               {}
 func (*IsolatedRef) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
+func (m *IsolatedRef) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *IsolatedRef) GetServer() string {
+	if m != nil {
+		return m.Server
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*IsolatedRef)(nil), "swarmingV1.IsolatedRef")
 }

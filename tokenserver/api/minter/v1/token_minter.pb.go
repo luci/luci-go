@@ -131,6 +131,20 @@ func (m *MintMachineTokenRequest) String() string            { return proto.Comp
 func (*MintMachineTokenRequest) ProtoMessage()               {}
 func (*MintMachineTokenRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *MintMachineTokenRequest) GetSerializedTokenRequest() []byte {
+	if m != nil {
+		return m.SerializedTokenRequest
+	}
+	return nil
+}
+
+func (m *MintMachineTokenRequest) GetSignature() []byte {
+	if m != nil {
+		return m.Signature
+	}
+	return nil
+}
+
 // MachineTokenRequest contains the actual request parameters.
 type MachineTokenRequest struct {
 	// The certificate that identifies a caller (as ASN1-serialized blob).
@@ -155,11 +169,32 @@ func (m *MachineTokenRequest) String() string            { return proto.CompactT
 func (*MachineTokenRequest) ProtoMessage()               {}
 func (*MachineTokenRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
+func (m *MachineTokenRequest) GetCertificate() []byte {
+	if m != nil {
+		return m.Certificate
+	}
+	return nil
+}
+
+func (m *MachineTokenRequest) GetSignatureAlgorithm() SignatureAlgorithm {
+	if m != nil {
+		return m.SignatureAlgorithm
+	}
+	return SignatureAlgorithm_UNKNOWN_ALGO
+}
+
 func (m *MachineTokenRequest) GetIssuedAt() *google_protobuf.Timestamp {
 	if m != nil {
 		return m.IssuedAt
 	}
 	return nil
+}
+
+func (m *MachineTokenRequest) GetTokenType() tokenserver.MachineTokenType {
+	if m != nil {
+		return m.TokenType
+	}
+	return tokenserver.MachineTokenType_UNKNOWN_TYPE
 }
 
 // MintMachineTokenResponse is returned by 'MintMachineToken' if the server
@@ -188,11 +223,32 @@ func (m *MintMachineTokenResponse) String() string            { return proto.Com
 func (*MintMachineTokenResponse) ProtoMessage()               {}
 func (*MintMachineTokenResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
+func (m *MintMachineTokenResponse) GetErrorCode() ErrorCode {
+	if m != nil {
+		return m.ErrorCode
+	}
+	return ErrorCode_SUCCESS
+}
+
+func (m *MintMachineTokenResponse) GetErrorMessage() string {
+	if m != nil {
+		return m.ErrorMessage
+	}
+	return ""
+}
+
 func (m *MintMachineTokenResponse) GetTokenResponse() *MachineTokenResponse {
 	if m != nil {
 		return m.TokenResponse
 	}
 	return nil
+}
+
+func (m *MintMachineTokenResponse) GetServiceVersion() string {
+	if m != nil {
+		return m.ServiceVersion
+	}
+	return ""
 }
 
 // MachineTokenResponse contains a token requested by MachineTokenRequest.
@@ -232,6 +288,13 @@ func (m *MachineTokenResponse) GetTokenType() isMachineTokenResponse_TokenType {
 		return m.TokenType
 	}
 	return nil
+}
+
+func (m *MachineTokenResponse) GetServiceVersion() string {
+	if m != nil {
+		return m.ServiceVersion
+	}
+	return ""
 }
 
 func (m *MachineTokenResponse) GetLuciMachineToken() *LuciMachineToken {
@@ -317,6 +380,13 @@ func (m *LuciMachineToken) String() string            { return proto.CompactText
 func (*LuciMachineToken) ProtoMessage()               {}
 func (*LuciMachineToken) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
 
+func (m *LuciMachineToken) GetMachineToken() string {
+	if m != nil {
+		return m.MachineToken
+	}
+	return ""
+}
+
 func (m *LuciMachineToken) GetExpiry() *google_protobuf.Timestamp {
 	if m != nil {
 		return m.Expiry
@@ -372,6 +442,41 @@ func (m *MintDelegationTokenRequest) String() string            { return proto.C
 func (*MintDelegationTokenRequest) ProtoMessage()               {}
 func (*MintDelegationTokenRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
 
+func (m *MintDelegationTokenRequest) GetDelegatedIdentity() string {
+	if m != nil {
+		return m.DelegatedIdentity
+	}
+	return ""
+}
+
+func (m *MintDelegationTokenRequest) GetValidityDuration() int64 {
+	if m != nil {
+		return m.ValidityDuration
+	}
+	return 0
+}
+
+func (m *MintDelegationTokenRequest) GetAudience() []string {
+	if m != nil {
+		return m.Audience
+	}
+	return nil
+}
+
+func (m *MintDelegationTokenRequest) GetServices() []string {
+	if m != nil {
+		return m.Services
+	}
+	return nil
+}
+
+func (m *MintDelegationTokenRequest) GetIntent() string {
+	if m != nil {
+		return m.Intent
+	}
+	return ""
+}
+
 // MintDelegationTokenResponse is returned by 'MintDelegationToken' on success.
 //
 // Errors are returned via standard gRPC codes.
@@ -389,6 +494,13 @@ func (m *MintDelegationTokenResponse) Reset()                    { *m = MintDele
 func (m *MintDelegationTokenResponse) String() string            { return proto.CompactTextString(m) }
 func (*MintDelegationTokenResponse) ProtoMessage()               {}
 func (*MintDelegationTokenResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
+
+func (m *MintDelegationTokenResponse) GetToken() string {
+	if m != nil {
+		return m.Token
+	}
+	return ""
+}
 
 func (m *MintDelegationTokenResponse) GetDelegationSubtoken() *messages.Subtoken {
 	if m != nil {

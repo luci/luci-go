@@ -50,6 +50,13 @@ func (m *CachedStep) GetStep() *milo.Step {
 	return nil
 }
 
+func (m *CachedStep) GetFinished() bool {
+	if m != nil {
+		return m.Finished
+	}
+	return false
+}
+
 func init() {
 	proto.RegisterType((*CachedStep)(nil), "internal.CachedStep")
 }

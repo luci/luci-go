@@ -29,6 +29,13 @@ func (m *Result) String() string            { return proto.CompactTextString(m) 
 func (*Result) ProtoMessage()               {}
 func (*Result) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
 
+func (m *Result) GetExitCode() int64 {
+	if m != nil {
+		return m.ExitCode
+	}
+	return 0
+}
+
 func (m *Result) GetIsolatedOutdir() *IsolatedRef {
 	if m != nil {
 		return m.IsolatedOutdir

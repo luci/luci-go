@@ -98,6 +98,13 @@ func (m *ActivateExecutionReq) GetAuth() *Execution_Auth {
 	return nil
 }
 
+func (m *ActivateExecutionReq) GetExecutionToken() []byte {
+	if m != nil {
+		return m.ExecutionToken
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*ActivateExecutionReq)(nil), "dm.ActivateExecutionReq")
 }

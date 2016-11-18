@@ -67,6 +67,13 @@ func (m *DescribeResponse) GetDescription() *google_protobuf.FileDescriptorSet {
 	return nil
 }
 
+func (m *DescribeResponse) GetServices() []string {
+	if m != nil {
+		return m.Services
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*Void)(nil), "discovery.Void")
 	proto.RegisterType((*DescribeResponse)(nil), "discovery.DescribeResponse")

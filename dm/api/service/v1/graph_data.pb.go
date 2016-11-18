@@ -235,6 +235,20 @@ func (m *AbnormalFinish) String() string            { return proto.CompactTextSt
 func (*AbnormalFinish) ProtoMessage()               {}
 func (*AbnormalFinish) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
 
+func (m *AbnormalFinish) GetStatus() AbnormalFinish_Status {
+	if m != nil {
+		return m.Status
+	}
+	return AbnormalFinish_INVALID
+}
+
+func (m *AbnormalFinish) GetReason() string {
+	if m != nil {
+		return m.Reason
+	}
+	return ""
+}
+
 type Quest struct {
 	Id *Quest_ID `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
 	// DNE is set to true if this Quest does not exist. None of the following
@@ -260,6 +274,13 @@ func (m *Quest) GetId() *Quest_ID {
 	return nil
 }
 
+func (m *Quest) GetDNE() bool {
+	if m != nil {
+		return m.DNE
+	}
+	return false
+}
+
 func (m *Quest) GetData() *Quest_Data {
 	if m != nil {
 		return m.Data
@@ -274,6 +295,13 @@ func (m *Quest) GetAttempts() map[uint32]*Attempt {
 	return nil
 }
 
+func (m *Quest) GetPartial() bool {
+	if m != nil {
+		return m.Partial
+	}
+	return false
+}
+
 type Quest_ID struct {
 	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
 }
@@ -282,6 +310,13 @@ func (m *Quest_ID) Reset()                    { *m = Quest_ID{} }
 func (m *Quest_ID) String() string            { return proto.CompactTextString(m) }
 func (*Quest_ID) ProtoMessage()               {}
 func (*Quest_ID) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1, 0} }
+
+func (m *Quest_ID) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
 
 type Quest_Desc struct {
 	// This names a specific distributor configuration (or alias) in the
@@ -318,6 +353,27 @@ func (m *Quest_Desc) String() string            { return proto.CompactTextString
 func (*Quest_Desc) ProtoMessage()               {}
 func (*Quest_Desc) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1, 1} }
 
+func (m *Quest_Desc) GetDistributorConfigName() string {
+	if m != nil {
+		return m.DistributorConfigName
+	}
+	return ""
+}
+
+func (m *Quest_Desc) GetParameters() string {
+	if m != nil {
+		return m.Parameters
+	}
+	return ""
+}
+
+func (m *Quest_Desc) GetDistributorParameters() string {
+	if m != nil {
+		return m.DistributorParameters
+	}
+	return ""
+}
+
 func (m *Quest_Desc) GetMeta() *Quest_Desc_Meta {
 	if m != nil {
 		return m.Meta
@@ -340,6 +396,13 @@ func (m *Quest_Desc_Meta) Reset()                    { *m = Quest_Desc_Meta{} }
 func (m *Quest_Desc_Meta) String() string            { return proto.CompactTextString(m) }
 func (*Quest_Desc_Meta) ProtoMessage()               {}
 func (*Quest_Desc_Meta) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1, 1, 0} }
+
+func (m *Quest_Desc_Meta) GetAsAccount() string {
+	if m != nil {
+		return m.AsAccount
+	}
+	return ""
+}
 
 func (m *Quest_Desc_Meta) GetRetry() *Quest_Desc_Meta_Retry {
 	if m != nil {
@@ -379,6 +442,34 @@ func (m *Quest_Desc_Meta_Retry) Reset()                    { *m = Quest_Desc_Met
 func (m *Quest_Desc_Meta_Retry) String() string            { return proto.CompactTextString(m) }
 func (*Quest_Desc_Meta_Retry) ProtoMessage()               {}
 func (*Quest_Desc_Meta_Retry) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1, 1, 0, 0} }
+
+func (m *Quest_Desc_Meta_Retry) GetFailed() uint32 {
+	if m != nil {
+		return m.Failed
+	}
+	return 0
+}
+
+func (m *Quest_Desc_Meta_Retry) GetCrashed() uint32 {
+	if m != nil {
+		return m.Crashed
+	}
+	return 0
+}
+
+func (m *Quest_Desc_Meta_Retry) GetExpired() uint32 {
+	if m != nil {
+		return m.Expired
+	}
+	return 0
+}
+
+func (m *Quest_Desc_Meta_Retry) GetTimedOut() uint32 {
+	if m != nil {
+		return m.TimedOut
+	}
+	return 0
+}
 
 // Timing describes the amount of time that Executions for this Quest
 // should have, on the following timeline:
@@ -442,6 +533,34 @@ func (m *Quest_TemplateSpec) String() string            { return proto.CompactTe
 func (*Quest_TemplateSpec) ProtoMessage()               {}
 func (*Quest_TemplateSpec) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1, 2} }
 
+func (m *Quest_TemplateSpec) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *Quest_TemplateSpec) GetRef() string {
+	if m != nil {
+		return m.Ref
+	}
+	return ""
+}
+
+func (m *Quest_TemplateSpec) GetVersion() string {
+	if m != nil {
+		return m.Version
+	}
+	return ""
+}
+
+func (m *Quest_TemplateSpec) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
 type Quest_Data struct {
 	Created *google_protobuf1.Timestamp `protobuf:"bytes,1,opt,name=created" json:"created,omitempty"`
 	Desc    *Quest_Desc                 `protobuf:"bytes,2,opt,name=desc" json:"desc,omitempty"`
@@ -496,6 +615,20 @@ func (m *JsonResult) Reset()                    { *m = JsonResult{} }
 func (m *JsonResult) String() string            { return proto.CompactTextString(m) }
 func (*JsonResult) ProtoMessage()               {}
 func (*JsonResult) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2} }
+
+func (m *JsonResult) GetObject() string {
+	if m != nil {
+		return m.Object
+	}
+	return ""
+}
+
+func (m *JsonResult) GetSize() uint32 {
+	if m != nil {
+		return m.Size
+	}
+	return 0
+}
 
 func (m *JsonResult) GetExpiration() *google_protobuf1.Timestamp {
 	if m != nil {
@@ -557,6 +690,13 @@ func (m *Attempt) GetId() *Attempt_ID {
 	return nil
 }
 
+func (m *Attempt) GetDNE() bool {
+	if m != nil {
+		return m.DNE
+	}
+	return false
+}
+
 func (m *Attempt) GetData() *Attempt_Data {
 	if m != nil {
 		return m.Data
@@ -601,6 +741,20 @@ func (m *Attempt_ID) Reset()                    { *m = Attempt_ID{} }
 func (m *Attempt_ID) String() string            { return proto.CompactTextString(m) }
 func (*Attempt_ID) ProtoMessage()               {}
 func (*Attempt_ID) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4, 0} }
+
+func (m *Attempt_ID) GetQuest() string {
+	if m != nil {
+		return m.Quest
+	}
+	return ""
+}
+
+func (m *Attempt_ID) GetId() uint32 {
+	if m != nil {
+		return m.Id
+	}
+	return 0
+}
 
 type Attempt_Data struct {
 	Created       *google_protobuf1.Timestamp `protobuf:"bytes,1,opt,name=created" json:"created,omitempty"`
@@ -665,6 +819,13 @@ func (m *Attempt_Data) GetModified() *google_protobuf1.Timestamp {
 		return m.Modified
 	}
 	return nil
+}
+
+func (m *Attempt_Data) GetNumExecutions() uint32 {
+	if m != nil {
+		return m.NumExecutions
+	}
+	return 0
 }
 
 func (m *Attempt_Data) GetScheduling() *Attempt_Data_Scheduling {
@@ -854,6 +1015,13 @@ func (m *Attempt_Data_Executing) String() string            { return proto.Compa
 func (*Attempt_Data_Executing) ProtoMessage()               {}
 func (*Attempt_Data_Executing) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4, 1, 1} }
 
+func (m *Attempt_Data_Executing) GetCurExecutionId() uint32 {
+	if m != nil {
+		return m.CurExecutionId
+	}
+	return 0
+}
+
 // This attempt's last Execution stopped by adding dependencies.
 type Attempt_Data_Waiting struct {
 	NumWaiting uint32 `protobuf:"varint,1,opt,name=num_waiting,json=numWaiting" json:"num_waiting,omitempty"`
@@ -863,6 +1031,13 @@ func (m *Attempt_Data_Waiting) Reset()                    { *m = Attempt_Data_Wa
 func (m *Attempt_Data_Waiting) String() string            { return proto.CompactTextString(m) }
 func (*Attempt_Data_Waiting) ProtoMessage()               {}
 func (*Attempt_Data_Waiting) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4, 1, 2} }
+
+func (m *Attempt_Data_Waiting) GetNumWaiting() uint32 {
+	if m != nil {
+		return m.NumWaiting
+	}
+	return 0
+}
 
 // This attempt is complete.
 type Attempt_Data_Finished struct {
@@ -909,6 +1084,41 @@ func (m *Attempt_Partial) String() string            { return proto.CompactTextS
 func (*Attempt_Partial) ProtoMessage()               {}
 func (*Attempt_Partial) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4, 3} }
 
+func (m *Attempt_Partial) GetData() bool {
+	if m != nil {
+		return m.Data
+	}
+	return false
+}
+
+func (m *Attempt_Partial) GetExecutions() bool {
+	if m != nil {
+		return m.Executions
+	}
+	return false
+}
+
+func (m *Attempt_Partial) GetFwdDeps() bool {
+	if m != nil {
+		return m.FwdDeps
+	}
+	return false
+}
+
+func (m *Attempt_Partial) GetBackDeps() bool {
+	if m != nil {
+		return m.BackDeps
+	}
+	return false
+}
+
+func (m *Attempt_Partial) GetResult() Attempt_Partial_Result {
+	if m != nil {
+		return m.Result
+	}
+	return Attempt_Partial_LOADED
+}
+
 type Execution struct {
 	Id   *Execution_ID   `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
 	Data *Execution_Data `protobuf:"bytes,2,opt,name=data" json:"data,omitempty"`
@@ -936,6 +1146,13 @@ func (m *Execution) GetData() *Execution_Data {
 	return nil
 }
 
+func (m *Execution) GetPartial() bool {
+	if m != nil {
+		return m.Partial
+	}
+	return false
+}
+
 // Execution_Auth is a tuple of the requesting ExecutionID and the activated
 // Execution Token (see the ActivateExecution rpc).
 type Execution_Auth struct {
@@ -955,6 +1172,13 @@ func (m *Execution_Auth) GetId() *Execution_ID {
 	return nil
 }
 
+func (m *Execution_Auth) GetToken() []byte {
+	if m != nil {
+		return m.Token
+	}
+	return nil
+}
+
 type Execution_ID struct {
 	Quest   string `protobuf:"bytes,1,opt,name=quest" json:"quest,omitempty"`
 	Attempt uint32 `protobuf:"varint,2,opt,name=attempt" json:"attempt,omitempty"`
@@ -965,6 +1189,27 @@ func (m *Execution_ID) Reset()                    { *m = Execution_ID{} }
 func (m *Execution_ID) String() string            { return proto.CompactTextString(m) }
 func (*Execution_ID) ProtoMessage()               {}
 func (*Execution_ID) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{5, 1} }
+
+func (m *Execution_ID) GetQuest() string {
+	if m != nil {
+		return m.Quest
+	}
+	return ""
+}
+
+func (m *Execution_ID) GetAttempt() uint32 {
+	if m != nil {
+		return m.Attempt
+	}
+	return 0
+}
+
+func (m *Execution_ID) GetId() uint32 {
+	if m != nil {
+		return m.Id
+	}
+	return 0
+}
 
 type Execution_Data struct {
 	Created         *google_protobuf1.Timestamp     `protobuf:"bytes,1,opt,name=created" json:"created,omitempty"`
@@ -1218,6 +1463,34 @@ func (*Execution_Data_DistributorInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor3, []int{5, 2, 0}
 }
 
+func (m *Execution_Data_DistributorInfo) GetConfigName() string {
+	if m != nil {
+		return m.ConfigName
+	}
+	return ""
+}
+
+func (m *Execution_Data_DistributorInfo) GetConfigVersion() string {
+	if m != nil {
+		return m.ConfigVersion
+	}
+	return ""
+}
+
+func (m *Execution_Data_DistributorInfo) GetToken() string {
+	if m != nil {
+		return m.Token
+	}
+	return ""
+}
+
+func (m *Execution_Data_DistributorInfo) GetUrl() string {
+	if m != nil {
+		return m.Url
+	}
+	return ""
+}
+
 type Execution_Data_Scheduling struct {
 }
 
@@ -1300,6 +1573,20 @@ func (m *GraphData) GetQuests() map[string]*Quest {
 		return m.Quests
 	}
 	return nil
+}
+
+func (m *GraphData) GetHadErrors() bool {
+	if m != nil {
+		return m.HadErrors
+	}
+	return false
+}
+
+func (m *GraphData) GetHadMore() bool {
+	if m != nil {
+		return m.HadMore
+	}
+	return false
 }
 
 func init() {

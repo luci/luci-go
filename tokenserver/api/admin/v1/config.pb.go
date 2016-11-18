@@ -57,6 +57,41 @@ func (m *CertificateAuthorityConfig) String() string            { return proto.C
 func (*CertificateAuthorityConfig) ProtoMessage()               {}
 func (*CertificateAuthorityConfig) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
 
+func (m *CertificateAuthorityConfig) GetUniqueId() int64 {
+	if m != nil {
+		return m.UniqueId
+	}
+	return 0
+}
+
+func (m *CertificateAuthorityConfig) GetCn() string {
+	if m != nil {
+		return m.Cn
+	}
+	return ""
+}
+
+func (m *CertificateAuthorityConfig) GetCertPath() string {
+	if m != nil {
+		return m.CertPath
+	}
+	return ""
+}
+
+func (m *CertificateAuthorityConfig) GetCrlUrl() string {
+	if m != nil {
+		return m.CrlUrl
+	}
+	return ""
+}
+
+func (m *CertificateAuthorityConfig) GetUseOauth() bool {
+	if m != nil {
+		return m.UseOauth
+	}
+	return false
+}
+
 func (m *CertificateAuthorityConfig) GetKnownDomains() []*DomainConfig {
 	if m != nil {
 		return m.KnownDomains
@@ -78,6 +113,20 @@ func (m *DomainConfig) Reset()                    { *m = DomainConfig{} }
 func (m *DomainConfig) String() string            { return proto.CompactTextString(m) }
 func (*DomainConfig) ProtoMessage()               {}
 func (*DomainConfig) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
+
+func (m *DomainConfig) GetDomain() []string {
+	if m != nil {
+		return m.Domain
+	}
+	return nil
+}
+
+func (m *DomainConfig) GetMachineTokenLifetime() int64 {
+	if m != nil {
+		return m.MachineTokenLifetime
+	}
+	return 0
+}
 
 // DelegationPermissions is read from delegation.cfg in luci-config.
 type DelegationPermissions struct {
@@ -191,6 +240,55 @@ func (m *DelegationRule) Reset()                    { *m = DelegationRule{} }
 func (m *DelegationRule) String() string            { return proto.CompactTextString(m) }
 func (*DelegationRule) ProtoMessage()               {}
 func (*DelegationRule) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{4} }
+
+func (m *DelegationRule) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *DelegationRule) GetOwner() []string {
+	if m != nil {
+		return m.Owner
+	}
+	return nil
+}
+
+func (m *DelegationRule) GetRequestor() []string {
+	if m != nil {
+		return m.Requestor
+	}
+	return nil
+}
+
+func (m *DelegationRule) GetAllowedToImpersonate() []string {
+	if m != nil {
+		return m.AllowedToImpersonate
+	}
+	return nil
+}
+
+func (m *DelegationRule) GetAllowedAudience() []string {
+	if m != nil {
+		return m.AllowedAudience
+	}
+	return nil
+}
+
+func (m *DelegationRule) GetTargetService() []string {
+	if m != nil {
+		return m.TargetService
+	}
+	return nil
+}
+
+func (m *DelegationRule) GetMaxValidityDuration() int64 {
+	if m != nil {
+		return m.MaxValidityDuration
+	}
+	return 0
+}
 
 func init() {
 	proto.RegisterType((*TokenServerConfig)(nil), "tokenserver.admin.TokenServerConfig")

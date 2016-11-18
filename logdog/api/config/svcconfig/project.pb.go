@@ -70,6 +70,20 @@ func (m *ProjectConfig) String() string            { return proto.CompactTextStr
 func (*ProjectConfig) ProtoMessage()               {}
 func (*ProjectConfig) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
+func (m *ProjectConfig) GetReaderAuthGroups() []string {
+	if m != nil {
+		return m.ReaderAuthGroups
+	}
+	return nil
+}
+
+func (m *ProjectConfig) GetWriterAuthGroups() []string {
+	if m != nil {
+		return m.WriterAuthGroups
+	}
+	return nil
+}
+
 func (m *ProjectConfig) GetMaxStreamAge() *google_protobuf.Duration {
 	if m != nil {
 		return m.MaxStreamAge
@@ -82,6 +96,20 @@ func (m *ProjectConfig) GetPrefixExpiration() *google_protobuf.Duration {
 		return m.PrefixExpiration
 	}
 	return nil
+}
+
+func (m *ProjectConfig) GetArchiveGsBucket() string {
+	if m != nil {
+		return m.ArchiveGsBucket
+	}
+	return ""
+}
+
+func (m *ProjectConfig) GetRenderAllStreams() bool {
+	if m != nil {
+		return m.RenderAllStreams
+	}
+	return false
 }
 
 func (m *ProjectConfig) GetArchiveIndexConfig() *ArchiveIndexConfig {

@@ -47,6 +47,13 @@ func (m *Config_Swarming) String() string            { return proto.CompactTextS
 func (*Config_Swarming) ProtoMessage()               {}
 func (*Config_Swarming) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 0} }
 
+func (m *Config_Swarming) GetUrl() string {
+	if m != nil {
+		return m.Url
+	}
+	return ""
+}
+
 type Config_Isolate struct {
 	// The host of the isolate service, e.g. isolateserver.appspot.com.
 	Url string `protobuf:"bytes,1,opt,name=url" json:"url,omitempty"`
@@ -58,6 +65,13 @@ func (m *Config_Isolate) Reset()                    { *m = Config_Isolate{} }
 func (m *Config_Isolate) String() string            { return proto.CompactTextString(m) }
 func (*Config_Isolate) ProtoMessage()               {}
 func (*Config_Isolate) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 1} }
+
+func (m *Config_Isolate) GetUrl() string {
+	if m != nil {
+		return m.Url
+	}
+	return ""
+}
 
 func (m *Config_Isolate) GetExpiration() *google_protobuf.Duration {
 	if m != nil {

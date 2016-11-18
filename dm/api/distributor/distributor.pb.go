@@ -41,6 +41,13 @@ func (m *Alias) String() string            { return proto.CompactTextString(m) }
 func (*Alias) ProtoMessage()               {}
 func (*Alias) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *Alias) GetOtherConfig() string {
+	if m != nil {
+		return m.OtherConfig
+	}
+	return ""
+}
+
 type Distributor struct {
 	// TODO(iannucci): Maybe something like Any or extensions would be a better
 	// fit here? The ultimate goal is that users will be able to use the proto

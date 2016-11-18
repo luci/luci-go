@@ -46,6 +46,13 @@ func (m *HelloRequest) String() string            { return proto.CompactTextStri
 func (*HelloRequest) ProtoMessage()               {}
 func (*HelloRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *HelloRequest) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
 // The response message containing the greetings
 type HelloReply struct {
 	Message string `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
@@ -55,6 +62,13 @@ func (m *HelloReply) Reset()                    { *m = HelloReply{} }
 func (m *HelloReply) String() string            { return proto.CompactTextString(m) }
 func (*HelloReply) ProtoMessage()               {}
 func (*HelloReply) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+
+func (m *HelloReply) GetMessage() string {
+	if m != nil {
+		return m.Message
+	}
+	return ""
+}
 
 type MultiplyRequest struct {
 	X int32 `protobuf:"varint,1,opt,name=x" json:"x,omitempty"`
@@ -66,6 +80,20 @@ func (m *MultiplyRequest) String() string            { return proto.CompactTextS
 func (*MultiplyRequest) ProtoMessage()               {}
 func (*MultiplyRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
+func (m *MultiplyRequest) GetX() int32 {
+	if m != nil {
+		return m.X
+	}
+	return 0
+}
+
+func (m *MultiplyRequest) GetY() int32 {
+	if m != nil {
+		return m.Y
+	}
+	return 0
+}
+
 type MultiplyResponse struct {
 	Z int32 `protobuf:"varint,1,opt,name=z" json:"z,omitempty"`
 }
@@ -74,6 +102,13 @@ func (m *MultiplyResponse) Reset()                    { *m = MultiplyResponse{} 
 func (m *MultiplyResponse) String() string            { return proto.CompactTextString(m) }
 func (*MultiplyResponse) ProtoMessage()               {}
 func (*MultiplyResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
+func (m *MultiplyResponse) GetZ() int32 {
+	if m != nil {
+		return m.Z
+	}
+	return 0
+}
 
 func init() {
 	proto.RegisterType((*HelloRequest)(nil), "prpc.HelloRequest")

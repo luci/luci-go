@@ -83,9 +83,23 @@ func (m *Parameters_Scheduling) String() string            { return proto.Compac
 func (*Parameters_Scheduling) ProtoMessage()               {}
 func (*Parameters_Scheduling) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0, 0} }
 
+func (m *Parameters_Scheduling) GetPriority() uint32 {
+	if m != nil {
+		return m.Priority
+	}
+	return 0
+}
+
 func (m *Parameters_Scheduling) GetDimensions() map[string]string {
 	if m != nil {
 		return m.Dimensions
+	}
+	return nil
+}
+
+func (m *Parameters_Scheduling) GetSnapshotDimensions() []string {
+	if m != nil {
+		return m.SnapshotDimensions
 	}
 	return nil
 }
@@ -109,6 +123,13 @@ func (m *Parameters_Meta) Reset()                    { *m = Parameters_Meta{} }
 func (m *Parameters_Meta) String() string            { return proto.CompactTextString(m) }
 func (*Parameters_Meta) ProtoMessage()               {}
 func (*Parameters_Meta) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0, 1} }
+
+func (m *Parameters_Meta) GetNamePrefix() string {
+	if m != nil {
+		return m.NamePrefix
+	}
+	return ""
+}
 
 type Parameters_Job struct {
 	Inputs *Parameters_Job_Inputs `protobuf:"bytes,1,opt,name=inputs" json:"inputs,omitempty"`
@@ -143,6 +164,13 @@ func (*Parameters_Job) Descriptor() ([]byte, []int) { return fileDescriptor3, []
 func (m *Parameters_Job) GetInputs() *Parameters_Job_Inputs {
 	if m != nil {
 		return m.Inputs
+	}
+	return nil
+}
+
+func (m *Parameters_Job) GetCommand() []string {
+	if m != nil {
+		return m.Command
 	}
 	return nil
 }

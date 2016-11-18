@@ -40,6 +40,20 @@ func (m *Acls) String() string            { return proto.CompactTextString(m) }
 func (*Acls) ProtoMessage()               {}
 func (*Acls) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *Acls) GetReaders() []string {
+	if m != nil {
+		return m.Readers
+	}
+	return nil
+}
+
+func (m *Acls) GetWriters() []string {
+	if m != nil {
+		return m.Writers
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*Acls)(nil), "acls.Acls")
 }

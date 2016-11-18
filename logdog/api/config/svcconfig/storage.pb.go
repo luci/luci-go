@@ -143,6 +143,27 @@ func (m *Storage_BigTable) String() string            { return proto.CompactText
 func (*Storage_BigTable) ProtoMessage()               {}
 func (*Storage_BigTable) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0, 0} }
 
+func (m *Storage_BigTable) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *Storage_BigTable) GetInstance() string {
+	if m != nil {
+		return m.Instance
+	}
+	return ""
+}
+
+func (m *Storage_BigTable) GetLogTableName() string {
+	if m != nil {
+		return m.LogTableName
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*Storage)(nil), "svcconfig.Storage")
 	proto.RegisterType((*Storage_BigTable)(nil), "svcconfig.Storage.BigTable")

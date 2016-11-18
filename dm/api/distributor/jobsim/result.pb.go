@@ -24,6 +24,20 @@ func (m *Result) String() string            { return proto.CompactTextString(m) 
 func (*Result) ProtoMessage()               {}
 func (*Result) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
+func (m *Result) GetSuccess() bool {
+	if m != nil {
+		return m.Success
+	}
+	return false
+}
+
+func (m *Result) GetValue() int64 {
+	if m != nil {
+		return m.Value
+	}
+	return 0
+}
+
 func init() {
 	proto.RegisterType((*Result)(nil), "jobsim.Result")
 }

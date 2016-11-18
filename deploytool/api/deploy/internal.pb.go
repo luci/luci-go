@@ -63,6 +63,34 @@ func (m *FrozenLayout_Source) GetSource() *Source {
 	return nil
 }
 
+func (m *FrozenLayout_Source) GetRelpath() string {
+	if m != nil {
+		return m.Relpath
+	}
+	return ""
+}
+
+func (m *FrozenLayout_Source) GetRevision() string {
+	if m != nil {
+		return m.Revision
+	}
+	return ""
+}
+
+func (m *FrozenLayout_Source) GetMajorVersion() string {
+	if m != nil {
+		return m.MajorVersion
+	}
+	return ""
+}
+
+func (m *FrozenLayout_Source) GetMinorVersion() string {
+	if m != nil {
+		return m.MinorVersion
+	}
+	return ""
+}
+
 func (m *FrozenLayout_Source) GetInitResult() *SourceInitResult {
 	if m != nil {
 		return m.InitResult
@@ -90,6 +118,20 @@ func (m *FrozenLayout_SourceGroup) GetSource() map[string]*FrozenLayout_Source {
 		return m.Source
 	}
 	return nil
+}
+
+func (m *FrozenLayout_SourceGroup) GetRevisionHash() string {
+	if m != nil {
+		return m.RevisionHash
+	}
+	return ""
+}
+
+func (m *FrozenLayout_SourceGroup) GetTainted() bool {
+	if m != nil {
+		return m.Tainted
+	}
+	return false
 }
 
 func init() {

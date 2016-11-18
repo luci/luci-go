@@ -38,6 +38,41 @@ func (m *LogStreamState) String() string            { return proto.CompactTextSt
 func (*LogStreamState) ProtoMessage()               {}
 func (*LogStreamState) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
+func (m *LogStreamState) GetProtoVersion() string {
+	if m != nil {
+		return m.ProtoVersion
+	}
+	return ""
+}
+
+func (m *LogStreamState) GetSecret() []byte {
+	if m != nil {
+		return m.Secret
+	}
+	return nil
+}
+
+func (m *LogStreamState) GetTerminalIndex() int64 {
+	if m != nil {
+		return m.TerminalIndex
+	}
+	return 0
+}
+
+func (m *LogStreamState) GetArchived() bool {
+	if m != nil {
+		return m.Archived
+	}
+	return false
+}
+
+func (m *LogStreamState) GetPurged() bool {
+	if m != nil {
+		return m.Purged
+	}
+	return false
+}
+
 func init() {
 	proto.RegisterType((*LogStreamState)(nil), "logdog.LogStreamState")
 }

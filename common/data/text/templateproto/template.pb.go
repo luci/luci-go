@@ -706,6 +706,20 @@ func (m *Schema_Set_Entry) String() string            { return proto.CompactText
 func (*Schema_Set_Entry) ProtoMessage()               {}
 func (*Schema_Set_Entry) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1, 0, 0} }
 
+func (m *Schema_Set_Entry) GetDoc() string {
+	if m != nil {
+		return m.Doc
+	}
+	return ""
+}
+
+func (m *Schema_Set_Entry) GetToken() string {
+	if m != nil {
+		return m.Token
+	}
+	return ""
+}
+
 type Schema_JSON struct {
 	// restricts the maximum amount of bytes that a Value for this field may
 	// take.
@@ -717,6 +731,13 @@ func (m *Schema_JSON) String() string            { return proto.CompactTextStrin
 func (*Schema_JSON) ProtoMessage()               {}
 func (*Schema_JSON) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1, 1} }
 
+func (m *Schema_JSON) GetMaxLength() uint32 {
+	if m != nil {
+		return m.MaxLength
+	}
+	return 0
+}
+
 type Schema_Sequence struct {
 	// restricts the maximum amount of bytes that a Value for this field may
 	// take.
@@ -727,6 +748,13 @@ func (m *Schema_Sequence) Reset()                    { *m = Schema_Sequence{} }
 func (m *Schema_Sequence) String() string            { return proto.CompactTextString(m) }
 func (*Schema_Sequence) ProtoMessage()               {}
 func (*Schema_Sequence) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1, 2} }
+
+func (m *Schema_Sequence) GetMaxLength() uint32 {
+	if m != nil {
+		return m.MaxLength
+	}
+	return 0
+}
 
 type Schema_Atom struct {
 }
@@ -776,6 +804,20 @@ func (m *File_Template) String() string            { return proto.CompactTextStr
 func (*File_Template) ProtoMessage()               {}
 func (*File_Template) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2, 0} }
 
+func (m *File_Template) GetDoc() string {
+	if m != nil {
+		return m.Doc
+	}
+	return ""
+}
+
+func (m *File_Template) GetBody() string {
+	if m != nil {
+		return m.Body
+	}
+	return ""
+}
+
 func (m *File_Template) GetParam() map[string]*File_Template_Parameter {
 	if m != nil {
 		return m.Param
@@ -799,11 +841,25 @@ func (m *File_Template_Parameter) String() string            { return proto.Comp
 func (*File_Template_Parameter) ProtoMessage()               {}
 func (*File_Template_Parameter) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2, 0, 0} }
 
+func (m *File_Template_Parameter) GetDoc() string {
+	if m != nil {
+		return m.Doc
+	}
+	return ""
+}
+
 func (m *File_Template_Parameter) GetDefault() *Value {
 	if m != nil {
 		return m.Default
 	}
 	return nil
+}
+
+func (m *File_Template_Parameter) GetNullable() bool {
+	if m != nil {
+		return m.Nullable
+	}
+	return false
 }
 
 func (m *File_Template_Parameter) GetSchema() *Schema {
@@ -822,6 +878,13 @@ func (m *Specifier) Reset()                    { *m = Specifier{} }
 func (m *Specifier) String() string            { return proto.CompactTextString(m) }
 func (*Specifier) ProtoMessage()               {}
 func (*Specifier) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
+func (m *Specifier) GetTemplateName() string {
+	if m != nil {
+		return m.TemplateName
+	}
+	return ""
+}
 
 func (m *Specifier) GetParams() map[string]*Value {
 	if m != nil {

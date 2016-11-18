@@ -38,6 +38,13 @@ func (m *LogStreamState) String() string            { return proto.CompactTextSt
 func (*LogStreamState) ProtoMessage()               {}
 func (*LogStreamState) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
+func (m *LogStreamState) GetProtoVersion() string {
+	if m != nil {
+		return m.ProtoVersion
+	}
+	return ""
+}
+
 func (m *LogStreamState) GetCreated() *google_protobuf.Timestamp {
 	if m != nil {
 		return m.Created
@@ -45,11 +52,25 @@ func (m *LogStreamState) GetCreated() *google_protobuf.Timestamp {
 	return nil
 }
 
+func (m *LogStreamState) GetTerminalIndex() int64 {
+	if m != nil {
+		return m.TerminalIndex
+	}
+	return 0
+}
+
 func (m *LogStreamState) GetArchive() *LogStreamState_ArchiveInfo {
 	if m != nil {
 		return m.Archive
 	}
 	return nil
+}
+
+func (m *LogStreamState) GetPurged() bool {
+	if m != nil {
+		return m.Purged
+	}
+	return false
 }
 
 // ArchiveInfo contains archive details for the log stream.
@@ -72,6 +93,41 @@ func (m *LogStreamState_ArchiveInfo) Reset()                    { *m = LogStream
 func (m *LogStreamState_ArchiveInfo) String() string            { return proto.CompactTextString(m) }
 func (*LogStreamState_ArchiveInfo) ProtoMessage()               {}
 func (*LogStreamState_ArchiveInfo) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 0} }
+
+func (m *LogStreamState_ArchiveInfo) GetIndexUrl() string {
+	if m != nil {
+		return m.IndexUrl
+	}
+	return ""
+}
+
+func (m *LogStreamState_ArchiveInfo) GetStreamUrl() string {
+	if m != nil {
+		return m.StreamUrl
+	}
+	return ""
+}
+
+func (m *LogStreamState_ArchiveInfo) GetDataUrl() string {
+	if m != nil {
+		return m.DataUrl
+	}
+	return ""
+}
+
+func (m *LogStreamState_ArchiveInfo) GetComplete() bool {
+	if m != nil {
+		return m.Complete
+	}
+	return false
+}
+
+func (m *LogStreamState_ArchiveInfo) GetLogEntryCount() int64 {
+	if m != nil {
+		return m.LogEntryCount
+	}
+	return 0
+}
 
 func init() {
 	proto.RegisterType((*LogStreamState)(nil), "logdog.LogStreamState")

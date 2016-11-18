@@ -101,6 +101,13 @@ func (m *M1) String() string            { return proto.CompactTextString(m) }
 func (*M1) ProtoMessage()               {}
 func (*M1) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *M1) GetF1() string {
+	if m != nil {
+		return m.F1
+	}
+	return ""
+}
+
 // M2
 // next line.
 type M2 struct {
@@ -122,6 +129,13 @@ func (m *M2) GetF1() []*M1 {
 		return m.F1
 	}
 	return nil
+}
+
+func (m *M2) GetF2() E1 {
+	if m != nil {
+		return m.F2
+	}
+	return E1_V0
 }
 
 // M3
@@ -211,6 +225,20 @@ func (m *M3) GetF3() int32 {
 func (m *M3) GetF4() int32 {
 	if x, ok := m.GetO2().(*M3_F4); ok {
 		return x.F4
+	}
+	return 0
+}
+
+func (m *M3) GetF5() string {
+	if m != nil {
+		return m.F5
+	}
+	return ""
+}
+
+func (m *M3) GetF6() int32 {
+	if m != nil {
+		return m.F6
 	}
 	return 0
 }
@@ -337,6 +365,20 @@ func (m *NestedMessageParent_NestedMessage) String() string { return proto.Compa
 func (*NestedMessageParent_NestedMessage) ProtoMessage()    {}
 func (*NestedMessageParent_NestedMessage) Descriptor() ([]byte, []int) {
 	return fileDescriptor0, []int{3, 0}
+}
+
+func (m *NestedMessageParent_NestedMessage) GetF1() int32 {
+	if m != nil {
+		return m.F1
+	}
+	return 0
+}
+
+func (m *NestedMessageParent_NestedMessage) GetF2() int32 {
+	if m != nil {
+		return m.F2
+	}
+	return 0
 }
 
 func init() {

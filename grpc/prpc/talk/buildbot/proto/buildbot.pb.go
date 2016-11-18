@@ -87,6 +87,27 @@ func (m *SearchRequest) String() string            { return proto.CompactTextStr
 func (*SearchRequest) ProtoMessage()               {}
 func (*SearchRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *SearchRequest) GetMaster() string {
+	if m != nil {
+		return m.Master
+	}
+	return ""
+}
+
+func (m *SearchRequest) GetState() BuildState {
+	if m != nil {
+		return m.State
+	}
+	return BuildState_UNSET
+}
+
+func (m *SearchRequest) GetBuilder() string {
+	if m != nil {
+		return m.Builder
+	}
+	return ""
+}
+
 type SearchResponse struct {
 	Builds []*Build `protobuf:"bytes,1,rep,name=builds" json:"builds,omitempty"`
 }
@@ -115,6 +136,34 @@ func (m *Build) String() string            { return proto.CompactTextString(m) }
 func (*Build) ProtoMessage()               {}
 func (*Build) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
+func (m *Build) GetMaster() string {
+	if m != nil {
+		return m.Master
+	}
+	return ""
+}
+
+func (m *Build) GetBuilder() string {
+	if m != nil {
+		return m.Builder
+	}
+	return ""
+}
+
+func (m *Build) GetNumber() int32 {
+	if m != nil {
+		return m.Number
+	}
+	return 0
+}
+
+func (m *Build) GetState() BuildState {
+	if m != nil {
+		return m.State
+	}
+	return BuildState_UNSET
+}
+
 // ScheduleRequest defines builds to schedule.
 type ScheduleRequest struct {
 	// Master is a "master.XXX" string that defines where to schedule builds.
@@ -127,6 +176,13 @@ func (m *ScheduleRequest) Reset()                    { *m = ScheduleRequest{} }
 func (m *ScheduleRequest) String() string            { return proto.CompactTextString(m) }
 func (*ScheduleRequest) ProtoMessage()               {}
 func (*ScheduleRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
+func (m *ScheduleRequest) GetMaster() string {
+	if m != nil {
+		return m.Master
+	}
+	return ""
+}
 
 func (m *ScheduleRequest) GetBuilds() []*ScheduleRequest_BuildDef {
 	if m != nil {
@@ -154,6 +210,41 @@ func (m *ScheduleRequest_BuildDef) Reset()                    { *m = ScheduleReq
 func (m *ScheduleRequest_BuildDef) String() string            { return proto.CompactTextString(m) }
 func (*ScheduleRequest_BuildDef) ProtoMessage()               {}
 func (*ScheduleRequest_BuildDef) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3, 0} }
+
+func (m *ScheduleRequest_BuildDef) GetBuilder() string {
+	if m != nil {
+		return m.Builder
+	}
+	return ""
+}
+
+func (m *ScheduleRequest_BuildDef) GetBranch() string {
+	if m != nil {
+		return m.Branch
+	}
+	return ""
+}
+
+func (m *ScheduleRequest_BuildDef) GetRevision() string {
+	if m != nil {
+		return m.Revision
+	}
+	return ""
+}
+
+func (m *ScheduleRequest_BuildDef) GetProperties() []string {
+	if m != nil {
+		return m.Properties
+	}
+	return nil
+}
+
+func (m *ScheduleRequest_BuildDef) GetBlamelist() []string {
+	if m != nil {
+		return m.Blamelist
+	}
+	return nil
+}
 
 // HelloReply contains a greeting.
 type ScheduleResponse struct {

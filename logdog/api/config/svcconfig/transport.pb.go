@@ -121,6 +121,27 @@ func (m *Transport_PubSub) String() string            { return proto.CompactText
 func (*Transport_PubSub) ProtoMessage()               {}
 func (*Transport_PubSub) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0, 0} }
 
+func (m *Transport_PubSub) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *Transport_PubSub) GetTopic() string {
+	if m != nil {
+		return m.Topic
+	}
+	return ""
+}
+
+func (m *Transport_PubSub) GetSubscription() string {
+	if m != nil {
+		return m.Subscription
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*Transport)(nil), "svcconfig.Transport")
 	proto.RegisterType((*Transport_PubSub)(nil), "svcconfig.Transport.PubSub")

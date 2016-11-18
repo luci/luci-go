@@ -85,6 +85,27 @@ func (m *Job) String() string            { return proto.CompactTextString(m) }
 func (*Job) ProtoMessage()               {}
 func (*Job) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *Job) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *Job) GetSchedule() string {
+	if m != nil {
+		return m.Schedule
+	}
+	return ""
+}
+
+func (m *Job) GetDisabled() bool {
+	if m != nil {
+		return m.Disabled
+	}
+	return false
+}
+
 func (m *Job) GetTask() *TaskDefWrapper {
 	if m != nil {
 		return m.Task
@@ -147,6 +168,27 @@ func (m *Trigger) String() string            { return proto.CompactTextString(m)
 func (*Trigger) ProtoMessage()               {}
 func (*Trigger) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
+func (m *Trigger) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *Trigger) GetSchedule() string {
+	if m != nil {
+		return m.Schedule
+	}
+	return ""
+}
+
+func (m *Trigger) GetDisabled() bool {
+	if m != nil {
+		return m.Disabled
+	}
+	return false
+}
+
 func (m *Trigger) GetNoop() *NoopTask {
 	if m != nil {
 		return m.Noop
@@ -183,6 +225,20 @@ func (m *GitilesTask) String() string            { return proto.CompactTextStrin
 func (*GitilesTask) ProtoMessage()               {}
 func (*GitilesTask) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
+func (m *GitilesTask) GetRepo() string {
+	if m != nil {
+		return m.Repo
+	}
+	return ""
+}
+
+func (m *GitilesTask) GetRefs() []string {
+	if m != nil {
+		return m.Refs
+	}
+	return nil
+}
+
 // UrlFetchTask specifies parameters for simple HTTP call.
 type UrlFetchTask struct {
 	// Method is HTTP method to use, such as "GET" or "POST". Default is "GET".
@@ -197,6 +253,27 @@ func (m *UrlFetchTask) Reset()                    { *m = UrlFetchTask{} }
 func (m *UrlFetchTask) String() string            { return proto.CompactTextString(m) }
 func (*UrlFetchTask) ProtoMessage()               {}
 func (*UrlFetchTask) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+
+func (m *UrlFetchTask) GetMethod() string {
+	if m != nil {
+		return m.Method
+	}
+	return ""
+}
+
+func (m *UrlFetchTask) GetUrl() string {
+	if m != nil {
+		return m.Url
+	}
+	return ""
+}
+
+func (m *UrlFetchTask) GetTimeoutSec() int32 {
+	if m != nil {
+		return m.TimeoutSec
+	}
+	return 0
+}
 
 // SwarmingTask specifies parameters of Swarming-based jobs.
 type SwarmingTask struct {
@@ -226,11 +303,81 @@ func (m *SwarmingTask) String() string            { return proto.CompactTextStri
 func (*SwarmingTask) ProtoMessage()               {}
 func (*SwarmingTask) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
 
+func (m *SwarmingTask) GetServer() string {
+	if m != nil {
+		return m.Server
+	}
+	return ""
+}
+
+func (m *SwarmingTask) GetCommand() []string {
+	if m != nil {
+		return m.Command
+	}
+	return nil
+}
+
 func (m *SwarmingTask) GetIsolatedRef() *SwarmingTask_IsolatedRef {
 	if m != nil {
 		return m.IsolatedRef
 	}
 	return nil
+}
+
+func (m *SwarmingTask) GetExtraArgs() []string {
+	if m != nil {
+		return m.ExtraArgs
+	}
+	return nil
+}
+
+func (m *SwarmingTask) GetEnv() []string {
+	if m != nil {
+		return m.Env
+	}
+	return nil
+}
+
+func (m *SwarmingTask) GetDimensions() []string {
+	if m != nil {
+		return m.Dimensions
+	}
+	return nil
+}
+
+func (m *SwarmingTask) GetTags() []string {
+	if m != nil {
+		return m.Tags
+	}
+	return nil
+}
+
+func (m *SwarmingTask) GetPriority() int32 {
+	if m != nil {
+		return m.Priority
+	}
+	return 0
+}
+
+func (m *SwarmingTask) GetExecutionTimeoutSecs() int32 {
+	if m != nil {
+		return m.ExecutionTimeoutSecs
+	}
+	return 0
+}
+
+func (m *SwarmingTask) GetGracePeriodSecs() int32 {
+	if m != nil {
+		return m.GracePeriodSecs
+	}
+	return 0
+}
+
+func (m *SwarmingTask) GetIoTimeoutSecs() int32 {
+	if m != nil {
+		return m.IoTimeoutSecs
+	}
+	return 0
 }
 
 // IsolatedRef defines a data tree reference, normally a reference to
@@ -245,6 +392,27 @@ func (m *SwarmingTask_IsolatedRef) Reset()                    { *m = SwarmingTas
 func (m *SwarmingTask_IsolatedRef) String() string            { return proto.CompactTextString(m) }
 func (*SwarmingTask_IsolatedRef) ProtoMessage()               {}
 func (*SwarmingTask_IsolatedRef) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5, 0} }
+
+func (m *SwarmingTask_IsolatedRef) GetIsolated() string {
+	if m != nil {
+		return m.Isolated
+	}
+	return ""
+}
+
+func (m *SwarmingTask_IsolatedRef) GetIsolatedServer() string {
+	if m != nil {
+		return m.IsolatedServer
+	}
+	return ""
+}
+
+func (m *SwarmingTask_IsolatedRef) GetNamespace() string {
+	if m != nil {
+		return m.Namespace
+	}
+	return ""
+}
 
 // BuildbucketTask specifies parameters of Buildbucket-based jobs.
 type BuildbucketTask struct {
@@ -264,6 +432,41 @@ func (m *BuildbucketTask) Reset()                    { *m = BuildbucketTask{} }
 func (m *BuildbucketTask) String() string            { return proto.CompactTextString(m) }
 func (*BuildbucketTask) ProtoMessage()               {}
 func (*BuildbucketTask) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
+
+func (m *BuildbucketTask) GetServer() string {
+	if m != nil {
+		return m.Server
+	}
+	return ""
+}
+
+func (m *BuildbucketTask) GetBucket() string {
+	if m != nil {
+		return m.Bucket
+	}
+	return ""
+}
+
+func (m *BuildbucketTask) GetBuilder() string {
+	if m != nil {
+		return m.Builder
+	}
+	return ""
+}
+
+func (m *BuildbucketTask) GetProperties() []string {
+	if m != nil {
+		return m.Properties
+	}
+	return nil
+}
+
+func (m *BuildbucketTask) GetTags() []string {
+	if m != nil {
+		return m.Tags
+	}
+	return nil
+}
 
 // ProjectConfig defines a schema for config file that describe jobs belonging
 // to some project.

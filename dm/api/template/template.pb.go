@@ -60,6 +60,13 @@ func (m *File_Template) String() string            { return proto.CompactTextStr
 func (*File_Template) ProtoMessage()               {}
 func (*File_Template) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 0} }
 
+func (m *File_Template) GetDistributorConfigName() string {
+	if m != nil {
+		return m.DistributorConfigName
+	}
+	return ""
+}
+
 func (m *File_Template) GetParameters() *templateproto.File_Template {
 	if m != nil {
 		return m.Parameters

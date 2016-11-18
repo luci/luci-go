@@ -47,6 +47,20 @@ func (m *CipdPackage) String() string            { return proto.CompactTextStrin
 func (*CipdPackage) ProtoMessage()               {}
 func (*CipdPackage) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *CipdPackage) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *CipdPackage) GetVersion() string {
+	if m != nil {
+		return m.Version
+	}
+	return ""
+}
+
 type CipdSpec struct {
 	// Server to use for cipd packages. Required (though it may be specified
 	// by the quest's designated distributor config). This must be
@@ -66,6 +80,13 @@ func (m *CipdSpec) Reset()                    { *m = CipdSpec{} }
 func (m *CipdSpec) String() string            { return proto.CompactTextString(m) }
 func (*CipdSpec) ProtoMessage()               {}
 func (*CipdSpec) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+
+func (m *CipdSpec) GetServer() string {
+	if m != nil {
+		return m.Server
+	}
+	return ""
+}
 
 func (m *CipdSpec) GetClient() *CipdPackage {
 	if m != nil {

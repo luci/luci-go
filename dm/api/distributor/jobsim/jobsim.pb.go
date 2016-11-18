@@ -63,6 +63,20 @@ func (m *Config) String() string            { return proto.CompactTextString(m) 
 func (*Config) ProtoMessage()               {}
 func (*Config) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *Config) GetPool() string {
+	if m != nil {
+		return m.Pool
+	}
+	return ""
+}
+
+func (m *Config) GetDoPollback() bool {
+	if m != nil {
+		return m.DoPollback
+	}
+	return false
+}
+
 func init() {
 	proto.RegisterType((*Config)(nil), "jobsim.Config")
 }

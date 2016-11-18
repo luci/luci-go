@@ -33,6 +33,20 @@ func (m *FetchCRLRequest) String() string            { return proto.CompactTextS
 func (*FetchCRLRequest) ProtoMessage()               {}
 func (*FetchCRLRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
+func (m *FetchCRLRequest) GetCn() string {
+	if m != nil {
+		return m.Cn
+	}
+	return ""
+}
+
+func (m *FetchCRLRequest) GetForce() bool {
+	if m != nil {
+		return m.Force
+	}
+	return false
+}
+
 // FetchCRLResponse is returned by FetchCRL.
 type FetchCRLResponse struct {
 	CrlStatus *CRLStatus `protobuf:"bytes,1,opt,name=crl_status,json=crlStatus" json:"crl_status,omitempty"`
@@ -60,6 +74,13 @@ func (m *ListCAsResponse) String() string            { return proto.CompactTextS
 func (*ListCAsResponse) ProtoMessage()               {}
 func (*ListCAsResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
 
+func (m *ListCAsResponse) GetCn() []string {
+	if m != nil {
+		return m.Cn
+	}
+	return nil
+}
+
 // GetCAStatusRequest identifies a name of CA to fetch.
 type GetCAStatusRequest struct {
 	Cn string `protobuf:"bytes,1,opt,name=cn" json:"cn,omitempty"`
@@ -69,6 +90,13 @@ func (m *GetCAStatusRequest) Reset()                    { *m = GetCAStatusReques
 func (m *GetCAStatusRequest) String() string            { return proto.CompactTextString(m) }
 func (*GetCAStatusRequest) ProtoMessage()               {}
 func (*GetCAStatusRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
+
+func (m *GetCAStatusRequest) GetCn() string {
+	if m != nil {
+		return m.Cn
+	}
+	return ""
+}
 
 // GetCAStatusResponse is returned by GetCAStatus method.
 //
@@ -96,6 +124,48 @@ func (m *GetCAStatusResponse) GetConfig() *CertificateAuthorityConfig {
 	return nil
 }
 
+func (m *GetCAStatusResponse) GetCert() string {
+	if m != nil {
+		return m.Cert
+	}
+	return ""
+}
+
+func (m *GetCAStatusResponse) GetRemoved() bool {
+	if m != nil {
+		return m.Removed
+	}
+	return false
+}
+
+func (m *GetCAStatusResponse) GetReady() bool {
+	if m != nil {
+		return m.Ready
+	}
+	return false
+}
+
+func (m *GetCAStatusResponse) GetAddedRev() string {
+	if m != nil {
+		return m.AddedRev
+	}
+	return ""
+}
+
+func (m *GetCAStatusResponse) GetUpdatedRev() string {
+	if m != nil {
+		return m.UpdatedRev
+	}
+	return ""
+}
+
+func (m *GetCAStatusResponse) GetRemovedRev() string {
+	if m != nil {
+		return m.RemovedRev
+	}
+	return ""
+}
+
 func (m *GetCAStatusResponse) GetCrlStatus() *CRLStatus {
 	if m != nil {
 		return m.CrlStatus
@@ -114,6 +184,20 @@ func (m *IsRevokedCertRequest) String() string            { return proto.Compact
 func (*IsRevokedCertRequest) ProtoMessage()               {}
 func (*IsRevokedCertRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{5} }
 
+func (m *IsRevokedCertRequest) GetCa() string {
+	if m != nil {
+		return m.Ca
+	}
+	return ""
+}
+
+func (m *IsRevokedCertRequest) GetSn() string {
+	if m != nil {
+		return m.Sn
+	}
+	return ""
+}
+
 // IsRevokedCertResponse is returned by IsRevokedCert
 type IsRevokedCertResponse struct {
 	Revoked bool `protobuf:"varint,1,opt,name=revoked" json:"revoked,omitempty"`
@@ -123,6 +207,13 @@ func (m *IsRevokedCertResponse) Reset()                    { *m = IsRevokedCertR
 func (m *IsRevokedCertResponse) String() string            { return proto.CompactTextString(m) }
 func (*IsRevokedCertResponse) ProtoMessage()               {}
 func (*IsRevokedCertResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{6} }
+
+func (m *IsRevokedCertResponse) GetRevoked() bool {
+	if m != nil {
+		return m.Revoked
+	}
+	return false
+}
 
 // CheckCertificateRequest contains a pem encoded certificate to check.
 type CheckCertificateRequest struct {
@@ -134,6 +225,13 @@ func (m *CheckCertificateRequest) String() string            { return proto.Comp
 func (*CheckCertificateRequest) ProtoMessage()               {}
 func (*CheckCertificateRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{7} }
 
+func (m *CheckCertificateRequest) GetCertPem() string {
+	if m != nil {
+		return m.CertPem
+	}
+	return ""
+}
+
 // CheckCertificateResponse is returned by CheckCertificate.
 type CheckCertificateResponse struct {
 	IsValid       bool   `protobuf:"varint,1,opt,name=is_valid,json=isValid" json:"is_valid,omitempty"`
@@ -144,6 +242,20 @@ func (m *CheckCertificateResponse) Reset()                    { *m = CheckCertif
 func (m *CheckCertificateResponse) String() string            { return proto.CompactTextString(m) }
 func (*CheckCertificateResponse) ProtoMessage()               {}
 func (*CheckCertificateResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{8} }
+
+func (m *CheckCertificateResponse) GetIsValid() bool {
+	if m != nil {
+		return m.IsValid
+	}
+	return false
+}
+
+func (m *CheckCertificateResponse) GetInvalidReason() string {
+	if m != nil {
+		return m.InvalidReason
+	}
+	return ""
+}
 
 // CRLStatus describes the latest known state of imported CRL.
 type CRLStatus struct {
@@ -170,6 +282,20 @@ func (m *CRLStatus) GetLastFetchTime() *google_protobuf1.Timestamp {
 		return m.LastFetchTime
 	}
 	return nil
+}
+
+func (m *CRLStatus) GetLastFetchEtag() string {
+	if m != nil {
+		return m.LastFetchEtag
+	}
+	return ""
+}
+
+func (m *CRLStatus) GetRevokedCertsCount() int64 {
+	if m != nil {
+		return m.RevokedCertsCount
+	}
+	return 0
 }
 
 func init() {

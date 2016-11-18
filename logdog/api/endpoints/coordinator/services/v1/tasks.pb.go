@@ -56,6 +56,27 @@ func (m *ArchiveTask) String() string            { return proto.CompactTextStrin
 func (*ArchiveTask) ProtoMessage()               {}
 func (*ArchiveTask) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
+func (m *ArchiveTask) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *ArchiveTask) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *ArchiveTask) GetKey() []byte {
+	if m != nil {
+		return m.Key
+	}
+	return nil
+}
+
 func (m *ArchiveTask) GetSettleDelay() *google_protobuf.Duration {
 	if m != nil {
 		return m.SettleDelay

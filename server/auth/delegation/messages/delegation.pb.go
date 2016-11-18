@@ -94,6 +94,34 @@ func (m *DelegationToken) String() string            { return proto.CompactTextS
 func (*DelegationToken) ProtoMessage()               {}
 func (*DelegationToken) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *DelegationToken) GetSignerId() string {
+	if m != nil {
+		return m.SignerId
+	}
+	return ""
+}
+
+func (m *DelegationToken) GetSigningKeyId() string {
+	if m != nil {
+		return m.SigningKeyId
+	}
+	return ""
+}
+
+func (m *DelegationToken) GetPkcs1Sha256Sig() []byte {
+	if m != nil {
+		return m.Pkcs1Sha256Sig
+	}
+	return nil
+}
+
+func (m *DelegationToken) GetSerializedSubtoken() []byte {
+	if m != nil {
+		return m.SerializedSubtoken
+	}
+	return nil
+}
+
 // Identifies who delegates what authority to whom where.
 //
 // Next ID: 9.
@@ -139,6 +167,62 @@ func (m *Subtoken) Reset()                    { *m = Subtoken{} }
 func (m *Subtoken) String() string            { return proto.CompactTextString(m) }
 func (*Subtoken) ProtoMessage()               {}
 func (*Subtoken) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+
+func (m *Subtoken) GetKind() Subtoken_Kind {
+	if m != nil {
+		return m.Kind
+	}
+	return Subtoken_UNKNOWN_KIND
+}
+
+func (m *Subtoken) GetSubtokenId() int64 {
+	if m != nil {
+		return m.SubtokenId
+	}
+	return 0
+}
+
+func (m *Subtoken) GetDelegatedIdentity() string {
+	if m != nil {
+		return m.DelegatedIdentity
+	}
+	return ""
+}
+
+func (m *Subtoken) GetRequestorIdentity() string {
+	if m != nil {
+		return m.RequestorIdentity
+	}
+	return ""
+}
+
+func (m *Subtoken) GetCreationTime() int64 {
+	if m != nil {
+		return m.CreationTime
+	}
+	return 0
+}
+
+func (m *Subtoken) GetValidityDuration() int32 {
+	if m != nil {
+		return m.ValidityDuration
+	}
+	return 0
+}
+
+func (m *Subtoken) GetAudience() []string {
+	if m != nil {
+		return m.Audience
+	}
+	return nil
+}
+
+func (m *Subtoken) GetServices() []string {
+	if m != nil {
+		return m.Services
+	}
+	return nil
+}
 
 func init() {
 	proto.RegisterType((*DelegationToken)(nil), "messages.DelegationToken")

@@ -129,6 +129,20 @@ func (m *WalkGraphReq_Mode) String() string            { return proto.CompactTex
 func (*WalkGraphReq_Mode) ProtoMessage()               {}
 func (*WalkGraphReq_Mode) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{0, 0} }
 
+func (m *WalkGraphReq_Mode) GetDfs() bool {
+	if m != nil {
+		return m.Dfs
+	}
+	return false
+}
+
+func (m *WalkGraphReq_Mode) GetDirection() WalkGraphReq_Mode_Direction {
+	if m != nil {
+		return m.Direction
+	}
+	return WalkGraphReq_Mode_FORWARDS
+}
+
 type WalkGraphReq_Limit struct {
 	// MaxDepth sets the number of attempts to traverse; 0 means 'immediate'
 	// (no dependencies), -1 means 'no limit', and >0 is a limit.
@@ -158,11 +172,25 @@ func (m *WalkGraphReq_Limit) String() string            { return proto.CompactTe
 func (*WalkGraphReq_Limit) ProtoMessage()               {}
 func (*WalkGraphReq_Limit) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{0, 1} }
 
+func (m *WalkGraphReq_Limit) GetMaxDepth() int64 {
+	if m != nil {
+		return m.MaxDepth
+	}
+	return 0
+}
+
 func (m *WalkGraphReq_Limit) GetMaxTime() *google_protobuf.Duration {
 	if m != nil {
 		return m.MaxTime
 	}
 	return nil
+}
+
+func (m *WalkGraphReq_Limit) GetMaxDataSize() uint32 {
+	if m != nil {
+		return m.MaxDataSize
+	}
+	return 0
 }
 
 type WalkGraphReq_Include struct {
@@ -213,6 +241,27 @@ func (m *WalkGraphReq_Include) GetExecution() *WalkGraphReq_Include_Options {
 	return nil
 }
 
+func (m *WalkGraphReq_Include) GetNumExecutions() uint32 {
+	if m != nil {
+		return m.NumExecutions
+	}
+	return 0
+}
+
+func (m *WalkGraphReq_Include) GetFwdDeps() bool {
+	if m != nil {
+		return m.FwdDeps
+	}
+	return false
+}
+
+func (m *WalkGraphReq_Include) GetBackDeps() bool {
+	if m != nil {
+		return m.BackDeps
+	}
+	return false
+}
+
 type WalkGraphReq_Include_Options struct {
 	// Fills the 'id' field.
 	//
@@ -249,6 +298,41 @@ func (*WalkGraphReq_Include_Options) Descriptor() ([]byte, []int) {
 	return fileDescriptor7, []int{0, 2, 0}
 }
 
+func (m *WalkGraphReq_Include_Options) GetIds() bool {
+	if m != nil {
+		return m.Ids
+	}
+	return false
+}
+
+func (m *WalkGraphReq_Include_Options) GetData() bool {
+	if m != nil {
+		return m.Data
+	}
+	return false
+}
+
+func (m *WalkGraphReq_Include_Options) GetResult() bool {
+	if m != nil {
+		return m.Result
+	}
+	return false
+}
+
+func (m *WalkGraphReq_Include_Options) GetAbnormal() bool {
+	if m != nil {
+		return m.Abnormal
+	}
+	return false
+}
+
+func (m *WalkGraphReq_Include_Options) GetExpired() bool {
+	if m != nil {
+		return m.Expired
+	}
+	return false
+}
+
 type WalkGraphReq_Exclude struct {
 	// Do not include data from the following quests in the response.
 	Quests []string `protobuf:"bytes,1,rep,name=quests" json:"quests,omitempty"`
@@ -260,6 +344,13 @@ func (m *WalkGraphReq_Exclude) Reset()                    { *m = WalkGraphReq_Ex
 func (m *WalkGraphReq_Exclude) String() string            { return proto.CompactTextString(m) }
 func (*WalkGraphReq_Exclude) ProtoMessage()               {}
 func (*WalkGraphReq_Exclude) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{0, 3} }
+
+func (m *WalkGraphReq_Exclude) GetQuests() []string {
+	if m != nil {
+		return m.Quests
+	}
+	return nil
+}
 
 func (m *WalkGraphReq_Exclude) GetAttempts() *AttemptList {
 	if m != nil {

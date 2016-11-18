@@ -88,6 +88,27 @@ func (m *GraphQuery_AttemptRange) String() string            { return proto.Comp
 func (*GraphQuery_AttemptRange) ProtoMessage()               {}
 func (*GraphQuery_AttemptRange) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0, 0} }
 
+func (m *GraphQuery_AttemptRange) GetQuest() string {
+	if m != nil {
+		return m.Quest
+	}
+	return ""
+}
+
+func (m *GraphQuery_AttemptRange) GetLow() uint32 {
+	if m != nil {
+		return m.Low
+	}
+	return 0
+}
+
+func (m *GraphQuery_AttemptRange) GetHigh() uint32 {
+	if m != nil {
+		return m.High
+	}
+	return 0
+}
+
 // A Search allows you to query objects whose properties match all of the
 // provided filters. Filters take the form of a dot-delimited path. For
 // example, say that we had the following objects:
@@ -183,6 +204,13 @@ func (m *GraphQuery_Search) Reset()                    { *m = GraphQuery_Search{
 func (m *GraphQuery_Search) String() string            { return proto.CompactTextString(m) }
 func (*GraphQuery_Search) ProtoMessage()               {}
 func (*GraphQuery_Search) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0, 1} }
+
+func (m *GraphQuery_Search) GetDomain() GraphQuery_Search_Domain {
+	if m != nil {
+		return m.Domain
+	}
+	return GraphQuery_Search_QUEST
+}
 
 func (m *GraphQuery_Search) GetStart() *PropertyValue {
 	if m != nil {

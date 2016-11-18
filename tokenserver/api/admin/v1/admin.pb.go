@@ -87,6 +87,20 @@ func (m *ImportedConfigs_ConfigFile) String() string            { return proto.C
 func (*ImportedConfigs_ConfigFile) ProtoMessage()               {}
 func (*ImportedConfigs_ConfigFile) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 0} }
 
+func (m *ImportedConfigs_ConfigFile) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *ImportedConfigs_ConfigFile) GetRevision() string {
+	if m != nil {
+		return m.Revision
+	}
+	return ""
+}
+
 // InspectMachineTokenRequest is body of InspectMachineToken RPC call.
 //
 // It contains machine token of some kind.
@@ -103,6 +117,20 @@ func (m *InspectMachineTokenRequest) Reset()                    { *m = InspectMa
 func (m *InspectMachineTokenRequest) String() string            { return proto.CompactTextString(m) }
 func (*InspectMachineTokenRequest) ProtoMessage()               {}
 func (*InspectMachineTokenRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+
+func (m *InspectMachineTokenRequest) GetTokenType() tokenserver.MachineTokenType {
+	if m != nil {
+		return m.TokenType
+	}
+	return tokenserver.MachineTokenType_UNKNOWN_TYPE
+}
+
+func (m *InspectMachineTokenRequest) GetToken() string {
+	if m != nil {
+		return m.Token
+	}
+	return ""
+}
 
 // InspectMachineTokenResponse is return value of InspectMachineToken RPC call.
 type InspectMachineTokenResponse struct {
@@ -178,6 +206,55 @@ func (m *InspectMachineTokenResponse) GetTokenType() isInspectMachineTokenRespon
 	return nil
 }
 
+func (m *InspectMachineTokenResponse) GetValid() bool {
+	if m != nil {
+		return m.Valid
+	}
+	return false
+}
+
+func (m *InspectMachineTokenResponse) GetInvalidityReason() string {
+	if m != nil {
+		return m.InvalidityReason
+	}
+	return ""
+}
+
+func (m *InspectMachineTokenResponse) GetSigned() bool {
+	if m != nil {
+		return m.Signed
+	}
+	return false
+}
+
+func (m *InspectMachineTokenResponse) GetNonExpired() bool {
+	if m != nil {
+		return m.NonExpired
+	}
+	return false
+}
+
+func (m *InspectMachineTokenResponse) GetNonRevoked() bool {
+	if m != nil {
+		return m.NonRevoked
+	}
+	return false
+}
+
+func (m *InspectMachineTokenResponse) GetSigningKeyId() string {
+	if m != nil {
+		return m.SigningKeyId
+	}
+	return ""
+}
+
+func (m *InspectMachineTokenResponse) GetCertCaName() string {
+	if m != nil {
+		return m.CertCaName
+	}
+	return ""
+}
+
 func (m *InspectMachineTokenResponse) GetLuciMachineToken() *tokenserver.MachineTokenBody {
 	if x, ok := m.GetTokenType().(*InspectMachineTokenResponse_LuciMachineToken); ok {
 		return x.LuciMachineToken
@@ -251,6 +328,13 @@ func (m *InspectDelegationTokenRequest) String() string            { return prot
 func (*InspectDelegationTokenRequest) ProtoMessage()               {}
 func (*InspectDelegationTokenRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
+func (m *InspectDelegationTokenRequest) GetToken() string {
+	if m != nil {
+		return m.Token
+	}
+	return ""
+}
+
 // InspectDelegationTokenResponse is return value of InspectDelegationToken RPC.
 type InspectDelegationTokenResponse struct {
 	// True if the token is valid.
@@ -295,6 +379,34 @@ func (m *InspectDelegationTokenResponse) Reset()                    { *m = Inspe
 func (m *InspectDelegationTokenResponse) String() string            { return proto.CompactTextString(m) }
 func (*InspectDelegationTokenResponse) ProtoMessage()               {}
 func (*InspectDelegationTokenResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+
+func (m *InspectDelegationTokenResponse) GetValid() bool {
+	if m != nil {
+		return m.Valid
+	}
+	return false
+}
+
+func (m *InspectDelegationTokenResponse) GetInvalidityReason() string {
+	if m != nil {
+		return m.InvalidityReason
+	}
+	return ""
+}
+
+func (m *InspectDelegationTokenResponse) GetSigned() bool {
+	if m != nil {
+		return m.Signed
+	}
+	return false
+}
+
+func (m *InspectDelegationTokenResponse) GetNonExpired() bool {
+	if m != nil {
+		return m.NonExpired
+	}
+	return false
+}
 
 func (m *InspectDelegationTokenResponse) GetEnvelope() *messages.DelegationToken {
 	if m != nil {
