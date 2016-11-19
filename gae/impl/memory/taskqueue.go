@@ -5,14 +5,16 @@
 package memory
 
 import (
-	"regexp"
+	"fmt"
+	"net/http"
 	"time"
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/gae/service/info"
 	tq "github.com/luci/gae/service/taskqueue"
 
-	"github.com/luci/luci-go/common/data/rand/mathrand"
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 )
 
@@ -43,50 +45,25 @@ var (
 	_ = tq.Testable((*taskqueueImpl)(nil))
 )
 
-func (t *taskqueueImpl) addLocked(task *tq.Task, queueName string) (*tq.Task, error) {
-	toSched, err := t.prepTask(t.ctx, task, queueName)
-	if err != nil {
-		return nil, err
-	}
-
-	if _, ok := t.archived[queueName][toSched.Name]; ok {
-		// SDK converts TOMBSTONE -> already added too
-		return nil, tq.ErrTaskAlreadyAdded
-	} else if _, ok := t.named[queueName][toSched.Name]; ok {
-		return nil, tq.ErrTaskAlreadyAdded
-	} else {
-		t.named[queueName][toSched.Name] = toSched
-	}
-
-	return toSched.Duplicate(), nil
-}
-
-func (t *taskqueueImpl) deleteLocked(task *tq.Task, queueName string) error {
-	if _, ok := t.archived[queueName][task.Name]; ok {
-		return errors.New("TOMBSTONED_TASK")
-	}
-
-	if _, ok := t.named[queueName][task.Name]; !ok {
-		return errors.New("UNKNOWN_TASK")
-	}
-
-	t.archived[queueName][task.Name] = t.named[queueName][task.Name]
-	delete(t.named[queueName], task.Name)
-
-	return nil
-}
-
 func (t *taskqueueImpl) AddMulti(tasks []*tq.Task, queueName string, cb tq.RawTaskCB) error {
 	t.Lock()
 	defer t.Unlock()
 
-	queueName, err := t.getQueueNameLocked(queueName)
+	q, err := t.getQueueLocked(queueName)
 	if err != nil {
 		return err
 	}
 
 	for _, task := range tasks {
-		cb(t.addLocked(task, queueName))
+		task, err := prepTask(t.ctx, task, q)
+		if err == nil {
+			err = q.addTask(task)
+		}
+		if err != nil {
+			cb(nil, err)
+		} else {
+			cb(task.Duplicate(), nil)
+		}
 	}
 	return nil
 }
@@ -95,13 +72,13 @@ func (t *taskqueueImpl) DeleteMulti(tasks []*tq.Task, queueName string, cb tq.Ra
 	t.Lock()
 	defer t.Unlock()
 
-	queueName, err := t.getQueueNameLocked(queueName)
+	q, err := t.getQueueLocked(queueName)
 	if err != nil {
 		return err
 	}
 
 	for _, task := range tasks {
-		cb(t.deleteLocked(task, queueName))
+		cb(q.deleteTask(task))
 	}
 	return nil
 }
@@ -130,21 +107,11 @@ func (t *taskqueueImpl) Stats(queueNames []string, cb tq.RawStatsCB) error {
 	defer t.Unlock()
 
 	for _, qn := range queueNames {
-		qn, err := t.getQueueNameLocked(qn)
+		q, err := t.getQueueLocked(qn)
 		if err != nil {
 			cb(nil, err)
 		} else {
-			s := tq.Statistics{
-				Tasks: len(t.named[qn]),
-			}
-			for _, t := range t.named[qn] {
-				if s.OldestETA.IsZero() {
-					s.OldestETA = t.ETA
-				} else if t.ETA.Before(s.OldestETA) {
-					s.OldestETA = t.ETA
-				}
-			}
-			cb(&s, nil)
+			cb(q.getStats(), nil)
 		}
 	}
 
@@ -166,8 +133,8 @@ var _ interface {
 	tq.Testable
 } = (*taskqueueTxnImpl)(nil)
 
-func (t *taskqueueTxnImpl) addLocked(task *tq.Task, queueName string) (*tq.Task, error) {
-	toSched, err := t.parent.prepTask(t.ctx, task, queueName)
+func (t *taskqueueTxnImpl) addLocked(task *tq.Task, q *sortedQueue) (*tq.Task, error) {
+	toSched, err := prepTask(t.ctx, task, q)
 	if err != nil {
 		return nil, err
 	}
@@ -181,13 +148,14 @@ func (t *taskqueueTxnImpl) addLocked(task *tq.Task, queueName string) (*tq.Task,
 		// ride on the datastore. The current datastore implementation only allows
 		// a maximum of 5 Actions per transaction, and more than that result in a
 		// BAD_REQUEST.
-		return nil, errors.New("BAD_REQUEST")
+		return nil, errBadRequest
 	}
 
-	t.anony[queueName] = append(t.anony[queueName], toSched)
+	t.anony[q.name] = append(t.anony[q.name], toSched)
 
 	// the fact that we have generated a unique name for this task queue item is
-	// an implementation detail.
+	// an implementation detail. These names are regenerated when the transaction
+	// is committed.
 	// TODO(riannucci): now that I think about this... it may not actually be true.
 	//		We should verify that the .Name for a task added in a transaction is
 	//		meaningless. Maybe names generated in a transaction are somehow
@@ -206,13 +174,13 @@ func (t *taskqueueTxnImpl) AddMulti(tasks []*tq.Task, queueName string, cb tq.Ra
 	t.Lock()
 	defer t.Unlock()
 
-	queueName, err := t.parent.getQueueNameLocked(queueName)
+	q, err := t.parent.getQueueLocked(queueName)
 	if err != nil {
 		return err
 	}
 
 	for _, task := range tasks {
-		cb(t.addLocked(task, queueName))
+		cb(t.addLocked(task, q))
 	}
 	return nil
 }
@@ -243,32 +211,60 @@ func (t *taskqueueTxnImpl) Stats([]string, tq.RawStatsCB) error {
 
 func (t *taskqueueTxnImpl) GetTestable() tq.Testable { return t }
 
-////////////////////////////// private functions ///////////////////////////////
+////////////////////////// private functions ///////////////////////////////////
 
-var validTaskName = regexp.MustCompile("^[0-9a-zA-Z\\-\\_]{0,500}$")
+func prepTask(c context.Context, task *tq.Task, q *sortedQueue) (*tq.Task, error) {
+	toSched := task.Duplicate()
 
-const validTaskChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_"
-
-func mkName(c context.Context, cur string, queue map[string]*tq.Task) string {
-	_, ok := queue[cur]
-	for !ok && cur == "" {
-		name := [500]byte{}
-		for i := 0; i < 500; i++ {
-			name[i] = validTaskChars[mathrand.Intn(c, len(validTaskChars))]
-		}
-		cur = string(name[:])
-		_, ok = queue[cur]
+	if toSched.ETA.IsZero() {
+		toSched.ETA = clock.Now(c).Add(toSched.Delay)
+	} else if toSched.Delay != 0 {
+		panic("taskqueue: both Delay and ETA are set")
 	}
-	return cur
-}
+	toSched.Delay = 0
 
-func dupQueue(q tq.QueueData) tq.QueueData {
-	r := make(tq.QueueData, len(q))
-	for k, q := range q {
-		r[k] = make(map[string]*tq.Task, len(q))
-		for tn, t := range q {
-			r[k][tn] = t.Duplicate()
+	switch toSched.Method {
+	// Methods that can have payloads.
+	case "":
+		toSched.Method = "POST"
+		fallthrough
+	case "POST", "PUT", "PULL":
+		break
+
+	// Methods that can not have payloads.
+	case "GET", "HEAD", "DELETE":
+		toSched.Payload = nil
+
+	default:
+		return nil, fmt.Errorf("taskqueue: bad method %q", toSched.Method)
+	}
+
+	// PULL tasks have no HTTP related stuff in them (Path and Header).
+	if toSched.Method == "PULL" {
+		toSched.Path = ""
+		toSched.Header = nil
+	} else {
+		if toSched.Path == "" {
+			toSched.Path = "/_ah/queue/" + q.name
+		}
+		if _, ok := toSched.Header[currentNamespace]; !ok {
+			if ns := info.GetNamespace(c); ns != "" {
+				if toSched.Header == nil {
+					toSched.Header = http.Header{}
+				}
+				toSched.Header[currentNamespace] = []string{ns}
+			}
+		}
+		// TODO(riannucci): implement DefaultNamespace
+	}
+
+	if toSched.Name == "" {
+		toSched.Name = q.genTaskName(c)
+	} else {
+		if !validTaskName.MatchString(toSched.Name) {
+			return nil, errInvalidTaskName
 		}
 	}
-	return r
+
+	return toSched, nil
 }

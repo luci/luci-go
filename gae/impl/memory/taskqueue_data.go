@@ -8,30 +8,125 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"sync"
 	"sync/atomic"
 
 	"golang.org/x/net/context"
 
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
 	tq "github.com/luci/gae/service/taskqueue"
 
-	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 )
 
 var (
 	currentNamespace = http.CanonicalHeaderKey("X-AppEngine-Current-Namespace")
 	defaultNamespace = http.CanonicalHeaderKey("X-AppEngine-Default-Namespace")
+
+	validTaskName = regexp.MustCompile("^[0-9a-zA-Z\\-\\_]{0,500}$")
+
+	errBadRequest      = errors.New("BAD_REQUEST")
+	errInvalidTaskName = errors.New("INVALID_TASK_NAME")
+	errUnknownQueue    = errors.New("UNKNOWN_QUEUE")
+	errTombstonedTask  = errors.New("TOMBSTONED_TASK")
+	errUnknownTask     = errors.New("UNKNOWN_TASK")
 )
+
+//////////////////////////////// sortedQueue ///////////////////////////////////
+
+type sortedQueue struct {
+	name string
+
+	tasks    map[string]*tq.Task // added, but not deleted
+	archived map[string]*tq.Task // tombstones
+
+	// TODO(vadimsh): add a structure sorted by ETA
+}
+
+func newSortedQueue(name string) *sortedQueue {
+	return &sortedQueue{
+		name:     name,
+		tasks:    map[string]*tq.Task{},
+		archived: map[string]*tq.Task{},
+	}
+}
+
+// All sortedQueue methods are assumed to be called under taskQueueData lock.
+
+func (q *sortedQueue) genTaskName(c context.Context) string {
+	const validTaskChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_"
+	for {
+		buf := [500]byte{}
+		for i := 0; i < 500; i++ {
+			buf[i] = validTaskChars[mathrand.Intn(c, len(validTaskChars))]
+		}
+		name := string(buf[:])
+		_, ok1 := q.tasks[name]
+		_, ok2 := q.archived[name]
+		if !ok1 && !ok2 {
+			return name
+		}
+	}
+}
+
+func (q *sortedQueue) addTask(task *tq.Task) error {
+	if _, ok := q.archived[task.Name]; ok {
+		// SDK converts TOMBSTONE -> already added too
+		return tq.ErrTaskAlreadyAdded
+	} else if _, ok := q.tasks[task.Name]; ok {
+		return tq.ErrTaskAlreadyAdded
+	}
+
+	q.tasks[task.Name] = task
+
+	// TODO(vadimsh): If a PULL task, add to ETA-sorted array.
+
+	return nil
+}
+
+func (q *sortedQueue) deleteTask(task *tq.Task) error {
+	if _, ok := q.archived[task.Name]; ok {
+		return errTombstonedTask
+	}
+
+	if _, ok := q.tasks[task.Name]; !ok {
+		return errUnknownTask
+	}
+
+	q.archived[task.Name] = q.tasks[task.Name]
+	delete(q.tasks, task.Name)
+
+	// TODO(vadimsh): If a PULL task, remove from ETA-sorted array.
+
+	return nil
+}
+
+func (q *sortedQueue) purge() {
+	q.tasks = map[string]*tq.Task{}
+	q.archived = map[string]*tq.Task{}
+}
+
+func (q *sortedQueue) getStats() *tq.Statistics {
+	s := tq.Statistics{
+		Tasks: len(q.tasks),
+	}
+	for _, t := range q.tasks {
+		if s.OldestETA.IsZero() {
+			s.OldestETA = t.ETA
+		} else if t.ETA.Before(s.OldestETA) {
+			s.OldestETA = t.ETA
+		}
+	}
+	return &s
+}
 
 //////////////////////////////// taskQueueData /////////////////////////////////
 
 type taskQueueData struct {
 	sync.Mutex
 
-	named    tq.QueueData
-	archived tq.QueueData
+	queues map[string]*sortedQueue
 }
 
 var _ interface {
@@ -41,8 +136,7 @@ var _ interface {
 
 func newTaskQueueData() memContextObj {
 	return &taskQueueData{
-		named:    tq.QueueData{"default": {}},
-		archived: tq.QueueData{"default": {}},
+		queues: map[string]*sortedQueue{"default": newSortedQueue("default")},
 	}
 }
 
@@ -51,9 +145,15 @@ func (t *taskQueueData) endTxn()                            {}
 func (t *taskQueueData) applyTxn(c context.Context, obj memContextObj) {
 	txn := obj.(*txnTaskQueueData)
 	for qn, tasks := range txn.anony {
+		q := t.queues[qn]
 		for _, tsk := range tasks {
-			tsk.Name = mkName(c, tsk.Name, t.named[qn])
-			t.named[qn][tsk.Name] = tsk
+			// Regenerate names to make sure we don't collide with anything already
+			// committed. Note that transactional tasks can't have user-defined name.
+			tsk.Name = q.genTaskName(c)
+			err := q.addTask(tsk) // prepped in txnTaskQueueData.AddMulti, must be good
+			if err != nil {
+				panic(err)
+			}
 		}
 	}
 	txn.anony = nil
@@ -73,31 +173,43 @@ func (t *taskQueueData) CreateQueue(queueName string) {
 	t.Lock()
 	defer t.Unlock()
 
-	if _, ok := t.named[queueName]; ok {
+	if _, ok := t.queues[queueName]; ok {
 		panic(fmt.Errorf("memory/taskqueue: cannot add the same queue twice! %q", queueName))
 	}
-	t.named[queueName] = map[string]*tq.Task{}
-	t.archived[queueName] = map[string]*tq.Task{}
+	t.queues[queueName] = newSortedQueue(queueName)
 }
 
 func (t *taskQueueData) GetScheduledTasks() tq.QueueData {
 	t.Lock()
 	defer t.Unlock()
 
-	return dupQueue(t.named)
+	r := make(tq.QueueData, len(t.queues))
+	for qn, q := range t.queues {
+		r[qn] = make(map[string]*tq.Task, len(q.tasks))
+		for tn, t := range q.tasks {
+			r[qn][tn] = t.Duplicate()
+		}
+	}
+	return r
 }
 
 func (t *taskQueueData) GetTombstonedTasks() tq.QueueData {
 	t.Lock()
 	defer t.Unlock()
 
-	return dupQueue(t.archived)
+	r := make(tq.QueueData, len(t.queues))
+	for qn, q := range t.queues {
+		r[qn] = make(map[string]*tq.Task, len(q.archived))
+		for tn, t := range q.archived {
+			r[qn][tn] = t.Duplicate()
+		}
+	}
+	return r
 }
 
 func (t *taskQueueData) resetTasksWithLock() {
-	for queueName := range t.named {
-		t.named[queueName] = map[string]*tq.Task{}
-		t.archived[queueName] = map[string]*tq.Task{}
+	for _, q := range t.queues {
+		q.purge()
 	}
 }
 
@@ -108,76 +220,24 @@ func (t *taskQueueData) ResetTasks() {
 	t.resetTasksWithLock()
 }
 
-func (t *taskQueueData) getQueueNameLocked(queueName string) (string, error) {
+func (t *taskQueueData) getQueueLocked(queueName string) (*sortedQueue, error) {
 	if queueName == "" {
 		queueName = "default"
 	}
-	if _, ok := t.named[queueName]; !ok {
-		return "", errors.New("UNKNOWN_QUEUE")
+	q, ok := t.queues[queueName]
+	if !ok {
+		return nil, errUnknownQueue
 	}
-	return queueName, nil
+	return q, nil
 }
 
 func (t *taskQueueData) purgeLocked(queueName string) error {
-	queueName, err := t.getQueueNameLocked(queueName)
+	q, err := t.getQueueLocked(queueName)
 	if err != nil {
 		return err
 	}
-
-	t.named[queueName] = map[string]*tq.Task{}
-	t.archived[queueName] = map[string]*tq.Task{}
+	q.purge()
 	return nil
-}
-
-func (t *taskQueueData) prepTask(c context.Context, task *tq.Task, queueName string) (*tq.Task, error) {
-	toSched := task.Duplicate()
-
-	if toSched.Path == "" {
-		toSched.Path = "/_ah/queue/" + queueName
-	}
-
-	if toSched.ETA.IsZero() {
-		toSched.ETA = clock.Now(c).Add(toSched.Delay)
-	} else if toSched.Delay != 0 {
-		panic("taskqueue: both Delay and ETA are set")
-	}
-	toSched.Delay = 0
-
-	switch toSched.Method {
-	// Methods that can have payloads.
-	case "":
-		toSched.Method = "POST"
-		fallthrough
-	case "POST", "PUT", "PULL":
-		break
-
-	// Methods that can not have payloads.
-	case "GET", "HEAD", "DELETE":
-		toSched.Payload = nil
-
-	default:
-		return nil, fmt.Errorf("taskqueue: bad method %q", toSched.Method)
-	}
-
-	if _, ok := toSched.Header[currentNamespace]; !ok {
-		if ns := info.GetNamespace(c); ns != "" {
-			if toSched.Header == nil {
-				toSched.Header = http.Header{}
-			}
-			toSched.Header[currentNamespace] = []string{ns}
-		}
-	}
-	// TODO(riannucci): implement DefaultNamespace
-
-	if toSched.Name == "" {
-		toSched.Name = mkName(c, "", t.named[queueName])
-	} else {
-		if !validTaskName.MatchString(toSched.Name) {
-			return nil, errors.New("INVALID_TASK_NAME")
-		}
-	}
-
-	return toSched, nil
 }
 
 /////////////////////////////// txnTaskQueueData ///////////////////////////////
@@ -226,6 +286,7 @@ func (t *txnTaskQueueData) Lock() {
 	t.lock.Lock()
 	t.parent.Lock()
 }
+
 func (t *txnTaskQueueData) Unlock() {
 	t.parent.Unlock()
 	t.lock.Unlock()
