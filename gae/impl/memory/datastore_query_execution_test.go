@@ -511,6 +511,29 @@ var queryExecutionTests = []qExTest{
 			},
 		},
 	}},
+
+	{"regression: avoid index bleedover for common fields in compound indices", []qExStage{
+		{
+			addIdxs: []*ds.IndexDefinition{
+				indx("Kind", "A", "B"),
+				indx("Other", "A", "B"),
+			},
+			putEnts: []ds.PropertyMap{
+				pmap(
+					"$key", key("Kind", 1), Next,
+					"A", "value", Next,
+					"B", "value", Next),
+			},
+		},
+		{
+			expect: []qExpect{
+				{
+					q:   nq("Other").Eq("A", "value").Order("B"),
+					get: []ds.PropertyMap{},
+				},
+			},
+		},
+	}},
 }
 
 func TestQueryExecution(t *testing.T) {

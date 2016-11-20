@@ -204,7 +204,7 @@ func TestIndexRowGen(t *testing.T) {
 
 			Convey("indexEntries", func() {
 				sip := serialize.PropertyMapPartially(fakeKey, nil)
-				s := indexEntries(sip, "ns", defaultIndexes("knd", ds.PropertyMap(nil)))
+				s := indexEntries(fakeKey, sip, defaultIndexes("knd", ds.PropertyMap(nil)))
 				numItems, _ := s.GetCollection("idx").GetTotals()
 				So(numItems, ShouldEqual, 1)
 				itm := s.GetCollection("idx").MinItem(false)
@@ -248,7 +248,7 @@ func TestIndexEntries(t *testing.T) {
 					store = indexEntriesWithBuiltins(fakeKey, tc.pmap, tc.idxs)
 				} else {
 					sip := serialize.PropertyMapPartially(fakeKey, tc.pmap)
-					store = indexEntries(sip, fakeKey.Namespace(), tc.idxs)
+					store = indexEntries(fakeKey, sip, tc.idxs)
 				}
 				for colName, vals := range tc.collections {
 					i := 0

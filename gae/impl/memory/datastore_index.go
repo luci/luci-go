@@ -55,7 +55,7 @@ func indexEntriesWithBuiltins(k *ds.Key, pm ds.PropertyMap, complexIdxs []*ds.In
 		return newMemStore()
 	}
 	sip = serialize.PropertyMapPartially(k, pm)
-	return indexEntries(sip, k.Namespace(), append(defaultIndexes(k.Kind(), pm), complexIdxs...))
+	return indexEntries(k, sip, append(defaultIndexes(k.Kind(), pm), complexIdxs...))
 }
 
 // indexRowGen contains enough information to generate all of the index rows which
@@ -144,17 +144,21 @@ func (m *matcher) match(sortBy []ds.IndexColumn, sip serialize.SerializedPmap) (
 
 // indexEntries generates a new memStore containing index entries for sip for
 // the supplied index definitions.
-func indexEntries(sip serialize.SerializedPmap, ns string, idxs []*ds.IndexDefinition) memStore {
+func indexEntries(key *ds.Key, sip serialize.SerializedPmap, idxs []*ds.IndexDefinition) memStore {
 	ret := newMemStore()
 	idxColl := ret.GetOrCreateCollection("idx")
 
 	mtch := matcher{}
 	for _, idx := range idxs {
 		idx = idx.Normalize()
+		if idx.Kind != "" && idx.Kind != key.Kind() {
+			continue
+		}
 		if irg, ok := mtch.match(idx.GetFullSortOrder(), sip); ok {
 			idxBin := serialize.ToBytes(*idx.PrepForIdxTable())
 			idxColl.Set(idxBin, []byte{})
-			coll := ret.GetOrCreateCollection(fmt.Sprintf("idx:%s:%s", ns, idxBin))
+			coll := ret.GetOrCreateCollection(
+				fmt.Sprintf("idx:%s:%s", key.Namespace(), idxBin))
 			irg.permute(coll.Set)
 		}
 	}
@@ -260,7 +264,7 @@ func addIndexes(store memStore, aid string, compIdx []*ds.IndexDefinition) {
 
 				mergeIndexes(ns, store,
 					newMemStore(),
-					indexEntries(sip, ns, normalized))
+					indexEntries(k, sip, normalized))
 				return true
 			})
 		}
