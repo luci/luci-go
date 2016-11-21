@@ -281,9 +281,9 @@ func archive(arch *archiver.Archiver, opts *ArchiveOptions, displayName string) 
 				if err != nil {
 					return nil, err
 				}
-				i.Files[relPath] = isolated.File{Link: newString(l)}
+				i.Files[relPath] = isolated.SymLink(l)
 			} else {
-				i.Files[relPath] = isolated.File{Mode: newInt(int(mode.Perm())), Size: newInt64(info.Size())}
+				i.Files[relPath] = isolated.BasicFile("", int(mode.Perm()), info.Size())
 				fileItems = append(fileItems, arch.PushFile(relPath, dep, -info.Size()))
 			}
 		}

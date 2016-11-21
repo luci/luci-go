@@ -152,12 +152,9 @@ func PushDirectory(a *Archiver, root string, relDir string, blacklist []string) 
 				s.SetErr(fmt.Errorf("readlink(%s): %s", item.fullPath, err))
 				continue
 			}
-			i.Files[item.relPath] = isolated.File{Link: newString(l)}
+			i.Files[item.relPath] = isolated.SymLink(l)
 		} else {
-			i.Files[item.relPath] = isolated.File{
-				Mode: newInt(int(mode.Perm())),
-				Size: newInt64(item.info.Size()),
-			}
+			i.Files[item.relPath] = isolated.BasicFile("", int(mode.Perm()), item.info.Size())
 			items = append(items, a.PushFile(item.relPath, item.fullPath, -item.info.Size()))
 		}
 	}

@@ -102,13 +102,13 @@ func TestPushDirectory(t *testing.T) {
 	isolatedData := isolated.Isolated{
 		Algo: "sha-1",
 		Files: map[string]isolated.File{
-			filepath.Join("base", "bar"):      {Digest: "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", Mode: newInt(mode), Size: newInt64(3)},
-			filepath.Join("base", "bar_dupe"): {Digest: "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", Mode: newInt(mode), Size: newInt64(3)},
+			filepath.Join("base", "bar"):      isolated.BasicFile("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", mode, 3),
+			filepath.Join("base", "bar_dupe"): isolated.BasicFile("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", mode, 3),
 		},
 		Version: isolated.IsolatedFormatVersion,
 	}
 	if !common.IsWindows() {
-		isolatedData.Files[filepath.Join("base", "link")] = isolated.File{Link: newString("bar")}
+		isolatedData.Files[filepath.Join("base", "link")] = isolated.SymLink("bar")
 	}
 	encoded, err := json.Marshal(isolatedData)
 	ut.AssertEqual(t, nil, err)

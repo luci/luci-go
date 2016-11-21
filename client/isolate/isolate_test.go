@@ -131,7 +131,7 @@ func TestArchive(t *testing.T) {
 	baseIsolatedData := isolated.Isolated{
 		Algo: "sha-1",
 		Files: map[string]isolated.File{
-			filepath.Join("base", "bar"): {Digest: "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", Mode: newInt(mode), Size: newInt64(3)},
+			filepath.Join("base", "bar"): isolated.BasicFile("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33", mode, 3),
 		},
 		Version: isolated.IsolatedFormatVersion,
 	}
@@ -144,7 +144,7 @@ func TestArchive(t *testing.T) {
 	secondIsolatedData := isolated.Isolated{
 		Algo: "sha-1",
 		Files: map[string]isolated.File{
-			filepath.Join("second", "boz"): {Digest: "aaadd94977b8fbf3f6fb09fc3bbbc9edbdfa8427", Mode: newInt(mode), Size: newInt64(4)},
+			filepath.Join("second", "boz"): isolated.BasicFile("aaadd94977b8fbf3f6fb09fc3bbbc9edbdfa8427", mode, 4),
 		},
 		Version: isolated.IsolatedFormatVersion,
 	}
@@ -163,9 +163,9 @@ func TestArchive(t *testing.T) {
 		Version:     isolated.IsolatedFormatVersion,
 	}
 	if !common.IsWindows() {
-		isolatedData.Files["link"] = isolated.File{Link: newString(filepath.Join("base", "bar"))}
+		isolatedData.Files["link"] = isolated.SymLink(filepath.Join("base", "bar"))
 	} else {
-		isolatedData.Files["link"] = isolated.File{Digest: "12339b9756c2994f85c310d560bc8c142a6b79a1", Mode: newInt(0666), Size: newInt64(18)}
+		isolatedData.Files["link"] = isolated.BasicFile("12339b9756c2994f85c310d560bc8c142a6b79a1", 0666, 18)
 	}
 	encoded, err = json.Marshal(isolatedData)
 	ut.AssertEqual(t, nil, err)
