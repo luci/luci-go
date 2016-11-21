@@ -10,10 +10,13 @@ package main
 
 import (
 	cryptorand "crypto/rand"
+	"crypto/sha1"
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -25,6 +28,8 @@ import (
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
+
+	"github.com/kardianos/osext"
 
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
@@ -1883,6 +1888,88 @@ func readCounters(ctx context.Context, pkg, version string, counters []string, o
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// 'selfupdate' subcommand.
+
+var cmdSelfUpdate = &subcommands.Command{
+	UsageLine: "selfupdate -version <version>",
+	ShortDesc: "updates the current cipd client binary",
+	LongDesc:  "does an in-place upgrade to the current cipd binary",
+	CommandRun: func() subcommands.CommandRun {
+		s := &selfupdateRun{}
+		s.registerBaseFlags()
+		s.ClientOptions.registerFlags(&s.Flags)
+		s.Flags.StringVar(&s.version, "version", "", "Version of the client to update to.")
+		return s
+	},
+}
+
+type selfupdateRun struct {
+	Subcommand
+	ClientOptions
+
+	version string
+}
+
+func (s *selfupdateRun) Run(a subcommands.Application, args []string) int {
+	if !s.checkArgs(args, 0, 0) {
+		return 1
+	}
+	if s.version == "" {
+		s.printError(makeCLIError("-version is required"))
+		return 1
+	}
+	ctx := cli.GetContext(a, s)
+	exePath, err := osext.Executable()
+	if err != nil {
+		s.printError(err)
+		return 1
+	}
+	clientCacheDir := filepath.Join(filepath.Dir(exePath), ".cipd_client_cache")
+	s.ClientOptions.cacheDir = clientCacheDir
+	fs := local.NewFileSystem(filepath.Dir(exePath), filepath.Join(clientCacheDir, "trash"))
+	defer fs.CleanupTrash(ctx)
+	return s.doSelfUpdate(ctx, exePath, fs)
+}
+
+func executableSHA1(exePath string) (string, error) {
+	file, err := os.Open(exePath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+	hash := sha1.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(hash.Sum(nil)), nil
+}
+
+func (s *selfupdateRun) doSelfUpdate(ctx context.Context, exePath string, fs local.FileSystem) int {
+	if err := common.ValidateInstanceVersion(s.version); err != nil {
+		s.printError(err)
+		return 1
+	}
+
+	curExeHash, err := executableSHA1(exePath)
+	if err != nil {
+		s.printError(err)
+		return 1
+	}
+
+	client, err := s.ClientOptions.makeCipdClient(ctx, filepath.Dir(exePath))
+	if err != nil {
+		s.printError(err)
+		return 1
+	}
+	if err := client.MaybeUpdateClient(ctx, fs, s.version, curExeHash, exePath); err != nil {
+		s.printError(err)
+		return 1
+	}
+
+	return 0
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Main.
 
 var application = &cli.Application{
@@ -1921,6 +2008,7 @@ var application = &cli.Application{
 		cmdDescribe,
 		cmdSetRef,
 		cmdSetTag,
+		cmdSelfUpdate,
 
 		// ACLs.
 		cmdListACL,

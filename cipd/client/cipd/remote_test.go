@@ -83,6 +83,22 @@ func TestRemoteImpl(t *testing.T) {
 		return remote.fetchInstance(ctx, Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
 	}
 
+	mockFetchClientBinaryInfo := func(c C, reply string) (*fetchClientBinaryInfoResponse, error) {
+		remote := mockRemoteImpl(c, []expectedHTTPCall{
+			{
+				Method: "GET",
+				Path:   "/_ah/api/repo/v1/client",
+				Query: url.Values{
+					"package_name": []string{"infra/tools/cipd/mac-amd64"},
+					"instance_id":  []string{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+				},
+				Reply: reply,
+			},
+		})
+		return remote.fetchClientBinaryInfo(ctx,
+			Pin{"infra/tools/cipd/mac-amd64", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
+	}
+
 	mockFetchTags := func(c C, reply string, tags []string) ([]TagInfo, error) {
 		query := url.Values{
 			"package_name": []string{"pkgname"},
@@ -517,6 +533,61 @@ func TestRemoteImpl(t *testing.T) {
 
 	Convey("fetchInstance ERROR", t, func(c C) {
 		result, err := mockFetchInstance(c, `{
+				"status": "ERROR",
+				"error_message": "Some error message"
+			}`)
+		So(err, ShouldNotBeNil)
+		So(result, ShouldBeNil)
+	})
+
+	Convey("fetchClientBinaryInfo SUCCESS", t, func(c C) {
+		result, err := mockFetchClientBinaryInfo(c, `{
+				"status": "SUCCESS",
+				"instance": {
+					"instance_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					"registered_by": "user:a@example.com",
+					"registered_ts": "1420244414571500",
+					"package_name": "infra/tools/cipd/mac-amd64"
+				},
+				"client_binary": {
+					"file_name": "cipd",
+					"sha1": "c52a8ffe7522302e5658fd7f1eb9e2dfd93c0b80",
+					"fetch_url": "https://storage.googleapis.com/example?params=yes",
+					"size": "10120188"
+				},
+				"kind": "repo#resourcesItem",
+				"etag": "\"klmD7St9j1caKhEua58kkAgnm0A/GCbN4lyfRwANQtP3NW9-SWMggwY\""
+			}`)
+		So(err, ShouldBeNil)
+		So(result, ShouldResemble, &fetchClientBinaryInfoResponse{
+			instance: &InstanceInfo{
+				Pin{"infra/tools/cipd/mac-amd64", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+				"user:a@example.com",
+				UnixTime(time.Unix(0, 1420244414571500000)),
+			},
+			clientBinary: &clientBinary{
+				"cipd",
+				"c52a8ffe7522302e5658fd7f1eb9e2dfd93c0b80",
+				"https://storage.googleapis.com/example?params=yes",
+				10120188,
+			},
+		})
+	})
+
+	Convey("fetchClientBinaryInfo PACKAGE_NOT_FOUND", t, func(c C) {
+		result, err := mockFetchClientBinaryInfo(c, `{"status": "PACKAGE_NOT_FOUND"}`)
+		So(err, ShouldNotBeNil)
+		So(result, ShouldBeNil)
+	})
+
+	Convey("fetchClientBinaryInfo INSTANCE_NOT_FOUND", t, func(c C) {
+		result, err := mockFetchClientBinaryInfo(c, `{"status": "INSTANCE_NOT_FOUND"}`)
+		So(err, ShouldNotBeNil)
+		So(result, ShouldBeNil)
+	})
+
+	Convey("fetchClientBinaryInfo ERROR", t, func(c C) {
+		result, err := mockFetchClientBinaryInfo(c, `{
 				"status": "ERROR",
 				"error_message": "Some error message"
 			}`)

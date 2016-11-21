@@ -37,6 +37,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -290,6 +291,12 @@ type Client interface {
 
 	// ResolveVersion converts an instance ID, a tag or a ref into a concrete Pin.
 	ResolveVersion(ctx context.Context, packageName, version string) (common.Pin, error)
+
+	// MaybeUpdateClient will update `destination` to `targetVersion` if
+	// `currentHash` doesn't match version's executable hash.
+	//
+	// This update is done from the "infra/tools/cipd/${platform}" package.
+	MaybeUpdateClient(ctx context.Context, fs local.FileSystem, targetVersion, currentHash, destination string) error
 
 	// RegisterInstance makes the package instance available for clients.
 	//
@@ -686,6 +693,76 @@ func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, versi
 		client.doBatchAwareOp(ctx, batchAwareOpSaveTagCache)
 	}
 	return pin, nil
+}
+
+const clientPackageBase = "infra/tools/cipd"
+
+var clientPackage = ""
+var clientFileName = ""
+
+func init() {
+	// TODO(iannucci): rationalize these to just be exactly GOOS and GOARCH.
+	platform := runtime.GOOS
+	if platform == "darwin" {
+		platform = "mac"
+	}
+
+	clientFileName = "cipd"
+	if platform == "windows" {
+		clientFileName = "cipd.exe"
+	}
+
+	arch := runtime.GOARCH
+	if arch == "arm" {
+		arch = "armv6l"
+	}
+	clientPackage = fmt.Sprintf("%s/%s-%s", clientPackageBase, platform, arch)
+}
+
+func (client *clientImpl) MaybeUpdateClient(ctx context.Context, fs local.FileSystem, targetVersion, currentHash, destination string) error {
+	if err := common.ValidateFileHash(currentHash); err != nil {
+		return err
+	}
+
+	client.BeginBatch(ctx)
+	defer client.EndBatch(ctx)
+
+	logging.Infof(ctx, "cipd: maybe updating client to version %q", targetVersion)
+	pin, err := client.ResolveVersion(ctx, clientPackage, targetVersion)
+	if err != nil {
+		return err
+	}
+
+	cache := client.getTagCache()
+	exeHash := ""
+	if cache != nil {
+		if exeHash, err = cache.ResolveFile(ctx, pin, clientFileName); err != nil {
+			return err
+		}
+	}
+	if exeHash == currentHash {
+		// already up-to-date
+		return nil
+	}
+
+	logging.Infof(ctx, "cipd: updating client to %s", pin)
+
+	info, err := client.remote.fetchClientBinaryInfo(ctx, pin)
+	if err != nil {
+		return err
+	}
+	if cache != nil {
+		if err = cache.AddFile(ctx, pin, clientFileName, info.clientBinary.SHA1); err != nil {
+			return err
+		}
+	}
+	client.doBatchAwareOp(ctx, batchAwareOpSaveTagCache)
+	if info.clientBinary.SHA1 == currentHash {
+		// already up-to-date, but the cache didn't know that.
+		return nil
+	}
+
+	return client.installClient(ctx, fs, info.clientBinary.FetchURL, destination)
 }
 
 func (client *clientImpl) RegisterInstance(ctx context.Context, instance local.PackageInstance, timeout time.Duration) error {
@@ -1157,6 +1234,7 @@ type remote interface {
 	fetchTags(ctx context.Context, pin common.Pin, tags []string) ([]TagInfo, error)
 	fetchRefs(ctx context.Context, pin common.Pin, refs []string) ([]RefInfo, error)
 	fetchInstance(ctx context.Context, pin common.Pin) (*fetchInstanceResponse, error)
+	fetchClientBinaryInfo(ctx context.Context, pin common.Pin) (*fetchClientBinaryInfoResponse, error)
 
 	listPackages(ctx context.Context, path string, recursive, showHidden bool) ([]string, []string, error)
 	searchInstances(ctx context.Context, tag, packageName string) ([]common.Pin, error)
@@ -1181,6 +1259,18 @@ type fetchInstanceResponse struct {
 	fetchURL     string
 	registeredBy string
 	registeredTs time.Time
+}
+
+type clientBinary struct {
+	FileName string `json:"file_name"`
+	SHA1     string `json:"sha1"`
+	FetchURL string `json:"fetch_url"`
+	Size     int64  `json:"size,string"`
+}
+
+type fetchClientBinaryInfoResponse struct {
+	instance     *InstanceInfo
+	clientBinary *clientBinary
 }
 
 // Private stuff.

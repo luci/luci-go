@@ -24,6 +24,7 @@ import (
 	"github.com/luci/luci-go/common/logging/gologger"
 
 	"github.com/luci/luci-go/cipd/client/cipd/common"
+	"github.com/luci/luci-go/cipd/client/cipd/internal"
 	"github.com/luci/luci-go/cipd/client/cipd/local"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -523,6 +524,22 @@ func TestFetch(t *testing.T) {
 			data, err := ioutil.ReadFile(filepath.Join(tempDir, "file"))
 			So(err, ShouldBeNil)
 			So(data, ShouldResemble, []byte("test data"))
+		})
+	})
+}
+
+func TestMaybeUpdateClient(t *testing.T) {
+	ctx := makeTestContext()
+
+	Convey("MaybeUpdateClient", t, func() {
+
+		Convey("Is a NOOP when exeHash matches", func(c C) {
+			client := mockClient(c, "", nil)
+			client.tagCache = internal.NewTagCache(nil)
+			pin := common.Pin{clientPackage, "0000000000000000000000000000000000000000"}
+			So(client.tagCache.AddTag(ctx, pin, "git:deadbeef"), ShouldBeNil)
+			So(client.tagCache.AddFile(ctx, pin, clientFileName, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), ShouldBeNil)
+			So(client.MaybeUpdateClient(ctx, nil, "git:deadbeef", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "some_path"), ShouldBeNil)
 		})
 	})
 }

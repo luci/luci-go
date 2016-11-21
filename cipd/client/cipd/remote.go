@@ -347,6 +347,42 @@ func (r *remoteImpl) fetchInstance(ctx context.Context, pin common.Pin) (*fetchI
 	return nil, fmt.Errorf("unexpected reply status: %s", reply.Status)
 }
 
+func (r *remoteImpl) fetchClientBinaryInfo(ctx context.Context, pin common.Pin) (*fetchClientBinaryInfoResponse, error) {
+	params, err := instanceParams(pin)
+	if err != nil {
+		return nil, err
+	}
+	endpoint := "repo/v1/client?" + params
+	var reply struct {
+		Status       string             `json:"status"`
+		ErrorMessage string             `json:"error_message"`
+		Instance     packageInstanceMsg `json:"instance"`
+		ClientBinary clientBinary       `json:"client_binary"`
+	}
+	err = r.makeRequest(ctx, endpoint, "GET", nil, &reply)
+	if err != nil {
+		return nil, err
+	}
+	switch reply.Status {
+	case "SUCCESS":
+		ts, err := convertTimestamp(reply.Instance.RegisteredTs)
+		if err != nil {
+			return nil, err
+		}
+		return &fetchClientBinaryInfoResponse{
+			&InstanceInfo{pin, reply.Instance.RegisteredBy, UnixTime(ts)},
+			&reply.ClientBinary,
+		}, nil
+	case "PACKAGE_NOT_FOUND":
+		return nil, fmt.Errorf("package %q is not registered", pin.PackageName)
+	case "INSTANCE_NOT_FOUND":
+		return nil, fmt.Errorf("package %q doesn't have instance %q", pin.PackageName, pin.InstanceID)
+	case "ERROR":
+		return nil, errors.New(reply.ErrorMessage)
+	}
+	return nil, fmt.Errorf("unexpected reply status: %s", reply.Status)
+}
+
 func (r *remoteImpl) fetchTags(ctx context.Context, pin common.Pin, tags []string) ([]TagInfo, error) {
 	endpoint, err := tagsEndpoint(pin, tags)
 	if err != nil {
@@ -724,14 +760,19 @@ func packageEndpoint(packageName string) (string, error) {
 	return "repo/v1/package?" + params.Encode(), nil
 }
 
-func instanceEndpoint(pin common.Pin) (string, error) {
+func instanceParams(pin common.Pin) (string, error) {
 	if err := common.ValidatePin(pin); err != nil {
 		return "", err
 	}
 	params := url.Values{}
 	params.Add("package_name", pin.PackageName)
 	params.Add("instance_id", pin.InstanceID)
-	return "repo/v1/instance?" + params.Encode(), nil
+	return params.Encode(), nil
+}
+
+func instanceEndpoint(pin common.Pin) (string, error) {
+	params, err := instanceParams(pin)
+	return "repo/v1/instance?" + params, err
 }
 
 func aclEndpoint(packagePath string) (string, error) {
