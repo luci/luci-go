@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,8 +14,14 @@ import (
 	"os"
 	"path/filepath"
 
+	"time"
+
 	humanize "github.com/dustin/go-humanize"
+
+	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/client/isolate"
+	"github.com/luci/luci-go/common/eventlog"
+	logpb "github.com/luci/luci-go/common/eventlog/proto"
 	"github.com/luci/luci-go/common/isolated"
 	"github.com/maruel/subcommands"
 )
@@ -55,6 +62,7 @@ type Item struct {
 
 // main contains the core logic for experimental archive.
 func (c *expArchiveRun) main() error {
+	start := time.Now()
 	archiveOpts := &c.isolateFlags.ArchiveOptions
 	// Parse the incoming isolate file.
 	deps, rootDir, isol, err := isolate.ProcessIsolate(archiveOpts)
@@ -122,7 +130,23 @@ func (c *expArchiveRun) main() error {
 	if err := ioutil.WriteFile(archiveOpts.Isolated, isolJSON, 0644); err != nil {
 		return err
 	}
-	fmt.Printf("%s\t%s\n", isolated.HashBytes(isolJSON), filepath.Base(archiveOpts.Isolated))
+	isolatedHash := string(isolated.HashBytes(isolJSON))
+	fmt.Printf("%s\t%s\n", isolatedHash, filepath.Base(archiveOpts.Isolated))
+
+	end := time.Now()
+
+	if endpoint := eventlogEndpoint(c.isolateFlags.EventlogEndpoint); endpoint != "" {
+		ctx := context.Background()
+		logger := eventlog.NewClient(endpoint)
+
+		// TODO(mcgreevy): fill out more stats in archiveDetails.
+		archiveDetails := &logpb.IsolateClientEvent_ArchiveDetails{
+			IsolateHash: []string{isolatedHash},
+		}
+		if err := logStats(ctx, logger, start, end, archiveDetails); err != nil {
+			log.Printf("Failed to log to eventlog: %v", err)
+		}
+	}
 
 	return errors.New("experimental archive is not implemented")
 }
@@ -159,4 +183,31 @@ func (c *expArchiveRun) Run(a subcommands.Application, args []string) int {
 		return 1
 	}
 	return 0
+}
+
+func logStats(ctx context.Context, logger *eventlog.Client, start, end time.Time, archiveDetails *logpb.IsolateClientEvent_ArchiveDetails) error {
+	event := logger.NewLogEvent(ctx, eventlog.Point())
+	event.InfraEvent.IsolateClientEvent = &logpb.IsolateClientEvent{
+		Binary: &logpb.Binary{
+			Name:          proto.String("isolate"),
+			VersionNumber: proto.String(version),
+		},
+		Operation:      logpb.IsolateClientEvent_ARCHIVE.Enum(),
+		ArchiveDetails: archiveDetails,
+		// TODO(mcgreevy): fill out Master, Builder, BuildId, Slave.
+		StartTsUsec: proto.Int64(int64(start.UnixNano() / 1e3)),
+		EndTsUsec:   proto.Int64(int64(end.UnixNano() / 1e3)),
+	}
+	return logger.LogSync(ctx, event)
+}
+
+func eventlogEndpoint(endpointFlag string) string {
+	switch endpointFlag {
+	case "test":
+		return eventlog.TestEndpoint
+	case "prod":
+		return eventlog.ProdEndpoint
+	default:
+		return endpointFlag
+	}
 }
