@@ -6,7 +6,7 @@
 
 syntax = "proto2";
 
-package ts_mon.proto;
+package ts_mon.proto.v1;
 
 message NetworkDevice {
   enum TypeId { MESSAGE_TYPE_ID = 34049749; };

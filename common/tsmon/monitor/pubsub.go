@@ -47,7 +47,7 @@ func (m *pubSubMonitor) ChunkSize() int {
 }
 
 func (m *pubSubMonitor) Send(ctx context.Context, cells []types.Cell) error {
-	collection := SerializeCells(cells)
+	collection := SerializeCellsV1(cells)
 
 	data, err := proto.Marshal(collection)
 	if err != nil {

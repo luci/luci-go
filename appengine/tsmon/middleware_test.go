@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	ds "github.com/luci/gae/service/datastore"
@@ -119,7 +118,7 @@ func TestMiddleware(t *testing.T) {
 				// Override the TaskNum here - it's created just before this handler runs
 				// and used just after.
 				tar := tsmon.Store(c.Context).DefaultTarget().(*target.Task)
-				tar.TaskNum = proto.Int32(int32(0))
+				tar.TaskNum = int32(0)
 				tsmon.Store(c.Context).SetDefaultTarget(tar)
 			},
 		)

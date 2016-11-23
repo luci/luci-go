@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
@@ -17,17 +16,13 @@ import (
 	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/common/tsmon/types"
 
-	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
-
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestFlush(t *testing.T) {
 	t.Parallel()
 
-	defaultTarget := (*target.Task)(&pb.Task{
-		ServiceName: proto.String("test"),
-	})
+	defaultTarget := &target.Task{ServiceName: "test"}
 
 	Convey("With a testing State", t, func() {
 		c := WithState(context.Background(), NewState())

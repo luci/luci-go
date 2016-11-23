@@ -8,7 +8,6 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/logging"
@@ -190,7 +189,7 @@ func WithFakes(c context.Context) (context.Context, *store.Fake, *monitor.Fake) 
 // WithDummyInMemory returns a new context holding a new State with a new in-
 // memory store and a fake monitor.
 func WithDummyInMemory(c context.Context) (context.Context, *monitor.Fake) {
-	s := store.NewInMemory(&target.Task{ServiceName: proto.String("")})
+	s := store.NewInMemory(&target.Task{})
 	m := &monitor.Fake{}
 	return WithState(c, &State{
 		S:                 s,

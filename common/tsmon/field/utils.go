@@ -7,8 +7,6 @@ package field
 import (
 	"fmt"
 	"hash/fnv"
-
-	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
 )
 
 // Canonicalize returns a copy of fieldVals converted to the canonical types for
@@ -25,11 +23,11 @@ func Canonicalize(fields []Field, fieldVals []interface{}) ([]interface{}, error
 		fv, ok := fieldVals[i], false
 
 		switch f.Type {
-		case pb.MetricsField_STRING:
+		case StringType:
 			_, ok = fv.(string)
-		case pb.MetricsField_BOOL:
+		case BoolType:
 			_, ok = fv.(bool)
-		case pb.MetricsField_INT:
+		case IntType:
 			if _, ok = fv.(int64); !ok {
 				if fvi, oki := fv.(int); oki {
 					fv, ok = int64(fvi), true

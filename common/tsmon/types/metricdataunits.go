@@ -7,7 +7,7 @@ package types
 import (
 	"fmt"
 
-	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
+	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto_v1"
 )
 
 // MetricDataUnits are enums for the units of metrics data.
@@ -86,4 +86,41 @@ func (units MetricDataUnits) AsProto() *pb.MetricsData_Units {
 		return pb.MetricsData_DEGREES_CELSIUS.Enum()
 	}
 	panic(fmt.Sprintf("unknown MetricDataUnits %d", units))
+}
+
+// String returns a name from http://unitsofmeasure.org/ucum.html.
+func (units MetricDataUnits) String() string {
+	switch units {
+	case Seconds:
+		return "s"
+	case Milliseconds:
+		return "ms"
+	case Microseconds:
+		return "us"
+	case Nanoseconds:
+		return "ns"
+	case Bits:
+		return "B"
+	case Bytes:
+		return "By"
+	case Kilobytes:
+		return "kBy"
+	case Megabytes:
+		return "MBy"
+	case Gigabytes:
+		return "GBy"
+	case Kibibytes:
+		return "kiBy"
+	case Mebibytes:
+		return "MiBy"
+	case Gibibytes:
+		return "GiBy"
+	case AmpUnit:
+		return "A"
+	case MilliampUnit:
+		return "mA"
+	case DegreeCelsiusUnit:
+		return "Cel"
+	}
+	return "{unknown}"
 }

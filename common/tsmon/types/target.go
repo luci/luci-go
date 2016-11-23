@@ -5,13 +5,14 @@
 package types
 
 import (
-	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
+	pbv1 "github.com/luci/luci-go/common/tsmon/ts_mon_proto_v1"
+	pbv2 "github.com/luci/luci-go/common/tsmon/ts_mon_proto_v2"
 )
 
 // A Target knows how to put information about itself in a MetricsData message.
 type Target interface {
-	PopulateProto(d *pb.MetricsData)
-	IsPopulatedIn(d *pb.MetricsData) bool
+	PopulateProtoV1(d *pbv1.MetricsData)
+	PopulateProto(d *pbv2.MetricsCollection)
 	Hash() uint64
 	Clone() Target
 }

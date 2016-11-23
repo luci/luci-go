@@ -9,12 +9,12 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
+	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto_v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestSerialize(t *testing.T) {
+func TestSerializeV1(t *testing.T) {
 	data := []struct {
 		fields []Field
 		values []interface{}
@@ -56,8 +56,8 @@ func TestSerialize(t *testing.T) {
 	}
 
 	for i, d := range data {
-		Convey(fmt.Sprintf("%d. Serialize(%v, %v)", i, d.fields, d.values), t, func() {
-			got := Serialize(d.fields, d.values)
+		Convey(fmt.Sprintf("%d. SerializeV1(%v, %v)", i, d.fields, d.values), t, func() {
+			got := SerializeV1(d.fields, d.values)
 			So(got, ShouldResemble, d.want)
 		})
 	}

@@ -6,7 +6,6 @@ package store
 import (
 	"testing"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/tsmon/store/storetest"
 	"github.com/luci/luci-go/common/tsmon/target"
 	"golang.org/x/net/context"
@@ -16,7 +15,7 @@ func TestInMemory(t *testing.T) {
 	ctx := context.Background()
 	storetest.RunStoreImplementationTests(t, ctx, storetest.TestOptions{
 		Factory: func() storetest.Store {
-			return NewInMemory(&target.Task{ServiceName: proto.String("default target")})
+			return NewInMemory(&target.Task{ServiceName: "default target"})
 		},
 		RegistrationFinished: func(storetest.Store) {},
 		GetNumRegisteredMetrics: func(s storetest.Store) int {

@@ -6,10 +6,10 @@
 
 syntax = "proto2";
 
-package ts_mon.proto;
+package ts_mon.proto.v1;
 
-import "github.com/luci/luci-go/common/tsmon/ts_mon_proto/acquisition_network_device.proto";
-import "github.com/luci/luci-go/common/tsmon/ts_mon_proto/acquisition_task.proto";
+import "github.com/luci/luci-go/common/tsmon/ts_mon_proto_v1/acquisition_network_device.proto";
+import "github.com/luci/luci-go/common/tsmon/ts_mon_proto_v1/acquisition_task.proto";
 
 message MetricsCollection {
   repeated MetricsData data = 1;
@@ -60,8 +60,8 @@ message MetricsData {
   required string name = 1;
   optional string metric_name_prefix = 2;
 
-  optional ts_mon.proto.NetworkDevice network_device = 11;
-  optional ts_mon.proto.Task task = 12;
+  optional ts_mon.proto.v1.NetworkDevice network_device = 11;
+  optional ts_mon.proto.v1.Task task = 12;
 
   repeated MetricsField fields = 20;
 

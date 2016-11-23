@@ -6,7 +6,7 @@
 
 syntax = "proto2";
 
-package ts_mon.proto;
+package ts_mon.proto.v1;
 
 message Task {
 

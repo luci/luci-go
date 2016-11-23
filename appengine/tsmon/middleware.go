@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
@@ -165,11 +164,11 @@ func (s *State) checkSettings(c context.Context) (*tsmon.State, *tsmonSettings) 
 // Called with 's.lock' locked.
 func (s *State) enableTsMon(c context.Context) {
 	s.state.SetStore(store.NewInMemory(&target.Task{
-		DataCenter:  proto.String(targetDataCenter),
-		ServiceName: proto.String(info.AppID(c)),
-		JobName:     proto.String(info.ModuleName(c)),
-		HostName:    proto.String(strings.SplitN(info.VersionID(c), ".", 2)[0]),
-		TaskNum:     proto.Int32(-1),
+		DataCenter:  targetDataCenter,
+		ServiceName: info.AppID(c),
+		JobName:     info.ModuleName(c),
+		HostName:    strings.SplitN(info.VersionID(c), ".", 2)[0],
+		TaskNum:     -1,
 	}))
 
 	// Request the flush to be executed ASAP, so it registers (or updates)
@@ -263,14 +262,14 @@ func (s *State) updateInstanceEntityAndFlush(c context.Context, state *tsmon.Sta
 
 	// Don't do the flush if we still haven't get a task number.
 	if entity.TaskNum < 0 {
-		if *task.TaskNum >= 0 {
+		if task.TaskNum >= 0 {
 			// We used to have a task number but we don't any more (we were inactive
 			// for too long), so clear our state.
 			logging.Warningf(c, "Instance %s got purged from Datastore, but is still alive. "+
 				"Clearing cumulative metrics", info.InstanceID(c))
 			state.ResetCumulativeMetrics(c)
 		}
-		task.TaskNum = proto.Int32(-1)
+		task.TaskNum = -1
 		state.S.SetDefaultTarget(task)
 
 		// Start complaining if we haven't been given a task number after some time.
@@ -285,7 +284,7 @@ func (s *State) updateInstanceEntityAndFlush(c context.Context, state *tsmon.Sta
 		return nil
 	}
 
-	task.TaskNum = proto.Int32(int32(entity.TaskNum))
+	task.TaskNum = int32(entity.TaskNum)
 	state.S.SetDefaultTarget(task)
 
 	// Refresh 'entity.LastUpdated'. Ignore errors here since the flush is

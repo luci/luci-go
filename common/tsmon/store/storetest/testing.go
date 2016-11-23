@@ -22,7 +22,7 @@ import (
 	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
 
-	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
+	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto_v1"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -299,7 +299,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					all := s.GetAll(ctx)
 					So(len(all), ShouldEqual, 1)
 
-					msg := monitor.SerializeCell(all[0])
+					msg := monitor.SerializeCellV1(all[0])
 					if test.wantStartTimestamp {
 						So(time.Unix(0, int64(msg.GetStartTimestampUs()*uint64(time.Microsecond))).UTC().String(),
 							ShouldEqual, t.String())
@@ -333,8 +333,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					opts.RegistrationFinished(s)
 
 					// Create a context with a different target.
-					t := target.Task{}
-					t.AsProto().ServiceName = proto.String("foo")
+					t := target.Task{ServiceName: "foo"}
 					ctxWithTarget := target.Set(ctx, &t)
 
 					// Set the first value on the default target, second value on the
@@ -363,11 +362,10 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					all := s.GetAll(ctx)
 					So(len(all), ShouldEqual, 2)
 
-					coll := monitor.SerializeCells(all)
+					coll := monitor.SerializeCellsV1(all)
 					sort.Sort(sortableDataSlice(coll.Data))
-					So(coll.Data[0].Task.GetServiceName(), ShouldEqual,
-						s.DefaultTarget().(*target.Task).AsProto().GetServiceName())
-					So(coll.Data[1].Task.GetServiceName(), ShouldEqual, t.AsProto().GetServiceName())
+					So(coll.Data[0].Task.GetServiceName(), ShouldEqual, s.DefaultTarget().(*target.Task).ServiceName)
+					So(coll.Data[1].Task.GetServiceName(), ShouldEqual, t.ServiceName)
 				})
 			}
 		})
@@ -526,7 +524,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					all := s.GetAll(ctx)
 					So(len(all), ShouldEqual, 1)
 
-					msg := monitor.SerializeCell(all[0])
+					msg := monitor.SerializeCellV1(all[0])
 					if test.wantStartTimestamp {
 						So(time.Unix(0, int64(msg.GetStartTimestampUs()*uint64(time.Microsecond))).UTC().String(),
 							ShouldEqual, t.String())
@@ -561,8 +559,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					opts.RegistrationFinished(s)
 
 					// Create a context with a different target.
-					t := target.Task{}
-					t.AsProto().ServiceName = proto.String("foo")
+					t := target.Task{ServiceName: "foo"}
 					ctxWithTarget := target.Set(ctx, &t)
 
 					// Incr the first delta on the default target, second delta on the
@@ -581,11 +578,10 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					all := s.GetAll(ctx)
 					So(len(all), ShouldEqual, 2)
 
-					coll := monitor.SerializeCells(all)
+					coll := monitor.SerializeCellsV1(all)
 					sort.Sort(sortableDataSlice(coll.Data))
-					So(coll.Data[0].Task.GetServiceName(), ShouldEqual,
-						s.DefaultTarget().(*target.Task).AsProto().GetServiceName())
-					So(coll.Data[1].Task.GetServiceName(), ShouldEqual, t.AsProto().GetServiceName())
+					So(coll.Data[0].Task.GetServiceName(), ShouldEqual, s.DefaultTarget().(*target.Task).ServiceName)
+					So(coll.Data[1].Task.GetServiceName(), ShouldEqual, t.ServiceName)
 				})
 			}
 		})
@@ -745,8 +741,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			s.Register(m)
 			opts.RegistrationFinished(s)
 
-			t := target.Task{}
-			t.AsProto().ServiceName = proto.String("foo")
+			t := target.Task{ServiceName: "foo"}
 			ctxWithTarget := target.Set(ctx, &t)
 
 			So(s.Set(ctx, m, time.Time{}, []interface{}{}, int64(42)), ShouldBeNil)

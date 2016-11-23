@@ -7,7 +7,6 @@ package tsmon
 import (
 	"testing"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/monitor"
 	"github.com/luci/luci-go/common/tsmon/store"
@@ -19,7 +18,7 @@ import (
 func TestGlobalMetrics(t *testing.T) {
 	Convey("Default version", t, func() {
 		c, _ := buildGAETestContext()
-		tsmon.GetState(c).S = store.NewInMemory(&target.Task{ServiceName: proto.String("default target")})
+		tsmon.GetState(c).S = store.NewInMemory(&target.Task{ServiceName: "default target"})
 		collectGlobalMetrics(c)
 		tsmon.Flush(c)
 

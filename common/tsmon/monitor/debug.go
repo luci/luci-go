@@ -30,7 +30,7 @@ func (m *debugMonitor) ChunkSize() int {
 }
 
 func (m *debugMonitor) Send(ctx context.Context, cells []types.Cell) error {
-	collection := SerializeCells(cells)
+	collection := SerializeCellsV1(cells)
 	str := proto.MarshalTextString(collection)
 
 	logging.Infof(ctx, "Sending ts_mon metrics:\n%s", str)
