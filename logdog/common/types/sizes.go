@@ -11,7 +11,7 @@ const (
 
 	// MaxLogEntryDataSize is the maximum size, in bytes, of the data section of
 	// a single log entry (1 MiB).
-	MaxLogEntryDataSize = 1 * 1024 * 1024
+	MaxLogEntryDataSize = 10 * 1024 * 1024
 
 	// MaxDatagramSize is the maximum size, in bytes, of datagram data.
 	MaxDatagramSize int = MaxLogEntryDataSize

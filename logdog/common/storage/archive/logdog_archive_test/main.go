@@ -114,6 +114,14 @@ func main() {
 	os.Exit(mainImpl(context.Background(), os.Args[1:]))
 }
 
+func renderErr(c context.Context, err error) {
+	rerr := errors.RenderStack(err)
+
+	var buf bytes.Buffer
+	rerr.DumpTo(&buf)
+	log.Errorf(c, "Error encountered during operation: %s\n%s", err, buf.Bytes())
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Subcommand: dump-index
 ////////////////////////////////////////////////////////////////////////////////
@@ -227,64 +235,37 @@ func (cmd *cmdRunDumpStream) Run(baseApp subcommands.Application, args []string)
 	}
 	defer client.Close()
 
-	reader, err := client.NewReader(path, 0, 0)
+	reader, err := client.NewReader(path, 0, -1)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create GS reader.")
 		return 1
 	}
 	defer reader.Close()
 
-	// Re-use the same buffer for each RecordIO frame.
-	var (
-		frameReader = recordio.NewReader(reader, math.MaxInt64)
-		frameIndex  = 0
-		buf         bytes.Buffer
+	descFrame := true
+	err = dumpRecordIO(c, reader, func(c context.Context, d []byte) error {
+		if descFrame {
+			descFrame = false
 
-		entry logpb.LogEntry
-	)
-	for {
-		frameSize, r, err := frameReader.ReadFrame()
-		switch err {
-		case nil:
-			break
-
-		case io.EOF:
-			log.Debugf(c, "Encountered EOF.")
-			return 0
-
-		default:
-			log.Fields{
-				log.ErrorKey: err,
-				"index":      frameIndex,
-			}.Errorf(c, "Encountered error reading log stream.")
-			return 1
+			var desc logpb.LogStreamDescriptor
+			if err := unmarshalAndDump(c, os.Stdout, d, &desc); err != nil {
+				return errors.Annotate(err).Reason("failed to dump log descriptor").Err()
+			}
+			return nil
 		}
 
-		buf.Reset()
-		buf.Grow(int(frameSize))
-
-		if _, err := buf.ReadFrom(r); err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-				"index":      frameIndex,
-			}.Errorf(c, "Failed to read log stream frame.")
-			return 1
+		var entry logpb.LogEntry
+		if err := unmarshalAndDump(c, os.Stdout, d, &entry); err != nil {
+			return errors.Annotate(err).Reason("failed to dump log entry").Err()
 		}
-
-		log.Fields{
-			"index": frameIndex,
-			"size":  buf.Len(),
-		}.Debugf(c, "Read frame.")
-		frameIndex++
-
-		if err := unmarshalAndDump(c, os.Stdout, buf.Bytes(), &entry); err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-				"index":      frameIndex,
-			}.Errorf(c, "Failed to dump log entry descriptor.")
-			return 1
-		}
+		return nil
+	})
+	if err != nil {
+		renderErr(c, err)
+		return 1
 	}
+
+	return 0
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -460,4 +441,50 @@ func (cmd *cmdRunTail) Run(baseApp subcommands.Application, args []string) int {
 		return 1
 	}
 	return 0
+}
+
+func dumpRecordIO(c context.Context, r io.Reader, cb func(context.Context, []byte) error) error {
+	var (
+		frameReader = recordio.NewReader(r, math.MaxInt64)
+		frameIndex  = 0
+		buf         bytes.Buffer
+		eof         bool
+	)
+	for !eof {
+		frameSize, r, err := frameReader.ReadFrame()
+		switch err {
+		case nil:
+			break
+
+		case io.EOF:
+			log.Debugf(c, "Encountered EOF.")
+			eof = true
+			break
+
+		default:
+			return errors.Annotate(err).Reason("Encountered error reading log stream.").
+				D("frameIndex", frameIndex).Err()
+		}
+
+		if frameSize > 0 {
+			buf.Reset()
+			buf.Grow(int(frameSize))
+
+			if _, err := buf.ReadFrom(r); err != nil {
+				return errors.Annotate(err).Reason("Failed to buffer frame.").
+					D("frameIndex", frameIndex).Err()
+			}
+
+			if err := cb(c, buf.Bytes()); err != nil {
+				return err
+			}
+		}
+
+		log.Fields{
+			"index": frameIndex,
+			"size":  buf.Len(),
+		}.Debugf(c, "Read frame.")
+		frameIndex++
+	}
+	return nil
 }
