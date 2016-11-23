@@ -25,6 +25,7 @@ var application = &subcommands.DefaultApplication{
 	Commands: []*subcommands.Command{
 		cmdArchive,
 		cmdBatchArchive,
+		cmdExpArchive,
 		cmdCheck,
 		subcommands.CmdHelp,
 		authcli.SubcommandInfo(auth.Options{}, "whoami", false),
