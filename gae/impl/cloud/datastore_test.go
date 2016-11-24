@@ -69,7 +69,7 @@ func TestDatastore(t *testing.T) {
 	// test suite.
 	emulatorHost := os.Getenv("DATASTORE_EMULATOR_HOST")
 	if emulatorHost == "" {
-		t.Logf("No emulator detected. Skipping test suite.")
+		t.Logf("No emulator detected (DATASTORE_EMULATOR_HOST). Skipping test suite.")
 		return
 	}
 
@@ -82,7 +82,8 @@ func TestDatastore(t *testing.T) {
 		testTime := ds.RoundTime(time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC))
 		_ = testTime
 
-		c = Use(c, client)
+		cfg := Config{DS: client}
+		c = cfg.Use(c)
 
 		Convey(`Supports namespaces`, func() {
 			namespaces := []string{"foo", "bar", "baz"}
