@@ -58,6 +58,8 @@ type Item struct {
 	RelPath string
 	Size    int64
 	Mode    os.FileMode
+
+	Digest isolated.HexDigest
 }
 
 // main contains the core logic for experimental archive.
