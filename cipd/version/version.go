@@ -98,10 +98,15 @@ func recoverSymlinkPath(p string) string {
 	return strings.Join(append(chunks[:i], chunks[i+4:]...), string(filepath.Separator))
 }
 
-func getCurrentVersion(exePath string) (Info, error) {
+// GetVersionFile returns the path to the version file corresponding to the
+// provided exe. This isn't typically needed, but can be useful for debugging.
+func GetVersionFile(exePath string) string {
 	// <root>/.versions/exename.cipd_version
-	p := filepath.Join(filepath.Dir(exePath), ".versions", filepath.Base(exePath)+".cipd_version")
-	if vf, _ := readVersionFile(p); vf.InstanceID != "" {
+	return filepath.Join(filepath.Dir(exePath), ".versions", filepath.Base(exePath)+".cipd_version")
+}
+
+func getCurrentVersion(exePath string) (Info, error) {
+	if vf, _ := readVersionFile(GetVersionFile(exePath)); vf.InstanceID != "" {
 		return vf, nil
 	}
 	// <root>/exename.cipd_version

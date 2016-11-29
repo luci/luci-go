@@ -32,8 +32,11 @@ package cipd
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -52,6 +55,7 @@ import (
 	"github.com/luci/luci-go/cipd/client/cipd/common"
 	"github.com/luci/luci-go/cipd/client/cipd/internal"
 	"github.com/luci/luci-go/cipd/client/cipd/local"
+	"github.com/luci/luci-go/cipd/version"
 )
 
 // PackageACLChangeAction defines a flavor of PackageACLChange.
@@ -719,50 +723,96 @@ func init() {
 	clientPackage = fmt.Sprintf("%s/%s-%s", clientPackageBase, platform, arch)
 }
 
-func (client *clientImpl) MaybeUpdateClient(ctx context.Context, fs local.FileSystem, targetVersion, currentHash, destination string) error {
-	if err := common.ValidateFileHash(currentHash); err != nil {
+func (client *clientImpl) ensureClientVersionInfo(ctx context.Context, fs local.FileSystem, pin common.Pin, exePath string) {
+	verFile := version.GetVersionFile(exePath)
+
+	expect, err := json.Marshal(version.Info{
+		PackageName: pin.PackageName,
+		InstanceID:  pin.InstanceID,
+	})
+	if err != nil {
+		// should never occur; only error could be if version.Info is not JSON
+		// serializable.
+		logging.WithError(err).Errorf(ctx, "Unable to generate version file content")
+		return
+	}
+
+	if f, err := os.Open(verFile); err == nil {
+		data, err := ioutil.ReadAll(f)
+		f.Close()
+		if err == nil && bytes.Equal(expect, data) {
+			// up to date
+			return
+		}
+	}
+	// there was an error reading the existing version file, or its content does
+	// not match. Proceed with EnsureFile.
+
+	err = fs.EnsureFile(ctx, verFile, func(of *os.File) error {
+		_, err := of.Write(expect)
 		return err
+	})
+	if err != nil {
+		logging.WithError(err).Warningf(ctx, "Unable to update version info %q", verFile)
+	}
+}
+
+func (client *clientImpl) MaybeUpdateClient(ctx context.Context, fs local.FileSystem, targetVersion, currentHash, destination string) error {
+	pin, err := client.maybeUpdateClient(ctx, fs, targetVersion, currentHash, destination)
+	if err == nil {
+		client.ensureClientVersionInfo(ctx, fs, pin, destination)
+	}
+	return err
+}
+
+func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSystem, targetVersion, currentHash, destination string) (pin common.Pin, err error) {
+	if err = common.ValidateFileHash(currentHash); err != nil {
+		return
 	}
 
 	client.BeginBatch(ctx)
 	defer client.EndBatch(ctx)
 
 	logging.Infof(ctx, "cipd: maybe updating client to version %q", targetVersion)
-	pin, err := client.ResolveVersion(ctx, clientPackage, targetVersion)
-	if err != nil {
-		return err
+	if pin, err = client.ResolveVersion(ctx, clientPackage, targetVersion); err != nil {
+		return
 	}
 
 	cache := client.getTagCache()
 	exeHash := ""
 	if cache != nil {
 		if exeHash, err = cache.ResolveFile(ctx, pin, clientFileName); err != nil {
-			return err
+			return
 		}
 	}
 	if exeHash == currentHash {
-		// already up-to-date
-		return nil
+		// already up-to-date. Make sure version file is up to date.
+		return
 	}
 
 	logging.Infof(ctx, "cipd: updating client to %s", pin)
 
 	info, err := client.remote.fetchClientBinaryInfo(ctx, pin)
 	if err != nil {
-		return err
+		return
 	}
 	if cache != nil {
 		if err = cache.AddFile(ctx, pin, clientFileName, info.clientBinary.SHA1); err != nil {
-			return err
+			return
 		}
 	}
 	client.doBatchAwareOp(ctx, batchAwareOpSaveTagCache)
 	if info.clientBinary.SHA1 == currentHash {
-		// already up-to-date, but the cache didn't know that.
-		return nil
+		// already up-to-date, but the cache didn't know that. Make sure version
+		// file is update.
+		return
 	}
 
-	return client.installClient(ctx, fs, info.clientBinary.FetchURL, destination)
+	if err = client.installClient(ctx, fs, info.clientBinary.FetchURL, destination); err != nil {
+		return
+	}
+
+	return
 }
 
 func (client *clientImpl) RegisterInstance(ctx context.Context, instance local.PackageInstance, timeout time.Duration) error {
