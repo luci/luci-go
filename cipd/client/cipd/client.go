@@ -773,7 +773,6 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSy
 	client.BeginBatch(ctx)
 	defer client.EndBatch(ctx)
 
-	logging.Infof(ctx, "cipd: maybe updating client to version %q", targetVersion)
 	if pin, err = client.ResolveVersion(ctx, clientPackage, targetVersion); err != nil {
 		return
 	}
@@ -790,7 +789,11 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSy
 		return
 	}
 
-	logging.Infof(ctx, "cipd: updating client to %s", pin)
+	if targetVersion == pin.InstanceID {
+		logging.Infof(ctx, "cipd: updating client to %s", pin)
+	} else {
+		logging.Infof(ctx, "cipd: updating client to %s (%s)", pin, targetVersion)
+	}
 
 	info, err := client.remote.fetchClientBinaryInfo(ctx, pin)
 	if err != nil {
