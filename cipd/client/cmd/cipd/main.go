@@ -235,13 +235,10 @@ type ClientOptions struct {
 	authFlags  authcli.Flags
 	serviceURL string
 	cacheDir   string
-	userAgent  string
 }
 
 func (opts *ClientOptions) registerFlags(f *flag.FlagSet) {
 	f.StringVar(&opts.serviceURL, "service-url", "", "URL of a backend to use instead of the default one.")
-	f.StringVar(&opts.userAgent, "http-user-agent", "",
-		"User Agent text to add. If specified, the UA will be '<this_option>/"+cipd.UserAgent+"'.")
 	f.StringVar(&opts.cacheDir, "cache-dir", "", "Directory for shared cache")
 	opts.authFlags.Register(f, auth.Options{})
 }
@@ -256,8 +253,8 @@ func (opts *ClientOptions) makeCipdClient(ctx context.Context, root string) (cip
 		return nil, err
 	}
 	ua := cipd.UserAgent
-	if opts.userAgent != "" {
-		ua = fmt.Sprintf("%s/%s", opts.userAgent, ua)
+	if prefix := os.Getenv("CIPD_HTTP_USER_AGENT_PREFIX"); prefix != "" {
+		ua = fmt.Sprintf("%s/%s", prefix, ua)
 	}
 	return cipd.NewClient(cipd.ClientOptions{
 		ServiceURL:          opts.serviceURL,
