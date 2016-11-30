@@ -7,7 +7,6 @@ package archiver
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http/httptest"
 	"os"
@@ -22,28 +21,6 @@ import (
 	"github.com/luci/luci-go/common/isolatedclient/isolatedfake"
 	"github.com/maruel/ut"
 )
-
-func TestWalkInexistent(t *testing.T) {
-	ch := make(chan *walkItem)
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		defer close(ch)
-		walk("inexistent_directory", nil, ch)
-	}()
-	item := <-ch
-	osErr := "lstat inexistent_directory: no such file or directory"
-	if common.IsWindows() {
-		osErr = "GetFileAttributesEx inexistent_directory: The system cannot find the file specified."
-	}
-	err := fmt.Errorf("walk(inexistent_directory): %s", osErr)
-	ut.AssertEqual(t, &walkItem{err: err}, item)
-	item, ok := <-ch
-	ut.AssertEqual(t, (*walkItem)(nil), item)
-	ut.AssertEqual(t, false, ok)
-	wg.Wait()
-}
 
 func TestWalkBadRegexp(t *testing.T) {
 	ch := make(chan *walkItem)

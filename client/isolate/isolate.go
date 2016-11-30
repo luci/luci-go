@@ -279,7 +279,9 @@ func archive(arch *archiver.Archiver, opts *ArchiveOptions, displayName string) 
 			if mode&os.ModeSymlink == os.ModeSymlink {
 				l, err := os.Readlink(dep)
 				if err != nil {
-					return nil, err
+					// Kill the process: there's no reason to continue if a file is
+					// unavailable.
+					log.Fatalf("Unable to stat %q: %v", dep, err)
 				}
 				i.Files[relPath] = isolated.SymLink(l)
 			} else {

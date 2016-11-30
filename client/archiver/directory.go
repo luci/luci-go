@@ -69,7 +69,7 @@ func walk(root string, blacklist []string, c chan<- *walkItem) {
 	err := filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
 		total++
 		if err != nil {
-			return fmt.Errorf("walk(%s): %s", p, err)
+			return fmt.Errorf("walk(%q): %v", p, err)
 		}
 		if len(p) <= rootLen {
 			// Root directory.
@@ -98,7 +98,8 @@ func walk(root string, blacklist []string, c chan<- *walkItem) {
 		return nil
 	})
 	if err != nil {
-		c <- &walkItem{err: err}
+		// No point continuing if an error occurred during walk.
+		log.Fatalf("Unable to walk %q: %v", root, err)
 	}
 }
 
