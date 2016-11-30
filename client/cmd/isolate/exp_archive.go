@@ -31,6 +31,10 @@ const (
 	// files to a tar archive before uploading. Files smaller than this size will
 	// be combined into archives before being uploaded to the server.
 	archiveThreshold = 100e3 // 100kB
+
+	// archiveSizeTrigger is the desired size of the created archives. Once
+	// archives reach this size, they will be closed and prepared for upload.
+	archiveSizeTrigger = 10e6
 )
 
 var cmdExpArchive = &subcommands.Command{
