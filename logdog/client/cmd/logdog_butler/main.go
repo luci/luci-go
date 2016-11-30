@@ -29,6 +29,7 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/common/runtime/paniccatcher"
+	grpcLogging "github.com/luci/luci-go/grpc/logging"
 	"github.com/luci/luci-go/logdog/client/butler"
 	"github.com/luci/luci-go/logdog/client/butler/output"
 	"github.com/luci/luci-go/logdog/common/types"
@@ -246,7 +247,7 @@ func mainImpl(ctx context.Context, argv []string) int {
 	// Install logging configuration flags.
 	flags := flag.NewFlagSet("flags", flag.ExitOnError)
 	logConfig := log.Config{
-		Level: log.Info,
+		Level: log.Warning,
 	}
 	logConfig.AddFlags(flags)
 	a.addFlags(flags)
@@ -259,6 +260,11 @@ func mainImpl(ctx context.Context, argv []string) int {
 	}
 
 	a.Context = logConfig.Set(a.Context)
+
+	// Install a global gRPC logger adapter. This routes gRPC log messages that
+	// are emitted through our logger. We only log gRPC prints if our logger is
+	// configured to log info-level or lower.
+	grpcLogging.Install(log.Get(a.Context), log.IsLogging(a.Context, log.Info))
 
 	if err := a.project.Validate(); err != nil {
 		log.WithError(err).Errorf(a, "Invalid project (-project).")
