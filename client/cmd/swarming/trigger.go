@@ -175,7 +175,7 @@ func (c *triggerRun) Parse(args []string) error {
 	return err
 }
 
-func (c *triggerRun) Run(a subcommands.Application, args []string) int {
+func (c *triggerRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if err := c.Parse(args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1

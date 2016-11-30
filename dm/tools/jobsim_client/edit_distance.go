@@ -63,7 +63,7 @@ type EditResult struct {
 	Error     string `json:"error,omitempty"`
 }
 
-func (e *editDistanceRun) Run(a subcommands.Application, args []string) int {
+func (e *editDistanceRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	e.start(a, e, cmdEditDistance)
 
 	p := &EditParams{}

@@ -87,7 +87,7 @@ type runCommandRun struct {
 	stderr streamConfig // Stream configuration for STDERR.
 }
 
-func (cmd *runCommandRun) Run(app subcommands.Application, args []string) int {
+func (cmd *runCommandRun) Run(app subcommands.Application, args []string, _ subcommands.Env) int {
 	a := app.(*application)
 
 	if cmd.jsonArgsPath != "" {

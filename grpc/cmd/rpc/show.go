@@ -37,7 +37,7 @@ type showRun struct {
 	cmdRun
 }
 
-func (r *showRun) Run(a subcommands.Application, args []string) int {
+func (r *showRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if r.cmd == nil {
 		r.cmd = cmdShow
 	}

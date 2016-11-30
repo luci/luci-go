@@ -72,7 +72,7 @@ type cmdGitRun struct {
 	repoURL string
 }
 
-func (c *cmdGitRun) Run(a subcommands.Application, args []string) int {
+func (c *cmdGitRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	cfg := gologger.LoggerConfig{
 		Format: "%{message}",
 		Out:    os.Stdout,

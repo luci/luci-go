@@ -27,7 +27,7 @@ type versionRun struct {
 	version string
 }
 
-func (c *versionRun) Run(a subcommands.Application, args []string) int {
+func (c *versionRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if len(args) != 0 {
 		fmt.Fprintf(a.GetErr(), "%s: position arguments not expected\n", a.GetName())
 		return 1

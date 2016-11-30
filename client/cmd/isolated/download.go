@@ -42,7 +42,7 @@ func (c *downloadRun) main(a subcommands.Application, args []string) error {
 	return errors.New("TODO")
 }
 
-func (c *downloadRun) Run(a subcommands.Application, args []string) int {
+func (c *downloadRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if err := c.Parse(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1

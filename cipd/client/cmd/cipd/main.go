@@ -648,7 +648,7 @@ type createRun struct {
 	Opts createOpts
 }
 
-func (c *createRun) Run(a subcommands.Application, args []string) int {
+func (c *createRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 0, 0) {
 		return 1
 	}
@@ -705,7 +705,7 @@ type ensureRun struct {
 	listFile string
 }
 
-func (c *ensureRun) Run(a subcommands.Application, args []string) int {
+func (c *ensureRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 0, 0) {
 		return 1
 	}
@@ -772,7 +772,7 @@ type checkUpdatesRun struct {
 	listFile string
 }
 
-func (c *checkUpdatesRun) Run(a subcommands.Application, args []string) int {
+func (c *checkUpdatesRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 0, 0) {
 		return 1
 	}
@@ -815,7 +815,7 @@ type resolveRun struct {
 	version string
 }
 
-func (c *resolveRun) Run(a subcommands.Application, args []string) int {
+func (c *resolveRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
@@ -861,7 +861,7 @@ type describeRun struct {
 	version string
 }
 
-func (c *describeRun) Run(a subcommands.Application, args []string) int {
+func (c *describeRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
@@ -971,7 +971,7 @@ type setRefRun struct {
 	version string
 }
 
-func (c *setRefRun) Run(a subcommands.Application, args []string) int {
+func (c *setRefRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
@@ -1074,7 +1074,7 @@ type setTagRun struct {
 	version string
 }
 
-func (c *setTagRun) Run(a subcommands.Application, args []string) int {
+func (c *setTagRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
@@ -1118,7 +1118,7 @@ type listPackagesRun struct {
 	showHidden bool
 }
 
-func (c *listPackagesRun) Run(a subcommands.Application, args []string) int {
+func (c *listPackagesRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 0, 1) {
 		return 1
 	}
@@ -1171,7 +1171,7 @@ type searchRun struct {
 	TagsOptions
 }
 
-func (c *searchRun) Run(a subcommands.Application, args []string) int {
+func (c *searchRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 0, 1) {
 		return 1
 	}
@@ -1227,7 +1227,7 @@ type listACLRun struct {
 	ClientOptions
 }
 
-func (c *listACLRun) Run(a subcommands.Application, args []string) int {
+func (c *listACLRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
@@ -1324,7 +1324,7 @@ type editACLRun struct {
 	revoke        principalsList
 }
 
-func (c *editACLRun) Run(a subcommands.Application, args []string) int {
+func (c *editACLRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
@@ -1395,7 +1395,7 @@ type buildRun struct {
 	outputFile string
 }
 
-func (c *buildRun) Run(a subcommands.Application, args []string) int {
+func (c *buildRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 0, 0) {
 		return 1
 	}
@@ -1453,7 +1453,7 @@ type deployRun struct {
 	rootDir string
 }
 
-func (c *deployRun) Run(a subcommands.Application, args []string) int {
+func (c *deployRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
@@ -1501,7 +1501,7 @@ type fetchRun struct {
 	outputPath string
 }
 
-func (c *fetchRun) Run(a subcommands.Application, args []string) int {
+func (c *fetchRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
@@ -1568,7 +1568,7 @@ type inspectRun struct {
 	Subcommand
 }
 
-func (c *inspectRun) Run(a subcommands.Application, args []string) int {
+func (c *inspectRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
@@ -1637,7 +1637,7 @@ type registerRun struct {
 	Opts registerOpts
 }
 
-func (c *registerRun) Run(a subcommands.Application, args []string) int {
+func (c *registerRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
@@ -1695,7 +1695,7 @@ type deleteRun struct {
 	ClientOptions
 }
 
-func (c *deleteRun) Run(a subcommands.Application, args []string) int {
+func (c *deleteRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
@@ -1752,7 +1752,7 @@ type counterWriteRun struct {
 	touch     string
 }
 
-func (c *counterWriteRun) Run(a subcommands.Application, args []string) int {
+func (c *counterWriteRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
@@ -1816,7 +1816,7 @@ type counterReadRun struct {
 	version string
 }
 
-func (c *counterReadRun) Run(a subcommands.Application, args []string) int {
+func (c *counterReadRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 2, -1) {
 		return 1
 	}
@@ -1915,7 +1915,7 @@ type selfupdateRun struct {
 	version string
 }
 
-func (s *selfupdateRun) Run(a subcommands.Application, args []string) int {
+func (s *selfupdateRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !s.checkArgs(args, 0, 0) {
 		return 1
 	}

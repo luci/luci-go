@@ -144,7 +144,7 @@ var subcommandDumpIndex = subcommands.Command{
 	},
 }
 
-func (cmd *cmdRunDumpIndex) Run(baseApp subcommands.Application, args []string) int {
+func (cmd *cmdRunDumpIndex) Run(baseApp subcommands.Application, args []string, _ subcommands.Env) int {
 	app, c := getApplication(baseApp)
 
 	if cmd.path == "" {
@@ -219,7 +219,7 @@ var subcommandDumpStream = subcommands.Command{
 	},
 }
 
-func (cmd *cmdRunDumpStream) Run(baseApp subcommands.Application, args []string) int {
+func (cmd *cmdRunDumpStream) Run(baseApp subcommands.Application, args []string, _ subcommands.Env) int {
 	app, c := getApplication(baseApp)
 
 	if cmd.path == "" {
@@ -297,7 +297,7 @@ var subcommandGet = subcommands.Command{
 	},
 }
 
-func (cmd *cmdRunGet) Run(baseApp subcommands.Application, args []string) int {
+func (cmd *cmdRunGet) Run(baseApp subcommands.Application, args []string, _ subcommands.Env) int {
 	app, c := getApplication(baseApp)
 
 	switch {
@@ -385,7 +385,7 @@ var subcommandTail = subcommands.Command{
 	},
 }
 
-func (cmd *cmdRunTail) Run(baseApp subcommands.Application, args []string) int {
+func (cmd *cmdRunTail) Run(baseApp subcommands.Application, args []string, _ subcommands.Env) int {
 	app, c := getApplication(baseApp)
 
 	switch {

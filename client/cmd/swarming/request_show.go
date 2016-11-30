@@ -80,7 +80,7 @@ func (c *requestShowRun) main(a subcommands.Application, taskid string) error {
 	return err
 }
 
-func (c *requestShowRun) Run(a subcommands.Application, args []string) int {
+func (c *requestShowRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if err := c.Parse(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1

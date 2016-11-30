@@ -87,7 +87,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	return err
 }
 
-func (c *archiveRun) Run(a subcommands.Application, args []string) int {
+func (c *archiveRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if err := c.Parse(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1

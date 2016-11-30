@@ -42,7 +42,7 @@ type streamCommandRun struct {
 }
 
 // subcommands.Run
-func (cmd *streamCommandRun) Run(app subcommands.Application, args []string) int {
+func (cmd *streamCommandRun) Run(app subcommands.Application, args []string, _ subcommands.Env) int {
 	a := app.(*application)
 
 	var (

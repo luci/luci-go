@@ -28,7 +28,7 @@ type cancelRun struct {
 	buildIDArg
 }
 
-func (r *cancelRun) Run(a subcommands.Application, args []string) int {
+func (r *cancelRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	ctx := cli.GetContext(a, r)
 
 	if err := r.parseArgs(args); err != nil {

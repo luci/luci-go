@@ -30,7 +30,7 @@ type serveCommandRun struct {
 	uri streamServerURI
 }
 
-func (cmd *serveCommandRun) Run(app subcommands.Application, args []string) int {
+func (cmd *serveCommandRun) Run(app subcommands.Application, args []string, _ subcommands.Env) int {
 	a := app.(*application)
 
 	if err := cmd.uri.Validate(); err != nil {

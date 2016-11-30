@@ -64,7 +64,7 @@ func newQueryCommand() *subcommands.Command {
 	}
 }
 
-func (cmd *queryCommandRun) Run(scApp subcommands.Application, args []string) int {
+func (cmd *queryCommandRun) Run(scApp subcommands.Application, args []string, _ subcommands.Env) int {
 	a := scApp.(*application)
 
 	// User-friendly: trim any leading or trailing slashes from the path.

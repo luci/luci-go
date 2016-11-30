@@ -89,7 +89,7 @@ type cmdDeployRun struct {
 	dp deploymentPlan
 }
 
-func (cmd *cmdDeployRun) Run(app subcommands.Application, args []string) int {
+func (cmd *cmdDeployRun) Run(app subcommands.Application, args []string, _ subcommands.Env) int {
 	a, c := app.(*application), cli.GetContext(app, cmd)
 
 	err := a.runWork(c, func(w *work) error {

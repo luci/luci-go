@@ -174,7 +174,7 @@ func (c *expArchiveRun) parseFlags(args []string) error {
 	return nil
 }
 
-func (c *expArchiveRun) Run(a subcommands.Application, args []string) int {
+func (c *expArchiveRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	fmt.Fprintln(a.GetErr(), "WARNING: this command is experimental")
 	if err := c.parseFlags(args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)

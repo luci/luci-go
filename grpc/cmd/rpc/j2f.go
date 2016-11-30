@@ -39,7 +39,7 @@ type j2fRun struct {
 	cmdRun
 }
 
-func (r *j2fRun) Run(a subcommands.Application, args []string) int {
+func (r *j2fRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if r.cmd == nil {
 		r.cmd = cmdJ2F
 	}

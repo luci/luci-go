@@ -32,7 +32,7 @@ type putBatchRun struct {
 	baseCommandRun
 }
 
-func (r *putBatchRun) Run(a subcommands.Application, args []string) int {
+func (r *putBatchRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	ctx := cli.GetContext(a, r)
 	if len(args) < 1 {
 		return r.done(ctx, fmt.Errorf("missing parameter: <JSON Request>"))

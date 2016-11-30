@@ -45,7 +45,7 @@ func newListCommand() *subcommands.Command {
 	}
 }
 
-func (cmd *listCommandRun) Run(scApp subcommands.Application, args []string) int {
+func (cmd *listCommandRun) Run(scApp subcommands.Application, args []string, _ subcommands.Env) int {
 	a := scApp.(*application)
 
 	if len(args) == 0 {

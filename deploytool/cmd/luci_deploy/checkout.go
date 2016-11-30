@@ -59,7 +59,7 @@ type cmdCheckoutRun struct {
 	local bool
 }
 
-func (cmd *cmdCheckoutRun) Run(app subcommands.Application, args []string) int {
+func (cmd *cmdCheckoutRun) Run(app subcommands.Application, args []string, _ subcommands.Env) int {
 	a, c := app.(*application), cli.GetContext(app, cmd)
 
 	// Perform the checkout.

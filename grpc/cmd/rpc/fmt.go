@@ -25,7 +25,7 @@ type fmtRun struct {
 	cmdRun
 }
 
-func (r *fmtRun) Run(a subcommands.Application, args []string) int {
+func (r *fmtRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	app := &cli.Application{
 		Name: "fmt",
 		Context: func(context.Context) context.Context {

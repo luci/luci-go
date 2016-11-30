@@ -30,7 +30,7 @@ type cmdManageRun struct {
 	subcommands.CommandRunBase
 }
 
-func (cmd *cmdManageRun) Run(app subcommands.Application, args []string) int {
+func (cmd *cmdManageRun) Run(app subcommands.Application, args []string, _ subcommands.Env) int {
 	a, c := app.(*application), cli.GetContext(app, cmd)
 
 	if len(args) == 0 {
@@ -145,7 +145,7 @@ type manageGKEPodKubectlCommandRun struct {
 	cluster string
 }
 
-func (cmd *manageGKEPodKubectlCommandRun) Run(app subcommands.Application, args []string) int {
+func (cmd *manageGKEPodKubectlCommandRun) Run(app subcommands.Application, args []string, _ subcommands.Env) int {
 	a, c := app.(*manageApp), cli.GetContext(app, cmd)
 
 	// Figure out which cluster to use.
@@ -213,7 +213,7 @@ type updateGAECommandRun struct {
 	project *layoutDeploymentCloudProject
 }
 
-func (cmd *updateGAECommandRun) Run(app subcommands.Application, args []string) int {
+func (cmd *updateGAECommandRun) Run(app subcommands.Application, args []string, _ subcommands.Env) int {
 	a, c := app.(*manageApp), cli.GetContext(app, cmd)
 
 	// Do not deploy any actual GAE modules.

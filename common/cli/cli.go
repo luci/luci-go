@@ -48,6 +48,7 @@ type Application struct {
 	Title    string
 	Context  func(context.Context) context.Context
 	Commands []*subcommands.Command
+	EnvVars  map[string]subcommands.EnvVarDefinition
 }
 
 var _ interface {
@@ -78,6 +79,11 @@ func (a *Application) GetOut() io.Writer {
 // GetErr implements interface subcommands.Application.
 func (a *Application) GetErr() io.Writer {
 	return os.Stderr
+}
+
+// GetEnvVars implements interface subcommands.Application.
+func (a *Application) GetEnvVars() map[string]subcommands.EnvVarDefinition {
+	return a.EnvVars
 }
 
 // ModifyContext implements interface ContextModificator.

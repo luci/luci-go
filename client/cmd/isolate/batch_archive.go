@@ -200,7 +200,7 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	return err
 }
 
-func (c *batchArchiveRun) Run(a subcommands.Application, args []string) int {
+func (c *batchArchiveRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if err := c.Parse(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1

@@ -146,7 +146,7 @@ type loginRun struct {
 	commandRunBase
 }
 
-func (c *loginRun) Run(a subcommands.Application, _ []string) int {
+func (c *loginRun) Run(a subcommands.Application, _ []string, _ subcommands.Env) int {
 	opts, err := c.flags.Options()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -194,7 +194,7 @@ type logoutRun struct {
 	commandRunBase
 }
 
-func (c *logoutRun) Run(a subcommands.Application, args []string) int {
+func (c *logoutRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	opts, err := c.flags.Options()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -236,7 +236,7 @@ type infoRun struct {
 	commandRunBase
 }
 
-func (c *infoRun) Run(a subcommands.Application, args []string) int {
+func (c *infoRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	opts, err := c.flags.Options()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -308,7 +308,7 @@ const (
 	TokenExitCodeInternalError
 )
 
-func (c *tokenRun) Run(a subcommands.Application, args []string) int {
+func (c *tokenRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	opts, err := c.flags.Options()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)

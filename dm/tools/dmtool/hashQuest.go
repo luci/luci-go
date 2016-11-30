@@ -33,7 +33,7 @@ type hashQuestRun struct {
 func (r *hashQuestRun) registerOptions() {
 }
 
-func (r *hashQuestRun) Run(a subcommands.Application, args []string) int {
+func (r *hashQuestRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	r.cmd = cmdHashQuest
 
 	if len(args) > 0 {

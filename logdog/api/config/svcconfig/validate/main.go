@@ -45,7 +45,7 @@ type validateCommandRun struct {
 	msg proto.Message
 }
 
-func (cmd *validateCommandRun) Run(_ subcommands.Application, args []string) int {
+func (cmd *validateCommandRun) Run(_ subcommands.Application, args []string, _ subcommands.Env) int {
 	if len(args) != 1 {
 		log.Fatalln("Must specify exactly one argument: the path to the config.")
 	}

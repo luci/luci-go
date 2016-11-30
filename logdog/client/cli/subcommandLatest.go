@@ -41,7 +41,7 @@ func newLatestCommand() *subcommands.Command {
 	}
 }
 
-func (cmd *latestCommandRun) Run(scApp subcommands.Application, args []string) int {
+func (cmd *latestCommandRun) Run(scApp subcommands.Application, args []string, _ subcommands.Env) int {
 	a := scApp.(*application)
 
 	// User-friendly: trim any leading or trailing slashes from the path.

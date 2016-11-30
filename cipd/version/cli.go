@@ -24,7 +24,7 @@ type versionRun struct {
 	subcommands.CommandRunBase
 }
 
-func (c *versionRun) Run(a subcommands.Application, args []string) int {
+func (c *versionRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	ver, err := GetStartupVersion()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)

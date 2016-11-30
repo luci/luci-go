@@ -398,7 +398,7 @@ type initRun struct {
 	cacheDir   string
 }
 
-func (c *initRun) Run(a subcommands.Application, args []string) int {
+func (c *initRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 0, 1) {
 		return 1
 	}
@@ -444,7 +444,7 @@ type installRun struct {
 	force bool
 }
 
-func (c *installRun) Run(a subcommands.Application, args []string) int {
+func (c *installRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 1, 2) {
 		return 1
 	}
@@ -503,7 +503,7 @@ type installedRun struct {
 	siteRootOptions
 }
 
-func (c *installedRun) Run(a subcommands.Application, args []string) int {
+func (c *installedRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if !c.checkArgs(args, 0, -1) {
 		return 1
 	}

@@ -47,7 +47,7 @@ type f2jRun struct {
 	cmdRun
 }
 
-func (r *f2jRun) Run(a subcommands.Application, args []string) int {
+func (r *f2jRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if r.cmd == nil {
 		r.cmd = cmdF2J
 	}
