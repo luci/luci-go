@@ -122,7 +122,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 				Schedule:  "*/1 * * * * * *",
 				State: JobState{
 					State:     "SCHEDULED",
-					TickNonce: 9111178027324032851,
+					TickNonce: 6891407870632131044,
 					TickTime:  epoch.Add(1 * time.Second),
 				},
 			},
@@ -244,7 +244,7 @@ func TestResetAllJobsOnDevServer(t *testing.T) {
 				Schedule:  "*/5 * * * * * *",
 				State: JobState{
 					State:     "SCHEDULED",
-					TickNonce: 9111178027324032851,
+					TickNonce: 6891407870632131044,
 					TickTime:  epoch.Add(65 * time.Second),
 				},
 			},
@@ -302,9 +302,9 @@ func TestFullFlow(t *testing.T) {
 				Task:      taskBytes,
 				State: JobState{
 					State:           "QUEUED",
-					TickNonce:       9111178027324032851,
+					TickNonce:       6891407870632131044,
 					TickTime:        epoch.Add(10 * time.Second),
-					InvocationNonce: 631000787647335445,
+					InvocationNonce: 1907242367099883828,
 					InvocationTime:  epoch.Add(5 * time.Second),
 				},
 			},
@@ -325,8 +325,8 @@ func TestFullFlow(t *testing.T) {
 		mgr.launchTask = func(ctl task.Controller) error {
 			// Check data provided via the controller.
 			So(ctl.JobID(), ShouldEqual, "abc/1")
-			So(ctl.InvocationID(), ShouldEqual, int64(9200093518582666224))
-			So(ctl.InvocationNonce(), ShouldEqual, int64(631000787647335445))
+			So(ctl.InvocationID(), ShouldEqual, int64(9200093518582546608))
+			So(ctl.InvocationNonce(), ShouldEqual, int64(1907242367099883828))
 			So(ctl.Task(), ShouldResemble, &messages.NoopTask{})
 
 			ctl.DebugLog("oops, fail")
@@ -346,25 +346,25 @@ func TestFullFlow(t *testing.T) {
 				Task:      taskBytes,
 				State: JobState{
 					State:           "QUEUED",
-					TickNonce:       9111178027324032851,
+					TickNonce:       6891407870632131044,
 					TickTime:        epoch.Add(10 * time.Second),
-					InvocationNonce: 631000787647335445,
+					InvocationNonce: 1907242367099883828,
 					InvocationTime:  epoch.Add(5 * time.Second),
-					InvocationID:    9200093518582666224,
+					InvocationID:    9200093518582546608,
 				},
 			},
 		})
 		jobKey := ds.KeyForObj(c, &jobs[0])
 
 		// Check Invocation fields.
-		inv := Invocation{ID: 9200093518582666224, JobKey: jobKey}
+		inv := Invocation{ID: 9200093518582546608, JobKey: jobKey}
 		So(ds.Get(c, &inv), ShouldBeNil)
 		inv.JobKey = nil // for easier ShouldResemble below
 		debugLog := inv.DebugLog
 		inv.DebugLog = ""
 		So(inv, ShouldResemble, Invocation{
-			ID:              9200093518582666224,
-			InvocationNonce: 631000787647335445,
+			ID:              9200093518582546608,
+			InvocationNonce: 1907242367099883828,
 			Revision:        "rev1",
 			Started:         epoch.Add(5 * time.Second),
 			Finished:        epoch.Add(5 * time.Second),
@@ -396,21 +396,21 @@ func TestFullFlow(t *testing.T) {
 					Task:      taskBytes,
 					State: JobState{
 						State:                "RUNNING",
-						TickNonce:            9111178027324032851,
+						TickNonce:            6891407870632131044,
 						TickTime:             epoch.Add(10 * time.Second),
-						InvocationNonce:      631000787647335445,
+						InvocationNonce:      1907242367099883828,
 						InvocationRetryCount: 1,
 						InvocationTime:       epoch.Add(5 * time.Second),
-						InvocationID:         9200093518581789696,
+						InvocationID:         9200093518581921600,
 					},
 				},
 			})
-			inv := Invocation{ID: 9200093518581789696, JobKey: jobKey}
+			inv := Invocation{ID: 9200093518581921600, JobKey: jobKey}
 			So(ds.Get(c, &inv), ShouldBeNil)
 			inv.JobKey = nil // for easier ShouldResemble below
 			So(inv, ShouldResemble, Invocation{
-				ID:              9200093518581789696,
-				InvocationNonce: 631000787647335445,
+				ID:              9200093518581921600,
+				InvocationNonce: 1907242367099883828,
 				Revision:        "rev1",
 				Started:         epoch.Add(5 * time.Second),
 				Task:            taskBytes,
@@ -432,14 +432,14 @@ func TestFullFlow(t *testing.T) {
 		So(e.ExecuteSerializedAction(c, invTask.Payload, 1), ShouldBeNil)
 
 		// After final save.
-		inv = Invocation{ID: 9200093518581789696, JobKey: jobKey}
+		inv = Invocation{ID: 9200093518581921600, JobKey: jobKey}
 		So(ds.Get(c, &inv), ShouldBeNil)
 		inv.JobKey = nil // for easier ShouldResemble below
 		debugLog = inv.DebugLog
 		inv.DebugLog = ""
 		So(inv, ShouldResemble, Invocation{
-			ID:              9200093518581789696,
-			InvocationNonce: 631000787647335445,
+			ID:              9200093518581921600,
+			InvocationNonce: 1907242367099883828,
 			Revision:        "rev1",
 			Started:         epoch.Add(5 * time.Second),
 			Finished:        epoch.Add(5 * time.Second),
@@ -456,14 +456,14 @@ func TestFullFlow(t *testing.T) {
 		So(debugLog, ShouldContainSubstring, "with status SUCCEEDED")
 
 		// Previous invocation is canceled.
-		inv = Invocation{ID: 9200093518582666224, JobKey: jobKey}
+		inv = Invocation{ID: 9200093518582546608, JobKey: jobKey}
 		So(ds.Get(c, &inv), ShouldBeNil)
 		inv.JobKey = nil // for easier ShouldResemble below
 		debugLog = inv.DebugLog
 		inv.DebugLog = ""
 		So(inv, ShouldResemble, Invocation{
-			ID:              9200093518582666224,
-			InvocationNonce: 631000787647335445,
+			ID:              9200093518582546608,
+			InvocationNonce: 1907242367099883828,
 			Revision:        "rev1",
 			Started:         epoch.Add(5 * time.Second),
 			Finished:        epoch.Add(5 * time.Second),
@@ -488,7 +488,7 @@ func TestFullFlow(t *testing.T) {
 				Task:      taskBytes,
 				State: JobState{
 					State:     "SCHEDULED",
-					TickNonce: 9111178027324032851,
+					TickNonce: 6891407870632131044,
 					TickTime:  epoch.Add(10 * time.Second),
 					PrevTime:  epoch.Add(5 * time.Second),
 				},
