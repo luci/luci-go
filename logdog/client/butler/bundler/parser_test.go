@@ -25,9 +25,8 @@ func (d *testData) Release() {
 func data(ts time.Time, b ...byte) *testData {
 	return &testData{
 		Data: &streamData{
-			buffer:     b,
-			bufferBase: b,
-			ts:         ts,
+			buffer: b,
+			ts:     ts,
 		},
 	}
 }

@@ -27,13 +27,15 @@ type Stream interface {
 	// LeaseData allocates and returns a Data block that stream data can be
 	// loaded into. The caller should Release() the Data, or transfer ownership to
 	// something that will (e.g., Append()).
+	//
+	// If the leased data is not Released, it is merely inefficient, not fatal.
 	LeaseData() Data
 
 	// Append adds a sequential chunk of data to the Stream. Append may block if
 	// the data isn't ready to be consumed.
 	//
-	// Append takes possession of the supplied Data, and will Release it when
-	// finished.
+	// Append takes ownership of the data regardless of whether or not it returns
+	// an error. The supplied Data must not be referenced after calling Append.
 	Append(Data) error
 
 	// Close closes the Stream, flushing any remaining data.
@@ -124,16 +126,11 @@ func (s *streamImpl) LeaseData() Data {
 }
 
 func (s *streamImpl) Append(d Data) error {
-	defer func() {
-		if d != nil {
-			d.Release()
-		}
-	}()
-
 	// Block/loop until we've successfully appended the data.
 	for {
 		dLen := int64(len(d.Bytes()))
 		if err := s.appendError(); err != nil || dLen == 0 {
+			d.Release()
 			return err
 		}
 
@@ -158,6 +155,9 @@ func (s *streamImpl) Append(d Data) error {
 		<-s.dataConsumedSignalC
 	}
 
+	if d != nil {
+		d.Release()
+	}
 	return nil
 }
 

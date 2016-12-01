@@ -40,7 +40,8 @@ type constraints struct {
 //
 // parser instances are owned by a single Stream and are not goroutine-safe.
 type parser interface {
-	// appendData adds a data chunk to this parser's chunk.Buffer.
+	// appendData adds a data chunk to this parser's chunk.Buffer, taking
+	// ownership of the Data.
 	appendData(Data)
 
 	// nextEntry returns the next LogEntry in the stream.

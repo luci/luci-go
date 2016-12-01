@@ -53,7 +53,7 @@ func newPool(size int) *dataPool {
 
 func (p *dataPool) newData() interface{} {
 	return &streamData{
-		bufferBase:  make([]byte, p.size),
+		buffer:      make([]byte, p.size),
 		releaseFunc: p.release,
 	}
 }
@@ -89,9 +89,8 @@ type Data interface {
 //
 // It includes the ability to bind to a size/timestamp.
 type streamData struct {
-	bufferBase []byte
-	buffer     []byte
-	ts         time.Time
+	buffer []byte
+	ts     time.Time
 
 	releaseFunc func(*streamData)
 }
@@ -99,7 +98,7 @@ type streamData struct {
 var _ Data = (*streamData)(nil)
 
 func (d *streamData) reset() {
-	d.buffer = d.bufferBase
+	d.buffer = d.buffer[:cap(d.buffer)]
 }
 
 func (d *streamData) Bytes() []byte {

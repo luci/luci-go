@@ -24,11 +24,6 @@ type stream struct {
 
 func (s *stream) readChunk() bool {
 	d := s.bs.LeaseData()
-	defer func() {
-		if d != nil {
-			d.Release()
-		}
-	}()
 
 	amount, err := s.r.Read(d.Bytes())
 	if amount > 0 {
@@ -39,12 +34,20 @@ func (s *stream) readChunk() bool {
 		log.Fields{
 			"numBytes": amount,
 		}.Debugf(s, "Read byte(s).")
-		if err := s.bs.Append(d); err != nil {
+
+		err := s.bs.Append(d)
+		d = nil // Append takes ownership of "d" regardless of error.
+		if err != nil {
 			log.Fields{
 				log.ErrorKey: err,
 			}.Errorf(s, "Failed to Append to stream.")
 			return false
 		}
+	}
+
+	// If we haven't consumed our data, release it.
+	if d != nil {
+		d.Release()
 		d = nil
 	}
 

@@ -13,7 +13,9 @@ type Chunk interface {
 	// Bytes returns the underlying byte slice contained by this Chunk.
 	Bytes() []byte
 
-	// Release releases the Chunk. After being released, a Chunk's methods may no
+	// Release releases the Chunk. After being released, a Chunk's methods must no
 	// longer be used.
+	//
+	// It is a good idea to set your chunk variable to nil after releasing it.
 	Release()
 }

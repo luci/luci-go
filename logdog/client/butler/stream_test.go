@@ -53,13 +53,17 @@ func (bs *testBundlerStream) Close() {
 	bs.closed = true
 }
 
-func (bs *testBundlerStream) closedAndReleased() bool {
+func (bs *testBundlerStream) allReleased() bool {
 	for _, d := range bs.data {
 		if !d.released {
 			return false
 		}
 	}
-	return bs.closed
+	return true
+}
+
+func (bs *testBundlerStream) closedAndReleased() bool {
+	return (bs.allReleased() && bs.closed)
 }
 
 type testBundlerData struct {
@@ -149,13 +153,14 @@ func TestStream(t *testing.T) {
 			So(bs.closedAndReleased(), ShouldBeTrue)
 		})
 
-		Convey(`Will release Data on Append error.`, func() {
+		Convey(`Will NOT release Data on Append error.`, func() {
 			bs.err = errors.New("test error")
 			rc.data = []byte("bar")
 			So(s.readChunk(), ShouldBeFalse)
 
 			s.closeStream()
-			So(bs.closedAndReleased(), ShouldBeTrue)
+			So(bs.closed, ShouldBeTrue)
+			So(bs.allReleased(), ShouldBeFalse)
 		})
 
 		Convey(`Will read data and ignore timeout errors.`, func() {
