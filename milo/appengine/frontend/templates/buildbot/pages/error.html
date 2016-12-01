@@ -1,0 +1,11 @@
+{{define "title"}}Error: {{.Code}}{{end}}
+
+{{define "head"}}{{end}}
+
+{{define "body"}}
+<h1>Error: {{.Code}}</h1>
+{{ if .Message }}
+  <div>{{.Message}}</div>
+{{ end }}
+<div>Request ID: {{.RequestID}}</div>
+{{end}}

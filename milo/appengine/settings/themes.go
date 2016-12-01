@@ -83,11 +83,13 @@ func GetTemplateBundles() []NamedBundle {
 				DefaultTemplate: name,
 				DebugMode:       info.IsDevAppServer,
 				DefaultArgs: func(c context.Context) (templates.Args, error) {
-					loginURL, err := auth.LoginURL(c, "/")
+					r := getRequest(c)
+					path := r.URL.Path
+					loginURL, err := auth.LoginURL(c, path)
 					if err != nil {
 						return nil, err
 					}
-					logoutURL, err := auth.LogoutURL(c, "/")
+					logoutURL, err := auth.LogoutURL(c, path)
 					if err != nil {
 						return nil, err
 					}
@@ -102,6 +104,7 @@ func GetTemplateBundles() []NamedBundle {
 						"LogoutURL":   logoutURL,
 						"CurrentTime": clock.Now(c),
 						"Analytics":   analytics.Snippet(c),
+						"RequestID":   info.RequestID(c),
 					}, nil
 				},
 				FuncMap: funcMap,
@@ -172,17 +175,27 @@ func Wrap(h ThemedHandler) router.Handler {
 		theme := GetTheme(c.Context, c.Request)
 		template := h.GetTemplateName(theme)
 
+		// Inject the request into the context.
+		c.Context = WithRequest(c.Context, c.Request)
+
 		// Do the things.
 		args, err := h.Render(c.Context, c.Request, c.Params)
 
 		// Throw errors.
 		// TODO(hinoka): Add themes and templates for errors so they look better.
 		if err != nil {
-			if merr, ok := err.(*miloerror.Error); ok {
-				http.Error(c.Writer, merr.Message, merr.Code)
-			} else {
-				http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
+			msg := err.Error()
+			code := http.StatusInternalServerError
+			if merr, ok := err.(miloerror.Error); ok {
+				msg = merr.Message
+				code = merr.Code
 			}
+			c.Writer.WriteHeader(code)
+			name := "pages/error.html"
+			themedMustRender(c.Context, c.Writer, theme.Name, name, templates.Args{
+				"Code":    code,
+				"Message": msg,
+			})
 			return
 		}
 
@@ -190,4 +203,18 @@ func Wrap(h ThemedHandler) router.Handler {
 		name := fmt.Sprintf("pages/%s", template)
 		themedMustRender(c.Context, c.Writer, theme.Name, name, *args)
 	}
+}
+
+// The context key
+var requestKey = "http.request"
+
+func WithRequest(c context.Context, r *http.Request) context.Context {
+	return context.WithValue(c, &requestKey, r)
+}
+
+func getRequest(c context.Context) *http.Request {
+	if req, ok := c.Value(&requestKey).(*http.Request); ok {
+		return req
+	}
+	panic("No http.request found in context")
 }

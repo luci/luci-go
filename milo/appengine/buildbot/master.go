@@ -16,6 +16,8 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/settings"
+	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/identity"
 
 	"golang.org/x/net/context"
 )
@@ -34,32 +36,52 @@ func decodeMasterEntry(
 	return nil
 }
 
-// getMasterEntry feches the named master and does an ACL check on the
-// current user.
-func getMasterEntry(c context.Context, name string) (*buildbotMasterEntry, error) {
-	entry := buildbotMasterEntry{Name: name}
-	err := ds.Get(c, &entry)
+// User not logged in, master found, master public: nil
+// User not logged in, master not found: 401
+// User not logged in, master internal: 401
+// User logged in, master found, master internal: nil
+// User logged in, master not found: 404
+// User logged in, master found, master internal: 404
+// Other error: 500
+func checkAccess(c context.Context, err error, internal bool) error {
+	cu := auth.CurrentUser(c)
 	switch {
 	case err == ds.ErrNoSuchEntity:
-		return nil, errMasterNotFound
+		if cu.Identity == identity.AnonymousIdentity {
+			return errNotAuth
+		} else {
+			return errMasterNotFound
+		}
 	case err != nil:
-		logging.WithError(err).Errorf(
-			c, "Encountered error while fetching entry for %s:\n%s", name, err)
-		return nil, err
+		return err
 	}
 
 	// Do the ACL check if the entry is internal.
-	if entry.Internal {
+	if internal {
 		allowed, err := settings.IsAllowedInternal(c)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if !allowed {
-			return nil, errMasterNotFound
+			if cu.Identity == identity.AnonymousIdentity {
+				return errNotAuth
+			} else {
+				return errMasterNotFound
+			}
 		}
 	}
 
-	return &entry, nil
+	return nil
+}
+
+// getMasterEntry feches the named master and does an ACL check on the
+// current user.
+// It returns:
+func getMasterEntry(c context.Context, name string) (*buildbotMasterEntry, error) {
+	entry := buildbotMasterEntry{Name: name}
+	err := ds.Get(c, &entry)
+	err = checkAccess(c, err, entry.Internal)
+	return &entry, err
 }
 
 // getMasterJSON fetches the latest known buildbot master data and returns

@@ -85,14 +85,14 @@ func (b Builder) Render(c context.Context, r *http.Request, p httprouter.Params)
 	master := p.ByName("master")
 	if master == "" {
 		return nil, &miloerror.Error{
-			Message: "No master",
+			Message: "No master specified",
 			Code:    http.StatusBadRequest,
 		}
 	}
 	builder := p.ByName("builder")
 	if builder == "" {
 		return nil, &miloerror.Error{
-			Message: "No builder",
+			Message: "No builder specified",
 			Code:    http.StatusBadRequest,
 		}
 	}

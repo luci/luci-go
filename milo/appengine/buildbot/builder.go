@@ -78,8 +78,13 @@ func getBuilds(
 }
 
 var errMasterNotFound = miloerror.Error{
-	Message: "Master not found",
+	Message: "Either the request resource was not found or you are not authorized",
 	Code:    http.StatusNotFound,
+}
+
+var errNotAuth = miloerror.Error{
+	Message: "You are not authenticated, try logging in",
+	Code:    http.StatusUnauthorized,
 }
 
 // builderImpl is the implementation for getting a milo builder page from buildbot.

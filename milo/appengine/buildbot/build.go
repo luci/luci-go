@@ -18,7 +18,6 @@ import (
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/appengine/settings"
 	"github.com/luci/luci-go/milo/common/miloerror"
 	"golang.org/x/net/context"
 )
@@ -29,6 +28,7 @@ var errBuildNotFound = miloerror.Error{
 }
 
 // getBuild fetches a buildbot build from the datastore and checks ACLs.
+// The return code matches the master responses.
 func getBuild(c context.Context, master, builder string, buildNum int) (*buildbotBuild, error) {
 	result := &buildbotBuild{
 		Master:      master,
@@ -37,23 +37,11 @@ func getBuild(c context.Context, master, builder string, buildNum int) (*buildbo
 	}
 
 	err := ds.Get(c, result)
-	switch {
-	case err == ds.ErrNoSuchEntity:
-		return nil, errBuildNotFound
-	case err != nil:
-		return nil, err
+	err = checkAccess(c, err, result.Internal)
+	if err == errMasterNotFound {
+		err = errBuildNotFound
 	}
-	if result.Internal {
-		allowed, err := settings.IsAllowedInternal(c)
-		if err != nil {
-			return nil, err
-		}
-		if !allowed {
-			return nil, errBuildNotFound
-		}
-	}
-
-	return result, nil
+	return result, err
 }
 
 // result2Status translates a buildbot result integer into a resp.Status.

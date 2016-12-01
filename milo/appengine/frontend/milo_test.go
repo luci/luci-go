@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -78,12 +79,12 @@ func (m fakeOAuthMethod) Authenticate(context.Context, *http.Request) (*auth.Use
 	}, nil
 }
 
-func (m fakeOAuthMethod) LoginURL(context.Context, string) (string, error) {
-	return "https://login.url/", nil
+func (m fakeOAuthMethod) LoginURL(c context.Context, target string) (string, error) {
+	return "https://login.url/?target=" + target, nil
 }
 
-func (m fakeOAuthMethod) LogoutURL(context.Context, string) (string, error) {
-	return "https://logout.url/", nil
+func (m fakeOAuthMethod) LogoutURL(c context.Context, target string) (string, error) {
+	return "https://logout.url/?target=" + target, nil
 }
 
 type analyticsSettings struct {
@@ -100,6 +101,7 @@ func TestPages(t *testing.T) {
 		// Load all the bundles.
 		c := context.Background()
 		c = memory.Use(c)
+		c = settings.WithRequest(c, &http.Request{URL: &url.URL{Path: "/foobar"}})
 		c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
 		a := auth.Authenticator{fakeOAuthMethod{"some_client_id"}}
 		c = auth.SetAuthenticator(c, a)
