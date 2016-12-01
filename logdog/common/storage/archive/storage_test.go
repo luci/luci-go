@@ -28,8 +28,8 @@ import (
 )
 
 const (
-	testIndexURL  = "gs://+/index"
-	testStreamURL = "gs://+/stream"
+	testIndexPath  = gs.Path("gs://+/index")
+	testStreamPath = gs.Path("gs://+/stream")
 )
 
 type logStreamGenerator struct {
@@ -181,10 +181,10 @@ func (c *fakeGSClient) NewReader(p gs.Path, offset, length int64) (io.ReadCloser
 		data      []byte
 		readerErr error
 	)
-	switch string(p) {
-	case testIndexURL:
+	switch p {
+	case testIndexPath:
 		data, readerErr = c.index, c.indexErr
-	case testStreamURL:
+	case testStreamPath:
 		data, readerErr = c.stream, c.streamErr
 	default:
 		return nil, cloudStorage.ErrObjectNotExist
@@ -218,9 +218,9 @@ func TestArchiveStorage(t *testing.T) {
 		defer client.Close()
 
 		opts := Options{
-			IndexURL:  testIndexURL,
-			StreamURL: testStreamURL,
-			Client:    &client,
+			Index:  testIndexPath,
+			Stream: testStreamPath,
+			Client: &client,
 		}
 		st, err := New(c, opts)
 		So(err, ShouldBeNil)
@@ -246,8 +246,8 @@ func TestArchiveStorage(t *testing.T) {
 			}{
 				{`Complete index`, func() {}},
 				{`Empty index protobuf`, func() { gen.sparseIndex() }},
-				{`No index provided`, func() { stImpl.indexPath = "" }},
-				{`Invalid index path`, func() { stImpl.indexPath = "does-not-exist" }},
+				{`No index provided`, func() { stImpl.Index = "" }},
+				{`Invalid index path`, func() { stImpl.Index = "does-not-exist" }},
 				{`Sparse index with a start and terminal entry`, func() { gen.sparseIndex(0, 2, 4) }},
 				{`Sparse index with a terminal entry`, func() { gen.sparseIndex(1, 3, 4) }},
 				{`Sparse index missing a terminal entry`, func() { gen.sparseIndex(1, 3) }},
@@ -322,7 +322,7 @@ func TestArchiveStorage(t *testing.T) {
 		} {
 			Convey(fmt.Sprintf("Testing retrieval: %q", tc.title), func() {
 				Convey(`With missing log stream returns ErrDoesNotExist.`, func() {
-					stImpl.streamPath = "does-not-exist"
+					stImpl.Stream = "does-not-exist"
 
 					So(st.Get(storage.GetRequest{}, nil), ShouldEqual, storage.ErrDoesNotExist)
 				})

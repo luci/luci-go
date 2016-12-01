@@ -21,7 +21,8 @@ import (
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
-	"github.com/luci/luci-go/logdog/common/storage/caching"
+	"github.com/luci/luci-go/logdog/common/storage/archive"
+	"github.com/luci/luci-go/logdog/common/storage/bigtable"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/auth/identity"
@@ -56,9 +57,12 @@ type Environment struct {
 	// Services is the set of installed Coordinator services.
 	Services Services
 
+	// BigTable in-memory testing instance.
+	BigTable bigtable.Testing
 	// GSClient is the test GSClient instance installed (by default) into
 	// Services.
 	GSClient GSClient
+
 	// ArchivalPublisher is the test ArchivalPublisher instance installed (by
 	// default) into Services.
 	ArchivalPublisher ArchivalPublisher
@@ -178,6 +182,11 @@ func Install() (context.Context, *Environment) {
 		c = logging.SetLevel(gologger.StdConfig.Use(c), logging.Debug)
 	}
 
+	// Create/install our BigTable memory instance.
+	e.BigTable = bigtable.NewMemoryInstance(c, bigtable.Options{
+		Cache: &e.StorageCache,
+	})
+
 	// Add indexes. These should match the indexes defined in the application's
 	// "index.yaml".
 	indexDefs := [][]string{
@@ -283,14 +292,32 @@ func Install() (context.Context, *Environment) {
 
 	// Setup our default Coordinator services.
 	e.Services = Services{
-		GS: func() (gs.Client, error) {
-			return &e.GSClient, nil
+		ST: func(lst *coordinator.LogStreamState) (coordinator.Storage, error) {
+			// If we're not archived, return our BigTable storage instance.
+			if !lst.ArchivalState().Archived() {
+				return &BigTableStorage{
+					Testing: e.BigTable,
+				}, nil
+			}
+
+			opts := archive.Options{
+				Index:  gs.Path(lst.ArchiveIndexURL),
+				Stream: gs.Path(lst.ArchiveStreamURL),
+				Client: &e.GSClient,
+				Cache:  &e.StorageCache,
+			}
+
+			base, err := archive.New(c, opts)
+			if err != nil {
+				return nil, err
+			}
+			return &ArchivalStorage{
+				Storage: base,
+				Opts:    opts,
+			}, nil
 		},
 		AP: func() (coordinator.ArchivalPublisher, error) {
 			return &e.ArchivalPublisher, nil
-		},
-		SC: func() caching.Cache {
-			return &e.StorageCache
 		},
 	}
 	c = coordinator.WithServices(c, &e.Services)

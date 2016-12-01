@@ -317,9 +317,9 @@ func (cmd *cmdRunGet) Run(baseApp subcommands.Application, args []string, _ subc
 	defer client.Close()
 
 	stClient, err := archive.New(c, archive.Options{
-		IndexURL:  cmd.indexPath,
-		StreamURL: cmd.streamPath,
-		Client:    client,
+		Index:  gs.Path(cmd.indexPath),
+		Stream: gs.Path(cmd.streamPath),
+		Client: client,
 	})
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create storage client.")
@@ -405,9 +405,9 @@ func (cmd *cmdRunTail) Run(baseApp subcommands.Application, args []string, _ sub
 	defer client.Close()
 
 	stClient, err := archive.New(c, archive.Options{
-		IndexURL:  cmd.indexPath,
-		StreamURL: cmd.streamPath,
-		Client:    client,
+		Index:  gs.Path(cmd.indexPath),
+		Stream: gs.Path(cmd.streamPath),
+		Client: client,
 	})
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create storage client.")

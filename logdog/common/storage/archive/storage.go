@@ -51,10 +51,10 @@ const (
 // Project and Path parameters in requests will be ignored in favor of the
 // Google Storage URLs.
 type Options struct {
-	// IndexURL is the Google Storage URL for the stream's index.
-	IndexURL string
-	// StreamURL is the Google Storage URL for the stream's entries.
-	StreamURL string
+	// Index is the Google Storage URL for the stream's index.
+	Index gs.Path
+	// Stream is the Google Storage URL for the stream's entries.
+	Stream gs.Path
 
 	// Client is the HTTP client to use for authentication.
 	//
@@ -69,9 +69,6 @@ type storageImpl struct {
 	*Options
 	context.Context
 
-	streamPath gs.Path
-	indexPath  gs.Path
-
 	index atomic.Value
 }
 
@@ -80,16 +77,13 @@ func New(ctx context.Context, o Options) (storage.Storage, error) {
 	s := storageImpl{
 		Options: &o,
 		Context: ctx,
-
-		streamPath: gs.Path(o.StreamURL),
-		indexPath:  gs.Path(o.IndexURL),
 	}
 
-	if !s.streamPath.IsFullPath() {
-		return nil, fmt.Errorf("invalid stream URL: %q", s.streamPath)
+	if !s.Stream.IsFullPath() {
+		return nil, fmt.Errorf("invalid stream URL: %q", s.Stream)
 	}
-	if s.indexPath != "" && !s.indexPath.IsFullPath() {
-		return nil, fmt.Errorf("invalid index URL: %v", s.indexPath)
+	if s.Index != "" && !s.Index.IsFullPath() {
+		return nil, fmt.Errorf("invalid index URL: %v", s.Index)
 	}
 
 	return &s, nil
@@ -139,9 +133,9 @@ func (s *storageImpl) getLogEntriesIter(st *getStrategy, cb storage.GetCallback)
 	log.Fields{
 		"offset": offset,
 		"length": length,
-		"path":   s.streamPath,
+		"path":   s.Stream,
 	}.Debugf(s, "Creating stream reader for range.")
-	storageReader, err := s.Client.NewReader(s.streamPath, int64(offset), length)
+	storageReader, err := s.Client.NewReader(s.Stream, int64(offset), length)
 	if err != nil {
 		log.WithError(err).Errorf(s, "Failed to create stream Reader.")
 		return errors.Annotate(err).Reason("failed to create stream Reader").Err()
@@ -292,7 +286,7 @@ func (s *storageImpl) getIndex() (*logpb.LogIndex, error) {
 		return idx.(*logpb.LogIndex), nil
 	}
 
-	index, err := loadIndex(s, s.Client, s.indexPath, s.Cache)
+	index, err := loadIndex(s, s.Client, s.Index, s.Cache)
 	switch errors.Unwrap(err) {
 	case nil:
 		break

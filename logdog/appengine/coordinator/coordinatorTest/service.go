@@ -6,12 +6,10 @@ package coordinatorTest
 
 import (
 	luciConfig "github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/gcloud/gs"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
-	"github.com/luci/luci-go/logdog/common/storage"
-	"github.com/luci/luci-go/logdog/common/storage/caching"
+
 	"golang.org/x/net/context"
 )
 
@@ -29,17 +27,15 @@ type Services struct {
 	// Storage returns an intermediate storage instance for use by this service.
 	//
 	// The caller must close the returned instance if successful.
-	IS func() (storage.Storage, error)
-
-	// GSClient instantiates a Google Storage client.
-	GS func() (gs.Client, error)
+	//
+	// By default, this will return a *BigTableStorage instance bound to the
+	// Environment's BigTable instance if the stream is not archived, and an
+	// *ArchivalStorage instance bound to this Environment's GSClient instance
+	// if the stream is archived.
+	ST func(*coordinator.LogStreamState) (coordinator.Storage, error)
 
 	// ArchivalPublisher returns an ArchivalPublisher instance.
 	AP func() (coordinator.ArchivalPublisher, error)
-
-	// SC returns a storage caching.Cache instance. If nil, a nil cache value
-	// will be returned.
-	SC func() caching.Cache
 }
 
 var _ coordinator.Services = (*Services)(nil)
@@ -60,18 +56,10 @@ func (s *Services) ProjectConfig(c context.Context, project luciConfig.ProjectNa
 	return config.ProjectConfig(c, project)
 }
 
-// IntermediateStorage implements coordinator.Services.
-func (s *Services) IntermediateStorage(c context.Context) (storage.Storage, error) {
-	if s.IS != nil {
-		return s.IS()
-	}
-	panic("not implemented")
-}
-
-// GSClient implements coordinator.Services.
-func (s *Services) GSClient(context.Context) (gs.Client, error) {
-	if s.GS != nil {
-		return s.GS()
+// StorageForStream implements coordinator.Services.
+func (s *Services) StorageForStream(c context.Context, lst *coordinator.LogStreamState) (coordinator.Storage, error) {
+	if s.ST != nil {
+		return s.ST(lst)
 	}
 	panic("not implemented")
 }
@@ -82,12 +70,4 @@ func (s *Services) ArchivalPublisher(context.Context) (coordinator.ArchivalPubli
 		return s.AP()
 	}
 	panic("not implemented")
-}
-
-// StorageCache implements coordinator.Services.
-func (s *Services) StorageCache() caching.Cache {
-	if s.SC != nil {
-		return s.SC()
-	}
-	return nil
 }

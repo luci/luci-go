@@ -12,16 +12,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/data/recordio"
 	"github.com/luci/luci-go/common/iotools"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	ct "github.com/luci/luci-go/logdog/appengine/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/logdog/common/archive"
 	"github.com/luci/luci-go/logdog/common/renderer"
 	"github.com/luci/luci-go/logdog/common/storage"
-	"github.com/luci/luci-go/logdog/common/storage/bigtable"
 	"github.com/luci/luci-go/logdog/common/types"
 
 	"github.com/luci/gae/filter/featureBreaker"
@@ -79,13 +80,6 @@ func testGetImpl(t *testing.T, archived bool) {
 		c, env := ct.Install()
 
 		svr := New()
-
-		// Use an actual BigTable testing instance for our intermediate storage,
-		// instead of the default in-memory instance.
-		is := bigtable.NewMemoryInstance(c, bigtable.Options{
-			Cache: env.Services.StorageCache(),
-		})
-		env.Services.IS = func() (storage.Storage, error) { return is, nil }
 
 		// di is a datastore bound to the test project namespace.
 		const project = config.ProjectName("proj-foo")
@@ -299,7 +293,7 @@ func testGetImpl(t *testing.T, archived bool) {
 				if !archived {
 					// Add the logs to the in-memory temporary storage.
 					for _, le := range entries {
-						err := is.Put(storage.PutRequest{
+						err := env.BigTable.Put(storage.PutRequest{
 							Project: project,
 							Path:    tls.Path,
 							Index:   types.MessageIndex(le.StreamIndex),
@@ -379,10 +373,6 @@ func testGetImpl(t *testing.T, archived bool) {
 					So(resp, shouldHaveLogs, 0, 1, 2)
 
 					Convey(`Will successfully retrieve the stream path again (caching).`, func() {
-						// Re-put the log data, since the previous request closed the
-						// storage instance.
-						putLogData()
-
 						resp, err := svr.Get(c, &req)
 						So(err, ShouldBeRPCOK)
 						So(resp, shouldHaveLogs, 0, 1, 2)
@@ -483,6 +473,38 @@ func testGetImpl(t *testing.T, archived bool) {
 					})
 				})
 
+				Convey(`When requesting a signed URL`, func() {
+					const duration = 10 * time.Hour
+					req.LogCount = -1
+
+					sr := logdog.GetRequest_SignURLRequest{
+						Lifetime: google.NewDuration(duration),
+						Stream:   true,
+						Index:    true,
+					}
+					req.GetSignedUrls = &sr
+
+					if archived {
+						Convey(`Will successfully retrieve the URL.`, func() {
+							resp, err := svr.Get(c, &req)
+							So(err, ShouldBeNil)
+							So(resp.Logs, ShouldHaveLength, 0)
+
+							So(resp.SignedUrls, ShouldNotBeNil)
+							So(resp.SignedUrls.Stream, ShouldEndWith, "&signed=true")
+							So(resp.SignedUrls.Index, ShouldEndWith, "&signed=true")
+							So(resp.SignedUrls.Expiration.Time(), ShouldResemble, clock.Now(c).Add(duration))
+						})
+					} else {
+						Convey(`Will succeed, but return no URL.`, func() {
+							resp, err := svr.Get(c, &req)
+							So(err, ShouldBeNil)
+							So(resp.Logs, ShouldHaveLength, 0)
+							So(resp.SignedUrls, ShouldBeNil)
+						})
+					}
+				})
+
 				Convey(`Will return Internal if the protobuf log entry data is corrupt.`, func() {
 					if archived {
 						// Corrupt the archive datastream.
@@ -491,7 +513,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					} else {
 						// Add corrupted entry to Storage. Create a new entry here, since
 						// the storage will reject a duplicate/overwrite.
-						err := is.Put(storage.PutRequest{
+						err := env.BigTable.Put(storage.PutRequest{
 							Project: project,
 							Path:    types.StreamPath(req.Path),
 							Index:   666,
@@ -520,7 +542,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					if archived {
 						env.GSClient["error"] = []byte("test error")
 					} else {
-						is.SetErr(errors.New("not working"))
+						env.BigTable.SetErr(errors.New("not working"))
 					}
 
 					_, err := svr.Get(c, &req)
@@ -620,9 +642,6 @@ func testGetImpl(t *testing.T, archived bool) {
 					So(env.StorageCache.Stats(), ShouldResemble, ct.StorageCacheStats{Puts: 1, Misses: 1})
 
 					Convey(`Will retrieve the stream path again (caching).`, func() {
-						// Re-put the log data, since the previous request closed the
-						// storage instance.
-						putLogData()
 						env.StorageCache.Clear()
 
 						resp, err := svr.Tail(c, &req)

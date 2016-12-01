@@ -9,6 +9,7 @@ package logdog;
 import "github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1/state.proto";
 import "github.com/luci/luci-go/logdog/api/logpb/log.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
 
 // GetRequest is the request structure for the user Get endpoint.
 //
@@ -64,6 +65,20 @@ message GetRequest {
   // A contiguous request with Index 3 will return: [3, 4], stopping because
   // 5 is missing. A non-contiguous request will return [3, 4, 6, 7].
   bool non_contiguous = 7;
+
+  // If supplied, the response will contain a SignedUrls message with the
+  // requested signed URLs. If signed URLs are not supported by the log's
+  // current storage system, the response message will be empty.
+  message SignURLRequest {
+    // The lifetime that the signed URL will be bound to.. The
+    google.protobuf.Duration lifetime = 1;
+
+    // Return a signed URL for the log's RecordIO protobuf data.
+    bool stream = 2;
+    // Return a signed URL for the log's LogIndex protobuf.
+    bool index = 3;
+  }
+  SignURLRequest get_signed_urls = 8;
 }
 
 // TailRequest is the request structure for the user Tail endpoint. It returns
@@ -106,6 +121,20 @@ message GetResponse {
 
   // Log represents the set of retrieved log records.
   repeated logpb.LogEntry logs = 4;
+
+  // Holds information about the log stream's signed entry URL.
+  message SignedUrls {
+    // The time when this signed URL will expire.
+    google.protobuf.Timestamp expiration = 1;
+
+    // The signed log stream URL, if requested.
+    string stream = 2;
+    // The signed log index URL, if requested.
+    string index = 3;
+  }
+  // An optional signed log entry RecordIO protobuf URL, if requested via
+  // "sign_entry_url_lifetime".
+  SignedUrls signed_urls = 5;
 }
 
 // QueryRequest is the request structure for the user Query endpoint.
