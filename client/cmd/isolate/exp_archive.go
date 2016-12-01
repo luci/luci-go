@@ -23,6 +23,7 @@ import (
 	"github.com/luci/luci-go/common/eventlog"
 	logpb "github.com/luci/luci-go/common/eventlog/proto"
 	"github.com/luci/luci-go/common/isolated"
+	"github.com/luci/luci-go/common/isolatedclient"
 	"github.com/maruel/subcommands"
 )
 
@@ -77,6 +78,15 @@ func (c *expArchiveRun) main() error {
 	}
 	log.Printf("Isolate referenced %d deps", len(deps))
 
+	// Create the isolated client which connects to the isolate server.
+	authCl, err := c.createAuthClient()
+	if err != nil {
+		return err
+	}
+	client := isolatedclient.New(nil, authCl, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil)
+
+	checker := NewChecker(client)
+
 	// Walk each of the deps, partioning the results into symlinks and files categorised by size.
 	var links, archiveFiles, indivFiles []*Item
 	var archiveSize, indivSize int64 // Cumulative size of archived/individual files.
@@ -119,18 +129,83 @@ func (c *expArchiveRun) main() error {
 		}
 	}
 
+	// Construct a map of the files that constitute the isolate.
+	files := make(map[string]isolated.File)
+
 	log.Printf("Isolate expanded to %d files (total size %s) and %d symlinks", len(archiveFiles)+len(indivFiles), humanize.Bytes(uint64(archiveSize+indivSize)), len(links))
 	log.Printf("\t%d files (%s) to be isolated individually", len(indivFiles), humanize.Bytes(uint64(indivSize)))
 	log.Printf("\t%d files (%s) to be isolated in archives", len(archiveFiles), humanize.Bytes(uint64(archiveSize)))
 
-	// TODO(djd): actually do something with the each of links, archiveFiles and indivFiles.
+	// Handle the symlinks.
+	for _, item := range links {
+		l, err := os.Readlink(item.Path)
+		if err != nil {
+			return fmt.Errorf("unable to resolve symlink for %q: %v", item.Path, err)
+		}
+		files[item.RelPath] = isolated.SymLink(l)
+	}
+
+	// Handle the small to-be-archived files.
+	archiveCallback := func(tar *Tar) {
+		log.Printf("Created tar archive %q (%s)", tar.Digest, humanize.Bytes(uint64(len(tar.Content))))
+		log.Printf("\tcontains %d files (total %s)", tar.FileCount, humanize.Bytes(uint64(tar.FileSize)))
+		// Mint an item for this tar.
+		item := &Item{
+			Path:    fmt.Sprintf(".%s.tar", tar.Digest),
+			RelPath: fmt.Sprintf(".%s.tar", tar.Digest),
+			Size:    int64(len(tar.Content)),
+			Mode:    0644, // Read
+			Digest:  tar.Digest,
+		}
+		files[item.RelPath] = isolated.TarFile(item.Digest, int(item.Mode), item.Size)
+		checker.AddItem(item, false, func(item *Item, ps *isolatedclient.PushState) {
+			if ps == nil {
+				tar.Release()
+				return
+			}
+			// XXX(djd): Actually upload the tar file.
+			log.Printf("XXX: %q needs to be uploaded", item.RelPath)
+			tar.Release()
+		})
+	}
+
+	archiver := NewTarAchiver(archiveCallback)
+	for _, item := range archiveFiles {
+		if err := archiver.AddItem(item); err != nil {
+			return err
+		}
+	}
+	archiver.Flush()
+
+	// Handle the large individually-uploaded files.
+	for _, item := range indivFiles {
+		d, err := hashFile(item.Path)
+		if err != nil {
+			return err
+		}
+		item.Digest = d
+		files[item.RelPath] = isolated.BasicFile(item.Digest, int(item.Mode), item.Size)
+		checker.AddItem(item, false, func(item *Item, ps *isolatedclient.PushState) {
+			if ps == nil {
+				return
+			}
+			// XXX(djd): Actually upload the file.
+			log.Printf("XXX: %q needs to be uploaded", item.RelPath)
+		})
+	}
 
 	// Marshal the isolated file into JSON.
+	isol.Files = files
 	isolJSON, err := json.Marshal(isol)
 	if err != nil {
 		return err
 	}
 	// TODO(djd): actually check/upload the isolated.
+
+	// Make sure that all pending items have been checked.
+	if err := checker.Close(); err != nil {
+		return err
+	}
 
 	// Write the isolated file, and emit its digest to stdout.
 	if err := ioutil.WriteFile(archiveOpts.Isolated, isolJSON, 0644); err != nil {
@@ -189,6 +264,15 @@ func (c *expArchiveRun) Run(a subcommands.Application, args []string, _ subcomma
 		return 1
 	}
 	return 0
+}
+
+func hashFile(path string) (isolated.HexDigest, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	return isolated.Hash(f)
 }
 
 func logStats(ctx context.Context, logger *eventlog.Client, start, end time.Time, archiveDetails *logpb.IsolateClientEvent_ArchiveDetails) error {
