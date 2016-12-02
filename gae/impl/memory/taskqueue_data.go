@@ -63,13 +63,9 @@ func newSortedQueue(name string, isPullQueue bool) *sortedQueue {
 // All sortedQueue methods are assumed to be called under taskQueueData lock.
 
 func (q *sortedQueue) genTaskName(c context.Context) string {
-	const validTaskChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_"
 	for {
-		buf := [500]byte{}
-		for i := 0; i < 500; i++ {
-			buf[i] = validTaskChars[mathrand.Intn(c, len(validTaskChars))]
-		}
-		name := string(buf[:])
+		// Real Task Queue service seems to be using random ints too.
+		name := fmt.Sprintf("%d", mathrand.Int63(c))
 		_, ok1 := q.tasks[name]
 		_, ok2 := q.archived[name]
 		if !ok1 && !ok2 {

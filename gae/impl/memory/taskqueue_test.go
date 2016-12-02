@@ -51,12 +51,16 @@ func TestTaskQueue(t *testing.T) {
 					t.RetryOptions = &tq.RetryOptions{AgeLimit: 7 * time.Second}
 					So(tq.Add(c, "", t), ShouldBeNil)
 
-					name := "Z_UjshxM9ecyMQfGbZmUGOEcgxWU0_5CGLl_-RntudwAw2DqQ5-58bzJiWQN4OKzeuUb9O4JrPkUw2rOvk2Ax46THojnQ6avBQgZdrKcJmrwQ6o4qKfJdiyUbGXvy691yRfzLeQhs6cBhWrgf3wH-VPMcA4SC-zlbJ2U8An7I0zJQA5nBFnMNoMgT-2peGoay3rCSbj4z9VFFm9kS_i6JCaQH518ujLDSNCYdjTq6B6lcWrZAh0U_q3a1S2nXEwrKiw_t9MTNQFgAQZWyGBbvZQPmeRYtu8SPaWzTfd25v_YWgBuVL2rRSPSMvlDwE04nNdtvVzE8vNNiA1zRimmdzKeqATQF9_ReUvj4D7U8dcS703DZWfKMBLgBffY9jqCassOOOw77V72Oq5EVauUw3Qw0L6bBsfM9FtahTKUdabzRZjXUoze3EK4KXPt3-wdidau-8JrVf2XFocjjZbwHoxcGvbtT3b4nGLDlgwdC00bwaFBZWff"
-					So(tqt.GetScheduledTasks()["default"][name], ShouldResemble, &tq.Task{
+					var scheduled *tq.Task
+					for _, t := range tqt.GetScheduledTasks()["default"] {
+						scheduled = t
+						break
+					}
+					So(scheduled, ShouldResemble, &tq.Task{
 						ETA:          now.Add(4 * time.Second),
 						Header:       http.Header{"Cat": []string{"tabby"}},
 						Method:       "POST",
-						Name:         name,
+						Name:         "7569393727548727334",
 						Path:         "/hello/world",
 						Payload:      []byte("watwatwat"),
 						RetryOptions: &tq.RetryOptions{AgeLimit: 7 * time.Second},
@@ -152,7 +156,7 @@ func TestTaskQueue(t *testing.T) {
 						Convey(fmt.Sprintf("task %d: %s", i, expect[i].Path), func() {
 							So(expect[i].Method, ShouldEqual, "POST")
 							So(expect[i].ETA, ShouldHappenOnOrBefore, now)
-							So(len(expect[i].Name), ShouldEqual, 500)
+							So(len(expect[i].Name), ShouldEqual, 19)
 						})
 					}
 
