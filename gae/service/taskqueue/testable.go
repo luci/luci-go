@@ -13,6 +13,7 @@ type AnonymousQueueData map[string][]*Task
 // Testable is the testable interface for fake taskqueue implementations
 type Testable interface {
 	CreateQueue(queueName string)
+	CreatePullQueue(queueName string)
 	GetScheduledTasks() QueueData
 	GetTombstonedTasks() QueueData
 	GetTransactionTasks() AnonymousQueueData

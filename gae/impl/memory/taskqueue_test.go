@@ -407,5 +407,548 @@ func TestTaskQueue(t *testing.T) {
 			})
 
 		})
+
+		Convey("Pull queues", func() {
+			tqt.CreatePullQueue("pull")
+			tqt.CreateQueue("push")
+
+			Convey("One task scenarios", func() {
+				Convey("enqueue, lease, delete", func() {
+					// Enqueue.
+					err := tq.Add(c, "pull", &tq.Task{
+						Method:  "PULL",
+						Payload: []byte("zzz"),
+						Tag:     "tag",
+					})
+					So(err, ShouldBeNil)
+
+					// Lease.
+					tasks, err := tq.Lease(c, 1, "pull", time.Minute)
+					So(err, ShouldBeNil)
+					So(len(tasks), ShouldEqual, 1)
+					So(tasks[0].Payload, ShouldResemble, []byte("zzz"))
+
+					// "Disappears" from the queue while leased.
+					tc.Add(30 * time.Second)
+					tasks2, err := tq.Lease(c, 1, "pull", time.Minute)
+					So(err, ShouldBeNil)
+					So(len(tasks2), ShouldEqual, 0)
+
+					// Remove after "processing".
+					So(tq.Delete(c, "pull", tasks[0]), ShouldBeNil)
+
+					// Still nothing there even after lease expires.
+					tc.Add(50 * time.Second)
+					tasks3, err := tq.Lease(c, 1, "pull", time.Minute)
+					So(err, ShouldBeNil)
+					So(len(tasks3), ShouldEqual, 0)
+				})
+
+				Convey("enqueue, lease, loose", func() {
+					// Enqueue.
+					err := tq.Add(c, "pull", &tq.Task{
+						Method:  "PULL",
+						Payload: []byte("zzz"),
+					})
+					So(err, ShouldBeNil)
+
+					// Lease.
+					tasks, err := tq.Lease(c, 1, "pull", time.Minute)
+					So(err, ShouldBeNil)
+					So(len(tasks), ShouldEqual, 1)
+					So(tasks[0].Payload, ShouldResemble, []byte("zzz"))
+
+					// Time passes, lease expires.
+					tc.Add(61 * time.Second)
+
+					// Available again, someone grabs it.
+					tasks2, err := tq.Lease(c, 1, "pull", time.Minute)
+					So(err, ShouldBeNil)
+					So(len(tasks2), ShouldEqual, 1)
+					So(tasks2[0].Payload, ShouldResemble, []byte("zzz"))
+
+					// Previously leased task is no longer owned.
+					err = tq.ModifyLease(c, tasks[0], "pull", time.Minute)
+					So(err, ShouldErrLike, "TASK_LEASE_EXPIRED")
+				})
+
+				Convey("enqueue, lease, sleep", func() {
+					// Enqueue.
+					err := tq.Add(c, "pull", &tq.Task{
+						Method:  "PULL",
+						Payload: []byte("zzz"),
+					})
+					So(err, ShouldBeNil)
+
+					// Lease.
+					tasks, err := tq.Lease(c, 1, "pull", time.Minute)
+					So(err, ShouldBeNil)
+					So(len(tasks), ShouldEqual, 1)
+					So(tasks[0].Payload, ShouldResemble, []byte("zzz"))
+
+					// Time passes, the lease expires.
+					tc.Add(61 * time.Second)
+					err = tq.ModifyLease(c, tasks[0], "pull", time.Minute)
+					So(err, ShouldErrLike, "TASK_LEASE_EXPIRED")
+				})
+
+				Convey("enqueue, lease, extend", func() {
+					// Enqueue.
+					err := tq.Add(c, "pull", &tq.Task{
+						Method:  "PULL",
+						Payload: []byte("zzz"),
+					})
+					So(err, ShouldBeNil)
+
+					// Lease.
+					tasks, err := tq.Lease(c, 1, "pull", time.Minute)
+					So(err, ShouldBeNil)
+					So(len(tasks), ShouldEqual, 1)
+					So(tasks[0].Payload, ShouldResemble, []byte("zzz"))
+
+					// Time passes, the lease is updated.
+					tc.Add(59 * time.Second)
+					err = tq.ModifyLease(c, tasks[0], "pull", time.Minute)
+					So(err, ShouldBeNil)
+
+					// Not available, still leased.
+					tc.Add(30 * time.Second)
+					tasks2, err := tq.Lease(c, 1, "pull", time.Minute)
+					So(err, ShouldBeNil)
+					So(len(tasks2), ShouldEqual, 0)
+				})
+
+				Convey("enqueue, lease, return", func() {
+					// Enqueue.
+					err := tq.Add(c, "pull", &tq.Task{
+						Method:  "PULL",
+						Payload: []byte("zzz"),
+					})
+					So(err, ShouldBeNil)
+
+					// Lease.
+					tasks, err := tq.Lease(c, 1, "pull", time.Minute)
+					So(err, ShouldBeNil)
+					So(len(tasks), ShouldEqual, 1)
+					So(tasks[0].Payload, ShouldResemble, []byte("zzz"))
+
+					// Put back by using 0 sec lease.
+					err = tq.ModifyLease(c, tasks[0], "pull", 0)
+					So(err, ShouldBeNil)
+
+					// Available again.
+					tasks2, err := tq.Lease(c, 1, "pull", time.Minute)
+					So(err, ShouldBeNil)
+					So(len(tasks2), ShouldEqual, 1)
+				})
+
+				Convey("lease by existing tag", func() {
+					// Enqueue.
+					err := tq.Add(c, "pull", &tq.Task{
+						Method:  "PULL",
+						Payload: []byte("zzz"),
+						Tag:     "tag",
+					})
+					So(err, ShouldBeNil)
+
+					// Try different tag first, should return nothing.
+					tasks, err := tq.LeaseByTag(c, 1, "pull", time.Minute, "wrong_tag")
+					So(err, ShouldBeNil)
+					So(len(tasks), ShouldEqual, 0)
+
+					// Leased.
+					tasks, err = tq.LeaseByTag(c, 1, "pull", time.Minute, "tag")
+					So(err, ShouldBeNil)
+					So(len(tasks), ShouldEqual, 1)
+
+					// No ready tasks anymore.
+					tasks2, err := tq.LeaseByTag(c, 1, "pull", time.Minute, "tag")
+					So(err, ShouldBeNil)
+					So(len(tasks2), ShouldEqual, 0)
+					tasks2, err = tq.Lease(c, 1, "pull", time.Minute)
+					So(err, ShouldBeNil)
+					So(len(tasks2), ShouldEqual, 0)
+
+					// Return back to the queue later.
+					tc.Add(30 * time.Second)
+					So(tq.ModifyLease(c, tasks[0], "pull", 0), ShouldBeNil)
+
+					// Available again.
+					tasks, err = tq.LeaseByTag(c, 1, "pull", time.Minute, "tag")
+					So(err, ShouldBeNil)
+					So(len(tasks), ShouldEqual, 1)
+				})
+
+				Convey("transactions (success)", func() {
+					So(ds.RunInTransaction(c, func(c context.Context) error {
+						return tq.Add(c, "pull", &tq.Task{
+							Method:  "PULL",
+							Payload: []byte("zzz"),
+						})
+					}, nil), ShouldBeNil)
+
+					tasks, err := tq.Lease(c, 1, "pull", time.Minute)
+					So(err, ShouldBeNil)
+					So(len(tasks), ShouldEqual, 1)
+				})
+
+				Convey("transactions (rollback)", func() {
+					So(ds.RunInTransaction(c, func(c context.Context) error {
+						err := tq.Add(c, "pull", &tq.Task{
+							Method:  "PULL",
+							Payload: []byte("zzz"),
+						})
+						So(err, ShouldBeNil)
+						return fmt.Errorf("meh")
+					}, nil), ShouldErrLike, "meh")
+
+					tasks, err := tq.Lease(c, 1, "pull", time.Minute)
+					So(err, ShouldBeNil)
+					So(len(tasks), ShouldEqual, 0)
+				})
+
+				Convey("transactions (invalid ops)", func() {
+					So(ds.RunInTransaction(c, func(c context.Context) error {
+						_, err := tq.Lease(c, 1, "pull", time.Minute)
+						So(err, ShouldErrLike, "cannot Lease")
+
+						_, err = tq.LeaseByTag(c, 1, "pull", time.Minute, "tag")
+						So(err, ShouldErrLike, "cannot LeaseByTag")
+
+						err = tq.ModifyLease(c, &tq.Task{}, "pull", time.Minute)
+						So(err, ShouldErrLike, "cannot ModifyLease")
+
+						return nil
+					}, nil), ShouldBeNil)
+				})
+
+				Convey("wrong queue mode", func() {
+					err := tq.Add(c, "pull", &tq.Task{
+						Method:  "POST",
+						Payload: []byte("zzz"),
+					})
+					So(err, ShouldErrLike, "INVALID_QUEUE_MODE")
+
+					err = tq.Add(c, "push", &tq.Task{
+						Method:  "PULL",
+						Payload: []byte("zzz"),
+					})
+					So(err, ShouldErrLike, "INVALID_QUEUE_MODE")
+
+					_, err = tq.Lease(c, 1, "push", time.Minute)
+					So(err, ShouldErrLike, "INVALID_QUEUE_MODE")
+
+					err = tq.ModifyLease(c, &tq.Task{}, "push", time.Minute)
+					So(err, ShouldErrLike, "INVALID_QUEUE_MODE")
+				})
+
+				Convey("bad requests", func() {
+					_, err := tq.Lease(c, 0, "pull", time.Minute)
+					So(err, ShouldErrLike, "BAD_REQUEST")
+
+					_, err = tq.Lease(c, 1, "pull", -time.Minute)
+					So(err, ShouldErrLike, "BAD_REQUEST")
+
+					err = tq.ModifyLease(c, &tq.Task{}, "pull", -time.Minute)
+					So(err, ShouldErrLike, "BAD_REQUEST")
+				})
+
+				Convey("tombstoned task", func() {
+					task := &tq.Task{
+						Method:  "PULL",
+						Name:    "deleted",
+						Payload: []byte("zzz"),
+					}
+					So(tq.Add(c, "pull", task), ShouldBeNil)
+					So(tq.Delete(c, "pull", task), ShouldBeNil)
+
+					err := tq.ModifyLease(c, task, "pull", time.Minute)
+					So(err, ShouldErrLike, "TOMBSTONED_TASK")
+				})
+
+				Convey("missing task", func() {
+					err := tq.ModifyLease(c, &tq.Task{Name: "missing"}, "pull", time.Minute)
+					So(err, ShouldErrLike, "UNKNOWN_TASK")
+				})
+			})
+
+			Convey("Many-tasks scenarios (sorting)", func() {
+				Convey("Lease sorts by ETA (no tags)", func() {
+					now := clock.Now(c)
+
+					tasks := []*tq.Task{}
+					for i := 0; i < 5; i++ {
+						tasks = append(tasks, &tq.Task{
+							Method: "PULL",
+							Name:   fmt.Sprintf("task-%d", i),
+							ETA:    now.Add(time.Duration(i+1) * time.Second),
+						})
+					}
+
+					// Add in some "random" order.
+					err := tq.Add(c, "pull", tasks[4], tasks[2], tasks[0], tasks[1], tasks[3])
+					So(err, ShouldBeNil)
+
+					// Nothing to pull, no available tasks yet.
+					leased, err := tq.Lease(c, 1, "pull", time.Minute)
+					So(err, ShouldBeNil)
+					So(len(leased), ShouldEqual, 0)
+
+					tc.Add(time.Second)
+
+					// First task appears.
+					leased, err = tq.Lease(c, 1, "pull", time.Minute)
+					So(err, ShouldBeNil)
+					So(len(leased), ShouldEqual, 1)
+					So(leased[0].Name, ShouldEqual, "task-0")
+
+					tc.Add(4 * time.Second)
+
+					// The rest of them appear, in sorted order.
+					leased, err = tq.Lease(c, 100, "pull", time.Minute)
+					So(err, ShouldBeNil)
+					So(len(leased), ShouldEqual, 4)
+					for i := 0; i < 4; i++ {
+						So(leased[i].Name, ShouldEqual, fmt.Sprintf("task-%d", i+1))
+					}
+				})
+			})
+
+			Convey("Lease and forget (no tags)", func() {
+				now := clock.Now(c)
+
+				for i := 0; i < 5; i++ {
+					err := tq.Add(c, "pull", &tq.Task{
+						Method: "PULL",
+						Name:   fmt.Sprintf("task-%d", i),
+						ETA:    now.Add(time.Duration(i+1) * time.Second),
+					})
+					So(err, ShouldBeNil)
+				}
+
+				tc.Add(time.Second)
+
+				// Lease the first task for 3 sec.
+				leased, err := tq.Lease(c, 1, "pull", 3*time.Second)
+				So(err, ShouldBeNil)
+				So(len(leased), ShouldEqual, 1)
+				So(leased[0].Name, ShouldEqual, "task-0")
+
+				// "Forget" about the lease.
+				tc.Add(10 * time.Second)
+
+				// Lease all we have there.
+				leased, err = tq.Lease(c, 100, "pull", time.Minute)
+				So(err, ShouldBeNil)
+				So(len(leased), ShouldEqual, 5)
+				So(leased[0].Name, ShouldEqual, "task-1")
+				So(leased[1].Name, ShouldEqual, "task-2")
+				So(leased[2].Name, ShouldEqual, "task-0")
+				So(leased[3].Name, ShouldEqual, "task-3")
+				So(leased[4].Name, ShouldEqual, "task-4")
+			})
+
+			Convey("Modify lease moves the task (no tags)", func() {
+				now := clock.Now(c)
+
+				for i := 0; i < 5; i++ {
+					err := tq.Add(c, "pull", &tq.Task{
+						Method: "PULL",
+						Name:   fmt.Sprintf("task-%d", i),
+						ETA:    now.Add(time.Duration(i+1) * time.Second),
+					})
+					So(err, ShouldBeNil)
+				}
+
+				tc.Add(time.Second)
+
+				// Lease the first task for 1 minute.
+				leased, err := tq.Lease(c, 1, "pull", time.Minute)
+				So(err, ShouldBeNil)
+				So(len(leased), ShouldEqual, 1)
+				So(leased[0].Name, ShouldEqual, "task-0")
+
+				// 3 sec later release the lease.
+				tc.Add(3 * time.Second)
+				So(tq.ModifyLease(c, leased[0], "pull", 0), ShouldEqual, nil)
+
+				tc.Add(10 * time.Second)
+
+				// Lease all we have there.
+				leased, err = tq.Lease(c, 100, "pull", time.Minute)
+				So(err, ShouldBeNil)
+				So(len(leased), ShouldEqual, 5)
+				So(leased[0].Name, ShouldEqual, "task-1")
+				So(leased[1].Name, ShouldEqual, "task-2")
+				So(leased[2].Name, ShouldEqual, "task-0")
+				So(leased[3].Name, ShouldEqual, "task-3")
+				So(leased[4].Name, ShouldEqual, "task-4")
+			})
+
+			Convey("Delete task deletes from the middle", func() {
+				now := clock.Now(c)
+
+				for i := 0; i < 5; i++ {
+					err := tq.Add(c, "pull", &tq.Task{
+						Method: "PULL",
+						Name:   fmt.Sprintf("task-%d", i),
+						ETA:    now.Add(time.Duration(i+1) * time.Second),
+					})
+					So(err, ShouldBeNil)
+				}
+
+				tc.Add(time.Second)
+
+				// Lease the first task for 3 sec.
+				leased, err := tq.Lease(c, 1, "pull", 3*time.Second)
+				So(err, ShouldBeNil)
+				So(len(leased), ShouldEqual, 1)
+				So(leased[0].Name, ShouldEqual, "task-0")
+
+				// Kill it.
+				So(tq.Delete(c, "pull", leased[0]), ShouldBeNil)
+
+				tc.Add(10 * time.Second)
+
+				// Lease all we have there.
+				leased, err = tq.Lease(c, 100, "pull", time.Minute)
+				So(err, ShouldBeNil)
+				So(len(leased), ShouldEqual, 4)
+				So(leased[0].Name, ShouldEqual, "task-1")
+				So(leased[1].Name, ShouldEqual, "task-2")
+				So(leased[2].Name, ShouldEqual, "task-3")
+				So(leased[3].Name, ShouldEqual, "task-4")
+			})
+
+			Convey("Tags work", func() {
+				now := clock.Now(c)
+
+				for i := 0; i < 5; i++ {
+					err := tq.Add(c, "pull",
+						&tq.Task{
+							Method: "PULL",
+							Name:   fmt.Sprintf("task-%d", i),
+							ETA:    now.Add(time.Duration(i+1) * time.Second),
+						},
+						&tq.Task{
+							Method: "PULL",
+							Name:   fmt.Sprintf("task-a-%d", i),
+							ETA:    now.Add(time.Duration(i+1) * time.Second),
+							Tag:    "a",
+						},
+						&tq.Task{
+							Method: "PULL",
+							Name:   fmt.Sprintf("task-b-%d", i),
+							ETA:    now.Add(time.Duration(i+1) * time.Second),
+							Tag:    "b",
+						})
+					So(err, ShouldBeNil)
+				}
+
+				tc.Add(time.Second)
+
+				// Lease leases all regardless of tags.
+				leased, err := tq.Lease(c, 100, "pull", time.Minute)
+				So(err, ShouldBeNil)
+				So(len(leased), ShouldEqual, 3)
+				So(leased[0].Name, ShouldEqual, "task-0")
+				So(leased[1].Name, ShouldEqual, "task-a-0")
+				So(leased[2].Name, ShouldEqual, "task-b-0")
+
+				// Nothing to least per tag for now.
+				leased, err = tq.LeaseByTag(c, 100, "pull", time.Minute, "a")
+				So(err, ShouldBeNil)
+				So(len(leased), ShouldEqual, 0)
+
+				tc.Add(10 * time.Second)
+
+				// Grab all "a" tasks.
+				leased, err = tq.LeaseByTag(c, 100, "pull", time.Minute, "a")
+				So(err, ShouldBeNil)
+				So(len(leased), ShouldEqual, 4)
+				for i := 0; i < 4; i++ {
+					So(leased[i].Name, ShouldEqual, fmt.Sprintf("task-a-%d", i+1))
+				}
+
+				// Only "b" and untagged tasks left.
+				leased, err = tq.Lease(c, 100, "pull", time.Minute)
+				So(err, ShouldBeNil)
+				So(len(leased), ShouldEqual, 8)
+				for i := 0; i < 4; i++ {
+					So(leased[i*2].Name, ShouldEqual, fmt.Sprintf("task-%d", i+1))
+					So(leased[i*2+1].Name, ShouldEqual, fmt.Sprintf("task-b-%d", i+1))
+				}
+			})
+
+			Convey("LeaseByTag with empty tag, hitting tag first", func() {
+				now := clock.Now(c)
+
+				// Nothing to pull, nothing there yet.
+				leased, err := tq.LeaseByTag(c, 1, "pull", time.Minute, "")
+				So(err, ShouldBeNil)
+				So(len(leased), ShouldEqual, 0)
+
+				for i := 0; i < 5; i++ {
+					err := tq.Add(c, "pull",
+						&tq.Task{
+							Method: "PULL",
+							Name:   fmt.Sprintf("task-a-%d", i),
+							ETA:    now.Add(time.Duration(i*2+1) * time.Second),
+							Tag:    "a",
+						},
+						&tq.Task{
+							Method: "PULL",
+							Name:   fmt.Sprintf("task-%d", i),
+							ETA:    now.Add(time.Duration(i*2+2) * time.Second),
+						})
+					So(err, ShouldBeNil)
+				}
+
+				// Nothing to pull, no available tasks yet.
+				leased, err = tq.LeaseByTag(c, 1, "pull", time.Minute, "")
+				So(err, ShouldBeNil)
+				So(len(leased), ShouldEqual, 0)
+
+				tc.Add(time.Minute)
+
+				// Hits "a" first and fetches only "a" tasks.
+				leased, err = tq.LeaseByTag(c, 100, "pull", time.Minute, "")
+				So(err, ShouldBeNil)
+				So(len(leased), ShouldEqual, 5)
+				for i := 0; i < 5; i++ {
+					So(leased[i].Name, ShouldEqual, fmt.Sprintf("task-a-%d", i))
+				}
+			})
+
+			Convey("LeaseByTag with empty tag, hitting untagged first", func() {
+				now := clock.Now(c)
+
+				for i := 0; i < 5; i++ {
+					err := tq.Add(c, "pull",
+						&tq.Task{
+							Method: "PULL",
+							Name:   fmt.Sprintf("task-%d", i),
+							ETA:    now.Add(time.Duration(i*2+1) * time.Second),
+						},
+						&tq.Task{
+							Method: "PULL",
+							Name:   fmt.Sprintf("task-a-%d", i),
+							ETA:    now.Add(time.Duration(i*2+2) * time.Second),
+							Tag:    "a",
+						})
+					So(err, ShouldBeNil)
+				}
+
+				tc.Add(time.Minute)
+
+				// Hits "" first and fetches only "" tasks.
+				leased, err := tq.LeaseByTag(c, 100, "pull", time.Minute, "")
+				So(err, ShouldBeNil)
+				So(len(leased), ShouldEqual, 5)
+				for i := 0; i < 5; i++ {
+					So(leased[i].Name, ShouldEqual, fmt.Sprintf("task-%d", i))
+				}
+			})
+		})
 	})
 }

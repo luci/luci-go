@@ -99,6 +99,9 @@ func LeaseByTag(c context.Context, maxTasks int, queueName string, leaseTime tim
 //
 // Used to request more processing time, or to abandon processing. leaseTime has
 // seconds precision and must not be negative.
+//
+// On success, modifies task's ETA field in-place with updated lease expiration
+// time.
 func ModifyLease(c context.Context, task *Task, queueName string, leaseTime time.Duration) error {
 	return Raw(c).ModifyLease(task, queueName, leaseTime)
 }

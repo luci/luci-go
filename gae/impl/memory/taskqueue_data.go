@@ -5,12 +5,14 @@
 package memory
 
 import (
+	"container/heap"
 	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -26,29 +28,35 @@ var (
 
 	validTaskName = regexp.MustCompile("^[0-9a-zA-Z\\-\\_]{0,500}$")
 
-	errBadRequest      = errors.New("BAD_REQUEST")
-	errInvalidTaskName = errors.New("INVALID_TASK_NAME")
-	errUnknownQueue    = errors.New("UNKNOWN_QUEUE")
-	errTombstonedTask  = errors.New("TOMBSTONED_TASK")
-	errUnknownTask     = errors.New("UNKNOWN_TASK")
+	errBadRequest       = errors.New("BAD_REQUEST")
+	errInvalidTaskName  = errors.New("INVALID_TASK_NAME")
+	errUnknownQueue     = errors.New("UNKNOWN_QUEUE")
+	errTombstonedTask   = errors.New("TOMBSTONED_TASK")
+	errUnknownTask      = errors.New("UNKNOWN_TASK")
+	errInvalidQueueMode = errors.New("INVALID_QUEUE_MODE")
+	errTaskLeaseExpired = errors.New("TASK_LEASE_EXPIRED")
 )
 
 //////////////////////////////// sortedQueue ///////////////////////////////////
 
 type sortedQueue struct {
-	name string
+	name        string
+	isPullQueue bool
 
 	tasks    map[string]*tq.Task // added, but not deleted
 	archived map[string]*tq.Task // tombstones
 
-	// TODO(vadimsh): add a structure sorted by ETA
+	sorted       taskIndex             // sorted by (ETA, name)
+	sortedPerTag map[string]*taskIndex // tag => tasks sorted by (ETA, name)
 }
 
-func newSortedQueue(name string) *sortedQueue {
+func newSortedQueue(name string, isPullQueue bool) *sortedQueue {
 	return &sortedQueue{
-		name:     name,
-		tasks:    map[string]*tq.Task{},
-		archived: map[string]*tq.Task{},
+		name:         name,
+		isPullQueue:  isPullQueue,
+		tasks:        map[string]*tq.Task{},
+		archived:     map[string]*tq.Task{},
+		sortedPerTag: map[string]*taskIndex{},
 	}
 }
 
@@ -71,6 +79,13 @@ func (q *sortedQueue) genTaskName(c context.Context) string {
 }
 
 func (q *sortedQueue) addTask(task *tq.Task) error {
+	switch {
+	case task.Method == "PULL" && !q.isPullQueue:
+		return errInvalidQueueMode
+	case task.Method != "PULL" && q.isPullQueue:
+		return errInvalidQueueMode
+	}
+
 	if _, ok := q.archived[task.Name]; ok {
 		// SDK converts TOMBSTONE -> already added too
 		return tq.ErrTaskAlreadyAdded
@@ -80,7 +95,16 @@ func (q *sortedQueue) addTask(task *tq.Task) error {
 
 	q.tasks[task.Name] = task
 
-	// TODO(vadimsh): If a PULL task, add to ETA-sorted array.
+	if q.isPullQueue {
+		q.sorted.add(task)
+
+		perTag, ok := q.sortedPerTag[task.Tag]
+		if !ok {
+			perTag = &taskIndex{}
+			q.sortedPerTag[task.Tag] = perTag
+		}
+		perTag.add(task)
+	}
 
 	return nil
 }
@@ -89,22 +113,134 @@ func (q *sortedQueue) deleteTask(task *tq.Task) error {
 	if _, ok := q.archived[task.Name]; ok {
 		return errTombstonedTask
 	}
-
 	if _, ok := q.tasks[task.Name]; !ok {
 		return errUnknownTask
 	}
 
-	q.archived[task.Name] = q.tasks[task.Name]
+	t := q.tasks[task.Name]
+	q.archived[task.Name] = t
 	delete(q.tasks, task.Name)
 
-	// TODO(vadimsh): If a PULL task, remove from ETA-sorted array.
+	if q.isPullQueue {
+		q.sorted.remove(t)
+		q.sortedPerTag[t.Tag].remove(t)
+	}
 
+	return nil
+}
+
+func (q *sortedQueue) leaseTasks(now time.Time, maxTasks int, leaseTime time.Duration, useTag bool, tag string) ([]*tq.Task, error) {
+	if !q.isPullQueue {
+		return nil, errInvalidQueueMode
+	}
+
+	if maxTasks <= 0 {
+		return nil, errBadRequest
+	}
+	leaseSec := int(leaseTime / time.Second)
+	if leaseSec < 0 {
+		return nil, errBadRequest
+	}
+
+	if !useTag && tag != "" {
+		panic("taskqueue: impossible leaseTasks call")
+	}
+
+	// useTag == true and tag == "" is VALID request here. It means "find
+	// the first task by ETA, and use its tag as if it was passed to leaseTasks,
+	// or fetch only untagged tasks if the tag is not set". That's how production
+	// API works too.
+	if useTag && tag == "" {
+		// Fetch the first task with ETA <= now to examine its tag.
+		task := q.sorted.peek()
+		if task == nil || task.ETA.After(now) {
+			return nil, nil // no ready tasks at all
+		}
+		// It is possible 'tag' is "" here. It means "fetch only untagged tasks".
+		tag = task.Tag
+	}
+
+	// Extract all the tasks that match the criteria. We'll update their ETA and
+	// push them back into the index (at updated positions).
+	var tasks []*tq.Task
+	if useTag {
+		if perTag := q.sortedPerTag[tag]; perTag != nil {
+			tasks = perTag.extract(now, maxTasks)
+			for _, t := range tasks {
+				q.sorted.remove(t)
+			}
+		}
+	} else {
+		tasks = q.sorted.extract(now, maxTasks)
+		for _, t := range tasks {
+			q.sortedPerTag[t.Tag].remove(t)
+		}
+	}
+
+	// Seconds precision is important, that's how production API works.
+	newETA := now.Add(time.Duration(leaseSec) * time.Second)
+	for _, t := range tasks {
+		t.ETA = newETA
+		q.sorted.add(t)
+		q.sortedPerTag[t.Tag].add(t)
+	}
+
+	out := make([]*tq.Task, len(tasks))
+	for i := range tasks {
+		out[i] = tasks[i].Duplicate()
+	}
+	return out, nil
+}
+
+func (q *sortedQueue) modifyTaskLease(now time.Time, t *tq.Task, leaseTime time.Duration) error {
+	if !q.isPullQueue {
+		return errInvalidQueueMode
+	}
+
+	leaseSec := int(leaseTime / time.Second)
+	if leaseSec < 0 {
+		return errBadRequest
+	}
+
+	if _, ok := q.archived[t.Name]; ok {
+		return errTombstonedTask
+	}
+	if _, ok := q.tasks[t.Name]; !ok {
+		return errUnknownTask
+	}
+
+	// Check ownership of the task by using ETA field as a "cookie". Clients are
+	// supposed to round-trip the ETA they get from 'leaseTasks' back to
+	// 'modifyLease'. Production API works the same way.
+	task := q.tasks[t.Name]
+	if !task.ETA.Equal(t.ETA) {
+		return errTaskLeaseExpired
+	}
+
+	// The lease has been lost by timeout.
+	if now.After(task.ETA) {
+		return errTaskLeaseExpired
+	}
+
+	// Update the lease and the indexes. Seconds precision is important, that's
+	// how production API works.
+	q.sorted.remove(task)
+	q.sortedPerTag[task.Tag].remove(task)
+	task.ETA = now.Add(time.Duration(leaseSec) * time.Second)
+	q.sorted.add(task)
+	q.sortedPerTag[task.Tag].add(task)
+
+	// Make the caller know the new ETA, in case it needs to be passed to
+	// 'modifyLease' again.
+	t.ETA = task.ETA
 	return nil
 }
 
 func (q *sortedQueue) purge() {
 	q.tasks = map[string]*tq.Task{}
 	q.archived = map[string]*tq.Task{}
+	q.sorted = taskIndex{}
+	q.sortedPerTag = map[string]*taskIndex{}
 }
 
 func (q *sortedQueue) getStats() *tq.Statistics {
@@ -119,6 +255,75 @@ func (q *sortedQueue) getStats() *tq.Statistics {
 		}
 	}
 	return &s
+}
+
+/////////////////////////////// Indexing helpers ///////////////////////////////
+
+// taskIndex is a heap of tasks sorted by (ETA, name), oldest first.
+type taskIndex struct {
+	data taskIndexData
+}
+
+// add puts the task into the index, complexity is O(log(N)).
+func (idx *taskIndex) add(t *tq.Task) {
+	heap.Push(&idx.data, t)
+}
+
+// remove deletes the task from the index, complexity is O(N).
+func (idx *taskIndex) remove(t *tq.Task) {
+	for i, task := range idx.data {
+		if t == task {
+			heap.Remove(&idx.data, i)
+			return
+		}
+	}
+}
+
+// peek returns the task with the minimum ETA, complexity is O(1).
+func (idx *taskIndex) peek() *tq.Task {
+	if len(idx.data) == 0 {
+		return nil
+	}
+	return idx.data[0]
+}
+
+// extract finds up to 'max' tasks with ETA <= now and removes them.
+//
+// Returns them as well, preserving the order (the first returned task is the
+// oldest).
+//
+// Complexity is O(log(N)*max).
+func (idx *taskIndex) extract(now time.Time, max int) []*tq.Task {
+	var out []*tq.Task
+	for len(idx.data) > 0 && len(out) < max && !idx.data[0].ETA.After(now) {
+		out = append(out, heap.Pop(&idx.data).(*tq.Task))
+	}
+	return out
+}
+
+// taskIndexData implements heap.Interface.
+type taskIndexData []*tq.Task
+
+func (d taskIndexData) Len() int      { return len(d) }
+func (d taskIndexData) Swap(i, j int) { d[i], d[j] = d[j], d[i] }
+
+func (d taskIndexData) Less(i, j int) bool {
+	if d[i].ETA.Equal(d[j].ETA) {
+		return d[i].Name < d[j].Name
+	}
+	return d[i].ETA.Before(d[j].ETA)
+}
+
+func (d *taskIndexData) Push(x interface{}) {
+	*d = append(*d, x.(*tq.Task))
+}
+
+func (d *taskIndexData) Pop() interface{} {
+	old := *d
+	n := len(old)
+	x := old[n-1]
+	*d = old[0 : n-1]
+	return x
 }
 
 //////////////////////////////// taskQueueData /////////////////////////////////
@@ -136,7 +341,7 @@ var _ interface {
 
 func newTaskQueueData() memContextObj {
 	return &taskQueueData{
-		queues: map[string]*sortedQueue{"default": newSortedQueue("default")},
+		queues: map[string]*sortedQueue{"default": newSortedQueue("default", false)},
 	}
 }
 
@@ -170,13 +375,21 @@ func (t *taskQueueData) GetTransactionTasks() tq.AnonymousQueueData {
 }
 
 func (t *taskQueueData) CreateQueue(queueName string) {
+	t.createQueueInternal(queueName, false)
+}
+
+func (t *taskQueueData) CreatePullQueue(queueName string) {
+	t.createQueueInternal(queueName, true)
+}
+
+func (t *taskQueueData) createQueueInternal(queueName string, isPullQueue bool) {
 	t.Lock()
 	defer t.Unlock()
 
 	if _, ok := t.queues[queueName]; ok {
 		panic(fmt.Errorf("memory/taskqueue: cannot add the same queue twice! %q", queueName))
 	}
-	t.queues[queueName] = newSortedQueue(queueName)
+	t.queues[queueName] = newSortedQueue(queueName, isPullQueue)
 }
 
 func (t *taskQueueData) GetScheduledTasks() tq.QueueData {
@@ -319,4 +532,8 @@ func (t *txnTaskQueueData) GetScheduledTasks() tq.QueueData {
 
 func (t *txnTaskQueueData) CreateQueue(queueName string) {
 	t.parent.CreateQueue(queueName)
+}
+
+func (t *txnTaskQueueData) CreatePullQueue(queueName string) {
+	t.parent.CreatePullQueue(queueName)
 }

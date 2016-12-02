@@ -144,7 +144,12 @@ func (t tqImpl) LeaseByTag(maxTasks int, queueName string, leaseTime time.Durati
 }
 
 func (t tqImpl) ModifyLease(task *tq.Task, queueName string, leaseTime time.Duration) error {
-	return taskqueue.ModifyLease(t.aeCtx, tqF2R(task), queueName, int(leaseTime/time.Second))
+	realTask := tqF2R(task)
+	err := taskqueue.ModifyLease(t.aeCtx, realTask, queueName, int(leaseTime/time.Second))
+	if err == nil {
+		task.ETA = realTask.ETA
+	}
+	return err
 }
 
 func (t tqImpl) Purge(queueName string) error {

@@ -84,15 +84,39 @@ func (t *taskqueueImpl) DeleteMulti(tasks []*tq.Task, queueName string, cb tq.Ra
 }
 
 func (t *taskqueueImpl) Lease(maxTasks int, queueName string, leaseTime time.Duration) ([]*tq.Task, error) {
-	panic("not implemented yet")
+	t.Lock()
+	defer t.Unlock()
+
+	q, err := t.getQueueLocked(queueName)
+	if err != nil {
+		return nil, err
+	}
+
+	return q.leaseTasks(clock.Now(t.ctx), maxTasks, leaseTime, false, "")
 }
 
 func (t *taskqueueImpl) LeaseByTag(maxTasks int, queueName string, leaseTime time.Duration, tag string) ([]*tq.Task, error) {
-	panic("not implemented yet")
+	t.Lock()
+	defer t.Unlock()
+
+	q, err := t.getQueueLocked(queueName)
+	if err != nil {
+		return nil, err
+	}
+
+	return q.leaseTasks(clock.Now(t.ctx), maxTasks, leaseTime, true, tag)
 }
 
 func (t *taskqueueImpl) ModifyLease(task *tq.Task, queueName string, leaseTime time.Duration) error {
-	panic("not implemented yet")
+	t.Lock()
+	defer t.Unlock()
+
+	q, err := t.getQueueLocked(queueName)
+	if err != nil {
+		return err
+	}
+
+	return q.modifyTaskLease(clock.Now(t.ctx), task, leaseTime)
 }
 
 func (t *taskqueueImpl) Purge(queueName string) error {
