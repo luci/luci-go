@@ -74,9 +74,6 @@ const (
 	// TagAttachTimeout is how long to wait for an instance to be processed when attaching tags.
 	TagAttachTimeout = 3 * time.Minute
 
-	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 1.3"
-
 	// ServiceURL is URL of a backend to connect to by default.
 	ServiceURL = "https://chrome-infra-packages.appspot.com"
 )
@@ -109,6 +106,19 @@ var (
 	// ErrPackageNotFound is returned by DeletePackage if the package doesn't exist.
 	ErrPackageNotFound = errors.New("no such package")
 )
+
+var (
+	// UserAgent is HTTP user agent string for CIPD client.
+	UserAgent = "cipd 1.3"
+)
+
+func init() {
+	ver, err := version.GetStartupVersion()
+	if err != nil {
+		return
+	}
+	UserAgent += fmt.Sprintf(" (%s@%s)", ver.PackageName, ver.InstanceID)
+}
 
 // UnixTime is time.Time that serializes to unix timestamp in JSON (represented
 // as a number of seconds since January 1, 1970 UTC).
