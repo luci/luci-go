@@ -78,17 +78,18 @@ func TestTriggerBuild(t *testing.T) {
 				Repo: ts.URL,
 				Refs: []string{"refs/heads/master"},
 			},
-			Client:       http.DefaultClient,
-			SaveCallback: func() error { return nil },
+			Client:        http.DefaultClient,
+			SaveCallback:  func() error { return nil },
+			OverrideJobID: "proj/job",
 		}
 
 		// Launch.
 		So(m.LaunchTask(c, ctl), ShouldBeNil)
 		So(ctl.Log[0], ShouldEqual, "Trigger build for commit baddcafe")
-		r := Repository{Repository: ts.URL}
+		r := Repository{ID: "proj/job:" + ts.URL}
 		So(ds.Get(c, &r), ShouldBeNil)
 		So(r, ShouldResemble, Repository{
-			Repository: ts.URL,
+			ID: "proj/job:" + ts.URL,
 			References: []Reference{
 				{Name: "refs/heads/master", Revision: "baddcafe"},
 			},
@@ -127,14 +128,15 @@ func TestTriggerBuild(t *testing.T) {
 				Repo: ts.URL,
 				Refs: []string{"refs/heads/master"},
 			},
-			Client:       http.DefaultClient,
-			SaveCallback: func() error { return nil },
+			Client:        http.DefaultClient,
+			SaveCallback:  func() error { return nil },
+			OverrideJobID: "proj/job",
 		}
 
 		// Launch.
 		So(ds.Put(c,
 			&Repository{
-				Repository: ts.URL,
+				ID: "proj/job:" + ts.URL,
 				References: []Reference{
 					{Name: "refs/heads/master", Revision: "baddcafe"},
 				},

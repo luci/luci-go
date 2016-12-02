@@ -76,7 +76,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	var headsErr error
 	wg.Add(1)
 	go func() {
-		heads, headsErr = m.load(c, u)
+		heads, headsErr = m.load(c, ctl.JobID(), u)
 		wg.Done()
 	}()
 
@@ -149,7 +149,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 		// TODO(phosek): Trigger buildbucket job here.
 		ctl.DebugLog("Trigger build for commit %s", commit.Commit)
 	}
-	if err := m.save(c, u, heads); err != nil {
+	if err := m.save(c, ctl.JobID(), u, heads); err != nil {
 		return err
 	}
 
@@ -186,39 +186,40 @@ type Repository struct {
 	_kind  string         `gae:"$kind,gitiles.Repository"`
 	_extra ds.PropertyMap `gae:"-,extra"`
 
-	// Repository is the repository URL.
-	Repository string `gae:"$id"`
+	// ID is "<job ID>:<repository URL>".
+	ID string `gae:"$id"`
 
 	// References is the slice of all the tracked refs within repository.
 	References []Reference `gae:",noindex"`
 }
 
-func (m TaskManager) load(c context.Context, u *url.URL) (map[string]string, error) {
-	stored := &Repository{Repository: u.String()}
+func repositoryID(jobID string, u *url.URL) string {
+	return fmt.Sprintf("%s:%s", jobID, u)
+}
+
+func (m TaskManager) load(c context.Context, jobID string, u *url.URL) (map[string]string, error) {
+	stored := &Repository{ID: repositoryID(jobID, u)}
 	err := ds.Get(c, stored)
 	if err != nil && err != ds.ErrNoSuchEntity {
 		return nil, err
 	}
-	heads := map[string]string{}
+	heads := make(map[string]string, len(stored.References))
 	for _, b := range stored.References {
 		heads[b.Name] = b.Revision
 	}
 	return heads, nil
 }
 
-func (m TaskManager) save(c context.Context, u *url.URL, heads map[string]string) error {
-	stored := &Repository{Repository: u.String()}
-	err := ds.Get(c, stored)
-	if err != nil && err != ds.ErrNoSuchEntity {
-		return err
-	}
-	refs := []Reference{}
+func (m TaskManager) save(c context.Context, jobID string, u *url.URL, heads map[string]string) error {
+	refs := make([]Reference, 0, len(heads))
 	for n, r := range heads {
 		refs = append(refs, Reference{
 			Name:     n,
 			Revision: r,
 		})
 	}
-	stored.References = refs
-	return ds.Put(c, stored)
+	return ds.Put(c, &Repository{
+		ID:         repositoryID(jobID, u),
+		References: refs,
+	})
 }
