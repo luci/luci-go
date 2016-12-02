@@ -31,6 +31,14 @@ var application = &subcommands.DefaultApplication{
 		authcli.SubcommandLogout(auth.Options{}, "logout", false),
 		common.CmdVersion(version),
 	},
+
+	EnvVars: map[string]subcommands.EnvVarDefinition{
+		"SWARMING_TASK_ID": {
+			Advanced: true,
+			ShortDesc: ("Used when processing new triggered tasks. Is used as the " +
+				"parent task ID for the newly triggered tasks."),
+		},
+	},
 }
 
 func main() {

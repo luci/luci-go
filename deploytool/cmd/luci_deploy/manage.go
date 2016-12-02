@@ -30,8 +30,8 @@ type cmdManageRun struct {
 	subcommands.CommandRunBase
 }
 
-func (cmd *cmdManageRun) Run(app subcommands.Application, args []string, _ subcommands.Env) int {
-	a, c := app.(*application), cli.GetContext(app, cmd)
+func (cmd *cmdManageRun) Run(app subcommands.Application, args []string, env subcommands.Env) int {
+	a, c := app.(*application), cli.GetContext(app, cmd, env)
 
 	if len(args) == 0 {
 		log.Errorf(c, "Must supply a Deployment or Component to operate on.")
@@ -145,8 +145,8 @@ type manageGKEPodKubectlCommandRun struct {
 	cluster string
 }
 
-func (cmd *manageGKEPodKubectlCommandRun) Run(app subcommands.Application, args []string, _ subcommands.Env) int {
-	a, c := app.(*manageApp), cli.GetContext(app, cmd)
+func (cmd *manageGKEPodKubectlCommandRun) Run(app subcommands.Application, args []string, env subcommands.Env) int {
+	a, c := app.(*manageApp), cli.GetContext(app, cmd, env)
 
 	// Figure out which cluster to use.
 	var bp *layoutDeploymentGKEPodBinding
@@ -177,7 +177,7 @@ func (cmd *manageGKEPodKubectlCommandRun) Run(app subcommands.Application, args 
 			clusters[i] = fmt.Sprintf("- %s", cluster.cluster.Name)
 		}
 
-		log.Errorf(c, "Kubernetes pod is bound to multiple clusters. Specify one with -cluster:\n",
+		log.Errorf(c, "Kubernetes pod is bound to multiple clusters. Specify one with -cluster:\n%s",
 			strings.Join(clusters, "\n"))
 		return 1
 	}
@@ -213,8 +213,8 @@ type updateGAECommandRun struct {
 	project *layoutDeploymentCloudProject
 }
 
-func (cmd *updateGAECommandRun) Run(app subcommands.Application, args []string, _ subcommands.Env) int {
-	a, c := app.(*manageApp), cli.GetContext(app, cmd)
+func (cmd *updateGAECommandRun) Run(app subcommands.Application, args []string, env subcommands.Env) int {
+	a, c := app.(*manageApp), cli.GetContext(app, cmd, env)
 
 	// Do not deploy any actual GAE modules.
 	a.dp.reg.appEngineModulesOnly()

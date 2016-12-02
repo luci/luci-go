@@ -69,10 +69,10 @@ func loadJSONPB(c context.Context, flavor, path string, msg proto.Message) {
 	}
 }
 
-func (r *cmdRun) start(a subcommands.Application, cr subcommands.CommandRun, c *subcommands.Command) {
+func (r *cmdRun) start(a subcommands.Application, cr subcommands.CommandRun, env subcommands.Env, c *subcommands.Command) {
 	r.cmd = c
 
-	r.Context = cli.GetContext(a, cr)
+	r.Context = cli.GetContext(a, cr, env)
 
 	r.exAuth = &dm.Execution_Auth{}
 	s := lucictx.GetSwarming(r.Context)

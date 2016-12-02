@@ -47,7 +47,7 @@ type f2jRun struct {
 	cmdRun
 }
 
-func (r *f2jRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (r *f2jRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if r.cmd == nil {
 		r.cmd = cmdF2J
 	}
@@ -58,7 +58,7 @@ func (r *f2jRun) Run(a subcommands.Application, args []string, _ subcommands.Env
 	host, msgType := args[0], args[1]
 	args = args[2:]
 
-	ctx := cli.GetContext(a, r)
+	ctx := cli.GetContext(a, r, env)
 	client, err := r.authenticatedClient(ctx, host)
 	if err != nil {
 		return ecAuthenticatedClientError

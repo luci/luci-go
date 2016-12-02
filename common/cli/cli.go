@@ -24,19 +24,39 @@ type ContextModificator interface {
 	ModifyContext(context.Context) context.Context
 }
 
+var envKey = "holds a subcommands.Env"
+
+// Getenv returns the given value from the embedded subcommands.Env, or "" if
+// the value was unset and had no default.
+func Getenv(ctx context.Context, key string) string {
+	return LookupEnv(ctx, key).Value
+}
+
+// LookupEnv returns the given value from the embedded subcommands.Env as-is.
+func LookupEnv(ctx context.Context, key string) subcommands.EnvVar {
+	e, _ := ctx.Value(&envKey).(subcommands.Env)
+	return e[key]
+}
+
 // GetContext sniffs ContextModificator in the app and in the cmd and uses them
 // to derive a context for the command.
+//
+// Embeds the subcommands.Env into the Context (if any), which can be accessed
+// with the *env methods in this package.
 //
 // Subcommands can use it to get an initial context in their 'Run' methods.
 //
 // Returns the background context if app doesn't implement ContextModificator.
-func GetContext(app subcommands.Application, cmd subcommands.CommandRun) context.Context {
+func GetContext(app subcommands.Application, cmd subcommands.CommandRun, env subcommands.Env) context.Context {
 	ctx := context.Background()
 	if m, _ := app.(ContextModificator); m != nil {
 		ctx = m.ModifyContext(ctx)
 	}
 	if m, _ := cmd.(ContextModificator); m != nil {
 		ctx = m.ModifyContext(ctx)
+	}
+	if len(env) > 0 {
+		ctx = context.WithValue(ctx, &envKey, env)
 	}
 	return ctx
 }

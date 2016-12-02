@@ -59,8 +59,8 @@ type cmdCheckoutRun struct {
 	local bool
 }
 
-func (cmd *cmdCheckoutRun) Run(app subcommands.Application, args []string, _ subcommands.Env) int {
-	a, c := app.(*application), cli.GetContext(app, cmd)
+func (cmd *cmdCheckoutRun) Run(app subcommands.Application, args []string, env subcommands.Env) int {
+	a, c := app.(*application), cli.GetContext(app, cmd, env)
 
 	// Perform the checkout.
 	err := a.runWork(c, func(w *work) error {

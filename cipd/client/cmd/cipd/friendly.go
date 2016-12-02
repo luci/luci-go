@@ -444,7 +444,7 @@ type installRun struct {
 	force bool
 }
 
-func (c *installRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *installRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 1, 2) {
 		return 1
 	}
@@ -473,7 +473,7 @@ func (c *installRun) Run(a subcommands.Application, args []string, _ subcommands
 		return c.done(nil, err)
 	}
 
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	if err = site.initClient(ctx, c.authFlags); err != nil {
 		return c.done(nil, err)
 	}
@@ -503,7 +503,7 @@ type installedRun struct {
 	siteRootOptions
 }
 
-func (c *installedRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *installedRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 0, -1) {
 		return 1
 	}
@@ -511,6 +511,6 @@ func (c *installedRun) Run(a subcommands.Application, args []string, _ subcomman
 	if err != nil {
 		return c.done(nil, err)
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	return c.doneWithPins(site.installedPackages(ctx, args))
 }

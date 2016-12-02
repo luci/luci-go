@@ -25,11 +25,11 @@ type fmtRun struct {
 	cmdRun
 }
 
-func (r *fmtRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (r *fmtRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	app := &cli.Application{
 		Name: "fmt",
 		Context: func(context.Context) context.Context {
-			return cli.GetContext(a, r)
+			return cli.GetContext(a, r, env)
 		},
 		Title: "Converts a message formats.",
 		Commands: []*subcommands.Command{

@@ -195,10 +195,10 @@ func runQuery(c context.Context, dc dm.DepsClient, query *dm.WalkGraphReq) (ret 
 	return
 }
 
-func (r *visQueryRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (r *visQueryRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	r.cmd = cmdVisQuery
 
-	c, cancel := context.WithCancel(cli.GetContext(a, r))
+	c, cancel := context.WithCancel(cli.GetContext(a, r, env))
 
 	if r.path == "" && r.sequence {
 		return r.argErr("path is required for sequence")

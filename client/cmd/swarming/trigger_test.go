@@ -185,7 +185,7 @@ func TestProcessTriggerOptions_WithRawArgs(t *testing.T) {
 	c.isolated = "1234567890123456789012345678901234567890"
 	c.rawCmd = true
 
-	result, err := c.processTriggerOptions([]string{"arg1", "arg2"})
+	result, err := c.processTriggerOptions([]string{"arg1", "arg2"}, nil)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, []string{"arg1", "arg2"}, result.Properties.Command)
 	ut.AssertEqual(t, ([]string)(nil), result.Properties.ExtraArgs)
@@ -199,7 +199,7 @@ func TestProcessTriggerOptions_ExtraArgs(t *testing.T) {
 	c.isolateServer = "http://localhost:10050"
 	c.isolated = "1234567890123456789012345678901234567890"
 
-	result, err := c.processTriggerOptions([]string{"arg1", "arg2"})
+	result, err := c.processTriggerOptions([]string{"arg1", "arg2"}, nil)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, []string(nil), result.Properties.Command)
 	ut.AssertEqual(t, []string{"arg1", "arg2"}, result.Properties.ExtraArgs)
@@ -217,7 +217,7 @@ func TestProcessTriggerOptions_EatDashDash(t *testing.T) {
 	c.isolateServer = "http://localhost:10050"
 	c.isolated = "1234567890123456789012345678901234567890"
 
-	result, err := c.processTriggerOptions([]string{"--", "arg1", "arg2"})
+	result, err := c.processTriggerOptions([]string{"--", "arg1", "arg2"}, nil)
 	ut.AssertEqual(t, nil, err)
 	ut.AssertEqual(t, []string(nil), result.Properties.Command)
 	ut.AssertEqual(t, []string{"arg1", "arg2"}, result.Properties.ExtraArgs)

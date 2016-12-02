@@ -28,8 +28,8 @@ type getRun struct {
 	buildIDArg
 }
 
-func (r *getRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
-	ctx := cli.GetContext(a, r)
+func (r *getRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	ctx := cli.GetContext(a, r, env)
 
 	if err := r.parseArgs(args); err != nil {
 		return r.done(ctx, err)

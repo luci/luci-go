@@ -63,8 +63,8 @@ type EditResult struct {
 	Error     string `json:"error,omitempty"`
 }
 
-func (e *editDistanceRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
-	e.start(a, e, cmdEditDistance)
+func (e *editDistanceRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	e.start(a, e, env, cmdEditDistance)
 
 	p := &EditParams{}
 	err := json.NewDecoder(bytes.NewBufferString(e.questDesc.Parameters)).Decode(p)

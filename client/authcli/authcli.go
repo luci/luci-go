@@ -146,13 +146,13 @@ type loginRun struct {
 	commandRunBase
 }
 
-func (c *loginRun) Run(a subcommands.Application, _ []string, _ subcommands.Env) int {
+func (c *loginRun) Run(a subcommands.Application, _ []string, env subcommands.Env) int {
 	opts, err := c.flags.Options()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	authenticator := auth.NewAuthenticator(ctx, auth.InteractiveLogin, opts)
 	if _, err := authenticator.Client(); err != nil {
 		fmt.Fprintf(os.Stderr, "Login failed: %s\n", err.Error())
@@ -194,13 +194,13 @@ type logoutRun struct {
 	commandRunBase
 }
 
-func (c *logoutRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *logoutRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	opts, err := c.flags.Options()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	err = auth.NewAuthenticator(ctx, auth.SilentLogin, opts).PurgeCredentialsCache()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -236,13 +236,13 @@ type infoRun struct {
 	commandRunBase
 }
 
-func (c *infoRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *infoRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	opts, err := c.flags.Options()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	authenticator := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 	switch _, err := authenticator.Client(); {
 	case err == auth.ErrLoginRequired:
@@ -308,7 +308,7 @@ const (
 	TokenExitCodeInternalError
 )
 
-func (c *tokenRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	opts, err := c.flags.Options()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -319,7 +319,7 @@ func (c *tokenRun) Run(a subcommands.Application, args []string, _ subcommands.E
 		return TokenExitCodeInvalidInput
 	}
 
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	authenticator := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 	token, err := authenticator.GetAccessToken(c.lifetime)
 	if err != nil {

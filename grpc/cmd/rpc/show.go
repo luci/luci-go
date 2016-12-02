@@ -37,7 +37,7 @@ type showRun struct {
 	cmdRun
 }
 
-func (r *showRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (r *showRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if r.cmd == nil {
 		r.cmd = cmdShow
 	}
@@ -54,7 +54,7 @@ func (r *showRun) Run(a subcommands.Application, args []string, _ subcommands.En
 		return r.argErr("")
 	}
 
-	ctx := cli.GetContext(a, r)
+	ctx := cli.GetContext(a, r, env)
 	client, err := r.authenticatedClient(ctx, host)
 	if err != nil {
 		return ecAuthenticatedClientError

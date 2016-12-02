@@ -89,8 +89,8 @@ type cmdDeployRun struct {
 	dp deploymentPlan
 }
 
-func (cmd *cmdDeployRun) Run(app subcommands.Application, args []string, _ subcommands.Env) int {
-	a, c := app.(*application), cli.GetContext(app, cmd)
+func (cmd *cmdDeployRun) Run(app subcommands.Application, args []string, env subcommands.Env) int {
+	a, c := app.(*application), cli.GetContext(app, cmd, env)
 
 	err := a.runWork(c, func(w *work) error {
 		// Perform our planned checkout.

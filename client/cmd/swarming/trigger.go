@@ -175,7 +175,7 @@ func (c *triggerRun) Parse(args []string) error {
 	return err
 }
 
-func (c *triggerRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *triggerRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if err := c.Parse(args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
@@ -187,16 +187,16 @@ func (c *triggerRun) Run(a subcommands.Application, args []string, _ subcommands
 	}
 	defer cl.Close()
 
-	if err := c.main(a, args); err != nil {
+	if err := c.main(a, args, env); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
 	}
 	return 0
 }
 
-func (c *triggerRun) main(a subcommands.Application, args []string) error {
+func (c *triggerRun) main(a subcommands.Application, args []string, env subcommands.Env) error {
 	start := time.Now()
-	request, err := c.processTriggerOptions(args)
+	request, err := c.processTriggerOptions(args, env)
 	if err != nil {
 		return err
 	}
@@ -260,7 +260,7 @@ func (c *triggerRun) main(a subcommands.Application, args []string) error {
 	return err
 }
 
-func (c *triggerRun) processTriggerOptions(args []string) (*swarming.SwarmingRpcsNewTaskRequest, error) {
+func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (*swarming.SwarmingRpcsNewTaskRequest, error) {
 	var inputsRefs *swarming.SwarmingRpcsFilesRef
 	var commands []string
 	var extraArgs []string
@@ -316,7 +316,7 @@ func (c *triggerRun) processTriggerOptions(args []string) (*swarming.SwarmingRpc
 	request := swarming.SwarmingRpcsNewTaskRequest{
 		ExpirationSecs: c.hardTimeout,
 		Name:           c.taskName,
-		ParentTaskId:   os.Getenv("SWARMING_TASK_ID"),
+		ParentTaskId:   env["SWARMING_TASK_ID"].Value,
 		Priority:       c.priority,
 		Properties:     &properties,
 		Tags:           c.tags,

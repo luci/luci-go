@@ -253,8 +253,8 @@ func (opts *ClientOptions) makeCipdClient(ctx context.Context, root string) (cip
 		return nil, err
 	}
 	ua := cipd.UserAgent
-	if prefix := os.Getenv("CIPD_HTTP_USER_AGENT_PREFIX"); prefix != "" {
-		ua = fmt.Sprintf("%s/%s", prefix, ua)
+	if prefix := cli.LookupEnv(ctx, CIPDHTTPUserAgentPrefix); prefix.Exists {
+		ua = fmt.Sprintf("%s/%s", prefix.Value, ua)
 	}
 	return cipd.NewClient(cipd.ClientOptions{
 		ServiceURL:          opts.serviceURL,
@@ -648,11 +648,11 @@ type createRun struct {
 	Opts createOpts
 }
 
-func (c *createRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *createRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 0, 0) {
 		return 1
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	return c.done(buildAndUploadInstance(ctx, &c.Opts))
 }
 
@@ -705,11 +705,11 @@ type ensureRun struct {
 	listFile string
 }
 
-func (c *ensureRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 0, 0) {
 		return 1
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	currentPins, _, err := ensurePackages(ctx, c.rootDir, c.listFile, false, c.ClientOptions)
 	return c.done(currentPins, err)
 }
@@ -772,11 +772,11 @@ type checkUpdatesRun struct {
 	listFile string
 }
 
-func (c *checkUpdatesRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *checkUpdatesRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 0, 0) {
 		return 1
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	_, actions, err := ensurePackages(ctx, c.rootDir, c.listFile, true, c.ClientOptions)
 	if err != nil {
 		ret := c.done(actions, err)
@@ -815,11 +815,11 @@ type resolveRun struct {
 	version string
 }
 
-func (c *resolveRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *resolveRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	return c.doneWithPins(resolveVersion(ctx, args[0], c.version, c.ClientOptions))
 }
 
@@ -861,11 +861,11 @@ type describeRun struct {
 	version string
 }
 
-func (c *describeRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *describeRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	return c.done(describeInstance(ctx, args[0], c.version, c.ClientOptions))
 }
 
@@ -971,14 +971,14 @@ type setRefRun struct {
 	version string
 }
 
-func (c *setRefRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *setRefRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
 	if len(c.refs) == 0 {
 		return c.done(nil, makeCLIError("at least one -ref must be provided"))
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	return c.doneWithPins(setRefOrTag(ctx, &setRefOrTagArgs{
 		ClientOptions: c.ClientOptions,
 		packagePrefix: args[0],
@@ -1074,14 +1074,14 @@ type setTagRun struct {
 	version string
 }
 
-func (c *setTagRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *setTagRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
 	if len(c.tags) == 0 {
 		return c.done(nil, makeCLIError("at least one -tag must be provided"))
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	return c.done(setRefOrTag(ctx, &setRefOrTagArgs{
 		ClientOptions: c.ClientOptions,
 		packagePrefix: args[0],
@@ -1118,7 +1118,7 @@ type listPackagesRun struct {
 	showHidden bool
 }
 
-func (c *listPackagesRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *listPackagesRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 0, 1) {
 		return 1
 	}
@@ -1126,7 +1126,7 @@ func (c *listPackagesRun) Run(a subcommands.Application, args []string, _ subcom
 	if len(args) == 1 {
 		path = args[0]
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	return c.done(listPackages(ctx, path, c.recursive, c.showHidden, c.ClientOptions))
 }
 
@@ -1171,7 +1171,7 @@ type searchRun struct {
 	TagsOptions
 }
 
-func (c *searchRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *searchRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 0, 1) {
 		return 1
 	}
@@ -1182,7 +1182,7 @@ func (c *searchRun) Run(a subcommands.Application, args []string, _ subcommands.
 	if len(args) == 1 {
 		packageName = args[0]
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	return c.done(searchInstances(ctx, packageName, c.tags[0], c.ClientOptions))
 }
 
@@ -1227,11 +1227,11 @@ type listACLRun struct {
 	ClientOptions
 }
 
-func (c *listACLRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *listACLRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	return c.done(listACL(ctx, args[0], c.ClientOptions))
 }
 
@@ -1324,11 +1324,11 @@ type editACLRun struct {
 	revoke        principalsList
 }
 
-func (c *editACLRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *editACLRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	return c.done(nil, editACL(ctx, args[0], c.owner, c.writer, c.reader, c.counterWriter, c.revoke, c.ClientOptions))
 }
 
@@ -1395,11 +1395,11 @@ type buildRun struct {
 	outputFile string
 }
 
-func (c *buildRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *buildRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 0, 0) {
 		return 1
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	err := buildInstanceFile(ctx, c.outputFile, c.InputOptions)
 	if err != nil {
 		return c.done(nil, err)
@@ -1453,11 +1453,11 @@ type deployRun struct {
 	rootDir string
 }
 
-func (c *deployRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *deployRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	return c.done(deployInstanceFile(ctx, c.rootDir, args[0]))
 }
 
@@ -1501,11 +1501,11 @@ type fetchRun struct {
 	outputPath string
 }
 
-func (c *fetchRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *fetchRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	return c.done(fetchInstanceFile(ctx, args[0], c.version, c.outputPath, c.ClientOptions))
 }
 
@@ -1568,11 +1568,11 @@ type inspectRun struct {
 	Subcommand
 }
 
-func (c *inspectRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *inspectRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	return c.done(inspectInstanceFile(ctx, args[0], true))
 }
 
@@ -1637,11 +1637,11 @@ type registerRun struct {
 	Opts registerOpts
 }
 
-func (c *registerRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *registerRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	return c.done(registerInstanceFile(ctx, args[0], &c.Opts))
 }
 
@@ -1695,11 +1695,11 @@ type deleteRun struct {
 	ClientOptions
 }
 
-func (c *deleteRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *deleteRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	return c.done(nil, deletePackage(ctx, args[0], &c.ClientOptions))
 }
 
@@ -1752,7 +1752,7 @@ type counterWriteRun struct {
 	touch     string
 }
 
-func (c *counterWriteRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *counterWriteRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
@@ -1773,7 +1773,7 @@ func (c *counterWriteRun) Run(a subcommands.Application, args []string, _ subcom
 		counter = c.touch
 	}
 
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	return c.done(nil, writeCounter(ctx, args[0], c.version, counter, delta, &c.ClientOptions))
 }
 
@@ -1816,12 +1816,12 @@ type counterReadRun struct {
 	version string
 }
 
-func (c *counterReadRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (c *counterReadRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 2, -1) {
 		return 1
 	}
 
-	ctx := cli.GetContext(a, c)
+	ctx := cli.GetContext(a, c, env)
 	ret, err := readCounters(ctx, args[0], c.version, args[1:], &c.ClientOptions)
 	return c.done(ret, err)
 }
@@ -1915,7 +1915,7 @@ type selfupdateRun struct {
 	version string
 }
 
-func (s *selfupdateRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (s *selfupdateRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !s.checkArgs(args, 0, 0) {
 		return 1
 	}
@@ -1923,7 +1923,7 @@ func (s *selfupdateRun) Run(a subcommands.Application, args []string, _ subcomma
 		s.printError(makeCLIError("-version is required"))
 		return 1
 	}
-	ctx := cli.GetContext(a, s)
+	ctx := cli.GetContext(a, s, env)
 	exePath, err := osext.Executable()
 	if err != nil {
 		s.printError(err)
@@ -1977,6 +1977,11 @@ func (s *selfupdateRun) doSelfUpdate(ctx context.Context, exePath string, fs loc
 ////////////////////////////////////////////////////////////////////////////////
 // Main.
 
+// Environment variable definitions
+const (
+	CIPDHTTPUserAgentPrefix = "CIPD_HTTP_USER_AGENT_PREFIX"
+)
+
 var application = &cli.Application{
 	Name:  "cipd",
 	Title: "Chrome Infra Package Deployer (" + cipd.UserAgent + ")",
@@ -1987,6 +1992,13 @@ var application = &cli.Application{
 			Out:    os.Stderr,
 		}
 		return loggerConfig.Use(ctx)
+	},
+
+	EnvVars: map[string]subcommands.EnvVarDefinition{
+		CIPDHTTPUserAgentPrefix: {
+			Advanced:  true,
+			ShortDesc: "Optional http User-Agent prefix.",
+		},
 	},
 
 	Commands: []*subcommands.Command{

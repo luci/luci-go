@@ -56,7 +56,7 @@ type callRun struct {
 	message string
 }
 
-func (r *callRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (r *callRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if r.cmd == nil {
 		r.cmd = cmdCall
 	}
@@ -79,7 +79,7 @@ func (r *callRun) Run(a subcommands.Application, args []string, _ subcommands.En
 		return r.argErr("%s", err)
 	}
 
-	ctx := cli.GetContext(a, r)
+	ctx := cli.GetContext(a, r, env)
 	client, err := r.authenticatedClient(ctx, host)
 	if err != nil {
 		return ecAuthenticatedClientError
