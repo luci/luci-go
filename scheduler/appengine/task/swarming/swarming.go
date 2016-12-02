@@ -190,7 +190,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	// Make sure Swarming can publish PubSub messages, grab token that would
 	// identify this invocation when receiving PubSub notifications.
 	ctl.DebugLog("Preparing PubSub topic for %q", cfg.Server)
-	topic, authToken, err := ctl.PrepareTopic(cfg.Server)
+	topic, authToken, err := ctl.PrepareTopic(c, cfg.Server)
 	if err != nil {
 		ctl.DebugLog("Failed to prepare PubSub topic - %s", err)
 		return err
@@ -237,7 +237,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 
 	// The next call may take a while. Dump the current log to the datastore.
 	// Ignore errors here, it is best effort attempt to update the log.
-	ctl.Save()
+	ctl.Save(c)
 
 	// Trigger the task.
 	service, err := m.createSwarmingService(c, ctl)
@@ -313,7 +313,7 @@ func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name st
 
 // createSwarmingService makes a configured Swarming API client.
 func (m TaskManager) createSwarmingService(c context.Context, ctl task.Controller) (*swarming.Service, error) {
-	client, err := ctl.GetClient(time.Minute)
+	client, err := ctl.GetClient(c, time.Minute)
 	if err != nil {
 		return nil, err
 	}
@@ -334,7 +334,7 @@ func (m TaskManager) createSwarmingService(c context.Context, ctl task.Controlle
 func (m TaskManager) checkTaskStatusLater(c context.Context, ctl task.Controller) {
 	// TODO(vadimsh): Make the check interval configurable?
 	if !ctl.State().Status.Final() {
-		ctl.AddTimer(statusCheckTimerInterval, statusCheckTimerName, nil)
+		ctl.AddTimer(c, statusCheckTimerInterval, statusCheckTimerName, nil)
 	}
 }
 

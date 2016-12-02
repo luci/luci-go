@@ -122,6 +122,10 @@ type Manager interface {
 // control over one job invocation. Manager must not use it outside of
 // LaunchTask. Controller implementation is generally not thread safe (but it's
 // fine to use it from multiple goroutines if access is protected by a lock).
+//
+// All methods that accept context.Context expect contexts derived from ones
+// passed to 'Manager' methods. A derived context can be used to set custom
+// deadlines for some potentially expensive methods like 'PrepareTopic'.
 type Controller interface {
 	// JobID returns full job ID the controller is operating on.
 	JobID() string
@@ -150,6 +154,10 @@ type Controller interface {
 	// Manager doesn't call Save.
 	State() *State
 
+	// DebugLog appends a line to the free form text log of the task.
+	// For debugging.
+	DebugLog(format string, args ...interface{})
+
 	// AddTimer sets up a new delayed call to Manager.HandleTimer.
 	//
 	// Timers are active as long as the invocation is not in one of the final
@@ -166,7 +174,7 @@ type Controller interface {
 	//
 	// TODO(vadimsh): Need a way to deduplicate/disable timers added when retrying
 	// on HandleTimer transient errors.
-	AddTimer(delay time.Duration, name string, payload []byte)
+	AddTimer(c context.Context, delay time.Duration, name string, payload []byte)
 
 	// PrepareTopic create PubSub topic for notifications related to the task and
 	// adds given publisher to its ACL.
@@ -181,18 +189,14 @@ type Controller interface {
 	// If URL is given, its /auth/api/v1/server/info endpoint will be used to
 	// grab a corresponding service account name. All service that use luci auth
 	// component expose this endpoint.
-	PrepareTopic(publisher string) (topic string, token string, err error)
+	PrepareTopic(c context.Context, publisher string) (topic string, token string, err error)
 
 	// GetClient returns http.Client that is configured to use job's service
 	// account credentials to talk to other services.
 	//
 	// All requests made by the client must finish before given deadline time
 	// (or they will be forcefully aborted).
-	GetClient(timeout time.Duration) (*http.Client, error)
-
-	// DebugLog appends a line to the free form text log of the task.
-	// For debugging.
-	DebugLog(format string, args ...interface{})
+	GetClient(c context.Context, timeout time.Duration) (*http.Client, error)
 
 	// Save updates the state of the task in the persistent store.
 	//
@@ -205,7 +209,7 @@ type Controller interface {
 	// Returns error if it couldn't save the invocation state. It is fine to
 	// ignore it. The engine will attempt to Save the invocation at the end anyway
 	// and it will properly handle the error if it happens again.
-	Save() error
+	Save(c context.Context) error
 }
 
 // State is mutable portion of the task invocation state.

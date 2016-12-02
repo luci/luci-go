@@ -1114,7 +1114,7 @@ func (e *engineImpl) AbortInvocation(c context.Context, jobID string, invID int6
 	}
 
 	ctl.State().Status = task.StatusAborted
-	if err = ctl.Save(); err != nil {
+	if err = ctl.Save(c); err != nil {
 		logging.Errorf(c, "Failed to save the invocation - %s", err)
 		return err
 	}
@@ -1327,7 +1327,7 @@ func (e *engineImpl) invocationTimerTick(c context.Context, jobID string, invID 
 	}
 
 	// Save anyway, to preserve the invocation log.
-	saveErr := ctl.Save()
+	saveErr := ctl.Save(c)
 	if saveErr != nil {
 		logging.Errorf(c, "Error when saving the invocation - %s", saveErr)
 	}
@@ -1471,7 +1471,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 		// ctl not fully initialized (but good enough for what's done below).
 		ctl.DebugLog("Failed to initialize task controller - %s", err)
 		ctl.State().Status = task.StatusFailed
-		return ctl.Save()
+		return ctl.Save(c)
 	}
 
 	// Ask manager to start the task. If it returns no errors, it should also move
@@ -1495,8 +1495,8 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	// touch Job entity when saving the current (failed) invocation. That way Job
 	// stays in "QUEUED" state (indicating it's queued for a new invocation).
 	retryInvocation := errors.IsTransient(err)
-	if saveErr := ctl.saveImpl(!retryInvocation); saveErr != nil {
-		logging.Errorf(ctl.ctx, "Failed to save invocation state - %s", saveErr)
+	if saveErr := ctl.saveImpl(c, !retryInvocation); saveErr != nil {
+		logging.Errorf(c, "Failed to save invocation state - %s", saveErr)
 		if err == nil {
 			err = saveErr
 		}
@@ -1504,7 +1504,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 
 	// Returning transient error here causes the task queue to retry the task.
 	if err != nil {
-		logging.WithError(err).Errorf(ctl.ctx, "Invocation failed to start")
+		logging.WithError(err).Errorf(c, "Invocation failed to start")
 	}
 	return err
 }
@@ -1515,7 +1515,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 // If task definition can't be deserialized, returns both controller and error.
 func (e *engineImpl) controllerForInvocation(c context.Context, inv *Invocation) (*taskController, error) {
 	ctl := &taskController{
-		ctx:   c,
+		ctx:   c, // for DebugLog
 		eng:   e,
 		saved: *inv,
 	}
@@ -1713,7 +1713,7 @@ func (e *engineImpl) handlePubSubMessage(c context.Context, msg *pubsub.PubsubMe
 	}
 
 	// Save anyway, to preserve the invocation log.
-	saveErr := ctl.Save()
+	saveErr := ctl.Save(c)
 	if saveErr != nil {
 		logging.Errorf(c, "Error when saving the invocation - %s", saveErr)
 	}
@@ -1779,8 +1779,14 @@ func (ctl *taskController) State() *task.State {
 	return &ctl.state
 }
 
+// DebugLog is part of task.Controller interface.
+func (ctl *taskController) DebugLog(format string, args ...interface{}) {
+	logging.Infof(ctl.ctx, format, args...)
+	debugLog(ctl.ctx, &ctl.debugLog, format, args...)
+}
+
 // AddTimer is part of Controller interface.
-func (ctl *taskController) AddTimer(delay time.Duration, name string, payload []byte) {
+func (ctl *taskController) AddTimer(ctx context.Context, delay time.Duration, name string, payload []byte) {
 	ctl.DebugLog("Scheduling timer %q after %s", name, delay)
 	ctl.timers = append(ctl.timers, invocationTimer{
 		Delay:   delay,
@@ -1790,8 +1796,8 @@ func (ctl *taskController) AddTimer(delay time.Duration, name string, payload []
 }
 
 // PrepareTopic is part of task.Controller interface.
-func (ctl *taskController) PrepareTopic(publisher string) (topic string, token string, err error) {
-	return ctl.eng.prepareTopic(ctl.ctx, topicParams{
+func (ctl *taskController) PrepareTopic(ctx context.Context, publisher string) (topic string, token string, err error) {
+	return ctl.eng.prepareTopic(ctx, topicParams{
 		inv:       &ctl.saved,
 		manager:   ctl.manager,
 		publisher: publisher,
@@ -1799,10 +1805,10 @@ func (ctl *taskController) PrepareTopic(publisher string) (topic string, token s
 }
 
 // GetClient is part of task.Controller interface
-func (ctl *taskController) GetClient(timeout time.Duration) (*http.Client, error) {
+func (ctl *taskController) GetClient(ctx context.Context, timeout time.Duration) (*http.Client, error) {
 	// TODO(vadimsh): Use per-project service accounts, not a global service
 	// account.
-	ctx, _ := clock.WithTimeout(ctl.ctx, timeout)
+	ctx, _ = clock.WithTimeout(ctx, timeout)
 	t, err := auth.GetRPCTransport(ctx, auth.AsSelf)
 	if err != nil {
 		return nil, err
@@ -1810,15 +1816,9 @@ func (ctl *taskController) GetClient(timeout time.Duration) (*http.Client, error
 	return &http.Client{Transport: t}, nil
 }
 
-// DebugLog is part of task.Controller interface.
-func (ctl *taskController) DebugLog(format string, args ...interface{}) {
-	logging.Infof(ctl.ctx, format, args...)
-	debugLog(ctl.ctx, &ctl.debugLog, format, args...)
-}
-
 // Save is part of task.Controller interface.
-func (ctl *taskController) Save() error {
-	return ctl.saveImpl(true)
+func (ctl *taskController) Save(ctx context.Context) error {
+	return ctl.saveImpl(ctx, true)
 }
 
 // errUpdateConflict means Invocation is being modified by two TaskController's
@@ -1828,7 +1828,7 @@ var errUpdateConflict = errors.WrapTransient(errors.New("concurrent modification
 
 // saveImpl uploads updated Invocation to the datastore. If updateJob is true,
 // it will also roll corresponding state machine forward.
-func (ctl *taskController) saveImpl(updateJob bool) (err error) {
+func (ctl *taskController) saveImpl(ctx context.Context, updateJob bool) (err error) {
 	// Mutate copy in case transaction below fails. Also unpacks ctl.state back
 	// into the entity (reverse of 'populateState').
 	saving := ctl.saved
@@ -1853,22 +1853,22 @@ func (ctl *taskController) saveImpl(updateJob bool) (err error) {
 	hasStartedOrFailed := ctl.saved.Status == task.StatusStarting && saving.Status != task.StatusStarting
 	hasFinished := !ctl.saved.Status.Final() && saving.Status.Final()
 	if hasFinished {
-		saving.Finished = clock.Now(ctl.ctx)
+		saving.Finished = clock.Now(ctx)
 		saving.debugLog(
-			ctl.ctx, "Invocation finished in %s with status %s",
+			ctx, "Invocation finished in %s with status %s",
 			saving.Finished.Sub(saving.Started), saving.Status)
 		if !updateJob {
-			saving.debugLog(ctl.ctx, "It will probably be retried")
+			saving.debugLog(ctx, "It will probably be retried")
 		}
 		// Finished invocations can't schedule timers.
 		for _, t := range ctl.timers {
-			saving.debugLog(ctl.ctx, "Ignoring timer %s...", t.Name)
+			saving.debugLog(ctx, "Ignoring timer %s...", t.Name)
 		}
 	}
 
 	// Store the invocation entity, mutate Job state accordingly, schedule all
 	// timer ticks.
-	return ctl.eng.txn(ctl.ctx, saving.JobKey.StringID(), func(c context.Context, job *Job, isNew bool) error {
+	return ctl.eng.txn(ctx, saving.JobKey.StringID(), func(c context.Context, job *Job, isNew bool) error {
 		// Grab what's currently in the store to compare MutationsCount to what we
 		// expect it to be.
 		mostRecent := Invocation{

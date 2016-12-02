@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/scheduler/appengine/task"
 )
 
@@ -73,7 +75,7 @@ func (c *TestController) State() *task.State {
 }
 
 // AddTimer is part of Controller interface.
-func (c *TestController) AddTimer(delay time.Duration, name string, payload []byte) {
+func (c *TestController) AddTimer(ctx context.Context, delay time.Duration, name string, payload []byte) {
 	c.Timers = append(c.Timers, TimerSpec{
 		Delay:   delay,
 		Name:    name,
@@ -87,7 +89,7 @@ func (c *TestController) DebugLog(format string, args ...interface{}) {
 }
 
 // Save is part of Controller interface.
-func (c *TestController) Save() error {
+func (c *TestController) Save(ctx context.Context) error {
 	if c.SaveCallback != nil {
 		return c.SaveCallback()
 	}
@@ -95,7 +97,7 @@ func (c *TestController) Save() error {
 }
 
 // PrepareTopic is part of Controller interface.
-func (c *TestController) PrepareTopic(publisher string) (topic string, token string, err error) {
+func (c *TestController) PrepareTopic(ctx context.Context, publisher string) (topic string, token string, err error) {
 	if c.PrepareTopicCallback != nil {
 		return c.PrepareTopicCallback(publisher)
 	}
@@ -103,7 +105,7 @@ func (c *TestController) PrepareTopic(publisher string) (topic string, token str
 }
 
 // GetClient is part of Controller interface.
-func (c *TestController) GetClient(timeout time.Duration) (*http.Client, error) {
+func (c *TestController) GetClient(ctx context.Context, timeout time.Duration) (*http.Client, error) {
 	if c.Client != nil {
 		return c.Client, nil
 	}

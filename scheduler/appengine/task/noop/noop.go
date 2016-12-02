@@ -41,7 +41,7 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 // LaunchTask is part of Manager interface.
 func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	ctl.DebugLog("Running noop task")
-	ctl.AddTimer(5*time.Second, "succeed-later", nil)
+	ctl.AddTimer(c, 5*time.Second, "succeed-later", nil)
 	ctl.State().Status = task.StatusRunning
 	return nil
 }

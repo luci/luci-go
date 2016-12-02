@@ -118,7 +118,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	// Do the fetch asynchronously with datastore update.
 	go func() {
 		defer close(result)
-		c, _ = clock.WithTimeout(c, time.Duration(timeout)*time.Second)
+		c, _ := clock.WithTimeout(c, time.Duration(timeout)*time.Second)
 		client := &http.Client{Transport: urlfetch.Get(c)}
 		resp, err := client.Do(&http.Request{
 			Method: method,
@@ -141,7 +141,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	// to 8 minutes). Ignore errors. As long as final Save is OK, we don't care
 	// about this one.
 	ctl.State().Status = task.StatusRunning
-	if err := ctl.Save(); err != nil {
+	if err := ctl.Save(c); err != nil {
 		logging.Warningf(c, "Failed to save invocation state: %s", err)
 	}
 

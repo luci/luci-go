@@ -322,7 +322,7 @@ func TestFullFlow(t *testing.T) {
 		tq.GetTestable(c).ResetTasks()
 
 		// Time to run the job and it fails to launch with a transient error.
-		mgr.launchTask = func(ctl task.Controller) error {
+		mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 			// Check data provided via the controller.
 			So(ctl.JobID(), ShouldEqual, "abc/1")
 			So(ctl.InvocationID(), ShouldEqual, int64(9200093518582546608))
@@ -379,11 +379,11 @@ func TestFullFlow(t *testing.T) {
 		So(debugLog, ShouldContainSubstring, "[22:42:05.000] It will probably be retried")
 
 		// Second attempt. Now starts, hangs midway, they finishes.
-		mgr.launchTask = func(ctl task.Controller) error {
+		mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 			// Make sure Save() checkpoints the progress.
 			ctl.DebugLog("Starting")
 			ctl.State().Status = task.StatusRunning
-			So(ctl.Save(), ShouldBeNil)
+			So(ctl.Save(ctx), ShouldBeNil)
 
 			// After first Save the job and the invocation are in running state.
 			So(allJobs(c), ShouldResemble, []Job{
@@ -421,7 +421,7 @@ func TestFullFlow(t *testing.T) {
 			})
 
 			// Noop save, just for the code coverage.
-			So(ctl.Save(), ShouldBeNil)
+			So(ctl.Save(ctx), ShouldBeNil)
 
 			// Change state to the final one.
 			ctl.State().Status = task.StatusSucceeded
@@ -647,20 +647,20 @@ func TestPrepareTopic(t *testing.T) {
 		ctl.populateState()
 
 		// Once.
-		topic, token, err := ctl.PrepareTopic("some@publisher.com")
+		topic, token, err := ctl.PrepareTopic(c, "some@publisher.com")
 		So(err, ShouldBeNil)
 		So(topic, ShouldEqual, "projects/app/topics/dev-scheduler+noop+some~publisher.com")
 		So(token, ShouldNotEqual, "")
 		So(pubSubCalls, ShouldEqual, 1)
 
 		// Again. 'configureTopic' should not be called anymore.
-		_, _, err = ctl.PrepareTopic("some@publisher.com")
+		_, _, err = ctl.PrepareTopic(c, "some@publisher.com")
 		So(err, ShouldBeNil)
 		So(pubSubCalls, ShouldEqual, 1)
 
 		// Make sure memcache-based deduplication also works.
 		e.doneFlags = make(map[string]bool)
-		_, _, err = ctl.PrepareTopic("some@publisher.com")
+		_, _, err = ctl.PrepareTopic(c, "some@publisher.com")
 		So(err, ShouldBeNil)
 		So(pubSubCalls, ShouldEqual, 1)
 	})
@@ -698,7 +698,7 @@ func TestProcessPubSubPush(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Grab the working auth token.
-		_, token, err := ctl.PrepareTopic("some@publisher.com")
+		_, token, err := ctl.PrepareTopic(c, "some@publisher.com")
 		So(err, ShouldBeNil)
 		So(token, ShouldNotEqual, "")
 
@@ -715,7 +715,7 @@ func TestProcessPubSubPush(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			handled := false
-			mgr.handleNotification = func(msg *pubsub.PubsubMessage) error {
+			mgr.handleNotification = func(ctx context.Context, msg *pubsub.PubsubMessage) error {
 				So(msg.Data, ShouldEqual, "blah")
 				handled = true
 				return nil
@@ -762,10 +762,10 @@ func TestAborts(t *testing.T) {
 
 		launchInv := func() int64 {
 			var invID int64
-			mgr.launchTask = func(ctl task.Controller) error {
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				invID = ctl.InvocationID()
 				ctl.State().Status = task.StatusRunning
-				So(ctl.Save(), ShouldBeNil)
+				So(ctl.Save(ctx), ShouldBeNil)
 				return nil
 			}
 			So(e.startInvocation(c, jobID, invNonce, "", 0), ShouldBeNil)
@@ -844,8 +844,8 @@ func TestAddTimer(t *testing.T) {
 
 		Convey("AddTimer works", func() {
 			// Start an invocation that adds a timer.
-			mgr.launchTask = func(ctl task.Controller) error {
-				ctl.AddTimer(time.Minute, "timer-name", []byte{1, 2, 3})
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
+				ctl.AddTimer(ctx, time.Minute, "timer-name", []byte{1, 2, 3})
 				ctl.State().Status = task.StatusRunning
 				return nil
 			}
@@ -881,10 +881,10 @@ func TestAddTimer(t *testing.T) {
 			tq.GetTestable(c).ResetTasks()
 
 			// Time comes to execute the task.
-			mgr.handleTimer = func(ctl task.Controller, name string, payload []byte) error {
+			mgr.handleTimer = func(ctx context.Context, ctl task.Controller, name string, payload []byte) error {
 				So(name, ShouldEqual, "timer-name")
 				So(payload, ShouldResemble, []byte{1, 2, 3})
-				ctl.AddTimer(time.Minute, "ignored-timer", nil)
+				ctl.AddTimer(ctx, time.Minute, "ignored-timer", nil)
 				ctl.State().Status = task.StatusSucceeded
 				return nil
 			}
@@ -996,9 +996,9 @@ func newTestEngine() (*engineImpl, *fakeTaskManager) {
 
 // fakeTaskManager implement task.Manager interface.
 type fakeTaskManager struct {
-	launchTask         func(ctl task.Controller) error
-	handleNotification func(msg *pubsub.PubsubMessage) error
-	handleTimer        func(ctl task.Controller, name string, payload []byte) error
+	launchTask         func(ctx context.Context, ctl task.Controller) error
+	handleNotification func(ctx context.Context, msg *pubsub.PubsubMessage) error
+	handleTimer        func(ctx context.Context, ctl task.Controller, name string, payload []byte) error
 }
 
 func (m *fakeTaskManager) Name() string {
@@ -1014,7 +1014,7 @@ func (m *fakeTaskManager) ValidateProtoMessage(msg proto.Message) error {
 }
 
 func (m *fakeTaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
-	return m.launchTask(ctl)
+	return m.launchTask(c, ctl)
 }
 
 func (m *fakeTaskManager) AbortTask(c context.Context, ctl task.Controller) error {
@@ -1022,11 +1022,11 @@ func (m *fakeTaskManager) AbortTask(c context.Context, ctl task.Controller) erro
 }
 
 func (m *fakeTaskManager) HandleNotification(c context.Context, ctl task.Controller, msg *pubsub.PubsubMessage) error {
-	return m.handleNotification(msg)
+	return m.handleNotification(c, msg)
 }
 
 func (m fakeTaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
-	return m.handleTimer(ctl, name, payload)
+	return m.handleTimer(c, ctl, name, payload)
 }
 
 ////
