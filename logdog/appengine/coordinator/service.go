@@ -268,14 +268,15 @@ func (s *prodServicesInst) newGoogleStorage(c context.Context, index, stream gs.
 		return nil, err
 	}
 
-	gs = nil // Don't close in defer.
-	return &googleStorage{
+	rv := &googleStorage{
 		Storage: st,
 		svc:     s,
 		gs:      gs,
 		stream:  stream,
 		index:   index,
-	}, nil
+	}
+	gs = nil // Don't close in defer.
+	return rv, nil
 }
 
 func (s *prodServicesInst) newGSClient(c context.Context) (gs.Client, error) {
