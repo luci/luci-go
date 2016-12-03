@@ -631,10 +631,17 @@ func testGetImpl(t *testing.T, archived bool) {
 					State:   true,
 				}
 
+				// If the stream is archived, the tail index will be 7. Otherwise, it
+				// will be 2 (streaming).
+				tailIndex := 7
+				if !archived {
+					tailIndex = 2
+				}
+
 				Convey(`Will successfully retrieve a stream path.`, func() {
 					resp, err := svr.Tail(c, &req)
 					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogs, 7)
+					So(resp, shouldHaveLogs, tailIndex)
 					So(resp.State, ShouldResemble, buildLogStreamState(tls.Stream, tls.State))
 
 					// For non-archival: 1 miss and 1 put, for the tail row.
@@ -646,7 +653,7 @@ func testGetImpl(t *testing.T, archived bool) {
 
 						resp, err := svr.Tail(c, &req)
 						So(err, ShouldBeRPCOK)
-						So(resp, shouldHaveLogs, 7)
+						So(resp, shouldHaveLogs, tailIndex)
 						So(resp.State, ShouldResemble, buildLogStreamState(tls.Stream, tls.State))
 
 						// For non-archival: 1 hit, for the tail row.

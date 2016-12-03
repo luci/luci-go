@@ -112,6 +112,8 @@ func TestStorage(t *testing.T) {
 			So(put("A", 3, "3", "4"), ShouldBeNil)
 			So(put("B", 10, "10"), ShouldBeNil)
 			So(put("B", 12, "12", "13"), ShouldBeNil)
+			So(put("C", 0, "0", "1", "2"), ShouldBeNil)
+			So(put("C", 4, "4"), ShouldBeNil)
 
 			Convey(`Testing "Put"...`, func() {
 				Convey(`Loads the row data.`, func() {
@@ -120,6 +122,8 @@ func TestStorage(t *testing.T) {
 						ekey("A", 4, 2):  records("3", "4"),
 						ekey("B", 10, 1): records("10"),
 						ekey("B", 13, 2): records("12", "13"),
+						ekey("C", 2, 3):  records("0", "1", "2"),
+						ekey("C", 4, 1):  records("4"),
 					})
 				})
 			})
@@ -209,10 +213,15 @@ func TestStorage(t *testing.T) {
 					So(got, ShouldEqual, "4")
 				})
 
-				Convey(`A tail request for "B" returns B{13}.`, func() {
-					got, err := tail("B")
+				Convey(`A tail request for "B" returns nothing (no contiguous logs).`, func() {
+					_, err := tail("B")
+					So(err, ShouldEqual, storage.ErrDoesNotExist)
+				})
+
+				Convey(`A tail request for "C" returns 2.`, func() {
+					got, err := tail("C")
 					So(err, ShouldBeNil)
-					So(got, ShouldEqual, "13")
+					So(got, ShouldEqual, "2")
 				})
 
 				Convey(`A tail request for "INVALID" errors NOT FOUND.`, func() {

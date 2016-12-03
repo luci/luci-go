@@ -314,14 +314,23 @@ func (s *btStorage) Tail(project config.ProjectName, path types.StreamPath) (*st
 		startIdx = getLastTailIndex(s, s.Cache, project, path)
 	}
 
-	// Iterate through all log keys in the stream. Record the latest one.
-	rk := newRowKey(string(project), string(path), startIdx, 0)
-	var latest *rowKey
+	// Iterate through all log keys in the stream. Record the latest contiguous
+	// one.
+	var (
+		rk        = newRowKey(string(project), string(path), startIdx, 0)
+		latest    *rowKey
+		nextIndex = startIdx
+	)
 	err := s.raw.getLogData(ctx, rk, 0, true, func(rk *rowKey, data []byte) error {
-		latest = rk
+		// If this record is non-contiguous, we're done iterating.
+		if (rk.index - rk.count + 1) != nextIndex {
+			return errStop
+		}
+
+		latest, nextIndex = rk, rk.index+1
 		return nil
 	})
-	if err != nil {
+	if err != nil && err != errStop {
 		log.Fields{
 			log.ErrorKey: err,
 			"project":    s.Project,
