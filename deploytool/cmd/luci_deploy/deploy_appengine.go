@@ -83,7 +83,7 @@ func (d *gaeDeployment) stage(w *work, root *managedfs.Dir, params *deployParams
 					return errors.Annotate(err).Reason("failed to create module directory for %(module)q").
 						D("module", module.comp.comp.title).Err()
 				}
-				if err := module.stage(w, moduleDir); err != nil {
+				if err := module.stage(w, moduleDir, params); err != nil {
 					return errors.Annotate(err).Reason("failed to stage module %(name)q").
 						D("name", module.comp.comp.title).Err()
 				}
@@ -185,9 +185,13 @@ func (d *gaeDeployment) commit(w *work) error {
 		return errors.Annotate(err).Reason("failed to set default versions").Err()
 	}
 
-	for _, updateCmd := range []string{"update_dispatch", "update_indexes", "update_queues", "update_cron"} {
-		if err := appcfg.exec(updateCmd, "--application", d.project.Name, d.yamlDir).check(w); err != nil {
-			return errors.Annotate(err).Reason("failed to update %(cmd)q").D("cmd", updateCmd).Err()
+	// If any modules were installed as default, push our new related configs.
+	// Otherwise, do not update them.
+	if len(d.versionModuleMap) > 0 {
+		for _, updateCmd := range []string{"update_dispatch", "update_indexes", "update_queues", "update_cron"} {
+			if err := appcfg.exec(updateCmd, "--application", d.project.Name, d.yamlDir).check(w); err != nil {
+				return errors.Annotate(err).Reason("failed to update %(cmd)q").D("cmd", updateCmd).Err()
+			}
 		}
 	}
 	return nil
@@ -229,7 +233,7 @@ type stagedGAEModule struct {
 
 	// version is the calculated version for this module. It is populated during
 	// staging.
-	version *cloudProjectVersion
+	version cloudProjectVersion
 
 	// For Go AppEngine modules, the generated GOPATH.
 	goPath []string
@@ -255,12 +259,14 @@ type stagedGAEModule struct {
 // Go / Managed VM (Same as Go/Classic, plus):
 // -------------------------------------------
 // <root>/component/Dockerfile (Generated Docker file)
-func (m *stagedGAEModule) stage(w *work, root *managedfs.Dir) error {
+func (m *stagedGAEModule) stage(w *work, root *managedfs.Dir, params *deployParams) error {
 	// Calculate our version.
-	var err error
-	m.version, err = makeCloudProjectVersion(m.comp.dep.cloudProject, m.comp.source())
-	if err != nil {
-		return errors.Annotate(err).Reason("failed to calculate cloud project version").Err()
+	if m.version = params.forceVersion; m.version == nil {
+		var err error
+		m.version, err = makeCloudProjectVersion(m.comp.dep.cloudProject, m.comp.source())
+		if err != nil {
+			return errors.Annotate(err).Reason("failed to calculate cloud project version").Err()
+		}
 	}
 
 	// The directory where the base YAML and other depoyment-relative data will be

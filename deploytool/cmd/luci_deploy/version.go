@@ -5,6 +5,7 @@
 package main
 
 import (
+	"fmt"
 	"os/user"
 	"strings"
 
@@ -12,7 +13,13 @@ import (
 	"github.com/luci/luci-go/deploytool/api/deploy"
 )
 
-type cloudProjectVersion struct {
+type cloudProjectVersion interface {
+	fmt.Stringer
+
+	isTainted() bool
+}
+
+type structuredCloudProjectVersion struct {
 	// minorSourceVersion is the minorVersion parameter of the component's
 	// origin Source.
 	minorSourceVersion string
@@ -25,7 +32,7 @@ type cloudProjectVersion struct {
 	taintedUser string
 }
 
-func makeCloudProjectVersion(cp *layoutDeploymentCloudProject, src *layoutSource) (*cloudProjectVersion, error) {
+func makeCloudProjectVersion(cp *layoutDeploymentCloudProject, src *layoutSource) (cloudProjectVersion, error) {
 	return (cloudProjectVersionBuilder{}).build(cp, src)
 }
 
@@ -33,10 +40,10 @@ type cloudProjectVersionBuilder struct {
 	currentUser func() (string, error)
 }
 
-func (b cloudProjectVersionBuilder) build(cp *layoutDeploymentCloudProject, src *layoutSource) (*cloudProjectVersion, error) {
+func (b cloudProjectVersionBuilder) build(cp *layoutDeploymentCloudProject, src *layoutSource) (cloudProjectVersion, error) {
 	switch vs := cp.VersionScheme; vs {
 	case deploy.Deployment_CloudProject_DEFAULT:
-		cpv := cloudProjectVersion{
+		cpv := structuredCloudProjectVersion{
 			minorSourceVersion: cloudVersionStringNormalize(src.MinorVersion),
 			majorSourceVersion: cloudVersionStringNormalize(src.MajorVersion),
 		}
@@ -69,8 +76,8 @@ func (b *cloudProjectVersionBuilder) getCurrentUser() (string, error) {
 }
 
 func parseCloudProjectVersion(vs deploy.Deployment_CloudProject_VersionScheme, v string) (
-	*cloudProjectVersion, error) {
-	var cpv cloudProjectVersion
+	cloudProjectVersion, error) {
+	var cpv structuredCloudProjectVersion
 	switch vs {
 	case deploy.Deployment_CloudProject_DEFAULT:
 		parts := strings.Split(v, "-")
@@ -97,7 +104,7 @@ func parseCloudProjectVersion(vs deploy.Deployment_CloudProject_VersionScheme, v
 	}
 }
 
-func (v *cloudProjectVersion) String() string {
+func (v *structuredCloudProjectVersion) String() string {
 	var partsArray [5]string
 	parts := partsArray[:0]
 
@@ -108,8 +115,16 @@ func (v *cloudProjectVersion) String() string {
 	return strings.Join(parts, "-")
 }
 
-func (v *cloudProjectVersion) isTainted() bool                        { return v.taintedUser != "" }
-func (v *cloudProjectVersion) Equals(other *cloudProjectVersion) bool { return *v == *other }
+func (v *structuredCloudProjectVersion) isTainted() bool { return v.taintedUser != "" }
+
+type stringCloudProjectVersion string
+
+func makeStringCloudProjectVersion(v string) cloudProjectVersion {
+	return stringCloudProjectVersion(cloudVersionStringNormalize(v))
+}
+
+func (v stringCloudProjectVersion) String() string  { return string(v) }
+func (v stringCloudProjectVersion) isTainted() bool { return true }
 
 // cloudVersionStringNormalize converts an input string into a cloud version-
 // normalized string.

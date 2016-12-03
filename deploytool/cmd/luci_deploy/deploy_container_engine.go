@@ -153,7 +153,7 @@ func (d *containerEngineDeployment) stage(w *work, root *managedfs.Dir, params *
 						D("pod", name).Err()
 				}
 
-				return pod.stage(w, podDir)
+				return pod.stage(w, podDir, params)
 			}
 		}
 	})
@@ -383,7 +383,7 @@ func (bp *containerEngineBoundPod) commit(w *work) error {
 				"currentVersion": currentVersion,
 			}.Warningf(w, "Could not parse current version, but configured to ignore this failure.")
 
-		case cloudVersion.Equals(bp.sp.version):
+		case cloudVersion.String() == bp.sp.version.String():
 			if !bp.c.gke.ignoreCurrentVersion {
 				log.Fields{
 					"version": currentVersion,
@@ -427,7 +427,7 @@ type stagedGKEPod struct {
 	pod *layoutDeploymentGKEPod
 
 	// version is the calculated cloud project version.
-	version *cloudProjectVersion
+	version cloudProjectVersion
 	// The name of the deployment for thie Component.
 	deploymentName string
 	// containers is the set of staged Kubernetes containers.
@@ -443,12 +443,14 @@ func (sp *stagedGKEPod) cloudProject() *layoutDeploymentCloudProject {
 	return sp.pod.comp.dep.cloudProject
 }
 
-func (sp *stagedGKEPod) stage(w *work, root *managedfs.Dir) error {
+func (sp *stagedGKEPod) stage(w *work, root *managedfs.Dir, params *deployParams) error {
 	// Calculate the cloud project version for this pod.
-	var err error
-	sp.version, err = makeCloudProjectVersion(sp.cloudProject(), sp.pod.comp.source())
-	if err != nil {
-		return errors.Annotate(err).Reason("failed to get cloud version").Err()
+	if sp.version = params.forceVersion; sp.version == nil {
+		var err error
+		sp.version, err = makeCloudProjectVersion(sp.cloudProject(), sp.pod.comp.source())
+		if err != nil {
+			return errors.Annotate(err).Reason("failed to get cloud version").Err()
+		}
 	}
 
 	comp := sp.pod.comp
