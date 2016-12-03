@@ -37,6 +37,7 @@ import (
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
+	"google.golang.org/grpc/credentials"
 
 	"cloud.google.com/go/compute/metadata"
 
@@ -410,6 +411,32 @@ func (a *Authenticator) TokenSource() (oauth2.TokenSource, error) {
 		return nil, err // unrecoverable error for the current login mode
 	}
 }
+
+// GetPerRPCCredentials returns gRPC's PerRPCCredentials implementation.
+//
+// It can be used to authenticate outbound gPRC RPC's.
+func (a *Authenticator) GetPerRPCCredentials() credentials.PerRPCCredentials { return perRPCCreds{a} }
+
+type perRPCCreds struct {
+	a *Authenticator
+}
+
+func (creds perRPCCreds) GetRequestMetadata(c context.Context, uri ...string) (map[string]string, error) {
+	if len(uri) == 0 {
+		panic("perRPCCreds: no URI given")
+	}
+
+	tok, err := creds.a.GetAccessToken(minAcceptedLifetime)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]string{
+		"Authorization": tok.TokenType + " " + tok.AccessToken,
+	}, nil
+}
+
+func (creds perRPCCreds) RequireTransportSecurity() bool { return true }
 
 ////////////////////////////////////////////////////////////////////////////////
 // oauth2.TokenSource implementation.
