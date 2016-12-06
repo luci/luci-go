@@ -78,7 +78,7 @@ func (m *mcDataItem) toUserItem(key string) *mcItem {
 }
 
 type memcacheData struct {
-	lock  sync.RWMutex
+	lock  sync.Mutex
 	items map[string]*mcDataItem
 	casID uint64
 
@@ -258,8 +258,8 @@ func (m *memcacheImpl) GetMulti(keys []string, cb mc.RawItemCB) error {
 
 	for i, k := range keys {
 		itms[i], errs[i] = func() (mc.Item, error) {
-			m.data.lock.RLock()
-			defer m.data.lock.RUnlock()
+			m.data.lock.Lock()
+			defer m.data.lock.Unlock()
 			val, err := m.data.retrieveLocked(now, k)
 			if err != nil {
 				return nil, err
@@ -345,8 +345,8 @@ func (m *memcacheImpl) Increment(key string, delta int64, initialValue *uint64) 
 }
 
 func (m *memcacheImpl) Stats() (*mc.Statistics, error) {
-	m.data.lock.RLock()
-	defer m.data.lock.RUnlock()
+	m.data.lock.Lock()
+	defer m.data.lock.Unlock()
 
 	ret := m.data.stats
 	return &ret, nil
