@@ -18,6 +18,7 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/common/proto/milo"
+	"github.com/luci/luci-go/common/runtime/profiling"
 	"github.com/luci/luci-go/logdog/client/annotee"
 	"github.com/luci/luci-go/logdog/client/annotee/executor"
 	"github.com/luci/luci-go/logdog/client/bootstrapResult"
@@ -65,6 +66,8 @@ type application struct {
 	nameBase           streamproto.StreamNameFlag
 	prefix             streamproto.StreamNameFlag
 	logdogHost         string
+
+	prof profiling.Profiler
 
 	bootstrap *bootstrap.Bootstrap
 }
@@ -160,6 +163,7 @@ func mainImpl(args []string) int {
 
 	fs := &flag.FlagSet{}
 	logFlags.AddFlags(fs)
+	a.prof.AddFlags(fs)
 	a.addToFlagSet(fs)
 	if err := fs.Parse(args); err != nil {
 		log.WithError(err).Errorf(a, "Failed to parse flags.")
@@ -215,6 +219,14 @@ func mainImpl(args []string) int {
 	// update should be sent.
 	if a.annotationInterval < 0 {
 		a.annotationInterval = 0
+	}
+
+	// Start our profiling service. This will be a no-op if the profiler is not
+	// configured.
+	a.prof.Logger = log.Get(a)
+	if err := a.prof.Start(); err != nil {
+		log.WithError(err).Errorf(a, "Failed to start profiler.")
+		return runtimeErrorReturnCode
 	}
 
 	// Initialize our link generator, if we can.

@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"runtime/pprof"
 	"sort"
 	"strings"
 	"time"
@@ -29,6 +28,7 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/common/runtime/paniccatcher"
+	"github.com/luci/luci-go/common/runtime/profiling"
 	grpcLogging "github.com/luci/luci-go/grpc/logging"
 	"github.com/luci/luci-go/logdog/client/butler"
 	"github.com/luci/luci-go/logdog/client/butler/output"
@@ -66,7 +66,7 @@ type application struct {
 	maxBufferAge clockflag.Duration
 	noBufferLogs bool
 
-	cpuProfile string
+	prof profiling.Profiler
 
 	client *http.Client
 
@@ -95,8 +95,6 @@ func (a *application) addFlags(fs *flag.FlagSet) {
 		"Prefix to apply to all stream names.")
 	fs.Var(&a.outputConfig, "output",
 		"The output name and configuration. Specify 'help' for more information.")
-	fs.StringVar(&a.cpuProfile,
-		"cpuprofile", "", "If specified, enables CPU profiling and profiles to the specified path.")
 	fs.IntVar(&a.outputWorkers, "output-workers", butler.DefaultOutputWorkers,
 		"The maximum number of parallel output dispatches.")
 	fs.Var(&a.maxBufferAge, "output-max-buffer-age",
@@ -127,15 +125,12 @@ func (a *application) getOutputFactory() (outputFactory, error) {
 // to a Butler run.
 func (a *application) runWithButler(out output.Output, runFunc func(*butler.Butler) error) error {
 
-	// Enable CPU profiling if specified
-	if a.cpuProfile != "" {
-		f, err := os.Create(a.cpuProfile)
-		if err != nil {
-			return fmt.Errorf("failed to create CPU profile output: %v", err)
-		}
-		pprof.StartCPUProfile(f)
-		defer pprof.StopCPUProfile()
+	// Start our Profiler.
+	a.prof.Logger = log.Get(a)
+	if err := a.prof.Start(); err != nil {
+		return fmt.Errorf("failed to start Profiler: %v", err)
 	}
+	defer a.prof.Stop()
 
 	// Instantiate our Butler.
 	butlerOpts := butler.Config{
@@ -252,6 +247,7 @@ func mainImpl(ctx context.Context, argv []string) int {
 	logConfig.AddFlags(flags)
 	a.addFlags(flags)
 	a.authFlags.Register(flags, authOptions)
+	a.prof.AddFlags(flags)
 
 	// Parse the top-level flag set.
 	if err := flags.Parse(argv); err != nil {
