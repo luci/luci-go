@@ -1,0 +1,12 @@
+cron:
+- description: Generate fake entries
+  url: /generate/1000
+  schedule: every 1 minutes
+
+- description: Flush fake entries
+  url: /flush
+  schedule: every 1 minutes
+
+- description: tsmon house keeping
+  url: /internal/cron/ts_mon/housekeeping
+  schedule: every 1 minutes
