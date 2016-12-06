@@ -9,6 +9,7 @@ It is generated from these files:
 	github.com/luci/luci-go/common/tsmon/ts_mon_proto_v2/acquisition_network_device.proto
 	github.com/luci/luci-go/common/tsmon/ts_mon_proto_v2/acquisition_task.proto
 	github.com/luci/luci-go/common/tsmon/ts_mon_proto_v2/any.proto
+	github.com/luci/luci-go/common/tsmon/ts_mon_proto_v2/endpoint.proto
 	github.com/luci/luci-go/common/tsmon/ts_mon_proto_v2/metrics.proto
 	github.com/luci/luci-go/common/tsmon/ts_mon_proto_v2/timestamp.proto
 
@@ -16,6 +17,7 @@ It has these top-level messages:
 	NetworkDevice
 	Task
 	Any
+	Request
 	MetricsPayload
 	MetricsCollection
 	MetricsDataSet

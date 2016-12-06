@@ -52,8 +52,9 @@ func (fl *Flags) Register(f *flag.FlagSet) {
 			"depend on the machine's position in the network, IP whitelisting and "+
 			"deployment of credentials.")
 	f.StringVar(&fl.Endpoint, "ts-mon-endpoint", fl.Endpoint,
-		"url (including file://, pubsub://project/topic) to post monitoring "+
-			"metrics to. If set, overrides the value in --ts-mon-config-file")
+		"url (including file://, https://, pubsub://project/topic) to post "+
+			"monitoring metrics to. If set, overrides the value in "+
+			"--ts-mon-config-file")
 	f.StringVar(&fl.Credentials, "ts-mon-credentials", fl.Credentials,
 		"path to a pkcs8 json credential file. If set, overrides the value in "+
 			"--ts-mon-config-file")

@@ -22,7 +22,7 @@ type Timestamp struct {
 func (m *Timestamp) Reset()                    { *m = Timestamp{} }
 func (m *Timestamp) String() string            { return proto.CompactTextString(m) }
 func (*Timestamp) ProtoMessage()               {}
-func (*Timestamp) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
+func (*Timestamp) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0} }
 
 func (m *Timestamp) GetSeconds() int64 {
 	if m != nil && m.Seconds != nil {
@@ -43,10 +43,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("github.com/luci/luci-go/common/tsmon/ts_mon_proto_v2/timestamp.proto", fileDescriptor4)
+	proto.RegisterFile("github.com/luci/luci-go/common/tsmon/ts_mon_proto_v2/timestamp.proto", fileDescriptor5)
 }
 
-var fileDescriptor4 = []byte{
+var fileDescriptor5 = []byte{
 	// 136 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x72, 0x49, 0xcf, 0x2c, 0xc9,
 	0x28, 0x4d, 0xd2, 0x4b, 0xce, 0xcf, 0xd5, 0xcf, 0x29, 0x4d, 0xce, 0x04, 0x13, 0xba, 0xe9, 0xf9,

@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
 
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/errors"
@@ -202,22 +201,31 @@ func initMonitor(c context.Context, config config) (monitor.Monitor, error) {
 	case "file":
 		return monitor.NewDebugMonitor(endpointURL.Path), nil
 	case "pubsub":
-		tokens, err := tokenSource(c, config.Credentials)
+		tokens, err := newAuthenticator(c, config.Credentials, gcps.PublisherScopes).TokenSource()
 		if err != nil {
 			return nil, err
 		}
 
 		return monitor.NewPubsubMonitor(
 			c, tokens, gcps.NewTopic(endpointURL.Host, strings.TrimPrefix(endpointURL.Path, "/")))
+	case "http":
+		fallthrough
+	case "https":
+		client, err := newAuthenticator(c, config.Credentials, monitor.ProdxmonScopes).Client()
+		if err != nil {
+			return nil, err
+		}
+
+		return monitor.NewHTTPMonitor(c, client, endpointURL)
 	default:
 		return nil, fmt.Errorf("unknown tsmon endpoint url: %s", config.Endpoint)
 	}
 }
 
-// tokenSource returns oauth2.TokenSource with token to use for PubSub auth.
-func tokenSource(ctx context.Context, credentials string) (oauth2.TokenSource, error) {
+// newAuthenticator returns a new authenticator for PubSub and HTTP requests.
+func newAuthenticator(ctx context.Context, credentials string, scopes []string) *auth.Authenticator {
 	authOpts := auth.Options{
-		Scopes: gcps.PublisherScopes,
+		Scopes: scopes,
 	}
 	switch credentials {
 	case GCECredentials:
@@ -231,5 +239,5 @@ func tokenSource(ctx context.Context, credentials string) (oauth2.TokenSource, e
 		authOpts.Method = auth.ServiceAccountMethod
 		authOpts.ServiceAccountJSONPath = credentials
 	}
-	return auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).TokenSource()
+	return auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts)
 }

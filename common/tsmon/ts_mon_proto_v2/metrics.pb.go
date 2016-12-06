@@ -48,7 +48,7 @@ func (x *StreamKind) UnmarshalJSON(data []byte) error {
 	*x = StreamKind(value)
 	return nil
 }
-func (StreamKind) EnumDescriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
+func (StreamKind) EnumDescriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
 
 type ValueType int32
 
@@ -91,7 +91,7 @@ func (x *ValueType) UnmarshalJSON(data []byte) error {
 	*x = ValueType(value)
 	return nil
 }
-func (ValueType) EnumDescriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
+func (ValueType) EnumDescriptor() ([]byte, []int) { return fileDescriptor4, []int{1} }
 
 type MetricsDataSet_MetricFieldDescriptor_FieldType int32
 
@@ -129,7 +129,7 @@ func (x *MetricsDataSet_MetricFieldDescriptor_FieldType) UnmarshalJSON(data []by
 	return nil
 }
 func (MetricsDataSet_MetricFieldDescriptor_FieldType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor3, []int{2, 0, 0}
+	return fileDescriptor4, []int{2, 0, 0}
 }
 
 type MetricsPayload struct {
@@ -140,7 +140,7 @@ type MetricsPayload struct {
 func (m *MetricsPayload) Reset()                    { *m = MetricsPayload{} }
 func (m *MetricsPayload) String() string            { return proto.CompactTextString(m) }
 func (*MetricsPayload) ProtoMessage()               {}
-func (*MetricsPayload) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
+func (*MetricsPayload) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
 
 func (m *MetricsPayload) GetMetricsCollection() []*MetricsCollection {
 	if m != nil {
@@ -161,7 +161,7 @@ type MetricsCollection struct {
 func (m *MetricsCollection) Reset()                    { *m = MetricsCollection{} }
 func (m *MetricsCollection) String() string            { return proto.CompactTextString(m) }
 func (*MetricsCollection) ProtoMessage()               {}
-func (*MetricsCollection) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
+func (*MetricsCollection) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1} }
 
 type isMetricsCollection_TargetSchema interface {
 	isMetricsCollection_TargetSchema()
@@ -293,7 +293,7 @@ type MetricsDataSet struct {
 func (m *MetricsDataSet) Reset()                    { *m = MetricsDataSet{} }
 func (m *MetricsDataSet) String() string            { return proto.CompactTextString(m) }
 func (*MetricsDataSet) ProtoMessage()               {}
-func (*MetricsDataSet) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2} }
+func (*MetricsDataSet) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{2} }
 
 func (m *MetricsDataSet) GetMetricName() string {
 	if m != nil && m.MetricName != nil {
@@ -354,7 +354,7 @@ func (m *MetricsDataSet_MetricFieldDescriptor) Reset()         { *m = MetricsDat
 func (m *MetricsDataSet_MetricFieldDescriptor) String() string { return proto.CompactTextString(m) }
 func (*MetricsDataSet_MetricFieldDescriptor) ProtoMessage()    {}
 func (*MetricsDataSet_MetricFieldDescriptor) Descriptor() ([]byte, []int) {
-	return fileDescriptor3, []int{2, 0}
+	return fileDescriptor4, []int{2, 0}
 }
 
 func (m *MetricsDataSet_MetricFieldDescriptor) GetName() string {
@@ -388,7 +388,7 @@ type MetricsData struct {
 func (m *MetricsData) Reset()                    { *m = MetricsData{} }
 func (m *MetricsData) String() string            { return proto.CompactTextString(m) }
 func (*MetricsData) ProtoMessage()               {}
-func (*MetricsData) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3} }
+func (*MetricsData) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{3} }
 
 type isMetricsData_Value interface {
 	isMetricsData_Value()
@@ -608,7 +608,7 @@ type MetricsData_MetricField struct {
 func (m *MetricsData_MetricField) Reset()                    { *m = MetricsData_MetricField{} }
 func (m *MetricsData_MetricField) String() string            { return proto.CompactTextString(m) }
 func (*MetricsData_MetricField) ProtoMessage()               {}
-func (*MetricsData_MetricField) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3, 0} }
+func (*MetricsData_MetricField) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{3, 0} }
 
 type isMetricsData_MetricField_Value interface {
 	isMetricsData_MetricField_Value()
@@ -765,7 +765,7 @@ type MetricsData_Distribution struct {
 func (m *MetricsData_Distribution) Reset()                    { *m = MetricsData_Distribution{} }
 func (m *MetricsData_Distribution) String() string            { return proto.CompactTextString(m) }
 func (*MetricsData_Distribution) ProtoMessage()               {}
-func (*MetricsData_Distribution) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3, 1} }
+func (*MetricsData_Distribution) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{3, 1} }
 
 type isMetricsData_Distribution_BucketOptions interface {
 	isMetricsData_Distribution_BucketOptions()
@@ -968,7 +968,7 @@ func (m *MetricsData_Distribution_LinearOptions) Reset() {
 func (m *MetricsData_Distribution_LinearOptions) String() string { return proto.CompactTextString(m) }
 func (*MetricsData_Distribution_LinearOptions) ProtoMessage()    {}
 func (*MetricsData_Distribution_LinearOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor3, []int{3, 1, 0}
+	return fileDescriptor4, []int{3, 1, 0}
 }
 
 func (m *MetricsData_Distribution_LinearOptions) GetNumFiniteBuckets() int32 {
@@ -1007,7 +1007,7 @@ func (m *MetricsData_Distribution_ExponentialOptions) String() string {
 }
 func (*MetricsData_Distribution_ExponentialOptions) ProtoMessage() {}
 func (*MetricsData_Distribution_ExponentialOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor3, []int{3, 1, 1}
+	return fileDescriptor4, []int{3, 1, 1}
 }
 
 func (m *MetricsData_Distribution_ExponentialOptions) GetNumFiniteBuckets() int32 {
@@ -1042,7 +1042,7 @@ func (m *MetricsData_Distribution_ExplicitOptions) Reset() {
 func (m *MetricsData_Distribution_ExplicitOptions) String() string { return proto.CompactTextString(m) }
 func (*MetricsData_Distribution_ExplicitOptions) ProtoMessage()    {}
 func (*MetricsData_Distribution_ExplicitOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor3, []int{3, 1, 2}
+	return fileDescriptor4, []int{3, 1, 2}
 }
 
 func (m *MetricsData_Distribution_ExplicitOptions) GetBound() []float64 {
@@ -1063,7 +1063,7 @@ func (m *MetricsData_Distribution_Exemplar) Reset()         { *m = MetricsData_D
 func (m *MetricsData_Distribution_Exemplar) String() string { return proto.CompactTextString(m) }
 func (*MetricsData_Distribution_Exemplar) ProtoMessage()    {}
 func (*MetricsData_Distribution_Exemplar) Descriptor() ([]byte, []int) {
-	return fileDescriptor3, []int{3, 1, 3}
+	return fileDescriptor4, []int{3, 1, 3}
 }
 
 func (m *MetricsData_Distribution_Exemplar) GetValue() float64 {
@@ -1098,7 +1098,7 @@ type Annotations struct {
 func (m *Annotations) Reset()                    { *m = Annotations{} }
 func (m *Annotations) String() string            { return proto.CompactTextString(m) }
 func (*Annotations) ProtoMessage()               {}
-func (*Annotations) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4} }
+func (*Annotations) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{4} }
 
 func (m *Annotations) GetUnit() string {
 	if m != nil && m.Unit != nil {
@@ -1147,10 +1147,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("github.com/luci/luci-go/common/tsmon/ts_mon_proto_v2/metrics.proto", fileDescriptor3)
+	proto.RegisterFile("github.com/luci/luci-go/common/tsmon/ts_mon_proto_v2/metrics.proto", fileDescriptor4)
 }
 
-var fileDescriptor3 = []byte{
+var fileDescriptor4 = []byte{
 	// 1246 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xac, 0x56, 0x6f, 0x6f, 0xdb, 0x36,
 	0x13, 0xb7, 0xfc, 0x27, 0xb1, 0xcf, 0x8e, 0xa3, 0xf2, 0x69, 0x1f, 0x08, 0x5e, 0xb1, 0x66, 0x2e,
