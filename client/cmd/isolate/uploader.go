@@ -74,11 +74,11 @@ func (u *Uploader) upload(name string, src isolatedclient.Source, ps *isolatedcl
 	u.waitc <- true
 	defer func() {
 		<-u.waitc
-		if done != nil {
-			done()
-		}
-		u.wg.Done()
 	}()
+	defer u.wg.Done()
+	if done != nil {
+		defer done()
+	}
 
 	// Bail out early if there already was an error.
 	if u.getErr() != nil {
