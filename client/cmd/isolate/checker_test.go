@@ -101,6 +101,13 @@ func TestChecker(t *testing.T) {
 			break
 		}
 	}
+
+	if got, want := checker.Hit.Count, 0; got != want {
+		t.Errorf("checker hit count: got %v ; want: %v", got, want)
+	}
+	if got, want := checker.Miss.Count, 150; got != want {
+		t.Errorf("checker hit count: got %v ; want: %v", got, want)
+	}
 }
 
 func TestCheckerDelay(t *testing.T) {

@@ -41,6 +41,19 @@ type Checker struct {
 	svc     isolateService
 	bundler *bundler.Bundler
 	err     error
+
+	Hit, Miss CountBytes
+}
+
+// CountBytes aggregates a count of files and the number of bytes in them.
+type CountBytes struct {
+	Count int
+	Bytes int64
+}
+
+func (cb *CountBytes) addFile(size int64) {
+	cb.Count++
+	cb.Bytes += size
 }
 
 // NewChecker creates a NewChecker with the given isolated client.
@@ -108,6 +121,12 @@ func (c *Checker) check(items []checkerItem) error {
 		return err
 	}
 	for i, item := range items {
+		if size := item.item.Size; out[i] == nil {
+			c.Hit.addFile(size)
+		} else {
+			c.Miss.addFile(size)
+		}
+
 		item.callback(item.item, out[i])
 	}
 	return nil

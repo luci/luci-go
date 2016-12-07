@@ -260,6 +260,10 @@ func (c *expArchiveRun) main() error {
 
 		// TODO(mcgreevy): fill out more stats in archiveDetails.
 		archiveDetails := &logpb.IsolateClientEvent_ArchiveDetails{
+			HitCount:    proto.Int64(int64(checker.Hit.Count)),
+			MissCount:   proto.Int64(int64(checker.Miss.Count)),
+			HitBytes:    &checker.Hit.Bytes,
+			MissBytes:   &checker.Miss.Bytes,
 			IsolateHash: []string{string(isolItem.Digest)},
 		}
 		if err := logStats(ctx, logger, start, end, archiveDetails); err != nil {
