@@ -95,8 +95,7 @@ func (c *expArchiveRun) main() error {
 	// Set up a checker and pair of uploaders. One uploader is for in-memory
 	// files, and one is for on-disk files (we want to limit the latter to only
 	// one upload at a time).
-	// TODO(djd): Make NewChecker take a context arg.
-	checker := NewChecker(client)
+	checker := NewChecker(ctx, client)
 	memUploader, fileUploader := NewUploader(ctx, client, 10), NewUploader(ctx, client, 1)
 
 	// Walk each of the deps, partioning the results into symlinks and files categorised by size.

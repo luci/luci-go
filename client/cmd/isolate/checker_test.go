@@ -60,7 +60,7 @@ func (f *fakeIsolateService) Contains(_ context.Context, digests []*service.Hand
 
 func TestChecker(t *testing.T) {
 	fake := &fakeIsolateService{}
-	checker := newChecker(fake)
+	checker := newChecker(context.Background(), fake)
 
 	type itemPair struct {
 		item *Item
@@ -113,7 +113,7 @@ func TestChecker(t *testing.T) {
 func TestCheckerDelay(t *testing.T) {
 	batchc := make(chan []*service.HandlersEndpointsV1Digest, 2)
 	fake := &fakeIsolateService{batchc: batchc}
-	checker := newChecker(fake)
+	checker := newChecker(context.Background(), fake)
 
 	nop := func(item *Item, ps *isolatedclient.PushState) {}
 	checker.AddItem(&Item{Digest: "aaa"}, false, nop)
@@ -139,13 +139,13 @@ func TestCheckerDelay(t *testing.T) {
 func TestCheckerErrors(t *testing.T) {
 	// Make an error channel which sends errBang on the second receive.
 	errc := make(chan error, 2)
-	errBang := errors.New("bang!")
+	errBang := errors.New("bang")
 	errc <- nil
 	errc <- errBang
 	close(errc)
 
 	fake := &fakeIsolateService{errc: errc}
-	checker := newChecker(fake)
+	checker := newChecker(context.Background(), fake)
 
 	nop := func(item *Item, ps *isolatedclient.PushState) {}
 	for i := 0; i < 150; i++ {

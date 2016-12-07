@@ -38,6 +38,7 @@ type checkerItem struct {
 // on the server.
 // Checker methods are safe to call concurrently.
 type Checker struct {
+	ctx     context.Context
 	svc     isolateService
 	bundler *bundler.Bundler
 	err     error
@@ -57,11 +58,12 @@ func (cb *CountBytes) addFile(size int64) {
 }
 
 // NewChecker creates a NewChecker with the given isolated client.
-func NewChecker(client *isolatedclient.Client) *Checker {
-	return newChecker(client)
+// The provided context is used to make all requests to the isolate server.
+func NewChecker(ctx context.Context, client *isolatedclient.Client) *Checker {
+	return newChecker(ctx, client)
 }
 
-func newChecker(svc isolateService) *Checker {
+func newChecker(ctx context.Context, svc isolateService) *Checker {
 	c := &Checker{
 		svc: svc,
 	}
@@ -116,7 +118,7 @@ func (c *Checker) check(items []checkerItem) error {
 			IsIsolated: item.isolated,
 		})
 	}
-	out, err := c.svc.Contains(context.Background(), digests)
+	out, err := c.svc.Contains(c.ctx, digests)
 	if err != nil {
 		return err
 	}
