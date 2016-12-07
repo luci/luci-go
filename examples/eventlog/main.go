@@ -16,8 +16,8 @@ import (
 )
 
 func main() {
-	c := eventlog.NewClient("http://localhost:27910/log")
 	ctx := context.Background()
+	c := eventlog.NewClient(ctx, "http://localhost:27910/log")
 
 	event := c.NewLogEvent(ctx, eventlog.Point())
 

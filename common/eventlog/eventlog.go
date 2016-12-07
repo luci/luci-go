@@ -24,7 +24,9 @@ const ProdEndpoint = "https://play.googleapis.com/log"
 
 // Client may be used to send ChromeInfraEvent logs to the eventlog service.
 type Client struct {
-	c *logservice.Client
+	sl     *logservice.Logger // synchronous logger.
+	bl     *logservice.BatchLogger
+	ticker *time.Ticker
 
 	// EventSource identifies the log producer. It may be configured before sending logs.
 	EventSource *logpb.InfraEventSource
@@ -32,7 +34,8 @@ type Client struct {
 
 // NewClient constructs a Client which can be used to send ChromeInfraEvent logs to the eventlog service.
 // Users must call Close when the Client is no longer needed.
-func NewClient(serverAddr string, opts ...ClientOption) *Client {
+// ctx is the context to use for batch log uploads.
+func NewClient(ctx context.Context, serverAddr string, opts ...ClientOption) *Client {
 	// TODO(mcgreevy): help users to set EventSource?
 
 	settings := &clientSettings{
@@ -42,27 +45,52 @@ func NewClient(serverAddr string, opts ...ClientOption) *Client {
 		o.apply(settings)
 	}
 
-	serviceClient := logservice.NewClient(serverAddr, "CHROME_INFRA")
-	serviceClient.HTTPClient = settings.HTTPClient
-	return &Client{c: serviceClient}
+	syncLogger := logservice.NewLogger(serverAddr, "CHROME_INFRA")
+	syncLogger.HTTPClient = settings.HTTPClient
+	ticker := time.NewTicker(time.Minute)
+	return &Client{
+		sl:     syncLogger,
+		bl:     logservice.NewBatchLogger(ctx, syncLogger, ticker.C),
+		ticker: ticker,
+	}
 }
 
 // LogSync synchronously logs events to the eventlog service.
 // Use NewLogEvent to assist with constructing a well-formed log event.
 // LogSync takes ownership of events.
 func (c *Client) LogSync(ctx context.Context, events ...*ChromeInfraLogEvent) error {
+	logEvents, err := c.prepareLogs(events)
+	if err != nil {
+		return err
+	}
+	return c.sl.LogSync(ctx, logEvents...)
+}
+
+// Log stages events to be logged to the eventlog service.
+// Use NewLogEvent to assist with constructing a well-formed log event.
+// Log returns immediately, and batches of events will be sent to the eventlog server periodically.
+// Log takes ownership of events.
+func (c *Client) Log(events ...*ChromeInfraLogEvent) error {
+	logEvents, err := c.prepareLogs(events)
+	if err != nil {
+		return err
+	}
+	c.bl.Log(logEvents...)
+	return nil
+}
+
+func (c *Client) prepareLogs(events []*ChromeInfraLogEvent) ([]*logpb.LogRequestLite_LogEventLite, error) {
 	var logEvents []*logpb.LogRequestLite_LogEventLite
 
 	for _, event := range events {
 		sourceExt, err := proto.Marshal(event.InfraEvent)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		event.LogEvent.SourceExtension = sourceExt
 		logEvents = append(logEvents, event.LogEvent)
 	}
-
-	return c.c.LogSync(ctx, logEvents)
+	return logEvents, nil
 }
 
 // NewLogEvent constructs a well-formed log event.
@@ -84,8 +112,9 @@ func (c *Client) NewLogEvent(ctx context.Context, eventTime TypedTime) *ChromeIn
 
 // Close flushes any pending logs and releases any resources held by the client.
 // Close should be called when the client is no longer needed.
-func (c *Client) Close() error {
-	return c.c.Close()
+func (c *Client) Close() {
+	c.bl.Close()
+	c.ticker.Stop()
 }
 
 // ChromeInfraLogEvent stores a pending LogEvent, and the proto used to populate its SourceExtension field.

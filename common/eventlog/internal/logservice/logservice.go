@@ -7,40 +7,46 @@ package logservice
 
 import (
 	"bytes"
+	"context"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 
 	logpb "github.com/luci/luci-go/common/eventlog/proto"
-	"golang.org/x/net/context"
 )
 
-// Client sends event logs to the eventlog service.
-type Client struct {
+// Logger sends event logs to the eventlog service.
+type Logger struct {
 	HTTPClient *http.Client
+
 	serverAddr string
 	logSource  string
 }
 
-// NewClient constructs a new Client.
+// NewLogger constructs a new Client.
 // Users must call Close when the Client is no longer needed.
-func NewClient(serverAddr, logSourceName string) *Client {
-	return &Client{
+func NewLogger(serverAddr, logSourceName string) *Logger {
+	return &Logger{
 		serverAddr: serverAddr,
 		logSource:  logSourceName,
 	}
 }
 
-// TODO(mcgreevy): support bundling log requests.
+// retryError is an error for an operation that should be retried.
+type retryError struct {
+	error
+}
 
 // LogSync synchronously logs events to the eventlog service.
 // The EventTime in each event must have been obtained from time.Now.
-func (c *Client) LogSync(ctx context.Context, events []*logpb.LogRequestLite_LogEventLite) error {
+// The returned error can be supplied to ShouldRetry to determine whether the operation should be retried.
+func (l *Logger) LogSync(ctx context.Context, events ...*logpb.LogRequestLite_LogEventLite) error {
 	// TODO(mcgreevy): consider supporting custom clocks.
 	log := &logpb.LogRequestLite{
 		RequestTimeMs: proto.Int64(time.Now().UnixNano() / 1e6),
-		LogSourceName: &c.logSource,
+		LogSourceName: &l.logSource,
 		LogEvent:      events,
 	}
 
@@ -49,25 +55,37 @@ func (c *Client) LogSync(ctx context.Context, events []*logpb.LogRequestLite_Log
 		return err
 	}
 
-	req, err := http.NewRequest("POST", c.serverAddr, bytes.NewReader(buf))
+	req, err := http.NewRequest("POST", l.serverAddr, bytes.NewReader(buf))
 	if err != nil {
 		return err
 	}
 
 	req.Header.Set("Content-Type", "application/octet-stream")
 	req = req.WithContext(ctx)
-	resp, err := c.HTTPClient.Do(req)
+	resp, err := l.HTTPClient.Do(req)
 	if err != nil {
-		return err
+		return retryError{err}
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
 
-	return nil
+	sc := resp.StatusCode
+	switch {
+	case sc == 200:
+		return nil
+	case sc == 400:
+		// malformed; this should not happen.
+		return fmt.Errorf("eventlog: malformed request: %v", req)
+	case sc == 401:
+		return retryError{fmt.Errorf("eventlog: auth failed: %v", req)}
+	case sc >= 500 && sc < 600:
+		return retryError{fmt.Errorf("eventlog: req failed: %v", req)}
+	default:
+		return fmt.Errorf("eventlog: unexpected status code: %v for request: %v", sc, req)
+	}
 }
 
-// Close flushes any pending logs and releases any resources held by the client.
-// Close should be called when the client is no longer needed.
-func (c *Client) Close() error {
-	// We will need this later, but for now it's a no-op.
-	return nil
+// ShouldRetry reports whether a LogSync call (which returned err) should be retried.
+func ShouldRetry(err error) bool {
+	_, ok := err.(retryError)
+	return ok
 }

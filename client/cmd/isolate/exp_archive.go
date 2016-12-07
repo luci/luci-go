@@ -218,7 +218,7 @@ func (c *expArchiveRun) main() error {
 
 	if endpoint := eventlogEndpoint(c.isolateFlags.EventlogEndpoint); endpoint != "" {
 		ctx := context.Background()
-		logger := eventlog.NewClient(endpoint)
+		logger := eventlog.NewClient(ctx, endpoint)
 
 		// TODO(mcgreevy): fill out more stats in archiveDetails.
 		archiveDetails := &logpb.IsolateClientEvent_ArchiveDetails{
