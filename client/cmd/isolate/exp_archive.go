@@ -69,6 +69,9 @@ type Item struct {
 
 // main contains the core logic for experimental archive.
 func (c *expArchiveRun) main() error {
+	// TODO(djd): This func is long and has a lot of internal complexity (like,
+	// such as, archiveCallback). Refactor.
+
 	start := time.Now()
 	archiveOpts := &c.isolateFlags.ArchiveOptions
 	// Parse the incoming isolate file.
@@ -78,6 +81,10 @@ func (c *expArchiveRun) main() error {
 	}
 	log.Printf("Isolate referenced %d deps", len(deps))
 
+	// Set up a background context which is cancelled when this function returns.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// Create the isolated client which connects to the isolate server.
 	authCl, err := c.createAuthClient()
 	if err != nil {
@@ -85,7 +92,12 @@ func (c *expArchiveRun) main() error {
 	}
 	client := isolatedclient.New(nil, authCl, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil)
 
+	// Set up a checker and pair of uploaders. One uploader is for in-memory
+	// files, and one is for on-disk files (we want to limit the latter to only
+	// one upload at a time).
+	// TODO(djd): Make NewChecker take a context arg.
 	checker := NewChecker(client)
+	memUploader, fileUploader := NewUploader(ctx, client, 10), NewUploader(ctx, client, 1)
 
 	// Walk each of the deps, partioning the results into symlinks and files categorised by size.
 	var links, archiveFiles, indivFiles []*Item
@@ -163,9 +175,11 @@ func (c *expArchiveRun) main() error {
 				tar.Release()
 				return
 			}
-			// XXX(djd): Actually upload the tar file.
-			log.Printf("XXX: %q needs to be uploaded", item.RelPath)
-			tar.Release()
+			log.Printf("QUEUED %q for upload", item.RelPath)
+			memUploader.UploadBytes(item.RelPath, tar.Content, ps, func() {
+				log.Printf("UPLOADED %q", item.RelPath)
+				tar.Release()
+			})
 		})
 	}
 
@@ -189,21 +203,47 @@ func (c *expArchiveRun) main() error {
 			if ps == nil {
 				return
 			}
-			// XXX(djd): Actually upload the file.
-			log.Printf("XXX: %q needs to be uploaded", item.RelPath)
+			log.Printf("QUEUED %q for upload", item.RelPath)
+			fileUploader.UploadFile(item, ps, func() {
+				log.Printf("UPLOADED %q", item.RelPath)
+			})
 		})
 	}
 
-	// Marshal the isolated file into JSON.
+	// Marshal the isolated file into JSON, and create an Item to describe it.
 	isol.Files = files
 	isolJSON, err := json.Marshal(isol)
 	if err != nil {
 		return err
 	}
-	// TODO(djd): actually check/upload the isolated.
+	isolItem := &Item{
+		Path:    archiveOpts.Isolated,
+		RelPath: filepath.Base(archiveOpts.Isolated),
+		Digest:  isolated.HashBytes(isolJSON),
+		Size:    int64(len(isolJSON)),
+	}
+
+	// Check and upload isolate JSON.
+	checker.AddItem(isolItem, true, func(item *Item, ps *isolatedclient.PushState) {
+		if ps == nil {
+			return
+		}
+		log.Printf("QUEUED %q for upload", item.RelPath)
+		memUploader.UploadBytes(item.RelPath, isolJSON, ps, func() {
+			log.Printf("UPLOADED %q", item.RelPath)
+		})
+	})
 
 	// Make sure that all pending items have been checked.
 	if err := checker.Close(); err != nil {
+		return err
+	}
+
+	// Make sure that all the uploads have completed successfully.
+	if err := fileUploader.Close(); err != nil {
+		return err
+	}
+	if err := memUploader.Close(); err != nil {
 		return err
 	}
 
@@ -211,25 +251,23 @@ func (c *expArchiveRun) main() error {
 	if err := ioutil.WriteFile(archiveOpts.Isolated, isolJSON, 0644); err != nil {
 		return err
 	}
-	isolatedHash := string(isolated.HashBytes(isolJSON))
-	fmt.Printf("%s\t%s\n", isolatedHash, filepath.Base(archiveOpts.Isolated))
+	fmt.Printf("%s\t%s\n", isolItem.Digest, filepath.Base(archiveOpts.Isolated))
 
 	end := time.Now()
 
 	if endpoint := eventlogEndpoint(c.isolateFlags.EventlogEndpoint); endpoint != "" {
-		ctx := context.Background()
 		logger := eventlog.NewClient(ctx, endpoint)
 
 		// TODO(mcgreevy): fill out more stats in archiveDetails.
 		archiveDetails := &logpb.IsolateClientEvent_ArchiveDetails{
-			IsolateHash: []string{isolatedHash},
+			IsolateHash: []string{string(isolItem.Digest)},
 		}
 		if err := logStats(ctx, logger, start, end, archiveDetails); err != nil {
 			log.Printf("Failed to log to eventlog: %v", err)
 		}
 	}
 
-	return errors.New("experimental archive is not implemented")
+	return nil
 }
 
 func (c *expArchiveRun) parseFlags(args []string) error {
