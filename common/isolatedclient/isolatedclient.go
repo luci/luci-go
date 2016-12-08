@@ -156,6 +156,53 @@ func (i *Client) Push(c context.Context, state *PushState, source Source) (err e
 	return
 }
 
+// Fetch downloads an item from the server.
+func (i *Client) Fetch(c context.Context, item *isolateservice.HandlersEndpointsV1Digest, dest io.WriteSeeker) error {
+	// Perform initial request.
+	url := i.url + "/api/isolateservice/v1/retrieve"
+	in := &isolateservice.HandlersEndpointsV1RetrieveRequest{
+		Digest: item.Digest,
+		Namespace: &isolateservice.HandlersEndpointsV1Namespace{
+			DigestHash: "sha-1",
+			Namespace:  i.namespace,
+		},
+		Offset: 0,
+	}
+	var out isolateservice.HandlersEndpointsV1RetrievedContent
+	if _, err := lhttp.PostJSON(c, i.retryFactory, i.authClient, url, nil, in, &out); err != nil {
+		return err
+	}
+
+	// Handle DB items.
+	if out.Content != "" {
+		decoded, err := base64.StdEncoding.DecodeString(out.Content)
+		if err != nil {
+			return err
+		}
+		decompressor := isolated.GetDecompressor(bytes.NewReader(decoded))
+		defer decompressor.Close()
+		_, err = io.Copy(dest, decompressor)
+		return err
+	}
+
+	// Handle GCS items.
+	rgen := func() (*http.Request, error) {
+		return http.NewRequest("GET", out.Url, nil)
+	}
+	handler := func(resp *http.Response) error {
+		defer resp.Body.Close()
+		decompressor := isolated.GetDecompressor(resp.Body)
+		defer decompressor.Close()
+		if _, err := dest.Seek(0, io.SeekStart); err != nil {
+			return err
+		}
+		_, err := io.Copy(dest, decompressor)
+		return err
+	}
+	_, err := lhttp.NewRequest(c, i.authClient, i.retryFactory, rgen, handler)()
+	return err
+}
+
 // postJSON does authenticated POST request.
 func (i *Client) postJSON(c context.Context, resource string, headers map[string]string, in, out interface{}) error {
 	if len(resource) == 0 || resource[0] != '/' {
