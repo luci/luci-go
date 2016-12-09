@@ -54,11 +54,10 @@ const (
 type application struct {
 	context.Context
 
-	annotate           annotationMode
 	resultPath         string
 	jsonArgsPath       string
 	butlerStreamServer string
-	tee                bool
+	tee                teeFlag
 	printSummary       bool
 	testingDir         string
 	annotationInterval clockflag.Duration
@@ -73,8 +72,6 @@ type application struct {
 }
 
 func (a *application) addToFlagSet(fs *flag.FlagSet) {
-	fs.Var(&a.annotate, "annotate",
-		"Annotation handling mode. Options are: "+annotationFlagEnum.Choices())
 	fs.StringVar(&a.resultPath, "result-path", "",
 		"If supplied, a JSON file describing the bootstrap result will be written here if the bootstrapped process "+
 			"is successfully executed.")
@@ -84,8 +81,8 @@ func (a *application) addToFlagSet(fs *flag.FlagSet) {
 	fs.StringVar(&a.butlerStreamServer, "butler-stream-server", "",
 		"The Butler stream server location. If empty, Annotee will check for Butler "+
 			"bootstrapping and extract the stream server from that.")
-	fs.BoolVar(&a.tee, "tee", true,
-		"Tee the bootstrapped process' STDOUT/STDERR streams.")
+	fs.Var(&a.tee, "tee",
+		"Comma-delimited list of content to tee to the bootstrapped process. Valid values are: "+teeFlagOptions)
 	fs.BoolVar(&a.printSummary, "print-summary", true,
 		"Print the annotation protobufs that were emitted at the end.")
 	fs.StringVar(&a.testingDir, "testing-dir", "",
@@ -236,10 +233,11 @@ func mainImpl(args []string) int {
 			Client:                 client,
 			MetadataUpdateInterval: time.Duration(a.annotationInterval),
 			CloseSteps:             true,
+			TeeAnnotations:         a.tee.annotations,
+			TeeText:                a.tee.text,
 		},
 
-		Annotate: executor.AnnotationMode(a.annotate),
-		Stdin:    os.Stdin,
+		Stdin: os.Stdin,
 	}
 
 	linkGen := &coordinatorLinkGenerator{
@@ -251,7 +249,7 @@ func mainImpl(args []string) int {
 		e.Options.LinkGenerator = linkGen
 	}
 
-	if a.tee {
+	if a.tee.enabled() {
 		e.TeeStdout = os.Stdout
 		e.TeeStderr = os.Stderr
 	}

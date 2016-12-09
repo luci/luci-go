@@ -19,30 +19,10 @@ import (
 	"golang.org/x/net/context"
 )
 
-// AnnotationMode describes how the Executor will process annotations.
-type AnnotationMode int
-
-const (
-	// NoAnnotations causes no annotation processing will be performed on the
-	// bootstrapped process' STDOUT.
-	NoAnnotations AnnotationMode = iota
-	// TeeAnnotations causes the bootstrapped process' annotation state to be
-	// transmitted through LogDog as an annotation stream, but still included in
-	// the bootstrapped process' STDOUT stream.
-	TeeAnnotations
-	// StripAnnotations causes the bootstrapped process' annotation state to be
-	// transmitted through LogDog as an annotation stream and removed from the
-	// bootstrapped process' STDOUT stream.
-	StripAnnotations
-)
-
 // Executor bootstraps an application, running its output through a Processor.
 type Executor struct {
 	// Options are the set of Annotee options to use.
 	Options annotee.Options
-
-	// Annoate describes how annotations in the STDOUT stream should be handled.
-	Annotate AnnotationMode
 
 	// Stdin, if not nil, will be used as standard input for the bootstrapped
 	// process.
@@ -83,14 +63,14 @@ func (e *Executor) Run(ctx context.Context, command []string) error {
 		return fmt.Errorf("failed to create STDOUT pipe: %s", err)
 	}
 	defer stdoutRC.Close()
-	stdout := e.configStream(stdoutRC, annotee.STDOUT, e.TeeStdout)
+	stdout := e.configStream(stdoutRC, annotee.STDOUT, e.TeeStdout, true)
 
 	stderrRC, err := cmd.StderrPipe()
 	if err != nil {
 		return fmt.Errorf("failed to create STDERR pipe: %s", err)
 	}
 	defer stderrRC.Close()
-	stderr := e.configStream(stderrRC, annotee.STDERR, e.TeeStderr)
+	stderr := e.configStream(stderrRC, annotee.STDERR, e.TeeStderr, false)
 
 	// Start our process.
 	if err := cmd.Start(); err != nil {
@@ -163,16 +143,14 @@ func (e *Executor) Executed() bool {
 	return e.executed
 }
 
-func (e *Executor) configStream(r io.Reader, name types.StreamName, tee io.Writer) *annotee.Stream {
+func (e *Executor) configStream(r io.Reader, name types.StreamName, tee io.Writer, emitAll bool) *annotee.Stream {
 	s := &annotee.Stream{
-		Reader:           r,
-		Name:             name,
-		Tee:              tee,
-		Alias:            "stdio",
-		StripAnnotations: (e.Annotate == StripAnnotations),
-	}
-	if e.Annotate != NoAnnotations {
-		s.Annotate = true
+		Reader:      r,
+		Name:        name,
+		Tee:         tee,
+		Alias:       "stdio",
+		Annotate:    true,
+		EmitAllLink: emitAll,
 	}
 	return s
 }

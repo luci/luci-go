@@ -54,9 +54,16 @@ type Stream struct {
 	// Annotate, if true, causes annotations in this Stream to be captured and
 	// an annotation LogDog stream to be emitted.
 	Annotate bool
+
 	// StripAnnotations, if true, causes all encountered annotations to be
-	// stripped from incoming stream data.
+	// stripped from incoming stream data. Otherwise, those annotations will
+	// still advnace the annotation state (if Annotate is true), but will not be
+	// included in any output streams.
 	StripAnnotations bool
+
+	// EmitAllLink, if true, instructs an "all STDOUT/STDERR" link to be injected
+	// into this Stream.
+	EmitAllLink bool
 
 	// BufferSize is the size of the read buffer that will be used when processing
 	// this stream's data.
@@ -88,6 +95,13 @@ type Options struct {
 	// Execution describes the current applicaton's execution parameters. This
 	// will be used to construct annotation state.
 	Execution *annotation.Execution
+
+	// TeeAnnotations, if true, causes all encountered annotations to be
+	// tee'd, if teeing is configured.
+	TeeAnnotations bool
+	// TeeText, if true, causes all encountered non-annotation lines to be
+	// tee'd, if teeing is configured.
+	TeeText bool
 
 	// MetadataUpdateInterval is the amount of time to wait after stream metadata
 	// updates to push the updated metadata protobuf to the metadata stream.
@@ -121,6 +135,8 @@ type Processor struct {
 	annotationStream    streamclient.Stream
 	annotationC         chan annotationSignal
 	annotationFinishedC chan struct{}
+
+	allEmittedStreams map[*Stream]struct{}
 }
 
 type annotationSignal struct {
@@ -163,6 +179,7 @@ func (p *Processor) initialize() (err error) {
 	// Complete initialization and start our annotation meter.
 	p.annotationC = make(chan annotationSignal)
 	p.annotationFinishedC = make(chan struct{})
+	p.allEmittedStreams = map[*Stream]struct{}{}
 
 	// Run our annotation meter in a separate goroutine.
 	go p.runAnnotationMeter(p.annotationStream, p.o.MetadataUpdateInterval)
@@ -258,44 +275,84 @@ func (p *Processor) IngestLine(s *Stream, line string) error {
 		return err
 	}
 
-	// Build our output, which will consist of the initial line and any extra
-	// lines that have been registered.
-	inject := h.flushInjectedLines()
-	stepOutput := make([]string, 0, 1+len(inject))
+	// Determine our injected annotations.
+	injectedAnnotations := h.flushInjectedAnnotations()
 
-	// If this is an annotation line, write it to our root handler. Otherwise,
-	// write it to our step's handler (by appending it to stepOutput).
+	// Emit the "all" link if configured (at most once).
+	if s.EmitAllLink {
+		if l := buildStreamLinkAnnotation(p.o.LinkGenerator, "all", "stdio", "**/stdout", "**/stderr"); l != "" {
+			injectedAnnotations = append(injectedAnnotations, l)
+		}
+		s.EmitAllLink = false
+	}
+
+	// Get our root log stream handler. As an optimization, if "step" is
+	// the root step, then "h" is already the root handler, so we don't need
+	// to duplicate the lookup.
+	//
+	// We only need the handler if we're going to emit annotations to the root
+	// stream.
+	var rootHandler *stepHandler
+	if !s.StripAnnotations && (a != "" || len(injectedAnnotations) > 0) {
+		if rootStep := p.astate.RootStep(); rootStep != step {
+			rootHandler, err = p.getStepHandler(rootStep, true)
+			if err != nil {
+				return err
+			}
+		} else {
+			rootHandler = h
+		}
+	}
+
+	// Handle annotation line.
 	if a != "" {
+		// If we're teeing annotations, emit this.
+		if s.Tee != nil && p.o.TeeAnnotations {
+			if err := writeTextLine(s.Tee, line); err != nil {
+				log.WithError(err).Errorf(h, "Failed to tee annotation line.")
+				return err
+			}
+		}
+
 		// If we're not stripping annotations, emit this to the root handler.
 		if !s.StripAnnotations {
-			// Get our root log stream handler. As an optimization, if "step" is
-			// the root step, then "h" is already the root handler, so we don't need
-			// to duplicate the lookup.
-			var rootHandler *stepHandler
-			if rootStep := p.astate.RootStep(); rootStep != step {
-				rootHandler, err = p.getStepHandler(rootStep, true)
-				if err != nil {
-					return err
-				}
-			} else {
-				rootHandler = h
-			}
-
 			if err := rootHandler.writeBaseStream(s, line); err != nil {
 				log.WithError(err).Errorf(p.ctx, "Failed to send line to LogDog.")
 				return err
 			}
 		}
-	} else {
-		stepOutput = append(stepOutput, line)
 	}
 
-	// Add any injected lines.
-	stepOutput = append(stepOutput, inject...)
+	// Emit any injected annotations.
+	for _, anno := range injectedAnnotations {
+		// Teeing?
+		if s.Tee != nil && p.o.TeeAnnotations {
+			if err := writeTextLine(s.Tee, anno); err != nil {
+				log.WithError(err).Errorf(h, "Failed to tee annotation line.")
+				return err
+			}
+		}
 
-	for _, l := range stepOutput {
+		// Not stripping?
+		if !s.StripAnnotations {
+			if err := rootHandler.writeBaseStream(s, anno); err != nil {
+				log.WithError(err).Errorf(h, "Failed to send injected annotation line to LogDog.")
+				return err
+			}
+		}
+	}
+
+	// If this is a text line, and we're teeing text, emit this line.
+	if a == "" {
+		if s.Tee != nil && p.o.TeeText {
+			if err := writeTextLine(s.Tee, line); err != nil {
+				log.WithError(err).Errorf(h, "Failed to tee text line.")
+				return err
+			}
+		}
+
 		// Write to our LogDog stream.
-		if err := h.writeBaseStream(s, l); err != nil {
+		if err := h.writeBaseStream(s, line); err != nil {
 			log.WithError(err).Errorf(p.ctx, "Failed to send line to LogDog.")
 			return err
 		}
@@ -494,10 +551,11 @@ type stepHandler struct {
 	processor *Processor
 	step      *annotation.Step
 
-	client        streamclient.Client
-	injectedLines []string
-	streams       map[types.StreamName]streamclient.Stream
-	finished      bool
+	client              streamclient.Client
+	injectedAnnotations []string
+	streams             map[types.StreamName]streamclient.Stream
+	finished            bool
+	allEmitted          bool
 }
 
 func newStepHandler(p *Processor, step *annotation.Step) (*stepHandler, error) {
@@ -540,15 +598,6 @@ func (h *stepHandler) finish(closeSteps bool) {
 }
 
 func (h *stepHandler) writeBaseStream(s *Stream, line string) error {
-	// If we're teeing, also write this to our Processor's tee stream.
-	if s.Tee != nil {
-		// Tee this to the Stream's configured Tee output.
-		if err := writeTextLine(s.Tee, line); err != nil {
-			log.WithError(err).Errorf(h, "Failed to tee line.")
-			return err
-		}
-	}
-
 	name := h.step.BaseStream(s.Name)
 	stream, created, err := h.getStream(name, &textStreamArchetype)
 	if err != nil {
@@ -622,28 +671,31 @@ func (h *stepHandler) closeStreamImpl(name types.StreamName, s streamclient.Stre
 	}
 }
 
-func (h *stepHandler) injectLines(s ...string) {
-	h.injectedLines = append(h.injectedLines, s...)
-}
-
-func (h *stepHandler) flushInjectedLines() []string {
-	if len(h.injectedLines) == 0 {
+func (h *stepHandler) flushInjectedAnnotations() []string {
+	if len(h.injectedAnnotations) == 0 {
 		return nil
 	}
 
-	lines := make([]string, len(h.injectedLines))
-	copy(lines, h.injectedLines)
-	h.injectedLines = h.injectedLines[:0]
+	lines := make([]string, len(h.injectedAnnotations))
+	copy(lines, h.injectedAnnotations)
+	h.injectedAnnotations = h.injectedAnnotations[:0]
 
 	return lines
 }
 
 func (h *stepHandler) maybeInjectLink(base, text string, names ...types.StreamName) {
-	if lg := h.processor.o.LinkGenerator; lg != nil {
+	if l := buildStreamLinkAnnotation(h.processor.o.LinkGenerator, base, text, names...); l != "" {
+		h.injectedAnnotations = append(h.injectedAnnotations, l)
+	}
+}
+
+func buildStreamLinkAnnotation(lg LinkGenerator, base, text string, names ...types.StreamName) string {
+	if lg != nil {
 		if link := lg.GetLink(names...); link != "" {
-			h.injectLines(buildAnnotation("STEP_LINK", fmt.Sprintf("%s-->%s", text, base), link))
+			return buildAnnotation("STEP_LINK", fmt.Sprintf("%s-->%s", text, base), link)
 		}
 	}
+	return ""
 }
 
 // lineReader reads from an input stream and returns the data line-by-line.
