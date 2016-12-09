@@ -251,7 +251,8 @@ func TestFlush(t *testing.T) {
 			So(len(tq.GetScheduledTasks()["pull-queue"]), ShouldEqual, 0)
 		})
 
-		Convey("Handles transient bq failure", func() {
+		// TODO(vadimsh): This test is flaky.
+		SkipConvey("Handles transient bq failure", func() {
 			testingLog := testingLog
 			testingLog.MaxParallelUploads = 1
 			testingLog.BatchesPerRequest = 2
