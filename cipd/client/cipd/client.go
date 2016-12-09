@@ -364,10 +364,25 @@ type Client interface {
 
 	// ProcessEnsureFile parses text file that describes what should be installed.
 	//
-	// It is a text file where each line has a form "<package name> <version>".
+	// It is a text file where each line has a form "<package template> <version>".
 	// Whitespaces are ignored. Lines that start with '#' are ignored. A version
 	// can be specified as instance ID, tag or ref. Will resolve tags and refs to
 	// concrete instance IDs by calling the backend.
+	//
+	// The package template may contain the expansion parameters ${platfrom} and
+	// ${arch}. All other characters in the template are taken verbatim.
+	//
+	// ${platform} will expand to one of the following, based on the value of this
+	// client's runtime.GOOS value:
+	//   * windows
+	//   * mac
+	//   * linux
+	//
+	// ${arch} will expand to one of the following, based on the value of this
+	// client's runtime.GOARCH value:
+	//   * 386
+	//   * amd64
+	//   * armv6l
 	ProcessEnsureFile(ctx context.Context, r io.Reader) ([]common.Pin, error)
 
 	// EnsurePackages installs, removes and updates packages in the site root.
@@ -714,23 +729,34 @@ const clientPackageBase = "infra/tools/cipd"
 var clientPackage = ""
 var clientFileName = ""
 
+var platformExpansion = ""
+var archExpansion = ""
+var templateExpander interface {
+	Replace(string) string
+}
+
 func init() {
 	// TODO(iannucci): rationalize these to just be exactly GOOS and GOARCH.
-	platform := runtime.GOOS
-	if platform == "darwin" {
-		platform = "mac"
+	platformExpansion = runtime.GOOS
+	if platformExpansion == "darwin" {
+		platformExpansion = "mac"
 	}
 
 	clientFileName = "cipd"
-	if platform == "windows" {
+	if platformExpansion == "windows" {
 		clientFileName = "cipd.exe"
 	}
 
-	arch := runtime.GOARCH
-	if arch == "arm" {
-		arch = "armv6l"
+	archExpansion = runtime.GOARCH
+	if archExpansion == "arm" {
+		archExpansion = "armv6l"
 	}
-	clientPackage = fmt.Sprintf("%s/%s-%s", clientPackageBase, platform, arch)
+	templateExpander = strings.NewReplacer(
+		"${platform}", platformExpansion,
+		"${arch}", archExpansion,
+	)
+	clientPackage = fmt.Sprintf("%s/%s-%s", clientPackageBase, platformExpansion,
+		archExpansion)
 }
 
 func (client *clientImpl) ensureClientVersionInfo(ctx context.Context, fs local.FileSystem, pin common.Pin, exePath string) {
@@ -1156,10 +1182,12 @@ func (client *clientImpl) ProcessEnsureFile(ctx context.Context, r io.Reader) ([
 			continue
 		}
 
-		// Each line has a format "<package name> <version>".
+		// Each line has a format "<package template> <version>".
 		if len(tokens) != 2 {
-			return nil, makeError("expecting '<package name> <version>' line")
+			return nil, makeError("expecting '<package template> <version>' line")
 		}
+
+		tokens[0] = templateExpander.Replace(tokens[0])
 		err := common.ValidatePackageName(tokens[0])
 		if err != nil {
 			return nil, makeError(err.Error())

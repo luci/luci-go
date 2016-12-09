@@ -605,6 +605,16 @@ func TestProcessEnsureFile(t *testing.T) {
 		_, err := call(c, "pkg/a", nil)
 		So(err, ShouldNotBeNil)
 	})
+
+	Convey("ProcessEnsureFile template package", t, func(c C) {
+		pins, _ := call(c, "something/${platform}-${arch} 0000000000000000000000000000000000000000", nil)
+		So(pins, ShouldResemble, []common.Pin{
+			{
+				fmt.Sprintf("something/%s-%s", platformExpansion, archExpansion),
+				"0000000000000000000000000000000000000000",
+			},
+		})
+	})
 }
 
 func TestListPackages(t *testing.T) {
