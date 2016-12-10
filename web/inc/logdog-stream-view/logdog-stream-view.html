@@ -6,13 +6,12 @@
 
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/google-signin/google-signin-aware.html">
-<link rel="import" href="../bower_components/paper-checkbox/paper-checkbox.html">
-
-<link rel="import" href="../logdog-stream/logdog-stream.html">
-<link rel="import" href="../logdog-stream/logdog-error.html">
-<link rel="import" href="../luci-sleep-promise/luci-sleep-promise.html">
-<link rel="import" href="logdog-stream-fetcher.html">
-<link rel="import" href="logdog-stream-query.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/iron-icons/av-icons.html">
+<link rel="import" href="../bower_components/iron-icons/editor-icons.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="">
 
 <!--
 An element for rendering muxed LogDog log streams.
@@ -20,12 +19,32 @@ An element for rendering muxed LogDog log streams.
 <dom-module id="logdog-stream-view">
 
   <template>
-    <style>
-      .buttons {
+    <style is="custom-style">
+      #mainView {
+        position: relative;
+      }
+
+      #buttons {
+        position: fixed;
+        height: auto;
+        padding: 5px;
+        background-color: rgba(0, 0, 0, 0.1);
+        z-index: 100;
+      }
+      #buttons > paper-button {
         background-color: white;
       }
 
-      #stream-status {
+      .paper-button-highlight[toggles][active] {
+        background-color: #cd6a51;
+      }
+
+      .paper-icon-button-highlight[toggles][active] {
+        background-color: #cd6a51;
+        border-radius: 80%;
+      }
+
+      #streamStatus {
         position: fixed;
         right: 16px;
         background-color: #EEEEEE;
@@ -33,7 +52,7 @@ An element for rendering muxed LogDog log streams.
       }
 
       #logContent {
-        padding-top: 20px;
+        padding-top: 54px; /* Pad around buttons */
         background-color: white;
       }
 
@@ -43,53 +62,89 @@ An element for rendering muxed LogDog log streams.
       }
 
       .log-entry-meta {
-        vertical-align: top;
-        padding: 0 8px 0 0;
-        margin: 0 0 0 0;
-        float: left;
+        background-color: lightgray;
+        padding: 5px;
+        border-width: 2px 0px 0px 0px;
+        border-color: darkgray;
+        border-style: dotted;
+        user-select: none;
+
         font-style: italic;
         font-family: Courier New, Courier, monospace;
         font-size: 10px;
 
-        /* Fixed width, break word if necessary. */
-        width: 150px;
-        word-break: break-word;
-
-        /* Can be toggled by applying .showMeta class to #logs. */
+        /* Can be toggled to "flex" by applying .showMeta class to #logs. */
         display: none;
       }
+      .log-entry-meta-line {
+        padding: 5px;
+        border-width: 1px;
+        border-style: solid;
+        border-color: gray;
+        border-radius: 10px;
+        margin-right: 10px;
+        text-align: center;
+      }
       .showMeta .log-entry-meta {
-        display: block;
+        display: flex;
       }
 
-      .log-entry-content {
+      /* .log-entry-content { */
+      .log-entry-chunk {
         padding: 0 0 0 0;
         margin: 0 0 0 0;
         float: none;
         font-family: Courier New, Courier, monospace;
         font-size: 16px;
         list-style: none;
-      }
 
-      .log-entry-line {
-        padding-left: 0;
+        border-bottom: 1px solid #CCCCCC;
 
         /* Can be toggled by applying .wrapLines class to #logs. */
         white-space: pre;
       }
-      .wrapLines .log-entry-line {
+
+      /*.wrapLines .log-entry-content { */
+      .wrapLines .log-entry-chunk {
         white-space: pre-wrap;
         word-break: break-word;
       }
 
-      .log-entry-line:nth-last-child(2) {
-        border-bottom: 1px solid #CCCCCC;
+      .logFetchButtonContainer {
+        height: auto;
+        display: none;
+        flex-direction: row;
+        background-color: rgba(0, 0, 0, 0.2);
+        padding: 2px;
       }
 
-      #bottom {
+      .logFetchButtonVisible {
+        display: flex !important;
+      }
+
+      .logFetchButton {
+        width: 100%;
+        height: 18px;
+      }
+
+      .logSplitUpButton {
+        background: yellow;
+      }
+      .logSplitDownButton {
+        background: green;
+      }
+
+      .logBottomButton {
         background-color: lightcoral;
-        height: 2px;
-        margin-bottom: 10px;
+      }
+
+      #logEnd {
+        margin-bottom: 30px;
+        background-color: gray;
+      }
+
+      .clickable-log-anchor {
+        height: 24px;
       }
 
       #status-bar {
@@ -107,32 +162,74 @@ An element for rendering muxed LogDog log streams.
       }
     </style>
 
-    <google-signin-aware
-      id="aware"
-      on-google-signin-aware-success="_onSignin"></google-signin-aware>
-
     <rpc-client
       id="client"
       auto-token
       host="[[host]]"></rpc-client>
 
+    <!--
+      This must be after "rpc-client" so we get the signin event after it
+      does.
+    -->
+    <google-signin-aware
+      id="aware"
+      on-google-signin-aware-success="_onSignin"></google-signin-aware>
+
     <!-- Stream view options. -->
-    <div class="main-view">
-      <div class="buttons">
-        <paper-checkbox checked="{{showMetadata}}">
-          Show Metadata
-        </paper-checkbox>
-        <paper-checkbox checked="{{wrapLines}}">
-          Wrap Lines
-        </paper-checkbox>
-        <paper-checkbox checked="{{follow}}">
-          Follow
-        </paper-checkbox>
+    <div id="mainView">
+      <div id="buttons">
+        <!-- If we have exactly one stream, we will enable users to split. -->
+        <template is="dom-if" if="{{showStreamingControls}}">
+          <template is="dom-if" if="{{canSplit}}">
+            <paper-icon-button title="Split, load logs from end"
+                icon="editor:vertical-align-bottom"
+                on-tap="_splitClicked">
+            </paper-icon-button>
+          </template>
+
+          <template is="dom-if" if="{{isSplit}}">
+            <paper-icon-button title="Scroll to split"
+                icon="editor:vertical-align-center" on-tap="_scrollToSplit">
+            </paper-icon-button>
+          </template>
+
+          <paper-icon-button class="paper-icon-button-highlight" toggles
+              title="Automatically scroll to new logs." icon="icons:update"
+              active="{{follow}}">
+          </paper-icon-button>
+
+          <paper-icon-button class="paper-icon-button-highlight" toggles
+              title="Automatically load logs." icon="{{playingIconName}}"
+              active="{{playing}}">
+          </paper-icon-button>
+
+          <template is="dom-if" if="{{isSplit}}">
+            <paper-icon-button toggles
+                title="Load new logs, or backfill from top."
+                icon="{{backfillIconName}}"
+                active="{{backfill}}">
+            </paper-icon-button>
+          </template>
+        </template>
+
+        <template is="dom-if" if="{{_not(playing)}}">
+          <paper-button class="paper-button-highlight" toggles raised
+              active="{{wrapLines}}">
+            Wrap
+          </paper-button>
+
+          <template is="dom-if" if="{{metadata}}">
+            <paper-button class="paper-button-highlight" toggles raised
+                active="{{showMetadata}}">
+              Metadata
+            </paper-button>
+          </template>
+        </template>
       </div>
 
       <!-- Display current fetching status, if stream data is still loading. -->
-      <template is="dom-if" if="{{streamStatus}}">
-        <div id="stream-status">
+      <div id="streamStatus">
+        <template is="dom-if" if="{{streamStatus}}">
           <table>
             <template is="dom-repeat" items="{{streamStatus}}">
               <tr>
@@ -141,11 +238,12 @@ An element for rendering muxed LogDog log streams.
               </tr>
             </template>
           </table>
-        </div>
-      </template>
+        </template>
+      </div>
 
       <!-- Muxed log content. -->
-      <div id="logContent" on-mousewheel="_handleMouseWheel">
+      <div id="logContent"
+          on-mousewheel="_handleMouseWheel">
         <div id="logs">
           <!-- Content will be populated with JavaScript as logs are loaded.
 
@@ -156,18 +254,49 @@ An element for rendering muxed LogDog log streams.
                 <div class="log-entry-meta-line">(Meta N)</div>
               </div>
               <div class="log-entry-content">
-                <div class="log-entry-line">LINE #0</div>
+                LINE #0
                 ...
-                <div class="log-entry-line">LINE #N</div>
+                LINE #N
               </div>
             </div>
             ...
 
-          -->
-        </div>
 
-        <!-- Current red bottom line. -->
-        <div id="bottom"></div>
+            Note that we can't use templating to show/hide the log dividers,
+            since our positional log insertion requires them to be present and
+            move along with insertions as points of reference.
+          -->
+
+          <div id="logSplit" class="logFetchButtonContainer">
+            <!-- Insert point (prepend for head, append for tail). -->
+            <paper-button id="logSplitUp"
+                class="logFetchButton logSplitUpButton giant"
+                disabled="[[streamAnchorsNotClickable]]"
+                on-click="_handleUpClick">
+              <iron-icon icon="file-upload"></iron-icon>
+            </paper-button>
+            <paper-button id="logSplitDown"
+                class="logFetchButton logSplitDownButton giant"
+                disabled="[[streamAnchorsNotClickable]]"
+                on-click="_handleDownClick">
+              <iron-icon icon="file-download"></iron-icon>
+            </paper-button>
+          </div>
+
+          <div id="logBottom" class="logFetchButtonContainer">
+            <!--
+              Bottom of the log stream (red bottom line). When tail is complete,
+              all future logs get prepended to this.
+            -->
+            <paper-button id="logBottomButton"
+                class="logFetchButton logBottomButton giant"
+                disabled="[[streamAnchorsNotClickable]]"
+                on-click="_handleBottomClick">
+              <iron-icon icon="arrow-drop-down"></iron-icon>
+            </paper-button>
+          </div>
+          <div id="logEnd"></div>
+        </div>
       </div>
 
     </div>
@@ -206,6 +335,16 @@ An element for rendering muxed LogDog log streams.
         observer: "_streamsChanged",
       },
 
+      toolbarAnchor: {
+        type: Object,
+        value: null,
+      },
+
+      mobile: {
+        type: Boolean,
+        value: false,
+      },
+
       /**
        * The number of logs to load before forcing a page refresh.
        *
@@ -217,6 +356,18 @@ An element for rendering muxed LogDog log streams.
         type: Number,
         value: 1000,
         notify: true,
+      },
+
+      /**
+       * If true, render metadata blocks alongside their log entries.
+       *
+       * This will cause significantly more HTML elements during rendering (so
+       * that each metadata element can show up next to its row) and greatly
+       * slow the viewer down.
+       */
+      metadata: {
+        type: Boolean,
+        value: false,
       },
 
       /** If true, show log metadata column. */
@@ -243,6 +394,52 @@ An element for rendering muxed LogDog log streams.
         observer: "_followChanged",
       },
 
+      canSplit: {
+        type: Boolean,
+        value: false,
+        readOnly: true,
+      },
+
+      showStreamingControls: {
+        type: Boolean,
+        value: true,
+        readOnly: true,
+      },
+
+      isSplit: {
+        type: Boolean,
+        value: false,
+        readOnly: true,
+      },
+
+      streamAnchorsNotClickable: {
+        type: Boolean,
+        computed:
+          '_computeAnchorsNotClickable(playing, showStreamingControls)',
+      },
+
+      playing: {
+        type: Boolean,
+        value: false,
+        observer: "_playingChanged",
+      },
+
+      playingIconName: {
+        type: String,
+        computed: '_computePlayingIconName(playing)',
+      },
+
+      backfill: {
+        type: Boolean,
+        value: false,
+        observer: "_backfillChanged",
+      },
+
+      backfillIconName: {
+        type: String,
+        computed: '_computeBackfillIconName(backfill)',
+      },
+
       /**
        * The current stream status. This is an Array of objects:
        *   obj.name is the name of the stream.
@@ -265,304 +462,358 @@ An element for rendering muxed LogDog log streams.
       },
     },
 
-    ready: function() {
-      this._scheduledWrite = null;
-      this._buffer = null;
-      this._currentLogBuffer = null;
-      this._authCallback = null;
+    created: function() {
+      this._scrollTimeoutId = null;
+
+      // Create "onScrollHandler", which just invokes "_onScroll" while bound
+      // to "this". We create it here so we can unregister it later, since
+      // "bind" returns a modified value.
+      this._onScrollHandler = function(e) { this._onScroll(e); }.bind(this);
+    },
+
+    attached: function() {
+      require(["inc/rpc/client", "inc/logdog-stream-view/viewer"],
+          function(client, viewer) {
+            // Instantiate our view, and install callbacks.
+            this._v = viewer;
+            this._model = new viewer.Model({
+                client: new client.luci_rpc.Client(this.$.client),
+                mobile: this.mobile,
+
+                pushLogEntries: this._pushLogEntries.bind(this),
+                clearLogEntries: this._clearLogEntries.bind(this),
+                updateControls: this._updateControls.bind(this),
+                locationIsVisible: this._locationIsVisible.bind(this),
+            });
+            this._streamsChanged();
+          }.bind(this));
+
+      window.addEventListener('scroll', this._onScrollHandler);
     },
 
     detached: function() {
-      this.stop();
+      // Unregsiter event handlers.
+      window.removeEventListener('scroll', this._onScrollHandler);
+
+      // Reset state.
+      this.reset();
     },
 
     stop: function() {
-      this._cancelFetch(true);
+      this.reset();
     },
 
     /** Clears state and begins fetching log data. */
     reset: function() {
-      this._resetLogState();
-
-      this._resolveStreams().then(function(streams) {
-        this._resetToStreams(streams);
-      }.bind(this)).catch(function(error) {
-        this._loadStatusBar("Failed to resolve streams:" + error);
-        throw error;
-      }.bind(this));
-    },
-
-    /** Clears all current logs. */
-    _resetLogState: function() {
-      this._cancelFetch(true);
-
-      // Remove all current log elements. */
-      while (this.$.logs.hasChildNodes()) {
-        this.$.logs.removeChild(this.$.logs.lastChild);
+      if ( this._model ) {
+        this._model.reset();
       }
-
-      // Clear our buffer and streamer state.
-      this._buffer = null;
-      this._currentLogBuffer = null;
-      if (this._streamer) {
-        this._streamer.shutdown();
-      }
-      this._streamer = null;
-    },
-
-    _resolveStreams: function() {
-      // Separate our configured streams into full stream paths and queries.
-      var parts = {
-        queries: [],
-        streams: [],
-      };
-      var query = new LogDogQuery(this.project);
-      this.streams.map(LogDogStream.splitProject).forEach(function(v) {
-        if (LogDogQuery.isQuery(v.path)) {
-          parts.queries.push(v);
-        } else {
-          parts.streams.push(v);
-        }
-      });
-
-      // Resolve any outstanding queries into full stream paths.
-      //
-      // If we get an authentication error, register to have our query
-      // resolution callback invoked on signin changes until it works (or
-      // indefinitely).
-      var queries = parts.queries.map(function(v) {
-          var params = new LogDogQueryParams(v.project).
-              path(v.path).
-              streamType("text");
-          return new LogDogQuery(this.$.client, params);
-      }.bind(this));
-
-      var issueQuery = function() {
-        this._loadStatusBar("Resolving log streams from query...");
-        this._authCallback = null;
-
-        return Promise.all(queries.map(function(q) {
-          return q.getAll();
-        }.bind(this))).then(function(results) {
-          this._loadStatusBar(null);
-
-          // Add query results (if any) to streams.
-          results.forEach(function(streams) {
-            (streams || []).forEach(function(stream) {
-              parts.streams.push(stream.stream);
-            });
-          });
-          parts.streams.sort(LogDogStream.cmp);
-
-          // Remove any duplicates.
-          var seenStreams = {};
-          var result = [];
-          parts.streams.forEach(function(s) {
-            var fullName = s.fullName();
-            if (!seenStreams[fullName]) {
-              seenStreams[fullName] = s;
-              result.push(s);
-            }
-          });
-          return result;
-        }.bind(this)).catch(function(error) {
-          if (error instanceof LogDogError && error.isUnauthenticated()) {
-            // Retry on auth event.
-            this._loadStatusBar("Not authorized to execute query. Log in " +
-                "with an authorized account.");
-            return new Promise(function(resolve) {
-              this._authCallback = resolve;
-            }.bind(this)).then(issueQuery);
-          }
-
-          throw error;
-        }.bind(this));
-      }.bind(this);
-      return issueQuery();
-    },
-
-    _resetToStreams: function(streams) {
-      // Unique streams.
-      if (!streams.length) {
-        this._loadStatusBar("No log streams.");
-        return;
-      }
-
-      console.log("Loading log streams:", streams);
-      this._loadStatusBar("Loading stream data...");
-      streams.sort(LogDogStream.cmp);
-
-      // Create a _BufferedStream for each stream.
-      var bufStreams = streams.map(function(stream, idx) {
-        return new _BufferedStream(stream, this.$.client,
-            (streams.length > 1), function(bs) {
-              this._updateStreamStatus(bs, idx);
-            }.bind(this));
-      }.bind(this));
-      this._buffer = new _LogStreamBuffer();
-      this._buffer.setStreams(bufStreams)
-
-      this._streamer = new _LogStreamer(this._buffer, this.burst, function(v) {
-        this._loadStatusBar(v);
-      }.bind(this));
-
-      // Construct our initial status content.
-      this._setStreamStatus(bufStreams.map(function(bs, idx) {
-        return {
-          name: (" [.../+/" + bs.stream.name() + "]"),
-          desc: bs.description(),
-        };
-      }.bind(this)));
-
-      // Kick off our log fetching.
-      this._scheduleWriteNextLogs();
-    },
-
-    /** Cancels any currently-executing log stream fetch. */
-    _cancelFetch: function(clear) {
-      this._cancelScheduledWrite();
-      this._authCallback = null;
-
-      if (clear) {
-        this._setStreamStatus(null);
-        this._loadStatusBar(null);
-      }
-    },
-
-    /** Cancels any scheduled asynchronous write. */
-    _cancelScheduledWrite: function() {
-      if (this._scheduledWrite) {
-        this.cancelAsync(this._scheduledWrite);
-        this._scheduledWrite = null;
-      }
-    },
-
-    /** Called when the bound log stream variables has changed. */
-    _streamsChanged: function(v, old) {
-      this.reset();
-    },
-
-    /** Schedules the next asynchronous log write. */
-    _scheduleWriteNextLogs: function() {
-      // This is called after refresh, so use this opportunity to maybe scroll
-      // to the bottom.
-      this._maybeScrollToBottom();
-
-      if (! this._scheduledWrite) {
-        this._scheduledWrite = this.async(function() {
-          this._writeNextLogs()
-        }.bind(this));
-      }
+      this._resetScroll();
+      this._model = null;
+      this._renderedLogs = false;
     },
 
     /**
-     * This is an iterative function that grabs the next set of logs and renders
-     * them. Afterwards, it will continue rescheduling itself until there are
-     * no more logs to render.
+     * Called each time a scroll event is fired. Since this can be really
+     * frequent, this will kick off a "scroll handler" in the background at an
+     * interval. Multiple scroll events within that interval will only result
+     * in one scroll handler invocation.
      */
-    _writeNextLogs: function() {
-      this._cancelScheduledWrite();
+    _onScroll: function(e) {
+      if ( this._scrollTimeoutId ) {
+        return;
+      }
 
-      this._streamer.load().then(function(entries) {
-        // If there are no entries, then we're done.
-        if (! entries) {
-          // Cancel all fetching state. If our streamer is finished, also clear
-          // messages and status.
-          if (this._streamer.finished) {
-            if (this._streamer.someStreamsFailed) {
-              this._cancelFetch(false);
-              this._loadStatusBar("Some streams failed to load.");
-            } else {
-              this._cancelFetch(true);
-            }
-          } else {
-            // No more logs, but also we are not finished. Retry after auth.
-            this._authCallback = this._scheduleWriteNextLogs.bind(this);
-          }
+      window.setTimeout(function() {
+        this._handleScrollEvent(e);
+      }.bind(this), 100);
+    },
+
+    /** Actual scroll event handler. */
+    _handleScrollEvent: function(e) {
+      this._resetScroll();
+
+      // Update our button bar position to be relative to the parent's height.
+      this._adjustToTop(this.$.buttons);
+      this._adjustToTop(this.$.streamStatus);
+    },
+
+    _adjustToTop: function(elem) {
+      // Update our button bar position to be relative to the parent's height.
+      var pageRect = this.$.mainView.getBoundingClientRect();
+      var elemRect = elem.getBoundingClientRect();
+      var adjusted = (elem.offsetTop + pageRect.top - elemRect.top);
+      if ( adjusted < 0 ) {
+        adjusted = 0;
+      }
+      elem.style.top = adjusted;
+    },
+
+    /** Clears asynchornous scroll event status. */
+    _resetScroll: function() {
+      if ( this._scrollTimeoutId !== null ) {
+        window.clearTimeout(this._scrollTimeoutId);
+        this._scrollTimeoutId = null;
+      }
+    },
+
+    _handleMouseWheel: function(e) {
+      this.follow = false;
+    },
+
+    _handleDownClick: function(e) {
+      this._model.fetchLocation(this._v.Location.HEAD, true);
+    },
+
+    _handleUpClick: function(e) {
+      this._model.fetchLocation(this._v.Location.TAIL, true);
+    },
+
+    _handleBottomClick: function(e) {
+      this._model.fetchLocation(this._v.Location.BOTTOM, true);
+    },
+
+    /** Called when the bound log stream variables has changed. */
+    _streamsChanged: function() {
+      if( ! this._model ) {
+        return;
+      }
+
+      this._model.resolve(this.streams).then( function() {
+        // If we're not on mobile, start with playing state.
+        this.playing = (!this.mobile);
+
+        // Perform the initial fetch after resolution.
+        this._model.setAutomatic( this.playing );
+        this._model.setTailing( ! this.backfill );
+        this._model.fetch(false);
+      }.bind(this) );
+    },
+
+    _appendMetaLine: function(root, key, value) {
+      var line = document.createElement("div");
+      line.className = "log-entry-meta-line";
+
+      if ( key != null ) {
+        var e = document.createElement("strong");
+        e.textContent = key;
+        line.appendChild(e);
+      }
+
+      if ( value != null ) {
+        var e = document.createElement("span");
+        e.textContent = value;
+        line.appendChild(e);
+      }
+
+      root.appendChild(line);
+    },
+
+    _pushLogEntries: function(entries, insertion) {
+      // Mark that we've rendered logs (show bars now).
+      this._renderedLogs = true;
+
+      // Build our log entry chunk.
+      var logEntryChunk = document.createElement("div");
+      logEntryChunk.className = "log-entry-chunk";
+
+      var lastLogEntry = logEntryChunk;
+      var lines = new Array();
+
+      entries.forEach(function(le) {
+        var text = le.text;
+        if (!(text && text.lines)) {
           return;
         }
 
-        var logEntryChunk = document.createElement("div");
-        entries.forEach(function(le) {
-          this._appendLogEntry(logEntryChunk, le);
-        }.bind(this));
+        // If we're rendering metadata, render an element per log entry.
+        if( this.metadata ) {
+          var entryRow = document.createElement("div");
+          entryRow.className = "log-entry";
 
-        // To have styles apply correctly, we need to add it twice, see
-        // https://github.com/Polymer/polymer/issues/3100.
-        Polymer.dom(this.root).appendChild(logEntryChunk);
-        this.$.logs.appendChild(logEntryChunk);
+          // Metadata column.
+          var metadataBlock = document.createElement("div");
+          metadataBlock.className = "log-entry-meta";
 
-        // Yield so that our browser can refresh. We can't directly use
-        // this.async since a timeout of "0" causes immediate execution instead
-        // of yielding.
-        setTimeout(function() {
-          this._scheduleWriteNextLogs();
-        }.bind(this), 0);
+          this._appendMetaLine(metadataBlock, "Timestamp:", le.timestamp);
+          this._appendMetaLine(metadataBlock, "Stream:", le.desc.name);
+          this._appendMetaLine(metadataBlock, "Index:", le.streamIndex);
+
+          // Log column.
+          var logDataBlock = document.createElement("div");
+          logDataBlock.className = "log-entry-content";
+
+          le.text.lines.forEach(function(line) {
+            lines.push(line.value);
+          });
+
+          logDataBlock.textContent = lines.join("\n");
+          lines.length = 0;
+
+          entryRow.appendChild(metadataBlock);
+          entryRow.appendChild(logDataBlock);
+
+          logEntryChunk.appendChild(entryRow);
+          lastLogEntry = entryRow;
+        } else {
+          // Add this to the lines. We'll assign this directly to logEntryChunk
+          // after the loop.
+          le.text.lines.forEach(function(line) {
+            lines.push(line.value);
+          });
+        }
       }.bind(this));
-    },
 
-    _appendLogEntry: function(root, le) {
-      var text = le.text;
-      if (!(text && text.lines)) {
-        return 0;
+      if ( ! this.metadata ) {
+        // Only one HTML element: the chunk.
+        logEntryChunk.textContent = lines.join("\n");
+        lastLogEntry = logEntryChunk;
       }
 
-      // Create elements manually to avoid Polymer overhead for large logs.
-      var entryRow = document.createElement("div");
-      entryRow.className = "log-entry";
+      // To have styles apply correctly, we need to add it twice, see
+      // https://github.com/Polymer/polymer/issues/3100.
+      Polymer.dom(this.root).appendChild(logEntryChunk);
 
-      // Metadata column.
-      var metadataBlock = document.createElement("div");
-      metadataBlock.className = "log-entry-meta";
-      entryRow.appendChild(metadataBlock);
+      // Add the log entry to the appropriate place.
+      var anchor, scrollToTop = false;
+      var forceScroll = false;
+      switch ( insertion ) {
+      case this._v.Location.HEAD:
+        // InsertionPoint.HEAD: PREPEND to "logSplit".
+        this.$.logs.insertBefore(logEntryChunk, this.$.logSplit);
 
-      var timestampDiv = document.createElement("div");
-      timestampDiv.className = "log-entry-meta-line";
-      timestampDiv.textContent = le.timestamp;
-      metadataBlock.appendChild(timestampDiv);
+        // If we're not split, scroll to the log bottom. Otherwise, scroll to
+        // the split.
+        anchor = lastLogEntry;
+        break;
 
-      var nameDiv = document.createElement("div");
-      nameDiv.className = "log-entry-meta-line";
-      nameDiv.textContent = le.desc.name;
-      metadataBlock.appendChild(nameDiv);
+      case this._v.Location.TAIL:
+        // InsertionPoint.TAIL: APPEND to "logSplit".
+        anchor = this.$.logSplit;
 
-      var streamDiv = document.createElement("div");
-      streamDiv.className = "log-entry-meta-line";
-      streamDiv.textContent = le.streamIndex;
-      metadataBlock.appendChild(streamDiv);
+        // Identify the element *after* our insertion point and scroll to it.
+        // This provides a semblance of stability as we top-insert.
+        //
+        // As a special case, if the next element is the log bottom, just
+        // scroll to the split, since there is no content to stabilize.
+        if ( anchor.nextElementSibling !== this.$.logBottom ) {
+          anchor = anchor.nextElementSibling;
+        }
 
-      // Log column.
-      var logDataBlock = document.createElement("div");
-      logDataBlock.className = "log-entry-content";
-      if (le.text) {
-        for (var i = 0; i < le.text.lines.length; i++) {
-          var lineDiv = document.createElement("div");
-          lineDiv.className = "log-entry-line";
-          lineDiv.textContent = le.text.lines[i].value;
-          logDataBlock.appendChild(lineDiv);
+        // Insert logs by adding them before the sibling following the log
+        // split (append to this.$.logSplit).
+        this.$.logs.insertBefore(logEntryChunk, this.$.logSplit.nextSibling);
+
+        // When tailing, always scroll to the anchor point.
+        scrollToTop = true;
+        forceScroll = true;
+        break;
+
+      case this._v.Location.BOTTOM:
+        // InsertionPoint.BOTTOM: PREPEND to "logBottom".
+        anchor = this.$.logBottom;
+        this.$.logs.insertBefore(logEntryChunk, anchor);
+        break;
+      }
+
+      this._maybeScrollToElement(anchor, scrollToTop, forceScroll);
+    },
+
+    _clearLogEntries: function() {
+      // Remove all current log elements. */
+      for ( var cur = this.$.logs.firstChild; cur; ) {
+        var del = cur;
+        cur = cur.nextElementSibling;
+        if ( del.classList && del.classList.contains('log-entry-chunk') ) {
+          this.$.logs.removeChild(del);
         }
       }
-      entryRow.appendChild(logDataBlock);
-      root.appendChild(entryRow);
-
-      return le.text.lines.length;
     },
 
-    _updateStreamStatus: function(bs, idx) {
-      var origStatus = this.streamStatus[idx];
-      this.splice("streamStatus", idx, 1, {
-        name: origStatus.name,
-        desc: bs.description(),
-      });
+    _locationIsVisible: function(l) {
+      var anchor;
+      switch( l ) {
+      case this._v.Location.HEAD:
+      case this._v.Location.TAIL:
+        anchor = this.$.logSplit;
+
+      case this._v.Location.BOTTOM:
+        anchor = this.$.logBottom;
+
+      default:
+        return false;
+      }
+      return this._elementInViewport(anchor);
     },
 
-    /** Scrolls to the bottom if "follow" is enabled. */
-    _maybeScrollToBottom: function() {
-      if (this.follow) {
-        this.$.bottom.scrollIntoView({
-          "behavior": "smooth",
-          "block": "end",
-        });
+    _updateControls: function(c) {
+      this._setCanSplit(c.canSplit);
+      this._setIsSplit(c.split);
+      this.toggleClass("logFetchButtonVisible",
+          (c.split && this._renderedLogs), this.$.logSplit);
+      this.toggleClass("logFetchButtonVisible",
+          (c.bottom && this._renderedLogs), this.$.logBottom);
+
+      this._setShowStreamingControls( !c.fullyLoaded );
+      if ( c.fullyLoaded ) {
+        this.playing = false;
+      }
+
+      switch( c.loadingState ) {
+      case this._v.LoadingState.NONE:
+        this._loadStatusBar(null);
+        break;
+      case this._v.LoadingState.RESOLVING:
+        this._loadStatusBar("Resolving stream names...");
+        break;
+      case this._v.LoadingState.LOADING:
+        this._loadStatusBar("Loading streams...");
+        break;
+      case this._v.LoadingState.RENDERING:
+        this._loadStatusBar("Rendering logs.");
+        break;
+      case this._v.LoadingState.NEEDS_AUTH:
+        this._loadStatusBar("Not authenticated. Please log in.");
+        break;
+      case this._v.LoadingState.ERROR:
+        this._loadStatusBar("Error loading streams (see console).");
+        break;
+      }
+
+      this._setStreamStatus(c.streamStatus);
+    },
+
+    /** Scrolls to the follow anchor point. */
+    _maybeScrollToFollow: function() {
+      // Determine our anchor element.
+      var e;
+      if ( this.isSplit && this.backfill ) {
+        // Centering on the split element, at the bottom of the page.
+        e = this.$.logSplit;
+      } else {
+        // Scroll to the bottom of the page.
+        e = this.$.logEnd;
+      }
+
+      this._maybeScrollToElement(e, false, false);
+    },
+
+    /**
+     * Scrolls to the specified element, centering it at the top or bottom of
+     * the view. By default,t his will only happen if "follow" is enabled;
+     * however, it can be forced via "force".
+     */
+    _maybeScrollToElement: function(element, topOfView, force) {
+      if (this.follow || force) {
+        if ( topOfView ) {
+          element.scrollIntoView({
+            behavior: "auto",
+            block: "end",
+          });
+        } else {
+          // Bug? "block: start" doesn't seem to work the same as false.
+          element.scrollIntoView(false);
+        }
       }
     },
 
@@ -572,7 +823,8 @@ An element for rendering muxed LogDog log streams.
      */
     _showMetadataChanged: function(v) {
       this.toggleClass("showMeta", v, this.$.logs);
-     },
+    },
+
     /**
      * Callback when "wrapLines" has changed. This adds/removes the
      * "wrapLines" CSS class to the log data.
@@ -580,14 +832,77 @@ An element for rendering muxed LogDog log streams.
     _wrapLinesChanged: function(v) {
       this.toggleClass("wrapLines", v, this.$.logs);
      },
+
+    /** Callback when "follow" has changed. */
+    _playingChanged: function(v) {
+      if( ! this._model ) {
+        return;
+      }
+
+      // If we're playing, begin log fetching.
+      this._model.setAutomatic(v);
+    },
+
+    _computePlayingIconName: function(playing) {
+      return ( (playing) ?
+          "av:pause-circle-outline" : "av:play-circle-outline" );
+    },
+
+    /** Callback when "follow" has changed. */
+    _backfillChanged: function(v) {
+      if( ! this._model ) {
+        return;
+      }
+
+      // If we're backfilling, then we're not tailing.
+      this._model.setTailing(!v);
+    },
+
+    _computeBackfillIconName: function(backfill) {
+      return ( (backfill) ?
+          "editor:border-bottom" : "editor:border-top" );
+    },
+
     /** Callback when "follow" has changed. */
     _followChanged: function(v) {
-      this._maybeScrollToBottom();
-     },
+      if ( ! this._model ) {
+        return;
+      }
 
-    /** Callback for when the mouse wheel has scrolled. Disables follow. */
-    _handleMouseWheel: function() {
-      this.follow = false;
+      if ( v ) {
+        // If follow is toggled on, automatically begin playing.
+        this.playing = true;
+        this._maybeScrollToFollow();
+      }
+    },
+
+    /** Callback when "split" button has been clicked. */
+    _splitClicked: function() {
+      if( ! this._model ) {
+        return;
+      }
+
+      // After a split, toggle off playing.
+      this._model.split();
+      this._model.setTailing(true);
+      this.playing = false;
+    },
+
+    /** Callback when "split" button has been clicked. */
+    _scrollToSplit: function() {
+      this._maybeScrollToElement(this.$.logSplit, true, true);
+    },
+
+    _computeAnchorsNotClickable: function(playing, showStreamingControls,
+                                          rendering) {
+      // Anchors are not clickable if we're playing or the controls are
+      // not visible.
+      return ( playing || (!showStreamingControls) || rendering );
+    },
+
+    /** Filter function to invert a value. */
+    _not: function(v) {
+      return (!v);
     },
 
     /**
@@ -607,470 +922,30 @@ An element for rendering muxed LogDog log streams.
     },
 
     _onSignin: function() {
-      var fn = this._authCallback;
-      if (fn) {
-        this._authCallback = null;
-        fn();
+      if ( this._model ) {
+        this._model.notifyAuthenticationChanged();
       }
     },
+
+    _elementInViewport: function(el) {
+      var top = el.offsetTop;
+      var left = el.offsetLeft;
+      var width = el.offsetWidth;
+      var height = el.offsetHeight;
+
+      while(el.offsetParent) {
+        el = el.offsetParent;
+        top += el.offsetTop;
+        left += el.offsetLeft;
+      }
+
+      return (
+        top < (window.pageYOffset + window.innerHeight) &&
+        left < (window.pageXOffset + window.innerWidth) &&
+        (top + height) > window.pageYOffset &&
+        (left + width) > window.pageXOffset
+      );
+    },
+
   });
-
-  /**
-   * Continuously loads log streams from a _LogStreamBuffer and exposes them via
-   * callback.
-   */
-  function _LogStreamer(buffer, burst, statusCallback) {
-    this._buffer = buffer;
-    this._burst = (burst || 0);
-    this._missingDelay = 5000;
-    this._statusCallback = statusCallback;
-
-    this.finished = false;
-    this.someStreamsFailed = false;
-
-    this._currentLogBuffer = null;
-  }
-
-  _LogStreamer.prototype.shutdown = function() {
-    this.finshed = true;
-  };
-
-  _LogStreamer.prototype._setStatus = function(v) {
-    if (this._statusCallback) {
-      this._statusCallback(v);
-    }
-  };
-
-  _LogStreamer.prototype.load = function() {
-    if (this.finished) {
-      this._setStatus(null);
-      return Promise.resolve(null);
-    }
-
-    // If we have buffered logs, return them.
-    var current = this._currentLogBuffer;
-    if (current) {
-      // We will track how many log entries that we've rendered. If we exceed
-      // this amount, we will force a refresh so the logs appear streaming and
-      // the app remains responsive.
-      var rendered = 0;
-
-      var entries = [];
-      for (var le = current.next(); (le); le = current.next()) {
-        entries.push(le);
-        if (le.text && le.text.lines) {
-          rendered += le.text.lines.length;
-        }
-
-        if (this._burst > 0 && rendered >= this._burst) {
-          break;
-        }
-      }
-
-      // Have we exhausted this buffer?
-      if (! current.peek()) {
-        this._currentLogBuffer = null;
-      }
-
-      // Return the bundle of entries.
-      return Promise.resolve(entries);
-    }
-
-    // We didn't have any buffered logs, so either all of our streams are
-    // finished or our buffer is empty and needs to be refreshed.
-    this._setStatus("Loading log stream data...");
-    return this._buffer.nextBuffer().then(function(buf) {
-      this.someStreamsFailed = (!!this._buffer._failures.length);
-
-      // Check result.
-      if (buf === null) {
-        if (this._buffer.finished) {
-          // No more buffers, we are done.
-          console.log("All streams have been exhausted.");
-          this.finished = true;
-          this._setStatus(null);
-          return null;
-        }
-
-        // The buffer was incomplete. Should we retry after a delay, or do
-        // we need to wait for an explicit edge (e.g., auth)?
-        if (this._buffer.autoRetry) {
-          // Sleep for 5 seconds and try again (waiting).
-          console.log("Log stream delayed; sleeping", this._missingDelay,
-              "and retry.");
-          this._setStatus("Missing log streams, retrying after delay...");
-          return new LuciSleepPromise(this._missingDelay).then(function() {
-            if (this.finished) {
-              console.log("Streamer is deactivated, discarding.");
-              return null;
-            }
-
-            return this.load();
-          }.bind(this));
-        }
-
-        this._setStatus("Some log streams could not be loaded.");
-        return null;
-      }
-
-      // Install the new buffer and re-enter.
-      this._currentLogBuffer = buf;
-      return this.load();
-    }.bind(this)).catch(function(error) {
-      this._setStatus("[" + error.name + "] fetching streams: " +
-          error.message);
-      throw error;
-    }.bind(this));
-  };
-
-  /**
-   * Manages an aggregate log stream buffer, consisting of logs punted from a
-   * set of zero or more _BufferedStream instances.
-   */
-  function _LogStreamBuffer() {
-    this._streams = null;
-    this._active = null;
-    this._nextBufferPromise = null;
-    this._failures = [];
-
-    this.finished = false;
-    this._resetIterativeState();
-  }
-
-  _LogStreamBuffer.prototype.setStreams = function(streams) {
-    // TODO(dnj): Make this do a delta with previous streams so we don't lose
-    // their already-loaded logs if the page changes.
-    this._streams = streams.map(function(bs, i) {
-      return {
-        bs: bs,
-        active: true,
-        buffer: new _BufferedLogs(),
-      };
-    });
-    this._active = this._streams;
-    this._nextBufferPromise = null;
-  };
-
-  _LogStreamBuffer.prototype._resetIterativeState = function() {
-    this.autoRetry = false;
-  };
-
-  /**
-   * Returns a Promise that resolves into a _BufferedLogs instance containing
-   * the next set of logs, in order, from the source log streams.
-   *
-   * The _BufferedLogs bundle may have status flags set, and should be checked.
-   *
-   * The Promise will also resolve to "null" if there are no more logs in the
-   * source streams.
-   *
-   * If there are errors fetching logs, the Promise will be rejected, and an
-   * error will be returned.
-   */
-  _LogStreamBuffer.prototype.nextBuffer = function() {
-    // If we're already are fetching the next buffer, return that Promise.
-    if (this._nextBufferPromise) {
-      return this._nextBufferPromise;
-    }
-
-    // Filter our any finished streams from our active list. A stream is
-    // finished if it is finished streaming and we don't have a retained buffer
-    // from it.
-    this._active = this._active.filter(function(entry) {
-      return (entry.buffer.peek() || (! (entry.bs.finished || entry.bs.error)));
-    })
-
-    if (! this._active.length) {
-      this.finished = true;
-    }
-    if (this.finished) {
-      // No active streams, so we're finished. Permanently set our promise to
-      // the finished state.
-      this._nextBufferPromise = Promise.resolve(null);
-      return this._nextBufferPromise;
-    }
-
-    // Fill all buffers for all active streams. This may result in an RPC to
-    // load new buffer content for streams whose buffers are empty.
-    //
-    // RPC failures are handled here:
-    // - If the stream reports "not found", we will terminate early and set
-    //   out status to "waiting". Our owner should retry after a delay.
-    // - Otherwise, we will set our status to "error". Our owner should report
-    //   that an error has occurred while loading stream data.
-    this._resetIterativeState();
-
-    var incomplete = false;
-    this._nextBufferPromise = Promise.all(this._active.map(function(entry) {
-      // If the entry's buffer still has data, use it immediately.
-      if (entry.buffer.peek()) {
-        return entry.buffer;
-      }
-
-      // Get the next log buffer for each stream. This may result in an RPC.
-      return entry.bs.nextBuffer().then(function(buffer) {
-        // Retain this buffer, if valid. The stream may have returned a null
-        // buffer if it failed to fetch for a legitimate reason. In this case,
-        // we will not retain it (since we want entry.buffer to be valid), but
-        // will forward the "null" to our aggregate function.
-        if (buffer) {
-          entry.buffer = buffer;
-        } else {
-          incomplete = true;
-
-          // If this stream is waiting, but not on auth, mark that we should
-          // automatically retry.
-          if (entry.bs.waiting && !entry.bs.auth) {
-            this.autoRetry = true;
-          }
-        }
-        return buffer;
-      }.bind(this)).catch(function(error) {
-        // Log stream source of error. Raise a generic "failed to buffer"
-        // error. This will become a permanent failure.
-        console.error("Error loading buffer for", entry.bs.stream.fullName(),
-            "(", entry.bs, "): ", error);
-        this._failures.push(entry.bs);
-        return null;
-      }.bind(this));
-    }.bind(this))).then(function(buffers) {
-      this._nextBufferPromise = null;
-
-      // Check each buffer. If any are null, that stream failed to deliver.
-      if (incomplete) {
-        // We succeeded, but are incomplete. At least one stream failed to
-        // deliver and should have state flags set accordingly.
-        return null;
-      }
-
-      // Remove any null buffers. These would be placed here when a stream fails
-      // to load.  Aggregate as much data from each of our streams as possible.
-      buffers = buffers.filter(v => (!!v));
-      return this._aggregateBuffers(buffers);
-    }.bind(this));
-    return this._nextBufferPromise;
-  };
-
-  _LogStreamBuffer.prototype._aggregateBuffers = function(buffers) {
-    switch (buffers.length) {
-    case 0:
-      // No buffers, so no logs.
-      return new _BufferedLogs(null);
-    case 1:
-      // As a special case, if we only have one buffer, and we assume that its
-      // entries are sorted, then that buffer is a return value.
-      return new _BufferedLogs(buffers[0].getAll());
-    }
-
-    // Preload our peek array.
-    var incomplete = false;
-    var peek = buffers.map(function(buf) {
-      var le = buf.peek();
-      if (! le) {
-        incomplete = true;
-      }
-      return le;
-    });
-    if (incomplete) {
-      // One of our input buffers had no log entries.
-      return new _BufferedLogs(null);
-    }
-
-    // Assemble our aggregate buffer array.
-    // TODO: A binary heap would be pretty great for this.
-    var entries = [];
-    while (true) {
-      // Choose the next stream.
-      var earliest = 0;
-      for (var i = 1; i < buffers.length; i++) {
-        if (_LogStreamBuffer.compareLogs(peek[i], peek[earliest]) < 0) {
-          earliest = i;
-        }
-      }
-
-      // Get the next log from the earliest stream.
-      entries.push(buffers[earliest].next());
-
-      // Repopulate that buffer's "peek" value. If the buffer has no more
-      // entries, then we're done.
-      var next = buffers[earliest].peek();
-      if (!next) {
-        return new _BufferedLogs(entries);
-      }
-      peek[earliest] = next;
-    }
-  };
-
-  _LogStreamBuffer.compareLogs = function(a, b) {
-    // If they are part of the same stream, compare prefix indexes.
-    if (a.source.stream.samePrefixAs(b.source.stream)) {
-      return (a.prefixIndex - b.prefixIndex);
-    }
-
-    // Compare based on timestamp.
-    return a.timestamp - b.timestamp;
-  };
-
-
-  /**
-   * A buffer of ordered log entries from all streams.
-   *
-   * Assumes total ownership of the input log buffer, which can be null to
-   * indicate no logs.
-   */
-  function _BufferedLogs(logs) {
-    this._logs = logs;
-    this._index = 0;
-  }
-
-  _BufferedLogs.prototype.getAll = function() {
-    // Pop all logs.
-    var logs = this._logs;
-    this._logs = null;
-    return logs;
-  };
-
-  _BufferedLogs.prototype.peek = function() {
-    return (this._logs) ? (this._logs[this._index]) : (null);
-  };
-
-  _BufferedLogs.prototype.next = function() {
-    if (! (this._logs && this._logs.length)) {
-      return null;
-    }
-
-    // Get the next log and increment our index.
-    var log = this._logs[this._index++];
-    if (this._index >= this._logs.length) {
-      this._logs = null;
-    }
-    return log;
-  };
-
-
-  /**
-   * Stateful log fetching manager for a single log stream.
-   */
-  function _BufferedStream(stream, client, oneOfMany, statusCallback) {
-    this.stream = stream;
-
-    this.error = null;
-    this.finished = false;
-
-    this._fetcher = new LogDogFetcher(client, stream);
-    this._oneOfMany = oneOfMany;
-    this._statusCallback = statusCallback;
-    this._lastFetchIndex = null;
-  }
-
-  _BufferedStream.INITIAL_FETCH_SIZE = 4096;
-
-  _BufferedStream.prototype._resetIterativeState = function() {
-    this.waiting = false;
-    this.auth = false;
-    this._fireStatusUpdated();
-
-    this._currentFetch = null;
-  };
-
-  _BufferedStream.prototype.nextBuffer = function() {
-    if (this._currentFetch) {
-      return this._currentFetch;
-    }
-
-    // Reset per-round state and begin next round fetch.
-    this._resetIterativeState();
-
-    // If this is the first fetch, and we're not the only log stream being
-    // rendered, fetch a small amount so we can (probably) start rendering
-    // without waiting for a lot of huge chunks.
-    this._fetcher.byteCount = (
-        (this._lastFetchIndex === null) && this._oneOfMany) ?
-        (_BufferedStream.INITIAL_FETCH_SIZE) : (null);
-
-    this._currentFetch = this._fetcher.next().then(function(result) {
-      this._currentFetch = null;
-
-      // Update our stream information.
-      this.finished = this._fetcher.finished;
-
-      // Augment each returned log entry with self-descriptive metadata.
-      var logs = result.entries;
-      if (logs && logs.length) {
-        logs.forEach(function(le) {
-          le.desc = result.desc;
-          le.state = result.state;
-          le.source = this;
-        }.bind(this));
-
-        // Record the latest fetch index.
-        this._lastFetchIndex = logs[logs.length - 1].streamIndex;
-      }
-
-      this._fireStatusUpdated();
-      return new _BufferedLogs(logs);
-    }.bind(this)).catch(function(error) {;
-      // If this is a "not found" error, we assume that the stream is valid, but
-      // hasn't been ingested into LogDog yet. Return "null".
-      if (error instanceof LogDogError) {
-        if (error.isUnauthenticated()) {
-          this.waiting = true;
-          this.auth = true;
-        } else if (error.isNotFound()) {
-          this.waiting = true;
-        }
-
-        // If this is an error that we understand, recover from it, return
-        // null, and set our status flags.
-        if (this.waiting) {
-          // Recover from this error.
-          this._currentFetch = null;
-          this._fireStatusUpdated();
-          return null;
-        }
-      }
-
-      // Retain this error forever.
-      this.error = error;
-      throw error;
-    }.bind(this));
-    return this._currentFetch;
-  };
-
-  _BufferedStream.prototype._fireStatusUpdated = function() {
-    if (this._statusCallback) {
-      this._statusCallback(this);
-    }
-  };
-
-  _BufferedStream.prototype.description = function() {
-    if (this._waiting) {
-      return "(Waiting)";
-    }
-
-    var pieces = []
-    var tidx = this._fetcher.terminalIndex();
-    if (this._lastFetchIndex) {
-      if (tidx >= 0) {
-        pieces.push(this._lastFetchIndex + " / " + tidx);
-      } else {
-        pieces.push(this._lastFetchIndex + "...");
-      }
-    }
-
-    if (this.error) {
-      pieces.push("(Error)");
-    } else if (this.auth) {
-      pieces.push("(Auth Error)");
-    } else if (this.waiting) {
-      pieces.push("(Waiting)");
-    } else if (!this._fetcher.state) {
-      pieces.push("(Fetching)");
-    } else if (this._fetcher.finished) {
-      pieces.push("(Finished)");
-    } else {
-      pieces.push("(Streaming)");
-    }
-    return pieces.join(" ");
-  };
 </script>

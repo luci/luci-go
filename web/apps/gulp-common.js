@@ -21,16 +21,23 @@ exports.plugins = require('gulp-load-plugins')({
 
 // Include Gulp & tools we'll use
 var $ = exports.plugins;
-var del = require('del');
-var requireDir = require('require-dir');
-var runSequence = require('run-sequence');
 var browserSync = require('browser-sync');
-var reload = browserSync.reload;
-var merge = require('merge-stream');
+var debug = require('gulp-debug');
+var del = require('del');
+var foreach = require('gulp-foreach');
 var fs = require('fs');
 var glob = require('glob-all');
 var historyApiFallback = require('connect-history-api-fallback');
-var crypto = require('crypto');
+var hyd = require('hydrolysis');
+var merge = require('merge-stream');
+var pathExists = require('path-exists');
+var reload = browserSync.reload;
+var rename = require('gulp-rename');
+var requireDir = require('require-dir');
+var runSequence = require('run-sequence');
+var through = require('through2');
+var ts = require('gulp-typescript');
+
 
 var AUTOPREFIXER_BROWSERS = [
   'ie >= 10',
@@ -46,6 +53,7 @@ var AUTOPREFIXER_BROWSERS = [
 
 exports.setup = function(gulp, config) {
   var APP = path.basename(config.dir);
+  var BUILD = path.join('.tmp', 'build');
   var DIST = path.join(exports.out, 'dist', APP);
 
   var layout = {
@@ -74,7 +82,7 @@ exports.setup = function(gulp, config) {
 
   var styleTask = function(stylesPath, srcs) {
     return gulp.src(srcs.map(function(src) {
-        return path.join(stylesPath, src);
+        return path.join(BUILD, stylesPath, src);
       }))
       .pipe($.autoprefixer(AUTOPREFIXER_BROWSERS))
       .pipe(gulp.dest('.tmp/' + stylesPath))
@@ -84,7 +92,7 @@ exports.setup = function(gulp, config) {
   };
 
   var imageOptimizeTask = function(src, dest) {
-    return gulp.src(src)
+    return gulp.src(path.join(BUILD, src))
       .pipe($.imagemin({
         progressive: true,
         interlaced: true
@@ -95,10 +103,10 @@ exports.setup = function(gulp, config) {
 
   var optimizeHtmlTask = function(src, dest) {
     var assets = $.useref.assets({
-      searchPath: ['.tmp', 'app']
+      searchPath: ['.tmp', config.dir]
     });
 
-    return gulp.src(src)
+    return gulp.src(src, {cwd: BUILD})
       .pipe(assets)
       // Concatenate and minify JavaScript
       .pipe($.if('*.js', $.uglify({
@@ -122,51 +130,126 @@ exports.setup = function(gulp, config) {
       }));
   };
 
+  gulp.task('build', function() {
+    // Copy application directories.
+    var app = gulp.src([
+        '**',
+        '!inc',
+    ]).pipe(gulp.dest(BUILD));
+
+    var inc = gulp.src('inc/**/*', { cwd: exports.base })
+        .pipe(gulp.dest(path.join(BUILD, 'inc')));
+    return merge(app, inc);
+  });
+
   // Compile and automatically prefix stylesheets
-  gulp.task('styles', function() {
+  gulp.task('styles', ['build'], function() {
     return styleTask('styles', ['**/*.css']);
   });
 
-  gulp.task('elements', function() {
+  gulp.task('elements', ['build'], function() {
     return styleTask('elements', ['**/*.css']);
   });
 
   // Optimize images
-  gulp.task('images', function() {
+  gulp.task('images', ['build'], function() {
     return imageOptimizeTask('images/**/*', layout.dist('images'));
   });
 
+  // Transpiles "inc/*/*.ts" and deposits the result alongside their source
+  // "ts" files.
+  gulp.task('tsinline', function() {
+    // Transpile each TypeScript module independently into JavaScript in the
+    // BUILD directory.
+    var incDir = path.join(exports.base, 'inc')
+    var tsconfigPath = path.join(incDir, 'tsconfig.json');
+    var tsProj = ts.createProject(tsconfigPath, {
+      typeRoots: [path.join(exports.base, 'node_modules', '@types')],
+    });
+    return gulp.src('*/*.ts', { cwd: incDir })
+        .pipe(tsProj())
+        .pipe(gulp.dest(incDir));
+  });
+
+  var tsCompileSingle = function(tsconfigPath, dest) {
+    // Transpile each TypeScript module independently into JavaScript in the
+    // BUILD directory.
+    return pathExists(tsconfigPath).then( (exists) => {
+      if ( !exists ) {
+        return;
+      }
+
+      var tsProj = ts.createProject(tsconfigPath, {
+        target: 'ES5', // Vulcanize can't handle ES6 ATM.
+        removeComments: true,
+        module: "amd",
+        outFile: 'ts-app.js',
+        typeRoots: [path.join(exports.base, 'node_modules', '@types')],
+      });
+      return gulp.src('main.ts', { cwd: path.join(BUILD, 'scripts-ts') })
+          .pipe(tsProj())
+          .pipe(rename(function(fpath) {
+            fpath.dirname = ".";
+          }))
+          .pipe(gulp.dest(dest));
+    } );
+  };
+
+  // Builds the project's "ts-app.js" into the project directory.
+  gulp.task('tsproject', function() {
+    return tsCompileSingle(
+        path.join(BUILD, 'scripts-ts', 'tsconfig.json'),
+        path.join('scripts') );
+  });
+
+  gulp.task('ts', ['build'], function() {
+    return tsCompileSingle(
+        path.join(BUILD, 'scripts-ts', 'tsconfig.json'),
+        path.join(path.join(BUILD, 'scripts')) );
+  });
+
   // Copy all files at the root level (app)
-  gulp.task('copy', function() {
+  gulp.task('copy', ['build'], function() {
     // Application files.
     var app = gulp.src([
       '*',
       '!inc',
       '!test',
       '!elements',
-      '!bower_components',
+      '!inc/bower_components',
       '!cache-config.json',
       '!**/.DS_Store',
       '!gulpfile.js',
       '!package.json',
-    ]).pipe(gulp.dest(layout.dist()));
+      '!scripts-ts',
+    ], {
+      cwd: BUILD,
+    }).pipe(gulp.dest(layout.dist()));
 
     // Copy over only the bower_components we need
     // These are things which cannot be vulcanized
     var webcomponentsjs = gulp.src([
       'inc/bower_components/webcomponentsjs/webcomponents-lite.min.js',
-    ]).pipe(gulp.dest(layout.dist('inc/bower_components/webcomponentsjs/')));
+    ], {
+      cwd: BUILD,
+    }).pipe(gulp.dest(layout.dist('inc/bower_components/webcomponentsjs/')));
+
+    var requirejs = gulp.src([
+      'inc/bower_components/requirejs/require.js',
+    ], {
+      cwd: BUILD,
+    }).pipe(gulp.dest(layout.dist('inc/bower_components/requirejs/')));
 
     var includes = (config.includes) ? (config.includes(gulp, layout)) : ([]);
-    return merge(app, includes, webcomponentsjs)
+    return merge(app, includes, webcomponentsjs, requirejs)
       .pipe($.size({
         title: 'copy'
       }));
   });
 
   // Copy web fonts to dist
-  gulp.task('fonts', function() {
-    return gulp.src(['fonts/**'])
+  gulp.task('fonts', ['build'], function() {
+    return gulp.src(['fonts/**'], {cwd: BUILD})
       .pipe(gulp.dest(layout.dist('fonts')))
       .pipe($.size({
         title: 'fonts'
@@ -174,19 +257,20 @@ exports.setup = function(gulp, config) {
   });
 
   // Scan your HTML for assets & optimize them
-  gulp.task('html', function() {
+  gulp.task('html', ['build'], function() {
     return optimizeHtmlTask(
       ['**/*.html', '!{elements,test,inc}/**/*.html'],
       layout.dist());
   });
 
   // Vulcanize granular configuration
-  gulp.task('vulcanize', function() {
-    return gulp.src('elements/elements.html')
+  gulp.task('vulcanize', ['build', 'ts'], function() {
+    var fsResolver = hyd.FSResolver
+    return gulp.src('elements/elements.html', {cwd: BUILD})
       .pipe($.vulcanize({
         stripComments: true,
         inlineCss: true,
-        inlineScripts: true
+        inlineScripts: true,
       }))
       .pipe(gulp.dest(layout.dist('elements')))
       .pipe($.size({title: 'vulcanize'}));
@@ -201,9 +285,20 @@ exports.setup = function(gulp, config) {
   });
 
   // Watch files for changes & reload
-  gulp.task('serve', ['styles', 'elements'], function() {
+  gulp.task('servebuild', ['build'], function() {
+    gulp.watch([
+    '**',
+    '!.tmp',
+  ], ['build']);
+  });
+
+  // Watch files for changes & reload
+  gulp.task('serve', ['default'], function() {
     browserSync({
-      port: 5000,
+      port: 8000,
+      ui: {
+        port: 8080,
+      },
       notify: false,
       logPrefix: 'PSK',
       snippetOptions: {
@@ -219,21 +314,25 @@ exports.setup = function(gulp, config) {
       //       will present a certificate warning in the browser.
       // https: true,
       server: {
-        baseDir: ['.tmp', 'app'],
+        baseDir: [BUILD],
         middleware: [historyApiFallback()]
       }
     });
 
-    gulp.watch(['**/*.html'], reload);
+    gulp.watch(['**/*.html'], ['html', reload]);
     gulp.watch(['styles/**/*.css'], ['styles', reload]);
     gulp.watch(['elements/**/*.css'], ['elements', reload]);
-    gulp.watch(['images/**/*'], reload);
+    gulp.watch(['images/**/*'], ['build', reload]);
+    gulp.watch(['inc/**/*'], { cwd: exports.base }, ['ts', reload]);
   });
 
   // Build and serve the output from the dist build
   gulp.task('serve:dist', ['default'], function() {
     browserSync({
-      port: 5001,
+      port: 8000,
+      ui: {
+        port: 8080,
+      },
       notify: false,
       logPrefix: 'PSK',
       snippetOptions: {
@@ -256,7 +355,7 @@ exports.setup = function(gulp, config) {
   // Build production files, the default task
   gulp.task('default', ['clean'], function(cb) {
     runSequence(
-      ['copy', 'styles', 'images', 'fonts', 'html'],
+      ['ts', 'copy', 'styles', 'images', 'fonts', 'html'],
       'vulcanize',
       cb);
   });

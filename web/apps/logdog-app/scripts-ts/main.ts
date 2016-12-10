@@ -4,12 +4,6 @@
   that can be found in the LICENSE file.
 */
 
-'use strict';
-
-// Include Gulp & tools we'll use
-var gulp = require('gulp');
-var luci = require('../gulp-common.js');
-
-luci.setup(gulp, {
-  dir: __dirname,
-});
+// All imports here will be combined into a single JavaScript file called
+// "scripts/ts-app.js".
+import "logdog-stream-view/viewer";

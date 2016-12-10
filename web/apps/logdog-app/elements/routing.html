@@ -14,7 +14,8 @@
     // client-side router inspired by the Express router
     // More info: https://visionmedia.github.io/page.js/
     // Removes end / from app.baseUrl which page.base requires for production
-    page.base(app.baseUrl);
+    var baseUrl = app.baseUrl;
+    page.base(baseUrl);
 
     // Middleware
     function scrollToTop(ctx, next) {
@@ -26,19 +27,36 @@
       next();
     }
 
+    // Hack to make this work on root-URL apps (e.g., localhost testing).
+    if ( baseUrl === "/" ) {
+      var oldReplace = page.replace;
+      page.replace = function(path, state, init, dispatch) {
+        if ( path.substring(0, 1) !== "/" ) {
+          path = "/" + path;
+        }
+        if ( path.substring(0, 3) !== "/#!" ) {
+          path = "/#!" + path;
+        }
+        return oldReplace(path, state, init, dispatch);
+      };
+    }
+
     // Routes
-    page('*', scrollToTop, closeDrawer, function(ctx, next) {
+    page("*", scrollToTop, closeDrawer, function(ctx, next) {
       next();
     });
-    page('/', function() {
-      app.route = 'root';
+
+    page("/", function() {
+      app.route = "root";
     });
-    page('/list/*', function(data) {
-      app.route = 'list';
+
+    page("/list/*", function(data) {
+      app.route = "list";
       app.$.list.base = logdog.correctStreamPath(data.params[0]);
     });
-    page('/stream/*', function(data) {
-      app.route = 'stream';
+
+    page("/stream/*", function(data) {
+      app.route = "stream";
       app.$.stream.streams = logdog.getQueryValues(data.querystring, "s").
           map(logdog.correctStreamPath);
     });
@@ -50,7 +68,7 @@
       app.$.toast.show();
       page.redirect(app.baseUrl);
     });
-    // add #! before urls
+
     page({
       hashbang: true,
     });
