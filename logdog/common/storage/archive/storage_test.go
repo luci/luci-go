@@ -206,9 +206,7 @@ func (c *fakeGSClient) NewReader(p gs.Path, offset, length int64) (io.ReadCloser
 	return ioutil.NopCloser(&errReader{bytes.NewReader(data), readerErr}), nil
 }
 
-func TestArchiveStorage(t *testing.T) {
-	t.Parallel()
-
+func testArchiveStorage(t *testing.T, limit int64) {
 	Convey(`A testing archive instance`, t, func() {
 		var (
 			c      = context.Background()
@@ -222,6 +220,13 @@ func TestArchiveStorage(t *testing.T) {
 			Stream: testStreamPath,
 			Client: &client,
 		}
+		if limit > 0 {
+			opts.Client = &gs.LimitedClient{
+				Client:       opts.Client,
+				MaxReadBytes: limit,
+			}
+		}
+
 		st, err := New(c, opts)
 		So(err, ShouldBeNil)
 		defer st.Close()
@@ -394,4 +399,14 @@ func TestArchiveStorage(t *testing.T) {
 			So(err, ShouldEqual, storage.ErrDoesNotExist)
 		})
 	})
+}
+
+func TestArchiveStorage(t *testing.T) {
+	t.Parallel()
+	testArchiveStorage(t, -1)
+}
+
+func TestArchiveStorageWithLimit(t *testing.T) {
+	t.Parallel()
+	testArchiveStorage(t, 4)
 }

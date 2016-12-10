@@ -35,8 +35,21 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-// maxSignedURLLifetime is the maximum allowed signed URL lifetime.
-const maxSignedURLLifetime = 1 * time.Hour
+const (
+	// maxSignedURLLifetime is the maximum allowed signed URL lifetime.
+	maxSignedURLLifetime = 1 * time.Hour
+
+	// maxGSFetchSize is the maximum amount of data we can fetch from a single
+	// Google Storage RPC call.
+	//
+	// AppEngine's "urlfetch" has a limit of 32MB:
+	// https://cloud.google.com/appengine/docs/python/outbound-requests
+	//
+	// We're choosing a smaller window. It may cause extra urlfetch runs, but
+	// it also reduces the maximum amount of memory that we need, since urlfetch
+	// loads in chunks.
+	maxGSFetchSize = int64(8 * 1024 * 1024)
+)
 
 // Services is a set of support services used by Coordinator.
 //
@@ -287,7 +300,18 @@ func (s *prodServicesInst) newGSClient(c context.Context) (gs.Client, error) {
 		log.WithError(err).Errorf(c, "Failed to create Cloud Storage transport.")
 		return nil, errors.New("failed to create Cloud Storage transport")
 	}
-	return gs.NewProdClient(c, transport)
+	prodClient, err := gs.NewProdClient(c, transport)
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to create GS client.")
+		return nil, err
+	}
+
+	// Wrap the GS client in a limiter. This prevents large requests from
+	// exceeding the urlfetch threshold.
+	return &gs.LimitedClient{
+		Client:       prodClient,
+		MaxReadBytes: maxGSFetchSize,
+	}, nil
 }
 
 func (s *prodServicesInst) ArchivalPublisher(c context.Context) (ArchivalPublisher, error) {
