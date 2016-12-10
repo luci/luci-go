@@ -22,6 +22,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logging/gologger"
+	. "github.com/luci/luci-go/common/testing/assertions"
 
 	"github.com/luci/luci-go/cipd/client/cipd/common"
 	"github.com/luci/luci-go/cipd/client/cipd/internal"
@@ -606,13 +607,85 @@ func TestProcessEnsureFile(t *testing.T) {
 		So(err, ShouldNotBeNil)
 	})
 
-	Convey("ProcessEnsureFile template package", t, func(c C) {
-		pins, _ := call(c, "something/${platform}-${arch} 0000000000000000000000000000000000000000", nil)
-		So(pins, ShouldResemble, []common.Pin{
-			{
-				fmt.Sprintf("something/%s-%s", platformExpansion, archExpansion),
-				"0000000000000000000000000000000000000000",
-			},
+	Convey("ProcessEnsureFile template package", t, func() {
+		Convey("simple expansion", func() {
+			Convey("success", func() {
+				pkg, _ := expandTemplate("something/${platform}-${arch}", "windows", "amd64")
+				So(pkg, ShouldEqual, "something/windows-amd64")
+			})
+
+			Convey("lonesome", func() {
+				pkg, _ := expandTemplate("${platform}", "windows", "amd64")
+				So(pkg, ShouldEqual, "windows")
+			})
+
+			Convey("missing close brace", func() {
+				_, err := expandTemplate("something/${notvar", "windows", "amd64")
+				So(err, ShouldErrLike, "unable to process")
+			})
+
+			Convey("missing open brace", func() {
+				_, err := expandTemplate("something/$notvar}", "windows", "amd64")
+				So(err, ShouldErrLike, "unable to process")
+			})
+
+			Convey("bad var", func() {
+				_, err := expandTemplate("something/${notvar}", "windows", "amd64")
+				So(err, ShouldErrLike, "unknown variable in ${notvar}")
+			})
+		})
+
+		Convey("matchlist expansion", func() {
+			Convey("success, accepted", func() {
+				Convey("typical", func() {
+					pkg, err := expandTemplate("something/${platform=linux,windows}", "windows", "amd64")
+					So(err, ShouldBeNil)
+					So(pkg, ShouldEqual, "something/windows")
+				})
+
+				Convey("typical 2", func() {
+					pkg, err := expandTemplate("something/${platform=linux,windows}-${arch=amd64,386}", "windows", "amd64")
+					So(err, ShouldBeNil)
+					So(pkg, ShouldEqual, "something/windows-amd64")
+				})
+
+				Convey("lonesome", func() {
+					pkg, _ := expandTemplate("${platform=windows}", "windows", "amd64")
+					So(pkg, ShouldEqual, "windows")
+				})
+
+				Convey("lonesome 2", func() {
+					pkg, _ := expandTemplate("${platform=windows,linux}${arch=386,amd64}", "windows", "amd64")
+					So(pkg, ShouldEqual, "windowsamd64")
+				})
+			})
+
+			Convey("success, ignored", func() {
+				Convey("typical", func() {
+					_, err := expandTemplate("something/${platform=linux,windows}", "mac", "amd64")
+					So(err, ShouldEqual, errSkipTemplate)
+				})
+
+				Convey("typical 2", func() {
+					_, err := expandTemplate("something/${platform=linux,windows}-${arch=amd64,386}", "windows", "armv6l")
+					So(err, ShouldEqual, errSkipTemplate)
+				})
+
+				Convey("lonesome", func() {
+					_, err := expandTemplate("${platform=windows}", "linux", "amd64")
+					So(err, ShouldEqual, errSkipTemplate)
+				})
+
+				Convey("lonesome 2", func() {
+					_, err := expandTemplate("${platform=windows,linux}${arch=386,amd64}", "mac", "armv6l")
+					So(err, ShouldEqual, errSkipTemplate)
+				})
+			})
+
+			Convey("bad var", func() {
+				_, err := expandTemplate("something/${wutlol=mac}", "windows", "amd64")
+				So(err, ShouldErrLike, "unknown variable in ${wutlol=mac}")
+			})
 		})
 	})
 }

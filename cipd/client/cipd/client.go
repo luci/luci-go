@@ -40,6 +40,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sort"
 	"strings"
@@ -383,6 +384,16 @@ type Client interface {
 	//   * 386
 	//   * amd64
 	//   * armv6l
+	//
+	// Both of these paramters also support the syntax ${var=possible,values}.
+	// What this means is that the package line will be expanded if, and only if,
+	// var equals one of the possible values. If that var does not match
+	// a possible value, the line is ignored. This allows you to do, e.g.:
+	//   path/to/package/${platform=windows}  windows_release
+	//   path/to/package/${platform=linux}		linux_release
+	//   # no version for mac
+	//
+	//   path/to/posix/tool/${platform=mac,linux}  some_tag:value
 	ProcessEnsureFile(ctx context.Context, r io.Reader) ([]common.Pin, error)
 
 	// EnsurePackages installs, removes and updates packages in the site root.
@@ -731,9 +742,6 @@ var clientFileName = ""
 
 var platformExpansion = ""
 var archExpansion = ""
-var templateExpander interface {
-	Replace(string) string
-}
 
 func init() {
 	// TODO(iannucci): rationalize these to just be exactly GOOS and GOARCH.
@@ -751,10 +759,6 @@ func init() {
 	if archExpansion == "arm" {
 		archExpansion = "armv6l"
 	}
-	templateExpander = strings.NewReplacer(
-		"${platform}", platformExpansion,
-		"${arch}", archExpansion,
-	)
 	clientPackage = fmt.Sprintf("%s/%s-%s", clientPackageBase, platformExpansion,
 		archExpansion)
 }
@@ -1163,6 +1167,9 @@ func (client *clientImpl) ProcessEnsureFile(ctx context.Context, r io.Reader) ([
 		return fmt.Errorf("failed to parse desired state (line %d): %s", lineNo, msg)
 	}
 
+	logging.Debugf(ctx, "scanning ensure file with platform=%q, arch=%q",
+		platformExpansion, archExpansion)
+
 	out := []common.Pin{}
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
@@ -1187,18 +1194,27 @@ func (client *clientImpl) ProcessEnsureFile(ctx context.Context, r io.Reader) ([
 			return nil, makeError("expecting '<package template> <version>' line")
 		}
 
-		tokens[0] = templateExpander.Replace(tokens[0])
-		err := common.ValidatePackageName(tokens[0])
-		if err != nil {
+		pkg, err := expandTemplate(tokens[0], platformExpansion, archExpansion)
+		switch err {
+		case nil:
+		case errSkipTemplate:
+			logging.Debugf(
+				ctx, "skipping line %d: template does not apply to platform/arch", lineNo)
+			continue
+		default:
 			return nil, makeError(err.Error())
 		}
-		err = common.ValidateInstanceVersion(tokens[1])
-		if err != nil {
+
+		if err = common.ValidatePackageName(pkg); err != nil {
+			return nil, makeError(err.Error())
+		}
+
+		if err = common.ValidateInstanceVersion(tokens[1]); err != nil {
 			return nil, makeError(err.Error())
 		}
 
 		// Good enough.
-		pin, err := client.ResolveVersion(ctx, tokens[0], tokens[1])
+		pin, err := client.ResolveVersion(ctx, pkg, tokens[1])
 		if err != nil {
 			return nil, err
 		}
@@ -1399,4 +1415,59 @@ func buildInstanceIDMap(pins []common.Pin) map[string]string {
 		out[p.PackageName] = p.InstanceID
 	}
 	return out
+}
+
+var templateParm = regexp.MustCompile(`\${[^}]*}`)
+var errSkipTemplate = errors.New("this template should be skipped")
+
+// expandTemplate applies template expansion rules to the package template,
+// using the provided platform and arch values. If err == errSkipTemplate, that
+// means that this template does not apply to this platform/arch combination and
+// should be skipped.
+func expandTemplate(template, platform, arch string) (pkg string, err error) {
+	skip := false
+
+	expansionLookup := map[string]string{
+		"platform": platform,
+		"arch":     arch,
+	}
+
+	pkg = templateParm.ReplaceAllStringFunc(template, func(parm string) string {
+		// ${...}
+		contents := parm[2 : len(parm)-1]
+
+		varNameValues := strings.SplitN(contents, "=", 2)
+		if len(varNameValues) == 1 {
+			// ${varName}
+			if value, ok := expansionLookup[varNameValues[0]]; ok {
+				return value
+			}
+
+			err = errors.Reason("unknown variable in ${%(contents)s}").
+				D("contents", contents).Err()
+		}
+
+		// ${varName=value,value}
+		ourValue, ok := expansionLookup[varNameValues[0]]
+		if !ok {
+			err = errors.Reason("unknown variable in %(parm)s").D("parm", parm).Err()
+			return parm
+		}
+
+		for _, val := range strings.Split(varNameValues[1], ",") {
+			if val == ourValue {
+				return ourValue
+			}
+		}
+		skip = true
+		return parm
+	})
+	if skip {
+		err = errSkipTemplate
+	}
+	if err == nil && strings.ContainsRune(pkg, '$') {
+		err = errors.Reason("unable to process some variables in %(template)q").
+			D("template", template).Err()
+	}
+	return
 }
