@@ -306,8 +306,9 @@ func (p *Processor) IngestLine(s *Stream, line string) error {
 
 	// Handle annotation line.
 	if a != "" {
-		// If we're teeing annotations, emit this.
-		if s.Tee != nil && p.o.TeeAnnotations {
+		// If we're teeing annotations, emit this annotation if it's not a
+		// stream-type annotation.
+		if s.Tee != nil && p.o.TeeAnnotations && !isStreamAnnotation(a) {
 			if err := writeTextLine(s.Tee, line); err != nil {
 				log.WithError(err).Errorf(h, "Failed to tee annotation line.")
 				return err
@@ -340,6 +341,19 @@ func (p *Processor) IngestLine(s *Stream, line string) error {
 				return err
 			}
 		}
+	}
+
+	// If we're stripping text, write a warning message noting that this stream
+	// will not have text in it.
+	if !p.o.TeeText && s.Tee != nil && !h.textStrippedNote {
+		err := writeTextLine(s.Tee, "This build is configured to send log data exclusively to LogDog. "+
+			"Please click the LogDog link on the build page to view this log stream.")
+		if err != nil {
+			log.WithError(err).Errorf(h, "Failed to write text stripped notice.")
+			return err
+		}
+
+		h.textStrippedNote = true
 	}
 
 	// If this is a text line, and we're teeing text, emit this line.
@@ -556,6 +570,7 @@ type stepHandler struct {
 	streams             map[types.StreamName]streamclient.Stream
 	finished            bool
 	allEmitted          bool
+	textStrippedNote    bool
 }
 
 func newStepHandler(p *Processor, step *annotation.Step) (*stepHandler, error) {
@@ -746,4 +761,12 @@ func buildAnnotation(name string, params ...string) string {
 	v := make([]string, 1, 1+len(params))
 	v[0] = name
 	return "@@@" + strings.Join(append(v, params...), "@") + "@@@"
+}
+
+func isStreamAnnotation(a string) bool {
+	// Strip out any annotation arguments.
+	if idx := strings.IndexRune(a, '@'); idx > 0 {
+		a = a[:idx]
+	}
+	return a == "STEP_LOG_LINE"
 }
