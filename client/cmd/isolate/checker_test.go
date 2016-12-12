@@ -36,7 +36,12 @@ type fakeIsolateService struct {
 	errc <-chan error
 }
 
-func (f *fakeIsolateService) Contains(_ context.Context, digests []*service.HandlersEndpointsV1Digest) ([]*isolatedclient.PushState, error) {
+func (f *fakeIsolateService) Contains(ctx context.Context, digests []*service.HandlersEndpointsV1Digest) ([]*isolatedclient.PushState, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	var states []*isolatedclient.PushState

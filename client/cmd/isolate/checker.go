@@ -66,6 +66,7 @@ func NewChecker(ctx context.Context, client *isolatedclient.Client) *Checker {
 func newChecker(ctx context.Context, svc isolateService) *Checker {
 	c := &Checker{
 		svc: svc,
+		ctx: ctx,
 	}
 	c.bundler = bundler.NewBundler(checkerItem{}, func(bundle interface{}) {
 		items := bundle.([]checkerItem)
