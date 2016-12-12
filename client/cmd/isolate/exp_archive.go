@@ -36,6 +36,10 @@ const (
 	// archiveSizeTrigger is the desired size of the created archives. Once
 	// archives reach this size, they will be closed and prepared for upload.
 	archiveSizeTrigger = 10e6
+
+	// infraFailExit is the exit code used when the exparchive fails due to
+	// infrastructure errors (for example, failed server requests).
+	infraFailExit = 2
 )
 
 var cmdExpArchive = &subcommands.Command{

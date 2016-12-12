@@ -6,6 +6,7 @@ package main
 
 import (
 	"log"
+	"os"
 	"time"
 
 	"golang.org/x/net/context"
@@ -121,6 +122,10 @@ func (c *Checker) check(items []checkerItem) error {
 	}
 	out, err := c.svc.Contains(c.ctx, digests)
 	if err != nil {
+		// TODO(djd): propogate this more cleanly. At the moment, dropping
+		// callbacks may cause the TAR archiver to hang.
+		log.Printf("ERROR: isolate Contains call failed: %v", err)
+		os.Exit(infraFailExit)
 		return err
 	}
 	for i, item := range items {
