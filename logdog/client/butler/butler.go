@@ -38,6 +38,9 @@ const (
 
 	// streamBufferSize is the maximum amount of stream data to buffer in memory.
 	streamBufferSize = 1024 * 1024 * 5
+
+	// keepAliveChannelSize is the size of the I/O keep-alive channel buffer.
+	keepAliveChannelSize = 128
 )
 
 // Config is the set of Butler configuration parameters.
@@ -67,6 +70,17 @@ type Config struct {
 	// TeeStderr, if not nil, is the Writer that will be used for streams
 	// requesting STDERR tee.
 	TeeStderr io.Writer
+
+	// IOKeepAliveInterval configures the Butler to perform I/O pings.
+	//
+	// The Butler will monitor I/O events on all of its subordinate streams. If
+	// a stream receives I/O, and no streams marked "IOKeepAlive" have written
+	// I/O in this period, an I/O keep-alive event will be written to all
+	// "IOKeepAlive" streams.
+	IOKeepAliveInterval time.Duration
+	// IOKeepAliveWriter is an io.Writer to send keep-alive updates through. This
+	// must be set for I/O keep-alive to be active.
+	IOKeepAliveWriter io.Writer
 }
 
 // Validate validates that the configuration is sufficient to instantiate a
@@ -118,6 +132,17 @@ type Butler struct {
 	streamSeen stringset.Set
 	// streamSeenLock is a lock to protect streamSeen.
 	streamSeenLock sync.Mutex
+
+	// keepAliveC, if not nil, will receive I/O keep-alive events.
+	//
+	// If the boolean is true, it is an IOKeepAlive stream signalling that I/O
+	// data has been written to it.
+	//
+	// If the boolean is false, it is a non-IOKeepAlive stream signalling that
+	// I/O data has been written to it.
+	keepAliveC chan bool
+	// keepAliveFinishedC is closed when the I/O Keep Alive monitor is finished.
+	keepAliveFinishedC chan struct{}
 
 	// shutdownMu is a mutex to protect shutdown parameters.
 	shutdownMu sync.Mutex
@@ -207,6 +232,16 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 		}
 	}()
 
+	// If we're doing I/O keep-alive, kick off our I/O keep-alive reactor.
+	if b.c.IOKeepAliveInterval > 0 && b.c.IOKeepAliveWriter != nil {
+		b.keepAliveC = make(chan bool, keepAliveChannelSize)
+		b.keepAliveFinishedC = make(chan struct{})
+		go func() {
+			defer close(b.keepAliveFinishedC)
+			b.keepAliveMonitor(b.c.IOKeepAliveInterval, b.c.IOKeepAliveWriter)
+		}()
+	}
+
 	return b, nil
 }
 
@@ -252,6 +287,13 @@ func (b *Butler) Wait() error {
 	log.Debugf(b.ctx, "Waiting for bundler to flush.")
 	b.bundler.CloseAndFlush()
 	log.Debugf(b.ctx, "Bundler has flushed.")
+
+	if b.keepAliveC != nil {
+		log.Debugf(b.ctx, "Closing keep-alive monitor.")
+		close(b.keepAliveC)
+		<-b.keepAliveFinishedC
+		log.Debugf(b.ctx, "Keep-alive monitor has finished.")
+	}
 
 	log.Debugf(b.ctx, "Waiting for output queue to shut down.")
 	<-b.bundlerDrainedC
@@ -374,6 +416,7 @@ func (b *Butler) AddStream(rc io.ReadCloser, p *streamproto.Properties) error {
 
 	// If this stream is configured to tee, set that up.
 	reader := io.Reader(rc)
+	isKeepAlive := false
 	switch p.Tee {
 	case streamproto.TeeNone:
 		break
@@ -383,12 +426,14 @@ func (b *Butler) AddStream(rc io.ReadCloser, p *streamproto.Properties) error {
 			return errors.New("butler: cannot tee through STDOUT; no STDOUT is configured")
 		}
 		reader = io.TeeReader(rc, b.c.TeeStdout)
+		isKeepAlive = true
 
 	case streamproto.TeeStderr:
 		if b.c.TeeStderr == nil {
 			return errors.New("butler: cannot tee through STDERR; no STDERR is configured")
 		}
 		reader = io.TeeReader(rc, b.c.TeeStderr)
+		isKeepAlive = true
 
 	default:
 		return fmt.Errorf("invalid tee value: %v", p.Tee)
@@ -398,26 +443,29 @@ func (b *Butler) AddStream(rc io.ReadCloser, p *streamproto.Properties) error {
 		return err
 	}
 
+	// Build our stream struct.
+	streamCtx := log.SetField(b.ctx, "stream", p.Name)
+	s := stream{
+		Context:     streamCtx,
+		r:           reader,
+		c:           rc,
+		isKeepAlive: isKeepAlive,
+	}
+
 	// Register this stream with our Bundler. It will take ownership of "p", so
 	// we should not use it after this point.
-	streamCtx := log.SetField(b.ctx, "stream", p.Name)
-	bs, err := b.bundler.Register(p)
-	if err != nil {
+	var err error
+	if s.bs, err = b.bundler.Register(p); err != nil {
 		return err
 	}
 	p = nil
 
-	b.streamC <- &stream{
-		Context: streamCtx,
-		r:       reader,
-		c:       rc,
-		bs:      bs,
-	}
+	b.streamC <- &s
 	return nil
 }
 
 func (b *Butler) runStreams(activateC chan struct{}) {
-	streamFinishedC := make(chan struct{})
+	streamFinishedC := make(chan *stream)
 	streamC := b.streamC
 
 	activeCount := 0
@@ -443,17 +491,22 @@ func (b *Butler) runStreams(activateC chan struct{}) {
 			go func() {
 				defer func() {
 					// Report that our stream has finished.
-					streamFinishedC <- struct{}{}
+					streamFinishedC <- s
 				}()
 				defer closeStream()
 
 				// Read the stream continuously until we're finished or interrupted.
 				finishedC := make(chan struct{})
-				go func() {
+				go func(s *stream) {
 					defer close(finishedC)
+
 					for s.readChunk() {
+						// If our keep-alive monitor is enabled, send a keep-alive event.
+						if b.keepAliveC != nil {
+							b.keepAliveC <- s.isKeepAlive
+						}
 					}
-				}()
+				}(s)
 
 				// Stop processing when either the stream is finished or we are instructed
 				// to close the stream via 'streamStopC'.
@@ -505,6 +558,49 @@ func (b *Butler) registerStream(name string) error {
 		return nil
 	}
 	return fmt.Errorf("a stream has already been registered with name %q", name)
+}
+
+func (b *Butler) keepAliveMonitor(interval time.Duration, w io.Writer) {
+	t := clock.NewTimer(b.ctx)
+	defer t.Stop()
+
+	// Begin our keep-alive countdown.
+	t.Reset(interval)
+	timerRunning := true
+
+	msg := []byte("LogDog Butler: I/O Keep-alive.")
+
+	for {
+		select {
+		case event, ok := <-b.keepAliveC:
+			if !ok {
+				// Our keep-alive monitor is finished.
+				return
+			}
+			if event {
+				// If "event", we have been signalled by an tee stream that I/O has
+				// arrived. Clear our timer, since teeing data inherently fulfills the
+				// same role as the keep-alive event.
+				t.Stop()
+			} else if !timerRunning {
+				// If !event, data has come in on a non-tee stream. Make sure our timer
+				// is running to represent that data was received.
+				t.Reset(interval)
+				timerRunning = true
+			}
+
+		case <-t.GetC():
+			// Keep-alive timer has timed out, write keep-alive.
+			timerRunning = false
+
+			// Send keep-alive through our keep-alive Writer.
+			if w != nil {
+				if _, err := w.Write(msg); err != nil {
+					log.WithError(err).Errorf(b.ctx, "Failed to send I/O keep-alive message.")
+				}
+			}
+		}
+	}
 }
 
 // Activate notifies the Butler that its current stream load is sufficient.

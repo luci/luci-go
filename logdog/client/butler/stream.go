@@ -17,9 +17,10 @@ import (
 type stream struct {
 	context.Context
 
-	r  io.Reader
-	c  io.Closer
-	bs bundler.Stream
+	r           io.Reader
+	c           io.Closer
+	bs          bundler.Stream
+	isKeepAlive bool
 }
 
 func (s *stream) readChunk() bool {

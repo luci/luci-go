@@ -20,6 +20,7 @@ import (
 	"github.com/luci/luci-go/logdog/client/butler"
 	"github.com/luci/luci-go/logdog/client/butler/bootstrap"
 	"github.com/luci/luci-go/logdog/client/butler/streamserver"
+
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 )

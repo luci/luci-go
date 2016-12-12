@@ -67,6 +67,7 @@ type Flags struct {
 	Timestamp           clockflag.Time `json:"timestamp,omitempty"`
 	Tags                TagMap         `json:"tags,omitempty"`
 	BinaryFileExtension string         `json:"binaryFileExtension,omitempty"`
+	IOKeepAlive         bool           `json:"ioKeepAlive,omitempty"`
 
 	Tee      TeeType            `json:"tee,omitempty"`
 	Timeout  clockflag.Duration `json:"timeout,omitempty"`
