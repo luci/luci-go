@@ -39,9 +39,12 @@ type RequestGen func() (*http.Request, error)
 // The handler func is responsible for closing the response Body before
 // returning. It should return retry.Error in case of retriable error, for
 // example if a TCP connection is terminated while receiving the content.
+//
+// If rFn is nil, NewRequest will use a default exponential backoff strategy only
+// for transient errors.
 func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen RequestGen, handler Handler) func() (int, error) {
 	if rFn == nil {
-		rFn = retry.Default
+		rFn = retry.TransientOnly(retry.Default)
 	}
 
 	return func() (int, error) {

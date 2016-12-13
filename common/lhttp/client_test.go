@@ -250,6 +250,64 @@ func TestPostJSONwithHeaders(t *testing.T) {
 	ut.AssertEqual(t, 1, serverCalls)
 }
 
+func TestNewRequestDefaultFactory(t *testing.T) {
+	// Test that the default factory (rFn == nil) only retries for transient
+	// HTTP errors.
+	testCases := []struct {
+		statusCode int    // The status code to return (the first 2 times).
+		path       string // Request path, if any.
+		wantErr    bool   // Whether we want NewRequest to return an error.
+		wantCalls  int    // The total number of HTTP requests expected.
+	}{
+		// 200, passes immediately.
+		{statusCode: 200, wantErr: false, wantCalls: 1},
+		// Transient HTTP error codes that will retry.
+		{statusCode: 408, wantErr: false, wantCalls: 3},
+		{statusCode: 500, wantErr: false, wantCalls: 3},
+		{statusCode: 503, wantErr: false, wantCalls: 3},
+		// Immediate failure codes.
+		{statusCode: 403, wantErr: true, wantCalls: 1},
+		{statusCode: 404, wantErr: true, wantCalls: 1},
+		// Special 404 case which will retry.
+		{statusCode: 404, path: "/_ah/api/foo/bar", wantErr: false, wantCalls: 3},
+	}
+
+	ctx := context.Background()
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(fmt.Sprintf("Status code %d, path %q", tc.statusCode, tc.path), func(t *testing.T) {
+			t.Parallel()
+			serverCalls := 0
+			ts := httptest.NewServer(
+				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					defer r.Body.Close()
+					serverCalls++
+					if serverCalls <= 2 {
+						w.WriteHeader(tc.statusCode)
+					}
+					fmt.Fprintf(w, "Hello World!\n")
+				}))
+			defer ts.Close()
+
+			httpReq := httpReqGen("GET", ts.URL+tc.path, nil)
+			req := NewRequest(ctx, http.DefaultClient, nil, httpReq, func(resp *http.Response) error {
+				return resp.Body.Close()
+			})
+
+			_, err := req()
+			if err == nil && tc.wantErr {
+				t.Error("req returned nil error, wanted an error")
+			} else if err != nil && !tc.wantErr {
+				t.Errorf("req returned err %v, wanted nil", err)
+			}
+			if got, want := serverCalls, tc.wantCalls; got != want {
+				t.Errorf("total server calls; got %d, want %d", got, want)
+			}
+		})
+	}
+}
+
 func TestNewRequestClosesBody(t *testing.T) {
 	ctx := context.Background()
 	serverCalls := 0
