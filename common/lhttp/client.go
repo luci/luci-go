@@ -40,8 +40,8 @@ type RequestGen func() (*http.Request, error)
 // returning. It should return retry.Error in case of retriable error, for
 // example if a TCP connection is terminated while receiving the content.
 //
-// If rFn is nil, NewRequest will use a default exponential backoff strategy only
-// for transient errors.
+// If rFn is nil, NewRequest will use a default exponential backoff strategy
+// only for transient errors.
 func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen RequestGen, handler Handler) func() (int, error) {
 	if rFn == nil {
 		rFn = retry.TransientOnly(retry.Default)
