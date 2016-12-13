@@ -2,8 +2,8 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-// Package datastoreCache implements a managed versatile datastore caching.
-// Each datastoreCache client obtains its own Cache instance for its specific
+// Package datastorecache implements a managed versatile datastore caching.
+// Each datastorecache client obtains its own Cache instance for its specific
 // cache type. That cache instance is given a "name" and managed independently
 // from other cache types.
 //
@@ -27,7 +27,7 @@
 //	  will be refreshed via its Handler.
 //	- Otherwise, the entry is left alone for the next pass.
 //
-// TODO: Each datastoreCache cache is designed to be shard-able if the manager
+// TODO: Each datastorecache cache is designed to be shard-able if the manager
 // refresh ever becomes too burdensome for a single cron session. However,
 // sharding isn't currently implemented.
-package datastoreCache
+package datastorecache
