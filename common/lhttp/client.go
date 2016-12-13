@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -35,19 +36,18 @@ type RequestGen func() (*http.Request, error)
 
 // NewRequest returns a retriable request.
 //
-// To enable automatic retry support, the Request.Body, if present, must
-// implement io.Seeker.
-//
-// handler should return retry.Error in case of retriable error, for example if
-// a TCP connection is teared off while receiving the content.
+// The handler func is responsible for closing the response Body before
+// returning. It should return retry.Error in case of retriable error, for
+// example if a TCP connection is terminated while receiving the content.
 func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen RequestGen, handler Handler) func() (int, error) {
 	if rFn == nil {
 		rFn = retry.Default
 	}
 
 	return func() (int, error) {
-		status := 0
+		status, attempts := 0, 0
 		err := retry.Retry(ctx, rFn, func() error {
+			attempts++
 			req, err := rgen()
 			if err != nil {
 				return err
@@ -61,25 +61,33 @@ func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen Req
 			}
 			status = resp.StatusCode
 
-			// If the HTTP status code means the request should be retried.
-			if status == 408 || status == 429 || status >= 500 {
-				return errors.WrapTransient(
+			switch {
+			case status == 408, status == 429, status >= 500:
+				// The HTTP status code means the request should be retried.
+				err = errors.WrapTransient(
 					fmt.Errorf("http request failed: %s (HTTP %d)", http.StatusText(status), status))
-			}
-			// Endpoints occasionally return 404 on valid requests (!)
-			if status == 404 && strings.HasPrefix(req.URL.Path, "/_ah/api/") {
+			case status == 404 && strings.HasPrefix(req.URL.Path, "/_ah/api/"):
+				// Endpoints occasionally return 404 on valid requests!
 				logging.Infof(ctx, "lhttp.Do() got a Cloud Endpoints 404: %#v", resp.Header)
-				return errors.WrapTransient(
+				err = errors.WrapTransient(
 					fmt.Errorf("http request failed (endpoints): %s (HTTP %d)", http.StatusText(status), status))
+			case status >= 400:
+				// Any other failure code is a hard failure.
+				err = fmt.Errorf("http request failed: %s (HTTP %d)", http.StatusText(status), status)
+			default:
+				// The handler may still return a retry.Error to indicate that the request
+				// should be retried even on successful status code.
+				return handler(resp)
 			}
-			// Any other failure code is a hard failure.
-			if status >= 400 {
-				return fmt.Errorf("http request failed: %s (HTTP %d)", http.StatusText(status), status)
-			}
-			// The handler may still return a retry.Error to indicate that the request
-			// should be retried even on successful status code.
-			return handler(resp)
+
+			// Drain and close the resp.Body.
+			io.Copy(ioutil.Discard, resp.Body)
+			resp.Body.Close()
+			return err
 		}, nil)
+		if err != nil {
+			err = fmt.Errorf("%v (attempts: %d)", err, attempts)
+		}
 		return status, err
 	}
 }
