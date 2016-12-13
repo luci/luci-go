@@ -6,6 +6,8 @@
 
 'use strict';
 
+var packageJsonFile = '../../package.json';
+
 // Include Gulp & tools we'll use
 var gulp = require('gulp');
 var luci = require('../gulp-common.js');

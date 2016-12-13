@@ -24,24 +24,9 @@
     return (this.base.name === "GrpcError");
   };
   LogDogError.prototype.isNotFound = function() {
-    return (this.isGrpcError() && this.base.code === luci.rpc.Code.NOT_FOUND);
+    return (this.isGrpcError() && this.base.code === 5);
   };
   LogDogError.prototype.isUnauthenticated = function() {
-    return (this.isGrpcError() &&
-        this.base.code === luci.rpc.Code.UNAUTHENTICATED);
-  };
-  LogDogError.prototype.isTransient = function() {
-    if ( ! this.isGrpcError() ) {
-      return false;
-    }
-    switch ( this.base.code ) {
-    case luci.rpc.Code.INTERNAL:
-    case luci.rpc.Code.UNAVAILABLE:
-    case luci.rpc.Code.RESOURCE_EXHAUSTED:
-      return true;
-
-    default:
-      return false;
-    }
+    return (this.isGrpcError() && this.base.code === 16);
   };
 </script>
