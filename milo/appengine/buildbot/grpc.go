@@ -40,6 +40,8 @@ func (s *Service) GetBuildbotBuildJSON(
 	switch {
 	case err == errBuildNotFound:
 		return nil, grpc.Errorf(codes.NotFound, "Build not found")
+	case err == errNotAuth:
+		return nil, grpc.Errorf(codes.Unauthenticated, "Unauthenticated request")
 	case err != nil:
 		return nil, err
 	}
@@ -69,6 +71,8 @@ func (s *Service) GetBuildbotBuildsJSON(
 	switch {
 	case err == errMasterNotFound:
 		return nil, grpc.Errorf(codes.NotFound, "Master not found")
+	case err == errNotAuth:
+		return nil, grpc.Errorf(codes.Unauthenticated, "Unauthenticated request")
 	case err != nil:
 		return nil, err
 	}
@@ -120,7 +124,8 @@ func (s *Service) GetCompressedMasterJSON(
 	switch {
 	case err == errMasterNotFound:
 		return nil, errNotFoundGRPC
-
+	case err == errNotAuth:
+		return nil, grpc.Errorf(codes.Unauthenticated, "Unauthenticated request")
 	case err != nil:
 		return nil, err
 	}
