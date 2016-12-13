@@ -8,24 +8,34 @@ import (
 	"bytes"
 )
 
-// Buffer is the interface which corresponds to the subset of *bytes.Buffer
+// WriteBuffer is the interface which corresponds to the subset of *bytes.Buffer
 // that this package requires.
-type Buffer interface {
+type WriteBuffer interface {
+	ReadBuffer
+
 	String() string
 	Bytes() []byte
-	Len() int
 
 	Grow(int)
-
-	Read([]byte) (int, error)
-	ReadByte() (byte, error)
 
 	Write([]byte) (int, error)
 	WriteByte(c byte) error
 	WriteString(s string) (int, error)
 }
 
-var _ Buffer = (*bytes.Buffer)(nil)
+// ReadBuffer is the interface which corresponds to the subset of *bytes.Reader
+// that this package requires.
+type ReadBuffer interface {
+	Len() int
+
+	Read([]byte) (int, error)
+	ReadByte() (byte, error)
+}
+
+var (
+	_ WriteBuffer = (*bytes.Buffer)(nil)
+	_ ReadBuffer  = (*bytes.Reader)(nil)
+)
 
 // InvertibleBuffer is just like Buffer, except that it also has a stateful
 // Invert() method, which will cause all reads and writes to/from it to be
@@ -48,22 +58,22 @@ var _ Buffer = (*bytes.Buffer)(nil)
 // If you know you need it, you'll know it's the right thing. If you're not sure
 // then you definitely don't need it!
 type InvertibleBuffer interface {
-	Buffer
+	WriteBuffer
 	SetInvert(inverted bool)
 }
 
 type invertibleBuffer struct {
-	Buffer
+	WriteBuffer
 	invert bool
 }
 
 // Invertible returns an InvertibleBuffer based on the Buffer.
-func Invertible(b Buffer) InvertibleBuffer {
+func Invertible(b WriteBuffer) InvertibleBuffer {
 	return &invertibleBuffer{b, false}
 }
 
 func (ib *invertibleBuffer) Read(bs []byte) (int, error) {
-	n, err := ib.Buffer.Read(bs)
+	n, err := ib.WriteBuffer.Read(bs)
 	if ib.invert {
 		for i, b := range bs {
 			bs[i] = b ^ 0xFF
@@ -76,37 +86,37 @@ func (ib *invertibleBuffer) WriteString(s string) (int, error) {
 	if ib.invert {
 		ib.Grow(len(s))
 		for i := 0; i < len(s); i++ {
-			if err := ib.Buffer.WriteByte(s[i] ^ 0xFF); err != nil {
+			if err := ib.WriteBuffer.WriteByte(s[i] ^ 0xFF); err != nil {
 				return i, err
 			}
 		}
 		return len(s), nil
 	}
-	return ib.Buffer.WriteString(s)
+	return ib.WriteBuffer.WriteString(s)
 }
 
 func (ib *invertibleBuffer) Write(bs []byte) (int, error) {
 	if ib.invert {
 		ib.Grow(len(bs))
 		for i, b := range bs {
-			if err := ib.Buffer.WriteByte(b ^ 0xFF); err != nil {
+			if err := ib.WriteBuffer.WriteByte(b ^ 0xFF); err != nil {
 				return i, err
 			}
 		}
 		return len(bs), nil
 	}
-	return ib.Buffer.Write(bs)
+	return ib.WriteBuffer.Write(bs)
 }
 
 func (ib *invertibleBuffer) WriteByte(b byte) error {
 	if ib.invert {
 		b = b ^ 0xFF
 	}
-	return ib.Buffer.WriteByte(b)
+	return ib.WriteBuffer.WriteByte(b)
 }
 
 func (ib *invertibleBuffer) ReadByte() (byte, error) {
-	ret, err := ib.Buffer.ReadByte()
+	ret, err := ib.WriteBuffer.ReadByte()
 	if ib.invert {
 		ret = ret ^ 0xFF
 	}

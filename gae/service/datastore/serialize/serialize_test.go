@@ -37,7 +37,7 @@ func mkKey(appID, namespace string, elems ...interface{}) *ds.Key {
 	return ds.MkKeyContext(appID, namespace).MakeKey(elems...)
 }
 
-func mkBuf(data []byte) Buffer {
+func mkBuf(data []byte) WriteBuffer {
 	return Invertible(bytes.NewBuffer(data))
 }
 
