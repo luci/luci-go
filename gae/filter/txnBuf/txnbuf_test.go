@@ -13,6 +13,7 @@ import (
 	"github.com/luci/gae/filter/count"
 	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/info"
 
 	"github.com/luci/luci-go/common/data/cmpbin"
 	"github.com/luci/luci-go/common/errors"
@@ -861,4 +862,19 @@ func TestQuerySupport(t *testing.T) {
 
 	})
 
+}
+
+func TestRegressions(t *testing.T) {
+	Convey("Regression tests", t, func() {
+		Convey("can remove namespace from txnBuf filter", func() {
+			c := info.MustNamespace(memory.Use(context.Background()), "foobar")
+			So(info.GetNamespace(c), ShouldEqual, "foobar")
+			ds.RunInTransaction(FilterRDS(c), func(c context.Context) error {
+				So(info.GetNamespace(c), ShouldEqual, "foobar")
+				c = ds.WithoutTransaction(info.MustNamespace(c, ""))
+				So(info.GetNamespace(c), ShouldEqual, "")
+				return nil
+			}, nil)
+		})
+	})
 }

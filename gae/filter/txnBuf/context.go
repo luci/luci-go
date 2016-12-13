@@ -10,11 +10,9 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 )
 
-type key int
-
 var (
-	dsTxnBufParent   key
-	dsTxnBufHaveLock key = 1
+	dsTxnBufParent   = "holds a *txnBufState of the parent transaction"
+	dsTxnBufHaveLock = "a boolean indicating that this context has the lock for this level of the transaction"
 )
 
 // FilterRDS installs a transaction buffer datastore filter in the context.
@@ -22,9 +20,9 @@ func FilterRDS(c context.Context) context.Context {
 	// TODO(riannucci): allow the specification of the set of roots to limit this
 	// transaction to, transitively.
 	return ds.AddRawFilters(c, func(c context.Context, rds ds.RawInterface) ds.RawInterface {
-		if par, _ := c.Value(dsTxnBufParent).(*txnBufState); par != nil {
-			haveLock, _ := c.Value(dsTxnBufHaveLock).(bool)
-			return &dsTxnBuf{c, par, haveLock}
+		if par, _ := c.Value(&dsTxnBufParent).(*txnBufState); par != nil {
+			haveLock, _ := c.Value(&dsTxnBufHaveLock).(bool)
+			return &dsTxnBuf{c, par, haveLock, rds}
 		}
 		return &dsBuf{rds}
 	})

@@ -24,12 +24,13 @@ type dsTxnBuf struct {
 	ic       context.Context
 	state    *txnBufState
 	haveLock bool
+	rds      ds.RawInterface
 }
 
 var _ ds.RawInterface = (*dsTxnBuf)(nil)
 
 func (d *dsTxnBuf) DecodeCursor(s string) (ds.Cursor, error) {
-	return d.state.parentDS.DecodeCursor(s)
+	return d.rds.DecodeCursor(s)
 }
 
 func (d *dsTxnBuf) AllocateIDs(keys []*ds.Key, cb ds.NewKeyCB) error {
@@ -116,15 +117,20 @@ func (d *dsTxnBuf) RunInTransaction(cb func(context.Context) error, opts *ds.Tra
 	return withTxnBuf(d.ic, cb, opts)
 }
 
-func (d *dsTxnBuf) CurrentTransaction() ds.Transaction { return d.state.parentDS.CurrentTransaction() }
+func (d *dsTxnBuf) CurrentTransaction() ds.Transaction {
+	// Return the pointer to the state at this layer of the transaction tree. This
+	// will be the same for multiple calls to CurrentTransaction within this
+	// nested transaction, and globally unique while the transaction is active.
+	return d.state
+}
 
 func (d *dsTxnBuf) WithoutTransaction() context.Context {
-	c := d.state.parentDS.WithoutTransaction()
-	c = context.WithValue(c, dsTxnBufParent, nil)
-	c = context.WithValue(c, dsTxnBufHaveLock, nil)
+	c := d.rds.WithoutTransaction()
+	c = context.WithValue(c, &dsTxnBufParent, nil)
+	c = context.WithValue(c, &dsTxnBufHaveLock, nil)
 	return c
 }
 
 func (d *dsTxnBuf) GetTestable() ds.Testable {
-	return d.state.parentDS.GetTestable()
+	return d.rds.GetTestable()
 }

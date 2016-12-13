@@ -121,7 +121,7 @@ type txnBufState struct {
 }
 
 func withTxnBuf(ctx context.Context, cb func(context.Context) error, opts *datastore.TransactionOptions) error {
-	parentState, _ := ctx.Value(dsTxnBufParent).(*txnBufState)
+	parentState, _ := ctx.Value(&dsTxnBufParent).(*txnBufState)
 	roots := stringset.New(0)
 	rootLimit := 1
 	if opts != nil && opts.XG {
@@ -147,11 +147,11 @@ func withTxnBuf(ctx context.Context, cb func(context.Context) error, opts *datas
 		roots:            roots,
 		rootLimit:        rootLimit,
 		kc:               datastore.GetKeyContext(ctx),
-		parentDS:         datastore.Raw(context.WithValue(ctx, dsTxnBufHaveLock, true)),
+		parentDS:         datastore.Raw(context.WithValue(ctx, &dsTxnBufHaveLock, true)),
 		sizeBudget:       sizeBudget,
 		writeCountBudget: writeCountBudget,
 	}
-	if err := cb(context.WithValue(ctx, dsTxnBufParent, state)); err != nil {
+	if err := cb(context.WithValue(ctx, &dsTxnBufParent, state)); err != nil {
 		return err
 	}
 
