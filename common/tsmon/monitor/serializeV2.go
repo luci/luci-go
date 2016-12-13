@@ -71,21 +71,12 @@ func SerializeDataSet(c types.Cell) *pb.MetricsDataSet {
 	}
 
 	switch c.ValueType {
-	case types.NonCumulativeIntType:
-		fallthrough
-	case types.CumulativeIntType:
+	case types.NonCumulativeIntType, types.CumulativeIntType:
 		d.ValueType = pb.ValueType_INT64.Enum()
-
-	case types.NonCumulativeFloatType:
-		fallthrough
-	case types.CumulativeFloatType:
+	case types.NonCumulativeFloatType, types.CumulativeFloatType:
 		d.ValueType = pb.ValueType_DOUBLE.Enum()
-
-	case types.NonCumulativeDistributionType:
-		fallthrough
-	case types.CumulativeDistributionType:
+	case types.NonCumulativeDistributionType, types.CumulativeDistributionType:
 		d.ValueType = pb.ValueType_DISTRIBUTION.Enum()
-
 	case types.StringType:
 		d.ValueType = pb.ValueType_STRING.Enum()
 	case types.BoolType:
@@ -118,21 +109,12 @@ func SerializeValue(c types.Cell, now time.Time) *pb.MetricsData {
 	d.EndTimestamp = toTimestamp(now)
 
 	switch c.ValueType {
-	case types.NonCumulativeIntType:
-		fallthrough
-	case types.CumulativeIntType:
+	case types.NonCumulativeIntType, types.CumulativeIntType:
 		d.Value = &pb.MetricsData_Int64Value{c.Value.(int64)}
-
-	case types.NonCumulativeFloatType:
-		fallthrough
-	case types.CumulativeFloatType:
+	case types.NonCumulativeFloatType, types.CumulativeFloatType:
 		d.Value = &pb.MetricsData_DoubleValue{c.Value.(float64)}
-
-	case types.CumulativeDistributionType:
-		fallthrough
-	case types.NonCumulativeDistributionType:
+	case types.CumulativeDistributionType, types.NonCumulativeDistributionType:
 		d.Value = &pb.MetricsData_DistributionValue{serializeDistribution(c.Value.(*distribution.Distribution))}
-
 	case types.StringType:
 		d.Value = &pb.MetricsData_StringValue{c.Value.(string)}
 	case types.BoolType:

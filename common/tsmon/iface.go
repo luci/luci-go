@@ -208,9 +208,7 @@ func initMonitor(c context.Context, config config) (monitor.Monitor, error) {
 
 		return monitor.NewPubsubMonitor(
 			c, tokens, gcps.NewTopic(endpointURL.Host, strings.TrimPrefix(endpointURL.Path, "/")))
-	case "http":
-		fallthrough
-	case "https":
+	case "http", "https":
 		client, err := newAuthenticator(c, config.Credentials, monitor.ProdxmonScopes).Client()
 		if err != nil {
 			return nil, err
