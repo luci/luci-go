@@ -30,15 +30,21 @@ import (
 	"github.com/luci/gae/service/info"
 	tq "github.com/luci/gae/service/taskqueue"
 
+	"github.com/luci/luci-go/grpc/discovery"
+	"github.com/luci/luci-go/grpc/prpc"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
 
 	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
+	"github.com/luci/luci-go/appengine/tsmon"
 
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 
+	"github.com/luci/luci-go/scheduler/api/scheduler/v1"
+
+	"github.com/luci/luci-go/scheduler/appengine/apiservers"
 	"github.com/luci/luci-go/scheduler/appengine/catalog"
 	"github.com/luci/luci-go/scheduler/appengine/engine"
 	"github.com/luci/luci-go/scheduler/appengine/task"
@@ -113,23 +119,6 @@ func initializeGlobalState(c context.Context) {
 	}
 }
 
-// base returns middleware chain. It initializes prod context and sets up
-// authentication config.
-func base() router.MiddlewareChain {
-	methods := auth.Authenticator{
-		&server.OAuth2Method{Scopes: []string{server.EmailScope}},
-		server.CookieAuth,
-		&server.InboundAppIDAuthMethod{},
-	}
-	return gaemiddleware.BaseProd().Extend(
-		func(c *router.Context, next router.Handler) {
-			globalInit.Do(func() { initializeGlobalState(c.Context) })
-			c.Context = auth.SetAuthenticator(c.Context, methods)
-			next(c)
-		},
-	)
-}
-
 //// Routes.
 
 func init() {
@@ -158,28 +147,53 @@ func init() {
 		PubSubPushPath:       "/pubsub",
 	})
 
+	// Middleware chains. 'baseUI' is used for web interface routes, 'base' for
+	// everything else.
+	base := gaemiddleware.BaseProd().Extend(
+		func(c *router.Context, next router.Handler) {
+			globalInit.Do(func() { initializeGlobalState(c.Context) })
+			next(c)
+		},
+	)
+	baseUI := base.Extend(auth.Use(auth.Authenticator{server.CookieAuth}))
+
 	// Setup HTTP routes.
 	r := router.New()
 
-	gaemiddleware.InstallHandlers(r, base())
-	ui.InstallHandlers(r, base(), ui.Config{
+	gaemiddleware.InstallHandlers(r, base)
+
+	ui.InstallHandlers(r, baseUI, ui.Config{
 		Engine:        globalEngine,
 		TemplatesPath: "templates",
 	})
 
-	r.GET("/_ah/warmup", base(), warmupHandler)
-	r.GET("/_ah/start", base(), warmupHandler)
-	r.POST("/pubsub", base(), pubsubPushHandler)
-	r.GET("/internal/cron/read-config", base().Extend(gaemiddleware.RequireCron), readConfigCron)
-	r.POST("/internal/tasks/read-project-config", base().Extend(gaemiddleware.RequireTaskQueue("read-project-config")), readProjectConfigTask)
-	r.POST("/internal/tasks/timers", base().Extend(gaemiddleware.RequireTaskQueue("timers")), actionTask)
-	r.POST("/internal/tasks/invocations", base().Extend(gaemiddleware.RequireTaskQueue("invocations")), actionTask)
+	r.GET("/_ah/warmup", base, warmupHandler)
+	r.GET("/_ah/start", base, warmupHandler)
+	r.POST("/pubsub", base, pubsubPushHandler) // auth is via custom tokens
+	r.GET("/internal/cron/read-config", base.Extend(gaemiddleware.RequireCron), readConfigCron)
+	r.POST("/internal/tasks/read-project-config", base.Extend(gaemiddleware.RequireTaskQueue("read-project-config")), readProjectConfigTask)
+	r.POST("/internal/tasks/timers", base.Extend(gaemiddleware.RequireTaskQueue("timers")), actionTask)
+	r.POST("/internal/tasks/invocations", base.Extend(gaemiddleware.RequireTaskQueue("invocations")), actionTask)
 
 	// Devserver can't accept PubSub pushes, so allow manual pulls instead to
 	// simplify local development.
 	if appengine.IsDevAppServer() {
-		r.GET("/pubsub/pull/:ManagerName/:Publisher", base(), pubsubPullHandler)
+		r.GET("/pubsub/pull/:ManagerName/:Publisher", base, pubsubPullHandler)
 	}
+
+	// Install RPC servers.
+	api := prpc.Server{
+		Authenticator: auth.Authenticator{
+			&server.OAuth2Method{Scopes: []string{server.EmailScope}},
+		},
+		UnaryServerInterceptor: tsmon.NewGrpcUnaryInterceptor(nil),
+	}
+	scheduler.RegisterSchedulerServer(&api, apiservers.SchedulerServer{
+		Engine:  globalEngine,
+		Catalog: globalCatalog,
+	})
+	discovery.Enable(&api)
+	api.InstallHandlers(r, base)
 
 	http.DefaultServeMux.Handle("/", r)
 }
