@@ -98,6 +98,8 @@ func (s Storage) FetchAllSettings(c context.Context) (*settings.Bundle, error) {
 
 // UpdateSetting updates a setting at the given key.
 func (s Storage) UpdateSetting(c context.Context, key string, value json.RawMessage, who, why string) error {
+	c = defaultContext(c)
+
 	var fatalFail error // set in transaction on fatal errors
 	err := ds.RunInTransaction(c, func(c context.Context) error {
 		// Fetch the most recent values.

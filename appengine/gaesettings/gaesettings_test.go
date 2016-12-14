@@ -13,8 +13,10 @@ import (
 
 	"github.com/luci/gae/filter/count"
 	"github.com/luci/gae/filter/dscache"
+	"github.com/luci/gae/filter/txnBuf"
 	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 
@@ -100,5 +102,121 @@ func TestWorks(t *testing.T) {
 		// 0 when it is fixed (the test will break at that moment).
 		So(mcOps.SetMulti.Total(), ShouldEqual, 3)
 		So(mcOps.DeleteMulti.Total(), ShouldEqual, 3)
+	})
+
+	Convey("Handles namespace switch", t, func() {
+		c := memory.Use(context.Background())
+		c = dscache.AlwaysFilterRDS(c)
+
+		namespaced := info.MustNamespace(c, "blah")
+
+		s := Storage{}
+
+		// Put something using default namespace.
+		So(s.UpdateSetting(c, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
+
+		// Works when using default namespace.
+		bundle, err := s.FetchAllSettings(c)
+		So(err, ShouldBeNil)
+		So(*bundle.Values["key"], ShouldResemble, json.RawMessage(`"val1"`))
+
+		// Works when using non-default namespace too.
+		bundle, err = s.FetchAllSettings(namespaced)
+		So(err, ShouldBeNil)
+		So(*bundle.Values["key"], ShouldResemble, json.RawMessage(`"val1"`))
+
+		// Update using non-default namespace.
+		So(s.UpdateSetting(namespaced, "key", json.RawMessage(`"val2"`), "who2", "why2"), ShouldBeNil)
+
+		// Works when using default namespace.
+		bundle, err = s.FetchAllSettings(c)
+		So(err, ShouldBeNil)
+		So(*bundle.Values["key"], ShouldResemble, json.RawMessage(`"val2"`))
+	})
+
+	Convey("Ignores transactions", t, func() {
+		c := memory.Use(context.Background())
+		s := Storage{}
+
+		// Put something.
+		So(s.UpdateSetting(c, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
+
+		// Works when fetching outside of a transaction.
+		bundle, err := s.FetchAllSettings(c)
+		So(err, ShouldBeNil)
+		So(len(bundle.Values), ShouldEqual, 1)
+
+		// Works when fetching from inside of a transaction.
+		ds.RunInTransaction(c, func(c context.Context) error {
+			bundle, err := s.FetchAllSettings(c)
+			So(err, ShouldBeNil)
+			So(len(bundle.Values), ShouldEqual, 1)
+			return nil
+		}, nil)
+	})
+
+	Convey("Ignores transactions and namespaces", t, func() {
+		c := memory.Use(context.Background())
+		s := Storage{}
+
+		// Put something.
+		So(s.UpdateSetting(c, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
+
+		// Works when fetching outside of a transaction.
+		bundle, err := s.FetchAllSettings(c)
+		So(err, ShouldBeNil)
+		So(len(bundle.Values), ShouldEqual, 1)
+
+		// Works when fetching from inside of a transaction.
+		namespaced := info.MustNamespace(c, "blah")
+		ds.RunInTransaction(namespaced, func(c context.Context) error {
+			bundle, err := s.FetchAllSettings(c)
+			So(err, ShouldBeNil)
+			So(len(bundle.Values), ShouldEqual, 1)
+			return nil
+		}, nil)
+	})
+
+	Convey("Ignores transactions and txnBuf", t, func() {
+		c := memory.Use(context.Background())
+		s := Storage{}
+
+		// Put something.
+		So(s.UpdateSetting(c, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
+
+		// Works when fetching outside of a transaction.
+		bundle, err := s.FetchAllSettings(c)
+		So(err, ShouldBeNil)
+		So(len(bundle.Values), ShouldEqual, 1)
+
+		// Works when fetching from inside of a transaction.
+		ds.RunInTransaction(txnBuf.FilterRDS(c), func(c context.Context) error {
+			bundle, err := s.FetchAllSettings(c)
+			So(err, ShouldBeNil)
+			So(len(bundle.Values), ShouldEqual, 1)
+			return nil
+		}, nil)
+	})
+
+	Convey("Ignores transactions and namespaces and txnBuf", t, func() {
+		c := memory.Use(context.Background())
+		s := Storage{}
+
+		// Put something.
+		So(s.UpdateSetting(c, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
+
+		// Works when fetching outside of a transaction.
+		bundle, err := s.FetchAllSettings(c)
+		So(err, ShouldBeNil)
+		So(len(bundle.Values), ShouldEqual, 1)
+
+		// Works when fetching from inside of a transaction.
+		namespaced := info.MustNamespace(c, "blah")
+		ds.RunInTransaction(txnBuf.FilterRDS(namespaced), func(c context.Context) error {
+			bundle, err := s.FetchAllSettings(c)
+			So(err, ShouldBeNil)
+			So(len(bundle.Values), ShouldEqual, 1)
+			return nil
+		}, nil)
 	})
 }
