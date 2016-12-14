@@ -172,13 +172,9 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string, _ subc
 
 	// Update our environment for the child process to inherit
 	bsEnv := bootstrap.Environment{
-		Project: a.project,
-		Prefix:  a.prefix,
-	}
-
-	// If our output factory has a Coordinator host, fill that in too.
-	if cho, ok := of.(coordinatorHostOutput); ok {
-		bsEnv.CoordinatorHost = cho.getCoordinatorHost()
+		Project:         a.project,
+		Prefix:          a.prefix,
+		CoordinatorHost: a.coordinatorHost,
 	}
 
 	// Configure stream server

@@ -58,6 +58,7 @@ type application struct {
 
 	project             config.ProjectName
 	prefix              types.StreamName
+	coordinatorHost     string
 	outputWorkers       int
 	outputConfig        outputConfigFlag
 	ioKeepAliveInterval clockflag.Duration
@@ -94,6 +95,8 @@ func (a *application) addFlags(fs *flag.FlagSet) {
 		"The log prefix's project name (required).")
 	fs.Var(&a.prefix, "prefix",
 		"Prefix to apply to all stream names.")
+	fs.StringVar(&a.coordinatorHost, "coordinator-host", "",
+		"The Coordinator host to pass on to subprocesses.")
 	fs.Var(&a.outputConfig, "output",
 		"The output name and configuration. Specify 'help' for more information.")
 	fs.IntVar(&a.outputWorkers, "output-workers", butler.DefaultOutputWorkers,
