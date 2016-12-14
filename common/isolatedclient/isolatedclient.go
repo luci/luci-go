@@ -199,7 +199,7 @@ func (i *Client) Fetch(c context.Context, item *isolateservice.HandlersEndpoints
 		_, err := io.Copy(dest, decompressor)
 		return err
 	}
-	_, err := lhttp.NewRequest(c, i.authClient, i.retryFactory, rgen, handler)()
+	_, err := lhttp.NewRequest(c, i.authClient, i.retryFactory, rgen, handler, nil)()
 	return err
 }
 
@@ -275,7 +275,7 @@ func (i *Client) doPushGCS(c context.Context, state *PushState, source Source) (
 			return err4
 		}
 		return err5
-	})
+	}, nil)
 	_, err = req()
 	return
 }

@@ -60,7 +60,7 @@ func TestNewRequestGET(t *testing.T) {
 		ut.AssertEqual(t, "Hello, client\n", string(content))
 		ut.AssertEqual(t, nil, resp.Body.Close())
 		return nil
-	})
+	}, nil)
 
 	status, err := clientReq()
 	ut.AssertEqual(t, nil, err)
@@ -98,7 +98,7 @@ func TestNewRequestPOST(t *testing.T) {
 		ut.AssertEqual(t, "Hello, client\n", string(content))
 		ut.AssertEqual(t, nil, resp.Body.Close())
 		return nil
-	})
+	}, nil)
 
 	status, err := clientReq()
 	ut.AssertEqual(t, nil, err)
@@ -122,7 +122,7 @@ func TestNewRequestGETFail(t *testing.T) {
 	clientReq := NewRequest(ctx, http.DefaultClient, fast, httpReq, func(resp *http.Response) error {
 		t.Fail()
 		return nil
-	})
+	}, nil)
 
 	status, err := clientReq()
 	ut.AssertEqual(t, "http request failed: Internal Server Error (HTTP 500) (attempts: 4)", err.Error())
@@ -293,7 +293,7 @@ func TestNewRequestDefaultFactory(t *testing.T) {
 			httpReq := httpReqGen("GET", ts.URL+tc.path, nil)
 			req := NewRequest(ctx, http.DefaultClient, nil, httpReq, func(resp *http.Response) error {
 				return resp.Body.Close()
-			})
+			}, nil)
 
 			_, err := req()
 			if err == nil && tc.wantErr {
@@ -334,7 +334,7 @@ func TestNewRequestClosesBody(t *testing.T) {
 		clientCalls++
 		lastResp = resp
 		return resp.Body.Close()
-	})
+	}, nil)
 
 	status, err := req()
 	if err != nil {

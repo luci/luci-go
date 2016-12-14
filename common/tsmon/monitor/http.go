@@ -7,6 +7,7 @@ package monitor
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 
@@ -64,6 +65,17 @@ func (m *httpMonitor) Send(ctx context.Context, cells []types.Cell) error {
 		return http.NewRequest("POST", m.endpoint.String(), bytes.NewReader(encoded.Bytes()))
 	}, func(resp *http.Response) error {
 		return resp.Body.Close()
+	}, func(resp *http.Response, oErr error) error {
+		if resp != nil {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				logging.WithError(err).Errorf(ctx, "Failed to read error response body")
+			} else {
+				logging.Errorf(ctx, "Monitoring push failed.  Response body: %s", body)
+			}
+			resp.Body.Close()
+		}
+		return oErr
 	})()
 	if err != nil {
 		return err

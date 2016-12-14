@@ -133,20 +133,19 @@ func (state *State) Flush(c context.Context, mon monitor.Monitor) error {
 		chunkSize = len(cells)
 	}
 
-	total := len(cells)
 	sent := 0
+	var lastErr error
 	for len(cells) > 0 {
 		count := minInt(chunkSize, len(cells))
 		if err := mon.Send(c, cells[:count]); err != nil {
-			logging.Errorf(
-				c, "Sent %d cells out of %d, skipping the rest due to error - %s",
-				sent, total, err)
-			return err
+			logging.Errorf(c, "Failed to send %d cells: %v", count, err)
+			lastErr = err
+			// Continue anyway.
 		}
 		cells = cells[count:]
 		sent += count
 	}
-	return nil
+	return lastErr
 }
 
 // runCallbacks runs any callbacks that have been registered to populate values

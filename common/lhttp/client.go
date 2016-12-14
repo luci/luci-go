@@ -28,6 +28,15 @@ const (
 // Handler is called once or multiple times for each HTTP request that is tried.
 type Handler func(*http.Response) error
 
+// ErrorHandler is called once or multiple times for each HTTP request that is
+// tried.  It is called when any non-200 response code is received, or if some
+// other network error occurs.
+// resp may be nil if a network error occurred before the response was received.
+// The ErrorHandler must close the provided resp, if any.
+// Return the same error again to continue retry behaviour, or nil to pretend
+// this error was a success.
+type ErrorHandler func(resp *http.Response, err error) error
+
 // RequestGen is a generator function to create a new request. It may be called
 // multiple times if an operation needs to be retried. The HTTP server is
 // responsible for closing the Request body, as per http.Request Body method
@@ -42,9 +51,23 @@ type RequestGen func() (*http.Request, error)
 //
 // If rFn is nil, NewRequest will use a default exponential backoff strategy
 // only for transient errors.
-func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen RequestGen, handler Handler) func() (int, error) {
+//
+// If errorHandler is nil, the default error handler will drain and close the
+// response body.
+func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen RequestGen,
+	handler Handler, errorHandler ErrorHandler) func() (int, error) {
 	if rFn == nil {
 		rFn = retry.TransientOnly(retry.Default)
+	}
+	if errorHandler == nil {
+		errorHandler = func(resp *http.Response, err error) error {
+			if resp != nil {
+				// Drain and close the resp.Body.
+				io.Copy(ioutil.Discard, resp.Body)
+				resp.Body.Close()
+			}
+			return err
+		}
 	}
 
 	return func() (int, error) {
@@ -60,7 +83,7 @@ func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen Req
 			if err != nil {
 				// Retry every error. This is sad when you specify an invalid hostname but
 				// it's better than failing when DNS resolution is flaky.
-				return errors.WrapTransient(err)
+				return errorHandler(nil, errors.WrapTransient(err))
 			}
 			status = resp.StatusCode
 
@@ -83,10 +106,7 @@ func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen Req
 				return handler(resp)
 			}
 
-			// Drain and close the resp.Body.
-			io.Copy(ioutil.Discard, resp.Body)
-			resp.Body.Close()
-			return err
+			return errorHandler(resp, err)
 		}, nil)
 		if err != nil {
 			err = fmt.Errorf("%v (attempts: %d)", err, attempts)
@@ -140,7 +160,7 @@ func NewRequestJSON(ctx context.Context, c *http.Client, rFn retry.Factory, url,
 			return errors.WrapTransient(fmt.Errorf("bad response %s: %s", url, err))
 		}
 		return nil
-	}), nil
+	}, nil), nil
 }
 
 // GetJSON is a shorthand. It returns the HTTP status code and error if any.
