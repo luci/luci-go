@@ -44,10 +44,19 @@ func newUploader(ctx context.Context, svc isolateService, maxConcurrent int) *Up
 	}
 }
 
+// Upload uploads an item from an isolated.Source. Upload does not block. If
+// not-nil, the done func will be invoked on upload completion (both success
+// and failure).
+func (u *Uploader) Upload(name string, src isolatedclient.Source, ps *isolatedclient.PushState, done func()) {
+	u.wg.Add(1)
+	go u.upload(name, src, ps, done)
+}
+
 // UploadBytes uploads an item held in-memory. UploadBytes does not block. If
 // not-nil, the done func will be invoked on upload completion (both success
 // and failure). The provided byte slice b must not be modified until the
 // upload is completed.
+// TODO(djd): Consider using Upload directly and deleting UploadBytes.
 func (u *Uploader) UploadBytes(name string, b []byte, ps *isolatedclient.PushState, done func()) {
 	u.wg.Add(1)
 	go u.upload(name, byteSource(b), ps, done)
@@ -56,6 +65,7 @@ func (u *Uploader) UploadBytes(name string, b []byte, ps *isolatedclient.PushSta
 // UploadFile uploads a file from disk. UploadFile does not block. If
 // not-nil, the done func will be invoked on upload completion (both success
 // and failure).
+// TODO(djd): Consider using Upload directly and deleting UploadFile.
 func (u *Uploader) UploadFile(item *Item, ps *isolatedclient.PushState, done func()) {
 	u.wg.Add(1)
 	go u.upload(item.RelPath, fileSource(item.Path), ps, done)

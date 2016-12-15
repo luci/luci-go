@@ -33,9 +33,8 @@ const (
 	// be combined into archives before being uploaded to the server.
 	archiveThreshold = 100e3 // 100kB
 
-	// archiveSizeTrigger is the desired size of the created archives. Once
-	// archives reach this size, they will be closed and prepared for upload.
-	archiveSizeTrigger = 10e6
+	// archiveMaxSize is the maximum size of the created archives.
+	archiveMaxSize = 10e6
 
 	// infraFailExit is the exit code used when the exparchive fails due to
 	// infrastructure errors (for example, failed server requests).
@@ -96,11 +95,12 @@ func (c *expArchiveRun) main() error {
 	}
 	client := isolatedclient.New(nil, authCl, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil)
 
-	// Set up a checker and pair of uploaders. One uploader is for in-memory
-	// files, and one is for on-disk files (we want to limit the latter to only
-	// one upload at a time).
+	// Set up a checker an uploader. We limit the uploader to one concurrent
+	// upload, since the uploads are all coming from disk (with the exception of
+	// the isolated JSON itself) and we only want a single goroutine reading from
+	// disk at once.
 	checker := NewChecker(ctx, client)
-	memUploader, fileUploader := NewUploader(ctx, client, 10), NewUploader(ctx, client, 1)
+	uploader := NewUploader(ctx, client, 1)
 
 	// Walk each of the deps, partioning the results into symlinks and files categorised by size.
 	var links, archiveFiles, indivFiles []*Item
@@ -161,38 +161,38 @@ func (c *expArchiveRun) main() error {
 	}
 
 	// Handle the small to-be-archived files.
-	archiveCallback := func(tar *Tar) {
-		log.Printf("Created tar archive %q (%s)", tar.Digest, humanize.Bytes(uint64(len(tar.Content))))
-		log.Printf("\tcontains %d files (total %s)", tar.FileCount, humanize.Bytes(uint64(tar.FileSize)))
+	bundles := ShardItems(archiveFiles, archiveMaxSize)
+	log.Printf("\t%d TAR archives to be isolated", len(bundles))
+
+	for _, bundle := range bundles {
+		bundle := bundle
+		digest, err := bundle.Digest()
+		if err != nil {
+			return err
+		}
+
+		log.Printf("Created tar archive %q (%s)", digest, humanize.Bytes(uint64(bundle.TarSize)))
+		log.Printf("\tcontains %d files (total %s)", len(bundle.Items), humanize.Bytes(uint64(bundle.ItemSize)))
 		// Mint an item for this tar.
 		item := &Item{
-			Path:    fmt.Sprintf(".%s.tar", tar.Digest),
-			RelPath: fmt.Sprintf(".%s.tar", tar.Digest),
-			Size:    int64(len(tar.Content)),
+			Path:    fmt.Sprintf(".%s.tar", digest),
+			RelPath: fmt.Sprintf(".%s.tar", digest),
+			Size:    bundle.TarSize,
 			Mode:    0644, // Read
-			Digest:  tar.Digest,
+			Digest:  digest,
 		}
 		files[item.RelPath] = isolated.TarFile(item.Digest, int(item.Mode), item.Size)
+
 		checker.AddItem(item, false, func(item *Item, ps *isolatedclient.PushState) {
 			if ps == nil {
-				tar.Release()
 				return
 			}
 			log.Printf("QUEUED %q for upload", item.RelPath)
-			memUploader.UploadBytes(item.RelPath, tar.Content, ps, func() {
+			uploader.Upload(item.RelPath, bundle.Contents, ps, func() {
 				log.Printf("UPLOADED %q", item.RelPath)
-				tar.Release()
 			})
 		})
 	}
-
-	archiver := NewTarAchiver(archiveCallback)
-	for _, item := range archiveFiles {
-		if err := archiver.AddItem(item); err != nil {
-			return err
-		}
-	}
-	archiver.Flush()
 
 	// Handle the large individually-uploaded files.
 	for _, item := range indivFiles {
@@ -207,7 +207,7 @@ func (c *expArchiveRun) main() error {
 				return
 			}
 			log.Printf("QUEUED %q for upload", item.RelPath)
-			fileUploader.UploadFile(item, ps, func() {
+			uploader.UploadFile(item, ps, func() {
 				log.Printf("UPLOADED %q", item.RelPath)
 			})
 		})
@@ -232,7 +232,7 @@ func (c *expArchiveRun) main() error {
 			return
 		}
 		log.Printf("QUEUED %q for upload", item.RelPath)
-		memUploader.UploadBytes(item.RelPath, isolJSON, ps, func() {
+		uploader.UploadBytes(item.RelPath, isolJSON, ps, func() {
 			log.Printf("UPLOADED %q", item.RelPath)
 		})
 	})
@@ -243,10 +243,7 @@ func (c *expArchiveRun) main() error {
 	}
 
 	// Make sure that all the uploads have completed successfully.
-	if err := fileUploader.Close(); err != nil {
-		return err
-	}
-	if err := memUploader.Close(); err != nil {
+	if err := uploader.Close(); err != nil {
 		return err
 	}
 
