@@ -166,18 +166,18 @@ func (c *expArchiveRun) main() error {
 
 	for _, bundle := range bundles {
 		bundle := bundle
-		digest, err := bundle.Digest()
+		digest, tarSize, err := bundle.Digest()
 		if err != nil {
 			return err
 		}
 
-		log.Printf("Created tar archive %q (%s)", digest, humanize.Bytes(uint64(bundle.TarSize)))
+		log.Printf("Created tar archive %q (%s)", digest, humanize.Bytes(uint64(tarSize)))
 		log.Printf("\tcontains %d files (total %s)", len(bundle.Items), humanize.Bytes(uint64(bundle.ItemSize)))
 		// Mint an item for this tar.
 		item := &Item{
 			Path:    fmt.Sprintf(".%s.tar", digest),
 			RelPath: fmt.Sprintf(".%s.tar", digest),
-			Size:    bundle.TarSize,
+			Size:    tarSize,
 			Mode:    0644, // Read
 			Digest:  digest,
 		}

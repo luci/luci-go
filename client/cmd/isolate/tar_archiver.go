@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/luci/luci-go/common/iotools"
 	"github.com/luci/luci-go/common/isolated"
 )
 
@@ -24,8 +25,6 @@ type ItemBundle struct {
 	// ItemSize is the total size (in bytes) of the constituent files. It will be
 	// smaller than the resultant tar.
 	ItemSize int64
-	// TarSize is the size (in bytes) of the resultant tar.
-	TarSize int64
 }
 
 // ShardItems shards the provided items into ItemBundles, using the provided
@@ -46,32 +45,33 @@ func ShardItems(items []*Item, threshold int64) []*ItemBundle {
 }
 
 func oneBundle(items []*Item, threshold int64) (*ItemBundle, []*Item) {
-	bundle := &ItemBundle{
-		TarSize: 1024, // two trailing blank 512-byte records.
-	}
+	bundle := &ItemBundle{}
+	bundleTarSize := int64(1024) // two trailing blank 512-byte records.
 
 	for i, item := range items {
 		// The in-tar size of the file (512 header + rounded up to nearest 512).
 		tarSize := (item.Size + 1023) & ^511
 
-		if i > 0 && bundle.TarSize+tarSize > threshold {
+		if i > 0 && bundleTarSize+tarSize > threshold {
 			return bundle, items[i:]
 		}
 
 		bundle.Items = items[:i+1]
 		bundle.ItemSize += item.Size
-		bundle.TarSize += tarSize
+		bundleTarSize += tarSize
 	}
 	return bundle, nil
 }
 
-// Digest returns the hash of the tar constructed from the bundle's items.
-func (b *ItemBundle) Digest() (isolated.HexDigest, error) {
+// Digest returns the hash and total size of the tar constructed from the
+// bundle's items.
+func (b *ItemBundle) Digest() (isolated.HexDigest, int64, error) {
 	h := sha1.New()
-	if err := b.writeTar(h); err != nil {
-		return "", err
+	cw := &iotools.CountingWriter{Writer: h}
+	if err := b.writeTar(cw); err != nil {
+		return "", 0, err
 	}
-	return isolated.Sum(h), nil
+	return isolated.Sum(h), cw.Count, nil
 }
 
 // Contents returns an io.ReadCloser containing the tar's contents.

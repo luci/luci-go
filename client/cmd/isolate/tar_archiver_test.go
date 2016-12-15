@@ -116,10 +116,9 @@ func TestItemBundle(t *testing.T) {
 		}
 		var wantBundles []*ItemBundle
 		temp := items
-		for i, bSize := range tc.wantBundles {
+		for _, bSize := range tc.wantBundles {
 			bundle := &ItemBundle{
-				Items:   temp[:bSize],
-				TarSize: int64(tc.wantSize[i]),
+				Items: temp[:bSize],
 			}
 			wantBundles = append(wantBundles, bundle)
 			temp = temp[bSize:]
@@ -134,13 +133,16 @@ func TestItemBundle(t *testing.T) {
 		}
 
 		for i, bundle := range bundles {
-			digest, err := bundle.Digest()
+			digest, size, err := bundle.Digest()
 			if err != nil {
 				t.Errorf("%s: bundle[%d].Digest gave err %v, want nil", tc.desc, i, err)
 				continue
 			}
 			if digest != tc.wantDigests[i] {
-				t.Errorf("%s: bundle[%d].Digest() = %q, want %q", tc.desc, i, digest, tc.wantDigests[i])
+				t.Errorf("%s: bundle[%d].Digest() hash = %q, want %q", tc.desc, i, digest, tc.wantDigests[i])
+			}
+			if size != int64(tc.wantSize[i]) {
+				t.Errorf("%s: bundle[%d].Digest() size = %d, want %d", tc.desc, i, size, tc.wantSize[i])
 			}
 
 			rc, err := bundle.Contents()
@@ -185,7 +187,7 @@ func TestItemBundle_Errors(t *testing.T) {
 		t.Errorf("len(bundles) = %d, want 2", len(bundles))
 	}
 	for _, bundle := range bundles {
-		if _, err := bundle.Digest(); err == nil {
+		if _, _, err := bundle.Digest(); err == nil {
 			t.Errorf("Path %q, bundle.Digest gave nil error; want some error", bundle.Items[0].Path)
 		}
 		rc, err := bundle.Contents()
