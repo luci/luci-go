@@ -16,6 +16,24 @@ import (
 	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto_v1"
 )
 
+func runningZeroes(values []int64) []int64 {
+	ret := []int64{}
+
+	var count int64
+	for _, v := range values {
+		if v == 0 {
+			count++
+		} else {
+			if count != 0 {
+				ret = append(ret, -count)
+				count = 0
+			}
+			ret = append(ret, v)
+		}
+	}
+	return ret
+}
+
 // SerializeCellsV1 creates a MetricsCollection message from a slice of cells.
 func SerializeCellsV1(cells []types.Cell) *pb.MetricsCollection {
 	collection := pb.MetricsCollection{

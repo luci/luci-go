@@ -7,21 +7,3 @@ package monitor
 const (
 	metricNamePrefix = "/chrome/infra/"
 )
-
-func runningZeroes(values []int64) []int64 {
-	ret := []int64{}
-
-	var count int64
-	for _, v := range values {
-		if v == 0 {
-			count++
-		} else {
-			if count != 0 {
-				ret = append(ret, -count)
-				count = 0
-			}
-			ret = append(ret, v)
-		}
-	}
-	return ret
-}

@@ -24,9 +24,13 @@ func TestAdd(t *testing.T) {
 		So(d.Count(), ShouldEqual, 0)
 
 		d.Add(1)
+		So(d.Buckets(), ShouldResemble, []int64{0, 1})
 		d.Add(10)
+		So(d.Buckets(), ShouldResemble, []int64{0, 1, 1})
 		d.Add(20)
+		So(d.Buckets(), ShouldResemble, []int64{0, 1, 1, 1})
 		d.Add(30)
+		So(d.Buckets(), ShouldResemble, []int64{0, 1, 1, 2})
 		So(d.Sum(), ShouldEqual, 61)
 		So(d.Count(), ShouldEqual, 4)
 	})

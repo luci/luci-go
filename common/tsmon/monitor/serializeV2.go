@@ -153,7 +153,7 @@ func serializeDistribution(d *distribution.Distribution) *pb.MetricsData_Distrib
 
 	// Copy the distribution bucket values.  Include the overflow buckets on
 	// either end.
-	ret.BucketCount = runningZeroes(d.Buckets())
+	ret.BucketCount = d.Buckets()
 
 	return &ret
 }

@@ -32,7 +32,6 @@ func TestSerializeDistribution(t *testing.T) {
 					Offset:           proto.Float64(0),
 				},
 			},
-			BucketCount: []int64{},
 		})
 	})
 
@@ -49,7 +48,6 @@ func TestSerializeDistribution(t *testing.T) {
 					Scale:            proto.Float64(1),
 				},
 			},
-			BucketCount: []int64{},
 		})
 	})
 
@@ -71,7 +69,7 @@ func TestSerializeDistribution(t *testing.T) {
 					Offset:           proto.Float64(0),
 				},
 			},
-			BucketCount: []int64{-1, 3, -1, 1},
+			BucketCount: []int64{0, 3, 0, 1},
 		})
 	})
 }
