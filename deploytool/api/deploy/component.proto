@@ -220,6 +220,19 @@ message AppEngineModule {
    * Resource paths may include deployment parameters.
    */
   repeated string resource_path = 23;
+
+  /**
+   * The source-relative path to an "index.yaml" file that can be imported.
+   *
+   * This is specifically useful since GAE development instances are capable
+   * of generating their own index data after observing module behavior. A user
+   * may want to use this behavior directly ratehr rather than translate it
+   * ininto an AppEngineResources protobuf.
+   *
+   * If this is not empty, an "index.yaml" file will be loaded from this path
+   * and appended to any other defined indexes.
+   */
+  string index_yaml_path = 24;
 }
 
 /**

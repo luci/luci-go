@@ -231,6 +231,18 @@ func (comp *layoutDeploymentComponent) loadSourceComponent(reg componentRegistra
 			module.Handlers.Handler = append(module.Handlers.Handler, msg.Handler...)
 		}
 
+		// If the module specifies a direct "index.yaml" path, load index entries
+		// from there and translate them to resources.
+		if p := module.IndexYamlPath; p != "" {
+			path := module.comp.pathTo(p)
+			res, err := loadIndexYAMLResource(path)
+			if err != nil {
+				return errors.Annotate(err).Reason("failed to load 'index.yaml' from [%(path)s]").
+					D("path", path).Err()
+			}
+			dep.cloudProject.appendResources(res, &module)
+		}
+
 		// Append GAE Resources.
 		if r := module.Resources; r != nil {
 			dep.cloudProject.appendResources(r, &module)

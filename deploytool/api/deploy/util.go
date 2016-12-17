@@ -6,6 +6,8 @@ package deploy
 
 import (
 	"fmt"
+
+	"github.com/luci/luci-go/common/errors"
 )
 
 // AppYAMLString returns the "app.yaml" string for this option.
@@ -36,7 +38,7 @@ func (v AppEngineModule_Handler_SecureOption) AppYAMLString() string {
 	}
 }
 
-// AppYAMLString returns the "app.yaml" string for this option.
+// AppYAMLString returns the "index.yaml" string for this option.
 func (v AppEngineResources_Index_Direction) AppYAMLString() string {
 	switch v {
 	case AppEngineResources_Index_ASCENDING:
@@ -45,6 +47,26 @@ func (v AppEngineResources_Index_Direction) AppYAMLString() string {
 		return "desc"
 	default:
 		panic(fmt.Errorf("unknown index direction %q", v))
+	}
+}
+
+// IndexDirectionFromAppYAMLString returns the
+// AppEngineResources_Index_Direction value associated with the given
+// "index.yaml" strnig value.
+//
+// This is a reverse of the AppEngineResources_Index_Direction's AppYAMLString.
+//
+// If the direction value is not recognized, an error will be returned.
+func IndexDirectionFromAppYAMLString(v string) (AppEngineResources_Index_Direction, error) {
+	switch v {
+	case "asc", "":
+		return AppEngineResources_Index_ASCENDING, nil
+
+	case "desc":
+		return AppEngineResources_Index_DESCENDING, nil
+
+	default:
+		return 0, errors.Reason("invalid index direction %(value)q").D("value", v).Err()
 	}
 }
 

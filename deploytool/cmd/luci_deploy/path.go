@@ -22,7 +22,7 @@ func splitSourceRelativePath(path string) []string {
 	return strings.Split(path, "/")
 }
 
-// deployToNative converts the depoy tool path, path, to a native path.
+// deployToNative converts the deploy tool path, path, to a native path.
 //
 // base is a native base path to prepend to the generated path. If empty, the
 // returned path will be relative.
