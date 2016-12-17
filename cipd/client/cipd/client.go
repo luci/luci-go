@@ -1107,17 +1107,9 @@ func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pi
 }
 
 func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, pin common.Pin) error {
-	return client.fetchAndDeployImpl(ctx, pin, true)
-}
-
-func (client *clientImpl) fetchAndDeployImpl(ctx context.Context, pin common.Pin, cleanTrash bool) error {
 	err := common.ValidatePin(pin)
 	if err != nil {
 		return err
-	}
-
-	if cleanTrash {
-		defer client.deployer.CleanupTrash(ctx)
 	}
 
 	// Use temp file for storing package file. Delete it when done.
@@ -1300,7 +1292,7 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, pins []common.Pin,
 		if !toDeploy[pin.PackageName] {
 			continue
 		}
-		err = client.fetchAndDeployImpl(ctx, pin, false)
+		err = client.FetchAndDeployInstance(ctx, pin)
 		if err != nil {
 			logging.Errorf(ctx, "Failed to install %s - %s", pin, err)
 			actions.Errors = append(actions.Errors, ActionError{
@@ -1312,7 +1304,7 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, pins []common.Pin,
 	}
 
 	// Opportunistically cleanup the trash left from previous installs.
-	client.deployer.CleanupTrash(ctx)
+	client.doBatchAwareOp(ctx, batchAwareOpCleanupTrash)
 
 	if len(actions.Errors) == 0 {
 		logging.Infof(ctx, "All changes applied.")
