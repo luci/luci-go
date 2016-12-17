@@ -99,6 +99,30 @@ message BuildPath {
 }
 
 /**
+ * A Duration expression.
+ *
+ * This is preferred to google.protobuf.Duration since it is more easily
+ * expressed by a human.
+ */
+message Duration {
+  /** The duration value, taken in units of "unit". */
+  uint32 value = 1;
+
+  enum Unit {
+    MILLISECONDS = 0;
+    SECONDS = 1;
+    MINUTES = 2;
+    HOURS = 3;
+    DAYS = 4;
+  }
+  /** The unit for this duration value. */
+  Unit unit = 2;
+
+  /** Additional duration units to append. */
+  repeated Duration plus = 3;
+}
+
+/**
  * Describes an AppEngine module.
  */
 message AppEngineModule {
@@ -126,16 +150,88 @@ message AppEngineModule {
     StaticModule static_module = 3;
   }
 
+  /** Parameters for a classic AppEngine instance. */
+  message ClassicParams {
+    /** Generic instance class types. */
+    enum InstanceClass {
+      /** Default for this scaling type. */
+      IC_DEFAULT = 0;
+
+      /* 1-core */
+      IC_1 = 1;
+      /* 2-core */
+      IC_2 = 2;
+      /* 4-core */
+      IC_4 = 3;
+      /* 4-core, 1G memory */
+      IC_4_1G = 4;
+      /* 8-core instance class. Only available with basic/manual scaling. */
+      IC_8 = 5;
+    }
+    InstanceClass instance_class = 1;
+
+    /** Describes automatic scaling parameters. */
+    message AutomaticScaling {
+      /** Minimum number of idle instances. */
+      uint32 min_idle_instances = 1;
+      /** Maximum number of idle instances. 0 is automatic (default). */
+      uint32 max_idle_instances = 2;
+
+      /** Minimum pending latency. */
+      Duration min_pending_latency = 3;
+      /** Maximum pending latency. 0 is automatic (default). */
+      Duration max_pending_latency = 4;
+
+      /** Number of concurrent requests before respawning a new instance. */
+      uint32 max_concurrent_requests = 5;
+    }
+
+    /** Describes basic scaling parameters. */
+    message BasicScaling {
+      /* Time after last request when instance will be shut down. */
+      Duration idle_timeout = 1;
+      /**
+       * The maximum number of instances to creaet for this version (required).
+       */
+      uint32 max_instances = 2;
+    }
+
+    /** Describes manual scaling parameters. */
+    message ManualScaling {
+      /** The number of instances to assign. */
+      uint32 instances = 1;
+    }
+
+    /** Instance scaling type. */
+    oneof scaling {
+      /** Automatic scaling */
+      AutomaticScaling automatic_scaling = 10;
+      /** Basic scaling */
+      BasicScaling basic_scaling = 11;
+      /** Manual scaling */
+      ManualScaling manual_scaling = 12;
+    }
+  }
+
   /** Parameters for Managed VM */
   message ManagedVmParams {
     /** Scopes are additional service account scopes to include. */
     repeated string scopes = 1;
   }
-  /**
-   * If set, this is a Managed VM AppEngine module, and these are additional
-   * parameters.
-   */
-  ManagedVmParams managed_vm = 10;
+
+  oneof params {
+    /**
+     * If set, this is a Classic AppEngine module, and these are additional
+     * parameters.
+     */
+    ClassicParams classic = 10;
+
+    /**
+     * If set, this is a Managed VM AppEngine module, and these are additional
+     * parameters.
+     */
+    ManagedVmParams managed_vm = 11;
+  }
 
   /** Handler is the set of handlers. */
   message Handler {
@@ -291,6 +387,7 @@ message AppEngineResources {
       int32 retry_min_backoff_seconds = 4;
       int32 retry_max_backoff_seconds = 5;
       int32 retry_max_doublings = 6;
+      int32 max_concurrent_requests = 7;
     }
 
     oneof type {

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/luci/luci-go/common/errors"
@@ -15,6 +16,9 @@ import (
 	"github.com/luci/luci-go/deploytool/api/deploy"
 	"github.com/luci/luci-go/deploytool/managedfs"
 )
+
+// gaeDefaultModule is the name of the default GAE module.
+var gaeDefaultModule = "default"
 
 // gaeDeployment is a consolidated AppEngine deployment configuration. It
 // includes staged configurations for specifically-deployed components, as well
@@ -50,6 +54,10 @@ func (d *gaeDeployment) addModule(module *layoutDeploymentGAEModule) {
 	d.modules[module.ModuleName] = &stagedGAEModule{
 		layoutDeploymentGAEModule: module,
 		gaeDep: d,
+
+		// Default no-op action stubs.
+		localBuildFn: func(*work) error { return nil },
+		pushFn:       func(*work) error { return nil },
 	}
 	d.moduleNames = append(d.moduleNames, module.ModuleName)
 }
@@ -112,7 +120,7 @@ func (d *gaeDeployment) stage(w *work, root *managedfs.Dir, params *deployParams
 		version := module.version.String()
 		moduleName := module.ModuleName
 		if moduleName == "" {
-			moduleName = "default"
+			moduleName = gaeDefaultModule
 		}
 		d.versionModuleMap[version] = append(d.versionModuleMap[version], moduleName)
 	}
@@ -128,9 +136,6 @@ func (d *gaeDeployment) localBuild(w *work) error {
 			module := d.modules[name]
 			workC <- func() error {
 				// Run the module's build function.
-				if module.localBuildFn == nil {
-					return nil
-				}
 				return module.localBuildFn(w)
 			}
 		}
@@ -138,14 +143,25 @@ func (d *gaeDeployment) localBuild(w *work) error {
 }
 
 func (d *gaeDeployment) push(w *work) error {
-	// Run push  operations on modules in parallel.
+	// Always push the default module first and independently, since this is a
+	// GAE requirement for initial deployments.
+	if module := d.modules[gaeDefaultModule]; module != nil {
+		if err := module.pushFn(w); err != nil {
+			return errors.Annotate(err).Reason("failed to push default module").Err()
+		}
+	}
+
+	// Push the remaining GAE modules in parallel.
 	return w.RunMulti(func(workC chan<- func() error) {
 		for _, name := range d.moduleNames {
+			if name == gaeDefaultModule {
+				// (Pushed above)
+				continue
+			}
+
 			module := d.modules[name]
-			if module.pushFn != nil {
-				workC <- func() error {
-					return module.pushFn(w)
-				}
+			workC <- func() error {
+				return module.pushFn(w)
 			}
 		}
 	})
@@ -281,10 +297,18 @@ func (m *stagedGAEModule) stage(w *work, root *managedfs.Dir, params *deployPara
 	// we will panic instead of silently using an empty string.
 	var appYAMLPath *string
 
+	// Our "__deploy" directory will be where deploy-specific artifacts are
+	// blended with the current app. The name is chosen to (probably) not
+	// interfere with app files.
+	deployDir, err := root.EnsureDirectory("__deploy")
+	if err != nil {
+		return errors.Annotate(err).Reason("failed to create deploy directory").Err()
+	}
+
 	// Build each Component. We will delete any existing contents and leave it
 	// unmanaged to allow our build system to put whatever files it wants in
 	// there.
-	buildDir, err := root.EnsureDirectory("build")
+	buildDir, err := deployDir.EnsureDirectory("build")
 	if err != nil {
 		return errors.Annotate(err).Reason("failed to create build directory").Err()
 	}
@@ -327,7 +351,7 @@ func (m *stagedGAEModule) stage(w *work, root *managedfs.Dir, params *deployPara
 		m.goPath = []string{root.String(), goPath.String()}
 
 		// Choose how to push based on whether or not this is a Managed VM.
-		if m.ManagedVm != nil {
+		if m.GetManagedVm() != nil {
 			// If this is a Managed VM, symlink files from the main package.
 			//
 			// NOTE: This has the effect of prohibiting the entry point package for
@@ -375,7 +399,12 @@ func (m *stagedGAEModule) stage(w *work, root *managedfs.Dir, params *deployPara
 	// Build our static files map.
 	//
 	// For each static files directory, symlink a generated directory immediately
-	// under our source.
+	// under our deployment directory.
+	staticDir, err := deployDir.EnsureDirectory("static")
+	if err != nil {
+		return errors.Annotate(err).Reason("failed to create static directory").Err()
+	}
+
 	staticMap := make(map[string]string)
 	staticBuildPathMap := make(map[*deploy.BuildPath]string)
 	if handlerSet := m.Handlers; handlerSet != nil {
@@ -405,12 +434,14 @@ func (m *stagedGAEModule) stage(w *work, root *managedfs.Dir, params *deployPara
 			// Do we already have a static map entry for this filesystem source path?
 			staticName, ok := staticMap[dirPath]
 			if !ok {
-				sd := base.File(fmt.Sprintf("_static_%d", len(staticMap)))
+				sd := staticDir.File(strconv.Itoa(len(staticMap)))
 				if err := sd.SymlinkFrom(dirPath, true); err != nil {
 					return errors.Annotate(err).Reason("failed to symlink static content for [%(path)s]").
 						D("path", dirPath).Err()
 				}
-				staticName = sd.Name()
+				if staticName, err = root.RelPathFrom(sd.String()); err != nil {
+					return errors.Annotate(err).Reason("failed to get relative path").Err()
+				}
 				staticMap[dirPath] = staticName
 			}
 			staticBuildPathMap[bp] = staticName
@@ -482,14 +513,14 @@ func (m *stagedGAEModule) pushClassic(w *work, appYAMLPath string) error {
 	return nil
 }
 
-// localBuildGo performs a local build against a Go binary.
+// localBuildGo performs verification of a Go binary.
 func (m *stagedGAEModule) localBuildGo(w *work, mainPkg string) error {
 	gt, err := w.goTool(m.goPath)
 	if err != nil {
 		return errors.Annotate(err).Reason("failed to get Go tool").Err()
 	}
 	if err := gt.build(w, "", mainPkg); err != nil {
-		return errors.Annotate(err).Reason("failed to build %(pkg)q").D("pkg", mainPkg).Err()
+		return errors.Annotate(err).Reason("failed to local build %(pkg)q").D("pkg", mainPkg).Err()
 	}
 	return nil
 }

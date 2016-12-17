@@ -6,9 +6,99 @@ package deploy
 
 import (
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/luci/luci-go/common/errors"
 )
+
+// AppYAMLString returns the GAE app.yaml string for this Duration.
+func (d *Duration) AppYAMLString() string { return strings.Join(d.appYAMLStringParts(), " ") }
+
+func (d *Duration) appYAMLStringParts() (parts []string) {
+	if d != nil {
+		parts = []string{fmt.Sprintf("%d%s", d.Value, d.Unit.appYAMLSuffix())}
+		for _, plus := range d.Plus {
+			parts = append(parts, plus.appYAMLStringParts()...)
+		}
+	}
+	return
+}
+
+// Duration returns the time.Duration that this Duration describes.
+func (d *Duration) Duration() time.Duration {
+	if d == nil {
+		return 0
+	}
+
+	dv := time.Duration(d.Value) * d.Unit.durationUnit()
+	for _, plus := range d.Plus {
+		dv += plus.Duration()
+	}
+	return dv
+}
+
+func (u Duration_Unit) appYAMLSuffix() string {
+	switch u {
+	case Duration_MILLISECONDS:
+		return "ms"
+	case Duration_SECONDS:
+		return "s"
+	case Duration_MINUTES:
+		return "m"
+	case Duration_HOURS:
+		return "h"
+	case Duration_DAYS:
+		return "d"
+	default:
+		panic(fmt.Errorf("unknown Duration.Unit: %v", u))
+	}
+}
+
+func (u Duration_Unit) durationUnit() time.Duration {
+	switch u {
+	case Duration_MILLISECONDS:
+		return time.Millisecond
+	case Duration_SECONDS:
+		return time.Second
+	case Duration_MINUTES:
+		return time.Minute
+	case Duration_HOURS:
+		return time.Hour
+	case Duration_DAYS:
+		return 24 * time.Hour
+	default:
+		panic(fmt.Errorf("unknown Duration.Unit: %v", u))
+	}
+}
+
+// AppYAMLString returns the "app.yaml" string for this instance class.
+//
+// The supplied prefix is prepended to the instance class string. This prefix
+// will differ based on the type of AppEngine module that the instance class
+// is describing (e.g., for "F_1", the prefix is "F_").
+func (v AppEngineModule_ClassicParams_InstanceClass) AppYAMLString(prefix string) string {
+	var name string
+	switch v {
+	case AppEngineModule_ClassicParams_IC_DEFAULT:
+		return ""
+
+	case AppEngineModule_ClassicParams_IC_1:
+		name = "1"
+	case AppEngineModule_ClassicParams_IC_2:
+		name = "2"
+	case AppEngineModule_ClassicParams_IC_4:
+		name = "4"
+	case AppEngineModule_ClassicParams_IC_4_1G:
+		name = "4_1G"
+	case AppEngineModule_ClassicParams_IC_8:
+		name = "8"
+	default:
+		panic(fmt.Errorf("unknown InstanceClass: %v", v))
+	}
+
+	return prefix + name
+}
 
 // AppYAMLString returns the "app.yaml" string for this option.
 func (v AppEngineModule_Handler_LoginOption) AppYAMLString() string {

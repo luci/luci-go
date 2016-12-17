@@ -18,6 +18,7 @@ It has these top-level messages:
 	GoPath
 	Component
 	BuildPath
+	Duration
 	AppEngineModule
 	AppEngineResources
 	ContainerEnginePod

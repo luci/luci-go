@@ -16,15 +16,56 @@ import (
 
 // gaeAppYAML is a YAML struct for an AppEngine "app.yaml".
 type gaeAppYAML struct {
-	Module     string      `yaml:"module,omitempty"`
-	Runtime    string      `yaml:"runtime,omitempty"`
-	ThreadSafe *bool       `yaml:"threadsafe,omitempty"`
-	APIVersion interface{} `yaml:"api_version,omitempty"`
-	VM         bool        `yaml:"vm,omitempty"`
+	Module        string      `yaml:"module,omitempty"`
+	Runtime       string      `yaml:"runtime,omitempty"`
+	ThreadSafe    *bool       `yaml:"threadsafe,omitempty"`
+	APIVersion    interface{} `yaml:"api_version,omitempty"`
+	VM            bool        `yaml:"vm,omitempty"`
+	InstanceClass string      `yaml:"instance_class,omitempty"`
+
+	AutomaticScaling *gaeAppAutomaticScalingParams `yaml:"automatic_scaling,omitempty"`
+	BasicScaling     *gaeAppBasicScalingParams     `yaml:"basic_scaling,omitempty"`
+	ManualScaling    *gaeAppManualScalingParams    `yaml:"manual_scaling,omitempty"`
 
 	BetaSettings *gaeAppYAMLBetaSettings `yaml:"beta_settings,omitempty"`
 
 	Handlers []*gaeAppYAMLHandler `yaml:"handlers,omitempty"`
+}
+
+// gaeAppAutomaticScalingParams is the combined set of scaling parameters for
+// automatic scaling.
+type gaeAppAutomaticScalingParams struct {
+	MinIdleInstances      *int   `yaml:"min_idle_instances,omitempty"`
+	MaxIdleInstances      *int   `yaml:"max_idle_instances,omitempty"`
+	MinPendingLatency     string `yaml:"min_pending_latency,omitempty"`
+	MaxPendingLatency     string `yaml:"max_pending_latency,omitempty"`
+	MaxConcurrentRequests *int   `yaml:"max_concurrent_requests,omitempty"`
+}
+
+// gaeAppBasicScalingParams is the combined set of scaling parameters for
+// basic scaling.
+type gaeAppBasicScalingParams struct {
+	IdleTimeout  string `yaml:"idle_timeout,omitempty"`
+	MaxInstances int    `yaml:"max_instances"`
+}
+
+// gaeAppManualScalingParams is the combined set of scaling parameters for
+// manual scaling.
+type gaeAppManualScalingParams struct {
+	Instances int `yaml:"instances"`
+}
+
+// gaeAppYAMLBuiltIns is the set of builtin options that can be enabled. Any
+// enabled option will have the value, "on".
+type gaeAppYAMLBuiltIns struct {
+	AppStats  string `yaml:"appstats,omitempty"`
+	RemoteAPI string `yaml:"remote_api,omitempty"`
+	Deferred  string `yaml:"deferred,omitempty"`
+}
+
+type gaeLibrary struct {
+	Name    string `yaml:"name"`
+	Version string `yaml:"version,omitempty"`
 }
 
 // gaeAppYAMLBetaSettings is a YAML struct for an AppEngine "app.yaml"
@@ -45,6 +86,9 @@ type gaeAppYAMLHandler struct {
 	StaticDir   string `yaml:"static_dir,omitempty"`
 	StaticFiles string `yaml:"static_files,omitempty"`
 	Upload      string `yaml:"upload,omitempty"`
+	Expiration  string `yaml:"expiration,omitempty"`
+
+	HTTPHeaders map[string]string `yaml:"http_headers,omitempty"`
 }
 
 // gaeCronYAML is a YAML struct for an AppEngine "cron.yaml".
@@ -68,7 +112,7 @@ type gaeIndexYAML struct {
 // gaeIndexYAMLEntry is a YAML struct for an AppEngine "index.yaml" entry.
 type gaeIndexYAMLEntry struct {
 	Kind       string                       `yaml:"kind"`
-	Ancestor   string                       `yaml:"ancestor,omitempty"`
+	Ancestor   interface{}                  `yaml:"ancestor,omitempty"`
 	Properties []*gaeIndexYAMLEntryProperty `yaml:"properties"`
 }
 
@@ -100,11 +144,12 @@ type gaeQueueYAMLEntry struct {
 	Name string `yaml:"name"`
 	Mode string `yaml:"mode"`
 
-	Rate                  string                            `yaml:"rate,omitempty"`
-	BucketSize            int                               `yaml:"bucket_size,omitempty"`
-	MaxConcurrentRequests int                               `yaml:"max_concurrent_requests,omitempty"`
-	RetryParameters       *gaeQueueYAMLEntryRetryParameters `yaml:"retry_parameters,omitempty"`
-	Target                string                            `yaml:"target,omitempty"`
+	Rate                  string `yaml:"rate,omitempty"`
+	BucketSize            int    `yaml:"bucket_size,omitempty"`
+	MaxConcurrentRequests int    `yaml:"max_concurrent_requests,omitempty"`
+	Target                string `yaml:"target,omitempty"`
+
+	RetryParameters *gaeQueueYAMLEntryRetryParameters `yaml:"retry_parameters,omitempty"`
 }
 
 // gaeQueueYAMLEntryRetryParameters is a YAML struct for an AppEngine
@@ -130,7 +175,7 @@ func gaeBuildAppYAML(aem *deploy.AppEngineModule, staticMap map[*deploy.BuildPat
 	case *deploy.AppEngineModule_GoModule_:
 		appYAML.Runtime = "go"
 
-		if aem.ManagedVm != nil {
+		if aem.GetManagedVm() != nil {
 			appYAML.APIVersion = 1
 			appYAML.VM = true
 		} else {
@@ -151,10 +196,50 @@ func gaeBuildAppYAML(aem *deploy.AppEngineModule, staticMap map[*deploy.BuildPat
 		return nil, errors.Reason("unsupported runtime %(runtime)q").D("runtime", aem.Runtime).Err()
 	}
 
-	if mvm := aem.ManagedVm; mvm != nil {
-		if len(mvm.Scopes) > 0 {
+	// Classic / Managed VM Properties
+	switch p := aem.GetParams().(type) {
+	case *deploy.AppEngineModule_Classic:
+		var icPrefix string
+		switch sc := p.Classic.GetScaling().(type) {
+		case nil:
+			// (Automatic, default).
+			icPrefix = "F"
+
+		case *deploy.AppEngineModule_ClassicParams_AutomaticScaling_:
+			as := sc.AutomaticScaling
+			appYAML.AutomaticScaling = &gaeAppAutomaticScalingParams{
+				MinIdleInstances:      intPtrOrNilIfZero(as.MinIdleInstances),
+				MaxIdleInstances:      intPtrOrNilIfZero(as.MaxIdleInstances),
+				MinPendingLatency:     as.MinPendingLatency.AppYAMLString(),
+				MaxPendingLatency:     as.MaxPendingLatency.AppYAMLString(),
+				MaxConcurrentRequests: intPtrOrNilIfZero(as.MaxConcurrentRequests),
+			}
+			icPrefix = "F"
+
+		case *deploy.AppEngineModule_ClassicParams_BasicScaling_:
+			bs := sc.BasicScaling
+			appYAML.BasicScaling = &gaeAppBasicScalingParams{
+				IdleTimeout:  bs.IdleTimeout.AppYAMLString(),
+				MaxInstances: int(bs.MaxInstances),
+			}
+			icPrefix = "B"
+
+		case *deploy.AppEngineModule_ClassicParams_ManualScaling_:
+			ms := sc.ManualScaling
+			appYAML.ManualScaling = &gaeAppManualScalingParams{
+				Instances: int(ms.Instances),
+			}
+			icPrefix = "B"
+
+		default:
+			return nil, errors.Reason("unknown scaling type %(type)T").D("type", sc).Err()
+		}
+		appYAML.InstanceClass = p.Classic.InstanceClass.AppYAMLString(icPrefix)
+
+	case *deploy.AppEngineModule_ManagedVm:
+		if scopes := p.ManagedVm.Scopes; len(scopes) > 0 {
 			appYAML.BetaSettings = &gaeAppYAMLBetaSettings{
-				ServiceAccountScopes: strings.Join(mvm.Scopes, ","),
+				ServiceAccountScopes: strings.Join(scopes, ","),
 			}
 		}
 	}
@@ -228,9 +313,7 @@ func gaeBuildIndexYAML(cp *layoutDeploymentCloudProject) *gaeIndexYAML {
 		entry := gaeIndexYAMLEntry{
 			Kind:       index.Kind,
 			Properties: make([]*gaeIndexYAMLEntryProperty, len(index.Property)),
-		}
-		if index.Ancestor {
-			entry.Ancestor = "yes"
+			Ancestor:   index.Ancestor,
 		}
 		for i, prop := range index.Property {
 			entry.Properties[i] = &gaeIndexYAMLEntryProperty{
@@ -277,6 +360,7 @@ func gaeBuildQueueYAML(cp *layoutDeploymentCloudProject) (*gaeQueueYAML, error) 
 				entry.Mode = "push"
 				entry.Rate = push.Rate
 				entry.BucketSize = int(push.BucketSize)
+				entry.MaxConcurrentRequests = int(push.MaxConcurrentRequests)
 				entry.RetryParameters = &gaeQueueYAMLEntryRetryParameters{
 					TaskAgeLimit:      push.RetryTaskAgeLimit,
 					MinBackoffSeconds: int(push.RetryMinBackoffSeconds),
@@ -314,7 +398,7 @@ func loadIndexYAMLResource(path string) (*deploy.AppEngineResources, error) {
 		for i, idx := range indexYAML.Indexes {
 			entry := deploy.AppEngineResources_Index{
 				Kind:     idx.Kind,
-				Ancestor: (idx.Ancestor == "yes"),
+				Ancestor: yesOrBoolToBool(idx.Ancestor),
 				Property: make([]*deploy.AppEngineResources_Index_Property, len(idx.Properties)),
 			}
 			for pidx, idxProp := range idx.Properties {
@@ -334,4 +418,24 @@ func loadIndexYAMLResource(path string) (*deploy.AppEngineResources, error) {
 		}
 	}
 	return &res, nil
+}
+
+func intPtrOrNilIfZero(v uint32) *int {
+	if v == 0 {
+		return nil
+	}
+
+	value := int(v)
+	return &value
+}
+
+func yesOrBoolToBool(v interface{}) bool {
+	switch t := v.(type) {
+	case string:
+		return (t == "yes")
+	case bool:
+		return t
+	default:
+		return false
+	}
 }
