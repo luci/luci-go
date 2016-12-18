@@ -5,7 +5,6 @@
 package coordinator
 
 import (
-	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -331,19 +330,22 @@ func (s *prodServicesInst) ArchivalPublisher(c context.Context) (ArchivalPublish
 	project, topic := fullTopic.Split()
 
 	// Create an authenticated Pub/Sub client.
-	transport, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(pubsub.PublisherScopes...))
+	creds, err := auth.GetPerRPCCredentials(auth.AsSelf, auth.WithScopes(pubsub.PublisherScopes...))
 	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create Pub/Sub authenticator.")
-		return nil, errors.New("failed to create Pub/Sub authenticator")
+		log.WithError(err).Errorf(c, "Failed to create Pub/Sub credentials.")
+		return nil, errors.New("failed to create Pub/Sub credentials")
 	}
-	client := &http.Client{Transport: transport}
-	psClient, err := gcps.NewClient(c, project, option.WithHTTPClient(client))
+	// Don't pass gRPC metadata to PubSub.
+	psClient, err := gcps.NewClient(
+		metadata.NewContext(c, nil), project,
+		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create Pub/Sub client.")
 		return nil, errors.New("failed to create Pub/Sub client")
 	}
 
 	return &pubsubArchivalPublisher{
+		client:           psClient,
 		topic:            psClient.Topic(topic),
 		publishIndexFunc: s.nextArchiveIndex,
 	}, nil

@@ -47,6 +47,11 @@ func (m *CreateArchiveTask) RollForward(c context.Context) ([]tumble.Mutation, e
 		log.WithError(err).Errorf(c, "Failed to get archival publisher.")
 		return nil, err
 	}
+	defer func() {
+		if err := ap.Close(); err != nil {
+			log.WithError(err).Warningf(c, "Failed to close archival publisher.")
+		}
+	}()
 
 	// Get the log stream.
 	state := m.logStream().State(c)

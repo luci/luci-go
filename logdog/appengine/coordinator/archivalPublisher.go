@@ -17,6 +17,9 @@ import (
 
 // ArchivalPublisher is capable of publishing archival requests.
 type ArchivalPublisher interface {
+	// Close shutdowns this publisher, releasing all its resources.
+	Close() error
+
 	// Publish publishes the supplied ArchiveTask.
 	Publish(context.Context, *logdog.ArchiveTask) error
 
@@ -26,12 +29,19 @@ type ArchivalPublisher interface {
 }
 
 type pubsubArchivalPublisher struct {
+	// client is Pub/Sub client used by the publisher.
+	client *gcps.Client
+
 	// topic is the authenticated Pub/Sub topic handle to publish to.
 	topic *gcps.Topic
 
 	// publishIndexFunc is a function that will return a unique publish index
 	// for this request.
 	publishIndexFunc func() uint64
+}
+
+func (p *pubsubArchivalPublisher) Close() error {
+	return p.client.Close()
 }
 
 func (p *pubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTask) error {

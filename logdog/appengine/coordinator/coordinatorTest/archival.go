@@ -5,6 +5,7 @@
 package coordinatorTest
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 
@@ -22,16 +23,33 @@ type ArchivalPublisher struct {
 	// Err, if not nil, is the error returned by Publish.
 	Err error
 
+	closed        bool
 	tasks         []*logdog.ArchiveTask
 	archivalIndex uint64
 }
 
 var _ coordinator.ArchivalPublisher = (*ArchivalPublisher)(nil)
 
+func (ap *ArchivalPublisher) Close() error {
+	ap.Lock()
+	defer ap.Unlock()
+
+	if ap.closed {
+		return fmt.Errorf("already closed")
+	}
+	ap.closed = true
+
+	return nil
+}
+
 // Publish implements coordinator.ArchivalPublisher.
 func (ap *ArchivalPublisher) Publish(c context.Context, at *logdog.ArchiveTask) error {
 	ap.Lock()
 	defer ap.Unlock()
+
+	if ap.closed {
+		return fmt.Errorf("closed")
+	}
 
 	if err := ap.Err; err != nil {
 		return err
