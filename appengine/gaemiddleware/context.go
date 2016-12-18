@@ -90,13 +90,27 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 	c = config.SetImplementation(c, gaeconfig.New(c))
 	c = gaesecrets.Use(c, nil)
 	c = auth.SetConfig(c, globalAuthConfig)
+
+	// Wrap this in a cache context so that lookups for any of the aforementioned
+	// items are fast.
 	return cacheContext.Wrap(c)
 }
 
 // ProdServices is a middleware that installs the set of standard production
 // AppEngine services by calling WithProd.
 func ProdServices(c *router.Context, next router.Handler) {
+	// Create a cancelable Context that cancels when this request finishes.
+	//
+	// We do this because Contexts will leak resources and/or goroutines if they
+	// have timers or can be canceled, but aren't. Predictably canceling the
+	// parent will ensure that any such resource leaks are cleaned up.
+	var cancelFunc context.CancelFunc
+	c.Context, cancelFunc = context.WithCancel(c.Context)
+	defer cancelFunc()
+
+	// Apply production settings.
 	c.Context = WithProd(c.Context, c.Request)
+
 	next(c)
 }
 
