@@ -22,6 +22,7 @@ import (
 	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints/registration"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints/services"
 	"github.com/luci/luci-go/server/router"
+
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
@@ -45,8 +46,9 @@ func main() {
 	discovery.Enable(&svr)
 
 	// Standard HTTP endpoints.
-	gaemiddleware.InstallHandlers(r, coordinator.ProdServices())
-	svr.InstallHandlers(r, coordinator.ProdServices())
+	base := gaemiddleware.BaseProd().Extend(coordinator.ProdCoordinatorService)
+	gaemiddleware.InstallHandlers(r, base)
+	svr.InstallHandlers(r, base)
 
 	// Redirect "/" to "/app/".
 	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {

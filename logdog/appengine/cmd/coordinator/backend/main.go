@@ -7,6 +7,7 @@ package module
 import (
 	"net/http"
 
+	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/tumble"
@@ -20,7 +21,9 @@ func init() {
 	tmb := tumble.Service{}
 
 	r := router.New()
-	tmb.InstallHandlers(r, coordinator.ProdServices())
+	base := gaemiddleware.BaseProd().Extend(coordinator.ProdCoordinatorService)
+	tmb.InstallHandlers(r, base)
+	gaemiddleware.InstallHandlers(r, base)
 
 	http.Handle("/", r)
 }

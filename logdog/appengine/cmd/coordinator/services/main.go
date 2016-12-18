@@ -7,6 +7,7 @@ package module
 import (
 	"net/http"
 
+	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/grpc/prpc"
 	registrationPb "github.com/luci/luci-go/logdog/api/endpoints/coordinator/registration/v1"
 	servicesPb "github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
@@ -30,7 +31,8 @@ func init() {
 	registrationPb.RegisterRegistrationServer(&svr, registration.New())
 
 	// Standard HTTP endpoints.
-	svr.InstallHandlers(r, coordinator.ProdServices())
+	base := gaemiddleware.BaseProd().Extend(coordinator.ProdCoordinatorService)
+	svr.InstallHandlers(r, base)
 
 	http.Handle("/", r)
 }

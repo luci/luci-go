@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/appengine/gaeauth/server/gaesigner"
-	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/common/clock"
 	luciConfig "github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
@@ -85,15 +84,12 @@ type Services interface {
 	ArchivalPublisher(context.Context) (ArchivalPublisher, error)
 }
 
-// ProdServices is middleware chain used by Coordinator services.
+// ProdCoordinatorService is Middleware used by Coordinator services.
 //
-// It sets up basic GAE functionality as well as installs a production Services
-// instance.
-func ProdServices() router.MiddlewareChain {
-	return gaemiddleware.BaseProd().Extend(func(c *router.Context, next router.Handler) {
-		c.Context = WithServices(c.Context, &prodServicesInst{})
-		next(c)
-	})
+// It installs a production Services instance into the Context.
+func ProdCoordinatorService(c *router.Context, next router.Handler) {
+	c.Context = WithServices(c.Context, &prodServicesInst{})
+	next(c)
 }
 
 // prodServicesInst is a Service exposing production faciliites. A unique
