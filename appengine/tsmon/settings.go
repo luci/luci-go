@@ -103,7 +103,9 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 			Help: "If not enabled, all metrics manipulations are ignored and the " +
 				"monitoring has zero runtime overhead. If enabled, will keep track of metrics " +
 				"values in memory and will periodically flush them to PubSub (if PubSub endpoint " +
-				"is configured, see below) or GAE log (if not configured).",
+				"is configured, see below) or GAE log (if not configured). Note that enabling " +
+				"this field requires an active housekeeping cron task to be installed. See " +
+				"https://godoc.org/github.com/luci/luci-go/appengine/tsmon for more information.",
 		}),
 		{
 			ID:    "PubsubProject",

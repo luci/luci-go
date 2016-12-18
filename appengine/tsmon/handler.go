@@ -9,14 +9,17 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/gae/filter/dsQueryBatch"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
+
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/server/router"
 )
+
+const housekeepingInstanceBatchSize = 200
 
 // InstallHandlers installs HTTP handlers for tsmon routes.
 func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
@@ -46,22 +49,47 @@ func housekeepingHandler(c *router.Context) {
 func assignTaskNumbers(c context.Context) error {
 	c = info.MustNamespace(c, instanceNamespace)
 
-	logger := logging.Get(c)
 	now := clock.Now(c)
 	expiredTime := now.Add(-instanceExpirationTimeout)
 
 	usedTaskNums := map[int]struct{}{}
-	var expiredKeys []*ds.Key
+	totalExpired := 0
+
+	expiredKeys := make([]*ds.Key, 0, housekeepingInstanceBatchSize)
 	var unassigned []*instance
 
+	// expireInstanceBatch processes the set of instances in "expiredKeys",
+	// deletes them, and clears the list for the next iteration.
+	//
+	// We do this in batches to handle large numbers without inflating memory
+	// requirements. If there are any timeouts or problems, this will also enable
+	// us to iteratively chip away at the problem.
+	expireInstanceBatch := func(c context.Context) error {
+		if len(expiredKeys) == 0 {
+			return nil
+		}
+
+		logging.Debugf(c, "Expiring %d instance(s)", len(expiredKeys))
+		if err := ds.Delete(c, expiredKeys); err != nil {
+			logging.WithError(err).Errorf(c, "Failed to expire instances.")
+			return err
+		}
+
+		// Clear the instances list for next round.
+		totalExpired += len(expiredKeys)
+		expiredKeys = expiredKeys[:0]
+		return nil
+	}
+
 	// Query all instances from datastore.
-	if err := ds.Run(c, ds.NewQuery("Instance"), func(i *instance) {
+	q := ds.NewQuery("Instance")
+	if err := ds.Run(dsQueryBatch.BatchQueries(c, housekeepingInstanceBatchSize, expireInstanceBatch), q, func(i *instance) {
 		if i.TaskNum >= 0 {
 			usedTaskNums[i.TaskNum] = struct{}{}
 		}
 		if i.LastUpdated.Before(expiredTime) {
 			expiredKeys = append(expiredKeys, ds.NewKey(c, "Instance", i.ID, 0, nil))
-			logger.Debugf("Expiring %s task_num %d, inactive since %s",
+			logging.Debugf(c, "Expiring %s task_num %d, inactive since %s",
 				i.ID, i.TaskNum, i.LastUpdated.String())
 		} else if i.TaskNum < 0 {
 			unassigned = append(unassigned, i)
@@ -71,25 +99,24 @@ func assignTaskNumbers(c context.Context) error {
 		return err
 	}
 
-	logger.Debugf("Found %d expired and %d unassigned instances",
-		len(expiredKeys), len(unassigned))
+	// Final expiration round.
+	if err := expireInstanceBatch(c); err != nil {
+		logging.WithError(err).Debugf(c, "Failed to expire final instance batch.")
+		return err
+	}
+
+	logging.Debugf(c, "Found %d expired and %d unassigned instances",
+		totalExpired, len(unassigned))
 
 	// Assign task numbers to those that don't have one assigned yet.
 	nextNum := gapFinder(usedTaskNums)
 	for _, i := range unassigned {
 		i.TaskNum = nextNum()
-		logger.Debugf("Assigned %s task_num %d", i.ID, i.TaskNum)
+		logging.Debugf(c, "Assigned %s task_num %d", i.ID, i.TaskNum)
 	}
 
 	// Update all the entities in datastore.
-	if err := parallel.FanOutIn(func(gen chan<- func() error) {
-		gen <- func() error {
-			return ds.Put(c, unassigned)
-		}
-		gen <- func() error {
-			return ds.Delete(c, expiredKeys)
-		}
-	}); err != nil {
+	if err := ds.Put(c, unassigned); err != nil {
 		logging.WithError(err).Errorf(c, "Failed to update task numbers")
 		return err
 	}

@@ -140,28 +140,38 @@ func TestHousekeepingHandler(t *testing.T) {
 	Convey("Expires old instances", t, func() {
 		c, clock := buildGAETestContext()
 
-		oldInstance := instance{
-			ID:          "foobar",
-			TaskNum:     0,
-			LastUpdated: clock.Now(),
+		for _, count := range []int{1, housekeepingInstanceBatchSize + 1} {
+			Convey(fmt.Sprintf("Count: %d", count), func() {
+				insts := make([]*instance, count)
+				keys := make([]*ds.Key, count)
+				for i := 0; i < count; i++ {
+					insts[i] = &instance{
+						ID:          fmt.Sprintf("foobar_%d", i),
+						TaskNum:     i,
+						LastUpdated: clock.Now(),
+					}
+					keys[i] = ds.KeyForObj(c, insts[i])
+				}
+				So(ds.Put(c, insts), ShouldBeNil)
+
+				exists, err := ds.Exists(c, keys)
+				So(err, ShouldBeNil)
+				So(exists.All(), ShouldBeTrue)
+
+				clock.Add(instanceExpirationTimeout + time.Second)
+
+				rec := httptest.NewRecorder()
+				housekeepingHandler(&router.Context{
+					Context: c,
+					Writer:  rec,
+					Request: &http.Request{},
+				})
+				So(rec.Code, ShouldEqual, http.StatusOK)
+
+				exists, err = ds.Exists(c, keys)
+				So(err, ShouldBeNil)
+				So(exists.Any(), ShouldBeFalse)
+			})
 		}
-		So(ds.Put(c, &oldInstance), ShouldBeNil)
-		exists, err := ds.Exists(c, ds.NewKey(c, "Instance", "foobar", 0, nil))
-		So(err, ShouldBeNil)
-		So(exists.All(), ShouldBeTrue)
-
-		clock.Add(instanceExpirationTimeout + time.Second)
-
-		rec := httptest.NewRecorder()
-		housekeepingHandler(&router.Context{
-			Context: c,
-			Writer:  rec,
-			Request: &http.Request{},
-		})
-		So(rec.Code, ShouldEqual, http.StatusOK)
-
-		exists, err = ds.Exists(c, ds.NewKey(c, "Instance", "foobar", 0, nil))
-		So(err, ShouldBeNil)
-		So(exists.All(), ShouldBeFalse)
 	})
 }
