@@ -5,6 +5,7 @@
 package coordinator
 
 import (
+	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -29,6 +30,7 @@ import (
 	gcst "cloud.google.com/go/storage"
 	"golang.org/x/net/context"
 	"google.golang.org/api/option"
+	"google.golang.org/appengine"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -88,7 +90,9 @@ type Services interface {
 //
 // It installs a production Services instance into the Context.
 func ProdCoordinatorService(c *router.Context, next router.Handler) {
-	c.Context = WithServices(c.Context, &prodServicesInst{})
+	c.Context = WithServices(c.Context, &prodServicesInst{
+		req: c.Request,
+	})
 	next(c)
 }
 
@@ -96,6 +100,10 @@ func ProdCoordinatorService(c *router.Context, next router.Handler) {
 // instance is bound to each each request.
 type prodServicesInst struct {
 	sync.Mutex
+
+	// req is the request that is being serviced. This is populated when the
+	// service is installed via ProdCoordinatorService.
+	req *http.Request
 
 	// gcfg is the cached global configuration.
 	gcfg           *config.Config
@@ -331,9 +339,12 @@ func (s *prodServicesInst) ArchivalPublisher(c context.Context) (ArchivalPublish
 		log.WithError(err).Errorf(c, "Failed to create Pub/Sub credentials.")
 		return nil, errors.New("failed to create Pub/Sub credentials")
 	}
-	// Don't pass gRPC metadata to PubSub.
-	psClient, err := gcps.NewClient(
-		metadata.NewContext(c, nil), project,
+
+	// Create a new AppEngine context. Don't pass gRPC metadata to PubSub, since
+	// we don't want any caller RPC to be forwarded to the backend service.
+	aeCtx := appengine.WithContext(metadata.NewContext(c, nil), s.req)
+
+	psClient, err := gcps.NewClient(aeCtx, project,
 		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create Pub/Sub client.")
