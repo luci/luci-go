@@ -7,6 +7,9 @@ package main
 import (
 	"net/http"
 
+	// Importing pprof implicitly installs "/debug/*" profiling handlers.
+	_ "net/http/pprof"
+
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/grpc/discovery"
