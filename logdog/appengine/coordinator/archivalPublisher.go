@@ -17,7 +17,7 @@ import (
 
 // ArchivalPublisher is capable of publishing archival requests.
 type ArchivalPublisher interface {
-	// Close shutdowns this publisher, releasing all its resources.
+	// Close shutdowns this publisher instance, releasing all its resources.
 	Close() error
 
 	// Publish publishes the supplied ArchiveTask.
@@ -30,6 +30,9 @@ type ArchivalPublisher interface {
 
 type pubsubArchivalPublisher struct {
 	// client is Pub/Sub client used by the publisher.
+	//
+	// This client is owned by the prodServicesInst that created this instnace,
+	// and should not be closed on shutdown here.
 	client *gcps.Client
 
 	// topic is the authenticated Pub/Sub topic handle to publish to.
@@ -40,9 +43,7 @@ type pubsubArchivalPublisher struct {
 	publishIndexFunc func() uint64
 }
 
-func (p *pubsubArchivalPublisher) Close() error {
-	return p.client.Close()
-}
+func (p *pubsubArchivalPublisher) Close() error { return nil }
 
 func (p *pubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTask) error {
 	d, err := proto.Marshal(t)
