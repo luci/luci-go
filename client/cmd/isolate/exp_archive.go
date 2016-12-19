@@ -13,6 +13,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"time"
 
@@ -49,6 +50,8 @@ var cmdExpArchive = &subcommands.Command{
 		c := &expArchiveRun{}
 		c.commonServerFlags.Init()
 		c.isolateFlags.Init(&c.Flags)
+		c.Flags.StringVar(&c.dumpJSON, "dump-json", "",
+			"Write isolated digests of archived trees to this file as JSON")
 		return c
 	},
 }
@@ -58,6 +61,7 @@ var cmdExpArchive = &subcommands.Command{
 type expArchiveRun struct {
 	commonServerFlags // Provides the GetFlags method.
 	isolateFlags      isolateFlags
+	dumpJSON          string
 }
 
 // Item represents a file or symlink referenced by an isolate file.
@@ -252,6 +256,25 @@ func (c *expArchiveRun) main() error {
 		return err
 	}
 	fmt.Printf("%s\t%s\n", isolItem.Digest, filepath.Base(archiveOpts.Isolated))
+
+	// Optionally, write the digest of the isolated file as JSON (in the same
+	// format as batch_archive).
+	if c.dumpJSON != "" {
+		// The name is the base name of the isolated file, extension stripped.
+		name := filepath.Base(archiveOpts.Isolated)
+		if i := strings.LastIndex(name, "."); i != -1 {
+			name = name[:i]
+		}
+		j, err := json.Marshal(map[string]isolated.HexDigest{
+			name: isolItem.Digest,
+		})
+		if err != nil {
+			return err
+		}
+		if err := ioutil.WriteFile(c.dumpJSON, j, 0644); err != nil {
+			return err
+		}
+	}
 
 	end := time.Now()
 
