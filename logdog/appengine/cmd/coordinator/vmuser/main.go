@@ -2,7 +2,7 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-package main
+package module
 
 import (
 	"net/http"
@@ -27,7 +27,6 @@ import (
 	"github.com/luci/luci-go/server/router"
 
 	"golang.org/x/net/context"
-	"google.golang.org/appengine"
 
 	// Include mutations package so its Mutations will register with tumble via
 	// init().
@@ -35,7 +34,7 @@ import (
 )
 
 // Run installs and executes this site.
-func main() {
+func init() {
 	r := router.New()
 
 	// Setup Cloud Endpoints.
@@ -59,7 +58,6 @@ func main() {
 	})
 
 	http.Handle("/", r)
-	appengine.Main()
 }
 
 func accessControl(c context.Context, origin string) bool {

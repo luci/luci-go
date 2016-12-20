@@ -257,12 +257,13 @@ func (s *prodServicesInst) newBigTableStorage(c context.Context) (Storage, error
 		return nil, errors.New("failed to create BigTable credentials")
 	}
 
+	// Use an AppEngine Context so we have access to the socket API. This is
+	// needed by AppEngine Classic for gRPC connections.
+	//
 	// Explicitly clear gRPC metadata from the Context. It is forwarded to
 	// delegate calls by default, and standard request metadata can break BigTable
 	// calls.
-	c = metadata.NewContext(c, nil)
-
-	st, err := bigtable.New(c, bigtable.Options{
+	st, err := bigtable.New(metadata.NewContext(s.aeCtx, nil), bigtable.Options{
 		Project:  bt.Project,
 		Instance: bt.Instance,
 		LogTable: bt.LogTableName,
