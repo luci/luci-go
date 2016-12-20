@@ -130,8 +130,8 @@ const minAcceptedLifetime = 2 * time.Minute
 type Options struct {
 	// Transport is underlying round tripper to use for requests.
 	//
-	// If nil, will be extracted from the context. If not there,
-	// http.DefaultTransport will be used.
+	// If not there, http.DefaultTransport will be used. The transport MUST be
+	// provided if running on GAE (http.DefaultTransport doesn't work there).
 	Transport http.RoundTripper
 
 	// Method defaults to AutoSelectMethod.
@@ -235,9 +235,7 @@ func NewAuthenticator(ctx context.Context, loginMode LoginMode, opts Options) *A
 		opts.GCEAccountName = "default"
 	}
 	if opts.Transport == nil {
-		// Note: TransportFromContext returns http.DefaultTransport if the context
-		// doesn't have a transport set.
-		opts.Transport = internal.TransportFromContext(ctx)
+		opts.Transport = http.DefaultTransport
 	}
 
 	// See ensureInitialized for the rest of the initialization.

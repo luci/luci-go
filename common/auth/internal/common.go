@@ -7,7 +7,6 @@ package internal
 
 import (
 	"encoding/json"
-	"net/http"
 	"strings"
 	"time"
 
@@ -54,18 +53,6 @@ type TokenProvider interface {
 	// and returns a new refreshed token. It should never do any user interaction.
 	// If a user interaction is required, a error should be returned instead.
 	RefreshToken(*oauth2.Token) (*oauth2.Token, error)
-}
-
-// TransportFromContext returns http.RoundTripper buried inside the given
-// context.
-func TransportFromContext(ctx context.Context) http.RoundTripper {
-	// When nil is passed to NewClient it skips all OAuth stuff and returns
-	// client extracted from the context or http.DefaultClient.
-	c := oauth2.NewClient(ctx, nil)
-	if c == http.DefaultClient {
-		return http.DefaultTransport
-	}
-	return c.Transport
 }
 
 // MarshalToken converts a token into byte buffer.
