@@ -11,9 +11,10 @@ package distribution
 type Distribution struct {
 	b *Bucketer
 
-	buckets []int64
-	count   int64
-	sum     float64
+	buckets           []int64
+	count             int64
+	sum               float64
+	lastNonZeroBucket int
 }
 
 // New creates a new distribution using the given bucketer.  Passing a nil
@@ -22,7 +23,7 @@ func New(b *Bucketer) *Distribution {
 	if b == nil {
 		b = DefaultBucketer
 	}
-	return &Distribution{b: b}
+	return &Distribution{b: b, lastNonZeroBucket: -1}
 }
 
 // Add adds the sample to the distribution and updates the statistics.
@@ -34,6 +35,9 @@ func (d *Distribution) Add(sample float64) {
 	d.buckets[i]++
 	d.sum += sample
 	d.count++
+	if i > d.lastNonZeroBucket {
+		d.lastNonZeroBucket = i
+	}
 }
 
 // Bucketer returns the bucketer used in this distribution.
@@ -48,3 +52,7 @@ func (d *Distribution) Count() int64 { return d.count }
 
 // Sum returns the sum of all samples passed to Add.
 func (d *Distribution) Sum() float64 { return d.sum }
+
+// LastNonZeroBucket returns the index into Buckets() of the last bucket that
+// is set (non-zero).  Returns -1 if Count() == 0.
+func (d *Distribution) LastNonZeroBucket() int { return d.lastNonZeroBucket }

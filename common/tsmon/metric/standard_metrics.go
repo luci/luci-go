@@ -99,7 +99,6 @@ var (
 		field.Int("status"),    // HTTP status code
 		field.String("name"),   // URL template
 		field.Bool("is_robot")) // If request is made by a bot
-
 )
 
 func init() {
@@ -112,16 +111,12 @@ func registerCallbacks(ctx context.Context) {
 	})
 }
 
-const (
-	millisecondsInASecond = 1000.0
-)
-
 // UpdateHTTPMetrics updates the metrics for a request to a remote server.
 func UpdateHTTPMetrics(ctx context.Context, name string, client string,
 	code int, duration time.Duration, requestBytes int64, responseBytes int64) {
 	requestBytesMetric.Add(ctx, float64(requestBytes), name, client)
 	responseBytesMetric.Add(ctx, float64(responseBytes), name, client)
-	requestDurationsMetric.Add(ctx, duration.Seconds()*millisecondsInASecond, name, client)
+	requestDurationsMetric.Add(ctx, float64(int64(duration)/int64(time.Millisecond)), name, client)
 	responseStatusMetric.Add(ctx, 1, code, name, client)
 }
 
@@ -132,8 +127,7 @@ func UpdateServerMetrics(ctx context.Context, name string, code int,
 	isRobot := (strings.Contains(userAgent, "GoogleBot") ||
 		strings.Contains(userAgent, "GoogleSecurityScanner") ||
 		userAgent == "B3M/prober")
-	serverDurationsMetric.Add(ctx, duration.Seconds()*millisecondsInASecond,
-		code, name, isRobot)
+	serverDurationsMetric.Add(ctx, float64(int64(duration)/int64(time.Millisecond)), code, name, isRobot)
 	serverResponseStatusMetric.Add(ctx, 1, code, name, isRobot)
 	serverRequestBytesMetric.Add(ctx, float64(requestBytes), code, name, isRobot)
 	serverResponseBytesMetric.Add(ctx, float64(responseBytes), code, name, isRobot)

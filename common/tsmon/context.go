@@ -188,10 +188,9 @@ func WithFakes(c context.Context) (context.Context, *store.Fake, *monitor.Fake) 
 // WithDummyInMemory returns a new context holding a new State with a new in-
 // memory store and a fake monitor.
 func WithDummyInMemory(c context.Context) (context.Context, *monitor.Fake) {
-	s := store.NewInMemory(&target.Task{})
 	m := &monitor.Fake{}
 	return WithState(c, &State{
-		S:                 s,
+		S:                 store.NewInMemory(&target.Task{}),
 		M:                 m,
 		RegisteredMetrics: map[string]types.Metric{},
 	}), m
