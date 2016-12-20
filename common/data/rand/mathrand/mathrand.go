@@ -10,16 +10,48 @@ package mathrand
 
 import (
 	"math/rand"
+	"sync"
 
 	"golang.org/x/net/context"
 )
 
 var key = "holds a rand.Rand for mathrand"
 
-func newRand() *rand.Rand {
-	return rand.New(rand.NewSource(rand.Int63()))
+var (
+	// globalOnce performs one-time global random variable initialization.
+	globalOnce sync.Once
+
+	// globalRandBase is the gloal *rand.Rand instance. It MUST NOT BE USED
+	// without holding globalRand's lock.
+	//
+	// globalRandBase must not be accessed directly; instead, it must be obtained
+	// through getGlobalRand to ensure that it is initialized.
+	globalRandBase *rand.Rand
+
+	// globalRand is the locking Rand implementation that wraps globalRandBase.
+	//
+	// globalRand must not be accessed directly; instead, it must be obtained
+	// through getGlobalRand to ensure that it is initialized.
+	globalRand *Locking
+)
+
+// getGlobalRand returns globalRand and its Locking wrapper. This must be used
+// instead of direct variable access in order to ensure that everything is
+// initialized.
+//
+// We use a Once to perform this initialization so that we can enable
+// applications to set the seed via rand.Seed if they wish.
+func getGlobalRand() (*Locking, *rand.Rand) {
+	globalOnce.Do(func() {
+		globalRandBase = newRand()
+		globalRand = &Locking{R: wrapped{globalRandBase}}
+	})
+	return globalRand, globalRandBase
 }
 
+func newRand() *rand.Rand { return rand.New(rand.NewSource(rand.Int63())) }
+
+// getRand returns the Rand installed in c, or nil if no Rand is installed.
 func getRand(c context.Context) Rand {
 	if r, ok := c.Value(&key).(Rand); ok {
 		return r
@@ -30,23 +62,17 @@ func getRand(c context.Context) Rand {
 // Get gets a Rand from the Context. The resulting Rand is safe for concurrent
 // use.
 //
-// If one hasn't been set, this creates a new Rand object with a Source
-// initialized from the global randomness source provided by stdlib.
-//
-// If you want to get just a single random number, prefer to use a corresponding
-// global function instead: they know how to use math/rand global RNG directly
-// and thus are much faster in case the context doesn't have a rand.Rand
-// installed.
-//
-// Use 'Get' only if you plan to obtain a large series of random numbers.
+// If one hasn't been set, this will return a global Rand object backed by a
+// shared rand.Rand singleton. Just like in "math/rand", rand.Seed can be called
+// prior to using Get to set the seed used by this singleton.
 func Get(c context.Context) Rand {
 	if r := getRand(c); r != nil {
 		return r
 	}
 
-	// Generate a new Rand instance and return it. Our callers expect this to be
-	// concurrency-safe.
-	return wrapLocking(wrapRand(newRand()))
+	// Use the global instance.
+	gr, _ := getGlobalRand()
+	return gr
 }
 
 // Set sets the current *"math/rand".Rand object in the context.
@@ -77,124 +103,58 @@ func SetRand(c context.Context, r Rand) context.Context {
 ////////////////////////////////////////////////////////////////////////////////
 // Top-level convenience functions mirroring math/rand package API.
 //
-// They are here to optimize the case when the context doesn't have math.Rand
-// installed. Using Get(ctx).<function> in this case is semantically equivalent
-// to using global RNG, but much slower (up to 400x slower), because it creates
-// and seeds new math.Rand object on each call.
-//
-// Unfortunately since math.Rand is a struct, and its implementation is not
-// thread-safe, we can't just return some global math.Rand instance. The stdlib
-// has one, but it is private, and we can't reimplement it because stdlib does
-// some disgusting type casts to private types in math.Rand implementation, e.g:
-// https://github.com/golang/go/blob/fb3cf5c/src/math/rand/rand.go#L183
-//
-// This also makes mathrand API more similar to math/rand API.
+// This makes mathrand API more similar to math/rand API.
 
 // Int63 returns a non-negative pseudo-random 63-bit integer as an int64
 // from the source in the context or the shared global source.
-func Int63(c context.Context) int64 {
-	if r := getRand(c); r != nil {
-		return r.Int63()
-	}
-	return rand.Int63()
-}
+func Int63(c context.Context) int64 { return Get(c).Int63() }
 
 // Uint32 returns a pseudo-random 32-bit value as a uint32 from the source in
 // the context or the shared global source.
-func Uint32(c context.Context) uint32 {
-	if r := getRand(c); r != nil {
-		return r.Uint32()
-	}
-	return rand.Uint32()
-}
+func Uint32(c context.Context) uint32 { return Get(c).Uint32() }
 
 // Int31 returns a non-negative pseudo-random 31-bit integer as an int32 from
 // the source in the context or the shared global source.
-func Int31(c context.Context) int32 {
-	if r := getRand(c); r != nil {
-		return r.Int31()
-	}
-	return rand.Int31()
-}
+func Int31(c context.Context) int32 { return Get(c).Int31() }
 
 // Int returns a non-negative pseudo-random int from the source in the context
 // or the shared global source.
-func Int(c context.Context) int {
-	if r := getRand(c); r != nil {
-		return r.Int()
-	}
-	return rand.Int()
-}
+func Int(c context.Context) int { return Get(c).Int() }
 
 // Int63n returns, as an int64, a non-negative pseudo-random number in [0,n)
 // from the source in the context or the shared global source.
 //
 // It panics if n <= 0.
-func Int63n(c context.Context, n int64) int64 {
-	if r := getRand(c); r != nil {
-		return r.Int63n(n)
-	}
-	return rand.Int63n(n)
-}
+func Int63n(c context.Context, n int64) int64 { return Get(c).Int63n(n) }
 
 // Int31n returns, as an int32, a non-negative pseudo-random number in [0,n)
 // from the source in the context or the shared global source.
 //
 // It panics if n <= 0.
-func Int31n(c context.Context, n int32) int32 {
-	if r := getRand(c); r != nil {
-		return r.Int31n(n)
-	}
-	return rand.Int31n(n)
-}
+func Int31n(c context.Context, n int32) int32 { return Get(c).Int31n(n) }
 
 // Intn returns, as an int, a non-negative pseudo-random number in [0,n) from
 // the source in the context or the shared global source.
 //
 // It panics if n <= 0.
-func Intn(c context.Context, n int) int {
-	if r := getRand(c); r != nil {
-		return r.Intn(n)
-	}
-	return rand.Intn(n)
-}
+func Intn(c context.Context, n int) int { return Get(c).Intn(n) }
 
 // Float64 returns, as a float64, a pseudo-random number in [0.0,1.0) from
 // the source in the context or the shared global source.
-func Float64(c context.Context) float64 {
-	if r := getRand(c); r != nil {
-		return r.Float64()
-	}
-	return rand.Float64()
-}
+func Float64(c context.Context) float64 { return Get(c).Float64() }
 
 // Float32 returns, as a float32, a pseudo-random number in [0.0,1.0) from
 // the source in the context or the shared global source.
-func Float32(c context.Context) float32 {
-	if r := getRand(c); r != nil {
-		return r.Float32()
-	}
-	return rand.Float32()
-}
+func Float32(c context.Context) float32 { return Get(c).Float32() }
 
 // Perm returns, as a slice of n ints, a pseudo-random permutation of the
 // integers [0,n) from the source in the context or the shared global source.
-func Perm(c context.Context, n int) []int {
-	if r := getRand(c); r != nil {
-		return r.Perm(n)
-	}
-	return rand.Perm(n)
-}
+func Perm(c context.Context, n int) []int { return Get(c).Perm(n) }
 
 // Read generates len(p) random bytes from the source in the context or
 // the shared global source and writes them into p. It always returns len(p)
 // and a nil error.
-func Read(c context.Context, p []byte) (n int, err error) {
-	if r := getRand(c); r != nil {
-		return r.Read(p)
-	}
-	return rand.Read(p)
-}
+func Read(c context.Context, p []byte) (n int, err error) { return Get(c).Read(p) }
 
 // NormFloat64 returns a normally distributed float64 in the range
 // [-math.MaxFloat64, +math.MaxFloat64] with standard normal distribution
@@ -206,12 +166,7 @@ func Read(c context.Context, p []byte) (n int, err error) {
 //
 //  sample = NormFloat64(ctx) * desiredStdDev + desiredMean
 //
-func NormFloat64(c context.Context) float64 {
-	if r := getRand(c); r != nil {
-		return r.NormFloat64()
-	}
-	return rand.NormFloat64()
-}
+func NormFloat64(c context.Context) float64 { return Get(c).NormFloat64() }
 
 // ExpFloat64 returns an exponentially distributed float64 in the range
 // (0, +math.MaxFloat64] with an exponential distribution whose rate parameter
@@ -223,26 +178,23 @@ func NormFloat64(c context.Context) float64 {
 //
 //  sample = ExpFloat64(ctx) / desiredRateParameter
 //
-func ExpFloat64(c context.Context) float64 {
-	if r := getRand(c); r != nil {
-		return r.ExpFloat64()
-	}
-	return rand.ExpFloat64()
-}
+func ExpFloat64(c context.Context) float64 { return Get(c).ExpFloat64() }
 
 // WithGoRand invokes the supplied "fn" while holding an exclusive lock
 // for it. This can be used by callers to pull and use a *rand.Rand instance
 // out of the Context safely.
 //
-// The callback's r must not be retained or used outside of hte scope of the
+// The callback's r must not be retained or used outside of the scope of the
 // callback.
 func WithGoRand(c context.Context, fn func(r *rand.Rand) error) error {
 	if r := getRand(c); r != nil {
 		return r.WithGoRand(fn)
 	}
 
-	// No Rand is installed in our Context. Generate a single-use Rand instance.
-	// We don't need to wrap this at all, since the premise of this method is
-	// that the result is not safe for concurrent use.
-	return fn(newRand())
+	// Return our globalRandBase. We MUST hold globalRand's lock in order for this
+	// to be safe.
+	l, base := getGlobalRand()
+	l.Lock()
+	defer l.Unlock()
+	return fn(base)
 }

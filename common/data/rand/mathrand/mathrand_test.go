@@ -22,6 +22,10 @@ func Test(t *testing.T) {
 		Convey("unset", func() {
 			// Just ensure doesn't crash.
 			So(Get(c).Int()+1 > 0, ShouldBeTrue)
+			So(WithGoRand(c, func(r *rand.Rand) error {
+				So(r.Int(), ShouldBeGreaterThanOrEqualTo, 0)
+				return nil
+			}), ShouldBeNil)
 		})
 
 		Convey("set persistance", func() {
@@ -43,7 +47,7 @@ func Test(t *testing.T) {
 		// check that the produced RNG sequence matches the uniform distribution
 		// at least at first two moments.
 		ctx := context.Background()
-		mean, dev := calcStats(10000, func() float64 {
+		mean, dev := calcStats(20000, func() float64 {
 			return Get(ctx).Float64()
 		})
 
@@ -52,6 +56,55 @@ func Test(t *testing.T) {
 		// Standard deviation: 0.288675
 		So(mean, ShouldBeBetween, 0.495, 0.505)
 		So(dev, ShouldBeBetween, 0.284, 0.29)
+	})
+}
+
+func testConcurrentAccess(t *testing.T, r *rand.Rand) {
+	const goroutines = 16
+	const rounds = 1024
+
+	Convey(`Concurrent access does not produce a race or deadlock.`, func() {
+		c := context.Background()
+		if r != nil {
+			c = Set(c, r)
+		}
+
+		startC := make(chan struct{})
+		doneC := make(chan struct{}, goroutines)
+		for g := 0; g < goroutines; g++ {
+			go func() {
+				defer func() {
+					doneC <- struct{}{}
+				}()
+
+				<-startC
+				for i := 0; i < rounds; i++ {
+					Int(c)
+				}
+			}()
+		}
+
+		close(startC)
+		for reap := 0; reap < goroutines; reap++ {
+			<-doneC
+		}
+	})
+
+}
+
+// TestConcurrentGlobalAccess is intentionally NOT Parallel, since we want to
+// have exclusive access to the global instance.
+func TestConcurrentGlobalAccess(t *testing.T) {
+	Convey(`Testing concurrent global access`, t, func() {
+		testConcurrentAccess(t, nil)
+	})
+}
+
+func TestConcurrentAccess(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Testing concurrent non-global access`, t, func() {
+		testConcurrentAccess(t, newRand())
 	})
 }
 
@@ -110,8 +163,16 @@ func BenchmarkOurInitializedSourceViaFunc(b *testing.B) {
 	})
 }
 
-// BenchmarkStdlibDefaultSource-8           	50000000	        32.0 ns/op
-// BenchmarkOurDefaultSourceViaCtx-8        	  200000	       10893 ns/op
-// BenchmarkOurDefaultSourceViaFunc-8       	30000000	        38.7 ns/op
-// BenchmarkOurInitializedSourceViaCtx-8    	50000000	        30.2 ns/op
-// BenchmarkOurInitializedSourceViaFunc-8   	50000000	        29.1 ns/op
+func BenchmarkGlobalSource(b *testing.B) {
+	r, _ := getGlobalRand()
+	calcStats(b.N, func() float64 {
+		return r.Float64()
+	})
+}
+
+// BenchmarkStdlibDefaultSource-32               30000000        35.6 ns/op
+// BenchmarkOurDefaultSourceViaCtx-32            20000000        77.8 ns/op
+// BenchmarkOurDefaultSourceViaFunc-32           20000000        78.6 ns/op
+// BenchmarkOurInitializedSourceViaCtx-32        20000000        86.8 ns/op
+// BenchmarkOurInitializedSourceViaFunc-32       20000000        81.9 ns/op
+// BenchmarkGlobalSource-32                      30000000        43.8 ns/op
