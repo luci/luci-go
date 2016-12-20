@@ -17,6 +17,7 @@ import (
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/data/caching/cacheContext"
 	"github.com/luci/luci-go/common/data/caching/proccache"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/logging"
 
 	"github.com/luci/luci-go/server/auth"
@@ -61,10 +62,16 @@ var (
 
 	// globalTsMonState holds state related to time series monitoring.
 	globalTsMonState = &tsmon.State{}
+
+	// globalMathRand is a global "mathrand.Rand" instance. Get, as per its
+	// function signature, returns an instance that is protected by a lock, so
+	// this is safe for its expected concurrent use.
+	globalMathRand = mathrand.Get(context.Background())
 )
 
 // WithProd installs the set of standard production AppEngine services:
 //   * github.com/luci/luci-go/common/logging (set default level to debug).
+//   * github.com/luci/luci-go/common/data/rand/mathrand.
 //   * github.com/luci/gae/impl/prod (production appengine services)
 //   * github.com/luci/luci-go/appengine/gaeauth/client (appengine urlfetch transport)
 //   * github.com/luci/luci-go/server/proccache (in process memory cache)
@@ -75,6 +82,7 @@ var (
 func WithProd(c context.Context, req *http.Request) context.Context {
 	// These are needed to use fetchCachedSettings.
 	c = logging.SetLevel(c, logging.Debug)
+	c = mathrand.SetRand(c, globalMathRand)
 	c = prod.Use(c, req)
 	c = settings.Use(c, globalSettings)
 
