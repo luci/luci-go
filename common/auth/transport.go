@@ -6,6 +6,8 @@ package auth
 
 import (
 	"net/http"
+
+	"golang.org/x/net/context"
 )
 
 // NewModifyingTransport returns a transport that can modify headers of
@@ -40,4 +42,15 @@ func (t *modifyingTransport) RoundTrip(req *http.Request) (*http.Response, error
 		return nil, err
 	}
 	return t.base.RoundTrip(&clone)
+}
+
+var globalInstrumentTransport func(context.Context, http.RoundTripper, string) http.RoundTripper
+
+// SetMonitoringInstrumentation sets a global callback used by Authenticator to
+// add monitoring instrumentation to a transport.
+//
+// This is used by tsmon library in init(). We have to resort to callbacks to
+// break module dependency cycle (tsmon is using auth lib already).
+func SetMonitoringInstrumentation(cb func(context.Context, http.RoundTripper, string) http.RoundTripper) {
+	globalInstrumentTransport = cb
 }

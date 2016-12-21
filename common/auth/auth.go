@@ -174,6 +174,18 @@ type Options struct {
 	// If not set, SecretsDir() will be used.
 	SecretsDir string
 
+	// DisableMonitoring can be used to disable the monitoring instrumentation.
+	//
+	// The transport produced by this authenticator sends tsmon metrics IFF:
+	//  1. DisableMonitoring is false (default).
+	//  2. The context passed to 'NewAuthenticator' has monitoring initialized.
+	DisableMonitoring bool
+
+	// MonitorAs is used for 'client' field of monitoring metrics.
+	//
+	// The default is 'luci-go'.
+	MonitorAs string
+
 	// tokenCacheFactory is used in unit tests.
 	tokenCacheFactory func(entryName string) (tokenCache, error)
 	// customTokenProvider is used in unit tests.
@@ -181,7 +193,8 @@ type Options struct {
 }
 
 // Authenticator is a factory for http.RoundTripper objects that know how to use
-// cached OAuth credentials.
+// cached OAuth credentials and how to send monitoring metrics (if tsmon package
+// was imported).
 //
 // Authenticator also knows how to run interactive login flow, if required.
 type Authenticator struct {
@@ -245,6 +258,20 @@ func NewAuthenticator(ctx context.Context, loginMode LoginMode, opts Options) *A
 		ctx:       ctx,
 	}
 	auth.transport = NewModifyingTransport(opts.Transport, auth.authTokenInjector)
+
+	// Include the token refresh time into the monitored request time.
+	if globalInstrumentTransport != nil && !opts.DisableMonitoring {
+		monitorAs := opts.MonitorAs
+		if monitorAs == "" {
+			monitorAs = "luci-go"
+		}
+		instrumented := globalInstrumentTransport(ctx, auth.transport, monitorAs)
+		if instrumented != auth.transport {
+			logging.Debugf(ctx, "Enabling monitoring instrumentation (client == %q)", monitorAs)
+			auth.transport = instrumented
+		}
+	}
+
 	return auth
 }
 

@@ -10,16 +10,19 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/iotools"
+	"github.com/luci/luci-go/common/tsmon"
+	"github.com/luci/luci-go/common/tsmon/store"
 )
 
 // instrumentedHTTPRoundTripper reports tsmon metrics about the requests that
 // are made using it.  It implements http.RoundTripper.
 type instrumentedHTTPRoundTripper struct {
-	ctx  context.Context
-	base http.RoundTripper
-	name string
+	ctx    context.Context
+	base   http.RoundTripper
+	client string // ends up in 'client' field of the metrics
 }
 
 // RoundTrip implements http.RoundTripper.
@@ -53,16 +56,28 @@ func (t *instrumentedHTTPRoundTripper) RoundTrip(origReq *http.Request) (*http.R
 		responseBytes = resp.ContentLength
 	}
 
-	UpdateHTTPMetrics(t.ctx, req.URL.Host, t.name, code, duration, requestBytes, responseBytes)
+	UpdateHTTPMetrics(t.ctx, req.URL.Host, t.client, code, duration, requestBytes, responseBytes)
 
 	return resp, err
 }
 
 // InstrumentTransport returns a transport that sends HTTP client metrics via
 // the given context.
-func InstrumentTransport(ctx context.Context, base http.RoundTripper, name string) http.RoundTripper {
+//
+// If the context has no tsmon initialized (no metrics store installed), returns
+// the original transport unchanged.
+func InstrumentTransport(ctx context.Context, base http.RoundTripper, client string) http.RoundTripper {
 	if base == nil {
 		base = http.DefaultTransport
 	}
-	return &instrumentedHTTPRoundTripper{ctx, base, name}
+	if store.IsNilStore(tsmon.GetState(ctx).S) {
+		return base
+	}
+	return &instrumentedHTTPRoundTripper{ctx, base, client}
+}
+
+func init() {
+	// We use init hook to break module dependency cycle: common/auth can't import
+	// tsmon module directly.
+	auth.SetMonitoringInstrumentation(InstrumentTransport)
 }

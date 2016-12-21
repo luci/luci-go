@@ -205,7 +205,8 @@ func initMonitor(c context.Context, config config) (monitor.Monitor, error) {
 		if err != nil {
 			return nil, err
 		}
-
+		// N.B.: PubSub monitor is NOT using http.RoundTripper (It is gRPC-based)
+		// and thus doesn't report any HTTP client metrics.
 		return monitor.NewPubsubMonitor(
 			c, tokens, gcps.NewTopic(endpointURL.Host, strings.TrimPrefix(endpointURL.Path, "/")))
 	case "http", "https":
