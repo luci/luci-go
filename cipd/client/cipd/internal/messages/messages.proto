@@ -4,9 +4,9 @@
 
 syntax = "proto3";
 
-import "google/protobuf/timestamp.proto";
-
 package messages;
+
+import "google/protobuf/timestamp.proto";
 
 // BlobWithSHA1 is a wrapper around a binary blob with SHA1 hash to verify
 // its integrity.
@@ -21,6 +21,8 @@ message BlobWithSHA1 {
 // It also contains a (instance_id, file_name) -> hash mapping which is used for
 // client self-update purposes. file_name is case-senstive and must always use
 // POSIX-style slashes.
+//
+// TODO(vadimsh): Use server hostname as a part of the cache key.
 message TagCache {
   message Entry {
     string package = 1;
@@ -40,8 +42,10 @@ message TagCache {
   repeated FileEntry file_entries = 2;
 }
 
-// InstanceCache stores a list of instances in cache
-// and their last access time.
+// InstanceCache stores a list of instances and their last access time.
+//
+// This cache does not depend on a server being used, since an instance's ID is
+// derived only from its contents (regardless from where it was downloaded).
 message InstanceCache {
   // Entry stores info about an instance.
   message Entry {

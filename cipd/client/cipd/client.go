@@ -110,12 +110,12 @@ var (
 
 var (
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 1.3.1"
+	UserAgent = "cipd 1.3.2"
 )
 
 func init() {
 	ver, err := version.GetStartupVersion()
-	if err != nil {
+	if err != nil || ver.InstanceID == "" {
 		return
 	}
 	UserAgent += fmt.Sprintf(" (%s@%s)", ver.PackageName, ver.InstanceID)
@@ -583,13 +583,14 @@ func (client *clientImpl) getTagCache() *internal.TagCache {
 // getInstanceCache lazy-initializes instanceCache and returns it.
 //
 // May return nil if instance cache is disabled.
-func (client *clientImpl) getInstanceCache() *internal.InstanceCache {
+func (client *clientImpl) getInstanceCache(ctx context.Context) *internal.InstanceCache {
 	client.instanceCacheInit.Do(func() {
 		if client.CacheDir == "" {
 			return
 		}
 		path := filepath.Join(client.CacheDir, "instances")
 		client.instanceCache = internal.NewInstanceCache(local.NewFileSystem(path, ""))
+		logging.Infof(ctx, "cipd: using instance cache at %q", path)
 	})
 	return client.instanceCache
 }
@@ -1056,7 +1057,7 @@ func (client *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (Re
 	if err := common.ValidatePin(pin); err != nil {
 		return nil, err
 	}
-	if cache := client.getInstanceCache(); cache != nil {
+	if cache := client.getInstanceCache(ctx); cache != nil {
 		return client.fetchInstanceWithCache(ctx, pin, cache)
 	}
 	return client.fetchInstanceNoCache(ctx, pin)
@@ -1069,7 +1070,7 @@ func (client *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, o
 
 	// Deal with no-cache situation first, it is simple - just fetch the instance
 	// into the 'output'.
-	cache := client.getInstanceCache()
+	cache := client.getInstanceCache(ctx)
 	if cache == nil {
 		return client.remoteFetchInstance(ctx, pin, output)
 	}

@@ -239,7 +239,8 @@ type ClientOptions struct {
 
 func (opts *ClientOptions) registerFlags(f *flag.FlagSet) {
 	f.StringVar(&opts.serviceURL, "service-url", "", "URL of a backend to use instead of the default one.")
-	f.StringVar(&opts.cacheDir, "cache-dir", "", "Directory for shared cache")
+	f.StringVar(&opts.cacheDir, "cache-dir", "",
+		fmt.Sprintf("Directory for shared cache (can also be set by %s env var).", CIPDCacheDir))
 	opts.authFlags.Register(f, auth.Options{})
 }
 
@@ -256,11 +257,20 @@ func (opts *ClientOptions) makeCipdClient(ctx context.Context, root string) (cip
 	if prefix := cli.LookupEnv(ctx, CIPDHTTPUserAgentPrefix); prefix.Exists {
 		ua = fmt.Sprintf("%s/%s", prefix.Value, ua)
 	}
+	cacheDir := opts.cacheDir
+	if cacheDir == "" {
+		if cacheDirEnv := cli.LookupEnv(ctx, CIPDCacheDir); cacheDirEnv.Exists {
+			cacheDir = cacheDirEnv.Value
+			if cacheDir != "" && !filepath.IsAbs(cacheDir) {
+				return nil, fmt.Errorf("Bad %s: not an absolute path - %s", CIPDCacheDir, cacheDir)
+			}
+		}
+	}
 	return cipd.NewClient(cipd.ClientOptions{
 		ServiceURL:          opts.serviceURL,
 		Root:                root,
 		UserAgent:           ua,
-		CacheDir:            opts.cacheDir,
+		CacheDir:            cacheDir,
 		AuthenticatedClient: client,
 		AnonymousClient:     http.DefaultClient,
 	}), nil
@@ -1980,6 +1990,7 @@ func (s *selfupdateRun) doSelfUpdate(ctx context.Context, exePath string, fs loc
 // Environment variable definitions
 const (
 	CIPDHTTPUserAgentPrefix = "CIPD_HTTP_USER_AGENT_PREFIX"
+	CIPDCacheDir            = "CIPD_CACHE_DIR"
 )
 
 var application = &cli.Application{
@@ -1998,6 +2009,10 @@ var application = &cli.Application{
 		CIPDHTTPUserAgentPrefix: {
 			Advanced:  true,
 			ShortDesc: "Optional http User-Agent prefix.",
+		},
+		CIPDCacheDir: {
+			ShortDesc: "Directory with shared instance and tags cache " +
+				"(-cache-dir, if given, takes precedence).",
 		},
 	},
 
