@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"container/heap"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -27,6 +26,7 @@ import (
 )
 
 const (
+	// instanceCacheMaxSize defines how many packages to keep in the cache.
 	instanceCacheMaxSize = 300
 	// instanceCacheSyncInterval determines the frequency of
 	// synchronization of state.db with instance files in the cache dir.
@@ -40,41 +40,41 @@ const (
 type InstanceCache struct {
 	fs        local.FileSystem
 	stateLock sync.Mutex // synchronizes access to the state file.
+
+	// Defaults to instanceCacheMaxSize, mocked in tests.
+	maxSize int
 }
 
 // NewInstanceCache initializes InstanceCache.
 //
 // fs will be the root of the cache.
 func NewInstanceCache(fs local.FileSystem) *InstanceCache {
-	return &InstanceCache{fs: fs}
+	return &InstanceCache{fs: fs, maxSize: instanceCacheMaxSize}
 }
 
-// Get searches for the instance in the cache and writes its contents to output.
+// Get searches for the instance in the cache and opens it for reading.
 //
-// If the instance is not found, returns an os.IsNotExists error without writing
-// to output.
-func (c *InstanceCache) Get(ctx context.Context, pin common.Pin, output io.Writer, now time.Time) error {
+// If the instance is not found, returns an os.IsNotExists error.
+func (c *InstanceCache) Get(ctx context.Context, pin common.Pin, now time.Time) (*os.File, error) {
 	if err := common.ValidatePin(pin); err != nil {
-		return err
+		return nil, err
 	}
 
 	path, err := c.fs.RootRelToAbs(pin.InstanceID)
 	if err != nil {
-		return fmt.Errorf("invalid instance ID %q", pin.InstanceID)
+		return nil, fmt.Errorf("invalid instance ID %q", pin.InstanceID)
 	}
 
 	f, err := os.Open(path)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer f.Close()
 
 	c.withState(ctx, now, func(s *messages.InstanceCache) {
 		touch(s, pin.InstanceID, now)
 	})
 
-	_, err = io.Copy(output, f)
-	return err
+	return f, nil
 }
 
 // Put caches an instance.
@@ -120,7 +120,7 @@ func (h *timeHeap) Pop() interface{} {
 // gc checks if the number of instances in the state is greater than maximum.
 // If yes, purges excessive oldest instances.
 func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache) {
-	garbageSize := len(state.Entries) - instanceCacheMaxSize
+	garbageSize := len(state.Entries) - c.maxSize
 	if garbageSize <= 0 {
 		return
 	}

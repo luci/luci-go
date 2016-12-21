@@ -190,8 +190,19 @@ func (f *fsImpl) EnsureFile(ctx context.Context, path string, write func(*os.Fil
 		return err
 	}
 
-	// Create a temp file with new content.
 	temp := tempFileName(path)
+
+	// Make sure to cleanup garbage on errors or panics.
+	ok := false
+	defer func() {
+		if !ok {
+			if err := os.Remove(temp); err != nil && !os.IsNotExist(err) {
+				logging.Warningf(ctx, "fs: failed to remove %s - %s", temp, err)
+			}
+		}
+	}()
+
+	// Create a temp file with new content.
 	if err := createFile(temp, write); err != nil {
 		return err
 	}
@@ -200,12 +211,10 @@ func (f *fsImpl) EnsureFile(ctx context.Context, path string, write func(*os.Fil
 	// version (f.Replace) instead of simple atomicReplace to handle various edge
 	// cases handled by the nuclear version (e.g replacing a non-empty directory).
 	if err := f.Replace(ctx, temp, path); err != nil {
-		if err2 := os.Remove(temp); err2 != nil && !os.IsNotExist(err2) {
-			logging.Warningf(ctx, "fs: failed to remove %s - %s", temp, err2)
-		}
 		return err
 	}
 
+	ok = true
 	return nil
 }
 
@@ -415,6 +424,10 @@ var (
 //
 // Doesn't check for existence of the file at the given path (e.g. there may be
 // conflicts, but the probability should be small).
+//
+// TODO(vadimsh): Maybe we should change that? This is dangerous assumption.
+// Simple Exists(...) check would reduce the likelihood of a conflict
+// significantly in exchange for some modest performance impact.
 func tempFileName(path string) string {
 	return filepath.Join(filepath.Dir(path), pseudoRand())
 }
@@ -461,6 +474,8 @@ func tempDir(dir string) (name string, err error) {
 }
 
 // createFile creates a file and calls the function to write file content.
+//
+// Does NOT cleanup the file if something fails midway.
 func createFile(path string, write func(*os.File) error) (err error) {
 	file, err := os.Create(path)
 	if err != nil {

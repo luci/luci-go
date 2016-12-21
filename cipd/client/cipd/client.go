@@ -110,7 +110,7 @@ var (
 
 var (
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 1.3"
+	UserAgent = "cipd 1.3.1"
 )
 
 func init() {
@@ -263,6 +263,13 @@ type ActionError struct {
 	Error  JSONError  `json:"error,omitempty"`
 }
 
+// ReadSeekCloser is the interface that groups Reader, Seeker and Closer.
+type ReadSeekCloser interface {
+	io.Reader
+	io.Seeker
+	io.Closer
+}
+
 // Client provides high-level CIPD client interface. Thread safe.
 type Client interface {
 	// BeginBatch makes the client enter into a "batch mode".
@@ -346,8 +353,18 @@ type Client interface {
 	// 'refs' is empty, fetches all refs, otherwise only ones specified.
 	FetchInstanceRefs(ctx context.Context, pin common.Pin, refs []string) ([]RefInfo, error)
 
-	// FetchInstance downloads package instance file from the repository.
-	FetchInstance(ctx context.Context, pin common.Pin, output io.WriteSeeker) error
+	// FetchInstance downloads a package instance file from the repository.
+	//
+	// It returns an ReadSeekCloser pointing to the raw package data. The caller
+	// must make sure SHA1 of the data matches the pin, and close it when done.
+	FetchInstance(ctx context.Context, pin common.Pin) (ReadSeekCloser, error)
+
+	// FetchInstanceTo downloads a package instance file into the given writer.
+	//
+	// This is roughly the same as getting a reader with 'FetchInstance' and
+	// copying its data into the writer, except this call skips unnecessary temp
+	// files if the client is not using cache.
+	FetchInstanceTo(ctx context.Context, pin common.Pin, output io.WriteSeeker) error
 
 	// FetchAndDeployInstance fetches the package instance and deploys it.
 	//
@@ -1035,63 +1052,124 @@ func (client *clientImpl) FetchInstanceRefs(ctx context.Context, pin common.Pin,
 	return client.remote.fetchRefs(ctx, pin, refs)
 }
 
-func (client *clientImpl) FetchInstance(ctx context.Context, pin common.Pin, output io.WriteSeeker) error {
+func (client *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (ReadSeekCloser, error) {
+	if err := common.ValidatePin(pin); err != nil {
+		return nil, err
+	}
+	if cache := client.getInstanceCache(); cache != nil {
+		return client.fetchInstanceWithCache(ctx, pin, cache)
+	}
+	return client.fetchInstanceNoCache(ctx, pin)
+}
+
+func (client *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, output io.WriteSeeker) error {
 	if err := common.ValidatePin(pin); err != nil {
 		return err
 	}
+
+	// Deal with no-cache situation first, it is simple - just fetch the instance
+	// into the 'output'.
 	cache := client.getInstanceCache()
 	if cache == nil {
-		return client.fetchInstanceNoCache(ctx, pin, output)
+		return client.remoteFetchInstance(ctx, pin, output)
 	}
-	return client.fetchInstanceWithCache(ctx, pin, cache, output)
-}
 
-func (client *clientImpl) fetchInstanceNoCache(ctx context.Context, pin common.Pin, output io.WriteSeeker) error {
-	if err := client.remoteFetchInstance(ctx, pin, output); err != nil {
+	// If using the cache, always fetch into the cache first, and then copy data
+	// from the cache into the output.
+	input, err := client.fetchInstanceWithCache(ctx, pin, cache)
+	if err != nil {
 		return err
 	}
-	logging.Infof(ctx, "cipd: successfully fetched %s", pin)
-	return nil
+	defer func() {
+		if err := input.Close(); err != nil {
+			logging.Warningf(ctx, "cipd: failed to close the package file - %s", err)
+		}
+	}()
+
+	logging.Infof(ctx, "cipd: copying the instance into the final destination...")
+	_, err = io.Copy(output, input)
+	return err
 }
 
-func (client *clientImpl) fetchInstanceWithCache(ctx context.Context, pin common.Pin, cache *internal.InstanceCache, output io.WriteSeeker) error {
-	// Try to get the instance from cache.
-	now := clock.Now(ctx)
-	switch err := cache.Get(ctx, pin, output, now); {
-	case os.IsNotExist(err):
-		// output is not corrupted.
+func (client *clientImpl) fetchInstanceNoCache(ctx context.Context, pin common.Pin) (ReadSeekCloser, error) {
+	// Use temp file for storing package data. Delete it when the caller is done
+	// with it.
+	f, err := client.deployer.TempFile(ctx, pin.InstanceID)
+	if err != nil {
+		return nil, err
+	}
+	tmp := deleteOnClose{f}
 
-	case err != nil:
-		logging.Warningf(ctx, "cipd: could not get %s from cache - %s", pin, err)
-		// Output may be corrupted. Rewind back and let client.remote
-		// overwrite it. Given instance ID is a hash of instance contents,
-		// cache could not write more than client.remote will,
-		// so output does not have to be truncated.
-		if _, err := output.Seek(0, os.SEEK_SET); err != nil {
-			return err
+	// Make sure to remove the garbage on errors or panics.
+	ok := false
+	defer func() {
+		if !ok {
+			if err := tmp.Close(); err != nil {
+				logging.Warningf(ctx, "cipd: failed to close the temp file - %s", err)
+			}
 		}
+	}()
 
-	default:
-		logging.Debugf(ctx, "cipd: instance cache hit for %s", pin)
-		return nil
+	if err := client.remoteFetchInstance(ctx, pin, tmp); err != nil {
+		return nil, err
 	}
 
-	return cache.Put(ctx, pin, now, func(f *os.File) error {
-		// Fetch to the file.
-		if err := client.remoteFetchInstance(ctx, pin, f); err != nil {
-			return err
+	// Return exact same file as ReadSeekCloser.
+	if _, err := tmp.Seek(0, os.SEEK_SET); err != nil {
+		return nil, err
+	}
+	ok = true
+	return tmp, nil
+}
+
+func (client *clientImpl) fetchInstanceWithCache(ctx context.Context, pin common.Pin, cache *internal.InstanceCache) (ReadSeekCloser, error) {
+	attempt := 0
+	for {
+		attempt++
+
+		// Try to get the instance from cache.
+		now := clock.Now(ctx)
+		switch file, err := cache.Get(ctx, pin, now); {
+		case os.IsNotExist(err):
+			// No such package in the cache. This is fine.
+
+		case err != nil:
+			// Some unexpected error. Log and carry on, as if it is a cache miss.
+			logging.Warningf(ctx, "cipd: could not get %s from cache - %s", pin, err)
+
+		default:
+			logging.Debugf(ctx, "cipd: instance cache hit for %s", pin)
+			return file, nil
 		}
 
-		// Copy fetched content to output.
-		if _, err := f.Seek(0, 0); err != nil {
-			return err
+		// Download the package into the cache.
+		err := cache.Put(ctx, pin, now, func(f *os.File) error {
+			return client.remoteFetchInstance(ctx, pin, f)
+		})
+		if err != nil {
+			return nil, err
 		}
-		if _, err := io.Copy(output, f); err != nil {
-			return err
+
+		// Try to open it now. There's (very) small chance that it has been evicted
+		// from the cache already. If this happens, try again. Do it only once.
+		//
+		// Note that theoretically we could keep open the handle to the file used in
+		// 'cache.Put' above, but this file gets renamed at some point, and renaming
+		// files with open handles on Windows is moot. So instead we close it,
+		// rename the file (this happens inside cache.Put), and reopen it again
+		// under the new name.
+		file, err := cache.Get(ctx, pin, clock.Now(ctx))
+		if err != nil {
+			logging.Errorf(ctx, "cipd: %s is unexpectedly missing from cache (%s)", pin, err)
+			if attempt == 1 {
+				logging.Infof(ctx, "cipd: retrying...")
+				continue
+			}
+			logging.Errorf(ctx, "cipd: giving up")
+			return nil, err
 		}
-		logging.Infof(ctx, "cipd: successfully fetched %s", pin)
-		return nil
-	})
+		return file, nil
+	}
 }
 
 func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pin, output io.WriteSeeker) error {
@@ -1102,48 +1180,47 @@ func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pi
 	}
 	if err != nil {
 		logging.Errorf(ctx, "cipd: failed to fetch %s - %s", pin, err)
+	} else {
+		logging.Infof(ctx, "cipd: successfully fetched %s", pin)
 	}
 	return err
 }
 
 func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, pin common.Pin) error {
-	err := common.ValidatePin(pin)
+	if err := common.ValidatePin(pin); err != nil {
+		return err
+	}
+
+	// Fetch the package and obtain a pointer to its data.
+	instanceFile, err := client.FetchInstance(ctx, pin)
 	if err != nil {
 		return err
 	}
 
-	// Use temp file for storing package file. Delete it when done.
-	var instance local.PackageInstance
-	f, err := client.deployer.TempFile(ctx, pin.InstanceID)
+	// Make sure to close the file if paniced before OpenInstance call below.
+	owned := false
+	defer func() {
+		if !owned {
+			if err := instanceFile.Close(); err != nil {
+				logging.Warningf(ctx, "cipd: failed to close the package file - %s", err)
+			}
+		}
+	}()
+
+	// Open the instance, verify the instance ID.
+	instance, err := local.OpenInstance(ctx, instanceFile, pin.InstanceID)
 	if err != nil {
 		return err
 	}
+
+	owned = true // disarm the defer above, instance.Close closes instanceFile.
 	defer func() {
-		// Instance takes ownership of the file, no need to close it separately.
-		if instance == nil {
-			f.Close()
-		}
-		if err := os.Remove(f.Name()); err != nil {
-			if !os.IsNotExist(err) {
-				logging.Warningf(ctx, "cipd: failed to remove temp file - %s", err)
-			}
+		if err := instance.Close(); err != nil {
+			logging.Warningf(ctx, "cipd: failed to close the instance - %s", err)
 		}
 		// Opportunistically clean up trashed files.
 		client.doBatchAwareOp(ctx, batchAwareOpCleanupTrash)
 	}()
-
-	// Fetch the package data to the provided storage.
-	err = client.FetchInstance(ctx, pin, f)
-	if err != nil {
-		return err
-	}
-
-	// Open the instance, verify the instance ID.
-	instance, err = local.OpenInstance(ctx, f, pin.InstanceID)
-	if err != nil {
-		return err
-	}
-	defer instance.Close()
 
 	// Deploy it. 'defer' will take care of removing the temp file if needed.
 	_, err = client.deployer.DeployInstance(ctx, instance)
@@ -1370,6 +1447,21 @@ type clientBinary struct {
 type fetchClientBinaryInfoResponse struct {
 	instance     *InstanceInfo
 	clientBinary *clientBinary
+}
+
+// deleteOnClose deletes the file once it is closed.
+type deleteOnClose struct {
+	*os.File
+}
+
+func (d deleteOnClose) Close() (err error) {
+	name := d.File.Name()
+	defer func() {
+		if rmErr := os.Remove(name); err == nil && rmErr != nil && !os.IsNotExist(rmErr) {
+			err = rmErr
+		}
+	}()
+	return d.File.Close()
 }
 
 // Private stuff.

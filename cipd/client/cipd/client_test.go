@@ -479,46 +479,107 @@ func TestFetchInstanceRefs(t *testing.T) {
 func TestFetch(t *testing.T) {
 	ctx := makeTestContext()
 
-	Convey("Mocking remote services", t, func() {
+	Convey("Mocking remote services", t, func(c C) {
 		tempDir, err := ioutil.TempDir("", "cipd_test")
 		So(err, ShouldBeNil)
 		Reset(func() { os.RemoveAll(tempDir) })
-		tempFile := filepath.Join(tempDir, "pkg")
 
-		Convey("FetchInstance works", func(c C) {
-			inst := buildInstanceInMemory(ctx, "pkgname", nil)
-			defer inst.Close()
+		inst := buildInstanceInMemory(ctx, "testing/package", []local.File{
+			local.NewTestFile("file", "test data", false),
+		})
+		Reset(func() { inst.Close() })
 
+		client := mockClientForFetch(c, tempDir, []local.PackageInstance{inst})
+
+		Convey("FetchInstance (no cache)", func() {
+			reader, err := client.FetchInstance(ctx, inst.Pin())
+			So(err, ShouldBeNil)
+
+			// Backed by a temp file.
+			tmpFile := reader.(deleteOnClose)
+			_, err = os.Stat(tmpFile.Name())
+			So(err, ShouldBeNil)
+
+			fetched, err := local.OpenInstance(ctx, reader, "")
+			So(err, ShouldBeNil)
+			So(fetched.Pin(), ShouldResemble, inst.Pin())
+			fetched.Close() // this closes the 'reader' too
+
+			// The temp file is gone.
+			_, err = os.Stat(tmpFile.Name())
+			So(os.IsNotExist(err), ShouldBeTrue)
+		})
+
+		Convey("FetchInstance (with cache)", func() {
+			client.CacheDir = filepath.Join(tempDir, "instance_cache")
+
+			reader, err := client.FetchInstance(ctx, inst.Pin())
+			So(err, ShouldBeNil)
+
+			// Backed by a real file.
+			cachedFile := reader.(*os.File)
+			info1, err := os.Stat(cachedFile.Name())
+			So(err, ShouldBeNil)
+
+			fetched, err := local.OpenInstance(ctx, reader, "")
+			So(err, ShouldBeNil)
+			So(fetched.Pin(), ShouldResemble, inst.Pin())
+			fetched.Close() // this closes the 'reader' too
+
+			// The real file is still there, in the cache.
+			_, err = os.Stat(cachedFile.Name())
+			So(err, ShouldBeNil)
+
+			// Fetch again.
+			reader, err = client.FetchInstance(ctx, inst.Pin())
+			So(err, ShouldBeNil)
+
+			// Got same exact file.
+			cachedFile = reader.(*os.File)
+			info2, err := os.Stat(cachedFile.Name())
+			So(err, ShouldBeNil)
+			So(os.SameFile(info1, info2), ShouldBeTrue)
+
+			reader.Close()
+		})
+
+		Convey("FetchInstanceTo (no cache)", func() {
+			tempFile := filepath.Join(tempDir, "pkg")
 			out, err := os.OpenFile(tempFile, os.O_WRONLY|os.O_CREATE, 0666)
 			So(err, ShouldBeNil)
-			closed := false
-			defer func() {
-				if !closed {
-					out.Close()
-				}
-			}()
+			defer out.Close()
 
-			client := mockClientForFetch(c, "", []local.PackageInstance{inst})
-			err = client.FetchInstance(ctx, inst.Pin(), out)
+			err = client.FetchInstanceTo(ctx, inst.Pin(), out)
 			So(err, ShouldBeNil)
 			out.Close()
-			closed = true
 
 			fetched, err := local.OpenInstanceFile(ctx, tempFile, "")
 			So(err, ShouldBeNil)
 			So(fetched.Pin(), ShouldResemble, inst.Pin())
+			fetched.Close()
 		})
 
-		Convey("FetchAndDeployInstance works", func(c C) {
-			// Build a package instance with some file.
-			inst := buildInstanceInMemory(ctx, "testing/package", []local.File{
-				local.NewTestFile("file", "test data", false),
-			})
-			defer inst.Close()
+		Convey("FetchInstanceTo (with cache)", func() {
+			client.CacheDir = filepath.Join(tempDir, "instance_cache")
 
+			tempFile := filepath.Join(tempDir, "pkg")
+			out, err := os.OpenFile(tempFile, os.O_WRONLY|os.O_CREATE, 0666)
+			So(err, ShouldBeNil)
+			defer out.Close()
+
+			err = client.FetchInstanceTo(ctx, inst.Pin(), out)
+			So(err, ShouldBeNil)
+			out.Close()
+
+			fetched, err := local.OpenInstanceFile(ctx, tempFile, "")
+			So(err, ShouldBeNil)
+			So(fetched.Pin(), ShouldResemble, inst.Pin())
+			fetched.Close()
+		})
+
+		Convey("FetchAndDeployInstance works", func() {
 			// Install the package, fetching it from the fake server.
-			client := mockClientForFetch(c, tempDir, []local.PackageInstance{inst})
-			err = client.FetchAndDeployInstance(ctx, inst.Pin())
+			err := client.FetchAndDeployInstance(ctx, inst.Pin())
 			So(err, ShouldBeNil)
 
 			// The file from the package should be installed.

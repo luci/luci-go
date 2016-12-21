@@ -217,9 +217,6 @@ func (s *storageImpl) download(ctx context.Context, url string, output io.WriteS
 			reader:   src,
 			callback: func(read int64) { reportProgress(read, totalLen) },
 		})
-		if err == nil {
-			logging.Infof(ctx, "cipd: fetch finished successfully")
-		}
 		return err
 	}
 

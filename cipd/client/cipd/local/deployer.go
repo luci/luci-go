@@ -73,6 +73,8 @@ type Deployer interface {
 	RemoveDeployed(ctx context.Context, packageName string) error
 
 	// TempFile returns os.File located in <root>/.cipd/tmp/*.
+	//
+	// The file is open for reading and writing.
 	TempFile(ctx context.Context, prefix string) (*os.File, error)
 
 	// CleanupTrash attemps to remove stale files.

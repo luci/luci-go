@@ -1531,7 +1531,7 @@ func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile s
 		}
 	}()
 
-	err = client.FetchInstance(ctx, pin, out)
+	err = client.FetchInstanceTo(ctx, pin, out)
 	if err != nil {
 		return common.Pin{}, err
 	}

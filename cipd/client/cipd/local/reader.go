@@ -272,10 +272,10 @@ func (inst *packageInstance) open(instanceID string) error {
 	return nil
 }
 
-func (inst *packageInstance) Close() error {
+func (inst *packageInstance) Close() (err error) {
 	if inst.data != nil {
 		if closer, ok := inst.data.(io.Closer); ok {
-			closer.Close()
+			err = closer.Close()
 		}
 		inst.data = nil
 	}
@@ -284,7 +284,7 @@ func (inst *packageInstance) Close() error {
 	inst.zip = nil
 	inst.files = []File{}
 	inst.manifest = Manifest{}
-	return nil
+	return
 }
 
 func (inst *packageInstance) Pin() common.Pin {

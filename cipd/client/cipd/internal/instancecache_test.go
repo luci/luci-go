@@ -5,7 +5,6 @@
 package internal
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -22,6 +21,9 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+// No need to create 600 files in tests.
+const testInstanceCacheMaxSize = 10
+
 func TestInstanceCache(t *testing.T) {
 	ctx := context.Background()
 
@@ -34,6 +36,7 @@ func TestInstanceCache(t *testing.T) {
 
 		fs := local.NewFileSystem(tempDir, "")
 		cache := NewInstanceCache(fs)
+		cache.maxSize = testInstanceCacheMaxSize
 
 		put := func(cache *InstanceCache, pin common.Pin, data string) {
 			err = cache.Put(ctx, pin, now, func(f *os.File) error {
@@ -45,18 +48,22 @@ func TestInstanceCache(t *testing.T) {
 		}
 
 		testHas := func(cache *InstanceCache, pin common.Pin, data string) {
-			buf := &bytes.Buffer{}
-			err = cache.Get(ctx, pin, buf, now)
+			r, err := cache.Get(ctx, pin, now)
 			So(err, ShouldBeNil)
-			So(buf.String(), ShouldEqual, data)
+			buf, err := ioutil.ReadAll(r)
+			So(err, ShouldBeNil)
+			So(string(buf), ShouldEqual, data)
+			So(r.Close(), ShouldBeNil)
 		}
 
 		Convey("Works", func() {
 			cache2 := NewInstanceCache(fs)
+			cache2.maxSize = testInstanceCacheMaxSize
 
 			pin := common.Pin{"pkg", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}
-			err := cache.Get(ctx, pin, ioutil.Discard, now)
+			r, err := cache.Get(ctx, pin, now)
 			So(os.IsNotExist(err), ShouldBeTrue)
+			So(r, ShouldBeNil)
 
 			// Add new.
 			put(cache, pin, "blah")
@@ -77,7 +84,7 @@ func TestInstanceCache(t *testing.T) {
 
 		Convey("GC", func() {
 			// Add twice more the limit.
-			for i := 0; i < instanceCacheMaxSize*2; i++ {
+			for i := 0; i < testInstanceCacheMaxSize*2; i++ {
 				put(cache, pini(i), "blah")
 				now = now.Add(time.Second)
 			}
@@ -88,12 +95,15 @@ func TestInstanceCache(t *testing.T) {
 
 			files, err := tempDirFile.Readdirnames(0)
 			So(err, ShouldBeNil)
-			So(files, ShouldHaveLength, instanceCacheMaxSize+1) // 1 for state.db
+			So(files, ShouldHaveLength, testInstanceCacheMaxSize+1) // 1 for state.db
 
 			// Try to get.
-			for i := 0; i < instanceCacheMaxSize*2; i++ {
-				err := cache.Get(ctx, pini(i), ioutil.Discard, now)
-				So(os.IsNotExist(err), ShouldEqual, i < instanceCacheMaxSize)
+			for i := 0; i < testInstanceCacheMaxSize*2; i++ {
+				r, err := cache.Get(ctx, pini(i), now)
+				So(os.IsNotExist(err), ShouldEqual, i < testInstanceCacheMaxSize)
+				if r != nil {
+					r.Close()
+				}
 			}
 		})
 
