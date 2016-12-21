@@ -2,7 +2,7 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-package tsmon
+package grpcmon
 
 import (
 	"time"
@@ -34,19 +34,18 @@ var (
 		field.Int("code"))      // grpc.Code of the result
 )
 
-// NewGrpcUnaryInterceptor returns an interceptor that gathers RPC handler
+// NewUnaryServerInterceptor returns an interceptor that gathers RPC handler
 // metrics and sends them to tsmon.
 //
 // It can be optionally chained with other interceptor. The reported metrics
 // include time spent in this other interceptor too.
 //
-// It assumes the RPC context has tsmon initialized already (perhaps via the
-// middleware).
-func NewGrpcUnaryInterceptor(next grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
+// It assumes the RPC context has tsmon initialized already.
+func NewUnaryServerInterceptor(next grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		started := clock.Now(ctx)
 		defer func() {
-			reportRPCMetrics(ctx, info.FullMethod, err, clock.Now(ctx).Sub(started))
+			reportServerRPCMetrics(ctx, info.FullMethod, err, clock.Now(ctx).Sub(started))
 		}()
 		if next != nil {
 			return next(ctx, req, info, handler)
@@ -55,12 +54,12 @@ func NewGrpcUnaryInterceptor(next grpc.UnaryServerInterceptor) grpc.UnaryServerI
 	}
 }
 
-// reportRPCMetrics sends metrics after RPC handler has finished.
-func reportRPCMetrics(ctx context.Context, method string, err error, dur time.Duration) {
+// reportServerRPCMetrics sends metrics after RPC handler has finished.
+func reportServerRPCMetrics(ctx context.Context, method string, err error, dur time.Duration) {
 	code := 0
 	if err != nil {
 		code = int(grpc.Code(err))
 	}
 	grpcServerCount.Add(ctx, 1, method, code)
-	grpcServerDuration.Add(ctx, float64(dur.Nanoseconds()/1000000), method, code)
+	grpcServerDuration.Add(ctx, float64(dur.Nanoseconds()/1e6), method, code)
 }

@@ -11,8 +11,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/appengine/tsmon"
 	"github.com/luci/luci-go/grpc/discovery"
+	"github.com/luci/luci-go/grpc/grpcmon"
 	"github.com/luci/luci-go/grpc/prpc"
 	milo "github.com/luci/luci-go/milo/api/proto"
 	"github.com/luci/luci-go/milo/appengine/buildbot"
@@ -72,7 +72,7 @@ func init() {
 
 	// pRPC style endpoints.
 	api := prpc.Server{
-		UnaryServerInterceptor: tsmon.NewGrpcUnaryInterceptor(nil),
+		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil),
 	}
 	milo.RegisterBuildbotServer(&api, &milo.DecoratedBuildbot{
 		Service: &buildbot.Service{},

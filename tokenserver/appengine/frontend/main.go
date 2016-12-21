@@ -20,9 +20,9 @@ import (
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/appengine/tsmon"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/grpc/discovery"
+	"github.com/luci/luci-go/grpc/grpcmon"
 	"github.com/luci/luci-go/grpc/prpc"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
@@ -100,7 +100,7 @@ func init() {
 		Authenticator: auth.Authenticator{
 			&server.OAuth2Method{Scopes: []string{server.EmailScope}},
 		},
-		UnaryServerInterceptor: tsmon.NewGrpcUnaryInterceptor(nil),
+		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil),
 	}
 	admin.RegisterCertificateAuthoritiesServer(&api, caServerWithAuth)
 	admin.RegisterAdminServer(&api, adminServerWithAuth)
