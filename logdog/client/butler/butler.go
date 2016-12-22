@@ -25,6 +25,7 @@ import (
 	"github.com/luci/luci-go/logdog/client/butler/streamserver"
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
 	"github.com/luci/luci-go/logdog/common/types"
+
 	"golang.org/x/net/context"
 )
 
@@ -55,6 +56,11 @@ type Config struct {
 	Project config.ProjectName
 	// Prefix is the log stream common prefix value.
 	Prefix types.StreamName
+
+	// GlobalTags are a set of global log stream tags to apply to individual
+	// streams on registration. Individual stream tags will override tags with
+	// the same key.
+	GlobalTags streamproto.TagMap
 
 	// BufferLogs, if true, instructs the butler to buffer collected log data
 	// before sending it to Output.
@@ -396,6 +402,17 @@ func (b *Butler) AddStream(rc io.ReadCloser, p *streamproto.Properties) error {
 	}
 	if err := p.Validate(); err != nil {
 		return err
+	}
+
+	// Build per-stream tag map.
+	if l := len(b.c.GlobalTags); l > 0 {
+		for k, v := range b.c.GlobalTags {
+			// Add only global flags that aren't already present (overridden) in
+			// stream tags.
+			if _, ok := p.Tags[k]; !ok {
+				p.Tags[k] = v
+			}
+		}
 	}
 
 	if p.Timeout > 0 {

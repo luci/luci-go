@@ -35,7 +35,7 @@ func (s *streamConfig) addFlags(fs *flag.FlagSet) {
 	fs.Var(&s.Tee, "tee",
 		fmt.Sprintf("Tee the stream through the Butler's output. Options are: %s",
 			streamproto.TeeTypeFlagEnum.Choices()))
-	fs.Var(&s.Tags, "tag", "Add a key=value tag.")
+	fs.Var(&s.Tags, "tag", "Add a key[=value] tag.")
 }
 
 // Converts command-line parameters into a stream.Config.

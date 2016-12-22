@@ -32,6 +32,7 @@ import (
 	grpcLogging "github.com/luci/luci-go/grpc/logging"
 	"github.com/luci/luci-go/logdog/client/butler"
 	"github.com/luci/luci-go/logdog/client/butler/output"
+	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
 	"github.com/luci/luci-go/logdog/common/types"
 )
 
@@ -65,6 +66,7 @@ type application struct {
 
 	authFlags authcli.Flags
 
+	globalTags   streamproto.TagMap
 	maxBufferAge clockflag.Duration
 	noBufferLogs bool
 
@@ -101,6 +103,9 @@ func (a *application) addFlags(fs *flag.FlagSet) {
 		"The output name and configuration. Specify 'help' for more information.")
 	fs.IntVar(&a.outputWorkers, "output-workers", butler.DefaultOutputWorkers,
 		"The maximum number of parallel output dispatches.")
+	fs.Var(&a.globalTags, "tag",
+		"Specify key[=value] tags to be applied to all log streams. Individual treams may override. Can "+
+			"be specified multiple times.")
 	fs.Var(&a.maxBufferAge, "output-max-buffer-age",
 		"Send buffered messages if they've been held for longer than this period.")
 	fs.BoolVar(&a.noBufferLogs, "output-no-buffer", false,
@@ -142,6 +147,7 @@ func (a *application) runWithButler(out output.Output, runFunc func(*butler.Butl
 	butlerOpts := butler.Config{
 		Project:             a.project,
 		Prefix:              a.prefix,
+		GlobalTags:          a.globalTags,
 		MaxBufferAge:        time.Duration(a.maxBufferAge),
 		BufferLogs:          !a.noBufferLogs,
 		Output:              out,
