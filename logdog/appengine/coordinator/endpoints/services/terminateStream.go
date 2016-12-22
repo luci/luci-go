@@ -117,7 +117,8 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 				// Schedule this mutation to execute after our settle delay.
 				Expiration: now.Add(params.SettleDelay),
 			}
-			aeParent, aeName := cat.TaskName(c)
+
+			aeParent, aeName := ds.KeyForObj(c, lst), cat.TaskName(c)
 			if err := tumble.PutNamedMutations(c, aeParent, map[string]tumble.Mutation{aeName: &cat}); err != nil {
 				log.WithError(err).Errorf(c, "Failed to replace archive expiration mutation.")
 				return grpcutil.Internal

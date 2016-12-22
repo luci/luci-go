@@ -102,8 +102,8 @@ func (m *CreateArchiveTask) ProcessAfter() time.Time { return m.Expiration }
 func (m *CreateArchiveTask) HighPriority() bool { return false }
 
 // TaskName returns the task's name, which is derived from its log stream ID.
-func (m *CreateArchiveTask) TaskName(c context.Context) (*ds.Key, string) {
-	return ds.KeyForObj(c, m.logStream()), fmt.Sprintf("archive-expired-%s", m.ID)
+func (m *CreateArchiveTask) TaskName(c context.Context) string {
+	return fmt.Sprintf("archive-expired-%s", m.ID)
 }
 
 // logStream returns the log stream associated with this task.

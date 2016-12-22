@@ -357,7 +357,7 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 			m := iterMuts[i]
 
 			logging.Fields{"m": m}.Infof(c, "running RollForward")
-			shards, newMuts, newMutKeys, err := enterTransactionInternal(c, cfg, overrideRoot{m, root}, uint64(i))
+			shards, newMuts, newMutKeys, err := enterTransactionMutation(c, cfg, overrideRoot{m, root}, uint64(i))
 			if err != nil {
 				l.Errorf("Executing decoded gob(%T) failed: %q: %+v", m, err, m)
 				continue

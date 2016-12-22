@@ -71,7 +71,7 @@ func TestTerminateStream(t *testing.T) {
 						ID:         tls.Stream.ID,
 						Expiration: env.Clock.Now().Add(time.Hour),
 					}
-					arParent, arName := areq.TaskName(c)
+					arParent, arName := ds.KeyForObj(c, tls.Stream), areq.TaskName(c)
 					err := tumble.PutNamedMutations(c, arParent, map[string]tumble.Mutation{
 						arName: &areq,
 					})

@@ -300,43 +300,6 @@ func TestRegisterStream(t *testing.T) {
 						So(err, ShouldBeRPCInvalidArgument, "Invalid log stream descriptor")
 					})
 				})
-
-				Convey(`The registerStreamMutation`, func() {
-					svcs := coordinator.GetServices(c)
-					cfg, err := svcs.Config(c)
-					if err != nil {
-						panic(err)
-					}
-					pcfg, err := svcs.ProjectConfig(c, "proj-foo")
-					if err != nil {
-						panic(err)
-					}
-
-					rsm := registerStreamMutation{
-						RegisterStreamRequest: &req,
-
-						cfg:  cfg,
-						pcfg: pcfg,
-
-						desc: tls.Desc,
-						pfx:  tls.Prefix,
-						ls:   tls.Stream,
-						lst:  tls.State,
-					}
-
-					Convey(`Can RollForward.`, func() {
-						_, err := rsm.RollForward(c)
-						So(err, ShouldBeNil)
-					})
-
-					Convey(`Returns internal server error if the stream Put() fails (tumble).`, func() {
-						c, fb := featureBreaker.FilterRDS(c, nil)
-						fb.BreakFeatures(errors.New("test error"), "PutMulti")
-
-						_, err := rsm.RollForward(c)
-						So(err, ShouldBeRPCInternal)
-					})
-				})
 			})
 		})
 	})
