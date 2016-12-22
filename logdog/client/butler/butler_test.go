@@ -9,17 +9,22 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/proto/google"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/butler/output"
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
 	"github.com/luci/luci-go/logdog/common/types"
-	. "github.com/smartystreets/goconvey/convey"
+
 	"golang.org/x/net/context"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 type testOutput struct {
@@ -397,6 +402,60 @@ func TestButler(t *testing.T) {
 				So(teeStderr.String(), ShouldEqual, "Hello, STDERR")
 				So(to.logs("stderr"), shouldHaveTextLogs, "Hello, STDERR")
 				So(to.isTerminal("stderr"), ShouldBeTrue)
+			})
+
+			Convey(`Can apply global tags.`, func() {
+				conf.GlobalTags = streamproto.TagMap{
+					"foo": "bar",
+					"baz": "qux",
+				}
+				props := streamproto.Properties{
+					LogStreamDescriptor: &logpb.LogStreamDescriptor{
+						Name:        "stdout",
+						ContentType: "test/data",
+						Timestamp:   google.NewTimestamp(time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC)),
+					},
+				}
+
+				b := mkb(c, conf)
+				defer func() {
+					b.Activate()
+					b.Wait()
+				}()
+
+				Convey(`Applies global tags, but allows the stream to override.`, func() {
+					props.Tags = map[string]string{
+						"baz": "override",
+					}
+
+					So(b.AddStream(ioutil.NopCloser(&bytes.Buffer{}), &props), ShouldBeNil)
+					So(b.bundler.GetStreamDescs(), ShouldResemble, map[string]*logpb.LogStreamDescriptor{
+						"stdout": {
+							Name:        "stdout",
+							ContentType: "test/data",
+							Timestamp:   props.Timestamp,
+							Tags: map[string]string{
+								"foo": "bar",
+								"baz": "override",
+							},
+						},
+					})
+				})
+
+				Convey(`Will apply global tags if the stream has none (nil).`, func() {
+					So(b.AddStream(ioutil.NopCloser(&bytes.Buffer{}), &props), ShouldBeNil)
+					So(b.bundler.GetStreamDescs(), ShouldResemble, map[string]*logpb.LogStreamDescriptor{
+						"stdout": {
+							Name:        "stdout",
+							ContentType: "test/data",
+							Timestamp:   props.Timestamp,
+							Tags: map[string]string{
+								"foo": "bar",
+								"baz": "qux",
+							},
+						},
+					})
+				})
 			})
 
 			Convey(`Run with 256 streams, stream{0..256} will deplete and finish.`, func() {

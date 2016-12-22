@@ -52,6 +52,7 @@ type bundlerStream interface {
 	name() string
 	expireTime() (time.Time, bool)
 	nextBundleEntry(*builder, bool) bool
+	streamDesc() *logpb.LogStreamDescriptor
 }
 
 // Bundler is the main Bundler instance. It exposes goroutine-safe endpoints for
@@ -139,6 +140,26 @@ func (b *Bundler) Register(p *streamproto.Properties) (Stream, error) {
 	s := newStream(c)
 	b.registerStreamLocked(s)
 	return s, nil
+}
+
+// GetStreamDescs returns the set of registered stream names mapped to their
+// descriptors.
+//
+// This is intended for testing purposes. DO NOT modify the resulting
+// descriptors.
+func (b *Bundler) GetStreamDescs() map[string]*logpb.LogStreamDescriptor {
+	b.streamsLock.Lock()
+	defer b.streamsLock.Unlock()
+
+	if len(b.streams) == 0 {
+		return nil
+	}
+
+	streams := make(map[string]*logpb.LogStreamDescriptor, len(b.streams))
+	for k, s := range b.streams {
+		streams[k] = s.streamDesc()
+	}
+	return streams
 }
 
 // CloseAndFlush closes the Bundler, alerting it that no more streams will be

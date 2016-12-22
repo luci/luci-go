@@ -365,3 +365,7 @@ func (s *streamImpl) setAppendErrorLocked(err error) {
 	s.closeLocked()
 	s.signalDataConsumed()
 }
+
+func (s *streamImpl) streamDesc() *logpb.LogStreamDescriptor {
+	return s.c.template.Desc
+}

@@ -406,6 +406,10 @@ func (b *Butler) AddStream(rc io.ReadCloser, p *streamproto.Properties) error {
 
 	// Build per-stream tag map.
 	if l := len(b.c.GlobalTags); l > 0 {
+		if p.Tags == nil {
+			p.Tags = make(map[string]string, l)
+		}
+
 		for k, v := range b.c.GlobalTags {
 			// Add only global flags that aren't already present (overridden) in
 			// stream tags.
