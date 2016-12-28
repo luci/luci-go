@@ -4,7 +4,9 @@
 
 {{define "body"}}
 <h1>Error: {{.Code}}</h1>
-{{ if .Message }}
+{{ if eq .Code 401 }}
+  <div>You are not authenticated, please try <a href="{{.LoginURL}}">logging in</a></div>
+{{ else if .Message }}
   <div>{{.Message}}</div>
 {{ end }}
 <div>Request ID: {{.RequestID}}</div>
