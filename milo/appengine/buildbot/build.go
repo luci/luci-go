@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -174,6 +175,8 @@ func summary(c context.Context, b *buildbotBuild) resp.BuildComponent {
 	return sum
 }
 
+var rLineBreak = regexp.MustCompile("<br */?>")
+
 // components takes a full buildbot build struct and extract step info from all
 // of the steps and returns it as a list of milo Build Components.
 func components(b *buildbotBuild) (result []*resp.BuildComponent) {
@@ -183,7 +186,12 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 		}
 		bc := &resp.BuildComponent{
 			Label: step.Name,
-			Text:  step.Text,
+		}
+		// Step text sometimes contains <br>, which we want to parse into new lines.
+		for _, t := range step.Text {
+			for _, line := range rLineBreak.Split(t, -1) {
+				bc.Text = append(bc.Text, line)
+			}
 		}
 
 		// Figure out the status.
