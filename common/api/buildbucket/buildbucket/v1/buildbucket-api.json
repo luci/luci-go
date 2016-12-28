@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"zRMgE0l9nVDW4S28VYYcYQF9UW4/S-QlT-LG4tzfglYajGitdbn-uxw\"",
+ "etag": "\"ODRTh3xaRR64wpeXJSlF33HMN-0/72w1tM82jyLOVXQokFAUqsYiSfw\"",
  "discoveryVersion": "v1",
  "id": "buildbucket:v1",
  "name": "buildbucket",
@@ -8,8 +8,8 @@
  "title": "Build Bucket Service",
  "description": "API for scheduling builds.",
  "icons": {
-  "x16": "http://www.google.com/images/icons/product/search-16.gif",
-  "x32": "http://www.google.com/images/icons/product/search-32.gif"
+  "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
+  "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
  },
  "protocol": "rest",
  "baseUrl": "https://cr-buildbucket.appspot.com/_ah/api/buildbucket/v1/",

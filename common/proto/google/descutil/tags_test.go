@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	pb "google.golang.org/genproto/protobuf"
+	pb "github.com/golang/protobuf/protoc-gen-go/descriptor"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

@@ -103,7 +103,7 @@ func (c *Checker) AddItem(item *Item, isolated bool, callback CheckerCallback) {
 // After Close has returned, Checker is guaranteed to no longer invoke any
 // previously-provided callback.
 func (c *Checker) Close() error {
-	c.bundler.Close()
+	c.bundler.Stop()
 	// After Close has returned, we know there are no outstanding running
 	// checks.
 	return c.err

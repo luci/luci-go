@@ -2164,6 +2164,17 @@ func (c *BotsCountCall) Dimensions(dimensions ...string) *BotsCountCall {
 	return c
 }
 
+// IsBusy sets the optional parameter "is_busy":
+//
+// Possible values:
+//   "FALSE"
+//   "NONE" (default)
+//   "TRUE"
+func (c *BotsCountCall) IsBusy(isBusy string) *BotsCountCall {
+	c.urlParams_.Set("is_busy", isBusy)
+	return c
+}
+
 // IsDead sets the optional parameter "is_dead":
 //
 // Possible values:
@@ -2294,6 +2305,21 @@ func (c *BotsCountCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotsCount
 	//     "dimensions": {
 	//       "location": "query",
 	//       "repeated": true,
+	//       "type": "string"
+	//     },
+	//     "is_busy": {
+	//       "default": "NONE",
+	//       "enum": [
+	//         "FALSE",
+	//         "NONE",
+	//         "TRUE"
+	//       ],
+	//       "enumDescriptions": [
+	//         "",
+	//         "",
+	//         ""
+	//       ],
+	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "is_dead": {
@@ -2494,6 +2520,17 @@ func (c *BotsListCall) Dimensions(dimensions ...string) *BotsListCall {
 	return c
 }
 
+// IsBusy sets the optional parameter "is_busy":
+//
+// Possible values:
+//   "FALSE"
+//   "NONE" (default)
+//   "TRUE"
+func (c *BotsListCall) IsBusy(isBusy string) *BotsListCall {
+	c.urlParams_.Set("is_busy", isBusy)
+	return c
+}
+
 // IsDead sets the optional parameter "is_dead":
 //
 // Possible values:
@@ -2624,6 +2661,21 @@ func (c *BotsListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotList, e
 	//     "dimensions": {
 	//       "location": "query",
 	//       "repeated": true,
+	//       "type": "string"
+	//     },
+	//     "is_busy": {
+	//       "default": "NONE",
+	//       "enum": [
+	//         "FALSE",
+	//         "NONE",
+	//         "TRUE"
+	//       ],
+	//       "enumDescriptions": [
+	//         "",
+	//         "",
+	//         ""
+	//       ],
+	//       "location": "query",
 	//       "type": "string"
 	//     },
 	//     "is_dead": {

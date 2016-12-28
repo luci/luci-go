@@ -9,9 +9,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
-	"google.golang.org/genproto/protobuf"
 
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/proto/google/descutil"

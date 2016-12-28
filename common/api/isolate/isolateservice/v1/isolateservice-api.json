@@ -1,14 +1,14 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"zRMgE0l9nVDW4S28VYYcYQF9UW4/3KI6TVp1MMqKkL6cnO9D42dGmko\"",
+ "etag": "\"ODRTh3xaRR64wpeXJSlF33HMN-0/72jS9RGr-voDJLvg8VfPTXufieI\"",
  "discoveryVersion": "v1",
  "id": "isolateservice:v1",
  "name": "isolateservice",
  "version": "v1",
  "description": "Version 1 of Isolate Service",
  "icons": {
-  "x16": "http://www.google.com/images/icons/product/search-16.gif",
-  "x32": "http://www.google.com/images/icons/product/search-32.gif"
+  "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
+  "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
  },
  "protocol": "rest",
  "baseUrl": "https://isolateserver.appspot.com/_ah/api/isolateservice/v1/",

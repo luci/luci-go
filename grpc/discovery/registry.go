@@ -13,7 +13,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"google.golang.org/genproto/protobuf"
+	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 )
 
 type entry struct {

@@ -15,7 +15,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	"google.golang.org/genproto/protobuf"
+	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 )
 
 func run() error {

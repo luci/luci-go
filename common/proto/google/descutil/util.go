@@ -7,7 +7,7 @@ package descutil
 import (
 	"strings"
 
-	pb "google.golang.org/genproto/protobuf"
+	pb "github.com/golang/protobuf/protoc-gen-go/descriptor"
 )
 
 // splitFullName splits package name and service/type name.

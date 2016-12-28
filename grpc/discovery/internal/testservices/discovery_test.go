@@ -19,7 +19,7 @@ import (
 	"github.com/luci/luci-go/common/proto/google/descutil"
 	"github.com/luci/luci-go/grpc/discovery"
 
-	"google.golang.org/genproto/protobuf"
+	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

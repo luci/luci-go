@@ -2,7 +2,7 @@
 
 package discovery
 
-import "google.golang.org/genproto/protobuf"
+import "github.com/golang/protobuf/protoc-gen-go/descriptor"
 
 func init() {
 	RegisterDescriptorSetCompressed(

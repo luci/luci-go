@@ -1,14 +1,14 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"zRMgE0l9nVDW4S28VYYcYQF9UW4/eUABaByO-cDkpFpEyWJg5iOQQJQ\"",
+ "etag": "\"ODRTh3xaRR64wpeXJSlF33HMN-0/GonxJDPxZrsuGi9jSsW3xc04MHA\"",
  "discoveryVersion": "v1",
  "id": "swarming:v1",
  "name": "swarming",
  "version": "v1",
  "description": "API to interact with the Swarming service. Permits to create, view and cancel tasks, query tasks and bots",
  "icons": {
-  "x16": "http://www.google.com/images/icons/product/search-16.gif",
-  "x32": "http://www.google.com/images/icons/product/search-32.gif"
+  "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
+  "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
  },
  "protocol": "rest",
  "baseUrl": "https://chromium-swarm.appspot.com/_ah/api/swarming/v1/",
@@ -1089,6 +1089,21 @@
        "repeated": true,
        "location": "query"
       },
+      "is_busy": {
+       "type": "string",
+       "default": "NONE",
+       "enum": [
+        "FALSE",
+        "NONE",
+        "TRUE"
+       ],
+       "enumDescriptions": [
+        "",
+        "",
+        ""
+       ],
+       "location": "query"
+      },
       "is_dead": {
        "type": "string",
        "default": "NONE",
@@ -1158,6 +1173,21 @@
       "dimensions": {
        "type": "string",
        "repeated": true,
+       "location": "query"
+      },
+      "is_busy": {
+       "type": "string",
+       "default": "NONE",
+       "enum": [
+        "FALSE",
+        "NONE",
+        "TRUE"
+       ],
+       "enumDescriptions": [
+        "",
+        "",
+        ""
+       ],
        "location": "query"
       },
       "is_dead": {

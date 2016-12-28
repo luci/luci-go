@@ -4,7 +4,7 @@ package dm
 
 import discovery "github.com/luci/luci-go/grpc/discovery"
 
-import "google.golang.org/genproto/protobuf"
+import "github.com/golang/protobuf/protoc-gen-go/descriptor"
 
 func init() {
 	discovery.RegisterDescriptorSetCompressed(

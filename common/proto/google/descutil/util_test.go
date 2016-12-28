@@ -10,8 +10,8 @@ import (
 	"io/ioutil"
 
 	"github.com/golang/protobuf/proto"
+	pb "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	. "github.com/smartystreets/goconvey/convey"
-	pb "google.golang.org/genproto/protobuf"
 )
 
 func TestUtil(t *testing.T) {

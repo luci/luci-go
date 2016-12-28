@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"google.golang.org/genproto/protobuf"
+	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 
 	"github.com/luci/luci-go/common/proto/google/descutil"
 

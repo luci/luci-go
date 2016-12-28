@@ -7,7 +7,7 @@ package flagpb
 import (
 	"github.com/luci/luci-go/common/proto/google/descutil"
 
-	"google.golang.org/genproto/protobuf"
+	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 )
 
 // Resolver resolves type names.

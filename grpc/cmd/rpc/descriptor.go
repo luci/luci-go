@@ -12,9 +12,9 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/luci/luci-go/grpc/discovery"
 	"github.com/luci/luci-go/grpc/prpc"
-	"google.golang.org/genproto/protobuf"
 )
 
 type serverDescription struct {
