@@ -9,20 +9,24 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luci/gkvlite"
-
 	"github.com/luci/luci-go/common/data/recordio"
+	"github.com/luci/luci-go/common/data/treapstore"
 	"github.com/luci/luci-go/logdog/common/storage"
 
 	"golang.org/x/net/context"
 )
 
+type storageItem struct {
+	key   []byte
+	value []byte
+}
+
 // btTableTest is an in-memory implementation of btTable interface for testing.
 //
 // This is a simple implementation; not an efficient one.
 type btTableTest struct {
-	s *gkvlite.Store
-	c *gkvlite.Collection
+	s *treapstore.Store
+	c *treapstore.Collection
 
 	// err, if true, is the error immediately returned by functions.
 	err error
@@ -47,12 +51,6 @@ type btTestingStorage struct {
 	mem *btTableTest
 }
 
-func (st *btTestingStorage) Close() {
-	// Override Close to make sure our gkvlite instance is closed.
-	st.mem.close()
-	st.btStorage.Close()
-}
-
 func (st *btTestingStorage) DataMap() map[string][]byte { return st.mem.dataMap() }
 func (st *btTestingStorage) SetMaxRowSize(v int)        { st.maxRowSize = v }
 func (st *btTestingStorage) SetErr(err error)           { st.mem.err = err }
@@ -74,20 +72,16 @@ func NewMemoryInstance(c context.Context, opts Options) Testing {
 }
 
 func (t *btTableTest) close() {
-	if t.s != nil {
-		t.s.Close()
-		t.s = nil
-	}
+	t.s = nil
+	t.c = nil
 }
 
-func (t *btTableTest) collection() *gkvlite.Collection {
+func (t *btTableTest) collection() *treapstore.Collection {
 	if t.s == nil {
-		var err error
-		t.s, err = gkvlite.NewStore(nil)
-		if err != nil {
-			panic(err)
-		}
-		t.c = t.s.MakePrivateCollection(bytes.Compare)
+		t.s = treapstore.New()
+		t.c = t.s.CreateCollection("", func(a, b interface{}) int {
+			return bytes.Compare(a.(*storageItem).key, b.(*storageItem).key)
+		})
 	}
 	return t.c
 }
@@ -108,16 +102,29 @@ func (t *btTableTest) putLogData(c context.Context, rk *rowKey, d []byte) error 
 
 	enc := []byte(rk.encode())
 	coll := t.collection()
-	if item, _ := coll.Get(enc); item != nil {
+	if item := coll.Get(&storageItem{enc, nil}); item != nil {
 		return storage.ErrExists
 	}
 
 	clone := make([]byte, len(d))
 	copy(clone, d)
-	if err := coll.Set(enc, clone); err != nil {
-		panic(err)
-	}
+	coll.Put(&storageItem{enc, clone})
+
 	return nil
+}
+
+func (t *btTableTest) forEachItem(start []byte, cb func(k, v []byte) bool) {
+	it := t.collection().Iterator(&storageItem{start, nil})
+	for {
+		itm, ok := it.Next()
+		if !ok {
+			return
+		}
+		ent := itm.(*storageItem)
+		if !cb(ent.key, ent.value) {
+			return
+		}
+	}
 }
 
 func (t *btTableTest) getLogData(c context.Context, rk *rowKey, limit int, keysOnly bool, cb btGetCallback) error {
@@ -128,9 +135,10 @@ func (t *btTableTest) getLogData(c context.Context, rk *rowKey, limit int, keysO
 	enc := []byte(rk.encode())
 	prefix := rk.pathPrefix()
 	var ierr error
-	err := t.collection().VisitItemsAscend(enc, !keysOnly, func(i *gkvlite.Item) bool {
+
+	t.forEachItem(enc, func(k, v []byte) bool {
 		var drk *rowKey
-		drk, ierr = decodeRowKey(string(i.Key))
+		drk, ierr = decodeRowKey(string(k))
 		if ierr != nil {
 			return false
 		}
@@ -138,7 +146,7 @@ func (t *btTableTest) getLogData(c context.Context, rk *rowKey, limit int, keysO
 			return false
 		}
 
-		rowData := i.Val
+		rowData := v
 		if keysOnly {
 			rowData = nil
 		}
@@ -159,9 +167,6 @@ func (t *btTableTest) getLogData(c context.Context, rk *rowKey, limit int, keysO
 
 		return true
 	})
-	if err != nil {
-		panic(err)
-	}
 	return ierr
 }
 
@@ -176,12 +181,9 @@ func (t *btTableTest) setMaxLogAge(c context.Context, d time.Duration) error {
 func (t *btTableTest) dataMap() map[string][]byte {
 	result := map[string][]byte{}
 
-	err := t.collection().VisitItemsAscend([]byte(nil), true, func(i *gkvlite.Item) bool {
-		result[string(i.Key)] = i.Val
+	t.forEachItem(nil, func(k, v []byte) bool {
+		result[string(k)] = v
 		return true
 	})
-	if err != nil {
-		panic(err)
-	}
 	return result
 }
