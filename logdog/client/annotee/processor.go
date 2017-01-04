@@ -306,9 +306,12 @@ func (p *Processor) IngestLine(s *Stream, line string) error {
 
 	// Handle annotation line.
 	if a != "" {
-		// If we're teeing annotations, emit this annotation if it's not a
-		// stream-type annotation.
-		if s.Tee != nil && p.o.TeeAnnotations && !isStreamAnnotation(a) {
+		// If we're teeing annotations, emit this annotation.
+		//
+		// Some annotations (notably, STEP_LOG_LINE) contain actual content instead
+		// of structural build hinting. We don't want to tee those unless we're also
+		// teeing text.
+		if s.Tee != nil && p.o.TeeAnnotations && (p.o.TeeText || !isContentAnnotation(a)) {
 			if err := writeTextLine(s.Tee, line); err != nil {
 				log.WithError(err).Errorf(h, "Failed to tee annotation line.")
 				return err
@@ -763,7 +766,7 @@ func buildAnnotation(name string, params ...string) string {
 	return "@@@" + strings.Join(append(v, params...), "@") + "@@@"
 }
 
-func isStreamAnnotation(a string) bool {
+func isContentAnnotation(a string) bool {
 	// Strip out any annotation arguments.
 	if idx := strings.IndexRune(a, '@'); idx > 0 {
 		a = a[:idx]
