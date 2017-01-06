@@ -5,8 +5,11 @@
 package prod
 
 import (
+	"github.com/luci/gae/impl/prod/constraints"
 	ds "github.com/luci/gae/service/datastore"
+
 	"github.com/luci/luci-go/common/errors"
+
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/datastore"
 )
@@ -298,6 +301,8 @@ func (d *rdsImpl) CurrentTransaction() ds.Transaction {
 	}
 	return nil
 }
+
+func (d *rdsImpl) Constraints() ds.Constraints { return constraints.DS() }
 
 func (d *rdsImpl) GetTestable() ds.Testable {
 	return nil

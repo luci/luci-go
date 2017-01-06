@@ -131,6 +131,8 @@ func (d *dsTxnBuf) WithoutTransaction() context.Context {
 	return c
 }
 
+func (d *dsTxnBuf) Constraints() ds.Constraints { return d.rds.Constraints() }
+
 func (d *dsTxnBuf) GetTestable() ds.Testable {
 	return d.rds.GetTestable()
 }

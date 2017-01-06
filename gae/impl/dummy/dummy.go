@@ -91,7 +91,8 @@ func (ds) RunInTransaction(func(context.Context) error, *datastore.TransactionOp
 func (ds) WithoutTransaction() context.Context       { panic(ni()) }
 func (ds) CurrentTransaction() datastore.Transaction { panic(ni()) }
 
-func (ds) GetTestable() datastore.Testable { return nil }
+func (ds) Constraints() datastore.Constraints { panic(ni()) }
+func (ds) GetTestable() datastore.Testable    { return nil }
 
 var dummyDSInst = ds{}
 

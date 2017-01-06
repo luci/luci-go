@@ -12,6 +12,7 @@ import (
 
 	"github.com/luci/luci-go/common/errors"
 
+	"github.com/luci/gae/impl/prod/constraints"
 	ds "github.com/luci/gae/service/datastore"
 
 	"cloud.google.com/go/datastore"
@@ -253,6 +254,8 @@ func (bds *boundDatastore) WithoutTransaction() context.Context {
 }
 
 func (bds *boundDatastore) CurrentTransaction() ds.Transaction { return bds.transaction }
+
+func (bds *boundDatastore) Constraints() ds.Constraints { return constraints.DS() }
 
 func (bds *boundDatastore) GetTestable() ds.Testable { return nil }
 

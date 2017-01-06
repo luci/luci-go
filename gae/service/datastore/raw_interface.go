@@ -63,6 +63,20 @@ type NewKeyCB func(key *Key, err error) error
 // error `Stop`, then DeleteMulti will stop the query and return nil.
 type DeleteMultiCB func(err error) error
 
+// Constraints represent implementation constraints.
+type Constraints struct {
+	// QueryBatchSize is the number of query elements to use when batching
+	// queries. This should be chosen such that any given query batch of this
+	// size will (probably) not cause a timeout.
+	//
+	// If <= 0, there is no default batch size.
+	QueryBatchSize int
+
+	// MaxPutSize is the maximum number of entities that can be written in a
+	// single PutMulti call.
+	MaxPutSize int
+}
+
 type nullMetaGetterType struct{}
 
 func (nullMetaGetterType) GetMeta(string) (interface{}, bool) { return nil, false }
@@ -192,6 +206,9 @@ type RawInterface interface {
 	// CurrentTransaction returns a reference to the current Transaction, or nil
 	// if the Context does not have a current Transaction.
 	CurrentTransaction() Transaction
+
+	// Constraints returns this implementation's constraints.
+	Constraints() Constraints
 
 	// GetTestable returns the Testable interface for the implementation, or nil
 	// if there is none.

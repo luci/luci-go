@@ -71,6 +71,10 @@ func (r *dsCounter) WithoutTransaction() context.Context {
 	return r.ds.WithoutTransaction()
 }
 
+func (r *dsCounter) Constraints() ds.Constraints {
+	return r.ds.Constraints()
+}
+
 func (r *dsCounter) GetTestable() ds.Testable {
 	return r.ds.GetTestable()
 }

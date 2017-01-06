@@ -24,18 +24,26 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func fakeDatastoreFactory(c context.Context) RawInterface {
-	return &fakeDatastore{Context: c}
-}
-
 var (
 	errFail    = errors.New("Individual element fail")
 	errFailAll = errors.New("Operation fail")
 )
 
 type fakeDatastore struct {
-	context.Context
 	RawInterface
+
+	kctx         KeyContext
+	keyForResult func(int32, KeyContext) *Key
+	entities     int32
+	constraints  Constraints
+}
+
+func (f *fakeDatastore) factory() RawFactory {
+	return func(ic context.Context) RawInterface {
+		fds := *f
+		fds.kctx = GetKeyContext(ic)
+		return &fds
+	}
 }
 
 func (f *fakeDatastore) AllocateIDs(keys []*Key, cb NewKeyCB) error {
@@ -46,17 +54,39 @@ func (f *fakeDatastore) AllocateIDs(keys []*Key, cb NewKeyCB) error {
 		if k.Kind() == "Fail" {
 			cb(nil, errFail)
 		} else {
-			cb(NewKey(f, k.Kind(), "", int64(i+1), k.Parent()), nil)
+			cb(f.kctx.NewKey(k.Kind(), "", int64(i+1), k.Parent()), nil)
 		}
 	}
 	return nil
 }
 
 func (f *fakeDatastore) Run(fq *FinalizedQuery, cb RawRunCB) error {
+	cur := int32(0)
+
+	start, end := fq.Bounds()
+	if start != nil {
+		cur = int32(start.(fakeCursor))
+	}
+
+	remaining := int32(f.entities - cur)
+	if end != nil {
+		endV := int32(end.(fakeCursor))
+		if remaining > endV {
+			remaining = endV
+		}
+	}
 	lim, _ := fq.Limit()
+	if lim <= 0 || lim > remaining {
+		lim = remaining
+	}
 
 	cursCB := func() (Cursor, error) {
-		return fakeCursor("CURSOR"), nil
+		return fakeCursor(cur), nil
+	}
+
+	kfr := f.keyForResult
+	if kfr == nil {
+		kfr = func(i int32, kctx KeyContext) *Key { return kctx.MakeKey("Kind", (i + 1)) }
 	}
 
 	for i := int32(0); i < lim; i++ {
@@ -66,11 +96,11 @@ func (f *fakeDatastore) Run(fq *FinalizedQuery, cb RawRunCB) error {
 				return errors.New(v[0].Value().(string))
 			}
 		}
-		k := MakeKey(f, "Kind", i+1)
-		if i == 10 {
-			k = MakeKey(f, "Kind", "eleven")
-		}
-		pm := PropertyMap{"Value": MkProperty(i)}
+
+		k := kfr(cur, f.kctx)
+		pm := PropertyMap{"Value": MkProperty(cur)}
+		cur++
+
 		if err := cb(k, pm, cursCB); err != nil {
 			if err == Stop {
 				err = nil
@@ -136,6 +166,10 @@ func (f *fakeDatastore) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
 		}
 	}
 	return nil
+}
+
+func (f *fakeDatastore) Constraints() Constraints {
+	return f.constraints
 }
 
 type badStruct struct {
@@ -317,7 +351,8 @@ func TestKeyForObj(t *testing.T) {
 
 	Convey("Test interface.KeyForObj", t, func() {
 		c := info.Set(context.Background(), fakeInfo{})
-		c = SetRawFactory(c, fakeDatastoreFactory)
+		fds := fakeDatastore{}
+		c = SetRawFactory(c, fds.factory())
 
 		k := MakeKey(c, "Hello", "world")
 
@@ -431,7 +466,8 @@ func TestAllocateIDs(t *testing.T) {
 
 	Convey("A testing environment", t, func() {
 		c := info.Set(context.Background(), fakeInfo{})
-		c = SetRawFactory(c, fakeDatastoreFactory)
+		fds := fakeDatastore{}
+		c = SetRawFactory(c, fds.factory())
 
 		Convey("Testing AllocateIDs", func() {
 			Convey("Will return nil if no entities are supplied.", func() {
@@ -512,7 +548,8 @@ func TestPut(t *testing.T) {
 
 	Convey("A testing environment", t, func() {
 		c := info.Set(context.Background(), fakeInfo{})
-		c = SetRawFactory(c, fakeDatastoreFactory)
+		fds := fakeDatastore{}
+		c = SetRawFactory(c, fds.factory())
 
 		Convey("Testing Put", func() {
 			Convey("bad", func() {
@@ -750,7 +787,8 @@ func TestExists(t *testing.T) {
 
 	Convey("A testing environment", t, func() {
 		c := info.Set(context.Background(), fakeInfo{})
-		c = SetRawFactory(c, fakeDatastoreFactory)
+		fds := fakeDatastore{}
+		c = SetRawFactory(c, fds.factory())
 
 		k := MakeKey(c, "Hello", "world")
 
@@ -816,7 +854,8 @@ func TestDelete(t *testing.T) {
 
 	Convey("A testing environment", t, func() {
 		c := info.Set(context.Background(), fakeInfo{})
-		c = SetRawFactory(c, fakeDatastoreFactory)
+		fds := fakeDatastore{}
+		c = SetRawFactory(c, fds.factory())
 
 		Convey("Testing Delete", func() {
 			Convey("bad", func() {
@@ -877,7 +916,8 @@ func TestGet(t *testing.T) {
 
 	Convey("A testing environment", t, func() {
 		c := info.Set(context.Background(), fakeInfo{})
-		c = SetRawFactory(c, fakeDatastoreFactory)
+		fds := fakeDatastore{}
+		c = SetRawFactory(c, fds.factory())
 
 		Convey("Testing Get", func() {
 			Convey("bad", func() {
@@ -988,9 +1028,11 @@ func TestGetAll(t *testing.T) {
 
 	Convey("Test GetAll", t, func() {
 		c := info.Set(context.Background(), fakeInfo{})
-		c = SetRawFactory(c, fakeDatastoreFactory)
+		fds := fakeDatastore{}
+		c = SetRawFactory(c, fds.factory())
 
-		q := NewQuery("").Limit(5)
+		fds.entities = 5
+		q := NewQuery("")
 
 		Convey("bad", func() {
 			Convey("nil target", func() {
@@ -1120,9 +1162,11 @@ func TestRun(t *testing.T) {
 
 	Convey("Test Run", t, func() {
 		c := info.Set(context.Background(), fakeInfo{})
-		c = SetRawFactory(c, fakeDatastoreFactory)
+		fds := fakeDatastore{}
+		c = SetRawFactory(c, fds.factory())
 
-		q := NewQuery("kind").Limit(5)
+		fds.entities = 5
+		q := NewQuery("kind")
 
 		Convey("bad", func() {
 			assertBadTypePanics := func(cb interface{}) {
@@ -1213,7 +1257,7 @@ func TestRun(t *testing.T) {
 					i++
 					curs, err := ccb()
 					So(err, ShouldBeNil)
-					So(curs.String(), ShouldEqual, "CURSOR")
+					So(curs.String(), ShouldEqual, fakeCursor(i).String())
 				}), ShouldBeNil)
 				So(i, ShouldEqual, 5)
 			})
@@ -1228,6 +1272,13 @@ func TestRun(t *testing.T) {
 			})
 
 			Convey("*P", func() {
+				fds.keyForResult = func(i int32, kctx KeyContext) *Key {
+					if i == 10 {
+						return kctx.MakeKey("Kind", "eleven")
+					}
+					return kctx.MakeKey("Kind", i+1)
+				}
+
 				i := 0
 				So(Run(c, q.Limit(12), func(fpls *FakePLS) {
 					So(fpls.gotLoaded, ShouldBeTrue)

@@ -26,23 +26,29 @@ type RawFactory func(c context.Context) RawInterface
 // backed by the one passed in.
 type RawFilter func(context.Context, RawInterface) RawInterface
 
-// getUnfiltered gets gets the RawInterface implementation from context without
+// rawUnfiltered gets gets the RawInterface implementation from context without
 // any of the filters applied.
-func getUnfiltered(c context.Context) RawInterface {
+func rawUnfiltered(c context.Context) RawInterface {
 	if f, ok := c.Value(rawDatastoreKey).(RawFactory); ok && f != nil {
 		return f(c)
 	}
 	return nil
 }
 
-// getFiltered gets the datastore (transactional or not), and applies all of
+// rawWithFilters gets the datastore (transactional or not), and applies all of
 // the currently installed filters to it.
-func getFiltered(c context.Context) RawInterface {
-	ret := getUnfiltered(c)
+//
+// The supplied filters will be applied in order in between the check filter
+// (first) and Context filters.
+func rawWithFilters(c context.Context, filter ...RawFilter) RawInterface {
+	ret := rawUnfiltered(c)
 	if ret == nil {
 		return nil
 	}
 	for _, f := range getCurFilters(c) {
+		ret = f(c, ret)
+	}
+	for _, f := range filter {
 		ret = f(c, ret)
 	}
 	return applyCheckFilter(c, ret)
@@ -50,7 +56,7 @@ func getFiltered(c context.Context) RawInterface {
 
 // Raw gets the RawInterface implementation from context.
 func Raw(c context.Context) RawInterface {
-	return getFiltered(c)
+	return rawWithFilters(c)
 }
 
 // SetRawFactory sets the function to produce Datastore instances, as returned by

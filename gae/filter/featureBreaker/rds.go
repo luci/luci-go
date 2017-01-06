@@ -81,6 +81,8 @@ func (r *dsState) CurrentTransaction() ds.Transaction {
 	return r.rds.CurrentTransaction()
 }
 
+func (r *dsState) Constraints() ds.Constraints { return r.rds.Constraints() }
+
 func (r *dsState) GetTestable() ds.Testable {
 	return r.rds.GetTestable()
 }

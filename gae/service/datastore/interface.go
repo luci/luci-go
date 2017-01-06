@@ -291,6 +291,10 @@ func RunInTransaction(c context.Context, f func(c context.Context) error, opts *
 // due to flakiness, timeout, etc. If it encounters such an error, it will
 // be returned.
 func Run(c context.Context, q *Query, cb interface{}) error {
+	return runRaw(rawWithFilters(c), q, cb)
+}
+
+func runRaw(raw RawInterface, q *Query, cb interface{}) error {
 	isKey, hasErr, hasCursorCB, mat := runParseCallback(cb)
 
 	if isKey {
@@ -335,7 +339,6 @@ func Run(c context.Context, q *Query, cb interface{}) error {
 		}
 	}
 
-	raw := Raw(c)
 	if isKey {
 		err = raw.Run(fq, func(k *Key, _ PropertyMap, gc CursorCB) error {
 			return cbFunc(reflect.ValueOf(k), gc)
@@ -379,6 +382,10 @@ func DecodeCursor(c context.Context, s string) (Cursor, error) {
 //     PropertyLoadSaver
 //   - *[]*Key implies a keys-only query.
 func GetAll(c context.Context, q *Query, dst interface{}) error {
+	return getAllRaw(Raw(c), q, dst)
+}
+
+func getAllRaw(raw RawInterface, q *Query, dst interface{}) error {
 	v := reflect.ValueOf(dst)
 	if v.Kind() != reflect.Ptr {
 		panic(fmt.Errorf("invalid GetAll dst: must have a ptr-to-slice: %T", dst))
@@ -387,7 +394,6 @@ func GetAll(c context.Context, q *Query, dst interface{}) error {
 		panic(errors.New("invalid GetAll dst: <nil>"))
 	}
 
-	raw := Raw(c)
 	if keys, ok := dst.(*[]*Key); ok {
 		fq, err := q.KeysOnly(true).Finalize()
 		if err != nil {

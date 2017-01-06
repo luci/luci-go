@@ -24,9 +24,9 @@ func TestDatastoreQueries(t *testing.T) {
 		Convey("can create good queries", func() {
 			q := NewQuery("Foo").Gt("farnsworth", 20).KeysOnly(true).Limit(10).Offset(39)
 
-			start := fakeCursor("hi")
+			start := fakeCursor(1337)
 
-			end := fakeCursor("end")
+			end := fakeCursor(24601)
 
 			q = q.Start(start).End(end)
 			So(q, ShouldNotBeNil)

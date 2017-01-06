@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	prodConstraints "github.com/luci/gae/impl/prod/constraints"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
 	"github.com/luci/luci-go/common/errors"
@@ -39,6 +40,10 @@ type dataStoreData struct {
 	// maintained will be omitted. This also means that Put with an incomplete
 	// key will become an error.
 	disableSpecialEntities bool
+
+	// constraints is the fake datastore constraints. By default, this will match
+	// the Constraints of the "impl/prod" datastore.
+	constraints ds.Constraints
 }
 
 var (
@@ -49,9 +54,10 @@ var (
 func newDataStoreData(aid string) *dataStoreData {
 	head := newMemStore()
 	return &dataStoreData{
-		aid:  aid,
-		head: head,
-		snap: head.Snapshot(), // empty but better than a nil pointer.
+		aid:         aid,
+		head:        head,
+		snap:        head.Snapshot(), // empty but better than a nil pointer.
+		constraints: prodConstraints.DS(),
 	}
 }
 
@@ -171,6 +177,18 @@ func (d *dataStoreData) namespaces() []string {
 	defer d.rwlock.Unlock()
 
 	return namespaces(d.head)
+}
+
+func (d *dataStoreData) getConstraints() ds.Constraints {
+	d.rwlock.RLock()
+	defer d.rwlock.RUnlock()
+	return d.constraints
+}
+
+func (d *dataStoreData) setConstraints(c ds.Constraints) {
+	d.rwlock.Lock()
+	defer d.rwlock.Unlock()
+	d.constraints = c
 }
 
 /////////////////////////// indexes(dataStoreData) ////////////////////////////

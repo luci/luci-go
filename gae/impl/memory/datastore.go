@@ -131,6 +131,8 @@ func (d *dsImpl) AddIndexes(idxs ...*ds.IndexDefinition) {
 	d.data.addIndexes(idxs)
 }
 
+func (d *dsImpl) Constraints() ds.Constraints { return d.data.getConstraints() }
+
 func (d *dsImpl) TakeIndexSnapshot() ds.TestingSnapshot {
 	return d.data.takeSnapshot()
 }
@@ -157,6 +159,14 @@ func (d *dsImpl) AutoIndex(enable bool) {
 
 func (d *dsImpl) DisableSpecialEntities(enabled bool) {
 	d.data.setDisableSpecialEntities(enabled)
+}
+
+func (d *dsImpl) SetConstraints(c *ds.Constraints) error {
+	if c == nil {
+		c = &ds.Constraints{}
+	}
+	d.data.setConstraints(*c)
+	return nil
 }
 
 func (d *dsImpl) GetTestable() ds.Testable { return d }
@@ -225,5 +235,7 @@ func (d *txnDsImpl) WithoutTransaction() context.Context {
 func (d *txnDsImpl) CurrentTransaction() ds.Transaction {
 	return d.data.txn
 }
+
+func (d *txnDsImpl) Constraints() ds.Constraints { return d.data.parent.getConstraints() }
 
 func (d *txnDsImpl) GetTestable() ds.Testable { return nil }

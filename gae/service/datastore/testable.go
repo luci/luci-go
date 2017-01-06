@@ -73,4 +73,10 @@ type Testable interface {
 	// but never wants the in-memory versions of these entities to bleed through
 	// to the user code.
 	DisableSpecialEntities(bool)
+
+	// SetConstraints sets this instance's constraints. If the supplied
+	// constraints are invalid, an error will be returned.
+	//
+	// If c is nil, default constraints will be set.
+	SetConstraints(c *Constraints) error
 }

@@ -5,6 +5,7 @@
 package datastore
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/luci/gae/service/info"
@@ -25,13 +26,14 @@ type fakeService struct{ RawInterface }
 type fakeFilt struct{ RawInterface }
 
 func (f fakeService) DecodeCursor(s string) (Cursor, error) {
-	return fakeCursor(s), nil
+	v, err := strconv.Atoi(s)
+	return fakeCursor(v), err
 }
 
-type fakeCursor string
+type fakeCursor int
 
 func (f fakeCursor) String() string {
-	return string(f)
+	return strconv.Itoa(int(f))
 }
 
 func TestServices(t *testing.T) {
@@ -58,9 +60,9 @@ func TestServices(t *testing.T) {
 					return fakeFilt{rds}
 				})
 
-				curs, err := DecodeCursor(c, "pants")
+				curs, err := DecodeCursor(c, "123")
 				So(err, ShouldBeNil)
-				So(curs.String(), ShouldEqual, "pants")
+				So(curs.String(), ShouldEqual, "123")
 			})
 		})
 		Convey("adding zero filters does nothing", func() {
