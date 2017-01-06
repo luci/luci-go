@@ -21,6 +21,7 @@ import (
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/storage/bigtable"
+	"github.com/luci/luci-go/logdog/common/storage/memory"
 	"github.com/luci/luci-go/logdog/common/types"
 
 	"github.com/golang/protobuf/proto"
@@ -68,6 +69,7 @@ func (app *application) getBigTableClient(c context.Context) (storage.Storage, e
 		ClientOptions: []option.ClientOption{
 			option.WithTokenSource(tsrc),
 		},
+		Cache: &memory.Cache{},
 	})
 }
 
@@ -175,8 +177,9 @@ type cmdRunGet struct {
 	project string
 	path    string
 
-	index int
-	limit int
+	index  int
+	limit  int
+	rounds int
 }
 
 var subcommandGet = subcommands.Command{
@@ -189,6 +192,7 @@ var subcommandGet = subcommands.Command{
 		cmd.Flags.StringVar(&cmd.path, "path", "", "Log stream path.")
 		cmd.Flags.IntVar(&cmd.index, "index", 0, "The index to fetch.")
 		cmd.Flags.IntVar(&cmd.limit, "limit", 0, "The log entry limit.")
+		cmd.Flags.IntVar(&cmd.rounds, "rounds", 1, "Number of rounds to run.")
 
 		return &cmd
 	},
@@ -213,40 +217,43 @@ func (cmd *cmdRunGet) Run(baseApp subcommands.Application, args []string, _ subc
 	}
 	defer stClient.Close()
 
-	var innerErr error
-	err = stClient.Get(storage.GetRequest{
-		Project: config.ProjectName(cmd.project),
-		Path:    types.StreamPath(cmd.path),
-		Index:   types.MessageIndex(cmd.index),
-		Limit:   cmd.limit,
-	}, func(e *storage.Entry) bool {
-		le, err := e.GetLogEntry()
-		if err != nil {
-			log.WithError(err).Errorf(c, "Failed to unmarshal log entry.")
-			return false
+	for round := 0; round < cmd.rounds; round++ {
+		log.Infof(c, "Get round %d.", round+1)
+
+		var innerErr error
+		err = stClient.Get(storage.GetRequest{
+			Project: config.ProjectName(cmd.project),
+			Path:    types.StreamPath(cmd.path),
+			Index:   types.MessageIndex(cmd.index),
+			Limit:   cmd.limit,
+		}, func(e *storage.Entry) bool {
+			le, err := e.GetLogEntry()
+			if err != nil {
+				log.WithError(err).Errorf(c, "Failed to unmarshal log entry.")
+				return false
+			}
+
+			log.Fields{
+				"index": le.StreamIndex,
+			}.Infof(c, "Fetched log entry.")
+
+			if innerErr = unmarshalAndDump(c, os.Stdout, nil, le); innerErr != nil {
+				return false
+			}
+			return true
+		})
+		switch {
+		case innerErr != nil:
+			renderErr(c, errors.Annotate(err).Reason("failed to process fetched log entries").Err())
+			return 1
+
+		case err != nil:
+			renderErr(c, errors.Annotate(err).Reason("Failed to Get log entries.").Err())
+			return 1
 		}
-
-		log.Fields{
-			"index": le.StreamIndex,
-		}.Infof(c, "Fetched log entry.")
-
-		if innerErr = unmarshalAndDump(c, os.Stdout, nil, le); innerErr != nil {
-			return false
-		}
-		return true
-	})
-	switch {
-	case innerErr != nil:
-		renderErr(c, errors.Annotate(err).Reason("failed to process fetched log entries").Err())
-		return 1
-
-	case err != nil:
-		renderErr(c, errors.Annotate(err).Reason("Failed to Get log entries.").Err())
-		return 1
-
-	default:
-		return 0
 	}
+
+	return 0
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -258,6 +265,7 @@ type cmdRunTail struct {
 
 	project string
 	path    string
+	rounds  int
 }
 
 var subcommandTail = subcommands.Command{
@@ -268,6 +276,7 @@ var subcommandTail = subcommands.Command{
 
 		cmd.Flags.StringVar(&cmd.project, "project", "", "Log stream project name.")
 		cmd.Flags.StringVar(&cmd.path, "path", "", "Log stream path.")
+		cmd.Flags.IntVar(&cmd.rounds, "rounds", 1, "Number of rounds to run.")
 
 		return &cmd
 	},
@@ -292,30 +301,34 @@ func (cmd *cmdRunTail) Run(baseApp subcommands.Application, args []string, _ sub
 	}
 	defer stClient.Close()
 
-	e, err := stClient.Tail(config.ProjectName(cmd.project), types.StreamPath(cmd.path))
-	if err != nil {
-		renderErr(c, errors.Annotate(err).Reason("failed to tail log entries").Err())
-		return 1
+	for round := 0; round < cmd.rounds; round++ {
+		log.Infof(c, "Tail round %d.", round+1)
+		e, err := stClient.Tail(config.ProjectName(cmd.project), types.StreamPath(cmd.path))
+		if err != nil {
+			renderErr(c, errors.Annotate(err).Reason("failed to tail log entries").Err())
+			return 1
+		}
+
+		if e == nil {
+			log.Infof(c, "No log data to tail.")
+			continue
+		}
+
+		le, err := e.GetLogEntry()
+		if err != nil {
+			renderErr(c, errors.Annotate(err).Reason("failed to unmarshal log entry").Err())
+			return 1
+		}
+
+		log.Fields{
+			"index": le.StreamIndex,
+			"size":  len(e.D),
+		}.Debugf(c, "Dumping tail entry.")
+		if err := unmarshalAndDump(c, os.Stdout, nil, le); err != nil {
+			renderErr(c, errors.Annotate(err).Reason("failed to dump log entry").Err())
+			return 1
+		}
 	}
 
-	if e == nil {
-		log.Infof(c, "No log data to tail.")
-		return 0
-	}
-
-	le, err := e.GetLogEntry()
-	if err != nil {
-		renderErr(c, errors.Annotate(err).Reason("failed to unmarshal log entry").Err())
-		return 1
-	}
-
-	log.Fields{
-		"index": le.StreamIndex,
-		"size":  len(e.D),
-	}.Debugf(c, "Dumping tail entry.")
-	if err := unmarshalAndDump(c, os.Stdout, nil, le); err != nil {
-		renderErr(c, errors.Annotate(err).Reason("failed to dump log entry").Err())
-		return 1
-	}
 	return 0
 }

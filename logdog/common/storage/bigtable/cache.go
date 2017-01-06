@@ -47,6 +47,9 @@ func getLastTailIndex(c context.Context, cache caching.Cache, project config.Pro
 		return 0
 	}
 
+	log.Fields{
+		"index": v,
+	}.Infof(c, "Using cached tail index.")
 	return v
 }
 

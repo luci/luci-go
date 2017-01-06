@@ -12,6 +12,7 @@ import (
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/data/recordio"
 	"github.com/luci/luci-go/logdog/common/storage"
+	"github.com/luci/luci-go/logdog/common/storage/memory"
 	"github.com/luci/luci-go/logdog/common/types"
 	"golang.org/x/net/context"
 
@@ -31,7 +32,10 @@ func TestStorage(t *testing.T) {
 	t.Parallel()
 
 	Convey(`A BigTable storage instance bound to a testing BigTable instance`, t, func() {
-		s := NewMemoryInstance(context.Background(), Options{})
+		var cache memory.Cache
+		s := NewMemoryInstance(context.Background(), Options{
+			Cache: &cache,
+		})
 		defer s.Close()
 
 		project := config.ProjectName("test-project")
@@ -211,6 +215,12 @@ func TestStorage(t *testing.T) {
 					got, err := tail("A")
 					So(err, ShouldBeNil)
 					So(got, ShouldEqual, "4")
+
+					Convey(`(Cache) A second request also returns A{4}.`, func() {
+						got, err := tail("A")
+						So(err, ShouldBeNil)
+						So(got, ShouldEqual, "4")
+					})
 				})
 
 				Convey(`A tail request for "B" returns nothing (no contiguous logs).`, func() {
@@ -222,6 +232,20 @@ func TestStorage(t *testing.T) {
 					got, err := tail("C")
 					So(err, ShouldBeNil)
 					So(got, ShouldEqual, "2")
+
+					Convey(`(Cache) A second request also returns 2.`, func() {
+						got, err := tail("C")
+						So(err, ShouldBeNil)
+						So(got, ShouldEqual, "2")
+					})
+
+					Convey(`(Cache) After "3" is added, a second request returns 4.`, func() {
+						So(put("C", 3, "3"), ShouldBeNil)
+
+						got, err := tail("C")
+						So(err, ShouldBeNil)
+						So(got, ShouldEqual, "4")
+					})
 				})
 
 				Convey(`A tail request for "INVALID" errors NOT FOUND.`, func() {

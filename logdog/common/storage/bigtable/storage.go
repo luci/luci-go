@@ -226,7 +226,7 @@ func (s *btStorage) Get(r storage.GetRequest, cb storage.GetCallback) error {
 		// Calculate the start index of the contiguous row. Since we index the row
 		// on the LAST entry in the row, count backwards to get the index of the
 		// first entry.
-		startIndex := rk.index - rk.count + 1
+		startIndex := rk.firstIndex()
 		if startIndex < 0 {
 			return storage.ErrBadData
 		}
@@ -323,7 +323,7 @@ func (s *btStorage) Tail(project config.ProjectName, path types.StreamPath) (*st
 	)
 	err := s.raw.getLogData(ctx, rk, 0, true, func(rk *rowKey, data []byte) error {
 		// If this record is non-contiguous, we're done iterating.
-		if (rk.index - rk.count + 1) != nextIndex {
+		if rk.firstIndex() != nextIndex {
 			return errStop
 		}
 
@@ -346,7 +346,9 @@ func (s *btStorage) Tail(project config.ProjectName, path types.StreamPath) (*st
 
 	// Update our cache if the tail index has changed.
 	if s.Cache != nil && startIdx != latest.index {
-		putLastTailIndex(s, s.Cache, project, path, latest.index)
+		// We cache the first index in the row so that subsequent cached fetches
+		// have the correct "startIdx" expectations.
+		putLastTailIndex(s, s.Cache, project, path, latest.firstIndex())
 	}
 
 	// Fetch the latest row's data.

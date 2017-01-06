@@ -91,6 +91,9 @@ func (rkb *rowKeyBuffers) value() string {
 // - Rows with the same path should be clustered.
 // - Rows with the same path should be sorted according to index.
 //
+// The row key index is the index of the LAST entry in the row. Therefore, a
+// row for a given row key will span log indexes [index-count+1..index].
+//
 // Since BigTable rows must be valid UTF8, and since paths are effectively
 // unbounded, the row key will be formed by composing:
 //
@@ -198,6 +201,9 @@ func (rk *rowKey) pathPrefixUpperBound() (v string) {
 	})
 	return
 }
+
+// firstIndex returns the first log entry index represented by this row key.
+func (rk *rowKey) firstIndex() int64 { return rk.index - rk.count + 1 }
 
 // sharesPrefixWith tests if the "path" component of the row key "rk" matches
 // the "path" component of "o".
