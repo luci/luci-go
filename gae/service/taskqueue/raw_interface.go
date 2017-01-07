@@ -18,6 +18,13 @@ type RawTaskCB func(*Task, error)
 // object, as well as an error (e.g. in case the queue doesn't exist).
 type RawStatsCB func(*Statistics, error)
 
+// Constraints is the set of implementation-specific task queue constraints.
+type Constraints struct {
+	// MaxAddSize is the maximum number of tasks that can be added to a queue in
+	// a single Add call.
+	MaxAddSize int
+}
+
 // RawInterface is the full interface to the Task Queue service.
 type RawInterface interface {
 	// AddMulti adds multiple tasks to the given queue, calling cb for each item.
@@ -35,6 +42,8 @@ type RawInterface interface {
 	Purge(queueName string) error
 
 	Stats(queueNames []string, cb RawStatsCB) error
+
+	Constraints() Constraints
 
 	GetTestable() Testable
 }

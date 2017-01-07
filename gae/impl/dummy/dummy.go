@@ -133,6 +133,7 @@ func (tq) LeaseByTag(int, string, time.Duration, string) ([]*taskqueue.Task, err
 func (tq) ModifyLease(*taskqueue.Task, string, time.Duration) error                 { panic(ni()) }
 func (tq) Purge(string) error                                                       { panic(ni()) }
 func (tq) Stats([]string, taskqueue.RawStatsCB) error                               { panic(ni()) }
+func (tq) Constraints() taskqueue.Constraints                                       { panic(ni()) }
 func (tq) GetTestable() taskqueue.Testable                                          { return nil }
 
 var dummyTQInst = tq{}

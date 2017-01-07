@@ -7,12 +7,7 @@ package constraints
 
 import (
 	"github.com/luci/gae/service/datastore"
-)
-
-const (
-	// TQMaxAddSize is the maximum number of tasks that can be added in a single
-	// AddMulti call.
-	TQMaxAddSize = 100
+	"github.com/luci/gae/service/taskqueue"
 )
 
 // DS returns a datastore.Constraints object for the production datastore.
@@ -24,5 +19,13 @@ func DS() datastore.Constraints {
 	return datastore.Constraints{
 		QueryBatchSize: 200,
 		MaxPutSize:     500,
+	}
+}
+
+// TQ returns a taskqueue.Constraints object for the production task queue
+// service.
+func TQ() taskqueue.Constraints {
+	return taskqueue.Constraints{
+		MaxAddSize: 100,
 	}
 }

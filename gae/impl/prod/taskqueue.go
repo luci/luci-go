@@ -9,7 +9,9 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/luci/gae/impl/prod/constraints"
 	tq "github.com/luci/gae/service/taskqueue"
+
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/taskqueue"
@@ -166,6 +168,8 @@ func (t tqImpl) Stats(queueNames []string, cb tq.RawStatsCB) error {
 	}
 	return nil
 }
+
+func (t tqImpl) Constraints() tq.Constraints { return constraints.TQ() }
 
 func (t tqImpl) GetTestable() tq.Testable {
 	return nil

@@ -16,6 +16,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	prodConstraints "github.com/luci/gae/impl/prod/constraints"
 	ds "github.com/luci/gae/service/datastore"
 	tq "github.com/luci/gae/service/taskqueue"
 
@@ -327,7 +328,8 @@ func (d *taskIndexData) Pop() interface{} {
 type taskQueueData struct {
 	sync.Mutex
 
-	queues map[string]*sortedQueue
+	queues      map[string]*sortedQueue
+	constraints tq.Constraints
 }
 
 var _ interface {
@@ -337,7 +339,8 @@ var _ interface {
 
 func newTaskQueueData() memContextObj {
 	return &taskQueueData{
-		queues: map[string]*sortedQueue{"default": newSortedQueue("default", false)},
+		queues:      map[string]*sortedQueue{"default": newSortedQueue("default", false)},
+		constraints: prodConstraints.TQ(),
 	}
 }
 
@@ -447,6 +450,16 @@ func (t *taskQueueData) purgeLocked(queueName string) error {
 	}
 	q.purge()
 	return nil
+}
+
+func (t *taskQueueData) getConstraints() tq.Constraints {
+	t.Lock()
+	defer t.Unlock()
+	return t.constraints
+}
+
+func (t *taskQueueData) setConstraintsLocked(c tq.Constraints) {
+	t.constraints = c
 }
 
 /////////////////////////////// txnTaskQueueData ///////////////////////////////

@@ -63,6 +63,10 @@ func (t *tqCounter) Stats(queueNames []string, cb tq.RawStatsCB) error {
 	return t.c.Stats.up(t.tq.Stats(queueNames, cb))
 }
 
+func (t *tqCounter) Constraints() tq.Constraints {
+	return t.tq.Constraints()
+}
+
 func (t *tqCounter) GetTestable() tq.Testable {
 	return t.tq.GetTestable()
 }

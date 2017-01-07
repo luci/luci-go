@@ -19,9 +19,13 @@ import (
 // event of an error, with a given error index corresponding to the error
 // encountered when processing the task at that index.
 func Add(c context.Context, queueName string, tasks ...*Task) error {
+	return addRaw(Raw(c), queueName, tasks)
+}
+
+func addRaw(raw RawInterface, queueName string, tasks []*Task) error {
 	lme := errors.NewLazyMultiError(len(tasks))
 	i := 0
-	err := Raw(c).AddMulti(tasks, queueName, func(t *Task, err error) {
+	err := raw.AddMulti(tasks, queueName, func(t *Task, err error) {
 		if !lme.Assign(i, err) {
 			*tasks[i] = *t
 		}

@@ -142,6 +142,10 @@ func (t *taskqueueImpl) Stats(queueNames []string, cb tq.RawStatsCB) error {
 	return nil
 }
 
+func (t *taskqueueImpl) Constraints() tq.Constraints {
+	return t.taskQueueData.getConstraints()
+}
+
 func (t *taskqueueImpl) GetTestable() tq.Testable { return t }
 
 /////////////////////////////// taskqueueTxnImpl ///////////////////////////////
@@ -225,12 +229,27 @@ func (t *taskqueueTxnImpl) ModifyLease(task *tq.Task, queueName string, leaseTim
 	return errors.New("taskqueue: cannot ModifyLease from a transaction")
 }
 
+func (t *taskqueueTxnImpl) Constraints() tq.Constraints {
+	return t.parent.getConstraints()
+}
+
 func (t *taskqueueTxnImpl) Purge(string) error {
 	return errors.New("taskqueue: cannot Purge from a transaction")
 }
 
 func (t *taskqueueTxnImpl) Stats([]string, tq.RawStatsCB) error {
 	return errors.New("taskqueue: cannot Stats from a transaction")
+}
+
+func (t *taskqueueImpl) SetConstraints(c *tq.Constraints) error {
+	if c == nil {
+		c = &tq.Constraints{}
+	}
+
+	t.Lock()
+	defer t.Unlock()
+	t.setConstraintsLocked(*c)
+	return nil
 }
 
 func (t *taskqueueTxnImpl) GetTestable() tq.Testable { return t }
