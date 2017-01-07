@@ -260,7 +260,15 @@ func TestStoreParallel(t *testing.T) {
 			}()
 
 			<-writeDoneC
-			So(<-readDoneC, ShouldBeGreaterThan, 0)
+
+			check := ShouldBeGreaterThan
+			if i == 0 {
+				// The first time around, we *could* read before anything has been
+				// written. Every other time, something from the previous round will
+				// have been written.
+				check = ShouldBeGreaterThanOrEqualTo
+			}
+			So(<-readDoneC, check, 0)
 			snaps = append(snaps, head.Snapshot())
 		}
 	})
