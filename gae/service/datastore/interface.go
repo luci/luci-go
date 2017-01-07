@@ -574,6 +574,10 @@ func Get(c context.Context, dst ...interface{}) error {
 // that in the scenario where multiple slices are provided, this will return a
 // MultiError containing a nested MultiError for each slice argument.
 func Put(c context.Context, src ...interface{}) error {
+	return putRaw(Raw(c), GetKeyContext(c), src)
+}
+
+func putRaw(raw RawInterface, kctx KeyContext, src []interface{}) error {
 	if len(src) == 0 {
 		return nil
 	}
@@ -583,7 +587,7 @@ func Put(c context.Context, src ...interface{}) error {
 		panic(err)
 	}
 
-	keys, vals, err := mma.getKeysPMs(GetKeyContext(c), false)
+	keys, vals, err := mma.getKeysPMs(kctx, false)
 	if err != nil {
 		return maybeSingleError(err, src)
 	}
@@ -594,7 +598,7 @@ func Put(c context.Context, src ...interface{}) error {
 	i := 0
 	var et errorTracker
 	it := mma.iterator(et.init(mma))
-	err = filterStop(Raw(c).PutMulti(keys, vals, func(key *Key, err error) error {
+	err = filterStop(raw.PutMulti(keys, vals, func(key *Key, err error) error {
 		it.next(func(mat *multiArgType, slot reflect.Value) error {
 			if err != nil {
 				return err

@@ -62,6 +62,16 @@ func (b *Batcher) GetAll(c context.Context, q *Query, dst interface{}) error {
 	return getAllRaw(raw, q, dst)
 }
 
+// Put puts the specified objects into datastore in batches. See the top-level
+// Put for more semantics.
+//
+// If the specified batch size is <= 0, the current implementation's
+// MaxPutSize constraint will be used.
+func (b *Batcher) Put(c context.Context, src ...interface{}) error {
+	raw := rawWithFilters(c, applyBatchPutFilter(b))
+	return putRaw(raw, GetKeyContext(c), src)
+}
+
 func (b *Batcher) runCallback(c context.Context) error {
 	if b.Callback == nil {
 		return nil
@@ -165,6 +175,53 @@ func (bqf *batchQueryFilter) Run(fq *FinalizedQuery, cb RawRunCB) error {
 		// Execute our callback(s).
 		if err := bqf.b.runCallback(bqf.ic); err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+type batchPutFilter struct {
+	RawInterface
+
+	b  *Batcher
+	ic context.Context
+}
+
+func applyBatchPutFilter(b *Batcher) RawFilter {
+	return func(ic context.Context, rds RawInterface) RawInterface {
+		return &batchPutFilter{
+			RawInterface: rds,
+			b:            b,
+			ic:           ic,
+		}
+	}
+}
+
+func (bpf *batchPutFilter) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) error {
+	// Determine batch size.
+	batchSize := bpf.b.Size
+	if batchSize <= 0 {
+		batchSize = bpf.Constraints().MaxPutSize
+	}
+	if batchSize <= 0 {
+		return bpf.RawInterface.PutMulti(keys, vals, cb)
+	}
+
+	for len(keys) > 0 {
+		count := batchSize
+		if count > len(keys) {
+			count = len(keys)
+		}
+
+		if err := bpf.RawInterface.PutMulti(keys[:count], vals[:count], cb); err != nil {
+			return err
+		}
+
+		keys, vals = keys[count:], vals[count:]
+		if len(keys) > 0 {
+			if err := bpf.b.runCallback(bpf.ic); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
