@@ -17,6 +17,7 @@ import (
 	"github.com/luci/luci-go/common/retry"
 	"github.com/luci/luci-go/server/router"
 
+	"github.com/luci/gae/impl/prod/constraints"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 
@@ -175,7 +176,7 @@ func (cache *Cache) pruneInterval() time.Duration {
 func (cache *Cache) manager() *manager {
 	return &manager{
 		cache:          cache,
-		queryBatchSize: managerQueryBatchSize,
+		queryBatchSize: constraints.DS().QueryBatchSize,
 	}
 }
 

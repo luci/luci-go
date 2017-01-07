@@ -9,7 +9,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/filter/dsQueryBatch"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 
@@ -18,8 +17,6 @@ import (
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/server/router"
 )
-
-const housekeepingInstanceBatchSize = 200
 
 // InstallHandlers installs HTTP handlers for tsmon routes.
 func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
@@ -55,7 +52,7 @@ func assignTaskNumbers(c context.Context) error {
 	usedTaskNums := map[int]struct{}{}
 	totalExpired := 0
 
-	expiredKeys := make([]*ds.Key, 0, housekeepingInstanceBatchSize)
+	expiredKeys := make([]*ds.Key, 0, ds.Raw(c).Constraints().QueryBatchSize)
 	var unassigned []*instance
 
 	// expireInstanceBatch processes the set of instances in "expiredKeys",
@@ -83,7 +80,11 @@ func assignTaskNumbers(c context.Context) error {
 
 	// Query all instances from datastore.
 	q := ds.NewQuery("Instance")
-	if err := ds.Run(dsQueryBatch.BatchQueries(c, housekeepingInstanceBatchSize, expireInstanceBatch), q, func(i *instance) {
+
+	b := ds.Batcher{
+		Callback: expireInstanceBatch,
+	}
+	if err := b.Run(c, q, func(i *instance) {
 		if i.TaskNum >= 0 {
 			usedTaskNums[i.TaskNum] = struct{}{}
 		}

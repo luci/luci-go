@@ -19,18 +19,11 @@ import (
 	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/server/router"
 
-	"github.com/luci/gae/filter/dsQueryBatch"
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
-)
-
-const (
-	// managerQueryBatchSize is the query batch size for cache entries that are
-	// processed by a manager shard.
-	managerQueryBatchSize = 200
 )
 
 func errHTTPHandler(fn func(c context.Context, req *http.Request, params httprouter.Params) error) router.Handler {
@@ -326,7 +319,11 @@ func (ms *managerShard) runLocked(c context.Context) error {
 		return nil
 	}
 
-	err := datastore.Run(dsQueryBatch.BatchQueries(c, int32(ms.queryBatchSize), handleEntries), q, func(e *entry) error {
+	b := datastore.Batcher{
+		Size:     ms.queryBatchSize,
+		Callback: handleEntries,
+	}
+	err := b.Run(c, q, func(e *entry) error {
 		totalEntries++
 		ms.observeEntry()
 		entries = append(entries, e)
