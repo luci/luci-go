@@ -144,14 +144,12 @@ func (bqf *batchQueryFilter) Run(fq *FinalizedQuery, cb RawRunCB) error {
 				return err
 			}
 
-			// If this is the last entry in our batch, get the cursor and stop this
-			// query round.
+			// If this is the last entry in our batch, get the cursor.
 			count++
 			if count >= bs {
 				if cursor, err = getCursor(); err != nil {
 					return fmt.Errorf("failed to get cursor: %v", err)
 				}
-				return Stop
 			}
 			return nil
 		})

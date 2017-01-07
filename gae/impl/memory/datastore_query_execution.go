@@ -206,7 +206,7 @@ func executeNamespaceQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, head memStor
 		}
 		if hasLimit {
 			if limit <= 0 {
-				return ds.Stop
+				return nil
 			}
 			limit--
 		}
@@ -283,7 +283,7 @@ func executeQuery(fq *ds.FinalizedQuery, kc ds.KeyContext, isTxn bool, idx, head
 		}
 		if hasLimit {
 			if limit <= 0 {
-				return ds.Stop
+				return nil
 			}
 			limit--
 		}
