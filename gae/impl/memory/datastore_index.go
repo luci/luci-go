@@ -11,7 +11,6 @@ import (
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
-	"github.com/luci/gkvlite"
 )
 
 type qIndexSlice []*ds.IndexDefinition
@@ -183,18 +182,12 @@ func walkCompIdxs(store memStore, endsWith *ds.IndexDefinition, cb func(*ds.Inde
 	}
 
 	it := itrDef.mkIter()
-	defer it.stop()
-	for !it.stopped {
-		it.next(nil, func(i *gkvlite.Item) {
-			if i == nil {
-				return
-			}
-			qi, err := serialize.ReadIndexDefinition(bytes.NewBuffer(i.Key))
-			memoryCorruption(err)
-			if !cb(qi.Flip()) {
-				it.stop()
-			}
-		})
+	for ent := it.next(); ent != nil; ent = it.next() {
+		qi, err := serialize.ReadIndexDefinition(bytes.NewBuffer(ent.key))
+		memoryCorruption(err)
+		if !cb(qi.Flip()) {
+			break
+		}
 	}
 }
 
@@ -205,7 +198,7 @@ func mergeIndexes(ns string, store, oldIdx, newIdx memStore) {
 	oldIdx = oldIdx.Snapshot()
 	newIdx = newIdx.Snapshot()
 
-	gkvCollide(oldIdx.GetCollection("idx"), newIdx.GetCollection("idx"), func(k, ov, nv []byte) {
+	memStoreCollide(oldIdx.GetCollection("idx"), newIdx.GetCollection("idx"), func(k, ov, nv []byte) {
 		prefixBuf = append(prefixBuf[:origPrefixBufLen], k...)
 		ks := string(prefixBuf)
 
@@ -216,17 +209,17 @@ func mergeIndexes(ns string, store, oldIdx, newIdx memStore) {
 
 		switch {
 		case ov == nil && nv != nil: // all additions
-			newColl.VisitItemsAscend(nil, false, func(i *gkvlite.Item) bool {
-				coll.Set(i.Key, []byte{})
+			newColl.ForEachItem(func(k, _ []byte) bool {
+				coll.Set(k, []byte{})
 				return true
 			})
 		case ov != nil && nv == nil: // all deletions
-			oldColl.VisitItemsAscend(nil, false, func(i *gkvlite.Item) bool {
-				coll.Delete(i.Key)
+			oldColl.ForEachItem(func(k, _ []byte) bool {
+				coll.Delete(k)
 				return true
 			})
 		case ov != nil && nv != nil: // merge
-			gkvCollide(oldColl, newColl, func(k, ov, nv []byte) {
+			memStoreCollide(oldColl, newColl, func(k, ov, nv []byte) {
 				if nv == nil {
 					coll.Delete(k)
 				} else {
@@ -234,7 +227,7 @@ func mergeIndexes(ns string, store, oldIdx, newIdx memStore) {
 				}
 			})
 		default:
-			impossible(fmt.Errorf("both values from gkvCollide were nil?"))
+			impossible(fmt.Errorf("both values from memStoreCollide were nil?"))
 		}
 		// TODO(riannucci): remove entries from idxColl and remove index collections
 		// when there are no index entries for that index any more.
@@ -250,12 +243,13 @@ func addIndexes(store memStore, aid string, compIdx []*ds.IndexDefinition) {
 	}
 
 	for _, ns := range namespaces(store) {
+		kctx := ds.MkKeyContext(aid, ns)
 		if allEnts := store.Snapshot().GetCollection("ents:" + ns); allEnts != nil {
-			allEnts.VisitItemsAscend(nil, true, func(i *gkvlite.Item) bool {
-				pm, err := rpm(i.Val)
+			allEnts.ForEachItem(func(ik, iv []byte) bool {
+				pm, err := rpm(iv)
 				memoryCorruption(err)
 
-				prop, err := serialize.ReadProperty(bytes.NewBuffer(i.Key), serialize.WithoutContext, ds.MkKeyContext(aid, ns))
+				prop, err := serialize.ReadProperty(bytes.NewBuffer(ik), serialize.WithoutContext, kctx)
 				memoryCorruption(err)
 
 				k := prop.Value().(*ds.Key)

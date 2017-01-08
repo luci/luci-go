@@ -665,11 +665,6 @@ func TestCompoundIndexes(t *testing.T) {
 		return "idx::" + string(serialize.ToBytes(*def.PrepForIdxTable()))
 	}
 
-	numItms := func(c memCollection) uint64 {
-		ret, _ := c.GetTotals()
-		return ret
-	}
-
 	Convey("Test Compound indexes", t, func() {
 		type Model struct {
 			ID int64 `gae:"$id"`
@@ -691,22 +686,22 @@ func TestCompoundIndexes(t *testing.T) {
 			},
 		}
 
-		coll := head.GetCollection(idxKey(idx))
+		coll := head.Snapshot().GetCollection(idxKey(idx))
 		So(coll, ShouldNotBeNil)
-		So(numItms(coll), ShouldEqual, 2)
+		So(countItems(coll), ShouldEqual, 2)
 
 		idx.SortBy[0].Property = "Field1"
-		coll = head.GetCollection(idxKey(idx))
+		coll = head.Snapshot().GetCollection(idxKey(idx))
 		So(coll, ShouldNotBeNil)
-		So(numItms(coll), ShouldEqual, 2)
+		So(countItems(coll), ShouldEqual, 2)
 
 		idx.SortBy = append(idx.SortBy, ds.IndexColumn{Property: "Field1"})
 		So(head.GetCollection(idxKey(idx)), ShouldBeNil)
 
 		t.AddIndexes(&idx)
-		coll = head.GetCollection(idxKey(idx))
+		coll = head.Snapshot().GetCollection(idxKey(idx))
 		So(coll, ShouldNotBeNil)
-		So(numItms(coll), ShouldEqual, 4)
+		So(countItems(coll), ShouldEqual, 4)
 	})
 }
 

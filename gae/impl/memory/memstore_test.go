@@ -110,13 +110,13 @@ func getFilledColl(fill []kv) memCollection {
 func TestCollision(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test gkvCollide", t, func() {
+	Convey("Test memStoreCollide", t, func() {
 		for _, tc := range testCollisionCases {
 			Convey(tc.name, func() {
 				left := getFilledColl(tc.left)
 				right := getFilledColl(tc.right)
 				i := 0
-				gkvCollide(left, right, func(key, left, right []byte) {
+				memStoreCollide(left, right, func(key, left, right []byte) {
 					e := tc.expect[i]
 					So(key, ShouldResemble, e.key)
 					So(left, ShouldResemble, e.left)

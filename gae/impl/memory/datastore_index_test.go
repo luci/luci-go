@@ -11,7 +11,7 @@ import (
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
-	"github.com/luci/gkvlite"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -205,12 +205,10 @@ func TestIndexRowGen(t *testing.T) {
 			Convey("indexEntries", func() {
 				sip := serialize.PropertyMapPartially(fakeKey, nil)
 				s := indexEntries(fakeKey, sip, defaultIndexes("knd", ds.PropertyMap(nil)))
-				numItems, _ := s.GetCollection("idx").GetTotals()
-				So(numItems, ShouldEqual, 1)
-				itm := s.GetCollection("idx").MinItem(false)
-				So(itm.Key, ShouldResemble, cat(indx("knd").PrepForIdxTable()))
-				numItems, _ = s.GetCollection("idx:ns:" + string(itm.Key)).GetTotals()
-				So(numItems, ShouldEqual, 1)
+				So(countItems(s.Snapshot().GetCollection("idx")), ShouldEqual, 1)
+				itm := s.GetCollection("idx").MinItem()
+				So(itm.key, ShouldResemble, cat(indx("knd").PrepForIdxTable()))
+				So(countItems(s.Snapshot().GetCollection("idx:ns:"+string(itm.key))), ShouldEqual, 1)
 			})
 
 			Convey("defaultIndexes", func() {
@@ -253,10 +251,10 @@ func TestIndexEntries(t *testing.T) {
 				for colName, vals := range tc.collections {
 					i := 0
 					coll := store.Snapshot().GetCollection(colName)
-					numItems, _ := coll.GetTotals()
-					So(numItems, ShouldEqual, len(tc.collections[colName]))
-					coll.VisitItemsAscend(nil, true, func(itm *gkvlite.Item) bool {
-						So(itm.Key, ShouldResemble, vals[i])
+					So(countItems(coll), ShouldEqual, len(tc.collections[colName]))
+
+					coll.ForEachItem(func(k, _ []byte) bool {
+						So(k, ShouldResemble, vals[i])
 						i++
 						return true
 					})
@@ -372,8 +370,8 @@ func TestUpdateIndexes(t *testing.T) {
 					coll := store.Snapshot().GetCollection(colName)
 					So(coll, ShouldNotBeNil)
 					i := 0
-					coll.VisitItemsAscend(nil, false, func(itm *gkvlite.Item) bool {
-						So(data[i], ShouldResemble, itm.Key)
+					coll.ForEachItem(func(k, _ []byte) bool {
+						So(data[i], ShouldResemble, k)
 						i++
 						return true
 					})

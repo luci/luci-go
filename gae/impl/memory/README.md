@@ -27,7 +27,7 @@ compared only using `bytes.Compare` (aka `memcmp`). This doc will assume that
 you're familiar with those encodings, but will point out where we diverge from
 the stock encodings.
 
-All encoded Property values used in gkvlite Keys (i.e. index rows) are
+All encoded Property values used in memory store Keys (i.e. index rows) are
 serialized using the settings `serialize.WithoutContext`, and
 `datastore.ShouldIndex`.
 

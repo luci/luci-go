@@ -15,17 +15,15 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-
-	"github.com/luci/gkvlite"
 )
 
 var logMemCollectionFolder = flag.String(
-	"luci.gae.gkvlite_trace_folder", "",
+	"luci.gae.store_trace_folder", "",
 	"Set to a folder path to enable debugging traces to be dumped there. Set to '-' to dump to stdout.")
 var logMemCollectionFolderTmp string
 var logMemCollectionOnce sync.Once
 var logMemCounter uint32
-var logMemNameKey = "holds a string indicating the GKVLiteDebuggingTraceName"
+var logMemNameKey = "holds a string indicating the StoreDebuggingTraceName"
 var stdoutLock sync.Mutex
 
 func wrapTracingMemStore(store memStore) memStore {
@@ -42,7 +40,7 @@ func wrapTracingMemStore(store memStore) memStore {
 	} else {
 		logMemCollectionOnce.Do(func() {
 			var err error
-			logMemCollectionFolderTmp, err = ioutil.TempDir(*logMemCollectionFolder, "luci-gae-gkvlite_trace")
+			logMemCollectionFolderTmp, err = ioutil.TempDir(*logMemCollectionFolder, "luci-gae-store_trace")
 			if err != nil {
 				panic(err)
 			}
@@ -50,7 +48,7 @@ func wrapTracingMemStore(store memStore) memStore {
 			if err != nil {
 				panic(err)
 			}
-			fmt.Fprintf(os.Stderr, "Saving GKVLite trace files to %q\n", logMemCollectionFolderTmp)
+			fmt.Fprintf(os.Stderr, "Saving store trace files to %q\n", logMemCollectionFolderTmp)
 		})
 		if logMemCollectionFolderTmp == "" {
 			panic("unable to create folder for tracefiles")
@@ -118,7 +116,7 @@ func (t *tracingMemStoreImpl) GetCollection(name string) memCollection {
 		return nil
 	}
 	writer := t.colWriter("GetCollection", name)
-	return &tracingMemCollectionImpl{coll, writer, 0}
+	return &tracingMemCollectionImpl{coll, writer, 0, 0}
 }
 
 func (t *tracingMemStoreImpl) GetCollectionNames() []string {
@@ -128,7 +126,7 @@ func (t *tracingMemStoreImpl) GetCollectionNames() []string {
 
 func (t *tracingMemStoreImpl) GetOrCreateCollection(name string) memCollection {
 	writer := t.colWriter("GetOrCreateCollection", name)
-	return &tracingMemCollectionImpl{t.i.GetOrCreateCollection(name), writer, 0}
+	return &tracingMemCollectionImpl{t.i.GetOrCreateCollection(name), writer, 0, 0}
 }
 
 func (t *tracingMemStoreImpl) Snapshot() memStore {
@@ -148,9 +146,11 @@ func (t *tracingMemStoreImpl) IsReadOnly() bool {
 }
 
 type tracingMemCollectionImpl struct {
-	i           memCollection
-	w           traceWriter
-	visitNumber uint
+	i memCollection
+	w traceWriter
+
+	iterNumber    uint
+	forEachNumber uint
 }
 
 var _ memCollection = (*tracingMemCollectionImpl)(nil)
@@ -159,9 +159,9 @@ func (t *tracingMemCollectionImpl) Name() string {
 	return t.i.Name()
 }
 
-func (t *tracingMemCollectionImpl) Delete(k []byte) bool {
+func (t *tracingMemCollectionImpl) Delete(k []byte) {
 	t.w(".Delete(%#v)", k)
-	return t.i.Delete(k)
+	t.i.Delete(k)
 }
 
 func (t *tracingMemCollectionImpl) Get(k []byte) []byte {
@@ -169,14 +169,9 @@ func (t *tracingMemCollectionImpl) Get(k []byte) []byte {
 	return t.i.Get(k)
 }
 
-func (t *tracingMemCollectionImpl) GetTotals() (numItems, numBytes uint64) {
-	t.w(".GetTotals()")
-	return t.i.GetTotals()
-}
-
-func (t *tracingMemCollectionImpl) MinItem(withValue bool) *gkvlite.Item {
-	t.w(".MinItem(%t)", withValue)
-	return t.i.MinItem(withValue)
+func (t *tracingMemCollectionImpl) MinItem() *storeEntry {
+	t.w(".MinItem()")
+	return t.i.MinItem()
 }
 
 func (t *tracingMemCollectionImpl) Set(k, v []byte) {
@@ -184,15 +179,34 @@ func (t *tracingMemCollectionImpl) Set(k, v []byte) {
 	t.i.Set(k, v)
 }
 
-func (t *tracingMemCollectionImpl) VisitItemsAscend(target []byte, withValue bool, visitor gkvlite.ItemVisitor) {
-	vnum := t.visitNumber
-	t.visitNumber++
+func (t *tracingMemCollectionImpl) Iterator(pivot []byte) memIterator {
+	inum := t.iterNumber
+	t.iterNumber++
 
-	t.w(".VisitItemsAscend(%#v, %t, func(i *gkvlite.Item) bool{ return true }) // BEGIN VisitItemsAscend(%d)", target, withValue, vnum)
-	defer t.w("// END VisitItemsAscend(%d)", vnum)
-	t.i.VisitItemsAscend(target, withValue, visitor)
+	t.w(".Iterator(%#v) // Created Iterator #%d", pivot, inum)
+	return &tracingMemIteratorImpl{t.i.Iterator(pivot), t.w, inum}
+}
+
+func (t *tracingMemCollectionImpl) ForEachItem(fn memVisitor) {
+	vnum := t.forEachNumber
+	t.forEachNumber++
+
+	t.w(".ForEachItem(func(k, v []byte) bool{ return true }) // BEGIN ForEachItem(%d)", vnum)
+	defer t.w("// END ForEachItem(%d)", vnum)
+	t.i.ForEachItem(fn)
 }
 
 func (t *tracingMemCollectionImpl) IsReadOnly() bool {
 	return t.i.IsReadOnly()
+}
+
+type tracingMemIteratorImpl struct {
+	i   memIterator
+	w   traceWriter
+	num uint
+}
+
+func (t *tracingMemIteratorImpl) Next() *storeEntry {
+	t.w(".Next() // Iterator #%d", t.num)
+	return t.i.Next()
 }

@@ -10,8 +10,9 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
-	"github.com/luci/gkvlite"
+
 	"github.com/luci/luci-go/common/data/cmpbin"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -30,6 +31,15 @@ func readNum(data []byte) int64 {
 	return ret
 }
 
+func countItems(mc memCollection) int {
+	count := 0
+	mc.ForEachItem(func(_, _ []byte) bool {
+		count++
+		return true
+	})
+	return count
+}
+
 func TestIterator(t *testing.T) {
 	t.Parallel()
 
@@ -43,30 +53,34 @@ func TestIterator(t *testing.T) {
 	}
 	c = s.Snapshot().GetCollection("zup")
 
+	iterCB := func(it *iterator, cb func(k, v []byte)) {
+		for ent := it.next(); ent != nil; ent = it.next() {
+			cb(ent.key, ent.value)
+		}
+	}
+
 	get := func(c C, t *iterator) interface{} {
-		ret := interface{}(nil)
-		t.next(nil, func(i *gkvlite.Item) {
-			if i != nil {
-				ret = readNum(i.Key)
-			}
-		})
-		return ret
+		if ent := t.next(); ent != nil {
+			return readNum(ent.key)
+		}
+		return nil
 	}
 
 	skipGet := func(c C, t *iterator, skipTo int64) interface{} {
-		ret := interface{}(nil)
-		t.next(mkNum(skipTo), func(i *gkvlite.Item) {
-			if i != nil {
-				ret = readNum(i.Key)
-			}
+		t.skip(mkNum(skipTo))
+		return get(c, t)
+	}
+
+	didIterate := func(t *iterator) (did bool) {
+		iterCB(t, func(k, v []byte) {
+			did = true
 		})
-		return ret
+		return
 	}
 
 	Convey("Test iterator", t, func() {
 		Convey("start at nil", func(ctx C) {
 			t := (&iterDefinition{c: c}).mkIter()
-			defer t.stop()
 			So(get(ctx, t), ShouldEqual, 5)
 			So(get(ctx, t), ShouldEqual, 6)
 			So(get(ctx, t), ShouldEqual, 7)
@@ -76,12 +90,9 @@ func TestIterator(t *testing.T) {
 				So(get(ctx, t), ShouldEqual, 11)
 
 				Convey("But not forever", func(ctx C) {
-					t.next(mkNum(200), func(i *gkvlite.Item) {
-						ctx.So(i, ShouldBeNil)
-					})
-					t.next(nil, func(i *gkvlite.Item) {
-						ctx.So(i, ShouldBeNil)
-					})
+					t.skip(mkNum(200))
+					So(didIterate(t), ShouldBeFalse)
+					So(didIterate(t), ShouldBeFalse)
 				})
 			})
 
@@ -91,17 +102,6 @@ func TestIterator(t *testing.T) {
 
 				// Giving the immediately next key doesn't cause an internal reset.
 				So(skipGet(ctx, t, 10), ShouldEqual, 10)
-			})
-
-			Convey("Can stop", func(ctx C) {
-				t.stop()
-				t.next(mkNum(200), func(i *gkvlite.Item) {
-					ctx.So(i, ShouldBeNil)
-				})
-				t.next(nil, func(i *gkvlite.Item) {
-					ctx.So(i, ShouldBeNil)
-				})
-				So(t.stop, ShouldNotPanic)
 			})
 
 			Convey("Going backwards is ignored", func(ctx C) {
@@ -129,9 +129,8 @@ func TestIterator(t *testing.T) {
 			So(get(ctx, t), ShouldEqual, 22)
 			So(get(ctx, t), ShouldEqual, 23)
 			So(get(ctx, t), ShouldEqual, 24)
-			t.next(nil, func(i *gkvlite.Item) {
-				ctx.So(i, ShouldBeNil)
-			})
+
+			So(didIterate(t), ShouldBeFalse)
 		})
 
 		Convey("can skip over starting cap", func(ctx C) {
@@ -139,11 +138,9 @@ func TestIterator(t *testing.T) {
 			So(skipGet(ctx, t, 22), ShouldEqual, 22)
 			So(get(ctx, t), ShouldEqual, 23)
 			So(get(ctx, t), ShouldEqual, 24)
-			t.next(nil, func(i *gkvlite.Item) {
-				ctx.So(i, ShouldBeNil)
-			})
-		})
 
+			So(didIterate(t), ShouldBeFalse)
+		})
 	})
 }
 
