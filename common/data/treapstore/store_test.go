@@ -25,6 +25,15 @@ func putMulti(c *Collection, vs ...string) {
 	}
 }
 
+func visitAll(c *Collection, pivot string) []string {
+	res := []string{}
+	c.VisitAscend(pivot, func(v gtreap.Item) bool {
+		res = append(res, v.(string))
+		return true
+	})
+	return res
+}
+
 func iterAll(it *gtreap.Iterator) []string {
 	all := []string{}
 	for {
@@ -34,6 +43,31 @@ func iterAll(it *gtreap.Iterator) []string {
 		}
 		all = append(all, v.(string))
 	}
+}
+
+func shouldHaveKeys(actual interface{}, expected ...interface{}) string {
+	c := actual.(*Collection)
+
+	// expected can either be a single []string or a series of strings.
+	var keys []string
+	var ok bool
+	if len(expected) == 1 {
+		keys, ok = expected[0].([]string)
+	}
+	if !ok {
+		keys = make([]string, len(expected))
+		for i, v := range expected {
+			keys[i] = v.(string)
+		}
+	}
+
+	if err := ShouldResemble(iterAll(c.Iterator("")), keys); err != "" {
+		return fmt.Sprintf("failed via iterator: %s", err)
+	}
+	if err := ShouldResemble(visitAll(c, ""), keys); err != "" {
+		return fmt.Sprintf("failed via visit: %s", err)
+	}
+	return ""
 }
 
 func TestStore(t *testing.T) {
@@ -46,7 +80,7 @@ func TestStore(t *testing.T) {
 		Convey(`When empty`, func() {
 			checkEmpty := func(c *Collection) {
 				So(c.Get("foo"), ShouldBeNil)
-				So(iterAll(c.Iterator("")), ShouldResemble, []string{})
+				So(c, shouldHaveKeys)
 			}
 
 			// Check the basic Store.
@@ -68,7 +102,7 @@ func TestStore(t *testing.T) {
 						So(coll.Get(k), ShouldEqual, k)
 					}
 
-					So(iterAll(coll.Iterator("")), ShouldResemble, keys)
+					So(coll, shouldHaveKeys, keys)
 					for i, k := range keys {
 						So(iterAll(coll.Iterator(k)), ShouldResemble, keys[i:])
 						So(iterAll(coll.Iterator(k+"1")), ShouldResemble, keys[i+1:])

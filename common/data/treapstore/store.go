@@ -237,8 +237,19 @@ func (c *Collection) setRoot(root *gtreap.Treap) {
 	c.root = root
 }
 
-// Iterator returns an iterator over the Store, starting at the supplied pivot
-// item.
+// VisitAscend traverses the Collection ascendingly, invoking visitor for each
+// visited item.
+//
+// If visitor returns false, iteration will stop prematurely.
+//
+// VisitAscend is a more efficient traversal than using an Iterator, and is
+// useful in times when entry-by-entry iteration is not required.
+func (c *Collection) VisitAscend(pivot gtreap.Item, visitor gtreap.ItemVisitor) {
+	c.currentRoot().VisitAscend(pivot, visitor)
+}
+
+// Iterator returns an iterator over the Collection, starting at the supplied
+// pivot item.
 func (c *Collection) Iterator(pivot gtreap.Item) *gtreap.Iterator {
 	root := c.currentRoot()
 	if root == nil {
