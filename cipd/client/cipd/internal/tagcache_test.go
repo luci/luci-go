@@ -45,7 +45,7 @@ func TestTagCacheWorks(t *testing.T) {
 		}
 
 		Convey("single tag", func() {
-			tc := NewTagCache(fs)
+			tc := NewTagCache(fs, "service.example.com")
 			pin, err := tc.ResolveTag(ctx, "pkg", "tag:1")
 			So(err, ShouldBeNil)
 			So(pin, ShouldResemble, common.Pin{})
@@ -90,7 +90,7 @@ func TestTagCacheWorks(t *testing.T) {
 			So(tc.Save(ctx), ShouldBeNil)
 
 			// Load.
-			another := NewTagCache(fs)
+			another := NewTagCache(fs, "service.example.com")
 			pin, err = another.ResolveTag(ctx, "pkg", "tag:1")
 			So(err, ShouldBeNil)
 			So(pin, ShouldResemble, common.Pin{
@@ -103,7 +103,7 @@ func TestTagCacheWorks(t *testing.T) {
 		})
 
 		Convey("many tags", func() {
-			tc := NewTagCache(fs)
+			tc := NewTagCache(fs, "service.example.com")
 
 			// Fill up to capacity.
 			for i := 0; i < tagCacheMaxSize; i++ {
@@ -153,8 +153,8 @@ func TestTagCacheWorks(t *testing.T) {
 		})
 
 		Convey("parallel update", func() {
-			tc1 := NewTagCache(fs)
-			tc2 := NewTagCache(fs)
+			tc1 := NewTagCache(fs, "service.example.com")
+			tc2 := NewTagCache(fs, "service.example.com")
 
 			So(tc1.AddTag(ctx, cannedPin, "tag:1"), ShouldBeNil)
 			So(tc1.AddFile(ctx, numberedPin(0), "filename", numberedID(0)), ShouldBeNil)
@@ -164,7 +164,7 @@ func TestTagCacheWorks(t *testing.T) {
 			So(tc1.Save(ctx), ShouldBeNil)
 			So(tc2.Save(ctx), ShouldBeNil)
 
-			tc3 := NewTagCache(fs)
+			tc3 := NewTagCache(fs, "service.example.com")
 
 			// Both tags are resolvable.
 			pin, err := tc3.ResolveTag(ctx, "pkg", "tag:1")
@@ -179,6 +179,49 @@ func TestTagCacheWorks(t *testing.T) {
 			file, err = tc3.ResolveFile(ctx, numberedPin(1), "filename")
 			So(err, ShouldBeNil)
 			So(file, ShouldEqual, numberedID(1))
+		})
+
+		Convey("multiple services", func() {
+			tc1 := NewTagCache(fs, "service1.example.com")
+			tc2 := NewTagCache(fs, "service2.example.com")
+
+			// Add same tags and files, that resolve to different hashes on different
+			// servers.
+			So(tc1.AddTag(ctx, numberedPin(0), "tag:1"), ShouldBeNil)
+			So(tc1.AddFile(ctx, numberedPin(1), "filename", numberedID(10)), ShouldBeNil)
+			So(tc2.AddTag(ctx, numberedPin(2), "tag:1"), ShouldBeNil)
+			So(tc2.AddFile(ctx, numberedPin(1), "filename", numberedID(20)), ShouldBeNil)
+
+			So(tc1.Save(ctx), ShouldBeNil)
+			So(tc2.Save(ctx), ShouldBeNil)
+
+			tc1 = NewTagCache(fs, "service1.example.com")
+			tc2 = NewTagCache(fs, "service2.example.com")
+
+			// Tags are resolvable. tc2.Save didn't overwrite tc1 data.
+			pin, err := tc1.ResolveTag(ctx, "pkg", "tag:1")
+			So(err, ShouldBeNil)
+			So(pin, ShouldResemble, numberedPin(0))
+			pin, err = tc2.ResolveTag(ctx, "pkg", "tag:1")
+			So(err, ShouldBeNil)
+			So(pin, ShouldResemble, numberedPin(2))
+
+			// File hashes are cached too.
+			file, err := tc1.ResolveFile(ctx, numberedPin(1), "filename")
+			So(err, ShouldBeNil)
+			So(file, ShouldEqual, numberedID(10))
+			file, err = tc2.ResolveFile(ctx, numberedPin(1), "filename")
+			So(err, ShouldBeNil)
+			So(file, ShouldEqual, numberedID(20))
+
+			// No "ghost" records for some different service.
+			tc3 := NewTagCache(fs, "service3.example.com")
+			pin, err = tc3.ResolveTag(ctx, "pkg", "tag:1")
+			So(err, ShouldBeNil)
+			So(pin, ShouldResemble, common.Pin{})
+			file, err = tc3.ResolveFile(ctx, numberedPin(1), "filename")
+			So(err, ShouldBeNil)
+			So(file, ShouldEqual, "")
 		})
 	})
 }

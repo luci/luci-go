@@ -596,7 +596,7 @@ func TestMaybeUpdateClient(t *testing.T) {
 	Convey("MaybeUpdateClient", t, func() {
 		Convey("Is a NOOP when exeHash matches", func(c C) {
 			client := mockClient(c, "", nil)
-			client.tagCache = internal.NewTagCache(nil)
+			client.tagCache = internal.NewTagCache(nil, "service.example.com")
 			pin := common.Pin{clientPackage, "0000000000000000000000000000000000000000"}
 			So(client.tagCache.AddTag(ctx, pin, "git:deadbeef"), ShouldBeNil)
 			So(client.tagCache.AddFile(ctx, pin, clientFileName, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), ShouldBeNil)
@@ -1012,12 +1012,13 @@ func mockClient(c C, root string, expectations []expectedHTTPCall) *clientImpl {
 		},
 	}
 
-	client := NewClient(ClientOptions{
+	client, err := NewClient(ClientOptions{
 		ServiceURL:          server.URL,
 		Root:                root,
 		AnonymousClient:     &http.Client{Transport: transport},
 		AuthenticatedClient: &http.Client{Transport: transport},
 	})
+	c.So(err, ShouldBeNil)
 	return client.(*clientImpl)
 }
 

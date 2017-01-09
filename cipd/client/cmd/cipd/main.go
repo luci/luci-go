@@ -273,7 +273,7 @@ func (opts *ClientOptions) makeCipdClient(ctx context.Context, root string) (cip
 		CacheDir:            cacheDir,
 		AuthenticatedClient: client,
 		AnonymousClient:     http.DefaultClient,
-	}), nil
+	})
 }
 
 ////////////////////////////////////////////////////////////////////////////////

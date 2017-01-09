@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"os"
 	"sort"
-	"strings"
 	"sync"
 
 	"golang.org/x/net/context"
@@ -44,27 +43,39 @@ const (
 // is of the whole package, and not of the actual executable inside the
 // package).
 type TagCache struct {
-	fs   local.FileSystem
+	fs      local.FileSystem
+	service string
+
 	lock sync.Mutex
 
-	cache      *messages.TagCache                      // the last loaded state, if not nil.
-	addedTags  map[string]*messages.TagCache_Entry     // entries added by AddTag
-	addedFiles map[string]*messages.TagCache_FileEntry // entries added by AddFile
+	cache      *messages.TagCache                       // the last loaded state, if not nil.
+	addedTags  map[tagKey]*messages.TagCache_Entry      // entries added by AddTag
+	addedFiles map[fileKey]*messages.TagCache_FileEntry // entries added by AddFile
 }
 
-// stringKey constructs keys for the TagCache.added* maps.
+type tagKey string
+type fileKey string
+
+// makeTagKey constructs key for the TagCache.addedTags map.
 //
 // We use string math instead of a struct to avoid reimplementing sorting
-// interface.
-func stringKey(strs ...string) string {
-	return strings.Join(strs, ":")
+// interface, ain't nobody got time for that.
+func makeTagKey(pkg, tag string) tagKey {
+	return tagKey(pkg + ":" + tag)
+}
+
+// makeFileKey constructs key for the TagCache.addedFiles map.
+//
+// It is distinct from tagKey structurally, thus uses different type.
+func makeFileKey(pkg, instance, file string) fileKey {
+	return fileKey(pkg + ":" + instance + ":" + file)
 }
 
 // NewTagCache initializes TagCache.
 //
 // fs will be the root of the cache. It will be searched for tagcache.db file.
-func NewTagCache(fs local.FileSystem) *TagCache {
-	return &TagCache{fs: fs}
+func NewTagCache(fs local.FileSystem, service string) *TagCache {
+	return &TagCache{fs: fs, service: service}
 }
 
 func (c *TagCache) lazyLoadLocked(ctx context.Context) (err error) {
@@ -75,7 +86,7 @@ func (c *TagCache) lazyLoadLocked(ctx context.Context) (err error) {
 	// processes will be "invisible" to the TagCache. It still tries not to
 	// overwrite them in Save, so it's fine.
 	if c.cache == nil {
-		c.cache, err = c.loadFromDisk(ctx)
+		c.cache, err = c.loadFromDisk(ctx, false)
 	}
 	return
 }
@@ -95,7 +106,7 @@ func (c *TagCache) ResolveTag(ctx context.Context, pkg, tag string) (pin common.
 	defer c.lock.Unlock()
 
 	// Already added with AddTag recently?
-	if e := c.addedTags[stringKey(pkg, tag)]; e != nil {
+	if e := c.addedTags[makeTagKey(pkg, tag)]; e != nil {
 		return common.Pin{
 			PackageName: e.Package,
 			InstanceID:  e.InstanceId,
@@ -132,7 +143,7 @@ func (c *TagCache) ResolveFile(ctx context.Context, pin common.Pin, fileName str
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	key := stringKey(pin.PackageName, pin.InstanceID, fileName)
+	key := makeFileKey(pin.PackageName, pin.InstanceID, fileName)
 	if e := c.addedFiles[key]; e != nil {
 		return e.Hash, nil
 	}
@@ -168,11 +179,12 @@ func (c *TagCache) AddTag(ctx context.Context, pin common.Pin, tag string) error
 	defer c.lock.Unlock()
 
 	if c.addedTags == nil {
-		c.addedTags = make(map[string]*messages.TagCache_Entry, 1)
+		c.addedTags = make(map[tagKey]*messages.TagCache_Entry, 1)
 	}
 
 	// 'Save' will merge this into 'c.cache' before dumping to disk.
-	c.addedTags[stringKey(pin.PackageName, tag)] = &messages.TagCache_Entry{
+	c.addedTags[makeTagKey(pin.PackageName, tag)] = &messages.TagCache_Entry{
+		Service:    c.service,
 		Package:    pin.PackageName,
 		Tag:        tag,
 		InstanceId: pin.InstanceID,
@@ -197,9 +209,10 @@ func (c *TagCache) AddFile(ctx context.Context, pin common.Pin, fileName, hash s
 	defer c.lock.Unlock()
 
 	if c.addedFiles == nil {
-		c.addedFiles = make(map[string]*messages.TagCache_FileEntry, 1)
+		c.addedFiles = make(map[fileKey]*messages.TagCache_FileEntry, 1)
 	}
-	c.addedFiles[stringKey(pin.PackageName, pin.InstanceID, fileName)] = &messages.TagCache_FileEntry{
+	c.addedFiles[makeFileKey(pin.PackageName, pin.InstanceID, fileName)] = &messages.TagCache_FileEntry{
+		Service:    c.service,
 		Package:    pin.PackageName,
 		InstanceId: pin.InstanceID,
 		FileName:   fileName,
@@ -225,32 +238,36 @@ func (c *TagCache) Save(ctx context.Context) error {
 	// Sort all new entries, for consistency.
 	sortedTags := make([]string, 0, len(c.addedTags))
 	for k := range c.addedTags {
-		sortedTags = append(sortedTags, k)
+		sortedTags = append(sortedTags, string(k))
 	}
 	sort.Strings(sortedTags)
 	sortedFiles := make([]string, 0, len(c.addedFiles))
 	for k := range c.addedFiles {
-		sortedFiles = append(sortedFiles, k)
+		sortedFiles = append(sortedFiles, string(k))
 	}
 	sort.Strings(sortedFiles)
 
-	// Load the most recent data to avoid overwriting it.
-	recent, err := c.loadFromDisk(ctx)
+	// Load the most recent data to avoid overwriting it. Load ALL entries, even
+	// if they belong to different service: we have one global cache file and
+	// should preserve all entries there.
+	recent, err := c.loadFromDisk(ctx, true)
 	if err != nil {
 		return err
 	}
 
-	// Copy all existing entries, except the ones we are moving to the tail.
+	// Copy existing entries, except the ones we are moving to the tail. Carefully
+	// copy entries belonging to other services too, we must not overwrite them.
 	mergedTags := make([]*messages.TagCache_Entry, 0, len(recent.Entries)+len(c.addedTags))
 	for _, e := range recent.Entries {
-		if c.addedTags[stringKey(e.Package, e.Tag)] == nil {
+		key := makeTagKey(e.Package, e.Tag)
+		if e.Service != c.service || c.addedTags[key] == nil {
 			mergedTags = append(mergedTags, e)
 		}
 	}
 
 	// Add new entries to the tail.
 	for _, k := range sortedTags {
-		mergedTags = append(mergedTags, c.addedTags[k])
+		mergedTags = append(mergedTags, c.addedTags[tagKey(k)])
 	}
 
 	// Trim the end result, discard the head: it's where old items are.
@@ -258,15 +275,16 @@ func (c *TagCache) Save(ctx context.Context) error {
 		mergedTags = mergedTags[len(mergedTags)-tagCacheMaxSize:]
 	}
 
-	// Do the same for file entries
+	// Do the same for file entries.
 	mergedFiles := make([]*messages.TagCache_FileEntry, 0, len(recent.FileEntries)+len(c.addedFiles))
 	for _, e := range recent.FileEntries {
-		if c.addedFiles[e.Hash] == nil {
+		key := makeFileKey(e.Package, e.InstanceId, e.FileName)
+		if e.Service != c.service || c.addedFiles[key] == nil {
 			mergedFiles = append(mergedFiles, e)
 		}
 	}
 	for _, k := range sortedFiles {
-		mergedFiles = append(mergedFiles, c.addedFiles[k])
+		mergedFiles = append(mergedFiles, c.addedFiles[fileKey(k)])
 	}
 	if len(mergedFiles) > tagCacheMaxExeSize {
 		mergedFiles = mergedFiles[len(mergedFiles)-tagCacheMaxExeSize:]
@@ -290,9 +308,13 @@ func (c *TagCache) Save(ctx context.Context) error {
 
 // loadFromDisk loads and parses the tag cache file.
 //
+// If 'allService' is true, returns all cache entries (regardless of what
+// service they correspond to), otherwise filters out all entries that don't
+// match c.service.
+//
 // Returns empty struct if the file is missing or corrupted. Returns errors if
 // the file can't be read.
-func (c *TagCache) loadFromDisk(ctx context.Context) (*messages.TagCache, error) {
+func (c *TagCache) loadFromDisk(ctx context.Context, allServices bool) (*messages.TagCache, error) {
 	path, err := c.fs.RootRelToAbs(tagCacheFilename)
 	if err != nil {
 		return nil, err
@@ -307,13 +329,27 @@ func (c *TagCache) loadFromDisk(ctx context.Context) (*messages.TagCache, error)
 	}
 
 	// Just ignore the corrupted cache file.
-	cache := &messages.TagCache{}
-	if err := UnmarshalWithSHA1(blob, cache); err != nil {
+	cache := messages.TagCache{}
+	if err := UnmarshalWithSHA1(blob, &cache); err != nil {
 		logging.Warningf(ctx, "cipd: can't deserialize tag cache - %s", err)
 		return &messages.TagCache{}, nil
 	}
 
-	return cache, nil
+	// Throw away all entries with empty Service. They are not longer valid.
+	// Also apply 'allServices' filter.
+	filtered := &messages.TagCache{}
+	for _, e := range cache.Entries {
+		if e.Service != "" && (e.Service == c.service || allServices) {
+			filtered.Entries = append(filtered.Entries, e)
+		}
+	}
+	for _, e := range cache.FileEntries {
+		if e.Service != "" && (e.Service == c.service || allServices) {
+			filtered.FileEntries = append(filtered.FileEntries, e)
+		}
+	}
+
+	return filtered, nil
 }
 
 // dumpToDisk serializes the tag cache and writes it to the file system.

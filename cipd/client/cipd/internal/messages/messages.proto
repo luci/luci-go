@@ -15,16 +15,18 @@ message BlobWithSHA1 {
   bytes sha1 = 2;
 }
 
-// TagCache stores a mapping (package name, tag) -> instance ID to
+// TagCache stores a mapping (service, package name, tag) -> instance ID to
 // speed up subsequent ResolveVersion calls when tags are used.
 //
-// It also contains a (instance_id, file_name) -> hash mapping which is used for
-// client self-update purposes. file_name is case-senstive and must always use
-// POSIX-style slashes.
+// It also contains a (service, instance_id, file_name) -> hash mapping which is
+// used for client self-update purposes. file_name is case-senstive and must
+// always use POSIX-style slashes.
 //
-// TODO(vadimsh): Use server hostname as a part of the cache key.
+// A service is specified by its hostname. We make it part of the key since
+// same tags may point to different instances on different services.
 message TagCache {
   message Entry {
+    string service = 4;
     string package = 1;
     string tag = 2;
     string instance_id = 3;
@@ -34,6 +36,7 @@ message TagCache {
   repeated Entry entries = 1;
 
   message FileEntry {
+    string service = 5;
     string package = 1;
     string instance_id = 2;
     string file_name = 3;
@@ -44,7 +47,7 @@ message TagCache {
 
 // InstanceCache stores a list of instances and their last access time.
 //
-// This cache does not depend on a server being used, since an instance's ID is
+// This cache does not depend on a service being used, since an instance's ID is
 // derived only from its contents (regardless from where it was downloaded).
 message InstanceCache {
   // Entry stores info about an instance.

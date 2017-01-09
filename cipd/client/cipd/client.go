@@ -38,6 +38,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -479,7 +480,7 @@ type ClientOptions struct {
 }
 
 // NewClient initializes CIPD client object.
-func NewClient(opts ClientOptions) Client {
+func NewClient(opts ClientOptions) (Client, error) {
 	if opts.ServiceURL == "" {
 		opts.ServiceURL = ServiceURL
 	}
@@ -492,6 +493,17 @@ func NewClient(opts ClientOptions) Client {
 	if opts.UserAgent == "" {
 		opts.UserAgent = UserAgent
 	}
+
+	// Validate and normalize service URL.
+	parsed, err := url.Parse(opts.ServiceURL)
+	if err != nil {
+		return nil, fmt.Errorf("not a valid URL %q - %s", opts.ServiceURL, err)
+	}
+	if parsed.Path != "" && parsed.Path != "/" {
+		return nil, fmt.Errorf("expecting a root URL, not %q", opts.ServiceURL)
+	}
+	opts.ServiceURL = fmt.Sprintf("%s://%s", parsed.Scheme, parsed.Host)
+
 	return &clientImpl{
 		ClientOptions: opts,
 		remote: &remoteImpl{
@@ -505,7 +517,7 @@ func NewClient(opts ClientOptions) Client {
 			client:    opts.AnonymousClient,
 		},
 		deployer: local.NewDeployer(opts.Root),
-	}
+	}, nil
 }
 
 type clientImpl struct {
@@ -575,7 +587,11 @@ func (client *clientImpl) getTagCache() *internal.TagCache {
 		default:
 			return
 		}
-		client.tagCache = internal.NewTagCache(local.NewFileSystem(dir, ""))
+		parsed, err := url.Parse(client.ServiceURL)
+		if err != nil {
+			panic(err) // the URL has been validated in NewClient already
+		}
+		client.tagCache = internal.NewTagCache(local.NewFileSystem(dir, ""), parsed.Host)
 	})
 	return client.tagCache
 }
