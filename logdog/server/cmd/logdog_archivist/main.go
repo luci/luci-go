@@ -9,7 +9,6 @@ import (
 
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/gcloud/gs"
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
@@ -22,6 +21,7 @@ import (
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
 	"github.com/luci/luci-go/logdog/server/archivist"
 	"github.com/luci/luci-go/logdog/server/service"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	"cloud.google.com/go/pubsub"
 	"golang.org/x/net/context"
@@ -219,7 +219,7 @@ func (a *application) runArchivist(c context.Context) error {
 func (a *application) GetSettingsLoader(acfg *svcconfig.Archivist) archivist.SettingsLoader {
 	serviceID := a.ServiceID()
 
-	return func(c context.Context, proj config.ProjectName) (*archivist.Settings, error) {
+	return func(c context.Context, proj cfgtypes.ProjectName) (*archivist.Settings, error) {
 		// Fold in our project-specific configuration, if valid.
 		pcfg, err := a.ProjectConfig(c, proj)
 		if err != nil {

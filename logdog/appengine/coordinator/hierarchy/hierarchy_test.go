@@ -10,10 +10,10 @@ import (
 
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
-	luciConfig "github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	ct "github.com/luci/luci-go/logdog/appengine/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -151,7 +151,7 @@ func TestHierarchy(t *testing.T) {
 		})
 
 		Convey(`Can register a hierarchy of name components in multiple namespaces.`, func() {
-			for _, proj := range []luciConfig.ProjectName{
+			for _, proj := range []cfgtypes.ProjectName{
 				"proj-foo", "proj-bar", "proj-exclusive",
 			} {
 				// Bypass access check.
@@ -187,7 +187,7 @@ func TestHierarchy(t *testing.T) {
 
 			Convey(`Can list the hierarchy immediate paths (discrete).`, func() {
 				r.Project = "proj-foo"
-				lv.project = luciConfig.ProjectName(r.Project)
+				lv.project = cfgtypes.ProjectName(r.Project)
 
 				list := func(b string) *List {
 					r.Project = "proj-foo"
@@ -211,7 +211,7 @@ func TestHierarchy(t *testing.T) {
 
 			Convey(`Performing discrete queries`, func() {
 				r.Project = "proj-foo"
-				lv.project = luciConfig.ProjectName(r.Project)
+				lv.project = cfgtypes.ProjectName(r.Project)
 
 				Convey(`When listing "proj-foo/foo/+"`, func() {
 					r.PathBase = "foo/+"
@@ -262,7 +262,7 @@ func TestHierarchy(t *testing.T) {
 }
 
 type listValidator struct {
-	project  luciConfig.ProjectName
+	project  cfgtypes.ProjectName
 	pathBase types.StreamPath
 }
 

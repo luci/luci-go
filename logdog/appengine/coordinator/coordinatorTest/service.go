@@ -5,10 +5,10 @@
 package coordinatorTest
 
 import (
-	luciConfig "github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
 )
@@ -49,7 +49,7 @@ func (s *Services) Config(c context.Context) (*config.Config, error) {
 }
 
 // ProjectConfig implements coordinator.Services.
-func (s *Services) ProjectConfig(c context.Context, project luciConfig.ProjectName) (*svcconfig.ProjectConfig, error) {
+func (s *Services) ProjectConfig(c context.Context, project cfgtypes.ProjectName) (*svcconfig.ProjectConfig, error) {
 	if s.PC != nil {
 		return s.PC()
 	}

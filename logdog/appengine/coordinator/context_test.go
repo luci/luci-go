@@ -13,6 +13,7 @@ import (
 	luciConfig "github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/auth/identity"
@@ -27,10 +28,10 @@ type testServices struct {
 	Services
 
 	configErr error
-	configs   map[luciConfig.ProjectName]*svcconfig.ProjectConfig
+	configs   map[cfgtypes.ProjectName]*svcconfig.ProjectConfig
 }
 
-func (s *testServices) ProjectConfig(c context.Context, project luciConfig.ProjectName) (*svcconfig.ProjectConfig, error) {
+func (s *testServices) ProjectConfig(c context.Context, project cfgtypes.ProjectName) (*svcconfig.ProjectConfig, error) {
 	if err := s.configErr; err != nil {
 		return nil, err
 	}
@@ -63,7 +64,7 @@ func TestWithProjectNamespace(t *testing.T) {
 
 		// Fake service with fake project configs.
 		svc := testServices{
-			configs: map[luciConfig.ProjectName]*svcconfig.ProjectConfig{
+			configs: map[cfgtypes.ProjectName]*svcconfig.ProjectConfig{
 				"all-access": {
 					ReaderAuthGroups: []string{"all"},
 					WriterAuthGroups: []string{"all"},
@@ -160,7 +161,7 @@ func TestWithProjectNamespace(t *testing.T) {
 				Convey(`When config service returns an unexpected error`, func() {
 					svc.configErr = errors.New("misc")
 
-					for _, proj := range []luciConfig.ProjectName{"all-access", "exclusive-access", "does-not-exist"} {
+					for _, proj := range []cfgtypes.ProjectName{"all-access", "exclusive-access", "does-not-exist"} {
 						Convey(fmt.Sprintf(`Will fail to access %q with Internal.`, proj), func() {
 							So(WithProjectNamespace(&c, "all-access", tc.access), ShouldBeRPCInternal)
 						})

@@ -7,11 +7,11 @@ package archivist
 import (
 	"io"
 
-	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"golang.org/x/net/context"
 )
 
@@ -20,10 +20,10 @@ import (
 type storageSource struct {
 	context.Context
 
-	st            storage.Storage    // the storage instance to read from
-	project       config.ProjectName // the path of the log stream
-	path          types.StreamPath   // the path of the log stream
-	terminalIndex types.MessageIndex // if >= 0, discard logs beyond this
+	st            storage.Storage      // the storage instance to read from
+	project       cfgtypes.ProjectName // the path of the log stream
+	path          types.StreamPath     // the path of the log stream
+	terminalIndex types.MessageIndex   // if >= 0, discard logs beyond this
 
 	buf           []*logpb.LogEntry
 	lastIndex     types.MessageIndex

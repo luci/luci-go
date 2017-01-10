@@ -13,7 +13,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/gcloud/gs"
 	"github.com/luci/luci-go/common/proto/google"
@@ -22,6 +21,7 @@ import (
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/storage/memory"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
@@ -236,7 +236,7 @@ func TestHandleArchive(t *testing.T) {
 				}
 
 				err = st.Put(storage.PutRequest{
-					Project: config.ProjectName(p),
+					Project: cfgtypes.ProjectName(p),
 					Path:    desc.Path(),
 					Index:   types.MessageIndex(v),
 					Values:  [][]byte{d},
@@ -309,7 +309,7 @@ func TestHandleArchive(t *testing.T) {
 
 		ar := Archivist{
 			Service: &sc,
-			SettingsLoader: func(c context.Context, proj config.ProjectName) (*Settings, error) {
+			SettingsLoader: func(c context.Context, proj cfgtypes.ProjectName) (*Settings, error) {
 				// Extra slashes to test concatenation,.
 				st := stBase
 				st.GSBase = gs.Path(fmt.Sprintf("gs://archival/%s/path/to/archive/", proj))

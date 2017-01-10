@@ -15,13 +15,13 @@ import (
 	"sync"
 
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/butlerproto"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/types"
 	cc "github.com/luci/luci-go/logdog/server/collector/coordinator"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
 )
@@ -295,7 +295,7 @@ func shouldHaveStoredStream(actual interface{}, expected ...interface{}) string 
 
 	// Load all entries for this stream.
 	req := storage.GetRequest{
-		Project: config.ProjectName(project),
+		Project: cfgtypes.ProjectName(project),
 		Path:    types.StreamPath(name),
 	}
 

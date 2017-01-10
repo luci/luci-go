@@ -22,7 +22,6 @@ import (
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/clock/clockflag"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/flag/multiflag"
 	log "github.com/luci/luci-go/common/logging"
@@ -34,6 +33,7 @@ import (
 	"github.com/luci/luci-go/logdog/client/butler/output"
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 )
 
 const (
@@ -57,7 +57,7 @@ type application struct {
 	cli.Application
 	context.Context
 
-	project             config.ProjectName
+	project             cfgtypes.ProjectName
 	prefix              types.StreamName
 	coordinatorHost     string
 	outputWorkers       int

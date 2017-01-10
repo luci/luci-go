@@ -8,11 +8,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 )
 
@@ -35,15 +37,15 @@ func ProjectConfigPath(c context.Context) string {
 //	  be loaded.
 //	- Some other error if an error occurred that does not fit one of the
 //	  previous categories.
-func ProjectConfig(c context.Context, project config.ProjectName) (*svcconfig.ProjectConfig, error) {
+func ProjectConfig(c context.Context, project cfgtypes.ProjectName) (*svcconfig.ProjectConfig, error) {
 	if project == "" {
 		return nil, config.ErrNoConfig
 	}
 
 	// Get the config from the config service. If the configuration doesn't exist,
 	// this will return config.ErrNoConfig.
-	configSet, configPath := config.ProjectConfigSet(project), ProjectConfigPath(c)
-	cfg, err := config.GetConfig(c, configSet, configPath, false)
+	configSet, configPath := cfgtypes.ProjectConfigSet(project), ProjectConfigPath(c)
+	cfg, err := config.GetConfig(c, string(configSet), configPath, false)
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,
@@ -73,7 +75,7 @@ func ProjectConfig(c context.Context, project config.ProjectName) (*svcconfig.Pr
 //
 // If a project's configuration fails to load, an error will be logged and the
 // project will be omitted from the output map.
-func AllProjectConfigs(c context.Context) (map[config.ProjectName]*svcconfig.ProjectConfig, error) {
+func AllProjectConfigs(c context.Context) (map[cfgtypes.ProjectName]*svcconfig.ProjectConfig, error) {
 	// TODO: This endpoint is generally slow. Even though there is memcache-based
 	// config cache, this really should be loaded from a more failsafe cache like
 	// datastore to protect against config service outages.
@@ -83,10 +85,10 @@ func AllProjectConfigs(c context.Context) (map[config.ProjectName]*svcconfig.Pro
 		return nil, err
 	}
 
-	result := make(map[config.ProjectName]*svcconfig.ProjectConfig, len(configs))
+	result := make(map[cfgtypes.ProjectName]*svcconfig.ProjectConfig, len(configs))
 	for _, cfg := range configs {
 		// Identify the project by removng the "projects/" prefix.
-		project := config.ProjectName(strings.TrimPrefix(cfg.ConfigSet, "projects/"))
+		project := cfgtypes.ProjectName(strings.TrimPrefix(cfg.ConfigSet, "projects/"))
 		if err := project.Validate(); err != nil {
 			log.Fields{
 				log.ErrorKey: err,

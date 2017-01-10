@@ -9,10 +9,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"golang.org/x/net/context"
 )
 
@@ -54,7 +54,7 @@ type StreamState struct {
 // LogStream is returned metadata about a log stream.
 type LogStream struct {
 	// Project is the log stream's project.
-	Project config.ProjectName
+	Project cfgtypes.ProjectName
 	// Path is the path of the log stream.
 	Path types.StreamPath
 
@@ -75,7 +75,7 @@ func loadLogStream(proj string, path types.StreamPath, s *logdog.LogStreamState,
 	}
 
 	ls := LogStream{
-		Project: config.ProjectName(proj),
+		Project: cfgtypes.ProjectName(proj),
 		Path:    path,
 		Desc:    *d,
 		State: StreamState{
@@ -100,7 +100,7 @@ type Stream struct {
 	c *Client
 
 	// project is this stream's project.
-	project config.ProjectName
+	project cfgtypes.ProjectName
 	// path is the log stream's prefix.
 	path types.StreamPath
 }

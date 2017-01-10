@@ -12,7 +12,6 @@ import (
 	"github.com/luci/gae/filter/featureBreaker"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/data/rand/cryptorand"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
@@ -21,6 +20,7 @@ import (
 	ct "github.com/luci/luci-go/logdog/appengine/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/hierarchy"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
 
@@ -46,7 +46,7 @@ func TestRegisterPrefix(t *testing.T) {
 
 		svr := New()
 
-		const project = config.ProjectName("proj-foo")
+		const project = cfgtypes.ProjectName("proj-foo")
 		req := logdog.RegisterPrefixRequest{
 			Project:    string(project),
 			Prefix:     "testing/prefix",

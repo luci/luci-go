@@ -5,7 +5,6 @@
 package config
 
 import (
-	"fmt"
 	"net/url"
 
 	"github.com/golang/protobuf/proto"
@@ -14,6 +13,8 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+
 	"golang.org/x/net/context"
 )
 
@@ -39,9 +40,9 @@ type Config struct {
 
 // ServiceConfigPath returns the config set and path for this application's
 // service configuration.
-func ServiceConfigPath(c context.Context) (string, string) {
+func ServiceConfigPath(c context.Context) (cfgtypes.ConfigSet, string) {
 	appID := info.AppID(c)
-	return fmt.Sprintf("services/%s", appID), svcconfig.ServiceConfigFilename
+	return cfgtypes.ServiceConfigSet(appID), svcconfig.ServiceConfigFilename
 }
 
 // Load loads the service configuration. This includes:
@@ -52,7 +53,7 @@ func ServiceConfigPath(c context.Context) (string, string) {
 // The service config is minimally validated prior to being returned.
 func Load(c context.Context) (*Config, error) {
 	configSet, configPath := ServiceConfigPath(c)
-	serviceCfg, err := config.GetConfig(c, configSet, configPath, false)
+	serviceCfg, err := config.GetConfig(c, string(configSet), configPath, false)
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,

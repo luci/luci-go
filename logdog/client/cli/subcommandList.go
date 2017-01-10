@@ -11,10 +11,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/client/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"github.com/maruel/subcommands"
 )
 
@@ -59,7 +59,7 @@ func (cmd *listCommandRun) Run(scApp subcommands.Application, args []string, _ s
 		arg = strings.TrimSpace(arg)
 
 		var (
-			project  config.ProjectName
+			project  cfgtypes.ProjectName
 			pathBase string
 			unified  bool
 		)

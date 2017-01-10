@@ -23,6 +23,7 @@ import (
 	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
 	"github.com/luci/luci-go/logdog/common/storage/archive"
 	"github.com/luci/luci-go/logdog/common/storage/bigtable"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/auth/identity"
@@ -96,7 +97,7 @@ func (e *Environment) LeaveAllGroups() {
 // simulating a missing config.
 func (e *Environment) ClearCoordinatorConfig(c context.Context) {
 	configSet, _ := config.ServiceConfigPath(c)
-	delete(e.Config, configSet)
+	delete(e.Config, string(configSet))
 }
 
 // ModServiceConfig loads the current service configuration, invokes the
@@ -112,8 +113,8 @@ func (e *Environment) ModServiceConfig(c context.Context, fn func(*svcconfig.Con
 
 // ModProjectConfig loads the current configuration for the named project,
 // invokes the callback with its contents, and writes the result back to config.
-func (e *Environment) ModProjectConfig(c context.Context, proj luciConfig.ProjectName, fn func(*svcconfig.ProjectConfig)) {
-	configSet, configPath := luciConfig.ProjectConfigSet(proj), config.ProjectConfigPath(c)
+func (e *Environment) ModProjectConfig(c context.Context, proj cfgtypes.ProjectName, fn func(*svcconfig.ProjectConfig)) {
+	configSet, configPath := cfgtypes.ProjectConfigSet(proj), config.ProjectConfigPath(c)
 
 	var pcfg svcconfig.ProjectConfig
 	e.modTextProtobuf(c, configSet, configPath, &pcfg, func() {
@@ -129,14 +130,14 @@ func (e *Environment) IterateTumbleAll(c context.Context) {
 	}
 
 	for _, proj := range projects {
-		WithProjectNamespace(c, luciConfig.ProjectName(proj.ID), func(c context.Context) {
+		WithProjectNamespace(c, cfgtypes.ProjectName(proj.ID), func(c context.Context) {
 			e.Tumble.Iterate(c)
 		})
 	}
 }
 
-func (e *Environment) modTextProtobuf(c context.Context, configSet, path string, msg proto.Message, fn func()) {
-	cfg, err := e.ConfigIface.GetConfig(c, configSet, path, false)
+func (e *Environment) modTextProtobuf(c context.Context, configSet cfgtypes.ConfigSet, path string, msg proto.Message, fn func()) {
+	cfg, err := e.ConfigIface.GetConfig(c, string(configSet), path, false)
 
 	switch err {
 	case nil:
@@ -155,11 +156,11 @@ func (e *Environment) modTextProtobuf(c context.Context, configSet, path string,
 	e.addConfigEntry(configSet, path, proto.MarshalTextString(msg))
 }
 
-func (e *Environment) addConfigEntry(configSet, path, content string) {
-	cset := e.Config[configSet]
+func (e *Environment) addConfigEntry(configSet cfgtypes.ConfigSet, path, content string) {
+	cset := e.Config[string(configSet)]
 	if cset == nil {
 		cset = make(map[string]string)
-		e.Config[configSet] = cset
+		e.Config[string(configSet)] = cset
 	}
 	cset[path] = content
 }
@@ -229,7 +230,7 @@ func Install() (context.Context, *Environment) {
 
 	// luci-config: Projects.
 	projectName := info.AppID(c)
-	addProjectConfig := func(proj luciConfig.ProjectName, access ...string) {
+	addProjectConfig := func(proj cfgtypes.ProjectName, access ...string) {
 		e.ModProjectConfig(c, proj, func(pcfg *svcconfig.ProjectConfig) {
 			for _, a := range access {
 				parts := strings.SplitN(a, ":", 2)
@@ -255,7 +256,7 @@ func Install() (context.Context, *Environment) {
 	// Add a project without a LogDog project config.
 	e.addConfigEntry("projects/proj-unconfigured", "not-logdog.cfg", "junk")
 
-	configSet, configPath := luciConfig.ProjectConfigSet("proj-malformed"), config.ProjectConfigPath(c)
+	configSet, configPath := cfgtypes.ProjectConfigSet("proj-malformed"), config.ProjectConfigPath(c)
 	e.addConfigEntry(configSet, configPath, "!!! not a text protobuf !!!")
 
 	// luci-config: Coordinator Defaults
@@ -327,7 +328,7 @@ func Install() (context.Context, *Environment) {
 
 // WithProjectNamespace runs f in proj's namespace, bypassing authentication
 // checks.
-func WithProjectNamespace(c context.Context, proj luciConfig.ProjectName, f func(context.Context)) {
+func WithProjectNamespace(c context.Context, proj cfgtypes.ProjectName, f func(context.Context)) {
 	if err := coordinator.WithProjectNamespace(&c, proj, coordinator.NamespaceAccessAllTesting); err != nil {
 		panic(err)
 	}

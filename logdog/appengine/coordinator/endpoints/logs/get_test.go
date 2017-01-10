@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/data/recordio"
 	"github.com/luci/luci-go/common/iotools"
 	"github.com/luci/luci-go/common/proto/google"
@@ -24,6 +23,7 @@ import (
 	"github.com/luci/luci-go/logdog/common/renderer"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	"github.com/luci/gae/filter/featureBreaker"
 
@@ -82,7 +82,7 @@ func testGetImpl(t *testing.T, archived bool) {
 		svr := New()
 
 		// di is a datastore bound to the test project namespace.
-		const project = config.ProjectName("proj-foo")
+		const project = cfgtypes.ProjectName("proj-foo")
 
 		// Generate our test stream.
 		tls := ct.MakeStream(c, "proj-foo", "testing/+/foo/bar")

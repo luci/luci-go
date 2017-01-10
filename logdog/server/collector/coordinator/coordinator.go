@@ -7,10 +7,10 @@ package coordinator
 import (
 	"fmt"
 
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"golang.org/x/net/context"
 )
 
@@ -31,7 +31,7 @@ type Coordinator interface {
 // operate and update.
 type LogStreamState struct {
 	// Project is the log stream project.
-	Project config.ProjectName
+	Project cfgtypes.ProjectName
 	// Path is the log stream path.
 	Path types.StreamPath
 
@@ -57,8 +57,8 @@ type LogStreamState struct {
 // TerminateRequest is a local representation of a Coordinator stream
 // termination request.
 type TerminateRequest struct {
-	Project config.ProjectName // Project name.
-	Path    types.StreamPath   // Stream path. Needed for cache lookup.
+	Project cfgtypes.ProjectName // Project name.
+	Path    types.StreamPath     // Stream path. Needed for cache lookup.
 
 	// ID is the stream's Coordinator ID, as indicated by the Coordinator.
 	ID string

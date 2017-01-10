@@ -10,7 +10,6 @@ import (
 	"os"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/milo"
 	"github.com/luci/luci-go/logdog/api/logpb"
@@ -18,6 +17,7 @@ import (
 	"github.com/luci/luci-go/logdog/common/fetcher"
 	"github.com/luci/luci-go/logdog/common/renderer"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
@@ -116,7 +116,7 @@ func (cmd *catCommandRun) Run(scApp subcommands.Application, args []string, _ su
 
 // streamPath is a single path to fetch.
 type streamPath struct {
-	project config.ProjectName
+	project cfgtypes.ProjectName
 	path    types.StreamPath
 }
 

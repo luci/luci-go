@@ -10,7 +10,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/sync/parallel"
@@ -23,6 +22,7 @@ import (
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/logdog/server/collector/coordinator"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"golang.org/x/net/context"
 )
 
@@ -162,7 +162,7 @@ func (c *Collector) Process(ctx context.Context, msg []byte) error {
 		b:   pr.Bundle,
 	}
 
-	lw.project = config.ProjectName(lw.b.Project)
+	lw.project = cfgtypes.ProjectName(lw.b.Project)
 	if err := lw.project.Validate(); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
@@ -220,7 +220,7 @@ type bundleHandler struct {
 	b *logpb.ButlerLogBundle
 
 	// project is the validated project name.
-	project config.ProjectName
+	project cfgtypes.ProjectName
 }
 
 type bundleEntryHandler struct {

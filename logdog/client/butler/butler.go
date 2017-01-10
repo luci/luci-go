@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/iotools"
 	log "github.com/luci/luci-go/common/logging"
@@ -25,6 +24,7 @@ import (
 	"github.com/luci/luci-go/logdog/client/butler/streamserver"
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
 )
@@ -53,7 +53,7 @@ type Config struct {
 	OutputWorkers int
 
 	// Project is the project that the log stream will be bound to.
-	Project config.ProjectName
+	Project cfgtypes.ProjectName
 	// Prefix is the log stream common prefix value.
 	Prefix types.StreamName
 

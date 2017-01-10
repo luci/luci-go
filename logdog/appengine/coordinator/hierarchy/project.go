@@ -7,10 +7,10 @@ package hierarchy
 import (
 	"sort"
 
-	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
 )
@@ -36,7 +36,7 @@ func getProjects(c context.Context, r *Request) (*List, error) {
 	}
 	sort.Sort(projects)
 
-	next := config.ProjectName(r.Next)
+	next := cfgtypes.ProjectName(r.Next)
 	skip := r.Skip
 	for _, proj := range projects {
 		// Implement "Next" cursor. If set, don't do anything until we've seen it.
@@ -67,8 +67,8 @@ func getProjects(c context.Context, r *Request) (*List, error) {
 	return &l, nil
 }
 
-// projectNameSlice is a sortable slice of config.ProjectName.
-type projectNameSlice []config.ProjectName
+// projectNameSlice is a sortable slice of cfgtypes.ProjectName.
+type projectNameSlice []cfgtypes.ProjectName
 
 func (s projectNameSlice) Len() int           { return len(s) }
 func (s projectNameSlice) Less(i, j int) bool { return s[i] < s[j] }

@@ -9,11 +9,11 @@ import (
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/grpc/prpc"
 	"github.com/luci/luci-go/logdog/client/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"github.com/luci/luci-go/milo/appengine/settings"
 	"github.com/luci/luci-go/milo/common/miloerror"
 	"github.com/luci/luci-go/server/auth"
@@ -51,7 +51,7 @@ func (s *AnnotationStream) Render(c context.Context, req *http.Request, p httpro
 	as := annotationStreamRequest{
 		AnnotationStream: s,
 
-		project: config.ProjectName(p.ByName("project")),
+		project: cfgtypes.ProjectName(p.ByName("project")),
 		path:    types.StreamPath(strings.Trim(p.ByName("path"), "/")),
 		host:    req.FormValue("host"),
 	}

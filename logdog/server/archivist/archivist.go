@@ -15,7 +15,6 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/gcloud/gs"
 	log "github.com/luci/luci-go/common/logging"
@@ -29,6 +28,7 @@ import (
 	"github.com/luci/luci-go/logdog/common/archive"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 )
 
 const (
@@ -150,7 +150,7 @@ type Settings struct {
 }
 
 // SettingsLoader returns archival Settings for a given project.
-type SettingsLoader func(context.Context, config.ProjectName) (*Settings, error)
+type SettingsLoader func(context.Context, cfgtypes.ProjectName) (*Settings, error)
 
 // Archivist is a stateless configuration capable of archiving individual log
 // streams.
@@ -207,7 +207,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 	at := task.Task()
 
 	// Validate the project name.
-	if err := config.ProjectName(at.Project).Validate(); err != nil {
+	if err := cfgtypes.ProjectName(at.Project).Validate(); err != nil {
 		task.Consume()
 		return fmt.Errorf("invalid project name %q: %s", at.Project, err)
 	}
@@ -304,7 +304,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 	}
 
 	// Load archival settings for this project.
-	settings, err := a.loadSettings(c, config.ProjectName(at.Project))
+	settings, err := a.loadSettings(c, cfgtypes.ProjectName(at.Project))
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,
@@ -319,7 +319,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 	}
 
 	// Build our staged archival plan. This doesn't actually do any archiving.
-	staged, err := a.makeStagedArchival(c, config.ProjectName(at.Project), settings, ls, task.UniqueID())
+	staged, err := a.makeStagedArchival(c, cfgtypes.ProjectName(at.Project), settings, ls, task.UniqueID())
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create staged archival plan.")
 		return err
@@ -417,7 +417,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 }
 
 // loadSettings loads and validates archival settings.
-func (a *Archivist) loadSettings(c context.Context, project config.ProjectName) (*Settings, error) {
+func (a *Archivist) loadSettings(c context.Context, project cfgtypes.ProjectName) (*Settings, error) {
 	if a.SettingsLoader == nil {
 		panic("no settings loader configured")
 	}
@@ -446,7 +446,7 @@ func (a *Archivist) loadSettings(c context.Context, project config.ProjectName) 
 	}
 }
 
-func (a *Archivist) makeStagedArchival(c context.Context, project config.ProjectName,
+func (a *Archivist) makeStagedArchival(c context.Context, project cfgtypes.ProjectName,
 	st *Settings, ls *logdog.LoadStreamResponse, uid string) (*stagedArchival, error) {
 
 	sa := stagedArchival{
@@ -489,7 +489,7 @@ type stagedArchival struct {
 	*Archivist
 	*Settings
 
-	project config.ProjectName
+	project cfgtypes.ProjectName
 	path    types.StreamPath
 	desc    logpb.LogStreamDescriptor
 

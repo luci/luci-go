@@ -9,11 +9,11 @@ import (
 	"testing"
 
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
 	ct "github.com/luci/luci-go/logdog/appengine/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/hierarchy"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -47,7 +47,7 @@ func TestList(t *testing.T) {
 
 		svc := New()
 
-		const project = config.ProjectName("proj-foo")
+		const project = cfgtypes.ProjectName("proj-foo")
 
 		// Install a set of stock log streams to query against.
 		for i, v := range []types.StreamPath{

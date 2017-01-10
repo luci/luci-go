@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -320,7 +320,7 @@ func TestStreamStateCache(t *testing.T) {
 			})
 
 			Convey(`Different projects with the same stream name will not conflict.`, func() {
-				var projects = []config.ProjectName{"", "foo", "bar"}
+				var projects = []cfgtypes.ProjectName{"", "foo", "bar"}
 
 				for i, p := range projects {
 					st.Project = p

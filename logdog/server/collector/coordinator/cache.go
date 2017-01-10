@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/data/caching/lru"
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
@@ -17,6 +16,7 @@ import (
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/metric"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"golang.org/x/net/context"
 )
 
@@ -126,7 +126,7 @@ func (c *cache) TerminateStream(ctx context.Context, r *TerminateRequest) error 
 
 // cacheEntryKey is the LRU key for a cacheEntry.
 type cacheEntryKey struct {
-	project config.ProjectName
+	project cfgtypes.ProjectName
 	path    types.StreamPath
 }
 

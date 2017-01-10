@@ -11,13 +11,13 @@ import (
 	"testing"
 
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/butlerproto"
 	"github.com/luci/luci-go/logdog/common/storage/memory"
 	"github.com/luci/luci-go/logdog/common/types"
 	cc "github.com/luci/luci-go/logdog/server/collector/coordinator"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -202,7 +202,7 @@ func testCollectorImpl(t *testing.T, caching bool) {
 		Convey(`Will drop streams with invalid project names.`, func() {
 			b := bb.genBase()
 			b.Project = "!!!invalid name!!!"
-			So(config.ProjectName(b.Project).Validate(), ShouldNotBeNil)
+			So(cfgtypes.ProjectName(b.Project).Validate(), ShouldNotBeNil)
 
 			err := coll.Process(c, bb.bundle())
 			So(err, ShouldErrLike, "invalid bundle project name")

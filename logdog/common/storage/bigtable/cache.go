@@ -9,10 +9,10 @@ import (
 	"encoding/binary"
 	"time"
 
-	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/common/storage/caching"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
 )
@@ -30,7 +30,7 @@ const lastTailIndexCacheDuration = 1 * time.Hour
 //
 // If there was an error, or if the item was not cached, 0 (first index) will be
 // returned.
-func getLastTailIndex(c context.Context, cache caching.Cache, project config.ProjectName, path types.StreamPath) int64 {
+func getLastTailIndex(c context.Context, cache caching.Cache, project cfgtypes.ProjectName, path types.StreamPath) int64 {
 	itm := mkLastTailItem(project, path)
 	cache.Get(c, itm)
 	if itm.Data == nil {
@@ -53,7 +53,7 @@ func getLastTailIndex(c context.Context, cache caching.Cache, project config.Pro
 	return v
 }
 
-func putLastTailIndex(c context.Context, cache caching.Cache, project config.ProjectName, path types.StreamPath, v int64) {
+func putLastTailIndex(c context.Context, cache caching.Cache, project cfgtypes.ProjectName, path types.StreamPath, v int64) {
 	buf := make([]byte, binary.MaxVarintLen64)
 	buf = buf[:binary.PutVarint(buf, v)]
 
@@ -62,7 +62,7 @@ func putLastTailIndex(c context.Context, cache caching.Cache, project config.Pro
 	cache.Put(c, lastTailIndexCacheDuration, itm)
 }
 
-func mkLastTailItem(project config.ProjectName, path types.StreamPath) *caching.Item {
+func mkLastTailItem(project cfgtypes.ProjectName, path types.StreamPath) *caching.Item {
 	return &caching.Item{
 		Schema: cacheSchema,
 		Type:   "bt_tail_idx",

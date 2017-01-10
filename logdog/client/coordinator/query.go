@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"golang.org/x/net/context"
 )
 
@@ -126,7 +126,7 @@ type QueryCallback func(r *LogStream) bool
 //     first value is "foo" and whose name is "baz".
 //   - foo/bar will return all streams whose name is "foo/bar".
 //   - */* will return all streams with two-component names.
-func (c *Client) Query(ctx context.Context, project config.ProjectName, path string, o QueryOptions, cb QueryCallback) error {
+func (c *Client) Query(ctx context.Context, project cfgtypes.ProjectName, path string, o QueryOptions, cb QueryCallback) error {
 	req := logdog.QueryRequest{
 		Project:     string(project),
 		Path:        path,

@@ -12,11 +12,11 @@ import (
 	"github.com/golang/protobuf/proto"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"golang.org/x/net/context"
 )
 
@@ -28,7 +28,7 @@ func TestSecret() types.PrefixSecret {
 // TestStream returns a testing stream.
 type TestStream struct {
 	// Project is the project name for this stream.
-	Project config.ProjectName
+	Project cfgtypes.ProjectName
 	// Path is the path of this stream.
 	Path types.StreamPath
 
@@ -44,7 +44,7 @@ type TestStream struct {
 }
 
 // MakeStream builds a new TestStream with the supplied parameters.
-func MakeStream(c context.Context, project config.ProjectName, path types.StreamPath) *TestStream {
+func MakeStream(c context.Context, project cfgtypes.ProjectName, path types.StreamPath) *TestStream {
 	prefix, name := path.Split()
 
 	now := clock.Now(c).UTC()

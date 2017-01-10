@@ -6,10 +6,10 @@ package coordinator
 
 import (
 	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/grpc/prpc"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 )
 
 var (
@@ -36,7 +36,7 @@ func NewClient(c *prpc.Client) *Client {
 }
 
 // Stream returns a Stream instance for the named stream.
-func (c *Client) Stream(project config.ProjectName, path types.StreamPath) *Stream {
+func (c *Client) Stream(project cfgtypes.ProjectName, path types.StreamPath) *Stream {
 	return &Stream{
 		c:       c,
 		project: project,

@@ -5,11 +5,11 @@
 package cli
 
 import (
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 )
 
-func makeUnifiedPath(project config.ProjectName, path types.StreamPath) string {
+func makeUnifiedPath(project cfgtypes.ProjectName, path types.StreamPath) string {
 	val := string(project)
 	if path != "" {
 		val += types.StreamNameSepStr + string(path)

@@ -9,12 +9,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/data/recordio"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/storage/caching"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	"cloud.google.com/go/bigtable"
 	"golang.org/x/net/context"
@@ -302,7 +302,7 @@ func (s *btStorage) Get(r storage.GetRequest, cb storage.GetCallback) error {
 	}
 }
 
-func (s *btStorage) Tail(project config.ProjectName, path types.StreamPath) (*storage.Entry, error) {
+func (s *btStorage) Tail(project cfgtypes.ProjectName, path types.StreamPath) (*storage.Entry, error) {
 	ctx := log.SetFields(s, log.Fields{
 		"project": project,
 		"path":    path,
@@ -410,7 +410,7 @@ func (w *rowWriter) append(d []byte) (appended bool) {
 }
 
 func (w *rowWriter) flush(ctx context.Context, raw btTable, index types.MessageIndex,
-	project config.ProjectName, path types.StreamPath) (int, error) {
+	project cfgtypes.ProjectName, path types.StreamPath) (int, error) {
 	flushCount := w.count
 	if flushCount == 0 {
 		return 0, nil

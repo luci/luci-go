@@ -18,7 +18,6 @@ import (
 
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/common/auth"
-	luciConfig "github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/data/caching/proccache"
 	"github.com/luci/luci-go/common/gcloud/gs"
 	log "github.com/luci/luci-go/common/logging"
@@ -32,6 +31,7 @@ import (
 	"github.com/luci/luci-go/logdog/common/storage/bigtable"
 	"github.com/luci/luci-go/logdog/server/retryServicesClient"
 	"github.com/luci/luci-go/logdog/server/service/config"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/net/context"
@@ -347,7 +347,7 @@ func (s *Service) Config() *svcconfig.Config {
 // ProjectConfig returns the cached project configuration.
 //
 // If the project configuration is not available, nil will be returned.
-func (s *Service) ProjectConfig(c context.Context, proj luciConfig.ProjectName) (*svcconfig.ProjectConfig, error) {
+func (s *Service) ProjectConfig(c context.Context, proj cfgtypes.ProjectName) (*svcconfig.ProjectConfig, error) {
 	return s.config.ProjectConfig(c, proj)
 }
 

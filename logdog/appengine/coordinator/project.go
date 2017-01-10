@@ -8,10 +8,11 @@ import (
 	"strings"
 
 	"github.com/luci/gae/service/info"
-	luciConfig "github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+
 	"golang.org/x/net/context"
 )
 
@@ -23,7 +24,7 @@ const (
 
 // ProjectNamespace returns the AppEngine namespace for a given luci-config
 // project name.
-func ProjectNamespace(project luciConfig.ProjectName) string {
+func ProjectNamespace(project cfgtypes.ProjectName) string {
 	return projectNamespacePrefix + string(project)
 }
 
@@ -32,11 +33,11 @@ func ProjectNamespace(project luciConfig.ProjectName) string {
 //
 // If the namespace does not have a project namespace prefix, this function
 // will return an empty string.
-func ProjectFromNamespace(ns string) luciConfig.ProjectName {
+func ProjectFromNamespace(ns string) cfgtypes.ProjectName {
 	if !strings.HasPrefix(ns, projectNamespacePrefix) {
 		return ""
 	}
-	return luciConfig.ProjectName(ns[len(projectNamespacePrefix):])
+	return cfgtypes.ProjectName(ns[len(projectNamespacePrefix):])
 }
 
 // CurrentProject returns the current project based on the currently-loaded
@@ -44,7 +45,7 @@ func ProjectFromNamespace(ns string) luciConfig.ProjectName {
 //
 // If there is no current namespace, or if the current namespace is not a valid
 // project namespace, an empty string will be returned.
-func CurrentProject(c context.Context) luciConfig.ProjectName {
+func CurrentProject(c context.Context) cfgtypes.ProjectName {
 	if ns := info.GetNamespace(c); ns != "" {
 		return ProjectFromNamespace(ns)
 	}
@@ -66,7 +67,7 @@ func CurrentProjectConfig(c context.Context) (*svcconfig.ProjectConfig, error) {
 // TODO: Load project configs and all project configs lists from datastore. Add
 // a background cron job to periodically update these lists from luci-config.
 // This should be a generic config service capability.
-func ActiveUserProjects(c context.Context) (map[luciConfig.ProjectName]*svcconfig.ProjectConfig, error) {
+func ActiveUserProjects(c context.Context) (map[cfgtypes.ProjectName]*svcconfig.ProjectConfig, error) {
 	allPcfgs, err := config.AllProjectConfigs(c)
 	if err != nil {
 		return nil, err

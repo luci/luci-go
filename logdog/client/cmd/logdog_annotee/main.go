@@ -14,7 +14,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/clock/clockflag"
-	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/common/proto/milo"
@@ -26,6 +25,7 @@ import (
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamclient"
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"golang.org/x/net/context"
 )
 
@@ -61,7 +61,7 @@ type application struct {
 	printSummary       bool
 	testingDir         string
 	annotationInterval clockflag.Duration
-	project            config.ProjectName
+	project            cfgtypes.ProjectName
 	nameBase           streamproto.StreamNameFlag
 	prefix             streamproto.StreamNameFlag
 	logdogHost         string

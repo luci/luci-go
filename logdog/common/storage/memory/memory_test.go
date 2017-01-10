@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -52,7 +52,7 @@ func TestBigTable(t *testing.T) {
 		st := Storage{}
 		defer st.Close()
 
-		project := config.ProjectName("test-project")
+		project := cfgtypes.ProjectName("test-project")
 		path := types.StreamPath("testing/+/foo/bar")
 
 		Convey(`Can Put() log stream records {0..5, 7, 8, 10}.`, func() {

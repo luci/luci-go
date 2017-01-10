@@ -9,13 +9,13 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 )
 
 type coordinatorLinkGenerator struct {
 	host    string
-	project config.ProjectName
+	project cfgtypes.ProjectName
 	prefix  types.StreamName
 }
 

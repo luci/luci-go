@@ -8,11 +8,11 @@ import (
 	"fmt"
 
 	"github.com/luci/luci-go/client/environ"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamclient"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/logdog/common/viewer"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 )
 
 // ErrNotBootstrapped is returned by Get when the current process is not
@@ -33,7 +33,7 @@ type Bootstrap struct {
 	CoordinatorHost string
 
 	// Project is the Butler instance project name.
-	Project config.ProjectName
+	Project cfgtypes.ProjectName
 	// Prefix is the Butler instance prefix.
 	Prefix types.StreamName
 
@@ -52,7 +52,7 @@ func getFromEnv(env environ.Environment, reg *streamclient.Registry) (*Bootstrap
 	bs := &Bootstrap{
 		CoordinatorHost: env[EnvCoordinatorHost],
 		Prefix:          types.StreamName(prefix),
-		Project:         config.ProjectName(env[EnvStreamProject]),
+		Project:         cfgtypes.ProjectName(env[EnvStreamProject]),
 	}
 	if err := bs.Prefix.Validate(); err != nil {
 		return nil, fmt.Errorf("bootstrap: failed to validate prefix %q: %s", prefix, err)

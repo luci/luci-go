@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -20,7 +20,7 @@ func TestGetURL(t *testing.T) {
 	Convey(`Testing viewer URL generation`, t, func() {
 		for _, tc := range []struct {
 			host    string
-			project config.ProjectName
+			project cfgtypes.ProjectName
 			paths   []types.StreamPath
 			url     string
 		}{

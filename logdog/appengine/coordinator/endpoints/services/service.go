@@ -6,12 +6,12 @@ package services
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
 )
@@ -41,7 +41,7 @@ func New() logdog.ServicesServer {
 			//
 			// We use a type switch here because this is a shared decorator.
 			if pbm, ok := req.(endpoints.ProjectBoundMessage); ok {
-				project := config.ProjectName(pbm.GetMessageProject())
+				project := cfgtypes.ProjectName(pbm.GetMessageProject())
 				log.Fields{
 					"project": project,
 				}.Debugf(c, "Request is entering project namespace.")

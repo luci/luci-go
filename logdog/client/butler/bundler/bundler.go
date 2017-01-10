@@ -11,12 +11,12 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/sync/cancelcond"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"golang.org/x/net/context"
 )
 
@@ -27,7 +27,7 @@ type Config struct {
 	Clock clock.Clock
 
 	// Project is the project to use.
-	Project config.ProjectName
+	Project cfgtypes.ProjectName
 	// Prefix is the common prefix for this set of streams.
 	Prefix types.StreamName
 

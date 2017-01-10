@@ -12,13 +12,13 @@ import (
 
 	"github.com/luci/gae/filter/featureBreaker"
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	ct "github.com/luci/luci-go/logdog/appengine/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -66,7 +66,7 @@ func TestQuery(t *testing.T) {
 		var svrBase server
 		svr := newService(&svrBase)
 
-		const project = config.ProjectName("proj-foo")
+		const project = cfgtypes.ProjectName("proj-foo")
 
 		// Stock query request, will be modified by each test.
 		req := logdog.QueryRequest{

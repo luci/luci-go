@@ -20,7 +20,6 @@ import (
 	"sort"
 	"sync/atomic"
 
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/data/recordio"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/gcloud/gs"
@@ -30,6 +29,7 @@ import (
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/storage/caching"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	cloudStorage "cloud.google.com/go/storage"
 	"github.com/golang/protobuf/proto"
@@ -225,7 +225,7 @@ func (s *storageImpl) getLogEntriesIter(st *getStrategy, cb storage.GetCallback)
 	}
 }
 
-func (s *storageImpl) Tail(project config.ProjectName, path types.StreamPath) (*storage.Entry, error) {
+func (s *storageImpl) Tail(project cfgtypes.ProjectName, path types.StreamPath) (*storage.Entry, error) {
 	idx, err := s.getIndex()
 	if err != nil {
 		return nil, err

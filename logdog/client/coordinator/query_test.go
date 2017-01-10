@@ -10,12 +10,12 @@ import (
 	"testing"
 
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/testing/prpctest"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
 	"github.com/luci/luci-go/logdog/api/logpb"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -87,7 +87,7 @@ func TestClientQuery(t *testing.T) {
 		}
 
 		Convey(`When making a query request`, func() {
-			const project = config.ProjectName("myproj")
+			const project = cfgtypes.ProjectName("myproj")
 			const path = "**/+/**"
 			q := QueryOptions{
 				Tags: map[string]string{

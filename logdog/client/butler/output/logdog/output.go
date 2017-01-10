@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	ps "github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/lhttp"
@@ -22,6 +21,7 @@ import (
 	"github.com/luci/luci-go/logdog/client/butler/output"
 	out "github.com/luci/luci-go/logdog/client/butler/output/pubsub"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	"cloud.google.com/go/pubsub"
 	"golang.org/x/net/context"
@@ -48,7 +48,7 @@ type Config struct {
 	Host string
 
 	// Project is the project that this stream belongs to.
-	Project config.ProjectName
+	Project cfgtypes.ProjectName
 	// Prefix is the stream prefix to register.
 	Prefix types.StreamName
 	// PrefixExpiration is the prefix expiration to use when registering.

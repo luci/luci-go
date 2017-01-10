@@ -9,12 +9,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/data/caching/proccache"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 )
 
@@ -149,7 +151,7 @@ func (m *Manager) Config() *svcconfig.Config {
 }
 
 // ProjectConfig returns the project configuration.
-func (m *Manager) ProjectConfig(c context.Context, project config.ProjectName) (*svcconfig.ProjectConfig, error) {
+func (m *Manager) ProjectConfig(c context.Context, project cfgtypes.ProjectName) (*svcconfig.ProjectConfig, error) {
 	serviceID := m.o.ServiceID
 	if serviceID == "" {
 		return nil, errors.New("no service ID specified")

@@ -6,10 +6,10 @@
 package bootstrap
 
 import (
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/system/environ"
 	"github.com/luci/luci-go/logdog/client/butlerlib/bootstrap"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 )
 
 // Environment is the set of configuration parameters for the bootstrap.
@@ -20,7 +20,7 @@ type Environment struct {
 
 	// Project is the project name. If not empty, this will be exported to
 	// subprocesses.
-	Project config.ProjectName
+	Project cfgtypes.ProjectName
 	// Prefix is the prefix name. If not empty, this will be exported to
 	// subprocesses.
 	Prefix types.StreamName

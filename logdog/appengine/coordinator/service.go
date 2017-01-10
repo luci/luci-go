@@ -11,7 +11,6 @@ import (
 
 	"github.com/luci/luci-go/appengine/gaeauth/server/gaesigner"
 	"github.com/luci/luci-go/common/clock"
-	luciConfig "github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/gcloud/gs"
 	"github.com/luci/luci-go/common/gcloud/pubsub"
@@ -22,6 +21,7 @@ import (
 	"github.com/luci/luci-go/logdog/common/storage/archive"
 	"github.com/luci/luci-go/logdog/common/storage/bigtable"
 	"github.com/luci/luci-go/logdog/common/storage/caching"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
 
@@ -74,7 +74,7 @@ type Services interface {
 	// request.
 	//
 	// Returns the same error codes as config.ProjectConfig.
-	ProjectConfig(context.Context, luciConfig.ProjectName) (*svcconfig.ProjectConfig, error)
+	ProjectConfig(context.Context, cfgtypes.ProjectName) (*svcconfig.ProjectConfig, error)
 
 	// Storage returns a Storage instance for the supplied log stream.
 	//
@@ -108,7 +108,7 @@ type prodServicesInst struct {
 
 	// gcfg is the cached global configuration.
 	gcfg           *config.Config
-	projectConfigs map[luciConfig.ProjectName]*cachedProjectConfig
+	projectConfigs map[cfgtypes.ProjectName]*cachedProjectConfig
 
 	// archivalIndex is the atomically-manipulated archival index for the
 	// ArchivalPublisher. This is shared between all ArchivalPublisher instances
@@ -162,7 +162,7 @@ func (s *prodServicesInst) Config(c context.Context) (*config.Config, error) {
 type cachedProjectConfig struct {
 	sync.Once
 
-	project luciConfig.ProjectName
+	project cfgtypes.ProjectName
 	pcfg    *svcconfig.ProjectConfig
 	err     error
 }
@@ -179,12 +179,12 @@ func (cp *cachedProjectConfig) resolve(c context.Context) (*svcconfig.ProjectCon
 	return cp.pcfg, cp.err
 }
 
-func (s *prodServicesInst) getOrCreateCachedProjectConfig(project luciConfig.ProjectName) *cachedProjectConfig {
+func (s *prodServicesInst) getOrCreateCachedProjectConfig(project cfgtypes.ProjectName) *cachedProjectConfig {
 	s.Lock()
 	defer s.Unlock()
 
 	if s.projectConfigs == nil {
-		s.projectConfigs = make(map[luciConfig.ProjectName]*cachedProjectConfig)
+		s.projectConfigs = make(map[cfgtypes.ProjectName]*cachedProjectConfig)
 	}
 	cp := s.projectConfigs[project]
 	if cp == nil {
@@ -196,7 +196,7 @@ func (s *prodServicesInst) getOrCreateCachedProjectConfig(project luciConfig.Pro
 	return cp
 }
 
-func (s *prodServicesInst) ProjectConfig(c context.Context, project luciConfig.ProjectName) (*svcconfig.ProjectConfig, error) {
+func (s *prodServicesInst) ProjectConfig(c context.Context, project cfgtypes.ProjectName) (*svcconfig.ProjectConfig, error) {
 	return s.getOrCreateCachedProjectConfig(project).resolve(c)
 }
 

@@ -19,12 +19,12 @@ import (
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/clock/clockflag"
-	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/grpc/prpc"
 	"github.com/luci/luci-go/logdog/client/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 )
 
 func init() {
@@ -52,7 +52,7 @@ type application struct {
 	// empty. Subcommands that support "unified" project-in-path paths should use
 	// splitPath to get the project form the path. Those that don't should assert
 	// that this is non-empty.
-	project   config.ProjectName
+	project   cfgtypes.ProjectName
 	authFlags authcli.Flags
 	insecure  bool
 	timeout   clockflag.Duration
@@ -79,14 +79,14 @@ func (a *application) addToFlagSet(ctx context.Context, fs *flag.FlagSet) {
 // If a project is supplied via command-line, the path is returned directly
 // along with the project. If no project is supplied, the first slash-delimited
 // component of "p" is used as the project name.
-func (a *application) splitPath(p string) (config.ProjectName, string, bool, error) {
+func (a *application) splitPath(p string) (cfgtypes.ProjectName, string, bool, error) {
 	if a.project != "" {
 		return a.project, p, false, nil
 	}
 
 	parts := strings.SplitN(p, types.StreamNameSepStr, 2)
 
-	project := config.ProjectName(parts[0])
+	project := cfgtypes.ProjectName(parts[0])
 	if err := project.Validate(); err != nil {
 		return "", "", false, fmt.Errorf("invalid project name %q: %v", project, err)
 	}

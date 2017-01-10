@@ -10,12 +10,12 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 )
 
 // GetURL generates a LogDog app viewer URL for the specified streams.
-func GetURL(host string, project config.ProjectName, paths ...types.StreamPath) string {
+func GetURL(host string, project cfgtypes.ProjectName, paths ...types.StreamPath) string {
 	values := make([]string, len(paths))
 	for i, p := range paths {
 		values[i] = fmt.Sprintf("%s/%s", project, p)

@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 )
 
 type logStream struct {
@@ -25,7 +25,7 @@ type rec struct {
 }
 
 type streamKey struct {
-	project config.ProjectName
+	project cfgtypes.ProjectName
 	path    types.StreamPath
 }
 
@@ -150,7 +150,7 @@ func (s *Storage) Get(req storage.GetRequest, cb storage.GetCallback) error {
 }
 
 // Tail implements storage.Storage.
-func (s *Storage) Tail(project config.ProjectName, path types.StreamPath) (*storage.Entry, error) {
+func (s *Storage) Tail(project cfgtypes.ProjectName, path types.StreamPath) (*storage.Entry, error) {
 	var r *rec
 
 	// Find the latest log, then return it.
@@ -173,7 +173,7 @@ func (s *Storage) Tail(project config.ProjectName, path types.StreamPath) (*stor
 }
 
 // Count returns the number of log records for the given stream.
-func (s *Storage) Count(project config.ProjectName, path types.StreamPath) (c int) {
+func (s *Storage) Count(project cfgtypes.ProjectName, path types.StreamPath) (c int) {
 	s.run(func() error {
 		if st := s.getLogStreamLocked(project, path, false); st != nil {
 			c = len(st.logs)
@@ -204,7 +204,7 @@ func (s *Storage) run(f func() error) error {
 	return f()
 }
 
-func (s *Storage) getLogStreamLocked(project config.ProjectName, path types.StreamPath, create bool) *logStream {
+func (s *Storage) getLogStreamLocked(project cfgtypes.ProjectName, path types.StreamPath, create bool) *logStream {
 	key := streamKey{
 		project: project,
 		path:    path,

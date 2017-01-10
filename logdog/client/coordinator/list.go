@@ -7,16 +7,16 @@ package coordinator
 import (
 	"fmt"
 
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"golang.org/x/net/context"
 )
 
 // ListResult is a single returned list entry.
 type ListResult struct {
 	// Project is the project that this result is bound to.
-	Project config.ProjectName
+	Project cfgtypes.ProjectName
 	// PathBase is the base part of the list path. This will match the base that
 	// the list was pulled from.
 	PathBase types.StreamPath
@@ -60,7 +60,7 @@ type ListOptions struct {
 // List executes a log stream hierarchy listing for the specified path.
 //
 // If project is the empty string, a top-level project listing will be returned.
-func (c *Client) List(ctx context.Context, project config.ProjectName, pathBase string, o ListOptions, cb ListCallback) error {
+func (c *Client) List(ctx context.Context, project cfgtypes.ProjectName, pathBase string, o ListOptions, cb ListCallback) error {
 	req := logdog.ListRequest{
 		Project:       string(project),
 		PathBase:      pathBase,
@@ -77,7 +77,7 @@ func (c *Client) List(ctx context.Context, project config.ProjectName, pathBase 
 
 		for _, s := range resp.Components {
 			lr := ListResult{
-				Project:  config.ProjectName(resp.Project),
+				Project:  cfgtypes.ProjectName(resp.Project),
 				PathBase: types.StreamPath(resp.PathBase),
 				Name:     s.Name,
 			}
@@ -95,7 +95,7 @@ func (c *Client) List(ctx context.Context, project config.ProjectName, pathBase 
 				}
 
 			case logdog.ListResponse_Component_PROJECT:
-				lr.Project = config.ProjectName(lr.Name)
+				lr.Project = cfgtypes.ProjectName(lr.Name)
 			}
 
 			if !cb(&lr) {

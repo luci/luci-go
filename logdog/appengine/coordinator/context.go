@@ -13,6 +13,7 @@ import (
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
 
@@ -75,7 +76,7 @@ func GetServices(c context.Context) Services {
 //	  - PermissionDenied if the user does not have the requested access.
 //	- PermissionDenied if the project doesn't exist.
 //	- Internal if an internal error occurred.
-func WithProjectNamespace(c *context.Context, project luciConfig.ProjectName, at NamespaceAccessType) error {
+func WithProjectNamespace(c *context.Context, project cfgtypes.ProjectName, at NamespaceAccessType) error {
 	ctx := *c
 
 	if err := project.Validate(); err != nil {
@@ -188,7 +189,7 @@ func WithProjectNamespace(c *context.Context, project luciConfig.ProjectName, at
 // This function is called with the expectation that the Context is in a
 // namespace conforming to ProjectNamespace. If this is not the case, this
 // method will panic.
-func Project(c context.Context) luciConfig.ProjectName {
+func Project(c context.Context) cfgtypes.ProjectName {
 	ns := info.GetNamespace(c)
 	project := ProjectFromNamespace(ns)
 	if project != "" {

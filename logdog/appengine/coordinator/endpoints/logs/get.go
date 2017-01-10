@@ -7,7 +7,6 @@ package logs
 import (
 	"time"
 
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
@@ -18,6 +17,7 @@ import (
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	ds "github.com/luci/gae/service/datastore"
 
@@ -182,7 +182,7 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog
 	return nil
 }
 
-func getHead(c context.Context, req *logdog.GetRequest, st coordinator.Storage, project config.ProjectName,
+func getHead(c context.Context, req *logdog.GetRequest, st coordinator.Storage, project cfgtypes.ProjectName,
 	path types.StreamPath, byteLimit int) ([]*logpb.LogEntry, error) {
 	log.Fields{
 		"project":       project,
@@ -266,7 +266,7 @@ func getHead(c context.Context, req *logdog.GetRequest, st coordinator.Storage, 
 	}
 }
 
-func getTail(c context.Context, st coordinator.Storage, project config.ProjectName, path types.StreamPath) (
+func getTail(c context.Context, st coordinator.Storage, project cfgtypes.ProjectName, path types.StreamPath) (
 	[]*logpb.LogEntry, error) {
 	log.Fields{
 		"project": project,

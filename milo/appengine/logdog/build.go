@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
@@ -20,6 +19,7 @@ import (
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/logdog/internal"
 	"github.com/luci/luci-go/milo/common/miloerror"
@@ -47,7 +47,7 @@ type annotationStreamRequest struct {
 	// host is the name of the LogDog host.
 	host string
 
-	project config.ProjectName
+	project cfgtypes.ProjectName
 	path    types.StreamPath
 
 	// logDogClient is the HTTP client to use for LogDog communication.
@@ -279,7 +279,7 @@ func (as *annotationStreamRequest) toMiloBuild(c context.Context) *resp.MiloBuil
 type logDogURLBuilder struct {
 	host    string
 	prefix  types.StreamName
-	project config.ProjectName
+	project cfgtypes.ProjectName
 }
 
 func (b *logDogURLBuilder) BuildLink(l *miloProto.Link) *resp.Link {

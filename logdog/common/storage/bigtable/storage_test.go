@@ -9,11 +9,11 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/data/recordio"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"github.com/luci/luci-go/logdog/common/storage/memory"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -38,7 +38,7 @@ func TestStorage(t *testing.T) {
 		})
 		defer s.Close()
 
-		project := config.ProjectName("test-project")
+		project := cfgtypes.ProjectName("test-project")
 		get := func(path string, index int, limit int, keysOnly bool) ([]string, error) {
 			req := storage.GetRequest{
 				Project:  project,

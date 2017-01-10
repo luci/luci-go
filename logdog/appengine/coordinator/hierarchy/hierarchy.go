@@ -10,11 +10,11 @@ import (
 	"encoding/hex"
 
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
@@ -169,7 +169,7 @@ type ListComponent struct {
 type List struct {
 	// Project is the listed project name. If empty, the list refers to the
 	// project namespace.
-	Project config.ProjectName
+	Project cfgtypes.ProjectName
 	// PathBase is the stream path base.
 	PathBase types.StreamPath
 	// Comp is the set of elements in this hierarchy result.
@@ -204,7 +204,7 @@ func Get(c context.Context, r Request) (*List, error) {
 	//
 	// We will validate our Project and PathBase types immediately afterwards.
 	l := List{
-		Project:  config.ProjectName(r.Project),
+		Project:  cfgtypes.ProjectName(r.Project),
 		PathBase: types.StreamPath(r.PathBase),
 	}
 

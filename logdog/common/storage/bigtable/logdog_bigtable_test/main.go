@@ -15,7 +15,6 @@ import (
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
@@ -23,6 +22,7 @@ import (
 	"github.com/luci/luci-go/logdog/common/storage/bigtable"
 	"github.com/luci/luci-go/logdog/common/storage/memory"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
@@ -222,7 +222,7 @@ func (cmd *cmdRunGet) Run(baseApp subcommands.Application, args []string, _ subc
 
 		var innerErr error
 		err = stClient.Get(storage.GetRequest{
-			Project: config.ProjectName(cmd.project),
+			Project: cfgtypes.ProjectName(cmd.project),
 			Path:    types.StreamPath(cmd.path),
 			Index:   types.MessageIndex(cmd.index),
 			Limit:   cmd.limit,
@@ -303,7 +303,7 @@ func (cmd *cmdRunTail) Run(baseApp subcommands.Application, args []string, _ sub
 
 	for round := 0; round < cmd.rounds; round++ {
 		log.Infof(c, "Tail round %d.", round+1)
-		e, err := stClient.Tail(config.ProjectName(cmd.project), types.StreamPath(cmd.path))
+		e, err := stClient.Tail(cfgtypes.ProjectName(cmd.project), types.StreamPath(cmd.path))
 		if err != nil {
 			renderErr(c, errors.Annotate(err).Reason("failed to tail log entries").Err())
 			return 1
