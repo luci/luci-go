@@ -25,10 +25,11 @@ func useTQ(c context.Context) context.Context {
 		memCtx, isTxn := cur(ic)
 		tqd := memCtx.Get(memContextTQIdx)
 
+		ns := info.GetNamespace(ic)
 		if isTxn {
-			return &taskqueueTxnImpl{tqd.(*txnTaskQueueData), ic}
+			return &taskqueueTxnImpl{tqd.(*txnTaskQueueData), ic, ns}
 		}
-		return &taskqueueImpl{tqd.(*taskQueueData), ic}
+		return &taskqueueImpl{tqd.(*taskQueueData), ic, ns}
 	})
 }
 
@@ -38,12 +39,10 @@ type taskqueueImpl struct {
 	*taskQueueData
 
 	ctx context.Context
+	ns  string
 }
 
-var (
-	_ = tq.RawInterface((*taskqueueImpl)(nil))
-	_ = tq.Testable((*taskqueueImpl)(nil))
-)
+var _ tq.RawInterface = (*taskqueueImpl)(nil)
 
 func (t *taskqueueImpl) AddMulti(tasks []*tq.Task, queueName string, cb tq.RawTaskCB) error {
 	t.Lock()
@@ -55,7 +54,7 @@ func (t *taskqueueImpl) AddMulti(tasks []*tq.Task, queueName string, cb tq.RawTa
 	}
 
 	for _, task := range tasks {
-		task, err := prepTask(t.ctx, task, q)
+		task, err := prepTask(t.ctx, task, q, t.ns)
 		if err == nil {
 			err = q.addTask(task)
 		}
@@ -146,7 +145,7 @@ func (t *taskqueueImpl) Constraints() tq.Constraints {
 	return t.taskQueueData.getConstraints()
 }
 
-func (t *taskqueueImpl) GetTestable() tq.Testable { return t }
+func (t *taskqueueImpl) GetTestable() tq.Testable { return &taskQueueTestable{t.ns, t} }
 
 /////////////////////////////// taskqueueTxnImpl ///////////////////////////////
 
@@ -154,15 +153,13 @@ type taskqueueTxnImpl struct {
 	*txnTaskQueueData
 
 	ctx context.Context
+	ns  string
 }
 
-var _ interface {
-	tq.RawInterface
-	tq.Testable
-} = (*taskqueueTxnImpl)(nil)
+var _ tq.RawInterface = (*taskqueueTxnImpl)(nil)
 
 func (t *taskqueueTxnImpl) addLocked(task *tq.Task, q *sortedQueue) (*tq.Task, error) {
-	toSched, err := prepTask(t.ctx, task, q)
+	toSched, err := prepTask(t.ctx, task, q, t.ns)
 	if err != nil {
 		return nil, err
 	}
@@ -252,11 +249,11 @@ func (t *taskqueueImpl) SetConstraints(c *tq.Constraints) error {
 	return nil
 }
 
-func (t *taskqueueTxnImpl) GetTestable() tq.Testable { return t }
+func (t *taskqueueTxnImpl) GetTestable() tq.Testable { return &taskQueueTestable{t.ns, t} }
 
 ////////////////////////// private functions ///////////////////////////////////
 
-func prepTask(c context.Context, task *tq.Task, q *sortedQueue) (*tq.Task, error) {
+func prepTask(c context.Context, task *tq.Task, q *sortedQueue, ns string) (*tq.Task, error) {
 	toSched := task.Duplicate()
 
 	if toSched.ETA.IsZero() {
@@ -291,7 +288,7 @@ func prepTask(c context.Context, task *tq.Task, q *sortedQueue) (*tq.Task, error
 			toSched.Path = "/_ah/queue/" + q.name
 		}
 		if _, ok := toSched.Header[currentNamespace]; !ok {
-			if ns := info.GetNamespace(c); ns != "" {
+			if ns != "" {
 				if toSched.Header == nil {
 					toSched.Header = http.Header{}
 				}
@@ -311,3 +308,5 @@ func prepTask(c context.Context, task *tq.Task, q *sortedQueue) (*tq.Task, error
 
 	return toSched, nil
 }
+
+func taskNamespace(task *tq.Task) string { return task.Header.Get(currentNamespace) }

@@ -332,10 +332,7 @@ type taskQueueData struct {
 	constraints tq.Constraints
 }
 
-var _ interface {
-	memContextObj
-	tq.Testable
-} = (*taskQueueData)(nil)
+var _ memContextObj = (*taskQueueData)(nil)
 
 func newTaskQueueData() memContextObj {
 	return &taskQueueData{
@@ -369,15 +366,13 @@ func (t *taskQueueData) mkTxn(*ds.TransactionOptions) memContextObj {
 	}
 }
 
-func (t *taskQueueData) GetTransactionTasks() tq.AnonymousQueueData {
-	return nil
-}
+func (t *taskQueueData) getTransactionTasks(ns string) tq.AnonymousQueueData { return nil }
 
-func (t *taskQueueData) CreateQueue(queueName string) {
+func (t *taskQueueData) createQueue(queueName string) {
 	t.createQueueInternal(queueName, false)
 }
 
-func (t *taskQueueData) CreatePullQueue(queueName string) {
+func (t *taskQueueData) createPullQueue(queueName string) {
 	t.createQueueInternal(queueName, true)
 }
 
@@ -391,7 +386,7 @@ func (t *taskQueueData) createQueueInternal(queueName string, isPullQueue bool) 
 	t.queues[queueName] = newSortedQueue(queueName, isPullQueue)
 }
 
-func (t *taskQueueData) GetScheduledTasks() tq.QueueData {
+func (t *taskQueueData) getScheduledTasks(ns string) tq.QueueData {
 	t.Lock()
 	defer t.Unlock()
 
@@ -399,13 +394,15 @@ func (t *taskQueueData) GetScheduledTasks() tq.QueueData {
 	for qn, q := range t.queues {
 		r[qn] = make(map[string]*tq.Task, len(q.tasks))
 		for tn, t := range q.tasks {
-			r[qn][tn] = t.Duplicate()
+			if taskNamespace(t) == ns {
+				r[qn][tn] = t.Duplicate()
+			}
 		}
 	}
 	return r
 }
 
-func (t *taskQueueData) GetTombstonedTasks() tq.QueueData {
+func (t *taskQueueData) getTombstonedTasks(ns string) tq.QueueData {
 	t.Lock()
 	defer t.Unlock()
 
@@ -413,7 +410,9 @@ func (t *taskQueueData) GetTombstonedTasks() tq.QueueData {
 	for qn, q := range t.queues {
 		r[qn] = make(map[string]*tq.Task, len(q.archived))
 		for tn, t := range q.archived {
-			r[qn][tn] = t.Duplicate()
+			if taskNamespace(t) == ns {
+				r[qn][tn] = t.Duplicate()
+			}
 		}
 	}
 	return r
@@ -425,7 +424,7 @@ func (t *taskQueueData) resetTasksWithLock() {
 	}
 }
 
-func (t *taskQueueData) ResetTasks() {
+func (t *taskQueueData) resetTasks() {
 	t.Lock()
 	defer t.Unlock()
 
@@ -473,10 +472,7 @@ type txnTaskQueueData struct {
 	parent *taskQueueData
 }
 
-var _ interface {
-	memContextObj
-	tq.Testable
-} = (*txnTaskQueueData)(nil)
+var _ memContextObj = (*txnTaskQueueData)(nil)
 
 func (t *txnTaskQueueData) canApplyTxn(obj memContextObj) bool { return false }
 func (t *txnTaskQueueData) applyTxn(context.Context, memContextObj) {
@@ -494,7 +490,7 @@ func (t *txnTaskQueueData) endTxn() {
 	atomic.StoreInt32(&t.closed, 1)
 }
 
-func (t *txnTaskQueueData) ResetTasks() {
+func (t *txnTaskQueueData) resetTasks() {
 	t.Lock()
 	defer t.Unlock()
 
@@ -514,7 +510,7 @@ func (t *txnTaskQueueData) Unlock() {
 	t.lock.Unlock()
 }
 
-func (t *txnTaskQueueData) GetTransactionTasks() tq.AnonymousQueueData {
+func (t *txnTaskQueueData) getTransactionTasks(ns string) tq.AnonymousQueueData {
 	t.Lock()
 	defer t.Unlock()
 
@@ -522,27 +518,56 @@ func (t *txnTaskQueueData) GetTransactionTasks() tq.AnonymousQueueData {
 	for k, vs := range t.anony {
 		ret[k] = make([]*tq.Task, len(vs))
 		for i, v := range vs {
-			tsk := v.Duplicate()
-			tsk.Name = ""
-			ret[k][i] = tsk
+			if taskNamespace(v) == ns {
+				tsk := v.Duplicate()
+				tsk.Name = ""
+				ret[k][i] = tsk
+			}
 		}
 	}
 
 	return ret
 }
 
-func (t *txnTaskQueueData) GetTombstonedTasks() tq.QueueData {
-	return t.parent.GetTombstonedTasks()
+func (t *txnTaskQueueData) getTombstonedTasks(ns string) tq.QueueData {
+	return t.parent.getTombstonedTasks(ns)
 }
 
-func (t *txnTaskQueueData) GetScheduledTasks() tq.QueueData {
-	return t.parent.GetScheduledTasks()
+func (t *txnTaskQueueData) getScheduledTasks(ns string) tq.QueueData {
+	return t.parent.getScheduledTasks(ns)
 }
 
-func (t *txnTaskQueueData) CreateQueue(queueName string) {
-	t.parent.CreateQueue(queueName)
+func (t *txnTaskQueueData) createQueue(queueName string) {
+	t.parent.createQueue(queueName)
 }
 
-func (t *txnTaskQueueData) CreatePullQueue(queueName string) {
-	t.parent.CreatePullQueue(queueName)
+func (t *txnTaskQueueData) createPullQueue(queueName string) {
+	t.parent.createPullQueue(queueName)
 }
+
+// taskQueueTestable is a tq.Testable implementation that is bound to a
+// specified namespace.
+type taskQueueTestable struct {
+	ns   string
+	data interface {
+		resetTasks()
+		getTombstonedTasks(ns string) tq.QueueData
+		getScheduledTasks(ns string) tq.QueueData
+		getTransactionTasks(ns string) tq.AnonymousQueueData
+		createQueue(queueName string)
+		createPullQueue(queueName string)
+	}
+}
+
+func (t *taskQueueTestable) ResetTasks() { t.data.resetTasks() }
+func (t *taskQueueTestable) GetTombstonedTasks() tq.QueueData {
+	return t.data.getTombstonedTasks(t.ns)
+}
+func (t *taskQueueTestable) GetScheduledTasks() tq.QueueData {
+	return t.data.getScheduledTasks(t.ns)
+}
+func (t *taskQueueTestable) GetTransactionTasks() tq.AnonymousQueueData {
+	return t.data.getTransactionTasks(t.ns)
+}
+func (t *taskQueueTestable) CreateQueue(queueName string)     { t.data.createQueue(queueName) }
+func (t *taskQueueTestable) CreatePullQueue(queueName string) { t.data.createPullQueue(queueName) }

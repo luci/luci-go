@@ -77,6 +77,12 @@ func TestTaskQueue(t *testing.T) {
 						"X-Appengine-Current-Namespace": {"coolNamespace"},
 					})
 
+					Convey("namespaced Testable only returns tasks for that namespace", func() {
+						So(tq.GetTestable(c).GetScheduledTasks()["default"], ShouldHaveLength, 1)
+
+						// Default namespace has no tasks in its queue.
+						So(tq.GetTestable(info.MustNamespace(c, "")).GetScheduledTasks()["default"], ShouldHaveLength, 0)
+					})
 				})
 
 				Convey("cannot add to bad queues", func() {
