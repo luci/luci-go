@@ -12,10 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
-	"github.com/luci/gae/impl/memory"
-	ds "github.com/luci/gae/service/datastore"
-	tq "github.com/luci/gae/service/taskqueue"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/data/rand/cryptorand"
@@ -24,6 +20,13 @@ import (
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/settings"
 	"golang.org/x/net/context"
+
+	"github.com/luci/gae/impl/memory"
+	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/info"
+	tq "github.com/luci/gae/service/taskqueue"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 // Testing is a high-level testing object for testing applications that use
@@ -103,8 +106,14 @@ func (t *Testing) Iterate(c context.Context) int {
 	clk := clock.Get(c).(testclock.TestClock)
 	logging.Debugf(c, "tumble.Testing.Iterate: time(%d|%s)", timestamp(clk.Now().Unix()), clk.Now().UTC())
 
+	cfg := t.GetConfig(c)
+	ns := ""
+	if cfg.Namespaced {
+		ns = TaskNamespace
+	}
+
 	ret := 0
-	tsks := tq.GetTestable(c).GetScheduledTasks()[baseName]
+	tsks := tq.GetTestable(info.MustNamespace(c, ns)).GetScheduledTasks()[baseName]
 	logging.Debugf(c, "got tasks: %v", tsks)
 	for _, tsk := range tsks {
 		logging.Debugf(c, "found task: %v", tsk)
