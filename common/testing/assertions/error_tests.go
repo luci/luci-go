@@ -7,6 +7,8 @@ package assertions
 import (
 	"fmt"
 
+	"github.com/luci/luci-go/common/errors"
+
 	"github.com/smartystreets/assertions"
 )
 
@@ -66,4 +68,25 @@ func ShouldPanicLike(function interface{}, expected ...interface{}) (ret string)
 	}()
 	f()
 	return ShouldErrLike(nil, expected...)
+}
+
+// ShouldUnwrapTo asserts that an error, when unwrapped, equals another error.
+//
+// The actual field will be unwrapped using errors.Unwrap and then compared to
+// the error in expected.
+func ShouldUnwrapTo(actual interface{}, expected ...interface{}) string {
+	act, ok := actual.(error)
+	if !ok {
+		return fmt.Sprintf("ShouldUnwrapTo requires an error actual type, got %T", act)
+	}
+
+	if len(expected) != 1 {
+		return fmt.Sprintf("ShouldUnwrapTo requires exactly one expected value, got %d", len(expected))
+	}
+	exp, ok := expected[0].(error)
+	if !ok {
+		return fmt.Sprintf("ShouldUnwrapTo requires an error expected type, got %T", expected[0])
+	}
+
+	return assertions.ShouldEqual(errors.Unwrap(act), exp)
 }

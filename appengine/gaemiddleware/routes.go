@@ -10,6 +10,7 @@ import (
 
 	gaeauth "github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/tsmon"
+	"github.com/luci/luci-go/luci_config/appengine/gaeconfig"
 )
 
 // InstallHandlers installs HTTP handlers for various default routes.
@@ -28,4 +29,5 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 	gaeauth.InstallHandlers(r, base)
 	tsmon.InstallHandlers(r, base)
 	admin.InstallHandlers(r, base, &gaeauth.UsersAPIAuthMethod{})
+	gaeconfig.InstallCacheCronHandler(r, base.Extend(RequireCron))
 }

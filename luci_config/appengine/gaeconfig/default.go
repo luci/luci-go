@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/config/impl/filesystem"
+	"github.com/luci/luci-go/luci_config/appengine/backend/datastore"
 	"github.com/luci/luci-go/luci_config/appengine/backend/memcache"
 	gaeformat "github.com/luci/luci-go/luci_config/appengine/format"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
@@ -20,6 +21,7 @@ import (
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/erroring"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/format"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
+	"github.com/luci/luci-go/server/router"
 
 	"github.com/luci/gae/service/info"
 
@@ -33,6 +35,30 @@ var ErrNotConfigured = errors.New("config service URL is not set in settings")
 // devCfgDir is a name of the directory with config files when running in
 // local dev appserver model. See New for details.
 const devCfgDir = "devcfg"
+
+// InstallCacheCronHandler installs the configuration service datastore caching
+// cron handler. This must be installed, and an associated cron must be set up,
+// if datastore caching is enabled.
+//
+// The cron should be configured to hit the handler at:
+// /admin/config/cache/manager
+func InstallCacheCronHandler(r *router.Router, base router.MiddlewareChain) {
+	installCacheCronHandlerImpl(r, base, nil)
+}
+
+// Install our cache cron handler into the supplied Router.
+//
+// bf is a generator function used to get the primary (service) Backend to build
+// on top of. If nil, the "production" (one used by Use) Backend will be used.
+func installCacheCronHandlerImpl(r *router.Router, base router.MiddlewareChain, be backend.B) {
+	base = base.Extend(func(c *router.Context, next router.Handler) {
+		// Install our Backend into our Context.
+		c.Context = installConfigBackend(c.Context, mustFetchCachedSettings(c.Context), be, true)
+		next(c)
+	})
+
+	datastore.Cache.InstallCronRoute("/admin/config/cache/manager", r, base)
+}
 
 // Use installs the default luci-config client.
 //
@@ -56,10 +82,10 @@ const devCfgDir = "devcfg"
 func Use(c context.Context) context.Context { return useImpl(c, nil) }
 
 func useImpl(c context.Context, be backend.B) context.Context {
-	return installConfigBackend(c, mustFetchCachedSettings(c), be)
+	return installConfigBackend(c, mustFetchCachedSettings(c), be, false)
 }
 
-func installConfigBackend(c context.Context, s *Settings, be backend.B) context.Context {
+func installConfigBackend(c context.Context, s *Settings, be backend.B, dsCron bool) context.Context {
 	if be == nil {
 		// Non-testing, build a Backend.
 		be = getPrimaryBackend(c, s)
@@ -79,6 +105,26 @@ func installConfigBackend(c context.Context, s *Settings, be backend.B) context.
 		// Add a ProcCache, backed by memcache.
 		be = memcache.Backend(be, exp)
 		be = caching.ProcCache(be, exp)
+
+		// If our datastore cache is enabled, install a handler for refresh. This
+		// will be loaded by dsCache's "HandlerFunc".
+		if s.DatastoreCacheMode != dsCacheDisabled {
+			dsc := datastore.Config{
+				RefreshInterval: exp,
+				FailOpen:        s.DatastoreCacheMode == dsCacheEnabled,
+			}
+
+			if !dsCron {
+				// For non-cron, install the datastore cache Backend.
+				be = dsc.Backend(be)
+			} else {
+				// For cron, do not install the datastore cache Backend. Instead,
+				// install a lasting Handler into the Context to be used for cache
+				// resolution. This is necessary since resolution calls will not be
+				// the result of an actual resolution command (e.g., cache.Get).
+				c = dsc.WithHandler(c, datastore.CronLoader(be), datastore.RPCDeadline)
+			}
+		}
 	}
 
 	c = backend.WithBackend(c, be)
