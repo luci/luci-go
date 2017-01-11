@@ -9,18 +9,31 @@ import (
 	"reflect"
 
 	"github.com/luci/gae"
+
+	"github.com/luci/luci-go/common/errors"
+
 	"google.golang.org/appengine/datastore"
 )
 
 // These errors are returned by various datastore.Interface methods.
 var (
-	ErrInvalidKey            = datastore.ErrInvalidKey
 	ErrNoSuchEntity          = datastore.ErrNoSuchEntity
 	ErrConcurrentTransaction = datastore.ErrConcurrentTransaction
 
 	// Stop is an alias for "github.com/luci/gae".Stop
 	Stop = gae.Stop
 )
+
+// MakeErrInvalidKey returns an errors.Annotator instance that wraps an invalid
+// key error. Calling IsErrInvalidKey on this Annotator or its derivatives will
+// return true.
+func MakeErrInvalidKey() *errors.Annotator {
+	return errors.Annotate(datastore.ErrInvalidKey)
+}
+
+// IsErrInvalidKey tests if a given error is a wrapped datastore.ErrInvalidKey
+// error.
+func IsErrInvalidKey(err error) bool { return errors.Unwrap(err) == datastore.ErrInvalidKey }
 
 // ErrFieldMismatch is returned when a field is to be loaded into a different
 // type than the one it was stored from, or when a field is missing or

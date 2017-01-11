@@ -124,7 +124,7 @@ func AllocateIDs(c context.Context, ent ...interface{}) error {
 			}
 
 			if !mat.setKey(v, key) {
-				return ErrInvalidKey
+				return MakeErrInvalidKey().Reason("failed to export key [%(key)s]").D("key", key).Err()
 			}
 			return nil
 		})

@@ -67,7 +67,7 @@ func TestCheckFilter(t *testing.T) {
 			keys := []*Key{MkKeyContext("wut", "wrong").MakeKey("Kind", 1)}
 			So(rds.GetMulti(keys, nil, func(pm PropertyMap, err error) error {
 				So(pm, ShouldBeNil)
-				So(err, ShouldEqual, ErrInvalidKey)
+				So(IsErrInvalidKey(err), ShouldBeTrue)
 				return nil
 			}), ShouldBeNil)
 
@@ -94,7 +94,7 @@ func TestCheckFilter(t *testing.T) {
 
 			So(rds.PutMulti(keys, vals, func(k *Key, err error) error {
 				So(k, ShouldBeNil)
-				So(err, ShouldEqual, ErrInvalidKey)
+				So(IsErrInvalidKey(err), ShouldBeTrue)
 				return nil
 			}), ShouldBeNil)
 
@@ -121,7 +121,7 @@ func TestCheckFilter(t *testing.T) {
 			So(rds.DeleteMulti(nil, nil), ShouldBeNil)
 			So(rds.DeleteMulti([]*Key{mkKey("", "", "", "")}, nil).Error(), ShouldContainSubstring, "is nil")
 			So(rds.DeleteMulti([]*Key{mkKey("", "", "", "")}, func(err error) error {
-				So(err, ShouldEqual, ErrInvalidKey)
+				So(IsErrInvalidKey(err), ShouldBeTrue)
 				return nil
 			}), ShouldBeNil)
 

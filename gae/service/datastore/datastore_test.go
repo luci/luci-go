@@ -612,7 +612,7 @@ func TestPut(t *testing.T) {
 					}
 					// having an Incomplete parent makes an invalid key
 					bp := &BadParent{ID: 1, Parent: MakeKey(c, "Something", 0)}
-					So(Put(c, bp), ShouldErrLike, ErrInvalidKey)
+					So(IsErrInvalidKey(Put(c, bp)), ShouldBeTrue)
 				})
 
 				Convey("vararg with errors", func() {

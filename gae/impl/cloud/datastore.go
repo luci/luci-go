@@ -583,7 +583,7 @@ func normalizeError(err error) error {
 	case datastore.ErrConcurrentTransaction:
 		return ds.ErrConcurrentTransaction
 	case datastore.ErrInvalidKey:
-		return ds.ErrInvalidKey
+		return ds.MakeErrInvalidKey().Err()
 	default:
 		return err
 	}

@@ -323,16 +323,30 @@ func (q *FinalizedQuery) String() string {
 // have values of type PTKey (but don't filter on the magic '__key__' field).
 func (q *FinalizedQuery) Valid(kc KeyContext) error {
 	anc := q.Ancestor()
-	if anc != nil && (!anc.Valid(false, kc) || anc.IsIncomplete()) {
-		return ErrInvalidKey
+	if anc != nil {
+		switch {
+		case !anc.Valid(false, kc):
+			return MakeErrInvalidKey().Reason("ancestor [%(key)s] is not valid in context %(context)s").
+				D("key", anc).D("context", kc).Err()
+		case anc.IsIncomplete():
+			return MakeErrInvalidKey().Reason("ancestor [%(key)s] is incomplete").D("key", anc).Err()
+		}
 	}
 
 	if q.ineqFiltProp == "__key__" {
-		if q.ineqFiltLowSet && !q.ineqFiltLow.Value().(*Key).Valid(false, kc) {
-			return ErrInvalidKey
+		if q.ineqFiltLowSet {
+			if k := q.ineqFiltLow.Value().(*Key); !k.Valid(false, kc) {
+				return MakeErrInvalidKey().
+					Reason("low inequality filter key [%(key)s] is not valid in context %(context)s").
+					D("key", k).D("context", kc).Err()
+			}
 		}
-		if q.ineqFiltHighSet && !q.ineqFiltHigh.Value().(*Key).Valid(false, kc) {
-			return ErrInvalidKey
+		if q.ineqFiltHighSet {
+			if k := q.ineqFiltHigh.Value().(*Key); !k.Valid(false, kc) {
+				return MakeErrInvalidKey().
+					Reason("high inequality filter key [%(key)s] is not valid in context %(context)s").
+					D("key", k).D("context", kc).Err()
+			}
 		}
 	}
 	return nil

@@ -104,7 +104,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 				})
 			})
 			Convey("Deleteing with a bogus key is bad", func() {
-				So(ds.Delete(c, ds.NewKey(c, "Foo", "wat", 100, nil)), ShouldEqual, ds.ErrInvalidKey)
+				So(ds.IsErrInvalidKey(ds.Delete(c, ds.NewKey(c, "Foo", "wat", 100, nil))), ShouldBeTrue)
 			})
 			Convey("Deleteing a DNE entity is fine", func() {
 				So(ds.Delete(c, ds.NewKey(c, "Foo", "wat", 0, nil)), ShouldBeNil)

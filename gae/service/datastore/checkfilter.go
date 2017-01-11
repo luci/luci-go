@@ -45,8 +45,17 @@ func (tcf *checkFilter) GetMulti(keys []*Key, meta MultiMetaGetter, cb GetMultiC
 	}
 	lme := errors.NewLazyMultiError(len(keys))
 	for i, k := range keys {
-		if k.IsIncomplete() || !k.Valid(true, tcf.kc) {
-			lme.Assign(i, ErrInvalidKey)
+		var err error
+		switch {
+		case k.IsIncomplete():
+			err = MakeErrInvalidKey().Reason("key [%(key)s] is incomplete").
+				D("key", k).Err()
+		case !k.Valid(true, tcf.kc):
+			err = MakeErrInvalidKey().Reason("key [%(key)s] is not valid in context %(context)s").
+				D("key", k).D("context", tcf.kc).Err()
+		}
+		if err != nil {
+			lme.Assign(i, err)
 		}
 	}
 	if me := lme.Get(); me != nil {
@@ -71,7 +80,8 @@ func (tcf *checkFilter) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) e
 	lme := errors.NewLazyMultiError(len(keys))
 	for i, k := range keys {
 		if !k.PartialValid(tcf.kc) {
-			lme.Assign(i, ErrInvalidKey)
+			lme.Assign(i, MakeErrInvalidKey().Reason("key [%(key)s] is not partially valid in context %(context)s").
+				D("key", k).D("context", tcf.kc).Err())
 			continue
 		}
 		v := vals[i]
@@ -98,8 +108,17 @@ func (tcf *checkFilter) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
 	}
 	lme := errors.NewLazyMultiError(len(keys))
 	for i, k := range keys {
-		if k.IsIncomplete() || !k.Valid(false, tcf.kc) {
-			lme.Assign(i, ErrInvalidKey)
+		var err error
+		switch {
+		case k.IsIncomplete():
+			err = MakeErrInvalidKey().Reason("key [%(key)s] is incomplete").
+				D("key", k).Err()
+		case !k.Valid(false, tcf.kc):
+			err = MakeErrInvalidKey().Reason("key [%(key)s] is not valid in context %(context)s").
+				D("key", k).D("context", tcf.kc).Err()
+		}
+		if err != nil {
+			lme.Assign(i, err)
 		}
 	}
 	if me := lme.Get(); me != nil {
