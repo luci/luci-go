@@ -19,6 +19,16 @@ import (
 // DefaultExpire is a reasonable default expiration value.
 const DefaultExpire = 10 * time.Minute
 
+type dsCacheMode string
+
+const (
+	dsCacheDisabled dsCacheMode = ""
+	dsCacheEnabled  dsCacheMode = "Enabled"
+	dsCacheStrict   dsCacheMode = "Strict"
+)
+
+const dsCacheDisabledSetting = "Disabled"
+
 // Settings are stored in the datastore via appengine/gaesettings package.
 type Settings struct {
 	// ConfigServiceURL is URL of luci-config service to fetch configs from.
@@ -26,6 +36,9 @@ type Settings struct {
 
 	// CacheExpirationSec is how long to hold configs in local cache.
 	CacheExpirationSec int `json:"cache_expiration_sec"`
+
+	// DatastoreCacheMode, is the datastore caching mode.
+	DatastoreCacheMode dsCacheMode `json:"datastore_enabled"`
 }
 
 // FetchCachedSettings fetches Settings from the settings store.
@@ -49,10 +62,19 @@ func FetchCachedSettings(c context.Context) (Settings, error) {
 	}
 }
 
+func mustFetchCachedSettings(c context.Context) *Settings {
+	settings, err := FetchCachedSettings(c)
+	if err != nil {
+		panic(err)
+	}
+	return &settings
+}
+
 // DefaultSettings returns Settings to use if setting store is empty.
 func DefaultSettings() Settings {
 	return Settings{
 		CacheExpirationSec: int(DefaultExpire.Seconds()),
+		DatastoreCacheMode: dsCacheDisabled,
 	}
 }
 
@@ -111,6 +133,20 @@ probably don't use it and can keep this setting blank.</p>`,
 service are cached in memcache for specified amount of time. Set it to 0 to
 disable local cache.</p>`,
 		},
+		{
+			ID:    "DatastoreCacheMode",
+			Title: "Enable datastore-backed config caching",
+			Type:  settings.UIFieldChoice,
+			ChoiceVariants: []string{
+				dsCacheDisabledSetting,
+				string(dsCacheEnabled),
+				string(dsCacheStrict),
+			},
+			Help: `<p>For better performance and resilience against configuration
+service outages, the local datastore can be used as a backing cache. When
+enabled, an additional <strong>Strict</strong> mode is available where expired
+datastore entries will error instead of fail-open to the config service.</p>`,
+		},
 	}, nil
 }
 
@@ -120,15 +156,29 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 	if err != nil && err != settings.ErrNoSettings {
 		return nil, err
 	}
+
+	cacheMode := string(s.DatastoreCacheMode)
+	if cacheMode == string(dsCacheDisabled) {
+		cacheMode = dsCacheDisabledSetting
+	}
+
 	return map[string]string{
 		"ConfigServiceURL":   s.ConfigServiceURL,
 		"CacheExpirationSec": strconv.Itoa(s.CacheExpirationSec),
+		"DatastoreCacheMode": cacheMode,
 	}, nil
 }
 
 func (settingsUIPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
-	modified := Settings{}
-	modified.ConfigServiceURL = values["ConfigServiceURL"]
+	dsMode := dsCacheMode(values["DatastoreCacheMode"])
+	if dsMode == dsCacheDisabledSetting {
+		dsMode = dsCacheDisabled
+	}
+
+	modified := Settings{
+		ConfigServiceURL:   values["ConfigServiceURL"],
+		DatastoreCacheMode: dsMode,
+	}
 
 	var err error
 	modified.CacheExpirationSec, err = strconv.Atoi(values["CacheExpirationSec"])

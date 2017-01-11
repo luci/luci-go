@@ -22,7 +22,7 @@ import (
 func TestHierarchy(t *testing.T) {
 	t.Parallel()
 
-	Convey(`With a testing configuration`, t, func() {
+	FocusConvey(`With a testing configuration`, t, func() {
 		c, env := ct.Install()
 
 		var r Request
@@ -36,10 +36,10 @@ func TestHierarchy(t *testing.T) {
 
 		var lv listValidator
 
-		Convey(`When requesting Project-level list`, func() {
+		FocusConvey(`When requesting Project-level list`, func() {
 			r.Project = ""
 
-			Convey(`An anonymous user will see all public-access projects.`, func() {
+			FocusConvey(`An anonymous user will see all public-access projects.`, func() {
 				So(get(), lv.shouldHaveComponents, "proj-bar", "proj-foo")
 			})
 

@@ -7,10 +7,6 @@ package templateproto
 import (
 	"testing"
 
-	"golang.org/x/net/context"
-
-	"github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/config/impl/memory"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -19,7 +15,7 @@ func TestLoadFromConfig(t *testing.T) {
 	t.Parallel()
 
 	Convey("LoadFile", t, func() {
-		c := config.SetImplementation(context.Background(), memory.New(map[string]memory.ConfigSet{"projects/foo": {"templates/bar.cfg": `
+		templateContent := `
 		template: <
 			key: "hardcode"
 			value: <
@@ -77,12 +73,11 @@ func TestLoadFromConfig(t *testing.T) {
 				>
 			>
 		>
-		`}}))
+		`
 
 		Convey("basic load", func() {
-			file, vers, err := LoadFile(c, "projects/foo", "templates/bar.cfg")
+			file, err := LoadFile(templateContent)
 			So(err, ShouldBeNil)
-			So(vers, ShouldEqual, "v1:989dbfaacc4565bcf1491388c912e7afc378d19d")
 			So(file, ShouldResemble, &File{Template: map[string]*File_Template{
 				"hardcode": {
 					Doc:  "it's hard-coded",

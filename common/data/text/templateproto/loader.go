@@ -7,23 +7,15 @@ package templateproto
 import (
 	"fmt"
 
-	"golang.org/x/net/context"
-
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/proto"
 )
 
-// LoadFile loads a File from config service by configSet and path.
+// LoadFile loads a File from a string containing the template text protobuf.
 //
 // Expects config.Interface to be in the context already.
-func LoadFile(c context.Context, configSet, path string) (file *File, vers string, err error) {
-	templateData, err := config.GetConfig(c, configSet, path, false)
-	if err != nil {
-		return
-	}
+func LoadFile(data string) (file *File, err error) {
 	file = &File{}
-	vers = templateData.ContentHash
-	if err = proto.UnmarshalTextML(templateData.Content, file); err != nil {
+	if err = proto.UnmarshalTextML(data, file); err != nil {
 		return
 	}
 	err = file.Normalize()

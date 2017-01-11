@@ -12,8 +12,8 @@ import (
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaetesting"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/config/impl/memory"
+	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
 	admin "github.com/luci/luci-go/tokenserver/api/admin/v1"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -66,7 +66,7 @@ func TestImportDelegationConfigs(t *testing.T) {
 		// Try to import completely broken config.
 		ctx = prepareCfg(ctx, `I'm broken`)
 		_, err = rpc.ImportDelegationConfigs(ctx, nil)
-		So(err, ShouldErrLike, `can't parse config file - line 1.0: unknown field name`)
+		So(err, ShouldErrLike, `line 1.0: unknown field name`)
 
 		// Old config is not replaced.
 		cfg, _ = FetchDelegationConfig(ctx)
@@ -86,7 +86,7 @@ func TestImportDelegationConfigs(t *testing.T) {
 }
 
 func prepareCfg(c context.Context, configFile string) context.Context {
-	return config.SetImplementation(c, memory.New(map[string]memory.ConfigSet{
+	return testconfig.WithCommonClient(c, memory.New(map[string]memory.ConfigSet{
 		"services/" + info.AppID(c): {
 			"delegation.cfg": configFile,
 		},

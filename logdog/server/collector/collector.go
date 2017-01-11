@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
@@ -23,6 +22,8 @@ import (
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/logdog/server/collector/coordinator"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 )
 

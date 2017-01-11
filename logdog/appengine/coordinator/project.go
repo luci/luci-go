@@ -8,9 +8,7 @@ import (
 	"strings"
 
 	"github.com/luci/gae/service/info"
-	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
-	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
@@ -59,37 +57,4 @@ func CurrentProject(c context.Context) cfgtypes.ProjectName {
 // configuration, config.ErrInvalidConfig will be returned.
 func CurrentProjectConfig(c context.Context) (*svcconfig.ProjectConfig, error) {
 	return GetServices(c).ProjectConfig(c, CurrentProject(c))
-}
-
-// ActiveUserProjects returns a full list of all config service projects with
-// LogDog project configurations that the current user has READ access to.
-//
-// TODO: Load project configs and all project configs lists from datastore. Add
-// a background cron job to periodically update these lists from luci-config.
-// This should be a generic config service capability.
-func ActiveUserProjects(c context.Context) (map[cfgtypes.ProjectName]*svcconfig.ProjectConfig, error) {
-	allPcfgs, err := config.AllProjectConfigs(c)
-	if err != nil {
-		return nil, err
-	}
-
-	for project, pcfg := range allPcfgs {
-		// Verify user READ access.
-		if err := IsProjectReader(c, pcfg); err != nil {
-			delete(allPcfgs, project)
-
-			// If it is a membership error, prune this project and continue.
-			// Otherwise, forward the error.
-			if !IsMembershipError(err) {
-				// No configuration for this project, the configuration is invalid, or
-				// the user didn't have access. Remove it from the list.
-				log.Fields{
-					log.ErrorKey: err,
-					"project":    project,
-				}.Errorf(c, "Failed to check project.")
-				return nil, err
-			}
-		}
-	}
-	return allPcfgs, nil
 }

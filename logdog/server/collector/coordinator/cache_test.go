@@ -15,6 +15,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"

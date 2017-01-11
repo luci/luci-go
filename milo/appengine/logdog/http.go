@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/julienschmidt/httprouter"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/grpc/prpc"
 	"github.com/luci/luci-go/logdog/client/coordinator"
@@ -19,6 +18,7 @@ import (
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/templates"
 
+	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 )
 

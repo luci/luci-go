@@ -9,28 +9,24 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/data/text/templateproto"
-	"github.com/luci/luci-go/common/proto"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"github.com/luci/luci-go/luci_config/server/cfgclient"
+	"github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
 )
 
 // LoadFile loads a File by configSet and path.
 func LoadFile(c context.Context, project, ref string) (file *File, vers string, err error) {
-	cfgSet := "projects/" + project
-	if ref != "" {
-		cfgSet += "/" + ref
-	}
-	templateData, err := config.GetConfig(c, cfgSet, "dm/quest_templates.cfg", false)
-	if err != nil {
-		return
-	}
+	// If ref is "", this will be a standard project config set.
+	cfgSet := cfgtypes.RefConfigSet(cfgtypes.ProjectName(project), ref)
+
 	file = &File{}
-	vers = templateData.ContentHash
-	err = proto.UnmarshalTextML(templateData.Content, file)
-	if err != nil {
+	var meta cfgclient.Meta
+	if err = cfgclient.Get(c, cfgclient.AsService, cfgSet, "dm/quest_templates.cfg", textproto.Message(file), &meta); err != nil {
 		return
 	}
+	vers = meta.ContentHash
 	err = file.Normalize()
 	return
 }

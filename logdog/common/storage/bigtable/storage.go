@@ -411,6 +411,7 @@ func (w *rowWriter) append(d []byte) (appended bool) {
 
 func (w *rowWriter) flush(ctx context.Context, raw btTable, index types.MessageIndex,
 	project cfgtypes.ProjectName, path types.StreamPath) (int, error) {
+
 	flushCount := w.count
 	if flushCount == 0 {
 		return 0, nil

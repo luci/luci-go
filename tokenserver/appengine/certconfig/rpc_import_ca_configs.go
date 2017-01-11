@@ -17,12 +17,11 @@ import (
 	"google.golang.org/grpc/codes"
 
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/luci_config/server/cfgclient"
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 	"github.com/luci/luci-go/tokenserver/appengine/utils"
@@ -34,15 +33,15 @@ type ImportCAConfigsRPC struct {
 
 // ImportCAConfigs fetches CA configs from from luci-config right now.
 func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *google.Empty) (*admin.ImportedConfigs, error) {
-	cfg, err := fetchConfigFile(c, "tokenserver.cfg")
+	content, meta, err := fetchConfigFile(c, "tokenserver.cfg")
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "can't read config file - %s", err)
 	}
-	logging.Infof(c, "Importing tokenserver.cfg at rev %s", cfg.Revision)
+	logging.Infof(c, "Importing tokenserver.cfg at rev %s", meta.Revision)
 
 	// Read list of CAs.
 	msg := admin.TokenServerConfig{}
-	if err = proto.UnmarshalText(cfg.Content, &msg); err != nil {
+	if err = proto.UnmarshalText(content, &msg); err != nil {
 		return nil, grpc.Errorf(codes.Internal, "can't parse config file - %s", err)
 	}
 
@@ -91,11 +90,11 @@ func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *google.Empty)
 		wg.Add(1)
 		go func(i int, ca *admin.CertificateAuthorityConfig) {
 			defer wg.Done()
-			certFileCfg, err := fetchConfigFile(c, ca.CertPath)
+			content, meta, err := fetchConfigFile(c, ca.CertPath)
 			if err != nil {
 				logging.Errorf(c, "Failed to fetch %q: %s", ca.CertPath, err)
 				me.Assign(i, err)
-			} else if err := importCA(c, ca, certFileCfg.Content, cfg.Revision); err != nil {
+			} else if err := importCA(c, ca, content, meta.Revision); err != nil {
 				logging.Errorf(c, "Failed to import %q: %s", ca.Cn, err)
 				me.Assign(i, err)
 			}
@@ -125,7 +124,7 @@ func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *google.Empty)
 		wg.Add(1)
 		go func(i int, name string) {
 			defer wg.Done()
-			if err := removeCA(c, name, cfg.Revision); err != nil {
+			if err := removeCA(c, name, meta.Revision); err != nil {
 				logging.Errorf(c, "Failed to remove %q: %s", name, err)
 				me.Assign(i, err)
 			}
@@ -140,18 +139,27 @@ func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *google.Empty)
 		ImportedConfigs: []*admin.ImportedConfigs_ConfigFile{
 			{
 				Name:     "tokenserver.cfg",
-				Revision: cfg.Revision,
+				Revision: meta.Revision,
 			},
 		},
 	}, nil
 }
 
 // fetchConfigFile fetches a file from this services' config set.
-func fetchConfigFile(c context.Context, path string) (*config.Config, error) {
-	configSet := "services/" + info.AppID(c)
+func fetchConfigFile(c context.Context, path string) (string, *cfgclient.Meta, error) {
+	configSet := cfgclient.CurrentServiceConfigSet(c)
 	logging.Infof(c, "Reading %q from config set %q", path, configSet)
-	c, _ = context.WithTimeout(c, 30*time.Second) // URL fetch deadline
-	return config.GetConfig(c, configSet, path, false)
+	c, cancelFunc := context.WithTimeout(c, 29*time.Second) // URL fetch deadline
+	defer cancelFunc()
+
+	var (
+		content string
+		meta    cfgclient.Meta
+	)
+	if err := cfgclient.Get(c, cfgclient.AsService, configSet, path, cfgclient.String(&content), &meta); err != nil {
+		return "", nil, err
+	}
+	return content, &meta, nil
 }
 
 // importCA imports CA definition from the config (or updates an existing one).

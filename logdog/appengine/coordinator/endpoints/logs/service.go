@@ -5,7 +5,6 @@
 package logs
 
 import (
-	"github.com/golang/protobuf/proto"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
@@ -13,6 +12,7 @@ import (
 	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )

@@ -14,6 +14,7 @@ import (
 	"github.com/luci/luci-go/logdog/common/storage/memory"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+
 	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"

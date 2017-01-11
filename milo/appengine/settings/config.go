@@ -6,16 +6,16 @@ package settings
 
 import (
 	"fmt"
-	"strings"
 
-	"github.com/golang/protobuf/proto"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/luci_config/server/cfgclient"
+	"github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
 	milocfg "github.com/luci/luci-go/milo/common/config"
 	"github.com/luci/luci-go/server/router"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 )
 
@@ -47,36 +47,34 @@ func UpdateHandler(ctx *router.Context) {
 // scanning through all project and extract all console configs.
 func Update(c context.Context) error {
 	cfgName := info.AppID(c) + ".cfg"
-	cfgs, err := config.GetProjectConfigs(c, cfgName, false)
-	if err != nil {
+
+	var (
+		configs []*milocfg.Project
+		metas   []*cfgclient.Meta
+	)
+	if err := cfgclient.Projects(c, cfgclient.AsService, cfgName, textproto.Slice(&configs), &metas); err != nil {
 		logging.WithError(err).Errorf(c, "Encountered error while getting project config for %s", cfgName)
 		return err
 	}
+
 	// A map of project ID to project.
 	projects := map[string]*Project{}
-	for _, cfg := range cfgs {
-		pathParts := strings.SplitN(cfg.ConfigSet, "/", 2)
-		if len(pathParts) != 2 {
-			return fmt.Errorf("Invalid config path: %s", cfg.Path)
-		}
-		name := pathParts[1]
-		proj := milocfg.Project{}
-		logging.Infof(c, "Prossing %s", name)
-		if err = proto.UnmarshalText(cfg.Content, &proj); err != nil {
-			logging.WithError(err).Errorf(
-				c, "Encountered error while processing %s.  Config:\n%s", name, cfg.Content)
-			return err
-		}
+	for i, proj := range configs {
+		projectName, _, _ := metas[i].ConfigSet.SplitProject()
+
+		logging.Infof(c, "Prossing %s", projectName)
 		if dup, ok := projects[proj.ID]; ok {
 			return fmt.Errorf(
-				"Duplicate project ID: %s. (%s and %s)", proj.ID, dup.Name, name)
+				"Duplicate project ID: %s. (%s and %s)", proj.ID, dup.Name, projectName)
 		}
 		p := &Project{
 			ID:   proj.ID,
-			Name: name,
+			Name: string(projectName),
 		}
 		projects[proj.ID] = p
-		p.Data, err = proto.Marshal(&proj)
+
+		var err error
+		p.Data, err = proto.Marshal(proj)
 		if err != nil {
 			return err
 		}
@@ -87,8 +85,7 @@ func Update(c context.Context) error {
 	for _, proj := range projects {
 		projs = append(projs, proj)
 	}
-	err = ds.Put(c, projs)
-	if err != nil {
+	if err := ds.Put(c, projs); err != nil {
 		return err
 	}
 

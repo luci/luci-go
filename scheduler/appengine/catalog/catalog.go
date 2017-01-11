@@ -18,8 +18,10 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"github.com/luci/luci-go/luci_config/server/cfgclient"
+	"github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
 
 	"github.com/luci/luci-go/scheduler/appengine/messages"
 	"github.com/luci/luci-go/scheduler/appengine/schedule"
@@ -61,14 +63,14 @@ type Catalog interface {
 
 	// GetAllProjects returns a list of all known project ids.
 	//
-	// It assumes there's config.Interface implementation installed in
+	// It assumes there's cfgclient implementation installed in
 	// the context, will panic if it's not there.
 	GetAllProjects(c context.Context) ([]string, error)
 
 	// GetProjectJobs returns a list of scheduler jobs defined within a project or
 	// empty list if no such project.
 	//
-	// It assumes there's config.Interface implementation installed in
+	// It assumes there's cfgclient implementation installed in
 	// the context, will panic if it's not there.
 	GetProjectJobs(c context.Context, projectID string) ([]Definition, error)
 }
@@ -164,47 +166,50 @@ func (cat *catalog) UnmarshalTask(task []byte) (proto.Message, error) {
 func (cat *catalog) GetAllProjects(c context.Context) ([]string, error) {
 	// Enumerate all projects that have <config>.cfg. Do not fetch actual configs
 	// yet.
-	cfgs, err := config.GetProjectConfigs(c, cat.configFile(c), true)
-	if err != nil {
+	var metas []*cfgclient.Meta
+	if err := cfgclient.Projects(c, cfgclient.AsService, cat.configFile(c), nil, &metas); err != nil {
 		return nil, err
 	}
-	out := make([]string, 0, len(cfgs))
-	for _, cfg := range cfgs {
-		// ConfigSet must be "projects/<project-id>". Verify that.
-		chunks := strings.Split(cfg.ConfigSet, "/")
-		if len(chunks) != 2 || chunks[0] != "projects" {
-			logging.Warningf(c, "Unexpected ConfigSet: %s", cfg.ConfigSet)
+
+	out := make([]string, 0, len(metas))
+	for _, meta := range metas {
+		projectName, _, _ := meta.ConfigSet.SplitProject()
+		if projectName == "" {
+			logging.Warningf(c, "Unexpected ConfigSet: %s", meta.ConfigSet)
 		} else {
-			out = append(out, chunks[1])
+			out = append(out, string(projectName))
 		}
 	}
 	return out, nil
 }
 
 func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Definition, error) {
-	configSetURL, err := config.GetConfigSetLocation(c, "projects/"+projectID)
+	configSet := cfgtypes.ProjectConfigSet(cfgtypes.ProjectName(projectID))
+	configSetURL, err := cfgclient.GetConfigSetURL(c, cfgclient.AsService, configSet)
 	switch err {
 	case nil: // Continue
-	case config.ErrNoConfig:
+	case cfgclient.ErrNoConfig:
 		return nil, nil
 	default:
 		return nil, err
 	}
 
-	rawCfg, err := config.GetConfig(c, "projects/"+projectID, cat.configFile(c), false)
-	if err == config.ErrNoConfig {
+	var (
+		cfg  messages.ProjectConfig
+		meta cfgclient.Meta
+	)
+	switch err := cfgclient.Get(c, cfgclient.AsService, configSet, cat.configFile(c), textproto.Message(&cfg), &meta); err {
+	case nil:
+		break
+	case cfgclient.ErrNoConfig:
 		return nil, nil
-	}
-	if err != nil {
+	default:
 		return nil, err
 	}
-	revisionURL := getRevisionURL(configSetURL, rawCfg.Revision, rawCfg.Path)
+
+	revisionURL := getRevisionURL(&configSetURL, meta.Revision, meta.Path)
 	if revisionURL != "" {
 		logging.Infof(c, "Importing %s", revisionURL)
-	}
-	cfg := messages.ProjectConfig{}
-	if err = proto.UnmarshalText(rawCfg.Content, &cfg); err != nil {
-		return nil, err
 	}
 
 	out := make([]Definition, 0, len(cfg.Job)+len(cfg.Trigger))
@@ -239,7 +244,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		out = append(out, Definition{
 			JobID:       fmt.Sprintf("%s/%s", projectID, job.Id),
 			Flavor:      flavor,
-			Revision:    rawCfg.Revision,
+			Revision:    meta.Revision,
 			RevisionURL: revisionURL,
 			Schedule:    schedule,
 			Task:        packed,
@@ -272,7 +277,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		out = append(out, Definition{
 			JobID:       fmt.Sprintf("%s/%s", projectID, trigger.Id),
 			Flavor:      JobFlavorTrigger,
-			Revision:    rawCfg.Revision,
+			Revision:    meta.Revision,
 			RevisionURL: revisionURL,
 			Schedule:    schedule,
 			Task:        packed,

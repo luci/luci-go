@@ -8,12 +8,12 @@ import (
 	"fmt"
 
 	"github.com/luci/gae/service/info"
-	luciConfig "github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"github.com/luci/luci-go/luci_config/server/cfgclient"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
 
@@ -106,7 +106,7 @@ func WithProjectNamespace(c *context.Context, project cfgtypes.ProjectName, at N
 			// Successfully loaded project config.
 			return pcfg, nil
 
-		case luciConfig.ErrNoConfig, config.ErrInvalidConfig:
+		case cfgclient.ErrNoConfig, config.ErrInvalidConfig:
 			// If the configuration request was valid, but no configuration could be
 			// loaded, treat this as the user not having READ access to the project.
 			// Otherwise, the user could use this error response to confirm a

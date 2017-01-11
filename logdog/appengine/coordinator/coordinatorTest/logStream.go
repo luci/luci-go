@@ -9,14 +9,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/protobuf/proto"
-	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+
+	ds "github.com/luci/gae/service/datastore"
+
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 )
 

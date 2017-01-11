@@ -12,8 +12,8 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaetesting"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/config/impl/memory"
+	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 
@@ -251,10 +251,10 @@ PkoYH9WC8tSbqNof3g==
 -----END CERTIFICATE-----
 `
 
-// prepareCfg injects config.Interface implementation with a bunch of
+// prepareCfg injects config.Backend implementation with a bunch of
 // config files.
 func prepareCfg(c context.Context, configFile string) context.Context {
-	return config.SetImplementation(c, memory.New(map[string]memory.ConfigSet{
+	return testconfig.WithCommonClient(c, memory.New(map[string]memory.ConfigSet{
 		"services/" + info.AppID(c): {
 			"tokenserver.cfg":           configFile,
 			"certs/fake.ca.crt":         fakeCACrt,

@@ -20,9 +20,9 @@ import (
 	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock/testclock"
-	lucicfg "github.com/luci/luci-go/common/config"
 	memcfg "github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/common/logging/gologger"
+	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
 	"github.com/luci/luci-go/milo/appengine/settings"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
@@ -432,7 +432,8 @@ func TestPubSub(t *testing.T) {
 			})
 			So(h.Code, ShouldEqual, 200)
 			Convey("And stores correctly", func() {
-				c = lucicfg.SetImplementation(c, memcfg.New(aclConfgs))
+				c = testconfig.WithCommonClient(c, memcfg.New(aclConfgs))
+
 				err := settings.Update(c)
 				So(err, ShouldBeNil)
 				c = auth.WithState(c, &authtest.FakeState{

@@ -6,26 +6,23 @@ package config
 
 import (
 	"fmt"
-	"strings"
+	"sort"
 
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/config"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"github.com/luci/luci-go/luci_config/server/cfgclient"
+	"github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
 
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 )
-
-const maxProjectWorkers = 32
 
 // ProjectConfigPath returns the path of the project-specific configuration.
 // This path should be used with a project config set.
 //
 // A given project's configuration is named after the current App ID.
 func ProjectConfigPath(c context.Context) string {
-	return fmt.Sprintf("%s.cfg", info.AppID(c))
+	return fmt.Sprintf("%s.cfg", cfgclient.CurrentServiceName(c))
 }
 
 // ProjectConfig loads the project config protobuf from the config service.
@@ -39,14 +36,15 @@ func ProjectConfigPath(c context.Context) string {
 //	  previous categories.
 func ProjectConfig(c context.Context, project cfgtypes.ProjectName) (*svcconfig.ProjectConfig, error) {
 	if project == "" {
-		return nil, config.ErrNoConfig
+		return nil, cfgclient.ErrNoConfig
 	}
 
 	// Get the config from the config service. If the configuration doesn't exist,
-	// this will return config.ErrNoConfig.
+	// this will return cfgclient.ErrNoConfig.
 	configSet, configPath := cfgtypes.ProjectConfigSet(project), ProjectConfigPath(c)
-	cfg, err := config.GetConfig(c, string(configSet), configPath, false)
-	if err != nil {
+
+	var pcfg svcconfig.ProjectConfig
+	if err := cfgclient.Get(c, cfgclient.AsService, configSet, configPath, textproto.Message(&pcfg), nil); err != nil {
 		log.Fields{
 			log.ErrorKey: err,
 			"project":    project,
@@ -55,69 +53,50 @@ func ProjectConfig(c context.Context, project cfgtypes.ProjectName) (*svcconfig.
 		}.Errorf(c, "Failed to load project configuration content.")
 		return nil, err
 	}
-
-	pcfg, err := unmarshalProjectConfig(cfg)
-	if err != nil {
-		log.Fields{
-			log.ErrorKey:  err,
-			"project":     project,
-			"configSet":   cfg.ConfigSet,
-			"path":        cfg.Path,
-			"contentHash": cfg.ContentHash,
-		}.Errorf(c, "Failed to unmarshal project configuration.")
-		return nil, ErrInvalidConfig
-	}
-	return pcfg, nil
+	return &pcfg, nil
 }
 
-// AllProjectConfigs returns the project configurations for all projects that
-// have a configuration.
-//
-// If a project's configuration fails to load, an error will be logged and the
-// project will be omitted from the output map.
-func AllProjectConfigs(c context.Context) (map[cfgtypes.ProjectName]*svcconfig.ProjectConfig, error) {
-	// TODO: This endpoint is generally slow. Even though there is memcache-based
-	// config cache, this really should be loaded from a more failsafe cache like
-	// datastore to protect against config service outages.
-	configs, err := config.GetProjectConfigs(c, ProjectConfigPath(c), false)
-	if err != nil {
+// ProjectNames returns a sorted list of the names of all of the projects
+// that the supplied authority can view.
+func ProjectNames(c context.Context, a cfgclient.Authority) ([]cfgtypes.ProjectName, error) {
+	configPath := ProjectConfigPath(c)
+
+	var metas []*cfgclient.Meta
+	if err := cfgclient.Projects(c, a, configPath, nil, &metas); err != nil {
 		log.WithError(err).Errorf(c, "Failed to load project configs.")
 		return nil, err
 	}
 
-	result := make(map[cfgtypes.ProjectName]*svcconfig.ProjectConfig, len(configs))
-	for _, cfg := range configs {
-		// Identify the project by removng the "projects/" prefix.
-		project := cfgtypes.ProjectName(strings.TrimPrefix(cfg.ConfigSet, "projects/"))
-		if err := project.Validate(); err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-				"configSet":  cfg.ConfigSet,
-			}.Errorf(c, "Invalid project name returned.")
-			continue
+	// Iterate through our Metas and extract the project names.
+	projects := make([]cfgtypes.ProjectName, 0, len(metas))
+	for _, meta := range metas {
+		projectName, _, _ := meta.ConfigSet.SplitProject()
+		if projectName != "" {
+			projects = append(projects, projectName)
 		}
-
-		// Unmarshal the project's configuration.
-		pcfg, err := unmarshalProjectConfig(&cfg)
-		if err != nil {
-			log.Fields{
-				log.ErrorKey:  err,
-				"configSet":   cfg.ConfigSet,
-				"path":        cfg.Path,
-				"contentHash": cfg.ContentHash,
-			}.Errorf(c, "Failed to unmarshal project configuration.")
-			continue
-		}
-
-		result[project] = pcfg
 	}
-	return result, nil
+	sort.Sort(projectNameSlice(projects))
+	return projects, nil
 }
 
-func unmarshalProjectConfig(cfg *config.Config) (*svcconfig.ProjectConfig, error) {
-	var pcfg svcconfig.ProjectConfig
-	if err := proto.UnmarshalText(cfg.Content, &pcfg); err != nil {
-		return nil, err
-	}
-	return &pcfg, nil
+// ActiveProjects returns a full list of all config service projects with
+// LogDog project configurations.
+//
+// The list will be alphabetically sorted.
+func ActiveProjects(c context.Context) ([]cfgtypes.ProjectName, error) {
+	return ProjectNames(c, cfgclient.AsService)
 }
+
+// ActiveUserProjects returns a full list of all config service projects with
+// LogDog project configurations that the current user can see.
+//
+// The list will be alphabetically sorted.
+func ActiveUserProjects(c context.Context) ([]cfgtypes.ProjectName, error) {
+	return ProjectNames(c, cfgclient.AsUser)
+}
+
+type projectNameSlice []cfgtypes.ProjectName
+
+func (s projectNameSlice) Len() int           { return len(s) }
+func (s projectNameSlice) Less(i, j int) bool { return s[i] < s[j] }
+func (s projectNameSlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }

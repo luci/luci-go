@@ -16,6 +16,7 @@ import (
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"

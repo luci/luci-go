@@ -12,8 +12,8 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
 
-	"github.com/luci/luci-go/common/config"
 	memcfg "github.com/luci/luci-go/common/config/impl/memory"
+	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
 
 	"github.com/luci/luci-go/scheduler/appengine/messages"
 	"github.com/luci/luci-go/scheduler/appengine/task"
@@ -173,7 +173,7 @@ func TestTaskMarshaling(t *testing.T) {
 
 func TestConfigReading(t *testing.T) {
 	Convey("with mocked config", t, func() {
-		ctx := config.SetImplementation(context.Background(), memcfg.New(mockedConfigs))
+		ctx := testconfig.WithCommonClient(context.Background(), memcfg.New(mockedConfigs))
 		cat := New("scheduler.cfg")
 		cat.RegisterTaskManager(fakeTaskManager{
 			name: "noop",

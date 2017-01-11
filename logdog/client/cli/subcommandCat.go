@@ -9,7 +9,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/golang/protobuf/proto"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/milo"
 	"github.com/luci/luci-go/logdog/api/logpb"
@@ -19,6 +18,7 @@ import (
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 )

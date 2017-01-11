@@ -5,11 +5,9 @@
 package hierarchy
 
 import (
-	"sort"
-
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/grpc/grpcutil"
-	"github.com/luci/luci-go/logdog/appengine/coordinator"
+	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
@@ -23,18 +21,12 @@ func getProjects(c context.Context, r *Request) (*List, error) {
 	}
 
 	// Get all user-accessible active projects.
-	allPcfgs, err := coordinator.ActiveUserProjects(c)
+	projects, err := config.ActiveUserProjects(c)
 	if err != nil {
 		// If there is an error, we will refrain from filtering projects.
 		log.WithError(err).Warningf(c, "Failed to get user project list.")
 		return nil, grpcutil.Internal
 	}
-
-	projects := make(projectNameSlice, 0, len(allPcfgs))
-	for project := range allPcfgs {
-		projects = append(projects, project)
-	}
-	sort.Sort(projects)
 
 	next := cfgtypes.ProjectName(r.Next)
 	skip := r.Skip
@@ -66,10 +58,3 @@ func getProjects(c context.Context, r *Request) (*List, error) {
 
 	return &l, nil
 }
-
-// projectNameSlice is a sortable slice of cfgtypes.ProjectName.
-type projectNameSlice []cfgtypes.ProjectName
-
-func (s projectNameSlice) Len() int           { return len(s) }
-func (s projectNameSlice) Less(i, j int) bool { return s[i] < s[j] }
-func (s projectNameSlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }

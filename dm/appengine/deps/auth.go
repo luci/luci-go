@@ -5,40 +5,27 @@
 package deps
 
 import (
-	"fmt"
-	"strings"
-
-	"google.golang.org/grpc/codes"
-
-	"github.com/golang/protobuf/proto"
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/dm/api/acls"
 	"github.com/luci/luci-go/grpc/grpcutil"
+	"github.com/luci/luci-go/luci_config/server/cfgclient"
+	"github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
 	"github.com/luci/luci-go/server/auth"
+
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
 )
 
-func getTrimmedAppID(c context.Context) string {
-	// custom domains show up as "foo.com:appid"
-	toks := strings.Split(info.AppID(c), ":")
-	return toks[len(toks)-1]
-}
-
 func loadAcls(c context.Context) (ret *acls.Acls, err error) {
-	aid := getTrimmedAppID(c)
-	cSet := fmt.Sprintf("services/%s", aid)
+	cSet := cfgclient.CurrentServiceConfigSet(c)
 	file := "acls.cfg"
-	aclCfg, err := config.GetConfig(c, cSet, file, false)
-	if err != nil {
+
+	ret = &acls.Acls{}
+	if err := cfgclient.Get(c, cfgclient.AsService, cSet, file, textproto.Message(ret), nil); err != nil {
 		return nil, errors.Annotate(err).Transient().
 			D("cSet", cSet).D("file", file).InternalReason("loading config").Err()
 	}
-
-	ret = &acls.Acls{}
-	err = proto.UnmarshalText(aclCfg.Content, ret)
 	return
 }
 

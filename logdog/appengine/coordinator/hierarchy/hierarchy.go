@@ -9,12 +9,13 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 
-	ds "github.com/luci/gae/service/datastore"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+
+	ds "github.com/luci/gae/service/datastore"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"

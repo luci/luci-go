@@ -9,13 +9,16 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/dm/api/distributor"
 	"github.com/luci/luci-go/dm/api/service/v1"
+	"github.com/luci/luci-go/luci_config/server/cfgclient"
+	"github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
 	"github.com/luci/luci-go/tumble"
+
+	"github.com/golang/protobuf/proto"
+
 	"golang.org/x/net/context"
 )
 
@@ -122,18 +125,17 @@ func (r *registry) MakeDistributor(c context.Context, cfgName string) (d D, ver 
 // loadConfig loads the named distributor configuration from luci-config,
 // possibly using the in-memory or memcache version.
 func loadConfig(c context.Context, cfgName string) (ret *Config, err error) {
-	aid := info.TrimmedAppID(c)
-	distCfgObj, err := config.GetConfig(c, fmt.Sprintf("services/%s", aid), "distributors.cfg", false)
-	if err != nil {
+	configSet := cfgclient.CurrentServiceConfigSet(c)
+
+	var (
+		distCfg distributor.Config
+		meta    cfgclient.Meta
+	)
+	if err = cfgclient.Get(c, cfgclient.AsService, configSet, "distributors.cfg", textproto.Message(&distCfg), &meta); err != nil {
 		return
 	}
 
-	cfgVersion := distCfgObj.Revision
-	distCfg := &distributor.Config{}
-	if err = proto.UnmarshalText(distCfgObj.Content, distCfg); err != nil {
-		return
-	}
-
+	cfgVersion := meta.Revision
 	cfg, ok := distCfg.DistributorConfigs[cfgName]
 	if !ok {
 		err = fmt.Errorf("unknown distributor configuration: %q", cfgName)

@@ -15,6 +15,7 @@ import (
 	"github.com/luci/luci-go/logdog/client/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+
 	"github.com/maruel/subcommands"
 )
 

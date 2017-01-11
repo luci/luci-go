@@ -26,7 +26,7 @@ func (s *server) GetConfig(c context.Context, req *google.Empty) (*logdog.GetCon
 
 	return &logdog.GetConfigResponse{
 		ConfigServiceUrl:  gcfg.ConfigServiceURL.String(),
-		ConfigSet:         gcfg.ConfigSet,
+		ConfigSet:         string(gcfg.ConfigSet),
 		ServiceConfigPath: gcfg.ServiceConfigPath,
 	}, nil
 }

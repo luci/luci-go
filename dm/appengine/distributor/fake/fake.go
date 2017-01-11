@@ -11,8 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/config"
 	config_mem "github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/common/gcloud/pubsub"
 	googlepb "github.com/luci/luci-go/common/proto/google"
@@ -20,11 +18,14 @@ import (
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/distributor"
 	"github.com/luci/luci-go/dm/appengine/model"
+	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/secrets/testsecrets"
 	"github.com/luci/luci-go/tumble"
+
+	"github.com/golang/protobuf/proto"
 	"github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -55,11 +56,12 @@ func Setup(fn distributor.FinishExecutionFn) (ttest *tumble.Testing, c context.C
 	ttest = &tumble.Testing{}
 	c = ttest.Context()
 	c = testsecrets.Use(c)
-	c = config.SetImplementation(c, config_mem.New(map[string]config_mem.ConfigSet{
+
+	c = testconfig.WithCommonClient(c, config_mem.New(map[string]config_mem.ConfigSet{
 		"services/app": {
 			"acls.cfg": `
-			readers: "reader_group"
-			writers: "writer_group"
+				readers: "reader_group"
+				writers: "writer_group"
 			`,
 		},
 	}))

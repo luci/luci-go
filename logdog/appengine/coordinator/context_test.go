@@ -10,10 +10,10 @@ import (
 	"testing"
 
 	"github.com/luci/gae/impl/memory"
-	luciConfig "github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"github.com/luci/luci-go/luci_config/server/cfgclient"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/auth/identity"
@@ -39,7 +39,7 @@ func (s *testServices) ProjectConfig(c context.Context, project cfgtypes.Project
 	cfg, ok := s.configs[project]
 	switch {
 	case !ok:
-		return nil, luciConfig.ErrNoConfig
+		return nil, cfgclient.ErrNoConfig
 
 	case cfg == nil:
 		return nil, config.ErrInvalidConfig

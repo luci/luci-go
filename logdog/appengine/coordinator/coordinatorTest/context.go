@@ -11,12 +11,12 @@ import (
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
-	luciConfig "github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/common/data/caching/cacheContext"
 	"github.com/luci/luci-go/common/gcloud/gs"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
+	configPB "github.com/luci/luci-go/common/proto/config"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
@@ -24,6 +24,9 @@ import (
 	"github.com/luci/luci-go/logdog/common/storage/archive"
 	"github.com/luci/luci-go/logdog/common/storage/bigtable"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"github.com/luci/luci-go/luci_config/server/cfgclient"
+	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
+	"github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/auth/identity"
@@ -51,9 +54,6 @@ type Environment struct {
 
 	// Config is the luci-config configuration map that is installed.
 	Config map[string]memory.ConfigSet
-	// ConfigIface is a reference to the memory config.Interface that Config is
-	// installed into.
-	ConfigIface luciConfig.Interface
 
 	// Services is the set of installed Coordinator services.
 	Services Services
@@ -90,7 +90,6 @@ func (e *Environment) JoinGroup(g string) {
 // LeaveAllGroups clears all auth groups that the user is currently a member of.
 func (e *Environment) LeaveAllGroups() {
 	e.AuthState.IdentityGroups = nil
-	e.JoinGroup("all")
 }
 
 // ClearCoordinatorConfig removes the Coordinator configuration entry,
@@ -125,18 +124,12 @@ func (e *Environment) ModProjectConfig(c context.Context, proj cfgtypes.ProjectN
 // IterateTumbleAll iterates all Tumble instances across all namespaces.
 func (e *Environment) IterateTumbleAll(c context.Context) { e.Tumble.IterateAll(c) }
 
-func (e *Environment) modTextProtobuf(c context.Context, configSet cfgtypes.ConfigSet, path string, msg proto.Message, fn func()) {
-	cfg, err := e.ConfigIface.GetConfig(c, string(configSet), path, false)
+func (e *Environment) modTextProtobuf(c context.Context, configSet cfgtypes.ConfigSet, path string,
+	msg proto.Message, fn func()) {
 
-	switch err {
-	case nil:
-		if err := proto.UnmarshalText(cfg.Content, msg); err != nil {
-			panic(err)
-		}
-
-	case luciConfig.ErrNoConfig:
+	switch err := cfgclient.Get(c, cfgclient.AsService, configSet, path, textproto.Message(msg), nil); err {
+	case nil, cfgclient.ErrNoConfig:
 		break
-
 	default:
 		panic(err)
 	}
@@ -214,14 +207,16 @@ func Install() (context.Context, *Environment) {
 	c = settings.Use(c, settings.New(&settings.MemoryStorage{}))
 
 	// Setup luci-config configuration.
-	e.ConfigIface = memory.New(e.Config)
-	c = luciConfig.SetImplementation(c, e.ConfigIface)
+	c = testconfig.WithCommonClient(c, memory.New(e.Config))
 
 	// luci-config: Projects.
 	projectName := info.AppID(c)
 	addProjectConfig := func(proj cfgtypes.ProjectName, access ...string) {
+		projectAccesses := make([]string, len(access))
+
+		// Build our service config. Also builds "projectAccesses".
 		e.ModProjectConfig(c, proj, func(pcfg *svcconfig.ProjectConfig) {
-			for _, a := range access {
+			for i, a := range access {
 				parts := strings.SplitN(a, ":", 2)
 				group, field := parts[0], &pcfg.ReaderAuthGroups
 				if len(parts) == 2 {
@@ -235,6 +230,15 @@ func Install() (context.Context, *Environment) {
 					}
 				}
 				*field = append(*field, group)
+				projectAccesses[i] = fmt.Sprintf("group:%s", group)
+			}
+		})
+
+		var pcfg configPB.ProjectCfg
+		e.modTextProtobuf(c, cfgtypes.ProjectConfigSet(proj), cfgclient.ProjectConfigPath, &pcfg, func() {
+			pcfg = configPB.ProjectCfg{
+				Name:   proto.String(string(proj)),
+				Access: projectAccesses,
 			}
 		})
 	}
@@ -278,6 +282,7 @@ func Install() (context.Context, *Environment) {
 
 	// Setup authentication state.
 	e.LeaveAllGroups()
+	e.JoinGroup("all")
 
 	// Setup our default Coordinator services.
 	e.Services = Services{

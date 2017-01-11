@@ -12,7 +12,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/clock/clockflag"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
@@ -26,6 +25,8 @@ import (
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 )
 

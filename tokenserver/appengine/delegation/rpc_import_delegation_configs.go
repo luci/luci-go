@@ -13,11 +13,11 @@ import (
 	"google.golang.org/grpc/codes"
 
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
 
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/luci_config/server/cfgclient"
+	"github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 )
@@ -30,18 +30,18 @@ type ImportDelegationConfigsRPC struct {
 
 // ImportDelegationConfigs fetches configs from from luci-config right now.
 func (r *ImportDelegationConfigsRPC) ImportDelegationConfigs(c context.Context, _ *google.Empty) (*admin.ImportedConfigs, error) {
-	cfg, err := fetchConfigFile(c, delegationCfg)
+	msg, meta, err := fetchConfigDelegationPermissions(c, delegationCfg)
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "can't read config file - %s", err)
 	}
-	logging.Infof(c, "Importing %q at rev %s", delegationCfg, cfg.Revision)
+	logging.Infof(c, "Importing %q at rev %s", delegationCfg, meta.Revision)
 
 	// This is returned on successful import.
 	successResp := &admin.ImportedConfigs{
 		ImportedConfigs: []*admin.ImportedConfigs_ConfigFile{
 			{
 				Name:     delegationCfg,
-				Revision: cfg.Revision,
+				Revision: meta.Revision,
 			},
 		},
 	}
@@ -51,18 +51,14 @@ func (r *ImportDelegationConfigsRPC) ImportDelegationConfigs(c context.Context, 
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "can't read existing config - %s", err)
 	}
-	if existing.Revision == cfg.Revision {
-		logging.Infof(c, "Up-to-date at rev %s", cfg.Revision)
+	if existing.Revision == meta.Revision {
+		logging.Infof(c, "Up-to-date at rev %s", meta.Revision)
 		return successResp, nil
 	}
 
 	// Validate the new config before storing.
-	msg := &admin.DelegationPermissions{}
-	if err = proto.UnmarshalText(cfg.Content, msg); err != nil {
-		return nil, grpc.Errorf(codes.InvalidArgument, "can't parse config file - %s", err)
-	}
 	if merr := ValidateConfig(msg); len(merr) != 0 {
-		logging.Errorf(c, "The config at rev %s is invalid: %s", cfg.Revision, merr)
+		logging.Errorf(c, "The config at rev %s is invalid: %s", meta.Revision, merr)
 		for _, err := range merr {
 			logging.Errorf(c, "%s", err)
 		}
@@ -75,7 +71,7 @@ func (r *ImportDelegationConfigsRPC) ImportDelegationConfigs(c context.Context, 
 		return nil, grpc.Errorf(codes.Internal, "can't serialize proto - %s", err)
 	}
 	imported := DelegationConfig{
-		Revision:     cfg.Revision,
+		Revision:     meta.Revision,
 		Config:       blob,
 		ParsedConfig: msg,
 	}
@@ -87,10 +83,19 @@ func (r *ImportDelegationConfigsRPC) ImportDelegationConfigs(c context.Context, 
 	return successResp, nil
 }
 
-// fetchConfigFile fetches a file from this services' config set.
-func fetchConfigFile(c context.Context, path string) (*config.Config, error) {
-	configSet := "services/" + info.AppID(c)
+// fetchConfigDelegationPermissions fetches a file from this services' config set.
+func fetchConfigDelegationPermissions(c context.Context, path string) (*admin.DelegationPermissions, *cfgclient.Meta, error) {
+	configSet := cfgclient.CurrentServiceConfigSet(c)
 	logging.Infof(c, "Reading %q from config set %q", path, configSet)
-	c, _ = context.WithTimeout(c, 30*time.Second) // URL fetch deadline
-	return config.GetConfig(c, configSet, path, false)
+	c, cancelFunc := context.WithTimeout(c, 30*time.Second) // URL fetch deadline
+	defer cancelFunc()
+
+	var (
+		meta cfgclient.Meta
+		msg  admin.DelegationPermissions
+	)
+	if err := cfgclient.Get(c, cfgclient.AsService, configSet, path, textproto.Message(&msg), &meta); err != nil {
+		return nil, nil, err
+	}
+	return &msg, &meta, nil
 }

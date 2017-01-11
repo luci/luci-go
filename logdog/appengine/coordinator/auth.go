@@ -71,18 +71,16 @@ func checkMember(c context.Context, groups ...string) error {
 	}
 
 	id := auth.CurrentIdentity(c)
-	for _, group := range groups {
-		is, err := auth.IsMember(c, group)
-		if err != nil {
-			return err
-		}
-		if is {
-			log.Fields{
-				"identity": id,
-				"group":    group,
-			}.Debugf(c, "User access granted.")
-			return nil
-		}
+	is, err := auth.IsMember(c, groups...)
+	if err != nil {
+		return err
+	}
+	if is {
+		log.Fields{
+			"identity": id,
+			"group":    groups,
+		}.Debugf(c, "User access granted.")
+		return nil
 	}
 
 	return &MembershipError{

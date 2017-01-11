@@ -7,13 +7,12 @@ package config
 import (
 	"net/url"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"github.com/luci/luci-go/luci_config/server/cfgclient"
+	"github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
 
 	"golang.org/x/net/context"
 )
@@ -32,7 +31,7 @@ type Config struct {
 	// ConfigServiceURL is the config service's URL.
 	ConfigServiceURL url.URL `json:"-"`
 	// ConfigSet is the name of the service config set that is being used.
-	ConfigSet string `json:"-"`
+	ConfigSet cfgtypes.ConfigSet `json:"-"`
 	// ServiceConfigPath is the path within ConfigSet of the service
 	// configuration.
 	ServiceConfigPath string `json:"-"`
@@ -41,8 +40,7 @@ type Config struct {
 // ServiceConfigPath returns the config set and path for this application's
 // service configuration.
 func ServiceConfigPath(c context.Context) (cfgtypes.ConfigSet, string) {
-	appID := info.AppID(c)
-	return cfgtypes.ServiceConfigSet(appID), svcconfig.ServiceConfigFilename
+	return cfgclient.CurrentServiceConfigSet(c), svcconfig.ServiceConfigFilename
 }
 
 // Load loads the service configuration. This includes:
@@ -52,33 +50,22 @@ func ServiceConfigPath(c context.Context) (cfgtypes.ConfigSet, string) {
 //
 // The service config is minimally validated prior to being returned.
 func Load(c context.Context) (*Config, error) {
-	configSet, configPath := ServiceConfigPath(c)
-	serviceCfg, err := config.GetConfig(c, string(configSet), configPath, false)
-	if err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-			"configSet":  configSet,
-			"configPath": configPath,
-		}.Errorf(c, "Failed to load configuration from config service.")
-		return nil, err
-	}
-
 	// Unmarshal the config into service configuration.
 	cfg := Config{
-		ConfigServiceURL:  config.ServiceURL(c),
-		ConfigSet:         serviceCfg.ConfigSet,
-		ServiceConfigPath: serviceCfg.Path,
+		ConfigServiceURL: cfgclient.ServiceURL(c),
 	}
+	cfg.ConfigSet, cfg.ServiceConfigPath = ServiceConfigPath(c)
 
-	if err := proto.UnmarshalText(serviceCfg.Content, &cfg.Config); err != nil {
+	// Load our service-level config.
+	if err := cfgclient.Get(c, cfgclient.AsService, cfg.ConfigSet, cfg.ServiceConfigPath,
+		textproto.Message(&cfg.Config), nil); err != nil {
+
 		log.Fields{
-			log.ErrorKey:  err,
-			"size":        len(serviceCfg.Content),
-			"contentHash": serviceCfg.ContentHash,
-			"configSet":   serviceCfg.ConfigSet,
-			"revision":    serviceCfg.Revision,
-		}.Errorf(c, "Failed to unmarshal configuration protobuf.")
-		return nil, ErrInvalidConfig
+			log.ErrorKey: err,
+			"configSet":  cfg.ConfigSet,
+			"configPath": cfg.ServiceConfigPath,
+		}.Errorf(c, "Failed to load configuration from config service.")
+		return nil, err
 	}
 
 	// Validate the configuration.

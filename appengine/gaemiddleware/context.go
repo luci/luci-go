@@ -14,7 +14,6 @@ import (
 	"github.com/luci/gae/impl/prod"
 	"github.com/luci/gae/service/urlfetch"
 
-	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/data/caching/cacheContext"
 	"github.com/luci/luci-go/common/data/caching/proccache"
 	"github.com/luci/luci-go/common/logging"
@@ -28,10 +27,10 @@ import (
 	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaeauth/server/gaesigner"
-	"github.com/luci/luci-go/appengine/gaeconfig"
 	"github.com/luci/luci-go/appengine/gaesecrets"
 	"github.com/luci/luci-go/appengine/gaesettings"
 	"github.com/luci/luci-go/appengine/tsmon"
+	"github.com/luci/luci-go/luci_config/appengine/gaeconfig"
 )
 
 var (
@@ -87,7 +86,7 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 
 	// The rest of the service may use applied configuration.
 	c = proccache.Use(c, globalProcessCache)
-	c = config.SetImplementation(c, gaeconfig.New(c))
+	c = gaeconfig.Use(c)
 	c = gaesecrets.Use(c, nil)
 	c = auth.SetConfig(c, globalAuthConfig)
 
