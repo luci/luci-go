@@ -108,6 +108,16 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	r.hrouter.ServeHTTP(rw, req)
 }
 
+// GetParams parases the httprouter.Params from the supplied method and path.
+//
+// If nothing is registered for method/path, GetParams will return false.
+func (r *Router) GetParams(method, path string) (httprouter.Params, bool) {
+	if h, p, _ := r.hrouter.Lookup(method, path); h != nil {
+		return p, true
+	}
+	return nil, false
+}
+
 // adapt adapts given middleware chain and handler into a httprouter-style handle.
 func (r *Router) adapt(mc MiddlewareChain, h Handler) httprouter.Handle {
 	return httprouter.Handle(func(rw http.ResponseWriter, req *http.Request, p httprouter.Params) {

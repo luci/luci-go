@@ -32,7 +32,7 @@ func TestTumbleFiddlyBits(t *testing.T) {
 
 			So(fireTasks(ctx, tt.GetConfig(ctx), map[taskShard]struct{}{
 				taskShard{10, minTS}: {},
-			}), ShouldBeTrue)
+			}, true), ShouldBeTrue)
 			tt.Drain(ctx)
 
 			So(l.Has(logging.Info,

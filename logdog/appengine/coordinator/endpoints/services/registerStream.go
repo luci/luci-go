@@ -160,8 +160,8 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 		}
 
 		// The stream does not exist. Proceed with transactional registration.
-		lsKey := ds.KeyForObj(c, ls)
-		err = tumble.RunUnbuffered(c, lsKey, func(c context.Context) ([]tumble.Mutation, error) {
+		lstKey := ds.KeyForObj(c, lst)
+		err = tumble.RunUnbuffered(c, lstKey, func(c context.Context) ([]tumble.Mutation, error) {
 			// Load our state and stream (transactional).
 			switch err := ds.Get(c, ls, lst); {
 			case err == nil:
@@ -251,7 +251,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 			}
 
 			aeName := cat.TaskName(c)
-			if err := tumble.PutNamedMutations(c, lsKey, map[string]tumble.Mutation{aeName: &cat}); err != nil {
+			if err := tumble.PutNamedMutations(c, lstKey, map[string]tumble.Mutation{aeName: &cat}); err != nil {
 				log.WithError(err).Errorf(c, "Failed to write named mutations.")
 				return nil, grpcutil.Internal
 			}

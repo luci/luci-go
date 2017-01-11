@@ -6,13 +6,16 @@ package tumble
 
 import (
 	"math"
+	"net/http"
 	"testing"
 	"time"
 
-	tq "github.com/luci/gae/service/taskqueue"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/memlogger"
+
+	"github.com/luci/gae/service/info"
+	tq "github.com/luci/gae/service/taskqueue"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -64,7 +67,7 @@ func TestFireTasks(t *testing.T) {
 		ctx := tt.Context()
 
 		Convey("empty", func() {
-			So(fireTasks(ctx, tt.GetConfig(ctx), nil), ShouldBeTrue)
+			So(fireTasks(ctx, tt.GetConfig(ctx), nil, true), ShouldBeTrue)
 			So(len(tq.GetTestable(ctx).GetScheduledTasks()[baseName]), ShouldEqual, 0)
 		})
 
@@ -75,25 +78,44 @@ func TestFireTasks(t *testing.T) {
 
 				// since DelayedMutations is false, this timew will be reset
 				taskShard{5, mkTimestamp(tt.GetConfig(ctx), testclock.TestTimeUTC.Add(time.Minute))}: {},
-			}), ShouldBeTrue)
-			q := tq.GetTestable(ctx).GetScheduledTasks()[baseName]
-			So(q["-62132730888_2"], ShouldResemble, &tq.Task{
-				Name:   "-62132730888_2",
-				Method: "POST",
-				Path:   processURL(-62132730888, 2),
-				ETA:    testclock.TestTimeUTC.Add(6 * time.Second).Round(time.Second),
+			}, true), ShouldBeTrue)
+			So(tq.GetTestable(ctx).GetScheduledTasks()[baseName], ShouldResemble, map[string]*tq.Task{
+				"-62132730888__2": {
+					Name:   "-62132730888__2",
+					Method: "POST",
+					Path:   processURL(-62132730888, 2, "", true),
+					ETA:    testclock.TestTimeUTC.Add(6 * time.Second).Round(time.Second),
+				},
+				"-62132730888__7": {
+					Name:   "-62132730888__7",
+					Method: "POST",
+					Path:   processURL(-62132730888, 7, "", true),
+					ETA:    testclock.TestTimeUTC.Add(6 * time.Second).Round(time.Second),
+				},
+				"-62132730888__5": {
+					Name:   "-62132730888__5",
+					Method: "POST",
+					Path:   processURL(-62132730888, 5, "", true),
+					ETA:    testclock.TestTimeUTC.Add(6 * time.Second).Round(time.Second),
+				},
 			})
-			So(q["-62132730888_7"], ShouldResemble, &tq.Task{
-				Name:   "-62132730888_7",
-				Method: "POST",
-				Path:   processURL(-62132730888, 7),
-				ETA:    testclock.TestTimeUTC.Add(6 * time.Second).Round(time.Second),
-			})
-			So(q["-62132730888_5"], ShouldResemble, &tq.Task{
-				Name:   "-62132730888_5",
-				Method: "POST",
-				Path:   processURL(-62132730888, 5),
-				ETA:    testclock.TestTimeUTC.Add(6 * time.Second).Round(time.Second),
+		})
+
+		Convey("namespaced", func() {
+			ctx = info.MustNamespace(ctx, "foo.bar")
+			So(fireTasks(ctx, tt.GetConfig(ctx), map[taskShard]struct{}{
+				taskShard{2, minTS}: {},
+			}, true), ShouldBeTrue)
+			So(tq.GetTestable(ctx).GetScheduledTasks()[baseName], ShouldResemble, map[string]*tq.Task{
+				"-62132730888_foo_bar_2": {
+					Name:   "-62132730888_foo_bar_2",
+					Method: "POST",
+					Header: http.Header{
+						"X-Appengine-Current-Namespace": []string{"foo.bar"},
+					},
+					Path: processURL(-62132730888, 2, "foo.bar", true),
+					ETA:  testclock.TestTimeUTC.Add(6 * time.Second).Round(time.Second),
+				},
 			})
 		})
 
@@ -104,13 +126,14 @@ func TestFireTasks(t *testing.T) {
 			delayedTS := mkTimestamp(cfg, testclock.TestTimeUTC.Add(time.Minute*10))
 			So(fireTasks(ctx, cfg, map[taskShard]struct{}{
 				taskShard{1, delayedTS}: {},
-			}), ShouldBeTrue)
-			q := tq.GetTestable(ctx).GetScheduledTasks()[baseName]
-			So(q["-62132730288_1"], ShouldResemble, &tq.Task{
-				Name:   "-62132730288_1",
-				Method: "POST",
-				Path:   processURL(-62132730288, 1),
-				ETA:    testclock.TestTimeUTC.Add(time.Minute * 10).Add(6 * time.Second).Round(time.Second),
+			}, true), ShouldBeTrue)
+			So(tq.GetTestable(ctx).GetScheduledTasks()[baseName], ShouldResemble, map[string]*tq.Task{
+				"-62132730288__1": {
+					Name:   "-62132730288__1",
+					Method: "POST",
+					Path:   processURL(-62132730288, 1, "", true),
+					ETA:    testclock.TestTimeUTC.Add(time.Minute * 10).Add(6 * time.Second).Round(time.Second),
+				},
 			})
 		})
 	})

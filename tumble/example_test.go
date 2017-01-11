@@ -261,8 +261,23 @@ func init() {
 	Register((*WriteReceipt)(nil))
 }
 
+func shouldHaveLogMessage(actual interface{}, expected ...interface{}) string {
+	l := actual.(*memlogger.MemLogger)
+	if len(expected) != 1 {
+		panic("expected must contain a single string")
+	}
+	exp := expected[0].(string)
+
+	msgs := l.Messages()
+	msgText := make([]string, len(msgs))
+	for i, msg := range msgs {
+		msgText[i] = msg.Msg
+	}
+	return ShouldContainSubstring(strings.Join(msgText, "\n"), exp)
+}
+
 func testHighLevelImpl(t *testing.T, namespaces []string) {
-	Convey("Tumble", t, func() {
+	FocusConvey("Tumble", t, func() {
 
 		Convey("Check registration", func() {
 			So(registry, ShouldContainKey, "*tumble.SendMessage")
@@ -276,37 +291,21 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 			})
 		})
 
-		Convey("Good", func() {
+		FocusConvey("Good", func() {
 			testing := &Testing{}
+			testing.Service.Namespaces = func(context.Context) ([]string, error) { return namespaces, nil }
+
 			ctx := testing.Context()
 
-			if namespaces == nil {
-				// Non-namespaced test.
-				namespaces = []string{""}
-			} else {
-				cfg := testing.GetConfig(ctx)
-				cfg.Namespaced = true
-				testing.UpdateSettings(ctx, cfg)
-			}
-
-			testing.Service.Namespaces = func(context.Context) ([]string, error) {
-				return namespaces, nil
-			}
-
-			forEachNS := func(c context.Context, f func(context.Context, int)) {
+			forEachNS := func(c context.Context, fn func(context.Context, int)) {
 				for i, ns := range namespaces {
-					nc := c
-					if ns != "" {
-						nc = info.MustNamespace(c, ns)
-					}
-					f(nc, i)
+					fn(info.MustNamespace(c, ns), i)
 				}
 			}
 
 			outMsgs := make([]*OutgoingMessage, len(namespaces))
 
 			l := logging.Get(ctx).(*memlogger.MemLogger)
-			_ = l
 
 			charlie := &User{Name: "charlie"}
 			forEachNS(ctx, func(ctx context.Context, i int) {
@@ -323,7 +322,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 					So(err, ShouldBeNil)
 				})
 
-				testing.Drain(ctx)
+				testing.DrainAll(ctx)
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
 					So(ds.Get(ctx, outMsgs[i]), ShouldBeNil)
@@ -339,8 +338,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				})
 
 				testing.AdvanceTime(ctx)
-
-				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
+				So(testing.IterateAll(ctx), ShouldBeGreaterThan, 0)
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
 					So(ds.Get(ctx, outMsgs[i]), ShouldBeNil)
@@ -365,18 +363,8 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				})
 
 				l.Reset()
-				testing.Drain(ctx)
-
-				if !testing.GetConfig(ctx).Namespaced {
-					So(l.Has(logging.Warning, "loading mutation with different code version", map[string]interface{}{
-						"key":         "tumble.23.lock",
-						"clientID":    "-62132730888_23",
-						"mut_version": "otherCodeVersion",
-						"cur_version": "testVersionID",
-					}), ShouldBeTrue)
-				} else {
-					// TODO: Assert log messages for namespaced test?
-				}
+				testing.DrainAll(ctx)
+				So(l, shouldHaveLogMessage, "loading mutation with different code version")
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
 					So(ds.Get(ctx, outMsgs[i]), ShouldBeNil)
@@ -384,11 +372,11 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				})
 			})
 
-			Convey("sending to 100 people is no big deal", func() {
+			FocusConvey("sending to 100 people is no big deal", func() {
 				ds.GetTestable(gctx).Consistent(false)
 
 				users := make([]User, 100)
-				recipients := make([]string, 100)
+				recipients := make([]string, len(users))
 				for i := range recipients {
 					name := base64.StdEncoding.EncodeToString([]byte{byte(i)})
 					recipients[i] = name
@@ -406,32 +394,23 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				// do all the SendMessages
 				ds.GetTestable(gctx).CatchupIndexes()
 				testing.AdvanceTime(ctx)
-				testing.Iterate(ctx)
+				testing.IterateAll(ctx)
 
 				// do all the WriteReceipts
 				l.Reset()
 				ds.GetTestable(gctx).CatchupIndexes()
 				testing.AdvanceTime(ctx)
-				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
+				So(testing.IterateAll(ctx), ShouldBeGreaterThan, 0)
 
 				// hacky proof that all 100 incoming message receipts were buffered
-				// appropriately.
-				//
-				// The extra mutation at the end is supposed to be delayed, but we
-				// didn't enable Delayed messages in this config.
-				if !testing.GetConfig(ctx).Namespaced {
-					So(l.Has(logging.Info, "successfully processed 100 mutations (0 tail-call), adding 0 more", map[string]interface{}{
-						"key":      "tumble.23.lock",
-						"clientID": "-62132730884_23",
-					}), ShouldBeTrue)
-				} else {
-					// TODO: Assert log messages for namespaced test?
-				}
+				// appropriately, +1 for the outgoing tail call, which will be processed
+				// immediately since delayed mutations are not enabled.
+				So(l, shouldHaveLogMessage, "successfully processed 101 mutations (1 tail-call), delta 0")
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
 					So(ds.Get(ctx, outMsgs[i]), ShouldBeNil)
 					So(outMsgs[i].Success.All(true), ShouldBeTrue)
-					So(outMsgs[i].Success.Size(), ShouldEqual, 100)
+					So(outMsgs[i].Success.Size(), ShouldEqual, len(users))
 				})
 			})
 
@@ -459,7 +438,9 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				testing.AdvanceTime(ctx)
 
 				// forgot to add the extra index!
-				So(func() { testing.Iterate(ctx) }, ShouldPanicLike, "Insufficient indexes")
+				So(func() { testing.IterateAll(ctx) }, ShouldPanic)
+				So(l, shouldHaveLogMessage, "Insufficient indexes")
+
 				ds.GetTestable(gctx).AddIndexes(&ds.IndexDefinition{
 					Kind: "tumble.Mutation",
 					SortBy: []ds.IndexColumn{
@@ -469,12 +450,12 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				})
 				ds.GetTestable(gctx).CatchupIndexes()
 
-				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
+				So(testing.IterateAll(ctx), ShouldBeGreaterThan, 0)
 
 				// do all the WriteReceipts
 				ds.GetTestable(gctx).CatchupIndexes()
 				testing.AdvanceTime(ctx)
-				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
+				So(testing.IterateAll(ctx), ShouldBeGreaterThan, 0)
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
 					So(ds.Get(ctx, outMsgs[i]), ShouldBeNil)
@@ -487,21 +468,13 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				l.Reset()
 				ds.GetTestable(gctx).CatchupIndexes()
 				testing.AdvanceTime(ctx)
-				So(testing.Iterate(ctx), ShouldEqual, 0)
-
-				if !testing.GetConfig(ctx).Namespaced {
-					So(l.Has(
-						logging.Info, ("skipping task: ETA(0001-02-03 04:10:24 +0000 UTC): "+
-							processURL(-62132730576, 23)), nil,
-					), ShouldBeTrue)
-				} else {
-					// TODO: Assert log messages for namespaced test?
-				}
+				So(testing.IterateAll(ctx), ShouldEqual, 0)
+				So(l, shouldHaveLogMessage, "skipping task: ETA(0001-02-03 04:10:24 +0000 UTC)")
 
 				// Now it'll find something
 				ds.GetTestable(gctx).CatchupIndexes()
 				clock.Get(ctx).(testclock.TestClock).Add(time.Minute * 5)
-				So(testing.Iterate(ctx), ShouldBeGreaterThan, 0)
+				So(testing.IterateAll(ctx), ShouldBeGreaterThan, 0)
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
 					So(ds.Get(ctx, outMsgs[i]), ShouldBeNil)
@@ -510,9 +483,11 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 			})
 
 			Convey("named mutations work", func() {
-				cfg := testing.GetConfig(ctx)
-				cfg.Namespaced = false
-				testing.UpdateSettings(ctx, cfg)
+				if len(namespaces) > 1 {
+					// Disable this test for multi-namespace case.
+					return
+				}
+
 				testing.EnableDelayedMutations(ctx)
 
 				So(ds.Put(gctx,
@@ -524,14 +499,14 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				So(err, ShouldBeNil)
 
 				testing.AdvanceTime(ctx)
-				So(testing.Iterate(ctx), ShouldEqual, 1) // sent to "recipient"
+				So(testing.IterateAll(ctx), ShouldEqual, 1) // sent to "recipient"
 
 				testing.AdvanceTime(ctx)
 				testing.AdvanceTime(ctx)
-				So(testing.Iterate(ctx), ShouldEqual, 1) // receipt from "recipient"
+				So(testing.IterateAll(ctx), ShouldEqual, 1) // receipt from "recipient"
 
 				clock.Get(ctx).(testclock.TestClock).Add(time.Minute * 5)
-				So(testing.Iterate(ctx), ShouldEqual, 1) // timeout!
+				So(testing.IterateAll(ctx), ShouldEqual, 1) // timeout!
 				So(l.HasFunc(func(ent *memlogger.LogEntry) bool {
 					return strings.Contains(ent.Msg, "TimeoutMessageSend")
 				}), ShouldBeTrue)
@@ -542,26 +517,28 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				So(outMsg.Success.CountSet(), ShouldEqual, 1)
 
 				clock.Get(ctx).(testclock.TestClock).Add(time.Minute * 5)
-				So(testing.Iterate(ctx), ShouldEqual, 1) // WriteReceipt slowmojoe
+				So(testing.IterateAll(ctx), ShouldEqual, 1) // WriteReceipt slowmojoe
 
 				testing.AdvanceTime(ctx)
-				So(testing.Iterate(ctx), ShouldEqual, 1) // Notification submitted
+				So(testing.IterateAll(ctx), ShouldEqual, 1) // Notification submitted
 				So(ds.Get(gctx, outMsg), ShouldBeNil)
 				So(outMsg.Failure.CountSet(), ShouldEqual, 0)
 				So(outMsg.Success.CountSet(), ShouldEqual, 2)
 
 				testing.AdvanceTime(ctx)
 				clock.Get(ctx).(testclock.TestClock).Add(time.Minute * 5)
-				So(testing.Iterate(ctx), ShouldEqual, 1) // ReminderMessage set
+				So(testing.IterateAll(ctx), ShouldEqual, 1) // ReminderMessage set
 				So(ds.Get(gctx, outMsg), ShouldBeNil)
 				So(outMsg.Notified, ShouldBeTrue)
 
 			})
 
 			Convey("can cancel named mutations", func() {
-				cfg := testing.GetConfig(ctx)
-				cfg.Namespaced = false
-				testing.UpdateSettings(ctx, cfg)
+				if len(namespaces) > 1 {
+					// Disable this test for multi-namespace case.
+					return
+				}
+
 				testing.EnableDelayedMutations(ctx)
 
 				So(ds.Put(gctx,
@@ -573,18 +550,18 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				So(err, ShouldBeNil)
 
 				testing.AdvanceTime(ctx)
-				So(testing.Iterate(ctx), ShouldEqual, 2) // sent to "recipient" and "other"
+				So(testing.IterateAll(ctx), ShouldEqual, 2) // sent to "recipient" and "other"
 
 				testing.AdvanceTime(ctx)
 				testing.AdvanceTime(ctx)
-				So(testing.Iterate(ctx), ShouldEqual, 1) // receipt from "recipient" and "other", Notification pending
+				So(testing.IterateAll(ctx), ShouldEqual, 1) // receipt from "recipient" and "other", Notification pending
 
 				testing.AdvanceTime(ctx)
 				clock.Get(ctx).(testclock.TestClock).Add(time.Minute * 5)
-				So(testing.Iterate(ctx), ShouldEqual, 2) // ReminderMessage set
+				So(testing.IterateAll(ctx), ShouldEqual, 2) // ReminderMessage set
 
 				clock.Get(ctx).(testclock.TestClock).Add(time.Minute * 5)
-				So(testing.Iterate(ctx), ShouldEqual, 0) // Nothing else
+				So(testing.IterateAll(ctx), ShouldEqual, 0) // Nothing else
 
 				So(ds.Get(gctx, outMsg), ShouldBeNil)
 				So(outMsg.TimedOut, ShouldBeFalse)
@@ -601,14 +578,14 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 	})
 }
 
-func TestHighLevel(t *testing.T) {
+func TestHighLevelSingleNamespace(t *testing.T) {
 	t.Parallel()
 
-	testHighLevelImpl(t, nil)
+	testHighLevelImpl(t, []string{""})
 }
 
 func TestHighLevelMultiNamespace(t *testing.T) {
 	t.Parallel()
 
-	testHighLevelImpl(t, []string{"foo", "bar"})
+	testHighLevelImpl(t, []string{"foo", "bar.baz_qux"})
 }

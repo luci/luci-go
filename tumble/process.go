@@ -14,7 +14,6 @@ import (
 	"github.com/luci/gae/filter/txnBuf"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/datastore/serialize"
-	"github.com/luci/gae/service/info"
 	mc "github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/appengine/memlock"
 	"github.com/luci/luci-go/common/clock"
@@ -24,6 +23,12 @@ import (
 	"github.com/luci/luci-go/common/sync/parallel"
 
 	"golang.org/x/net/context"
+)
+
+const (
+	// minNoWorkDelay is the minimum amount of time to sleep in between rounds if
+	// there was no work done in that round.
+	minNoWorkDelay = time.Second
 )
 
 // expandedShardBounds returns the boundary of the expandedShard order that
@@ -53,95 +58,80 @@ func processShardQuery(c context.Context, cfg *Config, shard uint64) *ds.Query {
 		return nil
 	}
 
-	return ds.NewQuery("tumble.Mutation").
+	q := ds.NewQuery("tumble.Mutation").
 		Gte("ExpandedShard", low).Lte("ExpandedShard", high).
-		Project("TargetRoot").Distinct(true).
-		Limit(cfg.ProcessMaxBatchSize)
+		Project("TargetRoot").Distinct(true)
+
+	batchSize := cfg.ProcessMaxBatchSize
+	if batchSize > 0 {
+		if batchSize > math.MaxInt32 {
+			batchSize = math.MaxInt32
+		}
+		q = q.Limit(int32(batchSize))
+	}
+	return q
 }
 
-// processShard is the tumble backend endpoint. This accepts a shard number which
-// is expected to be < GlobalConfig.NumShards.
-func processShard(c context.Context, cfg *Config, namespaces []string, timestamp time.Time, shard uint64) error {
+// processShard is the tumble backend endpoint. This accepts a shard number
+// which is expected to be < GlobalConfig.NumShards.
+func processShard(c context.Context, cfg *Config, timestamp time.Time, shard uint64, loop bool) error {
 	logging.Fields{
 		"shard": shard,
 	}.Infof(c, "Processing tumble shard.")
 
 	q := processShardQuery(c, cfg, shard)
-
 	if q == nil {
 		logging.Warningf(c, "dead shard, quitting")
 		return nil
 	}
 
-	// If there are no namesapces, there is nothing to process.
-	if len(namespaces) == 0 {
-		logging.Infof(c, "no namespaces, quitting")
-		return nil
+	// Calculate our end itme. If we're not looping or we have a <= 0 duration,
+	// we will perform a single loop.
+	var endTime time.Time
+	if loop && cfg.ProcessLoopDuration > 0 {
+		endTime = clock.Now(c).Add(time.Duration(cfg.ProcessLoopDuration))
+		logging.Debugf(c, "Process loop is configured to exit after [%s] at %s",
+			cfg.ProcessLoopDuration.String(), endTime)
 	}
 
-	tasks := make([]*processTask, len(namespaces))
-	for i, ns := range namespaces {
-		tasks[i] = makeProcessTask(ns, timestamp, shard)
-	}
-
+	// Since memcache is namespaced, we don't need to include the namespace in our
+	// lock name.
+	task := makeProcessTask(timestamp, endTime, shard, loop)
 	lockKey := fmt.Sprintf("%s.%d.lock", baseName, shard)
 	clientID := fmt.Sprintf("%d_%d", timestamp.Unix(), shard)
 
-	var err error
-	for try := 0; try < 2; try++ {
-		err = memlock.TryWithLock(c, lockKey, clientID, func(c context.Context) error {
-			return parallel.FanOutIn(func(taskC chan<- func() error) {
-				for _, task := range tasks {
-					task := task
-
-					taskC <- func() error {
-						return task.process(c, cfg, q)
-					}
-				}
-			})
-		})
-		if err != memlock.ErrFailedToLock {
-			break
-		}
-		logging.Infof(c, "Couldn't obtain lock (try %d) (sleeping 2s)", try+1)
-		if tr := clock.Sleep(c, time.Second*2); tr.Incomplete() {
-			logging.Warningf(c, "sleep interrupted, context is done: %v", tr.Err)
-			return tr.Err
-		}
-	}
+	err := memlock.TryWithLock(c, lockKey, clientID, func(c context.Context) error {
+		return task.process(c, cfg, q)
+	})
 	if err == memlock.ErrFailedToLock {
 		logging.Infof(c, "Couldn't obtain lock (giving up): %s", err)
-		err = nil
+		return nil
 	}
 	return err
 }
 
-// processTask is a stateful processing task. It is bound to a specific
-// namespace.
+// processTask is a stateful processing task.
 type processTask struct {
-	namespace string
 	timestamp time.Time
+	endTime   time.Time
 	clientID  string
 	lastKey   string
 	banSets   map[string]stringset.Set
+	loop      bool
 }
 
-func makeProcessTask(namespace string, timestamp time.Time, shard uint64) *processTask {
+func makeProcessTask(timestamp, endTime time.Time, shard uint64, loop bool) *processTask {
 	return &processTask{
-		namespace: namespace,
 		timestamp: timestamp,
+		endTime:   endTime,
 		clientID:  fmt.Sprintf("%d_%d", timestamp.Unix(), shard),
 		lastKey:   fmt.Sprintf("%s.%d.last", baseName, shard),
 		banSets:   make(map[string]stringset.Set),
+		loop:      loop,
 	}
 }
 
 func (t *processTask) process(c context.Context, cfg *Config, q *ds.Query) error {
-	if t.namespace != "" {
-		c = logging.SetField(c, "namespace", t.namespace)
-		c = info.MustNamespace(c, t.namespace)
-	}
-
 	// this last key allows buffered tasks to early exit if some other shard
 	// processor has already processed past this task's target timestamp.
 	lastItm, err := mc.GetKey(c, t.lastKey)
@@ -164,9 +154,22 @@ func (t *processTask) process(c context.Context, cfg *Config, q *ds.Query) error
 	}
 	err = nil
 
+	// Loop until our shard processing session expires.
+	prd := processRoundDelay{
+		cfg: cfg,
+	}
+	prd.reset()
+
 	for {
-		processCounters := []*int64{}
-		err := parallel.WorkPool(int(cfg.NumGoroutines), func(ch chan<- func() error) {
+		var numProcessed, errCount, transientErrCount counter
+
+		// Run our query against a work pool.
+		//
+		// NO work pool methods will return errors, so there is no need to collect
+		// the result. Rather, any error that is encountered will atomically update
+		// the "errCount" counter (for non-transient errors) or "transientErrCount"
+		// counter (for transient errors).
+		_ = parallel.WorkPool(int(cfg.NumGoroutines), func(ch chan<- func() error) {
 			err := ds.Run(c, q, func(pm ds.PropertyMap) error {
 				root := pm.Slice("TargetRoot")[0].Value().(*ds.Key)
 				encRoot := root.Encode()
@@ -180,11 +183,8 @@ func (t *processTask) process(c context.Context, cfg *Config, q *ds.Query) error
 					bs = stringset.New(0)
 					t.banSets[encRoot] = bs
 				}
-				counter := new(int64)
-				processCounters = append(processCounters, counter)
-
 				ch <- func() error {
-					switch err := processRoot(c, cfg, root, bs, counter); err {
+					switch err := processRoot(c, cfg, root, bs, &numProcessed); err {
 					case nil:
 						return nil
 
@@ -193,19 +193,21 @@ func (t *processTask) process(c context.Context, cfg *Config, q *ds.Query) error
 							logging.ErrorKey: err,
 							"root":           root,
 						}.Warningf(c, "Transient error encountered processing root.")
-						return errors.WrapTransient(err)
+						transientErrCount.inc()
+						return nil
 
 					default:
 						logging.Fields{
 							logging.ErrorKey: err,
 							"root":           root,
 						}.Errorf(c, "Failed to process root.")
-						return err
+						errCount.inc()
+						return nil
 					}
 				}
 
-				if c.Err() != nil {
-					logging.Warningf(c, "Lost lock! %s", c.Err())
+				if err := c.Err(); err != nil {
+					logging.WithError(err).Warningf(c, "Context canceled (lost lock?).")
 					return ds.Stop
 				}
 				return nil
@@ -214,42 +216,63 @@ func (t *processTask) process(c context.Context, cfg *Config, q *ds.Query) error
 				var qstr string
 				if fq, err := q.Finalize(); err == nil {
 					qstr = fq.String()
-				} else {
-					qstr = fmt.Sprintf("unable to finalize: %v", err)
 				}
 
 				logging.Fields{
 					logging.ErrorKey: err,
 					"query":          qstr,
-				}.Errorf(c, "Failure to query.")
-				ch <- func() error {
-					return err
-				}
+				}.Errorf(c, "Failure to run shard query.")
+				errCount.inc()
 			}
 		})
-		if err != nil {
-			return err
-		}
-		numProcessed := int64(0)
-		for _, n := range processCounters {
-			numProcessed += *n
-		}
-		logging.Infof(c, "cumulatively processed %d items", numProcessed)
-		if numProcessed == 0 {
-			break
+
+		logging.Infof(c, "cumulatively processed %d items with %d errors(s) and %d transient error(s)",
+			numProcessed, errCount, transientErrCount)
+		switch {
+		case transientErrCount > 0:
+			return errors.WrapTransient(errors.New("transient error during shard processing"))
+		case errCount > 0:
+			return errors.New("encountered non-transient error during shard processing")
 		}
 
-		err = mc.Set(c, mc.NewItem(c, t.lastKey).SetValue(serialize.ToBytes(clock.Now(c).UTC())))
-		if err != nil {
-			logging.Warningf(c, "could not update last process memcache key %s: %s", t.lastKey, err)
+		now := clock.Now(c)
+		didWork := numProcessed > 0
+		if didWork {
+			err = mc.Set(c, mc.NewItem(c, t.lastKey).SetValue(serialize.ToBytes(now.UTC())))
+			if err != nil {
+				logging.Warningf(c, "could not update last process memcache key %s: %s", t.lastKey, err)
+			}
 		}
 
-		if tr := clock.Sleep(c, time.Duration(cfg.DustSettleTimeout)); tr.Incomplete() {
-			logging.Warningf(c, "sleep interrupted, context is done: %v", tr.Err)
-			return tr.Err
+		// If we're past our end time, then we're done.
+		switch {
+		case t.endTime.IsZero():
+			logging.Debugf(c, "Configured for single loop.")
+			return nil
+
+		case now.After(t.endTime):
+			logging.Debugf(c, "Exceeded our process loop time by [%s]; terminating loop.", now.Sub(t.endTime))
+			return nil
+		}
+
+		// Sleep in between processing rounds based on whether or not we did work.
+		delay := prd.next(didWork)
+		if delay > 0 {
+			// If we have an end time, and this delay would exceed that end time, then
+			// we're done.
+			if now.Add(delay).After(t.endTime) {
+				logging.Debugf(c, "Delay (%s) exceeds process loop time (%s); terminating loop.",
+					delay, t.endTime)
+				return nil
+			}
+
+			logging.Debugf(c, "Sleeping %s in between rounds...", delay)
+			if err := clock.Sleep(c, delay).Err; err != nil {
+				logging.WithError(err).Warningf(c, "Sleep interrupted, terminating loop.")
+				return nil
+			}
 		}
 	}
-	return nil
 }
 
 func getBatchByRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.Set) ([]*realMutation, error) {
@@ -258,7 +281,11 @@ func getBatchByRoot(c context.Context, cfg *Config, root *ds.Key, banSet strings
 		q = q.Lte("ProcessAfter", clock.Now(c).UTC())
 	}
 
-	toFetch := make([]*realMutation, 0, cfg.ProcessMaxBatchSize)
+	fetchAllocSize := cfg.ProcessMaxBatchSize
+	if fetchAllocSize < 0 {
+		fetchAllocSize = 0
+	}
+	toFetch := make([]*realMutation, 0, fetchAllocSize)
 	err := ds.Run(c, q, func(k *ds.Key) error {
 		if !banSet.Has(k.Encode()) {
 			toFetch = append(toFetch, &realMutation{
@@ -320,12 +347,16 @@ func (o overrideRoot) Root(context.Context) *ds.Key {
 	return o.root
 }
 
-func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.Set, counter *int64) error {
+func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.Set, cnt *counter) error {
 	l := logging.Get(c)
 
 	toFetch, err := getBatchByRoot(c, cfg, root, banSet)
-	if err != nil || len(toFetch) == 0 {
+	switch {
+	case err != nil:
+		l.Errorf("Failed to get batch for root [%s]: %s", root, err)
 		return err
+	case len(toFetch) == 0:
+		return nil
 	}
 
 	mutKeys, muts, err := loadFilteredMutations(c, toFetch)
@@ -341,9 +372,7 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 	allShards := map[taskShard]struct{}{}
 
 	toDel := make([]*ds.Key, 0, len(muts))
-	numMuts := uint64(0)
-	deletedMuts := uint64(0)
-	processedMuts := uint64(0)
+	var numMuts, deletedMuts, processedMuts int64
 	err = ds.RunInTransaction(txnBuf.FilterRDS(c), func(c context.Context) error {
 		toDel = toDel[:0]
 		numMuts = 0
@@ -381,6 +410,7 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 			if key.HasAncestor(root) {
 				// try to delete it as part of the same transaction.
 				if err := ds.Delete(c, key); err == nil {
+					cnt.add(len(toDel))
 					deletedMuts++
 				} else {
 					toDel = append(toDel, key)
@@ -389,7 +419,7 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 				toDel = append(toDel, key)
 			}
 
-			numMuts += uint64(len(newMuts))
+			numMuts += int64(len(newMuts))
 			for shard := range shards {
 				allShards[shard] = struct{}{}
 			}
@@ -401,13 +431,13 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 		l.Errorf("failed running transaction: %s", err)
 		return err
 	}
-	numMuts -= deletedMuts
 
-	fireTasks(c, cfg, allShards)
-	l.Infof("successfully processed %d mutations (%d tail-call), adding %d more", processedMuts, deletedMuts, numMuts)
+	fireTasks(c, cfg, allShards, true)
+	l.Debugf("successfully processed %d mutations (%d tail-call), delta %d",
+		processedMuts, deletedMuts, (numMuts - deletedMuts))
 
 	if len(toDel) > 0 {
-		atomic.StoreInt64(counter, int64(len(toDel)))
+		cnt.add(len(toDel))
 
 		for _, k := range toDel {
 			banSet.Add(k.Encode())
@@ -418,4 +448,54 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 	}
 
 	return nil
+}
+
+// counter is an atomic integer counter.
+//
+// When concurrent access is possible, a counter must only be manipulated with
+// its "inc" and "add" methods, and must not be read.
+//
+// We use an int32 because that is atomically safe across all architectures.
+type counter int32
+
+func (c *counter) inc()      { c.add(1) }
+func (c *counter) add(n int) { atomic.AddInt32((*int32)(c), int32(n)) }
+
+// processRoundDelay calculates the delay to impose in between processing
+// rounds.
+type processRoundDelay struct {
+	cfg       *Config
+	nextDelay time.Duration
+}
+
+func (prd *processRoundDelay) reset() {
+	// Reset our delay to DustSettleTimeout.
+	prd.nextDelay = time.Duration(prd.cfg.DustSettleTimeout)
+}
+
+func (prd *processRoundDelay) next(didWork bool) time.Duration {
+	if didWork {
+		// Reset our delay to DustSettleTimeout.
+		prd.reset()
+		return prd.nextDelay
+	}
+
+	delay := prd.nextDelay
+	if growth := prd.cfg.NoWorkDelayGrowth; growth > 1 {
+		prd.nextDelay *= time.Duration(growth)
+	}
+
+	if max := time.Duration(prd.cfg.MaxNoWorkDelay); max > 0 && delay > max {
+		delay = max
+
+		// Cap our "next delay" so it doesn't grow unbounded in the background.
+		prd.nextDelay = delay
+	}
+
+	// Enforce a no work lower bound.
+	if delay < minNoWorkDelay {
+		delay = minNoWorkDelay
+	}
+
+	return delay
 }

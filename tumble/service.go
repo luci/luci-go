@@ -7,21 +7,30 @@ package tumble
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
-	"sync"
+	"strings"
 	"time"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/server/router"
+
+	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/info"
+
 	"golang.org/x/net/context"
 )
 
-const transientHTTPHeader = "X-LUCI-Tumble-Transient"
+const (
+	baseURL             = "/internal/" + baseName
+	fireAllTasksURL     = baseURL + "/fire_all_tasks"
+	processShardPattern = baseURL + "/process_shard/:shard_id/at/:timestamp"
+
+	transientHTTPHeader = "X-LUCI-Tumble-Transient"
+)
 
 // Service is an instance of a Tumble service. It installs its handlers into an
 // HTTP router and services Tumble request tasks.
@@ -42,7 +51,10 @@ func (s *Service) InstallHandlers(r *router.Router, base router.MiddlewareChain)
 	// GET so that this can be invoked from cron
 	r.GET(fireAllTasksURL, base.Extend(gaemiddleware.RequireCron), s.FireAllTasksHandler)
 	r.POST(processShardPattern, base.Extend(gaemiddleware.RequireTaskQueue(baseName)),
-		s.ProcessShardHandler)
+		func(ctx *router.Context) {
+			loop := ctx.Request.URL.Query().Get("single") == ""
+			s.ProcessShardHandler(ctx, loop)
+		})
 }
 
 // FireAllTasksHandler is an HTTP handler that expects `logging` and `luci/gae`
@@ -65,107 +77,96 @@ func (s *Service) FireAllTasksHandler(c *router.Context) {
 // a constantly-loaded system with good tumble key distribution.
 func (s *Service) FireAllTasks(c context.Context) error {
 	cfg := getConfig(c)
-	shards := make(map[taskShard]struct{}, cfg.NumShards)
-	shardsLock := &sync.RWMutex{}
 
-	nspaces, err := s.getNamespaces(c, cfg)
+	// Generate a list of all shards.
+	allShards := make([]taskShard, 0, cfg.NumShards)
+	for i := uint64(0); i < cfg.NumShards; i++ {
+		allShards = append(allShards, taskShard{i, minTS})
+	}
+
+	namespaces, err := s.getNamespaces(c, cfg)
 	if err != nil {
 		return err
 	}
 
-	err = parallel.WorkPool(cfg.NumGoroutines, func(ch chan<- func() error) {
-		// Since shards are cross-namespace, missingShards represents the total
-		// maximum set of shards that this cron job can trigger. Once we find work
-		// that needs to be done on a particular shard, that shard is removed from
-		// this map, and we no longer probe the rest of the namespaces for it.
-		missingShards := make(map[taskShard]struct{}, cfg.NumShards)
-		for i := uint64(0); i < cfg.NumShards; i++ {
-			missingShards[taskShard{i, minTS}] = struct{}{}
-		}
-
-		for _, ns := range nspaces {
-			c := c
-			if ns != "" {
-				c = info.MustNamespace(c, ns)
-			}
-
-			for shrd := range missingShards {
-				shardsLock.RLock()
-				_, has := shards[shrd]
-				shardsLock.RUnlock()
-				if has {
-					delete(missingShards, shrd)
-					if len(missingShards) == 0 {
-						return
-					}
-					continue
-				}
-
-				c := c
-				shrd := shrd
-				ch <- func() error {
-					shardsLock.RLock()
-					_, has := shards[shrd]
-					shardsLock.RUnlock()
-					if has {
-						return nil
-					}
-
-					amt, err := ds.Count(c, processShardQuery(c, cfg, shrd.shard).Limit(1))
-					if err != nil {
-						logging.Fields{
-							logging.ErrorKey: err,
-							"shard":          shrd.shard,
-						}.Errorf(c, "error in query")
-						return err
-					}
-					if amt == 0 {
-						return nil
-					}
-					logging.Fields{
-						"shard": shrd.shard,
-					}.Infof(c, "triggering")
-
-					shardsLock.Lock()
-					shards[shrd] = struct{}{}
-					shardsLock.Unlock()
-					return nil
-				}
+	// Probe each namespace in parallel. Each probe function reports its own
+	// errors, so the work pool will never return any non-nil error response.
+	var errCount, taskCount counter
+	_ = parallel.WorkPool(cfg.NumGoroutines, func(ch chan<- func() error) {
+		for _, ns := range namespaces {
+			ns := ns
+			ch <- func() error {
+				s.fireAllTasksForNamespace(c, cfg, ns, allShards, &errCount, &taskCount)
+				return nil
 			}
 		}
 	})
-	if err != nil {
-		logging.WithError(err).Errorf(c, "got errors while scanning")
-		if len(shards) == 0 {
-			return err
-		}
+	if errCount > 0 {
+		logging.Errorf(c, "Encountered %d error(s).", errCount)
+		return errors.New("errors were encountered while probing for tasks")
 	}
 
-	if !fireTasks(c, cfg, shards) {
-		err = errors.New("unable to fire tasks")
-	}
-
+	logging.Debugf(c, "Successfully probed %d namespace(s) and fired %d tasks(s).",
+		len(namespaces), taskCount)
 	return err
 }
 
-func (s *Service) getNamespaces(c context.Context, cfg *Config) (namespaces []string, err error) {
-	// Get the set of namespaces to handle.
-	if cfg.Namespaced {
-		nsFn := s.Namespaces
-		if nsFn == nil {
-			nsFn = getDatastoreNamespaces
-		}
-		namespaces, err = nsFn(c)
+func (s *Service) fireAllTasksForNamespace(c context.Context, cfg *Config, ns string, allShards []taskShard,
+	errCount, taskCount *counter) {
+
+	// Enter the supplied namespace.
+	logging.Infof(c, "Firing all tasks for namespace %q", ns)
+	c = info.MustNamespace(c, ns)
+	if ns != "" {
+		c = logging.SetField(c, "namespace", ns)
+	}
+
+	// Track shards that we find work for. After scanning is complete, fire off
+	// tasks for all identified shards.
+	triggerShards := make(map[taskShard]struct{}, len(allShards))
+	for _, shrd := range allShards {
+		amt, err := ds.Count(c, processShardQuery(c, cfg, shrd.shard).Limit(1))
 		if err != nil {
-			logging.WithError(err).Errorf(c, "Failed to enumerate namespaces.")
-			return
+			logging.Fields{
+				logging.ErrorKey: err,
+				"shard":          shrd.shard,
+			}.Errorf(c, "Error querying for shards")
+			errCount.inc()
+			break
+		}
+		if amt > 0 {
+			logging.Infof(c, "Found work in shard [%d]", shrd.shard)
+			triggerShards[shrd] = struct{}{}
+		}
+	}
+
+	// Fire tasks for shards with identified work.
+	if len(triggerShards) > 0 {
+		logging.Infof(c, "Firing tasks for %d tasked shard(s).", len(triggerShards))
+		if !fireTasks(c, cfg, triggerShards, false) {
+			logging.Errorf(c, "Failed to fire tasks.")
+			errCount.inc()
+		} else {
+			taskCount.add(len(triggerShards))
 		}
 	} else {
-		// Namespacing is disabled, use a single empty string. Process will
-		// interpret this as a signal to not use namesapces.
-		namespaces = []string{""}
+		logging.Infof(c, "No tasked shards were found.")
 	}
-	return
+}
+
+func (s *Service) getNamespaces(c context.Context, cfg *Config) ([]string, error) {
+	// Get the set of namespaces to handle.
+	nsFn := s.Namespaces
+	if nsFn == nil {
+		nsFn = getDatastoreNamespaces
+	}
+
+	namespaces, err := nsFn(c)
+	if err != nil {
+		logging.WithError(err).Errorf(c, "Failed to enumerate namespaces.")
+		return nil, err
+	}
+	return namespaces, nil
 }
 
 // ProcessShardHandler is an HTTP handler that expects `logging` and `luci/gae`
@@ -176,8 +177,10 @@ func (s *Service) getNamespaces(c context.Context, cfg *Config) (namespaces []st
 //   * timestamp: decimal-encoded UNIX/UTC timestamp in seconds.
 //   * shard_id: decimal-encoded shard identifier.
 //
-// ProcessShardHandler then invokes ProcessShard with the parsed parameters.
-func (s *Service) ProcessShardHandler(ctx *router.Context) {
+// ProcessShardHandler then invokes ProcessShard with the parsed parameters. It
+// runs in the namespace of the task which scheduled it and processes mutations
+// for that namespace.
+func (s *Service) ProcessShardHandler(ctx *router.Context, loop bool) {
 	c, rw, p := ctx.Context, ctx.Writer, ctx.Params
 
 	tstampStr := p.ByName("timestamp")
@@ -201,14 +204,8 @@ func (s *Service) ProcessShardHandler(ctx *router.Context) {
 
 	cfg := getConfig(c)
 
-	// Get the set of namespaces to handle.
-	namespaces, err := s.getNamespaces(c, cfg)
-	if err != nil {
-		rw.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	err = processShard(c, cfg, namespaces, time.Unix(tstamp, 0).UTC(), sid)
+	logging.Infof(c, "Processing tasks in namespace %q", info.GetNamespace(c))
+	err = processShard(c, cfg, time.Unix(tstamp, 0).UTC(), sid, loop)
 	if err != nil {
 		logging.Errorf(c, "failure! %s", err)
 
@@ -227,10 +224,7 @@ func (s *Service) ProcessShardHandler(ctx *router.Context) {
 //
 // This is done by issuing a datastore query for kind "__namespace__". The
 // resulting keys will have IDs for the namespaces, namely:
-//	- The default namespace will have integer ID 1. We ignore this because if
-//	  we're using tumble with namespaces, we don't process the default
-//	  namespace.
-//
+//	- The default namespace will have integer ID 1.
 //	- Other namespaces will have string IDs.
 func getDatastoreNamespaces(c context.Context) ([]string, error) {
 	q := ds.NewQuery("__namespace__").KeysOnly(true)
@@ -244,9 +238,32 @@ func getDatastoreNamespaces(c context.Context) ([]string, error) {
 
 	namespaces := make([]string, 0, len(namespaceKeys))
 	for _, nk := range namespaceKeys {
-		if ns := nk.StringID(); ns != "" {
-			namespaces = append(namespaces, ns)
-		}
+		// Add our namespace ID. For the default namespace, the key will have an
+		// integer ID of 1, so StringID will correctly be an empty string.
+		namespaces = append(namespaces, nk.StringID())
 	}
 	return namespaces, nil
+}
+
+// processURL creates a new url for a process shard taskqueue task, including
+// the given timestamp and shard number.
+func processURL(ts timestamp, shard uint64, ns string, loop bool) string {
+	v := strings.NewReplacer(
+		":shard_id", fmt.Sprint(shard),
+		":timestamp", strconv.FormatInt(int64(ts), 10),
+	).Replace(processShardPattern)
+
+	// Append our namespace query parameter. This is cosmetic, and the default
+	// namespace will have this query parameter omitted.
+	query := url.Values{}
+	if ns != "" {
+		query.Set("ns", ns)
+	}
+	if !loop {
+		query.Set("single", "1")
+	}
+	if len(query) > 0 {
+		v += "?" + query.Encode()
+	}
+	return v
 }

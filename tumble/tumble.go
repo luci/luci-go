@@ -30,7 +30,7 @@ func RunMutation(c context.Context, m Mutation) error {
 	if err != nil {
 		return err
 	}
-	fireTasks(c, cfg, shardSet)
+	fireTasks(c, cfg, shardSet, true)
 	return nil
 }
 
@@ -49,7 +49,7 @@ func RunUnbuffered(c context.Context, root *ds.Key, fn func(context.Context) ([]
 	if err != nil {
 		return err
 	}
-	fireTasks(c, cfg, shardSet)
+	fireTasks(c, cfg, shardSet, true)
 	return nil
 }
 
@@ -132,7 +132,7 @@ func PutNamedMutations(c context.Context, parent *ds.Key, muts map[string]Mutati
 	}
 
 	err := ds.Put(c, toPut)
-	fireTasks(c, getConfig(c), shardSet)
+	fireTasks(c, getConfig(c), shardSet, true)
 	return err
 }
 

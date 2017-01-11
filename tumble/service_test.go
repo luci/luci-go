@@ -82,18 +82,19 @@ func TestFireAllTasks(t *testing.T) {
 			So(tq.GetTestable(c).GetScheduledTasks()["tumble"], ShouldHaveLength, 1)
 		})
 
-		Convey("with some work in a different namespace emits a task", func() {
-			c = info.MustNamespace(c, "other")
-			So(ds.Put(c, &realMutation{ID: "bogus", Parent: ds.MakeKey(c, "Parent", 1)}), ShouldBeNil)
+		Convey("with some work in a different namespaces emits a task for each namespace", func() {
+			namespaces := []string{"first", "other"}
+			s.Namespaces = func(context.Context) ([]string, error) { return namespaces, nil }
 
-			cfg := tt.GetConfig(c)
-			cfg.Namespaced = true
-			tt.UpdateSettings(c, cfg)
-			s.Namespaces = func(context.Context) ([]string, error) {
-				return []string{"other"}, nil
+			for _, ns := range namespaces {
+				c := info.MustNamespace(c, ns)
+				So(ds.Put(c, &realMutation{ID: "bogus", Parent: ds.MakeKey(c, "Parent", 1)}), ShouldBeNil)
 			}
+
 			So(s.FireAllTasks(c), ShouldBeNil)
-			So(tq.GetTestable(info.MustNamespace(c, TaskNamespace)).GetScheduledTasks()["tumble"], ShouldHaveLength, 1)
+			for _, ns := range namespaces {
+				So(tq.GetTestable(info.MustNamespace(c, ns)).GetScheduledTasks()["tumble"], ShouldHaveLength, 1)
+			}
 		})
 	})
 }

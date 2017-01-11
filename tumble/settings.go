@@ -47,6 +47,13 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 			Validator:   intValidator(true),
 		},
 		{
+			ID:          "NumGoroutines",
+			Title:       "Number of goroutines per shard",
+			Type:        settings.UIFieldText,
+			Placeholder: strconv.Itoa(defaultConfig.NumGoroutines),
+			Validator:   intValidator(true),
+		},
+		{
 			ID:          "TemporalMinDelay",
 			Title:       "Temporal minimum delay (s, m, h)",
 			Type:        settings.UIFieldText,
@@ -61,17 +68,33 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 			Validator:   validateDuration,
 		},
 		{
+			ID:          "ProcessLoopDuration",
+			Title:       "Maximum lifetime of batch processing loop",
+			Type:        settings.UIFieldText,
+			Placeholder: defaultConfig.ProcessLoopDuration.String(),
+			Validator:   validateDuration,
+		},
+		{
 			ID:          "DustSettleTimeout",
-			Title:       "Amount of time to wait for datastore to settle in between mutation rounds",
+			Title:       "Amount of time to wait for datastore to settle in between mutation rounds (s, m, h)",
 			Type:        settings.UIFieldText,
 			Placeholder: defaultConfig.DustSettleTimeout.String(),
 			Validator:   validateDuration,
 		},
 		{
-			ID:          "NumGoroutines",
-			Title:       "Number of goroutines per shard",
+			ID: "MaxNoWorkDelay",
+			Title: "Maximum amount of time to sleep in between rounds if here was no work done " +
+				"the previous round (s, m, h)",
 			Type:        settings.UIFieldText,
-			Placeholder: strconv.Itoa(defaultConfig.NumGoroutines),
+			Placeholder: defaultConfig.MaxNoWorkDelay.String(),
+			Validator:   validateDuration,
+		},
+		{
+			ID: "NoWorkDelayGrowth",
+			Title: "Growth factor for the delay in between loops when no work was done. " +
+				"If <= 1, no growth will be applied. The delay is capped by MaxNoWorkDelay.",
+			Type:        settings.UIFieldText,
+			Placeholder: strconv.Itoa(int(defaultConfig.NoWorkDelayGrowth)),
 			Validator:   intValidator(true),
 		},
 		{
@@ -84,12 +107,6 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 		{
 			ID:             "DelayedMutations",
 			Title:          "Delayed mutations (index MUST be present)",
-			Type:           settings.UIFieldChoice,
-			ChoiceVariants: []string{settingDisabled, settingEnabled},
-		},
-		{
-			ID:             "Namespaced",
-			Title:          "Operate in namespaced mode",
 			Type:           settings.UIFieldChoice,
 			ChoiceVariants: []string{settingDisabled, settingEnabled},
 		},
@@ -110,39 +127,55 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 
 	values := map[string]string{}
 
-	if cfg.NumShards != 0 {
+	// Only render values if they differ from our default config.
+	if cfg.NumShards != defaultConfig.NumShards {
 		values["NumShards"] = strconv.FormatUint(cfg.NumShards, 10)
 	}
-	if cfg.TemporalMinDelay != 0 {
-		values["TemporalMinDelay"] = cfg.TemporalMinDelay.String()
-	}
-	if cfg.TemporalRoundFactor != 0 {
-		values["TemporalRoundFactor"] = cfg.TemporalRoundFactor.String()
-	}
-	if cfg.DustSettleTimeout != 0 {
-		values["DustSettleTimeout"] = cfg.DustSettleTimeout.String()
-	}
-	if cfg.NumGoroutines != 0 {
+	if cfg.NumGoroutines != defaultConfig.NumGoroutines {
 		values["NumGoroutines"] = strconv.Itoa(cfg.NumGoroutines)
 	}
-	if cfg.ProcessMaxBatchSize != 0 {
-		values["ProcessMaxBatchSize"] = strconv.FormatInt(int64(cfg.ProcessMaxBatchSize), 10)
+	if cfg.TemporalMinDelay != defaultConfig.TemporalMinDelay {
+		values["TemporalMinDelay"] = cfg.TemporalMinDelay.String()
+	}
+	if cfg.TemporalRoundFactor != defaultConfig.TemporalRoundFactor {
+		values["TemporalRoundFactor"] = cfg.TemporalRoundFactor.String()
+	}
+	if cfg.ProcessLoopDuration != defaultConfig.ProcessLoopDuration {
+		values["ProcessLoopDuration"] = cfg.ProcessLoopDuration.String()
+	}
+	if cfg.DustSettleTimeout != defaultConfig.DustSettleTimeout {
+		values["DustSettleTimeout"] = cfg.DustSettleTimeout.String()
+	}
+	if cfg.MaxNoWorkDelay != defaultConfig.MaxNoWorkDelay {
+		values["MaxNoWorkDelay"] = cfg.MaxNoWorkDelay.String()
+	}
+	if cfg.NoWorkDelayGrowth != defaultConfig.NoWorkDelayGrowth {
+		values["NoWorkDelayGrowth"] = strconv.Itoa(int(cfg.NoWorkDelayGrowth))
+	}
+	if cfg.ProcessMaxBatchSize != defaultConfig.ProcessMaxBatchSize {
+		values["ProcessMaxBatchSize"] = strconv.Itoa(int(cfg.ProcessMaxBatchSize))
 	}
 
 	values["DelayedMutations"] = getToggleSetting(cfg.DelayedMutations)
-	values["Namespaced"] = getToggleSetting(cfg.Namespaced)
 
 	return values, nil
 }
 
 func (settingsUIPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
-	cfg := Config{}
+	// Start with our default config and shape it with populated values.
+	cfg := defaultConfig
 
 	var err error
 	if v := values["NumShards"]; v != "" {
 		cfg.NumShards, err = strconv.ParseUint(v, 10, 64)
 		if err != nil {
 			return fmt.Errorf("could not parse NumShards: %v", err)
+		}
+	}
+	if v := values["NumGoroutines"]; v != "" {
+		cfg.NumGoroutines, err = strconv.Atoi(v)
+		if err != nil {
+			return fmt.Errorf("could not parse NumGoroutines: %v", err)
 		}
 	}
 	if v := values["TemporalMinDelay"]; v != "" {
@@ -157,27 +190,39 @@ func (settingsUIPage) WriteSettings(c context.Context, values map[string]string,
 			return fmt.Errorf("could not parse TemporalRoundFactor: %v", err)
 		}
 	}
+	if v := values["ProcessLoopDuration"]; v != "" {
+		cfg.ProcessLoopDuration, err = clockflag.ParseDuration(v)
+		if err != nil {
+			return fmt.Errorf("could not parse ProcessLoopDuration: %v", err)
+		}
+	}
 	if v := values["DustSettleTimeout"]; v != "" {
 		cfg.DustSettleTimeout, err = clockflag.ParseDuration(v)
 		if err != nil {
 			return fmt.Errorf("could not parse DustSettleTimeout: %v", err)
 		}
 	}
-	if v := values["NumGoroutines"]; v != "" {
-		cfg.NumGoroutines, err = strconv.Atoi(v)
+	if v := values["MaxNoWorkDelay"]; v != "" {
+		cfg.MaxNoWorkDelay, err = clockflag.ParseDuration(v)
 		if err != nil {
-			return fmt.Errorf("could not parse NumGoroutines: %v", err)
+			return fmt.Errorf("could not parse MaxNoWorkDelay: %v", err)
 		}
 	}
-	if v := values["ProcessMaxBatchSize"]; v != "" {
-		val, err := strconv.ParseInt(v, 10, 32)
+	if v := values["NoWorkDelayGrowth"]; v != "" {
+		val, err := strconv.Atoi(v)
 		if err != nil {
 			return fmt.Errorf("could not parse ProcessMaxBatchSize: %v", err)
 		}
-		cfg.ProcessMaxBatchSize = int32(val)
+		cfg.NoWorkDelayGrowth = val
+	}
+	if v := values["ProcessMaxBatchSize"]; v != "" {
+		val, err := strconv.Atoi(v)
+		if err != nil {
+			return fmt.Errorf("could not parse ProcessMaxBatchSize: %v", err)
+		}
+		cfg.ProcessMaxBatchSize = val
 	}
 	cfg.DelayedMutations = values["DelayedMutations"] == settingEnabled
-	cfg.Namespaced = values["Namespaced"] == settingEnabled
 
 	return settings.SetIfChanged(c, baseName, &cfg, who, why)
 }
@@ -187,7 +232,7 @@ func intValidator(positive bool) func(string) error {
 		if v == "" {
 			return nil
 		}
-		i, err := strconv.ParseInt(v, 10, 32)
+		i, err := strconv.Atoi(v)
 		if err != nil {
 			return fmt.Errorf("invalid integer %q - %s", v, err)
 		}

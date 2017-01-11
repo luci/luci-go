@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/luci/luci-go/common/clock"
@@ -25,8 +24,6 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	tq "github.com/luci/gae/service/taskqueue"
-
-	"github.com/julienschmidt/httprouter"
 )
 
 // Testing is a high-level testing object for testing applications that use
@@ -98,7 +95,8 @@ func (t *Testing) EnableDelayedMutations(c context.Context) {
 }
 
 // Iterate makes a single iteration of the tumble service worker, and returns
-// the number of shards that were processed.
+// the number of shards that were processed. Iterate operates on the Context's
+// current namespace.
 //
 // It will skip all work items if the test clock hasn't advanced in time
 // enough.
@@ -106,14 +104,11 @@ func (t *Testing) Iterate(c context.Context) int {
 	clk := clock.Get(c).(testclock.TestClock)
 	logging.Debugf(c, "tumble.Testing.Iterate: time(%d|%s)", timestamp(clk.Now().Unix()), clk.Now().UTC())
 
-	cfg := t.GetConfig(c)
-	ns := ""
-	if cfg.Namespaced {
-		ns = TaskNamespace
-	}
+	r := router.New()
+	t.InstallHandlers(r, router.MiddlewareChain{})
 
 	ret := 0
-	tsks := tq.GetTestable(info.MustNamespace(c, ns)).GetScheduledTasks()[baseName]
+	tsks := tq.GetTestable(c).GetScheduledTasks()[baseName]
 	logging.Debugf(c, "got tasks: %v", tsks)
 	for _, tsk := range tsks {
 		logging.Debugf(c, "found task: %v", tsk)
@@ -121,21 +116,27 @@ func (t *Testing) Iterate(c context.Context) int {
 			logging.Infof(c, "skipping task: ETA(%s): %s", tsk.ETA, tsk.Path)
 			continue
 		}
-		toks := strings.Split(tsk.Path, "/")
+
+		req, err := http.NewRequest("POST", tsk.Path, nil)
+		if err != nil {
+			panic(err)
+		}
+		req.Header.Set("X-AppEngine-QueueName", baseName)
+
+		// Determine our parameters.
+		params, ok := r.GetParams("POST", req.URL.Path)
+		if !ok {
+			panic(fmt.Errorf("failed to lookup path: %s", req.URL.Path))
+		}
 
 		// Process the shard until a success or hard failure.
 		retryHTTP(c, func(rec *httptest.ResponseRecorder) {
 			t.ProcessShardHandler(&router.Context{
 				Context: c,
 				Writer:  rec,
-				Request: &http.Request{
-					Header: http.Header{"X-AppEngine-QueueName": []string{baseName}},
-				},
-				Params: httprouter.Params{
-					{Key: "shard_id", Value: toks[4]},
-					{Key: "timestamp", Value: toks[6]},
-				},
-			})
+				Request: req,
+				Params:  params,
+			}, false)
 		})
 
 		if err := tq.Delete(c, baseName, tsk); err != nil {
@@ -144,6 +145,15 @@ func (t *Testing) Iterate(c context.Context) int {
 		ret++
 	}
 	return ret
+}
+
+// IterateAll iterates over all namespaces and calls Iterate on each.
+func (t *Testing) IterateAll(c context.Context) int {
+	total := 0
+	for _, ns := range t.MustGetNamespaces(c) {
+		total += t.Iterate(info.MustNamespace(c, ns))
+	}
+	return total
 }
 
 // FireAllTasks will force all tumble shards to run in the future.
@@ -186,6 +196,15 @@ func (t *Testing) Drain(c context.Context) int {
 	return ret
 }
 
+// DrainAll iterates over all namespaces and drains each independently.
+func (t *Testing) DrainAll(c context.Context) int {
+	total := 0
+	for _, ns := range t.MustGetNamespaces(c) {
+		total += t.Drain(info.MustNamespace(c, ns))
+	}
+	return total
+}
+
 // ResetLog resets the current memory logger to the empty state.
 func (t *Testing) ResetLog(c context.Context) {
 	logging.Get(c).(*memlogger.MemLogger).Reset()
@@ -194,6 +213,17 @@ func (t *Testing) ResetLog(c context.Context) {
 // DumpLog dumps the current memory logger to stdout to help with debugging.
 func (t *Testing) DumpLog(c context.Context) {
 	logging.Get(c).(*memlogger.MemLogger).Dump(os.Stdout)
+}
+
+// MustGetNamespaces returns all active namespaces in t's Service.
+//
+// If the namespace function returns an error, MustGetNamespaces will panic.
+func (t *Testing) MustGetNamespaces(c context.Context) []string {
+	namespaces, err := t.getNamespaces(c, t.GetConfig(c))
+	if err != nil {
+		panic(err)
+	}
+	return namespaces
 }
 
 // retryHTTP will record an HTTP request and handle its response.

@@ -7,6 +7,7 @@ package tumble
 import (
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	ds "github.com/luci/gae/service/datastore"
@@ -23,10 +24,6 @@ type timestamp int64
 
 const minTS timestamp = math.MinInt64
 
-// TaskNamespace is the namespace used to store and dispatch Tumble task queue
-// tasks.
-const TaskNamespace = "__tumble"
-
 func (t timestamp) Unix() time.Time {
 	return time.Unix((int64)(t), 0).UTC()
 }
@@ -42,15 +39,9 @@ type taskShard struct {
 	time  timestamp
 }
 
-func fireTasks(c context.Context, cfg *Config, shards map[taskShard]struct{}) bool {
+func fireTasks(c context.Context, cfg *Config, shards map[taskShard]struct{}, loop bool) bool {
 	if len(shards) == 0 {
 		return true
-	}
-
-	// If namespacing is enabled, Tumble will fire tasks into the Tumble task
-	// namespace.
-	if cfg.Namespaced {
-		c = info.MustNamespace(c, TaskNamespace)
 	}
 
 	nextSlot := mkTimestamp(cfg, clock.Now(c).UTC())
@@ -60,17 +51,32 @@ func fireTasks(c context.Context, cfg *Config, shards map[taskShard]struct{}) bo
 
 	tasks := make([]*tq.Task, 0, len(shards))
 
+	// Transform our namespace into a valid task queue task name.
+	ns := info.GetNamespace(c)
+	taskNS := nsToTaskName(ns)
+
 	for shard := range shards {
 		eta := nextSlot
 		if cfg.DelayedMutations && shard.time > eta {
 			eta = shard.time
 		}
+
+		// Generate our task name.
+		//
+		// Fold namespace into the task name, since task names must be unique across
+		// all namespaces.
+		taskName := fmt.Sprintf("%d_%s_%d", eta, taskNS, shard.shard)
+		if !loop {
+			// Differentiate non-loop (cron) tasks from loop (Mutation-scheduled)
+			// tasks so we don't supplant a long-running task with a cron task due to
+			// timing.
+			taskName += "_single"
+		}
+
 		tsk := &tq.Task{
-			Name: fmt.Sprintf("%d_%d", eta, shard.shard),
-
-			Path: processURL(eta, shard.shard),
-
-			ETA: eta.Unix(),
+			Name: taskName,
+			Path: processURL(eta, shard.shard, ns, loop),
+			ETA:  eta.Unix(),
 
 			// TODO(riannucci): Tune RetryOptions?
 		}
@@ -84,4 +90,23 @@ func fireTasks(c context.Context, cfg *Config, shards map[taskShard]struct{}) bo
 		return false
 	}
 	return true
+}
+
+// nsToTaskName flattens a namespace into a string that can be part of a valid
+// task queue task name.
+func nsToTaskName(v string) string {
+	// Escape single underscores in the namespace name.
+	v = strings.Replace(v, "_", "__", -1)
+
+	// Replace any invalid task queue name characters with underscore.
+	return strings.Map(func(r rune) rune {
+		switch {
+		case (r >= 'a' && r <= 'z'),
+			(r >= 'A' && r <= 'Z'),
+			r == '_', r == '-':
+			return r
+		default:
+			return '_'
+		}
+	}, v)
 }

@@ -15,8 +15,11 @@ import (
 type ExponentialBackoff struct {
 	Limited
 
-	Multiplier float64       // The exponential multiplier. If zero, a default of 2 will be used.
-	MaxDelay   time.Duration // The maximum duration. If zero, no maximum will be enforced.
+	// Multiplier is the exponential growth multiplier. If < 1, a default of 2
+	// will be used.
+	Multiplier float64
+	// MaxDelay is the maximum duration. If <= zero, no maximum will be enforced.
+	MaxDelay time.Duration
 }
 
 // Next implements Iterator.
@@ -28,7 +31,7 @@ func (b *ExponentialBackoff) Next(ctx context.Context, err error) time.Duration 
 	}
 
 	// Bound our delay.
-	if b.MaxDelay != 0 && b.MaxDelay < delay {
+	if b.MaxDelay > 0 && b.MaxDelay < delay {
 		delay = b.MaxDelay
 	} else {
 		// Calculate the next delay exponentially.

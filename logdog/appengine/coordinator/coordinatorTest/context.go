@@ -123,18 +123,7 @@ func (e *Environment) ModProjectConfig(c context.Context, proj cfgtypes.ProjectN
 }
 
 // IterateTumbleAll iterates all Tumble instances across all namespaces.
-func (e *Environment) IterateTumbleAll(c context.Context) {
-	projects, err := luciConfig.GetProjects(c)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, proj := range projects {
-		WithProjectNamespace(c, cfgtypes.ProjectName(proj.ID), func(c context.Context) {
-			e.Tumble.Iterate(c)
-		})
-	}
-}
+func (e *Environment) IterateTumbleAll(c context.Context) { e.Tumble.IterateAll(c) }
 
 func (e *Environment) modTextProtobuf(c context.Context, configSet cfgtypes.ConfigSet, path string, msg proto.Message, fn func()) {
 	cfg, err := e.ConfigIface.GetConfig(c, string(configSet), path, false)
@@ -280,7 +269,6 @@ func Install() (context.Context, *Environment) {
 	e.Tumble.EnableDelayedMutations(c)
 
 	tcfg := e.Tumble.GetConfig(c)
-	tcfg.Namespaced = true
 	tcfg.TemporalRoundFactor = 0 // Makes test timing easier to understand.
 	tcfg.TemporalMinDelay = 0    // Makes test timing easier to understand.
 	e.Tumble.UpdateSettings(c, tcfg)

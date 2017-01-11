@@ -11,25 +11,34 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Limited is an Iterator implementation that is limited by a maximum number of
-// retries or time.
+// Limited is an Iterator implementation that may be limited by a maximum number
+// of retries and/or time.
 type Limited struct {
-	Delay   time.Duration // The next generated delay.
-	Retries int           // The number of remaining retries.
+	// Delay is the next generated delay.
+	Delay time.Duration
 
-	MaxTotal time.Duration // The maximum total elapsed time. If zero, no maximum will be enforced.
+	// Retries, if >= 0, is the number of remaining retries. If <0, no retry
+	// count will be applied.
+	Retries int
 
-	startTime time.Time // The time when the generator initially started.
+	// MaxTotal is the maximum total elapsed time. If <= 0, no maximum will be
+	// enforced.
+	MaxTotal time.Duration
+
+	// The time when the generator initially started.
+	startTime time.Time
 }
 
 var _ Iterator = (*Limited)(nil)
 
 // Next implements the Iterator interface.
 func (i *Limited) Next(ctx context.Context, _ error) time.Duration {
-	if i.Retries == 0 {
+	switch {
+	case i.Retries == 0:
 		return Stop
+	case i.Retries > 0:
+		i.Retries--
 	}
-	i.Retries--
 
 	// If there is a maximum total time, enforce it.
 	if i.MaxTotal > 0 {
