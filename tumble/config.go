@@ -16,7 +16,7 @@ import (
 
 const (
 	// baseName is the base tumble name. It is also the name of the tumble task
-	// queue.
+	// queue and settings dict.
 	baseName = "tumble"
 
 	baseURL             = "/internal/" + baseName

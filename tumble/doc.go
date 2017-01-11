@@ -43,8 +43,8 @@
 //
 // There are a couple prerequisites for using tumble.
 //
-// 1. You must register the tumble routes in your appengine app. You can do this
-// like:
+// 1. You must register the tumble routes in your appengine module. You can do
+// this like:
 //
 //   import (
 //     "net/http"
@@ -54,7 +54,7 @@
 //     "github.com/luci/luci-go/tumble"
 //   )
 //
-//   var tumbleService = tumble.DefaultConfig()
+//   var tumbleService = tumble.Service{}
 //
 //   def init() {
 //     router := httprouter.New()
@@ -62,9 +62,18 @@
 //     http.Handle("/", router)
 //   }
 //
-// Don't forget to add these to app.yaml (and/or dispatch.yaml). Additionally,
-// make sure to add them with `login: admin`, as they should never be accessed
-// from non-backend processes.
+// Make sure /internal/tumble routes in app.yaml (and/or dispatch.yaml) point
+// to the module with the Tumble. Additionally, make sure Tumble routes are
+// protected with `login: admin`, as they should never be accessed from
+// non-backend processes.
+//
+// For example:
+//
+//   handlers:
+//   - url: /internal/tumble/.*
+//     script: _go_app
+//     secure: always
+//     login: admin
 //
 // 2. You must add the following index to your index.yaml:
 //
@@ -81,7 +90,7 @@
 //
 // 3. You must add a new taskqueue for tumble (example parameters):
 //
-//   - name: tumble  # NOTE: name must match the name in the tumble.Config.
+//   - name: tumble
 //     rate: 32/s
 //     bucket_size: 32
 //     retry_parameters:
@@ -93,10 +102,6 @@
 // 4. All Mutation implementations must be registered at init() time using
 // tumble.Register((*MyMutation)(nil)).
 //
-// 5. You must remember to add tumbleService to all of your handlers'
-// contexts with tumble.Use(ctx, tumbleService). This last step is not
-// necessary if you use all of the default configuration for tumble.
-//
 // Optional Setup
 //
 // You may choose to add a new cron entry. This prevents work from slipping
@@ -104,6 +109,6 @@
 // distribution, this is not necessary.
 //
 //   - description: tumble fire_all_tasks invocation
-//     url: /internal/tumble/fire_all_tasks  # NOTE: must match tumble.Config.FireAllTasksURL()
-//     schedule: every 5 minutes             # maximium task latency you can tolerate.
+//     url: /internal/tumble/fire_all_tasks
+//     schedule: every 5 minutes  # maximum task latency you can tolerate.
 package tumble
