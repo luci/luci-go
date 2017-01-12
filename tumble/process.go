@@ -88,7 +88,7 @@ func processShard(c context.Context, cfg *Config, timestamp time.Time, shard uin
 	// Calculate our end itme. If we're not looping or we have a <= 0 duration,
 	// we will perform a single loop.
 	var endTime time.Time
-	if loop && cfg.ProcessLoopDuration > 0 {
+	if cfg.ProcessLoopDuration > 0 {
 		endTime = clock.Now(c).Add(time.Duration(cfg.ProcessLoopDuration))
 		logging.Debugf(c, "Process loop is configured to exit after [%s] at %s",
 			cfg.ProcessLoopDuration.String(), endTime)
@@ -238,29 +238,31 @@ func (t *processTask) process(c context.Context, cfg *Config, q *ds.Query) error
 		now := clock.Now(c)
 		didWork := numProcessed > 0
 		if didWork {
+			// Set our last key value for next round.
 			err = mc.Set(c, mc.NewItem(c, t.lastKey).SetValue(serialize.ToBytes(now.UTC())))
 			if err != nil {
 				logging.Warningf(c, "could not update last process memcache key %s: %s", t.lastKey, err)
 			}
+		} else if t.endTime.IsZero() || !t.loop {
+			// We didn't do any work this round, and we're configured for a single
+			// loop, so we're done.
+			logging.Debugf(c, "Configured for single loop.")
+			return nil
 		}
 
 		// If we're past our end time, then we're done.
-		switch {
-		case t.endTime.IsZero():
-			logging.Debugf(c, "Configured for single loop.")
-			return nil
-
-		case now.After(t.endTime):
+		if !t.endTime.IsZero() && now.After(t.endTime) {
 			logging.Debugf(c, "Exceeded our process loop time by [%s]; terminating loop.", now.Sub(t.endTime))
 			return nil
 		}
 
-		// Sleep in between processing rounds based on whether or not we did work.
+		// Either we are looping, we did work last round, or both. Sleep in between
+		// processing rounds for a duration based on whether or not we did work.
 		delay := prd.next(didWork)
 		if delay > 0 {
 			// If we have an end time, and this delay would exceed that end time, then
-			// we're done.
-			if now.Add(delay).After(t.endTime) {
+			// don't bother sleeping; we're done.
+			if !t.endTime.IsZero() && now.Add(delay).After(t.endTime) {
 				logging.Debugf(c, "Delay (%s) exceeds process loop time (%s); terminating loop.",
 					delay, t.endTime)
 				return nil
