@@ -231,7 +231,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 				projs, _, err = loadProjectConfigs(c, cfgclient.AsService)
 				So(err, ShouldUnwrapTo, datastorecache.ErrCacheExpired)
 
-				So(cnt.GetMulti.Total(), ShouldEqual, 3)
+				So(cnt.GetMulti.Total(), ShouldEqual, 4)
 				So(cnt.PutMulti.Total(), ShouldEqual, 1)
 			})
 		})

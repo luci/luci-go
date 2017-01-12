@@ -85,6 +85,20 @@ func useImpl(c context.Context, be backend.B) context.Context {
 	return installConfigBackend(c, mustFetchCachedSettings(c), be, false)
 }
 
+// installConfigBackend chooses a primary backend, then reenforces it with
+// caches based on the configuration.
+//
+// The primary backend is a live LUCI config service if configured, a permanent
+// error service if not configured, or a debug service if running on a
+// development server.
+//
+// If caching is enabled, this is re-enforced with the following caches:
+// - A memcache-backed cache.
+// - A datastore-backed cache (if enabled).
+// - A per-process in-memory cache (proccache).
+//
+// Lookups move from the bottom of the list up through the top, then to the
+// primary backend service.
 func installConfigBackend(c context.Context, s *Settings, be backend.B, dsCron bool) context.Context {
 	if be == nil {
 		// Non-testing, build a Backend.
@@ -102,9 +116,8 @@ func installConfigBackend(c context.Context, s *Settings, be backend.B, dsCron b
 	// Apply caching configuration.
 	exp := time.Duration(s.CacheExpirationSec) * time.Second
 	if exp > 0 {
-		// Add a ProcCache, backed by memcache.
+		// Back the raw service with memcache.
 		be = memcache.Backend(be, exp)
-		be = caching.ProcCache(be, exp)
 
 		// If our datastore cache is enabled, install a handler for refresh. This
 		// will be loaded by dsCache's "HandlerFunc".
@@ -125,6 +138,9 @@ func installConfigBackend(c context.Context, s *Settings, be backend.B, dsCron b
 				c = dsc.WithHandler(c, datastore.CronLoader(be), datastore.RPCDeadline)
 			}
 		}
+
+		// Install in-memory cache (proccache).
+		be = caching.ProcCache(be, exp)
 	}
 
 	c = backend.WithBackend(c, be)

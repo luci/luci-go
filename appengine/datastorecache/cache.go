@@ -199,6 +199,9 @@ func (cache *Cache) InstallCronRoute(path string, r *router.Router, base router.
 // If the Refresh function returns an error, that error will be propagated
 // as-is and returned.
 func (cache *Cache) Get(c context.Context, key []byte) (Value, error) {
+	// Leave any current transaction.
+	c = datastore.WithoutTransaction(c)
+
 	var h Handler
 	if hf := cache.HandlerFunc; hf != nil {
 		h = hf(c)

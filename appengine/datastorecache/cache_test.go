@@ -104,6 +104,32 @@ func TestCache(t *testing.T) {
 			})
 		})
 
+		Convey(`Can perform a Get while in another entity's transaction`, func() {
+			err := datastore.RunInTransaction(te, func(c context.Context) error {
+				// Hit some random entity first. Since we're not cross-group, this means
+				// that any invalid single-group datastore accesses from the cache will
+				// error.
+				r, err := datastore.Exists(c, datastore.PropertyMap{
+					"$kind": datastore.MkProperty("SomeEntitySomewhere"),
+					"$id":   datastore.MkProperty(1),
+				})
+				if err != nil {
+					return err
+				}
+				So(r.Any(), ShouldBeFalse)
+
+				// Perform a cache Get.
+				v, err := cache.Get(c, []byte("foo"))
+				if err != nil {
+					return err
+				}
+				So(v, ShouldResemble, currentValue)
+				return nil
+			}, nil)
+			So(err, ShouldBeNil)
+			So(cache.refreshes, ShouldEqual, 1)
+		})
+
 		Convey(`The refresh function is called with the original namespace.`, func() {
 			c := info.MustNamespace(te, "dog")
 
