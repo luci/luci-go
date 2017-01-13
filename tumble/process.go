@@ -11,16 +11,18 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/luci/gae/filter/txnBuf"
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/datastore/serialize"
-	mc "github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/appengine/memlock"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/sync/parallel"
+
+	"github.com/luci/gae/filter/txnBuf"
+	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/datastore/serialize"
+	"github.com/luci/gae/service/info"
+	mc "github.com/luci/gae/service/memcache"
 
 	"golang.org/x/net/context"
 )
@@ -75,6 +77,7 @@ func processShardQuery(c context.Context, cfg *Config, shard uint64) *ds.Query {
 // processShard is the tumble backend endpoint. This accepts a shard number
 // which is expected to be < GlobalConfig.NumShards.
 func processShard(c context.Context, cfg *Config, timestamp time.Time, shard uint64, loop bool) error {
+
 	logging.Fields{
 		"shard": shard,
 	}.Infof(c, "Processing tumble shard.")
@@ -94,11 +97,13 @@ func processShard(c context.Context, cfg *Config, timestamp time.Time, shard uin
 			cfg.ProcessLoopDuration.String(), endTime)
 	}
 
+	// Lock around the shard that we are trying to modify.
+	//
 	// Since memcache is namespaced, we don't need to include the namespace in our
 	// lock name.
 	task := makeProcessTask(timestamp, endTime, shard, loop)
 	lockKey := fmt.Sprintf("%s.%d.lock", baseName, shard)
-	clientID := fmt.Sprintf("%d_%d", timestamp.Unix(), shard)
+	clientID := fmt.Sprintf("%d_%d_%s", timestamp.Unix(), shard, info.RequestID(c))
 
 	err := memlock.TryWithLock(c, lockKey, clientID, func(c context.Context) error {
 		return task.process(c, cfg, q)
@@ -114,7 +119,6 @@ func processShard(c context.Context, cfg *Config, timestamp time.Time, shard uin
 type processTask struct {
 	timestamp time.Time
 	endTime   time.Time
-	clientID  string
 	lastKey   string
 	banSets   map[string]stringset.Set
 	loop      bool
@@ -124,7 +128,6 @@ func makeProcessTask(timestamp, endTime time.Time, shard uint64, loop bool) *pro
 	return &processTask{
 		timestamp: timestamp,
 		endTime:   endTime,
-		clientID:  fmt.Sprintf("%d_%d", timestamp.Unix(), shard),
 		lastKey:   fmt.Sprintf("%s.%d.last", baseName, shard),
 		banSets:   make(map[string]stringset.Set),
 		loop:      loop,
@@ -374,7 +377,7 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 	allShards := map[taskShard]struct{}{}
 
 	toDel := make([]*ds.Key, 0, len(muts))
-	var numMuts, deletedMuts, processedMuts int64
+	var numMuts, deletedMuts, processedMuts int
 	err = ds.RunInTransaction(txnBuf.FilterRDS(c), func(c context.Context) error {
 		toDel = toDel[:0]
 		numMuts = 0
@@ -394,6 +397,7 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 				continue
 			}
 			processedMuts++
+
 			for j, nm := range newMuts {
 				if nm.Root(c).HasAncestor(root) {
 					runNow := !cfg.DelayedMutations
@@ -408,20 +412,21 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 				}
 			}
 
+			// Finished processing this Mutation.
 			key := iterMutKeys[i]
 			if key.HasAncestor(root) {
 				// try to delete it as part of the same transaction.
 				if err := ds.Delete(c, key); err == nil {
-					cnt.add(len(toDel))
 					deletedMuts++
 				} else {
+					cnt.add(len(toDel))
 					toDel = append(toDel, key)
 				}
 			} else {
 				toDel = append(toDel, key)
 			}
 
-			numMuts += int64(len(newMuts))
+			numMuts += len(newMuts)
 			for shard := range shards {
 				allShards[shard] = struct{}{}
 			}
@@ -440,7 +445,6 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 
 	if len(toDel) > 0 {
 		cnt.add(len(toDel))
-
 		for _, k := range toDel {
 			banSet.Add(k.Encode())
 		}
@@ -460,8 +464,8 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 // We use an int32 because that is atomically safe across all architectures.
 type counter int32
 
-func (c *counter) inc()      { c.add(1) }
-func (c *counter) add(n int) { atomic.AddInt32((*int32)(c), int32(n)) }
+func (c *counter) inc() int      { return c.add(1) }
+func (c *counter) add(n int) int { return int(atomic.AddInt32((*int32)(c), int32(n))) }
 
 // processRoundDelay calculates the delay to impose in between processing
 // rounds.

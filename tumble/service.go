@@ -121,6 +121,22 @@ func (s *Service) fireAllTasksForNamespace(c context.Context, cfg *Config, ns st
 		c = logging.SetField(c, "namespace", ns)
 	}
 
+	// First, check if the namespace has *any* Mutations.
+	q := ds.NewQuery("tumble.Mutation").KeysOnly(true).Limit(1)
+	switch amt, err := ds.Count(c, q); {
+	case err != nil:
+		logging.WithError(err).Errorf(c, "Error querying for Mutations")
+		errCount.inc()
+		return
+
+	case amt == 0:
+		logging.Infof(c, "No Mutations registered for this namespace.")
+		return
+	}
+
+	// We have at least one Mutation for this namespace. Iterate through all
+	// shards and dispatch a processing task for each one that has Mutations.
+	//
 	// Track shards that we find work for. After scanning is complete, fire off
 	// tasks for all identified shards.
 	triggerShards := make(map[taskShard]struct{}, len(allShards))

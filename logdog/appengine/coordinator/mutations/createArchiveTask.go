@@ -17,8 +17,9 @@ import (
 	"golang.org/x/net/context"
 )
 
-// CreateArchiveTask is a tumble Mutation that registers a single hierarchy
-// component.
+// CreateArchiveTask is a tumble Mutation that registers an archive task.
+//
+// It is a named mutation.
 type CreateArchiveTask struct {
 	// ID is the hash ID of the LogStream whose archive task is being created.
 	//
