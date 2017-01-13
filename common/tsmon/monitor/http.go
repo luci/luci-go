@@ -42,7 +42,7 @@ func NewHTTPMonitor(ctx context.Context, client *http.Client, endpoint *url.URL)
 }
 
 func (m *httpMonitor) ChunkSize() int {
-	return 1000
+	return 500
 }
 
 func (m *httpMonitor) Send(ctx context.Context, cells []types.Cell) error {
