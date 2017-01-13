@@ -6,10 +6,7 @@
 
 'use strict';
 
-// Include Gulp & tools we'll use
 var gulp = require('gulp');
-var luci = require('../gulp-common.js');
+var luci = require('./gulp-common.js');
 
-luci.setup(gulp, {
-  dir: __dirname,
-});
+luci.setup_common(gulp);

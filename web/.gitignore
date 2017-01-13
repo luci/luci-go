@@ -6,6 +6,9 @@ dist/*/**
 !dist/*/.keep
 apps/*/.tmp
 
+# Ignore compiled JavaScript.
+inc/*/*.js
+
 # Tag files for installed Bower/NPM.
 .npm.installed
 .bower.installed

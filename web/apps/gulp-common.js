@@ -21,16 +21,19 @@ exports.plugins = require('gulp-load-plugins')({
 
 // Include Gulp & tools we'll use
 var $ = exports.plugins;
-var del = require('del');
-var requireDir = require('require-dir');
-var runSequence = require('run-sequence');
 var browserSync = require('browser-sync');
-var reload = browserSync.reload;
-var merge = require('merge-stream');
+var debug = require('gulp-debug');
+var del = require('del');
 var fs = require('fs');
 var glob = require('glob-all');
 var historyApiFallback = require('connect-history-api-fallback');
-var crypto = require('crypto');
+var hyd = require('hydrolysis');
+var merge = require('merge-stream');
+var reload = browserSync.reload;
+var runSequence = require('run-sequence');
+var ts = require('gulp-typescript');
+var tslint = require('gulp-tslint');
+
 
 var AUTOPREFIXER_BROWSERS = [
   'ie >= 10',
@@ -44,6 +47,41 @@ var AUTOPREFIXER_BROWSERS = [
   'bb >= 10'
 ];
 
+// Common (global) tasks.
+exports.setup_common = function(gulp) {
+  // Transpiles "inc/*/*.ts" and deposits the result alongside their source
+  // "ts" files.
+  gulp.task('ts', function() {
+    // Transpile each TypeScript module independently into JavaScript.
+    var incDir = path.join(exports.base, 'inc');
+    var tsconfigPath = path.join(incDir, 'tsconfig.json');
+    var tsProj = ts.createProject(tsconfigPath, {
+      typeRoots: [path.join(exports.base, 'node_modules', '@types')],
+    });
+    return gulp.src('*/*.ts', {cwd: incDir, exclude: ['*_test.ts']})
+        .pipe(tsProj())
+        .pipe(gulp.dest(incDir));
+  });
+
+  // Verify TypeScript file integrity and formatting.
+  gulp.task('tslint', function() {
+    var incDir = path.join(exports.base, 'inc')
+    return gulp.src('*/*.ts', {cwd: incDir})
+        .pipe(tslint({
+            configuration: path.join(exports.base, 'inc', 'tslint.json'),
+            formatter: 'verbose',
+        }))
+        .pipe(tslint.report());
+  });
+
+  // Build production files, the default task
+  gulp.task('lint', ['tslint']);
+
+  // Build production files, the default task
+  gulp.task('presubmit', ['lint']);
+};
+
+// Project-specific tasks.
 exports.setup = function(gulp, config) {
   var APP = path.basename(config.dir);
   var DIST = path.join(exports.out, 'dist', APP);
@@ -95,7 +133,7 @@ exports.setup = function(gulp, config) {
 
   var optimizeHtmlTask = function(src, dest) {
     var assets = $.useref.assets({
-      searchPath: ['.tmp', 'app']
+      searchPath: ['.tmp', config.dir]
     });
 
     return gulp.src(src)
@@ -144,7 +182,7 @@ exports.setup = function(gulp, config) {
       '!inc',
       '!test',
       '!elements',
-      '!bower_components',
+      '!inc/bower_components',
       '!cache-config.json',
       '!**/.DS_Store',
       '!gulpfile.js',
@@ -157,8 +195,12 @@ exports.setup = function(gulp, config) {
       'inc/bower_components/webcomponentsjs/webcomponents-lite.min.js',
     ]).pipe(gulp.dest(layout.dist('inc/bower_components/webcomponentsjs/')));
 
+    var requirejs = gulp.src([
+      'inc/bower_components/requirejs/require.js',
+    ]).pipe(gulp.dest(layout.dist('inc/bower_components/requirejs/')));
+
     var includes = (config.includes) ? (config.includes(gulp, layout)) : ([]);
-    return merge(app, includes, webcomponentsjs)
+    return merge(app, includes, webcomponentsjs, requirejs)
       .pipe($.size({
         title: 'copy'
       }));
@@ -180,13 +222,16 @@ exports.setup = function(gulp, config) {
       layout.dist());
   });
 
+  gulp.task('compile', ['ts']);
+
   // Vulcanize granular configuration
-  gulp.task('vulcanize', function() {
+  gulp.task('vulcanize', ['compile'], function() {
+    var fsResolver = hyd.FSResolver
     return gulp.src('elements/elements.html')
       .pipe($.vulcanize({
         stripComments: true,
         inlineCss: true,
-        inlineScripts: true
+        inlineScripts: true,
       }))
       .pipe(gulp.dest(layout.dist('elements')))
       .pipe($.size({title: 'vulcanize'}));
@@ -201,9 +246,12 @@ exports.setup = function(gulp, config) {
   });
 
   // Watch files for changes & reload
-  gulp.task('serve', ['styles', 'elements'], function() {
+  gulp.task('serve', ['default'], function() {
     browserSync({
       port: 5000,
+      ui: {
+        port: 5080,
+      },
       notify: false,
       logPrefix: 'PSK',
       snippetOptions: {
@@ -219,21 +267,25 @@ exports.setup = function(gulp, config) {
       //       will present a certificate warning in the browser.
       // https: true,
       server: {
-        baseDir: ['.tmp', 'app'],
+        baseDir: ['.'],
         middleware: [historyApiFallback()]
       }
     });
 
-    gulp.watch(['**/*.html'], reload);
+    gulp.watch(['**/*.html'], ['html', reload]);
     gulp.watch(['styles/**/*.css'], ['styles', reload]);
     gulp.watch(['elements/**/*.css'], ['elements', reload]);
-    gulp.watch(['images/**/*'], reload);
+    gulp.watch(['images/**/*'], [reload]);
+    gulp.watch(['inc/**/*.ts'], { cwd: exports.base }, ['compile', reload]);
   });
 
   // Build and serve the output from the dist build
   gulp.task('serve:dist', ['default'], function() {
     browserSync({
-      port: 5001,
+      port: 5000,
+      ui: {
+        port: 5080,
+      },
       notify: false,
       logPrefix: 'PSK',
       snippetOptions: {
@@ -256,10 +308,13 @@ exports.setup = function(gulp, config) {
   // Build production files, the default task
   gulp.task('default', ['clean'], function(cb) {
     runSequence(
-      ['copy', 'styles', 'images', 'fonts', 'html'],
+      ['copy', 'styles', 'images', 'fonts', 'html', 'compile'],
       'vulcanize',
       cb);
   });
+
+  // Install common targets.
+  exports.setup_common(gulp);
 };
 
 require('es6-promise').polyfill();

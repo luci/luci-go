@@ -31,7 +31,8 @@
     "page": "~1.6.4",
     "paper-elements": "PolymerElements/paper-elements#~1.0.7",
     "platinum-elements": "PolymerElements/platinum-elements#~1.2.0",
-    "polymer": "Polymer/polymer#^1.6.1"
+    "polymer": "Polymer/polymer#^1.6.1",
+    "requirejs": "^2.3.2"
   },
   "devDependencies": {
     "web-component-tester": "~4.2.0"

@@ -49,6 +49,27 @@ def PreCommitGo(input_api, output_api, pcg_mode):
   ])
 
 
+def WebChecks(input_api, output_api):
+  """Run checks on the web/ directory."""
+  if input_api.is_committing:
+    error_type = output_api.PresubmitError
+  else:
+    error_type = output_api.PresubmitPromptWarning
+
+  output = []
+  output += input_api.RunTests([input_api.Command(
+      name='web presubmit',
+      cmd=[
+          input_api.python_executable,
+          input_api.os_path.join('web', 'web.py'),
+          'presubmit',
+      ],
+      kwargs={},
+      message=output_api.PresubmitError,
+  )])
+  return output
+
+
 def header(input_api):
   """Returns the expected license header regexp for this project."""
   current_year = int(input_api.time.strftime('%Y'))
@@ -101,6 +122,7 @@ def CommonChecks(input_api, output_api):
     input_api.canned_checks.CheckLicense(
       input_api, output_api, header(input_api),
       source_file_filter=source_file_filter(input_api)))
+  results.extend(WebChecks(input_api, output_api))
   return results
 
 
