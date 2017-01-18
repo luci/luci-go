@@ -20,7 +20,7 @@ func TestScanFileSystem(t *testing.T) {
 	Convey("Given a temp directory", t, func() {
 		tempDir, err := ioutil.TempDir("", "cipd_test")
 		So(err, ShouldBeNil)
-		Reset(func() { os.RemoveAll(tempDir) })
+		defer os.RemoveAll(tempDir)
 
 		Convey("Scan empty dir works", func() {
 			files, err := ScanFileSystem(tempDir, tempDir, nil)
@@ -163,7 +163,7 @@ func TestWrapFile(t *testing.T) {
 	Convey("Given a temp directory", t, func() {
 		tempDir, err := ioutil.TempDir("", "cipd_test")
 		So(err, ShouldBeNil)
-		Reset(func() { os.RemoveAll(tempDir) })
+		defer os.RemoveAll(tempDir)
 
 		Convey("WrapFile simple file works", func() {
 			writeFile(tempDir, "dir/a/b", "12345", 0666)
@@ -273,7 +273,7 @@ func TestFileSystemDestination(t *testing.T) {
 		destDir := filepath.Join(tempDir, "dest")
 		So(err, ShouldBeNil)
 		dest := NewFileSystemDestination(destDir, nil)
-		Reset(func() { os.RemoveAll(tempDir) })
+		defer os.RemoveAll(tempDir)
 
 		writeFileToDest := func(name string, executable bool, data string) {
 			writer, err := dest.CreateFile(ctx, name, executable)

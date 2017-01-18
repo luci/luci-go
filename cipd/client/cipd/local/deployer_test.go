@@ -21,13 +21,18 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func mkTempDir() string {
+	tempDir, err := ioutil.TempDir("", "cipd_test")
+	So(err, ShouldBeNil)
+	Reset(func() { os.RemoveAll(tempDir) })
+	return tempDir
+}
+
 func TestUtilities(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("Given a temp directory", t, func() {
-		tempDir, err := ioutil.TempDir("", "cipd_test")
-		So(err, ShouldBeNil)
-		Reset(func() { os.RemoveAll(tempDir) })
+		tempDir := mkTempDir()
 
 		// Wrappers that accept paths relative to tempDir.
 		touch := func(rel string) {
@@ -98,9 +103,7 @@ func TestDeployInstance(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("Given a temp directory", t, func() {
-		tempDir, err := ioutil.TempDir("", "cipd_test")
-		So(err, ShouldBeNil)
-		Reset(func() { os.RemoveAll(tempDir) })
+		tempDir := mkTempDir()
 
 		Convey("Try to deploy package instance with bad package name", func() {
 			_, err := NewDeployer(tempDir).DeployInstance(
@@ -125,9 +128,7 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("Given a temp directory", t, func() {
-		tempDir, err := ioutil.TempDir("", "cipd_test")
-		So(err, ShouldBeNil)
-		Reset(func() { os.RemoveAll(tempDir) })
+		tempDir := mkTempDir()
 
 		Convey("DeployInstance new empty package instance", func() {
 			inst := makeTestInstance("test/package", nil, InstallModeSymlink)
@@ -287,9 +288,7 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("Given a temp directory", t, func() {
-		tempDir, err := ioutil.TempDir("", "cipd_test")
-		So(err, ShouldBeNil)
-		Reset(func() { os.RemoveAll(tempDir) })
+		tempDir := mkTempDir()
 
 		Convey("DeployInstance new empty package instance", func() {
 			inst := makeTestInstance("test/package", nil, InstallModeCopy)
@@ -421,9 +420,7 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("Given a temp directory", t, func() {
-		tempDir, err := ioutil.TempDir("", "cipd_test")
-		So(err, ShouldBeNil)
-		Reset(func() { os.RemoveAll(tempDir) })
+		tempDir := mkTempDir()
 
 		Convey("DeployInstance new empty package instance", func() {
 			inst := makeTestInstance("test/package", nil, InstallModeCopy)
@@ -556,9 +553,7 @@ func TestDeployInstanceSwitchingModes(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("Given a temp directory", t, func() {
-		tempDir, err := ioutil.TempDir("", "cipd_test")
-		So(err, ShouldBeNil)
-		Reset(func() { os.RemoveAll(tempDir) })
+		tempDir := mkTempDir()
 
 		files := []File{
 			NewTestFile("some/file/path", "data a", false),
@@ -615,9 +610,7 @@ func TestFindDeployed(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("Given a temp directory", t, func() {
-		tempDir, err := ioutil.TempDir("", "cipd_test")
-		So(err, ShouldBeNil)
-		Reset(func() { os.RemoveAll(tempDir) })
+		tempDir := mkTempDir()
 
 		Convey("FindDeployed works with empty dir", func() {
 			out, err := NewDeployer(tempDir).FindDeployed(ctx)
@@ -655,9 +648,7 @@ func TestRemoveDeployedCommon(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("Given a temp directory", t, func() {
-		tempDir, err := ioutil.TempDir("", "cipd_test")
-		So(err, ShouldBeNil)
-		Reset(func() { os.RemoveAll(tempDir) })
+		tempDir := mkTempDir()
 
 		Convey("RemoveDeployed works with missing package", func() {
 			err := NewDeployer(tempDir).RemoveDeployed(ctx, "package/path")
@@ -674,9 +665,7 @@ func TestRemoveDeployedPosix(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("Given a temp directory", t, func() {
-		tempDir, err := ioutil.TempDir("", "cipd_test")
-		So(err, ShouldBeNil)
-		Reset(func() { os.RemoveAll(tempDir) })
+		tempDir := mkTempDir()
 
 		Convey("RemoveDeployed works", func() {
 			d := NewDeployer(tempDir)
@@ -721,9 +710,7 @@ func TestRemoveDeployedWindows(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("Given a temp directory", t, func() {
-		tempDir, err := ioutil.TempDir("", "cipd_test")
-		So(err, ShouldBeNil)
-		Reset(func() { os.RemoveAll(tempDir) })
+		tempDir := mkTempDir()
 
 		Convey("RemoveDeployed works", func() {
 			d := NewDeployer(tempDir)

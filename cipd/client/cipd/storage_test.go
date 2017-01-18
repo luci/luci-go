@@ -76,7 +76,7 @@ func TestDownload(t *testing.T) {
 	Convey("With temp directory", t, func() {
 		tempDir, err := ioutil.TempDir("", "cipd_test")
 		So(err, ShouldBeNil)
-		Reset(func() { os.RemoveAll(tempDir) })
+		defer os.RemoveAll(tempDir)
 		tempFile := filepath.Join(tempDir, "pkg")
 
 		Convey("Download full flow", func(c C) {

@@ -5,8 +5,6 @@
 package local
 
 import (
-	"io/ioutil"
-	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -213,9 +211,7 @@ func TestExclusion(t *testing.T) {
 
 func TestFindFiles(t *testing.T) {
 	Convey("Given a temp directory", t, func() {
-		tempDir, err := ioutil.TempDir("", "cipd_test")
-		So(err, ShouldBeNil)
-		Reset(func() { os.RemoveAll(tempDir) })
+		tempDir := mkTempDir()
 
 		mkF := func(path string) { writeFile(tempDir, path, "", 0666) }
 		mkD := func(path string) { mkDir(tempDir, path) }

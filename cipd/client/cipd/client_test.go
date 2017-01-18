@@ -147,7 +147,7 @@ func TestRegisterInstance(t *testing.T) {
 		// Open it for reading.
 		inst, err := local.OpenInstance(ctx, bytes.NewReader(out.Bytes()), "")
 		So(err, ShouldBeNil)
-		Reset(func() { inst.Close() })
+		defer inst.Close()
 
 		Convey("RegisterInstance full flow", func(c C) {
 			client := mockClient(c, "", []expectedHTTPCall{
@@ -482,12 +482,12 @@ func TestFetch(t *testing.T) {
 	Convey("Mocking remote services", t, func(c C) {
 		tempDir, err := ioutil.TempDir("", "cipd_test")
 		So(err, ShouldBeNil)
-		Reset(func() { os.RemoveAll(tempDir) })
+		defer os.RemoveAll(tempDir)
 
 		inst := buildInstanceInMemory(ctx, "testing/package", []local.File{
 			local.NewTestFile("file", "test data", false),
 		})
-		Reset(func() { inst.Close() })
+		defer inst.Close()
 
 		client := mockClientForFetch(c, tempDir, []local.PackageInstance{inst})
 
@@ -783,7 +783,7 @@ func TestEnsurePackages(t *testing.T) {
 	Convey("Mocking temp dir", t, func() {
 		tempDir, err := ioutil.TempDir("", "cipd_test")
 		So(err, ShouldBeNil)
-		Reset(func() { os.RemoveAll(tempDir) })
+		defer os.RemoveAll(tempDir)
 
 		assertFile := func(relPath, data string) {
 			body, err := ioutil.ReadFile(filepath.Join(tempDir, relPath))

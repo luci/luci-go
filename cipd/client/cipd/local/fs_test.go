@@ -312,10 +312,7 @@ func TestReplace(t *testing.T) {
 
 // tempFileSystem returns FileSystem for tests built over a temp directory.
 func tempFileSystem() *tempFileSystemImpl {
-	tempDir, err := ioutil.TempDir("", "cipd_test")
-	So(err, ShouldBeNil)
-	Reset(func() { os.RemoveAll(tempDir) })
-	return &tempFileSystemImpl{NewFileSystem(tempDir, "")}
+	return &tempFileSystemImpl{NewFileSystem(mkTempDir(), "")}
 }
 
 type tempFileSystemImpl struct {
