@@ -9,7 +9,7 @@ import (
 	"os"
 
 	"github.com/luci/luci-go/client/authcli"
-	"github.com/luci/luci-go/client/internal/common"
+	"github.com/luci/luci-go/client/versioncli"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/maruel/subcommands"
 )
@@ -29,7 +29,7 @@ var application = &subcommands.DefaultApplication{
 		authcli.SubcommandInfo(auth.Options{}, "whoami", false),
 		authcli.SubcommandLogin(auth.Options{}, "login", false),
 		authcli.SubcommandLogout(auth.Options{}, "logout", false),
-		common.CmdVersion(version),
+		versioncli.CmdVersion(version),
 	},
 
 	EnvVars: map[string]subcommands.EnvVarDefinition{
