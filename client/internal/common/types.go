@@ -5,7 +5,7 @@
 package common
 
 import (
-	"github.com/kr/pretty"
+	"fmt"
 )
 
 // Strings accumulates string values from repeated flags.
@@ -14,7 +14,7 @@ import (
 type Strings []string
 
 func (c *Strings) String() string {
-	return pretty.Sprintf("%v", []string(*c))
+	return fmt.Sprintf("%v", []string(*c))
 }
 
 // Set is needed to implements flag.Var interface.
