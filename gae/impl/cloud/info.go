@@ -64,11 +64,11 @@ func useInfo(c context.Context) context.Context {
 func (*infoService) AppID() string               { panic(errNotImplemented) }
 func (*infoService) FullyQualifiedAppID() string { return "" }
 func (i *infoService) GetNamespace() string      { return i.namespace }
+func (*infoService) IsDevAppServer() bool        { return false }
 
 func (*infoService) Datacenter() string             { panic(errNotImplemented) }
 func (*infoService) DefaultVersionHostname() string { panic(errNotImplemented) }
 func (*infoService) InstanceID() string             { panic(errNotImplemented) }
-func (*infoService) IsDevAppServer() bool           { panic(errNotImplemented) }
 func (*infoService) IsOverQuota(err error) bool     { panic(errNotImplemented) }
 func (*infoService) IsTimeoutError(err error) bool  { panic(errNotImplemented) }
 func (*infoService) ModuleHostname(module, version, instance string) (string, error) {
