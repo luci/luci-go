@@ -23,6 +23,7 @@ import (
 
 // Provider returns a config.Interface for the supplied parameters.
 type Provider interface {
+	GetServiceURL() url.URL
 	GetConfigClient(context.Context, backend.Authority) config.Interface
 }
 
@@ -38,9 +39,7 @@ type Backend struct {
 var _ backend.B = (*Backend)(nil)
 
 // ServiceURL implements backend.B.
-func (be *Backend) ServiceURL(c context.Context) url.URL {
-	return be.getIface(c, backend.AsAnonymous).ServiceURL(c)
-}
+func (be *Backend) ServiceURL(c context.Context) url.URL { return be.Provider.GetServiceURL() }
 
 // ConfigSetURL implements backend.B.
 func (be *Backend) ConfigSetURL(c context.Context, configSet string, p backend.Params) (url.URL, error) {
@@ -98,9 +97,11 @@ func (be *Backend) getIface(c context.Context, a backend.Authority) config.Inter
 // RemoteProvider is a Provider implementation that binds to
 // a remote configuration service.
 type RemoteProvider struct {
-	// BaseURL is the base URL to the configuration service, e.g.,
-	// https://example.appspot.com.
-	BaseURL string
+	// Host is the base host name of the configuration service, e.g.,
+	// "example.appspot.com".
+	Host string
+	// Insecure is true if the connection should use HTTP instead of HTTPS.
+	Insecure bool
 
 	cacheLock sync.RWMutex
 	cache     map[backend.Authority]config.Interface
@@ -111,6 +112,19 @@ type RemoteProvider struct {
 }
 
 var _ Provider = (*RemoteProvider)(nil)
+
+// GetServiceURL implements Provider.
+func (p *RemoteProvider) GetServiceURL() url.URL {
+	u := url.URL{
+		Scheme: "https",
+		Host:   p.Host,
+		Path:   "/_ah/api/config/v1/",
+	}
+	if p.Insecure {
+		u.Scheme = "http"
+	}
+	return u
+}
 
 // GetConfigClient implements Provider.
 func (p *RemoteProvider) GetConfigClient(c context.Context, a backend.Authority) config.Interface {
@@ -129,7 +143,7 @@ func (p *RemoteProvider) GetConfigClient(c context.Context, a backend.Authority)
 	}
 
 	// Create our remote implementation.
-	impl = remote.New(p.BaseURL+"/_ah/api/config/v1/", func(c context.Context) (*http.Client, error) {
+	impl = remote.New(p.Host, p.Insecure, func(c context.Context) (*http.Client, error) {
 		var opts []auth.RPCOption
 		if a == backend.AsUser && p.testUserDelegationToken != "" {
 			opts = append(opts, auth.WithDelegationToken(p.testUserDelegationToken))

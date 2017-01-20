@@ -151,14 +151,15 @@ func installConfigBackend(c context.Context, s *Settings, be backend.B, dsCron b
 
 func getPrimaryBackend(c context.Context, settings *Settings) backend.B {
 	// Identify our config service backend (in testing, it will be supplied).
-	if settings.ConfigServiceURL == "" {
+	if settings.ConfigServiceHost == "" {
 		if info.IsDevAppServer(c) {
 			return devServerBackend()
 		}
 		return erroring.New(ErrNotConfigured)
 	}
 	return &client.Backend{&client.RemoteProvider{
-		BaseURL: settings.ConfigServiceURL,
+		Host:     settings.ConfigServiceHost,
+		Insecure: false,
 	}}
 }
 

@@ -30,7 +30,12 @@ func testTools(code int, resp interface{}) (*httptest.Server, config.Interface) 
 		marsh, _ := json.Marshal(resp)
 		fmt.Fprintln(w, string(marsh))
 	}))
-	return server, New(server.URL, nil)
+
+	u, err := url.Parse(server.URL)
+	if err != nil {
+		panic(err)
+	}
+	return server, New(u.Host, true, nil)
 }
 
 func TestRemoteCalls(t *testing.T) {
@@ -231,14 +236,14 @@ func TestRemoteCalls(t *testing.T) {
 
 	Convey("Should handle errors well", t, func() {
 		Convey("Should enforce GetConfigSetLocation argument is not the empty string.", func() {
-			remoteImpl := New("http://example.com", nil)
+			remoteImpl := New("example.com", true, nil)
 
 			_, err := remoteImpl.GetConfigSetLocation(ctx, "")
 			So(err, ShouldNotBeNil)
 		})
 
 		Convey("Should pass through HTTP errors", func() {
-			remoteImpl := New("http://example.com", func(context.Context) (*http.Client, error) {
+			remoteImpl := New("example.com", true, func(context.Context) (*http.Client, error) {
 				return &http.Client{
 					Transport: failingRoundTripper{},
 				}, nil

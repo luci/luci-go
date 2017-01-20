@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -39,14 +40,23 @@ const dsCacheDisabledSetting = "Disabled"
 
 // Settings are stored in the datastore via appengine/gaesettings package.
 type Settings struct {
-	// ConfigServiceURL is URL of luci-config service to fetch configs from.
-	ConfigServiceURL string `json:"config_service_url"`
+	// ConfigServiceHost is host name (and port) of the luci-config service to
+	// fetch configs from.
+	//
+	// For legacy reasons, the JSON value is "config_service_url".
+	ConfigServiceHost string `json:"config_service_url"`
 
 	// CacheExpirationSec is how long to hold configs in local cache.
 	CacheExpirationSec int `json:"cache_expiration_sec"`
 
 	// DatastoreCacheMode, is the datastore caching mode.
 	DatastoreCacheMode DSCacheMode `json:"datastore_enabled"`
+}
+
+// SetIfChanged sets "s" to be the new Settings if it differs from the current
+// settings value.
+func (s *Settings) SetIfChanged(c context.Context, who, why string) error {
+	return settings.SetIfChanged(c, settingsKey, s, who, why)
 }
 
 // FetchCachedSettings fetches Settings from the settings store.
@@ -62,6 +72,8 @@ func FetchCachedSettings(c context.Context) (Settings, error) {
 	s := Settings{}
 	switch err := settings.Get(c, settingsKey, &s); err {
 	case nil:
+		// Backwards-compatibility with full URL: translate to host.
+		s.ConfigServiceHost = translateConfigURLToHost(s.ConfigServiceHost)
 		return s, nil
 	case settings.ErrNoSettings:
 		return DefaultSettings(), nil
@@ -104,28 +116,27 @@ func (settingsUIPage) Title(c context.Context) (string, error) {
 func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 	return []settings.UIField{
 		{
-			ID:    "ConfigServiceURL",
-			Title: "Config service URL",
+			ID:    "ConfigServiceHost",
+			Title: `Config service host.`,
 			Type:  settings.UIFieldText,
 			Validator: func(v string) error {
-				if v != "" {
-					parsed, err := url.Parse(v)
-					if err != nil {
-						return fmt.Errorf("bad URL %q - %s", v, err)
-					}
-					if !parsed.IsAbs() || parsed.Path != "" {
-						return fmt.Errorf("bad URL %q - must be host root URL", v)
-					}
-					if parsed.Scheme != "https" {
-						return fmt.Errorf("bad URL %q - expecting https:// scheme", v)
-					}
+				// Validate that the host has a length, and has no forward slashes
+				// in it.
+				switch {
+				case len(v) == 0:
+					return fmt.Errorf("host cannot be empty")
+				case strings.IndexRune(v, '/') >= 0:
+					return fmt.Errorf("host must be a host name, not a URL")
+				default:
+					return nil
 				}
 				return nil
 			},
-			Help: `<p>The application may fetch configuration files stored centrally
-in an instance of <a href="https://github.com/luci/luci-py/tree/master/appengine/config_service">luci-config</a>
-service. This is an URL of such service. If you don't know what this is, you
-probably don't use it and can keep this setting blank.</p>`,
+			Help: `<p>The application may fetch configuration files stored centrally` +
+				`in an instance of <a href="https://github.com/luci/luci-py/tree/master/appengine/config_service">luci-config</a>` +
+				`service. This is the host name (e.g., "example.com") of such service. For legacy purposes, this may be a` +
+				`URL, in which case the host component will be used. If you don't know what this is, you probably don't ` +
+				`use it and can keep this setting blank.</p>`,
 		},
 		{
 			ID:    "CacheExpirationSec",
@@ -171,7 +182,7 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 	}
 
 	return map[string]string{
-		"ConfigServiceURL":   s.ConfigServiceURL,
+		"ConfigServiceHost":  s.ConfigServiceHost,
 		"CacheExpirationSec": strconv.Itoa(s.CacheExpirationSec),
 		"DatastoreCacheMode": cacheMode,
 	}, nil
@@ -184,7 +195,7 @@ func (settingsUIPage) WriteSettings(c context.Context, values map[string]string,
 	}
 
 	modified := Settings{
-		ConfigServiceURL:   values["ConfigServiceURL"],
+		ConfigServiceHost:  values["ConfigServiceHost"],
 		DatastoreCacheMode: dsMode,
 	}
 
@@ -194,7 +205,29 @@ func (settingsUIPage) WriteSettings(c context.Context, values map[string]string,
 		return err
 	}
 
-	return settings.SetIfChanged(c, settingsKey, &modified, who, why)
+	// Backwards-compatibility with full URL: translate to host.
+	modified.ConfigServiceHost = translateConfigURLToHost(modified.ConfigServiceHost)
+
+	return modified.SetIfChanged(c, who, why)
+}
+
+func translateConfigURLToHost(v string) string {
+	// If the host is a full URL, extract just the host component.
+	switch u, err := url.Parse(v); {
+	case err != nil:
+		return v
+	case u.Host != "":
+		// If we have a host (e.g., "example.com"), this will parse into the "Path"
+		// field with an empty host value. Therefore, if we have a "Host" value,
+		// we will use it directly (e.g., "http://example.com")
+		return u.Host
+	case u.Path != "":
+		// If this was just an empty (correct) host, it will have parsed into the
+		// Path field with an empty Host value.
+		return u.Path
+	default:
+		return v
+	}
 }
 
 func init() {

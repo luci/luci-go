@@ -45,12 +45,6 @@ type memoryImpl struct {
 	err  error
 }
 
-func (m *memoryImpl) ServiceURL(ctx context.Context) url.URL {
-	return url.URL{
-		Scheme: "memory",
-	}
-}
-
 func (m *memoryImpl) GetConfig(ctx context.Context, configSet, path string, hashOnly bool) (*config.Config, error) {
 	if err := m.err; err != nil {
 		return nil, err

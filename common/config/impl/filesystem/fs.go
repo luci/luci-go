@@ -398,13 +398,6 @@ func (fs *filesystemImpl) slurpScannedConfigs(revision string, scanned *scannedC
 	fs.contentRevisionsScanned.Add(revision)
 }
 
-func (fs *filesystemImpl) ServiceURL(ctx context.Context) url.URL {
-	return url.URL{
-		Scheme: "file",
-		Path:   fs.basePath.s(),
-	}
-}
-
 func (fs *filesystemImpl) GetConfig(ctx context.Context, cfgSet, cfgPath string, hashOnly bool) (*config.Config, error) {
 	configSet := configSet{luciPath(cfgSet)}
 	path := luciPath(cfgPath)

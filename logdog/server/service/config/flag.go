@@ -7,7 +7,9 @@ package config
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/luci/luci-go/common/clock/clockflag"
@@ -62,8 +64,16 @@ func (f *Flags) CoordinatorOptions(c context.Context, client logdog.ServicesClie
 			return nil, err
 		}
 	} else {
-		if ccfg.ConfigServiceUrl == "" {
-			return nil, errors.New("coordinator does not specify a config service")
+		host := ccfg.ConfigServiceHost
+		if host == "" {
+			if ccfg.ConfigServiceUrl == "" {
+				return nil, errors.New("coordinator does not specify a config service")
+			}
+			u, err := url.Parse(ccfg.ConfigServiceUrl)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse config service URL: %v", err)
+			}
+			host = u.Host
 		}
 		if ccfg.ConfigSet == "" {
 			return nil, errors.New("coordinator does not specify a config set")
@@ -79,7 +89,7 @@ func (f *Flags) CoordinatorOptions(c context.Context, client logdog.ServicesClie
 				return &http.Client{Transport: rr}, nil
 			}
 		}
-		ci = remote.New(ccfg.ConfigServiceUrl, clientFactory)
+		ci = remote.New(host, false, clientFactory)
 	}
 
 	return &Options{

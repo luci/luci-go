@@ -60,9 +60,15 @@ func TestRemoteService(t *testing.T) {
 		svr := httptest.NewServer(&ris)
 		defer svr.Close()
 
+		svrURL, err := url.Parse(svr.URL)
+		if err != nil {
+			panic(err)
+		}
+
 		c = backend.WithBackend(c, &Backend{
 			Provider: &RemoteProvider{
-				BaseURL:                 svr.URL,
+				Host:                    svrURL.Host,
+				Insecure:                true,
 				testUserDelegationToken: "user token",
 			},
 		})

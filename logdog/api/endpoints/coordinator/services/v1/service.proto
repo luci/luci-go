@@ -21,6 +21,10 @@ message GetConfigResponse {
   string config_set = 2;
   // The path of the text-serialized service configuration protobuf.
   string service_config_path = 3;
+
+  // The host name of the configuration service. This is preferred to
+  // "config_service_url".
+  string config_service_host = 4;
 }
 
 // RegisterStreamRequest is the set of caller-supplied data for the

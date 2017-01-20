@@ -34,24 +34,30 @@ type ClientFactory func(context.Context) (*http.Client, error)
 // trippers are bound to contexts and carry RPC deadlines.
 //
 // If 'clients' is nil, http.DefaultClient will be used for all requests.
-func New(configServiceURL string, clients ClientFactory) config.Interface {
-	serviceURL, err := url.Parse(configServiceURL)
-	if err != nil {
-		panic(fmt.Errorf("failed to parse service URL: %v", err))
-	}
+func New(host string, insecure bool, clients ClientFactory) config.Interface {
 	if clients == nil {
 		clients = func(context.Context) (*http.Client, error) {
 			return http.DefaultClient, nil
 		}
 	}
+
+	serviceURL := url.URL{
+		Scheme: "https",
+		Host:   host,
+		Path:   "/_ah/api/config/v1/",
+	}
+	if insecure {
+		serviceURL.Scheme = "http"
+	}
+
 	return &remoteImpl{
-		serviceURL: serviceURL,
+		serviceURL: serviceURL.String(),
 		clients:    clients,
 	}
 }
 
 type remoteImpl struct {
-	serviceURL *url.URL
+	serviceURL string
 	clients    ClientFactory
 }
 
@@ -67,12 +73,9 @@ func (r *remoteImpl) service(ctx context.Context) (*configApi.Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	service.BasePath = r.serviceURL.String()
-	return service, nil
-}
 
-func (r *remoteImpl) ServiceURL(ctx context.Context) url.URL {
-	return *r.serviceURL
+	service.BasePath = r.serviceURL
+	return service, nil
 }
 
 func (r *remoteImpl) GetConfig(ctx context.Context, configSet, path string, hashOnly bool) (*config.Config, error) {

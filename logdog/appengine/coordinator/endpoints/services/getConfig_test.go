@@ -10,6 +10,7 @@ import (
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
 	ct "github.com/luci/luci-go/logdog/appengine/coordinator/coordinatorTest"
+	"github.com/luci/luci-go/luci_config/appengine/gaeconfig"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -20,6 +21,11 @@ func TestGetConfig(t *testing.T) {
 
 	Convey(`With a testing configuration`, t, func() {
 		c, env := ct.Install()
+
+		s := gaeconfig.Settings{
+			ConfigServiceHost: "example.com",
+		}
+		So(s.SetIfChanged(c, "test", "test"), ShouldBeNil)
 
 		svr := New()
 
@@ -34,9 +40,10 @@ func TestGetConfig(t *testing.T) {
 			cr, err := svr.GetConfig(c, nil)
 			So(err, ShouldBeRPCOK)
 			So(cr, ShouldResemble, &logdog.GetConfigResponse{
-				ConfigServiceUrl:  "memory://",
+				ConfigServiceUrl:  "test://example.com",
 				ConfigSet:         "services/app",
 				ServiceConfigPath: svcconfig.ServiceConfigFilename,
+				ConfigServiceHost: "example.com",
 			})
 		})
 	})

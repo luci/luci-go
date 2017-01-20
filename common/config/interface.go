@@ -83,9 +83,6 @@ type Project struct {
 //
 // Transient errors are wrapped in errors.Transient. See common/errors.
 type Interface interface {
-	// ServiceURL returns the URL of the config service.
-	ServiceURL(ctx context.Context) url.URL
-
 	// GetConfig returns a config at a path in a config set or ErrNoConfig
 	// if missing. If hashOnly is true, returned Config struct has Content set
 	// to "" (and the call is faster).

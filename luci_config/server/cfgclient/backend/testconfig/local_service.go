@@ -41,6 +41,14 @@ type Provider struct {
 
 var _ client.Provider = (*Provider)(nil)
 
+// GetServiceURL implements ClientProvider.
+func (p *Provider) GetServiceURL() url.URL {
+	return url.URL{
+		Scheme: "test",
+		Host:   "example.com",
+	}
+}
+
 // GetConfigClient implements ClientProvider.
 func (p *Provider) GetConfigClient(c context.Context, a backend.Authority) ccfg.Interface {
 	return &boundLocalInterface{

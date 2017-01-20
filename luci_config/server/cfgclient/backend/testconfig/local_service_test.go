@@ -85,7 +85,7 @@ func TestLocalService(t *testing.T) {
 		}
 
 		Convey(`Can get the service URL`, func() {
-			So(cfgclient.ServiceURL(c), ShouldResemble, url.URL{Scheme: "memory"})
+			So(cfgclient.ServiceURL(c), ShouldResemble, url.URL{Scheme: "test", Host: "example.com"})
 		})
 
 		Convey(`Can get a single config`, func() {
