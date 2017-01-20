@@ -11,10 +11,6 @@ import (
 	"hash"
 	"io"
 	"log"
-
-	// TODO(tandrii): this library became part of Go 1.7, So, switch back to
-	// standard library compress/zlib once we are solidly on Go > 1.7
-	"github.com/klauspost/compress/zlib"
 )
 
 // GetHash returns a fresh instance of the hashing algorithm to be used to
@@ -31,7 +27,7 @@ func GetHash() hash.Hash {
 //
 // It is currently hardcoded to RFC 1950 (zlib).
 func GetDecompressor(in io.Reader) io.ReadCloser {
-	d, err := zlib.NewReader(in)
+	d, err := newZlibReader(in)
 	if err != nil {
 		// The data is corrupted.
 		log.Printf("%s", err)
@@ -45,7 +41,7 @@ func GetDecompressor(in io.Reader) io.ReadCloser {
 //
 // It is currently hardcoded to RFC 1950 (zlib).
 func GetCompressor(out io.Writer) io.WriteCloser {
-	c, _ := zlib.NewWriterLevel(out, 7)
+	c, _ := newZlibWriterLevel(out, 7)
 	return c
 }
 
