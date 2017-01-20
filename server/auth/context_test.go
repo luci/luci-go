@@ -20,6 +20,8 @@ import (
 )
 
 func TestContext(t *testing.T) {
+	t.Parallel()
+
 	Convey("Works", t, func() {
 		c := context.Background()
 
@@ -53,6 +55,8 @@ func TestContext(t *testing.T) {
 }
 
 func TestContextAuthenticate(t *testing.T) {
+	t.Parallel()
+
 	call := func(c context.Context, m router.MiddlewareChain, h router.Handler) *httptest.ResponseRecorder {
 		req, err := http.NewRequest("GET", "http://example.com/foo", nil)
 		So(err, ShouldBeNil)
@@ -112,6 +116,8 @@ func TestContextAuthenticate(t *testing.T) {
 }
 
 func TestAutologin(t *testing.T) {
+	t.Parallel()
+
 	call := func(c context.Context, m router.MiddlewareChain, h router.Handler) *httptest.ResponseRecorder {
 		req, err := http.NewRequest("GET", "http://example.com/foo", nil)
 		So(err, ShouldBeNil)

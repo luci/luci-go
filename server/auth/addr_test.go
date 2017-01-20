@@ -14,6 +14,8 @@ import (
 )
 
 func TestParseRemoteIP(t *testing.T) {
+	t.Parallel()
+
 	Convey(`Test suites`, t, func() {
 		for _, tc := range []struct {
 			v   string

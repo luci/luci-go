@@ -23,6 +23,8 @@ import (
 )
 
 func TestMintDelegationToken(t *testing.T) {
+	t.Parallel()
+
 	Convey("MintDelegationToken works", t, func() {
 		ctx := context.Background()
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)

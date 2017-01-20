@@ -14,6 +14,8 @@ import (
 )
 
 func TestState(t *testing.T) {
+	t.Parallel()
+
 	Convey("Check empty ctx", t, func() {
 		ctx := context.Background()
 		So(GetState(ctx), ShouldBeNil)

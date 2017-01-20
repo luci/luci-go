@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 	"google.golang.org/grpc/credentials"
 
 	"github.com/luci/luci-go/common/auth"
@@ -102,7 +103,7 @@ func (o delegationTokenOption) apply(opts *rpcOptions) {
 //    client := &http.Client{Transport: tr}
 //    ...
 func GetRPCTransport(c context.Context, kind RPCAuthorityKind, opts ...RPCOption) (http.RoundTripper, error) {
-	options, err := makeRpcOptions(kind, opts)
+	options, err := makeRPCOptions(kind, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +131,7 @@ func GetRPCTransport(c context.Context, kind RPCAuthorityKind, opts ...RPCOption
 //
 // It can be used to authenticate outbound gPRC RPC's.
 func GetPerRPCCredentials(kind RPCAuthorityKind, opts ...RPCOption) (credentials.PerRPCCredentials, error) {
-	options, err := makeRpcOptions(kind, opts)
+	options, err := makeRPCOptions(kind, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -150,6 +151,38 @@ func (creds perRPCCreds) GetRequestMetadata(c context.Context, uri ...string) (m
 
 func (creds perRPCCreds) RequireTransportSecurity() bool {
 	return true
+}
+
+// GetTokenSourceAsSelf returns an oauth2.TokenSource bound to the supplied
+// Context that returns tokens for AsSelf authentication.
+//
+// If no scopes are provided, auth.OAuthScopeEmail will be used.
+//
+// While GetPerRPCCredentials is preferred, this can be used by packages that
+// cannot or do not properly handle this gRPC option.
+func GetTokenSourceAsSelf(c context.Context, scopes ...string) oauth2.TokenSource {
+	if len(scopes) == 0 {
+		scopes = []string{auth.OAuthScopeEmail}
+	}
+	return &tokenSource{c, scopes}
+}
+
+type tokenSource struct {
+	context.Context
+	scopes []string
+}
+
+func (ts *tokenSource) Token() (*oauth2.Token, error) {
+	cfg := GetConfig(ts)
+	if cfg == nil || cfg.AccessTokenProvider == nil {
+		return nil, ErrNotConfigured
+	}
+
+	tok, err := cfg.AccessTokenProvider(ts, ts.scopes)
+	if err != nil {
+		return nil, err
+	}
+	return tok.OAuth2Token(), nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -196,8 +229,8 @@ type rpcOptions struct {
 	rpcMocks        *rpcMocks
 }
 
-// makeRpcOptions applies all options and validates them.
-func makeRpcOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error) {
+// makeRPCOptions applies all options and validates them.
+func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error) {
 	options := &rpcOptions{kind: kind}
 	for _, o := range opts {
 		o.apply(options)

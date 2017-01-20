@@ -19,6 +19,8 @@ import (
 )
 
 func TestTokenCache(t *testing.T) {
+	t.Parallel()
+
 	Convey("with mocked cache", t, func() {
 		cache := &mockedCache{}
 

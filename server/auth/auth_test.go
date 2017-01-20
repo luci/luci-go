@@ -24,6 +24,8 @@ import (
 )
 
 func TestAuthenticate(t *testing.T) {
+	t.Parallel()
+
 	Convey("IsAllowedOAuthClientID on default DB", t, func() {
 		c := context.Background()
 		auth := Authenticator{fakeOAuthMethod{clientID: "some_client_id"}}

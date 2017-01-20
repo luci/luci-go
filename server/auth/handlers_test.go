@@ -20,6 +20,8 @@ import (
 )
 
 func TestCertificatesHandler(t *testing.T) {
+	t.Parallel()
+
 	call := func(s signing.Signer) (*signing.PublicCertificates, error) {
 		r := router.New()
 		InstallHandlers(r, router.NewMiddlewareChain(
@@ -55,6 +57,8 @@ func TestCertificatesHandler(t *testing.T) {
 }
 
 func TestServiceInfoHandler(t *testing.T) {
+	t.Parallel()
+
 	Convey("Works", t, func() {
 		r := router.New()
 		signer := &phonySigner{}

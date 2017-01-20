@@ -224,6 +224,15 @@ type Token struct {
 	TokenType string `json:"token_type,omitempty"`
 }
 
+// OAuth2Token returns the oauth2.Token containing the same data as tok.
+func (tok *Token) OAuth2Token() *oauth2.Token {
+	return &oauth2.Token{
+		AccessToken: tok.AccessToken,
+		Expiry:      tok.Expiry,
+		TokenType:   tok.TokenType,
+	}
+}
+
 // NewAuthenticator returns a new instance of Authenticator given its options.
 //
 // The authenticator is essentially a factory for http.RoundTripper that knows
@@ -476,11 +485,7 @@ func (s tokenSource) Token() (*oauth2.Token, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &oauth2.Token{
-		AccessToken: tok.AccessToken,
-		Expiry:      tok.Expiry,
-		TokenType:   tok.TokenType,
-	}, nil
+	return tok.OAuth2Token(), nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
