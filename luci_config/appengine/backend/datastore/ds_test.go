@@ -58,13 +58,15 @@ func projectConfigWithAccess(name cfgtypes.ProjectName, access ...string) *confi
 // fakeCache is a pure in-memory testCache implementation. It is very simple,
 // storing only raw cache key/value pairs.
 type fakeCache struct {
-	d   map[string]datastorecache.Value
-	err error
+	d          map[string]datastorecache.Value
+	serviceURL string
+	err        error
 }
 
-func mkFakeCache() *fakeCache {
+func mkFakeCache(serviceURL string) *fakeCache {
 	return &fakeCache{
-		d: make(map[string]datastorecache.Value),
+		d:          make(map[string]datastorecache.Value),
+		serviceURL: serviceURL,
 	}
 }
 
@@ -83,9 +85,6 @@ func (fc *fakeCache) Get(c context.Context, key []byte) (v datastorecache.Value,
 
 	err = datastorecache.ErrCacheExpired
 	return
-}
-
-func (fc *fakeCache) setCacheData(key caching.Key, d []byte) {
 }
 
 func (fc *fakeCache) set(key caching.Key, v *caching.Value) {
@@ -116,10 +115,11 @@ func (fc *fakeCache) setCacheErr(err error) { fc.err = err }
 func (fc *fakeCache) setProjectDNE(project string) {
 	// Get for this project config will fail.
 	fc.set(caching.Key{
-		Schema:    caching.Schema,
-		Op:        caching.OpGet,
-		ConfigSet: string(cfgtypes.ProjectConfigSet(cfgtypes.ProjectName(project))),
-		Path:      cfgclient.ProjectConfigPath,
+		Schema:     caching.Schema,
+		ServiceURL: fc.serviceURL,
+		Op:         caching.OpGet,
+		ConfigSet:  string(cfgtypes.ProjectConfigSet(cfgtypes.ProjectName(project))),
+		Path:       cfgclient.ProjectConfigPath,
 	}, nil)
 }
 
@@ -143,6 +143,7 @@ func (fc *fakeCache) addConfigImpl(cs cfgtypes.ConfigSet, path, formatter, forma
 
 	fc.set(caching.Key{
 		Schema:     caching.Schema,
+		ServiceURL: fc.serviceURL,
 		Authority:  backend.AsService,
 		Op:         caching.OpGet,
 		ConfigSet:  string(cs),
@@ -197,6 +198,7 @@ func (fc *fakeCache) addConfigSets(path string, configSets ...cfgtypes.ConfigSet
 
 		fc.set(caching.Key{
 			Schema:       caching.Schema,
+			ServiceURL:   fc.serviceURL,
 			Authority:    backend.AsService,
 			Op:           caching.OpGetAll,
 			Content:      true,
@@ -210,10 +212,11 @@ func (fc *fakeCache) addConfigSets(path string, configSets ...cfgtypes.ConfigSet
 func (fc *fakeCache) addConfigSetURL(configSet cfgtypes.ConfigSet) string {
 	u := fmt.Sprintf("https://exmaple.com/config-sets/%s", configSet)
 	fc.set(caching.Key{
-		Schema:    caching.Schema,
-		Authority: backend.AsService,
-		Op:        caching.OpConfigSetURL,
-		ConfigSet: string(configSet),
+		Schema:     caching.Schema,
+		ServiceURL: fc.serviceURL,
+		Authority:  backend.AsService,
+		Op:         caching.OpConfigSetURL,
+		ConfigSet:  string(configSet),
 	}, &caching.Value{
 		URL: u,
 	})
@@ -554,14 +557,14 @@ func TestDatastoreCache(t *testing.T) {
 
 	Convey(`Testing with in-memory stub cache`, t, func() {
 		c := context.Background()
-		fc := mkFakeCache()
 
-		var be backend.B
-		be = &client.Backend{
+		var be backend.B = &client.Backend{
 			Provider: &testconfig.Provider{
 				Base: memConfig.New(nil),
 			},
 		}
+		mcURL := be.ServiceURL(c)
+		fc := mkFakeCache(mcURL.String())
 
 		fr := gaeformat.Default()
 		be = &format.Backend{

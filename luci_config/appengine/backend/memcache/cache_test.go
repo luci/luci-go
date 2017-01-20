@@ -20,7 +20,7 @@ import (
 
 	"github.com/luci/gae/filter/featureBreaker"
 	"github.com/luci/gae/impl/memory"
-	mc "github.com/luci/gae/service/memcache"
+	"github.com/luci/gae/service/memcache"
 
 	"golang.org/x/net/context"
 
@@ -39,8 +39,8 @@ func TestMemcache(t *testing.T) {
 
 		c, mcFB := featureBreaker.FilterMC(c, nil)
 
-		getMCStats := func(c context.Context) *mc.Statistics {
-			st, err := mc.Stats(c)
+		getMCStats := func(c context.Context) *memcache.Statistics {
+			st, err := memcache.Stats(c)
 			if err != nil {
 				panic(err)
 			}
@@ -53,12 +53,12 @@ func TestMemcache(t *testing.T) {
 			},
 		}
 
-		var be backend.B
-		be = &client.Backend{
+		var be backend.B = &client.Backend{
 			Provider: &testconfig.Provider{
 				Base: memconfig.New(configDB),
 			},
 		}
+		mcURL := be.ServiceURL(c)
 		be = Backend(be, time.Minute)
 		c = backend.WithBackend(c, be)
 
@@ -102,14 +102,15 @@ func TestMemcache(t *testing.T) {
 
 			Convey(`When a cached entry is corrupted`, func() {
 				cacheKey := caching.Key{
-					Schema:    caching.Schema,
-					Op:        caching.OpGet,
-					ConfigSet: "projects/foo",
-					Path:      "test.cfg",
-					Content:   true,
-					Authority: backend.AsService,
+					Schema:     caching.Schema,
+					ServiceURL: mcURL.String(),
+					Op:         caching.OpGet,
+					ConfigSet:  "projects/foo",
+					Path:       "test.cfg",
+					Content:    true,
+					Authority:  backend.AsService,
 				}
-				So(mc.Set(c, mc.NewItem(c, memcacheKey(&cacheKey)).SetValue([]byte("!!! trash !!!"))), ShouldBeNil)
+				So(memcache.Set(c, memcache.NewItem(c, memcacheKey(&cacheKey)).SetValue([]byte("!!! trash !!!"))), ShouldBeNil)
 				So(cfgclient.Get(c, cfgclient.AsService, "projects/foo", "test.cfg", cfgclient.String(&content), nil), ShouldBeNil)
 				So(content, ShouldEqual, "foo")
 				So(getMCStats(c).Misses, ShouldEqual, 0)

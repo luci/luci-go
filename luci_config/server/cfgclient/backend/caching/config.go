@@ -39,6 +39,9 @@ type Key struct {
 	// incompatible way, this must also change.
 	Schema string `json:"s,omitempty"`
 
+	// ServiceURL is the URL of the config service.
+	ServiceURL string `json:"u,omitempty"`
+
 	// Authority is the config authority to use.
 	Authority backend.Authority `json:"a,omitempty"`
 
@@ -70,8 +73,8 @@ func (k *Key) ParamHash() []byte {
 	if k.Content {
 		cstr = "y"
 	}
-	return HashParams(k.Schema, string(k.Authority), string(k.Op), cstr, k.Formatter, k.FormatData,
-		k.ConfigSet, k.Path, string(k.GetAllTarget))
+	return HashParams(k.Schema, k.ServiceURL, string(k.Authority), string(k.Op), cstr,
+		k.Formatter, k.FormatData, k.ConfigSet, k.Path, string(k.GetAllTarget))
 }
 
 // String prints a text representation of the key. No effort is made to ensure
@@ -238,10 +241,16 @@ type Backend struct {
 	CacheGet func(context.Context, Key, Loader) (*Value, error)
 }
 
+func (b *Backend) keyServiceURL(c context.Context) string {
+	u := b.ServiceURL(c)
+	return u.String()
+}
+
 // Get implements backend.B.
 func (b *Backend) Get(c context.Context, configSet, path string, p backend.Params) (*backend.Item, error) {
 	key := Key{
 		Schema:     Schema,
+		ServiceURL: b.keyServiceURL(c),
 		Authority:  p.Authority,
 		Op:         OpGet,
 		Content:    p.Content,
@@ -283,6 +292,7 @@ func (b *Backend) Get(c context.Context, configSet, path string, p backend.Param
 func (b *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string, p backend.Params) ([]*backend.Item, error) {
 	key := Key{
 		Schema:       Schema,
+		ServiceURL:   b.keyServiceURL(c),
 		Authority:    p.Authority,
 		Op:           OpGetAll,
 		Content:      p.Content,
@@ -317,10 +327,11 @@ func (b *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string,
 // ConfigSetURL implements backend.B.
 func (b *Backend) ConfigSetURL(c context.Context, configSet string, p backend.Params) (u url.URL, err error) {
 	key := Key{
-		Schema:    Schema,
-		Authority: p.Authority,
-		Op:        OpConfigSetURL,
-		ConfigSet: configSet,
+		Schema:     Schema,
+		ServiceURL: b.keyServiceURL(c),
+		Authority:  p.Authority,
+		Op:         OpConfigSetURL,
+		ConfigSet:  configSet,
 	}
 
 	var value *Value
