@@ -5,16 +5,18 @@
 package local
 
 import (
-	"crypto/sha1"
-	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
+	"syscall"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -152,7 +154,11 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, inst PackageInstance)
 	// and files will be moved to the site root later (in addToSiteRoot call).
 	// ExtractPackageInstance knows how to build full paths and how to atomically
 	// extract a package. No need to delete garbage if it fails.
-	pkgPath := d.packagePath(ctx, pin.PackageName)
+	pkgPath, err := d.packagePath(ctx, pin.PackageName, true)
+	if err != nil {
+		return common.Pin{}, err
+	}
+
 	destPath := filepath.Join(pkgPath, pin.InstanceID)
 	if err := ExtractInstance(ctx, inst, NewFileSystemDestination(destPath, d.fs)); err != nil {
 		return common.Pin{}, err
@@ -235,7 +241,15 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, inst PackageInstance)
 }
 
 func (d *deployerImpl) CheckDeployed(ctx context.Context, pkg string) (common.Pin, error) {
-	current, err := d.getCurrentInstanceID(d.packagePath(ctx, pkg))
+	pkgPath, err := d.packagePath(ctx, pkg, false)
+	if err != nil {
+		return common.Pin{}, err
+	}
+	if pkgPath == "" {
+		return common.Pin{}, fmt.Errorf("package %s is not installed", pkg)
+	}
+
+	current, err := d.getCurrentInstanceID(pkgPath)
 	if err != nil {
 		return common.Pin{}, err
 	}
@@ -265,22 +279,23 @@ func (d *deployerImpl) FindDeployed(ctx context.Context) ([]common.Pin, error) {
 		if !info.IsDir() {
 			continue
 		}
-		// Attempt to read the manifest. If it is there -> valid package is found.
+		// Read the description and the 'current' link.
 		pkgPath := filepath.Join(pkgs, info.Name())
+		desc, err := d.readDescription(ctx, pkgPath)
+		if err != nil || desc == nil {
+			continue
+		}
 		currentID, err := d.getCurrentInstanceID(pkgPath)
 		if err != nil || currentID == "" {
 			continue
 		}
-		manifest, err := d.readManifest(ctx, filepath.Join(pkgPath, currentID))
-		if err != nil {
-			continue
-		}
+
 		// Ignore duplicate entries, they can appear if someone messes with pkgs/*
 		// structure manually.
-		if _, ok := found[manifest.PackageName]; !ok {
-			keys = append(keys, manifest.PackageName)
-			found[manifest.PackageName] = common.Pin{
-				PackageName: manifest.PackageName,
+		if _, ok := found[desc.PackageName]; !ok {
+			keys = append(keys, desc.PackageName)
+			found[desc.PackageName] = common.Pin{
+				PackageName: desc.PackageName,
 				InstanceID:  currentID,
 			}
 		}
@@ -300,7 +315,14 @@ func (d *deployerImpl) RemoveDeployed(ctx context.Context, packageName string) e
 	if err := common.ValidatePackageName(packageName); err != nil {
 		return err
 	}
-	pkgPath := d.packagePath(ctx, packageName)
+	pkgPath, err := d.packagePath(ctx, packageName, false)
+	if err != nil {
+		return err
+	}
+	if pkgPath == "" {
+		logging.Warningf(ctx, "Package %s not found", packageName)
+		return nil
+	}
 
 	// Read the manifest of the currently installed version.
 	manifest := Manifest{}
@@ -327,6 +349,14 @@ func (d *deployerImpl) TempFile(ctx context.Context, prefix string) (*os.File, e
 	return ioutil.TempFile(dir, prefix)
 }
 
+func (d *deployerImpl) TempDir(ctx context.Context, prefix string) (string, error) {
+	dir, err := d.fs.EnsureDirectory(ctx, filepath.Join(d.fs.Root(), SiteServiceDir, "tmp"))
+	if err != nil {
+		return "", err
+	}
+	return ioutil.TempDir(dir, prefix)
+}
+
 func (d *deployerImpl) CleanupTrash(ctx context.Context) error {
 	return d.fs.CleanupTrash(ctx)
 }
@@ -334,16 +364,143 @@ func (d *deployerImpl) CleanupTrash(ctx context.Context) error {
 ////////////////////////////////////////////////////////////////////////////////
 // Utility methods.
 
+type numSet sort.IntSlice
+
+func (s *numSet) addNum(n int) {
+	idx := sort.IntSlice((*s)).Search(n)
+	if idx == len(*s) {
+		// it's insertion point is off the end of the slice
+		*s = append(*s, n)
+	} else if (*s)[idx] != n {
+		// it's insertion point is inside the slice, but is not present.
+		*s = append(*s, 0)
+		copy((*s)[idx+1:], (*s)[idx:])
+		(*s)[idx] = n
+	}
+	// it's already present in the slice
+}
+
+func (s *numSet) smallestNewNum() int {
+	prev := -1
+	for _, n := range *s {
+		if n-1 != prev {
+			return prev + 1
+		}
+		prev = n
+	}
+	return prev + 1
+}
+
 // packagePath returns a path to a package directory in .cipd/pkgs/.
-func (d *deployerImpl) packagePath(ctx context.Context, pkg string) string {
-	rel := filepath.Join(filepath.FromSlash(packagesDir), packageNameDigest(pkg))
+//
+// This will scan all directories under pkgs, looking for a description.json. If
+// an old-style package folder is encountered (e.g. has an instance folder and
+// current manifest, but doesn't have a description.json), the description.json
+// will be added.
+//
+// If no suitable path is found and allocate is true, this will create a new
+// directory with an accompanying description.json. Otherwise this returns "".
+func (d *deployerImpl) packagePath(ctx context.Context, pkg string, allocate bool) (string, error) {
+	if err := common.ValidatePackageName(pkg); err != nil {
+		return "", err
+	}
+
+	rel := filepath.Join(filepath.FromSlash(packagesDir))
 	abs, err := d.fs.RootRelToAbs(rel)
 	if err != nil {
-		msg := fmt.Sprintf("can't get absolute path of %q", rel)
-		logging.Errorf(ctx, "%s", msg)
-		panic(msg)
+		logging.Errorf(ctx, "Can't get absolute path of %q: %s", rel, err)
+		return "", err
 	}
-	return abs
+	files, err := ioutil.ReadDir(abs)
+	if err != nil && !os.IsNotExist(err) {
+		logging.Errorf(ctx, "Can't read packages dir %q: %s", abs, err)
+		return "", err
+	}
+
+	seenNumbers := numSet{}
+
+	for _, f := range files {
+		// keep track of all numeric children of .cipd/pkgs
+		if n, err := strconv.Atoi(f.Name()); err == nil {
+			seenNumbers.addNum(n)
+		}
+
+		fullPkgPath := filepath.Join(abs, f.Name())
+		description, err := d.readDescription(ctx, fullPkgPath)
+		if err != nil {
+			logging.Warningf(ctx, "Skipping %q: %s", fullPkgPath, err)
+			continue
+		}
+		if description.PackageName == pkg {
+			return fullPkgPath, nil
+		}
+	}
+
+	if !allocate {
+		return "", nil
+	}
+
+	// we didn't find one, so we have to make one
+	if _, err := d.fs.EnsureDirectory(ctx, abs); err != nil {
+		logging.Errorf(ctx, "Cannot ensure packages directory: %s", err)
+		return "", err
+	}
+
+	tmpDir, err := d.TempDir(ctx, strings.Replace(pkg, "/", "_", -1))
+	if err != nil {
+		logging.Errorf(ctx, "Cannot create new pkg tempdir: %s", err)
+		return "", err
+	}
+	defer d.fs.EnsureDirectoryGone(ctx, tmpDir)
+	err = d.fs.EnsureFile(ctx, filepath.Join(tmpDir, descriptionName), func(f *os.File) error {
+		return writeDescription(&Description{PackageName: pkg}, f)
+	})
+	if err != nil {
+		logging.Errorf(ctx, "Cannot create new pkg description.json: %s", err)
+		return "", err
+	}
+
+	// now we have to find a suitable index folder for it.
+	for attempts := 0; attempts < 3; attempts++ {
+		if attempts > 0 {
+			// random sleep up to 1s to help avoid collisions between clients.
+			time.Sleep(time.Duration(rand.Int31n(1000)) * time.Millisecond)
+		}
+		n := seenNumbers.smallestNewNum()
+		seenNumbers.addNum(n)
+
+		pkgPath := filepath.Join(abs, strconv.Itoa(n))
+		// We use os.Rename instead of d.fs.Replace because we want it to fail if
+		// the target directory already exists.
+		switch err := os.Rename(tmpDir, pkgPath); le := err.(type) {
+		case nil:
+			return pkgPath, nil
+
+		case *os.LinkError:
+			if le.Err != syscall.ENOTEMPTY {
+				logging.Errorf(ctx, "Error while creating pkg dir %s: %s", pkgPath, err)
+				return "", err
+			}
+
+		default:
+			logging.Errorf(ctx, "Unknown error while creating pkg dir %s: %s", pkgPath, err)
+			return "", err
+		}
+
+		// rename failed with ENOTEMPTY, that means that another client wrote this
+		// directory.
+		description, err := d.readDescription(ctx, pkgPath)
+		if err != nil {
+			logging.Warningf(ctx, "Skipping %q: %s", pkgPath, err)
+			continue
+		}
+		if description.PackageName == pkg {
+			return pkgPath, nil
+		}
+	}
+
+	logging.Errorf(ctx, "Unable to find valid index for package %q in %s!", pkg, abs)
+	return "", err
 }
 
 // getCurrentInstanceID returns instance ID of currently installed instance
@@ -388,6 +545,63 @@ func (d *deployerImpl) setCurrentInstanceID(ctx context.Context, packageDir, ins
 			strings.NewReader(instanceID))
 	}
 	return d.fs.EnsureSymlink(ctx, filepath.Join(packageDir, currentSymlink), instanceID)
+}
+
+// readDescription reads the package description.json given a path to a package
+// directory.
+//
+// As a backwards-compatibility measure, it will also upgrade CIPD < 1.4 folders
+// to contain a description.json. Previous to 1.4, package folders only had
+// instance subfolders, and the current instances' manifest was used to
+// determine the package name. Versions prior to 1.4 also installed all packages
+// at the base (root ""), hence the implied root location here.
+//
+// Returns (nil, nil) if no description.json exists and there are no instance
+// folders present.
+func (d *deployerImpl) readDescription(ctx context.Context, pkgDir string) (desc *Description, err error) {
+	descriptionPath := filepath.Join(pkgDir, descriptionName)
+	r, err := os.Open(descriptionPath)
+	switch {
+	case os.IsNotExist(err):
+		// try fixup
+		break
+	case err == nil:
+		defer r.Close()
+		return readDescription(r)
+	default:
+		return
+	}
+
+	// see if this is a pre 1.4 directory
+	currentID, err := d.getCurrentInstanceID(pkgDir)
+	if err != nil {
+		return
+	}
+
+	if currentID == "" {
+		logging.Warningf(ctx, "No current instance id in %s", pkgDir)
+		err = nil
+		return
+	}
+
+	manifest, err := d.readManifest(ctx, filepath.Join(pkgDir, currentID))
+	if err != nil {
+		return
+	}
+
+	desc = &Description{
+		PackageName: manifest.PackageName,
+	}
+	// To handle the case where some other user owns these directories, all errors
+	// from here to the end are treated as warnings.
+	err = d.fs.EnsureFile(ctx, descriptionPath, func(f *os.File) error {
+		return writeDescription(desc, f)
+	})
+	if err != nil {
+		logging.Warningf(ctx, "Unable to create description.json: %s", err)
+		err = nil
+	}
+	return
 }
 
 // readManifest reads package manifest given a path to a package instance
@@ -495,39 +709,6 @@ func (d *deployerImpl) removeEmptyDirs(ctx context.Context, root string) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions.
-
-// packageNameDigest returns a filename to use for naming a package directory in
-// the file system. Using package names as is can introduce problems on file
-// systems with path length limits (on Windows in particular). Returns stripped
-// SHA1 of the whole package name on Windows. On Linux\Mac also prepends last
-// two components of the package name (for better readability of .cipd/*
-// directory).
-func packageNameDigest(pkg string) string {
-	// Be paranoid.
-	err := common.ValidatePackageName(pkg)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	// Grab stripped SHA1 of the full package name.
-	digest := sha1.Sum([]byte(pkg))
-	hash := base64.URLEncoding.EncodeToString(digest[:])[:10]
-
-	// On Windows paths are restricted to 260 chars, so every byte counts.
-	if runtime.GOOS == "windows" {
-		return hash
-	}
-
-	// On Posix file paths are not so restricted, so we can make names more
-	// readable. Grab last <= 2 components of the package path and join them with
-	// the digest.
-	chunks := strings.Split(pkg, "/")
-	if len(chunks) > 2 {
-		chunks = chunks[len(chunks)-2:]
-	}
-	chunks = append(chunks, hash)
-	return strings.Join(chunks, "_")
-}
 
 // scanPackageDir finds a set of regular files (and symlinks) in a package
 // instance directory and returns them as FileInfo structs (with slash-separated

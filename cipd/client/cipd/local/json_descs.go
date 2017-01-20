@@ -122,3 +122,34 @@ func writeManifest(m *Manifest, w io.Writer) error {
 	_, err = w.Write(data)
 	return err
 }
+
+const (
+	// descriptionName is a name of the description file inside the package.
+	descriptionName = "description.json"
+)
+
+// Description defines the structure of the description.json file located at
+// .cipd/pkgs/<foo>/description.json.
+type Description struct {
+	Root        string `json:"root,omitempty"`
+	PackageName string `json:"package_name,omitempty"`
+}
+
+// readDescription reads and decodes description JSON from io.Reader.
+func readDescription(r io.Reader) (desc *Description, err error) {
+	blob, err := ioutil.ReadAll(r)
+	if err == nil {
+		err = json.Unmarshal(blob, &desc)
+	}
+	return
+}
+
+// writeDescription encodes and writes description JSON to io.Writer.
+func writeDescription(d *Description, w io.Writer) error {
+	data, err := json.MarshalIndent(d, "", "  ")
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(data)
+	return err
+}
