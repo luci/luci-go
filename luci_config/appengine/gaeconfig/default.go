@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/luci/luci-go/appengine/datastorecache"
 	"github.com/luci/luci-go/common/config/impl/filesystem"
 	"github.com/luci/luci-go/luci_config/appengine/backend/datastore"
 	"github.com/luci/luci-go/luci_config/appengine/backend/memcache"
@@ -121,10 +122,11 @@ func installConfigBackend(c context.Context, s *Settings, be backend.B, dsCron b
 
 		// If our datastore cache is enabled, install a handler for refresh. This
 		// will be loaded by dsCache's "HandlerFunc".
-		if s.DatastoreCacheMode != dsCacheDisabled {
+		if s.DatastoreCacheMode != DSCacheDisabled {
 			dsc := datastore.Config{
 				RefreshInterval: exp,
-				FailOpen:        s.DatastoreCacheMode == dsCacheEnabled,
+				FailOpen:        s.DatastoreCacheMode == DSCacheEnabled,
+				LockerFunc:      datastorecache.MemLocker,
 			}
 
 			if !dsCron {

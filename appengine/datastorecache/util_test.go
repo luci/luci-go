@@ -107,6 +107,8 @@ func (tc *testCache) Refresh(c context.Context, key []byte, current Value) (Valu
 	return value, nil
 }
 
+func (tc *testCache) Locker(c context.Context) Locker { return MemLocker(c) }
+
 func (tc *testCache) reset() {
 	atomic.StoreInt32(&tc.refreshes, 0)
 }

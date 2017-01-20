@@ -7,16 +7,11 @@ package datastorecache
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/luci/luci-go/appengine/memlock"
-
 	"github.com/luci/gae/service/datastore"
-
-	"golang.org/x/net/context"
 )
 
 // entry is a single cached value.
@@ -136,11 +131,8 @@ func (e *entry) SetMeta(key string, val interface{}) bool {
 	return datastore.GetPLS(e).SetMeta(key, val)
 }
 
-// tryWithLock invokes memlock.TryWithLock, locking around a key unique to this
-// cache entry.
-func (e *entry) tryWithLock(c context.Context, clientID string, fn func(context.Context) error) error {
-	key := fmt.Sprintf("datastore_cache_entry_%s", e.keyHash())
-	return memlock.TryWithLock(c, key, clientID, fn)
+func (e *entry) lockKey() string {
+	return "datastore_cache_entry_" + e.keyHash()
 }
 
 // managerShardStats are per-shard stats kept by manager runs.

@@ -50,4 +50,11 @@ type Handler interface {
 	// caller. Otherwise, the return value will be used to update the cache
 	// entity.
 	Refresh(c context.Context, key []byte, v Value) (Value, error)
+
+	// Locker returns the Locker instance to use.
+	//
+	// The Locker is optional, and serves to prevent multiple independent cache
+	// calls for the same data from each independently refreshing that data. If
+	// Locker returns nil, no such locking will be performed.
+	Locker(c context.Context) Locker
 }

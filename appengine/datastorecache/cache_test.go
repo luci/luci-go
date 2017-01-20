@@ -34,6 +34,12 @@ func TestCache(t *testing.T) {
 		cache := makeTestCache("test")
 		cache.refreshFn = func(context.Context, []byte, Value) (Value, error) { return currentValue, nil }
 
+		// otherLocker is a memLocker intance (used by makeTestCache) that
+		// identifies itself as a different client than the one running the test.
+		//
+		// This is used to create lock conflicts.
+		otherLocker := memLocker{"other client ID"}
+
 		Convey(`Will panic if it has neither a name or namespace configured.`, func() {
 			cache.Name = ""
 			cache.Namespace = ""
@@ -203,7 +209,7 @@ func TestCache(t *testing.T) {
 				// Hold the entity's refresh lock. Our cache will not be able to acquire
 				// it.
 				var v Value
-				err := e.tryWithLock(cache.withNamespace(te), "test client", func(c context.Context) (err error) {
+				err := otherLocker.TryWithLock(cache.withNamespace(te), e.lockKey(), func(c context.Context) (err error) {
 					v, err = cache.Get(info.MustNamespace(te, "dog"), []byte("foo"))
 					return
 				})
@@ -219,7 +225,7 @@ func TestCache(t *testing.T) {
 
 				// Hold the entity's refresh lock. Our cache will not be able to acquire
 				// it.
-				err := e.tryWithLock(cache.withNamespace(te), "test client", func(c context.Context) (err error) {
+				err := otherLocker.TryWithLock(cache.withNamespace(te), e.lockKey(), func(c context.Context) (err error) {
 					_, err = cache.Get(te, []byte("foo"))
 					return
 				})
@@ -240,7 +246,7 @@ func TestCache(t *testing.T) {
 				// Hold the entity's refresh lock. Our cache will not be able to acquire
 				// it.
 				var v Value
-				err := e.tryWithLock(cache.withNamespace(te), "test client", func(c context.Context) (err error) {
+				err := otherLocker.TryWithLock(cache.withNamespace(te), e.lockKey(), func(c context.Context) (err error) {
 					v, err = cache.Get(te, []byte("foo"))
 					return
 				})
@@ -256,7 +262,7 @@ func TestCache(t *testing.T) {
 				// Hold the entity's refresh lock. Our cache will not be able to acquire
 				// it.
 				var v Value
-				err := e.tryWithLock(cache.withNamespace(te), "test client", func(c context.Context) (err error) {
+				err := otherLocker.TryWithLock(cache.withNamespace(te), e.lockKey(), func(c context.Context) (err error) {
 					v, err = cache.Get(te, []byte("foo"))
 					return
 				})
@@ -379,7 +385,7 @@ func TestCache(t *testing.T) {
 
 			Convey(`Will ignore accessed timestamp if the entry's lock is held.`, func() {
 				var v Value
-				err := e.tryWithLock(cache.withNamespace(te), "test client", func(c context.Context) (err error) {
+				err := otherLocker.TryWithLock(cache.withNamespace(te), e.lockKey(), func(c context.Context) (err error) {
 					v, err = cache.Get(te, []byte("foo"))
 					return
 				})

@@ -6,10 +6,8 @@ package datastorecache
 
 import (
 	"math"
-	"strings"
 	"time"
 
-	"github.com/luci/luci-go/appengine/memlock"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/errors"
@@ -42,7 +40,7 @@ const (
 	// but less potential concurrent writes. Lower values will cause more
 	// potential concurrent conflicts, but will require a lower datastore load.
 	// It's all generally unimpactful anyway because the operation is deconflicted
-	// via memlock, so a lot of concurrent writes will end up being no-ops.
+	// via Locker, so a lot of concurrent writes will end up being no-ops.
 	accessUpdateDeltaFactor = 20
 
 	// DefaultCacheNamespace is the default datastore namespace for cache entries.
@@ -77,7 +75,7 @@ type Value struct {
 //
 // The cache works as follows:
 //	- The cache is scanned for an item
-//	- Memlocks are used to provide best-effort deduplication of refreshes for
+//	- Locks are used to provide best-effort deduplication of refreshes for
 //	  the same entity. Inability to lock will not prevent cache operations.
 //	- Upon access a entry's "Accessed" timestamp will be updated to
 //	  note that it is still in use. This happens probabilistically after an
@@ -210,13 +208,16 @@ func (cache *Cache) Get(c context.Context, key []byte) (Value, error) {
 		return Value{}, errors.New("unable to generate Handler")
 	}
 
+	// Determine which Locker to use.
+	locker := h.Locker(c)
+	if locker == nil {
+		locker = nopLocker{}
+	}
+
 	bci := boundCacheInst{
-		Cache: cache,
-		h:     h,
-		clientID: strings.Join([]string{
-			"datastore_cache",
-			info.RequestID(c),
-		}, "\x00"),
+		Cache:  cache,
+		h:      h,
+		locker: locker,
 	}
 	return bci.get(c, key)
 }
@@ -227,8 +228,8 @@ func (cache *Cache) Get(c context.Context, key []byte) (Value, error) {
 type boundCacheInst struct {
 	*Cache
 
-	h        Handler
-	clientID string
+	h      Handler
+	locker Locker
 }
 
 func (bci *boundCacheInst) get(c context.Context, key []byte) (Value, error) {
@@ -300,7 +301,7 @@ func (bci *boundCacheInst) get(c context.Context, key []byte) (Value, error) {
 	}
 
 	// We've chosen to refresh our entry. Many other parallel processes may also
-	// have chosen to do this, so let's memlock around that refresh in an attempt
+	// have chosen to do this, so let's lock around that refresh in an attempt
 	// to make this a singleton.
 	//
 	// We'll try a few times, sleeping a short time in between if we fail to get
@@ -339,7 +340,7 @@ func (bci *boundCacheInst) get(c context.Context, key []byte) (Value, error) {
 			attempts++
 
 			// Take out a lock on this entry and Refresh it.
-			err := e.tryWithLock(c, bci.clientID, func(c context.Context) (err error) {
+			err := bci.locker.TryWithLock(c, e.lockKey(), func(c context.Context) (err error) {
 				acquiredLock = true
 
 				// Perform our initial refresh.
@@ -351,7 +352,7 @@ func (bci *boundCacheInst) get(c context.Context, key []byte) (Value, error) {
 				// Successfully loaded.
 				return nil
 
-			case memlock.ErrFailedToLock:
+			case ErrFailedToLock:
 				// Retry after delay.
 				return errors.WrapTransient(err)
 
@@ -422,12 +423,12 @@ func (bci *boundCacheInst) tryUpdateLastAccessed(c context.Context, e *entry, no
 	// Take out a memcache lock on this entry. We do this to prevent multiple
 	// cache Gets that all examine "e" at the same time don't waste each other's
 	// time spamming last accessed updates.
-	err := e.tryWithLock(c, bci.clientID, func(c context.Context) error {
+	err := bci.locker.TryWithLock(c, e.lockKey(), func(c context.Context) error {
 		e.LastAccessed = now
 		return datastore.Put(c, e)
 	})
 	switch err {
-	case nil, memlock.ErrFailedToLock:
+	case nil, ErrFailedToLock:
 		// If we didn't get to update it, no big deal. The next access will try
 		// again now that the lock is free.
 

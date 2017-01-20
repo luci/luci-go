@@ -63,6 +63,9 @@ type Config struct {
 	// through to the underlying cache.
 	FailOpen bool
 
+	// LockerFunc returns the Locker intance to use.
+	LockerFunc func(context.Context) datastorecache.Locker
+
 	// userProjAccess is cache of the current user's project access lookups.
 	userProjAccess map[string]bool
 	// anonProjAccess is cache of the current user's project access lookups.
@@ -92,6 +95,7 @@ func (dc *Config) WithHandler(c context.Context, l caching.Loader, timeout time.
 	handler := dsCacheHandler{
 		refreshInterval: dc.RefreshInterval,
 		failOpen:        dc.FailOpen,
+		lockerFunc:      dc.LockerFunc,
 		loader:          l,
 		loaderTimeout:   timeout,
 	}
@@ -233,6 +237,7 @@ type dsCacheHandler struct {
 	failOpen        bool
 	refreshInterval time.Duration
 	loader          caching.Loader
+	lockerFunc      func(context.Context) datastorecache.Locker
 
 	// loaderTimeout, if >0, will be applied prior to performing the loader
 	// operation. This is used for cron operations.
@@ -241,7 +246,6 @@ type dsCacheHandler struct {
 
 func (dch *dsCacheHandler) FailOpen() bool                       { return dch.failOpen }
 func (dch *dsCacheHandler) RefreshInterval([]byte) time.Duration { return dch.refreshInterval }
-
 func (dch *dsCacheHandler) Refresh(c context.Context, key []byte, v datastorecache.Value) (datastorecache.Value, error) {
 	// Decode the key into our caching key.
 	var ck caching.Key
@@ -278,6 +282,13 @@ func (dch *dsCacheHandler) Refresh(c context.Context, key []byte, v datastorecac
 	v.Schema = dsCacheSchema
 	v.Description = ck.String()
 	return v, nil
+}
+
+func (dch *dsCacheHandler) Locker(c context.Context) datastorecache.Locker {
+	if dch.lockerFunc != nil {
+		return dch.lockerFunc(c)
+	}
+	return nil
 }
 
 // CronLoader returns a caching.Loader implementation to be used

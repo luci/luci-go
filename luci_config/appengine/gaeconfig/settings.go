@@ -19,14 +19,22 @@ import (
 // DefaultExpire is a reasonable default expiration value.
 const DefaultExpire = 10 * time.Minute
 
-type dsCacheMode string
+// DSCacheMode is the datastore cache mode.
+type DSCacheMode string
 
 const (
-	dsCacheDisabled dsCacheMode = ""
-	dsCacheEnabled  dsCacheMode = "Enabled"
-	dsCacheStrict   dsCacheMode = "Strict"
+	// DSCacheDisabled means that the datastore cache is disabled.
+	DSCacheDisabled DSCacheMode = ""
+	// DSCacheEnabled means that the datastore cache is enabled.
+	DSCacheEnabled DSCacheMode = "Enabled"
+	// DSCacheStrict means that the datastore cache is enabled, and that a stale
+	// datastore cache entry should return an error rather than fall through to
+	// the real config service.
+	DSCacheStrict DSCacheMode = "Strict"
 )
 
+// dsCacheDisabledSetting is the user-visible value for the "disabled" cache
+// mode.
 const dsCacheDisabledSetting = "Disabled"
 
 // Settings are stored in the datastore via appengine/gaesettings package.
@@ -38,7 +46,7 @@ type Settings struct {
 	CacheExpirationSec int `json:"cache_expiration_sec"`
 
 	// DatastoreCacheMode, is the datastore caching mode.
-	DatastoreCacheMode dsCacheMode `json:"datastore_enabled"`
+	DatastoreCacheMode DSCacheMode `json:"datastore_enabled"`
 }
 
 // FetchCachedSettings fetches Settings from the settings store.
@@ -74,7 +82,7 @@ func mustFetchCachedSettings(c context.Context) *Settings {
 func DefaultSettings() Settings {
 	return Settings{
 		CacheExpirationSec: int(DefaultExpire.Seconds()),
-		DatastoreCacheMode: dsCacheDisabled,
+		DatastoreCacheMode: DSCacheDisabled,
 	}
 }
 
@@ -139,8 +147,8 @@ disable local cache.</p>`,
 			Type:  settings.UIFieldChoice,
 			ChoiceVariants: []string{
 				dsCacheDisabledSetting,
-				string(dsCacheEnabled),
-				string(dsCacheStrict),
+				string(DSCacheEnabled),
+				string(DSCacheStrict),
 			},
 			Help: `<p>For better performance and resilience against configuration
 service outages, the local datastore can be used as a backing cache. When
@@ -158,7 +166,7 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 	}
 
 	cacheMode := string(s.DatastoreCacheMode)
-	if cacheMode == string(dsCacheDisabled) {
+	if cacheMode == string(DSCacheDisabled) {
 		cacheMode = dsCacheDisabledSetting
 	}
 
@@ -170,9 +178,9 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 }
 
 func (settingsUIPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
-	dsMode := dsCacheMode(values["DatastoreCacheMode"])
+	dsMode := DSCacheMode(values["DatastoreCacheMode"])
 	if dsMode == dsCacheDisabledSetting {
-		dsMode = dsCacheDisabled
+		dsMode = DSCacheDisabled
 	}
 
 	modified := Settings{

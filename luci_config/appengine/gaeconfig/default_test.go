@@ -103,7 +103,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 		c = settings.Use(c, settings.New(&memSettings))
 		s := Settings{
 			CacheExpirationSec: 10,
-			DatastoreCacheMode: dsCacheStrict,
+			DatastoreCacheMode: DSCacheStrict,
 		}
 		putSettings := func() {
 			if err := settings.GetSettings(c).Set(c, settingsKey, &s, "test harness", "initial settings"); err != nil {
@@ -152,7 +152,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 			}
 
 			Convey(`Disabled, skips datastore cache.`, func() {
-				s.DatastoreCacheMode = dsCacheDisabled
+				s.DatastoreCacheMode = DSCacheDisabled
 				putSettings()
 
 				c = installConfig(c)
@@ -168,7 +168,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 			})
 
 			Convey(`Enabled`, func() {
-				s.DatastoreCacheMode = dsCacheEnabled
+				s.DatastoreCacheMode = DSCacheEnabled
 				putSettings()
 
 				c = installConfig(c)
@@ -202,7 +202,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 			})
 
 			Convey(`Strict`, func() {
-				s.DatastoreCacheMode = dsCacheStrict
+				s.DatastoreCacheMode = DSCacheStrict
 				putSettings()
 
 				c = installConfig(c)
