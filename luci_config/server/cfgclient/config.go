@@ -63,9 +63,9 @@ func ServiceURL(c context.Context) url.URL { return backend.Get(c).ServiceURL(c)
 
 // Get retrieves a single configuration file.
 //
-// r, if supplied, is a MultiResolver that will load the configuration data.
-// If nil, the configuration data will be discarded (useful if you only care
-// about metas).
+// r, if not nil, is a Resolver that will load the configuration data. If nil,
+// the configuration data will be discarded (useful if you only care about
+// metas).
 //
 // meta, if not nil, will have the configuration's Meta loaded into it on
 // success.
@@ -74,7 +74,7 @@ func Get(c context.Context, a Authority, cs cfgtypes.ConfigSet, path string, r R
 
 	params := backend.Params{
 		Authority: backend.Authority(a),
-		Content:   true,
+		Content:   r != nil,
 	}
 
 	if fr, ok := r.(FormattingResolver); ok {
@@ -97,7 +97,7 @@ func Get(c context.Context, a Authority, cs cfgtypes.ConfigSet, path string, r R
 
 // Projects retrieves all named project configurations.
 //
-// r, if supplied, is a MultiResolver that will load the configuration data.
+// r, if not nil, is a MultiResolver that will load the configuration data.
 // If nil, the configuration data will be discarded (useful if you only care
 // about metas). If the MultiResolver operates on a slice (which it probably
 // will), each meta and/or error index will correspond to its slice index.
@@ -132,9 +132,10 @@ func getAll(c context.Context, a Authority, t backend.GetAllTarget, path string,
 
 	params := backend.Params{
 		Authority: backend.Authority(a),
-		Content:   true,
+		Content:   r != nil,
 	}
 
+	// If we're fetching content, apply a formatting specification.
 	if fr, ok := r.(FormattingResolver); ok {
 		params.FormatSpec = fr.Format()
 	}

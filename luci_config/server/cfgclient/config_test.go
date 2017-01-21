@@ -23,11 +23,13 @@ type testingBackend struct {
 	err        error
 	items      []*backend.Item
 	url        url.URL
+	lastParams backend.Params
 }
 
 func (tb *testingBackend) ServiceURL(context.Context) url.URL { return *tb.serviceURL }
 
 func (tb *testingBackend) Get(c context.Context, configSet, path string, p backend.Params) (*backend.Item, error) {
+	tb.lastParams = p
 	if err := tb.err; err != nil {
 		return nil, tb.err
 	}
@@ -40,6 +42,7 @@ func (tb *testingBackend) Get(c context.Context, configSet, path string, p backe
 func (tb *testingBackend) GetAll(c context.Context, t backend.GetAllTarget, path string, p backend.Params) (
 	[]*backend.Item, error) {
 
+	tb.lastParams = p
 	if err := tb.err; err != nil {
 		return nil, tb.err
 	}
@@ -47,6 +50,7 @@ func (tb *testingBackend) GetAll(c context.Context, t backend.GetAllTarget, path
 }
 
 func (tb *testingBackend) ConfigSetURL(c context.Context, configSet string, p backend.Params) (url.URL, error) {
+	tb.lastParams = p
 	return tb.url, tb.err
 }
 
@@ -164,6 +168,7 @@ func TestConfig(t *testing.T) {
 				var meta Meta
 				So(Get(c, AsService, "", "", nil, &meta), ShouldBeNil)
 				So(meta, ShouldResemble, Meta{"projects/foo", "path", "####", "v1"})
+				So(tb.lastParams.Content, ShouldBeFalse)
 			})
 
 			Convey(`Multi`, func() {
@@ -173,6 +178,7 @@ func TestConfig(t *testing.T) {
 					{"projects/foo", "path", "####", "v1"},
 					{"projects/bar", "path", "####", "v1"},
 				})
+				So(tb.lastParams.Content, ShouldBeFalse)
 			})
 		})
 
