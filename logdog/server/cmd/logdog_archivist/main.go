@@ -57,7 +57,7 @@ type application struct {
 
 // run is the main execution function.
 func (a *application) runArchivist(c context.Context) error {
-	cfg := a.Config()
+	cfg := a.ServiceConfig()
 
 	coordCfg, acfg := cfg.GetCoordinator(), cfg.GetArchivist()
 	switch {

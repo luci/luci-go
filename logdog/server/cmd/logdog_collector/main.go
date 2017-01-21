@@ -63,7 +63,7 @@ type application struct {
 
 // run is the main execution function.
 func (a *application) runCollector(c context.Context) error {
-	cfg := a.Config()
+	cfg := a.ServiceConfig()
 	ccfg := cfg.GetCollector()
 	if ccfg == nil {
 		return errors.New("no collector configuration")
