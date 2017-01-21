@@ -30,7 +30,8 @@ func TestMintDelegationToken(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
 
-		tokenCache := &mockedCache{}
+		// Create an LRU large enough that it will never cycle during test.
+		tokenCache := MemoryCache(1024)
 
 		subtokenID := "123"
 		mintingReq := ""
@@ -54,7 +55,7 @@ func TestMintDelegationToken(t *testing.T) {
 		ctx = ModifyConfig(ctx, func(cfg *Config) {
 			cfg.AccessTokenProvider = transport.getAccessToken
 			cfg.AnonymousTransport = transport.getTransport
-			cfg.GlobalCache = tokenCache
+			cfg.Cache = tokenCache
 			cfg.Signer = signingtest.NewSigner(0, &signing.ServiceInfo{
 				ServiceAccountName: "service@example.com",
 			})
@@ -83,10 +84,9 @@ func TestMintDelegationToken(t *testing.T) {
 					`"impersonate":"user:abc@example.com","intent":"intent"}`)
 
 			// Cached now.
-			So(len(tokenCache.data), ShouldEqual, 1)
-			for k := range tokenCache.data {
-				So(k, ShouldEqual, "delegation/2/R5RJ9yppAB8IK0GNB-UyjVrYoBw")
-			}
+			So(tokenCache.(memoryCache).cache.Len(), ShouldEqual, 1)
+			v, _ := tokenCache.Get(ctx, "delegation/2/R5RJ9yppAB8IK0GNB-UyjVrYoBw")
+			So(v, ShouldNotBeNil)
 
 			// On subsequence request the cached token is used.
 			subtokenID = "456"
@@ -127,10 +127,9 @@ func TestMintDelegationToken(t *testing.T) {
 					`"impersonate":"user:abc@example.com","intent":"intent"}`)
 
 			// Cached now.
-			So(len(tokenCache.data), ShouldEqual, 1)
-			for k := range tokenCache.data {
-				So(k, ShouldEqual, "delegation/2/tjYIGNrwFvKa0FT5juu7ThjpxBo")
-			}
+			So(tokenCache.(memoryCache).cache.Len(), ShouldEqual, 1)
+			v, _ := tokenCache.Get(ctx, "delegation/2/tjYIGNrwFvKa0FT5juu7ThjpxBo")
+			So(v, ShouldNotBeNil)
 		})
 	})
 }

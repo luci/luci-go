@@ -16,12 +16,12 @@ import (
 	"github.com/luci/luci-go/server/auth"
 )
 
-// Memcache implements auth.GlobalCache on top of GAE memcache.
+// Memcache implements auth.Cache on top of GAE memcache.
 type Memcache struct {
 	Namespace string
 }
 
-var _ auth.GlobalCache = (*Memcache)(nil)
+var _ auth.Cache = (*Memcache)(nil)
 
 // Get returns a cached item or (nil, nil) if it's not in the cache.
 //

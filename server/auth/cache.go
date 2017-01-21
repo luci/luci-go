@@ -15,10 +15,11 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/data/caching/lru"
 	"github.com/luci/luci-go/common/data/rand/mathrand"
 )
 
-// delegationTokenCache is used to store delegation tokens in the global cache.
+// delegationTokenCache is used to store delegation tokens in the cache.
 var delegationTokenCache = tokenCache{
 	Kind:                "delegation",
 	Version:             2,
@@ -26,9 +27,9 @@ var delegationTokenCache = tokenCache{
 	MinAcceptedLifetime: 5 * time.Minute,
 }
 
-// tokenCache knows how to keep tokens in the global cache.
+// tokenCache knows how to keep tokens in the cache.
 //
-// Uses Config.GlobalCache as a storage backend.
+// Uses Config.Cache as a storage backend.
 //
 // It implements probabilistic early expiration to workaround cache stampede
 // problem for hot items, see Fetch.
@@ -80,10 +81,10 @@ func (tc *tokenCache) Store(c context.Context, tok cachedToken) error {
 		return err
 	}
 	cfg := GetConfig(c)
-	if cfg == nil || cfg.GlobalCache == nil {
+	if cfg == nil || cfg.Cache == nil {
 		return ErrNotConfigured
 	}
-	return cfg.GlobalCache.Set(c, tc.itemKey(tok.Key), blob, ttl)
+	return cfg.Cache.Set(c, tc.itemKey(tok.Key), blob, ttl)
 }
 
 // Fetch grabs cached token if it hasn't expired yet.
@@ -94,11 +95,11 @@ func (tc *tokenCache) Store(c context.Context, tok cachedToken) error {
 // token, only the most unlucky one will refresh it.
 func (tc *tokenCache) Fetch(c context.Context, key string) (*cachedToken, error) {
 	cfg := GetConfig(c)
-	if cfg == nil || cfg.GlobalCache == nil {
+	if cfg == nil || cfg.Cache == nil {
 		return nil, ErrNotConfigured
 	}
 
-	blob, err := cfg.GlobalCache.Get(c, tc.itemKey(key))
+	blob, err := cfg.Cache.Get(c, tc.itemKey(key))
 	switch {
 	case err != nil:
 		return nil, err
@@ -159,4 +160,51 @@ func (tc *tokenCache) unmarshal(blob []byte) (*cachedToken, error) {
 		return nil, err
 	}
 	return out, nil
+}
+
+type memoryCache struct {
+	cache *lru.Cache
+}
+
+// MemoryCache creates a new in-memory Cache instance that is built on
+// top of an LRU cache of the specified size.
+func MemoryCache(size int) Cache {
+	return memoryCache{
+		cache: lru.New(size),
+	}
+}
+
+func (mc memoryCache) Get(c context.Context, key string) ([]byte, error) {
+	var item *memoryCacheItem
+	now := clock.Now(c)
+	_ = mc.cache.Mutate(key, func(cur interface{}) interface{} {
+		if cur == nil {
+			return nil
+		}
+
+		item = cur.(*memoryCacheItem)
+		if now.After(item.exp) {
+			// Cache item is too old, so expire it.
+			item = nil
+		}
+		return item
+	})
+	if item == nil {
+		// Cache miss (or expired).
+		return nil, nil
+	}
+	return item.value, nil
+}
+
+func (mc memoryCache) Set(c context.Context, key string, value []byte, exp time.Duration) error {
+	mc.cache.Put(key, &memoryCacheItem{
+		value: value,
+		exp:   clock.Now(c).Add(exp),
+	})
+	return nil
+}
+
+type memoryCacheItem struct {
+	value []byte
+	exp   time.Time
 }

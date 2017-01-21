@@ -47,15 +47,15 @@ type Config struct {
 	// outlive it.
 	AnonymousTransport func(c context.Context) http.RoundTripper
 
-	// GlobalCache implements service-global strongly consistent cache.
+	// Cache implements a strongly consistent cache.
 	//
 	// Usually backed by memcache. Should do namespacing itself (i.e. the auth
 	// library assumes full ownership of the keyspace).
-	GlobalCache GlobalCache
+	Cache Cache
 }
 
-// GlobalCache implements service-global strongly consistent cache.
-type GlobalCache interface {
+// Cache implements a strongly consistent cache.
+type Cache interface {
 	// Get returns a cached item or (nil, nil) if it's not in the cache.
 	//
 	// Any returned error is transient error.

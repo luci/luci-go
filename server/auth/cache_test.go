@@ -21,13 +21,14 @@ import (
 func TestTokenCache(t *testing.T) {
 	t.Parallel()
 
-	Convey("with mocked cache", t, func() {
-		cache := &mockedCache{}
+	Convey("with in-process cache", t, func() {
+		// Create a cache large enough that the LRU doesn't cycle.
+		cache := MemoryCache(1024)
 
 		ctx := context.Background()
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
-		ctx = SetConfig(ctx, Config{GlobalCache: cache})
+		ctx = SetConfig(ctx, Config{Cache: cache})
 
 		tc := tokenCache{
 			Kind:           "testing",
@@ -52,10 +53,8 @@ func TestTokenCache(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(itm, ShouldResemble, &tok)
 
-			So(len(cache.data), ShouldEqual, 1)
-			for key := range cache.data {
-				So(key, ShouldEqual, "testing/1/na7cNnVNdP6Ydb9K9UIEST04OV8")
-			}
+			pgc := cache.(memoryCache)
+			So(pgc.cache.Len(), ShouldEqual, 1)
 		})
 
 		Convey("check expiration randomization", func() {
@@ -94,21 +93,4 @@ func TestTokenCache(t *testing.T) {
 			}
 		})
 	})
-}
-
-// mockedCache is GlobalCache implementation for tests.
-type mockedCache struct {
-	data map[string][]byte
-}
-
-func (mc *mockedCache) Get(c context.Context, key string) ([]byte, error) {
-	return mc.data[key], nil
-}
-
-func (mc *mockedCache) Set(c context.Context, key string, value []byte, exp time.Duration) error {
-	if mc.data == nil {
-		mc.data = map[string][]byte{}
-	}
-	mc.data[key] = value
-	return nil
 }
