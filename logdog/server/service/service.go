@@ -108,6 +108,7 @@ type Service struct {
 	testConfigFilePath string
 	// serviceConfig is the cached service configuration.
 	serviceConfig svcconfig.Config
+	configCache   config.MessageCache
 
 	// serviceID is the cloud project ID, which is also this service's unique
 	// ID. This can be specified by flag or, if on GCE, will automatically be
@@ -331,9 +332,8 @@ func (s *Service) initCoordinatorClient(c context.Context) (logdog.ServicesClien
 }
 
 func (s *Service) initConfig(c *context.Context) error {
-	opts := config.CacheOptions{
-		CacheExpiration: projectConfigCacheDuration,
-	}
+	// Set up our in-memory config object cache.
+	s.configCache.Lifetime = projectConfigCacheDuration
 
 	// If a testConfigFilePath was specified, use a mock configuration service
 	// that loads from a local file.
@@ -380,6 +380,9 @@ func (s *Service) initConfig(c *context.Context) error {
 	}
 
 	// Add config caching layers.
+	opts := config.CacheOptions{
+		CacheExpiration: projectConfigCacheDuration,
+	}
 	*c = opts.WrapBackend(*c, &client.Backend{
 		Provider: p,
 	})
@@ -432,11 +435,12 @@ func (s *Service) ProjectConfig(c context.Context, proj cfgtypes.ProjectName) (*
 	cset, path := s.ProjectConfigPath(proj)
 
 	var pcfg svcconfig.ProjectConfig
-	if err := cfgclient.Get(c, cfgclient.AsService, cset, path, textproto.Message(&pcfg), nil); err != nil {
+	msg, err := s.configCache.Get(c, cset, path, &pcfg)
+	if err != nil {
 		return nil, errors.Annotate(err).Reason("failed to load project config from %(cset)s.%(path)s").
 			D("cset", cset).D("path", path).Err()
 	}
-	return &pcfg, nil
+	return msg.(*svcconfig.ProjectConfig), nil
 }
 
 // SetShutdownFunc sets the service shutdown function.
