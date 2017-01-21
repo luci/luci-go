@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
@@ -25,7 +24,6 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
 )
 
 var (
@@ -81,14 +79,7 @@ func (a *application) runCollector(c context.Context) error {
 	}
 
 	// New PubSub instance with the authenticated client.
-	tokenSource, err := a.TokenSource(c, func(o *auth.Options) {
-		o.Scopes = gcps.SubscriberScopes
-	})
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to get Pub/Sub token source.")
-		return err
-	}
-	psClient, err := pubsub.NewClient(c, pscfg.Project, option.WithTokenSource(tokenSource))
+	psClient, err := a.Service.PubSubSubscriberClient(c, pscfg.Project)
 	if err != nil {
 		log.Fields{
 			log.ErrorKey:   err,

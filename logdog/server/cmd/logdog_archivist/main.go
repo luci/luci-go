@@ -7,7 +7,6 @@ package main
 import (
 	"time"
 
-	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/gcloud/gs"
@@ -26,7 +25,6 @@ import (
 	"cloud.google.com/go/pubsub"
 	"golang.org/x/net/context"
 	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
 )
 
 var (
@@ -85,16 +83,8 @@ func (a *application) runArchivist(c context.Context) error {
 	}
 	psProject, psSubscriptionName := taskSub.Split()
 
-	tokenSource, err := a.TokenSource(c, func(o *auth.Options) {
-		o.Scopes = gcps.SubscriberScopes
-	})
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to get Pub/Sub token source.")
-		return err
-	}
-
-	// Pub/Sub: TokenSource => Client
-	psClient, err := pubsub.NewClient(c, psProject, option.WithTokenSource(tokenSource))
+	// New PubSub instance with the authenticated client.
+	psClient, err := a.Service.PubSubSubscriberClient(c, psProject)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create Pub/Sub client.")
 		return err
