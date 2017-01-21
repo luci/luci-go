@@ -16,6 +16,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/luci/luci-go/appengine/gaesettings"
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/clock/clockflag"
@@ -40,8 +41,12 @@ import (
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/client"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
+	"github.com/luci/luci-go/server/settings"
+
+	"github.com/luci/gae/impl/cloud"
 
 	"cloud.google.com/go/compute/metadata"
+	"cloud.google.com/go/datastore"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
@@ -92,7 +97,8 @@ type Service struct {
 	heapProfilePath           string
 
 	// onGCE is true if we're on GCE. We probe this once during Run.
-	onGCE bool
+	onGCE        bool
+	hasDatastore bool
 
 	// killCheckInterval is the amount of time in between service configuration
 	// checks. If set, this service will periodically reload its service
@@ -138,6 +144,10 @@ func (s *Service) Run(c context.Context, f func(context.Context) error) {
 }
 
 func (s *Service) runImpl(c context.Context, f func(context.Context) error) error {
+	// Probe our environment for default values.
+	s.probeGCEEnvironment(c)
+
+	// Install service flags and parse.
 	s.addFlags(c, &s.Flags)
 	if err := s.Flags.Parse(os.Args[1:]); err != nil {
 		log.WithError(err).Errorf(c, "Failed to parse command-line.")
@@ -183,9 +193,30 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 		}()
 	}
 
+	// Cancel our Context after we're done our run loop.
+	c, cancelFunc := context.WithCancel(c)
+	defer cancelFunc()
+
 	// Validate the runtime environment.
 	if s.serviceID == "" {
 		return errors.New("no service ID was configured (-service-id)")
+	}
+
+	// Install a cloud datastore client. This is non-fatal if it fails.
+	dsClient, err := s.initDatastoreClient(c)
+	if err == nil {
+		defer dsClient.Close()
+
+		ccfg := cloud.Config{
+			DS: dsClient,
+		}
+		c = ccfg.Use(c)
+		c = settings.Use(c, settings.New(gaesettings.Storage{}))
+
+		s.hasDatastore = true
+		log.Debugf(c, "Enabled cloud datastore access.")
+	} else {
+		log.WithError(err).Warningf(c, "Failed to create cloud datastore client.")
 	}
 
 	// Install a process-wide cache.
@@ -225,7 +256,6 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 	defer tsmon.Shutdown(c)
 
 	// Initialize our Client instantiations.
-	var err error
 	if s.coord, err = s.initCoordinatorClient(c); err != nil {
 		log.WithError(err).Errorf(c, "Failed to setup Coordinator client.")
 		return err
@@ -282,12 +312,12 @@ func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
 // probeGCEEnvironment fills in any parameters that can be probed from Google
 // Compute Engine metadata.
 //
-// If we're not running on GCE, this will return nil. An error will only be
-// returned if an operation that is expected to work fails.
-func (s *Service) probeGCEEnvironment(c context.Context) error {
+// If we're not running on GCE, this will do nothing. It is non-fatal if any
+// given GCE field fails to be probed.
+func (s *Service) probeGCEEnvironment(c context.Context) {
 	s.onGCE = metadata.OnGCE()
 	if !s.onGCE {
-		return nil
+		return
 	}
 
 	// Determine our service ID from metadata. The service ID will equal the cloud
@@ -295,11 +325,23 @@ func (s *Service) probeGCEEnvironment(c context.Context) error {
 	if s.serviceID == "" {
 		var err error
 		if s.serviceID, err = metadata.ProjectID(); err != nil {
-			log.WithError(err).Errorf(c, "Failed to probe GCE project ID.")
-			return err
+			log.WithError(err).Warningf(c, "Failed to probe GCE project ID.")
 		}
 	}
-	return nil
+}
+
+func (s *Service) initDatastoreClient(c context.Context) (*datastore.Client, error) {
+	// Initialize Storage authentication.
+	tokenSource, err := s.TokenSource(c, func(o *auth.Options) {
+		o.Scopes = []string{datastore.ScopeDatastore}
+	})
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to create datastore TokenSource.")
+		return nil, err
+	}
+
+	return datastore.NewClient(c, s.serviceID,
+		option.WithTokenSource(tokenSource))
 }
 
 func (s *Service) initCoordinatorClient(c context.Context) (logdog.ServicesClient, error) {
@@ -334,6 +376,11 @@ func (s *Service) initCoordinatorClient(c context.Context) (logdog.ServicesClien
 func (s *Service) initConfig(c *context.Context) error {
 	// Set up our in-memory config object cache.
 	s.configCache.Lifetime = projectConfigCacheDuration
+
+	// Start to build our backend caching options.
+	opts := config.CacheOptions{
+		CacheExpiration: projectConfigCacheDuration,
+	}
 
 	// If a testConfigFilePath was specified, use a mock configuration service
 	// that loads from a local file.
@@ -370,6 +417,9 @@ func (s *Service) initConfig(c *context.Context) error {
 		p = &client.RemoteProvider{
 			Host: host,
 		}
+
+		// If using a remote config provider, enable datastore access and caching.
+		opts.DatastoreCacheAvailable = s.hasDatastore
 	} else {
 		// Test / Local: use filesystem config path.
 		ci, err := filesystem.New(s.testConfigFilePath)
@@ -380,9 +430,6 @@ func (s *Service) initConfig(c *context.Context) error {
 	}
 
 	// Add config caching layers.
-	opts := config.CacheOptions{
-		CacheExpiration: projectConfigCacheDuration,
-	}
 	*c = opts.WrapBackend(*c, &client.Backend{
 		Provider: p,
 	})
