@@ -42,7 +42,7 @@ func TestGetConfig(t *testing.T) {
 			So(cr, ShouldResemble, &logdog.GetConfigResponse{
 				ConfigServiceUrl:  "test://example.com",
 				ConfigSet:         "services/app",
-				ServiceConfigPath: svcconfig.ServiceConfigFilename,
+				ServiceConfigPath: svcconfig.ServiceConfigPath,
 				ConfigServiceHost: "example.com",
 			})
 		})

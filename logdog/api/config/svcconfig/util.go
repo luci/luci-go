@@ -4,7 +4,15 @@
 
 package svcconfig
 
-const (
-	// ServiceConfigFilename is the config service path of the Config protobuf.
-	ServiceConfigFilename = "services.cfg"
+import (
+	"fmt"
 )
+
+const (
+	// ServiceConfigPath is the config service path of the Config protobuf.
+	ServiceConfigPath = "services.cfg"
+)
+
+// ProjectConfigPath returns the path of a LogDog project config given the
+// LogDog service's name.
+func ProjectConfigPath(serviceName string) string { return fmt.Sprintf("%s.cfg", serviceName) }

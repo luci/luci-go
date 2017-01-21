@@ -24,7 +24,7 @@ import (
 var (
 	subcommandValidateServices = subcommands.Command{
 		UsageLine: "services",
-		ShortDesc: fmt.Sprintf("Validate %q services config file.", svcconfig.ServiceConfigFilename),
+		ShortDesc: fmt.Sprintf("Validate %q services config file.", svcconfig.ServiceConfigPath),
 		CommandRun: func() subcommands.CommandRun {
 			return &validateCommandRun{msg: &svcconfig.Config{}}
 		},

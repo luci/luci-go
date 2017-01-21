@@ -115,7 +115,7 @@ func (p *Profiler) Stop() {
 }
 
 // DumpSnapshot dumps a profile snapshot to the configured output directory. If
-// no output directory is configured, nothing wil happen.
+// no output directory is configured, nothing will happen.
 func (p *Profiler) DumpSnapshot() error {
 	if p.Dir == "" {
 		return nil

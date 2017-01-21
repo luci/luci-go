@@ -5,7 +5,6 @@
 package config
 
 import (
-	"fmt"
 	"sort"
 
 	log "github.com/luci/luci-go/common/logging"
@@ -22,7 +21,7 @@ import (
 //
 // A given project's configuration is named after the current App ID.
 func ProjectConfigPath(c context.Context) string {
-	return fmt.Sprintf("%s.cfg", cfgclient.CurrentServiceName(c))
+	return svcconfig.ProjectConfigPath(cfgclient.CurrentServiceName(c))
 }
 
 // ProjectConfig loads the project config protobuf from the config service.

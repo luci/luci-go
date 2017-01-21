@@ -40,7 +40,7 @@ type Config struct {
 // ServiceConfigPath returns the config set and path for this application's
 // service configuration.
 func ServiceConfigPath(c context.Context) (cfgtypes.ConfigSet, string) {
-	return cfgclient.CurrentServiceConfigSet(c), svcconfig.ServiceConfigFilename
+	return cfgclient.CurrentServiceConfigSet(c), svcconfig.ServiceConfigPath
 }
 
 // Load loads the service configuration. This includes:
