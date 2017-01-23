@@ -11,6 +11,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"golang.org/x/net/context"
 )
@@ -49,6 +50,9 @@ type File interface {
 // It supports transactional semantic by providing 'Begin' and 'End' methods.
 // No changes should be applied until End(true) is called. A call to End(false)
 // should discard any pending changes. All paths are slash separated.
+//
+// While between 'Begin' and 'End', 'CreateFile' and 'CreateSymlink' can be
+// called concurrently.
 type Destination interface {
 	// Begin initiates a new write transaction. Called before first CreateFile.
 	Begin(ctx context.Context) error
@@ -278,7 +282,9 @@ type fileSystemDestination struct {
 	tempDir string
 	// Where to extract all temp files, subdirectory of tempDir.
 	outDir string
+
 	// Currently open files.
+	lock      sync.RWMutex
 	openFiles map[string]*os.File
 }
 
@@ -340,7 +346,10 @@ func (d *fileSystemDestination) Begin(ctx context.Context) error {
 }
 
 func (d *fileSystemDestination) CreateFile(ctx context.Context, name string, executable bool) (io.WriteCloser, error) {
-	if _, ok := d.openFiles[name]; ok {
+	d.lock.RLock()
+	_, ok := d.openFiles[name]
+	d.lock.RUnlock()
+	if ok {
 		return nil, fmt.Errorf("file %s is already open", name)
 	}
 
@@ -361,12 +370,24 @@ func (d *fileSystemDestination) CreateFile(ctx context.Context, name string, exe
 	if err != nil {
 		return nil, err
 	}
+
+	d.lock.Lock()
+	defer d.lock.Unlock()
+
+	// This should never happen in theory (due to O_EXCL).
+	if _, ok := d.openFiles[name]; ok {
+		file.Close()
+		return nil, fmt.Errorf("race condition when creating %s", name)
+	}
 	d.openFiles[name] = file
+
 	return &fileSystemDestinationFile{
 		nested: file,
 		parent: d,
 		closeCallback: func() {
+			d.lock.Lock()
 			delete(d.openFiles, name)
+			d.lock.Unlock()
 		},
 	}, nil
 }
@@ -393,8 +414,12 @@ func (d *fileSystemDestination) End(ctx context.Context, success bool) error {
 	if d.tempDir == "" {
 		return fmt.Errorf("destination is not open")
 	}
-	if len(d.openFiles) != 0 {
-		return fmt.Errorf("not all files were closed (leaking %d files)", len(d.openFiles))
+
+	d.lock.RLock()
+	leaking := len(d.openFiles)
+	d.lock.RUnlock()
+	if leaking != 0 {
+		return fmt.Errorf("not all files were closed (leaking %d files)", leaking)
 	}
 
 	// Clean up temp dir and the state no matter what.
