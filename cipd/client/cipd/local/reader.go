@@ -211,7 +211,6 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 
 type packageInstance struct {
 	data       io.ReadSeeker
-	dataSize   int64
 	instanceID string
 	zip        *zip.Reader
 	files      []File
@@ -233,7 +232,6 @@ func (inst *packageInstance) open(instanceID string) error {
 	if err != nil {
 		return err
 	}
-	inst.dataSize = dataSize
 
 	calculatedSHA1 := hex.EncodeToString(hash.Sum(nil))
 	if instanceID != "" && instanceID != calculatedSHA1 {
@@ -241,8 +239,16 @@ func (inst *packageInstance) open(instanceID string) error {
 	}
 	inst.instanceID = calculatedSHA1
 
+	// Zip reader needs an io.ReaderAt. Try to sniff it from our io.ReadSeeker
+	// before falling back to a generic (potentially slower) implementation. This
+	// works if inst.data is actually an os.File (which happens quite often).
+	reader, ok := inst.data.(io.ReaderAt)
+	if !ok {
+		reader = &readerAt{r: inst.data}
+	}
+
 	// List files and package manifest.
-	inst.zip, err = zip.NewReader(&readerAt{r: inst.data}, inst.dataSize)
+	inst.zip, err = zip.NewReader(reader, dataSize)
 	if err != nil {
 		return err
 	}
@@ -279,7 +285,6 @@ func (inst *packageInstance) Close() (err error) {
 		}
 		inst.data = nil
 	}
-	inst.dataSize = 0
 	inst.instanceID = ""
 	inst.zip = nil
 	inst.files = []File{}
