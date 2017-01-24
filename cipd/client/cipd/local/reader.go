@@ -155,6 +155,7 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 		return err
 	}
 
+	var manifest File
 	var err error
 	for _, f := range files {
 		if err = ctx.Err(); err != nil {
@@ -162,7 +163,13 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 		}
 		switch {
 		case f.Name() == manifestName:
-			err = extractManifestFile(f)
+			// We delay writing the extended manifest until the very end because it
+			// contains values of 'SymlinkTarget' fields of all extracted files.
+			// Fetching 'SymlinkTarget' in general involves seeking inside the zip,
+			// and we prefer not to do that now. Upon exit from the loop, all
+			// 'SymlinkTarget' values will be already cached in memory, and writing
+			// the manifest will be cheaper.
+			manifest = f
 		case f.Symlink():
 			err = extractSymlinkFile(f)
 		default:
@@ -170,6 +177,16 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 		}
 		if err != nil {
 			break
+		}
+	}
+
+	// Finally extract the extended manifest, now that we have read (and cached)
+	// all 'SymlinkTarget' values.
+	if err == nil {
+		if manifest == nil {
+			err = fmt.Errorf("no %s file, this is bad", manifestName)
+		} else {
+			err = extractManifestFile(manifest)
 		}
 	}
 
@@ -298,13 +315,17 @@ func (inst *packageInstance) open(instanceID string) error {
 	}
 	inst.files = make([]File, len(inst.zip.File))
 	for i, zf := range inst.zip.File {
-		inst.files[i] = &fileInZip{z: zf}
-		if inst.files[i].Name() == manifestName {
-			inst.manifest, err = readManifestFile(inst.files[i])
-			if err != nil {
+		fiz := &fileInZip{z: zf}
+		if fiz.Name() == manifestName {
+			// The manifest is later read again when extracting, keep it in memory.
+			if err = fiz.prefetch(); err != nil {
+				return err
+			}
+			if inst.manifest, err = readManifestFile(fiz); err != nil {
 				return err
 			}
 		}
+		inst.files[i] = fiz
 	}
 
 	// Generate version_file if needed.
@@ -396,7 +417,22 @@ func (b *blobFile) Open() (io.ReadCloser, error) {
 // File interface implementation via zip.File.
 
 type fileInZip struct {
-	z *zip.File
+	z    *zip.File
+	body []byte // if not nil, uncompressed body of the file
+}
+
+// prefetch loads the body of file into memory to speed up later calls.
+func (f *fileInZip) prefetch() error {
+	if f.body != nil {
+		return nil
+	}
+	r, err := f.z.Open()
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+	f.body, err = ioutil.ReadAll(r)
+	return err
 }
 
 func (f *fileInZip) Name() string  { return f.z.Name }
@@ -420,21 +456,21 @@ func (f *fileInZip) SymlinkTarget() (string, error) {
 	if !f.Symlink() {
 		return "", fmt.Errorf("not a symlink: %s", f.Name())
 	}
-	r, err := f.z.Open()
-	if err != nil {
+	// Symlink is small, read it once and keep in memory. This is important
+	// because 'SymlinkTarget' method looks like metadata getter, callers
+	// don't expect it to do any IO each time (e.g. seeking inside the zip file).
+	if err := f.prefetch(); err != nil {
 		return "", err
 	}
-	defer r.Close()
-	data, err := ioutil.ReadAll(r)
-	if err != nil {
-		return "", err
-	}
-	return string(data), nil
+	return string(f.body), nil
 }
 
 func (f *fileInZip) Open() (io.ReadCloser, error) {
 	if f.Symlink() {
 		return nil, fmt.Errorf("opening a symlink is not allowed: %s", f.Name())
+	}
+	if f.body != nil {
+		return ioutil.NopCloser(bytes.NewReader(f.body)), nil
 	}
 	return f.z.Open()
 }
