@@ -14,6 +14,7 @@ import (
 
 	"net/url"
 
+	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/lhttp"
 	"github.com/luci/luci-go/common/logging"
@@ -21,21 +22,18 @@ import (
 
 type baseCommandRun struct {
 	subcommands.CommandRunBase
-	serviceAccountJSONPath string
-	host                   string
+	authFlags      authcli.Flags
+	parsedAuthOpts auth.Options
+	host           string
 }
 
 func (r *baseCommandRun) SetDefaultFlags() {
-	r.Flags.StringVar(
-		&r.serviceAccountJSONPath,
-		"service-account-json",
-		"",
-		"path to service account json file.")
 	r.Flags.StringVar(
 		&r.host,
 		"host",
 		"cr-buildbucket.appspot.com",
 		"host for the buildbucket service instance.")
+	r.authFlags.Register(&r.Flags, auth.Options{})
 }
 
 func (r *baseCommandRun) createClient(ctx context.Context) (*client, error) {
@@ -45,16 +43,18 @@ func (r *baseCommandRun) createClient(ctx context.Context) (*client, error) {
 	if strings.ContainsRune(r.host, '/') {
 		return nil, fmt.Errorf("invalid host %q", r.host)
 	}
+	var err error
+	if r.parsedAuthOpts, err = r.authFlags.Options(); err != nil {
+		return nil, err
+	}
 
 	loginMode := auth.OptionalLogin
-	if r.serviceAccountJSONPath != "" {
+	if r.parsedAuthOpts.ServiceAccountJSONPath != "" {
 		// if service account is specified, the request MUST be authenticated
 		// otherwise it is optional.
 		loginMode = auth.SilentLogin
 	}
-	authenticator := auth.NewAuthenticator(ctx, loginMode, auth.Options{
-		ServiceAccountJSONPath: r.serviceAccountJSONPath,
-	})
+	authenticator := auth.NewAuthenticator(ctx, loginMode, r.parsedAuthOpts)
 
 	httpClient, err := authenticator.Client()
 	if err != nil {

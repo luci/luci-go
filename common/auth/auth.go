@@ -41,8 +41,6 @@ import (
 
 	"cloud.google.com/go/compute/metadata"
 
-	"github.com/mitchellh/go-homedir"
-
 	"github.com/luci/luci-go/common/auth/internal"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
@@ -168,10 +166,8 @@ type Options struct {
 	// Default: "default" account.
 	GCEAccountName string
 
-	// SecretsDir can be used to override a path to a directory where tokens
+	// SecretsDir can be used to set the path to a directory where tokens
 	// are cached and default service account key is located.
-	//
-	// If not set, SecretsDir() will be used.
 	SecretsDir string
 
 	// DisableMonitoring can be used to disable the monitoring instrumentation.
@@ -517,15 +513,12 @@ func (a *Authenticator) ensureInitialized() error {
 			return a.err
 		}
 	} else {
-		secretsDir, err := a.opts.secretsDir()
-		if err != nil {
-			// Note: in observed cases the 'err' here is some confusing nonsense like
-			// "exit status 1", this is fine.
-			logging.Warningf(a.ctx, "Disabling token cache, can't find HOME (the inner error is %q)", err)
+		if a.opts.SecretsDir == "" {
+			logging.Warningf(a.ctx, "Disabling token cache. Not configured.")
 			a.cache = &memoryCache{}
 		} else {
 			a.cache = &tokenFileCache{
-				path: filepath.Join(secretsDir, cacheName+".tok"),
+				path: filepath.Join(a.opts.SecretsDir, cacheName+".tok"),
 				ctx:  a.ctx,
 			}
 		}
@@ -824,14 +817,6 @@ func (c *memoryCache) Clear() error {
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions.
 
-// secretsDir returns directory with token cache files.
-func (opts *Options) secretsDir() (string, error) {
-	if opts.SecretsDir != "" {
-		return opts.SecretsDir, nil
-	}
-	return SecretsDir()
-}
-
 // cacheEntryName constructs a name of cache entry from data that identifies
 // requested credential, to allow multiple differently configured instances of
 // Authenticator to coexist.
@@ -915,14 +900,4 @@ func DefaultClient() (clientID string, clientSecret string) {
 	clientID = "446450136466-2hr92jrq8e6i4tnsa56b52vacp7t3936.apps.googleusercontent.com"
 	clientSecret = "uBfbay2KCy9t4QveJ-dOqHtp"
 	return
-}
-
-// SecretsDir returns an absolute path to a directory (in $HOME) to keep secret
-// files in or an error if $HOME can't be determined.
-func SecretsDir() (string, error) {
-	home, err := homedir.Dir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(home, ".config", "chrome_infra", "auth"), nil
 }

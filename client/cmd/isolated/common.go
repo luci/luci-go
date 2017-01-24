@@ -11,6 +11,7 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/isolatedclient"
@@ -23,24 +24,32 @@ func init() {
 
 type commonFlags struct {
 	subcommands.CommandRunBase
-	defaultFlags  common.Flags
-	isolatedFlags isolatedclient.Flags
+	defaultFlags   common.Flags
+	isolatedFlags  isolatedclient.Flags
+	authFlags      authcli.Flags
+	parsedAuthOpts auth.Options
 }
 
 func (c *commonFlags) Init() {
 	c.defaultFlags.Init(&c.Flags)
 	c.isolatedFlags.Init(&c.Flags)
+	c.authFlags.Register(&c.Flags, auth.Options{})
 }
 
 func (c *commonFlags) Parse() error {
-	if err := c.defaultFlags.Parse(); err != nil {
+	var err error
+	if err = c.defaultFlags.Parse(); err != nil {
 		return err
 	}
-	return c.isolatedFlags.Parse()
+	if err = c.isolatedFlags.Parse(); err != nil {
+		return err
+	}
+	c.parsedAuthOpts, err = c.authFlags.Options()
+	return err
 }
 
 func (c *commonFlags) createClient() *http.Client {
 	ctx := gologger.StdConfig.Use(context.Background())
-	client, _ := auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{}).Client()
+	client, _ := auth.NewAuthenticator(ctx, auth.SilentLogin, c.parsedAuthOpts).Client()
 	return client
 }

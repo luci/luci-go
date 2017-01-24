@@ -46,11 +46,13 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/maruel/subcommands"
+	homedir "github.com/mitchellh/go-homedir"
 	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
 
@@ -104,6 +106,9 @@ func (fl *Flags) Options() (auth.Options, error) {
 	if fl.registerScopesFlag {
 		opts.Scopes = strings.Split(fl.scopes, " ")
 		sort.Strings(opts.Scopes)
+	}
+	if opts.SecretsDir == "" {
+		opts.SecretsDir, _ = secretsDir()
 	}
 	return opts, nil
 }
@@ -431,4 +436,14 @@ func reportIdentity(ctx context.Context, a *auth.Authenticator) error {
 	}
 
 	return nil
+}
+
+// secretsDir returns an absolute path to a directory (in $HOME) to keep secret
+// files in or an error if $HOME can't be determined.
+func secretsDir() (string, error) {
+	home, err := homedir.Dir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, ".config", "chrome_infra", "auth"), nil
 }
