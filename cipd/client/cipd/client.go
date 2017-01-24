@@ -1155,7 +1155,7 @@ func (client *clientImpl) fetchInstanceWithCache(ctx context.Context, pin common
 			logging.Warningf(ctx, "cipd: could not get %s from cache - %s", pin, err)
 
 		default:
-			logging.Debugf(ctx, "cipd: instance cache hit for %s", pin)
+			logging.Infof(ctx, "cipd: instance cache hit for %s", pin)
 			return file, nil
 		}
 
