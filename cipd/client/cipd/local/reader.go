@@ -15,6 +15,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/net/context"
@@ -83,8 +84,10 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 	}()
 
 	files := inst.Files()
+	progress := newProgressReporter(ctx, files)
 
 	extractManifestFile := func(f File) (err error) {
+		defer progress.advance(f)
 		manifest, err := readManifestFile(f)
 		if err != nil {
 			return err
@@ -124,6 +127,7 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 	}
 
 	extractSymlinkFile := func(f File) error {
+		defer progress.advance(f)
 		target, err := f.SymlinkTarget()
 		if err != nil {
 			return err
@@ -132,6 +136,7 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 	}
 
 	extractRegularFile := func(f File) (err error) {
+		defer progress.advance(f)
 		out, err := dest.CreateFile(ctx, f.Name(), f.Executable())
 		if err != nil {
 			return err
@@ -150,49 +155,22 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 		return err
 	}
 
-	// Use file sizes for progress report calculation.
-	totalSize := uint64(0)
-	extractedSize := uint64(0)
-	for _, f := range files {
-		if !f.Symlink() {
-			totalSize += f.Size()
-		}
-	}
-
-	logging.Infof(ctx, "cipd: about to extract %.1f Mb", float64(totalSize)/1024.0/1024.0)
-
-	// reportProgress print extraction progress, throttling the reports rate to
-	// one per 5 sec.
-	prevProgress := 1000 // >100%
-	var prevReportTs time.Time
-	reportProgress := func(read, total uint64) {
-		now := clock.Now(ctx)
-		progress := int(float64(read) * 100 / float64(total))
-		if progress < prevProgress || read == total || now.Sub(prevReportTs) > 5*time.Second {
-			logging.Infof(ctx, "cipd: extracting - %d%%", progress)
-			prevReportTs = now
-			prevProgress = progress
-		}
-	}
-
 	var err error
 	for _, f := range files {
 		if err = ctx.Err(); err != nil {
 			break
 		}
-		if f.Name() == manifestName {
+		switch {
+		case f.Name() == manifestName:
 			err = extractManifestFile(f)
-			extractedSize += f.Size()
-		} else if f.Symlink() {
+		case f.Symlink():
 			err = extractSymlinkFile(f)
-		} else {
+		default:
 			err = extractRegularFile(f)
-			extractedSize += f.Size()
 		}
 		if err != nil {
 			break
 		}
-		reportProgress(extractedSize, totalSize)
 	}
 
 	needToEnd = false
@@ -204,6 +182,72 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 	}
 
 	return err
+}
+
+// progressReporter periodically logs progress of the extraction.
+//
+// Can be shared by multiple goroutines.
+type progressReporter struct {
+	sync.Mutex
+
+	ctx context.Context
+
+	totalCount     uint64    // total number of files to extract
+	totalSize      uint64    // total expected uncompressed size of files
+	extractedCount uint64    // number of files extract so far
+	extractedSize  uint64    // bytes uncompressed so far
+	prevReport     time.Time // time when we did the last progress report
+}
+
+func newProgressReporter(ctx context.Context, files []File) *progressReporter {
+	r := &progressReporter{ctx: ctx, totalCount: uint64(len(files))}
+	for _, f := range files {
+		if !f.Symlink() {
+			r.totalSize += f.Size()
+		}
+	}
+	if r.totalCount != 0 {
+		logging.Infof(
+			r.ctx, "cipd: about to extract %.1f Mb (%d files)",
+			float64(r.totalSize)/1024.0/1024.0, r.totalCount)
+	}
+	return r
+}
+
+// advance moves the progress indicator, occasionally logging it.
+func (r *progressReporter) advance(f File) {
+	if r.totalCount == 0 {
+		return
+	}
+
+	now := clock.Now(r.ctx)
+	reportNow := false
+	progress := 0
+
+	// We don't count size of the symlinks toward total.
+	var size uint64
+	if !f.Symlink() {
+		size = f.Size()
+	}
+
+	// Report progress on first and last 'advance' calls and each 2 sec.
+	r.Lock()
+	r.extractedSize += size
+	r.extractedCount++
+	if r.extractedCount == 1 || r.extractedCount == r.totalCount || now.Sub(r.prevReport) > 2*time.Second {
+		reportNow = true
+		if r.totalSize != 0 {
+			progress = int(float64(r.extractedSize) * 100 / float64(r.totalSize))
+		} else {
+			progress = int(float64(r.extractedCount) * 100 / float64(r.totalCount))
+		}
+		r.prevReport = now
+	}
+	r.Unlock()
+
+	if reportNow {
+		logging.Infof(r.ctx, "cipd: extracting - %d%%", progress)
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
