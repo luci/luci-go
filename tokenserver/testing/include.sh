@@ -207,7 +207,7 @@ certificate_authority {
 EOL
 
   # Ask the server to reread the config.
-  echo "{}" | call_rpc "tokenserver.admin.CertificateAuthorities.ImportConfig"
+  echo "{}" | call_rpc "tokenserver.admin.Admin.ImportCAConfigs"
 
   # Wait a bit for cached config to expire.
   sleep 0.5
