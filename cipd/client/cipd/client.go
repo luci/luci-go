@@ -42,7 +42,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -774,27 +773,14 @@ const clientPackageBase = "infra/tools/cipd"
 var clientPackage = ""
 var clientFileName = ""
 
-var platformExpansion = ""
-var archExpansion = ""
-
 func init() {
-	// TODO(iannucci): rationalize these to just be exactly GOOS and GOARCH.
-	platformExpansion = runtime.GOOS
-	if platformExpansion == "darwin" {
-		platformExpansion = "mac"
-	}
-
 	clientFileName = "cipd"
-	if platformExpansion == "windows" {
+	if common.CurrentPlatform() == "windows" {
 		clientFileName = "cipd.exe"
 	}
 
-	archExpansion = runtime.GOARCH
-	if archExpansion == "arm" {
-		archExpansion = "armv6l"
-	}
-	clientPackage = fmt.Sprintf("%s/%s-%s", clientPackageBase, platformExpansion,
-		archExpansion)
+	clientPackage = fmt.Sprintf("%s/%s-%s", clientPackageBase,
+		common.CurrentPlatform(), common.CurrentArchitecture())
 }
 
 func (client *clientImpl) ensureClientVersionInfo(ctx context.Context, fs local.FileSystem, pin common.Pin, exePath string) {
@@ -1254,7 +1240,7 @@ func (client *clientImpl) ProcessEnsureFile(ctx context.Context, r io.Reader) ([
 	}
 
 	logging.Debugf(ctx, "scanning ensure file with platform=%q, arch=%q",
-		platformExpansion, archExpansion)
+		common.CurrentPlatform(), common.CurrentArchitecture())
 
 	out := []common.Pin{}
 	scanner := bufio.NewScanner(r)
@@ -1280,7 +1266,8 @@ func (client *clientImpl) ProcessEnsureFile(ctx context.Context, r io.Reader) ([
 			return nil, makeError("expecting '<package template> <version>' line")
 		}
 
-		pkg, err := expandTemplate(tokens[0], platformExpansion, archExpansion)
+		pkg, err := expandTemplate(tokens[0], common.CurrentPlatform(),
+			common.CurrentArchitecture())
 		switch err {
 		case nil:
 		case errSkipTemplate:

@@ -8,6 +8,7 @@ package common
 import (
 	"fmt"
 	"regexp"
+	"runtime"
 	"strings"
 )
 
@@ -125,4 +126,36 @@ func GetInstanceTagKey(t string) string {
 		return ""
 	}
 	return chunks[0]
+}
+
+var currentArchitecture = ""
+var currentPlatform = ""
+
+func init() {
+	// TODO(iannucci): rationalize these to just be exactly GOOS and GOARCH.
+	currentArchitecture = runtime.GOOS
+	if currentArchitecture == "darwin" {
+		currentArchitecture = "mac"
+	}
+
+	currentPlatform = runtime.GOARCH
+	if currentPlatform == "arm" {
+		currentPlatform = "armv6l"
+	}
+}
+
+// CurrentArchitecture returns the current cipd-style architecture that the
+// current go binary conforms to. Possible values:
+//   - "armv6l" (if GOARCH=arm)
+//   - other GOARCH values
+func CurrentArchitecture() string {
+	return currentArchitecture
+}
+
+// CurrentPlatform returns the current cipd-style platform that the
+// current go binary conforms to. Possible values:
+//   - "mac" (if GOOS=darwin)
+//   - other GOOS values
+func CurrentPlatform() string {
+	return currentPlatform
 }
