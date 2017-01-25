@@ -10,7 +10,10 @@ import (
 	"path"
 	"regexp"
 	"runtime"
+	"sort"
 	"strings"
+
+	"github.com/luci/luci-go/common/data/stringset"
 )
 
 // packageNameRe is a regular expression for a package name: <word>/<word/<word>
@@ -110,7 +113,7 @@ func ValidateInstanceTag(t string) error {
 // ValidateInstanceVersion return error if a string can't be used as version.
 //
 // A version can be specified as:
-// 	1) Instance ID (hash, e.g "1234deadbeef2234...").
+//  1) Instance ID (hash, e.g "1234deadbeef2234...").
 //  2) Package ref (e.g. "latest").
 //  3) Instance tag (e.g. "git_revision:abcdef...").
 func ValidateInstanceVersion(v string) error {
@@ -183,4 +186,86 @@ func CurrentArchitecture() string {
 //   - other GOOS values
 func CurrentPlatform() string {
 	return currentPlatform
+}
+
+// PinSlice is a simple list of Pins
+type PinSlice []Pin
+
+// Validate ensures that this PinSlice contains no duplicate packages or invalid
+// pins.
+func (s PinSlice) Validate() error {
+	dedup := stringset.New(len(s))
+	for _, p := range s {
+		if err := ValidatePin(p); err != nil {
+			return err
+		}
+		if !dedup.Add(p.PackageName) {
+			return fmt.Errorf("duplicate package %q", p.PackageName)
+		}
+	}
+	return nil
+}
+
+// ToMap converts the PinSlice to a PinMap.
+func (s PinSlice) ToMap() PinMap {
+	ret := make(PinMap, len(s))
+	for _, p := range s {
+		ret[p.PackageName] = p.InstanceID
+	}
+	return ret
+}
+
+// PinMap is a map of package_name to instanceID.
+type PinMap map[string]string
+
+// ToSlice converts the PinMap to a PinSlice.
+func (m PinMap) ToSlice() PinSlice {
+	s := make(PinSlice, 0, len(m))
+	pkgs := make(sort.StringSlice, 0, len(m))
+	for k := range m {
+		pkgs = append(pkgs, k)
+	}
+	pkgs.Sort()
+	for _, pkg := range pkgs {
+		s = append(s, Pin{pkg, m[pkg]})
+	}
+	return s
+}
+
+// PinSliceByRoot is a simple mapping of root path to pin.
+type PinSliceByRoot map[string]PinSlice
+
+// Validate ensures that this doesn't contain any invalid
+// root paths, duplicate packages within the same root, or invalid pins.
+func (p PinSliceByRoot) Validate() error {
+	for root, pkgs := range p {
+		if err := ValidateRoot(root); err != nil {
+			return err
+		}
+		if err := pkgs.Validate(); err != nil {
+			return fmt.Errorf("root %q: %s", root, err)
+		}
+	}
+	return nil
+}
+
+// ToMap converts this to a PinMapByRoot
+func (p PinSliceByRoot) ToMap() PinMapByRoot {
+	ret := make(PinMapByRoot, len(p))
+	for root, pkgs := range p {
+		ret[root] = pkgs.ToMap()
+	}
+	return ret
+}
+
+// PinMapByRoot is a simple mapping of root -> package_name -> instanceID
+type PinMapByRoot map[string]PinMap
+
+// ToSlice converts this to a PinSliceByRoot
+func (p PinMapByRoot) ToSlice() PinSliceByRoot {
+	ret := make(PinSliceByRoot, len(p))
+	for root, pkgs := range p {
+		ret[root] = pkgs.ToSlice()
+	}
+	return ret
 }

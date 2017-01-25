@@ -158,3 +158,90 @@ func TestGetInstanceTagKey(t *testing.T) {
 		So(GetInstanceTagKey(""), ShouldEqual, "")
 	})
 }
+
+func TestPinSliceAndMap(t *testing.T) {
+	t.Parallel()
+
+	Convey("PinSlice", t, func() {
+		ps := PinSlice{{"pkg2", "vers"}, {"pkg", "vers"}}
+
+		Convey("can convert to a map", func() {
+			pm := ps.ToMap()
+			So(pm, ShouldResemble, PinMap{
+				"pkg":  "vers",
+				"pkg2": "vers",
+			})
+
+			pm["new/pkg"] = "some:tag"
+
+			Convey("and back to a slice", func() {
+				So(pm.ToSlice(), ShouldResemble, PinSlice{
+					{"new/pkg", "some:tag"},
+					{"pkg", "vers"},
+					{"pkg2", "vers"},
+				})
+			})
+		})
+	})
+
+	Convey("PinSliceByRoot", t, func() {
+		id := func(letter rune) string {
+			return strings.Repeat(string(letter), 40)
+		}
+
+		pmr := PinSliceByRoot{
+			"": PinSlice{
+				{"pkg2", id('1')},
+				{"pkg", id('0')},
+			},
+			"other": PinSlice{
+				{"something", id('2')},
+			},
+		}
+
+		Convey("Can validate", func() {
+			So(pmr.Validate(), ShouldErrLike, nil)
+
+			Convey("can see bad roots", func() {
+				pmr["/"] = PinSlice{{"something", "version"}}
+				So(pmr.Validate(), ShouldErrLike, "bad root path")
+			})
+
+			Convey("can see duplicate packages", func() {
+				pmr[""] = append(pmr[""], Pin{"pkg", strings.Repeat("2", 40)})
+				So(pmr.Validate(), ShouldErrLike, `root "": duplicate package "pkg"`)
+			})
+
+			Convey("can see bad pins", func() {
+				pmr[""] = append(pmr[""], Pin{"quxxly", "nurbs"})
+				So(pmr.Validate(), ShouldErrLike, `root "": not a valid package instance ID`)
+			})
+		})
+
+		Convey("can convert to ByMap", func() {
+			pmm := pmr.ToMap()
+			So(pmm, ShouldResemble, PinMapByRoot{
+				"": PinMap{
+					"pkg":  id('0'),
+					"pkg2": id('1'),
+				},
+				"other": PinMap{
+					"something": id('2'),
+				},
+			})
+
+			Convey("and back", func() {
+				So(pmm.ToSlice(), ShouldResemble, PinSliceByRoot{
+					"": PinSlice{
+						{"pkg", id('0')},
+						{"pkg2", id('1')},
+					},
+					"other": PinSlice{
+						{"something", id('2')},
+					},
+				})
+			})
+		})
+
+	})
+}
