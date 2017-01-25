@@ -283,6 +283,10 @@ func (m fakeTaskManager) ProtoMessageType() proto.Message {
 	return &messages.NoopTask{}
 }
 
+func (m fakeTaskManager) Traits() task.Traits {
+	return task.Traits{}
+}
+
 func (m fakeTaskManager) ValidateProtoMessage(msg proto.Message) error {
 	So(msg, ShouldNotBeNil)
 	return m.validationErr

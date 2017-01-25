@@ -43,6 +43,13 @@ func (m TaskManager) ProtoMessageType() proto.Message {
 	return (*messages.SwarmingTask)(nil)
 }
 
+// Traits is part of Manager interface.
+func (m TaskManager) Traits() task.Traits {
+	return task.Traits{
+		Multistage: true, // we use task.StatusRunning state
+	}
+}
+
 // ValidateProtoMessage is part of Manager interface.
 func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 	cfg, ok := msg.(*messages.SwarmingTask)

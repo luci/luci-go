@@ -47,6 +47,33 @@ func (s Status) Final() bool {
 	}
 }
 
+// Traits describes properties that influence how the scheduler engine manages
+// tasks handled by this Manager.
+type Traits struct {
+	// Multistage is true if Manager uses Starting -> Running -> Finished
+	// state chain for all invocations (instead of just Starting -> Finished).
+	//
+	// This is the case for "heavy" tasks that can run for undetermined amount
+	// of time (e.g. Swarming and Buildbucket tasks). By switching invocation
+	// state to Running, the Manager acknowledges that it takes responsibility for
+	// eventually moving the invocation to Finished state (perhaps in response to
+	// a PubSub notification or a timer tick). In other words, once an invocation
+	// is in Running state, the schedule engine will not automatically keep track
+	// of it's healthiness (it's the responsibility of the Manager now).
+	//
+	// For smaller tasks (that finish in seconds, e.g. gitiles poller tasks) it is
+	// simpler and more efficient just to do everything in LaunchTask and then
+	// move the invocation to Finished state. By doing so, the Manager avoids
+	// implementing healthiness checks, piggybacking on LaunchTask retries
+	// automatically performed by the scheduler engine.
+	//
+	// Currently this trait only influences the UI. Invocations with
+	// Multistage == false don't show up as "Starting" in the UI (they are
+	// displayed as "Running" instead, since it makes more sense from end-user
+	// perspective).
+	Multistage bool
+}
+
 // Manager knows how to work with a particular kind of tasks (e.g URL fetch
 // tasks, Swarming tasks, etc): how to deserialize, validate and execute them.
 //
@@ -61,6 +88,12 @@ type Manager interface {
 	// only for its type signature.
 	ProtoMessageType() proto.Message
 
+	// Traits returns properties that influence how the scheduler engine manages
+	// tasks handled by this Manager.
+	//
+	// See Traits struct for more details.
+	Traits() Traits
+
 	// ValidateProtoMessage verifies task definition proto message makes sense.
 	// msg must have same underlying type as ProtoMessageType() return value.
 	ValidateProtoMessage(msg proto.Message) error
@@ -69,7 +102,11 @@ type Manager interface {
 	//
 	// Manager's responsibilities:
 	//  * To move the task to some state other than StatusStarting
-	//    (by changing ctl.State().Status).
+	//    (by changing ctl.State().Status). If at some point the task has moved
+	//    to StatusRunning, the manager MUST setup some way to track the task's
+	//    progress to eventually move it to some final state. It can be a status
+	//    check via a timer (see `AddTimer` below), or a PubSub callback (see
+	//    `PrepareTopic` below).
 	//  * Be idempotent, if possible, using ctl.InvocationNonce() as an operation
 	//    key.
 	//  * Not to use supplied controller outside of LaunchTask call.
@@ -79,9 +116,9 @@ type Manager interface {
 	// will be called again later, receiving exact same ctl.InvocationNonce(), but
 	// different ctl.InvocationID().
 	//
-	// TaskManager may optionally use ctl.Save() to checkpoint a progress, in this
-	// case returned error will switch invocation status to StatusFailed only if
-	// its currently saved status is still StatusStarting.
+	// TaskManager may optionally use ctl.Save() to checkpoint progress and save
+	// debug log. ctl.Save() is also implicitly called by the engine when
+	// `LaunchTask` returns.
 	LaunchTask(c context.Context, ctl Controller) error
 
 	// AbortTask is called to opportunistically abort launched task.

@@ -17,6 +17,10 @@ import (
 
 // StateKind defines high-level state of the job. See JobState for full state
 // description: it's a StateKind plus additional parameters.
+//
+// Note that this is low-level state that is not directly visible in the UI. For
+// UI we derive more user-friendly state labels by examining JobState and taking
+// into account job traits. See makeJob in ui/presentation.go.
 type StateKind string
 
 const (
@@ -36,19 +40,33 @@ const (
 	JobStateSuspended StateKind = "SUSPENDED"
 
 	// JobStateQueued means the job's invocation has been added to the task queue
-	// and the job should start (switch to RUNNING state) really soon now.
+	// and the job should start (switch to "RUNNING" state inside TaskManager's
+	// LaunchTask call) really soon now.
+	//
+	// The engine will keep trying to launch the queued invocation as long as
+	// the job is in "QUEUED" state (e.g. it makes another launch attempt if
+	// LaunchTask crashes). But once the job is in "RUNNING" state, it's the
+	// responsibility of the particular TaskManager implementation to ensure the
+	// invocation state gets updated in a timely manner.
+	//
+	// Some TaskManagers may opt to skip "RUNNING" state completely and do
+	// everything in one go in LaunchTask (by switching invocation to some final
+	// state in the end). This is allowed. If such task crashes before completion,
+	// it will be retried by the engine (because it is in "QUEUED" state).
 	JobStateQueued StateKind = "QUEUED"
 
 	// JobStateRunning means the job's invocation is running currently and the job
 	// is scheduled to start again sometime in the future.
 	JobStateRunning StateKind = "RUNNING"
 
-	// JobStateOverrun means the job's new invocation should have been started
-	// by now, but the previous one is still running.
+	// JobStateOverrun is same as "RUNNING", except the engine has also detected
+	// an overrun: the job's new invocation should have been started by now, but
+	// the previous one is still running.
 	JobStateOverrun StateKind = "OVERRUN"
 
-	// JobStateSlowQueue means the job's new invocation should have been started
-	// by now, but the previous one is still sitting in the start queue.
+	// JobStateSlowQueue is same as "QUEUED", except the engine has also detected
+	// an overrun: the job's new invocation should have been started by now, but
+	// the previous one is still sitting in the queue.
 	JobStateSlowQueue StateKind = "SLOW_QUEUE"
 )
 

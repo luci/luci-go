@@ -41,6 +41,13 @@ func (m TaskManager) ProtoMessageType() proto.Message {
 	return (*messages.UrlFetchTask)(nil)
 }
 
+// Traits is part of Manager interface.
+func (m TaskManager) Traits() task.Traits {
+	return task.Traits{
+		Multistage: false, // we don't use task.StatusRunning state
+	}
+}
+
 // ValidateProtoMessage is part of Manager interface.
 func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 	cfg, ok := msg.(*messages.UrlFetchTask)
@@ -137,10 +144,11 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 		result <- tuple{resp, buf.Bytes(), nil}
 	}()
 
-	// Notify outside world that the task is running (since URL fetch can take up
-	// to 8 minutes). Ignore errors. As long as final Save is OK, we don't care
-	// about this one.
-	ctl.State().Status = task.StatusRunning
+	// Save the invocation log now (since URL fetch can take up to 8 minutes).
+	// Ignore errors. As long as final Save is OK, we don't care about this one.
+	// Do NOT set status to StatusRunning, because by doing so we take
+	// responsibility to detect crashes below and we don't want to do it (let
+	// the scheduler retry LaunchTask automatically instead).
 	if err := ctl.Save(c); err != nil {
 		logging.Warningf(c, "Failed to save invocation state: %s", err)
 	}

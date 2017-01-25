@@ -38,11 +38,18 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 	return nil
 }
 
+// Traits is part of Manager interface.
+func (m TaskManager) Traits() task.Traits {
+	return task.Traits{
+		Multistage: false, // we don't use task.StatusRunning state
+	}
+}
+
 // LaunchTask is part of Manager interface.
 func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	ctl.DebugLog("Running noop task")
-	ctl.AddTimer(c, 5*time.Second, "succeed-later", nil)
-	ctl.State().Status = task.StatusRunning
+	time.Sleep(20 * time.Second)
+	ctl.State().Status = task.StatusSucceeded
 	return nil
 }
 
@@ -58,9 +65,5 @@ func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, 
 
 // HandleTimer is part of Manager interface.
 func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
-	ctl.DebugLog("Handling timer tick %q", name)
-	if name == "succeed-later" {
-		ctl.State().Status = task.StatusSucceeded
-	}
 	return nil
 }
