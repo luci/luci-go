@@ -14,6 +14,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/golang/protobuf/proto"
 
+	"github.com/luci/luci-go/common/data/sortby"
 	"github.com/luci/luci-go/scheduler/appengine/catalog"
 	"github.com/luci/luci-go/scheduler/appengine/engine"
 	"github.com/luci/luci-go/scheduler/appengine/messages"
@@ -36,7 +37,7 @@ type schedulerJob struct {
 	JobFlavorIcon  string
 	JobFlavorTitle string
 
-	sortKey []string
+	sortGroup string // used only for sorting, doesn't show up in UI
 }
 
 var stateToLabelClass = map[engine.StateKind]string{
@@ -131,7 +132,7 @@ func makeJob(j *engine.Job, now time.Time) *schedulerJob {
 		JobFlavorIcon:  flavorToIconClass[j.Flavor],
 		JobFlavorTitle: flavorToTitle[j.Flavor],
 
-		sortKey: []string{chunks[0], sortGroup, chunks[1]},
+		sortGroup: sortGroup,
 	}
 }
 
@@ -155,18 +156,11 @@ type sortedJobs []*schedulerJob
 func (s sortedJobs) Len() int      { return len(s) }
 func (s sortedJobs) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 func (s sortedJobs) Less(i, j int) bool {
-	if len(s[i].sortKey) < len(s[j].sortKey) {
-		return true
-	}
-	if len(s[i].sortKey) > len(s[j].sortKey) {
-		return false
-	}
-	for idx := range s[i].sortKey {
-		if s[i].sortKey[idx] < s[j].sortKey[idx] {
-			return true
-		}
-	}
-	return false
+	return sortby.Chain{
+		func(i, j int) bool { return s[i].ProjectID < s[j].ProjectID },
+		func(i, j int) bool { return s[i].sortGroup < s[j].sortGroup },
+		func(i, j int) bool { return s[i].JobID < s[j].JobID },
+	}.Use(i, j)
 }
 
 func convertToSortedJobs(jobs []*engine.Job, now time.Time) sortedJobs {
