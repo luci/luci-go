@@ -705,7 +705,10 @@ var cmdEnsure = &subcommands.Command{
 		c.registerBaseFlags()
 		c.ClientOptions.registerFlags(&c.Flags)
 		c.Flags.StringVar(&c.rootDir, "root", "<path>", "Path to an installation site root directory.")
-		c.Flags.StringVar(&c.listFile, "list", "<path>", "A file with a list of '<package name> <version>' pairs.")
+		c.Flags.StringVar(&c.ensureFile, "list", "<path>", "(DEPRECATED) A synonym for -ensure-file.")
+		c.Flags.StringVar(&c.ensureFile, "ensure-file", "<path>",
+			(`An "ensure" file. See syntax described here: ` +
+				`https://godoc.org/github.com/luci/luci-go/cipd/client/cipd/ensure`))
 		return c
 	},
 }
@@ -714,8 +717,8 @@ type ensureRun struct {
 	Subcommand
 	ClientOptions
 
-	rootDir  string
-	listFile string
+	rootDir    string
+	ensureFile string
 }
 
 func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -723,7 +726,7 @@ func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommand
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	currentPins, _, err := ensurePackages(ctx, c.rootDir, c.listFile, false, c.ClientOptions)
+	currentPins, _, err := ensurePackages(ctx, c.rootDir, c.ensureFile, false, c.ClientOptions)
 	return c.done(currentPins, err)
 }
 
@@ -796,7 +799,10 @@ var cmdPuppetCheckUpdates = &subcommands.Command{
 		c.registerBaseFlags()
 		c.ClientOptions.registerFlags(&c.Flags)
 		c.Flags.StringVar(&c.rootDir, "root", "<path>", "Path to an installation site root directory.")
-		c.Flags.StringVar(&c.listFile, "list", "<path>", "A file with a list of '<package name> <version>' pairs.")
+		c.Flags.StringVar(&c.ensureFile, "list", "<path>", "(DEPRECATED) A synonym for -ensure-file.")
+		c.Flags.StringVar(&c.ensureFile, "ensure-file", "<path>",
+			(`An "ensure" file. See syntax described here: ` +
+				`https://godoc.org/github.com/luci/luci-go/cipd/client/cipd/ensure`))
 		return c
 	},
 }
@@ -805,8 +811,8 @@ type checkUpdatesRun struct {
 	Subcommand
 	ClientOptions
 
-	rootDir  string
-	listFile string
+	rootDir    string
+	ensureFile string
 }
 
 func (c *checkUpdatesRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -814,7 +820,7 @@ func (c *checkUpdatesRun) Run(a subcommands.Application, args []string, env subc
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	_, actions, err := ensurePackages(ctx, c.rootDir, c.listFile, true, c.ClientOptions)
+	_, actions, err := ensurePackages(ctx, c.rootDir, c.ensureFile, true, c.ClientOptions)
 	if err != nil {
 		ret := c.done(actions, err)
 		if errors.IsTransient(err) {
