@@ -14,6 +14,8 @@ import (
 )
 
 func TestValidatePackageName(t *testing.T) {
+	t.Parallel()
+
 	Convey("ValidatePackageName works", t, func() {
 		So(ValidatePackageName("good/name"), ShouldBeNil)
 		So(ValidatePackageName("good_name"), ShouldBeNil)
@@ -30,6 +32,8 @@ func TestValidatePackageName(t *testing.T) {
 }
 
 func TestValidateInstanceID(t *testing.T) {
+	t.Parallel()
+
 	Convey("ValidateInstanceID works", t, func() {
 		So(ValidateInstanceID(""), ShouldNotBeNil)
 		So(ValidateInstanceID("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), ShouldBeNil)
@@ -43,6 +47,8 @@ func TestValidateInstanceID(t *testing.T) {
 }
 
 func TestValidateInstanceTag(t *testing.T) {
+	t.Parallel()
+
 	Convey("ValidateInstanceTag works", t, func() {
 		So(ValidateInstanceTag(""), ShouldNotBeNil)
 		So(ValidateInstanceTag("notapair"), ShouldNotBeNil)
@@ -56,6 +62,8 @@ func TestValidateInstanceTag(t *testing.T) {
 }
 
 func TestValidatePin(t *testing.T) {
+	t.Parallel()
+
 	Convey("ValidatePin works", t, func() {
 		So(ValidatePin(Pin{"good/name", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}), ShouldBeNil)
 		So(ValidatePin(Pin{"BAD/name", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}), ShouldNotBeNil)
@@ -64,6 +72,8 @@ func TestValidatePin(t *testing.T) {
 }
 
 func TestValidatePackageRef(t *testing.T) {
+	t.Parallel()
+
 	Convey("ValidatePackageRef works", t, func() {
 		So(ValidatePackageRef("some-ref"), ShouldBeNil)
 		So(ValidatePackageRef(""), ShouldNotBeNil)
@@ -73,6 +83,8 @@ func TestValidatePackageRef(t *testing.T) {
 }
 
 func TestValidateInstanceVersion(t *testing.T) {
+	t.Parallel()
+
 	Convey("ValidateInstanceVersion works", t, func() {
 		So(ValidateInstanceVersion("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), ShouldBeNil)
 		So(ValidateInstanceVersion("good:tag"), ShouldBeNil)
@@ -126,6 +138,8 @@ func TestValidateRoot(t *testing.T) {
 }
 
 func TestPinToString(t *testing.T) {
+	t.Parallel()
+
 	Convey("Pin.String works", t, func() {
 		So(
 			fmt.Sprintf("%s", Pin{"good/name", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}),
@@ -135,6 +149,8 @@ func TestPinToString(t *testing.T) {
 }
 
 func TestGetInstanceTagKey(t *testing.T) {
+	t.Parallel()
+
 	Convey("GetInstanceTagKey works", t, func() {
 		So(GetInstanceTagKey("a:b"), ShouldEqual, "a")
 		So(GetInstanceTagKey("a:b:c"), ShouldEqual, "a")
