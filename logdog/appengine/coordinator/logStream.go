@@ -12,6 +12,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/common/types"
 
@@ -285,7 +286,7 @@ func (s *LogStream) LoadDescriptor(desc *logpb.LogStreamDescriptor) error {
 
 	// We know that the timestamp is valid b/c it's checked in ValidateDescriptor.
 	if ts := desc.Timestamp; ts != nil {
-		s.Timestamp = ds.RoundTime(ts.Time().UTC())
+		s.Timestamp = ds.RoundTime(google.TimeFromProto(ts).UTC())
 	}
 
 	// Note: tag content was validated via ValidateDescriptor.

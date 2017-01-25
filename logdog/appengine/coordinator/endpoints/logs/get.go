@@ -126,7 +126,7 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog
 	// Identify our URL signing parameters.
 	var signingRequest coordinator.URLSigningRequest
 	if sr := req.GetSignedUrls; sr != nil {
-		signingRequest.Lifetime = sr.Lifetime.Duration()
+		signingRequest.Lifetime = google.DurationFromProto(sr.Lifetime)
 		signingRequest.Stream = sr.Stream
 		signingRequest.Index = sr.Index
 	}

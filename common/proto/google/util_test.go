@@ -22,7 +22,7 @@ func TestTimestamp(t *testing.T) {
 			testclock.TestTimeLocal,
 			testclock.TestTimeUTC,
 		} {
-			So(NewTimestamp(v).Time().UTC(), ShouldResemble, v.UTC())
+			So(TimeFromProto(NewTimestamp(v)).UTC(), ShouldResemble, v.UTC())
 		}
 	})
 
@@ -31,7 +31,7 @@ func TestTimestamp(t *testing.T) {
 	})
 
 	Convey(`A nil Timestamp produces a zero time.Time.`, t, func() {
-		So((*Timestamp)(nil).Time().IsZero(), ShouldBeTrue)
+		So(TimeFromProto(nil).IsZero(), ShouldBeTrue)
 	})
 }
 
@@ -44,7 +44,7 @@ func TestDuration(t *testing.T) {
 			0,
 			10 * time.Second,
 		} {
-			So(NewDuration(v).Duration(), ShouldEqual, v)
+			So(DurationFromProto(NewDuration(v)), ShouldEqual, v)
 		}
 	})
 
@@ -53,6 +53,6 @@ func TestDuration(t *testing.T) {
 	})
 
 	Convey(`A nil Duration produces a zero time.Duration.`, t, func() {
-		So((*Duration)(nil).Duration(), ShouldEqual, time.Duration(0))
+		So(DurationFromProto(nil), ShouldEqual, time.Duration(0))
 	})
 }

@@ -11,6 +11,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/proto/google"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
 	"github.com/luci/luci-go/milo/api/resp"
 )
@@ -126,8 +127,8 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, buildCompletedTime, now 
 	comp.LevelsDeep = 0
 
 	// Timestamps
-	comp.Started = anno.Started.Time()
-	comp.Finished = anno.Ended.Time()
+	comp.Started = google.TimeFromProto(anno.Started)
+	comp.Finished = google.TimeFromProto(anno.Ended)
 
 	var till time.Time
 	switch {
@@ -175,7 +176,7 @@ func AddLogDogToBuild(
 
 	// Now fill in each of the step components.
 	// TODO(hinoka): This is totes cachable.
-	buildCompletedTime := mainAnno.Ended.Time()
+	buildCompletedTime := google.TimeFromProto(mainAnno.Ended)
 	build.Summary = *(miloBuildStep(ub, mainAnno, buildCompletedTime, now)[0])
 	for _, substepContainer := range mainAnno.Substep {
 		anno := substepContainer.GetStep()

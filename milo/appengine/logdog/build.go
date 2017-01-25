@@ -205,7 +205,7 @@ func (as *annotationStreamRequest) load(c context.Context) error {
 			log.Warningf(c, "Annotation stream links LogDog substream [%+v], not supported!", t.AnnotationStream)
 
 		case *miloProto.Step_Substep_Step:
-			endedTime := t.Step.Ended.Time()
+			endedTime := google.TimeFromProto(t.Step.Ended)
 			if t.Step.Ended != nil && endedTime.After(latestEndedTime) {
 				latestEndedTime = endedTime
 			}
@@ -213,7 +213,7 @@ func (as *annotationStreamRequest) load(c context.Context) error {
 	}
 	if latestEndedTime.IsZero() {
 		// No substep had an ended time :(
-		latestEndedTime = step.Started.Time()
+		latestEndedTime = google.TimeFromProto(step.Started)
 	}
 
 	// Build our CachedStep.

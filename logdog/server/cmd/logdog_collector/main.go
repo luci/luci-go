@@ -12,6 +12,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
@@ -116,7 +117,7 @@ func (a *application) runCollector(c context.Context) error {
 	// Initialize our Collector service object using a caching Coordinator
 	// interface.
 	coord := coordinator.NewCoordinator(a.Coordinator())
-	coord = coordinator.NewCache(coord, int(ccfg.StateCacheSize), ccfg.StateCacheExpiration.Duration())
+	coord = coordinator.NewCache(coord, int(ccfg.StateCacheSize), google.DurationFromProto(ccfg.StateCacheExpiration))
 
 	coll := collector.Collector{
 		Coordinator:       coord,

@@ -9,6 +9,7 @@ import (
 	"sort"
 
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/deploytool/api/deploy"
 
 	"golang.org/x/net/context"
@@ -219,6 +220,10 @@ func (meta *kubeObjectMeta) addAnnotation(key string, value interface{}) {
 	meta.Annotations[key] = value
 }
 
+func durationProtoToSec(p *google.Duration) int {
+	return int(google.DurationFromProto(p).Seconds())
+}
+
 func kubeBuildDeploymentYAML(pb *layoutDeploymentGKEPodBinding, name string,
 	imageMap map[string]string) *kubeDeployment {
 	kp := pb.pod.KubePod
@@ -237,11 +242,11 @@ func kubeBuildDeploymentYAML(pb *layoutDeploymentGKEPodBinding, name string,
 				Spec: &kubePodSpec{
 					Containers:                    make([]*kubeContainer, len(kp.Container)),
 					RestartPolicy:                 kp.RestartPolicy.KubeString(),
-					TerminationGracePeriodSeconds: int(kp.TerminationGracePeriod.Duration().Seconds()),
-					ActiveDeadlineSeconds:         int(kp.ActiveDeadline.Duration().Seconds()),
+					TerminationGracePeriodSeconds: durationProtoToSec(kp.TerminationGracePeriod),
+					ActiveDeadlineSeconds:         durationProtoToSec(kp.ActiveDeadline),
 				},
 			},
-			MinReadySeconds: int(kp.MinReady.Duration().Seconds()),
+			MinReadySeconds: durationProtoToSec(kp.MinReady),
 		},
 	}
 	tmpl := dep.Spec.Template
@@ -324,9 +329,9 @@ func kubeBuildDeploymentYAML(pb *layoutDeploymentGKEPodBinding, name string,
 			}
 
 			probe := kubeProbe{
-				InitialDelaySeconds: int(p.v.InitialDelay.Duration().Seconds()),
-				TimeoutSeconds:      int(p.v.Timeout.Duration().Seconds()),
-				PeriodSeconds:       int(p.v.Period.Duration().Seconds()),
+				InitialDelaySeconds: durationProtoToSec(p.v.InitialDelay),
+				TimeoutSeconds:      durationProtoToSec(p.v.Timeout),
+				PeriodSeconds:       durationProtoToSec(p.v.Period),
 				SuccessThreshold:    int(p.v.SuccessThreshold),
 				FailureThreshold:    int(p.v.FailureThreshold),
 			}

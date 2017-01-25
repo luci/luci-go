@@ -129,7 +129,7 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache) {
 	// and pop from it garbageSize times.
 	lastAccessTimes := make(timeHeap, 0, len(state.Entries))
 	for _, s := range state.Entries {
-		lastAccessTimes = append(lastAccessTimes, s.LastAccess.Time())
+		lastAccessTimes = append(lastAccessTimes, google.TimeFromProto(s.LastAccess))
 	}
 	heap.Init(&lastAccessTimes)
 	for i := 0; i < garbageSize-1; i++ {
@@ -141,7 +141,7 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache) {
 	garbage := make([]string, 0, garbageSize)
 	// Map iteration is not deterministic, but it is fine.
 	for id, e := range state.Entries {
-		if !e.LastAccess.Time().After(cutOff) {
+		if !google.TimeFromProto(e.LastAccess).After(cutOff) {
 			garbage = append(garbage, id)
 			if len(garbage) == cap(garbage) {
 				break
@@ -195,7 +195,7 @@ func (c *InstanceCache) readState(ctx context.Context, state *messages.InstanceC
 			cutOff := now.
 				Add(-instanceCacheSyncInterval).
 				Add(time.Duration(rand.Int63n(int64(5 * time.Minute))))
-			sync = state.LastSynced.Time().Before(cutOff)
+			sync = google.TimeFromProto(state.LastSynced).Before(cutOff)
 		}
 	}
 
@@ -300,7 +300,7 @@ func (c *InstanceCache) getAccessTime(ctx context.Context, now time.Time, pin co
 	c.withState(ctx, now, func(s *messages.InstanceCache) {
 		var entry *messages.InstanceCache_Entry
 		if entry, ok = s.Entries[pin.InstanceID]; ok {
-			lastAccess = entry.LastAccess.Time()
+			lastAccess = google.TimeFromProto(entry.LastAccess)
 		}
 	})
 	return

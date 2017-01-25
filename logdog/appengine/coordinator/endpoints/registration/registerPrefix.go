@@ -11,6 +11,7 @@ import (
 	"github.com/luci/luci-go/common/data/rand/cryptorand"
 	"github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/registration/v1"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
@@ -27,7 +28,7 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 		"project":    req.Project,
 		"prefix":     req.Prefix,
 		"source":     req.SourceInfo,
-		"expiration": req.Expiration.Duration(),
+		"expiration": google.DurationFromProto(req.Expiration),
 	}.Debugf(c, "Registering log prefix.")
 
 	// Confirm that the Prefix is a valid stream name.

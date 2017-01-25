@@ -11,6 +11,7 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logging/memlogger"
+	"github.com/luci/luci-go/common/proto/google"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
 
@@ -62,7 +63,7 @@ func TestFinishAttempt(t *testing.T) {
 
 				So(ds.Get(c, a, e, ar), ShouldBeNil)
 				So(e.Token, ShouldBeEmpty)
-				So(a.Result.Data.Expiration.Time(), ShouldResemble, testclock.TestTimeUTC)
+				So(google.TimeFromProto(a.Result.Data.Expiration), ShouldResemble, testclock.TestTimeUTC)
 				So(ar.Data.Object, ShouldResemble, `{"result":true}`)
 			})
 

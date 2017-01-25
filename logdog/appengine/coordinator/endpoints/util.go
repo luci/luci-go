@@ -16,7 +16,7 @@ import (
 // If none of the supplied Durations are > 0, 0 will be returned.
 func MinDuration(candidates ...*google.Duration) (exp time.Duration) {
 	for _, c := range candidates {
-		if cd := c.Duration(); cd > 0 && (exp <= 0 || cd < exp) {
+		if cd := google.DurationFromProto(c); cd > 0 && (exp <= 0 || cd < exp) {
 			exp = cd
 		}
 	}

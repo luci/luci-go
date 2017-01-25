@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/logdog/api/logpb"
 )
 
@@ -336,7 +337,7 @@ func (s *streamImpl) fixupLogEntry(prev, cur *logpb.LogEntry) error {
 			return fmt.Errorf("non-contiguous stream indices (%d != %d)", cur.StreamIndex, prev.StreamIndex+1)
 		}
 
-		if cur.TimeOffset.Duration() < prev.TimeOffset.Duration() {
+		if google.DurationFromProto(cur.TimeOffset) < google.DurationFromProto(prev.TimeOffset) {
 			to := *prev.TimeOffset
 			cur.TimeOffset = &to
 		}

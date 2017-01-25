@@ -11,6 +11,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/data/text/templateproto"
+	"github.com/luci/luci-go/common/proto/google"
 )
 
 // IsEmpty returns true if this metadata retry message only contains
@@ -21,13 +22,13 @@ func (q *Quest_Desc_Meta_Retry) IsEmpty() bool {
 
 // Normalize ensures that all timeouts are >= 0
 func (t *Quest_Desc_Meta_Timeouts) Normalize() error {
-	if d := t.Start.Duration(); d < 0 {
+	if d := google.DurationFromProto(t.Start); d < 0 {
 		return fmt.Errorf("desc.meta.timeouts.start < 0: %s", d)
 	}
-	if d := t.Run.Duration(); d < 0 {
+	if d := google.DurationFromProto(t.Run); d < 0 {
 		return fmt.Errorf("desc.meta.timeouts.run < 0: %s", d)
 	}
-	if d := t.Stop.Duration(); d < 0 {
+	if d := google.DurationFromProto(t.Stop); d < 0 {
 		return fmt.Errorf("desc.meta.timeouts.stop < 0: %s", d)
 	}
 	return nil

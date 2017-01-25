@@ -9,6 +9,7 @@ import (
 	"sort"
 
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/xtgo/set"
 )
 
@@ -70,7 +71,7 @@ func (w *WalkGraphReq) Normalize() error {
 		if w.Limit.MaxDepth < -1 {
 			return errors.New("limit.max_depth must be >= -1")
 		}
-		if w.Limit.GetMaxTime().Duration() < 0 {
+		if google.DurationFromProto(w.Limit.GetMaxTime()) < 0 {
 			return errors.New("limit.max_time must be positive")
 		}
 	} else {

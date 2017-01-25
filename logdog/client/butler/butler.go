@@ -397,7 +397,7 @@ func (b *Butler) AddStreamServer(streamServer streamserver.StreamServer) {
 // is responsible for closing it.
 func (b *Butler) AddStream(rc io.ReadCloser, p *streamproto.Properties) error {
 	p = p.Clone()
-	if p.Timestamp == nil || p.Timestamp.Time().IsZero() {
+	if p.Timestamp == nil || google.TimeFromProto(p.Timestamp).IsZero() {
 		p.Timestamp = google.NewTimestamp(clock.Now(b.ctx))
 	}
 	if err := p.Validate(); err != nil {

@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/logdog/client/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
@@ -110,7 +111,7 @@ func (*listCommandRun) attributes(lr *coordinator.ListResult) string {
 
 	if s := lr.State; s != nil {
 		p := []string{
-			s.Desc.GetTimestamp().Time().String(),
+			google.TimeFromProto(s.Desc.GetTimestamp()).String(),
 			fmt.Sprintf("type:%s", s.Desc.StreamType.String()),
 		}
 

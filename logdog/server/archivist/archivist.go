@@ -18,6 +18,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/gcloud/gs"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
@@ -214,7 +215,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 
 	// Get the local time. If we are within the dispatchThreshold, retry this
 	// archival later.
-	if ad := at.DispatchedAt.Time(); !ad.IsZero() {
+	if ad := google.TimeFromProto(at.DispatchedAt); !ad.IsZero() {
 		now := clock.Now(c)
 		delta := now.Sub(ad)
 		if delta < 0 {
@@ -294,11 +295,11 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 
 	// If the archival request is younger than the settle delay, kick it back to
 	// retry later.
-	age := ls.Age.Duration()
-	if age < at.SettleDelay.Duration() {
+	age := google.DurationFromProto(ls.Age)
+	if settle := google.DurationFromProto(at.SettleDelay); age < settle {
 		log.Fields{
 			"age":         age,
-			"settleDelay": at.SettleDelay.Duration(),
+			"settleDelay": settle,
 		}.Infof(c, "Log stream is younger than the settle delay. Returning task to queue.")
 		return statusErr(errors.New("log stream is within settle delay"))
 	}
@@ -326,7 +327,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 	}
 
 	// Are we required to archive a complete log stream?
-	if age <= at.CompletePeriod.Duration() {
+	if age <= google.DurationFromProto(at.CompletePeriod) {
 		// If we're requiring completeness, perform a keys-only scan of intermediate
 		// storage to ensure that we have all of the records before we bother
 		// streaming to storage only to find that we are missing data.

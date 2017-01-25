@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/common/renderer"
 )
@@ -48,7 +49,7 @@ func (s *safeLogEntrySource) NextLogEntry() (*logpb.LogEntry, error) {
 
 func (s *safeLogEntrySource) normalizeLogEntry(le *logpb.LogEntry) error {
 	// Calculate the time offset Duration once.
-	timeOffset := le.TimeOffset.Duration()
+	timeOffset := google.DurationFromProto(le.TimeOffset)
 
 	// Are any of our order constraints violated?
 	switch {
@@ -68,7 +69,7 @@ func (s *safeLogEntrySource) normalizeLogEntry(le *logpb.LogEntry) error {
 		s.logger().Warningf("Adjusting out-of-order timestamp (%s < %s) for log stream entry %d.",
 			timeOffset, s.lastTimeOffset, le.StreamIndex)
 
-		le.TimeOffset = le.TimeOffset.Load(s.lastTimeOffset)
+		le.TimeOffset = google.LoadDuration(le.TimeOffset, s.lastTimeOffset)
 	} else {
 		s.lastTimeOffset = timeOffset
 	}

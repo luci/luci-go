@@ -493,7 +493,7 @@ func testGetImpl(t *testing.T, archived bool) {
 							So(resp.SignedUrls, ShouldNotBeNil)
 							So(resp.SignedUrls.Stream, ShouldEndWith, "&signed=true")
 							So(resp.SignedUrls.Index, ShouldEndWith, "&signed=true")
-							So(resp.SignedUrls.Expiration.Time(), ShouldResemble, clock.Now(c).Add(duration))
+							So(google.TimeFromProto(resp.SignedUrls.Expiration), ShouldResemble, clock.Now(c).Add(duration))
 						})
 					} else {
 						Convey(`Will succeed, but return no URL.`, func() {

@@ -11,6 +11,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/butler/output"
 	"github.com/luci/luci-go/logdog/common/types"
@@ -64,7 +65,7 @@ func (o *logOutput) SendBundle(bundle *logpb.ButlerLogBundle) error {
 
 		for _, le := range e.Logs {
 			log.Fields{
-				"timeOffset":  le.TimeOffset.Duration(),
+				"timeOffset":  google.DurationFromProto(le.TimeOffset),
 				"prefixIndex": le.PrefixIndex,
 				"streamIndex": le.StreamIndex,
 				"sequence":    le.Sequence,

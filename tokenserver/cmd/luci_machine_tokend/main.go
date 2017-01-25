@@ -29,6 +29,7 @@ import (
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/common/logging/memlogger"
 	"github.com/luci/luci-go/common/logging/teelogger"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/retry"
 	"github.com/luci/luci-go/common/tsmon"
 
@@ -259,7 +260,7 @@ func run(ctx context.Context, clientParams client.Parameters, opts commandLine, 
 	}
 
 	now = clock.Now(ctx)
-	expiry := tok.Expiry.Time()
+	expiry := google.TimeFromProto(tok.Expiry)
 	lifetime := expiry.Sub(now)
 
 	// lifetime should usually be 1h, add a safeguard to avoid hammering

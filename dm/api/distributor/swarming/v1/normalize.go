@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"strings"
 	"unicode"
+
+	"github.com/luci/luci-go/common/proto/google"
 )
 
 // DefaultSwarmingPriority is the priority used if
@@ -47,7 +49,7 @@ func (s *Parameters_Scheduling) Normalize() (err error) {
 			return fmt.Errorf("scheduling.dimensions: dimension key %q with empty value", k)
 		}
 	}
-	if s.IoTimeout.Duration() < 0 {
+	if google.DurationFromProto(s.IoTimeout) < 0 {
 		return errors.New("scheduling.io_timeout: negative timeout not allowed")
 	}
 	return

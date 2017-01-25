@@ -18,6 +18,7 @@ import (
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/sync/parallel"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/distributor"
@@ -422,7 +423,7 @@ func (g *graphWalker) excludedAttempt(aid *dm.Attempt_ID) bool {
 func doGraphWalk(c context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, err error) {
 	cncl := (func())(nil)
 	timeoutProto := req.Limit.MaxTime
-	timeout := timeoutProto.Duration() // .Duration on nil is OK
+	timeout := google.DurationFromProto(timeoutProto)
 	if timeoutProto == nil || timeout > maxTimeout {
 		timeout = maxTimeout
 	}

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/common/types"
@@ -80,7 +81,7 @@ func loadLogStream(proj string, path types.StreamPath, s *logdog.LogStreamState,
 		Path:    path,
 		Desc:    *d,
 		State: StreamState{
-			Created:       s.Created.Time(),
+			Created:       google.TimeFromProto(s.Created),
 			TerminalIndex: types.MessageIndex(s.TerminalIndex),
 			Purged:        s.Purged,
 		},

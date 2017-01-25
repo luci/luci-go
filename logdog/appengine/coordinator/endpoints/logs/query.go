@@ -7,6 +7,7 @@ package logs
 import (
 	ds "github.com/luci/gae/service/datastore"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
 	"github.com/luci/luci-go/logdog/api/logpb"
@@ -154,10 +155,10 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 	}
 
 	if r.Newer != nil {
-		q = coordinator.AddNewerFilter(q, r.Newer.Time())
+		q = coordinator.AddNewerFilter(q, google.TimeFromProto(r.Newer))
 	}
 	if r.Older != nil {
-		q = coordinator.AddOlderFilter(q, r.Older.Time())
+		q = coordinator.AddOlderFilter(q, google.TimeFromProto(r.Older))
 	}
 
 	if r.ProtoVersion != "" {

@@ -60,7 +60,7 @@ func (s *server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*
 		"terminalIndex":   resp.State.TerminalIndex,
 		"archived":        resp.State.Archived,
 		"purged":          resp.State.Purged,
-		"age":             resp.Age.Duration(),
+		"age":             google.DurationFromProto(resp.Age),
 		"archivalKeySize": len(resp.ArchivalKey),
 	}.Infof(c, "Successfully loaded log stream state.")
 	return &resp, nil

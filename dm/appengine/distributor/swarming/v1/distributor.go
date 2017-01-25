@@ -76,6 +76,10 @@ func toSwarmMap(m map[string]string) []*swarm.SwarmingRpcsStringPair {
 	return ret
 }
 
+func toIntSeconds(p *googlepb.Duration) int64 {
+	return int64(googlepb.DurationFromProto(p).Seconds())
+}
+
 func httpClients(c context.Context) (anonC, authC *http.Client) {
 	rt, err := auth.GetRPCTransport(c, auth.AsSelf)
 	if err != nil {
@@ -193,7 +197,7 @@ func (d *swarmingDist) Run(desc *dm.Quest_Desc, auth *dm.Execution_Auth, prev *d
 	err = retry.Retry(d, retry.Default, func() (err error) {
 		rpcCtx, _ := context.WithTimeout(d, 10*time.Second)
 		rslt, err = newSwarmClient(rpcCtx, d.sCfg).Tasks.New(&swarm.SwarmingRpcsNewTaskRequest{
-			ExpirationSecs: int64(desc.Meta.Timeouts.Start.Duration().Seconds()),
+			ExpirationSecs: toIntSeconds(desc.Meta.Timeouts.Start),
 			Name:           fmt.Sprintf("%s%s|%d|%d", prefix, id.Quest, id.Attempt, id.Id),
 
 			Priority: int64(params.Scheduling.Priority),
@@ -202,9 +206,9 @@ func (d *swarmingDist) Run(desc *dm.Quest_Desc, auth *dm.Execution_Auth, prev *d
 				CipdInput:            cipdInput,
 				Dimensions:           toSwarmMap(dims),
 				Env:                  toSwarmMap(params.Job.Env),
-				ExecutionTimeoutSecs: int64(desc.Meta.Timeouts.Run.Duration().Seconds()),
-				GracePeriodSecs:      int64(desc.Meta.Timeouts.Stop.Duration().Seconds()),
-				IoTimeoutSecs:        int64(params.Scheduling.IoTimeout.Duration().Seconds()),
+				ExecutionTimeoutSecs: toIntSeconds(desc.Meta.Timeouts.Run),
+				GracePeriodSecs:      toIntSeconds(desc.Meta.Timeouts.Stop),
+				IoTimeoutSecs:        toIntSeconds(params.Scheduling.IoTimeout),
 				InputsRef:            iso,
 				SecretBytes:          secretBytes,
 			},
@@ -313,7 +317,7 @@ func (d *swarmingDist) GetStatus(q *dm.Quest_Desc, tok distributor.Token) (*dm.R
 			Object: data,
 			Size:   uint32(len(data)),
 			Expiration: googlepb.NewTimestamp(
-				clock.Now(d).Add(d.sCfg.Isolate.Expiration.Duration())),
+				clock.Now(d).Add(googlepb.DurationFromProto(d.sCfg.Isolate.Expiration))),
 		}
 
 	default:

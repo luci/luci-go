@@ -58,7 +58,7 @@ type parser interface {
 func newParser(p *streamproto.Properties, c *counter) (parser, error) {
 	base := baseParser{
 		counter:  c,
-		timeBase: p.Timestamp.Time(),
+		timeBase: google.TimeFromProto(p.Timestamp),
 	}
 
 	switch p.StreamType {

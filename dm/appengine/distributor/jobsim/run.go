@@ -18,6 +18,7 @@ import (
 	"github.com/luci/luci-go/common/data/rand/cryptorand"
 	"github.com/luci/luci-go/common/lhttp"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/dm/api/distributor/jobsim"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/grpc/grpcutil"
@@ -140,7 +141,7 @@ func (r *runner) doReturnStage(stg *jobsim.ReturnStage) error {
 
 	_, err := r.dmc.FinishAttempt(r.c, &dm.FinishAttemptReq{
 		Auth: r.auth,
-		Data: executionResult(true, retval, stg.GetExpiration().Time()),
+		Data: executionResult(true, retval, google.TimeFromProto(stg.GetExpiration())),
 	})
 	if err != nil {
 		logging.WithError(err).Warningf(r.c, "got error on FinishAttempt")
@@ -273,7 +274,7 @@ func (r *runner) doDeps(seed int64, stg *jobsim.DepsStage, cfgName string) (stop
 }
 
 func (r *runner) doStall(stg *jobsim.StallStage) {
-	dur := stg.Delay.Duration()
+	dur := google.DurationFromProto(stg.Delay)
 	logging.Fields{"duration": dur}.Infof(r.c, "stalling")
 	clock.Sleep(r.c, dur)
 }

@@ -14,14 +14,15 @@ const (
 
 // NewTimestamp creates a new Timestamp protobuf from a time.Time type.
 func NewTimestamp(v time.Time) *Timestamp {
-	return ((*Timestamp)(nil)).Load(v)
+	return LoadTimestamp(nil, v)
 }
 
-// Load replaces the value in the supplied Timestamp with the specified time.
+// LoadTimestamp replaces the value in the supplied Timestamp with the specified
+// time.
 //
 // If the supplied Timestamp is nil and the time is non-zero, a new Timestamp
 // will be generated. The populated Timestamp will be returned.
-func (t *Timestamp) Load(v time.Time) *Timestamp {
+func LoadTimestamp(t *Timestamp, v time.Time) *Timestamp {
 	if t == nil {
 		if v.IsZero() {
 			return nil
@@ -35,8 +36,8 @@ func (t *Timestamp) Load(v time.Time) *Timestamp {
 	return t
 }
 
-// Time returns the time.Time associated with a Timestamp protobuf.
-func (t *Timestamp) Time() time.Time {
+// TimeFromProto returns the time.Time associated with a Timestamp protobuf.
+func TimeFromProto(t *Timestamp) time.Time {
 	if t == nil {
 		return time.Time{}
 	}
@@ -45,14 +46,15 @@ func (t *Timestamp) Time() time.Time {
 
 // NewDuration creates a new Duration protobuf from a time.Duration.
 func NewDuration(v time.Duration) *Duration {
-	return ((*Duration)(nil)).Load(v)
+	return LoadDuration(nil, v)
 }
 
-// Load replaces the value in the supplied Duration with the specified value.
+// LoadDuration replaces the value in the supplied Duration with the specified
+// value.
 //
 // If the supplied Duration is nil and the value is non-zero, a new Duration
 // will be generated. The populated Duration will be returned.
-func (d *Duration) Load(v time.Duration) *Duration {
+func LoadDuration(d *Duration, v time.Duration) *Duration {
 	if d == nil {
 		if v == 0 {
 			return nil
@@ -68,8 +70,9 @@ func (d *Duration) Load(v time.Duration) *Duration {
 	return d
 }
 
-// Duration returns the time.Duration associated with a Duration protobuf.
-func (d *Duration) Duration() time.Duration {
+// DurationFromProto returns the time.Duration associated with a Duration
+// protobuf.
+func DurationFromProto(d *Duration) time.Duration {
 	if d == nil {
 		return 0
 	}

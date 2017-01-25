@@ -10,6 +10,7 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/google"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/distributor"
 	"github.com/luci/luci-go/dm/appengine/model"
@@ -73,15 +74,15 @@ func (s *ScheduleExecution) RollForward(c context.Context) (muts []tumble.Mutati
 
 	eid := dm.NewExecutionID(s.For.Quest, s.For.Id, a.CurExecution)
 	e := model.MakeExecution(c, eid, q.Desc.DistributorConfigName, ver)
-	e.TimeToStart = q.Desc.Meta.Timeouts.Start.Duration()
-	e.TimeToRun = q.Desc.Meta.Timeouts.Run.Duration()
+	e.TimeToStart = google.DurationFromProto(q.Desc.Meta.Timeouts.Start)
+	e.TimeToRun = google.DurationFromProto(q.Desc.Meta.Timeouts.Run)
 
 	exAuth := &dm.Execution_Auth{Id: eid, Token: e.Token}
 
 	var distTok distributor.Token
 	distTok, e.TimeToStop, err = dist.Run(&q.Desc, exAuth, prevResult)
 	if e.TimeToStop <= 0 {
-		e.TimeToStop = q.Desc.Meta.Timeouts.Stop.Duration()
+		e.TimeToStop = google.DurationFromProto(q.Desc.Meta.Timeouts.Stop)
 	}
 	e.DistributorToken = string(distTok)
 	if err != nil {
