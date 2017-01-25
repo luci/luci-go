@@ -70,10 +70,15 @@ func jobPage(ctx *router.Context) {
 		mc.Set(c, itm)
 	}
 
-	now := clock.Now(c).UTC()
+	jobUI := makeJob(c, job)
+	invsUI := make([]*invocation, len(invs))
+	for i, inv := range invs {
+		invsUI[i] = makeInvocation(jobUI, inv)
+	}
+
 	templates.MustRender(c, w, "pages/job.html", map[string]interface{}{
-		"Job":         makeJob(job, now),
-		"Invocations": convertToInvocations(job.ProjectID, job.JobID, invs, now),
+		"Job":         jobUI,
+		"Invocations": invsUI,
 		"PrevCursor":  prevCursor,
 		"NextCursor":  nextCursor,
 	})

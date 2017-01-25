@@ -164,6 +164,7 @@ func init() {
 
 	ui.InstallHandlers(r, baseUI, ui.Config{
 		Engine:        globalEngine,
+		Catalog:       globalCatalog,
 		TemplatesPath: "templates",
 	})
 

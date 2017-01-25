@@ -17,12 +17,14 @@ import (
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
 
+	"github.com/luci/luci-go/scheduler/appengine/catalog"
 	"github.com/luci/luci-go/scheduler/appengine/engine"
 )
 
 // Config is global configuration of UI handlers.
 type Config struct {
 	Engine        engine.Engine
+	Catalog       catalog.Catalog
 	TemplatesPath string // path to templates directory deployed to GAE
 }
 

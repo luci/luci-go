@@ -13,6 +13,10 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/logging"
 
 	"github.com/luci/luci-go/common/data/sortby"
 	"github.com/luci/luci-go/scheduler/appengine/catalog"
@@ -22,6 +26,7 @@ import (
 	"github.com/luci/luci-go/scheduler/appengine/task"
 )
 
+// schedulerJob is UI representation of engine.Job entity.
 type schedulerJob struct {
 	ProjectID      string
 	JobID          string
@@ -37,7 +42,9 @@ type schedulerJob struct {
 	JobFlavorIcon  string
 	JobFlavorTitle string
 
-	sortGroup string // used only for sorting, doesn't show up in UI
+	sortGroup string      // used only for sorting, doesn't show up in UI
+	now       time.Time   // as passed to makeJob
+	traits    task.Traits // as extracted from corresponding task.Manager
 }
 
 var stateToLabelClass = map[engine.StateKind]string{
@@ -60,7 +67,24 @@ var flavorToTitle = []string{
 	catalog.JobFlavorTrigger:   "Triggering job",
 }
 
-func makeJob(j *engine.Job, now time.Time) *schedulerJob {
+// makeJob builds UI presentation for engine.Job.
+func makeJob(c context.Context, j *engine.Job) *schedulerJob {
+	// Grab the task.Manager that's responsible for handling this job and
+	// query if for the list of traits applying to this job.
+	var manager task.Manager
+	cat := config(c).Catalog
+	taskDef, err := cat.UnmarshalTask(j.Task)
+	if err != nil {
+		logging.WithError(err).Warningf(c, "Failed to unmarshal task proto for %s", j.JobID)
+	} else {
+		manager = cat.GetTaskManager(taskDef)
+	}
+	traits := task.Traits{}
+	if manager != nil {
+		traits = manager.Traits()
+	}
+
+	now := clock.Now(c).UTC()
 	nextRun := ""
 	switch ts := j.State.TickTime; {
 	case ts == schedule.DistantFuture:
@@ -76,15 +100,21 @@ func makeJob(j *engine.Job, now time.Time) *schedulerJob {
 	labelClass := ""
 	switch {
 	case j.State.IsRetrying():
-		// Retries happen when invocation fails to launch (move from STARTING to
-		// RUNNING state). Such invocation is retried (as new invocation). When
+		// Retries happen when invocation fails to launch (move from "STARTING" to
+		// "RUNNING" state). Such invocation is retried (as new invocation). When
 		// a retry is enqueued, we display the job state as "RETRYING" (even though
 		// technically it is still "QUEUED").
 		state = "RETRYING"
 		labelClass = "label-danger"
+	case !traits.Multistage && j.State.InvocationID != 0:
+		// The job has an active invocation and the engine has called LaunchTask for
+		// it already. Jobs with Multistage == false trait do all their work in
+		// LaunchTask, so we display them as "RUNNING" (instead of "STARTING").
+		state = "RUNNING"
+		labelClass = "label-info"
 	case j.State.State == engine.JobStateQueued:
-		// An invocation has been added to the task queue, but didn't move to
-		// RUNNING state yet.
+		// An invocation has been added to the task queue, and the engine hasn't
+		// attempted to launch it yet.
 		state = "STARTING"
 		labelClass = "label-default"
 	case j.State.State == engine.JobStateSlowQueue:
@@ -93,14 +123,14 @@ func makeJob(j *engine.Job, now time.Time) *schedulerJob {
 		state = "STARTING"
 		labelClass = "label-warning"
 	case j.Paused && j.State.State == engine.JobStateSuspended:
-		// Paused jobs don't have a schedule, so they are always in SUSPENDED state.
-		// Make it clearer that they are just paused. This applies to both triggered
-		// and periodic jobs.
+		// Paused jobs don't have a schedule, so they are always in "SUSPENDED"
+		// state. Make it clearer that they are just paused. This applies to both
+		// triggered and periodic jobs.
 		state = "PAUSED"
 		labelClass = "label-default"
 	case j.State.State == engine.JobStateSuspended && j.Flavor == catalog.JobFlavorTriggered:
-		// Triggered jobs don't run on a schedule. They are in SUSPENDED state
-		// between triggering events, rename it to WAITING for clarity.
+		// Triggered jobs don't run on a schedule. They are in "SUSPENDED" state
+		// between triggering events, rename it to "WAITING" for clarity.
 		state = "WAITING"
 		labelClass = "label-default"
 	default:
@@ -133,6 +163,8 @@ func makeJob(j *engine.Job, now time.Time) *schedulerJob {
 		JobFlavorTitle: flavorToTitle[j.Flavor],
 
 		sortGroup: sortGroup,
+		now:       now,
+		traits:    traits,
 	}
 }
 
@@ -163,15 +195,18 @@ func (s sortedJobs) Less(i, j int) bool {
 	}.Use(i, j)
 }
 
-func convertToSortedJobs(jobs []*engine.Job, now time.Time) sortedJobs {
+// sortJobs instantiate a bunch of schedulerJob objects and sorts them in
+// display order.
+func sortJobs(c context.Context, jobs []*engine.Job) sortedJobs {
 	out := make(sortedJobs, len(jobs))
 	for i, job := range jobs {
-		out[i] = makeJob(job, now)
+		out[i] = makeJob(c, job)
 	}
 	sort.Sort(out)
 	return out
 }
 
+// invocation is UI representation of engine.Invocation entity.
 type invocation struct {
 	ProjectID   string
 	JobID       string
@@ -208,7 +243,17 @@ var statusToLabelClass = map[task.Status]string{
 	task.StatusAborted:   "label-danger",
 }
 
-func makeInvocation(projecID, jobID string, i *engine.Invocation, now time.Time) *invocation {
+// makeInvocation builds UI presentation of some Invocation of a job.
+func makeInvocation(j *schedulerJob, i *engine.Invocation) *invocation {
+	// Invocations with Multistage == false trait are never in "RUNNING" state,
+	// they perform all their work in 'LaunchTask' while technically being in
+	// "STARTING" state. We display them as "RUNNING" instead. See comment for
+	// task.Traits.Multistage for more info.
+	status := i.Status
+	if !j.traits.Multistage && status == task.StatusStarting {
+		status = task.StatusRunning
+	}
+
 	triggeredBy := "-"
 	if i.TriggeredBy != "" {
 		triggeredBy = string(i.TriggeredBy)
@@ -216,37 +261,31 @@ func makeInvocation(projecID, jobID string, i *engine.Invocation, now time.Time)
 			triggeredBy = i.TriggeredBy.Email() // triggered by a user (not a service)
 		}
 	}
+
 	finished := i.Finished
 	if finished.IsZero() {
-		finished = now
+		finished = j.now
 	}
 	duration := humanize.RelTime(i.Started, finished, "", "")
 	if duration == "now" {
 		duration = "1 second" // "now" looks weird for durations
 	}
+
 	return &invocation{
-		ProjectID:   projecID,
-		JobID:       jobID,
+		ProjectID:   j.ProjectID,
+		JobID:       j.JobID,
 		InvID:       i.ID,
 		Attempt:     i.RetryCount + 1,
 		Revision:    i.Revision,
 		RevisionURL: i.RevisionURL,
 		Definition:  taskToText(i.Task),
 		TriggeredBy: triggeredBy,
-		Started:     humanize.RelTime(i.Started, now, "ago", "from now"),
+		Started:     humanize.RelTime(i.Started, j.now, "ago", "from now"),
 		Duration:    duration,
-		Status:      string(i.Status),
+		Status:      string(status),
 		DebugLog:    i.DebugLog,
-		RowClass:    statusToRowClass[i.Status],
-		LabelClass:  statusToLabelClass[i.Status],
+		RowClass:    statusToRowClass[status],
+		LabelClass:  statusToLabelClass[status],
 		ViewURL:     i.ViewURL,
 	}
-}
-
-func convertToInvocations(projectID, jobID string, invs []*engine.Invocation, now time.Time) []*invocation {
-	out := make([]*invocation, len(invs))
-	for i, inv := range invs {
-		out[i] = makeInvocation(projectID, jobID, inv, now)
-	}
-	return out
 }

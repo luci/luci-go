@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
@@ -60,10 +59,10 @@ func invocationPage(c *router.Context) {
 		return
 	}
 
-	now := clock.Now(c.Context).UTC()
+	jobUI := makeJob(c.Context, job)
 	templates.MustRender(c.Context, c.Writer, "pages/invocation.html", map[string]interface{}{
-		"Job": makeJob(job, now),
-		"Inv": makeInvocation(projectID, jobID, inv, now),
+		"Job": jobUI,
+		"Inv": makeInvocation(jobUI, inv),
 	})
 }
 

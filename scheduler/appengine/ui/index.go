@@ -5,7 +5,6 @@
 package ui
 
 import (
-	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
 )
@@ -16,6 +15,6 @@ func indexPage(c *router.Context) {
 		panic(err)
 	}
 	templates.MustRender(c.Context, c.Writer, "pages/index.html", map[string]interface{}{
-		"Jobs": convertToSortedJobs(jobs, clock.Now(c.Context).UTC()),
+		"Jobs": sortJobs(c.Context, jobs),
 	})
 }
