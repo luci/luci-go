@@ -39,6 +39,7 @@ import (
 
 	"github.com/luci/luci-go/cipd/client/cipd"
 	"github.com/luci/luci-go/cipd/client/cipd/common"
+	"github.com/luci/luci-go/cipd/client/cipd/ensure"
 	"github.com/luci/luci-go/cipd/client/cipd/local"
 	"github.com/luci/luci-go/cipd/version"
 	"github.com/luci/luci-go/client/authcli"
@@ -238,7 +239,9 @@ type ClientOptions struct {
 }
 
 func (opts *ClientOptions) registerFlags(f *flag.FlagSet) {
-	f.StringVar(&opts.serviceURL, "service-url", "", "URL of a backend to use instead of the default one.")
+	f.StringVar(&opts.serviceURL, "service-url", "",
+		("URL of a backend to use instead of the default one. " +
+			"If provided via an 'ensure file', the URL in the file takes precedence."))
 	f.StringVar(&opts.cacheDir, "cache-dir", "",
 		fmt.Sprintf("Directory for shared cache (can also be set by %s env var).", CIPDCacheDir))
 	opts.authFlags.Register(f, auth.Options{})
@@ -731,6 +734,21 @@ func ensurePackages(ctx context.Context, root string, desiredStateFile string, d
 	}
 	defer f.Close()
 
+	ensureFile, err := ensure.ParseFile(f)
+	if err != nil {
+		return nil, cipd.Actions{}, err
+	}
+
+	// Prefer the ServiceURL from the file (if set), and log a warning if the user
+	// provided one on the commandline that doesn't match the one in the file.
+	if ensureFile.ServiceURL != "" {
+		if clientOpts.serviceURL != "" && clientOpts.serviceURL != ensureFile.ServiceURL {
+			logging.Warningf(ctx, "serviceURL in ensure file != serviceURL on CLI (%q v %q). Using %q from file.",
+				ensureFile.ServiceURL, clientOpts.serviceURL, ensureFile.ServiceURL)
+		}
+		clientOpts.serviceURL = ensureFile.ServiceURL
+	}
+
 	client, err := clientOpts.makeCipdClient(ctx, root)
 	if err != nil {
 		return nil, cipd.Actions{}, err
@@ -739,15 +757,24 @@ func ensurePackages(ctx context.Context, root string, desiredStateFile string, d
 	client.BeginBatch(ctx)
 	defer client.EndBatch(ctx)
 
-	desiredState, err := client.ProcessEnsureFile(ctx, f)
+	resolved, err := ensureFile.Resolve(func(pkg, vers string) (common.Pin, error) {
+		return client.ResolveVersion(ctx, pkg, vers)
+	})
 	if err != nil {
 		return nil, cipd.Actions{}, err
 	}
-	actions, err := client.EnsurePackages(ctx, desiredState, dryRun)
+
+	baseRoot := resolved.PackagesByRoot[""]
+	delete(resolved.PackagesByRoot, "")
+	if len(resolved.PackagesByRoot) > 0 {
+		return nil, cipd.Actions{}, errors.New("@Root not yet supported")
+	}
+
+	actions, err := client.EnsurePackages(ctx, baseRoot, dryRun)
 	if err != nil {
 		return nil, actions, err
 	}
-	return desiredState, actions, nil
+	return baseRoot, actions, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -31,7 +31,6 @@
 package cipd
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -379,39 +378,6 @@ type Client interface {
 	//
 	// Returns their concrete Pins.
 	SearchInstances(ctx context.Context, tag, packageName string) ([]common.Pin, error)
-
-	// ProcessEnsureFile parses text file that describes what should be installed.
-	//
-	// It is a text file where each line has a form "<package template> <version>".
-	// Whitespaces are ignored. Lines that start with '#' are ignored. A version
-	// can be specified as instance ID, tag or ref. Will resolve tags and refs to
-	// concrete instance IDs by calling the backend.
-	//
-	// The package template may contain the expansion parameters ${platfrom} and
-	// ${arch}. All other characters in the template are taken verbatim.
-	//
-	// ${platform} will expand to one of the following, based on the value of this
-	// client's runtime.GOOS value:
-	//   * windows
-	//   * mac
-	//   * linux
-	//
-	// ${arch} will expand to one of the following, based on the value of this
-	// client's runtime.GOARCH value:
-	//   * 386
-	//   * amd64
-	//   * armv6l
-	//
-	// Both of these paramters also support the syntax ${var=possible,values}.
-	// What this means is that the package line will be expanded if, and only if,
-	// var equals one of the possible values. If that var does not match
-	// a possible value, the line is ignored. This allows you to do, e.g.:
-	//   path/to/package/${platform=windows}  windows_release
-	//   path/to/package/${platform=linux}		linux_release
-	//   # no version for mac
-	//
-	//   path/to/posix/tool/${platform=mac,linux}  some_tag:value
-	ProcessEnsureFile(ctx context.Context, r io.Reader) ([]common.Pin, error)
 
 	// EnsurePackages installs, removes and updates packages in the site root.
 	//
@@ -1228,73 +1194,6 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, pin common
 	// Deploy it. 'defer' will take care of removing the temp file if needed.
 	_, err = client.deployer.DeployInstance(ctx, instance)
 	return err
-}
-
-func (client *clientImpl) ProcessEnsureFile(ctx context.Context, r io.Reader) ([]common.Pin, error) {
-	client.BeginBatch(ctx)
-	defer client.EndBatch(ctx)
-
-	lineNo := 0
-	makeError := func(msg string) error {
-		return fmt.Errorf("failed to parse desired state (line %d): %s", lineNo, msg)
-	}
-
-	logging.Debugf(ctx, "scanning ensure file with platform=%q, arch=%q",
-		common.CurrentPlatform(), common.CurrentArchitecture())
-
-	out := []common.Pin{}
-	scanner := bufio.NewScanner(r)
-	for scanner.Scan() {
-		lineNo++
-
-		// Split each line into words, ignore white space.
-		tokens := []string{}
-		for _, chunk := range strings.Split(scanner.Text(), " ") {
-			chunk = strings.TrimSpace(chunk)
-			if chunk != "" {
-				tokens = append(tokens, chunk)
-			}
-		}
-
-		// Skip empty lines or lines starting with '#'.
-		if len(tokens) == 0 || tokens[0][0] == '#' {
-			continue
-		}
-
-		// Each line has a format "<package template> <version>".
-		if len(tokens) != 2 {
-			return nil, makeError("expecting '<package template> <version>' line")
-		}
-
-		pkg, err := expandTemplate(tokens[0], common.CurrentPlatform(),
-			common.CurrentArchitecture())
-		switch err {
-		case nil:
-		case errSkipTemplate:
-			logging.Debugf(
-				ctx, "skipping line %d: template does not apply to platform/arch", lineNo)
-			continue
-		default:
-			return nil, makeError(err.Error())
-		}
-
-		if err = common.ValidatePackageName(pkg); err != nil {
-			return nil, makeError(err.Error())
-		}
-
-		if err = common.ValidateInstanceVersion(tokens[1]); err != nil {
-			return nil, makeError(err.Error())
-		}
-
-		// Good enough.
-		pin, err := client.ResolveVersion(ctx, pkg, tokens[1])
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, pin)
-	}
-
-	return out, nil
 }
 
 func (client *clientImpl) EnsurePackages(ctx context.Context, pins []common.Pin, dryRun bool) (actions Actions, err error) {
