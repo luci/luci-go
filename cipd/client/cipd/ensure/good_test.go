@@ -36,7 +36,7 @@ var goodEnsureFiles = []struct {
 			"path/to/other_package some_tag:version",
 			"path/to/yet_another a_ref",
 		),
-		&ResolvedFile{"", map[string][]common.Pin{
+		&ResolvedFile{"", common.PinSliceByRoot{
 			"": {
 				p("path/to/package", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"),
 				p("path/to/other_package", "some_tag:version"),
@@ -50,7 +50,7 @@ var goodEnsureFiles = []struct {
 		f(
 			"path/to/package/${platform}-${arch} latest",
 		),
-		&ResolvedFile{"", map[string][]common.Pin{
+		&ResolvedFile{"", common.PinSliceByRoot{
 			"": {
 				p("path/to/package/test_plat-test_arch", "latest"),
 			},
@@ -62,7 +62,7 @@ var goodEnsureFiles = []struct {
 		f(
 			"path/to/package/${platform}-${arch=neep,test_arch} latest",
 		),
-		&ResolvedFile{"", map[string][]common.Pin{
+		&ResolvedFile{"", common.PinSliceByRoot{
 			"": {p("path/to/package/test_plat-test_arch", "latest")},
 		}},
 	},
@@ -72,7 +72,7 @@ var goodEnsureFiles = []struct {
 		f(
 			"path/to/package/${platform=spaz}-${arch=neep,test_arch} latest",
 		),
-		&ResolvedFile{"", map[string][]common.Pin{}},
+		&ResolvedFile{"", common.PinSliceByRoot{}},
 	},
 
 	{
@@ -87,7 +87,7 @@ var goodEnsureFiles = []struct {
 			"@Root", // reset back to empty
 			"cool/package beef",
 		),
-		&ResolvedFile{"", map[string][]common.Pin{
+		&ResolvedFile{"", common.PinSliceByRoot{
 			"": {
 				p("some/package", "latest"),
 				p("cool/package", "beef"),
@@ -106,7 +106,7 @@ var goodEnsureFiles = []struct {
 			"",
 			"some/package version",
 		),
-		&ResolvedFile{"https://cipd.example.com/path/to/thing", map[string][]common.Pin{
+		&ResolvedFile{"https://cipd.example.com/path/to/thing", common.PinSliceByRoot{
 			"": {
 				p("some/package", "version"),
 			},

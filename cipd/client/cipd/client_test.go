@@ -23,7 +23,7 @@ import (
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/logging/gologger"
 
-	"github.com/luci/luci-go/cipd/client/cipd/common"
+	. "github.com/luci/luci-go/cipd/client/cipd/common"
 	"github.com/luci/luci-go/cipd/client/cipd/internal"
 	"github.com/luci/luci-go/cipd/client/cipd/local"
 
@@ -99,7 +99,7 @@ func TestResolveVersion(t *testing.T) {
 		})
 		pin, err := client.ResolveVersion(ctx, "pkgname", "tag_key:value")
 		So(err, ShouldBeNil)
-		So(pin, ShouldResemble, common.Pin{
+		So(pin, ShouldResemble, Pin{
 			PackageName: "pkgname",
 			InstanceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		})
@@ -110,7 +110,7 @@ func TestResolveVersion(t *testing.T) {
 		client := mockClient(c, "", nil)
 		pin, err := client.ResolveVersion(ctx, "pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 		So(err, ShouldBeNil)
-		So(pin, ShouldResemble, common.Pin{
+		So(pin, ShouldResemble, Pin{
 			PackageName: "pkgname",
 			InstanceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		})
@@ -240,7 +240,7 @@ func TestSetRefWhenReady(t *testing.T) {
 				Reply: `{"status": "SUCCESS"}`,
 			},
 		})
-		pin := common.Pin{
+		pin := Pin{
 			PackageName: "pkgname",
 			InstanceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		}
@@ -263,7 +263,7 @@ func TestSetRefWhenReady(t *testing.T) {
 			})
 		}
 		client := mockClient(c, "", calls)
-		pin := common.Pin{
+		pin := Pin{
 			PackageName: "pkgname",
 			InstanceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		}
@@ -298,7 +298,7 @@ func TestAttachTagsWhenReady(t *testing.T) {
 				Reply: `{"status": "SUCCESS"}`,
 			},
 		})
-		pin := common.Pin{
+		pin := Pin{
 			PackageName: "pkgname",
 			InstanceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		}
@@ -321,7 +321,7 @@ func TestAttachTagsWhenReady(t *testing.T) {
 			})
 		}
 		client := mockClient(c, "", calls)
-		pin := common.Pin{
+		pin := Pin{
 			PackageName: "pkgname",
 			InstanceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		}
@@ -351,7 +351,7 @@ func TestFetchInstanceInfo(t *testing.T) {
 				}`,
 			},
 		})
-		pin := common.Pin{
+		pin := Pin{
 			PackageName: "pkgname",
 			InstanceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		}
@@ -399,7 +399,7 @@ func TestFetchInstanceTags(t *testing.T) {
 				}`,
 			},
 		})
-		pin := common.Pin{
+		pin := Pin{
 			PackageName: "pkgname",
 			InstanceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		}
@@ -454,7 +454,7 @@ func TestFetchInstanceRefs(t *testing.T) {
 				}`,
 			},
 		})
-		pin := common.Pin{
+		pin := Pin{
 			PackageName: "pkgname",
 			InstanceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		}
@@ -596,7 +596,7 @@ func TestMaybeUpdateClient(t *testing.T) {
 		Convey("Is a NOOP when exeHash matches", func(c C) {
 			client := mockClient(c, "", nil)
 			client.tagCache = internal.NewTagCache(nil, "service.example.com")
-			pin := common.Pin{clientPackage, "0000000000000000000000000000000000000000"}
+			pin := Pin{clientPackage, "0000000000000000000000000000000000000000"}
 			So(client.tagCache.AddTag(ctx, pin, "git:deadbeef"), ShouldBeNil)
 			So(client.tagCache.AddFile(ctx, pin, clientFileName, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), ShouldBeNil)
 			pin, err := client.maybeUpdateClient(ctx, nil, "git:deadbeef", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "some_path")
@@ -659,14 +659,14 @@ func TestEnsurePackages(t *testing.T) {
 			// to serve only 'fetched' packages.
 			callEnsure := func(instances []local.PackageInstance, fetched []local.PackageInstance) (Actions, error) {
 				client := mockClientForFetch(c, tempDir, fetched)
-				pins := []common.Pin{}
+				pins := PinSlice{}
 				for _, i := range instances {
 					pins = append(pins, i.Pin())
 				}
 				return client.EnsurePackages(ctx, pins, false)
 			}
 
-			findDeployed := func(root string) []common.Pin {
+			findDeployed := func(root string) PinSlice {
 				deployer := local.NewDeployer(root)
 				pins, err := deployer.FindDeployed(ctx)
 				So(err, ShouldBeNil)
@@ -687,17 +687,17 @@ func TestEnsurePackages(t *testing.T) {
 			actions, err = callEnsure([]local.PackageInstance{a1}, []local.PackageInstance{a1})
 			So(err, ShouldBeNil)
 			So(actions, ShouldResemble, Actions{
-				ToInstall: []common.Pin{a1.Pin()},
+				ToInstall: PinSlice{a1.Pin()},
 			})
 			assertFile("file a 1", "test data")
-			So(findDeployed(tempDir), ShouldResemble, []common.Pin{a1.Pin()})
+			So(findDeployed(tempDir), ShouldResemble, PinSlice{a1.Pin()})
 
 			// Noop run. Nothing is fetched.
 			actions, err = callEnsure([]local.PackageInstance{a1}, nil)
 			So(err, ShouldBeNil)
 			So(actions, ShouldResemble, Actions{})
 			assertFile("file a 1", "test data")
-			So(findDeployed(tempDir), ShouldResemble, []common.Pin{a1.Pin()})
+			So(findDeployed(tempDir), ShouldResemble, PinSlice{a1.Pin()})
 
 			// Upgrade a1 to a2.
 			actions, err = callEnsure([]local.PackageInstance{a2}, []local.PackageInstance{a2})
@@ -711,35 +711,35 @@ func TestEnsurePackages(t *testing.T) {
 				},
 			})
 			assertFile("file a 2", "test data")
-			So(findDeployed(tempDir), ShouldResemble, []common.Pin{a2.Pin()})
+			So(findDeployed(tempDir), ShouldResemble, PinSlice{a2.Pin()})
 
 			// Remove a2 and install b.
 			actions, err = callEnsure([]local.PackageInstance{b}, []local.PackageInstance{b})
 			So(err, ShouldBeNil)
 			So(actions, ShouldResemble, Actions{
-				ToInstall: []common.Pin{b.Pin()},
-				ToRemove:  []common.Pin{a2.Pin()},
+				ToInstall: PinSlice{b.Pin()},
+				ToRemove:  PinSlice{a2.Pin()},
 			})
 			assertFile("file b", "test data")
-			So(findDeployed(tempDir), ShouldResemble, []common.Pin{b.Pin()})
+			So(findDeployed(tempDir), ShouldResemble, PinSlice{b.Pin()})
 
 			// Remove b.
 			actions, err = callEnsure(nil, nil)
 			So(err, ShouldBeNil)
 			So(actions, ShouldResemble, Actions{
-				ToRemove: []common.Pin{b.Pin()},
+				ToRemove: PinSlice{b.Pin()},
 			})
-			So(findDeployed(tempDir), ShouldResemble, []common.Pin{})
+			So(findDeployed(tempDir), ShouldResemble, PinSlice{})
 
 			// Install a1 and b.
 			actions, err = callEnsure([]local.PackageInstance{a1, b}, []local.PackageInstance{a1, b})
 			So(err, ShouldBeNil)
 			So(actions, ShouldResemble, Actions{
-				ToInstall: []common.Pin{a1.Pin(), b.Pin()},
+				ToInstall: PinSlice{a1.Pin(), b.Pin()},
 			})
 			assertFile("file a 1", "test data")
 			assertFile("file b", "test data")
-			So(findDeployed(tempDir), ShouldResemble, []common.Pin{a1.Pin(), b.Pin()})
+			So(findDeployed(tempDir), ShouldResemble, PinSlice{a1.Pin(), b.Pin()})
 		})
 	})
 }

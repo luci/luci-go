@@ -113,7 +113,7 @@ func ParseFile(r io.Reader) (*File, error) {
 type ResolvedFile struct {
 	ServiceURL string
 
-	PackagesByRoot map[string][]common.Pin
+	PackagesByRoot common.PinSliceByRoot
 }
 
 // Resolve takes the current unresolved File and expands all package templates
@@ -144,7 +144,7 @@ func (f *File) ResolveWith(arch, plat string, rslv VersionResolver) (*ResolvedFi
 	// root -> pkg -> orig_lineno
 	resolvedPkgDupList := map[string]map[string]int{}
 
-	ret.PackagesByRoot = map[string][]common.Pin{}
+	ret.PackagesByRoot = common.PinSliceByRoot{}
 	for root, pkgs := range f.PackagesByRoot {
 		// double-check the root
 		if err := common.ValidateRoot(root); err != nil {

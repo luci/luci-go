@@ -69,7 +69,7 @@ type Deployer interface {
 	CheckDeployed(ctx context.Context, packageName string) (common.Pin, error)
 
 	// FindDeployed returns a list of packages deployed to a site root.
-	FindDeployed(ctx context.Context) (out []common.Pin, err error)
+	FindDeployed(ctx context.Context) (out common.PinSlice, err error)
 
 	// RemoveDeployed deletes a package given its name.
 	RemoveDeployed(ctx context.Context, packageName string) error
@@ -113,10 +113,10 @@ func (d errDeployer) CheckDeployed(context.Context, string) (common.Pin, error) 
 	return common.Pin{}, d.err
 }
 
-func (d errDeployer) FindDeployed(context.Context) (out []common.Pin, err error) { return nil, d.err }
-func (d errDeployer) RemoveDeployed(context.Context, string) error               { return d.err }
-func (d errDeployer) TempFile(context.Context, string) (*os.File, error)         { return nil, d.err }
-func (d errDeployer) CleanupTrash(context.Context) error                         { return d.err }
+func (d errDeployer) FindDeployed(context.Context) (out common.PinSlice, err error) { return nil, d.err }
+func (d errDeployer) RemoveDeployed(context.Context, string) error                  { return d.err }
+func (d errDeployer) TempFile(context.Context, string) (*os.File, error)            { return nil, d.err }
+func (d errDeployer) CleanupTrash(context.Context) error                            { return d.err }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Real deployer implementation.
@@ -262,7 +262,7 @@ func (d *deployerImpl) CheckDeployed(ctx context.Context, pkg string) (common.Pi
 	}, nil
 }
 
-func (d *deployerImpl) FindDeployed(ctx context.Context) ([]common.Pin, error) {
+func (d *deployerImpl) FindDeployed(ctx context.Context) (common.PinSlice, error) {
 	// Directories with packages are direct children of .cipd/pkgs/.
 	pkgs := filepath.Join(d.fs.Root(), filepath.FromSlash(packagesDir))
 	infos, err := ioutil.ReadDir(pkgs)
@@ -303,7 +303,7 @@ func (d *deployerImpl) FindDeployed(ctx context.Context) ([]common.Pin, error) {
 
 	// Sort by package name.
 	sort.Strings(keys)
-	out := make([]common.Pin, len(found))
+	out := make(common.PinSlice, len(found))
 	for i, k := range keys {
 		out[i] = found[k]
 	}

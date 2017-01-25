@@ -236,10 +236,10 @@ type Counter struct {
 // It lists pins that were attempted to be installed, updated or removed, as
 // well as all errors.
 type Actions struct {
-	ToInstall []common.Pin  `json:"to_install,omitempty"` // pins to be installed
-	ToUpdate  []UpdatedPin  `json:"to_update,omitempty"`  // pins to be replaced
-	ToRemove  []common.Pin  `json:"to_remove,omitempty"`  // pins to be removed
-	Errors    []ActionError `json:"errors,omitempty"`     // all individual errors
+	ToInstall common.PinSlice `json:"to_install,omitempty"` // pins to be installed
+	ToUpdate  []UpdatedPin    `json:"to_update,omitempty"`  // pins to be replaced
+	ToRemove  common.PinSlice `json:"to_remove,omitempty"`  // pins to be removed
+	Errors    []ActionError   `json:"errors,omitempty"`     // all individual errors
 }
 
 // Empty is true if there are no actions specified.
@@ -375,7 +375,7 @@ type Client interface {
 	// SearchInstances finds all instances with given tag and optionally name.
 	//
 	// Returns their concrete Pins.
-	SearchInstances(ctx context.Context, tag, packageName string) ([]common.Pin, error)
+	SearchInstances(ctx context.Context, tag, packageName string) (common.PinSlice, error)
 
 	// EnsurePackages installs, removes and updates packages in the site root.
 	//
@@ -387,7 +387,7 @@ type Client interface {
 	// struct, but won't actually perform them.
 	//
 	// If the update was only partially applied, returns both Actions and error.
-	EnsurePackages(ctx context.Context, pins []common.Pin, dryRun bool) (Actions, error)
+	EnsurePackages(ctx context.Context, pins common.PinSlice, dryRun bool) (Actions, error)
 
 	// IncrementCounter adds delta to the counter's value and updates its last
 	// updated timestamp.
@@ -957,11 +957,11 @@ func (client *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pi
 	return ErrAttachTagsTimeout
 }
 
-func (client *clientImpl) SearchInstances(ctx context.Context, tag, packageName string) ([]common.Pin, error) {
+func (client *clientImpl) SearchInstances(ctx context.Context, tag, packageName string) (common.PinSlice, error) {
 	if packageName != "" {
 		// Don't bother searching if packageName is invalid.
 		if err := common.ValidatePackageName(packageName); err != nil {
-			return []common.Pin{}, err
+			return common.PinSlice{}, err
 		}
 	}
 	return client.remote.searchInstances(ctx, tag, packageName)
@@ -1194,7 +1194,7 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, pin common
 	return err
 }
 
-func (client *clientImpl) EnsurePackages(ctx context.Context, pins []common.Pin, dryRun bool) (actions Actions, err error) {
+func (client *clientImpl) EnsurePackages(ctx context.Context, pins common.PinSlice, dryRun bool) (actions Actions, err error) {
 	// Make sure a package is specified only once.
 	seen := make(map[string]bool, len(pins))
 	for _, p := range pins {
@@ -1314,7 +1314,7 @@ type remote interface {
 	fetchClientBinaryInfo(ctx context.Context, pin common.Pin) (*fetchClientBinaryInfoResponse, error)
 
 	listPackages(ctx context.Context, path string, recursive, showHidden bool) ([]string, []string, error)
-	searchInstances(ctx context.Context, tag, packageName string) ([]common.Pin, error)
+	searchInstances(ctx context.Context, tag, packageName string) (common.PinSlice, error)
 
 	incrementCounter(ctx context.Context, pin common.Pin, counter string, delta int) error
 	readCounter(ctx context.Context, pin common.Pin, counter string) (Counter, error)
@@ -1368,9 +1368,9 @@ func (d deleteOnClose) Close() (err error) {
 // Private stuff.
 
 // buildActionPlan is used by EnsurePackages to figure out what to install or remove.
-func buildActionPlan(desired, existing []common.Pin) (a Actions) {
+func buildActionPlan(desired, existing common.PinSlice) (a Actions) {
 	// Figure out what needs to be installed or updated.
-	existingMap := buildInstanceIDMap(existing)
+	existingMap := existing.ToMap()
 	for _, d := range desired {
 		if existingID, exists := existingMap[d.PackageName]; !exists {
 			a.ToInstall = append(a.ToInstall, d)
@@ -1383,7 +1383,7 @@ func buildActionPlan(desired, existing []common.Pin) (a Actions) {
 	}
 
 	// Figure out what needs to be removed.
-	desiredMap := buildInstanceIDMap(desired)
+	desiredMap := desired.ToMap()
 	for _, e := range existing {
 		if desiredMap[e.PackageName] == "" {
 			a.ToRemove = append(a.ToRemove, e)
@@ -1391,13 +1391,4 @@ func buildActionPlan(desired, existing []common.Pin) (a Actions) {
 	}
 
 	return
-}
-
-// buildInstanceIDMap builds mapping {package name -> instance ID}.
-func buildInstanceIDMap(pins []common.Pin) map[string]string {
-	out := map[string]string{}
-	for _, p := range pins {
-		out[p.PackageName] = p.InstanceID
-	}
-	return out
 }

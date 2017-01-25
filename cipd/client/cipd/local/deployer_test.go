@@ -654,7 +654,7 @@ func TestFindDeployed(t *testing.T) {
 			// Verify it is discoverable.
 			out, err := d.FindDeployed(ctx)
 			So(err, ShouldBeNil)
-			So(out, ShouldResemble, []Pin{
+			So(out, ShouldResemble, PinSlice{
 				{"test", "0123456789abcdef00000123456789abcdef0000"},
 				{"test/pkg", "0123456789abcdef00000123456789abcdef0000"},
 				{"test/pkg/123", "0123456789abcdef00000123456789abcdef0000"},
@@ -801,7 +801,7 @@ func TestUpgradeOldPkgDir(t *testing.T) {
 		Convey("reading the packages finds it", func() {
 			pins, err := d.FindDeployed(ctx)
 			So(err, ShouldBeNil)
-			So(pins, ShouldResemble, []Pin{
+			So(pins, ShouldResemble, PinSlice{
 				{"test/package", "0123456789abcdef00000123456789abcdef0000"},
 			})
 

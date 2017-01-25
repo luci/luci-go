@@ -649,7 +649,7 @@ func (r *remoteImpl) listPackages(ctx context.Context, path string, recursive, s
 	return nil, nil, fmt.Errorf("unexpected list packages status: %s", reply.Status)
 }
 
-func (r *remoteImpl) searchInstances(ctx context.Context, tag, packageName string) ([]common.Pin, error) {
+func (r *remoteImpl) searchInstances(ctx context.Context, tag, packageName string) (common.PinSlice, error) {
 	endpoint, err := packageSearchInstancesEndpoint(tag, packageName)
 	if err != nil {
 		return nil, err
@@ -665,7 +665,7 @@ func (r *remoteImpl) searchInstances(ctx context.Context, tag, packageName strin
 	}
 	switch reply.Status {
 	case "SUCCESS":
-		pins := make([]common.Pin, len(reply.Instances))
+		pins := make(common.PinSlice, len(reply.Instances))
 		for i, instance := range reply.Instances {
 			pins[i] = common.Pin{instance.PackageName, instance.InstanceID}
 		}
