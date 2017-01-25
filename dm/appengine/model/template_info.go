@@ -6,8 +6,8 @@ package model
 
 import (
 	"sort"
-	"strings"
 
+	"github.com/luci/luci-go/common/data/sortby"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/xtgo/set"
 )
@@ -18,17 +18,12 @@ type TemplateInfo []dm.Quest_TemplateSpec
 func (ti TemplateInfo) Len() int      { return len(ti) }
 func (ti TemplateInfo) Swap(i, j int) { ti[i], ti[j] = ti[j], ti[i] }
 func (ti TemplateInfo) Less(i, j int) bool {
-	a, b := ti[i], ti[j]
-	if v := strings.Compare(a.Project, b.Project); v != 0 {
-		return v < 0
-	}
-	if v := strings.Compare(a.Ref, b.Ref); v != 0 {
-		return v < 0
-	}
-	if v := strings.Compare(a.Version, b.Version); v != 0 {
-		return v < 0
-	}
-	return strings.Compare(a.Name, b.Name) < 0
+	return sortby.Chain{
+		func(i, j int) bool { return ti[i].Project < ti[j].Project },
+		func(i, j int) bool { return ti[i].Ref < ti[j].Ref },
+		func(i, j int) bool { return ti[i].Version < ti[j].Version },
+		func(i, j int) bool { return ti[i].Name < ti[j].Name },
+	}.Use(i, j)
 }
 
 // EqualsData returns true iff this TemplateInfo has the same content as the

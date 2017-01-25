@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/common/data/sortby"
 )
 
 const flipMask uint32 = 0xFFFFFFFF
@@ -109,27 +110,16 @@ func (t *Quest_TemplateSpec) Equals(o *Quest_TemplateSpec) bool {
 	return *t == *o
 }
 
-// Less returns true iff this Quest_TemplateSpec sorts before the other one.
-func (t *Quest_TemplateSpec) Less(o *Quest_TemplateSpec) bool {
-	cmp := []struct{ a, b string }{
-		{t.Project, o.Project},
-		{t.Ref, o.Ref},
-		{t.Version, o.Version},
-		{t.Name, o.Name},
-	}
-	for _, c := range cmp {
-		if c.a < c.b {
-			return true
-		} else if c.a > c.b {
-			return false
-		}
-	}
-	return false
-}
-
 // QuestTemplateSpecs is a sortable slice of *Quest_TemplateSpec.
 type QuestTemplateSpecs []*Quest_TemplateSpec
 
-func (s QuestTemplateSpecs) Len() int           { return len(s) }
-func (s QuestTemplateSpecs) Less(i, j int) bool { return s[i].Less(s[j]) }
-func (s QuestTemplateSpecs) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s QuestTemplateSpecs) Len() int { return len(s) }
+func (s QuestTemplateSpecs) Less(i, j int) bool {
+	return sortby.Chain{
+		func(i, j int) bool { return s[i].Project < s[j].Project },
+		func(i, j int) bool { return s[i].Ref < s[j].Ref },
+		func(i, j int) bool { return s[i].Version < s[j].Version },
+		func(i, j int) bool { return s[i].Name < s[j].Name },
+	}.Use(i, j)
+}
+func (s QuestTemplateSpecs) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
