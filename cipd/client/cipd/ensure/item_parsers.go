@@ -7,6 +7,8 @@ package ensure
 import (
 	"fmt"
 	"net/url"
+
+	"github.com/luci/luci-go/cipd/client/cipd/common"
 )
 
 // an itemParser should parse the value from `val`, and update s or
@@ -20,7 +22,7 @@ type itemParserState struct {
 }
 
 func rootParser(s *itemParserState, _ *File, val string) error {
-	if err := ValidateRoot(val); err != nil {
+	if err := common.ValidateRoot(val); err != nil {
 		return err
 	}
 	s.curRoot = val

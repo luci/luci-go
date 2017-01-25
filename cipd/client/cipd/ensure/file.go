@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"net/url"
-	"path"
 	"sort"
 	"strings"
 
@@ -24,29 +23,6 @@ type File struct {
 	ServiceURL string
 
 	PackagesByRoot map[string]PackageSlice
-}
-
-// ValidateRoot ensures that the given root is valid.
-func ValidateRoot(root string) error {
-	if root == "" { // empty is fine
-		return nil
-	}
-	if strings.Contains(root, "\\") {
-		return fmt.Errorf(`bad root path: backslashes not allowed (use "/"): %q`, root)
-	}
-	if strings.Contains(root, ":") {
-		return fmt.Errorf(`bad root path: colons are not allowed: %q`, root)
-	}
-	if cleaned := path.Clean(root); cleaned != root {
-		return fmt.Errorf("bad root path: %q (should be %q)", root, cleaned)
-	}
-	if strings.HasPrefix(root, "./") || strings.HasPrefix(root, "../") || root == "." {
-		return fmt.Errorf(`bad root path: invalid ".": %q`, root)
-	}
-	if strings.HasPrefix(root, "/") {
-		return fmt.Errorf("bad root path: absolute paths not allowed: %q", root)
-	}
-	return nil
 }
 
 // ParseFile parses an ensure file from the given reader. See the package docs
@@ -171,7 +147,7 @@ func (f *File) ResolveWith(arch, plat string, rslv VersionResolver) (*ResolvedFi
 	ret.PackagesByRoot = map[string][]common.Pin{}
 	for root, pkgs := range f.PackagesByRoot {
 		// double-check the root
-		if err := ValidateRoot(root); err != nil {
+		if err := common.ValidateRoot(root); err != nil {
 			return nil, errors.Annotate(err).
 				Reason("normalizing %(root)q").
 				D("root", root).

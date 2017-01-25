@@ -7,6 +7,7 @@ package common
 
 import (
 	"fmt"
+	"path"
 	"regexp"
 	"runtime"
 	"strings"
@@ -117,6 +118,30 @@ func ValidateInstanceVersion(v string) error {
 		return nil
 	}
 	return fmt.Errorf("bad version (not an instance ID, a ref or a tag): %q", v)
+}
+
+// ValidateRoot returns an error if the string can't be used as an ensure-file
+// root.
+func ValidateRoot(root string) error {
+	if root == "" { // empty is fine
+		return nil
+	}
+	if strings.Contains(root, "\\") {
+		return fmt.Errorf(`bad root path: backslashes not allowed (use "/"): %q`, root)
+	}
+	if strings.Contains(root, ":") {
+		return fmt.Errorf(`bad root path: colons are not allowed: %q`, root)
+	}
+	if cleaned := path.Clean(root); cleaned != root {
+		return fmt.Errorf("bad root path: %q (should be %q)", root, cleaned)
+	}
+	if strings.HasPrefix(root, "./") || strings.HasPrefix(root, "../") || root == "." {
+		return fmt.Errorf(`bad root path: invalid ".": %q`, root)
+	}
+	if strings.HasPrefix(root, "/") {
+		return fmt.Errorf("bad root path: absolute paths not allowed: %q", root)
+	}
+	return nil
 }
 
 // GetInstanceTagKey returns key portion of the instance tag or empty string.

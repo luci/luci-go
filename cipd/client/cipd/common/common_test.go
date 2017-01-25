@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -77,6 +78,50 @@ func TestValidateInstanceVersion(t *testing.T) {
 		So(ValidateInstanceVersion("good:tag"), ShouldBeNil)
 		So(ValidatePackageRef("some-read"), ShouldBeNil)
 		So(ValidateInstanceVersion("BADTAG:"), ShouldNotBeNil)
+	})
+}
+
+func TestValidateRoot(t *testing.T) {
+	badRoots := []struct {
+		name string
+		root string
+		err  string
+	}{
+		{"windows", "folder\\thing", "backslashes not allowed"},
+		{"windows drive", "c:/foo/bar", `colons are not allowed`},
+		{"messy", "some/../thing", `"some/../thing" (should be "thing")`},
+		{"relative", "../something", `invalid "."`},
+		{"single relative", "./something", `"./something" (should be "something")`},
+		{"absolute", "/etc", `absolute paths not allowed`},
+		{"extra slashes", "//foo/bar", `bad root path`},
+	}
+
+	goodRoots := []struct {
+		name string
+		root string
+	}{
+		{"empty", ""},
+		{"simple path", "some/path"},
+		{"single path", "something"},
+		{"spaces", "some path/with/ spaces"},
+	}
+
+	Convey("ValidtateRoot", t, func() {
+		Convey("rejects bad roots", func() {
+			for _, tc := range badRoots {
+				Convey(tc.name, func() {
+					So(ValidateRoot(tc.root), ShouldErrLike, tc.err)
+				})
+			}
+		})
+
+		Convey("accepts good roots", func() {
+			for _, tc := range goodRoots {
+				Convey(tc.name, func() {
+					So(ValidateRoot(tc.root), ShouldErrLike, nil)
+				})
+			}
+		})
 	})
 }
 
