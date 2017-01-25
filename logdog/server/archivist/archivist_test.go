@@ -23,6 +23,7 @@ import (
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
@@ -76,13 +77,13 @@ func (sc *testServicesClient) LoadStream(c context.Context, req *logdog.LoadStre
 }
 
 func (sc *testServicesClient) ArchiveStream(c context.Context, req *logdog.ArchiveStreamRequest, o ...grpc.CallOption) (
-	*google.Empty, error) {
+	*empty.Empty, error) {
 	if cb := sc.asCallback; cb != nil {
 		if err := cb(req); err != nil {
 			return nil, err
 		}
 	}
-	return &google.Empty{}, nil
+	return &empty.Empty{}, nil
 }
 
 // testGSClient is a testing implementation of the gsClient interface.

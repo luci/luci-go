@@ -9,9 +9,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	ds "github.com/luci/gae/service/datastore"
 
-	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 )
 
@@ -20,7 +20,7 @@ type ListCAsRPC struct {
 }
 
 // ListCAs returns a list of Common Names of registered CAs.
-func (r *ListCAsRPC) ListCAs(c context.Context, _ *google.Empty) (*admin.ListCAsResponse, error) {
+func (r *ListCAsRPC) ListCAs(c context.Context, _ *empty.Empty) (*admin.ListCAsResponse, error) {
 	keys := []*ds.Key{}
 
 	q := ds.NewQuery("CA").Eq("Removed", false).KeysOnly(true)

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/deploytool/api/deploy"
@@ -220,7 +221,7 @@ func (meta *kubeObjectMeta) addAnnotation(key string, value interface{}) {
 	meta.Annotations[key] = value
 }
 
-func durationProtoToSec(p *google.Duration) int {
+func durationProtoToSec(p *duration.Duration) int {
 	return int(google.DurationFromProto(p).Seconds())
 }
 

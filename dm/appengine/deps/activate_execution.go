@@ -5,15 +5,15 @@
 package deps
 
 import (
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/luci/luci-go/common/logging"
-	google_pb "github.com/luci/luci-go/common/proto/google"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/mutate"
 	"golang.org/x/net/context"
 )
 
-func (d *deps) ActivateExecution(c context.Context, req *dm.ActivateExecutionReq) (ret *google_pb.Empty, err error) {
-	ret = &google_pb.Empty{}
+func (d *deps) ActivateExecution(c context.Context, req *dm.ActivateExecutionReq) (ret *empty.Empty, err error) {
+	ret = &empty.Empty{}
 	logging.Fields{"execution": req.Auth.Id}.Infof(c, "activating")
 	err = tumbleNow(c, &mutate.ActivateExecution{
 		Auth:   req.Auth,

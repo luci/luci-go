@@ -18,6 +18,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/luci/luci-go/appengine/gaesettings"
 	"github.com/luci/luci-go/client/authcli"
 	commonAuth "github.com/luci/luci-go/common/auth"
@@ -29,7 +30,6 @@ import (
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/grpc/prpc"
@@ -393,7 +393,7 @@ func (s *Service) initConfig(c *context.Context) error {
 	// that loads from a local file.
 	var p client.Provider
 	if s.testConfigFilePath == "" {
-		ccfg, err := s.coord.GetConfig(*c, &google.Empty{})
+		ccfg, err := s.coord.GetConfig(*c, &empty.Empty{})
 		if err != nil {
 			return err
 		}

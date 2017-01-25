@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"ODRTh3xaRR64wpeXJSlF33HMN-0/GonxJDPxZrsuGi9jSsW3xc04MHA\"",
+ "etag": "\"ODRTh3xaRR64wpeXJSlF33HMN-0/o7xMc6iM9EsNleRGe_TLR1l7UFU\"",
  "discoveryVersion": "v1",
  "id": "swarming:v1",
  "name": "swarming",
@@ -316,15 +316,15 @@
   "SwarmingRpcsCipdInput": {
    "id": "SwarmingRpcsCipdInput",
    "type": "object",
-   "description": "Defines CIPD packages to install in $CIPD_PATH. A command may use $CIPD_PATH in its arguments. It will be expanded to the path of the CIPD site root.",
+   "description": "Defines CIPD packages to install in task run directory.",
    "properties": {
     "client_package": {
      "$ref": "SwarmingRpcsCipdPackage",
-     "description": "A CIPD package to install in $CIPD_PATH and $PATH before task execution."
+     "description": "A CIPD package to install in the run dir before task execution."
     },
     "packages": {
      "type": "array",
-     "description": "A CIPD package to install in $CIPD_PATH and $PATH before task execution.",
+     "description": "A CIPD package to install in the run dir before task execution.",
      "items": {
       "$ref": "SwarmingRpcsCipdPackage"
      }
@@ -337,7 +337,7 @@
   "SwarmingRpcsCipdPackage": {
    "id": "SwarmingRpcsCipdPackage",
    "type": "object",
-   "description": "A CIPD package to install in $CIPD_PATH and $PATH before task execution.",
+   "description": "A CIPD package to install in the run dir before task execution.",
    "properties": {
     "package_name": {
      "type": "string"
@@ -357,11 +357,11 @@
    "properties": {
     "client_package": {
      "$ref": "SwarmingRpcsCipdPackage",
-     "description": "A CIPD package to install in $CIPD_PATH and $PATH before task execution."
+     "description": "A CIPD package to install in the run dir before task execution."
     },
     "packages": {
      "type": "array",
-     "description": "A CIPD package to install in $CIPD_PATH and $PATH before task execution.",
+     "description": "A CIPD package to install in the run dir before task execution.",
      "items": {
       "$ref": "SwarmingRpcsCipdPackage"
      }
@@ -631,7 +631,7 @@
     },
     "cipd_input": {
      "$ref": "SwarmingRpcsCipdInput",
-     "description": "Defines CIPD packages to install in $CIPD_PATH. A command may use $CIPD_PATH in its arguments. It will be expanded to the path of the CIPD site root."
+     "description": "Defines CIPD packages to install in task run directory."
     },
     "command": {
      "type": "array",

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -20,7 +21,6 @@ import (
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/luci_config/server/cfgclient"
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
@@ -32,7 +32,7 @@ type ImportCAConfigsRPC struct {
 }
 
 // ImportCAConfigs fetches CA configs from from luci-config right now.
-func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *google.Empty) (*admin.ImportedConfigs, error) {
+func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *empty.Empty) (*admin.ImportedConfigs, error) {
 	content, meta, err := fetchConfigFile(c, "tokenserver.cfg")
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "can't read config file - %s", err)

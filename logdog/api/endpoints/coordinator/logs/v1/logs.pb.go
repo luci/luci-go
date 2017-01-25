@@ -27,8 +27,8 @@ import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
 import logpb "github.com/luci/luci-go/logdog/api/logpb"
-import google_protobuf "github.com/luci/luci-go/common/proto/google"
-import google_protobuf1 "github.com/luci/luci-go/common/proto/google"
+import google_protobuf "github.com/golang/protobuf/ptypes/timestamp"
+import google_protobuf1 "github.com/golang/protobuf/ptypes/duration"
 
 import (
 	context "golang.org/x/net/context"

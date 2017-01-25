@@ -12,10 +12,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/iotools"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/proto/google"
 	milo "github.com/luci/luci-go/milo/api/proto"
 	"golang.org/x/net/context"
 )
@@ -194,7 +194,7 @@ func (s *Service) GetCompressedMasterJSON(
 
 	return &milo.CompressedMasterJSON{
 		Internal: entry.Internal,
-		Modified: &google.Timestamp{
+		Modified: &timestamp.Timestamp{
 			Seconds: entry.Modified.Unix(),
 			Nanos:   int32(entry.Modified.Nanosecond()),
 		},

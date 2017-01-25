@@ -17,6 +17,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/luci/gae/service/info"
 	swarm "github.com/luci/luci-go/common/api/swarming/swarming/v1"
 	"github.com/luci/luci-go/common/clock"
@@ -76,7 +77,7 @@ func toSwarmMap(m map[string]string) []*swarm.SwarmingRpcsStringPair {
 	return ret
 }
 
-func toIntSeconds(p *googlepb.Duration) int64 {
+func toIntSeconds(p *duration.Duration) int64 {
 	return int64(googlepb.DurationFromProto(p).Seconds())
 }
 

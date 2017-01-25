@@ -14,7 +14,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/golang/protobuf/proto"
-	google_protobuf2 "github.com/luci/luci-go/common/proto/google"
+	"github.com/golang/protobuf/ptypes/empty"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 )
 
@@ -46,11 +46,11 @@ func (r *recordingClient) EnsureGraphData(ctx context.Context, in *dm.EnsureGrap
 	return rsp, nil
 }
 
-func (r *recordingClient) ActivateExecution(ctx context.Context, in *dm.ActivateExecutionReq, opts ...grpc.CallOption) (*google_protobuf2.Empty, error) {
+func (r *recordingClient) ActivateExecution(ctx context.Context, in *dm.ActivateExecutionReq, opts ...grpc.CallOption) (*empty.Empty, error) {
 	panic("never happens")
 }
 
-func (r *recordingClient) FinishAttempt(ctx context.Context, in *dm.FinishAttemptReq, opts ...grpc.CallOption) (*google_protobuf2.Empty, error) {
+func (r *recordingClient) FinishAttempt(ctx context.Context, in *dm.FinishAttemptReq, opts ...grpc.CallOption) (*empty.Empty, error) {
 	r.result = &EditResult{}
 	if err := json.Unmarshal([]byte(in.Data.Object), r.result); err != nil {
 		panic(err)

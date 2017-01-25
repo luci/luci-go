@@ -6,7 +6,7 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	context "golang.org/x/net/context"
 
-	google_protobuf "github.com/luci/luci-go/common/proto/google"
+	google_protobuf "github.com/golang/protobuf/ptypes/empty"
 )
 
 type DecoratedCertificateAuthorities struct {

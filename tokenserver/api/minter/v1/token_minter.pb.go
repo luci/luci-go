@@ -24,7 +24,7 @@ import prpc "github.com/luci/luci-go/grpc/prpc"
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/luci/luci-go/common/proto/google"
+import google_protobuf "github.com/golang/protobuf/ptypes/timestamp"
 import messages "github.com/luci/luci-go/server/auth/delegation/messages"
 import tokenserver "github.com/luci/luci-go/tokenserver/api"
 

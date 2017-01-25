@@ -6,7 +6,7 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	context "golang.org/x/net/context"
 
-	google_protobuf1 "github.com/luci/luci-go/common/proto/google"
+	google_protobuf1 "github.com/golang/protobuf/ptypes/empty"
 )
 
 type DecoratedServices struct {

@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors. All rights reserved.
+// Copyright 2017 The LUCI Authors. All rights reserved.
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
@@ -524,16 +524,15 @@ func (s *SwarmingRpcsCancelResponse) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-// SwarmingRpcsCipdInput: Defines CIPD packages to install in
-// $CIPD_PATH. A command may use $CIPD_PATH in its arguments. It will be
-// expanded to the path of the CIPD site root.
+// SwarmingRpcsCipdInput: Defines CIPD packages to install in task run
+// directory.
 type SwarmingRpcsCipdInput struct {
-	// ClientPackage: A CIPD package to install in $CIPD_PATH and $PATH
-	// before task execution.
+	// ClientPackage: A CIPD package to install in the run dir before task
+	// execution.
 	ClientPackage *SwarmingRpcsCipdPackage `json:"client_package,omitempty"`
 
-	// Packages: A CIPD package to install in $CIPD_PATH and $PATH before
-	// task execution.
+	// Packages: A CIPD package to install in the run dir before task
+	// execution.
 	Packages []*SwarmingRpcsCipdPackage `json:"packages,omitempty"`
 
 	Server string `json:"server,omitempty"`
@@ -561,8 +560,8 @@ func (s *SwarmingRpcsCipdInput) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-// SwarmingRpcsCipdPackage: A CIPD package to install in $CIPD_PATH and
-// $PATH before task execution.
+// SwarmingRpcsCipdPackage: A CIPD package to install in the run dir
+// before task execution.
 type SwarmingRpcsCipdPackage struct {
 	PackageName string `json:"package_name,omitempty"`
 
@@ -596,12 +595,12 @@ func (s *SwarmingRpcsCipdPackage) MarshalJSON() ([]byte, error) {
 // SwarmingRpcsCipdPins: Defines pinned CIPD packages that were
 // installed during the task.
 type SwarmingRpcsCipdPins struct {
-	// ClientPackage: A CIPD package to install in $CIPD_PATH and $PATH
-	// before task execution.
+	// ClientPackage: A CIPD package to install in the run dir before task
+	// execution.
 	ClientPackage *SwarmingRpcsCipdPackage `json:"client_package,omitempty"`
 
-	// Packages: A CIPD package to install in $CIPD_PATH and $PATH before
-	// task execution.
+	// Packages: A CIPD package to install in the run dir before task
+	// execution.
 	Packages []*SwarmingRpcsCipdPackage `json:"packages,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "ClientPackage") to
@@ -879,6 +878,20 @@ func (s *SwarmingRpcsOperationStats) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
+func (s *SwarmingRpcsOperationStats) UnmarshalJSON(data []byte) error {
+	type noMethod SwarmingRpcsOperationStats
+	var s1 struct {
+		Duration gensupport.JSONFloat64 `json:"duration"`
+		*noMethod
+	}
+	s1.noMethod = (*noMethod)(s)
+	if err := json.Unmarshal(data, &s1); err != nil {
+		return err
+	}
+	s.Duration = float64(s1.Duration)
+	return nil
+}
+
 type SwarmingRpcsPerformanceStats struct {
 	BotOverhead float64 `json:"bot_overhead,omitempty"`
 
@@ -907,6 +920,20 @@ func (s *SwarmingRpcsPerformanceStats) MarshalJSON() ([]byte, error) {
 	type noMethod SwarmingRpcsPerformanceStats
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+func (s *SwarmingRpcsPerformanceStats) UnmarshalJSON(data []byte) error {
+	type noMethod SwarmingRpcsPerformanceStats
+	var s1 struct {
+		BotOverhead gensupport.JSONFloat64 `json:"bot_overhead"`
+		*noMethod
+	}
+	s1.noMethod = (*noMethod)(s)
+	if err := json.Unmarshal(data, &s1); err != nil {
+		return err
+	}
+	s.BotOverhead = float64(s1.BotOverhead)
+	return nil
 }
 
 // SwarmingRpcsServerDetails: Reports details about the server.
@@ -1086,9 +1113,7 @@ type SwarmingRpcsTaskProperties struct {
 	// a different path, it will see the changes.
 	Caches []*SwarmingRpcsCacheEntry `json:"caches,omitempty"`
 
-	// CipdInput: Defines CIPD packages to install in $CIPD_PATH. A command
-	// may use $CIPD_PATH in its arguments. It will be expanded to the path
-	// of the CIPD site root.
+	// CipdInput: Defines CIPD packages to install in task run directory.
 	CipdInput *SwarmingRpcsCipdInput `json:"cipd_input,omitempty"`
 
 	Command []string `json:"command,omitempty"`
@@ -1365,6 +1390,22 @@ func (s *SwarmingRpcsTaskResult) MarshalJSON() ([]byte, error) {
 	type noMethod SwarmingRpcsTaskResult
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+func (s *SwarmingRpcsTaskResult) UnmarshalJSON(data []byte) error {
+	type noMethod SwarmingRpcsTaskResult
+	var s1 struct {
+		CostSavedUsd gensupport.JSONFloat64 `json:"cost_saved_usd"`
+		Duration     gensupport.JSONFloat64 `json:"duration"`
+		*noMethod
+	}
+	s1.noMethod = (*noMethod)(s)
+	if err := json.Unmarshal(data, &s1); err != nil {
+		return err
+	}
+	s.CostSavedUsd = float64(s1.CostSavedUsd)
+	s.Duration = float64(s1.Duration)
+	return nil
 }
 
 // SwarmingRpcsTasksCount: Returns the count, as requested.

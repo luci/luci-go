@@ -5,8 +5,8 @@
 package admin
 
 import (
+	"github.com/golang/protobuf/ptypes/empty"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/admin/v1"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
@@ -16,7 +16,7 @@ import (
 
 // SetConfig loads the supplied configuration into a config.GlobalConfig
 // instance.
-func (s *server) SetConfig(c context.Context, req *logdog.SetConfigRequest) (*google.Empty, error) {
+func (s *server) SetConfig(c context.Context, req *logdog.SetConfigRequest) (*empty.Empty, error) {
 	se := config.Settings{
 		BigTableServiceAccountJSON: req.StorageServiceAccountJson,
 	}
@@ -33,5 +33,5 @@ func (s *server) SetConfig(c context.Context, req *logdog.SetConfigRequest) (*go
 		}.Errorf(c, "Failed to store new configuration.")
 		return nil, grpcutil.Internal
 	}
-	return &google.Empty{}, nil
+	return &empty.Empty{}, nil
 }

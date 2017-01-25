@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
+
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/milo"
@@ -80,7 +82,7 @@ type State struct {
 	stepLookup map[*milo.Step]*Step
 
 	// currentTimestamp is time for the next annotation expected in Append.
-	currentTimestamp *google.Timestamp
+	currentTimestamp *timestamp.Timestamp
 	closed           bool
 	haltOnFailure    bool
 }
@@ -112,7 +114,7 @@ func (s *State) initialize() {
 		}
 	}
 
-	var annotatedNow *google.Timestamp
+	var annotatedNow *timestamp.Timestamp
 	if !s.Offline {
 		annotatedNow = s.now()
 	}
@@ -507,7 +509,7 @@ func (s *State) unregisterStep(as *Step) {
 }
 
 // now returns current time of s.Clock. Defaults to system clock.
-func (s *State) now() *google.Timestamp {
+func (s *State) now() *timestamp.Timestamp {
 	c := s.Clock
 	if c == nil {
 		c = clock.GetSystemClock()
@@ -679,7 +681,7 @@ func (as *Step) regenerateLogPath() {
 }
 
 // Start marks the Step as started.
-func (as *Step) Start(startTime *google.Timestamp) bool {
+func (as *Step) Start(startTime *timestamp.Timestamp) bool {
 	if as.Started != nil {
 		return false
 	}
@@ -689,11 +691,11 @@ func (as *Step) Start(startTime *google.Timestamp) bool {
 
 // Close closes this step and any outstanding resources that it owns.
 // If it is already closed, does not have side effects and returns false.
-func (as *Step) Close(closeTime *google.Timestamp) bool {
+func (as *Step) Close(closeTime *timestamp.Timestamp) bool {
 	return as.closeWithStatus(closeTime, nil)
 }
 
-func (as *Step) closeWithStatus(closeTime *google.Timestamp, sp *milo.Status) bool {
+func (as *Step) closeWithStatus(closeTime *timestamp.Timestamp, sp *milo.Status) bool {
 	if as.closed {
 		return false
 	}

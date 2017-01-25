@@ -7,8 +7,8 @@ package retryServicesClient
 import (
 	"time"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/retry"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	s "github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
@@ -37,7 +37,7 @@ func New(c s.ServicesClient, f retry.Factory) s.ServicesClient {
 	return &client{c, retry.TransientOnly(f)}
 }
 
-func (c *client) GetConfig(ctx context.Context, in *google.Empty, opts ...grpc.CallOption) (r *s.GetConfigResponse, err error) {
+func (c *client) GetConfig(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (r *s.GetConfigResponse, err error) {
 	err = retry.Retry(ctx, c.f, func() (err error) {
 		r, err = c.c.GetConfig(ctx, in, opts...)
 		err = grpcutil.WrapIfTransient(err)
@@ -67,7 +67,7 @@ func (c *client) LoadStream(ctx context.Context, in *s.LoadStreamRequest, opts .
 }
 
 func (c *client) TerminateStream(ctx context.Context, in *s.TerminateStreamRequest, opts ...grpc.CallOption) (
-	r *google.Empty, err error) {
+	r *empty.Empty, err error) {
 	err = retry.Retry(ctx, c.f, func() (err error) {
 		r, err = c.c.TerminateStream(ctx, in, opts...)
 		err = grpcutil.WrapIfTransient(err)
@@ -77,7 +77,7 @@ func (c *client) TerminateStream(ctx context.Context, in *s.TerminateStreamReque
 }
 
 func (c *client) ArchiveStream(ctx context.Context, in *s.ArchiveStreamRequest, opts ...grpc.CallOption) (
-	r *google.Empty, err error) {
+	r *empty.Empty, err error) {
 	err = retry.Retry(ctx, c.f, func() (err error) {
 		r, err = c.c.ArchiveStream(ctx, in, opts...)
 		err = grpcutil.WrapIfTransient(err)

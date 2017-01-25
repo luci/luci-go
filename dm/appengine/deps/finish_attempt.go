@@ -5,15 +5,15 @@
 package deps
 
 import (
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/luci/luci-go/common/logging"
-	google_pb "github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/mutate"
 	"golang.org/x/net/context"
 )
 
-func (d *deps) FinishAttempt(c context.Context, req *dm.FinishAttemptReq) (_ *google_pb.Empty, err error) {
+func (d *deps) FinishAttempt(c context.Context, req *dm.FinishAttemptReq) (_ *empty.Empty, err error) {
 	logging.Fields{"execution": req.Auth.Id}.Infof(c, "finishing")
-	return &google_pb.Empty{}, tumbleNow(c, &mutate.FinishAttempt{
+	return &empty.Empty{}, tumbleNow(c, &mutate.FinishAttempt{
 		FinishAttemptReq: *req})
 }

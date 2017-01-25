@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -15,7 +16,6 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/luci_config/server/cfgclient"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
 
@@ -29,7 +29,7 @@ type ImportDelegationConfigsRPC struct {
 }
 
 // ImportDelegationConfigs fetches configs from from luci-config right now.
-func (r *ImportDelegationConfigsRPC) ImportDelegationConfigs(c context.Context, _ *google.Empty) (*admin.ImportedConfigs, error) {
+func (r *ImportDelegationConfigsRPC) ImportDelegationConfigs(c context.Context, _ *empty.Empty) (*admin.ImportedConfigs, error) {
 	msg, meta, err := fetchConfigDelegationPermissions(c, delegationCfg)
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "can't read config file - %s", err)

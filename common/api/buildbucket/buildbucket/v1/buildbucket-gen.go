@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors. All rights reserved.
+// Copyright 2017 The LUCI Authors. All rights reserved.
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
@@ -618,6 +618,20 @@ func (s *ApiLongestPendingTimeResponse) MarshalJSON() ([]byte, error) {
 	type noMethod ApiLongestPendingTimeResponse
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+func (s *ApiLongestPendingTimeResponse) UnmarshalJSON(data []byte) error {
+	type noMethod ApiLongestPendingTimeResponse
+	var s1 struct {
+		LongestPendingTimeSec gensupport.JSONFloat64 `json:"longest_pending_time_sec"`
+		*noMethod
+	}
+	s1.noMethod = (*noMethod)(s)
+	if err := json.Unmarshal(data, &s1); err != nil {
+		return err
+	}
+	s.LongestPendingTimeSec = float64(s1.LongestPendingTimeSec)
+	return nil
 }
 
 type ApiPubSubCallbackMessage struct {

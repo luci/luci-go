@@ -5,10 +5,10 @@
 package services
 
 import (
+	"github.com/golang/protobuf/ptypes/empty"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
@@ -16,7 +16,7 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamRequest) (*google.Empty, error) {
+func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamRequest) (*empty.Empty, error) {
 	log.Fields{
 		"project":       req.Project,
 		"id":            req.Id,
@@ -119,5 +119,5 @@ func (b *server) ArchiveStream(c context.Context, req *logdog.ArchiveStreamReque
 		return nil, grpcutil.Internal
 	}
 
-	return &google.Empty{}, nil
+	return &empty.Empty{}, nil
 }

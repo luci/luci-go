@@ -7,6 +7,7 @@ package services
 import (
 	"crypto/subtle"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	log "github.com/luci/luci-go/common/logging"
@@ -24,7 +25,7 @@ import (
 )
 
 // TerminateStream is an idempotent stream state terminate operation.
-func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamRequest) (*google.Empty, error) {
+func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamRequest) (*empty.Empty, error) {
 	log.Fields{
 		"project":       req.Project,
 		"id":            req.Id,
@@ -140,7 +141,7 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 		return nil, err
 	}
 
-	return &google.Empty{}, nil
+	return &empty.Empty{}, nil
 }
 
 func standardArchivalParams(cfg *config.Config, pcfg *svcconfig.ProjectConfig) *coordinator.ArchivalParams {

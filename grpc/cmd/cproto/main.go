@@ -7,7 +7,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"go/build"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -15,10 +14,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/common/system/exitcode"
-	"golang.org/x/net/context"
 )
 
 var (
@@ -30,9 +30,6 @@ var (
 	withDiscovery = flag.Bool(
 		"discovery", true,
 		"generate pb.discovery.go file")
-	withGoogleProtobuf = flag.Bool(
-		"with-google-protobuf", true,
-		"map .proto files in gitub.com/luci/luci-go/common/proto/google to google/protobuf/*.proto")
 	descFile = flag.String(
 		"desc",
 		"",
@@ -40,32 +37,15 @@ var (
 	)
 )
 
-func resolveGoogleProtobufPackages(c context.Context) (map[string]string, error) {
-	const (
-		protoPrefix = "google/protobuf/"
-		pkgPath     = "github.com/luci/luci-go/common/proto/google"
-		descPkgPath = "github.com/golang/protobuf/protoc-gen-go/descriptor"
-	)
-	var result = map[string]string{
-		protoPrefix + "descriptor.proto": descPkgPath, //snowflake
-	}
-
-	pkg, err := build.Import(pkgPath, "", build.FindOnly)
-	if err != nil {
-		return nil, err
-	}
-	protoFiles, err := findProtoFiles(pkg.Dir)
-	if err != nil {
-		return nil, err
-	}
-	if len(protoFiles) == 0 {
-		logging.Warningf(c, "no .proto files in %s", pkg.Dir)
-		return nil, nil
-	}
-	for _, protoFile := range protoFiles {
-		result[protoPrefix+filepath.Base(protoFile)] = pkgPath
-	}
-	return result, nil
+// Well-known Google proto packages -> go packages they are implemented in.
+var googlePackages = map[string]string{
+	"google/protobuf/any.proto":        "github.com/golang/protobuf/ptypes/any",
+	"google/protobuf/descriptor.proto": "github.com/golang/protobuf/protoc-gen-go/descriptor",
+	"google/protobuf/duration.proto":   "github.com/golang/protobuf/ptypes/duration",
+	"google/protobuf/empty.proto":      "github.com/golang/protobuf/ptypes/empty",
+	"google/protobuf/struct.proto":     "github.com/golang/protobuf/ptypes/struct",
+	"google/protobuf/timestamp.proto":  "github.com/golang/protobuf/ptypes/timestamp",
+	"google/protobuf/wrappers.proto":   "github.com/golang/protobuf/ptypes/wrappers",
 }
 
 // compile runs protoc on protoFiles. protoFiles must be relative to dir.
@@ -102,15 +82,10 @@ func compile(c context.Context, gopath, protoFiles []string, dir, descSetOut str
 	}
 
 	var params []string
-	if *withGoogleProtobuf {
-		googlePackages, err := resolveGoogleProtobufPackages(c)
-		if err != nil {
-			return err
-		}
-		for k, v := range googlePackages {
-			params = append(params, fmt.Sprintf("M%s=%s", k, v))
-		}
+	for k, v := range googlePackages {
+		params = append(params, fmt.Sprintf("M%s=%s", k, v))
 	}
+
 	if p := *importPath; p != "" {
 		params = append(params, fmt.Sprintf("import_path=%s", p))
 	}
