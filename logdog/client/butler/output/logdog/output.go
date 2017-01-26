@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	ps "github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/lhttp"
@@ -68,6 +69,9 @@ type Config struct {
 	// immediately cancel pending publishes due to flushing.
 	PublishContext context.Context
 
+	// RPCTimeout, if > 0, is the timeout to apply to an individual RPC.
+	RPCTimeout time.Duration
+
 	// Track, if true, instructs this Output instance to track all log entries
 	// that have been sent in-memory. This is useful for debugging.
 	Track bool
@@ -100,10 +104,12 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 	}
 
 	// Configure our pRPC client.
+	clientOpts := prpc.DefaultOptions()
+	clientOpts.PerRPCTimeout = cfg.RPCTimeout
 	client := prpc.Client{
 		C:       httpClient,
 		Host:    cfg.Host,
-		Options: prpc.DefaultOptions(),
+		Options: clientOpts,
 	}
 
 	// If our host begins with "localhost", set insecure option automatically.
@@ -183,7 +189,7 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 	psTopic := psClient.Topic(topic)
 
 	// Assert that our Topic exists.
-	exists, err := retryTopicExists(c, psTopic)
+	exists, err := retryTopicExists(c, psTopic, cfg.RPCTimeout)
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,
@@ -211,9 +217,15 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 	}), nil
 }
 
-func retryTopicExists(ctx context.Context, t *pubsub.Topic) (bool, error) {
+func retryTopicExists(ctx context.Context, t *pubsub.Topic, rpcTimeout time.Duration) (bool, error) {
 	var exists bool
 	err := retry.Retry(ctx, retry.Default, func() (err error) {
+		if rpcTimeout > 0 {
+			var cancelFunc context.CancelFunc
+			ctx, cancelFunc = clock.WithTimeout(ctx, rpcTimeout)
+			defer cancelFunc()
+		}
+
 		exists, err = t.Exists(ctx)
 		return
 	}, func(err error, d time.Duration) {

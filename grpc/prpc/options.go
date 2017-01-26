@@ -23,6 +23,12 @@ type Options struct {
 	UserAgent string
 	Insecure  bool // if true, use HTTP instead of HTTPS.
 
+	// PerRPCTimeout, if > 0, is a timeout that is applied to each RPC. If the
+	// client Context has a shorter deadline, this timeout will not be applied.
+	// Otherwise, if this timeout is hit, the RPC round will be considered
+	// transient.
+	PerRPCTimeout time.Duration
+
 	// the rest can be set only using CallOption.
 
 	resHeaderMetadata  *metadata.MD // destination for response HTTP headers.

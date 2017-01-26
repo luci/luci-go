@@ -61,6 +61,7 @@ func (f *logdogOutputFactory) configOutput(a *application) (output.Output, error
 			"LogDog Butler",
 		},
 		PublishContext: a.ncCtx,
+		RPCTimeout:     30 * time.Second,
 		Track:          f.track,
 	}
 	return cfg.Register(a)

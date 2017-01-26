@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/recordio"
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
@@ -20,6 +21,7 @@ import (
 	"github.com/luci/luci-go/logdog/client/butler/output"
 	"github.com/luci/luci-go/logdog/client/butlerproto"
 	"github.com/luci/luci-go/logdog/common/types"
+
 	"golang.org/x/net/context"
 )
 
@@ -50,6 +52,9 @@ type Config struct {
 	// Track, if true, tracks all log entries that have been successfully
 	// submitted.
 	Track bool
+
+	// RPCTimeout is the timeout to apply to an individual RPC.
+	RPCTimeout time.Duration
 }
 
 // buffer
@@ -190,7 +195,14 @@ func (o *pubSubOutput) buildMessage(buf *buffer, bundle *logpb.ButlerLogBundle) 
 func (o *pubSubOutput) publishMessages(messages []*pubsub.Message) error {
 	var messageIDs []string
 	err := retry.Retry(o, retry.TransientOnly(indefiniteRetry), func() (err error) {
-		messageIDs, err = o.Topic.Publish(o, messages...)
+		ctx := o.Context
+		if o.RPCTimeout > 0 {
+			var cancelFunc context.CancelFunc
+			ctx, cancelFunc = clock.WithTimeout(o, o.RPCTimeout)
+			defer cancelFunc()
+		}
+
+		messageIDs, err = o.Topic.Publish(ctx, messages...)
 		return
 	}, func(err error, d time.Duration) {
 		log.Fields{

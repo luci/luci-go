@@ -151,17 +151,38 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 		ctx,
 		retry.TransientOnly(options.Retry),
 		func() error {
+			ctx := ctx
 			logging.Debugf(ctx, "RPC %s/%s.%s", c.Host, serviceName, methodName)
 
 			// If there is a deadline on our Context, set the timeout header on the
 			// request.
-			if deadline, ok := ctx.Deadline(); ok {
-				delta := deadline.Sub(clock.Now(ctx))
+			now := clock.Now(ctx)
+			var requestDeadline time.Time
+			if c.Options.PerRPCTimeout > 0 {
+				requestDeadline = now.Add(c.Options.PerRPCTimeout)
+			}
+
+			// Does our parent Context have a deadline?
+			if deadline, ok := ctx.Deadline(); ok && (requestDeadline.IsZero() || deadline.Before(requestDeadline)) {
+				// Outer Context has a shorter deadline than our per-RPC deadline, so
+				// use it.
+				requestDeadline = deadline
+			} else if !requestDeadline.IsZero() {
+				// We have a shorter request deadline. Create a derivative Context for
+				// this request round.
+				var cancelFunc context.CancelFunc
+				ctx, cancelFunc = clock.WithDeadline(ctx, requestDeadline)
+				defer cancelFunc()
+			}
+
+			// If we have a request deadline, apply it to our header.
+			if !requestDeadline.IsZero() {
+				delta := requestDeadline.Sub(now)
 				if delta <= 0 {
 					// The request has already expired. This will likely never happen,
 					// since the outer Retry loop will have expired, but there is a very
 					// slight possibility of a race.
-					return ctx.Err()
+					return context.DeadlineExceeded
 				}
 
 				req.Header.Set(HeaderTimeout, EncodeTimeout(delta))
@@ -171,6 +192,7 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 			req.Body = ioutil.NopCloser(bytes.NewReader(in))
 			res, err := ctxhttp.Do(ctx, c.getHTTPClient(), req)
 			if err != nil {
+				// Treat all errors here as transient.
 				return errors.WrapTransient(fmt.Errorf("failed to send request: %s", err))
 			}
 			defer res.Body.Close()

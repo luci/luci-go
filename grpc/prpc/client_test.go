@@ -83,6 +83,17 @@ func transientErrors(count int, grpcHeader bool, then http.Handler) http.Handler
 	}
 }
 
+func alwaysTimesOut(tc testclock.TestClock) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if timeout := r.Header.Get(HeaderTimeout); timeout != "" {
+			if d, err := DecodeTimeout(timeout); err == nil {
+				tc.Add(d)
+			}
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
 func shouldHaveMessagesLike(actual interface{}, expected ...interface{}) string {
 	log := actual.(*memlogger.MemLogger)
 	msgs := log.Messages()
@@ -99,25 +110,25 @@ func shouldHaveMessagesLike(actual interface{}, expected ...interface{}) string 
 func TestClient(t *testing.T) {
 	t.Parallel()
 
-	Convey("Client", t, func() {
-		setUp := func(h http.HandlerFunc) (*Client, *httptest.Server) {
-			server := httptest.NewServer(h)
-			client := &Client{
-				Host: strings.TrimPrefix(server.URL, "http://"),
-				Options: &Options{
-					Retry: func() retry.Iterator {
-						return &retry.Limited{
-							Retries: 3,
-							Delay:   0,
-						}
-					},
-					Insecure:  true,
-					UserAgent: "prpc-test",
+	setUp := func(h http.HandlerFunc) (*Client, *httptest.Server) {
+		server := httptest.NewServer(h)
+		client := &Client{
+			Host: strings.TrimPrefix(server.URL, "http://"),
+			Options: &Options{
+				Retry: func() retry.Iterator {
+					return &retry.Limited{
+						Retries: 3,
+						Delay:   0,
+					}
 				},
-			}
-			return client, server
+				Insecure:  true,
+				UserAgent: "prpc-test",
+			},
 		}
+		return client, server
+	}
 
+	Convey("Client", t, func() {
 		// These unit tests use real HTTP connections to localhost. Since go 1.7
 		// 'net/http' library uses the context deadline to derive the connection
 		// timeout: it grabs the deadline (as time.Time) from the context and
@@ -125,7 +136,7 @@ func TestClient(t *testing.T) {
 		// into the testclock (as it ends up in the context deadline passed to
 		// 'net/http'). We either have to use real clock in the unit tests, or
 		// "freeze" the time at the real "now" value.
-		ctx, _ := testclock.UseTime(context.Background(), time.Now().Local())
+		ctx, tc := testclock.UseTime(context.Background(), time.Now().Local())
 		ctx = memlogger.Use(ctx)
 		log := logging.Get(ctx).(*memlogger.MemLogger)
 		expectedCallLogEntry := func(c *Client) memlogger.LogEntry {
@@ -156,7 +167,9 @@ func TestClient(t *testing.T) {
 				client, server := setUp(doPanicHandler)
 				defer server.Close()
 
-				ctx, _ = context.WithDeadline(ctx, clock.Now(ctx))
+				ctx, cancelFunc := clock.WithDeadline(ctx, clock.Now(ctx))
+				defer cancelFunc()
+
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
 				So(err.Error(), ShouldEqual, context.DeadlineExceeded.Error())
 			})
@@ -165,12 +178,34 @@ func TestClient(t *testing.T) {
 				client, server := setUp(sayHello(c))
 				defer server.Close()
 
-				ctx, _ = clock.WithDeadline(ctx, clock.Now(ctx).Add(10*time.Second))
+				ctx, cancelFunc := clock.WithDeadline(ctx, clock.Now(ctx).Add(10*time.Second))
+				defer cancelFunc()
+
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
 				So(err, ShouldBeNil)
 				So(res.Message, ShouldEqual, "Hello John")
 
 				So(log, shouldHaveMessagesLike, expectedCallLogEntry(client))
+			})
+
+			Convey("With a deadline in the future and a per-RPC deadline, applies the per-RPC deadline", func(c C) {
+				client, server := setUp(alwaysTimesOut(tc))
+				defer server.Close()
+
+				ctx, cancelFunc := clock.WithDeadline(ctx, clock.Now(ctx).Add(50*time.Second))
+				defer cancelFunc()
+
+				retries := 5
+				client.Options.PerRPCTimeout = 10 * time.Second
+				client.Options.Retry = func() retry.Iterator {
+					return &countingRetryIterator{
+						retries: &retries,
+					}
+				}
+
+				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
+				So(err.Error(), ShouldContainSubstring, "failed to send request")
+				So(retries, ShouldEqual, 0)
 			})
 
 			Convey(`With a maximum content length smaller than the response, returns "ErrResponseTooBig".`, func(c C) {
@@ -285,4 +320,16 @@ func TestClient(t *testing.T) {
 			})
 		})
 	})
+}
+
+type countingRetryIterator struct {
+	retries *int
+}
+
+func (it *countingRetryIterator) Next(c context.Context, err error) time.Duration {
+	*(it.retries)--
+	if *it.retries <= 0 {
+		return retry.Stop
+	}
+	return 0
 }
