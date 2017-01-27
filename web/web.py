@@ -6,14 +6,13 @@
 """Manages web/ resource checkout and building.
 
 This script can be run in one of three modes:
-  - As "deploy-initialize.py", it will perform resource dependency checkouts
-    for "luci_deploy" and quit.
-  - As "deploy-build.py", it will build web apps to a "luci_deploy" directory.
-  - As "build.py", it is a user-facing tool to manually build web components.
+  - As "initialize.py", it will perform resource dependency checkout for
+    "luci_deploy" and quit.
+  - As "build.py", it will build web apps to a "luci_deploy" directory.
+  - As "web.py", it is a user-facing tool to manually build web components.
 """
 
 import argparse
-import collections
 import logging
 import os
 import pipes
