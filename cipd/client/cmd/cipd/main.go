@@ -767,11 +767,10 @@ func ensurePackages(ctx context.Context, root string, desiredStateFile string, d
 		return nil, cipd.Actions{}, err
 	}
 
-	baseSubdir := resolved.PackagesBySubdir[""]
-	delete(resolved.PackagesBySubdir, "")
-	if len(resolved.PackagesBySubdir) > 0 {
-		return nil, cipd.Actions{}, errors.New("@Subdir not yet supported")
+	if err := resolved.PackagesBySubdir.AssertOnlyDefaultSubdir(); err != nil {
+		return nil, cipd.Actions{}, err
 	}
+	baseSubdir := resolved.PackagesBySubdir[""]
 
 	actions, err := client.EnsurePackages(ctx, baseSubdir, dryRun)
 	if err != nil {

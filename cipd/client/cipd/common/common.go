@@ -6,6 +6,7 @@
 package common
 
 import (
+	"errors"
 	"fmt"
 	"path"
 	"regexp"
@@ -245,6 +246,21 @@ func (p PinSliceBySubdir) Validate() error {
 		if err := pkgs.Validate(); err != nil {
 			return fmt.Errorf("subdir %q: %s", subdir, err)
 		}
+	}
+	return nil
+}
+
+// ErrSubdirsNotYetSupported is a transitionary error which indicates that the
+// invoked method does not yet work with sudbir values other than "".
+var ErrSubdirsNotYetSupported = errors.New(`subdirs other than "" not currently supported`)
+
+// AssertOnlyDefaultSubdir is a transitionary method which returns an error if
+// p contains subdirs other than "".
+func (p PinSliceBySubdir) AssertOnlyDefaultSubdir() error {
+	if _, ok := p[""]; ok && len(p) > 1 {
+		return ErrSubdirsNotYetSupported
+	} else if !ok && len(p) > 0 {
+		return ErrSubdirsNotYetSupported
 	}
 	return nil
 }
