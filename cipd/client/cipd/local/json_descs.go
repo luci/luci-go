@@ -131,7 +131,7 @@ const (
 // Description defines the structure of the description.json file located at
 // .cipd/pkgs/<foo>/description.json.
 type Description struct {
-	Root        string `json:"root,omitempty"`
+	Subdir      string `json:"subdir,omitempty"`
 	PackageName string `json:"package_name,omitempty"`
 }
 

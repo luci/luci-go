@@ -730,7 +730,7 @@ func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommand
 	return c.done(currentPins, err)
 }
 
-func ensurePackages(ctx context.Context, root string, desiredStateFile string, dryRun bool, clientOpts ClientOptions) ([]common.Pin, cipd.Actions, error) {
+func ensurePackages(ctx context.Context, root string, desiredStateFile string, dryRun bool, clientOpts ClientOptions) (common.PinSlice, cipd.Actions, error) {
 	f, err := os.Open(desiredStateFile)
 	if err != nil {
 		return nil, cipd.Actions{}, err
@@ -770,13 +770,14 @@ func ensurePackages(ctx context.Context, root string, desiredStateFile string, d
 	if err := resolved.PackagesBySubdir.AssertOnlyDefaultSubdir(); err != nil {
 		return nil, cipd.Actions{}, err
 	}
-	baseSubdir := resolved.PackagesBySubdir[""]
 
-	actions, err := client.EnsurePackages(ctx, baseSubdir, dryRun)
+	actions, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, dryRun)
 	if err != nil {
 		return nil, actions, err
 	}
-	return baseSubdir, actions, nil
+
+	// TODO(iannucci): fix 'dump' format so that it can contain subdir information
+	return resolved.PackagesBySubdir[""], actions, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1514,7 +1515,9 @@ func deployInstanceFile(ctx context.Context, root string, instanceFile string) (
 	d := local.NewDeployer(root)
 	defer d.CleanupTrash(ctx)
 
-	return d.DeployInstance(ctx, inst)
+	// TODO(iannucci): add subdir arg to deployRun
+
+	return d.DeployInstance(ctx, "", inst)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

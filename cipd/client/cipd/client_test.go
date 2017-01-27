@@ -578,7 +578,7 @@ func TestFetch(t *testing.T) {
 
 		Convey("FetchAndDeployInstance works", func() {
 			// Install the package, fetching it from the fake server.
-			err := client.FetchAndDeployInstance(ctx, inst.Pin())
+			err := client.FetchAndDeployInstance(ctx, "", inst.Pin())
 			So(err, ShouldBeNil)
 
 			// The file from the package should be installed.
@@ -659,14 +659,14 @@ func TestEnsurePackages(t *testing.T) {
 			// to serve only 'fetched' packages.
 			callEnsure := func(instances []local.PackageInstance, fetched []local.PackageInstance) (Actions, error) {
 				client := mockClientForFetch(c, tempDir, fetched)
-				pins := PinSlice{}
+				pins := PinSliceBySubdir{}
 				for _, i := range instances {
-					pins = append(pins, i.Pin())
+					pins[""] = append(pins[""], i.Pin())
 				}
 				return client.EnsurePackages(ctx, pins, false)
 			}
 
-			findDeployed := func(root string) PinSlice {
+			findDeployed := func(root string) PinSliceBySubdir {
 				deployer := local.NewDeployer(root)
 				pins, err := deployer.FindDeployed(ctx)
 				So(err, ShouldBeNil)
@@ -690,14 +690,14 @@ func TestEnsurePackages(t *testing.T) {
 				ToInstall: PinSlice{a1.Pin()},
 			})
 			assertFile("file a 1", "test data")
-			So(findDeployed(tempDir), ShouldResemble, PinSlice{a1.Pin()})
+			So(findDeployed(tempDir), ShouldResemble, PinSliceBySubdir{"": PinSlice{a1.Pin()}})
 
 			// Noop run. Nothing is fetched.
 			actions, err = callEnsure([]local.PackageInstance{a1}, nil)
 			So(err, ShouldBeNil)
 			So(actions, ShouldResemble, Actions{})
 			assertFile("file a 1", "test data")
-			So(findDeployed(tempDir), ShouldResemble, PinSlice{a1.Pin()})
+			So(findDeployed(tempDir), ShouldResemble, PinSliceBySubdir{"": PinSlice{a1.Pin()}})
 
 			// Upgrade a1 to a2.
 			actions, err = callEnsure([]local.PackageInstance{a2}, []local.PackageInstance{a2})
@@ -711,7 +711,7 @@ func TestEnsurePackages(t *testing.T) {
 				},
 			})
 			assertFile("file a 2", "test data")
-			So(findDeployed(tempDir), ShouldResemble, PinSlice{a2.Pin()})
+			So(findDeployed(tempDir), ShouldResemble, PinSliceBySubdir{"": PinSlice{a2.Pin()}})
 
 			// Remove a2 and install b.
 			actions, err = callEnsure([]local.PackageInstance{b}, []local.PackageInstance{b})
@@ -721,7 +721,7 @@ func TestEnsurePackages(t *testing.T) {
 				ToRemove:  PinSlice{a2.Pin()},
 			})
 			assertFile("file b", "test data")
-			So(findDeployed(tempDir), ShouldResemble, PinSlice{b.Pin()})
+			So(findDeployed(tempDir), ShouldResemble, PinSliceBySubdir{"": PinSlice{b.Pin()}})
 
 			// Remove b.
 			actions, err = callEnsure(nil, nil)
@@ -729,7 +729,7 @@ func TestEnsurePackages(t *testing.T) {
 			So(actions, ShouldResemble, Actions{
 				ToRemove: PinSlice{b.Pin()},
 			})
-			So(findDeployed(tempDir), ShouldResemble, PinSlice{})
+			So(findDeployed(tempDir), ShouldResemble, PinSliceBySubdir{"": PinSlice{}})
 
 			// Install a1 and b.
 			actions, err = callEnsure([]local.PackageInstance{a1, b}, []local.PackageInstance{a1, b})
@@ -739,7 +739,7 @@ func TestEnsurePackages(t *testing.T) {
 			})
 			assertFile("file a 1", "test data")
 			assertFile("file b", "test data")
-			So(findDeployed(tempDir), ShouldResemble, PinSlice{a1.Pin(), b.Pin()})
+			So(findDeployed(tempDir), ShouldResemble, PinSliceBySubdir{"": PinSlice{a1.Pin(), b.Pin()}})
 		})
 	})
 }

@@ -365,9 +365,9 @@ type Client interface {
 
 	// FetchAndDeployInstance fetches the package instance and deploys it.
 	//
-	// Deploys to the site root (see ClientOptions.Root). It doesn't check whether
-	// the instance is already deployed.
-	FetchAndDeployInstance(ctx context.Context, pin common.Pin) error
+	// Deploys to the given subdir under the site root (see ClientOptions.Root).
+	// It doesn't check whether the instance is already deployed.
+	FetchAndDeployInstance(ctx context.Context, subdir string, pin common.Pin) error
 
 	// ListPackages returns a list of strings of package names.
 	ListPackages(ctx context.Context, path string, recursive, showHidden bool) ([]string, error)
@@ -387,7 +387,7 @@ type Client interface {
 	// struct, but won't actually perform them.
 	//
 	// If the update was only partially applied, returns both Actions and error.
-	EnsurePackages(ctx context.Context, pins common.PinSlice, dryRun bool) (Actions, error)
+	EnsurePackages(ctx context.Context, pkgs common.PinSliceBySubdir, dryRun bool) (Actions, error)
 
 	// IncrementCounter adds delta to the counter's value and updates its last
 	// updated timestamp.
@@ -1153,7 +1153,10 @@ func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pi
 	return err
 }
 
-func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, pin common.Pin) error {
+func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir string, pin common.Pin) error {
+	if subdir != "" {
+		return common.ErrSubdirsNotYetSupported
+	}
 	if err := common.ValidatePin(pin); err != nil {
 		return err
 	}
@@ -1190,19 +1193,19 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, pin common
 	}()
 
 	// Deploy it. 'defer' will take care of removing the temp file if needed.
-	_, err = client.deployer.DeployInstance(ctx, instance)
+	_, err = client.deployer.DeployInstance(ctx, subdir, instance)
 	return err
 }
 
-func (client *clientImpl) EnsurePackages(ctx context.Context, pins common.PinSlice, dryRun bool) (actions Actions, err error) {
-	// Make sure a package is specified only once.
-	seen := make(map[string]bool, len(pins))
-	for _, p := range pins {
-		if seen[p.PackageName] {
-			return actions, fmt.Errorf("package %s is specified twice", p.PackageName)
-		}
-		seen[p.PackageName] = true
+func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, dryRun bool) (actions Actions, err error) {
+	if err = allPins.Validate(); err != nil {
+		return
 	}
+
+	if err = allPins.AssertOnlyDefaultSubdir(); err != nil {
+		return
+	}
+	pins := allPins[""]
 
 	client.BeginBatch(ctx)
 	defer client.EndBatch(ctx)
@@ -1210,15 +1213,16 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, pins common.PinSli
 	// Enumerate existing packages.
 	existing, err := client.deployer.FindDeployed(ctx)
 	if err != nil {
-		return actions, err
+		return
 	}
 
 	// Figure out what needs to be updated and deleted, log it.
-	actions = buildActionPlan(pins, existing)
+	actions = buildActionPlan(allPins, existing)
 	if actions.Empty() {
 		logging.Debugf(ctx, "Everything is up-to-date.")
 		return actions, nil
 	}
+	// TODO(iannucci): ensure that no packages cross root boundaries
 	if len(actions.ToInstall) != 0 {
 		logging.Infof(ctx, "Packages to be installed:")
 		for _, pin := range actions.ToInstall {
@@ -1246,7 +1250,7 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, pins common.PinSli
 
 	// Remove all unneeded stuff.
 	for _, pin := range actions.ToRemove {
-		err = client.deployer.RemoveDeployed(ctx, pin.PackageName)
+		err = client.deployer.RemoveDeployed(ctx, "", pin.PackageName)
 		if err != nil {
 			logging.Errorf(ctx, "Failed to remove %s - %s", pin.PackageName, err)
 			actions.Errors = append(actions.Errors, ActionError{
@@ -1270,7 +1274,7 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, pins common.PinSli
 		if !toDeploy[pin.PackageName] {
 			continue
 		}
-		err = client.FetchAndDeployInstance(ctx, pin)
+		err = client.FetchAndDeployInstance(ctx, "", pin)
 		if err != nil {
 			logging.Errorf(ctx, "Failed to install %s - %s", pin, err)
 			actions.Errors = append(actions.Errors, ActionError{
@@ -1368,10 +1372,20 @@ func (d deleteOnClose) Close() (err error) {
 // Private stuff.
 
 // buildActionPlan is used by EnsurePackages to figure out what to install or remove.
-func buildActionPlan(desired, existing common.PinSlice) (a Actions) {
+func buildActionPlan(desired, existing common.PinSliceBySubdir) (a Actions) {
+	if err := desired.AssertOnlyDefaultSubdir(); err != nil {
+		panic(err)
+	}
+	if err := existing.AssertOnlyDefaultSubdir(); err != nil {
+		panic(err)
+	}
+
+	defaultDesired := desired[""]
+	defaultExisting := existing[""]
+
 	// Figure out what needs to be installed or updated.
-	existingMap := existing.ToMap()
-	for _, d := range desired {
+	existingMap := defaultExisting.ToMap()
+	for _, d := range defaultDesired {
 		if existingID, exists := existingMap[d.PackageName]; !exists {
 			a.ToInstall = append(a.ToInstall, d)
 		} else if existingID != d.InstanceID {
@@ -1383,8 +1397,8 @@ func buildActionPlan(desired, existing common.PinSlice) (a Actions) {
 	}
 
 	// Figure out what needs to be removed.
-	desiredMap := desired.ToMap()
-	for _, e := range existing {
+	desiredMap := defaultDesired.ToMap()
+	for _, e := range defaultExisting {
 		if desiredMap[e.PackageName] == "" {
 			a.ToRemove = append(a.ToRemove, e)
 		}

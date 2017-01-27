@@ -29,8 +29,8 @@ import (
 
 // TODO(vadimsh): Use some sort of file lock to reduce a chance of corruption.
 
-// File system layout of a site directory <root> for "symlink" install method:
-// <root>/.cipd/pkgs/
+// File system layout of a site directory <base> for "symlink" install method:
+// <base>/.cipd/pkgs/
 //   <package name digest>/
 //     _current -> symlink to fea3ab83440e9dfb813785e16d4101f331ed44f4
 //     fea3ab83440e9dfb813785e16d4101f331ed44f4/
@@ -56,25 +56,27 @@ import (
 
 // Deployer knows how to unzip and place packages into site root directory.
 type Deployer interface {
-	// DeployInstance installs an instance of a package into a site root.
+	// DeployInstance installs an instance of a package into the given subdir of
+	// the root.
 	//
-	// It unpacks the package into <root>/.cipd/pkgs/*, and rearranges
+	// It unpacks the package into <base>/.cipd/pkgs/*, and rearranges
 	// symlinks to point to unpacked files. It tries to make it as "atomic" as
 	// possible. Returns information about the deployed instance.
-	DeployInstance(ctx context.Context, inst PackageInstance) (common.Pin, error)
+	DeployInstance(ctx context.Context, subdir string, inst PackageInstance) (common.Pin, error)
 
-	// CheckDeployed checks whether a given package is deployed.
+	// CheckDeployed checks whether a given package is deployed at the given
+	// subdir.
 	//
 	// It returns information about installed version (or error if not installed).
-	CheckDeployed(ctx context.Context, packageName string) (common.Pin, error)
+	CheckDeployed(ctx context.Context, subdir, packageName string) (common.Pin, error)
 
 	// FindDeployed returns a list of packages deployed to a site root.
-	FindDeployed(ctx context.Context) (out common.PinSlice, err error)
+	FindDeployed(ctx context.Context) (out common.PinSliceBySubdir, err error)
 
-	// RemoveDeployed deletes a package given its name.
-	RemoveDeployed(ctx context.Context, packageName string) error
+	// RemoveDeployed deletes a package from a subdir given its name.
+	RemoveDeployed(ctx context.Context, subdir, packageName string) error
 
-	// TempFile returns os.File located in <root>/.cipd/tmp/*.
+	// TempFile returns os.File located in <base>/.cipd/tmp/*.
 	//
 	// The file is open for reading and writing.
 	TempFile(ctx context.Context, prefix string) (*os.File, error)
@@ -105,18 +107,20 @@ func NewDeployer(root string) Deployer {
 
 type errDeployer struct{ err error }
 
-func (d errDeployer) DeployInstance(context.Context, PackageInstance) (common.Pin, error) {
+func (d errDeployer) DeployInstance(context.Context, string, PackageInstance) (common.Pin, error) {
 	return common.Pin{}, d.err
 }
 
-func (d errDeployer) CheckDeployed(context.Context, string) (common.Pin, error) {
+func (d errDeployer) CheckDeployed(context.Context, string, string) (common.Pin, error) {
 	return common.Pin{}, d.err
 }
 
-func (d errDeployer) FindDeployed(context.Context) (out common.PinSlice, err error) { return nil, d.err }
-func (d errDeployer) RemoveDeployed(context.Context, string) error                  { return d.err }
-func (d errDeployer) TempFile(context.Context, string) (*os.File, error)            { return nil, d.err }
-func (d errDeployer) CleanupTrash(context.Context) error                            { return d.err }
+func (d errDeployer) FindDeployed(context.Context) (out common.PinSliceBySubdir, err error) {
+	return nil, d.err
+}
+func (d errDeployer) RemoveDeployed(context.Context, string, string) error { return d.err }
+func (d errDeployer) TempFile(context.Context, string) (*os.File, error)   { return nil, d.err }
+func (d errDeployer) CleanupTrash(context.Context) error                   { return d.err }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Real deployer implementation.
@@ -137,7 +141,11 @@ type deployerImpl struct {
 	fs FileSystem
 }
 
-func (d *deployerImpl) DeployInstance(ctx context.Context, inst PackageInstance) (common.Pin, error) {
+func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst PackageInstance) (common.Pin, error) {
+	if subdir != "" {
+		return common.Pin{}, common.ErrSubdirsNotYetSupported
+	}
+
 	pin := inst.Pin()
 	logging.Infof(ctx, "Deploying %s into %s", pin, d.fs.Root())
 
@@ -154,7 +162,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, inst PackageInstance)
 	// and files will be moved to the site root later (in addToSiteRoot call).
 	// ExtractPackageInstance knows how to build full paths and how to atomically
 	// extract a package. No need to delete garbage if it fails.
-	pkgPath, err := d.packagePath(ctx, pin.PackageName, true)
+	pkgPath, err := d.packagePath(ctx, subdir, pin.PackageName, true)
 	if err != nil {
 		return common.Pin{}, err
 	}
@@ -228,7 +236,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, inst PackageInstance)
 	}
 
 	// Verify it's all right.
-	newPin, err := d.CheckDeployed(ctx, pin.PackageName)
+	newPin, err := d.CheckDeployed(ctx, subdir, pin.PackageName)
 	if err == nil && newPin.InstanceID != pin.InstanceID {
 		err = fmt.Errorf("other instance (%s) was deployed concurrently", newPin.InstanceID)
 	}
@@ -240,8 +248,12 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, inst PackageInstance)
 	return newPin, err
 }
 
-func (d *deployerImpl) CheckDeployed(ctx context.Context, pkg string) (common.Pin, error) {
-	pkgPath, err := d.packagePath(ctx, pkg, false)
+func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkg string) (common.Pin, error) {
+	if subdir != "" {
+		return common.Pin{}, common.ErrSubdirsNotYetSupported
+	}
+
+	pkgPath, err := d.packagePath(ctx, subdir, pkg, false)
 	if err != nil {
 		return common.Pin{}, err
 	}
@@ -262,7 +274,7 @@ func (d *deployerImpl) CheckDeployed(ctx context.Context, pkg string) (common.Pi
 	}, nil
 }
 
-func (d *deployerImpl) FindDeployed(ctx context.Context) (common.PinSlice, error) {
+func (d *deployerImpl) FindDeployed(ctx context.Context) (common.PinSliceBySubdir, error) {
 	// Directories with packages are direct children of .cipd/pkgs/.
 	pkgs := filepath.Join(d.fs.Root(), filepath.FromSlash(packagesDir))
 	infos, err := ioutil.ReadDir(pkgs)
@@ -307,15 +319,19 @@ func (d *deployerImpl) FindDeployed(ctx context.Context) (common.PinSlice, error
 	for i, k := range keys {
 		out[i] = found[k]
 	}
-	return out, nil
+	return common.PinSliceBySubdir{"": out}, nil
 }
 
-func (d *deployerImpl) RemoveDeployed(ctx context.Context, packageName string) error {
+func (d *deployerImpl) RemoveDeployed(ctx context.Context, subdir, packageName string) error {
+	if subdir != "" {
+		return common.ErrSubdirsNotYetSupported
+	}
+
 	logging.Infof(ctx, "Removing %s from %s", packageName, d.fs.Root())
 	if err := common.ValidatePackageName(packageName); err != nil {
 		return err
 	}
-	pkgPath, err := d.packagePath(ctx, packageName, false)
+	pkgPath, err := d.packagePath(ctx, subdir, packageName, false)
 	if err != nil {
 		return err
 	}
@@ -400,7 +416,7 @@ func (s *numSet) smallestNewNum() int {
 //
 // If no suitable path is found and allocate is true, this will create a new
 // directory with an accompanying description.json. Otherwise this returns "".
-func (d *deployerImpl) packagePath(ctx context.Context, pkg string, allocate bool) (string, error) {
+func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allocate bool) (string, error) {
 	if err := common.ValidatePackageName(pkg); err != nil {
 		return "", err
 	}
@@ -453,7 +469,7 @@ func (d *deployerImpl) packagePath(ctx context.Context, pkg string, allocate boo
 	}
 	defer d.fs.EnsureDirectoryGone(ctx, tmpDir)
 	err = d.fs.EnsureFile(ctx, filepath.Join(tmpDir, descriptionName), func(f *os.File) error {
-		return writeDescription(&Description{PackageName: pkg}, f)
+		return writeDescription(&Description{Subdir: subdir, PackageName: pkg}, f)
 	})
 	if err != nil {
 		logging.Errorf(ctx, "Cannot create new pkg description.json: %s", err)
@@ -554,7 +570,7 @@ func (d *deployerImpl) setCurrentInstanceID(ctx context.Context, packageDir, ins
 // to contain a description.json. Previous to 1.4, package folders only had
 // instance subfolders, and the current instances' manifest was used to
 // determine the package name. Versions prior to 1.4 also installed all packages
-// at the base (root ""), hence the implied root location here.
+// at the base (subdir ""), hence the implied subdir location here.
 //
 // Returns (nil, nil) if no description.json exists and there are no instance
 // folders present.
@@ -649,7 +665,7 @@ func (d *deployerImpl) addToSiteRoot(ctx context.Context, files []FileInfo, inst
 			return err
 		}
 		if installMode == InstallModeSymlink {
-			// E.g. <root>/.cipd/pkgs/name/_current/bin/tool.
+			// E.g. <base>/.cipd/pkgs/name/_current/bin/tool.
 			targetAbs := filepath.Join(pkgDir, currentSymlink, relPath)
 			// E.g. ../.cipd/pkgs/name/_current/bin/tool.
 			targetRel, err := filepath.Rel(filepath.Dir(destAbs), targetAbs)
@@ -664,7 +680,7 @@ func (d *deployerImpl) addToSiteRoot(ctx context.Context, files []FileInfo, inst
 				return err
 			}
 		} else if installMode == InstallModeCopy {
-			// E.g. <root>/.cipd/pkgs/name/<id>/bin/tool.
+			// E.g. <base>/.cipd/pkgs/name/<id>/bin/tool.
 			srcAbs := filepath.Join(srcDir, relPath)
 			if err := d.fs.Replace(ctx, srcAbs, destAbs); err != nil {
 				logging.Warningf(ctx, "Failed to move %s to %s: %s", srcAbs, destAbs, err)

@@ -237,10 +237,14 @@ func (site *installationSite) installedPackages(ctx context.Context, pkgs []stri
 
 	// List all?
 	if len(pkgs) == 0 {
-		pins, err := d.FindDeployed(ctx)
+		allPins, err := d.FindDeployed(ctx)
 		if err != nil {
 			return nil, err
 		}
+		if err := allPins.AssertOnlyDefaultSubdir(); err != nil {
+			return nil, err
+		}
+		pins := allPins[""]
 		output := make([]pinInfo, len(pins))
 		for i, pin := range pins {
 			cpy := pin
@@ -256,7 +260,7 @@ func (site *installationSite) installedPackages(ctx context.Context, pkgs []stri
 	// List specific packages only.
 	output := make([]pinInfo, len(pkgs))
 	for i, pkgName := range pkgs {
-		pin, err := d.CheckDeployed(ctx, pkgName)
+		pin, err := d.CheckDeployed(ctx, "", pkgName)
 		if err == nil {
 			output[i] = pinInfo{
 				Pkg:      pkgName,
@@ -299,7 +303,7 @@ func (site *installationSite) installPackage(ctx context.Context, pkgName, versi
 	doInstall := true
 	if !force {
 		d := local.NewDeployer(site.siteRoot)
-		existing, err := d.CheckDeployed(ctx, pkgName)
+		existing, err := d.CheckDeployed(ctx, "", pkgName)
 		if err == nil && existing == resolved {
 			fmt.Printf("Package %s is up-to-date.\n", pkgName)
 			doInstall = false
@@ -309,7 +313,7 @@ func (site *installationSite) installPackage(ctx context.Context, pkgName, versi
 	// Go for it.
 	if doInstall {
 		fmt.Printf("Installing %s (version %q)...\n", pkgName, version)
-		if err := site.client.FetchAndDeployInstance(ctx, resolved); err != nil {
+		if err := site.client.FetchAndDeployInstance(ctx, "", resolved); err != nil {
 			return nil, err
 		}
 	}
