@@ -22,7 +22,7 @@ import (
 type File struct {
 	ServiceURL string
 
-	PackagesByRoot map[string]PackageSlice
+	PackagesBySubdir map[string]PackageSlice
 }
 
 // ParseFile parses an ensure file from the given reader. See the package docs
@@ -32,7 +32,7 @@ type File struct {
 // as unpinned package versions. Use File.Resolve() to obtain resolved+pinned
 // versions of these.
 func ParseFile(r io.Reader) (*File, error) {
-	ret := &File{PackagesByRoot: map[string]PackageSlice{}}
+	ret := &File{PackagesBySubdir: map[string]PackageSlice{}}
 
 	state := itemParserState{}
 
@@ -98,7 +98,7 @@ func ParseFile(r io.Reader) (*File, error) {
 				return nil, err
 			}
 
-			ret.PackagesByRoot[state.curRoot] = append(ret.PackagesByRoot[state.curRoot], pkg)
+			ret.PackagesBySubdir[state.curSubdir] = append(ret.PackagesBySubdir[state.curSubdir], pkg)
 		}
 	}
 	if err := scanner.Err(); err != nil {
@@ -113,7 +113,7 @@ func ParseFile(r io.Reader) (*File, error) {
 type ResolvedFile struct {
 	ServiceURL string
 
-	PackagesByRoot common.PinSliceByRoot
+	PackagesBySubdir common.PinSliceBySubdir
 }
 
 // Resolve takes the current unresolved File and expands all package templates
@@ -137,20 +137,20 @@ func (f *File) ResolveWith(arch, plat string, rslv VersionResolver) (*ResolvedFi
 	}
 
 	ret.ServiceURL = f.ServiceURL
-	if len(f.PackagesByRoot) == 0 {
+	if len(f.PackagesBySubdir) == 0 {
 		return ret, nil
 	}
 
-	// root -> pkg -> orig_lineno
+	// subdir -> pkg -> orig_lineno
 	resolvedPkgDupList := map[string]map[string]int{}
 
-	ret.PackagesByRoot = common.PinSliceByRoot{}
-	for root, pkgs := range f.PackagesByRoot {
-		// double-check the root
-		if err := common.ValidateRoot(root); err != nil {
+	ret.PackagesBySubdir = common.PinSliceBySubdir{}
+	for subdir, pkgs := range f.PackagesBySubdir {
+		// double-check the subdir
+		if err := common.ValidateSubdir(subdir); err != nil {
 			return nil, errors.Annotate(err).
-				Reason("normalizing %(root)q").
-				D("root", root).
+				Reason("normalizing %(subdir)q").
+				D("subdir", subdir).
 				Err()
 		}
 		for _, pkg := range pkgs {
@@ -162,21 +162,21 @@ func (f *File) ResolveWith(arch, plat string, rslv VersionResolver) (*ResolvedFi
 				return nil, errors.Annotate(err).Reason("resolving package").Err()
 			}
 
-			if origLineNo, ok := resolvedPkgDupList[root][pin.PackageName]; ok {
+			if origLineNo, ok := resolvedPkgDupList[subdir][pin.PackageName]; ok {
 				return nil, errors.
-					Reason("duplicate package in root %(root)q: %(pkg)q: defined on line %(orig)d and %(new)d").
-					D("root", root).
+					Reason("duplicate package in subdir %(subdir)q: %(pkg)q: defined on line %(orig)d and %(new)d").
+					D("subdir", subdir).
 					D("pkg", pin.PackageName).
 					D("orig", origLineNo).
 					D("new", pkg.LineNo).
 					Err()
 			}
-			if resolvedPkgDupList[root] == nil {
-				resolvedPkgDupList[root] = map[string]int{}
+			if resolvedPkgDupList[subdir] == nil {
+				resolvedPkgDupList[subdir] = map[string]int{}
 			}
-			resolvedPkgDupList[root][pin.PackageName] = pkg.LineNo
+			resolvedPkgDupList[subdir][pin.PackageName] = pkg.LineNo
 
-			ret.PackagesByRoot[root] = append(ret.PackagesByRoot[root], pin)
+			ret.PackagesBySubdir[subdir] = append(ret.PackagesBySubdir[subdir], pin)
 		}
 	}
 
@@ -200,8 +200,8 @@ func (f *File) Serialize(w io.Writer) (int, error) {
 			needsNLs = 2
 		}
 
-		keys := make(sort.StringSlice, 0, len(f.PackagesByRoot))
-		for k := range f.PackagesByRoot {
+		keys := make(sort.StringSlice, 0, len(f.PackagesBySubdir))
+		for k := range f.PackagesBySubdir {
 			keys = append(keys, k)
 		}
 		keys.Sort()
@@ -209,11 +209,11 @@ func (f *File) Serialize(w io.Writer) (int, error) {
 		for _, k := range keys {
 			maybeAddNL()
 			if k != "" {
-				fmt.Fprintf(w, "\n@Root %s", k)
+				fmt.Fprintf(w, "\n@Subdir %s", k)
 				needsNLs = 1
 			}
 
-			pkgs := f.PackagesByRoot[k]
+			pkgs := f.PackagesBySubdir[k]
 			pkgsSort := make(PackageSlice, len(pkgs))
 			copy(pkgsSort, pkgs)
 			sort.Sort(pkgsSort)

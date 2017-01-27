@@ -93,11 +93,11 @@ func TestValidateInstanceVersion(t *testing.T) {
 	})
 }
 
-func TestValidateRoot(t *testing.T) {
-	badRoots := []struct {
-		name string
-		root string
-		err  string
+func TestValidateSubdir(t *testing.T) {
+	badSubdirs := []struct {
+		name   string
+		subdir string
+		err    string
 	}{
 		{"windows", "folder\\thing", "backslashes not allowed"},
 		{"windows drive", "c:/foo/bar", `colons are not allowed`},
@@ -105,12 +105,12 @@ func TestValidateRoot(t *testing.T) {
 		{"relative", "../something", `invalid "."`},
 		{"single relative", "./something", `"./something" (should be "something")`},
 		{"absolute", "/etc", `absolute paths not allowed`},
-		{"extra slashes", "//foo/bar", `bad root path`},
+		{"extra slashes", "//foo/bar", `bad subdir`},
 	}
 
-	goodRoots := []struct {
-		name string
-		root string
+	goodSubdirs := []struct {
+		name   string
+		subdir string
 	}{
 		{"empty", ""},
 		{"simple path", "some/path"},
@@ -118,19 +118,19 @@ func TestValidateRoot(t *testing.T) {
 		{"spaces", "some path/with/ spaces"},
 	}
 
-	Convey("ValidtateRoot", t, func() {
-		Convey("rejects bad roots", func() {
-			for _, tc := range badRoots {
+	Convey("ValidtateSubdir", t, func() {
+		Convey("rejects bad subdirs", func() {
+			for _, tc := range badSubdirs {
 				Convey(tc.name, func() {
-					So(ValidateRoot(tc.root), ShouldErrLike, tc.err)
+					So(ValidateSubdir(tc.subdir), ShouldErrLike, tc.err)
 				})
 			}
 		})
 
-		Convey("accepts good roots", func() {
-			for _, tc := range goodRoots {
+		Convey("accepts good subdirs", func() {
+			for _, tc := range goodSubdirs {
 				Convey(tc.name, func() {
-					So(ValidateRoot(tc.root), ShouldErrLike, nil)
+					So(ValidateSubdir(tc.subdir), ShouldErrLike, nil)
 				})
 			}
 		})
@@ -184,12 +184,12 @@ func TestPinSliceAndMap(t *testing.T) {
 		})
 	})
 
-	Convey("PinSliceByRoot", t, func() {
+	Convey("PinSliceBySubdir", t, func() {
 		id := func(letter rune) string {
 			return strings.Repeat(string(letter), 40)
 		}
 
-		pmr := PinSliceByRoot{
+		pmr := PinSliceBySubdir{
 			"": PinSlice{
 				{"pkg2", id('1')},
 				{"pkg", id('0')},
@@ -202,25 +202,25 @@ func TestPinSliceAndMap(t *testing.T) {
 		Convey("Can validate", func() {
 			So(pmr.Validate(), ShouldErrLike, nil)
 
-			Convey("can see bad roots", func() {
+			Convey("can see bad subdirs", func() {
 				pmr["/"] = PinSlice{{"something", "version"}}
-				So(pmr.Validate(), ShouldErrLike, "bad root path")
+				So(pmr.Validate(), ShouldErrLike, "bad subdir")
 			})
 
 			Convey("can see duplicate packages", func() {
 				pmr[""] = append(pmr[""], Pin{"pkg", strings.Repeat("2", 40)})
-				So(pmr.Validate(), ShouldErrLike, `root "": duplicate package "pkg"`)
+				So(pmr.Validate(), ShouldErrLike, `subdir "": duplicate package "pkg"`)
 			})
 
 			Convey("can see bad pins", func() {
 				pmr[""] = append(pmr[""], Pin{"quxxly", "nurbs"})
-				So(pmr.Validate(), ShouldErrLike, `root "": not a valid package instance ID`)
+				So(pmr.Validate(), ShouldErrLike, `subdir "": not a valid package instance ID`)
 			})
 		})
 
 		Convey("can convert to ByMap", func() {
 			pmm := pmr.ToMap()
-			So(pmm, ShouldResemble, PinMapByRoot{
+			So(pmm, ShouldResemble, PinMapBySubdir{
 				"": PinMap{
 					"pkg":  id('0'),
 					"pkg2": id('1'),
@@ -231,7 +231,7 @@ func TestPinSliceAndMap(t *testing.T) {
 			})
 
 			Convey("and back", func() {
-				So(pmm.ToSlice(), ShouldResemble, PinSliceByRoot{
+				So(pmm.ToSlice(), ShouldResemble, PinSliceBySubdir{
 					"": PinSlice{
 						{"pkg", id('0')},
 						{"pkg2", id('1')},

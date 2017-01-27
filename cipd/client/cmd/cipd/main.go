@@ -767,17 +767,17 @@ func ensurePackages(ctx context.Context, root string, desiredStateFile string, d
 		return nil, cipd.Actions{}, err
 	}
 
-	baseRoot := resolved.PackagesByRoot[""]
-	delete(resolved.PackagesByRoot, "")
-	if len(resolved.PackagesByRoot) > 0 {
-		return nil, cipd.Actions{}, errors.New("@Root not yet supported")
+	baseSubdir := resolved.PackagesBySubdir[""]
+	delete(resolved.PackagesBySubdir, "")
+	if len(resolved.PackagesBySubdir) > 0 {
+		return nil, cipd.Actions{}, errors.New("@Subdir not yet supported")
 	}
 
-	actions, err := client.EnsurePackages(ctx, baseRoot, dryRun)
+	actions, err := client.EnsurePackages(ctx, baseSubdir, dryRun)
 	if err != nil {
 		return nil, actions, err
 	}
-	return baseRoot, actions, nil
+	return baseSubdir, actions, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

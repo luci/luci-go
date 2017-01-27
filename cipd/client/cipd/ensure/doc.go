@@ -8,7 +8,7 @@
 // The format is used by the cipd client to describe the desired state of a cipd
 // installation. This states can be asserted with the cipd client 'ensure'
 // command. The state is essentialy a list of packages, their versions and their
-// installation subdirectories ("roots").
+// installation subdirectories ("subdirs").
 //
 // Format Description
 //
@@ -29,10 +29,10 @@
 //
 // A directive looks like `@name value`. Directives are 'sticky' and apply until
 // the next same-name directive. The following directives are allowed:
-//   - Root allows you to change the root that packages are installed to.
-//     The root value is relative to the base of the cipd installation (the
-//     directory containing the .cipd folder). The value of Root before any
-//     @Root directives is "", or the base of the cipd installation.
+//   - Subdir allows you to change the subdirectory that packages are installed
+//		 to. The subdir value is relative to the root of the cipd installation
+//		 (the directory containing the .cipd folder). The value of Subdir before
+//		 any @Subdir directives is "", or the root of the cipd installation.
 //
 // Package Definitions
 //
@@ -76,10 +76,10 @@
 //   # This is the cipd client itself
 //   infra/tools/cipd/${platform}-${arch}  latest
 //
-//   @Root python
+//   @Subdir python
 //   python/wheels/pip                           version:8.1.2
 //   python/wheels/coverage/${platform}-${arch}  version:4.1
 //
-//   @Root infra/support
+//   @Subdir infra/support
 //   infra/some/other/package deadbeefdeadbeefdeadbeefdeadbeefdeadbeef
 package ensure

@@ -123,26 +123,26 @@ func ValidateInstanceVersion(v string) error {
 	return fmt.Errorf("bad version (not an instance ID, a ref or a tag): %q", v)
 }
 
-// ValidateRoot returns an error if the string can't be used as an ensure-file
-// root.
-func ValidateRoot(root string) error {
-	if root == "" { // empty is fine
+// ValidateSubdir returns an error if the string can't be used as an ensure-file
+// subdir.
+func ValidateSubdir(subdir string) error {
+	if subdir == "" { // empty is fine
 		return nil
 	}
-	if strings.Contains(root, "\\") {
-		return fmt.Errorf(`bad root path: backslashes not allowed (use "/"): %q`, root)
+	if strings.Contains(subdir, "\\") {
+		return fmt.Errorf(`bad subdir: backslashes not allowed (use "/"): %q`, subdir)
 	}
-	if strings.Contains(root, ":") {
-		return fmt.Errorf(`bad root path: colons are not allowed: %q`, root)
+	if strings.Contains(subdir, ":") {
+		return fmt.Errorf(`bad subdir: colons are not allowed: %q`, subdir)
 	}
-	if cleaned := path.Clean(root); cleaned != root {
-		return fmt.Errorf("bad root path: %q (should be %q)", root, cleaned)
+	if cleaned := path.Clean(subdir); cleaned != subdir {
+		return fmt.Errorf("bad subdir: %q (should be %q)", subdir, cleaned)
 	}
-	if strings.HasPrefix(root, "./") || strings.HasPrefix(root, "../") || root == "." {
-		return fmt.Errorf(`bad root path: invalid ".": %q`, root)
+	if strings.HasPrefix(subdir, "./") || strings.HasPrefix(subdir, "../") || subdir == "." {
+		return fmt.Errorf(`bad subdir: invalid ".": %q`, subdir)
 	}
-	if strings.HasPrefix(root, "/") {
-		return fmt.Errorf("bad root path: absolute paths not allowed: %q", root)
+	if strings.HasPrefix(subdir, "/") {
+		return fmt.Errorf("bad subdir: absolute paths not allowed: %q", subdir)
 	}
 	return nil
 }
@@ -232,40 +232,40 @@ func (m PinMap) ToSlice() PinSlice {
 	return s
 }
 
-// PinSliceByRoot is a simple mapping of root path to pin.
-type PinSliceByRoot map[string]PinSlice
+// PinSliceBySubdir is a simple mapping of subdir to pin slice.
+type PinSliceBySubdir map[string]PinSlice
 
 // Validate ensures that this doesn't contain any invalid
-// root paths, duplicate packages within the same root, or invalid pins.
-func (p PinSliceByRoot) Validate() error {
-	for root, pkgs := range p {
-		if err := ValidateRoot(root); err != nil {
+// subdirs, duplicate packages within the same subdir, or invalid pins.
+func (p PinSliceBySubdir) Validate() error {
+	for subdir, pkgs := range p {
+		if err := ValidateSubdir(subdir); err != nil {
 			return err
 		}
 		if err := pkgs.Validate(); err != nil {
-			return fmt.Errorf("root %q: %s", root, err)
+			return fmt.Errorf("subdir %q: %s", subdir, err)
 		}
 	}
 	return nil
 }
 
-// ToMap converts this to a PinMapByRoot
-func (p PinSliceByRoot) ToMap() PinMapByRoot {
-	ret := make(PinMapByRoot, len(p))
-	for root, pkgs := range p {
-		ret[root] = pkgs.ToMap()
+// ToMap converts this to a PinMapBySubdir
+func (p PinSliceBySubdir) ToMap() PinMapBySubdir {
+	ret := make(PinMapBySubdir, len(p))
+	for subdir, pkgs := range p {
+		ret[subdir] = pkgs.ToMap()
 	}
 	return ret
 }
 
-// PinMapByRoot is a simple mapping of root -> package_name -> instanceID
-type PinMapByRoot map[string]PinMap
+// PinMapBySubdir is a simple mapping of subdir -> package_name -> instanceID
+type PinMapBySubdir map[string]PinMap
 
-// ToSlice converts this to a PinSliceByRoot
-func (p PinMapByRoot) ToSlice() PinSliceByRoot {
-	ret := make(PinSliceByRoot, len(p))
-	for root, pkgs := range p {
-		ret[root] = pkgs.ToSlice()
+// ToSlice converts this to a PinSliceBySubdir
+func (p PinMapBySubdir) ToSlice() PinSliceBySubdir {
+	ret := make(PinSliceBySubdir, len(p))
+	for subdir, pkgs := range p {
+		ret[subdir] = pkgs.ToSlice()
 	}
 	return ret
 }

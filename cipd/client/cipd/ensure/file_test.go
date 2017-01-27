@@ -51,7 +51,7 @@ var fileSerializationTests = []struct {
 				PackageDef{"some/thing", "version", 0},
 				PackageDef{"some/other_thing", "latest", 0},
 			},
-			"path/to root/with/spaces": {
+			"path/to dir/with/spaces": {
 				PackageDef{"different/package", "some_tag:thingy", 0},
 			},
 		}},
@@ -61,7 +61,7 @@ var fileSerializationTests = []struct {
 			"some/other_thing latest",
 			"some/thing version",
 			"",
-			"@Root path/to root/with/spaces",
+			"@Subdir path/to dir/with/spaces",
 			"different/package some_tag:thingy",
 		),
 	},

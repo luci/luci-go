@@ -42,39 +42,39 @@ var badEnsureFiles = []struct {
 	},
 
 	{
-		"windows root",
-		"@root folder\\thing",
-		`bad root path: backslashes not allowed`,
+		"windows subdir",
+		"@subdir folder\\thing",
+		`bad subdir: backslashes not allowed`,
 	},
 
 	{
-		"messy root",
-		"@root folder/../something",
-		`bad root path: "folder/../something" (should be "something")`,
+		"messy subdir",
+		"@subdir folder/../something",
+		`bad subdir: "folder/../something" (should be "something")`,
 	},
 
 	{
-		"relative root",
-		"@root ../../something",
-		`bad root path: invalid ".": "../../something"`,
+		"relative subdir",
+		"@subdir ../../something",
+		`bad subdir: invalid ".": "../../something"`,
 	},
 
 	{
-		"absolute root",
-		"@root /etc",
-		`bad root path: absolute paths not allowed`,
+		"absolute subdir",
+		"@subdir /etc",
+		`bad subdir: absolute paths not allowed`,
 	},
 
 	{
 		"extra slashes",
-		"@root //foo/bar/baz",
-		`bad root path`,
+		"@subdir //foo/bar/baz",
+		`bad subdir`,
 	},
 
 	{
 		"windows style",
-		"@root c:/foo/bar/baz",
-		`bad root path`,
+		"@subdir c:/foo/bar/baz",
+		`bad subdir`,
 	},
 
 	{
@@ -122,7 +122,7 @@ var badEnsureFiles = []struct {
 			"some/package/something version",
 			"some/package/something latest",
 		),
-		`duplicate package in root "": "some/package/something": defined on line 1 and 2`,
+		`duplicate package in subdir "": "some/package/something": defined on line 1 and 2`,
 	},
 
 	{
@@ -132,7 +132,7 @@ var badEnsureFiles = []struct {
 			"some/other/package canary",
 			"some/package/test_arch latest",
 		),
-		`duplicate package in root "": "some/package/test_arch": defined on line 1 and 3`,
+		`duplicate package in subdir "": "some/package/test_arch": defined on line 1 and 3`,
 	},
 
 	{
@@ -156,7 +156,7 @@ var badEnsureFiles = []struct {
 	{
 		"late setting (directive)",
 		f(
-			"@Root some/path",
+			"@Subdir some/path",
 			"",
 			"$ServiceURL https://something.example.com",
 		),

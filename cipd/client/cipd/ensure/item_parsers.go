@@ -18,14 +18,14 @@ type itemParser func(s *itemParserState, f *File, val string) error
 // itemParserState is the state object shared between the item parsers and the
 // main ParseFile implementation.
 type itemParserState struct {
-	curRoot string
+	curSubdir string
 }
 
-func rootParser(s *itemParserState, _ *File, val string) error {
-	if err := common.ValidateRoot(val); err != nil {
+func subdirParser(s *itemParserState, _ *File, val string) error {
+	if err := common.ValidateSubdir(val); err != nil {
 		return err
 	}
-	s.curRoot = val
+	s.curSubdir = val
 	return nil
 }
 
@@ -44,6 +44,6 @@ func serviceURLParser(_ *itemParserState, f *File, val string) error {
 // need to add a new setting or directive, please add an appropriate function
 // above and then add it to this map.
 var itemParsers = map[string]itemParser{
-	"@root":       rootParser,
+	"@subdir":     subdirParser,
 	"$serviceurl": serviceURLParser,
 }
