@@ -83,13 +83,9 @@ func transientErrors(count int, grpcHeader bool, then http.Handler) http.Handler
 	}
 }
 
-func alwaysTimesOut(tc testclock.TestClock) http.HandlerFunc {
+func advanceClockAndErr(tc testclock.TestClock, d time.Duration) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if timeout := r.Header.Get(HeaderTimeout); timeout != "" {
-			if d, err := DecodeTimeout(timeout); err == nil {
-				tc.Add(d)
-			}
-		}
+		tc.Add(d)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
@@ -189,13 +185,24 @@ func TestClient(t *testing.T) {
 			})
 
 			Convey("With a deadline in the future and a per-RPC deadline, applies the per-RPC deadline", func(c C) {
-				client, server := setUp(alwaysTimesOut(tc))
-				defer server.Close()
+				retries := 5
 
-				ctx, cancelFunc := clock.WithDeadline(ctx, clock.Now(ctx).Add(50*time.Second))
+				// Set an overall deadline.
+				overallDeadline := time.Duration(10*time.Second)*time.Duration(retries) - 1
+				ctx, cancelFunc := clock.WithTimeout(ctx, overallDeadline)
 				defer cancelFunc()
 
-				retries := 5
+				client, server := setUp(advanceClockAndErr(tc, 10*time.Second))
+				defer server.Close()
+
+				// All of our HTTP requests should terminate >= timeout. Synchronize
+				// around this to ensure that our Context is always the functional
+				// client error.
+				client.testPostHTTP = func(c context.Context, err error) error {
+					<-c.Done()
+					return c.Err()
+				}
+
 				client.Options.PerRPCTimeout = 10 * time.Second
 				client.Options.Retry = func() retry.Iterator {
 					return &countingRetryIterator{

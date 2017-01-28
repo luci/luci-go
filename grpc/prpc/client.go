@@ -71,6 +71,10 @@ type Client struct {
 
 	Host    string   // host and optionally a port number of the target server.
 	Options *Options // if nil, DefaultOptions() are used.
+
+	// testPostHTTP is a test-installed callback that is invoked after an HTTP
+	// request finishes.
+	testPostHTTP func(context.Context, error) error
 }
 
 // renderOptions copies client options and applies opts.
@@ -191,11 +195,16 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 			// Send the request.
 			req.Body = ioutil.NopCloser(bytes.NewReader(in))
 			res, err := ctxhttp.Do(ctx, c.getHTTPClient(), req)
+			if res != nil && res.Body != nil {
+				defer res.Body.Close()
+			}
+			if c.testPostHTTP != nil {
+				err = c.testPostHTTP(ctx, err)
+			}
 			if err != nil {
 				// Treat all errors here as transient.
 				return errors.WrapTransient(fmt.Errorf("failed to send request: %s", err))
 			}
-			defer res.Body.Close()
 
 			if options.resHeaderMetadata != nil {
 				*options.resHeaderMetadata = metadataFromHeaders(res.Header)
