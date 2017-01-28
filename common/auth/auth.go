@@ -167,7 +167,13 @@ type Options struct {
 	GCEAccountName string
 
 	// SecretsDir can be used to set the path to a directory where tokens
-	// are cached and default service account key is located.
+	// are cached.
+	//
+	// If not set, tokens will be cached only in the process memory. For refresh
+	// tokens it means the user would have to go through the login process each
+	// time process is started. For service account tokens it means there'll be
+	// HTTP round trip to OAuth backend to generate access token each time the
+	// process is started.
 	SecretsDir string
 
 	// DisableMonitoring can be used to disable the monitoring instrumentation.
