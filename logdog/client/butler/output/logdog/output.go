@@ -220,6 +220,7 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 func retryTopicExists(ctx context.Context, t *pubsub.Topic, rpcTimeout time.Duration) (bool, error) {
 	var exists bool
 	err := retry.Retry(ctx, retry.Default, func() (err error) {
+		ctx := ctx
 		if rpcTimeout > 0 {
 			var cancelFunc context.CancelFunc
 			ctx, cancelFunc = clock.WithTimeout(ctx, rpcTimeout)
