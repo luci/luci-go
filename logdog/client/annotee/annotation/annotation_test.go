@@ -268,6 +268,7 @@ func TestState(t *testing.T) {
 		{"timestamps", nil},
 		{"coverage", nil},
 		{"nested", nil},
+		{"legacy", nil},
 	}
 
 	if *generate {

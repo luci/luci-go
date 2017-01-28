@@ -101,7 +101,7 @@ func (s *State) initialize() {
 	if s.Execution != nil {
 		name = s.Execution.Name
 	}
-	s.rootStep.initializeStep(s, nil, name)
+	s.rootStep.initializeStep(s, nil, name, false)
 	s.rootStep.LogNameBase = s.LogNameBase
 	s.SetCurrentStep(nil)
 
@@ -192,10 +192,12 @@ func (s *State) Append(annotation string) error {
 				// Same step; ignore the command.
 				break
 			}
-			step.Close(annotatedNow)
+			if step.legacy {
+				step.Close(annotatedNow)
+			}
 		}
 
-		step = s.rootStep.AddStep(params)
+		step = s.rootStep.AddStep(params, true)
 		step.Start(annotatedNow)
 		s.SetCurrentStep(step)
 		updatedIf(step, UpdateStructural, true)
@@ -204,7 +206,7 @@ func (s *State) Append(annotation string) error {
 	case "SEED_STEP":
 		step := s.LookupStep(params)
 		if step == nil {
-			step = s.rootStep.AddStep(params)
+			step = s.rootStep.AddStep(params, false)
 			updatedIf(step, UpdateIterative, true)
 		}
 
@@ -540,6 +542,12 @@ type Step struct {
 
 	level int
 
+	// legacy is explicit support for the legacy "BUILD_STEP" annotation. Any Step
+	// that is created via BUILD_STEP is considered a legacy step. Legacy steps
+	// do not get automatically closed when a new "BUILD_STEP" annotation is
+	// encountered.
+	legacy bool
+
 	// logPathIndex is a map of the number of log paths with the given base name.
 	// Each time a log path is generated, it will register with this map and
 	// increase the count.
@@ -564,7 +572,7 @@ type Step struct {
 
 func (as *Step) String() string { return string(as.LogNameBase) }
 
-func (as *Step) initializeStep(s *State, parent *Step, name string) *Step {
+func (as *Step) initializeStep(s *State, parent *Step, name string, legacy bool) *Step {
 	t := milo.Status_RUNNING
 	as.Step = milo.Step{
 		Name:   name,
@@ -572,6 +580,7 @@ func (as *Step) initializeStep(s *State, parent *Step, name string) *Step {
 	}
 
 	as.s = s
+	as.legacy = legacy
 	as.logLines = map[string]types.StreamName{}
 	as.logLineCount = map[string]int{}
 	as.logPathIndex = map[types.StreamName]int{}
@@ -642,8 +651,8 @@ func (as *Step) BaseStream(name types.StreamName) types.StreamName {
 }
 
 // AddStep generates a new substep.
-func (as *Step) AddStep(name string) *Step {
-	return (&Step{}).initializeStep(as.s, as, name)
+func (as *Step) AddStep(name string, legacy bool) *Step {
+	return (&Step{}).initializeStep(as.s, as, name, legacy)
 }
 
 func (as *Step) regenerateLogPath() {

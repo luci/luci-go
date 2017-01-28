@@ -1,0 +1,14 @@
+SEED_STEP@not legacy
+STEP_CURSOR@not legacy
+STEP_STARTED
++time
+
+BUILD_STEP@legacy step
++time
+
+BUILD_STEP@other legacy step
++time
+
+STEP_CURSOR@not legacy
++time
+STEP_CLOSED

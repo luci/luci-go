@@ -1,0 +1,47 @@
+name: "steps"
+status: FAILURE
+failure_details: <
+  type: EXCEPTION
+>
+substep: <
+  step: <
+    name: "not legacy"
+    status: SUCCESS
+    started: <
+      seconds: 1420070400
+    >
+    ended: <
+      seconds: 1420070404
+    >
+  >
+>
+substep: <
+  step: <
+    name: "legacy step"
+    status: SUCCESS
+    started: <
+      seconds: 1420070401
+    >
+    ended: <
+      seconds: 1420070402
+    >
+  >
+>
+substep: <
+  step: <
+    name: "other legacy step"
+    status: SUCCESS
+    started: <
+      seconds: 1420070402
+    >
+    ended: <
+      seconds: 1420070404
+    >
+  >
+>
+started: <
+  seconds: 1420070400
+>
+ended: <
+  seconds: 1420070404
+>

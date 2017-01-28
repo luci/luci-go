@@ -1,4 +1,6 @@
-BUILD_STEP@not nested
+SEED_STEP@not nested
+STEP_CURSOR@not nested
+STEP_STARTED
 +error level must be >= 0
 STEP_NEST_LEVEL@-1
 STEP_CLOSED
