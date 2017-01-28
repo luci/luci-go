@@ -44,6 +44,10 @@ const (
 	keepAliveChannelSize = 128
 )
 
+// ioKeepAliveMessage is a message that will be sent when I/O keep-alive is
+// configured (see keepAliveMonitor).
+var ioKeepAliveMessage = []byte("LogDog Butler: I/O Keep-alive.\n")
+
 // Config is the set of Butler configuration parameters.
 type Config struct {
 	// Output is the output instance to use for log dispatch.
@@ -589,8 +593,6 @@ func (b *Butler) keepAliveMonitor(interval time.Duration, w io.Writer) {
 	t.Reset(interval)
 	timerRunning := true
 
-	msg := []byte("LogDog Butler: I/O Keep-alive.")
-
 	for {
 		select {
 		case event, ok := <-b.keepAliveC:
@@ -616,7 +618,7 @@ func (b *Butler) keepAliveMonitor(interval time.Duration, w io.Writer) {
 
 			// Send keep-alive through our keep-alive Writer.
 			if w != nil {
-				if _, err := w.Write(msg); err != nil {
+				if _, err := w.Write(ioKeepAliveMessage); err != nil {
 					log.WithError(err).Errorf(b.ctx, "Failed to send I/O keep-alive message.")
 				}
 			}
