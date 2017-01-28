@@ -543,8 +543,8 @@ type Step struct {
 	level int
 
 	// legacy is explicit support for the legacy "BUILD_STEP" annotation. Any Step
-	// that is created via BUILD_STEP is considered a legacy step. Legacy steps
-	// do not get automatically closed when a new "BUILD_STEP" annotation is
+	// that is created via BUILD_STEP is considered a legacy step. Only legacy
+	// steps get automatically closed when a new "BUILD_STEP" annotation is
 	// encountered.
 	legacy bool
 
