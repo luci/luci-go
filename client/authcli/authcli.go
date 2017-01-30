@@ -2,14 +2,44 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-// Package authcli implements authentication related CLI subcommands.
+// Package authcli implements authentication related flags parsing and CLI
+// subcommands.
 //
 // It can be used from CLI tools that want customize authentication
 // configuration from the command line.
 //
-// It use luci-go/common/cli.GetContext() to grab a context for logging, so
-// callers should prefer using cli.Application for hosting subcommands and
-// making the context:
+// Minimal example of using flags parsing:
+//
+//
+//	authFlags := authcli.Flags{}
+//	authFlags.Register(flag.CommandLine, auth.Options{})
+//	flag.Parse()
+//	opts, err := authFlags.Options()
+//	if err != nil {
+//		// handle error
+//	}
+//	authenticator := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
+//	httpClient, err := authenticator.Client()
+//	if err != nil {
+//		// handle error
+//	}
+//
+//
+// This assumes that either a service account credentials are used (passed via
+// -service-account-json), or the user has previously ran "login" subcommand and
+// their refresh token is already cached. In any case, there will be no
+// interaction with the user (this is what auth.SilentLogin means): if there
+// are no cached token, authenticator.Client will return auth.ErrLoginRequired.
+//
+// Interaction with the user happens only in "login" subcommand. This subcommand
+// (as well as a bunch of other related commands) can be added to any
+// subcommands.Application.
+//
+// While it will work with any subcommand.Application, it uses
+// luci-go/common/cli.GetContext() to grab a context for logging, so callers
+// should prefer using cli.Application for hosting auth subcommands and making
+// the context. This ensures consistent logging style between all subcommands
+// of a CLI application:
 //
 //
 //	import (
@@ -26,9 +56,9 @@
 //		},
 //
 //		Commands: []*subcommands.Command{
-//			authcli.SubcommandInfo(auth.Options{}, "auth-info"),
-//			authcli.SubcommandLogin(auth.Options{}, "auth-login"),
-//			authcli.SubcommandLogout(auth.Options{}, "auth-logout"),
+//			authcli.SubcommandInfo(auth.Options{}, "auth-info", false),
+//			authcli.SubcommandLogin(auth.Options{}, "auth-login", false),
+//			authcli.SubcommandLogout(auth.Options{}, "auth-logout", false),
 //			...
 //		},
 //	}
@@ -130,8 +160,8 @@ func SubcommandLogin(opts auth.Options, name string, advanced bool) *subcommands
 	return SubcommandLoginWithParams(CommandParams{Name: name, Advanced: advanced, AuthOptions: opts})
 }
 
-// SubcommandLoginWithParams returns subcommands.Command that can be used to perform
-// interactive login.
+// SubcommandLoginWithParams returns subcommands.Command that can be used to
+// perform interactive login.
 func SubcommandLoginWithParams(params CommandParams) *subcommands.Command {
 	return &subcommands.Command{
 		Advanced:  params.Advanced,
@@ -220,8 +250,8 @@ func SubcommandInfo(opts auth.Options, name string, advanced bool) *subcommands.
 	return SubcommandInfoWithParams(CommandParams{Name: name, Advanced: advanced, AuthOptions: opts})
 }
 
-// SubcommandInfoWithParams returns subcommand.Command that can be used to print current
-// cached credentials.
+// SubcommandInfoWithParams returns subcommand.Command that can be used to print
+// current cached credentials.
 func SubcommandInfoWithParams(params CommandParams) *subcommands.Command {
 	return &subcommands.Command{
 		Advanced:  params.Advanced,
@@ -275,8 +305,8 @@ func SubcommandToken(opts auth.Options, name string) *subcommands.Command {
 	return SubcommandTokenWithParams(CommandParams{Name: name, AuthOptions: opts})
 }
 
-// SubcommandTokenWithParams returns subcommand.Command that can be used to print current
-// access token.
+// SubcommandTokenWithParams returns subcommand.Command that can be used to
+// print current access token.
 func SubcommandTokenWithParams(params CommandParams) *subcommands.Command {
 	return &subcommands.Command{
 		Advanced:  params.Advanced,

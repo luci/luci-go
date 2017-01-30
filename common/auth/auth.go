@@ -15,11 +15,6 @@
 // (GCE, regular datacenter, GAE, developers' machines) and switches default
 // authentication scheme accordingly (e.g. on GCE machine the default is to use
 // GCE metadata server).
-//
-// All tools that use auth library share same credentials by default, meaning
-// a user needs to authenticate only once to use them all. Credentials are
-// cached in ~/.config/chrome_infra/auth/*.tok and may be reused by all
-// processes running under the same user account.
 package auth
 
 import (
