@@ -6,6 +6,7 @@ package common
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -243,5 +244,29 @@ func TestPinSliceAndMap(t *testing.T) {
 			})
 		})
 
+	})
+}
+
+func TestCurrentResolution(t *testing.T) {
+	t.Parallel()
+
+	Convey("Sanity check on arch/platform", t, func() {
+		Convey("Has a known platform", func() {
+			known := false
+			switch currentPlatform {
+			case runtime.GOOS, "mac":
+				known = true
+			}
+			So(known, ShouldBeTrue)
+		})
+
+		Convey("Has a known architecture", func() {
+			known := false
+			switch currentArchitecture {
+			case runtime.GOARCH, "armv6l":
+				known = true
+			}
+			So(known, ShouldBeTrue)
+		})
 	})
 }

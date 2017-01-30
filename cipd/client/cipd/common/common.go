@@ -162,14 +162,14 @@ var currentPlatform = ""
 
 func init() {
 	// TODO(iannucci): rationalize these to just be exactly GOOS and GOARCH.
-	currentArchitecture = runtime.GOOS
-	if currentArchitecture == "darwin" {
-		currentArchitecture = "mac"
+	currentArchitecture = runtime.GOARCH
+	if currentArchitecture == "arm" {
+		currentArchitecture = "armv6l"
 	}
 
-	currentPlatform = runtime.GOARCH
-	if currentPlatform == "arm" {
-		currentPlatform = "armv6l"
+	currentPlatform = runtime.GOOS
+	if currentPlatform == "darwin" {
+		currentPlatform = "mac"
 	}
 }
 
