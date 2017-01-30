@@ -210,10 +210,11 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 	//
 	// Note that we use our publishing context here.
 	return out.New(pctx, out.Config{
-		Topic:    psTopic,
-		Secret:   resp.Secret,
-		Compress: true,
-		Track:    cfg.Track,
+		Topic:      psTopic,
+		Secret:     resp.Secret,
+		Compress:   true,
+		Track:      cfg.Track,
+		RPCTimeout: cfg.RPCTimeout,
 	}), nil
 }
 
