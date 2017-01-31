@@ -37,4 +37,25 @@ type Set interface {
 
 	// ToSlice renders this set to a slice of all values.
 	ToSlice() []string
+
+	// Intersect returns a new Set which is the intersection of this set with the
+	// other set.
+	//
+	// `other` must have the same underlying type as the current set, or this will
+	// panic.
+	Intersect(other Set) Set
+
+	// Difference returns a new Set which is this set with all elements from other
+	// removed (i.e. `self - other`).
+	//
+	// `other` must have the same underlying type as the current set, or this will
+	// panic.
+	Difference(other Set) Set
+
+	// Union returns a new Set which contains all element from this set, as well
+	// as all elements from the other set.
+	//
+	// `other` must have the same underlying type as the current set, or this will
+	// panic.
+	Union(other Set) Set
 }

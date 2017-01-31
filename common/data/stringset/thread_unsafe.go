@@ -81,3 +81,40 @@ func (s set) ToSlice() []string {
 	})
 	return ret
 }
+
+func (s set) Intersect(other Set) Set {
+	o := other.(set)
+	smallLen := len(s)
+	if lo := len(o); lo < smallLen {
+		smallLen = lo
+	}
+	if smallLen == 0 {
+		return New(0)
+	}
+	ret := New(smallLen)
+	for k := range s {
+		if _, ok := o[k]; ok {
+			ret.Add(k)
+		}
+	}
+	return ret
+}
+
+func (s set) Difference(other Set) Set {
+	o := other.(set)
+	ret := New(0)
+	for k := range s {
+		if _, ok := o[k]; !ok {
+			ret.Add(k)
+		}
+	}
+	return ret
+}
+
+func (s set) Union(other Set) Set {
+	ret := s.Dup()
+	for k := range other.(set) {
+		ret.Add(k)
+	}
+	return ret
+}

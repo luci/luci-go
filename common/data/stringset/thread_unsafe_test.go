@@ -96,4 +96,67 @@ func TestThreadUnsafeSet(t *testing.T) {
 		sort.Strings(sl)
 		So(sl, ShouldResemble, []string{"hi", "person", "there"})
 	})
+
+	Convey("Can do set operations", t, func() {
+		s := NewFromSlice("a", "b", "c", "d", "e", "f", "z")
+
+		Convey("Union", func() {
+			sl := s.Union(NewFromSlice("b", "k", "g")).ToSlice()
+			sort.Strings(sl)
+			So(sl, ShouldResemble, []string{
+				"a", "b", "c", "d", "e", "f", "g", "k", "z"})
+		})
+
+		Convey("Intersect", func() {
+			Convey("empty", func() {
+				sl := s.Intersect(New(0)).ToSlice()
+				sort.Strings(sl)
+				So(sl, ShouldResemble, []string{})
+			})
+
+			Convey("no overlap", func() {
+				sl := s.Intersect(NewFromSlice("beef")).ToSlice()
+				sort.Strings(sl)
+				So(sl, ShouldResemble, []string{})
+			})
+
+			Convey("some overlap", func() {
+				sl := s.Intersect(NewFromSlice("c", "k", "z", "g")).ToSlice()
+				sort.Strings(sl)
+				So(sl, ShouldResemble, []string{"c", "z"})
+			})
+
+			Convey("total overlap", func() {
+				sl := s.Intersect(NewFromSlice("a", "b", "c", "d", "e", "f", "z")).ToSlice()
+				sort.Strings(sl)
+				So(sl, ShouldResemble, []string{"a", "b", "c", "d", "e", "f", "z"})
+			})
+		})
+
+		Convey("Difference", func() {
+			Convey("empty", func() {
+				sl := s.Difference(New(0)).ToSlice()
+				sort.Strings(sl)
+				So(sl, ShouldResemble, []string{"a", "b", "c", "d", "e", "f", "z"})
+			})
+
+			Convey("no overlap", func() {
+				sl := s.Difference(NewFromSlice("beef")).ToSlice()
+				sort.Strings(sl)
+				So(sl, ShouldResemble, []string{"a", "b", "c", "d", "e", "f", "z"})
+			})
+
+			Convey("some overlap", func() {
+				sl := s.Difference(NewFromSlice("c", "k", "z", "g")).ToSlice()
+				sort.Strings(sl)
+				So(sl, ShouldResemble, []string{"a", "b", "d", "e", "f"})
+			})
+
+			Convey("total overlap", func() {
+				sl := s.Difference(NewFromSlice("a", "b", "c", "d", "e", "f", "z")).ToSlice()
+				sort.Strings(sl)
+				So(sl, ShouldResemble, []string{})
+			})
+		})
+	})
 }
