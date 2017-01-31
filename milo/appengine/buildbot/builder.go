@@ -67,7 +67,7 @@ func getBuilds(
 	}
 	q = q.Order("-number")
 	buildbots := []*buildbotBuild{}
-	err := ds.GetAll(c, q, &buildbots)
+	err := getBuildQueryBatcher(c).GetAll(c, q, &buildbots)
 	if err != nil {
 		return nil, err
 	}

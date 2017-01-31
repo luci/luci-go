@@ -25,6 +25,7 @@ type Service struct{}
 
 var errNotFoundGRPC = grpc.Errorf(codes.NotFound, "Master Not Found")
 
+// GetBuildbotBuildJSON implements milo.BuildbotServer.
 func (s *Service) GetBuildbotBuildJSON(
 	c context.Context, req *milo.BuildbotBuildRequest) (
 	*milo.BuildbotBuildJSON, error) {
@@ -55,6 +56,7 @@ func (s *Service) GetBuildbotBuildJSON(
 	return &milo.BuildbotBuildJSON{Data: bs}, nil
 }
 
+// GetBuildbotBuildsJSON implements milo.BuildbotServer.
 func (s *Service) GetBuildbotBuildsJSON(
 	c context.Context, req *milo.BuildbotBuildsRequest) (
 	*milo.BuildbotBuildsJSON, error) {
@@ -91,7 +93,7 @@ func (s *Service) GetBuildbotBuildsJSON(
 		q = q.Eq("finished", true)
 	}
 	builds := []*buildbotBuild{}
-	err = ds.GetAll(c, q, &builds)
+	err = getBuildQueryBatcher(c).GetAll(c, q, &builds)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +153,7 @@ func (s *Service) GetCompressedMasterJSON(
 		}
 		if err := ds.Get(c, slave.Runningbuilds); err != nil {
 			logging.WithError(err).Errorf(c,
-				"Encountered error while trying to fetch running builds for %s: %s",
+				"Encountered error while trying to fetch running builds for %s: %v",
 				master.Name, slave.Runningbuilds)
 			return nil, err
 		}
@@ -169,7 +171,7 @@ func (s *Service) GetCompressedMasterJSON(
 			Order("-number").
 			KeysOnly(true)
 		var builds []*buildbotBuild
-		err := ds.GetAll(c, q, &builds)
+		err := getBuildQueryBatcher(c).GetAll(c, q, &builds)
 		if err != nil {
 			return nil, err
 		}

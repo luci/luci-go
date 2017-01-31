@@ -238,7 +238,7 @@ func doMaster(c context.Context, master *buildbotMaster, internal bool) int {
 		Eq("finished", false).
 		Eq("master", master.Name)
 	builds := []*buildbotBuild{}
-	err = ds.GetAll(c, q, &builds)
+	err = getBuildQueryBatcher(c).GetAll(c, q, &builds)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Could not load current builds from master %s",
 			master.Name)

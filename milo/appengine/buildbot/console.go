@@ -28,7 +28,7 @@ func getFullBuilds(c context.Context, masterName, builderName string, finished b
 	q = q.Order("-number")
 	q.Finalize()
 	buildbots := make([]*buildbotBuild, 0, 25)
-	err := ds.GetAll(c, q, &buildbots)
+	err := getBuildQueryBatcher(c).GetAll(c, q, &buildbots)
 	return buildbots, err
 }
 

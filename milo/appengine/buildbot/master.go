@@ -49,9 +49,8 @@ func checkAccess(c context.Context, err error, internal bool) error {
 	case err == ds.ErrNoSuchEntity:
 		if cu.Identity == identity.AnonymousIdentity {
 			return errNotAuth
-		} else {
-			return errMasterNotFound
 		}
+		return errMasterNotFound
 	case err != nil:
 		return err
 	}
@@ -65,9 +64,8 @@ func checkAccess(c context.Context, err error, internal bool) error {
 		if !allowed {
 			if cu.Identity == identity.AnonymousIdentity {
 				return errNotAuth
-			} else {
-				return errMasterNotFound
 			}
+			return errMasterNotFound
 		}
 	}
 
@@ -107,7 +105,7 @@ func GetAllBuilders(c context.Context) (*resp.Module, error) {
 	q := ds.NewQuery("buildbotMasterEntry")
 	// TODO(hinoka): Maybe don't look past like a month or so?
 	entries := []*buildbotMasterEntry{}
-	err := ds.GetAll(c, q, &entries)
+	err := (&ds.Batcher{}).GetAll(c, q, &entries)
 	if err != nil {
 		return nil, err
 	}
