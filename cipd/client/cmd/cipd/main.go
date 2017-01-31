@@ -9,16 +9,13 @@
 package main
 
 import (
-	cryptorand "crypto/rand"
 	"crypto/sha1"
-	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -33,6 +30,7 @@ import (
 
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
@@ -2136,11 +2134,6 @@ func fixFlagsPosition(args []string) []string {
 }
 
 func main() {
-	var seed int64
-	if err := binary.Read(cryptorand.Reader, binary.LittleEndian, &seed); err != nil {
-		panic(err)
-	}
-	rand.Seed(seed)
-
+	mathrand.SeedRandomly()
 	os.Exit(subcommands.Run(application, fixFlagsPosition(os.Args[1:])))
 }

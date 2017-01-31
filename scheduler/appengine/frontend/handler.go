@@ -13,11 +13,8 @@
 package frontend
 
 import (
-	cryptorand "crypto/rand"
-	"encoding/binary"
 	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -39,6 +36,7 @@ import (
 	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 
@@ -125,11 +123,7 @@ func init() {
 	// Dev server likes to restart a lot, and upon a restart math/rand seed is
 	// always set to 1, resulting in lots of presumably "random" IDs not being
 	// very random. Seed it with real randomness.
-	var seed int64
-	if err := binary.Read(cryptorand.Reader, binary.LittleEndian, &seed); err != nil {
-		panic(err)
-	}
-	rand.Seed(seed)
+	mathrand.SeedRandomly()
 
 	// Setup global singletons.
 	globalCatalog = catalog.New("")

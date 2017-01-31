@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/errors"
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
@@ -213,6 +214,7 @@ func (a *application) processMessage(c context.Context, coll *collector.Collecto
 
 // Entry point.
 func main() {
+	mathrand.SeedRandomly()
 	a := application{
 		Service: service.Service{
 			Name: "collector",

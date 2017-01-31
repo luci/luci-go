@@ -22,6 +22,7 @@ import (
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/clock/clockflag"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/flag/multiflag"
 	log "github.com/luci/luci-go/common/logging"
@@ -337,6 +338,8 @@ func mainImpl(ctx context.Context, argv []string) int {
 // Main execution function. This immediately jumps to 'mainImpl' and uses its
 // result as an exit code.
 func main() {
+	mathrand.SeedRandomly()
+
 	ctx := context.Background()
 	ctx = gologger.StdConfig.Use(ctx)
 

@@ -25,6 +25,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/common/logging/memlogger"
@@ -90,6 +91,7 @@ func (c *commandLine) check() error {
 }
 
 func main() {
+	mathrand.SeedRandomly()
 	os.Exit(realMain())
 }
 

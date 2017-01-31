@@ -11,6 +11,7 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/luci/luci-go/appengine/gaemiddleware"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/grpc/discovery"
 	"github.com/luci/luci-go/grpc/prpc"
@@ -36,6 +37,8 @@ import (
 
 // Run installs and executes this site.
 func main() {
+	mathrand.SeedRandomly()
+
 	r := router.New()
 
 	// Setup Cloud Endpoints.

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/gcloud/gs"
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
@@ -258,6 +259,7 @@ func (a *application) GetSettingsLoader(acfg *svcconfig.Archivist) archivist.Set
 
 // Entry point.
 func main() {
+	mathrand.SeedRandomly()
 	a := application{
 		Service: service.Service{
 			Name: "archivist",

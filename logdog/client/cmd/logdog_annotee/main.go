@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/clock/clockflag"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/common/proto/milo"
@@ -288,5 +289,6 @@ func mainImpl(args []string) int {
 }
 
 func main() {
+	mathrand.SeedRandomly()
 	os.Exit(mainImpl(os.Args[1:]))
 }

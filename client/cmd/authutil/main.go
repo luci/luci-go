@@ -13,10 +13,12 @@ import (
 
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/common/cli"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/logging/gologger"
 )
 
 func main() {
+	mathrand.SeedRandomly()
 	application := &cli.Application{
 		Name:  "authutil",
 		Title: "LUCI Authentication Utility",
