@@ -31,7 +31,8 @@ import (
 
 // File system layout of a site directory <base> for "symlink" install method:
 // <base>/.cipd/pkgs/
-//   <package name digest>/
+//   <arbitrary index>/
+//     description.json
 //     _current -> symlink to fea3ab83440e9dfb813785e16d4101f331ed44f4
 //     fea3ab83440e9dfb813785e16d4101f331ed44f4/
 //       bin/
@@ -42,17 +43,17 @@ import (
 //    tool -> symlink to ../.cipd/pkgs/<package name digest>/_current/bin/tool
 //    ...
 //
-// Where <package name digest> is derived from a package name. It doesn't have
-// to be reversible though, since the package name is still stored in the
-// installed package manifest and can be read from there.
+// Where <arbitrary index> is chosen to be the smallest number available for
+// this installation (installing more packages gets higher numbers, removing
+// packages and installing new ones will reuse the smallest ones).
 //
 // Some efforts are made to make sure that during the deployment a window of
 // inconsistency in the file system is as small as possible.
 //
 // For "copy" install method everything is much simpler: files are directly
 // copied to the site root directory and .cipd/pkgs/* contains only metadata,
-// such as manifest file with a list of extracted files (to know what to
-// uninstall).
+// such as description and manifest files with a list of extracted files (to
+// know what to uninstall).
 
 // Deployer knows how to unzip and place packages into site root directory.
 type Deployer interface {
@@ -142,18 +143,18 @@ type deployerImpl struct {
 }
 
 func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst PackageInstance) (common.Pin, error) {
-	if subdir != "" {
-		return common.Pin{}, common.ErrSubdirsNotYetSupported
+	if err := common.ValidateSubdir(subdir); err != nil {
+		return common.Pin{}, err
 	}
 
 	pin := inst.Pin()
-	logging.Infof(ctx, "Deploying %s into %s", pin, d.fs.Root())
+	logging.Infof(ctx, "Deploying %s into %s(/%s)", pin, d.fs.Root(), subdir)
 
 	// Be paranoid.
 	if err := common.ValidatePin(pin); err != nil {
 		return common.Pin{}, err
 	}
-	if _, err := d.fs.EnsureDirectory(ctx, d.fs.Root()); err != nil {
+	if _, err := d.fs.EnsureDirectory(ctx, filepath.Join(d.fs.Root(), subdir)); err != nil {
 		return common.Pin{}, err
 	}
 
@@ -189,7 +190,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 	}
 
 	// Install all new files to the site root.
-	err = d.addToSiteRoot(ctx, newManifest.Files, newManifest.InstallMode, pkgPath, destPath)
+	err = d.addToSiteRoot(ctx, subdir, newManifest.Files, newManifest.InstallMode, pkgPath, destPath)
 	if err != nil {
 		d.fs.EnsureDirectoryGone(ctx, destPath)
 		return common.Pin{}, err
@@ -231,7 +232,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 					toKill = append(toKill, f)
 				}
 			}
-			d.removeFromSiteRoot(ctx, toKill)
+			d.removeFromSiteRoot(ctx, subdir, toKill)
 		}()
 	}
 
@@ -249,8 +250,8 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 }
 
 func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkg string) (common.Pin, error) {
-	if subdir != "" {
-		return common.Pin{}, common.ErrSubdirsNotYetSupported
+	if err := common.ValidateSubdir(subdir); err != nil {
+		return common.Pin{}, err
 	}
 
 	pkgPath, err := d.packagePath(ctx, subdir, pkg, false)
@@ -285,8 +286,7 @@ func (d *deployerImpl) FindDeployed(ctx context.Context) (common.PinSliceBySubdi
 		return nil, err
 	}
 
-	found := map[string]common.Pin{}
-	keys := []string{}
+	found := common.PinMapBySubdir{}
 	for _, info := range infos {
 		if !info.IsDir() {
 			continue
@@ -304,30 +304,23 @@ func (d *deployerImpl) FindDeployed(ctx context.Context) (common.PinSliceBySubdi
 
 		// Ignore duplicate entries, they can appear if someone messes with pkgs/*
 		// structure manually.
-		if _, ok := found[desc.PackageName]; !ok {
-			keys = append(keys, desc.PackageName)
-			found[desc.PackageName] = common.Pin{
-				PackageName: desc.PackageName,
-				InstanceID:  currentID,
+		if _, ok := found[desc.Subdir][desc.PackageName]; !ok {
+			if _, ok := found[desc.Subdir]; !ok {
+				found[desc.Subdir] = common.PinMap{}
 			}
+			found[desc.Subdir][desc.PackageName] = currentID
 		}
 	}
 
-	// Sort by package name.
-	sort.Strings(keys)
-	out := make(common.PinSlice, len(found))
-	for i, k := range keys {
-		out[i] = found[k]
-	}
-	return common.PinSliceBySubdir{"": out}, nil
+	return found.ToSlice(), nil
 }
 
 func (d *deployerImpl) RemoveDeployed(ctx context.Context, subdir, packageName string) error {
-	if subdir != "" {
-		return common.ErrSubdirsNotYetSupported
+	if err := common.ValidateSubdir(subdir); err != nil {
+		return err
 	}
 
-	logging.Infof(ctx, "Removing %s from %s", packageName, d.fs.Root())
+	logging.Infof(ctx, "Removing %s from %s(/%s)", packageName, d.fs.Root(), subdir)
 	if err := common.ValidatePackageName(packageName); err != nil {
 		return err
 	}
@@ -352,7 +345,7 @@ func (d *deployerImpl) RemoveDeployed(ctx context.Context, subdir, packageName s
 	if err != nil {
 		logging.Warningf(ctx, "Package %s is in a broken state: %s", packageName, err)
 	} else {
-		d.removeFromSiteRoot(ctx, manifest.Files)
+		d.removeFromSiteRoot(ctx, subdir, manifest.Files)
 	}
 	return d.fs.EnsureDirectoryGone(ctx, pkgPath)
 }
@@ -417,11 +410,15 @@ func (s *numSet) smallestNewNum() int {
 // If no suitable path is found and allocate is true, this will create a new
 // directory with an accompanying description.json. Otherwise this returns "".
 func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allocate bool) (string, error) {
+	if err := common.ValidateSubdir(subdir); err != nil {
+		return "", err
+	}
+
 	if err := common.ValidatePackageName(pkg); err != nil {
 		return "", err
 	}
 
-	rel := filepath.Join(filepath.FromSlash(packagesDir))
+	rel := filepath.FromSlash(packagesDir)
 	abs, err := d.fs.RootRelToAbs(rel)
 	if err != nil {
 		logging.Errorf(ctx, "Can't get absolute path of %q: %s", rel, err)
@@ -447,7 +444,7 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 			logging.Warningf(ctx, "Skipping %q: %s", fullPkgPath, err)
 			continue
 		}
-		if description.PackageName == pkg {
+		if description.PackageName == pkg && description.Subdir == subdir {
 			return fullPkgPath, nil
 		}
 	}
@@ -462,7 +459,15 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 		return "", err
 	}
 
-	tmpDir, err := d.TempDir(ctx, strings.Replace(pkg, "/", "_", -1))
+	// take the last 2 components from the pkg path.
+	pkgParts := strings.Split(pkg, "/")
+	prefix := ""
+	if len(pkgParts) > 2 {
+		prefix = strings.Join(pkgParts[len(pkgParts)-2:], "_")
+	} else {
+		prefix = strings.Join(pkgParts, "_")
+	}
+	tmpDir, err := d.TempDir(ctx, prefix)
 	if err != nil {
 		logging.Errorf(ctx, "Cannot create new pkg tempdir: %s", err)
 		return "", err
@@ -510,7 +515,7 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 			logging.Warningf(ctx, "Skipping %q: %s", pkgPath, err)
 			continue
 		}
-		if description.PackageName == pkg {
+		if description.PackageName == pkg && description.Subdir == subdir {
 			return pkgPath, nil
 		}
 	}
@@ -645,7 +650,7 @@ func (d *deployerImpl) readManifest(ctx context.Context, instanceDir string) (Ma
 
 // addToSiteRoot moves or symlinks files into the site root directory (depending
 // on passed installMode).
-func (d *deployerImpl) addToSiteRoot(ctx context.Context, files []FileInfo, installMode InstallMode, pkgDir, srcDir string) error {
+func (d *deployerImpl) addToSiteRoot(ctx context.Context, subdir string, files []FileInfo, installMode InstallMode, pkgDir, srcDir string) error {
 	// On Windows only InstallModeCopy is supported.
 	if runtime.GOOS == "windows" {
 		installMode = InstallModeCopy
@@ -657,17 +662,19 @@ func (d *deployerImpl) addToSiteRoot(ctx context.Context, files []FileInfo, inst
 	}
 
 	for _, f := range files {
-		// E.g. bin/tool.
+		// e.g. bin/tool
 		relPath := filepath.FromSlash(f.Name)
-		destAbs, err := d.fs.RootRelToAbs(relPath)
+		// e.g. <base>/<subdir>/bin/tool
+		destAbs, err := d.fs.RootRelToAbs(filepath.Join(subdir, relPath))
 		if err != nil {
 			logging.Warningf(ctx, "Invalid relative path %q: %s", relPath, err)
 			return err
 		}
 		if installMode == InstallModeSymlink {
-			// E.g. <base>/.cipd/pkgs/name/_current/bin/tool.
+			// e.g. <base>/.cipd/pkgs/name/_current/bin/tool
 			targetAbs := filepath.Join(pkgDir, currentSymlink, relPath)
-			// E.g. ../.cipd/pkgs/name/_current/bin/tool.
+			// e.g. ../.cipd/pkgs/name/_current/bin/tool
+			// has more `../` depending on subdir
 			targetRel, err := filepath.Rel(filepath.Dir(destAbs), targetAbs)
 			if err != nil {
 				logging.Warningf(
@@ -691,7 +698,7 @@ func (d *deployerImpl) addToSiteRoot(ctx context.Context, files []FileInfo, inst
 			return fmt.Errorf("impossible state")
 		}
 	}
-	// Best effort cleanup of empty directories after all files has been moved.
+	// Best effort cleanup of empty directories after all files have been moved.
 	if installMode == InstallModeCopy {
 		d.removeEmptyDirs(ctx, srcDir)
 	}
@@ -701,9 +708,9 @@ func (d *deployerImpl) addToSiteRoot(ctx context.Context, files []FileInfo, inst
 // removeFromSiteRoot deletes files from the site root directory.
 //
 // Best effort. Logs errors and carries on.
-func (d *deployerImpl) removeFromSiteRoot(ctx context.Context, files []FileInfo) {
+func (d *deployerImpl) removeFromSiteRoot(ctx context.Context, subdir string, files []FileInfo) {
 	for _, f := range files {
-		absPath, err := d.fs.RootRelToAbs(filepath.FromSlash(f.Name))
+		absPath, err := d.fs.RootRelToAbs(filepath.Join(subdir, filepath.FromSlash(f.Name)))
 		if err != nil {
 			logging.Warningf(ctx, "Refusing to remove %q: %s", f.Name, err)
 			continue

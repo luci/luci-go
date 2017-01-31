@@ -18,6 +18,7 @@ import (
 	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/cipd/client/cipd/common"
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -108,14 +109,21 @@ func TestDeployInstance(t *testing.T) {
 		Convey("Try to deploy package instance with bad package name", func() {
 			_, err := NewDeployer(tempDir).DeployInstance(
 				ctx, "", makeTestInstance("../test/package", nil, InstallModeCopy))
-			So(err, ShouldNotBeNil)
+			So(err, ShouldErrLike, "invalid package name")
 		})
 
 		Convey("Try to deploy package instance with bad instance ID", func() {
 			inst := makeTestInstance("test/package", nil, InstallModeCopy)
 			inst.instanceID = "../000000000"
 			_, err := NewDeployer(tempDir).DeployInstance(ctx, "", inst)
-			So(err, ShouldNotBeNil)
+			So(err, ShouldErrLike, "not a valid package instance ID")
+		})
+
+		Convey("Try to deploy package instance in bad subdir", func() {
+			inst := makeTestInstance("test/package", nil, InstallModeCopy)
+			inst.instanceID = "../000000000"
+			_, err := NewDeployer(tempDir).DeployInstance(ctx, "/abspath", inst)
+			So(err, ShouldErrLike, "bad subdir")
 		})
 	})
 }
@@ -139,6 +147,20 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				".cipd/pkgs/0/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
 				".cipd/pkgs/0/_current:0123456789abcdef00000123456789abcdef0000",
 				".cipd/pkgs/0/description.json",
+			})
+
+			Convey("in subdir", func() {
+				info, err := NewDeployer(tempDir).DeployInstance(ctx, "subdir", inst)
+				So(err, ShouldBeNil)
+				So(info, ShouldResemble, inst.Pin())
+				So(scanDir(tempDir), ShouldResemble, []string{
+					".cipd/pkgs/0/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/0/_current:0123456789abcdef00000123456789abcdef0000",
+					".cipd/pkgs/0/description.json",
+					".cipd/pkgs/1/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/1/_current:0123456789abcdef00000123456789abcdef0000",
+					".cipd/pkgs/1/description.json",
+				})
 			})
 		})
 
@@ -169,6 +191,40 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 			body, err = ioutil.ReadFile(filepath.Join(tempDir, "some", "symlink"))
 			So(err, ShouldBeNil)
 			So(string(body), ShouldEqual, "data b")
+
+			Convey("in subdir", func() {
+				_, err := NewDeployer(tempDir).DeployInstance(ctx, "subdir", inst)
+				So(err, ShouldBeNil)
+				So(scanDir(tempDir), ShouldResemble, []string{
+					".cipd/pkgs/0/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/0/0123456789abcdef00000123456789abcdef0000/some/executable*",
+					".cipd/pkgs/0/0123456789abcdef00000123456789abcdef0000/some/file/path",
+					".cipd/pkgs/0/0123456789abcdef00000123456789abcdef0000/some/symlink:executable",
+					".cipd/pkgs/0/_current:0123456789abcdef00000123456789abcdef0000",
+					".cipd/pkgs/0/description.json",
+					".cipd/pkgs/1/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/1/0123456789abcdef00000123456789abcdef0000/some/executable*",
+					".cipd/pkgs/1/0123456789abcdef00000123456789abcdef0000/some/file/path",
+					".cipd/pkgs/1/0123456789abcdef00000123456789abcdef0000/some/symlink:executable",
+					".cipd/pkgs/1/_current:0123456789abcdef00000123456789abcdef0000",
+					".cipd/pkgs/1/description.json",
+					"some/executable:../.cipd/pkgs/0/_current/some/executable",
+					"some/file/path:../../.cipd/pkgs/0/_current/some/file/path",
+					"some/symlink:../.cipd/pkgs/0/_current/some/symlink",
+					"subdir/some/executable:../../.cipd/pkgs/1/_current/some/executable",
+					"subdir/some/file/path:../../../.cipd/pkgs/1/_current/some/file/path",
+					"subdir/some/symlink:../../.cipd/pkgs/1/_current/some/symlink",
+				})
+
+				// Ensure symlinks are actually traversable.
+				body, err := ioutil.ReadFile(filepath.Join(tempDir, "subdir", "some", "file", "path"))
+				So(err, ShouldBeNil)
+				So(string(body), ShouldEqual, "data a")
+				// Symlink to symlink is traversable too.
+				body, err = ioutil.ReadFile(filepath.Join(tempDir, "subdir", "some", "symlink"))
+				So(err, ShouldBeNil)
+				So(string(body), ShouldEqual, "data b")
+			})
 		})
 
 		Convey("Redeploy same package instance", func() {
@@ -191,6 +247,33 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				"some/executable:../.cipd/pkgs/0/_current/some/executable",
 				"some/file/path:../../.cipd/pkgs/0/_current/some/file/path",
 				"some/symlink:../.cipd/pkgs/0/_current/some/symlink",
+			})
+
+			Convey("in subdir", func() {
+				_, err := NewDeployer(tempDir).DeployInstance(ctx, "subdir", inst)
+				So(err, ShouldBeNil)
+				_, err = NewDeployer(tempDir).DeployInstance(ctx, "subdir", inst)
+				So(err, ShouldBeNil)
+				So(scanDir(tempDir), ShouldResemble, []string{
+					".cipd/pkgs/0/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/0/0123456789abcdef00000123456789abcdef0000/some/executable*",
+					".cipd/pkgs/0/0123456789abcdef00000123456789abcdef0000/some/file/path",
+					".cipd/pkgs/0/0123456789abcdef00000123456789abcdef0000/some/symlink:executable",
+					".cipd/pkgs/0/_current:0123456789abcdef00000123456789abcdef0000",
+					".cipd/pkgs/0/description.json",
+					".cipd/pkgs/1/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/1/0123456789abcdef00000123456789abcdef0000/some/executable*",
+					".cipd/pkgs/1/0123456789abcdef00000123456789abcdef0000/some/file/path",
+					".cipd/pkgs/1/0123456789abcdef00000123456789abcdef0000/some/symlink:executable",
+					".cipd/pkgs/1/_current:0123456789abcdef00000123456789abcdef0000",
+					".cipd/pkgs/1/description.json",
+					"some/executable:../.cipd/pkgs/0/_current/some/executable",
+					"some/file/path:../../.cipd/pkgs/0/_current/some/file/path",
+					"some/symlink:../.cipd/pkgs/0/_current/some/symlink",
+					"subdir/some/executable:../../.cipd/pkgs/1/_current/some/executable",
+					"subdir/some/file/path:../../../.cipd/pkgs/1/_current/some/file/path",
+					"subdir/some/symlink:../../.cipd/pkgs/1/_current/some/symlink",
+				})
 			})
 		})
 
@@ -239,6 +322,46 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				"symlink changed:.cipd/pkgs/0/_current/symlink changed",
 				"symlink unchanged:.cipd/pkgs/0/_current/symlink unchanged",
 			})
+
+			Convey("in subdir", func() {
+				_, err := NewDeployer(tempDir).DeployInstance(ctx, "subdir", oldPkg)
+				So(err, ShouldBeNil)
+				_, err = NewDeployer(tempDir).DeployInstance(ctx, "subdir", newPkg)
+				So(err, ShouldBeNil)
+
+				So(scanDir(tempDir), ShouldResemble, []string{
+					".cipd/pkgs/0/1111111111111111111111111111111111111111/.cipdpkg/manifest.json",
+					".cipd/pkgs/0/1111111111111111111111111111111111111111/mode change 1",
+					".cipd/pkgs/0/1111111111111111111111111111111111111111/mode change 2*",
+					".cipd/pkgs/0/1111111111111111111111111111111111111111/some/executable*",
+					".cipd/pkgs/0/1111111111111111111111111111111111111111/some/file/path",
+					".cipd/pkgs/0/1111111111111111111111111111111111111111/symlink changed:new target",
+					".cipd/pkgs/0/1111111111111111111111111111111111111111/symlink unchanged:target",
+					".cipd/pkgs/0/_current:1111111111111111111111111111111111111111",
+					".cipd/pkgs/0/description.json",
+					".cipd/pkgs/1/1111111111111111111111111111111111111111/.cipdpkg/manifest.json",
+					".cipd/pkgs/1/1111111111111111111111111111111111111111/mode change 1",
+					".cipd/pkgs/1/1111111111111111111111111111111111111111/mode change 2*",
+					".cipd/pkgs/1/1111111111111111111111111111111111111111/some/executable*",
+					".cipd/pkgs/1/1111111111111111111111111111111111111111/some/file/path",
+					".cipd/pkgs/1/1111111111111111111111111111111111111111/symlink changed:new target",
+					".cipd/pkgs/1/1111111111111111111111111111111111111111/symlink unchanged:target",
+					".cipd/pkgs/1/_current:1111111111111111111111111111111111111111",
+					".cipd/pkgs/1/description.json",
+					"mode change 1:.cipd/pkgs/0/_current/mode change 1",
+					"mode change 2:.cipd/pkgs/0/_current/mode change 2",
+					"some/executable:../.cipd/pkgs/0/_current/some/executable",
+					"some/file/path:../../.cipd/pkgs/0/_current/some/file/path",
+					"subdir/mode change 1:../.cipd/pkgs/1/_current/mode change 1",
+					"subdir/mode change 2:../.cipd/pkgs/1/_current/mode change 2",
+					"subdir/some/executable:../../.cipd/pkgs/1/_current/some/executable",
+					"subdir/some/file/path:../../../.cipd/pkgs/1/_current/some/file/path",
+					"subdir/symlink changed:../.cipd/pkgs/1/_current/symlink changed",
+					"subdir/symlink unchanged:../.cipd/pkgs/1/_current/symlink unchanged",
+					"symlink changed:.cipd/pkgs/0/_current/symlink changed",
+					"symlink unchanged:.cipd/pkgs/0/_current/symlink unchanged",
+				})
+			})
 		})
 
 		Convey("DeployInstance two different packages", func() {
@@ -282,6 +405,50 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				"some/executable:../.cipd/pkgs/1/_current/some/executable",
 				"some/file/path:../../.cipd/pkgs/1/_current/some/file/path",
 			})
+
+			Convey("in subdir", func() {
+				_, err := NewDeployer(tempDir).DeployInstance(ctx, "subdir", pkg1)
+				So(err, ShouldBeNil)
+				_, err = NewDeployer(tempDir).DeployInstance(ctx, "subdir", pkg2)
+				So(err, ShouldBeNil)
+
+				// TODO: Conflicting symlinks point to last installed package, it is not
+				// very deterministic.
+				So(scanDir(tempDir), ShouldResemble, []string{
+					".cipd/pkgs/0/0000000000000000000000000000000000000000/.cipdpkg/manifest.json",
+					".cipd/pkgs/0/0000000000000000000000000000000000000000/pkg1 file",
+					".cipd/pkgs/0/0000000000000000000000000000000000000000/some/executable*",
+					".cipd/pkgs/0/0000000000000000000000000000000000000000/some/file/path",
+					".cipd/pkgs/0/_current:0000000000000000000000000000000000000000",
+					".cipd/pkgs/0/description.json",
+					".cipd/pkgs/1/1111111111111111111111111111111111111111/.cipdpkg/manifest.json",
+					".cipd/pkgs/1/1111111111111111111111111111111111111111/pkg2 file",
+					".cipd/pkgs/1/1111111111111111111111111111111111111111/some/executable*",
+					".cipd/pkgs/1/1111111111111111111111111111111111111111/some/file/path",
+					".cipd/pkgs/1/_current:1111111111111111111111111111111111111111",
+					".cipd/pkgs/1/description.json",
+					".cipd/pkgs/2/0000000000000000000000000000000000000000/.cipdpkg/manifest.json",
+					".cipd/pkgs/2/0000000000000000000000000000000000000000/pkg1 file",
+					".cipd/pkgs/2/0000000000000000000000000000000000000000/some/executable*",
+					".cipd/pkgs/2/0000000000000000000000000000000000000000/some/file/path",
+					".cipd/pkgs/2/_current:0000000000000000000000000000000000000000",
+					".cipd/pkgs/2/description.json",
+					".cipd/pkgs/3/1111111111111111111111111111111111111111/.cipdpkg/manifest.json",
+					".cipd/pkgs/3/1111111111111111111111111111111111111111/pkg2 file",
+					".cipd/pkgs/3/1111111111111111111111111111111111111111/some/executable*",
+					".cipd/pkgs/3/1111111111111111111111111111111111111111/some/file/path",
+					".cipd/pkgs/3/_current:1111111111111111111111111111111111111111",
+					".cipd/pkgs/3/description.json",
+					"pkg1 file:.cipd/pkgs/0/_current/pkg1 file",
+					"pkg2 file:.cipd/pkgs/1/_current/pkg2 file",
+					"some/executable:../.cipd/pkgs/1/_current/some/executable",
+					"some/file/path:../../.cipd/pkgs/1/_current/some/file/path",
+					"subdir/pkg1 file:../.cipd/pkgs/2/_current/pkg1 file",
+					"subdir/pkg2 file:../.cipd/pkgs/3/_current/pkg2 file",
+					"subdir/some/executable:../../.cipd/pkgs/3/_current/some/executable",
+					"subdir/some/file/path:../../../.cipd/pkgs/3/_current/some/file/path",
+				})
+			})
 		})
 	})
 }
@@ -306,6 +473,21 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 				".cipd/pkgs/0/_current:0123456789abcdef00000123456789abcdef0000",
 				".cipd/pkgs/0/description.json",
 			})
+
+			Convey("in subdir", func() {
+				inst := makeTestInstance("test/package", nil, InstallModeCopy)
+				info, err := NewDeployer(tempDir).DeployInstance(ctx, "subdir", inst)
+				So(err, ShouldBeNil)
+				So(info, ShouldResemble, inst.Pin())
+				So(scanDir(tempDir), ShouldResemble, []string{
+					".cipd/pkgs/0/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/0/_current:0123456789abcdef00000123456789abcdef0000",
+					".cipd/pkgs/0/description.json",
+					".cipd/pkgs/1/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/1/_current:0123456789abcdef00000123456789abcdef0000",
+					".cipd/pkgs/1/description.json",
+				})
+			})
 		})
 
 		Convey("DeployInstance new non-empty package instance", func() {
@@ -323,6 +505,25 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 				"some/executable*",
 				"some/file/path",
 				"some/symlink:executable",
+			})
+
+			Convey("in subdir", func() {
+				_, err := NewDeployer(tempDir).DeployInstance(ctx, "subdir", inst)
+				So(err, ShouldBeNil)
+				So(scanDir(tempDir), ShouldResemble, []string{
+					".cipd/pkgs/0/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/0/_current:0123456789abcdef00000123456789abcdef0000",
+					".cipd/pkgs/0/description.json",
+					".cipd/pkgs/1/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/1/_current:0123456789abcdef00000123456789abcdef0000",
+					".cipd/pkgs/1/description.json",
+					"some/executable*",
+					"some/file/path",
+					"some/symlink:executable",
+					"subdir/some/executable*",
+					"subdir/some/file/path",
+					"subdir/some/symlink:executable",
+				})
 			})
 		})
 
@@ -343,6 +544,27 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 				"some/executable*",
 				"some/file/path",
 				"some/symlink:executable",
+			})
+
+			Convey("in subdir", func() {
+				_, err := NewDeployer(tempDir).DeployInstance(ctx, "somedir", inst)
+				So(err, ShouldBeNil)
+				_, err = NewDeployer(tempDir).DeployInstance(ctx, "somedir", inst)
+				So(err, ShouldBeNil)
+				So(scanDir(tempDir), ShouldResemble, []string{
+					".cipd/pkgs/0/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/0/_current:0123456789abcdef00000123456789abcdef0000",
+					".cipd/pkgs/0/description.json",
+					".cipd/pkgs/1/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/1/_current:0123456789abcdef00000123456789abcdef0000",
+					".cipd/pkgs/1/description.json",
+					"some/executable*",
+					"some/file/path",
+					"some/symlink:executable",
+					"somedir/some/executable*",
+					"somedir/some/file/path",
+					"somedir/some/symlink:executable",
+				})
 			})
 		})
 
@@ -385,6 +607,35 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 				"symlink changed:new target",
 				"symlink unchanged:target",
 			})
+
+			Convey("in subdir", func() {
+
+				_, err := NewDeployer(tempDir).DeployInstance(ctx, "subdir", oldPkg)
+				So(err, ShouldBeNil)
+				_, err = NewDeployer(tempDir).DeployInstance(ctx, "subdir", newPkg)
+				So(err, ShouldBeNil)
+
+				So(scanDir(tempDir), ShouldResemble, []string{
+					".cipd/pkgs/0/1111111111111111111111111111111111111111/.cipdpkg/manifest.json",
+					".cipd/pkgs/0/_current:1111111111111111111111111111111111111111",
+					".cipd/pkgs/0/description.json",
+					".cipd/pkgs/1/1111111111111111111111111111111111111111/.cipdpkg/manifest.json",
+					".cipd/pkgs/1/_current:1111111111111111111111111111111111111111",
+					".cipd/pkgs/1/description.json",
+					"mode change 1",
+					"mode change 2*",
+					"some/executable*",
+					"some/file/path",
+					"subdir/mode change 1",
+					"subdir/mode change 2*",
+					"subdir/some/executable*",
+					"subdir/some/file/path",
+					"subdir/symlink changed:new target",
+					"subdir/symlink unchanged:target",
+					"symlink changed:new target",
+					"symlink unchanged:target",
+				})
+			})
 		})
 
 		Convey("DeployInstance two different packages", func() {
@@ -420,6 +671,37 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 				"some/executable*",
 				"some/file/path",
 			})
+
+			Convey("in subdir", func() {
+
+				_, err := NewDeployer(tempDir).DeployInstance(ctx, "somedir", pkg1)
+				So(err, ShouldBeNil)
+				_, err = NewDeployer(tempDir).DeployInstance(ctx, "somedir", pkg2)
+				So(err, ShouldBeNil)
+
+				So(scanDir(tempDir), ShouldResemble, []string{
+					".cipd/pkgs/0/0000000000000000000000000000000000000000/.cipdpkg/manifest.json",
+					".cipd/pkgs/0/_current:0000000000000000000000000000000000000000",
+					".cipd/pkgs/0/description.json",
+					".cipd/pkgs/1/1111111111111111111111111111111111111111/.cipdpkg/manifest.json",
+					".cipd/pkgs/1/_current:1111111111111111111111111111111111111111",
+					".cipd/pkgs/1/description.json",
+					".cipd/pkgs/2/0000000000000000000000000000000000000000/.cipdpkg/manifest.json",
+					".cipd/pkgs/2/_current:0000000000000000000000000000000000000000",
+					".cipd/pkgs/2/description.json",
+					".cipd/pkgs/3/1111111111111111111111111111111111111111/.cipdpkg/manifest.json",
+					".cipd/pkgs/3/_current:1111111111111111111111111111111111111111",
+					".cipd/pkgs/3/description.json",
+					"pkg1 file",
+					"pkg2 file",
+					"some/executable*",
+					"some/file/path",
+					"somedir/pkg1 file",
+					"somedir/pkg2 file",
+					"somedir/some/executable*",
+					"somedir/some/file/path",
+				})
+			})
 		})
 	})
 }
@@ -446,6 +728,24 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 			})
 			cur := readFile(tempDir, ".cipd/pkgs/0/_current.txt")
 			So(cur, ShouldEqual, "0123456789abcdef00000123456789abcdef0000")
+
+			Convey("in subdir", func() {
+				info, err := NewDeployer(tempDir).DeployInstance(ctx, "subdir", inst)
+				So(err, ShouldBeNil)
+				So(info, ShouldResemble, inst.Pin())
+				So(scanDir(tempDir), ShouldResemble, []string{
+					".cipd/pkgs/0/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/0/_current.txt",
+					".cipd/pkgs/0/description.json",
+					".cipd/pkgs/1/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/1/_current.txt",
+					".cipd/pkgs/1/description.json",
+				})
+				cur := readFile(tempDir, ".cipd/pkgs/0/_current.txt")
+				So(cur, ShouldEqual, "0123456789abcdef00000123456789abcdef0000")
+				cur = readFile(tempDir, ".cipd/pkgs/1/_current.txt")
+				So(cur, ShouldEqual, "0123456789abcdef00000123456789abcdef0000")
+			})
 		})
 
 		Convey("DeployInstance new non-empty package instance", func() {
@@ -464,6 +764,27 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 			})
 			cur := readFile(tempDir, ".cipd/pkgs/0/_current.txt")
 			So(cur, ShouldEqual, "0123456789abcdef00000123456789abcdef0000")
+
+			Convey("in subdir", func() {
+				_, err := NewDeployer(tempDir).DeployInstance(ctx, "subdir", inst)
+				So(err, ShouldBeNil)
+				So(scanDir(tempDir), ShouldResemble, []string{
+					".cipd/pkgs/0/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/0/_current.txt",
+					".cipd/pkgs/0/description.json",
+					".cipd/pkgs/1/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/1/_current.txt",
+					".cipd/pkgs/1/description.json",
+					"some/executable",
+					"some/file/path",
+					"subdir/some/executable",
+					"subdir/some/file/path",
+				})
+				cur := readFile(tempDir, ".cipd/pkgs/0/_current.txt")
+				So(cur, ShouldEqual, "0123456789abcdef00000123456789abcdef0000")
+				cur = readFile(tempDir, ".cipd/pkgs/1/_current.txt")
+				So(cur, ShouldEqual, "0123456789abcdef00000123456789abcdef0000")
+			})
 		})
 
 		Convey("Redeploy same package instance", func() {
@@ -484,6 +805,29 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 			})
 			cur := readFile(tempDir, ".cipd/pkgs/0/_current.txt")
 			So(cur, ShouldEqual, "0123456789abcdef00000123456789abcdef0000")
+
+			Convey("in subdir", func() {
+				_, err := NewDeployer(tempDir).DeployInstance(ctx, "subdir", inst)
+				So(err, ShouldBeNil)
+				_, err = NewDeployer(tempDir).DeployInstance(ctx, "subdir", inst)
+				So(err, ShouldBeNil)
+				So(scanDir(tempDir), ShouldResemble, []string{
+					".cipd/pkgs/0/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/0/_current.txt",
+					".cipd/pkgs/0/description.json",
+					".cipd/pkgs/1/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/1/_current.txt",
+					".cipd/pkgs/1/description.json",
+					"some/executable",
+					"some/file/path",
+					"subdir/some/executable",
+					"subdir/some/file/path",
+				})
+				cur := readFile(tempDir, ".cipd/pkgs/0/_current.txt")
+				So(cur, ShouldEqual, "0123456789abcdef00000123456789abcdef0000")
+				cur = readFile(tempDir, ".cipd/pkgs/1/_current.txt")
+				So(cur, ShouldEqual, "0123456789abcdef00000123456789abcdef0000")
+			})
 		})
 
 		Convey("DeployInstance package update", func() {
@@ -520,6 +864,34 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 			})
 			cur := readFile(tempDir, ".cipd/pkgs/0/_current.txt")
 			So(cur, ShouldEqual, "1111111111111111111111111111111111111111")
+
+			Convey("in subdir", func() {
+				_, err := NewDeployer(tempDir).DeployInstance(ctx, "subdir", oldPkg)
+				So(err, ShouldBeNil)
+				_, err = NewDeployer(tempDir).DeployInstance(ctx, "subdir", newPkg)
+				So(err, ShouldBeNil)
+
+				So(scanDir(tempDir), ShouldResemble, []string{
+					".cipd/pkgs/0/1111111111111111111111111111111111111111/.cipdpkg/manifest.json",
+					".cipd/pkgs/0/_current.txt",
+					".cipd/pkgs/0/description.json",
+					".cipd/pkgs/1/1111111111111111111111111111111111111111/.cipdpkg/manifest.json",
+					".cipd/pkgs/1/_current.txt",
+					".cipd/pkgs/1/description.json",
+					"mode change 1",
+					"mode change 2",
+					"some/executable",
+					"some/file/path",
+					"subdir/mode change 1",
+					"subdir/mode change 2",
+					"subdir/some/executable",
+					"subdir/some/file/path",
+				})
+				cur := readFile(tempDir, ".cipd/pkgs/0/_current.txt")
+				So(cur, ShouldEqual, "1111111111111111111111111111111111111111")
+				cur = readFile(tempDir, ".cipd/pkgs/1/_current.txt")
+				So(cur, ShouldEqual, "1111111111111111111111111111111111111111")
+			})
 		})
 
 		Convey("DeployInstance two different packages", func() {
@@ -559,6 +931,40 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 			So(cur1, ShouldEqual, "1111111111111111111111111111111111111111")
 			cur2 := readFile(tempDir, ".cipd/pkgs/0/_current.txt")
 			So(cur2, ShouldEqual, "0000000000000000000000000000000000000000")
+
+			Convey("in subdir", func() {
+				_, err := NewDeployer(tempDir).DeployInstance(ctx, "subdir", pkg1)
+				So(err, ShouldBeNil)
+				_, err = NewDeployer(tempDir).DeployInstance(ctx, "subdir", pkg2)
+				So(err, ShouldBeNil)
+
+				So(scanDir(tempDir), ShouldResemble, []string{
+					".cipd/pkgs/0/0000000000000000000000000000000000000000/.cipdpkg/manifest.json",
+					".cipd/pkgs/0/_current.txt",
+					".cipd/pkgs/0/description.json",
+					".cipd/pkgs/1/1111111111111111111111111111111111111111/.cipdpkg/manifest.json",
+					".cipd/pkgs/1/_current.txt",
+					".cipd/pkgs/1/description.json",
+					".cipd/pkgs/2/0000000000000000000000000000000000000000/.cipdpkg/manifest.json",
+					".cipd/pkgs/2/_current.txt",
+					".cipd/pkgs/2/description.json",
+					".cipd/pkgs/3/1111111111111111111111111111111111111111/.cipdpkg/manifest.json",
+					".cipd/pkgs/3/_current.txt",
+					".cipd/pkgs/3/description.json",
+					"pkg1 file",
+					"pkg2 file",
+					"some/executable",
+					"some/file/path",
+					"subdir/pkg1 file",
+					"subdir/pkg2 file",
+					"subdir/some/executable",
+					"subdir/some/file/path",
+				})
+				cur1 := readFile(tempDir, ".cipd/pkgs/1/_current.txt")
+				So(cur1, ShouldEqual, "1111111111111111111111111111111111111111")
+				cur2 := readFile(tempDir, ".cipd/pkgs/0/_current.txt")
+				So(cur2, ShouldEqual, "0000000000000000000000000000000000000000")
+			})
 		})
 	})
 }
@@ -601,6 +1007,39 @@ func TestDeployInstanceSwitchingModes(t *testing.T) {
 				"some/file/path:../../.cipd/pkgs/0/_current/some/file/path",
 				"some/symlink:../.cipd/pkgs/0/_current/some/symlink",
 			})
+
+			Convey("in subidr", func() {
+				inst := makeTestInstance("test/package", files, InstallModeCopy)
+				inst.instanceID = "0000000000000000000000000000000000000000"
+				_, err := NewDeployer(tempDir).DeployInstance(ctx, "subdir", inst)
+				So(err, ShouldBeNil)
+
+				inst = makeTestInstance("test/package", files, InstallModeSymlink)
+				inst.instanceID = "1111111111111111111111111111111111111111"
+				_, err = NewDeployer(tempDir).DeployInstance(ctx, "subdir", inst)
+
+				So(err, ShouldBeNil)
+				So(scanDir(tempDir), ShouldResemble, []string{
+					".cipd/pkgs/0/1111111111111111111111111111111111111111/.cipdpkg/manifest.json",
+					".cipd/pkgs/0/1111111111111111111111111111111111111111/some/executable*",
+					".cipd/pkgs/0/1111111111111111111111111111111111111111/some/file/path",
+					".cipd/pkgs/0/1111111111111111111111111111111111111111/some/symlink:executable",
+					".cipd/pkgs/0/_current:1111111111111111111111111111111111111111",
+					".cipd/pkgs/0/description.json",
+					".cipd/pkgs/1/1111111111111111111111111111111111111111/.cipdpkg/manifest.json",
+					".cipd/pkgs/1/1111111111111111111111111111111111111111/some/executable*",
+					".cipd/pkgs/1/1111111111111111111111111111111111111111/some/file/path",
+					".cipd/pkgs/1/1111111111111111111111111111111111111111/some/symlink:executable",
+					".cipd/pkgs/1/_current:1111111111111111111111111111111111111111",
+					".cipd/pkgs/1/description.json",
+					"some/executable:../.cipd/pkgs/0/_current/some/executable",
+					"some/file/path:../../.cipd/pkgs/0/_current/some/file/path",
+					"some/symlink:../.cipd/pkgs/0/_current/some/symlink",
+					"subdir/some/executable:../../.cipd/pkgs/1/_current/some/executable",
+					"subdir/some/file/path:../../../.cipd/pkgs/1/_current/some/file/path",
+					"subdir/some/symlink:../../.cipd/pkgs/1/_current/some/symlink",
+				})
+			})
 		})
 
 		Convey("InstallModeSymlink => InstallModeCopy", func() {
@@ -621,6 +1060,33 @@ func TestDeployInstanceSwitchingModes(t *testing.T) {
 				"some/executable*",
 				"some/file/path",
 				"some/symlink:executable",
+			})
+
+			Convey("in subdir", func() {
+				inst := makeTestInstance("test/package", files, InstallModeSymlink)
+				inst.instanceID = "0000000000000000000000000000000000000000"
+				_, err := NewDeployer(tempDir).DeployInstance(ctx, "subdir", inst)
+				So(err, ShouldBeNil)
+
+				inst = makeTestInstance("test/package", files, InstallModeCopy)
+				inst.instanceID = "1111111111111111111111111111111111111111"
+				_, err = NewDeployer(tempDir).DeployInstance(ctx, "subdir", inst)
+
+				So(err, ShouldBeNil)
+				So(scanDir(tempDir), ShouldResemble, []string{
+					".cipd/pkgs/0/1111111111111111111111111111111111111111/.cipdpkg/manifest.json",
+					".cipd/pkgs/0/_current:1111111111111111111111111111111111111111",
+					".cipd/pkgs/0/description.json",
+					".cipd/pkgs/1/1111111111111111111111111111111111111111/.cipdpkg/manifest.json",
+					".cipd/pkgs/1/_current:1111111111111111111111111111111111111111",
+					".cipd/pkgs/1/description.json",
+					"some/executable*",
+					"some/file/path",
+					"some/symlink:executable",
+					"subdir/some/executable*",
+					"subdir/some/file/path",
+					"subdir/some/symlink:executable",
+				})
 			})
 		})
 	})
@@ -650,12 +1116,26 @@ func TestFindDeployed(t *testing.T) {
 			So(err, ShouldBeNil)
 			_, err = d.DeployInstance(ctx, "", makeTestInstance("test", nil, InstallModeCopy))
 			So(err, ShouldBeNil)
+			_, err = d.DeployInstance(ctx, "subdir", makeTestInstance("test/pkg/123", nil, InstallModeCopy))
+			So(err, ShouldBeNil)
+			_, err = d.DeployInstance(ctx, "subdir", makeTestInstance("test/pkg/456", nil, InstallModeCopy))
+			So(err, ShouldBeNil)
+			_, err = d.DeployInstance(ctx, "subdir", makeTestInstance("test/pkg", nil, InstallModeCopy))
+			So(err, ShouldBeNil)
+			_, err = d.DeployInstance(ctx, "subdir", makeTestInstance("test", nil, InstallModeCopy))
+			So(err, ShouldBeNil)
 
 			// Verify it is discoverable.
 			out, err := d.FindDeployed(ctx)
 			So(err, ShouldBeNil)
 			So(out, ShouldResemble, PinSliceBySubdir{
 				"": PinSlice{
+					{"test", "0123456789abcdef00000123456789abcdef0000"},
+					{"test/pkg", "0123456789abcdef00000123456789abcdef0000"},
+					{"test/pkg/123", "0123456789abcdef00000123456789abcdef0000"},
+					{"test/pkg/456", "0123456789abcdef00000123456789abcdef0000"},
+				},
+				"subdir": PinSlice{
 					{"test", "0123456789abcdef00000123456789abcdef0000"},
 					{"test/pkg", "0123456789abcdef00000123456789abcdef0000"},
 					{"test/pkg/123", "0123456789abcdef00000123456789abcdef0000"},
@@ -674,6 +1154,8 @@ func TestRemoveDeployedCommon(t *testing.T) {
 
 		Convey("RemoveDeployed works with missing package", func() {
 			err := NewDeployer(tempDir).RemoveDeployed(ctx, "", "package/path")
+			So(err, ShouldBeNil)
+			err = NewDeployer(tempDir).RemoveDeployed(ctx, "subdir", "package/path")
 			So(err, ShouldBeNil)
 		})
 	})
@@ -701,12 +1183,12 @@ func TestRemoveDeployedPosix(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// Deploy another instance (to remove it).
-			inst = makeTestInstance("test/package", []File{
+			inst2 := makeTestInstance("test/package", []File{
 				NewTestFile("some/file/path2", "data a", false),
 				NewTestFile("some/executable2", "data b", true),
 				NewTestSymlink("some/symlink", "executable"),
 			}, InstallModeCopy)
-			_, err = d.DeployInstance(ctx, "", inst)
+			_, err = d.DeployInstance(ctx, "", inst2)
 			So(err, ShouldBeNil)
 
 			// Now remove the second package.
@@ -720,6 +1202,36 @@ func TestRemoveDeployedPosix(t *testing.T) {
 				".cipd/pkgs/0/description.json",
 				"some/executable1*",
 				"some/file/path1",
+			})
+
+			Convey("in subdir", func() {
+				// Deploy some instance (to keep it).
+				_, err := d.DeployInstance(ctx, "subdir", inst2)
+				So(err, ShouldBeNil)
+
+				// Deploy another instance (to remove it).
+				_, err = d.DeployInstance(ctx, "subdir", inst)
+				So(err, ShouldBeNil)
+
+				// Now remove the second package.
+				err = d.RemoveDeployed(ctx, "subdir", "test/package")
+				So(err, ShouldBeNil)
+
+				// Verify the final state (only first package should survive).
+				So(scanDir(tempDir), ShouldResemble, []string{
+					".cipd/pkgs/0/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/0/_current:0123456789abcdef00000123456789abcdef0000",
+					".cipd/pkgs/0/description.json",
+					// it's 2 because we flipped inst2 and inst in the installation order.
+					// When we RemoveDeployed, we remove index 1.
+					".cipd/pkgs/2/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/2/_current:0123456789abcdef00000123456789abcdef0000",
+					".cipd/pkgs/2/description.json",
+					"some/executable1*",
+					"some/file/path1",
+					"subdir/some/executable1*",
+					"subdir/some/file/path1",
+				})
 			})
 		})
 	})
@@ -747,11 +1259,11 @@ func TestRemoveDeployedWindows(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// Deploy another instance (to remove it).
-			inst = makeTestInstance("test/package", []File{
+			inst2 := makeTestInstance("test/package", []File{
 				NewTestFile("some/file/path2", "data a", false),
 				NewTestFile("some/executable2", "data b", true),
 			}, InstallModeCopy)
-			_, err = d.DeployInstance(ctx, "", inst)
+			_, err = d.DeployInstance(ctx, "", inst2)
 			So(err, ShouldBeNil)
 
 			// Now remove the second package.
@@ -765,6 +1277,34 @@ func TestRemoveDeployedWindows(t *testing.T) {
 				".cipd/pkgs/0/description.json",
 				"some/executable1",
 				"some/file/path1",
+			})
+
+			Convey("in subdir", func() {
+				// Deploy some instance (to keep it).
+				_, err := d.DeployInstance(ctx, "subdir", inst2)
+				So(err, ShouldBeNil)
+
+				// Deploy another instance (to remove it).
+				_, err = d.DeployInstance(ctx, "subdir", inst)
+				So(err, ShouldBeNil)
+
+				// Now remove the second package.
+				err = d.RemoveDeployed(ctx, "subdir", "test/package")
+				So(err, ShouldBeNil)
+
+				// Verify the final state (only first package should survive).
+				So(scanDir(tempDir), ShouldResemble, []string{
+					".cipd/pkgs/0/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/0/_current.txt",
+					".cipd/pkgs/0/description.json",
+					".cipd/pkgs/2/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					".cipd/pkgs/2/_current.txt",
+					".cipd/pkgs/2/description.json",
+					"some/executable1",
+					"some/file/path1",
+					"subdir/some/executable1",
+					"subdir/some/file/path1",
+				})
 			})
 		})
 	})

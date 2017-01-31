@@ -729,7 +729,7 @@ func TestEnsurePackages(t *testing.T) {
 			So(actions, ShouldResemble, Actions{
 				ToRemove: PinSlice{b.Pin()},
 			})
-			So(findDeployed(tempDir), ShouldResemble, PinSliceBySubdir{"": PinSlice{}})
+			So(findDeployed(tempDir), ShouldResemble, PinSliceBySubdir{})
 
 			// Install a1 and b.
 			actions, err = callEnsure([]local.PackageInstance{a1, b}, []local.PackageInstance{a1, b})
