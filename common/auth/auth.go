@@ -2,29 +2,20 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-// Package auth implements an opinionated wrapper around OAuth2.
+// Package auth implements an opinionated wrapper around golang.org/x/oauth2.
 //
-// It hides configurability of base oauth2 library and instead makes a
+// It hides some configurability of base oauth2 library and instead makes a
 // predefined set of choices regarding where the credentials should be stored,
 // how they should be cached and how OAuth2 flow should be invoked.
 //
 // It makes authentication flows look more uniform across tools that use this
 // package and allow credentials reuse across multiple binaries.
-//
-// Also it knows about various environments luci tools are running under
-// (GCE, regular datacenter, GAE, developers' machines) and switches default
-// authentication scheme accordingly (e.g. on GCE machine the default is to use
-// GCE metadata server).
 package auth
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"os"
 	"path/filepath"
 	"sort"
 	"sync"
@@ -133,12 +124,24 @@ type Options struct {
 	// Scopes is a list of OAuth scopes to request, defaults to [OAuthScopeEmail].
 	Scopes []string
 
-	// ClientID is OAuth client_id to use with UserCredentialsMethod.
+	// ClientID is OAuth client ID to use with UserCredentialsMethod.
+	//
+	// See https://developers.google.com/identity/protocols/OAuth2InstalledApp
+	// (in particular everything related to "Desktop apps").
+	//
+	// Together with Scopes forms a cache key in the token cache, which in
+	// practical terms means there can be only one concurrently "logged in" user
+	// per [ClientID, Scopes] combination. So if multiple binaries use exact same
+	// ClientID and Scopes, they'll share credentials cache (a login in one app
+	// makes the user logged in in the other app too).
+	//
+	// If you don't want to share login information between tools, use separate
+	// ClientID or SecretsDir values.
 	//
 	// Default: provided by DefaultClient().
 	ClientID string
 
-	// ClientID is OAuth client_secret to use with UserCredentialsMethod.
+	// ClientSecret is OAuth client secret to use with UserCredentialsMethod.
 	//
 	// Default: provided by DefaultClient().
 	ClientSecret string
@@ -158,6 +161,7 @@ type Options struct {
 	//
 	// If given account wasn't granted required set of scopes during instance
 	// creation time, Transport() call fails with ErrInsufficientAccess.
+	//
 	// Default: "default" account.
 	GCEAccountName string
 
@@ -183,8 +187,6 @@ type Options struct {
 	// The default is 'luci-go'.
 	MonitorAs string
 
-	// tokenCacheFactory is used in unit tests.
-	tokenCacheFactory func(entryName string) (tokenCache, error)
 	// customTokenProvider is used in unit tests.
 	customTokenProvider internal.TokenProvider
 }
@@ -203,7 +205,7 @@ type Authenticator struct {
 
 	// Mutable members.
 	lock     sync.RWMutex
-	cache    tokenCache
+	cache    internal.TokenCache
 	provider internal.TokenProvider
 	err      error
 	token    *oauth2.Token
@@ -255,6 +257,15 @@ func NewAuthenticator(ctx context.Context, loginMode LoginMode, opts Options) *A
 	}
 	if opts.Transport == nil {
 		opts.Transport = http.DefaultTransport
+	}
+
+	// TODO(vadimsh): Check SecretsDir permissions. It should be 0700.
+	if opts.SecretsDir != "" && !filepath.IsAbs(opts.SecretsDir) {
+		var err error
+		opts.SecretsDir, err = filepath.Abs(opts.SecretsDir)
+		if err != nil {
+			panic(fmt.Errorf("failed to get abs path to token cache dir: %s", err))
+		}
 	}
 
 	// See ensureInitialized for the rest of the initialization.
@@ -368,7 +379,11 @@ func (a *Authenticator) Login() error {
 
 	// Store the initial token in the cache. Don't abort if it fails, the token
 	// is still usable from the memory.
-	if err = a.cacheToken(a.token); err != nil {
+	key, err := a.provider.CacheKey()
+	if err == nil {
+		err = a.cache.PutToken(key, a.token)
+	}
+	if err != nil {
 		logging.Warningf(a.ctx, "Failed to write token to cache: %s", err)
 	}
 
@@ -383,7 +398,11 @@ func (a *Authenticator) PurgeCredentialsCache() error {
 		return err
 	}
 	a.token = nil
-	return a.cache.Clear()
+	key, err := a.provider.CacheKey()
+	if err != nil {
+		return err
+	}
+	return a.cache.DeleteToken(key)
 }
 
 // GetAccessToken returns a valid access token with specified minimum lifetime.
@@ -506,23 +525,24 @@ func (a *Authenticator) ensureInitialized() error {
 		return a.err
 	}
 
-	// Setup the cache only when Method is known, cache filename depends on it.
-	cacheName := cacheEntryName(a.opts, a.provider)
-	if a.opts.tokenCacheFactory != nil {
-		a.cache, a.err = a.opts.tokenCacheFactory(cacheName)
-		if a.err != nil {
-			return a.err
-		}
-	} else {
-		if a.opts.SecretsDir == "" {
-			logging.Warningf(a.ctx, "Disabling token cache. Not configured.")
-			a.cache = &memoryCache{}
-		} else {
-			a.cache = &tokenFileCache{
-				path: filepath.Join(a.opts.SecretsDir, cacheName+".tok"),
-				ctx:  a.ctx,
+	// Initialize token caches. Use disk cache only if SecretsDir is given and
+	// the provider is not "lightweight" (so it makes sense to actually hit
+	// the disk, rather then call the provider each time new token is needed).
+	//
+	// Note also that tests set a.cache before ensureInitialized() is called, so
+	// don't overwrite it here.
+	if a.cache != nil && !a.provider.Lightweight() {
+		if a.opts.SecretsDir != "" {
+			a.cache = &internal.DiskTokenCache{
+				Context:    a.ctx,
+				SecretsDir: a.opts.SecretsDir,
 			}
+		} else {
+			logging.Warningf(a.ctx, "Disabling disk token cache. Not configured.")
 		}
+	}
+	if a.cache == nil {
+		a.cache = internal.ProcTokenCache
 	}
 
 	// Interactive providers need to know whether there's a cached token (to ask
@@ -530,47 +550,20 @@ func (a *Authenticator) ensureInitialized() error {
 	// care about state of the cache that much (they know how to update it
 	// themselves). So examine the cache here only when using interactive
 	// provider. Non interactive providers will do it lazily on a first
-	// refreshToken(...) call. It saves one memcache call in certain situations
-	// when auth library is used from GAE.
+	// refreshToken(...) call.
 	if a.provider.RequiresInteraction() {
 		// Broken token cache is not a fatal error. So just log it and forget, a new
 		// token will be minted.
-		var err error
-		a.token, err = a.readTokenCache()
+		key, err := a.provider.CacheKey()
+		if err == nil {
+			a.token, err = a.cache.GetToken(key)
+		}
 		if err != nil {
 			logging.Warningf(a.ctx, "Failed to read token from cache: %s", err)
 		}
 	}
 
 	return nil
-}
-
-// readTokenCache reads token from cache (if it is there) and unmarshals it.
-//
-// It may be called with a.lock held or not held. It works either way. Returns
-// (nil, nil) if cache is empty.
-func (a *Authenticator) readTokenCache() (*oauth2.Token, error) {
-	// 'Read' returns (nil, nil) if cache is empty.
-	buf, err := a.cache.Read()
-	if err != nil || buf == nil {
-		return nil, err
-	}
-	token, err := internal.UnmarshalToken(buf)
-	if err != nil {
-		return nil, err
-	}
-	return token, nil
-}
-
-// cacheToken marshals the token and puts it in the cache.
-//
-// It may be called with a.lock held or not held. It works either way.
-func (a *Authenticator) cacheToken(tok *oauth2.Token) error {
-	buf, err := internal.MarshalToken(tok)
-	if err != nil {
-		return err
-	}
-	return a.cache.Write(buf, tok.Expiry)
 }
 
 // currentToken returns currently loaded token (or nil).
@@ -592,6 +585,13 @@ func (a *Authenticator) currentToken() *oauth2.Token {
 // If token can't be refreshed (e.g. it was revoked), sets current token to nil
 // and returns ErrLoginRequired or ErrBadCredentials.
 func (a *Authenticator) refreshToken(prev *oauth2.Token, lifetime time.Duration) (*oauth2.Token, error) {
+	cacheKey, err := a.provider.CacheKey()
+	if err != nil {
+		// An error here is truly fatal. It is something like "can't read service
+		// account JSON from disk". There's no way to refresh a token without it.
+		return nil, err
+	}
+
 	// Refresh the token under the lock.
 	tok, cache, err := func() (*oauth2.Token, bool, error) {
 		a.lock.Lock()
@@ -605,7 +605,7 @@ func (a *Authenticator) refreshToken(prev *oauth2.Token, lifetime time.Duration)
 		// Rescan the cache. Maybe some other process updated the token. This branch
 		// is also responsible for lazy-loading of token for non-interactive
 		// providers, see ensureInitialized().
-		if cached, _ := a.readTokenCache(); cached != nil {
+		if cached, _ := a.cache.GetToken(cacheKey); cached != nil {
 			a.token = cached
 			if !internal.EqualTokens(cached, prev) && !internal.TokenExpiresIn(a.ctx, cached, lifetime) {
 				return cached, false, nil
@@ -643,7 +643,7 @@ func (a *Authenticator) refreshToken(prev *oauth2.Token, lifetime time.Duration)
 
 	if err == internal.ErrBadRefreshToken || err == internal.ErrBadCredentials {
 		// Do not keep broken token in the cache. It is unusable.
-		if err := a.cache.Clear(); err != nil {
+		if err := a.cache.DeleteToken(cacheKey); err != nil {
 			logging.Warningf(a.ctx, "Failed to remove broken token from the cache: %s", err)
 		}
 		// Bad refresh token can be fixed by interactive logic. Bad credentials are
@@ -660,7 +660,7 @@ func (a *Authenticator) refreshToken(prev *oauth2.Token, lifetime time.Duration)
 	// Update the cache outside the lock, no need for callers to wait for this.
 	// Do not die if failed, token is still usable from the memory.
 	if cache && tok != nil {
-		if err = a.cacheToken(tok); err != nil {
+		if err = a.cache.PutToken(cacheKey, tok); err != nil {
 			logging.Warningf(a.ctx, "Failed to write refreshed token to the cache: %s", err)
 		}
 	}
@@ -728,115 +728,7 @@ func (a *Authenticator) authTokenInjector(req *http.Request) error {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// tokenCache implementations.
-
-// tokenCache implements a scheme to cache access tokens between the calls. It
-// will be used concurrently from multiple threads. Authenticator takes care
-// of token serialization, tokenCache operates in terms of byte buffers.
-type tokenCache interface {
-	// Read returns the data previously stored with Write or (nil, nil) if not
-	// there or expired. It is also OK if token cache doesn't do expiration check
-	// itself. Cached byte buffer includes expiration time too.
-	Read() ([]byte, error)
-
-	// Write puts token data into the cache.
-	Write(tok []byte, expiry time.Time) error
-
-	// Clear clears the cache.
-	Clear() error
-}
-
-// tokenFileCache implements tokenCache on top of the file system file.
-//
-// It caches only single token.
-type tokenFileCache struct {
-	path string
-	ctx  context.Context
-	lock sync.Mutex
-}
-
-func (c *tokenFileCache) Read() (buf []byte, err error) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	buf, err = ioutil.ReadFile(c.path)
-	if err != nil && os.IsNotExist(err) {
-		err = nil
-	}
-	return
-}
-
-func (c *tokenFileCache) Write(buf []byte, exp time.Time) error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	logging.Debugf(c.ctx, "Writing token to %s", c.path)
-	err := os.MkdirAll(filepath.Dir(c.path), 0700)
-	if err != nil {
-		return err
-	}
-	// TODO(vadimsh): Make it atomic across multiple processes.
-	return ioutil.WriteFile(c.path, buf, 0600)
-}
-
-func (c *tokenFileCache) Clear() error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	err := os.Remove(c.path)
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	return nil
-}
-
-// memoryCache implements tokenCache on top of local process memory.
-//
-// It caches only single token.
-type memoryCache struct {
-	lock  sync.RWMutex
-	cache []byte
-}
-
-func (c *memoryCache) Read() (buf []byte, err error) {
-	c.lock.RLock()
-	defer c.lock.RUnlock()
-	return c.cache, nil
-}
-
-func (c *memoryCache) Write(buf []byte, exp time.Time) error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	c.cache = append([]byte(nil), buf...)
-	return nil
-}
-
-func (c *memoryCache) Clear() error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	c.cache = nil
-	return nil
-}
-
-////////////////////////////////////////////////////////////////////////////////
 // Utility functions.
-
-// cacheEntryName constructs a name of cache entry from data that identifies
-// requested credential, to allow multiple differently configured instances of
-// Authenticator to coexist.
-func cacheEntryName(opts *Options, p internal.TokenProvider) string {
-	sum := sha1.New()
-	sum.Write([]byte(opts.Method))
-	sum.Write([]byte{0})
-	sum.Write([]byte(opts.ClientID))
-	sum.Write([]byte{0})
-	sum.Write([]byte(opts.ClientSecret))
-	sum.Write([]byte{0})
-	for _, scope := range opts.Scopes {
-		sum.Write([]byte(scope))
-		sum.Write([]byte{0})
-	}
-	sum.Write([]byte(opts.GCEAccountName))
-	sum.Write(p.CacheSeed())
-	return hex.EncodeToString(sum.Sum(nil))[:16]
-}
 
 // selectDefaultMethod is invoked in AutoSelectMethod mode.
 //
@@ -897,6 +789,8 @@ func makeTokenProvider(ctx context.Context, opts *Options) (internal.TokenProvid
 // as it's callback URI is configured to be 'localhost'. If someone decides to
 // reuse such client_secret they have to run something on user's local machine
 // to get the refresh_token.
+//
+// TODO(vadimsh): Move it elsewhere.
 func DefaultClient() (clientID string, clientSecret string) {
 	clientID = "446450136466-2hr92jrq8e6i4tnsa56b52vacp7t3936.apps.googleusercontent.com"
 	clientSecret = "uBfbay2KCy9t4QveJ-dOqHtp"

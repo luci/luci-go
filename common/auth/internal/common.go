@@ -6,8 +6,10 @@
 package internal
 
 import (
-	"encoding/json"
+	"bytes"
+	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/net/context"
@@ -33,17 +35,26 @@ var (
 	ErrBadCredentials = errors.New("invalid service account credentials")
 )
 
-// TokenProvider knows how to mint new tokens, refresh existing ones, marshal
-// and unmarshal tokens to byte buffers.
+// TokenProvider knows how to mint new tokens or refresh existing ones.
 type TokenProvider interface {
 	// RequiresInteraction is true if provider may start user interaction
 	// in MintToken.
 	RequiresInteraction() bool
 
-	// CacheSeed is an optional byte string to use when constructing cache entry
-	// name for access token cache. Different seeds will result in different
-	// cache entries.
-	CacheSeed() []byte
+	// Lightweight is true if MintToken is very cheap to call.
+	//
+	// In this case the token is not being cached on disk (only in memory), since
+	// it's easy to get a new one each time the process starts.
+	//
+	// By avoiding the disk cache, we reduce the chance of a leak.
+	Lightweight() bool
+
+	// CacheKey identifies a slot in the token cache to store the token in.
+	//
+	// Note: CacheKey MAY change during lifetime of a TokenProvider. It happens,
+	// for example, for ServiceAccount token provider if the underlying service
+	// account key is replaced while the process is still running.
+	CacheKey() (*CacheKey, error)
 
 	// MintToken launches authentication flow (possibly interactive) and returns
 	// a new refreshable token (or error). It must never return (nil, nil).
@@ -55,37 +66,64 @@ type TokenProvider interface {
 	RefreshToken(*oauth2.Token) (*oauth2.Token, error)
 }
 
-// MarshalToken converts a token into byte buffer.
-func MarshalToken(tok *oauth2.Token) ([]byte, error) {
-	// TODO(vadimsh): Remove 'flavor' and 'version' when new code that doesn't use
-	// them is deployed everywhere.
-	flavor := "service_account"
-	if tok.RefreshToken != "" {
-		flavor = "user"
-	}
-	return json.MarshalIndent(&tokenOnDisk{
-		Version:      "1",    // not actually used, exists for backward compatibility
-		Flavor:       flavor, // same
-		AccessToken:  tok.AccessToken,
-		TokenType:    tok.Type(),
-		RefreshToken: tok.RefreshToken,
-		ExpiresAtSec: tok.Expiry.Unix(),
-	}, "", "\t")
+// TokenCache stores access and refresh tokens to avoid requesting them all
+// the time.
+type TokenCache interface {
+	// GetToken reads the token from cache.
+	//
+	// Returns (nil, nil) if requested token is not in the cache.
+	GetToken(key *CacheKey) (*oauth2.Token, error)
+
+	// PutToken writes the token to cache.
+	PutToken(key *CacheKey, tok *oauth2.Token) error
+
+	// DeleteToken removes the token from cache.
+	DeleteToken(key *CacheKey) error
 }
 
-// UnmarshalToken takes byte buffer produced by MarshalToken and returns
-// original token.
-func UnmarshalToken(data []byte) (*oauth2.Token, error) {
-	onDisk := tokenOnDisk{}
-	if err := json.Unmarshal(data, &onDisk); err != nil {
-		return nil, err
+// CacheKey identifies a slot in the token cache to store the token in.
+type CacheKey struct {
+	// Key identifies an auth method being used to get the token and its
+	// parameters.
+	//
+	// Its exact form is not important, since it is used only for string matching
+	// when searching for a token inside the cache.
+	//
+	// The following forms are being used currently:
+	//  * user/<client_id> when using UserCredentialsMethod with some ClientID.
+	//  * service_account/<email>/<key_id> when using ServiceAccountMethod.
+	//  * gce/<account> when using GCEMetadataMethod.
+	Key string `json:"key"`
+
+	// Scopes is the list of requested OAuth scopes.
+	Scopes []string `json:"scopes"`
+}
+
+var bufPool = sync.Pool{}
+
+// ToMapKey returns a string that can be used as map[string] key.
+//
+// This string IS NOT PRINTABLE. It's a merely a string-looking []byte.
+func (k *CacheKey) ToMapKey() string {
+	b, _ := bufPool.Get().(*bytes.Buffer)
+	if b == nil {
+		b = &bytes.Buffer{}
+	} else {
+		b.Reset()
 	}
-	return &oauth2.Token{
-		AccessToken:  onDisk.AccessToken,
-		TokenType:    onDisk.TokenType,
-		RefreshToken: onDisk.RefreshToken,
-		Expiry:       time.Unix(onDisk.ExpiresAtSec, 0),
-	}, nil
+	defer bufPool.Put(b)
+	b.WriteString(k.Key)
+	b.WriteByte(0)
+	for _, s := range k.Scopes {
+		b.WriteString(s)
+		b.WriteByte(0)
+	}
+	return b.String()
+}
+
+// EqualCacheKeys returns true if keys are equal.
+func EqualCacheKeys(a, b *CacheKey) bool {
+	return reflect.DeepEqual(a, b)
 }
 
 // TokenExpiresIn returns True if the token is not valid or expires within given
@@ -119,22 +157,16 @@ func EqualTokens(a, b *oauth2.Token) bool {
 	return aTok == bTok
 }
 
-// tokenOnDisk describes JSON produced by MarshalToken.
-type tokenOnDisk struct {
-	Version      string `json:"version,omitempty"` // not actually used, exists for backward compatibility
-	Flavor       string `json:"flavor,omitempty"`  // same
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token,omitempty"`
-	TokenType    string `json:"token_type,omitempty"`
-	ExpiresAtSec int64  `json:"expires_at,omitempty"`
-}
-
-// isBadTokenError sniffs out HTTP 400 from token source errors.
+// isBadTokenError sniffs out HTTP 400/401 from token source errors.
 func isBadTokenError(err error) bool {
 	// See https://github.com/golang/oauth2/blob/master/internal/token.go.
 	// Unfortunately, fmt.Errorf is used there, so there's no other way to
-	// differentiate between bad tokens and transient errors.
-	return err != nil && strings.Contains(err.Error(), "400 Bad Request")
+	// differentiate between bad tokens/creds and transient errors.
+	if err == nil {
+		return false
+	}
+	s := strings.ToLower(err.Error())
+	return strings.Contains(s, "400 bad request") || strings.Contains(s, "401 unauthorized")
 }
 
 // grabToken uses token source to create a new token.

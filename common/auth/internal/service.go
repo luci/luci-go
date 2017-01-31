@@ -6,6 +6,8 @@ package internal
 
 import (
 	"crypto/sha1"
+	"encoding/hex"
+	"fmt"
 	"io/ioutil"
 
 	"golang.org/x/net/context"
@@ -52,23 +54,36 @@ func (p *serviceAccountTokenProvider) RequiresInteraction() bool {
 	return false
 }
 
-func (p *serviceAccountTokenProvider) CacheSeed() []byte {
-	// If using file on disk, associate cache entry with this file (since the key
-	// inside may change in runtime). Otherwise associate cache entry with exact
-	// private key passed (since it won't change over time).
-	seed := sha1.New()
-	if p.path != "" {
-		seed.Write([]byte(p.path))
-	} else {
-		seed.Write(p.jsonKey)
+func (p *serviceAccountTokenProvider) Lightweight() bool {
+	return false
+}
+
+func (p *serviceAccountTokenProvider) CacheKey() (*CacheKey, error) {
+	cfg, err := p.jwtConfig()
+	if err != nil {
+		logging.Errorf(p.ctx, "Failed to load private key JSON - %s", err)
+		return nil, err
 	}
-	return seed.Sum(nil)[:]
+	// PrivateKeyID is optional part of the private key JSON. If not given, use
+	// a digest of the private key itself. This ID is used strictly locally, it
+	// doesn't matter how we get it as long as it is repeatable between process
+	// invocations.
+	pkeyID := cfg.PrivateKeyID
+	if pkeyID == "" {
+		h := sha1.New()
+		h.Write(cfg.PrivateKey)
+		pkeyID = "custom:" + hex.EncodeToString(h.Sum(nil))
+	}
+	return &CacheKey{
+		Key:    fmt.Sprintf("service_account/%s/%s", cfg.Email, pkeyID),
+		Scopes: p.scopes,
+	}, nil
 }
 
 func (p *serviceAccountTokenProvider) MintToken() (*oauth2.Token, error) {
 	cfg, err := p.jwtConfig()
 	if err != nil {
-		logging.Warningf(p.ctx, "Failed to load private key JSON - %s", err)
+		logging.Errorf(p.ctx, "Failed to load private key JSON - %s", err)
 		return nil, ErrBadCredentials
 	}
 	switch newTok, err := grabToken(cfg.TokenSource(p.ctx)); {

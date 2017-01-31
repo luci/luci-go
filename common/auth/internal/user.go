@@ -16,8 +16,9 @@ import (
 )
 
 type userAuthTokenProvider struct {
-	ctx    context.Context
-	config *oauth2.Config
+	ctx      context.Context
+	config   *oauth2.Config
+	cacheKey CacheKey
 }
 
 // NewUserAuthTokenProvider returns TokenProvider that can perform 3-legged
@@ -35,6 +36,10 @@ func NewUserAuthTokenProvider(ctx context.Context, clientID, clientSecret string
 			RedirectURL: "urn:ietf:wg:oauth:2.0:oob",
 			Scopes:      scopes,
 		},
+		cacheKey: CacheKey{
+			Key:    fmt.Sprintf("user/%s", clientID),
+			Scopes: scopes,
+		},
 	}, nil
 }
 
@@ -42,8 +47,12 @@ func (p *userAuthTokenProvider) RequiresInteraction() bool {
 	return true
 }
 
-func (p *userAuthTokenProvider) CacheSeed() []byte {
-	return nil
+func (p *userAuthTokenProvider) Lightweight() bool {
+	return false
+}
+
+func (p *userAuthTokenProvider) CacheKey() (*CacheKey, error) {
+	return &p.cacheKey, nil
 }
 
 func (p *userAuthTokenProvider) MintToken() (*oauth2.Token, error) {

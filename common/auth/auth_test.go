@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 	"time"
 
@@ -32,26 +31,32 @@ var (
 )
 
 func TestAuthenticatedClient(t *testing.T) {
-	Convey("Test login required", t, func() {
+	t.Parallel()
+
+	Convey("Test login required returns hooked transport", t, func() {
 		auth, _ := newTestAuthenticator(InteractiveLogin, &fakeTokenProvider{
 			interactive: true,
 		}, nil)
 		t, err := auth.Transport()
 		So(err, ShouldBeNil)
-		So(t, ShouldNotEqual, http.DefaultTransport)
+		// Note: we don't use ShouldNotEqual because it tries to read guts of
+		// http.DefaultTransport and it sometimes triggers race detector.
+		So(t != http.DefaultTransport, ShouldBeTrue)
 	})
 
-	Convey("Test login not required", t, func() {
+	Convey("Test login not required returns default transport", t, func() {
 		auth, _ := newTestAuthenticator(OptionalLogin, &fakeTokenProvider{
 			interactive: true,
 		}, nil)
 		t, err := auth.Transport()
 		So(err, ShouldBeNil)
-		So(t, ShouldEqual, http.DefaultTransport)
+		So(t == http.DefaultTransport, ShouldBeTrue)
 	})
 }
 
 func TestRefreshToken(t *testing.T) {
+	t.Parallel()
+
 	Convey("Test non interactive auth (no cache)", t, func() {
 		tokenProvider := &fakeTokenProvider{
 			interactive: false,
@@ -281,6 +286,8 @@ func TestTransport(t *testing.T) {
 			tokenToMint:    &oauth2.Token{AccessToken: "minted", Expiry: now.Add(time.Hour)},
 			tokenToRefresh: &oauth2.Token{AccessToken: "refreshed", Expiry: now.Add(2 * time.Hour)},
 		}
+		cacheKey, _ := tokenProvider.CacheKey()
+
 		auth, ctx := newTestAuthenticator(SilentLogin, tokenProvider, nil)
 		client, err := auth.Client()
 		So(err, ShouldBeNil)
@@ -294,7 +301,7 @@ func TestTransport(t *testing.T) {
 
 		// Minted token is now cached.
 		So(auth.currentToken().AccessToken, ShouldEqual, "minted")
-		cached, err := internal.UnmarshalToken(auth.cache.(*memoryCache).cache)
+		cached, err := auth.cache.GetToken(cacheKey)
 		So(err, ShouldBeNil)
 		So(cached.AccessToken, ShouldEqual, "minted")
 
@@ -319,6 +326,8 @@ func TestTransport(t *testing.T) {
 }
 
 func TestOptionalLogin(t *testing.T) {
+	t.Parallel()
+
 	Convey("Test optional login works", t, func(c C) {
 		// This test simulates following scenario for OptionalLogin mode:
 		//   1. There's existing cached access token.
@@ -344,6 +353,8 @@ func TestOptionalLogin(t *testing.T) {
 			interactive:  true,
 			revokedToken: true,
 		}
+		cacheKey, _ := tokenProvider.CacheKey()
+
 		tokenInCache := &oauth2.Token{AccessToken: "cached", Expiry: now.Add(time.Hour)}
 		auth, ctx := newTestAuthenticator(OptionalLogin, tokenProvider, tokenInCache)
 		client, err := auth.Client()
@@ -366,7 +377,9 @@ func TestOptionalLogin(t *testing.T) {
 
 		// Bad token is removed from the cache.
 		So(auth.currentToken(), ShouldBeNil)
-		So(auth.cache.(*memoryCache).cache, ShouldBeNil)
+		cached, err := auth.cache.GetToken(cacheKey)
+		So(cached, ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		// All calls are actually made.
 		So(calls, ShouldEqual, 2)
@@ -381,30 +394,22 @@ func newTestAuthenticator(loginMode LoginMode, p internal.TokenProvider, cached 
 		tc.Add(d)
 	})
 
-	// Use temporary directory to store secrets.
-	tempDir, err := ioutil.TempDir("", "auth_test")
-	So(err, ShouldBeNil)
-	Reset(func() {
-		So(os.RemoveAll(tempDir), ShouldBeNil)
-	})
+	a := NewAuthenticator(ctx, loginMode, Options{customTokenProvider: p})
+	a.cache = &internal.MemoryTokenCache{}
 
 	// Populate initial token cache.
-	var initialCache []byte
 	if cached != nil {
-		var err error
-		initialCache, err = internal.MarshalToken(cached)
+		cacheKey, err := p.CacheKey()
+		if err != nil {
+			panic(err)
+		}
+		err = a.cache.PutToken(cacheKey, cached)
 		if err != nil {
 			panic(err)
 		}
 	}
 
-	return NewAuthenticator(ctx, loginMode, Options{
-		tokenCacheFactory: func(string) (tokenCache, error) {
-			return &memoryCache{cache: initialCache}, nil
-		},
-		SecretsDir:          tempDir,
-		customTokenProvider: p,
-	}), ctx
+	return a, ctx
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -422,8 +427,12 @@ func (p *fakeTokenProvider) RequiresInteraction() bool {
 	return p.interactive
 }
 
-func (p *fakeTokenProvider) CacheSeed() []byte {
-	return nil
+func (p *fakeTokenProvider) Lightweight() bool {
+	return true
+}
+
+func (p *fakeTokenProvider) CacheKey() (*internal.CacheKey, error) {
+	return &internal.CacheKey{Key: "fake"}, nil
 }
 
 func (p *fakeTokenProvider) MintToken() (*oauth2.Token, error) {

@@ -5,6 +5,8 @@
 package internal
 
 import (
+	"fmt"
+
 	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
@@ -15,7 +17,8 @@ import (
 )
 
 type gceTokenProvider struct {
-	account string
+	account  string
+	cacheKey CacheKey
 }
 
 // NewGCETokenProvider returns TokenProvider that knows how to use GCE metadata server.
@@ -32,15 +35,25 @@ func NewGCETokenProvider(c context.Context, account string, scopes []string) (To
 			return nil, ErrInsufficientAccess
 		}
 	}
-	return &gceTokenProvider{account: account}, nil
+	return &gceTokenProvider{
+		account: account,
+		cacheKey: CacheKey{
+			Key:    fmt.Sprintf("gce/%s", account),
+			Scopes: scopes,
+		},
+	}, nil
 }
 
 func (p *gceTokenProvider) RequiresInteraction() bool {
 	return false
 }
 
-func (p *gceTokenProvider) CacheSeed() []byte {
-	return nil
+func (p *gceTokenProvider) Lightweight() bool {
+	return true
+}
+
+func (p *gceTokenProvider) CacheKey() (*CacheKey, error) {
+	return &p.cacheKey, nil
 }
 
 func (p *gceTokenProvider) MintToken() (*oauth2.Token, error) {
