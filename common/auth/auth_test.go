@@ -7,6 +7,7 @@ package auth
 import (
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -18,6 +19,7 @@ import (
 	"github.com/luci/luci-go/common/auth/internal"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/errors"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -388,7 +390,7 @@ func TestOptionalLogin(t *testing.T) {
 
 func newTestAuthenticator(loginMode LoginMode, p internal.TokenProvider, cached *oauth2.Token) (*Authenticator, context.Context) {
 	// Use auto-advancing fake time.
-	ctx := context.Background()
+	ctx := mathrand.Set(context.Background(), rand.New(rand.NewSource(123)))
 	ctx, tc := testclock.UseTime(ctx, now)
 	tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
 		tc.Add(d)

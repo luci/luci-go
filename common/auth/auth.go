@@ -417,12 +417,14 @@ func (a *Authenticator) GetAccessToken(lifetime time.Duration) (Token, error) {
 	tok := a.token
 	a.lock.Unlock()
 
-	if tok == nil || internal.TokenExpiresIn(a.ctx, tok, lifetime) {
+	if tok == nil || internal.TokenExpiresInRnd(a.ctx, tok, lifetime) {
 		var err error
 		tok, err = a.refreshToken(tok, lifetime)
 		if err != nil {
 			return Token{}, err
 		}
+		// Note: no randomization here. It is a sanity check that verifies
+		// refreshToken did its job.
 		if internal.TokenExpiresIn(a.ctx, tok, lifetime) {
 			return Token{}, fmt.Errorf("auth: failed to refresh the token")
 		}
@@ -585,6 +587,10 @@ func (a *Authenticator) currentToken() *oauth2.Token {
 // If token can't be refreshed (e.g. it was revoked), sets current token to nil
 // and returns ErrLoginRequired or ErrBadCredentials.
 func (a *Authenticator) refreshToken(prev *oauth2.Token, lifetime time.Duration) (*oauth2.Token, error) {
+	// Note: 'refreshToken' is called only when the caller used TokenExpiresInRnd
+	// check already and determined it is time to refresh the token. No expiration
+	// randomization is needed at this point, it has already been done.
+
 	cacheKey, err := a.provider.CacheKey()
 	if err != nil {
 		// An error here is truly fatal. It is something like "can't read service
@@ -711,7 +717,7 @@ func (a *Authenticator) authTokenInjector(req *http.Request) error {
 	// Attempt to refresh the token, if required. Revert to non-authed call if
 	// token can't be refreshed and running in OptionalLogin mode.
 	tok := a.currentToken()
-	if tok == nil || internal.TokenExpiresIn(a.ctx, tok, minAcceptedLifetime) {
+	if tok == nil || internal.TokenExpiresInRnd(a.ctx, tok, minAcceptedLifetime) {
 		var err error
 		tok, err = a.refreshToken(tok, minAcceptedLifetime)
 		switch {
@@ -719,6 +725,8 @@ func (a *Authenticator) authTokenInjector(req *http.Request) error {
 			return nil // skip auth, no need for modifications
 		case err != nil:
 			return err
+		// Note: no randomization here. It is a sanity check that verifies
+		// refreshToken did its job.
 		case internal.TokenExpiresIn(a.ctx, tok, minAcceptedLifetime):
 			return fmt.Errorf("auth: failed to refresh the token")
 		}

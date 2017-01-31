@@ -16,8 +16,12 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/errors"
 )
+
+// expiryRandInterval is used by TokenExpiresInRnd.
+const expiryRandInterval = 30 * time.Second
 
 var (
 	// ErrInsufficientAccess is returned by MintToken() if token can't be minted
@@ -128,6 +132,12 @@ func EqualCacheKeys(a, b *CacheKey) bool {
 
 // TokenExpiresIn returns True if the token is not valid or expires within given
 // duration.
+//
+// The function returns True in any of the following conditions:
+//  * The token is not valid.
+//  * The token expires before now+lifetime.
+//
+// In all other cases it returns False.
 func TokenExpiresIn(ctx context.Context, t *oauth2.Token, lifetime time.Duration) bool {
 	if t == nil || t.AccessToken == "" {
 		return true
@@ -135,8 +145,48 @@ func TokenExpiresIn(ctx context.Context, t *oauth2.Token, lifetime time.Duration
 	if t.Expiry.IsZero() {
 		return false
 	}
-	expiry := t.Expiry.Add(-lifetime)
-	return expiry.Before(clock.Now(ctx))
+	return t.Expiry.Before(clock.Now(ctx).Add(lifetime))
+}
+
+// TokenExpiresInRnd is like TokenExpiresIn, except it slightly randomizes the
+// token expiration time.
+//
+// If the function returns False, the token expires past now+lifetime. In other
+// words, it is totally safe to use the token until now+lifetime. The inverse of
+// this statement is not correct though: if the function returns True, it
+// doesn't necessarily imply the token will expire before now+lifetime.
+//
+// The function returns True in any of the following conditions:
+//  * The token is not valid.
+//  * The token expires before now+lifetime.
+//  * The token expiration time is between (now+lifetime, now+lifetime+rnd),
+//    where rnd is a uniformly distributed random number between 0 and
+//    expiryRandInterval sec (which is set to 30 sec).
+//
+// This is useful for processes that use multiple service account keys at
+// around the same time. Without randomization, access tokens for such keys
+// expire at the same time (strictly 1h after process startup, where 1h is
+// the default token lifetime). This causes unnecessary contention on the token
+// cache file.
+func TokenExpiresInRnd(ctx context.Context, t *oauth2.Token, lifetime time.Duration) bool {
+	if t == nil || t.AccessToken == "" {
+		return true
+	}
+	if t.Expiry.IsZero() {
+		return false
+	}
+	deadline := clock.Now(ctx).Add(lifetime)
+	if t.Expiry.Before(deadline) {
+		// Definitely expires within 'lifetime'.
+		return true
+	}
+	if t.Expiry.After(deadline.Add(expiryRandInterval)) {
+		// Definitely expires much later than 'lifetime', no need to involve RNG.
+		return false
+	}
+	// Semi-randomly declare it as expired.
+	rnd := time.Duration(mathrand.Int63n(ctx, int64(expiryRandInterval)))
+	return t.Expiry.Before(deadline.Add(rnd))
 }
 
 // EqualTokens returns true if both token object have same access token.
