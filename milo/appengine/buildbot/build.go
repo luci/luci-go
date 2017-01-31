@@ -140,12 +140,16 @@ func summary(c context.Context, b *buildbotBuild) resp.BuildComponent {
 		Label: b.Slave,
 		URL:   fmt.Sprintf("https://%s/%s/buildslaves/%s", server, b.Master, b.Slave),
 	}
+	host := "build.chromium.org/p"
+	if b.Internal {
+		host = "uberchromegw.corp.google.com/i"
+	}
 	source := &resp.Link{
 		Label: fmt.Sprintf("%s/%s/%d", b.Master, b.Buildername, b.Number),
 		// TODO(hinoka): Internal builds.
 		URL: fmt.Sprintf(
-			"https://build.chromium.org/p/%s/builders/%s/builds/%d",
-			b.Master, b.Buildername, b.Number),
+			"https://%s/%s/builders/%s/builds/%d",
+			host, b.Master, b.Buildername, b.Number),
 	}
 
 	// The link to the builder page.
