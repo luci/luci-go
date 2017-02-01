@@ -16,6 +16,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+
+	"github.com/luci/luci-go/logdog/api/logpb"
 )
 
 // DatagramWriter is a callback function that, given datagram bytes, writes them
@@ -39,6 +41,10 @@ type Renderer struct {
 	// - For binary and datagram streams, this skips any associated
 	//   DatagramWriters and hex translation and dumps data directly to output.
 	Raw bool
+
+	// TextPrefix, if not nil, is called prior to rendering a text line. The
+	// resulting string is prepended to that text line on render.
+	TextPrefix func(le *logpb.LogEntry, line *logpb.Text_Line) string
 
 	// DatagramWriter is a function to call to render a complete datagram stream.
 	// If it returns false, or if nil, a hex dump renderer will be used to
@@ -86,6 +92,10 @@ func (r *Renderer) bufferNext() error {
 		switch {
 		case le.GetText() != nil:
 			for _, line := range le.GetText().Lines {
+				if r.TextPrefix != nil {
+					r.buf.WriteString(r.TextPrefix(le, line))
+				}
+
 				r.buf.WriteString(line.Value)
 				if !r.Raw {
 					r.buf.WriteRune('\n')

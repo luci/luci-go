@@ -8,8 +8,13 @@ import (
 	"errors"
 	"io"
 	"os"
+	"strconv"
+	"strings"
+	"time"
 
+	"github.com/luci/luci-go/common/flag/flagenum"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/proto/milo"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/coordinator"
@@ -25,6 +30,23 @@ import (
 
 var errDatagramNotSupported = errors.New("datagram not supported")
 
+type timestampsFlag string
+
+const (
+	timestampsOff   timestampsFlag = ""
+	timestampsLocal timestampsFlag = "local"
+	timestampsUTC   timestampsFlag = "utc"
+)
+
+func (t *timestampsFlag) Set(v string) error { return timestampFlagEnum.FlagSet(t, v) }
+func (t *timestampsFlag) String() string     { return timestampFlagEnum.FlagString(t) }
+
+var timestampFlagEnum = flagenum.Enum{
+	"":      timestampsOff,
+	"local": timestampsLocal,
+	"utc":   timestampsUTC,
+}
+
 type catCommandRun struct {
 	subcommands.CommandRunBase
 
@@ -34,6 +56,9 @@ type catCommandRun struct {
 	fetchSize  int
 	fetchBytes int
 	raw        bool
+
+	timestamps      timestampsFlag
+	showStreamIndex bool
 }
 
 func newCatCommand() *subcommands.Command {
@@ -45,6 +70,10 @@ func newCatCommand() *subcommands.Command {
 
 			cmd.Flags.Int64Var(&cmd.index, "index", 0, "Starting index.")
 			cmd.Flags.Int64Var(&cmd.count, "count", 0, "The number of log entries to fetch.")
+			cmd.Flags.Var(&cmd.timestamps, "timestamps",
+				"When rendering text logs, prefix them with their timestamps. Options are: "+timestampFlagEnum.Choices())
+			cmd.Flags.BoolVar(&cmd.showStreamIndex, "show-stream-index", false,
+				"When rendering text logs, show their stream index.")
 			cmd.Flags.IntVar(&cmd.buffer, "buffer", 64,
 				"The size of the read buffer. A smaller buffer will more responsive while streaming, whereas "+
 					"a larger buffer will have higher throughput.")
@@ -138,6 +167,14 @@ func (cmd *catCommandRun) catPath(c context.Context, coord *coordinator.Client, 
 	rend := renderer.Renderer{
 		Source: f,
 		Raw:    cmd.raw,
+		TextPrefix: func(le *logpb.LogEntry, line *logpb.Text_Line) string {
+			desc, err := src.descriptor()
+			if err != nil {
+				log.WithError(err).Errorf(c, "Failed to get text prefix descriptor.")
+				return ""
+			}
+			return cmd.getTextPrefix(desc, le)
+		},
 		DatagramWriter: func(w io.Writer, dg []byte) bool {
 			desc, err := src.descriptor()
 			if err != nil {
@@ -151,6 +188,29 @@ func (cmd *catCommandRun) catPath(c context.Context, coord *coordinator.Client, 
 		return err
 	}
 	return nil
+}
+
+func (cmd *catCommandRun) getTextPrefix(desc *logpb.LogStreamDescriptor, le *logpb.LogEntry) string {
+	var parts []string
+	if cmd.timestamps != timestampsOff {
+		ts := google.TimeFromProto(desc.Timestamp)
+		ts = ts.Add(google.DurationFromProto(le.TimeOffset))
+		switch cmd.timestamps {
+		case timestampsLocal:
+			parts = append(parts, ts.Local().Format(time.StampMilli))
+
+		case timestampsUTC:
+			parts = append(parts, ts.UTC().Format(time.StampMilli))
+		}
+	}
+
+	if cmd.showStreamIndex {
+		parts = append(parts, strconv.FormatUint(le.StreamIndex, 10))
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return strings.Join(parts, " ") + "| "
 }
 
 // getDatagramWriter returns a datagram writer function that can be used as a
