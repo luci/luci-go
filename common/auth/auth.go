@@ -533,7 +533,7 @@ func (a *Authenticator) ensureInitialized() error {
 	//
 	// Note also that tests set a.cache before ensureInitialized() is called, so
 	// don't overwrite it here.
-	if a.cache != nil && !a.provider.Lightweight() {
+	if a.cache == nil && !a.provider.Lightweight() {
 		if a.opts.SecretsDir != "" {
 			a.cache = &internal.DiskTokenCache{
 				Context:    a.ctx,

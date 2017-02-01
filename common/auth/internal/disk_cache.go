@@ -216,8 +216,8 @@ func (c *DiskTokenCache) updateCacheFile(cb func(*cacheFile, time.Time) bool) er
 		return &retry.ExponentialBackoff{
 			Limited: retry.Limited{
 				Delay:    10 * time.Millisecond,
-				Retries:  20,
-				MaxTotal: 2 * time.Second,
+				Retries:  200,
+				MaxTotal: 4 * time.Second,
 			},
 			Multiplier: 1.5,
 		}
