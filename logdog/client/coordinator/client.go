@@ -26,12 +26,15 @@ var (
 type Client struct {
 	// C is the underlying LogsClient interface.
 	C logdog.LogsClient
+	// Host is the LogDog host. This is loaded from the pRPC client in NewClient.
+	Host string
 }
 
 // NewClient returns a new Client instance bound to a pRPC Client.
 func NewClient(c *prpc.Client) *Client {
 	return &Client{
-		C: logdog.NewLogsPRPCClient(c),
+		C:    logdog.NewLogsPRPCClient(c),
+		Host: c.Host,
 	}
 }
 

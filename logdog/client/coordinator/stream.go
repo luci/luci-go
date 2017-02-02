@@ -314,9 +314,15 @@ func loadStatePointer(stateP *LogStream, resp *logdog.GetResponse) error {
 		return nil
 	}
 
+	// The service should always return this when requested, but handle the case
+	// where it doesn't for completeness.
+	if resp.Desc == nil {
+		return errors.New("descriptor was not returned")
+	}
+
 	ls, err := loadLogStream(resp.Project, resp.Desc.Path(), resp.State, resp.Desc)
 	if err != nil {
-		return fmt.Errorf("failde to load stream state: %v", err)
+		return fmt.Errorf("failed to load stream state: %v", err)
 	}
 
 	*stateP = *ls
