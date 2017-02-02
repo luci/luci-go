@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/grpc/prpc"
 	"github.com/luci/luci-go/logdog/client/coordinator"
@@ -22,53 +23,44 @@ import (
 	"golang.org/x/net/context"
 )
 
-// AnnotationStream is a ThemedHandler that renders a LogDog Milo annotation
-// protobuf stream.
+// AnnotationStreamHandler is a ThemedHandler that renders a LogDog Milo
+// annotation protobuf stream.
 //
 // The protobuf stream is fetched live from LogDog and cached locally, either
 // temporarily (if incomplete) or indefinitely (if complete).
-type AnnotationStream struct {
-	// logDogClient is a reusable HTTP client to use for LogDog.
-	logDogClient *http.Client
-}
+type AnnotationStreamHandler struct{}
 
 // GetTemplateName implements settings.ThemedHandler.
-func (s *AnnotationStream) GetTemplateName(t settings.Theme) string {
+func (s *AnnotationStreamHandler) GetTemplateName(t settings.Theme) string {
 	return "build.html"
 }
 
 // Render implements settings.ThemedHandler.
-func (s *AnnotationStream) Render(c context.Context, req *http.Request, p httprouter.Params) (*templates.Args, error) {
-	// Initialize the LogDog client authentication.
-	t, err := auth.GetRPCTransport(c, auth.AsUser)
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to get transport for LogDog server.")
+func (s *AnnotationStreamHandler) Render(c context.Context, req *http.Request, p httprouter.Params) (
+	*templates.Args, error) {
+
+	as := AnnotationStream{
+		Project: cfgtypes.ProjectName(p.ByName("project")),
+		Path:    types.StreamPath(strings.Trim(p.ByName("path"), "/")),
+	}
+	if err := as.Normalize(); err != nil {
+		return nil, &miloerror.Error{
+			Message: err.Error(),
+			Code:    http.StatusBadRequest,
+		}
+	}
+
+	// Setup our LogDog client.
+	var err error
+	if as.Client, err = NewClient(c, ""); err != nil {
+		log.WithError(err).Errorf(c, "Failed to generate LogDog client.")
 		return nil, &miloerror.Error{
 			Code: http.StatusInternalServerError,
 		}
 	}
 
-	as := annotationStreamRequest{
-		AnnotationStream: s,
-
-		project: cfgtypes.ProjectName(p.ByName("project")),
-		path:    types.StreamPath(strings.Trim(p.ByName("path"), "/")),
-		host:    req.FormValue("host"),
-	}
-	if err := as.normalize(); err != nil {
-		return nil, err
-	}
-
-	// Setup our LogDog client.
-	as.logDogClient = coordinator.NewClient(&prpc.Client{
-		C: &http.Client{
-			Transport: t,
-		},
-		Host: as.host,
-	})
-
 	// Load the Milo annotation protobuf from the annotation stream.
-	if err := as.load(c); err != nil {
+	if _, err := as.Load(c); err != nil {
 		return nil, err
 	}
 
@@ -76,4 +68,26 @@ func (s *AnnotationStream) Render(c context.Context, req *http.Request, p httpro
 	return &templates.Args{
 		"Build": as.toMiloBuild(c),
 	}, nil
+}
+
+// NewClient generates a new LogDog client that issues requests on behalf of the
+// current user.
+func NewClient(c context.Context, host string) (*coordinator.Client, error) {
+	if host == "" {
+		host = defaultLogDogHost
+	}
+
+	// Initialize the LogDog client authentication.
+	t, err := auth.GetRPCTransport(c, auth.AsUser)
+	if err != nil {
+		return nil, errors.New("failed to get transport for LogDog server")
+	}
+
+	// Setup our LogDog client.
+	return coordinator.NewClient(&prpc.Client{
+		C: &http.Client{
+			Transport: t,
+		},
+		Host: host,
+	}), nil
 }

@@ -61,7 +61,7 @@ func init() {
 	r.GET("/buildbot/:master/:builder/", basemw, settings.Wrap(buildbot.Builder{}))
 
 	// LogDog Milo Annotation Streams.
-	r.GET("/logdog/build/:project/*path", basemw, settings.Wrap(&logdog.AnnotationStream{}))
+	r.GET("/logdog/build/:project/*path", basemw, settings.Wrap(&logdog.AnnotationStreamHandler{}))
 
 	// User settings
 	r.GET("/settings", basemw, settings.Wrap(settings.Settings{}))

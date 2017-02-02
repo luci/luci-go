@@ -5,11 +5,8 @@
 package logdog
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strings"
 	"time"
 
 	log "github.com/luci/luci-go/common/logging"
@@ -19,6 +16,7 @@ import (
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
+	"github.com/luci/luci-go/logdog/common/viewer"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/logdog/internal"
@@ -41,55 +39,44 @@ const (
 	defaultLogDogHost = "luci-logdog.appspot.com"
 )
 
-type annotationStreamRequest struct {
-	*AnnotationStream
-
-	// host is the name of the LogDog host.
-	host string
-
-	project cfgtypes.ProjectName
-	path    types.StreamPath
+// AnnotationStream represents a LogDog annotation protobuf stream.
+type AnnotationStream struct {
+	Project cfgtypes.ProjectName
+	Path    types.StreamPath
 
 	// logDogClient is the HTTP client to use for LogDog communication.
-	logDogClient *coordinator.Client
+	Client *coordinator.Client
 
 	// cs is the unmarshalled annotation stream Step and associated data.
 	cs internal.CachedStep
 }
 
-func (as *annotationStreamRequest) normalize() error {
-	if err := as.project.Validate(); err != nil {
-		return &miloerror.Error{
-			Message: "Invalid project name",
-			Code:    http.StatusBadRequest,
-		}
+// Normalize validates and normalizes the stream's parameters.
+func (as *AnnotationStream) Normalize() error {
+	if err := as.Project.Validate(); err != nil {
+		return fmt.Errorf("Invalid project name: %s", as.Project)
 	}
 
-	if err := as.path.Validate(); err != nil {
-		return &miloerror.Error{
-			Message: fmt.Sprintf("Invalid log stream path %q: %s", as.path, err),
-			Code:    http.StatusBadRequest,
-		}
-	}
-
-	// Get the host. We normalize it to lowercase and trim spaces since we use
-	// it as a memcache key.
-	as.host = strings.ToLower(strings.TrimSpace(as.host))
-	if as.host == "" {
-		as.host = defaultLogDogHost
-	}
-	if strings.ContainsRune(as.host, '/') {
-		return errors.New("invalid host name")
+	if err := as.Path.Validate(); err != nil {
+		return fmt.Errorf("Invalid log stream path %q: %s", as.Path, err)
 	}
 
 	return nil
 }
 
-func (as *annotationStreamRequest) memcacheKey() string {
-	return fmt.Sprintf("logdog/%s/%s/%s", as.host, as.project, as.path)
-}
+// Load loads the annotation stream from LogDog.
+//
+// If the stream does not exist, or is invalid, Load will return a Milo error.
+// Otherwise, it will return the Step that was loaded.
+//
+// Load caches the step, so multiple calls to Load will return the same Step
+// value.
+func (as *AnnotationStream) Load(c context.Context) (*miloProto.Step, error) {
+	// Cached?
+	if as.cs.Step != nil {
+		return as.cs.Step, nil
+	}
 
-func (as *annotationStreamRequest) load(c context.Context) error {
 	// Load from memcache, if possible. If an error occurs, we will proceed as if
 	// no CachedStep was available.
 	mcKey := as.memcacheKey()
@@ -97,7 +84,7 @@ func (as *annotationStreamRequest) load(c context.Context) error {
 	switch err {
 	case nil:
 		if err := proto.Unmarshal(mcItem.Value(), &as.cs); err == nil {
-			return nil
+			return as.cs.Step, nil
 		}
 
 		// We could not unmarshal the cached value. Try and delete it from
@@ -122,14 +109,14 @@ func (as *annotationStreamRequest) load(c context.Context) error {
 
 	// Load from LogDog directly.
 	log.Fields{
-		"project": as.project,
-		"path":    as.path,
-		"host":    as.host,
+		"host":    as.Client.Host,
+		"project": as.Project,
+		"path":    as.Path,
 	}.Infof(c, "Making tail request to LogDog to fetch annotation stream.")
 
 	var (
 		state  coordinator.LogStream
-		stream = as.logDogClient.Stream(as.project, as.path)
+		stream = as.Client.Stream(as.Project, as.Path)
 	)
 	le, err := stream.Tail(c, coordinator.WithState(&state), coordinator.Complete())
 	switch code := grpcutil.Code(err); code {
@@ -137,7 +124,7 @@ func (as *annotationStreamRequest) load(c context.Context) error {
 		break
 
 	case codes.NotFound:
-		return &miloerror.Error{
+		return nil, &miloerror.Error{
 			Message: "Stream not found",
 			Code:    http.StatusNotFound,
 		}
@@ -149,7 +136,7 @@ func (as *annotationStreamRequest) load(c context.Context) error {
 			log.ErrorKey: err,
 			"code":       code,
 		}.Errorf(c, "Failed to load LogDog annotation stream.")
-		return &miloerror.Error{
+		return nil, &miloerror.Error{
 			Message: "Failed to load stream",
 			Code:    http.StatusInternalServerError,
 		}
@@ -158,20 +145,23 @@ func (as *annotationStreamRequest) load(c context.Context) error {
 	// Make sure that this is an annotation stream.
 	switch {
 	case state.Desc.ContentType != miloProto.ContentTypeAnnotations:
-		return &miloerror.Error{
+		return nil, &miloerror.Error{
 			Message: "Requested stream is not a Milo annotation protobuf",
 			Code:    http.StatusBadRequest,
 		}
 
 	case state.Desc.StreamType != logpb.StreamType_DATAGRAM:
-		return &miloerror.Error{
+		return nil, &miloerror.Error{
 			Message: "Requested stream is not a datagram stream",
 			Code:    http.StatusBadRequest,
 		}
 
 	case le == nil:
 		// No annotation stream data, so render a minimal page.
-		return nil
+		return nil, &miloerror.Error{
+			Message: "Log stream has no annotation entries",
+			Code:    http.StatusNotFound,
+		}
 	}
 
 	// Get the last log entry in the stream. In reality, this will be index 0,
@@ -181,7 +171,7 @@ func (as *annotationStreamRequest) load(c context.Context) error {
 	// will be complete even if its source datagram(s) are fragments.
 	dg := le.GetDatagram()
 	if dg == nil {
-		return &miloerror.Error{
+		return nil, &miloerror.Error{
 			Message: "Datagram stream does not have datagram data",
 			Code:    http.StatusInternalServerError,
 		}
@@ -190,7 +180,7 @@ func (as *annotationStreamRequest) load(c context.Context) error {
 	// Attempt to decode the Step protobuf.
 	var step miloProto.Step
 	if err := proto.Unmarshal(dg.Data, &step); err != nil {
-		return &miloerror.Error{
+		return nil, &miloerror.Error{
 			Message: "Failed to unmarshal annotation protobuf",
 			Code:    http.StatusInternalServerError,
 		}
@@ -246,16 +236,20 @@ func (as *annotationStreamRequest) load(c context.Context) error {
 		log.WithError(err).Warningf(c, "Failed to marshal annotation protobuf CachedStep.")
 	}
 
-	return nil
+	return as.cs.Step, nil
 }
 
-func (as *annotationStreamRequest) toMiloBuild(c context.Context) *resp.MiloBuild {
-	prefix, name := as.path.Split()
+func (as *AnnotationStream) memcacheKey() string {
+	return fmt.Sprintf("logdog/%s/%s/%s", as.Client.Host, as.Project, as.Path)
+}
+
+func (as *AnnotationStream) toMiloBuild(c context.Context) *resp.MiloBuild {
+	prefix, name := as.Path.Split()
 
 	// Prepare a Streams object with only one stream.
 	streams := Streams{
 		MainStream: &Stream{
-			Server:     as.host,
+			Server:     as.Client.Host,
 			Prefix:     string(prefix),
 			Path:       string(name),
 			IsDatagram: true,
@@ -267,8 +261,8 @@ func (as *annotationStreamRequest) toMiloBuild(c context.Context) *resp.MiloBuil
 	var (
 		build resp.MiloBuild
 		ub    = logDogURLBuilder{
-			project: as.project,
-			host:    as.host,
+			host:    as.Client.Host,
+			project: as.Project,
 			prefix:  prefix,
 		}
 	)
@@ -297,19 +291,10 @@ func (b *logDogURLBuilder) BuildLink(l *miloProto.Link) *resp.Link {
 			prefix = b.prefix
 		}
 
-		path := fmt.Sprintf("%s/%s", b.project, prefix.Join(types.StreamName(ls.Name)))
-		u := url.URL{
-			Scheme: "https",
-			Host:   server,
-			Path:   "v/",
-			RawQuery: url.Values{
-				"s": []string{string(path)},
-			}.Encode(),
-		}
-
+		u := viewer.GetURL(server, b.project, prefix.Join(types.StreamName(ls.Name)))
 		link := resp.Link{
 			Label: l.Label,
-			URL:   u.String(),
+			URL:   u,
 		}
 		if link.Label == "" {
 			link.Label = ls.Name
