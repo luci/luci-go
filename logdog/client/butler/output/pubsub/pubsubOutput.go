@@ -6,14 +6,13 @@ package pubsub
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"sync"
 	"time"
 
-	"cloud.google.com/go/pubsub"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/recordio"
+	"github.com/luci/luci-go/common/errors"
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
@@ -22,6 +21,7 @@ import (
 	"github.com/luci/luci-go/logdog/client/butlerproto"
 	"github.com/luci/luci-go/logdog/common/types"
 
+	"cloud.google.com/go/pubsub"
 	"golang.org/x/net/context"
 )
 
@@ -203,6 +203,10 @@ func (o *pubSubOutput) publishMessages(messages []*pubsub.Message) error {
 		}
 
 		messageIDs, err = o.Topic.Publish(ctx, messages...)
+		if err == context.DeadlineExceeded {
+			// If we hit our publish deadline, retry.
+			err = errors.WrapTransient(err)
+		}
 		return
 	}, func(err error, d time.Duration) {
 		log.Fields{
