@@ -7,11 +7,11 @@
     "Bot": null,
     "Source": {
       "Label": "Task 2fb1b35e1da25710",
-      "URL": "https://debug/user/task/2fb1b35e1da25710"
+      "URL": "https://example.com/user/task/2fb1b35e1da25710"
     },
     "MainLink": {
       "Label": "Task 2fb1b35e1da25710",
-      "URL": "https://debug/user/task/2fb1b35e1da25710"
+      "URL": "https://example.com/user/task/2fb1b35e1da25710"
     },
     "SubLink": null,
     "Progress": null,

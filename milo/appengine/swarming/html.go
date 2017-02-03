@@ -18,16 +18,35 @@ import (
 	"github.com/luci/luci-go/server/templates"
 )
 
-func getServer(r *http.Request) string {
+const (
+	defaultSwarmingServer    = "chromium-swarm.appspot.com"
+	defaultSwarmingDevServer = "chromium-swarm-dev.appspot.com"
+)
+
+func getSwarmingHost(r *http.Request) string {
 	server := r.FormValue("server")
-	// TODO(hinoka): configure this mapping in luci-config
 	switch server {
 	case "":
-		return "chromium-swarm.appspot.com"
+		return defaultSwarmingServer
 	case "dev":
-		return "chromium-swarm-dev.appspot.com"
+		return defaultSwarmingDevServer
 	default:
 		return server
+	}
+}
+
+func getSwarmingService(c context.Context, host string) (swarmingService, error) {
+	switch host {
+	// TODO(hinoka): configure this mapping in luci-config
+	case defaultSwarmingServer, defaultSwarmingDevServer,
+		"cast-swarming.appspot.com":
+		return newProdService(c, host)
+
+	default:
+		return nil, &miloerror.Error{
+			Message: "unregistered Swarming host",
+			Code:    http.StatusNotFound,
+		}
 	}
 }
 
@@ -59,7 +78,12 @@ func (l Log) Render(c context.Context, r *http.Request, p httprouter.Params) (*t
 		}
 	}
 
-	log, closed, err := swarmingBuildLogImpl(c, getServer(r), id, logname)
+	sf, err := getSwarmingService(c, getSwarmingHost(r))
+	if err != nil {
+		return nil, convertErr(err)
+	}
+
+	log, closed, err := swarmingBuildLogImpl(c, sf, id, logname)
 	if err != nil {
 		return nil, convertErr(err)
 	}
@@ -87,7 +111,12 @@ func (b Build) Render(c context.Context, r *http.Request, p httprouter.Params) (
 		}
 	}
 
-	result, err := swarmingBuildImpl(c, r.URL.String(), getServer(r), id)
+	sf, err := getSwarmingService(c, getSwarmingHost(r))
+	if err != nil {
+		return nil, convertErr(err)
+	}
+
+	result, err := swarmingBuildImpl(c, sf, r.URL.String(), id)
 	if err != nil {
 		return nil, convertErr(err)
 	}

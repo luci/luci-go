@@ -19,15 +19,15 @@
     },
     "Bot": {
       "Label": "swarm3-c4",
-      "URL": "https://debug/restricted/bot/swarm3-c4"
+      "URL": "https://example.com/restricted/bot/swarm3-c4"
     },
     "Source": {
       "Label": "Task 2d8d62f6be545b10",
-      "URL": "https://debug/user/task/2d8d62f6be545b10"
+      "URL": "https://example.com/user/task/2d8d62f6be545b10"
     },
     "MainLink": {
       "Label": "Task 2d8d62f6be545b10",
-      "URL": "https://debug/user/task/2d8d62f6be545b10"
+      "URL": "https://example.com/user/task/2d8d62f6be545b10"
     },
     "SubLink": [
       {

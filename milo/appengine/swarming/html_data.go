@@ -5,14 +5,17 @@
 package swarming
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"golang.org/x/net/context"
 
+	swarming "github.com/luci/luci-go/common/api/swarming/swarming/v1"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/settings"
@@ -36,6 +39,7 @@ var testCases = []struct {
 }
 
 func getTestCases() []string {
+	// References "milo/appengine/swarming/testdata".
 	testdata := filepath.Join("..", "swarming", "testdata")
 	results := []string{}
 	f, err := ioutil.ReadDir(testdata)
@@ -48,6 +52,50 @@ func getTestCases() []string {
 		}
 	}
 	return results
+}
+
+type debugSwarmingService struct{}
+
+func (svc debugSwarmingService) getHost() string { return "example.com" }
+
+func (svc debugSwarmingService) getContent(taskID, suffix string) ([]byte, error) {
+	// ../swarming below assumes that
+	// - this code is not executed by tests outside of this dir
+	// - this dir is a sibling of frontend dir
+	logFilename := filepath.Join("..", "swarming", "testdata", taskID)
+	if suffix != "" {
+		logFilename += suffix
+	}
+	return ioutil.ReadFile(logFilename)
+}
+
+func (svc debugSwarmingService) getSwarmingJSON(taskID, suffix string, dst interface{}) error {
+	content, err := svc.getContent(taskID, suffix)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(content, dst)
+}
+
+func (svc debugSwarmingService) getSwarmingResult(c context.Context, taskID string) (
+	*swarming.SwarmingRpcsTaskResult, error) {
+
+	var sr swarming.SwarmingRpcsTaskResult
+	if err := svc.getSwarmingJSON(taskID, ".swarm", &sr); err != nil {
+		return nil, err
+	}
+	return &sr, nil
+}
+
+func (svc debugSwarmingService) getTaskOutput(c context.Context, taskID string) (string, error) {
+	content, err := svc.getContent(taskID, "")
+	if err != nil {
+		if os.IsNotExist(err) {
+			err = nil
+		}
+		return "", err
+	}
+	return string(content), nil
 }
 
 // TestableLog is a subclass of Log that interfaces with TestableHandler and
@@ -90,8 +138,10 @@ func (b TestableBuild) TestData() []settings.TestBundle {
 	}
 	c := context.Background()
 	c, _ = testclock.UseTime(c, time.Date(2016, time.March, 14, 11, 0, 0, 0, time.UTC))
+
+	var svc debugSwarmingService
 	for _, tc := range getTestCases() {
-		build, err := swarmingBuildImpl(c, "foo", "debug", tc)
+		build, err := swarmingBuildImpl(c, svc, "foo", tc)
 		if err != nil {
 			panic(fmt.Errorf("Error while processing %s: %s", tc, err))
 		}

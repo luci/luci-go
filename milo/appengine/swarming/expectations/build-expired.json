@@ -20,11 +20,11 @@
     "Bot": null,
     "Source": {
       "Label": "Task 308998ca182a0210",
-      "URL": "https://debug/user/task/308998ca182a0210"
+      "URL": "https://example.com/user/task/308998ca182a0210"
     },
     "MainLink": {
       "Label": "Task 308998ca182a0210",
-      "URL": "https://debug/user/task/308998ca182a0210"
+      "URL": "https://example.com/user/task/308998ca182a0210"
     },
     "SubLink": null,
     "Progress": null,

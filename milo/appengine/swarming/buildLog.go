@@ -8,19 +8,18 @@ import (
 	"fmt"
 	"path"
 	"sort"
-	"strings"
 
 	"golang.org/x/net/context"
 
 	mc "github.com/luci/gae/service/memcache"
-	"github.com/luci/luci-go/common/api/swarming/swarming/v1"
 	"github.com/luci/luci-go/common/logging"
 )
 
 // swarmingBuildLogImpl is the implementation for getting a log name from
 // a swarming build via annotee.  It returns the full text of the specific log,
 // and whether or not it has been closed.
-func swarmingBuildLogImpl(c context.Context, server, taskID, logname string) (string, bool, error) {
+func swarmingBuildLogImpl(c context.Context, svc swarmingService, taskID, logname string) (string, bool, error) {
+	server := svc.getHost()
 	cached, err := mc.GetKey(c, path.Join("swarmingLog", server, taskID, logname))
 	switch {
 	case err == mc.ErrCacheMiss:
@@ -33,25 +32,17 @@ func swarmingBuildLogImpl(c context.Context, server, taskID, logname string) (st
 		return string(cached.Value()), false, nil
 	}
 
-	var sc *swarming.Service
-	debug := strings.HasPrefix(taskID, "debug:")
-	if debug {
-		// if taskID starts with "debug:", then getTaskOutput will ignore client.
-	} else {
-		var err error
-		sc, err = getSwarmingClient(c, server)
-		if err != nil {
-			return "", false, err
-		}
+	fetchParams := swarmingFetchParams{
+		fetchRes: true, // Needed so we can validate that this is a Milo build.
+		fetchLog: true,
 	}
-
-	output, err := getTaskOutput(sc, taskID)
+	fr, err := swarmingFetch(c, svc, taskID, fetchParams)
 	if err != nil {
 		return "", false, err
 	}
 
 	// Decode the data using annotee.
-	s, err := streamsFromAnnotatedLog(c, output)
+	s, err := streamsFromAnnotatedLog(c, fr.log)
 	if err != nil {
 		return "", false, err
 	}
@@ -67,7 +58,7 @@ func swarmingBuildLogImpl(c context.Context, server, taskID, logname string) (st
 		return "", false, fmt.Errorf("stream %q not found; available streams: %q", k, keys)
 	}
 
-	if stream.Closed && !debug {
+	if stream.Closed {
 		cached.SetValue([]byte(stream.Text))
 		if err := mc.Set(c, cached); err != nil {
 			logging.Errorf(c, "Failed to write log with key %s to memcache: %s", cached.Key(), err)
