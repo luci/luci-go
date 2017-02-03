@@ -26,6 +26,8 @@ import (
 	"cloud.google.com/go/pubsub"
 	"golang.org/x/net/context"
 	"google.golang.org/api/iterator"
+
+	"github.com/luci/luci-go/hardcoded/chromeinfra"
 )
 
 var (
@@ -262,7 +264,8 @@ func main() {
 	mathrand.SeedRandomly()
 	a := application{
 		Service: service.Service{
-			Name: "archivist",
+			Name:               "archivist",
+			DefaultAuthOptions: chromeinfra.DefaultAuthOptions(),
 		},
 	}
 	a.Run(context.Background(), a.runArchivist)

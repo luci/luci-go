@@ -35,6 +35,8 @@ import (
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+
+	"github.com/luci/luci-go/hardcoded/chromeinfra"
 )
 
 const (
@@ -231,10 +233,8 @@ func logAnnotatedErr(ctx context.Context, err error, f string, args ...interface
 	log.Errorf(ctx, f+"\n%s", nargs...)
 }
 
-func mainImpl(ctx context.Context, argv []string) int {
-	authOptions := auth.Options{
-		Scopes: allOutputScopes(),
-	}
+func mainImpl(ctx context.Context, defaultAuthOpts auth.Options, argv []string) int {
+	defaultAuthOpts.Scopes = allOutputScopes()
 
 	a := &application{
 		Context: ctx,
@@ -248,9 +248,9 @@ func mainImpl(ctx context.Context, argv []string) int {
 				subcommandStream,
 				subcommandServe,
 
-				authcli.SubcommandLogin(authOptions, "auth-login", false),
-				authcli.SubcommandLogout(authOptions, "auth-logout", false),
-				authcli.SubcommandInfo(authOptions, "auth-info", false),
+				authcli.SubcommandLogin(defaultAuthOpts, "auth-login", false),
+				authcli.SubcommandLogout(defaultAuthOpts, "auth-logout", false),
+				authcli.SubcommandInfo(defaultAuthOpts, "auth-info", false),
 			},
 		},
 	}
@@ -261,7 +261,7 @@ func mainImpl(ctx context.Context, argv []string) int {
 	}
 	logConfig.AddFlags(flags)
 	a.addFlags(flags)
-	a.authFlags.Register(flags, authOptions)
+	a.authFlags.Register(flags, defaultAuthOpts)
 	a.prof.AddFlags(flags)
 
 	// Parse the top-level flag set.
@@ -351,7 +351,7 @@ func main() {
 	}()
 
 	paniccatcher.Do(func() {
-		rc = mainImpl(ctx, os.Args[1:])
+		rc = mainImpl(ctx, chromeinfra.DefaultAuthOptions(), os.Args[1:])
 	}, func(p *paniccatcher.Panic) {
 		log.Fields{
 			"panic.error": p.Reason,

@@ -39,6 +39,10 @@ type Parameters struct {
 
 	// Host is the default host name.
 	Host string
+
+	// DefaultAuthOptions provide default values for authentication related
+	// options (most notably SecretsDir: a directory with token cache).
+	DefaultAuthOptions auth.Options
 }
 
 type application struct {
@@ -110,9 +114,8 @@ func (a *application) timeoutCtx(c context.Context) (context.Context, context.Ca
 func Main(ctx context.Context, params Parameters) int {
 	ctx = gologger.StdConfig.Use(ctx)
 
-	authOptions := auth.Options{
-		Scopes: coordinator.Scopes,
-	}
+	authOptions := params.DefaultAuthOptions
+	authOptions.Scopes = coordinator.Scopes
 
 	a := application{
 		Application: cli.Application{

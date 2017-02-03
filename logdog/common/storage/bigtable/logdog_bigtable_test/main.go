@@ -15,6 +15,7 @@ import (
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
@@ -28,6 +29,8 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 	"google.golang.org/api/option"
+
+	"github.com/luci/luci-go/hardcoded/chromeinfra"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -73,16 +76,14 @@ func (app *application) getBigTableClient(c context.Context) (storage.Storage, e
 	})
 }
 
-func mainImpl(c context.Context, args []string) int {
+func mainImpl(c context.Context, defaultAuthOpts auth.Options, args []string) int {
 	c = gologger.StdConfig.Use(c)
 
 	logConfig := log.Config{
 		Level: log.Warning,
 	}
 
-	authOpts := auth.Options{
-		Scopes: append([]string{auth.OAuthScopeEmail}, bigtable.StorageScopes...),
-	}
+	defaultAuthOpts.Scopes = append([]string{auth.OAuthScopeEmail}, bigtable.StorageScopes...)
 	var authFlags authcli.Flags
 
 	app := application{
@@ -101,9 +102,9 @@ func mainImpl(c context.Context, args []string) int {
 				&subcommandGet,
 				&subcommandTail,
 
-				authcli.SubcommandLogin(authOpts, "auth-login", false),
-				authcli.SubcommandLogout(authOpts, "auth-logout", false),
-				authcli.SubcommandInfo(authOpts, "auth-info", false),
+				authcli.SubcommandLogin(defaultAuthOpts, "auth-login", false),
+				authcli.SubcommandLogout(defaultAuthOpts, "auth-logout", false),
+				authcli.SubcommandInfo(defaultAuthOpts, "auth-info", false),
 			},
 		},
 	}
@@ -111,7 +112,7 @@ func mainImpl(c context.Context, args []string) int {
 	fs := flag.NewFlagSet("flags", flag.ExitOnError)
 	app.addFlags(fs)
 	logConfig.AddFlags(fs)
-	authFlags.Register(fs, authOpts)
+	authFlags.Register(fs, defaultAuthOpts)
 	fs.Parse(args)
 
 	switch {
@@ -141,7 +142,8 @@ func mainImpl(c context.Context, args []string) int {
 }
 
 func main() {
-	os.Exit(mainImpl(context.Background(), os.Args[1:]))
+	mathrand.SeedRandomly()
+	os.Exit(mainImpl(context.Background(), chromeinfra.DefaultAuthOptions(), os.Args[1:]))
 }
 
 func renderErr(c context.Context, err error) {

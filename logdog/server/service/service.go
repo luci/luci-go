@@ -92,6 +92,11 @@ type Service struct {
 	//
 	// If empty, a service name will be inferred from the command-line arguments.
 	Name string
+
+	// DefaultAuthOptions provide default values for authentication related
+	// options (most notably SecretsDir: a directory with token cache).
+	DefaultAuthOptions commonAuth.Options
+
 	// Flags is the set of flags that will be used by the Service.
 	Flags flag.FlagSet
 
@@ -305,7 +310,7 @@ func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
 	s.tsMonFlags.Target.TaskJobName = s.Name
 	s.tsMonFlags.Register(fs)
 
-	s.authFlags.Register(fs, commonAuth.Options{})
+	s.authFlags.Register(fs, s.DefaultAuthOptions)
 
 	fs.StringVar(&s.serviceID, "service-id", "",
 		"Specify the service ID that this instance is supporting. If empty, the service ID "+
