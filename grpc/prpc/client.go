@@ -162,8 +162,8 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 			// request.
 			now := clock.Now(ctx)
 			var requestDeadline time.Time
-			if c.Options.PerRPCTimeout > 0 {
-				requestDeadline = now.Add(c.Options.PerRPCTimeout)
+			if options.PerRPCTimeout > 0 {
+				requestDeadline = now.Add(options.PerRPCTimeout)
 			}
 
 			// Does our parent Context have a deadline?
