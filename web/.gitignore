@@ -8,6 +8,7 @@ apps/*/.tmp
 
 # Ignore compiled JavaScript.
 inc/*/*.js
+inc/*/*.js.map
 
 # Tag files for installed Bower/NPM.
 .npm.installed

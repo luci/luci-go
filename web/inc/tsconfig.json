@@ -6,9 +6,9 @@
     "noUnusedParameters": true,
     "noUnusedLocals": true,
     "strictNullChecks": true,
+    "sourceMap": true,
 
-    "module": "amd",
-    "target": "ES5",
-    "baseUrl": ".."
+    "module": "none",
+    "target": "ES5"
   }
 }

@@ -32,6 +32,7 @@ var merge = require('merge-stream');
 var reload = browserSync.reload;
 var runSequence = require('run-sequence');
 var ts = require('gulp-typescript');
+var sourcemaps = require('gulp-sourcemaps');
 var tslint = require('gulp-tslint');
 
 
@@ -58,8 +59,13 @@ exports.setup_common = function(gulp) {
     var tsProj = ts.createProject(tsconfigPath, {
       typeRoots: [path.join(exports.base, 'node_modules', '@types')],
     });
-    return gulp.src('*/*.ts', {cwd: incDir, exclude: ['*_test.ts']})
-        .pipe(tsProj())
+
+    var tsResult = gulp.src('*/*.ts', {cwd: incDir, exclude: ['*_test.ts']})
+        .pipe(sourcemaps.init())
+        .pipe(tsProj());
+
+    return tsResult.js
+        .pipe(sourcemaps.write(".")) // Emit source maps alongside JavaScript.
         .pipe(gulp.dest(incDir));
   });
 
