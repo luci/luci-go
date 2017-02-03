@@ -12,35 +12,45 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/client/flagpb"
+	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/grpc/prpc"
 )
 
-var cmdF2J = &subcommands.Command{
-	UsageLine: `f2j [flags] <server> <message type> <message flags>
+const (
+	cmdF2JUsage = `f2j [flags] <server> <message type> <message flags>
 
   server: host ("example.com") or port for localhost (":8080").
   message type: full name of the message type.
-  message flags: a message in flagpb format.`,
-	ShortDesc: "converts a message from flagpb format to JSON format.",
-	LongDesc: `Converts a message from flagpb format to JSON format.
+  message flags: a message in flagpb format.
+`
+
+	cmdF2JDesc = "converts a message from flagpb format to JSON format."
+)
+
+func cmdF2J(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: cmdF2JUsage,
+		ShortDesc: cmdF2JDesc,
+		LongDesc: `Converts a message from flagpb format to JSON format.
 It is convenient for switching from flag format in "rpc call" to json format
 once a command line becomes unreadable.
 
 Example:
 
-	$ rpc fmt f2j :8080 helloworld.HelloRequest -name Lucy
-	{
-		"name: "Lucy"
-	}
+  $ rpc fmt f2j :8080 helloworld.HelloRequest -name Lucy
+  {
+    "name: "Lucy"
+  }
 
 See also j2f subcommand.
 `,
-	CommandRun: func() subcommands.CommandRun {
-		c := &f2jRun{}
-		c.registerBaseFlags()
-		return c
-	},
+		CommandRun: func() subcommands.CommandRun {
+			c := &f2jRun{}
+			c.registerBaseFlags(defaultAuthOpts)
+			return c
+		},
+	}
 }
 
 type f2jRun struct {
@@ -48,12 +58,8 @@ type f2jRun struct {
 }
 
 func (r *f2jRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if r.cmd == nil {
-		r.cmd = cmdF2J
-	}
-
 	if len(args) < 2 {
-		return r.argErr("")
+		return r.argErr(cmdF2JDesc, cmdF2JUsage, "")
 	}
 	host, msgType := args[0], args[1]
 	args = args[2:]

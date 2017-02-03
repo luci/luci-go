@@ -14,10 +14,13 @@ import (
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/lhttp"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/grpc/prpc"
+
+	"github.com/luci/luci-go/hardcoded/chromeinfra"
 )
 
 const (
@@ -47,7 +50,6 @@ func (e *exitCode) Error() string { return e.err.Error() }
 // It defines some common flags, such as logging and auth, and useful methods.
 type cmdRun struct {
 	subcommands.CommandRunBase
-	cmd     *subcommands.Command
 	verbose bool
 	auth    authcli.Flags
 }
@@ -61,9 +63,9 @@ func (r *cmdRun) ModifyContext(ctx context.Context) context.Context {
 }
 
 // registerBaseFlags registers common flags used by all subcommands.
-func (r *cmdRun) registerBaseFlags() {
+func (r *cmdRun) registerBaseFlags(defaultAuthOpts auth.Options) {
 	r.Flags.BoolVar(&r.verbose, "verbose", false, "Enable more logging.")
-	r.auth.Register(&r.Flags, auth.Options{})
+	r.auth.Register(&r.Flags, defaultAuthOpts)
 }
 
 func (r *cmdRun) authenticatedClient(ctx context.Context, host string) (*prpc.Client, error) {
@@ -87,12 +89,12 @@ func (r *cmdRun) authenticatedClient(ctx context.Context, host string) (*prpc.Cl
 }
 
 // argErr prints an err and usage to stderr and returns an exit code.
-func (r *cmdRun) argErr(format string, a ...interface{}) int {
+func (r *cmdRun) argErr(shortDesc, usageLine, format string, a ...interface{}) int {
 	if format != "" {
 		fmt.Fprintf(os.Stderr, format+"\n", a...)
 	}
-	fmt.Fprintln(os.Stderr, r.cmd.ShortDesc)
-	fmt.Fprintln(os.Stderr, r.cmd.UsageLine)
+	fmt.Fprintln(os.Stderr, shortDesc)
+	fmt.Fprintln(os.Stderr, usageLine)
 	fmt.Fprintln(os.Stderr, "\nFlags:")
 	r.Flags.PrintDefaults()
 	return ecInvalidCommandLine
@@ -110,22 +112,26 @@ func (r *cmdRun) done(err error) int {
 	return 0
 }
 
-var application = &cli.Application{
-	Name:  "rpc",
-	Title: "Remote Procedure Call CLI",
-	Context: func(ctx context.Context) context.Context {
-		return logCfg.Use(ctx)
-	},
-	Commands: []*subcommands.Command{
-		cmdCall,
-		cmdShow,
-		cmdFmt,
-		authcli.SubcommandLogin(auth.Options{}, "login", false),
-		authcli.SubcommandLogout(auth.Options{}, "logout", false),
-		subcommands.CmdHelp,
-	},
+func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
+	return &cli.Application{
+		Name:  "rpc",
+		Title: "Remote Procedure Call CLI",
+		Context: func(ctx context.Context) context.Context {
+			return logCfg.Use(ctx)
+		},
+		Commands: []*subcommands.Command{
+			cmdCall(defaultAuthOpts),
+			cmdShow(defaultAuthOpts),
+			cmdFmt(defaultAuthOpts),
+			authcli.SubcommandLogin(defaultAuthOpts, "login", false),
+			authcli.SubcommandLogout(defaultAuthOpts, "logout", false),
+			subcommands.CmdHelp,
+		},
+	}
 }
 
 func main() {
-	os.Exit(subcommands.Run(application, os.Args[1:]))
+	mathrand.SeedRandomly()
+	app := GetApplication(chromeinfra.DefaultAuthOptions())
+	os.Exit(subcommands.Run(app, os.Args[1:]))
 }

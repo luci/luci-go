@@ -18,13 +18,14 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"github.com/luci/luci-go/client/flagpb"
+	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/grpc/prpc"
 )
 
-var cmdCall = &subcommands.Command{
-	UsageLine: `call [flags] <server> <service>.<method> [input message flags]
+const (
+	cmdCallUsage = `call [flags] <server> <service>.<method> [input message flags]
 
   server: host ("example.com") or port for localhost (":8080").
   service: full name of a service, e.g. "pkg.service"
@@ -32,21 +33,30 @@ var cmdCall = &subcommands.Command{
   input message flags: the input message in flagpb format.
     Ignored if format is json/binary/text, in which case input message is read
     from stdin.
-    See also fmt subcommand.`,
-	ShortDesc: "calls a service method.",
-	LongDesc: `Calls a service method.
+    See also fmt subcommand.
+`
+
+	cmdCallDesc = "calls a service method."
+)
+
+func cmdCall(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: cmdCallUsage,
+		ShortDesc: cmdCallDesc,
+		LongDesc: `Calls a service method.
 Unless format is "flag" (default), the input message is read from stdin`,
-	CommandRun: func() subcommands.CommandRun {
-		c := &callRun{
-			format: formatFlagPB,
-		}
-		c.registerBaseFlags()
-		c.Flags.Var(&c.format, "format", fmt.Sprintf(
-			`Message format. Valid values: %s. `+
-				`If format is "flag" (default), the output format is text; otherwise output format is same.`,
-			formatFlagMap.Choices()))
-		return c
-	},
+		CommandRun: func() subcommands.CommandRun {
+			c := &callRun{
+				format: formatFlagPB,
+			}
+			c.registerBaseFlags(defaultAuthOpts)
+			c.Flags.Var(&c.format, "format", fmt.Sprintf(
+				`Message format. Valid values: %s. `+
+					`If format is "flag" (default), the output format is text; otherwise output format is same.`,
+				formatFlagMap.Choices()))
+			return c
+		},
+	}
 }
 
 // callRun implements "call" subcommand.
@@ -57,12 +67,8 @@ type callRun struct {
 }
 
 func (r *callRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if r.cmd == nil {
-		r.cmd = cmdCall
-	}
-
 	if len(args) < 2 {
-		return r.argErr("")
+		return r.argErr(cmdCallDesc, cmdCallUsage, "")
 	}
 	host, target := args[0], args[1]
 	args = args[2:]
@@ -76,7 +82,7 @@ func (r *callRun) Run(a subcommands.Application, args []string, env subcommands.
 	var err error
 	req.service, req.method, err = splitServiceAndMethod(target)
 	if err != nil {
-		return r.argErr("%s", err)
+		return r.argErr(cmdCallDesc, cmdCallUsage, "%s", err)
 	}
 
 	ctx := cli.GetContext(a, r, env)

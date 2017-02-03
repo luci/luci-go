@@ -8,21 +8,26 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
 )
 
-var cmdFmt = &subcommands.Command{
-	UsageLine: `fmt subcommand [arguments]`,
-	ShortDesc: "converts a message to/from flagpb and JSON formats",
-	LongDesc:  "Converts a message to/from flagpb and JSON formats.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &fmtRun{}
-		return c
-	},
+func cmdFmt(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: `fmt subcommand [arguments]`,
+		ShortDesc: "converts a message to/from flagpb and JSON formats",
+		LongDesc:  "Converts a message to/from flagpb and JSON formats.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &fmtRun{defaultAuthOpts: defaultAuthOpts}
+			return c
+		},
+	}
 }
 
 type fmtRun struct {
 	cmdRun
+
+	defaultAuthOpts auth.Options
 }
 
 func (r *fmtRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -33,8 +38,8 @@ func (r *fmtRun) Run(a subcommands.Application, args []string, env subcommands.E
 		},
 		Title: "Converts a message formats.",
 		Commands: []*subcommands.Command{
-			cmdJ2F,
-			cmdF2J,
+			cmdJ2F(r.defaultAuthOpts),
+			cmdF2J(r.defaultAuthOpts),
 		},
 	}
 	return subcommands.Run(app, args)

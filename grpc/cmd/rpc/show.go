@@ -13,24 +13,34 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/proto/google/descutil"
 	"github.com/luci/luci-go/grpc/prpc"
 )
 
-var cmdShow = &subcommands.Command{
-	UsageLine: `show [flags] <server> [name]
+const (
+	cmdShowUsage = `show [flags] <server> [name]
 
   server: host ("example.com") or port for localhost (":8080").
   name: a full name of service, method or type. If not specified prints names
-  	of all available services.`,
-	ShortDesc: "lists services and prints a definition of a referenced object.",
-	LongDesc:  "Lists services and prints a definition of a referenced object.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &showRun{}
-		c.registerBaseFlags()
-		return c
-	},
+    of all available services.
+`
+
+	cmdShowDesc = "lists services and prints a definition of a referenced object."
+)
+
+func cmdShow(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: cmdShowUsage,
+		ShortDesc: cmdShowDesc,
+		LongDesc:  "Lists services and prints a definition of a referenced object.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &showRun{}
+			c.registerBaseFlags(defaultAuthOpts)
+			return c
+		},
+	}
 }
 
 type showRun struct {
@@ -38,10 +48,6 @@ type showRun struct {
 }
 
 func (r *showRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if r.cmd == nil {
-		r.cmd = cmdShow
-	}
-
 	var host, name string
 	switch len(args) {
 	case 2:
@@ -51,7 +57,7 @@ func (r *showRun) Run(a subcommands.Application, args []string, env subcommands.
 		host = args[0]
 
 	default:
-		return r.argErr("")
+		return r.argErr(cmdShowDesc, cmdShowUsage, "")
 	}
 
 	ctx := cli.GetContext(a, r, env)

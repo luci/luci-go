@@ -15,24 +15,32 @@ import (
 	"github.com/maruel/subcommands"
 
 	"github.com/luci/luci-go/client/flagpb"
+	"github.com/luci/luci-go/common/auth"
 )
 
-var cmdJ2F = &subcommands.Command{
-	UsageLine: `j2f [flags]`,
-	ShortDesc: "converts a message from JSON format to flagpb format.",
-	LongDesc: `Converts a message from JSON format to flagpb format.
+const (
+	cmdJ2FUsage = `j2f [flags]`
+	cmdJ2FDesc  = "converts a message from JSON format to flagpb format."
+)
+
+func cmdJ2F(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: cmdJ2FUsage,
+		ShortDesc: cmdJ2FDesc,
+		LongDesc: `Converts a message from JSON format to flagpb format.
 
 Example:
 
-	$ echo '{"name": "Lucy"}' | rpc fmt j2f
-	-name Lucy
+  $ echo '{"name": "Lucy"}' | rpc fmt j2f
+  -name Lucy
 
 See also f2j subcommand.`,
-	CommandRun: func() subcommands.CommandRun {
-		c := &j2fRun{}
-		c.registerBaseFlags()
-		return c
-	},
+		CommandRun: func() subcommands.CommandRun {
+			c := &j2fRun{}
+			c.registerBaseFlags(defaultAuthOpts)
+			return c
+		},
+	}
 }
 
 type j2fRun struct {
@@ -40,12 +48,8 @@ type j2fRun struct {
 }
 
 func (r *j2fRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
-	if r.cmd == nil {
-		r.cmd = cmdJ2F
-	}
-
 	if len(args) != 0 {
-		return r.argErr("")
+		return r.argErr(cmdJ2FDesc, cmdJ2FUsage, "")
 	}
 
 	return r.done(jsonToFlags())
