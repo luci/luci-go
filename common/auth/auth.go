@@ -16,7 +16,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"path/filepath"
 	"sort"
 	"sync"
@@ -32,7 +31,6 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
-	homedir "github.com/mitchellh/go-homedir"
 )
 
 var (
@@ -262,27 +260,6 @@ func NewAuthenticator(ctx context.Context, loginMode LoginMode, opts Options) *A
 	}
 	if opts.Transport == nil {
 		opts.Transport = http.DefaultTransport
-	}
-
-	// TODO(vadimsh): Remove this once all code is updated to explicitly
-	// initialize Options with these defaults before calling NewAuthenticator.
-	//
-	// These are same values as in hardcoded/chromeinfra.DefaultAuthOptions(). It
-	// can't be imported directly due to module import cycle.
-	if opts.SecretsDir == "" || opts.ClientID == "" {
-		logging.Warningf(ctx, "Using hardcoded auth options, this is deprecated")
-		if opts.SecretsDir == "" {
-			home, err := homedir.Dir()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Can't resolve $HOME: %s", err)
-			} else {
-				opts.SecretsDir = filepath.Join(home, ".config", "chrome_infra", "auth")
-			}
-		}
-		if opts.ClientID == "" {
-			opts.ClientID = "446450136466-2hr92jrq8e6i4tnsa56b52vacp7t3936.apps.googleusercontent.com"
-			opts.ClientSecret = "uBfbay2KCy9t4QveJ-dOqHtp"
-		}
 	}
 
 	// TODO(vadimsh): Check SecretsDir permissions. It should be 0700.
