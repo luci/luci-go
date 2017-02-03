@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"path/filepath"
 	"sort"
 	"sync"
@@ -31,6 +32,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
+	homedir "github.com/mitchellh/go-homedir"
 )
 
 var (
@@ -118,10 +120,14 @@ type Options struct {
 	// provided if running on GAE (http.DefaultTransport doesn't work there).
 	Transport http.RoundTripper
 
-	// Method defaults to AutoSelectMethod.
+	// Method defines how to grab OAuth2 tokens.
+	//
+	// Default: AutoSelectMethod.
 	Method Method
 
-	// Scopes is a list of OAuth scopes to request, defaults to [OAuthScopeEmail].
+	// Scopes is a list of OAuth scopes to request.
+	//
+	// Default: [OAuthScopeEmail].
 	Scopes []string
 
 	// ClientID is OAuth client ID to use with UserCredentialsMethod.
@@ -138,12 +144,14 @@ type Options struct {
 	// If you don't want to share login information between tools, use separate
 	// ClientID or SecretsDir values.
 	//
-	// Default: provided by DefaultClient().
+	// If not set, UserCredentialsMethod auth method will not work.
+	//
+	// Default: none.
 	ClientID string
 
 	// ClientSecret is OAuth client secret to use with UserCredentialsMethod.
 	//
-	// Default: provided by DefaultClient().
+	// Default: none.
 	ClientSecret string
 
 	// ServiceAccountJSONPath is a path to a JSON blob with a private key to use.
@@ -249,14 +257,32 @@ func NewAuthenticator(ctx context.Context, loginMode LoginMode, opts Options) *A
 	}
 
 	// Fill in blanks with default values.
-	if opts.ClientID == "" || opts.ClientSecret == "" {
-		opts.ClientID, opts.ClientSecret = DefaultClient()
-	}
 	if opts.GCEAccountName == "" {
 		opts.GCEAccountName = "default"
 	}
 	if opts.Transport == nil {
 		opts.Transport = http.DefaultTransport
+	}
+
+	// TODO(vadimsh): Remove this once all code is updated to explicitly
+	// initialize Options with these defaults before calling NewAuthenticator.
+	//
+	// These are same values as in hardcoded/chromeinfra.DefaultAuthOptions(). It
+	// can't be imported directly due to module import cycle.
+	if opts.SecretsDir == "" || opts.ClientID == "" {
+		logging.Warningf(ctx, "Using hardcoded auth options, this is deprecated")
+		if opts.SecretsDir == "" {
+			home, err := homedir.Dir()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Can't resolve $HOME: %s", err)
+			} else {
+				opts.SecretsDir = filepath.Join(home, ".config", "chrome_infra", "auth")
+			}
+		}
+		if opts.ClientID == "" {
+			opts.ClientID = "446450136466-2hr92jrq8e6i4tnsa56b52vacp7t3936.apps.googleusercontent.com"
+			opts.ClientSecret = "uBfbay2KCy9t4QveJ-dOqHtp"
+		}
 	}
 
 	// TODO(vadimsh): Check SecretsDir permissions. It should be 0700.
@@ -789,18 +815,4 @@ func makeTokenProvider(ctx context.Context, opts *Options) (internal.TokenProvid
 	default:
 		return nil, fmt.Errorf("auth: unrecognized authentication method: %s", opts.Method)
 	}
-}
-
-// DefaultClient returns OAuth client_id and client_secret to use for 3 legged
-// OAuth flow. Note that client_secret is not really a secret since it's
-// hardcoded into the source code (and binaries). It's totally fine, as long
-// as it's callback URI is configured to be 'localhost'. If someone decides to
-// reuse such client_secret they have to run something on user's local machine
-// to get the refresh_token.
-//
-// TODO(vadimsh): Move it elsewhere.
-func DefaultClient() (clientID string, clientSecret string) {
-	clientID = "446450136466-2hr92jrq8e6i4tnsa56b52vacp7t3936.apps.googleusercontent.com"
-	clientSecret = "uBfbay2KCy9t4QveJ-dOqHtp"
-	return
 }

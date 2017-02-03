@@ -8,20 +8,23 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/luci/luci-go/common/auth"
 	"github.com/maruel/subcommands"
 )
 
-var cmdDownload = &subcommands.Command{
-	UsageLine: "download <options>...",
-	ShortDesc: "downloads a file or a .isolated tree from an isolate server.",
-	LongDesc: `Downloads one or multiple files, or a isolated tree from the isolate server.
+func cmdDownload(authOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "download <options>...",
+		ShortDesc: "downloads a file or a .isolated tree from an isolate server.",
+		LongDesc: `Downloads one or multiple files, or a isolated tree from the isolate server.
 
 Files are referenced by their hash`,
-	CommandRun: func() subcommands.CommandRun {
-		c := downloadRun{}
-		c.commonFlags.Init()
-		return &c
-	},
+		CommandRun: func() subcommands.CommandRun {
+			c := downloadRun{}
+			c.commonFlags.Init(authOpts)
+			return &c
+		},
+	}
 }
 
 type downloadRun struct {

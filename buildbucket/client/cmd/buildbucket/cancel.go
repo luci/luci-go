@@ -9,18 +9,21 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
 )
 
-var cmdCancel = &subcommands.Command{
-	UsageLine: `cancel [flags] <build id>`,
-	ShortDesc: "Cancel a build",
-	LongDesc:  "Attempt to cancel an existing build.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &cancelRun{}
-		c.SetDefaultFlags()
-		return c
-	},
+func cmdCancel(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: `cancel [flags] <build id>`,
+		ShortDesc: "Cancel a build",
+		LongDesc:  "Attempt to cancel an existing build.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &cancelRun{}
+			c.SetDefaultFlags(defaultAuthOpts)
+			return c
+		},
+	}
 }
 
 type cancelRun struct {

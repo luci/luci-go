@@ -8,34 +8,40 @@ import (
 	"log"
 	"os"
 
+	"github.com/maruel/subcommands"
+
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/client/versioncli"
 	"github.com/luci/luci-go/common/auth"
-	"github.com/maruel/subcommands"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
+
+	"github.com/luci/luci-go/hardcoded/chromeinfra"
 )
 
 // version must be updated whenever functional change (behavior, arguments,
 // supported commands) is done.
 const version = "0.2"
 
-var opts = auth.Options{}
-
-var application = &subcommands.DefaultApplication{
-	Name:  "isolated",
-	Title: "isolateserver.py but faster",
-	// Keep in alphabetical order of their name.
-	Commands: []*subcommands.Command{
-		cmdArchive,
-		cmdDownload,
-		subcommands.CmdHelp,
-		authcli.SubcommandInfo(opts, "info", false),
-		authcli.SubcommandLogin(opts, "login", false),
-		authcli.SubcommandLogout(opts, "logout", false),
-		versioncli.CmdVersion(version),
-	},
+func GetApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
+	return &subcommands.DefaultApplication{
+		Name:  "isolated",
+		Title: "isolateserver.py but faster",
+		// Keep in alphabetical order of their name.
+		Commands: []*subcommands.Command{
+			cmdArchive(defaultAuthOpts),
+			cmdDownload(defaultAuthOpts),
+			subcommands.CmdHelp,
+			authcli.SubcommandInfo(defaultAuthOpts, "whoami", false),
+			authcli.SubcommandLogin(defaultAuthOpts, "login", false),
+			authcli.SubcommandLogout(defaultAuthOpts, "logout", false),
+			versioncli.CmdVersion(version),
+		},
+	}
 }
 
 func main() {
 	log.SetFlags(log.Lmicroseconds)
-	os.Exit(subcommands.Run(application, nil))
+	mathrand.SeedRandomly()
+	app := GetApplication(chromeinfra.DefaultAuthOptions())
+	os.Exit(subcommands.Run(app, nil))
 }

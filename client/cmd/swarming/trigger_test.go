@@ -8,9 +8,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/luci/luci-go/common/api/swarming/swarming/v1"
-	"github.com/luci/luci-go/common/flag/stringmapflag"
 	"github.com/maruel/ut"
+
+	"github.com/luci/luci-go/common/api/swarming/swarming/v1"
+	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/flag/stringmapflag"
 )
 
 // Make sure that stringmapflag.Value are returned as sorted arrays.
@@ -103,7 +105,7 @@ func TestNamePartFromDimensions(t *testing.T) {
 
 func TestParse_NoArgs(t *testing.T) {
 	c := triggerRun{}
-	c.Init()
+	c.Init(auth.Options{})
 
 	err := c.Parse([]string{})
 	ut.AssertEqual(t, errors.New("must provide -server"), err)
@@ -111,7 +113,7 @@ func TestParse_NoArgs(t *testing.T) {
 
 func TestParse_NoDimension(t *testing.T) {
 	c := triggerRun{}
-	c.Init()
+	c.Init(auth.Options{})
 
 	err := c.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
 
@@ -121,7 +123,7 @@ func TestParse_NoDimension(t *testing.T) {
 
 func TestParse_NoIsolated(t *testing.T) {
 	c := triggerRun{}
-	c.Init()
+	c.Init(auth.Options{})
 
 	err := c.GetFlags().Parse([]string{
 		"-server", "http://localhost:9050",
@@ -134,7 +136,7 @@ func TestParse_NoIsolated(t *testing.T) {
 
 func TestParse_BadIsolated(t *testing.T) {
 	c := triggerRun{}
-	c.Init()
+	c.Init(auth.Options{})
 
 	err := c.GetFlags().Parse([]string{
 		"-server", "http://localhost:9050",
@@ -148,7 +150,7 @@ func TestParse_BadIsolated(t *testing.T) {
 
 func TestParse_RawNoArgs(t *testing.T) {
 	c := triggerRun{}
-	c.Init()
+	c.Init(auth.Options{})
 
 	err := c.GetFlags().Parse([]string{
 		"-server", "http://localhost:9050",
@@ -163,7 +165,7 @@ func TestParse_RawNoArgs(t *testing.T) {
 
 func TestParse_RawAndIsolateServer(t *testing.T) {
 	c := triggerRun{}
-	c.Init()
+	c.Init(auth.Options{})
 
 	err := c.GetFlags().Parse([]string{
 		"-server", "http://localhost:9050",
@@ -179,7 +181,7 @@ func TestParse_RawAndIsolateServer(t *testing.T) {
 
 func TestProcessTriggerOptions_WithRawArgs(t *testing.T) {
 	c := triggerRun{}
-	c.Init()
+	c.Init(auth.Options{})
 	c.commonFlags.serverURL = "http://localhost:9050"
 	c.isolateServer = "http://localhost:10050"
 	c.isolated = "1234567890123456789012345678901234567890"
@@ -194,7 +196,7 @@ func TestProcessTriggerOptions_WithRawArgs(t *testing.T) {
 
 func TestProcessTriggerOptions_ExtraArgs(t *testing.T) {
 	c := triggerRun{}
-	c.Init()
+	c.Init(auth.Options{})
 	c.commonFlags.serverURL = "http://localhost:9050"
 	c.isolateServer = "http://localhost:10050"
 	c.isolated = "1234567890123456789012345678901234567890"
@@ -212,7 +214,7 @@ func TestProcessTriggerOptions_ExtraArgs(t *testing.T) {
 
 func TestProcessTriggerOptions_EatDashDash(t *testing.T) {
 	c := triggerRun{}
-	c.Init()
+	c.Init(auth.Options{})
 	c.commonFlags.serverURL = "http://localhost:9050"
 	c.isolateServer = "http://localhost:10050"
 	c.isolated = "1234567890123456789012345678901234567890"

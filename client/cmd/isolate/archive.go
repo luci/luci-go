@@ -11,24 +11,28 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/maruel/subcommands"
+
 	"github.com/luci/luci-go/client/archiver"
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/isolate"
+	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/data/text/units"
 	"github.com/luci/luci-go/common/isolatedclient"
-	"github.com/maruel/subcommands"
 )
 
-var cmdArchive = &subcommands.Command{
-	UsageLine: "archive <options>",
-	ShortDesc: "creates a .isolated file and uploads the tree to an isolate server.",
-	LongDesc:  "All the files listed in the .isolated file are put in the isolate server cache",
-	CommandRun: func() subcommands.CommandRun {
-		c := archiveRun{}
-		c.commonServerFlags.Init()
-		c.isolateFlags.Init(&c.Flags)
-		return &c
-	},
+func cmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "archive <options>",
+		ShortDesc: "creates a .isolated file and uploads the tree to an isolate server.",
+		LongDesc:  "All the files listed in the .isolated file are put in the isolate server cache",
+		CommandRun: func() subcommands.CommandRun {
+			c := archiveRun{}
+			c.commonServerFlags.Init(defaultAuthOpts)
+			c.isolateFlags.Init(&c.Flags)
+			return &c
+		},
+	}
 }
 
 type archiveRun struct {

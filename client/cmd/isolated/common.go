@@ -6,7 +6,6 @@ package main
 
 import (
 	"net/http"
-	"runtime"
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
@@ -18,10 +17,6 @@ import (
 	"github.com/luci/luci-go/common/logging/gologger"
 )
 
-func init() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
-}
-
 type commonFlags struct {
 	subcommands.CommandRunBase
 	defaultFlags   common.Flags
@@ -30,10 +25,10 @@ type commonFlags struct {
 	parsedAuthOpts auth.Options
 }
 
-func (c *commonFlags) Init() {
+func (c *commonFlags) Init(authOpts auth.Options) {
 	c.defaultFlags.Init(&c.Flags)
 	c.isolatedFlags.Init(&c.Flags)
-	c.authFlags.Register(&c.Flags, auth.Options{})
+	c.authFlags.Register(&c.Flags, authOpts)
 }
 
 func (c *commonFlags) Parse() error {
@@ -48,8 +43,18 @@ func (c *commonFlags) Parse() error {
 	return err
 }
 
-func (c *commonFlags) createClient() *http.Client {
+func (c *commonFlags) createAuthClient() (*http.Client, error) {
+	// TODO(vadimsh): This is copy-pasta of createAuthClient from
+	// cmd/isolate/common.go.
+	authOpts := c.parsedAuthOpts
+	var loginMode auth.LoginMode
+	if authOpts.ServiceAccountJSONPath != "" {
+		authOpts.Method = auth.ServiceAccountMethod
+		loginMode = auth.SilentLogin
+	} else {
+		authOpts.Method = auth.UserCredentialsMethod
+		loginMode = auth.OptionalLogin
+	}
 	ctx := gologger.StdConfig.Use(context.Background())
-	client, _ := auth.NewAuthenticator(ctx, auth.SilentLogin, c.parsedAuthOpts).Client()
-	return client
+	return auth.NewAuthenticator(ctx, loginMode, authOpts).Client()
 }

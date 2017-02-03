@@ -7,11 +7,9 @@ package tsmon
 import (
 	"encoding/json"
 	"os"
-	"path/filepath"
 	"runtime"
 
 	"github.com/luci/luci-go/common/errors"
-	homedir "github.com/mitchellh/go-homedir"
 )
 
 // config is the representation of a tsmon JSON config file.
@@ -54,16 +52,9 @@ func loadConfig(path string) (config, error) {
 }
 
 func defaultConfigFilePath() string {
+	// TODO(vadimsh): Move this to "hardcoded/chromeinfra" package.
 	if runtime.GOOS == "windows" {
 		return "C:\\chrome-infra\\ts-mon.json"
 	}
 	return "/etc/chrome-infra/ts-mon.json"
-}
-
-func tokenCachePath() (string, error) {
-	home, err := homedir.Dir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(home, ".config", "chrome_infra", "auth"), nil
 }

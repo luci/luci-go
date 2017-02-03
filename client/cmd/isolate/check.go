@@ -12,16 +12,18 @@ import (
 	"github.com/maruel/subcommands"
 )
 
-var cmdCheck = &subcommands.Command{
-	UsageLine: "check <options>",
-	ShortDesc: "checks that all the inputs are present and generates .isolated",
-	LongDesc:  "",
-	CommandRun: func() subcommands.CommandRun {
-		c := checkRun{}
-		c.commonFlags.Init()
-		c.isolateFlags.Init(&c.Flags)
-		return &c
-	},
+func cmdCheck() *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "check <options>",
+		ShortDesc: "checks that all the inputs are present and generates .isolated",
+		LongDesc:  "",
+		CommandRun: func() subcommands.CommandRun {
+			c := checkRun{}
+			c.commonFlags.Init()
+			c.isolateFlags.Init(&c.Flags)
+			return &c
+		},
+	}
 }
 
 type checkRun struct {

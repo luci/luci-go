@@ -6,27 +6,32 @@ package main
 
 import (
 	"errors"
+	"net/http"
 	"os"
-	"runtime"
 
-	"github.com/luci/luci-go/client/internal/common"
-	"github.com/luci/luci-go/common/lhttp"
 	"github.com/maruel/subcommands"
-)
+	"golang.org/x/net/context"
 
-func init() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
-}
+	"github.com/luci/luci-go/client/authcli"
+	"github.com/luci/luci-go/client/internal/common"
+	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/lhttp"
+	"github.com/luci/luci-go/common/logging/gologger"
+)
 
 type commonFlags struct {
 	subcommands.CommandRunBase
 	defaultFlags common.Flags
+	authFlags    authcli.Flags
 	serverURL    string
+
+	parsedAuthOpts auth.Options
 }
 
 // Init initializes common flags.
-func (c *commonFlags) Init() {
+func (c *commonFlags) Init(authOpts auth.Options) {
 	c.defaultFlags.Init(&c.Flags)
+	c.authFlags.Register(&c.Flags, authOpts)
 	c.Flags.StringVar(&c.serverURL, "server", os.Getenv("SWARMING_SERVER"), "Server URL; required. Set $SWARMING_SERVER to set a default.")
 }
 
@@ -43,5 +48,22 @@ func (c *commonFlags) Parse() error {
 		return err
 	}
 	c.serverURL = s
-	return nil
+	c.parsedAuthOpts, err = c.authFlags.Options()
+	return err
+}
+
+func (c *commonFlags) createAuthClient() (*http.Client, error) {
+	// TODO(vadimsh): This is copy-pasta of createAuthClient from
+	// cmd/isolate/common.go.
+	authOpts := c.parsedAuthOpts
+	var loginMode auth.LoginMode
+	if authOpts.ServiceAccountJSONPath != "" {
+		authOpts.Method = auth.ServiceAccountMethod
+		loginMode = auth.SilentLogin
+	} else {
+		authOpts.Method = auth.UserCredentialsMethod
+		loginMode = auth.OptionalLogin
+	}
+	ctx := gologger.StdConfig.Use(context.Background())
+	return auth.NewAuthenticator(ctx, loginMode, authOpts).Client()
 }

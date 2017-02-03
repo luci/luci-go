@@ -7,47 +7,29 @@ package main
 import (
 	"errors"
 	"fmt"
-	"net/http"
-
-	"golang.org/x/net/context"
 
 	"github.com/kr/pretty"
-	"github.com/luci/luci-go/client/authcli"
+	"github.com/maruel/subcommands"
+
 	"github.com/luci/luci-go/common/api/swarming/swarming/v1"
 	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/maruel/subcommands"
 )
 
-var cmdRequestShow = &subcommands.Command{
-	UsageLine: "request-show <task_id>",
-	ShortDesc: "returns properties of a request",
-	LongDesc:  "Returns the properties, what, when, by who, about a request on the Swarming server.",
-	CommandRun: func() subcommands.CommandRun {
-		r := &requestShowRun{}
-		r.Init()
-		return r
-	},
+func cmdRequestShow(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "request-show <task_id>",
+		ShortDesc: "returns properties of a request",
+		LongDesc:  "Returns the properties, what, when, by who, about a request on the Swarming server.",
+		CommandRun: func() subcommands.CommandRun {
+			r := &requestShowRun{}
+			r.Init(defaultAuthOpts)
+			return r
+		},
+	}
 }
 
 type requestShowRun struct {
 	commonFlags
-
-	// Used to authenticate requests to server.
-	authFlags      authcli.Flags
-	parsedAuthOpts auth.Options
-}
-
-func (c *requestShowRun) Init() {
-	c.commonFlags.Init()
-	c.authFlags.Register(&c.Flags, auth.Options{
-		Method: auth.UserCredentialsMethod, // disable GCE service account for now
-	})
-}
-
-func (c *requestShowRun) createAuthClient() (*http.Client, error) {
-	ctx := gologger.StdConfig.Use(context.Background())
-	return auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
 }
 
 func (c *requestShowRun) Parse(a subcommands.Application, args []string) error {

@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
-	"runtime"
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
@@ -22,10 +21,6 @@ import (
 	"github.com/luci/luci-go/common/isolatedclient"
 	"github.com/luci/luci-go/common/logging/gologger"
 )
-
-func init() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
-}
 
 type commonFlags struct {
 	subcommands.CommandRunBase
@@ -48,12 +43,10 @@ type commonServerFlags struct {
 	parsedAuthOpts auth.Options
 }
 
-func (c *commonServerFlags) Init() {
+func (c *commonServerFlags) Init(authOpts auth.Options) {
 	c.commonFlags.Init()
 	c.isolatedFlags.Init(&c.Flags)
-	c.authFlags.Register(&c.Flags, auth.Options{
-		Method: auth.UserCredentialsMethod, // disable GCE service account for now
-	})
+	c.authFlags.Register(&c.Flags, authOpts)
 }
 
 func (c *commonServerFlags) Parse() error {
@@ -69,10 +62,34 @@ func (c *commonServerFlags) Parse() error {
 }
 
 func (c *commonServerFlags) createAuthClient() (*http.Client, error) {
-	// OptionalLogin is used here instead of SilentLogin to make IP whitelisted
-	// bots to work without OAuth for now.
+	// TODO(vadimsh): cmd/isolated and cmd/swarming have copy-pasta of this exact
+	// method.
+	//
+	// If not explicitly passed -service-account-json, use UserCredentialsMethod.
+	// This effectively disables "sniffing" of GCE service account that happens
+	// when using default AutoSelectMethod. We prefer not to use GCE service
+	// account automatically.
+	//
+	// Also, if not using -service-account-json, don't enforce authentication
+	// by using OptionalLogin mode. This is needed for IP whitelisted bots: they
+	// have NO credentials to send.
+	//
+	// If -service-account-json is passed, enforce that it is really used.
+	//
+	// TODO(vadimsh): Some of relations between -service-account-json and
+	// applicable login modes are universal and should be made a part of
+	// "common/auth" library.
+	authOpts := c.parsedAuthOpts
+	var loginMode auth.LoginMode
+	if authOpts.ServiceAccountJSONPath != "" {
+		authOpts.Method = auth.ServiceAccountMethod
+		loginMode = auth.SilentLogin
+	} else {
+		authOpts.Method = auth.UserCredentialsMethod
+		loginMode = auth.OptionalLogin
+	}
 	ctx := gologger.StdConfig.Use(context.Background())
-	return auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
+	return auth.NewAuthenticator(ctx, loginMode, authOpts).Client()
 }
 
 type isolateFlags struct {

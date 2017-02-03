@@ -9,33 +9,31 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"sort"
 	"strings"
 	"time"
 
-	"golang.org/x/net/context"
+	"github.com/maruel/subcommands"
 
-	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/common/api/swarming/swarming/v1"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/data/text/units"
 	"github.com/luci/luci-go/common/flag/stringmapflag"
-	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/maruel/subcommands"
 )
 
-var cmdTrigger = &subcommands.Command{
-	UsageLine: "trigger hash",
-	ShortDesc: "Triggers a Swarming task",
-	LongDesc:  "Triggers a Swarming task.",
-	CommandRun: func() subcommands.CommandRun {
-		r := &triggerRun{}
-		r.Init()
-		return r
-	},
+func cmdTrigger(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "trigger <options>",
+		ShortDesc: "Triggers a Swarming task",
+		LongDesc:  "Triggers a Swarming task.",
+		CommandRun: func() subcommands.CommandRun {
+			r := &triggerRun{}
+			r.Init(defaultAuthOpts)
+			return r
+		},
+	}
 }
 
 type array []*swarming.SwarmingRpcsStringPair
@@ -76,7 +74,7 @@ func namePartFromDimensions(m stringmapflag.Value) string {
 type triggerRun struct {
 	commonFlags
 
-	// TODO(rogerta): movce these flags to swarming/common.go once other commands
+	// TODO(rogerta): move these flags to swarming/common.go once other commands
 	// are written and I see what parts are common.
 
 	// Isolate server.
@@ -98,14 +96,10 @@ type triggerRun struct {
 	ioTimeout   int64
 	rawCmd      bool
 	dumpJSON    string
-
-	// Used to authenticate requests to server.
-	authFlags      authcli.Flags
-	parsedAuthOpts auth.Options
 }
 
-func (c *triggerRun) Init() {
-	c.commonFlags.Init()
+func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
+	c.commonFlags.Init(defaultAuthOpts)
 
 	// Isolate server.
 	c.Flags.StringVar(&c.isolateServer, "isolate-server", "", "URL of the Isolate Server to use.")
@@ -126,16 +120,6 @@ func (c *triggerRun) Init() {
 	c.Flags.Int64Var(&c.ioTimeout, "io-timeout", 20*60, "Seconds to allow the task to be silent.")
 	c.Flags.BoolVar(&c.rawCmd, "raw-cmd", false, "When set, the command after -- is used as-is without run_isolated. In this case, no isolated hash is expected.")
 	c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Dump details about the triggered task(s) to this file as json.")
-
-	c.authFlags.Register(&c.Flags, auth.Options{
-		Method: auth.UserCredentialsMethod, // disable GCE service account for now
-	})
-}
-
-func (c *triggerRun) createAuthClient() (*http.Client, error) {
-	ctx := gologger.StdConfig.Use(context.Background())
-	return auth.NewAuthenticator(ctx, auth.OptionalLogin,
-		c.parsedAuthOpts).Client()
 }
 
 func (c *triggerRun) Parse(args []string) error {
@@ -143,7 +127,6 @@ func (c *triggerRun) Parse(args []string) error {
 	if err := c.commonFlags.Parse(); err != nil {
 		return err
 	}
-	c.parsedAuthOpts, err = c.authFlags.Options()
 
 	// Validate options and args.
 	if c.dimensions == nil {

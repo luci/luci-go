@@ -6,13 +6,12 @@ package main
 
 import (
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
-
-	"net/url"
 
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/common/auth"
@@ -27,13 +26,13 @@ type baseCommandRun struct {
 	host           string
 }
 
-func (r *baseCommandRun) SetDefaultFlags() {
+func (r *baseCommandRun) SetDefaultFlags(defaultAuthOpts auth.Options) {
 	r.Flags.StringVar(
 		&r.host,
 		"host",
 		"cr-buildbucket.appspot.com",
 		"host for the buildbucket service instance.")
-	r.authFlags.Register(&r.Flags, auth.Options{})
+	r.authFlags.Register(&r.Flags, defaultAuthOpts)
 }
 
 func (r *baseCommandRun) createClient(ctx context.Context) (*client, error) {

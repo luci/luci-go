@@ -19,6 +19,8 @@ import (
 	"github.com/luci/luci-go/common/tsmon/store"
 	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/common/tsmon/types"
+
+	"github.com/luci/luci-go/hardcoded/chromeinfra"
 )
 
 // Store returns the global metric store that contains all the metric values for
@@ -223,15 +225,11 @@ func initMonitor(c context.Context, config config) (monitor.Monitor, error) {
 
 // newAuthenticator returns a new authenticator for PubSub and HTTP requests.
 func newAuthenticator(ctx context.Context, credentials string, scopes []string) *auth.Authenticator {
-	tokenCache, err := tokenCachePath()
-	if err != nil {
-		// Empty "tokenCache" just disables the token cache. We shouldn't abort.
-		logging.WithError(err).Warningf(ctx, "Failed to resolve path to token cache dir")
-	}
-	authOpts := auth.Options{
-		Scopes:     scopes,
-		SecretsDir: tokenCache,
-	}
+	// TODO(vadimsh): Don't hardcode auth options here, pass them from outside
+	// somehow.
+	authOpts := chromeinfra.DefaultAuthOptions()
+	authOpts.Scopes = scopes
+
 	switch credentials {
 	case GCECredentials:
 		authOpts.Method = auth.GCEMetadataMethod

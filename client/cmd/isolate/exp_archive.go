@@ -14,18 +14,18 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
 	"time"
 
 	humanize "github.com/dustin/go-humanize"
-
 	"github.com/golang/protobuf/proto"
+	"github.com/maruel/subcommands"
+
 	"github.com/luci/luci-go/client/isolate"
+	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/eventlog"
 	logpb "github.com/luci/luci-go/common/eventlog/proto"
 	"github.com/luci/luci-go/common/isolated"
 	"github.com/luci/luci-go/common/isolatedclient"
-	"github.com/maruel/subcommands"
 )
 
 const (
@@ -42,18 +42,20 @@ const (
 	infraFailExit = 2
 )
 
-var cmdExpArchive = &subcommands.Command{
-	UsageLine: "exparchive <options>",
-	ShortDesc: "EXPERIMENTAL parses a .isolate file to create a .isolated file, and uploads it and all referenced files to an isolate server",
-	LongDesc:  "All the files listed in the .isolated file are put in the isolate server cache. Small files are combined together in a tar archive before uploading.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &expArchiveRun{}
-		c.commonServerFlags.Init()
-		c.isolateFlags.Init(&c.Flags)
-		c.Flags.StringVar(&c.dumpJSON, "dump-json", "",
-			"Write isolated digests of archived trees to this file as JSON")
-		return c
-	},
+func cmdExpArchive(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "exparchive <options>",
+		ShortDesc: "EXPERIMENTAL parses a .isolate file to create a .isolated file, and uploads it and all referenced files to an isolate server",
+		LongDesc:  "All the files listed in the .isolated file are put in the isolate server cache. Small files are combined together in a tar archive before uploading.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &expArchiveRun{}
+			c.commonServerFlags.Init(defaultAuthOpts)
+			c.isolateFlags.Init(&c.Flags)
+			c.Flags.StringVar(&c.dumpJSON, "dump-json", "",
+				"Write isolated digests of archived trees to this file as JSON")
+			return c
+		},
+	}
 }
 
 // expArchiveRun contains the logic for the experimental archive subcommand.

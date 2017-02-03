@@ -9,18 +9,21 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
 )
 
-var cmdGet = &subcommands.Command{
-	UsageLine: `get [flags] <build id>`,
-	ShortDesc: "get details about a build",
-	LongDesc:  "Get details about a build.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &getRun{}
-		c.SetDefaultFlags()
-		return c
-	},
+func cmdGet(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: `get [flags] <build id>`,
+		ShortDesc: "get details about a build",
+		LongDesc:  "Get details about a build.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &getRun{}
+			c.SetDefaultFlags(defaultAuthOpts)
+			return c
+		},
+	}
 }
 
 type getRun struct {

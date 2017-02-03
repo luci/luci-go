@@ -373,25 +373,27 @@ func (opts *siteRootOptions) registerFlags(f *flag.FlagSet) {
 ////////////////////////////////////////////////////////////////////////////////
 // 'init' subcommand.
 
-var cmdInit = &subcommands.Command{
-	Advanced:  true,
-	UsageLine: "init [root dir] [options]",
-	ShortDesc: "sets up a new site root directory to install packages into",
-	LongDesc: "Sets up a new site root directory to install packages into.\n\n" +
-		"Uses current working directory by default.\n" +
-		"Unless -force is given, the new site root directory should be empty (or " +
-		"do not exist at all) and not be under some other existing site root. " +
-		"The command will create <root>/.cipd subdirectory with some " +
-		"configuration files. This directory is used by CIPD client to keep " +
-		"track of what is installed in the site root.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &initRun{}
-		c.registerBaseFlags()
-		c.Flags.BoolVar(&c.force, "force", false, "Create the site root even if the directory is not empty or already under another site root directory.")
-		c.Flags.StringVar(&c.serviceURL, "service-url", "", "URL of a backend to use instead of the default one.")
-		c.Flags.StringVar(&c.cacheDir, "cache-dir", "", "Directory for shared cache")
-		return c
-	},
+func cmdInit() *subcommands.Command {
+	return &subcommands.Command{
+		Advanced:  true,
+		UsageLine: "init [root dir] [options]",
+		ShortDesc: "sets up a new site root directory to install packages into",
+		LongDesc: "Sets up a new site root directory to install packages into.\n\n" +
+			"Uses current working directory by default.\n" +
+			"Unless -force is given, the new site root directory should be empty (or " +
+			"do not exist at all) and not be under some other existing site root. " +
+			"The command will create <root>/.cipd subdirectory with some " +
+			"configuration files. This directory is used by CIPD client to keep " +
+			"track of what is installed in the site root.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &initRun{}
+			c.registerBaseFlags()
+			c.Flags.BoolVar(&c.force, "force", false, "Create the site root even if the directory is not empty or already under another site root directory.")
+			c.Flags.StringVar(&c.serviceURL, "service-url", "", "URL of a backend to use instead of the default one.")
+			c.Flags.StringVar(&c.cacheDir, "cache-dir", "", "Directory for shared cache")
+			return c
+		},
+	}
 }
 
 type initRun struct {
@@ -425,19 +427,21 @@ func (c *initRun) Run(a subcommands.Application, args []string, _ subcommands.En
 ////////////////////////////////////////////////////////////////////////////////
 // 'install' subcommand.
 
-var cmdInstall = &subcommands.Command{
-	Advanced:  true,
-	UsageLine: "install <package> [<version>] [options]",
-	ShortDesc: "installs or updates a package",
-	LongDesc:  "Installs or updates a package.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &installRun{}
-		c.registerBaseFlags()
-		c.authFlags.Register(&c.Flags, auth.Options{})
-		c.siteRootOptions.registerFlags(&c.Flags)
-		c.Flags.BoolVar(&c.force, "force", false, "Refetch and reinstall the package even if already installed.")
-		return c
-	},
+func cmdInstall(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		Advanced:  true,
+		UsageLine: "install <package> [<version>] [options]",
+		ShortDesc: "installs or updates a package",
+		LongDesc:  "Installs or updates a package.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &installRun{}
+			c.registerBaseFlags()
+			c.authFlags.Register(&c.Flags, defaultAuthOpts)
+			c.siteRootOptions.registerFlags(&c.Flags)
+			c.Flags.BoolVar(&c.force, "force", false, "Refetch and reinstall the package even if already installed.")
+			return c
+		},
+	}
 }
 
 type installRun struct {
@@ -489,17 +493,19 @@ func (c *installRun) Run(a subcommands.Application, args []string, env subcomman
 ////////////////////////////////////////////////////////////////////////////////
 // 'installed' subcommand.
 
-var cmdInstalled = &subcommands.Command{
-	Advanced:  true,
-	UsageLine: "installed [<package> <package> ...] [options]",
-	ShortDesc: "lists packages installed in the site root",
-	LongDesc:  "Lists packages installed in the site root.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &installedRun{}
-		c.registerBaseFlags()
-		c.siteRootOptions.registerFlags(&c.Flags)
-		return c
-	},
+func cmdInstalled() *subcommands.Command {
+	return &subcommands.Command{
+		Advanced:  true,
+		UsageLine: "installed [<package> <package> ...] [options]",
+		ShortDesc: "lists packages installed in the site root",
+		LongDesc:  "Lists packages installed in the site root.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &installedRun{}
+			c.registerBaseFlags()
+			c.siteRootOptions.registerFlags(&c.Flags)
+			return c
+		},
+	}
 }
 
 type installedRun struct {

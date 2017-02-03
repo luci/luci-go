@@ -10,26 +10,30 @@ import (
 	"os"
 	"time"
 
+	"github.com/maruel/subcommands"
+
 	"github.com/luci/luci-go/client/archiver"
 	"github.com/luci/luci-go/client/internal/common"
+	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/data/text/units"
 	"github.com/luci/luci-go/common/isolatedclient"
-	"github.com/maruel/subcommands"
 )
 
-var cmdArchive = &subcommands.Command{
-	UsageLine: "archive <options>...",
-	ShortDesc: "creates a .isolated file and uploads the tree to an isolate server.",
-	LongDesc:  "All the files listed in the .isolated file are put in the isolate server.",
-	CommandRun: func() subcommands.CommandRun {
-		c := archiveRun{}
-		c.commonFlags.Init()
-		c.Flags.Var(&c.dirs, "dirs", "Directory(ies) to archive")
-		c.Flags.Var(&c.files, "files", "Individual file(s) to archive")
-		c.Flags.Var(&c.blacklist, "blacklist",
-			"List of regexp to use as blacklist filter when uploading directories")
-		return &c
-	},
+func cmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "archive <options>...",
+		ShortDesc: "creates a .isolated file and uploads the tree to an isolate server.",
+		LongDesc:  "All the files listed in the .isolated file are put in the isolate server.",
+		CommandRun: func() subcommands.CommandRun {
+			c := archiveRun{}
+			c.commonFlags.Init(defaultAuthOpts)
+			c.Flags.Var(&c.dirs, "dirs", "Directory(ies) to archive")
+			c.Flags.Var(&c.files, "files", "Individual file(s) to archive")
+			c.Flags.Var(&c.blacklist, "blacklist",
+				"List of regexp to use as blacklist filter when uploading directories")
+			return &c
+		},
+	}
 }
 
 type archiveRun struct {
@@ -57,7 +61,13 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 		out = nil
 		prefix = ""
 	}
-	arch := archiver.New(isolatedclient.New(nil, c.createClient(), c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil), out)
+
+	authClient, err := c.createAuthClient()
+	if err != nil {
+		return err
+	}
+
+	arch := archiver.New(isolatedclient.New(nil, authClient, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil), out)
 	common.CancelOnCtrlC(arch)
 	items := make([]*archiver.Item, 0, len(c.files)+len(c.dirs))
 	names := make([]string, 0, cap(items))
@@ -80,7 +90,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 		}
 	}
 	// This waits for all uploads.
-	err := arch.Close()
+	err = arch.Close()
 	if !c.defaultFlags.Quiet {
 		duration := time.Since(start)
 		stats := arch.Stats()

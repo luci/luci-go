@@ -13,19 +13,22 @@ import (
 	"sync"
 	"time"
 
+	"github.com/maruel/subcommands"
+
 	"github.com/luci/luci-go/client/archiver"
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/isolate"
+	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/data/text/units"
 	"github.com/luci/luci-go/common/isolated"
 	"github.com/luci/luci-go/common/isolatedclient"
-	"github.com/maruel/subcommands"
 )
 
-var cmdBatchArchive = &subcommands.Command{
-	UsageLine: "batcharchive <options> file1 file2 ...",
-	ShortDesc: "archives multiple isolated trees at once.",
-	LongDesc: `Archives multiple isolated trees at once.
+func cmdBatchArchive(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "batcharchive <options> file1 file2 ...",
+		ShortDesc: "archives multiple isolated trees at once.",
+		LongDesc: `Archives multiple isolated trees at once.
 
 Using single command instead of multiple sequential invocations allows to cut
 redundant work when isolated trees share common files (e.g. file hashes are
@@ -39,13 +42,14 @@ isolate. Format of files is:
   "dir": <absolute path to a directory all other paths are relative to>,
   "args": [list of command line arguments for single 'archive' command]
 }`,
-	CommandRun: func() subcommands.CommandRun {
-		c := batchArchiveRun{}
-		c.commonServerFlags.Init()
-		c.Flags.StringVar(&c.dumpJSON, "dump-json", "",
-			"Write isolated digests of archived trees to this file as JSON")
-		return &c
-	},
+		CommandRun: func() subcommands.CommandRun {
+			c := batchArchiveRun{}
+			c.commonServerFlags.Init(defaultAuthOpts)
+			c.Flags.StringVar(&c.dumpJSON, "dump-json", "",
+				"Write isolated digests of archived trees to this file as JSON")
+			return &c
+		},
+	}
 }
 
 type batchArchiveRun struct {

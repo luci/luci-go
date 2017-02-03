@@ -11,21 +11,24 @@ import (
 	"github.com/maruel/subcommands"
 
 	"github.com/luci/luci-go/common/api/buildbucket/buildbucket/v1"
+	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
 )
 
-var cmdPutBatch = &subcommands.Command{
-	UsageLine: `put [flags] <JSON request>...`,
-	ShortDesc: "schedule  builds",
-	LongDesc: "Schedule builds. \n" +
-		"See https://godoc.org/github.com/luci/luci-go/common/api/" +
-		"buildbucket/buildbucket/v1#ApiPutBatchRequestMessage " +
-		"for JSON request message schema.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &putBatchRun{}
-		c.SetDefaultFlags()
-		return c
-	},
+func cmdPutBatch(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: `put [flags] <JSON request>...`,
+		ShortDesc: "schedule  builds",
+		LongDesc: "Schedule builds. \n" +
+			"See https://godoc.org/github.com/luci/luci-go/common/api/" +
+			"buildbucket/buildbucket/v1#ApiPutBatchRequestMessage " +
+			"for JSON request message schema.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &putBatchRun{}
+			c.SetDefaultFlags(defaultAuthOpts)
+			return c
+		},
+	}
 }
 
 type putBatchRun struct {

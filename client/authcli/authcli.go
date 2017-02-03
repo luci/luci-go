@@ -12,16 +12,17 @@
 //
 //
 //	authFlags := authcli.Flags{}
-//	authFlags.Register(flag.CommandLine, auth.Options{})
+//	defaults := ... // prepare default auth.Options
+//	authFlags.Register(flag.CommandLine, defaults)
 //	flag.Parse()
 //	opts, err := authFlags.Options()
 //	if err != nil {
-//		// handle error
+//	  // handle error
 //	}
 //	authenticator := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 //	httpClient, err := authenticator.Client()
 //	if err != nil {
-//		// handle error
+//	  // handle error
 //	}
 //
 //
@@ -43,28 +44,33 @@
 //
 //
 //	import (
+//	  ...
 //	  "github.com/luci/luci-go/client/authcli"
 //	  "github.com/luci/luci-go/common/cli"
 //	)
 //
-//	var application = &cli.Application{
-//		Name:  "app_name",
+//	func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
+//	  return &cli.Application{
+//	    Name:  "app_name",
 //
-//		Context: func(ctx context.Context) context.Context {
-//			... configure logging, etc. ...
-//			return ctx
-//		},
+//	    Context: func(ctx context.Context) context.Context {
+//	      ... configure logging, etc. ...
+//	      return ctx
+//	    },
 //
-//		Commands: []*subcommands.Command{
-//			authcli.SubcommandInfo(auth.Options{}, "auth-info", false),
-//			authcli.SubcommandLogin(auth.Options{}, "auth-login", false),
-//			authcli.SubcommandLogout(auth.Options{}, "auth-logout", false),
-//			...
-//		},
+//	    Commands: []*subcommands.Command{
+//	      authcli.SubcommandInfo(defaultAuthOpts, "auth-info", false),
+//	      authcli.SubcommandLogin(defaultAuthOpts, "auth-login", false),
+//	      authcli.SubcommandLogout(defaultAuthOpts, "auth-logout", false),
+//	      ...
+//	    },
+//	  }
 //	}
 //
 //	func main() {
-//		os.Exit(subcommands.Run(application, nil))
+//	  defaultAuthOpts := ...
+//	  app := GetApplication(defaultAuthOpts)
+//		os.Exit(subcommands.Run(app, nil))
 //	}
 package authcli
 
@@ -76,13 +82,11 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/maruel/subcommands"
-	homedir "github.com/mitchellh/go-homedir"
 	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
 
@@ -128,6 +132,7 @@ func (fl *Flags) Register(f *flag.FlagSet, defaults auth.Options) {
 // parsed command line flags.
 func (fl *Flags) Options() (auth.Options, error) {
 	opts := fl.defaults
+
 	if fl.serviceAccountJSON != "" {
 		opts.Method = auth.ServiceAccountMethod
 		opts.ServiceAccountJSONPath = fl.serviceAccountJSON
@@ -137,9 +142,7 @@ func (fl *Flags) Options() (auth.Options, error) {
 		opts.Scopes = strings.Split(fl.scopes, " ")
 		sort.Strings(opts.Scopes)
 	}
-	if opts.SecretsDir == "" {
-		opts.SecretsDir, _ = secretsDir()
-	}
+
 	return opts, nil
 }
 
@@ -466,14 +469,4 @@ func reportIdentity(ctx context.Context, a *auth.Authenticator) error {
 	}
 
 	return nil
-}
-
-// secretsDir returns an absolute path to a directory (in $HOME) to keep secret
-// files in or an error if $HOME can't be determined.
-func secretsDir() (string, error) {
-	home, err := homedir.Dir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(home, ".config", "chrome_infra", "auth"), nil
 }

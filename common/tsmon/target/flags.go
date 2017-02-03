@@ -127,6 +127,7 @@ func getFQDN() (string, string) {
 }
 
 func getNetwork(hostname string) string {
+	// TODO(vadimsh): Move this to "hardcoded/chromeinfra" package.
 	if m := regexp.MustCompile(`^([\w-]*?-[acm]|master)(\d+)a?$`).FindStringSubmatch(hostname); m != nil {
 		return m[2]
 	}

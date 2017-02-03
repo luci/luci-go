@@ -56,6 +56,9 @@ func (p *userAuthTokenProvider) CacheKey() (*CacheKey, error) {
 }
 
 func (p *userAuthTokenProvider) MintToken() (*oauth2.Token, error) {
+	if p.config.ClientID == "" || p.config.ClientSecret == "" {
+		return nil, fmt.Errorf("OAuth client is not set, can't use 3-legged login flow")
+	}
 	// Grab the authorization code by redirecting a user to a consent screen.
 	url := p.config.AuthCodeURL("", oauth2.AccessTypeOffline, oauth2.ApprovalForce)
 	fmt.Printf("Visit the URL to get authorization code.\n\n%s\n\n", url)

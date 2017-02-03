@@ -41,6 +41,8 @@ import (
 	"github.com/luci/luci-go/cipd/client/cipd/local"
 	"github.com/luci/luci-go/cipd/version"
 	"github.com/luci/luci-go/client/authcli"
+
+	"github.com/luci/luci-go/hardcoded/chromeinfra"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -236,13 +238,13 @@ type ClientOptions struct {
 	cacheDir   string
 }
 
-func (opts *ClientOptions) registerFlags(f *flag.FlagSet) {
+func (opts *ClientOptions) registerFlags(f *flag.FlagSet, defaultAuthOpts auth.Options) {
 	f.StringVar(&opts.serviceURL, "service-url", "",
 		("URL of a backend to use instead of the default one. " +
 			"If provided via an 'ensure file', the URL in the file takes precedence."))
 	f.StringVar(&opts.cacheDir, "cache-dir", "",
 		fmt.Sprintf("Directory for shared cache (can also be set by %s env var).", CIPDCacheDir))
-	opts.authFlags.Register(f, auth.Options{})
+	opts.authFlags.Register(f, defaultAuthOpts)
 }
 
 func (opts *ClientOptions) makeCipdClient(ctx context.Context, root string) (cipd.Client, error) {
@@ -629,20 +631,22 @@ func hasErrors(pins []pinInfo) bool {
 ////////////////////////////////////////////////////////////////////////////////
 // 'create' subcommand.
 
-var cmdCreate = &subcommands.Command{
-	UsageLine: "create [options]",
-	ShortDesc: "builds and uploads a package instance file",
-	LongDesc:  "Builds and uploads a package instance file.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &createRun{}
-		c.registerBaseFlags()
-		c.Opts.InputOptions.registerFlags(&c.Flags)
-		c.Opts.RefsOptions.registerFlags(&c.Flags)
-		c.Opts.TagsOptions.registerFlags(&c.Flags)
-		c.Opts.ClientOptions.registerFlags(&c.Flags)
-		c.Opts.UploadOptions.registerFlags(&c.Flags)
-		return c
-	},
+func cmdCreate(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "create [options]",
+		ShortDesc: "builds and uploads a package instance file",
+		LongDesc:  "Builds and uploads a package instance file.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &createRun{}
+			c.registerBaseFlags()
+			c.Opts.InputOptions.registerFlags(&c.Flags)
+			c.Opts.RefsOptions.registerFlags(&c.Flags)
+			c.Opts.TagsOptions.registerFlags(&c.Flags)
+			c.Opts.ClientOptions.registerFlags(&c.Flags, defaultAuthOpts)
+			c.Opts.UploadOptions.registerFlags(&c.Flags)
+			return c
+		},
+	}
 }
 
 type createOpts struct {
@@ -691,24 +695,26 @@ func buildAndUploadInstance(ctx context.Context, opts *createOpts) (common.Pin, 
 ////////////////////////////////////////////////////////////////////////////////
 // 'ensure' subcommand.
 
-var cmdEnsure = &subcommands.Command{
-	UsageLine: "ensure [options]",
-	ShortDesc: "installs, removes and updates packages in one go",
-	LongDesc: "Installs, removes and updates packages in one go.\n\n" +
-		"Supposed to be used from scripts and automation. Alternative to 'init', " +
-		"'install' and 'remove'. As such, it doesn't try to discover site root " +
-		"directory on its own.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &ensureRun{}
-		c.registerBaseFlags()
-		c.ClientOptions.registerFlags(&c.Flags)
-		c.Flags.StringVar(&c.rootDir, "root", "<path>", "Path to an installation site root directory.")
-		c.Flags.StringVar(&c.ensureFile, "list", "<path>", "(DEPRECATED) A synonym for -ensure-file.")
-		c.Flags.StringVar(&c.ensureFile, "ensure-file", "<path>",
-			(`An "ensure" file. See syntax described here: ` +
-				`https://godoc.org/github.com/luci/luci-go/cipd/client/cipd/ensure`))
-		return c
-	},
+func cmdEnsure(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "ensure [options]",
+		ShortDesc: "installs, removes and updates packages in one go",
+		LongDesc: "Installs, removes and updates packages in one go.\n\n" +
+			"Supposed to be used from scripts and automation. Alternative to 'init', " +
+			"'install' and 'remove'. As such, it doesn't try to discover site root " +
+			"directory on its own.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &ensureRun{}
+			c.registerBaseFlags()
+			c.ClientOptions.registerFlags(&c.Flags, defaultAuthOpts)
+			c.Flags.StringVar(&c.rootDir, "root", "<path>", "Path to an installation site root directory.")
+			c.Flags.StringVar(&c.ensureFile, "list", "<path>", "(DEPRECATED) A synonym for -ensure-file.")
+			c.Flags.StringVar(&c.ensureFile, "ensure-file", "<path>",
+				(`An "ensure" file. See syntax described here: ` +
+					`https://godoc.org/github.com/luci/luci-go/cipd/client/cipd/ensure`))
+			return c
+		},
+	}
 }
 
 type ensureRun struct {
@@ -781,28 +787,30 @@ func ensurePackages(ctx context.Context, root string, desiredStateFile string, d
 ////////////////////////////////////////////////////////////////////////////////
 // 'puppet-check-updates' subcommand.
 
-var cmdPuppetCheckUpdates = &subcommands.Command{
-	Advanced:  true,
-	UsageLine: "puppet-check-updates [options]",
-	ShortDesc: "returns 0 exit code iff 'ensure' will do some actions",
-	LongDesc: "Returns 0 exit code iff 'ensure' will do some actions.\n\n" +
-		"Exists to be used from Puppet's Exec 'onlyif' option to trigger " +
-		"'ensure' only if something is out of date. If puppet-check-updates " +
-		"fails with a transient error, it returns non-zero exit code (as usual), " +
-		"so that Puppet doesn't trigger notification chain (that can result in " +
-		"service restarts). On fatal errors it returns 0 to let Puppet run " +
-		"'ensure' for real and catch an error.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &checkUpdatesRun{}
-		c.registerBaseFlags()
-		c.ClientOptions.registerFlags(&c.Flags)
-		c.Flags.StringVar(&c.rootDir, "root", "<path>", "Path to an installation site root directory.")
-		c.Flags.StringVar(&c.ensureFile, "list", "<path>", "(DEPRECATED) A synonym for -ensure-file.")
-		c.Flags.StringVar(&c.ensureFile, "ensure-file", "<path>",
-			(`An "ensure" file. See syntax described here: ` +
-				`https://godoc.org/github.com/luci/luci-go/cipd/client/cipd/ensure`))
-		return c
-	},
+func cmdPuppetCheckUpdates(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		Advanced:  true,
+		UsageLine: "puppet-check-updates [options]",
+		ShortDesc: "returns 0 exit code iff 'ensure' will do some actions",
+		LongDesc: "Returns 0 exit code iff 'ensure' will do some actions.\n\n" +
+			"Exists to be used from Puppet's Exec 'onlyif' option to trigger " +
+			"'ensure' only if something is out of date. If puppet-check-updates " +
+			"fails with a transient error, it returns non-zero exit code (as usual), " +
+			"so that Puppet doesn't trigger notification chain (that can result in " +
+			"service restarts). On fatal errors it returns 0 to let Puppet run " +
+			"'ensure' for real and catch an error.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &checkUpdatesRun{}
+			c.registerBaseFlags()
+			c.ClientOptions.registerFlags(&c.Flags, defaultAuthOpts)
+			c.Flags.StringVar(&c.rootDir, "root", "<path>", "Path to an installation site root directory.")
+			c.Flags.StringVar(&c.ensureFile, "list", "<path>", "(DEPRECATED) A synonym for -ensure-file.")
+			c.Flags.StringVar(&c.ensureFile, "ensure-file", "<path>",
+				(`An "ensure" file. See syntax described here: ` +
+					`https://godoc.org/github.com/luci/luci-go/cipd/client/cipd/ensure`))
+			return c
+		},
+	}
 }
 
 type checkUpdatesRun struct {
@@ -836,17 +844,19 @@ func (c *checkUpdatesRun) Run(a subcommands.Application, args []string, env subc
 ////////////////////////////////////////////////////////////////////////////////
 // 'resolve' subcommand.
 
-var cmdResolve = &subcommands.Command{
-	UsageLine: "resolve <package or package prefix> [options]",
-	ShortDesc: "returns concrete package instance ID given a version",
-	LongDesc:  "Returns concrete package instance ID given a version.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &resolveRun{}
-		c.registerBaseFlags()
-		c.ClientOptions.registerFlags(&c.Flags)
-		c.Flags.StringVar(&c.version, "version", "<version>", "Package version to resolve.")
-		return c
-	},
+func cmdResolve(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "resolve <package or package prefix> [options]",
+		ShortDesc: "returns concrete package instance ID given a version",
+		LongDesc:  "Returns concrete package instance ID given a version.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &resolveRun{}
+			c.registerBaseFlags()
+			c.ClientOptions.registerFlags(&c.Flags, defaultAuthOpts)
+			c.Flags.StringVar(&c.version, "version", "<version>", "Package version to resolve.")
+			return c
+		},
+	}
 }
 
 type resolveRun struct {
@@ -881,18 +891,20 @@ func resolveVersion(ctx context.Context, packagePrefix, version string, clientOp
 ////////////////////////////////////////////////////////////////////////////////
 // 'describe' subcommand.
 
-var cmdDescribe = &subcommands.Command{
-	UsageLine: "describe <package> [options]",
-	ShortDesc: "returns information about a package instance given its version",
-	LongDesc: "Returns information about a package instance given its version: " +
-		"who uploaded the instance and when and a list of attached tags.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &describeRun{}
-		c.registerBaseFlags()
-		c.ClientOptions.registerFlags(&c.Flags)
-		c.Flags.StringVar(&c.version, "version", "<version>", "Package version to describe.")
-		return c
-	},
+func cmdDescribe(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "describe <package> [options]",
+		ShortDesc: "returns information about a package instance given its version",
+		LongDesc: "Returns information about a package instance given its version: " +
+			"who uploaded the instance and when and a list of attached tags.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &describeRun{}
+			c.registerBaseFlags()
+			c.ClientOptions.registerFlags(&c.Flags, defaultAuthOpts)
+			c.Flags.StringVar(&c.version, "version", "<version>", "Package version to describe.")
+			return c
+		},
+	}
 }
 
 type describeRun struct {
@@ -990,18 +1002,20 @@ func describeInstance(ctx context.Context, pkg, version string, clientOpts Clien
 ////////////////////////////////////////////////////////////////////////////////
 // 'set-ref' subcommand.
 
-var cmdSetRef = &subcommands.Command{
-	UsageLine: "set-ref <package or package prefix> [options]",
-	ShortDesc: "moves a ref to point to a given version",
-	LongDesc:  "Moves a ref to point to a given version.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &setRefRun{}
-		c.registerBaseFlags()
-		c.RefsOptions.registerFlags(&c.Flags)
-		c.ClientOptions.registerFlags(&c.Flags)
-		c.Flags.StringVar(&c.version, "version", "<version>", "Package version to point the ref to.")
-		return c
-	},
+func cmdSetRef(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "set-ref <package or package prefix> [options]",
+		ShortDesc: "moves a ref to point to a given version",
+		LongDesc:  "Moves a ref to point to a given version.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &setRefRun{}
+			c.registerBaseFlags()
+			c.RefsOptions.registerFlags(&c.Flags)
+			c.ClientOptions.registerFlags(&c.Flags, defaultAuthOpts)
+			c.Flags.StringVar(&c.version, "version", "<version>", "Package version to point the ref to.")
+			return c
+		},
+	}
 }
 
 type setRefRun struct {
@@ -1092,19 +1106,21 @@ func setRefOrTag(ctx context.Context, args *setRefOrTagArgs) ([]pinInfo, error) 
 ////////////////////////////////////////////////////////////////////////////////
 // 'set-tag' subcommand.
 
-var cmdSetTag = &subcommands.Command{
-	UsageLine: "set-tag <package or package prefix> -tag=key:value [options]",
-	ShortDesc: "tags package of a specific version",
-	LongDesc:  "Tags package of a specific version",
-	CommandRun: func() subcommands.CommandRun {
-		c := &setTagRun{}
-		c.registerBaseFlags()
-		c.TagsOptions.registerFlags(&c.Flags)
-		c.ClientOptions.registerFlags(&c.Flags)
-		c.Flags.StringVar(&c.version, "version", "<version>",
-			"Package version to resolve. Could also be itself a tag or ref")
-		return c
-	},
+func cmdSetTag(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "set-tag <package or package prefix> -tag=key:value [options]",
+		ShortDesc: "tags package of a specific version",
+		LongDesc:  "Tags package of a specific version",
+		CommandRun: func() subcommands.CommandRun {
+			c := &setTagRun{}
+			c.registerBaseFlags()
+			c.TagsOptions.registerFlags(&c.Flags)
+			c.ClientOptions.registerFlags(&c.Flags, defaultAuthOpts)
+			c.Flags.StringVar(&c.version, "version", "<version>",
+				"Package version to resolve. Could also be itself a tag or ref")
+			return c
+		},
+	}
 }
 
 type setTagRun struct {
@@ -1136,19 +1152,21 @@ func (c *setTagRun) Run(a subcommands.Application, args []string, env subcommand
 ////////////////////////////////////////////////////////////////////////////////
 // 'ls' subcommand.
 
-var cmdListPackages = &subcommands.Command{
-	UsageLine: "ls [-r] [<prefix string>]",
-	ShortDesc: "lists matching packages on the server",
-	LongDesc: "Queries the backend for a list of packages in the given path to " +
-		"which the user has access, optionally recursively.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &listPackagesRun{}
-		c.registerBaseFlags()
-		c.ClientOptions.registerFlags(&c.Flags)
-		c.Flags.BoolVar(&c.recursive, "r", false, "Whether to list packages in subdirectories.")
-		c.Flags.BoolVar(&c.showHidden, "h", false, "Whether also to list hidden packages.")
-		return c
-	},
+func cmdListPackages(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "ls [-r] [<prefix string>]",
+		ShortDesc: "lists matching packages on the server",
+		LongDesc: "Queries the backend for a list of packages in the given path to " +
+			"which the user has access, optionally recursively.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &listPackagesRun{}
+			c.registerBaseFlags()
+			c.ClientOptions.registerFlags(&c.Flags, defaultAuthOpts)
+			c.Flags.BoolVar(&c.recursive, "r", false, "Whether to list packages in subdirectories.")
+			c.Flags.BoolVar(&c.showHidden, "h", false, "Whether also to list hidden packages.")
+			return c
+		},
+	}
 }
 
 type listPackagesRun struct {
@@ -1193,17 +1211,19 @@ func listPackages(ctx context.Context, path string, recursive, showHidden bool, 
 ////////////////////////////////////////////////////////////////////////////////
 // 'search' subcommand.
 
-var cmdSearch = &subcommands.Command{
-	UsageLine: "search [package] -tag key:value [options]",
-	ShortDesc: "searches for package instances by tag",
-	LongDesc:  "Searches for package instances by tag, optionally constrained by package name.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &searchRun{}
-		c.registerBaseFlags()
-		c.ClientOptions.registerFlags(&c.Flags)
-		c.TagsOptions.registerFlags(&c.Flags)
-		return c
-	},
+func cmdSearch(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "search [package] -tag key:value [options]",
+		ShortDesc: "searches for package instances by tag",
+		LongDesc:  "Searches for package instances by tag, optionally constrained by package name.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &searchRun{}
+			c.registerBaseFlags()
+			c.ClientOptions.registerFlags(&c.Flags, defaultAuthOpts)
+			c.TagsOptions.registerFlags(&c.Flags)
+			return c
+		},
+	}
 }
 
 type searchRun struct {
@@ -1250,17 +1270,19 @@ func searchInstances(ctx context.Context, packageName, tag string, clientOpts Cl
 ////////////////////////////////////////////////////////////////////////////////
 // 'acl-list' subcommand.
 
-var cmdListACL = &subcommands.Command{
-	Advanced:  true,
-	UsageLine: "acl-list <package subpath>",
-	ShortDesc: "lists package path Access Control List",
-	LongDesc:  "Lists package path Access Control List.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &listACLRun{}
-		c.registerBaseFlags()
-		c.ClientOptions.registerFlags(&c.Flags)
-		return c
-	},
+func cmdListACL(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		Advanced:  true,
+		UsageLine: "acl-list <package subpath>",
+		ShortDesc: "lists package path Access Control List",
+		LongDesc:  "Lists package path Access Control List.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &listACLRun{}
+			c.registerBaseFlags()
+			c.ClientOptions.registerFlags(&c.Flags, defaultAuthOpts)
+			return c
+		},
+	}
 }
 
 type listACLRun struct {
@@ -1336,22 +1358,24 @@ func (l *principalsList) Set(value string) error {
 	return nil
 }
 
-var cmdEditACL = &subcommands.Command{
-	Advanced:  true,
-	UsageLine: "acl-edit <package subpath> [options]",
-	ShortDesc: "modifies package path Access Control List",
-	LongDesc:  "Modifies package path Access Control List.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &editACLRun{}
-		c.registerBaseFlags()
-		c.ClientOptions.registerFlags(&c.Flags)
-		c.Flags.Var(&c.owner, "owner", "Users or groups to grant OWNER role.")
-		c.Flags.Var(&c.writer, "writer", "Users or groups to grant WRITER role.")
-		c.Flags.Var(&c.reader, "reader", "Users or groups to grant READER role.")
-		c.Flags.Var(&c.counterWriter, "counter-writer", "Users or groups to grant COUNTER_WRITER role.")
-		c.Flags.Var(&c.revoke, "revoke", "Users or groups to remove from all roles.")
-		return c
-	},
+func cmdEditACL(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		Advanced:  true,
+		UsageLine: "acl-edit <package subpath> [options]",
+		ShortDesc: "modifies package path Access Control List",
+		LongDesc:  "Modifies package path Access Control List.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &editACLRun{}
+			c.registerBaseFlags()
+			c.ClientOptions.registerFlags(&c.Flags, defaultAuthOpts)
+			c.Flags.Var(&c.owner, "owner", "Users or groups to grant OWNER role.")
+			c.Flags.Var(&c.writer, "writer", "Users or groups to grant WRITER role.")
+			c.Flags.Var(&c.reader, "reader", "Users or groups to grant READER role.")
+			c.Flags.Var(&c.counterWriter, "counter-writer", "Users or groups to grant COUNTER_WRITER role.")
+			c.Flags.Var(&c.revoke, "revoke", "Users or groups to remove from all roles.")
+			return c
+		},
+	}
 }
 
 type editACLRun struct {
@@ -1415,18 +1439,20 @@ func editACL(ctx context.Context, packagePath string, owners, writers, readers, 
 ////////////////////////////////////////////////////////////////////////////////
 // 'pkg-build' subcommand.
 
-var cmdBuild = &subcommands.Command{
-	Advanced:  true,
-	UsageLine: "pkg-build [options]",
-	ShortDesc: "builds a package instance file",
-	LongDesc:  "Builds a package instance producing *.cipd file.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &buildRun{}
-		c.registerBaseFlags()
-		c.InputOptions.registerFlags(&c.Flags)
-		c.Flags.StringVar(&c.outputFile, "out", "<path>", "Path to a file to write the final package to.")
-		return c
-	},
+func cmdBuild() *subcommands.Command {
+	return &subcommands.Command{
+		Advanced:  true,
+		UsageLine: "pkg-build [options]",
+		ShortDesc: "builds a package instance file",
+		LongDesc:  "Builds a package instance producing *.cipd file.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &buildRun{}
+			c.registerBaseFlags()
+			c.InputOptions.registerFlags(&c.Flags)
+			c.Flags.StringVar(&c.outputFile, "out", "<path>", "Path to a file to write the final package to.")
+			return c
+		},
+	}
 }
 
 type buildRun struct {
@@ -1475,17 +1501,19 @@ func buildInstanceFile(ctx context.Context, instanceFile string, inputOpts Input
 ////////////////////////////////////////////////////////////////////////////////
 // 'pkg-deploy' subcommand.
 
-var cmdDeploy = &subcommands.Command{
-	Advanced:  true,
-	UsageLine: "pkg-deploy <package instance file> [options]",
-	ShortDesc: "deploys a package instance file",
-	LongDesc:  "Deploys a *.cipd package instance into a site root.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &deployRun{}
-		c.registerBaseFlags()
-		c.Flags.StringVar(&c.rootDir, "root", "<path>", "Path to an installation site root directory.")
-		return c
-	},
+func cmdDeploy() *subcommands.Command {
+	return &subcommands.Command{
+		Advanced:  true,
+		UsageLine: "pkg-deploy <package instance file> [options]",
+		ShortDesc: "deploys a package instance file",
+		LongDesc:  "Deploys a *.cipd package instance into a site root.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &deployRun{}
+			c.registerBaseFlags()
+			c.Flags.StringVar(&c.rootDir, "root", "<path>", "Path to an installation site root directory.")
+			return c
+		},
+	}
 }
 
 type deployRun struct {
@@ -1521,19 +1549,21 @@ func deployInstanceFile(ctx context.Context, root string, instanceFile string) (
 ////////////////////////////////////////////////////////////////////////////////
 // 'pkg-fetch' subcommand.
 
-var cmdFetch = &subcommands.Command{
-	Advanced:  true,
-	UsageLine: "pkg-fetch <package> [options]",
-	ShortDesc: "fetches a package instance file from the repository",
-	LongDesc:  "Fetches a package instance file from the repository.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &fetchRun{}
-		c.registerBaseFlags()
-		c.ClientOptions.registerFlags(&c.Flags)
-		c.Flags.StringVar(&c.version, "version", "<version>", "Package version to fetch.")
-		c.Flags.StringVar(&c.outputPath, "out", "<path>", "Path to a file to write fetch to.")
-		return c
-	},
+func cmdFetch(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		Advanced:  true,
+		UsageLine: "pkg-fetch <package> [options]",
+		ShortDesc: "fetches a package instance file from the repository",
+		LongDesc:  "Fetches a package instance file from the repository.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &fetchRun{}
+			c.registerBaseFlags()
+			c.ClientOptions.registerFlags(&c.Flags, defaultAuthOpts)
+			c.Flags.StringVar(&c.version, "version", "<version>", "Package version to fetch.")
+			c.Flags.StringVar(&c.outputPath, "out", "<path>", "Path to a file to write fetch to.")
+			return c
+		},
+	}
 }
 
 type fetchRun struct {
@@ -1595,16 +1625,18 @@ func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile s
 ////////////////////////////////////////////////////////////////////////////////
 // 'pkg-inspect' subcommand.
 
-var cmdInspect = &subcommands.Command{
-	Advanced:  true,
-	UsageLine: "pkg-inspect <package instance file>",
-	ShortDesc: "inspects contents of a package instance file",
-	LongDesc:  "Reads contents *.cipd file and prints information about it.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &inspectRun{}
-		c.registerBaseFlags()
-		return c
-	},
+func cmdInspect() *subcommands.Command {
+	return &subcommands.Command{
+		Advanced:  true,
+		UsageLine: "pkg-inspect <package instance file>",
+		ShortDesc: "inspects contents of a package instance file",
+		LongDesc:  "Reads contents *.cipd file and prints information about it.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &inspectRun{}
+			c.registerBaseFlags()
+			return c
+		},
+	}
 }
 
 type inspectRun struct {
@@ -1651,20 +1683,22 @@ func inspectInstance(ctx context.Context, inst local.PackageInstance, listFiles 
 ////////////////////////////////////////////////////////////////////////////////
 // 'pkg-register' subcommand.
 
-var cmdRegister = &subcommands.Command{
-	Advanced:  true,
-	UsageLine: "pkg-register <package instance file>",
-	ShortDesc: "uploads and registers package instance in the package repository",
-	LongDesc:  "Uploads and registers package instance in the package repository.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &registerRun{}
-		c.registerBaseFlags()
-		c.Opts.RefsOptions.registerFlags(&c.Flags)
-		c.Opts.TagsOptions.registerFlags(&c.Flags)
-		c.Opts.ClientOptions.registerFlags(&c.Flags)
-		c.Opts.UploadOptions.registerFlags(&c.Flags)
-		return c
-	},
+func cmdRegister(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		Advanced:  true,
+		UsageLine: "pkg-register <package instance file>",
+		ShortDesc: "uploads and registers package instance in the package repository",
+		LongDesc:  "Uploads and registers package instance in the package repository.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &registerRun{}
+			c.registerBaseFlags()
+			c.Opts.RefsOptions.registerFlags(&c.Flags)
+			c.Opts.TagsOptions.registerFlags(&c.Flags)
+			c.Opts.ClientOptions.registerFlags(&c.Flags, defaultAuthOpts)
+			c.Opts.UploadOptions.registerFlags(&c.Flags)
+			return c
+		},
+	}
 }
 
 type registerOpts struct {
@@ -1719,18 +1753,20 @@ func registerInstanceFile(ctx context.Context, instanceFile string, opts *regist
 ////////////////////////////////////////////////////////////////////////////////
 // 'pkg-delete' subcommand.
 
-var cmdDelete = &subcommands.Command{
-	Advanced:  true,
-	UsageLine: "pkg-delete <package name>",
-	ShortDesc: "removes the package from the package repository on the backend",
-	LongDesc: "Removes all instances of the package, all its tags and refs.\n" +
-		"There's no confirmation and no undo. Be careful.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &deleteRun{}
-		c.registerBaseFlags()
-		c.ClientOptions.registerFlags(&c.Flags)
-		return c
-	},
+func cmdDelete(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		Advanced:  true,
+		UsageLine: "pkg-delete <package name>",
+		ShortDesc: "removes the package from the package repository on the backend",
+		LongDesc: "Removes all instances of the package, all its tags and refs.\n" +
+			"There's no confirmation and no undo. Be careful.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &deleteRun{}
+			c.registerBaseFlags()
+			c.ClientOptions.registerFlags(&c.Flags, defaultAuthOpts)
+			return c
+		},
+	}
 }
 
 type deleteRun struct {
@@ -1765,25 +1801,27 @@ func deletePackage(ctx context.Context, packageName string, opts *ClientOptions)
 ////////////////////////////////////////////////////////////////////////////////
 // 'counter-write' subcommand.
 
-var cmdCounterWrite = &subcommands.Command{
-	Advanced:  true,
-	UsageLine: "counter-write -version <version> <package name> [-increment <counter> | -touch <counter>]",
-	ShortDesc: "updates a named counter associated with the given package version",
-	LongDesc: "Updates a named counter associated with the given package version\n" +
-		"If used with -increment the counter will be incremented by 1 and its timestamp\n" +
-		"updated.  The counter will be created with an initial value of 1 if it does not\n" +
-		"exist.\n" +
-		"If used with -touch the timestamp will be updated without changing the value.\n" +
-		"The counter will be created with an initial value of 0 if it does not exist.",
-	CommandRun: func() subcommands.CommandRun {
-		c := &counterWriteRun{}
-		c.registerBaseFlags()
-		c.ClientOptions.registerFlags(&c.Flags)
-		c.Flags.StringVar(&c.version, "version", "<version>", "Version of the package to modify.")
-		c.Flags.StringVar(&c.increment, "increment", "", "Name of the counter to increment.")
-		c.Flags.StringVar(&c.touch, "touch", "", "Name of the counter to touch.")
-		return c
-	},
+func cmdCounterWrite(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		Advanced:  true,
+		UsageLine: "counter-write -version <version> <package name> [-increment <counter> | -touch <counter>]",
+		ShortDesc: "updates a named counter associated with the given package version",
+		LongDesc: "Updates a named counter associated with the given package version\n" +
+			"If used with -increment the counter will be incremented by 1 and its timestamp\n" +
+			"updated.  The counter will be created with an initial value of 1 if it does not\n" +
+			"exist.\n" +
+			"If used with -touch the timestamp will be updated without changing the value.\n" +
+			"The counter will be created with an initial value of 0 if it does not exist.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &counterWriteRun{}
+			c.registerBaseFlags()
+			c.ClientOptions.registerFlags(&c.Flags, defaultAuthOpts)
+			c.Flags.StringVar(&c.version, "version", "<version>", "Version of the package to modify.")
+			c.Flags.StringVar(&c.increment, "increment", "", "Name of the counter to increment.")
+			c.Flags.StringVar(&c.touch, "touch", "", "Name of the counter to touch.")
+			return c
+		},
+	}
 }
 
 type counterWriteRun struct {
@@ -1838,18 +1876,20 @@ func writeCounter(ctx context.Context, pkg, version, counter string, delta int, 
 ////////////////////////////////////////////////////////////////////////////////
 // 'counter-read' subcommand.
 
-var cmdCounterRead = &subcommands.Command{
-	Advanced:  true,
-	UsageLine: "counter-read -version <version> <package name> <counter> [<counter> ...]",
-	ShortDesc: "fetches one or more counters for the given package version",
-	LongDesc:  "Fetches one or more counters for the given package version",
-	CommandRun: func() subcommands.CommandRun {
-		c := &counterReadRun{}
-		c.registerBaseFlags()
-		c.ClientOptions.registerFlags(&c.Flags)
-		c.Flags.StringVar(&c.version, "version", "<version>", "Version of the package to modify.")
-		return c
-	},
+func cmdCounterRead(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		Advanced:  true,
+		UsageLine: "counter-read -version <version> <package name> <counter> [<counter> ...]",
+		ShortDesc: "fetches one or more counters for the given package version",
+		LongDesc:  "Fetches one or more counters for the given package version",
+		CommandRun: func() subcommands.CommandRun {
+			c := &counterReadRun{}
+			c.registerBaseFlags()
+			c.ClientOptions.registerFlags(&c.Flags, defaultAuthOpts)
+			c.Flags.StringVar(&c.version, "version", "<version>", "Version of the package to modify.")
+			return c
+		},
+	}
 }
 
 type counterReadRun struct {
@@ -1938,17 +1978,19 @@ func readCounters(ctx context.Context, pkg, version string, counters []string, o
 ////////////////////////////////////////////////////////////////////////////////
 // 'selfupdate' subcommand.
 
-var cmdSelfUpdate = &subcommands.Command{
-	UsageLine: "selfupdate -version <version>",
-	ShortDesc: "updates the current cipd client binary",
-	LongDesc:  "does an in-place upgrade to the current cipd binary",
-	CommandRun: func() subcommands.CommandRun {
-		s := &selfupdateRun{}
-		s.registerBaseFlags()
-		s.ClientOptions.registerFlags(&s.Flags)
-		s.Flags.StringVar(&s.version, "version", "", "Version of the client to update to.")
-		return s
-	},
+func cmdSelfUpdate(defaultAuthOpts auth.Options) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "selfupdate -version <version>",
+		ShortDesc: "updates the current cipd client binary",
+		LongDesc:  "does an in-place upgrade to the current cipd binary",
+		CommandRun: func() subcommands.CommandRun {
+			s := &selfupdateRun{}
+			s.registerBaseFlags()
+			s.ClientOptions.registerFlags(&s.Flags, defaultAuthOpts)
+			s.Flags.StringVar(&s.version, "version", "", "Version of the client to update to.")
+			return s
+		},
+	}
 }
 
 type selfupdateRun struct {
@@ -2026,74 +2068,76 @@ const (
 	CIPDCacheDir            = "CIPD_CACHE_DIR"
 )
 
-var application = &cli.Application{
-	Name:  "cipd",
-	Title: "Chrome Infra Package Deployer (" + cipd.UserAgent + ")",
+func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
+	return &cli.Application{
+		Name:  "cipd",
+		Title: "Chrome Infra Package Deployer (" + cipd.UserAgent + ")",
 
-	Context: func(ctx context.Context) context.Context {
-		loggerConfig := gologger.LoggerConfig{
-			Format: `[P%{pid} %{time:15:04:05.000} %{shortfile} %{level:.1s}] %{message}`,
-			Out:    os.Stderr,
-		}
-		return loggerConfig.Use(ctx)
-	},
-
-	EnvVars: map[string]subcommands.EnvVarDefinition{
-		CIPDHTTPUserAgentPrefix: {
-			Advanced:  true,
-			ShortDesc: "Optional http User-Agent prefix.",
+		Context: func(ctx context.Context) context.Context {
+			loggerConfig := gologger.LoggerConfig{
+				Format: `[P%{pid} %{time:15:04:05.000} %{shortfile} %{level:.1s}] %{message}`,
+				Out:    os.Stderr,
+			}
+			return loggerConfig.Use(ctx)
 		},
-		CIPDCacheDir: {
-			ShortDesc: "Directory with shared instance and tags cache " +
-				"(-cache-dir, if given, takes precedence).",
+
+		EnvVars: map[string]subcommands.EnvVarDefinition{
+			CIPDHTTPUserAgentPrefix: {
+				Advanced:  true,
+				ShortDesc: "Optional http User-Agent prefix.",
+			},
+			CIPDCacheDir: {
+				ShortDesc: "Directory with shared instance and tags cache " +
+					"(-cache-dir, if given, takes precedence).",
+			},
 		},
-	},
 
-	Commands: []*subcommands.Command{
-		subcommands.CmdHelp,
-		version.SubcommandVersion,
+		Commands: []*subcommands.Command{
+			subcommands.CmdHelp,
+			version.SubcommandVersion,
 
-		// User friendly subcommands that operates within a site root. Implemented
-		// in friendly.go.
-		cmdInit,
-		cmdInstall,
-		cmdInstalled,
+			// User friendly subcommands that operates within a site root. Implemented
+			// in friendly.go.
+			cmdInit(),
+			cmdInstall(defaultAuthOpts),
+			cmdInstalled(),
 
-		// Authentication related commands.
-		authcli.SubcommandInfo(auth.Options{}, "auth-info", true),
-		authcli.SubcommandLogin(auth.Options{}, "auth-login", false),
-		authcli.SubcommandLogout(auth.Options{}, "auth-logout", false),
+			// Authentication related commands.
+			authcli.SubcommandInfo(defaultAuthOpts, "auth-info", true),
+			authcli.SubcommandLogin(defaultAuthOpts, "auth-login", false),
+			authcli.SubcommandLogout(defaultAuthOpts, "auth-logout", false),
 
-		// High level commands.
-		cmdListPackages,
-		cmdSearch,
-		cmdCreate,
-		cmdEnsure,
-		cmdResolve,
-		cmdDescribe,
-		cmdSetRef,
-		cmdSetTag,
-		cmdSelfUpdate,
+			// High level commands.
+			cmdListPackages(defaultAuthOpts),
+			cmdSearch(defaultAuthOpts),
+			cmdCreate(defaultAuthOpts),
+			cmdEnsure(defaultAuthOpts),
+			cmdResolve(defaultAuthOpts),
+			cmdDescribe(defaultAuthOpts),
+			cmdSetRef(defaultAuthOpts),
+			cmdSetTag(defaultAuthOpts),
+			cmdSelfUpdate(defaultAuthOpts),
 
-		// ACLs.
-		cmdListACL,
-		cmdEditACL,
+			// ACLs.
+			cmdListACL(defaultAuthOpts),
+			cmdEditACL(defaultAuthOpts),
 
-		// Counters.
-		cmdCounterWrite,
-		cmdCounterRead,
+			// Counters.
+			cmdCounterWrite(defaultAuthOpts),
+			cmdCounterRead(defaultAuthOpts),
 
-		// Low level pkg-* commands.
-		cmdBuild,
-		cmdDeploy,
-		cmdFetch,
-		cmdInspect,
-		cmdRegister,
-		cmdDelete,
+			// Low level pkg-* commands.
+			cmdBuild(),
+			cmdDeploy(),
+			cmdFetch(defaultAuthOpts),
+			cmdInspect(),
+			cmdRegister(defaultAuthOpts),
+			cmdDelete(defaultAuthOpts),
 
-		// Low level misc commands.
-		cmdPuppetCheckUpdates,
-	},
+			// Low level misc commands.
+			cmdPuppetCheckUpdates(defaultAuthOpts),
+		},
+	}
 }
 
 func splitCmdLine(args []string) (cmd string, flags []string, pos []string) {
@@ -2135,5 +2179,6 @@ func fixFlagsPosition(args []string) []string {
 
 func main() {
 	mathrand.SeedRandomly()
-	os.Exit(subcommands.Run(application, fixFlagsPosition(os.Args[1:])))
+	app := GetApplication(chromeinfra.DefaultAuthOptions())
+	os.Exit(subcommands.Run(app, fixFlagsPosition(os.Args[1:])))
 }
