@@ -1,0 +1,71 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package milo;
+
+import "github.com/luci/luci-go/common/proto/milo/annotations.proto";
+
+// The BuildInfo service definition.
+//
+// BuildInfo offers a one-stop shop for users to query Milo about a specific
+// build, referencing it using familiar terms, and receive canonical build data
+// (mostly LogDog annotation protobufs) and metadata. It acts as an entry point
+// for services that wish to learn about builds or view their logs.
+service BuildInfo {
+  rpc Get(BuildInfoRequest) returns (BuildInfoResponse);
+}
+
+message BuildInfoRequest {
+  // The request for the name of a BuildBot built.
+  message BuildBot {
+    // The master name.
+    string master_name = 1;
+    // The builder name server.
+    string builder_name = 2;
+    // The build number.
+    int64 build_number = 3;
+  }
+
+  // The request containing a Swarming task.
+  message Swarming {
+    // Host is the hostname of the Swarming server to connect to
+    // (e.g., "swarming.example.com").
+    //
+    // This is optional. If omitted or empty, Milo's default Swarming server
+    // will be used.
+    string host = 1;
+
+    // The Swarming task name.
+    string task = 2;
+  }
+
+  oneof build {
+    // Request a BuildBot build.
+    BuildBot buildbot = 1;
+    // Request a Swarming build.
+    Swarming swarming = 2;
+  }
+
+  // Project hint is a LUCI project suggestion for this build. Some builds,
+  // notably older ones, may not contain enough metadata to resolve their
+  // project. Resolution may succeed if this hint is provided and correct.
+  //
+  // This field is optional, and its use is discouraged unless necessary.
+  string project_hint = 11;
+}
+
+// The request containing the name of the master.
+message BuildInfoResponse {
+  // The LUCI project that this build belongs to.
+  string project = 1;
+
+  // The main build step.
+  milo.Step step = 2;
+
+  // The LogDog annotation stream for this build. The Prefix will be populated
+  // and can be used as the prefix for any un-prefixed LogdogStream in "step".
+  milo.LogdogStream annotation_stream = 3;
+}

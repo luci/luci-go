@@ -7,9 +7,9 @@ package frontend
 import (
 	"net/http"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/grpc/discovery"
 	"github.com/luci/luci-go/grpc/grpcmon"
@@ -17,6 +17,7 @@ import (
 	milo "github.com/luci/luci-go/milo/api/proto"
 	"github.com/luci/luci-go/milo/appengine/buildbot"
 	"github.com/luci/luci-go/milo/appengine/buildbucket"
+	"github.com/luci/luci-go/milo/appengine/buildinfo"
 	"github.com/luci/luci-go/milo/appengine/console"
 	"github.com/luci/luci-go/milo/appengine/logdog"
 	"github.com/luci/luci-go/milo/appengine/settings"
@@ -76,6 +77,10 @@ func init() {
 	}
 	milo.RegisterBuildbotServer(&api, &milo.DecoratedBuildbot{
 		Service: &buildbot.Service{},
+		Prelude: emptyPrelude,
+	})
+	milo.RegisterBuildInfoServer(&api, &milo.DecoratedBuildInfo{
+		Service: &buildinfo.Service{},
 		Prelude: emptyPrelude,
 	})
 	discovery.Enable(&api)

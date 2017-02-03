@@ -7,4 +7,4 @@ package milo
 //go:generate go install github.com/luci/luci-go/grpc/cmd/cproto
 //go:generate go install github.com/luci/luci-go/grpc/cmd/svcdec
 //go:generate cproto
-//go:generate svcdec -type BuildbotServer
+//go:generate svcdec -type BuildbotServer -type BuildInfoServer
