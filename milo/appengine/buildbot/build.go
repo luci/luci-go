@@ -15,11 +15,13 @@ import (
 	"strings"
 	"time"
 
-	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/common/miloerror"
+
+	ds "github.com/luci/gae/service/datastore"
+
 	"golang.org/x/net/context"
 )
 
@@ -348,9 +350,9 @@ func properties(b *buildbotBuild) (result []*resp.PropertyGroup) {
 	groups := map[string]*resp.PropertyGroup{}
 	allProps := map[string]Prop{}
 	for _, prop := range b.Properties {
-		allProps[prop[0].(string)] = Prop{
-			Value: prop[1],
-			Group: prop[2].(string),
+		allProps[prop.Name] = Prop{
+			Value: prop.Value,
+			Group: prop.Source,
 		}
 	}
 	for key, prop := range allProps {
@@ -420,27 +422,25 @@ func sourcestamp(c context.Context, b *buildbotBuild) *resp.SourceStamp {
 	issue := int64(-1)
 	// TODO(hinoka): Gerrit URLs.
 	for _, prop := range b.Properties {
-		key := prop[0].(string)
-		value := prop[1]
-		switch key {
+		switch prop.Name {
 		case "rietveld":
-			if v, ok := value.(string); ok {
+			if v, ok := prop.Value.(string); ok {
 				rietveld = v
 			} else {
-				logging.Warningf(c, "Field rietveld is not a string: %#v", value)
+				logging.Warningf(c, "Field rietveld is not a string: %#v", prop.Value)
 			}
 		case "issue":
-			if v, ok := value.(float64); ok {
+			if v, ok := prop.Value.(float64); ok {
 				issue = int64(v)
 			} else {
-				logging.Warningf(c, "Field issue is not a float: %#v", value)
+				logging.Warningf(c, "Field issue is not a float: %#v", prop.Value)
 			}
 
 		case "got_revision":
-			if v, ok := value.(string); ok {
+			if v, ok := prop.Value.(string); ok {
 				ss.Revision = v
 			} else {
-				logging.Warningf(c, "Field got_revision is not a string: %#v", value)
+				logging.Warningf(c, "Field got_revision is not a string: %#v", prop.Value)
 			}
 
 		}

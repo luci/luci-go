@@ -71,6 +71,42 @@ func (a *buildbotLinkAlias) toLink() *resp.Link {
 	}
 }
 
+type buildbotProperty struct {
+	Name   string
+	Value  interface{}
+	Source string
+}
+
+func (p *buildbotProperty) MarshalJSON() ([]byte, error) {
+	return json.Marshal([]interface{}{p.Name, p.Value, p.Source})
+}
+
+func (p *buildbotProperty) UnmarshalJSON(d []byte) error {
+	// The raw BuildBot representation is a slice of interfaces.
+	var raw []interface{}
+	if err := json.Unmarshal(d, &raw); err != nil {
+		return err
+	}
+
+	switch len(raw) {
+	case 3:
+		if s, ok := raw[2].(string); ok {
+			p.Source = s
+		}
+		fallthrough
+
+	case 2:
+		p.Value = raw[1]
+		fallthrough
+
+	case 1:
+		if s, ok := raw[0].(string); ok {
+			p.Name = s
+		}
+	}
+	return nil
+}
+
 // buildbotBuild is a single build json on buildbot.
 type buildbotBuild struct {
 	Master      string   `gae:"$master"`
@@ -86,7 +122,7 @@ type buildbotBuild struct {
 	// property name is always a string
 	// value can be a string or float
 	// source is optional, but is always a string if present
-	Properties  [][]interface{}      `json:"properties" gae:"-"`
+	Properties  []*buildbotProperty  `json:"properties" gae:"-"`
 	Reason      string               `json:"reason"`
 	Results     *int                 `json:"results" gae:"-"`
 	Slave       string               `json:"slave"`
@@ -200,6 +236,15 @@ func (b *buildbotBuild) Load(p datastore.PropertyMap) error {
 		return err
 	}
 	return json.Unmarshal(bs, b)
+}
+
+func (b *buildbotBuild) getPropertyValue(name string) interface{} {
+	for _, prop := range b.Properties {
+		if prop.Name == name {
+			return prop.Value
+		}
+	}
+	return ""
 }
 
 type errTooBig struct {
