@@ -12,8 +12,6 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/client/authcli"
-	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
@@ -22,7 +20,6 @@ import (
 type application struct {
 	cli.Application
 
-	authFlags  authcli.Flags
 	layoutPath string
 	workers    int
 
@@ -42,12 +39,6 @@ func (a *application) runWork(c context.Context, fn func(*work) error) error {
 }
 
 func mainImpl(args []string) int {
-	authOptions := auth.Options{
-		Scopes: []string{
-			"https://www.googleapis.com/auth/cloud-platform",
-		},
-	}
-
 	c := gologger.StdConfig.Use(context.Background())
 	a := application{
 		Application: cli.Application{
@@ -59,10 +50,6 @@ func mainImpl(args []string) int {
 				&cmdCheckout,
 				&cmdDeploy,
 				&cmdManage,
-
-				authcli.SubcommandLogin(authOptions, "auth-login", false),
-				authcli.SubcommandLogout(authOptions, "auth-logout", false),
-				authcli.SubcommandInfo(authOptions, "auth-info", false),
 			},
 		},
 	}
@@ -72,7 +59,6 @@ func mainImpl(args []string) int {
 
 	var fs flag.FlagSet
 	logFlags.AddFlags(&fs)
-	a.authFlags.Register(&fs, authOptions)
 	a.addFlags(&fs)
 	if err := fs.Parse(args); err != nil {
 		log.WithError(err).Errorf(c, "Failed to parse flags.")
