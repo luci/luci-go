@@ -202,9 +202,17 @@ func (c *Subcommand) done(result interface{}, err error) int {
 	return 0
 }
 
-// doneWithPins is a handy shortcut that prints list of pinInfo and deduces
-// process exit code based on presence of errors there.
+// doneWithPins is a handy shortcut that prints a pinInfo slice and
+// deduces process exit code based on presence of errors there.
+//
+// This just calls through to doneWithPinMap.
 func (c *Subcommand) doneWithPins(pins []pinInfo, err error) int {
+	return c.doneWithPinMap(map[string][]pinInfo{"": pins}, err)
+}
+
+// doneWithPinMap is a handy shortcut that prints the subdir->pinInfo map and
+// deduces process exit code based on presence of errors there.
+func (c *Subcommand) doneWithPinMap(pins map[string][]pinInfo, err error) int {
 	if len(pins) == 0 {
 		fmt.Println("No packages.")
 	} else {
@@ -586,43 +594,53 @@ func callConcurrently(pkgs []string, callback func(pkg string) pinInfo) []pinInf
 	return pins
 }
 
-func printPinsAndError(pins []pinInfo) {
-	hasPins := false
-	hasErrors := false
-	for _, p := range pins {
-		if p.Err != "" {
-			hasErrors = true
-		} else if p.Pin != nil {
-			hasPins = true
-		}
-	}
-	if hasPins {
-		fmt.Println("Packages:")
-		for _, p := range pins {
-			if p.Err != "" || p.Pin == nil {
-				continue
-			}
-			if p.Tracking == "" {
-				fmt.Printf("  %s\n", p.Pin)
-			} else {
-				fmt.Printf("  %s (tracking %q)\n", p.Pin, p.Tracking)
-			}
-		}
-	}
-	if hasErrors {
-		fmt.Fprintln(os.Stderr, "Errors:")
+func printPinsAndError(pinMap map[string][]pinInfo) {
+	for subdir, pins := range pinMap {
+		hasPins := false
+		hasErrors := false
 		for _, p := range pins {
 			if p.Err != "" {
-				fmt.Fprintf(os.Stderr, "  %s: %s.\n", p.Pkg, p.Err)
+				hasErrors = true
+			} else if p.Pin != nil {
+				hasPins = true
+			}
+		}
+		subdirString := ""
+		if (hasPins || hasErrors) && (len(pinMap) > 1 || subdir != "") {
+			// only print this if it's not the root subdir, or there's more than one
+			// subdir in pinMap.
+			subdirString = fmt.Sprintf(" (subdir %q)", subdir)
+		}
+		if hasPins {
+			fmt.Printf("Packages%s:\n", subdirString)
+			for _, p := range pins {
+				if p.Err != "" || p.Pin == nil {
+					continue
+				}
+				if p.Tracking == "" {
+					fmt.Printf("  %s\n", p.Pin)
+				} else {
+					fmt.Printf("  %s (tracking %q)\n", p.Pin, p.Tracking)
+				}
+			}
+		}
+		if hasErrors {
+			fmt.Fprintf(os.Stderr, "Errors%s:\n", subdirString)
+			for _, p := range pins {
+				if p.Err != "" {
+					fmt.Fprintf(os.Stderr, "  %s: %s.\n", p.Pkg, p.Err)
+				}
 			}
 		}
 	}
 }
 
-func hasErrors(pins []pinInfo) bool {
-	for _, p := range pins {
-		if p.Err != "" {
-			return true
+func hasErrors(pinMap map[string][]pinInfo) bool {
+	for _, pins := range pinMap {
+		for _, p := range pins {
+			if p.Err != "" {
+				return true
+			}
 		}
 	}
 	return false
@@ -734,16 +752,16 @@ func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommand
 	return c.done(currentPins, err)
 }
 
-func ensurePackages(ctx context.Context, root string, desiredStateFile string, dryRun bool, clientOpts ClientOptions) (common.PinSlice, cipd.Actions, error) {
+func ensurePackages(ctx context.Context, root string, desiredStateFile string, dryRun bool, clientOpts ClientOptions) (common.PinSliceBySubdir, cipd.ActionMap, error) {
 	f, err := os.Open(desiredStateFile)
 	if err != nil {
-		return nil, cipd.Actions{}, err
+		return nil, nil, err
 	}
 	defer f.Close()
 
 	ensureFile, err := ensure.ParseFile(f)
 	if err != nil {
-		return nil, cipd.Actions{}, err
+		return nil, nil, err
 	}
 
 	// Prefer the ServiceURL from the file (if set), and log a warning if the user
@@ -758,7 +776,7 @@ func ensurePackages(ctx context.Context, root string, desiredStateFile string, d
 
 	client, err := clientOpts.makeCipdClient(ctx, root)
 	if err != nil {
-		return nil, cipd.Actions{}, err
+		return nil, nil, err
 	}
 
 	client.BeginBatch(ctx)
@@ -768,11 +786,7 @@ func ensurePackages(ctx context.Context, root string, desiredStateFile string, d
 		return client.ResolveVersion(ctx, pkg, vers)
 	})
 	if err != nil {
-		return nil, cipd.Actions{}, err
-	}
-
-	if err := resolved.PackagesBySubdir.AssertOnlyDefaultSubdir(); err != nil {
-		return nil, cipd.Actions{}, err
+		return nil, nil, err
 	}
 
 	actions, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, dryRun)
@@ -780,8 +794,7 @@ func ensurePackages(ctx context.Context, root string, desiredStateFile string, d
 		return nil, actions, err
 	}
 
-	// TODO(iannucci): fix 'dump' format so that it can contain subdir information
-	return resolved.PackagesBySubdir[""], actions, nil
+	return resolved.PackagesBySubdir, actions, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -835,7 +848,7 @@ func (c *checkUpdatesRun) Run(a subcommands.Application, args []string, env subc
 		return 0 // on fatal errors ask puppet to run 'ensure' for real
 	}
 	c.done(actions, nil)
-	if actions.Empty() {
+	if len(actions) == 0 {
 		return 5 // some arbitrary non-zero number, unlikely to show up on errors
 	}
 	return 0
@@ -1076,8 +1089,8 @@ func setRefOrTag(ctx context.Context, args *setRefOrTagArgs) ([]pinInfo, error) 
 	if err != nil {
 		return nil, err
 	}
-	if hasErrors(pins) {
-		printPinsAndError(pins)
+	if pm := map[string][]pinInfo{"": pins}; hasErrors(pm) {
+		printPinsAndError(pm)
 		return nil, fmt.Errorf("can't find %q version in all packages, aborting", args.version)
 	}
 
@@ -2068,6 +2081,7 @@ const (
 	CIPDCacheDir            = "CIPD_CACHE_DIR"
 )
 
+// GetApplication returns the application, duh.
 func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
 	return &cli.Application{
 		Name:  "cipd",

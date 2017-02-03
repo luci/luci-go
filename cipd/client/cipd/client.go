@@ -47,6 +47,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 
@@ -107,7 +108,7 @@ var (
 
 var (
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 1.4.0"
+	UserAgent = "cipd 1.5.0"
 )
 
 func init() {
@@ -229,6 +230,62 @@ type Counter struct {
 	CreatedTS UnixTime `json:"created_ts"`
 	// UpdatedTS is the most recent time the counter was written.
 	UpdatedTS UnixTime `json:"updated_ts"`
+}
+
+// ActionMap is a map of subdir to the Actions which will occur within it.
+type ActionMap map[string]*Actions
+
+// LoopOrdered loops over the ActionMap in sorted order (by subdir).
+func (am ActionMap) LoopOrdered(cb func(subdir string, actions *Actions)) {
+	subdirs := make(sort.StringSlice, 0, len(am))
+	for subdir := range am {
+		subdirs = append(subdirs, subdir)
+	}
+	subdirs.Sort()
+	for _, subdir := range subdirs {
+		cb(subdir, am[subdir])
+	}
+}
+
+// Log prints the pending action to the logger installed in ctx.
+func (am ActionMap) Log(ctx context.Context) {
+	keys := make([]string, 0, len(am))
+	for key := range am {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	for _, subdir := range keys {
+		actions := am[subdir]
+
+		if subdir == "" {
+			if len(keys) > 1 {
+				logging.Infof(ctx, "In root:")
+			}
+		} else {
+			logging.Infof(ctx, "In subdir %q:", subdir)
+		}
+
+		if len(actions.ToInstall) != 0 {
+			logging.Infof(ctx, "  to install:")
+			for _, pin := range actions.ToInstall {
+				logging.Infof(ctx, "    %s", pin)
+			}
+		}
+		if len(actions.ToUpdate) != 0 {
+			logging.Infof(ctx, "  to updated:")
+			for _, pair := range actions.ToUpdate {
+				logging.Infof(ctx, "    %s (%s -> %s)",
+					pair.From.PackageName, pair.From.InstanceID, pair.To.InstanceID)
+			}
+		}
+		if len(actions.ToRemove) != 0 {
+			logging.Infof(ctx, "  to removed:")
+			for _, pin := range actions.ToRemove {
+				logging.Infof(ctx, "    %s", pin)
+			}
+		}
+	}
 }
 
 // Actions is returned by EnsurePackages.
@@ -387,7 +444,7 @@ type Client interface {
 	// struct, but won't actually perform them.
 	//
 	// If the update was only partially applied, returns both Actions and error.
-	EnsurePackages(ctx context.Context, pkgs common.PinSliceBySubdir, dryRun bool) (Actions, error)
+	EnsurePackages(ctx context.Context, pkgs common.PinSliceBySubdir, dryRun bool) (ActionMap, error)
 
 	// IncrementCounter adds delta to the counter's value and updates its last
 	// updated timestamp.
@@ -1154,8 +1211,8 @@ func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pi
 }
 
 func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir string, pin common.Pin) error {
-	if subdir != "" {
-		return common.ErrSubdirsNotYetSupported
+	if err := common.ValidateSubdir(subdir); err != nil {
+		return err
 	}
 	if err := common.ValidatePin(pin); err != nil {
 		return err
@@ -1197,15 +1254,10 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir str
 	return err
 }
 
-func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, dryRun bool) (actions Actions, err error) {
+func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, dryRun bool) (aMap ActionMap, err error) {
 	if err = allPins.Validate(); err != nil {
 		return
 	}
-
-	if err = allPins.AssertOnlyDefaultSubdir(); err != nil {
-		return
-	}
-	pins := allPins[""]
 
 	client.BeginBatch(ctx)
 	defer client.EndBatch(ctx)
@@ -1217,82 +1269,73 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 	}
 
 	// Figure out what needs to be updated and deleted, log it.
-	actions = buildActionPlan(allPins, existing)
-	if actions.Empty() {
+	aMap = buildActionPlan(allPins, existing)
+	if len(aMap) == 0 {
 		logging.Debugf(ctx, "Everything is up-to-date.")
-		return actions, nil
+		return
 	}
 	// TODO(iannucci): ensure that no packages cross root boundaries
-	if len(actions.ToInstall) != 0 {
-		logging.Infof(ctx, "Packages to be installed:")
-		for _, pin := range actions.ToInstall {
-			logging.Infof(ctx, "  %s", pin)
-		}
-	}
-	if len(actions.ToUpdate) != 0 {
-		logging.Infof(ctx, "Packages to be updated:")
-		for _, pair := range actions.ToUpdate {
-			logging.Infof(ctx, "  %s (%s -> %s)",
-				pair.From.PackageName, pair.From.InstanceID, pair.To.InstanceID)
-		}
-	}
-	if len(actions.ToRemove) != 0 {
-		logging.Infof(ctx, "Packages to be removed:")
-		for _, pin := range actions.ToRemove {
-			logging.Infof(ctx, "  %s", pin)
-		}
-	}
+	aMap.Log(ctx)
 
 	if dryRun {
 		logging.Infof(ctx, "Dry run, not actually doing anything.")
-		return actions, nil
+		return
 	}
 
+	hasErrors := false
+
 	// Remove all unneeded stuff.
-	for _, pin := range actions.ToRemove {
-		err = client.deployer.RemoveDeployed(ctx, "", pin.PackageName)
-		if err != nil {
-			logging.Errorf(ctx, "Failed to remove %s - %s", pin.PackageName, err)
-			actions.Errors = append(actions.Errors, ActionError{
-				Action: "remove",
-				Pin:    pin,
-				Error:  JSONError{err},
-			})
+	aMap.LoopOrdered(func(subdir string, actions *Actions) {
+		for _, pin := range actions.ToRemove {
+			err = client.deployer.RemoveDeployed(ctx, subdir, pin.PackageName)
+			if err != nil {
+				logging.Errorf(ctx, "Failed to remove %s - %s (subdir %q)", pin.PackageName, err, subdir)
+				hasErrors = true
+				actions.Errors = append(actions.Errors, ActionError{
+					Action: "remove",
+					Pin:    pin,
+					Error:  JSONError{err},
+				})
+			}
 		}
-	}
+	})
 
 	// Install all new and updated stuff. Install in the order specified by
 	// 'pins'. Order matters if multiple packages install same file.
-	toDeploy := make(map[string]bool, len(actions.ToInstall)+len(actions.ToUpdate))
-	for _, p := range actions.ToInstall {
-		toDeploy[p.PackageName] = true
-	}
-	for _, pair := range actions.ToUpdate {
-		toDeploy[pair.To.PackageName] = true
-	}
-	for _, pin := range pins {
-		if !toDeploy[pin.PackageName] {
-			continue
+	aMap.LoopOrdered(func(subdir string, actions *Actions) {
+		toDeploy := make(map[string]bool, len(actions.ToInstall)+len(actions.ToUpdate))
+		for _, p := range actions.ToInstall {
+			toDeploy[p.PackageName] = true
 		}
-		err = client.FetchAndDeployInstance(ctx, "", pin)
-		if err != nil {
-			logging.Errorf(ctx, "Failed to install %s - %s", pin, err)
-			actions.Errors = append(actions.Errors, ActionError{
-				Action: "install",
-				Pin:    pin,
-				Error:  JSONError{err},
-			})
+		for _, pair := range actions.ToUpdate {
+			toDeploy[pair.To.PackageName] = true
 		}
-	}
+		for _, pin := range allPins[subdir] {
+			if !toDeploy[pin.PackageName] {
+				continue
+			}
+			err = client.FetchAndDeployInstance(ctx, subdir, pin)
+			if err != nil {
+				logging.Errorf(ctx, "Failed to install %s - %s", pin, err)
+				hasErrors = true
+				actions.Errors = append(actions.Errors, ActionError{
+					Action: "install",
+					Pin:    pin,
+					Error:  JSONError{err},
+				})
+			}
+		}
+	})
 
 	// Opportunistically cleanup the trash left from previous installs.
 	client.doBatchAwareOp(ctx, batchAwareOpCleanupTrash)
 
-	if len(actions.Errors) == 0 {
+	if !hasErrors {
 		logging.Infof(ctx, "All changes applied.")
-		return actions, nil
+	} else {
+		err = ErrEnsurePackagesFailed
 	}
-	return actions, ErrEnsurePackagesFailed
+	return
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1372,37 +1415,68 @@ func (d deleteOnClose) Close() (err error) {
 // Private stuff.
 
 // buildActionPlan is used by EnsurePackages to figure out what to install or remove.
-func buildActionPlan(desired, existing common.PinSliceBySubdir) (a Actions) {
-	if err := desired.AssertOnlyDefaultSubdir(); err != nil {
-		panic(err)
-	}
-	if err := existing.AssertOnlyDefaultSubdir(); err != nil {
-		panic(err)
+func buildActionPlan(desired, existing common.PinSliceBySubdir) (aMap ActionMap) {
+	desiredSubdirs := stringset.New(len(desired))
+	for desiredSubdir := range desired {
+		desiredSubdirs.Add(desiredSubdir)
 	}
 
-	defaultDesired := desired[""]
-	defaultExisting := existing[""]
+	existingSubdirs := stringset.New(len(existing))
+	for existingSubdir := range existing {
+		existingSubdirs.Add(existingSubdir)
+	}
 
-	// Figure out what needs to be installed or updated.
-	existingMap := defaultExisting.ToMap()
-	for _, d := range defaultDesired {
-		if existingID, exists := existingMap[d.PackageName]; !exists {
-			a.ToInstall = append(a.ToInstall, d)
-		} else if existingID != d.InstanceID {
-			a.ToUpdate = append(a.ToUpdate, UpdatedPin{
-				From: common.Pin{PackageName: d.PackageName, InstanceID: existingID},
-				To:   d,
-			})
+	aMap = ActionMap{}
+
+	// all newly added subdirs
+	desiredSubdirs.Difference(existingSubdirs).Iter(func(subdir string) bool {
+		if want := desired[subdir]; len(want) > 0 {
+			aMap[subdir] = &Actions{ToInstall: want}
 		}
-	}
+		return true
+	})
 
-	// Figure out what needs to be removed.
-	desiredMap := defaultDesired.ToMap()
-	for _, e := range defaultExisting {
-		if desiredMap[e.PackageName] == "" {
-			a.ToRemove = append(a.ToRemove, e)
+	// all removed subdirs
+	existingSubdirs.Difference(desiredSubdirs).Iter(func(subdir string) bool {
+		if have := existing[subdir]; len(have) > 0 {
+			aMap[subdir] = &Actions{ToRemove: have}
 		}
-	}
+		return true
+	})
 
+	// all common subdirs
+	desiredSubdirs.Intersect(existingSubdirs).Iter(func(subdir string) bool {
+		a := Actions{}
+
+		// Figure out what needs to be installed or updated.
+		haveMap := existing[subdir].ToMap()
+		for _, want := range desired[subdir] {
+			if haveID, exists := haveMap[want.PackageName]; !exists {
+				a.ToInstall = append(a.ToInstall, want)
+			} else if haveID != want.InstanceID {
+				a.ToUpdate = append(a.ToUpdate, UpdatedPin{
+					From: common.Pin{PackageName: want.PackageName, InstanceID: haveID},
+					To:   want,
+				})
+			}
+		}
+
+		// Figure out what needs to be removed.
+		wantMap := desired[subdir].ToMap()
+		for _, have := range existing[subdir] {
+			if wantMap[have.PackageName] == "" {
+				a.ToRemove = append(a.ToRemove, have)
+			}
+		}
+
+		if !a.Empty() {
+			aMap[subdir] = &a
+		}
+		return true
+	})
+
+	if len(aMap) == 0 {
+		return nil
+	}
 	return
 }

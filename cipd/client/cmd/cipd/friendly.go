@@ -232,46 +232,22 @@ func (site *installationSite) modifyConfig(cb func(cfg *installationSiteConfig) 
 // installedPackages discovers versions of packages installed in the site.
 //
 // If pkgs is empty array, it returns list of all installed packages.
-func (site *installationSite) installedPackages(ctx context.Context, pkgs []string) ([]pinInfo, error) {
+func (site *installationSite) installedPackages(ctx context.Context) (map[string][]pinInfo, error) {
 	d := local.NewDeployer(site.siteRoot)
 
-	// List all?
-	if len(pkgs) == 0 {
-		allPins, err := d.FindDeployed(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if err := allPins.AssertOnlyDefaultSubdir(); err != nil {
-			return nil, err
-		}
-		pins := allPins[""]
-		output := make([]pinInfo, len(pins))
+	allPins, err := d.FindDeployed(ctx)
+	if err != nil {
+		return nil, err
+	}
+	output := make(map[string][]pinInfo, len(allPins))
+	for subdir, pins := range allPins {
+		output[subdir] = make([]pinInfo, len(pins))
 		for i, pin := range pins {
 			cpy := pin
-			output[i] = pinInfo{
+			output[subdir][i] = pinInfo{
 				Pkg:      pin.PackageName,
 				Pin:      &cpy,
 				Tracking: site.cfg.TrackedVersions[pin.PackageName],
-			}
-		}
-		return output, nil
-	}
-
-	// List specific packages only.
-	output := make([]pinInfo, len(pkgs))
-	for i, pkgName := range pkgs {
-		pin, err := d.CheckDeployed(ctx, "", pkgName)
-		if err == nil {
-			output[i] = pinInfo{
-				Pkg:      pkgName,
-				Pin:      &pin,
-				Tracking: site.cfg.TrackedVersions[pkgName],
-			}
-		} else {
-			output[i] = pinInfo{
-				Pkg:      pkgName,
-				Tracking: site.cfg.TrackedVersions[pkgName],
-				Err:      err.Error(),
 			}
 		}
 	}
@@ -496,7 +472,7 @@ func (c *installRun) Run(a subcommands.Application, args []string, env subcomman
 func cmdInstalled() *subcommands.Command {
 	return &subcommands.Command{
 		Advanced:  true,
-		UsageLine: "installed [<package> <package> ...] [options]",
+		UsageLine: "installed [options]",
 		ShortDesc: "lists packages installed in the site root",
 		LongDesc:  "Lists packages installed in the site root.",
 		CommandRun: func() subcommands.CommandRun {
@@ -514,7 +490,7 @@ type installedRun struct {
 }
 
 func (c *installedRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if !c.checkArgs(args, 0, -1) {
+	if !c.checkArgs(args, 0, 0) {
 		return 1
 	}
 	site, err := getInstallationSite(c.rootDir)
@@ -522,5 +498,5 @@ func (c *installedRun) Run(a subcommands.Application, args []string, env subcomm
 		return c.done(nil, err)
 	}
 	ctx := cli.GetContext(a, c, env)
-	return c.doneWithPins(site.installedPackages(ctx, args))
+	return c.doneWithPinMap(site.installedPackages(ctx))
 }

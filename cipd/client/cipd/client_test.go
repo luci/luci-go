@@ -640,10 +640,12 @@ func TestEnsurePackages(t *testing.T) {
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tempDir)
 
-		assertFile := func(relPath, data string) {
-			body, err := ioutil.ReadFile(filepath.Join(tempDir, relPath))
-			So(err, ShouldBeNil)
-			So(string(body), ShouldEqual, data)
+		shouldHaveContent := func(relPath interface{}, data ...interface{}) string {
+			body, err := ioutil.ReadFile(filepath.Join(tempDir, relPath.(string)))
+			if ret := ShouldBeNil(err); ret != "" {
+				return ret
+			}
+			return ShouldEqual(string(body), data[0].(string))
 		}
 
 		Convey("EnsurePackages full flow", func(c C) {
@@ -655,91 +657,166 @@ func TestEnsurePackages(t *testing.T) {
 			b := buildInstanceInMemory(ctx, "pkg/b", []local.File{local.NewTestFile("file b", "test data", false)})
 			defer b.Close()
 
+			pil := func(insts ...local.PackageInstance) []local.PackageInstance {
+				return insts
+			}
+
 			// Calls EnsurePackages, mocking fetch backend first. Backend will be mocked
-			// to serve only 'fetched' packages.
-			callEnsure := func(instances []local.PackageInstance, fetched []local.PackageInstance) (Actions, error) {
+			// to serve only 'fetched' packages. callEnsure will ensure the state
+			// reflected by the 'state' variable.
+			state := map[string][]local.PackageInstance{}
+			callEnsure := func(fetched ...local.PackageInstance) (ActionMap, error) {
 				client := mockClientForFetch(c, tempDir, fetched)
 				pins := PinSliceBySubdir{}
-				for _, i := range instances {
-					pins[""] = append(pins[""], i.Pin())
+				for subdir, instances := range state {
+					for _, i := range instances {
+						pins[subdir] = append(pins[subdir], i.Pin())
+					}
 				}
 				return client.EnsurePackages(ctx, pins, false)
 			}
 
-			findDeployed := func(root string) PinSliceBySubdir {
-				deployer := local.NewDeployer(root)
+			shouldBeDeployed := func(expect interface{}, _ ...interface{}) string {
+				deployer := local.NewDeployer(tempDir)
 				pins, err := deployer.FindDeployed(ctx)
-				So(err, ShouldBeNil)
-				return pins
+				if ret := ShouldBeNil(err); ret != "" {
+					return ret
+				}
+				return ShouldResemble(pins, expect.(PinSliceBySubdir))
 			}
 
 			// Noop run on top of empty directory.
-			actions, err := callEnsure(nil, nil)
+			actions, err := callEnsure()
 			So(err, ShouldBeNil)
-			So(actions, ShouldResemble, Actions{})
+			So(actions, ShouldResemble, ActionMap(nil))
 
 			// Specify same package twice. Fails.
-			actions, err = callEnsure([]local.PackageInstance{a1, a2}, nil)
+			state[""] = pil(a1, a2)
+			actions, err = callEnsure()
 			So(err, ShouldNotBeNil)
-			So(actions, ShouldResemble, Actions{})
+			So(actions, ShouldResemble, ActionMap(nil))
 
 			// Install a1 into a site root.
-			actions, err = callEnsure([]local.PackageInstance{a1}, []local.PackageInstance{a1})
+			state[""] = pil(a1)
+			actions, err = callEnsure(a1)
 			So(err, ShouldBeNil)
-			So(actions, ShouldResemble, Actions{
-				ToInstall: PinSlice{a1.Pin()},
+			So(actions, ShouldResemble, ActionMap{
+				"": &Actions{ToInstall: PinSlice{a1.Pin()}},
 			})
-			assertFile("file a 1", "test data")
-			So(findDeployed(tempDir), ShouldResemble, PinSliceBySubdir{"": PinSlice{a1.Pin()}})
+			So("file a 1", shouldHaveContent, "test data")
+			So(PinSliceBySubdir{
+				"": PinSlice{a1.Pin()},
+			}, shouldBeDeployed)
+
+			// Install a1 into subdir, remove it from root.
+			state[""] = nil
+			state["subdir"] = pil(a1)
+			actions, err = callEnsure(a1)
+			So(err, ShouldBeNil)
+			So(actions, ShouldResemble, ActionMap{
+				"":       &Actions{ToRemove: PinSlice{a1.Pin()}},
+				"subdir": &Actions{ToInstall: PinSlice{a1.Pin()}},
+			})
+			So("subdir/file a 1", shouldHaveContent, "test data")
+			So(PinSliceBySubdir{
+				"subdir": PinSlice{a1.Pin()},
+			}, shouldBeDeployed)
 
 			// Noop run. Nothing is fetched.
-			actions, err = callEnsure([]local.PackageInstance{a1}, nil)
+			actions, err = callEnsure()
 			So(err, ShouldBeNil)
-			So(actions, ShouldResemble, Actions{})
-			assertFile("file a 1", "test data")
-			So(findDeployed(tempDir), ShouldResemble, PinSliceBySubdir{"": PinSlice{a1.Pin()}})
+			So(actions, ShouldResemble, ActionMap(nil))
+			So("subdir/file a 1", shouldHaveContent, "test data")
+			So(PinSliceBySubdir{
+				"subdir": PinSlice{a1.Pin()},
+			}, shouldBeDeployed)
+
+			// Root and subdir installed at the same time.
+			state[""] = pil(a1)
+			actions, err = callEnsure(a1)
+			So(err, ShouldBeNil)
+			So(actions, ShouldResemble, ActionMap{
+				"": &Actions{ToInstall: PinSlice{a1.Pin()}},
+			})
+			So("subdir/file a 1", shouldHaveContent, "test data")
+			So("file a 1", shouldHaveContent, "test data")
+			So(PinSliceBySubdir{
+				"":       PinSlice{a1.Pin()},
+				"subdir": PinSlice{a1.Pin()},
+			}, shouldBeDeployed)
 
 			// Upgrade a1 to a2.
-			actions, err = callEnsure([]local.PackageInstance{a2}, []local.PackageInstance{a2})
+			state[""] = pil(a2)
+			actions, err = callEnsure(a2)
 			So(err, ShouldBeNil)
-			So(actions, ShouldResemble, Actions{
-				ToUpdate: []UpdatedPin{
+			So(actions, ShouldResemble, ActionMap{
+				"": &Actions{ToUpdate: []UpdatedPin{
 					{
 						From: a1.Pin(),
 						To:   a2.Pin(),
 					},
-				},
+				}},
 			})
-			assertFile("file a 2", "test data")
-			So(findDeployed(tempDir), ShouldResemble, PinSliceBySubdir{"": PinSlice{a2.Pin()}})
+			So("file a 2", shouldHaveContent, "test data")
+			So(PinSliceBySubdir{
+				"":       PinSlice{a2.Pin()},
+				"subdir": PinSlice{a1.Pin()},
+			}, shouldBeDeployed)
 
 			// Remove a2 and install b.
-			actions, err = callEnsure([]local.PackageInstance{b}, []local.PackageInstance{b})
+			state[""] = pil(b)
+			actions, err = callEnsure(b)
 			So(err, ShouldBeNil)
-			So(actions, ShouldResemble, Actions{
-				ToInstall: PinSlice{b.Pin()},
-				ToRemove:  PinSlice{a2.Pin()},
+			So(actions, ShouldResemble, ActionMap{
+				"": &Actions{
+					ToInstall: PinSlice{b.Pin()},
+					ToRemove:  PinSlice{a2.Pin()},
+				},
 			})
-			assertFile("file b", "test data")
-			So(findDeployed(tempDir), ShouldResemble, PinSliceBySubdir{"": PinSlice{b.Pin()}})
+			So("file b", shouldHaveContent, "test data")
+			So(PinSliceBySubdir{
+				"":       PinSlice{b.Pin()},
+				"subdir": PinSlice{a1.Pin()},
+			}, shouldBeDeployed)
 
 			// Remove b.
-			actions, err = callEnsure(nil, nil)
+			state[""] = nil
+			actions, err = callEnsure()
 			So(err, ShouldBeNil)
-			So(actions, ShouldResemble, Actions{
-				ToRemove: PinSlice{b.Pin()},
+			So(actions, ShouldResemble, ActionMap{
+				"": &Actions{
+					ToRemove: PinSlice{b.Pin()},
+				},
 			})
-			So(findDeployed(tempDir), ShouldResemble, PinSliceBySubdir{})
+			So(PinSliceBySubdir{
+				"subdir": PinSlice{a1.Pin()},
+			}, shouldBeDeployed)
+
+			// Remove a1 from subdir
+			state["subdir"] = nil
+			actions, err = callEnsure()
+			So(err, ShouldBeNil)
+			So(actions, ShouldResemble, ActionMap{
+				"subdir": &Actions{
+					ToRemove: PinSlice{a1.Pin()},
+				},
+			})
+			So(PinSliceBySubdir{}, shouldBeDeployed)
 
 			// Install a1 and b.
-			actions, err = callEnsure([]local.PackageInstance{a1, b}, []local.PackageInstance{a1, b})
+			state[""] = pil(a1, b)
+			actions, err = callEnsure(a1, b)
 			So(err, ShouldBeNil)
-			So(actions, ShouldResemble, Actions{
-				ToInstall: PinSlice{a1.Pin(), b.Pin()},
+			So(actions, ShouldResemble, ActionMap{
+				"": &Actions{
+					ToInstall: PinSlice{a1.Pin(), b.Pin()},
+				},
 			})
-			assertFile("file a 1", "test data")
-			assertFile("file b", "test data")
-			So(findDeployed(tempDir), ShouldResemble, PinSliceBySubdir{"": PinSlice{a1.Pin(), b.Pin()}})
+			So("file a 1", shouldHaveContent, "test data")
+			So("file b", shouldHaveContent, "test data")
+			So(PinSliceBySubdir{
+				"": PinSlice{a1.Pin(), b.Pin()},
+			}, shouldBeDeployed)
 		})
 	})
 }
