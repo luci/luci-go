@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"sort"
 	"strings"
+	"unicode"
 
 	"github.com/luci/luci-go/cipd/client/cipd/common"
 	"github.com/luci/luci-go/common/errors"
@@ -58,11 +59,13 @@ func ParseFile(r io.Reader) (*File, error) {
 			continue
 		}
 
-		tokens := strings.SplitN(line, " ", 2)
-		if len(tokens) != 2 {
-			tokens = append(tokens, "") // no value means a value of ""
+		tok1 := line
+		tok2 := ""
+		if idx := strings.IndexFunc(line, unicode.IsSpace); idx == -1 {
+			// only one token. This implies a second token of ""
+		} else {
+			tok1, tok2 = line[:idx], strings.TrimSpace(line[idx:])
 		}
-		tok1, tok2 := tokens[0], tokens[1]
 
 		switch c := tok1[0]; c {
 		case '@', '$':

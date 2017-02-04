@@ -118,6 +118,22 @@ var goodEnsureFiles = []struct {
 		"",
 		&ResolvedFile{},
 	},
+
+	{
+		"wacky spaces",
+		f(
+			"path/to/package           latest",
+			"tabs/to/package\t\t\t\tlatest",
+			"\ttabs/and/spaces  \t  \t  \tlatest   \t",
+		),
+		&ResolvedFile{"", common.PinSliceBySubdir{
+			"": {
+				p("path/to/package", "latest"),
+				p("tabs/to/package", "latest"),
+				p("tabs/and/spaces", "latest"),
+			},
+		}},
+	},
 }
 
 func testResolver(pkg, vers string) (common.Pin, error) {
