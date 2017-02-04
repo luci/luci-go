@@ -13,14 +13,14 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
-	"github.com/maruel/subcommands"
+	"github.com/luci/luci-go/client/authcli"
+	"github.com/luci/luci-go/common/cli"
 
 	"github.com/luci/luci-go/cipd/client/cipd"
 	"github.com/luci/luci-go/cipd/client/cipd/local"
-	"github.com/luci/luci-go/client/authcli"
-	"github.com/luci/luci-go/common/cli"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -205,7 +205,7 @@ func (site *installationSite) initClient(ctx context.Context, authFlags authcli.
 	if site.client != nil {
 		return errors.New("client is already initialized")
 	}
-	clientOpts := ClientOptions{
+	clientOpts := clientOptions{
 		authFlags:  authFlags,
 		serviceURL: site.cfg.ServiceURL,
 		cacheDir:   site.cfg.CacheDir,
@@ -372,7 +372,7 @@ func cmdInit() *subcommands.Command {
 }
 
 type initRun struct {
-	Subcommand
+	cipdSubcommand
 
 	force      bool
 	serviceURL string
@@ -420,7 +420,7 @@ func cmdInstall(params Parameters) *subcommands.Command {
 }
 
 type installRun struct {
-	Subcommand
+	cipdSubcommand
 	authFlags authcli.Flags
 	siteRootOptions
 
@@ -484,7 +484,7 @@ func cmdInstalled() *subcommands.Command {
 }
 
 type installedRun struct {
-	Subcommand
+	cipdSubcommand
 	siteRootOptions
 }
 

@@ -4,8 +4,8 @@
 
 // Package cli implements command line interface for CIPD client.
 //
-// It's main exported function is GetApplication(...) that takes a bundle with
-// default parameters and returns a subcommands.Application configured with this
+// Its main exported function is GetApplication(...) that takes a bundle with
+// default parameters and returns a *cli.Application configured with this
 // defaults.
 //
 // There's also Main(...) that does some additional arguments manipulation. It
