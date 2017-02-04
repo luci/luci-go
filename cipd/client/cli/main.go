@@ -733,7 +733,8 @@ func cmdEnsure(params Parameters) *subcommands.Command {
 			c.Flags.StringVar(&c.ensureFile, "list", "<path>", "(DEPRECATED) A synonym for -ensure-file.")
 			c.Flags.StringVar(&c.ensureFile, "ensure-file", "<path>",
 				(`An "ensure" file. See syntax described here: ` +
-					`https://godoc.org/github.com/luci/luci-go/cipd/client/cipd/ensure`))
+					`https://godoc.org/github.com/luci/luci-go/cipd/client/cipd/ensure.` +
+					` Providing '-' will read from stdin.`))
 			return c
 		},
 	}
@@ -757,9 +758,14 @@ func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommand
 }
 
 func ensurePackages(ctx context.Context, root string, desiredStateFile string, dryRun bool, clientOpts clientOptions) (common.PinSliceBySubdir, cipd.ActionMap, error) {
-	f, err := os.Open(desiredStateFile)
-	if err != nil {
-		return nil, nil, err
+	var err error
+	var f io.ReadCloser
+	if desiredStateFile == "-" {
+		f = os.Stdin
+	} else {
+		if f, err = os.Open(desiredStateFile); err != nil {
+			return nil, nil, err
+		}
 	}
 	defer f.Close()
 
