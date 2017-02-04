@@ -8,6 +8,7 @@ import (
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	milo "github.com/luci/luci-go/milo/api/proto"
+	"github.com/luci/luci-go/milo/appengine/buildbot"
 
 	"google.golang.org/grpc/codes"
 
@@ -15,7 +16,10 @@ import (
 )
 
 // Service is a BuildInfoServer implementation.
-type Service struct{}
+type Service struct {
+	// BuildBot is the BuildInfoProvider for the BuildBot service.
+	BuildBot buildbot.BuildInfoProvider
+}
 
 var _ milo.BuildInfoServer = (*Service)(nil)
 
@@ -30,12 +34,16 @@ func (svc *Service) Get(c context.Context, req *milo.BuildInfoRequest) (*milo.Bu
 
 	switch {
 	case req.GetBuildbot() != nil:
-		return nil, grpcutil.Unimplemented
+		resp, err := svc.BuildBot.GetBuildInfo(c, req.GetBuildbot(), projectHint)
+		if err != nil {
+			return nil, err
+		}
+		return resp, nil
 
 	case req.GetSwarming() != nil:
 		return nil, grpcutil.Unimplemented
 
 	default:
-		return nil, grpcutil.Unimplemented
+		return nil, grpcutil.Errf(codes.InvalidArgument, "must supply a build")
 	}
 }
