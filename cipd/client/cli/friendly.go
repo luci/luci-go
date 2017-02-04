@@ -2,7 +2,7 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-package main
+package cli
 
 import (
 	"encoding/json"
@@ -20,7 +20,6 @@ import (
 	"github.com/luci/luci-go/cipd/client/cipd"
 	"github.com/luci/luci-go/cipd/client/cipd/local"
 	"github.com/luci/luci-go/client/authcli"
-	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
 )
 
@@ -403,7 +402,7 @@ func (c *initRun) Run(a subcommands.Application, args []string, _ subcommands.En
 ////////////////////////////////////////////////////////////////////////////////
 // 'install' subcommand.
 
-func cmdInstall(defaultAuthOpts auth.Options) *subcommands.Command {
+func cmdInstall(params Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		Advanced:  true,
 		UsageLine: "install <package> [<version>] [options]",
@@ -412,7 +411,7 @@ func cmdInstall(defaultAuthOpts auth.Options) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &installRun{}
 			c.registerBaseFlags()
-			c.authFlags.Register(&c.Flags, defaultAuthOpts)
+			c.authFlags.Register(&c.Flags, params.DefaultAuthOptions)
 			c.siteRootOptions.registerFlags(&c.Flags)
 			c.Flags.BoolVar(&c.force, "force", false, "Refetch and reinstall the package even if already installed.")
 			return c

@@ -72,9 +72,6 @@ const (
 	SetRefTimeout = 3 * time.Minute
 	// TagAttachTimeout is how long to wait for an instance to be processed when attaching tags.
 	TagAttachTimeout = 3 * time.Minute
-
-	// ServiceURL is URL of a backend to connect to by default.
-	ServiceURL = "https://chrome-infra-packages.appspot.com"
 )
 
 var (
@@ -501,9 +498,6 @@ type ClientOptions struct {
 
 // NewClient initializes CIPD client object.
 func NewClient(opts ClientOptions) (Client, error) {
-	if opts.ServiceURL == "" {
-		opts.ServiceURL = ServiceURL
-	}
 	if opts.AnonymousClient == nil {
 		opts.AnonymousClient = http.DefaultClient
 	}
@@ -515,6 +509,9 @@ func NewClient(opts ClientOptions) (Client, error) {
 	}
 
 	// Validate and normalize service URL.
+	if opts.ServiceURL == "" {
+		return nil, fmt.Errorf("ServiceURL is required")
+	}
 	parsed, err := url.Parse(opts.ServiceURL)
 	if err != nil {
 		return nil, fmt.Errorf("not a valid URL %q - %s", opts.ServiceURL, err)

@@ -23,7 +23,11 @@ import (
 //  * tsmon config file: "/etc/chrome-infra/ts-mon.json"
 //  * tsmon secrets dir: same as SecretsDir below.
 //  * tsmon network detection regexp: `^([\w-]*?-[acm]|master)(\d+)a?$`
-//  * cipd service URL: "https://chrome-infra-packages.appspot.com"
+
+const (
+	// CIPDServiceURL is URL of a CIPD backend to connect to by default.
+	CIPDServiceURL = "https://chrome-infra-packages.appspot.com"
+)
 
 // DefaultAuthOptions returns auth.Options struct prefilled with chrome-infra
 // defaults.
