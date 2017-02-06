@@ -31,7 +31,13 @@ import (
 // EnvKey is the environment variable key for the LUCI_CONTEXT file.
 const EnvKey = "LUCI_CONTEXT"
 
-type lctx map[string]json.RawMessage
+// lctx is wrapper around top-level JSON dict of a LUCI_CONTEXT file.
+//
+// Note that we must use '*json.RawMessage' as dict value type since only
+// pointer *json.RawMessage type implements json.Marshaler and json.Unmarshaler
+// interfaces. Without '*' the JSON library treats json.RawMessage as []byte and
+// marshals it as base64 blob.
+type lctx map[string]*json.RawMessage
 
 func (l lctx) clone() lctx {
 	ret := make(lctx, len(l))
@@ -79,7 +85,8 @@ func extractFromEnv(out io.Writer) lctx {
 		item, _ := json.Marshal(v)
 		// This section just came from json.Unmarshal, so we know that json.Marshal
 		// will work on it.
-		ret[k] = json.RawMessage(item)
+		raw := json.RawMessage(item)
+		ret[k] = &raw
 	}
 	return ret
 }
@@ -97,10 +104,10 @@ func getCurrent(ctx context.Context) lctx {
 // out is unmodified.
 func Get(ctx context.Context, section string, out interface{}) error {
 	data := getCurrent(ctx)[section]
-	if len(data) == 0 {
+	if data == nil || len(*data) == 0 {
 		return nil
 	}
-	return json.Unmarshal(data, out)
+	return json.Unmarshal(*data, out)
 }
 
 // Lookup retrieves the current section from the current LUCI_CONTEXT, and
@@ -109,10 +116,10 @@ func Get(ctx context.Context, section string, out interface{}) error {
 // section was actually found.
 func Lookup(ctx context.Context, section string, out interface{}) (bool, error) {
 	data, ok := getCurrent(ctx)[section]
-	if len(data) == 0 {
+	if data == nil || len(*data) == 0 {
 		return ok, nil
 	}
-	return ok, json.Unmarshal(data, out)
+	return ok, json.Unmarshal(*data, out)
 }
 
 // Set writes the json serialization of `in` as the given section into the
@@ -143,15 +150,15 @@ func Set(ctx context.Context, section string, in interface{}) (context.Context, 
 	if data == nil {
 		delete(newLctx, section)
 	} else {
-		newLctx[section] = data
+		newLctx[section] = &data
 	}
 	return context.WithValue(ctx, &lctxKey, newLctx), nil
 }
 
-// Export takes the current LUCI_CONTEXT informaion from ctx, writes it to
-// a file, then invokes the callback with the Exported LUCI_CONTEXT. This
-// exported value must then be installed into the environment of any subcommands
-// (see the methods on Exported).
+// Export takes the current LUCI_CONTEXT information from ctx, writes it to
+// a file and returns a wrapping Exported object. This exported value must then
+// be installed into the environment of any subcommands (see the methods on
+// Exported).
 //
 // It is required that the caller of this function invoke Close() on the
 // returned Exported object, or they will leak temporary files.

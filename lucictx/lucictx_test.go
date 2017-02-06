@@ -6,6 +6,7 @@ package lucictx
 
 import (
 	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -63,8 +64,9 @@ func TestLUCIContextInitialization(t *testing.T) {
 		Convey("ignores bad sections", func() {
 			defer rawctx(`{"hi": {"there": 10}, "not": "good"}`)()
 
+			blob := json.RawMessage(`{"there":10}`)
 			So(extractFromEnv(buf), ShouldResemble, lctx{
-				"hi": []byte(`{"there":10}`),
+				"hi": &blob,
 			})
 			So(buf.String(), ShouldContainSubstring, `section "not": Not a map`)
 		})
@@ -142,8 +144,13 @@ func TestLUCIContextMethods(t *testing.T) {
 				defer e.Close()
 				cmd := exec.Command("something", "something")
 				e.SetInCmd(cmd)
-				_, ok := environ.New(cmd.Env).Get(EnvKey)
+				path, ok := environ.New(cmd.Env).Get(EnvKey)
 				So(ok, ShouldBeTrue)
+
+				// There's a valid JSON there.
+				blob, err := ioutil.ReadFile(path)
+				So(err, ShouldBeNil)
+				So(string(blob), ShouldEqual, `{"hi":{"there":10}}`)
 			})
 		})
 	})
