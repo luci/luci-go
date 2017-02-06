@@ -440,7 +440,10 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 
 		fullPkgPath := filepath.Join(abs, f.Name())
 		description, err := d.readDescription(ctx, fullPkgPath)
-		if err != nil {
+		if description == nil || err != nil {
+			if err == nil {
+				err = fmt.Errorf("invalid package dir, no description.json and no instances found")
+			}
 			logging.Warningf(ctx, "Skipping %q: %s", fullPkgPath, err)
 			continue
 		}
