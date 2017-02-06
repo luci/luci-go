@@ -8,23 +8,25 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/maruel/ut"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCheckURL(t *testing.T) {
-	data := []struct {
-		in       string
-		expected string
-		err      error
-	}{
-		{"foo", "https://foo", nil},
-		{"https://foo", "https://foo", nil},
-		{"http://foo.example.com", "http://foo.example.com", nil},
-		{"http://foo.appspot.com", "", errors.New("only https:// scheme is accepted for appspot hosts, it can be omitted")},
-	}
-	for i, line := range data {
-		out, err := CheckURL(line.in)
-		ut.AssertEqualIndex(t, i, line.expected, out)
-		ut.AssertEqualIndex(t, i, line.err, err)
-	}
+	Convey(`Verifies that CheckURL properly checks a URL.`, t, func() {
+		data := []struct {
+			in       string
+			expected string
+			err      error
+		}{
+			{"foo", "https://foo", nil},
+			{"https://foo", "https://foo", nil},
+			{"http://foo.example.com", "http://foo.example.com", nil},
+			{"http://foo.appspot.com", "", errors.New("only https:// scheme is accepted for appspot hosts, it can be omitted")},
+		}
+		for _, line := range data {
+			out, err := CheckURL(line.in)
+			So(out, ShouldResemble, line.expected)
+			So(err, ShouldResemble, line.err)
+		}
+	})
 }

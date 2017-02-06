@@ -19,7 +19,7 @@ import (
 
 	"github.com/luci/luci-go/common/retry"
 
-	"github.com/maruel/ut"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func httpReqGen(method, url string, body []byte) RequestGen {
@@ -33,221 +33,239 @@ func httpReqGen(method, url string, body []byte) RequestGen {
 }
 
 func TestNewRequestGET(t *testing.T) {
-	ctx := context.Background()
+	Convey(`HTTP GET requests should be handled correctly.`, t, func(c C) {
+		ctx := context.Background()
 
-	// First call returns HTTP 500, second succeeds.
-	serverCalls := 0
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		serverCalls++
-		content, err := ioutil.ReadAll(r.Body)
-		ut.ExpectEqual(t, nil, err)
-		ut.ExpectEqual(t, []byte{}, content)
-		if serverCalls == 1 {
-			w.WriteHeader(500)
-		} else {
-			fmt.Fprintf(w, "Hello, client\n")
-		}
-	}))
-	defer ts.Close()
+		// First call returns HTTP 500, second succeeds.
+		serverCalls := 0
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			serverCalls++
+			content, err := ioutil.ReadAll(r.Body)
+			c.So(err, ShouldBeNil)
+			c.So(content, ShouldResemble, []byte{})
+			if serverCalls == 1 {
+				w.WriteHeader(500)
+			} else {
+				fmt.Fprintf(w, "Hello, client\n")
+			}
+		}))
+		defer ts.Close()
 
-	httpReq := httpReqGen("GET", ts.URL, nil)
+		httpReq := httpReqGen("GET", ts.URL, nil)
 
-	clientCalls := 0
-	clientReq := NewRequest(ctx, http.DefaultClient, fast, httpReq, func(resp *http.Response) error {
-		clientCalls++
-		content, err := ioutil.ReadAll(resp.Body)
-		ut.AssertEqual(t, nil, err)
-		ut.AssertEqual(t, "Hello, client\n", string(content))
-		ut.AssertEqual(t, nil, resp.Body.Close())
-		return nil
-	}, nil)
+		clientCalls := 0
+		clientReq := NewRequest(ctx, http.DefaultClient, fast, httpReq, func(resp *http.Response) error {
+			clientCalls++
+			content, err := ioutil.ReadAll(resp.Body)
+			So(err, ShouldBeNil)
+			So(string(content), ShouldResemble, "Hello, client\n")
+			So(resp.Body.Close(), ShouldBeNil)
+			return nil
+		}, nil)
 
-	status, err := clientReq()
-	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, 200, status)
-	ut.AssertEqual(t, 2, serverCalls)
-	ut.AssertEqual(t, 1, clientCalls)
+		status, err := clientReq()
+		So(err, ShouldBeNil)
+		So(status, ShouldResemble, 200)
+		So(serverCalls, ShouldResemble, 2)
+		So(clientCalls, ShouldResemble, 1)
+	})
 }
 
 func TestNewRequestPOST(t *testing.T) {
-	ctx := context.Background()
+	Convey(`HTTP POST requests should be handled correctly.`, t, func(c C) {
+		ctx := context.Background()
 
-	// First call returns HTTP 500, second succeeds.
-	serverCalls := 0
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		serverCalls++
-		content, err := ioutil.ReadAll(r.Body)
-		ut.ExpectEqual(t, nil, err)
-		// The same data is sent twice.
-		ut.ExpectEqual(t, "foo bar", string(content))
-		if serverCalls == 1 {
-			w.WriteHeader(500)
-		} else {
-			fmt.Fprintf(w, "Hello, client\n")
-		}
-	}))
-	defer ts.Close()
+		// First call returns HTTP 500, second succeeds.
+		serverCalls := 0
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			serverCalls++
+			content, err := ioutil.ReadAll(r.Body)
+			c.So(err, ShouldBeNil)
+			// The same data is sent twice.
+			c.So(string(content), ShouldResemble, "foo bar")
+			if serverCalls == 1 {
+				w.WriteHeader(500)
+			} else {
+				fmt.Fprintf(w, "Hello, client\n")
+			}
+		}))
+		defer ts.Close()
 
-	httpReq := httpReqGen("POST", ts.URL, []byte("foo bar"))
+		httpReq := httpReqGen("POST", ts.URL, []byte("foo bar"))
 
-	clientCalls := 0
-	clientReq := NewRequest(ctx, http.DefaultClient, fast, httpReq, func(resp *http.Response) error {
-		clientCalls++
-		content, err := ioutil.ReadAll(resp.Body)
-		ut.AssertEqual(t, nil, err)
-		ut.AssertEqual(t, "Hello, client\n", string(content))
-		ut.AssertEqual(t, nil, resp.Body.Close())
-		return nil
-	}, nil)
+		clientCalls := 0
+		clientReq := NewRequest(ctx, http.DefaultClient, fast, httpReq, func(resp *http.Response) error {
+			clientCalls++
+			content, err := ioutil.ReadAll(resp.Body)
+			So(err, ShouldBeNil)
+			So(string(content), ShouldResemble, "Hello, client\n")
+			So(resp.Body.Close(), ShouldBeNil)
+			return nil
+		}, nil)
 
-	status, err := clientReq()
-	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, 200, status)
-	ut.AssertEqual(t, 2, serverCalls)
-	ut.AssertEqual(t, 1, clientCalls)
+		status, err := clientReq()
+		So(err, ShouldBeNil)
+		So(status, ShouldResemble, 200)
+		So(serverCalls, ShouldResemble, 2)
+		So(clientCalls, ShouldResemble, 1)
+	})
 }
 
 func TestNewRequestGETFail(t *testing.T) {
-	ctx := context.Background()
+	Convey(`HTTP GET requests should handle failure successfully.`, t, func() {
+		ctx := context.Background()
 
-	serverCalls := 0
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		serverCalls++
-		w.WriteHeader(500)
-	}))
-	defer ts.Close()
+		serverCalls := 0
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			serverCalls++
+			w.WriteHeader(500)
+		}))
+		defer ts.Close()
 
-	httpReq := httpReqGen("GET", ts.URL, nil)
+		httpReq := httpReqGen("GET", ts.URL, nil)
 
-	clientReq := NewRequest(ctx, http.DefaultClient, fast, httpReq, func(resp *http.Response) error {
-		t.Fail()
-		return nil
-	}, nil)
+		clientReq := NewRequest(ctx, http.DefaultClient, fast, httpReq, func(resp *http.Response) error {
+			t.Fail()
+			return nil
+		}, nil)
 
-	status, err := clientReq()
-	ut.AssertEqual(t, "http request failed: Internal Server Error (HTTP 500) (attempts: 4)", err.Error())
-	ut.AssertEqual(t, 500, status)
+		status, err := clientReq()
+		So(err.Error(), ShouldResemble, "http request failed: Internal Server Error (HTTP 500) (attempts: 4)")
+		So(status, ShouldResemble, 500)
+	})
 }
 
 func TestGetJSON(t *testing.T) {
-	ctx := context.Background()
+	Convey(`HTTP GET JSON requests should be handled correctly.`, t, func(c C) {
+		ctx := context.Background()
 
-	// First call returns HTTP 500, second succeeds.
-	serverCalls := 0
-	ts := httptest.NewServer(handlerJSON(t, func(body io.Reader) interface{} {
-		serverCalls++
-		content, err := ioutil.ReadAll(body)
-		ut.ExpectEqual(t, nil, err)
-		ut.ExpectEqual(t, []byte{}, content)
-		if serverCalls == 1 {
-			return nil
-		}
-		return map[string]string{"success": "yeah"}
-	}))
-	defer ts.Close()
+		// First call returns HTTP 500, second succeeds.
+		serverCalls := 0
+		ts := httptest.NewServer(handlerJSON(t, func(body io.Reader) interface{} {
+			serverCalls++
+			content, err := ioutil.ReadAll(body)
+			c.So(err, ShouldBeNil)
+			c.So(content, ShouldResemble, []byte{})
+			if serverCalls == 1 {
+				return nil
+			}
+			return map[string]string{"success": "yeah"}
+		}))
+		defer ts.Close()
 
-	actual := map[string]string{}
-	status, err := GetJSON(ctx, fast, http.DefaultClient, ts.URL, &actual)
-	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, 200, status)
-	ut.AssertEqual(t, map[string]string{"success": "yeah"}, actual)
-	ut.AssertEqual(t, 2, serverCalls)
+		actual := map[string]string{}
+		status, err := GetJSON(ctx, fast, http.DefaultClient, ts.URL, &actual)
+		So(err, ShouldBeNil)
+		So(status, ShouldResemble, 200)
+		So(actual, ShouldResemble, map[string]string{"success": "yeah"})
+		So(serverCalls, ShouldResemble, 2)
+	})
 }
 
 func TestGetJSONBadResult(t *testing.T) {
-	ctx := context.Background()
+	Convey(`HTTP GET JSON bad requests should be handled correctly.`, t, func(c C) {
+		ctx := context.Background()
 
-	serverCalls := 0
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		serverCalls++
-		w.Header().Set("Content-Type", jsonContentType)
-		_, err := io.WriteString(w, "yo")
-		ut.ExpectEqual(t, nil, err)
-	}))
-	defer ts.Close()
+		serverCalls := 0
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			serverCalls++
+			w.Header().Set("Content-Type", jsonContentType)
+			_, err := io.WriteString(w, "yo")
+			c.So(err, ShouldBeNil)
+		}))
+		defer ts.Close()
 
-	actual := map[string]string{}
-	status, err := GetJSON(ctx, fast, http.DefaultClient, ts.URL, &actual)
-	ut.AssertEqual(t, "bad response "+ts.URL+": invalid character 'y' looking for beginning of value (attempts: 4)", err.Error())
-	ut.AssertEqual(t, 200, status)
-	ut.AssertEqual(t, map[string]string{}, actual)
+		actual := map[string]string{}
+		status, err := GetJSON(ctx, fast, http.DefaultClient, ts.URL, &actual)
+		So(err.Error(), ShouldResemble, "bad response "+ts.URL+": invalid character 'y' looking for beginning of value (attempts: 4)")
+		So(status, ShouldResemble, 200)
+		So(actual, ShouldResemble, map[string]string{})
+	})
 }
 
 func TestGetJSONBadResultIgnore(t *testing.T) {
-	ctx := context.Background()
+	Convey(`Bad results from GET JSON requests should be handled correctly.`, t, func(c C) {
+		ctx := context.Background()
 
-	serverCalls := 0
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		serverCalls++
-		w.Header().Set("Content-Type", jsonContentType)
-		_, err := io.WriteString(w, "yo")
-		ut.ExpectEqual(t, nil, err)
-	}))
-	defer ts.Close()
+		serverCalls := 0
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			serverCalls++
+			w.Header().Set("Content-Type", jsonContentType)
+			_, err := io.WriteString(w, "yo")
+			c.So(err, ShouldBeNil)
+		}))
+		defer ts.Close()
 
-	status, err := GetJSON(ctx, fast, http.DefaultClient, ts.URL, nil)
-	ut.AssertEqual(t, "bad response "+ts.URL+": invalid character 'y' looking for beginning of value (attempts: 4)", err.Error())
-	ut.AssertEqual(t, 200, status)
+		status, err := GetJSON(ctx, fast, http.DefaultClient, ts.URL, nil)
+		So(err.Error(), ShouldResemble, "bad response "+ts.URL+": invalid character 'y' looking for beginning of value (attempts: 4)")
+		So(status, ShouldResemble, 200)
+	})
 }
 
 func TestGetJSONBadContentTypeIgnore(t *testing.T) {
-	ctx := context.Background()
+	Convey(`Invalid content in bad GET JSON requests should be handled correctly`, t, func(c C) {
+		ctx := context.Background()
 
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, err := io.WriteString(w, "{}")
-		ut.ExpectEqual(t, nil, err)
-	}))
-	defer ts.Close()
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, err := io.WriteString(w, "{}")
+			c.So(err, ShouldBeNil)
+		}))
+		defer ts.Close()
 
-	status, err := GetJSON(ctx, fast, http.DefaultClient, ts.URL, nil)
-	ut.AssertEqual(t, "unexpected Content-Type, expected \"application/json\", got \"text/plain; charset=utf-8\" (attempts: 4)", err.Error())
-	ut.AssertEqual(t, 200, status)
+		status, err := GetJSON(ctx, fast, http.DefaultClient, ts.URL, nil)
+		So(err.Error(), ShouldResemble, "unexpected Content-Type, expected \"application/json\", got \"text/plain; charset=utf-8\" (attempts: 4)")
+		So(status, ShouldResemble, 200)
+	})
 }
 
 func TestPostJSON(t *testing.T) {
-	ctx := context.Background()
+	Convey(`HTTP POST JSON requests should be handled correctly.`, t, func(c C) {
+		ctx := context.Background()
 
-	// First call returns HTTP 500, second succeeds.
-	serverCalls := 0
-	ts := httptest.NewServer(handlerJSON(t, func(body io.Reader) interface{} {
-		serverCalls++
-		data := map[string]string{}
-		ut.ExpectEqual(t, nil, json.NewDecoder(body).Decode(&data))
-		ut.ExpectEqual(t, map[string]string{"in": "all"}, data)
-		if serverCalls == 1 {
-			return nil
-		}
-		return map[string]string{"success": "yeah"}
-	}))
-	defer ts.Close()
+		// First call returns HTTP 500, second succeeds.
+		serverCalls := 0
+		ts := httptest.NewServer(handlerJSON(t, func(body io.Reader) interface{} {
+			serverCalls++
+			data := map[string]string{}
+			c.So(json.NewDecoder(body).Decode(&data), ShouldBeNil)
+			c.So(data, ShouldResemble, map[string]string{"in": "all"})
+			if serverCalls == 1 {
+				return nil
+			}
+			return map[string]string{"success": "yeah"}
+		}))
+		defer ts.Close()
 
-	in := map[string]string{"in": "all"}
-	actual := map[string]string{}
-	status, err := PostJSON(ctx, fast, http.DefaultClient, ts.URL, nil, in, &actual)
-	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, 200, status)
-	ut.AssertEqual(t, map[string]string{"success": "yeah"}, actual)
-	ut.AssertEqual(t, 2, serverCalls)
+		in := map[string]string{"in": "all"}
+		actual := map[string]string{}
+		status, err := PostJSON(ctx, fast, http.DefaultClient, ts.URL, nil, in, &actual)
+		So(err, ShouldBeNil)
+		So(status, ShouldResemble, 200)
+		So(actual, ShouldResemble, map[string]string{"success": "yeah"})
+		So(serverCalls, ShouldResemble, 2)
+	})
 }
 
 func TestPostJSONwithHeaders(t *testing.T) {
-	ctx := context.Background()
+	Convey(`HTTP POST JSON requests should handle headers.`, t, func(c C) {
+		ctx := context.Background()
 
-	serverCalls := 0
-	ts := httptest.NewServer(
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			defer r.Body.Close()
-			w.Header().Set("Content-Type", jsonContentType)
-			ut.ExpectEqual(t, nil, json.NewEncoder(w).Encode(map[string]string{}))
-			ut.ExpectEqual(t, r.Header.Get("key"), "value")
-			serverCalls++
-		}))
-	defer ts.Close()
+		serverCalls := 0
+		ts := httptest.NewServer(
+			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				defer r.Body.Close()
+				w.Header().Set("Content-Type", jsonContentType)
+				c.So(json.NewEncoder(w).Encode(map[string]string{}), ShouldBeNil)
+				c.So(r.Header.Get("key"), ShouldResemble, "value")
+				serverCalls++
+			}))
+		defer ts.Close()
 
-	status, err := PostJSON(ctx, fast, http.DefaultClient, ts.URL, map[string]string{"key": "value"}, nil, nil)
-	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, 200, status)
-	ut.AssertEqual(t, 1, serverCalls)
+		status, err := PostJSON(ctx, fast, http.DefaultClient, ts.URL, map[string]string{"key": "value"}, nil, nil)
+		So(err, ShouldBeNil)
+		So(status, ShouldResemble, 200)
+		So(serverCalls, ShouldResemble, 1)
+	})
 }
 
 func TestNewRequestDefaultFactory(t *testing.T) {
@@ -409,14 +427,15 @@ type jsonAPI func(body io.Reader) interface{}
 // handlerJSON converts a jsonAPI http handler to a proper http.Handler.
 func handlerJSON(t *testing.T, handler jsonAPI) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//ut.ExpectEqual(t, jsonContentType, r.Header.Get("Content-Type"))
-		defer r.Body.Close()
-		out := handler(r.Body)
-		if out == nil {
-			w.WriteHeader(500)
-		} else {
-			w.Header().Set("Content-Type", jsonContentType)
-			ut.ExpectEqual(t, nil, json.NewEncoder(w).Encode(out))
-		}
+		Convey(`Test fixture for JSON http.`, t, func() {
+			defer r.Body.Close()
+			out := handler(r.Body)
+			if out == nil {
+				w.WriteHeader(500)
+			} else {
+				w.Header().Set("Content-Type", jsonContentType)
+				So(json.NewEncoder(w).Encode(out), ShouldBeNil)
+			}
+		})
 	})
 }

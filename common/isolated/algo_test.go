@@ -7,29 +7,33 @@ package isolated
 import (
 	"testing"
 
-	"github.com/maruel/ut"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestHexDigestValid(t *testing.T) {
 	t.Parallel()
-	valid := []string{
-		"0123456789012345678901234567890123456789",
-		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-	}
-	for i, in := range valid {
-		ut.AssertEqualIndex(t, i, true, HexDigest(in).Validate())
-	}
+	Convey(`Tests valid hex digest values.`, t, func() {
+		valid := []string{
+			"0123456789012345678901234567890123456789",
+			"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		}
+		for _, in := range valid {
+			So(HexDigest(in).Validate(), ShouldBeTrue)
+		}
+	})
 }
 
 func TestHexDigestInvalid(t *testing.T) {
 	t.Parallel()
-	invalid := []string{
-		"0123456789",
-		"AAAAAAAAAA",
-		"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-		"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-	}
-	for i, in := range invalid {
-		ut.AssertEqualIndex(t, i, false, HexDigest(in).Validate())
-	}
+	Convey(`Tests invalid hex digest values.`, t, func() {
+		invalid := []string{
+			"0123456789",
+			"AAAAAAAAAA",
+			"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+			"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+		}
+		for _, in := range invalid {
+			So(HexDigest(in).Validate(), ShouldBeFalse)
+		}
+	})
 }

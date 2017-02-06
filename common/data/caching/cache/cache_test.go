@@ -12,113 +12,121 @@ import (
 	"testing"
 
 	"github.com/luci/luci-go/common/isolated"
-	"github.com/maruel/ut"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func testCache(t *testing.T, c Cache) isolated.HexDigests {
-	// c's policies must have MaxItems == 2 and MaxSize == 1024.
-	td, err := ioutil.TempDir("", "cache")
-	ut.AssertEqual(t, nil, err)
-	defer func() {
-		if err := os.RemoveAll(td); err != nil {
-			t.Fail()
-		}
-	}()
+	var expected isolated.HexDigests
+	Convey(`Common tests performed on a cache of objects.`, func() {
+		// c's policies must have MaxItems == 2 and MaxSize == 1024.
+		td, err := ioutil.TempDir("", "cache")
+		So(err, ShouldBeNil)
+		defer func() {
+			if err := os.RemoveAll(td); err != nil {
+				t.Fail()
+			}
+		}()
 
-	fakeDigest := isolated.HexDigest("0123456789012345678901234567890123456789")
-	badDigest := isolated.HexDigest("012345678901234567890123456789012345678")
-	emptyContent := []byte{}
-	emptyDigest := isolated.HashBytes(emptyContent)
-	file1Content := []byte("foo")
-	file1Digest := isolated.HashBytes(file1Content)
-	file2Content := []byte("foo bar")
-	file2Digest := isolated.HashBytes(file2Content)
-	largeContent := bytes.Repeat([]byte("A"), 1023)
-	largeDigest := isolated.HashBytes(largeContent)
-	tooLargeContent := bytes.Repeat([]byte("A"), 1025)
-	tooLargeDigest := isolated.HashBytes(tooLargeContent)
+		fakeDigest := isolated.HexDigest("0123456789012345678901234567890123456789")
+		badDigest := isolated.HexDigest("012345678901234567890123456789012345678")
+		emptyContent := []byte{}
+		emptyDigest := isolated.HashBytes(emptyContent)
+		file1Content := []byte("foo")
+		file1Digest := isolated.HashBytes(file1Content)
+		file2Content := []byte("foo bar")
+		file2Digest := isolated.HashBytes(file2Content)
+		largeContent := bytes.Repeat([]byte("A"), 1023)
+		largeDigest := isolated.HashBytes(largeContent)
+		tooLargeContent := bytes.Repeat([]byte("A"), 1025)
+		tooLargeDigest := isolated.HashBytes(tooLargeContent)
 
-	ut.AssertEqual(t, isolated.HexDigests{}, c.Keys())
+		So(c.Keys(), ShouldResemble, isolated.HexDigests{})
 
-	ut.AssertEqual(t, false, c.Touch(fakeDigest))
-	ut.AssertEqual(t, false, c.Touch(badDigest))
+		So(c.Touch(fakeDigest), ShouldBeFalse)
+		So(c.Touch(badDigest), ShouldBeFalse)
 
-	c.Evict(fakeDigest)
-	c.Evict(badDigest)
+		c.Evict(fakeDigest)
+		c.Evict(badDigest)
 
-	r, err := c.Read(fakeDigest)
-	ut.AssertEqual(t, nil, r)
-	ut.AssertEqual(t, true, err != nil)
-	r, err = c.Read(badDigest)
-	ut.AssertEqual(t, nil, r)
-	ut.AssertEqual(t, true, err != nil)
+		r, err := c.Read(fakeDigest)
+		So(r, ShouldBeNil)
+		So(err, ShouldNotBeNil)
+		r, err = c.Read(badDigest)
+		So(r, ShouldBeNil)
+		So(err, ShouldNotBeNil)
 
-	// It's too large to fit in the cache.
-	ut.AssertEqual(t, true, nil != c.Add(tooLargeDigest, bytes.NewBuffer(tooLargeContent)))
+		// It's too large to fit in the cache.
+		So(c.Add(tooLargeDigest, bytes.NewBuffer(tooLargeContent)), ShouldNotBeNil)
 
-	// It gets discarded because it's too large.
-	ut.AssertEqual(t, nil, c.Add(largeDigest, bytes.NewBuffer(largeContent)))
-	ut.AssertEqual(t, nil, c.Add(emptyDigest, bytes.NewBuffer(emptyContent)))
-	ut.AssertEqual(t, nil, c.Add(emptyDigest, bytes.NewBuffer(emptyContent)))
-	ut.AssertEqual(t, isolated.HexDigests{emptyDigest, largeDigest}, c.Keys())
-	c.Evict(emptyDigest)
-	ut.AssertEqual(t, isolated.HexDigests{largeDigest}, c.Keys())
-	ut.AssertEqual(t, nil, c.Add(emptyDigest, bytes.NewBuffer(emptyContent)))
+		// It gets discarded because it's too large.
+		So(c.Add(largeDigest, bytes.NewBuffer(largeContent)), ShouldBeNil)
+		So(c.Add(emptyDigest, bytes.NewBuffer(emptyContent)), ShouldBeNil)
+		So(c.Add(emptyDigest, bytes.NewBuffer(emptyContent)), ShouldBeNil)
+		So(c.Keys(), ShouldResemble, isolated.HexDigests{emptyDigest, largeDigest})
+		c.Evict(emptyDigest)
+		So(c.Keys(), ShouldResemble, isolated.HexDigests{largeDigest})
+		So(c.Add(emptyDigest, bytes.NewBuffer(emptyContent)), ShouldBeNil)
 
-	ut.AssertEqual(t, nil, c.Add(file1Digest, bytes.NewBuffer(file1Content)))
-	ut.AssertEqual(t, true, c.Touch(emptyDigest))
-	ut.AssertEqual(t, nil, c.Add(file2Digest, bytes.NewBuffer(file2Content)))
+		So(c.Add(file1Digest, bytes.NewBuffer(file1Content)), ShouldBeNil)
+		So(c.Touch(emptyDigest), ShouldBeTrue)
+		So(c.Add(file2Digest, bytes.NewBuffer(file2Content)), ShouldBeNil)
 
-	r, err = c.Read(file1Digest)
-	ut.AssertEqual(t, nil, r)
-	ut.AssertEqual(t, true, nil != err)
-	r, err = c.Read(file2Digest)
-	ut.AssertEqual(t, nil, err)
-	actual, err := ioutil.ReadAll(r)
-	ut.AssertEqual(t, nil, r.Close())
-	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, file2Content, actual)
+		r, err = c.Read(file1Digest)
+		So(r, ShouldBeNil)
+		So(err, ShouldNotBeNil)
+		r, err = c.Read(file2Digest)
+		So(err, ShouldBeNil)
+		actual, err := ioutil.ReadAll(r)
+		So(r.Close(), ShouldBeNil)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, file2Content)
 
-	expected := isolated.HexDigests{file2Digest, emptyDigest}
-	ut.AssertEqual(t, expected, c.Keys())
+		expected = isolated.HexDigests{file2Digest, emptyDigest}
+		So(c.Keys(), ShouldResemble, expected)
 
-	dest := filepath.Join(td, "foo")
-	ut.AssertEqual(t, true, nil != c.Hardlink(fakeDigest, dest, os.FileMode(0600)))
-	ut.AssertEqual(t, true, nil != c.Hardlink(badDigest, dest, os.FileMode(0600)))
-	ut.AssertEqual(t, nil, c.Hardlink(file2Digest, dest, os.FileMode(0600)))
-	// See comment about the fact that it may or may not work.
-	_ = c.Hardlink(file2Digest, dest, os.FileMode(0600))
-	actual, err = ioutil.ReadFile(dest)
-	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, file2Content, actual)
+		dest := filepath.Join(td, "foo")
+		So(c.Hardlink(fakeDigest, dest, os.FileMode(0600)), ShouldNotBeNil)
+		So(c.Hardlink(badDigest, dest, os.FileMode(0600)), ShouldNotBeNil)
+		So(c.Hardlink(file2Digest, dest, os.FileMode(0600)), ShouldBeNil)
+		// See comment about the fact that it may or may not work.
+		_ = c.Hardlink(file2Digest, dest, os.FileMode(0600))
+		actual, err = ioutil.ReadFile(dest)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, file2Content)
 
-	ut.AssertEqual(t, nil, c.Close())
+		So(c.Close(), ShouldBeNil)
+	})
 	return expected
 }
 
 func TestNewMemory(t *testing.T) {
-	testCache(t, NewMemory(Policies{MaxSize: 1024, MaxItems: 2}))
+	Convey(`Test the memory-based cache of objects.`, t, func() {
+		testCache(t, NewMemory(Policies{MaxSize: 1024, MaxItems: 2}))
+	})
 }
 
 func TestNewDisk(t *testing.T) {
-	td, err := ioutil.TempDir("", "cache")
-	ut.AssertEqual(t, nil, err)
-	defer func() {
-		if err := os.RemoveAll(td); err != nil {
-			t.Error(err)
-		}
-	}()
-	pol := Policies{MaxSize: 1024, MaxItems: 2}
-	c, err := NewDisk(pol, td)
-	ut.AssertEqual(t, nil, err)
-	expected := testCache(t, c)
+	Convey(`Test the disk-based cache of objects.`, t, func() {
+		td, err := ioutil.TempDir("", "cache")
+		So(err, ShouldBeNil)
+		defer func() {
+			if err := os.RemoveAll(td); err != nil {
+				t.Error(err)
+			}
+		}()
+		pol := Policies{MaxSize: 1024, MaxItems: 2}
+		c, err := NewDisk(pol, td)
+		So(err, ShouldBeNil)
+		expected := testCache(t, c)
 
-	c, err = NewDisk(pol, td)
-	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, expected, c.Keys())
-	ut.AssertEqual(t, nil, c.Close())
+		c, err = NewDisk(pol, td)
+		So(err, ShouldBeNil)
+		So(c.Keys(), ShouldResemble, expected)
+		So(c.Close(), ShouldBeNil)
 
-	c, err = NewDisk(pol, "non absolute path")
-	ut.AssertEqual(t, nil, c)
-	ut.AssertEqual(t, true, nil != err)
+		c, err = NewDisk(pol, "non absolute path")
+		So(c, ShouldBeNil)
+		So(err, ShouldNotBeNil)
+	})
 }

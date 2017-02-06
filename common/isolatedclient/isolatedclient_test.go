@@ -20,55 +20,70 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
+	isolateservice "github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
 	"github.com/luci/luci-go/common/isolated"
 	"github.com/luci/luci-go/common/isolatedclient/isolatedfake"
 	"github.com/luci/luci-go/common/retry"
-	"github.com/maruel/ut"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestIsolateServerCaps(t *testing.T) {
 	ctx := context.Background()
 
 	t.Parallel()
-	server := isolatedfake.New()
-	ts := httptest.NewServer(server)
-	defer ts.Close()
-	client := New(nil, nil, ts.URL, DefaultNamespace, nil)
-	caps, err := client.ServerCapabilities(ctx)
-	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, &isolateservice.HandlersEndpointsV1ServerDetails{ServerVersion: "v1"}, caps)
-	ut.AssertEqual(t, nil, server.Error())
+	Convey(`An empty archiver should produce sane output.`, t, func() {
+		server := isolatedfake.New()
+		ts := httptest.NewServer(server)
+		defer ts.Close()
+		client := New(nil, nil, ts.URL, DefaultNamespace, nil)
+		caps, err := client.ServerCapabilities(ctx)
+		So(err, ShouldBeNil)
+		So(caps, ShouldResemble, &isolateservice.HandlersEndpointsV1ServerDetails{ServerVersion: "v1"})
+		So(server.Error(), ShouldBeNil)
+	})
 }
 
 func TestIsolateServerSmall(t *testing.T) {
 	t.Parallel()
-	testNormal(context.Background(), t, foo, bar)
+	Convey(``, t, func() {
+		testNormal(context.Background(), t, foo, bar)
+	})
 }
 
 func TestIsolateServerLarge(t *testing.T) {
 	t.Parallel()
-	testNormal(context.Background(), t, large)
+	Convey(``, t, func() {
+		testNormal(context.Background(), t, large)
+	})
 }
 
 func TestIsolateServerRetryContains(t *testing.T) {
 	t.Parallel()
-	testFlaky(context.Background(), t, "/api/isolateservice/v1/preupload")
+	Convey(``, t, func() {
+		testFlaky(context.Background(), t, "/api/isolateservice/v1/preupload")
+	})
 }
 
 func TestIsolateServerRetryStoreInline(t *testing.T) {
 	t.Parallel()
-	testFlaky(context.Background(), t, "/api/isolateservice/v1/store_inline")
+	Convey(``, t, func() {
+		testFlaky(context.Background(), t, "/api/isolateservice/v1/store_inline")
+	})
 }
 
 func TestIsolateServerRetryGCS(t *testing.T) {
 	t.Parallel()
-	testFlaky(context.Background(), t, "/fake/cloudstorage")
+	Convey(``, t, func() {
+		testFlaky(context.Background(), t, "/fake/cloudstorage")
+	})
 }
 
 func TestIsolateServerRetryFinalize(t *testing.T) {
 	t.Parallel()
-	testFlaky(context.Background(), t, "/api/isolateservice/v1/finalize_gs_upload")
+	Convey(``, t, func() {
+		testFlaky(context.Background(), t, "/api/isolateservice/v1/finalize_gs_upload")
+	})
 }
 
 func TestIsolateServerRetryGCSPartial(t *testing.T) {
@@ -76,42 +91,46 @@ func TestIsolateServerRetryGCSPartial(t *testing.T) {
 
 	// GCS upload is teared down in the middle.
 	t.Parallel()
-	server := isolatedfake.New()
-	flaky := &killingMux{server: server, tearDown: map[string]int{"/fake/cloudstorage": 1024}}
-	flaky.ts = httptest.NewServer(flaky)
-	defer flaky.ts.Close()
-	client := New(nil, nil, flaky.ts.URL, DefaultNamespace, fastRetry)
+	Convey(``, t, func() {
+		server := isolatedfake.New()
+		flaky := &killingMux{server: server, tearDown: map[string]int{"/fake/cloudstorage": 1024}}
+		flaky.ts = httptest.NewServer(flaky)
+		defer flaky.ts.Close()
+		client := New(nil, nil, flaky.ts.URL, DefaultNamespace, fastRetry)
 
-	digests, contents, expected := makeItems(large)
-	states, err := client.Contains(ctx, digests)
-	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, len(digests), len(states))
-	for _, state := range states {
-		err = client.Push(ctx, state, NewBytesSource(contents[state.status.Index]))
-		ut.AssertEqual(t, nil, err)
-	}
-	ut.AssertEqual(t, expected, server.Contents())
-	ut.AssertEqual(t, map[string]int{}, flaky.tearDown)
+		digests, contents, expected := makeItems(large)
+		states, err := client.Contains(ctx, digests)
+		So(err, ShouldBeNil)
+		So(len(states), ShouldResemble, len(digests))
+		for _, state := range states {
+			err = client.Push(ctx, state, NewBytesSource(contents[state.status.Index]))
+			So(err, ShouldBeNil)
+		}
+		So(server.Contents(), ShouldResemble, expected)
+		So(flaky.tearDown, ShouldResemble, map[string]int{})
 
-	// Look up again to confirm.
-	states, err = client.Contains(ctx, digests)
-	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, len(digests), len(states))
-	for _, state := range states {
-		ut.AssertEqual(t, (*PushState)(nil), state)
-	}
-	ut.AssertEqual(t, nil, server.Error())
+		// Look up again to confirm.
+		states, err = client.Contains(ctx, digests)
+		So(err, ShouldBeNil)
+		So(len(states), ShouldResemble, len(digests))
+		for _, state := range states {
+			So(state, ShouldResemble, (*PushState)(nil))
+		}
+		So(server.Error(), ShouldBeNil)
+	})
 }
 
 func TestIsolateServerBadURL(t *testing.T) {
 	t.Parallel()
-	if testing.Short() {
-		t.SkipNow()
-	}
-	client := New(nil, nil, "http://127.0.0.1:1", DefaultNamespace, fastRetry)
-	caps, err := client.ServerCapabilities(context.Background())
-	ut.AssertEqual(t, (*isolateservice.HandlersEndpointsV1ServerDetails)(nil), caps)
-	ut.AssertEqual(t, true, err != nil)
+	Convey(``, t, func() {
+		if testing.Short() {
+			t.SkipNow()
+		}
+		client := New(nil, nil, "http://127.0.0.1:1", DefaultNamespace, fastRetry)
+		caps, err := client.ServerCapabilities(context.Background())
+		So(caps, ShouldBeNil)
+		So(err, ShouldNotBeNil)
+	})
 }
 
 // Private stuff.
@@ -160,54 +179,58 @@ func makeItems(contents ...[]byte) ([]*isolateservice.HandlersEndpointsV1Digest,
 }
 
 func testNormal(ctx context.Context, t *testing.T, contents ...[]byte) {
-	digests, _, expected := makeItems(contents...)
-	server := isolatedfake.New()
-	ts := httptest.NewServer(server)
-	defer ts.Close()
-	client := New(nil, nil, ts.URL, DefaultNamespace, cantRetry)
-	states, err := client.Contains(ctx, digests)
-	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, len(digests), len(states))
-	for _, state := range states {
-		// The data is automatically compressed.
-		err = client.Push(ctx, state, NewBytesSource(contents[state.status.Index]))
-		ut.AssertEqual(t, nil, err)
-	}
-	ut.AssertEqual(t, nil, server.Error())
-	ut.AssertEqual(t, expected, server.Contents())
-	states, err = client.Contains(ctx, digests)
-	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, len(digests), len(states))
-	for _, state := range states {
-		ut.AssertEqual(t, (*PushState)(nil), state)
-	}
-	ut.AssertEqual(t, nil, server.Error())
+	Convey(``, func() {
+		digests, _, expected := makeItems(contents...)
+		server := isolatedfake.New()
+		ts := httptest.NewServer(server)
+		defer ts.Close()
+		client := New(nil, nil, ts.URL, DefaultNamespace, cantRetry)
+		states, err := client.Contains(ctx, digests)
+		So(err, ShouldBeNil)
+		So(len(states), ShouldResemble, len(digests))
+		for _, state := range states {
+			// The data is automatically compressed.
+			err = client.Push(ctx, state, NewBytesSource(contents[state.status.Index]))
+			So(err, ShouldBeNil)
+		}
+		So(server.Error(), ShouldBeNil)
+		So(server.Contents(), ShouldResemble, expected)
+		states, err = client.Contains(ctx, digests)
+		So(err, ShouldBeNil)
+		So(len(states), ShouldResemble, len(digests))
+		for _, state := range states {
+			So(state, ShouldBeNil)
+		}
+		So(server.Error(), ShouldBeNil)
+	})
 }
 
 func testFlaky(ctx context.Context, t *testing.T, flake string) {
-	server := isolatedfake.New()
-	flaky := &killingMux{server: server, http503: map[string]int{flake: 10}}
-	flaky.ts = httptest.NewServer(flaky)
-	defer flaky.ts.Close()
-	client := New(nil, nil, flaky.ts.URL, DefaultNamespace, fastRetry)
+	Convey(``, func() {
+		server := isolatedfake.New()
+		flaky := &killingMux{server: server, http503: map[string]int{flake: 10}}
+		flaky.ts = httptest.NewServer(flaky)
+		defer flaky.ts.Close()
+		client := New(nil, nil, flaky.ts.URL, DefaultNamespace, fastRetry)
 
-	digests, contents, expected := makeItems(foo, large)
-	states, err := client.Contains(ctx, digests)
-	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, len(digests), len(states))
-	for _, state := range states {
-		err = client.Push(ctx, state, NewBytesSource(contents[state.status.Index]))
-		ut.AssertEqual(t, nil, err)
-	}
-	ut.AssertEqual(t, expected, server.Contents())
-	states, err = client.Contains(ctx, digests)
-	ut.AssertEqual(t, nil, err)
-	ut.AssertEqual(t, len(digests), len(states))
-	for _, state := range states {
-		ut.AssertEqual(t, (*PushState)(nil), state)
-	}
-	ut.AssertEqual(t, nil, server.Error())
-	ut.AssertEqual(t, map[string]int{}, flaky.http503)
+		digests, contents, expected := makeItems(foo, large)
+		states, err := client.Contains(ctx, digests)
+		So(err, ShouldBeNil)
+		So(len(states), ShouldResemble, len(digests))
+		for _, state := range states {
+			err = client.Push(ctx, state, NewBytesSource(contents[state.status.Index]))
+			So(err, ShouldBeNil)
+		}
+		So(server.Contents(), ShouldResemble, expected)
+		states, err = client.Contains(ctx, digests)
+		So(err, ShouldBeNil)
+		So(len(states), ShouldResemble, len(digests))
+		for _, state := range states {
+			So(state, ShouldBeNil)
+		}
+		So(server.Error(), ShouldBeNil)
+		So(flaky.http503, ShouldResemble, map[string]int{})
+	})
 }
 
 // killingMux inserts tears down connection in the middle of a transfer.

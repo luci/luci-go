@@ -11,7 +11,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/maruel/ut"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func ExampleSpan() {
@@ -55,114 +55,124 @@ func TestNotStarted(t *testing.T) {
 }
 
 func TestCounterAdd(t *testing.T) {
-	b := &bytes.Buffer{}
-	ut.AssertEqual(t, nil, Start(b, 1))
-	CounterAdd(nil, "explosion", 42)
-	CounterAdd(nil, "explosion", 3)
-	Stop()
+	Convey(`A tracer counter should support being incremented.`, t, func() {
+		b := &bytes.Buffer{}
+		So(Start(b, 1), ShouldBeNil)
+		CounterAdd(nil, "explosion", 42)
+		CounterAdd(nil, "explosion", 3)
+		Stop()
 
-	check(t, b, []event{
-		{
-			Type: eventCounter,
-			Name: "explosion",
-			Args: Args{"value": 42.},
-			ID:   1,
-		},
-		{
-			Type: eventCounter,
-			Name: "explosion",
-			Args: Args{"value": 45.},
-			ID:   2,
-		},
+		check(t, b, []event{
+			{
+				Type: eventCounter,
+				Name: "explosion",
+				Args: Args{"value": 42.},
+				ID:   1,
+			},
+			{
+				Type: eventCounter,
+				Name: "explosion",
+				Args: Args{"value": 45.},
+				ID:   2,
+			},
+		})
 	})
 }
 
 func TestCounterSet(t *testing.T) {
-	b := &bytes.Buffer{}
-	ut.AssertEqual(t, nil, Start(b, 1))
-	CounterSet(nil, "explosion", 42)
-	CounterSet(nil, "explosion", 3)
-	Stop()
+	Convey(`A tracer counter should support being set.`, t, func() {
+		b := &bytes.Buffer{}
+		So(Start(b, 1), ShouldBeNil)
+		CounterSet(nil, "explosion", 42)
+		CounterSet(nil, "explosion", 3)
+		Stop()
 
-	check(t, b, []event{
-		{
-			Type: eventCounter,
-			Name: "explosion",
-			Args: Args{"value": 42.},
-			ID:   1,
-		},
-		{
-			Type: eventCounter,
-			Name: "explosion",
-			Args: Args{"value": 3.},
-			ID:   2,
-		},
+		check(t, b, []event{
+			{
+				Type: eventCounter,
+				Name: "explosion",
+				Args: Args{"value": 42.},
+				ID:   1,
+			},
+			{
+				Type: eventCounter,
+				Name: "explosion",
+				Args: Args{"value": 3.},
+				ID:   2,
+			},
+		})
 	})
 }
 
 func TestInstant(t *testing.T) {
-	b := &bytes.Buffer{}
-	ut.AssertEqual(t, nil, Start(b, 1))
-	Instant(nil, "explosion", Global, Args{"level": "hard"})
-	Stop()
+	Convey(`A tracer should support instantaneous events with no duration.`, t, func() {
+		b := &bytes.Buffer{}
+		So(Start(b, 1), ShouldBeNil)
+		Instant(nil, "explosion", Global, Args{"level": "hard"})
+		Stop()
 
-	check(t, b, []event{
-		{
-			Type:     eventNestableInstant,
-			Category: "ignored",
-			Name:     "explosion",
-			Args:     Args{"level": "hard"},
-			Scope:    Global,
-			ID:       1,
-		},
+		check(t, b, []event{
+			{
+				Type:     eventNestableInstant,
+				Category: "ignored",
+				Name:     "explosion",
+				Args:     Args{"level": "hard"},
+				Scope:    Global,
+				ID:       1,
+			},
+		})
 	})
 }
 
 func TestSpanSimpleBegin(t *testing.T) {
-	b := &bytes.Buffer{}
-	ut.AssertEqual(t, nil, Start(b, 1))
-	Span(nil, "action1", Args{"err": "bar"})(nil)
-	Stop()
+	Convey(`A tracer should support spanning event with duration.`, t, func() {
+		b := &bytes.Buffer{}
+		So(Start(b, 1), ShouldBeNil)
+		Span(nil, "action1", Args{"err": "bar"})(nil)
+		Stop()
 
-	check(t, b, []event{
-		{
-			Type:     eventNestableBegin,
-			Category: "ignored",
-			Name:     "action1",
-			Args:     Args{"err": "bar"},
-			ID:       1,
-		},
-		{
-			Type:     eventNestableEnd,
-			Category: "ignored",
-			Name:     "action1",
-			Args:     consts.fakeArgs,
-			ID:       1,
-		},
+		check(t, b, []event{
+			{
+				Type:     eventNestableBegin,
+				Category: "ignored",
+				Name:     "action1",
+				Args:     Args{"err": "bar"},
+				ID:       1,
+			},
+			{
+				Type:     eventNestableEnd,
+				Category: "ignored",
+				Name:     "action1",
+				Args:     consts.fakeArgs,
+				ID:       1,
+			},
+		})
 	})
 }
 
 func TestSpanSimpleEnd(t *testing.T) {
-	b := &bytes.Buffer{}
-	ut.AssertEqual(t, nil, Start(b, 1))
-	Span(nil, "action1", nil)(Args{"err": "bar"})
-	Stop()
+	Convey(`A tracer should support spanning event with duration.`, t, func() {
+		b := &bytes.Buffer{}
+		So(Start(b, 1), ShouldBeNil)
+		Span(nil, "action1", nil)(Args{"err": "bar"})
+		Stop()
 
-	check(t, b, []event{
-		{
-			Type:     eventNestableBegin,
-			Category: "ignored",
-			Name:     "action1",
-			Args:     consts.fakeArgs,
-			ID:       1,
-		},
-		{
-			Type:     eventNestableEnd,
-			Category: "ignored",
-			Name:     "action1",
-			Args:     Args{"err": "bar"},
-			ID:       1,
-		},
+		check(t, b, []event{
+			{
+				Type:     eventNestableBegin,
+				Category: "ignored",
+				Name:     "action1",
+				Args:     consts.fakeArgs,
+				ID:       1,
+			},
+			{
+				Type:     eventNestableEnd,
+				Category: "ignored",
+				Name:     "action1",
+				Args:     Args{"err": "bar"},
+				ID:       1,
+			},
+		})
 	})
 }
 
@@ -191,33 +201,35 @@ type traceFile struct {
 }
 
 func check(t *testing.T, b *bytes.Buffer, expected []event) {
-	actual := &traceFile{}
-	ut.AssertEqual(t, nil, json.Unmarshal(b.Bytes(), actual))
-	// First sort by .Timestamp. Then Zap out .Timestamp since it is not
-	// deterministic. Convert Duration to binary value, either 0 or 1 since it's
-	// value is either set or not set.
-	sort.Sort(actual.Events)
-	for i := range actual.Events {
-		// Timestamp can be zero on low resolution clock (e.g. Windows) when an
-		// event is filed right after tracer.Start(). Using high resolution (1ms)
-		// clock resolution on Windows is optional.
-		ut.AssertEqual(t, true, actual.Events[i].Timestamp >= 0)
-		actual.Events[i].Timestamp = 0
-		if actual.Events[i].Duration != 0 {
-			actual.Events[i].Duration = 1
+	Convey(`Basic checks performed for many tracer tests.`, func() {
+		actual := &traceFile{}
+		So(json.Unmarshal(b.Bytes(), actual), ShouldBeNil)
+		// First sort by .Timestamp. Then Zap out .Timestamp since it is not
+		// deterministic. Convert Duration to binary value, either 0 or 1 since it's
+		// value is either set or not set.
+		sort.Sort(actual.Events)
+		for i := range actual.Events {
+			// Timestamp can be zero on low resolution clock (e.g. Windows) when an
+			// event is filed right after tracer.Start(). Using high resolution (1ms)
+			// clock resolution on Windows is optional.
+			So(actual.Events[i].Timestamp, ShouldBeGreaterThanOrEqualTo, 0)
+			actual.Events[i].Timestamp = 0
+			if actual.Events[i].Duration != 0 {
+				actual.Events[i].Duration = 1
+			}
 		}
-	}
-	for i := range expected {
-		if expected[i].Pid == 0 {
-			expected[i].Pid = 1
+		for i := range expected {
+			if expected[i].Pid == 0 {
+				expected[i].Pid = 1
+			}
+			if expected[i].Tid == 0 {
+				expected[i].Tid = 1
+			}
 		}
-		if expected[i].Tid == 0 {
-			expected[i].Tid = 1
-		}
-	}
-	wd, _ := os.Getwd()
-	e := &traceFile{traceContext{os.Args, wd}, expected}
-	ut.AssertEqual(t, e.Context, actual.Context)
-	ut.AssertEqual(t, e.Events, actual.Events)
-	ut.AssertEqual(t, e, actual)
+		wd, _ := os.Getwd()
+		e := &traceFile{traceContext{os.Args, wd}, expected}
+		So(actual.Context, ShouldResemble, e.Context)
+		So(actual.Events, ShouldResemble, e.Events)
+		So(actual, ShouldResemble, e)
+	})
 }

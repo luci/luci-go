@@ -8,49 +8,53 @@ import (
 	"testing"
 	"time"
 
-	"github.com/maruel/ut"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSizeToString(t *testing.T) {
 	t.Parallel()
-	data := []struct {
-		in       int64
-		expected string
-	}{
-		{0, "0b"},
-		{1, "1b"},
-		{1000, "1000b"},
-		{1023, "1023b"},
-		{1024, "1.00Kib"},
-		{1029, "1.00Kib"},
-		{1030, "1.01Kib"},
-		{10234, "9.99Kib"},
-		{10239, "10.00Kib"},
-		{10240, "10.0Kib"},
-		{1048575, "1024.0Kib"},
-		{1048576, "1.00Mib"},
-	}
-	for i, line := range data {
-		ut.AssertEqualIndex(t, i, line.expected, SizeToString(line.in))
-	}
+	Convey(`A size unit should convert to a valid string representation.`, t, func() {
+		data := []struct {
+			in       int64
+			expected string
+		}{
+			{0, "0b"},
+			{1, "1b"},
+			{1000, "1000b"},
+			{1023, "1023b"},
+			{1024, "1.00Kib"},
+			{1029, "1.00Kib"},
+			{1030, "1.01Kib"},
+			{10234, "9.99Kib"},
+			{10239, "10.00Kib"},
+			{10240, "10.0Kib"},
+			{1048575, "1024.0Kib"},
+			{1048576, "1.00Mib"},
+		}
+		for _, line := range data {
+			So(SizeToString(line.in), ShouldResemble, line.expected)
+		}
+	})
 }
 
 func TestRound(t *testing.T) {
 	t.Parallel()
-	data := []struct {
-		in       time.Duration
-		round    time.Duration
-		expected time.Duration
-	}{
-		{-time.Second, time.Second, -time.Second},
-		{-500 * time.Millisecond, time.Second, -time.Second},
-		{-499 * time.Millisecond, time.Second, 0},
-		{0, time.Second, 0},
-		{499 * time.Millisecond, time.Second, 0},
-		{500 * time.Millisecond, time.Second, time.Second},
-		{time.Second, time.Second, time.Second},
-	}
-	for i, line := range data {
-		ut.AssertEqualIndex(t, i, line.expected, Round(line.in, line.round))
-	}
+	Convey(`Unit values should round correctly.`, t, func() {
+		data := []struct {
+			in       time.Duration
+			round    time.Duration
+			expected time.Duration
+		}{
+			{-time.Second, time.Second, -time.Second},
+			{-500 * time.Millisecond, time.Second, -time.Second},
+			{-499 * time.Millisecond, time.Second, 0},
+			{0, time.Second, 0},
+			{499 * time.Millisecond, time.Second, 0},
+			{500 * time.Millisecond, time.Second, time.Second},
+			{time.Second, time.Second, time.Second},
+		}
+		for _, line := range data {
+			So(Round(line.in, line.round), ShouldResemble, line.expected)
+		}
+	})
 }
