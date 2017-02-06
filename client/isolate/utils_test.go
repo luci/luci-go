@@ -11,46 +11,50 @@ import (
 	"os"
 	"testing"
 
-	"github.com/maruel/ut"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestUniqueMergeSortedStrings(t *testing.T) {
 	t.Parallel()
-	SS := func(s string) []string {
-		out := []string{}
-		for _, c := range s {
-			out = append(out, string(c))
+	Convey(`Tests the unique merge of sorted of strings.`, t, func() {
+		SS := func(s string) []string {
+			out := []string{}
+			for _, c := range s {
+				out = append(out, string(c))
+			}
+			return out
 		}
-		return out
-	}
-	ut.AssertEqual(t, SS("abcde"), uniqueMergeSortedStrings(SS("acde"), SS("abe")))
-	ut.AssertEqual(t, SS("abc"), uniqueMergeSortedStrings(SS("abc"), SS("")))
-	ut.AssertEqual(t, []string{"bar", "foo", "test", "toss", "xyz"},
-		uniqueMergeSortedStrings(
+		So(uniqueMergeSortedStrings(SS("acde"), SS("abe")), ShouldResemble, SS("abcde"))
+		So(uniqueMergeSortedStrings(SS("abc"), SS("")), ShouldResemble, SS("abc"))
+		So(uniqueMergeSortedStrings(
 			[]string{"bar", "foo", "test"},
-			[]string{"foo", "toss", "xyz"}))
+			[]string{"foo", "toss", "xyz"}),
+			ShouldResemble, []string{"bar", "foo", "test", "toss", "xyz"})
 
-	// Test degenerate cases (empty and single-element lists)
-	ut.AssertEqual(t, SS(""), uniqueMergeSortedStrings(SS(""), SS("")))
-	ut.AssertEqual(t, SS("x"), uniqueMergeSortedStrings(SS("x"), SS("")))
-	ut.AssertEqual(t, SS("x"), uniqueMergeSortedStrings(SS(""), SS("x")))
+		// Test degenerate cases (empty and single-element lists)
+		So(uniqueMergeSortedStrings(SS(""), SS("")), ShouldResemble, SS(""))
+		So(uniqueMergeSortedStrings(SS("x"), SS("")), ShouldResemble, SS("x"))
+		So(uniqueMergeSortedStrings(SS(""), SS("x")), ShouldResemble, SS("x"))
+	})
 }
 
 func TestAssert(t *testing.T) {
-	log.SetOutput(ioutil.Discard)
-	defer log.SetOutput(os.Stderr)
+	Convey(`Helper function for test assertion.`, t, func() {
+		log.SetOutput(ioutil.Discard)
+		defer log.SetOutput(os.Stderr)
 
-	wasPanic := func(f func()) (yes bool) {
-		defer func() {
-			yes = nil != recover()
-		}()
-		f()
-		return
-	}
-	ut.AssertEqual(t, true, wasPanic(func() { assert(false) }))
-	ut.AssertEqual(t, true, wasPanic(func() { assert(false, "format") }))
-	ut.AssertEqual(t, true, wasPanic(func() { assert(false, "format") }))
-	ut.AssertEqual(t, true, wasPanic(func() { assertNoError(errors.New("error")) }))
+		wasPanic := func(f func()) (yes bool) {
+			defer func() {
+				yes = nil != recover()
+			}()
+			f()
+			return
+		}
+		So(wasPanic(func() { assert(false) }), ShouldBeTrue)
+		So(wasPanic(func() { assert(false, "format") }), ShouldBeTrue)
+		So(wasPanic(func() { assert(false, "format") }), ShouldBeTrue)
+		So(wasPanic(func() { assertNoError(errors.New("error")) }), ShouldBeTrue)
+	})
 }
 
 // Copy-pasted from Go's lib path/filepath/path_test.go .
