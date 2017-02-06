@@ -5,13 +5,12 @@
 package isolate
 
 import (
-	"errors"
+	"fmt"
 	"log"
 	"path"
 	"strings"
 
-	// TODO(tandrii): Remove this testing lib from non-test file.
-	"github.com/maruel/ut"
+	"github.com/luci/luci-go/common/errors"
 )
 
 // TODO(tandrii): Remove this hacky stuff.
@@ -20,7 +19,7 @@ func assertNoError(err error) {
 	if err == nil {
 		return
 	}
-	log.Panicf(ut.Decorate("assertion failed due to error %s."), err)
+	log.Panic(errors.RenderStack(fmt.Errorf("assertion failed due to error: %s", err)).ToLines())
 }
 
 func assert(condition bool, info ...interface{}) {
@@ -28,9 +27,9 @@ func assert(condition bool, info ...interface{}) {
 		return
 	}
 	if len(info) == 0 {
-		log.Panic(ut.Decorate("assertion failed"))
+		log.Panic(errors.RenderStack(errors.New("assertion failed")).ToLines())
 	} else if format, ok := info[0].(string); ok {
-		log.Panicf(ut.Decorate("assertion failed: "+format), info[1:]...)
+		log.Panic(errors.RenderStack(fmt.Errorf("assertion failed: "+format, info[1:]...)).ToLines())
 	}
 }
 
