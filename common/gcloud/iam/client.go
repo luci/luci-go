@@ -21,17 +21,46 @@ const (
 	DefaultBasePath = "https://iam.googleapis.com/"
 )
 
-// Client knows how to read and update IAM policies of resources.
+// Client knows how to perform IAM API v1 calls.
 type Client struct {
 	Client   *http.Client // client to use to make calls
 	BasePath string       // replaceable in tests, DefaultBasePath by default.
+}
+
+// SignBlob signs a blob using a service account's system-managed private key.
+//
+// The caller must have "roles/iam.serviceAccountActor" role in the service
+// account's IAM policy and caller's OAuth token must have one of the scopes:
+//  * https://www.googleapis.com/auth/iam
+//  * https://www.googleapis.com/auth/cloud-platform
+//
+// Returns ID of the signing key and the signature on success.
+//
+// On API-level errors (e.g. insufficient permissions) returns *googleapi.Error.
+func (cl *Client) SignBlob(c context.Context, serviceAccount string, blob []byte) (keyName string, signature []byte, err error) {
+	var request struct {
+		BytesToSign []byte `json:"bytesToSign"`
+	}
+	request.BytesToSign = blob
+	var response struct {
+		KeyId     string `json:"keyId"`
+		Signature []byte `json:"signature"`
+	}
+	if err = cl.apiRequest(c, "projects/-/serviceAccounts/"+serviceAccount, "signBlob", &request, &response); err != nil {
+		return "", nil, err
+	}
+	return response.KeyId, response.Signature, nil
 }
 
 // GetIAMPolicy fetches an IAM policy of a resource.
 //
 // On non-success HTTP status codes returns googleapi.Error.
 func (cl *Client) GetIAMPolicy(c context.Context, resource string) (*Policy, error) {
-	return cl.policyRequest(c, resource, "getIamPolicy", nil)
+	response := &Policy{}
+	if err := cl.apiRequest(c, resource, "getIamPolicy", nil, response); err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
 // SetIAMPolicy replaces an IAM policy of a resource.
@@ -42,7 +71,11 @@ func (cl *Client) SetIAMPolicy(c context.Context, resource string, p Policy) (*P
 		Policy *Policy `json:"policy"`
 	}
 	request.Policy = &p
-	return cl.policyRequest(c, resource, "setIamPolicy", &request)
+	response := &Policy{}
+	if err := cl.apiRequest(c, resource, "setIamPolicy", &request, response); err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
 // ModifyIAMPolicy reads IAM policy, calls callback to modify it, and then
@@ -69,14 +102,14 @@ func (cl *Client) ModifyIAMPolicy(c context.Context, resource string, cb func(*P
 	return err
 }
 
-// policyRequest sends getIamPolicy or setIamPolicy requests.
-func (cl *Client) policyRequest(c context.Context, resource, action string, body interface{}) (*Policy, error) {
+// apiRequest performs HTTP POST to an IAM API endpoint.
+func (cl *Client) apiRequest(c context.Context, resource, action string, body, resp interface{}) error {
 	// Serialize the body.
 	var reader io.Reader
 	if body != nil {
 		blob, err := json.Marshal(body)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		reader = bytes.NewReader(blob)
 	}
@@ -92,7 +125,7 @@ func (cl *Client) policyRequest(c context.Context, resource, action string, body
 	url := fmt.Sprintf("%sv1/%s:%s?alt=json", base, resource, action)
 	req, err := http.NewRequest("POST", url, reader)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if reader != nil {
 		req.Header.Set("Content-Type", "application/json")
@@ -102,15 +135,11 @@ func (cl *Client) policyRequest(c context.Context, resource, action string, body
 	// methods. CheckResponse returns *googleapi.Error.
 	res, err := ctxhttp.Do(c, cl.Client, req)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return err
 	}
-	ret := &Policy{}
-	if err := json.NewDecoder(res.Body).Decode(ret); err != nil {
-		return nil, err
-	}
-	return ret, nil
+	return json.NewDecoder(res.Body).Decode(resp)
 }
