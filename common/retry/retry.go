@@ -65,6 +65,9 @@ func Retry(ctx context.Context, f Factory, fn func() error, callback Callback) (
 		it = f()
 	}
 
+	timer := clock.NewTimer(ctx)
+	defer timer.Stop()
+
 	for {
 		// If we've been cancelled, don't try/retry.
 		select {
@@ -92,7 +95,8 @@ func Retry(ctx context.Context, f Factory, fn func() error, callback Callback) (
 		}
 
 		if delay > 0 {
-			if tr := <-clock.After(ctx, delay); tr.Incomplete() {
+			timer.Reset(delay)
+			if tr := <-timer.GetC(); tr.Incomplete() {
 				// Context was canceled.
 				return tr.Err
 			}

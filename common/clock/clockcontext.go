@@ -11,6 +11,10 @@ import (
 	"golang.org/x/net/context"
 )
 
+// ContextDeadlineTag is the tag that will be applied to timers used for Context
+// deadine timeout.
+const ContextDeadlineTag = "github.com/luci/luci-go/common/clock.ContextDeadlineTag"
+
 // clockContext is a context.Context implementation that uses Clock library
 // constructs.
 type clockContext struct {
@@ -72,7 +76,7 @@ func WithDeadline(parent context.Context, deadline time.Time) (context.Context, 
 	// Invoke our cancelFunc after the specified time. Register the timer now, so
 	// it gets registered in the testclock heap right away (and not at some
 	// undetermined later time when the goroutine starts).
-	t := NewTimer(c)
+	t := NewTimer(Tag(c, ContextDeadlineTag))
 	t.Reset(d)
 	go func() {
 		defer t.Stop()

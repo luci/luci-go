@@ -16,6 +16,7 @@ import (
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/butler/output"
 	"github.com/luci/luci-go/logdog/client/butlerproto"
@@ -194,6 +195,7 @@ func (o *pubSubOutput) buildMessage(buf *buffer, bundle *logpb.ButlerLogBundle) 
 // retry transient errors until the publish succeeds.
 func (o *pubSubOutput) publishMessages(messages []*pubsub.Message) error {
 	var messageIDs []string
+	transientErrors := 0
 	err := retry.Retry(o, retry.TransientOnly(indefiniteRetry), func() (err error) {
 		ctx := o.Context
 		if o.RPCTimeout > 0 {
@@ -206,6 +208,8 @@ func (o *pubSubOutput) publishMessages(messages []*pubsub.Message) error {
 		if err == context.DeadlineExceeded {
 			// If we hit our publish deadline, retry.
 			err = errors.WrapTransient(err)
+		} else {
+			err = grpcutil.WrapIfTransient(err)
 		}
 		return
 	}, func(err error, d time.Duration) {
@@ -214,15 +218,25 @@ func (o *pubSubOutput) publishMessages(messages []*pubsub.Message) error {
 			"delay":      d,
 			"count":      len(messages),
 		}.Warningf(o, "TRANSIENT error publishing messages; retrying...")
+		transientErrors++
 	})
 	if err != nil {
 		log.WithError(err).Errorf(o, "Failed to send PubSub message.")
 		return err
 	}
 
-	log.Fields{
-		"messageIds": messageIDs,
-	}.Debugf(o, "Published messages.")
+	if transientErrors > 0 {
+		// We successfully published, but we hit a transient error, so explicitly
+		// acknowledge this at warning-level for log message closure.
+		log.Fields{
+			"messageIds":      messageIDs,
+			"transientErrors": transientErrors,
+		}.Warningf(o, "Successfully published messages after transient errors.")
+	} else {
+		log.Fields{
+			"messageIds": messageIDs,
+		}.Debugf(o, "Published messages.")
+	}
 	return nil
 }
 
@@ -239,6 +253,7 @@ func indefiniteRetry() retry.Iterator {
 	return &retry.ExponentialBackoff{
 		Limited: retry.Limited{
 			Retries: -1,
+			Delay:   500 * time.Millisecond,
 		},
 		MaxDelay: 30 * time.Second,
 	}

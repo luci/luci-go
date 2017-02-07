@@ -7,29 +7,34 @@ package pubsub
 import (
 	"bytes"
 	"compress/zlib"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"sync"
 	"testing"
 	"time"
 
-	"cloud.google.com/go/pubsub"
-	"github.com/golang/protobuf/proto"
+	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/logging/gologger"
+
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/data/recordio"
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/api/logpb"
-	. "github.com/smartystreets/goconvey/convey"
+
+	"cloud.google.com/go/pubsub"
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 type testTopic struct {
 	sync.Mutex
 
-	err error
+	err func() error
 
 	msgC          chan *pubsub.Message
 	nextMessageID int
@@ -39,12 +44,20 @@ func (t *testTopic) String() string { return "test" }
 
 func (t *testTopic) Publish(c context.Context, msgs ...*pubsub.Message) ([]string, error) {
 	if t.err != nil {
-		return nil, t.err
+		if err := t.err(); err != nil {
+			return nil, err
+		}
 	}
 
 	ids := make([]string, len(msgs))
 	for i, m := range msgs {
-		t.msgC <- m
+		if t.msgC != nil {
+			select {
+			case t.msgC <- m:
+			case <-c.Done():
+				return nil, c.Err()
+			}
+		}
 		ids[i] = t.getNextMessageID()
 	}
 	return ids, nil
@@ -107,9 +120,11 @@ func deconstructMessage(msg *pubsub.Message) (*logpb.ButlerMetadata, *logpb.Butl
 
 func TestOutput(t *testing.T) {
 	Convey(`An Output using a test Pub/Sub instance`, t, func() {
-		ctx, _ := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
+		ctx, tc := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
+		ctx = gologger.StdConfig.Use(ctx)
+		ctx = logging.SetLevel(ctx, logging.Debug)
 		tt := &testTopic{
-			msgC: make(chan *pubsub.Message, 1),
+			msgC: make(chan *pubsub.Message),
 		}
 		conf := Config{
 			Topic: tt,
@@ -126,9 +141,14 @@ func TestOutput(t *testing.T) {
 		}
 
 		Convey(`Can send/receive a bundle.`, func() {
-			So(o.SendBundle(bundle), ShouldBeNil)
+			errC := make(chan error)
+			go func() {
+				errC <- o.SendBundle(bundle)
+			}()
+			msg := <-tt.msgC
+			So(<-errC, ShouldBeNil)
 
-			h, b, err := deconstructMessage(<-tt.msgC)
+			h, b, err := deconstructMessage(msg)
 			So(err, ShouldBeNil)
 			So(h.Compression, ShouldEqual, logpb.ButlerMetadata_NONE)
 			So(b, ShouldResemble, bundle)
@@ -142,9 +162,63 @@ func TestOutput(t *testing.T) {
 			})
 		})
 
-		Convey(`Will return an error if Publish failed.`, func() {
-			tt.err = errors.New("test: error")
-			So(o.SendBundle(bundle), ShouldNotBeNil)
+		Convey(`Will return an error if Publish failed non-transiently.`, func() {
+			tt.err = func() error { return grpcutil.InvalidArgument }
+			So(o.SendBundle(bundle), ShouldEqual, grpcutil.InvalidArgument)
+		})
+
+		Convey(`Will retry indefinitely if Publish fails transiently (Context deadline).`, func() {
+			const retries = 30
+
+			// Advance our clock each time there is a delay up until count.
+			count := 0
+			tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+				switch {
+				case !testclock.HasTags(t, clock.ContextDeadlineTag):
+					// Other timer (probably retry sleep), advance time.
+					tc.Add(d)
+
+				case count < retries:
+					// Still retrying, advance time.
+					count++
+					tc.Add(d)
+
+				default:
+					// Done retrying, don't expire Contexts anymore. Consume the message
+					// when it is sent.
+					tt.err = func() error { return grpcutil.InvalidArgument }
+				}
+			})
+
+			// Time our our RPC. Because of our timer callback, this will always be
+			// hit.
+			o.RPCTimeout = 30 * time.Second
+			So(o.SendBundle(bundle), ShouldEqual, grpcutil.InvalidArgument)
+			So(count, ShouldEqual, retries)
+		})
+
+		Convey(`Will retry indefinitely if Publish fails transiently (gRPC).`, func() {
+			const retries = 30
+
+			// Advance our clock each time there is a delay up until count.
+			tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+				tc.Add(d)
+			})
+
+			count := 0
+			tt.msgC = nil
+			tt.err = func() error {
+				count++
+				if count < retries {
+					return grpcutil.Internal
+				}
+				return grpcutil.NotFound // Non-transient.
+			}
+
+			// Time our our RPC. Because of our timer callback, this will always be
+			// hit.
+			So(o.SendBundle(bundle), ShouldEqual, grpcutil.NotFound)
+			So(count, ShouldEqual, retries)
 		})
 	})
 }
