@@ -2165,9 +2165,9 @@ func GetApplication(params Parameters) *cli.Application {
 
 			// User friendly subcommands that operates within a site root. Implemented
 			// in friendly.go.
-			cmdInit(),
+			cmdInit(params),
 			cmdInstall(params),
-			cmdInstalled(),
+			cmdInstalled(params),
 
 			// Authentication related commands.
 			authcli.SubcommandInfo(params.DefaultAuthOptions, "auth-info", true),

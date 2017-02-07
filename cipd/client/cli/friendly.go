@@ -85,13 +85,13 @@ func isSiteRoot(p string) bool {
 // installationSiteConfig is stored in .cipd/config.json.
 type installationSiteConfig struct {
 	// ServiceURL is https://<hostname> of a backend to use by default.
-	ServiceURL string
+	ServiceURL string `json:",omitempty"`
 	// DefaultVersion is what version to install if not specified.
-	DefaultVersion string
+	DefaultVersion string `json:",omitempty"`
 	// TrackedVersions is mapping package name -> version to use in 'update'.
-	TrackedVersions map[string]string
+	TrackedVersions map[string]string `json:",omitempty"`
 	// CacheDir contains shared cache.
-	CacheDir string
+	CacheDir string `json:",omitempty"`
 }
 
 // read loads JSON from given path.
@@ -115,6 +115,9 @@ func (c *installationSiteConfig) write(path string) error {
 }
 
 // readConfig reads config, returning default one if missing.
+//
+// The returned config may have ServiceURL set to "" due to previous buggy
+// version of CIPD not setting it up correctly.
 func readConfig(siteRoot string) (installationSiteConfig, error) {
 	path := filepath.Join(siteRoot, local.SiteServiceDir, "config.json")
 	c := installationSiteConfig{}
@@ -130,9 +133,10 @@ func readConfig(siteRoot string) (installationSiteConfig, error) {
 // installationSite represents a site root directory with config and optional
 // cipd.Client instance configured to install packages into that root.
 type installationSite struct {
-	siteRoot string                  // path to a site root directory
-	cfg      *installationSiteConfig // parsed .cipd/config.json file
-	client   cipd.Client             // initialized by initClient()
+	siteRoot          string                  // path to a site root directory
+	defaultServiceURL string                  // set during construction
+	cfg               *installationSiteConfig // parsed .cipd/config.json file
+	client            cipd.Client             // initialized by initClient()
 }
 
 // getInstallationSite finds site root directory, reads config and constructs
@@ -141,7 +145,7 @@ type installationSite struct {
 // If siteRoot is "", will find a site root based on the current directory,
 // otherwise will use siteRoot. Doesn't create any new files or directories,
 // just reads what's on disk.
-func getInstallationSite(siteRoot string) (*installationSite, error) {
+func getInstallationSite(siteRoot, defaultServiceURL string) (*installationSite, error) {
 	siteRoot, err := optionalSiteRoot(siteRoot)
 	if err != nil {
 		return nil, err
@@ -150,14 +154,17 @@ func getInstallationSite(siteRoot string) (*installationSite, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &installationSite{siteRoot, &cfg, nil}, nil
+	if cfg.ServiceURL == "" {
+		cfg.ServiceURL = defaultServiceURL
+	}
+	return &installationSite{siteRoot, defaultServiceURL, &cfg, nil}, nil
 }
 
 // initInstallationSite creates new site root directory on disk.
 //
 // It does a bunch of sanity checks (like whether rootDir is empty) that are
 // skipped if 'force' is set to true.
-func initInstallationSite(rootDir string, force bool) (*installationSite, error) {
+func initInstallationSite(rootDir, defaultServiceURL string, force bool) (*installationSite, error) {
 	rootDir, err := filepath.Abs(rootDir)
 	if err != nil {
 		return nil, err
@@ -190,7 +197,7 @@ func initInstallationSite(rootDir string, force bool) (*installationSite, error)
 	if err = os.MkdirAll(filepath.Join(rootDir, local.SiteServiceDir), 0777); err != nil {
 		return nil, err
 	}
-	site, err := getInstallationSite(rootDir)
+	site, err := getInstallationSite(rootDir, defaultServiceURL)
 	if err != nil {
 		return nil, err
 	}
@@ -224,6 +231,10 @@ func (site *installationSite) modifyConfig(cb func(cfg *installationSiteConfig) 
 	}
 	if err := cb(&c); err != nil {
 		return err
+	}
+	// Fix broken config that doesn't have ServiceURL set. It is required now.
+	if c.ServiceURL == "" {
+		c.ServiceURL = site.defaultServiceURL
 	}
 	return c.write(path)
 }
@@ -348,7 +359,7 @@ func (opts *siteRootOptions) registerFlags(f *flag.FlagSet) {
 ////////////////////////////////////////////////////////////////////////////////
 // 'init' subcommand.
 
-func cmdInit() *subcommands.Command {
+func cmdInit(params Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		Advanced:  true,
 		UsageLine: "init [root dir] [options]",
@@ -364,7 +375,7 @@ func cmdInit() *subcommands.Command {
 			c := &initRun{}
 			c.registerBaseFlags()
 			c.Flags.BoolVar(&c.force, "force", false, "Create the site root even if the directory is not empty or already under another site root directory.")
-			c.Flags.StringVar(&c.serviceURL, "service-url", "", "URL of a backend to use instead of the default one.")
+			c.Flags.StringVar(&c.serviceURL, "service-url", params.ServiceURL, "Backend URL. Will be put into the site config and used for subsequent 'install' commands.")
 			c.Flags.StringVar(&c.cacheDir, "cache-dir", "", "Directory for shared cache")
 			return c
 		},
@@ -387,7 +398,7 @@ func (c *initRun) Run(a subcommands.Application, args []string, _ subcommands.En
 	if len(args) == 1 {
 		rootDir = args[0]
 	}
-	site, err := initInstallationSite(rootDir, c.force)
+	site, err := initInstallationSite(rootDir, c.serviceURL, c.force)
 	if err != nil {
 		return c.done(nil, err)
 	}
@@ -409,7 +420,7 @@ func cmdInstall(params Parameters) *subcommands.Command {
 		ShortDesc: "installs or updates a package",
 		LongDesc:  "Installs or updates a package.",
 		CommandRun: func() subcommands.CommandRun {
-			c := &installRun{}
+			c := &installRun{defaultServiceURL: params.ServiceURL}
 			c.registerBaseFlags()
 			c.authFlags.Register(&c.Flags, params.DefaultAuthOptions)
 			c.siteRootOptions.registerFlags(&c.Flags)
@@ -423,6 +434,8 @@ type installRun struct {
 	cipdSubcommand
 	authFlags authcli.Flags
 	siteRootOptions
+
+	defaultServiceURL string // used only if the site config has ServiceURL == ""
 
 	force bool
 }
@@ -445,9 +458,9 @@ func (c *installRun) Run(a subcommands.Application, args []string, env subcomman
 	var site *installationSite
 	rootDir, err := optionalSiteRoot(c.rootDir)
 	if err == nil {
-		site, err = getInstallationSite(rootDir)
+		site, err = getInstallationSite(rootDir, c.defaultServiceURL)
 	} else {
-		site, err = initInstallationSite(c.rootDir, false)
+		site, err = initInstallationSite(c.rootDir, c.defaultServiceURL, false)
 		if err != nil {
 			err = fmt.Errorf("can't auto initialize cipd site root (%s), use 'init'", err)
 		}
@@ -468,14 +481,14 @@ func (c *installRun) Run(a subcommands.Application, args []string, env subcomman
 ////////////////////////////////////////////////////////////////////////////////
 // 'installed' subcommand.
 
-func cmdInstalled() *subcommands.Command {
+func cmdInstalled(params Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		Advanced:  true,
 		UsageLine: "installed [options]",
 		ShortDesc: "lists packages installed in the site root",
 		LongDesc:  "Lists packages installed in the site root.",
 		CommandRun: func() subcommands.CommandRun {
-			c := &installedRun{}
+			c := &installedRun{defaultServiceURL: params.ServiceURL}
 			c.registerBaseFlags()
 			c.siteRootOptions.registerFlags(&c.Flags)
 			return c
@@ -486,13 +499,15 @@ func cmdInstalled() *subcommands.Command {
 type installedRun struct {
 	cipdSubcommand
 	siteRootOptions
+
+	defaultServiceURL string // used only if the site config has ServiceURL == ""
 }
 
 func (c *installedRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	if !c.checkArgs(args, 0, 0) {
 		return 1
 	}
-	site, err := getInstallationSite(c.rootDir)
+	site, err := getInstallationSite(c.rootDir, c.defaultServiceURL)
 	if err != nil {
 		return c.done(nil, err)
 	}
