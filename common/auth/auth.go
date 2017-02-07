@@ -2,14 +2,23 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-// Package auth implements an opinionated wrapper around golang.org/x/oauth2.
+// Package auth implements a wrapper around golang.org/x/oauth2.
 //
-// It hides some configurability of base oauth2 library and instead makes a
-// predefined set of choices regarding where the credentials should be stored,
-// how they should be cached and how OAuth2 flow should be invoked.
+// Its main improvement is the on-disk cache for OAuth tokens, which is
+// especially important for 3-legged interactive OAuth flows: its usage
+// eliminates annoying login prompts each time a program is used (because the
+// refresh token can now be reused). The cache also allows to reduce unnecessary
+// token refresh calls when sharing a service account between processes.
 //
-// It makes authentication flows look more uniform across tools that use this
-// package and allow credentials reuse across multiple binaries.
+// The package also implements some best practices regarding interactive login
+// flows in CLI programs. It makes it easy to implement a login process as
+// a separate interactive step that happens before the main program loop.
+//
+// The antipattern it tries to prevent is "launch an interactive login flow
+// whenever program hits 'Not Authorized' response from the server". This
+// usually results in a very confusing behavior, when login prompts pop up
+// unexpectedly at random time, random places and from multiple goroutines at
+// once, unexpectedly consuming unintended stdin input.
 package auth
 
 import (
@@ -54,23 +63,42 @@ const (
 	OAuthScopeEmail = "https://www.googleapis.com/auth/userinfo.email"
 )
 
-// Method defines a method to use to obtain OAuth access_token.
+// Method defines a method to use to obtain OAuth access token.
 type Method string
 
 // Supported authentication methods.
 const (
 	// AutoSelectMethod can be used to allow the library to pick a method most
-	// appropriate for current execution environment. It will search for a private
-	// key for a service account, then (if running on GCE) will try to query GCE
-	// metadata server, and only then pick UserCredentialsMethod that requires
-	// interaction with a user.
+	// appropriate for given set of options and the current execution environment.
+	//
+	// For example, passing ServiceAccountJSONPath or ServiceAcountJSON makes
+	// Authenticator to pick ServiceAccountMethod.
+	//
+	// See SelectBestMethod function for details.
 	AutoSelectMethod Method = ""
 
 	// UserCredentialsMethod is used for interactive OAuth 3-legged login flow.
+	//
+	// Using this method requires specifying an OAuth client by passing ClientID
+	// and ClientSecret in Options when calling NewAuthenticator.
+	//
+	// Additionally, SilentLogin and OptionalLogin (i.e. non-interactive) login
+	// modes rely on a presence of a refresh token in the token cache, thus using
+	// these modes with UserCredentialsMethod also requires configured token
+	// cache (see SecretsDir field of Options).
 	UserCredentialsMethod Method = "UserCredentialsMethod"
 
 	// ServiceAccountMethod is used to authenticate as a service account using
 	// a private key.
+	//
+	// Callers of NewAuthenticator must pass either a path to a JSON file with
+	// service account key (as produced by Google Cloud Console) or a body of this
+	// JSON file. See ServiceAccountJSONPath and ServiceAccountJSON fields in
+	// Options.
+	//
+	// Using ServiceAccountJSONPath has an advantage: Authenticator always loads
+	// the private key from the file before refreshing the token, it allows to
+	// replace the key while the process is running.
 	ServiceAccountMethod Method = "ServiceAccountMethod"
 
 	// GCEMetadataMethod is used on Compute Engine to use tokens provided by
@@ -82,23 +110,52 @@ const (
 type LoginMode string
 
 const (
-	// InteractiveLogin is passed to NewAuthenticator to instruct Authenticator to
-	// ignore cached tokens and forcefully rerun full login flow in Transport().
-	// Used by 'login' CLI command.
+	// InteractiveLogin instructs Authenticator to ignore cached tokens (if any)
+	// and forcefully rerun interactive login flow in Transport(), Client()
+	// or Login() (whichever is called first).
+	//
+	// This is typically used with UserCredentialsMethod to generate an OAuth
+	// refresh token and put it in the token cache, to make it available for later
+	// non-interactive usage.
+	//
+	// When used with service account credentials (ServiceAccountMethod mode),
+	// just precaches the access token.
 	InteractiveLogin LoginMode = "InteractiveLogin"
 
-	// SilentLogin is passed to NewAuthenticator if authentication must be used
-	// and it is NOT OK to run interactive login flow to get the tokens.
-	// Transport() call will fail with ErrLoginRequired error if there's no cached
-	// tokens. Should normally be used by all CLI tools that need to use
-	// authentication. If in doubt what mode to use, pick this one.
+	// SilentLogin indicates to Authenticator that it must return a transport that
+	// implements authentication, but it is NOT OK to run interactive login flow
+	// to make it.
+	//
+	// Transport() and other calls will fail with ErrLoginRequired error if
+	// there's no cached token or one can't be generated on the fly in
+	// non-interactive mode. This may happen when using UserCredentialsMethod.
+	//
+	// It is always OK to use SilentLogin mode with service accounts credentials
+	// (ServiceAccountMethod mode), since no user interaction is necessary to
+	// generate an access token in this case.
 	SilentLogin LoginMode = "SilentLogin"
 
-	// OptionalLogin is passed to NewAuthenticator if it is OK not to use
-	// authentication if there are no cached credentials or they are revoked or
-	// expired. Interactive login will never be called, default unauthenticated
-	// client will be used instead if no credentials are present. Should be used
-	// by CLI tools where authentication is optional.
+	// OptionalLogin indicates to Authenticator that it should return a transport
+	// that implements authentication, but it is OK to return non-authenticating
+	// transport if there are no valid cached credentials.
+	//
+	// An interactive login flow will never be invoked. An unauthenticated client
+	// will be returned if no credentials are present.
+	//
+	// Can be used when making calls to backends that allow anonymous access. This
+	// is especially useful with UserCredentialsMethod: a user may start using
+	// the service right away (in anonymous mode), and later login (using Login()
+	// method or any other way of initializing credentials cache) to get more
+	// permissions.
+	//
+	// TODO(vadimsh): When used with ServiceAccountMethod it is identical to
+	// SilentLogin, since it makes no sense to ignore invalid service account
+	// credentials when the caller is explicitly asking the authenticator to use
+	// them.
+	//
+	// Has the original meaning when used with GCEMetadataMethod: it instructs to
+	// skip authentication if the token returned by GCE metadata service doesn't
+	// have all requested scopes.
 	OptionalLogin LoginMode = "OptionalLogin"
 )
 
@@ -114,8 +171,7 @@ const minAcceptedLifetime = 2 * time.Minute
 type Options struct {
 	// Transport is underlying round tripper to use for requests.
 	//
-	// If not there, http.DefaultTransport will be used. The transport MUST be
-	// provided if running on GAE (http.DefaultTransport doesn't work there).
+	// Default: http.DefaultTransport.
 	Transport http.RoundTripper
 
 	// Method defines how to grab OAuth2 tokens.
@@ -197,6 +253,24 @@ type Options struct {
 	customTokenProvider internal.TokenProvider
 }
 
+// SelectBestMethod returns a most appropriate authentication method for the
+// given set of options and the current execution environment.
+//
+// Invoked by Authenticator if AutoSelectMethod is passed as Method in Options.
+//
+// Shouldn't be generally used directly. Exposed publicly just for documentation
+// purposes.
+func SelectBestMethod(opts *Options) Method {
+	switch {
+	case opts.ServiceAccountJSONPath != "" || len(opts.ServiceAccountJSON) != 0:
+		return ServiceAccountMethod
+	case metadata.OnGCE():
+		return GCEMetadataMethod
+	default:
+		return UserCredentialsMethod
+	}
+}
+
 // Authenticator is a factory for http.RoundTripper objects that know how to use
 // cached OAuth credentials and how to send monitoring metrics (if tsmon package
 // was imported).
@@ -218,6 +292,8 @@ type Authenticator struct {
 }
 
 // Token represents OAuth2 access token.
+//
+// TODO(vadimsh): Replace with oauth2.Token.
 type Token struct {
 	// AccessToken is actual token that authorizes and authenticates the requests.
 	AccessToken string `json:"access_token"`
@@ -446,6 +522,9 @@ func (a *Authenticator) GetAccessToken(lifetime time.Duration) (Token, error) {
 // some token. Otherwise its logic is similar to Transport(). In particular it
 // may return ErrLoginRequired if interactive login is required, but the
 // authenticator is in silent mode. See LoginMode enum for more details.
+//
+// TODO(vadimsh): Rename to GetTokenSource for consistency with
+// GetPerRPCCredentials. Also dedup some shared code.
 func (a *Authenticator) TokenSource() (oauth2.TokenSource, error) {
 	if a.loginMode == InteractiveLogin {
 		if err := a.PurgeCredentialsCache(); err != nil {
@@ -520,10 +599,10 @@ func (a *Authenticator) ensureInitialized() error {
 		return a.err
 	}
 
-	// selectDefaultMethod may do heavy calls, call it lazily here rather than in
-	// NewAuthenticator.
+	// SelectBestMethod may do heavy calls like talking to GCE metadata server,
+	// call it lazily here rather than in NewAuthenticator.
 	if a.opts.Method == AutoSelectMethod {
-		a.opts.Method = selectDefaultMethod(a.opts)
+		a.opts.Method = SelectBestMethod(a.opts)
 	}
 	a.provider, a.err = makeTokenProvider(a.ctx, a.opts)
 	if a.err != nil {
@@ -740,21 +819,6 @@ func (a *Authenticator) authTokenInjector(req *http.Request) error {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions.
-
-// selectDefaultMethod is invoked in AutoSelectMethod mode.
-//
-// It looks at the options and the environment and picks the most appropriate
-// authentication method.
-func selectDefaultMethod(opts *Options) Method {
-	switch {
-	case opts.ServiceAccountJSONPath != "" || len(opts.ServiceAccountJSON) != 0:
-		return ServiceAccountMethod
-	case metadata.OnGCE():
-		return GCEMetadataMethod
-	default:
-		return UserCredentialsMethod
-	}
-}
 
 // makeTokenProvider creates TokenProvider implementation based on options.
 //

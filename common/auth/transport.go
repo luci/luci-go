@@ -20,6 +20,8 @@ import (
 // Works only with Go >=1.5 transports (that use Request.Cancel instead of
 // deprecated Transport.CancelRequest). For same reason doesn't implement
 // CancelRequest itself.
+//
+// TODO(vadimsh): Move it elsewhere. It has no direct relation to auth.
 func NewModifyingTransport(base http.RoundTripper, modifier func(*http.Request) error) http.RoundTripper {
 	return &modifyingTransport{
 		base:     base,
