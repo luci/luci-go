@@ -24,6 +24,7 @@ var $ = exports.plugins;
 var browserSync = require('browser-sync');
 var debug = require('gulp-debug');
 var del = require('del');
+var format = require('gulp-clang-format');
 var fs = require('fs');
 var glob = require('glob-all');
 var gulpIf = require('gulp-if');
@@ -49,12 +50,16 @@ var AUTOPREFIXER_BROWSERS = [
   'bb >= 10'
 ];
 
+// Include directory (/web/inc/)
+exports.incDir = path.join(exports.base, 'inc');
+
 // Common (global) tasks.
 exports.setup_common = function(gulp) {
   // Verify TypeScript file integrity and formatting.
   gulp.task('tslint', function() {
-    var incDir = path.join(exports.base, 'inc')
-    return gulp.src('*/*.ts', {cwd: incDir})
+    process.chdir(exports.base);
+
+    return gulp.src('inc/*/*.ts')
         .pipe(tslint({
             configuration: path.join(exports.base, 'inc', 'tslint.json'),
             formatter: 'verbose',
@@ -62,11 +67,30 @@ exports.setup_common = function(gulp) {
         .pipe(tslint.report());
   });
 
+  gulp.task('check-format', function() {
+    process.chdir(exports.base);
+    return gulp.src('inc/*/*.ts')
+        .pipe(format.checkFormat())
+        .on('warning', function(e) {
+          process.stdout.write(e.message);
+          process.exit(1)
+        });
+  });
+
+  gulp.task('format', function() {
+    process.chdir(exports.base);
+
+    // The base option ensures the glob doesn't strip prefixes.
+    return gulp.src('inc/*/*.ts', {base: '.'})
+        .pipe(format.format())
+        .pipe(gulp.dest('.'));
+  });
+
   // Build production files, the default task
   gulp.task('lint', ['tslint']);
 
   // Build production files, the default task
-  gulp.task('presubmit', ['lint']);
+  gulp.task('presubmit', ['lint', 'check-format']);
 };
 
 // Project-specific tasks.
@@ -152,8 +176,7 @@ exports.setup = function(gulp, config) {
   // "ts" files.
   gulp.task('ts', function() {
     // Transpile each TypeScript module independently into JavaScript.
-    var incDir = path.join(exports.base, 'inc');
-    var tsconfigPath = path.join(incDir, 'tsconfig.json');
+    var tsconfigPath = path.join(exports.incDir, 'tsconfig.json');
 
     // Compile the files in "scripts-ts/*.ts" into a single out file.
     var scriptsTs = path.join(config.dir, 'scripts-ts');

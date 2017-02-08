@@ -21,7 +21,7 @@
     "no-unused-expression": true,
     "no-use-before-declare": true,
     "no-var-keyword": true,
-    "quotemark": [true, "double"],
+    "quotemark": [true, "single"],
     "radix": true,
     "semicolon": [true, "always"],
     "switch-default": true,
