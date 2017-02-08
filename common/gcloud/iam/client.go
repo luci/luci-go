@@ -14,11 +14,15 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
 	"google.golang.org/api/googleapi"
+
+	"github.com/luci/luci-go/common/logging"
 )
 
 const (
 	// DefaultBasePath is root of IAM API.
 	DefaultBasePath = "https://iam.googleapis.com/"
+	// OAuthScope is an OAuth scope required by IAM API.
+	OAuthScope = "https://www.googleapis.com/auth/iam"
 )
 
 // Client knows how to perform IAM API v1 calls.
@@ -133,12 +137,14 @@ func (cl *Client) apiRequest(c context.Context, resource, action string, body, r
 
 	// Send and handle errors. This is roughly how google-api-go-client calls
 	// methods. CheckResponse returns *googleapi.Error.
+	logging.Debugf(c, "POST %s", url)
 	res, err := ctxhttp.Do(c, cl.Client, req)
 	if err != nil {
 		return err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
+		logging.WithError(err).Errorf(c, "POST %s failed", url)
 		return err
 	}
 	return json.NewDecoder(res.Body).Decode(resp)
