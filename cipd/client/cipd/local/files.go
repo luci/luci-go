@@ -329,7 +329,7 @@ func (d *fileSystemDestination) Begin(ctx context.Context) error {
 	}
 
 	// Create root temp dir, on the same level as the destination directory.
-	d.tempDir, err = tempDir(filepath.Dir(d.dir))
+	d.tempDir, err = tempDir(filepath.Dir(d.dir), "", 0700)
 	if err != nil {
 		cleanup()
 		return err

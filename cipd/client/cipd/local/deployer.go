@@ -358,12 +358,12 @@ func (d *deployerImpl) TempFile(ctx context.Context, prefix string) (*os.File, e
 	return ioutil.TempFile(dir, prefix)
 }
 
-func (d *deployerImpl) TempDir(ctx context.Context, prefix string) (string, error) {
+func (d *deployerImpl) TempDir(ctx context.Context, prefix string, mode os.FileMode) (string, error) {
 	dir, err := d.fs.EnsureDirectory(ctx, filepath.Join(d.fs.Root(), SiteServiceDir, "tmp"))
 	if err != nil {
 		return "", err
 	}
-	return ioutil.TempDir(dir, prefix)
+	return tempDir(dir, prefix, mode)
 }
 
 func (d *deployerImpl) CleanupTrash(ctx context.Context) error {
@@ -470,7 +470,8 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 	} else {
 		prefix = strings.Join(pkgParts, "_")
 	}
-	tmpDir, err := d.TempDir(ctx, prefix)
+	// 0777 allows umask to take effect
+	tmpDir, err := d.TempDir(ctx, prefix, 0777)
 	if err != nil {
 		logging.Errorf(ctx, "Cannot create new pkg tempdir: %s", err)
 		return "", err

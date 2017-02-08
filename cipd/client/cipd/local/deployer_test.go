@@ -148,6 +148,9 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				".cipd/pkgs/0/_current:0123456789abcdef00000123456789abcdef0000",
 				".cipd/pkgs/0/description.json",
 			})
+			fInfo, err := os.Stat(filepath.Join(tempDir, ".cipd", "pkgs", "0"))
+			So(err, ShouldBeNil)
+			So(fInfo.Mode(), ShouldEqual, os.FileMode(0755)|os.ModeDir)
 
 			Convey("in subdir", func() {
 				info, err := NewDeployer(tempDir).DeployInstance(ctx, "subdir", inst)

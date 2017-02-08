@@ -458,10 +458,13 @@ func pseudoRand() string {
 // Supposed to be used only in cases when the probability of a conflict is low
 // (e.g. when 'dir' is some "private" directory, not global /tmp or something
 // like that).
-func tempDir(dir string) (name string, err error) {
+//
+// Additionally, this allows you to pass mode (which will respect the process
+// umask). To get ioutils.TempDir behavior, pass 0700 for the mode.
+func tempDir(dir string, prefix string, mode os.FileMode) (name string, err error) {
 	for i := 0; i < 1000; i++ {
-		try := filepath.Join(dir, pseudoRand())
-		err = os.Mkdir(try, 0700)
+		try := filepath.Join(dir, prefix+pseudoRand())
+		err = os.Mkdir(try, mode)
 		if os.IsExist(err) {
 			continue
 		}
