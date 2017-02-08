@@ -56,6 +56,7 @@ var (
 		AccessTokenProvider: client.GetAccessToken,
 		AnonymousTransport:  urlfetch.Get,
 		Cache:               &server.Memcache{Namespace: "__luciauth__"},
+		IsDevMode:           appengine.IsDevAppServer(),
 	}
 
 	// globalTsMonState holds state related to time series monitoring.

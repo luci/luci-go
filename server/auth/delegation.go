@@ -92,8 +92,8 @@ type DelegationTokenParams struct {
 //
 // The token is cached internally. Same token may be returned by multiple calls,
 // if its lifetime allows.
-func MintDelegationToken(c context.Context, p DelegationTokenParams) (tok *delegation.Token, err error) {
-	report := durationReporter(c, mintDelegationTokenDuration)
+func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (tok *delegation.Token, err error) {
+	report := durationReporter(ctx, mintDelegationTokenDuration)
 
 	// Validate TargetHost.
 	target := ""
@@ -102,7 +102,7 @@ func MintDelegationToken(c context.Context, p DelegationTokenParams) (tok *deleg
 	} else {
 		p.TargetHost = strings.ToLower(p.TargetHost)
 		if strings.IndexRune(p.TargetHost, '/') != -1 {
-			report("ERROR_BAD_HOST")
+			report(ErrBadTargetHost, "ERROR_BAD_HOST")
 			return nil, ErrBadTargetHost
 		}
 		target = "https://" + p.TargetHost
@@ -113,30 +113,30 @@ func MintDelegationToken(c context.Context, p DelegationTokenParams) (tok *deleg
 		p.MinTTL = 10 * time.Minute
 	}
 	if p.MinTTL < 30*time.Second || p.MinTTL > MaxDelegationTokenTTL {
-		report("ERROR_BAD_TTL")
+		report(ErrBadDelegationTokenTTL, "ERROR_BAD_TTL")
 		return nil, ErrBadDelegationTokenTTL
 	}
 
 	// The state carries ID of the current user and URL of an auth service.
-	state := GetState(c)
+	state := GetState(ctx)
 	if state == nil {
-		report("ERROR_NO_AUTH_STATE")
+		report(ErrNoAuthState, "ERROR_NO_AUTH_STATE")
 		return nil, ErrNoAuthState
 	}
 
 	// Identity we want to impersonate.
 	userID := state.User().Identity
 	if userID == identity.AnonymousIdentity {
-		report("ERROR_NO_IDENTITY")
+		report(ErrAnonymousDelegation, "ERROR_NO_IDENTITY")
 		return nil, ErrAnonymousDelegation
 	}
 
 	// Grab URL of the main auth service we are bound to. It will be the one to
 	// sign the token, and thus its identity is indirectly defines the identity
 	// of the generated token.
-	authServiceURL, err := state.DB().GetAuthServiceURL(c)
+	authServiceURL, err := state.DB().GetAuthServiceURL(ctx)
 	if err != nil {
-		report("ERROR_AUTH_DB")
+		report(err, "ERROR_AUTH_DB")
 		return nil, err
 	}
 
@@ -146,49 +146,59 @@ func MintDelegationToken(c context.Context, p DelegationTokenParams) (tok *deleg
 
 	// Try to find an existing cached token and check that it lives long enough.
 	cacheKey := string(userID) + "\n" + authServiceURL + "\n" + target
-	now := clock.Now(c).UTC()
-	switch cached, err := delegationTokenCache.Fetch(c, cacheKey); {
+	now := clock.Now(ctx).UTC()
+	switch cached, err := delegationTokenCache.Fetch(ctx, cacheKey); {
 	case err != nil:
-		report("ERROR_CACHE")
+		report(err, "ERROR_CACHE")
 		return nil, err
 	case cached != nil && cached.Expiry.After(now.Add(p.MinTTL)):
 		t := cached.Token.(delegation.Token) // let it panic on type mismatch
-		report("SUCCESS_CACHE_HIT")
+		report(nil, "SUCCESS_CACHE_HIT")
 		return &t, nil
 	}
 
+	// Minting a new token involves RPCs to remote services that should be fast.
+	// Abort the attempt if it gets stuck for longer than 10 sec, it's unlikely
+	// it'll succeed. Note that we setup the new context only on slow code path
+	// (on cache miss), since it involves some overhead we don't want to pay on
+	// the fast path. We assume memcache RPCs don't get stuck for a long time
+	// (unlike URL Fetch calls to GAE).
+	cfg := GetConfig(ctx)
+	if cfg == nil || cfg.Signer == nil {
+		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
+		return nil, ErrNotConfigured
+	}
+	var cancel context.CancelFunc
+	ctx, cancel = clock.WithTimeout(ctx, cfg.adjustedTimeout(10*time.Second))
+	defer cancel()
+
 	// Need to make a new token. Log parameters and its ID.
-	logF := logging.Fields{
+	ctx = logging.SetFields(ctx, logging.Fields{
 		"intent": p.Intent,
 		"target": target,
 		"userID": userID,
-	}
-	logF.Debugf(c, "Minting delegation token")
+	})
+	logging.Debugf(ctx, "Minting delegation token")
 	defer func() {
 		if err != nil {
-			logging.WithError(err).Copy(logF).Errorf(c, "Failed to mint delegation token")
+			logging.WithError(err).Errorf(ctx, "Failed to mint delegation token")
 		} else {
-			logF.Copy(logging.Fields{
+			logging.Fields{
 				"subtokenID": tok.SubtokenID,
 				"expiry":     tok.Expiry,
-			}).Debugf(c, "Minted new delegation token")
+			}.Debugf(ctx, "Minted new delegation token")
 		}
 	}()
 
 	// Grab ID of the currently running service, to bind the token to it.
-	cfg := GetConfig(c)
-	if cfg.Signer == nil {
-		report("ERROR_NOT_CONFIGURED")
-		return nil, ErrNotConfigured
-	}
-	us, err := cfg.Signer.ServiceInfo(c)
+	us, err := cfg.Signer.ServiceInfo(ctx)
 	if err != nil {
-		report("ERROR_SERVICE_INFO")
+		report(err, "ERROR_SERVICE_INFO")
 		return nil, err
 	}
 	ourOwnID, err := identity.MakeIdentity("user:" + us.ServiceAccountName)
 	if err != nil {
-		report("ERROR_BROKEN_IDENTITY")
+		report(err, "ERROR_BROKEN_IDENTITY")
 		return nil, err
 	}
 
@@ -202,9 +212,9 @@ func MintDelegationToken(c context.Context, p DelegationTokenParams) (tok *deleg
 
 	var targetServices []identity.Identity
 	if target != "*" {
-		serviceID, err := signing.FetchLUCIServiceIdentity(c, target)
+		serviceID, err := signing.FetchLUCIServiceIdentity(ctx, target)
 		if err != nil {
-			report("ERROR_FETCH_TARGET_ID")
+			report(err, "ERROR_FETCH_TARGET_ID")
 			return nil, err
 		}
 		targetServices = append(targetServices, serviceID)
@@ -223,27 +233,27 @@ func MintDelegationToken(c context.Context, p DelegationTokenParams) (tok *deleg
 	} else {
 		tokenReq.TargetServices = targetServices
 	}
-	tok, err = delegation.CreateToken(c, tokenReq)
+	tok, err = delegation.CreateToken(ctx, tokenReq)
 	if err != nil {
 		if errors.IsTransient(err) {
-			report("ERROR_TRANSIENT_IN_MINTING")
+			report(err, "ERROR_TRANSIENT_IN_MINTING")
 		} else {
-			report("ERROR_MINTING")
+			report(err, "ERROR_MINTING")
 		}
 		return nil, err
 	}
 
 	// Cache the token. Ignore errors here, it's not big deal, we have the token.
-	err = delegationTokenCache.Store(c, cachedToken{
+	err = delegationTokenCache.Store(ctx, cachedToken{
 		Key:     cacheKey,
 		Token:   *tok,
 		Created: now,
 		Expiry:  tok.Expiry,
 	})
 	if err != nil {
-		logging.Errorf(c, "Failed to store delegation token in the cache - %s", err)
+		logging.Errorf(ctx, "Failed to store delegation token in the cache - %s", err)
 	}
 
-	report("SUCCESS_CACHE_MISS")
+	report(nil, "SUCCESS_CACHE_MISS")
 	return tok, nil
 }

@@ -8,6 +8,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/metric"
@@ -30,9 +31,17 @@ var (
 		field.String("result"))
 )
 
-func durationReporter(c context.Context, m metric.CumulativeDistribution) func(...interface{}) {
+func durationReporter(c context.Context, m metric.CumulativeDistribution) func(error, string) {
 	startTs := clock.Now(c)
-	return func(fields ...interface{}) {
-		m.Add(c, float64(clock.Since(c, startTs).Nanoseconds()/1000), fields...)
+	return func(err error, result string) {
+		// We should report context errors as such. It doesn't matter at which stage
+		// the deadline happens, thus we ignore 'result' if seeing a context error.
+		switch errors.Unwrap(err) {
+		case context.DeadlineExceeded:
+			result = "CONTEXT_DEADLINE_EXCEEDED"
+		case context.Canceled:
+			result = "CONTEXT_CANCELED"
+		}
+		m.Add(c, float64(clock.Since(c, startTs).Nanoseconds()/1000), result)
 	}
 }
