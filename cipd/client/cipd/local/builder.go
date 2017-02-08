@@ -55,10 +55,15 @@ func BuildInstance(ctx context.Context, opts BuildInstanceOptions) error {
 		return err
 	}
 
-	// Make sure no files are written to package service directory.
+	// Sanitize the Inputs.
 	for _, f := range opts.Input {
+		// Make sure no files are written to package service directory.
 		if strings.HasPrefix(f.Name(), packageServiceDir+"/") {
 			return fmt.Errorf("can't write to %s: %s", packageServiceDir, f.Name())
+		}
+		// Make sure no files are written to cipd's internal state directory.
+		if strings.HasPrefix(f.Name(), SiteServiceDir+"/") {
+			return fmt.Errorf("can't write to %s: %s", SiteServiceDir, f.Name())
 		}
 	}
 

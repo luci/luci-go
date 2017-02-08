@@ -106,11 +106,17 @@ type ScanFilter func(abs string) bool
 
 // ScanFileSystem returns all files in some file system directory in
 // an alphabetical order. It returns only files, skipping directory entries
-// (i.e. empty directories are completely invisible). ScanFileSystem does not
-// follow symbolic links, but recognizes them as such (see Symlink() method
-// of File interface). It scans "dir" path, returning File objects that have
-// paths relative to "root". It skips files and directories for which
-// 'exclude(absolute path)' returns true.
+// (i.e. empty directories are completely invisible).
+//
+// ScanFileSystem follows symbolic links which have a target in
+// <root>/<SiteServiceDir> (i.e. the .cipd folder). Other symlinks will
+// will be preserved as symlinks (see Symlink() method of File interface).
+// Symlinks with absolute targets inside of the root will be converted to
+// relative targets inside of the root.
+//
+// It scans "dir" path, returning File objects that have paths relative to
+// "root". It skips files and directories for which 'exclude(absolute path)'
+// returns true. It also will always skip <root>/<SiteServiceDir>.
 func ScanFileSystem(dir string, root string, exclude ScanFilter) ([]File, error) {
 	root, err := filepath.Abs(filepath.Clean(root))
 	if err != nil {
@@ -126,10 +132,17 @@ func ScanFileSystem(dir string, root string, exclude ScanFilter) ([]File, error)
 
 	files := []File{}
 
+	svcDir := filepath.Join(root, SiteServiceDir)
 	err = filepath.Walk(dir, func(abs string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
+
+		// skip the SiteServiceDir entirely
+		if abs == svcDir {
+			return filepath.SkipDir
+		}
+
 		if exclude != nil && abs != dir && exclude(abs) {
 			if info.Mode().IsDir() {
 				return filepath.SkipDir
@@ -191,7 +204,9 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo) (File, error) {
 		if err != nil {
 			return nil, err
 		}
+		targetAbs := ""
 		if filepath.IsAbs(target) {
+			targetAbs = target
 			// Convert absolute path pointing somewhere in "root" into a path
 			// relative to the symlink file itself. Store other absolute paths as
 			// they are. For example, it allows to package virtual env directory
@@ -205,12 +220,27 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo) (File, error) {
 		} else {
 			// Only relative paths that do not go outside "root" are allowed.
 			// A package must not depend on its installation path.
-			targetAbs := filepath.Clean(filepath.Join(filepath.Dir(abs), target))
+			targetAbs = filepath.Clean(filepath.Join(filepath.Dir(abs), target))
 			if !isSubpath(targetAbs, root) {
 				return nil, fmt.Errorf(
 					"Invalid symlink %s: a relative symlink pointing to a file outside of the package root", rel)
 			}
 		}
+
+		// Symlinks with targets within SiteServiceDir get resolved as normal files.
+		if isSubpath(targetAbs, filepath.Join(root, SiteServiceDir)) {
+			info, err = os.Stat(targetAbs)
+			if err != nil {
+				return nil, err
+			}
+			return &fileSystemFile{
+				absPath:    abs,
+				name:       filepath.ToSlash(rel),
+				size:       uint64(info.Size()),
+				executable: (info.Mode().Perm() & 0111) != 0,
+			}, nil
+		}
+
 		return &fileSystemFile{
 			absPath:       abs,
 			name:          filepath.ToSlash(rel),

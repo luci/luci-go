@@ -140,6 +140,35 @@ func TestScanFileSystem(t *testing.T) {
 			})
 		})
 
+		Convey(".cipd links turn into real files", func() {
+			writeFile(tempDir, ".cipd/pkgs/0/deadbeef/some_file", "hello", 0666)
+			writeFile(tempDir, ".cipd/pkgs/0/deadbeef/some_executable", "#!/usr/bin/python", 0777)
+			writeSymlink(tempDir, ".cipd/pkgs/0/current", "deadbeef")
+			writeSymlink(tempDir, "some_executable", ".cipd/pkgs/0/current/some_executable")
+			writeSymlink(tempDir, "some_file", ".cipd/pkgs/0/current/some_file")
+
+			files, err := ScanFileSystem(tempDir, tempDir, nil)
+			So(err, ShouldBeNil)
+			So(len(files), ShouldEqual, 2)
+
+			if runtime.GOOS != "windows" {
+				So(files[0].Executable(), ShouldBeTrue)
+			}
+
+			So(files[1].Size(), ShouldEqual, 5)
+			So(files[1].Name(), ShouldEqual, "some_file")
+			So(files[1].Symlink(), ShouldBeFalse)
+			So(files[1].Executable(), ShouldBeFalse)
+			rc, err := files[1].Open()
+			So(err, ShouldBeNil)
+			defer rc.Close()
+
+			data, err := ioutil.ReadAll(rc)
+			So(err, ShouldBeNil)
+
+			So(string(data), ShouldResemble, "hello")
+		})
+
 		if runtime.GOOS != "windows" {
 			Convey("Discovering single executable file works", func() {
 				writeFile(tempDir, "single_file", "12345", 0766)
@@ -207,6 +236,20 @@ func TestWrapFile(t *testing.T) {
 				out, err := WrapFile(filepath.Join(tempDir, "a", "b", "c"), tempDir, nil)
 				So(err, ShouldBeNil)
 				ensureSymlinkTarget(out, "../../d")
+			})
+
+			Convey("WrapFile .cipd symlink", func() {
+				writeFile(tempDir, ".cipd/pkgs/0/deadbeef/some_executable", "#!/usr/bin/python", 0777)
+				writeSymlink(tempDir, ".cipd/pkgs/0/current", "deadbeef")
+				writeSymlink(tempDir, "some_executable", ".cipd/pkgs/0/current/some_executable")
+
+				out, err := WrapFile(filepath.Join(tempDir, "some_executable"), tempDir, nil)
+				So(err, ShouldBeNil)
+				if runtime.GOOS != "windows" {
+					So(out.Executable(), ShouldBeTrue)
+				}
+				So(out.Symlink(), ShouldBeFalse)
+				So(out.Size(), ShouldEqual, 17)
 			})
 
 			Convey("WrapFile rel symlink outside root", func() {
