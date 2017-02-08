@@ -8,7 +8,7 @@
     "strictNullChecks": true,
     "sourceMap": true,
 
-    "module": "none",
+    "module": "amd",
     "target": "ES5"
   }
 }

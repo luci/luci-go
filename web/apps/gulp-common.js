@@ -26,6 +26,7 @@ var debug = require('gulp-debug');
 var del = require('del');
 var fs = require('fs');
 var glob = require('glob-all');
+var gulpIf = require('gulp-if');
 var historyApiFallback = require('connect-history-api-fallback');
 var hyd = require('hydrolysis');
 var merge = require('merge-stream');
@@ -50,25 +51,6 @@ var AUTOPREFIXER_BROWSERS = [
 
 // Common (global) tasks.
 exports.setup_common = function(gulp) {
-  // Transpiles "inc/*/*.ts" and deposits the result alongside their source
-  // "ts" files.
-  gulp.task('ts', function() {
-    // Transpile each TypeScript module independently into JavaScript.
-    var incDir = path.join(exports.base, 'inc');
-    var tsconfigPath = path.join(incDir, 'tsconfig.json');
-    var tsProj = ts.createProject(tsconfigPath, {
-      typeRoots: [path.join(exports.base, 'node_modules', '@types')],
-    });
-
-    var tsResult = gulp.src('*/*.ts', {cwd: incDir, exclude: ['*_test.ts']})
-        .pipe(sourcemaps.init())
-        .pipe(tsProj());
-
-    return tsResult.js
-        .pipe(sourcemaps.write(".")) // Emit source maps alongside JavaScript.
-        .pipe(gulp.dest(incDir));
-  });
-
   // Verify TypeScript file integrity and formatting.
   gulp.task('tslint', function() {
     var incDir = path.join(exports.base, 'inc')
@@ -165,6 +147,27 @@ exports.setup = function(gulp, config) {
         title: 'html'
       }));
   };
+
+  // Transpiles "inc/*/*.ts" and deposits the result alongside their source
+  // "ts" files.
+  gulp.task('ts', function() {
+    // Transpile each TypeScript module independently into JavaScript.
+    var incDir = path.join(exports.base, 'inc');
+    var tsconfigPath = path.join(incDir, 'tsconfig.json');
+
+    // Compile the files in "scripts-ts/*.ts" into a single out file.
+    var scriptsTs = path.join(config.dir, 'scripts-ts');
+    var tsProj = ts.createProject(tsconfigPath, {
+      typeRoots: [path.join(exports.base, 'node_modules', '@types')],
+      outFile: path.join(scriptsTs, 'main.js'),
+    });
+
+    return gulp.src('*.ts', {cwd: scriptsTs, exclude: ['*_test.ts']})
+        .pipe(sourcemaps.init())
+            .pipe(tsProj())
+            .pipe(sourcemaps.write('.'))
+            .pipe(gulp.dest(scriptsTs));
+  });
 
   // Compile and automatically prefix stylesheets
   gulp.task('styles', function() {
