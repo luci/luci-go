@@ -23,6 +23,18 @@
     GrpcError.prototype = Error();
     rpc.GrpcError = GrpcError;
 
+    function HttpError(code, description) {
+      if (code == null) {
+        throw Error('code is not set')
+      }
+      this.name = 'HttpError';
+      this.code = code;
+      this.description = description;
+      this.message = 'code = ' + code + ' desc = ' + description;
+    }
+    HttpError.prototype = Error();
+    rpc.HttpError = HttpError;
+
     return luci;
   }(luci || {}));
 </script>

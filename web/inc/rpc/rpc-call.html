@@ -202,14 +202,15 @@
 
       _done: function(error) {
         try {
-          if (error && typeof this.xhr.status !== 'number') {
+          var status = this.xhr.status;
+          if (error && typeof status !== 'number') {
             // We didn't receive the response.
             throw error;
           }
 
           var codeHeader = this.xhr.getResponseHeader('X-Prpc-Grpc-Code');
           if (!codeHeader) {
-            throw Error(
+            throw new luci.rpc.HttpError( status,
                 'Invalid response: no X-Prpc-Grpc-Code response header');
           }
 
@@ -219,7 +220,7 @@
               throw Error('code is not defined');
             }
           } catch (e) {
-            throw Error(
+            throw new luci.rpc.HttpError( status,
                 'Invalid X-Prpc-Grpc-Code response header "' + codeHeader +
                 '": ' + e
             );
