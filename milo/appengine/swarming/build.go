@@ -73,6 +73,7 @@ func getSwarmingClient(c context.Context, server string) (*swarming.Service, err
 type swarmingService interface {
 	getHost() string
 	getSwarmingResult(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskResult, error)
+	getSwarmingRequest(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error)
 	getTaskOutput(c context.Context, taskID string) (string, error)
 }
 
@@ -106,12 +107,18 @@ func (svc *prodSwarmingService) getTaskOutput(c context.Context, taskID string) 
 	return stdout.Output, nil
 }
 
+func (svc *prodSwarmingService) getSwarmingRequest(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskRequest, error) {
+	return svc.client.Task.Request(taskID).Context(c).Do()
+}
+
 type swarmingFetchParams struct {
+	fetchReq bool
 	fetchRes bool
 	fetchLog bool
 }
 
 type swarmingFetchResult struct {
+	req *swarming.SwarmingRpcsTaskRequest
 	res *swarming.SwarmingRpcsTaskResult
 	log string
 }
@@ -134,6 +141,13 @@ func swarmingFetch(c context.Context, svc swarmingService, taskID string, req sw
 	var fr swarmingFetchResult
 
 	err := parallel.FanOutIn(func(workC chan<- func() error) {
+		if req.fetchReq {
+			workC <- func() (err error) {
+				fr.req, err = svc.getSwarmingRequest(c, taskID)
+				return
+			}
+		}
+
 		if req.fetchRes {
 			workC <- func() (err error) {
 				fr.res, err = svc.getSwarmingResult(c, taskID)
@@ -154,6 +168,10 @@ func swarmingFetch(c context.Context, svc swarmingService, taskID string, req sw
 
 	// Current ACL implementation: error if this is not a Milo job.
 	switch {
+	case req.fetchReq:
+		if !isMiloJob(fr.req.Tags) {
+			return nil, errNotMiloJob
+		}
 	case req.fetchRes:
 		if !isMiloJob(fr.res.Tags) {
 			return nil, errNotMiloJob

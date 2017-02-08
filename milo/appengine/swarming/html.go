@@ -8,10 +8,9 @@ import (
 	"net/http"
 	"os"
 
-	"google.golang.org/api/googleapi"
-
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
+	"google.golang.org/api/googleapi"
 
 	"github.com/luci/luci-go/milo/appengine/settings"
 	"github.com/luci/luci-go/milo/common/miloerror"

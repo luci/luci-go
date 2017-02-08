@@ -17,6 +17,7 @@ import (
 
 	swarming "github.com/luci/luci-go/common/api/swarming/swarming/v1"
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/settings"
 	"github.com/luci/luci-go/server/templates"
@@ -85,6 +86,12 @@ func (svc debugSwarmingService) getSwarmingResult(c context.Context, taskID stri
 		return nil, err
 	}
 	return &sr, nil
+}
+
+func (svc debugSwarmingService) getSwarmingRequest(c context.Context, taskID string) (
+	*swarming.SwarmingRpcsTaskRequest, error) {
+
+	return nil, errors.New("not implemented")
 }
 
 func (svc debugSwarmingService) getTaskOutput(c context.Context, taskID string) (string, error) {
