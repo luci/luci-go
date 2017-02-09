@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strings"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -1128,6 +1129,16 @@ func TestFindDeployed(t *testing.T) {
 			_, err = d.DeployInstance(ctx, "subdir", makeTestInstance("test", nil, InstallModeCopy))
 			So(err, ShouldBeNil)
 
+			// including some broken packages
+			_, err = d.DeployInstance(ctx, "", makeTestInstance("broken", nil, InstallModeCopy))
+			So(err, ShouldBeNil)
+			if runtime.GOOS == "windows" {
+				err = os.Remove(filepath.Join(tempDir, SiteServiceDir, "pkgs", "8", "_current.txt"))
+			} else {
+				err = os.Remove(filepath.Join(tempDir, SiteServiceDir, "pkgs", "8", "_current"))
+			}
+			So(err, ShouldBeNil)
+
 			// Verify it is discoverable.
 			out, err := d.FindDeployed(ctx)
 			So(err, ShouldBeNil)
@@ -1417,6 +1428,150 @@ func TestNumSet(t *testing.T) {
 		})
 
 	})
+}
+
+func TestResolveValidPackageDirs(t *testing.T) {
+	ctx := context.Background()
+
+	Convey("resolveValidPackageDirs", t, func() {
+		tempDir := mkTempDir()
+		d := NewDeployer(tempDir).(*deployerImpl)
+		pkgdir, err := d.fs.RootRelToAbs(filepath.FromSlash(packagesDir))
+		So(err, ShouldBeNil)
+
+		writeFiles := func(files ...File) {
+			for _, f := range files {
+				name := filepath.Join(tempDir, f.Name())
+				if f.Symlink() {
+					targ, err := f.SymlinkTarget()
+					So(err, ShouldBeNil)
+					err = d.fs.EnsureSymlink(ctx, name, targ)
+					So(err, ShouldBeNil)
+				} else {
+					err := d.fs.EnsureFile(ctx, name, func(wf *os.File) error {
+						reader, err := f.Open()
+						if err != nil {
+							return err
+						}
+						defer reader.Close()
+						_, err = io.Copy(wf, reader)
+						return err
+					})
+					So(err, ShouldBeNil)
+				}
+			}
+		}
+		desc := func(pkgFolder, subdir, packageName string) File {
+			return NewTestFile(
+				fmt.Sprintf(".cipd/pkgs/%s/description.json", pkgFolder),
+				fmt.Sprintf(`{"subdir": %q, "package_name": %q}`, subdir, packageName),
+				false,
+			)
+		}
+		resolve := func() (numSet, map[Description]string) {
+			nums, all := d.resolveValidPackageDirs(ctx, pkgdir)
+			for desc, absPath := range all {
+				rel, err := filepath.Rel(tempDir, absPath)
+				So(err, ShouldBeNil)
+				all[desc] = strings.Replace(filepath.Clean(rel), "\\", "/", -1)
+			}
+			return nums, all
+		}
+
+		Convey("packagesDir with just description.json", func() {
+			writeFiles(
+				desc("0", "", "some/package/name"),
+			)
+			nums, all := resolve()
+			So(nums, ShouldResemble, numSet{0})
+			So(all, ShouldResemble, map[Description]string{
+				Description{"", "some/package/name"}: ".cipd/pkgs/0",
+			})
+			So(scanDir(tempDir), ShouldResemble, []string{
+				".cipd/pkgs/0/description.json",
+			})
+		})
+
+		Convey("packagesDir with duplicates", func() {
+			writeFiles(
+				desc("0", "", "some/package/name"),
+				desc("some_other", "", "some/package/name"),
+				desc("1", "", "some/package/name"),
+			)
+			nums, all := resolve()
+			So(nums, ShouldResemble, numSet{0})
+			So(all, ShouldResemble, map[Description]string{
+				Description{"", "some/package/name"}: ".cipd/pkgs/0",
+			})
+			So(scanDir(tempDir), ShouldResemble, []string{
+				".cipd/pkgs/0/description.json",
+			})
+		})
+
+		Convey("bogus file", func() {
+			writeFiles(
+				NewTestFile(".cipd/pkgs/wat", "hello", false),
+			)
+			nums, all := resolve()
+			So(nums, ShouldResemble, numSet(nil))
+			So(all, ShouldResemble, map[Description]string{})
+			So(scanDir(tempDir), ShouldResemble, []string(nil))
+		})
+
+		Convey("bad description.json", func() {
+			writeFiles(
+				NewTestFile(".cipd/pkgs/0/description.json", "hello", false),
+			)
+			nums, all := resolve()
+			So(nums, ShouldResemble, numSet(nil))
+			So(all, ShouldResemble, map[Description]string{})
+			So(scanDir(tempDir), ShouldResemble, []string(nil))
+		})
+
+		Convey("package with no manifest", func() {
+			writeFiles(
+				NewTestFile(".cipd/pkgs/0/deadbeef/something", "hello", false),
+				NewTestSymlink(".cipd/pkgs/0/_current", "deadbeef"),
+			)
+			nums, all := resolve()
+			So(nums, ShouldResemble, numSet(nil))
+			So(all, ShouldResemble, map[Description]string{})
+			So(scanDir(tempDir), ShouldResemble, []string(nil))
+		})
+
+		Convey("package with manifest", func() {
+			curLink := NewTestSymlink(".cipd/pkgs/oldskool/_current", "0123456789abcdef00000123456789abcdef0000")
+			if runtime.GOOS == "windows" {
+				curLink = NewTestFile(".cipd/pkgs/oldskool/_current.txt", "0123456789abcdef00000123456789abcdef0000", false)
+			}
+			writeFiles(
+				NewTestFile(".cipd/pkgs/oldskool/0123456789abcdef00000123456789abcdef0000/something", "hello", false),
+				NewTestFile(".cipd/pkgs/oldskool/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+					`{"format_version": "1", "package_name": "cool/cats"}`, false),
+				curLink,
+			)
+			nums, all := resolve()
+			So(nums, ShouldResemble, numSet(nil))
+			So(all, ShouldResemble, map[Description]string{
+				Description{"", "cool/cats"}: ".cipd/pkgs/oldskool",
+			})
+			linkExpect := curLink.Name()
+			if curLink.Symlink() {
+				targ, err := curLink.SymlinkTarget()
+				So(err, ShouldBeNil)
+				linkExpect = fmt.Sprintf("%s:%s", curLink.Name(), targ)
+			}
+
+			So(scanDir(tempDir), ShouldResemble, []string{
+				".cipd/pkgs/oldskool/0123456789abcdef00000123456789abcdef0000/.cipdpkg/manifest.json",
+				".cipd/pkgs/oldskool/0123456789abcdef00000123456789abcdef0000/something",
+				linkExpect,
+				".cipd/pkgs/oldskool/description.json",
+			})
+		})
+
+	})
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////

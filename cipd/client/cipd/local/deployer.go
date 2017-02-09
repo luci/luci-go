@@ -21,6 +21,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/cipd/client/cipd/common"
+	"github.com/luci/luci-go/common/data/sortby"
 	"github.com/luci/luci-go/common/logging"
 )
 
@@ -438,32 +439,10 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 		logging.Errorf(ctx, "Can't get absolute path of %q: %s", rel, err)
 		return "", err
 	}
-	files, err := ioutil.ReadDir(abs)
-	if err != nil && !os.IsNotExist(err) {
-		logging.Errorf(ctx, "Can't read packages dir %q: %s", abs, err)
-		return "", err
-	}
 
-	seenNumbers := numSet{}
-
-	for _, f := range files {
-		// keep track of all numeric children of .cipd/pkgs
-		if n, err := strconv.Atoi(f.Name()); err == nil {
-			seenNumbers.addNum(n)
-		}
-
-		fullPkgPath := filepath.Join(abs, f.Name())
-		description, err := d.readDescription(ctx, fullPkgPath)
-		if description == nil || err != nil {
-			if err == nil {
-				err = fmt.Errorf("invalid package dir, no description.json and no instances found")
-			}
-			logging.Warningf(ctx, "Skipping %q: %s", fullPkgPath, err)
-			continue
-		}
-		if description.PackageName == pkg && description.Subdir == subdir {
-			return fullPkgPath, nil
-		}
+	seenNumbers, curPkgs := d.resolveValidPackageDirs(ctx, abs)
+	if cur, ok := curPkgs[Description{subdir, pkg}]; ok {
+		return cur, nil
 	}
 
 	if !allocate {
@@ -540,6 +519,78 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 
 	logging.Errorf(ctx, "Unable to find valid index for package %q in %s!", pkg, abs)
 	return "", err
+}
+
+type byLenThenAlpha []string
+
+func (b byLenThenAlpha) Len() int      { return len(b) }
+func (b byLenThenAlpha) Swap(i, j int) { b[i], b[j] = b[j], b[i] }
+func (b byLenThenAlpha) Less(i, j int) bool {
+	return sortby.Chain{
+		func(i, j int) bool { return len(b[i]) < len(b[j]) },
+		func(i, j int) bool { return b[i] < b[j] },
+	}.Use(i, j)
+}
+
+// resolveValidPackageDirs scans the .cipd/pkgs dir and returns:
+//   * a numeric set of all number-style directories seen.
+//   * a map of Description (e.g. subdir + pkgname) to the correct pkg folder
+//
+// This also will delete (EnsureDirectoryGone) any folders or files in the pkgs
+// directory which are:
+//   * invalid (contain no description.json and no current instance symlink)
+//   * duplicate (where multiple directories contain the same description.json)
+//
+// Duplicate detection always prefers the folder with the shortest path name
+// that sorts alphabetically earlier.
+func (d *deployerImpl) resolveValidPackageDirs(ctx context.Context, pkgsAbsDir string) (numbered numSet, all map[Description]string) {
+	files, err := ioutil.ReadDir(pkgsAbsDir)
+	if err != nil && !os.IsNotExist(err) {
+		logging.Errorf(ctx, "Can't read packages dir %q: %s", pkgsAbsDir, err)
+		return
+	}
+
+	allWithDups := map[Description][]string{}
+
+	for _, f := range files {
+		fullPkgPath := filepath.Join(pkgsAbsDir, f.Name())
+		description, err := d.readDescription(ctx, fullPkgPath)
+		if description == nil || err != nil {
+			if err == nil {
+				err = fmt.Errorf("missing description.json and current instance")
+			}
+			logging.Warningf(ctx, "removing junk directory: %q (%s)", fullPkgPath, err)
+			if err := d.fs.EnsureDirectoryGone(ctx, fullPkgPath); err != nil {
+				logging.Warningf(ctx, "while removing junk directory: %q (%s)", fullPkgPath, err)
+			}
+			continue
+		}
+		allWithDups[*description] = append(allWithDups[*description], fullPkgPath)
+	}
+
+	all = make(map[Description]string, len(allWithDups))
+	for desc, possibilities := range allWithDups {
+		sort.Sort(byLenThenAlpha(possibilities))
+
+		// keep track of all non-deleted numeric children of .cipd/pkgs
+		if n, err := strconv.Atoi(filepath.Base(possibilities[0])); err == nil {
+			numbered.addNum(n)
+		}
+
+		all[desc] = possibilities[0]
+
+		if len(possibilities) == 1 {
+			continue
+		}
+		for _, extra := range possibilities[1:] {
+			logging.Warningf(ctx, "removing duplicate directory: %q", extra)
+			if err := d.fs.EnsureDirectoryGone(ctx, extra); err != nil {
+				logging.Warningf(ctx, "while removing duplicate directory: %q (%s)", extra, err)
+			}
+		}
+	}
+
+	return
 }
 
 // getCurrentInstanceID returns instance ID of currently installed instance
