@@ -63,6 +63,10 @@ type Deployer interface {
 	// It unpacks the package into <base>/.cipd/pkgs/*, and rearranges
 	// symlinks to point to unpacked files. It tries to make it as "atomic" as
 	// possible. Returns information about the deployed instance.
+	//
+	// Due to a historical bug, if inst contains any files which are intended to
+	// be deployed to `.cipd/*`, they will not be extracted and you'll see
+	// warnings logged.
 	DeployInstance(ctx context.Context, subdir string, inst PackageInstance) (common.Pin, error)
 
 	// CheckDeployed checks whether a given package is deployed at the given
@@ -168,8 +172,18 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 		return common.Pin{}, err
 	}
 
+	svcDir := SiteServiceDir + "/"
+	filterCipd := func(f File) bool {
+		name := f.Name()
+		if strings.HasPrefix(name, svcDir) {
+			logging.Warningf(ctx, "[non-fatal] ignoring internal file: %s", name)
+			return true
+		}
+		return false
+	}
+
 	destPath := filepath.Join(pkgPath, pin.InstanceID)
-	if err := ExtractInstance(ctx, inst, NewFileSystemDestination(destPath, d.fs)); err != nil {
+	if err := ExtractInstance(ctx, inst, NewFileSystemDestination(destPath, d.fs), filterCipd); err != nil {
 		return common.Pin{}, err
 	}
 	newManifest, err := d.readManifest(ctx, destPath)

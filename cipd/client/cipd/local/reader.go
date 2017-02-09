@@ -69,8 +69,17 @@ func OpenInstanceFile(ctx context.Context, path string, instanceID string) (inst
 	return
 }
 
+// ExtractFilter is predicate used by ExtractInstance to exclude files from
+// extraction and the manifest.json. The function will be given the name of the
+// file inside the instance zip (so, the path relative to the extraction
+// destination).
+type ExtractFilter func(f File) bool
+
 // ExtractInstance extracts all files from a package instance into a destination.
-func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination) error {
+//
+// If exclude != nil, it will be used to filter the contents of the
+// PackageInstance before extraction.
+func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination, exclude ExtractFilter) error {
 	if err := dest.Begin(ctx); err != nil {
 		return err
 	}
@@ -83,7 +92,19 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 		}
 	}()
 
-	files := inst.Files()
+	allFiles := inst.Files()
+	var files []File
+	if exclude != nil {
+		files = make([]File, 0, len(allFiles))
+		for _, f := range allFiles {
+			if !exclude(f) {
+				files = append(files, f)
+			}
+		}
+	} else {
+		files = allFiles
+	}
+
 	progress := newProgressReporter(ctx, files)
 
 	extractManifestFile := func(f File) (err error) {
@@ -158,22 +179,26 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 	var manifest File
 	var err error
 	for _, f := range files {
-		if err = ctx.Err(); err != nil {
+		select {
+		case <-ctx.Done():
+			err = ctx.Err()
 			break
-		}
-		switch {
-		case f.Name() == manifestName:
-			// We delay writing the extended manifest until the very end because it
-			// contains values of 'SymlinkTarget' fields of all extracted files.
-			// Fetching 'SymlinkTarget' in general involves seeking inside the zip,
-			// and we prefer not to do that now. Upon exit from the loop, all
-			// 'SymlinkTarget' values will be already cached in memory, and writing
-			// the manifest will be cheaper.
-			manifest = f
-		case f.Symlink():
-			err = extractSymlinkFile(f)
+
 		default:
-			err = extractRegularFile(f)
+			switch {
+			case f.Name() == manifestName:
+				// We delay writing the extended manifest until the very end because it
+				// contains values of 'SymlinkTarget' fields of all extracted files.
+				// Fetching 'SymlinkTarget' in general involves seeking inside the zip,
+				// and we prefer not to do that now. Upon exit from the loop, all
+				// 'SymlinkTarget' values will be already cached in memory, and writing
+				// the manifest will be cheaper.
+				manifest = f
+			case f.Symlink():
+				err = extractSymlinkFile(f)
+			default:
+				err = extractRegularFile(f)
+			}
 		}
 		if err != nil {
 			break

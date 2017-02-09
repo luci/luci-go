@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"strings"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -143,6 +144,7 @@ func TestPackageReading(t *testing.T) {
 			Input: []File{
 				NewTestFile("testing/qwerty", "12345", false),
 				NewTestFile("abc", "duh", true),
+				NewTestFile("bad_dir/pkg/0/description.json", "{}", false),
 				NewTestSymlink("rel_symlink", "abc"),
 				NewTestSymlink("abs_symlink", "/abc/def"),
 			},
@@ -160,7 +162,9 @@ func TestPackageReading(t *testing.T) {
 		}
 		So(err, ShouldBeNil)
 		dest := &testDestination{}
-		err = ExtractInstance(ctx, inst, dest)
+		err = ExtractInstance(ctx, inst, dest, func(f File) bool {
+			return strings.HasPrefix(f.Name(), "bad_dir/")
+		})
 		So(err, ShouldBeNil)
 		So(dest.beginCalls, ShouldEqual, 1)
 		So(dest.endCalls, ShouldEqual, 1)
@@ -185,7 +189,7 @@ func TestPackageReading(t *testing.T) {
 
 		// Verify version file is correct.
 		goodVersionFile := `{
-			"instance_id": "dd08e20d0e436c5c778ccbd87c99a05182dc5558",
+			"instance_id": "5503734d74bc46f2b4d59c23bf4b1293696861a9",
 			"package_name": "testing"
 		}`
 		So(dest.files[4].name, ShouldEqual, "subpath/version.json")
