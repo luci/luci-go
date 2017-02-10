@@ -1,6 +1,6 @@
 # Dockerfile extending the generic Go image with application files for a
 # single application.
-FROM golang:1.6
+FROM golang:1.7
 
 ENV mainpkg "github.com/luci/luci-go/logdog/server/cmd/logdog_collector"
 

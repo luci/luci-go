@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"runtime/pprof"
 	"sort"
 	"strings"
 	"sync"
@@ -30,6 +29,7 @@ import (
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
+	"github.com/luci/luci-go/common/runtime/profiling"
 	"github.com/luci/luci-go/common/tsmon"
 	"github.com/luci/luci-go/common/tsmon/target"
 	"github.com/luci/luci-go/grpc/prpc"
@@ -105,11 +105,10 @@ type Service struct {
 	loggingFlags log.Config
 	authFlags    authcli.Flags
 	tsMonFlags   tsmon.Flags
+	profiler     profiling.Profiler
 
 	coordinatorHost     string
 	coordinatorInsecure bool
-	cpuProfilePath      string
-	heapProfilePath     string
 
 	// onGCE is true if we're on GCE. We probe this once during Run.
 	onGCE        bool
@@ -164,7 +163,12 @@ func (s *Service) Run(c context.Context, f func(context.Context) error) {
 }
 
 func (s *Service) runImpl(c context.Context, f func(context.Context) error) error {
-	// Probe our environment for default values.
+	// Set log level to Info for initial setup. This will be overridden when the
+	// flags are parsed.
+	c = log.SetLevel(c, log.Info)
+
+	// Probe our environment for default values. Set log level to Info for this
+	// b/c we haven't parsed flags yet.
 	s.probeGCEEnvironment(c)
 
 	// Install service flags and parse.
@@ -177,41 +181,10 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 	// Install logging configuration.
 	c = s.loggingFlags.Set(c)
 
-	if p := s.cpuProfilePath; p != "" {
-		fd, err := os.Create(p)
-		if err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-				"path":       p,
-			}.Errorf(c, "Failed to create CPU profile output file.")
-			return err
-		}
-		defer fd.Close()
-
-		pprof.StartCPUProfile(fd)
-		defer pprof.StopCPUProfile()
+	if err := s.profiler.Start(); err != nil {
+		return errors.Annotate(err).Reason("failed to start profiler").Err()
 	}
-
-	if p := s.heapProfilePath; p != "" {
-		defer func() {
-			fd, err := os.Create(p)
-			if err != nil {
-				log.Fields{
-					log.ErrorKey: err,
-					"path":       p,
-				}.Warningf(c, "Failed to create heap profile output file.")
-				return
-			}
-			defer fd.Close()
-
-			if err := pprof.WriteHeapProfile(fd); err != nil {
-				log.Fields{
-					log.ErrorKey: err,
-					"path":       p,
-				}.Warningf(c, "Failed to write heap profile.")
-			}
-		}()
-	}
+	defer s.profiler.Stop()
 
 	// Cancel our Context after we're done our run loop.
 	c, cancelFunc := context.WithCancel(c)
@@ -310,23 +283,23 @@ func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
 	s.tsMonFlags.Target.TaskJobName = s.Name
 	s.tsMonFlags.Register(fs)
 
+	// Initialize auth flags.
 	s.authFlags.Register(fs, s.DefaultAuthOptions)
 
-	fs.StringVar(&s.serviceID, "service-id", "",
+	// Initialize profiling flags.
+	s.profiler.AddFlags(fs)
+
+	fs.StringVar(&s.serviceID, "service-id", s.serviceID,
 		"Specify the service ID that this instance is supporting. If empty, the service ID "+
 			"will attempt to be resolved by probing the local environment. This probably will match the "+
 			"App ID of the Coordinator.")
-	fs.StringVar(&s.coordinatorHost, "coordinator", "",
+	fs.StringVar(&s.coordinatorHost, "coordinator", s.coordinatorHost,
 		"The Coordinator service's [host][:port].")
-	fs.BoolVar(&s.coordinatorInsecure, "coordinator-insecure", false,
+	fs.BoolVar(&s.coordinatorInsecure, "coordinator-insecure", s.coordinatorInsecure,
 		"Connect to Coordinator over HTTP (instead of HTTPS).")
-	fs.StringVar(&s.cpuProfilePath, "cpu-profile-path", "",
-		"If supplied, enable CPU profiling and write the profile here.")
-	fs.StringVar(&s.heapProfilePath, "heap-profile-path", "",
-		"If supplied, enable CPU profiling and write the profile here.")
 	fs.Var(&s.killCheckInterval, "config-kill-interval",
 		"If non-zero, poll for configuration changes and kill the application if one is detected.")
-	fs.StringVar(&s.testConfigFilePath, "test-config-file-path", "",
+	fs.StringVar(&s.testConfigFilePath, "test-config-file-path", s.testConfigFilePath,
 		"(Testing) If set, load configuration from a local filesystem rooted here.")
 }
 
@@ -338,6 +311,7 @@ func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
 func (s *Service) probeGCEEnvironment(c context.Context) {
 	s.onGCE = metadata.OnGCE()
 	if !s.onGCE {
+		log.Infof(c, "Not on GCE.")
 		return
 	}
 
@@ -348,6 +322,10 @@ func (s *Service) probeGCEEnvironment(c context.Context) {
 		if s.serviceID, err = metadata.ProjectID(); err != nil {
 			log.WithError(err).Warningf(c, "Failed to probe GCE project ID.")
 		}
+
+		log.Fields{
+			"serviceID": s.serviceID,
+		}.Infof(c, "Probed GCE service ID.")
 	}
 }
 
@@ -629,9 +607,20 @@ func (s *Service) withAuthService(c context.Context) context.Context {
 			// instance to be permanently bound to the inner Context.
 			a, err := s.authenticatorForScopes(c, scopes)
 			if err != nil {
+				log.Fields{
+					"scopes":     scopes,
+					log.ErrorKey: err,
+				}.Errorf(c, "Failed to create authenticator.")
 				return commonAuth.Token{}, err
 			}
-			return a.GetAccessToken(minAuthTokenLifetime)
+			tok, err := a.GetAccessToken(minAuthTokenLifetime)
+			if err != nil {
+				log.Fields{
+					"scopes":     scopes,
+					log.ErrorKey: err,
+				}.Errorf(c, "Failed to mint access token.")
+			}
+			return tok, err
 		},
 		AnonymousTransport: func(ic context.Context) http.RoundTripper {
 			return s.unauthenticatedTransport()

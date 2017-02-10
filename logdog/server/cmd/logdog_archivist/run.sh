@@ -82,12 +82,6 @@ _load_metadata_check() {
   return 0
 }
 
-_write_credentials() {
-  local path=$1; shift
-  local data=$1; shift
-  echo "${data}" > "${path}"
-}
-
 # Test if we're running on a GCE instance.
 echo "Testing for GCE instance: ${METADATA_URL}"
 curl \
@@ -104,7 +98,6 @@ fi
 # Load metadata (common).
 _load_metadata_check PROJECT_ID "project-id"
 _load_metadata_check COORDINATOR_HOST "attributes/logdog_coordinator_host"
-_load_metadata STORAGE_CREDENTIALS "attributes/logdog_storage_auth_json"
 
 # Load metadata (ts-mon).
 _load_metadata TSMON_ENDPOINT "attributes/tsmon_endpoint"
@@ -124,11 +117,6 @@ ARGS=(
 
 if [ ! -z "${LOG_LEVEL}" ]; then
   ARGS+=("-log-level" "${LOG_LEVEL}")
-fi
-if [ ! -z "${STORAGE_CREDENTIALS}" ]; then
-  STORAGE_CREDENTIALS_JSON_PATH="${TEMPDIR}/storage_service_account_json.json"
-  _write_credentials "${STORAGE_CREDENTIALS_JSON_PATH}" "${STORAGE_CREDENTIALS}"
-  ARGS+=("-storage-credential-json-path" "${STORAGE_CREDENTIALS_JSON_PATH}")
 fi
 if [ ! -z "${TSMON_ENDPOINT}" ]; then
   ARGS+=("-ts-mon-endpoint" "${TSMON_ENDPOINT}")
