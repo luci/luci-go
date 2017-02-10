@@ -78,9 +78,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"net/url"
 	"os"
 	"sort"
 	"strings"
@@ -88,10 +85,10 @@ import (
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
-	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
+	"github.com/luci/luci-go/common/gcloud/googleoauth"
 )
 
 // CommandParams specifies various parameters for a subcommand.
@@ -146,6 +143,15 @@ func (fl *Flags) Options() (auth.Options, error) {
 	return opts, nil
 }
 
+// Process exit codes for subcommands.
+const (
+	ExitCodeSuccess = iota
+	ExitCodeNoValidToken
+	ExitCodeInvalidInput
+	ExitCodeInternalError
+	ExitCodeBadLogin
+)
+
 type commandRunBase struct {
 	subcommands.CommandRunBase
 	flags  Flags
@@ -188,21 +194,15 @@ func (c *loginRun) Run(a subcommands.Application, _ []string, env subcommands.En
 	opts, err := c.flags.Options()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		return 1
+		return ExitCodeInvalidInput
 	}
 	ctx := cli.GetContext(a, c, env)
 	authenticator := auth.NewAuthenticator(ctx, auth.InteractiveLogin, opts)
 	if _, err := authenticator.Client(); err != nil {
 		fmt.Fprintf(os.Stderr, "Login failed: %s\n", err.Error())
-		return 2
+		return ExitCodeBadLogin
 	}
-	fmt.Println("Success!")
-	if canReportIdentity(opts.Scopes) {
-		if err = reportIdentity(ctx, authenticator); err != nil {
-			return 3
-		}
-	}
-	return 0
+	return checkToken(ctx, authenticator)
 }
 
 // SubcommandLogout returns subcommands.Command that can be used to purge cached
@@ -236,15 +236,15 @@ func (c *logoutRun) Run(a subcommands.Application, args []string, env subcommand
 	opts, err := c.flags.Options()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		return 1
+		return ExitCodeInvalidInput
 	}
 	ctx := cli.GetContext(a, c, env)
 	err = auth.NewAuthenticator(ctx, auth.SilentLogin, opts).PurgeCredentialsCache()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		return 2
+		return ExitCodeInternalError
 	}
-	return 0
+	return ExitCodeSuccess
 }
 
 // SubcommandInfo returns subcommand.Command that can be used to print current
@@ -278,28 +278,19 @@ func (c *infoRun) Run(a subcommands.Application, args []string, env subcommands.
 	opts, err := c.flags.Options()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		return 1
+		return ExitCodeInvalidInput
 	}
 	ctx := cli.GetContext(a, c, env)
 	authenticator := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 	switch _, err := authenticator.Client(); {
 	case err == auth.ErrLoginRequired:
 		fmt.Fprintln(os.Stderr, "Not logged in")
-		return 2
+		return ExitCodeNoValidToken
 	case err != nil:
 		fmt.Fprintln(os.Stderr, err)
-		return 3
+		return ExitCodeInternalError
 	}
-	if canReportIdentity(opts.Scopes) {
-		if err = reportIdentity(ctx, authenticator); err != nil {
-			return 4
-		}
-	} else {
-		fmt.Printf(
-			"The refresh token exists, but it doesn't have %q scope, so we can't "+
-				"report who it belongs to.\n", auth.OAuthScopeEmail)
-	}
-	return 0
+	return checkToken(ctx, authenticator)
 }
 
 // SubcommandToken returns subcommand.Command that can be used to print current
@@ -338,23 +329,15 @@ type tokenRun struct {
 	jsonOutput string
 }
 
-// Process exit codes of SubcommandToken subcommand.
-const (
-	TokenExitCodeValidToken = iota
-	TokenExitCodeNoValidToken
-	TokenExitCodeInvalidInput
-	TokenExitCodeInternalError
-)
-
 func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	opts, err := c.flags.Options()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		return TokenExitCodeInvalidInput
+		return ExitCodeInvalidInput
 	}
 	if c.lifetime > 45*time.Minute {
 		fmt.Fprintln(os.Stderr, "lifetime cannot exceed 45m")
-		return TokenExitCodeInvalidInput
+		return ExitCodeInvalidInput
 	}
 
 	ctx := cli.GetContext(a, c, env)
@@ -366,10 +349,10 @@ func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands
 		} else {
 			fmt.Fprintln(os.Stderr, err)
 		}
-		return TokenExitCodeNoValidToken
+		return ExitCodeNoValidToken
 	}
 	if token.AccessToken == "" {
-		return TokenExitCodeNoValidToken
+		return ExitCodeNoValidToken
 	}
 
 	if c.jsonOutput == "" {
@@ -380,7 +363,7 @@ func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands
 			out, err = os.Create(c.jsonOutput)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err)
-				return TokenExitCodeInvalidInput
+				return ExitCodeInvalidInput
 			}
 			defer out.Close()
 		}
@@ -390,83 +373,47 @@ func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands
 		}{token.AccessToken, token.Expiry.Unix()}
 		if err = json.NewEncoder(out).Encode(data); err != nil {
 			fmt.Fprintln(os.Stderr, err)
-			return TokenExitCodeInternalError
+			return ExitCodeInternalError
 		}
 	}
-	return TokenExitCodeValidToken
+	return ExitCodeSuccess
 }
 
-// canReportIdentity returns true if reportIdentity can be used with given list
-// of scopes.
+// checkToken prints information about the token carried by the authenticator.
 //
-// reportIdentity works only if userinfo.email scope was used (which is also
-// the default if no scopes are provided).
-func canReportIdentity(scopes []string) bool {
-	if len(scopes) == 0 {
-		return true
-	}
-	for _, scope := range scopes {
-		if scope == auth.OAuthScopeEmail {
-			return true
-		}
-	}
-	return false
-}
-
-// reportIdentity prints identity associated with credentials carried by the
-// authenticator.
-//
-// Also prints errors to stderr.
-func reportIdentity(ctx context.Context, a *auth.Authenticator) error {
+// Prints errors to stderr and returns corresponding process exit code.
+func checkToken(ctx context.Context, a *auth.Authenticator) int {
 	// Grab the active access token.
 	tok, err := a.GetAccessToken(time.Minute)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Can't grab an access token: %s\n", err)
-		return err
+		return ExitCodeNoValidToken
 	}
 
-	// Ask Google endpoint to verify the token.
-	q := url.Values{}
-	q.Add("access_token", tok.AccessToken)
-	resp, err := ctxhttp.Get(ctx, http.DefaultClient, "https://www.googleapis.com/oauth2/v1/tokeninfo?"+q.Encode())
+	// Ask Google endpoint for details of the token.
+	info, err := googleoauth.GetTokenInfo(ctx, googleoauth.TokenInfoParams{
+		AccessToken: tok.AccessToken,
+	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to call token info endpoint: %s\n", err)
-		return err
-	}
-	defer resp.Body.Close()
-
-	// The response is dumped to error log below, read it in full before decoding.
-	blob, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to read token info endpoint response: %s\n", err)
-		return err
+		if err == googleoauth.ErrBadToken {
+			return ExitCodeNoValidToken
+		}
+		return ExitCodeInternalError
 	}
 
-	if resp.StatusCode != 200 {
-		fmt.Fprintf(
-			os.Stderr, "The token info endpoint returned HTTP code %d.\nFull response:\n%s\n",
-			resp.StatusCode, blob)
-		return fmt.Errorf("tokeninfo endpoint call failed with status %d", resp.StatusCode)
+	// Email is set only if the token has userinfo.email scope.
+	if info.Email != "" {
+		fmt.Printf("Logged in as %s.\n", info.Email)
+	} else {
+		fmt.Printf("Logged in as uid %q.\n", info.Sub)
 	}
-
-	// There's more stuff here, but we care only about these fields.
-	var reply struct {
-		Email    string `json:"email"`
-		IssuedTo string `json:"issued_to"`
-		Scope    string `json:"scope"`
-	}
-	if err := json.Unmarshal(blob, &reply); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to deserialize the token info (%s):\n%s\n", err, blob)
-		return err
-	}
-
-	fmt.Printf("Logged in as %s.\n", reply.Email)
 	fmt.Printf("OAuth token details:\n")
-	fmt.Printf("  Client ID: %s\n", reply.IssuedTo)
+	fmt.Printf("  Client ID: %s\n", info.Aud)
 	fmt.Printf("  Scopes:\n")
-	for _, scope := range strings.Split(reply.Scope, " ") {
+	for _, scope := range strings.Split(info.Scope, " ") {
 		fmt.Printf("    %s\n", scope)
 	}
 
-	return nil
+	return ExitCodeSuccess
 }

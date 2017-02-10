@@ -15,6 +15,7 @@ import (
 	"github.com/luci/luci-go/server/auth"
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/gcloud/googleoauth"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -82,7 +83,7 @@ func TestOAuth2MethodDevServer(t *testing.T) {
 			status = http.StatusBadRequest
 			info.Error = "OMG, error"
 			_, err := call("Bearer access_token")
-			So(err, ShouldErrLike, "OMG, error")
+			So(err, ShouldEqual, googleoauth.ErrBadToken)
 		})
 
 		Convey("No email", func() {

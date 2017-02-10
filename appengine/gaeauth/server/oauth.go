@@ -5,12 +5,8 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -22,6 +18,7 @@ import (
 
 	"github.com/luci/luci-go/common/data/caching/proccache"
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/gcloud/googleoauth"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
@@ -102,49 +99,27 @@ func (m *OAuth2Method) authenticateDevServer(c context.Context, header string, s
 	}
 
 	// Fetch an info dict associated with the token.
-	client := http.Client{
-		Transport: urlfetch.Get(c),
-	}
 	logging.Infof(c, "oauth: Querying tokeninfo endpoint")
-	endpoint := m.tokenInfoEndpoint
-	if endpoint == "" {
-		endpoint = "https://www.googleapis.com/oauth2/v3/tokeninfo"
-	}
-	resp, err := client.Get(endpoint + "?access_token=" + url.QueryEscape(accessToken))
+	tokenInfo, err := googleoauth.GetTokenInfo(c, googleoauth.TokenInfoParams{
+		AccessToken: accessToken,
+		Client:      &http.Client{Transport: urlfetch.Get(c)},
+		Endpoint:    m.tokenInfoEndpoint,
+	})
 	if err != nil {
-		return nil, errors.WrapTransient(err)
-	}
-	defer func() {
-		ioutil.ReadAll(resp.Body)
-		resp.Body.Close()
-	}()
-	if resp.StatusCode >= 500 {
-		return nil, errors.WrapTransient(
-			fmt.Errorf("oauth: transient error when validating token (HTTP %d)", resp.StatusCode))
+		if err == googleoauth.ErrBadToken {
+			return nil, err
+		}
+		return nil, errors.WrapTransient(fmt.Errorf("oauth: transient error when validating token - %s", err))
 	}
 
-	// Deserialize, perform some basic checks.
-	var tokenInfo struct {
-		Audience      string `json:"aud"`
-		Email         string `json:"email"`
-		EmailVerified string `json:"email_verified"`
-		Error         string `json:"error_description"`
-		ExpiresIn     string `json:"expires_in"`
-		Scope         string `json:"scope"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&tokenInfo); err != nil {
-		return nil, fmt.Errorf("oauth: failed to deserialize token info JSON - %s", err)
-	}
+	// Verify the token contains a validated email.
 	switch {
-	case tokenInfo.Error != "":
-		return nil, fmt.Errorf("oauth: bad token - %s", tokenInfo.Error)
 	case tokenInfo.Email == "":
 		return nil, fmt.Errorf("oauth: token is not associated with an email")
-	case tokenInfo.EmailVerified != "true":
+	case !tokenInfo.EmailVerified:
 		return nil, fmt.Errorf("oauth: email %s is not verified", tokenInfo.Email)
 	}
-	expiresIn, err := strconv.Atoi(tokenInfo.ExpiresIn)
-	if err != nil || expiresIn <= 0 {
+	if tokenInfo.ExpiresIn <= 0 {
 		return nil, fmt.Errorf("oauth: 'expires_in' field is not a positive integer")
 	}
 
@@ -167,8 +142,8 @@ func (m *OAuth2Method) authenticateDevServer(c context.Context, header string, s
 	u := &auth.User{
 		Identity: id,
 		Email:    tokenInfo.Email,
-		ClientID: tokenInfo.Audience,
+		ClientID: tokenInfo.Aud,
 	}
-	proccache.Put(c, tokenCheckCache(accessToken), u, time.Duration(expiresIn)*time.Second)
+	proccache.Put(c, tokenCheckCache(accessToken), u, time.Duration(tokenInfo.ExpiresIn)*time.Second)
 	return u, nil
 }
