@@ -23,6 +23,9 @@ const (
 	// instanceNamespace is the namespace to use for datastore instances.
 	instanceNamespace = "ts_mon_instance_namespace"
 
+	// prodXEndpoint is endpoint to send metrics to.
+	prodXEndpoint = "https://prodxmon-pa.googleapis.com/v1:insert"
+
 	instanceExpirationTimeout     = 30 * time.Minute
 	instanceExpectedToHaveTaskNum = 5 * time.Minute
 	flushTimeout                  = 5 * time.Second

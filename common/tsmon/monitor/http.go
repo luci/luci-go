@@ -62,7 +62,12 @@ func (m *httpMonitor) Send(ctx context.Context, cells []types.Cell) error {
 
 	// Make the request.
 	status, err := lhttp.NewRequest(ctx, m.client, nil, func() (*http.Request, error) {
-		return http.NewRequest("POST", m.endpoint.String(), bytes.NewReader(encoded.Bytes()))
+		req, err := http.NewRequest("POST", m.endpoint.String(), bytes.NewReader(encoded.Bytes()))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		return req, nil
 	}, func(resp *http.Response) error {
 		return resp.Body.Close()
 	}, func(resp *http.Response, oErr error) error {

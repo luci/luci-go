@@ -13,6 +13,8 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/service/info"
+	"github.com/luci/luci-go/common/tsmon/monitor"
+	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/settings"
 )
 
@@ -30,15 +32,32 @@ type tsmonSettings struct {
 	// Default is false.
 	Enabled settings.YesOrNo `json:"enabled"`
 
+	// BackendKind defines how to flush metrics.
+	//
+	// TEMPORARY. It exists only until we fully remove PubSub flush mechanism
+	// and switch to prodx one.
+	//
+	// Default is "prodx" for new installs, "pubsub" for converted ones.
+	BackendKind string `json:"backend_kind"`
+
 	// PubsubProject is Cloud Project that hosts metrics ingestion PubSub topic.
+	//
+	// DEPRECATED. Will be removed.
 	//
 	// If not set, metrics will be logged to local GAE log. Default is "".
 	PubsubProject string `json:"pubsub_project"`
 
 	// PubsubTopic is a topic inside PubsubProject to send metrics to.
 	//
+	// DEPRECATED. Will be removed.
+	//
 	// If not set, metrics will be logged to local GAE log. Default is "monacq".
 	PubsubTopic string `json:"pubsub_topic"`
+
+	// ProdXAccount is a service account to use to send metrics to ProdX endpoint.
+	//
+	// If not set, metrics will be logged to local GAE log. Default is "".
+	ProdXAccount string `json:"prodx_account"`
 
 	// FlushIntervalSec defines how often to flush metrics to the pubsub topic.
 	//
@@ -51,8 +70,21 @@ type tsmonSettings struct {
 	ReportRuntimeStats settings.YesOrNo `json:"report_runtime_stats"`
 }
 
+// configured is true if flush-related paramters of settings are filled in.
+func (s *tsmonSettings) configured() bool {
+	switch s.BackendKind {
+	case "pubsub":
+		return s.PubsubProject != "" && s.PubsubTopic != ""
+	case "prodx":
+		return s.ProdXAccount != ""
+	default:
+		return false
+	}
+}
+
 // Prefilled portion of settings.
 var defaultSettings = tsmonSettings{
+	BackendKind:      "prodx", // for completely new installs
 	PubsubProject:    "chrome-infra-mon-pubsub",
 	PubsubTopic:      "monacq",
 	FlushIntervalSec: 60,
@@ -72,6 +104,11 @@ func fetchCachedSettings(c context.Context) tsmonSettings {
 	s := tsmonSettings{}
 	switch err := settings.Get(c, settingsKey, &s); {
 	case err == nil:
+		// Settings exist in the datastore, but no method defined => old instance
+		// that uses PubSub. New instances get 'prodx' there via defaultSettings.
+		if s.BackendKind == "" {
+			s.BackendKind = "pubsub"
+		}
 		return s
 	case err == settings.ErrNoSettings:
 		return defaultSettings
@@ -100,28 +137,44 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 		settings.YesOrNoField(settings.UIField{
 			ID:    "Enabled",
 			Title: "Enabled",
-			Help: "If not enabled, all metrics manipulations are ignored and the " +
-				"monitoring has zero runtime overhead. If enabled, will keep track of metrics " +
-				"values in memory and will periodically flush them to PubSub (if PubSub endpoint " +
-				"is configured, see below) or GAE log (if not configured). Note that enabling " +
-				"this field requires an active housekeeping cron task to be installed. See " +
-				"https://godoc.org/github.com/luci/luci-go/appengine/tsmon for more information.",
+			Help: `If not enabled, all metrics manipulations are ignored and the ` +
+				`monitoring has zero runtime overhead. If enabled, will keep track of metrics ` +
+				`values in memory and will periodically flush them to tsmon backends (if the flush method ` +
+				`is configured, see below) or GAE log (if not configured). Note that enabling ` +
+				`this field requires an active housekeeping cron task to be installed. See ` +
+				`<a href="https://godoc.org/github.com/luci/luci-go/appengine/tsmon">the tsmon doc</a> for more information.`,
 		}),
 		{
-			ID:    "PubsubProject",
-			Title: "PubSub project",
+			ID:    "BackendKind",
+			Title: "Backend",
+			Type:  settings.UIFieldChoice,
+			ChoiceVariants: []string{
+				"pubsub",
+				"prodx",
+			},
+			Help: "What backend to use. Switch to <b>prodx</b> ASAP if still using PubSub.",
+		},
+		{
+			ID:    "ProdXAccount",
+			Title: "ProdX Service Account",
 			Type:  settings.UIFieldText,
-			Help: "Cloud Project that hosts PubSub topic to send metrics to. " +
-				"Use <b>chrome-infra-mon-pubsub</b> to send metrics to Chrome Infrastructure " +
-				"monitoring pipeline. Keep blank to dump metrics to GAE log instead.",
+			Help: template.HTML(fmt.Sprintf(
+				`Name of a properly configured service account inside a ProdX-enabled `+
+					`project to use for sending metrics. The GAE app's account (<b>%s</b>) `+
+					`must have <i>Service Account Actor</i> role for this service account `+
+					`to be able to send metrics. This works only for Google projects.`, serviceAcc)),
+		},
+		{
+			ID:    "PubsubProject",
+			Title: "[DEPRECATED] PubSub project",
+			Type:  settings.UIFieldText,
+			Help:  "Pick <b>prodx</b> backend and configure ProdX Service Account instead.",
 		},
 		{
 			ID:    "PubsubTopic",
-			Title: "PubSub topic",
+			Title: "[DEPRECATED] PubSub topic",
 			Type:  settings.UIFieldText,
-			Help: template.HTML(fmt.Sprintf("Name of the PubSub topic (within the "+
-				"project specified above) to send metrics to. The GAE app's service account "+
-				"(<b>%s</b>) must have publish permissions for this topic.", serviceAcc)),
+			Help:  "Pick <b>prodx</b> backend and configure ProdX Service Account instead.",
 		},
 		{
 			ID:    "FlushIntervalSec",
@@ -134,7 +187,7 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 				return nil
 			},
 			Help: "How often to flush metrics, in seconds. The default value (60 sec) " +
-				"is fine for most cases.",
+				"is highly recommended. Change it only if you know what you are doing.",
 		},
 		settings.YesOrNoField(settings.UIField{
 			ID:    "ReportRuntimeStats",
@@ -154,8 +207,13 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 	case err != nil:
 		return nil, err
 	}
+	if s.BackendKind == "" {
+		s.BackendKind = "pubsub" // existing non-updated installs
+	}
 	return map[string]string{
 		"Enabled":            s.Enabled.String(),
+		"BackendKind":        s.BackendKind,
+		"ProdXAccount":       s.ProdXAccount,
 		"PubsubProject":      s.PubsubProject,
 		"PubsubTopic":        s.PubsubTopic,
 		"FlushIntervalSec":   strconv.Itoa(s.FlushIntervalSec),
@@ -165,6 +223,8 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 
 func (settingsUIPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
 	modified := tsmonSettings{}
+	modified.BackendKind = values["BackendKind"]
+	modified.ProdXAccount = values["ProdXAccount"]
 	modified.PubsubProject = values["PubsubProject"]
 	modified.PubsubTopic = values["PubsubTopic"]
 	if err := modified.Enabled.Set(values["Enabled"]); err != nil {
@@ -177,7 +237,30 @@ func (settingsUIPage) WriteSettings(c context.Context, values map[string]string,
 	if err := modified.ReportRuntimeStats.Set(values["ReportRuntimeStats"]); err != nil {
 		return err
 	}
+
+	// Verify ProdXAccount is usable before saving the settings.
+	if modified.BackendKind == "prodx" && modified.ProdXAccount != "" {
+		if err := canActAsProdX(c, modified.ProdXAccount); err != nil {
+			return fmt.Errorf("Can't use given ProdX Service Account %q, check its configuration - %s", modified.ProdXAccount, err)
+		}
+	}
+
 	return settings.SetIfChanged(c, settingsKey, &modified, who, why)
+}
+
+// canActAsProdX attempts to grab ProdX scopes access token for the given
+// account.
+func canActAsProdX(c context.Context, account string) error {
+	// TODO(vadimsh): Switch to auth.GetTokenSource once it supports AsActor.
+	creds, err := auth.GetPerRPCCredentials(
+		auth.AsActor,
+		auth.WithServiceAccount(account),
+		auth.WithScopes(monitor.ProdxmonScopes...))
+	if err != nil {
+		return err
+	}
+	_, err = creds.GetRequestMetadata(c, "")
+	return err
 }
 
 func init() {

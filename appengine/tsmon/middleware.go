@@ -7,6 +7,7 @@ package tsmon
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -25,6 +26,7 @@ import (
 	"github.com/luci/luci-go/common/tsmon/monitor"
 	"github.com/luci/luci-go/common/tsmon/store"
 	"github.com/luci/luci-go/common/tsmon/target"
+	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
 )
 
@@ -231,8 +233,9 @@ func (s *State) flushIfNeeded(c context.Context, req *http.Request, state *tsmon
 	// The flush must be fast. Limit it with by some timeout. It also needs real
 	// GAE context for gRPC calls in PubSub guts, so slap it on top of luci-go
 	// context.
-	c, _ = clock.WithTimeout(c, flushTimeout)
-	c = withGAEContext(c, req)
+	c, cancel := clock.WithTimeout(c, flushTimeout)
+	defer cancel()
+	c = withGAEContext(c, req) // TODO(vadimsh): not needed with ProdX
 	if err := s.updateInstanceEntityAndFlush(c, state, settings); err != nil {
 		logging.Errorf(c, "Failed to flush tsmon metrics: %s", err)
 	} else {
@@ -272,11 +275,14 @@ func (s *State) updateInstanceEntityAndFlush(c context.Context, state *tsmon.Sta
 		task.TaskNum = -1
 		state.S.SetDefaultTarget(task)
 
-		// Start complaining if we haven't been given a task number after some time.
-		shouldHaveTaskNumBy := entity.LastUpdated.Add(instanceExpectedToHaveTaskNum)
-		if shouldHaveTaskNumBy.Before(now) {
-			logging.Warningf(c, "Instance %s is %s old with no task_num.",
-				info.InstanceID(c), now.Sub(shouldHaveTaskNumBy).String())
+		// Complain if we haven't been given a task number yet. This is fine for
+		// recently started instances. Task numbers are populated by the
+		// housekeeping cron that MUST be configured for tsmon to work.
+		logging.Warningf(c, "Skipping the flush: instance %s has no task_num.", info.InstanceID(c))
+		if now.Sub(entity.LastUpdated) > instanceExpectedToHaveTaskNum {
+			logging.Errorf(c, "Is /internal/cron/ts_mon/housekeeping running? "+
+				"The instance %s is %s old and has no task_num yet. This is abnormal.",
+				info.InstanceID(c), now.Sub(entity.LastUpdated))
 		}
 
 		// Non-assigned TaskNum is expected situation, pretend the flush succeeded,
@@ -310,9 +316,9 @@ func (s *State) doFlush(c context.Context, state *tsmon.State, settings *tsmonSe
 
 	if s.testingMonitor != nil {
 		mon = s.testingMonitor
-	} else if info.IsDevAppServer(c) || settings.PubsubProject == "" || settings.PubsubTopic == "" {
+	} else if info.IsDevAppServer(c) || !settings.configured() {
 		mon = monitor.NewDebugMonitor("")
-	} else {
+	} else if settings.BackendKind == "pubsub" {
 		topic := gcps.NewTopic(settings.PubsubProject, settings.PubsubTopic)
 		logging.Infof(c, "Sending metrics to %s", topic)
 
@@ -322,6 +328,28 @@ func (s *State) doFlush(c context.Context, state *tsmon.State, settings *tsmonSe
 		if mon, err = monitor.NewPubsubMonitor(c, ts, topic); err != nil {
 			return err
 		}
+	} else if settings.BackendKind == "prodx" {
+		logging.Infof(c, "Sending metrics to ProdX using %s", settings.ProdXAccount)
+		transport, err := auth.GetRPCTransport(
+			c,
+			auth.AsActor,
+			auth.WithServiceAccount(settings.ProdXAccount),
+			auth.WithScopes(monitor.ProdxmonScopes...))
+		if err != nil {
+			return err
+		}
+		endpoint, err := url.Parse(prodXEndpoint)
+		if err != nil {
+			return err
+		}
+		mon, err = monitor.NewHTTPMonitor(c, &http.Client{Transport: transport}, endpoint)
+		if err != nil {
+			return err
+		}
+	} else {
+		// This should not generally happen.
+		logging.Errorf(c, "Unrecognized tsmon backend kind %q", settings.BackendKind)
+		mon = monitor.NewDebugMonitor("")
 	}
 
 	defer mon.Close()
