@@ -16,12 +16,12 @@ import (
 func cmdCancel(defaultAuthOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: `cancel [flags] <build id>`,
-		ShortDesc: "Cancel a build",
-		LongDesc:  "Attempt to cancel an existing build.",
+		ShortDesc: "cancel a build",
+		LongDesc:  "Cancel a build.",
 		CommandRun: func() subcommands.CommandRun {
-			c := &cancelRun{}
-			c.SetDefaultFlags(defaultAuthOpts)
-			return c
+			r := &cancelRun{}
+			r.SetDefaultFlags(defaultAuthOpts)
+			return r
 		},
 	}
 }

@@ -19,9 +19,9 @@ func cmdGet(defaultAuthOpts auth.Options) *subcommands.Command {
 		ShortDesc: "get details about a build",
 		LongDesc:  "Get details about a build.",
 		CommandRun: func() subcommands.CommandRun {
-			c := &getRun{}
-			c.SetDefaultFlags(defaultAuthOpts)
-			return c
+			r := &getRun{}
+			r.SetDefaultFlags(defaultAuthOpts)
+			return r
 		},
 	}
 }
