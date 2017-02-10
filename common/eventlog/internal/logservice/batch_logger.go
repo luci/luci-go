@@ -6,12 +6,13 @@
 package logservice
 
 import (
-	"context"
 	"log"
 	"sync"
 	"time"
 
 	logpb "github.com/luci/luci-go/common/eventlog/proto"
+
+	"golang.org/x/net/context"
 )
 
 // numRetries is the number of retry attempts we will make to log a given event in the face of transient errors.

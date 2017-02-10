@@ -5,13 +5,14 @@
 package eventlog
 
 import (
-	"context"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	logpb "github.com/luci/luci-go/common/eventlog/proto"
+
+	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
 )
 
 func TestGeneratesLogEvent(t *testing.T) {

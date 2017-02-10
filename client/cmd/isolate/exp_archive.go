@@ -5,7 +5,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,6 +18,7 @@ import (
 	humanize "github.com/dustin/go-humanize"
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/client/isolate"
 	"github.com/luci/luci-go/common/auth"

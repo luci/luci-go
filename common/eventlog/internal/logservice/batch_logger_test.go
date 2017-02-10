@@ -5,7 +5,6 @@
 package logservice
 
 import (
-	"context"
 	"errors"
 	"reflect"
 	"sort"
@@ -13,8 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	logpb "github.com/luci/luci-go/common/eventlog/proto"
+
+	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
 )
 
 type testLogger struct {

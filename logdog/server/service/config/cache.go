@@ -5,7 +5,6 @@
 package config
 
 import (
-	"context"
 	"time"
 
 	"github.com/luci/luci-go/common/data/caching/proccache"
@@ -15,6 +14,7 @@ import (
 	"github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
 
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
 )
 
 type messageCacheKey struct {

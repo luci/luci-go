@@ -7,12 +7,12 @@ package logservice
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
 
 	logpb "github.com/luci/luci-go/common/eventlog/proto"
 )

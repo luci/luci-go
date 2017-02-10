@@ -6,7 +6,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -14,6 +13,8 @@ import (
 	"sync"
 
 	"github.com/luci/luci-go/common/isolatedclient"
+
+	"golang.org/x/net/context"
 )
 
 // Uploader uses an isolatedclient.Client to upload items to the server.
