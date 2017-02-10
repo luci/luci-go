@@ -5,6 +5,7 @@
 package swarming
 
 import (
+	"fmt"
 	"testing"
 
 	swarming "github.com/luci/luci-go/common/api/swarming/swarming/v1"
@@ -112,13 +113,14 @@ func TestBuildInfo(t *testing.T) {
 				},
 			},
 			res: swarming.SwarmingRpcsTaskResult{
-				TaskId: "12345",
+				TaskId: "12340",
 				State:  TaskRunning,
 				Tags: []string{
 					"allow_milo:1",
 					"foo:1",
 					"bar:2",
 				},
+				TryNumber: 1,
 			},
 		}
 		bip := BuildInfoProvider{
@@ -146,7 +148,7 @@ func TestBuildInfo(t *testing.T) {
 		biReq := milo.BuildInfoRequest{
 			Build: &milo.BuildInfoRequest_Swarming_{
 				Swarming: &milo.BuildInfoRequest_Swarming{
-					Task: "12345",
+					Task: "12340",
 				},
 			},
 		}
@@ -159,13 +161,13 @@ func TestBuildInfo(t *testing.T) {
 		})
 
 		Convey("Can load a build, inferring project from Kitchen CLI.", func() {
-			testClient.resp = datagramGetResponse("testproject", "swarm/swarming.example.com/12345", &logdogStep)
+			testClient.resp = datagramGetResponse("testproject", "swarm/swarming.example.com/12341", &logdogStep)
 
 			resp, err := bip.GetBuildInfo(c, biReq.GetSwarming(), "")
 			So(err, ShouldBeNil)
 			So(testClient.req, ShouldResemble, &logdog.TailRequest{
 				Project: "testproject",
-				Path:    "swarm/swarming.example.com/12345/+/annotations",
+				Path:    "swarm/swarming.example.com/12341/+/annotations",
 				State:   true,
 			})
 			So(resp, ShouldResemble, &milo.BuildInfoResponse{
@@ -176,9 +178,9 @@ func TestBuildInfo(t *testing.T) {
 					},
 					Text: []string{"test step"},
 					Link: &miloProto.Link{
-						Label: "Task 12345",
+						Label: "Task 12340",
 						Value: &miloProto.Link_Url{
-							Url: "https://swarming.example.com/user/task/12345",
+							Url: "https://swarming.example.com/user/task/12340",
 						},
 					},
 					Property: []*miloProto.Step_Property{
@@ -187,7 +189,7 @@ func TestBuildInfo(t *testing.T) {
 				},
 				AnnotationStream: &miloProto.LogdogStream{
 					Server: "example.com",
-					Prefix: "swarm/swarming.example.com/12345",
+					Prefix: "swarm/swarming.example.com/12341",
 					Name:   "annotations",
 				},
 			})
@@ -203,13 +205,13 @@ func TestBuildInfo(t *testing.T) {
 		Convey("Will load Kitchen without LogDog if there is a project hint.", func() {
 			biReq.ProjectHint = "testproject"
 			testSvc.req.Properties.Command = []string{"kitchen"}
-			testClient.resp = datagramGetResponse("testproject", "swarm/swarming.example.com/12345", &logdogStep)
+			testClient.resp = datagramGetResponse("testproject", "swarm/swarming.example.com/12341", &logdogStep)
 
 			resp, err := bip.GetBuildInfo(c, biReq.GetSwarming(), "testproject")
 			So(err, ShouldBeNil)
 			So(testClient.req, ShouldResemble, &logdog.TailRequest{
 				Project: "testproject",
-				Path:    "swarm/swarming.example.com/12345/+/annotations",
+				Path:    "swarm/swarming.example.com/12341/+/annotations",
 				State:   true,
 			})
 			So(resp, ShouldResemble, &milo.BuildInfoResponse{
@@ -220,9 +222,9 @@ func TestBuildInfo(t *testing.T) {
 					},
 					Text: []string{"test step"},
 					Link: &miloProto.Link{
-						Label: "Task 12345",
+						Label: "Task 12340",
 						Value: &miloProto.Link_Url{
-							Url: "https://swarming.example.com/user/task/12345",
+							Url: "https://swarming.example.com/user/task/12340",
 						},
 					},
 					Property: []*miloProto.Step_Property{
@@ -231,10 +233,49 @@ func TestBuildInfo(t *testing.T) {
 				},
 				AnnotationStream: &miloProto.LogdogStream{
 					Server: "example.com",
-					Prefix: "swarm/swarming.example.com/12345",
+					Prefix: "swarm/swarming.example.com/12341",
 					Name:   "annotations",
 				},
 			})
 		})
+	})
+}
+
+func TestGetRunID(t *testing.T) {
+	t.Parallel()
+
+	successes := []struct {
+		taskID    string
+		tryNumber int64
+		runID     string
+	}{
+		{"3442825749e6e110", 1, "3442825749e6e111"},
+	}
+
+	failures := []struct {
+		taskID    string
+		tryNumber int64
+		err       string
+	}{
+		{"", 1, "swarming task ID is empty"},
+		{"3442825749e6e110", 16, "exceeds 4 bits"},
+		{"3442825749e6e11M", 1, "failed to parse hex from rune"},
+	}
+
+	Convey("Testing BuildInfo's getRunID", t, func() {
+		for _, tc := range successes {
+			Convey(fmt.Sprintf("Successfully processes %q / %q => %q", tc.taskID, tc.tryNumber, tc.runID), func() {
+				v, err := getRunID(tc.taskID, tc.tryNumber)
+				So(err, ShouldBeNil)
+				So(v, ShouldEqual, tc.runID)
+			})
+		}
+
+		for _, tc := range failures {
+			Convey(fmt.Sprintf("Failes to parse %q / %q (%s)", tc.taskID, tc.tryNumber, tc.err), func() {
+				_, err := getRunID(tc.taskID, tc.tryNumber)
+				So(err, ShouldErrLike, tc.err)
+			})
+		}
 	})
 }
