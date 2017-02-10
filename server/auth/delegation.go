@@ -78,6 +78,16 @@ type DelegationTokenParams struct {
 	Intent string
 }
 
+// delegationTokenCache is used to store delegation tokens in the cache.
+//
+// The underlying token type is delegation.Token.
+var delegationTokenCache = tokenCache{
+	Kind:                "delegation",
+	Version:             2,
+	ExpRandPercent:      10,
+	MinAcceptedLifetime: 5 * time.Minute,
+}
+
 // MintDelegationToken returns a delegation token that can be used by the
 // current service to "pretend" to be the current caller (as returned by
 // CurrentIdentity(...)) when sending requests to some other LUCI service.
@@ -168,12 +178,12 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (tok *del
 		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
 		return nil, ErrNotConfigured
 	}
-	var cancel context.CancelFunc
-	ctx, cancel = clock.WithTimeout(ctx, cfg.adjustedTimeout(10*time.Second))
+	ctx, cancel := clock.WithTimeout(ctx, cfg.adjustedTimeout(10*time.Second))
 	defer cancel()
 
 	// Need to make a new token. Log parameters and its ID.
 	ctx = logging.SetFields(ctx, logging.Fields{
+		"method": "AsUser",
 		"intent": p.Intent,
 		"target": target,
 		"userID": userID,
@@ -251,7 +261,8 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (tok *del
 		Expiry:  tok.Expiry,
 	})
 	if err != nil {
-		logging.Errorf(ctx, "Failed to store delegation token in the cache - %s", err)
+		logging.WithError(err).Warningf(ctx, "Failed to store the delegation token in the cache")
+		err = nil // to disarm defer
 	}
 
 	report(nil, "SUCCESS_CACHE_MISS")

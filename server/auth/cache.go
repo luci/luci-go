@@ -19,14 +19,6 @@ import (
 	"github.com/luci/luci-go/common/data/rand/mathrand"
 )
 
-// delegationTokenCache is used to store delegation tokens in the cache.
-var delegationTokenCache = tokenCache{
-	Kind:                "delegation",
-	Version:             2,
-	ExpRandPercent:      10,
-	MinAcceptedLifetime: 5 * time.Minute,
-}
-
 // tokenCache knows how to keep tokens in the cache.
 //
 // Uses Config.Cache as a storage backend.

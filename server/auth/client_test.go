@@ -132,6 +132,36 @@ func TestGetRPCTransport(t *testing.T) {
 			_, err := GetRPCTransport(ctx, NoAuth, WithScopes("A"))
 			So(err, ShouldNotBeNil)
 		})
+
+		Convey("in AsActor mode with account", func(C C) {
+			mocks := &rpcMocks{
+				MintAccessTokenForServiceAccount: func(ic context.Context, p MintAccessTokenParams) (*oauth2.Token, error) {
+					So(p, ShouldResemble, MintAccessTokenParams{
+						ServiceAccount: "abc@example.com",
+						Scopes:         []string{auth.OAuthScopeEmail},
+						MinTTL:         2 * time.Minute,
+					})
+					return &oauth2.Token{
+						TokenType:   "Bearer",
+						AccessToken: "blah-blah",
+					}, nil
+				},
+			}
+
+			t, err := GetRPCTransport(ctx, AsActor, WithServiceAccount("abc@example.com"), mocks)
+			So(err, ShouldBeNil)
+
+			_, err = t.RoundTrip(makeReq("https://example.com"))
+			So(err, ShouldBeNil)
+			So(mock.reqs[0].Header, ShouldResemble, http.Header{
+				"Authorization": {"Bearer blah-blah"},
+			})
+		})
+
+		Convey("in AsActor mode without account, error", func(C C) {
+			_, err := GetRPCTransport(ctx, AsActor)
+			So(err, ShouldNotBeNil)
+		})
 	})
 }
 

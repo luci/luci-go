@@ -53,6 +53,17 @@ const (
 	// The implementation is based on LUCI-specific protocol that uses special
 	// delegation tokens. Only LUCI backends can understand them.
 	AsUser
+
+	// AsActor is used for outbound RPCs sent with the authority of some service
+	// account that the current service has "iam.serviceAccountActor" role in.
+	//
+	// RPC requests done in this mode will have 'Authorization' header set to
+	// the access token of the service account specified by WithServiceAccount()
+	// option.
+	//
+	// By default uses "https://www.googleapis.com/auth/userinfo.email" API scope.
+	// Can be customized with WithScopes() options.
+	AsActor
 )
 
 // RPCOption is an option for GetRPCTransport or GetPerRPCCredentials functions.
@@ -73,6 +84,20 @@ type oauthScopesOption struct {
 
 func (o oauthScopesOption) apply(opts *rpcOptions) {
 	opts.scopes = append(opts.scopes, o.scopes...)
+}
+
+// WithServiceAccount option must be used with AsActor authority kind to specify
+// what service account to act as.
+func WithServiceAccount(email string) RPCOption {
+	return serviceAccountOption{email: email}
+}
+
+type serviceAccountOption struct {
+	email string
+}
+
+func (o serviceAccountOption) apply(opts *rpcOptions) {
+	opts.serviceAccount = o.email
 }
 
 // WithDelegationToken can be used to attach an existing delegation token to
@@ -160,6 +185,10 @@ func (creds perRPCCreds) RequireTransportSecurity() bool {
 //
 // While GetPerRPCCredentials is preferred, this can be used by packages that
 // cannot or do not properly handle this gRPC option.
+//
+// TODO(vadimsh): Convert it to GetTokenSource(kind, opts ...RPCOption) for
+// consistency with the rest of APIs here since it can work in AsActor mode too
+// now. It should return error on AsUser or NoAuth mode though.
 func GetTokenSourceAsSelf(c context.Context, scopes ...string) oauth2.TokenSource {
 	if len(scopes) == 0 {
 		scopes = []string{auth.OAuthScopeEmail}
@@ -209,7 +238,8 @@ func init() {
 
 // rpcMocks are used exclusively in unit tests.
 type rpcMocks struct {
-	MintDelegationToken func(context.Context, DelegationTokenParams) (*delegation.Token, error)
+	MintDelegationToken              func(context.Context, DelegationTokenParams) (*delegation.Token, error)
+	MintAccessTokenForServiceAccount func(context.Context, MintAccessTokenParams) (*oauth2.Token, error)
 }
 
 // apply implements RPCOption interface.
@@ -223,8 +253,9 @@ type headersGetter func(c context.Context, uri string, opts *rpcOptions) (map[st
 
 type rpcOptions struct {
 	kind            RPCAuthorityKind
-	scopes          []string
-	delegationToken string
+	scopes          []string // for AsSelf and AsActor
+	serviceAccount  string   // for AsActor
+	delegationToken string   // for AsUser
 	getRPCHeaders   headersGetter
 	rpcMocks        *rpcMocks
 }
@@ -235,16 +266,27 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 	for _, o := range opts {
 		o.apply(options)
 	}
-	// Validate options.
-	switch {
-	case options.kind == AsSelf && len(options.scopes) == 0:
+
+	// Set default scopes.
+	asSelfOrActor := options.kind == AsSelf || options.kind == AsActor
+	if asSelfOrActor && len(options.scopes) == 0 {
 		options.scopes = defaultOAuthScopes
-	case options.kind != AsSelf && len(options.scopes) != 0:
-		return nil, fmt.Errorf("auth: WithScopes can only be used with AsSelf authorization kind")
+	}
+
+	// Validate options.
+	if !asSelfOrActor && len(options.scopes) != 0 {
+		return nil, fmt.Errorf("auth: WithScopes can only be used with AsSelf or AsActor authorization kind")
+	}
+	if options.serviceAccount != "" && options.kind != AsActor {
+		return nil, fmt.Errorf("auth: WithServiceAccount can only be used with AsActor authorization kind")
+	}
+	if options.serviceAccount == "" && options.kind == AsActor {
+		return nil, fmt.Errorf("auth: AsActor authorization kind requires WithServiceAccount option")
 	}
 	if options.delegationToken != "" && options.kind != AsUser {
 		return nil, fmt.Errorf("auth: WithDelegationToken can only be used with AsUser authorization kind")
 	}
+
 	// Validate 'kind' and pick correct implementation of getRPCHeaders.
 	switch options.kind {
 	case NoAuth:
@@ -253,6 +295,8 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 		options.getRPCHeaders = asSelfHeaders
 	case AsUser:
 		options.getRPCHeaders = asUserHeaders
+	case AsActor:
+		options.getRPCHeaders = asActorHeaders
 	default:
 		return nil, fmt.Errorf("auth: unknown RPCAuthorityKind %d", options.kind)
 	}
@@ -337,5 +381,27 @@ func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (map[string]
 	return map[string]string{
 		"Authorization":           oauthTok.TokenType + " " + oauthTok.AccessToken,
 		delegation.HTTPHeaderName: delegationToken,
+	}, nil
+}
+
+// asActorHeaders returns a map of authentication headers to add to outbound
+// RPC requests done in AsActor mode.
+//
+// This will be called by the transport layer on each request.
+func asActorHeaders(c context.Context, uri string, opts *rpcOptions) (map[string]string, error) {
+	mintTokenCall := MintAccessTokenForServiceAccount
+	if opts.rpcMocks != nil && opts.rpcMocks.MintAccessTokenForServiceAccount != nil {
+		mintTokenCall = opts.rpcMocks.MintAccessTokenForServiceAccount
+	}
+	oauthTok, err := mintTokenCall(c, MintAccessTokenParams{
+		ServiceAccount: opts.serviceAccount,
+		Scopes:         opts.scopes,
+		MinTTL:         2 * time.Minute,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return map[string]string{
+		"Authorization": oauthTok.TokenType + " " + oauthTok.AccessToken,
 	}, nil
 }
