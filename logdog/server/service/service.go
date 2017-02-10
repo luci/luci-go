@@ -352,9 +352,15 @@ func (s *Service) probeGCEEnvironment(c context.Context) {
 }
 
 func (s *Service) initDatastoreClient(c context.Context) (*datastore.Client, error) {
+	ts, err := serverAuth.GetTokenSource(
+		c, serverAuth.AsSelf,
+		serverAuth.WithScopes(datastore.ScopeDatastore))
+	if err != nil {
+		return nil, err
+	}
 	return datastore.NewClient(c, s.serviceID,
 		option.WithUserAgent(s.getUserAgent()),
-		option.WithTokenSource(serverAuth.GetTokenSourceAsSelf(c, datastore.ScopeDatastore)))
+		option.WithTokenSource(ts))
 }
 
 func (s *Service) initCoordinatorClient(c context.Context) (logdog.ServicesClient, error) {
@@ -548,13 +554,19 @@ func (s *Service) IntermediateStorage(c context.Context) (storage.Storage, error
 	}
 
 	// Initialize RPC credentials.
+	ts, err := serverAuth.GetTokenSource(
+		c, serverAuth.AsSelf,
+		serverAuth.WithScopes(bigtable.StorageScopes...))
+	if err != nil {
+		return nil, err
+	}
 	bt, err := bigtable.New(c, bigtable.Options{
 		Project:  btcfg.Project,
 		Instance: btcfg.Instance,
 		LogTable: btcfg.LogTableName,
 		ClientOptions: []option.ClientOption{
 			option.WithUserAgent(s.getUserAgent()),
-			option.WithTokenSource(serverAuth.GetTokenSourceAsSelf(c, bigtable.StorageScopes...)),
+			option.WithTokenSource(ts),
 		},
 	})
 	if err != nil {
@@ -584,9 +596,15 @@ func (s *Service) GSClient(c context.Context) (gs.Client, error) {
 // PubSubSubscriberClient returns a Pub/Sub client instance that is
 // authenticated with Pub/Sub subscriber scopes.
 func (s *Service) PubSubSubscriberClient(c context.Context, projectID string) (*pubsub.Client, error) {
+	ts, err := serverAuth.GetTokenSource(
+		c, serverAuth.AsSelf,
+		serverAuth.WithScopes(gcps.SubscriberScopes...))
+	if err != nil {
+		return nil, err
+	}
 	return pubsub.NewClient(c, projectID,
 		option.WithUserAgent(s.getUserAgent()),
-		option.WithTokenSource(serverAuth.GetTokenSourceAsSelf(c, gcps.SubscriberScopes...)))
+		option.WithTokenSource(ts))
 }
 
 func (s *Service) unauthenticatedTransport() http.RoundTripper {

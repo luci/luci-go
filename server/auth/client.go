@@ -141,11 +141,14 @@ func GetRPCTransport(c context.Context, kind RPCAuthorityKind, opts ...RPCOption
 		return baseTransport, nil
 	}
 	return auth.NewModifyingTransport(baseTransport, func(req *http.Request) error {
-		headers, err := options.getRPCHeaders(c, req.URL.String(), options)
+		tok, extra, err := options.getRPCHeaders(c, req.URL.String(), options)
 		if err != nil {
 			return err
 		}
-		for k, v := range headers {
+		if tok != nil {
+			req.Header.Set("Authorization", tok.TokenType+" "+tok.AccessToken)
+		}
+		for k, v := range extra {
 			req.Header.Set(k, v)
 		}
 		return nil
@@ -171,47 +174,65 @@ func (creds perRPCCreds) GetRequestMetadata(c context.Context, uri ...string) (m
 	if len(uri) == 0 {
 		panic("perRPCCreds: no URI given")
 	}
-	return creds.options.getRPCHeaders(c, uri[0], creds.options)
+	tok, extra, err := creds.options.getRPCHeaders(c, uri[0], creds.options)
+	switch {
+	case err != nil:
+		return nil, err
+	case tok == nil && len(extra) == 0:
+		return nil, nil
+	}
+	headers := make(map[string]string, 1+len(extra))
+	if tok != nil {
+		headers["Authorization"] = tok.TokenType + " " + tok.AccessToken
+	}
+	for k, v := range extra {
+		headers[k] = v
+	}
+	return headers, nil
 }
 
 func (creds perRPCCreds) RequireTransportSecurity() bool {
 	return true
 }
 
-// GetTokenSourceAsSelf returns an oauth2.TokenSource bound to the supplied
-// Context that returns tokens for AsSelf authentication.
+// GetTokenSource returns an oauth2.TokenSource bound to the supplied Context.
 //
-// If no scopes are provided, auth.OAuthScopeEmail will be used.
+// Supports only AsSelf and AsActor authorization kinds, since they are only
+// ones that exclusively use OAuth2 tokens and no other extra headers.
 //
 // While GetPerRPCCredentials is preferred, this can be used by packages that
 // cannot or do not properly handle this gRPC option.
-//
-// TODO(vadimsh): Convert it to GetTokenSource(kind, opts ...RPCOption) for
-// consistency with the rest of APIs here since it can work in AsActor mode too
-// now. It should return error on AsUser or NoAuth mode though.
-func GetTokenSourceAsSelf(c context.Context, scopes ...string) oauth2.TokenSource {
-	if len(scopes) == 0 {
-		scopes = []string{auth.OAuthScopeEmail}
+func GetTokenSource(c context.Context, kind RPCAuthorityKind, opts ...RPCOption) (oauth2.TokenSource, error) {
+	if kind != AsSelf && kind != AsActor {
+		return nil, fmt.Errorf("auth: GetTokenSource can only be used with AsSelf or AsActor authorization kind")
 	}
-	return &tokenSource{c, scopes}
-}
-
-type tokenSource struct {
-	context.Context
-	scopes []string
-}
-
-func (ts *tokenSource) Token() (*oauth2.Token, error) {
-	cfg := GetConfig(ts)
-	if cfg == nil || cfg.AccessTokenProvider == nil {
-		return nil, ErrNotConfigured
-	}
-
-	tok, err := cfg.AccessTokenProvider(ts, ts.scopes)
+	options, err := makeRPCOptions(kind, opts)
 	if err != nil {
 		return nil, err
 	}
-	return tok.OAuth2Token(), nil
+	return &tokenSource{c, options}, nil
+}
+
+type tokenSource struct {
+	ctx     context.Context
+	options *rpcOptions
+}
+
+func (ts *tokenSource) Token() (*oauth2.Token, error) {
+	tok, extra, err := ts.options.getRPCHeaders(ts.ctx, "", ts.options)
+	switch {
+	case err != nil:
+		return nil, err
+	case tok == nil:
+		panic("oauth2.Token is unexpectedly nil")
+	case extra != nil:
+		keys := make([]string, 0, len(extra))
+		for k := range extra {
+			keys = append(keys, k)
+		}
+		panic(fmt.Errorf("extra headers are unexpectedly not empty: %s", keys))
+	}
+	return tok, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -249,7 +270,9 @@ func (o *rpcMocks) apply(opts *rpcOptions) {
 
 var defaultOAuthScopes = []string{auth.OAuthScopeEmail}
 
-type headersGetter func(c context.Context, uri string, opts *rpcOptions) (map[string]string, error)
+// headersGetter returns a main Authorization token and optional additional
+// headers.
+type headersGetter func(c context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error)
 
 type rpcOptions struct {
 	kind            RPCAuthorityKind
@@ -304,36 +327,34 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 }
 
 // noAuthHeaders is getRPCHeaders for NoAuth mode.
-func noAuthHeaders(c context.Context, uri string, opts *rpcOptions) (map[string]string, error) {
-	return nil, nil
+func noAuthHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
+	return nil, nil, nil
 }
 
 // asSelfHeaders returns a map of authentication headers to add to outbound
 // RPC requests done in AsSelf mode.
 //
 // This will be called by the transport layer on each request.
-func asSelfHeaders(c context.Context, uri string, opts *rpcOptions) (map[string]string, error) {
+func asSelfHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
 	cfg := GetConfig(c)
 	if cfg == nil || cfg.AccessTokenProvider == nil {
-		return nil, ErrNotConfigured
+		return nil, nil, ErrNotConfigured
 	}
 	tok, err := cfg.AccessTokenProvider(c, opts.scopes)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return map[string]string{
-		"Authorization": tok.TokenType + " " + tok.AccessToken,
-	}, nil
+	return tok.OAuth2Token(), nil, nil
 }
 
 // asUserHeaders returns a map of authentication headers to add to outbound
 // RPC requests done in AsUser mode.
 //
 // This will be called by the transport layer on each request.
-func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (map[string]string, error) {
+func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
 	cfg := GetConfig(c)
 	if cfg == nil || cfg.AccessTokenProvider == nil {
-		return nil, ErrNotConfigured
+		return nil, nil, ErrNotConfigured
 	}
 
 	delegationToken := ""
@@ -344,13 +365,13 @@ func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (map[string]
 		// anonymous too. No need to use any authentication headers.
 		userIdent := CurrentIdentity(c)
 		if userIdent == identity.AnonymousIdentity {
-			return nil, nil
+			return nil, nil, nil
 		}
 
 		// Grab root URL of the destination service. Only https:// are allowed.
 		uri = strings.ToLower(uri)
 		if !strings.HasPrefix(uri, "https://") {
-			return nil, fmt.Errorf("auth: refusing to use delegation tokens with non-https URL")
+			return nil, nil, fmt.Errorf("auth: refusing to use delegation tokens with non-https URL")
 		}
 		host := uri[len("https://"):]
 		if idx := strings.IndexRune(host, '/'); idx != -1 {
@@ -368,7 +389,7 @@ func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (map[string]
 			MinTTL:     10 * time.Minute,
 		})
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		delegationToken = tok.Token
 	}
@@ -376,19 +397,16 @@ func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (map[string]
 	// Use our own OAuth token too, since the delegation token is bound to us.
 	oauthTok, err := cfg.AccessTokenProvider(c, []string{auth.OAuthScopeEmail})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return map[string]string{
-		"Authorization":           oauthTok.TokenType + " " + oauthTok.AccessToken,
-		delegation.HTTPHeaderName: delegationToken,
-	}, nil
+	return oauthTok.OAuth2Token(), map[string]string{delegation.HTTPHeaderName: delegationToken}, nil
 }
 
 // asActorHeaders returns a map of authentication headers to add to outbound
 // RPC requests done in AsActor mode.
 //
 // This will be called by the transport layer on each request.
-func asActorHeaders(c context.Context, uri string, opts *rpcOptions) (map[string]string, error) {
+func asActorHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
 	mintTokenCall := MintAccessTokenForServiceAccount
 	if opts.rpcMocks != nil && opts.rpcMocks.MintAccessTokenForServiceAccount != nil {
 		mintTokenCall = opts.rpcMocks.MintAccessTokenForServiceAccount
@@ -398,10 +416,5 @@ func asActorHeaders(c context.Context, uri string, opts *rpcOptions) (map[string
 		Scopes:         opts.scopes,
 		MinTTL:         2 * time.Minute,
 	})
-	if err != nil {
-		return nil, err
-	}
-	return map[string]string{
-		"Authorization": oauthTok.TokenType + " " + oauthTok.AccessToken,
-	}, nil
+	return oauthTok, nil, err
 }

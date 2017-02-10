@@ -248,18 +248,17 @@ func (settingsUIPage) WriteSettings(c context.Context, values map[string]string,
 	return settings.SetIfChanged(c, settingsKey, &modified, who, why)
 }
 
-// canActAsProdX attempts to grab ProdX scopes access token for the given
+// canActAsProdX attempts to grab ProdX scoped access token for the given
 // account.
 func canActAsProdX(c context.Context, account string) error {
-	// TODO(vadimsh): Switch to auth.GetTokenSource once it supports AsActor.
-	creds, err := auth.GetPerRPCCredentials(
-		auth.AsActor,
+	ts, err := auth.GetTokenSource(
+		c, auth.AsActor,
 		auth.WithServiceAccount(account),
 		auth.WithScopes(monitor.ProdxmonScopes...))
 	if err != nil {
 		return err
 	}
-	_, err = creds.GetRequestMetadata(c, "")
+	_, err = ts.Token()
 	return err
 }
 

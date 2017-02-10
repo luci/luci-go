@@ -168,7 +168,7 @@ func TestGetRPCTransport(t *testing.T) {
 func TestTokenSource(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetTokenSourceAsSelf works", t, func() {
+	Convey("GetTokenSource works", t, func() {
 		ctx := context.Background()
 		mock := &clientRPCTransportMock{}
 		ctx = ModifyConfig(ctx, func(cfg *Config) {
@@ -177,7 +177,8 @@ func TestTokenSource(t *testing.T) {
 		})
 
 		Convey("With no scopes", func() {
-			ts := GetTokenSourceAsSelf(ctx)
+			ts, err := GetTokenSource(ctx, AsSelf)
+			So(err, ShouldBeNil)
 			tok, err := ts.Token()
 			So(err, ShouldBeNil)
 			So(tok, ShouldResemble, &oauth2.Token{
@@ -187,13 +188,26 @@ func TestTokenSource(t *testing.T) {
 		})
 
 		Convey("With a specific list of scopes", func() {
-			ts := GetTokenSourceAsSelf(ctx, "foo", "bar", "baz")
+			ts, err := GetTokenSource(ctx, AsSelf, WithScopes("foo", "bar", "baz"))
+			So(err, ShouldBeNil)
 			tok, err := ts.Token()
 			So(err, ShouldBeNil)
 			So(tok, ShouldResemble, &oauth2.Token{
 				AccessToken: "blah:foo,bar,baz",
 				TokenType:   "Bearer",
 			})
+		})
+
+		Convey("NoAuth is not allowed", func() {
+			ts, err := GetTokenSource(ctx, NoAuth)
+			So(ts, ShouldBeNil)
+			So(err, ShouldNotBeNil)
+		})
+
+		Convey("AsUser is not allowed", func() {
+			ts, err := GetTokenSource(ctx, AsUser)
+			So(ts, ShouldBeNil)
+			So(err, ShouldNotBeNil)
 		})
 	})
 }
