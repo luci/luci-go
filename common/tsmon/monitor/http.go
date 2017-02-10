@@ -80,6 +80,15 @@ func (m *httpMonitor) Send(ctx context.Context, cells []types.Cell) error {
 			}
 			resp.Body.Close()
 		}
+		// On HTTP 429 response (Too many requests) oErr is marked as transient and
+		// returning it causes a retry. We don't want to do that. HTTP 429 is
+		// received if timestamps in the request body indicate that the sampling
+		// period is smaller than the configured retention period. Resending the
+		// exact same body with exact same timestamps won't help. Return a fatal
+		// error instead.
+		if resp != nil && resp.StatusCode == 429 {
+			return fmt.Errorf("giving up on HTTP 249 status")
+		}
 		return oErr
 	})()
 	if err != nil {
