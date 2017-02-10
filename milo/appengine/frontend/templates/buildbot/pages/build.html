@@ -15,7 +15,23 @@
   {{- end }}
 {{end}}
 
-{{define "head"}}{{end}}
+{{define "head"}}
+<link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/
+{{- with .Build.Summary.Status.String -}}
+  {{- if eq . "Running" -}} teal
+  {{- else if eq . "Success" -}} green
+  {{- else if eq . "InfraFailure" -}} purple
+  {{- else if eq . "Expired" -}} darkpurple
+  {{- else if eq . "Failure" -}} red
+  {{- else if eq . "NotRun" -}} gray
+  {{- else if eq . "Warning" -}} yellow
+  {{- else if eq . "DependencyFailure" -}} redamber
+  {{- else if eq . "WaitingDependency" -}} brown
+  {{- else -}} milo
+  {{- end -}}
+{{- end -}}-32.png">
+
+{{end}}
 
 {{define "body"}}
   <div class="content">
