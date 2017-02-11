@@ -26,7 +26,9 @@ type PackageDef struct {
 	// Package defines a name of the package.
 	Package string
 
-	// Root defines where to search for files, relative to package file itself.
+	// Root defines where to search for files. It may either be an absolute path,
+	// or it may be a path relative to the package file itself. If omitted, it
+	// defaults to "." (i.e., the same directory as the package file)
 	Root string
 
 	// InstallMode defines how to deploy the package file: "copy" or "symlink".
@@ -133,7 +135,12 @@ func (def *PackageDef) FindFiles(cwd string) ([]File, error) {
 	if err != nil {
 		return nil, err
 	}
-	root := filepath.Clean(filepath.Join(absCwd, filepath.FromSlash(def.Root)))
+	root := ""
+	if filepath.IsAbs(def.Root) {
+		root = def.Root
+	} else {
+		root = filepath.Clean(filepath.Join(absCwd, filepath.FromSlash(def.Root)))
+	}
 
 	// Helper to get absolute path to a file given path relative to root.
 	makeAbs := func(p string) string {

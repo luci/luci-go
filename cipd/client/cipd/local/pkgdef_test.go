@@ -244,9 +244,46 @@ func TestFindFiles(t *testing.T) {
 			mkF("garbage/a")
 			mkF("garbage/b")
 
+			assertFiles := func(pkgDef PackageDef, cwd string) {
+				files, err := pkgDef.FindFiles(cwd)
+				So(err, ShouldBeNil)
+				names := []string{}
+				byName := make(map[string]File, len(files))
+				for _, f := range files {
+					names = append(names, f.Name())
+					byName[f.Name()] = f
+				}
+
+				if runtime.GOOS == "windows" {
+					So(names, ShouldResemble, []string{
+						"ENV/abc.py",
+						"ENV/abc.pyo",
+						"ENV/dir/def.py",
+						"dir/file2.py",
+						"file1.py",
+						"infra/xyz.py",
+					})
+				} else {
+					So(names, ShouldResemble, []string{
+						"ENV/abc.py",
+						"ENV/abc.pyo",
+						"ENV/abs_in_root",
+						"ENV/abs_link",
+						"ENV/dir/def.py",
+						"ENV/rel_link",
+						"dir/file2.py",
+						"file1.py",
+						"infra/xyz.py",
+					})
+					// Separately check symlinks.
+					ensureSymlinkTarget(byName["ENV/abs_in_root"], "dir/def.py")
+					ensureSymlinkTarget(byName["ENV/abs_link"], filepath.ToSlash(filepath.Dir(tempDir)))
+					ensureSymlinkTarget(byName["ENV/rel_link"], "abc.py")
+				}
+			}
+
 			pkgDef := PackageDef{
 				Package: "test",
-				Root:    "../../",
 				Data: []PackageChunkDef{
 					{
 						Dir:     "ENV",
@@ -267,41 +304,20 @@ func TestFindFiles(t *testing.T) {
 				},
 			}
 
-			files, err := pkgDef.FindFiles(filepath.Join(tempDir, "a", "b"))
-			So(err, ShouldBeNil)
-			names := []string{}
-			byName := make(map[string]File, len(files))
-			for _, f := range files {
-				names = append(names, f.Name())
-				byName[f.Name()] = f
-			}
+			Convey("with relative root", func() {
+				pkgDef.Root = "../../"
 
-			if runtime.GOOS == "windows" {
-				So(names, ShouldResemble, []string{
-					"ENV/abc.py",
-					"ENV/abc.pyo",
-					"ENV/dir/def.py",
-					"dir/file2.py",
-					"file1.py",
-					"infra/xyz.py",
-				})
-			} else {
-				So(names, ShouldResemble, []string{
-					"ENV/abc.py",
-					"ENV/abc.pyo",
-					"ENV/abs_in_root",
-					"ENV/abs_link",
-					"ENV/dir/def.py",
-					"ENV/rel_link",
-					"dir/file2.py",
-					"file1.py",
-					"infra/xyz.py",
-				})
-				// Separately check symlinks.
-				ensureSymlinkTarget(byName["ENV/abs_in_root"], "dir/def.py")
-				ensureSymlinkTarget(byName["ENV/abs_link"], filepath.ToSlash(filepath.Dir(tempDir)))
-				ensureSymlinkTarget(byName["ENV/rel_link"], "abc.py")
-			}
+				assertFiles(pkgDef, filepath.Join(tempDir, "a", "b"))
+			})
+
+			Convey("with absolute root", func() {
+				pkgDef.Root = tempDir
+
+				someOtherTmpDir := mkTempDir()
+				assertFiles(pkgDef, someOtherTmpDir)
+			})
+
 		})
+
 	})
 }
