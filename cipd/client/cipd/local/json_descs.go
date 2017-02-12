@@ -67,6 +67,11 @@ type FileInfo struct {
 	// Only used for Linux\Mac archives. False for symlinks.
 	Executable bool `json:"executable,omitempty"`
 
+	// WinAttrs is a string representation of extra windows file attributes.
+	//
+	// Only used for Win archives.
+	WinAttrs string `json:"win_attrs,omitempty"`
+
 	// Symlink is a path the symlink points to or "" if the file is not a symlink.
 	Symlink string `json:"symlink,omitempty"`
 }

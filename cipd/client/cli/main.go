@@ -1697,7 +1697,21 @@ func inspectInstance(ctx context.Context, inst local.PackageInstance, listFiles 
 					fmt.Printf(" S %s -> %s\n", f.Name(), target)
 				}
 			} else {
-				fmt.Printf(" F %s\n", f.Name())
+				flags := []string{}
+				if f.Executable() {
+					flags = append(flags, "+x")
+				}
+				if f.WinAttrs()&local.WinAttrHidden != 0 {
+					flags = append(flags, "+H")
+				}
+				if f.WinAttrs()&local.WinAttrSystem != 0 {
+					flags = append(flags, "+S")
+				}
+				flagText := ""
+				if len(flags) > 0 {
+					flagText = fmt.Sprintf(" (%s)", strings.Join(flags, ""))
+				}
+				fmt.Printf(" F %s%s\n", f.Name(), flagText)
 			}
 		}
 	}

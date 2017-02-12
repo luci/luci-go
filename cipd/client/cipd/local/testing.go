@@ -21,6 +21,17 @@ func NewTestFile(name string, data string, executable bool) File {
 	}
 }
 
+// NewWinTestFile returns a File implementation (Symlink == false, Executable ==
+// false) backed by a fake in-memory data with windows attributes. It is useful
+// in unit tests.
+func NewWinTestFile(name string, data string, attrs WinAttrs) File {
+	return &testFile{
+		name:     name,
+		data:     data,
+		winAttrs: attrs,
+	}
+}
+
 // NewTestSymlink returns File implementation (Symlink == true) backed by a fake
 // in-memory data. It is useful in unit tests.
 func NewTestSymlink(name string, target string) File {
@@ -35,12 +46,15 @@ type testFile struct {
 	data          string
 	executable    bool
 	symlinkTarget string
+
+	winAttrs WinAttrs
 }
 
-func (f *testFile) Name() string     { return f.name }
-func (f *testFile) Size() uint64     { return uint64(len(f.data)) }
-func (f *testFile) Executable() bool { return f.executable }
-func (f *testFile) Symlink() bool    { return f.symlinkTarget != "" }
+func (f *testFile) Name() string       { return f.name }
+func (f *testFile) Size() uint64       { return uint64(len(f.data)) }
+func (f *testFile) Executable() bool   { return f.executable }
+func (f *testFile) Symlink() bool      { return f.symlinkTarget != "" }
+func (f *testFile) WinAttrs() WinAttrs { return f.winAttrs }
 
 func (f *testFile) SymlinkTarget() (string, error) {
 	if f.symlinkTarget == "" {

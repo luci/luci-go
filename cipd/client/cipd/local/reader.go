@@ -125,6 +125,7 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 				Name:       file.Name(),
 				Size:       file.Size(),
 				Executable: file.Executable(),
+				WinAttrs:   file.WinAttrs().String(),
 			}
 			if file.Symlink() {
 				target, err := file.SymlinkTarget()
@@ -135,7 +136,7 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 			}
 			manifest.Files = append(manifest.Files, fi)
 		}
-		out, err := dest.CreateFile(ctx, f.Name(), false)
+		out, err := dest.CreateFile(ctx, f.Name(), false, 0)
 		if err != nil {
 			return err
 		}
@@ -158,7 +159,7 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 
 	extractRegularFile := func(f File) (err error) {
 		defer progress.advance(f)
-		out, err := dest.CreateFile(ctx, f.Name(), f.Executable())
+		out, err := dest.CreateFile(ctx, f.Name(), f.Executable(), f.WinAttrs())
 		if err != nil {
 			return err
 		}
@@ -433,6 +434,7 @@ func (b *blobFile) Size() uint64                   { return uint64(len(b.blob)) 
 func (b *blobFile) Executable() bool               { return false }
 func (b *blobFile) Symlink() bool                  { return false }
 func (b *blobFile) SymlinkTarget() (string, error) { return "", nil }
+func (b *blobFile) WinAttrs() WinAttrs             { return 0 }
 
 func (b *blobFile) Open() (io.ReadCloser, error) {
 	return ioutil.NopCloser(bytes.NewReader(b.blob)), nil
@@ -462,6 +464,9 @@ func (f *fileInZip) prefetch() error {
 
 func (f *fileInZip) Name() string  { return f.z.Name }
 func (f *fileInZip) Symlink() bool { return (f.z.Mode() & os.ModeSymlink) != 0 }
+func (f *fileInZip) WinAttrs() WinAttrs {
+	return WinAttrs(f.z.ExternalAttrs) & WinAttrsAll
+}
 
 func (f *fileInZip) Executable() bool {
 	if f.Symlink() {

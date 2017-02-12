@@ -59,6 +59,8 @@ func TestBuildInstance(t *testing.T) {
 				Input: []File{
 					NewTestFile("testing/qwerty", "12345", false),
 					NewTestFile("abc", "duh", true),
+					NewWinTestFile("sneaky_file", "ninja", WinAttrHidden),
+					NewWinTestFile("special_file", "special", WinAttrSystem),
 					NewTestSymlink("rel_symlink", "abc"),
 					NewTestSymlink("abs_symlink", "/abc/def"),
 				},
@@ -89,6 +91,20 @@ func TestBuildInstance(t *testing.T) {
 				size: 3,
 				mode: 0700,
 				body: []byte("duh"),
+			},
+			{
+				name:     "sneaky_file",
+				size:     5,
+				mode:     0600,
+				body:     []byte("ninja"),
+				winAttrs: WinAttrHidden,
+			},
+			{
+				name:     "special_file",
+				size:     7,
+				mode:     0600,
+				body:     []byte("special"),
+				winAttrs: WinAttrSystem,
 			},
 			{
 				name: "rel_symlink",
@@ -172,10 +188,11 @@ func getSHA1(buf *bytes.Buffer) string {
 ////////////////////////////////////////////////////////////////////////////////
 
 type zippedFile struct {
-	name string
-	size uint64
-	mode os.FileMode
-	body []byte
+	name     string
+	size     uint64
+	mode     os.FileMode
+	body     []byte
+	winAttrs WinAttrs
 }
 
 // readZip scans zip directory and returns files it finds.
@@ -195,10 +212,11 @@ func readZip(data []byte) []zippedFile {
 			panic("Failed to read zipped file")
 		}
 		files[i] = zippedFile{
-			name: zf.Name,
-			size: zf.FileHeader.UncompressedSize64,
-			mode: zf.Mode(),
-			body: body,
+			name:     zf.Name,
+			size:     zf.FileHeader.UncompressedSize64,
+			mode:     zf.Mode(),
+			body:     body,
+			winAttrs: WinAttrs(zf.ExternalAttrs) & WinAttrsAll,
 		}
 	}
 	return files

@@ -39,10 +39,36 @@ type File interface {
 	// SymlinkTarget return a path the symlink is pointing to.
 	SymlinkTarget() (string, error)
 
+	// WinAttrs returns the windows attributes, if any.
+	WinAttrs() WinAttrs
+
 	// Open opens the regular file for reading.
 	//
 	// Returns error for symlink files.
 	Open() (io.ReadCloser, error)
+}
+
+// WinAttrs represents the extra file attributes for windows.
+type WinAttrs uint32
+
+// These are the valid WinAttrs values. They may be OR'd together to form
+// a mask. These match the windows GetFileAttributes values.
+const (
+	WinAttrHidden WinAttrs = 0x2
+	WinAttrSystem WinAttrs = 0x4
+
+	WinAttrsAll WinAttrs = WinAttrHidden | WinAttrSystem
+)
+
+func (w WinAttrs) String() string {
+	ret := ""
+	if w&WinAttrHidden != 0 {
+		ret += "H"
+	}
+	if w&WinAttrSystem != 0 {
+		ret += "S"
+	}
+	return ret
 }
 
 // Destination knows how to create files when extracting a package.
@@ -58,9 +84,7 @@ type Destination interface {
 	Begin(ctx context.Context) error
 
 	// CreateFile opens a writer to extract some package file to.
-	//
-	// 'name' must be a slash separated path relative to the destination root.
-	CreateFile(ctx context.Context, name string, executable bool) (io.WriteCloser, error)
+	CreateFile(ctx context.Context, name string, executable bool, winAttrs WinAttrs) (io.WriteCloser, error)
 
 	// CreateSymlink creates a symlink (with absolute or relative target).
 	//
@@ -80,12 +104,14 @@ type fileSystemFile struct {
 	size          uint64
 	executable    bool
 	symlinkTarget string
+	winAttrs      WinAttrs
 }
 
-func (f *fileSystemFile) Name() string     { return f.name }
-func (f *fileSystemFile) Size() uint64     { return f.size }
-func (f *fileSystemFile) Executable() bool { return f.executable }
-func (f *fileSystemFile) Symlink() bool    { return f.symlinkTarget != "" }
+func (f *fileSystemFile) Name() string       { return f.name }
+func (f *fileSystemFile) Size() uint64       { return f.size }
+func (f *fileSystemFile) Executable() bool   { return f.executable }
+func (f *fileSystemFile) Symlink() bool      { return f.symlinkTarget != "" }
+func (f *fileSystemFile) WinAttrs() WinAttrs { return f.winAttrs }
 
 func (f *fileSystemFile) SymlinkTarget() (string, error) {
 	if f.symlinkTarget != "" {
@@ -229,32 +255,33 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo) (File, error) {
 
 		// Symlinks with targets within SiteServiceDir get resolved as normal files.
 		if isSubpath(targetAbs, filepath.Join(root, SiteServiceDir)) {
-			info, err = os.Stat(targetAbs)
+			abs = targetAbs
+			info, err = os.Stat(abs)
 			if err != nil {
 				return nil, err
 			}
+		} else {
 			return &fileSystemFile{
-				absPath:    abs,
-				name:       filepath.ToSlash(rel),
-				size:       uint64(info.Size()),
-				executable: (info.Mode().Perm() & 0111) != 0,
+				absPath:       abs,
+				name:          filepath.ToSlash(rel),
+				symlinkTarget: filepath.ToSlash(target),
 			}, nil
 		}
-
-		return &fileSystemFile{
-			absPath:       abs,
-			name:          filepath.ToSlash(rel),
-			symlinkTarget: filepath.ToSlash(target),
-		}, nil
 	}
 
 	// Regular file.
 	if info.Mode().IsRegular() {
+		attrs, err := getWinFileAttributes(info)
+		if err != nil {
+			return nil, err
+		}
+
 		return &fileSystemFile{
 			absPath:    abs,
 			name:       filepath.ToSlash(rel),
 			size:       uint64(info.Size()),
 			executable: (info.Mode().Perm() & 0111) != 0,
+			winAttrs:   attrs,
 		}, nil
 	}
 
@@ -375,7 +402,7 @@ func (d *fileSystemDestination) Begin(ctx context.Context) error {
 	return nil
 }
 
-func (d *fileSystemDestination) CreateFile(ctx context.Context, name string, executable bool) (io.WriteCloser, error) {
+func (d *fileSystemDestination) CreateFile(ctx context.Context, name string, executable bool, winAttrs WinAttrs) (io.WriteCloser, error) {
 	d.lock.RLock()
 	_, ok := d.openFiles[name]
 	d.lock.RUnlock()
@@ -398,6 +425,10 @@ func (d *fileSystemDestination) CreateFile(ctx context.Context, name string, exe
 
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_EXCL, mode)
 	if err != nil {
+		return nil, err
+	}
+	if err := setWinFileAttributes(path, winAttrs); err != nil {
+		file.Close()
 		return nil, err
 	}
 

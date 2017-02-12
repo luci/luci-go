@@ -7,9 +7,11 @@ package local
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -140,14 +142,23 @@ func TestPackageReading(t *testing.T) {
 	Convey("ExtractInstance works", t, func() {
 		// Add a bunch of files to a package.
 		out := bytes.Buffer{}
+
+		inFiles := []File{
+			NewTestFile("testing/qwerty", "12345", false),
+			NewTestFile("abc", "duh", true),
+			NewTestFile("bad_dir/pkg/0/description.json", "{}", false),
+			NewTestSymlink("rel_symlink", "abc"),
+			NewTestSymlink("abs_symlink", "/abc/def"),
+		}
+		if runtime.GOOS == "windows" {
+			inFiles = append(inFiles,
+				NewWinTestFile("secret", "ninja", WinAttrHidden),
+				NewWinTestFile("system", "machine", WinAttrSystem),
+			)
+		}
+
 		err := BuildInstance(ctx, BuildInstanceOptions{
-			Input: []File{
-				NewTestFile("testing/qwerty", "12345", false),
-				NewTestFile("abc", "duh", true),
-				NewTestFile("bad_dir/pkg/0/description.json", "{}", false),
-				NewTestSymlink("rel_symlink", "abc"),
-				NewTestSymlink("abs_symlink", "/abc/def"),
-			},
+			Input:            inFiles,
 			Output:           &out,
 			PackageName:      "testing",
 			VersionFile:      "subpath/version.json",
@@ -174,26 +185,47 @@ func TestPackageReading(t *testing.T) {
 		for _, f := range dest.files {
 			names = append(names, f.name)
 		}
-		So(names, ShouldResemble, []string{
-			"testing/qwerty",
-			"abc",
-			"rel_symlink",
-			"abs_symlink",
-			"subpath/version.json",
-			".cipdpkg/manifest.json",
-		})
+		if runtime.GOOS != "windows" {
+			So(names, ShouldResemble, []string{
+				"testing/qwerty",
+				"abc",
+				"rel_symlink",
+				"abs_symlink",
+				"subpath/version.json",
+				".cipdpkg/manifest.json",
+			})
+		} else {
+			So(names, ShouldResemble, []string{
+				"testing/qwerty",
+				"abc",
+				"rel_symlink",
+				"abs_symlink",
+				"secret",
+				"system",
+				"subpath/version.json",
+				".cipdpkg/manifest.json",
+			})
+		}
 		So(string(dest.files[0].Bytes()), ShouldEqual, "12345")
 		So(dest.files[1].executable, ShouldBeTrue)
 		So(dest.files[2].symlinkTarget, ShouldEqual, "abc")
 		So(dest.files[3].symlinkTarget, ShouldEqual, "/abc/def")
 
 		// Verify version file is correct.
+		verFileIdx := 4
 		goodVersionFile := `{
 			"instance_id": "5503734d74bc46f2b4d59c23bf4b1293696861a9",
 			"package_name": "testing"
 		}`
-		So(dest.files[4].name, ShouldEqual, "subpath/version.json")
-		So(string(dest.files[4].Bytes()), shouldBeSameJSONDict, goodVersionFile)
+		if runtime.GOOS == "windows" {
+			verFileIdx = 6
+			goodVersionFile = `{
+				"instance_id": "a97131be80bcba9b62feb3a9b669916a04d35738",
+				"package_name": "testing"
+			}`
+		}
+		So(dest.files[verFileIdx].name, ShouldEqual, "subpath/version.json")
+		So(string(dest.files[verFileIdx].Bytes()), shouldBeSameJSONDict, goodVersionFile)
 
 		// Verify manifest file is correct.
 		goodManifest := `{
@@ -219,15 +251,32 @@ func TestPackageReading(t *testing.T) {
 					"name": "abs_symlink",
 					"size": 0,
 					"symlink": "/abc/def"
-				},
+				}%s,
 				{
 					"name": "subpath/version.json",
 					"size": 92
 				}
 			]
 		}`
-		So(dest.files[5].name, ShouldEqual, ".cipdpkg/manifest.json")
-		So(string(dest.files[5].Bytes()), shouldBeSameJSONDict, goodManifest)
+		manifestIdx := 0
+		if runtime.GOOS == "windows" {
+			manifestIdx = 7
+			goodManifest = fmt.Sprintf(goodManifest, `,{
+				"name": "secret",
+				"size": 5,
+				"win_attrs": "H"
+			},
+			{
+				"name": "system",
+				"size": 7,
+				"win_attrs": "S"
+			}`)
+		} else {
+			manifestIdx = 5
+			goodManifest = fmt.Sprintf(goodManifest, "")
+		}
+		So(dest.files[manifestIdx].name, ShouldEqual, ".cipdpkg/manifest.json")
+		So(string(dest.files[manifestIdx].Bytes()), shouldBeSameJSONDict, goodManifest)
 	})
 }
 
@@ -244,6 +293,7 @@ type testDestinationFile struct {
 	name          string
 	executable    bool
 	symlinkTarget string
+	winAttrs      WinAttrs
 }
 
 func (d *testDestinationFile) Close() error { return nil }
@@ -253,10 +303,11 @@ func (d *testDestination) Begin(context.Context) error {
 	return nil
 }
 
-func (d *testDestination) CreateFile(ctx context.Context, name string, executable bool) (io.WriteCloser, error) {
+func (d *testDestination) CreateFile(ctx context.Context, name string, executable bool, winAttrs WinAttrs) (io.WriteCloser, error) {
 	f := &testDestinationFile{
 		name:       name,
 		executable: executable,
+		winAttrs:   winAttrs,
 	}
 	d.files = append(d.files, f)
 	return f, nil

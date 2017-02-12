@@ -319,7 +319,17 @@ func TestFileSystemDestination(t *testing.T) {
 		defer os.RemoveAll(tempDir)
 
 		writeFileToDest := func(name string, executable bool, data string) {
-			writer, err := dest.CreateFile(ctx, name, executable)
+			writer, err := dest.CreateFile(ctx, name, executable, 0)
+			if writer != nil {
+				defer writer.Close()
+			}
+			So(err, ShouldBeNil)
+			_, err = writer.Write([]byte(data))
+			So(err, ShouldBeNil)
+		}
+
+		writeAttrFileToDest := func(name string, attr WinAttrs, data string) {
+			writer, err := dest.CreateFile(ctx, name, false, attr)
 			if writer != nil {
 				defer writer.Close()
 			}
@@ -365,7 +375,7 @@ func TestFileSystemDestination(t *testing.T) {
 		})
 
 		Convey("CreateFile works only when destination is open", func() {
-			wr, err := dest.CreateFile(ctx, "testing", true)
+			wr, err := dest.CreateFile(ctx, "testing", true, 0)
 			So(wr, ShouldBeNil)
 			So(err, ShouldNotBeNil)
 		})
@@ -375,12 +385,12 @@ func TestFileSystemDestination(t *testing.T) {
 			defer dest.End(ctx, true)
 
 			// Rel path that is still inside the package is ok.
-			wr, err := dest.CreateFile(ctx, "a/b/c/../../../d", false)
+			wr, err := dest.CreateFile(ctx, "a/b/c/../../../d", false, 0)
 			So(err, ShouldBeNil)
 			wr.Close()
 
 			// Rel path pointing outside is forbidden.
-			_, err = dest.CreateFile(ctx, "a/b/c/../../../../d", false)
+			_, err = dest.CreateFile(ctx, "a/b/c/../../../../d", false, 0)
 			So(err, ShouldNotBeNil)
 		})
 
@@ -405,6 +415,9 @@ func TestFileSystemDestination(t *testing.T) {
 			if runtime.GOOS != "windows" {
 				writeSymlinkToDest("abs_symlink", filepath.FromSlash(tempDir))
 				writeSymlinkToDest("dir/dir/rel_symlink", "../../a")
+			} else {
+				writeAttrFileToDest("secret_file", WinAttrHidden, "ninja")
+				writeAttrFileToDest("system_file", WinAttrSystem, "system")
 			}
 			So(dest.End(ctx, true), ShouldBeNil)
 
@@ -424,6 +437,8 @@ func TestFileSystemDestination(t *testing.T) {
 					"dir/c",
 					"dir/dir/d",
 					"exe",
+					"secret_file",
+					"system_file",
 				})
 			} else {
 				So(names, ShouldResemble, []string{
@@ -451,6 +466,9 @@ func TestFileSystemDestination(t *testing.T) {
 				So(mapping["exe"].Executable(), ShouldBeTrue)
 				ensureSymlinkTarget(mapping["abs_symlink"], filepath.FromSlash(tempDir))
 				ensureSymlinkTarget(mapping["dir/dir/rel_symlink"], "../../a")
+			} else {
+				So(mapping["secret_file"].WinAttrs()&WinAttrHidden, ShouldEqual, WinAttrHidden)
+				So(mapping["system_file"].WinAttrs()&WinAttrSystem, ShouldEqual, WinAttrSystem)
 			}
 
 			// Ensure no temp files left.
@@ -464,6 +482,9 @@ func TestFileSystemDestination(t *testing.T) {
 			writeFileToDest("dir/c", false, "dir/c data")
 			if runtime.GOOS != "windows" {
 				writeSymlinkToDest("dir/d", "c")
+			} else {
+				writeAttrFileToDest("secret", WinAttrHidden, "ninja")
+				writeAttrFileToDest("system", WinAttrSystem, "machine")
 			}
 			So(dest.End(ctx, false), ShouldBeNil)
 
@@ -488,6 +509,9 @@ func TestFileSystemDestination(t *testing.T) {
 			writeFileToDest("a", false, "a data")
 			if runtime.GOOS != "windows" {
 				writeSymlinkToDest("b", "a")
+			} else {
+				writeAttrFileToDest("secret", WinAttrHidden, "ninja")
+				writeAttrFileToDest("system", WinAttrSystem, "machine")
 			}
 			So(dest.End(ctx, true), ShouldBeNil)
 
@@ -495,8 +519,10 @@ func TestFileSystemDestination(t *testing.T) {
 			files, err := ScanFileSystem(destDir, destDir, nil)
 			So(err, ShouldBeNil)
 			if runtime.GOOS == "windows" {
-				So(len(files), ShouldEqual, 1)
+				So(len(files), ShouldEqual, 3)
 				So(files[0].Name(), ShouldEqual, "a")
+				So(files[1].Name(), ShouldEqual, "secret")
+				So(files[2].Name(), ShouldEqual, "system")
 			} else {
 				So(len(files), ShouldEqual, 2)
 				So(files[0].Name(), ShouldEqual, "a")
@@ -516,6 +542,9 @@ func TestFileSystemDestination(t *testing.T) {
 			writeFileToDest("a", false, "a data")
 			if runtime.GOOS != "windows" {
 				writeSymlinkToDest("b", "a")
+			} else {
+				writeAttrFileToDest("secret", WinAttrHidden, "ninja")
+				writeAttrFileToDest("system", WinAttrSystem, "machine")
 			}
 			So(dest.End(ctx, false), ShouldBeNil)
 
@@ -529,7 +558,7 @@ func TestFileSystemDestination(t *testing.T) {
 		Convey("Opening file twice fails", func() {
 			So(dest.Begin(ctx), ShouldBeNil)
 			writeFileToDest("a", false, "a data")
-			w, err := dest.CreateFile(ctx, "a", false)
+			w, err := dest.CreateFile(ctx, "a", false, 0)
 			So(w, ShouldBeNil)
 			So(err, ShouldNotBeNil)
 			So(dest.End(ctx, true), ShouldBeNil)
@@ -537,7 +566,7 @@ func TestFileSystemDestination(t *testing.T) {
 
 		Convey("End with opened files fail", func() {
 			So(dest.Begin(ctx), ShouldBeNil)
-			w, err := dest.CreateFile(ctx, "a", false)
+			w, err := dest.CreateFile(ctx, "a", false, 0)
 			So(w, ShouldNotBeNil)
 			So(err, ShouldBeNil)
 			So(dest.End(ctx, true), ShouldNotBeNil)

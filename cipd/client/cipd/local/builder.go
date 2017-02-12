@@ -135,6 +135,7 @@ func zipInputFiles(ctx context.Context, files []File, w io.Writer, level int) er
 			mode |= os.ModeSymlink
 		}
 		fh.SetMode(mode)
+		fh.ExternalAttrs |= uint32(in.WinAttrs())
 
 		dst, err := writer.CreateHeader(&fh)
 		if err != nil {
@@ -184,10 +185,11 @@ func zipSymlinkFile(dst io.Writer, f File) error {
 
 type manifestFile []byte
 
-func (m *manifestFile) Name() string     { return manifestName }
-func (m *manifestFile) Size() uint64     { return uint64(len(*m)) }
-func (m *manifestFile) Executable() bool { return false }
-func (m *manifestFile) Symlink() bool    { return false }
+func (m *manifestFile) Name() string       { return manifestName }
+func (m *manifestFile) Size() uint64       { return uint64(len(*m)) }
+func (m *manifestFile) Executable() bool   { return false }
+func (m *manifestFile) Symlink() bool      { return false }
+func (m *manifestFile) WinAttrs() WinAttrs { return 0 }
 
 func (m *manifestFile) SymlinkTarget() (string, error) {
 	return "", fmt.Errorf("not a symlink: %s", m.Name())
