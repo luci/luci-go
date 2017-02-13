@@ -10,8 +10,11 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
+
+	"github.com/luci/luci-go/common/logging"
 
 	"golang.org/x/net/context"
 )
@@ -418,9 +421,15 @@ func (d *fileSystemDestination) CreateFile(ctx context.Context, name string, exe
 	// Let the umask trim the file mode. Do not set 'writable' bit though.
 	var mode os.FileMode
 	if executable {
+		if runtime.GOOS == "windows" {
+			logging.Warningf(ctx, "[data-loss] ignoring +x on %q", name)
+		}
 		mode = 0555
 	} else {
 		mode = 0444
+	}
+	if winAttrs != 0 && runtime.GOOS != "windows" {
+		logging.Warningf(ctx, "[data-loss] ignoring +%s on %q", winAttrs, name)
 	}
 
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_EXCL, mode)
