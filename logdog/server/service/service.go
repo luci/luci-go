@@ -53,6 +53,7 @@ import (
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 )
 
@@ -600,7 +601,7 @@ func (s *Service) withAuthService(c context.Context) context.Context {
 	return serverAuth.SetConfig(c, serverAuth.Config{
 		DBProvider: nil, // We don't need to store an auth DB.
 		Signer:     nil, // We don't need to sign anything.
-		AccessTokenProvider: func(ic context.Context, scopes []string) (commonAuth.Token, error) {
+		AccessTokenProvider: func(ic context.Context, scopes []string) (*oauth2.Token, error) {
 			// Create a new Authenticator for the supplied scopes.
 			//
 			// Pass our outer Context, since we don't want the cached Authenticator
@@ -611,7 +612,7 @@ func (s *Service) withAuthService(c context.Context) context.Context {
 					"scopes":     scopes,
 					log.ErrorKey: err,
 				}.Errorf(c, "Failed to create authenticator.")
-				return commonAuth.Token{}, err
+				return nil, err
 			}
 			tok, err := a.GetAccessToken(minAuthTokenLifetime)
 			if err != nil {

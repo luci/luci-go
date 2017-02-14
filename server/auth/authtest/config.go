@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 
-	cauth "github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/server/auth"
 )
@@ -24,8 +24,8 @@ func MockAuthConfig(c context.Context) context.Context {
 		cfg.AnonymousTransport = func(context.Context) http.RoundTripper {
 			return http.DefaultTransport
 		}
-		cfg.AccessTokenProvider = func(ic context.Context, scopes []string) (cauth.Token, error) {
-			return cauth.Token{
+		cfg.AccessTokenProvider = func(ic context.Context, scopes []string) (*oauth2.Token, error) {
+			return &oauth2.Token{
 				AccessToken: "fake_token",
 				TokenType:   "Bearer",
 				Expiry:      clock.Now(ic).Add(time.Hour).UTC(),

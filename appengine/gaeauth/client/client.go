@@ -33,7 +33,7 @@ import (
 //
 // Implements a caching layer on top of GAE's GetAccessToken RPC. May return
 // transient errors.
-func GetAccessToken(c context.Context, scopes []string) (auth.Token, error) {
+func GetAccessToken(c context.Context, scopes []string) (*oauth2.Token, error) {
 	scopes, cacheKey := normalizeScopes(scopes)
 
 	// Try to find the token in the local memory first. If it expires soon,
@@ -42,20 +42,20 @@ func GetAccessToken(c context.Context, scopes []string) (auth.Token, error) {
 	// and rush to refresh the token all at once.
 	pcache := proccache.GetCache(c)
 	if entry := pcache.Get(cacheKey); entry != nil && !closeToExpRandomized(c, entry.Exp) {
-		return entry.Value.(auth.Token), nil
+		return entry.Value.(*oauth2.Token), nil
 	}
 
 	// The token needs to be refreshed.
 	logging.Debugf(c, "Getting an access token for scopes %q", strings.Join(scopes, ", "))
 	accessToken, exp, err := info.AccessToken(c, scopes...)
 	if err != nil {
-		return auth.Token{}, errors.WrapTransient(err)
+		return nil, errors.WrapTransient(err)
 	}
 	logging.Debugf(c, "The token expires in %s", exp.Sub(clock.Now(c)))
 
 	// Prematurely expire it to guarantee all returned token live for at least
 	// 'expirationMinLifetime'.
-	tok := auth.Token{
+	tok := &oauth2.Token{
 		AccessToken: accessToken,
 		Expiry:      exp.Add(-expirationMinLifetime),
 		TokenType:   "Bearer",
@@ -80,15 +80,7 @@ type tokenSource struct {
 }
 
 func (ts *tokenSource) Token() (*oauth2.Token, error) {
-	tok, err := GetAccessToken(ts.ctx, ts.scopes)
-	if err != nil {
-		return nil, err
-	}
-	return &oauth2.Token{
-		AccessToken: tok.AccessToken,
-		TokenType:   tok.TokenType,
-		Expiry:      tok.Expiry,
-	}, nil
+	return GetAccessToken(ts.ctx, ts.scopes)
 }
 
 //// Internal stuff.

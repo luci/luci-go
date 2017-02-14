@@ -291,29 +291,6 @@ type Authenticator struct {
 	token    *oauth2.Token
 }
 
-// Token represents OAuth2 access token.
-//
-// TODO(vadimsh): Replace with oauth2.Token.
-type Token struct {
-	// AccessToken is actual token that authorizes and authenticates the requests.
-	AccessToken string `json:"access_token"`
-
-	// Expiry is the expiration time of the token or zero if it does not expire.
-	Expiry time.Time `json:"expiry"`
-
-	// TokenType is the type of token (e.g. "Bearer", which is default).
-	TokenType string `json:"token_type,omitempty"`
-}
-
-// OAuth2Token returns the oauth2.Token containing the same data as tok.
-func (tok *Token) OAuth2Token() *oauth2.Token {
-	return &oauth2.Token{
-		AccessToken: tok.AccessToken,
-		Expiry:      tok.Expiry,
-		TokenType:   tok.TokenType,
-	}
-}
-
 // NewAuthenticator returns a new instance of Authenticator given its options.
 //
 // The authenticator is essentially a factory for http.RoundTripper that knows
@@ -490,11 +467,11 @@ func (a *Authenticator) PurgeCredentialsCache() error {
 // GetAccessToken returns a valid access token with specified minimum lifetime.
 //
 // Does not interact with the user. May return ErrLoginRequired.
-func (a *Authenticator) GetAccessToken(lifetime time.Duration) (Token, error) {
+func (a *Authenticator) GetAccessToken(lifetime time.Duration) (*oauth2.Token, error) {
 	a.lock.Lock()
 	if err := a.ensureInitialized(); err != nil {
 		a.lock.Unlock()
-		return Token{}, err
+		return nil, err
 	}
 	tok := a.token
 	a.lock.Unlock()
@@ -503,19 +480,15 @@ func (a *Authenticator) GetAccessToken(lifetime time.Duration) (Token, error) {
 		var err error
 		tok, err = a.refreshToken(tok, lifetime)
 		if err != nil {
-			return Token{}, err
+			return nil, err
 		}
 		// Note: no randomization here. It is a sanity check that verifies
 		// refreshToken did its job.
 		if internal.TokenExpiresIn(a.ctx, tok, lifetime) {
-			return Token{}, fmt.Errorf("auth: failed to refresh the token")
+			return nil, fmt.Errorf("auth: failed to refresh the token")
 		}
 	}
-	return Token{
-		AccessToken: tok.AccessToken,
-		Expiry:      tok.Expiry,
-		TokenType:   tok.Type(),
-	}, nil
+	return tok, nil
 }
 
 // TokenSource optionally performs a login and returns oauth2.TokenSource.
@@ -588,11 +561,7 @@ type tokenSource struct {
 
 // Token is part of oauth2.TokenSource inteface.
 func (s tokenSource) Token() (*oauth2.Token, error) {
-	tok, err := s.a.GetAccessToken(minAcceptedLifetime)
-	if err != nil {
-		return nil, err
-	}
-	return tok.OAuth2Token(), nil
+	return s.a.GetAccessToken(minAcceptedLifetime)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

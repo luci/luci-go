@@ -227,9 +227,12 @@ type clientRPCTransportMock struct {
 	cb func(req *http.Request, body string) string
 }
 
-func (m *clientRPCTransportMock) getAccessToken(c context.Context, scopes []string) (auth.Token, error) {
+func (m *clientRPCTransportMock) getAccessToken(c context.Context, scopes []string) (*oauth2.Token, error) {
 	m.calls = append(m.calls, scopes)
-	return auth.Token{AccessToken: "blah:" + strings.Join(scopes, ","), TokenType: "Bearer"}, nil
+	return &oauth2.Token{
+		AccessToken: "blah:" + strings.Join(scopes, ","),
+		TokenType:   "Bearer",
+	}, nil
 }
 
 func (m *clientRPCTransportMock) getTransport(c context.Context) http.RoundTripper {

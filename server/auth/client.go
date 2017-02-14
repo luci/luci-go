@@ -341,10 +341,7 @@ func asSelfHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Tok
 		return nil, nil, ErrNotConfigured
 	}
 	tok, err := cfg.AccessTokenProvider(c, opts.scopes)
-	if err != nil {
-		return nil, nil, err
-	}
-	return tok.OAuth2Token(), nil, nil
+	return tok, nil, err
 }
 
 // asUserHeaders returns a map of authentication headers to add to outbound
@@ -399,7 +396,7 @@ func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Tok
 	if err != nil {
 		return nil, nil, err
 	}
-	return oauthTok.OAuth2Token(), map[string]string{delegation.HTTPHeaderName: delegationToken}, nil
+	return oauthTok, map[string]string{delegation.HTTPHeaderName: delegationToken}, nil
 }
 
 // asActorHeaders returns a map of authentication headers to add to outbound

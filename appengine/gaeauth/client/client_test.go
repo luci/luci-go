@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/gae/service/info"
 
-	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/data/caching/proccache"
@@ -32,7 +32,7 @@ func TestGetAccessToken(t *testing.T) {
 		ctx := mockAccessTokenRPC(c, []string{"A", "B"}, "access_token_1", testclock.TestRecentTimeUTC.Add(time.Hour))
 		tok, err := GetAccessToken(ctx, []string{"B", "B", "A"})
 		So(err, ShouldBeNil)
-		So(tok, ShouldResemble, auth.Token{
+		So(tok, ShouldResemble, &oauth2.Token{
 			AccessToken: "access_token_1",
 			TokenType:   "Bearer",
 			Expiry:      testclock.TestRecentTimeUTC.Add(time.Hour).Add(-expirationMinLifetime),
@@ -44,7 +44,7 @@ func TestGetAccessToken(t *testing.T) {
 		ctx = mockAccessTokenRPC(c, []string{"A", "B"}, "access_token_none", testclock.TestRecentTimeUTC.Add(time.Hour))
 		tok, err = GetAccessToken(ctx, []string{"B", "B", "A"})
 		So(err, ShouldBeNil)
-		So(tok, ShouldResemble, auth.Token{
+		So(tok, ShouldResemble, &oauth2.Token{
 			AccessToken: "access_token_1",
 			TokenType:   "Bearer",
 			Expiry:      testclock.TestRecentTimeUTC.Add(time.Hour).Add(-expirationMinLifetime),
@@ -58,7 +58,7 @@ func TestGetAccessToken(t *testing.T) {
 			tok, err = GetAccessToken(ctx, []string{"B", "B", "A"})
 			So(err, ShouldBeNil)
 		}
-		So(tok, ShouldResemble, auth.Token{
+		So(tok, ShouldResemble, &oauth2.Token{
 			AccessToken: "access_token_13",
 			TokenType:   "Bearer",
 			Expiry:      testclock.TestRecentTimeUTC.Add(2 * time.Hour).Add(-expirationMinLifetime),

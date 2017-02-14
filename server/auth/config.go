@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 
-	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/server/auth/authdb"
 	"github.com/luci/luci-go/server/auth/signing"
 )
@@ -37,8 +37,8 @@ type Config struct {
 	// service account belonging to the server itself.
 	//
 	// Should implement caching itself, if appropriate. Returned tokens are
-	// expected to live for at least 1-2 mins.
-	AccessTokenProvider func(c context.Context, scopes []string) (auth.Token, error)
+	// expected to live for at least 1 min.
+	AccessTokenProvider func(c context.Context, scopes []string) (*oauth2.Token, error)
 
 	// AnonymousTransport returns http.RoundTriper that can make unauthenticated
 	// HTTP requests.
