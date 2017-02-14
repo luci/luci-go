@@ -111,8 +111,8 @@ type LoginMode string
 
 const (
 	// InteractiveLogin instructs Authenticator to ignore cached tokens (if any)
-	// and forcefully rerun interactive login flow in Transport(), Client()
-	// or Login() (whichever is called first).
+	// and forcefully rerun interactive login flow in Transport(), Client() and
+	// other factories or Login() (whichever is called first).
 	//
 	// This is typically used with UserCredentialsMethod to generate an OAuth
 	// refresh token and put it in the token cache, to make it available for later
@@ -126,7 +126,7 @@ const (
 	// implements authentication, but it is NOT OK to run interactive login flow
 	// to make it.
 	//
-	// Transport() and other calls will fail with ErrLoginRequired error if
+	// Transport() and other factories will fail with ErrLoginRequired error if
 	// there's no cached token or one can't be generated on the fly in
 	// non-interactive mode. This may happen when using UserCredentialsMethod.
 	//
@@ -371,36 +371,25 @@ func NewAuthenticator(ctx context.Context, loginMode LoginMode, opts Options) *A
 	return auth
 }
 
-// Transport optionally performs a login and returns http.RoundTripper. It is
-// high level wrapper around Login() and TransportIfAvailable() calls. See
+// Transport optionally performs a login and returns http.RoundTripper.
+//
+// It is a high level wrapper around CheckLoginRequired() and Login() calls. See
 // documentation for LoginMode for more details.
 func (a *Authenticator) Transport() (http.RoundTripper, error) {
-	if a.loginMode == InteractiveLogin {
-		if err := a.PurgeCredentialsCache(); err != nil {
-			return nil, err
-		}
-	}
-	transport, err := a.TransportIfAvailable()
-	switch {
-	case err == nil:
-		return transport, nil
-	case err == ErrInsufficientAccess && a.loginMode == OptionalLogin:
-		return a.opts.Transport, nil
-	case err != ErrLoginRequired || a.loginMode == SilentLogin:
+	switch useAuth, err := a.doLoginIfRequired(false); {
+	case err != nil:
 		return nil, err
-	case a.loginMode == OptionalLogin:
-		return a.opts.Transport, nil
-	case a.loginMode != InteractiveLogin:
-		return nil, fmt.Errorf("invalid mode argument: %s", a.loginMode)
+	case useAuth:
+		return a.transport, nil // token-injecting transport
+	default:
+		return a.opts.Transport, nil // original non-authenticating transport
 	}
-	if err = a.Login(); err != nil {
-		return nil, err
-	}
-	return a.TransportIfAvailable()
 }
 
-// Client optionally performs a login and returns http.Client. It uses transport
-// returned by Transport(). See documentation for LoginMode for more details.
+// Client optionally performs a login and returns http.Client.
+//
+// It uses transport returned by Transport(). See documentation for LoginMode
+// for more details.
 func (a *Authenticator) Client() (*http.Client, error) {
 	transport, err := a.Transport()
 	if err != nil {
@@ -409,32 +398,46 @@ func (a *Authenticator) Client() (*http.Client, error) {
 	return &http.Client{Transport: transport}, nil
 }
 
-// TransportIfAvailable returns http.RoundTripper that adds authentication
-// details to each request. An interactive authentication flow (if required)
-// must be complete before making a transport, otherwise ErrLoginRequired is
-// returned.
-func (a *Authenticator) TransportIfAvailable() (http.RoundTripper, error) {
+// CheckLoginRequired decides whether an interactive login is required.
+//
+// It examines the token cache and the configured authentication method to
+// figure out whether we can attempt to grab an access token without involving
+// the user interaction.
+//
+// Note: it does not check that the cached refresh token is still valid (i.e.
+// not revoked). A revoked token will result in ErrLoginRequired error on a
+// first attempt to use it.
+//
+// Returns:
+//   * nil if we have a valid cached token or can mint one on the fly.
+//   * ErrLoginRequired if we have no cached token and need to bother the user.
+//   * ErrInsufficientAccess if the configured auth method can't mint the token
+//     we require (e.g when using GCE method and the instance doesn't have all
+//     requested OAuth scopes).
+//   * Generic error on other unexpected errors.
+func (a *Authenticator) CheckLoginRequired() error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	err := a.ensureInitialized()
-	if err != nil {
-		return nil, err
+	if err := a.ensureInitialized(); err != nil {
+		return err
 	}
 
 	// No cached token and token provider requires interaction with a user: need
 	// to login. Only non-interactive token providers are allowed to mint tokens
 	// on the fly, see refreshToken.
 	if a.token == nil && a.provider.RequiresInteraction() {
-		return nil, ErrLoginRequired
+		return ErrLoginRequired
 	}
 
-	return a.transport, nil
+	return nil
 }
 
 // Login perform an interaction with the user to get a long term refresh token
-// and cache it. Blocks for user input, can use stdin. It overwrites currently
-// cached credentials, if any.
+// and cache it.
+//
+// Blocks for user input, can use stdin. It overwrites currently cached
+// credentials, if any.
 func (a *Authenticator) Login() error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -444,7 +447,7 @@ func (a *Authenticator) Login() error {
 		return err
 	}
 	if !a.provider.RequiresInteraction() {
-		return nil
+		return nil // can mint the token on the fly, no need for login
 	}
 
 	// Create initial token. This may require interaction with a user. Do not do
@@ -515,41 +518,44 @@ func (a *Authenticator) GetAccessToken(lifetime time.Duration) (Token, error) {
 	}, nil
 }
 
-// TokenSource returns oauth2.TokenSource implementation for interoperability
-// with libraries that use it.
+// TokenSource optionally performs a login and returns oauth2.TokenSource.
+//
+// Can be used for interoperability with libraries that use golang.org/x/oauth2.
 //
 // It doesn't support 'OptionalLogin' mode, since oauth2.TokenSource must return
 // some token. Otherwise its logic is similar to Transport(). In particular it
 // may return ErrLoginRequired if interactive login is required, but the
-// authenticator is in silent mode. See LoginMode enum for more details.
+// authenticator is in the silent mode. See LoginMode enum for more details.
 //
-// TODO(vadimsh): Rename to GetTokenSource for consistency with
-// GetPerRPCCredentials. Also dedup some shared code.
+// TODO(vadimsh): Move up, closer to Transport().
 func (a *Authenticator) TokenSource() (oauth2.TokenSource, error) {
-	if a.loginMode == InteractiveLogin {
-		if err := a.PurgeCredentialsCache(); err != nil {
-			return nil, err
-		}
+	if _, err := a.doLoginIfRequired(true); err != nil {
+		return nil, err
 	}
-	// TransportIfAvailable returns ErrLoginRequired if there's no cached token.
-	switch _, err := a.TransportIfAvailable(); {
-	case err == nil:
-		return tokenSource{a}, nil // have a valid cached token
-	case err == ErrLoginRequired && a.loginMode == InteractiveLogin:
-		// Attempt to do an interactive login to get a valid token.
-		if err = a.Login(); err != nil {
-			return nil, err
-		}
-		return tokenSource{a}, nil
+	return tokenSource{a}, nil
+}
+
+// PerRPCCredentials optionally performs a login and returns PerRPCCredentials.
+//
+// It can be used to authenticate outbound gPRC RPC's.
+//
+// Has same logic as Transport(), in particular supports OptionalLogin mode.
+// See Transport() for more details.
+//
+// TODO(vadimsh): Move up, closer to Transport().
+func (a *Authenticator) PerRPCCredentials() (credentials.PerRPCCredentials, error) {
+	switch useAuth, err := a.doLoginIfRequired(false); {
+	case err != nil:
+		return nil, err
+	case useAuth:
+		return perRPCCreds{a}, nil // token-injecting PerRPCCredentials
 	default:
-		return nil, err // unrecoverable error for the current login mode
+		return perRPCCreds{}, nil // noop PerRPCCredentials
 	}
 }
 
-// GetPerRPCCredentials returns gRPC's PerRPCCredentials implementation.
-//
-// It can be used to authenticate outbound gPRC RPC's.
-func (a *Authenticator) GetPerRPCCredentials() credentials.PerRPCCredentials { return perRPCCreds{a} }
+////////////////////////////////////////////////////////////////////////////////
+// credentials.PerRPCCredentials implementation.
 
 type perRPCCreds struct {
 	a *Authenticator
@@ -559,12 +565,13 @@ func (creds perRPCCreds) GetRequestMetadata(c context.Context, uri ...string) (m
 	if len(uri) == 0 {
 		panic("perRPCCreds: no URI given")
 	}
-
+	if creds.a == nil {
+		return nil, nil
+	}
 	tok, err := creds.a.GetAccessToken(minAcceptedLifetime)
 	if err != nil {
 		return nil, err
 	}
-
 	return map[string]string{
 		"Authorization": tok.TokenType + " " + tok.AccessToken,
 	}, nil
@@ -606,7 +613,7 @@ func (a *Authenticator) ensureInitialized() error {
 	}
 	a.provider, a.err = makeTokenProvider(a.ctx, a.opts)
 	if a.err != nil {
-		return a.err
+		return a.err // note: this can be ErrInsufficientAccess
 	}
 
 	// Initialize token caches. Use disk cache only if SecretsDir is given and
@@ -648,6 +655,50 @@ func (a *Authenticator) ensureInitialized() error {
 	}
 
 	return nil
+}
+
+// doLoginIfRequired optionally performs an interactive login.
+//
+// This is the main place where LoginMode handling is performed. Used by various
+// factories (Transport, PerRPCCredentials, TokenSource, ...).
+//
+// If requiresAuth is false, we respect OptionalLogin mode. If true - we treat
+// OptionalLogin mode as SilentLogin: some authentication mechanisms (like
+// oauth2.TokenSource) require valid tokens no matter what. The corresponding
+// factories set requiresAuth to true.
+//
+// Returns:
+//   (true, nil) if successfully initialized the authenticator with some token.
+//   (false, nil) to disable authentication (for OptionalLogin mode).
+//   (false, err) on errors.
+func (a *Authenticator) doLoginIfRequired(requiresAuth bool) (useAuth bool, err error) {
+	if a.loginMode == InteractiveLogin {
+		if err := a.PurgeCredentialsCache(); err != nil {
+			return false, err
+		}
+	}
+	effectiveMode := a.loginMode
+	if requiresAuth && effectiveMode == OptionalLogin {
+		effectiveMode = SilentLogin
+	}
+	switch err := a.CheckLoginRequired(); {
+	case err == nil:
+		return true, nil // have a valid cached token
+	case err == ErrInsufficientAccess && effectiveMode == OptionalLogin:
+		return false, nil // have the token, but it doesn't have enough scopes
+	case err != ErrLoginRequired:
+		return false, err // some error we can't handle (we handle only ErrLoginRequired)
+	case effectiveMode == SilentLogin:
+		return false, ErrLoginRequired // can't run Login in SilentLogin mode
+	case effectiveMode == OptionalLogin:
+		return false, nil // we can skip auth in OptionalLogin if we have no token
+	case effectiveMode != InteractiveLogin:
+		return false, fmt.Errorf("invalid mode argument: %s", effectiveMode)
+	}
+	if err := a.Login(); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // currentToken returns currently loaded token (or nil).

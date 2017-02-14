@@ -65,8 +65,7 @@ func TestRefreshToken(t *testing.T) {
 			tokenToMint: &oauth2.Token{AccessToken: "minted"},
 		}
 		auth, _ := newTestAuthenticator(SilentLogin, tokenProvider, nil)
-		_, err := auth.TransportIfAvailable()
-		So(err, ShouldBeNil)
+		So(auth.CheckLoginRequired(), ShouldBeNil)
 
 		// Token is lazily loaded below.
 		So(auth.currentToken(), ShouldBeNil)
@@ -83,8 +82,7 @@ func TestRefreshToken(t *testing.T) {
 		}
 		tokenInCache := &oauth2.Token{AccessToken: "cached", Expiry: future}
 		auth, _ := newTestAuthenticator(SilentLogin, tokenProvider, tokenInCache)
-		_, err := auth.TransportIfAvailable()
-		So(err, ShouldBeNil)
+		So(auth.CheckLoginRequired(), ShouldBeNil)
 
 		// Token is lazily loaded below.
 		So(auth.currentToken(), ShouldBeNil)
@@ -102,8 +100,7 @@ func TestRefreshToken(t *testing.T) {
 		}
 		tokenInCache := &oauth2.Token{AccessToken: "cached", Expiry: past}
 		auth, _ := newTestAuthenticator(SilentLogin, tokenProvider, tokenInCache)
-		_, err := auth.TransportIfAvailable()
-		So(err, ShouldBeNil)
+		So(auth.CheckLoginRequired(), ShouldBeNil)
 
 		// Token is lazily loaded below.
 		So(auth.currentToken(), ShouldBeNil)
@@ -122,15 +119,13 @@ func TestRefreshToken(t *testing.T) {
 
 		// No token cached, login is required.
 		auth, _ := newTestAuthenticator(SilentLogin, tokenProvider, nil)
-		_, err := auth.TransportIfAvailable()
-		So(err, ShouldEqual, ErrLoginRequired)
+		So(auth.CheckLoginRequired(), ShouldEqual, ErrLoginRequired)
 		So(auth.currentToken(), ShouldBeNil)
 
 		// Do it.
-		err = auth.Login()
+		err := auth.Login()
 		So(err, ShouldBeNil)
-		_, err = auth.TransportIfAvailable()
-		So(err, ShouldBeNil)
+		So(auth.CheckLoginRequired(), ShouldBeNil)
 
 		// Minted initial token.
 		So(auth.currentToken().AccessToken, ShouldEqual, "minted")
@@ -149,8 +144,7 @@ func TestRefreshToken(t *testing.T) {
 		auth, _ := newTestAuthenticator(SilentLogin, tokenProvider, tokenInCache)
 
 		// No need to login, already have a token.
-		_, err := auth.TransportIfAvailable()
-		So(err, ShouldBeNil)
+		So(auth.CheckLoginRequired(), ShouldBeNil)
 
 		// Loaded cached token.
 		So(auth.currentToken().AccessToken, ShouldEqual, "cached")
@@ -171,8 +165,7 @@ func TestRefreshToken(t *testing.T) {
 
 		// No need to login, already have a token. Only its "access_token" part is
 		// expired. Refresh token part is still valid, so no login is required.
-		_, err := auth.TransportIfAvailable()
-		So(err, ShouldBeNil)
+		So(auth.CheckLoginRequired(), ShouldBeNil)
 
 		// Loaded cached token.
 		So(auth.currentToken().AccessToken, ShouldEqual, "cached")
@@ -194,14 +187,13 @@ func TestRefreshToken(t *testing.T) {
 		// No need to login, already have a token. Only its "access_token" part is
 		// expired. Refresh token part is still presumably valid, there's no way to
 		// detect that it has been revoked without attempting to use it.
-		_, err := auth.TransportIfAvailable()
-		So(err, ShouldBeNil)
+		So(auth.CheckLoginRequired(), ShouldBeNil)
 
 		// Loaded cached token.
 		So(auth.currentToken().AccessToken, ShouldEqual, "cached")
 
 		// Attempting to use it triggers a refresh that fails.
-		_, err = auth.GetAccessToken(time.Minute)
+		_, err := auth.GetAccessToken(time.Minute)
 		So(err, ShouldEqual, ErrLoginRequired)
 	})
 
@@ -212,11 +204,10 @@ func TestRefreshToken(t *testing.T) {
 		}
 		tokenInCache := &oauth2.Token{AccessToken: "cached", Expiry: past}
 		auth, _ := newTestAuthenticator(SilentLogin, tokenProvider, tokenInCache)
-		_, err := auth.TransportIfAvailable()
-		So(err, ShouldBeNil)
+		So(auth.CheckLoginRequired(), ShouldBeNil)
 
 		// Attempting to use expired cached token triggers a refresh that fails.
-		_, err = auth.GetAccessToken(time.Minute)
+		_, err := auth.GetAccessToken(time.Minute)
 		So(err, ShouldEqual, ErrBadCredentials)
 	})
 
@@ -228,8 +219,7 @@ func TestRefreshToken(t *testing.T) {
 		}
 		tokenInCache := &oauth2.Token{AccessToken: "cached", Expiry: past}
 		auth, _ := newTestAuthenticator(SilentLogin, tokenProvider, tokenInCache)
-		_, err := auth.TransportIfAvailable()
-		So(err, ShouldBeNil)
+		So(auth.CheckLoginRequired(), ShouldBeNil)
 
 		// Attempting to use expired cached token triggers a refresh that fails a
 		// bunch of times, but the succeeds.
@@ -248,13 +238,12 @@ func TestRefreshToken(t *testing.T) {
 		}
 		tokenInCache := &oauth2.Token{AccessToken: "cached", Expiry: past}
 		auth, ctx := newTestAuthenticator(SilentLogin, tokenProvider, tokenInCache)
-		_, err := auth.TransportIfAvailable()
-		So(err, ShouldBeNil)
+		So(auth.CheckLoginRequired(), ShouldBeNil)
 
 		// Attempting to use expired cached token triggers a refresh that constantly
 		// fails. Eventually we give up (on 17th attempt).
 		before := clock.Now(ctx)
-		_, err = auth.GetAccessToken(time.Minute)
+		_, err := auth.GetAccessToken(time.Minute)
 		So(err, ShouldErrLike, "transient error")
 		after := clock.Now(ctx)
 
