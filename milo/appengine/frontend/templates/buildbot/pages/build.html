@@ -18,7 +18,7 @@
 {{define "head"}}
 <link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/
 {{- with .Build.Summary.Status.String -}}
-  {{- if eq . "Running" -}} teal
+  {{- if eq . "Running" -}} yellow
   {{- else if eq . "Success" -}} green
   {{- else if eq . "InfraFailure" -}} purple
   {{- else if eq . "Expired" -}} darkpurple
