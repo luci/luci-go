@@ -540,11 +540,11 @@ func (m *stagedGAEModule) pushGoMVM(w *work, appYAMLPath string) error {
 		return errors.Annotate(err).Err()
 	}
 
-	// Deploy via: aedeploy gcloud preview app deploy
+	// Deploy via: aedeploy gcloud app deploy
 	//
 	// We will promote it later on commit.
 	gcloudArgs := []string{
-		"preview", "app", "deploy", appYAML,
+		"app", "deploy", appYAML,
 		"--version", m.version.String(),
 		"--no-promote",
 	}
