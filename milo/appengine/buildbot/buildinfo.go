@@ -82,20 +82,24 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 	// Identify the LogDog annotation stream from the build.
 	//
 	// This will return a gRPC error on failure.
-	as, err := getLogDogAnnotations(c, client, build, projectHint)
+	addr, err := getLogDogAnnotationAddr(c, client, build, projectHint)
 	if err != nil {
 		return nil, err
 	}
-	logging.Infof(c, "Resolved annotation stream: %s / %s", as.Project, as.Path)
+	logging.Infof(c, "Resolved annotation stream: %s / %s", addr.Project, addr.Path)
 
 	// Load the annotation protobuf.
-	as.Client = client
+	as := logdog.AnnotationStream{
+		Client:  client,
+		Path:    addr.Path,
+		Project: addr.Project,
+	}
 	if err := as.Normalize(); err != nil {
 		logging.WithError(err).Errorf(c, "Failed to normalize annotation stream.")
 		return nil, grpcutil.Internal
 	}
 
-	step, err := as.Load(c)
+	step, err := as.Fetch(c)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to load annotation stream.")
 		return nil, grpcutil.Errf(codes.Internal, "failed to load LogDog annotation stream from: %s", as.Path)
@@ -127,32 +131,32 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 // This function is messy and implementation-specific. That's the point of this
 // endpoint, though. All of the nastiness here should be replaced with something
 // more elegant once that becomes available. In the meantime...
-func getLogDogAnnotations(c context.Context, client *coordinator.Client, build *buildbotBuild,
-	projectHint cfgtypes.ProjectName) (*logdog.AnnotationStream, error) {
+func getLogDogAnnotationAddr(c context.Context, client *coordinator.Client, build *buildbotBuild,
+	projectHint cfgtypes.ProjectName) (*types.StreamAddr, error) {
 
 	// Modern builds will have this information in their build properties.
-	var as logdog.AnnotationStream
+	var addr types.StreamAddr
 	prefix, _ := build.getPropertyValue("logdog_prefix").(string)
 	project, _ := build.getPropertyValue("logdog_project").(string)
 	if prefix != "" && project != "" {
 		// Construct the full annotation path.
-		as.Project = cfgtypes.ProjectName(project)
-		as.Path = types.StreamName(prefix).Join("annotations")
+		addr.Project = cfgtypes.ProjectName(project)
+		addr.Path = types.StreamName(prefix).Join("annotations")
 
 		logging.Debugf(c, "Resolved path/project from build properties.")
-		return &as, nil
+		return &addr, nil
 	}
 
 	// From here on out, we will need a project hint.
 	if projectHint == "" {
 		return nil, grpcutil.Errf(codes.NotFound, "annotation stream not found")
 	}
-	as.Project = projectHint
+	addr.Project = projectHint
 
 	// Execute a LogDog service query to see if we can identify the stream.
 	err := func() error {
 		var annotationStream *coordinator.LogStream
-		err := client.Query(c, as.Project, "", coordinator.QueryOptions{
+		err := client.Query(c, addr.Project, "", coordinator.QueryOptions{
 			Tags: map[string]string{
 				"buildbot.master":      build.Master,
 				"buildbot.builder":     build.Buildername,
@@ -170,16 +174,16 @@ func getLogDogAnnotations(c context.Context, client *coordinator.Client, build *
 		}
 
 		if annotationStream != nil {
-			as.Path = annotationStream.Path
+			addr.Path = annotationStream.Path
 		}
 		return nil
 	}()
 	if err != nil {
 		return nil, err
 	}
-	if as.Path != "" {
+	if addr.Path != "" {
 		logging.Debugf(c, "Resolved path/project via tag query.")
-		return &as, nil
+		return &addr, nil
 	}
 
 	// Last-ditch effort: generate a prefix based on the build properties. This
@@ -205,11 +209,11 @@ func getLogDogAnnotations(c context.Context, client *coordinator.Client, build *
 		}
 		return v
 	}
-	as.Path = types.StreamPath(fmt.Sprintf("bb/%s/%s/%s/+/annotations",
+	addr.Path = types.StreamPath(fmt.Sprintf("bb/%s/%s/%s/+/annotations",
 		normalize(build.Master), normalize(build.Buildername), normalize(strconv.Itoa(build.Number))))
 
 	logging.Debugf(c, "Generated path/project algorithmically.")
-	return &as, nil
+	return &addr, nil
 }
 
 // mergeBuildInfoIntoAnnotation merges BuildBot-specific build informtion into

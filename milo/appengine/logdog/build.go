@@ -44,7 +44,7 @@ type AnnotationStream struct {
 	Project cfgtypes.ProjectName
 	Path    types.StreamPath
 
-	// logDogClient is the HTTP client to use for LogDog communication.
+	// Client is the HTTP client to use for LogDog communication.
 	Client *coordinator.Client
 
 	// cs is the unmarshalled annotation stream Step and associated data.
@@ -64,14 +64,14 @@ func (as *AnnotationStream) Normalize() error {
 	return nil
 }
 
-// Load loads the annotation stream from LogDog.
+// Fetch loads the annotation stream from LogDog.
 //
-// If the stream does not exist, or is invalid, Load will return a Milo error.
+// If the stream does not exist, or is invalid, Fetch will return a Milo error.
 // Otherwise, it will return the Step that was loaded.
 //
-// Load caches the step, so multiple calls to Load will return the same Step
+// Fetch caches the step, so multiple calls to Fetch will return the same Step
 // value.
-func (as *AnnotationStream) Load(c context.Context) (*miloProto.Step, error) {
+func (as *AnnotationStream) Fetch(c context.Context) (*miloProto.Step, error) {
 	// Cached?
 	if as.cs.Step != nil {
 		return as.cs.Step, nil
@@ -212,12 +212,6 @@ func (as *AnnotationStream) Load(c context.Context) (*miloProto.Step, error) {
 		Finished: (state.State.TerminalIndex >= 0 && le.StreamIndex == uint64(state.State.TerminalIndex)),
 	}
 
-	// Annotee is apparently not putting an ended time on some annotation protos.
-	// This hack will ensure that a finished build will always have an ended time.
-	if as.cs.Finished && as.cs.Step.Ended == nil {
-		as.cs.Step.Ended = google.NewTimestamp(latestEndedTime)
-	}
-
 	// Marshal and cache the step. If this is the final protobuf in the stream,
 	// cache it indefinitely; otherwise, cache it for intermediateCacheLifetime.
 	//
@@ -260,38 +254,40 @@ func (as *AnnotationStream) toMiloBuild(c context.Context) *resp.MiloBuild {
 
 	var (
 		build resp.MiloBuild
-		ub    = logDogURLBuilder{
-			host:    as.Client.Host,
-			project: as.Project,
-			prefix:  prefix,
+		ub    = ViewerURLBuilder{
+			Host:    as.Client.Host,
+			Project: as.Project,
+			Prefix:  prefix,
 		}
 	)
 	AddLogDogToBuild(c, &ub, streams.MainStream.Data, &build)
 	return &build
 }
 
-type logDogURLBuilder struct {
-	host    string
-	prefix  types.StreamName
-	project cfgtypes.ProjectName
+// ViewerURLBuilder is a URL builder that constructs LogDog viewer URLs.
+type ViewerURLBuilder struct {
+	Host    string
+	Prefix  types.StreamName
+	Project cfgtypes.ProjectName
 }
 
-func (b *logDogURLBuilder) BuildLink(l *miloProto.Link) *resp.Link {
+// BuildLink implements URLBuilder.
+func (b *ViewerURLBuilder) BuildLink(l *miloProto.Link) *resp.Link {
 	switch t := l.Value.(type) {
 	case *miloProto.Link_LogdogStream:
 		ls := t.LogdogStream
 
 		server := ls.Server
 		if server == "" {
-			server = b.host
+			server = b.Host
 		}
 
 		prefix := types.StreamName(ls.Prefix)
 		if prefix == "" {
-			prefix = b.prefix
+			prefix = b.Prefix
 		}
 
-		u := viewer.GetURL(server, b.project, prefix.Join(types.StreamName(ls.Name)))
+		u := viewer.GetURL(server, b.Project, prefix.Join(types.StreamName(ls.Name)))
 		link := resp.Link{
 			Label: l.Label,
 			URL:   u,

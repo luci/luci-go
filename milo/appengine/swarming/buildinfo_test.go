@@ -11,41 +11,16 @@ import (
 	swarming "github.com/luci/luci-go/common/api/swarming/swarming/v1"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
-	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/coordinator"
 	milo "github.com/luci/luci-go/milo/api/proto"
 
 	"github.com/luci/gae/impl/memory"
 
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-// testLogDogClient is a minimal functional LogsClient implementation.
-//
-// It retains its latest input parameter and returns its configured err (if not
-// nil) or resp.
-type testLogDogClient struct {
-	logdog.LogsClient
-
-	req  interface{}
-	resp interface{}
-	err  error
-}
-
-func (tc *testLogDogClient) Tail(ctx context.Context, in *logdog.TailRequest, opts ...grpc.CallOption) (
-	*logdog.GetResponse, error) {
-
-	tc.req = in
-	if tc.err != nil {
-		return nil, tc.err
-	}
-	return tc.resp.(*logdog.GetResponse), nil
-}
 
 type testSwarmingService struct {
 	swarmingService
@@ -67,31 +42,6 @@ func (sf *testSwarmingService) getSwarmingRequest(c context.Context, taskID stri
 	*swarming.SwarmingRpcsTaskRequest, error) {
 
 	return &sf.req, nil
-}
-
-func datagramGetResponse(project, prefix string, msg proto.Message) *logdog.GetResponse {
-	data, err := proto.Marshal(msg)
-	if err != nil {
-		panic(err)
-	}
-	return &logdog.GetResponse{
-		Project: project,
-		Desc: &logpb.LogStreamDescriptor{
-			Prefix:      prefix,
-			ContentType: miloProto.ContentTypeAnnotations,
-			StreamType:  logpb.StreamType_DATAGRAM,
-		},
-		State: &logdog.LogStreamState{},
-		Logs: []*logpb.LogEntry{
-			{
-				Content: &logpb.LogEntry_Datagram{
-					Datagram: &logpb.Datagram{
-						Data: data,
-					},
-				},
-			},
-		},
-	}
 }
 
 func TestBuildInfo(t *testing.T) {
@@ -124,11 +74,16 @@ func TestBuildInfo(t *testing.T) {
 			},
 		}
 		bip := BuildInfoProvider{
-			LogdogClientFunc: func(context.Context) (*coordinator.Client, error) {
-				return &coordinator.Client{
-					C:    &testClient,
-					Host: "example.com",
-				}, nil
+			bl: buildLoader{
+				logDogClientFunc: func(c context.Context, host string) (*coordinator.Client, error) {
+					if host == "" {
+						host = "example.com"
+					}
+					return &coordinator.Client{
+						C:    &testClient,
+						Host: host,
+					}, nil
+				},
 			},
 			swarmingServiceFunc: func(context.Context, string) (swarmingService, error) {
 				return &testSvc, nil

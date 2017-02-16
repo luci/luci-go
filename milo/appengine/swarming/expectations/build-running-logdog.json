@@ -1,0 +1,159 @@
+{
+  "Summary": {
+    "ParentLabel": null,
+    "Label": "2d8d62f6be545b10",
+    "Status": "Running",
+    "Banner": null,
+    "Bot": null,
+    "Source": {
+      "Label": "Task 2d8d62f6be545b10",
+      "URL": "https://example.com/user/task/2d8d62f6be545b10"
+    },
+    "MainLink": {
+      "Label": "Task 2d8d62f6be545b10",
+      "URL": "https://example.com/user/task/2d8d62f6be545b10"
+    },
+    "SubLink": [
+      {
+        "Label": "stdout",
+        "URL": "https://example.com/v/?s=testproject%2Ffoo%2Fbar%2F%2B%2Fstdout"
+      }
+    ],
+    "Progress": null,
+    "Started": "2016-03-14T10:00:01.85071Z",
+    "Finished": "0001-01-01T00:00:00Z",
+    "Duration": 3598149290000,
+    "Type": "Recipe",
+    "LevelsDeep": 0,
+    "Verbosity": 0,
+    "Text": [
+      "Running bot_update"
+    ]
+  },
+  "SourceStamp": null,
+  "Components": [
+    {
+      "ParentLabel": null,
+      "Label": "recipe bootstrap",
+      "Status": "Success",
+      "Banner": null,
+      "Bot": null,
+      "Source": null,
+      "MainLink": {
+        "Label": "stdout",
+        "URL": "https://example.com/v/?s=testproject%2Ffoo%2Fbar%2F%2B%2Fsteps%2Frecipe_bootstrap%2F0%2Fstdout"
+      },
+      "SubLink": null,
+      "Progress": null,
+      "Started": "2016-03-14T10:00:02Z",
+      "Finished": "2016-03-14T10:00:03Z",
+      "Duration": 1000000000,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Verbosity": 1,
+      "Text": null
+    },
+    {
+      "ParentLabel": null,
+      "Label": "setup_build",
+      "Status": "Success",
+      "Banner": null,
+      "Bot": null,
+      "Source": null,
+      "MainLink": {
+        "Label": "stdout",
+        "URL": "https://example.com/v/?s=testproject%2Ffoo%2Fbar%2F%2B%2Fsteps%2Fsetup_build%2F0%2Fstdout"
+      },
+      "SubLink": [
+        {
+          "Label": "run_recipe",
+          "URL": "https://example.com/v/?s=testproject%2Ffoo%2Fbar%2F%2B%2Fsteps%2Fsetup_build%2F0%2Flogs%2Frun_recipe%2F0"
+        }
+      ],
+      "Progress": null,
+      "Started": "2016-03-14T10:00:03Z",
+      "Finished": "2016-03-14T10:00:04Z",
+      "Duration": 1000000000,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Verbosity": 1,
+      "Text": [
+        "running recipe: \"v8\""
+      ]
+    },
+    {
+      "ParentLabel": null,
+      "Label": "bot_update",
+      "Status": "Running",
+      "Banner": null,
+      "Bot": null,
+      "Source": null,
+      "MainLink": {
+        "Label": "stdout",
+        "URL": "https://example.com/v/?s=testproject%2Ffoo%2Fbar%2F%2B%2Fsteps%2Fbot_update%2F0%2Fstdout"
+      },
+      "SubLink": null,
+      "Progress": null,
+      "Started": "2016-03-14T10:00:05Z",
+      "Finished": "0001-01-01T00:00:00Z",
+      "Duration": 3595000000000,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Verbosity": 0,
+      "Text": null
+    }
+  ],
+  "PropertyGroup": [
+    {
+      "GroupName": "recipe bootstrap",
+      "Property": [
+        {
+          "Key": "path_config",
+          "Value": "kitchen"
+        },
+        {
+          "Key": "slavename",
+          "Value": "fakeslave"
+        },
+        {
+          "Key": "buildername",
+          "Value": "infra-continuous-precise-32"
+        },
+        {
+          "Key": "mastername",
+          "Value": "chromium.infra"
+        }
+      ]
+    },
+    {
+      "GroupName": "setup_build",
+      "Property": null
+    },
+    {
+      "GroupName": "bot_update",
+      "Property": null
+    },
+    {
+      "GroupName": "Main",
+      "Property": null
+    },
+    {
+      "GroupName": "Swarming Tags",
+      "Property": [
+        {
+          "Key": "allow_milo",
+          "Value": "1"
+        },
+        {
+          "Key": "luci_project",
+          "Value": "testproject"
+        },
+        {
+          "Key": "log_location",
+          "Value": "logdog://example.com/testproject/foo/bar/+/annotations"
+        }
+      ]
+    }
+  ],
+  "Blame": null
+}

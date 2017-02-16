@@ -1,0 +1,71 @@
+name: "steps"
+substep: <
+  step: <
+    name: "recipe bootstrap"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/recipe_bootstrap/0/stdout"
+    >
+    started: <
+      seconds: 1457949602
+    >
+    ended: <
+      seconds: 1457949603
+    >
+    property: <
+      name: "path_config"
+      value: "kitchen"
+    >
+    property: <
+      name: "slavename"
+      value: "fakeslave"
+    >
+    property: <
+      name: "buildername"
+      value: "infra-continuous-precise-32"
+    >
+    property: <
+      name: "mastername"
+      value: "chromium.infra"
+    >
+  >
+>
+substep: <
+  step: <
+    name: "setup_build"
+    status: SUCCESS
+    stdout_stream: <
+      name: "steps/setup_build/0/stdout"
+    >
+    started: <
+      seconds: 1457949603
+    >
+    ended: <
+      seconds: 1457949604
+    >
+    text: "running recipe: \"v8\""
+    other_links: <
+      label: "run_recipe"
+      logdog_stream: <
+        name: "steps/setup_build/0/logs/run_recipe/0"
+      >
+    >
+  >
+>
+substep: <
+  step: <
+    name: "bot_update"
+    stdout_stream: <
+      name: "steps/bot_update/0/stdout"
+    >
+    started: <
+      seconds: 1457949605
+    >
+  >
+>
+stdout_stream: <
+  name: "stdout"
+>
+started: <
+  seconds: 1457949601
+>

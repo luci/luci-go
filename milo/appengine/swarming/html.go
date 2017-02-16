@@ -53,7 +53,11 @@ func getSwarmingService(c context.Context, host string) (swarmingService, error)
 type Log struct{}
 
 // Build is for deciphering recipe builds from swarming based off of logs.
-type Build struct{}
+type Build struct {
+	// bl is the buildLoader to use. A zero value is suitable for production, but
+	// this can be overridden for testing.
+	bl buildLoader
+}
 
 // GetTemplateName for Log returns the template name for log pages.
 func (l Log) GetTemplateName(t settings.Theme) string {
@@ -115,7 +119,7 @@ func (b Build) Render(c context.Context, r *http.Request, p httprouter.Params) (
 		return nil, convertErr(err)
 	}
 
-	result, err := swarmingBuildImpl(c, sf, r.URL.String(), id)
+	result, err := b.bl.swarmingBuildImpl(c, sf, r.URL.String(), id)
 	if err != nil {
 		return nil, convertErr(err)
 	}

@@ -14,6 +14,8 @@ import (
 )
 
 func TestStreamNameAsFlag(t *testing.T) {
+	t.Parallel()
+
 	Convey(`Given an FlagSet configured with a StreamName flag`, t, func() {
 		var stream StreamName
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
@@ -36,6 +38,8 @@ func TestStreamNameAsFlag(t *testing.T) {
 }
 
 func TestStreamName(t *testing.T) {
+	t.Parallel()
+
 	Convey(`MakeStreamName`, t, func() {
 		type e struct {
 			t []string // Test value.
@@ -161,6 +165,8 @@ func TestStreamName(t *testing.T) {
 }
 
 func TestStreamPath(t *testing.T) {
+	t.Parallel()
+
 	Convey(`StreamPath.Split, StreamPath.Validate`, t, func() {
 		type e struct {
 			p      string // The stream path.

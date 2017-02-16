@@ -14,11 +14,9 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
 	"github.com/luci/luci-go/grpc/grpcutil"
-	"github.com/luci/luci-go/logdog/client/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	milo "github.com/luci/luci-go/milo/api/proto"
-	"github.com/luci/luci-go/milo/appengine/logdog"
 
 	"golang.org/x/net/context"
 )
@@ -28,24 +26,13 @@ import (
 // In a production system, this will be completely defaults. For testing, the
 // various services and data sources may be substituted for testing stubs.
 type BuildInfoProvider struct {
-	// LogdogClientFunc returns a coordinator Client instance for the supplied
-	// parameters.
-	//
-	// If nil, a production client will be generated.
-	LogdogClientFunc func(c context.Context) (*coordinator.Client, error)
+	bl buildLoader
 
 	// swarmingServiceFunc returns a swarmingService instance for the supplied
 	// parameters.
 	//
 	// If nil, a production fetcher will be generated.
 	swarmingServiceFunc func(c context.Context, host string) (swarmingService, error)
-}
-
-func (p *BuildInfoProvider) newLogdogClient(c context.Context) (*coordinator.Client, error) {
-	if p.LogdogClientFunc != nil {
-		return p.LogdogClientFunc(c)
-	}
-	return logdog.NewClient(c, "")
 }
 
 func (p *BuildInfoProvider) newSwarmingService(c context.Context, host string) (swarmingService, error) {
@@ -89,30 +76,26 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 	// Determine the LogDog annotation stream path for this Swarming task.
 	//
 	// On failure, will return a gRPC error.
-	as, err := resolveLogDogAnnotations(c, fr.req, projectHint, host, req.Task, fr.res.TryNumber)
+	stream, err := resolveLogDogAnnotations(c, fr.req, projectHint, host, req.Task, fr.res.TryNumber)
 	if err != nil {
 		logging.WithError(err).Warningf(c, "Failed to get annotation stream parameters.")
 		return nil, err
 	}
-	if err := as.Normalize(); err != nil {
-		logging.WithError(err).Warningf(c, "Failed to normalize annotation stream parameters.")
-		return nil, grpcutil.Internal
-	}
 
 	logging.Fields{
-		"project": as.Project,
-		"path":    as.Path,
-	}.Infof(c, "Resolved annotation stream.")
+		"host":    stream.Host,
+		"project": stream.Project,
+		"path":    stream.Path,
+	}.Infof(c, "Resolved LogDog annotation stream.")
 
-	client, err := p.newLogdogClient(c)
+	as, err := p.bl.newEmptyAnnotationStream(c, stream)
 	if err != nil {
-		logging.WithError(err).Errorf(c, "Failed to create LogDog client.")
+		logging.WithError(err).Errorf(c, "Failed to create LogDog annotation stream.")
 		return nil, grpcutil.Internal
 	}
 
 	// Fetch LogDog annotation stream data.
-	as.Client = client
-	step, err := as.Load(c)
+	step, err := as.Fetch(c)
 	if err != nil {
 		logging.WithError(err).Warningf(c, "Failed to load annotation stream.")
 		return nil, grpcutil.Internal
@@ -128,7 +111,7 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 		Project: string(as.Project),
 		Step:    step,
 		AnnotationStream: &miloProto.LogdogStream{
-			Server: client.Host,
+			Server: as.Client.Host,
 			Prefix: string(prefix),
 			Name:   string(name),
 		},
@@ -144,26 +127,34 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 // endpoint, though. All of the nastiness here should be replaced with something
 // more elegant once that becomes available. In the meantime...
 func resolveLogDogAnnotations(c context.Context, sr *swarming.SwarmingRpcsTaskRequest, projectHint cfgtypes.ProjectName,
-	host, taskID string, tryNumber int64) (*logdog.AnnotationStream, error) {
+	host, taskID string, tryNumber int64) (*types.StreamAddr, error) {
+
+	// Try and resolve from explicit tags (preferred).
+	tags := swarmingTags(sr.Tags)
+	addr, err := resolveLogDogStreamAddrFromTags(tags)
+	if err == nil {
+		return addr, nil
+	}
+	logging.WithError(err).Debugf(c, "Could not resolve stream address from tags.")
 
 	// If this is a Kitchen command, maybe we can infer our LogDog project from
 	// the command-line.
-	var as logdog.AnnotationStream
 	if sr.Properties == nil {
 		logging.Warningf(c, "No request properties, can't infer annotation stream path.")
 		return nil, grpcutil.NotFound
 	}
 
+	addr = &types.StreamAddr{}
 	var isKitchen bool
-	if as.Project, isKitchen = getLogDogProjectFromKitchen(sr.Properties.Command); !isKitchen {
+	if addr.Project, isKitchen = getLogDogProjectFromKitchen(sr.Properties.Command); !isKitchen {
 		logging.Warningf(c, "Not a Kitchen CLI, can't infer annotation stream path.")
 		return nil, grpcutil.NotFound
 	}
 
-	if as.Project == "" {
-		as.Project = projectHint
+	if addr.Project == "" {
+		addr.Project = projectHint
 	}
-	if as.Project == "" {
+	if addr.Project == "" {
 		logging.Warningf(c, "Don't know how to get annotation stream path.")
 		return nil, grpcutil.NotFound
 	}
@@ -188,8 +179,8 @@ func resolveLogDogAnnotations(c context.Context, sr *swarming.SwarmingRpcsTaskRe
 		logging.WithError(err).Errorf(c, "Failed to generate Swarming prefix.")
 		return nil, grpcutil.Internal
 	}
-	as.Path = prefix.Join("annotations")
-	return &as, nil
+	addr.Path = prefix.Join("annotations")
+	return addr, nil
 }
 
 func getLogDogProjectFromKitchen(cmd []string) (proj cfgtypes.ProjectName, isKitchen bool) {
@@ -214,6 +205,32 @@ func getLogDogProjectFromKitchen(cmd []string) (proj cfgtypes.ProjectName, isKit
 		}
 	}
 	return
+}
+
+func resolveLogDogStreamAddrFromTags(tags map[string]string) (*types.StreamAddr, error) {
+	// If we don't have a LUCI project, abort.
+	luciProject, logLocation := tags["luci_project"], tags["log_location"]
+	switch {
+	case luciProject == "":
+		return nil, errors.New("no 'luci_project' tag")
+	case logLocation == "":
+		return nil, errors.New("no 'log_location' tag")
+	}
+
+	addr, err := types.ParseURL(logLocation)
+	if err != nil {
+		return nil, errors.Annotate(err).Reason("could not parse LogDog stream from location").Err()
+	}
+
+	// The LogDog stream's project should match the LUCI project.
+	if string(addr.Project) != luciProject {
+		return nil, errors.Reason("stream project %(streamProject)q doesn't match LUCI project %(luciProject)q").
+			D("luciProject", luciProject).
+			D("streamProject", addr.Project).
+			Err()
+	}
+
+	return addr, nil
 }
 
 // getRunID converts a Swarming task ID and try number into a Swarming Run ID.

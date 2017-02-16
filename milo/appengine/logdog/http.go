@@ -60,7 +60,7 @@ func (s *AnnotationStreamHandler) Render(c context.Context, req *http.Request, p
 	}
 
 	// Load the Milo annotation protobuf from the annotation stream.
-	if _, err := as.Load(c); err != nil {
+	if _, err := as.Fetch(c); err != nil {
 		return nil, err
 	}
 
@@ -70,11 +70,26 @@ func (s *AnnotationStreamHandler) Render(c context.Context, req *http.Request, p
 	}, nil
 }
 
+func resolveHost(host string) (string, error) {
+	// Resolveour our Host, and validate it against a host whitelist.
+	switch host {
+	case "":
+		return defaultLogDogHost, nil
+	case defaultLogDogHost, "luci-logdog-dev.appspot.com":
+		return host, nil
+	default:
+		return "", errors.Reason("host %(host)q is not whitelisted").
+			D("host", host).
+			Err()
+	}
+}
+
 // NewClient generates a new LogDog client that issues requests on behalf of the
 // current user.
 func NewClient(c context.Context, host string) (*coordinator.Client, error) {
-	if host == "" {
-		host = defaultLogDogHost
+	var err error
+	if host, err = resolveHost(host); err != nil {
+		return nil, err
 	}
 
 	// Initialize the LogDog client authentication.
