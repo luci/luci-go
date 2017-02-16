@@ -94,8 +94,13 @@ func (m *AuthMethod) Authenticate(c context.Context, r *http.Request) (*auth.Use
 		return nil, err
 	}
 	if session == nil {
+		(logging.Fields{"sid": sid}).Warningf(c, "The session cookie references unknown session")
 		return nil, nil
 	}
+	(logging.Fields{
+		"sid":   sid,
+		"email": session.User.Email,
+	}).Debugf(c, "Fetched the session")
 	return &session.User, nil
 }
 
@@ -168,6 +173,7 @@ func (m *AuthMethod) logoutHandler(ctx *router.Context) {
 		return
 	}
 	if sid != "" {
+		(logging.Fields{"sid": sid}).Infof(c, "Closing the session")
 		if err = m.SessionStore.CloseSession(c, sid); err != nil {
 			replyError(c, rw, err, "Error when closing the session - %s", err)
 			return
@@ -179,6 +185,7 @@ func (m *AuthMethod) logoutHandler(ctx *router.Context) {
 	m.removeIncompatibleCookies(rw, r)
 
 	// Redirect to the final destination.
+	logging.Infof(c, "Redirecting to %s", dest)
 	http.Redirect(rw, r, dest, http.StatusFound)
 }
 
@@ -268,10 +275,12 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 		replyError(c, rw, err, "Error when creating the session - %s", err)
 		return
 	}
+	(logging.Fields{"sid": sid}).Infof(c, "Opened a new session")
 
 	// Kill previous session now that new one is successfully created.
 	if prevSid != "" {
-		if err = m.SessionStore.CloseSession(c, sid); err != nil {
+		(logging.Fields{"sid": prevSid}).Infof(c, "Closing the previous session")
+		if err = m.SessionStore.CloseSession(c, prevSid); err != nil {
 			replyError(c, rw, err, "Error when closing the session - %s", err)
 			return
 		}
@@ -287,6 +296,7 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 	m.removeIncompatibleCookies(rw, r)
 
 	// Redirect to the final destination page.
+	logging.Infof(c, "Redirecting to %s", dest)
 	http.Redirect(rw, r, dest, http.StatusFound)
 }
 

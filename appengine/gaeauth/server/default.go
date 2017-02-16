@@ -61,13 +61,18 @@ func (m cookieAuthMethod) LogoutURL(c context.Context, dest string) (string, err
 }
 
 func init() {
-	if appengine.IsDevAppServer() {
+	// Flip to true to enable OpenID login on devserver for debugging. Requires
+	// a configuration (see /admin/settings/openid_auth page).
+	const useOIDOnDevServer = false
+
+	if appengine.IsDevAppServer() && !useOIDOnDevServer {
 		CookieAuth = cookieAuthMethod{UsersAPIAuthMethod{}}
 	} else {
 		CookieAuth = cookieAuthMethod{
 			&openid.AuthMethod{
 				SessionStore:        &SessionStore{Prefix: "openid"},
 				IncompatibleCookies: []string{"SACSID", "dev_appserver_login"},
+				Insecure:            appengine.IsDevAppServer(), // for http:// cookie
 			},
 		}
 	}
