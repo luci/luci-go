@@ -91,6 +91,9 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 	if fl.Credentials != "" {
 		config.Credentials = fl.Credentials
 	}
+	if fl.ActAs != "" {
+		config.ActAs = fl.ActAs
+	}
 
 	mon, err := initMonitor(c, config)
 	switch {
@@ -203,7 +206,7 @@ func initMonitor(c context.Context, config config) (monitor.Monitor, error) {
 	case "file":
 		return monitor.NewDebugMonitor(endpointURL.Path), nil
 	case "pubsub":
-		tokens, err := newAuthenticator(c, config.Credentials, gcps.PublisherScopes).TokenSource()
+		tokens, err := newAuthenticator(c, config.Credentials, config.ActAs, gcps.PublisherScopes).TokenSource()
 		if err != nil {
 			return nil, err
 		}
@@ -212,7 +215,7 @@ func initMonitor(c context.Context, config config) (monitor.Monitor, error) {
 		return monitor.NewPubsubMonitor(
 			c, tokens, gcps.NewTopic(endpointURL.Host, strings.TrimPrefix(endpointURL.Path, "/")))
 	case "http", "https":
-		client, err := newAuthenticator(c, config.Credentials, monitor.ProdxmonScopes).Client()
+		client, err := newAuthenticator(c, config.Credentials, config.ActAs, monitor.ProdxmonScopes).Client()
 		if err != nil {
 			return nil, err
 		}
@@ -224,11 +227,12 @@ func initMonitor(c context.Context, config config) (monitor.Monitor, error) {
 }
 
 // newAuthenticator returns a new authenticator for PubSub and HTTP requests.
-func newAuthenticator(ctx context.Context, credentials string, scopes []string) *auth.Authenticator {
+func newAuthenticator(ctx context.Context, credentials, actAs string, scopes []string) *auth.Authenticator {
 	// TODO(vadimsh): Don't hardcode auth options here, pass them from outside
 	// somehow.
 	authOpts := chromeinfra.DefaultAuthOptions()
 	authOpts.Scopes = scopes
+	authOpts.ActAsServiceAccount = actAs
 
 	switch credentials {
 	case GCECredentials:

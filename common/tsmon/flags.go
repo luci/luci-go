@@ -24,6 +24,7 @@ type Flags struct {
 	ConfigFile    string
 	Endpoint      string
 	Credentials   string
+	ActAs         string
 	Flush         FlushType
 	FlushInterval time.Duration
 
@@ -36,6 +37,7 @@ func NewFlags() Flags {
 		ConfigFile:    defaultConfigFilePath(),
 		Endpoint:      "",
 		Credentials:   "",
+		ActAs:         "",
 		Flush:         FlushAuto,
 		FlushInterval: time.Minute,
 
@@ -58,6 +60,10 @@ func (fl *Flags) Register(f *flag.FlagSet) {
 	f.StringVar(&fl.Credentials, "ts-mon-credentials", fl.Credentials,
 		"path to a pkcs8 json credential file. If set, overrides the value in "+
 			"--ts-mon-config-file")
+	f.StringVar(&fl.ActAs, "ts-mon-act-as", fl.ActAs,
+		"(advanced) a service account email to impersonate when authenticating to "+
+			"tsmon backends. Uses 'iam' scope and serviceAccountActor role. If set, "+
+			"overrides the value in --ts-mon-config-file")
 	f.Var(&fl.Flush, "ts-mon-flush",
 		"metric push behavior: manual (only send when Flush() is called), or auto "+
 			"(send automatically every --ts-mon-flush-interval)")

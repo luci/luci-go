@@ -16,6 +16,7 @@ import (
 type config struct {
 	Endpoint        string `json:"endpoint"`
 	Credentials     string `json:"credentials"`
+	ActAs           string `json:"act_as"`
 	AutoGenHostname bool   `json:"autogen_hostname"`
 	Hostname        string `json:"hostname"`
 	Region          string `json:"region"`
