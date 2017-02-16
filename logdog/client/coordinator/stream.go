@@ -67,32 +67,29 @@ type LogStream struct {
 	State StreamState
 }
 
-func loadLogStream(proj string, path types.StreamPath, s *logdog.LogStreamState, d *logpb.LogStreamDescriptor) (
-	*LogStream, error) {
-	switch {
-	case s == nil:
-		return nil, errors.New("missing required log state")
-	case d == nil:
-		return nil, errors.New("missing required descriptor")
-	}
-
+func loadLogStream(proj string, path types.StreamPath, s *logdog.LogStreamState, d *logpb.LogStreamDescriptor) *LogStream {
 	ls := LogStream{
 		Project: cfgtypes.ProjectName(proj),
 		Path:    path,
-		Desc:    *d,
-		State: StreamState{
+	}
+	if d != nil {
+		ls.Desc = *d
+	}
+	if s != nil {
+		ls.State = StreamState{
 			Created:       google.TimeFromProto(s.Created),
 			TerminalIndex: types.MessageIndex(s.TerminalIndex),
 			Purged:        s.Purged,
-		},
+		}
+
+		if a := s.Archive; a != nil {
+			ls.State.Archived = true
+			ls.State.ArchiveIndexURL = a.IndexUrl
+			ls.State.ArchiveStreamURL = a.StreamUrl
+			ls.State.ArchiveDataURL = a.DataUrl
+		}
 	}
-	if a := s.Archive; a != nil {
-		ls.State.Archived = true
-		ls.State.ArchiveIndexURL = a.IndexUrl
-		ls.State.ArchiveStreamURL = a.StreamUrl
-		ls.State.ArchiveDataURL = a.DataUrl
-	}
-	return &ls, nil
+	return &ls
 }
 
 // Stream is an interface to Coordinator stream-level commands. It is bound to
@@ -126,11 +123,7 @@ func (s *Stream) State(ctx context.Context) (*LogStream, error) {
 		path = desc.Path()
 	}
 
-	st, err := loadLogStream(resp.Project, path, resp.State, resp.Desc)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load stream state: %v", err)
-	}
-	return st, nil
+	return loadLogStream(resp.Project, path, resp.State, resp.Desc), nil
 }
 
 // Get retrieves log stream entries from the Coordinator. The supplied
@@ -320,11 +313,7 @@ func loadStatePointer(stateP *LogStream, resp *logdog.GetResponse) error {
 		return errors.New("descriptor was not returned")
 	}
 
-	ls, err := loadLogStream(resp.Project, resp.Desc.Path(), resp.State, resp.Desc)
-	if err != nil {
-		return fmt.Errorf("failed to load stream state: %v", err)
-	}
-
+	ls := loadLogStream(resp.Project, resp.Desc.Path(), resp.State, resp.Desc)
 	*stateP = *ls
 	return nil
 }

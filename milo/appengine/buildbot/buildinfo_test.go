@@ -188,9 +188,7 @@ func TestBuildInfo(t *testing.T) {
 				&logdog.QueryResponse{
 					Streams: []*logdog.QueryResponse_Stream{
 						{
-							Path:  "foo/bar/+/annotations",
-							State: &logdog.LogStreamState{},
-							Desc:  &logpb.LogStreamDescriptor{},
+							Path: "foo/bar/+/annotations",
 						},
 						{
 							Path: "other/ignore/+/me",
