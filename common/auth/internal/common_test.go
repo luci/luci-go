@@ -11,6 +11,7 @@ import (
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -173,5 +174,25 @@ func TestTokenHelpers(t *testing.T) {
 			8, 6, 8, 23, 20, 27, 28, 29, 25, 36, 43, 41, 53, 49,
 			49, 57, 59, 62, 69, 69, 76, 72, 82, 73, 85, 83, 93, 93,
 		})
+	})
+}
+
+func TestIsBadKeyError(t *testing.T) {
+	Convey("Correctly sniffs out bad key error", t, func() {
+		brokenKeyJSON := `{
+			"type": "service_account",
+			"project_id": "blah",
+			"private_key_id": "zzzzzzzzzzzzzzzzzz",
+			"private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhBROKENq\nEpldRN3tNnLoLNy6\n-----END PRIVATE KEY-----\n",
+			"client_email": "blah@blah.iam.gserviceaccount.com",
+			"auth_uri": "https://accounts.google.com/o/oauth2/auth",
+			"token_uri": "https://accounts.google.com/o/oauth2/token",
+			"auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs"
+		}`
+		cfg, err := google.JWTConfigFromJSON([]byte(brokenKeyJSON), "scope")
+		So(err, ShouldBeNil)
+		_, err = cfg.TokenSource(context.Background()).Token()
+		So(err, ShouldNotBeNil)
+		So(isBadKeyError(err), ShouldBeTrue)
 	})
 }

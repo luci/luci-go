@@ -16,7 +16,6 @@ import (
 )
 
 type userAuthTokenProvider struct {
-	ctx      context.Context
 	config   *oauth2.Config
 	cacheKey CacheKey
 }
@@ -25,7 +24,6 @@ type userAuthTokenProvider struct {
 // OAuth flow involving interaction with a user.
 func NewUserAuthTokenProvider(ctx context.Context, clientID, clientSecret string, scopes []string) (TokenProvider, error) {
 	return &userAuthTokenProvider{
-		ctx: ctx,
 		config: &oauth2.Config{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
@@ -51,39 +49,50 @@ func (p *userAuthTokenProvider) Lightweight() bool {
 	return false
 }
 
-func (p *userAuthTokenProvider) CacheKey() (*CacheKey, error) {
+func (p *userAuthTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {
 	return &p.cacheKey, nil
 }
 
-func (p *userAuthTokenProvider) MintToken() (*oauth2.Token, error) {
+func (p *userAuthTokenProvider) MintToken(ctx context.Context, base *oauth2.Token) (*oauth2.Token, error) {
 	if p.config.ClientID == "" || p.config.ClientSecret == "" {
 		return nil, fmt.Errorf("OAuth client is not set, can't use 3-legged login flow")
 	}
+
+	// The list of scopes is displayed on the consent page as well, but show it
+	// in the terminal too, for clarity.
+	fmt.Println("Getting a refresh token with following OAuth scopes:")
+	for _, scope := range p.config.Scopes {
+		fmt.Printf("  * %s\n", scope)
+	}
+	fmt.Println()
+
 	// Grab the authorization code by redirecting a user to a consent screen.
 	url := p.config.AuthCodeURL("", oauth2.AccessTypeOffline, oauth2.ApprovalForce)
-	fmt.Printf("Visit the URL to get authorization code.\n\n%s\n\n", url)
+	fmt.Printf("Visit the following URL to get the authorization code and copy-paste it below.\n\n%s\n\n", url)
 	fmt.Printf("Authorization code: ")
 	var code string
 	if _, err := fmt.Scan(&code); err != nil {
 		return nil, err
 	}
+	fmt.Println()
+
 	// Exchange it for a token.
-	return p.config.Exchange(p.ctx, code)
+	return p.config.Exchange(ctx, code)
 }
 
-func (p *userAuthTokenProvider) RefreshToken(tok *oauth2.Token) (*oauth2.Token, error) {
+func (p *userAuthTokenProvider) RefreshToken(ctx context.Context, prev, base *oauth2.Token) (*oauth2.Token, error) {
 	// Clear expiration time to force token refresh. Do not use 0 since it means
 	// that token never expires.
-	t := *tok
+	t := *prev
 	t.Expiry = time.Unix(1, 0)
-	switch newTok, err := grabToken(p.config.TokenSource(p.ctx, &t)); {
+	switch newTok, err := grabToken(p.config.TokenSource(ctx, &t)); {
 	case err == nil:
 		return newTok, nil
 	case errors.IsTransient(err):
-		logging.Warningf(p.ctx, "Transient error when refreshing the token - %s", err)
+		logging.Warningf(ctx, "Transient error when refreshing the token - %s", err)
 		return nil, err
 	default:
-		logging.Warningf(p.ctx, "Bad refresh token - %s", err)
+		logging.Warningf(ctx, "Bad refresh token - %s", err)
 		return nil, ErrBadRefreshToken
 	}
 }

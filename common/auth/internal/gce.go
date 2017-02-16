@@ -22,7 +22,7 @@ type gceTokenProvider struct {
 }
 
 // NewGCETokenProvider returns TokenProvider that knows how to use GCE metadata server.
-func NewGCETokenProvider(c context.Context, account string, scopes []string) (TokenProvider, error) {
+func NewGCETokenProvider(ctx context.Context, account string, scopes []string) (TokenProvider, error) {
 	// Ensure account has requested scopes.
 	availableScopes, err := metadata.Scopes(account)
 	if err != nil {
@@ -31,7 +31,7 @@ func NewGCETokenProvider(c context.Context, account string, scopes []string) (To
 	availableSet := stringset.NewFromSlice(availableScopes...)
 	for _, requested := range scopes {
 		if !availableSet.Has(requested) {
-			logging.Warningf(c, "GCE service account %q doesn't have required scope %q", account, requested)
+			logging.Warningf(ctx, "GCE service account %q doesn't have required scope %q", account, requested)
 			return nil, ErrInsufficientAccess
 		}
 	}
@@ -52,16 +52,16 @@ func (p *gceTokenProvider) Lightweight() bool {
 	return true
 }
 
-func (p *gceTokenProvider) CacheKey() (*CacheKey, error) {
+func (p *gceTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {
 	return &p.cacheKey, nil
 }
 
-func (p *gceTokenProvider) MintToken() (*oauth2.Token, error) {
+func (p *gceTokenProvider) MintToken(ctx context.Context, base *oauth2.Token) (*oauth2.Token, error) {
 	src := google.ComputeTokenSource(p.account)
 	return src.Token()
 }
 
-func (p *gceTokenProvider) RefreshToken(*oauth2.Token) (*oauth2.Token, error) {
+func (p *gceTokenProvider) RefreshToken(ctx context.Context, prev, base *oauth2.Token) (*oauth2.Token, error) {
 	// Minting and refreshing on GCE is the same thing: a call to metadata server.
-	return p.MintToken()
+	return p.MintToken(ctx, base)
 }

@@ -32,81 +32,121 @@ var (
 	future = now.Add(24 * time.Hour)
 )
 
-func TestAuthenticatedClient(t *testing.T) {
+func TestTransportFactory(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test login required returns hooked transport", t, func() {
-		auth, _ := newTestAuthenticator(InteractiveLogin, &fakeTokenProvider{
+	Convey("InteractiveLogin + interactive provider: invokes Login", t, func() {
+		provider := &fakeTokenProvider{
 			interactive: true,
-		}, nil)
-		t, err := auth.Transport()
-		So(err, ShouldBeNil)
+		}
+		auth, _ := newAuth(InteractiveLogin, provider, nil, "")
+
+		// Returns "hooked" transport, not default.
+		//
 		// Note: we don't use ShouldNotEqual because it tries to read guts of
 		// http.DefaultTransport and it sometimes triggers race detector.
+		t, err := auth.Transport()
+		So(err, ShouldBeNil)
 		So(t != http.DefaultTransport, ShouldBeTrue)
+
+		// MintToken is called by Login.
+		So(provider.mintTokenCalled, ShouldBeTrue)
 	})
 
-	Convey("Test login not required returns default transport", t, func() {
-		auth, _ := newTestAuthenticator(OptionalLogin, &fakeTokenProvider{
+	Convey(" SilentLogin + interactive provider: ErrLoginRequired", t, func() {
+		auth, _ := newAuth(SilentLogin, &fakeTokenProvider{
 			interactive: true,
-		}, nil)
+		}, nil, "")
+		_, err := auth.Transport()
+		So(err, ShouldEqual, ErrLoginRequired)
+	})
+
+	Convey("OptionalLogin + interactive provider: Fallback to non-auth", t, func() {
+		auth, _ := newAuth(OptionalLogin, &fakeTokenProvider{
+			interactive: true,
+		}, nil, "")
 		t, err := auth.Transport()
 		So(err, ShouldBeNil)
 		So(t == http.DefaultTransport, ShouldBeTrue)
+	})
+
+	Convey("Always uses authenticating transport for non-interactive provider", t, func() {
+		modes := []LoginMode{InteractiveLogin, SilentLogin, OptionalLogin}
+		for _, mode := range modes {
+			auth, _ := newAuth(mode, &fakeTokenProvider{}, nil, "")
+			So(auth.Login(), ShouldBeNil) // noop
+			t, err := auth.Transport()
+			So(err, ShouldBeNil)
+			So(t != http.DefaultTransport, ShouldBeTrue)
+		}
 	})
 }
 
 func TestRefreshToken(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test non interactive auth (no cache)", t, func() {
+	Convey("Test non-interactive auth (no cache)", t, func() {
 		tokenProvider := &fakeTokenProvider{
 			interactive: false,
 			tokenToMint: &oauth2.Token{AccessToken: "minted"},
 		}
-		auth, _ := newTestAuthenticator(SilentLogin, tokenProvider, nil)
+		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
 		So(auth.CheckLoginRequired(), ShouldBeNil)
 
-		// Token is lazily loaded below.
-		So(auth.currentToken(), ShouldBeNil)
+		// No token yet, it is is lazily loaded below.
+		tok, err := auth.currentToken()
+		So(err, ShouldBeNil)
+		So(tok, ShouldBeNil)
 
 		// The token is minted on first request.
-		tok, err := auth.GetAccessToken(time.Minute)
+		tok, err = auth.GetAccessToken(time.Minute)
 		So(err, ShouldBeNil)
 		So(tok.AccessToken, ShouldEqual, "minted")
 	})
 
-	Convey("Test non interactive auth (with non-expired cache)", t, func() {
+	Convey("Test non-interactive auth (with non-expired cache)", t, func() {
 		tokenProvider := &fakeTokenProvider{
 			interactive: false,
 		}
-		tokenInCache := &oauth2.Token{AccessToken: "cached", Expiry: future}
-		auth, _ := newTestAuthenticator(SilentLogin, tokenProvider, tokenInCache)
+		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
+		cacheToken(auth, tokenProvider, &oauth2.Token{
+			AccessToken: "cached",
+			Expiry:      future,
+		})
+
 		So(auth.CheckLoginRequired(), ShouldBeNil)
 
-		// Token is lazily loaded below.
-		So(auth.currentToken(), ShouldBeNil)
+		// No token yet, it is is lazily loaded below.
+		tok, err := auth.currentToken()
+		So(err, ShouldBeNil)
+		So(tok, ShouldBeNil)
 
 		// Cached token is used.
-		tok, err := auth.GetAccessToken(time.Minute)
+		tok, err = auth.GetAccessToken(time.Minute)
 		So(err, ShouldBeNil)
 		So(tok.AccessToken, ShouldEqual, "cached")
 	})
 
-	Convey("Test non interactive auth (with expired cache)", t, func() {
+	Convey("Test non-interactive auth (with expired cache)", t, func() {
 		tokenProvider := &fakeTokenProvider{
 			interactive:    false,
 			tokenToRefresh: &oauth2.Token{AccessToken: "refreshed"},
 		}
-		tokenInCache := &oauth2.Token{AccessToken: "cached", Expiry: past}
-		auth, _ := newTestAuthenticator(SilentLogin, tokenProvider, tokenInCache)
+		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
+		cacheToken(auth, tokenProvider, &oauth2.Token{
+			AccessToken: "cached",
+			Expiry:      past,
+		})
+
 		So(auth.CheckLoginRequired(), ShouldBeNil)
 
-		// Token is lazily loaded below.
-		So(auth.currentToken(), ShouldBeNil)
+		// No token yet, it is is lazily loaded below.
+		tok, err := auth.currentToken()
+		So(err, ShouldBeNil)
+		So(tok, ShouldBeNil)
 
 		// The usage triggers refresh procedure.
-		tok, err := auth.GetAccessToken(time.Minute)
+		tok, err = auth.GetAccessToken(time.Minute)
 		So(err, ShouldBeNil)
 		So(tok.AccessToken, ShouldEqual, "refreshed")
 	})
@@ -118,20 +158,24 @@ func TestRefreshToken(t *testing.T) {
 		}
 
 		// No token cached, login is required.
-		auth, _ := newTestAuthenticator(SilentLogin, tokenProvider, nil)
+		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
 		So(auth.CheckLoginRequired(), ShouldEqual, ErrLoginRequired)
-		So(auth.currentToken(), ShouldBeNil)
+		tok, err := auth.currentToken()
+		So(err, ShouldBeNil)
+		So(tok, ShouldBeNil)
 
 		// Do it.
-		err := auth.Login()
+		err = auth.Login()
 		So(err, ShouldBeNil)
 		So(auth.CheckLoginRequired(), ShouldBeNil)
 
 		// Minted initial token.
-		So(auth.currentToken().AccessToken, ShouldEqual, "minted")
+		tok, err = auth.currentToken()
+		So(err, ShouldBeNil)
+		So(tok.AccessToken, ShouldEqual, "minted")
 
 		// And it is actually used.
-		tok, err := auth.GetAccessToken(time.Minute)
+		tok, err = auth.GetAccessToken(time.Minute)
 		So(err, ShouldBeNil)
 		So(tok.AccessToken, ShouldEqual, "minted")
 	})
@@ -140,17 +184,22 @@ func TestRefreshToken(t *testing.T) {
 		tokenProvider := &fakeTokenProvider{
 			interactive: true,
 		}
-		tokenInCache := &oauth2.Token{AccessToken: "cached", Expiry: future}
-		auth, _ := newTestAuthenticator(SilentLogin, tokenProvider, tokenInCache)
+		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
+		cacheToken(auth, tokenProvider, &oauth2.Token{
+			AccessToken: "cached",
+			Expiry:      future,
+		})
 
 		// No need to login, already have a token.
 		So(auth.CheckLoginRequired(), ShouldBeNil)
 
 		// Loaded cached token.
-		So(auth.currentToken().AccessToken, ShouldEqual, "cached")
+		tok, err := auth.currentToken()
+		So(err, ShouldBeNil)
+		So(tok.AccessToken, ShouldEqual, "cached")
 
 		// And it is actually used.
-		tok, err := auth.GetAccessToken(time.Minute)
+		tok, err = auth.GetAccessToken(time.Minute)
 		So(err, ShouldBeNil)
 		So(tok.AccessToken, ShouldEqual, "cached")
 	})
@@ -160,18 +209,23 @@ func TestRefreshToken(t *testing.T) {
 			interactive:    true,
 			tokenToRefresh: &oauth2.Token{AccessToken: "refreshed"},
 		}
-		tokenInCache := &oauth2.Token{AccessToken: "cached", Expiry: past}
-		auth, _ := newTestAuthenticator(SilentLogin, tokenProvider, tokenInCache)
+		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
+		cacheToken(auth, tokenProvider, &oauth2.Token{
+			AccessToken: "cached",
+			Expiry:      past,
+		})
 
 		// No need to login, already have a token. Only its "access_token" part is
 		// expired. Refresh token part is still valid, so no login is required.
 		So(auth.CheckLoginRequired(), ShouldBeNil)
 
 		// Loaded cached token.
-		So(auth.currentToken().AccessToken, ShouldEqual, "cached")
+		tok, err := auth.currentToken()
+		So(err, ShouldBeNil)
+		So(tok.AccessToken, ShouldEqual, "cached")
 
 		// Attempting to use it triggers a refresh.
-		tok, err := auth.GetAccessToken(time.Minute)
+		tok, err = auth.GetAccessToken(time.Minute)
 		So(err, ShouldBeNil)
 		So(tok.AccessToken, ShouldEqual, "refreshed")
 	})
@@ -181,8 +235,11 @@ func TestRefreshToken(t *testing.T) {
 			interactive:  true,
 			revokedToken: true,
 		}
-		tokenInCache := &oauth2.Token{AccessToken: "cached", Expiry: past}
-		auth, _ := newTestAuthenticator(SilentLogin, tokenProvider, tokenInCache)
+		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
+		cacheToken(auth, tokenProvider, &oauth2.Token{
+			AccessToken: "cached",
+			Expiry:      past,
+		})
 
 		// No need to login, already have a token. Only its "access_token" part is
 		// expired. Refresh token part is still presumably valid, there's no way to
@@ -190,10 +247,12 @@ func TestRefreshToken(t *testing.T) {
 		So(auth.CheckLoginRequired(), ShouldBeNil)
 
 		// Loaded cached token.
-		So(auth.currentToken().AccessToken, ShouldEqual, "cached")
+		tok, err := auth.currentToken()
+		So(err, ShouldBeNil)
+		So(tok.AccessToken, ShouldEqual, "cached")
 
 		// Attempting to use it triggers a refresh that fails.
-		_, err := auth.GetAccessToken(time.Minute)
+		_, err = auth.GetAccessToken(time.Minute)
 		So(err, ShouldEqual, ErrLoginRequired)
 	})
 
@@ -202,8 +261,12 @@ func TestRefreshToken(t *testing.T) {
 			interactive:  false,
 			revokedCreds: true,
 		}
-		tokenInCache := &oauth2.Token{AccessToken: "cached", Expiry: past}
-		auth, _ := newTestAuthenticator(SilentLogin, tokenProvider, tokenInCache)
+		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
+		cacheToken(auth, tokenProvider, &oauth2.Token{
+			AccessToken: "cached",
+			Expiry:      past,
+		})
+
 		So(auth.CheckLoginRequired(), ShouldBeNil)
 
 		// Attempting to use expired cached token triggers a refresh that fails.
@@ -217,8 +280,12 @@ func TestRefreshToken(t *testing.T) {
 			transientRefreshErrors: 5,
 			tokenToRefresh:         &oauth2.Token{AccessToken: "refreshed"},
 		}
-		tokenInCache := &oauth2.Token{AccessToken: "cached", Expiry: past}
-		auth, _ := newTestAuthenticator(SilentLogin, tokenProvider, tokenInCache)
+		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
+		cacheToken(auth, tokenProvider, &oauth2.Token{
+			AccessToken: "cached",
+			Expiry:      past,
+		})
+
 		So(auth.CheckLoginRequired(), ShouldBeNil)
 
 		// Attempting to use expired cached token triggers a refresh that fails a
@@ -236,8 +303,12 @@ func TestRefreshToken(t *testing.T) {
 			interactive:            false,
 			transientRefreshErrors: 5000, // never succeeds
 		}
-		tokenInCache := &oauth2.Token{AccessToken: "cached", Expiry: past}
-		auth, ctx := newTestAuthenticator(SilentLogin, tokenProvider, tokenInCache)
+		auth, ctx := newAuth(SilentLogin, tokenProvider, nil, "")
+		cacheToken(auth, tokenProvider, &oauth2.Token{
+			AccessToken: "cached",
+			Expiry:      past,
+		})
+
 		So(auth.CheckLoginRequired(), ShouldBeNil)
 
 		// Attempting to use expired cached token triggers a refresh that constantly
@@ -249,11 +320,70 @@ func TestRefreshToken(t *testing.T) {
 
 		// It took reasonable amount of time and number of attempts.
 		So(after.Sub(before), ShouldBeLessThan, 15*time.Second)
-		So(5000-tokenProvider.transientRefreshErrors, ShouldEqual, 17)
+		So(5000-tokenProvider.transientRefreshErrors, ShouldEqual, 8)
+	})
+}
+
+func TestActorMode(t *testing.T) {
+	t.Parallel()
+
+	Convey("Test non-interactive auth (no cache)", t, func() {
+		baseProvider := &fakeTokenProvider{
+			interactive: false,
+			tokenToMint: &oauth2.Token{
+				AccessToken: "minted-base",
+				Expiry:      now.Add(time.Hour),
+			},
+			tokenToRefresh: &oauth2.Token{
+				AccessToken: "refreshed-base",
+				Expiry:      now.Add(2 * time.Hour),
+			},
+		}
+		iamProvider := &fakeTokenProvider{
+			interactive: false,
+			tokenToMint: &oauth2.Token{
+				AccessToken: "minted-iam",
+				Expiry:      now.Add(30 * time.Minute),
+			},
+			tokenToRefresh: &oauth2.Token{
+				AccessToken: "refreshed-iam",
+				Expiry:      now.Add(2 * time.Hour),
+			},
+		}
+		auth, ctx := newAuth(SilentLogin, baseProvider, iamProvider, "as-actor")
+		So(auth.CheckLoginRequired(), ShouldBeNil)
+
+		// No token yet, it is is lazily loaded below.
+		tok, err := auth.currentToken()
+		So(err, ShouldBeNil)
+		So(tok, ShouldBeNil)
+
+		// The token is minted on the first request. It is IAM-derived token.
+		tok, err = auth.GetAccessToken(time.Minute)
+		So(err, ShouldBeNil)
+		So(tok.AccessToken, ShouldEqual, "minted-iam")
+
+		// The correct base token was minted as well and used by IAM call.
+		So(iamProvider.baseTokenInMint.AccessToken, ShouldEqual, "minted-base")
+		iamProvider.baseTokenInMint = nil
+
+		// After 40 min the IAM-generated token expires, but base is still ok.
+		clock.Get(ctx).(testclock.TestClock).Add(40 * time.Minute)
+
+		// Getting a refreshed IAM token.
+		tok, err = auth.GetAccessToken(time.Minute)
+		So(err, ShouldBeNil)
+		So(tok.AccessToken, ShouldEqual, "refreshed-iam")
+
+		// Using existing base token (still valid).
+		So(iamProvider.baseTokenInRefresh.AccessToken, ShouldEqual, "minted-base")
+		iamProvider.baseTokenInRefresh = nil
 	})
 }
 
 func TestTransport(t *testing.T) {
+	t.Parallel()
+
 	Convey("Test transport works", t, func(c C) {
 		calls := 0
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -277,9 +407,8 @@ func TestTransport(t *testing.T) {
 			tokenToMint:    &oauth2.Token{AccessToken: "minted", Expiry: now.Add(time.Hour)},
 			tokenToRefresh: &oauth2.Token{AccessToken: "refreshed", Expiry: now.Add(2 * time.Hour)},
 		}
-		cacheKey, _ := tokenProvider.CacheKey()
 
-		auth, ctx := newTestAuthenticator(SilentLogin, tokenProvider, nil)
+		auth, ctx := newAuth(SilentLogin, tokenProvider, nil, "")
 		client, err := auth.Client()
 		So(err, ShouldBeNil)
 		So(client, ShouldNotBeNil)
@@ -291,8 +420,12 @@ func TestTransport(t *testing.T) {
 		defer resp.Body.Close()
 
 		// Minted token is now cached.
-		So(auth.currentToken().AccessToken, ShouldEqual, "minted")
-		cached, err := auth.cache.GetToken(cacheKey)
+		tok, err := auth.currentToken()
+		So(err, ShouldBeNil)
+		So(tok.AccessToken, ShouldEqual, "minted")
+
+		cacheKey, _ := tokenProvider.CacheKey(ctx)
+		cached, err := auth.testingCache.GetToken(cacheKey)
 		So(err, ShouldBeNil)
 		So(cached.AccessToken, ShouldEqual, "minted")
 
@@ -309,7 +442,10 @@ func TestTransport(t *testing.T) {
 		So(err, ShouldBeNil)
 		ioutil.ReadAll(resp.Body)
 		defer resp.Body.Close()
-		So(auth.currentToken().AccessToken, ShouldEqual, "refreshed")
+
+		tok, err = auth.currentToken()
+		So(err, ShouldBeNil)
+		So(tok.AccessToken, ShouldEqual, "refreshed")
 
 		// All calls are actually made.
 		So(calls, ShouldEqual, 3)
@@ -344,10 +480,12 @@ func TestOptionalLogin(t *testing.T) {
 			interactive:  true,
 			revokedToken: true,
 		}
-		cacheKey, _ := tokenProvider.CacheKey()
+		auth, ctx := newAuth(OptionalLogin, tokenProvider, nil, "")
+		cacheToken(auth, tokenProvider, &oauth2.Token{
+			AccessToken: "cached",
+			Expiry:      now.Add(time.Hour),
+		})
 
-		tokenInCache := &oauth2.Token{AccessToken: "cached", Expiry: now.Add(time.Hour)}
-		auth, ctx := newTestAuthenticator(OptionalLogin, tokenProvider, tokenInCache)
 		client, err := auth.Client()
 		So(err, ShouldBeNil)
 		So(client, ShouldNotBeNil)
@@ -367,8 +505,11 @@ func TestOptionalLogin(t *testing.T) {
 		defer resp.Body.Close()
 
 		// Bad token is removed from the cache.
-		So(auth.currentToken(), ShouldBeNil)
-		cached, err := auth.cache.GetToken(cacheKey)
+		tok, err := auth.currentToken()
+		So(err, ShouldBeNil)
+		So(tok, ShouldBeNil)
+		cacheKey, _ := tokenProvider.CacheKey(ctx)
+		cached, err := auth.testingCache.GetToken(cacheKey)
 		So(cached, ShouldBeNil)
 		So(err, ShouldBeNil)
 
@@ -377,30 +518,31 @@ func TestOptionalLogin(t *testing.T) {
 	})
 }
 
-func newTestAuthenticator(loginMode LoginMode, p internal.TokenProvider, cached *oauth2.Token) (*Authenticator, context.Context) {
+func newAuth(loginMode LoginMode, base, iam internal.TokenProvider, actAs string) (*Authenticator, context.Context) {
 	// Use auto-advancing fake time.
 	ctx := mathrand.Set(context.Background(), rand.New(rand.NewSource(123)))
 	ctx, tc := testclock.UseTime(ctx, now)
 	tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
 		tc.Add(d)
 	})
-
-	a := NewAuthenticator(ctx, loginMode, Options{customTokenProvider: p})
-	a.cache = &internal.MemoryTokenCache{}
-
-	// Populate initial token cache.
-	if cached != nil {
-		cacheKey, err := p.CacheKey()
-		if err != nil {
-			panic(err)
-		}
-		err = a.cache.PutToken(cacheKey, cached)
-		if err != nil {
-			panic(err)
-		}
-	}
-
+	a := NewAuthenticator(ctx, loginMode, Options{
+		ActAsServiceAccount:      actAs,
+		testingBaseTokenProvider: base,
+		testingIAMTokenProvider:  iam,
+	})
+	a.testingCache = &internal.MemoryTokenCache{}
 	return a, ctx
+}
+
+func cacheToken(a *Authenticator, p internal.TokenProvider, tok *oauth2.Token) {
+	cacheKey, err := p.CacheKey(a.ctx)
+	if err != nil {
+		panic(err)
+	}
+	err = a.testingCache.PutToken(cacheKey, tok)
+	if err != nil {
+		panic(err)
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -412,6 +554,12 @@ type fakeTokenProvider struct {
 	transientRefreshErrors int
 	tokenToMint            *oauth2.Token
 	tokenToRefresh         *oauth2.Token
+
+	mintTokenCalled    bool
+	refreshTokenCalled bool
+
+	baseTokenInMint    *oauth2.Token
+	baseTokenInRefresh *oauth2.Token
 }
 
 func (p *fakeTokenProvider) RequiresInteraction() bool {
@@ -422,11 +570,13 @@ func (p *fakeTokenProvider) Lightweight() bool {
 	return true
 }
 
-func (p *fakeTokenProvider) CacheKey() (*internal.CacheKey, error) {
+func (p *fakeTokenProvider) CacheKey(ctx context.Context) (*internal.CacheKey, error) {
 	return &internal.CacheKey{Key: "fake"}, nil
 }
 
-func (p *fakeTokenProvider) MintToken() (*oauth2.Token, error) {
+func (p *fakeTokenProvider) MintToken(ctx context.Context, base *oauth2.Token) (*oauth2.Token, error) {
+	p.mintTokenCalled = true
+	p.baseTokenInMint = base
 	if p.revokedCreds {
 		return nil, internal.ErrBadCredentials
 	}
@@ -436,7 +586,9 @@ func (p *fakeTokenProvider) MintToken() (*oauth2.Token, error) {
 	return &oauth2.Token{AccessToken: "some minted token"}, nil
 }
 
-func (p *fakeTokenProvider) RefreshToken(*oauth2.Token) (*oauth2.Token, error) {
+func (p *fakeTokenProvider) RefreshToken(ctx context.Context, prev, base *oauth2.Token) (*oauth2.Token, error) {
+	p.refreshTokenCalled = true
+	p.baseTokenInRefresh = base
 	if p.transientRefreshErrors != 0 {
 		p.transientRefreshErrors--
 		return nil, errors.WrapTransient(fmt.Errorf("transient error"))

@@ -58,16 +58,22 @@ type TokenProvider interface {
 	// Note: CacheKey MAY change during lifetime of a TokenProvider. It happens,
 	// for example, for ServiceAccount token provider if the underlying service
 	// account key is replaced while the process is still running.
-	CacheKey() (*CacheKey, error)
+	CacheKey(ctx context.Context) (*CacheKey, error)
 
 	// MintToken launches authentication flow (possibly interactive) and returns
 	// a new refreshable token (or error). It must never return (nil, nil).
-	MintToken() (*oauth2.Token, error)
+	//
+	// In actor mode 'base' is an IAM-scoped sufficiently fresh oauth token. It's
+	// nil otherwise. Used by IAM-based token provider.
+	MintToken(ctx context.Context, base *oauth2.Token) (*oauth2.Token, error)
 
 	// RefreshToken takes existing token (probably expired, but not necessarily)
 	// and returns a new refreshed token. It should never do any user interaction.
 	// If a user interaction is required, a error should be returned instead.
-	RefreshToken(*oauth2.Token) (*oauth2.Token, error)
+	//
+	// In actor mode 'base' is an IAM-scoped sufficiently fresh oauth token. It's
+	// nil otherwise. Used by IAM-based token provider.
+	RefreshToken(ctx context.Context, prev, base *oauth2.Token) (*oauth2.Token, error)
 }
 
 // TokenCache stores access and refresh tokens to avoid requesting them all
@@ -97,6 +103,7 @@ type CacheKey struct {
 	//  * user/<client_id> when using UserCredentialsMethod with some ClientID.
 	//  * service_account/<email>/<key_id> when using ServiceAccountMethod.
 	//  * gce/<account> when using GCEMetadataMethod.
+	//  * iam/<account> when using actor mode with ActAsServiceAccount != "".
 	Key string `json:"key"`
 
 	// Scopes is the list of requested OAuth scopes.
@@ -212,11 +219,26 @@ func isBadTokenError(err error) bool {
 	// See https://github.com/golang/oauth2/blob/master/internal/token.go.
 	// Unfortunately, fmt.Errorf is used there, so there's no other way to
 	// differentiate between bad tokens/creds and transient errors.
+	// Note that mis-categorization is not a big deal: we'll unnecessarily retry
+	// fatal error a bunch of times, thinking it is transient.
 	if err == nil {
 		return false
 	}
 	s := strings.ToLower(err.Error())
 	return strings.Contains(s, "400 bad request") || strings.Contains(s, "401 unauthorized")
+}
+
+// isBadKeyError sniffs out errors related to malformed private keys.
+func isBadKeyError(err error) bool {
+	// See https://github.com/golang/oauth2/blob/master/internal/oauth2.go.
+	// Unfortunately, if also uses fmt.Errorf.
+	// Note that mis-categorization is not a big deal: we'll unnecessarily retry
+	// fatal error a bunch of times, thinking it is transient.
+	if err == nil {
+		return false
+	}
+	s := err.Error()
+	return strings.Contains(s, "private key should be a PEM or plain PKSC1 or PKCS8") || s == "private key is invalid"
 }
 
 // grabToken uses token source to create a new token.
@@ -225,6 +247,8 @@ func isBadTokenError(err error) bool {
 func grabToken(src oauth2.TokenSource) (*oauth2.Token, error) {
 	switch tok, err := src.Token(); {
 	case isBadTokenError(err):
+		return nil, err
+	case isBadKeyError(err):
 		return nil, err
 	case err != nil:
 		// More often than not errors here are transient (network connectivity

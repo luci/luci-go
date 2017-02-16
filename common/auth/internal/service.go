@@ -20,7 +20,6 @@ import (
 )
 
 type serviceAccountTokenProvider struct {
-	ctx     context.Context
 	jsonKey []byte
 	path    string
 	scopes  []string
@@ -30,18 +29,17 @@ type serviceAccountTokenProvider struct {
 // account private key (on disk or in memory) to make access tokens.
 func NewServiceAccountTokenProvider(ctx context.Context, jsonKey []byte, path string, scopes []string) (TokenProvider, error) {
 	return &serviceAccountTokenProvider{
-		ctx:     ctx,
 		jsonKey: jsonKey,
 		path:    path,
 		scopes:  scopes,
 	}, nil
 }
 
-func (p *serviceAccountTokenProvider) jwtConfig() (*jwt.Config, error) {
+func (p *serviceAccountTokenProvider) jwtConfig(ctx context.Context) (*jwt.Config, error) {
 	jsonKey := p.jsonKey
 	if p.path != "" {
 		var err error
-		logging.Debugf(p.ctx, "Reading private key from %s", p.path)
+		logging.Debugf(ctx, "Reading private key from %s", p.path)
 		jsonKey, err = ioutil.ReadFile(p.path)
 		if err != nil {
 			return nil, err
@@ -58,10 +56,10 @@ func (p *serviceAccountTokenProvider) Lightweight() bool {
 	return false
 }
 
-func (p *serviceAccountTokenProvider) CacheKey() (*CacheKey, error) {
-	cfg, err := p.jwtConfig()
+func (p *serviceAccountTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {
+	cfg, err := p.jwtConfig(ctx)
 	if err != nil {
-		logging.Errorf(p.ctx, "Failed to load private key JSON - %s", err)
+		logging.Errorf(ctx, "Failed to load private key JSON - %s", err)
 		return nil, err
 	}
 	// PrivateKeyID is optional part of the private key JSON. If not given, use
@@ -80,26 +78,26 @@ func (p *serviceAccountTokenProvider) CacheKey() (*CacheKey, error) {
 	}, nil
 }
 
-func (p *serviceAccountTokenProvider) MintToken() (*oauth2.Token, error) {
-	cfg, err := p.jwtConfig()
+func (p *serviceAccountTokenProvider) MintToken(ctx context.Context, base *oauth2.Token) (*oauth2.Token, error) {
+	cfg, err := p.jwtConfig(ctx)
 	if err != nil {
-		logging.Errorf(p.ctx, "Failed to load private key JSON - %s", err)
+		logging.Errorf(ctx, "Failed to load private key JSON - %s", err)
 		return nil, ErrBadCredentials
 	}
-	switch newTok, err := grabToken(cfg.TokenSource(p.ctx)); {
+	switch newTok, err := grabToken(cfg.TokenSource(ctx)); {
 	case err == nil:
 		return newTok, nil
 	case errors.IsTransient(err):
-		logging.Warningf(p.ctx, "Transient error when creating access token - %s", err)
+		logging.Warningf(ctx, "Error when creating access token - %s", err)
 		return nil, err
 	default:
-		logging.Warningf(p.ctx, "Invalid or revoked service account key - %s", err)
+		logging.Warningf(ctx, "Invalid or revoked service account key - %s", err)
 		return nil, ErrBadCredentials
 	}
 }
 
-func (p *serviceAccountTokenProvider) RefreshToken(*oauth2.Token) (*oauth2.Token, error) {
+func (p *serviceAccountTokenProvider) RefreshToken(ctx context.Context, prev, base *oauth2.Token) (*oauth2.Token, error) {
 	// JWT tokens are self sufficient, there's no need for refresh_token. Minting
 	// a token and "refreshing" it is a same thing.
-	return p.MintToken()
+	return p.MintToken(ctx, base)
 }
