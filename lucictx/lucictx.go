@@ -162,6 +162,9 @@ func Set(ctx context.Context, section string, in interface{}) (context.Context, 
 //
 // It is required that the caller of this function invoke Close() on the
 // returned Exported object, or they will leak temporary files.
+//
+// 'dir', if not "", specifies a directory to put the exported file in.
+// If empty, os.TempDir() will be used.
 func Export(ctx context.Context, dir string) (Exported, error) {
 	cur := getCurrent(ctx)
 	if len(cur) == 0 {
@@ -171,6 +174,8 @@ func Export(ctx context.Context, dir string) (Exported, error) {
 	if dir == "" {
 		dir = os.TempDir()
 	}
+	// Note: this makes a file in 0600 mode. This is what we want, the context
+	// may have secrets.
 	f, err := ioutil.TempFile(dir, "luci_context.")
 	if err != nil {
 		return nil, errors.Annotate(err).Reason("creating luci_context file").Err()

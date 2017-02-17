@@ -67,6 +67,9 @@ func (e *liveExport) SetInCmd(c *exec.Cmd) {
 	e.assertOpen()
 	pfx := EnvKey + "="
 	newVal := pfx + e.path
+	if c.Env == nil {
+		c.Env = os.Environ()
+	}
 	for i, l := range c.Env {
 		if strings.HasPrefix(strings.ToUpper(l), pfx) {
 			c.Env[i] = newVal

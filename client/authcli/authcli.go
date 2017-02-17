@@ -79,6 +79,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -87,8 +89,12 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/auth/localauth"
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/gcloud/googleoauth"
+	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/system/exitcode"
+	"github.com/luci/luci-go/lucictx"
 )
 
 // CommandParams specifies various parameters for a subcommand.
@@ -163,6 +169,8 @@ func (c *commandRunBase) registerBaseFlags() {
 	c.flags.Register(&c.Flags, c.params.AuthOptions)
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
 // SubcommandLogin returns subcommands.Command that can be used to perform
 // interactive login.
 func SubcommandLogin(opts auth.Options, name string, advanced bool) *subcommands.Command {
@@ -205,6 +213,8 @@ func (c *loginRun) Run(a subcommands.Application, _ []string, env subcommands.En
 	return checkToken(ctx, authenticator)
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
 // SubcommandLogout returns subcommands.Command that can be used to purge cached
 // credentials.
 func SubcommandLogout(opts auth.Options, name string, advanced bool) *subcommands.Command {
@@ -246,6 +256,8 @@ func (c *logoutRun) Run(a subcommands.Application, args []string, env subcommand
 	}
 	return ExitCodeSuccess
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 // SubcommandInfo returns subcommand.Command that can be used to print current
 // cached credentials.
@@ -292,6 +304,8 @@ func (c *infoRun) Run(a subcommands.Application, args []string, env subcommands.
 	}
 	return checkToken(ctx, authenticator)
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 // SubcommandToken returns subcommand.Command that can be used to print current
 // access token.
@@ -378,6 +392,156 @@ func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands
 	}
 	return ExitCodeSuccess
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+// SubcommandContext returns subcommand.Command that can be used to setup new
+// LUCI authentication context for a process tree.
+//
+// This is an advanced command and shouldn't be usually embedded into binaries.
+// It is primarily used by 'authutil' program. It exists to simplify development
+// and debugging of programs that rely on LUCI authentication context.
+func SubcommandContext(opts auth.Options, name string) *subcommands.Command {
+	return SubcommandContextWithParams(CommandParams{Name: name, AuthOptions: opts})
+}
+
+// SubcommandTokenWithParams returns subcommand.Command that can be used to
+// setup new LUCI authentication context for a process tree.
+func SubcommandContextWithParams(params CommandParams) *subcommands.Command {
+	return &subcommands.Command{
+		Advanced:  params.Advanced,
+		UsageLine: fmt.Sprintf("%s [opts] -- <bin> [args]", params.Name),
+		ShortDesc: "sets up new LUCI local auth context and launches a process in it",
+		LongDesc:  "Starts local RPC auth server, prepares LUCI_CONTEXT, launches a process in this environment.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &contextRun{}
+			c.params = &params
+			c.registerBaseFlags()
+			c.Flags.StringVar(
+				&c.actAs, "act-as-service-account", "",
+				"Act as a given service account (caller must have iam.serviceAccountActor role).")
+			c.Flags.BoolVar(&c.verbose, "verbose", false, "More logging")
+			return c
+		},
+	}
+}
+
+type contextRun struct {
+	commandRunBase
+
+	actAs   string
+	verbose bool
+}
+
+func (c *contextRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	ctx := cli.GetContext(a, c, env)
+
+	opts, err := c.flags.Options()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return ExitCodeInvalidInput
+	}
+	opts.ActAsServiceAccount = c.actAs
+	if c.verbose {
+		ctx = logging.SetLevel(ctx, logging.Debug)
+	}
+
+	// 'args' specify a subcommand to run. Prepare *exec.Cmd.
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, "Specify a command to run:\n  authutil context [opts] -- <bin> [args]")
+		return ExitCodeInvalidInput
+	}
+	bin := args[0]
+	if filepath.Base(bin) == bin {
+		resolved, err := exec.LookPath(bin)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Can't find %q in PATH\n", bin)
+			return ExitCodeInvalidInput
+		}
+		bin = resolved
+	}
+	cmd := &exec.Cmd{
+		Path:   bin,
+		Args:   args,
+		Stdin:  os.Stdin,
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+	}
+
+	// First create an authenticator for requested options and make sure we have
+	// required refresh tokens (if any) by asking user to login.
+	if opts.Method == auth.AutoSelectMethod {
+		opts.Method = auth.SelectBestMethod(opts)
+	}
+	authenticator := auth.NewAuthenticator(ctx, auth.InteractiveLogin, opts)
+	err = authenticator.CheckLoginRequired()
+	if err == auth.ErrLoginRequired {
+		fmt.Println("Need to login first!\n")
+		err = authenticator.Login()
+	}
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return ExitCodeNoValidToken
+	}
+
+	// Now that we have required tokens in the cache, we construct the token
+	// generator.
+	//
+	// Two cases here:
+	//  1) We are using options that specify service account private key or
+	//     IAM-based authenticator (with IAM refresh token just initialized
+	//     above). In this case we can mint tokens for any requested combination
+	//     of scopes and can use NewFlexibleGenerator.
+	//  2) We are using options that specify some externally configured
+	//     authenticator (like GCE metadata server, or a refresh token). In this
+	//     case we have to use this specific authenticator for generating tokens.
+	var gen localauth.TokenGenerator
+	if auth.AllowsArbitraryScopes(opts) {
+		logging.Debugf(ctx, "Using flexible token generator: %s (acting as %q)", opts.Method, opts.ActAsServiceAccount)
+		gen, err = localauth.NewFlexibleGenerator(ctx, opts)
+	} else {
+		// An authenticator preconfigured with given list of scopes.
+		logging.Debugf(ctx, "Using rigid token generator: %s (scopes %s)", opts.Method, opts.Scopes)
+		gen, err = localauth.NewRigidGenerator(ctx, authenticator)
+	}
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return ExitCodeNoValidToken
+	}
+
+	// Enter the environment with the local auth server.
+	srv := &localauth.Server{TokenGenerator: gen}
+	err = localauth.WithLocalAuth(ctx, srv, func(ctx context.Context) error {
+		// Drop the new LUCI_CONTEXT file, prepare cmd environ.
+		exported, err := lucictx.Export(ctx, "")
+		if err != nil {
+			logging.WithError(err).Errorf(ctx, "Failed to prepare LUCI_CONTEXT file")
+			return err
+		}
+		defer func() {
+			if err := exported.Close(); err != nil {
+				logging.WithError(err).Warningf(ctx, "Failed to remove LUCI_CONTEXT file")
+			}
+		}()
+		exported.SetInCmd(cmd)
+
+		// Launch the process and wait for it to finish.
+		logging.Debugf(ctx, "Running %q", cmd.Args)
+		return cmd.Run()
+	})
+
+	// Return the subprocess exit code, if available.
+	switch code, hasCode := exitcode.Get(err); {
+	case err == nil:
+		return 0
+	case hasCode:
+		return code
+	default:
+		return ExitCodeInternalError
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 // checkToken prints information about the token carried by the authenticator.
 //

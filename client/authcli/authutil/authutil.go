@@ -47,6 +47,12 @@ func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
 				AuthOptions: defaultAuthOpts,
 				ScopesFlag:  true,
 			}),
+			authcli.SubcommandContextWithParams(authcli.CommandParams{
+				Name:        "context",
+				Advanced:    true,
+				AuthOptions: defaultAuthOpts,
+				ScopesFlag:  true,
+			}),
 		},
 	}
 }
