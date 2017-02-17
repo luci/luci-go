@@ -289,9 +289,9 @@ type Options struct {
 //
 // Invoked by Authenticator if AutoSelectMethod is passed as Method in Options.
 //
-// Shouldn't be generally used directly. Exposed publicly just for documentation
-// purposes.
-func SelectBestMethod(opts *Options) Method {
+// Beware: it may do relatively heavy calls on first usage (to detect GCE
+// environment). Fast after that.
+func SelectBestMethod(opts Options) Method {
 	switch {
 	case opts.ServiceAccountJSONPath != "" || len(opts.ServiceAccountJSON) != 0:
 		return ServiceAccountMethod
@@ -300,6 +300,33 @@ func SelectBestMethod(opts *Options) Method {
 	default:
 		return UserCredentialsMethod
 	}
+}
+
+// AllowsArbitraryScopes returns true if given authenticator options allow
+// generating tokens for arbitrary set of scopes.
+//
+// For example, using a private key to sign assertions allows to mint tokens
+// for any set of scopes (since there's no restriction on what scopes we can
+// put into JWT to be signed).
+//
+// On other hand, using e.g GCE metadata server restricts us to use only scopes
+// assigned to GCE instance when it was created.
+func AllowsArbitraryScopes(opts Options) bool {
+	if opts.Method == AutoSelectMethod {
+		opts.Method = SelectBestMethod(opts)
+	}
+	switch {
+	case opts.Method == ServiceAccountMethod:
+		// A private key can be used to generate tokens with any combination of
+		// scopes.
+		return true
+	case opts.ActAsServiceAccount != "":
+		// When using IAM-derived tokens authenticator relies on singBytes IAM RPC.
+		// It is similar to having a private key, and also can be used to generate
+		// tokens with any combination of scopes
+		return true
+	}
+	return false
 }
 
 // Authenticator is a factory for http.RoundTripper objects that know how to use
@@ -656,7 +683,7 @@ func (a *Authenticator) ensureInitialized() error {
 	// SelectBestMethod may do heavy calls like talking to GCE metadata server,
 	// call it lazily here rather than in NewAuthenticator.
 	if a.opts.Method == AutoSelectMethod {
-		a.opts.Method = SelectBestMethod(a.opts)
+		a.opts.Method = SelectBestMethod(*a.opts)
 	}
 
 	// In Actor mode, make the base token IAM-scoped, to be able to use SignBlob
