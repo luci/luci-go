@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/clock"
@@ -753,7 +754,7 @@ func writeTextLine(w io.Writer, line string) error {
 }
 
 func extractAnnotation(line string) string {
-	line = strings.TrimSpace(line)
+	line = strings.TrimRightFunc(line, unicode.IsSpace)
 	if len(line) <= 6 || !(strings.HasPrefix(line, "@@@") && strings.HasSuffix(line, "@@@")) {
 		return ""
 	}
