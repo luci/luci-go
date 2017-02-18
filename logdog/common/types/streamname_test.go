@@ -162,6 +162,26 @@ func TestStreamName(t *testing.T) {
 			})
 		}
 	})
+
+	Convey(`StreamName.Split`, t, func() {
+		for _, tc := range []struct {
+			s    StreamName
+			base StreamName
+			last StreamName
+		}{
+			{"", "", ""},
+			{"foo", "", "foo"},
+			{"/foo", "", "foo"},
+			{"foo/bar", "foo", "bar"},
+			{"foo/bar/baz", "foo/bar", "baz"},
+		} {
+			Convey(fmt.Sprintf(`Stream name %q splits into %q and %q.`, tc.s, tc.base, tc.last), func() {
+				base, last := tc.s.Split()
+				So(base, ShouldEqual, tc.base)
+				So(last, ShouldEqual, tc.last)
+			})
+		}
+	})
 }
 
 func TestStreamPath(t *testing.T) {

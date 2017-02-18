@@ -233,6 +233,28 @@ func (s StreamName) SegmentCount() int {
 	return segmentCount(string(s))
 }
 
+// Split splits a StreamName on its last path element, into a prefix (everything
+// before that element) and the last element.
+//
+// Split assumes that s is a valid stream name.
+//
+// If there is only one element in the stream name, prefix will be empty.
+//
+// For example:
+//
+//	- Split("foo/bar/baz") ("foo/bar", "baz")
+//	- Split("foo") ("", "foo")
+//	- Split("") ("", "")
+func (s StreamName) Split() (prefix, last StreamName) {
+	lidx := strings.LastIndex(string(s), StreamNameSepStr)
+	if lidx < 0 {
+		last = s
+		return
+	}
+	prefix, last = s[:lidx], s[lidx+len(StreamNameSepStr):]
+	return
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (s *StreamName) UnmarshalJSON(data []byte) error {
 	v := ""
