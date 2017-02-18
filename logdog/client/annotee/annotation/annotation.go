@@ -461,12 +461,6 @@ func (s *State) RootStep() *Step {
 	return &s.rootStep
 }
 
-// AnnotationStream returns the name of this State's Milo annotation datagram
-// stream.
-func (s *State) AnnotationStream() types.StreamName {
-	return s.rootStep.BaseStream("annotations")
-}
-
 // CurrentStep returns the step referenced by the step cursor.
 func (s *State) CurrentStep() *Step {
 	s.initialize()

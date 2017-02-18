@@ -37,6 +37,10 @@ const (
 	STDOUT = types.StreamName("stdout")
 	// STDERR is the system STDERR stream.
 	STDERR = types.StreamName("stderr")
+
+	// DefaultAnnotationSubpath is the default annotation subpath. It will be used
+	// if an explicit subpath is not provided.
+	DefaultAnnotationSubpath = types.StreamName("annotations")
 )
 
 // Stream describes a single process stream.
@@ -84,6 +88,11 @@ type Options struct {
 	// Base is the base log stream name. This is prepended to every log name, as
 	// well as any generate log names.
 	Base types.StreamName
+	// AnnotationSubpath is the path underneath of Base where the annotation
+	// stream will be written.
+	//
+	// If empty, DefaultAnnotationSubpath will be used.
+	AnnotationSubpath types.StreamName
 
 	// LinkGenerator generates links to alias for a given log stream.
 	//
@@ -171,8 +180,14 @@ func (p *Processor) initialize() (err error) {
 		return nil
 	}
 
+	annotationPath := p.o.AnnotationSubpath
+	if annotationPath == "" {
+		annotationPath = DefaultAnnotationSubpath
+	}
+	annotationPath = p.astate.RootStep().BaseStream(annotationPath)
+
 	// Create our annotation stream.
-	if p.annotationStream, err = p.createStream(p.astate.AnnotationStream(), &metadataStreamArchetype); err != nil {
+	if p.annotationStream, err = p.createStream(annotationPath, &metadataStreamArchetype); err != nil {
 		log.WithError(err).Errorf(p.ctx, "Failed to create annotation stream.")
 		return
 	}
