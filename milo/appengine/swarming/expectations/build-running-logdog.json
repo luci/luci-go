@@ -16,7 +16,7 @@
     "SubLink": [
       {
         "Label": "stdout",
-        "URL": "https://example.com/v/?s=testproject%2Ffoo%2Fbar%2F%2B%2Fstdout"
+        "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fstdout"
       }
     ],
     "Progress": null,
@@ -41,7 +41,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdout",
-        "URL": "https://example.com/v/?s=testproject%2Ffoo%2Fbar%2F%2B%2Fsteps%2Frecipe_bootstrap%2F0%2Fstdout"
+        "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Frecipe_bootstrap%2F0%2Fstdout"
       },
       "SubLink": null,
       "Progress": null,
@@ -62,12 +62,12 @@
       "Source": null,
       "MainLink": {
         "Label": "stdout",
-        "URL": "https://example.com/v/?s=testproject%2Ffoo%2Fbar%2F%2B%2Fsteps%2Fsetup_build%2F0%2Fstdout"
+        "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fsetup_build%2F0%2Fstdout"
       },
       "SubLink": [
         {
           "Label": "run_recipe",
-          "URL": "https://example.com/v/?s=testproject%2Ffoo%2Fbar%2F%2B%2Fsteps%2Fsetup_build%2F0%2Flogs%2Frun_recipe%2F0"
+          "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fsetup_build%2F0%2Flogs%2Frun_recipe%2F0"
         }
       ],
       "Progress": null,
@@ -90,7 +90,7 @@
       "Source": null,
       "MainLink": {
         "Label": "stdout",
-        "URL": "https://example.com/v/?s=testproject%2Ffoo%2Fbar%2F%2B%2Fsteps%2Fbot_update%2F0%2Fstdout"
+        "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fbot_update%2F0%2Fstdout"
       },
       "SubLink": null,
       "Progress": null,
@@ -150,7 +150,7 @@
         },
         {
           "Key": "log_location",
-          "Value": "logdog://example.com/testproject/foo/bar/+/annotations"
+          "Value": "logdog://example.com/testproject/${swarming_run_id}/+/annotations"
         }
       ]
     }

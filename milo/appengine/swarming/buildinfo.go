@@ -17,6 +17,7 @@ import (
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	milo "github.com/luci/luci-go/milo/api/proto"
+	"github.com/luci/luci-go/swarming/tasktemplate"
 
 	"golang.org/x/net/context"
 )
@@ -131,7 +132,7 @@ func resolveLogDogAnnotations(c context.Context, sr *swarming.SwarmingRpcsTaskRe
 
 	// Try and resolve from explicit tags (preferred).
 	tags := swarmingTags(sr.Tags)
-	addr, err := resolveLogDogStreamAddrFromTags(tags)
+	addr, err := resolveLogDogStreamAddrFromTags(tags, taskID, tryNumber)
 	if err == nil {
 		return addr, nil
 	}
@@ -207,7 +208,7 @@ func getLogDogProjectFromKitchen(cmd []string) (proj cfgtypes.ProjectName, isKit
 	return
 }
 
-func resolveLogDogStreamAddrFromTags(tags map[string]string) (*types.StreamAddr, error) {
+func resolveLogDogStreamAddrFromTags(tags map[string]string, taskID string, tryNumber int64) (*types.StreamAddr, error) {
 	// If we don't have a LUCI project, abort.
 	luciProject, logLocation := tags["luci_project"], tags["log_location"]
 	switch {
@@ -215,6 +216,18 @@ func resolveLogDogStreamAddrFromTags(tags map[string]string) (*types.StreamAddr,
 		return nil, errors.New("no 'luci_project' tag")
 	case logLocation == "":
 		return nil, errors.New("no 'log_location' tag")
+	}
+
+	// Gather our Swarming task template parameters and perform a substitution.
+	runID, err := getRunID(taskID, tryNumber)
+	if err != nil {
+		return nil, errors.Annotate(err).Err()
+	}
+	p := tasktemplate.Params{
+		SwarmingRunID: runID,
+	}
+	if logLocation, err = p.Resolve(logLocation); err != nil {
+		return nil, errors.Annotate(err).Reason("failed to resolve swarming task templating in 'log_location'").Err()
 	}
 
 	addr, err := types.ParseURL(logLocation)

@@ -117,13 +117,13 @@ type swarmingFetchParams struct {
 	fetchRes bool
 	fetchLog bool
 
-	// taskTagCallback, if not nil, is a callback that will be invoked after
+	// taskResCallback, if not nil, is a callback that will be invoked after
 	// fetching the result, if fetchRes is true. It will be passed a key/value map
 	// of the Swarming result's tags.
 	//
-	// If taskTagCallback returns true, any pending log fetch will be cancelled
+	// If taskResCallback returns true, any pending log fetch will be cancelled
 	// without error.
-	taskTagCallback func(map[string]string) bool
+	taskResCallback func(*swarming.SwarmingRpcsTaskResult) bool
 }
 
 type swarmingFetchResult struct {
@@ -151,7 +151,6 @@ func swarmingFetch(c context.Context, svc swarmingService, taskID string, req sw
 	// situations it's acceptable to not have a log stream.
 	var logErr error
 	var fr swarmingFetchResult
-	var resTags map[string]string
 
 	// Special Context to enable the cancellation of log fetching.
 	logsCancelled := false
@@ -169,8 +168,7 @@ func swarmingFetch(c context.Context, svc swarmingService, taskID string, req sw
 		if req.fetchRes {
 			workC <- func() (err error) {
 				if fr.res, err = svc.getSwarmingResult(c, taskID); err == nil {
-					resTags = swarmingTags(fr.res.Tags)
-					if req.taskTagCallback != nil && req.taskTagCallback(resTags) {
+					if req.taskResCallback != nil && req.taskResCallback(fr.res) {
 						logsCancelled = true
 						cancelLogs()
 					}
@@ -513,9 +511,11 @@ func (bl *buildLoader) swarmingBuildImpl(c context.Context, svc swarmingService,
 		fetchLog: true,
 
 		// Cancel if LogDog annotation stream parameters are present in the tag set.
-		taskTagCallback: func(tags map[string]string) (cancelLogs bool) {
+		taskResCallback: func(res *swarming.SwarmingRpcsTaskResult) (cancelLogs bool) {
+			tags := swarmingTags(res.Tags)
+
 			var err error
-			if logDogStreamAddr, err = resolveLogDogStreamAddrFromTags(tags); err != nil {
+			if logDogStreamAddr, err = resolveLogDogStreamAddrFromTags(tags, res.TaskId, res.TryNumber); err != nil {
 				logging.WithError(err).Debugf(c, "Not using LogDog annotation stream.")
 				return false
 			}
