@@ -405,7 +405,7 @@ func SubcommandContext(opts auth.Options, name string) *subcommands.Command {
 	return SubcommandContextWithParams(CommandParams{Name: name, AuthOptions: opts})
 }
 
-// SubcommandTokenWithParams returns subcommand.Command that can be used to
+// SubcommandContextWithParams returns subcommand.Command that can be used to
 // setup new LUCI authentication context for a process tree.
 func SubcommandContextWithParams(params CommandParams) *subcommands.Command {
 	return &subcommands.Command{
@@ -471,12 +471,12 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 	// First create an authenticator for requested options and make sure we have
 	// required refresh tokens (if any) by asking user to login.
 	if opts.Method == auth.AutoSelectMethod {
-		opts.Method = auth.SelectBestMethod(opts)
+		opts.Method = auth.SelectBestMethod(ctx, opts)
 	}
 	authenticator := auth.NewAuthenticator(ctx, auth.InteractiveLogin, opts)
 	err = authenticator.CheckLoginRequired()
 	if err == auth.ErrLoginRequired {
-		fmt.Println("Need to login first!\n")
+		fmt.Printf("Need to login first!\n\n")
 		err = authenticator.Login()
 	}
 	if err != nil {
@@ -496,7 +496,7 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 	//     authenticator (like GCE metadata server, or a refresh token). In this
 	//     case we have to use this specific authenticator for generating tokens.
 	var gen localauth.TokenGenerator
-	if auth.AllowsArbitraryScopes(opts) {
+	if auth.AllowsArbitraryScopes(ctx, opts) {
 		logging.Debugf(ctx, "Using flexible token generator: %s (acting as %q)", opts.Method, opts.ActAsServiceAccount)
 		gen, err = localauth.NewFlexibleGenerator(ctx, opts)
 	} else {

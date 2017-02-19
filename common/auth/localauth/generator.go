@@ -29,7 +29,7 @@ import (
 // The token generator will produce tokens that have exactly requested scopes.
 // Value of opts.Scopes is ignored.
 func NewFlexibleGenerator(ctx context.Context, opts auth.Options) (TokenGenerator, error) {
-	if !auth.AllowsArbitraryScopes(opts) {
+	if !auth.AllowsArbitraryScopes(ctx, opts) {
 		return nil, fmt.Errorf("can't use given auth.Options to mint token with arbitrary scopes")
 	}
 

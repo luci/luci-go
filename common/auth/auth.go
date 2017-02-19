@@ -41,6 +41,7 @@ import (
 	"github.com/luci/luci-go/common/gcloud/iam"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/lucictx"
 )
 
 var (
@@ -105,6 +106,29 @@ const (
 	// GCEMetadataMethod is used on Compute Engine to use tokens provided by
 	// Metadata server. See https://cloud.google.com/compute/docs/authentication
 	GCEMetadataMethod Method = "GCEMetadataMethod"
+
+	// LUCIContextMethod is used by LUCI-aware applications to fetch tokens though
+	// a local auth server (discoverable via "local_auth" key in LUCI_CONTEXT).
+	//
+	// This method is similar in spirit to GCEMetadataMethod: it uses some local
+	// HTTP server as a provider of OAuth access tokens, which gives an ambient
+	// authentication context to apps that use it.
+	//
+	// There are some big differences:
+	//  1. LUCIContextMethod supports minting tokens for multiple different set
+	//     of scopes, unlike GCE metadata server that always gives a token with
+	//     preconfigured scopes (set when the GCE instance was created).
+	//  2. LUCIContextMethod is not GCE-specific. It doesn't use magic link-local
+	//     IP address. It can run on any machine.
+	//  3. The access to the local auth server is controlled by file system
+	//     permissions of LUCI_CONTEXT file (there's a secret in this file).
+	//  4. There can be many local auth servers running at once (on different
+	//     ports). Useful for bringing up sub-contexts, in particular in
+	//     combination with ActAsServiceAcccount ("sudo" mode) or for tests.
+	//
+	// See common/auth/localauth package for the implementation of the server side
+	// of the protocol.
+	LUCIContextMethod Method = "LUCIContextMethod"
 )
 
 // LoginMode is used as enum in NewAuthenticator function.
@@ -288,13 +312,20 @@ type Options struct {
 // given set of options and the current execution environment.
 //
 // Invoked by Authenticator if AutoSelectMethod is passed as Method in Options.
+// It picks the first applicable method in this order:
+//   * ServiceAccountMethod (if the service account private key is configured).
+//   * LUCIContextMethod (if running inside LUCI_CONTEXT with an auth server).
+//   * GCEMetadataMethod (if running on GCE).
+//   * UserCredentialsMethod (if no other method applies).
 //
 // Beware: it may do relatively heavy calls on first usage (to detect GCE
 // environment). Fast after that.
-func SelectBestMethod(opts Options) Method {
+func SelectBestMethod(ctx context.Context, opts Options) Method {
 	switch {
 	case opts.ServiceAccountJSONPath != "" || len(opts.ServiceAccountJSON) != 0:
 		return ServiceAccountMethod
+	case lucictx.GetLocalAuth(ctx) != nil:
+		return LUCIContextMethod
 	case metadata.OnGCE():
 		return GCEMetadataMethod
 	default:
@@ -311,14 +342,17 @@ func SelectBestMethod(opts Options) Method {
 //
 // On other hand, using e.g GCE metadata server restricts us to use only scopes
 // assigned to GCE instance when it was created.
-func AllowsArbitraryScopes(opts Options) bool {
+func AllowsArbitraryScopes(ctx context.Context, opts Options) bool {
 	if opts.Method == AutoSelectMethod {
-		opts.Method = SelectBestMethod(opts)
+		opts.Method = SelectBestMethod(ctx, opts)
 	}
 	switch {
 	case opts.Method == ServiceAccountMethod:
 		// A private key can be used to generate tokens with any combination of
 		// scopes.
+		return true
+	case opts.Method == LUCIContextMethod:
+		// We can ask the local auth server for any combination of scopes.
 		return true
 	case opts.ActAsServiceAccount != "":
 		// When using IAM-derived tokens authenticator relies on singBytes IAM RPC.
@@ -683,7 +717,7 @@ func (a *Authenticator) ensureInitialized() error {
 	// SelectBestMethod may do heavy calls like talking to GCE metadata server,
 	// call it lazily here rather than in NewAuthenticator.
 	if a.opts.Method == AutoSelectMethod {
-		a.opts.Method = SelectBestMethod(*a.opts)
+		a.opts.Method = SelectBestMethod(a.ctx, *a.opts)
 	}
 
 	// In Actor mode, make the base token IAM-scoped, to be able to use SignBlob
@@ -1157,6 +1191,8 @@ func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string) 
 			scopes)
 	case GCEMetadataMethod:
 		return internal.NewGCETokenProvider(ctx, opts.GCEAccountName, scopes)
+	case LUCIContextMethod:
+		return internal.NewLUCIContextTokenProvider(ctx, scopes, opts.Transport)
 	default:
 		return nil, fmt.Errorf("auth: unrecognized authentication method: %s", opts.Method)
 	}

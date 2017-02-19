@@ -104,6 +104,7 @@ type CacheKey struct {
 	//  * service_account/<email>/<key_id> when using ServiceAccountMethod.
 	//  * gce/<account> when using GCEMetadataMethod.
 	//  * iam/<account> when using actor mode with ActAsServiceAccount != "".
+	//  * luci_ctx/<digest> when using LUCIContextMethod.
 	Key string `json:"key"`
 
 	// Scopes is the list of requested OAuth scopes.
