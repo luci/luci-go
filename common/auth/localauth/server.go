@@ -20,6 +20,7 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
+	"github.com/luci/luci-go/common/auth/localauth/rpcs"
 	"github.com/luci/luci-go/common/data/rand/cryptorand"
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
@@ -321,12 +322,10 @@ func (h *protocolHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	// Fatal errors are returned as specially structured JSON responses with
 	// HTTP 200 code. Replace 'response' with it.
 	if err != nil {
-		var fatalError struct {
-			ErrorCode    int    `json:"error_code"`
-			ErrorMessage string `json:"error_message"`
+		fatalError := rpcs.BaseResponse{
+			ErrorCode:    -1,
+			ErrorMessage: err.Error(),
 		}
-		fatalError.ErrorCode = -1
-		fatalError.ErrorMessage = err.Error()
 		if withCode, ok := err.(ErrorWithCode); ok && withCode.Code() != 0 {
 			fatalError.ErrorCode = withCode.Code()
 		}
@@ -354,7 +353,7 @@ func (h *protocolHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 func (h *protocolHandler) routeToImpl(method string, request []byte) (interface{}, error) {
 	switch method {
 	case "GetOAuthToken":
-		req := &getOAuthTokenRequest{}
+		req := &rpcs.GetOAuthTokenRequest{}
 		if err := json.Unmarshal(request, req); err != nil {
 			return nil, &protocolError{
 				Status:  http.StatusBadRequest,
@@ -373,29 +372,9 @@ func (h *protocolHandler) routeToImpl(method string, request []byte) (interface{
 ////////////////////////////////////////////////////////////////////////////////
 // RPC implementations.
 
-type getOAuthTokenRequest struct {
-	Scopes []string `json:"scopes"`
-	Secret []byte   `json:"secret"`
-}
-
-func (r *getOAuthTokenRequest) validate() error {
-	switch {
-	case len(r.Scopes) == 0:
-		return fmt.Errorf(`Field "scopes" is required.`)
-	case len(r.Secret) == 0:
-		return fmt.Errorf(`Field "secret" is required.`)
-	}
-	return nil
-}
-
-type getOAuthTokenResponse struct {
-	AccessToken string `json:"access_token"`
-	Expiry      int64  `json:"expiry"`
-}
-
-func (h *protocolHandler) handleGetOAuthToken(req *getOAuthTokenRequest) (*getOAuthTokenResponse, error) {
+func (h *protocolHandler) handleGetOAuthToken(req *rpcs.GetOAuthTokenRequest) (*rpcs.GetOAuthTokenResponse, error) {
 	// Validate the request, verify the correct secret is passed.
-	if err := req.validate(); err != nil {
+	if err := req.Validate(); err != nil {
 		return nil, &protocolError{
 			Status:  400,
 			Message: err.Error(),
@@ -421,7 +400,7 @@ func (h *protocolHandler) handleGetOAuthToken(req *getOAuthTokenRequest) (*getOA
 	if err != nil {
 		return nil, err
 	}
-	return &getOAuthTokenResponse{
+	return &rpcs.GetOAuthTokenResponse{
 		AccessToken: tok.AccessToken,
 		Expiry:      tok.Expiry.Unix(),
 	}, nil
