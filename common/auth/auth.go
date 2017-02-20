@@ -135,16 +135,15 @@ const (
 type LoginMode string
 
 const (
-	// InteractiveLogin instructs Authenticator to ignore cached tokens (if any)
-	// and forcefully rerun interactive login flow in Transport(), Client() and
-	// other factories or Login() (whichever is called first).
+	// InteractiveLogin indicates to Authenticator that it is okay to run an
+	// interactive login flow (via Login()) in Transport(), Client() or other
+	// factories if there's no cached token.
 	//
 	// This is typically used with UserCredentialsMethod to generate an OAuth
-	// refresh token and put it in the token cache, to make it available for later
-	// non-interactive usage.
+	// refresh token and put it in the token cache at the start of the program,
+	// when grabbing a transport.
 	//
-	// When used with service account credentials (ServiceAccountMethod mode),
-	// just precaches the access token.
+	// Has no effect when used with service account credentials.
 	InteractiveLogin LoginMode = "InteractiveLogin"
 
 	// SilentLogin indicates to Authenticator that it must return a transport that
@@ -588,6 +587,10 @@ func (a *Authenticator) CheckLoginRequired() error {
 //
 // Blocks for user input, can use stdin. It overwrites currently cached
 // credentials, if any.
+//
+// When used with non-interactive token providers (e.g. based on service
+// accounts), just clears the cached access token, so next the next
+// authenticated call gets a fresh one.
 func (a *Authenticator) Login() error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -596,6 +599,12 @@ func (a *Authenticator) Login() error {
 	if err != nil {
 		return err
 	}
+
+	// Remove any cached tokens to trigger full relogin.
+	if err := a.purgeCredentialsCacheLocked(); err != nil {
+		return err
+	}
+
 	if !a.baseToken.provider.RequiresInteraction() {
 		return nil // can mint the token on the fly, no need for login
 	}
@@ -627,7 +636,10 @@ func (a *Authenticator) PurgeCredentialsCache() error {
 	if err := a.ensureInitialized(); err != nil {
 		return err
 	}
+	return a.purgeCredentialsCacheLocked()
+}
 
+func (a *Authenticator) purgeCredentialsCacheLocked() error {
 	// No need to purge twice if baseToken == authToken, which is the case in
 	// non-actor mode.
 	var merr errors.MultiError
@@ -819,11 +831,6 @@ func (a *Authenticator) ensureInitialized() error {
 //   (false, nil) to disable authentication (for OptionalLogin mode).
 //   (false, err) on errors.
 func (a *Authenticator) doLoginIfRequired(requiresAuth bool) (useAuth bool, err error) {
-	if a.loginMode == InteractiveLogin {
-		if err := a.PurgeCredentialsCache(); err != nil {
-			return false, err
-		}
-	}
 	effectiveMode := a.loginMode
 	if requiresAuth && effectiveMode == OptionalLogin {
 		effectiveMode = SilentLogin

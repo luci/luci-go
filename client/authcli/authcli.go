@@ -206,7 +206,7 @@ func (c *loginRun) Run(a subcommands.Application, _ []string, env subcommands.En
 	}
 	ctx := cli.GetContext(a, c, env)
 	authenticator := auth.NewAuthenticator(ctx, auth.InteractiveLogin, opts)
-	if _, err := authenticator.Client(); err != nil {
+	if err := authenticator.Login(); err != nil {
 		fmt.Fprintf(os.Stderr, "Login failed: %s\n", err.Error())
 		return ExitCodeBadLogin
 	}
@@ -410,7 +410,7 @@ func SubcommandContext(opts auth.Options, name string) *subcommands.Command {
 func SubcommandContextWithParams(params CommandParams) *subcommands.Command {
 	return &subcommands.Command{
 		Advanced:  params.Advanced,
-		UsageLine: fmt.Sprintf("%s [opts] -- <bin> [args]", params.Name),
+		UsageLine: fmt.Sprintf("%s [flags] [--] <bin> [args]", params.Name),
 		ShortDesc: "sets up new LUCI local auth context and launches a process in it",
 		LongDesc:  "Starts local RPC auth server, prepares LUCI_CONTEXT, launches a process in this environment.",
 		CommandRun: func() subcommands.CommandRun {
@@ -448,7 +448,7 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 
 	// 'args' specify a subcommand to run. Prepare *exec.Cmd.
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "Specify a command to run:\n  authutil context [opts] -- <bin> [args]")
+		fmt.Fprintln(os.Stderr, "Specify a command to run:\n  authutil context [flags] [--] <bin> [args]")
 		return ExitCodeInvalidInput
 	}
 	bin := args[0]
@@ -512,7 +512,7 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 	// Enter the environment with the local auth server.
 	srv := &localauth.Server{TokenGenerator: gen}
 	err = localauth.WithLocalAuth(ctx, srv, func(ctx context.Context) error {
-		// Drop the new LUCI_CONTEXT file, prepare cmd environ.
+		// Put the new LUCI_CONTEXT file, prepare cmd environ.
 		exported, err := lucictx.Export(ctx, "")
 		if err != nil {
 			logging.WithError(err).Errorf(ctx, "Failed to prepare LUCI_CONTEXT file")
