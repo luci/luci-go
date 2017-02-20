@@ -47,14 +47,7 @@ func (r *baseCommandRun) createClient(ctx context.Context) (*client, error) {
 		return nil, err
 	}
 
-	loginMode := auth.OptionalLogin
-	if r.parsedAuthOpts.ServiceAccountJSONPath != "" {
-		// if service account is specified, the request MUST be authenticated
-		// otherwise it is optional.
-		loginMode = auth.SilentLogin
-	}
-	authenticator := auth.NewAuthenticator(ctx, loginMode, r.parsedAuthOpts)
-
+	authenticator := auth.NewAuthenticator(ctx, auth.OptionalLogin, r.parsedAuthOpts)
 	httpClient, err := authenticator.Client()
 	if err != nil {
 		return nil, err

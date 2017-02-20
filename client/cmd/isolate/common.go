@@ -70,26 +70,20 @@ func (c *commonServerFlags) createAuthClient() (*http.Client, error) {
 	// when using default AutoSelectMethod. We prefer not to use GCE service
 	// account automatically.
 	//
-	// Also, if not using -service-account-json, don't enforce authentication
-	// by using OptionalLogin mode. This is needed for IP whitelisted bots: they
-	// have NO credentials to send.
-	//
-	// If -service-account-json is passed, enforce that it is really used.
+	// Don't enforce authentication by using OptionalLogin mode. This is needed
+	// for IP whitelisted bots: they have NO credentials to send.
 	//
 	// TODO(vadimsh): Some of relations between -service-account-json and
 	// applicable login modes are universal and should be made a part of
 	// "common/auth" library.
 	authOpts := c.parsedAuthOpts
-	var loginMode auth.LoginMode
 	if authOpts.ServiceAccountJSONPath != "" {
 		authOpts.Method = auth.ServiceAccountMethod
-		loginMode = auth.SilentLogin
 	} else {
 		authOpts.Method = auth.UserCredentialsMethod
-		loginMode = auth.OptionalLogin
 	}
 	ctx := gologger.StdConfig.Use(context.Background())
-	return auth.NewAuthenticator(ctx, loginMode, authOpts).Client()
+	return auth.NewAuthenticator(ctx, auth.OptionalLogin, authOpts).Client()
 }
 
 type isolateFlags struct {

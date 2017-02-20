@@ -47,14 +47,11 @@ func (c *commonFlags) createAuthClient() (*http.Client, error) {
 	// TODO(vadimsh): This is copy-pasta of createAuthClient from
 	// cmd/isolate/common.go.
 	authOpts := c.parsedAuthOpts
-	var loginMode auth.LoginMode
 	if authOpts.ServiceAccountJSONPath != "" {
 		authOpts.Method = auth.ServiceAccountMethod
-		loginMode = auth.SilentLogin
 	} else {
 		authOpts.Method = auth.UserCredentialsMethod
-		loginMode = auth.OptionalLogin
 	}
 	ctx := gologger.StdConfig.Use(context.Background())
-	return auth.NewAuthenticator(ctx, loginMode, authOpts).Client()
+	return auth.NewAuthenticator(ctx, auth.OptionalLogin, authOpts).Client()
 }

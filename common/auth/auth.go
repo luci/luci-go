@@ -172,10 +172,9 @@ const (
 	// method or any other way of initializing credentials cache) to get more
 	// permissions.
 	//
-	// TODO(vadimsh): When used with ServiceAccountMethod it is identical to
-	// SilentLogin, since it makes no sense to ignore invalid service account
-	// credentials when the caller is explicitly asking the authenticator to use
-	// them.
+	// When used with ServiceAccountMethod it is identical to SilentLogin, since
+	// it makes no sense to ignore invalid service account credentials when the
+	// caller is explicitly asking the authenticator to use them.
 	//
 	// Has the original meaning when used with GCEMetadataMethod: it instructs to
 	// skip authentication if the token returned by GCE metadata service doesn't
@@ -831,11 +830,12 @@ func (a *Authenticator) ensureInitialized() error {
 //   (false, nil) to disable authentication (for OptionalLogin mode).
 //   (false, err) on errors.
 func (a *Authenticator) doLoginIfRequired(requiresAuth bool) (useAuth bool, err error) {
-	effectiveMode := a.loginMode
+	err = a.CheckLoginRequired() // also initializes guts for effectiveLoginMode()
+	effectiveMode := a.effectiveLoginMode()
 	if requiresAuth && effectiveMode == OptionalLogin {
 		effectiveMode = SilentLogin
 	}
-	switch err := a.CheckLoginRequired(); {
+	switch {
 	case err == nil:
 		return true, nil // have a valid cached base token
 	case err == ErrInsufficientAccess && effectiveMode == OptionalLogin:
@@ -853,6 +853,27 @@ func (a *Authenticator) doLoginIfRequired(requiresAuth bool) (useAuth bool, err 
 		return false, err
 	}
 	return true, nil
+}
+
+// effectiveLoginMode returns a login mode to use, considering what kind of a
+// token provider is being used.
+//
+// See comments for OptionalLogin for more info. The gist of it: we treat
+// OptionalLogin as SilentLogin when using a service account private key.
+func (a *Authenticator) effectiveLoginMode() (lm LoginMode) {
+	// a.opts.Method is modified under a lock, need to grab the lock to avoid a
+	// race. Note that a.loginMode is immutable and can be read outside the
+	// lock. We skip the locking if we know for sure that the return value will be
+	// same as a.loginMode (which is the case for a.loginMode != OptionalLogin).
+	lm = a.loginMode
+	if lm == OptionalLogin {
+		a.lock.RLock()
+		if a.opts.Method == ServiceAccountMethod {
+			lm = SilentLogin
+		}
+		a.lock.RUnlock()
+	}
+	return
 }
 
 // currentToken returns currently loaded authentication token (or nil).
@@ -952,7 +973,7 @@ func (a *Authenticator) authTokenInjector(req *http.Request) error {
 		var err error
 		tok, err = a.refreshToken(tok, minAcceptedLifetime)
 		switch {
-		case err == ErrLoginRequired && a.loginMode == OptionalLogin:
+		case err == ErrLoginRequired && a.effectiveLoginMode() == OptionalLogin:
 			return nil // skip auth, no need for modifications
 		case err != nil:
 			return err
