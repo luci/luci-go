@@ -4,8 +4,8 @@
 
 //go:generate cproto
 
-// Package env contains `vpython` environment definition protobufs.
-package env
+// Package vpython contains `vpython` environment definition protobufs.
+package vpython
 
 import (
 	"github.com/golang/protobuf/proto"
