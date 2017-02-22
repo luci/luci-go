@@ -13,6 +13,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/api/buildbucket/buildbucket/v1"
+	"github.com/luci/luci-go/common/api/buildbucket/swarmbucket/v1"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/server/auth"
 )
@@ -40,10 +41,23 @@ func ParseTags(tags []string) map[string]string {
 	return result
 }
 
-func newClient(c context.Context, server string) (*buildbucket.Service, error) {
-	// TODO(vadimsh): Use auth.AsUser? (for impersonating end users).
-	c, _ = context.WithTimeout(c, 60*time.Second)
-	t, err := auth.GetRPCTransport(c, auth.AsSelf)
+func newSwarmbucketClient(c context.Context, server string) (*swarmbucket.Service, error) {
+	c, _ = context.WithTimeout(c, time.Minute)
+	t, err := auth.GetRPCTransport(c, auth.AsUser)
+	if err != nil {
+		return nil, err
+	}
+	client, err := swarmbucket.New(&http.Client{Transport: t})
+	if err != nil {
+		return nil, err
+	}
+	client.BasePath = fmt.Sprintf("https://%s/api/swarmbucket/v1/", server)
+	return client, nil
+}
+
+func newBuildbucketClient(c context.Context, server string) (*buildbucket.Service, error) {
+	c, _ = context.WithTimeout(c, time.Minute)
+	t, err := auth.GetRPCTransport(c, auth.AsUser)
 	if err != nil {
 		return nil, err
 	}

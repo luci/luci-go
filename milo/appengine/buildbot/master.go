@@ -99,8 +99,8 @@ func getMasterJSON(c context.Context, name string) (
 
 // GetAllBuilders returns a resp.Module object containing all known masters
 // and builders.
-func GetAllBuilders(c context.Context) (*resp.Module, error) {
-	result := &resp.Module{Name: "Buildbot"}
+func GetAllBuilders(c context.Context) (*resp.CIService, error) {
+	result := &resp.CIService{Name: "Buildbot"}
 	// Fetch all Master entries from datastore
 	q := ds.NewQuery("buildbotMasterEntry")
 	// TODO(hinoka): Maybe don't look past like a month or so?
@@ -131,7 +131,7 @@ func GetAllBuilders(c context.Context) (*resp.Module, error) {
 			logging.WithError(err).Errorf(c, "Could not decode %s", entry.Name)
 			continue
 		}
-		ml := resp.MasterListing{Name: entry.Name}
+		ml := resp.BuilderGroup{Name: entry.Name}
 		// Sort the builder listing.
 		sb := make([]string, 0, len(master.Builders))
 		for bn := range master.Builders {
@@ -146,7 +146,7 @@ func GetAllBuilders(c context.Context) (*resp.Module, error) {
 				URL: fmt.Sprintf("/buildbot/%s/%s", entry.Name, bn),
 			})
 		}
-		result.Masters = append(result.Masters, ml)
+		result.BuilderGroups = append(result.BuilderGroups, ml)
 	}
 	return result, nil
 }

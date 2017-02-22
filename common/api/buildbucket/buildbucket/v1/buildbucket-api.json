@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"ODRTh3xaRR64wpeXJSlF33HMN-0/72w1tM82jyLOVXQokFAUqsYiSfw\"",
+ "etag": "\"ODRTh3xaRR64wpeXJSlF33HMN-0/ZdH9naghIwgRSliyml1cwKZHA3o\"",
  "discoveryVersion": "v1",
  "id": "buildbucket:v1",
  "name": "buildbucket",

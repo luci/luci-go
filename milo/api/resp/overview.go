@@ -8,24 +8,32 @@ package resp
 // There is an implicit hierarchy of Master -> Builder.
 
 type FrontPage struct {
-	// Module is a Milo module, such as "buildbot", "swarmbucket", or "dm".
-	Module []Module
+	// CIServices is a backing service for a Continuous Integration system,
+	// such as "buildbot", "swarmbucket", or "dm".
+	CIServices []CIService
 }
 
-// Module is a Milo module, such as "buildbot", "swarmbucket", or "dm".
-type Module struct {
-	// Name is the display name of the module, which could be "Buildbot",
+// CIService is a backing service for a Continuous Integration system,
+// such as "buildbot", "swarmbucket", or "dm".
+type CIService struct {
+	// Name is the display name of the service, which could be "Buildbot",
 	// "SwarmBucket", or "Dungeon Master"
 	Name string
 
-	// Masters lists all of the known masters within this module.
-	Masters []MasterListing
+	// Host points to the specific instance of this CI Service.
+	Host *Link
+
+	// BuilderGroups lists all of the known named groups of builders within this service.
+	BuilderGroups []BuilderGroup
 }
 
-// MasterListing describes all of the builders within a master cluster.
-// This is also known as a "Bucket" in swarmbucket.
-type MasterListing struct {
-	// Name is the name of the master.
+// BuilderGroup is a container to describe a named cluster of builders.
+// This takes on other names in each CI services:
+// Buildbot: Master
+// Buildbucket: Bucket
+// Dungeon Master: Bucket
+type BuilderGroup struct {
+	// Name is the name of the group.
 	Name string
 	// Builders is a list of links to the builder page for that builder.
 	Builders []Link

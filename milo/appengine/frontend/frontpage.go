@@ -12,8 +12,10 @@ import (
 	"golang.org/x/net/context"
 
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/buildbot"
+	"github.com/luci/luci-go/milo/appengine/buildbucket"
 	"github.com/luci/luci-go/milo/appengine/settings"
 )
 
@@ -25,13 +27,25 @@ func (f frontpage) GetTemplateName(t settings.Theme) string {
 
 func (f frontpage) Render(c context.Context, r *http.Request, p httprouter.Params) (*templates.Args, error) {
 	fp := resp.FrontPage{}
-	mBuildbot, err := buildbot.GetAllBuilders(c)
+	var mBuildbot, mBuildbucket *resp.CIService
+
+	err := parallel.FanOutIn(func(ch chan<- func() error) {
+		ch <- func() (err error) {
+			mBuildbot, err = buildbot.GetAllBuilders(c)
+			return err
+		}
+		ch <- func() (err error) {
+			mBuildbucket, err = buildbucket.GetAllBuilders(c)
+			return err
+		}
+	})
 	if err != nil {
-		log.Errorf(c, "Encountered error while loading buildbot module: %s", err)
-	} else {
-		fp.Module = append(fp.Module, *mBuildbot)
+		log.WithError(err).Errorf(c, "Encountered error while loading modules")
+		return nil, err
 	}
 
+	fp.CIServices = append(fp.CIServices, *mBuildbucket)
+	fp.CIServices = append(fp.CIServices, *mBuildbot)
 	return &templates.Args{"frontpage": fp}, nil
 }
 
@@ -40,10 +54,10 @@ type testableFrontpage struct{ frontpage }
 func (l testableFrontpage) TestData() []settings.TestBundle {
 	data := &templates.Args{
 		"frontpage": resp.FrontPage{
-			Module: []resp.Module{
+			CIServices: []resp.CIService{
 				{
 					Name: "Module 1",
-					Masters: []resp.MasterListing{
+					BuilderGroups: []resp.BuilderGroup{
 						{
 							Name: "Example master A",
 							Builders: []resp.Link{

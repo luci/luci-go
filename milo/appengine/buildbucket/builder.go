@@ -232,7 +232,7 @@ func builderImpl(c context.Context, server, bucket, builder string, maxCompleted
 	if server == "debug" {
 		return result, getDebugBuilds(c, bucket, builder, maxCompletedBuilds, result)
 	}
-	client, err := newClient(c, server)
+	client, err := newBuildbucketClient(c, server)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"ODRTh3xaRR64wpeXJSlF33HMN-0/o7xMc6iM9EsNleRGe_TLR1l7UFU\"",
+ "etag": "\"ODRTh3xaRR64wpeXJSlF33HMN-0/S1SQMuvomPJ7IdbDqjq3hmebEaI\"",
  "discoveryVersion": "v1",
  "id": "swarming:v1",
  "name": "swarming",
@@ -151,6 +151,9 @@
     },
     "bot_id": {
      "type": "string"
+    },
+    "deleted": {
+     "type": "boolean"
     },
     "dimensions": {
      "type": "array",
@@ -376,6 +379,9 @@
     "cancel_task": {
      "type": "boolean"
     },
+    "cancel_tasks": {
+     "type": "boolean"
+    },
     "delete_bot": {
      "type": "boolean"
     },
@@ -547,6 +553,9 @@
      "type": "string"
     },
     "display_server_url_template": {
+     "type": "string"
+    },
+    "luci_config": {
      "type": "string"
     },
     "machine_provider_template": {
@@ -910,6 +919,44 @@
     },
     "user": {
      "type": "string"
+    }
+   }
+  },
+  "SwarmingRpcsTasksCancelRequest": {
+   "id": "SwarmingRpcsTasksCancelRequest",
+   "type": "object",
+   "description": "Request to cancel some subset of pending tasks.",
+   "properties": {
+    "cursor": {
+     "type": "string"
+    },
+    "limit": {
+     "type": "string",
+     "format": "int64"
+    },
+    "tags": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "SwarmingRpcsTasksCancelResponse": {
+   "id": "SwarmingRpcsTasksCancelResponse",
+   "type": "object",
+   "description": "Result of canceling some subset of pending tasks.",
+   "properties": {
+    "cursor": {
+     "type": "string"
+    },
+    "matched": {
+     "type": "string",
+     "format": "int64"
+    },
+    "now": {
+     "type": "string",
+     "format": "date-time"
     }
    }
   },
@@ -1444,6 +1491,22 @@
   },
   "tasks": {
    "methods": {
+    "cancel": {
+     "id": "swarming.tasks.cancel",
+     "path": "tasks/cancel",
+     "httpMethod": "POST",
+     "description": "Cancel a subset of pending tasks based on the tags. Cancellation happens asynchronously, so when this call returns, cancellations will not have completed yet.",
+     "request": {
+      "$ref": "SwarmingRpcsTasksCancelRequest",
+      "parameterName": "resource"
+     },
+     "response": {
+      "$ref": "SwarmingRpcsTasksCancelResponse"
+     },
+     "scopes": [
+      "https://www.googleapis.com/auth/userinfo.email"
+     ]
+    },
     "count": {
      "id": "swarming.tasks.count",
      "path": "tasks/count",
