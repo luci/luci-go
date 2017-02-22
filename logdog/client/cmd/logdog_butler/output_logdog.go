@@ -5,6 +5,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/luci/luci-go/common/clock/clockflag"
@@ -20,7 +21,7 @@ func init() {
 
 // logdogOutputFactory for publishing logs using a LogDog Coordinator host.
 type logdogOutputFactory struct {
-	host             string
+	service          string
 	prefixExpiration clockflag.Duration
 
 	track bool
@@ -32,8 +33,8 @@ func (f *logdogOutputFactory) option() multiflag.Option {
 	opt := newOutputOption("logdog", "Output to a LogDog Coordinator instance.", f)
 
 	flags := opt.Flags()
-	flags.StringVar(&f.host, "host", "",
-		"The LogDog Coordinator host name.")
+	flags.StringVar(&f.service, "service", "",
+		"Optional service within <host> to use. Will be referenced as <service>-dot-<host>.")
 	flags.Var(&f.prefixExpiration, "prefix-expiration",
 		"Amount of time after registration that the prefix will be active. If omitted, the service "+
 			"default will be used. This should exceed the expected lifetime of the job by a fair margin.")
@@ -51,9 +52,17 @@ func (f *logdogOutputFactory) configOutput(a *application) (output.Output, error
 		return nil, errors.Annotate(err).Reason("failed to instantiate authenticator").Err()
 	}
 
+	host := a.coordinatorHost
+	if host == "" {
+		return nil, errors.New("logdog output requires a Coordinator host (-coordinator-host)")
+	}
+	if f.service != "" {
+		host = fmt.Sprintf("%s-dot-%s", f.service, host)
+	}
+
 	cfg := out.Config{
 		Auth:             auth,
-		Host:             f.host,
+		Host:             host,
 		Project:          a.project,
 		Prefix:           a.prefix,
 		PrefixExpiration: time.Duration(f.prefixExpiration),

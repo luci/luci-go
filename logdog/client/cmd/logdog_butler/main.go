@@ -101,7 +101,7 @@ func (a *application) addFlags(fs *flag.FlagSet) {
 	fs.Var(&a.prefix, "prefix",
 		"Prefix to apply to all stream names.")
 	fs.StringVar(&a.coordinatorHost, "coordinator-host", "",
-		"The Coordinator host to pass on to subprocesses.")
+		"The Coordinator service host to use.")
 	fs.Var(&a.outputConfig, "output",
 		"The output name and configuration. Specify 'help' for more information.")
 	fs.IntVar(&a.outputWorkers, "output-workers", butler.DefaultOutputWorkers,
