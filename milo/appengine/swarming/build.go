@@ -270,7 +270,7 @@ func addBuilderLink(c context.Context, build *resp.MiloBuild, swarmingHostname s
 	builder := tags["builder"]
 	if bucket == "" {
 		logging.Errorf(
-			c, "Could not extract buidlbucket bucket from task %s",
+			c, "Could not extract buildbucket bucket from task %s",
 			taskPageURL(swarmingHostname, sr.TaskId))
 	}
 	if builder == "" {
