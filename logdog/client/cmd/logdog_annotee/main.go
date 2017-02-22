@@ -190,6 +190,10 @@ func mainImpl(args []string) int {
 		return configErrorReturnCode
 	}
 
+	if a.logdogHost == "" && a.bootstrap != nil {
+		a.logdogHost = a.bootstrap.CoordinatorHost
+	}
+
 	args = fs.Args()
 	if a.jsonArgsPath != "" {
 		if len(args) > 0 {
