@@ -1,0 +1,46 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package env;
+
+
+message Spec {
+  // The Python version to use. This should be of the form:
+  // "Major[.Minor[.Patch]]"
+  //
+  // If specified,
+  // - The Major version will be enforced absolutely. Python 3 will not be
+  //   preferred over Python 2 because '3' is greater than '2'.
+  // - The remaining versions, if specified, will be regarded as *minimum*
+  //   versions. In other words, if "2.7.4" is specified and the system has
+  //   "2.7.12", that will suffice. Similarly, "2.6" would accept a "2.7"
+  //   interpreter.
+  //
+  // If empty, the default Python interpreter ("python") will be used.
+  string python_version = 1;
+
+  // A definition for a remote package. The type of package depends on the
+  // configured package resolver.
+  message Package {
+    // The path of the package.
+    //
+    // - For CIPD, this is the package name.
+    string path = 1;
+
+    // The package version.
+    //
+    // - For CIPD, this will be any recognized CIPD version (i.e., ID, tag, or
+    //   ref).
+    string version = 2;
+  }
+  repeated Package wheel = 2;
+
+  // The VirtualEnv package.
+  //
+  // This should be left empty to use the `vpython` default package
+  // (recommended).
+  Package virtualenv = 3;
+}
