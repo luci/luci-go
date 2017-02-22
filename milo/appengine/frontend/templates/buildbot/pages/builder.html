@@ -107,7 +107,10 @@
           {{ end }}
         </td>
         <td class="left">
-          {{ .Text }}
+          {{ range $i, $value := .Text }}
+            {{ if gt $i 0 }}<br>{{ end }}
+            {{ . }}
+          {{ end }}
         </td>
       </tr>
     {{ end }}

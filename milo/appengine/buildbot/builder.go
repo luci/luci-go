@@ -31,6 +31,39 @@ type builderRef struct {
 // it's eaiser to map thenm by builders instead.
 type buildMap map[builderRef]*buildbotBuild
 
+// mergeText merges buildbot summary texts, which sometimes separates
+// words that should be merged together, this combines them into a single
+// line.
+func mergeText(text []string) []string {
+	result := make([]string, 0, len(text))
+	merge := false
+	for _, line := range text {
+		if merge {
+			merge = false
+			result[len(result)-1] += " " + line
+			continue
+		}
+		result = append(result, line)
+		switch line {
+		case "build", "failed", "exception":
+			merge = true
+		default:
+			merge = false
+		}
+	}
+
+	// We can remove error messages about the step "steps" if it's part of a longer
+	// message because this step is an artifact of running on recipes and it's
+	// not important to users.
+	if len(result) > 1 {
+		switch result[0] {
+		case "failed steps", "exception steps":
+			result = result[1:]
+		}
+	}
+	return result
+}
+
 func getBuildSummary(b *buildbotBuild) *resp.BuildSummary {
 	started, finished, duration := parseTimes(b.Times)
 	return &resp.BuildSummary{
@@ -44,7 +77,7 @@ func getBuildSummary(b *buildbotBuild) *resp.BuildSummary {
 			Finished: finished,
 			Duration: duration,
 		},
-		Text:     b.Text,
+		Text:     mergeText(b.Text),
 		Blame:    blame(b),
 		Revision: b.Sourcestamp.Revision,
 	}
