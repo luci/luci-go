@@ -96,6 +96,7 @@ _load_metadata_check COORDINATOR_HOST "attributes/logdog_coordinator_host"
 
 # Load metadata (ts-mon).
 _load_metadata TSMON_ENDPOINT "attributes/tsmon_endpoint"
+_load_metadata TSMON_ACT_AS "attributes/tsmon_act_as"
 
 # Load metadata (app-specific).
 _load_metadata LOG_LEVEL "attributes/logdog_collector_log_level"
@@ -108,15 +109,19 @@ trap "rm -rf ${TEMPDIR}" EXIT
 ARGS=(
   "-coordinator" "${COORDINATOR_HOST}"
   "-config-kill-interval" "5m"
+  "-service-account-json" ":gce"
   )
 
 if [ ! -z "${LOG_LEVEL}" ]; then
   ARGS+=("-log-level" "${LOG_LEVEL}")
 fi
 if [ ! -z "${TSMON_ENDPOINT}" ]; then
-  ARGS+=("-ts-mon-endpoint" "${TSMON_ENDPOINT}")
-  ARGS+=("-ts-mon-task-service-name" "${PROJECT_ID}")
-  ARGS+=("-ts-mon-autogen-hostname")
+  ARGS+=( \
+    "-ts-mon-endpoint" "${TSMON_ENDPOINT}" \
+    "-ts-mon-act-as" "${TSMON_ACT_AS}" \
+    "-ts-mon-credentials" ":gce" \
+    "-ts-mon-autogen-hostname" \
+    )
 fi
 
 echo "INFO: Running command line args: ${APP} ${ARGS[*]}"
