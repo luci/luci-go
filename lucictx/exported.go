@@ -25,18 +25,6 @@ type Exported interface {
 
 	// SetInEnviron sets/replaces the LUCI_CONTEXT in an environ.Env object.
 	SetInEnviron(env environ.Env)
-
-	// UnsafeSetInGlobalEnviron sets this exported value DIRECTLY in the
-	// process-wide environment. This is NOT thread/goroutine safe! Only use this
-	// if you know that a single logical 'thread' of execution will ever mutate
-	// the LUCI_CONTEXT environment variable (e.g. at the very top of your main()
-	// function or something like that).
-	//
-	// Calling this more than once per Exported may panic. Don't do that.
-	//
-	// If this method is used, calling Close on the Exported will also reset the
-	// LUCI_CONTEXT envvar back to its value prior to calling this method.
-	UnsafeSetInGlobalEnviron()
 }
 
 type baseExport struct {
@@ -59,7 +47,6 @@ type liveExport struct {
 	baseExport
 	path string
 
-	calledUnsafe     bool
 	previousEnvValue *string
 }
 
@@ -84,29 +71,8 @@ func (e *liveExport) SetInEnviron(env environ.Env) {
 	env.Set(EnvKey, e.path)
 }
 
-func (e *liveExport) UnsafeSetInGlobalEnviron() {
-	e.assertOpen()
-	if e.calledUnsafe {
-		panic("Cannot call UnsafeSetInGlobalEnviron more than once.")
-	}
-	e.calledUnsafe = true
-
-	curVal, exists := os.LookupEnv(EnvKey)
-	if exists {
-		e.previousEnvValue = &curVal
-	}
-	os.Setenv(EnvKey, e.path)
-}
-
 func (e *liveExport) Close() error {
 	e.baseExport.Close()
-	if e.calledUnsafe {
-		if e.previousEnvValue == nil {
-			os.Unsetenv(EnvKey)
-		} else {
-			os.Setenv(EnvKey, *e.previousEnvValue)
-		}
-	}
 	if err := os.Remove(e.path); err != nil {
 		fmt.Fprintf(os.Stderr, "Could not remove LUCI_CONTEXT file %q: %s", e.path, err)
 	}
@@ -117,6 +83,5 @@ type nullExport struct {
 	baseExport
 }
 
-func (n *nullExport) SetInCmd(*exec.Cmd)        { n.assertOpen() }
-func (n *nullExport) SetInEnviron(environ.Env)  { n.assertOpen() }
-func (n *nullExport) UnsafeSetInGlobalEnviron() { n.assertOpen() }
+func (n *nullExport) SetInCmd(*exec.Cmd)       { n.assertOpen() }
+func (n *nullExport) SetInEnviron(environ.Env) { n.assertOpen() }

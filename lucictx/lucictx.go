@@ -55,9 +55,6 @@ var externalContext = extractFromEnv(os.Stderr)
 
 func extractFromEnv(out io.Writer) lctx {
 	path := os.Getenv(EnvKey)
-	// We unset this here so that child processes don't accidentally inherit
-	// a stale LUCI_CONTEXT environment variable.
-	os.Unsetenv(EnvKey)
 	if path == "" {
 		return nil
 	}

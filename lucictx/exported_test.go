@@ -77,28 +77,5 @@ func TestLiveExported(t *testing.T) {
 			So(ok, ShouldBeTrue)
 			So(val, ShouldEqual, le.path)
 		})
-
-		Convey("Can set in global env", func() {
-			le.UnsafeSetInGlobalEnviron()
-			So(os.Getenv(EnvKey), ShouldEqual, le.path)
-
-			Convey("cannot set it more than once", func() {
-				So(le.UnsafeSetInGlobalEnviron, ShouldPanic)
-			})
-
-			Convey("closing resets the variable", func() {
-				le.Close()
-				_, ok := os.LookupEnv(EnvKey)
-				So(ok, ShouldBeFalse)
-			})
-		})
-
-		Convey("Changing global env resores previous", func() {
-			os.Setenv(EnvKey, "sup")
-			le.UnsafeSetInGlobalEnviron()
-			So(os.Getenv(EnvKey), ShouldEqual, le.path)
-			le.Close()
-			So(os.Getenv(EnvKey), ShouldEqual, "sup")
-		})
 	})
 }
