@@ -65,6 +65,13 @@ const (
 	OAuthScopeEmail = "https://www.googleapis.com/auth/userinfo.email"
 )
 
+const (
+	// GCEServiceAccount is special value that can be passed instead of path to
+	// a service account credentials file to indicate that GCE VM credentials should
+	// be used instead of a real credentials file.
+	GCEServiceAccount = ":gce"
+)
+
 // Method defines a method to use to obtain OAuth access token.
 type Method string
 
@@ -261,6 +268,12 @@ type Options struct {
 
 	// ServiceAccountJSONPath is a path to a JSON blob with a private key to use.
 	//
+	// Can also be set to GCEServiceAccount (':gce') to indicate that the GCE VM
+	// service account should be used instead. Useful in CLI interfaces. This
+	// works only if Method is set to AutoSelectMethod (which is the default for
+	// most CLI apps). If GCEServiceAccount is used on non-GCE machine,
+	// authenticator methods return ErrBadCredentials.
+	//
 	// Used only with ServiceAccountMethod.
 	ServiceAccountJSONPath string
 
@@ -277,6 +290,19 @@ type Options struct {
 	//
 	// Default: "default" account.
 	GCEAccountName string
+
+	// GCEAllowAsDefault indicates whether it is OK to pick GCE authentication
+	// method as default if no other methods apply.
+	//
+	// Effective only when running on GCE and Method is set to AutoSelectMethod.
+	//
+	// In theory using GCE metadata server for authentication when it is
+	// available looks attractive. In practice, especially if running in a
+	// heterogeneous fleet with a mix of GCE and non-GCE machines, automatically
+	// enabling GCE-based authentication is very surprising when it happens.
+	//
+	// Default: false (don't "sniff" GCE environment).
+	GCEAllowAsDefault bool
 
 	// SecretsDir can be used to set the path to a directory where tokens
 	// are cached.
@@ -313,7 +339,7 @@ type Options struct {
 // It picks the first applicable method in this order:
 //   * ServiceAccountMethod (if the service account private key is configured).
 //   * LUCIContextMethod (if running inside LUCI_CONTEXT with an auth server).
-//   * GCEMetadataMethod (if running on GCE).
+//   * GCEMetadataMethod (if running on GCE and GCEAllowAsDefault is true).
 //   * UserCredentialsMethod (if no other method applies).
 //
 // Beware: it may do relatively heavy calls on first usage (to detect GCE
@@ -321,10 +347,13 @@ type Options struct {
 func SelectBestMethod(ctx context.Context, opts Options) Method {
 	switch {
 	case opts.ServiceAccountJSONPath != "" || len(opts.ServiceAccountJSON) != 0:
+		if opts.ServiceAccountJSONPath == GCEServiceAccount {
+			return GCEMetadataMethod
+		}
 		return ServiceAccountMethod
 	case lucictx.GetLocalAuth(ctx) != nil:
 		return LUCIContextMethod
-	case metadata.OnGCE():
+	case opts.GCEAllowAsDefault && metadata.OnGCE():
 		return GCEMetadataMethod
 	default:
 		return UserCredentialsMethod
@@ -1218,6 +1247,10 @@ func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string) 
 			serviceAccountPath,
 			scopes)
 	case GCEMetadataMethod:
+		if !metadata.OnGCE() {
+			logging.Errorf(ctx, "Attempting to use GCE VM service account, but not running on GCE")
+			return nil, ErrBadCredentials
+		}
 		return internal.NewGCETokenProvider(ctx, opts.GCEAccountName, scopes)
 	case LUCIContextMethod:
 		return internal.NewLUCIContextTokenProvider(ctx, scopes, opts.Transport)

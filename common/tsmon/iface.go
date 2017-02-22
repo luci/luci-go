@@ -231,20 +231,8 @@ func newAuthenticator(ctx context.Context, credentials, actAs string, scopes []s
 	// TODO(vadimsh): Don't hardcode auth options here, pass them from outside
 	// somehow.
 	authOpts := chromeinfra.DefaultAuthOptions()
+	authOpts.ServiceAccountJSONPath = credentials
 	authOpts.Scopes = scopes
 	authOpts.ActAsServiceAccount = actAs
-
-	switch credentials {
-	case GCECredentials:
-		authOpts.Method = auth.GCEMetadataMethod
-
-	case "":
-		// Let the Authenticator choose.
-		break
-
-	default:
-		authOpts.Method = auth.ServiceAccountMethod
-		authOpts.ServiceAccountJSONPath = credentials
-	}
 	return auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts)
 }

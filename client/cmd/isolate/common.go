@@ -62,28 +62,10 @@ func (c *commonServerFlags) Parse() error {
 }
 
 func (c *commonServerFlags) createAuthClient() (*http.Client, error) {
-	// TODO(vadimsh): cmd/isolated and cmd/swarming have copy-pasta of this exact
-	// method.
-	//
-	// If not explicitly passed -service-account-json, use UserCredentialsMethod.
-	// This effectively disables "sniffing" of GCE service account that happens
-	// when using default AutoSelectMethod. We prefer not to use GCE service
-	// account automatically.
-	//
 	// Don't enforce authentication by using OptionalLogin mode. This is needed
 	// for IP whitelisted bots: they have NO credentials to send.
-	//
-	// TODO(vadimsh): Some of relations between -service-account-json and
-	// applicable login modes are universal and should be made a part of
-	// "common/auth" library.
-	authOpts := c.parsedAuthOpts
-	if authOpts.ServiceAccountJSONPath != "" {
-		authOpts.Method = auth.ServiceAccountMethod
-	} else {
-		authOpts.Method = auth.UserCredentialsMethod
-	}
 	ctx := gologger.StdConfig.Use(context.Background())
-	return auth.NewAuthenticator(ctx, auth.OptionalLogin, authOpts).Client()
+	return auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
 }
 
 type isolateFlags struct {

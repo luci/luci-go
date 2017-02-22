@@ -11,13 +11,6 @@ import (
 	"github.com/luci/luci-go/common/tsmon/target"
 )
 
-// GCECredentials is special value that can be passed instead of path to
-// credentials file to indicate that app assertion credentials should be used
-// instead of a real credentials file.
-const (
-	GCECredentials = ":gce"
-)
-
 // Flags defines command line flags related to tsmon.  Use NewFlags()
 // to get a Flags struct with sensible default values.
 type Flags struct {

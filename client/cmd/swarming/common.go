@@ -53,14 +53,8 @@ func (c *commonFlags) Parse() error {
 }
 
 func (c *commonFlags) createAuthClient() (*http.Client, error) {
-	// TODO(vadimsh): This is copy-pasta of createAuthClient from
-	// cmd/isolate/common.go.
-	authOpts := c.parsedAuthOpts
-	if authOpts.ServiceAccountJSONPath != "" {
-		authOpts.Method = auth.ServiceAccountMethod
-	} else {
-		authOpts.Method = auth.UserCredentialsMethod
-	}
+	// Don't enforce authentication by using OptionalLogin mode. This is needed
+	// for IP whitelisted bots: they have NO credentials to send.
 	ctx := gologger.StdConfig.Use(context.Background())
-	return auth.NewAuthenticator(ctx, auth.OptionalLogin, authOpts).Client()
+	return auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
 }

@@ -135,17 +135,11 @@ func (fl *Flags) Register(f *flag.FlagSet, defaults auth.Options) {
 // parsed command line flags.
 func (fl *Flags) Options() (auth.Options, error) {
 	opts := fl.defaults
-
-	if fl.serviceAccountJSON != "" {
-		opts.Method = auth.ServiceAccountMethod
-		opts.ServiceAccountJSONPath = fl.serviceAccountJSON
-	}
-
+	opts.ServiceAccountJSONPath = fl.serviceAccountJSON
 	if fl.registerScopesFlag {
 		opts.Scopes = strings.Split(fl.scopes, " ")
 		sort.Strings(opts.Scopes)
 	}
-
 	return opts, nil
 }
 
