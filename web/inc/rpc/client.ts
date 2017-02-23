@@ -88,8 +88,8 @@ namespace luci {
                 let delay = transientRetry.next();
                 if (delay >= 0) {
                   console.warn(
-                      `Transient error calling ${service}.${method
-                      } with params:`,
+                      `Transient error calling ` +
+                          `${service}.${method} with params:`,
                       request, `:`, err, `; retrying after ${delay}ms.`);
                   return luci.sleepPromise(delay).then(doCall);
                 }
