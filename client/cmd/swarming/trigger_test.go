@@ -6,6 +6,7 @@ package main
 
 import (
 	"errors"
+	"os"
 	"testing"
 
 	swarming "github.com/luci/luci-go/common/api/swarming/swarming/v1"
@@ -14,6 +15,12 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func init() {
+	// So that this test works on swarming!
+	os.Unsetenv("SWARMING_SERVER")
+	os.Unsetenv("SWARMING_TASK_ID")
+}
 
 // Make sure that stringmapflag.Value are returned as sorted arrays.
 func TestMapToArray(t *testing.T) {
