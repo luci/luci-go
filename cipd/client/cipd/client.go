@@ -256,9 +256,7 @@ func (am ActionMap) Log(ctx context.Context) {
 		actions := am[subdir]
 
 		if subdir == "" {
-			if len(keys) > 1 {
-				logging.Infof(ctx, "In root:")
-			}
+			logging.Infof(ctx, "In root:")
 		} else {
 			logging.Infof(ctx, "In subdir %q:", subdir)
 		}
@@ -270,14 +268,14 @@ func (am ActionMap) Log(ctx context.Context) {
 			}
 		}
 		if len(actions.ToUpdate) != 0 {
-			logging.Infof(ctx, "  to updated:")
+			logging.Infof(ctx, "  to update:")
 			for _, pair := range actions.ToUpdate {
 				logging.Infof(ctx, "    %s (%s -> %s)",
 					pair.From.PackageName, pair.From.InstanceID, pair.To.InstanceID)
 			}
 		}
 		if len(actions.ToRemove) != 0 {
-			logging.Infof(ctx, "  to removed:")
+			logging.Infof(ctx, "  to remove:")
 			for _, pin := range actions.ToRemove {
 				logging.Infof(ctx, "    %s", pin)
 			}
