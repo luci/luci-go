@@ -1,0 +1,222 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+<meta charset="utf-8">
+<title>
+  
+      Pending
+    
+    -
+    
+    1a2b3c4d5e6f7890
+</title>
+<link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
+<script src="/static/common/js/time.js"></script>
+<script src="/static/common/third_party/js/jquery.min.js"></script>
+
+<link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/gray-32.png">
+
+
+
+<body class="interface">
+  <header>
+    Luci
+    <div>
+      
+        <a href="https://login.url/?target=/foobar">login</a>
+      
+    </div>
+  </header>
+  <hr>
+  
+  <div class="content">
+    <h1>
+      
+      Build 1a2b3c4d5e6f7890
+      
+    </h1>
+
+    <div class="column">
+
+      <h2>Results:</h2>
+      
+        
+          <p class="pending result">Build Pending
+        
+        <span class="subtitle">
+          
+        </span>
+        </p>
+       
+
+
+        
+
+      
+      <h2>Execution:</h2>
+      <ul>
+        
+        <li>
+          Source:
+          <a href="https://example.com/user/task/1a2b3c4d5e6f7890">Task 1a2b3c4d5e6f7890</a>
+        </li>
+        
+
+        
+      </ul>
+       
+
+      
+
+      
+        <h2>Steps and Logfiles:</h2>
+        <input type="checkbox" id="showHidden">
+        <label for="showHidden">Show hidden <span id="numHidden"></span></label>
+        <ol id="steps" class="hide">
+          
+          <li class="verbosity-Normal">
+            <div class="status-Running result">
+              <b>Waiting...</b>
+              
+              <span>
+                <div class="step-text">waiting for annotation stream</div>
+              </span>
+            </div>
+            <ul>
+              
+              
+              
+                <li> - no logs - </li>
+              
+            </ul>
+          </li>
+          
+        </ol>
+       
+
+    </div>
+
+    <div class="column">
+
+      <h2>Build Properties:</h2>
+
+      <table class="info" width="100%">
+      <tr><th>Name</th><th>Value</th><th>Source</th></tr>
+
+        
+        
+          
+            <tr>
+              <td class="left">allow_milo</td>
+              <td>
+                
+                  1
+                
+              </td>
+              <td>Swarming Tags</td>
+            </tr>
+          
+            <tr>
+              <td class="left">luci_project</td>
+              <td>
+                
+                  testproject
+                
+              </td>
+              <td>Swarming Tags</td>
+            </tr>
+          
+            <tr>
+              <td class="left">log_location</td>
+              <td>
+                
+                  logdog://example.com/testproject/${swarming_run_id}/&#43;/annotations
+                
+              </td>
+              <td>Swarming Tags</td>
+            </tr>
+          
+        
+      </table>
+
+      
+
+      <h2>Timing:</h2>
+      <table class="info" width="100%">
+        <tr class="alt"><td class="left">Start</td>
+        <td>
+          N/A
+        </td></tr>
+        <tr><td class="left">End</td>
+        <td>
+          N/A
+        </td></tr>
+        <tr class="alt"><td class="left">Elapsed</td>
+        <td id="duration">
+          
+            N/A
+          
+        </td></tr>
+      </table>
+
+    </div>
+
+    
+  </div>
+</div>
+<script language="javascript">
+$(document).ready(function() {
+  var check = function(checked) {
+    var things = $("#steps");
+    if (checked) {
+      $("#steps").removeClass("hide");
+    } else {
+      $("#steps").addClass("hide");
+    }
+    var numHidden = $(".verbosity-Hidden").length;
+    if (numHidden > 0) {
+      $("#numHidden").text("(" + numHidden + " hidden)");
+    } else {
+      $("#numHidden").text("");
+    }
+  };
+
+  check($("#showHidden").is(":checked"));
+  $("#showHidden").click(function(e) {
+    check($(this).is(":checked"));
+  });
+});
+</script>
+
+  <footer>
+    <hr>
+    <a href="https://github.com/luci">luci</a>,
+    working for the <a href="https://chromium.org/">Chromium</a> project.<br>
+    Page built: <b><span class="local-time" data-timestamp="-6792498672871">Saturday, 03-Feb-01 04:05:06 UTC</span></b> (All times local)
+  </footer>
+<script>
+(function () {
+  'use strict';
+  milo.makeTimesLocal();
+})();
+</script>
+<script>
+  (function(i,s,o,g,r,a,m){i['CrDXObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://storage.googleapis.com/crdx-feedback.appspot.com/feedback.js','crdx');
+
+  crdx('setFeedbackButtonLink', 'https://bugs.chromium.org/p/chromium/issues/entry?cc=hinoka@chromium.org&components=Infra%3EPlatform%3EMilo');
+</script>
+
+<script>
+	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+	ga('create', 'UA-12345-01', 'auto');
+	ga('send', 'pageview');
+</script>
+

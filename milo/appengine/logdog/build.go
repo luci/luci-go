@@ -12,7 +12,6 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
-	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
@@ -25,7 +24,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	mc "github.com/luci/gae/service/memcache"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc/codes"
 )
 
 const (
@@ -118,28 +116,11 @@ func (as *AnnotationStream) Fetch(c context.Context) (*miloProto.Step, error) {
 		state  coordinator.LogStream
 		stream = as.Client.Stream(as.Project, as.Path)
 	)
+
 	le, err := stream.Tail(c, coordinator.WithState(&state), coordinator.Complete())
-	switch code := grpcutil.Code(err); code {
-	case codes.OK:
-		break
-
-	case codes.NotFound:
-		return nil, &miloerror.Error{
-			Message: "Stream not found",
-			Code:    http.StatusNotFound,
-		}
-
-	default:
-		// TODO: Once we switch to delegation tokens and are making the request on
-		// behalf of a user rather than the Milo service, handle PermissionDenied.
-		log.Fields{
-			log.ErrorKey: err,
-			"code":       code,
-		}.Errorf(c, "Failed to load LogDog annotation stream.")
-		return nil, &miloerror.Error{
-			Message: "Failed to load stream",
-			Code:    http.StatusInternalServerError,
-		}
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to load stream.")
+		return nil, err
 	}
 
 	// Make sure that this is an annotation stream.

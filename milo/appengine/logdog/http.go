@@ -61,7 +61,25 @@ func (s *AnnotationStreamHandler) Render(c context.Context, req *http.Request, p
 
 	// Load the Milo annotation protobuf from the annotation stream.
 	if _, err := as.Fetch(c); err != nil {
-		return nil, err
+		switch errors.Unwrap(err) {
+		case coordinator.ErrNoSuchStream:
+			return nil, &miloerror.Error{
+				Message: "Stream does not exist",
+				Code:    http.StatusNotFound,
+			}
+
+		case coordinator.ErrNoAccess:
+			return nil, &miloerror.Error{
+				Message: "No access to stream",
+				Code:    http.StatusForbidden,
+			}
+
+		default:
+			return nil, &miloerror.Error{
+				Message: "Failed to load stream",
+				Code:    http.StatusInternalServerError,
+			}
+		}
 	}
 
 	// Convert the Milo Annotation protobuf to Milo objects.

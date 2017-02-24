@@ -1,0 +1,68 @@
+{
+  "Summary": {
+    "ParentLabel": null,
+    "Label": "2fb1b35e1da25710",
+    "Status": "NotRun",
+    "Banner": null,
+    "Bot": null,
+    "Source": {
+      "Label": "Task 2fb1b35e1da25710",
+      "URL": "https://example.com/user/task/2fb1b35e1da25710"
+    },
+    "MainLink": {
+      "Label": "Task 2fb1b35e1da25710",
+      "URL": "https://example.com/user/task/2fb1b35e1da25710"
+    },
+    "SubLink": null,
+    "Progress": null,
+    "Started": "0001-01-01T00:00:00Z",
+    "Finished": "0001-01-01T00:00:00Z",
+    "Duration": 0,
+    "Type": "Recipe",
+    "LevelsDeep": 0,
+    "Verbosity": 0,
+    "Text": null
+  },
+  "SourceStamp": null,
+  "Components": null,
+  "PropertyGroup": [
+    {
+      "GroupName": "Main",
+      "Property": null
+    },
+    {
+      "GroupName": "Swarming Tags",
+      "Property": [
+        {
+          "Key": "os",
+          "Value": "Linux"
+        },
+        {
+          "Key": "pool",
+          "Value": "default"
+        },
+        {
+          "Key": "priority",
+          "Value": "10"
+        },
+        {
+          "Key": "user",
+          "Value": ""
+        },
+        {
+          "Key": "allow_milo",
+          "Value": "1"
+        },
+        {
+          "Key": "luci_project",
+          "Value": "testproject"
+        },
+        {
+          "Key": "log_location",
+          "Value": "logdog://example.com/testproject/${swarming_run_id}/+/annotations"
+        }
+      ]
+    }
+  ],
+  "Blame": null
+}

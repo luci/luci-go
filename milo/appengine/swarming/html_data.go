@@ -115,6 +115,10 @@ func (tc *testCase) getSwarmingOutput() string {
 func (tc *testCase) getAnnotation() *miloProto.Step {
 	var step miloProto.Step
 	data := tc.getContent(tc.annotations)
+	if len(data) == 0 {
+		return nil
+	}
+
 	if err := proto.UnmarshalText(string(data), &step); err != nil {
 		panic(fmt.Errorf("failed to unmarshal text protobuf [%s]: %s", tc.annotations, err))
 	}
@@ -183,15 +187,24 @@ func (tc *testLogDogClient) Tail(ctx context.Context, in *logdog.TailRequest, op
 	if tc.err != nil {
 		return nil, tc.err
 	}
+	if tc.resp == nil {
+		return nil, coordinator.ErrNoSuchStream
+	}
 	return tc.resp.(*logdog.GetResponse), nil
 }
 
 func logDogClientFunc(tc *testCase) func(context.Context, string) (*coordinator.Client, error) {
+	anno := tc.getAnnotation()
+	var resp interface{}
+	if anno != nil {
+		resp = datagramGetResponse("testproject", "foo/bar", tc.getAnnotation())
+	}
+
 	return func(c context.Context, host string) (*coordinator.Client, error) {
 		return &coordinator.Client{
-			Host: "example.com",
+			Host: host,
 			C: &testLogDogClient{
-				resp: datagramGetResponse("testproject", "foo/bar", tc.getAnnotation()),
+				resp: resp,
 			},
 		}, nil
 	}

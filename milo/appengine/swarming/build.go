@@ -35,6 +35,10 @@ var errNotMiloJob = errors.New("Not a Milo Job")
 // SwarmingTimeLayout is time layout used by swarming.
 const SwarmingTimeLayout = "2006-01-02T15:04:05.999999999"
 
+// logDogFetchTimeout is the amount of time to wait while fetching a LogDog
+// stream before we time out the fetch.
+const logDogFetchTimeout = 30 * time.Second
+
 // Swarming task states..
 const (
 	// TaskRunning means task is running.
@@ -512,6 +516,20 @@ func (bl *buildLoader) swarmingBuildImpl(c context.Context, svc swarmingService,
 
 		// Cancel if LogDog annotation stream parameters are present in the tag set.
 		taskResCallback: func(res *swarming.SwarmingRpcsTaskResult) (cancelLogs bool) {
+			// If the build hasn't started yet, then there is no LogDog log stream to
+			// render.
+			switch res.State {
+			case TaskPending, TaskExpired:
+				return false
+
+			case TaskCanceled:
+				// If the task wasn't created, then it wasn't started.
+				if res.CreatedTs == "" {
+					return false
+				}
+			}
+
+			// The task started ... is it using LogDog for logging?
 			tags := swarmingTags(res.Tags)
 
 			var err error
@@ -539,14 +557,12 @@ func (bl *buildLoader) swarmingBuildImpl(c context.Context, svc swarmingService,
 	// annotations.
 	switch {
 	case logDogStreamAddr != nil:
+		logging.Infof(c, "Loading build from LogDog stream at: %s", logDogStreamAddr)
+
 		// If the LogDog stream is available, load the step from that.
 		as, err := bl.newEmptyAnnotationStream(c, logDogStreamAddr)
 		if err != nil {
 			return nil, errors.Annotate(err).Reason("failed to create LogDog annotation stream").Err()
-		}
-
-		if s, err = as.Fetch(c); err != nil {
-			return nil, errors.Annotate(err).Reason("failed to load LogDog annotation stream").Err()
 		}
 
 		prefix, _ := logDogStreamAddr.Path.Split()
@@ -556,6 +572,25 @@ func (bl *buildLoader) swarmingBuildImpl(c context.Context, svc swarmingService,
 			Project: logDogStreamAddr.Project,
 		}
 
+		if s, err = as.Fetch(c); err != nil {
+			switch errors.Unwrap(err) {
+			case coordinator.ErrNoSuchStream:
+				logging.WithError(err).Errorf(c, "User cannot access stream.")
+				build.Components = append(build.Components, infoComponent(resp.Running,
+					"Waiting...", "waiting for annotation stream"))
+
+			case coordinator.ErrNoAccess:
+				logging.WithError(err).Errorf(c, "User cannot access stream.")
+				build.Components = append(build.Components, infoComponent(resp.Failure,
+					"No Access", "no access to annotation stream"))
+
+			default:
+				logging.WithError(err).Errorf(c, "Failed to load LogDog annotation stream.")
+				build.Components = append(build.Components, infoComponent(resp.InfraFailure,
+					"Error", "failed to load annotation stream"))
+			}
+		}
+
 	case fr.log != "":
 		// Decode the data using annotee. The logdog stream returned here is assumed
 		// to be consistent, which is why the following block of code are not
@@ -563,16 +598,12 @@ func (bl *buildLoader) swarmingBuildImpl(c context.Context, svc swarmingService,
 		var err error
 		lds, err = streamsFromAnnotatedLog(c, fr.log)
 		if err != nil {
-			build.Components = []*resp.BuildComponent{{
-				Type:   resp.Summary,
-				Label:  "Milo annotation parser",
-				Text:   []string{err.Error()},
-				Status: resp.InfraFailure,
-				SubLink: []*resp.Link{{
-					Label: "swarming task",
-					URL:   taskPageURL(svc.getHost(), taskID),
-				}},
-			}}
+			comp := infoComponent(resp.InfraFailure, "Milo annotation parser", err.Error())
+			comp.SubLink = append(comp.SubLink, &resp.Link{
+				Label: "swarming task",
+				URL:   taskPageURL(svc.getHost(), taskID),
+			})
+			build.Components = append(build.Components, comp)
 		}
 
 		if lds != nil && lds.MainStream != nil && lds.MainStream.Data != nil {
@@ -585,16 +616,27 @@ func (bl *buildLoader) swarmingBuildImpl(c context.Context, svc swarmingService,
 		ub = swarmingURLBuilder(linkBase)
 	}
 
-	if err := addTaskToMiloStep(c, svc.getHost(), fr.res, s); err != nil {
-		return nil, err
+	if s != nil {
+		if err := addTaskToMiloStep(c, svc.getHost(), fr.res, s); err != nil {
+			return nil, err
+		}
+		logdog.AddLogDogToBuild(c, ub, s, &build)
 	}
-	logdog.AddLogDogToBuild(c, ub, s, &build)
 
 	if err := addTaskToBuild(c, svc.getHost(), fr.res, &build); err != nil {
 		return nil, err
 	}
 
 	return &build, nil
+}
+
+func infoComponent(st resp.Status, label, text string) *resp.BuildComponent {
+	return &resp.BuildComponent{
+		Type:   resp.Summary,
+		Label:  label,
+		Text:   []string{text},
+		Status: st,
+	}
 }
 
 func isMiloJob(tags []string) bool {

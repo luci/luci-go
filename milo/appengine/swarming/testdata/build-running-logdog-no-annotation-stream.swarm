@@ -1,0 +1,10 @@
+{
+  "state": "RUNNING",
+  "started_ts": "2016-03-14T10:00:01.850710",
+  "tags": [
+    "allow_milo:1",
+    "luci_project:testproject",
+    "log_location:logdog://example.com/testproject/${swarming_run_id}/+/annotations"
+  ],
+  "task_id": "1a2b3c4d5e6f7890"
+}

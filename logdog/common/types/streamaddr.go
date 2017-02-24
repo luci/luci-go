@@ -26,6 +26,9 @@ type StreamAddr struct {
 	Path StreamPath
 }
 
+// String returns a string representation of this address.
+func (s *StreamAddr) String() string { return s.URL().String() }
+
 // URL returns a LogDog URL that represents this Stream.
 func (s *StreamAddr) URL() *url.URL {
 	return &url.URL{
