@@ -132,7 +132,7 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	if err != nil {
 		return err
 	}
-	arch := archiver.New(isolatedclient.New(nil, client, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil), out)
+	arch := archiver.New(isolatedclient.New(nil, client, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil), out)
 	common.CancelOnCtrlC(arch)
 	type tmp struct {
 		*archiver.Item

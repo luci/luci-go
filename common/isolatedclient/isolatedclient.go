@@ -50,6 +50,9 @@ type PushState struct {
 	finalized bool
 }
 
+// Function type of handler for retrieving specified content from GCS and storing the response in the provided destination buffer.
+type fetchGCS func(context.Context, *Client, isolateservice.HandlersEndpointsV1RetrievedContent, io.WriteSeeker) error
+
 // Client is a client to an isolated server.
 type Client struct {
 	// All the members are immutable.
@@ -57,8 +60,9 @@ type Client struct {
 	url          string
 	namespace    string
 
-	authClient *http.Client // client that sends auth tokens
-	anonClient *http.Client // client that does NOT send auth tokens
+	authClient      *http.Client // client that sends auth tokens
+	anonClient      *http.Client // client that does NOT send auth tokens
+	fetchGCSHandler fetchGCS     // function which fetches url from GCS and stores results in provided destination
 }
 
 // New returns a new IsolateServer client.
@@ -72,19 +76,26 @@ type Client struct {
 // on Classic AppEngine!).
 //
 // If you're unsure which namespace to use, use the DefaultNamespace constant.
-func New(anonClient, authClient *http.Client, host, namespace string, rFn retry.Factory) *Client {
+//
+// If fetchGCSHandler is nil, the fetchGCSDefault function will be used to retrieve
+// files from GCS.
+func New(anonClient, authClient *http.Client, host, namespace string, rFn retry.Factory, fetchGCSHandler fetchGCS) *Client {
 	if anonClient == nil {
 		anonClient = http.DefaultClient
 	}
 	if authClient == nil {
 		authClient = http.DefaultClient
 	}
+	if fetchGCSHandler == nil {
+		fetchGCSHandler = fetchGCSDefault
+	}
 	i := &Client{
-		retryFactory: rFn,
-		url:          strings.TrimRight(host, "/"),
-		namespace:    namespace,
-		authClient:   authClient,
-		anonClient:   anonClient,
+		retryFactory:    rFn,
+		url:             strings.TrimRight(host, "/"),
+		namespace:       namespace,
+		authClient:      authClient,
+		anonClient:      anonClient,
+		fetchGCSHandler: fetchGCSHandler,
 	}
 	tracer.NewPID(i, "isolatedclient:"+i.url)
 	return i
@@ -186,8 +197,13 @@ func (i *Client) Fetch(c context.Context, item *isolateservice.HandlersEndpoints
 	}
 
 	// Handle GCS items.
+	return i.fetchGCSHandler(c, i, out, dest)
+}
+
+// fetchGCSDefault uses the provided HandlersEndpointsV1RetrievedContent response to download content from GCS to the provided dest.
+func fetchGCSDefault(c context.Context, i *Client, content isolateservice.HandlersEndpointsV1RetrievedContent, dest io.WriteSeeker) error {
 	rgen := func() (*http.Request, error) {
-		return http.NewRequest("GET", out.Url, nil)
+		return http.NewRequest("GET", content.Url, nil)
 	}
 	handler := func(resp *http.Response) error {
 		defer resp.Body.Close()

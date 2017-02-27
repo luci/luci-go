@@ -69,7 +69,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	if err != nil {
 		return err
 	}
-	arch := archiver.New(isolatedclient.New(nil, client, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil), out)
+	arch := archiver.New(isolatedclient.New(nil, client, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil), out)
 	common.CancelOnCtrlC(arch)
 	item := isolate.Archive(arch, &c.ArchiveOptions)
 	item.WaitForHashed()

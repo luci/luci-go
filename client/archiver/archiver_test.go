@@ -29,7 +29,7 @@ func init() {
 func TestArchiverEmpty(t *testing.T) {
 	t.Parallel()
 	Convey(`An empty archiver should produce sane output.`, t, func() {
-		a := New(isolatedclient.New(nil, nil, "https://localhost:1", isolatedclient.DefaultNamespace, nil), nil)
+		a := New(isolatedclient.New(nil, nil, "https://localhost:1", isolatedclient.DefaultNamespace, nil, nil), nil)
 		stats := a.Stats()
 		So(stats.TotalHits(), ShouldResemble, 0)
 		So(stats.TotalMisses(), ShouldResemble, 0)
@@ -45,7 +45,7 @@ func TestArchiverFile(t *testing.T) {
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		a := New(isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil), nil)
+		a := New(isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
 
 		fEmpty, err := ioutil.TempFile("", "archiver")
 		So(err, ShouldBeNil)
@@ -89,7 +89,7 @@ func TestArchiverFileHit(t *testing.T) {
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		a := New(isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil), nil)
+		a := New(isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
 		server.Inject([]byte("foo"))
 		item := a.Push("foo", isolatedclient.NewBytesSource([]byte("foo")), 0)
 		item.WaitForHashed()
@@ -110,7 +110,7 @@ func TestArchiverCancel(t *testing.T) {
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		a := New(isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil), nil)
+		a := New(isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
 
 		tmpDir, err := ioutil.TempDir("", "archiver")
 		So(err, ShouldBeNil)

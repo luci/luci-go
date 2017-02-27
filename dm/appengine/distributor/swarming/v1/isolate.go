@@ -12,7 +12,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
+	isolateservice "github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
 	swarm "github.com/luci/luci-go/common/api/swarming/swarming/v1"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/isolated"
@@ -91,7 +91,7 @@ func pushIsolate(c context.Context, isolateURL string, chunks []isoChunk) error 
 	anonC, authC := httpClients(c)
 
 	isoClient := isolatedclient.New(
-		anonC, authC, isolateURL, isolatedclient.DefaultNamespace, nil)
+		anonC, authC, isolateURL, isolatedclient.DefaultNamespace, nil, nil)
 	states, err := isoClient.Contains(c, dgsts)
 	if err != nil {
 		err = errors.Annotate(err).

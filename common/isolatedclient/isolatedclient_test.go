@@ -36,7 +36,7 @@ func TestIsolateServerCaps(t *testing.T) {
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		client := New(nil, nil, ts.URL, DefaultNamespace, nil)
+		client := New(nil, nil, ts.URL, DefaultNamespace, nil, nil)
 		caps, err := client.ServerCapabilities(ctx)
 		So(err, ShouldBeNil)
 		So(caps, ShouldResemble, &isolateservice.HandlersEndpointsV1ServerDetails{ServerVersion: "v1"})
@@ -96,7 +96,7 @@ func TestIsolateServerRetryGCSPartial(t *testing.T) {
 		flaky := &killingMux{server: server, tearDown: map[string]int{"/fake/cloudstorage": 1024}}
 		flaky.ts = httptest.NewServer(flaky)
 		defer flaky.ts.Close()
-		client := New(nil, nil, flaky.ts.URL, DefaultNamespace, fastRetry)
+		client := New(nil, nil, flaky.ts.URL, DefaultNamespace, fastRetry, nil)
 
 		digests, contents, expected := makeItems(large)
 		states, err := client.Contains(ctx, digests)
@@ -126,7 +126,7 @@ func TestIsolateServerBadURL(t *testing.T) {
 		if testing.Short() {
 			t.SkipNow()
 		}
-		client := New(nil, nil, "http://127.0.0.1:1", DefaultNamespace, fastRetry)
+		client := New(nil, nil, "http://127.0.0.1:1", DefaultNamespace, fastRetry, nil)
 		caps, err := client.ServerCapabilities(context.Background())
 		So(caps, ShouldBeNil)
 		So(err, ShouldNotBeNil)
@@ -184,7 +184,7 @@ func testNormal(ctx context.Context, t *testing.T, contents ...[]byte) {
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		client := New(nil, nil, ts.URL, DefaultNamespace, cantRetry)
+		client := New(nil, nil, ts.URL, DefaultNamespace, cantRetry, nil)
 		states, err := client.Contains(ctx, digests)
 		So(err, ShouldBeNil)
 		So(len(states), ShouldResemble, len(digests))
@@ -211,7 +211,7 @@ func testFlaky(ctx context.Context, t *testing.T, flake string) {
 		flaky := &killingMux{server: server, http503: map[string]int{flake: 10}}
 		flaky.ts = httptest.NewServer(flaky)
 		defer flaky.ts.Close()
-		client := New(nil, nil, flaky.ts.URL, DefaultNamespace, fastRetry)
+		client := New(nil, nil, flaky.ts.URL, DefaultNamespace, fastRetry, nil)
 
 		digests, contents, expected := makeItems(foo, large)
 		states, err := client.Contains(ctx, digests)

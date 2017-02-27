@@ -99,7 +99,7 @@ func (c *expArchiveRun) main() error {
 	if err != nil {
 		return err
 	}
-	client := isolatedclient.New(nil, authCl, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil)
+	client := isolatedclient.New(nil, authCl, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
 
 	// Set up a checker an uploader. We limit the uploader to one concurrent
 	// upload, since the uploads are all coming from disk (with the exception of
