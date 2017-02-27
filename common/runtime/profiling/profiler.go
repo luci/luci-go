@@ -17,6 +17,7 @@ import (
 	"sync/atomic"
 
 	"github.com/julienschmidt/httprouter"
+
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
@@ -34,6 +35,21 @@ type Profiler struct {
 	// Can also be configured with "-profile-output-dir" flag.
 	Dir string
 
+	// ProfileCPU, if true, indicates that the profiler should profile the CPU.
+	//
+	// Requires Dir to be set, since it's where the profiler output is dumped.
+	//
+	// Can also be set with "-profile-cpu".
+	ProfileCPU bool
+
+	// ProfileHeap, if true, indicates that the profiler should profile heap
+	// allocations.
+	//
+	// Requires Dir to be set, since it's where the profiler output is dumped.
+	//
+	// Can also be set with "-profile-heap".
+	ProfileHeap bool
+
 	// Logger, if not nil, will be used to log events and errors. If nil, no
 	// logging will be used.
 	Logger logging.Logger
@@ -45,6 +61,9 @@ type Profiler struct {
 
 	// pathCounter is an atomic counter used to ensure non-conflicting paths.
 	pathCounter uint32
+
+	// profilingCPU is true if 'Start' successfully launched CPU profiling.
+	profilingCPU bool
 }
 
 // AddFlags adds command line flags to common Profiler fields.
@@ -53,6 +72,9 @@ func (p *Profiler) AddFlags(fs *flag.FlagSet) {
 		"If specified, run a runtime profiler HTTP server bound to this [address][:port].")
 	fs.StringVar(&p.Dir, "profile-output-dir", "",
 		"If specified, allow generation of profiling artifacts, which will be written here.")
+	fs.BoolVar(&p.ProfileCPU, "profile-cpu", false, "If specified, enables CPU profiling.")
+	fs.BoolVar(&p.ProfileHeap, "profile-heap", false, "If specified, enables heap profiling.")
+
 }
 
 // Start starts the Profiler's configured operations.  On success, returns a
@@ -61,12 +83,30 @@ func (p *Profiler) AddFlags(fs *flag.FlagSet) {
 // Calling Stop is not necessary, but will enable end-of-operation profiling
 // to be gathered.
 func (p *Profiler) Start() error {
-	// If we have an output directory, start our CPU profiling.
+	if p.Dir == "" {
+		if p.ProfileCPU {
+			return errors.New("-profile-cpu requires -profile-output-dir to be set")
+		}
+		if p.ProfileHeap {
+			return errors.New("-profile-heap requires -profile-output-dir to be set")
+		}
+	}
+
+	if p.ProfileCPU {
+		out, err := os.Create(p.generateOutPath("cpu"))
+		if err != nil {
+			return errors.Annotate(err).Reason("failed to create CPU profile output file").Err()
+		}
+		pprof.StartCPUProfile(out)
+		p.profilingCPU = true
+	}
+
 	if p.BindHTTP != "" {
 		if err := p.startHTTP(); err != nil {
 			return errors.Annotate(err).Reason("failed to start HTTP server").Err()
 		}
 	}
+
 	return nil
 }
 
@@ -103,6 +143,11 @@ func (p *Profiler) startHTTP() error {
 
 // Stop stops the Profiler's operations.
 func (p *Profiler) Stop() {
+	if p.profilingCPU {
+		pprof.StopCPUProfile()
+		p.profilingCPU = false
+	}
+
 	if p.listener != nil {
 		if err := p.listener.Close(); err != nil {
 			p.getLogger().Warningf("Failed to stop profile HTTP server: %s", err)
@@ -121,9 +166,12 @@ func (p *Profiler) DumpSnapshot() error {
 		return nil
 	}
 
-	if err := p.dumpHeapProfile(); err != nil {
-		return errors.Annotate(err).Reason("failed to dump heap profile").Err()
+	if p.ProfileHeap {
+		if err := p.dumpHeapProfile(); err != nil {
+			return errors.Annotate(err).Reason("failed to dump heap profile").Err()
+		}
 	}
+
 	return nil
 }
 

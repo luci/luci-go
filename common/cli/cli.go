@@ -69,6 +69,8 @@ type Application struct {
 	Context  func(context.Context) context.Context
 	Commands []*subcommands.Command
 	EnvVars  map[string]subcommands.EnvVarDefinition
+
+	profiling profilingExt // empty struct if 'include_profiler' build tag is not set
 }
 
 var _ interface {
@@ -88,6 +90,7 @@ func (a *Application) GetTitle() string {
 
 // GetCommands implements interface subcommands.Application.
 func (a *Application) GetCommands() []*subcommands.Command {
+	a.profiling.addProfiling(a.Commands)
 	return a.Commands
 }
 
