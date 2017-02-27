@@ -17,6 +17,7 @@ import (
 	"github.com/luci/luci-go/common/iotools"
 	"github.com/luci/luci-go/common/logging"
 	milo "github.com/luci/luci-go/milo/api/proto"
+	"github.com/luci/luci-go/server/auth"
 	"golang.org/x/net/context"
 )
 
@@ -36,6 +37,10 @@ func (s *Service) GetBuildbotBuildJSON(
 	if req.Builder == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "No builder specified")
 	}
+
+	cu := auth.CurrentUser(c)
+	logging.Debugf(c, "%s is requesting %s/%s/%d",
+		cu.Identity, req.Master, req.Builder, req.BuildNum)
 
 	b, err := getBuild(c, req.Master, req.Builder, int(req.BuildNum))
 	switch {
@@ -68,6 +73,15 @@ func (s *Service) GetBuildbotBuildsJSON(
 		return nil, grpc.Errorf(codes.InvalidArgument, "No builder specified")
 	}
 
+	limit := req.Limit
+	if limit == 0 {
+		limit = 20
+	}
+
+	cu := auth.CurrentUser(c)
+	logging.Debugf(c, "%s is requesting %s/%s (limit %d)",
+		cu.Identity, req.Master, req.Builder, limit)
+
 	// Perform an ACL check by fetching the master.
 	_, err := getMasterEntry(c, req.Master)
 	switch {
@@ -77,11 +91,6 @@ func (s *Service) GetBuildbotBuildsJSON(
 		return nil, grpc.Errorf(codes.Unauthenticated, "Unauthenticated request")
 	case err != nil:
 		return nil, err
-	}
-
-	limit := req.Limit
-	if limit == 0 {
-		limit = 20
 	}
 
 	q := ds.NewQuery("buildbotBuild")
@@ -121,6 +130,9 @@ func (s *Service) GetCompressedMasterJSON(
 	if req.Name == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "No master specified")
 	}
+
+	cu := auth.CurrentUser(c)
+	logging.Debugf(c, "%s is making a master request for %s", cu.Identity, req.Name)
 
 	entry, err := getMasterEntry(c, req.Name)
 	switch {
