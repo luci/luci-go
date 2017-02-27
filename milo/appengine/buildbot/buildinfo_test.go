@@ -134,6 +134,45 @@ func TestBuildInfo(t *testing.T) {
 			},
 		}
 
+		Convey("Can load a BuildBot build by annotation URL.", func() {
+			build.Properties = append(build.Properties, []*buildbotProperty{
+				{Name: "logdog_annotation_url", Value: "logdog://example.com/testproject/foo/bar/+/baz/annotations"},
+			}...)
+			So(ds.Put(c, &build), ShouldBeNil)
+			testClient.resp = []interface{}{
+				datagramGetResponse("testproject", "foo/bar", &logdogStep),
+			}
+
+			resp, err := bip.GetBuildInfo(c, biReq.GetBuildbot(), "")
+			So(err, ShouldBeNil)
+			So(testClient.req, ShouldResemble, []interface{}{
+				&logdog.TailRequest{
+					Project: "testproject",
+					Path:    "foo/bar/+/baz/annotations",
+					State:   true,
+				},
+			})
+			So(resp, ShouldResemble, &milo.BuildInfoResponse{
+				Project: "testproject",
+				Step: &miloProto.Step{
+					Command: &miloProto.Step_Command{
+						CommandLine: []string{"foo", "bar", "baz"},
+					},
+					Text: []string{"test step"},
+					Property: []*miloProto.Step_Property{
+						{Name: "bar", Value: "log-bar"},
+						{Name: "foo", Value: "build-foo"},
+						{Name: "logdog_annotation_url", Value: "logdog://example.com/testproject/foo/bar/+/baz/annotations"},
+					},
+				},
+				AnnotationStream: &miloProto.LogdogStream{
+					Server: "example.com",
+					Prefix: "foo/bar",
+					Name:   "baz/annotations",
+				},
+			})
+		})
+
 		Convey("Can load a BuildBot build by tag.", func() {
 			build.Properties = append(build.Properties, []*buildbotProperty{
 				{Name: "logdog_prefix", Value: "foo/bar"},

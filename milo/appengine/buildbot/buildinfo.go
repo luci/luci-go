@@ -134,6 +134,19 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 func getLogDogAnnotationAddr(c context.Context, client *coordinator.Client, build *buildbotBuild,
 	projectHint cfgtypes.ProjectName) (*types.StreamAddr, error) {
 
+	if v, ok := build.getPropertyValue("logdog_annotation_url").(string); ok && v != "" {
+		addr, err := types.ParseURL(v)
+		if err != nil {
+			logging.Fields{
+				logging.ErrorKey: err,
+				"url":            v,
+			}.Errorf(c, "Failed to parse 'logdog_annotation_url' property.")
+			return nil, grpcutil.Errf(codes.FailedPrecondition, "build has invalid annotation URL")
+		}
+
+		return addr, nil
+	}
+
 	// Modern builds will have this information in their build properties.
 	var addr types.StreamAddr
 	prefix, _ := build.getPropertyValue("logdog_prefix").(string)
