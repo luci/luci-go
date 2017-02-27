@@ -281,6 +281,7 @@ func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
 	s.tsMonFlags = tsmon.NewFlags()
 	s.tsMonFlags.Flush = tsmon.FlushAuto
 	s.tsMonFlags.Target.TargetType = target.TaskType
+	s.tsMonFlags.Target.TaskServiceName = s.serviceID
 	s.tsMonFlags.Target.TaskJobName = s.Name
 	s.tsMonFlags.Register(fs)
 
@@ -519,7 +520,10 @@ func (s *Service) ServiceID() string {
 
 // IntermediateStorage instantiates the configured intermediate Storage
 // instance.
-func (s *Service) IntermediateStorage(c context.Context) (storage.Storage, error) {
+//
+// If "rw" is true, Read/Write access will be requested. Otherwise, read-only
+// access will be requested.
+func (s *Service) IntermediateStorage(c context.Context, rw bool) (storage.Storage, error) {
 	cfg := s.ServiceConfig()
 	if cfg.GetStorage() == nil {
 		log.Errorf(c, "Missing storage configuration.")
@@ -532,10 +536,14 @@ func (s *Service) IntermediateStorage(c context.Context) (storage.Storage, error
 		return nil, ErrInvalidConfig
 	}
 
+	// Determine our scopes.
+	scopes := bigtable.StorageReadOnlyScopes
+	if rw {
+		scopes = bigtable.StorageScopes
+	}
+
 	// Initialize RPC credentials.
-	ts, err := serverAuth.GetTokenSource(
-		c, serverAuth.AsSelf,
-		serverAuth.WithScopes(bigtable.StorageScopes...))
+	ts, err := serverAuth.GetTokenSource(c, serverAuth.AsSelf, serverAuth.WithScopes(scopes...))
 	if err != nil {
 		return nil, err
 	}

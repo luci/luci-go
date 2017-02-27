@@ -200,6 +200,9 @@ message Deployment {
       /** The name of the GKE machine type for this cluster. */
       string machine_type = 5;
 
+      /** If true, enable GKE's auto-upgrade feature. */
+      bool enable_auto_upgrade = 6;
+
       /** Binds a ContainerEnginePod component to this GKE cluster. */
       message PodBinding {
         /**

@@ -111,7 +111,7 @@ func (a *application) runCollector(c context.Context) error {
 		"subscription": sub,
 	}.Infof(c, "Successfully validated Pub/Sub subscription.")
 
-	st, err := a.IntermediateStorage(c)
+	st, err := a.IntermediateStorage(c, true)
 	if err != nil {
 		return err
 	}

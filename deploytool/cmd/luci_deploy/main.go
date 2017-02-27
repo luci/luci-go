@@ -54,7 +54,7 @@ func mainImpl(args []string) int {
 		},
 	}
 	logFlags := log.Config{
-		Level: log.Warning,
+		Level: log.Info,
 	}
 
 	var fs flag.FlagSet
