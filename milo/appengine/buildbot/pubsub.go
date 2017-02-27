@@ -308,9 +308,10 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 	}
 	internal := true
 	switch msg.Subscription {
-	case publicSubName:
+	// TODO(hinoka): Move these names to luci-config
+	case publicSubName, publicSubName + "-dev":
 		internal = false
-	case internalSubName:
+	case internalSubName, internalSubName + "-dev":
 		// internal = true, but that's already set.
 	default:
 		logging.Errorf(
