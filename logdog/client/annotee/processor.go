@@ -75,14 +75,6 @@ type Stream struct {
 	BufferSize int
 }
 
-// LinkGenerator generates links for a given log stream.
-type LinkGenerator interface {
-	// GetLink returns a link for the specified aggregate streams.
-	//
-	// If no link could be generated, GetLink may return an empty string.
-	GetLink(name ...types.StreamName) string
-}
-
 // Options are the configuration options for a Processor.
 type Options struct {
 	// Base is the base log stream name. This is prepended to every log name, as

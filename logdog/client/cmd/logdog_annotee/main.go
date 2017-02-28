@@ -246,12 +246,12 @@ func mainImpl(args []string) int {
 		Stdin: os.Stdin,
 	}
 
-	linkGen := &coordinatorLinkGenerator{
-		host:    a.logdogHost,
-		project: a.project,
-		prefix:  prefix,
+	linkGen := &annotee.CoordinatorLinkGenerator{
+		Host:    a.logdogHost,
+		Project: a.project,
+		Prefix:  prefix,
 	}
-	if linkGen.canGenerateLinks() {
+	if linkGen.CanGenerateLinks() {
 		e.Options.LinkGenerator = linkGen
 	}
 
