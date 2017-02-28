@@ -39,8 +39,13 @@ type gaeDeployment struct {
 	// will have one entry. However, for multi-source deployments, this may have
 	// more. Each entry translates to a "set_default_version" call on commit.
 	versionModuleMap map[string][]string
+
 	// yamlDir is the directory containing the AppEngine-wide YAMLs.
 	yamlDir string
+	// yamlMap is a map of YAML file name (e.g., "cron.yaml") to the generated
+	// YAML struct. If an entry is missing, the project does not have that YAML
+	// file.
+	yamlMap map[string]interface{}
 }
 
 func makeGAEDeployment(project *layoutDeploymentCloudProject) *gaeDeployment {
@@ -168,9 +173,9 @@ func (d *gaeDeployment) push(w *work) error {
 }
 
 func (d *gaeDeployment) commit(w *work) error {
-	appcfg, err := w.tools.appcfg()
+	gcloud, err := w.tools.gcloud(d.project.Name)
 	if err != nil {
-		return errors.Annotate(err).Err()
+		return err
 	}
 
 	// Set default modules for each module version.
@@ -183,17 +188,17 @@ func (d *gaeDeployment) commit(w *work) error {
 	err = w.RunMulti(func(workC chan<- func() error) {
 		for _, v := range versions {
 			modules := d.versionModuleMap[v]
-			workC <- func() error {
-				appcfgArgs := []string{
-					"--application", d.project.Name,
-					"--version", v,
-					"--module", strings.Join(modules, ","),
+
+			// Migrate each module's version in parallel.
+			for _, mod := range modules {
+				mod := mod
+				workC <- func() error {
+					if err := gcloud.exec("app", "versions", "migrate", "--service", mod, v).check(w); err != nil {
+						return errors.Annotate(err).Reason("failed to set default version").
+							D("version", v).Err()
+					}
+					return nil
 				}
-				if err := appcfg.exec("set_default_version", appcfgArgs...).check(w); err != nil {
-					return errors.Annotate(err).Reason("failed to set default version").
-						D("version", v).Err()
-				}
-				return nil
 			}
 		}
 	})
@@ -204,9 +209,15 @@ func (d *gaeDeployment) commit(w *work) error {
 	// If any modules were installed as default, push our new related configs.
 	// Otherwise, do not update them.
 	if len(d.versionModuleMap) > 0 {
-		for _, updateCmd := range []string{"update_dispatch", "update_indexes", "update_queues", "update_cron"} {
-			if err := appcfg.exec(updateCmd, "--application", d.project.Name, d.yamlDir).check(w); err != nil {
-				return errors.Annotate(err).Reason("failed to update %(cmd)q").D("cmd", updateCmd).Err()
+		for _, deployable := range []string{"dispatch.yaml", "index.yaml", "queue.yaml", "cron.yaml"} {
+			if _, ok := d.yamlMap[deployable]; !ok {
+				// Does not exist for this project.
+				continue
+			}
+
+			if err := gcloud.exec("app", "deploy", deployable).check(w); err != nil {
+				return errors.Annotate(err).Reason("failed to deploy YAML %(deployable)q").
+					D("deployable", deployable).Err()
 			}
 		}
 	}
@@ -237,6 +248,7 @@ func (d *gaeDeployment) generateYAMLs(w *work, root *managedfs.Dir) error {
 	}
 
 	d.yamlDir = root.String()
+	d.yamlMap = yamls
 	return nil
 }
 
@@ -494,18 +506,14 @@ import _ %q
 // pushClassic pushes a classic AppEngine module using "appcfg.py".
 func (m *stagedGAEModule) pushClassic(w *work, appYAMLPath string) error {
 	// Deploy classic.
-	appcfg, err := w.tools.appcfg()
+	gcloud, err := w.tools.gcloud(m.gaeDep.project.Name)
 	if err != nil {
-		return errors.Annotate(err).Err()
+		return err
 	}
 
 	appPath, appYAML := filepath.Split(appYAMLPath)
-	x := appcfg.exec(
-		"--application", m.gaeDep.project.Name,
-		"--version", m.version.String(),
-		"--verbose",
-		"update", appYAML,
-	).cwd(appPath)
+	x := gcloud.exec("app", "deploy", "--no-promote", "--version", m.version.String(), appYAML).
+		cwd(appPath)
 	x = addGoEnv(m.goPath, x)
 	if err := x.check(w); err != nil {
 		return errors.Annotate(err).Reason("failed to deploy classic GAE module").Err()
@@ -537,7 +545,7 @@ func (m *stagedGAEModule) pushGoMVM(w *work, appYAMLPath string) error {
 
 	gcloud, err := w.tools.gcloud(m.gaeDep.project.Name)
 	if err != nil {
-		return errors.Annotate(err).Err()
+		return err
 	}
 
 	// Deploy via: aedeploy gcloud app deploy

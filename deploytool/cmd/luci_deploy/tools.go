@@ -65,7 +65,6 @@ func (t *tools) genericTool(name string) (*genericTool, error) {
 
 func (t *tools) python() (*genericTool, error) { return t.genericTool("python") }
 func (t *tools) docker() (*genericTool, error) { return t.genericTool("docker") }
-func (t *tools) appcfg() (*genericTool, error) { return t.genericTool("appcfg.py") }
 
 func (t *tools) git() (*gitTool, error) {
 	exe, err := t.getLookup("git")
