@@ -11,6 +11,7 @@ import (
 	"os"
 
 	"github.com/luci/luci-go/common/clock/clockflag"
+	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
@@ -74,6 +75,12 @@ func (cmd *queryCommandRun) Run(scApp subcommands.Application, args []string, _ 
 		return 1
 	}
 
+	coord, err := a.coordinatorClient("")
+	if err != nil {
+		errors.Log(a, errors.Annotate(err).Reason("could not create Coordinator client").Err())
+		return 1
+	}
+
 	// Open our output file, if necessary.
 	w := io.Writer(nil)
 	switch cmd.out {
@@ -119,7 +126,7 @@ func (cmd *queryCommandRun) Run(scApp subcommands.Application, args []string, _ 
 
 	tctx, _ := a.timeoutCtx(a)
 	ierr := error(nil)
-	err = a.coord.Query(tctx, project, path, qo, func(s *coordinator.LogStream) bool {
+	err = coord.Query(tctx, project, path, qo, func(s *coordinator.LogStream) bool {
 		if err := o.emit(s); err != nil {
 			ierr = err
 			return false

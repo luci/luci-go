@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/logdog/client/coordinator"
@@ -57,6 +58,12 @@ func (cmd *listCommandRun) Run(scApp subcommands.Application, args []string, _ s
 	bio := bufio.NewWriter(os.Stdout)
 	defer bio.Flush()
 
+	coord, err := a.coordinatorClient("")
+	if err != nil {
+		errors.Log(a, errors.Annotate(err).Reason("could not create Coordinator client").Err())
+		return 1
+	}
+
 	for _, arg := range args {
 		arg = strings.TrimSpace(arg)
 
@@ -75,7 +82,7 @@ func (cmd *listCommandRun) Run(scApp subcommands.Application, args []string, _ s
 			}
 		}
 
-		err := a.coord.List(a, project, pathBase, cmd.o, func(lr *coordinator.ListResult) bool {
+		err := coord.List(a, project, pathBase, cmd.o, func(lr *coordinator.ListResult) bool {
 			p := lr.Name
 			if cmd.o.State {
 				// Long listing, show full path.

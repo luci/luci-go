@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/luci/luci-go/common/data/rand/mathrand"
+	"github.com/luci/luci-go/hardcoded/chromeinfra"
 	"github.com/luci/luci-go/logdog/client/cli"
 
 	"golang.org/x/net/context"
@@ -16,6 +17,7 @@ import (
 func main() {
 	mathrand.SeedRandomly()
 	os.Exit(cli.Main(context.Background(), cli.Parameters{
-		Args: os.Args[1:],
+		Args:               os.Args[1:],
+		DefaultAuthOptions: chromeinfra.DefaultAuthOptions(),
 	}))
 }

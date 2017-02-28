@@ -7,6 +7,7 @@ package cli
 import (
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -19,6 +20,7 @@ import (
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/clock/clockflag"
+	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/grpc/prpc"
@@ -61,7 +63,9 @@ type application struct {
 	insecure  bool
 	timeout   clockflag.Duration
 
-	coord *coordinator.Client
+	// httpClient is an authenticated HTTP client to use for connections to the
+	// Coordinator.
+	httpClient *http.Client
 }
 
 func (a *application) addToFlagSet(ctx context.Context, fs *flag.FlagSet) {
@@ -103,6 +107,35 @@ func (a *application) splitPath(p string) (cfgtypes.ProjectName, string, bool, e
 	return project, p, true, nil
 }
 
+func (a *application) resolveHost(host string) (string, error) {
+	switch {
+	case host != "":
+		return host, nil
+	case a.p.Host != "":
+		return a.p.Host, nil
+	default:
+		return "", errors.New("a Coordinator host must be specified (-host)")
+	}
+}
+
+// coordinatorClient returns a Coordinator client for the specified host. If
+// no host is provided, the command-line host will be used.
+func (a *application) coordinatorClient(host string) (*coordinator.Client, error) {
+	host, err := a.resolveHost(host)
+	if err != nil {
+		return nil, errors.Annotate(err).Err()
+	}
+
+	// Get our Coordinator client instance.
+	prpcClient := prpc.Client{
+		C:       a.httpClient,
+		Host:    host,
+		Options: prpc.DefaultOptions(),
+	}
+	prpcClient.Options.Insecure = a.insecure
+	return coordinator.NewClient(&prpcClient), nil
+}
+
 func (a *application) timeoutCtx(c context.Context) (context.Context, context.CancelFunc) {
 	if a.timeout <= 0 {
 		return context.WithCancel(c)
@@ -134,7 +167,8 @@ func Main(ctx context.Context, params Parameters) int {
 				authcli.SubcommandInfo(authOptions, "auth-info", false),
 			},
 		},
-		p: params,
+		p:         params,
+		authFlags: authcli.Flags{},
 	}
 	loggingConfig := log.Config{
 		Level: log.Level(log.Info),
@@ -153,11 +187,6 @@ func Main(ctx context.Context, params Parameters) int {
 
 	// Install our log formatter.
 	ctx = loggingConfig.Set(ctx)
-
-	if a.p.Host == "" {
-		log.Errorf(ctx, "Missing coordinator host (-host).")
-		return 1
-	}
 
 	// Signal handler will cancel our context when interrupted.
 	ctx, cancelFunc := context.WithCancel(ctx)
@@ -188,21 +217,12 @@ func Main(ctx context.Context, params Parameters) int {
 		log.Errorf(log.SetError(ctx, err), "Failed to create auth options.")
 		return 1
 	}
-	httpClient, err := auth.NewAuthenticator(ctx, auth.OptionalLogin, authOpts).Client()
-	if err != nil {
+
+	if a.httpClient, err = auth.NewAuthenticator(ctx, auth.OptionalLogin, authOpts).Client(); err != nil {
 		log.Errorf(log.SetError(ctx, err), "Failed to create authenticated client.")
 		return 1
 	}
 
-	// Get our Coordinator client instance.
-	prpcClient := &prpc.Client{
-		C:       httpClient,
-		Host:    a.p.Host,
-		Options: prpc.DefaultOptions(),
-	}
-	prpcClient.Options.Insecure = a.insecure
-
-	a.coord = coordinator.NewClient(prpcClient)
 	a.Context = ctx
 	return subcommands.Run(&a, flags.Args())
 }

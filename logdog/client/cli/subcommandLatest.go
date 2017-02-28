@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/coordinator"
@@ -50,31 +51,42 @@ func (cmd *latestCommandRun) Run(scApp subcommands.Application, args []string, _
 		return 1
 	}
 
-	project, path, _, err := a.splitPath(args[0])
+	var addr *types.StreamAddr
+	var err error
+	if addr, err = types.ParseURL(args[0]); err != nil {
+		// Not a log stream address.
+		project, path, _, err := a.splitPath(args[0])
+		if err != nil {
+			log.WithError(err).Errorf(a, "Invalid path specifier.")
+			return 1
+		}
+
+		addr = &types.StreamAddr{Project: project, Path: types.StreamPath(path)}
+		if err := addr.Path.Validate(); err != nil {
+			log.Fields{
+				log.ErrorKey: err,
+				"project":    addr.Project,
+				"path":       addr.Path,
+			}.Errorf(a, "Invalid command-line stream path.")
+			return 1
+		}
+	}
+
+	coord, err := a.coordinatorClient(addr.Host)
 	if err != nil {
-		log.WithError(err).Errorf(a, "Invalid path specifier.")
+		errors.Log(a, errors.Annotate(err).Reason("failed to create Coordinator client").Err())
 		return 1
 	}
 
-	sp := streamPath{project, types.StreamPath(path)}
-	if err := sp.path.Validate(); err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-			"project":    sp.project,
-			"path":       sp.path,
-		}.Errorf(a, "Invalid command-line stream path.")
-		return 1
-	}
-
-	stream := a.coord.Stream(sp.project, sp.path)
+	stream := coord.Stream(addr.Project, addr.Path)
 
 	tctx, _ := a.timeoutCtx(a)
 	le, st, err := cmd.getTailEntry(tctx, stream)
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,
-			"project":    sp.project,
-			"path":       sp.path,
+			"project":    addr.Project,
+			"path":       addr.Path,
 		}.Errorf(a, "Failed to load latest record.")
 
 		if err == context.DeadlineExceeded {
