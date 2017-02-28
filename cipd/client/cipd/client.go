@@ -366,7 +366,7 @@ type Client interface {
 	// MaybeUpdateClient will update `destination` to `targetVersion` if
 	// `currentHash` doesn't match version's executable hash.
 	//
-	// This update is done from the "infra/tools/cipd/${platform}" package.
+	// This update is done from the "infra/tools/cipd/${os}-${arch}" package.
 	MaybeUpdateClient(ctx context.Context, fs local.FileSystem, targetVersion, currentHash, destination string) error
 
 	// RegisterInstance makes the package instance available for clients.
@@ -791,12 +791,12 @@ var clientFileName = ""
 
 func init() {
 	clientFileName = "cipd"
-	if common.CurrentPlatform() == "windows" {
+	if common.CurrentOS() == "windows" {
 		clientFileName = "cipd.exe"
 	}
 
 	clientPackage = fmt.Sprintf("%s/%s-%s", clientPackageBase,
-		common.CurrentPlatform(), common.CurrentArchitecture())
+		common.CurrentOS(), common.CurrentArchitecture())
 }
 
 func (client *clientImpl) ensureClientVersionInfo(ctx context.Context, fs local.FileSystem, pin common.Pin, exePath string) {

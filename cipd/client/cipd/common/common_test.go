@@ -250,10 +250,10 @@ func TestPinSliceAndMap(t *testing.T) {
 func TestCurrentResolution(t *testing.T) {
 	t.Parallel()
 
-	Convey("Sanity check on arch/platform", t, func() {
-		Convey("Has a known platform", func() {
+	Convey("Sanity check on arch/os", t, func() {
+		Convey("Has a known os", func() {
 			known := false
-			switch currentPlatform {
+			switch currentOS {
 			case runtime.GOOS, "mac":
 				known = true
 			}

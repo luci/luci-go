@@ -177,7 +177,11 @@ func TestBadEnsureFiles(t *testing.T) {
 					So(err, ShouldErrLike, tc.err)
 				} else {
 					So(f, ShouldNotBeNil)
-					rf, err := f.ResolveWith("test_arch", "test_plat", testResolver)
+					rf, err := f.ResolveWith(testResolver, map[string]string{
+						"os":       "test_os",
+						"arch":     "test_arch",
+						"platform": "test_os-test_arch",
+					})
 					So(rf, ShouldBeNil)
 					So(err, ShouldErrLike, tc.err)
 				}

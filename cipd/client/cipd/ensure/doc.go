@@ -37,12 +37,12 @@
 // Package Definitions
 //
 // A package line looks like `<package_template> <version>`. Package templates
-// are cipd package names, with optional expansion parameters `${platform}` and
+// are cipd package names, with optional expansion parameters `${os}` and
 // `${arch}`. These placeholders can appear anywhere in the package template
 // except for the first letter.  All other characters in the template are taken
 // verbatim.
 //
-// ${platform} will expand to one of the following, based on the value of this
+// ${os} will expand to one of the following, based on the value of this
 // client's runtime.GOOS value:
 //   * windows
 //   * mac
@@ -54,15 +54,18 @@
 //   * amd64
 //   * armv6l
 //
+// Since these two often appear together, a convenience placeholder
+// `${platform}` expands to the equivalent of `${os}-${arch}`.
+//
 // Both of these paramters also support the syntax ${var=possible,values}.
 // What this means is that the package line will be expanded if, and only if,
 // var equals one of the possible values. If that var does not match
 // a possible value, the line is ignored. This allows you to do, e.g.:
-//   path/to/package/${platform=windows}  windows_release
-//   path/to/package/${platform=linux}    linux_release
+//   path/to/package/${os=windows}  windows_release
+//   path/to/package/${os=linux}    linux_release
 //   # no version for mac
 //
-//   path/to/posix/tool/${platform=mac,linux}  some_tag:value
+//   path/to/posix/tool/${os=mac,linux}  some_tag:value
 //
 // That's all there is to it.
 //
@@ -74,11 +77,12 @@
 //   $ServiceURL https://chrome-infra-packages.appspot.com/
 //
 //   # This is the cipd client itself
-//   infra/tools/cipd/${platform}-${arch}  latest
+//   infra/tools/cipd/${os}-${arch}  latest
 //
 //   @Subdir python
-//   python/wheels/pip                           version:8.1.2
-//   python/wheels/coverage/${platform}-${arch}  version:4.1
+//   python/wheels/pip                     version:8.1.2
+//   # use the convenience placeholder
+//   python/wheels/coverage/${platform}    version:4.1
 //
 //   @Subdir infra/support
 //   infra/some/other/package deadbeefdeadbeefdeadbeefdeadbeefdeadbeef

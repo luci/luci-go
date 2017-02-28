@@ -157,7 +157,7 @@ func GetInstanceTagKey(t string) string {
 }
 
 var currentArchitecture = ""
-var currentPlatform = ""
+var currentOS = ""
 
 func init() {
 	// TODO(iannucci): rationalize these to just be exactly GOOS and GOARCH.
@@ -166,9 +166,9 @@ func init() {
 		currentArchitecture = "armv6l"
 	}
 
-	currentPlatform = runtime.GOOS
-	if currentPlatform == "darwin" {
-		currentPlatform = "mac"
+	currentOS = runtime.GOOS
+	if currentOS == "darwin" {
+		currentOS = "mac"
 	}
 }
 
@@ -180,12 +180,12 @@ func CurrentArchitecture() string {
 	return currentArchitecture
 }
 
-// CurrentPlatform returns the current cipd-style platform that the
+// CurrentOS returns the current cipd-style os that the
 // current go binary conforms to. Possible values:
 //   - "mac" (if GOOS=darwin)
 //   - other GOOS values
-func CurrentPlatform() string {
-	return currentPlatform
+func CurrentOS() string {
+	return currentOS
 }
 
 // PinSlice is a simple list of Pins
@@ -268,4 +268,14 @@ func (p PinMapBySubdir) ToSlice() PinSliceBySubdir {
 		ret[subdir] = pkgs.ToSlice()
 	}
 	return ret
+}
+
+// TemplateArgs returns the default template args which can be used with the
+// ensure.PackageDef.Resolve() method.
+func TemplateArgs() map[string]string {
+	return map[string]string{
+		"os":       currentOS,
+		"arch":     currentArchitecture,
+		"platform": fmt.Sprintf("%s-%s", currentOS, currentArchitecture),
+	}
 }

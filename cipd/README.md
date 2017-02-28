@@ -44,7 +44,8 @@ always update "latest" ref of a package to the instance that they upload.
 
 If a package is platform-specific, the package name should have `/<os>-<arch>`
 suffix where `os` can be `linux`, `mac` or `windows` and arch can be `386`,
-`amd64` or `armv6l`. For example, `infra/tools/cipd/linux-amd64`.
+`amd64` or `armv6l`. For example, `infra/tools/cipd/linux-amd64`. See
+[the ensure package docs][client/cipd/ensure/doc.go] for os and arch values.
 
 Some [cipd client] subcomands accept a package name "directory" that ends with
 slash, e.g. "infra/tools/cipd/", and apply a change to all packages in that

@@ -90,13 +90,12 @@ func ParseFile(r io.Reader) (*File, error) {
 			settingsAllowed = false
 			pkg := PackageDef{tok1, tok2, lineNo}
 
-			// pass dummy VersionResolver to validate vers
-			_, err := pkg.Resolve("dummy_plat", "dummy_arch", func(pkg, vers string) (common.Pin, error) {
+			_, err := pkg.Resolve(func(pkg, vers string) (common.Pin, error) {
 				return common.Pin{
 					PackageName: pkg,
 					InstanceID:  vers,
 				}, common.ValidateInstanceVersion(vers)
-			})
+			}, common.TemplateArgs())
 			if err != nil && err != errSkipTemplate {
 				return nil, err
 			}
@@ -120,16 +119,19 @@ type ResolvedFile struct {
 }
 
 // Resolve takes the current unresolved File and expands all package templates
-// using cipd/common's values for arch and platform, and also resolves all
-// versions with the provided VersionResolver.
+// using common.TemplateArgs(), and also resolves all versions with the provided
+// VersionResolver.
 func (f *File) Resolve(rslv VersionResolver) (*ResolvedFile, error) {
-	return f.ResolveWith(common.CurrentArchitecture(), common.CurrentPlatform(), rslv)
+	return f.ResolveWith(rslv, common.TemplateArgs())
 }
 
 // ResolveWith takes the current unresolved File and expands all package
-// templates using the provided values of arch and platform, and also resolves
+// templates using the provided values of arch and os, and also resolves
 // all versions with the provided VersionResolver.
-func (f *File) ResolveWith(arch, plat string, rslv VersionResolver) (*ResolvedFile, error) {
+//
+// templateArgs is a mapping of expansion parameter to value. Usually you'll
+// want to pass common.TemplateArgs().
+func (f *File) ResolveWith(rslv VersionResolver, templateArgs map[string]string) (*ResolvedFile, error) {
 	ret := &ResolvedFile{}
 
 	if f.ServiceURL != "" {
@@ -157,7 +159,7 @@ func (f *File) ResolveWith(arch, plat string, rslv VersionResolver) (*ResolvedFi
 				Err()
 		}
 		for _, pkg := range pkgs {
-			pin, err := pkg.Resolve(plat, arch, rslv)
+			pin, err := pkg.Resolve(rslv, templateArgs)
 			if err == errSkipTemplate {
 				continue
 			}

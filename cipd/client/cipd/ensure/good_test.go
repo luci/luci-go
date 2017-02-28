@@ -48,11 +48,13 @@ var goodEnsureFiles = []struct {
 	{
 		"templates",
 		f(
-			"path/to/package/${platform}-${arch} latest",
+			"path/to/package/${os}-${arch} latest",
+			"path/to/other/${platform} latest",
 		),
 		&ResolvedFile{"", common.PinSliceBySubdir{
 			"": {
-				p("path/to/package/test_plat-test_arch", "latest"),
+				p("path/to/package/test_os-test_arch", "latest"),
+				p("path/to/other/test_os-test_arch", "latest"),
 			},
 		}},
 	},
@@ -60,17 +62,22 @@ var goodEnsureFiles = []struct {
 	{
 		"optional_templates",
 		f(
-			"path/to/package/${platform}-${arch=neep,test_arch} latest",
+			"path/to/package/${os}-${arch=neep,test_arch} latest",
+			"path/to/other/${platform=test_os-test_arch} latest",
 		),
 		&ResolvedFile{"", common.PinSliceBySubdir{
-			"": {p("path/to/package/test_plat-test_arch", "latest")},
+			"": {
+				p("path/to/package/test_os-test_arch", "latest"),
+				p("path/to/other/test_os-test_arch", "latest"),
+			},
 		}},
 	},
 
 	{
 		"optional_templates_no_match",
 		f(
-			"path/to/package/${platform=spaz}-${arch=neep,test_arch} latest",
+			"path/to/package/${os=spaz}-${arch=neep,test_arch} latest",
+			"path/to/package/${platform=neep-foo} latest",
 		),
 		&ResolvedFile{"", common.PinSliceBySubdir{}},
 	},
@@ -152,7 +159,11 @@ func TestGoodEnsureFiles(t *testing.T) {
 				buf := bytes.NewBufferString(tc.file)
 				f, err := ParseFile(buf)
 				So(err, ShouldBeNil)
-				rf, err := f.ResolveWith("test_arch", "test_plat", testResolver)
+				rf, err := f.ResolveWith(testResolver, map[string]string{
+					"os":       "test_os",
+					"arch":     "test_arch",
+					"platform": "test_os-test_arch",
+				})
 				So(err, ShouldBeNil)
 				So(rf, ShouldResemble, tc.expect)
 			})

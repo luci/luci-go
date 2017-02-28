@@ -38,8 +38,11 @@ type VersionResolver func(pkg, vers string) (common.Pin, error)
 // Resolve takes a Package definition containing a possibly templated package
 // name, and a possibly unresolved version string and attempts to resolve them
 // into a Pin.
-func (p *PackageDef) Resolve(plat, arch string, rslv VersionResolver) (pin common.Pin, err error) {
-	pin.PackageName, err = expandTemplate(p.PackageTemplate, plat, arch)
+//
+// templateArgs is a mapping of expansion parameter to value. Usually you'll
+// want to pass common.TemplateArgs().
+func (p *PackageDef) Resolve(rslv VersionResolver, templateArgs map[string]string) (pin common.Pin, err error) {
+	pin.PackageName, err = expandTemplate(p.PackageTemplate, templateArgs)
 	if err == errSkipTemplate {
 		return
 	}

@@ -17,16 +17,11 @@ var templateParm = regexp.MustCompile(`\${[^}]*}`)
 var errSkipTemplate = errors.New("this template should be skipped")
 
 // expandTemplate applies template expansion rules to the package template,
-// using the provided platform and arch values. If err == errSkipTemplate, that
-// means that this template does not apply to this platform/arch combination and
+// using the provided os and arch values. If err == errSkipTemplate, that
+// means that this template does not apply to this os/arch combination and
 // should be skipped.
-func expandTemplate(template, platform, arch string) (pkg string, err error) {
+func expandTemplate(template string, expansionLookup map[string]string) (pkg string, err error) {
 	skip := false
-
-	expansionLookup := map[string]string{
-		"platform": platform,
-		"arch":     arch,
-	}
 
 	pkg = templateParm.ReplaceAllStringFunc(template, func(parm string) string {
 		// ${...}
