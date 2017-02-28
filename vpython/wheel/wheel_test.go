@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/luci/luci-go/vpython/filesystem/testfs"
+	"github.com/luci/luci-go/common/testing/testfs"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"

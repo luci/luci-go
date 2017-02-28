@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/luci/luci-go/common/testing/testfs"
 	"github.com/luci/luci-go/vpython/api/vpython"
-	"github.com/luci/luci-go/vpython/filesystem/testfs"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"

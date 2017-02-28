@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/luci/luci-go/vpython/filesystem"
+	"github.com/luci/luci-go/common/system/filesystem"
 )
 
 // Build constructs a filesystem hierarchy given a layout.

@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/luci/luci-go/vpython/filesystem"
+	"github.com/luci/luci-go/common/system/filesystem"
 )
 
 // WithTempDir creates a temporary directory and passes it to fn. After fn
