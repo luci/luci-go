@@ -50,8 +50,8 @@ type PushState struct {
 	finalized bool
 }
 
-// Function type of handler for retrieving specified content from GCS and storing the response in the provided destination buffer.
-type fetchGCS func(context.Context, *Client, isolateservice.HandlersEndpointsV1RetrievedContent, io.WriteSeeker) error
+// FetchGCS is a function type of a handler for retrieving specified content from GCS and storing the response in the provided destination buffer.
+type FetchGCS func(context.Context, *Client, isolateservice.HandlersEndpointsV1RetrievedContent, io.WriteSeeker) error
 
 // Client is a client to an isolated server.
 type Client struct {
@@ -62,7 +62,7 @@ type Client struct {
 
 	authClient      *http.Client // client that sends auth tokens
 	anonClient      *http.Client // client that does NOT send auth tokens
-	fetchGCSHandler fetchGCS     // function which fetches url from GCS and stores results in provided destination
+	fetchGCSHandler FetchGCS     // function which fetches url from GCS and stores results in provided destination
 }
 
 // New returns a new IsolateServer client.
@@ -79,7 +79,7 @@ type Client struct {
 //
 // If fetchGCSHandler is nil, the fetchGCSDefault function will be used to retrieve
 // files from GCS.
-func New(anonClient, authClient *http.Client, host, namespace string, rFn retry.Factory, fetchGCSHandler fetchGCS) *Client {
+func New(anonClient, authClient *http.Client, host, namespace string, rFn retry.Factory, fetchGCSHandler FetchGCS) *Client {
 	if anonClient == nil {
 		anonClient = http.DefaultClient
 	}
