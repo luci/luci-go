@@ -555,6 +555,10 @@ type Step struct {
 	// names.
 	logLineCount map[string]int
 
+	// linkMap is a map of link label to link struct. BuildBot only retains the
+	// latest link for a given label, so we use this to enforce that.
+	linkMap map[string]*milo.Link
+
 	// logNameBase is the LogDog stream name root for this step.
 	LogNameBase types.StreamName
 	// hasSummary, if true, means that this Step has summary text. The summary
@@ -861,25 +865,36 @@ func (as *Step) SetNestLevel(l int) bool {
 
 // AddLogdogStreamLink adds a LogDog stream link to this Step's links list.
 func (as *Step) AddLogdogStreamLink(server, label string, prefix, name types.StreamName) {
-	link := &milo.Link{
-		Label: label,
-		Value: &milo.Link_LogdogStream{&milo.LogdogStream{
-			Name:   string(name),
-			Server: server,
-			Prefix: string(prefix),
-		}},
-	}
-	as.OtherLinks = append(as.OtherLinks, link)
+	link := as.getOrCreateLinkForLabel(label)
+	link.Value = &milo.Link_LogdogStream{&milo.LogdogStream{
+		Name:   string(name),
+		Server: server,
+		Prefix: string(prefix),
+	}}
 }
 
 // AddURLLink adds a URL link to this Step's links list.
 func (as *Step) AddURLLink(label, alias, url string) {
+	link := as.getOrCreateLinkForLabel(label)
+	link.AliasLabel = alias
+	link.Value = &milo.Link_Url{url}
+}
+
+func (as *Step) getOrCreateLinkForLabel(label string) *milo.Link {
+	if cur := as.linkMap[label]; cur != nil {
+		return cur
+	}
+
+	// New label, so create a new link.
 	link := &milo.Link{
-		Label:      label,
-		AliasLabel: alias,
-		Value:      &milo.Link_Url{url},
+		Label: label,
+	}
+	if as.linkMap == nil {
+		as.linkMap = make(map[string]*milo.Link)
 	}
 	as.OtherLinks = append(as.OtherLinks, link)
+	as.linkMap[label] = link
+	return link
 }
 
 // SetStatus sets this step's component status.

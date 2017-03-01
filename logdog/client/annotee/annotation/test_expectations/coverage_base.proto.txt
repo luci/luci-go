@@ -17,7 +17,7 @@ substep: <
     >
     other_links: <
       label: "dogs"
-      url: "http://example.com/dogs"
+      url: "http://example.com/moreDogs"
     >
     other_links: <
       label: "content"
@@ -77,7 +77,7 @@ substep: <
           url: "http://example.com"
         >
         other_links: <
-          label: "example"
+          label: "aliasedExample"
           alias_label: "alias"
           url: "http://example.com/alias"
         >
