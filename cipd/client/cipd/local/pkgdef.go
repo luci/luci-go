@@ -135,11 +135,9 @@ func (def *PackageDef) FindFiles(cwd string) ([]File, error) {
 	if err != nil {
 		return nil, err
 	}
-	root := ""
-	if filepath.IsAbs(def.Root) {
-		root = def.Root
-	} else {
-		root = filepath.Clean(filepath.Join(absCwd, filepath.FromSlash(def.Root)))
+	root := filepath.Clean(def.Root)
+	if !filepath.IsAbs(root) {
+		root = filepath.Join(absCwd, root)
 	}
 
 	// Helper to get absolute path to a file given path relative to root.
