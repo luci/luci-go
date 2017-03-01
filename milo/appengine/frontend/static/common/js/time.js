@@ -18,15 +18,6 @@
         return null;
     }
     var shortDayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    var offset = -(new Date()).getTimezoneOffset();
-    var offsetHr = Math.abs(Math.round(offset / 60));
-    var offsetMin = Math.abs(Math.abs(offset) - (offsetHr * 60));
-    if (offsetHr < 10) {
-      offsetHr = '0' + offsetHr;
-    }
-    if (offsetMin < 10) {
-      offsetMin = '0' + offsetMin;
-    }
 
     var month = (t.getMonth() + 1);
     if (month < 10) {
@@ -38,7 +29,7 @@
     }
     var s = shortDayNames[t.getDay()] + ', ';
     s += t.getFullYear() + '-' + month + '-' + date + ' ';
-    s += t.toLocaleTimeString();
+    s += t.toLocaleTimeString() + ' (local time)';
 
     return s;
   };
