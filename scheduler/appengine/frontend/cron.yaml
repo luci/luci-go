@@ -2,3 +2,7 @@ cron:
 - description: Reads cron job definitions from config
   url: /internal/cron/read-config
   schedule: every 1 minutes
+
+- description: tsmon house keeping
+  url: /internal/cron/ts_mon/housekeeping
+  schedule: every 1 minutes
