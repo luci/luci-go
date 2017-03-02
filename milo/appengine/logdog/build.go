@@ -22,7 +22,6 @@ import (
 	"github.com/luci/luci-go/milo/common/miloerror"
 
 	"github.com/golang/protobuf/proto"
-	mc "github.com/luci/gae/service/memcache"
 	"golang.org/x/net/context"
 )
 
@@ -73,36 +72,6 @@ func (as *AnnotationStream) Fetch(c context.Context) (*miloProto.Step, error) {
 	// Cached?
 	if as.cs.Step != nil {
 		return as.cs.Step, nil
-	}
-
-	// Load from memcache, if possible. If an error occurs, we will proceed as if
-	// no CachedStep was available.
-	mcKey := as.memcacheKey()
-	mcItem, err := mc.GetKey(c, mcKey)
-	switch err {
-	case nil:
-		if err := proto.Unmarshal(mcItem.Value(), &as.cs); err == nil {
-			return as.cs.Step, nil
-		}
-
-		// We could not unmarshal the cached value. Try and delete it from
-		// memcache, since it's invalid.
-		log.Fields{
-			log.ErrorKey:  err,
-			"memcacheKey": mcKey,
-		}.Warningf(c, "Failed to unmarshal cached annotation protobuf.")
-		if err := mc.Delete(c, mcKey); err != nil {
-			log.WithError(err).Warningf(c, "Failed to delete invalid annotation protobuf memcache entry.")
-		}
-
-	case mc.ErrCacheMiss:
-		break
-
-	default:
-		log.Fields{
-			log.ErrorKey:  err,
-			"memcacheKey": mcKey,
-		}.Errorf(c, "Failed to load annotation protobuf memcache cached step.")
 	}
 
 	// Load from LogDog directly.
@@ -192,30 +161,7 @@ func (as *AnnotationStream) Fetch(c context.Context) (*miloProto.Step, error) {
 		Step:     &step,
 		Finished: (state.State.TerminalIndex >= 0 && le.StreamIndex == uint64(state.State.TerminalIndex)),
 	}
-
-	// Marshal and cache the step. If this is the final protobuf in the stream,
-	// cache it indefinitely; otherwise, cache it for intermediateCacheLifetime.
-	//
-	// If this fails, it is non-fatal.
-	mcData, err := proto.Marshal(&as.cs)
-	if err == nil {
-		mcItem = mc.NewItem(c, mcKey)
-		if !as.cs.Finished {
-			mcItem.SetExpiration(intermediateCacheLifetime)
-		}
-		mcItem.SetValue(mcData)
-		if err := mc.Set(c, mcItem); err != nil {
-			log.WithError(err).Warningf(c, "Failed to cache annotation protobuf CachedStep.")
-		}
-	} else {
-		log.WithError(err).Warningf(c, "Failed to marshal annotation protobuf CachedStep.")
-	}
-
 	return as.cs.Step, nil
-}
-
-func (as *AnnotationStream) memcacheKey() string {
-	return fmt.Sprintf("logdog/%s/%s/%s", as.Client.Host, as.Project, as.Path)
 }
 
 func (as *AnnotationStream) toMiloBuild(c context.Context) *resp.MiloBuild {
