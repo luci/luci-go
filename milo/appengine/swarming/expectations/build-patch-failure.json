@@ -1,10 +1,7 @@
 {
   "Summary": {
-    "ParentLabel": null,
     "Label": "2d8d62f6be545b10",
     "Status": "Failure",
-    "Banner": null,
-    "Bot": null,
     "Source": {
       "Label": "Task 2d8d62f6be545b10",
       "URL": "https://example.com/user/task/2d8d62f6be545b10"
@@ -19,7 +16,6 @@
         "URL": "foo/stdout"
       }
     ],
-    "Progress": null,
     "Started": "2016-03-14T10:00:01Z",
     "Finished": "0001-01-01T00:00:00Z",
     "Duration": 0,
@@ -33,12 +29,8 @@
   "SourceStamp": null,
   "Components": [
     {
-      "ParentLabel": null,
       "Label": "update_scripts",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdout",
         "URL": "foo/steps/update_scripts/0/stdout"
@@ -49,7 +41,6 @@
           "URL": "foo/steps/update_scripts/0/logs/gclient_json/0"
         }
       ],
-      "Progress": null,
       "Started": "2016-03-14T10:00:02Z",
       "Finished": "2016-03-14T10:00:03Z",
       "Duration": 1000000000,
@@ -61,12 +52,8 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "setup_build",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdout",
         "URL": "foo/steps/setup_build/0/stdout"
@@ -77,7 +64,6 @@
           "URL": "foo/steps/setup_build/0/logs/run_recipe/0"
         }
       ],
-      "Progress": null,
       "Started": "2016-03-14T10:00:04Z",
       "Finished": "2016-03-14T10:00:05Z",
       "Duration": 1000000000,
@@ -89,12 +75,8 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "bot_update",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdout",
         "URL": "foo/steps/bot_update/0/stdout"
@@ -109,7 +91,6 @@
           "URL": "foo/steps/bot_update/0/logs/patch_error/0"
         }
       ],
-      "Progress": null,
       "Started": "2016-03-14T10:00:06Z",
       "Finished": "2016-03-14T10:00:07Z",
       "Duration": 1000000000,
@@ -121,18 +102,12 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "Patch failure",
       "Status": "Failure",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdout",
         "URL": "foo/steps/Patch_failure/0/stdout"
       },
-      "SubLink": null,
-      "Progress": null,
       "Started": "2016-03-14T10:00:08Z",
       "Finished": "2016-03-14T10:00:09Z",
       "Duration": 1000000000,
@@ -144,12 +119,8 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "recipe failure reason",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdout",
         "URL": "foo/steps/recipe_failure_reason/0/stdout"
@@ -160,7 +131,6 @@
           "URL": "foo/steps/recipe_failure_reason/0/logs/failure_reason/0"
         }
       ],
-      "Progress": null,
       "Started": "2016-03-14T10:00:10Z",
       "Finished": "2016-03-14T10:00:11Z",
       "Duration": 1000000000,
@@ -247,15 +217,6 @@
         {
           "Key": "Exit Code",
           "Value": "0"
-        }
-      ]
-    },
-    {
-      "GroupName": "Swarming Tags",
-      "Property": [
-        {
-          "Key": "allow_milo",
-          "Value": "1"
         }
       ]
     }

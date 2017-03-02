@@ -247,41 +247,22 @@ func taskProperties(sr *swarming.SwarmingRpcsTaskResult) *resp.PropertyGroup {
 	return props
 }
 
-func tagsToProperties(tags []string) *resp.PropertyGroup {
-	props := &resp.PropertyGroup{GroupName: "Swarming Tags"}
+func tagsToMap(tags []string) map[string]string {
+	result := make(map[string]string, len(tags))
 	for _, t := range tags {
-		if t == "" {
-			continue
-		}
 		parts := strings.SplitN(t, ":", 2)
-		p := &resp.Property{
-			Key: parts[0],
-		}
 		if len(parts) == 2 {
-			p.Value = parts[1]
+			result[parts[0]] = parts[1]
 		}
-		props.Property = append(props.Property, p)
 	}
-	return props
+	return result
 }
 
 // addBuilderLink adds a link to the buildbucket builder view.
-func addBuilderLink(c context.Context, build *resp.MiloBuild, swarmingHostname string, sr *swarming.SwarmingRpcsTaskResult) {
-	tags := swarmingTags(sr.Tags)
-
+func addBuilderLink(c context.Context, build *resp.MiloBuild, tags map[string]string) {
 	bbHost := tags["buildbucket_hostname"]
 	bucket := tags["buildbucket_bucket"]
 	builder := tags["builder"]
-	if bucket == "" {
-		logging.Errorf(
-			c, "Could not extract buildbucket bucket from task %s",
-			taskPageURL(swarmingHostname, sr.TaskId))
-	}
-	if builder == "" {
-		logging.Errorf(
-			c, "Could not extract builder name from task %s",
-			taskPageURL(swarmingHostname, sr.TaskId))
-	}
 	if bucket != "" && builder != "" {
 		build.Summary.ParentLabel = &resp.Link{
 			Label: builder,
@@ -291,20 +272,13 @@ func addBuilderLink(c context.Context, build *resp.MiloBuild, swarmingHostname s
 }
 
 // addBanner adds an OS banner derived from "os" swarming tag, if present.
-func addBanner(build *resp.MiloBuild, sr *swarming.SwarmingRpcsTaskResult) {
-	var os, ver string
-	for _, t := range sr.Tags {
-		value := strings.TrimPrefix(t, "os:")
-		if value == t {
-			// t does not have the prefix
-			continue
-		}
-		parts := strings.SplitN(value, "-", 2)
-		if len(parts) == 2 {
-			os = parts[0]
-			ver = parts[1]
-			break
-		}
+func addBanner(build *resp.MiloBuild, tags map[string]string) {
+	os := tags["os"]
+	var ver string
+	parts := strings.SplitN(os, "-", 2)
+	if len(parts) == 2 {
+		os = parts[0]
+		ver = parts[1]
 	}
 
 	var base resp.LogoBase
@@ -415,6 +389,59 @@ func addTaskToMiloStep(c context.Context, server string, sr *swarming.SwarmingRp
 	return nil
 }
 
+func addBuildsetInfo(build *resp.MiloBuild, tags map[string]string) {
+	buildset := tags["buildset"]
+	if !strings.HasPrefix(buildset, "patch/") {
+		// Buildset isn't a patch, ignore.
+		return
+	}
+
+	patchset := strings.TrimLeft(buildset, "patch/")
+	// TODO(hinoka): Also support Rietveld patches.
+	if strings.HasPrefix(patchset, "gerrit/") {
+		gerritPatchset := strings.TrimLeft(patchset, "gerrit/")
+		parts := strings.Split(gerritPatchset, "/")
+		if len(parts) != 3 {
+			// Not a well-formed gerrit patchset.
+			return
+		}
+		if build.SourceStamp == nil {
+			build.SourceStamp = &resp.SourceStamp{}
+		}
+		build.SourceStamp.Changelist = &resp.Link{
+			Label: "Gerrit CL",
+			URL:   fmt.Sprintf("https://%s/c/%s/%s", parts[0], parts[1], parts[2]),
+		}
+
+	}
+}
+
+func addRecipeLink(build *resp.MiloBuild, tags map[string]string) {
+	name := tags["recipe_name"]
+	repoURL := tags["recipe_repository"]
+	revision := tags["recipe_revision"]
+	if name != "" && repoURL != "" {
+		if revision == "" {
+			revision = "master"
+		}
+		// Link directly to the revision if it is a gerrit URL, otherwise just
+		// display it in the name.
+		if repoParse, err := url.Parse(repoURL); err == nil && strings.HasSuffix(
+			repoParse.Host, ".googlesource.com") {
+			repoURL += "/+/" + revision + "/"
+		} else {
+			if len(revision) > 8 {
+				revision = revision[:8]
+			}
+			name += " @ " + revision
+		}
+		build.Summary.Recipe = &resp.Link{
+			Label: name,
+			URL:   repoURL,
+		}
+	}
+}
+
 func addTaskToBuild(c context.Context, server string, sr *swarming.SwarmingRpcsTaskResult, build *resp.MiloBuild) error {
 	build.Summary.Label = sr.TaskId
 	build.Summary.Type = resp.Recipe
@@ -427,12 +454,12 @@ func addTaskToBuild(c context.Context, server string, sr *swarming.SwarmingRpcsT
 	if props := taskProperties(sr); len(props.Property) > 0 {
 		build.PropertyGroup = append(build.PropertyGroup, props)
 	}
-	if props := tagsToProperties(sr.Tags); len(props.Property) > 0 {
-		build.PropertyGroup = append(build.PropertyGroup, props)
-	}
+	tags := tagsToMap(sr.Tags)
 
-	addBuilderLink(c, build, server, sr)
-	addBanner(build, sr)
+	addBuildsetInfo(build, tags)
+	addBanner(build, tags)
+	addBuilderLink(c, build, tags)
+	addRecipeLink(build, tags)
 
 	// Add a link to the bot.
 	if sr.BotId != "" {

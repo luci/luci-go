@@ -1,10 +1,7 @@
 {
   "Summary": {
-    "ParentLabel": null,
     "Label": "2d8d62f6be545b10",
     "Status": "Running",
-    "Banner": null,
-    "Bot": null,
     "Source": {
       "Label": "Task 2d8d62f6be545b10",
       "URL": "https://example.com/user/task/2d8d62f6be545b10"
@@ -19,7 +16,6 @@
         "URL": "foo/stdout"
       }
     ],
-    "Progress": null,
     "Started": "2016-03-14T10:00:01.85071Z",
     "Finished": "0001-01-01T00:00:00Z",
     "Duration": 3598149290000,
@@ -33,18 +29,12 @@
   "SourceStamp": null,
   "Components": [
     {
-      "ParentLabel": null,
       "Label": "recipe bootstrap",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdout",
         "URL": "foo/steps/recipe_bootstrap/0/stdout"
       },
-      "SubLink": null,
-      "Progress": null,
       "Started": "2016-03-14T10:00:02Z",
       "Finished": "2016-03-14T10:00:03Z",
       "Duration": 1000000000,
@@ -54,12 +44,8 @@
       "Text": null
     },
     {
-      "ParentLabel": null,
       "Label": "setup_build",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdout",
         "URL": "foo/steps/setup_build/0/stdout"
@@ -70,7 +56,6 @@
           "URL": "foo/steps/setup_build/0/logs/run_recipe/0"
         }
       ],
-      "Progress": null,
       "Started": "2016-03-14T10:00:03Z",
       "Finished": "2016-03-14T10:00:04Z",
       "Duration": 1000000000,
@@ -82,18 +67,12 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "bot_update",
       "Status": "Running",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdout",
         "URL": "foo/steps/bot_update/0/stdout"
       },
-      "SubLink": null,
-      "Progress": null,
       "Started": "2016-03-14T10:00:05Z",
       "Finished": "0001-01-01T00:00:00Z",
       "Duration": 3595000000000,
@@ -136,15 +115,6 @@
     {
       "GroupName": "Main",
       "Property": null
-    },
-    {
-      "GroupName": "Swarming Tags",
-      "Property": [
-        {
-          "Key": "allow_milo",
-          "Value": "1"
-        }
-      ]
     }
   ],
   "Blame": null

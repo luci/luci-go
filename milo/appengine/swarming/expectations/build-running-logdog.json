@@ -1,10 +1,7 @@
 {
   "Summary": {
-    "ParentLabel": null,
     "Label": "2d8d62f6be545b10",
     "Status": "Running",
-    "Banner": null,
-    "Bot": null,
     "Source": {
       "Label": "Task 2d8d62f6be545b10",
       "URL": "https://example.com/user/task/2d8d62f6be545b10"
@@ -19,7 +16,6 @@
         "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fstdout"
       }
     ],
-    "Progress": null,
     "Started": "2016-03-14T10:00:01.85071Z",
     "Finished": "0001-01-01T00:00:00Z",
     "Duration": 3598149290000,
@@ -33,18 +29,12 @@
   "SourceStamp": null,
   "Components": [
     {
-      "ParentLabel": null,
       "Label": "recipe bootstrap",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdout",
         "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Frecipe_bootstrap%2F0%2Fstdout"
       },
-      "SubLink": null,
-      "Progress": null,
       "Started": "2016-03-14T10:00:02Z",
       "Finished": "2016-03-14T10:00:03Z",
       "Duration": 1000000000,
@@ -54,12 +44,8 @@
       "Text": null
     },
     {
-      "ParentLabel": null,
       "Label": "setup_build",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdout",
         "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fsetup_build%2F0%2Fstdout"
@@ -70,7 +56,6 @@
           "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fsetup_build%2F0%2Flogs%2Frun_recipe%2F0"
         }
       ],
-      "Progress": null,
       "Started": "2016-03-14T10:00:03Z",
       "Finished": "2016-03-14T10:00:04Z",
       "Duration": 1000000000,
@@ -82,18 +67,12 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "bot_update",
       "Status": "Running",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdout",
         "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fbot_update%2F0%2Fstdout"
       },
-      "SubLink": null,
-      "Progress": null,
       "Started": "2016-03-14T10:00:05Z",
       "Finished": "0001-01-01T00:00:00Z",
       "Duration": 3595000000000,
@@ -136,23 +115,6 @@
     {
       "GroupName": "Main",
       "Property": null
-    },
-    {
-      "GroupName": "Swarming Tags",
-      "Property": [
-        {
-          "Key": "allow_milo",
-          "Value": "1"
-        },
-        {
-          "Key": "luci_project",
-          "Value": "testproject"
-        },
-        {
-          "Key": "log_location",
-          "Value": "logdog://example.com/testproject/${swarming_run_id}/+/annotations"
-        }
-      ]
     }
   ],
   "Blame": null

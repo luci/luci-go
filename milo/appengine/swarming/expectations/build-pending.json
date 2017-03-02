@@ -1,10 +1,7 @@
 {
   "Summary": {
-    "ParentLabel": null,
     "Label": "2fb1b35e1da25710",
     "Status": "NotRun",
-    "Banner": null,
-    "Bot": null,
     "Source": {
       "Label": "Task 2fb1b35e1da25710",
       "URL": "https://example.com/user/task/2fb1b35e1da25710"
@@ -13,8 +10,6 @@
       "Label": "Task 2fb1b35e1da25710",
       "URL": "https://example.com/user/task/2fb1b35e1da25710"
     },
-    "SubLink": null,
-    "Progress": null,
     "Started": "0001-01-01T00:00:00Z",
     "Finished": "0001-01-01T00:00:00Z",
     "Duration": 0,
@@ -29,31 +24,6 @@
     {
       "GroupName": "Main",
       "Property": null
-    },
-    {
-      "GroupName": "Swarming Tags",
-      "Property": [
-        {
-          "Key": "os",
-          "Value": "Linux"
-        },
-        {
-          "Key": "pool",
-          "Value": "default"
-        },
-        {
-          "Key": "priority",
-          "Value": "10"
-        },
-        {
-          "Key": "user",
-          "Value": ""
-        },
-        {
-          "Key": "allow_milo",
-          "Value": "1"
-        }
-      ]
     }
   ],
   "Blame": null

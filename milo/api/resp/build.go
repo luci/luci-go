@@ -47,7 +47,7 @@ type SourceStamp struct {
 	Source string
 }
 
-// Property specifies the source of the property. k/v pair representing some
+// Property specifies k/v pair representing some
 // sort of property, such as buildbot property, quest property, etc.
 type Property struct {
 	Key   string
@@ -203,7 +203,7 @@ const (
 type BuildComponent struct {
 	// The parent of this component.  For buildbot and swarmbucket builds, this
 	// refers to the builder.  For DM, this refers to whatever triggered the Quest.
-	ParentLabel *Link
+	ParentLabel *Link `json:",omitempty"`
 
 	// The main label for the component.
 	Label string
@@ -213,23 +213,26 @@ type BuildComponent struct {
 
 	// Banner is a banner of logos that define the OS and devices this
 	// component is associated with.
-	Banner *LogoBanner
+	Banner *LogoBanner `json:",omitempty"`
 
 	// Bot is the machine or execution instance that this component ran on.
-	Bot *Link
+	Bot *Link `json:",omitempty"`
+
+	// Recipe is a link to the recipe this component is based on.
+	Recipe *Link `json:",omitempty"`
 
 	// Source is a link to the external (buildbot, swarming, dm, etc) data
 	// source that this component relates to.
-	Source *Link
+	Source *Link `json:",omitempty"`
 
 	// Link to show adjacent to the main label.
-	MainLink *Link
+	MainLink *Link `json:",omitempty"`
 
 	// Links to show right below the main label.
-	SubLink []*Link
+	SubLink []*Link `json:",omitempty"`
 
 	// Designates the progress of the current component. Set null for no progress.
-	Progress *BuildProgress
+	Progress *BuildProgress `json:",omitempty"`
 
 	// When did this step start.
 	Started time.Time

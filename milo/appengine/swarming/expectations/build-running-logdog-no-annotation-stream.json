@@ -1,17 +1,11 @@
 {
   "Summary": {
-    "ParentLabel": null,
     "Label": "1a2b3c4d5e6f7890",
     "Status": "NotRun",
-    "Banner": null,
-    "Bot": null,
     "Source": {
       "Label": "Task 1a2b3c4d5e6f7890",
       "URL": "https://example.com/user/task/1a2b3c4d5e6f7890"
     },
-    "MainLink": null,
-    "SubLink": null,
-    "Progress": null,
     "Started": "0001-01-01T00:00:00Z",
     "Finished": "0001-01-01T00:00:00Z",
     "Duration": 0,
@@ -23,15 +17,8 @@
   "SourceStamp": null,
   "Components": [
     {
-      "ParentLabel": null,
       "Label": "Waiting...",
       "Status": "Running",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
-      "MainLink": null,
-      "SubLink": null,
-      "Progress": null,
       "Started": "0001-01-01T00:00:00Z",
       "Finished": "0001-01-01T00:00:00Z",
       "Duration": 0,
@@ -43,24 +30,6 @@
       ]
     }
   ],
-  "PropertyGroup": [
-    {
-      "GroupName": "Swarming Tags",
-      "Property": [
-        {
-          "Key": "allow_milo",
-          "Value": "1"
-        },
-        {
-          "Key": "luci_project",
-          "Value": "testproject"
-        },
-        {
-          "Key": "log_location",
-          "Value": "logdog://example.com/testproject/${swarming_run_id}/+/annotations"
-        }
-      ]
-    }
-  ],
+  "PropertyGroup": null,
   "Blame": null
 }

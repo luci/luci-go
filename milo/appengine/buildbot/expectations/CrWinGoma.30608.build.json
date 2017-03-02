@@ -6,7 +6,6 @@
     },
     "Label": "#30608",
     "Status": "Success",
-    "Banner": null,
     "Bot": {
       "Label": "build28-m1",
       "URL": "https://build.chromium.org/p//buildslaves/build28-m1"
@@ -15,9 +14,6 @@
       "Label": "/CrWinGoma/30608",
       "URL": "https://build.chromium.org/p//builders/CrWinGoma/builds/30608"
     },
-    "MainLink": null,
-    "SubLink": null,
-    "Progress": null,
     "Started": "2016-06-08T20:37:26.347294976Z",
     "Finished": "2016-06-08T20:52:56.719568896Z",
     "Duration": 930372273920,
@@ -42,12 +38,8 @@
   },
   "Components": [
     {
-      "ParentLabel": null,
       "Label": "steps",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdio",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/steps/logs/stdio",
@@ -88,7 +80,6 @@
           ]
         }
       ],
-      "Progress": null,
       "Started": "2016-06-08T20:37:26.347794176Z",
       "Finished": "2016-06-08T20:52:56.709209088Z",
       "Duration": 930361414912,
@@ -100,12 +91,8 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "update_scripts",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdio",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/update_scripts/logs/stdio"
@@ -116,7 +103,6 @@
           "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/update_scripts/logs/gclient_json"
         }
       ],
-      "Progress": null,
       "Started": "2016-06-08T20:37:31.355832064Z",
       "Finished": "2016-06-08T20:37:56.148355072Z",
       "Duration": 24792523008,
@@ -129,18 +115,12 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "setup_properties",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdio",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/setup_properties/logs/stdio"
       },
-      "SubLink": null,
-      "Progress": null,
       "Started": "2016-06-08T20:37:56.158436096Z",
       "Finished": "2016-06-08T20:38:02.18488704Z",
       "Duration": 6026450944,
@@ -152,12 +132,8 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "setup_build",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdio",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/setup_build/logs/stdio"
@@ -168,7 +144,6 @@
           "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/setup_build/logs/run_recipe"
         }
       ],
-      "Progress": null,
       "Started": "2016-06-08T20:38:08.545152Z",
       "Finished": "2016-06-08T20:38:08.54711296Z",
       "Duration": 1960960,
@@ -181,18 +156,12 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "taskkill",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdio",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/taskkill/logs/stdio"
       },
-      "SubLink": null,
-      "Progress": null,
       "Started": "2016-06-08T20:38:08.548142848Z",
       "Finished": "2016-06-08T20:38:19.609606144Z",
       "Duration": 11061463296,
@@ -204,12 +173,8 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "bot_update",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdio",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/bot_update/logs/stdio"
@@ -220,7 +185,6 @@
           "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/bot_update/logs/json.output"
         }
       ],
-      "Progress": null,
       "Started": "2016-06-08T20:38:19.645263872Z",
       "Finished": "2016-06-08T20:39:23.713361152Z",
       "Duration": 64068097280,
@@ -233,18 +197,12 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "ensure_goma",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdio",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/ensure_goma/logs/stdio"
       },
-      "SubLink": null,
-      "Progress": null,
       "Started": "2016-06-08T20:39:24.025535232Z",
       "Finished": "2016-06-08T20:39:24.02771712Z",
       "Duration": 2181888,
@@ -256,12 +214,8 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "ensure_goma.install cipd",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdio",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/ensure_goma.install%20cipd/logs/stdio"
@@ -272,7 +226,6 @@
           "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/ensure_goma.install%20cipd/logs/json.output"
         }
       ],
-      "Progress": null,
       "Started": "2016-06-08T20:39:23.727854848Z",
       "Finished": "2016-06-08T20:39:23.732992768Z",
       "Duration": 5137920,
@@ -285,12 +238,8 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "ensure_goma.ensure_installed",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdio",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/ensure_goma.ensure_installed/logs/stdio"
@@ -301,7 +250,6 @@
           "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/ensure_goma.ensure_installed/logs/json.output"
         }
       ],
-      "Progress": null,
       "Started": "2016-06-08T20:39:23.738912Z",
       "Finished": "2016-06-08T20:39:23.743748864Z",
       "Duration": 4836864,
@@ -313,18 +261,12 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "gclient runhooks",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdio",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/gclient%20runhooks/logs/stdio"
       },
-      "SubLink": null,
-      "Progress": null,
       "Started": "2016-06-08T20:39:24.029580032Z",
       "Finished": "2016-06-08T20:39:39.269846016Z",
       "Duration": 15240265984,
@@ -336,12 +278,8 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "get compile targets for scripts",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdio",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/get%20compile%20targets%20for%20scripts/logs/stdio"
@@ -352,7 +290,6 @@
           "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/get%20compile%20targets%20for%20scripts/logs/json.output"
         }
       ],
-      "Progress": null,
       "Started": "2016-06-08T20:39:39.280136192Z",
       "Finished": "2016-06-08T20:39:41.288676096Z",
       "Duration": 2008539904,
@@ -364,12 +301,8 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "read test spec",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdio",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/read%20test%20spec/logs/stdio"
@@ -380,7 +313,6 @@
           "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/read%20test%20spec/logs/json.output"
         }
       ],
-      "Progress": null,
       "Started": "2016-06-08T20:39:41.290800128Z",
       "Finished": "2016-06-08T20:39:51.33959296Z",
       "Duration": 10048792832,
@@ -393,18 +325,12 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "cleanup_temp",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdio",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/cleanup_temp/logs/stdio"
       },
-      "SubLink": null,
-      "Progress": null,
       "Started": "2016-06-08T20:39:51.708583168Z",
       "Finished": "2016-06-08T20:39:51.720995072Z",
       "Duration": 12411904,
@@ -416,18 +342,12 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "generate_build_files",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdio",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/generate_build_files/logs/stdio"
       },
-      "SubLink": null,
-      "Progress": null,
       "Started": "2016-06-08T20:39:51.722564096Z",
       "Finished": "2016-06-08T20:40:37.593517056Z",
       "Duration": 45870952960,
@@ -439,12 +359,8 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "compile",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdio",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/compile/logs/stdio"
@@ -455,7 +371,6 @@
           "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/compile/logs/json.output"
         }
       ],
-      "Progress": null,
       "Started": "2016-06-08T20:40:37.594507008Z",
       "Finished": "2016-06-08T20:51:39.89583104Z",
       "Duration": 662301324032,
@@ -467,18 +382,12 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "base_unittests",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdio",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/base_unittests/logs/stdio"
       },
-      "SubLink": null,
-      "Progress": null,
       "Started": "2016-06-08T20:51:39.897126912Z",
       "Finished": "2016-06-08T20:52:15.802792192Z",
       "Duration": 35905665280,
@@ -493,18 +402,12 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "content_unittests",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdio",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/content_unittests/logs/stdio"
       },
-      "SubLink": null,
-      "Progress": null,
       "Started": "2016-06-08T20:52:15.804073216Z",
       "Finished": "2016-06-08T20:52:56.594151936Z",
       "Duration": 40790078720,
@@ -518,18 +421,12 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "process_dumps",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdio",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/process_dumps/logs/stdio"
       },
-      "SubLink": null,
-      "Progress": null,
       "Started": "2016-06-08T20:52:56.596560128Z",
       "Finished": "2016-06-08T20:52:56.59919104Z",
       "Duration": 2630912,
@@ -541,12 +438,8 @@
       ]
     },
     {
-      "ParentLabel": null,
       "Label": "recipe result",
       "Status": "Success",
-      "Banner": null,
-      "Bot": null,
-      "Source": null,
       "MainLink": {
         "Label": "stdio",
         "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/recipe%20result/logs/stdio"
@@ -557,7 +450,6 @@
           "URL": "http://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608/steps/recipe%20result/logs/result"
         }
       ],
-      "Progress": null,
       "Started": "2016-06-08T20:52:56.60039296Z",
       "Finished": "2016-06-08T20:52:56.687215104Z",
       "Duration": 86822144,

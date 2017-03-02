@@ -17,7 +17,10 @@
       ],
       "Device": null
     },
-    "Bot": null,
+    "Recipe": {
+      "Label": "infra_repo_trybot",
+      "URL": "https://chromium.googlesource.com/infra/infra/+/master/"
+    },
     "Source": {
       "Label": "Task 308998ca182a0210",
       "URL": "https://example.com/user/task/308998ca182a0210"
@@ -26,8 +29,6 @@
       "Label": "Task 308998ca182a0210",
       "URL": "https://example.com/user/task/308998ca182a0210"
     },
-    "SubLink": null,
-    "Progress": null,
     "Started": "0001-01-01T00:00:00Z",
     "Finished": "0001-01-01T00:00:00Z",
     "Duration": 0,
@@ -44,75 +45,6 @@
     {
       "GroupName": "Main",
       "Property": null
-    },
-    {
-      "GroupName": "Swarming Tags",
-      "Property": [
-        {
-          "Key": "allow_milo",
-          "Value": "1"
-        },
-        {
-          "Key": "buildbucket_bucket",
-          "Value": "luci.infra.try"
-        },
-        {
-          "Key": "buildbucket_hostname",
-          "Value": "cr-buildbucket.appspot.com"
-        },
-        {
-          "Key": "buildbucket_template_canary",
-          "Value": "false"
-        },
-        {
-          "Key": "builder",
-          "Value": "Infra Win Tester"
-        },
-        {
-          "Key": "buildset",
-          "Value": "patch/rietveld/codereview.chromium.org/2225073005/1"
-        },
-        {
-          "Key": "cpu",
-          "Value": "x86-64"
-        },
-        {
-          "Key": "master",
-          "Value": "luci.infra.try"
-        },
-        {
-          "Key": "os",
-          "Value": "Windows-7-SP1"
-        },
-        {
-          "Key": "pool",
-          "Value": "Chrome"
-        },
-        {
-          "Key": "priority",
-          "Value": "100"
-        },
-        {
-          "Key": "recipe_name",
-          "Value": "infra_repo_trybot"
-        },
-        {
-          "Key": "recipe_repository",
-          "Value": "https://chromium.googlesource.com/infra/infra"
-        },
-        {
-          "Key": "recipe_revision",
-          "Value": ""
-        },
-        {
-          "Key": "user",
-          "Value": ""
-        },
-        {
-          "Key": "user_agent",
-          "Value": "cq"
-        }
-      ]
     }
   ],
   "Blame": null

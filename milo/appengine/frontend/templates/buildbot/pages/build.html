@@ -125,6 +125,12 @@
           <a href="{{ .Build.Summary.Bot.URL }}">{{ .Build.Summary.Bot.Label }}</a>
         </li>
         {{ end }}
+
+        {{ if .Build.Summary.Recipe}}
+        <li>
+          Recipe: {{ .Build.Summary.Recipe | linkify }}
+        </li>
+        {{ end }}
       </ul>
       {{ end }} <!-- if -->
 
