@@ -35,8 +35,8 @@ func init() {
 
 // Parameters is the set of application parametesr that can be supplied.
 type Parameters struct {
-	// Args is the command-line arguments. This should not include the command name,
-	// args[0].
+	// Args is the command-line arguments. This should not include the command
+	// name, args[0].
 	Args []string
 
 	// Host is the default host name.
@@ -152,7 +152,7 @@ func Main(ctx context.Context, params Parameters) int {
 
 	a := application{
 		Application: cli.Application{
-			Name:    "LogDog cat",
+			Name:    "logdog",
 			Title:   "LogDog log data access CLI",
 			Context: func(context.Context) context.Context { return ctx },
 
