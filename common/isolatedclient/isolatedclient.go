@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -209,7 +210,7 @@ func fetchGCSDefault(c context.Context, i *Client, content isolateservice.Handle
 		defer resp.Body.Close()
 		decompressor := isolated.GetDecompressor(resp.Body)
 		defer decompressor.Close()
-		if _, err := dest.Seek(0, io.SeekStart); err != nil {
+		if _, err := dest.Seek(0, os.SEEK_SET); err != nil {
 			return err
 		}
 		_, err := io.Copy(dest, decompressor)
