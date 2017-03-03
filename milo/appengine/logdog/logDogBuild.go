@@ -34,7 +34,8 @@ var builtIn = map[string]struct{}{
 
 // miloBuildStep converts a logdog/milo step to a BuildComponent struct.
 // buildCompletedTime must be zero if build did not complete yet.
-func miloBuildStep(ub URLBuilder, anno *miloProto.Step, buildCompletedTime, now time.Time) []*resp.BuildComponent {
+func miloBuildStep(ub URLBuilder, anno *miloProto.Step, isMain bool, buildCompletedTime,
+	now time.Time) []*resp.BuildComponent {
 
 	comp := &resp.BuildComponent{Label: anno.Name}
 	switch anno.Status {
@@ -83,8 +84,13 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, buildCompletedTime, now 
 
 	// Hide the unimportant steps, highlight the interesting ones.
 	switch comp.Status {
+	case resp.NotRun, resp.Running:
+		if isMain {
+			comp.Verbosity = resp.Hidden
+		}
+
 	case resp.Success:
-		if _, ok := builtIn[anno.Name]; ok {
+		if _, ok := builtIn[anno.Name]; ok || isMain {
 			comp.Verbosity = resp.Hidden
 		}
 	case resp.InfraFailure, resp.Failure:
@@ -111,6 +117,16 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, buildCompletedTime, now 
 		}
 	} else if stdoutLink != nil {
 		comp.MainLink = ub.BuildLink(stdoutLink)
+	}
+
+	// Add STDERR link, if available.
+	if anno.StderrStream != nil {
+		anno.OtherLinks = append(anno.OtherLinks, &miloProto.Link{
+			Label: "stderr",
+			Value: &miloProto.Link_LogdogStream{
+				LogdogStream: anno.StderrStream,
+			},
+		})
 	}
 
 	// Sub link is for one link per log that isn't stdout.
@@ -160,7 +176,7 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, buildCompletedTime, now 
 		default:
 			panic(fmt.Errorf("Unknown type %v", s))
 		}
-		for _, subcomp := range miloBuildStep(ub, subanno, buildCompletedTime, now) {
+		for _, subcomp := range miloBuildStep(ub, subanno, false, buildCompletedTime, now) {
 			results = append(results, subcomp)
 		}
 	}
@@ -177,7 +193,7 @@ func AddLogDogToBuild(
 	// Now fill in each of the step components.
 	// TODO(hinoka): This is totes cachable.
 	buildCompletedTime := google.TimeFromProto(mainAnno.Ended)
-	build.Summary = *(miloBuildStep(ub, mainAnno, buildCompletedTime, now)[0])
+	build.Summary = *(miloBuildStep(ub, mainAnno, true, buildCompletedTime, now)[0])
 	for _, substepContainer := range mainAnno.Substep {
 		anno := substepContainer.GetStep()
 		if anno == nil {
@@ -185,7 +201,7 @@ func AddLogDogToBuild(
 			continue
 		}
 
-		bss := miloBuildStep(ub, anno, buildCompletedTime, now)
+		bss := miloBuildStep(ub, anno, false, buildCompletedTime, now)
 		for _, bs := range bss {
 			if bs.Status != resp.Success {
 				build.Summary.Text = append(

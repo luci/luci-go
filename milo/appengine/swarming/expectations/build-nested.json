@@ -15,7 +15,7 @@
     "Duration": 3598149290000,
     "Type": "Recipe",
     "LevelsDeep": 0,
-    "Verbosity": 0,
+    "Verbosity": 1,
     "Text": [
       "Running recipe bootstrap",
       "Failure build",

@@ -66,6 +66,9 @@ substep: <
 stdout_stream: <
   name: "stdout"
 >
+stderr_stream: <
+  name: "stderr"
+>
 started: <
   seconds: 1457949601
 >

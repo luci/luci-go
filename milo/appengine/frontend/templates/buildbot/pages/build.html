@@ -141,11 +141,30 @@
         {{ end }}
       {{ end }}
 
-      {{ if .Build.Components }}
+      {{ if or .Build.Components .Build.Summary.SubLink }}
         <h2>Steps and Logfiles:</h2>
         <input type="checkbox" id="showHidden">
         <label for="showHidden">Show hidden <span id="numHidden"></span></label>
         <ol id="steps" class="hide">
+
+          {{ with .Build.Summary }}
+            {{ if .SubLink }}
+            <li class="verbosity-{{.Verbosity.String}}">
+              <div class="status-{{.Status}} result">
+                <b>Steps</b>
+                {{ if .Duration -}}
+                <span style="float:right">( {{ .Duration | humanDuration }} )</span>
+                {{- end }}
+              </div>
+              <ul>
+                {{ range .SubLink  }}
+                <li>{{ . | linkify }}</li>
+                {{ end }}
+              </ul>
+            </li>
+            {{ end }}
+          {{ end }}
+
           {{ range .Build.Components  }}
           <li class="verbosity-{{.Verbosity.String}}">
             <div class="status-{{.Status}} result">
