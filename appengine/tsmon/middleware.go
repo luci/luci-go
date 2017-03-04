@@ -16,9 +16,7 @@ import (
 	"google.golang.org/appengine"
 
 	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/appengine/gaeauth/client"
 	"github.com/luci/luci-go/common/clock"
-	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/iotools"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/tsmon"
@@ -316,19 +314,9 @@ func (s *State) doFlush(c context.Context, state *tsmon.State, settings *tsmonSe
 
 	if s.testingMonitor != nil {
 		mon = s.testingMonitor
-	} else if info.IsDevAppServer(c) || !settings.configured() {
+	} else if info.IsDevAppServer(c) || settings.ProdXAccount == "" {
 		mon = monitor.NewDebugMonitor("")
-	} else if settings.BackendKind == "pubsub" {
-		topic := gcps.NewTopic(settings.PubsubProject, settings.PubsubTopic)
-		logging.Infof(c, "Sending metrics to %s", topic)
-
-		// The token source and the monitor are bound to the context and inherits
-		// its deadline.
-		ts := client.NewTokenSource(c, gcps.PublisherScopes)
-		if mon, err = monitor.NewPubsubMonitor(c, ts, topic); err != nil {
-			return err
-		}
-	} else if settings.BackendKind == "prodx" {
+	} else {
 		logging.Infof(c, "Sending metrics to ProdX using %s", settings.ProdXAccount)
 		transport, err := auth.GetRPCTransport(
 			c,
@@ -346,10 +334,6 @@ func (s *State) doFlush(c context.Context, state *tsmon.State, settings *tsmonSe
 		if err != nil {
 			return err
 		}
-	} else {
-		// This should not generally happen.
-		logging.Errorf(c, "Unrecognized tsmon backend kind %q", settings.BackendKind)
-		mon = monitor.NewDebugMonitor("")
 	}
 
 	defer mon.Close()
