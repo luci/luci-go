@@ -10,16 +10,37 @@ import (
 	"net"
 	"os"
 
+	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
+
 	"golang.org/x/net/context"
 )
 
-// NewNamedPipeServer instantiates a new POSIX named pipe server instance.
-func NewNamedPipeServer(ctx context.Context, path string) StreamServer {
+// maxPOSIXNamedSocketLength is the maximum length of a UNIX domain socket.
+//
+// This is defined by the UNIX_PATH_MAX constant, and is usually this value.
+const maxPOSIXNamedSocketLength = 104
+
+// NewUNIXDomainSocketServer instantiates a new POSIX domain soecket server
+// instance.
+//
+// No resources are actually created until methods are called on the returned
+// server.
+func NewUNIXDomainSocketServer(ctx context.Context, path string) (StreamServer, error) {
+	switch l := len(path); {
+	case l == 0:
+		return nil, errors.New("cannot have empty path")
+	case l > maxPOSIXNamedSocketLength:
+		return nil, errors.Reason("path exceeds maximum length %(max)d").
+			D("path", path).
+			D("max", maxPOSIXNamedSocketLength).
+			Err()
+	}
+
 	ctx = log.SetField(ctx, "namedPipePath", path)
 	return &listenerStreamServer{
 		Context: ctx,
-		gen: func() (net.Listener, error) {
+		gen: func() (net.Listener, string, error) {
 			log.Infof(ctx, "Creating POSIX server socket Listener.")
 
 			// Cleanup any previous named pipe. We don't bother checking for the file
@@ -33,21 +54,22 @@ func NewNamedPipeServer(ctx context.Context, path string) StreamServer {
 			// Create a UNIX listener
 			l, err := net.Listen("unix", path)
 			if err != nil {
-				return nil, err
+				return nil, "", err
 			}
 
+			addr := "unix:" + path
 			ul := selfCleaningUNIXListener{
 				Context:  ctx,
 				Listener: l,
 				path:     path,
 			}
-			return &ul, nil
+			return &ul, addr, nil
 		},
-	}
+	}, nil
 }
 
-// Wrapper around the "unix"-type Listener that cleans up the named pipe on
-// creation and 'Close()'
+// selfCleaningUNIXListener is a wrapper around the "unix"-type Listener that
+// cleans up the named pipe on creation and Close().
 //
 // The standard Go Listener will unlink the file when Closed. However, it
 // doesn't do it in a deferred, so this will clean up if a panic is encountered

@@ -7,19 +7,45 @@ package streamserver
 import (
 	"net"
 
+	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/logdog/client/butlerlib/streamclient"
+
 	"golang.org/x/net/context"
 	npipe "gopkg.in/natefinch/npipe.v2"
 )
 
+// maxWindowsNamedPipeLength is the maximum length of a Windows named pipe.
+const maxWindowsNamedPipeLength = 256
+
 // NewNamedPipeServer instantiates a new Windows named pipe server instance.
-func NewNamedPipeServer(ctx context.Context, address string) StreamServer {
-	ctx = log.SetField(ctx, "address", address)
+func NewNamedPipeServer(ctx context.Context, name string) (StreamServer, error) {
+	switch l := len(name); {
+	case l == 0:
+		return nil, errors.New("cannot have empty name")
+	case l > maxWindowsNamedPipeLength:
+		return nil, errors.Reason("name exceeds maximum length %(max)d").
+			D("name", name).
+			D("max", maxWindowsNamedPipeLength).
+			Err()
+	}
+
+	ctx = log.SetField(ctx, "name", name)
 	return &listenerStreamServer{
 		Context: ctx,
-		gen: func() (net.Listener, error) {
-			log.Debugf(ctx, "Creating Windows server socket Listener.")
-			return npipe.Listen(address)
+		gen: func() (net.Listener, string, error) {
+			address := "net.pipe:" + name
+			pipePath := streamclient.LocalNamedPipePath(name)
+			log.Fields{
+				"addr":     address,
+				"pipePath": pipePath,
+			}.Debugf(ctx, "Creating Windows server socket Listener.")
+
+			l, err := npipe.Listen(pipePath)
+			if err != nil {
+				return nil, "", errors.Annotate(err).Reason("failed to listen on named pipe").Err()
+			}
+			return l, address, nil
 		},
-	}
+	}, nil
 }

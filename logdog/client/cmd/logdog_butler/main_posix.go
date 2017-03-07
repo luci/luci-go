@@ -48,10 +48,10 @@ func (u streamServerURI) Validate() (err error) {
 }
 
 // Create a POSIX (UNIX named pipe) stream server
-func createStreamServer(ctx context.Context, uri streamServerURI) streamserver.StreamServer {
+func createStreamServer(ctx context.Context, uri streamServerURI) (streamserver.StreamServer, error) {
 	path, err := uri.Parse()
 	if err != nil {
 		panic("Failed to parse stream server URI.")
 	}
-	return streamserver.NewNamedPipeServer(ctx, path)
+	return streamserver.NewUNIXDomainSocketServer(ctx, path)
 }

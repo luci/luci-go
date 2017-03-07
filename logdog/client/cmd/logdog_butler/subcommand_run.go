@@ -178,16 +178,20 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string, _ subc
 	}
 
 	// Configure stream server
-	streamServer := streamserver.StreamServer(nil)
+	var streamServer streamserver.StreamServer
 	streamServerOwned := true
 	if cmd.streamServerURI != "" {
 		log.Fields{
 			"url": cmd.streamServerURI,
 		}.Infof(a, "Creating stream server.")
-		streamServer = createStreamServer(a, cmd.streamServerURI)
+		var err error
+		if streamServer, err = createStreamServer(a, cmd.streamServerURI); err != nil {
+			log.WithError(err).Errorf(a, "Failed to create stream server.")
+			return runtimeErrorReturnCode
+		}
 
 		if err := streamServer.Listen(); err != nil {
-			log.Errorf(log.SetError(a, err), "Failed to connect to stream server.")
+			log.WithError(err).Errorf(a, "Failed to connect to stream server.")
 			return runtimeErrorReturnCode
 		}
 		defer func() {
@@ -196,7 +200,7 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string, _ subc
 			}
 		}()
 
-		bsEnv.StreamServerURI = string(cmd.streamServerURI)
+		bsEnv.StreamServerURI = streamServer.Address()
 	}
 
 	// Build our command enviornment.

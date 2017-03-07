@@ -13,9 +13,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luci/luci-go/common/clock/clockflag"
+	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/logdog/client/butlerlib/streamclient"
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
-	. "github.com/smartystreets/goconvey/convey"
+
 	"golang.org/x/net/context"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 type testAddr string
@@ -105,12 +110,12 @@ func TestListenerStreamServer(t *testing.T) {
 		var tl *testListener
 		s := &listenerStreamServer{
 			Context: context.Background(),
-			gen: func() (net.Listener, error) {
+			gen: func() (net.Listener, string, error) {
 				if tl != nil {
 					panic("gen called more than once")
 				}
 				tl = newTestListener()
-				return tl, nil
+				return tl, "test", nil
 			},
 		}
 
@@ -119,8 +124,8 @@ func TestListenerStreamServer(t *testing.T) {
 		})
 
 		Convey(`Will fail to Listen if the Listener could not be created.`, func() {
-			s.gen = func() (net.Listener, error) {
-				return nil, errors.New("test error")
+			s.gen = func() (net.Listener, string, error) {
+				return nil, "", errors.New("test error")
 			}
 			So(s.Listen(), ShouldNotBeNil)
 		})
@@ -227,4 +232,50 @@ func TestListenerStreamServer(t *testing.T) {
 
 		})
 	})
+}
+
+// testClientServer tests to ensure that a client can create streams with a
+// server.
+//
+// svr must be in listening state when this is called.
+func testClientServer(t *testing.T, svr StreamServer, client streamclient.Client) {
+	flags := streamproto.Flags{
+		Name:      "foo/bar",
+		Timestamp: clockflag.Time(testclock.TestTimeLocal),
+	}
+	data := []byte("ohaithere")
+
+	clientDoneC := make(chan error)
+	go func() {
+		var err error
+		defer func() {
+			clientDoneC <- err
+		}()
+
+		var stream streamclient.Stream
+		if stream, err = client.NewStream(flags); err != nil {
+			return
+		}
+		defer func() {
+			if closeErr := stream.Close(); closeErr != nil && err == nil {
+				err = closeErr
+			}
+		}()
+
+		if _, err = stream.Write(data); err != nil {
+			return
+		}
+	}()
+
+	rc, props := svr.Next()
+	defer rc.Close()
+
+	So(props, ShouldResemble, flags.Properties())
+
+	var buf bytes.Buffer
+	_, err := buf.ReadFrom(rc)
+	So(err, ShouldBeNil)
+	So(buf.Bytes(), ShouldResemble, data)
+
+	So(<-clientDoneC, ShouldBeNil)
 }

@@ -18,13 +18,13 @@ import (
 func TestStreamImpl(t *testing.T) {
 	Convey(`A stream writing to a buffer`, t, func() {
 		buf := bytes.Buffer{}
-		si := streamImpl{
+		si := BaseStream{
 			WriteCloser: &nopWriteCloser{Writer: &buf},
-			props:       (&streamproto.Flags{}).Properties(),
+			P:           (&streamproto.Flags{}).Properties(),
 		}
 
 		Convey(`TEXT`, func() {
-			si.props.StreamType = logpb.StreamType_TEXT
+			si.P.StreamType = logpb.StreamType_TEXT
 
 			Convey(`Will error if WriteDatagram is called.`, func() {
 				So(si.WriteDatagram([]byte(nil)), ShouldNotBeNil)
@@ -39,7 +39,7 @@ func TestStreamImpl(t *testing.T) {
 		})
 
 		Convey(`DATAGRAM`, func() {
-			si.props.StreamType = logpb.StreamType_DATAGRAM
+			si.P.StreamType = logpb.StreamType_DATAGRAM
 
 			Convey(`Will error if Write is called.`, func() {
 				_, err := si.Write([]byte(nil))

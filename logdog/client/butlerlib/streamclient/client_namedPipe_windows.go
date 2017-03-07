@@ -6,7 +6,6 @@ package streamclient
 
 import (
 	"errors"
-	"fmt"
 	"io"
 
 	npipe "gopkg.in/natefinch/npipe.v2"
@@ -26,7 +25,12 @@ func newNamedPipeClient(path string) (Client, error) {
 
 	return &clientImpl{
 		factory: func() (io.WriteCloser, error) {
-			return npipe.Dial(fmt.Sprintf(`\\.\pipe\%s`, path))
+			return npipe.Dial(LocalNamedPipePath(path))
 		},
 	}, nil
+}
+
+// LocalNamedPipePath returns the path to a local Windows named pipe named base.
+func LocalNamedPipePath(base string) string {
+	return `\\.\pipe\` + base
 }

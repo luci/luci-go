@@ -193,9 +193,9 @@ func newTestStreamServer() *testStreamServer {
 	}
 }
 
-func (tss *testStreamServer) Listen() error {
-	return tss.err
-}
+func (tss *testStreamServer) Address() string { return "test" }
+
+func (tss *testStreamServer) Listen() error { return tss.err }
 
 func (tss *testStreamServer) Next() (io.ReadCloser, *streamproto.Properties) {
 	if tss.onNext != nil {

@@ -79,9 +79,9 @@ func TestClient(t *testing.T) {
 			Convey(`That can instantiate new Streams.`, func() {
 				stream, err := client.NewStream(flags)
 				So(err, ShouldBeNil)
-				So(stream, ShouldHaveSameTypeAs, &streamImpl{})
+				So(stream, ShouldHaveSameTypeAs, &BaseStream{})
 
-				si := stream.(*streamImpl)
+				si := stream.(*BaseStream)
 				So(si.WriteCloser, ShouldHaveSameTypeAs, &testStreamWriteCloser{})
 
 				tswc := si.WriteCloser.(*testStreamWriteCloser)

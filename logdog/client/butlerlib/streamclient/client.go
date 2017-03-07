@@ -70,9 +70,9 @@ func (c *clientImpl) NewStream(f streamproto.Flags) (Stream, error) {
 	}
 
 	// Perform the handshake: magic + size(data) + data.
-	s := &streamImpl{
+	s := &BaseStream{
 		WriteCloser: client,
-		props:       p,
+		P:           p,
 	}
 	if _, err := s.writeRaw(streamproto.ProtocolFrameHeaderMagic); err != nil {
 		return nil, fmt.Errorf("failed to write magic number: %s", err)

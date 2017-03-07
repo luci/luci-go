@@ -25,21 +25,23 @@ type Stream interface {
 	Properties() *streamproto.Properties
 }
 
-// streamImpl is the standard implementation of the Stream interface.
-type streamImpl struct {
+// BaseStream is the standard implementation of the Stream interface.
+type BaseStream struct {
+	// WriteCloser (required) is the stream's underlying io.WriteCloser.
 	io.WriteCloser
 
-	// props is this stream's properties.
-	props *streamproto.Properties
+	// P (required) is this stream's properties.
+	P *streamproto.Properties
 
 	// rioW is a recordio.Writer bound to the WriteCloser. This will be
 	// initialized on the first writeRecord invocation.
 	rioW recordio.Writer
 }
 
-var _ Stream = (*streamImpl)(nil)
+var _ Stream = (*BaseStream)(nil)
 
-func (s *streamImpl) WriteDatagram(dg []byte) error {
+// WriteDatagram implements StreamClient.
+func (s *BaseStream) WriteDatagram(dg []byte) error {
 	if !s.isDatagramStream() {
 		return errors.New("not a datagram stream")
 	}
@@ -47,7 +49,8 @@ func (s *streamImpl) WriteDatagram(dg []byte) error {
 	return s.writeRecord(dg)
 }
 
-func (s *streamImpl) Write(data []byte) (int, error) {
+// Write implements StreamClient.
+func (s *BaseStream) Write(data []byte) (int, error) {
 	if s.isDatagramStream() {
 		return 0, errors.New("cannot use Write with datagram stream")
 	}
@@ -55,11 +58,11 @@ func (s *streamImpl) Write(data []byte) (int, error) {
 	return s.writeRaw(data)
 }
 
-func (s *streamImpl) writeRaw(data []byte) (int, error) {
+func (s *BaseStream) writeRaw(data []byte) (int, error) {
 	return s.WriteCloser.Write(data)
 }
 
-func (s *streamImpl) writeRecord(r []byte) error {
+func (s *BaseStream) writeRecord(r []byte) error {
 	if s.rioW == nil {
 		s.rioW = recordio.NewWriter(s.WriteCloser)
 	}
@@ -69,8 +72,9 @@ func (s *streamImpl) writeRecord(r []byte) error {
 	return s.rioW.Flush()
 }
 
-func (s *streamImpl) isDatagramStream() bool {
-	return s.props.StreamType == logpb.StreamType_DATAGRAM
+func (s *BaseStream) isDatagramStream() bool {
+	return s.P.StreamType == logpb.StreamType_DATAGRAM
 }
 
-func (s *streamImpl) Properties() *streamproto.Properties { return s.props.Clone() }
+// Properties implements StreamClient.
+func (s *BaseStream) Properties() *streamproto.Properties { return s.P.Clone() }

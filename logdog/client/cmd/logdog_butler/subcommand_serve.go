@@ -40,7 +40,11 @@ func (cmd *serveCommandRun) Run(app subcommands.Application, args []string, _ su
 		}.Errorf(a, "Invalid stream server URI.")
 		return configErrorReturnCode
 	}
-	streamServer := createStreamServer(a, cmd.uri)
+	streamServer, err := createStreamServer(a, cmd.uri)
+	if err != nil {
+		log.WithError(err).Errorf(a, "Failed to create stream server.")
+		return runtimeErrorReturnCode
+	}
 
 	if err := streamServer.Listen(); err != nil {
 		log.Errorf(log.SetError(a, err), "Failed to connect to stream server.")

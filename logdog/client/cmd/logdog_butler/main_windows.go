@@ -6,7 +6,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/luci/luci-go/logdog/client/butler/streamserver"
@@ -47,10 +46,10 @@ func (u streamServerURI) Validate() error {
 }
 
 // Create a Windows stream server.
-func createStreamServer(ctx context.Context, uri streamServerURI) streamserver.StreamServer {
+func createStreamServer(ctx context.Context, uri streamServerURI) (streamserver.StreamServer, error) {
 	name, err := uri.Parse()
 	if err != nil {
 		panic("Failed to parse stream server URI.")
 	}
-	return streamserver.NewNamedPipeServer(ctx, fmt.Sprintf(`\\.\pipe\%s`, name))
+	return streamserver.NewNamedPipeServer(ctx, name)
 }

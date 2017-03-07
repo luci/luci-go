@@ -32,10 +32,15 @@ type streamParams struct {
 type listenerStreamServer struct {
 	context.Context
 
+	// address is the string returned by the Address method.
+	address string
+
 	// gen is a generator function that is called to produce the stream server's
 	// Listener. On success, it returns the instantiated Listener, which will be
 	// closed when the stream server is closed.
-	gen   func() (net.Listener, error)
+	//
+	// The string returned is the address for this server.
+	gen   func() (net.Listener, string, error)
 	l     net.Listener
 	laddr string
 
@@ -58,10 +63,17 @@ func (s *listenerStreamServer) String() string {
 	return fmt.Sprintf("%T(%s)", s, s.laddr)
 }
 
+func (s *listenerStreamServer) Address() string {
+	if s.address == "" {
+		panic("server must be listening to get its address")
+	}
+	return s.address
+}
+
 func (s *listenerStreamServer) Listen() error {
 	// Create a listener (OS-specific).
 	var err error
-	s.l, err = s.gen()
+	s.l, s.address, err = s.gen()
 	if err != nil {
 		return err
 	}
