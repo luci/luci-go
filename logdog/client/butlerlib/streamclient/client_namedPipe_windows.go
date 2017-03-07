@@ -8,7 +8,7 @@ import (
 	"errors"
 	"io"
 
-	npipe "gopkg.in/natefinch/npipe.v2"
+	"github.com/Microsoft/go-winio"
 )
 
 func registerPlatformProtocols(r *Registry) {
@@ -24,7 +24,7 @@ func newNamedPipeClient(path string) (Client, error) {
 
 	return &clientImpl{
 		factory: func() (io.WriteCloser, error) {
-			return npipe.Dial(LocalNamedPipePath(path))
+			return winio.DialPipe(LocalNamedPipePath(path), nil)
 		},
 	}, nil
 }

@@ -23,7 +23,7 @@ func TestWindowsNamedPipeServer(t *testing.T) {
 
 	pid := os.Getpid()
 
-	SkipConvey(`A named pipe server`, t, func() {
+	Convey(`A named pipe server`, t, func() {
 		ctx := context.Background()
 
 		Convey(`Will refuse to create if there is an empty path.`, func() {
