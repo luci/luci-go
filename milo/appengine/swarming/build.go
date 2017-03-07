@@ -626,10 +626,10 @@ func (bl *buildLoader) swarmingBuildImpl(c context.Context, svc swarmingService,
 		lds, err = streamsFromAnnotatedLog(c, fr.log)
 		if err != nil {
 			comp := infoComponent(resp.InfraFailure, "Milo annotation parser", err.Error())
-			comp.SubLink = append(comp.SubLink, &resp.Link{
+			comp.SubLink = append(comp.SubLink, resp.LinkSet{&resp.Link{
 				Label: "swarming task",
 				URL:   taskPageURL(svc.getHost(), taskID),
-			})
+			}})
 			build.Components = append(build.Components, comp)
 		}
 

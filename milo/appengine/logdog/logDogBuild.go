@@ -109,14 +109,14 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, isMain bool, buildComple
 	}
 
 	if anno.Link != nil {
-		comp.MainLink = ub.BuildLink(anno.Link)
+		comp.MainLink = resp.LinkSet{ub.BuildLink(anno.Link)}
 
 		// If we also have a STDOUT stream, add it to our OtherLinks.
 		if stdoutLink != nil {
 			anno.OtherLinks = append([]*miloProto.Link{stdoutLink}, anno.OtherLinks...)
 		}
 	} else if stdoutLink != nil {
-		comp.MainLink = ub.BuildLink(stdoutLink)
+		comp.MainLink = resp.LinkSet{ub.BuildLink(stdoutLink)}
 	}
 
 	// Add STDERR link, if available.
@@ -132,7 +132,7 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, isMain bool, buildComple
 	// Sub link is for one link per log that isn't stdout.
 	for _, link := range anno.GetOtherLinks() {
 		if l := ub.BuildLink(link); l != nil {
-			comp.SubLink = append(comp.SubLink, l)
+			comp.SubLink = append(comp.SubLink, resp.LinkSet{l})
 		}
 	}
 

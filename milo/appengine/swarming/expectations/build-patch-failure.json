@@ -6,15 +6,19 @@
       "Label": "Task 2d8d62f6be545b10",
       "URL": "https://example.com/user/task/2d8d62f6be545b10"
     },
-    "MainLink": {
-      "Label": "Task 2d8d62f6be545b10",
-      "URL": "https://example.com/user/task/2d8d62f6be545b10"
-    },
-    "SubLink": [
+    "MainLink": [
       {
-        "Label": "stdout",
-        "URL": "foo/stdout"
+        "Label": "Task 2d8d62f6be545b10",
+        "URL": "https://example.com/user/task/2d8d62f6be545b10"
       }
+    ],
+    "SubLink": [
+      [
+        {
+          "Label": "stdout",
+          "URL": "foo/stdout"
+        }
+      ]
     ],
     "Started": "2016-03-14T10:00:01Z",
     "Finished": "0001-01-01T00:00:00Z",
@@ -31,15 +35,19 @@
     {
       "Label": "update_scripts",
       "Status": "Success",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/update_scripts/0/stdout"
-      },
-      "SubLink": [
+      "MainLink": [
         {
-          "Label": "gclient_json",
-          "URL": "foo/steps/update_scripts/0/logs/gclient_json/0"
+          "Label": "stdout",
+          "URL": "foo/steps/update_scripts/0/stdout"
         }
+      ],
+      "SubLink": [
+        [
+          {
+            "Label": "gclient_json",
+            "URL": "foo/steps/update_scripts/0/logs/gclient_json/0"
+          }
+        ]
       ],
       "Started": "2016-03-14T10:00:02Z",
       "Finished": "2016-03-14T10:00:03Z",
@@ -54,15 +62,19 @@
     {
       "Label": "setup_build",
       "Status": "Success",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/setup_build/0/stdout"
-      },
-      "SubLink": [
+      "MainLink": [
         {
-          "Label": "run_recipe",
-          "URL": "foo/steps/setup_build/0/logs/run_recipe/0"
+          "Label": "stdout",
+          "URL": "foo/steps/setup_build/0/stdout"
         }
+      ],
+      "SubLink": [
+        [
+          {
+            "Label": "run_recipe",
+            "URL": "foo/steps/setup_build/0/logs/run_recipe/0"
+          }
+        ]
       ],
       "Started": "2016-03-14T10:00:04Z",
       "Finished": "2016-03-14T10:00:05Z",
@@ -77,19 +89,25 @@
     {
       "Label": "bot_update",
       "Status": "Success",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/bot_update/0/stdout"
-      },
-      "SubLink": [
+      "MainLink": [
         {
-          "Label": "json.output",
-          "URL": "foo/steps/bot_update/0/logs/json.output/0"
-        },
-        {
-          "Label": "patch error",
-          "URL": "foo/steps/bot_update/0/logs/patch_error/0"
+          "Label": "stdout",
+          "URL": "foo/steps/bot_update/0/stdout"
         }
+      ],
+      "SubLink": [
+        [
+          {
+            "Label": "json.output",
+            "URL": "foo/steps/bot_update/0/logs/json.output/0"
+          }
+        ],
+        [
+          {
+            "Label": "patch error",
+            "URL": "foo/steps/bot_update/0/logs/patch_error/0"
+          }
+        ]
       ],
       "Started": "2016-03-14T10:00:06Z",
       "Finished": "2016-03-14T10:00:07Z",
@@ -104,10 +122,12 @@
     {
       "Label": "Patch failure",
       "Status": "Failure",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/Patch_failure/0/stdout"
-      },
+      "MainLink": [
+        {
+          "Label": "stdout",
+          "URL": "foo/steps/Patch_failure/0/stdout"
+        }
+      ],
       "Started": "2016-03-14T10:00:08Z",
       "Finished": "2016-03-14T10:00:09Z",
       "Duration": 1000000000,
@@ -121,15 +141,19 @@
     {
       "Label": "recipe failure reason",
       "Status": "Success",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/recipe_failure_reason/0/stdout"
-      },
-      "SubLink": [
+      "MainLink": [
         {
-          "Label": "failure reason",
-          "URL": "foo/steps/recipe_failure_reason/0/logs/failure_reason/0"
+          "Label": "stdout",
+          "URL": "foo/steps/recipe_failure_reason/0/stdout"
         }
+      ],
+      "SubLink": [
+        [
+          {
+            "Label": "failure reason",
+            "URL": "foo/steps/recipe_failure_reason/0/logs/failure_reason/0"
+          }
+        ]
       ],
       "Started": "2016-03-14T10:00:10Z",
       "Finished": "2016-03-14T10:00:11Z",

@@ -225,11 +225,12 @@ type BuildComponent struct {
 	// source that this component relates to.
 	Source *Link `json:",omitempty"`
 
-	// Link to show adjacent to the main label.
-	MainLink *Link `json:",omitempty"`
+	// Links to show adjacent to the main label.
+	MainLink LinkSet `json:",omitempty"`
 
-	// Links to show right below the main label.
-	SubLink []*Link `json:",omitempty"`
+	// Links to show right below the main label. Top-level slice are rows of
+	// links, second level shows up as
+	SubLink []LinkSet `json:",omitempty"`
 
 	// Designates the progress of the current component. Set null for no progress.
 	Progress *BuildProgress `json:",omitempty"`
@@ -277,6 +278,10 @@ type Navigation struct {
 	Right []*Link
 }
 
+// LinkSet is an ordered collection of Link objects that will be rendered on the
+// same line.
+type LinkSet []*Link
+
 // Link denotes a single labeled link.
 //
 // JSON tags here are for test expectations.
@@ -293,6 +298,6 @@ type Link struct {
 	// Alt text for the image, only supported with img.
 	Alt string `json:",omitempty"`
 
-	// Aliases is the set of aliases attached to this link.
-	Aliases []*Link `json:",omitempty"`
+	// Alias, if true, means that this link is an [alias link].
+	Alias bool `json:",omitempty"`
 }

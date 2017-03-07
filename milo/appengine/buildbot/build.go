@@ -186,7 +186,7 @@ var rLineBreak = regexp.MustCompile("<br */?>")
 // components takes a full buildbot build struct and extract step info from all
 // of the steps and returns it as a list of milo Build Components.
 func components(b *buildbotBuild) (result []*resp.BuildComponent) {
-	for _, step := range b.Steps {
+	for i, step := range b.Steps {
 		if step.Hidden == true {
 			continue
 		}
@@ -219,28 +219,68 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 		// Any given log may have an alias link. There may also be alises that are
 		// not attached to logs (unusual, but allowed), so we need to track which
 		// aliases are unreferenced and add them as immediate links.
+		//
+		// Additionally, if the build is LogDog-only ("log_location" is "logdog://")
+		// then we want to render *only* the alias for steps with aliases.
+		isLogDogOnly := false
+		if loc, ok := b.getPropertyValue("log_location").(string); ok && strings.HasPrefix(loc, "logdog://") {
+			isLogDogOnly = true
+		}
 		remainingAliases := stringset.New(len(step.Aliases))
 		for linkAnchor := range step.Aliases {
 			remainingAliases.Add(linkAnchor)
 		}
 
+		getLinksWithAliases := func(logLink *resp.Link, isLog bool) resp.LinkSet {
+			// Generate alias links.
+			var aliases resp.LinkSet
+			if remainingAliases.Del(logLink.Label) {
+				stepAliases := step.Aliases[logLink.Label]
+				aliases = make(resp.LinkSet, len(stepAliases))
+				for i, alias := range stepAliases {
+					aliases[i] = alias.toLink()
+				}
+			}
+
+			var links resp.LinkSet
+			if isLogDogOnly && len(aliases) > 0 && !(isLog && i == 0 && logLink.Label == "stdio") {
+				// LogDog only and there are viable aliases. Feature them instead of the
+				// log link.
+				//
+				// We exclude the top-level "stdio" link here because there isn't a
+				// LogDog equivalent of the raw step output.
+				//
+				// Any link named "logdog" (Annotee cosmetic implementation detail) will
+				// inherit the name of the build link.
+				for _, a := range aliases {
+					if a.Label == "logdog" {
+						a.Label = logLink.Label
+					}
+				}
+				return aliases
+			}
+
+			// Step log link takes primary, with aliases as secondary.
+			links = make(resp.LinkSet, 1, 1+len(aliases))
+			links[0] = logLink
+
+			for _, a := range aliases {
+				a.Alias = true
+			}
+			return append(links, aliases...)
+		}
+
 		for _, l := range step.Logs {
-			link := &resp.Link{
+			logLink := resp.Link{
 				Label: l[0],
 				URL:   l[1],
 			}
 
-			// Is this link aliased?
-			if remainingAliases.Del(link.Label) {
-				for _, alias := range step.Aliases[link.Label] {
-					link.Aliases = append(link.Aliases, alias.toLink())
-				}
-			}
-
-			if link.Label == "stdio" {
-				bc.MainLink = link
+			links := getLinksWithAliases(&logLink, true)
+			if logLink.Label == "stdio" {
+				bc.MainLink = links
 			} else {
-				bc.SubLink = append(bc.SubLink, link)
+				bc.SubLink = append(bc.SubLink, links)
 			}
 		}
 
@@ -253,11 +293,12 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 		}
 		sort.Strings(names)
 		for _, name := range names {
-			link := &resp.Link{
+			logLink := resp.Link{
 				Label: name,
 				URL:   step.Urls[name],
 			}
-			bc.SubLink = append(bc.SubLink, link)
+
+			bc.SubLink = append(bc.SubLink, getLinksWithAliases(&logLink, false))
 		}
 
 		// Add any unused aliases directly.
@@ -266,18 +307,18 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 			sort.Strings(unusedAliases)
 
 			for _, label := range unusedAliases {
-				var baseLink *resp.Link
+				var baseLink resp.LinkSet
 				for _, alias := range step.Aliases[label] {
 					aliasLink := alias.toLink()
-					if baseLink == nil {
-						baseLink = aliasLink
-						baseLink.Label = label
+					if len(baseLink) == 0 {
+						aliasLink.Label = label
 					} else {
-						baseLink.Aliases = append(baseLink.Aliases, aliasLink)
+						aliasLink.Alias = true
 					}
+					baseLink = append(baseLink, aliasLink)
 				}
 
-				if baseLink != nil {
+				if len(baseLink) > 0 {
 					bc.SubLink = append(bc.SubLink, baseLink)
 				}
 			}

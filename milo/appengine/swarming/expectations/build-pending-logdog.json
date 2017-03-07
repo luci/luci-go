@@ -6,10 +6,12 @@
       "Label": "Task 2fb1b35e1da25710",
       "URL": "https://example.com/user/task/2fb1b35e1da25710"
     },
-    "MainLink": {
-      "Label": "Task 2fb1b35e1da25710",
-      "URL": "https://example.com/user/task/2fb1b35e1da25710"
-    },
+    "MainLink": [
+      {
+        "Label": "Task 2fb1b35e1da25710",
+        "URL": "https://example.com/user/task/2fb1b35e1da25710"
+      }
+    ],
     "Started": "0001-01-01T00:00:00Z",
     "Finished": "0001-01-01T00:00:00Z",
     "Duration": 0,

@@ -25,10 +25,12 @@
       "Label": "Task 308998ca182a0210",
       "URL": "https://example.com/user/task/308998ca182a0210"
     },
-    "MainLink": {
-      "Label": "Task 308998ca182a0210",
-      "URL": "https://example.com/user/task/308998ca182a0210"
-    },
+    "MainLink": [
+      {
+        "Label": "Task 308998ca182a0210",
+        "URL": "https://example.com/user/task/308998ca182a0210"
+      }
+    ],
     "Started": "0001-01-01T00:00:00Z",
     "Finished": "0001-01-01T00:00:00Z",
     "Duration": 0,

@@ -6,15 +6,19 @@
       "Label": "Task 2d8d62f6be545b10",
       "URL": "https://example.com/user/task/2d8d62f6be545b10"
     },
-    "MainLink": {
-      "Label": "Task 2d8d62f6be545b10",
-      "URL": "https://example.com/user/task/2d8d62f6be545b10"
-    },
-    "SubLink": [
+    "MainLink": [
       {
-        "Label": "stdout",
-        "URL": "foo/stdout"
+        "Label": "Task 2d8d62f6be545b10",
+        "URL": "https://example.com/user/task/2d8d62f6be545b10"
       }
+    ],
+    "SubLink": [
+      [
+        {
+          "Label": "stdout",
+          "URL": "foo/stdout"
+        }
+      ]
     ],
     "Started": "2016-03-14T10:00:01.85071Z",
     "Finished": "0001-01-01T00:00:00Z",
@@ -31,10 +35,12 @@
     {
       "Label": "recipe bootstrap",
       "Status": "Success",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/recipe_bootstrap/0/stdout"
-      },
+      "MainLink": [
+        {
+          "Label": "stdout",
+          "URL": "foo/steps/recipe_bootstrap/0/stdout"
+        }
+      ],
       "Started": "2016-03-14T10:00:02Z",
       "Finished": "2016-03-14T10:00:03Z",
       "Duration": 1000000000,
@@ -46,15 +52,19 @@
     {
       "Label": "setup_build",
       "Status": "Success",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/setup_build/0/stdout"
-      },
-      "SubLink": [
+      "MainLink": [
         {
-          "Label": "run_recipe",
-          "URL": "foo/steps/setup_build/0/logs/run_recipe/0"
+          "Label": "stdout",
+          "URL": "foo/steps/setup_build/0/stdout"
         }
+      ],
+      "SubLink": [
+        [
+          {
+            "Label": "run_recipe",
+            "URL": "foo/steps/setup_build/0/logs/run_recipe/0"
+          }
+        ]
       ],
       "Started": "2016-03-14T10:00:03Z",
       "Finished": "2016-03-14T10:00:04Z",
@@ -69,10 +79,12 @@
     {
       "Label": "bot_update",
       "Status": "Running",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/bot_update/0/stdout"
-      },
+      "MainLink": [
+        {
+          "Label": "stdout",
+          "URL": "foo/steps/bot_update/0/stdout"
+        }
+      ],
       "Started": "2016-03-14T10:00:05Z",
       "Finished": "0001-01-01T00:00:00Z",
       "Duration": 3595000000000,

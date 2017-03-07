@@ -27,8 +27,8 @@
           <tr><td>
         {{ end }}
         <strong>{{ .Label }}</strong>
-        {{ if .MainLink }}
-          (<a href="{{.MainLink.URL}}">{{ .MainLink.Label }}</a>)
+        {{ range .MainLink }}
+          (<a href="{{.URL}}">{{ .Label }}</a>)
         {{ end }}
         <small class="muted">
           {{ range .Text }}<div>{{ . }}</div>{{ end }}
@@ -38,7 +38,9 @@
         </span>
           <ol>
             {{ range .SubLink }}
-              <li><a href="{{.URL}}">{{.Label}}</a></li>
+              {{ range . }}
+                <li><a href="{{.URL}}">{{.Label}}</a></li>
+              {{ end }}
             {{ end }}
           </ol>
         </td></tr>

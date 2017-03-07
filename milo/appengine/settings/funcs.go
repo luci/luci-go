@@ -21,6 +21,7 @@ var funcMap = template.FuncMap{
 	"humanDuration":  humanDuration,
 	"parseRFC3339":   parseRFC3339,
 	"linkify":        linkify,
+	"linkifySet":     linkifySet,
 	"obfuscateEmail": obfuscateEmail,
 	"localTime":      localTime,
 	"shortHash":      shortHash,
@@ -158,15 +159,29 @@ func parseRFC3339(s string) time.Time {
 // linkifyTemplate is the template used in "linkify". Because the template,
 // itself recursively invokes "linkify", we will initialize it in explicitly
 // in "init()".
-var linkifyTemplate *template.Template
+//
+// linkifySetTemplate is the template used in "linkifySet".
+var linkifyTemplate, linkifySetTemplate *template.Template
 
-// linkify turns a resp.Link struct into a canonical link.
+// linkify turns a resp.LinkSet struct into a canonical link.
 func linkify(link *resp.Link) template.HTML {
 	if link == nil {
 		return ""
 	}
 	buf := bytes.Buffer{}
 	if err := linkifyTemplate.Execute(&buf, link); err != nil {
+		panic(err)
+	}
+	return template.HTML(buf.Bytes())
+}
+
+// linkifySet turns a resp.Link struct into a canonical link.
+func linkifySet(linkSet resp.LinkSet) template.HTML {
+	if len(linkSet) == 0 {
+		return ""
+	}
+	buf := bytes.Buffer{}
+	if err := linkifySetTemplate.Execute(&buf, linkSet); err != nil {
 		panic(err)
 	}
 	return template.HTML(buf.Bytes())
@@ -187,14 +202,22 @@ func shortHash(s string) string {
 }
 
 func init() {
-	linkifyTemplate = template.Must(
-		template.New("linkify").
+	linkifySetTemplate = template.Must(
+		template.New("linkifySet").
 			Funcs(template.FuncMap{
 				"linkify": linkify,
 			}).Parse(
-			`<a href="{{.URL}}">` +
-				`{{if .Img}}<img src="{{.Img}}"{{if .Alt}} alt="{{.Alt}}"{{end}}>` +
-				`{{else}}{{.Label}}{{end}}` +
-				`</a>` +
-				`{{range .Aliases}} [{{. | linkify}}]{{end}}`))
+			`{{ range $i, $link := . }}` +
+				`{{ if gt $i 0 }} {{ end }}` +
+				`{{ $link | linkify}}` +
+				`{{ end }}`))
+
+	linkifyTemplate = template.Must(
+		template.New("linkify").
+			Parse(
+				`<a href="{{.URL}}">` +
+					`{{if .Img}}<img src="{{.Img}}"{{if .Alt}} alt="{{.Alt}}"{{end}}>` +
+					`{{else if .Alias}}[{{.Label}}]` +
+					`{{else}}{{.Label}}{{end}}` +
+					`</a>`))
 }

@@ -6,15 +6,19 @@
       "Label": "Task 2d8d62f6be545b10",
       "URL": "https://example.com/user/task/2d8d62f6be545b10"
     },
-    "MainLink": {
-      "Label": "Task 2d8d62f6be545b10",
-      "URL": "https://example.com/user/task/2d8d62f6be545b10"
-    },
-    "SubLink": [
+    "MainLink": [
       {
-        "Label": "stdout",
-        "URL": "foo/stdout"
+        "Label": "Task 2d8d62f6be545b10",
+        "URL": "https://example.com/user/task/2d8d62f6be545b10"
       }
+    ],
+    "SubLink": [
+      [
+        {
+          "Label": "stdout",
+          "URL": "foo/stdout"
+        }
+      ]
     ],
     "Started": "2016-03-14T10:00:01.85071Z",
     "Finished": "2016-03-14T11:00:18.48602Z",
@@ -32,10 +36,12 @@
     {
       "Label": "recipe bootstrap",
       "Status": "Success",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/recipe_bootstrap/0/stdout"
-      },
+      "MainLink": [
+        {
+          "Label": "stdout",
+          "URL": "foo/steps/recipe_bootstrap/0/stdout"
+        }
+      ],
       "Started": "2016-03-14T10:00:02Z",
       "Finished": "2016-03-14T10:00:09Z",
       "Duration": 7000000000,
@@ -47,15 +53,19 @@
     {
       "Label": "setup_build",
       "Status": "Success",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/setup_build/0/stdout"
-      },
-      "SubLink": [
+      "MainLink": [
         {
-          "Label": "run_recipe",
-          "URL": "foo/steps/setup_build/0/logs/run_recipe/0"
+          "Label": "stdout",
+          "URL": "foo/steps/setup_build/0/stdout"
         }
+      ],
+      "SubLink": [
+        [
+          {
+            "Label": "run_recipe",
+            "URL": "foo/steps/setup_build/0/logs/run_recipe/0"
+          }
+        ]
       ],
       "Started": "2016-03-14T10:00:03Z",
       "Finished": "2016-03-14T10:00:04Z",
@@ -70,15 +80,19 @@
     {
       "Label": "bot_update",
       "Status": "InfraFailure",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/bot_update/0/stdout"
-      },
-      "SubLink": [
+      "MainLink": [
         {
-          "Label": "json.output (invalid)",
-          "URL": "foo/steps/bot_update/0/logs/json.output__invalid_/0"
+          "Label": "stdout",
+          "URL": "foo/steps/bot_update/0/stdout"
         }
+      ],
+      "SubLink": [
+        [
+          {
+            "Label": "json.output (invalid)",
+            "URL": "foo/steps/bot_update/0/logs/json.output__invalid_/0"
+          }
+        ]
       ],
       "Started": "2016-03-14T10:00:05Z",
       "Finished": "2016-03-14T10:00:06Z",
@@ -91,15 +105,19 @@
     {
       "Label": "Uncaught Exception",
       "Status": "InfraFailure",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/Uncaught_Exception/0/stdout"
-      },
-      "SubLink": [
+      "MainLink": [
         {
-          "Label": "exception",
-          "URL": "foo/steps/Uncaught_Exception/0/logs/exception/0"
+          "Label": "stdout",
+          "URL": "foo/steps/Uncaught_Exception/0/stdout"
         }
+      ],
+      "SubLink": [
+        [
+          {
+            "Label": "exception",
+            "URL": "foo/steps/Uncaught_Exception/0/logs/exception/0"
+          }
+        ]
       ],
       "Started": "2016-03-14T10:00:07Z",
       "Finished": "2016-03-14T10:00:08Z",

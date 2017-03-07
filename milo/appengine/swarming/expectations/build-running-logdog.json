@@ -6,19 +6,25 @@
       "Label": "Task 2d8d62f6be545b10",
       "URL": "https://example.com/user/task/2d8d62f6be545b10"
     },
-    "MainLink": {
-      "Label": "Task 2d8d62f6be545b10",
-      "URL": "https://example.com/user/task/2d8d62f6be545b10"
-    },
-    "SubLink": [
+    "MainLink": [
       {
-        "Label": "stdout",
-        "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fstdout"
-      },
-      {
-        "Label": "stderr",
-        "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fstderr"
+        "Label": "Task 2d8d62f6be545b10",
+        "URL": "https://example.com/user/task/2d8d62f6be545b10"
       }
+    ],
+    "SubLink": [
+      [
+        {
+          "Label": "stdout",
+          "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fstdout"
+        }
+      ],
+      [
+        {
+          "Label": "stderr",
+          "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fstderr"
+        }
+      ]
     ],
     "Started": "2016-03-14T10:00:01.85071Z",
     "Finished": "0001-01-01T00:00:00Z",
@@ -35,10 +41,12 @@
     {
       "Label": "recipe bootstrap",
       "Status": "Success",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Frecipe_bootstrap%2F0%2Fstdout"
-      },
+      "MainLink": [
+        {
+          "Label": "stdout",
+          "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Frecipe_bootstrap%2F0%2Fstdout"
+        }
+      ],
       "Started": "2016-03-14T10:00:02Z",
       "Finished": "2016-03-14T10:00:03Z",
       "Duration": 1000000000,
@@ -50,15 +58,19 @@
     {
       "Label": "setup_build",
       "Status": "Success",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fsetup_build%2F0%2Fstdout"
-      },
-      "SubLink": [
+      "MainLink": [
         {
-          "Label": "run_recipe",
-          "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fsetup_build%2F0%2Flogs%2Frun_recipe%2F0"
+          "Label": "stdout",
+          "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fsetup_build%2F0%2Fstdout"
         }
+      ],
+      "SubLink": [
+        [
+          {
+            "Label": "run_recipe",
+            "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fsetup_build%2F0%2Flogs%2Frun_recipe%2F0"
+          }
+        ]
       ],
       "Started": "2016-03-14T10:00:03Z",
       "Finished": "2016-03-14T10:00:04Z",
@@ -73,10 +85,12 @@
     {
       "Label": "bot_update",
       "Status": "Running",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fbot_update%2F0%2Fstdout"
-      },
+      "MainLink": [
+        {
+          "Label": "stdout",
+          "URL": "https://example.com/v/?s=testproject%2F2d8d62f6be545b10%2F%2B%2Fsteps%2Fbot_update%2F0%2Fstdout"
+        }
+      ],
       "Started": "2016-03-14T10:00:05Z",
       "Finished": "0001-01-01T00:00:00Z",
       "Duration": 3595000000000,

@@ -6,10 +6,12 @@
       "Label": "Task 2d8d62f6be545b10",
       "URL": "https://example.com/user/task/2d8d62f6be545b10"
     },
-    "MainLink": {
-      "Label": "Task 2d8d62f6be545b10",
-      "URL": "https://example.com/user/task/2d8d62f6be545b10"
-    },
+    "MainLink": [
+      {
+        "Label": "Task 2d8d62f6be545b10",
+        "URL": "https://example.com/user/task/2d8d62f6be545b10"
+      }
+    ],
     "Started": "2016-03-14T10:00:01.85071Z",
     "Finished": "0001-01-01T00:00:00Z",
     "Duration": 3598149290000,
@@ -27,10 +29,12 @@
     {
       "Label": "recipe bootstrap",
       "Status": "Running",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/recipe_bootstrap/0/stdout"
-      },
+      "MainLink": [
+        {
+          "Label": "stdout",
+          "URL": "foo/steps/recipe_bootstrap/0/stdout"
+        }
+      ],
       "Started": "2016-11-14T22:36:06Z",
       "Finished": "0001-01-01T00:00:00Z",
       "Duration": 0,
@@ -42,15 +46,19 @@
     {
       "Label": "setup_build",
       "Status": "Success",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/setup_build/0/stdout"
-      },
-      "SubLink": [
+      "MainLink": [
         {
-          "Label": "run_recipe",
-          "URL": "foo/steps/setup_build/0/logs/run_recipe/0"
+          "Label": "stdout",
+          "URL": "foo/steps/setup_build/0/stdout"
         }
+      ],
+      "SubLink": [
+        [
+          {
+            "Label": "run_recipe",
+            "URL": "foo/steps/setup_build/0/logs/run_recipe/0"
+          }
+        ]
       ],
       "Started": "2016-11-14T22:36:12.970000128Z",
       "Finished": "2016-11-14T22:36:13.02Z",
@@ -65,15 +73,19 @@
     {
       "Label": "install cipd",
       "Status": "Success",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/install_cipd/0/stdout"
-      },
-      "SubLink": [
+      "MainLink": [
         {
-          "Label": "json.output",
-          "URL": "foo/steps/install_cipd/0/logs/json.output/0"
+          "Label": "stdout",
+          "URL": "foo/steps/install_cipd/0/stdout"
         }
+      ],
+      "SubLink": [
+        [
+          {
+            "Label": "json.output",
+            "URL": "foo/steps/install_cipd/0/logs/json.output/0"
+          }
+        ]
       ],
       "Started": "2016-11-14T22:36:13.02Z",
       "Finished": "2016-11-14T22:36:13.450000128Z",
@@ -88,15 +100,19 @@
     {
       "Label": "ensure_installed",
       "Status": "Success",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/ensure_installed/0/stdout"
-      },
-      "SubLink": [
+      "MainLink": [
         {
-          "Label": "json.output",
-          "URL": "foo/steps/ensure_installed/0/logs/json.output/0"
+          "Label": "stdout",
+          "URL": "foo/steps/ensure_installed/0/stdout"
         }
+      ],
+      "SubLink": [
+        [
+          {
+            "Label": "json.output",
+            "URL": "foo/steps/ensure_installed/0/logs/json.output/0"
+          }
+        ]
       ],
       "Started": "2016-11-14T22:36:13.450000128Z",
       "Finished": "2016-11-14T22:36:13.68Z",
@@ -109,10 +125,12 @@
     {
       "Label": "jiri init",
       "Status": "Success",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/jiri_init/0/stdout"
-      },
+      "MainLink": [
+        {
+          "Label": "stdout",
+          "URL": "foo/steps/jiri_init/0/stdout"
+        }
+      ],
       "Started": "2016-11-14T22:36:13.68Z",
       "Finished": "2016-11-14T22:36:14.06Z",
       "Duration": 380000000,
@@ -124,10 +142,12 @@
     {
       "Label": "jiri project clean",
       "Status": "Success",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/jiri_project_clean/0/stdout"
-      },
+      "MainLink": [
+        {
+          "Label": "stdout",
+          "URL": "foo/steps/jiri_project_clean/0/stdout"
+        }
+      ],
       "Started": "2016-11-14T22:36:14.06Z",
       "Finished": "2016-11-14T22:36:14.089999872Z",
       "Duration": 29999872,
@@ -139,10 +159,12 @@
     {
       "Label": "jiri import",
       "Status": "Success",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/jiri_import/0/stdout"
-      },
+      "MainLink": [
+        {
+          "Label": "stdout",
+          "URL": "foo/steps/jiri_import/0/stdout"
+        }
+      ],
       "Started": "2016-11-14T22:36:14.089999872Z",
       "Finished": "2016-11-14T22:36:14.089999872Z",
       "Duration": 0,
@@ -154,10 +176,12 @@
     {
       "Label": "jiri update",
       "Status": "Success",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/jiri_update/0/stdout"
-      },
+      "MainLink": [
+        {
+          "Label": "stdout",
+          "URL": "foo/steps/jiri_update/0/stdout"
+        }
+      ],
       "Started": "2016-11-14T22:36:14.089999872Z",
       "Finished": "2016-11-14T22:37:14.029999872Z",
       "Duration": 59940000000,
@@ -180,10 +204,12 @@
     {
       "Label": "build.cleanup",
       "Status": "Success",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/build/0/steps/cleanup/0/stdout"
-      },
+      "MainLink": [
+        {
+          "Label": "stdout",
+          "URL": "foo/steps/build/0/steps/cleanup/0/stdout"
+        }
+      ],
       "Started": "2016-11-14T22:37:14.78Z",
       "Finished": "2016-11-14T22:37:16.329999872Z",
       "Duration": 1549999872,
@@ -195,10 +221,12 @@
     {
       "Label": "build.build",
       "Status": "Failure",
-      "MainLink": {
-        "Label": "stdout",
-        "URL": "foo/steps/build/0/steps/build/0/stdout"
-      },
+      "MainLink": [
+        {
+          "Label": "stdout",
+          "URL": "foo/steps/build/0/steps/build/0/stdout"
+        }
+      ],
       "Started": "2016-11-14T22:37:16.329999872Z",
       "Finished": "2016-11-14T22:37:58.5Z",
       "Duration": 42170000128,

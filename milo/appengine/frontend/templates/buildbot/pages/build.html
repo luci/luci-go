@@ -158,7 +158,7 @@
               </div>
               <ul>
                 {{ range .SubLink  }}
-                <li>{{ . | linkify }}</li>
+                <li>{{ . | linkifySet }}</li>
                 {{ end }}
               </ul>
             </li>
@@ -178,14 +178,16 @@
             </div>
             <ul>
               {{ if .MainLink }}
-                <li>{{.MainLink | linkify}}</li>
+                <li>{{.MainLink | linkifySet}}</li>
                 {{- if eq .Verbosity.String "Interesting" -}}
-                  <link rel="prerender" href="{{.MainLink.URL}}">
-                  <link rel="prefetch" href="{{.MainLink.URL}}">
+                  {{ range .MainLink }}
+                    <link rel="prerender" href="{{.URL}}">
+                    <link rel="prefetch" href="{{.URL}}">
+                  {{ end }}
                 {{ end }}
               {{- end }}
               {{ range .SubLink }}
-                <li>{{. | linkify}}</li>
+                <li>{{. | linkifySet}}</li>
               {{ end }}
               {{ if not (or .MainLink .SubLink) }}
                 <li> - no logs - </li>
