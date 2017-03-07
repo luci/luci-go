@@ -41,7 +41,7 @@ var subcommandRun = &subcommands.Command{
 		cmd.Flags.StringVar(&cmd.chdir, "chdir", "",
 			"If specified, switch to this directory prior to running the command.")
 		cmd.Flags.Var(&cmd.streamServerURI, "streamserver-uri",
-			"The stream server URI to bind to (e.g., "+string(exampleStreamServerURI)+").")
+			"The stream server URI to bind to (e.g., "+exampleStreamServerURIs()+").")
 		cmd.Flags.BoolVar(&cmd.attach, "attach", true,
 			"If true, attaches the bootstrapped process' STDOUT and STDERR streams.")
 		cmd.Flags.BoolVar(&cmd.stdin, "forward-stdin", false,
@@ -118,8 +118,11 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string, _ subc
 		return configErrorReturnCode
 	}
 
+	// Resolve
+	var streamServer streamserver.StreamServer
 	if cmd.streamServerURI != "" {
-		if err := cmd.streamServerURI.Validate(); err != nil {
+		var err error
+		if streamServer, err = cmd.streamServerURI.resolve(a); err != nil {
 			log.Fields{
 				log.ErrorKey: err,
 				"uri":        cmd.streamServerURI,
@@ -178,18 +181,11 @@ func (cmd *runCommandRun) Run(app subcommands.Application, args []string, _ subc
 	}
 
 	// Configure stream server
-	var streamServer streamserver.StreamServer
 	streamServerOwned := true
-	if cmd.streamServerURI != "" {
+	if streamServer != nil {
 		log.Fields{
 			"url": cmd.streamServerURI,
 		}.Infof(a, "Creating stream server.")
-		var err error
-		if streamServer, err = createStreamServer(a, cmd.streamServerURI); err != nil {
-			log.WithError(err).Errorf(a, "Failed to create stream server.")
-			return runtimeErrorReturnCode
-		}
-
 		if err := streamServer.Listen(); err != nil {
 			log.WithError(err).Errorf(a, "Failed to connect to stream server.")
 			return runtimeErrorReturnCode

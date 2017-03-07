@@ -63,15 +63,28 @@ func (r *Registry) NewClient(path string) (Client, error) {
 }
 
 // defaultRegistry is the default protocol registry.
-var defaultRegistry = &Registry{}
+var (
+	defaultRegistry         *Registry
+	defaultRegistryInitOnce sync.Once
+)
 
 // GetDefaultRegistry returns the default client registry instance.
+//
+// Initializes the registry on first invocation.
 func GetDefaultRegistry() *Registry {
+	defaultRegistryInitOnce.Do(func() {
+		defaultRegistry = &Registry{}
+		RegisterDefaultProtocols(defaultRegistry)
+	})
 	return defaultRegistry
 }
 
-// registerProtocol registers a protocol with the default (global) protocol
-// registry.
-func registerProtocol(name string, f ClientFactory) {
-	defaultRegistry.Register(name, f)
+// RegisterDefaultProtocols registers the default set of protocols with a
+// Registry.
+func RegisterDefaultProtocols(r *Registry) {
+	registerPlatformProtocols(r)
+
+	// Register common protocols.
+	r.Register("tcp4", tcpProtocolClientFactory("tcp4"))
+	r.Register("tcp6", tcpProtocolClientFactory("tcp6"))
 }

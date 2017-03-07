@@ -13,9 +13,8 @@ import (
 	"os"
 )
 
-// Register POSIX-only protocols.
-func init() {
-	registerProtocol("unix", newUnixSocketClient)
+func registerPlatformProtocols(r *Registry) {
+	r.Register("unix", newUnixSocketClient)
 }
 
 // newUnixSocketClient creates a new Client instance bound to a named pipe stream

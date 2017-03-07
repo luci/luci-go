@@ -5,19 +5,16 @@
 package main
 
 import (
-	"errors"
 	"os"
 
 	"github.com/luci/luci-go/logdog/client/butler/streamserver"
 	"golang.org/x/net/context"
 )
 
-const (
-	// An example stream server URI.
-	//
+var platformStreamServerExamples = []string{
 	// This expands to: //localhost/pipe/<name>
-	exampleStreamServerURI = streamServerURI("net.pipe:logdog-butler")
-)
+	"net.pipe:logdog-butler",
+}
 
 // interruptSignals is the set of signals to handle gracefully (e.g., flush,
 // shutdown).
@@ -25,31 +22,13 @@ var interruptSignals = []os.Signal{
 	os.Interrupt,
 }
 
-type streamServerURI string
+func resolvePlatform(ctx context.Context, typ, spec string) (streamserver.StreamServer, error) {
+	switch typ {
+	case "net.pipe":
+		return streamserver.NewNamedPipeServer(ctx, spec)
 
-func (u streamServerURI) Parse() (string, error) {
-	typ, value := parseStreamServer(string(u))
-	if typ != "net.pipe" {
-		return "", errors.New("Unsupported URI scheme.")
+	default:
+		// Not a known platform type.
+		return nil, nil
 	}
-
-	if value == "" {
-		return "", errors.New("cannot have empty pipe name")
-	}
-	return value, nil
-}
-
-// Validates that the URI is correct for Windows.
-func (u streamServerURI) Validate() error {
-	_, err := u.Parse()
-	return err
-}
-
-// Create a Windows stream server.
-func createStreamServer(ctx context.Context, uri streamServerURI) (streamserver.StreamServer, error) {
-	name, err := uri.Parse()
-	if err != nil {
-		panic("Failed to parse stream server URI.")
-	}
-	return streamserver.NewNamedPipeServer(ctx, name)
 }

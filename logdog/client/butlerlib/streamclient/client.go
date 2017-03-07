@@ -43,7 +43,7 @@ type clientImpl struct {
 //   - net.pipe:name describes a stream server listening on Windows named pipe
 //     "\\.\pipe\name".
 func New(path string) (Client, error) {
-	return defaultRegistry.NewClient(path)
+	return GetDefaultRegistry().NewClient(path)
 }
 
 func (c *clientImpl) NewStream(f streamproto.Flags) (Stream, error) {

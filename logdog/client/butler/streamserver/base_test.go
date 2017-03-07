@@ -234,6 +234,27 @@ func TestListenerStreamServer(t *testing.T) {
 	})
 }
 
+func TestTCPServer(t *testing.T) {
+	t.Parallel()
+
+	Convey(`A TCP/IP4 client`, t, func() {
+		ctx := context.Background()
+
+		Convey(`When created and listening.`, func() {
+			svr, err := NewTCP4Server(ctx, "")
+			So(err, ShouldBeNil)
+
+			So(svr.Listen(), ShouldBeNil)
+			defer svr.Close()
+
+			client, err := streamclient.New(svr.Address())
+			So(err, ShouldBeNil)
+
+			testClientServer(t, svr, client)
+		})
+	})
+}
+
 // testClientServer tests to ensure that a client can create streams with a
 // server.
 //

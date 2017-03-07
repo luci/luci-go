@@ -19,7 +19,7 @@ var subcommandServe = &subcommands.Command{
 		cmd := &serveCommandRun{}
 
 		cmd.Flags.Var(&cmd.uri, "streamserver-uri",
-			"The stream server URI to bind to (e.g., "+string(exampleStreamServerURI)+").")
+			"The stream server URI to bind to (e.g., "+exampleStreamServerURIs()+").")
 		return cmd
 	},
 }
@@ -33,17 +33,13 @@ type serveCommandRun struct {
 func (cmd *serveCommandRun) Run(app subcommands.Application, args []string, _ subcommands.Env) int {
 	a := app.(*application)
 
-	if err := cmd.uri.Validate(); err != nil {
+	streamServer, err := cmd.uri.resolve(a)
+	if err != nil {
 		log.Fields{
 			"flag":  "-streamserver_uri",
 			"value": cmd.uri,
 		}.Errorf(a, "Invalid stream server URI.")
 		return configErrorReturnCode
-	}
-	streamServer, err := createStreamServer(a, cmd.uri)
-	if err != nil {
-		log.WithError(err).Errorf(a, "Failed to create stream server.")
-		return runtimeErrorReturnCode
 	}
 
 	if err := streamServer.Listen(); err != nil {

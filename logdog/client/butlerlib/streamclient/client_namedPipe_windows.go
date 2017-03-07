@@ -11,9 +11,8 @@ import (
 	npipe "gopkg.in/natefinch/npipe.v2"
 )
 
-// Register POSIX-only protocols.
-func init() {
-	registerProtocol("net.pipe", newNamedPipeClient)
+func registerPlatformProtocols(r *Registry) {
+	r.Register("net.pipe", newNamedPipeClient)
 }
 
 // newNamedPipeClient creates a new Client instance bound to a named pipe stream

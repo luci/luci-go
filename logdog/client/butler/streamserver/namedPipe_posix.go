@@ -9,6 +9,7 @@ package streamserver
 import (
 	"net"
 	"os"
+	"path/filepath"
 
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
@@ -36,6 +37,14 @@ func NewUNIXDomainSocketServer(ctx context.Context, path string) (StreamServer, 
 			D("max", maxPOSIXNamedSocketLength).
 			Err()
 	}
+
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return nil, errors.Annotate(err).Reason("could not get absolute path of [%(path)s]").
+			D("path", path).
+			Err()
+	}
+	path = abs
 
 	ctx = log.SetField(ctx, "namedPipePath", path)
 	return &listenerStreamServer{

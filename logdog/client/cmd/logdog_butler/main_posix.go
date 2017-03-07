@@ -7,19 +7,17 @@
 package main
 
 import (
-	"errors"
-	"fmt"
 	"os"
 	"syscall"
 
 	"github.com/luci/luci-go/logdog/client/butler/streamserver"
+
 	"golang.org/x/net/context"
 )
 
-const (
-	// An example stream server URI.
-	exampleStreamServerURI = streamServerURI("unix:/var/run/butler.sock")
-)
+var platformStreamServerExamples = []string{
+	"unix:/var/run/butler.sock",
+}
 
 // interruptSignals is the set of signals to handle gracefully (e.g., flush,
 // shutdown).
@@ -28,30 +26,13 @@ var interruptSignals = []os.Signal{
 	syscall.SIGTERM,
 }
 
-type streamServerURI string
+func resolvePlatform(ctx context.Context, typ, spec string) (streamserver.StreamServer, error) {
+	switch typ {
+	case "unix":
+		return streamserver.NewUNIXDomainSocketServer(ctx, spec)
 
-func (u streamServerURI) Parse() (string, error) {
-	typ, value := parseStreamServer(string(u))
-	if typ != "unix" {
-		return "", fmt.Errorf("unsupported URI scheme: [%s]", typ)
+	default:
+		// Not a known platform type.
+		return nil, nil
 	}
-	if value == "" {
-		return "", errors.New("empty stream server path")
-	}
-	return value, nil
-}
-
-// Validates that the URI is correct for Windows.
-func (u streamServerURI) Validate() (err error) {
-	_, err = u.Parse()
-	return
-}
-
-// Create a POSIX (UNIX named pipe) stream server
-func createStreamServer(ctx context.Context, uri streamServerURI) (streamserver.StreamServer, error) {
-	path, err := uri.Parse()
-	if err != nil {
-		panic("Failed to parse stream server URI.")
-	}
-	return streamserver.NewUNIXDomainSocketServer(ctx, path)
 }
