@@ -211,7 +211,7 @@ func TestMintDelegationToken(t *testing.T) {
 				Audience:          []string{"REQUESTOR"},
 				Services:          []string{"*"},
 			})
-			So(err, ShouldErrLike, `code = 7 desc = delegation is forbidden for this API call`)
+			So(err, ShouldBeRPCPermissionDenied, "delegation is forbidden for this API call")
 		})
 
 		Convey("Anonymous calls are forbidden", func() {
@@ -223,7 +223,7 @@ func TestMintDelegationToken(t *testing.T) {
 				Audience:          []string{"REQUESTOR"},
 				Services:          []string{"*"},
 			})
-			So(err, ShouldErrLike, `code = 16 desc = authentication required`)
+			So(err, ShouldBeRPCUnauthenticated, "authentication required")
 		})
 
 		Convey("Unauthorized requestor", func() {
@@ -235,7 +235,7 @@ func TestMintDelegationToken(t *testing.T) {
 				Audience:          []string{"REQUESTOR"},
 				Services:          []string{"*"},
 			})
-			So(err, ShouldErrLike, `code = 7 desc = not authorized`)
+			So(err, ShouldBeRPCPermissionDenied, "not authorized")
 		})
 
 		Convey("Negative validity duration", func() {
@@ -248,7 +248,7 @@ func TestMintDelegationToken(t *testing.T) {
 				Services:          []string{"*"},
 				ValidityDuration:  -1,
 			})
-			So(err, ShouldErrLike, `code = 3 desc = bad request - invalid 'validity_duration' (-1)`)
+			So(err, ShouldBeRPCInvalidArgument, "bad request - invalid 'validity_duration' (-1)")
 		})
 
 		Convey("Malformed request", func() {
@@ -260,7 +260,7 @@ func TestMintDelegationToken(t *testing.T) {
 				Audience:          []string{"junk"},
 				Services:          []string{"*"},
 			})
-			So(err, ShouldErrLike, `code = 3 desc = bad request - bad 'audience' - auth: bad identity string "junk"`)
+			So(err, ShouldBeRPCInvalidArgument, `bad request - bad 'audience' - auth: bad identity string "junk"`)
 		})
 
 		Convey("No matching rules", func() {
@@ -272,7 +272,7 @@ func TestMintDelegationToken(t *testing.T) {
 				Audience:          []string{"user:someone-else@example.com"},
 				Services:          []string{"*"},
 			})
-			So(err, ShouldErrLike, `code = 7 desc = forbidden - no matching delegation rules in the config`)
+			So(err, ShouldBeRPCPermissionDenied, "forbidden - no matching delegation rules in the config")
 		})
 
 		Convey("Forbidden validity duration", func() {
@@ -285,8 +285,7 @@ func TestMintDelegationToken(t *testing.T) {
 				Services:          []string{"*"},
 				ValidityDuration:  3601,
 			})
-			So(err, ShouldErrLike,
-				`rpc error: code = 7 desc = forbidden - the requested validity duration (3601 sec) exceeds the maximum allowed one (3600 sec)`)
+			So(err, ShouldBeRPCPermissionDenied, "forbidden - the requested validity duration (3601 sec) exceeds the maximum allowed one (3600 sec)")
 		})
 
 	})
