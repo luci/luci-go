@@ -16,7 +16,6 @@ import (
 	"sync"
 	"testing"
 	"testing/iotest"
-	"time"
 
 	"golang.org/x/net/context"
 
@@ -55,34 +54,6 @@ func TestIsolateServerLarge(t *testing.T) {
 	t.Parallel()
 	Convey(``, t, func() {
 		testNormal(context.Background(), t, large)
-	})
-}
-
-func TestIsolateServerRetryContains(t *testing.T) {
-	t.Parallel()
-	Convey(``, t, func() {
-		testFlaky(context.Background(), t, "/api/isolateservice/v1/preupload")
-	})
-}
-
-func TestIsolateServerRetryStoreInline(t *testing.T) {
-	t.Parallel()
-	Convey(``, t, func() {
-		testFlaky(context.Background(), t, "/api/isolateservice/v1/store_inline")
-	})
-}
-
-func TestIsolateServerRetryGCS(t *testing.T) {
-	t.Parallel()
-	Convey(``, t, func() {
-		testFlaky(context.Background(), t, "/fake/cloudstorage")
-	})
-}
-
-func TestIsolateServerRetryFinalize(t *testing.T) {
-	t.Parallel()
-	Convey(``, t, func() {
-		testFlaky(context.Background(), t, "/api/isolateservice/v1/finalize_gs_upload")
 	})
 }
 
@@ -135,13 +106,9 @@ func TestIsolateServerBadURL(t *testing.T) {
 
 // Private stuff.
 
-func cantRetry() retry.Iterator {
-	return &retry.ExponentialBackoff{
-		Limited: retry.Limited{
-			Retries: 10,
-			Delay:   10 * time.Second,
-		},
-		Multiplier: 10,
+func noRetry() retry.Iterator {
+	return &retry.Limited{
+		Retries: 0,
 	}
 }
 
@@ -154,6 +121,7 @@ func fastRetry() retry.Iterator {
 var (
 	bar   = []byte("bar")
 	foo   = []byte("foo")
+	small = []byte("small")
 	large []byte
 )
 
@@ -184,7 +152,7 @@ func testNormal(ctx context.Context, t *testing.T, contents ...[]byte) {
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		client := New(nil, nil, ts.URL, DefaultNamespace, cantRetry, nil)
+		client := New(nil, nil, ts.URL, DefaultNamespace, noRetry, nil)
 		states, err := client.Contains(ctx, digests)
 		So(err, ShouldBeNil)
 		So(len(states), ShouldResemble, len(digests))
@@ -205,23 +173,58 @@ func testNormal(ctx context.Context, t *testing.T, contents ...[]byte) {
 	})
 }
 
-func testFlaky(ctx context.Context, t *testing.T, flake string) {
-	Convey(``, func() {
+func TestRetry(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	// failStep indicates the point at which testFunc failed.
+	type failStep int
+	const (
+		success        failStep = iota
+		failedContains failStep = iota
+		failedPush     failStep = iota
+	)
+
+	type testCase struct {
+		name         string
+		items        [][]byte // items to upload
+		errURL       string   // a request to this URL is expected, and we will serve a 503 once before succeeding on retries.
+		fatalURL     string   // the test will fail if this URL is requested.
+		retryFactory func() retry.Iterator
+		result       failStep // expected result of calling testFunc.
+	}
+
+	// testFunc checks for items on the server, and then uploads those that are missing (i.e. all of them).
+	// Failure may be induced at various points in this process by setting tc.errURL and tc.retryFactory.
+	// Requests to tc.errURL will return a 503 once before succeeding.
+	// tc.retryFactory will be used to decide whether to retry these failed requests.
+	// testFunc will return a failStep which indicates which step in the process failed.
+	testFunc := func(tc testCase) failStep {
+		// Construct a server which will serve a single 503 for requests to tc.errURL before succeeding.
 		server := isolatedfake.New()
-		flaky := &killingMux{server: server, http503: map[string]int{flake: 10}}
+		flaky := &killingMux{server: server, http503: make(map[string]int)}
+		if tc.errURL != "" {
+			flaky.http503[tc.errURL] = 10
+		}
 		flaky.ts = httptest.NewServer(flaky)
 		defer flaky.ts.Close()
-		client := New(nil, nil, flaky.ts.URL, DefaultNamespace, fastRetry, nil)
+		client := New(nil, nil, flaky.ts.URL, DefaultNamespace, tc.retryFactory, nil)
 
-		digests, contents, expected := makeItems(foo, large)
+		digests, contents, expected := makeItems(tc.items...)
 		states, err := client.Contains(ctx, digests)
-		So(err, ShouldBeNil)
+		if err != nil {
+			return failedContains
+		}
 		So(len(states), ShouldResemble, len(digests))
+
 		for _, state := range states {
 			err = client.Push(ctx, state, NewBytesSource(contents[state.status.Index]))
-			So(err, ShouldBeNil)
+			if err != nil {
+				return failedPush
+			}
 		}
 		So(server.Contents(), ShouldResemble, expected)
+
 		states, err = client.Contains(ctx, digests)
 		So(err, ShouldBeNil)
 		So(len(states), ShouldResemble, len(digests))
@@ -229,7 +232,97 @@ func testFlaky(ctx context.Context, t *testing.T, flake string) {
 			So(state, ShouldBeNil)
 		}
 		So(server.Error(), ShouldBeNil)
+
+		_, fatalURLSeen := flaky.seenURLs[tc.fatalURL]
+		So(fatalURLSeen, ShouldBeFalse)
 		So(flaky.http503, ShouldResemble, map[string]int{})
+
+		return success
+	}
+
+	Convey(``, t, func() {
+		testCases := []testCase{
+			{
+				name:         "retry contains",
+				items:        [][]byte{small},
+				errURL:       "/api/isolateservice/v1/preupload",
+				retryFactory: fastRetry,
+				result:       success,
+			},
+			{
+				name:         "skip retry of contains",
+				items:        [][]byte{small},
+				errURL:       "/api/isolateservice/v1/preupload",
+				retryFactory: noRetry,
+				result:       failedContains,
+			},
+
+			{
+				name:         "retry store_inline",
+				items:        [][]byte{small},
+				errURL:       "/api/isolateservice/v1/store_inline",
+				retryFactory: fastRetry,
+				result:       success,
+			},
+			{
+				name:         "skip retry of store_inline",
+				items:        [][]byte{small},
+				errURL:       "/api/isolateservice/v1/store_inline",
+				retryFactory: noRetry,
+				result:       failedPush,
+			},
+			{
+				name:         "store_inline failure is irrelevant for large files",
+				items:        [][]byte{large},
+				fatalURL:     "/api/isolateservice/v1/store_inline",
+				retryFactory: noRetry,
+				result:       success,
+			},
+
+			{
+				name:         "retry gs upload",
+				items:        [][]byte{large},
+				errURL:       "/fake/cloudstorage",
+				retryFactory: fastRetry,
+				result:       success,
+			},
+			{
+				name:         "skip retry of gs upload",
+				items:        [][]byte{large},
+				errURL:       "/fake/cloudstorage",
+				retryFactory: noRetry,
+				result:       failedPush,
+			},
+			{
+				name:         "gs upload failure is irrelevant for small files",
+				items:        [][]byte{small},
+				fatalURL:     "/fake/cloudstorage",
+				retryFactory: noRetry,
+				result:       success,
+			},
+
+			{
+				name:         "retry finalize",
+				items:        [][]byte{large}, // Must use large, because finalize is not called for small objects.
+				errURL:       "/api/isolateservice/v1/finalize_gs_upload",
+				retryFactory: fastRetry,
+				result:       success,
+			},
+			{
+				name:         "skip retry of finalize",
+				items:        [][]byte{large},
+				errURL:       "/api/isolateservice/v1/finalize_gs_upload",
+				retryFactory: noRetry,
+				result:       failedPush,
+			},
+		}
+		for _, tc := range testCases {
+			tc := tc
+			Convey(tc.name, func() {
+				result := testFunc(tc)
+				So(result, ShouldEqual, tc.result)
+			})
+		}
 	})
 }
 
@@ -239,6 +332,7 @@ type killingMux struct {
 	server   http.Handler
 	http503  map[string]int // Number of bytes should be read before returning HTTP 500.
 	tearDown map[string]int // Number of bytes should be read before killing the connection.
+	seenURLs map[string]struct{}
 	ts       *httptest.Server
 }
 
@@ -255,6 +349,11 @@ func (k *killingMux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	f := func() bool {
 		k.lock.Lock()
 		defer k.lock.Unlock()
+		if k.seenURLs == nil {
+			k.seenURLs = make(map[string]struct{})
+		}
+		k.seenURLs[req.URL.Path] = struct{}{}
+
 		if toRead, ok := k.http503[req.URL.Path]; ok {
 			delete(k.http503, req.URL.Path)
 			readBytes(req.Body, toRead)
@@ -287,7 +386,7 @@ func (t *testReadCloser) Close() error {
 }
 
 func TestCompressor(t *testing.T) {
-	errBang := errors.New("bang!")
+	errBang := errors.New("bang")
 
 	testCases := []struct {
 		Desc         string

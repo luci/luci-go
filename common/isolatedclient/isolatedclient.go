@@ -234,7 +234,8 @@ func (i *Client) doPush(c context.Context, state *PushState, source Source) (err
 	end := tracer.Span(i, "push", tracer.Args{"useDB": useDB, "size": state.size})
 	defer func() { end(tracer.Args{"err": err}) }()
 	if useDB {
-		src, err := source()
+		var src io.ReadCloser
+		src, err = source()
 		if err != nil {
 			return err
 		}
