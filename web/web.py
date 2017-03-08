@@ -138,7 +138,8 @@ class Toolchain(object):
 
 
 def _subcommand_install():
-  # Nothing to do, since toolchain comes installed.
+  # Nothing to do, since toolchain is installed as a precondition to invoking
+  # the subcommand!
   return 0
 
 
@@ -162,12 +163,12 @@ def _subcommand_build(tc, build_dir, apps=None):
   return 0
 
 
-def _subcommand_gulp(tc, app, gulp_args):
+def _subcommand_gulp(tc, gulp_args, app=None):
   app_dir = tc.apps_dir
   if app:
     app_dir = os.path.join(app_dir, app)
-  if not os.path.isfile(os.path.join(app_dir, 'gulpfile.js')):
-    raise ValueError('[%s] is not a valid Gulp target' % (app,))
+    if not os.path.isfile(os.path.join(app_dir, 'gulpfile.js')):
+      raise ValueError('[%s] is not a valid application' % (app,))
   tc.gulp(*gulp_args, cwd=app_dir)
   return 0
 
@@ -205,11 +206,19 @@ def _main(argv):
 
   # Subcommand: gulp
   subcommand = subparser.add_parser('gulp',
+      help='Run a global Gulp.js target.')
+  subcommand.set_defaults(func=lambda tc, args:
+      _subcommand_gulp(tc, args.gulp_args))
+  subcommand.add_argument('gulp_args', nargs='*',
+      help='Arguments to pass to Gulp.js.')
+
+  # Subcommand: gulp-app
+  subcommand = subparser.add_parser('gulp-app',
       help='Run Gulp.js for the specified web app.')
   subcommand.set_defaults(func=lambda tc, args:
-      _subcommand_gulp(tc, args.app, args.gulp_args))
+      _subcommand_gulp(tc, args.gulp_args, app=args.app))
   subcommand.add_argument('app',
-      help='Web app name. Leave empty ("") for common target')
+      help='Web app name')
   subcommand.add_argument('gulp_args', nargs='*',
       help='Arguments to pass to Gulp.js.')
 

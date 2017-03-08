@@ -182,7 +182,7 @@ exports.setup = function(gulp, config) {
     var scriptsTs = path.join(config.dir, 'scripts-ts');
     var tsProj = ts.createProject(tsconfigPath, {
       typeRoots: [path.join(exports.base, 'node_modules', '@types')],
-      outFile: path.join(scriptsTs, 'main.js'),
+      outFile: 'main.js',
     });
 
     return gulp.src('*.ts', {cwd: scriptsTs, exclude: ['*_test.ts']})
