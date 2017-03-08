@@ -38,7 +38,8 @@ func getSwarmingService(c context.Context, host string) (swarmingService, error)
 	switch host {
 	// TODO(hinoka): configure this mapping in luci-config
 	case defaultSwarmingServer, defaultSwarmingDevServer,
-		"cast-swarming.appspot.com":
+		"cast-swarming.appspot.com",
+		"touch-swarming.appspot.com":
 		return newProdService(c, host)
 
 	default:
