@@ -121,7 +121,7 @@ type Flags struct {
 // Register adds auth related flags to a FlagSet.
 func (fl *Flags) Register(f *flag.FlagSet, defaults auth.Options) {
 	fl.defaults = defaults
-	f.StringVar(&fl.serviceAccountJSON, "service-account-json", "", "Path to JSON file with service account credentials to use.")
+	f.StringVar(&fl.serviceAccountJSON, "service-account-json", fl.defaults.ServiceAccountJSONPath, "Path to JSON file with service account credentials to use.")
 	if fl.registerScopesFlag {
 		defaultScopes := strings.Join(defaults.Scopes, " ")
 		if defaultScopes == "" {
