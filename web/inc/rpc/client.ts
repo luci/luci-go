@@ -4,9 +4,26 @@
   that can be found in the LICENSE file.
 */
 
+///<reference path="../luci-operation/operation.ts" />
 ///<reference path="../luci-sleep-promise/promise.ts" />
 
 namespace luci {
+  /**
+   * Describes the exposed functionality of a single Polymer RPC call, defined
+   * in "rpc-call.html".
+   */
+  interface PolymerClientCall {
+    /** Aborts the call, if it is currently ongoing. */
+    abort(): void;
+
+    /**
+     * Completes performs the configured RPC, returning a Promise that
+     * resolves with the call's result on completion and an HTTP/gRPC error on
+     * failure.
+     */
+    completes: Promise<any>;
+  }
+
   /**
    * PolymerClient describes the exposed functionality of the Polymer RPC
    * client,
@@ -33,14 +50,7 @@ namespace luci {
      * Call returns an object configured to execute an RPC against the specified
      * service and method.
      */
-    call(): {
-      /**
-       * Completes performs the configured RPC, returning a Promise that
-       * resolves with the call's result on completion and an HTTP/gRPC error on
-       * failure.
-       */
-      completes: Promise<any>,
-    };
+    call(): PolymerClientCall;
   }
 
   /**
@@ -72,34 +82,49 @@ namespace luci {
      *     respectively.
      */
     call<T, R>(service: string, method: string, request?: T): Promise<R> {
+      return this.callOp(undefined, service, method, request);
+    }
+
+    callOp<T, R>(
+        op: luci.Operation|undefined, service: string, method: string,
+        request?: T): Promise<R> {
       let transientRetry = new RetryIterator(this.transientRetry);
-      let doCall = (): Promise<R> => {
-        // Configure the client for this request.
-        this.pc.service = service;
-        this.pc.method = method;
-        this.pc.request = request;
-
-        // Execute the configured request.
-        let callPromise: Promise<R> = this.pc.call().completes;
-        return callPromise.then((resp: any) => resp.response)
-            .catch((err: Error) => {
-              // Is this a transient error?
-              if (isTransientError(err)) {
-                let delay = transientRetry.next();
-                if (delay >= 0) {
-                  console.warn(
-                      `Transient error calling ` +
-                          `${service}.${method} with params:`,
-                      request, `:`, err, `; retrying after ${delay}ms.`);
-                  return luci.sleepPromise(delay).then(doCall);
+      let currentCall: PolymerClientCall;
+      return transientRetry
+          .do(
+              () => {
+                if (op && currentCall) {
+                  // Unregister previous call instances' cancellation callbacks.
+                  op.removeCancelCallback(currentCall.abort);
                 }
-              }
 
-              // Non-transient, throw the error.
-              throw err;
-            });
-      };
-      return doCall();
+                // Configure the client for this request.
+                this.pc.service = service;
+                this.pc.method = method;
+                this.pc.request = request;
+
+                // Execute the configured request.
+                //
+                // If we are supplied an operation, allow it to cancel the call
+                // directly.
+                currentCall = this.pc.call();
+                if (op) {
+                  op.addCancelCallback(currentCall.abort);
+                }
+                return currentCall.completes;
+              },
+              (err: Error, delay: number) => {
+                // Is this a transient error?
+                if (!isTransientError(err)) {
+                  throw err;
+                }
+                console.warn(
+                    `Transient error calling ` +
+                        `${service}.${method} with params:`,
+                    request, `:`, err, `; retrying after ${delay}ms.`);
+              },
+              op)
+          .then(resp => resp.response);
     }
   }
 
@@ -216,19 +241,28 @@ namespace luci {
   export type Retry = {
     // The number of retries to perform before failing. If undefined, will retry
     // indefinitely.
-    retries: number | undefined;
+    retries?: number;
 
     // The amount of time to delay in between retry attempts, in milliseconds.
     // If undefined or < 0, no delay will be imposed.
     delay: number;
     // The maximum delay to apply, in milliseconds. If > 0 and delay scales past
     // "maxDelay", it will be capped at "maxDelay".
-    maxDelay: number | undefined;
+    maxDelay?: number;
 
     // delayScaling is the multiplier applied to "delay" in between retries. If
     // undefined or <= 1, DEFAULT_DELAY_SCALING will be used.
     delayScaling?: number;
   };
+
+  /** RetryCallback is an optional callback type used in "do". */
+  export type RetryCallback = (err: Error, delay: number) => void;
+
+  /**
+   * Stopped is a sentinel error thrown by RetryIterator when it runs out of
+   * retries.
+   */
+  export const STOPPED = new Error('retry stopped');
 
   /**
    * Generic exponential backoff retry delay generator.
@@ -260,12 +294,12 @@ namespace luci {
      * @returns the next delay, in milliseconds. If there are no more retries,
      *      returns undefined.
      */
-    next(): number|undefined {
+    next(): number {
       // Apply retries, if they have been enabled.
       if (this.retries !== undefined) {
         if (this.retries <= 0) {
           // No more retries remaining.
-          return undefined;
+          throw STOPPED;
         }
         this.retries--;
       }
@@ -277,5 +311,57 @@ namespace luci {
       }
       return delay;
     }
+
+    /**
+     * Executes a Promise, retrying if the Promise raises an error.
+     *
+     * "do" iteratively tries to execute a Promise, generated by "gen". If that
+     * Promise raises an error, "do" will retry until it either runs out of
+     * retries, or the Promise does not return an error. Each retry, "do" will
+     * invoke "gen" again to generate a new Promise.
+     *
+     * An optional "onError" callback can be supplied. If it is, it will be
+     * invoked in between each retry. The callback may, itself, throw, in which
+     * case the retry loop will stop. This can be used for reporting and/or
+     * selective retries.
+     *
+     * @param gen Promise generator function for retries.
+     * @param onError optional callback to be invoked in between retries.
+     * @param op if supplied, this Operation will be used to cancel retries.
+     *
+     * @throws any the error generated by "gen"'s Promise, if out of retries,
+     *     or the error raised by onError if it chooses to throw.
+     */
+    do
+      <T>(gen: () => Promise<T>, onError?: RetryCallback,
+          op?: luci.Operation): Promise<T> {
+        let onErr = (err: Error): Promise<T> => {
+          let delay: number;
+          try {
+            delay = this.next();
+          } catch (e) {
+            if (e !== STOPPED) {
+              console.warn('Unexpected error generating next delay:', e);
+            }
+
+            // If we could not generate another retry delay, raise the initial
+            // Promise's error.
+            throw err;
+          }
+
+          if (onError) {
+            // Note: this may throw.
+            onError(err, delay);
+          }
+
+          return luci.sleepPromise(delay, op).then(() => gen().catch(onErr));
+        };
+
+        let base = gen().catch(onErr);
+        if (op) {
+          base = op.wrap(base);
+        }
+        return base;
+      }
   }
 }

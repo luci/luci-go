@@ -200,6 +200,13 @@
           .catch(this._done.bind(this));
       },
 
+      abort: function() {
+        if (this.xhr) {
+          // This will cause a 'Request aborted' error to be sent via reject.
+          this.xhr.abort();
+        }
+      },
+
       _done: function(error) {
         try {
           var status = this.xhr.status;
