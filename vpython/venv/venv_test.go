@@ -140,14 +140,14 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 			BaseDir:    tdir,
 			MaxHashLen: 4,
 			Package: vpython.Spec_Package{
-				Path:    "foo/bar/virtualenv",
+				Name:    "foo/bar/virtualenv",
 				Version: "unresolved",
 			},
 			Python: ri.py.Python,
 			Spec: &vpython.Spec{
 				Wheel: []*vpython.Spec_Package{
-					{Path: "foo/bar/shirt", Version: "unresolved"},
-					{Path: "foo/bar/pants", Version: "unresolved"},
+					{Name: "foo/bar/shirt", Version: "unresolved"},
+					{Name: "foo/bar/pants", Version: "unresolved"},
 				},
 			},
 			Loader: tl,

@@ -162,13 +162,13 @@ python_version: "2.7"
 
 # Include "numpy" for the current architecture.
 wheel {
-  path: "infra/python/wheels/numpy/${platform}-${arch}"
+  name: "infra/python/wheels/numpy/${platform}-${arch}"
   version: "version:1.11.0"
 }
 
 # Include "coverage" for the current architecture.
 wheel {
-  path: "infra/python/wheels/coverage/${platform}-${arch}"
+  name: "infra/python/wheels/coverage/${platform}-${arch}"
   version: "version:4.1"
 }
 ```

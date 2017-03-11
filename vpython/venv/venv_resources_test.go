@@ -139,7 +139,7 @@ func (tl *testingLoader) Resolve(c context.Context, root string, packages []*vpy
 
 func (tl *testingLoader) Ensure(c context.Context, root string, packages []*vpython.Spec_Package) error {
 	for _, pkg := range packages {
-		if err := tl.installPackage(pkg.Path, root); err != nil {
+		if err := tl.installPackage(pkg.Name, root); err != nil {
 			return err
 		}
 	}
@@ -194,7 +194,7 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 		BaseDir:    filepath.Join(outDir, ".env"),
 		Python:     py.Python,
 		Package: vpython.Spec_Package{
-			Path:    "foo/bar/virtualenv",
+			Name:    "foo/bar/virtualenv",
 			Version: "whatever",
 		},
 		Loader: tl,

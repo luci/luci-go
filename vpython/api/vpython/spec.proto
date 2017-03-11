@@ -25,10 +25,10 @@ message Spec {
   // A definition for a remote package. The type of package depends on the
   // configured package resolver.
   message Package {
-    // The path of the package.
+    // The name of the package.
     //
     // - For CIPD, this is the package name.
-    string path = 1;
+    string name = 1;
 
     // The package version.
     //

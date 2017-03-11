@@ -26,9 +26,9 @@ func Normalize(spec *vpython.Spec) error {
 	// No duplicate packages. Since we're sorted, we can just check for no
 	// immediate repetitions.
 	for i, pkg := range spec.Wheel {
-		if i > 0 && pkg.Path == spec.Wheel[i-1].Path {
+		if i > 0 && pkg.Name == spec.Wheel[i-1].Name {
 			return errors.Reason("duplicate spec entries for package %(path)q").
-				D("path", pkg.Path).
+				D("name", pkg.Name).
 				Err()
 		}
 	}
@@ -54,7 +54,7 @@ func (s specPackageSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 func (s specPackageSlice) Less(i, j int) bool {
 	return sortby.Chain{
-		func(i, j int) bool { return s[i].Path < s[j].Path },
+		func(i, j int) bool { return s[i].Name < s[j].Name },
 		func(i, j int) bool { return s[i].Version < s[j].Version },
 	}.Use(i, j)
 }

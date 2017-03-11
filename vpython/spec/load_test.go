@@ -25,8 +25,8 @@ func TestLoadForScript(t *testing.T) {
 	goodSpec := &vpython.Spec{
 		PythonVersion: "3.4.0",
 		Wheel: []*vpython.Spec_Package{
-			{Path: "foo/bar", Version: "1"},
-			{Path: "baz/qux", Version: "2"},
+			{Name: "foo/bar", Version: "1"},
+			{Name: "baz/qux", Version: "2"},
 		},
 	}
 	goodSpecData := proto.MarshalTextString(goodSpec)

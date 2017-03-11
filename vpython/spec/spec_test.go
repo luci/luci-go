@@ -16,9 +16,9 @@ import (
 func TestNormalizeAndHash(t *testing.T) {
 	t.Parallel()
 
-	pkgFoo := &vpython.Spec_Package{Path: "foo", Version: "1"}
-	pkgBar := &vpython.Spec_Package{Path: "bar", Version: "2"}
-	pkgBaz := &vpython.Spec_Package{Path: "baz", Version: "3"}
+	pkgFoo := &vpython.Spec_Package{Name: "foo", Version: "1"}
+	pkgBar := &vpython.Spec_Package{Name: "bar", Version: "2"}
+	pkgBaz := &vpython.Spec_Package{Name: "baz", Version: "3"}
 
 	Convey(`Test manifest generation`, t, func() {
 		var spec vpython.Spec
