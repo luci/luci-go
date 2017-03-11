@@ -1,0 +1,138 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+package vpython
+
+import (
+	"os"
+	"os/exec"
+	"os/signal"
+
+	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/system/environ"
+	"github.com/luci/luci-go/vpython/venv"
+
+	"golang.org/x/net/context"
+)
+
+var (
+	// EnvSpecPath is the exported enviornment variable for the specification path.
+	//
+	// This is added to the bootstrap enviornment used by Run to allow subprocess
+	// "vpython" invocations to automatically inherit the same environment.
+	EnvSpecPath = "VPYTHON_VENV_SPEC_PATH"
+)
+
+// Run sets up a Python VirtualEnv and executes the supplied Options.
+//
+// Run returns nil if if the Python environment was successfully set-up and the
+// Python interpreter was successfully run with a zero return code. If the
+// Python interpreter returns a non-zero return code, a PythonError (potentially
+// wrapped) will be returned.
+//
+// A generalized return code to return for an error value can be obtained via
+// ReturnCode.
+//
+// Run consists of:
+//
+//	- Identify the target Python script to run (if there is one).
+//	- Identifying the Python interpreter to use.
+//	- Composing the environment specification.
+//	- Constructing the virtual environment (download, install).
+//	- Execute the Python process with the supplied arguments.
+//
+// The Python subprocess is bound to the lifetime of ctx, and will be terminated
+// if ctx is cancelled.
+func Run(c context.Context, opts Options) error {
+	// Resolve our Options.
+	if err := opts.resolve(c); err != nil {
+		return errors.Annotate(err).Reason("could not resolve options").Err()
+	}
+
+	// Create a local cancellation option (signal handling).
+	c, cancelFunc := context.WithCancel(c)
+	defer cancelFunc()
+
+	// Create our virtual enviornment root directory.
+	err := venv.With(c, opts.EnvConfig, opts.WaitForEnv, func(c context.Context, ve *venv.Env) error {
+		// Build the augmented environment variables.
+		e := opts.Environ
+		if e.Len() == 0 {
+			// If no environment was supplied, use the system environment.
+			e = environ.System()
+		}
+
+		e.Set("VIRTUAL_ENV", ve.Root) // Set by VirtualEnv script.
+		if ve.SpecPath != "" {
+			e.Set(EnvSpecPath, ve.SpecPath)
+		}
+
+		// Run our bootstrapped Python command.
+		cmd := ve.InterpreterCommand()
+		cmd.WorkDir = opts.WorkDir
+		cmd.Isolated = true
+		cmd.Env = e.Sorted()
+
+		pythonCmd, err := cmd.Prepare(c, opts.Args...)
+		if err != nil {
+			return errors.Annotate(err).Reason("failed to prepare command").Err()
+		}
+		pythonCmd.Stdin = os.Stdin
+
+		if err := runAndForwardSignals(c, pythonCmd, cancelFunc); err != nil {
+			return errors.Annotate(err).Reason("failed to execute bootstrapped Python").Err()
+		}
+		return nil
+	})
+	if err != nil {
+		return errors.Annotate(err).Err()
+	}
+	return nil
+}
+
+func runAndForwardSignals(c context.Context, cmd *exec.Cmd, cancelFunc context.CancelFunc) error {
+	signalC := make(chan os.Signal, 1)
+	signalDoneC := make(chan struct{})
+	signal.Notify(signalC, forwardedSignals...)
+	defer func() {
+		signal.Stop(signalC)
+
+		close(signalC)
+		<-signalDoneC
+	}()
+
+	if err := cmd.Start(); err != nil {
+		return errors.Annotate(err).Reason("failed to start process").Err()
+	}
+
+	logging.Fields{
+		"pid": cmd.Process.Pid,
+	}.Debugf(c, "Python subprocess has started!")
+
+	// Start our signal forwarding goroutine, now that the process is running.
+	go func() {
+		defer func() {
+			close(signalDoneC)
+		}()
+
+		for sig := range signalC {
+			logging.Debugf(c, "Forwarding signal: %v", sig)
+			if err := cmd.Process.Signal(sig); err != nil {
+				logging.Fields{
+					logging.ErrorKey: err,
+					"signal":         sig,
+				}.Errorf(c, "Failed to forward signal; terminating immediately.")
+				cancelFunc()
+			}
+		}
+	}()
+
+	err := cmd.Wait()
+	logging.Debugf(c, "Python subprocess has terminated: %v", err)
+	if err != nil {
+		return errors.Annotate(err).Err()
+	}
+	return nil
+}

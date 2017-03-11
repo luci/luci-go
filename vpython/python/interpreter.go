@@ -12,7 +12,6 @@ import (
 
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/system/exitcode"
 
 	"golang.org/x/net/context"
 )
@@ -116,11 +115,6 @@ type Command struct {
 	// empty, the current working directory will be used.
 	WorkDir string
 
-	// ConnectSTDIN will cause this process' STDIN to be passed through to the
-	// Python subprocess. Otherwise, the Python subprocess will receive a closed
-	// STDIN.
-	ConnectSTDIN bool
-
 	// Isolated means that the Python invocation should include flags to isolate
 	// it from local system modification.
 	//
@@ -138,16 +132,10 @@ type Command struct {
 	testRunner runnerFunc
 }
 
-// Run runs the configured Command with the supplied arguments.
-//
-// Run returns wrapped errors. Use errors.Unwrap to get the main cause, if
-// needed. If an error occurs during setup or invocation, it will be returned
-// directly. If the interpreter runs and returns zero, nil will be returned. If
-// the interpreter runs and returns non-zero, an Error instance will be returned
-// containing that return code.
-func (ic *Command) Run(c context.Context, args ...string) error {
+// Prepare generates an exec.Cmd with the Command's configuration.
+func (ic *Command) Prepare(c context.Context, args ...string) (*exec.Cmd, error) {
 	if ic.Python == "" {
-		return errors.New("a Python interpreter must be supplied")
+		return nil, errors.New("a Python interpreter must be supplied")
 	}
 
 	if ic.Isolated {
@@ -161,11 +149,23 @@ func (ic *Command) Run(c context.Context, args ...string) error {
 	cmd := exec.CommandContext(c, ic.Python, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	if ic.ConnectSTDIN {
-		cmd.Stdin = os.Stdin
-	}
 	cmd.Dir = ic.WorkDir
 	cmd.Env = ic.Env
+
+	return cmd, nil
+}
+
+// Run runs the configured Command with the supplied arguments.
+//
+// Run returns wrapped errors. Use errors.Unwrap to get the main cause, if
+// needed. If an error occurs during setup or invocation, including an exit
+// code related error, it will be returned, possibly wrapped. If the interpreter
+// runs and returns zero, nil will be returned.
+func (ic *Command) Run(c context.Context, args ...string) error {
+	cmd, err := ic.Prepare(c, args...)
+	if err != nil {
+		return errors.Annotate(err).Err()
+	}
 
 	if logging.IsLogging(c, logging.Debug) {
 		logging.Debugf(c, "Running Python command (cwd=%s): %s",
@@ -179,12 +179,6 @@ func (ic *Command) Run(c context.Context, args ...string) error {
 	}
 
 	if _, err := rf(cmd, false); err != nil {
-		// If the process failed because of a non-zero return value, return that
-		// as our error.
-		if rc, has := exitcode.Get(err); has {
-			return errors.Annotate(Error(rc)).Reason("Python bootstrap returned non-zero").Err()
-		}
-
 		return errors.Annotate(err).Reason("failed to run Python command").
 			D("python", ic.Python).
 			D("args", args).

@@ -23,48 +23,45 @@ func TestParsePythonCommandLine(t *testing.T) {
 		args []string
 		cmd  CommandLine
 	}{
-		{nil, CommandLine{}},
+		{nil, CommandLine{Target: NoTarget{}}},
 
 		{[]string{"-a", "-b", "-Q'foo.bar.baz'", "-Wbar"},
 			CommandLine{
-				Flags: []string{"-a", "-b", "-Q'foo.bar.baz'", "-Wbar"},
-				Args:  []string{},
+				Target: NoTarget{},
+				Flags:  []string{"-a", "-b", "-Q'foo.bar.baz'", "-Wbar"},
+				Args:   []string{},
 			},
 		},
 
 		{[]string{"path.py", "--", "foo", "bar"},
 			CommandLine{
-				Type:  TargetScript,
-				Value: "path.py",
-				Flags: []string{},
-				Args:  []string{"--", "foo", "bar"},
+				Target: ScriptTarget{"path.py"},
+				Flags:  []string{},
+				Args:   []string{"--", "foo", "bar"},
 			},
 		},
 
 		{[]string{"-a", "-Wfoo", "-", "--", "foo"},
 			CommandLine{
-				Type:  TargetScript,
-				Value: "-",
-				Flags: []string{"-a", "-Wfoo"},
-				Args:  []string{"--", "foo"},
+				Target: ScriptTarget{"-"},
+				Flags:  []string{"-a", "-Wfoo"},
+				Args:   []string{"--", "foo"},
 			},
 		},
 
 		{[]string{"-a", "-b", "-W", "foo", "-Wbar", "-c", "<script>", "--", "arg"},
 			CommandLine{
-				Type:  TargetCommand,
-				Value: "<script>",
-				Flags: []string{"-a", "-b", "-W", "foo", "-Wbar"},
-				Args:  []string{"--", "arg"},
+				Target: CommandTarget{"<script>"},
+				Flags:  []string{"-a", "-b", "-W", "foo", "-Wbar"},
+				Args:   []string{"--", "arg"},
 			},
 		},
 
 		{[]string{"-a", "-b", "-m'foo.bar.baz'", "arg"},
 			CommandLine{
-				Type:  TargetModule,
-				Value: "'foo.bar.baz'",
-				Flags: []string{"-a", "-b"},
-				Args:  []string{"arg"},
+				Target: ModuleTarget{"'foo.bar.baz'"},
+				Flags:  []string{"-a", "-b"},
+				Args:   []string{"arg"},
 			},
 		},
 	}
@@ -171,19 +168,6 @@ func TestInterpreter(t *testing.T) {
 						Args:   []string{"/path/to/python", "-B", "-E", "-s", "foo", "bar"},
 						Stdout: os.Stdout,
 						Stderr: os.Stderr,
-					})
-				})
-
-				Convey(`Can connect STDIN.`, func() {
-					cmd.ConnectSTDIN = true
-
-					So(cmd.Run(c, "foo", "bar"), ShouldBeNil)
-					So(lastCmd, ShouldResemble, &exec.Cmd{
-						Path:   "/path/to/python",
-						Args:   []string{"/path/to/python", "foo", "bar"},
-						Stdout: os.Stdout,
-						Stderr: os.Stderr,
-						Stdin:  os.Stdin,
 					})
 				})
 

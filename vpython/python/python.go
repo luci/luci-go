@@ -5,45 +5,68 @@
 package python
 
 import (
-	"fmt"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/luci/luci-go/common/errors"
 )
 
-// Error is a Python error return code.
-type Error int
-
-func (err Error) Error() string {
-	return fmt.Sprintf("python interpreter returned non-zero error: %d", err)
-}
-
-// TargetType is an enumeration of possible Python invocation targets.
+// Target describes a Python invocation target.
 //
 // Targets are identified by parsing a Python command-line using
 // ParseCommandLine.
-type TargetType int
+//
+// A Target is identified through type assertion, and will be one of:
+//
+//	- NoTarget
+//	- ScriptTarget
+//	- CommandTarget
+//	- ModuleTarget
+type Target interface {
+	// implementsTarget is an internal method used to constrain Target
+	// implementations to internal packages.
+	implementsTarget()
+}
 
-const (
-	// TargetNone means no Python target (i.e., interactive).
-	TargetNone TargetType = iota
-	// TargetScript is a Python executable script target.
-	TargetScript
-	// TargetCommand runs a command-line string (-c ...).
-	TargetCommand
-	// TargetModule runs a Python module (-m ...).
-	TargetModule
-)
+// NoTarget is a Target implementation indicating no Python target (i.e.,
+// interactive).
+type NoTarget struct{}
+
+func (st NoTarget) implementsTarget() {}
+
+// ScriptTarget is a Python executable script target.
+type ScriptTarget struct {
+	// Path is the path to the script that is being invoked.
+	//
+	// This may be "-", indicating that the script is being read from STDIN.
+	Path string
+}
+
+func (st ScriptTarget) implementsTarget() {}
+
+// CommandTarget is a Target implementation for a command-line string
+// (-c ...).
+type CommandTarget struct {
+	// Command is the command contents.
+	Command string
+}
+
+func (st CommandTarget) implementsTarget() {}
+
+// ModuleTarget is a Target implementating indicating a Python module (-m ...).
+type ModuleTarget struct {
+	// Module is the name of the target module.
+	Module string
+}
+
+func (st ModuleTarget) implementsTarget() {}
 
 // CommandLine is a parsed Python command-line.
 //
 // CommandLine can be parsed from arguments via ParseCommandLine.
 type CommandLine struct {
-	// Type is the Python target type.
-	Type TargetType
-	// Value is the execution value for Type.
-	Value string
+	// Target is the Python target type.
+	Target Target
 
 	// Flags are flags to the Python interpreter.
 	Flags []string
@@ -56,26 +79,29 @@ type CommandLine struct {
 func ParseCommandLine(args []string) (cmd CommandLine, err error) {
 	flags := 0
 	i := 0
-	for i < len(args) && cmd.Type == TargetNone {
+	for i < len(args) && cmd.Target == nil {
 		arg := args[i]
 		i++
 
 		flag, has := trimPrefix(arg, "-")
 		if !has {
 			// Non-flag argument, so path to script.
-			cmd.Type = TargetScript
-			cmd.Value = flag
+			cmd.Target = ScriptTarget{
+				Path: flag,
+			}
 			break
 		}
 
 		// -<flag>
 		if len(flag) == 0 {
 			// "-" instructs Python to load the script from STDIN.
-			cmd.Type, cmd.Value = TargetScript, "-"
+			cmd.Target = ScriptTarget{
+				Path: "-",
+			}
 			break
 		}
 
-		// Extract the flag value. -f<lag>
+		// Extract the flag Target. -f<lag>
 		r, l := utf8.DecodeRuneInString(flag)
 		if r == utf8.RuneError {
 			err = errors.Reason("invalid rune in flag #%(index)d").D("index", i).Err()
@@ -84,36 +110,38 @@ func ParseCommandLine(args []string) (cmd CommandLine, err error) {
 
 		// Is this a combined flag/value (e.g., -c'paoskdpo') ?
 		flag = flag[l:]
-		twoVarType := func() error {
+		twoVarType := func() (string, error) {
 			if len(flag) > 0 {
-				cmd.Value = flag
-				return nil
+				return flag, nil
 			}
 
 			if i >= len(args) {
-				return errors.Reason("two-value flag -%(flag)c missing second value at %(index)d").
+				return "", errors.Reason("two-value flag -%(flag)c missing second value at %(index)d").
 					D("flag", r).
 					D("index", i).
 					Err()
 			}
-			cmd.Value = args[i]
+
+			value := args[i]
 			i++
-			return nil
+			return value, nil
 		}
 
 		switch r {
 		// Two-variable execution flags.
 		case 'c':
-			cmd.Type = TargetCommand
-			if err = twoVarType(); err != nil {
+			var target CommandTarget
+			if target.Command, err = twoVarType(); err != nil {
 				return
 			}
+			cmd.Target = target
 
 		case 'm':
-			cmd.Type = TargetModule
-			if err = twoVarType(); err != nil {
+			var target ModuleTarget
+			if target.Module, err = twoVarType(); err != nil {
 				return
 			}
+			cmd.Target = target
 
 		case 'Q', 'W', 'X':
 			// Random two-argument Python flags.
@@ -132,6 +160,11 @@ func ParseCommandLine(args []string) (cmd CommandLine, err error) {
 	if i > len(args) {
 		err = errors.New("truncated two-variable argument")
 		return
+	}
+
+	// If no target was specified, use NoTarget.
+	if cmd.Target == nil {
+		cmd.Target = NoTarget{}
 	}
 
 	cmd.Flags = args[:flags]
