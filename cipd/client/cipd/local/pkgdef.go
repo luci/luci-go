@@ -52,7 +52,7 @@ type PackageChunkDef struct {
 	// VersionFile defines where to drop JSON file with package version.
 	VersionFile string `yaml:"version_file"`
 
-	// Exclude is a list of glob patterns to exclude when scanning a directory.
+	// Exclude is a list of regexp patterns to exclude when scanning a directory.
 	Exclude []string
 }
 
