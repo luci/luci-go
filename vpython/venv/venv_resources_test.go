@@ -163,6 +163,7 @@ func (tl *testingLoader) installPackage(name, root string) error {
 }
 
 func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, name, outDir string) (string, error) {
+	ctx := context.Background()
 	w, err := wheel.ParseName(name)
 	if err != nil {
 		return "", errors.Annotate(err).Reason("failed to parse wheel name %(name)q").
@@ -205,20 +206,57 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 		testLeaveReadWrite:                 true,
 	}
 
-	return outWheelPath, With(context.Background(), cfg, true, func(ctx context.Context, env *Env) error {
-		cmd := env.InterpreterCommand()
-		cmd.WorkDir = srcDir
-		if err := cmd.Run(context.Background(), "setup.py", "bdist_wheel", "--dist-dir", outDir); err != nil {
+	// Build the wheel in a temporary directory, then copy it into outDir. This
+	// will stop wheel builds from stepping on each other or inheriting each
+	// others' state accidentally.
+	err = testfs.WithTempDir(t, "vpython_venv_wheel", func(tdir string) error {
+		buildDir := filepath.Join(tdir, "build")
+		if err := filesystem.MakeDirs(buildDir); err != nil {
+			return err
+		}
+
+		distDir := filepath.Join(tdir, "dist")
+		if err := filesystem.MakeDirs(distDir); err != nil {
+			return err
+		}
+
+		// Use an empty bootstrap VirtualEnv to build the wheel. This guarantees
+		// that we actually have "setuptools" and "wheel" packages, which are
+		// required for building wheels, and not necessarily present in their
+		// expected forms on all systems.
+		err := With(ctx, cfg, true, func(ctx context.Context, env *Env) error {
+			cmd := env.InterpreterCommand()
+			cmd.WorkDir = srcDir
+			err := cmd.Run(ctx, "setup.py", "--no-user-cfg", "bdist_wheel",
+				"--bdist-dir", buildDir,
+				"--dist-dir", distDir)
+			if err != nil {
+				return errors.Annotate(err).Reason("failed to build wheel").Err()
+			}
+			return nil
+		})
+		if err != nil {
 			return errors.Annotate(err).Reason("failed to build wheel").Err()
 		}
 
-		if _, err := os.Stat(outWheelPath); err != nil {
+		// Assert that the expected wheel file was generated, and copy it into
+		// outDir.
+		wheelPath := filepath.Join(distDir, w.String())
+		if _, err := os.Stat(wheelPath); err != nil {
 			return errors.Annotate(err).Reason("failed to generate wheel").Err()
 		}
+		if err := copyFileIntoDir(wheelPath, outDir); err != nil {
+			return errors.Annotate(err).Reason("failed to install wheel").Err()
+		}
 
-		t.Logf("Generated wheel file %q: %s", name, outWheelPath)
 		return nil
 	})
+	if err != nil {
+		return "", err
+	}
+
+	t.Logf("Generated wheel file %q: %s", name, outWheelPath)
+	return outWheelPath, nil
 }
 
 func (tl *testingLoader) ensureRemoteFilesLocked(ctx context.Context, t *testing.T) error {
