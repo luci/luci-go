@@ -1230,7 +1230,10 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir str
 	}()
 
 	// Open the instance, verify the instance ID.
-	instance, err := local.OpenInstance(ctx, instanceFile, pin.InstanceID)
+	//
+	// TODO(vadimsh): Skip hash verification for packages in the cache, assuming
+	// we do not put invalid packages there.
+	instance, err := local.OpenInstance(ctx, instanceFile, pin.InstanceID, local.VerifyHash)
 	if err != nil {
 		return err
 	}

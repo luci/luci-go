@@ -144,7 +144,7 @@ func TestRegisterInstance(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Open it for reading.
-		inst, err := local.OpenInstance(ctx, bytes.NewReader(out.Bytes()), "")
+		inst, err := local.OpenInstance(ctx, bytes.NewReader(out.Bytes()), "", local.VerifyHash)
 		So(err, ShouldBeNil)
 		defer inst.Close()
 
@@ -499,7 +499,7 @@ func TestFetch(t *testing.T) {
 			_, err = os.Stat(tmpFile.Name())
 			So(err, ShouldBeNil)
 
-			fetched, err := local.OpenInstance(ctx, reader, "")
+			fetched, err := local.OpenInstance(ctx, reader, "", local.VerifyHash)
 			So(err, ShouldBeNil)
 			So(fetched.Pin(), ShouldResemble, inst.Pin())
 			fetched.Close() // this closes the 'reader' too
@@ -520,7 +520,7 @@ func TestFetch(t *testing.T) {
 			info1, err := os.Stat(cachedFile.Name())
 			So(err, ShouldBeNil)
 
-			fetched, err := local.OpenInstance(ctx, reader, "")
+			fetched, err := local.OpenInstance(ctx, reader, "", local.VerifyHash)
 			So(err, ShouldBeNil)
 			So(fetched.Pin(), ShouldResemble, inst.Pin())
 			fetched.Close() // this closes the 'reader' too
@@ -552,7 +552,7 @@ func TestFetch(t *testing.T) {
 			So(err, ShouldBeNil)
 			out.Close()
 
-			fetched, err := local.OpenInstanceFile(ctx, tempFile, "")
+			fetched, err := local.OpenInstanceFile(ctx, tempFile, "", local.VerifyHash)
 			So(err, ShouldBeNil)
 			So(fetched.Pin(), ShouldResemble, inst.Pin())
 			fetched.Close()
@@ -570,7 +570,7 @@ func TestFetch(t *testing.T) {
 			So(err, ShouldBeNil)
 			out.Close()
 
-			fetched, err := local.OpenInstanceFile(ctx, tempFile, "")
+			fetched, err := local.OpenInstanceFile(ctx, tempFile, "", local.VerifyHash)
 			So(err, ShouldBeNil)
 			So(fetched.Pin(), ShouldResemble, inst.Pin())
 			fetched.Close()
@@ -834,7 +834,7 @@ func buildInstanceInMemory(ctx context.Context, pkgName string, files []local.Fi
 		CompressionLevel: 5,
 	})
 	So(err, ShouldBeNil)
-	inst, err := local.OpenInstance(ctx, bytes.NewReader(out.Bytes()), "")
+	inst, err := local.OpenInstance(ctx, bytes.NewReader(out.Bytes()), "", local.VerifyHash)
 	So(err, ShouldBeNil)
 	return inst
 }

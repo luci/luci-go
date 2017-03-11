@@ -63,7 +63,7 @@ func TestPackageReading(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Open it.
-		inst, err := OpenInstance(ctx, bytes.NewReader(out.Bytes()), "")
+		inst, err := OpenInstance(ctx, bytes.NewReader(out.Bytes()), "", VerifyHash)
 		if inst != nil {
 			defer inst.Close()
 		}
@@ -103,15 +103,23 @@ func TestPackageReading(t *testing.T) {
 
 		// Attempt to open it, providing correct instance ID, should work.
 		source := bytes.NewReader(out.Bytes())
-		inst, err := OpenInstance(ctx, source, "23f2c4900785ac8faa2f38e473925b840e574ccc")
+		inst, err := OpenInstance(ctx, source, "23f2c4900785ac8faa2f38e473925b840e574ccc", VerifyHash)
 		So(err, ShouldBeNil)
 		So(inst, ShouldNotBeNil)
+		So(inst.Pin(), ShouldResemble, Pin{"testing", "23f2c4900785ac8faa2f38e473925b840e574ccc"})
 		inst.Close()
 
 		// Attempt to open it, providing incorrect instance ID.
-		inst, err = OpenInstance(ctx, source, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+		inst, err = OpenInstance(ctx, source, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", VerifyHash)
 		So(err, ShouldNotBeNil)
 		So(inst, ShouldBeNil)
+
+		// Open with incorrect instance ID, but skipping the verification..
+		inst, err = OpenInstance(ctx, source, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", SkipHashVerification)
+		So(err, ShouldBeNil)
+		So(inst, ShouldNotBeNil)
+		So(inst.Pin(), ShouldResemble, Pin{"testing", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
+		inst.Close()
 	})
 
 	Convey("OpenInstanceFile works", t, func() {
@@ -131,7 +139,7 @@ func TestPackageReading(t *testing.T) {
 		tempFile.Close()
 
 		// Read the package.
-		inst, err := OpenInstanceFile(ctx, tempFilePath, "")
+		inst, err := OpenInstanceFile(ctx, tempFilePath, "", VerifyHash)
 		if inst != nil {
 			defer inst.Close()
 		}
@@ -167,7 +175,7 @@ func TestPackageReading(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Extract files.
-		inst, err := OpenInstance(ctx, bytes.NewReader(out.Bytes()), "")
+		inst, err := OpenInstance(ctx, bytes.NewReader(out.Bytes()), "", VerifyHash)
 		if inst != nil {
 			defer inst.Close()
 		}

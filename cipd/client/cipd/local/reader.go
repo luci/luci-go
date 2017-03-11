@@ -25,6 +25,19 @@ import (
 	"github.com/luci/luci-go/common/logging"
 )
 
+// VerificationMode is defines whether to verify hash or not.
+type VerificationMode int
+
+const (
+	// VerifyHash instructs OpenPackage to calculate hash of the package and
+	// compare it to the given instanceID.
+	VerifyHash VerificationMode = 0
+
+	// SkipVerification instructs OpenPackage to skip the hash verification and
+	// trust that the given instanceID matches the package.
+	SkipHashVerification VerificationMode = 1
+)
+
 // PackageInstance represents a binary CIPD package file (with manifest inside).
 type PackageInstance interface {
 	// Close shuts down the package and its data provider.
@@ -40,29 +53,35 @@ type PackageInstance interface {
 	DataReader() io.ReadSeeker
 }
 
-// OpenInstance verifies the package and prepares it for extraction.
+// OpenInstance prepares the package for extraction.
 //
-// It checks package SHA1 hash (must match instanceID, if it's given) and
-// prepares a package instance for extraction. If the call succeeds,
-// PackageInstance takes ownership of io.ReadSeeker. If it also implements
-// io.Closer, it will be closed when package.Close() is called. If an error is
-// returned, io.ReadSeeker remains unowned and caller is responsible for closing
-// it (if required).
-func OpenInstance(ctx context.Context, r io.ReadSeeker, instanceID string) (PackageInstance, error) {
+// If instanceID is an empty string, OpenInstance will calculate the hash
+// of the package and use it as InstanceID (regardless of verification mode).
+//
+// If instanceID is not empty and verification mode is VerifyHash,
+// OpenInstance will check that package data matches the given instanceID. It
+// skips this check if verification mode is SkipHashVerification.
+//
+// If the call succeeds, PackageInstance takes ownership of io.ReadSeeker. If it
+// also implements io.Closer, it will be closed when package.Close() is called.
+//
+// If an error is returned, io.ReadSeeker remains unowned and caller is r
+// esponsible for closing it (if required).
+func OpenInstance(ctx context.Context, r io.ReadSeeker, instanceID string, v VerificationMode) (PackageInstance, error) {
 	out := &packageInstance{data: r}
-	if err := out.open(instanceID); err != nil {
+	if err := out.open(instanceID, v); err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
 // OpenInstanceFile opens a package instance file on disk.
-func OpenInstanceFile(ctx context.Context, path string, instanceID string) (inst PackageInstance, err error) {
+func OpenInstanceFile(ctx context.Context, path string, instanceID string, v VerificationMode) (inst PackageInstance, err error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return
 	}
-	inst, err = OpenInstance(ctx, file, instanceID)
+	inst, err = OpenInstance(ctx, file, instanceID, v)
 	if err != nil {
 		file.Close()
 	}
@@ -305,26 +324,33 @@ type packageInstance struct {
 }
 
 // open reads the package data, verifies SHA1 hash and reads manifest.
-func (inst *packageInstance) open(instanceID string) error {
-	// Calculate SHA1 of the data to verify it matches expected instanceID.
-	if _, err := inst.data.Seek(0, os.SEEK_SET); err != nil {
-		return err
-	}
-	hash := sha1.New()
-	if _, err := io.Copy(hash, inst.data); err != nil {
-		return err
+func (inst *packageInstance) open(instanceID string, v VerificationMode) error {
+	if instanceID == "" {
+		v = VerifyHash // need it to calculate package instance ID for Pin().
 	}
 
-	dataSize, err := inst.data.Seek(0, os.SEEK_CUR)
-	if err != nil {
-		return err
+	var dataSize int64
+	var err error
+	switch v {
+	case VerifyHash:
+		var calculatedHash string
+		calculatedHash, dataSize, err = getSHA1AndSize(inst.data)
+		if err != nil {
+			return err
+		}
+		if instanceID != "" && instanceID != calculatedHash {
+			return fmt.Errorf("package hash mismatch")
+		}
+		inst.instanceID = calculatedHash
+	case SkipHashVerification:
+		dataSize, err = inst.data.Seek(0, os.SEEK_END)
+		if err != nil {
+			return err
+		}
+		inst.instanceID = instanceID
+	default:
+		return fmt.Errorf("invalid verification mode %q", v)
 	}
-
-	calculatedSHA1 := hex.EncodeToString(hash.Sum(nil))
-	if instanceID != "" && instanceID != calculatedSHA1 {
-		return fmt.Errorf("package SHA1 hash mismatch")
-	}
-	inst.instanceID = calculatedSHA1
 
 	// Zip reader needs an io.ReaderAt. Try to sniff it from our io.ReadSeeker
 	// before falling back to a generic (potentially slower) implementation. This
@@ -395,6 +421,24 @@ func (inst *packageInstance) DataReader() io.ReadSeeker { return inst.data }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Utilities.
+
+// getSHA1AndSize rereads the entire file, passing it through SHA1 digester.
+//
+// Returns both digest (as hex string) and file length.
+func getSHA1AndSize(r io.ReadSeeker) (hexHash string, size int64, err error) {
+	if _, err = r.Seek(0, os.SEEK_SET); err != nil {
+		return
+	}
+	hash := sha1.New()
+	if _, err = io.Copy(hash, r); err != nil {
+		return
+	}
+	if size, err = r.Seek(0, os.SEEK_CUR); err != nil {
+		return
+	}
+	hexHash = hex.EncodeToString(hash.Sum(nil))
+	return
+}
 
 // readManifestFile decodes manifest file zipped inside the package.
 func readManifestFile(f File) (Manifest, error) {
