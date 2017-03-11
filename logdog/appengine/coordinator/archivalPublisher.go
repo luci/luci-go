@@ -65,7 +65,7 @@ func (p *pubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTa
 			"key":     t.Key,
 		}.Infof(c, "Publishing archival message for stream.")
 
-		_, err := p.topic.Publish(c, &msg)
+		_, err := p.topic.Publish(c, &msg).Get(c)
 		return err
 	}, func(err error, d time.Duration) {
 		log.Fields{

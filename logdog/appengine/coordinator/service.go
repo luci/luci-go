@@ -362,9 +362,13 @@ func (s *prodServicesInst) ArchivalPublisher(c context.Context) (ArchivalPublish
 		return nil, err
 	}
 
+	// Create a Topic, and configure it to not bundle messages.
+	psTopic := psClient.Topic(topic)
+	pubsub.DisableTopicBundling(psTopic)
+
 	return &pubsubArchivalPublisher{
 		client:           psClient,
-		topic:            psClient.Topic(topic),
+		topic:            psTopic,
 		publishIndexFunc: s.nextArchiveIndex,
 	}, nil
 }

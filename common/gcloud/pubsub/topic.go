@@ -6,6 +6,8 @@ package pubsub
 
 import (
 	"flag"
+
+	"cloud.google.com/go/pubsub"
 )
 
 // Topic is a fully-qualified Pub/Sub project/topic name.
@@ -48,4 +50,18 @@ func (t Topic) Split() (p, n string) {
 func (t Topic) SplitErr() (p, n string, err error) {
 	p, n, err = resourceProjectName(string(t))
 	return
+}
+
+// DisableTopicBundling configures a new pubsub.Topic to not bundle its data.
+//
+// t must NOT have had any Publish calls made yet, else these settings will not
+// have any effect.
+//
+// By default, a Pub/Sub Topic bundles data, delaying its actual dispatch in
+// favor of batching calls. Sometimes this is not desired. This function
+// configures an existing Topic not to bundle.
+func DisableTopicBundling(t *pubsub.Topic) {
+	t.PublishSettings.DelayThreshold = 0
+	t.PublishSettings.NumGoroutines = 1
+	t.PublishSettings.CountThreshold = 1
 }

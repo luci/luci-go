@@ -34,9 +34,12 @@ func NewPubsubMonitor(ctx context.Context, tokens oauth2.TokenSource, topic gcps
 		return nil, err
 	}
 
+	psTopic := psClient.Topic(name)
+	gcps.DisableTopicBundling(psTopic)
+
 	return &pubSubMonitor{
 		client: psClient,
-		topic:  psClient.Topic(name),
+		topic:  psTopic,
 	}, nil
 }
 
@@ -54,7 +57,7 @@ func (m *pubSubMonitor) Send(ctx context.Context, cells []types.Cell) error {
 		return err
 	}
 
-	ids, err := m.topic.Publish(ctx, &pubsub.Message{Data: data})
+	ids, err := m.topic.Publish(ctx, &pubsub.Message{Data: data}).Get(ctx)
 	if err != nil {
 		logging.Errorf(ctx, "PubSub publish error - %s", err)
 		return err

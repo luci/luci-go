@@ -13,14 +13,14 @@ import (
 // Cloud PubSub quota is documented here:
 // https://cloud.google.com/pubsub/quotas
 const (
-	// MaxPublishSize is the maximum size, in bytes, of the published message
-	// (10 MB).
+	// MaxPublishRequestBytes is the maximum size of a single publish request in
+	// bytes, as determined by the PubSub service.
 	//
 	// See: https://cloud.google.com/pubsub/publisher
-	MaxPublishSize = 10 * 1024 * 1024
+	MaxPublishRequestBytes = 1e7
 
-	// MaxPublishBatchSize is the maximum PubSub batch size.
-	MaxPublishBatchSize = pubsub.MaxPublishBatchSize
+	// MaxPublishRequestCount is the maximum PubSub batch size.
+	MaxPublishRequestCount = pubsub.MaxPublishRequestCount
 
 	// MaxProjectMessagesPerSecond is the maximum number of requests per second,
 	// across the entire project.

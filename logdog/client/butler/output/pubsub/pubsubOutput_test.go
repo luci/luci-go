@@ -42,25 +42,21 @@ type testTopic struct {
 
 func (t *testTopic) String() string { return "test" }
 
-func (t *testTopic) Publish(c context.Context, msgs ...*pubsub.Message) ([]string, error) {
+func (t *testTopic) Publish(c context.Context, msg *pubsub.Message) (string, error) {
 	if t.err != nil {
 		if err := t.err(); err != nil {
-			return nil, err
+			return "", err
 		}
 	}
 
-	ids := make([]string, len(msgs))
-	for i, m := range msgs {
-		if t.msgC != nil {
-			select {
-			case t.msgC <- m:
-			case <-c.Done():
-				return nil, c.Err()
-			}
+	if t.msgC != nil {
+		select {
+		case t.msgC <- msg:
+		case <-c.Done():
+			return "", c.Err()
 		}
-		ids[i] = t.getNextMessageID()
 	}
-	return ids, nil
+	return t.getNextMessageID(), nil
 }
 
 func (t *testTopic) getNextMessageID() string {
@@ -73,7 +69,7 @@ func (t *testTopic) getNextMessageID() string {
 }
 
 func deconstructMessage(msg *pubsub.Message) (*logpb.ButlerMetadata, *logpb.ButlerLogBundle, error) {
-	fr := recordio.NewReader(bytes.NewBuffer(msg.Data), gcps.MaxPublishSize)
+	fr := recordio.NewReader(bytes.NewBuffer(msg.Data), gcps.MaxPublishRequestBytes)
 
 	// Validate header frame.
 	headerBytes, err := fr.ReadFrameAll()

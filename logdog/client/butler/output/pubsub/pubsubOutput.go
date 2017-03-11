@@ -34,10 +34,8 @@ type Topic interface {
 	String() string
 
 	// Publish mirrors the pubsub.Connection Publish method.
-	Publish(context.Context, ...*pubsub.Message) ([]string, error)
+	Publish(context.Context, *pubsub.Message) (string, error)
 }
-
-var _ Topic = (*pubsub.Topic)(nil)
 
 // Config is a configuration structure for Pub/Sub output.
 type Config struct {
@@ -116,14 +114,14 @@ func (o *pubSubOutput) SendBundle(bundle *logpb.ButlerLogBundle) error {
 		st.F.Errors++
 		return err
 	}
-	if len(message.Data) > gcps.MaxPublishSize {
+	if len(message.Data) > gcps.MaxPublishRequestBytes {
 		log.Fields{
 			"messageSize":   len(message.Data),
-			"maxPubSubSize": gcps.MaxPublishSize,
+			"maxPubSubSize": gcps.MaxPublishRequestBytes,
 		}.Errorf(o, "Constructed message exceeds Pub/Sub maximum size.")
 		return errors.New("pubsub: bundle contents violate Pub/Sub size limit")
 	}
-	if err := o.publishMessages([]*pubsub.Message{message}); err != nil {
+	if err := o.publishMessage(message); err != nil {
 		st.F.DiscardedMessages++
 		st.F.Errors++
 		return err
@@ -139,7 +137,7 @@ func (o *pubSubOutput) SendBundle(bundle *logpb.ButlerLogBundle) error {
 }
 
 func (*pubSubOutput) MaxSize() int {
-	return gcps.MaxPublishSize / 2
+	return gcps.MaxPublishRequestBytes / 2
 }
 
 func (o *pubSubOutput) Stats() output.Stats {
@@ -191,10 +189,10 @@ func (o *pubSubOutput) buildMessage(buf *buffer, bundle *logpb.ButlerLogBundle) 
 	}, nil
 }
 
-// publishMessages handles an individual publish request. It will indefinitely
+// publishMessage handles an individual publish request. It will indefinitely
 // retry transient errors until the publish succeeds.
-func (o *pubSubOutput) publishMessages(messages []*pubsub.Message) error {
-	var messageIDs []string
+func (o *pubSubOutput) publishMessage(message *pubsub.Message) error {
+	var messageID string
 	transientErrors := 0
 	err := retry.Retry(o, retry.TransientOnly(indefiniteRetry), func() (err error) {
 		ctx := o.Context
@@ -204,7 +202,7 @@ func (o *pubSubOutput) publishMessages(messages []*pubsub.Message) error {
 			defer cancelFunc()
 		}
 
-		messageIDs, err = o.Topic.Publish(ctx, messages...)
+		messageID, err = o.Topic.Publish(ctx, message)
 		if err == context.DeadlineExceeded {
 			// If we hit our publish deadline, retry.
 			err = errors.WrapTransient(err)
@@ -216,7 +214,6 @@ func (o *pubSubOutput) publishMessages(messages []*pubsub.Message) error {
 		log.Fields{
 			log.ErrorKey: err,
 			"delay":      d,
-			"count":      len(messages),
 		}.Warningf(o, "TRANSIENT error publishing messages; retrying...")
 		transientErrors++
 	})
@@ -229,12 +226,12 @@ func (o *pubSubOutput) publishMessages(messages []*pubsub.Message) error {
 		// We successfully published, but we hit a transient error, so explicitly
 		// acknowledge this at warning-level for log message closure.
 		log.Fields{
-			"messageIds":      messageIDs,
+			"messageId":       messageID,
 			"transientErrors": transientErrors,
 		}.Warningf(o, "Successfully published messages after transient errors.")
 	} else {
 		log.Fields{
-			"messageIds": messageIDs,
+			"messageId": messageID,
 		}.Debugf(o, "Published messages.")
 	}
 	return nil

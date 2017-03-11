@@ -187,6 +187,7 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 		return nil, errors.New("failed to get Pub/Sub client")
 	}
 	psTopic := psClient.Topic(topic)
+	ps.DisableTopicBundling(psTopic)
 
 	// Assert that our Topic exists.
 	exists, err := retryTopicExists(c, psTopic, cfg.RPCTimeout)
@@ -210,7 +211,7 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 	//
 	// Note that we use our publishing context here.
 	return out.New(pctx, out.Config{
-		Topic:      psTopic,
+		Topic:      pubSubTopicWrapper{psTopic},
 		Secret:     resp.Secret,
 		Compress:   true,
 		Track:      cfg.Track,
@@ -237,4 +238,18 @@ func retryTopicExists(ctx context.Context, t *pubsub.Topic, rpcTimeout time.Dura
 		}.Errorf(ctx, "Failed to check if topic exists; retrying...")
 	})
 	return exists, err
+}
+
+// pubSubTopicWrapper wraps a cloud pubsub package Topic and converts it into
+// a Butler pubsub.Topic.
+type pubSubTopicWrapper struct {
+	t *pubsub.Topic
+}
+
+func (w pubSubTopicWrapper) String() string {
+	return w.t.String()
+}
+
+func (w pubSubTopicWrapper) Publish(ctx context.Context, msg *pubsub.Message) (string, error) {
+	return w.t.Publish(ctx, msg).Get(ctx)
 }
