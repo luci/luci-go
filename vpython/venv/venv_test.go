@@ -179,6 +179,9 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 func TestVirtualEnv(t *testing.T) {
 	t.Parallel()
 
+	// TODO(dnj): Identify flake and fix.
+	t.Skip("Test is currently flaky, will re-enable once resolved.")
+
 	for _, tc := range []struct {
 		name string
 		ri   *resolvedInterpreter
