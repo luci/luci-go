@@ -1632,12 +1632,11 @@ func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile s
 		return common.Pin{}, err
 	}
 
-	// Verify it (by checking that instanceID matches the file content).
-	//
-	// TODO(vadimsh): FetchInstanceTo should do the verification.
+	// Print information about the instance. 'FetchInstanceTo' already verified
+	// the hash.
 	out.Close()
 	ok = true
-	inst, err := local.OpenInstanceFile(ctx, instanceFile, pin.InstanceID, local.VerifyHash)
+	inst, err := local.OpenInstanceFile(ctx, instanceFile, pin.InstanceID, local.SkipHashVerification)
 	if err != nil {
 		os.Remove(instanceFile)
 		return common.Pin{}, err

@@ -7,10 +7,9 @@ package local
 import (
 	"archive/zip"
 	"bytes"
-	"crypto/sha1"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"hash"
 	"io"
 	"io/ioutil"
 	"os"
@@ -325,32 +324,50 @@ type packageInstance struct {
 
 // open reads the package data, verifies SHA1 hash and reads manifest.
 func (inst *packageInstance) open(instanceID string, v VerificationMode) error {
-	if instanceID == "" {
-		v = VerifyHash // need it to calculate package instance ID for Pin().
-	}
-
 	var dataSize int64
 	var err error
-	switch v {
-	case VerifyHash:
-		var calculatedHash string
-		calculatedHash, dataSize, err = getSHA1AndSize(inst.data)
+
+	switch {
+	case instanceID == "":
+		// Calculate the default hash and use it as instance ID, regardless of
+		// the verification mode.
+		h := common.DefaultHash()
+		dataSize, err = getHashAndSize(inst.data, h)
 		if err != nil {
 			return err
 		}
-		if instanceID != "" && instanceID != calculatedHash {
+		instanceID = common.InstanceIDFromHash(h)
+
+	case v == VerifyHash:
+		var h hash.Hash
+		h, err = common.HashForInstanceID(instanceID)
+		if err != nil {
+			return err
+		}
+		dataSize, err = getHashAndSize(inst.data, h)
+		if err != nil {
+			return err
+		}
+		if common.InstanceIDFromHash(h) != instanceID {
 			return fmt.Errorf("package hash mismatch")
 		}
-		inst.instanceID = calculatedHash
-	case SkipHashVerification:
+
+	case v == SkipHashVerification:
 		dataSize, err = inst.data.Seek(0, os.SEEK_END)
 		if err != nil {
 			return err
 		}
-		inst.instanceID = instanceID
+
 	default:
 		return fmt.Errorf("invalid verification mode %q", v)
 	}
+
+	// Assert it is well-formated. This is important for SkipHashVerification
+	// mode, where the user can pass whatever.
+	if err = common.ValidateInstanceID(instanceID); err != nil {
+		return err
+	}
+	inst.instanceID = instanceID
 
 	// Zip reader needs an io.ReaderAt. Try to sniff it from our io.ReadSeeker
 	// before falling back to a generic (potentially slower) implementation. This
@@ -422,22 +439,17 @@ func (inst *packageInstance) DataReader() io.ReadSeeker { return inst.data }
 ////////////////////////////////////////////////////////////////////////////////
 // Utilities.
 
-// getSHA1AndSize rereads the entire file, passing it through SHA1 digester.
+// getHashAndSize rereads the entire file, passing it through the digester.
 //
-// Returns both digest (as hex string) and file length.
-func getSHA1AndSize(r io.ReadSeeker) (hexHash string, size int64, err error) {
-	if _, err = r.Seek(0, os.SEEK_SET); err != nil {
-		return
+// Returns file length.
+func getHashAndSize(r io.ReadSeeker, h hash.Hash) (int64, error) {
+	if _, err := r.Seek(0, os.SEEK_SET); err != nil {
+		return 0, err
 	}
-	hash := sha1.New()
-	if _, err = io.Copy(hash, r); err != nil {
-		return
+	if _, err := io.Copy(h, r); err != nil {
+		return 0, err
 	}
-	if size, err = r.Seek(0, os.SEEK_CUR); err != nil {
-		return
-	}
-	hexHash = hex.EncodeToString(hash.Sum(nil))
-	return
+	return r.Seek(0, os.SEEK_CUR)
 }
 
 // readManifestFile decodes manifest file zipped inside the package.

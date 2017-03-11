@@ -5,15 +5,25 @@
 package cipd
 
 import (
+	"encoding/hex"
+	"fmt"
+	"hash"
 	"os"
 
-	"github.com/luci/luci-go/cipd/client/cipd/local"
 	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/cipd/client/cipd/local"
 )
 
-func (client *clientImpl) installClient(ctx context.Context, fs local.FileSystem, fetchURL, destination string) error {
+func (client *clientImpl) installClient(ctx context.Context, fs local.FileSystem, h hash.Hash, fetchURL, destination, digest string) error {
 	return fs.EnsureFile(ctx, destination, func(of *os.File) error {
 		// TODO(iannucci): worry about owner/group/permissions?
-		return client.storage.download(ctx, fetchURL, of)
+		if err := client.storage.download(ctx, fetchURL, of, h); err != nil {
+			return err
+		}
+		if hex.EncodeToString(h.Sum(nil)) != digest {
+			return fmt.Errorf("file hash mismatch")
+		}
+		return nil
 	})
 }

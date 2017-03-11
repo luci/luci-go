@@ -7,6 +7,7 @@ package cipd
 import (
 	"bytes"
 	"fmt"
+	"hash"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -888,14 +889,17 @@ type mockedStorage struct {
 	data map[string][]byte
 }
 
-func (s *mockedStorage) download(ctx context.Context, url string, output io.WriteSeeker) error {
+func (s *mockedStorage) download(ctx context.Context, url string, output io.WriteSeeker, h hash.Hash) error {
 	blob, ok := s.data[url]
 	if !ok {
 		return ErrDownloadError
 	}
+	h.Reset()
 	_, err := output.Seek(0, os.SEEK_SET)
 	s.c.So(err, ShouldBeNil)
 	_, err = output.Write(blob)
+	s.c.So(err, ShouldBeNil)
+	_, err = h.Write(blob)
 	s.c.So(err, ShouldBeNil)
 	return nil
 }

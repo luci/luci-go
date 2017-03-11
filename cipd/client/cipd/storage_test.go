@@ -6,6 +6,8 @@ package cipd
 
 import (
 	"bytes"
+	"crypto/sha1"
+	"encoding/hex"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -99,13 +101,15 @@ func TestDownload(t *testing.T) {
 					Reply:  "file data",
 				},
 			})
-			err = storage.download(ctx, "http://localhost/dwn", out)
+			h := sha1.New()
+			err = storage.download(ctx, "http://localhost/dwn", out, h)
 			So(err, ShouldBeNil)
 
 			out.Seek(0, os.SEEK_SET)
 			fetched, err := ioutil.ReadAll(out)
 			So(err, ShouldBeNil)
 			So(string(fetched), ShouldEqual, "file data")
+			So(hex.EncodeToString(h.Sum(nil)), ShouldEqual, "cfb9e9ea5ee050291bc74c7e51fbe578a9f3bd4d")
 		})
 	})
 }

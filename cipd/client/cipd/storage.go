@@ -7,6 +7,7 @@ package cipd
 import (
 	"errors"
 	"fmt"
+	"hash"
 	"io"
 	"net/http"
 	"os"
@@ -194,7 +195,7 @@ func (s *storageImpl) getNextOffset(ctx context.Context, url string, length int6
 
 // TODO(vadimsh): Use resumable download protocol.
 
-func (s *storageImpl) download(ctx context.Context, url string, output io.WriteSeeker) error {
+func (s *storageImpl) download(ctx context.Context, url string, output io.WriteSeeker, h hash.Hash) error {
 	// reportProgress print fetch progress, throttling the reports rate.
 	var prevProgress int64 = 1000 // >100%
 	var prevReportTs time.Time
@@ -209,7 +210,7 @@ func (s *storageImpl) download(ctx context.Context, url string, output io.WriteS
 	}
 
 	// download is a separate function to be able to use deferred close.
-	download := func(out io.WriteSeeker, src io.ReadCloser, totalLen int64) error {
+	download := func(out io.Writer, src io.ReadCloser, totalLen int64) error {
 		defer src.Close()
 		logging.Infof(ctx, "cipd: about to fetch %.1f Mb", float32(totalLen)/1024.0/1024.0)
 		reportProgress(0, totalLen)
@@ -237,6 +238,7 @@ func (s *storageImpl) download(ctx context.Context, url string, output io.WriteS
 		}
 
 		// Rewind output to zero offset.
+		h.Reset()
 		_, err := output.Seek(0, os.SEEK_SET)
 		if err != nil {
 			return err
@@ -254,7 +256,7 @@ func (s *storageImpl) download(ctx context.Context, url string, output io.WriteS
 		resp, err = ctxhttp.Do(ctx, s.client, req)
 		if err != nil {
 			if isTemporaryNetError(err) {
-				reportTransientError("cipd: transient network error: %s", err)
+				reportTransientError("cipd: failed to initiate the fetch - %s", err)
 				continue
 			}
 			return err
@@ -274,7 +276,7 @@ func (s *storageImpl) download(ctx context.Context, url string, output io.WriteS
 		}
 
 		// Try to fetch (will close resp.Body when done).
-		err = download(output, resp.Body, resp.ContentLength)
+		err = download(io.MultiWriter(output, h), resp.Body, resp.ContentLength)
 		if err != nil {
 			reportTransientError("cipd: transient error fetching the file: %s", err)
 			continue

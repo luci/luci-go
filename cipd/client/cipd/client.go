@@ -32,8 +32,10 @@ package cipd
 
 import (
 	"bytes"
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
+	"hash"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -404,8 +406,10 @@ type Client interface {
 
 	// FetchInstance downloads a package instance file from the repository.
 	//
+	// It verifies that the package hash matches pin.InstanceID.
+	//
 	// It returns an ReadSeekCloser pointing to the raw package data. The caller
-	// must make sure SHA1 of the data matches the pin, and close it when done.
+	// must close it when done.
 	FetchInstance(ctx context.Context, pin common.Pin) (ReadSeekCloser, error)
 
 	// FetchInstanceTo downloads a package instance file into the given writer.
@@ -413,6 +417,10 @@ type Client interface {
 	// This is roughly the same as getting a reader with 'FetchInstance' and
 	// copying its data into the writer, except this call skips unnecessary temp
 	// files if the client is not using cache.
+	//
+	// It verifies that the package hash matches pin.InstanceID, but does it while
+	// writing to 'output', so expect to discard all data there if FetchInstanceTo
+	// returns an error.
 	FetchInstanceTo(ctx context.Context, pin common.Pin, output io.WriteSeeker) error
 
 	// FetchAndDeployInstance fetches the package instance and deploys it.
@@ -887,7 +895,8 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSy
 		return
 	}
 
-	if err = client.installClient(ctx, fs, info.clientBinary.FetchURL, destination); err != nil {
+	err = client.installClient(ctx, fs, sha1.New(), info.clientBinary.FetchURL, destination, info.clientBinary.SHA1)
+	if err != nil {
 		return
 	}
 
@@ -1161,7 +1170,9 @@ func (client *clientImpl) fetchInstanceWithCache(ctx context.Context, pin common
 			return file, nil
 		}
 
-		// Download the package into the cache.
+		// Download the package into the cache. 'remoteFetchInstance' verifies the
+		// hash. When reading from the cache, we can skip the hash check (and we
+		// indeed do, see 'cipd: instance cache hit' case above).
 		err := cache.Put(ctx, pin, now, func(f *os.File) error {
 			return client.remoteFetchInstance(ctx, pin, f)
 		})
@@ -1191,18 +1202,33 @@ func (client *clientImpl) fetchInstanceWithCache(ctx context.Context, pin common
 	}
 }
 
-func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pin, output io.WriteSeeker) error {
+// remoteFetchInstance fetches the package file into 'output' and verifies its
+// hash along the way.
+func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pin, output io.WriteSeeker) (err error) {
+	defer func() {
+		if err != nil {
+			logging.Errorf(ctx, "cipd: failed to fetch %s - %s", pin, err)
+		} else {
+			logging.Infof(ctx, "cipd: successfully fetched %s", pin)
+		}
+	}()
+
 	logging.Infof(ctx, "cipd: resolving fetch URL for %s", pin)
 	fetchInfo, err := client.remote.fetchInstance(ctx, pin)
-	if err == nil {
-		err = client.storage.download(ctx, fetchInfo.fetchURL, output)
-	}
 	if err != nil {
-		logging.Errorf(ctx, "cipd: failed to fetch %s - %s", pin, err)
-	} else {
-		logging.Infof(ctx, "cipd: successfully fetched %s", pin)
+		return
 	}
-	return err
+	hash, err := common.HashForInstanceID(pin.InstanceID)
+	if err != nil {
+		return
+	}
+	if err = client.storage.download(ctx, fetchInfo.fetchURL, output, hash); err != nil {
+		return
+	}
+	if common.InstanceIDFromHash(hash) != pin.InstanceID {
+		err = fmt.Errorf("package hash mismatch")
+	}
+	return
 }
 
 func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir string, pin common.Pin) error {
@@ -1213,7 +1239,7 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir str
 		return err
 	}
 
-	// Fetch the package and obtain a pointer to its data.
+	// Fetch the package (verifying its hash) and obtain a pointer to its data.
 	instanceFile, err := client.FetchInstance(ctx, pin)
 	if err != nil {
 		return err
@@ -1229,11 +1255,9 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir str
 		}
 	}()
 
-	// Open the instance, verify the instance ID.
-	//
-	// TODO(vadimsh): Skip hash verification for packages in the cache, assuming
-	// we do not put invalid packages there.
-	instance, err := local.OpenInstance(ctx, instanceFile, pin.InstanceID, local.VerifyHash)
+	// Open the instance. This reads its manifest. 'FetchInstance' has verified
+	// the hash already, so skip verification.
+	instance, err := local.OpenInstance(ctx, instanceFile, pin.InstanceID, local.SkipHashVerification)
 	if err != nil {
 		return err
 	}
@@ -1367,7 +1391,7 @@ type remote interface {
 
 type storage interface {
 	upload(ctx context.Context, url string, data io.ReadSeeker) error
-	download(ctx context.Context, url string, output io.WriteSeeker) error
+	download(ctx context.Context, url string, output io.WriteSeeker, h hash.Hash) error
 }
 
 type registerInstanceResponse struct {
