@@ -16,6 +16,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
@@ -27,10 +28,21 @@ import (
 
 const (
 	// instanceCacheMaxSize defines how many packages to keep in the cache.
-	instanceCacheMaxSize = 300
-	// instanceCacheSyncInterval determines the frequency of
-	// synchronization of state.db with instance files in the cache dir.
-	instanceCacheSyncInterval  = 8 * time.Hour
+	//
+	// When this limit is reached, oldest touched packages are purged.
+	instanceCacheMaxSize = 100
+
+	// instanceCacheMaxAge defines when to purge a cached package that is not
+	// being used.
+	//
+	// Works in parallel with 'instanceCacheMaxSize' limit.
+	instanceCacheMaxAge = 48 * time.Hour
+
+	// instanceCacheSyncInterval determines the frequency of synchronization of
+	// state.db with instance files in the cache dir.
+	instanceCacheSyncInterval = 8 * time.Hour
+
+	// instanceCacheStateFilename is a name of the file with InstanceCache proto.
 	instanceCacheStateFilename = "state.db"
 )
 
@@ -43,13 +55,19 @@ type InstanceCache struct {
 
 	// Defaults to instanceCacheMaxSize, mocked in tests.
 	maxSize int
+	// Defaults to instanceCacheMaxAge, mocked in tests.
+	maxAge time.Duration
 }
 
 // NewInstanceCache initializes InstanceCache.
 //
 // fs will be the root of the cache.
 func NewInstanceCache(fs local.FileSystem) *InstanceCache {
-	return &InstanceCache{fs: fs, maxSize: instanceCacheMaxSize}
+	return &InstanceCache{
+		fs:      fs,
+		maxSize: instanceCacheMaxSize,
+		maxAge:  instanceCacheMaxAge,
+	}
 }
 
 // Get searches for the instance in the cache and opens it for reading.
@@ -96,20 +114,32 @@ func (c *InstanceCache) Put(ctx context.Context, pin common.Pin, now time.Time, 
 
 	c.withState(ctx, now, func(s *messages.InstanceCache) {
 		touch(s, pin.InstanceID, now)
-		c.gc(ctx, s)
+		c.gc(ctx, s, now)
 	})
 	return nil
 }
 
-type timeHeap []time.Time
-
-func (h timeHeap) Len() int           { return len(h) }
-func (h timeHeap) Less(i, j int) bool { return h[i].Before(h[j]) }
-func (h timeHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-func (h *timeHeap) Push(x interface{}) {
-	*h = append(*h, x.(time.Time))
+// GC opportunistically purges entries that haven't been touched for too long.
+func (c *InstanceCache) GC(ctx context.Context, now time.Time) {
+	c.withState(ctx, now, func(s *messages.InstanceCache) {
+		c.gc(ctx, s, now)
+	})
 }
-func (h *timeHeap) Pop() interface{} {
+
+type garbageCandidate struct {
+	instanceID     string
+	lastAccessTime time.Time
+}
+
+type garbageHeap []*garbageCandidate
+
+func (h garbageHeap) Len() int           { return len(h) }
+func (h garbageHeap) Less(i, j int) bool { return h[i].lastAccessTime.Before(h[j].lastAccessTime) }
+func (h garbageHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h *garbageHeap) Push(x interface{}) {
+	*h = append(*h, x.(*garbageCandidate))
+}
+func (h *garbageHeap) Pop() interface{} {
 	old := *h
 	n := len(old)
 	x := old[n-1]
@@ -117,52 +147,56 @@ func (h *timeHeap) Pop() interface{} {
 	return x
 }
 
-// gc checks if the number of instances in the state is greater than maximum.
-// If yes, purges excessive oldest instances.
-func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache) {
-	garbageSize := len(state.Entries) - c.maxSize
-	if garbageSize <= 0 {
-		return
-	}
-
-	// Compute cutoff date by putting all access times to a heap
-	// and pop from it garbageSize times.
-	lastAccessTimes := make(timeHeap, 0, len(state.Entries))
-	for _, s := range state.Entries {
-		lastAccessTimes = append(lastAccessTimes, google.TimeFromProto(s.LastAccess))
-	}
-	heap.Init(&lastAccessTimes)
-	for i := 0; i < garbageSize-1; i++ {
-		heap.Pop(&lastAccessTimes)
-	}
-	cutOff := heap.Pop(&lastAccessTimes).(time.Time)
-
-	// First garbageSize instances that were last accessed on or before cutOff are garbage.
-	garbage := make([]string, 0, garbageSize)
-	// Map iteration is not deterministic, but it is fine.
-	for id, e := range state.Entries {
-		if !google.TimeFromProto(e.LastAccess).After(cutOff) {
-			garbage = append(garbage, id)
-			if len(garbage) == cap(garbage) {
-				break
-			}
+// gc cleans up the old instances.
+//
+// There are two cleanup polices acting at the same time:
+//   1. Instances that haven't been touched for too long are removed.
+//   2. If the number of instances in the state is greater than maximum, oldest
+//      instances are removed.
+func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, now time.Time) {
+	// Kick out entries older than some threshold first.
+	garbage := stringset.New(0)
+	for instanceID, e := range state.Entries {
+		age := now.Sub(google.TimeFromProto(e.LastAccess))
+		if age > c.maxAge {
+			garbage.Add(instanceID)
+			logging.Infof(ctx, "cipd: purging cached instance %s (age %s)", instanceID, age)
 		}
 	}
 
-	collected := 0
-	for _, id := range garbage {
-		path, err := c.fs.RootRelToAbs(id)
+	// If still have too many entries, kick out oldest. Ignore entries already
+	// designated as garbage.
+	moreGarbage := len(state.Entries) - garbage.Len() - c.maxSize
+	if moreGarbage > 0 {
+		logging.Infof(ctx, "cipd: still need to purge %d cached instance(s)", moreGarbage)
+		garbageHeap := make(garbageHeap, 0, len(state.Entries)-garbage.Len())
+		for instanceID, e := range state.Entries {
+			if !garbage.Has(instanceID) {
+				garbageHeap = append(garbageHeap, &garbageCandidate{
+					instanceID:     instanceID,
+					lastAccessTime: google.TimeFromProto(e.LastAccess),
+				})
+			}
+		}
+		heap.Init(&garbageHeap)
+		for i := 0; i < moreGarbage; i++ {
+			item := heap.Pop(&garbageHeap).(*garbageCandidate)
+			garbage.Add(item.instanceID)
+			logging.Infof(ctx, "cipd: purging cached instance %s (age %s)", item.instanceID, now.Sub(item.lastAccessTime))
+		}
+	}
+
+	garbage.Iter(func(instanceID string) bool {
+		path, err := c.fs.RootRelToAbs(instanceID)
 		if err != nil {
 			panic("impossible")
 		}
-		if c.fs.EnsureFileGone(ctx, path) != nil {
-			// EnsureFileGone logs errors.
-			continue
+		// EnsureFileGone logs errors already.
+		if c.fs.EnsureFileGone(ctx, path) == nil {
+			delete(state.Entries, instanceID)
 		}
-		delete(state.Entries, id)
-		collected++
-	}
-	logging.Infof(ctx, "cipd: instance cache collected %d instances", collected)
+		return true
+	})
 }
 
 // readState loads cache state from the state file.
@@ -203,13 +237,15 @@ func (c *InstanceCache) readState(ctx context.Context, state *messages.InstanceC
 		if err := c.syncState(ctx, state, now); err != nil {
 			logging.Warningf(ctx, "cipd: failed to sync instance cache - %s", err)
 		}
-		c.gc(ctx, state)
+		c.gc(ctx, state, now)
 	}
 }
 
-// syncState synchronizes the list of instances in the state file with instance files.
+// syncState synchronizes the list of instances in the state file with instance
+// files.
+//
 // Preserves lastAccess of existing instances. Newly discovered files are
-// considered last accessed at zero time.
+// considered last accessed now.
 func (c *InstanceCache) syncState(ctx context.Context, state *messages.InstanceCache, now time.Time) error {
 	root, err := os.Open(c.fs.Root())
 	switch {
@@ -236,7 +272,9 @@ func (c *InstanceCache) syncState(ctx context.Context, state *messages.InstanceC
 				if state.Entries == nil {
 					state.Entries = map[string]*messages.InstanceCache_Entry{}
 				}
-				state.Entries[id] = &messages.InstanceCache_Entry{}
+				state.Entries[id] = &messages.InstanceCache_Entry{
+					LastAccess: google.NewTimestamp(now),
+				}
 			}
 		}
 
@@ -270,27 +308,25 @@ func (c *InstanceCache) saveState(ctx context.Context, state *messages.InstanceC
 // withState loads cache state from the state file, calls f and saves it back.
 // See also readState.
 func (c *InstanceCache) withState(ctx context.Context, now time.Time, f func(*messages.InstanceCache)) {
+	state := &messages.InstanceCache{}
+
+	start := clock.Now(ctx)
+	defer func() {
+		totalTime := clock.Since(ctx, start)
+		if totalTime > 2*time.Second {
+			logging.Warningf(
+				ctx, "cipd: instance cache state update took %s (%d entries)",
+				totalTime, len(state.Entries))
+		}
+	}()
+
 	c.stateLock.Lock()
 	defer c.stateLock.Unlock()
 
-	state := &messages.InstanceCache{}
-
-	start := time.Now()
 	c.readState(ctx, state, now)
-	loadSaveTime := time.Since(start)
-
 	f(state)
-
-	start = time.Now()
 	if err := c.saveState(ctx, state); err != nil {
 		logging.Warningf(ctx, "cipd: could not save instance cache - %s", err)
-	}
-	loadSaveTime += time.Since(start)
-
-	if loadSaveTime > time.Second {
-		logging.Warningf(
-			ctx, "cipd: loading and saving instance cache with %d entries took %s",
-			len(state.Entries), loadSaveTime)
 	}
 }
 

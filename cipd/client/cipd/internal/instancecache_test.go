@@ -21,7 +21,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// No need to create 600 files in tests.
+// No need to create a lot of files in tests.
 const testInstanceCacheMaxSize = 10
 
 func TestInstanceCache(t *testing.T) {
@@ -82,7 +82,7 @@ func TestInstanceCache(t *testing.T) {
 			return pin
 		}
 
-		Convey("GC", func() {
+		Convey("GC respects MaxSize", func() {
 			// Add twice more the limit.
 			for i := 0; i < testInstanceCacheMaxSize*2; i++ {
 				put(cache, pini(i), "blah")
@@ -100,11 +100,38 @@ func TestInstanceCache(t *testing.T) {
 			// Try to get.
 			for i := 0; i < testInstanceCacheMaxSize*2; i++ {
 				r, err := cache.Get(ctx, pini(i), now)
-				So(os.IsNotExist(err), ShouldEqual, i < testInstanceCacheMaxSize)
 				if r != nil {
 					r.Close()
 				}
+				So(os.IsNotExist(err), ShouldEqual, i < testInstanceCacheMaxSize)
 			}
+		})
+
+		Convey("GC respects MaxAge", func() {
+			cache.maxAge = 2500 * time.Millisecond
+			for i := 0; i < 8; i++ {
+				if i != 0 {
+					now = now.Add(time.Second)
+				}
+				put(cache, pini(i), "blah")
+			}
+
+			// Age of last added item (i == 7) is 0 => age of i'th item is 7-i.
+			//
+			// Condition for survival: age < cache.maxAge, e.g 7-i<2.5 => i >= 5.
+			//
+			// Thus we expect {5, 6, 7} to still be in the cache after the GC.
+			cache.GC(ctx, now)
+
+			alive := []int{}
+			for i := 0; i < 8; i++ {
+				r, _ := cache.Get(ctx, pini(i), now)
+				if r != nil {
+					r.Close()
+					alive = append(alive, i)
+				}
+			}
+			So(alive, ShouldResemble, []int{5, 6, 7})
 		})
 
 		Convey("Sync", func() {
@@ -123,7 +150,7 @@ func TestInstanceCache(t *testing.T) {
 				for i := 0; i < count; i++ {
 					lastAccess, ok := cache.getAccessTime(ctx, now, pini(i))
 					So(ok, ShouldBeTrue)
-					So(lastAccess.IsZero(), ShouldBeTrue)
+					So(lastAccess, ShouldResemble, now)
 				}
 
 				_, ok := cache.getAccessTime(
