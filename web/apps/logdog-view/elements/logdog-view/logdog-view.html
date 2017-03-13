@@ -118,6 +118,10 @@ The streams are specified by full path using the "s=" query parameter.
       },
     },
 
+    observers: [
+      '_updatePageTitle(streams)',
+    ],
+
     attached: function() {
       // Parse the stream names from the "s" query parameter.
       var queryString = window.location.search.replace(/^\?/, "");
@@ -135,6 +139,14 @@ The streams are specified by full path using the "s=" query parameter.
 
     _arrayHasElements: function(v) {
       return (v && v.length);
+    },
+
+    _updatePageTitle: function(streams) {
+      var title = 'LogDog';
+      if (streams && streams.length) {
+        title += ': ' + streams.join(' ');
+      }
+      document.title = title;
     },
   });
 
