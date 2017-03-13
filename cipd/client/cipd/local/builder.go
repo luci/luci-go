@@ -12,12 +12,14 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"strings"
 	"time"
 
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/cipd/client/cipd/common"
+	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/logging"
 )
 
@@ -123,7 +125,7 @@ func zipInputFiles(ctx context.Context, files []File, w io.Writer, level int) er
 			Name:   in.Name(),
 			Method: zip.Deflate,
 		}
-		if level == 0 {
+		if level == 0 || in.Symlink() || isLikelyAlreadyCompressed(in) {
 			fh.Method = zip.Store
 		}
 
@@ -180,6 +182,88 @@ func zipSymlinkFile(dst io.Writer, f File) error {
 	_, err = dst.Write([]byte(target))
 	return err
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+// isLikelyAlreadyCompressed returns true for file format that use compression.
+//
+// It decides based only on the file name extension. For files that have an
+// optional compression, we assume it is enabled.
+func isLikelyAlreadyCompressed(f File) bool {
+	// TODO(vadimsh): We can sniff MIME type based on the content, e.g via
+	// https://bitbucket.org/taruti/mimemagic/src or http.DetectContentType. Not
+	// sure it's worth it.
+	return compressedExt.Has(strings.ToLower(path.Ext(f.Name())))
+}
+
+var compressedExt = stringset.NewFromSlice(
+	// Archives.
+	".7z",
+	".apk",
+	".bz2",
+	".cab",
+	".dmg",
+	".egg",
+	".epub",
+	".gz",
+	".jar",
+	".lz",
+	".lzma",
+	".lzo",
+	".pea",
+	".rar",
+	".rz",
+	".s7z",
+	".tbz2",
+	".tgz",
+	".tlz",
+	".war",
+	".whl",
+	".xpi",
+	".xz",
+	".z",
+	".zip",
+	".zipx",
+
+	// Images with (possibly optional) compression, which we assume is enabled.
+	".arw",
+	".cr2",
+	".dng",
+	".gif",
+	".jpeg",
+	".jpg",
+	".nef",
+	".orf",
+	".pef",
+	".pgf",
+	".png",
+	".raf",
+	".rw2",
+	".srw",
+	".tiff",
+	".webp",
+
+	// Containers with usually compressed video/audio.
+	".aac",
+	".alac",
+	".avi",
+	".flac",
+	".gifv",
+	".m4p",
+	".m4v",
+	".mka",
+	".mkv",
+	".mov",
+	".mp3",
+	".mp4",
+	".mpg",
+	".ogg",
+	".qt",
+	".vob",
+	".webm",
+	".wma",
+	".wmv",
+)
 
 ////////////////////////////////////////////////////////////////////////////////
 

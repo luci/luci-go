@@ -222,13 +222,13 @@ func TestPackageReading(t *testing.T) {
 		// Verify version file is correct.
 		verFileIdx := 4
 		goodVersionFile := `{
-			"instance_id": "5503734d74bc46f2b4d59c23bf4b1293696861a9",
+			"instance_id": "45542f54335688804cfba83782140d2624d265a2",
 			"package_name": "testing"
 		}`
 		if runtime.GOOS == "windows" {
 			verFileIdx = 6
 			goodVersionFile = `{
-				"instance_id": "a97131be80bcba9b62feb3a9b669916a04d35738",
+				"instance_id": "2208cc0f800b40895c5c4d5bf0e31235fa5e246f",
 				"package_name": "testing"
 			}`
 		}
