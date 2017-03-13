@@ -143,7 +143,7 @@ func getManager(c context.Context, a *application, name string) (*manageApp, err
 			mApp.subcommands = append(mApp.subcommands, &subcommands.Command{
 				UsageLine: "update_appengine",
 				ShortDesc: "update AppEngine parameters",
-				LongDesc:  "Update AppEngine cron, index, and queue configurations.",
+				LongDesc:  "Update AppEngine cron, dispatch, index, and queue configurations.",
 				CommandRun: func() subcommands.CommandRun {
 					return &updateGAECommandRun{
 						project: cp,
@@ -322,8 +322,12 @@ func (cmd *updateGAECommandRun) Run(app subcommands.Application, args []string, 
 	a, c := app.(*manageApp), cli.GetContext(app, cmd, env)
 
 	// Do not deploy any actual GAE modules.
+	//
+	// However, without modules, the "commit" stage will refrain from pushing new
+	// config, so force that.
 	a.dp.reg.appEngineModulesOnly()
 	for _, gae := range a.dp.reg.gaeProjects {
+		gae.alwaysCommitGAEConfig = true
 		gae.clearModules()
 	}
 

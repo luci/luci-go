@@ -40,8 +40,14 @@ type gaeDeployment struct {
 	// more. Each entry translates to a "set_default_version" call on commit.
 	versionModuleMap map[string][]string
 
+	// alwaysCommitGAEConfig, if true, indicates that the "commit" phase will
+	// always commit the GAE configuration, even if no actual GAE modules are
+	// updated. It is false by default, and set to true by the "update_appengine"
+	// management command.
+	alwaysCommitGAEConfig bool
+
 	// yamlDir is the directory containing the AppEngine-wide YAMLs.
-	yamlDir string
+	yamlDir *managedfs.Dir
 	// yamlMap is a map of YAML file name (e.g., "cron.yaml") to the generated
 	// YAML struct. If an entry is missing, the project does not have that YAML
 	// file.
@@ -208,16 +214,19 @@ func (d *gaeDeployment) commit(w *work) error {
 
 	// If any modules were installed as default, push our new related configs.
 	// Otherwise, do not update them.
-	if len(d.versionModuleMap) > 0 {
+	if d.alwaysCommitGAEConfig || len(d.versionModuleMap) > 0 {
 		for _, deployable := range []string{"dispatch.yaml", "index.yaml", "queue.yaml", "cron.yaml"} {
 			if _, ok := d.yamlMap[deployable]; !ok {
 				// Does not exist for this project.
 				continue
 			}
 
-			if err := gcloud.exec("app", "deploy", deployable).check(w); err != nil {
-				return errors.Annotate(err).Reason("failed to deploy YAML %(deployable)q").
-					D("deployable", deployable).Err()
+			deployablePath := d.yamlDir.File(deployable).String()
+			if err := gcloud.exec("app", "deploy", deployablePath).check(w); err != nil {
+				return errors.Annotate(err).Reason("failed to deploy YAML %(deployable)q from [%(path)s]").
+					D("deployable", deployable).
+					D("path", deployablePath).
+					Err()
 			}
 		}
 	}
@@ -247,7 +256,7 @@ func (d *gaeDeployment) generateYAMLs(w *work, root *managedfs.Dir) error {
 		}
 	}
 
-	d.yamlDir = root.String()
+	d.yamlDir = root
 	d.yamlMap = yamls
 	return nil
 }
