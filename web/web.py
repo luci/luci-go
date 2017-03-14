@@ -120,7 +120,12 @@ class Toolchain(object):
         pipes.quote(' '.join(args)))
 
     kwargs['stderr'] = subprocess.STDOUT
-    subprocess.check_call(args, **kwargs)
+    try:
+      subprocess.check_call(args, **kwargs)
+    except subprocess.CalledProcessError as e:
+      LOGGER.warning('Non-zero return code (%d) from command.',
+          e.returncode, exc_info=LOGGER.isEnabledFor(logging.DEBUG))
+      sys.exit(e.returncode)
 
   def node(self, *args, **kwargs):
     self._call(self._node_exe, *args, **kwargs)

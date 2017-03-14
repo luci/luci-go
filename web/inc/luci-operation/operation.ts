@@ -24,7 +24,7 @@ namespace luci {
      */
     static CANCELLED = new Error('Operation is cancelled');
 
-    private cancelledValue = false;
+    private _cancelled = false;
     private cancelCallbacks = new Array<() => void>();
 
     /**
@@ -47,7 +47,7 @@ namespace luci {
 
     /** Cancelled returns true if this Operation has been cancelled. */
     get cancelled() {
-      return this.cancelledValue;
+      return this._cancelled;
     }
 
     /**
@@ -72,7 +72,7 @@ namespace luci {
       }
 
       // Mark that we are cancelled, and cancel our parent (and so on...).
-      this.cancelledValue = true;
+      this._cancelled = true;
       this.cancelCallbacks.forEach(cb => asyncCall(cb));
     }
 
