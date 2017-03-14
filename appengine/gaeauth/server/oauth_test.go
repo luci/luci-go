@@ -101,7 +101,7 @@ func TestOAuth2MethodDevServer(t *testing.T) {
 		Convey("Bad expires_in", func() {
 			info.ExpiresIn = "not a number"
 			_, err := call("Bearer access_token")
-			So(err, ShouldErrLike, "not a positive integer")
+			So(err, ShouldErrLike, "json: invalid")
 		})
 
 		Convey("Zero expires_in", func() {

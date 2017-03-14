@@ -110,7 +110,7 @@ func ExampleAnnotate() {
 	//   reason: "top level"
 	//
 	// #? testing/example.go:XXX - testing.runExample()
-	// #? testing/example.go:XXX - testing.RunExamples()
+	// #? testing/example.go:XXX - testing.runExamples()
 	// #? testing/testing.go:XXX - testing.(*M).Run()
 	// ... skipped SOME frames in pkg "_test"...
 	// ... skipped SOME frames in pkg "runtime"...
