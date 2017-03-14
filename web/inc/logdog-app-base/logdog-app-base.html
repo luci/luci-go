@@ -7,19 +7,8 @@
 <script>
   /**
    * Basic common LogDog application functionality.
-   *
-   * @param {window} window the application window to bind to
    */
-  LogDogApp = function(window) {
-    // Set up our default LogDog host.
-    this.host = window.location.hostname;
-    if (this.host === "localhost") {
-      // Running locally. Bind to our development instance.
-      this.host = "luci-logdog-dev.appspot.com";
-    }
-
-    this.production = (window.location.port === "");
-  };
+  LogDogApp = function() {}
 
   /**
    * Returns an Array of values for a given query parameter.

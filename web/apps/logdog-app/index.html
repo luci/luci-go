@@ -11,10 +11,6 @@
 
   <!-- Setup Polymer -->
   <script src="inc/bower_components/webcomponentsjs/webcomponents-lite.min.js">
-  <script>
-    window.Polymer = window.Polymer || {};
-    window.Polymer.dom = 'shadow';
-  </script>
 
   <!-- Because this project uses vulcanize this should be your only html import
        in this file. All other imports should go in elements.html -->
@@ -45,8 +41,12 @@
   // Sets app default base URL.
   app.baseUrl = window.location.pathname;
 
-  // Set up our default LogDog pRPC host.
-  app.host = logdog.host;
+  // Set up our default LogDog host.
+  app.host = window.location.hostname;
+  if (app.host === "localhost") {
+    // Running locally. Bind to our development instance.
+    app.host = "luci-logdog-dev.appspot.com";
+  }
 </script>
 
 </body>
