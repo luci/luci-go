@@ -2,11 +2,14 @@ cron:
 - description: Reads configs from luci-config
   url: /internal/cron/read-config
   schedule: every 5 minutes
+  target: backend
 
 - description: Fetches certificate revocation lists
   url: /internal/cron/fetch-crl
   schedule: every 1 minutes
+  target: backend
 
 - description: tsmon house keeping
   url: /internal/cron/ts_mon/housekeeping
   schedule: every 1 minutes
+  target: backend
