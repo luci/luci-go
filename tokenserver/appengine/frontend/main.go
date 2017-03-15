@@ -30,9 +30,9 @@ import (
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 	"github.com/luci/luci-go/tokenserver/api/minter/v1"
 
-	"github.com/luci/luci-go/tokenserver/appengine/services/admin/adminsrv"
-	"github.com/luci/luci-go/tokenserver/appengine/services/admin/certauthorities"
-	"github.com/luci/luci-go/tokenserver/appengine/services/minter/tokenminter"
+	"github.com/luci/luci-go/tokenserver/appengine/impl/services/admin/adminsrv"
+	"github.com/luci/luci-go/tokenserver/appengine/impl/services/admin/certauthorities"
+	"github.com/luci/luci-go/tokenserver/appengine/impl/services/minter/tokenminter"
 )
 
 var (
