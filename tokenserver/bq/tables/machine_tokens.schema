@@ -1,0 +1,12 @@
+{
+  'table_id': 'machine_tokens',
+  'description': 'List of generated machine tokens',
+
+  # Keep 90 days worth of generated tokens.
+  'time_partitioning': True,
+  'time_partitioning_exp_days': 90,
+
+  'fields': [
+    # TODO(vadimsh): Add fields.
+  ],
+}
