@@ -26,6 +26,7 @@ import (
 	"github.com/luci/luci-go/milo/appengine/settings"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
+	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/router"
 
 	"github.com/julienschmidt/httprouter"
@@ -85,6 +86,11 @@ func TestPubSub(t *testing.T) {
 		c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
 		c = gologger.StdConfig.Use(c)
 		c, _ = testclock.UseTime(c, fakeTime)
+		c = testconfig.WithCommonClient(c, memcfg.New(bbAclConfigs))
+		c = auth.WithState(c, &authtest.FakeState{
+			Identity:       identity.AnonymousIdentity,
+			IdentityGroups: []string{"all"},
+		})
 
 		rand.Seed(5)
 
@@ -432,13 +438,11 @@ func TestPubSub(t *testing.T) {
 			})
 			So(h.Code, ShouldEqual, 200)
 			Convey("And stores correctly", func() {
-				c = testconfig.WithCommonClient(c, memcfg.New(aclConfgs))
-
 				err := settings.Update(c)
 				So(err, ShouldBeNil)
 				c = auth.WithState(c, &authtest.FakeState{
 					Identity:       "user:alicebob@google.com",
-					IdentityGroups: []string{"google.com", "all"},
+					IdentityGroups: []string{"googlers", "all"},
 				})
 				loadB := &buildbotBuild{
 					Master:      "Fake Master",
@@ -463,15 +467,4 @@ func TestPubSub(t *testing.T) {
 			})
 		})
 	})
-}
-
-var secretProjectCfg = `
-ID: "buildbot-internal"
-Readers: "google.com"
-`
-
-var aclConfgs = map[string]memcfg.ConfigSet{
-	"projects/buildbot-internal.git": {
-		"luci-milo.cfg": secretProjectCfg,
-	},
 }

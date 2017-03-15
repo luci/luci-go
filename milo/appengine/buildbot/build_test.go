@@ -16,7 +16,12 @@ import (
 	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock/testclock"
+	memcfg "github.com/luci/luci-go/common/config/impl/memory"
+	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
 	"github.com/luci/luci-go/milo/common/miloerror"
+	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/authtest"
+	"github.com/luci/luci-go/server/auth/identity"
 
 	"golang.org/x/net/context"
 
@@ -66,6 +71,11 @@ func TestBuild(t *testing.T) {
 	}
 
 	Convey(`A test Environment`, t, func() {
+		c = testconfig.WithCommonClient(c, memcfg.New(bbAclConfigs))
+		c = auth.WithState(c, &authtest.FakeState{
+			Identity:       identity.AnonymousIdentity,
+			IdentityGroups: []string{"all"},
+		})
 
 		for _, tc := range testCases {
 			Convey(fmt.Sprintf("Test Case: %s/%s", tc.builder, tc.build), func() {
@@ -85,9 +95,20 @@ func TestBuild(t *testing.T) {
 			})
 			_, err := getBuild(c, "fake", "fake", 1)
 			So(err, ShouldResemble, miloerror.Error{
-				Message: "Cannot fetch project buildbot-internal:\ndatastore: no such entity",
-				Code:    500,
+				Message: "You are not authenticated, try logging in",
+				Code:    401,
 			})
 		})
 	})
+}
+
+var internalConfig = `
+name: "buildbot-internal"
+access: "group:googlers"
+`
+
+var bbAclConfigs = map[string]memcfg.ConfigSet{
+	"projects/chrome": {
+		"project.cfg": internalConfig,
+	},
 }

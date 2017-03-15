@@ -5,3 +5,6 @@ cron:
  - description: Update luci config
    url: /admin/update
    schedule: every 1 minutes
+- description: LUCI Config datastore cache periodic refresh
+  url: /admin/config/cache/manager
+  schedule: every 10 minutes

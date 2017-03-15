@@ -51,7 +51,7 @@ func TestACL(t *testing.T) {
 			Convey("alicebob@google.com wants to...", func() {
 				c = auth.WithState(c, &authtest.FakeState{
 					Identity:       "user:alicebob@google.com",
-					IdentityGroups: []string{"google.com", "all"},
+					IdentityGroups: []string{"googlers", "all"},
 				})
 				Convey("Read private project", func() {
 					ok, err := IsAllowed(c, "secret")
@@ -81,20 +81,20 @@ func TestACL(t *testing.T) {
 }
 
 var secretProjectCfg = `
-ID: "secret"
-Readers: "google.com"
+name: "secret"
+access: "group:googlers"
 `
 
 var publicProjectCfg = `
-ID: "opensource"
-Readers: "all"
+name: "opensource"
+access: "group:all"
 `
 
 var aclConfgs = map[string]memcfg.ConfigSet{
-	"projects/secret.git": {
-		"luci-milo.cfg": secretProjectCfg,
+	"projects/secret": {
+		"project.cfg": secretProjectCfg,
 	},
-	"projects/opensource.git": {
-		"luci-milo.cfg": publicProjectCfg,
+	"projects/opensource": {
+		"project.cfg": publicProjectCfg,
 	},
 }
