@@ -73,11 +73,11 @@ func TestFireTasks(t *testing.T) {
 
 		Convey("basic", func() {
 			So(fireTasks(ctx, tt.GetConfig(ctx), map[taskShard]struct{}{
-				taskShard{2, minTS}: {},
-				taskShard{7, minTS}: {},
+				{2, minTS}: {},
+				{7, minTS}: {},
 
 				// since DelayedMutations is false, this timew will be reset
-				taskShard{5, mkTimestamp(tt.GetConfig(ctx), testclock.TestTimeUTC.Add(time.Minute))}: {},
+				{5, mkTimestamp(tt.GetConfig(ctx), testclock.TestTimeUTC.Add(time.Minute))}: {},
 			}, true), ShouldBeTrue)
 			So(tq.GetTestable(ctx).GetScheduledTasks()[baseName], ShouldResemble, map[string]*tq.Task{
 				"-62132730888__2": {
@@ -104,7 +104,7 @@ func TestFireTasks(t *testing.T) {
 		Convey("namespaced", func() {
 			ctx = info.MustNamespace(ctx, "foo.bar")
 			So(fireTasks(ctx, tt.GetConfig(ctx), map[taskShard]struct{}{
-				taskShard{2, minTS}: {},
+				{2, minTS}: {},
 			}, true), ShouldBeTrue)
 			So(tq.GetTestable(ctx).GetScheduledTasks()[baseName], ShouldResemble, map[string]*tq.Task{
 				"-62132730888_foo_bar_2": {
@@ -125,7 +125,7 @@ func TestFireTasks(t *testing.T) {
 			tt.UpdateSettings(ctx, cfg)
 			delayedTS := mkTimestamp(cfg, testclock.TestTimeUTC.Add(time.Minute*10))
 			So(fireTasks(ctx, cfg, map[taskShard]struct{}{
-				taskShard{1, delayedTS}: {},
+				{1, delayedTS}: {},
 			}, true), ShouldBeTrue)
 			So(tq.GetTestable(ctx).GetScheduledTasks()[baseName], ShouldResemble, map[string]*tq.Task{
 				"-62132730288__1": {

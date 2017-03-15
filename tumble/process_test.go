@@ -31,7 +31,7 @@ func TestTumbleFiddlyBits(t *testing.T) {
 			So(mc.Set(ctx, itm), ShouldBeNil)
 
 			So(fireTasks(ctx, tt.GetConfig(ctx), map[taskShard]struct{}{
-				taskShard{10, minTS}: {},
+				{10, minTS}: {},
 			}, true), ShouldBeTrue)
 			tt.Drain(ctx)
 

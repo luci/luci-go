@@ -1485,7 +1485,7 @@ func TestResolveValidPackageDirs(t *testing.T) {
 			nums, all := resolve()
 			So(nums, ShouldResemble, numSet{0})
 			So(all, ShouldResemble, map[Description]string{
-				Description{"", "some/package/name"}: ".cipd/pkgs/0",
+				{"", "some/package/name"}: ".cipd/pkgs/0",
 			})
 			So(scanDir(tempDir), ShouldResemble, []string{
 				".cipd/pkgs/0/description.json",
@@ -1501,7 +1501,7 @@ func TestResolveValidPackageDirs(t *testing.T) {
 			nums, all := resolve()
 			So(nums, ShouldResemble, numSet{0})
 			So(all, ShouldResemble, map[Description]string{
-				Description{"", "some/package/name"}: ".cipd/pkgs/0",
+				{"", "some/package/name"}: ".cipd/pkgs/0",
 			})
 			So(scanDir(tempDir), ShouldResemble, []string{
 				".cipd/pkgs/0/description.json",
@@ -1553,7 +1553,7 @@ func TestResolveValidPackageDirs(t *testing.T) {
 			nums, all := resolve()
 			So(nums, ShouldResemble, numSet(nil))
 			So(all, ShouldResemble, map[Description]string{
-				Description{"", "cool/cats"}: ".cipd/pkgs/oldskool",
+				{"", "cool/cats"}: ".cipd/pkgs/oldskool",
 			})
 			linkExpect := curLink.Name()
 			if curLink.Symlink() {
