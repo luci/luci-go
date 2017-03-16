@@ -1,0 +1,3 @@
+queue:
+- name: bqlog-machine-tokens
+  mode: pull

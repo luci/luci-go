@@ -9,6 +9,11 @@ cron:
   schedule: every 1 minutes
   target: backend
 
+- description: Uploads machine token logs to BigQuery
+  url: /internal/cron/bqlog/machine-tokens-flush
+  schedule: every 1 minutes
+  target: backend
+
 - description: tsmon house keeping
   url: /internal/cron/ts_mon/housekeeping
   schedule: every 1 minutes

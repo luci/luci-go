@@ -295,7 +295,8 @@ class Table(object):
       assert ms == table.time_partitioning_exp_days * 24 * 3600 * 1000
 
     # BQ format for fields schema is same as on-disk format we use in *.schema.
-    table.fields = TableFields.load_from_definition(meta['schema']['fields'])
+    table.fields = TableFields.load_from_definition(
+        meta.get('schema', {}).get('fields', []))
     return table
 
   def __eq__(self, other):

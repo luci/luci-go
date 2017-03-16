@@ -15,9 +15,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/signing"
 
 	tokenserver "github.com/luci/luci-go/tokenserver/api"
@@ -39,6 +42,11 @@ type MintMachineTokenRPC struct {
 	//
 	// In prod it is certchecker.CheckCertificate.
 	CheckCertificate func(c context.Context, cert *x509.Certificate) (*certconfig.CA, error)
+
+	// LogToken is mocked in tests.
+	//
+	// In prod it is LogToken from bigquery_logger.go.
+	LogToken func(c context.Context, info *MintedTokenInfo) error
 }
 
 // serviceVersion returns a string that identifier the app and the version.
@@ -145,7 +153,24 @@ func (r *MintMachineTokenRPC) MintMachineToken(c context.Context, req *minter.Mi
 	}
 	switch tokenReq.TokenType {
 	case tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN:
-		return r.mintLuciMachineToken(c, args)
+		resp, body, err := r.mintLuciMachineToken(c, args)
+		if r.LogToken != nil {
+			// Errors during logging are considered not fatal. bqlog library has
+			// a monitoring counter that tracks number of errors, so they are not
+			// totally invisible.
+			tokInfo := MintedTokenInfo{
+				Request:   &tokenReq,
+				Response:  resp.TokenResponse,
+				TokenBody: body,
+				CA:        ca,
+				PeerIP:    auth.GetState(c).PeerIP(),
+				RequestID: info.RequestID(c),
+			}
+			if logErr := r.LogToken(c, &tokInfo); logErr != nil {
+				logging.WithError(logErr).Errorf(c, "Failed to insert the machine token into BigQuery log")
+			}
+		}
+		return resp, err
 	default:
 		panic("impossible") // there's a check above
 	}
@@ -157,7 +182,7 @@ type mintTokenArgs struct {
 	Request *minter.MachineTokenRequest
 }
 
-func (r *MintMachineTokenRPC) mintLuciMachineToken(c context.Context, args mintTokenArgs) (*minter.MintMachineTokenResponse, error) {
+func (r *MintMachineTokenRPC) mintLuciMachineToken(c context.Context, args mintTokenArgs) (*minter.MintMachineTokenResponse, *tokenserver.MachineTokenBody, error) {
 	// Validate FQDN and whether it is allowed by config.
 	params := MintParams{
 		FQDN:   strings.ToLower(args.Cert.Subject.CommonName),
@@ -166,16 +191,17 @@ func (r *MintMachineTokenRPC) mintLuciMachineToken(c context.Context, args mintT
 		Signer: r.Signer,
 	}
 	if err := params.Validate(); err != nil {
-		return r.mintingErrorResponse(c, minter.ErrorCode_BAD_TOKEN_ARGUMENTS, "%s", err)
+		resp, err := r.mintingErrorResponse(c, minter.ErrorCode_BAD_TOKEN_ARGUMENTS, "%s", err)
+		return resp, nil, err
 	}
 
 	serviceVer, err := r.serviceVersion(c)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "can't grab service version - %s", err)
+		return nil, nil, grpc.Errorf(codes.Internal, "can't grab service version - %s", err)
 	}
 
 	// Make the token.
-	switch body, signedToken, err := Mint(c, params); {
+	switch body, signedToken, err := Mint(c, &params); {
 	case err == nil:
 		expiry := time.Unix(int64(body.IssuedAt), 0).Add(time.Duration(body.Lifetime) * time.Second)
 		return &minter.MintMachineTokenResponse{
@@ -189,11 +215,12 @@ func (r *MintMachineTokenRPC) mintLuciMachineToken(c context.Context, args mintT
 					},
 				},
 			},
-		}, nil
+		}, body, nil
 	case errors.IsTransient(err):
-		return nil, grpc.Errorf(codes.Internal, "failed to generate machine token - %s", err)
+		return nil, nil, grpc.Errorf(codes.Internal, "failed to generate machine token - %s", err)
 	default:
-		return r.mintingErrorResponse(c, minter.ErrorCode_MACHINE_TOKEN_MINTING_ERROR, "%s", err)
+		resp, err := r.mintingErrorResponse(c, minter.ErrorCode_MACHINE_TOKEN_MINTING_ERROR, "%s", err)
+		return resp, nil, err
 	}
 }
 

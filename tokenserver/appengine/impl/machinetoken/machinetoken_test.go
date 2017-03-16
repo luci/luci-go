@@ -96,7 +96,7 @@ func TestMint(t *testing.T) {
 				},
 				Signer: fakeSigner{},
 			}
-			body, token, err := Mint(ctx, params)
+			body, token, err := Mint(ctx, &params)
 			So(err, ShouldBeNil)
 			So(body, ShouldResemble, &tokenserver.MachineTokenBody{
 				MachineFqdn: "host.domain",

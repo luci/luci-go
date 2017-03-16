@@ -101,7 +101,7 @@ func domainConfig(cfg *admin.CertificateAuthorityConfig, domain string) *admin.D
 // Mint generates a new machine token.
 //
 // Returns its body as a proto, and as a signed base64-encoded final token.
-func Mint(c context.Context, params MintParams) (*tokenserver.MachineTokenBody, string, error) {
+func Mint(c context.Context, params *MintParams) (*tokenserver.MachineTokenBody, string, error) {
 	if err := params.Validate(); err != nil {
 		return nil, "", err
 	}

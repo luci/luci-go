@@ -19,6 +19,7 @@ import (
 	"golang.org/x/net/context"
 
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaetesting"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -104,10 +105,13 @@ var testingCA = certconfig.CA{
 			},
 		},
 	},
+	AddedRev:   "cfg-added-rev",
+	UpdatedRev: "cfg-updated-rev",
 }
 
 func testingContext() context.Context {
 	ctx := gaetesting.TestingContext()
+	ctx = info.GetTestable(ctx).SetRequestID("gae-request-id")
 	ctx, _ = testclock.UseTime(ctx, testingTime)
 
 	// Put mocked CA config in the datastore.
@@ -129,16 +133,22 @@ func testingSigner() signing.Signer {
 	})
 }
 
-// testingMachineTokenRequest is canned request to MintMachineToken RPC.
-//
-// The service is expected to reply with expectedLuciMachineToken.
-func testingMachineTokenRequest(ctx context.Context) *minter.MintMachineTokenRequest {
-	serialized, err := proto.Marshal(&minter.MachineTokenRequest{
+// testingRawRequest is canned request for machine token before it is serialized
+// and signed.
+func testingRawRequest(ctx context.Context) *minter.MachineTokenRequest {
+	return &minter.MachineTokenRequest{
 		Certificate:        getTestCertDER(),
 		SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
 		IssuedAt:           google.NewTimestamp(clock.Now(ctx)),
 		TokenType:          tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN,
-	})
+	}
+}
+
+// testingMachineTokenRequest is canned request to MintMachineToken RPC.
+//
+// The service is expected to reply with expectedLuciMachineToken.
+func testingMachineTokenRequest(ctx context.Context) *minter.MintMachineTokenRequest {
+	serialized, err := proto.Marshal(testingRawRequest(ctx))
 	if err != nil {
 		panic(err)
 	}

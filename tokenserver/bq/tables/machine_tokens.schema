@@ -7,6 +7,65 @@
   'time_partitioning_exp_days': 90,
 
   'fields': [
-    # TODO(vadimsh): Add fields.
+    {
+      'name': 'fingerprint',
+      'type': 'STRING',
+      'description': 'First 16 bytes of SHA256 of the token body, hex-encoded',
+    },
+    {
+      'name': 'machine_fqdn',
+      'type': 'STRING',
+      'description': 'Machine domain name encoded in the token',
+    },
+    {
+      'name': 'token_type',
+      'type': 'STRING',
+      'description': 'Type of the machine token',
+    },
+    {
+      'name': 'issued_at',
+      'type': 'TIMESTAMP',
+      'description': 'When the token was generated',
+    },
+    {
+      'name': 'expiration',
+      'type': 'TIMESTAMP',
+      'description': 'When the token expires',
+    },
+    {
+      'name': 'cert_serial_number',
+      'type': 'STRING',
+      'description': 'Serial number of the peer certificate',
+    },
+    {
+      'name': 'signature_algorithm',
+      'type': 'STRING',
+      'description': 'Type of the signature used to proof possession of the private key',
+    },
+    {
+      'name': 'ca_common_name',
+      'type': 'STRING',
+      'description': 'Common Name of a CA that signed the peer certificate',
+    },
+    {
+      'name': 'ca_config_rev',
+      'type': 'STRING',
+      'description': 'Revision of the luci-config repo that contains the CA',
+    },
+    {
+      'name': 'peer_ip',
+      'type': 'STRING',
+      'description': 'IP address of the caller',
+    },
+    {
+      'name': 'service_version',
+      'type': 'STRING',
+      'description': 'Identifier of the token server GAE app and version',
+    },
+    {
+      'name': 'gae_request_id',
+      'type': 'STRING',
+      'description': 'ID of the GAE request that handled the call',
+    },
   ],
 }

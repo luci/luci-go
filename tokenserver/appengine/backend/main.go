@@ -22,6 +22,7 @@ import (
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 
+	"github.com/luci/luci-go/tokenserver/appengine/impl/machinetoken"
 	"github.com/luci/luci-go/tokenserver/appengine/impl/services/admin/adminsrv"
 	"github.com/luci/luci-go/tokenserver/appengine/impl/services/admin/certauthorities"
 )
@@ -39,6 +40,7 @@ func init() {
 
 	r.GET("/internal/cron/read-config", basemw.Extend(gaemiddleware.RequireCron), readConfigCron)
 	r.GET("/internal/cron/fetch-crl", basemw.Extend(gaemiddleware.RequireCron), fetchCRLCron)
+	r.GET("/internal/cron/bqlog/machine-tokens-flush", basemw.Extend(gaemiddleware.RequireCron), flushMachineTokensLogCron)
 
 	http.DefaultServeMux.Handle("/", r)
 }
@@ -106,6 +108,14 @@ func fetchCRLCron(c *router.Context) {
 	// Retry cron job only on transient errors. On fatal errors let it rerun one
 	// minute later, as usual, to avoid spamming logs with errors.
 	c.Writer.WriteHeader(statusFromErrs(errs))
+}
+
+// flushMachineTokensLogCron is handler for /internal/cron/bqlog/machine-tokens-flush.
+func flushMachineTokensLogCron(c *router.Context) {
+	// FlushTokenLog logs errors inside. We also do not retry on errors. It's fine
+	// to wait and flush on the next iteration.
+	machinetoken.FlushTokenLog(c.Context)
+	c.Writer.WriteHeader(http.StatusOK)
 }
 
 // statusFromErrs returns 500 if any of gRPC errors is codes.Internal.
