@@ -268,27 +268,46 @@ func (opts *clientOptions) makeCipdClient(ctx context.Context, root string) (cip
 	if err != nil {
 		return nil, err
 	}
-	ua := cipd.UserAgent
-	if prefix := cli.LookupEnv(ctx, CIPDHTTPUserAgentPrefix); prefix.Exists {
-		ua = fmt.Sprintf("%s/%s", prefix.Value, ua)
-	}
 	cacheDir := opts.cacheDir
 	if cacheDir == "" {
-		if cacheDirEnv := cli.LookupEnv(ctx, CIPDCacheDir); cacheDirEnv.Exists {
-			cacheDir = cacheDirEnv.Value
-			if cacheDir != "" && !filepath.IsAbs(cacheDir) {
-				return nil, fmt.Errorf("Bad %s: not an absolute path - %s", CIPDCacheDir, cacheDir)
-			}
+		cacheDir, err = CacheDir(ctx)
+		if err != nil {
+			return nil, err
 		}
 	}
 	return cipd.NewClient(cipd.ClientOptions{
 		ServiceURL:          opts.serviceURL,
 		Root:                root,
-		UserAgent:           ua,
+		UserAgent:           UserAgent(ctx),
 		CacheDir:            cacheDir,
 		AuthenticatedClient: client,
 		AnonymousClient:     http.DefaultClient,
 	})
+}
+
+// UserAgent returns a CIPD user agent string, based on a CLI context.
+//
+// It knows how to use CIPDHTTPUserAgentPrefix env var.
+func UserAgent(ctx context.Context) string {
+	if prefix := cli.LookupEnv(ctx, CIPDHTTPUserAgentPrefix); prefix.Exists {
+		return fmt.Sprintf("%s/%s", prefix.Value, cipd.UserAgent)
+	}
+	return cipd.UserAgent
+}
+
+// CacheDir returns a CIPD cache directory path, based on a CLI context.
+//
+// It knows how to use CIPDCacheDir env var. May return empty string if cache
+// directory is not defined.
+func CacheDir(ctx context.Context) (string, error) {
+	if cacheDirEnv := cli.LookupEnv(ctx, CIPDCacheDir); cacheDirEnv.Exists {
+		cacheDir := cacheDirEnv.Value
+		if cacheDir != "" && !filepath.IsAbs(cacheDir) {
+			return "", fmt.Errorf("bad %s: not an absolute path - %s", CIPDCacheDir, cacheDir)
+		}
+		return cacheDir, nil
+	}
+	return "", nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
