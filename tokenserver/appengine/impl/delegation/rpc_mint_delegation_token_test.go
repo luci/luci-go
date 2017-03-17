@@ -14,6 +14,8 @@ import (
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/auth/identity"
+	"github.com/luci/luci-go/server/auth/signing"
+	"github.com/luci/luci-go/server/auth/signing/signingtest"
 	minter "github.com/luci/luci-go/tokenserver/api/minter/v1"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -36,6 +38,14 @@ func mockedFetchLUCIServiceIdentity(c context.Context, u string) (identity.Ident
 
 func init() {
 	fetchLUCIServiceIdentity = mockedFetchLUCIServiceIdentity
+}
+
+func testingSigner() signing.Signer {
+	return signingtest.NewSigner(0, &signing.ServiceInfo{
+		ServiceAccountName: "signer@testing.host",
+		AppID:              "unit-tests",
+		AppVersion:         "mocked-ver",
+	})
 }
 
 func TestBuildRulesQuery(t *testing.T) {
@@ -179,11 +189,12 @@ func TestMintDelegationToken(t *testing.T) {
 		`)
 		So(err, ShouldBeNil)
 
-		mintMock := func(context.Context, *mintParams) (*minter.MintDelegationTokenResponse, error) {
-			return &minter.MintDelegationTokenResponse{Token: "valid_token"}, nil
+		mintMock := func(c context.Context, p *mintParams) (*minter.MintDelegationTokenResponse, error) {
+			return &minter.MintDelegationTokenResponse{Token: "valid_token", ServiceVersion: p.serviceVer}, nil
 		}
 
 		rpc := MintDelegationTokenRPC{
+			Signer:       testingSigner(),
 			ConfigLoader: func(context.Context) (*DelegationConfig, error) { return cfg, nil },
 			mintMock:     mintMock,
 		}
@@ -199,6 +210,7 @@ func TestMintDelegationToken(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(resp.Token, ShouldEqual, "valid_token")
+			So(resp.ServiceVersion, ShouldEqual, "unit-tests/mocked-ver")
 		})
 
 		Convey("Using delegated identity for auth is forbidden", func() {

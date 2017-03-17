@@ -24,6 +24,7 @@ import (
 
 	admin "github.com/luci/luci-go/tokenserver/api/admin/v1"
 	"github.com/luci/luci-go/tokenserver/api/minter/v1"
+	"github.com/luci/luci-go/tokenserver/appengine/impl/utils"
 	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/identityset"
 )
 
@@ -67,6 +68,13 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 	if callerID == identity.AnonymousIdentity {
 		logging.Errorf(c, "Unauthenticated request")
 		return nil, grpc.Errorf(codes.Unauthenticated, "authentication required")
+	}
+
+	// Grab a string that identifies token server version. This almost always
+	// just hits local memory cache.
+	serviceVer, err := utils.ServiceVersion(c, r.Signer)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "can't grab service version - %s", err)
 	}
 
 	cfg, err := r.ConfigLoader(c)
@@ -133,10 +141,11 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 	}
 
 	p := mintParams{
-		request: req,
-		cfg:     cfg,
-		query:   query,
-		rule:    rule,
+		request:    req,
+		cfg:        cfg,
+		query:      query,
+		rule:       rule,
+		serviceVer: serviceVer,
 	}
 	if r.mintMock != nil {
 		return r.mintMock(c, &p)
@@ -146,10 +155,11 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 
 // mintParams are passed to 'mint' function.
 type mintParams struct {
-	request *minter.MintDelegationTokenRequest // the original RPC request
-	cfg     *DelegationConfig                  // the currently active config
-	query   *RulesQuery                        // extracted from the request
-	rule    *admin.DelegationRule              // looked up in the config based on 'query'
+	request    *minter.MintDelegationTokenRequest // the original RPC request
+	cfg        *DelegationConfig                  // the currently active config
+	query      *RulesQuery                        // extracted from the request
+	rule       *admin.DelegationRule              // looked up in the config based on 'query'
+	serviceVer string                             // version string to put in the response
 }
 
 // mint is called to make the token after the request has been authorized.
@@ -184,6 +194,7 @@ func (r *MintDelegationTokenRPC) mint(c context.Context, p *mintParams) (*minter
 	return &minter.MintDelegationTokenResponse{
 		Token:              signed,
 		DelegationSubtoken: subtok,
+		ServiceVersion:     p.serviceVer,
 	}, nil
 }
 

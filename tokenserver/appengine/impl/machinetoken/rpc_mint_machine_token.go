@@ -29,6 +29,7 @@ import (
 
 	"github.com/luci/luci-go/tokenserver/appengine/impl/certchecker"
 	"github.com/luci/luci-go/tokenserver/appengine/impl/certconfig"
+	"github.com/luci/luci-go/tokenserver/appengine/impl/utils"
 )
 
 // MintMachineTokenRPC implements TokenMinter.MintMachineToken RPC method.
@@ -47,21 +48,6 @@ type MintMachineTokenRPC struct {
 	//
 	// In prod it is LogToken from bigquery_logger.go.
 	LogToken func(c context.Context, info *MintedTokenInfo) error
-}
-
-// serviceVersion returns a string that identifier the app and the version.
-//
-// It is put in server responses.
-//
-// This function almost never returns errors. It can return an error only when
-// called for the first time during the process lifetime. It gets cached after
-// first successful return.
-func (r *MintMachineTokenRPC) serviceVersion(c context.Context) (string, error) {
-	inf, err := r.Signer.ServiceInfo(c) // cached
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%s/%s", inf.AppID, inf.AppVersion), nil
 }
 
 // MintMachineToken generates a new token for an authenticated machine.
@@ -195,7 +181,7 @@ func (r *MintMachineTokenRPC) mintLuciMachineToken(c context.Context, args mintT
 		return resp, nil, err
 	}
 
-	serviceVer, err := r.serviceVersion(c)
+	serviceVer, err := utils.ServiceVersion(c, r.Signer)
 	if err != nil {
 		return nil, nil, grpc.Errorf(codes.Internal, "can't grab service version - %s", err)
 	}
@@ -225,7 +211,7 @@ func (r *MintMachineTokenRPC) mintLuciMachineToken(c context.Context, args mintT
 }
 
 func (r *MintMachineTokenRPC) mintingErrorResponse(c context.Context, code minter.ErrorCode, msg string, args ...interface{}) (*minter.MintMachineTokenResponse, error) {
-	serviceVer, err := r.serviceVersion(c)
+	serviceVer, err := utils.ServiceVersion(c, r.Signer)
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "can't grab service version - %s", err)
 	}

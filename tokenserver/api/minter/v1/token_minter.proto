@@ -264,4 +264,9 @@ message MintDelegationTokenResponse {
   // Mostly for JSON encoding users, since they may not understand proto-encoded
   // tokens.
   messages.Subtoken delegation_subtoken = 2;
+
+  // Identifier of the service and its version that produced the token.
+  //
+  // Has the form "<app-id>/<module-version>". This is _not_ part of the token.
+  string service_version = 3;
 }
