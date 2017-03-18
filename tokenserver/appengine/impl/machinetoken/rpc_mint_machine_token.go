@@ -140,6 +140,9 @@ func (r *MintMachineTokenRPC) MintMachineToken(c context.Context, req *minter.Mi
 	switch tokenReq.TokenType {
 	case tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN:
 		resp, body, err := r.mintLuciMachineToken(c, args)
+		if err != nil {
+			return nil, err
+		}
 		if r.LogToken != nil {
 			// Errors during logging are considered not fatal. bqlog library has
 			// a monitoring counter that tracks number of errors, so they are not
@@ -156,7 +159,7 @@ func (r *MintMachineTokenRPC) MintMachineToken(c context.Context, req *minter.Mi
 				logging.WithError(logErr).Errorf(c, "Failed to insert the machine token into BigQuery log")
 			}
 		}
-		return resp, err
+		return resp, nil
 	default:
 		panic("impossible") // there's a check above
 	}

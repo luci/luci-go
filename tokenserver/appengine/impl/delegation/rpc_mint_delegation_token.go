@@ -180,7 +180,7 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 		}
 	}
 
-	return resp, err
+	return resp, nil
 }
 
 // mintParams are passed to 'mint' function.
