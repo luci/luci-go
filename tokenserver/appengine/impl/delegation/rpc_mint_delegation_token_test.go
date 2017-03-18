@@ -6,18 +6,24 @@ package delegation
 
 import (
 	"fmt"
+	"net"
 	"net/url"
 	"testing"
+	"time"
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/gae/service/info"
+	"github.com/luci/luci-go/appengine/gaetesting"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/auth/signing/signingtest"
-	minter "github.com/luci/luci-go/tokenserver/api/minter/v1"
+	"github.com/luci/luci-go/tokenserver/api/admin/v1"
+	"github.com/luci/luci-go/tokenserver/api/minter/v1"
 
+	"github.com/luci/luci-go/common/clock/testclock"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -40,6 +46,16 @@ func init() {
 	fetchLUCIServiceIdentity = mockedFetchLUCIServiceIdentity
 }
 
+func testingContext() context.Context {
+	ctx := gaetesting.TestingContext()
+	ctx = info.GetTestable(ctx).SetRequestID("gae-request-id")
+	ctx, _ = testclock.UseTime(ctx, time.Date(2015, time.February, 3, 4, 5, 6, 0, time.UTC))
+	return auth.WithState(ctx, &authtest.FakeState{
+		Identity:       "user:requestor@example.com",
+		PeerIPOverride: net.ParseIP("127.10.10.10"),
+	})
+}
+
 func testingSigner() signing.Signer {
 	return signingtest.NewSigner(0, &signing.ServiceInfo{
 		ServiceAccountName: "signer@testing.host",
@@ -49,7 +65,7 @@ func testingSigner() signing.Signer {
 }
 
 func TestBuildRulesQuery(t *testing.T) {
-	ctx := context.Background()
+	ctx := testingContext()
 
 	Convey("Happy path", t, func() {
 		q, err := buildRulesQuery(ctx, &minter.MintDelegationTokenRequest{
@@ -176,6 +192,8 @@ func TestBuildRulesQuery(t *testing.T) {
 }
 
 func TestMintDelegationToken(t *testing.T) {
+	ctx := testingContext()
+
 	Convey("with mocked config and state", t, func() {
 		cfg, err := loadConfig(`
 			rules {
@@ -193,28 +211,48 @@ func TestMintDelegationToken(t *testing.T) {
 			return &minter.MintDelegationTokenResponse{Token: "valid_token", ServiceVersion: p.serviceVer}, nil
 		}
 
+		var loggedInfo *MintedTokenInfo
 		rpc := MintDelegationTokenRPC{
 			Signer:       testingSigner(),
 			ConfigLoader: func(context.Context) (*DelegationConfig, error) { return cfg, nil },
-			mintMock:     mintMock,
+			LogToken: func(c context.Context, i *MintedTokenInfo) error {
+				loggedInfo = i
+				return nil
+			},
+			mintMock: mintMock,
 		}
 
 		Convey("Happy path", func() {
-			ctx := auth.WithState(context.Background(), &authtest.FakeState{
-				Identity: "user:requestor@example.com",
-			})
-			resp, err := rpc.MintDelegationToken(ctx, &minter.MintDelegationTokenRequest{
+			req := &minter.MintDelegationTokenRequest{
 				DelegatedIdentity: "REQUESTOR",
 				Audience:          []string{"REQUESTOR"},
 				Services:          []string{"*"},
-			})
+			}
+			resp, err := rpc.MintDelegationToken(ctx, req)
 			So(err, ShouldBeNil)
 			So(resp.Token, ShouldEqual, "valid_token")
 			So(resp.ServiceVersion, ShouldEqual, "unit-tests/mocked-ver")
+
+			// LogToken called.
+			So(loggedInfo, ShouldResemble, &MintedTokenInfo{
+				Request:  req,
+				Response: resp,
+				Config:   cfg,
+				Rule: &admin.DelegationRule{
+					Name:                 "requstor for itself",
+					Requestor:            []string{"user:requestor@example.com"},
+					AllowedToImpersonate: []string{"REQUESTOR"},
+					AllowedAudience:      []string{"REQUESTOR"},
+					TargetService:        []string{"*"},
+					MaxValidityDuration:  3600,
+				},
+				PeerIP:    net.ParseIP("127.10.10.10"),
+				RequestID: "gae-request-id",
+			})
 		})
 
 		Convey("Using delegated identity for auth is forbidden", func() {
-			ctx := auth.WithState(context.Background(), &authtest.FakeState{
+			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity:             "user:requestor@example.com",
 				PeerIdentityOverride: "user:impersonator@example.com",
 			})
@@ -227,7 +265,7 @@ func TestMintDelegationToken(t *testing.T) {
 		})
 
 		Convey("Anonymous calls are forbidden", func() {
-			ctx := auth.WithState(context.Background(), &authtest.FakeState{
+			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
 			_, err := rpc.MintDelegationToken(ctx, &minter.MintDelegationTokenRequest{
@@ -239,8 +277,8 @@ func TestMintDelegationToken(t *testing.T) {
 		})
 
 		Convey("Unauthorized requestor", func() {
-			ctx := auth.WithState(context.Background(), &authtest.FakeState{
-				Identity: "user:unknown@example.cim",
+			ctx := auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:unknown@example.com",
 			})
 			_, err := rpc.MintDelegationToken(ctx, &minter.MintDelegationTokenRequest{
 				DelegatedIdentity: "REQUESTOR",
@@ -251,9 +289,6 @@ func TestMintDelegationToken(t *testing.T) {
 		})
 
 		Convey("Negative validity duration", func() {
-			ctx := auth.WithState(context.Background(), &authtest.FakeState{
-				Identity: "user:requestor@example.com",
-			})
 			_, err := rpc.MintDelegationToken(ctx, &minter.MintDelegationTokenRequest{
 				DelegatedIdentity: "REQUESTOR",
 				Audience:          []string{"REQUESTOR"},
@@ -264,9 +299,6 @@ func TestMintDelegationToken(t *testing.T) {
 		})
 
 		Convey("Malformed request", func() {
-			ctx := auth.WithState(context.Background(), &authtest.FakeState{
-				Identity: "user:requestor@example.com",
-			})
 			_, err := rpc.MintDelegationToken(ctx, &minter.MintDelegationTokenRequest{
 				DelegatedIdentity: "REQUESTOR",
 				Audience:          []string{"junk"},
@@ -276,9 +308,6 @@ func TestMintDelegationToken(t *testing.T) {
 		})
 
 		Convey("No matching rules", func() {
-			ctx := auth.WithState(context.Background(), &authtest.FakeState{
-				Identity: "user:requestor@example.com",
-			})
 			_, err := rpc.MintDelegationToken(ctx, &minter.MintDelegationTokenRequest{
 				DelegatedIdentity: "REQUESTOR",
 				Audience:          []string{"user:someone-else@example.com"},
@@ -288,9 +317,6 @@ func TestMintDelegationToken(t *testing.T) {
 		})
 
 		Convey("Forbidden validity duration", func() {
-			ctx := auth.WithState(context.Background(), &authtest.FakeState{
-				Identity: "user:requestor@example.com",
-			})
 			_, err := rpc.MintDelegationToken(ctx, &minter.MintDelegationTokenRequest{
 				DelegatedIdentity: "REQUESTOR",
 				Audience:          []string{"REQUESTOR"},

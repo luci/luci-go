@@ -5,8 +5,6 @@
 package machinetoken
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -19,6 +17,7 @@ import (
 	"github.com/luci/luci-go/tokenserver/api/minter/v1"
 
 	"github.com/luci/luci-go/tokenserver/appengine/impl/certconfig"
+	"github.com/luci/luci-go/tokenserver/appengine/impl/utils"
 	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/bqlog"
 )
 
@@ -50,15 +49,9 @@ func (i *MintedTokenInfo) toBigQueryRow() map[string]interface{} {
 		panic("unknown token type")
 	}
 
-	// We use first 16 bytes of SHA256 of the hex encoded token as a fingerprint.
-	// Same fingerprint will be logged by services that use token.
-	signed := i.Response.GetLuciMachineToken().MachineToken
-	digest := sha256.Sum256([]byte(signed))
-	fingerprint := hex.EncodeToString(digest[:16])
-
 	return map[string]interface{}{
 		// Identifier of the token body.
-		"fingerprint": fingerprint,
+		"fingerprint": utils.TokenFingerprint(i.Response.GetLuciMachineToken().MachineToken),
 
 		// Information about the token.
 		"machine_fqdn":        i.TokenBody.MachineFqdn,

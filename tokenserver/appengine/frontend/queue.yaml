@@ -1,3 +1,6 @@
 queue:
 - name: bqlog-machine-tokens
   mode: pull
+
+- name: bqlog-delegation-tokens
+  mode: pull

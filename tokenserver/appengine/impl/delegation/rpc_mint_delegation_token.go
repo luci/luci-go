@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
@@ -39,6 +40,11 @@ type MintDelegationTokenRPC struct {
 	//
 	// In prod it is DelegationConfigLoader.
 	ConfigLoader func(context.Context) (*DelegationConfig, error)
+
+	// LogToken is mocked in tests.
+	//
+	// In prod it is LogDelegationToken from bigquery_log.go.
+	LogToken func(context.Context, *MintedTokenInfo) error
 
 	// mintMock call is used in tests.
 	//
@@ -140,6 +146,7 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 		return nil, grpc.Errorf(codes.PermissionDenied, "forbidden - %s", err)
 	}
 
+	var resp *minter.MintDelegationTokenResponse
 	p := mintParams{
 		request:    req,
 		cfg:        cfg,
@@ -148,9 +155,32 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 		serviceVer: serviceVer,
 	}
 	if r.mintMock != nil {
-		return r.mintMock(c, &p)
+		resp, err = r.mintMock(c, &p)
+	} else {
+		resp, err = r.mint(c, &p)
 	}
-	return r.mint(c, &p)
+	if err != nil {
+		return nil, err
+	}
+
+	if r.LogToken != nil {
+		// Errors during logging are considered not fatal. bqlog library has
+		// a monitoring counter that tracks number of errors, so they are not
+		// totally invisible.
+		tokInfo := MintedTokenInfo{
+			Request:   req,
+			Response:  resp,
+			Config:    cfg,
+			Rule:      rule,
+			PeerIP:    state.PeerIP(),
+			RequestID: info.RequestID(c),
+		}
+		if logErr := r.LogToken(c, &tokInfo); logErr != nil {
+			logging.WithError(logErr).Errorf(c, "Failed to insert the delegation token into the BigQuery log")
+		}
+	}
+
+	return resp, err
 }
 
 // mintParams are passed to 'mint' function.
@@ -187,9 +217,6 @@ func (r *MintDelegationTokenRPC) mint(c context.Context, p *mintParams) (*minter
 		logging.WithError(err).Errorf(c, "Error when signing the token.")
 		return nil, grpc.Errorf(codes.Internal, "error when signing the token - %s", err)
 	}
-
-	// TODO(vadimsh): Record the token in the audit log along with the rule,
-	// config revision and request details.
 
 	return &minter.MintDelegationTokenResponse{
 		Token:              signed,
