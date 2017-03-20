@@ -5,18 +5,17 @@
 package buildbot
 
 import (
+	"errors"
 	"fmt"
-	"net/http"
 	"sort"
 	"strings"
 	"time"
 
-	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/datastore"
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/common/miloerror"
 	"golang.org/x/net/context"
 )
 
@@ -91,7 +90,7 @@ func getBuilds(
 
 	// TODO(hinoka): Builder specific structs.
 	result := []*resp.BuildSummary{}
-	q := ds.NewQuery("buildbotBuild")
+	q := datastore.NewQuery("buildbotBuild")
 	q = q.Eq("finished", finished)
 	q = q.Eq("master", masterName)
 	q = q.Eq("builder", builderName)
@@ -110,15 +109,9 @@ func getBuilds(
 	return result, nil
 }
 
-var errMasterNotFound = miloerror.Error{
-	Message: "Either the request resource was not found or you are not authorized",
-	Code:    http.StatusNotFound,
-}
-
-var errNotAuth = miloerror.Error{
-	Message: "You are not authenticated, try logging in",
-	Code:    http.StatusUnauthorized,
-}
+var errMasterNotFound = errors.New(
+	"Either the request resource was not found or you have insufficient permissions")
+var errNotAuth = errors.New("You are not authenticated, try logging in")
 
 // builderImpl is the implementation for getting a milo builder page from buildbot.
 // This gets:

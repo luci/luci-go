@@ -2,7 +2,7 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-package settings
+package common
 
 import (
 	"fmt"
@@ -12,8 +12,7 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/luci_config/server/cfgclient"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
-	milocfg "github.com/luci/luci-go/milo/common/config"
-	"github.com/luci/luci-go/server/router"
+	"github.com/luci/luci-go/milo/common/config"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
@@ -30,18 +29,6 @@ type Project struct {
 	Data []byte `gae:",noindex"`
 }
 
-// UpdateHandler is an HTTP handler that handles configuration update requests.
-func UpdateHandler(ctx *router.Context) {
-	c, h := ctx.Context, ctx.Writer
-	err := Update(c)
-	if err != nil {
-		logging.WithError(err).Errorf(c, "Update Handler encountered error")
-		h.WriteHeader(500)
-	}
-	logging.Infof(c, "Successfully completed")
-	h.WriteHeader(200)
-}
-
 // Update internal configuration based off luci-cfg.
 // update updates Milo's configuration based off luci config.  This includes
 // scanning through all project and extract all console configs.
@@ -49,7 +36,7 @@ func Update(c context.Context) error {
 	cfgName := info.AppID(c) + ".cfg"
 
 	var (
-		configs []*milocfg.Project
+		configs []*config.Project
 		metas   []*cfgclient.Meta
 	)
 	if err := cfgclient.Projects(c, cfgclient.AsService, cfgName, textproto.Slice(&configs), &metas); err != nil {
@@ -105,7 +92,7 @@ func Update(c context.Context) error {
 }
 
 // GetAllProjects returns all registered projects.
-func GetAllProjects(c context.Context) ([]*milocfg.Project, error) {
+func GetAllProjects(c context.Context) ([]*config.Project, error) {
 	q := ds.NewQuery("Project")
 	q.Order("ID")
 
@@ -114,9 +101,9 @@ func GetAllProjects(c context.Context) ([]*milocfg.Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	results := make([]*milocfg.Project, len(ps))
+	results := make([]*config.Project, len(ps))
 	for i, p := range ps {
-		results[i] = &milocfg.Project{}
+		results[i] = &config.Project{}
 		if err := proto.Unmarshal(p.Data, results[i]); err != nil {
 			return nil, err
 		}
@@ -125,13 +112,13 @@ func GetAllProjects(c context.Context) ([]*milocfg.Project, error) {
 }
 
 // GetProject returns the requested project.
-func GetProject(c context.Context, projName string) (*milocfg.Project, error) {
+func GetProject(c context.Context, projName string) (*config.Project, error) {
 	// Next, Try datastore
 	p := Project{ID: projName}
 	if err := ds.Get(c, &p); err != nil {
 		return nil, err
 	}
-	mp := milocfg.Project{}
+	mp := config.Project{}
 	if err := proto.Unmarshal(p.Data, &mp); err != nil {
 		return nil, err
 	}
@@ -140,7 +127,7 @@ func GetProject(c context.Context, projName string) (*milocfg.Project, error) {
 }
 
 // GetConsole returns the requested console instance.
-func GetConsole(c context.Context, projName, consoleName string) (*milocfg.Console, error) {
+func GetConsole(c context.Context, projName, consoleName string) (*config.Console, error) {
 	p, err := GetProject(c, projName)
 	if err != nil {
 		return nil, err

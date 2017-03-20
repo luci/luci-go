@@ -4,13 +4,9 @@
 
 package console
 
-import "github.com/luci/luci-go/milo/appengine/settings"
+import "github.com/luci/luci-go/milo/appengine/common"
 
-// TestableConsole is a subclass of Build that interfaces with TestableHandler and
-// includes sample test data.
-type TestableConsole struct{ Console }
-
-// TestData returns sample test data.
-func (x Console) TestData() (result []settings.TestBundle) {
+// ConsoleTestData returns sample console data.
+func ConsoleTestData() (result []common.TestBundle) {
 	return
 }

@@ -10,11 +10,11 @@ import (
 	"strings"
 
 	"github.com/luci/luci-go/common/clock"
-	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/backend/git"
 	"github.com/luci/luci-go/milo/appengine/buildbot"
-	"github.com/luci/luci-go/milo/appengine/settings"
+	"github.com/luci/luci-go/milo/appengine/common"
 	"github.com/luci/luci-go/milo/common/config"
 	"github.com/luci/luci-go/server/router"
 	"golang.org/x/net/context"
@@ -40,7 +40,7 @@ func GetConsoleBuilds(
 // TODO(hinoka): If the user is not a reader of any of of the builders returned,
 // that builder will be removed from list of results.
 func getConsoleDef(c context.Context, project, name string) (*config.Console, error) {
-	cs, err := settings.GetConsole(c, project, name)
+	cs, err := common.GetConsole(c, project, name)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func console(c context.Context, project, name string) (*resp.Console, error) {
 		return nil, err
 	}
 	tGitiles := clock.Now(c)
-	log.Debugf(c, "Loading commits took %s.", tGitiles.Sub(tStart))
+	logging.Debugf(c, "Loading commits took %s.", tGitiles.Sub(tStart))
 	commitNames := make([]string, len(commits))
 	for i, commit := range commits {
 		commitNames[i] = commit.Revision
@@ -83,7 +83,7 @@ func console(c context.Context, project, name string) (*resp.Console, error) {
 	}
 	cb, err := GetConsoleBuilds(c, "buildbot", builders, commitNames)
 	tConsole := clock.Now(c)
-	log.Debugf(c, "Loading the console took a total of %s.", tConsole.Sub(tGitiles))
+	logging.Debugf(c, "Loading the console took a total of %s.", tConsole.Sub(tGitiles))
 	if err != nil {
 		return nil, err
 	}

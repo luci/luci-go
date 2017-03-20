@@ -41,7 +41,13 @@ func TestBuilder(t *testing.T) {
 				err := os.MkdirAll(filepath.Dir(expectationFilePath), 0777)
 				So(err, ShouldBeNil)
 
-				actual, err := builderImpl(c, "debug", tc.bucket, tc.builder, 0)
+				actual, err := builderImpl(c,
+					builderQuery{
+						Server:  "debug",
+						Bucket:  tc.bucket,
+						Builder: tc.builder,
+						Limit:   0,
+					})
 				So(err, ShouldBeNil)
 				actualJSON, err := json.MarshalIndent(actual, "", "  ")
 				So(err, ShouldBeNil)

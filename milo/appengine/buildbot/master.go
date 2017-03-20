@@ -15,7 +15,7 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/appengine/settings"
+	"github.com/luci/luci-go/milo/appengine/common"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
 
@@ -57,7 +57,7 @@ func checkAccess(c context.Context, err error, internal bool) error {
 
 	// Do the ACL check if the entry is internal.
 	if internal {
-		allowed, err := settings.IsAllowedInternal(c)
+		allowed, err := common.IsAllowedInternal(c)
 		if err != nil {
 			return err
 		}
@@ -116,7 +116,7 @@ func GetAllBuilders(c context.Context) (*resp.CIService, error) {
 		if entry.Internal {
 			// Bypass the master if it's an internal master and the user is not
 			// part of the buildbot-private project.
-			allowed, err := settings.IsAllowedInternal(c)
+			allowed, err := common.IsAllowedInternal(c)
 			if err != nil {
 				logging.WithError(err).Errorf(c, "Could not process master %s", entry.Name)
 				return nil, err

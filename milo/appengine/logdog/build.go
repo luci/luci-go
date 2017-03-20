@@ -5,8 +5,8 @@
 package logdog
 
 import (
+	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	log "github.com/luci/luci-go/common/logging"
@@ -19,7 +19,6 @@ import (
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/logdog/internal"
-	"github.com/luci/luci-go/milo/common/miloerror"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
@@ -61,6 +60,10 @@ func (as *AnnotationStream) Normalize() error {
 	return nil
 }
 
+var errNotMilo = errors.New("Requested stream is not a Milo annotation protobuf")
+var errNotDatagram = errors.New("Requested stream is not a datagram stream")
+var errNoEntries = errors.New("Log stream has no annotation entries")
+
 // Fetch loads the annotation stream from LogDog.
 //
 // If the stream does not exist, or is invalid, Fetch will return a Milo error.
@@ -95,23 +98,14 @@ func (as *AnnotationStream) Fetch(c context.Context) (*miloProto.Step, error) {
 	// Make sure that this is an annotation stream.
 	switch {
 	case state.Desc.ContentType != miloProto.ContentTypeAnnotations:
-		return nil, &miloerror.Error{
-			Message: "Requested stream is not a Milo annotation protobuf",
-			Code:    http.StatusBadRequest,
-		}
+		return nil, errNotMilo
 
 	case state.Desc.StreamType != logpb.StreamType_DATAGRAM:
-		return nil, &miloerror.Error{
-			Message: "Requested stream is not a datagram stream",
-			Code:    http.StatusBadRequest,
-		}
+		return nil, errNotDatagram
 
 	case le == nil:
 		// No annotation stream data, so render a minimal page.
-		return nil, &miloerror.Error{
-			Message: "Log stream has no annotation entries",
-			Code:    http.StatusNotFound,
-		}
+		return nil, errNoEntries
 	}
 
 	// Get the last log entry in the stream. In reality, this will be index 0,
@@ -121,19 +115,13 @@ func (as *AnnotationStream) Fetch(c context.Context) (*miloProto.Step, error) {
 	// will be complete even if its source datagram(s) are fragments.
 	dg := le.GetDatagram()
 	if dg == nil {
-		return nil, &miloerror.Error{
-			Message: "Datagram stream does not have datagram data",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, errors.New("Datagram stream does not have datagram data")
 	}
 
 	// Attempt to decode the Step protobuf.
 	var step miloProto.Step
 	if err := proto.Unmarshal(dg.Data, &step); err != nil {
-		return nil, &miloerror.Error{
-			Message: "Failed to unmarshal annotation protobuf",
-			Code:    http.StatusInternalServerError,
-		}
+		return nil, err
 	}
 
 	var latestEndedTime time.Time

@@ -7,40 +7,27 @@ package console
 import (
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
-	"golang.org/x/net/context"
-
-	"github.com/luci/luci-go/milo/appengine/settings"
-	"github.com/luci/luci-go/milo/common/miloerror"
+	"github.com/luci/luci-go/milo/appengine/common"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
 )
 
-type Console struct{}
-
-// GetTemplateName returns the template name for console pages.
-func (x Console) GetTemplateName(t settings.Theme) string {
-	return "console.html"
-}
-
-// Render renders the console page.
-func (x Console) Render(c context.Context, r *http.Request, p httprouter.Params) (*templates.Args, error) {
-	project := p.ByName("project")
+// ConsoleHandler renders the console page.
+func ConsoleHandler(c *router.Context) {
+	project := c.Params.ByName("project")
 	if project == "" {
-		return nil, &miloerror.Error{
-			Message: "Missing project",
-			Code:    http.StatusBadRequest,
-		}
+		common.ErrorPage(c, http.StatusBadRequest, "Missing Project")
+		return
 	}
-	name := p.ByName("name")
+	name := c.Params.ByName("name")
 
-	result, err := console(c, project, name)
+	result, err := console(c.Context, project, name)
 	if err != nil {
-		return nil, err
+		common.ErrorPage(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
-	// Render into the template
-	args := &templates.Args{
+	templates.MustRender(c.Context, c.Writer, "pages/console.html", templates.Args{
 		"Console": result,
-	}
-	return args, nil
+	})
 }

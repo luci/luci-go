@@ -4,19 +4,11 @@
 
 // Data Structures used for defining test data for use with testing each theme.
 
-package settings
+package common
 
 import (
 	"github.com/luci/luci-go/server/templates"
 )
-
-// TestableHandler pairs up a handler with a list of test data.
-type TestableHandler interface {
-	// ThemedHandler represents the Hanler that this TestableHandler is associated with.
-	ThemedHandler
-	// TestData returns a list of example data used for testing if a theme renders correctly.
-	TestData() []TestBundle
-}
 
 // TestBundle is a template arg associated with a description used for testing.
 type TestBundle struct {

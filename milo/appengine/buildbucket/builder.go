@@ -219,26 +219,33 @@ func getDebugBuilds(c context.Context, bucket, builder string, maxCompletedBuild
 	return nil
 }
 
+type builderQuery struct {
+	Server  string
+	Bucket  string
+	Builder string
+	Limit   int
+}
+
 // builderImpl is the implementation for getting a milo builder page from buildbucket.
 // if maxCompletedBuilds < 0, 25 is used.
-func builderImpl(c context.Context, server, bucket, builder string, maxCompletedBuilds int) (*resp.Builder, error) {
-	if maxCompletedBuilds < 0 {
-		maxCompletedBuilds = 20
+func builderImpl(c context.Context, q builderQuery) (*resp.Builder, error) {
+	if q.Limit < 0 {
+		q.Limit = 20
 	}
 
 	result := &resp.Builder{
-		Name: builder,
+		Name: q.Builder,
 	}
-	if server == "debug" {
-		return result, getDebugBuilds(c, bucket, builder, maxCompletedBuilds, result)
+	if q.Server == "debug" {
+		return result, getDebugBuilds(c, q.Bucket, q.Builder, q.Limit, result)
 	}
-	client, err := newBuildbucketClient(c, server)
+	client, err := newBuildbucketClient(c, q.Server)
 	if err != nil {
 		return nil, err
 	}
 
 	fetch := func(target *[]*resp.BuildSummary, status string, count int) error {
-		builds, err := fetchBuilds(c, client, bucket, builder, status, count)
+		builds, err := fetchBuilds(c, client, q.Bucket, q.Builder, status, count)
 		if err != nil {
 			log.Errorf(c, "Could not fetch builds with status %s: %s", status, err)
 			return err
@@ -260,7 +267,7 @@ func builderImpl(c context.Context, server, bucket, builder string, maxCompleted
 			return fetch(&result.CurrentBuilds, StatusStarted, -1)
 		}
 		work <- func() error {
-			return fetch(&result.FinishedBuilds, StatusCompleted, maxCompletedBuilds)
+			return fetch(&result.FinishedBuilds, StatusCompleted, q.Limit)
 		}
 	})
 }

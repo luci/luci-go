@@ -7,111 +7,88 @@ package buildbot
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 
-	"github.com/julienschmidt/httprouter"
-	"golang.org/x/net/context"
-
-	"github.com/luci/luci-go/milo/appengine/settings"
-	"github.com/luci/luci-go/milo/common/miloerror"
+	"github.com/luci/luci-go/milo/appengine/common"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
 )
 
-// Build is the container struct for methods related to buildbot build pages.
-type Build struct{}
-
-// Builder is the container struct for methods related to buildbot builder pages.
-type Builder struct{}
-
-// GetTemplateName returns the template name for build pages.
-func (b Build) GetTemplateName(t settings.Theme) string {
-	return "build.html"
-}
-
-// Render Render the buildbot build page.
-func (b Build) Render(c context.Context, r *http.Request, p httprouter.Params) (*templates.Args, error) {
-	master := p.ByName("master")
+// BuildHandler Renders the buildbot build page.
+func BuildHandler(c *router.Context) {
+	master := c.Params.ByName("master")
 	if master == "" {
-		return nil, &miloerror.Error{
-			Message: "No master",
-			Code:    http.StatusBadRequest,
-		}
+		common.ErrorPage(c, http.StatusBadRequest, "No master specified")
+		return
 	}
-	builder := p.ByName("builder")
+	builder := c.Params.ByName("builder")
 	if builder == "" {
-		return nil, &miloerror.Error{
-			Message: "No builder",
-			Code:    http.StatusBadRequest,
-		}
+		common.ErrorPage(c, http.StatusBadRequest, "No builder specified")
+		return
 	}
-	buildNum := p.ByName("build")
+	buildNum := c.Params.ByName("build")
 	if buildNum == "" {
-		return nil, &miloerror.Error{
-			Message: "No build num",
-			Code:    http.StatusBadRequest,
-		}
+		common.ErrorPage(c, http.StatusBadRequest, "No build number")
+		return
 	}
 	num, err := strconv.Atoi(buildNum)
 	if err != nil {
-		return nil, &miloerror.Error{
-			Message: fmt.Sprintf("%s does not look like a number", buildNum),
-			Code:    http.StatusBadRequest,
-		}
+		common.ErrorPage(c, http.StatusBadRequest,
+			fmt.Sprintf("%s does not look like a number", buildNum))
+		return
 	}
 
-	result, err := build(c, master, builder, num)
+	result, err := build(c.Context, master, builder, num)
 	if err != nil {
-		return nil, err
+		var code int
+		switch err {
+		case errBuildNotFound:
+			code = http.StatusNotFound
+		case errNotAuth:
+			code = http.StatusUnauthorized
+		default:
+			code = http.StatusInternalServerError
+		}
+		common.ErrorPage(c, code, err.Error())
+		return
 	}
 
-	// Render into the template
-	fmt.Fprintf(os.Stderr, "Result: %#v\n\n", result)
-	args := &templates.Args{
+	templates.MustRender(c.Context, c.Writer, "pages/build.html", templates.Args{
 		"Build": result,
-	}
-	return args, nil
+	})
 }
 
-// GetTemplateName returns the template name for builder pages.
-func (b Builder) GetTemplateName(t settings.Theme) string {
-	return "builder.html"
-}
-
-// Render renders the buildbot builder page.
+// BuilderHandler renders the buildbot builder page.
 // Note: The builder html template contains self links to "?limit=123", which could
 // potentially override any other request parameters set.
-func (b Builder) Render(c context.Context, r *http.Request, p httprouter.Params) (*templates.Args, error) {
-	master := p.ByName("master")
+func BuilderHandler(c *router.Context) {
+	master := c.Params.ByName("master")
 	if master == "" {
-		return nil, &miloerror.Error{
-			Message: "No master specified",
-			Code:    http.StatusBadRequest,
-		}
+		common.ErrorPage(c, http.StatusBadRequest, "No master specified")
+		return
 	}
-	builder := p.ByName("builder")
+	builder := c.Params.ByName("builder")
 	if builder == "" {
-		return nil, &miloerror.Error{
-			Message: "No builder specified",
-			Code:    http.StatusBadRequest,
-		}
+		common.ErrorPage(c, http.StatusBadRequest, "No builder specified")
+		return
 	}
-	limit, err := settings.GetLimit(r)
+	limit, err := common.GetLimit(c.Request)
 	if err != nil {
-		return nil, err
+		common.ErrorPage(c, http.StatusBadRequest, err.Error())
+		return
 	}
 	if limit < 0 {
 		limit = 25
 	}
 
-	result, err := builderImpl(c, master, builder, limit)
+	result, err := builderImpl(c.Context, master, builder, limit)
 	if err != nil {
-		return nil, err
+		common.ErrorPage(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	// Render into the template
-	args := &templates.Args{
+	templates.MustRender(c.Context, c.Writer, "pages/builder.html", templates.Args{
 		"Builder": result,
-	}
-	return args, nil
+	})
 }

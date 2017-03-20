@@ -14,78 +14,69 @@ import (
 	"github.com/luci/luci-go/logdog/client/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
-	"github.com/luci/luci-go/milo/appengine/settings"
-	"github.com/luci/luci-go/milo/common/miloerror"
+	"github.com/luci/luci-go/milo/appengine/common"
 	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
 
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 )
 
-// AnnotationStreamHandler is a ThemedHandler that renders a LogDog Milo
+// AnnotationStreamHandler is a Handler that renders a LogDog Milo
 // annotation protobuf stream.
 //
 // The protobuf stream is fetched live from LogDog and cached locally, either
 // temporarily (if incomplete) or indefinitely (if complete).
 type AnnotationStreamHandler struct{}
 
-// GetTemplateName implements settings.ThemedHandler.
-func (s *AnnotationStreamHandler) GetTemplateName(t settings.Theme) string {
-	return "build.html"
+func BuildHandler(c *router.Context) {
+	(&AnnotationStreamHandler{}).Render(c)
+	return
 }
 
 // Render implements settings.ThemedHandler.
-func (s *AnnotationStreamHandler) Render(c context.Context, req *http.Request, p httprouter.Params) (
-	*templates.Args, error) {
+func (s *AnnotationStreamHandler) Render(c *router.Context) {
 
 	as := AnnotationStream{
-		Project: cfgtypes.ProjectName(p.ByName("project")),
-		Path:    types.StreamPath(strings.Trim(p.ByName("path"), "/")),
+		Project: cfgtypes.ProjectName(c.Params.ByName("project")),
+		Path:    types.StreamPath(strings.Trim(c.Params.ByName("path"), "/")),
 	}
 	if err := as.Normalize(); err != nil {
-		return nil, &miloerror.Error{
-			Message: err.Error(),
-			Code:    http.StatusBadRequest,
-		}
+		common.ErrorPage(c, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	// Setup our LogDog client.
 	var err error
-	if as.Client, err = NewClient(c, ""); err != nil {
-		log.WithError(err).Errorf(c, "Failed to generate LogDog client.")
-		return nil, &miloerror.Error{
-			Code: http.StatusInternalServerError,
-		}
+	if as.Client, err = NewClient(c.Context, ""); err != nil {
+		log.WithError(err).Errorf(c.Context, "Failed to generate LogDog client.")
+		common.ErrorPage(c, http.StatusInternalServerError, "Failed to generate LogDog client")
+		return
 	}
 
 	// Load the Milo annotation protobuf from the annotation stream.
-	if _, err := as.Fetch(c); err != nil {
+	if _, err := as.Fetch(c.Context); err != nil {
 		switch errors.Unwrap(err) {
 		case coordinator.ErrNoSuchStream:
-			return nil, &miloerror.Error{
-				Message: "Stream does not exist",
-				Code:    http.StatusNotFound,
-			}
+			common.ErrorPage(c, http.StatusNotFound, "Stream does not exist")
 
 		case coordinator.ErrNoAccess:
-			return nil, &miloerror.Error{
-				Message: "No access to stream",
-				Code:    http.StatusForbidden,
-			}
+			common.ErrorPage(c, http.StatusForbidden, "No access to LogDog stream")
+
+		case errNotMilo, errNotDatagram:
+			// The user requested a LogDog url that isn't a Milo annotation.
+			common.ErrorPage(c, http.StatusBadRequest, err.Error())
 
 		default:
-			return nil, &miloerror.Error{
-				Message: "Failed to load stream",
-				Code:    http.StatusInternalServerError,
-			}
+			log.WithError(err).Errorf(c.Context, "Failed to load LogDog stream.")
+			common.ErrorPage(c, http.StatusInternalServerError, "Failed to load LogDog stream")
 		}
+		return
 	}
 
-	// Convert the Milo Annotation protobuf to Milo objects.
-	return &templates.Args{
-		"Build": as.toMiloBuild(c),
-	}, nil
+	templates.MustRender(c.Context, c.Writer, "pages/build.html", templates.Args{
+		"Build": as.toMiloBuild(c.Context),
+	})
 }
 
 func resolveHost(host string) (string, error) {

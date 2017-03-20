@@ -11,32 +11,39 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"strings"
 	"testing"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/milo/appengine/buildbot"
-	"github.com/luci/luci-go/milo/appengine/settings"
+	"github.com/luci/luci-go/milo/appengine/common"
 	"github.com/luci/luci-go/milo/appengine/swarming"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
-	luciSettings "github.com/luci/luci-go/server/settings"
+	"github.com/luci/luci-go/server/settings"
+	"github.com/luci/luci-go/server/templates"
+
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
+type testPackage struct {
+	Data         func() []common.TestBundle
+	DisplayName  string
+	TemplateName string
+}
+
 var (
-	allHandlers = []settings.TestableHandler{
-		settings.TestableSettings{},
-		buildbot.TestableBuild{},
-		buildbot.TestableBuilder{},
-		swarming.TestableBuild{},
-		swarming.TestableLog{},
-		testableFrontpage{},
+	allPackages = []testPackage{
+		{buildbot.BuildTestData, "buildbot.build", "build.html"},
+		{buildbot.BuilderTestData, "buildbot.builder", "builder.html"},
+		{swarming.BuildTestData, "swarming.build", "build.html"},
+		{swarming.LogTestData, "swarming.log", "log.html"},
+		{frontpageTestData, "frontpage", "frontpage.html"},
 	}
 )
 
@@ -101,38 +108,31 @@ func TestPages(t *testing.T) {
 		// Load all the bundles.
 		c := context.Background()
 		c = memory.Use(c)
-		c = settings.WithRequest(c, &http.Request{URL: &url.URL{Path: "/foobar"}})
+		c = common.WithRequest(c, &http.Request{URL: &url.URL{Path: "/foobar"}})
 		c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
 		a := auth.Authenticator{fakeOAuthMethod{"some_client_id"}}
 		c = auth.SetAuthenticator(c, a)
-		c = luciSettings.Use(c, luciSettings.New(&luciSettings.MemoryStorage{Expiration: time.Second}))
-		err := luciSettings.Set(c, "analytics", &analyticsSettings{"UA-12345-01"}, "", "")
+		c = settings.Use(c, settings.New(&settings.MemoryStorage{Expiration: time.Second}))
+		err := settings.Set(c, "analytics", &analyticsSettings{"UA-12345-01"}, "", "")
 		So(err, ShouldBeNil)
-		for _, nb := range settings.GetTemplateBundles() {
-			Convey(fmt.Sprintf("Testing theme %q", nb.Name), func() {
-				err := nb.Bundle.EnsureLoaded(c)
-				So(err, ShouldBeNil)
-				for _, h := range allHandlers {
-					hName := reflect.TypeOf(h).String()
-					Convey(fmt.Sprintf("Testing handler %q", hName), func() {
-						for _, b := range h.TestData() {
-							Convey(fmt.Sprintf("Testing: %q", b.Description), func() {
-								args := b.Data
-								// This is not a path, but a file key, should always be "/".
-								tmplName := fmt.Sprintf(
-									"pages/%s", h.GetTemplateName(*nb.Theme))
-								buf, err := nb.Bundle.Render(c, tmplName, args)
-								So(err, ShouldBeNil)
-								fname := fmt.Sprintf(
-									"%s-%s-%s.html", nb.Name, hName, b.Description)
-								if *generate {
-									mustWrite(fname, buf)
-								} else {
-									localBuf, err := load(fname)
-									So(err, ShouldBeNil)
-									So(fixZeroDuration(string(buf)), ShouldEqual, fixZeroDuration(string(localBuf)))
-								}
-							})
+		c = templates.Use(c, common.GetTemplateBundle())
+		for _, p := range allPackages {
+			Convey(fmt.Sprintf("Testing handler %q", p.DisplayName), func() {
+				for _, b := range p.Data() {
+					Convey(fmt.Sprintf("Testing: %q", b.Description), func() {
+						args := b.Data
+						// This is not a path, but a file key, should always be "/".
+						tmplName := "pages/" + p.TemplateName
+						buf, err := templates.Render(c, tmplName, args)
+						So(err, ShouldBeNil)
+						fname := fmt.Sprintf(
+							"%s-%s.html", p.DisplayName, b.Description)
+						if *generate {
+							mustWrite(fname, buf)
+						} else {
+							localBuf, err := load(fname)
+							So(err, ShouldBeNil)
+							So(fixZeroDuration(string(buf)), ShouldEqual, fixZeroDuration(string(localBuf)))
 						}
 					})
 				}

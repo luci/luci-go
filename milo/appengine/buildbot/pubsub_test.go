@@ -23,7 +23,7 @@ import (
 	memcfg "github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
-	"github.com/luci/luci-go/milo/appengine/settings"
+	"github.com/luci/luci-go/milo/appengine/common"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/auth/identity"
@@ -438,7 +438,7 @@ func TestPubSub(t *testing.T) {
 			})
 			So(h.Code, ShouldEqual, 200)
 			Convey("And stores correctly", func() {
-				err := settings.Update(c)
+				err := common.Update(c)
 				So(err, ShouldBeNil)
 				c = auth.WithState(c, &authtest.FakeState{
 					Identity:       "user:alicebob@google.com",

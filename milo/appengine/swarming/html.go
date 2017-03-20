@@ -5,15 +5,15 @@
 package swarming
 
 import (
+	"errors"
 	"net/http"
 	"os"
 
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 	"google.golang.org/api/googleapi"
 
-	"github.com/luci/luci-go/milo/appengine/settings"
-	"github.com/luci/luci-go/milo/common/miloerror"
+	"github.com/luci/luci-go/milo/appengine/common"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
 )
 
@@ -34,6 +34,8 @@ func getSwarmingHost(r *http.Request) string {
 	}
 }
 
+var errUnrecognizedHost = errors.New("Unregistered Swarming Host")
+
 func getSwarmingService(c context.Context, host string) (swarmingService, error) {
 	switch host {
 	// TODO(hinoka): configure this mapping in luci-config
@@ -43,15 +45,9 @@ func getSwarmingService(c context.Context, host string) (swarmingService, error)
 		return newProdService(c, host)
 
 	default:
-		return nil, &miloerror.Error{
-			Message: "unregistered Swarming host",
-			Code:    http.StatusNotFound,
-		}
+		return nil, errUnrecognizedHost
 	}
 }
-
-// Log is for fetching logs from swarming.
-type Log struct{}
 
 // Build is for deciphering recipe builds from swarming based off of logs.
 type Build struct {
@@ -60,86 +56,75 @@ type Build struct {
 	bl buildLoader
 }
 
-// GetTemplateName for Log returns the template name for log pages.
-func (l Log) GetTemplateName(t settings.Theme) string {
-	return "log.html"
-}
-
-// Render writes the build log to the given response writer.
-func (l Log) Render(c context.Context, r *http.Request, p httprouter.Params) (*templates.Args, error) {
-	id := p.ByName("id")
+// LogHandler writes the build log to the given response writer.
+func LogHandler(c *router.Context) {
+	id := c.Params.ByName("id")
 	if id == "" {
-		return nil, &miloerror.Error{
-			Message: "No id",
-			Code:    http.StatusBadRequest,
-		}
+		common.ErrorPage(c, http.StatusBadRequest, "No id")
+		return
 	}
-	logname := p.ByName("logname")
+	logname := c.Params.ByName("logname")
 	if logname == "" {
-		return nil, &miloerror.Error{
-			Message: "No log name",
-			Code:    http.StatusBadRequest,
-		}
+		common.ErrorPage(c, http.StatusBadRequest, "No log name")
 	}
 
-	sf, err := getSwarmingService(c, getSwarmingHost(r))
+	sf, err := getSwarmingService(c.Context, getSwarmingHost(c.Request))
 	if err != nil {
-		return nil, convertErr(err)
+		common.ErrorPage(c, errCode(err), err.Error())
+		return
 	}
 
-	log, closed, err := swarmingBuildLogImpl(c, sf, id, logname)
+	log, closed, err := swarmingBuildLogImpl(c.Context, sf, id, logname)
 	if err != nil {
-		return nil, convertErr(err)
+		common.ErrorPage(c, errCode(err), err.Error())
+		return
 	}
 
-	args := &templates.Args{
+	templates.MustRender(c.Context, c.Writer, "pages/log.html", templates.Args{
 		"Log":    log,
 		"Closed": closed,
-	}
-	return args, nil
+	})
 }
 
-// GetTemplateName for Build returns the template name for build pages.
-func (b Build) GetTemplateName(t settings.Theme) string {
-	return "build.html"
+func BuildHandler(c *router.Context) {
+	(Build{}).Render(c)
 }
 
 // Render renders both the build page and the log.
-func (b Build) Render(c context.Context, r *http.Request, p httprouter.Params) (*templates.Args, error) {
+func (b Build) Render(c *router.Context) {
 	// Get the swarming ID
-	id := p.ByName("id")
+	id := c.Params.ByName("id")
 	if id == "" {
-		return nil, &miloerror.Error{
-			Message: "No id",
-			Code:    http.StatusBadRequest,
-		}
+		common.ErrorPage(c, http.StatusBadRequest, "No id")
+		return
 	}
 
-	sf, err := getSwarmingService(c, getSwarmingHost(r))
+	sf, err := getSwarmingService(c.Context, getSwarmingHost(c.Request))
 	if err != nil {
-		return nil, convertErr(err)
+		common.ErrorPage(c, errCode(err), err.Error())
+		return
 	}
 
-	result, err := b.bl.swarmingBuildImpl(c, sf, r.URL.String(), id)
+	result, err := b.bl.swarmingBuildImpl(c.Context, sf, c.Request.URL.String(), id)
 	if err != nil {
-		return nil, convertErr(err)
+		common.ErrorPage(c, errCode(err), err.Error())
+		return
 	}
 
-	// Render into the template
-	args := &templates.Args{
+	templates.MustRender(c.Context, c.Writer, "pages/build.html", templates.Args{
 		"Build": result,
-	}
-	return args, nil
+	})
 }
 
-func convertErr(err error) error {
-	if isAPINotFound(err) || os.IsNotExist(err) {
-		return &miloerror.Error{
-			Message: err.Error(),
-			Code:    http.StatusNotFound,
-		}
+// errCode resolves recognized errors into proper http response codes.
+func errCode(err error) int {
+	if err == errUnrecognizedHost {
+		return http.StatusBadRequest
 	}
-	return err
+	if isAPINotFound(err) || os.IsNotExist(err) {
+		return http.StatusNotFound
+	}
+	return http.StatusInternalServerError
 }
 
 // isAPINotFound returns true if err is a HTTP 404 API response.
@@ -147,6 +132,5 @@ func isAPINotFound(err error) bool {
 	if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusNotFound {
 		return true
 	}
-
 	return false
 }

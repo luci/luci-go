@@ -18,9 +18,9 @@ import (
 	"github.com/luci/luci-go/milo/appengine/buildbot"
 	"github.com/luci/luci-go/milo/appengine/buildbucket"
 	"github.com/luci/luci-go/milo/appengine/buildinfo"
+	"github.com/luci/luci-go/milo/appengine/common"
 	"github.com/luci/luci-go/milo/appengine/console"
 	"github.com/luci/luci-go/milo/appengine/logdog"
-	"github.com/luci/luci-go/milo/appengine/settings"
 	"github.com/luci/luci-go/milo/appengine/swarming"
 	"github.com/luci/luci-go/server/router"
 )
@@ -35,38 +35,33 @@ func init() {
 	r := router.New()
 	gaemiddleware.InstallHandlers(r, gaemiddleware.BaseProd())
 
-	basemw := settings.Base()
-	r.GET("/", basemw, settings.Wrap(frontpage{}))
+	basemw := common.Base()
+	r.GET("/", basemw, frontpageHandler)
 
 	// Admin and cron endpoints.
-	r.GET("/admin/update", basemw.Extend(gaemiddleware.RequireCron),
-		settings.UpdateHandler)
-	r.GET("/admin/configs", basemw, settings.Wrap(settings.ViewConfigs{}))
+	r.GET("/admin/update", basemw.Extend(gaemiddleware.RequireCron), UpdateHandler)
+	r.GET("/admin/configs", basemw, ConfigsHandler)
 
 	// Console
-	r.GET("/console/:project/:name", basemw, settings.Wrap(console.Console{}))
+	r.GET("/console/:project/:name", basemw, console.ConsoleHandler)
 	r.GET("/console/:project", basemw, console.Main)
 
 	// Swarming
-	r.GET("/swarming/task/:id/steps/*logname", basemw, settings.Wrap(swarming.Log{}))
-	r.GET("/swarming/task/:id", basemw, settings.Wrap(swarming.Build{}))
-	// Backward-compatible URLs:
-	r.GET("/swarming/prod/:id/steps/*logname", basemw, settings.Wrap(swarming.Log{}))
-	r.GET("/swarming/prod/:id", basemw, settings.Wrap(swarming.Build{}))
+	r.GET("/swarming/task/:id/steps/*logname", basemw, swarming.LogHandler)
+	r.GET("/swarming/task/:id", basemw, swarming.BuildHandler)
+	// Backward-compatible URLs for Swarming:
+	r.GET("/swarming/prod/:id/steps/*logname", basemw, swarming.LogHandler)
+	r.GET("/swarming/prod/:id", basemw, swarming.BuildHandler)
 
 	// Buildbucket
-	r.GET("/buildbucket/:bucket/:builder", basemw, settings.Wrap(buildbucket.Builder{}))
+	r.GET("/buildbucket/:bucket/:builder", basemw, buildbucket.BuilderHandler)
 
 	// Buildbot
-	r.GET("/buildbot/:master/:builder/:build", basemw, settings.Wrap(buildbot.Build{}))
-	r.GET("/buildbot/:master/:builder/", basemw, settings.Wrap(buildbot.Builder{}))
+	r.GET("/buildbot/:master/:builder/:build", basemw, buildbot.BuildHandler)
+	r.GET("/buildbot/:master/:builder/", basemw, buildbot.BuilderHandler)
 
 	// LogDog Milo Annotation Streams.
-	r.GET("/logdog/build/:project/*path", basemw, settings.Wrap(&logdog.AnnotationStreamHandler{}))
-
-	// User settings
-	r.GET("/settings", basemw, settings.Wrap(settings.Settings{}))
-	r.POST("/settings", basemw, settings.ChangeSettings)
+	r.GET("/logdog/build/:project/*prefix", basemw, logdog.BuildHandler)
 
 	// PubSub subscription endpoints.
 	r.POST("/pubsub/buildbot", basemw, buildbot.PubSubHandler)

@@ -5,68 +5,59 @@
 package buildbucket
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
-	"golang.org/x/net/context"
-
-	"github.com/luci/luci-go/milo/appengine/settings"
-	"github.com/luci/luci-go/milo/common/miloerror"
+	"github.com/luci/luci-go/milo/appengine/common"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
 )
 
 // TODO(nodir): move this value to luci-config.
 const defaultServer = "cr-buildbucket.appspot.com"
 
-// Builder displays builder view by fetching builds from buildbucket.
-type Builder struct{}
-
-// GetTemplateName for Builder returns the template name for builder pages.
-func (b Builder) GetTemplateName(t settings.Theme) string {
-	return "builder.html"
-}
-
-// Render renders builder view page.
-// Note: The builder html template contains self links to "?limit=123", which could
-// potentially override any other request parameters set.
-func (b Builder) Render(c context.Context, r *http.Request, p httprouter.Params) (*templates.Args, error) {
-	// Parse URL parameters.
-	server := r.FormValue("server")
-	if server == "" {
-		server = defaultServer
+func parseBuilderQuery(r *http.Request, p httprouter.Params) (query builderQuery, err error) {
+	query.Server = r.FormValue("server")
+	if query.Server == "" {
+		query.Server = defaultServer
 	}
 
-	bucket := p.ByName("bucket")
-	if bucket == "" {
-		return nil, &miloerror.Error{
-			Message: "No bucket",
-			Code:    http.StatusBadRequest,
-		}
+	query.Bucket = p.ByName("bucket")
+	if query.Bucket == "" {
+		err = errors.New("No bucket")
+		return
 	}
 
 	builder := p.ByName("builder")
 	if builder == "" {
-		return nil, &miloerror.Error{
-			Message: "No builder",
-			Code:    http.StatusBadRequest,
-		}
+		err = errors.New("No builder")
+		return
 	}
 
 	// limit is a name of the query string parameter for specifying
 	// maximum number of builds to show.
-	limit, err := settings.GetLimit(r)
+	query.Limit, err = common.GetLimit(r)
+	return
+}
+
+// BuilderHandler renders the builder view page.
+// Note: The builder html template contains self links to "?limit=123", which could
+// potentially override any other request parameters set.
+func BuilderHandler(c *router.Context) {
+	query, err := parseBuilderQuery(c.Request, c.Params)
 	if err != nil {
-		return nil, err
+		common.ErrorPage(c, http.StatusBadRequest, err.Error())
+		return
 	}
 
-	result, err := builderImpl(c, server, bucket, builder, limit)
+	result, err := builderImpl(c.Context, query)
 	if err != nil {
-		return nil, err
+		common.ErrorPage(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
-	// Render into the template
-	args := &templates.Args{
+	templates.MustRender(c.Context, c.Writer, "pages/builder.html", templates.Args{
 		"Builder": result,
-	}
-	return args, nil
+	})
 }

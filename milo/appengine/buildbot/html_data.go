@@ -10,7 +10,7 @@ import (
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/appengine/settings"
+	"github.com/luci/luci-go/milo/appengine/common"
 	"github.com/luci/luci-go/server/templates"
 	"golang.org/x/net/context"
 )
@@ -24,19 +24,11 @@ var testCases = []struct {
 	{"win_chromium_rel_ng", 246309},
 }
 
-// TestableBuild is a subclass of Build that interfaces with TestableHandler and
-// includes sample test data.
-type TestableBuild struct{ Build }
-
-// TestableBuilder is a subclass of Builder that interfaces with TestableHandler
-// and includes sample test data.
-type TestableBuilder struct{ Builder }
-
-// TestData returns sample test data.
-func (b Build) TestData() []settings.TestBundle {
+// BuildTestData returns sample test data for build pages.
+func BuildTestData() []common.TestBundle {
 	c := memory.Use(context.Background())
 	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
-	bundles := []settings.TestBundle{}
+	bundles := []common.TestBundle{}
 	for _, tc := range testCases {
 		build, err := build(c, "debug", tc.builder, tc.build)
 		if err != nil {
@@ -44,7 +36,7 @@ func (b Build) TestData() []settings.TestBundle {
 				"Encountered error while building debug/%s/%s.\n%s",
 				tc.builder, tc.build, err))
 		}
-		bundles = append(bundles, settings.TestBundle{
+		bundles = append(bundles, common.TestBundle{
 			Description: fmt.Sprintf("Debug page: %s/%d", tc.builder, tc.build),
 			Data: templates.Args{
 				"Build": build,
@@ -54,9 +46,9 @@ func (b Build) TestData() []settings.TestBundle {
 	return bundles
 }
 
-// TestData returns sample test data.
-func (b Builder) TestData() []settings.TestBundle {
-	return []settings.TestBundle{
+// BiulderTestData returns sample test data for builder pages.
+func BuilderTestData() []common.TestBundle {
+	return []common.TestBundle{
 		{
 			Description: "Basic Test no builds",
 			Data: templates.Args{

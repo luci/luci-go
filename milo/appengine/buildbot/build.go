@@ -6,29 +6,24 @@ package buildbot
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 	"time"
 
+	"golang.org/x/net/context"
+
+	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/common/miloerror"
-
-	ds "github.com/luci/gae/service/datastore"
-
-	"golang.org/x/net/context"
 )
 
-var errBuildNotFound = miloerror.Error{
-	Message: "Build not found",
-	Code:    http.StatusNotFound,
-}
+var errBuildNotFound = errors.New("Build not found")
 
 // getBuild fetches a buildbot build from the datastore and checks ACLs.
 // The return code matches the master responses.
@@ -39,7 +34,7 @@ func getBuild(c context.Context, master, builder string, buildNum int) (*buildbo
 		Number:      buildNum,
 	}
 
-	err := ds.Get(c, result)
+	err := datastore.Get(c, result)
 	err = checkAccess(c, err, result.Internal)
 	if err == errMasterNotFound {
 		err = errBuildNotFound

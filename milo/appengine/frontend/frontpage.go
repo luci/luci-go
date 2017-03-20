@@ -7,51 +7,43 @@ package frontend
 import (
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
+	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
-	"golang.org/x/net/context"
 
-	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/buildbot"
 	"github.com/luci/luci-go/milo/appengine/buildbucket"
-	"github.com/luci/luci-go/milo/appengine/settings"
+	"github.com/luci/luci-go/milo/appengine/common"
 )
 
-type frontpage struct{}
-
-func (f frontpage) GetTemplateName(t settings.Theme) string {
-	return "frontpage.html"
-}
-
-func (f frontpage) Render(c context.Context, r *http.Request, p httprouter.Params) (*templates.Args, error) {
+func frontpageHandler(c *router.Context) {
 	fp := resp.FrontPage{}
 	var mBuildbot, mBuildbucket *resp.CIService
 
 	err := parallel.FanOutIn(func(ch chan<- func() error) {
 		ch <- func() (err error) {
-			mBuildbot, err = buildbot.GetAllBuilders(c)
+			mBuildbot, err = buildbot.GetAllBuilders(c.Context)
 			return err
 		}
 		ch <- func() (err error) {
-			mBuildbucket, err = buildbucket.GetAllBuilders(c)
+			mBuildbucket, err = buildbucket.GetAllBuilders(c.Context)
 			return err
 		}
 	})
 	if err != nil {
-		log.WithError(err).Errorf(c, "Encountered error while loading modules")
-		return nil, err
+		common.ErrorPage(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	fp.CIServices = append(fp.CIServices, *mBuildbucket)
 	fp.CIServices = append(fp.CIServices, *mBuildbot)
-	return &templates.Args{"frontpage": fp}, nil
+	templates.MustRender(c.Context, c.Writer, "pages/frontpage.html", templates.Args{
+		"frontpage": fp,
+	})
 }
 
-type testableFrontpage struct{ frontpage }
-
-func (l testableFrontpage) TestData() []settings.TestBundle {
+func frontpageTestData() []common.TestBundle {
 	data := &templates.Args{
 		"frontpage": resp.FrontPage{
 			CIServices: []resp.CIService{
@@ -76,7 +68,7 @@ func (l testableFrontpage) TestData() []settings.TestBundle {
 			},
 		},
 	}
-	return []settings.TestBundle{
+	return []common.TestBundle{
 		{
 			Description: "Basic frontpage",
 			Data:        *data,

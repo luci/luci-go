@@ -26,7 +26,7 @@ import (
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/coordinator"
 	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/appengine/settings"
+	"github.com/luci/luci-go/milo/appengine/common"
 	"github.com/luci/luci-go/server/templates"
 )
 
@@ -147,17 +147,9 @@ func (svc debugSwarmingService) getTaskOutput(c context.Context, taskID string) 
 	return svc.tc.getSwarmingOutput(), nil
 }
 
-// TestableLog is a subclass of Log that interfaces with TestableHandler and
-// includes sample test data.
-type TestableLog struct{ Log }
-
-// TestableBuild is a subclass of Build that interfaces with TestableHandler and
-// includes sample test data.
-type TestableBuild struct{ Build }
-
-// TestData returns sample test data.
-func (l TestableLog) TestData() []settings.TestBundle {
-	return []settings.TestBundle{
+// LogTestData returns sample test data for log pages.
+func LogTestData() []common.TestBundle {
+	return []common.TestBundle{
 		{
 			Description: "Basic log",
 			Data: templates.Args{
@@ -235,8 +227,8 @@ func datagramGetResponse(project, prefix string, msg proto.Message) *logdog.GetR
 	}
 }
 
-// TestData returns sample test data.
-func (b TestableBuild) TestData() []settings.TestBundle {
+// BuildTestData returns sample test data for swarming build pages.
+func BuildTestData() []common.TestBundle {
 	basic := resp.MiloBuild{
 		Summary: resp.BuildComponent{
 			Label:    "Test swarming build",
@@ -246,7 +238,7 @@ func (b TestableBuild) TestData() []settings.TestBundle {
 			Duration: time.Second,
 		},
 	}
-	results := []settings.TestBundle{
+	results := []common.TestBundle{
 		{
 			Description: "Basic successful build",
 			Data:        templates.Args{"Build": basic},
@@ -266,7 +258,7 @@ func (b TestableBuild) TestData() []settings.TestBundle {
 		if err != nil {
 			panic(fmt.Errorf("Error while processing %s: %s", tc.name, err))
 		}
-		results = append(results, settings.TestBundle{
+		results = append(results, common.TestBundle{
 			Description: tc.name,
 			Data:        templates.Args{"Build": build},
 		})
