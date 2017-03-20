@@ -63,9 +63,6 @@ func init() {
 
 	// Install all RPC servers.
 	api := prpc.Server{
-		Authenticator: auth.Authenticator{
-			&server.OAuth2Method{Scopes: []string{server.EmailScope}},
-		},
 		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil),
 	}
 	admin.RegisterCertificateAuthoritiesServer(&api, &admin.DecoratedCertificateAuthorities{

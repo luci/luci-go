@@ -17,7 +17,6 @@ import (
 
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
 )
 
@@ -36,24 +35,24 @@ var (
 	// client may accept.
 	exposeHeaders = strings.Join([]string{HeaderGRPCCode}, ", ")
 
-	// NoAuthenticator can be used with RegisterDefaultAuth or Server.Authenticator to explicitly specify that
-	// your Server won't apply any authentication to incoming connections.
-	NoAuthenticator = auth.Authenticator{}
+	// NoAuthentication can be used in place of an Authenticator to explicitly
+	// specify that your Server will skip authentication.
+	//
+	// Use it with Server.Authenticator or RegisterDefaultAuth.
+	NoAuthentication Authenticator = nullAuthenticator{}
 )
 
 // Server is a pRPC server to serve RPC requests.
 // Zero value is valid.
 type Server struct {
-	// Authenticator, if not nil, specifies a list of authentication methods to
-	// try when authenticating the request.
+	// Authenticator, if not nil, specifies how to authenticate requests.
 	//
-	// If nil, default authentication set by RegisterDefaultAuth will be used.
+	// If nil, the default authenticator set by RegisterDefaultAuth will be used.
+	// If the default authenticator is also nil, all request handlers will panic.
 	//
-	// If it is an empty list, the authentication layer is completely skipped.
-	// Useful for tests, but should be used with great caution in production code.
-	//
-	// Always overrides authenticator already present in the context.
-	Authenticator auth.Authenticator
+	// If you want to disable the authentication (e.g for tests), explicitly set
+	// Authenticator to NoAuthentication.
+	Authenticator Authenticator
 
 	// AccessControl, if not nil, is a callback that is invoked per request to
 	// determine if permissive access control headers should be added to the
@@ -114,17 +113,11 @@ func (s *Server) authenticate() router.Middleware {
 		a = GetDefaultAuth()
 		if a == nil {
 			panic("prpc: no custom Authenticator was provided and default authenticator was not registered.\n" +
-				"Forgot to import appengine/gaeauth/server package?\n" +
-				"Either make NoAuthenticator the Authenticator of your server or setup an Authenticator")
+				"Either explicitly set `Server.Authenticator = NoAuthentication`, or use RegisterDefaultAuth()")
 		}
 	}
 
-	if len(a) == 0 {
-		return nil
-	}
-
 	return func(c *router.Context, next router.Handler) {
-		c.Context = auth.SetAuthenticator(c.Context, a)
 		switch ctx, err := a.Authenticate(c.Context, c.Request); {
 		case errors.IsTransient(err):
 			res := errResponse(codes.Internal, http.StatusInternalServerError, escapeFmt(err.Error()))

@@ -178,9 +178,6 @@ func init() {
 
 	// Install RPC servers.
 	api := prpc.Server{
-		Authenticator: auth.Authenticator{
-			&server.OAuth2Method{Scopes: []string{server.EmailScope}},
-		},
 		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil),
 	}
 	scheduler.RegisterSchedulerServer(&api, apiservers.SchedulerServer{

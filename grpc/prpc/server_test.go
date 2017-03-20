@@ -15,7 +15,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -45,10 +44,7 @@ func TestServer(t *testing.T) {
 	t.Parallel()
 
 	Convey("Greeter service", t, func() {
-		var server Server
-
-		// auth.Authenticator.Authenticate is not designed to be called in tests.
-		server.Authenticator = auth.Authenticator{}
+		server := Server{Authenticator: NoAuthentication}
 
 		RegisterGreeterServer(&server, &greeterService{})
 

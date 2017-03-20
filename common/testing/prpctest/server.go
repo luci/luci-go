@@ -12,10 +12,10 @@ import (
 	"net/http/httptest"
 	"net/url"
 
-	"github.com/luci/luci-go/grpc/prpc"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/router"
 	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/grpc/prpc"
+	"github.com/luci/luci-go/server/router"
 )
 
 // Server is a pRPC test server.
@@ -46,7 +46,7 @@ func (s *Server) Start(c context.Context) {
 	// Clean up any active server.
 	s.Close()
 
-	s.Authenticator = auth.Authenticator{}
+	s.Authenticator = prpc.NoAuthentication
 	base := s.Base
 	if base == nil {
 		base = setContext

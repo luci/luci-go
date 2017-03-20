@@ -101,6 +101,10 @@ type Authenticator []Method
 func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context.Context, error) {
 	report := durationReporter(c, authenticateDuration)
 
+	// Make it known to handlers what authentication methods are allowed.
+	// This is important for LoginURL and LogoutURL functions.
+	c = SetAuthenticator(c, a)
+
 	// We will need working DB factory below to check IP whitelist.
 	cfg := GetConfig(c)
 	if cfg == nil || cfg.DBProvider == nil {
