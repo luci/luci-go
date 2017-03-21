@@ -24,11 +24,29 @@ func TestConfig(t *testing.T) {
 	Convey("Test Environment", t, func() {
 		c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
 		c = gologger.StdConfig.Use(c)
-		c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
+
+		Convey("Tests about global configs", func() {
+			Convey("Read a config before anything is set", func() {
+				c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
+				settings, err := GetSettings(c)
+				So(err, ShouldBeNil)
+				So(settings.Buildbot.InternalReader, ShouldEqual, "")
+			})
+			Convey("Read a config", func() {
+				mockedConfigs["services/luci-milo"] = memcfg.ConfigSet{
+					"settings.cfg": settingsCfg,
+				}
+				c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
+				settings, err := GetSettings(c)
+				So(err, ShouldBeNil)
+				So(settings.Buildbot.InternalReader, ShouldEqual, "googlers")
+			})
+		})
 
 		Convey("Send update", func() {
+			c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
 			// Send update here
-			err := Update(c)
+			err := UpdateProjectConfigs(c)
 			So(err, ShouldBeNil)
 
 			Convey("Check Project config updated", func() {
@@ -48,9 +66,10 @@ func TestConfig(t *testing.T) {
 		})
 
 		Convey("Reject duplicate configs.", func() {
+			c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
 			mockedConfigs["projects/bar.git"] = memcfg.ConfigSet{"luci-milo.cfg": barCfg}
 
-			err := Update(c)
+			err := UpdateProjectConfigs(c)
 			So(strings.HasPrefix(err.Error(), "Duplicate project ID"), ShouldEqual, true)
 		})
 	})
@@ -81,6 +100,12 @@ Consoles: {
 
 var barCfg = `
 ID: "foo"
+`
+
+var settingsCfg = `
+buildbot: {
+	internal_reader: "googlers"
+}
 `
 
 var mockedConfigs = map[string]memcfg.ConfigSet{

@@ -29,9 +29,10 @@ func ConfigsHandler(c *router.Context) {
 }
 
 // UpdateHandler is an HTTP handler that handles configuration update requests.
-func UpdateHandler(ctx *router.Context) {
+// TODO(hinoka): Migrate to cfgclient and remove this.
+func UpdateConfigHandler(ctx *router.Context) {
 	c, h := ctx.Context, ctx.Writer
-	err := common.Update(c)
+	err := common.UpdateProjectConfigs(c)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Update Handler encountered error")
 		h.WriteHeader(500)

@@ -39,7 +39,7 @@ func init() {
 	r.GET("/", basemw, frontpageHandler)
 
 	// Admin and cron endpoints.
-	r.GET("/admin/update", basemw.Extend(gaemiddleware.RequireCron), UpdateHandler)
+	r.GET("/admin/update", basemw.Extend(gaemiddleware.RequireCron), UpdateConfigHandler)
 	r.GET("/admin/configs", basemw, ConfigsHandler)
 
 	// Console

@@ -7,7 +7,7 @@ package common
 import (
 	"fmt"
 
-	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/luci_config/server/cfgclient"
@@ -29,10 +29,32 @@ type Project struct {
 	Data []byte `gae:",noindex"`
 }
 
-// Update internal configuration based off luci-cfg.
+// GetServiceConfig returns the service (aka global) config for the current
+// instance of Milo.
+func GetSettings(c context.Context) (*config.Settings, error) {
+	cs := cfgclient.CurrentServiceConfigSet(c)
+	msg := &config.Settings{}
+	// Our global config name is called settings.cfg.
+	err := cfgclient.Get(c, cfgclient.AsService, cs, "settings.cfg", textproto.Message(msg), nil)
+	switch err {
+	case cfgclient.ErrNoConfig:
+		// Just warn very heavily in the logs, but don't 500, instead return an
+		// empty config.
+		logging.WithError(err).Errorf(c, "settings.cfg does not exist")
+		msg.Buildbot = &config.Settings_Buildbot{}
+		err = nil
+	case nil:
+		// continue
+	default:
+		return nil, err
+	}
+	return msg, err
+}
+
+// UpdateProjectConfigs internal project configuration based off luci-cfg.
 // update updates Milo's configuration based off luci config.  This includes
 // scanning through all project and extract all console configs.
-func Update(c context.Context) error {
+func UpdateProjectConfigs(c context.Context) error {
 	cfgName := info.AppID(c) + ".cfg"
 
 	var (
@@ -72,32 +94,32 @@ func Update(c context.Context) error {
 	for _, proj := range projects {
 		projs = append(projs, proj)
 	}
-	if err := ds.Put(c, projs); err != nil {
+	if err := datastore.Put(c, projs); err != nil {
 		return err
 	}
 
 	// Delete entries that no longer exist.
-	q := ds.NewQuery("Project").KeysOnly(true)
+	q := datastore.NewQuery("Project").KeysOnly(true)
 	allProjs := []Project{}
-	ds.GetAll(c, q, &allProjs)
+	datastore.GetAll(c, q, &allProjs)
 	toDelete := []Project{}
 	for _, proj := range allProjs {
 		if _, ok := projects[proj.ID]; !ok {
 			toDelete = append(toDelete, proj)
 		}
 	}
-	ds.Delete(c, toDelete)
+	datastore.Delete(c, toDelete)
 
 	return nil
 }
 
 // GetAllProjects returns all registered projects.
 func GetAllProjects(c context.Context) ([]*config.Project, error) {
-	q := ds.NewQuery("Project")
+	q := datastore.NewQuery("Project")
 	q.Order("ID")
 
 	ps := []*Project{}
-	err := ds.GetAll(c, q, &ps)
+	err := datastore.GetAll(c, q, &ps)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +137,7 @@ func GetAllProjects(c context.Context) ([]*config.Project, error) {
 func GetProject(c context.Context, projName string) (*config.Project, error) {
 	// Next, Try datastore
 	p := Project{ID: projName}
-	if err := ds.Get(c, &p); err != nil {
+	if err := datastore.Get(c, &p); err != nil {
 		return nil, err
 	}
 	mp := config.Project{}

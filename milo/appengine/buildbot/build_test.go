@@ -45,7 +45,7 @@ func shouldMatchExpectationsFor(actualContents interface{}, expectedFilename ...
 }
 
 func TestBuild(t *testing.T) {
-	c := memory.Use(context.Background())
+	c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
 	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
 
 	if *generate {
@@ -99,12 +99,13 @@ func TestBuild(t *testing.T) {
 }
 
 var internalConfig = `
-name: "buildbot-internal"
-access: "group:googlers"
+buildbot: {
+	internal_reader: "googlers"
+}
 `
 
 var bbAclConfigs = map[string]memcfg.ConfigSet{
-	"projects/chrome": {
-		"project.cfg": internalConfig,
+	"services/luci-milo": {
+		"settings.cfg": internalConfig,
 	},
 }

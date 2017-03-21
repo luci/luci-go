@@ -5,10 +5,12 @@
 package common
 
 import (
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/access"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
-	"golang.org/x/net/context"
+	"github.com/luci/luci-go/server/auth"
 )
 
 // Helper functions for ACL checking.
@@ -33,6 +35,9 @@ func IsAllowed(c context.Context, project string) (bool, error) {
 // IsAllowedInternal is a shorthand for checking to see if the user is a reader
 // of a magic project named "chrome".
 func IsAllowedInternal(c context.Context) (bool, error) {
-	// TODO(hinoka): Move this to luci-cfg.
-	return IsAllowed(c, "chrome")
+	settings, err := GetSettings(c)
+	if err != nil {
+		return false, err
+	}
+	return auth.IsMember(c, settings.Buildbot.InternalReader)
 }
