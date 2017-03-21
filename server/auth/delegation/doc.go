@@ -4,12 +4,27 @@
 
 // Package delegation contains low-level API for working with delegation tokens.
 //
-// It provides convenient wrappers around Auth Service API for creating the
-// tokens and related proto messages.
-//
-// If you don't know what it is, or why you would use it, you probably don't
-// need it.
-//
 // Prefer the high-level API in server/auth package, in particular
 // `MintDelegationToken` and `auth.GetRPCTransport(ctx, auth.AsUser)`.
 package delegation
+
+import (
+	"encoding/gob"
+	"time"
+)
+
+const (
+	// HTTPHeaderName is name of HTTP header that carries the token.
+	HTTPHeaderName = "X-Delegation-Token-V1"
+)
+
+// Token represents serialized and signed delegation token.
+type Token struct {
+	Token  string    // base64-encoded URL-safe blob with the token
+	Expiry time.Time // UTC time when it expires
+}
+
+func init() {
+	// For the token cache.
+	gob.Register(Token{})
+}

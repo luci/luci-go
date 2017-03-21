@@ -192,6 +192,12 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 	// server's public keys.
 	delegationTok := r.Header.Get(delegation.HTTPHeaderName)
 	if delegationTok != "" {
+		// Log the token fingerprint (even before parsing the token), it can be used
+		// to grab the info about the token from the token server logs.
+		logging.Fields{
+			"fingerprint": tokenFingerprint(delegationTok),
+		}.Debugf(c, "auth: Received delegation token")
+
 		// Need to grab our own identity to verify that the delegation token is
 		// minted for consumption by us and not some other service.
 		ownServiceIdentity, err := getOwnServiceIdentity(c, cfg.Signer)
@@ -214,9 +220,16 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 			}
 			return nil, err
 		}
+
 		// User profile information is not available when using delegation, so just
 		// wipe it.
 		s.user = &User{Identity: delegatedIdentity}
+
+		// Log that 'peerIdent' is pretending to be 'delegatedIdentity'.
+		logging.Fields{
+			"peerID":      s.peerIdent,
+			"delegatedID": delegatedIdentity,
+		}.Debugf(c, "auth: Using delegation")
 	}
 
 	// Inject auth state.

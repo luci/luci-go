@@ -5,22 +5,40 @@
 package auth
 
 import (
-	"fmt"
 	"math/rand"
-	"net/http"
 	"testing"
 	"time"
 
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/server/auth/delegation"
-	"github.com/luci/luci-go/server/auth/signing"
-	"github.com/luci/luci-go/server/auth/signing/signingtest"
+	"github.com/luci/luci-go/server/auth/delegation/messages"
+	"github.com/luci/luci-go/tokenserver/api/minter/v1"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+type tokenMinterMock struct {
+	request  minter.MintDelegationTokenRequest
+	response minter.MintDelegationTokenResponse
+	err      error
+}
+
+func (m *tokenMinterMock) MintMachineToken(context.Context, *minter.MintMachineTokenRequest, ...grpc.CallOption) (*minter.MintMachineTokenResponse, error) {
+	panic("not implemented")
+}
+
+func (m *tokenMinterMock) MintDelegationToken(ctx context.Context, in *minter.MintDelegationTokenRequest, opts ...grpc.CallOption) (*minter.MintDelegationTokenResponse, error) {
+	m.request = *in
+	if m.err != nil {
+		return nil, m.err
+	}
+	return &m.response, nil
+}
 
 func TestMintDelegationToken(t *testing.T) {
 	t.Parallel()
@@ -30,40 +48,26 @@ func TestMintDelegationToken(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
 
-		// Create an LRU large enough that it will never cycle during test.
-		tokenCache := MemoryCache(1024)
-
-		subtokenID := "123"
-		mintingReq := ""
-		transport := &clientRPCTransportMock{
-			cb: func(r *http.Request, body string) string {
-				if r.URL.String() == "https://hostname.example.com/auth/api/v1/server/info" {
-					return `{"app_id":"hostname"}`
-				}
-				if r.URL.String() == "https://auth.example.com/auth_service/api/v1/delegation/token/create" {
-					mintingReq = body
-					return fmt.Sprintf(`{
-						"delegation_token": "tok",
-						"validity_duration": 43200,
-						"subtoken_id": "%s"
-					}`, subtokenID)
-				}
-				return "unknown URL"
+		mockedClient := &tokenMinterMock{
+			response: minter.MintDelegationTokenResponse{
+				Token: "tok",
+				DelegationSubtoken: &messages.Subtoken{
+					Kind:             messages.Subtoken_BEARER_DELEGATION_TOKEN,
+					ValidityDuration: int32(MaxDelegationTokenTTL.Seconds()),
+				},
 			},
 		}
 
+		// Create an LRU large enough that it will never cycle during test.
+		tokenCache := MemoryCache(1024)
+
 		ctx = ModifyConfig(ctx, func(cfg *Config) {
-			cfg.AccessTokenProvider = transport.getAccessToken
-			cfg.AnonymousTransport = transport.getTransport
 			cfg.Cache = tokenCache
-			cfg.Signer = signingtest.NewSigner(0, &signing.ServiceInfo{
-				ServiceAccountName: "service@example.com",
-			})
 		})
 
 		ctx = WithState(ctx, &state{
 			user: &User{Identity: "user:abc@example.com"},
-			db:   &fakeDB{authServiceURL: "https://auth.example.com"},
+			db:   &fakeDB{tokenServiceURL: "https://tokens.example.com"},
 		})
 
 		Convey("Works (including caching)", func(c C) {
@@ -71,32 +75,36 @@ func TestMintDelegationToken(t *testing.T) {
 				TargetHost: "hostname.example.com",
 				MinTTL:     time.Hour,
 				Intent:     "intent",
+				rpcClient:  mockedClient,
 			})
 			So(err, ShouldBeNil)
 			So(tok, ShouldResemble, &delegation.Token{
-				Token:      "tok",
-				SubtokenID: "123",
-				Expiry:     testclock.TestRecentTimeUTC.Add(MaxDelegationTokenTTL),
+				Token:  "tok",
+				Expiry: testclock.TestRecentTimeUTC.Add(MaxDelegationTokenTTL),
 			})
-			So(mintingReq, ShouldEqual,
-				`{"audience":["user:service@example.com"],`+
-					`"services":["service:hostname"],"validity_duration":43200,`+
-					`"impersonate":"user:abc@example.com","intent":"intent"}`)
+			So(mockedClient.request, ShouldResemble, minter.MintDelegationTokenRequest{
+				DelegatedIdentity: "user:abc@example.com",
+				ValidityDuration:  10800,
+				Audience:          []string{"REQUESTOR"},
+				Services:          []string{"https://hostname.example.com"},
+				Intent:            "intent",
+			})
 
 			// Cached now.
 			So(tokenCache.(memoryCache).cache.Len(), ShouldEqual, 1)
-			v, _ := tokenCache.Get(ctx, "delegation/2/R5RJ9yppAB8IK0GNB-UyjVrYoBw")
+			v, _ := tokenCache.Get(ctx, "delegation/3/dL9oZrnNLCIxyUBBaX3eGKAwTbA")
 			So(v, ShouldNotBeNil)
 
 			// On subsequence request the cached token is used.
-			subtokenID = "456"
+			mockedClient.response.Token = "another token"
 			tok, err = MintDelegationToken(ctx, DelegationTokenParams{
 				TargetHost: "hostname.example.com",
 				MinTTL:     time.Hour,
 				Intent:     "intent",
+				rpcClient:  mockedClient,
 			})
 			So(err, ShouldBeNil)
-			So(tok.SubtokenID, ShouldResemble, "123") // old one
+			So(tok.Token, ShouldResemble, "tok") // old one
 
 			// Unless it expires sooner than requested TTL.
 			clock.Get(ctx).(testclock.TestClock).Add(MaxDelegationTokenTTL - 30*time.Minute)
@@ -104,9 +112,10 @@ func TestMintDelegationToken(t *testing.T) {
 				TargetHost: "hostname.example.com",
 				MinTTL:     time.Hour,
 				Intent:     "intent",
+				rpcClient:  mockedClient,
 			})
 			So(err, ShouldBeNil)
-			So(tok.SubtokenID, ShouldResemble, "456") // new one
+			So(tok.Token, ShouldResemble, "another token") // new one
 		})
 
 		Convey("Untargeted token works", func(c C) {
@@ -114,22 +123,20 @@ func TestMintDelegationToken(t *testing.T) {
 				Untargeted: true,
 				MinTTL:     time.Hour,
 				Intent:     "intent",
+				rpcClient:  mockedClient,
 			})
 			So(err, ShouldBeNil)
 			So(tok, ShouldResemble, &delegation.Token{
-				Token:      "tok",
-				SubtokenID: "123",
-				Expiry:     testclock.TestRecentTimeUTC.Add(MaxDelegationTokenTTL),
+				Token:  "tok",
+				Expiry: testclock.TestRecentTimeUTC.Add(MaxDelegationTokenTTL),
 			})
-			So(mintingReq, ShouldEqual,
-				`{"audience":["user:service@example.com"],`+
-					`"services":["*"],"validity_duration":43200,`+
-					`"impersonate":"user:abc@example.com","intent":"intent"}`)
-
-			// Cached now.
-			So(tokenCache.(memoryCache).cache.Len(), ShouldEqual, 1)
-			v, _ := tokenCache.Get(ctx, "delegation/2/tjYIGNrwFvKa0FT5juu7ThjpxBo")
-			So(v, ShouldNotBeNil)
+			So(mockedClient.request, ShouldResemble, minter.MintDelegationTokenRequest{
+				DelegatedIdentity: "user:abc@example.com",
+				ValidityDuration:  10800,
+				Audience:          []string{"REQUESTOR"},
+				Services:          []string{"*"},
+				Intent:            "intent",
+			})
 		})
 	})
 }

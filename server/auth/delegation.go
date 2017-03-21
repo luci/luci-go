@@ -6,6 +6,7 @@ package auth
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -14,12 +15,26 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/grpc/grpcutil"
+	"github.com/luci/luci-go/grpc/prpc"
 	"github.com/luci/luci-go/server/auth/delegation"
+	"github.com/luci/luci-go/server/auth/delegation/messages"
 	"github.com/luci/luci-go/server/auth/identity"
-	"github.com/luci/luci-go/server/auth/signing"
+	"github.com/luci/luci-go/tokenserver/api/minter/v1"
 )
 
 var (
+	// ErrTokenServerNotConfigured is returned by MintDelegationToken if the
+	// token service URL is not configured. This usually means the corresponding
+	// auth service is not paired with a token server.
+	ErrTokenServiceNotConfigured = fmt.Errorf("auth: token service URL is not configured")
+
+	// ErrBrokenTokenService is returned by MintDelegationToken if the RPC to the
+	// token service succeeded, but response doesn't make sense. This should not
+	// generally happen.
+	ErrBrokenTokenService = fmt.Errorf("auth: unrecognized response from the token service")
+
 	// ErrAnonymousDelegation is returned by MintDelegationToken if it is used in
 	// a context of handling of an anonymous call.
 	//
@@ -38,7 +53,7 @@ var (
 const (
 	// MaxDelegationTokenTTL is maximum allowed token lifetime that can be
 	// requested via MintDelegationToken.
-	MaxDelegationTokenTTL = 12 * time.Hour
+	MaxDelegationTokenTTL = 3 * time.Hour
 )
 
 // DelegationTokenParams is passed to MintDelegationToken.
@@ -76,6 +91,11 @@ type DelegationTokenParams struct {
 	//
 	// Optional.
 	Intent string
+
+	// rpcClient is token server RPC client to use.
+	//
+	// Mocked in tests.
+	rpcClient minter.TokenMinterClient
 }
 
 // delegationTokenCache is used to store delegation tokens in the cache.
@@ -83,7 +103,7 @@ type DelegationTokenParams struct {
 // The underlying token type is delegation.Token.
 var delegationTokenCache = tokenCache{
 	Kind:                "delegation",
-	Version:             2,
+	Version:             3,
 	ExpRandPercent:      10,
 	MinAcceptedLifetime: 5 * time.Minute,
 }
@@ -127,7 +147,7 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (tok *del
 		return nil, ErrBadDelegationTokenTTL
 	}
 
-	// The state carries ID of the current user and URL of an auth service.
+	// The state carries ID of the current user and URL of the token service.
 	state := GetState(ctx)
 	if state == nil {
 		report(ErrNoAuthState, "ERROR_NO_AUTH_STATE")
@@ -141,21 +161,32 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (tok *del
 		return nil, ErrAnonymousDelegation
 	}
 
-	// Grab URL of the main auth service we are bound to. It will be the one to
-	// sign the token, and thus its identity is indirectly defines the identity
-	// of the generated token.
-	authServiceURL, err := state.DB().GetAuthServiceURL(ctx)
-	if err != nil {
+	// Grab hostname of the token service we received from the auth service. It
+	// will sign the token, and thus its identity is indirectly defines the
+	// identity of the generated token. For that reason we use it as part of the
+	// cache key.
+	tokenServiceURL, err := state.DB().GetTokenServiceURL(ctx)
+	switch {
+	case err != nil:
 		report(err, "ERROR_AUTH_DB")
 		return nil, err
+	case tokenServiceURL == "":
+		report(ErrTokenServiceNotConfigured, "ERROR_NO_TOKEN_SERVICE")
+		return nil, ErrTokenServiceNotConfigured
+	case !strings.HasPrefix(tokenServiceURL, "https://"):
+		// Note: this never actually happens.
+		logging.Errorf(ctx, "Bad token service URL: %s", tokenServiceURL)
+		report(ErrTokenServiceNotConfigured, "ERROR_NOT_HTTPS_TOKEN_SERVICE")
+		return nil, ErrTokenServiceNotConfigured
 	}
+	tokenServiceHost := tokenServiceURL[len("https://"):]
 
 	// TODO(vadimsh): Cache tokens in the request state, so that multiple outbound
 	// HTTP calls to some remote service during lifetime of inbound request don't
 	// hit memcache all the time.
 
 	// Try to find an existing cached token and check that it lives long enough.
-	cacheKey := string(userID) + "\n" + authServiceURL + "\n" + target
+	cacheKey := string(userID) + "\n" + tokenServiceHost + "\n" + target
 	now := clock.Now(ctx).UTC()
 	switch cached, err := delegationTokenCache.Fetch(ctx, cacheKey); {
 	case err != nil:
@@ -174,7 +205,7 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (tok *del
 	// the fast path. We assume memcache RPCs don't get stuck for a long time
 	// (unlike URL Fetch calls to GAE).
 	cfg := GetConfig(ctx)
-	if cfg == nil || cfg.Signer == nil {
+	if cfg == nil {
 		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
 		return nil, ErrNotConfigured
 	}
@@ -183,8 +214,6 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (tok *del
 
 	// Need to make a new token. Log parameters and its ID.
 	ctx = logging.SetFields(ctx, logging.Fields{
-		"method": "AsUser",
-		"intent": p.Intent,
 		"target": target,
 		"userID": userID,
 	})
@@ -192,59 +221,42 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (tok *del
 	defer func() {
 		if err != nil {
 			logging.WithError(err).Errorf(ctx, "Failed to mint delegation token")
-		} else {
-			logging.Fields{
-				"subtokenID": tok.SubtokenID,
-				"expiry":     tok.Expiry,
-			}.Debugf(ctx, "Minted new delegation token")
 		}
 	}()
 
-	// Grab ID of the currently running service, to bind the token to it.
-	us, err := cfg.Signer.ServiceInfo(ctx)
-	if err != nil {
-		report(err, "ERROR_SERVICE_INFO")
-		return nil, err
-	}
-	ourOwnID, err := identity.MakeIdentity("user:" + us.ServiceAccountName)
-	if err != nil {
-		report(err, "ERROR_BROKEN_IDENTITY")
-		return nil, err
-	}
-
-	// Grab service ID of the endpoint we are calling to make the token usable
-	// only by this service. Most of the time this will hit the local memory
-	// cache. Sometimes it will make a request to the remote service. This will
-	// fail if 'rootURI' is not pointing to a LUCI service. We use service IDs
-	// to identify services (instead of URIs), since same service may be
-	// accessible via multiple URIs (e.g. <version>-dot-<service>.appspot.com URIs
-	// on Appengine).
-
-	var targetServices []identity.Identity
-	if target != "*" {
-		serviceID, err := signing.FetchLUCIServiceIdentity(ctx, target)
+	// Grab a token server client (or its mock).
+	rpcClient := p.rpcClient
+	if rpcClient == nil {
+		transport, err := GetRPCTransport(ctx, AsSelf)
 		if err != nil {
-			report(err, "ERROR_FETCH_TARGET_ID")
+			report(err, "ERROR_SELF_TRANSPORT")
 			return nil, err
 		}
-		targetServices = append(targetServices, serviceID)
+		rpcClient = minter.NewTokenMinterPRPCClient(&prpc.Client{
+			C:    &http.Client{Transport: transport},
+			Host: tokenServiceHost,
+			Options: &prpc.Options{
+				Retry: func() retry.Iterator {
+					return &retry.ExponentialBackoff{
+						Limited: retry.Limited{
+							Delay:   50 * time.Millisecond,
+							Retries: 5,
+						},
+					}
+				},
+			},
+		})
 	}
 
-	// Request a new token from the auth service.
-	tokenReq := delegation.TokenRequest{
-		AuthServiceURL:   authServiceURL,
-		Audience:         []identity.Identity{ourOwnID},
-		Impersonate:      userID,
-		ValidityDuration: MaxDelegationTokenTTL,
-		Intent:           p.Intent,
-	}
-	if target == "*" {
-		tokenReq.Untargeted = true
-	} else {
-		tokenReq.TargetServices = targetServices
-	}
-	tok, err = delegation.CreateToken(ctx, tokenReq)
+	resp, err := rpcClient.MintDelegationToken(ctx, &minter.MintDelegationTokenRequest{
+		DelegatedIdentity: string(userID),
+		ValidityDuration:  int64(MaxDelegationTokenTTL.Seconds()),
+		Audience:          []string{"REQUESTOR"}, // make the token usable only by the calling service
+		Services:          []string{target},
+		Intent:            p.Intent,
+	})
 	if err != nil {
+		err = grpcutil.WrapIfTransient(err)
 		if errors.IsTransient(err) {
 			report(err, "ERROR_TRANSIENT_IN_MINTING")
 		} else {
@@ -252,6 +264,37 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (tok *del
 		}
 		return nil, err
 	}
+
+	// Sanity checks. A correctly working token server should not trigger them.
+	subtoken := resp.DelegationSubtoken
+	good := false
+	switch {
+	case subtoken == nil:
+		logging.Errorf(ctx, "No delegation_subtoken in the response")
+	case subtoken.Kind != messages.Subtoken_BEARER_DELEGATION_TOKEN:
+		logging.Errorf(ctx, "Invalid token kind: %s", subtoken.Kind)
+	case subtoken.ValidityDuration <= 0:
+		logging.Errorf(ctx, "Zero or negative validity_duration in the response")
+	default:
+		good = true
+	}
+	if !good {
+		err = ErrBrokenTokenService
+		report(err, "ERROR_BROKEN_TOKEN_SERVICE")
+		return nil, err
+	}
+
+	tok = &delegation.Token{
+		Token:  resp.Token,
+		Expiry: now.Add(time.Duration(subtoken.ValidityDuration) * time.Second).UTC(),
+	}
+
+	// Log details about the new token.
+	logging.Fields{
+		"fingerprint": tokenFingerprint(tok.Token),
+		"subtokenID":  subtoken.SubtokenId,
+		"validity":    time.Duration(subtoken.ValidityDuration) * time.Second,
+	}.Debugf(ctx, "Minted new delegation token")
 
 	// Cache the token. Ignore errors here, it's not big deal, we have the token.
 	err = delegationTokenCache.Store(ctx, cachedToken{
@@ -262,7 +305,7 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (tok *del
 	})
 	if err != nil {
 		logging.WithError(err).Warningf(ctx, "Failed to store the delegation token in the cache")
-		err = nil // to disarm defer
+		err = nil // to disarm the logging in defer
 	}
 
 	report(nil, "SUCCESS_CACHE_MISS")

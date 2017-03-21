@@ -23,9 +23,6 @@ import (
 )
 
 const (
-	// HTTPHeaderName is name of HTTP header that carries the token.
-	HTTPHeaderName = "X-Delegation-Token-V1"
-
 	// maxTokenSize is upper bound for expected size of a token (after base64
 	// decoding). Larger tokens will be ignored right away.
 	maxTokenSize = 8 * 1024

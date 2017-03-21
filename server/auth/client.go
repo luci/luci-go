@@ -5,6 +5,8 @@
 package auth
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"strings"
@@ -15,6 +17,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/luci/luci-go/common/auth"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth/delegation"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/internal"
@@ -257,6 +260,14 @@ func init() {
 	})
 }
 
+// tokenFingerprint returns first 16 bytes of SHA256 of the token, as hex.
+//
+// Token fingerprints can be used to identify tokens without parsing them.
+func tokenFingerprint(tok string) string {
+	digest := sha256.Sum256([]byte(tok))
+	return hex.EncodeToString(digest[:16])
+}
+
 // rpcMocks are used exclusively in unit tests.
 type rpcMocks struct {
 	MintDelegationToken              func(context.Context, DelegationTokenParams) (*delegation.Token, error)
@@ -396,6 +407,10 @@ func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Tok
 	if err != nil {
 		return nil, nil, err
 	}
+
+	logging.Fields{
+		"fingerprint": tokenFingerprint(delegationToken),
+	}.Debugf(c, "auth: Sending delegation token")
 	return oauthTok, map[string]string{delegation.HTTPHeaderName: delegationToken}, nil
 }
 

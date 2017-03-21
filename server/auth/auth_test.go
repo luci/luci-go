@@ -178,7 +178,7 @@ func (db *fakeDB) GetAuthServiceURL(c context.Context) (string, error) {
 }
 
 func (db *fakeDB) GetTokenServiceURL(c context.Context) (string, error) {
-	if db.authServiceURL == "" {
+	if db.tokenServiceURL == "" {
 		return "", errors.New("fakeDB: GetTokenServiceURL is not configured")
 	}
 	return db.tokenServiceURL, nil
