@@ -29,8 +29,8 @@ func parseBuilderQuery(r *http.Request, p httprouter.Params) (query builderQuery
 		return
 	}
 
-	builder := p.ByName("builder")
-	if builder == "" {
+	query.Builder = p.ByName("builder")
+	if query.Builder == "" {
 		err = errors.New("No builder")
 		return
 	}
