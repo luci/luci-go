@@ -14,28 +14,23 @@ import (
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/common/sync/parallel"
+	"github.com/luci/luci-go/common/retry"
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/metric"
 	"github.com/luci/luci-go/common/tsmon/types"
+	"github.com/luci/luci-go/grpc/grpcutil"
+	"github.com/luci/luci-go/hardcoded/chromeinfra"
 	"github.com/luci/luci-go/logdog/server/collector"
 	"github.com/luci/luci-go/logdog/server/collector/coordinator"
 	"github.com/luci/luci-go/logdog/server/service"
-	"golang.org/x/net/context"
 
 	"cloud.google.com/go/pubsub"
-	"google.golang.org/api/iterator"
-
-	"github.com/luci/luci-go/hardcoded/chromeinfra"
+	"golang.org/x/net/context"
 )
 
 var (
 	errInvalidConfig = errors.New("invalid configuration")
-)
-
-const (
-	pubsubPullErrorDelay = 10 * time.Second
 )
 
 // Metrics.
@@ -101,6 +96,12 @@ func (a *application) runCollector(c context.Context) error {
 		}.Errorf(c, "Could not confirm Pub/Sub subscription.")
 		return errInvalidConfig
 	}
+	psSub.ReceiveSettings = pubsub.ReceiveSettings{
+		MaxExtension:           24 * time.Hour,
+		MaxOutstandingMessages: int(ccfg.MaxConcurrentMessages), // If < 1, default.
+		MaxOutstandingBytes:    0,                               // Default.
+	}
+
 	if !exists {
 		log.Fields{
 			"subscription": sub,
@@ -129,43 +130,47 @@ func (a *application) runCollector(c context.Context) error {
 	}
 	defer coll.Close()
 
-	// Execute our main subscription pull loop. It will run until the supplied
-	// Context is cancelled.
-	psIterator, err := psSub.Pull(c)
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create Pub/Sub iterator.")
-		return err
-	}
-	defer psIterator.Stop()
+	c, cancelFunc := context.WithCancel(c)
+	defer cancelFunc()
 
 	// Application shutdown will now operate by cancelling the Collector's
 	// shutdown Context.
-	a.SetShutdownFunc(psIterator.Stop)
+	a.SetShutdownFunc(cancelFunc)
 
-	parallel.Ignore(parallel.Run(int(ccfg.MaxConcurrentMessages), func(taskC chan<- func() error) {
-		// Loop until shut down.
-		for {
-			msg, err := psIterator.Next()
-			switch err {
-			case nil:
-				taskC <- func() error {
-					c := log.SetField(c, "messageID", msg.ID)
-					msg.Done(a.processMessage(c, &coll, msg))
-					return nil
-				}
-
-			case iterator.Done, context.Canceled, context.DeadlineExceeded:
-				return
-
-			default:
-				log.Fields{
-					log.ErrorKey: err,
-					"delay":      pubsubPullErrorDelay,
-				}.Errorf(c, "Failed to fetch Pub/Sub message, retry after delay...")
-				clock.Sleep(c, pubsubPullErrorDelay)
-			}
+	// Execute our main subscription pull loop. It will run until the supplied
+	// Context is cancelled.
+	retryForever := func() retry.Iterator {
+		return &retry.ExponentialBackoff{
+			Limited: retry.Limited{
+				Delay:   200 * time.Millisecond,
+				Retries: -1, // Unlimited.
+			},
+			MaxDelay:   10 * time.Second,
+			Multiplier: 2,
 		}
-	}))
+	}
+
+	err = retry.Retry(c, retry.TransientOnly(retryForever), func() error {
+		return grpcutil.WrapIfTransient(psSub.Receive(c, func(c context.Context, msg *pubsub.Message) {
+			c = log.SetField(c, "messageID", msg.ID)
+			if a.processMessage(c, &coll, msg) {
+				// ACK the message, removing it from Pub/Sub.
+				msg.Ack()
+			} else {
+				// NACK the message. It will be redelivered and processed.
+				msg.Nack()
+			}
+		}))
+	}, func(err error, d time.Duration) {
+		log.Fields{
+			log.ErrorKey: err,
+			"delay":      d,
+		}.Warningf(c, "Transient error during subscription Receive loop; retrying...")
+	})
+	if err != nil {
+		log.WithError(err).Errorf(c, "Failed during Pub/Sub Receive.")
+		return err
+	}
 
 	log.Debugf(c, "Collector finished.")
 	return nil

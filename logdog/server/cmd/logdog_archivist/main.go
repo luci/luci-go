@@ -13,11 +13,12 @@ import (
 	"github.com/luci/luci-go/common/gcloud/gs"
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/sync/parallel"
+	"github.com/luci/luci-go/common/retry"
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/metric"
 	"github.com/luci/luci-go/common/tsmon/types"
+	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/api/config/svcconfig"
 	"github.com/luci/luci-go/logdog/server/archivist"
 	"github.com/luci/luci-go/logdog/server/service"
@@ -25,7 +26,6 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"golang.org/x/net/context"
-	"google.golang.org/api/iterator"
 
 	"github.com/luci/luci-go/hardcoded/chromeinfra"
 )
@@ -43,12 +43,6 @@ var (
 		&types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer,
 		field.Bool("consumed"))
-)
-
-const (
-	// subscriptionErrorDelay is the amount of time to sleep after a subscription
-	// iterator returns a non-terminal error.
-	subscriptionErrorDelay = 10 * time.Second
 )
 
 // application is the Archivist application state.
@@ -93,6 +87,11 @@ func (a *application) runArchivist(c context.Context) error {
 		return err
 	}
 	sub := psClient.Subscription(psSubscriptionName)
+	sub.ReceiveSettings = pubsub.ReceiveSettings{
+		MaxExtension:           24 * time.Hour,
+		MaxOutstandingMessages: int(acfg.Tasks), // If < 1, default.
+		MaxOutstandingBytes:    0,               // Default.
+	}
 
 	// Initialize our Storage.
 	//
@@ -121,89 +120,87 @@ func (a *application) runArchivist(c context.Context) error {
 		GSClient:       gsClient,
 	}
 
-	tasks := int(acfg.Tasks)
-	if tasks <= 0 {
-		tasks = 1
-	}
+	// Application shutdown will now operate by stopping the Iterator.
+	c, cancelFunc := context.WithCancel(c)
+	defer cancelFunc()
 
+	// Application shutdown will now operate by cancelling the Collector's
+	// shutdown Context.
+	a.SetShutdownFunc(cancelFunc)
+
+	// Execute our main subscription pull loop. It will run until the supplied
+	// Context is cancelled.
 	log.Fields{
 		"subscription": taskSub,
-		"tasks":        tasks,
 	}.Infof(c, "Pulling tasks from Pub/Sub subscription.")
-	it, err := sub.Pull(c, pubsub.MaxExtension(gcps.MaxACKDeadline), pubsub.MaxPrefetch(tasks))
-	if err != nil {
-		log.Fields{
-			log.ErrorKey:   err,
-			"subscription": taskSub,
-		}.Errorf(c, "Failed to create Pub/Sub subscription iterator.")
-		return err
+
+	retryForever := func() retry.Iterator {
+		return &retry.ExponentialBackoff{
+			Limited: retry.Limited{
+				Delay:   200 * time.Millisecond,
+				Retries: -1, // Unlimited.
+			},
+			MaxDelay:   10 * time.Second,
+			Multiplier: 2,
+		}
 	}
-	defer it.Stop()
 
-	// Application shutdown will now operate by stopping the Iterator.
-	a.SetShutdownFunc(it.Stop)
+	err = retry.Retry(c, retry.TransientOnly(retryForever), func() error {
+		return grpcutil.WrapIfTransient(sub.Receive(c, func(c context.Context, msg *pubsub.Message) {
+			c = log.SetFields(c, log.Fields{
+				"messageID": msg.ID,
+			})
 
-	// Loop, pulling messages from our iterator and dispatching them.
-	parallel.Ignore(parallel.Run(tasks, func(taskC chan<- func() error) {
-		for {
-			msg, err := it.Next()
-			switch err {
-			case nil:
-				c := log.SetFields(c, log.Fields{
-					"messageID": msg.ID,
-				})
+			// ACK (or not) the message based on whether our task was consumed.
+			deleteTask := false
+			defer func() {
+				// ACK the message if it is completed. If not, we do not NACK it, as we
+				// want to let Pub/Sub redelivery delay occur as a form of backoff.
+				if deleteTask {
+					msg.Ack()
+				}
+			}()
 
-				// Dispatch an archive handler for this message.
-				taskC <- func() error {
-					// ACK (or not) the message based on whether our task was consumed.
-					deleteTask := false
-					defer func() {
-						msg.Done(deleteTask)
-					}()
+			// Time how long task processing takes for metrics.
+			startTime := clock.Now(c)
+			defer func() {
+				duration := clock.Now(c).Sub(startTime)
 
-					// Time how long task processing takes for metrics.
-					startTime := clock.Now(c)
-					defer func() {
-						duration := clock.Now(c).Sub(startTime)
-
-						if deleteTask {
-							log.Fields{
-								"duration": duration,
-							}.Infof(c, "Task successfully processed; deleting.")
-						} else {
-							log.Fields{
-								"duration": duration,
-							}.Infof(c, "Task processing incomplete. Not deleting.")
-						}
-
-						// Add to our processing time metric.
-						tsTaskProcessingTime.Add(c, duration.Seconds()*1000, deleteTask)
-					}()
-
-					task, err := makePubSubArchivistTask(c, psSubscriptionName, msg)
-					if err != nil {
-						log.WithError(err).Errorf(c, "Failed to unmarshal archive task from message.")
-						deleteTask = true
-						return nil
-					}
-
-					ar.ArchiveTask(c, task)
-					deleteTask = task.consumed
-
-					return nil
+				if deleteTask {
+					log.Fields{
+						"duration": duration,
+					}.Infof(c, "Task successfully processed; deleting.")
+				} else {
+					log.Fields{
+						"duration": duration,
+					}.Infof(c, "Task processing incomplete. Not deleting.")
 				}
 
-			case iterator.Done, context.Canceled, context.DeadlineExceeded:
-				log.Infof(c, "Subscription iterator is finished.")
-				return
+				// Add to our processing time metric.
+				tsTaskProcessingTime.Add(c, duration.Seconds()*1000, deleteTask)
+			}()
 
-			default:
-				log.WithError(err).Warningf(c, "Subscription iterator returned error. Sleeping...")
-				clock.Sleep(c, subscriptionErrorDelay)
-				continue
+			task, err := makePubSubArchivistTask(c, psSubscriptionName, msg)
+			if err != nil {
+				log.WithError(err).Errorf(c, "Failed to unmarshal archive task from message.")
+				deleteTask = true
+				return
 			}
-		}
-	}))
+
+			ar.ArchiveTask(c, task)
+			deleteTask = task.consumed
+		}))
+	}, func(err error, d time.Duration) {
+		log.Fields{
+			log.ErrorKey: err,
+			"delay":      d,
+		}.Warningf(c, "Transient error during subscription Receive loop; retrying...")
+	})
+
+	if err := errors.Unwrap(err); err != nil && err != context.Canceled {
+		log.WithError(err).Errorf(c, "Failed during Pub/Sub Receive.")
+		return err
+	}
 
 	log.Debugf(c, "Archivist finished.")
 	return nil
