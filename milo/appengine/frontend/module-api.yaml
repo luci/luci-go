@@ -1,19 +1,10 @@
 runtime: go
 api_version: go1
-service: default
+module: api
 
 instance_class: F4_1G
 
 handlers:
-# For static resources such as css and js files.
-- url: /static
-  secure: always
-  static_dir: static
-
-# For sideloading data for testing and development.
-- url: /_ah/remote_api
-  script: _go_app
-
 # For admin resources or endpoints meant to be hit by a cron job.
 - url: /admin/.*
   script: _go_app
@@ -24,9 +15,3 @@ handlers:
 - url: /.*
   script: _go_app
   secure: always
-
-builtins:
-- remote_api: on
-
-includes:
-  - static

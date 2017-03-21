@@ -1,19 +1,10 @@
 runtime: go
 api_version: go1
-service: default
+module: pubsub
 
 instance_class: F4_1G
 
 handlers:
-# For static resources such as css and js files.
-- url: /static
-  secure: always
-  static_dir: static
-
-# For sideloading data for testing and development.
-- url: /_ah/remote_api
-  script: _go_app
-
 # For admin resources or endpoints meant to be hit by a cron job.
 - url: /admin/.*
   script: _go_app
@@ -25,8 +16,9 @@ handlers:
   script: _go_app
   secure: always
 
-builtins:
-- remote_api: on
-
-includes:
-  - static
+automatic_scaling:
+  min_idle_instances: 5
+  max_idle_instances: automatic
+  min_pending_latency: 30ms
+  max_pending_latency: automatic
+  max_concurrent_requests: 3

@@ -1,0 +1,5 @@
+dispatch:
+  - url: "*/pubsub/*"
+    service: pubsub
+  - url: "*/prpc/*"
+    service: api
