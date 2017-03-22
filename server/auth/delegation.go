@@ -147,6 +147,13 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (tok *del
 		return nil, ErrBadDelegationTokenTTL
 	}
 
+	// Config contains the cache implementation.
+	cfg := GetConfig(ctx)
+	if cfg == nil || cfg.Cache == nil {
+		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
+		return nil, ErrNotConfigured
+	}
+
 	// The state carries ID of the current user and URL of the token service.
 	state := GetState(ctx)
 	if state == nil {
@@ -188,7 +195,7 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (tok *del
 	// Try to find an existing cached token and check that it lives long enough.
 	cacheKey := string(userID) + "\n" + tokenServiceHost + "\n" + target
 	now := clock.Now(ctx).UTC()
-	switch cached, err := delegationTokenCache.Fetch(ctx, cacheKey); {
+	switch cached, err := delegationTokenCache.Fetch(ctx, cfg.Cache, cacheKey); {
 	case err != nil:
 		report(err, "ERROR_CACHE")
 		return nil, err
@@ -204,11 +211,6 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (tok *del
 	// (on cache miss), since it involves some overhead we don't want to pay on
 	// the fast path. We assume memcache RPCs don't get stuck for a long time
 	// (unlike URL Fetch calls to GAE).
-	cfg := GetConfig(ctx)
-	if cfg == nil {
-		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
-		return nil, ErrNotConfigured
-	}
 	ctx, cancel := clock.WithTimeout(ctx, cfg.adjustedTimeout(10*time.Second))
 	defer cancel()
 
@@ -297,7 +299,7 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (tok *del
 	}.Debugf(ctx, "Minted new delegation token")
 
 	// Cache the token. Ignore errors here, it's not big deal, we have the token.
-	err = delegationTokenCache.Store(ctx, cachedToken{
+	err = delegationTokenCache.Store(ctx, cfg.Cache, cachedToken{
 		Key:     cacheKey,
 		Token:   *tok,
 		Created: now,

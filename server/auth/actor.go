@@ -95,7 +95,7 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 	report := durationReporter(ctx, mintAccessTokenDuration)
 
 	cfg := GetConfig(ctx)
-	if cfg == nil || cfg.AccessTokenProvider == nil {
+	if cfg == nil || cfg.AccessTokenProvider == nil || cfg.Cache == nil {
 		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
 		return nil, ErrNotConfigured
 	}
@@ -127,7 +127,7 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 
 	// Try to find an existing cached token and check that it lives long enough.
 	now := clock.Now(ctx).UTC()
-	switch cached, err := actorTokenCache.Fetch(ctx, cacheKey); {
+	switch cached, err := actorTokenCache.Fetch(ctx, cfg.Cache, cacheKey); {
 	case err != nil:
 		report(err, "ERROR_CACHE")
 		return nil, err
@@ -184,7 +184,7 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 	}
 
 	// Cache the token. Ignore errors here, it's not big deal, we have the token.
-	err = actorTokenCache.Store(ctx, cachedToken{
+	err = actorTokenCache.Store(ctx, cfg.Cache, cachedToken{
 		Key:     cacheKey,
 		Token:   makeCachedOAuth2Token(tok),
 		Created: now,

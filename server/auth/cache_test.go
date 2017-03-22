@@ -28,7 +28,6 @@ func TestTokenCache(t *testing.T) {
 		ctx := context.Background()
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
-		ctx = SetConfig(ctx, Config{Cache: cache})
 
 		tc := tokenCache{
 			Kind:           "testing",
@@ -37,7 +36,7 @@ func TestTokenCache(t *testing.T) {
 		}
 
 		Convey("check basic usage", func() {
-			itm, err := tc.Fetch(ctx, "some\nkey")
+			itm, err := tc.Fetch(ctx, cache, "some\nkey")
 			So(err, ShouldBeNil)
 			So(itm, ShouldBeNil)
 
@@ -47,9 +46,9 @@ func TestTokenCache(t *testing.T) {
 				Created: clock.Now(ctx).UTC(),
 				Expiry:  clock.Now(ctx).Add(100 * time.Minute).UTC(),
 			}
-			So(tc.Store(ctx, tok), ShouldBeNil)
+			So(tc.Store(ctx, cache, tok), ShouldBeNil)
 
-			itm, err = tc.Fetch(ctx, "some\nkey")
+			itm, err = tc.Fetch(ctx, cache, "some\nkey")
 			So(err, ShouldBeNil)
 			So(itm, ShouldResemble, &tok)
 
@@ -64,13 +63,13 @@ func TestTokenCache(t *testing.T) {
 				Created: clock.Now(ctx).UTC(),
 				Expiry:  clock.Now(ctx).Add(100 * time.Minute).UTC(),
 			}
-			So(tc.Store(ctx, tok), ShouldBeNil)
+			So(tc.Store(ctx, cache, tok), ShouldBeNil)
 
 			// 89% of token's life has passed. The token is still alive
 			// (no randomization).
 			clock.Get(ctx).(testclock.TestClock).Add(89 * time.Minute)
 			for i := 0; i < 50; i++ {
-				itm, _ := tc.Fetch(ctx, "some\nkey")
+				itm, _ := tc.Fetch(ctx, cache, "some\nkey")
 				So(itm, ShouldNotBeNil)
 			}
 
@@ -79,7 +78,7 @@ func TestTokenCache(t *testing.T) {
 			clock.Get(ctx).(testclock.TestClock).Add(2 * time.Minute)
 			missing := 0
 			for i := 0; i < 100; i++ {
-				if itm, _ := tc.Fetch(ctx, "some\nkey"); itm == nil {
+				if itm, _ := tc.Fetch(ctx, cache, "some\nkey"); itm == nil {
 					missing++
 				}
 			}
@@ -88,7 +87,7 @@ func TestTokenCache(t *testing.T) {
 			// Token has expired. 0% chance of seeing it.
 			clock.Get(ctx).(testclock.TestClock).Add(9 * time.Minute)
 			for i := 0; i < 50; i++ {
-				itm, _ := tc.Fetch(ctx, "some\nkey")
+				itm, _ := tc.Fetch(ctx, cache, "some\nkey")
 				So(itm, ShouldBeNil)
 			}
 		})

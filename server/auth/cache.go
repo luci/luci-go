@@ -57,7 +57,7 @@ type cachedToken struct {
 }
 
 // Store unconditionally puts the token in the cache.
-func (tc *tokenCache) Store(c context.Context, tok cachedToken) error {
+func (tc *tokenCache) Store(c context.Context, cache Cache, tok cachedToken) error {
 	switch {
 	case tok.Created.IsZero() || tok.Created.Location() != time.UTC:
 		panic(fmt.Errorf("tok.Created is not a valid UTC time - %v", tok.Created))
@@ -72,11 +72,7 @@ func (tc *tokenCache) Store(c context.Context, tok cachedToken) error {
 	if err != nil {
 		return err
 	}
-	cfg := GetConfig(c)
-	if cfg == nil || cfg.Cache == nil {
-		return ErrNotConfigured
-	}
-	return cfg.Cache.Set(c, tc.itemKey(tok.Key), blob, ttl)
+	return cache.Set(c, tc.itemKey(tok.Key), blob, ttl)
 }
 
 // Fetch grabs cached token if it hasn't expired yet.
@@ -85,13 +81,8 @@ func (tc *tokenCache) Store(c context.Context, tok cachedToken) error {
 // token is close to expiration, this function will randomly return a cache
 // miss. That way if multiple concurrent processes all constantly use the same
 // token, only the most unlucky one will refresh it.
-func (tc *tokenCache) Fetch(c context.Context, key string) (*cachedToken, error) {
-	cfg := GetConfig(c)
-	if cfg == nil || cfg.Cache == nil {
-		return nil, ErrNotConfigured
-	}
-
-	blob, err := cfg.Cache.Get(c, tc.itemKey(key))
+func (tc *tokenCache) Fetch(c context.Context, cache Cache, key string) (*cachedToken, error) {
+	blob, err := cache.Get(c, tc.itemKey(key))
 	switch {
 	case err != nil:
 		return nil, err
