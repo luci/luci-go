@@ -188,10 +188,6 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (tok *del
 	}
 	tokenServiceHost := tokenServiceURL[len("https://"):]
 
-	// TODO(vadimsh): Cache tokens in the request state, so that multiple outbound
-	// HTTP calls to some remote service during lifetime of inbound request don't
-	// hit memcache all the time.
-
 	// Try to find an existing cached token and check that it lives long enough.
 	cacheKey := string(userID) + "\n" + tokenServiceHost + "\n" + target
 	now := clock.Now(ctx).UTC()

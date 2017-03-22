@@ -40,6 +40,9 @@ var (
 	// globalSettings holds global app settings lazily updated from the datastore.
 	globalSettings = settings.New(gaesettings.Storage{})
 
+	// globalAuthCache is used to cache various auth token.
+	globalAuthCache = &server.Memcache{Namespace: "__luciauth__"}
+
 	// globalAuthConfig is configuration of the server/auth library.
 	//
 	// It specifies concrete GAE-based implementations for various interfaces
@@ -55,7 +58,7 @@ var (
 		Signer:              gaesigner.Signer{},
 		AccessTokenProvider: client.GetAccessToken,
 		AnonymousTransport:  urlfetch.Get,
-		Cache:               &server.Memcache{Namespace: "__luciauth__"},
+		Cache:               globalAuthCache,
 		IsDevMode:           appengine.IsDevAppServer(),
 	}
 
@@ -89,6 +92,7 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 	c = proccache.Use(c, globalProcessCache)
 	c = gaeconfig.Use(c)
 	c = gaesecrets.Use(c, nil)
+	c = globalAuthCache.UseRequestCache(c)
 	c = auth.SetConfig(c, globalAuthConfig)
 
 	// Wrap this in a cache context so that lookups for any of the aforementioned
