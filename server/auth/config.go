@@ -72,21 +72,6 @@ func (cfg *Config) adjustedTimeout(t time.Duration) time.Duration {
 	return time.Minute
 }
 
-// Cache implements a strongly consistent cache.
-type Cache interface {
-	// Get returns a cached item or (nil, nil) if it's not in the cache.
-	//
-	// Any returned error is transient error.
-	Get(c context.Context, key string) ([]byte, error)
-
-	// Set unconditionally overwrites an item in the cache.
-	//
-	// If 'exp' is zero, the item will have no expiration time.
-	//
-	// Any returned error is transient error.
-	Set(c context.Context, key string, value []byte, exp time.Duration) error
-}
-
 type cfxContextKey int
 
 // SetConfig replaces the configuration in the context.

@@ -52,7 +52,7 @@ func TestTokenCache(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(itm, ShouldResemble, &tok)
 
-			pgc := cache.(memoryCache)
+			pgc := cache.(*memoryCache)
 			So(pgc.cache.Len(), ShouldEqual, 1)
 		})
 

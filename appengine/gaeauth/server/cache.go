@@ -15,12 +15,15 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/caching/proccache"
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/sync/mutexpool"
 	"github.com/luci/luci-go/server/auth"
 )
 
 // Memcache implements auth.Cache on top of GAE memcache and per-request state.
 type Memcache struct {
 	Namespace string
+
+	locks mutexpool.P
 }
 
 var _ auth.Cache = (*Memcache)(nil)
@@ -57,6 +60,11 @@ func (m *Memcache) Set(c context.Context, key string, value []byte, exp time.Dur
 		return errors.WrapTransient(err)
 	}
 	return nil
+}
+
+// WithLocalMutex calls 'f' under local mutex.
+func (mc *Memcache) WithLocalMutex(c context.Context, key string, f func()) {
+	mc.locks.WithMutex(key, f)
 }
 
 // cacheContext returns properly namespaced luci/gae context.

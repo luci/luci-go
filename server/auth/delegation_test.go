@@ -91,7 +91,7 @@ func TestMintDelegationToken(t *testing.T) {
 			})
 
 			// Cached now.
-			So(tokenCache.(memoryCache).cache.Len(), ShouldEqual, 1)
+			So(tokenCache.(*memoryCache).cache.Len(), ShouldEqual, 1)
 			v, _ := tokenCache.Get(ctx, "delegation/3/dL9oZrnNLCIxyUBBaX3eGKAwTbA")
 			So(v, ShouldNotBeNil)
 

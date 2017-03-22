@@ -17,11 +17,31 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/caching/lru"
 	"github.com/luci/luci-go/common/data/rand/mathrand"
+	"github.com/luci/luci-go/common/sync/mutexpool"
 )
 
-// tokenCache knows how to keep tokens in the cache.
-//
-// Uses Config.Cache as a storage backend.
+// Cache implements a strongly consistent cache.
+type Cache interface {
+	// Get returns a cached item or (nil, nil) if it's not in the cache.
+	//
+	// Any returned error is transient error.
+	Get(c context.Context, key string) ([]byte, error)
+
+	// Set unconditionally overwrites an item in the cache.
+	//
+	// If 'exp' is zero, the item will have no expiration time.
+	//
+	// Any returned error is transient error.
+	Set(c context.Context, key string, value []byte, exp time.Duration) error
+
+	// WithLocalMutex calls 'f' under a process-local mutex assigned to the 'key'.
+	//
+	// It is used to ensure only one goroutine is updating the item matching the
+	// given key.
+	WithLocalMutex(c context.Context, key string, f func())
+}
+
+// tokenCache knows how to keep tokens in a cache represented by Cache.
 //
 // It implements probabilistic early expiration to workaround cache stampede
 // problem for hot items, see Fetch.
@@ -147,17 +167,18 @@ func (tc *tokenCache) unmarshal(blob []byte) (*cachedToken, error) {
 
 type memoryCache struct {
 	cache *lru.Cache
+	locks mutexpool.P
 }
 
 // MemoryCache creates a new in-memory Cache instance that is built on
 // top of an LRU cache of the specified size.
 func MemoryCache(size int) Cache {
-	return memoryCache{
+	return &memoryCache{
 		cache: lru.New(size),
 	}
 }
 
-func (mc memoryCache) Get(c context.Context, key string) ([]byte, error) {
+func (mc *memoryCache) Get(c context.Context, key string) ([]byte, error) {
 	var item *memoryCacheItem
 	now := clock.Now(c)
 	_ = mc.cache.Mutate(key, func(cur interface{}) interface{} {
@@ -179,12 +200,16 @@ func (mc memoryCache) Get(c context.Context, key string) ([]byte, error) {
 	return item.value, nil
 }
 
-func (mc memoryCache) Set(c context.Context, key string, value []byte, exp time.Duration) error {
+func (mc *memoryCache) Set(c context.Context, key string, value []byte, exp time.Duration) error {
 	mc.cache.Put(key, &memoryCacheItem{
 		value: value,
 		exp:   clock.Now(c).Add(exp),
 	})
 	return nil
+}
+
+func (mc *memoryCache) WithLocalMutex(c context.Context, key string, f func()) {
+	mc.locks.WithMutex(key, f)
 }
 
 type memoryCacheItem struct {
