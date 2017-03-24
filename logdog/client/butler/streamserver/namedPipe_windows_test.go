@@ -23,7 +23,9 @@ func TestWindowsNamedPipeServer(t *testing.T) {
 
 	pid := os.Getpid()
 
-	Convey(`A named pipe server`, t, func() {
+	// TODO(dnj): Re-enable after switching back to "winio" pending bug.
+	// See: crbug.com/702105
+	SkipConvey(`A named pipe server`, t, func() {
 		ctx := context.Background()
 
 		Convey(`Will refuse to create if there is an empty path.`, func() {

@@ -13,7 +13,7 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamclient"
 
-	"github.com/Microsoft/go-winio"
+	"gopkg.in/natefinch/npipe.v2"
 )
 
 // maxWindowsNamedPipeLength is the maximum length of a Windows named pipe.
@@ -42,7 +42,7 @@ func NewNamedPipeServer(ctx context.Context, name string) (StreamServer, error) 
 				"pipePath": pipePath,
 			}.Debugf(ctx, "Creating Windows server socket Listener.")
 
-			l, err := winio.ListenPipe(pipePath, nil)
+			l, err := npipe.Listen(pipePath)
 			if err != nil {
 				return nil, "", errors.Annotate(err).Reason("failed to listen on named pipe").Err()
 			}
