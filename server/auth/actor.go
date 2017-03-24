@@ -123,77 +123,73 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 			return nil, err
 		}
 	}
-	cacheKey := strings.Join(parts, "\n")
 
-	// Try to find an existing cached token and check that it lives long enough.
-	now := clock.Now(ctx).UTC()
-	switch cached, err := actorTokenCache.Fetch(ctx, cfg.Cache, cacheKey); {
-	case err != nil:
-		report(err, "ERROR_CACHE")
-		return nil, err
-	case cached != nil && cached.Expiry.After(now.Add(params.MinTTL)):
-		t := cached.Token.(cachedOAuth2Token) // let it panic on type mismatch
-		report(nil, "SUCCESS_CACHE_HIT")
-		return t.toToken(), nil
-	}
-
-	// Both IAM API call and token endpoint should be fast. If it gets stuck
-	// longer than 10 sec, it is probably busted already.
-	ctx, cancel := clock.WithTimeout(ctx, cfg.adjustedTimeout(10*time.Second))
-	defer cancel()
 	ctx = logging.SetFields(ctx, logging.Fields{
-		"method":  "AsActor",
+		"token":   "actor",
 		"account": params.ServiceAccount,
 		"scopes":  strings.Join(sortedScopes, " "),
 	})
-	logging.Debugf(ctx, "Minting access token")
 
-	// Need an authenticating transport to talk to IAM.
-	asSelf, err := GetRPCTransport(ctx, AsSelf, WithScopes(iam.OAuthScope))
+	cached, err, label := fetchOrMintToken(ctx, &fetchOrMintTokenOp{
+		Config:   cfg,
+		Cache:    &actorTokenCache,
+		CacheKey: strings.Join(parts, "\n"),
+		MinTTL:   params.MinTTL,
+
+		// Mint is called on cache miss, under the lock.
+		Mint: func(ctx context.Context) (*cachedToken, error, string) {
+			// Need an authenticating transport to talk to IAM.
+			asSelf, err := GetRPCTransport(ctx, AsSelf, WithScopes(iam.OAuthScope))
+			if err != nil {
+				return nil, err, "ERROR_NO_TRANSPORT"
+			}
+
+			// This will do two HTTP calls: one to 'signBytes' IAM API, another to the
+			// token exchange endpoint.
+			tok, err := googleoauth.GetAccessToken(ctx, googleoauth.JwtFlowParams{
+				ServiceAccount: params.ServiceAccount,
+				Signer: &iam.Signer{
+					ServiceAccount: params.ServiceAccount,
+					Client: &iam.Client{
+						Client: &http.Client{Transport: asSelf},
+					},
+				},
+				Scopes: sortedScopes,
+				Client: &http.Client{Transport: cfg.AnonymousTransport(ctx)},
+			})
+
+			// Both iam.Signer and googleoauth.GetAccessToken return googleapi.Error
+			// on HTTP-level responses. Recognize fatal HTTP errors. Everything else
+			// (stuff like connection timeouts, deadlines, etc) are transient errors.
+			if err != nil {
+				if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code < 500 {
+					return nil, err, fmt.Sprintf("ERROR_MINTING_HTTP_%d", apiErr.Code)
+				} else {
+					return nil, errors.WrapTransient(err), "ERROR_TRANSIENT_IN_MINTING"
+				}
+			}
+
+			// Log details about the new token.
+			now := clock.Now(ctx).UTC()
+			logging.Fields{
+				"fingerprint": tokenFingerprint(tok.AccessToken),
+				"validity":    tok.Expiry.Sub(now),
+			}.Debugf(ctx, "Minted new actor OAuth token")
+
+			return &cachedToken{
+				Token:   makeCachedOAuth2Token(tok),
+				Created: now,
+				Expiry:  tok.Expiry,
+			}, nil, "SUCCESS_CACHE_MISS"
+		},
+	})
+
 	if err != nil {
-		logging.WithError(err).Errorf(ctx, "Failed to grab a transport for IAM call")
-		report(err, "ERROR_NO_TRANSPORT")
+		report(err, label)
 		return nil, err
 	}
 
-	// This will do two HTTP calls: one to 'signBytes' IAM API, another to the
-	// token exchange endpoint.
-	tok, err := googleoauth.GetAccessToken(ctx, googleoauth.JwtFlowParams{
-		ServiceAccount: params.ServiceAccount,
-		Signer: &iam.Signer{
-			ServiceAccount: params.ServiceAccount,
-			Client: &iam.Client{
-				Client: &http.Client{Transport: asSelf},
-			},
-		},
-		Scopes: sortedScopes,
-		Client: &http.Client{Transport: cfg.AnonymousTransport(ctx)},
-	})
-
-	// Both iam.Signer and googleoauth.GetAccessToken return googleapi.Error on
-	// HTTP-level responses. Recognize fatal HTTP errors. Everything else (stuff
-	// like connection timeouts, deadlines, etc) are transient errors.
-	if err != nil {
-		logging.WithError(err).Errorf(ctx, "Failed to mint an access token")
-		if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code < 500 {
-			report(err, fmt.Sprintf("ERROR_HTTP_%d", apiErr.Code))
-			return nil, err
-		}
-		report(err, "ERROR_TRANSIENT")
-		return nil, errors.WrapTransient(err)
-	}
-
-	// Cache the token. Ignore errors here, it's not big deal, we have the token.
-	err = actorTokenCache.Store(ctx, cfg.Cache, cachedToken{
-		Key:     cacheKey,
-		Token:   makeCachedOAuth2Token(tok),
-		Created: now,
-		Expiry:  tok.Expiry,
-	})
-	if err != nil {
-		logging.WithError(err).Warningf(ctx, "Failed to store the access token in the cache")
-	}
-
-	report(nil, "SUCCESS_CACHE_MISS")
-	return tok, nil
+	t := cached.Token.(cachedOAuth2Token) // let it panic on type mismatch
+	report(nil, label)
+	return t.toToken(), nil
 }
