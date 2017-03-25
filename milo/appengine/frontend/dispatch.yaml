@@ -1,5 +1,7 @@
 dispatch:
-  - url: "*/pubsub/*"
-    service: pubsub
+# Note: /_ah/push-handler/ cannot be covered by dispatch.yaml because
+# dispatch.yaml cannot handle /_ah/ URLs.  We do want pubsub requests going
+# to /_ah/push-handlers/ to go to the pubsub module however for accounting
+# purposes.
   - url: "*/prpc/*"
     service: api

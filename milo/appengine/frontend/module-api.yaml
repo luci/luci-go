@@ -5,13 +5,7 @@ module: api
 instance_class: F4_1G
 
 handlers:
-# For admin resources or endpoints meant to be hit by a cron job.
-- url: /admin/.*
-  script: _go_app
-  secure: always
-  login: admin
-
-# Everything goes here.
-- url: /.*
+# Machine endpoints.
+- url: /prpc/.*
   script: _go_app
   secure: always

@@ -5,16 +5,11 @@ module: pubsub
 instance_class: F4_1G
 
 handlers:
-# For admin resources or endpoints meant to be hit by a cron job.
-- url: /admin/.*
+# Pubsub Handler.
+- url: /_ah/push-handlers/.*
   script: _go_app
   secure: always
   login: admin
-
-# Everything goes here.
-- url: /.*
-  script: _go_app
-  secure: always
 
 automatic_scaling:
   min_idle_instances: 5

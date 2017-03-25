@@ -64,7 +64,7 @@ func init() {
 	r.GET("/logdog/build/:project/*prefix", basemw, logdog.BuildHandler)
 
 	// PubSub subscription endpoints.
-	r.POST("/pubsub/buildbot", basemw, buildbot.PubSubHandler)
+	r.POST("/_ah/push-handlers/buildbot", basemw, buildbot.PubSubHandler)
 
 	// pRPC style endpoints.
 	api := prpc.Server{
