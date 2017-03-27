@@ -104,8 +104,9 @@ func parseStatus(build *buildbucket.ApiBuildMessage) (resp.Status, error) {
 }
 
 // getChangeList tries to extract CL information from a buildbucket build.
-func getChangeList(build *buildbucket.ApiBuildMessage, params *buildParameters, resultDetails *resultDetails) *resp.Commit {
-	var result *resp.Commit
+func getChangeList(
+	build *buildbucket.ApiBuildMessage, params *buildParameters,
+	resultDetails *resultDetails) (result *resp.Commit) {
 
 	prop := &params.Properties
 	switch prop.PatchStorage {
@@ -122,13 +123,16 @@ func getChangeList(build *buildbucket.ApiBuildMessage, params *buildParameters, 
 		}
 
 	case "gerrit":
-		if prop.GerritURL != "" && prop.GerritChangeNumber != 0 {
+		if prop.GerritPatchURL != "" && prop.GerritPatchIssue != 0 {
+			path := fmt.Sprintf("%d", prop.GerritPatchIssue)
+			if prop.GerritPatchSet != 0 {
+				path = fmt.Sprintf("%d/%d", prop.GerritPatchIssue, prop.GerritPatchSet)
+			}
 			result = &resp.Commit{
-				Revision:        prop.GerritPatchRef,
-				RequestRevision: prop.GerritPatchRef,
 				Changelist: &resp.Link{
-					Label: fmt.Sprintf("Gerrit CL %d", prop.GerritChangeNumber),
-					URL:   prop.GerritChangeURL,
+					Label: fmt.Sprintf("Gerrit CL %d", prop.GerritPatchIssue),
+					URL: fmt.Sprintf(
+						"%s/c/%s", prop.GerritPatchURL, path),
 				},
 			}
 		}
@@ -139,5 +143,5 @@ func getChangeList(build *buildbucket.ApiBuildMessage, params *buildParameters, 
 		result.AuthorEmail = params.Changes[0].Author.Email
 	}
 
-	return result
+	return
 }

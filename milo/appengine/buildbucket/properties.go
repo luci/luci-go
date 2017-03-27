@@ -18,13 +18,13 @@ type properties struct {
 
 	RietveldURL string `json:"rietveld"` // e.g. "https://codereview.chromium.org"
 	Issue       number `json:"issue"`    // e.g. 2127373005
-	PatchSet    number `json:"patchset"` // e.g. 40001
+	PatchSet    number `json:"patchset"` // e.g. 40001 for rietveld
 
-	GerritURL          string `json:"gerrit"`              // e.g. "https://chromium-review.googlesource.com"
-	GerritChangeNumber int    `json:"event.change.number"` // e.g. 358171
-	GerritChangeID     string `json:"event.change.id"`     // e.g. "infra%2Finfra~master~Iee05b76799d577d491f533b8acaa4560ac14a806"
-	GerritChangeURL    string `json:"event.change.url"`    // e.g. "https://chromium-review.googlesource.com/#/c/358171"
-	GerritPatchRef     string `json:"event.patchSet.ref"`  // e.g. "refs/changes/71/358171/2"
+	GerritPatchURL           string `json:"patch_gerrit_url"`     // e.g. "https://chromium-review.googlesource.com"
+	GerritPatchIssue         int    `json:"patch_issue"`          // e.g. 358171
+	GerritPatchSet           number `json:"patch_set"`            // e.g. 1
+	GerritPatchProject       string `json:"patch_project"`        // e.g. "infra/infra"
+	GerritPatchRepositoryURL string `json:"patch_repository_url"` // e.g. https://chromium.googlesource.com/infra/infra
 
 	Revision  string   `json:"revision"`  // e.g. "0b04861933367c62630751702c84fd64bc3caf6f"
 	BlameList []string `json:"blamelist"` // e.g. ["someone@chromium.org"]
