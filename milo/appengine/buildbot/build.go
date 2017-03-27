@@ -515,8 +515,25 @@ func build(c context.Context, master, builder string, buildNum int) (*resp.MiloB
 func updatePostProcessBuild(b *buildbotBuild) {
 	// If this is a LogDog-only build, we want to promote the LogDog links.
 	if loc, ok := b.getPropertyValue("log_location").(string); ok && strings.HasPrefix(loc, "logdog://") {
+		linkMap := map[string]string{}
 		for sidx := range b.Steps {
-			promoteLogDogLinks(&b.Steps[sidx], sidx == 0)
+			promoteLogDogLinks(&b.Steps[sidx], sidx == 0, linkMap)
+		}
+
+		// Update "Logs". This field is part of BuildBot, and is the amalgamation
+		// of all logs in the build's steps. Since each log is out of context of its
+		// original step, we can't apply the promotion logic; instead, we will use
+		// the link map to map any old URLs that were matched in "promoteLogDogLnks"
+		// to their new URLs.
+		for _, link := range b.Logs {
+			// "link" is in the form: [NAME, URL]
+			if len(link) != 2 {
+				continue
+			}
+
+			if newURL, ok := linkMap[link[1]]; ok {
+				link[1] = newURL
+			}
 		}
 	}
 }
@@ -535,7 +552,10 @@ func updatePostProcessBuild(b *buildbotBuild) {
 // we want to do is remove the original junk links and replace them with their
 // alias counterparts, so that the "natural" BuildBot links are actually LogDog
 // links.
-func promoteLogDogLinks(s *buildbotStep, isInitialStep bool) {
+//
+// As URLs are re-mapped, the supplied "linkMap" will be updated to map the old
+// URLs to the new ones.
+func promoteLogDogLinks(s *buildbotStep, isInitialStep bool, linkMap map[string]string) {
 	type stepLog struct {
 		label string
 		url   string
@@ -580,6 +600,17 @@ func promoteLogDogLinks(s *buildbotStep, isInitialStep bool) {
 
 			result[i] = &aliasStepLog
 		}
+
+		// If we performed mapping, add the OLD -> NEW URL mapping to linkMap.
+		//
+		// Since multpiple aliases can apply to a single log, and we have to pick
+		// one, here, we'll arbitrarily pick the last one. This is maybe more
+		// consistent than the first one because linkMap, itself, will end up
+		// holding the last mapping for any given URL.
+		if len(result) > 0 {
+			linkMap[sl.url] = result[len(result)-1].url
+		}
+
 		return result
 	}
 
