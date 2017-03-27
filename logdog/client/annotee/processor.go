@@ -287,10 +287,10 @@ func (p *Processor) IngestLine(s *Stream, line string) error {
 	injectedAnnotations := h.flushInjectedAnnotations()
 
 	// Emit the "all" link if configured (at most once).
-	if s.EmitAllLink {
-		if l := buildStreamLinkAnnotation(p.o.LinkGenerator, "all", "stdio", "**/stdout", "**/stderr"); l != "" {
-			injectedAnnotations = append(injectedAnnotations, l)
-		}
+	if lg := p.o.LinkGenerator; lg != nil && s.EmitAllLink {
+		injectedAnnotations = append(injectedAnnotations,
+			buildAliasAnnotation("all", "stdio", lg.GetLink("**/stdout", "**/stderr")))
+
 		s.EmitAllLink = false
 	}
 
@@ -356,15 +356,26 @@ func (p *Processor) IngestLine(s *Stream, line string) error {
 
 	// If we're stripping text, write a warning message noting that this stream
 	// will not have text in it.
-	if !p.o.TeeText && s.Tee != nil && !h.textStrippedNote {
-		err := writeTextLine(s.Tee, "This build is configured to send log data exclusively to LogDog. "+
-			"Please click the LogDog link on the build page to view this log stream.")
-		if err != nil {
-			log.WithError(err).Errorf(h, "Failed to write text stripped notice.")
-			return err
+	if !p.o.TeeText && s.Tee != nil {
+		if !h.textStrippedNote {
+			err := writeTextLine(s.Tee, "This build is configured to send log data exclusively to LogDog. "+
+				"Please use the LogDog link on the build page to view this log stream.")
+			if err != nil {
+				log.WithError(err).Errorf(h, "Failed to write text stripped notice.")
+				return err
+			}
+
+			h.textStrippedNote = true
 		}
 
-		h.textStrippedNote = true
+		// Add links to specific log streams as they are generated.
+		injectTextStreamLines := h.flushInjectedTextStreamLines()
+		for _, line := range injectTextStreamLines {
+			if err := writeTextLine(s.Tee, line); err != nil {
+				log.WithError(err).Errorf(h, "Failed to inject text stream line: %s", line)
+				return err
+			}
+		}
 	}
 
 	// If this is a text line, and we're teeing text, emit this line.
@@ -576,12 +587,13 @@ type stepHandler struct {
 	processor *Processor
 	step      *annotation.Step
 
-	client              streamclient.Client
-	injectedAnnotations []string
-	streams             map[types.StreamName]streamclient.Stream
-	finished            bool
-	allEmitted          bool
-	textStrippedNote    bool
+	client                  streamclient.Client
+	injectedAnnotations     []string
+	injectedTextStreamLines []string
+	streams                 map[types.StreamName]streamclient.Stream
+	finished                bool
+	allEmitted              bool
+	textStrippedNote        bool
 }
 
 func newStepHandler(p *Processor, step *annotation.Step) (*stepHandler, error) {
@@ -698,30 +710,46 @@ func (h *stepHandler) closeStreamImpl(name types.StreamName, s streamclient.Stre
 }
 
 func (h *stepHandler) flushInjectedAnnotations() []string {
-	if len(h.injectedAnnotations) == 0 {
-		return nil
-	}
+	return flushStringSlice(&h.injectedAnnotations)
+}
 
-	lines := make([]string, len(h.injectedAnnotations))
-	copy(lines, h.injectedAnnotations)
-	h.injectedAnnotations = h.injectedAnnotations[:0]
-
-	return lines
+func (h *stepHandler) flushInjectedTextStreamLines() []string {
+	return flushStringSlice(&h.injectedTextStreamLines)
 }
 
 func (h *stepHandler) maybeInjectLink(base, text string, names ...types.StreamName) {
-	if l := buildStreamLinkAnnotation(h.processor.o.LinkGenerator, base, text, names...); l != "" {
-		h.injectedAnnotations = append(h.injectedAnnotations, l)
+	if lg := h.processor.o.LinkGenerator; lg != nil {
+		link := lg.GetLink(names...)
+
+		h.injectedAnnotations = append(h.injectedAnnotations, buildAliasAnnotation(base, text, link))
+		h.injectedTextStreamLines = append(h.injectedTextStreamLines, fmt.Sprintf("LogDog Link [%s]: %s", base, link))
 	}
 }
 
-func buildStreamLinkAnnotation(lg LinkGenerator, base, text string, names ...types.StreamName) string {
-	if lg != nil {
-		if link := lg.GetLink(names...); link != "" {
-			return buildAnnotation("STEP_LINK", fmt.Sprintf("%s-->%s", text, base), link)
-		}
+func (h *stepHandler) maybeInjectTextStreamLink(name string, stream types.StreamName) {
+	if lg := h.processor.o.LinkGenerator; lg != nil {
 	}
-	return ""
+}
+
+func buildAliasAnnotation(base, text, link string) string {
+	return buildAnnotation("STEP_LINK", fmt.Sprintf("%s-->%s", text, base), link)
+}
+
+func flushStringSlice(sp *[]string) []string {
+	if sp == nil {
+		return nil
+	}
+
+	s := *sp
+	if len(s) == 0 {
+		return nil
+	}
+
+	lines := make([]string, len(s))
+	copy(lines, s)
+	*sp = s[:0]
+
+	return lines
 }
 
 // lineReader reads from an input stream and returns the data line-by-line.
