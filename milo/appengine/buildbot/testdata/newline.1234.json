@@ -1,0 +1,46 @@
+{
+    "sourcestamp": {
+      "changes": []
+    },
+    "results": 2,
+    "steps": [
+        {
+            "hidden": false,
+            "isFinished": true,
+            "isStarted": true,
+            "logs": [
+                [
+                    "preamble",
+                    "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/steps/logs/preamble"
+                ]
+            ],
+            "name": "steps",
+            "results": [
+                2,
+                [
+                    "steps"
+                ]
+            ],
+            "statistics": {},
+            "step_number": 0,
+            "text": [
+                "line 1<br><br>line 3"
+            ],
+            "times": [
+                1467070230.081103,
+                1467071406.47502
+            ],
+            "urls": {}
+        }
+    ],
+    "text": [
+        "failed",
+        "steps",
+        "failed",
+        "compile (with patch)"
+    ],
+    "times": [
+        1467070230.080228,
+        1467071406.476459
+    ]
+}

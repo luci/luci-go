@@ -173,7 +173,11 @@
                 <span style="float:right">( {{ .Duration | humanDuration }} )</span>
               {{- end }}
               <span>
-                {{ range .Text }}<div class="step-text">{{ . }}</div>{{ end }}
+                {{ range .Text -}}
+                  <div class="step-text">
+                    {{- if . -}}{{- . -}}{{- else -}}&nbsp;{{- end -}}
+                  </div>
+                {{- end }}
               </span>
             </div>
             <ul>

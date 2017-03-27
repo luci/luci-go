@@ -1,0 +1,66 @@
+{
+  "Summary": {
+    "ParentLabel": {
+      "Label": "",
+      "URL": "."
+    },
+    "Label": "#0",
+    "Status": "Failure",
+    "Bot": {
+      "Label": "",
+      "URL": "https://build.chromium.org/p//buildslaves/"
+    },
+    "Source": {
+      "Label": "//0",
+      "URL": "https://build.chromium.org/p//builders//builds/0"
+    },
+    "Started": "2016-06-27T23:30:30.080228096Z",
+    "Finished": "2016-06-27T23:50:06.476459008Z",
+    "Duration": 1176396230912,
+    "Type": "Summary",
+    "LevelsDeep": 1,
+    "Verbosity": 0,
+    "Text": []
+  },
+  "SourceStamp": {
+    "AuthorName": "",
+    "AuthorEmail": "",
+    "Repo": "",
+    "Branch": "",
+    "RequestRevision": "",
+    "Revision": "",
+    "Description": "",
+    "Title": "",
+    "Changelist": null,
+    "CommitURL": "",
+    "File": null,
+    "Source": ""
+  },
+  "Components": [
+    {
+      "Label": "steps",
+      "Status": "Failure",
+      "SubLink": [
+        [
+          {
+            "Label": "preamble",
+            "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/steps/logs/preamble"
+          }
+        ]
+      ],
+      "Started": "2016-06-27T23:30:30.081103104Z",
+      "Finished": "2016-06-27T23:50:06.475020032Z",
+      "Duration": 1176393916928,
+      "Type": "Recipe",
+      "LevelsDeep": 0,
+      "Verbosity": 0,
+      "Text": [
+        "line 1",
+        "",
+        "line 3"
+      ]
+    }
+  ],
+  "PropertyGroup": null,
+  "Blame": null
+}

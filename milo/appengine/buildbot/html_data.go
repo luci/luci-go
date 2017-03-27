@@ -22,6 +22,7 @@ var testCases = []struct {
 }{
 	{"CrWinGoma", 30608},
 	{"win_chromium_rel_ng", 246309},
+	{"newline", 1234},
 }
 
 // BuildTestData returns sample test data for build pages.

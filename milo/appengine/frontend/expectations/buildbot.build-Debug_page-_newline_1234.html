@@ -1,0 +1,224 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+<meta charset="utf-8">
+<title>
+  
+      Failed
+    
+    -
+      
+    #0
+</title>
+<link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
+<script src="/static/common/js/time.js"></script>
+<script src="/static/common/third_party/js/jquery.min.js"></script>
+
+<link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/red-32.png">
+
+
+
+<body class="interface">
+  <header>
+    Luci
+    <div>
+      
+        <a href="https://login.url/?target=/foobar">login</a>
+      
+    </div>
+  </header>
+  <hr>
+  
+  <div class="content">
+    <h1>
+      
+        Builder <a href="."></a>
+      
+      Build #0
+      
+    </h1>
+
+    <div class="column">
+
+      <h2>Results:</h2>
+      
+        
+          <p class="failure result">Build Failed
+        
+        <span class="subtitle">
+          
+        </span>
+        </p>
+       
+
+
+      
+      
+
+      <h2>SourceStamp:</h2>
+
+      <table class="info" width="100%">
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      </table>
+        
+        
+
+      
+      <h2>Execution:</h2>
+      <ul>
+        
+        <li>
+          Source:
+          <a href="https://build.chromium.org/p//builders//builds/0">//0</a>
+        </li>
+        
+
+        
+        <li>
+          Bot:
+          <a href="https://build.chromium.org/p//buildslaves/"></a>
+        </li>
+        
+
+        
+      </ul>
+       
+
+      
+        
+      
+
+      
+        <h2>Steps and Logfiles:</h2>
+        <input type="checkbox" id="showHidden">
+        <label for="showHidden">Show hidden <span id="numHidden"></span></label>
+        <ol id="steps" class="hide">
+
+          
+            
+          
+
+          
+          <li class="verbosity-Normal">
+            <div class="status-Failure result">
+              <b>steps</b>
+              <span style="float:right">( 19 mins 36 secs )</span>
+              <span>
+                <div class="step-text">line 1</div><div class="step-text">&nbsp;</div><div class="step-text">line 3</div>
+              </span>
+            </div>
+            <ul>
+              
+              
+                <li><a href="http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/steps/logs/preamble">preamble</a></li>
+              
+              
+            </ul>
+          </li>
+          
+        </ol>
+       
+
+    </div>
+
+    <div class="column">
+
+      <h2>Build Properties:</h2>
+
+      <table class="info" width="100%">
+      <tr><th>Name</th><th>Value</th><th>Source</th></tr>
+
+        
+      </table>
+
+      
+
+      <h2>Timing:</h2>
+      <table class="info" width="100%">
+        <tr class="alt"><td class="left">Start</td>
+        <td>
+          <span class="local-time" data-timestamp="1467070230080">Monday, 27-Jun-16 23:30:30 UTC</span>
+        </td></tr>
+        <tr><td class="left">End</td>
+        <td>
+          <span class="local-time" data-timestamp="1467071406476">Monday, 27-Jun-16 23:50:06 UTC</span>
+        </td></tr>
+        <tr class="alt"><td class="left">Elapsed</td>
+        <td id="duration">
+          
+            19 mins 36 secs
+          
+        </td></tr>
+      </table>
+
+    </div>
+
+    
+  </div>
+</div>
+<script language="javascript">
+$(document).ready(function() {
+  var check = function(checked) {
+    var things = $("#steps");
+    if (checked) {
+      $("#steps").removeClass("hide");
+    } else {
+      $("#steps").addClass("hide");
+    }
+    var numHidden = $(".verbosity-Hidden").length;
+    if (numHidden > 0) {
+      $("#numHidden").text("(" + numHidden + " hidden)");
+    } else {
+      $("#numHidden").text("");
+    }
+  };
+
+  check($("#showHidden").is(":checked"));
+  $("#showHidden").click(function(e) {
+    check($(this).is(":checked"));
+  });
+});
+</script>
+
+  <footer>
+    <hr>
+    <a href="https://github.com/luci">luci</a>,
+    working for the <a href="https://chromium.org/">Chromium</a> project.<br>
+    Page built: <b><span class="local-time" data-timestamp="-6792498672871">Saturday, 03-Feb-01 04:05:06 UTC</span></b> (All times local)
+  </footer>
+<script>
+(function () {
+  'use strict';
+  milo.makeTimesLocal();
+})();
+</script>
+<script>
+  (function(i,s,o,g,r,a,m){i['CrDXObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://storage.googleapis.com/crdx-feedback.appspot.com/feedback.js','crdx');
+
+  crdx('setFeedbackButtonLink', 'https://bugs.chromium.org/p/chromium/issues/entry?cc=hinoka@chromium.org&components=Infra%3EPlatform%3EMilo');
+</script>
+
+<script>
+	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+	ga('create', 'UA-12345-01', 'auto');
+	ga('send', 'pageview');
+</script>
+
