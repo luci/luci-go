@@ -39,6 +39,7 @@ func getBuild(c context.Context, master, builder string, buildNum int) (*buildbo
 	if err == errMasterNotFound {
 		err = errBuildNotFound
 	}
+
 	return result, err
 }
 
@@ -181,7 +182,7 @@ var rLineBreak = regexp.MustCompile("<br */?>")
 // components takes a full buildbot build struct and extract step info from all
 // of the steps and returns it as a list of milo Build Components.
 func components(b *buildbotBuild) (result []*resp.BuildComponent) {
-	for i, step := range b.Steps {
+	for _, step := range b.Steps {
 		if step.Hidden == true {
 			continue
 		}
@@ -209,18 +210,6 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 			}
 		}
 
-		// Now, link to the logs.
-		//
-		// Any given log may have an alias link. There may also be alises that are
-		// not attached to logs (unusual, but allowed), so we need to track which
-		// aliases are unreferenced and add them as immediate links.
-		//
-		// Additionally, if the build is LogDog-only ("log_location" is "logdog://")
-		// then we want to render *only* the alias for steps with aliases.
-		isLogDogOnly := false
-		if loc, ok := b.getPropertyValue("log_location").(string); ok && strings.HasPrefix(loc, "logdog://") {
-			isLogDogOnly = true
-		}
 		remainingAliases := stringset.New(len(step.Aliases))
 		for linkAnchor := range step.Aliases {
 			remainingAliases.Add(linkAnchor)
@@ -237,26 +226,8 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 				}
 			}
 
-			var links resp.LinkSet
-			if isLogDogOnly && len(aliases) > 0 && !(isLog && i == 0 && logLink.Label == "stdio") {
-				// LogDog only and there are viable aliases. Feature them instead of the
-				// log link.
-				//
-				// We exclude the top-level "stdio" link here because there isn't a
-				// LogDog equivalent of the raw step output.
-				//
-				// Any link named "logdog" (Annotee cosmetic implementation detail) will
-				// inherit the name of the build link.
-				for _, a := range aliases {
-					if a.Label == "logdog" {
-						a.Label = logLink.Label
-					}
-				}
-				return aliases
-			}
-
 			// Step log link takes primary, with aliases as secondary.
-			links = make(resp.LinkSet, 1, 1+len(aliases))
+			links := make(resp.LinkSet, 1, 1+len(aliases))
 			links[0] = logLink
 
 			for _, a := range aliases {
@@ -522,6 +493,9 @@ func build(c context.Context, master, builder string, buildNum int) (*resp.MiloB
 		return nil, err
 	}
 
+	// Modify the build for rendering.
+	updatePostProcessBuild(b)
+
 	// TODO(hinoka): Do all fields concurrently.
 	return &resp.MiloBuild{
 		SourceStamp:   sourcestamp(c, b),
@@ -530,4 +504,119 @@ func build(c context.Context, master, builder string, buildNum int) (*resp.MiloB
 		PropertyGroup: properties(b),
 		Blame:         blame(b),
 	}, nil
+}
+
+// updatePostProcessBuild transforms a build from its raw JSON format into the
+// format that should be presented to users.
+//
+// Post-processing includes:
+//	- If the build is LogDog-only, promotes aliases (LogDog links) to
+//	  first-class links in the build.
+func updatePostProcessBuild(b *buildbotBuild) {
+	// If this is a LogDog-only build, we want to promote the LogDog links.
+	if loc, ok := b.getPropertyValue("log_location").(string); ok && strings.HasPrefix(loc, "logdog://") {
+		for sidx := range b.Steps {
+			promoteLogDogLinks(&b.Steps[sidx], sidx == 0)
+		}
+	}
+}
+
+// promoteLogDogLinks updates the links in a BuildBot step to
+// promote LogDog links.
+//
+// A build's links come in one of three forms:
+//	- Log Links, which link directly to BuildBot build logs.
+//	- URL Links, which are named links to arbitrary URLs.
+//	- Aliases, which attach to the label in one of the other types of links and
+//	  augment it with additional named links.
+//
+// LogDog uses aliases exclusively to attach LogDog logs to other links. When
+// the build is LogDog-only, though, the original links are actually junk. What
+// we want to do is remove the original junk links and replace them with their
+// alias counterparts, so that the "natural" BuildBot links are actually LogDog
+// links.
+func promoteLogDogLinks(s *buildbotStep, isInitialStep bool) {
+	type stepLog struct {
+		label string
+		url   string
+	}
+
+	remainingAliases := stringset.New(len(s.Aliases))
+	for linkAnchor := range s.Aliases {
+		remainingAliases.Add(linkAnchor)
+	}
+
+	maybePromoteAliases := func(sl *stepLog, isLog bool) []*stepLog {
+		// As a special case, if this is the first step ("steps" in BuildBot), we
+		// will refrain from promoting aliases for "stdio", since "stdio" represents
+		// the raw BuildBot logs.
+		if isLog && isInitialStep && sl.label == "stdio" {
+			// No aliases, don't modify this log.
+			return []*stepLog{sl}
+		}
+
+		// If there are no aliases, we should obviously not promote them. This will
+		// be the case for pre-LogDog steps such as build setup.
+		aliases := s.Aliases[sl.label]
+		if len(aliases) == 0 {
+			return []*stepLog{sl}
+		}
+
+		// We have chosen to promote the aliases. Therefore, we will not include
+		// them as aliases in the modified step.
+		remainingAliases.Del(sl.label)
+
+		result := make([]*stepLog, len(aliases))
+		for i, alias := range aliases {
+			aliasStepLog := stepLog{alias.Text, alias.URL}
+
+			// Any link named "logdog" (Annotee cosmetic implementation detail) will
+			// inherit the name of the original log.
+			if !isLog {
+				if aliasStepLog.label == "logdog" {
+					aliasStepLog.label = sl.label
+				}
+			}
+
+			result[i] = &aliasStepLog
+		}
+		return result
+	}
+
+	// Update step logs.
+	newLogs := make([][]string, 0, len(s.Logs))
+	for _, l := range s.Logs {
+		for _, res := range maybePromoteAliases(&stepLog{l[0], l[1]}, true) {
+			newLogs = append(newLogs, []string{res.label, res.url})
+		}
+	}
+	s.Logs = newLogs
+
+	// Update step URLs.
+	newURLs := make(map[string]string, len(s.Urls))
+	for label, link := range s.Urls {
+		urlLinks := maybePromoteAliases(&stepLog{label, link}, false)
+		if len(urlLinks) > 0 {
+			// Use the last URL link, since our URL map can only tolerate one link.
+			// The expected case here is that len(urlLinks) == 1, though, but it's
+			// possible that multiple aliases can be included for a single URL, so
+			// we need to handle that.
+			newValue := urlLinks[len(urlLinks)-1]
+			newURLs[newValue.label] = newValue.url
+		} else {
+			newURLs[label] = link
+		}
+	}
+	s.Urls = newURLs
+
+	// Preserve any aliases that haven't been promoted.
+	var newAliases map[string][]*buildbotLinkAlias
+	if l := remainingAliases.Len(); l > 0 {
+		newAliases = make(map[string][]*buildbotLinkAlias, l)
+		remainingAliases.Iter(func(v string) bool {
+			newAliases[v] = s.Aliases[v]
+			return true
+		})
+	}
+	s.Aliases = newAliases
 }

@@ -9,6 +9,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
@@ -18,7 +19,6 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	milo "github.com/luci/luci-go/milo/api/proto"
 	"github.com/luci/luci-go/server/auth"
-	"golang.org/x/net/context"
 )
 
 // Service is a service implementation that displays BuildBot builds.
@@ -27,8 +27,7 @@ type Service struct{}
 var errNotFoundGRPC = grpc.Errorf(codes.NotFound, "Master Not Found")
 
 // GetBuildbotBuildJSON implements milo.BuildbotServer.
-func (s *Service) GetBuildbotBuildJSON(
-	c context.Context, req *milo.BuildbotBuildRequest) (
+func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuildRequest) (
 	*milo.BuildbotBuildJSON, error) {
 
 	if req.Master == "" {
@@ -52,6 +51,7 @@ func (s *Service) GetBuildbotBuildJSON(
 		return nil, err
 	}
 
+	updatePostProcessBuild(b)
 	bs, err := json.Marshal(b)
 	if err != nil {
 		return nil, err
@@ -62,8 +62,7 @@ func (s *Service) GetBuildbotBuildJSON(
 }
 
 // GetBuildbotBuildsJSON implements milo.BuildbotServer.
-func (s *Service) GetBuildbotBuildsJSON(
-	c context.Context, req *milo.BuildbotBuildsRequest) (
+func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBuildsRequest) (
 	*milo.BuildbotBuildsJSON, error) {
 
 	if req.Master == "" {
@@ -109,6 +108,8 @@ func (s *Service) GetBuildbotBuildsJSON(
 
 	results := make([]*milo.BuildbotBuildJSON, len(builds))
 	for i, b := range builds {
+		updatePostProcessBuild(b)
+
 		// In theory we could do this in parallel, but it doesn't actually go faster
 		// since AppEngine is single-cored.
 		bs, err := json.Marshal(b)
@@ -124,8 +125,8 @@ func (s *Service) GetBuildbotBuildsJSON(
 
 // GetCompressedMasterJSON assembles a CompressedMasterJSON object from the
 // provided MasterRequest.
-func (s *Service) GetCompressedMasterJSON(
-	c context.Context, req *milo.MasterRequest) (*milo.CompressedMasterJSON, error) {
+func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterRequest) (
+	*milo.CompressedMasterJSON, error) {
 
 	if req.Name == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "No master specified")
@@ -168,6 +169,10 @@ func (s *Service) GetCompressedMasterJSON(
 				"Encountered error while trying to fetch running builds for %s: %v",
 				master.Name, slave.Runningbuilds)
 			return nil, err
+		}
+
+		for _, b := range slave.Runningbuilds {
+			updatePostProcessBuild(b)
 		}
 	}
 
