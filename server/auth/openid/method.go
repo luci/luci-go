@@ -63,13 +63,17 @@ func (m *AuthMethod) InstallHandlers(r *router.Router, base router.MiddlewareCha
 }
 
 // Warmup prepares local caches. It's optional.
-func (m *AuthMethod) Warmup(c context.Context) error {
+func (m *AuthMethod) Warmup(c context.Context) (err error) {
 	cfg, err := fetchCachedSettings(c)
 	if err != nil {
-		return err
+		return
 	}
-	_, err = fetchDiscoveryDoc(c, cfg.DiscoveryURL)
-	return err
+	if cfg.DiscoveryURL != "" {
+		_, err = fetchDiscoveryDoc(c, cfg.DiscoveryURL)
+	} else {
+		logging.Infof(c, "Skipping OpenID warmup, not configured")
+	}
+	return
 }
 
 // Authenticate extracts peer's identity from the incoming request. It is part

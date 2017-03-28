@@ -14,7 +14,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/grpc/discovery"
@@ -57,10 +56,6 @@ func init() {
 		http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
 	})
 
-	// Optional warmup routes.
-	r.GET("/_ah/warmup", basemw, warmupHandler)
-	r.GET("/_ah/start", basemw, warmupHandler)
-
 	// Install all RPC servers.
 	api := prpc.Server{
 		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil),
@@ -79,12 +74,4 @@ func init() {
 
 	// Expose all this stuff.
 	http.DefaultServeMux.Handle("/", r)
-}
-
-// warmupHandler warms in-memory caches.
-func warmupHandler(c *router.Context) {
-	if err := server.Warmup(c.Context); err != nil {
-		panic(err) // let panic catcher deal with it
-	}
-	c.Writer.WriteHeader(http.StatusOK)
 }

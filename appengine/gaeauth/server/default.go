@@ -11,6 +11,7 @@ import (
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/openid"
 	"github.com/luci/luci-go/server/router"
+	"github.com/luci/luci-go/server/warmup"
 
 	"github.com/luci/luci-go/appengine/gaeauth/server/internal/authdbimpl"
 )
@@ -35,13 +36,14 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 	authdbimpl.InstallHandlers(r, base)
 }
 
-// Warmup prepares local caches. It's optional.
-func Warmup(c context.Context) error {
-	m := CookieAuth.(cookieAuthMethod)
-	if oid, ok := m.Method.(*openid.AuthMethod); ok {
-		return oid.Warmup(c)
-	}
-	return nil
+func init() {
+	warmup.Register("appengine/gaeauth/server", func(c context.Context) error {
+		m := CookieAuth.(cookieAuthMethod)
+		if oid, ok := m.Method.(*openid.AuthMethod); ok {
+			return oid.Warmup(c)
+		}
+		return nil
+	})
 }
 
 ///

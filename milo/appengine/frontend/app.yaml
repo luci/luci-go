@@ -37,4 +37,7 @@ builtins:
 - remote_api: on
 
 includes:
-  - static
+- static
+
+inbound_services:
+- warmup

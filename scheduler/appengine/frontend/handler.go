@@ -162,8 +162,6 @@ func init() {
 		TemplatesPath: "templates",
 	})
 
-	r.GET("/_ah/warmup", base, warmupHandler)
-	r.GET("/_ah/start", base, warmupHandler)
 	r.POST("/pubsub", base, pubsubPushHandler) // auth is via custom tokens
 	r.GET("/internal/cron/read-config", base.Extend(gaemiddleware.RequireCron), readConfigCron)
 	r.POST("/internal/tasks/read-project-config", base.Extend(gaemiddleware.RequireTaskQueue("read-project-config")), readProjectConfigTask)
@@ -188,16 +186,6 @@ func init() {
 	api.InstallHandlers(r, base)
 
 	http.DefaultServeMux.Handle("/", r)
-}
-
-// warmupHandler warms in-memory caches.
-func warmupHandler(c *router.Context) {
-	rc := requestContext(*c)
-	if err := server.Warmup(rc.Context); err != nil {
-		rc.fail(500, "Failed to warmup OpenID: %s", err)
-		return
-	}
-	rc.ok()
 }
 
 // pubsubPushHandler handles incoming PubSub messages.

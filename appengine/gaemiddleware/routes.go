@@ -7,6 +7,7 @@ package gaemiddleware
 import (
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/settings/admin"
+	"github.com/luci/luci-go/server/warmup"
 
 	gaeauth "github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/tsmon"
@@ -30,4 +31,5 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 	tsmon.InstallHandlers(r, base)
 	admin.InstallHandlers(r, base, &gaeauth.UsersAPIAuthMethod{})
 	gaeconfig.InstallCacheCronHandler(r, base.Extend(RequireCron))
+	warmup.InstallHandlers(r, base)
 }
