@@ -5,9 +5,10 @@
 package buildbucket
 
 import (
-	"context"
 	"errors"
 	"net/http"
+
+	"golang.org/x/net/context"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/luci/luci-go/milo/appengine/common"
