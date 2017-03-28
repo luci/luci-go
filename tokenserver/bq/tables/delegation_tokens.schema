@@ -89,5 +89,10 @@
       'type': 'STRING',
       'description': 'ID of the GAE request that handled the call',
     },
+    {
+      'name': 'auth_db_rev',
+      'type': 'INTEGER',
+      'description': 'Revision of groups database used to authorize this call',
+    },
   ],
 }

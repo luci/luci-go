@@ -19,6 +19,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/authdb"
 	"github.com/luci/luci-go/server/auth/delegation/messages"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/signing"
@@ -174,6 +175,7 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 			Rule:      rule,
 			PeerIP:    state.PeerIP(),
 			RequestID: info.RequestID(c),
+			AuthDBRev: getAuthDBRev(state.DB()),
 		}
 		if logErr := r.LogToken(c, &tokInfo); logErr != nil {
 			logging.WithError(logErr).Errorf(c, "Failed to insert the delegation token into the BigQuery log")
@@ -223,6 +225,14 @@ func (r *MintDelegationTokenRPC) mint(c context.Context, p *mintParams) (*minter
 		DelegationSubtoken: subtok,
 		ServiceVersion:     p.serviceVer,
 	}, nil
+}
+
+// getAuthDBRev returns revision of groups database, if known.
+func getAuthDBRev(db authdb.DB) int64 {
+	if snap, _ := db.(*authdb.SnapshotDB); snap != nil {
+		return snap.Rev
+	}
+	return 0
 }
 
 // buildRulesQuery validates the request, extracts and normalizes relevant

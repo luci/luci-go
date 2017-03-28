@@ -37,6 +37,7 @@ type MintedTokenInfo struct {
 	Rule      *admin.DelegationRule               // the delegation rule used to authorize the request
 	PeerIP    net.IP                              // caller IP address
 	RequestID string                              // GAE request ID that handled the RPC
+	AuthDBRev int64                               // revision of groups database (or 0 if unknown)
 }
 
 // toBigQueryRow returns a JSON-ish map to upload to BigQuery.
@@ -64,10 +65,11 @@ func (i *MintedTokenInfo) toBigQueryRow() map[string]interface{} {
 		"config_rev":  i.Config.Revision,
 		"config_rule": i.Rule.Name,
 
-		// Information about the request handler.
+		// Information about the request handler environment.
 		"peer_ip":         i.PeerIP.String(),
 		"service_version": i.Response.ServiceVersion,
 		"gae_request_id":  i.RequestID,
+		"auth_db_rev":     i.AuthDBRev,
 	}
 }
 

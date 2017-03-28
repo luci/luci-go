@@ -16,6 +16,7 @@ import (
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaetesting"
 	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/authdb"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/signing"
@@ -53,6 +54,7 @@ func testingContext() context.Context {
 	return auth.WithState(ctx, &authtest.FakeState{
 		Identity:       "user:requestor@example.com",
 		PeerIPOverride: net.ParseIP("127.10.10.10"),
+		FakeDB:         &authdb.SnapshotDB{Rev: 1234},
 	})
 }
 
@@ -248,6 +250,7 @@ func TestMintDelegationToken(t *testing.T) {
 				},
 				PeerIP:    net.ParseIP("127.10.10.10"),
 				RequestID: "gae-request-id",
+				AuthDBRev: 1234,
 			})
 		})
 

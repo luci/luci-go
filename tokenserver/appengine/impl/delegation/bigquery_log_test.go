@@ -44,9 +44,11 @@ func TestMintedTokenInfo(t *testing.T) {
 			},
 			PeerIP:    net.ParseIP("127.10.10.10"),
 			RequestID: "gae-request-id",
+			AuthDBRev: 123,
 		}
 
 		So(info.toBigQueryRow(), ShouldResemble, map[string]interface{}{
+			"auth_db_rev":        int64(123), // convey is pedantic about types
 			"config_rev":         "config-rev",
 			"config_rule":        "rule-name",
 			"delegated_identity": "user:delegated@example.com",
@@ -56,7 +58,7 @@ func TestMintedTokenInfo(t *testing.T) {
 			"issued_at":          1.422936306e+09,
 			"peer_ip":            "127.10.10.10",
 			"requested_intent":   "intent string",
-			"requested_validity": int(3600), // convey is pedantic about types
+			"requested_validity": int(3600),
 			"requestor_identity": "user:requestor@example.com",
 			"service_version":    "unit-tests/mocked-ver",
 			"target_audience":    []string{"user:audience@example.com"},
