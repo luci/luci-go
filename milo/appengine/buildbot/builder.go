@@ -64,7 +64,7 @@ func mergeText(text []string) []string {
 }
 
 func getBuildSummary(b *buildbotBuild) *resp.BuildSummary {
-	started, finished, duration := parseTimes(b.Times)
+	started, finished, duration := parseTimes(nil, b.Times)
 	return &resp.BuildSummary{
 		Link: &resp.Link{
 			URL:   fmt.Sprintf("%d", b.Number),

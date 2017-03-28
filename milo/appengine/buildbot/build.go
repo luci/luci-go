@@ -67,9 +67,20 @@ func result2Status(s *int) (status resp.Status) {
 	return
 }
 
-// parseTimes translates a buildbot time tuple (start/end) into a triplet
+// buildbotTimeToTime converts a buildbot time representation (pointer to float
+// of seconds since epoch) to a native time.Time object.
+func buildbotTimeToTime(t *float64) (result time.Time) {
+	if t != nil {
+		result = time.Unix(int64(*t), int64(*t*1e9)%1e9).UTC()
+	}
+	return
+}
+
+// parseTimes translates a buildbot time tuple (start, end) into a triplet
 // of (Started time, Ending time, duration).
-func parseTimes(times []*float64) (started, ended time.Time, duration time.Duration) {
+// If times[1] is nil and buildFinished is not, ended will be set to buildFinished
+// time.
+func parseTimes(buildFinished *float64, times []*float64) (started, ended time.Time, duration time.Duration) {
 	if len(times) != 2 {
 		panic(fmt.Errorf("Expected 2 floats for times, got %v", times))
 	}
@@ -77,11 +88,15 @@ func parseTimes(times []*float64) (started, ended time.Time, duration time.Durat
 		// Some steps don't have timing info.  In that case, just return nils.
 		return
 	}
-	started = time.Unix(int64(*times[0]), int64(*times[0]*1e9)%1e9).UTC()
-	if times[1] != nil {
-		ended = time.Unix(int64(*times[1]), int64(*times[1]*1e9)%1e9).UTC()
+	started = buildbotTimeToTime(times[0])
+	switch {
+	case times[1] != nil:
+		ended = buildbotTimeToTime(times[1])
 		duration = ended.Sub(started)
-	} else {
+	case buildFinished != nil:
+		ended = buildbotTimeToTime(buildFinished)
+		duration = ended.Sub(started)
+	default:
 		duration = time.Since(started)
 	}
 	return
@@ -127,7 +142,7 @@ func summary(c context.Context, b *buildbotBuild) resp.BuildComponent {
 	}
 
 	// Timing info
-	started, ended, duration := parseTimes(b.Times)
+	started, ended, duration := parseTimes(nil, b.Times)
 
 	// Link to bot and original build.
 	server := "build.chromium.org/p"
@@ -182,6 +197,7 @@ var rLineBreak = regexp.MustCompile("<br */?>")
 // components takes a full buildbot build struct and extract step info from all
 // of the steps and returns it as a list of milo Build Components.
 func components(b *buildbotBuild) (result []*resp.BuildComponent) {
+	endingTime := b.Times[1]
 	for _, step := range b.Steps {
 		if step.Hidden == true {
 			continue
@@ -291,7 +307,7 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 		}
 
 		// Figure out the times.
-		bc.Started, bc.Finished, bc.Duration = parseTimes(step.Times)
+		bc.Started, bc.Finished, bc.Duration = parseTimes(endingTime, step.Times)
 
 		result = append(result, bc)
 	}
