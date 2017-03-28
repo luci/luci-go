@@ -14,7 +14,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/luci/gae/impl/memory"
 	"github.com/luci/luci-go/common/clock/testclock"
+	memcfg "github.com/luci/luci-go/common/config/impl/memory"
+	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -31,8 +34,9 @@ func TestBuilder(t *testing.T) {
 	}
 
 	Convey("Builder", t, func() {
-		c := context.Background()
+		c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
 		c, _ = testclock.UseTime(c, time.Date(2016, time.March, 14, 11, 0, 0, 0, time.UTC))
+		c = testconfig.WithCommonClient(c, memcfg.New(bktConfigFull))
 
 		for _, tc := range testCases {
 			tc := tc
@@ -43,7 +47,6 @@ func TestBuilder(t *testing.T) {
 
 				actual, err := builderImpl(c,
 					builderQuery{
-						Server:  "debug",
 						Bucket:  tc.bucket,
 						Builder: tc.builder,
 						Limit:   0,
@@ -63,4 +66,16 @@ func TestBuilder(t *testing.T) {
 			})
 		}
 	})
+}
+
+var bktConfig = `
+buildbucket: {
+	host: "debug"
+}
+`
+
+var bktConfigFull = map[string]memcfg.ConfigSet{
+	"services/luci-milo": {
+		"settings.cfg": bktConfig,
+	},
 }

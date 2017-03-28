@@ -6,12 +6,14 @@ package swarming
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 
 	"golang.org/x/net/context"
 	"google.golang.org/api/googleapi"
 
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/appengine/common"
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
@@ -22,31 +24,34 @@ const (
 	defaultSwarmingDevServer = "chromium-swarm-dev.appspot.com"
 )
 
-func getSwarmingHost(r *http.Request) string {
-	server := r.FormValue("server")
-	switch server {
-	case "":
-		return defaultSwarmingServer
-	case "dev":
-		return defaultSwarmingDevServer
-	default:
-		return server
-	}
-}
-
 var errUnrecognizedHost = errors.New("Unregistered Swarming Host")
 
-func getSwarmingService(c context.Context, host string) (swarmingService, error) {
-	switch host {
-	// TODO(hinoka): configure this mapping in luci-config
-	case defaultSwarmingServer, defaultSwarmingDevServer,
-		"cast-swarming.appspot.com",
-		"touch-swarming.appspot.com":
-		return newProdService(c, host)
-
-	default:
-		return nil, errUnrecognizedHost
+// getSwarmingHost parses the swarming hostname out of the context.  If
+// none is specified, get the default swarming host out of the global
+// configs.
+func getSwarmingHost(c context.Context, r *http.Request) (string, error) {
+	settings, err := common.GetSettings(c)
+	if err != nil {
+		logging.WithError(err).Errorf(c, "could not get settings")
+		return "", err
 	}
+	if settings.Swarming == nil {
+		err = errors.New("swarming not in settings")
+		logging.Errorf(c, err.Error())
+		return "", err
+	}
+	server := r.FormValue("server")
+	// If server isn't specified, return the default host.
+	if server == "" {
+		return settings.Swarming.DefaultHost, nil
+	}
+	// If it is specified, validate the hostname.
+	for _, hostname := range settings.Swarming.AllowedHosts {
+		if server == hostname {
+			return server, nil
+		}
+	}
+	return "", errUnrecognizedHost
 }
 
 // Build is for deciphering recipe builds from swarming based off of logs.
@@ -60,15 +65,22 @@ type Build struct {
 func LogHandler(c *router.Context) {
 	id := c.Params.ByName("id")
 	if id == "" {
-		common.ErrorPage(c, http.StatusBadRequest, "No id")
+		common.ErrorPage(c, http.StatusBadRequest, "no id")
 		return
 	}
 	logname := c.Params.ByName("logname")
 	if logname == "" {
-		common.ErrorPage(c, http.StatusBadRequest, "No log name")
+		common.ErrorPage(c, http.StatusBadRequest, "no log name")
+		return
 	}
 
-	sf, err := getSwarmingService(c.Context, getSwarmingHost(c.Request))
+	hostname, err := getSwarmingHost(c.Context, c.Request)
+	if err != nil {
+		common.ErrorPage(c, http.StatusBadRequest,
+			fmt.Sprintf("no swarming host: %s", err.Error()))
+		return
+	}
+	sf, err := newProdService(c.Context, hostname)
 	if err != nil {
 		common.ErrorPage(c, errCode(err), err.Error())
 		return
@@ -95,11 +107,17 @@ func (b Build) Render(c *router.Context) {
 	// Get the swarming ID
 	id := c.Params.ByName("id")
 	if id == "" {
-		common.ErrorPage(c, http.StatusBadRequest, "No id")
+		common.ErrorPage(c, http.StatusBadRequest, "no id")
 		return
 	}
 
-	sf, err := getSwarmingService(c.Context, getSwarmingHost(c.Request))
+	hostname, err := getSwarmingHost(c.Context, c.Request)
+	if err != nil {
+		common.ErrorPage(c, http.StatusBadRequest,
+			fmt.Sprintf("no swarming host: %s", err.Error()))
+		return
+	}
+	sf, err := newProdService(c.Context, hostname)
 	if err != nil {
 		common.ErrorPage(c, errCode(err), err.Error())
 		return

@@ -37,11 +37,10 @@ type BuildInfoProvider struct {
 }
 
 func (p *BuildInfoProvider) newSwarmingService(c context.Context, host string) (swarmingService, error) {
-	fn := p.swarmingServiceFunc
-	if fn == nil {
-		fn = getSwarmingService
+	if p.swarmingServiceFunc == nil {
+		return newProdService(c, host)
 	}
-	return fn(c, host)
+	return p.swarmingServiceFunc(c, host)
 }
 
 // GetBuildInfo resolves a Milo protobuf Step for a given Swarming task.

@@ -7,11 +7,40 @@ syntax = "proto3";
 package config;
 
 // Settings represents the format for the global (service) config for Milo.
-message Settings{
-  message Buildbot{
+message Settings {
+  message Buildbot {
     // internal_reader is the infra-auth group that is allowed to read internal
     // buildbot data.
     string internal_reader = 1;
+
+    // public_topic is the name of the pubsub topic where public builds come in
+    // from
+    string public_topic = 2;
+
+    // internal_topic is the name of the pubsub topic where internal builds
+    // come in from
+    string internal_topic = 3;
   }
   Buildbot buildbot = 1;
+
+  message Buildbucket {
+    // name is the user friendly name of the Buildbucket instance we're pointing to.
+    string name = 1;
+
+    // host is the hostname of the buildbucket instance we're pointing to (sans schema).
+    string host = 2;
+  }
+  Buildbucket buildbucket = 2;
+
+  message Swarming {
+    // default_host is the hostname of the swarming host Milo defaults to, if
+    // none is specified.  Default host is implicitly an allowed host.
+    string default_host = 1;
+
+    // allowed_hosts is a whitelist of hostnames of swarming instances
+    // that Milo is allowed to talk to.  This is specified here for security
+    // reasons, because Milo will hand out its oauth2 token to a swarming host.
+    repeated string allowed_hosts = 2;
+  }
+  Swarming swarming = 3;
 }

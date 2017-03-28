@@ -5,23 +5,34 @@
 package buildbucket
 
 import (
+	"errors"
 	"fmt"
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
+	"github.com/luci/luci-go/milo/appengine/common"
 )
 
 func GetAllBuilders(c context.Context) (*resp.CIService, error) {
+	settings, err := common.GetSettings(c)
+	if err != nil {
+		logging.WithError(err).Errorf(c, "could not get settings for buildbucket")
+		return nil, err
+	}
+	bucketSettings := settings.Buildbucket
+	if bucketSettings == nil {
+		return nil, errors.New("buildbucket settings missing in config")
+	}
 	result := &resp.CIService{
 		Name: "Swarmbucket",
-		// TODO(hinoka): This should be moved to luci-cfg
 		Host: &resp.Link{
-			Label: "Prod",
-			URL:   "https://" + defaultServer,
+			Label: bucketSettings.Name,
+			URL:   "https://" + bucketSettings.Host,
 		},
 	}
-	client, err := newSwarmbucketClient(c, defaultServer)
+	client, err := newSwarmbucketClient(c, bucketSettings.Host)
 	if err != nil {
 		return nil, err
 	}

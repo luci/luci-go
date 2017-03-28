@@ -19,6 +19,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/iotools"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/milo/appengine/common"
 	"github.com/luci/luci-go/server/router"
 
 	"golang.org/x/net/context"
@@ -28,11 +29,6 @@ import (
 )
 
 var (
-	// publicSubName is the name of the pubsub subscription that milo is expecting.
-	// TODO(hinoka): This should be read from luci-config.
-	publicSubName   = "projects/luci-milo/subscriptions/buildbot-public"
-	internalSubName = "projects/luci-milo/subscriptions/buildbot-private"
-
 	// Metrics
 	buildCounter = metric.NewCounter(
 		"luci/milo/buildbot_pubsub/builds",
@@ -228,7 +224,7 @@ func doMaster(c context.Context, master *buildbotMaster, internal bool) int {
 			c, "Could not save master in datastore %s", err)
 		masterCounter.Add(c, 1, internal, fullname, "failure")
 		// This is transient, we do want PubSub to retry.
-		return 500
+		return http.StatusInternalServerError
 	}
 	masterCounter.Add(c, 1, internal, fullname, "success")
 
@@ -242,7 +238,7 @@ func doMaster(c context.Context, master *buildbotMaster, internal bool) int {
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Could not load current builds from master %s",
 			master.Name)
-		return 500
+		return http.StatusInternalServerError
 	}
 	for _, b := range builds {
 		builder, ok := master.Builders[b.Buildername]
@@ -255,7 +251,7 @@ func doMaster(c context.Context, master *buildbotMaster, internal bool) int {
 			err = expireBuild(c, b)
 			if err != nil {
 				logging.WithError(err).Errorf(c, "Could not expire build")
-				return 500
+				return http.StatusInternalServerError
 			}
 			continue
 		}
@@ -279,7 +275,7 @@ func doMaster(c context.Context, master *buildbotMaster, internal bool) int {
 				err = expireBuild(c, b)
 				if err != nil {
 					logging.WithError(err).Errorf(c, "Could not expire build")
-					return 500
+					return http.StatusInternalServerError
 				}
 			}
 		}
@@ -294,8 +290,8 @@ func PubSubHandler(ctx *router.Context) {
 }
 
 // This is the actual implementation of the pubsub handler.  Returns
-// a status code.  200 for okay (ACK implied, don't retry).  Anything else
-// will signal to pubsub to retry.
+// a status code.  StatusOK (200) for okay (ACK implied, don't retry).
+// Anything else will signal to pubsub to retry.
 func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 	msg := pubSubSubscription{}
 	now := int(clock.Now(c).Unix())
@@ -304,20 +300,31 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 	if err := dec.Decode(&msg); err != nil {
 		logging.WithError(err).Errorf(
 			c, "Could not decode message.  %s", err)
-		return 200 // This is a hard failure, we don't want PubSub to retry.
+		return http.StatusOK // This is a hard failure, we don't want PubSub to retry.
 	}
 	internal := true
+	// Get the name of the subscription on luci-config
+	settings, err := common.GetSettings(c)
+	if err != nil {
+		logging.WithError(err).Errorf(c,
+			"Cannot load settings to check subscription name.")
+		// This is a configuration error. Tell PubSub to retry until we fix our
+		// configs.
+		return http.StatusInternalServerError
+	}
 	switch msg.Subscription {
-	// TODO(hinoka): Move these names to luci-config
-	case publicSubName, publicSubName + "-dev":
+	case settings.Buildbot.PublicTopic:
 		internal = false
-	case internalSubName, internalSubName + "-dev":
+	case settings.Buildbot.InternalTopic:
 		// internal = true, but that's already set.
 	default:
 		logging.Errorf(
 			c, "Subscription name %s does not match %s or %s",
-			msg.Subscription, publicSubName, internalSubName)
-		return 200
+			msg.Subscription, settings.Buildbot.PublicTopic,
+			settings.Buildbot.InternalTopic)
+		// This is a configuration error. Tell PubSub to retry until we fix our
+		// configs.
+		return http.StatusInternalServerError
 	}
 	logging.Infof(
 		c, "Message ID \"%s\" from subscription %s is %d bytes long",
@@ -325,12 +332,12 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 	bbMsg, err := msg.GetData()
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Could not base64 decode message %s", err)
-		return 200
+		return http.StatusOK
 	}
 	builds, master, err := unmarshal(c, bbMsg)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Could not unmarshal message %s", err)
-		return 200
+		return http.StatusOK
 	}
 	logging.Infof(c, "There are %d builds", len(builds))
 	if master != nil {
@@ -344,7 +351,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 	for _, build := range builds {
 		if build.Master == "" {
 			logging.Errorf(c, "Invalid message, missing master name")
-			return 200
+			return http.StatusOK
 		}
 		existingBuild := &buildbotBuild{
 			Master:      build.Master,
@@ -382,11 +389,11 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 				// This will never work, we don't want PubSub to retry.
 				logging.WithError(err).Errorf(
 					c, "Could not save build to datastore, failing permanently")
-				return 200
+				return http.StatusOK
 			}
 			// This is transient, we do want PubSub to retry.
 			logging.WithError(err).Errorf(c, "Could not save build in datastore")
-			return 500
+			return http.StatusInternalServerError
 		}
 		if buildExists {
 			buildCounter.Add(
@@ -403,5 +410,5 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 			return code
 		}
 	}
-	return 200
+	return http.StatusOK
 }

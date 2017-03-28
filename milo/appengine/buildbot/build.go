@@ -129,7 +129,7 @@ func getBanner(c context.Context, b *buildbotBuild) *resp.LogoBanner {
 	return nil
 }
 
-// summary Extract the top level summary from a buildbot build as a
+// summary extracts the top level summary from a buildbot build as a
 // BuildComponent
 func summary(c context.Context, b *buildbotBuild) resp.BuildComponent {
 	// TODO(hinoka): use b.toStatus()
@@ -159,7 +159,6 @@ func summary(c context.Context, b *buildbotBuild) resp.BuildComponent {
 	}
 	source := &resp.Link{
 		Label: fmt.Sprintf("%s/%s/%d", b.Master, b.Buildername, b.Number),
-		// TODO(hinoka): Internal builds.
 		URL: fmt.Sprintf(
 			"https://%s/%s/builders/%s/builds/%d",
 			host, b.Master, b.Buildername, b.Number),

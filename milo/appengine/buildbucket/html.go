@@ -5,6 +5,7 @@
 package buildbucket
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -14,14 +15,8 @@ import (
 	"github.com/luci/luci-go/server/templates"
 )
 
-// TODO(nodir): move this value to luci-config.
-const defaultServer = "cr-buildbucket.appspot.com"
-
-func parseBuilderQuery(r *http.Request, p httprouter.Params) (query builderQuery, err error) {
-	query.Server = r.FormValue("server")
-	if query.Server == "" {
-		query.Server = defaultServer
-	}
+func parseBuilderQuery(c context.Context, r *http.Request, p httprouter.Params) (
+	query builderQuery, err error) {
 
 	query.Bucket = p.ByName("bucket")
 	if query.Bucket == "" {
@@ -45,7 +40,7 @@ func parseBuilderQuery(r *http.Request, p httprouter.Params) (query builderQuery
 // Note: The builder html template contains self links to "?limit=123", which could
 // potentially override any other request parameters set.
 func BuilderHandler(c *router.Context) {
-	query, err := parseBuilderQuery(c.Request, c.Params)
+	query, err := parseBuilderQuery(c.Context, c.Request, c.Params)
 	if err != nil {
 		common.ErrorPage(c, http.StatusBadRequest, err.Error())
 		return

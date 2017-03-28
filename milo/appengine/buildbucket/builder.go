@@ -21,10 +21,11 @@ import (
 	"github.com/luci/luci-go/common/api/buildbucket/buildbucket/v1"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
-	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
 	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/milo/api/resp"
+	"github.com/luci/luci-go/milo/appengine/common"
 )
 
 // search executes the search request with retries and exponential back-off.
@@ -44,7 +45,7 @@ func search(c context.Context, client *buildbucket.Service, req *buildbucket.Sea
 			return err
 		},
 		func(err error, wait time.Duration) {
-			log.WithError(err).Warningf(c, "buildbucket search request failed transiently, will retry in %s", wait)
+			logging.WithError(err).Warningf(c, "buildbucket search request failed transiently, will retry in %s", wait)
 		})
 	return res, err
 }
@@ -84,7 +85,7 @@ func fetchBuilds(c context.Context, client *buildbucket.Service, bucket, builder
 		}
 		req.StartCursor(res.NextCursor)
 	}
-	log.Debugf(c, "Fetched %d %s builds in %s", len(fetched), status, clock.Since(c, start))
+	logging.Debugf(c, "Fetched %d %s builds in %s", len(fetched), status, clock.Since(c, start))
 	return fetched, nil
 }
 
@@ -95,11 +96,11 @@ func toMiloBuild(c context.Context, build *buildbucket.ApiBuildMessage) *resp.Bu
 	// Parsing of parameters and result details is best effort.
 	var params buildParameters
 	if err := json.NewDecoder(strings.NewReader(build.ParametersJson)).Decode(&params); err != nil {
-		log.Errorf(c, "Could not parse parameters of build %d: %s", build.Id, err)
+		logging.Errorf(c, "Could not parse parameters of build %d: %s", build.Id, err)
 	}
 	var resultDetails resultDetails
 	if err := json.NewDecoder(strings.NewReader(build.ResultDetailsJson)).Decode(&resultDetails); err != nil {
-		log.Errorf(c, "Could not parse result details of build %d: %s", build.Id, err)
+		logging.Errorf(c, "Could not parse result details of build %d: %s", build.Id, err)
 	}
 
 	result := &resp.BuildSummary{
@@ -114,7 +115,7 @@ func toMiloBuild(c context.Context, build *buildbucket.ApiBuildMessage) *resp.Bu
 	result.Status, err = parseStatus(build)
 	if err != nil {
 		// almost never happens
-		log.WithError(err).Errorf(c, "could not convert status of build %d", build.Id)
+		logging.WithError(err).Errorf(c, "could not convert status of build %d", build.Id)
 		result.Status = resp.InfraFailure
 		result.Text = append(result.Text, fmt.Sprintf("invalid build: %s", err))
 	}
@@ -149,7 +150,7 @@ func toMiloBuild(c context.Context, build *buildbucket.ApiBuildMessage) *resp.Bu
 		// map milo links to itself
 		switch {
 		case err != nil:
-			log.Errorf(c, "invalid URL in build %d: %s", build.Id, err)
+			logging.Errorf(c, "invalid URL in build %d: %s", build.Id, err)
 		case parsed.Host == "luci-milo.appspot.com":
 			parsed.Host = ""
 			parsed.Scheme = ""
@@ -220,7 +221,6 @@ func getDebugBuilds(c context.Context, bucket, builder string, maxCompletedBuild
 }
 
 type builderQuery struct {
-	Server  string
 	Bucket  string
 	Builder string
 	Limit   int
@@ -229,6 +229,17 @@ type builderQuery struct {
 // builderImpl is the implementation for getting a milo builder page from buildbucket.
 // if maxCompletedBuilds < 0, 25 is used.
 func builderImpl(c context.Context, q builderQuery) (*resp.Builder, error) {
+	settings, err := common.GetSettings(c)
+	if err != nil {
+		logging.WithError(err).Errorf(c, "failed to get settings")
+		return nil, err
+	}
+	if settings.Buildbucket == nil || settings.Buildbucket.Host == "" {
+		logging.WithError(err).Errorf(c, "missing buildbucket settings")
+		return nil, errors.New("missing buildbucket settings")
+	}
+	host := settings.Buildbucket.Host
+
 	if q.Limit < 0 {
 		q.Limit = 20
 	}
@@ -236,10 +247,10 @@ func builderImpl(c context.Context, q builderQuery) (*resp.Builder, error) {
 	result := &resp.Builder{
 		Name: q.Builder,
 	}
-	if q.Server == "debug" {
+	if host == "debug" {
 		return result, getDebugBuilds(c, q.Bucket, q.Builder, q.Limit, result)
 	}
-	client, err := newBuildbucketClient(c, q.Server)
+	client, err := newBuildbucketClient(c, host)
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +258,7 @@ func builderImpl(c context.Context, q builderQuery) (*resp.Builder, error) {
 	fetch := func(target *[]*resp.BuildSummary, status string, count int) error {
 		builds, err := fetchBuilds(c, client, q.Bucket, q.Builder, status, count)
 		if err != nil {
-			log.Errorf(c, "Could not fetch builds with status %s: %s", status, err)
+			logging.Errorf(c, "Could not fetch builds with status %s: %s", status, err)
 			return err
 		}
 		*target = make([]*resp.BuildSummary, len(builds))

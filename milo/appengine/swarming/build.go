@@ -57,7 +57,7 @@ const (
 	TaskCompleted = "COMPLETED"
 )
 
-func getSwarmingClient(c context.Context, server string) (*swarming.Service, error) {
+func getSwarmingClient(c context.Context, host string) (*swarming.Service, error) {
 	c, _ = context.WithTimeout(c, 60*time.Second)
 	t, err := auth.GetRPCTransport(c, auth.AsSelf)
 	if err != nil {
@@ -67,7 +67,7 @@ func getSwarmingClient(c context.Context, server string) (*swarming.Service, err
 	if err != nil {
 		return nil, err
 	}
-	sc.BasePath = fmt.Sprintf("https://%s/_ah/api/swarming/v1/", server)
+	sc.BasePath = fmt.Sprintf("https://%s/_ah/api/swarming/v1/", host)
 	return sc, nil
 }
 
@@ -87,13 +87,13 @@ type prodSwarmingService struct {
 	client *swarming.Service
 }
 
-func newProdService(c context.Context, server string) (*prodSwarmingService, error) {
-	client, err := getSwarmingClient(c, server)
+func newProdService(c context.Context, host string) (*prodSwarmingService, error) {
+	client, err := getSwarmingClient(c, host)
 	if err != nil {
 		return nil, err
 	}
 	return &prodSwarmingService{
-		host:   server,
+		host:   host,
 		client: client,
 	}, nil
 }
