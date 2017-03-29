@@ -313,15 +313,15 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 		return http.StatusInternalServerError
 	}
 	switch msg.Subscription {
-	case settings.Buildbot.PublicTopic:
+	case settings.Buildbot.PublicSubscription:
 		internal = false
-	case settings.Buildbot.InternalTopic:
+	case settings.Buildbot.InternalSubscription:
 		// internal = true, but that's already set.
 	default:
 		logging.Errorf(
 			c, "Subscription name %s does not match %s or %s",
-			msg.Subscription, settings.Buildbot.PublicTopic,
-			settings.Buildbot.InternalTopic)
+			msg.Subscription, settings.Buildbot.PublicSubscription,
+			settings.Buildbot.InternalSubscription)
 		// This is a configuration error. Tell PubSub to retry until we fix our
 		// configs.
 		return http.StatusInternalServerError

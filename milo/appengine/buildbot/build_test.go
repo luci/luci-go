@@ -101,8 +101,8 @@ func TestBuild(t *testing.T) {
 var internalConfig = `
 buildbot: {
 	internal_reader: "googlers"
-	public_topic: "projects/luci-milo/subscriptions/buildbot-public"
-	internal_topic: "projects/luci-milo/subscriptions/buildbot-private"
+	public_subscription: "projects/luci-milo/subscriptions/buildbot-public"
+	internal_subscription: "projects/luci-milo/subscriptions/buildbot-private"
 }
 `
 

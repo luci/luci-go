@@ -13,13 +13,13 @@ message Settings {
     // buildbot data.
     string internal_reader = 1;
 
-    // public_topic is the name of the pubsub topic where public builds come in
+    // public_subscription is the name of the pubsub topic where public builds come in
     // from
-    string public_topic = 2;
+    string public_subscription = 2;
 
-    // internal_topic is the name of the pubsub topic where internal builds
+    // internal_subscription is the name of the pubsub topic where internal builds
     // come in from
-    string internal_topic = 3;
+    string internal_subscription = 3;
   }
   Buildbot buildbot = 1;
 
