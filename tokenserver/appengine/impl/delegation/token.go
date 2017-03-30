@@ -10,31 +10,9 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
-
 	"github.com/luci/luci-go/server/auth/delegation/messages"
 	"github.com/luci/luci-go/server/auth/signing"
 )
-
-const tokenIDSequence = "delegationTokenID"
-
-// GenerateTokenID produces an int64 that can be used as a token identifier.
-//
-// We reuse datastore ID generator to produce token ids. The tokens are not
-// actually stored in the datastore. The generated ID sequence is associated
-// with some entity kind. If we ever need to restart the ID sequence, this
-// kind can be changed.
-func GenerateTokenID(c context.Context) (int64, error) {
-	// Note: AllocateIDs modifies passed slice in place, by replacing the keys
-	// there.
-	keys := []*datastore.Key{
-		datastore.NewKey(c, tokenIDSequence, "", 0, nil),
-	}
-	if err := datastore.AllocateIDs(c, keys); err != nil {
-		return 0, err
-	}
-	return keys[0].IntID(), nil
-}
 
 // SignToken signs and serializes the delegation subtoken.
 //

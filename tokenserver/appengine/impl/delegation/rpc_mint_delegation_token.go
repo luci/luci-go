@@ -28,7 +28,13 @@ import (
 	"github.com/luci/luci-go/tokenserver/api/minter/v1"
 	"github.com/luci/luci-go/tokenserver/appengine/impl/utils"
 	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/identityset"
+	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/revocation"
 )
+
+// tokenIDSequenceKind defines the namespace of int64 IDs for delegation tokens.
+//
+// Changing it will effectively reset the ID generation.
+const tokenIDSequenceKind = "delegationTokenID"
 
 // MintDelegationTokenRPC implements TokenMinter.MintDelegationToken RPC method.
 type MintDelegationTokenRPC struct {
@@ -196,7 +202,7 @@ type mintParams struct {
 
 // mint is called to make the token after the request has been authorized.
 func (r *MintDelegationTokenRPC) mint(c context.Context, p *mintParams) (*minter.MintDelegationTokenResponse, error) {
-	id, err := GenerateTokenID(c)
+	id, err := revocation.GenerateTokenID(c, tokenIDSequenceKind)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Error when generating token ID.")
 		return nil, grpc.Errorf(codes.Internal, "error when generating token ID - %s", err)
