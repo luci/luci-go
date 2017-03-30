@@ -275,12 +275,16 @@ func (dch *dsCacheHandler) Refresh(c context.Context, key []byte, v datastorecac
 		return v, errors.Annotate(err).Reason("failed to load cache value").Err()
 	}
 
+	keyDesc := ck.String()
+	valueDesc := cv.Description()
+	log.Infof(c, "Loaded [%s]: %s", keyDesc, valueDesc)
+
 	// Encode the resulting cache value.
 	if v.Data, err = cv.Encode(); err != nil {
 		return v, errors.Annotate(err).Reason("failed to encode cache value").Err()
 	}
 	v.Schema = dsCacheSchema
-	v.Description = ck.String()
+	v.Description = keyDesc + ": " + valueDesc
 	return v, nil
 }
 

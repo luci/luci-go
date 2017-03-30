@@ -7,6 +7,7 @@ package caching
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
@@ -141,6 +142,12 @@ func (vi *ValueItem) ConfigItem() *backend.Item {
 	}
 }
 
+// descriptionToken returns a human-readable string describing the contents of
+// this item.
+func (vi *ValueItem) descriptionToken() string {
+	return fmt.Sprintf("[%s:%s@%s]", vi.ConfigSet, vi.Path, vi.Revision)
+}
+
 // Value is a cache value.
 type Value struct {
 	// Items is the cached set of config response items.
@@ -207,6 +214,21 @@ func DecodeValue(d []byte) (*Value, error) {
 //
 // The format stores the Value as compressed JSON.
 func (v *Value) Encode() ([]byte, error) { return Encode(v) }
+
+// Description returns a human-readable string describing the contents of this
+// value.
+func (v *Value) Description() string {
+	parts := make([]string, 0, len(v.Items))
+	for _, it := range v.Items {
+		parts = append(parts, it.descriptionToken())
+	}
+
+	if v.URL != "" {
+		parts = append(parts, fmt.Sprintf("[URL=%s]", v.URL))
+	}
+
+	return strings.Join(parts, ", ")
+}
 
 // Loader retrieves a Value by consulting the backing backend.
 //
