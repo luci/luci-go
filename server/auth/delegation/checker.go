@@ -160,9 +160,7 @@ func unsealToken(c context.Context, tok *messages.DelegationToken, certsProvider
 //
 // It extracts and returns original delegated_identity.
 func checkSubtoken(c context.Context, subtoken *messages.Subtoken, params *CheckTokenParams) (identity.Identity, error) {
-	// TODO(vadimsh): Remove UNKNOWN_KIND from here once all services produce
-	// tokens with kind BEARER_DELEGATION_TOKEN.
-	if subtoken.Kind != messages.Subtoken_UNKNOWN_KIND && subtoken.Kind != messages.Subtoken_BEARER_DELEGATION_TOKEN {
+	if subtoken.Kind != messages.Subtoken_BEARER_DELEGATION_TOKEN {
 		logging.Warningf(c, "auth: Invalid delegation token kind - %s", subtoken.Kind)
 		return "", ErrForbiddenDelegationToken
 	}

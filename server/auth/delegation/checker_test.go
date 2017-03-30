@@ -177,6 +177,7 @@ func TestCheckToken(t *testing.T) {
 // subtoken returns messages.Subtoken with some fields filled in.
 func subtoken(c context.Context, delegatedID, audience string) *messages.Subtoken {
 	return &messages.Subtoken{
+		Kind:              messages.Subtoken_BEARER_DELEGATION_TOKEN,
 		DelegatedIdentity: delegatedID,
 		CreationTime:      clock.Now(c).Unix() - 300,
 		ValidityDuration:  3600,

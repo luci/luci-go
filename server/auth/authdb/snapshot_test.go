@@ -152,11 +152,6 @@ func TestSnapshotDB(t *testing.T) {
 		}, "http://auth-service", 1234)
 		So(err, ShouldBeNil)
 
-		authService := signingtest.NewSigner(0, &signing.ServiceInfo{
-			AppID:              "auth-service",
-			ServiceAccountName: "auth-service-account@example.com",
-		})
-
 		tokenService := signingtest.NewSigner(1, &signing.ServiceInfo{
 			AppID:              "token-server",
 			ServiceAccountName: "token-server-account@example.com",
@@ -167,16 +162,10 @@ func TestSnapshotDB(t *testing.T) {
 		ctx := context.Background()
 		ctx = internal.WithTestTransport(ctx, func(r *http.Request, body string) (int, string) {
 			calls++
-			var certs *signing.PublicCertificates
-			var err error
-			switch r.URL.String() {
-			case "http://auth-service/auth/api/v1/server/certificates":
-				certs, err = authService.Certificates(ctx)
-			case "http://token-server/auth/api/v1/server/certificates":
-				certs, err = tokenService.Certificates(ctx)
-			default:
+			if r.URL.String() != "http://token-server/auth/api/v1/server/certificates" {
 				return 404, "Wrong URL"
 			}
+			certs, err := tokenService.Certificates(ctx)
 			if err != nil {
 				panic(err)
 			}
@@ -187,23 +176,15 @@ func TestSnapshotDB(t *testing.T) {
 			return 200, string(blob)
 		})
 
-		good := []identity.Identity{
-			"service:auth-service",
-			"service:token-server",
-			"user:auth-service-account@example.com",
-			"user:token-server-account@example.com",
-		}
-		for _, ident := range good {
-			certs, err := db.GetCertificates(ctx, ident)
-			So(err, ShouldBeNil)
-			So(certs, ShouldNotBeNil)
-		}
+		certs, err := db.GetCertificates(ctx, "user:token-server-account@example.com")
+		So(err, ShouldBeNil)
+		So(certs, ShouldNotBeNil)
 
-		// Fetched two bundles, once.
-		So(calls, ShouldEqual, 2)
+		// Fetched one bundle.
+		So(calls, ShouldEqual, 1)
 
 		// For unknown signer returns (nil, nil).
-		certs, err := db.GetCertificates(ctx, "service:unknown")
+		certs, err = db.GetCertificates(ctx, "user:unknown@example.com")
 		So(err, ShouldBeNil)
 		So(certs, ShouldBeNil)
 	})
