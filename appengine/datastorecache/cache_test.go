@@ -71,42 +71,24 @@ func TestCache(t *testing.T) {
 				So(cache.refreshes, ShouldEqual, 0)
 			})
 
-			Convey(`After that entry has expired`, func() {
+			Convey(`After that entry has expired, a successive Get will return the stale data.`, func() {
+				cache.reset()
 				te.Clock.Add(expireFactor * cache.refreshInterval)
 
-				Convey(`(Fail Closed) A successive Get will return ErrCacheExpired.`, func() {
-					_, err := cache.Get(te, []byte("foo"))
-					So(err, ShouldEqual, ErrCacheExpired)
-				})
-
-				Convey(`(Fail Open) A successive Get will return the stale data.`, func() {
-					cache.failOpen = true
-					cache.reset()
-
-					v, err := cache.Get(te, []byte("foo"))
-					So(err, ShouldBeNil)
-					So(v, ShouldResemble, currentValue)
-					So(cache.refreshes, ShouldEqual, 0)
-				})
+				v, err := cache.Get(te, []byte("foo"))
+				So(err, ShouldBeNil)
+				So(v, ShouldResemble, currentValue)
+				So(cache.refreshes, ShouldEqual, 0)
 			})
 
-			Convey(`When GetMulti is broken`, func() {
+			Convey(`When GetMulti is broken, a successive Get will refresh.`, func() {
+				cache.reset()
 				te.DatastoreFB.BreakFeatures(errors.New("test error"), "GetMulti")
 
-				Convey(`(Fail Closed) A successive Get will return ErrCacheExpired.`, func() {
-					_, err := cache.Get(te, []byte("foo"))
-					So(err, ShouldErrLike, "test error")
-				})
-
-				Convey(`(Fail Open) A successive Get will refresh.`, func() {
-					cache.failOpen = true
-					cache.reset()
-
-					v, err := cache.Get(te, []byte("foo"))
-					So(err, ShouldBeNil)
-					So(v, ShouldResemble, currentValue)
-					So(cache.refreshes, ShouldEqual, 1)
-				})
+				v, err := cache.Get(te, []byte("foo"))
+				So(err, ShouldBeNil)
+				So(v, ShouldResemble, currentValue)
+				So(cache.refreshes, ShouldEqual, 1)
 			})
 		})
 
@@ -257,7 +239,6 @@ func TestCache(t *testing.T) {
 
 			Convey(`(Fail Open) Will refresh if GetMulti is broken during retries.`, func() {
 				te.DatastoreFB.BreakFeatures(errors.New("test error"), "GetMulti")
-				cache.failOpen = true
 
 				// Hold the entity's refresh lock. Our cache will not be able to acquire
 				// it.

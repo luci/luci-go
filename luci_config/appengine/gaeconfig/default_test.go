@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/appengine/datastorecache"
 	"github.com/luci/luci-go/common/clock/testclock"
 	commonConfig "github.com/luci/luci-go/common/config"
 	memConfig "github.com/luci/luci-go/common/config/impl/memory"
@@ -34,7 +33,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -103,7 +101,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 		c = settings.Use(c, settings.New(&memSettings))
 		s := Settings{
 			CacheExpirationSec: 10,
-			DatastoreCacheMode: DSCacheStrict,
+			DatastoreCacheMode: DSCacheEnabled,
 		}
 		putSettings := func() {
 			if err := settings.GetSettings(c).Set(c, settingsKey, &s, "test harness", "initial settings"); err != nil {
@@ -190,48 +188,14 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 				So(cnt.GetMulti.Total(), ShouldEqual, 2)
 				So(cnt.PutMulti.Total(), ShouldEqual, 1)
 
-				// Expire the cache.
+				// Expire the cache. Now that the entries are expired, we will
+				// continue to load the configuration from the datastore.
 				clk.Add(time.Hour)
 
 				projs, _, err = loadProjectConfigs(c, cfgclient.AsService)
 				So(err, ShouldBeNil)
-				So(projs, ShouldResemble, allProjs)
 
 				So(cnt.GetMulti.Total(), ShouldEqual, 3)
-				So(cnt.PutMulti.Total(), ShouldEqual, 1)
-			})
-
-			Convey(`Strict`, func() {
-				s.DatastoreCacheMode = DSCacheStrict
-				putSettings()
-
-				c = installConfig(c)
-				c, cnt := count.FilterRDS(c)
-				projs, _, err := loadProjectConfigs(c, cfgclient.AsService)
-				So(err, ShouldBeNil)
-				So(projs, ShouldResemble, allProjs)
-
-				So(cnt.GetMulti.Total(), ShouldEqual, 1)
-				So(cnt.PutMulti.Total(), ShouldEqual, 1)
-
-				// Break our backing store. This forces lookups to load from cache.
-				memConfig.SetError(base, errors.New("config is broken"))
-
-				projs, _, err = loadProjectConfigs(c, cfgclient.AsService)
-				So(err, ShouldBeNil)
-				So(projs, ShouldResemble, allProjs)
-
-				So(cnt.GetMulti.Total(), ShouldEqual, 2)
-				So(cnt.PutMulti.Total(), ShouldEqual, 1)
-
-				// Expire the cache. Now that the entries are expired, we will
-				// fail-closed to the backing store and return "config is broken".
-				clk.Add(time.Hour)
-
-				projs, _, err = loadProjectConfigs(c, cfgclient.AsService)
-				So(err, ShouldUnwrapTo, datastorecache.ErrCacheExpired)
-
-				So(cnt.GetMulti.Total(), ShouldEqual, 4)
 				So(cnt.PutMulti.Total(), ShouldEqual, 1)
 			})
 		})
@@ -259,7 +223,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 			// Expire cache.
 			clk.Add(time.Hour)
 			_, _, err = loadProjectConfigs(c, cfgclient.AsUser)
-			So(err, ShouldUnwrapTo, datastorecache.ErrCacheExpired)
+			So(err, ShouldBeNil)
 
 			// Update our cache entries.
 			So(runCron(), ShouldEqual, http.StatusOK)

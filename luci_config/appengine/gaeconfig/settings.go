@@ -27,11 +27,11 @@ const (
 	// DSCacheDisabled means that the datastore cache is disabled.
 	DSCacheDisabled DSCacheMode = ""
 	// DSCacheEnabled means that the datastore cache is enabled.
+	//
+	// When enabled, all requests that have cached entries will hit the cache,
+	// regardless of whether the cache is stale or not. If the cache is stale,
+	// a warning will be printed during fetch.
 	DSCacheEnabled DSCacheMode = "Enabled"
-	// DSCacheStrict means that the datastore cache is enabled, and that a stale
-	// datastore cache entry should return an error rather than fall through to
-	// the real config service.
-	DSCacheStrict DSCacheMode = "Strict"
 )
 
 // dsCacheDisabledSetting is the user-visible value for the "disabled" cache
@@ -130,7 +130,6 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 				default:
 					return nil
 				}
-				return nil
 			},
 			Help: `<p>The application may fetch configuration files stored centrally` +
 				`in an instance of <a href="https://github.com/luci/luci-py/tree/master/appengine/config_service">luci-config</a>` +
@@ -159,12 +158,12 @@ disable local cache.</p>`,
 			ChoiceVariants: []string{
 				dsCacheDisabledSetting,
 				string(DSCacheEnabled),
-				string(DSCacheStrict),
 			},
 			Help: `<p>For better performance and resilience against configuration
 service outages, the local datastore can be used as a backing cache. When
-enabled, an additional <strong>Strict</strong> mode is available where expired
-datastore entries will error instead of fail-open to the config service.</p>`,
+enabled, all configuration requests will be made against a cached configuration
+in the datastore. This configuration will be updated periodically by an
+independent cron job out of band with any user requests.</p>`,
 		},
 	}, nil
 }
@@ -176,21 +175,36 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 		return nil, err
 	}
 
-	cacheMode := string(s.DatastoreCacheMode)
-	if cacheMode == string(DSCacheDisabled) {
-		cacheMode = dsCacheDisabledSetting
+	// Translate the DSCacheMode into a user-readable string.
+	var cacheModeString string
+	switch s.DatastoreCacheMode {
+	// Recognized modes.
+	case DSCacheEnabled:
+		cacheModeString = string(s.DatastoreCacheMode)
+
+		// Any unrecognized mode translates to "disabled".
+	case DSCacheDisabled:
+		fallthrough
+	default:
+		cacheModeString = dsCacheDisabledSetting
 	}
 
 	return map[string]string{
 		"ConfigServiceHost":  s.ConfigServiceHost,
 		"CacheExpirationSec": strconv.Itoa(s.CacheExpirationSec),
-		"DatastoreCacheMode": cacheMode,
+		"DatastoreCacheMode": cacheModeString,
 	}, nil
 }
 
 func (settingsUIPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
 	dsMode := DSCacheMode(values["DatastoreCacheMode"])
-	if dsMode == dsCacheDisabledSetting {
+	switch dsMode {
+	case DSCacheEnabled: // Valid.
+
+	// Any unrecognized mode translates to disabled.
+	case dsCacheDisabledSetting:
+		fallthrough
+	default:
 		dsMode = DSCacheDisabled
 	}
 

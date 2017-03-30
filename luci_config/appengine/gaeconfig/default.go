@@ -109,16 +109,18 @@ func installConfigBackend(c context.Context, s *Settings, be backend.B, dsCron b
 	// Install a FormatRegistry. Register common config service protobufs with it.
 	c = gaeformat.WithRegistry(c, gaeformat.Default())
 
-	be = &format.Backend{
-		B:           be,
-		GetRegistry: gaeformat.GetRegistry,
-	}
-
 	// Apply caching configuration.
 	exp := time.Duration(s.CacheExpirationSec) * time.Second
 	if exp > 0 {
 		// Back the raw service with memcache.
 		be = memcache.Backend(be, exp)
+
+		// Add a formatting Backend. All Backends after this will use the formatted
+		// version of the entry.
+		be = &format.Backend{
+			B:           be,
+			GetRegistry: gaeformat.GetRegistry,
+		}
 
 		// If our datastore cache is enabled, install a handler for refresh. This
 		// will be loaded by dsCache's "HandlerFunc".

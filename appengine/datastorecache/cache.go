@@ -47,11 +47,6 @@ const (
 	DefaultCacheNamespace = "luci.datastoreCache"
 )
 
-// ErrCacheExpired is a sentinel error returned by Get when an expired cache
-// entry is encountered and the cache is configured not to fail open (see
-// Handler's FailOpen method).
-var ErrCacheExpired = errors.New("cache entry has expired")
-
 // Value is a cached value.
 type Value struct {
 	// Schema is an optional schema string that will be encoded in the cache
@@ -269,15 +264,7 @@ func (bci *boundCacheInst) get(c context.Context, key []byte) (Value, error) {
 
 		// Check if our cache entry has expired. If it has, we may be using stale
 		// data.
-		if bci.checkExpired(c, &e, now) {
-			// The cache entry has expired. If we are not failing open, this is a
-			// hard failure.
-			log.Errorf(c, "Cache entry has expired.")
-
-			if !bci.h.FailOpen() {
-				return Value{}, ErrCacheExpired
-			}
-		}
+		_ = bci.checkExpired(c, &e, now)
 		return e.toValue(), nil
 
 	case datastore.ErrNoSuchEntity:
@@ -287,11 +274,6 @@ func (bci *boundCacheInst) get(c context.Context, key []byte) (Value, error) {
 	default:
 		// Unexpected error from datastore.
 		log.WithError(err).Errorf(c, "Failed to retrieve cache entry from datastore.")
-
-		if !bci.h.FailOpen() {
-			// Not failing open, so propagate this error.
-			return Value{}, errors.Annotate(err).Err()
-		}
 
 		// We are failing open, so log the error. We will use Refresh to reload the
 		// cache entry, but will refrain from actually committing it, since this is

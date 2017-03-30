@@ -20,15 +20,6 @@ var ErrDeleteCacheEntry = errors.New("delete this cache entry")
 // Handler is a cache handler for a specific type of data. It is used at cache
 // runtime to make decisions on how to populate and manage cache entries.
 type Handler interface {
-	// FailOpen, if true, indicates that any error preventing a cache record from
-	// being retrieved or used should result in an automatic Refresh attempt.
-	//
-	// This increases overall reliability, since a cache failure will not
-	// propagate to the cache user. However, this also has the potential to mask
-	// error cases by succeeding when something is really going wrong. We try and
-	// mitigate the latter case with logging and metrics.
-	FailOpen() bool
-
 	// RefreshInterval is the amount of time that can expire before data becomes
 	// candidate for refresh.
 	//

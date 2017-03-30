@@ -83,7 +83,7 @@ func (fc *fakeCache) Get(c context.Context, key []byte) (v datastorecache.Value,
 		return
 	}
 
-	err = datastorecache.ErrCacheExpired
+	err = errors.New("no cache entry")
 	return
 }
 

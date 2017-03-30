@@ -47,7 +47,7 @@ func (o *CacheOptions) WrapBackend(c context.Context, base backend.B) context.Co
 			case nil:
 				// Successfully fetched settings, is our datastore cache enabled?
 				switch s.DatastoreCacheMode {
-				case gaeconfig.DSCacheEnabled, gaeconfig.DSCacheStrict:
+				case gaeconfig.DSCacheEnabled:
 					// Datastore cache is enabled, do we have an expiration configured?
 					exp := time.Duration(s.CacheExpirationSec) * time.Second
 					if exp > 0 {
@@ -55,7 +55,6 @@ func (o *CacheOptions) WrapBackend(c context.Context, base backend.B) context.Co
 						locker := &dsCacheLocker{}
 						dsCfg := datastore.Config{
 							RefreshInterval: exp,
-							FailOpen:        s.DatastoreCacheMode == gaeconfig.DSCacheEnabled,
 							LockerFunc:      func(context.Context) datastorecache.Locker { return locker },
 						}
 						be = dsCfg.Backend(be)
