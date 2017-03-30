@@ -7,12 +7,33 @@ package certchecker
 import (
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/warmup"
+	"github.com/luci/luci-go/tokenserver/appengine/impl/certconfig"
 )
 
 func init() {
 	warmup.Register("tokenserver/appengine/impl/certchecker", func(c context.Context) error {
-		// TODO
-		return nil
+		names, err := certconfig.ListCAs(c)
+		if err != nil {
+			return err
+		}
+		var merr errors.MultiError
+		for _, cn := range names {
+			logging.Infof(c, "Warming up %q", cn)
+			checker, err := GetCertChecker(c, cn)
+			if err == nil {
+				_, err = checker.GetCA(c)
+			}
+			if err != nil {
+				logging.WithError(err).Warningf(c, "Failed to warm up %q", cn)
+				merr = append(merr, err)
+			}
+		}
+		if len(merr) == 0 {
+			return nil
+		}
+		return merr
 	})
 }

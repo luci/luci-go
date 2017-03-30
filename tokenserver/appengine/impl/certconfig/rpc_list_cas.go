@@ -10,7 +10,6 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/golang/protobuf/ptypes/empty"
-	ds "github.com/luci/gae/service/datastore"
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 )
@@ -21,18 +20,9 @@ type ListCAsRPC struct {
 
 // ListCAs returns a list of Common Names of registered CAs.
 func (r *ListCAsRPC) ListCAs(c context.Context, _ *empty.Empty) (*admin.ListCAsResponse, error) {
-	keys := []*ds.Key{}
-
-	q := ds.NewQuery("CA").Eq("Removed", false).KeysOnly(true)
-	if err := ds.GetAll(c, q, &keys); err != nil {
+	names, err := ListCAs(c)
+	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "transient datastore error - %s", err)
 	}
-
-	resp := &admin.ListCAsResponse{
-		Cn: make([]string, len(keys)),
-	}
-	for i, key := range keys {
-		resp.Cn[i] = key.StringID()
-	}
-	return resp, nil
+	return &admin.ListCAsResponse{Cn: names}, nil
 }

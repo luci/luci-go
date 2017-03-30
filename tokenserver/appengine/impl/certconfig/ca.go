@@ -71,6 +71,20 @@ func (c *CA) ParseConfig() (*admin.CertificateAuthorityConfig, error) {
 	return msg, nil
 }
 
+// ListCAs returns names of all currently active CAs, in no particular order.
+func ListCAs(c context.Context) ([]string, error) {
+	keys := []*ds.Key{}
+	q := ds.NewQuery("CA").Eq("Removed", false).KeysOnly(true)
+	if err := ds.GetAll(c, q, &keys); err != nil {
+		return nil, errors.WrapTransient(err)
+	}
+	names := make([]string, len(keys))
+	for i, key := range keys {
+		names[i] = key.StringID()
+	}
+	return names, nil
+}
+
 // CAUniqueIDToCNMap is a singleton entity that stores a mapping between CA's
 // unique_id (specified in config) and its Common Name.
 //

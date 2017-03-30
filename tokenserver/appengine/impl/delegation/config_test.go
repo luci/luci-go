@@ -29,7 +29,7 @@ func TestDelegationConfigLoader(t *testing.T) {
 		ctx := gaetesting.TestingContext()
 		ctx, tc := testclock.UseTime(ctx, testclock.TestTimeUTC)
 
-		loader := DelegationConfigLoader()
+		loader := delegationConfigLoader()
 
 		// Put the initial copy into the datastore.
 		cfg, err := loadConfig(`

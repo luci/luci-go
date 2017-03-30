@@ -2,7 +2,7 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-package certconfig
+package delegation
 
 import (
 	"golang.org/x/net/context"
@@ -11,10 +11,8 @@ import (
 )
 
 func init() {
-	warmup.Register("tokenserver/appengine/impl/certconfig", func(c context.Context) error {
-		// Warmup ID -> CN mapping. Ignore result (it may be "no such CA"), this is
-		// fine, the mapping will be preloaded.
-		GetCAByUniqueID(c, 0)
-		return nil
+	warmup.Register("tokenserver/appengine/impl/delegation", func(c context.Context) error {
+		_, err := DelegationConfigLoader(c)
+		return err
 	})
 }

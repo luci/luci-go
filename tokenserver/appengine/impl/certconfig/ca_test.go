@@ -8,12 +8,34 @@ import (
 	"testing"
 	"time"
 
+	ds "github.com/luci/gae/service/datastore"
+
 	"github.com/luci/luci-go/appengine/gaetesting"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/data/caching/proccache"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func TestListCAs(t *testing.T) {
+	Convey("ListCAs works", t, func() {
+		ctx := gaetesting.TestingContext()
+
+		// Empty.
+		cas, err := ListCAs(ctx)
+		So(err, ShouldBeNil)
+		So(len(cas), ShouldEqual, 0)
+
+		// Add some.
+		err = ds.Put(ctx, &CA{CN: "abc", Removed: true}, &CA{CN: "def"})
+		So(err, ShouldBeNil)
+		ds.GetTestable(ctx).CatchupIndexes()
+
+		cas, err = ListCAs(ctx)
+		So(err, ShouldBeNil)
+		So(cas, ShouldResemble, []string{"def"})
+	})
+}
 
 func TestCAUniqueIDToCNMapLoadStore(t *testing.T) {
 	Convey("CAUniqueIDToCNMap Load and Store works", t, func() {

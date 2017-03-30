@@ -97,11 +97,15 @@ func FetchDelegationConfig(c context.Context) (*DelegationConfig, error) {
 	return cfg, nil
 }
 
-// DelegationConfigLoader constructs a function that lazy-loads delegation
-// config and keeps it cached in memory, refreshing the cached copy each minute.
+// DelegationConfigLoader lazy-loads delegation config and keeps it cached in
+// memory, refreshing the cached copy each minute.
 //
 // Used as MintDelegationTokenRPC.ConfigLoader implementation in prod.
-func DelegationConfigLoader() func(context.Context) (*DelegationConfig, error) {
+var DelegationConfigLoader = delegationConfigLoader()
+
+// delegationConfigLoader constructs a function that lazy-loads delegation
+// config and keeps it cached in memory, refreshing the cached copy each minute.
+func delegationConfigLoader() func(context.Context) (*DelegationConfig, error) {
 	slot := lazyslot.Slot{
 		Fetcher: func(c context.Context, prev lazyslot.Value) (lazyslot.Value, error) {
 			newCfg, err := FetchDelegationConfig(c)
