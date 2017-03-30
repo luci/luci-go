@@ -36,6 +36,7 @@ func UpdateConfigHandler(ctx *router.Context) {
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Update Handler encountered error")
 		h.WriteHeader(500)
+		return
 	}
 	logging.Infof(c, "Successfully completed")
 	h.WriteHeader(200)
