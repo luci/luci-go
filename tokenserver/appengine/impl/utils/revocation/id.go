@@ -11,8 +11,6 @@ import (
 	"github.com/luci/luci-go/common/errors"
 )
 
-const tokenIDSequence = "delegationTokenID"
-
 // GenerateTokenID produces an int64 that can be used as a token identifier.
 //
 // We reuse datastore ID generator to produce token ids. The tokens are not
