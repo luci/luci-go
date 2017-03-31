@@ -23,6 +23,7 @@ import (
 
 	"github.com/luci/luci-go/tokenserver/api"
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
+	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/tokensigning"
 )
 
 var maxUint64 = big.NewInt(0).SetUint64(math.MaxUint64)
@@ -98,7 +99,7 @@ func domainConfig(cfg *admin.CertificateAuthorityConfig, domain string) *admin.D
 	return nil
 }
 
-// Mint generates a new machine token.
+// Mint generates a new machine token proto, signs and serializes it.
 //
 // Returns its body as a proto, and as a signed base64-encoded final token.
 func Mint(c context.Context, params *MintParams) (*tokenserver.MachineTokenBody, string, error) {
@@ -119,7 +120,7 @@ func Mint(c context.Context, params *MintParams) (*tokenserver.MachineTokenBody,
 		return nil, "", errors.WrapTransient(err)
 	}
 
-	body := tokenserver.MachineTokenBody{
+	body := &tokenserver.MachineTokenBody{
 		MachineFqdn: params.FQDN,
 		IssuedBy:    srvInfo.ServiceAccountName,
 		IssuedAt:    uint64(clock.Now(c).Unix()),
@@ -127,60 +128,58 @@ func Mint(c context.Context, params *MintParams) (*tokenserver.MachineTokenBody,
 		CaId:        params.Config.UniqueId,
 		CertSn:      params.Cert.SerialNumber.Uint64(), // already validated, fits uint64
 	}
-	serializedBody, err := proto.Marshal(&body)
+	signed, err := SignToken(c, params.Signer, body)
 	if err != nil {
 		return nil, "", err
 	}
-
-	keyID, signature, err := params.Signer.SignBytes(c, serializedBody)
-	if err != nil {
-		return nil, "", errors.WrapTransient(err)
-	}
-
-	tokenBinBlob, err := proto.Marshal(&tokenserver.MachineTokenEnvelope{
-		TokenBody: serializedBody,
-		KeyId:     keyID,
-		RsaSha256: signature,
-	})
-	if err != nil {
-		return nil, "", err
-	}
-	return &body, base64.RawStdEncoding.EncodeToString(tokenBinBlob), nil
+	return body, signed, nil
 }
 
-// Parse takes serialized MachineTokenEnvelope and parses it.
+// SignToken signs and serializes the machine subtoken.
 //
-// It returns both deserialized envelope and deserialized MachineTokenBody. It
-// does not check the signature or expiration.
+// It doesn't do any validation. Assumes the prepared subtoken is valid.
 //
-// If the envelope can't be deserialized, returns (nil, nil, error).
-// If MachineTokenBody can't be deserialized returns (envelope, nil, error).
-func Parse(token string) (*tokenserver.MachineTokenEnvelope, *tokenserver.MachineTokenBody, error) {
-	tokenBinBlob, err := base64.RawStdEncoding.DecodeString(token)
-	if err != nil {
-		return nil, nil, err
+// Produces base64-encoded token or a transient error.
+func SignToken(c context.Context, signer signing.Signer, body *tokenserver.MachineTokenBody) (string, error) {
+	s := tokensigning.Signer{
+		Signer:   signer,
+		Encoding: base64.RawStdEncoding,
+		Wrap: func(w *tokensigning.Unwrapped) proto.Message {
+			return &tokenserver.MachineTokenEnvelope{
+				TokenBody: w.Body,
+				RsaSha256: w.RsaSHA256Sig,
+				KeyId:     w.KeyID,
+			}
+		},
 	}
-	envelope := &tokenserver.MachineTokenEnvelope{}
-	if err := proto.Unmarshal(tokenBinBlob, envelope); err != nil {
-		return nil, nil, err
-	}
-	body := &tokenserver.MachineTokenBody{}
-	if err := proto.Unmarshal(envelope.TokenBody, body); err != nil {
-		return envelope, nil, err
-	}
-	return envelope, body, nil
+	return s.SignToken(c, body)
 }
 
-// CheckSignature verifies the token was signed by some of the given keys.
-func CheckSignature(envelope *tokenserver.MachineTokenEnvelope, certs *signing.PublicCertificates) error {
-	return certs.CheckSignature(envelope.KeyId, envelope.TokenBody, envelope.RsaSha256)
-}
-
-// IsExpired returns true if the token is expired.
+// InspectToken returns information about the machine token.
 //
-// Allows 10 sec clock drift.
-func IsExpired(body *tokenserver.MachineTokenBody, now time.Time) bool {
-	notBefore := time.Unix(int64(body.IssuedAt), 0)
-	notAfter := notBefore.Add(time.Duration(body.Lifetime) * time.Second)
-	return now.Before(notBefore.Add(-10*time.Second)) || now.After(notAfter.Add(10*time.Second))
+// Inspection.Envelope is either nil or *tokenserver.MachineTokenEnvelope.
+// Inspection.Body is either nil or *tokenserver.MachineTokenBody.
+func InspectToken(c context.Context, certs tokensigning.CertificatesSupplier, tok string) (*tokensigning.Inspection, error) {
+	i := tokensigning.Inspector{
+		Encoding:     base64.RawStdEncoding,
+		Certificates: certs,
+		Envelope:     func() proto.Message { return &tokenserver.MachineTokenEnvelope{} },
+		Body:         func() proto.Message { return &tokenserver.MachineTokenBody{} },
+		Unwrap: func(e proto.Message) tokensigning.Unwrapped {
+			env := e.(*tokenserver.MachineTokenEnvelope)
+			return tokensigning.Unwrapped{
+				Body:         env.TokenBody,
+				RsaSHA256Sig: env.RsaSha256,
+				KeyID:        env.KeyId,
+			}
+		},
+		Lifespan: func(b proto.Message) tokensigning.Lifespan {
+			body := b.(*tokenserver.MachineTokenBody)
+			return tokensigning.Lifespan{
+				NotBefore: time.Unix(int64(body.IssuedAt), 0),
+				NotAfter:  time.Unix(int64(body.IssuedAt)+int64(body.Lifetime), 0),
+			}
+		},
+	}
+	return i.InspectToken(c, tok)
 }

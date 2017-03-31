@@ -62,10 +62,11 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(reply, ShouldResemble, &admin.InspectMachineTokenResponse{
 				Valid:            false,
-				InvalidityReason: "can't validate signature - crypto/rsa: verification error",
+				InvalidityReason: "bad signature - crypto/rsa: verification error",
 				Signed:           false,
-				NonExpired:       false,
-				NonRevoked:       false,
+				NonExpired:       true,
+				NonRevoked:       true,
+				CertCaName:       "Fake CA: fake.ca",
 				SigningKeyId:     "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
 				TokenType: &admin.InspectMachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &tokenserver.MachineTokenBody{

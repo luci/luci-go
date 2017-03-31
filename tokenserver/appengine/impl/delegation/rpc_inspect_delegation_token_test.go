@@ -81,7 +81,6 @@ func TestInspectDelegationToken(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(resp, ShouldResemble, &admin.InspectDelegationTokenResponse{
 			InvalidityReason: "can't unmarshal the envelope - proto: can't skip unknown wire type 7 for messages.DelegationToken",
-			Envelope:         &messages.DelegationToken{},
 		})
 	})
 
@@ -100,7 +99,7 @@ func TestInspectDelegationToken(t *testing.T) {
 		resp.Envelope.SerializedSubtoken = nil
 		So(resp, ShouldResemble, &admin.InspectDelegationTokenResponse{
 			Valid:            false,
-			InvalidityReason: "invalid signature",
+			InvalidityReason: "bad signature - crypto/rsa: verification error",
 			Signed:           false,
 			NonExpired:       true,
 			Envelope: &messages.DelegationToken{
@@ -123,7 +122,7 @@ func TestInspectDelegationToken(t *testing.T) {
 		resp.Envelope.SerializedSubtoken = nil
 		So(resp, ShouldResemble, &admin.InspectDelegationTokenResponse{
 			Valid:            false,
-			InvalidityReason: "expired or not active yet",
+			InvalidityReason: "expired",
 			Signed:           true,
 			NonExpired:       false,
 			Envelope: &messages.DelegationToken{

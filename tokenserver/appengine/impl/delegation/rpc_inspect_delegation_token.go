@@ -5,17 +5,10 @@
 package delegation
 
 import (
-	"encoding/base64"
-	"fmt"
-
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/auth/delegation/messages"
 	"github.com/luci/luci-go/server/auth/signing"
 
@@ -33,52 +26,17 @@ type InspectDelegationTokenRPC struct {
 }
 
 func (r *InspectDelegationTokenRPC) InspectDelegationToken(c context.Context, req *admin.InspectDelegationTokenRequest) (*admin.InspectDelegationTokenResponse, error) {
-	resp := &admin.InspectDelegationTokenResponse{}
-
-	blob, err := base64.RawURLEncoding.DecodeString(req.Token)
+	inspection, err := InspectToken(c, r.Signer, req.Token)
 	if err != nil {
-		resp.InvalidityReason = fmt.Sprintf("not base64 - %s", err)
-		return resp, nil
+		return nil, grpc.Errorf(codes.Internal, err.Error())
 	}
-
-	resp.Envelope = &messages.DelegationToken{}
-	if err = proto.Unmarshal(blob, resp.Envelope); err != nil {
-		resp.InvalidityReason = fmt.Sprintf("can't unmarshal the envelope - %s", err)
-		return resp, nil
+	resp := &admin.InspectDelegationTokenResponse{
+		Valid:            inspection.Signed && inspection.NonExpired,
+		Signed:           inspection.Signed,
+		NonExpired:       inspection.NonExpired,
+		InvalidityReason: inspection.InvalidityReason,
 	}
-
-	certs, err := r.Signer.Certificates(c)
-	if err != nil {
-		logging.WithError(err).Errorf(c, "Can't grab service certificates")
-		return nil, grpc.Errorf(codes.Internal, "can't grab service certificates")
-	}
-
-	err = certs.CheckSignature(
-		resp.Envelope.SigningKeyId, resp.Envelope.SerializedSubtoken, resp.Envelope.Pkcs1Sha256Sig)
-	if errors.IsTransient(err) {
-		logging.WithError(err).Errorf(c, "Transient error when checking signature")
-		return nil, grpc.Errorf(codes.Internal, "transient error when checking signature")
-	}
-	resp.Signed = err == nil
-
-	resp.Subtoken = &messages.Subtoken{}
-	if err = proto.Unmarshal(resp.Envelope.SerializedSubtoken, resp.Subtoken); err != nil {
-		resp.InvalidityReason = fmt.Sprintf("can't unmarshal token body - %s", err)
-		return resp, nil
-	}
-
-	now := clock.Now(c).Unix()
-	resp.NonExpired = (now >= resp.Subtoken.CreationTime) &&
-		(now < resp.Subtoken.CreationTime+int64(resp.Subtoken.ValidityDuration))
-
-	switch {
-	case !resp.Signed:
-		resp.InvalidityReason = "invalid signature"
-	case !resp.NonExpired:
-		resp.InvalidityReason = "expired or not active yet"
-	default:
-		resp.Valid = true
-	}
-
+	resp.Envelope, _ = inspection.Envelope.(*messages.DelegationToken)
+	resp.Subtoken, _ = inspection.Body.(*messages.Subtoken)
 	return resp, nil
 }

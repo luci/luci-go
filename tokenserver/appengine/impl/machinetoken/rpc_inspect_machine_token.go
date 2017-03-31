@@ -12,7 +12,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/server/auth/signing"
 
@@ -48,46 +47,38 @@ func (r *InspectMachineTokenRPC) InspectMachineToken(c context.Context, req *adm
 		return nil, grpc.Errorf(codes.InvalidArgument, "unsupported token type %s", req.TokenType)
 	}
 
-	// Deserialize the token, don't do any validity checks yet.
-	envelope, body, err := Parse(req.Token)
-	switch {
-	case envelope == nil:
-		return &admin.InspectMachineTokenResponse{
-			InvalidityReason: fmt.Sprintf("bad envelope format - %s", err),
-		}, nil
-	case body == nil:
-		return &admin.InspectMachineTokenResponse{
-			SigningKeyId:     envelope.KeyId,
-			InvalidityReason: fmt.Sprintf("bad body format - %s", err),
-		}, nil
-	case err != nil:
-		return &admin.InspectMachineTokenResponse{
-			InvalidityReason: fmt.Sprintf("parsing error - %s", err),
-		}, nil
+	// Deserialize the token, check its signature.
+	inspection, err := InspectToken(c, r.Signer, req.Token)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, err.Error())
 	}
-
 	resp := &admin.InspectMachineTokenResponse{
-		InvalidityReason: "unknown", // will be replaced below
-		SigningKeyId:     envelope.KeyId,
-		TokenType: &admin.InspectMachineTokenResponse_LuciMachineToken{
-			LuciMachineToken: body,
-		},
+		Signed:           inspection.Signed,
+		NonExpired:       inspection.NonExpired,
+		InvalidityReason: inspection.InvalidityReason,
 	}
 
-	// Check that the token was signed by our private key.
-	certs, err := r.Signer.Certificates(c)
-	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "can't fetch service certificates - %s", err)
+	// Grab the signing key from the envelope, if managed to deserialize it.
+	if env, _ := inspection.Envelope.(*tokenserver.MachineTokenEnvelope); env != nil {
+		resp.SigningKeyId = env.KeyId
 	}
-	err = CheckSignature(envelope, certs)
-	if err != nil {
-		resp.InvalidityReason = fmt.Sprintf("can't validate signature - %s", err)
+
+	// If we could not deserialize the body, that's all checks we could do.
+	body, _ := inspection.Body.(*tokenserver.MachineTokenBody)
+	if body == nil {
 		return resp, nil
 	}
-	resp.Signed = true
+	resp.TokenType = &admin.InspectMachineTokenResponse_LuciMachineToken{
+		LuciMachineToken: body,
+	}
 
-	// Check the expiration time. Allow 10 sec clock drift.
-	resp.NonExpired = !IsExpired(body, clock.Now(c))
+	addReason := func(r string) {
+		if resp.InvalidityReason == "" {
+			resp.InvalidityReason = r
+		} else {
+			resp.InvalidityReason += "; " + r
+		}
+	}
 
 	// Check revocation status. Find CA name that signed the certificate used when
 	// minting the token.
@@ -96,7 +87,7 @@ func (r *InspectMachineTokenRPC) InspectMachineToken(c context.Context, req *adm
 	case err != nil:
 		return nil, grpc.Errorf(codes.Internal, "can't resolve ca_id to CA name - %s", err)
 	case caName == "":
-		resp.InvalidityReason = "no CA with given ID"
+		addReason("no CA with given ID")
 		return resp, nil
 	}
 	resp.CertCaName = caName
@@ -107,7 +98,7 @@ func (r *InspectMachineTokenRPC) InspectMachineToken(c context.Context, req *adm
 	case errors.IsTransient(err):
 		return nil, grpc.Errorf(codes.Internal, "can't fetch CRL - %s", err)
 	case err != nil:
-		resp.InvalidityReason = fmt.Sprintf("can't fetch CRL - %s", err)
+		addReason(fmt.Sprintf("can't fetch CRL - %s", err))
 		return resp, nil
 	}
 
@@ -119,15 +110,13 @@ func (r *InspectMachineTokenRPC) InspectMachineToken(c context.Context, req *adm
 	}
 	resp.NonRevoked = !revoked
 
-	// Pick invalidity reason (if any).
-	switch {
-	case !resp.NonExpired:
-		resp.InvalidityReason = "expired"
-	case !resp.NonRevoked:
-		resp.InvalidityReason = "revoked"
-	default:
-		resp.Valid = true
-		resp.InvalidityReason = ""
+	// Note: if Signed or NonExpired is false, InvalidityReason is already set.
+	if resp.Signed && resp.NonExpired {
+		if resp.NonRevoked {
+			resp.Valid = true
+		} else {
+			addReason("corresponding cert was revoked")
+		}
 	}
 
 	return resp, nil
