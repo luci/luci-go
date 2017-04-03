@@ -8,9 +8,12 @@ import (
 	"os"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/logging"
+	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
+	"github.com/luci/luci-go/common/tsmon/types"
 )
 
 type debugMonitor struct {
@@ -30,8 +33,9 @@ func (m *debugMonitor) ChunkSize() int {
 }
 
 func (m *debugMonitor) Send(ctx context.Context, cells []types.Cell) error {
-	collection := SerializeCellsV1(cells)
-	str := proto.MarshalTextString(collection)
+	str := proto.MarshalTextString(&pb.MetricsPayload{
+		MetricsCollection: SerializeCells(cells, clock.Now(ctx)),
+	})
 
 	logging.Infof(ctx, "Sending ts_mon metrics:\n%s", str)
 

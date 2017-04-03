@@ -6,14 +6,12 @@
 package storetest
 
 import (
-	"bytes"
 	"fmt"
 	"sort"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
@@ -22,7 +20,7 @@ import (
 	"github.com/luci/luci-go/common/tsmon/types"
 	"golang.org/x/net/context"
 
-	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto_v1"
+	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -64,6 +62,7 @@ type TestOptions struct {
 // implementations are expected to pass.  When you write a new Store
 // implementation you should ensure you run these tests against it.
 func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOptions) {
+
 	distOne := distribution.New(distribution.DefaultBucketer)
 	distOne.Add(4.2)
 
@@ -299,12 +298,12 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					all := s.GetAll(ctx)
 					So(len(all), ShouldEqual, 1)
 
-					msg := monitor.SerializeCellV1(all[0])
+					msg := monitor.SerializeValue(all[0], testclock.TestRecentTimeUTC)
+					ts := msg.GetStartTimestamp()
 					if test.wantStartTimestamp {
-						So(time.Unix(0, int64(msg.GetStartTimestampUs()*uint64(time.Microsecond))).UTC().String(),
-							ShouldEqual, t.String())
+						So(time.Unix(ts.GetSeconds(), int64(ts.GetNanos())).UTC().String(), ShouldEqual, t.String())
 					} else {
-						So(msg.GetStartTimestampUs(), ShouldEqual, 0)
+						So(time.Unix(ts.GetSeconds(), int64(ts.GetNanos())).UTC().String(), ShouldEqual, testclock.TestRecentTimeUTC.String())
 					}
 				})
 			}
@@ -333,8 +332,8 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					opts.RegistrationFinished(s)
 
 					// Create a context with a different target.
-					t := target.Task{ServiceName: "foo"}
-					ctxWithTarget := target.Set(ctx, &t)
+					foo := target.Task{ServiceName: "foo"}
+					ctxWithTarget := target.Set(ctx, &foo)
 
 					// Set the first value on the default target, second value on the
 					// different target.
@@ -362,10 +361,17 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					all := s.GetAll(ctx)
 					So(len(all), ShouldEqual, 2)
 
-					coll := monitor.SerializeCellsV1(all)
-					sort.Sort(sortableDataSlice(coll.Data))
-					So(coll.Data[0].Task.GetServiceName(), ShouldEqual, s.DefaultTarget().(*target.Task).ServiceName)
-					So(coll.Data[1].Task.GetServiceName(), ShouldEqual, t.ServiceName)
+					coll := monitor.SerializeCells(all, testclock.TestRecentTimeUTC)
+					s0 := coll[0].TargetSchema.(*pb.MetricsCollection_Task).Task.GetServiceName()
+					s1 := coll[1].TargetSchema.(*pb.MetricsCollection_Task).Task.GetServiceName()
+					switch {
+					case s0 == foo.ServiceName:
+						So(s1, ShouldEqual, s.DefaultTarget().(*target.Task).ServiceName)
+					case s1 == foo.ServiceName:
+						So(s0, ShouldEqual, s.DefaultTarget().(*target.Task).ServiceName)
+					default:
+						t.Fail()
+					}
 				})
 			}
 		})
@@ -524,12 +530,12 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					all := s.GetAll(ctx)
 					So(len(all), ShouldEqual, 1)
 
-					msg := monitor.SerializeCellV1(all[0])
+					msg := monitor.SerializeValue(all[0], testclock.TestRecentTimeUTC)
 					if test.wantStartTimestamp {
-						So(time.Unix(0, int64(msg.GetStartTimestampUs()*uint64(time.Microsecond))).UTC().String(),
-							ShouldEqual, t.String())
+						ts := msg.GetStartTimestamp()
+						So(time.Unix(ts.GetSeconds(), int64(ts.GetNanos())).UTC().String(), ShouldEqual, t.String())
 					} else {
-						So(msg.GetStartTimestampUs(), ShouldEqual, 0)
+						So(msg.StartTimestamp, ShouldBeNil)
 					}
 				})
 			}
@@ -559,8 +565,8 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					opts.RegistrationFinished(s)
 
 					// Create a context with a different target.
-					t := target.Task{ServiceName: "foo"}
-					ctxWithTarget := target.Set(ctx, &t)
+					foo := target.Task{ServiceName: "foo"}
+					ctxWithTarget := target.Set(ctx, &foo)
 
 					// Incr the first delta on the default target, second delta on the
 					// different target.
@@ -578,17 +584,24 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					all := s.GetAll(ctx)
 					So(len(all), ShouldEqual, 2)
 
-					coll := monitor.SerializeCellsV1(all)
-					sort.Sort(sortableDataSlice(coll.Data))
-					So(coll.Data[0].Task.GetServiceName(), ShouldEqual, s.DefaultTarget().(*target.Task).ServiceName)
-					So(coll.Data[1].Task.GetServiceName(), ShouldEqual, t.ServiceName)
+					coll := monitor.SerializeCells(all, testclock.TestRecentTimeUTC)
+					s0 := coll[0].TargetSchema.(*pb.MetricsCollection_Task).Task.GetServiceName()
+					s1 := coll[1].TargetSchema.(*pb.MetricsCollection_Task).Task.GetServiceName()
+					switch {
+					case s0 == foo.ServiceName:
+						So(s1, ShouldEqual, s.DefaultTarget().(*target.Task).ServiceName)
+					case s1 == foo.ServiceName:
+						So(s0, ShouldEqual, s.DefaultTarget().(*target.Task).ServiceName)
+					default:
+						t.Fail()
+					}
 				})
 			}
 		})
 	})
 
 	Convey("GetAll", t, func() {
-		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
+		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 
 		s := opts.Factory()
 		foo := &FakeMetric{
@@ -804,13 +817,3 @@ func (s sortableCellSlice) Less(i, j int) bool {
 	return s[i].ResetTime.UnixNano() < s[j].ResetTime.UnixNano()
 }
 func (s sortableCellSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-
-type sortableDataSlice []*pb.MetricsData
-
-func (s sortableDataSlice) Len() int { return len(s) }
-func (s sortableDataSlice) Less(i, j int) bool {
-	a, _ := proto.Marshal(s[i])
-	b, _ := proto.Marshal(s[j])
-	return bytes.Compare(a, b) > 0
-}
-func (s sortableDataSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }

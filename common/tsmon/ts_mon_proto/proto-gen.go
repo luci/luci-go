@@ -4,12 +4,12 @@
 
 //go:generate cproto
 
-// Package ts_mon_proto_v1 contains ts_mon protobuf source and generated
-// protobuf data.
+// Package ts_mon_proto contains ts_mon protobuf source and generated protobuf
+// data.
 //
 // The package name here must match the protobuf package name, as the generated
 // files will reside in the same directory.
-package ts_mon_proto_v1
+package ts_mon_proto
 
 import (
 	"github.com/golang/protobuf/proto"

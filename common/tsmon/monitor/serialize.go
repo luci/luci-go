@@ -12,7 +12,7 @@ import (
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/types"
 
-	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto_v2"
+	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
 )
 
 type dataSetKey struct {
@@ -84,7 +84,7 @@ func SerializeDataSet(c types.Cell) *pb.MetricsDataSet {
 	}
 
 	if c.Units.IsSpecified() {
-		d.Annotations.Unit = proto.String(c.Units.String())
+		d.Annotations.Unit = proto.String(string(c.Units))
 	}
 	return &d
 }

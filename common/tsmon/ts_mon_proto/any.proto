@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 syntax = "proto2";
 
-package ts_mon.proto.v2;
+package ts_mon.proto;
 
 message Any {
   optional string type_url = 1 [ctype=STRING_PIECE];

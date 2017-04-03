@@ -13,7 +13,6 @@ import (
 
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/errors"
-	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/tsmon/monitor"
 	"github.com/luci/luci-go/common/tsmon/store"
@@ -205,15 +204,6 @@ func initMonitor(c context.Context, config config) (monitor.Monitor, error) {
 	switch endpointURL.Scheme {
 	case "file":
 		return monitor.NewDebugMonitor(endpointURL.Path), nil
-	case "pubsub":
-		tokens, err := newAuthenticator(c, config.Credentials, config.ActAs, gcps.PublisherScopes).TokenSource()
-		if err != nil {
-			return nil, err
-		}
-		// N.B.: PubSub monitor is NOT using http.RoundTripper (It is gRPC-based)
-		// and thus doesn't report any HTTP client metrics.
-		return monitor.NewPubsubMonitor(
-			c, tokens, gcps.NewTopic(endpointURL.Host, strings.TrimPrefix(endpointURL.Path, "/")))
 	case "http", "https":
 		client, err := newAuthenticator(c, config.Credentials, config.ActAs, monitor.ProdxmonScopes).Client()
 		if err != nil {
@@ -226,7 +216,7 @@ func initMonitor(c context.Context, config config) (monitor.Monitor, error) {
 	}
 }
 
-// newAuthenticator returns a new authenticator for PubSub and HTTP requests.
+// newAuthenticator returns a new authenticator for HTTP requests.
 func newAuthenticator(ctx context.Context, credentials, actAs string, scopes []string) *auth.Authenticator {
 	// TODO(vadimsh): Don't hardcode auth options here, pass them from outside
 	// somehow.

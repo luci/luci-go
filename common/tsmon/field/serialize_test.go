@@ -9,7 +9,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto_v2"
+	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

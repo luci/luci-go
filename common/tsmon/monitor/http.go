@@ -17,7 +17,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/lhttp"
 	"github.com/luci/luci-go/common/logging"
-	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto_v2"
+	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
 	"github.com/luci/luci-go/common/tsmon/types"
 )
 

@@ -3,10 +3,9 @@
 // found in the LICENSE file.
 syntax = "proto2";
 
-package ts_mon.proto.v2;
+package ts_mon.proto;
 
-import "github.com/luci/luci-go/common/tsmon/ts_mon_proto_v2/metrics.proto";
-
-message Request {
-  optional MetricsPayload payload = 1;
+message Timestamp {
+  optional int64 seconds = 1;
+  optional int32 nanos = 2;
 }
