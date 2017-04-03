@@ -27,9 +27,10 @@ type State struct {
 	RegisteredMetrics     map[string]types.Metric
 	RegisteredMetricsLock sync.RWMutex
 
-	CallbacksMutex  sync.RWMutex
-	Callbacks       []Callback
-	GlobalCallbacks []GlobalCallback
+	CallbacksMutex               sync.RWMutex
+	Callbacks                    []Callback
+	GlobalCallbacks              []GlobalCallback
+	InvokeGlobalCallbacksOnFlush bool
 }
 
 // SetStore changes the metric store.  All metrics that were registered with
@@ -83,10 +84,10 @@ func (state *State) RunGlobalCallbacks(c context.Context) {
 	}
 }
 
-// ResetGlobalCallbackMetrics resets metrics produced by global callbacks.
+// resetGlobalCallbackMetrics resets metrics produced by global callbacks.
 //
 // See RegisterGlobalCallback for more info.
-func (state *State) ResetGlobalCallbackMetrics(c context.Context) {
+func (state *State) resetGlobalCallbackMetrics(c context.Context) {
 	state.CallbacksMutex.RLock()
 	defer state.CallbacksMutex.RUnlock()
 
@@ -118,6 +119,9 @@ func (state *State) Flush(c context.Context, mon monitor.Monitor) error {
 	// Run any callbacks that have been registered to populate values in callback
 	// metrics.
 	state.runCallbacks(c)
+	if state.InvokeGlobalCallbacksOnFlush {
+		state.RunGlobalCallbacks(c)
+	}
 
 	cells := state.S.GetAll(c)
 	if len(cells) == 0 {
@@ -145,6 +149,7 @@ func (state *State) Flush(c context.Context, mon monitor.Monitor) error {
 		cells = cells[count:]
 		sent += count
 	}
+	state.resetGlobalCallbackMetrics(c)
 	return lastErr
 }
 
@@ -179,9 +184,10 @@ func WithFakes(c context.Context) (context.Context, *store.Fake, *monitor.Fake) 
 	s := &store.Fake{}
 	m := &monitor.Fake{}
 	return WithState(c, &State{
-		S:                 s,
-		M:                 m,
-		RegisteredMetrics: map[string]types.Metric{},
+		S:                            s,
+		M:                            m,
+		RegisteredMetrics:            map[string]types.Metric{},
+		InvokeGlobalCallbacksOnFlush: true,
 	}), s, m
 }
 
@@ -190,9 +196,10 @@ func WithFakes(c context.Context) (context.Context, *store.Fake, *monitor.Fake) 
 func WithDummyInMemory(c context.Context) (context.Context, *monitor.Fake) {
 	m := &monitor.Fake{}
 	return WithState(c, &State{
-		S:                 store.NewInMemory(&target.Task{}),
-		M:                 m,
-		RegisteredMetrics: map[string]types.Metric{},
+		S:                            store.NewInMemory(&target.Task{}),
+		M:                            m,
+		RegisteredMetrics:            map[string]types.Metric{},
+		InvokeGlobalCallbacksOnFlush: true,
 	}), m
 }
 
@@ -207,8 +214,9 @@ var (
 // Monitor.
 func NewState() *State {
 	return &State{
-		S:                 store.NewNilStore(),
-		M:                 monitor.NewNilMonitor(),
-		RegisteredMetrics: map[string]types.Metric{},
+		S:                            store.NewNilStore(),
+		M:                            monitor.NewNilMonitor(),
+		RegisteredMetrics:            map[string]types.Metric{},
+		InvokeGlobalCallbacksOnFlush: true,
 	}
 }

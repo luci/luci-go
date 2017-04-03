@@ -144,6 +144,7 @@ func (s *State) checkSettings(c context.Context) (*tsmon.State, *tsmonSettings) 
 	if s.state == nil {
 		s.state = state
 		s.state.M = monitor.NewNilMonitor() // doFlush uses its own monitor
+		s.state.InvokeGlobalCallbacksOnFlush = false
 	} else if state != s.state {
 		panic("tsmon state in the context was unexpectedly changed between requests")
 	}
@@ -341,6 +342,5 @@ func (s *State) doFlush(c context.Context, state *tsmon.State, settings *tsmonSe
 		return err
 	}
 
-	state.ResetGlobalCallbackMetrics(c)
 	return nil
 }
