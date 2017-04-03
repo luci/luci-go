@@ -39,9 +39,8 @@ func FixedWidthBucketer(width float64, numFiniteBuckets int) *Bucketer {
 }
 
 // GeometricBucketer returns a Bucketer that uses numFiniteBuckets+2 buckets:
-//   bucket[0] covers (−Inf, 0)
-//   bucket[1] covers [0, growthFactor)
-//   bucket[i] covers [growthFactor^(i−2), growthFactor^(i−1)) for i > 1 and i <= numFiniteBuckets
+//   bucket[0] covers (−Inf, 1)
+//   bucket[i] covers [growthFactor^(i−1), growthFactor^i) for i > 0 and i <= numFiniteBuckets
 //   bucket[numFiniteBuckets+1] covers [growthFactor^(numFiniteBuckets−1), +Inf)
 //
 // growthFactor must be positive, and the number of finite buckets must be
@@ -84,22 +83,33 @@ func (b *Bucketer) init() {
 		panic(fmt.Sprintf("numFiniteBuckets must be positive (was %d)", b.numFiniteBuckets))
 	}
 
-	b.lowerBounds = make([]float64, 2, b.NumBuckets())
+	b.lowerBounds = make([]float64, b.NumBuckets())
 	b.lowerBounds[0] = math.Inf(-1)
-	b.lowerBounds[1] = 0
 
+	if b.width != 0 {
+		b.fillLinearBounds()
+	} else {
+		b.fillExponentialBounds()
+	}
+
+	// Sanity check that the bucket boundaries are monotonically increasing.
 	var previous float64
-	for i := 0; i < b.numFiniteBuckets; i++ {
-		lowerBound := b.width * float64(i+1)
-		if b.growthFactor != 0 {
-			lowerBound += math.Pow(b.growthFactor, float64(i))
-		}
-
-		if lowerBound <= previous {
+	for i, bound := range b.lowerBounds {
+		if i != 0 && bound <= previous {
 			panic("bucket boundaries must be monotonically increasing")
 		}
+		previous = bound
+	}
+}
 
-		b.lowerBounds = append(b.lowerBounds, lowerBound)
-		previous = lowerBound
+func (b *Bucketer) fillLinearBounds() {
+	for i := 1; i < b.NumBuckets(); i++ {
+		b.lowerBounds[i] = b.width * float64(i-1)
+	}
+}
+
+func (b *Bucketer) fillExponentialBounds() {
+	for i := 1; i < b.NumBuckets(); i++ {
+		b.lowerBounds[i] = math.Pow(b.growthFactor, float64(i-1))
 	}
 }

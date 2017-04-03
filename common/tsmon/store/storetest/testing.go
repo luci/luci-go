@@ -112,7 +112,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			wantIncrSuccess: true,
 			wantIncrValidator: func(v interface{}) {
 				d := v.(*distribution.Distribution)
-				So(d.Buckets(), ShouldResemble, []int64{0, 0, 0, 0, 1, 1})
+				So(d.Buckets(), ShouldResemble, []int64{0, 0, 0, 1, 1})
 			},
 			wantStartTimestamp: true,
 		},
