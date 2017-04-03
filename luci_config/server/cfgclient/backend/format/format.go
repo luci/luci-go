@@ -49,7 +49,8 @@ func (b *Backend) Get(c context.Context, configSet, path string, p backend.Param
 
 		if err := b.formatItem(item, formatter, p.FormatSpec); err != nil {
 			return nil, errors.Annotate(err).Reason("failed to format item to %(format)q, data %(data)q").
-				D("format", p.FormatSpec).Err()
+				D("format", p.FormatSpec.Formatter).
+				D("data", p.FormatSpec.Data).Err()
 		}
 	}
 	return item, nil
@@ -68,7 +69,8 @@ func (b *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string,
 		formatter, err := b.getFormatter(c, p.FormatSpec.Formatter)
 		if err != nil {
 			return nil, errors.Annotate(err).Reason("failed to get formatter for %(format)q, data %(data)q").
-				D("format", p.FormatSpec).Err()
+				D("format", p.FormatSpec.Formatter).
+				D("data", p.FormatSpec.Data).Err()
 		}
 
 		lme := errors.NewLazyMultiError(len(items))
@@ -80,7 +82,8 @@ func (b *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string,
 
 		if err := lme.Get(); err != nil {
 			return nil, errors.Annotate(err).Reason("failed to format items to %(format)q, data %(data)q").
-				D("format", p.FormatSpec).Err()
+				D("format", p.FormatSpec.Formatter).
+				D("data", p.FormatSpec.Data).Err()
 		}
 	}
 	return items, nil
