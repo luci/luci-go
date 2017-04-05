@@ -14,17 +14,12 @@ import (
 // Glob is glob like pattern that matches identity strings of some kind.
 //
 // It is a string of the form "kind:<pattern>" where 'kind' is one of Kind
-// constants and 'pattern' is Unix-style wildcard pattern to apply to identity
-// name.
+// constants and 'pattern' is a wildcard pattern to apply to identity name.
 //
-// Supported syntax:
-//  - '*' matches everything
-//  - '?' matches any single character
-//  - [seq] matches any character in seq
-//  - [!seq] matches any character not in seq
+// The only supported glob syntax is '*', which matches zero or more characters.
 //
-// For a literal match, wrap the meta-characters in brackets. For example,
-// '[?]' matches the character '?'.
+// Case sensitive. Doesn't support multi-line strings or patterns. There's no
+// way to match '*' itself.
 type Glob string
 
 // MakeGlob ensures 'glob' string looks like a valid identity glob and
@@ -95,6 +90,9 @@ func (g Glob) Match(id Identity) bool {
 	if idKind != globKind {
 		return false
 	}
+	if strings.ContainsRune(name, '\n') {
+		return false
+	}
 
 	re, err := cache.translate(pattern)
 	if err != nil {
@@ -112,7 +110,7 @@ var cache patternCache
 // than 500 active patterns in the process. That's how python runtime does it
 // too.
 type patternCache struct {
-	sync.Mutex
+	sync.RWMutex
 	cache map[string]cacheEntry
 }
 
@@ -123,59 +121,45 @@ type cacheEntry struct {
 
 // translate grabs converted regexp from cache or calls 'translate' to get it.
 func (c *patternCache) translate(pat string) (*regexp.Regexp, error) {
+	c.RLock()
+	val, ok := c.cache[pat]
+	c.RUnlock()
+	if ok {
+		return val.re, val.err
+	}
+
 	c.Lock()
 	defer c.Unlock()
 	if val, ok := c.cache[pat]; ok {
 		return val.re, val.err
 	}
+
 	if c.cache == nil || len(c.cache) > 500 {
 		c.cache = map[string]cacheEntry{}
 	}
-	re, err := regexp.Compile(translate(pat))
+
+	var re *regexp.Regexp
+	reStr, err := translate(pat)
+	if err == nil {
+		re, err = regexp.Compile(reStr)
+	}
+
 	c.cache[pat] = cacheEntry{re, err}
 	return re, err
 }
 
-// translate converts glob pattern to a regular expression string. It is line
-// by line port of python fnmatch.translate, since that's what is used on
-// auth_service. Uglyness is inherited from the python code.
-func translate(pat string) string {
-	res := ""
-	for i, n := 0, len(pat); i < n; {
-		c := pat[i]
-		i++
-		switch c {
+// translate converts glob pattern to a regular expression string.
+func translate(pat string) (string, error) {
+	res := "^"
+	for _, runeVal := range pat {
+		switch runeVal {
+		case '\n':
+			return "", fmt.Errorf("new lines are not supported in globs")
 		case '*':
 			res += ".*"
-		case '?':
-			res += "."
-		case '[':
-			j := i
-			if j < n && pat[j] == '!' {
-				j++
-			}
-			if j < n && pat[j] == ']' {
-				j++
-			}
-			for j < n && pat[j] != ']' {
-				j++
-			}
-			if j >= n {
-				res += "\\["
-			} else {
-				stuff := strings.Replace(pat[i:j], "\\", "\\\\", -1)
-				i = j + 1
-				switch stuff[0] {
-				case '!':
-					stuff = "^" + stuff[1:]
-				case '^':
-					stuff = "\\" + stuff
-				}
-				res += "[" + stuff + "]"
-			}
 		default:
-			res += regexp.QuoteMeta(string(c))
+			res += regexp.QuoteMeta(string(runeVal))
 		}
 	}
-	return res + "\\z(?ms)"
+	return res + "$", nil
 }

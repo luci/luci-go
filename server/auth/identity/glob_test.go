@@ -27,6 +27,7 @@ func TestGlob(t *testing.T) {
 		So(Glob("user:").Validate(), ShouldNotBeNil)
 		So(Glob(":abc").Validate(), ShouldNotBeNil)
 		So(Glob("abc@example.com").Validate(), ShouldNotBeNil)
+		So(Glob("user:\n").Validate(), ShouldNotBeNil)
 	})
 
 	Convey("Kind works", t, func() {
@@ -48,6 +49,12 @@ func TestGlob(t *testing.T) {
 			{"user:abc@example.com", "user:abc@example.com", true},
 			{"user:*@example.com", "user:abc@example.com", true},
 			{"user:*", "user:abc@example.com", true},
+			{"user:prefix-*", "user:prefix-zzz", true},
+			{"user:prefix-*", "user:another-prefix-zzz", false},
+			{"user:prefix-*-suffix", "user:prefix-zzz-suffix", true},
+			{"user:prefix-*-suffix", "user:prefix-zzz-suffizzz", false},
+			{"user:*", "user:\n", false},
+			{"user:\n", "user:zzz", false},
 			{"bad glob", "user:abc@example.com", false},
 			{"user:*", "bad ident", false},
 			{"user:*", "service:abc", false},
@@ -62,19 +69,21 @@ func TestGlob(t *testing.T) {
 			pat string
 			reg string
 		}{
-			{"", `\z(?ms)`},
-			{"*", `.*\z(?ms)`},
-			{"abc?def", `abc.def\z(?ms)`},
-			{"abc(def", `abc\(def\z(?ms)`},
-			{"[", `\[\z(?ms)`},
-			{"[]", `\[\]\z(?ms)`},
-			{"[abc]", `[abc]\z(?ms)`},
-			{"[ab\\c]", `[ab\\c]\z(?ms)`},
-			{"[!abc]", `[^abc]\z(?ms)`},
-			{"[^abc]", `[\^abc]\z(?ms)`},
+			{"", `^$`},
+			{"*", `^.*$`},
+			{"abc", `^abc$`},
+			{".?", `^\.\?$`},
+			{"perfix-*@suffix", `^perfix-.*@suffix$`},
 		}
 		for _, entry := range trials {
-			So(translate(entry.pat), ShouldEqual, entry.reg)
+			re, err := translate(entry.pat)
+			So(err, ShouldBeNil)
+			So(re, ShouldEqual, entry.reg)
 		}
+	})
+
+	Convey("translate reject newline", t, func() {
+		_, err := translate("blah\nblah")
+		So(err, ShouldNotBeNil)
 	})
 }
