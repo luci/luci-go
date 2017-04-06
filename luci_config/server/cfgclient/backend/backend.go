@@ -7,6 +7,8 @@ package backend
 import (
 	"net/url"
 
+	"github.com/luci/luci-go/common/config"
+
 	"golang.org/x/net/context"
 )
 
@@ -63,6 +65,9 @@ type B interface {
 
 	// ConfigSetURL returns the URL for the specified config set.
 	ConfigSetURL(c context.Context, configSet string, p Params) (url.URL, error)
+
+	// GetConfigInterface returns the raw configuration interface of the backend.
+	GetConfigInterface(c context.Context, a Authority) config.Interface
 }
 
 // Factory is a function that generates a B given a Context.

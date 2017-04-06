@@ -33,5 +33,18 @@
   {{ else }}
     <h3> No projects defined </h3>
   {{ end }}
+
+  <h1>Service Configs</h1>
+  <h2>These are settings tied to this instance of Milo</h2>
+  {{ if not .ServiceConfig }}
+    <h3>No Settings found...</h3>
+  {{ else }}
+    <ul>
+      <li> Revision: {{ .ServiceConfig.Revision }} </li>
+      <li> Last Updated: {{ .ServiceConfig.LastUpdated | localTime "N/A" }} </li>
+    </ul>
+    Content:
+    <pre>{{ .ServiceConfig.Text }}</pre>
+  {{ end }}
 </div>
 {{end}}

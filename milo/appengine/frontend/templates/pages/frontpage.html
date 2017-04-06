@@ -5,6 +5,10 @@
 {{define "body"}}
 <h1>Milo</h1>
 
+{{ if .error }}
+Encountered error while loading front page: {{ .error }}
+{{ end }}
+
 {{ range .frontpage.CIServices }}
   <h2> {{ .Name }}
     {{ if .Host }} ({{ .Host | linkify }}) {{ end }}

@@ -19,30 +19,21 @@ import (
 	"github.com/luci/luci-go/server/templates"
 )
 
-const (
-	defaultSwarmingServer    = "chromium-swarm.appspot.com"
-	defaultSwarmingDevServer = "chromium-swarm-dev.appspot.com"
-)
-
 var errUnrecognizedHost = errors.New("Unregistered Swarming Host")
 
 // getSwarmingHost parses the swarming hostname out of the context.  If
 // none is specified, get the default swarming host out of the global
 // configs.
 func getSwarmingHost(c context.Context, r *http.Request) (string, error) {
-	settings, err := common.GetSettings(c)
-	if err != nil {
-		logging.WithError(err).Errorf(c, "could not get settings")
-		return "", err
-	}
+	settings := common.GetSettings(c)
 	if settings.Swarming == nil {
-		err = errors.New("swarming not in settings")
+		err := errors.New("swarming not in settings")
 		logging.Errorf(c, err.Error())
 		return "", err
 	}
 	server := r.FormValue("server")
 	// If server isn't specified, return the default host.
-	if server == "" {
+	if server == "" || server == settings.Swarming.DefaultHost {
 		return settings.Swarming.DefaultHost, nil
 	}
 	// If it is specified, validate the hostname.

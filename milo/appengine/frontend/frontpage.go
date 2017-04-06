@@ -5,8 +5,6 @@
 package frontend
 
 import (
-	"net/http"
-
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
 
@@ -31,15 +29,12 @@ func frontpageHandler(c *router.Context) {
 			return err
 		}
 	})
-	if err != nil {
-		common.ErrorPage(c, http.StatusInternalServerError, err.Error())
-		return
-	}
 
 	fp.CIServices = append(fp.CIServices, *mBuildbucket)
 	fp.CIServices = append(fp.CIServices, *mBuildbot)
 	templates.MustRender(c.Context, c.Writer, "pages/frontpage.html", templates.Args{
 		"frontpage": fp,
+		"error":     err.Error(),
 	})
 }
 
@@ -67,6 +62,7 @@ func frontpageTestData() []common.TestBundle {
 				},
 			},
 		},
+		"error": "couldn't find ice cream",
 	}
 	return []common.TestBundle{
 		{

@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
 
@@ -52,6 +53,10 @@ func (tb *testingBackend) GetAll(c context.Context, t backend.GetAllTarget, path
 func (tb *testingBackend) ConfigSetURL(c context.Context, configSet string, p backend.Params) (url.URL, error) {
 	tb.lastParams = p
 	return tb.url, tb.err
+}
+
+func (tb *testingBackend) GetConfigInterface(c context.Context, a backend.Authority) config.Interface {
+	panic("not supported")
 }
 
 func (tb *testingBackend) cloneItems() []*backend.Item {

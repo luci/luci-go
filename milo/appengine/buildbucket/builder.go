@@ -229,13 +229,9 @@ type builderQuery struct {
 // builderImpl is the implementation for getting a milo builder page from buildbucket.
 // if maxCompletedBuilds < 0, 25 is used.
 func builderImpl(c context.Context, q builderQuery) (*resp.Builder, error) {
-	settings, err := common.GetSettings(c)
-	if err != nil {
-		logging.WithError(err).Errorf(c, "failed to get settings")
-		return nil, err
-	}
+	settings := common.GetSettings(c)
 	if settings.Buildbucket == nil || settings.Buildbucket.Host == "" {
-		logging.WithError(err).Errorf(c, "missing buildbucket settings")
+		logging.Errorf(c, "missing buildbucket settings")
 		return nil, errors.New("missing buildbucket settings")
 	}
 	host := settings.Buildbucket.Host

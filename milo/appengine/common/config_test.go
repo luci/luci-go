@@ -5,6 +5,7 @@
 package common
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -28,8 +29,9 @@ func TestConfig(t *testing.T) {
 		Convey("Tests about global configs", func() {
 			Convey("Read a config before anything is set", func() {
 				c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
-				settings, err := GetSettings(c)
-				So(err, ShouldBeNil)
+				err := UpdateServiceConfig(c)
+				So(err, ShouldResemble, errors.New("could not load settings.cfg from luci-config: no such config"))
+				settings := GetSettings(c)
 				So(settings.Buildbot.InternalReader, ShouldEqual, "")
 			})
 			Convey("Read a config", func() {
@@ -37,16 +39,19 @@ func TestConfig(t *testing.T) {
 					"settings.cfg": settingsCfg,
 				}
 				c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
-				settings, err := GetSettings(c)
+				err := UpdateServiceConfig(c)
 				So(err, ShouldBeNil)
+				settings := GetSettings(c)
 				So(settings.Buildbot.InternalReader, ShouldEqual, "googlers")
 			})
 		})
 
 		Convey("Send update", func() {
 			c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
+			err := UpdateServiceConfig(c)
+			So(err, ShouldBeNil)
 			// Send update here
-			err := UpdateProjectConfigs(c)
+			err = UpdateProjectConfigs(c)
 			So(err, ShouldBeNil)
 
 			Convey("Check Project config updated", func() {
@@ -67,9 +72,11 @@ func TestConfig(t *testing.T) {
 
 		Convey("Reject duplicate configs.", func() {
 			c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
+			err := UpdateServiceConfig(c)
+			So(err, ShouldBeNil)
 			mockedConfigs["projects/bar.git"] = memcfg.ConfigSet{"luci-milo.cfg": barCfg}
 
-			err := UpdateProjectConfigs(c)
+			err = UpdateProjectConfigs(c)
 			So(strings.HasPrefix(err.Error(), "Duplicate project ID"), ShouldEqual, true)
 		})
 	})

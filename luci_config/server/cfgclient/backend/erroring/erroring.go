@@ -9,8 +9,11 @@
 package erroring
 
 import (
+	"errors"
 	"net/url"
 
+	"github.com/luci/luci-go/common/config"
+	"github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
 
 	"golang.org/x/net/context"
@@ -48,4 +51,11 @@ func (e erroringImpl) GetAll(c context.Context, t backend.GetAllTarget, path str
 
 func (e erroringImpl) ConfigSetURL(c context.Context, configSet string, p backend.Params) (url.URL, error) {
 	return url.URL{}, e.err
+}
+
+func (e erroringImpl) GetConfigInterface(c context.Context, a backend.Authority) config.Interface {
+	emptySet := map[string]memory.ConfigSet{}
+	i := memory.New(emptySet)
+	memory.SetError(i, errors.New("error"))
+	return i
 }

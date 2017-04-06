@@ -91,6 +91,9 @@ func TestPubSub(t *testing.T) {
 			Identity:       identity.AnonymousIdentity,
 			IdentityGroups: []string{"all"},
 		})
+		// Update the service config so that the settings are loaded.
+		err := common.UpdateServiceConfig(c)
+		So(err, ShouldBeNil)
 
 		rand.Seed(5)
 

@@ -7,6 +7,8 @@ package frontend
 import (
 	"net/http"
 
+	"cloud.google.com/go/datastore"
+
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/appengine/common"
 	"github.com/luci/luci-go/server/router"
@@ -22,22 +24,34 @@ func ConfigsHandler(c *router.Context) {
 			"Error while getting projects: "+err.Error())
 		return
 	}
+	sc, err := common.GetCurrentServiceConfig(c.Context)
+	if err != nil && err != datastore.ErrNoSuchEntity {
+		common.ErrorPage(
+			c, http.StatusInternalServerError,
+			"Error while getting service config: "+err.Error())
+		return
+	}
 
-	templates.MustRender(c.Context, c.Writer, "pages/config.html", templates.Args{
-		"Projects": projects,
+	templates.MustRender(c.Context, c.Writer, "pages/configs.html", templates.Args{
+		"Projects":      projects,
+		"ServiceConfig": sc,
 	})
 }
 
 // UpdateHandler is an HTTP handler that handles configuration update requests.
-// TODO(hinoka): Migrate to cfgclient and remove this.
 func UpdateConfigHandler(ctx *router.Context) {
 	c, h := ctx.Context, ctx.Writer
-	err := common.UpdateProjectConfigs(c)
-	if err != nil {
-		logging.WithError(err).Errorf(c, "Update Handler encountered error")
-		h.WriteHeader(500)
+	projErr := common.UpdateProjectConfigs(c)
+	if projErr != nil {
+		logging.WithError(projErr).Errorf(c, "project update handler encountered error")
+	}
+	servErr := common.UpdateServiceConfig(c)
+	if servErr != nil {
+		logging.WithError(servErr).Errorf(c, "service update handler encountered error")
+	}
+	if projErr != nil || servErr != nil {
+		h.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	logging.Infof(c, "Successfully completed")
-	h.WriteHeader(200)
+	h.WriteHeader(http.StatusOK)
 }

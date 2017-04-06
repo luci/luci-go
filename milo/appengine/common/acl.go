@@ -35,9 +35,9 @@ func IsAllowed(c context.Context, project string) (bool, error) {
 // IsAllowedInternal is a shorthand for checking to see if the user is a reader
 // of a magic project named "chrome".
 func IsAllowedInternal(c context.Context) (bool, error) {
-	settings, err := GetSettings(c)
-	if err != nil {
-		return false, err
+	settings := GetSettings(c)
+	if settings.Buildbot.InternalReader == "" {
+		return false, nil
 	}
 	return auth.IsMember(c, settings.Buildbot.InternalReader)
 }

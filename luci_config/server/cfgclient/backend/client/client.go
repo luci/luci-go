@@ -43,7 +43,7 @@ func (be *Backend) ServiceURL(c context.Context) url.URL { return be.Provider.Ge
 
 // ConfigSetURL implements backend.B.
 func (be *Backend) ConfigSetURL(c context.Context, configSet string, p backend.Params) (url.URL, error) {
-	u, err := be.getIface(c, p.Authority).GetConfigSetLocation(c, configSet)
+	u, err := be.GetConfigInterface(c, p.Authority).GetConfigSetLocation(c, configSet)
 	if err != nil || u == nil {
 		return url.URL{}, err
 	}
@@ -52,7 +52,7 @@ func (be *Backend) ConfigSetURL(c context.Context, configSet string, p backend.P
 
 // Get implements backend.B.
 func (be *Backend) Get(c context.Context, configSet, path string, p backend.Params) (*backend.Item, error) {
-	svc := be.getIface(c, p.Authority)
+	svc := be.GetConfigInterface(c, p.Authority)
 
 	cfg, err := svc.GetConfig(c, configSet, path, !p.Content)
 	if err != nil {
@@ -66,7 +66,7 @@ func (be *Backend) Get(c context.Context, configSet, path string, p backend.Para
 func (be *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string, p backend.Params) (
 	[]*backend.Item, error) {
 
-	svc := be.getIface(c, p.Authority)
+	svc := be.GetConfigInterface(c, p.Authority)
 
 	var fn func(context.Context, string, bool) ([]config.Config, error)
 	switch t {
@@ -90,7 +90,7 @@ func (be *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string
 	return items, nil
 }
 
-func (be *Backend) getIface(c context.Context, a backend.Authority) config.Interface {
+func (be *Backend) GetConfigInterface(c context.Context, a backend.Authority) config.Interface {
 	return be.Provider.GetConfigClient(c, a)
 }
 

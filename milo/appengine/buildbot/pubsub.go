@@ -304,14 +304,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 	}
 	internal := true
 	// Get the name of the subscription on luci-config
-	settings, err := common.GetSettings(c)
-	if err != nil {
-		logging.WithError(err).Errorf(c,
-			"Cannot load settings to check subscription name.")
-		// This is a configuration error. Tell PubSub to retry until we fix our
-		// configs.
-		return http.StatusInternalServerError
-	}
+	settings := common.GetSettings(c)
 	switch msg.Subscription {
 	case settings.Buildbot.PublicSubscription:
 		internal = false

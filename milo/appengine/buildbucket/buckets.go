@@ -10,17 +10,12 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/common"
 )
 
 func GetAllBuilders(c context.Context) (*resp.CIService, error) {
-	settings, err := common.GetSettings(c)
-	if err != nil {
-		logging.WithError(err).Errorf(c, "could not get settings for buildbucket")
-		return nil, err
-	}
+	settings := common.GetSettings(c)
 	bucketSettings := settings.Buildbucket
 	if bucketSettings == nil {
 		return nil, errors.New("buildbucket settings missing in config")
