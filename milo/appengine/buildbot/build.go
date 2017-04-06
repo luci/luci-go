@@ -607,7 +607,7 @@ func promoteLogDogLinks(s *buildbotStep, isInitialStep bool, linkMap map[string]
 
 			// Any link named "logdog" (Annotee cosmetic implementation detail) will
 			// inherit the name of the original log.
-			if !isLog {
+			if isLog {
 				if aliasStepLog.label == "logdog" {
 					aliasStepLog.label = sl.label
 				}
