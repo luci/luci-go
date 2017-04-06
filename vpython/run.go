@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"strings"
 
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
@@ -68,6 +69,9 @@ func Run(c context.Context, opts Options) error {
 		if ve.SpecPath != "" {
 			e.Set(EnvSpecPath, ve.SpecPath)
 		}
+
+		// Prefix PATH with the VirtualEnv "bin" directory.
+		prefixPATH(e, ve.BinDir)
 
 		// Run our bootstrapped Python command.
 		cmd := ve.InterpreterCommand()
@@ -135,4 +139,21 @@ func runAndForwardSignals(c context.Context, cmd *exec.Cmd, cancelFunc context.C
 		return errors.Annotate(err).Err()
 	}
 	return nil
+}
+
+func prefixPATH(env environ.Env, components ...string) {
+	if len(components) == 0 {
+		return
+	}
+
+	// Clone "components" so we don't mutate our caller's array.
+	components = append([]string(nil), components...)
+
+	// If there is a current PATH (likely), add that to the end.
+	cur, _ := env.Get("PATH")
+	if len(cur) > 0 {
+		components = append(components, cur)
+	}
+
+	env.Set("PATH", strings.Join(components, string(os.PathListSeparator)))
 }

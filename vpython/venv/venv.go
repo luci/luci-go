@@ -145,6 +145,9 @@ type Env struct {
 	// Python is the path to the Env Python interpreter.
 	Python string
 
+	// BinDir is the VirtualEnv "bin" directory, containing Python and installed
+	// wheel binaries.
+	BinDir string
 	// SepcPath is the path to the specification file that was used to construct
 	// this environment. It will be in text protobuf format, and, therefore,
 	// suitable for input to other "vpython" invocations.

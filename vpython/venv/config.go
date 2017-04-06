@@ -200,10 +200,12 @@ func (cfg *Config) Prune(c context.Context) error {
 func (cfg *Config) envForName(name string) *Env {
 	// Env-specific root directory: <BaseDir>/<name>
 	venvRoot := filepath.Join(cfg.BaseDir, name)
+	binDir := venvBinDir(venvRoot)
 	return &Env{
 		Config:   cfg,
 		Root:     venvRoot,
-		Python:   venvBinPath(venvRoot, "python"),
+		Python:   filepath.Join(binDir, "python"),
+		BinDir:   binDir,
 		SpecPath: filepath.Join(venvRoot, "enviornment.pb.txt"),
 
 		name:             name,

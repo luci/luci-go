@@ -18,9 +18,9 @@ import (
 // Since Windows doesn't generate scripts, this is disabled.
 func longestGeneratedScriptPath(basedir string) string { return "" }
 
-// venvBinPath resolves the path to a VirtualEnv binary.
-func venvBinPath(root, name string) string {
-	return filepath.Join(root, "Scripts", name)
+// venvBinDir resolves the path where VirtualEnv binaries are installed.
+func venvBinDir(root string) string {
+	return filepath.Join(root, "Scripts")
 }
 
 func checkProcessRunning(pid int) error {

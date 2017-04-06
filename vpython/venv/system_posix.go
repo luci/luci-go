@@ -17,12 +17,12 @@ import (
 // longestGeneratedScriptPath returns the path of the longest generated script
 // given a VirtualEnv root.
 func longestGeneratedScriptPath(baseDir string) string {
-	return venvBinPath(baseDir, "python-config")
+	return filepath.Join(venvBinDir(baseDir), "python-config")
 }
 
-// venvBinPath resolves the path to a VirtualEnv binary.
-func venvBinPath(root, name string) string {
-	return filepath.Join(root, "bin", name)
+// venvBinDir resolves the path where VirtualEnv binaries are installed.
+func venvBinDir(root string) string {
+	return filepath.Join(root, "bin")
 }
 
 func checkProcessRunning(pid int) error {
