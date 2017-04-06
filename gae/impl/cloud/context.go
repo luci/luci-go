@@ -51,10 +51,7 @@ func (cfg Config) Use(c context.Context) context.Context {
 
 	// datastore service
 	if cfg.DS != nil {
-		cds := cloudDatastore{
-			client: cfg.DS,
-		}
-		c = cds.use(c)
+		c = UseDatastore(c, cfg.DS)
 	} else {
 		c = ds.SetRaw(c, dummy.Datastore())
 	}
@@ -70,4 +67,12 @@ func (cfg Config) Use(c context.Context) context.Context {
 	}
 
 	return c
+}
+
+// UseDatastore installs a datastore implementation into the context.
+func UseDatastore(c context.Context, client *datastore.Client) context.Context {
+	cds := cloudDatastore{
+		client: client,
+	}
+	return cds.use(c)
 }
