@@ -32,9 +32,13 @@ func frontpageHandler(c *router.Context) {
 
 	fp.CIServices = append(fp.CIServices, *mBuildbucket)
 	fp.CIServices = append(fp.CIServices, *mBuildbot)
+	errMsg := ""
+	if err != nil {
+		errMsg = err.Error()
+	}
 	templates.MustRender(c.Context, c.Writer, "pages/frontpage.html", templates.Args{
 		"frontpage": fp,
-		"error":     err.Error(),
+		"error":     errMsg,
 	})
 }
 
