@@ -26,3 +26,16 @@ type Lifespan struct {
 	NotBefore time.Time
 	NotAfter  time.Time
 }
+
+// prependSigningContext prepends '<ctx>\x00' to the blob, if ctx != "".
+//
+// See SigningContext in Signer for more info.
+func prependSigningContext(blob []byte, ctx string) []byte {
+	if ctx == "" {
+		return blob
+	}
+	b := make([]byte, len(blob)+len(ctx)+1)
+	copy(b, ctx)
+	copy(b[len(ctx)+1:], blob)
+	return b
+}

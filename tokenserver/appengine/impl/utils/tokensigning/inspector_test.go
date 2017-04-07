@@ -30,27 +30,7 @@ func TestInspectToken(t *testing.T) {
 	signer := signingtest.NewSigner(0, &signing.ServiceInfo{
 		ServiceAccountName: "service@example.com",
 	})
-
-	inspector := Inspector{
-		Certificates: signer,
-		Envelope:     func() proto.Message { return &messages.DelegationToken{} },
-		Body:         func() proto.Message { return &messages.Subtoken{} },
-		Unwrap: func(e proto.Message) Unwrapped {
-			env := e.(*messages.DelegationToken)
-			return Unwrapped{
-				Body:         env.SerializedSubtoken,
-				RsaSHA256Sig: env.Pkcs1Sha256Sig,
-				KeyID:        env.SigningKeyId,
-			}
-		},
-		Lifespan: func(b proto.Message) Lifespan {
-			body := b.(*messages.Subtoken)
-			return Lifespan{
-				NotBefore: time.Unix(body.CreationTime, 0),
-				NotAfter:  time.Unix(body.CreationTime+int64(body.ValidityDuration), 0),
-			}
-		},
-	}
+	inspector := inspectorForTest(signer, "")
 
 	original := &messages.Subtoken{
 		DelegatedIdentity: "user:delegated@example.com",
@@ -60,7 +40,7 @@ func TestInspectToken(t *testing.T) {
 		Audience:          []string{"*"},
 		Services:          []string{"*"},
 	}
-	good, _ := signForTest(ctx, signer, original)
+	good, _ := signerForTest(signer, "").SignToken(ctx, original)
 
 	Convey("Happy path", t, func() {
 		ins, err := inspector.InspectToken(ctx, good)
@@ -103,6 +83,19 @@ func TestInspectToken(t *testing.T) {
 		So(ins.Body, ShouldResemble, original) // recovered the token body nonetheless
 	})
 
+	Convey("Wrong SigningContext", t, func() {
+		inspectorWithCtx := inspectorForTest(signer, "Some context")
+
+		// Symptoms are same as in "Bad signature".
+		ins, err := inspectorWithCtx.InspectToken(ctx, good)
+		So(err, ShouldBeNil)
+		So(ins.Signed, ShouldBeFalse)
+		So(ins.NonExpired, ShouldBeTrue)
+		So(ins.InvalidityReason, ShouldEqual, "bad signature - crypto/rsa: verification error")
+		So(ins.Envelope, ShouldHaveSameTypeAs, &messages.DelegationToken{})
+		So(ins.Body, ShouldResemble, original) // recovered the token body nonetheless
+	})
+
 	Convey("Expired", t, func() {
 		tc.Add(2 * time.Hour)
 
@@ -114,4 +107,28 @@ func TestInspectToken(t *testing.T) {
 		So(ins.Envelope, ShouldHaveSameTypeAs, &messages.DelegationToken{})
 		So(ins.Body, ShouldResemble, original)
 	})
+}
+
+func inspectorForTest(certs CertificatesSupplier, signingCtx string) *Inspector {
+	return &Inspector{
+		Certificates:   certs,
+		SigningContext: signingCtx,
+		Envelope:       func() proto.Message { return &messages.DelegationToken{} },
+		Body:           func() proto.Message { return &messages.Subtoken{} },
+		Unwrap: func(e proto.Message) Unwrapped {
+			env := e.(*messages.DelegationToken)
+			return Unwrapped{
+				Body:         env.SerializedSubtoken,
+				RsaSHA256Sig: env.Pkcs1Sha256Sig,
+				KeyID:        env.SigningKeyId,
+			}
+		},
+		Lifespan: func(b proto.Message) Lifespan {
+			body := b.(*messages.Subtoken)
+			return Lifespan{
+				NotBefore: time.Unix(body.CreationTime, 0),
+				NotAfter:  time.Unix(body.CreationTime+int64(body.ValidityDuration), 0),
+			}
+		},
+	}
 }

@@ -21,22 +21,21 @@ import (
 func TestSignToken(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+	original := &messages.Subtoken{
+		DelegatedIdentity: "user:delegated@example.com",
+		RequestorIdentity: "user:requestor@example.com",
+		CreationTime:      1477624966,
+		ValidityDuration:  3600,
+		Audience:          []string{"*"},
+		Services:          []string{"*"},
+	}
+	signer := signingtest.NewSigner(0, &signing.ServiceInfo{
+		ServiceAccountName: "service@example.com",
+	})
+
 	Convey("Works", t, func() {
-		ctx := context.Background()
-		signer := signingtest.NewSigner(0, &signing.ServiceInfo{
-			ServiceAccountName: "service@example.com",
-		})
-
-		original := &messages.Subtoken{
-			DelegatedIdentity: "user:delegated@example.com",
-			RequestorIdentity: "user:requestor@example.com",
-			CreationTime:      1477624966,
-			ValidityDuration:  3600,
-			Audience:          []string{"*"},
-			Services:          []string{"*"},
-		}
-
-		tok, err := signForTest(ctx, signer, original)
+		tok, err := signerForTest(signer, "").SignToken(ctx, original)
 		So(err, ShouldBeNil)
 		So(tok, ShouldEqual, `Ehh1c2VyOnNlcnZpY2VAZXhhbXBsZS5jb20aKGY5ZGE1YTBkMDk`+
 			`wM2JkYTU4YzZkNjY0ZTM4NTJhODljMjgzZDdmZTkiQG9oF6Zxi5yxVWdSjR_hKmxFqc51J`+
@@ -55,11 +54,44 @@ func TestSignToken(t *testing.T) {
 			SigningKeyId: "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
 		})
 	})
+
+	Convey("SigningContext works", t, func() {
+		const contextString = "Some context string"
+
+		signer := &capturingSigner{signer, nil}
+		tok, err := signerForTest(signer, contextString).SignToken(ctx, original)
+		So(err, ShouldBeNil)
+		So(tok, ShouldEqual, `Ehh1c2VyOnNlcnZpY2VAZXhhbXBsZS5jb20aKGY5ZGE1YTBkMDk`+
+			`wM2JkYTU4YzZkNjY0ZTM4NTJhODljMjgzZDdmZTkiQJVC-EIxuU--b_kKhL2K84QM8JYsP`+
+			`ojBEpcECIOowaDqA7X2i_1fhIQyIDvIAJtscp6TYVVQUCyXPkY_y9X94EwqRwoadXNlcjp`+
+			`kZWxlZ2F0ZWRAZXhhbXBsZS5jb20QhonLwAUYkBwqASoyASo6GnVzZXI6cmVxdWVzdG9yQ`+
+			`GV4YW1wbGUuY29t`)
+
+		ctxPart := signer.blobs[0][:len(contextString)+1]
+		So(string(ctxPart), ShouldEqual, contextString+"\x00")
+
+		msgPart := signer.blobs[0][len(contextString)+1:]
+		msg := &messages.Subtoken{}
+		So(proto.Unmarshal(msgPart, msg), ShouldBeNil)
+		So(msg, ShouldResemble, original)
+	})
 }
 
-func signForTest(c context.Context, signer signing.Signer, tok *messages.Subtoken) (string, error) {
-	s := Signer{
-		Signer: signer,
+type capturingSigner struct {
+	signing.Signer
+
+	blobs [][]byte
+}
+
+func (s *capturingSigner) SignBytes(c context.Context, blob []byte) (string, []byte, error) {
+	s.blobs = append(s.blobs, blob)
+	return s.Signer.SignBytes(c, blob)
+}
+
+func signerForTest(signer signing.Signer, signingCtx string) *Signer {
+	return &Signer{
+		Signer:         signer,
+		SigningContext: signingCtx,
 		Wrap: func(t *Unwrapped) proto.Message {
 			return &messages.DelegationToken{
 				SignerId:           "user:" + t.SignerID,
@@ -69,7 +101,6 @@ func signForTest(c context.Context, signer signing.Signer, tok *messages.Subtoke
 			}
 		},
 	}
-	return s.SignToken(c, tok)
 }
 
 func deserializeForTest(c context.Context, tok string, signer signing.Signer) (*messages.DelegationToken, *messages.Subtoken, error) {

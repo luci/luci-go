@@ -26,6 +26,15 @@ import (
 	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/tokensigning"
 )
 
+// tokenSigningContext is used to make sure machine token is not misused in
+// place of some other token.
+//
+// See SigningContext in utils/tokensigning.Signer.
+//
+// TODO(vadimsh): Enable it. Requires some temporary hacks to accept old and
+// new tokens at the same time.
+const tokenSigningContext = ""
+
 var maxUint64 = big.NewInt(0).SetUint64(math.MaxUint64)
 
 // MintParams is passed to Mint.
@@ -142,8 +151,9 @@ func Mint(c context.Context, params *MintParams) (*tokenserver.MachineTokenBody,
 // Produces base64-encoded token or a transient error.
 func SignToken(c context.Context, signer signing.Signer, body *tokenserver.MachineTokenBody) (string, error) {
 	s := tokensigning.Signer{
-		Signer:   signer,
-		Encoding: base64.RawStdEncoding,
+		Signer:         signer,
+		SigningContext: tokenSigningContext,
+		Encoding:       base64.RawStdEncoding,
 		Wrap: func(w *tokensigning.Unwrapped) proto.Message {
 			return &tokenserver.MachineTokenEnvelope{
 				TokenBody: w.Body,
@@ -161,10 +171,11 @@ func SignToken(c context.Context, signer signing.Signer, body *tokenserver.Machi
 // Inspection.Body is either nil or *tokenserver.MachineTokenBody.
 func InspectToken(c context.Context, certs tokensigning.CertificatesSupplier, tok string) (*tokensigning.Inspection, error) {
 	i := tokensigning.Inspector{
-		Encoding:     base64.RawStdEncoding,
-		Certificates: certs,
-		Envelope:     func() proto.Message { return &tokenserver.MachineTokenEnvelope{} },
-		Body:         func() proto.Message { return &tokenserver.MachineTokenBody{} },
+		Encoding:       base64.RawStdEncoding,
+		Certificates:   certs,
+		SigningContext: tokenSigningContext,
+		Envelope:       func() proto.Message { return &tokenserver.MachineTokenEnvelope{} },
+		Body:           func() proto.Message { return &tokenserver.MachineTokenBody{} },
 		Unwrap: func(e proto.Message) tokensigning.Unwrapped {
 			env := e.(*tokenserver.MachineTokenEnvelope)
 			return tokensigning.Unwrapped{

@@ -16,6 +16,15 @@ import (
 	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/tokensigning"
 )
 
+// tokenSigningContext is used to make sure delegation token is not misused in
+// place of some other token.
+//
+// See SigningContext in utils/tokensigning.Signer.
+//
+// TODO(vadimsh): Enable it. Requires some temporary hacks to accept old and
+// new tokens at the same time.
+const tokenSigningContext = ""
+
 // SignToken signs and serializes the delegation subtoken.
 //
 // It doesn't do any validation. Assumes the prepared subtoken is valid.
@@ -23,7 +32,8 @@ import (
 // Produces base64 URL-safe token or a transient error.
 func SignToken(c context.Context, signer signing.Signer, subtok *messages.Subtoken) (string, error) {
 	s := tokensigning.Signer{
-		Signer: signer,
+		Signer:         signer,
+		SigningContext: tokenSigningContext,
 		Wrap: func(w *tokensigning.Unwrapped) proto.Message {
 			return &messages.DelegationToken{
 				SerializedSubtoken: w.Body,
@@ -42,9 +52,10 @@ func SignToken(c context.Context, signer signing.Signer, subtok *messages.Subtok
 // Inspection.Body is either nil or *messages.Subtoken.
 func InspectToken(c context.Context, certs tokensigning.CertificatesSupplier, tok string) (*tokensigning.Inspection, error) {
 	i := tokensigning.Inspector{
-		Certificates: certs,
-		Envelope:     func() proto.Message { return &messages.DelegationToken{} },
-		Body:         func() proto.Message { return &messages.Subtoken{} },
+		Certificates:   certs,
+		SigningContext: tokenSigningContext,
+		Envelope:       func() proto.Message { return &messages.DelegationToken{} },
+		Body:           func() proto.Message { return &messages.Subtoken{} },
 		Unwrap: func(e proto.Message) tokensigning.Unwrapped {
 			env := e.(*messages.DelegationToken)
 			return tokensigning.Unwrapped{

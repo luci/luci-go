@@ -19,6 +19,25 @@ type Signer struct {
 	// Signer is the actual signer: it knows how to sign blobs.
 	Signer signing.Signer
 
+	// SigningContext is prepended to the token blob before it is signed.
+	//
+	// It exists to avoid cross-protocol attacks, when same key is used to sign
+	// different kinds of tokens. An attacker may get a token of kind A, and use
+	// it in place of a token of kind B. This may produce unexpected (possibly
+	// bad) results, especially for proto-serialized tokens (that all use small
+	// integers for message tags).
+	//
+	// By using different SigningContext strings per token kind we ensure tokens
+	// are recognized as correctly signed only when they are used in an
+	// appropriate context.
+	//
+	// SigningContext should be some arbitrary constant string that designates the
+	// usage of the token. We actually prepend SigningContext + '\x00' to the
+	// token blob.
+	//
+	// If SigningContext is "", this mechanism is completely skipped.
+	SigningContext string
+
 	// Encoding is base64 encoding to use (or RawURLEncoding if nil).
 	Encoding *base64.Encoding
 
@@ -40,7 +59,8 @@ func (s *Signer) SignToken(c context.Context, body proto.Message) (string, error
 	if err != nil {
 		return "", err
 	}
-	keyID, sig, err := s.Signer.SignBytes(c, blob)
+	withCtx := prependSigningContext(blob, s.SigningContext)
+	keyID, sig, err := s.Signer.SignBytes(c, withCtx)
 	if err != nil {
 		return "", errors.WrapTransient(err)
 	}

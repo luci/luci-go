@@ -34,6 +34,11 @@ type Inspector struct {
 	// Encoding is base64 encoding to used for token (or RawURLEncoding if nil).
 	Encoding *base64.Encoding
 
+	// SigningContext is prepended to the token blob before signature check.
+	//
+	// See SigningContext in Signer struct for more info.
+	SigningContext string
+
 	// Envelope returns an empty message of same type as produced by signer.Wrap.
 	Envelope func() proto.Message
 
@@ -154,7 +159,8 @@ func (i *Inspector) checkSignature(c context.Context, unwrapped *Unwrapped) (str
 	if err != nil {
 		return fmt.Sprintf("invalid signing key - %s", err), nil
 	}
-	err = cert.CheckSignature(x509.SHA256WithRSA, unwrapped.Body, unwrapped.RsaSHA256Sig)
+	withCtx := prependSigningContext(unwrapped.Body, i.SigningContext)
+	err = cert.CheckSignature(x509.SHA256WithRSA, withCtx, unwrapped.RsaSHA256Sig)
 	if err != nil {
 		return fmt.Sprintf("bad signature - %s", err), nil
 	}
