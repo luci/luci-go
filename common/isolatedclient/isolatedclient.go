@@ -51,8 +51,13 @@ type PushState struct {
 	finalized bool
 }
 
-// FetchGCS is a function type of a handler for retrieving specified content from GCS and storing the response in the provided destination buffer.
-type FetchGCS func(context.Context, *Client, isolateservice.HandlersEndpointsV1RetrievedContent, io.WriteSeeker) error
+// CloudStorage is the interface for clients to fetch from and push to GCS storage.
+type CloudStorage interface {
+	// Fetch is a handler for retrieving specified content from GCS and storing the response in the provided destination buffer.
+	Fetch(context.Context, *Client, isolateservice.HandlersEndpointsV1RetrievedContent, io.WriteSeeker) error
+	// Push is a handler for pushing content from provided buffer to GCS.
+	Push(context.Context, *Client, isolateservice.HandlersEndpointsV1PreuploadStatus, Source) error
+}
 
 // Client is a client to an isolated server.
 type Client struct {
@@ -61,9 +66,9 @@ type Client struct {
 	url          string
 	namespace    string
 
-	authClient      *http.Client // client that sends auth tokens
-	anonClient      *http.Client // client that does NOT send auth tokens
-	fetchGCSHandler FetchGCS     // function which fetches url from GCS and stores results in provided destination
+	authClient *http.Client // client that sends auth tokens
+	anonClient *http.Client // client that does NOT send auth tokens
+	gcsHandler CloudStorage // implements GCS fetch and push handlers
 }
 
 // New returns a new IsolateServer client.
@@ -78,25 +83,24 @@ type Client struct {
 //
 // If you're unsure which namespace to use, use the DefaultNamespace constant.
 //
-// If fetchGCSHandler is nil, the fetchGCSDefault function will be used to retrieve
-// files from GCS.
-func New(anonClient, authClient *http.Client, host, namespace string, rFn retry.Factory, fetchGCSHandler FetchGCS) *Client {
+// If gcs is nil, the defaultGCSHandler is used for fetching from and pushing to GCS.
+func New(anonClient, authClient *http.Client, host, namespace string, rFn retry.Factory, gcs CloudStorage) *Client {
 	if anonClient == nil {
 		anonClient = http.DefaultClient
 	}
 	if authClient == nil {
 		authClient = http.DefaultClient
 	}
-	if fetchGCSHandler == nil {
-		fetchGCSHandler = fetchGCSDefault
+	if gcs == nil {
+		gcs = defaultGCSHandler{}
 	}
 	i := &Client{
-		retryFactory:    rFn,
-		url:             strings.TrimRight(host, "/"),
-		namespace:       namespace,
-		authClient:      authClient,
-		anonClient:      anonClient,
-		fetchGCSHandler: fetchGCSHandler,
+		retryFactory: rFn,
+		url:          strings.TrimRight(host, "/"),
+		namespace:    namespace,
+		authClient:   authClient,
+		anonClient:   anonClient,
+		gcsHandler:   gcs,
 	}
 	tracer.NewPID(i, "isolatedclient:"+i.url)
 	return i
@@ -198,26 +202,7 @@ func (i *Client) Fetch(c context.Context, item *isolateservice.HandlersEndpoints
 	}
 
 	// Handle GCS items.
-	return i.fetchGCSHandler(c, i, out, dest)
-}
-
-// fetchGCSDefault uses the provided HandlersEndpointsV1RetrievedContent response to download content from GCS to the provided dest.
-func fetchGCSDefault(c context.Context, i *Client, content isolateservice.HandlersEndpointsV1RetrievedContent, dest io.WriteSeeker) error {
-	rgen := func() (*http.Request, error) {
-		return http.NewRequest("GET", content.Url, nil)
-	}
-	handler := func(resp *http.Response) error {
-		defer resp.Body.Close()
-		decompressor := isolated.GetDecompressor(resp.Body)
-		defer decompressor.Close()
-		if _, err := dest.Seek(0, os.SEEK_SET); err != nil {
-			return err
-		}
-		_, err := io.Copy(dest, decompressor)
-		return err
-	}
-	_, err := lhttp.NewRequest(c, i.authClient, i.retryFactory, rgen, handler, nil)()
-	return err
+	return i.gcsHandler.Fetch(c, i, out, dest)
 }
 
 // postJSON does authenticated POST request.
@@ -243,7 +228,7 @@ func (i *Client) doPush(c context.Context, state *PushState, source Source) (err
 
 		err = i.doPushDB(c, state, src)
 	} else {
-		err = i.doPushGCS(c, state, source)
+		err = i.gcsHandler.Push(c, i, state.status, source)
 	}
 	if err != nil {
 		tracer.CounterAdd(i, "bytesUploaded", float64(state.size))
@@ -267,7 +252,30 @@ func (i *Client) doPushDB(c context.Context, state *PushState, reader io.Reader)
 	return i.postJSON(c, "/api/isolateservice/v1/store_inline", nil, in, nil)
 }
 
-func (i *Client) doPushGCS(c context.Context, state *PushState, source Source) (err error) {
+// defaultGCSHandler implements the default Fetch and Push handlers for interacting with GCS.
+type defaultGCSHandler struct{}
+
+// Fetch uses the provided HandlersEndpointsV1RetrievedContent response to download content from GCS to the provided dest.
+func (gcs defaultGCSHandler) Fetch(c context.Context, i *Client, content isolateservice.HandlersEndpointsV1RetrievedContent, dest io.WriteSeeker) error {
+	rgen := func() (*http.Request, error) {
+		return http.NewRequest("GET", content.Url, nil)
+	}
+	handler := func(resp *http.Response) error {
+		defer resp.Body.Close()
+		decompressor := isolated.GetDecompressor(resp.Body)
+		defer decompressor.Close()
+		if _, err := dest.Seek(0, os.SEEK_SET); err != nil {
+			return err
+		}
+		_, err := io.Copy(dest, decompressor)
+		return err
+	}
+	_, err := lhttp.NewRequest(c, i.authClient, i.retryFactory, rgen, handler, nil)()
+	return err
+}
+
+// Push uses the provided HandlersEndpointsV1RetrievedContent response to download content from GCS to the provided dest.
+func (gcs defaultGCSHandler) Push(c context.Context, i *Client, status isolateservice.HandlersEndpointsV1PreuploadStatus, source Source) error {
 	// GsUploadUrl is signed Google Storage URL that doesn't require additional
 	// authentication. In fact, using authClient causes HTTP 403 because
 	// authClient's tokens don't have Cloud Storage OAuth scope. Use anonymous
@@ -278,7 +286,7 @@ func (i *Client) doPushGCS(c context.Context, state *PushState, source Source) (
 			return nil, err
 		}
 
-		request, err := http.NewRequest("PUT", state.status.GsUploadUrl, nil)
+		request, err := http.NewRequest("PUT", status.GsUploadUrl, nil)
 		if err != nil {
 			src.Close()
 			return nil, err
@@ -294,8 +302,8 @@ func (i *Client) doPushGCS(c context.Context, state *PushState, source Source) (
 		}
 		return err5
 	}, nil)
-	_, err = req()
-	return
+	_, err := req()
+	return err
 }
 
 // compressed is an io.ReadCloser that transparently compresses source data in
