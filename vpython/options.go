@@ -24,6 +24,12 @@ type Options struct {
 	// EnvConfig is the VirtualEnv configuration to run from.
 	EnvConfig venv.Config
 
+	// SpecLoader is the spec.Loader to use to load a specification file for a
+	// given script.
+	//
+	// The empty value is a valid default spec.Loader.
+	SpecLoader spec.Loader
+
 	// Args are the arguments to forward to the Python process.
 	Args []string
 
@@ -118,7 +124,7 @@ func (o *Options) resolveEnvSpec(c context.Context) error {
 
 	// If it's a script, try resolving from filesystem first.
 	if isScriptTarget {
-		spec, err := spec.LoadForScript(c, script.Path, isModule)
+		spec, err := o.SpecLoader.LoadForScript(c, script.Path, isModule)
 		if err != nil {
 			return errors.Annotate(err).Reason("failed to load spec for script: %(path)s").
 				D("path", cmd.Target).

@@ -16,6 +16,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	cproto "github.com/luci/luci-go/common/proto"
+	"github.com/luci/luci-go/common/system/filesystem"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
@@ -25,6 +26,21 @@ import (
 //
 // See LoadForScript for more information.
 const Suffix = ".vpython"
+
+// CommonName is the name of the "common" specification file.
+//
+// If a script doesn't explicitly specific a specification file, "vpython" will
+// automatically walk up from the script's directory towards filesystem root
+// and will use the first file named CommonName that it finds. This enables
+// repository-wide and shared environment specifications.
+const CommonName = "common" + Suffix
+
+const (
+	// DefaultInlineBeginGuard is the default loader InlineBeginGuard value.
+	DefaultInlineBeginGuard = "[VPYTHON:BEGIN]"
+	// DefaultInlineEndGuard is the default loader InlineEndGuard value.
+	DefaultInlineEndGuard = "[VPYTHON:END]"
+)
 
 // Load loads an specification file text protobuf from the supplied path.
 func Load(path string) (*vpython.Spec, error) {
@@ -67,6 +83,22 @@ func Write(spec *vpython.Spec, path string) error {
 		return errors.Annotate(err).Reason("failed to Close file").Err()
 	}
 	return nil
+}
+
+// Loader implements the generic ability to load a "vpython" spec file.
+type Loader struct {
+	// InlineBeginGuard is a string that signifies the beginning of an inline
+	// specification. If empty, DefaultInlineBeginGuard will be used.
+	InlineBeginGuard string
+	// InlineEndGuard is a string that signifies the end of an inline
+	// specification. If empty, DefaultInlineEndGuard will be used.
+	InlineEndGuard string
+
+	// CommonFilesystemBarriers is a list of filenames. During common spec, Loader
+	// walks directories towards root looking for a file named CommonName. If a
+	// directory is observed to contain a file in CommonFilesystemBarriers, the
+	// walk will terminate after processing that directory.
+	CommonFilesystemBarriers []string
 }
 
 // LoadForScript attempts to load a spec file for the specified script. If
@@ -138,9 +170,17 @@ func Write(spec *vpython.Spec, path string) error {
 //	// [VPYTHON:END]
 //
 // In this case, the "// " characters will be removed.
-func LoadForScript(c context.Context, path string, isModule bool) (*vpython.Spec, error) {
+//
+// Common
+// ======
+//
+// LoadForScript will examine successive parent directories starting from the
+// script's location, looking for a file named CommonName. If it finds one, it
+// will use that as the specification file. This enables scripts to implicitly
+// share an specification.
+func (l *Loader) LoadForScript(c context.Context, path string, isModule bool) (*vpython.Spec, error) {
 	// Partner File: Try loading the spec from an adjacent file.
-	specPath, err := findForScript(path, isModule)
+	specPath, err := l.findForScript(path, isModule)
 	if err != nil {
 		return nil, errors.Annotate(err).Reason("failed to scan for filesystem spec").Err()
 	}
@@ -163,7 +203,7 @@ func LoadForScript(c context.Context, path string, isModule bool) (*vpython.Spec
 		// Module.
 		mainScript = filepath.Join(mainScript, "__main__.py")
 	}
-	switch sp, err := parseFrom(mainScript); {
+	switch sp, err := l.parseFrom(mainScript); {
 	case err != nil:
 		return nil, errors.Annotate(err).Reason("failed to parse inline spec from: %(script)s").
 			D("script", mainScript).
@@ -174,11 +214,26 @@ func LoadForScript(c context.Context, path string, isModule bool) (*vpython.Spec
 		return sp, nil
 	}
 
-	// No spec file found.
+	// Common: Try and identify a common specification file.
+	switch path, err := l.findCommonWalkingFrom(filepath.Dir(mainScript)); {
+	case err != nil:
+		return nil, err
+
+	case path != "":
+		spec, err := Load(path)
+		if err != nil {
+			return nil, err
+		}
+
+		logging.Infof(c, "Loaded common spec from: %s", path)
+		return spec, nil
+	}
+
+	// Couldn't identify a specification file.
 	return nil, nil
 }
 
-func findForScript(path string, isModule bool) (string, error) {
+func (l *Loader) findForScript(path string, isModule bool) (string, error) {
 	if !isModule {
 		path += Suffix
 		if st, err := os.Stat(path); err != nil || st.IsDir() {
@@ -228,17 +283,23 @@ func findForScript(path string, isModule bool) (string, error) {
 	}
 }
 
-func parseFrom(path string) (*vpython.Spec, error) {
-	const (
-		beginGuard = "[VPYTHON:BEGIN]"
-		endGuard   = "[VPYTHON:END]"
-	)
-
+func (l *Loader) parseFrom(path string) (*vpython.Spec, error) {
 	fd, err := os.Open(path)
 	if err != nil {
 		return nil, errors.Annotate(err).Reason("failed to open file").Err()
 	}
 	defer fd.Close()
+
+	// Determine our guards.
+	beginGuard := l.InlineBeginGuard
+	if beginGuard == "" {
+		beginGuard = DefaultInlineBeginGuard
+	}
+
+	endGuard := l.InlineEndGuard
+	if endGuard == "" {
+		endGuard = DefaultInlineEndGuard
+	}
 
 	s := bufio.NewScanner(fd)
 	var (
@@ -301,4 +362,42 @@ func parseFrom(path string) (*vpython.Spec, error) {
 			Err()
 	}
 	return spec, nil
+}
+
+func (l *Loader) findCommonWalkingFrom(startDir string) (string, error) {
+	// Walk until we hit root.
+	prevDir := ""
+	for prevDir != startDir {
+		checkPath := filepath.Join(startDir, CommonName)
+
+		switch _, err := os.Stat(checkPath); {
+		case err == nil:
+			return checkPath, nil
+
+		case filesystem.IsNotExist(err):
+			// Not in this directory.
+
+		default:
+			// Failed to load specification from this file.
+			return "", errors.Annotate(err).Reason("failed to stat common spec file at: %(path)s").
+				D("path", checkPath).
+				Err()
+		}
+
+		// If we have any barrier files, check to see if they are present in this
+		// directory.
+		for _, name := range l.CommonFilesystemBarriers {
+			barrierName := filepath.Join(startDir, name)
+			if _, err := os.Stat(barrierName); err == nil {
+				// Identified a barrier file in this directory.
+				return "", nil
+			}
+		}
+
+		// Walk up a directory.
+		startDir, prevDir = filepath.Dir(startDir), startDir
+	}
+
+	// Couldn't find the file.
+	return "", nil
 }
