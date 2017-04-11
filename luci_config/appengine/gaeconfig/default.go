@@ -26,6 +26,9 @@ import (
 	"github.com/luci/gae/service/info"
 
 	"golang.org/x/net/context"
+
+	// Import to register the corresponding formatter.
+	_ "github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
 )
 
 // ErrNotConfigured is returned by cfgclient methods if the config service URL
