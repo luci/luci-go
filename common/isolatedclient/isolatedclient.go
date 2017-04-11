@@ -53,7 +53,8 @@ type PushState struct {
 
 // CloudStorage is the interface for clients to fetch from and push to GCS storage.
 type CloudStorage interface {
-	// Fetch is a handler for retrieving specified content from GCS and storing the response in the provided destination buffer.
+	// Fetch is a handler for retrieving specified content from GCS and storing
+	// the response in the provided destination buffer.
 	Fetch(context.Context, *Client, isolateservice.HandlersEndpointsV1RetrievedContent, io.WriteSeeker) error
 	// Push is a handler for pushing content from provided buffer to GCS.
 	Push(context.Context, *Client, isolateservice.HandlersEndpointsV1PreuploadStatus, Source) error
@@ -252,10 +253,12 @@ func (i *Client) doPushDB(c context.Context, state *PushState, reader io.Reader)
 	return i.postJSON(c, "/api/isolateservice/v1/store_inline", nil, in, nil)
 }
 
-// defaultGCSHandler implements the default Fetch and Push handlers for interacting with GCS.
+// defaultGCSHandler implements the default Fetch and Push handlers for
+// interacting with GCS.
 type defaultGCSHandler struct{}
 
-// Fetch uses the provided HandlersEndpointsV1RetrievedContent response to download content from GCS to the provided dest.
+// Fetch uses the provided HandlersEndpointsV1RetrievedContent response to
+// download content from GCS to the provided dest.
 func (gcs defaultGCSHandler) Fetch(c context.Context, i *Client, content isolateservice.HandlersEndpointsV1RetrievedContent, dest io.WriteSeeker) error {
 	rgen := func() (*http.Request, error) {
 		return http.NewRequest("GET", content.Url, nil)
@@ -274,7 +277,8 @@ func (gcs defaultGCSHandler) Fetch(c context.Context, i *Client, content isolate
 	return err
 }
 
-// Push uses the provided HandlersEndpointsV1RetrievedContent response to download content from GCS to the provided dest.
+// Push uploads content from the provided source to the GCS path specified in
+// the HandlersEndpointsV1PreuploadStatus response.
 func (gcs defaultGCSHandler) Push(c context.Context, i *Client, status isolateservice.HandlersEndpointsV1PreuploadStatus, source Source) error {
 	// GsUploadUrl is signed Google Storage URL that doesn't require additional
 	// authentication. In fact, using authClient causes HTTP 403 because
