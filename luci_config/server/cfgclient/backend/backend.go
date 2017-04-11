@@ -15,7 +15,7 @@ import (
 // FormatSpec is a specification for formatted data.
 type FormatSpec struct {
 	// Formatter is the supported destination Resolver format for this item.
-	// Backends (notably the FormatterBackend) may project the Item into this
+	// Backends (notably the format.Backend) may project the Item into this
 	// format.
 	//
 	// An empty string means the original config service format.

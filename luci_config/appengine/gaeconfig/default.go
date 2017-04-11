@@ -15,7 +15,6 @@ import (
 	"github.com/luci/luci-go/common/config/impl/filesystem"
 	"github.com/luci/luci-go/luci_config/appengine/backend/datastore"
 	"github.com/luci/luci-go/luci_config/appengine/backend/memcache"
-	gaeformat "github.com/luci/luci-go/luci_config/appengine/format"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/caching"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/client"
@@ -106,9 +105,6 @@ func installConfigBackend(c context.Context, s *Settings, be backend.B, dsCron b
 		be = getPrimaryBackend(c, s)
 	}
 
-	// Install a FormatRegistry. Register common config service protobufs with it.
-	c = gaeformat.WithRegistry(c, gaeformat.Default())
-
 	// Apply caching configuration.
 	exp := time.Duration(s.CacheExpirationSec) * time.Second
 	if exp > 0 {
@@ -117,10 +113,7 @@ func installConfigBackend(c context.Context, s *Settings, be backend.B, dsCron b
 
 		// Add a formatting Backend. All Backends after this will use the formatted
 		// version of the entry.
-		be = &format.Backend{
-			B:           be,
-			GetRegistry: gaeformat.GetRegistry,
-		}
+		be = &format.Backend{B: be}
 
 		// If our datastore cache is enabled, install a handler for refresh. This
 		// will be loaded by dsCache's "HandlerFunc".

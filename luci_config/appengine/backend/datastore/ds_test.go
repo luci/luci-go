@@ -15,7 +15,6 @@ import (
 	memConfig "github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/common/errors"
 	configPB "github.com/luci/luci-go/common/proto/config"
-	gaeformat "github.com/luci/luci-go/luci_config/appengine/format"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"github.com/luci/luci-go/luci_config/server/cfgclient"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
@@ -566,11 +565,7 @@ func TestDatastoreCache(t *testing.T) {
 		mcURL := be.ServiceURL(c)
 		fc := mkFakeCache(mcURL.String())
 
-		fr := gaeformat.Default()
-		be = &format.Backend{
-			B:           be,
-			GetRegistry: func(context.Context) *cfgclient.FormatterRegistry { return fr },
-		}
+		be = &format.Backend{B: be}
 
 		Convey(`Standard datastore tests`, func() {
 			testDatastoreCacheImpl(c, be, fc)
@@ -614,11 +609,7 @@ func TestDatastoreCacheFullStack(t *testing.T) {
 			},
 		}
 
-		fr := gaeformat.Default()
-		be = &format.Backend{
-			B:           be,
-			GetRegistry: func(context.Context) *cfgclient.FormatterRegistry { return fr },
-		}
+		be = &format.Backend{B: be}
 
 		fsc := fullStackCache{
 			cache:   &Cache,

@@ -5,13 +5,11 @@
 // Package format implements a config client Backend that performs formatting
 // on items.
 //
-// This must be used in conjuncton with a cfgclient.FormatterRegistry to
-// register Formatter instances.
+// The available formats are registered during init() time via 'Register'.
 package format
 
 import (
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/luci_config/server/cfgclient"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
 
 	"golang.org/x/net/context"
@@ -27,10 +25,6 @@ type Backend struct {
 	// B is the underlying Backend that this Backend will pull data
 	// from.
 	backend.B
-
-	// GetRegistry returns the FormatterRegistry to use. If it returns nil,
-	// no formatting will be done.
-	GetRegistry func(context.Context) *cfgclient.FormatterRegistry
 }
 
 // Get implements backend.B.
@@ -41,7 +35,7 @@ func (b *Backend) Get(c context.Context, configSet, path string, p backend.Param
 	}
 
 	if !p.FormatSpec.Unformatted() {
-		formatter, err := b.getFormatter(c, p.FormatSpec.Formatter)
+		formatter, err := getFormatter(p.FormatSpec.Formatter)
 		if err != nil {
 			return nil, errors.Annotate(err).Reason("failed to get formatter for %(format)q").
 				D("format", p.FormatSpec).Err()
@@ -66,7 +60,7 @@ func (b *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string,
 	}
 
 	if !p.FormatSpec.Unformatted() {
-		formatter, err := b.getFormatter(c, p.FormatSpec.Formatter)
+		formatter, err := getFormatter(p.FormatSpec.Formatter)
 		if err != nil {
 			return nil, errors.Annotate(err).Reason("failed to get formatter for %(format)q, data %(data)q").
 				D("format", p.FormatSpec.Formatter).
@@ -89,23 +83,7 @@ func (b *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string,
 	return items, nil
 }
 
-func (b *Backend) getFormatter(c context.Context, f string) (cfgclient.Formatter, error) {
-	if b.GetRegistry == nil {
-		return nil, errors.New("no formatter registry function installed")
-	}
-
-	reg := b.GetRegistry(c)
-	if reg == nil {
-		return nil, errors.New("formatter registry function returned nil registry")
-	}
-	formatter := reg.Get(f)
-	if formatter == nil {
-		return nil, errors.Reason("unknown formatter: %(formatter)q").D("formatter", f).Err()
-	}
-	return formatter, nil
-}
-
-func (b *Backend) formatItem(it *backend.Item, formatter cfgclient.Formatter, fs backend.FormatSpec) error {
+func (b *Backend) formatItem(it *backend.Item, formatter Formatter, fs backend.FormatSpec) error {
 	if !it.FormatSpec.Unformatted() {
 		// Item is already formatted.
 		return nil

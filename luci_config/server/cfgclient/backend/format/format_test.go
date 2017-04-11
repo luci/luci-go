@@ -100,8 +100,6 @@ type panicFormatter struct{}
 func (pf panicFormatter) FormatItem(string, string) (string, error) { panic("panic") }
 
 func TestFormatBackend(t *testing.T) {
-	t.Parallel()
-
 	Convey(`A testing environment`, t, func() {
 		tb := testingBackend{
 			items: []*backend.Item{
@@ -111,10 +109,8 @@ func TestFormatBackend(t *testing.T) {
 		}
 
 		// Pass all things from the backend through the formatter.
-		var fr cfgclient.FormatterRegistry
 		fb := Backend{
-			B:           &tb,
-			GetRegistry: func(context.Context) *cfgclient.FormatterRegistry { return &fr },
+			B: &tb,
 		}
 
 		// Retain all raw Items that were returned for examination.
@@ -125,13 +121,15 @@ func TestFormatBackend(t *testing.T) {
 		c := context.Background()
 		c = backend.WithBackend(c, &rb)
 
+		ClearRegistry()
+
 		Convey(`Will panic if an attempt to register empty key is made.`, func() {
-			So(func() { fr.Register("", nil) }, ShouldPanic)
+			So(func() { Register("", nil) }, ShouldPanic)
 		})
 
 		Convey(`Will ignore items that have already been formatted.`, func() {
 			rr := retainingResolver{"test", nil}
-			fr.Register("test", panicFormatter{})
+			Register("test", panicFormatter{})
 
 			// Confirm that this setup correctly attempts to format the item.
 			So(func() { cfgclient.Get(c, cfgclient.AsService, "", "", &rr, nil) }, ShouldPanic)
@@ -143,7 +141,7 @@ func TestFormatBackend(t *testing.T) {
 
 		Convey(`Testing custom formatter`, func() {
 			cf := customFormatter("content")
-			fr.Register("test", cf)
+			Register("test", cf)
 
 			// Confirm that this setup correctly attempts to format the item.
 			rr := retainingResolver{"test", nil}

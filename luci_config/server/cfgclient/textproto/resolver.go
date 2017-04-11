@@ -28,6 +28,7 @@ import (
 	luciProto "github.com/luci/luci-go/common/proto"
 	"github.com/luci/luci-go/luci_config/server/cfgclient"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
+	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/format"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -36,6 +37,15 @@ var typeOfProtoMessage = reflect.TypeOf((*proto.Message)(nil)).Elem()
 
 // BinaryFormat is the resolver's binary protobuf format string.
 const BinaryFormat = "github.com/luci/luci-go/server/config/TextProto:binary"
+
+// init registers this format in the registry of formats.
+func init() {
+	registerFormat()
+}
+
+func registerFormat() {
+	format.Register(BinaryFormat, &Formatter{})
+}
 
 // Message is a cfgclient.Resolver that resolves config data into proto.Message
 // instances by parsing the config data as a text protobuf.
@@ -151,11 +161,6 @@ func (r *resolver) resolveItem(out proto.Message, content string, format string)
 
 func (r *resolver) Format() backend.FormatSpec {
 	return backend.FormatSpec{BinaryFormat, r.messageName}
-}
-
-// RegisterFormatter registers the textproto Formatter with fr.
-func RegisterFormatter(fr *cfgclient.FormatterRegistry) {
-	fr.Register(BinaryFormat, &Formatter{})
 }
 
 // Formatter is a cfgclient.Formatter implementation bound to a specific

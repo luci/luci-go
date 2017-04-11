@@ -53,8 +53,6 @@ func (tb *testingBackend) cloneItems() []*backend.Item {
 }
 
 func TestResolver(t *testing.T) {
-	t.Parallel()
-
 	Convey(`A testing environment`, t, func() {
 		c := context.Background()
 
@@ -95,10 +93,10 @@ func TestResolver(t *testing.T) {
 		})
 
 		Convey(`With a formatter backend`, func() {
-			var fr cfgclient.FormatterRegistry
-			be = &format.Backend{
-				B:           be,
-				GetRegistry: func(context.Context) *cfgclient.FormatterRegistry { return &fr },
+			format.ClearRegistry()
+
+			be := &format.Backend{
+				B: be,
 			}
 			c = backend.WithBackend(c, be)
 
@@ -115,7 +113,7 @@ func TestResolver(t *testing.T) {
 			})
 
 			Convey(`If the Formatter is registered, succeeds`, func() {
-				RegisterFormatter(&fr)
+				registerFormat()
 
 				Convey(`Single`, func() {
 					var val configPB.Project
