@@ -260,13 +260,12 @@ func tagsToMap(tags []string) map[string]string {
 
 // addBuilderLink adds a link to the buildbucket builder view.
 func addBuilderLink(c context.Context, build *resp.MiloBuild, tags map[string]string) {
-	bbHost := tags["buildbucket_hostname"]
 	bucket := tags["buildbucket_bucket"]
 	builder := tags["builder"]
 	if bucket != "" && builder != "" {
 		build.Summary.ParentLabel = &resp.Link{
 			Label: builder,
-			URL:   fmt.Sprintf("/buildbucket/%s/%s?server=%s", bucket, builder, bbHost),
+			URL:   fmt.Sprintf("/buildbucket/%s/%s", bucket, builder),
 		}
 	}
 }

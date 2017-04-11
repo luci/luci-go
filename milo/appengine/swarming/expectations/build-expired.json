@@ -2,7 +2,7 @@
   "Summary": {
     "ParentLabel": {
       "Label": "Infra Win Tester",
-      "URL": "/buildbucket/luci.infra.try/Infra Win Tester?server=cr-buildbucket.appspot.com"
+      "URL": "/buildbucket/luci.infra.try/Infra Win Tester"
     },
     "Label": "308998ca182a0210",
     "Status": "Expired",

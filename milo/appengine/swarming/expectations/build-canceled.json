@@ -2,7 +2,7 @@
   "Summary": {
     "ParentLabel": {
       "Label": "infra-continuous-precise-32",
-      "URL": "/buildbucket/estaab-infra-waterfall-test/infra-continuous-precise-32?server=cr-buildbucket-dev.appspot.com"
+      "URL": "/buildbucket/estaab-infra-waterfall-test/infra-continuous-precise-32"
     },
     "Label": "2d8d62f6be545b10",
     "Status": "Failure",
