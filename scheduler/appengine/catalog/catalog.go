@@ -184,6 +184,22 @@ func (cat *catalog) GetAllProjects(c context.Context) ([]string, error) {
 }
 
 func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Definition, error) {
+	// TODO(vadimsh): This is a workaround for crbug.com/710619. Remove it once
+	// the bug is fixed.
+	projects, err := cat.GetAllProjects(c)
+	if err != nil {
+		return nil, err
+	}
+	found := false
+	for _, p := range projects {
+		if p == projectID {
+			found = true
+		}
+	}
+	if !found {
+		return nil, nil
+	}
+
 	configSet := cfgtypes.ProjectConfigSet(cfgtypes.ProjectName(projectID))
 	configSetURL, err := cfgclient.GetConfigSetURL(c, cfgclient.AsService, configSet)
 	switch err {
