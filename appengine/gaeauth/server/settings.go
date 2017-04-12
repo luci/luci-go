@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/url"
+	"strings"
 
 	"golang.org/x/net/context"
 
@@ -29,16 +30,34 @@ func (settingsUIPage) Overview(c context.Context) (template.HTML, error) {
 	if err != nil {
 		return "", err
 	}
-	return template.HTML(fmt.Sprintf(`<p>Prerequisites for fetching groups from an
-<a href="https://github.com/luci/luci-py/tree/master/appengine/auth_service">auth service</a>:</p>
+	return template.HTML(fmt.Sprintf(`<p>LUCI apps should be configured with an
+URL to some existing <a href="https://github.com/luci/luci-py/blob/master/appengine/auth_service/README.md">LUCI Auth Service</a>.</p>
+
+<p>This service distributes various authorization related configuration (like
+the list of user groups, IP whitelists, OAuth client IDs, etc), which is
+required to handle incoming requests. There's usually one instance of this
+service per LUCI deployment.</p>
+
+<p>To connect this app to LUCI Auth Service:</p>
 <ul>
   <li>
-    Google Cloud Pub/Sub service is enabled in the Cloud Console project.
+    Figure out what instance of LUCI Auth Service to use. Use a development
+    instance of LUCI Auth Service (*-dev) when running code locally or deploying
+    to a staging instance.
   </li>
   <li>
-    The <b>auth-trusted-services</b> group on the auth service includes
-    the service account belonging to this application:
-    <b>%s</b>.
+    Make sure Google Cloud Pub/Sub API is enabled in the Cloud Console project
+    of your app. LUCI Auth Service uses Pub/Sub to propagate changes.
+  </li>
+  <li>
+    Add the service account belonging to your app (<b>%s</b>) to
+    <b>auth-trusted-services</b> group on LUCI Auth Service. This authorizes
+    your app to receive updates from LUCI Auth Service.
+  </li>
+  <li>
+    Enter the hostname of LUCI Auth Service in the field below and hit
+    "Save Settings". It will verify everything is properly configured (or return
+    an error message with some clues if not).
   </li>
 </ul>`, template.HTMLEscapeString(serviceAcc))), nil
 }
@@ -49,17 +68,11 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 			ID:    "AuthServiceURL",
 			Title: "Auth service URL",
 			Type:  settings.UIFieldText,
-			Validator: func(authServiceURL string) error {
+			Validator: func(authServiceURL string) (err error) {
 				if authServiceURL != "" {
-					parsed, err := url.Parse(authServiceURL)
-					if err != nil {
-						return fmt.Errorf("bad URL %q - %s", authServiceURL, err)
-					}
-					if !parsed.IsAbs() || parsed.Path != "" {
-						return fmt.Errorf("bad URL %q - must be host root URL", authServiceURL)
-					}
+					_, err = normalizeAuthServiceURL(authServiceURL)
 				}
-				return nil
+				return err
 			},
 		},
 		{
@@ -89,8 +102,29 @@ func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error)
 
 func (settingsUIPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
 	authServiceURL := values["AuthServiceURL"]
+	if authServiceURL != "" {
+		var err error
+		authServiceURL, err = normalizeAuthServiceURL(authServiceURL)
+		if err != nil {
+			return err
+		}
+	}
 	baseURL := "https://" + info.DefaultVersionHostname(c)
 	return authdbimpl.ConfigureAuthService(c, baseURL, authServiceURL)
+}
+
+func normalizeAuthServiceURL(authServiceURL string) (string, error) {
+	if !strings.Contains(authServiceURL, "://") {
+		authServiceURL = "https://" + authServiceURL
+	}
+	parsed, err := url.Parse(authServiceURL)
+	if err != nil {
+		return "", fmt.Errorf("bad URL %q - %s", authServiceURL, err)
+	}
+	if !parsed.IsAbs() || parsed.Path != "" {
+		return "", fmt.Errorf("bad URL %q - must be host root URL", authServiceURL)
+	}
+	return parsed.String(), nil
 }
 
 func init() {
