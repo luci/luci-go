@@ -55,7 +55,7 @@ func init() {
 	r := router.New()
 	basemw := gaemiddleware.BaseProd()
 
-	gaemiddleware.InstallHandlers(r, basemw)
+	gaemiddleware.InstallHandlers(r)
 
 	r.GET("/generate/:Count", basemw, func(c *router.Context) {
 		count, err := strconv.Atoi(c.Params.ByName("Count"))

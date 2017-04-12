@@ -13,9 +13,8 @@ import (
 
 func init() {
 	r := router.New()
-	basemw := gaemiddleware.BaseProd()
 
-	gaemiddleware.InstallHandlers(r, basemw)
-	InstallAPIRoutes(r, basemw)
+	gaemiddleware.InstallHandlers(r)
+	InstallAPIRoutes(r, gaemiddleware.BaseProd())
 	http.DefaultServeMux.Handle("/", r)
 }

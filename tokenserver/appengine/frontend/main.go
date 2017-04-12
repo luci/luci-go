@@ -46,10 +46,9 @@ func adminPrelude(serviceName string) func(context.Context, string, proto.Messag
 
 func init() {
 	r := router.New()
-	basemw := gaemiddleware.BaseProd()
 
 	// Install auth, config and tsmon handlers.
-	gaemiddleware.InstallHandlers(r, basemw)
+	gaemiddleware.InstallHandlers(r)
 
 	// The service has no UI, so just redirect to stock RPC explorer.
 	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
@@ -70,7 +69,7 @@ func init() {
 	})
 	minter.RegisterTokenMinterServer(&api, tokenminter.NewServer()) // auth inside
 	discovery.Enable(&api)
-	api.InstallHandlers(r, basemw)
+	api.InstallHandlers(r, gaemiddleware.BaseProd())
 
 	// Expose all this stuff.
 	http.DefaultServeMux.Handle("/", r)

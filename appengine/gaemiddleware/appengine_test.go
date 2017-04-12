@@ -39,7 +39,7 @@ func TestRequireCron(t *testing.T) {
 			}
 			router.RunMiddleware(c, router.NewMiddlewareChain(RequireCron), f)
 			So(hit, ShouldBeFalse)
-			So(rec.Body.String(), ShouldEqual, "error: must be run from cron")
+			So(rec.Body.String(), ShouldEqual, "error: must be run from cron\n")
 			So(rec.Code, ShouldEqual, http.StatusForbidden)
 		})
 
@@ -81,7 +81,7 @@ func TestRequireTQ(t *testing.T) {
 			}
 			router.RunMiddleware(c, router.NewMiddlewareChain(RequireTaskQueue("wat")), f)
 			So(hit, ShouldBeFalse)
-			So(rec.Body.String(), ShouldEqual, "error: must be run from the correct taskqueue")
+			So(rec.Body.String(), ShouldEqual, "error: must be run from the correct taskqueue\n")
 			So(rec.Code, ShouldEqual, http.StatusForbidden)
 		})
 
@@ -94,7 +94,7 @@ func TestRequireTQ(t *testing.T) {
 			}
 			router.RunMiddleware(c, router.NewMiddlewareChain(RequireTaskQueue("")), f)
 			So(hit, ShouldBeFalse)
-			So(rec.Body.String(), ShouldEqual, "error: must be run from the correct taskqueue")
+			So(rec.Body.String(), ShouldEqual, "error: must be run from the correct taskqueue\n")
 			So(rec.Code, ShouldEqual, http.StatusForbidden)
 		})
 
@@ -111,7 +111,7 @@ func TestRequireTQ(t *testing.T) {
 			}
 			router.RunMiddleware(c, router.NewMiddlewareChain(RequireTaskQueue("wat")), f)
 			So(hit, ShouldBeFalse)
-			So(rec.Body.String(), ShouldEqual, "error: must be run from the correct taskqueue")
+			So(rec.Body.String(), ShouldEqual, "error: must be run from the correct taskqueue\n")
 			So(rec.Code, ShouldEqual, http.StatusForbidden)
 		})
 

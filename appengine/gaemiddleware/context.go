@@ -66,15 +66,16 @@ var (
 	globalTsMonState = &tsmon.State{}
 )
 
-// WithProd installs the set of standard production AppEngine services:
-//   * github.com/luci/luci-go/common/logging (set default level to debug).
-//   * github.com/luci/gae/impl/prod (production appengine services)
-//   * github.com/luci/luci-go/appengine/gaeauth/client (appengine urlfetch transport)
-//   * github.com/luci/luci-go/server/proccache (in process memory cache)
-//   * github.com/luci/luci-go/server/settings (global app settings)
-//   * github.com/luci/luci-go/appengine/gaesecrets (access to secret keys in datastore)
-//   * github.com/luci/luci-go/appengine/gaeauth/server/gaesigner (RSA signer)
-//   * github.com/luci/luci-go/appengine/gaeauth/server/auth (user groups database)
+// WithProd adds various production GAE LUCI services to the context.
+//
+// Basically, it installs GAE-specific backends and caches for various
+// subsystems to make them work in GAE environment.
+//
+// One example is a backend for Logging: github.com/luci/luci-go/common/logging.
+// Logs emitted through a WithProd() context go to GAE logs.
+//
+// 'Production' here means the services will use real GAE APIs (not mocks or
+// stubs), so WithProd should never be used from unit tests.
 func WithProd(c context.Context, req *http.Request) context.Context {
 	// These are needed to use fetchCachedSettings.
 	c = logging.SetLevel(c, logging.Debug)
@@ -100,9 +101,23 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 	return cacheContext.Wrap(c)
 }
 
-// ProdServices is a middleware that installs the set of standard production
+// BaseProd returns a middleware chain to use for all GAE requests.
+//
+// This middleware chain installs prod GAE services into the request context
+// (via WithProd), and wraps the request with a panic catcher and monitoring
+// hooks.
+func BaseProd() router.MiddlewareChain {
+	if appengine.IsDevAppServer() {
+		return router.NewMiddlewareChain(prodServices, globalTsMonState.Middleware)
+	}
+	return router.NewMiddlewareChain(
+		prodServices, middleware.WithPanicCatcher, globalTsMonState.Middleware,
+	)
+}
+
+// prodServices is a middleware that installs the set of standard production
 // AppEngine services by calling WithProd.
-func ProdServices(c *router.Context, next router.Handler) {
+func prodServices(c *router.Context, next router.Handler) {
 	// Create a cancelable Context that cancels when this request finishes.
 	//
 	// We do this because Contexts will leak resources and/or goroutines if they
@@ -116,15 +131,4 @@ func ProdServices(c *router.Context, next router.Handler) {
 	c.Context = WithProd(c.Context, c.Request)
 
 	next(c)
-}
-
-// BaseProd returns a list of middleware: WithProd middleware, a panic catcher if this
-// is not a devserver, and the monitoring middleware.
-func BaseProd() router.MiddlewareChain {
-	if appengine.IsDevAppServer() {
-		return router.NewMiddlewareChain(ProdServices, globalTsMonState.Middleware)
-	}
-	return router.NewMiddlewareChain(
-		ProdServices, middleware.WithPanicCatcher, globalTsMonState.Middleware,
-	)
 }

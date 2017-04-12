@@ -37,7 +37,7 @@ func init() {
 	r := router.New()
 	basemw := gaemiddleware.BaseProd()
 
-	gaemiddleware.InstallHandlers(r, basemw)
+	gaemiddleware.InstallHandlers(r)
 
 	r.GET("/internal/cron/read-config", basemw.Extend(gaemiddleware.RequireCron), readConfigCron)
 	r.GET("/internal/cron/fetch-crl", basemw.Extend(gaemiddleware.RequireCron), fetchCRLCron)

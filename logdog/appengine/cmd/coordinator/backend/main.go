@@ -26,7 +26,7 @@ func init() {
 	r := router.New()
 	base := gaemiddleware.BaseProd().Extend(coordinator.ProdCoordinatorService)
 	tmb.InstallHandlers(r, base)
-	gaemiddleware.InstallHandlers(r, base)
+	gaemiddleware.InstallHandlersWithMiddleware(r, base)
 
 	http.Handle("/", r)
 }

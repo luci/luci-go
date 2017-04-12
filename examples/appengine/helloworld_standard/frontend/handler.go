@@ -58,6 +58,7 @@ func pageBase() router.MiddlewareChain {
 	return gaemiddleware.BaseProd().Extend(
 		templates.WithTemplates(templateBundle),
 		auth.Use(auth.Authenticator{server.CookieAuth}),
+		auth.Authenticate,
 	)
 }
 
@@ -94,8 +95,8 @@ func checkAPIAccess(c context.Context, methodName string, req proto.Message) (co
 
 func init() {
 	r := router.New()
-	gaemiddleware.InstallHandlers(r, pageBase())
-	r.GET("/", pageBase().Extend(auth.Authenticate), indexPage)
+	gaemiddleware.InstallHandlers(r)
+	r.GET("/", pageBase(), indexPage)
 
 	var api prpc.Server
 	helloworld.RegisterGreeterServer(&api, &helloworld.DecoratedGreeter{

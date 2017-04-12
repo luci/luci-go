@@ -19,10 +19,9 @@ import (
 
 func main() {
 	r := router.New()
-	basemw := gaemiddleware.BaseProd()
 
-	gaemiddleware.InstallHandlers(r, basemw)
-	r.GET("/hi", basemw, sayHi)
+	gaemiddleware.InstallHandlers(r)
+	r.GET("/hi", gaemiddleware.BaseProd(), sayHi)
 	http.DefaultServeMux.Handle("/", r)
 
 	appengine.Main()

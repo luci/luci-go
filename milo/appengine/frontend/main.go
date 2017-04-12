@@ -33,7 +33,7 @@ func emptyPrelude(c context.Context, methodName string, req proto.Message) (cont
 func init() {
 	// Register plain ol' http handlers.
 	r := router.New()
-	gaemiddleware.InstallHandlers(r, gaemiddleware.BaseProd())
+	gaemiddleware.InstallHandlers(r)
 
 	basemw := common.Base()
 	r.GET("/", basemw, frontpageHandler)

@@ -14,19 +14,33 @@ import (
 	"github.com/luci/luci-go/luci_config/appengine/gaeconfig"
 )
 
-// InstallHandlers installs HTTP handlers for various default routes.
+// InstallHandlers installs handlers for framework routes.
 //
 // These routes are needed for various services provided in BaseProd context to
-// work (e.g. authentication related routes, time series monitoring, etc).
+// work:
+//  * Authentication related routes
+//  * Settings pages
+//  * Various housekeeping crons
+//  * Warmup
+//
+// They must be installed into a default module, but it is also safe to install
+// them into a non-default module. This may be handy if you want to move cron
+// handlers into a non-default module.
+func InstallHandlers(r *router.Router) {
+	InstallHandlersWithMiddleware(r, BaseProd())
+}
+
+// InstallHandlersWithMiddleware installs handlers for framework routes.
+//
+// It is same as 'InstallHandlers', but allows caller to customize the
+// middleware chain used for the routes. This may be needed if application
+// callbacks invoked through the default routes (settings pages, monitoring
+// callbacks) need some additional state in the context.
 //
 // 'base' is expected to be BaseProd() or its derivative. It must NOT do any
 // interception of requests (e.g. checking and rejecting unauthenticated
-// requests). It may inject additional state in the context though, if it is
-// needed by various tsmon callbacks or settings pages.
-//
-// In majority of cases 'base' should just be BaseProd(). If unsure what to use,
-// use BaseProd().
-func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
+// requests).
+func InstallHandlersWithMiddleware(r *router.Router, base router.MiddlewareChain) {
 	gaeauth.InstallHandlers(r, base)
 	tsmon.InstallHandlers(r, base)
 	admin.InstallHandlers(r, base, &gaeauth.UsersAPIAuthMethod{})

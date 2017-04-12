@@ -53,7 +53,7 @@ func main() {
 
 	// Standard HTTP endpoints.
 	base := gaemiddleware.BaseProd().Extend(coordinator.ProdCoordinatorService)
-	gaemiddleware.InstallHandlers(r, base)
+	gaemiddleware.InstallHandlersWithMiddleware(r, base)
 	svr.InstallHandlers(r, base)
 
 	// Redirect "/" to "/app/".

@@ -42,7 +42,11 @@ func init() {
 	distributor.InstallHandlers(r, basemw)
 	svr.InstallHandlers(r, basemw)
 	tmb.InstallHandlers(r, basemw)
-	gaemiddleware.InstallHandlers(r, basemw)
+
+	// TODO(iannucci): We can probably use gaemiddleware.InstallHandlers here,
+	// since various framework-level hooks (settings pages, tsmon callbacks), do
+	// not need a distributor registry.
+	gaemiddleware.InstallHandlersWithMiddleware(r, basemw)
 
 	http.Handle("/", r)
 }

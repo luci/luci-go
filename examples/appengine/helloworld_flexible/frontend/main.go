@@ -60,6 +60,7 @@ func base() router.MiddlewareChain {
 	return gaemiddleware.BaseProd().Extend(
 		templates.WithTemplates(templateBundle),
 		auth.Use(methods),
+		auth.Authenticate,
 	)
 }
 
@@ -67,9 +68,9 @@ func base() router.MiddlewareChain {
 
 func main() {
 	r := router.New()
-	basemw := base()
-	gaemiddleware.InstallHandlers(r, basemw)
-	r.GET("/", basemw.Extend(auth.Authenticate), indexPage)
+
+	gaemiddleware.InstallHandlers(r)
+	r.GET("/", base(), indexPage)
 	http.DefaultServeMux.Handle("/", r)
 
 	appengine.Main()
