@@ -77,7 +77,7 @@ func TestAbsPath(t *testing.T) {
 func TestTouch(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Can Touch a new file`, t, func() {
+	Convey(`Testing Touch`, t, func() {
 		withTempDir(t, func(tdir string) {
 			thePast := time.Now().Add(-10 * time.Second)
 
@@ -130,6 +130,10 @@ func TestTouch(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				So(st.ModTime(), ShouldHappenBefore, initialModTime)
+
+				content, err := ioutil.ReadFile(path)
+				So(err, ShouldBeNil)
+				So(content, ShouldResemble, []byte("sup"))
 			})
 		})
 	})

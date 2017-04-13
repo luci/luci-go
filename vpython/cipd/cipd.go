@@ -33,7 +33,9 @@ var _ venv.PackageLoader = (*PackageLoader)(nil)
 //
 // The resulting packages slice will be updated in-place with the resolved
 // package name and instance ID.
-func (pl *PackageLoader) Resolve(c context.Context, root string, packages []*vpython.Spec_Package) error {
+func (pl *PackageLoader) Resolve(c context.Context, root string, packages []*vpython.Spec_Package,
+	template map[string]string) error {
+
 	if len(packages) == 0 {
 		return nil
 	}
@@ -46,7 +48,7 @@ func (pl *PackageLoader) Resolve(c context.Context, root string, packages []*vpy
 			UnresolvedVersion: pkg.Version,
 		}
 
-		logging.Debugf(c, "\tUnresolved package: %s", pslice[i])
+		logging.Debugf(c, "\tUnresolved package: %s", pkg)
 	}
 
 	ef := ensure.File{
@@ -61,12 +63,18 @@ func (pl *PackageLoader) Resolve(c context.Context, root string, packages []*vpy
 		return errors.Annotate(err).Reason("failed to generate CIPD client").Err()
 	}
 
+	// Build our aggregate template parameters. We prefer our template parameters
+	// over the local system parameters. This allows us to override CIPD template
+	// parameters elsewhere, and in the production case we will not override
+	// any CIPD template parameters.
+	aggregateTemplate := mergeStringMaps(common.TemplateArgs(), template)
+
 	// Start a CIPD client batch.
 	client.BeginBatch(c)
 	defer client.EndBatch(c)
 
 	// Resolve our ensure file.
-	resolved, err := ef.Resolve(func(pkg, vers string) (common.Pin, error) {
+	resolved, err := ef.ResolveWith(func(pkg, vers string) (common.Pin, error) {
 		pin, err := client.ResolveVersion(c, pkg, vers)
 		if err != nil {
 			return pin, errors.Annotate(err).Reason("failed to resolve package %(package)q at version %(version)q").
@@ -80,7 +88,7 @@ func (pl *PackageLoader) Resolve(c context.Context, root string, packages []*vpy
 			"version": vers,
 		}.Debugf(c, "Resolved package to: %s", pin)
 		return pin, nil
-	})
+	}, aggregateTemplate)
 	if err != nil {
 		return err
 	}
@@ -152,4 +160,26 @@ func packagesToPins(packages []*vpython.Spec_Package) ([]common.Pin, error) {
 		}
 	}
 	return pins, nil
+}
+
+func mergeStringMaps(maps ...map[string]string) map[string]string {
+	count := 0
+	for _, m := range maps {
+		count += len(m)
+	}
+
+	switch {
+	case len(maps) == 0, count == 0:
+		return nil
+	case len(maps) == 1:
+		return maps[0]
+	}
+
+	merged := make(map[string]string, count)
+	for _, m := range maps {
+		for k, v := range m {
+			merged[k] = v
+		}
+	}
+	return merged
 }

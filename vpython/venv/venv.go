@@ -5,6 +5,8 @@
 package venv
 
 import (
+	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -13,7 +15,6 @@ import (
 
 	"github.com/luci/luci-go/vpython/api/vpython"
 	"github.com/luci/luci-go/vpython/python"
-	"github.com/luci/luci-go/vpython/spec"
 	"github.com/luci/luci-go/vpython/wheel"
 
 	"github.com/luci/luci-go/common/clock"
@@ -22,6 +23,7 @@ import (
 	"github.com/luci/luci-go/common/system/filesystem"
 
 	"github.com/danjacques/gofslock/fslock"
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 )
 
@@ -54,15 +56,15 @@ func withTempDir(l logging.Logger, prefix string, fn func(string) error) error {
 	return fn(tdir)
 }
 
-// EnvRootFromSpecPath calculates the environment root from an exported
+// EnvRootFromStampPath calculates the environment root from an exported
 // environment specification file path.
 //
-// The specification path is: <EnvRoot>/<SpecHash>/<spec>, so our EnvRoot
+// The specification path is: <EnvRoot>/<SpecHash>/EnvStampPath, so our EnvRoot
 // is two directories up.
 //
 // We export EnvSpecPath as an asbolute path. However, since someone else
 // could have overridden it or exported their own, let's make sure.
-func EnvRootFromSpecPath(path string) (string, error) {
+func EnvRootFromStampPath(path string) (string, error) {
 	if err := filesystem.AbsPath(&path); err != nil {
 		return "", errors.Annotate(err).
 			Reason("failed to get absolute path for specification file path: %(path)s").
@@ -85,14 +87,160 @@ func EnvRootFromSpecPath(path string) (string, error) {
 // If another process holds the lock, With will return an error (if blocking is
 // false) or try again until it obtains the lock (if blocking is true).
 func With(c context.Context, cfg Config, blocking bool, fn func(context.Context, *Env) error) error {
-	e, err := cfg.setupEnv(c)
-	if err != nil {
-		return errors.Annotate(err).Reason("failed to resolve VirtualEnv").Err()
+	// Start with an empty VirtualEnv. We will use this to probe the local
+	// system.
+	//
+	// If our configured VirtualEnv is, itself, an empty then we can
+	// skip this.
+	if cfg.HasWheels() && cfg.Tag.IsZero() {
+		// Use an empty VirtualEnv to probe the runtime environment.
+		re, err := getRuntimeEnvironment(c, blocking, cfg.WithoutWheels())
+		if err != nil {
+			return errors.Annotate(err).Reason("failed to get runtime environment").Err()
+		}
+
+		cfg.Tag = re.Tag
 	}
 
-	// Setup the environment.
+	// Run the real config, now with runtime data.
+	e, err := cfg.makeEnv(c)
+	if err != nil {
+		return err
+	}
+	return e.withImpl(c, blocking, fn)
+}
+
+func getRuntimeEnvironment(c context.Context, blocking bool, cfg *Config) (*vpython.Environment, error) {
+	e, err := cfg.makeEnv(c)
+	if err != nil {
+		return nil, err
+	}
+
+	// If we already have the environment specification for this environment, then
+	// load it.
+	venvStamp, err := e.LoadEnvStamp()
+	switch {
+	case err != nil:
+		// Not a big deal, but
+		logging.WithError(err).Debugf(c, "Failed to load stamp file; performing full initialization.")
+
+	default:
+		logging.Debugf(c, "Loaded environment stamp from empty VirtualEnv: %s", venvStamp)
+
+		// Try and touch the complete flag. It doesn't matter if we fail, since all
+		// it will do is refrain from acknowledging the utility of the empty
+		// environment.
+		if err := e.touchCompleteFlagNonBlocking(); err != nil {
+			logging.Debugf(c, "Failed to update empty environment flag timestamp.")
+		}
+		return venvStamp, nil
+	}
+
+	// Fully initialize the environment and load from that.
 	if err := e.setupImpl(c, blocking); err != nil {
-		return errors.Annotate(err).Err()
+		return nil, err
+	}
+	return e.Config.EnvStamp(), nil
+}
+
+// Env is a fully set-up Python virtual environment. It is configured
+// based on the contents of an vpython.Spec file by Setup.
+//
+// Env should not be instantiated directly; it must be created by calling
+// Config.Env.
+//
+// All paths in Env are absolute.
+type Env struct {
+	// Config is this Env's Config, fully-resolved.
+	Config *Config
+
+	// Root is the Env container's root directory path.
+	Root string
+
+	// Python is the path to the Env Python interpreter.
+	Python string
+
+	// BinDir is the VirtualEnv "bin" directory, containing Python and installed
+	// wheel binaries.
+	BinDir string
+	// EnvStampPath is the path to the environment stamp file that details a
+	// constructed environment. It will be in text protobuf format, and,
+	// therefore, suitable for input to other "vpython" invocations.
+	EnvStampPath string
+
+	// name is the hash of the specification file for this Env.
+	name string
+	// lockPath is the path to this Env-specific lock file. It will be at:
+	// "<baseDir>/.<name>.lock".
+	lockPath string
+	// completeFlagPath is the path to this Env's complete flag.
+	// It will be at "<Root>/complete.flag".
+	completeFlagPath string
+}
+
+func (e *Env) setupImpl(c context.Context, blocking bool) error {
+	// Repeatedly try and create our Env. We do this so that if we
+	// encounter a lock, we will let the other process finish and try and leverage
+	// its success.
+	for {
+		// We will be creating the Env. We will lock around a file for this Env hash
+		// so that any other processes that may be trying to simultaneously
+		// manipulate Env will be forced to wait.
+		err := e.withLockNonBlocking(func() error {
+			// Check for completion flag.
+			if err := e.AssertComplete(); err != nil {
+				logging.WithError(err).Debugf(c, "VirtualEnv is not complete.")
+
+				// No complete flag. Create a new VirtualEnv here.
+				if err := e.createLocked(c); err != nil {
+					return errors.Annotate(err).Reason("failed to create new VirtualEnv").Err()
+				}
+
+				// Successfully created the environment! Mark this with a completion
+				// flag.
+				if err := e.touchCompleteFlagLocked(); err != nil {
+					return errors.Annotate(err).Reason("failed to create complete flag").Err()
+				}
+			} else {
+				// Fast path: if our complete flag is present, assume that the
+				// environment is setup and complete. No locking or additional work necessary.
+				logging.Debugf(c, "Completion flag found! Environment is set-up: %s", e.completeFlagPath)
+
+				// Mark that we care about this environment. This is non-fatal if it
+				// fails.
+				if err := e.touchCompleteFlagLocked(); err != nil {
+					logging.WithError(err).Warningf(c, "Failed to update existing complete flag.")
+				}
+			}
+
+			return nil
+		})
+		switch err {
+		case nil:
+			return nil
+
+		case fslock.ErrLockHeld:
+			if !blocking {
+				return errors.Annotate(err).Reason("VirtualEnv lock is currently held (non-blocking)").Err()
+			}
+
+			// Some other process holds the lock. Sleep a little and retry.
+			logging.Warningf(c, "VirtualEnv lock is currently held. Retrying after delay (%s)...", lockHeldDelay)
+			if tr := clock.Sleep(c, lockHeldDelay); tr.Incomplete() {
+				return tr.Err
+			}
+			continue
+
+		default:
+			return errors.Annotate(err).Reason("failed to create VirtualEnv").Err()
+		}
+	}
+}
+
+func (e *Env) withImpl(c context.Context, blocking bool, fn func(context.Context, *Env) error) error {
+	// Setup the VirtualEnv environment.
+	if err := e.setupImpl(c, blocking); err != nil {
+		return err
 	}
 
 	// Perform a pruning round. Failure is non-fatal.
@@ -128,41 +276,6 @@ func With(c context.Context, cfg Config, blocking bool, fn func(context.Context,
 	return fn(c, e)
 }
 
-// Env is a fully set-up Python virtual environment. It is configured
-// based on the contents of an vpython.Spec file by Setup.
-//
-// Env should not be instantiated directly; it must be created by calling
-// Config.Env.
-//
-// All paths in Env are absolute.
-type Env struct {
-	// Config is this Env's Config, fully-resolved.
-	Config *Config
-
-	// Root is the Env container's root directory path.
-	Root string
-
-	// Python is the path to the Env Python interpreter.
-	Python string
-
-	// BinDir is the VirtualEnv "bin" directory, containing Python and installed
-	// wheel binaries.
-	BinDir string
-	// SepcPath is the path to the specification file that was used to construct
-	// this environment. It will be in text protobuf format, and, therefore,
-	// suitable for input to other "vpython" invocations.
-	SpecPath string
-
-	// name is the hash of the specification file for this Env.
-	name string
-	// lockPath is the path to this Env-specific lock file. It will be at:
-	// "<baseDir>/.<name>.lock".
-	lockPath string
-	// completeFlagPath is the path to this Env's complete flag.
-	// It will be at "<Root>/complete.flag".
-	completeFlagPath string
-}
-
 // InterpreterCommand returns a Python interpreter Command pointing to the
 // VirtualEnv's Python installation.
 func (e *Env) InterpreterCommand() *python.Command {
@@ -174,61 +287,8 @@ func (e *Env) InterpreterCommand() *python.Command {
 	return cmd
 }
 
-func (e *Env) setupImpl(c context.Context, blocking bool) error {
-	// Repeatedly try and create our Env. We do this so that if we
-	// encounter a lock, we will let the other process finish and try and leverage
-	// its success.
-	for {
-		// We will be creating the Env. We will lock around a file for this Env hash
-		// so that any other processes that may be trying to simultaneously
-		// manipulate Env will be forced to wait.
-		err := fslock.With(e.lockPath, func() error {
-			// Check for completion flag.
-			if _, err := os.Stat(e.completeFlagPath); err != nil {
-				// No complete flag. Create a new VirtualEnv here.
-				if err := e.createLocked(c); err != nil {
-					return errors.Annotate(err).Reason("failed to create new VirtualEnv").Err()
-				}
-
-				// Successfully created the environment! Mark this with a completion
-				// flag.
-				if err := e.touchCompleteFlagLocked(); err != nil {
-					return errors.Annotate(err).Reason("failed to create complete flag").Err()
-				}
-			} else {
-				// Fast path: if our complete flag is present, assume that the
-				// environment is setup and complete. No locking or additional work necessary.
-				logging.Debugf(c, "Completion flag found! Environment is set-up: %s", e.completeFlagPath)
-
-				// Mark that we care about this enviornment. This is non-fatal if it
-				// fails.
-				if err := e.touchCompleteFlagLocked(); err != nil {
-					logging.WithError(err).Warningf(c, "Failed to update existing complete flag.")
-				}
-			}
-
-			return nil
-		})
-		switch err {
-		case nil:
-			return nil
-
-		case fslock.ErrLockHeld:
-			if !blocking {
-				return errors.Annotate(err).Reason("VirtualEnv lock is currently held (non-blocking)").Err()
-			}
-
-			// Some other process holds the lock. Sleep a little and retry.
-			logging.Warningf(c, "VirtualEnv lock is currently held. Retrying after delay (%s)...", lockHeldDelay)
-			if tr := clock.Sleep(c, lockHeldDelay); tr.Incomplete() {
-				return tr.Err
-			}
-			continue
-
-		default:
-			return errors.Annotate(err).Reason("failed to create VirtualEnv").Err()
-		}
-	}
+func (e *Env) withLockNonBlocking(fn func() error) error {
+	return fslock.With(e.lockPath, fn)
 }
 
 func (e *Env) withLockBlocking(c context.Context, fn func() error) error {
@@ -247,6 +307,48 @@ func (e *Env) Delete(c context.Context) error {
 		errors.Annotate(err).Reason("failed to delete environment").Err()
 	}
 	return nil
+}
+
+// AssertComplete returns an error if the environment's completion flag does not
+// exist.
+func (e *Env) AssertComplete() error {
+	switch _, err := os.Stat(e.completeFlagPath); {
+	case filesystem.IsNotExist(err):
+		return errors.New("environment is not complete")
+	case err != nil:
+		return errors.Annotate(err).Reason("failed to check for completion flag").Err()
+	default:
+		return nil
+	}
+}
+
+// WriteEnvStamp writes a text protobuf form of spec to path.
+func (e *Env) WriteEnvStamp() error {
+	return writeTextProto(e.EnvStampPath, e.Config.EnvStamp())
+}
+
+// LoadEnvStamp loads this environment's environment stamp from its
+// EnvStampPath.
+func (e *Env) LoadEnvStamp() (*vpython.Environment, error) {
+	// Ensure that the environment has its completion flag.
+	if err := e.AssertComplete(); err != nil {
+		return nil, err
+	}
+
+	var envStamp vpython.Environment
+	content, err := ioutil.ReadFile(e.EnvStampPath)
+	if err != nil {
+		return nil, errors.Annotate(err).Reason("failed to load file from: %(path)s").
+			D("path", e.EnvStampPath).
+			Err()
+	}
+
+	if err := proto.UnmarshalText(string(content), &envStamp); err != nil {
+		return nil, errors.Annotate(err).Reason("failed to unmarshal vpython.Env stamp from: %(path)s").
+			D("path", e.EnvStampPath).
+			Err()
+	}
+	return &envStamp, nil
 }
 
 func (e *Env) createLocked(c context.Context) error {
@@ -291,6 +393,16 @@ func (e *Env) createLocked(c context.Context) error {
 			return errors.Annotate(err).Reason("failed to install VirtualEnv").Err()
 		}
 
+		if e.Config.Tag == nil && e.Config.TagSelector != nil {
+			tags, err := e.getPEP425Tags(c)
+			if err != nil {
+				return errors.Annotate(err).Reason("failed to get PEP425 tags").Err()
+			}
+
+			e.Config.Tag = e.Config.TagSelector(tags)
+			logging.Debugf(c, "Loaded PEP425 tag: %#v", e.Config.Tag)
+		}
+
 		// Install our wheel files.
 		if len(e.Config.Spec.Wheel) > 0 {
 			// Install wheels into our VirtualEnv.
@@ -306,12 +418,12 @@ func (e *Env) createLocked(c context.Context) error {
 	}
 
 	// Write our specification file.
-	if err := spec.Write(e.Config.Spec, e.SpecPath); err != nil {
-		return errors.Annotate(err).Reason("failed to write spec file to: %(path)s").
-			D("path", e.SpecPath).
+	if err := e.WriteEnvStamp(); err != nil {
+		return errors.Annotate(err).Reason("failed to write environment stamp file to: %(path)s").
+			D("path", e.EnvStampPath).
 			Err()
 	}
-	logging.Debugf(c, "Wrote specification file to: %s", e.SpecPath)
+	logging.Debugf(c, "Wrote environment stamp file to: %s", e.EnvStampPath)
 
 	// Finalize our VirtualEnv for bootstrap execution.
 	if err := e.finalize(c); err != nil {
@@ -362,6 +474,56 @@ func (e *Env) installVirtualEnv(c context.Context, pkgDir string) error {
 	return nil
 }
 
+// getPEP425Tags calls Python's pip.pep425tags package to retrieve the tags.
+//
+// This must be run while "pip" is installed in the VirtualEnv.
+func (e *Env) getPEP425Tags(c context.Context) ([]*vpython.Environment_Pep425Tag, error) {
+	// This script will return a list of 3-entry lists:
+	// [0]: version (e.g., "cp27")
+	// [1]: abi (e.g., "cp27mu", "none")
+	// [2]: arch (e.g., "x86_64", "armv7l", "any")
+	const script = `import json;` +
+		`import pip.pep425tags;` +
+		`import sys;` +
+		`sys.stdout.write(json.dumps(pip.pep425tags.get_supported()))`
+	type pep425TagEntry []string
+
+	cmd, err := e.venvInterpreter().Prepare(c, "-c", script)
+	if err != nil {
+		return nil, err
+	}
+
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+	if err = cmd.Run(); err != nil {
+		return nil, errors.Annotate(err).Reason("failed to get PEP425 tags").Err()
+	}
+
+	var tagEntries []pep425TagEntry
+	if err := json.Unmarshal(stdout.Bytes(), &tagEntries); err != nil {
+		return nil, errors.Annotate(err).Reason("failed to unmarshal PEP425 tag output: %(output)s").
+			D("output", stdout.String()).
+			Err()
+	}
+
+	tags := make([]*vpython.Environment_Pep425Tag, len(tagEntries))
+	for i, te := range tagEntries {
+		if len(te) != 3 {
+			return nil, errors.Reason("invalid PEP425 tag entry: %(entry)v").
+				D("entry", te).
+				D("index", i).
+				Err()
+		}
+
+		tags[i] = &vpython.Environment_Pep425Tag{
+			Version: te[0],
+			Abi:     te[1],
+			Arch:    te[2],
+		}
+	}
+	return tags, nil
+}
+
 func (e *Env) installWheels(c context.Context, bootstrapDir, pkgDir string) error {
 	// Identify all downloaded wheels and parse them.
 	wheels, err := wheel.ScanDir(pkgDir)
@@ -410,7 +572,7 @@ func (e *Env) finalize(c context.Context) error {
 	// Change all files to read-only, except:
 	// - Our root directory, which must be writable in order to update our
 	//   completion flag.
-	// - Our completion flag, which must be trivially re-writable.
+	// - Our environment stamp, which must be trivially re-writable.
 	if !e.Config.testLeaveReadWrite {
 		err := filesystem.MakeReadOnly(e.Root, func(path string) bool {
 			switch path {
@@ -433,9 +595,25 @@ func (e *Env) venvInterpreter() *python.Command {
 	return cmd
 }
 
-// touchCompleteFlag touches the complete flag, creating it and/or
+// touchCompleteFlagNonBlocking touches the complete flag, creating it and/or
 // updating its timestamp.
-func (e *Env) touchCompleteFlag(c context.Context) error {
+//
+// If the lock for this VirtualEnv is already held, we will fail with
+// fslock.ErrLockHeld.
+func (e *Env) touchCompleteFlagNonBlocking() error {
+	err := e.withLockNonBlocking(e.touchCompleteFlagLocked)
+	if err != nil {
+		return errors.Annotate(err).Reason("failed to touch complete flag").Err()
+	}
+	return err
+}
+
+// touchCompleteFlagBlocking touches the complete flag, creating it and/or
+// updating its timestamp.
+//
+// If the lock for this VirtualEnv is already held, we will block until it is
+// not and then update the flag.
+func (e *Env) touchCompleteFlagBlocking(c context.Context) error {
 	err := e.withLockBlocking(c, e.touchCompleteFlagLocked)
 	if err != nil {
 		return errors.Annotate(err).Reason("failed to touch complete flag").Err()
@@ -487,7 +665,7 @@ func (e *Env) keepAliveMonitor(c context.Context, interval time.Duration, cancel
 		}
 
 		logging.Debugf(c, "Keep-alive: Updating completed flag timestamp.")
-		if err := e.touchCompleteFlag(c); err != nil {
+		if err := e.touchCompleteFlagBlocking(c); err != nil {
 			errors.Log(c, errors.Annotate(err).Reason("failed to refresh timestamp").Err())
 			cancelFunc()
 			return

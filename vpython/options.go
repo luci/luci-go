@@ -41,7 +41,7 @@ type Options struct {
 	// WorkDir is the Python working directory. If empty, the current working
 	// directory will be used.
 	//
-	// If EnvRoot is empty, WorkDir will be used as the base enviornment root.
+	// If EnvRoot is empty, WorkDir will be used as the base environment root.
 	WorkDir string
 
 	// Environ is the system environment. It can be used for some default values
@@ -63,17 +63,17 @@ func (o *Options) resolve(c context.Context) error {
 	}
 
 	// Resolve our target python script.
-	if err := o.resolveEnvSpec(c); err != nil {
+	if err := o.resolveSpec(c); err != nil {
 		return errors.Annotate(err).Reason("failed to resolve Python script").Err()
 	}
 
-	// If no enviornment base directory was supplied, create one under the current
+	// If no environment base directory was supplied, create one under the current
 	// working directory.
 	if o.EnvConfig.BaseDir == "" {
 		// Is one specified in our environment?
-		if v, ok := o.Environ.Get(EnvSpecPath); ok {
+		if v, ok := o.Environ.Get(EnvStampPath); ok {
 			var err error
-			if o.EnvConfig.BaseDir, err = venv.EnvRootFromSpecPath(v); err != nil {
+			if o.EnvConfig.BaseDir, err = venv.EnvRootFromStampPath(v); err != nil {
 				return errors.Annotate(err).Reason("failed to get env root from environment: %(path)s").
 					D("path", v).
 					Err()
@@ -84,7 +84,7 @@ func (o *Options) resolve(c context.Context) error {
 	return nil
 }
 
-func (o *Options) resolveEnvSpec(c context.Context) error {
+func (o *Options) resolveSpec(c context.Context) error {
 	cmd, err := python.ParseCommandLine(o.Args)
 	if err != nil {
 		return errors.Annotate(err).Reason("failed to parse Python command-line").Err()
@@ -137,10 +137,10 @@ func (o *Options) resolveEnvSpec(c context.Context) error {
 		}
 	}
 
-	// Do we have a spec file in the enviornment?
-	if v, ok := o.Environ.Get(EnvSpecPath); ok {
+	// Do we have a spec file in the environment?
+	if v, ok := o.Environ.Get(EnvStampPath); ok {
 		if o.EnvConfig.Spec, err = spec.Load(v); err != nil {
-			return errors.Annotate(err).Reason("failed to load enviornment-supplied spec from: %(path)s").
+			return errors.Annotate(err).Reason("failed to load environment-supplied spec from: %(path)s").
 				D("path", v).
 				Err()
 		}

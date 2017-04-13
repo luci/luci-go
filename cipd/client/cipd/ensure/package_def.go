@@ -22,7 +22,7 @@ type PackageDef struct {
 }
 
 func (p *PackageDef) String() string {
-	return fmt.Sprintf("%s %s", p.PackageTemplate, p.UnresolvedVersion)
+	return fmt.Sprintf("%s@%s", p.PackageTemplate, p.UnresolvedVersion)
 }
 
 // VersionResolver is expected to tranform a {PackageName, Version} tuple into

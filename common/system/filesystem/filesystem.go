@@ -42,7 +42,7 @@ func AbsPath(base *string) error {
 // If when is zero-value, time.Now will be used.
 func Touch(path string, when time.Time, mode os.FileMode) error {
 	// Try and create a file at the target path.
-	fd, err := os.OpenFile(path, (os.O_CREATE | os.O_RDWR | os.O_TRUNC), mode)
+	fd, err := os.OpenFile(path, (os.O_CREATE | os.O_RDWR), mode)
 	if err == nil {
 		if err := fd.Close(); err != nil {
 			return errors.Annotate(err).Reason("failed to close new file").Err()
@@ -66,6 +66,7 @@ func Touch(path string, when time.Time, mode os.FileMode) error {
 			D("path", path).
 			Err()
 	}
+
 	return nil
 }
 

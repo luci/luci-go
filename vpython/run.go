@@ -19,11 +19,12 @@ import (
 )
 
 var (
-	// EnvSpecPath is the exported enviornment variable for the specification path.
+	// EnvStampPath is the exported enviornment variable for the environment stamp
+	// path.
 	//
 	// This is added to the bootstrap enviornment used by Run to allow subprocess
 	// "vpython" invocations to automatically inherit the same environment.
-	EnvSpecPath = "VPYTHON_VENV_SPEC_PATH"
+	EnvStampPath = "VPYTHON_VENV_ENV_STAMP_PATH"
 )
 
 // Run sets up a Python VirtualEnv and executes the supplied Options.
@@ -66,8 +67,8 @@ func Run(c context.Context, opts Options) error {
 		}
 
 		e.Set("VIRTUAL_ENV", ve.Root) // Set by VirtualEnv script.
-		if ve.SpecPath != "" {
-			e.Set(EnvSpecPath, ve.SpecPath)
+		if ve.EnvStampPath != "" {
+			e.Set(EnvStampPath, ve.EnvStampPath)
 		}
 
 		// Prefix PATH with the VirtualEnv "bin" directory.

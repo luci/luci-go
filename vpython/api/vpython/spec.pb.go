@@ -2,15 +2,6 @@
 // source: github.com/luci/luci-go/vpython/api/vpython/spec.proto
 // DO NOT EDIT!
 
-/*
-Package vpython is a generated protocol buffer package.
-
-It is generated from these files:
-	github.com/luci/luci-go/vpython/api/vpython/spec.proto
-
-It has these top-level messages:
-	Spec
-*/
 package vpython
 
 import proto "github.com/golang/protobuf/proto"
@@ -21,12 +12,6 @@ import math "math"
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the proto package it is being compiled against.
-// A compilation error at this line likely means your copy of the
-// proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type Spec struct {
 	// The Python version to use. This should be of the form:
@@ -53,7 +38,7 @@ type Spec struct {
 func (m *Spec) Reset()                    { *m = Spec{} }
 func (m *Spec) String() string            { return proto.CompactTextString(m) }
 func (*Spec) ProtoMessage()               {}
-func (*Spec) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+func (*Spec) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
 func (m *Spec) GetPythonVersion() string {
 	if m != nil {
@@ -93,7 +78,7 @@ type Spec_Package struct {
 func (m *Spec_Package) Reset()                    { *m = Spec_Package{} }
 func (m *Spec_Package) String() string            { return proto.CompactTextString(m) }
 func (*Spec_Package) ProtoMessage()               {}
-func (*Spec_Package) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 0} }
+func (*Spec_Package) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 0} }
 
 func (m *Spec_Package) GetName() string {
 	if m != nil {
@@ -115,12 +100,12 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("github.com/luci/luci-go/vpython/api/vpython/spec.proto", fileDescriptor0)
+	proto.RegisterFile("github.com/luci/luci-go/vpython/api/vpython/spec.proto", fileDescriptor1)
 }
 
-var fileDescriptor0 = []byte{
+var fileDescriptor1 = []byte{
 	// 200 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x32, 0x4b, 0xcf, 0x2c, 0xc9,
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x32, 0x4b, 0xcf, 0x2c, 0xc9,
 	0x28, 0x4d, 0xd2, 0x4b, 0xce, 0xcf, 0xd5, 0xcf, 0x29, 0x4d, 0xce, 0x04, 0x13, 0xba, 0xe9, 0xf9,
 	0xfa, 0x65, 0x05, 0x95, 0x25, 0x19, 0xf9, 0x79, 0xfa, 0x89, 0x05, 0x99, 0x70, 0x76, 0x71, 0x41,
 	0x6a, 0xb2, 0x5e, 0x41, 0x51, 0x7e, 0x49, 0xbe, 0x10, 0x3b, 0x54, 0x4c, 0xe9, 0x14, 0x23, 0x17,

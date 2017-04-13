@@ -18,6 +18,16 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
+// Clone returns a deep copy clone of the provided spec.
+//
+// If spec is nil, an empty vpython.Spec will be returned.
+func Clone(spec *vpython.Spec) *vpython.Spec {
+	if spec == nil {
+		return &vpython.Spec{}
+	}
+	return proto.Clone(spec).(*vpython.Spec)
+}
+
 // Normalize normalizes the specification Message such that two messages
 // with identical meaning will have identical representation.
 func Normalize(spec *vpython.Spec) error {

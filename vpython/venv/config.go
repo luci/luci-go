@@ -34,7 +34,7 @@ type PackageLoader interface {
 	// creating it if needed.
 	//
 	// root, if used, must be safe for concurrent use.
-	Resolve(c context.Context, root string, packages []*vpython.Spec_Package) error
+	Resolve(c context.Context, root string, packages []*vpython.Spec_Package, template map[string]string) error
 
 	// Ensure installs the supplied packages into root.
 	//
@@ -100,6 +100,18 @@ type Config struct {
 	// what is allowed by the operating system.
 	MaxScriptPathLen int
 
+	// TagSelector, if not nil, chooses which PEP425 tag to use when representing
+	// this Python environment.
+	//
+	// This logic is externalized because it also has to correspond to how
+	// packages are defined for Loader.
+	//
+	// If nil, no Tag will be selected.
+	TagSelector func([]*vpython.Environment_Pep425Tag) *vpython.Environment_Pep425Tag
+
+	// Tag is the PEP425 tag that describes this system.
+	Tag *vpython.Environment_Pep425Tag
+
 	// testPreserveInstallationCapability is a testing parameter. If true, the
 	// VirtualEnv's ability to install will be preserved after the setup. This is
 	// used by the test whell generation bootstrap code.
@@ -111,12 +123,33 @@ type Config struct {
 	testLeaveReadWrite bool
 }
 
-// setupEnv processes the config, validating and, where appropriate, populating
+// WithoutWheels returns a clone of cfg that depends on no additional packages.
+//
+// If cfg is already an empty it will be returned directly.
+func (cfg *Config) WithoutWheels() *Config {
+	if !cfg.HasWheels() {
+		return cfg
+	}
+
+	clone := *cfg
+	if clone.Spec != nil {
+		clone.Spec = spec.Clone(cfg.Spec)
+		clone.Spec.Wheel = nil
+	}
+	return &clone
+}
+
+// HasWheels returns true if this environment declares wheel dependencies.
+func (cfg *Config) HasWheels() bool {
+	return cfg.Spec != nil && len(cfg.Spec.Wheel) == 0
+}
+
+// makeEnv processes the config, validating and, where appropriate, populating
 // any components. Upon success, it returns a configured Env instance.
 //
 // The returned Env instance may or may not actually exist. Setup must be called
 // prior to using it.
-func (cfg *Config) setupEnv(c context.Context) (*Env, error) {
+func (cfg *Config) makeEnv(c context.Context) (*Env, error) {
 	// We MUST have a package loader.
 	if cfg.Loader == nil {
 		return nil, errors.New("no package loader provided")
@@ -178,13 +211,27 @@ func (cfg *Config) setupEnv(c context.Context) (*Env, error) {
 		return nil, errors.Annotate(err).Reason("failed to resolve system Python interpreter").Err()
 	}
 
-	// Generate our enviornment name based on the deterministic hash of its
+	// Generate our environment name based on the deterministic hash of its
 	// fully-resolved specification.
-	envName := spec.Hash(cfg.Spec)
-	if cfg.MaxHashLen > 0 && len(envName) > cfg.MaxHashLen {
-		envName = envName[:cfg.MaxHashLen]
+	return cfg.envForName(cfg.EnvName()), nil
+}
+
+// EnvName returns the VirtualEnv environment name for the environment that cfg
+// describes.
+func (cfg *Config) EnvName() string {
+	name := spec.Hash(cfg.Spec)
+	if cfg.MaxHashLen > 0 && len(name) > cfg.MaxHashLen {
+		name = name[:cfg.MaxHashLen]
 	}
-	return cfg.envForName(envName), nil
+	return name
+}
+
+// EnvStamp returns the vpython.Environment stamp for this Config.
+func (cfg *Config) EnvStamp() *vpython.Environment {
+	return &vpython.Environment{
+		Spec: cfg.Spec,
+		Tag:  cfg.Tag,
+	}
 }
 
 // Prune performs a pruning round on the environment set described by this
@@ -202,15 +249,15 @@ func (cfg *Config) envForName(name string) *Env {
 	venvRoot := filepath.Join(cfg.BaseDir, name)
 	binDir := venvBinDir(venvRoot)
 	return &Env{
-		Config:   cfg,
-		Root:     venvRoot,
-		Python:   filepath.Join(binDir, "python"),
-		BinDir:   binDir,
-		SpecPath: filepath.Join(venvRoot, "enviornment.pb.txt"),
+		Config:       cfg,
+		Root:         venvRoot,
+		Python:       filepath.Join(binDir, "python"),
+		BinDir:       binDir,
+		EnvStampPath: filepath.Join(venvRoot, "environment.pb.txt"),
 
 		name:             name,
 		lockPath:         filepath.Join(cfg.BaseDir, fmt.Sprintf(".%s.lock", name)),
-		completeFlagPath: filepath.Join(venvRoot, "complete.flag"),
+		completeFlagPath: filepath.Join(venvRoot, fmt.Sprintf("complete.%s.flag", vpython.Version)),
 	}
 }
 
@@ -221,9 +268,15 @@ func (cfg *Config) resolvePackages(c context.Context) error {
 	packages[0] = cfg.Spec.Virtualenv
 	packages = append(packages, cfg.Spec.Wheel...)
 
+	// Perform variable substitution on our wheel names.
+	template := make(map[string]string, 3)
+	if !cfg.Tag.IsZero() {
+		template["py_pep425_tag"] = cfg.Tag.String()
+	}
+
 	// Resolve our packages. Because we're using pointers, the in-place
 	// updating will update the actual spec file!
-	if err := cfg.Loader.Resolve(c, cfg.LoaderResolveRoot, packages); err != nil {
+	if err := cfg.Loader.Resolve(c, cfg.LoaderResolveRoot, packages, template); err != nil {
 		return errors.Annotate(err).Reason("failed to resolve packages").Err()
 	}
 	return nil

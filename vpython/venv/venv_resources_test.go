@@ -130,7 +130,9 @@ func (tl *testingLoader) ensureWheels(ctx context.Context, t *testing.T, py *pyt
 	return nil
 }
 
-func (tl *testingLoader) Resolve(c context.Context, root string, packages []*vpython.Spec_Package) error {
+func (tl *testingLoader) Resolve(c context.Context, root string, packages []*vpython.Spec_Package,
+	template map[string]string) error {
+
 	for _, pkg := range packages {
 		pkg.Version = "resolved"
 	}

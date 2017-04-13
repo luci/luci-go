@@ -18,7 +18,6 @@ import (
 	cproto "github.com/luci/luci-go/common/proto"
 	"github.com/luci/luci-go/common/system/filesystem"
 
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 )
 
@@ -65,24 +64,6 @@ func Parse(content string) (*vpython.Spec, error) {
 		return nil, errors.Annotate(err).Reason("failed to unmarshal vpython.Spec").Err()
 	}
 	return &spec, nil
-}
-
-// Write writes a text protobuf form of spec to path.
-func Write(spec *vpython.Spec, path string) error {
-	fd, err := os.Create(path)
-	if err != nil {
-		return errors.Annotate(err).Reason("failed to create output file").Err()
-	}
-
-	if err := proto.MarshalText(fd, spec); err != nil {
-		_ = fd.Close()
-		return errors.Annotate(err).Reason("failed to output text protobuf").Err()
-	}
-
-	if err := fd.Close(); err != nil {
-		return errors.Annotate(err).Reason("failed to Close file").Err()
-	}
-	return nil
 }
 
 // Loader implements the generic ability to load a "vpython" spec file.

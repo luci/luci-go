@@ -136,6 +136,7 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 
 	Convey(`Testing Setup`, t, testfs.MustWithTempDir(t, "vpython", func(tdir string) {
 		c := context.Background()
+		hadTag := false
 		config := Config{
 			BaseDir:    tdir,
 			MaxHashLen: 4,
@@ -151,6 +152,13 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 				},
 			},
 			Loader: tl,
+			TagSelector: func(tags []*vpython.Environment_Pep425Tag) *vpython.Environment_Pep425Tag {
+				if len(tags) > 0 {
+					hadTag = true
+					return tags[0]
+				}
+				return nil
+			},
 		}
 
 		// Load the bootstrap wheels for the next part of the test.
@@ -167,6 +175,16 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 			So(m.Interpreter, ShouldStartWith, v.Root)
 			So(m.Pants, ShouldStartWith, v.Root)
 			So(m.Shirt, ShouldStartWith, v.Root)
+
+			// We should be able to load its environment stamp.
+			st, err := v.LoadEnvStamp()
+			So(err, ShouldBeNil)
+			So(st, ShouldNotBeNil)
+			So(st.Tag.IsZero(), ShouldEqual, !hadTag)
+			So(st.Spec, ShouldNotBeNil)
+			So(len(st.Spec.Wheel), ShouldEqual, len(config.Spec.Wheel))
+			So(st.Spec.Virtualenv, ShouldNotBeNil)
+			So(st.Spec.PythonVersion, ShouldNotEqual, "")
 
 			// We should be able to delete it.
 			So(v.Delete(c), ShouldBeNil)

@@ -120,7 +120,7 @@ func maybePruneFile(c context.Context, cfg *Config, fi os.FileInfo, pruneThresho
 	e := cfg.envForName(name)
 	err = fslock.With(e.lockPath, func() error {
 		// Read the complete flag file's timestamp.
-		switch st, err := os.Stat(e.completeFlagPath); {
+		switch st, err := os.Stat(e.EnvStampPath); {
 		case err == nil:
 			if !st.ModTime().Before(pruneThreshold) {
 				return nil
@@ -133,8 +133,8 @@ func maybePruneFile(c context.Context, cfg *Config, fi os.FileInfo, pruneThresho
 			logging.Infof(c, "Env [%s] has no completed flag; pruning...", e.name)
 
 		default:
-			return errors.Annotate(err).Reason("failed to stat complete flag: %(path)s").
-				D("path", e.completeFlagPath).
+			return errors.Annotate(err).Reason("failed to stat environment stamp: %(path)s").
+				D("path", e.EnvStampPath).
 				Err()
 		}
 

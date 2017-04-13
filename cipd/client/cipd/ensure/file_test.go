@@ -39,8 +39,8 @@ var fileSerializationTests = []struct {
 			},
 		}},
 		f(
-			"some/other_thing latest",
-			"some/thing version",
+			"some/other_thing@latest",
+			"some/thing@version",
 		),
 	},
 
@@ -58,11 +58,11 @@ var fileSerializationTests = []struct {
 		f(
 			"$ServiceURL https://some.example.com",
 			"",
-			"some/other_thing latest",
-			"some/thing version",
+			"some/other_thing@latest",
+			"some/thing@version",
 			"",
 			"@Subdir path/to dir/with/spaces",
-			"different/package some_tag:thingy",
+			"different/package@some_tag:thingy",
 		),
 	},
 }
