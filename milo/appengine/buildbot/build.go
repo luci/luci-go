@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -313,49 +314,22 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 	return
 }
 
-// parseProp returns a representation of v based off k, and a boolean to
-// specify whether or not to hide it altogether.
-func parseProp(prop map[string]Prop, k string, v interface{}) (string, bool) {
-	switch k {
-	case "requestedAt":
-		if vf, ok := v.(float64); ok {
-			return time.Unix(int64(vf), 0).UTC().Format(time.RFC3339), true
-		}
-	case "buildbucket":
-		var b map[string]interface{}
-		json.Unmarshal([]byte(v.(string)), &b)
-		if b["build"] == nil {
-			return "", false
-		}
-		build := b["build"].(map[string]interface{})
-		id := build["id"]
-		if id == nil {
-			return "", false
-		}
-		return fmt.Sprintf("https://cr-buildbucket.appspot.com/b/%s", id.(string)), true
-	case "issue":
-		if rv, ok := prop["rietveld"]; ok {
-			rietveld := rv.Value.(string)
-			// Issue could be a float, int, or string.
-			switch v := v.(type) {
-			case float64:
-				return fmt.Sprintf("%s/%d", rietveld, int(v)), true
-			default: // Probably int or string
-				return fmt.Sprintf("%s/%v", rietveld, v), true
-			}
-		}
-		return fmt.Sprintf("%d", int(v.(float64))), true
-	case "rietveld":
-		return "", false
-	default:
-		if vs, ok := v.(string); ok && vs == "" {
-			return "", false // Value is empty, don't show it.
-		}
-		if v == nil {
-			return "", false
+// parseProp returns a string representation of v.
+func parseProp(v interface{}) string {
+	// if v is a whole number, force it into an int.  json.Marshal() would turn
+	// it into what looks like a float instead.  We want this to remain and
+	// int instead of a number.
+	if vf, ok := v.(float64); ok {
+		if math.Floor(vf) == vf {
+			return fmt.Sprintf("%d", int64(vf))
 		}
 	}
-	return fmt.Sprintf("%v", v), true
+	// return the json representation of the value.
+	b, err := json.Marshal(v)
+	if err == nil {
+		return string(b)
+	}
+	return fmt.Sprintf("%v", v)
 }
 
 // Prop is a struct used to store a value and group so that we can make a map
@@ -383,10 +357,7 @@ func properties(b *buildbotBuild) (result []*resp.PropertyGroup) {
 		if _, ok := groups[groupName]; !ok {
 			groups[groupName] = &resp.PropertyGroup{GroupName: groupName}
 		}
-		vs, ok := parseProp(allProps, key, value)
-		if !ok {
-			continue
-		}
+		vs := parseProp(value)
 		groups[groupName].Property = append(groups[groupName].Property, &resp.Property{
 			Key:   key,
 			Value: vs,

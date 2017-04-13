@@ -588,7 +588,7 @@ table.info th {
   text-align: center;
 }
 
-table.info td.left {
+table.info .left {
   text-align: left
 }
 

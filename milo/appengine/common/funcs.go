@@ -134,8 +134,8 @@ func humanDuration(d time.Duration) string {
 	return "0"
 }
 
-// obfuscateEmail converts an email@address.com into email<junk>@address.com
-// if it is an email.
+// obfuscateEmail converts a string containing email adddress email@address.com
+// into email<junk>@address.com.
 func obfuscateEmail(email string) template.HTML {
 	email = template.HTMLEscapeString(email)
 	return template.HTML(strings.Replace(

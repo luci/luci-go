@@ -216,17 +216,7 @@
           {{ range .Property }}
             <tr>
               <td class="left">{{.Key}}</td>
-              <td>
-                {{ if (eq .Key "requestedAt") }}
-                  {{ .Value | parseRFC3339 | localTime "" }}
-                {{ else if (eq .Key "blamelist") }}
-                  {{ .Value | obfuscateEmail }}
-                {{ else if (startswith .Value "https://") }}
-                  <a href="{{.Value}}">{{.Value}}</a>
-                {{ else }}
-                  {{.Value}}
-                {{ end }}
-              </td>
+              <td>{{.Value}}</td>
               <td>{{$name}}</td>
             </tr>
           {{ end }}

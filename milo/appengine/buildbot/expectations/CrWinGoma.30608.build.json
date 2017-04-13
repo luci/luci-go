@@ -527,43 +527,43 @@
       "Property": [
         {
           "Key": "got_angle_revision",
-          "Value": "07529ff8dcacd94b93d432122d0c6aa68631843a"
+          "Value": "\"07529ff8dcacd94b93d432122d0c6aa68631843a\""
         },
         {
           "Key": "got_buildtools_revision",
-          "Value": "8dd3c8e39a48743c4eb790d9a8abe9676b617046"
+          "Value": "\"8dd3c8e39a48743c4eb790d9a8abe9676b617046\""
         },
         {
           "Key": "got_nacl_revision",
-          "Value": "f9308087f764c0f4341e3200baded605c917eb49"
+          "Value": "\"f9308087f764c0f4341e3200baded605c917eb49\""
         },
         {
           "Key": "got_revision",
-          "Value": "bfdee36d31a624d330b60b481fc26d10dff81b97"
+          "Value": "\"bfdee36d31a624d330b60b481fc26d10dff81b97\""
         },
         {
           "Key": "got_revision_cp",
-          "Value": "refs/heads/master@{#398661}"
+          "Value": "\"refs/heads/master@{#398661}\""
         },
         {
           "Key": "got_swarming_client_revision",
-          "Value": "df6e95e7669883c8fe9ef956c69a544154701a49"
+          "Value": "\"df6e95e7669883c8fe9ef956c69a544154701a49\""
         },
         {
           "Key": "got_v8_revision",
-          "Value": "af2ed87b122bd32cc53285dc7579530ae08731e5"
+          "Value": "\"af2ed87b122bd32cc53285dc7579530ae08731e5\""
         },
         {
           "Key": "got_v8_revision_cp",
-          "Value": "refs/heads/5.3.182@{#1}"
+          "Value": "\"refs/heads/5.3.182@{#1}\""
         },
         {
           "Key": "got_webrtc_revision",
-          "Value": "393886f22bb16e991b0fc57d7e290637d307448a"
+          "Value": "\"393886f22bb16e991b0fc57d7e290637d307448a\""
         },
         {
           "Key": "got_webrtc_revision_cp",
-          "Value": "refs/heads/master@{#13070}"
+          "Value": "\"refs/heads/master@{#13070}\""
         }
       ]
     },
@@ -572,7 +572,7 @@
       "Property": [
         {
           "Key": "recipe",
-          "Value": "chromium"
+          "Value": "\"chromium\""
         }
       ]
     },
@@ -581,11 +581,11 @@
       "Property": [
         {
           "Key": "build_revision",
-          "Value": "94dbe001292dcec3423c5d1b0374826ff89a8f46"
+          "Value": "\"94dbe001292dcec3423c5d1b0374826ff89a8f46\""
         },
         {
           "Key": "build_scm",
-          "Value": "git"
+          "Value": "\"git\""
         }
       ]
     },
@@ -594,11 +594,11 @@
       "Property": [
         {
           "Key": "blamelist",
-          "Value": "[agrieve@chromium.org dcheng@chromium.org dtseng@chromium.org fsamuel@chromium.org gab@chromium.org moshayedi@chromium.org yolandyan@google.com]"
+          "Value": "[\"agrieve@chromium.org\",\"dcheng@chromium.org\",\"dtseng@chromium.org\",\"fsamuel@chromium.org\",\"gab@chromium.org\",\"moshayedi@chromium.org\",\"yolandyan@google.com\"]"
         },
         {
           "Key": "branch",
-          "Value": "master"
+          "Value": "\"master\""
         },
         {
           "Key": "buildnumber",
@@ -606,19 +606,19 @@
         },
         {
           "Key": "project",
-          "Value": "chromium"
+          "Value": "\"chromium\""
         },
         {
           "Key": "repository",
-          "Value": "https://chromium.googlesource.com/chromium/src"
+          "Value": "\"https://chromium.googlesource.com/chromium/src\""
         },
         {
           "Key": "requestedAt",
-          "Value": "2016-06-08T20:24:36Z"
+          "Value": "1465417476"
         },
         {
           "Key": "revision",
-          "Value": "bfdee36d31a624d330b60b481fc26d10dff81b97"
+          "Value": "\"bfdee36d31a624d330b60b481fc26d10dff81b97\""
         }
       ]
     },
@@ -627,7 +627,7 @@
       "Property": [
         {
           "Key": "slavename",
-          "Value": "build28-m1"
+          "Value": "\"build28-m1\""
         }
       ]
     },
@@ -636,7 +636,7 @@
       "Property": [
         {
           "Key": "buildername",
-          "Value": "CrWinGoma"
+          "Value": "\"CrWinGoma\""
         }
       ]
     },
@@ -645,7 +645,7 @@
       "Property": [
         {
           "Key": "git_revision",
-          "Value": "bfdee36d31a624d330b60b481fc26d10dff81b97"
+          "Value": "\"bfdee36d31a624d330b60b481fc26d10dff81b97\""
         }
       ]
     },
@@ -654,7 +654,7 @@
       "Property": [
         {
           "Key": "scheduler",
-          "Value": "chromium"
+          "Value": "\"chromium\""
         }
       ]
     },
@@ -663,11 +663,11 @@
       "Property": [
         {
           "Key": "buildbotURL",
-          "Value": "http://build.chromium.org/p/chromium.fyi/"
+          "Value": "\"http://build.chromium.org/p/chromium.fyi/\""
         },
         {
           "Key": "mastername",
-          "Value": "chromium.fyi"
+          "Value": "\"chromium.fyi\""
         }
       ]
     },
@@ -676,7 +676,7 @@
       "Property": [
         {
           "Key": "workdir",
-          "Value": "C:\\b\\build\\slave/CrWinGoma"
+          "Value": "\"C:\\\\b\\\\build\\\\slave/CrWinGoma\""
         }
       ]
     }

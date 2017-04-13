@@ -763,43 +763,43 @@
       "Property": [
         {
           "Key": "got_angle_revision",
-          "Value": "be5a8a400fd182fba174bd9110e470a54f8b14b6"
+          "Value": "\"be5a8a400fd182fba174bd9110e470a54f8b14b6\""
         },
         {
           "Key": "got_buildtools_revision",
-          "Value": "56eaae134648135663c4aa1ed82278572b5f35ef"
+          "Value": "\"56eaae134648135663c4aa1ed82278572b5f35ef\""
         },
         {
           "Key": "got_nacl_revision",
-          "Value": "d1ea091dad378d32067570114e19c0e1f15d5baa"
+          "Value": "\"d1ea091dad378d32067570114e19c0e1f15d5baa\""
         },
         {
           "Key": "got_revision",
-          "Value": "cb7c961aea3ee23c4e246f50441e5dc582565129"
+          "Value": "\"cb7c961aea3ee23c4e246f50441e5dc582565129\""
         },
         {
           "Key": "got_revision_cp",
-          "Value": "refs/heads/master@{#402330}"
+          "Value": "\"refs/heads/master@{#402330}\""
         },
         {
           "Key": "got_swarming_client_revision",
-          "Value": "df6e95e7669883c8fe9ef956c69a544154701a49"
+          "Value": "\"df6e95e7669883c8fe9ef956c69a544154701a49\""
         },
         {
           "Key": "got_v8_revision",
-          "Value": "3238ca22a1baefea0665b528f259c66db1bf1b17"
+          "Value": "\"3238ca22a1baefea0665b528f259c66db1bf1b17\""
         },
         {
           "Key": "got_v8_revision_cp",
-          "Value": "refs/heads/5.3.329@{#1}"
+          "Value": "\"refs/heads/5.3.329@{#1}\""
         },
         {
           "Key": "got_webrtc_revision",
-          "Value": "105bb15c86ba535a9abf42c29de9344c4664523e"
+          "Value": "\"105bb15c86ba535a9abf42c29de9344c4664523e\""
         },
         {
           "Key": "got_webrtc_revision_cp",
-          "Value": "refs/heads/master@{#13292}"
+          "Value": "\"refs/heads/master@{#13292}\""
         }
       ]
     },
@@ -808,7 +808,7 @@
       "Property": [
         {
           "Key": "failure_type",
-          "Value": "COMPILE_FAILURE"
+          "Value": "\"COMPILE_FAILURE\""
         }
       ]
     },
@@ -817,7 +817,7 @@
       "Property": [
         {
           "Key": "subproject_tag",
-          "Value": "chromium"
+          "Value": "\"chromium\""
         }
       ]
     },
@@ -826,7 +826,7 @@
       "Property": [
         {
           "Key": "failure_hash",
-          "Value": "4d6a903860330c798a14ca4fb8a3b9ea8c90b814"
+          "Value": "\"4d6a903860330c798a14ca4fb8a3b9ea8c90b814\""
         }
       ]
     },
@@ -835,11 +835,11 @@
       "Property": [
         {
           "Key": "$recipe_engine",
-          "Value": "map[mode_flags:map[use_subprocess42:true]]"
+          "Value": "{\"mode_flags\":{\"use_subprocess42\":true}}"
         },
         {
           "Key": "recipe",
-          "Value": "chromium_trybot"
+          "Value": "\"chromium_trybot\""
         }
       ]
     },
@@ -848,11 +848,11 @@
       "Property": [
         {
           "Key": "build_revision",
-          "Value": "0a2c62a48b28ce87da2409b08cdf2c6d50d75bc1"
+          "Value": "\"0a2c62a48b28ce87da2409b08cdf2c6d50d75bc1\""
         },
         {
           "Key": "build_scm",
-          "Value": "git"
+          "Value": "\"git\""
         }
       ]
     },
@@ -861,15 +861,31 @@
       "Property": [
         {
           "Key": "blamelist",
-          "Value": "[sky@chromium.org]"
+          "Value": "[\"sky@chromium.org\"]"
+        },
+        {
+          "Key": "branch",
+          "Value": "null"
         },
         {
           "Key": "buildnumber",
           "Value": "246309"
         },
         {
+          "Key": "project",
+          "Value": "\"\""
+        },
+        {
+          "Key": "repository",
+          "Value": "\"\""
+        },
+        {
           "Key": "requestedAt",
-          "Value": "2016-06-27T23:30:30Z"
+          "Value": "1467070230"
+        },
+        {
+          "Key": "revision",
+          "Value": "\"\""
         }
       ]
     },
@@ -878,7 +894,7 @@
       "Property": [
         {
           "Key": "slavename",
-          "Value": "vm774-m4"
+          "Value": "\"vm774-m4\""
         }
       ]
     },
@@ -887,7 +903,7 @@
       "Property": [
         {
           "Key": "buildername",
-          "Value": "win_chromium_rel_ng"
+          "Value": "\"win_chromium_rel_ng\""
         }
       ]
     },
@@ -896,27 +912,27 @@
       "Property": [
         {
           "Key": "buildbucket",
-          "Value": "https://cr-buildbucket.appspot.com/b/9008659093349989168"
+          "Value": "\"{\\\"build\\\": {\\\"bucket\\\": \\\"master.tryserver.chromium.win\\\", \\\"created_by\\\": \\\"user:sky@chromium.org\\\", \\\"created_ts\\\": \\\"1467070220037120\\\", \\\"id\\\": \\\"9008659093349989168\\\", \\\"lease_key\\\": \\\"1026332682\\\", \\\"tags\\\": [\\\"builder:win_chromium_rel_ng\\\", \\\"buildset:patch/rietveld/codereview.chromium.org/2101793003/1\\\", \\\"master:master.tryserver.chromium.win\\\", \\\"user_agent:git_cl_try\\\"]}}\""
         },
         {
           "Key": "category",
-          "Value": "git_cl_try"
+          "Value": "\"git_cl_try\""
         },
         {
           "Key": "issue",
-          "Value": "https://codereview.chromium.org/2101793003"
+          "Value": "2101793003"
         },
         {
           "Key": "master",
-          "Value": "master.tryserver.chromium.win"
+          "Value": "\"master.tryserver.chromium.win\""
         },
         {
           "Key": "patch_project",
-          "Value": "chromium"
+          "Value": "\"chromium\""
         },
         {
           "Key": "patch_storage",
-          "Value": "rietveld"
+          "Value": "\"rietveld\""
         },
         {
           "Key": "patchset",
@@ -924,15 +940,19 @@
         },
         {
           "Key": "reason",
-          "Value": "move_maximized_files"
+          "Value": "\"move_maximized_files\""
         },
         {
           "Key": "requester",
-          "Value": "sky@chromium.org"
+          "Value": "\"sky@chromium.org\""
+        },
+        {
+          "Key": "rietveld",
+          "Value": "\"https://codereview.chromium.org\""
         },
         {
           "Key": "testfilter",
-          "Value": "[defaulttests]"
+          "Value": "[\"defaulttests\"]"
         }
       ]
     },
@@ -941,11 +961,11 @@
       "Property": [
         {
           "Key": "buildbotURL",
-          "Value": "http://build.chromium.org/p/tryserver.chromium.win/"
+          "Value": "\"http://build.chromium.org/p/tryserver.chromium.win/\""
         },
         {
           "Key": "mastername",
-          "Value": "tryserver.chromium.win"
+          "Value": "\"tryserver.chromium.win\""
         }
       ]
     },
@@ -954,7 +974,7 @@
       "Property": [
         {
           "Key": "workdir",
-          "Value": "E:\\b\\build\\slave/win"
+          "Value": "\"E:\\\\b\\\\build\\\\slave/win\""
         }
       ]
     }
