@@ -117,7 +117,7 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 	return []settings.UIField{
 		{
 			ID:    "ConfigServiceHost",
-			Title: `Config service host.`,
+			Title: `Config service host`,
 			Type:  settings.UIFieldText,
 			Validator: func(v string) error {
 				// Validate that the host has a length, and has no forward slashes
@@ -131,9 +131,9 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 					return nil
 				}
 			},
-			Help: `<p>The application may fetch configuration files stored centrally` +
-				`in an instance of <a href="https://github.com/luci/luci-py/tree/master/appengine/config_service">luci-config</a>` +
-				`service. This is the host name (e.g., "example.com") of such service. For legacy purposes, this may be a` +
+			Help: `<p>The application may fetch configuration files stored centrally ` +
+				`in an instance of <a href="https://github.com/luci/luci-py/tree/master/appengine/config_service">luci-config</a> ` +
+				`service. This is the host name (e.g., "example.com") of such service. For legacy purposes, this may be an ` +
 				`URL, in which case the host component will be used. If you don't know what this is, you probably don't ` +
 				`use it and can keep this setting blank.</p>`,
 		},
@@ -163,7 +163,9 @@ disable local cache.</p>`,
 service outages, the local datastore can be used as a backing cache. When
 enabled, all configuration requests will be made against a cached configuration
 in the datastore. This configuration will be updated periodically by an
-independent cron job out of band with any user requests.</p>`,
+independent cron job out of band with any user requests. See
+<a href="https://godoc.org/github.com/luci/luci-go/appengine/gaemiddleware/#hdr-Cron_setup">gaemiddleware</a>
+package doc for instructions how to setup this cron job.</p>`,
 		},
 	}, nil
 }
