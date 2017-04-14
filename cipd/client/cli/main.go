@@ -255,7 +255,7 @@ func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters) {
 	f.StringVar(&opts.serviceURL, "service-url", params.ServiceURL,
 		"Backend URL. If provided via an 'ensure file', the URL in the file takes precedence.")
 	f.StringVar(&opts.cacheDir, "cache-dir", "",
-		fmt.Sprintf("Directory for shared cache (can also be set by %s env var).", common.CIPDCacheDir))
+		fmt.Sprintf("Directory for shared cache (can also be set by %s env var).", cipd.EnvCacheDir))
 	opts.authFlags.Register(f, params.DefaultAuthOptions)
 }
 
@@ -268,46 +268,17 @@ func (opts *clientOptions) makeCipdClient(ctx context.Context, root string) (cip
 	if err != nil {
 		return nil, err
 	}
-	cacheDir := opts.cacheDir
-	if cacheDir == "" {
-		cacheDir, err = CacheDir(ctx)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return cipd.NewClient(cipd.ClientOptions{
+
+	realOpts := cipd.ClientOptions{
 		ServiceURL:          opts.serviceURL,
 		Root:                root,
-		UserAgent:           UserAgent(ctx),
-		CacheDir:            cacheDir,
 		AuthenticatedClient: client,
 		AnonymousClient:     http.DefaultClient,
-	})
-}
-
-// UserAgent returns a CIPD user agent string, based on a CLI context.
-//
-// It knows how to use CIPDHTTPUserAgentPrefix env var.
-func UserAgent(ctx context.Context) string {
-	if prefix := cli.LookupEnv(ctx, common.CIPDHTTPUserAgentPrefix); prefix.Exists {
-		return fmt.Sprintf("%s/%s", prefix.Value, cipd.UserAgent)
 	}
-	return cipd.UserAgent
-}
-
-// CacheDir returns a CIPD cache directory path, based on a CLI context.
-//
-// It knows how to use CIPDCacheDir env var. May return empty string if cache
-// directory is not defined.
-func CacheDir(ctx context.Context) (string, error) {
-	if cacheDirEnv := cli.LookupEnv(ctx, common.CIPDCacheDir); cacheDirEnv.Exists {
-		cacheDir := cacheDirEnv.Value
-		if cacheDir != "" && !filepath.IsAbs(cacheDir) {
-			return "", fmt.Errorf("bad %s: not an absolute path - %s", common.CIPDCacheDir, cacheDir)
-		}
-		return cacheDir, nil
+	if err := realOpts.LoadFromEnv(cli.MakeGetEnv(ctx)); err != nil {
+		return nil, err
 	}
-	return "", nil
+	return cipd.NewClient(realOpts)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2177,11 +2148,11 @@ func GetApplication(params Parameters) *cli.Application {
 		},
 
 		EnvVars: map[string]subcommands.EnvVarDefinition{
-			common.CIPDHTTPUserAgentPrefix: {
+			cipd.EnvHTTPUserAgentPrefix: {
 				Advanced:  true,
 				ShortDesc: "Optional http User-Agent prefix.",
 			},
-			common.CIPDCacheDir: {
+			cipd.EnvCacheDir: {
 				ShortDesc: "Directory with shared instance and tags cache " +
 					"(-cache-dir, if given, takes precedence).",
 			},

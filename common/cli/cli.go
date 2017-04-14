@@ -38,6 +38,18 @@ func LookupEnv(ctx context.Context, key string) subcommands.EnvVar {
 	return e[key]
 }
 
+// MakeGetEnv returns a function bound to the supplied Context that has the
+// same semantics as os.Getenv. This can be used to simplify environment
+// compatibility.
+func MakeGetEnv(ctx context.Context) func(string) string {
+	return func(key string) string {
+		if v := LookupEnv(ctx, key); v.Exists {
+			return v.Value
+		}
+		return ""
+	}
+}
+
 // GetContext sniffs ContextModificator in the app and in the cmd and uses them
 // to derive a context for the command.
 //

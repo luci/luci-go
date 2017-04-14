@@ -76,6 +76,12 @@ const (
 	TagAttachTimeout = 3 * time.Minute
 )
 
+// Environment variable definitions
+const (
+	EnvCacheDir            = "CIPD_CACHE_DIR"
+	EnvHTTPUserAgentPrefix = "CIPD_HTTP_USER_AGENT_PREFIX"
+)
+
 var (
 	// ErrFinalizationTimeout is returned if CAS service can not finalize upload fast enough.
 	ErrFinalizationTimeout = errors.WrapTransient(errors.New("timeout while waiting for CAS service to finalize the upload"))
@@ -500,6 +506,27 @@ type ClientOptions struct {
 	//
 	// Default is UserAgent const.
 	UserAgent string
+}
+
+// LoadFromEnv loads supplied default values from an environment into opts.
+//
+// The supplied getEnv function is used to access named enviornment variables,
+// and should return an empty string if the enviornment variable is not defined.
+func (opts *ClientOptions) LoadFromEnv(getEnv func(string) string) error {
+	if opts.CacheDir == "" {
+		if v := getEnv(EnvCacheDir); v != "" {
+			if !filepath.IsAbs(v) {
+				return fmt.Errorf("bad %s: not an absolute path - %s", EnvCacheDir, v)
+			}
+			opts.CacheDir = v
+		}
+	}
+	if opts.UserAgent == "" {
+		if v := getEnv(EnvHTTPUserAgentPrefix); v != "" {
+			opts.UserAgent = fmt.Sprintf("%s/%s", v, UserAgent)
+		}
+	}
+	return nil
 }
 
 // NewClient initializes CIPD client object.

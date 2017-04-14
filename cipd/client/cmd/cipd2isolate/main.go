@@ -15,7 +15,6 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/cipd/client/cipd"
-	cipdcommon "github.com/luci/luci-go/cipd/client/cipd/common"
 	"github.com/luci/luci-go/cipd/client/cipd/ensure"
 	cipdcli "github.com/luci/luci-go/cipd/client/cli"
 	"github.com/luci/luci-go/cipd/version"
@@ -75,7 +74,7 @@ func cmdIsolate(params cipdcli.Parameters) *subcommands.Command {
 			c.Flags.StringVar(&c.cipdServiceURL, "cipd-service-url", params.ServiceURL,
 				"CIPD Backend URL. If provided via an 'ensure file', the URL in the file takes precedence.")
 			c.Flags.StringVar(&c.cipdCacheDir, "cipd-cache-dir", "",
-				fmt.Sprintf("Directory for shared CIPD cache (can also be set by %s env var).", cipdcommon.CIPDCacheDir))
+				fmt.Sprintf("Directory for shared CIPD cache (can also be set by %s env var).", cipd.EnvCacheDir))
 			c.Flags.StringVar(&c.ensureFile, "cipd-ensure-file", "",
 				`An "ensure" file with packages to isolate. See syntax described here: `+
 					`https://godoc.org/github.com/luci/luci-go/cipd/client/cipd/ensure.`+
@@ -183,23 +182,16 @@ func (r *isolateRun) initCipdClient(ctx context.Context, httpAuth *http.Client, 
 		serviceURL = ensureFile.ServiceURL
 	}
 
-	cacheDir := r.cipdCacheDir
-	if cacheDir == "" {
-		var err error
-		cacheDir, err = cipdcli.CacheDir(ctx)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return cipd.NewClient(cipd.ClientOptions{
+	opts := cipd.ClientOptions{
 		ServiceURL:          serviceURL,
 		Root:                r.workDir,
-		UserAgent:           cipdcli.UserAgent(ctx),
-		CacheDir:            cacheDir,
 		AuthenticatedClient: httpAuth,
 		AnonymousClient:     http.DefaultClient,
-	})
+	}
+	if err := opts.LoadFromEnv(cli.MakeGetEnv(ctx)); err != nil {
+		return nil, err
+	}
+	return cipd.NewClient(opts)
 }
 
 func (r *isolateRun) initIsolatedClient(ctx context.Context, httpAuth *http.Client) (*isolatedclient.Client, error) {

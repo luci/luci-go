@@ -19,12 +19,6 @@ import (
 	"github.com/luci/luci-go/common/data/stringset"
 )
 
-// Environment variable definitions
-const (
-	CIPDCacheDir            = "CIPD_CACHE_DIR"
-	CIPDHTTPUserAgentPrefix = "CIPD_HTTP_USER_AGENT_PREFIX"
-)
-
 // packageNameRe is a regular expression for a package name: <word>/<word/<word>
 // Package names must be lower case.
 var packageNameRe = regexp.MustCompile(`^([a-z0-9_\-]+/)*[a-z0-9_\-]+$`)
