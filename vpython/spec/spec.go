@@ -18,19 +18,16 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-// Clone returns a deep copy clone of the provided spec.
-//
-// If spec is nil, an empty vpython.Spec will be returned.
-func Clone(spec *vpython.Spec) *vpython.Spec {
-	if spec == nil {
-		return &vpython.Spec{}
-	}
-	return proto.Clone(spec).(*vpython.Spec)
-}
+// Render creates a human-readable string from spec.
+func Render(spec *vpython.Spec) string { return proto.MarshalTextString(spec) }
 
 // Normalize normalizes the specification Message such that two messages
 // with identical meaning will have identical representation.
-func Normalize(spec *vpython.Spec) error {
+func Normalize(spec *vpython.Spec, defaultVENVPackage *vpython.Spec_Package) error {
+	if spec.Virtualenv == nil {
+		spec.Virtualenv = defaultVENVPackage
+	}
+
 	sort.Sort(specPackageSlice(spec.Wheel))
 
 	// No duplicate packages. Since we're sorted, we can just check for no

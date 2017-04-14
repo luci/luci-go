@@ -24,13 +24,15 @@ func TestNormalizeAndHash(t *testing.T) {
 		var spec vpython.Spec
 
 		Convey(`Will normalize an empty spec`, func() {
-			So(Normalize(&spec), ShouldBeNil)
-			So(spec, ShouldResemble, vpython.Spec{})
+			So(Normalize(&spec, pkgFoo), ShouldBeNil)
+			So(spec, ShouldResemble, vpython.Spec{
+				Virtualenv: pkgFoo,
+			})
 		})
 
 		Convey(`Will normalize to sorted order.`, func() {
 			spec.Wheel = []*vpython.Spec_Package{pkgFoo, pkgBar, pkgBaz}
-			So(Normalize(&spec), ShouldBeNil)
+			So(Normalize(&spec, nil), ShouldBeNil)
 			So(spec, ShouldResemble, vpython.Spec{
 				Wheel: []*vpython.Spec_Package{pkgBar, pkgBaz, pkgFoo},
 			})
@@ -40,13 +42,13 @@ func TestNormalizeAndHash(t *testing.T) {
 
 		Convey(`Will fail to normalize if there are duplicate wheels.`, func() {
 			spec.Wheel = []*vpython.Spec_Package{pkgFoo, pkgFoo, pkgBar, pkgBaz}
-			So(Normalize(&spec), ShouldErrLike, "duplicate spec entries")
+			So(Normalize(&spec, nil), ShouldErrLike, "duplicate spec entries")
 
 			// Even if the versions differ.
 			fooClone := *pkgFoo
 			fooClone.Version = "other"
 			spec.Wheel = []*vpython.Spec_Package{pkgFoo, &fooClone, pkgBar, pkgBaz}
-			So(Normalize(&spec), ShouldErrLike, "duplicate spec entries")
+			So(Normalize(&spec, nil), ShouldErrLike, "duplicate spec entries")
 		})
 	})
 }

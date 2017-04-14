@@ -5,9 +5,9 @@
 package application
 
 import (
-	"github.com/luci/luci-go/common/errors"
-
 	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/errors"
 )
 
 var appKey = "github.com/luci/luci-go/vpython/application.A"
@@ -16,8 +16,10 @@ func withConfig(c context.Context, cfg *Config) context.Context {
 	return context.WithValue(c, &appKey, cfg)
 }
 
-func getConfig(c context.Context) *Config {
-	return c.Value(&appKey).(*Config)
+func getConfig(c context.Context, args []string) *Config {
+	cfg := c.Value(&appKey).(*Config)
+	cfg.opts.Args = args
+	return cfg
 }
 
 func run(c context.Context, fn func(context.Context) error) int {

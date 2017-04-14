@@ -12,6 +12,10 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/maruel/subcommands"
+	"github.com/mitchellh/go-homedir"
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/vpython"
 	vpythonAPI "github.com/luci/luci-go/vpython/api/vpython"
 	"github.com/luci/luci-go/vpython/spec"
@@ -24,10 +28,6 @@ import (
 	"github.com/luci/luci-go/common/system/environ"
 	"github.com/luci/luci-go/common/system/exitcode"
 	"github.com/luci/luci-go/common/system/filesystem"
-
-	"github.com/maruel/subcommands"
-	"github.com/mitchellh/go-homedir"
-	"golang.org/x/net/context"
 )
 
 // ReturnCodeError is an error wrapping a return code value.
@@ -36,6 +36,12 @@ type ReturnCodeError int
 func (err ReturnCodeError) Error() string {
 	return fmt.Sprintf("python interpreter returned non-zero error: %d", err)
 }
+
+// VerificationFunc is a function used in environment verification.
+//
+// VerificationFunc will be invoked with a PackageLoader and an Environment to
+// use for verification.
+type VerificationFunc func(context.Context, string, venv.PackageLoader, *vpythonAPI.Environment)
 
 // Config is an application's default configuration.
 type Config struct {
@@ -62,6 +68,13 @@ type Config struct {
 	// See venv.Config's MaxScriptPathLen.
 	MaxScriptPathLen int
 
+	// Verification, if not nil, is the generator function to use for environment
+	// verification. It will invoke the supplied VerificationFunc once for each
+	// independent environment.
+	//
+	// Verification may terminate early if the Context is cancelled.
+	Verification func(context.Context, VerificationFunc)
+
 	// opts is the set of configured options.
 	opts vpython.Options
 }
@@ -86,6 +99,7 @@ func (cfg *Config) mainDev(c context.Context, args []string) error {
 		Commands: []*subcommands.Command{
 			subcommands.CmdHelp,
 			subcommandInstall,
+			subcommandVerify,
 		},
 	}
 
@@ -126,11 +140,11 @@ func (cfg *Config) mainImpl(c context.Context, args []string) error {
 	fs.StringVar(&cfg.opts.WorkDir, "workdir", cfg.opts.WorkDir,
 		"Working directory to run the Python interpreter in. Default is current working directory.")
 	fs.StringVar(&cfg.opts.EnvConfig.BaseDir, "root", cfg.opts.EnvConfig.BaseDir,
-		"Path to virtual enviornment root directory. Default is the working directory. "+
+		"Path to virtual environment root directory. Default is the working directory. "+
 			"If explicitly set to empty string, a temporary directory will be used and cleaned up "+
 			"on completion.")
 	fs.StringVar(&specPath, "spec", specPath,
-		"Path to enviornment specification file to load. Default probes for one.")
+		"Path to environment specification file to load. Default probes for one.")
 	logConfig.AddFlags(fs)
 
 	if err := fs.Parse(args); err != nil {

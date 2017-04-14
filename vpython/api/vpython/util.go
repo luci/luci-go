@@ -6,6 +6,8 @@ package vpython
 
 import (
 	"strings"
+
+	"github.com/golang/protobuf/proto"
 )
 
 // Version is a version string. It must be updated any time the text protobufs
@@ -14,6 +16,16 @@ import (
 // This version string is used in the generation of filenames, and must be
 // filesystem-compatible.
 const Version = "v1"
+
+// Clone returns a deep clone of the supplied Environment.
+//
+// If e is nil, a non-nil empty Environment will be returned.
+func (e *Environment) Clone() *Environment {
+	if e == nil {
+		return &Environment{}
+	}
+	return proto.Clone(e).(*Environment)
+}
 
 // IsZero returns true if this tag is a zero value.
 func (t *Environment_Pep425Tag) IsZero() bool {
@@ -40,4 +52,14 @@ func (t *Environment_Pep425Tag) Count() (v int) {
 		v++
 	}
 	return
+}
+
+// Clone returns a deep clone of the supplied Spec.
+//
+// If e is nil, a non-nil empty Spec will be returned.
+func (s *Spec) Clone() *Spec {
+	if s == nil {
+		return &Spec{}
+	}
+	return proto.Clone(s).(*Spec)
 }

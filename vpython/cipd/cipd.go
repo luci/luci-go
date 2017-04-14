@@ -18,6 +18,10 @@ import (
 	"github.com/luci/luci-go/common/system/filesystem"
 )
 
+// TemplateFunc builds a set of template parameters to augment the default CIPD
+// parameter set with.
+type TemplateFunc func(context.Context, *vpython.Environment) (map[string]string, error)
+
 // PackageLoader is an implementation of venv.PackageLoader that uses the
 // CIPD service to fetch packages.
 //
@@ -34,7 +38,7 @@ type PackageLoader struct {
 	// For example, if a user wanted to include the Python PEP425 tag version
 	// as a CIPD template variable, they could include a "py_pep425_tag"
 	// template parameter.
-	Template func(context.Context, *vpython.Environment) (map[string]string, error)
+	Template TemplateFunc
 }
 
 var _ venv.PackageLoader = (*PackageLoader)(nil)

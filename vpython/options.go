@@ -5,9 +5,11 @@
 package vpython
 
 import (
-	"context"
 	"os"
 
+	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/vpython/api/vpython"
 	"github.com/luci/luci-go/vpython/python"
 	"github.com/luci/luci-go/vpython/spec"
 	"github.com/luci/luci-go/vpython/venv"
@@ -63,7 +65,7 @@ func (o *Options) resolve(c context.Context) error {
 	}
 
 	// Resolve our target python script.
-	if err := o.resolveSpec(c); err != nil {
+	if err := o.ResolveSpec(c); err != nil {
 		return errors.Annotate(err).Reason("failed to resolve Python script").Err()
 	}
 
@@ -84,7 +86,16 @@ func (o *Options) resolve(c context.Context) error {
 	return nil
 }
 
-func (o *Options) resolveSpec(c context.Context) error {
+// ResolveSpec resolves the configured environment specification. The resulting
+// spec is installed into o's EnvConfig.Spec field.
+func (o *Options) ResolveSpec(c context.Context) error {
+	// If a spec is explicitly provided, we're done.
+	if o.EnvConfig.Spec != nil {
+		return nil
+	}
+
+	// Determine our specification from the Python command-line that we are being
+	// invoked with.
 	cmd, err := python.ParseCommandLine(o.Args)
 	if err != nil {
 		return errors.Annotate(err).Reason("failed to parse Python command-line").Err()
@@ -117,11 +128,6 @@ func (o *Options) resolveSpec(c context.Context) error {
 		isModule = st.IsDir()
 	}
 
-	// If a spec is explicitly provided, we're done.
-	if o.EnvConfig.Spec != nil {
-		return nil
-	}
-
 	// If it's a script, try resolving from filesystem first.
 	if isScriptTarget {
 		spec, err := o.SpecLoader.LoadForScript(c, script.Path, isModule)
@@ -150,5 +156,6 @@ func (o *Options) resolveSpec(c context.Context) error {
 
 	// Unable to load a spec.
 	logging.Infof(c, "Unable to resolve specification path. Using empty specification.")
+	o.EnvConfig.Spec = &vpython.Spec{}
 	return nil
 }

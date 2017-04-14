@@ -19,24 +19,8 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/system/filesystem"
 
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 )
-
-// PackageLoader loads package information from a specification file's Package
-// message onto the local system.
-type PackageLoader interface {
-	// Resolve processes the packages defined in e, updating their fields to their
-	// resolved values. Resolved packages must fully specify the package instance
-	// that is being deployed, and will be used when determining the enviornment's
-	// fingerprint (used for locking and naming).
-	Resolve(c context.Context, e *vpython.Environment) error
-
-	// Ensure installs the supplied packages into root.
-	//
-	// The packages will have been previously resolved via Resolve.
-	Ensure(c context.Context, root string, packages []*vpython.Spec_Package) error
-}
 
 // Config is the configuration for a managed VirtualEnv.
 //
@@ -106,10 +90,8 @@ func (cfg *Config) WithoutWheels() *Config {
 	}
 
 	clone := *cfg
-	if clone.Spec != nil {
-		clone.Spec = spec.Clone(cfg.Spec)
-		clone.Spec.Wheel = nil
-	}
+	clone.Spec = clone.Spec.Clone()
+	clone.Spec.Wheel = nil
 	return &clone
 }
 
@@ -166,7 +148,7 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 	if cfg.Spec == nil {
 		cfg.Spec = &vpython.Spec{}
 	}
-	if err := spec.Normalize(cfg.Spec); err != nil {
+	if err := spec.Normalize(cfg.Spec, &cfg.Package); err != nil {
 		return nil, errors.Annotate(err).Reason("invalid specification").Err()
 	}
 
@@ -176,13 +158,10 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 	}
 
 	// Construct a new, independent Enviornment for this Env.
-	e = proto.Clone(e).(*vpython.Environment)
-	if e == nil {
-		e = &vpython.Environment{}
-	}
-	e.Spec = spec.Clone(cfg.Spec)
+	e = e.Clone()
+	e.Spec = cfg.Spec.Clone()
 
-	if err := cfg.resolvePackages(c, e); err != nil {
+	if err := cfg.Loader.Resolve(c, e); err != nil {
 		return nil, errors.Annotate(err).Reason("failed to resolve packages").Err()
 	}
 
@@ -231,15 +210,6 @@ func (cfg *Config) envForName(name string, e *vpython.Environment) *Env {
 		lockPath:         filepath.Join(cfg.BaseDir, fmt.Sprintf(".%s.lock", name)),
 		completeFlagPath: filepath.Join(venvRoot, "complete.flag"),
 	}
-}
-
-func (cfg *Config) resolvePackages(c context.Context, e *vpython.Environment) error {
-	// Resolve our packages. Because we're using pointers, the in-place
-	// updating will update the actual spec file!
-	if err := cfg.Loader.Resolve(c, e); err != nil {
-		return errors.Annotate(err).Reason("failed to resolve packages").Err()
-	}
-	return nil
 }
 
 func (cfg *Config) resolvePythonInterpreter(c context.Context, s *vpython.Spec) error {

@@ -5,13 +5,14 @@
 package application
 
 import (
+	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/vpython/venv"
 
-	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
+	"github.com/luci/luci-go/vpython/venv"
 )
 
 var subcommandInstall = &subcommands.Command{
@@ -30,7 +31,7 @@ type installCommandRun struct {
 
 func (cr *installCommandRun) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	c := cli.GetContext(app, cr, env)
-	cfg := getConfig(c)
+	cfg := getConfig(c, args)
 
 	return run(c, func(c context.Context) error {
 		err := venv.With(c, cfg.opts.EnvConfig, false, func(context.Context, *venv.Env) error {
