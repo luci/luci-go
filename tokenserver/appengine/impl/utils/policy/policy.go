@@ -5,10 +5,15 @@
 package policy
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/config/validation"
+	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/logging"
 )
 
 // Policy describes how to fetch, store and parse policy documents.
@@ -93,8 +98,75 @@ type ConfigFetcher interface {
 // Validation errors are returned as *validation.Error struct. Use type cast to
 // sniff them, if necessary.
 func (p *Policy) ImportConfigs(c context.Context) (rev string, err error) {
-	// TODO(vadimsh): Implement.
-	return "", nil
+	c = logging.SetField(c, "policy", p.Name)
+
+	// Fetch and parse text protos stored in LUCI config. The fetcher will also
+	// record the revision of the fetched files.
+	fetcher := luciConfigFetcher{}
+	bundle, err := p.Fetch(c, &fetcher)
+	if err == nil && len(bundle) == 0 {
+		err = errors.New("no configs fetched by the callback")
+	}
+	if err != nil {
+		return "", errors.Annotate(err).Reason("failed to fetch policy configs").Err()
+	}
+	rev = fetcher.Revision()
+
+	// Convert configs into a form appropriate for the datastore. We'll skip the
+	// rest of the import if this exact blob is already in the datastore (based on
+	// SHA256 digest).
+	cfgBlob, err := serializeBundle(bundle)
+	if err != nil {
+		return "", errors.Annotate(err).Reason("failed to serialize the configs").Err()
+	}
+	digest := sha256.Sum256(cfgBlob)
+	digestHex := hex.EncodeToString(digest[:])
+	logging.Infof(c, "Got %d bytes of configs (SHA256 %s)", len(cfgBlob), digestHex)
+
+	// Do we have it already?
+	existingHdr, err := getImportedPolicyHeader(c, p.Name)
+	if err != nil {
+		return "", errors.Annotate(err).Reason("failed to grab ImportedPolicyHeader").Err()
+	}
+	if existingHdr != nil && digestHex == existingHdr.SHA256 {
+		logging.Infof(
+			c, "Configs are up-to-date. Last changed at rev %s, last checked rev is %s.",
+			existingHdr.Revision, rev)
+		return existingHdr.Revision, nil
+	}
+
+	existingRev := "(nil)"
+	if existingHdr != nil {
+		existingRev = existingHdr.Revision
+	}
+	logging.Infof(c, "Policy config changed: %s -> %s", existingRev, rev)
+
+	if p.Validate != nil {
+		v := validation.Context{Logger: logging.Get(c)}
+		p.Validate(bundle, &v)
+		if err := v.Finalize(); err != nil {
+			return "", errors.Annotate(err).
+				Reason("configs at rev %(rev)s are invalid").
+				D("rev", rev).Err()
+		}
+	}
+
+	// Double check that they actually can be parsed into a queryable form. If
+	// not, the Policy callbacks are buggy.
+	queriable, err := p.Prepare(bundle, rev)
+	if err == nil && queriable.ConfigRevision() != rev {
+		err = errors.New("wrong revision in result of Prepare callback")
+	}
+	if err != nil {
+		return "", errors.Annotate(err).Reason("failed to convert configs into a queryable form").Err()
+	}
+
+	logging.Infof(c, "Storing new configs")
+	if err := updateImportedPolicy(c, p.Name, rev, digestHex, cfgBlob); err != nil {
+		return "", err
+	}
+
+	return rev, nil
 }
 
 // Queryable returns a form of the policy document optimized for queries.
