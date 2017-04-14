@@ -53,8 +53,17 @@ func Hash(spec *vpython.Spec) string {
 	if err != nil {
 		panic(fmt.Errorf("failed to marshal proto: %v", err))
 	}
-	hash := sha256.Sum256(data)
-	return hex.EncodeToString(hash[:])
+
+	mustWrite := func(v int, err error) {
+		if err != nil {
+			panic(fmt.Errorf("impossible: %s", err))
+		}
+	}
+
+	hash := sha256.New()
+	mustWrite(fmt.Fprintf(hash, "%s:", vpython.Version))
+	mustWrite(hash.Write(data))
+	return hex.EncodeToString(hash.Sum(nil))
 }
 
 type specPackageSlice []*vpython.Spec_Package

@@ -62,11 +62,11 @@ type Config struct {
 	// See venv.Config's MaxScriptPathLen.
 	MaxScriptPathLen int
 
-	// Opts is the set of configured options.
-	Opts vpython.Options
+	// opts is the set of configured options.
+	opts vpython.Options
 }
 
-func (cfg *Config) mainDev(c context.Context) error {
+func (cfg *Config) mainDev(c context.Context, args []string) error {
 	app := cli.Application{
 		Name:  "vpython",
 		Title: "VirtualEnv Python Bootstrap (Development Mode)",
@@ -89,7 +89,7 @@ func (cfg *Config) mainDev(c context.Context) error {
 		},
 	}
 
-	return ReturnCodeError(subcommands.Run(&app, cfg.Opts.Args))
+	return ReturnCodeError(subcommands.Run(&app, args))
 }
 
 func (cfg *Config) mainImpl(c context.Context, args []string) error {
@@ -102,7 +102,7 @@ func (cfg *Config) mainImpl(c context.Context, args []string) error {
 		return errors.Annotate(err).Reason("failed to get user home directory").Err()
 	}
 
-	cfg.Opts = vpython.Options{
+	cfg.opts = vpython.Options{
 		EnvConfig: venv.Config{
 			BaseDir:           filepath.Join(hdir, ".vpython"),
 			MaxHashLen:        6,
@@ -121,11 +121,11 @@ func (cfg *Config) mainImpl(c context.Context, args []string) error {
 	fs := flag.NewFlagSet("", flag.ExitOnError)
 	fs.BoolVar(&devMode, "dev", devMode,
 		"Enter development / subcommand mode (use 'help' for more options).")
-	fs.StringVar(&cfg.Opts.EnvConfig.Python, "python", cfg.Opts.EnvConfig.Python,
+	fs.StringVar(&cfg.opts.EnvConfig.Python, "python", cfg.opts.EnvConfig.Python,
 		"Path to system Python interpreter to use. Default is found on PATH.")
-	fs.StringVar(&cfg.Opts.WorkDir, "workdir", cfg.Opts.WorkDir,
+	fs.StringVar(&cfg.opts.WorkDir, "workdir", cfg.opts.WorkDir,
 		"Working directory to run the Python interpreter in. Default is current working directory.")
-	fs.StringVar(&cfg.Opts.EnvConfig.BaseDir, "root", cfg.Opts.EnvConfig.BaseDir,
+	fs.StringVar(&cfg.opts.EnvConfig.BaseDir, "root", cfg.opts.EnvConfig.BaseDir,
 		"Path to virtual enviornment root directory. Default is the working directory. "+
 			"If explicitly set to empty string, a temporary directory will be used and cleaned up "+
 			"on completion.")
@@ -139,14 +139,14 @@ func (cfg *Config) mainImpl(c context.Context, args []string) error {
 		}
 		return errors.Annotate(err).Reason("failed to parse flags").Err()
 	}
-	cfg.Opts.Args = fs.Args()
+	args = fs.Args()
 
 	c = logConfig.Set(c)
 
 	// If an spec path was manually specified, load and use it.
 	if specPath != "" {
 		var err error
-		if cfg.Opts.EnvConfig.Spec, err = spec.Load(specPath); err != nil {
+		if cfg.opts.EnvConfig.Spec, err = spec.Load(specPath); err != nil {
 			return errors.Annotate(err).Reason("failed to load specification file (-spec) from: %(path)s").
 				D("path", specPath).
 				Err()
@@ -155,7 +155,7 @@ func (cfg *Config) mainImpl(c context.Context, args []string) error {
 
 	// If an empty BaseDir was specified, use a temporary directory and clean it
 	// up on completion.
-	if cfg.Opts.EnvConfig.BaseDir == "" {
+	if cfg.opts.EnvConfig.BaseDir == "" {
 		tdir, err := ioutil.TempDir("", "vpython")
 		if err != nil {
 			return errors.Annotate(err).Reason("failed to create temporary directory").Err()
@@ -166,15 +166,16 @@ func (cfg *Config) mainImpl(c context.Context, args []string) error {
 				logging.WithError(terr).Warningf(c, "Failed to clean up temporary directory; leaking: %s", tdir)
 			}
 		}()
-		cfg.Opts.EnvConfig.BaseDir = tdir
+		cfg.opts.EnvConfig.BaseDir = tdir
 	}
 
 	// Development mode (subcommands).
 	if devMode {
-		return cfg.mainDev(c)
+		return cfg.mainDev(c, args)
 	}
 
-	if err := vpython.Run(c, cfg.Opts); err != nil {
+	cfg.opts.Args = args
+	if err := vpython.Run(c, cfg.opts); err != nil {
 		// If the process failed because of a non-zero return value, return that
 		// as our error.
 		if rc, has := exitcode.Get(errors.Unwrap(err)); has {

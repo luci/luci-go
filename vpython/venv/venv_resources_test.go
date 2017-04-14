@@ -130,11 +130,11 @@ func (tl *testingLoader) ensureWheels(ctx context.Context, t *testing.T, py *pyt
 	return nil
 }
 
-func (tl *testingLoader) Resolve(c context.Context, root string, packages []*vpython.Spec_Package,
-	template map[string]string) error {
+func (tl *testingLoader) Resolve(c context.Context, e *vpython.Environment) error {
 
-	for _, pkg := range packages {
-		pkg.Version = "resolved"
+	e.Spec.Virtualenv.Version = "resolved"
+	for _, wheel := range e.Spec.Wheel {
+		wheel.Version = "resolved"
 	}
 	return nil
 }

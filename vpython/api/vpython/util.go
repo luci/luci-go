@@ -22,7 +22,7 @@ func (t *Environment_Pep425Tag) IsZero() bool {
 
 // TagString returns an underscore-separated string containing t's fields.
 func (t *Environment_Pep425Tag) TagString() string {
-	return strings.Join([]string{t.Version, t.Abi, t.Arch}, "_")
+	return strings.Join([]string{t.Version, t.Abi, t.Arch}, "-")
 }
 
 // HasABI returns true if t declares that it only works with a specific ABI.

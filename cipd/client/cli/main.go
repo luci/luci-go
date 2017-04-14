@@ -255,7 +255,7 @@ func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters) {
 	f.StringVar(&opts.serviceURL, "service-url", params.ServiceURL,
 		"Backend URL. If provided via an 'ensure file', the URL in the file takes precedence.")
 	f.StringVar(&opts.cacheDir, "cache-dir", "",
-		fmt.Sprintf("Directory for shared cache (can also be set by %s env var).", CIPDCacheDir))
+		fmt.Sprintf("Directory for shared cache (can also be set by %s env var).", common.CIPDCacheDir))
 	opts.authFlags.Register(f, params.DefaultAuthOptions)
 }
 
@@ -289,7 +289,7 @@ func (opts *clientOptions) makeCipdClient(ctx context.Context, root string) (cip
 //
 // It knows how to use CIPDHTTPUserAgentPrefix env var.
 func UserAgent(ctx context.Context) string {
-	if prefix := cli.LookupEnv(ctx, CIPDHTTPUserAgentPrefix); prefix.Exists {
+	if prefix := cli.LookupEnv(ctx, common.CIPDHTTPUserAgentPrefix); prefix.Exists {
 		return fmt.Sprintf("%s/%s", prefix.Value, cipd.UserAgent)
 	}
 	return cipd.UserAgent
@@ -300,10 +300,10 @@ func UserAgent(ctx context.Context) string {
 // It knows how to use CIPDCacheDir env var. May return empty string if cache
 // directory is not defined.
 func CacheDir(ctx context.Context) (string, error) {
-	if cacheDirEnv := cli.LookupEnv(ctx, CIPDCacheDir); cacheDirEnv.Exists {
+	if cacheDirEnv := cli.LookupEnv(ctx, common.CIPDCacheDir); cacheDirEnv.Exists {
 		cacheDir := cacheDirEnv.Value
 		if cacheDir != "" && !filepath.IsAbs(cacheDir) {
-			return "", fmt.Errorf("bad %s: not an absolute path - %s", CIPDCacheDir, cacheDir)
+			return "", fmt.Errorf("bad %s: not an absolute path - %s", common.CIPDCacheDir, cacheDir)
 		}
 		return cacheDir, nil
 	}
@@ -2159,12 +2159,6 @@ func fixFlagsPosition(args []string) []string {
 ////////////////////////////////////////////////////////////////////////////////
 // Main.
 
-// Environment variable definitions
-const (
-	CIPDHTTPUserAgentPrefix = "CIPD_HTTP_USER_AGENT_PREFIX"
-	CIPDCacheDir            = "CIPD_CACHE_DIR"
-)
-
 // GetApplication returns cli.Application.
 //
 // It can be used directly by subcommands.Run(...), or nested into another
@@ -2183,11 +2177,11 @@ func GetApplication(params Parameters) *cli.Application {
 		},
 
 		EnvVars: map[string]subcommands.EnvVarDefinition{
-			CIPDHTTPUserAgentPrefix: {
+			common.CIPDHTTPUserAgentPrefix: {
 				Advanced:  true,
 				ShortDesc: "Optional http User-Agent prefix.",
 			},
-			CIPDCacheDir: {
+			common.CIPDCacheDir: {
 				ShortDesc: "Directory with shared instance and tags cache " +
 					"(-cache-dir, if given, takes precedence).",
 			},

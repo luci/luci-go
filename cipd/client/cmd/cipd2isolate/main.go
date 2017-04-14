@@ -15,6 +15,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/cipd/client/cipd"
+	cipdcommon "github.com/luci/luci-go/cipd/client/cipd/common"
 	"github.com/luci/luci-go/cipd/client/cipd/ensure"
 	cipdcli "github.com/luci/luci-go/cipd/client/cli"
 	"github.com/luci/luci-go/cipd/version"
@@ -74,7 +75,7 @@ func cmdIsolate(params cipdcli.Parameters) *subcommands.Command {
 			c.Flags.StringVar(&c.cipdServiceURL, "cipd-service-url", params.ServiceURL,
 				"CIPD Backend URL. If provided via an 'ensure file', the URL in the file takes precedence.")
 			c.Flags.StringVar(&c.cipdCacheDir, "cipd-cache-dir", "",
-				fmt.Sprintf("Directory for shared CIPD cache (can also be set by %s env var).", cipdcli.CIPDCacheDir))
+				fmt.Sprintf("Directory for shared CIPD cache (can also be set by %s env var).", cipdcommon.CIPDCacheDir))
 			c.Flags.StringVar(&c.ensureFile, "cipd-ensure-file", "",
 				`An "ensure" file with packages to isolate. See syntax described here: `+
 					`https://godoc.org/github.com/luci/luci-go/cipd/client/cipd/ensure.`+
@@ -121,7 +122,7 @@ func (r *isolateRun) Run(a subcommands.Application, args []string, env subcomman
 		return 1
 	}
 
-	httpAuth, err := r.initHttpAuth(ctx)
+	httpAuth, err := r.initHTTPAuth(ctx)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize authentication - %s\n", err)
 		return 2
@@ -162,7 +163,7 @@ func (r *isolateRun) parseEnsureFile() (*ensure.File, error) {
 	return ensure.ParseFile(f)
 }
 
-func (r *isolateRun) initHttpAuth(ctx context.Context) (*http.Client, error) {
+func (r *isolateRun) initHTTPAuth(ctx context.Context) (*http.Client, error) {
 	authOpts, err := r.authFlags.Options()
 	if err != nil {
 		return nil, err

@@ -5,7 +5,6 @@
 package testfs
 
 import (
-	"io/ioutil"
 	"testing"
 
 	"github.com/luci/luci-go/common/system/filesystem"
@@ -14,16 +13,13 @@ import (
 // WithTempDir creates a temporary directory and passes it to fn. After fn
 // exits, the directory is cleaned up.
 func WithTempDir(t *testing.T, prefix string, fn func(string) error) error {
-	tdir, err := ioutil.TempDir("", prefix)
-	if err != nil {
-		return err
+	td := filesystem.TempDir{
+		Prefix: prefix,
+		CleanupErrFunc: func(tdir string, err error) {
+			t.Errorf("failed to remove temporary directory [%s]: %s", tdir, err)
+		},
 	}
-	defer func() {
-		if rmErr := filesystem.RemoveAll(tdir); rmErr != nil {
-			t.Errorf("failed to remove temporary directory [%s]: %s", tdir, rmErr)
-		}
-	}()
-	return fn(tdir)
+	return td.With(fn)
 }
 
 // MustWithTempDir calls WithTempDir and panics if any failures occur.

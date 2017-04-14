@@ -59,26 +59,25 @@ func TestResolvePythonInterpreter(t *testing.T) {
 
 	Convey(`Resolving a Python interpreter`, t, func() {
 		c := context.Background()
-		cfg := Config{
-			Spec: &vpython.Spec{},
-		}
+		cfg := Config{}
+		s := vpython.Spec{}
 
 		// Tests to run if we have Python 2.7 installed.
 		if python27 != nil {
 			Convey(`When Python 2.7 is requested, it gets resolved.`, func() {
-				cfg.Spec.PythonVersion = "2.7"
-				So(cfg.resolvePythonInterpreter(c), ShouldBeNil)
+				s.PythonVersion = "2.7"
+				So(cfg.resolvePythonInterpreter(c, &s), ShouldBeNil)
 				So(cfg.Python, ShouldEqual, python27.py.Python)
 
-				vers, err := python.ParseVersion(cfg.Spec.PythonVersion)
+				vers, err := python.ParseVersion(s.PythonVersion)
 				So(err, ShouldBeNil)
 				So(vers.IsSatisfiedBy(python27.version), ShouldBeTrue)
 			})
 
 			Convey(`Fails when Python 9999 is requested, but a Python 2 interpreter is forced.`, func() {
 				cfg.Python = python27.py.Python
-				cfg.Spec.PythonVersion = "9999"
-				So(cfg.resolvePythonInterpreter(c), ShouldErrLike, "doesn't match specification")
+				s.PythonVersion = "9999"
+				So(cfg.resolvePythonInterpreter(c, &s), ShouldErrLike, "doesn't match specification")
 			})
 		}
 
@@ -86,10 +85,10 @@ func TestResolvePythonInterpreter(t *testing.T) {
 		if pythonGeneric != nil && python27 != nil {
 			// Our generic Python resolves to a known version, so we can proceed.
 			Convey(`When no Python version is specified, spec resolves to generic.`, func() {
-				So(cfg.resolvePythonInterpreter(c), ShouldBeNil)
+				So(cfg.resolvePythonInterpreter(c, &s), ShouldBeNil)
 				So(cfg.Python, ShouldEqual, pythonGeneric.py.Python)
 
-				vers, err := python.ParseVersion(cfg.Spec.PythonVersion)
+				vers, err := python.ParseVersion(s.PythonVersion)
 				So(err, ShouldBeNil)
 				So(vers.IsSatisfiedBy(pythonGeneric.version), ShouldBeTrue)
 			})
@@ -98,19 +97,19 @@ func TestResolvePythonInterpreter(t *testing.T) {
 		// Tests to run if we have Python 3 installed.
 		if python3 != nil {
 			Convey(`When Python 3 is requested, it gets resolved.`, func() {
-				cfg.Spec.PythonVersion = "3"
-				So(cfg.resolvePythonInterpreter(c), ShouldBeNil)
+				s.PythonVersion = "3"
+				So(cfg.resolvePythonInterpreter(c, &s), ShouldBeNil)
 				So(cfg.Python, ShouldEqual, python3.py.Python)
 
-				vers, err := python.ParseVersion(cfg.Spec.PythonVersion)
+				vers, err := python.ParseVersion(s.PythonVersion)
 				So(err, ShouldBeNil)
 				So(vers.IsSatisfiedBy(python3.version), ShouldBeTrue)
 			})
 
 			Convey(`Fails when Python 9999 is requested, but a Python 3 interpreter is forced.`, func() {
 				cfg.Python = python3.py.Python
-				cfg.Spec.PythonVersion = "9999"
-				So(cfg.resolvePythonInterpreter(c), ShouldErrLike, "doesn't match specification")
+				s.PythonVersion = "9999"
+				So(cfg.resolvePythonInterpreter(c, &s), ShouldErrLike, "doesn't match specification")
 			})
 		}
 	})
@@ -136,7 +135,6 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 
 	Convey(`Testing Setup`, t, testfs.MustWithTempDir(t, "vpython", func(tdir string) {
 		c := context.Background()
-		hadTag := false
 		config := Config{
 			BaseDir:    tdir,
 			MaxHashLen: 4,
@@ -152,13 +150,6 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 				},
 			},
 			Loader: tl,
-			TagSelector: func(tags []*vpython.Environment_Pep425Tag) *vpython.Environment_Pep425Tag {
-				if len(tags) > 0 {
-					hadTag = true
-					return tags[0]
-				}
-				return nil
-			},
 		}
 
 		// Load the bootstrap wheels for the next part of the test.
@@ -175,16 +166,17 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 			So(m.Interpreter, ShouldStartWith, v.Root)
 			So(m.Pants, ShouldStartWith, v.Root)
 			So(m.Shirt, ShouldStartWith, v.Root)
+			So(v.Environment, ShouldNotBeNil)
 
 			// We should be able to load its environment stamp.
-			st, err := v.LoadEnvStamp()
-			So(err, ShouldBeNil)
-			So(st, ShouldNotBeNil)
-			So(st.Tag.IsZero(), ShouldEqual, !hadTag)
-			So(st.Spec, ShouldNotBeNil)
-			So(len(st.Spec.Wheel), ShouldEqual, len(config.Spec.Wheel))
-			So(st.Spec.Virtualenv, ShouldNotBeNil)
-			So(st.Spec.PythonVersion, ShouldNotEqual, "")
+			v.Environment = nil
+			So(v.LoadEnvironmentFromStamp(), ShouldBeNil)
+			So(v.Environment, ShouldNotBeNil)
+			So(len(v.Environment.Pep425Tag), ShouldBeGreaterThan, 0)
+			So(v.Environment.Spec, ShouldNotBeNil)
+			So(len(v.Environment.Spec.Wheel), ShouldEqual, len(config.Spec.Wheel))
+			So(v.Environment.Spec.Virtualenv, ShouldNotBeNil)
+			So(v.Environment.Spec.PythonVersion, ShouldNotEqual, "")
 
 			// We should be able to delete it.
 			So(v.Delete(c), ShouldBeNil)

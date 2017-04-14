@@ -112,15 +112,15 @@ func maybePruneFile(c context.Context, cfg *Config, fi os.FileInfo, pruneThresho
 
 	name := fi.Name()
 	if !fi.IsDir() || name == forceKeep {
-		logging.Debugf(c, "Not pruning file: %s", name)
+		logging.Debugf(c, "Not pruning currently in-use file: %s", name)
 		return
 	}
 
 	// Grab the lock file for this directory.
-	e := cfg.envForName(name)
+	e := cfg.envForName(name, nil)
 	err = fslock.With(e.lockPath, func() error {
 		// Read the complete flag file's timestamp.
-		switch st, err := os.Stat(e.EnvStampPath); {
+		switch st, err := os.Stat(e.completeFlagPath); {
 		case err == nil:
 			if !st.ModTime().Before(pruneThreshold) {
 				return nil
@@ -133,8 +133,8 @@ func maybePruneFile(c context.Context, cfg *Config, fi os.FileInfo, pruneThresho
 			logging.Infof(c, "Env [%s] has no completed flag; pruning...", e.name)
 
 		default:
-			return errors.Annotate(err).Reason("failed to stat environment stamp: %(path)s").
-				D("path", e.EnvStampPath).
+			return errors.Annotate(err).Reason("failed to stat complete flag: %(path)s").
+				D("path", e.completeFlagPath).
 				Err()
 		}
 

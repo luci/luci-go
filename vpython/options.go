@@ -71,7 +71,7 @@ func (o *Options) resolve(c context.Context) error {
 	// working directory.
 	if o.EnvConfig.BaseDir == "" {
 		// Is one specified in our environment?
-		if v, ok := o.Environ.Get(EnvStampPath); ok {
+		if v, ok := o.Environ.Get(EnvironmentStampPathENV); ok {
 			var err error
 			if o.EnvConfig.BaseDir, err = venv.EnvRootFromStampPath(v); err != nil {
 				return errors.Annotate(err).Reason("failed to get env root from environment: %(path)s").
@@ -138,7 +138,7 @@ func (o *Options) resolveSpec(c context.Context) error {
 	}
 
 	// Do we have a spec file in the environment?
-	if v, ok := o.Environ.Get(EnvStampPath); ok {
+	if v, ok := o.Environ.Get(EnvironmentStampPathENV); ok {
 		if o.EnvConfig.Spec, err = spec.Load(v); err != nil {
 			return errors.Annotate(err).Reason("failed to load environment-supplied spec from: %(path)s").
 				D("path", v).

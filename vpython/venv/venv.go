@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -59,8 +60,8 @@ func withTempDir(l logging.Logger, prefix string, fn func(string) error) error {
 // EnvRootFromStampPath calculates the environment root from an exported
 // environment specification file path.
 //
-// The specification path is: <EnvRoot>/<SpecHash>/EnvStampPath, so our EnvRoot
-// is two directories up.
+// The specification path is: <EnvRoot>/<SpecHash>/EnvironmentStampPath, so our
+// EnvRoot is two directories up.
 //
 // We export EnvSpecPath as an asbolute path. However, since someone else
 // could have overridden it or exported their own, let's make sure.
@@ -92,40 +93,38 @@ func With(c context.Context, cfg Config, blocking bool, fn func(context.Context,
 	//
 	// If our configured VirtualEnv is, itself, an empty then we can
 	// skip this.
-	if cfg.HasWheels() && cfg.Tag.IsZero() {
+	var e *vpython.Environment
+	if cfg.HasWheels() {
 		// Use an empty VirtualEnv to probe the runtime environment.
-		re, err := getRuntimeEnvironment(c, blocking, cfg.WithoutWheels())
-		if err != nil {
+		var err error
+		if e, err = getRuntimeEnvironment(c, blocking, cfg.WithoutWheels()); err != nil {
 			return errors.Annotate(err).Reason("failed to get runtime environment").Err()
 		}
-
-		cfg.Tag = re.Tag
 	}
 
 	// Run the real config, now with runtime data.
-	e, err := cfg.makeEnv(c)
+	env, err := cfg.makeEnv(c, e)
 	if err != nil {
 		return err
 	}
-	return e.withImpl(c, blocking, fn)
+	return env.withImpl(c, blocking, fn)
 }
 
 func getRuntimeEnvironment(c context.Context, blocking bool, cfg *Config) (*vpython.Environment, error) {
-	e, err := cfg.makeEnv(c)
+	e, err := cfg.makeEnv(c, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	// If we already have the environment specification for this environment, then
 	// load it.
-	venvStamp, err := e.LoadEnvStamp()
-	switch {
+	switch err := e.LoadEnvironmentFromStamp(); {
 	case err != nil:
 		// Not a big deal, but
 		logging.WithError(err).Debugf(c, "Failed to load stamp file; performing full initialization.")
 
 	default:
-		logging.Debugf(c, "Loaded environment stamp from empty VirtualEnv: %s", venvStamp)
+		logging.Debugf(c, "Loaded environment stamp from empty VirtualEnv: %s", e.Environment)
 
 		// Try and touch the complete flag. It doesn't matter if we fail, since all
 		// it will do is refrain from acknowledging the utility of the empty
@@ -133,14 +132,14 @@ func getRuntimeEnvironment(c context.Context, blocking bool, cfg *Config) (*vpyt
 		if err := e.touchCompleteFlagNonBlocking(); err != nil {
 			logging.Debugf(c, "Failed to update empty environment flag timestamp.")
 		}
-		return venvStamp, nil
+		return e.Environment, nil
 	}
 
-	// Fully initialize the environment and load from that.
+	// Fully initialize the Env, which will popluate its Environment.
 	if err := e.setupImpl(c, blocking); err != nil {
 		return nil, err
 	}
-	return e.Config.EnvStamp(), nil
+	return e.Environment, nil
 }
 
 // Env is a fully set-up Python virtual environment. It is configured
@@ -160,13 +159,18 @@ type Env struct {
 	// Python is the path to the Env Python interpreter.
 	Python string
 
+	// Environment is the resolved Python environment that this VirtualEnv is
+	// configured with. It is resolved during environment setup and saved into the
+	// environment's EnvironmentStampPath.
+	Environment *vpython.Environment
+
 	// BinDir is the VirtualEnv "bin" directory, containing Python and installed
 	// wheel binaries.
 	BinDir string
-	// EnvStampPath is the path to the environment stamp file that details a
-	// constructed environment. It will be in text protobuf format, and,
+	// EnvironmentStampPath is the path to the vpython.Environment stamp file that
+	// details a constructed environment. It will be in text protobuf format, and,
 	// therefore, suitable for input to other "vpython" invocations.
-	EnvStampPath string
+	EnvironmentStampPath string
 
 	// name is the hash of the specification file for this Env.
 	name string
@@ -322,33 +326,38 @@ func (e *Env) AssertComplete() error {
 	}
 }
 
-// WriteEnvStamp writes a text protobuf form of spec to path.
-func (e *Env) WriteEnvStamp() error {
-	return writeTextProto(e.EnvStampPath, e.Config.EnvStamp())
+// WriteEnvironmentStamp writes a text protobuf form of spec to path.
+func (e *Env) WriteEnvironmentStamp() error {
+	environment := e.Environment
+	if environment == nil {
+		environment = &vpython.Environment{}
+	}
+	return writeTextProto(e.EnvironmentStampPath, environment)
 }
 
-// LoadEnvStamp loads this environment's environment stamp from its
-// EnvStampPath.
-func (e *Env) LoadEnvStamp() (*vpython.Environment, error) {
+// LoadEnvironmentFromStamp loads this environment's environment stamp from its
+// EnvironmentStampPath.
+func (e *Env) LoadEnvironmentFromStamp() error {
 	// Ensure that the environment has its completion flag.
 	if err := e.AssertComplete(); err != nil {
-		return nil, err
+		return err
 	}
 
-	var envStamp vpython.Environment
-	content, err := ioutil.ReadFile(e.EnvStampPath)
+	content, err := ioutil.ReadFile(e.EnvironmentStampPath)
 	if err != nil {
-		return nil, errors.Annotate(err).Reason("failed to load file from: %(path)s").
-			D("path", e.EnvStampPath).
+		return errors.Annotate(err).Reason("failed to load file from: %(path)s").
+			D("path", e.EnvironmentStampPath).
 			Err()
 	}
 
-	if err := proto.UnmarshalText(string(content), &envStamp); err != nil {
-		return nil, errors.Annotate(err).Reason("failed to unmarshal vpython.Env stamp from: %(path)s").
-			D("path", e.EnvStampPath).
+	var environment vpython.Environment
+	if err := proto.UnmarshalText(string(content), &environment); err != nil {
+		return errors.Annotate(err).Reason("failed to unmarshal vpython.Env stamp from: %(path)s").
+			D("path", e.EnvironmentStampPath).
 			Err()
 	}
-	return &envStamp, nil
+	e.Environment = &environment
+	return nil
 }
 
 func (e *Env) createLocked(c context.Context) error {
@@ -367,9 +376,9 @@ func (e *Env) createLocked(c context.Context) error {
 	logging.Infof(c, "Using virtual environment root: %s", e.Root)
 
 	// Build our package list. Always install our base VirtualEnv package.
-	packages := make([]*vpython.Spec_Package, 1, 1+len(e.Config.Spec.Wheel))
-	packages[0] = e.Config.Spec.Virtualenv
-	packages = append(packages, e.Config.Spec.Wheel...)
+	packages := make([]*vpython.Spec_Package, 1, 1+len(e.Environment.Spec.Wheel))
+	packages[0] = e.Environment.Spec.Virtualenv
+	packages = append(packages, e.Environment.Spec.Wheel...)
 
 	// Create a directory to bootstrap VirtualEnv from.
 	//
@@ -393,24 +402,22 @@ func (e *Env) createLocked(c context.Context) error {
 			return errors.Annotate(err).Reason("failed to install VirtualEnv").Err()
 		}
 
-		if e.Config.Tag == nil && e.Config.TagSelector != nil {
-			tags, err := e.getPEP425Tags(c)
+		// Load PEP425 tags, if we don't already have them.
+		if e.Environment.Pep425Tag == nil {
+			pep425Tags, err := e.getPEP425Tags(c)
 			if err != nil {
 				return errors.Annotate(err).Reason("failed to get PEP425 tags").Err()
 			}
-
-			e.Config.Tag = e.Config.TagSelector(tags)
-			logging.Debugf(c, "Loaded PEP425 tag: %#v", e.Config.Tag)
+			e.Environment.Pep425Tag = pep425Tags
 		}
 
 		// Install our wheel files.
-		if len(e.Config.Spec.Wheel) > 0 {
+		if len(e.Environment.Spec.Wheel) > 0 {
 			// Install wheels into our VirtualEnv.
 			if err := e.installWheels(c, bootstrapDir, pkgDir); err != nil {
 				return errors.Annotate(err).Reason("failed to install wheels").Err()
 			}
 		}
-
 		return nil
 	})
 	if err != nil {
@@ -418,12 +425,12 @@ func (e *Env) createLocked(c context.Context) error {
 	}
 
 	// Write our specification file.
-	if err := e.WriteEnvStamp(); err != nil {
+	if err := e.WriteEnvironmentStamp(); err != nil {
 		return errors.Annotate(err).Reason("failed to write environment stamp file to: %(path)s").
-			D("path", e.EnvStampPath).
+			D("path", e.EnvironmentStampPath).
 			Err()
 	}
-	logging.Debugf(c, "Wrote environment stamp file to: %s", e.EnvStampPath)
+	logging.Debugf(c, "Wrote environment stamp file to: %s", e.EnvironmentStampPath)
 
 	// Finalize our VirtualEnv for bootstrap execution.
 	if err := e.finalize(c); err != nil {
@@ -521,6 +528,16 @@ func (e *Env) getPEP425Tags(c context.Context) ([]*vpython.Environment_Pep425Tag
 			Arch:    te[2],
 		}
 	}
+
+	// If we're Debug-logging, calculate and display the tags that were probed.
+	if logging.IsLogging(c, logging.Debug) {
+		tagStr := make([]string, len(tags))
+		for i, t := range tags {
+			tagStr[i] = t.TagString()
+		}
+		logging.Debugf(c, "Loaded PEP425 tags: [%s]", strings.Join(tagStr, ", "))
+	}
+
 	return tags, nil
 }
 

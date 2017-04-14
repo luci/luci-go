@@ -19,12 +19,12 @@ import (
 )
 
 var (
-	// EnvStampPath is the exported enviornment variable for the environment stamp
-	// path.
+	// EnvironmentStampPathENV is the exported environment variable for the
+	// environment stamp path.
 	//
-	// This is added to the bootstrap enviornment used by Run to allow subprocess
+	// This is added to the bootstrap environment used by Run to allow subprocess
 	// "vpython" invocations to automatically inherit the same environment.
-	EnvStampPath = "VPYTHON_VENV_ENV_STAMP_PATH"
+	EnvironmentStampPathENV = "VPYTHON_VENV_ENV_STAMP_PATH"
 )
 
 // Run sets up a Python VirtualEnv and executes the supplied Options.
@@ -57,7 +57,7 @@ func Run(c context.Context, opts Options) error {
 	c, cancelFunc := context.WithCancel(c)
 	defer cancelFunc()
 
-	// Create our virtual enviornment root directory.
+	// Create our virtual environment root directory.
 	err := venv.With(c, opts.EnvConfig, opts.WaitForEnv, func(c context.Context, ve *venv.Env) error {
 		// Build the augmented environment variables.
 		e := opts.Environ
@@ -67,8 +67,8 @@ func Run(c context.Context, opts Options) error {
 		}
 
 		e.Set("VIRTUAL_ENV", ve.Root) // Set by VirtualEnv script.
-		if ve.EnvStampPath != "" {
-			e.Set(EnvStampPath, ve.EnvStampPath)
+		if ve.EnvironmentStampPath != "" {
+			e.Set(EnvironmentStampPathENV, ve.EnvironmentStampPath)
 		}
 
 		// Prefix PATH with the VirtualEnv "bin" directory.

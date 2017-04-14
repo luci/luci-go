@@ -33,7 +33,7 @@ func (cr *installCommandRun) Run(app subcommands.Application, args []string, env
 	cfg := getConfig(c)
 
 	return run(c, func(c context.Context) error {
-		err := venv.With(c, cfg.Opts.EnvConfig, false, func(context.Context, *venv.Env) error {
+		err := venv.With(c, cfg.opts.EnvConfig, false, func(context.Context, *venv.Env) error {
 			return nil
 		})
 		if err != nil {

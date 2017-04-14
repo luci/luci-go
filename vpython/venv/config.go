@@ -19,22 +19,18 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/system/filesystem"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 )
 
 // PackageLoader loads package information from a specification file's Package
 // message onto the local system.
 type PackageLoader interface {
-	// Resolve processes the supplied packages, updating their fields to their
+	// Resolve processes the packages defined in e, updating their fields to their
 	// resolved values. Resolved packages must fully specify the package instance
-	// that is being deployed.
-	//
-	// If needed, resolution may use the supplied root path as a persistent
-	// working directory. This path may not exist; Resolve is responsible for
-	// creating it if needed.
-	//
-	// root, if used, must be safe for concurrent use.
-	Resolve(c context.Context, root string, packages []*vpython.Spec_Package, template map[string]string) error
+	// that is being deployed, and will be used when determining the enviornment's
+	// fingerprint (used for locking and naming).
+	Resolve(c context.Context, e *vpython.Environment) error
 
 	// Ensure installs the supplied packages into root.
 	//
@@ -81,16 +77,6 @@ type Config struct {
 	// deployment.
 	Loader PackageLoader
 
-	// LoaderResolveRoot is the common persistent root directory to use for the
-	// package loader's package resolution. This must be safe for concurrent
-	// use.
-	//
-	// Each VirtualEnv will have its own loader destination directory (root).
-	// However, that root is homed in a directory that is named after the resolved
-	// packages. LoaderResolveRoot is used during setup to resolve those package
-	// values, and therefore can't re-use the VirtualEnv root.
-	LoaderResolveRoot string
-
 	// MaxScriptPathLen, if >0, is the maximum allowed VirutalEnv path length.
 	// If set, and if the VirtualEnv is configured to be installed at a path
 	// greater than this, Env will fail.
@@ -99,18 +85,6 @@ type Config struct {
 	// VirtualEnv scripts may be generated with a "shebang" (#!) line longer than
 	// what is allowed by the operating system.
 	MaxScriptPathLen int
-
-	// TagSelector, if not nil, chooses which PEP425 tag to use when representing
-	// this Python environment.
-	//
-	// This logic is externalized because it also has to correspond to how
-	// packages are defined for Loader.
-	//
-	// If nil, no Tag will be selected.
-	TagSelector func([]*vpython.Environment_Pep425Tag) *vpython.Environment_Pep425Tag
-
-	// Tag is the PEP425 tag that describes this system.
-	Tag *vpython.Environment_Pep425Tag
 
 	// testPreserveInstallationCapability is a testing parameter. If true, the
 	// VirtualEnv's ability to install will be preserved after the setup. This is
@@ -141,15 +115,18 @@ func (cfg *Config) WithoutWheels() *Config {
 
 // HasWheels returns true if this environment declares wheel dependencies.
 func (cfg *Config) HasWheels() bool {
-	return cfg.Spec != nil && len(cfg.Spec.Wheel) == 0
+	return cfg.Spec != nil && len(cfg.Spec.Wheel) > 0
 }
 
 // makeEnv processes the config, validating and, where appropriate, populating
 // any components. Upon success, it returns a configured Env instance.
 //
+// The supplied vpython.Environment is derived externally, and may be nil if
+// this is a bootstrapped Environment.
+//
 // The returned Env instance may or may not actually exist. Setup must be called
 // prior to using it.
-func (cfg *Config) makeEnv(c context.Context) (*Env, error) {
+func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, error) {
 	// We MUST have a package loader.
 	if cfg.Loader == nil {
 		return nil, errors.New("no package loader provided")
@@ -185,11 +162,6 @@ func (cfg *Config) makeEnv(c context.Context) (*Env, error) {
 			Err()
 	}
 
-	// Determine our common loader root.
-	if cfg.LoaderResolveRoot == "" {
-		cfg.LoaderResolveRoot = filepath.Join(cfg.BaseDir, ".package_loader")
-	}
-
 	// Ensure and normalize our specification file.
 	if cfg.Spec == nil {
 		cfg.Spec = &vpython.Spec{}
@@ -203,35 +175,34 @@ func (cfg *Config) makeEnv(c context.Context) (*Env, error) {
 		cfg.Spec.Virtualenv = &cfg.Package
 	}
 
-	if err := cfg.resolvePackages(c); err != nil {
+	// Construct a new, independent Enviornment for this Env.
+	e = proto.Clone(e).(*vpython.Environment)
+	if e == nil {
+		e = &vpython.Environment{}
+	}
+	e.Spec = spec.Clone(cfg.Spec)
+
+	if err := cfg.resolvePackages(c, e); err != nil {
 		return nil, errors.Annotate(err).Reason("failed to resolve packages").Err()
 	}
 
-	if err := cfg.resolvePythonInterpreter(c); err != nil {
+	if err := cfg.resolvePythonInterpreter(c, e.Spec); err != nil {
 		return nil, errors.Annotate(err).Reason("failed to resolve system Python interpreter").Err()
 	}
 
 	// Generate our environment name based on the deterministic hash of its
 	// fully-resolved specification.
-	return cfg.envForName(cfg.EnvName()), nil
+	return cfg.envForName(cfg.envNameForSpec(e.Spec), e), nil
 }
 
 // EnvName returns the VirtualEnv environment name for the environment that cfg
 // describes.
-func (cfg *Config) EnvName() string {
-	name := spec.Hash(cfg.Spec)
+func (cfg *Config) envNameForSpec(s *vpython.Spec) string {
+	name := spec.Hash(s)
 	if cfg.MaxHashLen > 0 && len(name) > cfg.MaxHashLen {
 		name = name[:cfg.MaxHashLen]
 	}
 	return name
-}
-
-// EnvStamp returns the vpython.Environment stamp for this Config.
-func (cfg *Config) EnvStamp() *vpython.Environment {
-	return &vpython.Environment{
-		Spec: cfg.Spec,
-		Tag:  cfg.Tag,
-	}
 }
 
 // Prune performs a pruning round on the environment set described by this
@@ -243,50 +214,39 @@ func (cfg *Config) Prune(c context.Context) error {
 	return nil
 }
 
-// envForExisting creates an Env for a named directory.
-func (cfg *Config) envForName(name string) *Env {
+// envForName creates an Env for a named directory.
+func (cfg *Config) envForName(name string, e *vpython.Environment) *Env {
 	// Env-specific root directory: <BaseDir>/<name>
 	venvRoot := filepath.Join(cfg.BaseDir, name)
 	binDir := venvBinDir(venvRoot)
 	return &Env{
-		Config:       cfg,
-		Root:         venvRoot,
-		Python:       filepath.Join(binDir, "python"),
-		BinDir:       binDir,
-		EnvStampPath: filepath.Join(venvRoot, "environment.pb.txt"),
+		Config:               cfg,
+		Root:                 venvRoot,
+		Python:               filepath.Join(binDir, "python"),
+		Environment:          e,
+		BinDir:               binDir,
+		EnvironmentStampPath: filepath.Join(venvRoot, fmt.Sprintf("environment.%s.pb.txt", vpython.Version)),
 
 		name:             name,
 		lockPath:         filepath.Join(cfg.BaseDir, fmt.Sprintf(".%s.lock", name)),
-		completeFlagPath: filepath.Join(venvRoot, fmt.Sprintf("complete.%s.flag", vpython.Version)),
+		completeFlagPath: filepath.Join(venvRoot, "complete.flag"),
 	}
 }
 
-func (cfg *Config) resolvePackages(c context.Context) error {
-	// Create a single package list. Our VirtualEnv will be index 0 (need
-	// this so we can back-port it into its VirtualEnv property).
-	packages := make([]*vpython.Spec_Package, 1, 1+len(cfg.Spec.Wheel))
-	packages[0] = cfg.Spec.Virtualenv
-	packages = append(packages, cfg.Spec.Wheel...)
-
-	// Perform variable substitution on our wheel names.
-	template := make(map[string]string, 3)
-	if !cfg.Tag.IsZero() {
-		template["py_pep425_tag"] = cfg.Tag.String()
-	}
-
+func (cfg *Config) resolvePackages(c context.Context, e *vpython.Environment) error {
 	// Resolve our packages. Because we're using pointers, the in-place
 	// updating will update the actual spec file!
-	if err := cfg.Loader.Resolve(c, cfg.LoaderResolveRoot, packages, template); err != nil {
+	if err := cfg.Loader.Resolve(c, e); err != nil {
 		return errors.Annotate(err).Reason("failed to resolve packages").Err()
 	}
 	return nil
 }
 
-func (cfg *Config) resolvePythonInterpreter(c context.Context) error {
-	specVers, err := python.ParseVersion(cfg.Spec.PythonVersion)
+func (cfg *Config) resolvePythonInterpreter(c context.Context, s *vpython.Spec) error {
+	specVers, err := python.ParseVersion(s.PythonVersion)
 	if err != nil {
 		return errors.Annotate(err).Reason("failed to parse Python version from: %(value)q").
-			D("value", cfg.Spec.PythonVersion).
+			D("value", s.PythonVersion).
 			Err()
 	}
 
@@ -320,7 +280,7 @@ func (cfg *Config) resolvePythonInterpreter(c context.Context) error {
 			D("spec", specVers).
 			Err()
 	}
-	cfg.Spec.PythonVersion = interpreterVers.String()
+	s.PythonVersion = interpreterVers.String()
 
 	// Resolve to absolute path.
 	if err := filesystem.AbsPath(&cfg.Python); err != nil {
@@ -328,7 +288,7 @@ func (cfg *Config) resolvePythonInterpreter(c context.Context) error {
 			D("python", cfg.Python).
 			Err()
 	}
-	logging.Debugf(c, "Resolved system Python interpreter (%s): %s", cfg.Spec.PythonVersion, cfg.Python)
+	logging.Debugf(c, "Resolved system Python interpreter (%s): %s", s.PythonVersion, cfg.Python)
 	return nil
 }
 
