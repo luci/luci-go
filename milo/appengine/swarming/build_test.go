@@ -14,6 +14,11 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/clock/testclock"
+	memcfg "github.com/luci/luci-go/common/config/impl/memory"
+	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
+	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/authtest"
+	"github.com/luci/luci-go/server/auth/identity"
 
 	"github.com/luci/gae/impl/memory"
 
@@ -45,7 +50,12 @@ func TestBuild(t *testing.T) {
 	if *generate {
 		c := context.Background()
 		c, _ = testclock.UseTime(c, time.Date(2016, time.March, 14, 11, 0, 0, 0, time.UTC))
-		c = memory.Use(c)
+		c = memory.UseWithAppID(c, "dev~luci-milo")
+		c = testconfig.WithCommonClient(c, memcfg.New(aclConfgs))
+		c = auth.WithState(c, &authtest.FakeState{
+			Identity:       "user:alicebob@google.com",
+			IdentityGroups: []string{"all", "googlers"},
+		})
 
 		for _, tc := range getTestCases() {
 			bl := buildLoader{
@@ -75,7 +85,12 @@ func TestBuild(t *testing.T) {
 	Convey(`A test Environment`, t, func() {
 		c := context.Background()
 		c, _ = testclock.UseTime(c, time.Date(2016, time.March, 14, 11, 0, 0, 0, time.UTC))
-		c = memory.Use(c)
+		c = memory.UseWithAppID(c, "dev~luci-milo")
+		c = testconfig.WithCommonClient(c, memcfg.New(aclConfgs))
+		c = auth.WithState(c, &authtest.FakeState{
+			Identity:       "user:alicebob@google.com",
+			IdentityGroups: []string{"all", "googlers"},
+		})
 
 		for _, tc := range getTestCases() {
 			Convey(fmt.Sprintf("Test Case: %s", tc.name), func() {
@@ -83,6 +98,18 @@ func TestBuild(t *testing.T) {
 					logDogClientFunc: logDogClientFunc(tc),
 				}
 				svc := debugSwarmingService{tc}
+
+				// Special case: The build-internal test case to check that ACLs should fail.
+				if tc.name == "build-internal" {
+					Convey("Should fail", func() {
+						c := auth.WithState(c, &authtest.FakeState{
+							Identity:       identity.AnonymousIdentity,
+							IdentityGroups: []string{"all"},
+						})
+						_, err := bl.swarmingBuildImpl(c, svc, "foo", tc.name)
+						So(err.Error(), ShouldResemble, "Not a Milo Job or access denied")
+					})
+				}
 
 				build, err := bl.swarmingBuildImpl(c, svc, "foo", tc.name)
 				So(err, ShouldBeNil)

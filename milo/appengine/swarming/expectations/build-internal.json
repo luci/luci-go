@@ -1,0 +1,72 @@
+{
+  "Summary": {
+    "Label": "2d8d62f6be545b10",
+    "Status": "Running",
+    "Source": {
+      "Label": "Task 2d8d62f6be545b10",
+      "URL": "https://example.com/user/task/2d8d62f6be545b10"
+    },
+    "MainLink": [
+      {
+        "Label": "Task 2d8d62f6be545b10",
+        "URL": "https://example.com/user/task/2d8d62f6be545b10"
+      }
+    ],
+    "SubLink": [
+      [
+        {
+          "Label": "stdout",
+          "URL": "foo/stdout"
+        }
+      ]
+    ],
+    "Started": "2016-03-14T10:00:01.85071Z",
+    "Finished": "0001-01-01T00:00:00Z",
+    "Duration": 3598149290000,
+    "Type": "Recipe",
+    "LevelsDeep": 0,
+    "Verbosity": 1,
+    "Text": [
+      "Running recipe bootstrap"
+    ]
+  },
+  "SourceStamp": null,
+  "Components": [
+    {
+      "Label": "recipe bootstrap",
+      "Status": "Running",
+      "MainLink": [
+        {
+          "Label": "stdout",
+          "URL": "foo/steps/recipe_bootstrap/0/stdout"
+        }
+      ],
+      "SubLink": [
+        [
+          {
+            "Label": "Confused? README here",
+            "URL": "https://chromium.googlesource.com/external/github.com/luci/recipes-py/+/master/doc/workflow.md"
+          }
+        ]
+      ],
+      "Started": "2016-03-14T10:00:02Z",
+      "Finished": "0001-01-01T00:00:00Z",
+      "Duration": 3598000000000,
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Verbosity": 0,
+      "Text": null
+    }
+  ],
+  "PropertyGroup": [
+    {
+      "GroupName": "recipe bootstrap",
+      "Property": null
+    },
+    {
+      "GroupName": "Main",
+      "Property": null
+    }
+  ],
+  "Blame": null
+}

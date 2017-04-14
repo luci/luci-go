@@ -20,13 +20,17 @@ import (
 
 	swarming "github.com/luci/luci-go/common/api/swarming/swarming/v1"
 	"github.com/luci/luci-go/common/clock/testclock"
+	memcfg "github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/common/errors"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/coordinator"
+	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/common"
+	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/templates"
 )
 
@@ -245,8 +249,13 @@ func BuildTestData() []common.TestBundle {
 		},
 	}
 	c := context.Background()
+	c = memory.UseWithAppID(c, "dev~luci-milo")
+	c = testconfig.WithCommonClient(c, memcfg.New(aclConfgs))
+	c = auth.WithState(c, &authtest.FakeState{
+		Identity:       "user:alicebob@google.com",
+		IdentityGroups: []string{"all", "googlers"},
+	})
 	c, _ = testclock.UseTime(c, time.Date(2016, time.March, 14, 11, 0, 0, 0, time.UTC))
-	c = memory.Use(c)
 
 	for _, tc := range getTestCases() {
 		svc := debugSwarmingService{tc}
@@ -264,4 +273,23 @@ func BuildTestData() []common.TestBundle {
 		})
 	}
 	return results
+}
+
+var secretProjectCfg = `
+name: "secret"
+access: "group:googlers"
+`
+
+var publicProjectCfg = `
+name: "opensource"
+access: "group:all"
+`
+
+var aclConfgs = map[string]memcfg.ConfigSet{
+	"projects/secret": {
+		"project.cfg": secretProjectCfg,
+	},
+	"projects/opensource": {
+		"project.cfg": publicProjectCfg,
+	},
 }

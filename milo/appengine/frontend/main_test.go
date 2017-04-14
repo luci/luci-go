@@ -105,7 +105,6 @@ func TestPages(t *testing.T) {
 	}
 
 	Convey("Testing basic rendering.", t, func() {
-		// Load all the bundles.
 		c := context.Background()
 		c = memory.Use(c)
 		c = common.WithRequest(c, &http.Request{URL: &url.URL{Path: "/foobar"}})

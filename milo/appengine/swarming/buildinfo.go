@@ -65,7 +65,7 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 	fr, err := swarmingFetch(c, sf, req.Task, fetchParams)
 	if err != nil {
 		if err == errNotMiloJob {
-			logging.Warningf(c, "User requested non-Milo task.")
+			logging.Warningf(c, "User requested nonexistent task or does not have permissions.")
 			return nil, grpcutil.NotFound
 		}
 

@@ -24,13 +24,14 @@ import (
 	"github.com/luci/luci-go/logdog/client/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/milo/api/resp"
+	"github.com/luci/luci-go/milo/appengine/common"
 	"github.com/luci/luci-go/milo/appengine/logdog"
 	"github.com/luci/luci-go/server/auth"
 )
 
 // errNotMiloJob is returned if a Swarming task is fetched that does not self-
 // identify as a Milo job.
-var errNotMiloJob = errors.New("Not a Milo Job")
+var errNotMiloJob = errors.New("Not a Milo Job or access denied")
 
 // SwarmingTimeLayout is time layout used by swarming.
 const SwarmingTimeLayout = "2006-01-02T15:04:05.999999999"
@@ -145,9 +146,6 @@ type swarmingFetchResult struct {
 // After fetching, an ACL check is performed to confirm that the user is
 // permitted to view the resulting data. If this check fails, get returns
 // errNotMiloJob.
-//
-// TODO(hinoka): Make this ACL check something more specific than the
-// resence of the "allow_milo" dimension.
 func swarmingFetch(c context.Context, svc swarmingService, taskID string, req swarmingFetchParams) (
 	*swarmingFetchResult, error) {
 
@@ -194,15 +192,18 @@ func swarmingFetch(c context.Context, svc swarmingService, taskID string, req sw
 		return nil, err
 	}
 
-	// Current ACL implementation: error if this is not a Milo job.
+	// Current ACL implementation:
+	// If allow_milo:1 is present, it is a public job.  Don't bother with ACL check.
+	// If it is not present, check the luci_project tag, and see if user is allowed
+	// to access said project.
 	switch {
 	case req.fetchReq:
-		if !isMiloJob(fr.req.Tags) {
+		if !isAllowed(c, fr.req.Tags) {
 			return nil, errNotMiloJob
 		}
 
 	case req.fetchRes:
-		if !isMiloJob(fr.res.Tags) {
+		if !isAllowed(c, fr.res.Tags) {
 			return nil, errNotMiloJob
 		}
 
@@ -665,10 +666,29 @@ func infoComponent(st resp.Status, label, text string) *resp.BuildComponent {
 	}
 }
 
-func isMiloJob(tags []string) bool {
+// isAllowed checks if:
+// 1. allow_milo:1 is present.  If so, it's a public job.
+// 2. luci_project is present, and if the logged in user has access to that project.
+func isAllowed(c context.Context, tags []string) bool {
 	for _, t := range tags {
 		if t == "allow_milo:1" {
 			return true
+		}
+	}
+	for _, t := range tags {
+		if strings.HasPrefix(t, "luci_project:") {
+			sp := strings.SplitN(t, ":", 2)
+			if len(sp) != 2 {
+				return false
+			}
+			logging.Debugf(c, "Checking if user has access to %s", sp[1])
+			// sp[1] is the project ID.
+			allowed, err := common.IsAllowed(c, sp[1])
+			if err != nil {
+				logging.WithError(err).Errorf(c, "could not perform acl check")
+				return false
+			}
+			return allowed
 		}
 	}
 	return false
