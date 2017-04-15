@@ -7,14 +7,26 @@ package policy
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"sync"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/config/validation"
+	"github.com/luci/luci-go/common/data/caching/lazyslot"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 )
+
+// ErrNoPolicy is returned by Queryable(...) if a policy is not yet available.
+//
+// This happens when the service is deployed for the first time and policy
+// configs aren't fetched yet. This error will not show up if ImportConfigs
+// succeeded at least once.
+var ErrNoPolicy = errors.New("policy config is not imported yet")
 
 // Policy describes how to fetch, store and parse policy documents.
 //
@@ -59,6 +71,9 @@ type Policy struct {
 	//
 	// Users of Policy should type-cast it to an appropriate type.
 	Prepare func(cfg ConfigBundle, revision string) (Queryable, error)
+
+	once  sync.Once
+	cache *lazyslot.Slot // holds and updates in-memory cache of Queryable
 }
 
 // Queryable is validated and parsed configs in a form optimized for queries.
@@ -174,7 +189,93 @@ func (p *Policy) ImportConfigs(c context.Context) (rev string, err error) {
 // This is hot function called from each RPC handler. It uses local in-memory
 // cache to store the configs, synchronizing it with the state stored in the
 // datastore once a minute.
+//
+// Returns ErrNoPolicy if the policy config wasn't imported yet.
 func (p *Policy) Queryable(c context.Context) (Queryable, error) {
-	// TODO(vadimsh): Implement.
-	return nil, nil
+	p.once.Do(func() {
+		p.cache = &lazyslot.Slot{Fetcher: p.grabQueryable}
+	})
+	val, err := p.cache.Get(c)
+	if err != nil {
+		return nil, err
+	}
+	return val.Value.(Queryable), nil
+}
+
+// grabQueryable is called whenever cached Queryable in p.cache expires.
+func (p *Policy) grabQueryable(c context.Context, prev lazyslot.Value) (val lazyslot.Value, err error) {
+	c = logging.SetField(c, "policy", p.Name)
+
+	logging.Infof(c, "Checking version of the policy in the datastore")
+	hdr, err := getImportedPolicyHeader(c, p.Name)
+	switch {
+	case err != nil:
+		err = errors.Annotate(err).Reason("failed to fetch importedPolicyHeader entity").Err()
+		return
+	case hdr == nil:
+		err = ErrNoPolicy
+		return
+	}
+
+	// Reuse existing Queryable object if configs didn't change.
+	prevQ, _ := prev.Value.(Queryable)
+	if prevQ != nil && prevQ.ConfigRevision() == hdr.Revision {
+		return lazyslot.Value{
+			Value:      prevQ,
+			Expiration: nextCheckTime(c),
+		}, nil
+	}
+
+	// Fetch new configs.
+	logging.Infof(c, "Fetching policy configs from the datastore")
+	body, err := getImportedPolicyBody(c, p.Name)
+	switch {
+	case err != nil:
+		err = errors.Annotate(err).Reason("failed to fetch importedPolicyBody entity").Err()
+		return
+	case body == nil: // this is rare, the body shouldn't disappear
+		logging.Errorf(c, "The policy body is unexpectedly gone")
+		err = ErrNoPolicy
+		return
+	}
+
+	// An error here and below can happen if previously validated config is no
+	// longer valid (e.g. if the service code is updated and new code doesn't like
+	// the stored config anymore).
+	//
+	// If this check fails, the service is effectively offline until configs are
+	// updated. Presumably, it is better than silently using no longer valid
+	// config.
+	logging.Infof(c, "Using configs at rev %s", body.Revision)
+	configs, unknown, err := deserializeBundle(body.Data)
+	if err != nil {
+		err = errors.Annotate(err).Reason("failed to deserialize cached configs").Err()
+		return
+	}
+	if len(unknown) != 0 {
+		for _, cfg := range unknown {
+			logging.Errorf(c, "Unknown proto type %q in cached config %q", cfg.Kind, cfg.Path)
+		}
+		err = errors.New("failed to deserialize some cached configs")
+		return
+	}
+	queryable, err := p.Prepare(configs, body.Revision)
+	if err != nil {
+		err = errors.Annotate(err).Reason("failed to process cached configs").Err()
+		return
+	}
+
+	return lazyslot.Value{
+		Value:      queryable,
+		Expiration: nextCheckTime(c),
+	}, nil
+}
+
+// nextCheckTime returns a random time from [now+4 min, now+5 min).
+//
+// It's used to define when to refresh in-memory Queryable cache. We randomize
+// it to desynchronize cache updates of different Policy instances.
+func nextCheckTime(c context.Context) time.Time {
+	rnd := time.Duration(mathrand.Int63n(c, int64(time.Minute)))
+	return clock.Now(c).Add(4*time.Minute + rnd)
 }

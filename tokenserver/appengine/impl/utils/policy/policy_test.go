@@ -5,13 +5,18 @@
 package policy
 
 import (
+	"math/rand"
 	"testing"
+	"time"
 
 	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/luci/gae/filter/count"
 	"github.com/luci/luci-go/appengine/gaetesting"
+	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/config/validation"
+	"github.com/luci/luci-go/common/data/rand/mathrand"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -113,6 +118,75 @@ func TestQueryable(t *testing.T) {
 	t.Parallel()
 
 	Convey("Works", t, func() {
-		// TODO
+		base, tc := testclock.UseTime(gaetesting.TestingContext(), testclock.TestTimeUTC)
+		base = mathrand.Set(base, rand.New(rand.NewSource(2)))
+		base, counter := count.FilterRDS(base)
+
+		p := Policy{
+			Name: "testing",
+			Fetch: func(c context.Context, f ConfigFetcher) (ConfigBundle, error) {
+				var ts timestamp.Timestamp
+				So(f.FetchTextProto(c, "config.cfg", &ts), ShouldBeNil)
+				return ConfigBundle{"config.cfg": &ts}, nil
+			},
+			Prepare: func(cfg ConfigBundle, revision string) (Queryable, error) {
+				return &queryableForm{revision, cfg}, nil
+			},
+		}
+
+		// No imported configs yet.
+		q, err := p.Queryable(base)
+		So(err, ShouldEqual, ErrNoPolicy)
+		So(q, ShouldEqual, nil)
+
+		c1 := prepareServiceConfig(base, map[string]string{
+			"config.cfg": "seconds: 12345",
+		})
+		rev1, err := p.ImportConfigs(c1)
+		So(err, ShouldBeNil)
+
+		q, err = p.Queryable(base)
+		So(err, ShouldBeNil)
+		So(q.ConfigRevision(), ShouldEqual, rev1)
+		qf := q.(*queryableForm)
+		So(qf.bundle["config.cfg"], ShouldResemble, &timestamp.Timestamp{Seconds: 12345})
+
+		So(counter.GetMulti.Total(), ShouldEqual, 4)
+
+		// 3 min later using exact same config, no datastore calls.
+		tc.Add(3 * time.Minute)
+		q, err = p.Queryable(base)
+		So(err, ShouldBeNil)
+		So(q.(*queryableForm), ShouldEqual, qf)
+		So(counter.GetMulti.Total(), ShouldEqual, 4)
+
+		// 2 min after that, the datastore is rechecked, since the local cache has
+		// expired. No new configs there, exact same 'q' is returned.
+		tc.Add(2 * time.Minute)
+		q, err = p.Queryable(base)
+		So(err, ShouldBeNil)
+		So(q.(*queryableForm), ShouldEqual, qf)
+		So(counter.GetMulti.Total(), ShouldEqual, 5) // datastore call!
+
+		// Config has been updated.
+		c2 := prepareServiceConfig(base, map[string]string{
+			"config.cfg": "seconds: 6789",
+		})
+		rev2, err := p.ImportConfigs(c2)
+		So(err, ShouldBeNil)
+
+		// Currently cached config is still fresh though, so it is still used.
+		q, err = p.Queryable(base)
+		So(err, ShouldBeNil)
+		So(q.ConfigRevision(), ShouldEqual, rev1)
+
+		// 5 minutes later the cached copy expires and new one is fetched from
+		// the datastore.
+		tc.Add(5 * time.Minute)
+		q, err = p.Queryable(base)
+		So(err, ShouldBeNil)
+		So(q.ConfigRevision(), ShouldEqual, rev2)
+		qf = q.(*queryableForm)
+		So(qf.bundle["config.cfg"], ShouldResemble, &timestamp.Timestamp{Seconds: 6789})
 	})
 }
