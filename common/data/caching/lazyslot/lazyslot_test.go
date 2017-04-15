@@ -5,6 +5,7 @@
 package lazyslot
 
 import (
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -99,7 +100,7 @@ func TestLazySlot(t *testing.T) {
 		So(v.Value.(int), ShouldEqual, 2)
 	})
 
-	Convey("Recovers from panic", t, func(conv C) {
+	Convey("Recovers from panic", t, func() {
 		c, clk := newContext()
 
 		// Initial value.
@@ -128,7 +129,7 @@ func TestLazySlot(t *testing.T) {
 		So(v.Value.(int), ShouldEqual, 2)
 	})
 
-	Convey("Checks for nil", t, func(conv C) {
+	Convey("Checks for nil", t, func() {
 		c, clk := newContext()
 		s := Slot{
 			Fetcher: func(c context.Context, prev Value) (Value, error) {
@@ -136,6 +137,72 @@ func TestLazySlot(t *testing.T) {
 			},
 		}
 		So(func() { s.Get(c) }, ShouldPanicWith, "lazyslot.Slot Fetcher returned nil value")
+	})
+
+	Convey("Retries failed refetch later", t, func() {
+		c, clk := newContext()
+
+		var errorToReturn error
+		var valueToReturn int
+
+		fetchCalls := 0
+
+		s := Slot{
+			Fetcher: func(c context.Context, prev Value) (Value, error) {
+				fetchCalls++
+				return Value{
+					Value:      valueToReturn,
+					Expiration: clk.Now().Add(time.Minute),
+				}, errorToReturn
+			},
+		}
+
+		// Initial fetch.
+		valueToReturn = 1
+		errorToReturn = nil
+		val, err := s.Get(c)
+		So(val.Value, ShouldResemble, 1)
+		So(err, ShouldBeNil)
+		So(fetchCalls, ShouldEqual, 1)
+
+		// Cached copy is good after 30 sec.
+		clk.Add(30 * time.Second)
+		valueToReturn = 2
+		errorToReturn = nil
+		val, err = s.Get(c)
+		So(val.Value, ShouldResemble, 1) // still cached copy
+		So(err, ShouldBeNil)
+		So(fetchCalls, ShouldEqual, 1)
+
+		// After 31 the cache copy expires, we attempt to update it, but something
+		// goes horribly wrong. Get(...) returns the old copy, with expiration time
+		// bumped to now+5 sec.
+		clk.Add(31 * time.Second)
+		valueToReturn = 3
+		errorToReturn = errors.New("omg")
+		val, err = s.Get(c)
+		So(val.Value, ShouldResemble, 1) // still cached copy
+		So(val.Expiration, ShouldResemble, clk.Now().Add(5*time.Second))
+		So(err, ShouldBeNil)
+		So(fetchCalls, ShouldEqual, 2) // attempted to fetch
+
+		// 1 sec later still using old copy, because retry is scheduled for later.
+		clk.Add(time.Second)
+		valueToReturn = 4
+		errorToReturn = nil
+		val, err = s.Get(c)
+		So(val.Value, ShouldResemble, 1) // still cached copy
+		So(err, ShouldBeNil)
+		So(fetchCalls, ShouldEqual, 2)
+
+		// 5 sec later fetched is attempted, and it succeeds.
+		clk.Add(5 * time.Second)
+		valueToReturn = 5
+		errorToReturn = nil
+		val, err = s.Get(c)
+		So(val.Value, ShouldResemble, 5) // new copy
+		So(err, ShouldBeNil)
+		So(fetchCalls, ShouldEqual, 3)
 	})
 }
 

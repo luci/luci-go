@@ -17,6 +17,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/logging"
 )
 
 // Value is what's stored in a Slot. It is treated as immutable value.
@@ -38,8 +39,9 @@ type Fetcher func(c context.Context, prev Value) (Value, error)
 // Only one goroutine will be busy refreshing, all others will see a slightly
 // stale copy of the value during the refresh.
 type Slot struct {
-	Fetcher Fetcher       // used to actually load the value on demand
-	Timeout time.Duration // how long to allow to fetch, 15 sec by default.
+	Fetcher    Fetcher       // used to actually load the value on demand
+	Timeout    time.Duration // how long to allow to fetch, 15 sec by default.
+	RetryDelay time.Duration // how long to wait before fetching after a failure, 5 sec by default
 
 	lock              sync.RWMutex    // protects the guts below
 	current           *Value          // currently known value or nil if not fetched
@@ -51,8 +53,19 @@ type Slot struct {
 // It may return slightly stale copy if some other goroutine is fetching a new
 // copy now. If there's no cached copy at all, blocks until it is retrieved.
 //
-// Returns an error only when Fetcher returns an error. Panics if fetcher
-// doesn't produce a value, and doesn't return an error.
+// Returns an error only when there's no cached copy yet and Fetcher returns
+// an error.
+//
+// If there's an expired cached copy, and Fetcher returns an error when trying
+// to refresh it, logs the error and returns the existing cached copy (which is
+// stale at this point). We assume callers prefer stale copy over a hard error.
+//
+// On refetch errors bumps expiration time of the cached copy to RetryDelay
+// seconds from now, effectively scheduling a retry at some later time.
+// RetryDelay is 5 sec by default.
+//
+// Panics if Fetcher doesn't produce a non-nil value and doesn't return an
+// error. It must either return an error or an non-nil value.
 func (s *Slot) Get(c context.Context) (result Value, err error) {
 	// state is populate in the anonymous function below.
 	var state struct {
@@ -92,7 +105,7 @@ func (s *Slot) Get(c context.Context) (result Value, err error) {
 		// there's nothing to return yet. All goroutines would have to wait for this
 		// initial fetch to complete. They'll all block on s.lock.RLock() above.
 		if s.current == nil {
-			result, err = doFetch(s.makeFetcherCtx(c), s.Fetcher, Value{})
+			result, err = initialFetch(s.makeFetcherCtx(c), s.Fetcher)
 			if err == nil {
 				s.current = &result
 			}
@@ -133,7 +146,7 @@ func (s *Slot) Get(c context.Context) (result Value, err error) {
 				s.current = &result
 			}
 		}()
-		return doFetch(state.C, state.Fetcher, state.PrevValue)
+		return refetch(state.C, state.Fetcher, state.PrevValue, s.RetryDelay), nil
 	}()
 }
 
@@ -149,9 +162,9 @@ func (s *Slot) makeFetcherCtx(c context.Context) context.Context {
 	return fetcherCtx
 }
 
-// doFetch calls fetcher callback and validates return value.
-func doFetch(ctx context.Context, cb Fetcher, prev Value) (result Value, err error) {
-	result, err = cb(ctx, prev)
+// initialFetch is called to load the value for the first time.
+func initialFetch(ctx context.Context, cb Fetcher) (result Value, err error) {
+	result, err = cb(ctx, Value{})
 	switch {
 	case err == nil && result.Value == nil:
 		panic("lazyslot.Slot Fetcher returned nil value")
@@ -159,4 +172,26 @@ func doFetch(ctx context.Context, cb Fetcher, prev Value) (result Value, err err
 		result = Value{}
 	}
 	return
+}
+
+// refetch attempts to update the previously known cached value.
+//
+// On an error it logs it and returns the previous value (bumping its expiration
+// time by retryDelay, to trigger a retry at some later time).
+func refetch(ctx context.Context, cb Fetcher, prev Value, retryDelay time.Duration) Value {
+	switch result, err := cb(ctx, prev); {
+	case err == nil && result.Value == nil:
+		panic("lazyslot.Slot Fetcher returned nil value")
+	case err != nil:
+		logging.WithError(err).Errorf(ctx, "lazyslot: failed to update instance of %T", prev.Value)
+		if retryDelay == 0 {
+			retryDelay = 5 * time.Second
+		}
+		return Value{
+			Value:      prev.Value,
+			Expiration: clock.Now(ctx).Add(retryDelay),
+		}
+	default:
+		return result
+	}
 }
