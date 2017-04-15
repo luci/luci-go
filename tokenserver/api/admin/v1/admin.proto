@@ -66,14 +66,13 @@ service Admin {
 }
 
 
-// ImportedConfigs is returned by ImportCAConfigs methods on success.
+// ImportedConfigs is returned by Import<something>Configs methods on success.
 message ImportedConfigs {
-  message ConfigFile {
-    string name                = 1; // name of the config file
-    string revision            = 2; // the revision of the imported config
-  }
-  // The list of imported config files with their revision numbers.
-  repeated ConfigFile imported_configs = 1;
+  // The revision of the configs that are now in the datastore.
+  //
+  // It's either the imported revision, if configs change, or a previously known
+  // revision, if configs at HEAD are same.
+  string revision = 1;
 }
 
 

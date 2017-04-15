@@ -135,14 +135,7 @@ func (r *ImportCAConfigsRPC) ImportCAConfigs(c context.Context, _ *empty.Empty) 
 		return nil, grpc.Errorf(codes.Internal, "datastore error - %s", err)
 	}
 
-	return &admin.ImportedConfigs{
-		ImportedConfigs: []*admin.ImportedConfigs_ConfigFile{
-			{
-				Name:     "tokenserver.cfg",
-				Revision: meta.Revision,
-			},
-		},
-	}, nil
+	return &admin.ImportedConfigs{Revision: meta.Revision}, nil
 }
 
 // fetchConfigFile fetches a file from this services' config set.

@@ -44,12 +44,7 @@ func TestImportDelegationConfigs(t *testing.T) {
 		resp, err := rpc.ImportDelegationConfigs(ctx, nil)
 		So(err, ShouldBeNil)
 		So(resp, ShouldResemble, &admin.ImportedConfigs{
-			ImportedConfigs: []*admin.ImportedConfigs_ConfigFile{
-				{
-					Name:     "delegation.cfg",
-					Revision: "780529c8f5e6b219e27482978d792d580f7d4f9d",
-				},
-			},
+			Revision: "780529c8f5e6b219e27482978d792d580f7d4f9d",
 		})
 
 		// Have config now.
@@ -61,7 +56,7 @@ func TestImportDelegationConfigs(t *testing.T) {
 		// Noop import.
 		resp, err = rpc.ImportDelegationConfigs(ctx, nil)
 		So(err, ShouldBeNil)
-		So(resp.ImportedConfigs[0].Revision, ShouldEqual, "780529c8f5e6b219e27482978d792d580f7d4f9d")
+		So(resp.Revision, ShouldEqual, "780529c8f5e6b219e27482978d792d580f7d4f9d")
 
 		// Try to import completely broken config.
 		ctx = prepareCfg(ctx, `I'm broken`)

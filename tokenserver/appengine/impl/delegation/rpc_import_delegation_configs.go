@@ -36,16 +36,6 @@ func (r *ImportDelegationConfigsRPC) ImportDelegationConfigs(c context.Context, 
 	}
 	logging.Infof(c, "Importing %q at rev %s", delegationCfg, meta.Revision)
 
-	// This is returned on successful import.
-	successResp := &admin.ImportedConfigs{
-		ImportedConfigs: []*admin.ImportedConfigs_ConfigFile{
-			{
-				Name:     delegationCfg,
-				Revision: meta.Revision,
-			},
-		},
-	}
-
 	// Already have this revision in the datastore?
 	existing, err := FetchDelegationConfig(c)
 	if err != nil {
@@ -53,7 +43,7 @@ func (r *ImportDelegationConfigsRPC) ImportDelegationConfigs(c context.Context, 
 	}
 	if existing.Revision == meta.Revision {
 		logging.Infof(c, "Up-to-date at rev %s", meta.Revision)
-		return successResp, nil
+		return &admin.ImportedConfigs{Revision: meta.Revision}, nil
 	}
 
 	// Validate the new config before storing.
@@ -80,7 +70,7 @@ func (r *ImportDelegationConfigsRPC) ImportDelegationConfigs(c context.Context, 
 	}
 
 	logging.Infof(c, "Updated delegation config %s => %s", existing.Revision, imported.Revision)
-	return successResp, nil
+	return &admin.ImportedConfigs{Revision: meta.Revision}, nil
 }
 
 // fetchConfigDelegationPermissions fetches a file from this services' config set.

@@ -67,7 +67,7 @@ func TestImportCAConfigsRPC(t *testing.T) {
 				}
 			`)
 			So(err, ShouldBeNil)
-			firstRev := out.ImportedConfigs[0].Revision
+			firstRev := out.Revision
 
 			// Appears.
 			resp := getCA("Puppet CA: fake.ca")
@@ -85,7 +85,7 @@ func TestImportCAConfigsRPC(t *testing.T) {
 				 }
 			`)
 			So(err, ShouldBeNil)
-			So(out.ImportedConfigs[0].Revision, ShouldNotEqual, firstRev)
+			So(out.Revision, ShouldNotEqual, firstRev)
 
 			// UpdateRev stays as it was, no significant changes made.
 			resp = getCA("Puppet CA: fake.ca")
@@ -100,7 +100,7 @@ func TestImportCAConfigsRPC(t *testing.T) {
 				 }
 			`)
 			So(err, ShouldBeNil)
-			secondRev := out.ImportedConfigs[0].Revision
+			secondRev := out.Revision
 
 			// Assert it is updated.
 			resp = getCA("Puppet CA: fake.ca")
@@ -136,7 +136,7 @@ func TestImportCAConfigsRPC(t *testing.T) {
 				}
 			`)
 			So(err, ShouldBeNil)
-			rev := out.ImportedConfigs[0].Revision
+			rev := out.Revision
 
 			ds.GetTestable(ctx).CatchupIndexes()
 
