@@ -54,14 +54,11 @@ func (p *iamTokenProvider) MintToken(ctx context.Context, base *oauth2.Token) (*
 	tok, err := googleoauth.GetAccessToken(ctx, googleoauth.JwtFlowParams{
 		ServiceAccount: p.actAs,
 		Scopes:         p.scopes,
-		Signer: &iam.Signer{
-			ServiceAccount: p.actAs,
-			Client: &iam.Client{
-				Client: &http.Client{
-					Transport: &tokenInjectingTransport{
-						transport: p.transport,
-						token:     base,
-					},
+		Signer: &iam.Client{
+			Client: &http.Client{
+				Transport: &tokenInjectingTransport{
+					transport: p.transport,
+					token:     base,
 				},
 			},
 		},

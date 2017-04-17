@@ -5,12 +5,10 @@
 package auth
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
@@ -40,15 +38,14 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 			cb: func(r *http.Request, body string) string {
 				switch r.URL.String() {
 				// IAM request to sign the assertion.
-				case "https://iam.googleapis.com/v1/projects/-/serviceAccounts/abc@example.com:signBlob?alt=json":
+				case "https://iam.googleapis.com/v1/projects/-/serviceAccounts/abc@example.com:signJwt?alt=json":
 					// Check the valid claimset is being passed.
 					var req struct {
-						BytesToSign []byte `json:"bytesToSign"`
+						Payload string `json:"payload"`
 					}
 					json.Unmarshal([]byte(body), &req)
-					claimSetBlob, _ := base64.RawURLEncoding.DecodeString(strings.Split(string(req.BytesToSign), ".")[1])
 					claimSet := map[string]interface{}{}
-					json.Unmarshal(claimSetBlob, &claimSet)
+					json.Unmarshal([]byte(req.Payload), &claimSet)
 					So(claimSet["iss"], ShouldEqual, "abc@example.com")
 					So(claimSet["scope"], ShouldEqual, "scope_a scope_b")
 					return `{"keyId":"key_id","signature":"c2lnbmF0dXJl"}`

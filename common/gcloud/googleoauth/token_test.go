@@ -16,11 +16,11 @@ import (
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/jws"
 	"google.golang.org/api/googleapi"
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/common/gcloud/iam"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -45,16 +45,14 @@ func TestGetAccessToken(t *testing.T) {
 
 		// Request parameters are valid.
 		So(req.Get("grant_type"), ShouldEqual, "urn:ietf:params:oauth:grant-type:jwt-bearer")
-		hdr, claims, sig := deconstructJWT(req.Get("assertion"))
-		So(hdr, ShouldResemble, jws.Header{Algorithm: "RS256", Typ: "JWT"})
-		So(claims, ShouldResemble, jws.ClaimSet{
+		claims := deconstructJWT(req.Get("assertion"))
+		So(claims, ShouldResemble, iam.ClaimSet{
 			Iss:   "account@example.com",
 			Scope: "a b",
 			Aud:   url,
 			Iat:   issuedAt,
 			Exp:   issuedAt + 3600,
 		})
-		So(string(sig), ShouldEqual, "signature")
 
 		// Response is understood.
 		So(tok, ShouldResemble, &oauth2.Token{
@@ -136,26 +134,26 @@ func call(ctx context.Context, params JwtFlowParams, status int, resp interface{
 	return req, tok, ts.URL, err
 }
 
-func deconstructJWT(token string) (hdr jws.Header, claims jws.ClaimSet, sig []byte) {
-	parts := strings.Split(token, ".")
+func deconstructJWT(token string) (claims iam.ClaimSet) {
+	parts := strings.Split(token, ".") // <header>.<claims>.<signature>
 	So(len(parts), ShouldEqual, 3)
 
-	hdrBin, err := base64.RawURLEncoding.DecodeString(parts[0])
-	So(err, ShouldBeNil)
-	So(json.Unmarshal(hdrBin, &hdr), ShouldBeNil)
-
+	// We are interested only in claim set. The headers and signature are mocked
+	// by fakeSigner, no sense it checking them.
 	claimsBin, err := base64.RawURLEncoding.DecodeString(parts[1])
 	So(err, ShouldBeNil)
 	So(json.Unmarshal(claimsBin, &claims), ShouldBeNil)
-
-	sig, err = base64.RawURLEncoding.DecodeString(parts[2])
-	So(err, ShouldBeNil)
 
 	return
 }
 
 type fakeSigner struct{}
 
-func (fakeSigner) SignBytes(c context.Context, blob []byte) (string, []byte, error) {
-	return "unused key id", []byte("signature"), nil
+func (fakeSigner) SignJWT(c context.Context, serviceAccount string, cs *iam.ClaimSet) (keyName, signedJwt string, err error) {
+	blob, err := json.Marshal(cs)
+	if err != nil {
+		return "", "", err
+	}
+	claimsB64 := base64.RawURLEncoding.EncodeToString(blob)
+	return "unused key id", "fake_hdr." + claimsB64 + ".fake_sig", nil
 }

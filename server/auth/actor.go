@@ -148,11 +148,8 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 			// token exchange endpoint.
 			tok, err := googleoauth.GetAccessToken(ctx, googleoauth.JwtFlowParams{
 				ServiceAccount: params.ServiceAccount,
-				Signer: &iam.Signer{
-					ServiceAccount: params.ServiceAccount,
-					Client: &iam.Client{
-						Client: &http.Client{Transport: asSelf},
-					},
+				Signer: &iam.Client{
+					Client: &http.Client{Transport: asSelf},
 				},
 				Scopes: sortedScopes,
 				Client: &http.Client{Transport: cfg.AnonymousTransport(ctx)},

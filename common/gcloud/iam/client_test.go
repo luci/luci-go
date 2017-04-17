@@ -60,6 +60,46 @@ func TestClient(t *testing.T) {
 		So(string(body), ShouldEqual, `{"bytesToSign":"YmxvYg=="}`)
 	})
 
+	Convey("SignJWT works", t, func(c C) {
+		bodies := make(chan []byte, 1)
+
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != "POST" {
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			}
+			if r.RequestURI != "/v1/projects/-/serviceAccounts/abc@example.com:signJwt?alt=json" {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+
+			body, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				panic(err)
+			}
+			bodies <- body
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(200)
+			w.Write([]byte(`{"keyId":"key_id","signedJwt":"signed_jwt"}`))
+		}))
+		defer ts.Close()
+
+		cl := Client{
+			Client:   http.DefaultClient,
+			BasePath: ts.URL,
+		}
+
+		keyID, jwt, err := cl.SignJWT(context.Background(), "abc@example.com", &ClaimSet{Exp: 123})
+		So(err, ShouldBeNil)
+		So(keyID, ShouldEqual, "key_id")
+		So(jwt, ShouldEqual, "signed_jwt")
+
+		// The request body looks sane too.
+		body := <-bodies
+		So(string(body), ShouldEqual, `{"payload":"{\"iss\":\"\",\"aud\":\"\",\"exp\":123,\"iat\":0}"}`)
+	})
+
 	Convey("ModifyIAMPolicy works", t, func(c C) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method != "POST" {

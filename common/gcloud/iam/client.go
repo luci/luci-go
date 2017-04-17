@@ -25,13 +25,30 @@ const (
 	OAuthScope = "https://www.googleapis.com/auth/iam"
 )
 
+// ClaimSet contains information about the JWT signature including the
+// permissions being requested (scopes), the target of the token, the issuer,
+// the time the token was issued, and the lifetime of the token.
+//
+// See RFC 7515.
+type ClaimSet struct {
+	Iss   string `json:"iss"`             // email address of the client_id of the application making the access token request
+	Scope string `json:"scope,omitempty"` // space-delimited list of the permissions the application requests
+	Aud   string `json:"aud"`             // descriptor of the intended target of the assertion (Optional).
+	Exp   int64  `json:"exp"`             // the expiration time of the assertion (seconds since Unix epoch)
+	Iat   int64  `json:"iat"`             // the time the assertion was issued (seconds since Unix epoch)
+	Typ   string `json:"typ,omitempty"`   // token type (Optional).
+
+	// Email for which the application is requesting delegated access (Optional).
+	Sub string `json:"sub,omitempty"`
+}
+
 // Client knows how to perform IAM API v1 calls.
 type Client struct {
 	Client   *http.Client // client to use to make calls
 	BasePath string       // replaceable in tests, DefaultBasePath by default.
 }
 
-// SignBlob signs a blob using a service account's system-managed private key.
+// SignBlob signs a blob using a service account's system-managed key.
 //
 // The caller must have "roles/iam.serviceAccountActor" role in the service
 // account's IAM policy and caller's OAuth token must have one of the scopes:
@@ -54,6 +71,42 @@ func (cl *Client) SignBlob(c context.Context, serviceAccount string, blob []byte
 		return "", nil, err
 	}
 	return response.KeyId, response.Signature, nil
+}
+
+// SignJWT signs a claim set using a service account's system-managed key.
+//
+// It injects the key ID into the JWT header before singing. As a result, JWTs
+// produced by SignJWT are slightly faster to verify, because we know what
+// public key to use exactly and don't need to enumerate all active keys.
+//
+// It also checks the expiration time and refuses to sign claim sets with
+// 'exp' set to more than 1h from now. Otherwise it is similar to SignBlob.
+//
+// The caller must have "roles/iam.serviceAccountActor" role in the service
+// account's IAM policy and caller's OAuth token must have one of the scopes:
+//  * https://www.googleapis.com/auth/iam
+//  * https://www.googleapis.com/auth/cloud-platform
+//
+// Returns ID of the signing key and the signed JWT on success.
+//
+// On API-level errors (e.g. insufficient permissions) returns *googleapi.Error.
+func (cl *Client) SignJWT(c context.Context, serviceAccount string, cs *ClaimSet) (keyName, signedJwt string, err error) {
+	blob, err := json.Marshal(cs)
+	if err != nil {
+		return "", "", err
+	}
+	var request struct {
+		Payload string `json:"payload"`
+	}
+	request.Payload = string(blob) // yep, this is JSON inside JSON
+	var response struct {
+		KeyId     string `json:"keyId"`
+		SignedJwt string `json:"signedJwt"`
+	}
+	if err = cl.apiRequest(c, "projects/-/serviceAccounts/"+serviceAccount, "signJwt", &request, &response); err != nil {
+		return "", "", err
+	}
+	return response.KeyId, response.SignedJwt, nil
 }
 
 // GetIAMPolicy fetches an IAM policy of a resource.
