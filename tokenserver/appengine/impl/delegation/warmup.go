@@ -12,7 +12,7 @@ import (
 
 func init() {
 	warmup.Register("tokenserver/appengine/impl/delegation", func(c context.Context) error {
-		_, err := DelegationConfigLoader(c)
+		_, err := GlobalRulesCache.Rules(c)
 		return err
 	})
 }

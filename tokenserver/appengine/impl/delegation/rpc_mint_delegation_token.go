@@ -43,10 +43,10 @@ type MintDelegationTokenRPC struct {
 	// In prod it is gaesigner.Signer.
 	Signer signing.Signer
 
-	// ConfigLoader loads delegation config on demand.
+	// Rules returns delegation rules to use for the request.
 	//
-	// In prod it is DelegationConfigLoader.
-	ConfigLoader func(context.Context) (*DelegationConfig, error)
+	// In prod it is GlobalRulesCache.Rules.
+	Rules func(context.Context) (*Rules, error)
 
 	// LogToken is mocked in tests.
 	//
@@ -90,18 +90,19 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 		return nil, grpc.Errorf(codes.Internal, "can't grab service version - %s", err)
 	}
 
-	cfg, err := r.ConfigLoader(c)
+	rules, err := r.Rules(c)
 	if err != nil {
 		// Don't put error details in the message, it may be returned to
-		// unauthorized callers. ConfigLoader logs the error already.
-		return nil, grpc.Errorf(codes.Internal, "failed to load delegation config")
+		// unauthorized callers.
+		logging.WithError(err).Errorf(c, "Failed to load delegation rules")
+		return nil, grpc.Errorf(codes.Internal, "failed to load delegation rules")
 	}
 
 	// Make sure the caller is mentioned in the config before doing anything else.
 	// This rejects unauthorized callers early. Passing this check doesn't mean
 	// that there's a matching rule though, so the request still can be rejected
 	// later.
-	switch ok, err := cfg.IsAuthorizedRequestor(c, callerID); {
+	switch ok, err := rules.IsAuthorizedRequestor(c, callerID); {
 	case err != nil:
 		logging.WithError(err).Errorf(c, "IsAuthorizedRequestor failed")
 		return nil, grpc.Errorf(codes.Internal, "failed to check authorization")
@@ -133,7 +134,7 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 	}
 
 	// Consult the config to find the rule that allows this operation (if any).
-	rule, err := cfg.FindMatchingRule(c, query)
+	rule, err := rules.FindMatchingRule(c, query)
 	if err != nil {
 		if errors.IsTransient(err) {
 			logging.WithError(err).Errorf(c, "FindMatchingRule failed")
@@ -142,7 +143,7 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 		logging.WithError(err).Errorf(c, "Didn't pass rules check")
 		return nil, grpc.Errorf(codes.PermissionDenied, "forbidden - %s", err)
 	}
-	logging.Infof(c, "Found the matching rule %q in the config rev %s", rule.Name, cfg.Revision)
+	logging.Infof(c, "Found the matching rule %q in the config rev %s", rule.Name, rules.ConfigRevision())
 
 	// Make sure the requested token lifetime is allowed by the rule.
 	if req.ValidityDuration > rule.MaxValidityDuration {
@@ -156,7 +157,6 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 	var resp *minter.MintDelegationTokenResponse
 	p := mintParams{
 		request:    req,
-		cfg:        cfg,
 		query:      query,
 		rule:       rule,
 		serviceVer: serviceVer,
@@ -177,7 +177,7 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 		tokInfo := MintedTokenInfo{
 			Request:   req,
 			Response:  resp,
-			Config:    cfg,
+			ConfigRev: rules.ConfigRevision(),
 			Rule:      rule,
 			PeerIP:    state.PeerIP(),
 			RequestID: info.RequestID(c),
@@ -194,7 +194,6 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 // mintParams are passed to 'mint' function.
 type mintParams struct {
 	request    *minter.MintDelegationTokenRequest // the original RPC request
-	cfg        *DelegationConfig                  // the currently active config
 	query      *RulesQuery                        // extracted from the request
 	rule       *admin.DelegationRule              // looked up in the config based on 'query'
 	serviceVer string                             // version string to put in the response

@@ -37,9 +37,9 @@ func NewServer() minter.TokenMinterServer {
 			LogToken:         machinetoken.LogToken,
 		},
 		MintDelegationTokenRPC: delegation.MintDelegationTokenRPC{
-			Signer:       gaesigner.Signer{},
-			ConfigLoader: delegation.DelegationConfigLoader,
-			LogToken:     delegation.LogToken,
+			Signer:   gaesigner.Signer{},
+			Rules:    delegation.GlobalRulesCache.Rules,
+			LogToken: delegation.LogToken,
 		},
 	}
 }

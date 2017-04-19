@@ -10,12 +10,16 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	admin "github.com/luci/luci-go/tokenserver/api/admin/v1"
+	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/policy"
 
+	"github.com/luci/luci-go/common/config/validation"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestValidation(t *testing.T) {
+	t.Parallel()
+
 	cases := []struct {
 		Cfg    string
 		Errors []string
@@ -64,7 +68,7 @@ func TestValidation(t *testing.T) {
 					max_validity_duration: 86400
 				}
 			`,
-			Errors: []string{`rule #2 ("rule 1"): the rule with such name is already defined`},
+			Errors: []string{`two rules with identical name "rule 1"`},
 		},
 
 		{
@@ -74,12 +78,12 @@ func TestValidation(t *testing.T) {
 				}
 			`,
 			Errors: []string{
-				`'name' is required`,
-				`'requestor' is required`,
-				`'allowed_to_impersonate' is required`,
-				`'allowed_audience' is required`,
-				`'target_service' is required`,
-				`'max_validity_duration' is required`,
+				`"name" is required`,
+				`"requestor" is required`,
+				`"allowed_to_impersonate" is required`,
+				`"allowed_audience" is required`,
+				`"target_service" is required`,
+				`"max_validity_duration" is required`,
 			},
 		},
 
@@ -104,8 +108,8 @@ func TestValidation(t *testing.T) {
 				}
 			`,
 			Errors: []string{
-				`rule #1 ("rule 1"): 'max_validity_duration' must be positive`,
-				`rule #2 ("rule 2"): 'max_validity_duration' must be smaller than 86401`,
+				`in "delegation.cfg" (rule #1: "rule 1"): "max_validity_duration" must be positive`,
+				`in "delegation.cfg" (rule #2: "rule 2"): "max_validity_duration" must be smaller than 86401`,
 			},
 		},
 
@@ -127,9 +131,9 @@ func TestValidation(t *testing.T) {
 				}
 			`,
 			Errors: []string{
-				`bad 'requestor' - auth: bad identity string "*"`,
-				`bad 'requestor' - auth: bad identity string "some junk"`,
-				`bad 'requestor' - bad group entry "group:"`,
+				`in "delegation.cfg" (rule #1: "rule 1" / "requestor"): auth: bad identity string "*"`,
+				`in "delegation.cfg" (rule #1: "rule 1" / "requestor"): auth: bad identity string "some junk"`,
+				`in "delegation.cfg" (rule #1: "rule 1" / "requestor"): bad group entry "group:"`,
 			},
 		},
 
@@ -149,7 +153,7 @@ func TestValidation(t *testing.T) {
 				}
 			`,
 			Errors: []string{
-				`bad 'allowed_to_impersonate' - auth: bad identity string "*"`,
+				`in "delegation.cfg" (rule #1: "rule 1" / "allowed_to_impersonate"): auth: bad identity string "*"`,
 			},
 		},
 
@@ -170,7 +174,7 @@ func TestValidation(t *testing.T) {
 				}
 			`,
 			Errors: []string{
-				`bad 'allowed_audience' - auth: bad identity string "some junk"`,
+				`in "delegation.cfg" (rule #1: "rule 1" / "allowed_audience"): auth: bad identity string "some junk"`,
 			},
 		},
 
@@ -189,8 +193,8 @@ func TestValidation(t *testing.T) {
 				}
 			`,
 			Errors: []string{
-				`bad 'target_service' - identity of kind "user" is not allowed here`,
-				`bad 'target_service' - group entries are not allowe`,
+				`in "delegation.cfg" (rule #1: "rule 1" / "target_service"): identity of kind "user" is not allowed here`,
+				`in "delegation.cfg" (rule #1: "rule 1" / "target_service"): group entries are not allowed`,
 			},
 		},
 	}
@@ -198,13 +202,23 @@ func TestValidation(t *testing.T) {
 	Convey("Validation works", t, func(c C) {
 		for idx, cs := range cases {
 			c.Printf("Case #%d\n", idx)
+
 			cfg := &admin.DelegationPermissions{}
 			err := proto.UnmarshalText(cs.Cfg, cfg)
 			So(err, ShouldBeNil)
-			merr := ValidateConfig(cfg)
-			So(len(merr), ShouldEqual, len(cs.Errors))
-			for i, err := range merr {
-				So(err, ShouldErrLike, cs.Errors[i])
+
+			ctx := validation.Context{}
+			validateConfigs(policy.ConfigBundle{delegationCfg: cfg}, &ctx)
+			verr := ctx.Finalize()
+
+			if len(cs.Errors) == 0 { // no errors expected
+				So(verr, ShouldBeNil)
+			} else {
+				verr := verr.(*validation.Error)
+				So(len(verr.Errors), ShouldEqual, len(cs.Errors))
+				for i, err := range verr.Errors {
+					So(err, ShouldErrLike, cs.Errors[i])
+				}
 			}
 		}
 	})

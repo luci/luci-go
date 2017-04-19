@@ -33,8 +33,8 @@ var delegationTokensLog = bqlog.Log{
 type MintedTokenInfo struct {
 	Request   *minter.MintDelegationTokenRequest  // RPC input, as is
 	Response  *minter.MintDelegationTokenResponse // RPC output, as is
-	Config    *DelegationConfig                   // the delegation config used
-	Rule      *admin.DelegationRule               // the delegation rule used to authorize the request
+	ConfigRev string                              // revision of the delegation.cfg used
+	Rule      *admin.DelegationRule               // the particular rule used to authorize the request
 	PeerIP    net.IP                              // caller IP address
 	RequestID string                              // GAE request ID that handled the RPC
 	AuthDBRev int64                               // revision of groups database (or 0 if unknown)
@@ -62,7 +62,7 @@ func (i *MintedTokenInfo) toBigQueryRow() map[string]interface{} {
 		"requested_intent":   i.Request.Intent,
 
 		// Information about the delegation rule used.
-		"config_rev":  i.Config.Revision,
+		"config_rev":  i.ConfigRev,
 		"config_rule": i.Rule.Name,
 
 		// Information about the request handler environment.

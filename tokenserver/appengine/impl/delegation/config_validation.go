@@ -8,120 +8,103 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/luci/luci-go/common/config/validation"
 	"github.com/luci/luci-go/common/data/stringset"
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/server/auth/identity"
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
+	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/policy"
 )
 
-// ValidateConfig checks delegation config for correctness.
-//
-// Tries to find all errors.
-func ValidateConfig(cfg *admin.DelegationPermissions) errors.MultiError {
-	var errs errors.MultiError
-	names := stringset.New(0)
+// validateConfigs validates the structure of configs fetched by fetchConfigs.
+func validateConfigs(bundle policy.ConfigBundle, ctx *validation.Context) {
+	ctx.SetFile(delegationCfg)
+	cfg, ok := bundle[delegationCfg].(*admin.DelegationPermissions)
+	if !ok {
+		ctx.Error("unexpectedly wrong proto type %T", cfg)
+		return
+	}
 
+	names := stringset.New(0)
 	for i, rule := range cfg.Rules {
-		prefix := fmt.Sprintf("rule #%d (%q)", i+1, rule.Name)
 		if rule.Name != "" {
 			if names.Has(rule.Name) {
-				errs = append(errs, fmt.Errorf("%s: the rule with such name is already defined", prefix))
+				ctx.Error("two rules with identical name %q", rule.Name)
 			}
 			names.Add(rule.Name)
 		}
-		for _, singleErr := range ValidateRule(rule) {
-			errs = append(errs, fmt.Errorf("%s: %s", prefix, singleErr))
-		}
+		validateRule(fmt.Sprintf("rule #%d: %q", i+1, rule.Name), rule, ctx)
 	}
-
-	return errs
 }
 
-// ValidateRule checks single DelegationRule proto.
+// validateRule checks single DelegationRule proto.
 //
 // See config.proto, DelegationRule for the description of allowed values.
-func ValidateRule(r *admin.DelegationRule) errors.MultiError {
-	var out errors.MultiError
-
-	emitErr := func(msg string, args ...interface{}) {
-		out = append(out, fmt.Errorf(msg, args...))
-	}
-
-	emitMultiErr := func(prefix string, merr errors.MultiError) {
-		for _, err := range merr {
-			emitErr("%s - %s", prefix, err)
-		}
-	}
+func validateRule(title string, r *admin.DelegationRule, ctx *validation.Context) {
+	ctx.Enter(title)
+	defer ctx.Exit()
 
 	if r.Name == "" {
-		emitErr("'name' is required")
+		ctx.Error(`"name" is required`)
 	}
 
-	if len(r.Requestor) == 0 {
-		emitErr("'requestor' is required")
-	} else {
-		v := identitySetValidator{
-			AllowGroups: true,
-		}
-		emitMultiErr("bad 'requestor'", v.Validate(r.Requestor))
+	v := identitySetValidator{
+		Field:       "requestor",
+		Context:     ctx,
+		AllowGroups: true,
 	}
+	v.validate(r.Requestor)
 
-	if len(r.AllowedToImpersonate) == 0 {
-		emitErr("'allowed_to_impersonate' is required")
-	} else {
-		v := identitySetValidator{
-			AllowReservedWords: []string{Requestor}, // '*' is not allowed here though
-			AllowGroups:        true,
-		}
-		emitMultiErr("bad 'allowed_to_impersonate'", v.Validate(r.AllowedToImpersonate))
+	v = identitySetValidator{
+		Field:              "allowed_to_impersonate",
+		Context:            ctx,
+		AllowReservedWords: []string{Requestor}, // '*' is not allowed here though
+		AllowGroups:        true,
 	}
+	v.validate(r.AllowedToImpersonate)
 
-	if len(r.AllowedAudience) == 0 {
-		emitErr("'allowed_audience' is required")
-	} else {
-		v := identitySetValidator{
-			AllowReservedWords: []string{Requestor, "*"},
-			AllowGroups:        true,
-		}
-		emitMultiErr("bad 'allowed_audience'", v.Validate(r.AllowedAudience))
+	v = identitySetValidator{
+		Field:              "allowed_audience",
+		Context:            ctx,
+		AllowReservedWords: []string{Requestor, "*"},
+		AllowGroups:        true,
 	}
+	v.validate(r.AllowedAudience)
 
-	if len(r.TargetService) == 0 {
-		emitErr("'target_service' is required")
-	} else {
-		v := identitySetValidator{
-			AllowReservedWords: []string{"*"},
-			AllowIDKinds:       []identity.Kind{identity.Service},
-		}
-		emitMultiErr("bad 'target_service'", v.Validate(r.TargetService))
+	v = identitySetValidator{
+		Field:              "target_service",
+		Context:            ctx,
+		AllowReservedWords: []string{"*"},
+		AllowIDKinds:       []identity.Kind{identity.Service},
 	}
+	v.validate(r.TargetService)
 
-	if r.MaxValidityDuration == 0 {
-		emitErr("'max_validity_duration' is required")
+	switch {
+	case r.MaxValidityDuration == 0:
+		ctx.Error(`"max_validity_duration" is required`)
+	case r.MaxValidityDuration < 0:
+		ctx.Error(`"max_validity_duration" must be positive`)
+	case r.MaxValidityDuration > 24*3600:
+		ctx.Error(`"max_validity_duration" must be smaller than 86401`)
 	}
-	if r.MaxValidityDuration < 0 {
-		emitErr("'max_validity_duration' must be positive")
-	}
-	if r.MaxValidityDuration > 24*3600 {
-		emitErr("'max_validity_duration' must be smaller than 86401")
-	}
-
-	return out
 }
 
 type identitySetValidator struct {
-	AllowReservedWords []string        // to allow "*" and "REQUESTOR"
-	AllowGroups        bool            // true to allow "group:" entries
-	AllowIDKinds       []identity.Kind // permitted identity kinds, or nil if all
+	Field              string              // name of the field being validated
+	Context            *validation.Context // where to emit errors to
+	AllowReservedWords []string            // to allow "*" and "REQUESTOR"
+	AllowGroups        bool                // true to allow "group:" entries
+	AllowIDKinds       []identity.Kind     // permitted identity kinds, or nil if all
 }
 
-func (v *identitySetValidator) Validate(items []string) errors.MultiError {
-	var out errors.MultiError
-
-	emitErr := func(msg string, args ...interface{}) {
-		out = append(out, fmt.Errorf(msg, args...))
+func (v *identitySetValidator) validate(items []string) {
+	if len(items) == 0 {
+		v.Context.Error("%q is required", v.Field)
+		return
 	}
+
+	v.Context.Enter("%q", v.Field)
+	defer v.Context.Exit()
 
 loop:
 	for _, s := range items {
@@ -135,10 +118,10 @@ loop:
 		// A group reference?
 		if strings.HasPrefix(s, "group:") {
 			if !v.AllowGroups {
-				emitErr("group entries are not allowed - %q", s)
+				v.Context.Error("group entries are not allowed - %q", s)
 			} else {
 				if s == "group:" {
-					emitErr("bad group entry %q", s)
+					v.Context.Error("bad group entry %q", s)
 				}
 			}
 			continue
@@ -147,7 +130,7 @@ loop:
 		// An identity then.
 		id, err := identity.MakeIdentity(s)
 		if err != nil {
-			emitErr("%s", err)
+			v.Context.Error("%s", err)
 			continue
 		}
 
@@ -160,10 +143,8 @@ loop:
 				}
 			}
 			if !allowed {
-				emitErr("identity of kind %q is not allowed here - %q", id.Kind(), s)
+				v.Context.Error("identity of kind %q is not allowed here - %q", id.Kind(), s)
 			}
 		}
 	}
-
-	return out
 }

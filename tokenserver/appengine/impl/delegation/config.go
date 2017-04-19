@@ -7,22 +7,22 @@ package delegation
 import (
 	"fmt"
 	"strings"
-	"time"
 
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	ds "github.com/luci/gae/service/datastore"
-
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/data/caching/lazyslot"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/config/validation"
 	"github.com/luci/luci-go/server/auth/identity"
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/identityset"
+	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/policy"
 )
+
+// delegationCfg is name of the main config file with the policy.
+//
+// Also used as a name for the imported configs in the datastore, so change it
+// very carefully.
+const delegationCfg = "delegation.cfg"
 
 // Requestor is magical token that may be used in the config and requests as
 // a substitute for caller's ID.
@@ -30,28 +30,11 @@ import (
 // See config.proto for more info.
 const Requestor = "REQUESTOR"
 
-// DelegationConfig is a singleton entity that stores imported delegation.cfg.
-type DelegationConfig struct {
-	_id int64 `gae:"$id,1"`
-
-	// Revision this config was imported from.
-	Revision string `gae:",noindex"`
-
-	// Config is serialized DelegationPermissions proto message.
-	Config []byte `gae:",noindex"`
-
-	// ParsedConfig is deserialized message stored in Config.
-	ParsedConfig *admin.DelegationPermissions `gae:"-"`
-
-	// rules is preprocessed config rules.
-	//
-	// Used by 'FindMatchingRule', built in 'Initialize'.
-	rules []*delegationRule `gae:"-"`
-
-	// requestors is a union of all 'Requestor' fields in all rules.
-	//
-	// Used by 'IsAuthorizedRequestor', built in 'Initialize'.
-	requestors *identityset.Set `gae:"-"`
+// Rules is queryable representation of delegation.cfg rules.
+type Rules struct {
+	revision   string            // config revision this policy is imported from
+	rules      []*delegationRule // preprocessed policy rules
+	requestors *identityset.Set  // union of all 'Requestor' fields in all rules
 }
 
 // RulesQuery contains parameters to match against the delegation rules.
@@ -79,83 +62,68 @@ type delegationRule struct {
 	addRequestorToAudience  bool // if true, add RulesQuery.Requestor to 'audience' set
 }
 
-// procCacheExpiration is how long to keep DelegationConfig in process memory.
-const procCacheExpiration = time.Minute
-
-// FetchDelegationConfig loads DelegationConfig entity from the datastore.
+// RulesCache is a stateful object with parsed delegation.cfg rules.
 //
-// Returns empty entity if there is no config stored yet. Doesn't attempt to
-// deserialize 'Config' protobuf field.
-func FetchDelegationConfig(c context.Context) (*DelegationConfig, error) {
-	cfg := &DelegationConfig{}
-	switch err := ds.Get(c, cfg); {
-	case err == ds.ErrNoSuchEntity:
-		return cfg, nil
-	case err != nil:
-		return nil, errors.WrapTransient(err)
-	}
-	return cfg, nil
+// It uses policy.Policy internally to manage datastore-cached copy of imported
+// delegation configs.
+//
+// Use NewRulesCache() to create a new instance. Each instance owns its own
+// in-memory cache, but uses same shared datastore cache.
+//
+// There's also a process global instance of RulesCache (GlobalRulesCache var)
+// which is used by the main process. Unit tests don't use it though to avoid
+// relying on shared state.
+type RulesCache struct {
+	policy policy.Policy // holds cached *parsedRules
 }
 
-// DelegationConfigLoader lazy-loads delegation config and keeps it cached in
-// memory, refreshing the cached copy each minute.
-//
-// Used as MintDelegationTokenRPC.ConfigLoader implementation in prod.
-var DelegationConfigLoader = delegationConfigLoader()
+// GlobalRulesCache is the process-wide rules cache.
+var GlobalRulesCache = NewRulesCache()
 
-// delegationConfigLoader constructs a function that lazy-loads delegation
-// config and keeps it cached in memory, refreshing the cached copy each minute.
-func delegationConfigLoader() func(context.Context) (*DelegationConfig, error) {
-	slot := lazyslot.Slot{
-		Fetcher: func(c context.Context, prev lazyslot.Value) (lazyslot.Value, error) {
-			newCfg, err := FetchDelegationConfig(c)
-			if err != nil {
-				return lazyslot.Value{}, err
-			}
-
-			// Reuse existing unpacked validated config if the revision didn't change.
-			prevCfg, _ := prev.Value.(*DelegationConfig)
-			if prevCfg != nil && prevCfg.Revision == newCfg.Revision {
-				return lazyslot.Value{
-					Value:      prevCfg,
-					Expiration: clock.Now(c).Add(procCacheExpiration),
-				}, nil
-			}
-
-			// An error here can happen if previously validated config is no longer
-			// valid (e.g. if the service code is updated and new code doesn't like
-			// the stored config anymore).
-			//
-			// If this check fails, the service is effectively offline until config is
-			// updated. Presumably, it is better than silently using no longer valid
-			// config.
-			logging.Infof(c, "Using delegation config at ref %q", newCfg.Revision)
-			if err := newCfg.Initialize(); err != nil {
-				logging.Errorf(c, "Existing delegation config is invalid - %s", err)
-				return lazyslot.Value{}, err
-			}
-
-			return lazyslot.Value{
-				Value:      newCfg,
-				Expiration: clock.Now(c).Add(procCacheExpiration),
-			}, nil
+// NewRulesCache properly initializes RulesCache instance.
+func NewRulesCache() *RulesCache {
+	return &RulesCache{
+		policy: policy.Policy{
+			Name:     delegationCfg,   // used as part of datastore keys
+			Fetch:    fetchConfigs,    // see below
+			Validate: validateConfigs, // see config_validation.go
+			Prepare:  prepareRules,    // see below
 		},
 	}
-
-	return func(c context.Context) (*DelegationConfig, error) {
-		val, err := slot.Get(c)
-		if err != nil {
-			return nil, err
-		}
-		return val.Value.(*DelegationConfig), nil
-	}
 }
 
-// Initialize parses the loaded config, initializing the guts of the object.
-func (cfg *DelegationConfig) Initialize() error {
-	parsed := &admin.DelegationPermissions{}
-	if err := proto.Unmarshal(cfg.Config, parsed); err != nil {
-		return err
+// ImportConfigs refetches delegation.cfg and updates datastore copy of it.
+//
+// Called from cron.
+func (rc *RulesCache) ImportConfigs(c context.Context) (rev string, err error) {
+	return rc.policy.ImportConfigs(c)
+}
+
+// Rules returns in-memory copy of delegation rules, ready for querying.
+func (rc *RulesCache) Rules(c context.Context) (*Rules, error) {
+	q, err := rc.policy.Queryable(c)
+	if err != nil {
+		return nil, err
+	}
+	return q.(*Rules), nil
+}
+
+// fetchConfigs loads proto messages with rules from the config.
+func fetchConfigs(c context.Context, f policy.ConfigFetcher) (policy.ConfigBundle, error) {
+	cfg := &admin.DelegationPermissions{}
+	if err := f.FetchTextProto(c, delegationCfg, cfg); err != nil {
+		return nil, err
+	}
+	return policy.ConfigBundle{delegationCfg: cfg}, nil
+}
+
+// prepareRules converts validated configs into *Rules.
+//
+// Returns them as policy.Queryable object to satisfy policy.Policy API.
+func prepareRules(cfg policy.ConfigBundle, revision string) (policy.Queryable, error) {
+	parsed, ok := cfg[delegationCfg].(*admin.DelegationPermissions)
+	if !ok {
+		return nil, fmt.Errorf("wrong type of delegation.cfg - %T", cfg[delegationCfg])
 	}
 
 	rules := make([]*delegationRule, len(parsed.Rules))
@@ -164,25 +132,28 @@ func (cfg *DelegationConfig) Initialize() error {
 	for i, msg := range parsed.Rules {
 		rule, err := makeDelegationRule(msg)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		rules[i] = rule
 		requestors[i] = rule.requestors
 	}
 
-	cfg.ParsedConfig = parsed
-	cfg.rules = rules
-	cfg.requestors = identityset.Union(requestors...)
-
-	return nil
+	return &Rules{
+		revision:   revision,
+		rules:      rules,
+		requestors: identityset.Union(requestors...),
+	}, nil
 }
 
 // makeDelegationRule preprocesses admin.DelegationRule proto.
 //
-// It also checks that the rule is passing validation.
+// It also double checks that the rule is passing validation. The check may
+// fail if new code uses old configs, still stored in the datastore.
 func makeDelegationRule(rule *admin.DelegationRule) (*delegationRule, error) {
-	if merr := ValidateRule(rule); len(merr) != 0 {
-		return nil, merr
+	v := validation.Context{}
+	validateRule(rule.Name, rule, &v)
+	if err := v.Finalize(); err != nil {
+		return nil, err
 	}
 
 	// The main validation step has been done above. Here we just assert that
@@ -229,18 +200,23 @@ func sliceHasString(slice []string, str string) bool {
 	return false
 }
 
+// ConfigRevision is part of policy.Queryable interface.
+func (r *Rules) ConfigRevision() string {
+	return r.revision
+}
+
 // IsAuthorizedRequestor returns true if the caller belongs to 'requestor' set
 // of at least one rule.
-func (cfg *DelegationConfig) IsAuthorizedRequestor(c context.Context, id identity.Identity) (bool, error) {
-	return cfg.requestors.IsMember(c, id)
+func (r *Rules) IsAuthorizedRequestor(c context.Context, id identity.Identity) (bool, error) {
+	return r.requestors.IsMember(c, id)
 }
 
 // FindMatchingRule finds one and only one rule matching the query.
 //
 // If multiple rules match or none rules match, an error is returned.
-func (cfg *DelegationConfig) FindMatchingRule(c context.Context, q *RulesQuery) (*admin.DelegationRule, error) {
+func (r *Rules) FindMatchingRule(c context.Context, q *RulesQuery) (*admin.DelegationRule, error) {
 	var matches []*admin.DelegationRule
-	for _, rule := range cfg.rules {
+	for _, rule := range r.rules {
 		switch yes, err := rule.matchesQuery(c, q); {
 		case err != nil:
 			return nil, err // usually transient

@@ -25,6 +25,7 @@ import (
 	"github.com/luci/luci-go/tokenserver/api/minter/v1"
 
 	"github.com/luci/luci-go/common/clock/testclock"
+
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -67,6 +68,8 @@ func testingSigner() signing.Signer {
 }
 
 func TestBuildRulesQuery(t *testing.T) {
+	t.Parallel()
+
 	ctx := testingContext()
 
 	Convey("Happy path", t, func() {
@@ -194,6 +197,8 @@ func TestBuildRulesQuery(t *testing.T) {
 }
 
 func TestMintDelegationToken(t *testing.T) {
+	t.Parallel()
+
 	ctx := testingContext()
 
 	Convey("with mocked config and state", t, func() {
@@ -215,8 +220,8 @@ func TestMintDelegationToken(t *testing.T) {
 
 		var loggedInfo *MintedTokenInfo
 		rpc := MintDelegationTokenRPC{
-			Signer:       testingSigner(),
-			ConfigLoader: func(context.Context) (*DelegationConfig, error) { return cfg, nil },
+			Signer: testingSigner(),
+			Rules:  func(context.Context) (*Rules, error) { return cfg, nil },
 			LogToken: func(c context.Context, i *MintedTokenInfo) error {
 				loggedInfo = i
 				return nil
@@ -237,9 +242,9 @@ func TestMintDelegationToken(t *testing.T) {
 
 			// LogToken called.
 			So(loggedInfo, ShouldResemble, &MintedTokenInfo{
-				Request:  req,
-				Response: resp,
-				Config:   cfg,
+				Request:   req,
+				Response:  resp,
+				ConfigRev: cfg.ConfigRevision(),
 				Rule: &admin.DelegationRule{
 					Name:                 "requstor for itself",
 					Requestor:            []string{"user:requestor@example.com"},

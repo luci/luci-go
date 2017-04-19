@@ -6,6 +6,7 @@ package delegation
 
 import (
 	"testing"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -15,15 +16,18 @@ import (
 	"github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
 	admin "github.com/luci/luci-go/tokenserver/api/admin/v1"
+	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/policy"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestImportDelegationConfigs(t *testing.T) {
+	t.Parallel()
+
 	Convey("Works", t, func() {
 		ctx := gaetesting.TestingContext()
-		ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC)
+		ctx, clk := testclock.UseTime(ctx, testclock.TestTimeUTC)
 
 		ctx = prepareCfg(ctx, `rules {
 			name: "rule 1"
@@ -34,12 +38,12 @@ func TestImportDelegationConfigs(t *testing.T) {
 			max_validity_duration: 86400
 		}`)
 
-		rpc := ImportDelegationConfigsRPC{}
+		rules := NewRulesCache()
+		rpc := ImportDelegationConfigsRPC{RulesCache: rules}
 
 		// No config.
-		cfg, err := FetchDelegationConfig(ctx)
-		So(err, ShouldBeNil)
-		So(cfg.Config, ShouldBeNil)
+		r, err := rules.Rules(ctx)
+		So(err, ShouldEqual, policy.ErrNoPolicy)
 
 		resp, err := rpc.ImportDelegationConfigs(ctx, nil)
 		So(err, ShouldBeNil)
@@ -48,10 +52,10 @@ func TestImportDelegationConfigs(t *testing.T) {
 		})
 
 		// Have config now.
-		cfg, err = FetchDelegationConfig(ctx)
+		r, err = rules.Rules(ctx)
 		So(err, ShouldBeNil)
-		So(cfg.Config, ShouldNotBeNil)
-		So(cfg.Revision, ShouldEqual, "780529c8f5e6b219e27482978d792d580f7d4f9d")
+		So(r.rules[0].rule.Name, ShouldEqual, "rule 1")
+		So(r.revision, ShouldEqual, "780529c8f5e6b219e27482978d792d580f7d4f9d")
 
 		// Noop import.
 		resp, err = rpc.ImportDelegationConfigs(ctx, nil)
@@ -64,19 +68,45 @@ func TestImportDelegationConfigs(t *testing.T) {
 		So(err, ShouldErrLike, `line 1.0: unknown field name`)
 
 		// Old config is not replaced.
-		cfg, _ = FetchDelegationConfig(ctx)
-		So(cfg.Revision, ShouldEqual, "780529c8f5e6b219e27482978d792d580f7d4f9d")
+		r, _ = rules.Rules(ctx)
+		So(r.revision, ShouldEqual, "780529c8f5e6b219e27482978d792d580f7d4f9d")
 
 		// Try to import a config that doesn't pass validation.
 		ctx = prepareCfg(ctx, `rules {
 			name: "rule 1"
 		}`)
 		_, err = rpc.ImportDelegationConfigs(ctx, nil)
-		So(err, ShouldErrLike, `validation error - rule #1 ("rule 1"): 'requestor' is required (and 4 other errors)`)
+		So(err, ShouldErrLike, `"requestor" is required (and 4 other errors)`)
 
 		// Old config is not replaced.
-		cfg, _ = FetchDelegationConfig(ctx)
-		So(cfg.Revision, ShouldEqual, "780529c8f5e6b219e27482978d792d580f7d4f9d")
+		r, _ = rules.Rules(ctx)
+		So(r.revision, ShouldEqual, "780529c8f5e6b219e27482978d792d580f7d4f9d")
+
+		// Roll time to expire local rules cache.
+		clk.Add(10 * time.Minute)
+
+		// Have new config now!
+		ctx = prepareCfg(ctx, `rules {
+			name: "rule 2"
+			requestor: "user:some-user@example.com"
+			target_service: "service:some-service"
+			allowed_to_impersonate: "group:some-group"
+			allowed_audience: "REQUESTOR"
+			max_validity_duration: 86400
+		}`)
+
+		// Import it.
+		resp, err = rpc.ImportDelegationConfigs(ctx, nil)
+		So(err, ShouldBeNil)
+		So(resp, ShouldResemble, &admin.ImportedConfigs{
+			Revision: "79770d0350b86402f434bf5479a800edeba64255",
+		})
+
+		// It is now active.
+		r, err = rules.Rules(ctx)
+		So(err, ShouldBeNil)
+		So(r.rules[0].rule.Name, ShouldEqual, "rule 2")
+		So(r.revision, ShouldEqual, "79770d0350b86402f434bf5479a800edeba64255")
 	})
 }
 

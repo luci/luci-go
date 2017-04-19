@@ -6,85 +6,24 @@ package delegation
 
 import (
 	"testing"
-	"time"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/gaetesting"
-	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/auth/identity"
 	admin "github.com/luci/luci-go/tokenserver/api/admin/v1"
 	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/identityset"
+	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/policy"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestDelegationConfigLoader(t *testing.T) {
-	Convey("DelegationConfigLoader works", t, func() {
-		ctx := gaetesting.TestingContext()
-		ctx, tc := testclock.UseTime(ctx, testclock.TestTimeUTC)
-
-		loader := delegationConfigLoader()
-
-		// Put the initial copy into the datastore.
-		cfg, err := loadConfig(`
-			rules {
-				name: "rule 1"
-				requestor: "user:some-user@example.com"
-				target_service: "service:some-service"
-				allowed_to_impersonate: "group:some-group"
-				allowed_audience: "REQUESTOR"
-				max_validity_duration: 86400
-			}`)
-		So(err, ShouldBeNil)
-		cfg.Revision = "1"
-		So(datastore.Put(ctx, cfg), ShouldBeNil)
-
-		// Loader fetches it.
-		fetched1, err := loader(ctx)
-		So(err, ShouldBeNil)
-		So(fetched1.ParsedConfig.Rules[0].Name, ShouldEqual, "rule 1")
-
-		// Config is updated.
-		cfg, err = loadConfig(`
-			rules {
-				name: "rule 2"
-				requestor: "user:some-user@example.com"
-				target_service: "service:some-service"
-				allowed_to_impersonate: "group:some-group"
-				allowed_audience: "REQUESTOR"
-				max_validity_duration: 86400
-			}`)
-		So(err, ShouldBeNil)
-		cfg.Revision = "2"
-		So(datastore.Put(ctx, cfg), ShouldBeNil)
-
-		// Loader still returns old cached copy.
-		fetched2, err := loader(ctx)
-		So(err, ShouldBeNil)
-		So(fetched2, ShouldEqual, fetched1)
-
-		// Advance time to expire the cache. The new copy is fetched.
-		tc.Add(procCacheExpiration + time.Second)
-		fetched3, err := loader(ctx)
-		So(err, ShouldBeNil)
-		So(fetched3.ParsedConfig.Rules[0].Name, ShouldEqual, "rule 2")
-
-		// Advance time again, but do not change the config. Loader reuses existing
-		// object.
-		tc.Add(procCacheExpiration + time.Second)
-		fetched4, err := loader(ctx)
-		So(err, ShouldBeNil)
-		So(fetched4, ShouldEqual, fetched3)
-	})
-}
-
 func TestIsAuthorizedRequestor(t *testing.T) {
+	t.Parallel()
+
 	Convey("IsAuthorizedRequestor works", t, func() {
 		cfg, err := loadConfig(`
 			rules {
@@ -143,6 +82,8 @@ func TestIsAuthorizedRequestor(t *testing.T) {
 }
 
 func TestFindMatchingRule(t *testing.T) {
+	t.Parallel()
+
 	Convey("with example config", t, func() {
 		cfg, err := loadConfig(`
 			rules {
@@ -315,21 +256,17 @@ func TestFindMatchingRule(t *testing.T) {
 	})
 }
 
-func loadConfig(text string) (*DelegationConfig, error) {
+func loadConfig(text string) (*Rules, error) {
 	cfg := &admin.DelegationPermissions{}
 	err := proto.UnmarshalText(text, cfg)
 	if err != nil {
 		return nil, err
 	}
-	blob, err := proto.Marshal(cfg)
+	rules, err := prepareRules(policy.ConfigBundle{delegationCfg: cfg}, "fake-revision")
 	if err != nil {
 		return nil, err
 	}
-	c := &DelegationConfig{Config: blob}
-	if err := c.Initialize(); err != nil {
-		return nil, err
-	}
-	return c, nil
+	return rules.(*Rules), nil
 }
 
 func makeSet(ident ...string) *identityset.Set {

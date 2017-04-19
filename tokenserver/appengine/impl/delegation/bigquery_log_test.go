@@ -16,6 +16,8 @@ import (
 )
 
 func TestMintedTokenInfo(t *testing.T) {
+	t.Parallel()
+
 	Convey("produces correct row map", t, func() {
 		info := MintedTokenInfo{
 			Request: &minter.MintDelegationTokenRequest{
@@ -36,9 +38,7 @@ func TestMintedTokenInfo(t *testing.T) {
 					Services:          []string{"*"},
 				},
 			},
-			Config: &DelegationConfig{
-				Revision: "config-rev",
-			},
+			ConfigRev: "config-rev",
 			Rule: &admin.DelegationRule{
 				Name: "rule-name",
 			},

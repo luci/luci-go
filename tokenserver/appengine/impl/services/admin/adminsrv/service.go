@@ -32,6 +32,9 @@ type serverImpl struct {
 func NewServer() admin.AdminServer {
 	signer := gaesigner.Signer{}
 	return &serverImpl{
+		ImportDelegationConfigsRPC: delegation.ImportDelegationConfigsRPC{
+			RulesCache: delegation.GlobalRulesCache,
+		},
 		InspectMachineTokenRPC: machinetoken.InspectMachineTokenRPC{
 			Signer: signer,
 		},
