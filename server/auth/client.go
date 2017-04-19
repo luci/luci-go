@@ -135,7 +135,7 @@ func GetRPCTransport(c context.Context, kind RPCAuthorityKind, opts ...RPCOption
 	if err != nil {
 		return nil, err
 	}
-	config := GetConfig(c)
+	config := getConfig(c)
 	if config == nil || config.AnonymousTransport == nil {
 		return nil, ErrNotConfigured
 	}
@@ -347,7 +347,7 @@ func noAuthHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Tok
 //
 // This will be called by the transport layer on each request.
 func asSelfHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
-	cfg := GetConfig(c)
+	cfg := getConfig(c)
 	if cfg == nil || cfg.AccessTokenProvider == nil {
 		return nil, nil, ErrNotConfigured
 	}
@@ -360,7 +360,7 @@ func asSelfHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Tok
 //
 // This will be called by the transport layer on each request.
 func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
-	cfg := GetConfig(c)
+	cfg := getConfig(c)
 	if cfg == nil || cfg.AccessTokenProvider == nil {
 		return nil, nil, ErrNotConfigured
 	}

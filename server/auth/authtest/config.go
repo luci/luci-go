@@ -20,7 +20,7 @@ import (
 // If modifies the configure stored in the context. See auth.SetConfig for more
 // info.
 func MockAuthConfig(c context.Context) context.Context {
-	return auth.ModifyConfig(c, func(cfg *auth.Config) {
+	return auth.ModifyConfig(c, func(cfg auth.Config) auth.Config {
 		cfg.AnonymousTransport = func(context.Context) http.RoundTripper {
 			return http.DefaultTransport
 		}
@@ -31,5 +31,6 @@ func MockAuthConfig(c context.Context) context.Context {
 				Expiry:      clock.Now(ic).Add(time.Hour).UTC(),
 			}, nil
 		}
+		return cfg
 	})
 }

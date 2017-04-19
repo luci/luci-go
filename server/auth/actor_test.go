@@ -59,10 +59,11 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 			},
 		}
 
-		ctx = ModifyConfig(ctx, func(cfg *Config) {
+		ctx = ModifyConfig(ctx, func(cfg Config) Config {
 			cfg.AccessTokenProvider = transport.getAccessToken
 			cfg.AnonymousTransport = transport.getTransport
 			cfg.Cache = tokenCache
+			return cfg
 		})
 
 		tok, err := MintAccessTokenForServiceAccount(ctx, MintAccessTokenParams{

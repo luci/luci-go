@@ -17,10 +17,12 @@ import (
 
 // Config contains global configuration of the auth library.
 //
-// It lives in the context and must be installed there by some root middleware.
+// This configuration adjusts the library to the particular execution
+// environment (GAE, Flex, whatever). It contains concrete implementations of
+// various interfaces used by the library.
 //
-// It contains concrete implementations of various interfaces used by
-// the library.
+// It lives in the context and must be installed there by some root middleware
+// (via ModifyContext call).
 type Config struct {
 	// DBProvider is a callback that returns most recent DB instance.
 	//
@@ -29,8 +31,10 @@ type Config struct {
 
 	// Signer possesses the service's private key and can sign blobs with it.
 	//
-	// Signer interface also responsible for providing identity of the currently
-	// running service (since it's related to the private key used).
+	// It provides the bundle with corresponding public keys and information about
+	// the service account they belong too (the service's own identity).
+	//
+	// Used to implement '/auth/api/v1/server/(certificates|info)' routes.
 	Signer signing.Signer
 
 	// AccessTokenProvider knows how to generate OAuth2 access token for the
@@ -61,6 +65,19 @@ type Config struct {
 	IsDevMode bool
 }
 
+// ModifyConfig makes a context with a derived configuration.
+//
+// It grabs current configuration from the context (if any), passes it to the
+// callback, and puts whatever callback returns into a derived context.
+func ModifyConfig(c context.Context, cb func(Config) Config) context.Context {
+	var cfg Config
+	if cur := getConfig(c); cur != nil {
+		cfg = *cur
+	}
+	cfg = cb(cfg)
+	return setConfig(c, &cfg)
+}
+
 // adjustedTimeout returns `t` if IsDevMode is false or >=1 min if true.
 func (cfg *Config) adjustedTimeout(t time.Duration) time.Duration {
 	if !cfg.IsDevMode {
@@ -72,55 +89,31 @@ func (cfg *Config) adjustedTimeout(t time.Duration) time.Duration {
 	return time.Minute
 }
 
-type cfxContextKey int
+var cfgContextKey = "auth.Config context key"
 
-// SetConfig replaces the configuration in the context.
-func SetConfig(c context.Context, cfg Config) context.Context {
-	return context.WithValue(c, cfxContextKey(0), &cfg)
+// setConfig replaces the configuration in the context.
+func setConfig(c context.Context, cfg *Config) context.Context {
+	return context.WithValue(c, &cfgContextKey, cfg)
 }
 
-// GetConfig returns the config stored in the context (or nil if not there).
-//
-// Do not modify it. If you want to change the config, make a copy and install
-// the copy in the context (or use ModifyConfig that does the same thing).
-func GetConfig(c context.Context) *Config {
-	val, _ := c.Value(cfxContextKey(0)).(*Config)
+// getConfig returns the config stored in the context (or nil if not there).
+func getConfig(c context.Context) *Config {
+	val, _ := c.Value(&cfgContextKey).(*Config)
 	return val
-}
-
-// ModifyConfig is a shortcut for making a context with a derived configuration.
-//
-// It grabs current configuration from the context, makes its copy, calls the
-// callback to modify the copy, and puts it into a new context.
-func ModifyConfig(c context.Context, cb func(cfg *Config)) context.Context {
-	var cfg Config
-	if cur := GetConfig(c); cur != nil {
-		cfg = *cur
-	}
-	cb(&cfg)
-	return SetConfig(c, cfg)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Helpers that extract stuff from the config.
 
 // GetDB returns most recent snapshot of authorization database using DBProvider
-// installed in the context via 'SetConfig'
+// installed in the context via 'ModifyConfig'.
 //
 // If no factory is installed, returns DB that forbids everything and logs
 // errors. It is often good enough for unit tests that do not care about
 // authorization, and still not horribly bad if accidentally used in production.
 func GetDB(c context.Context) (authdb.DB, error) {
-	if cfg := GetConfig(c); cfg != nil && cfg.DBProvider != nil {
+	if cfg := getConfig(c); cfg != nil && cfg.DBProvider != nil {
 		return cfg.DBProvider(c)
 	}
 	return authdb.ErroringDB{Error: ErrNotConfigured}, nil
-}
-
-// GetSigner extracts Signer from the context. Returns nil if no Signer is set.
-func GetSigner(c context.Context) signing.Signer {
-	if cfg := GetConfig(c); cfg != nil {
-		return cfg.Signer
-	}
-	return nil
 }

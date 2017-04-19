@@ -148,7 +148,7 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 	}
 
 	// Config contains the cache implementation.
-	cfg := GetConfig(ctx)
+	cfg := getConfig(ctx)
 	if cfg == nil || cfg.Cache == nil {
 		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
 		return nil, ErrNotConfigured

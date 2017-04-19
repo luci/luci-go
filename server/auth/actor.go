@@ -94,7 +94,7 @@ func init() {
 func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessTokenParams) (*oauth2.Token, error) {
 	report := durationReporter(ctx, mintAccessTokenDuration)
 
-	cfg := GetConfig(ctx)
+	cfg := getConfig(ctx)
 	if cfg == nil || cfg.AccessTokenProvider == nil || cfg.Cache == nil {
 		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
 		return nil, ErrNotConfigured

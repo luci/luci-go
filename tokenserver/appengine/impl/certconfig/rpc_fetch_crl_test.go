@@ -27,10 +27,11 @@ import (
 func TestFetchCRLRPC(t *testing.T) {
 	Convey("with mock context", t, func() {
 		ctx := gaetesting.TestingContext()
-		ctx = auth.ModifyConfig(ctx, func(cfg *auth.Config) {
+		ctx = auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
 			cfg.AnonymousTransport = func(context.Context) http.RoundTripper {
 				return http.DefaultTransport // mock URLFetch service
 			}
+			return cfg
 		})
 
 		importConfig := func(cfg string) {

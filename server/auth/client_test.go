@@ -27,9 +27,10 @@ func TestGetRPCTransport(t *testing.T) {
 	Convey("GetRPCTransport works", t, func() {
 		ctx := context.Background()
 		mock := &clientRPCTransportMock{}
-		ctx = ModifyConfig(ctx, func(cfg *Config) {
+		ctx = ModifyConfig(ctx, func(cfg Config) Config {
 			cfg.AccessTokenProvider = mock.getAccessToken
 			cfg.AnonymousTransport = mock.getTransport
+			return cfg
 		})
 
 		Convey("in NoAuth mode", func(c C) {
@@ -171,9 +172,10 @@ func TestTokenSource(t *testing.T) {
 	Convey("GetTokenSource works", t, func() {
 		ctx := context.Background()
 		mock := &clientRPCTransportMock{}
-		ctx = ModifyConfig(ctx, func(cfg *Config) {
+		ctx = ModifyConfig(ctx, func(cfg Config) Config {
 			cfg.AccessTokenProvider = mock.getAccessToken
 			cfg.AnonymousTransport = mock.getTransport
+			return cfg
 		})
 
 		Convey("With no scopes", func() {

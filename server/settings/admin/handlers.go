@@ -105,10 +105,11 @@ func (adminBypassDB) IsInWhitelist(c context.Context, ip net.IP, whitelist strin
 }
 
 func (d adminBypassDB) install(c *router.Context, next router.Handler) {
-	c.Context = auth.ModifyConfig(c.Context, func(cfg *auth.Config) {
+	c.Context = auth.ModifyConfig(c.Context, func(cfg auth.Config) auth.Config {
 		cfg.DBProvider = func(context.Context) (authdb.DB, error) {
 			return d, nil
 		}
+		return cfg
 	})
 	next(c)
 }

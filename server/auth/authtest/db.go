@@ -29,10 +29,11 @@ var _ authdb.DB = (FakeDB)(nil)
 
 // Use installs the fake db into the context.
 func (db FakeDB) Use(c context.Context) context.Context {
-	return auth.ModifyConfig(c, func(cfg *auth.Config) {
+	return auth.ModifyConfig(c, func(cfg auth.Config) auth.Config {
 		cfg.DBProvider = func(context.Context) (authdb.DB, error) {
 			return db, nil
 		}
+		return cfg
 	})
 }
 
@@ -105,9 +106,10 @@ func (db *FakeErroringDB) IsMember(c context.Context, id identity.Identity, grou
 
 // Use installs the fake db into the context.
 func (db *FakeErroringDB) Use(c context.Context) context.Context {
-	return auth.ModifyConfig(c, func(cfg *auth.Config) {
+	return auth.ModifyConfig(c, func(cfg auth.Config) auth.Config {
 		cfg.DBProvider = func(context.Context) (authdb.DB, error) {
 			return db, nil
 		}
+		return cfg
 	})
 }

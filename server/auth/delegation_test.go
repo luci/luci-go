@@ -61,8 +61,9 @@ func TestMintDelegationToken(t *testing.T) {
 		// Create an LRU large enough that it will never cycle during test.
 		tokenCache := MemoryCache(1024)
 
-		ctx = ModifyConfig(ctx, func(cfg *Config) {
+		ctx = ModifyConfig(ctx, func(cfg Config) Config {
 			cfg.Cache = tokenCache
+			return cfg
 		})
 
 		ctx = WithState(ctx, &state{

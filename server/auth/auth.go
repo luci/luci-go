@@ -137,7 +137,7 @@ func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (contex
 	report := durationReporter(c, authenticateDuration)
 
 	// We will need working DB factory below to check IP whitelist.
-	cfg := GetConfig(c)
+	cfg := getConfig(c)
 	if cfg == nil || cfg.DBProvider == nil || len(a.Methods) == 0 {
 		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
 		return nil, ErrNotConfigured

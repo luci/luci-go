@@ -19,6 +19,12 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+var cfgWithTransport = Config{
+	AnonymousTransport: func(context.Context) http.RoundTripper {
+		return http.DefaultTransport
+	},
+}
+
 func TestCertificatesHandler(t *testing.T) {
 	t.Parallel()
 
@@ -26,16 +32,15 @@ func TestCertificatesHandler(t *testing.T) {
 		r := router.New()
 		InstallHandlers(r, router.NewMiddlewareChain(
 			func(c *router.Context, next router.Handler) {
-				c.Context = SetConfig(context.Background(), Config{Signer: s})
+				c.Context = setConfig(c.Context, &Config{Signer: s})
 				next(c)
 			},
 		))
 		ts := httptest.NewServer(r)
-		ctx := SetConfig(context.Background(), Config{
-			AnonymousTransport: func(context.Context) http.RoundTripper {
-				return http.DefaultTransport
-			},
-		})
+		// Note: there are two contexts. One for outter /certificates call
+		// (this one), and another for /certificates request handler (it is setup
+		// in the middleware chain above).
+		ctx := setConfig(context.Background(), &cfgWithTransport)
 		return signing.FetchCertificates(ctx, ts.URL+"/auth/api/v1/server/certificates")
 	}
 
@@ -65,7 +70,7 @@ func TestServiceInfoHandler(t *testing.T) {
 
 		InstallHandlers(r, router.NewMiddlewareChain(
 			func(ctx *router.Context, next router.Handler) {
-				ctx.Context = SetConfig(context.Background(), Config{Signer: signer})
+				ctx.Context = setConfig(context.Background(), &Config{Signer: signer})
 				next(ctx)
 			},
 		))

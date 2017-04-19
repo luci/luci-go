@@ -94,7 +94,7 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 	c = gaeconfig.Use(c)
 	c = gaesecrets.Use(c, nil)
 	c = globalAuthCache.UseRequestCache(c)
-	c = auth.SetConfig(c, globalAuthConfig)
+	c = auth.ModifyConfig(c, func(auth.Config) auth.Config { return globalAuthConfig })
 
 	// Wrap this in a cache context so that lookups for any of the aforementioned
 	// items are fast.
