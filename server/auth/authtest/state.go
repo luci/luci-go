@@ -52,6 +52,15 @@ type FakeState struct {
 
 var _ auth.State = (*FakeState)(nil)
 
+// Authenticator is part of State interface.
+func (s *FakeState) Authenticator() *auth.Authenticator {
+	return &auth.Authenticator{
+		Methods: []auth.Method{
+			&FakeAuth{User: s.User()},
+		},
+	}
+}
+
 // DB is part of State interface.
 func (s *FakeState) DB() authdb.DB {
 	if s.FakeDB != nil {
@@ -65,9 +74,7 @@ func (s *FakeState) DB() authdb.DB {
 
 // Method is part of State interface.
 func (s *FakeState) Method() auth.Method {
-	return &FakeAuth{
-		User: s.User(),
-	}
+	return s.Authenticator().Methods[0]
 }
 
 // User is part of State interface.

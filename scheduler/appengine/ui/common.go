@@ -12,6 +12,7 @@ import (
 
 	"github.com/luci/gae/service/info"
 
+	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/xsrf"
 	"github.com/luci/luci-go/server/router"
@@ -35,7 +36,11 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, cfg Config) 
 	m := base.Extend(func(c *router.Context, next router.Handler) {
 		c.Context = context.WithValue(c.Context, configContextKey(0), &cfg)
 		next(c)
-	}, templates.WithTemplates(tmpl), auth.Authenticate)
+	})
+	m = m.Extend(
+		templates.WithTemplates(tmpl),
+		auth.Authenticate(server.CookieAuth),
+	)
 
 	r.GET("/", m, indexPage)
 	r.GET("/jobs/:ProjectID", m, projectPage)

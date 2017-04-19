@@ -52,15 +52,9 @@ var templateBundle = &templates.Bundle{
 
 // base returns the root middleware chain.
 func base() router.MiddlewareChain {
-	methods := auth.Authenticator{
-		&server.OAuth2Method{Scopes: []string{server.EmailScope}},
-		server.CookieAuth,
-		&server.InboundAppIDAuthMethod{},
-	}
 	return gaemiddleware.BaseProd().Extend(
 		templates.WithTemplates(templateBundle),
-		auth.Use(methods),
-		auth.Authenticate,
+		auth.Authenticate(server.CookieAuth),
 	)
 }
 

@@ -13,6 +13,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/logging"
 
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authdb"
@@ -60,10 +61,9 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, adminAuth au
 	rr := r.Subrouter("/admin/settings")
 	rr.Use(base.Extend(
 		templates.WithTemplates(tmpl),
-		auth.Use(auth.Authenticator{adminAuth}),
 		adminDB.install,
-		auth.Autologin,
-		adminOnly,
+		auth.Authenticate(adminAuth),
+		adminAutologin,
 	))
 
 	rr.GET("", router.MiddlewareChain{}, indexPage)
@@ -113,14 +113,44 @@ func (d adminBypassDB) install(c *router.Context, next router.Handler) {
 	next(c)
 }
 
-// adminOnly is middleware that ensures authenticated user is local site admin
-// aka superuser. On GAE it grants access only to users that have Editor or
-// Owner roles in the Cloud Project.
-func adminOnly(c *router.Context, next router.Handler) {
-	if !auth.CurrentUser(c.Context).Superuser {
+// adminAutologin is middleware that ensures authenticated user is local site
+// admin (aka superuser).
+//
+// On GAE it grants access only to users that have Editor or Owner roles in
+// the Cloud Project.
+//
+// It redirect anonymous users to login page, and displays "Access denied" page
+// to authenticated non-admin users.
+func adminAutologin(c *router.Context, next router.Handler) {
+	u := auth.CurrentUser(c.Context)
+
+	// Redirect anonymous users to a login page that redirects back to the current
+	// page.
+	if u.Identity == identity.AnonymousIdentity {
+		// Make the current URL relative to the host.
+		destURL := *c.Request.URL
+		destURL.Host = ""
+		destURL.Scheme = ""
+		url, err := auth.LoginURL(c.Context, destURL.String())
+		if err != nil {
+			logging.WithError(err).Errorf(c.Context, "Error when generating login URL")
+			if errors.IsTransient(err) {
+				http.Error(c.Writer, "Transient error when generating login URL, see logs", 500)
+			} else {
+				http.Error(c.Writer, "Can't generate login URL, see logs", 401)
+			}
+			return
+		}
+		http.Redirect(c.Writer, c.Request, url, 302)
+		return
+	}
+
+	// Non anonymous users must be admins to proceed.
+	if !u.Superuser {
 		c.Writer.WriteHeader(http.StatusForbidden)
 		templates.MustRender(c.Context, c.Writer, "pages/access_denied.html", nil)
 		return
 	}
+
 	next(c)
 }

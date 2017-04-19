@@ -57,8 +57,7 @@ var templateBundle = &templates.Bundle{
 func pageBase() router.MiddlewareChain {
 	return gaemiddleware.BaseProd().Extend(
 		templates.WithTemplates(templateBundle),
-		auth.Use(auth.Authenticator{server.CookieAuth}),
-		auth.Authenticate,
+		auth.Authenticate(server.CookieAuth),
 	)
 }
 

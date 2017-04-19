@@ -10,7 +10,9 @@ import (
 )
 
 func init() {
-	prpc.RegisterDefaultAuth(auth.Authenticator{
-		&OAuth2Method{Scopes: []string{EmailScope}},
+	prpc.RegisterDefaultAuth(&auth.Authenticator{
+		Methods: []auth.Method{
+			&OAuth2Method{Scopes: []string{EmailScope}},
+		},
 	})
 }

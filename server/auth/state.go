@@ -22,6 +22,9 @@ var ErrNoAuthState = errors.New("auth: auth.State is not in the context")
 // State is stored in the context when handling an incoming request. It
 // contains authentication related state of the current request.
 type State interface {
+	// Authenticator is an Authenticator used to authenticate the request.
+	Authenticator() *Authenticator
+
 	// DB is authdb.DB snapshot with authorization information to use when
 	// processing this request.
 	//
@@ -31,6 +34,8 @@ type State interface {
 
 	// Method returns authentication method used for current request or nil if
 	// request is anonymous.
+	//
+	// If non-nil, its one of the methods in Authenticator.Methods.
 	Method() Method
 
 	// User holds the identity and profile of the current caller. User.Identity
@@ -66,9 +71,10 @@ func GetState(c context.Context) State {
 	return nil
 }
 
-// CurrentUser represents the current caller. Shortcut for GetState(c).User().
-// Returns user that represents identity.AnonymousIdentity if the context
-// doesn't have State.
+// CurrentUser represents the current caller.
+//
+// Shortcut for GetState(c).User(). Returns user with AnonymousIdentity if
+// the context doesn't have State.
 func CurrentUser(c context.Context) *User {
 	if s := GetState(c); s != nil {
 		return s.User()
@@ -76,8 +82,9 @@ func CurrentUser(c context.Context) *User {
 	return &User{Identity: identity.AnonymousIdentity}
 }
 
-// CurrentIdentity return identity of the current caller. Shortcut for
-// GetState(c).User().Identity(). Returns identity.AnonymousIdentity if
+// CurrentIdentity return identity of the current caller.
+//
+// Shortcut for GetState(c).User().Identity(). Returns AnonymousIdentity if
 // the context doesn't have State.
 func CurrentIdentity(c context.Context) identity.Identity {
 	if s := GetState(c); s != nil {
@@ -100,17 +107,41 @@ func IsMember(c context.Context, groups ...string) (bool, error) {
 	return false, ErrNoAuthState
 }
 
+// LoginURL returns a URL that, when visited, prompts the user to sign in,
+// then redirects the user to the URL specified by dest.
+//
+// Shortcut for GetState(c).Authenticator().LoginURL(...).
+func LoginURL(c context.Context, dest string) (string, error) {
+	if s := GetState(c); s != nil {
+		return s.Authenticator().LoginURL(c, dest)
+	}
+	return "", ErrNoAuthState
+}
+
+// LogoutURL returns a URL that, when visited, signs the user out, then
+// redirects the user to the URL specified by dest.
+//
+// Shortcut for GetState(c).Authenticator().LogoutURL(...).
+func LogoutURL(c context.Context, dest string) (string, error) {
+	if s := GetState(c); s != nil {
+		return s.Authenticator().LogoutURL(c, dest)
+	}
+	return "", ErrNoAuthState
+}
+
 ///
 
 // state implements State. Immutable.
 type state struct {
-	db        authdb.DB
-	method    Method
-	user      *User
-	peerIdent identity.Identity
-	peerIP    net.IP
+	authenticator *Authenticator
+	db            authdb.DB
+	method        Method
+	user          *User
+	peerIdent     identity.Identity
+	peerIP        net.IP
 }
 
+func (s *state) Authenticator() *Authenticator   { return s.authenticator }
 func (s *state) DB() authdb.DB                   { return s.db }
 func (s *state) Method() Method                  { return s.method }
 func (s *state) User() *User                     { return s.user }

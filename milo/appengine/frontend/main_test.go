@@ -24,6 +24,7 @@ import (
 	"github.com/luci/luci-go/milo/appengine/common"
 	"github.com/luci/luci-go/milo/appengine/swarming"
 	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/settings"
 	"github.com/luci/luci-go/server/templates"
@@ -73,27 +74,6 @@ func mustWrite(name string, buf []byte) {
 	}
 }
 
-// fakeOAuthMethod implements Method.
-type fakeOAuthMethod struct {
-	clientID string
-}
-
-func (m fakeOAuthMethod) Authenticate(context.Context, *http.Request) (*auth.User, error) {
-	return &auth.User{
-		Identity: identity.Identity("user:abc@example.com"),
-		Email:    "abc@example.com",
-		ClientID: m.clientID,
-	}, nil
-}
-
-func (m fakeOAuthMethod) LoginURL(c context.Context, target string) (string, error) {
-	return "https://login.url/?target=" + target, nil
-}
-
-func (m fakeOAuthMethod) LogoutURL(c context.Context, target string) (string, error) {
-	return "https://logout.url/?target=" + target, nil
-}
-
 type analyticsSettings struct {
 	AnalyticsID string `json:"analytics_id"`
 }
@@ -109,8 +89,7 @@ func TestPages(t *testing.T) {
 		c = memory.Use(c)
 		c = common.WithRequest(c, &http.Request{URL: &url.URL{Path: "/foobar"}})
 		c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
-		a := auth.Authenticator{fakeOAuthMethod{"some_client_id"}}
-		c = auth.SetAuthenticator(c, a)
+		c = auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
 		c = settings.Use(c, settings.New(&settings.MemoryStorage{Expiration: time.Second}))
 		err := settings.Set(c, "analytics", &analyticsSettings{"UA-12345-01"}, "", "")
 		So(err, ShouldBeNil)

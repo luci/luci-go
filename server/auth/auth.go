@@ -16,6 +16,7 @@ import (
 	"github.com/luci/luci-go/server/auth/delegation"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/signing"
+	"github.com/luci/luci-go/server/router"
 )
 
 var (
@@ -36,11 +37,16 @@ var (
 	ErrIPNotWhitelisted = errors.New("auth: IP is not whitelisted")
 )
 
-// Method implements particular kind of low level authentication mechanism for
-// incoming requests. It may also optionally implement UsersAPI (if the method
-// support login and logout URLs). Use type sniffing to figure out.
+// Method implements a particular kind of low-level authentication mechanism.
+//
+// It may also optionally implement UsersAPI (if the method support login and
+// logout URLs).
+//
+// Methods are not usually used directly, but passed to Authenticator{...} that
+// knows how to apply them.
 type Method interface {
 	// Authenticate extracts user information from the incoming request.
+	//
 	// It returns:
 	//   * (*User, nil) on success.
 	//   * (nil, nil) if the method is not applicable.
@@ -88,33 +94,58 @@ type User struct {
 	ClientID string
 }
 
-// Authenticator perform authentication of incoming requests. It is stateless
-// object that just describes what methods to try when authenticating current
-// request. It is fine to create it on per-request basis.
-type Authenticator []Method
+// Authenticator performs authentication of incoming requests.
+//
+// It is a stateless object configured with a list of methods to try when
+// authenticating incoming requests. It implements Authenticate method that
+// performs high-level authentication logic using the provided list of low-level
+// auth methods.
+//
+// Note that most likely you don't need to instantiate this object directly.
+// Use Authenticate middleware instead. Authenticator is exposed publicly only
+// to be used in advanced cases, when you need to fine-tune authentication
+// behavior.
+type Authenticator struct {
+	Methods []Method // a list of authentication methods to try
+}
 
-// Authenticate authenticates incoming requests and returns new context.Context
-// with State stored into it. Returns error if credentials are provided, but
-// invalid. If no credentials are provided (i.e. the request is anonymous),
-// finishes successfully, but in that case State.Identity() will return
-// AnonymousIdentity.
-func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context.Context, error) {
+// GetMiddleware returns a middleware that uses this Authenticator for
+// authentication.
+//
+// It uses a.Authenticate internally and handles errors appropriately.
+func (a *Authenticator) GetMiddleware() router.Middleware {
+	return func(c *router.Context, next router.Handler) {
+		ctx, err := a.Authenticate(c.Context, c.Request)
+		switch {
+		case errors.IsTransient(err):
+			replyError(c.Context, c.Writer, 500, "Transient error during authentication", err)
+		case err != nil:
+			replyError(c.Context, c.Writer, 401, "Authentication error", err)
+		default:
+			c.Context = ctx
+			next(c)
+		}
+	}
+}
+
+// Authenticate authenticates the requests and adds State into the context.
+//
+// Returns an error if credentials are provided, but invalid. If no credentials
+// are provided (i.e. the request is anonymous), finishes successfully, but in
+// that case State.Identity() returns AnonymousIdentity.
+func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (context.Context, error) {
 	report := durationReporter(c, authenticateDuration)
-
-	// Make it known to handlers what authentication methods are allowed.
-	// This is important for LoginURL and LogoutURL functions.
-	c = SetAuthenticator(c, a)
 
 	// We will need working DB factory below to check IP whitelist.
 	cfg := GetConfig(c)
-	if cfg == nil || cfg.DBProvider == nil {
+	if cfg == nil || cfg.DBProvider == nil || len(a.Methods) == 0 {
 		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
 		return nil, ErrNotConfigured
 	}
 
 	// Pick first authentication method that applies.
-	var s state
-	for _, m := range a {
+	s := state{authenticator: a}
+	for _, m := range a.Methods {
 		var err error
 		s.user, err = m.Authenticate(c, r)
 		if err != nil {
@@ -237,10 +268,11 @@ func (a Authenticator) Authenticate(c context.Context, r *http.Request) (context
 	return WithState(c, &s), nil
 }
 
-// usersAPI returns implementation of UsersAPI by examining Methods. Returns nil
-// if none of Methods implement UsersAPI.
-func (a Authenticator) usersAPI() UsersAPI {
-	for _, m := range a {
+// usersAPI returns implementation of UsersAPI by examining Methods.
+//
+// Returns nil if none of Methods implement UsersAPI.
+func (a *Authenticator) usersAPI() UsersAPI {
+	for _, m := range a.Methods {
 		if api, ok := m.(UsersAPI); ok {
 			return api
 		}
@@ -250,16 +282,22 @@ func (a Authenticator) usersAPI() UsersAPI {
 
 // LoginURL returns a URL that, when visited, prompts the user to sign in,
 // then redirects the user to the URL specified by dest.
-func (a Authenticator) LoginURL(c context.Context, dest string) (string, error) {
+//
+// Returns ErrNoUsersAPI if none of the authentication methods support login
+// URLs.
+func (a *Authenticator) LoginURL(c context.Context, dest string) (string, error) {
 	if api := a.usersAPI(); api != nil {
 		return api.LoginURL(c, dest)
 	}
 	return "", ErrNoUsersAPI
 }
 
-// LogoutURL returns a URL that, when visited, signs the user out,
-// then redirects the user to the URL specified by dest.
-func (a Authenticator) LogoutURL(c context.Context, dest string) (string, error) {
+// LogoutURL returns a URL that, when visited, signs the user out, then
+// redirects the user to the URL specified by dest.
+//
+// Returns ErrNoUsersAPI if none of the authentication methods support login
+// URLs.
+func (a *Authenticator) LogoutURL(c context.Context, dest string) (string, error) {
 	if api := a.usersAPI(); api != nil {
 		return api.LogoutURL(c, dest)
 	}
@@ -267,6 +305,12 @@ func (a Authenticator) LogoutURL(c context.Context, dest string) (string, error)
 }
 
 ////
+
+// replyError logs the error and writes it to ResponseWriter.
+func replyError(c context.Context, rw http.ResponseWriter, code int, msg string, err error) {
+	logging.WithError(err).Errorf(c, "HTTP %d: %s", code, msg)
+	http.Error(rw, msg, code)
+}
 
 // getOwnServiceIdentity returns 'service:<appID>' identity of the current
 // service.

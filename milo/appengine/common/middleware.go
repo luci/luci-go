@@ -56,15 +56,11 @@ func GetTemplateBundle() *templates.Bundle {
 
 // Base returns the basic LUCI appengine middlewares.
 func Base() router.MiddlewareChain {
-	methods := auth.Authenticator{
-		&server.OAuth2Method{Scopes: []string{server.EmailScope}},
-		server.CookieAuth,
-		&server.InboundAppIDAuthMethod{},
-	}
-	m := gaemiddleware.BaseProd().Extend(auth.Use(methods), auth.Authenticate)
-	m = m.Extend(withRequestMiddleware)
-	m = m.Extend(templates.WithTemplates(GetTemplateBundle()))
-	return m
+	return gaemiddleware.BaseProd().Extend(
+		auth.Authenticate(server.CookieAuth),
+		withRequestMiddleware,
+		templates.WithTemplates(GetTemplateBundle()),
+	)
 }
 
 // The context key, so that we can embed the http.Request object into

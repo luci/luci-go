@@ -30,10 +30,8 @@ import (
 	"github.com/luci/luci-go/grpc/discovery"
 	"github.com/luci/luci-go/grpc/grpcmon"
 	"github.com/luci/luci-go/grpc/prpc"
-	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
 
-	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 
 	"github.com/luci/luci-go/common/data/rand/mathrand"
@@ -141,22 +139,20 @@ func init() {
 		PubSubPushPath:       "/pubsub",
 	})
 
-	// Middleware chains. 'baseUI' is used for web interface routes, 'base' for
-	// everything else.
+	// Do global init before handling requests.
 	base := gaemiddleware.BaseProd().Extend(
 		func(c *router.Context, next router.Handler) {
 			globalInit.Do(func() { initializeGlobalState(c.Context) })
 			next(c)
 		},
 	)
-	baseUI := base.Extend(auth.Use(auth.Authenticator{server.CookieAuth}))
 
 	// Setup HTTP routes.
 	r := router.New()
 
 	gaemiddleware.InstallHandlersWithMiddleware(r, base)
 
-	ui.InstallHandlers(r, baseUI, ui.Config{
+	ui.InstallHandlers(r, base, ui.Config{
 		Engine:        globalEngine,
 		Catalog:       globalCatalog,
 		TemplatesPath: "templates",
