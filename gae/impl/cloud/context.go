@@ -5,7 +5,10 @@
 package cloud
 
 import (
+	"fmt"
+
 	"github.com/luci/gae/impl/dummy"
+	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/mail"
 	mc "github.com/luci/gae/service/memcache"
@@ -13,6 +16,7 @@ import (
 	"github.com/luci/gae/service/taskqueue"
 	"github.com/luci/gae/service/user"
 
+	"cloud.google.com/go/compute/metadata"
 	"cloud.google.com/go/datastore"
 	"github.com/bradfitz/gomemcache/memcache"
 
@@ -51,7 +55,10 @@ func (cfg Config) Use(c context.Context) context.Context {
 
 	// datastore service
 	if cfg.DS != nil {
-		c = UseDatastore(c, cfg.DS)
+		cds := cloudDatastore{
+			client: cfg.DS,
+		}
+		c = cds.use(c)
 	} else {
 		c = ds.SetRaw(c, dummy.Datastore())
 	}
@@ -69,8 +76,23 @@ func (cfg Config) Use(c context.Context) context.Context {
 	return c
 }
 
-// UseDatastore installs a datastore implementation into the context.
-func UseDatastore(c context.Context, client *datastore.Client) context.Context {
+// UseFlex installs a set of cloud services into the context with services
+// supported by AppEngine Flex, including:
+// * Info
+// * Datastore
+func UseFlex(c context.Context) context.Context {
+	// Flex is on GCE, so we can get the project ID from the metadata server.
+	project, err := metadata.Get("project/project-id")
+	if err != nil {
+		panic(fmt.Errorf("could not get project ID, not on GCE? %s", err.Error()))
+	}
+	// Use the memory implementation of Info.
+	c = memory.UseInfo(c, project)
+	// Create a datastore client.
+	client, err := datastore.NewClient(c, project)
+	if err != nil {
+		panic(err)
+	}
 	cds := cloudDatastore{
 		client: client,
 	}

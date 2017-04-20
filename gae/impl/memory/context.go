@@ -96,6 +96,30 @@ func Use(c context.Context) context.Context {
 	return UseWithAppID(c, "dev~app")
 }
 
+// UseInfo adds an implementation for:
+//   * github.com/luci/gae/service/info
+// The application id wil be set to 'aid', and will not be modifiable in this
+// context. If 'aid' contains a "~" character, it will be treated as the
+// fully-qualified App ID and the AppID will be the string following the "~".
+func UseInfo(c context.Context, aid string) context.Context {
+	if c.Value(&memContextKey) != nil {
+		panic(errors.New("memory.Use: called twice on the same Context"))
+	}
+
+	fqAppID := aid
+	if parts := strings.SplitN(fqAppID, "~", 2); len(parts) == 2 {
+		aid = parts[1]
+	}
+
+	memctx := newMemContext(fqAppID)
+	c = context.WithValue(c, &memContextKey, memctx)
+
+	return useGI(useGID(c, func(mod *globalInfoData) {
+		mod.appID = aid
+		mod.fqAppID = fqAppID
+	}))
+}
+
 // UseWithAppID adds implementations for the following gae services to the
 // context:
 //   * github.com/luci/gae/service/datastore
@@ -117,23 +141,9 @@ func Use(c context.Context) context.Context {
 //
 // Using this more than once per context.Context will cause a panic.
 func UseWithAppID(c context.Context, aid string) context.Context {
-	if c.Value(&memContextKey) != nil {
-		panic(errors.New("memory.Use: called twice on the same Context"))
-	}
 	c = memlogger.Use(c)
-
-	fqAppID := aid
-	if parts := strings.SplitN(fqAppID, "~", 2); len(parts) == 2 {
-		aid = parts[1]
-	}
-
-	memctx := newMemContext(fqAppID)
-	c = context.WithValue(c, &memContextKey, memctx)
-	c = useGID(c, func(mod *globalInfoData) {
-		mod.appID = aid
-		mod.fqAppID = fqAppID
-	})
-	return useMod(useMail(useUser(useTQ(useRDS(useMC(useGI(c)))))))
+	c = UseInfo(c, aid) // Panics if UseWithAppID is called twice.
+	return useMod(useMail(useUser(useTQ(useRDS(useMC(c))))))
 }
 
 func cur(c context.Context) (*memContext, bool) {
