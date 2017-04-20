@@ -63,6 +63,11 @@ type Builder struct {
 	// machines that can run in a builder.  It has no meaning in buildbucket or dm
 	// and is expected to be nil.
 	MachinePool *MachinePool
+
+	// PrevCursor is a cursor to the previous page.
+	PrevCursor string `json:",omitempty"`
+	// NextCursor is a cursor to the next page.
+	NextCursor string `json:",omitempty"`
 }
 
 // MachinePool represents the capacity and availability of a builder.

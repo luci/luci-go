@@ -6,7 +6,7 @@
 {{end}}
 
 {{define "body"}}
-<h1>Builder {{.Builder.Name}}</h1>
+<h1>Builder <a href="{{ pagedURL .Request -1 "EMPTY" }}">{{.Builder.Name}}</a></h1>
 
 {{ if .Builder.CurrentBuilds }}
   <h2>Current Builds ({{len .Builder.CurrentBuilds}}):</h2>
@@ -119,12 +119,14 @@
   <h2>No Recent Builds</h2>
 {{ end }}
 
+{{ if .Builder.PrevCursor }}<a href="{{ pagedURL .Request 0 .Builder.PrevCursor }}">Prev</a>{{ end }}
 (Show:
-<a href=".">default</a>
-<a href="?limit=25">25</a>
-<a href="?limit=50">50</a>
-<a href="?limit=100">100</a>
-<a href="?limit=200">200</a>
+<a href="{{ pagedURL .Request -1 "" }}">default</a>
+<a href="{{ pagedURL .Request 25 "" }}">25</a>
+<a href="{{ pagedURL .Request 50 "" }}">50</a>
+<a href="{{ pagedURL .Request 100 "" }}">100</a>
+<a href="{{ pagedURL .Request 200 "" }}">200</a>
 )
+{{ if .Builder.NextCursor }}<a href="{{ pagedURL .Request 0 .Builder.NextCursor}}">Next</a>{{ end }}
 
 {{end}}

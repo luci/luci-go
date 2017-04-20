@@ -80,8 +80,9 @@ func BuilderHandler(c *router.Context) {
 	if limit < 0 {
 		limit = 25
 	}
+	cursor := c.Request.FormValue("cursor")
 
-	result, err := builderImpl(c.Context, master, builder, limit)
+	result, err := builderImpl(c.Context, master, builder, limit, cursor)
 	if err != nil {
 		common.ErrorPage(c, http.StatusInternalServerError, err.Error())
 		return

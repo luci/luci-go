@@ -53,9 +53,14 @@ message BuildbotBuildsRequest {
   int32 limit = 3;
   // Include ongoing builds (default: false).
   bool include_current = 4;
+  // Return builds starting from this cursor.
+  string cursor = 5;
 }
 
 // The response message for multiple builds in a builder.
 message BuildbotBuildsJSON {
+  // builds is the list of builds resulting from the builds request.
   repeated BuildbotBuildJSON builds = 1;
+  // The cursor to the next request from, if the exact same query was given.
+  string cursor = 2;
 }

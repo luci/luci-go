@@ -24,11 +24,10 @@ func getFullBuilds(c context.Context, masterName, builderName string, finished b
 	q = q.Eq("finished", finished)
 	q = q.Eq("master", masterName)
 	q = q.Eq("builder", builderName)
-	q = q.Limit(25) // TODO(hinoka): This should be adjustable
 	q = q.Order("-number")
 	q.Finalize()
-	buildbots := make([]*buildbotBuild, 0, 25)
-	err := getBuildQueryBatcher(c).GetAll(c, q, &buildbots)
+	// Ignore the cursor, we don't need it.
+	buildbots, _, err := runBuildsQuery(c, q, 25)
 	return buildbots, err
 }
 

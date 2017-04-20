@@ -5,7 +5,7 @@
 package buildbot
 
 import (
-	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/datastore"
 
 	"golang.org/x/net/context"
 )
@@ -18,14 +18,38 @@ import (
 // encountering datastore timeouts, reduce this value.
 const buildQueryBatchSize = 50
 
-// getBuildQueryBatcher returns a ds.Batcher tuned for executing queries on the
+// getBuildQueryBatcher returns a datastore.Batcher tuned for executing queries on the
 // "buildbotBuild" entity.
-func getBuildQueryBatcher(c context.Context) *ds.Batcher {
-	constraints := ds.Raw(c).Constraints()
+func getBuildQueryBatcher(c context.Context) *datastore.Batcher {
+	constraints := datastore.Raw(c).Constraints()
 	if constraints.QueryBatchSize > buildQueryBatchSize {
 		constraints.QueryBatchSize = buildQueryBatchSize
 	}
-	return &ds.Batcher{
+	return &datastore.Batcher{
 		Size: constraints.QueryBatchSize,
 	}
+}
+
+// runBuildsQuery takes a buildbotBuild query and returns a list of builds
+// along with a cursor.  We pass the limit here and apply it to the query as
+// an optimization because then we can create a build container of that size.
+func runBuildsQuery(c context.Context, q *datastore.Query, limit int32) (
+	[]*buildbotBuild, *datastore.Cursor, error) {
+
+	if limit != 0 {
+		q = q.Limit(limit)
+	}
+	builds := make([]*buildbotBuild, 0, limit)
+	var nextCursor *datastore.Cursor
+	err := getBuildQueryBatcher(c).Run(
+		c, q, func(build *buildbotBuild, getCursor datastore.CursorCB) error {
+			builds = append(builds, build)
+			tmpCursor, err := getCursor()
+			if err != nil {
+				return err
+			}
+			nextCursor = &tmpCursor
+			return nil
+		})
+	return builds, nextCursor, err
 }

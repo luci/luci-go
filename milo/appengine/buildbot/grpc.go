@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
-	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/iotools"
 	"github.com/luci/luci-go/common/logging"
 	milo "github.com/luci/luci-go/milo/api/proto"
@@ -78,8 +78,8 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 	}
 
 	cu := auth.CurrentUser(c)
-	logging.Debugf(c, "%s is requesting %s/%s (limit %d)",
-		cu.Identity, req.Master, req.Builder, limit)
+	logging.Debugf(c, "%s is requesting %s/%s (limit %d, cursor %s)",
+		cu.Identity, req.Master, req.Builder, limit, req.Cursor)
 
 	// Perform an ACL check by fetching the master.
 	_, err := getMasterEntry(c, req.Master)
@@ -92,7 +92,7 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 		return nil, err
 	}
 
-	q := ds.NewQuery("buildbotBuild")
+	q := datastore.NewQuery("buildbotBuild")
 	q = q.Eq("master", req.Master).
 		Eq("builder", req.Builder).
 		Limit(limit).
@@ -100,8 +100,15 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 	if req.IncludeCurrent == false {
 		q = q.Eq("finished", true)
 	}
-	builds := []*buildbotBuild{}
-	err = getBuildQueryBatcher(c).GetAll(c, q, &builds)
+	// Insert the cursor or offset.
+	if req.Cursor != "" {
+		cursor, err := datastore.DecodeCursor(c, req.Cursor)
+		if err != nil {
+			return nil, grpc.Errorf(codes.InvalidArgument, "Invalid cursor: %s", err.Error())
+		}
+		q = q.Start(cursor)
+	}
+	builds, nextCursor, err := runBuildsQuery(c, q, int32(req.Limit))
 	if err != nil {
 		return nil, err
 	}
@@ -118,9 +125,13 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 		}
 		results[i] = &milo.BuildbotBuildJSON{Data: bs}
 	}
-	return &milo.BuildbotBuildsJSON{
+	buildsJSON := &milo.BuildbotBuildsJSON{
 		Builds: results,
-	}, nil
+	}
+	if nextCursor != nil {
+		buildsJSON.Cursor = (*nextCursor).String()
+	}
+	return buildsJSON, nil
 }
 
 // GetCompressedMasterJSON assembles a CompressedMasterJSON object from the
@@ -164,7 +175,7 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 				})
 			}
 		}
-		if err := ds.Get(c, slave.Runningbuilds); err != nil {
+		if err := datastore.Get(c, slave.Runningbuilds); err != nil {
 			logging.WithError(err).Errorf(c,
 				"Encountered error while trying to fetch running builds for %s: %v",
 				master.Name, slave.Runningbuilds)
@@ -180,7 +191,7 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 	for builderName, builder := range master.Builders {
 		// Get the most recent 50 buildNums on the builder to simulate what the
 		// cachedBuilds field looks like from the real buildbot master json.
-		q := ds.NewQuery("buildbotBuild").
+		q := datastore.NewQuery("buildbotBuild").
 			Eq("finished", true).
 			Eq("master", req.Name).
 			Eq("builder", builderName).

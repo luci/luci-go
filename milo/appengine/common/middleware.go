@@ -48,6 +48,7 @@ func GetTemplateBundle() *templates.Bundle {
 				"CurrentTime": clock.Now(c),
 				"Analytics":   analytics.Snippet(c),
 				"RequestID":   info.RequestID(c),
+				"Request":     r,
 			}, nil
 		},
 		FuncMap: funcMap,

@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"net/http"
 	"strings"
 	"time"
 
@@ -28,6 +29,7 @@ var funcMap = template.FuncMap{
 	"startswith":     strings.HasPrefix,
 	"sub":            sub,
 	"consoleHeader":  consoleHeader,
+	"pagedURL":       pagedURL,
 }
 
 // localTime returns a <span> element with t in human format
@@ -199,6 +201,42 @@ func shortHash(s string) string {
 		return s[0:6]
 	}
 	return s
+}
+
+// pagedURL returns a self URL with the given cursor and limit paging options.
+// if limit is set to 0, then inherit whatever limit is set in request.  If
+// both are unspecified, then limit is omitted.
+func pagedURL(r *http.Request, limit int, cursor string) string {
+	if limit == 0 {
+		var err error
+		limit, err = GetLimit(r)
+		if err != nil {
+			// This should not happen because the handler should've already validated the
+			// limit earlier in the process.
+			panic(err)
+		}
+		if limit < 0 {
+			limit = 0
+		}
+	}
+	values := r.URL.Query()
+	switch cursor {
+	case "EMPTY":
+		values.Del("cursor")
+	case "":
+		// Do nothing, just leave the cursor in.
+	default:
+		values.Set("cursor", cursor)
+	}
+	switch {
+	case limit < 0:
+		values.Del("limit")
+	case limit > 0:
+		values.Set("limit", fmt.Sprintf("%d", limit))
+	}
+	result := *r.URL
+	result.RawQuery = values.Encode()
+	return result.String()
 }
 
 func init() {
