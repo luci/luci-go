@@ -10,33 +10,81 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func newImpl(caseInsensitive bool, entries []string) Env {
+	e := Env{CaseInsensitive: caseInsensitive}
+	e.LoadSlice(entries)
+	return e
+}
+
 func TestEnvironmentConversion(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Source environment slice translates correctly to/from an Env.`, t, func() {
-		env := New([]string{
-			"",
-			"FOO",
-			"BAR=BAZ",
-			"bar=baz",
-			"qux=quux=quuuuuuux",
-		})
-		So(env, ShouldResemble, Env{
-			env: map[string]string{
-				"":    "",
-				"FOO": "FOO",
-				"BAR": "BAR=BAZ",
-				"bar": "bar=baz",
-				"qux": "qux=quux=quuuuuuux",
-			},
+		Convey(`Case insensitive (e.g., Windows)`, func() {
+			env := newImpl(true, []string{
+				"",
+				"FOO",
+				"BAR=BAZ",
+				"bar=baz",
+				"qux=quux=quuuuuuux",
+			})
+			So(env, ShouldResemble, Env{
+				CaseInsensitive: true,
+				env: map[string]string{
+					"":    "",
+					"FOO": "FOO",
+					"BAR": "bar=baz",
+					"QUX": "qux=quux=quuuuuuux",
+				},
+			})
+
+			So(env.Sorted(), ShouldResemble, []string{
+				"",
+				"FOO",
+				"bar=baz",
+				"qux=quux=quuuuuuux",
+			})
+
+			So(env.GetEmpty(""), ShouldEqual, "")
+			So(env.GetEmpty("FOO"), ShouldEqual, "")
+			So(env.GetEmpty("BAR"), ShouldEqual, "baz")
+			So(env.GetEmpty("bar"), ShouldEqual, "baz")
+			So(env.GetEmpty("qux"), ShouldEqual, "quux=quuuuuuux")
+			So(env.GetEmpty("QuX"), ShouldEqual, "quux=quuuuuuux")
 		})
 
-		So(env.Sorted(), ShouldResemble, []string{
-			"",
-			"BAR=BAZ",
-			"FOO",
-			"bar=baz",
-			"qux=quux=quuuuuuux",
+		Convey(`Case sensitive (e.g., POSIX)`, func() {
+			env := newImpl(false, []string{
+				"",
+				"FOO",
+				"BAR=BAZ",
+				"bar=baz",
+				"qux=quux=quuuuuuux",
+			})
+			So(env, ShouldResemble, Env{
+				env: map[string]string{
+					"":    "",
+					"FOO": "FOO",
+					"BAR": "BAR=BAZ",
+					"bar": "bar=baz",
+					"qux": "qux=quux=quuuuuuux",
+				},
+			})
+
+			So(env.Sorted(), ShouldResemble, []string{
+				"",
+				"BAR=BAZ",
+				"FOO",
+				"bar=baz",
+				"qux=quux=quuuuuuux",
+			})
+
+			So(env.GetEmpty(""), ShouldEqual, "")
+			So(env.GetEmpty("FOO"), ShouldEqual, "")
+			So(env.GetEmpty("BAR"), ShouldEqual, "BAZ")
+			So(env.GetEmpty("bar"), ShouldEqual, "baz")
+			So(env.GetEmpty("qux"), ShouldEqual, "quux=quuuuuuux")
+			So(env.GetEmpty("QuX"), ShouldEqual, "")
 		})
 	})
 }
@@ -64,13 +112,14 @@ func TestEnvironmentManipulation(t *testing.T) {
 			So(env.Sorted(), ShouldResemble, []string{"foo=bar"})
 		})
 
-		Convey(`Can be cloned.`, func() {
+		Convey(`Can be cloned, and propagates case insensitivity.`, func() {
+			env.CaseInsensitive = true
 			So(env.Clone(), ShouldResemble, env)
 		})
 	})
 
 	Convey(`A testing Env`, t, func() {
-		env := New([]string{
+		env := newImpl(true, []string{
 			"PYTHONPATH=/foo:/bar:/baz",
 			"http_proxy=wiped-out-by-next",
 			"http_proxy=http://example.com",
@@ -93,11 +142,20 @@ func TestEnvironmentManipulation(t *testing.T) {
 		})
 
 		Convey(`Will note missing values.`, func() {
-			_, ok := env.Get("pythonpath")
+			_, ok := env.Get("missing")
 			So(ok, ShouldBeFalse)
 
 			_, ok = env.Get("")
 			So(ok, ShouldBeFalse)
+		})
+
+		Convey(`Can be converted into a map`, func() {
+			So(env.Map(), ShouldResemble, map[string]string{
+				"PYTHONPATH": "/foo:/bar:/baz",
+				"http_proxy": "http://example.com",
+				"novalue":    "",
+			})
+
 		})
 
 		Convey(`Can update its values.`, func() {
@@ -112,11 +170,31 @@ func TestEnvironmentManipulation(t *testing.T) {
 				"novalue",
 			})
 
-			// Test that the clone didn't change.
-			So(orig.Sorted(), ShouldResemble, []string{
-				"PYTHONPATH=/foo:/bar:/baz",
-				"http_proxy=http://example.com",
-				"novalue",
+			// Use a different-case key, and confirm that it still updated correctly.
+			Convey(`When case insensitive, will update common keys.`, func() {
+				env.CaseInsensitive = true
+
+				env.Set("pYtHoNpAtH", "/override:"+v)
+				So(env.Sorted(), ShouldResemble, []string{
+					"http_proxy=http://example.com",
+					"novalue",
+					"pYtHoNpAtH=/override:/foo:/bar:/baz",
+				})
+				So(env.GetEmpty("PYTHONPATH"), ShouldEqual, "/override:/foo:/bar:/baz")
+
+				So(env.Remove("HTTP_PROXY"), ShouldBeTrue)
+				So(env.Remove("nonexistent"), ShouldBeFalse)
+				So(env.Sorted(), ShouldResemble, []string{
+					"novalue",
+					"pYtHoNpAtH=/override:/foo:/bar:/baz",
+				})
+
+				// Test that the clone didn't change.
+				So(orig.Sorted(), ShouldResemble, []string{
+					"PYTHONPATH=/foo:/bar:/baz",
+					"http_proxy=http://example.com",
+					"novalue",
+				})
 			})
 		})
 	})
@@ -125,27 +203,34 @@ func TestEnvironmentManipulation(t *testing.T) {
 func TestEnvironmentConstruction(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Can create a new enviornment with Make`, t, func() {
-		env := Make(map[string]string{
-			"FOO": "BAR",
-			"foo": "bar",
+	Convey(`Testing Load* with an empty environment`, t, func() {
+		var env Env
+
+		Convey(`Can load an initial set of values from a map`, func() {
+			env.Load(map[string]string{
+				"FOO": "BAR",
+				"foo": "bar",
+			})
+
+			So(env, ShouldResemble, Env{
+				env: map[string]string{
+					"FOO": "FOO=BAR",
+					"foo": "foo=bar",
+				},
+			})
 		})
 
-		So(env, ShouldResemble, Env{
-			env: map[string]string{
-				"FOO": "FOO=BAR",
-				"foo": "foo=bar",
-			},
-		})
-	})
+		Convey(`Load with an nil/empty enviornment returns a zero value.`, func() {
+			env.Load(nil)
+			So(env.env, ShouldBeNil)
 
-	Convey(`Make with an nil/empty enviornment returns a zero value.`, t, func() {
-		So(Make(nil), ShouldResemble, Env{})
-		So(Make(map[string]string{}), ShouldResemble, Env{})
+			env.Load(map[string]string{})
+			So(env.env, ShouldBeNil)
+		})
 	})
 
 	Convey(`New with a nil/empty slice returns a zero value.`, t, func() {
-		So(New(nil), ShouldResemble, Env{})
-		So(New([]string{}), ShouldResemble, Env{})
+		So(New(nil).env, ShouldBeNil)
+		So(New([]string{}).env, ShouldBeNil)
 	})
 }
