@@ -113,12 +113,16 @@ func getChangeList(
 	case "rietveld":
 		if prop.RietveldURL != "" && prop.Issue != 0 {
 			result = &resp.Commit{
-				Revision:        resultDetails.Properties.GotRevision,
-				RequestRevision: prop.Revision,
+				RequestRevision: &resp.Link{Label: prop.Revision},
 				Changelist: &resp.Link{
 					Label: fmt.Sprintf("Rietveld CL %d", prop.Issue),
 					URL:   fmt.Sprintf("%s/%d/#ps%d", prop.RietveldURL, prop.Issue, prop.PatchSet),
 				},
+			}
+			if resultDetails.Properties.GotRevision != "" {
+				// TODO(hinoka): Figure out the full URL for these revisions, add it
+				// to the URL field.
+				result.Revision = &resp.Link{Label: resultDetails.Properties.GotRevision}
 			}
 		}
 

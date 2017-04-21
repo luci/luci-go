@@ -384,21 +384,15 @@ func properties(b *buildbotBuild) (result []*resp.PropertyGroup) {
 // returns it as a list of Commits.
 func blame(b *buildbotBuild) (result []*resp.Commit) {
 	for _, c := range b.Sourcestamp.Changes {
-		files := make([]string, len(c.Files))
-		for i, f := range c.Files {
-			// Buildbot stores files both as a string, or as a dict with a single entry
-			// named "name".  It doesn't matter to us what the type is, but we need
-			// to reflect on the type anyways.
-			if fn, ok := f.(string); ok {
-				files[i] = fn
-			} else if fn, ok := f.(struct{ Name string }); ok {
-				files[i] = fn.Name
-			}
-		}
+		files := c.GetFiles()
 		result = append(result, &resp.Commit{
 			AuthorEmail: c.Who,
 			Repo:        c.Repository,
-			Revision:    c.Revision,
+			CommitTime:  time.Unix(int64(c.When), 0),
+			Revision: &resp.Link{
+				URL:   c.Revlink,
+				Label: c.Revision,
+			},
 			Description: c.Comments,
 			Title:       strings.Split(c.Comments, "\n")[0],
 			File:        files,
@@ -412,6 +406,8 @@ func blame(b *buildbotBuild) (result []*resp.Commit) {
 func sourcestamp(c context.Context, b *buildbotBuild) *resp.SourceStamp {
 	ss := &resp.SourceStamp{}
 	rietveld := ""
+	got_revision := ""
+	repository := ""
 	issue := int64(-1)
 	// TODO(hinoka): Gerrit URLs.
 	for _, prop := range b.Properties {
@@ -431,11 +427,15 @@ func sourcestamp(c context.Context, b *buildbotBuild) *resp.SourceStamp {
 
 		case "got_revision":
 			if v, ok := prop.Value.(string); ok {
-				ss.Revision = v
+				got_revision = v
 			} else {
 				logging.Warningf(c, "Field got_revision is not a string: %#v", prop.Value)
 			}
 
+		case "repository":
+			if v, ok := prop.Value.(string); ok {
+				repository = v
+			}
 		}
 	}
 	if issue != -1 {
@@ -447,6 +447,14 @@ func sourcestamp(c context.Context, b *buildbotBuild) *resp.SourceStamp {
 			}
 		} else {
 			logging.Warningf(c, "Found issue but not rietveld property.")
+		}
+	}
+	if got_revision != "" {
+		ss.Revision = &resp.Link{
+			Label: got_revision,
+		}
+		if repository != "" {
+			ss.Revision.URL = repository + "/+/" + got_revision
 		}
 	}
 	return ss

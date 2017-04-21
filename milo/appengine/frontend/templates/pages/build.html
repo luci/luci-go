@@ -94,11 +94,11 @@
       {{ end }}
 
       {{ if .Commit.RequestRevision }}
-        <tr><td class="left">Revision</td><td>{{ .Commit.RequestRevision }}</td></tr>
+        <tr><td class="left">Revision</td><td>{{ .Commit.RequestRevision | linkify }}</td></tr>
       {{ end }}
 
       {{ if .Commit.Revision }}
-        <tr><td class="left">Got Revision</td><td>{{ .Commit.Revision }}</td></tr>
+        <tr><td class="left">Got Revision</td><td>{{ .Commit.Revision | linkify }}</td></tr>
       {{ end }}
 
       {{ if .Commit.Changelist }}
@@ -261,7 +261,48 @@
       {{ range .Build.Blame }}
       <li>
         <h3>{{.Title}}</h3>
-        <!--- TODO(hinoka): Layout the rest of this -->
+        <table class="info">
+          <tbody>
+            <tr>
+              <td class="left">Changed by</td>
+              <td class="value">
+                  {{ if .AuthorName }}{{ .AuthorName }} - {{ end }}
+                  {{ .AuthorEmail | obfuscateEmail }}
+              </td>
+            </tr>
+            <tr>
+              <td class="left">Changed at</td>
+              <td class="value">{{ .CommitTime | localTime "N/A" }}</td>
+            </tr>
+            <tr>
+              <td class="left">Repository</td>
+              <td class="value">{{ .Repo }}</td>
+            </tr>
+            <tr>
+              <td class="left">Branch</td>
+              <td class="value">{{ .Branch }}</td>
+            </tr>
+            <tr>
+              <td class="left">Revision</td>
+              <td class="value">{{ .Revision | linkify }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {{ if .Description }}
+          <h3>Comments</h3>
+          <pre class="comments">{{ .Description }}</pre>
+        {{ end }}
+
+        {{ if .File }}
+          <h3 class="files">Changed files</h3>
+          <ul class="alternating">
+            {{ range .File }}
+            <li class="file">{{ . }}</li>
+            {{ end }}
+          </ul>
+        {{ end }}
+
       </li>
       {{ end }}
       </ol>

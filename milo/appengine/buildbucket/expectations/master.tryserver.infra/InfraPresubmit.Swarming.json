@@ -26,10 +26,14 @@
         {
           "AuthorName": "",
           "AuthorEmail": "recipe-roller@chromium.org",
+          "CommitTime": "0001-01-01T00:00:00Z",
           "Repo": "",
           "Branch": "",
-          "RequestRevision": "HEAD",
-          "Revision": "",
+          "RequestRevision": {
+            "Label": "HEAD",
+            "URL": ""
+          },
+          "Revision": null,
           "Description": "",
           "Title": "",
           "Changelist": {

@@ -74,14 +74,16 @@ type Commit struct {
 	AuthorName string
 	// Email of the committer.
 	AuthorEmail string
+	// Time of the commit.
+	CommitTime time.Time
 	// Full URL of the main source repository.
 	Repo string
 	// Branch of the repo.
 	Branch string
 	// Requested revision of the commit or base commit.
-	RequestRevision string
+	RequestRevision *Link
 	// Revision of the commit or base commit.
-	Revision string
+	Revision *Link
 	// The commit message.
 	Description string
 	// The commit title, usually the first line of the commit message.

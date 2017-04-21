@@ -65,8 +65,8 @@ func fixURL(repoURL, treeish string) (string, error) {
 	if u.Scheme != "https" {
 		return "", fmt.Errorf("%s should start with https://", repoURL)
 	}
-	if !strings.HasSuffix(u.Host, "googlesource.com") {
-		return "", fmt.Errorf("Only googlesource.com repos supported")
+	if !strings.HasSuffix(u.Host, ".googlesource.com") {
+		return "", fmt.Errorf("Only .googlesource.com repos supported")
 	}
 	// Use the authenticated URL
 	u.Path = "a/" + u.Path
@@ -113,7 +113,10 @@ func GetCommits(c context.Context, repoURL, treeish string, limit int) ([]resp.C
 			AuthorName:  log.Author.Name,
 			AuthorEmail: log.Author.Email,
 			Repo:        repoURL,
-			Revision:    log.Commit,
+			Revision: &resp.Link{
+				Label: log.Commit,
+				URL:   repoURL + "/+/" + log.Commit,
+			},
 			Description: log.Message,
 			Title:       strings.SplitN(log.Message, "\n", 2)[0],
 			// TODO(hinoka): Fill in the rest of resp.Commit and add those details

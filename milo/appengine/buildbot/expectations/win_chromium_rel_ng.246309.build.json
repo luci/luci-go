@@ -25,10 +25,14 @@
   "SourceStamp": {
     "AuthorName": "",
     "AuthorEmail": "",
+    "CommitTime": "0001-01-01T00:00:00Z",
     "Repo": "",
     "Branch": "",
-    "RequestRevision": "",
-    "Revision": "cb7c961aea3ee23c4e246f50441e5dc582565129",
+    "RequestRevision": null,
+    "Revision": {
+      "Label": "cb7c961aea3ee23c4e246f50441e5dc582565129",
+      "URL": ""
+    },
     "Description": "",
     "Title": "",
     "Changelist": {
@@ -983,10 +987,14 @@
     {
       "AuthorName": "",
       "AuthorEmail": "sky@chromium.org",
+      "CommitTime": "2016-06-27T16:30:29-07:00",
       "Repo": "",
       "Branch": "",
-      "RequestRevision": "",
-      "Revision": "",
+      "RequestRevision": null,
+      "Revision": {
+        "Label": "",
+        "URL": ""
+      },
       "Description": "",
       "Title": "",
       "Changelist": null,

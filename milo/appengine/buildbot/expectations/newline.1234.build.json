@@ -25,10 +25,11 @@
   "SourceStamp": {
     "AuthorName": "",
     "AuthorEmail": "",
+    "CommitTime": "0001-01-01T00:00:00Z",
     "Repo": "",
     "Branch": "",
-    "RequestRevision": "",
-    "Revision": "",
+    "RequestRevision": null,
+    "Revision": null,
     "Description": "",
     "Title": "",
     "Changelist": null,

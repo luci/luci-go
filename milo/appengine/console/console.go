@@ -70,8 +70,10 @@ func console(c context.Context, project, name string) (*resp.Console, error) {
 	tGitiles := clock.Now(c)
 	logging.Debugf(c, "Loading commits took %s.", tGitiles.Sub(tStart))
 	commitNames := make([]string, len(commits))
+	commitLinks := make([]*resp.Link, len(commits))
 	for i, commit := range commits {
-		commitNames[i] = commit.Revision
+		commitNames[i] = commit.Revision.Label
+		commitLinks[i] = commit.Revision
 	}
 
 	// HACK(hinoka): This only supports buildbot....
@@ -88,7 +90,7 @@ func console(c context.Context, project, name string) (*resp.Console, error) {
 		return nil, err
 	}
 	ccb := make([]resp.CommitBuild, len(commits))
-	for i, commit := range commitNames {
+	for i, commit := range commitLinks {
 		// TODO(hinoka): Not like this
 		ccb[i].Commit = resp.Commit{Revision: commit}
 		ccb[i].Build = cb[i]

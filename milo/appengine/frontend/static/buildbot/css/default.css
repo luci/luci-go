@@ -592,6 +592,10 @@ table.info .left {
   text-align: left
 }
 
+td.value {
+  font-weight: bold;
+}
+
 table.info td .reason {
   display:block;
   font-weight: bold;
@@ -601,8 +605,16 @@ table.info td .reason {
   background-color: #f6f6f6;
 }
 
+ul.alternating li:nth-child(even) {
+  background-color: #ddd;
+}
+
 li {
   padding: 0.1em 1em 0.1em 1em;
+}
+
+.file {
+  font-weight: bold;
 }
 
 .result {

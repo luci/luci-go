@@ -334,6 +334,24 @@ type buildbotChange struct {
 	Who        string          `json:"who"`
 }
 
+func (bc *buildbotChange) GetFiles() []string {
+	files := make([]string, 0, len(bc.Files))
+	for _, f := range bc.Files {
+		// Buildbot stores files both as a string, or as a dict with a single entry
+		// named "name".  It doesn't matter to us what the type is, but we need
+		// to reflect on the type anyways.
+		switch fn := f.(type) {
+		case string:
+			files = append(files, fn)
+		case map[string]interface{}:
+			if name, ok := fn["name"]; ok {
+				files = append(files, fmt.Sprintf("%s", name))
+			}
+		}
+	}
+	return files
+}
+
 // buildbotSlave describes a slave on a master from a master json, and also includes the
 // full builds of any currently running builds.
 type buildbotSlave struct {
