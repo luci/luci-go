@@ -41,7 +41,7 @@ func (t *Environment_Pep425Tag) TagString() string {
 func (t *Environment_Pep425Tag) HasABI() bool { return t.Abi != "none" }
 
 // AnyArch returns true if t declares that it works on any architecture.
-func (t *Environment_Pep425Tag) AnyArch() bool { return t.Arch != "any" }
+func (t *Environment_Pep425Tag) AnyArch() bool { return t.Arch == "any" }
 
 // Count returns the number of populated fields in this tag.
 func (t *Environment_Pep425Tag) Count() (v int) {
