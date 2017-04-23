@@ -269,6 +269,8 @@ type SwarmingRpcsBotInfo struct {
 
 	LeaseId string `json:"lease_id,omitempty"`
 
+	MachineType string `json:"machine_type,omitempty"`
+
 	Quarantined bool `json:"quarantined,omitempty"`
 
 	State string `json:"state,omitempty"`
@@ -706,7 +708,7 @@ func (s *SwarmingRpcsDeletedResponse) MarshalJSON() ([]byte, error) {
 type SwarmingRpcsFileContent struct {
 	Content string `json:"content,omitempty"`
 
-	Version int64 `json:"version,omitempty,string"`
+	Version string `json:"version,omitempty"`
 
 	When string `json:"when,omitempty"`
 
@@ -1348,6 +1350,8 @@ type SwarmingRpcsTaskResult struct {
 	PerformanceStats *SwarmingRpcsPerformanceStats `json:"performance_stats,omitempty"`
 
 	PropertiesHash string `json:"properties_hash,omitempty"`
+
+	RunId string `json:"run_id,omitempty"`
 
 	ServerVersions []string `json:"server_versions,omitempty"`
 
@@ -2301,6 +2305,17 @@ func (c *BotsCountCall) IsDead(isDead string) *BotsCountCall {
 	return c
 }
 
+// IsMp sets the optional parameter "is_mp":
+//
+// Possible values:
+//   "FALSE"
+//   "NONE" (default)
+//   "TRUE"
+func (c *BotsCountCall) IsMp(isMp string) *BotsCountCall {
+	c.urlParams_.Set("is_mp", isMp)
+	return c
+}
+
 // Limit sets the optional parameter "limit":
 func (c *BotsCountCall) Limit(limit int64) *BotsCountCall {
 	c.urlParams_.Set("limit", fmt.Sprint(limit))
@@ -2438,6 +2453,21 @@ func (c *BotsCountCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotsCount
 	//       "type": "string"
 	//     },
 	//     "is_dead": {
+	//       "default": "NONE",
+	//       "enum": [
+	//         "FALSE",
+	//         "NONE",
+	//         "TRUE"
+	//       ],
+	//       "enumDescriptions": [
+	//         "",
+	//         "",
+	//         ""
+	//       ],
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "is_mp": {
 	//       "default": "NONE",
 	//       "enum": [
 	//         "FALSE",
@@ -2657,6 +2687,17 @@ func (c *BotsListCall) IsDead(isDead string) *BotsListCall {
 	return c
 }
 
+// IsMp sets the optional parameter "is_mp":
+//
+// Possible values:
+//   "FALSE"
+//   "NONE" (default)
+//   "TRUE"
+func (c *BotsListCall) IsMp(isMp string) *BotsListCall {
+	c.urlParams_.Set("is_mp", isMp)
+	return c
+}
+
 // Limit sets the optional parameter "limit":
 func (c *BotsListCall) Limit(limit int64) *BotsListCall {
 	c.urlParams_.Set("limit", fmt.Sprint(limit))
@@ -2794,6 +2835,21 @@ func (c *BotsListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotList, e
 	//       "type": "string"
 	//     },
 	//     "is_dead": {
+	//       "default": "NONE",
+	//       "enum": [
+	//         "FALSE",
+	//         "NONE",
+	//         "TRUE"
+	//       ],
+	//       "enumDescriptions": [
+	//         "",
+	//         "",
+	//         ""
+	//       ],
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "is_mp": {
 	//       "default": "NONE",
 	//       "enum": [
 	//         "FALSE",
@@ -2973,7 +3029,9 @@ type ServerGetBootstrapCall struct {
 }
 
 // GetBootstrap: Retrieves the current or a previous version of
-// bootstrap.py.
+// bootstrap.py. When the file is sourced via luci-config, the version
+// parameter is ignored. Eventually the support for 'version' will be
+// removed completely.
 func (r *ServerService) GetBootstrap() *ServerGetBootstrapCall {
 	c := &ServerGetBootstrapCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	return c
@@ -3076,7 +3134,7 @@ func (c *ServerGetBootstrapCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcs
 	}
 	return ret, nil
 	// {
-	//   "description": "Retrieves the current or a previous version of bootstrap.py.",
+	//   "description": "Retrieves the current or a previous version of bootstrap.py. When the file is sourced via luci-config, the version parameter is ignored. Eventually the support for 'version' will be removed completely.",
 	//   "httpMethod": "GET",
 	//   "id": "swarming.server.get_bootstrap",
 	//   "parameters": {
@@ -3108,7 +3166,9 @@ type ServerGetBotConfigCall struct {
 }
 
 // GetBotConfig: Retrieves the current or a previous version of
-// bot_config.py.
+// bot_config.py. When the file is sourced via luci-config, the version
+// parameter is ignored. Eventually the support for 'version' will be
+// removed completely.
 func (r *ServerService) GetBotConfig() *ServerGetBotConfigCall {
 	c := &ServerGetBotConfigCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	return c
@@ -3211,7 +3271,7 @@ func (c *ServerGetBotConfigCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcs
 	}
 	return ret, nil
 	// {
-	//   "description": "Retrieves the current or a previous version of bot_config.py.",
+	//   "description": "Retrieves the current or a previous version of bot_config.py. When the file is sourced via luci-config, the version parameter is ignored. Eventually the support for 'version' will be removed completely.",
 	//   "httpMethod": "GET",
 	//   "id": "swarming.server.get_bot_config",
 	//   "parameters": {
@@ -3363,7 +3423,10 @@ type ServerPutBootstrapCall struct {
 	header_                        http.Header
 }
 
-// PutBootstrap: Stores a new version of bootstrap.py.
+// PutBootstrap: Stores a new version of bootstrap.py. Warning: if a
+// file exists in luci-config, the file stored by this function is
+// ignored. Uploads are not blocked in case the file is later deleted
+// from luci-config.
 func (r *ServerService) PutBootstrap(swarmingrpcsfilecontentrequest *SwarmingRpcsFileContentRequest) *ServerPutBootstrapCall {
 	c := &ServerPutBootstrapCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.swarmingrpcsfilecontentrequest = swarmingrpcsfilecontentrequest
@@ -3453,7 +3516,7 @@ func (c *ServerPutBootstrapCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcs
 	}
 	return ret, nil
 	// {
-	//   "description": "Stores a new version of bootstrap.py.",
+	//   "description": "Stores a new version of bootstrap.py. Warning: if a file exists in luci-config, the file stored by this function is ignored. Uploads are not blocked in case the file is later deleted from luci-config.",
 	//   "httpMethod": "POST",
 	//   "id": "swarming.server.put_bootstrap",
 	//   "path": "server/put_bootstrap",
@@ -3481,7 +3544,10 @@ type ServerPutBotConfigCall struct {
 	header_                        http.Header
 }
 
-// PutBotConfig: Stores a new version of bot_config.py.
+// PutBotConfig: Stores a new version of bot_config.py. Warning: if a
+// file exists in luci-config, the file stored by this function is
+// ignored. Uploads are not blocked in case the file is later deleted
+// from luci-config.
 func (r *ServerService) PutBotConfig(swarmingrpcsfilecontentrequest *SwarmingRpcsFileContentRequest) *ServerPutBotConfigCall {
 	c := &ServerPutBotConfigCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.swarmingrpcsfilecontentrequest = swarmingrpcsfilecontentrequest
@@ -3571,7 +3637,7 @@ func (c *ServerPutBotConfigCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcs
 	}
 	return ret, nil
 	// {
-	//   "description": "Stores a new version of bot_config.py.",
+	//   "description": "Stores a new version of bot_config.py. Warning: if a file exists in luci-config, the file stored by this function is ignored. Uploads are not blocked in case the file is later deleted from luci-config.",
 	//   "httpMethod": "POST",
 	//   "id": "swarming.server.put_bot_config",
 	//   "path": "server/put_bot_config",

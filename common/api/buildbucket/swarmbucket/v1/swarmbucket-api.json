@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"ODRTh3xaRR64wpeXJSlF33HMN-0/ZrajoBQg5xk4oweF9ItteMQuyUw\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/TKnGlqBvxq3Tnq1YZfSctOWiTo4\"",
  "discoveryVersion": "v1",
  "id": "swarmbucket:v1",
  "name": "swarmbucket",
@@ -72,6 +72,49 @@
   }
  },
  "schemas": {
+  "ApiPubSubCallbackMessage": {
+   "id": "ApiPubSubCallbackMessage",
+   "type": "object",
+   "properties": {
+    "auth_token": {
+     "type": "string"
+    },
+    "topic": {
+     "type": "string"
+    },
+    "user_data": {
+     "type": "string"
+    }
+   }
+  },
+  "ApiPutRequestMessage": {
+   "id": "ApiPutRequestMessage",
+   "type": "object",
+   "properties": {
+    "bucket": {
+     "type": "string"
+    },
+    "client_operation_id": {
+     "type": "string"
+    },
+    "lease_expiration_ts": {
+     "type": "string",
+     "format": "int64"
+    },
+    "parameters_json": {
+     "type": "string"
+    },
+    "pubsub_callback": {
+     "$ref": "ApiPubSubCallbackMessage"
+    },
+    "tags": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   }
+  },
   "SwarmingSwarmbucketApiBucketMessage": {
    "id": "SwarmingSwarmbucketApiBucketMessage",
    "type": "object",
@@ -110,6 +153,27 @@
      }
     }
    }
+  },
+  "SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage": {
+   "id": "SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage",
+   "type": "object",
+   "properties": {
+    "build_request": {
+     "$ref": "ApiPutRequestMessage"
+    }
+   }
+  },
+  "SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage": {
+   "id": "SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage",
+   "type": "object",
+   "properties": {
+    "api_explorer_link": {
+     "type": "string"
+    },
+    "task_definition": {
+     "type": "string"
+    }
+   }
   }
  },
  "methods": {
@@ -120,6 +184,22 @@
    "description": "Returns defined swarmbucket builders. Can be used by code review tool to discover builders.",
    "response": {
     "$ref": "SwarmingSwarmbucketApiGetBuildersResponseMessage"
+   },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
+  "get_task_def": {
+   "id": "swarmbucket.get_task_def",
+   "path": "get_task_def",
+   "httpMethod": "POST",
+   "description": "Returns a swarming task definition for a build request.",
+   "request": {
+    "$ref": "SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage",
+    "parameterName": "resource"
+   },
+   "response": {
+    "$ref": "SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage"
    },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"

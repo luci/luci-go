@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"ODRTh3xaRR64wpeXJSlF33HMN-0/ZdH9naghIwgRSliyml1cwKZHA3o\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/oaseV8it1U6MhdnhHe3SGj1qZh0\"",
  "discoveryVersion": "v1",
  "id": "buildbucket:v1",
  "name": "buildbucket",
@@ -170,6 +170,10 @@
      "type": "string"
     },
     "retry_of": {
+     "type": "string",
+     "format": "int64"
+    },
+    "started_ts": {
      "type": "string",
      "format": "int64"
     },
@@ -434,6 +438,10 @@
     }
    }
   },
+  "ApiPauseResponse": {
+   "id": "ApiPauseResponse",
+   "type": "object"
+  },
   "ApiPubSubCallbackMessage": {
    "id": "ApiPubSubCallbackMessage",
    "type": "object",
@@ -465,6 +473,9 @@
    "id": "ApiPutBatchResponseMessage",
    "type": "object",
    "properties": {
+    "error": {
+     "$ref": "ApiErrorMessage"
+    },
     "results": {
      "type": "array",
      "items": {
@@ -589,6 +600,32 @@
   }
  },
  "methods": {
+  "backfill_tag_index": {
+   "id": "buildbucket.backfill_tag_index",
+   "path": "backfill_tag_index",
+   "httpMethod": "POST",
+   "description": "Backfills TagIndex entites from builds.",
+   "parameters": {
+    "shards": {
+     "type": "string",
+     "required": true,
+     "format": "int64",
+     "location": "query"
+    },
+    "tag": {
+     "type": "string",
+     "required": true,
+     "location": "query"
+    }
+   },
+   "parameterOrder": [
+    "tag",
+    "shards"
+   ],
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
   "cancel": {
    "id": "buildbucket.cancel",
    "path": "builds/{id}/cancel",
@@ -840,6 +877,34 @@
    ],
    "response": {
     "$ref": "ApiLongestPendingTimeResponse"
+   },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
+  "pause": {
+   "id": "buildbucket.pause",
+   "path": "buckets/{bucket}/pause",
+   "httpMethod": "POST",
+   "description": "Pauses or unpause a bucket.",
+   "parameters": {
+    "bucket": {
+     "type": "string",
+     "required": true,
+     "location": "path"
+    },
+    "is_paused": {
+     "type": "boolean",
+     "required": true,
+     "location": "query"
+    }
+   },
+   "parameterOrder": [
+    "bucket",
+    "is_paused"
+   ],
+   "response": {
+    "$ref": "ApiPauseResponse"
    },
    "scopes": [
     "https://www.googleapis.com/auth/userinfo.email"

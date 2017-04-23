@@ -153,6 +153,8 @@ type ApiBuildMessage struct {
 
 	RetryOf int64 `json:"retry_of,omitempty,string"`
 
+	StartedTs int64 `json:"started_ts,omitempty,string"`
+
 	// Possible values:
 	//   "COMPLETED"
 	//   "SCHEDULED"
@@ -634,6 +636,12 @@ func (s *ApiLongestPendingTimeResponse) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type ApiPauseResponse struct {
+	// ServerResponse contains the HTTP response code and headers from the
+	// server.
+	googleapi.ServerResponse `json:"-"`
+}
+
 type ApiPubSubCallbackMessage struct {
 	AuthToken string `json:"auth_token,omitempty"`
 
@@ -691,13 +699,15 @@ func (s *ApiPutBatchRequestMessage) MarshalJSON() ([]byte, error) {
 }
 
 type ApiPutBatchResponseMessage struct {
+	Error *ApiErrorMessage `json:"error,omitempty"`
+
 	Results []*ApiPutBatchResponseMessageOneResult `json:"results,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
 	// server.
 	googleapi.ServerResponse `json:"-"`
 
-	// ForceSendFields is a list of field names (e.g. "Results") to
+	// ForceSendFields is a list of field names (e.g. "Error") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the
@@ -705,8 +715,8 @@ type ApiPutBatchResponseMessage struct {
 	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "Results") to include in
-	// API requests with the JSON null value. By default, fields with empty
+	// NullFields is a list of field names (e.g. "Error") to include in API
+	// requests with the JSON null value. By default, fields with empty
 	// values are omitted from API requests. However, any field with an
 	// empty value appearing in NullFields will be sent to the server as
 	// null. It is an error if a field in this list has a non-empty value.
@@ -911,6 +921,104 @@ func (s *ApiSucceedRequestBodyMessage) MarshalJSON() ([]byte, error) {
 	type noMethod ApiSucceedRequestBodyMessage
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+// method id "buildbucket.backfill_tag_index":
+
+type BackfillTagIndexCall struct {
+	s          *Service
+	urlParams_ gensupport.URLParams
+	ctx_       context.Context
+	header_    http.Header
+}
+
+// BackfillTagIndex: Backfills TagIndex entites from builds.
+func (s *Service) BackfillTagIndex(tag string, shards int64) *BackfillTagIndexCall {
+	c := &BackfillTagIndexCall{s: s, urlParams_: make(gensupport.URLParams)}
+	c.urlParams_.Set("tag", tag)
+	c.urlParams_.Set("shards", fmt.Sprint(shards))
+	return c
+}
+
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *BackfillTagIndexCall) Fields(s ...googleapi.Field) *BackfillTagIndexCall {
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
+	return c
+}
+
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
+func (c *BackfillTagIndexCall) Context(ctx context.Context) *BackfillTagIndexCall {
+	c.ctx_ = ctx
+	return c
+}
+
+// Header returns an http.Header that can be modified by the caller to
+// add HTTP headers to the request.
+func (c *BackfillTagIndexCall) Header() http.Header {
+	if c.header_ == nil {
+		c.header_ = make(http.Header)
+	}
+	return c.header_
+}
+
+func (c *BackfillTagIndexCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	for k, v := range c.header_ {
+		reqHeaders[k] = v
+	}
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	var body io.Reader = nil
+	c.urlParams_.Set("alt", alt)
+	urls := googleapi.ResolveRelative(c.s.BasePath, "backfill_tag_index")
+	urls += "?" + c.urlParams_.Encode()
+	req, _ := http.NewRequest("POST", urls, body)
+	req.Header = reqHeaders
+	return gensupport.SendRequest(c.ctx_, c.s.client, req)
+}
+
+// Do executes the "buildbucket.backfill_tag_index" call.
+func (c *BackfillTagIndexCall) Do(opts ...googleapi.CallOption) error {
+	gensupport.SetOptions(c.urlParams_, opts...)
+	res, err := c.doRequest("json")
+	if err != nil {
+		return err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return err
+	}
+	return nil
+	// {
+	//   "description": "Backfills TagIndex entites from builds.",
+	//   "httpMethod": "POST",
+	//   "id": "buildbucket.backfill_tag_index",
+	//   "parameterOrder": [
+	//     "tag",
+	//     "shards"
+	//   ],
+	//   "parameters": {
+	//     "shards": {
+	//       "format": "int64",
+	//       "location": "query",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "tag": {
+	//       "location": "query",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "backfill_tag_index",
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/userinfo.email"
+	//   ]
+	// }
+
 }
 
 // method id "buildbucket.cancel":
@@ -2239,6 +2347,135 @@ func (c *LongestPendingTimeCall) Do(opts ...googleapi.CallOption) (*ApiLongestPe
 	//   "path": "metrics/longest-pending-time",
 	//   "response": {
 	//     "$ref": "ApiLongestPendingTimeResponse"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/userinfo.email"
+	//   ]
+	// }
+
+}
+
+// method id "buildbucket.pause":
+
+type PauseCall struct {
+	s          *Service
+	bucket     string
+	urlParams_ gensupport.URLParams
+	ctx_       context.Context
+	header_    http.Header
+}
+
+// Pause: Pauses or unpause a bucket.
+func (s *Service) Pause(bucket string, isPaused bool) *PauseCall {
+	c := &PauseCall{s: s, urlParams_: make(gensupport.URLParams)}
+	c.bucket = bucket
+	c.urlParams_.Set("is_paused", fmt.Sprint(isPaused))
+	return c
+}
+
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *PauseCall) Fields(s ...googleapi.Field) *PauseCall {
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
+	return c
+}
+
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
+func (c *PauseCall) Context(ctx context.Context) *PauseCall {
+	c.ctx_ = ctx
+	return c
+}
+
+// Header returns an http.Header that can be modified by the caller to
+// add HTTP headers to the request.
+func (c *PauseCall) Header() http.Header {
+	if c.header_ == nil {
+		c.header_ = make(http.Header)
+	}
+	return c.header_
+}
+
+func (c *PauseCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	for k, v := range c.header_ {
+		reqHeaders[k] = v
+	}
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	var body io.Reader = nil
+	c.urlParams_.Set("alt", alt)
+	urls := googleapi.ResolveRelative(c.s.BasePath, "buckets/{bucket}/pause")
+	urls += "?" + c.urlParams_.Encode()
+	req, _ := http.NewRequest("POST", urls, body)
+	req.Header = reqHeaders
+	googleapi.Expand(req.URL, map[string]string{
+		"bucket": c.bucket,
+	})
+	return gensupport.SendRequest(c.ctx_, c.s.client, req)
+}
+
+// Do executes the "buildbucket.pause" call.
+// Exactly one of *ApiPauseResponse or error will be non-nil. Any
+// non-2xx status code is an error. Response headers are in either
+// *ApiPauseResponse.ServerResponse.Header or (if a response was
+// returned at all) in error.(*googleapi.Error).Header. Use
+// googleapi.IsNotModified to check whether the returned error was
+// because http.StatusNotModified was returned.
+func (c *PauseCall) Do(opts ...googleapi.CallOption) (*ApiPauseResponse, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
+	res, err := c.doRequest("json")
+	if res != nil && res.StatusCode == http.StatusNotModified {
+		if res.Body != nil {
+			res.Body.Close()
+		}
+		return nil, &googleapi.Error{
+			Code:   res.StatusCode,
+			Header: res.Header,
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	ret := &ApiPauseResponse{
+		ServerResponse: googleapi.ServerResponse{
+			Header:         res.Header,
+			HTTPStatusCode: res.StatusCode,
+		},
+	}
+	target := &ret
+	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Pauses or unpause a bucket.",
+	//   "httpMethod": "POST",
+	//   "id": "buildbucket.pause",
+	//   "parameterOrder": [
+	//     "bucket",
+	//     "is_paused"
+	//   ],
+	//   "parameters": {
+	//     "bucket": {
+	//       "location": "path",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "is_paused": {
+	//       "location": "query",
+	//       "required": true,
+	//       "type": "boolean"
+	//     }
+	//   },
+	//   "path": "buckets/{bucket}/pause",
+	//   "response": {
+	//     "$ref": "ApiPauseResponse"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
