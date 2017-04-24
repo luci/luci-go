@@ -64,7 +64,7 @@
         <span class="navbar-brand">
           <span id="progress-spinner" class="not-spinning">
             <a is="html5-history-anchor" pushstate popstate
-                href="[[rootPath]]">RPC Explorer</a>
+                href="[[explorerRootPath]]">RPC Explorer</a>
           </span>
         </span>
       </div>
@@ -82,15 +82,15 @@
     <ol class="breadcrumb">
       <li>
         <a is="html5-history-anchor" pushstate popstate
-            href="[[rootPath]]/services/">Home</a>
+            href="[[explorerRootPath]]/services/">Home</a>
       </li>
       <li hidden="[[!service]]">
         <a is="html5-history-anchor" pushstate popstate
-            href="[[rootPath]]/services/[[service]]/">[[service]]</a>
+            href="[[explorerRootPath]]/services/[[service]]/">[[service]]</a>
       </li>
       <li hidden="[[!method]]">
         <a is="html5-history-anchor" pushstate popstate
-            href="[[rootPath]]/services/[[service]]/[[method]]">
+            href="[[explorerRootPath]]/services/[[service]]/[[method]]">
           [[method]]
         </a>
       </li>
@@ -127,10 +127,10 @@
       is: 'rpc-explorer',
 
       properties: {
-        rootPath: {
+        explorerRootPath: {
           type: String,
           value: '',
-          observer: '_onRootPathChanged'
+          observer: '_onExplorerRootPathChanged'
         },
 
         clientId: String,
@@ -146,11 +146,11 @@
         }
       },
 
-      _onRootPathChanged: function (newVal) {
+      _onExplorerRootPathChanged: function (newVal) {
         // The app-router element does not like data-binding in its attributes
         // so we update their values manually.
-        var rootPath = newVal || '',
-            servicesPath = rootPath + '/services/',
+        var explorerRootPath = newVal || '',
+            servicesPath = explorerRootPath + '/services/',
             servicePath = servicesPath + ':service/',
             methodPath = servicePath + ':method';
         this.$.servicesRoute.setAttribute('path', servicesPath);
