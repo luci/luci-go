@@ -97,15 +97,24 @@ func (e *Env) LoadSlice(s []string) {
 }
 
 // Set sets the supplied environment key and value.
-func (e *Env) Set(k, v string) {
+func (e *Env) Set(k, v string) { e.SetEntry(Join(k, v)) }
+
+// SetEntry sets the supplied environment to a "KEY[=VALUE]" entry.
+func (e *Env) SetEntry(entry string) {
 	if e.env == nil {
 		e.env = make(map[string]string)
 	}
-	e.env[e.normalizeKey(k)] = Join(k, v)
-}
 
-// SetEntry sets the supplied environment to a "KEY[=VALUE]" entry.
-func (e *Env) SetEntry(entry string) { e.Set(Split(entry)) }
+	// "entry" must be a well-formed "key=value" entry. If it doesn't have an "=",
+	// we will forcibly add one to make it well-formed.
+	if strings.IndexRune(entry, '=') < 0 {
+		entry += "="
+	}
+	k, _ := Split(entry)
+	if len(k) > 0 {
+		e.env[e.normalizeKey(k)] = entry
+	}
+}
 
 // Remove removes a value from the environment, returning true if the value was
 // present. If the value was missing, Remove returns false.
@@ -220,7 +229,7 @@ func Split(v string) (key, value string) {
 // Join creates an environment variable definition for the supplied key/value.
 func Join(k, v string) string {
 	if v == "" {
-		return k
+		return k + "="
 	}
 	return k + "=" + v
 }

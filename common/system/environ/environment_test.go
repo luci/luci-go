@@ -31,16 +31,14 @@ func TestEnvironmentConversion(t *testing.T) {
 			So(env, ShouldResemble, Env{
 				CaseInsensitive: true,
 				env: map[string]string{
-					"":    "",
-					"FOO": "FOO",
+					"FOO": "FOO=",
 					"BAR": "bar=baz",
 					"QUX": "qux=quux=quuuuuuux",
 				},
 			})
 
 			So(env.Sorted(), ShouldResemble, []string{
-				"",
-				"FOO",
+				"FOO=",
 				"bar=baz",
 				"qux=quux=quuuuuuux",
 			})
@@ -63,8 +61,7 @@ func TestEnvironmentConversion(t *testing.T) {
 			})
 			So(env, ShouldResemble, Env{
 				env: map[string]string{
-					"":    "",
-					"FOO": "FOO",
+					"FOO": "FOO=",
 					"BAR": "BAR=BAZ",
 					"bar": "bar=baz",
 					"qux": "qux=quux=quuuuuuux",
@@ -72,9 +69,8 @@ func TestEnvironmentConversion(t *testing.T) {
 			})
 
 			So(env.Sorted(), ShouldResemble, []string{
-				"",
 				"BAR=BAZ",
-				"FOO",
+				"FOO=",
 				"bar=baz",
 				"qux=quux=quuuuuuux",
 			})
@@ -167,7 +163,7 @@ func TestEnvironmentManipulation(t *testing.T) {
 			So(env.Sorted(), ShouldResemble, []string{
 				"PYTHONPATH=/override:/foo:/bar:/baz",
 				"http_proxy=http://example.com",
-				"novalue",
+				"novalue=",
 			})
 
 			// Use a different-case key, and confirm that it still updated correctly.
@@ -177,7 +173,7 @@ func TestEnvironmentManipulation(t *testing.T) {
 				env.Set("pYtHoNpAtH", "/override:"+v)
 				So(env.Sorted(), ShouldResemble, []string{
 					"http_proxy=http://example.com",
-					"novalue",
+					"novalue=",
 					"pYtHoNpAtH=/override:/foo:/bar:/baz",
 				})
 				So(env.GetEmpty("PYTHONPATH"), ShouldEqual, "/override:/foo:/bar:/baz")
@@ -185,7 +181,7 @@ func TestEnvironmentManipulation(t *testing.T) {
 				So(env.Remove("HTTP_PROXY"), ShouldBeTrue)
 				So(env.Remove("nonexistent"), ShouldBeFalse)
 				So(env.Sorted(), ShouldResemble, []string{
-					"novalue",
+					"novalue=",
 					"pYtHoNpAtH=/override:/foo:/bar:/baz",
 				})
 
@@ -193,7 +189,7 @@ func TestEnvironmentManipulation(t *testing.T) {
 				So(orig.Sorted(), ShouldResemble, []string{
 					"PYTHONPATH=/foo:/bar:/baz",
 					"http_proxy=http://example.com",
-					"novalue",
+					"novalue=",
 				})
 			})
 		})
