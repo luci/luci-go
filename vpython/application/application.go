@@ -88,13 +88,7 @@ func (cfg *Config) mainDev(c context.Context, args []string) error {
 			c := c
 
 			// Install our Config instance into the Context.
-			c = withConfig(c, cfg)
-
-			// Drop down to Info level debugging.
-			if logging.GetLevel(c) > logging.Info {
-				c = logging.SetLevel(c, logging.Info)
-			}
-			return c
+			return withConfig(c, cfg)
 		},
 		Commands: []*subcommands.Command{
 			subcommands.CmdHelp,
