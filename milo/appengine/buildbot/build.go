@@ -59,7 +59,7 @@ func result2Status(s *int) (status resp.Status) {
 	case 3:
 		status = resp.NotRun // Skipped
 	case 4:
-		status = resp.InfraFailure // Exception
+		status = resp.Exception
 	case 5:
 		status = resp.WaitingDependency // Retry
 	default:

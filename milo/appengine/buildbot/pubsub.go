@@ -206,7 +206,7 @@ func expireBuild(c context.Context, b *buildbotBuild) error {
 	if b.TimeStamp != nil {
 		finished = float64(*b.TimeStamp)
 	}
-	results := int(4) // InfraFailure
+	results := int(4) // Exception
 	b.Times[1] = &finished
 	b.Finished = true
 	b.Results = &results

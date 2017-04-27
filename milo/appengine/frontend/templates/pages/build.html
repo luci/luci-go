@@ -1,6 +1,8 @@
 {{define "title"}}
   {{ with .Build.Summary -}}
     {{ if eq .Status.String "InfraFailure" }}
+      Infra Failure
+    {{ else if eq .Status.String "Exception" }}
       Exception
     {{ else if eq .Status.String "Failure" }}
       Failed
@@ -21,6 +23,7 @@
   {{- if eq . "Running" -}} yellow
   {{- else if eq . "Success" -}} green
   {{- else if eq . "InfraFailure" -}} purple
+  {{- else if eq . "Exception" -}} purple
   {{- else if eq . "Expired" -}} darkpurple
   {{- else if eq . "Failure" -}} red
   {{- else if eq . "NotRun" -}} gray
@@ -62,6 +65,8 @@
           <p class="success result">Build Successful
         {{ else if eq .Status.String "InfraFailure" }}
           <p class="exception result">Internal Failure
+        {{ else if eq .Status.String "Exception" }}
+          <p class="exception result">Exception
         {{ else if eq .Status.String "Expired" }}
           <p class="expired result">Internal Failure - Expired
         {{ else if eq .Status.String "Failure" }}

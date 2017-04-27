@@ -84,6 +84,8 @@
           <td class="status-Failure">Failed</td>
         {{ else if eq .Status.String "InfraFailure" }}
           <td class="status-Exception">Infra Failure</td>
+        {{ else if eq .Status.String "Exception" }}
+          <td class="status-Exception">Exception</td>
         {{ else }}
           <td> {{ .Status.String }} </td>
         {{ end }}

@@ -132,6 +132,10 @@ const (
 	// InfraFailure if the component has finished incompletely due to a failure in infra.
 	InfraFailure // A100 Purple
 
+	// Exception if the component has finished incompletely and unexpectedly. This
+	// is used for buildbot builds.
+	Exception // A100 Purple
+
 	// Expired if the component was never scheduled due to resource exhaustion.
 	Expired // A200 Purple
 
