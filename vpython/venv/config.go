@@ -70,6 +70,10 @@ type Config struct {
 	// what is allowed by the operating system.
 	MaxScriptPathLen int
 
+	// si is the system Python interpreter. It is resolved during
+	// "resolvePythonInterpreter".
+	si *python.Interpreter
+
 	// testPreserveInstallationCapability is a testing parameter. If true, the
 	// VirtualEnv's ability to install will be preserved after the setup. This is
 	// used by the test whell generation bootstrap code.
@@ -220,25 +224,24 @@ func (cfg *Config) resolvePythonInterpreter(c context.Context, s *vpython.Spec) 
 			Err()
 	}
 
-	var i *python.Interpreter
 	if cfg.Python == "" {
 		// No explicitly-specified Python path. Determine one based on the
 		// specification.
-		if i, err = python.Find(c, specVers); err != nil {
+		if cfg.si, err = python.Find(c, specVers); err != nil {
 			return errors.Annotate(err).Reason("could not find Python for: %(vers)s").
 				D("vers", specVers).
 				Err()
 		}
-		cfg.Python = i.Python
+		cfg.Python = cfg.si.Python
 	} else {
-		i = &python.Interpreter{
+		cfg.si = &python.Interpreter{
 			Python: cfg.Python,
 		}
 	}
 
 	// Confirm that the version of the interpreter matches that which is
 	// expected.
-	interpreterVers, err := i.GetVersion(c)
+	interpreterVers, err := cfg.si.GetVersion(c)
 	if err != nil {
 		return errors.Annotate(err).Reason("failed to determine Python version for: %(python)s").
 			D("python", cfg.Python).
@@ -262,14 +265,4 @@ func (cfg *Config) resolvePythonInterpreter(c context.Context, s *vpython.Spec) 
 	return nil
 }
 
-func (cfg *Config) systemInterpreter() *python.Command {
-	if cfg.Python == "" {
-		return nil
-	}
-	i := python.Interpreter{
-		Python: cfg.Python,
-	}
-	cmd := i.Command()
-	cmd.Isolated = true
-	return cmd
-}
+func (cfg *Config) systemInterpreter() *python.Interpreter { return cfg.si }

@@ -227,12 +227,14 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 		// required for building wheels, and not necessarily present in their
 		// expected forms on all systems.
 		err := With(ctx, cfg, true, func(ctx context.Context, env *Env) error {
-			cmd := env.InterpreterCommand()
-			cmd.WorkDir = srcDir
-			err := cmd.Run(ctx, "setup.py", "--no-user-cfg", "bdist_wheel",
+			cmd := env.Interpreter().IsolatedCommand(ctx,
+				"setup.py",
+				"--no-user-cfg",
+				"bdist_wheel",
 				"--bdist-dir", buildDir,
 				"--dist-dir", distDir)
-			if err != nil {
+			cmd.Dir = srcDir
+			if err := cmd.Run(); err != nil {
 				return errors.Annotate(err).Reason("failed to build wheel").Err()
 			}
 			return nil

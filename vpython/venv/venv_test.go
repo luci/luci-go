@@ -158,8 +158,8 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 		err := With(c, config, false, func(c context.Context, v *Env) error {
 			testScriptPath := filepath.Join(testDataDir, "setup_check.py")
 			checkOut := filepath.Join(tdir, "output.json")
-			i := v.InterpreterCommand()
-			So(i.Run(c, testScriptPath, "--json-output", checkOut), ShouldBeNil)
+			cmd := v.Interpreter().IsolatedCommand(c, testScriptPath, "--json-output", checkOut)
+			So(cmd.Run(), ShouldBeNil)
 
 			var m setupCheckManifest
 			So(loadJSON(checkOut, &m), ShouldBeNil)

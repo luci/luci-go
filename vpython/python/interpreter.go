@@ -5,13 +5,11 @@
 package python
 
 import (
-	"os"
 	"os/exec"
 	"strings"
 	"sync"
 
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
 
 	"golang.org/x/net/context"
 )
@@ -29,27 +27,37 @@ type Interpreter struct {
 	cachedVersion   *Version
 	cachedVersionMu sync.Mutex
 
-	// testRunner is the runner function to use to run an exec.Cmd. This can be
-	// swapped out for testing.
-	testRunner runnerFunc
+	// testCommandHook, if not nil, is called on generated Command results prior
+	// to returning them.
+	testCommandHook func(*exec.Cmd)
 }
 
-// Command returns a configurable command structure bound to this Interpreter.
-func (i *Interpreter) Command() *Command {
-	return &Command{
-		Python:     i.Python,
-		testRunner: i.testRunner,
+// IsolatedCommand returns a configurable exec.Cmd structure bound to this
+// Interpreter.
+//
+// The supplied arguments have several Python isolation flags prepended to them
+// to remove environmental factors such as:
+//	- The user's "site.py".
+//	- The current PYTHONPATH environment variable.
+//	- Compiled ".pyc/.pyo" files.
+func (i *Interpreter) IsolatedCommand(c context.Context, args ...string) *exec.Cmd {
+	// Isolate the supplied arguments.
+	args = append([]string{
+		"-B", // Don't compile "pyo" binaries.
+		"-E", // Don't use PYTHON* enviornment variables.
+		"-s", // Don't use user 'site.py'.
+	}, args...)
+
+	cmd := exec.CommandContext(c, i.Python, args...)
+	if i.testCommandHook != nil {
+		i.testCommandHook(cmd)
 	}
+	return cmd
 }
 
 // GetVersion runs the specified Python interpreter with the "--version"
 // flag and maps it to a known specification verison.
 func (i *Interpreter) GetVersion(c context.Context) (v Version, err error) {
-	if i.Python == "" {
-		err = errors.New("missing Python interpreter")
-		return
-	}
-
 	i.cachedVersionMu.Lock()
 	defer i.cachedVersionMu.Unlock()
 
@@ -61,19 +69,14 @@ func (i *Interpreter) GetVersion(c context.Context) (v Version, err error) {
 
 	// We use CombinedOutput here becuase Python2 writes the version to STDERR,
 	// while Python3+ writes it to STDOUT.
-	cmd := exec.CommandContext(c, i.Python, "--version")
-
-	rf := i.testRunner
-	if rf == nil {
-		rf = defaultRunnerFunc
-	}
-
-	out, err := rf(cmd, true)
+	cmd := i.IsolatedCommand(c, "--version")
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		err = errors.Annotate(err).Reason("failed to get Python version").Err()
+		err = errors.Annotate(err).Err()
 		return
 	}
-	if v, err = parseVersionOutput(strings.TrimSpace(out)); err != nil {
+
+	if v, err = parseVersionOutput(strings.TrimSpace(string(out))); err != nil {
 		err = errors.Annotate(err).Err()
 		return
 	}
@@ -100,107 +103,4 @@ func parseVersionOutput(output string) (Version, error) {
 		return v, err
 	}
 	return v, nil
-}
-
-// Command can run Python commands using an Interpreter.
-//
-// It is created using an Interpreter's Command method.
-type Command struct {
-	// Python is the path to the Python interpreter to use. It is automatically
-	// populated from an Interpreter when created through an Interpreter's Command
-	// method.
-	Python string
-
-	// WorkDir is the working directory to use when running the interpreter. If
-	// empty, the current working directory will be used.
-	WorkDir string
-
-	// Isolated means that the Python invocation should include flags to isolate
-	// it from local system modification.
-	//
-	// This removes environmental factors such as:
-	// - The user's "site.py".
-	// - The current PYTHONPATH environment variable.
-	// - Compiled ".pyc/.pyo" files.
-	Isolated bool
-
-	// Env, if not nil, is the environment to supply.
-	Env []string
-
-	// testRunner is the runner function to use to run an exec.Cmd. This can be
-	// swapped out for testing.
-	testRunner runnerFunc
-}
-
-// Prepare generates an exec.Cmd with the Command's configuration.
-func (ic *Command) Prepare(c context.Context, args ...string) (*exec.Cmd, error) {
-	if ic.Python == "" {
-		return nil, errors.New("a Python interpreter must be supplied")
-	}
-
-	if ic.Isolated {
-		args = append([]string{
-			"-B", // Don't compile "pyo" binaries.
-			"-E", // Don't use PYTHON* enviornment variables.
-			"-s", // Don't use user 'site.py'.
-		}, args...)
-	}
-
-	cmd := exec.CommandContext(c, ic.Python, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Dir = ic.WorkDir
-	cmd.Env = ic.Env
-
-	return cmd, nil
-}
-
-// Run runs the configured Command with the supplied arguments.
-//
-// Run returns wrapped errors. Use errors.Unwrap to get the main cause, if
-// needed. If an error occurs during setup or invocation, including an exit
-// code related error, it will be returned, possibly wrapped. If the interpreter
-// runs and returns zero, nil will be returned.
-func (ic *Command) Run(c context.Context, args ...string) error {
-	cmd, err := ic.Prepare(c, args...)
-	if err != nil {
-		return errors.Annotate(err).Err()
-	}
-
-	if logging.IsLogging(c, logging.Debug) {
-		logging.Debugf(c, "Running Python command (cwd=%s): %s",
-			cmd.Dir, strings.Join(cmd.Args, " "))
-	}
-
-	// Allow testing to supply an alternative runner function.
-	rf := ic.testRunner
-	if rf == nil {
-		rf = defaultRunnerFunc
-	}
-
-	if _, err := rf(cmd, false); err != nil {
-		return errors.Annotate(err).Reason("failed to run Python command").
-			D("python", ic.Python).
-			D("args", args).
-			Err()
-	}
-	return nil
-}
-
-func defaultRunnerFunc(cmd *exec.Cmd, capture bool) (string, error) {
-	// If we're capturing output, combine STDOUT and STDERR (see GetVersion
-	// for details).
-	if capture {
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			return "", errors.Annotate(err).Err()
-		}
-		return string(out), nil
-	}
-
-	// Non-capturing run.
-	if err := cmd.Run(); err != nil {
-		return "", errors.Annotate(err).Err()
-	}
-	return "", nil
 }

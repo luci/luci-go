@@ -10,11 +10,26 @@ import (
 	"os/exec"
 	"testing"
 
+	"github.com/luci/luci-go/common/system/environ"
+
 	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+const testGetVersionENV = "_VPYTHON_TEST_GET_VERSION"
+
+// Setup for TestInterpreterGetVersion.
+func init() {
+	if v, ok := os.LookupEnv(testGetVersionENV); ok {
+		rc := 0
+		if _, err := os.Stdout.WriteString(v); err != nil {
+			rc = 1
+		}
+		os.Exit(rc)
+	}
+}
 
 func TestParsePythonCommandLine(t *testing.T) {
 	t.Parallel()
@@ -96,6 +111,37 @@ func TestParsePythonCommandLine(t *testing.T) {
 func TestInterpreter(t *testing.T) {
 	t.Parallel()
 
+	self, err := os.Executable()
+	if err != nil {
+		t.Fatalf("failed to get executable name: %s", err)
+	}
+
+	Convey(`A Python interpreter`, t, func() {
+		c := context.Background()
+
+		i := Interpreter{
+			Python: self,
+		}
+
+		Convey(`Testing IsolatedCommand`, func() {
+			cmd := i.IsolatedCommand(c, "foo", "bar")
+			So(cmd.Args, ShouldResemble, []string{self, "-B", "-E", "-s", "foo", "bar"})
+		})
+
+	})
+}
+
+func TestInterpreterGetVersion(t *testing.T) {
+	t.Parallel()
+
+	// For this test, we use our test binary as the executable and install an
+	// "init" hook to get it to dump its version.
+	self, err := os.Executable()
+	if err != nil {
+		t.Fatalf("failed to get executable: %s", err)
+	}
+	versionString := ""
+
 	versionSuccesses := []struct {
 		output string
 		vers   Version
@@ -115,96 +161,36 @@ func TestInterpreter(t *testing.T) {
 		{"Python 3.1.2.3.4", "failed to parse version"},
 	}
 
-	Convey(`A Python interpreter`, t, func() {
+	Convey(`Testing Interpreter.GetVersion`, t, func() {
 		c := context.Background()
 
-		var (
-			runnerOutput string
-			runnerErr    error
-			lastCmd      *exec.Cmd
-		)
 		i := Interpreter{
-			testRunner: func(cmd *exec.Cmd, capture bool) (string, error) {
-				// Sanitize exec.Cmd to exclude its private members for comparison.
-				lastCmd = &exec.Cmd{
-					Path:   cmd.Path,
-					Args:   cmd.Args,
-					Stdin:  cmd.Stdin,
-					Stdout: cmd.Stdout,
-					Stderr: cmd.Stderr,
-					Env:    cmd.Env,
-					Dir:    cmd.Dir,
-				}
-				return runnerOutput, runnerErr
+			Python: self,
+
+			testCommandHook: func(cmd *exec.Cmd) {
+				var env environ.Env
+				env.Set(testGetVersionENV, versionString)
+				cmd.Env = env.Sorted()
 			},
 		}
 
-		Convey(`Will error if no Python interpreter is supplied.`, func() {
-			So(i.Command().Run(c, "foo", "bar"), ShouldErrLike, "a Python interpreter must be supplied")
-		})
+		for _, tc := range versionSuccesses {
+			Convey(fmt.Sprintf(`Can successfully parse %q => %s`, tc.output, tc.vers), func() {
+				versionString = tc.output
 
-		Convey(`With a Python interpreter installed`, func() {
-			i.Python = "/path/to/python"
-
-			Convey(`Testing Run`, func() {
-				cmd := i.Command()
-
-				Convey(`Can run a command.`, func() {
-					So(cmd.Run(c, "foo", "bar"), ShouldBeNil)
-					So(lastCmd, ShouldResemble, &exec.Cmd{
-						Path:   "/path/to/python",
-						Args:   []string{"/path/to/python", "foo", "bar"},
-						Stdout: os.Stdout,
-						Stderr: os.Stderr,
-					})
-				})
-
-				Convey(`Can run an isolated environment command.`, func() {
-					cmd.Isolated = true
-
-					So(cmd.Run(c, "foo", "bar"), ShouldBeNil)
-					So(lastCmd, ShouldResemble, &exec.Cmd{
-						Path:   "/path/to/python",
-						Args:   []string{"/path/to/python", "-B", "-E", "-s", "foo", "bar"},
-						Stdout: os.Stdout,
-						Stderr: os.Stderr,
-					})
-				})
-
-				Convey(`Will forward a working directory and enviornment`, func() {
-					cmd.WorkDir = "zugzug"
-					cmd.Env = []string{"pants=on"}
-
-					So(cmd.Run(c, "foo", "bar"), ShouldBeNil)
-					So(lastCmd, ShouldResemble, &exec.Cmd{
-						Path:   "/path/to/python",
-						Args:   []string{"/path/to/python", "foo", "bar"},
-						Stdout: os.Stdout,
-						Stderr: os.Stderr,
-						Env:    []string{"pants=on"},
-						Dir:    "zugzug",
-					})
-				})
+				vers, err := i.GetVersion(c)
+				So(err, ShouldBeNil)
+				So(vers, ShouldResemble, tc.vers)
 			})
+		}
 
-			Convey(`Testing GetVersion`, func() {
-				for _, tc := range versionSuccesses {
-					Convey(fmt.Sprintf(`Can successfully parse %q => %s`, tc.output, tc.vers), func() {
-						runnerOutput = tc.output
-						vers, err := i.GetVersion(c)
-						So(err, ShouldBeNil)
-						So(vers, ShouldResemble, tc.vers)
-					})
-				}
+		for _, tc := range versionFailures {
+			Convey(fmt.Sprintf(`Will fail to parse %q (%s)`, tc.output, tc.err), func() {
+				versionString = tc.output
 
-				for _, tc := range versionFailures {
-					Convey(fmt.Sprintf(`Will fail to parse %q (%s)`, tc.output, tc.err), func() {
-						runnerOutput = tc.output
-						_, err := i.GetVersion(c)
-						So(err, ShouldErrLike, tc.err)
-					})
-				}
+				_, err := i.GetVersion(c)
+				So(err, ShouldErrLike, tc.err)
 			})
-		})
+		}
 	})
 }

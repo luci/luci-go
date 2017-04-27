@@ -75,18 +75,14 @@ func Run(c context.Context, opts Options) error {
 		prefixPATH(e, ve.BinDir)
 
 		// Run our bootstrapped Python command.
-		cmd := ve.InterpreterCommand()
-		cmd.WorkDir = opts.WorkDir
-		cmd.Isolated = true
+		cmd := ve.Interpreter().IsolatedCommand(c, opts.Args...)
+		cmd.Dir = opts.WorkDir
 		cmd.Env = e.Sorted()
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 
-		pythonCmd, err := cmd.Prepare(c, opts.Args...)
-		if err != nil {
-			return errors.Annotate(err).Reason("failed to prepare command").Err()
-		}
-		pythonCmd.Stdin = os.Stdin
-
-		if err := runAndForwardSignals(c, pythonCmd, cancelFunc); err != nil {
+		if err := runAndForwardSignals(c, cmd, cancelFunc); err != nil {
 			return errors.Annotate(err).Reason("failed to execute bootstrapped Python").Err()
 		}
 		return nil

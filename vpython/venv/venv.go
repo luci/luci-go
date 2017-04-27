@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -180,6 +181,11 @@ type Env struct {
 	// completeFlagPath is the path to this Env's complete flag.
 	// It will be at "<Root>/complete.flag".
 	completeFlagPath string
+	// interpreter is the VirtualEnv Python interpreter.
+	//
+	// It is configured to use the Python member as its base executable, and is
+	// initialized on first call to Interpreter.
+	interpreter *python.Interpreter
 }
 
 func (e *Env) setupImpl(c context.Context, blocking bool) error {
@@ -280,15 +286,14 @@ func (e *Env) withImpl(c context.Context, blocking bool, fn func(context.Context
 	return fn(c, e)
 }
 
-// InterpreterCommand returns a Python interpreter Command pointing to the
-// VirtualEnv's Python installation.
-func (e *Env) InterpreterCommand() *python.Command {
-	i := python.Interpreter{
-		Python: e.Python,
+// Interpreter returns the VirtualEnv's isolated Python Interpreter instance.
+func (e *Env) Interpreter() *python.Interpreter {
+	if e.interpreter == nil {
+		e.interpreter = &python.Interpreter{
+			Python: e.Python,
+		}
 	}
-	cmd := i.Command()
-	cmd.Isolated = true
-	return cmd
+	return e.interpreter
 }
 
 func (e *Env) withLockNonBlocking(fn func() error) error {
@@ -468,13 +473,13 @@ func (e *Env) installVirtualEnv(c context.Context, pkgDir string) error {
 	}
 
 	logging.Debugf(c, "Creating VirtualEnv at: %s", e.Root)
-	i := e.Config.systemInterpreter()
-	i.WorkDir = matches[0]
-	err = i.Run(c,
+	cmd := e.Config.systemInterpreter().IsolatedCommand(c,
 		"virtualenv.py",
 		"--no-download",
 		e.Root)
-	if err != nil {
+	cmd.Dir = matches[0]
+	attachOutputForLogging(c, logging.Debug, cmd)
+	if err := cmd.Run(); err != nil {
 		return errors.Annotate(err).Reason("failed to create VirtualEnv").Err()
 	}
 
@@ -495,14 +500,13 @@ func (e *Env) getPEP425Tags(c context.Context) ([]*vpython.Environment_Pep425Tag
 		`sys.stdout.write(json.dumps(pip.pep425tags.get_supported()))`
 	type pep425TagEntry []string
 
-	cmd, err := e.venvInterpreter().Prepare(c, "-c", script)
-	if err != nil {
-		return nil, err
-	}
+	cmd := e.Interpreter().IsolatedCommand(c, "-c", script)
 
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
-	if err = cmd.Run(); err != nil {
+
+	attachOutputForLogging(c, logging.Debug, cmd)
+	if err := cmd.Run(); err != nil {
 		return nil, errors.Annotate(err).Reason("failed to get PEP425 tags").Err()
 	}
 
@@ -555,8 +559,7 @@ func (e *Env) installWheels(c context.Context, bootstrapDir, pkgDir string) erro
 		return errors.Annotate(err).Reason("failed to render requirements file").Err()
 	}
 
-	cmd := e.venvInterpreter()
-	err = cmd.Run(c,
+	cmd := e.Interpreter().IsolatedCommand(c,
 		"-m", "pip",
 		"install",
 		"--use-wheel",
@@ -564,7 +567,8 @@ func (e *Env) installWheels(c context.Context, bootstrapDir, pkgDir string) erro
 		"--no-index",
 		"--find-links", pkgDir,
 		"--requirement", reqPath)
-	if err != nil {
+	attachOutputForLogging(c, logging.Debug, cmd)
+	if err := cmd.Run(); err != nil {
 		return errors.Annotate(err).Reason("failed to install wheels").Err()
 	}
 	return nil
@@ -574,14 +578,14 @@ func (e *Env) finalize(c context.Context) error {
 	// Uninstall "pip" and "wheel", preventing (easy) augmentation of the
 	// environment.
 	if !e.Config.testPreserveInstallationCapability {
-		cmd := e.venvInterpreter()
-		err := cmd.Run(c,
+		cmd := e.Interpreter().IsolatedCommand(c,
 			"-m", "pip",
 			"uninstall",
 			"--quiet",
 			"--yes",
 			"pip", "wheel")
-		if err != nil {
+		attachOutputForLogging(c, logging.Debug, cmd)
+		if err := cmd.Run(); err != nil {
 			return errors.Annotate(err).Reason("failed to install wheels").Err()
 		}
 	}
@@ -604,12 +608,6 @@ func (e *Env) finalize(c context.Context) error {
 		}
 	}
 	return nil
-}
-
-func (e *Env) venvInterpreter() *python.Command {
-	cmd := e.InterpreterCommand()
-	cmd.WorkDir = e.Root
-	return cmd
 }
 
 // touchCompleteFlagNonBlocking touches the complete flag, creating it and/or
@@ -686,6 +684,22 @@ func (e *Env) keepAliveMonitor(c context.Context, interval time.Duration, cancel
 			errors.Log(c, errors.Annotate(err).Reason("failed to refresh timestamp").Err())
 			cancelFunc()
 			return
+		}
+	}
+}
+
+func attachOutputForLogging(c context.Context, l logging.Level, cmd *exec.Cmd) {
+	if logging.IsLogging(c, logging.Info) {
+		logging.Infof(c, "Running Python command (cwd=%s): %s",
+			cmd.Dir, strings.Join(cmd.Args, " "))
+	}
+
+	if logging.IsLogging(c, l) {
+		if cmd.Stdout == nil {
+			cmd.Stdout = os.Stdout
+		}
+		if cmd.Stderr == nil {
+			cmd.Stderr = os.Stderr
 		}
 	}
 }
