@@ -30,6 +30,18 @@ import (
 	"github.com/luci/luci-go/common/system/filesystem"
 )
 
+const (
+	// VirtualEnvRootENV is an environment variable that, if set, will be used
+	// as the default VirtualEnv root.
+	//
+	// This value overrides the default (~/.vpython), but can be overridden by the
+	// "-root" flag.
+	//
+	// Like "-root", if this value is present but empty, a tempdir will be used
+	// for the VirtualEnv root.
+	VirtualEnvRootENV = "VPYTHON_VIRTUALENV_ROOT"
+)
+
 // ReturnCodeError is an error wrapping a return code value.
 type ReturnCodeError int
 
@@ -105,14 +117,10 @@ func (cfg *Config) mainImpl(c context.Context, args []string) error {
 		Level: logging.Warning,
 	}
 
-	hdir, err := homedir.Dir()
-	if err != nil {
-		return errors.Annotate(err).Reason("failed to get user home directory").Err()
-	}
-
+	env := environ.System()
 	cfg.opts = vpython.Options{
 		EnvConfig: venv.Config{
-			BaseDir:           filepath.Join(hdir, ".vpython"),
+			BaseDir:           "", // (Determined below).
 			MaxHashLen:        6,
 			Package:           cfg.VENVPackage,
 			PruneThreshold:    cfg.PruneThreshold,
@@ -121,8 +129,20 @@ func (cfg *Config) mainImpl(c context.Context, args []string) error {
 			Loader:            cfg.PackageLoader,
 		},
 		WaitForEnv: true,
-		Environ:    environ.System(),
+		Environ:    env,
 	}
+
+	// Determine our VirtualEnv base directory.
+	if v, ok := env.Get(VirtualEnvRootENV); ok {
+		cfg.opts.EnvConfig.BaseDir = v
+	} else {
+		hdir, err := homedir.Dir()
+		if err != nil {
+			return errors.Annotate(err).Reason("failed to get user home directory").Err()
+		}
+		cfg.opts.EnvConfig.BaseDir = filepath.Join(hdir, ".vpython")
+	}
+
 	var specPath string
 	var devMode bool
 

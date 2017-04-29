@@ -18,7 +18,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-var (
+const (
 	// EnvironmentStampPathENV is the exported environment variable for the
 	// environment stamp path.
 	//
