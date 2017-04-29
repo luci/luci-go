@@ -114,7 +114,7 @@ func (cfg *Config) mainDev(c context.Context, args []string) error {
 
 func (cfg *Config) mainImpl(c context.Context, args []string) error {
 	logConfig := logging.Config{
-		Level: logging.Warning,
+		Level: logging.Error,
 	}
 
 	env := environ.System()
@@ -218,7 +218,7 @@ func (cfg *Config) mainImpl(c context.Context, args []string) error {
 // Main is the main application entry point.
 func (cfg *Config) Main(c context.Context) int {
 	c = gologger.StdConfig.Use(c)
-	c = logging.SetLevel(c, logging.Warning)
+	c = logging.SetLevel(c, logging.Error)
 
 	return run(c, func(c context.Context) error {
 		return cfg.mainImpl(c, os.Args[1:])

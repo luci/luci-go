@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	lockHeldDelay            = 5 * time.Second
+	lockHeldDelay            = 10 * time.Millisecond
 	defaultKeepAliveInterval = 1 * time.Hour
 )
 
@@ -119,10 +119,13 @@ func getRuntimeEnvironment(c context.Context, blocking bool, cfg *Config) (*vpyt
 
 	// If we already have the environment specification for this environment, then
 	// load it.
-	switch err := e.LoadEnvironmentFromStamp(); {
+	switch err := e.AssertCompleteAndLoad(); {
 	case err != nil:
 		// Not a big deal, but
-		logging.WithError(err).Debugf(c, "Failed to load stamp file; performing full initialization.")
+		logging.Fields{
+			logging.ErrorKey: err,
+			"path":           e.EnvironmentStampPath,
+		}.Debugf(c, "Failed to load stamp file; performing full initialization.")
 
 	default:
 		logging.Debugf(c, "Loaded environment stamp from empty VirtualEnv: %s", e.Environment)
@@ -198,7 +201,7 @@ func (e *Env) setupImpl(c context.Context, blocking bool) error {
 		// manipulate Env will be forced to wait.
 		err := e.withLockNonBlocking(func() error {
 			// Check for completion flag.
-			if err := e.AssertComplete(); err != nil {
+			if err := e.AssertCompleteAndLoad(); err != nil {
 				logging.WithError(err).Debugf(c, "VirtualEnv is not complete.")
 
 				// No complete flag. Create a new VirtualEnv here.
@@ -213,7 +216,12 @@ func (e *Env) setupImpl(c context.Context, blocking bool) error {
 				}
 			} else {
 				// Fast path: if our complete flag is present, assume that the
-				// environment is setup and complete. No locking or additional work necessary.
+				// environment is setup and complete. No locking or additional work
+				// necessary.
+				//
+				// This will generally happen if another process created the environment
+				// in between when we checked for the completion stamp initially and
+				// when we actually obtained the lock.
 				logging.Debugf(c, "Completion flag found! Environment is set-up: %s", e.completeFlagPath)
 
 				// Mark that we care about this environment. This is non-fatal if it
@@ -230,12 +238,26 @@ func (e *Env) setupImpl(c context.Context, blocking bool) error {
 			return nil
 
 		case fslock.ErrLockHeld:
+			// Try again to load the environment stamp, asserting the existence of the
+			// completion flag in the process. If another process has created the
+			// environment, we may be able to use it without ever having to obtain
+			// its lock!
+			if err := e.AssertCompleteAndLoad(); err == nil {
+				logging.Infof(c, "Completion stamp was created while waiting for lock: %s", e.EnvironmentStampPath)
+				return nil
+			}
+
+			logging.Fields{
+				logging.ErrorKey: err,
+				"path":           e.EnvironmentStampPath,
+			}.Debugf(c, "Lock is held, and environment is not complete.")
+
 			if !blocking {
 				return errors.Annotate(err).Reason("VirtualEnv lock is currently held (non-blocking)").Err()
 			}
 
 			// Some other process holds the lock. Sleep a little and retry.
-			logging.Warningf(c, "VirtualEnv lock is currently held. Retrying after delay (%s)...", lockHeldDelay)
+			logging.Infof(c, "VirtualEnv lock is currently held. Retrying after delay (%s)...", lockHeldDelay)
 			if tr := clock.Sleep(c, lockHeldDelay); tr.Incomplete() {
 				return tr.Err
 			}
@@ -318,19 +340,6 @@ func (e *Env) Delete(c context.Context) error {
 	return nil
 }
 
-// AssertComplete returns an error if the environment's completion flag does not
-// exist.
-func (e *Env) AssertComplete() error {
-	switch _, err := os.Stat(e.completeFlagPath); {
-	case filesystem.IsNotExist(err):
-		return errors.New("environment is not complete")
-	case err != nil:
-		return errors.Annotate(err).Reason("failed to check for completion flag").Err()
-	default:
-		return nil
-	}
-}
-
 // WriteEnvironmentStamp writes a text protobuf form of spec to path.
 func (e *Env) WriteEnvironmentStamp() error {
 	environment := e.Environment
@@ -340,12 +349,19 @@ func (e *Env) WriteEnvironmentStamp() error {
 	return writeTextProto(e.EnvironmentStampPath, environment)
 }
 
-// LoadEnvironmentFromStamp loads this environment's environment stamp from its
-// EnvironmentStampPath.
-func (e *Env) LoadEnvironmentFromStamp() error {
+// AssertCompleteAndLoad asserts that the VirtualEnv's completion
+// flag exists. If it does, the environment's stamp is loaded into e.Environment
+// and nil is returned.
+//
+// An error is returned if the completion flag does not exist, or if the
+// VirtualEnv environment stamp could not be loaded.
+func (e *Env) AssertCompleteAndLoad() error {
 	// Ensure that the environment has its completion flag.
-	if err := e.AssertComplete(); err != nil {
-		return err
+	switch _, err := os.Stat(e.completeFlagPath); {
+	case filesystem.IsNotExist(err):
+		return errors.New("environment is not complete")
+	case err != nil:
+		return errors.Annotate(err).Reason("failed to check for completion flag").Err()
 	}
 
 	content, err := ioutil.ReadFile(e.EnvironmentStampPath)

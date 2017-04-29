@@ -6,6 +6,7 @@ package venv
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -15,6 +16,9 @@ import (
 	"github.com/luci/luci-go/vpython/python"
 
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/logging/gologger"
+	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/common/system/filesystem"
 	"github.com/luci/luci-go/common/testing/testfs"
 
@@ -24,13 +28,24 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+var verbose = flag.Bool("test.gologger", false, "Enable Go logging.")
+
+func testContext() context.Context {
+	c := context.Background()
+	if *verbose {
+		c = gologger.StdConfig.Use(c)
+		c = logging.SetLevel(c, logging.Debug)
+	}
+	return c
+}
+
 type resolvedInterpreter struct {
 	py      *python.Interpreter
 	version python.Version
 }
 
 func resolveFromPath(vers python.Version) *resolvedInterpreter {
-	c := context.Background()
+	c := testContext()
 	py, err := python.Find(c, vers)
 	if err != nil {
 		return nil
@@ -58,7 +73,7 @@ func TestResolvePythonInterpreter(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Resolving a Python interpreter`, t, func() {
-		c := context.Background()
+		c := testContext()
 		cfg := Config{}
 		s := vpython.Spec{}
 
@@ -128,13 +143,17 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 		t.Skipf("No python interpreter found.")
 	}
 
-	tl, err := loadTestEnvironment(context.Background(), t)
+	tl, err := loadTestEnvironment(testContext(), t)
 	if err != nil {
 		t.Fatalf("could not set up test loader for %q: %s", ri.py.Python, err)
 	}
 
-	Convey(`Testing Setup`, t, testfs.MustWithTempDir(t, "vpython", func(tdir string) {
-		c := context.Background()
+	Convey(`Testing the VirtualEnv`, t, testfs.MustWithTempDir(t, "vpython", func(tdir string) {
+		c := testContext()
+
+		// Load the bootstrap wheels for the next part of the test.
+		So(tl.ensureWheels(c, t, ri.py, tdir), ShouldBeNil)
+
 		config := Config{
 			BaseDir:    tdir,
 			MaxHashLen: 4,
@@ -143,46 +162,80 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 				Version: "unresolved",
 			},
 			Python: ri.py.Python,
+			Loader: tl,
 			Spec: &vpython.Spec{
 				Wheel: []*vpython.Spec_Package{
 					{Name: "foo/bar/shirt", Version: "unresolved"},
 					{Name: "foo/bar/pants", Version: "unresolved"},
 				},
 			},
-			Loader: tl,
 		}
 
-		// Load the bootstrap wheels for the next part of the test.
-		So(tl.ensureWheels(c, t, ri.py, tdir), ShouldBeNil)
+		Convey(`Testing Setup`, func() {
+			err := With(c, config, false, func(c context.Context, v *Env) error {
+				testScriptPath := filepath.Join(testDataDir, "setup_check.py")
+				checkOut := filepath.Join(tdir, "output.json")
+				cmd := v.Interpreter().IsolatedCommand(c, testScriptPath, "--json-output", checkOut)
+				So(cmd.Run(), ShouldBeNil)
 
-		err := With(c, config, false, func(c context.Context, v *Env) error {
-			testScriptPath := filepath.Join(testDataDir, "setup_check.py")
-			checkOut := filepath.Join(tdir, "output.json")
-			cmd := v.Interpreter().IsolatedCommand(c, testScriptPath, "--json-output", checkOut)
-			So(cmd.Run(), ShouldBeNil)
+				var m setupCheckManifest
+				So(loadJSON(checkOut, &m), ShouldBeNil)
+				So(m.Interpreter, ShouldStartWith, v.Root)
+				So(m.Pants, ShouldStartWith, v.Root)
+				So(m.Shirt, ShouldStartWith, v.Root)
+				So(v.Environment, ShouldNotBeNil)
 
-			var m setupCheckManifest
-			So(loadJSON(checkOut, &m), ShouldBeNil)
-			So(m.Interpreter, ShouldStartWith, v.Root)
-			So(m.Pants, ShouldStartWith, v.Root)
-			So(m.Shirt, ShouldStartWith, v.Root)
-			So(v.Environment, ShouldNotBeNil)
+				// We should be able to load its environment stamp.
+				v.Environment = nil
+				So(v.AssertCompleteAndLoad(), ShouldBeNil)
+				So(v.Environment, ShouldNotBeNil)
+				So(len(v.Environment.Pep425Tag), ShouldBeGreaterThan, 0)
+				So(v.Environment.Spec, ShouldNotBeNil)
+				So(len(v.Environment.Spec.Wheel), ShouldEqual, len(config.Spec.Wheel))
+				So(v.Environment.Spec.Virtualenv, ShouldNotBeNil)
+				So(v.Environment.Spec.PythonVersion, ShouldNotEqual, "")
 
-			// We should be able to load its environment stamp.
-			v.Environment = nil
-			So(v.LoadEnvironmentFromStamp(), ShouldBeNil)
-			So(v.Environment, ShouldNotBeNil)
-			So(len(v.Environment.Pep425Tag), ShouldBeGreaterThan, 0)
-			So(v.Environment.Spec, ShouldNotBeNil)
-			So(len(v.Environment.Spec.Wheel), ShouldEqual, len(config.Spec.Wheel))
-			So(v.Environment.Spec.Virtualenv, ShouldNotBeNil)
-			So(v.Environment.Spec.PythonVersion, ShouldNotEqual, "")
-
-			// We should be able to delete it.
-			So(v.Delete(c), ShouldBeNil)
-			return nil
+				// We should be able to delete it.
+				So(v.Delete(c), ShouldBeNil)
+				return nil
+			})
+			So(err, ShouldBeNil)
 		})
-		So(err, ShouldBeNil)
+
+		Convey(`Testing new environment setup race`, func() {
+			const workers = 4
+
+			envs := make([]*vpython.Environment, workers)
+			err := parallel.FanOutIn(func(taskC chan<- func() error) {
+				for i := 0; i < workers; i++ {
+					i := i
+
+					taskC <- func() error {
+						return With(c, config, true, func(c context.Context, v *Env) error {
+							// Has successfully loaded an Environment.
+							envs[i] = v.Environment
+
+							// Can use the Python interpreter.
+							if _, err := v.Interpreter().GetVersion(c); err != nil {
+								return err
+							}
+							return nil
+						})
+					}
+				}
+			})
+			So(err, ShouldBeNil)
+
+			// All Environments must be equal.
+			var archetype *vpython.Environment
+			for _, env := range envs {
+				if archetype == nil {
+					archetype = env
+				} else {
+					So(env, ShouldResemble, archetype)
+				}
+			}
+		})
 	}))
 }
 
@@ -194,7 +247,7 @@ func TestVirtualEnv(t *testing.T) {
 		ri   *resolvedInterpreter
 	}{
 		{"python27", python27},
-		{"python3", python3},
+		//{"python3", python3},
 	} {
 		tc := tc
 

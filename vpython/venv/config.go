@@ -151,6 +151,8 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 	// Ensure and normalize our specification file.
 	if cfg.Spec == nil {
 		cfg.Spec = &vpython.Spec{}
+	} else {
+		cfg.Spec = cfg.Spec.Clone()
 	}
 	if err := spec.Normalize(cfg.Spec, &cfg.Package); err != nil {
 		return nil, errors.Annotate(err).Reason("invalid specification").Err()
