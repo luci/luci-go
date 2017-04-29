@@ -510,7 +510,7 @@ func (e *Env) installVirtualEnv(c context.Context, pkgDir string) error {
 // getPEP425Tags calls Python's pip.pep425tags package to retrieve the tags.
 //
 // This must be run while "pip" is installed in the VirtualEnv.
-func (e *Env) getPEP425Tags(c context.Context) ([]*vpython.Environment_Pep425Tag, error) {
+func (e *Env) getPEP425Tags(c context.Context) ([]*vpython.Pep425Tag, error) {
 	// This script will return a list of 3-entry lists:
 	// [0]: version (e.g., "cp27")
 	// [1]: abi (e.g., "cp27mu", "none")
@@ -538,7 +538,7 @@ func (e *Env) getPEP425Tags(c context.Context) ([]*vpython.Environment_Pep425Tag
 			Err()
 	}
 
-	tags := make([]*vpython.Environment_Pep425Tag, len(tagEntries))
+	tags := make([]*vpython.Pep425Tag, len(tagEntries))
 	for i, te := range tagEntries {
 		if len(te) != 3 {
 			return nil, errors.Reason("invalid PEP425 tag entry: %(entry)v").
@@ -547,7 +547,7 @@ func (e *Env) getPEP425Tags(c context.Context) ([]*vpython.Environment_Pep425Tag
 				Err()
 		}
 
-		tags[i] = &vpython.Environment_Pep425Tag{
+		tags[i] = &vpython.Pep425Tag{
 			Version: te[0],
 			Abi:     te[1],
 			Arch:    te[2],

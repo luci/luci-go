@@ -10,13 +10,12 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/vpython/api/vpython"
+	"github.com/luci/luci-go/vpython/spec"
+
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
-
-	"github.com/luci/luci-go/vpython/api/vpython"
-	"github.com/luci/luci-go/vpython/spec"
-	"github.com/luci/luci-go/vpython/venv"
 )
 
 var subcommandVerify = &subcommands.Command{
@@ -51,31 +50,41 @@ func (cr *verifyCommandRun) Run(app subcommands.Application, args []string, env 
 		logging.Infof(c, "Successfully verified specification:\n%s", renderedSpec)
 
 		// Run our Verification generator and verify each generated environment.
-		if cfg.Verification != nil {
-			total := 0
-			var failures []string
-			cfg.Verification(c, func(c context.Context, title string, pl venv.PackageLoader, e *vpython.Environment) {
-				total++
-
-				// Augment this base environment with the current specification to
-				// resolve. We clone becauase Resolve mutates the supplied Environment,
-				// and we don't want to destroy our base data state.
-				e = e.Clone()
-				e.Spec = s.Clone()
-
-				if err := pl.Resolve(c, e); err != nil {
-					logging.Errorf(c, "Failed to resolve against %q: %s", title, err)
-					failures = append(failures, title)
+		if cfg.WithVerificationConfig != nil {
+			err := cfg.WithVerificationConfig(c, func(cfg Config, verificationScenarios []*vpython.Pep425Tag) error {
+				if len(s.VerifyPep425Tag) > 0 {
+					verificationScenarios = s.VerifyPep425Tag
 				}
+				if len(verificationScenarios) == 0 {
+					return nil
+				}
+
+				var failures []string
+				for _, vs := range verificationScenarios {
+					// Create a verification environment to pass to our package loader.
+					e := vpython.Environment{
+						Spec:      s.Clone(),
+						Pep425Tag: []*vpython.Pep425Tag{vs},
+					}
+
+					if err := cfg.PackageLoader.Resolve(c, &e); err != nil {
+						logging.Errorf(c, "Failed to resolve against %q: %s", vs.TagString(), err)
+						failures = append(failures, vs.TagString())
+					}
+				}
+
+				if len(failures) > 0 {
+					logging.Errorf(c, "Verification failed for %d scenario(s): %s\n%s",
+						len(failures), strings.Join(failures, ", "), renderedSpec)
+					return errors.New("verification failed")
+				}
+
+				logging.Infof(c, "Verified %d scenario(s).", len(verificationScenarios))
+				return nil
 			})
-
-			if len(failures) > 0 {
-				logging.Errorf(c, "Verification failed for %d scenario(s): %s\n%s",
-					len(failures), strings.Join(failures, ", "), renderedSpec)
-				return errors.New("verification failed")
+			if err != nil {
+				return err
 			}
-
-			logging.Infof(c, "Verified %d scenario(s).", total)
 		}
 
 		return nil

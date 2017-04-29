@@ -6,7 +6,10 @@ syntax = "proto3";
 
 package vpython;
 
+import "github.com/luci/luci-go/vpython/api/vpython/pep425.proto";
 
+
+// Spec is a "vpython" environment specification.
 message Spec {
   // The Python version to use. This should be of the form:
   // "Major[.Minor[.Patch]]"
@@ -43,4 +46,12 @@ message Spec {
   // This should be left empty to use the `vpython` default package
   // (recommended).
   Package virtualenv = 3;
+
+  // Specification-provided PEP425 verification tags.
+  //
+  // By default, verification will be performed against a default set of
+  // environment parameters. However, a given specification may offer its own
+  // set of PEP425 tags representing the systems that it wants to be verified
+  // against.
+  repeated vpython.Pep425Tag verify_pep425_tag = 4;
 }

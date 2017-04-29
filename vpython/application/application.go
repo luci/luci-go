@@ -80,12 +80,12 @@ type Config struct {
 	// See venv.Config's MaxScriptPathLen.
 	MaxScriptPathLen int
 
-	// Verification, if not nil, is the generator function to use for environment
-	// verification. It will invoke the supplied VerificationFunc once for each
-	// independent environment.
+	// WithVerificationConfig, if not nil, runs the supplied callback with
+	// a Config instance to use for verification and the set of default
+	// verification scenarios.
 	//
-	// Verification may terminate early if the Context is cancelled.
-	Verification func(context.Context, VerificationFunc)
+	// If nil, verification will only include the validation of the spec protobuf.
+	WithVerificationConfig func(context.Context, func(Config, []*vpythonAPI.Pep425Tag) error) error
 
 	// opts is the set of configured options.
 	opts vpython.Options

@@ -1,0 +1,18 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package vpython;
+
+// Represnets a Python PEP425 tag.
+message Pep425Tag {
+  // Version is the PEP425 version tag (e.g., "cp27").
+  string version  = 1;
+  // ABI is the PEP425 ABI tag (e.g., "cp27mu", "none").
+  string abi = 2;
+  // Arch is the PEP425 architecture tag (e.g., "linux_x86_64", "armv7l",
+  // "any").
+  string arch = 3;
+}
