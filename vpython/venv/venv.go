@@ -15,6 +15,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/danjacques/gofslock/fslock"
+	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/vpython/api/vpython"
 	"github.com/luci/luci-go/vpython/python"
 	"github.com/luci/luci-go/vpython/wheel"
@@ -23,11 +27,11 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/system/filesystem"
-
-	"github.com/danjacques/gofslock/fslock"
-	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 )
+
+// ErrNotComplete is a sentinel error returned by AssertCompleteAndLoad to
+// indicate that the Environment is missing its completion flag.
+var ErrNotComplete = errors.New("environment is not complete")
 
 const (
 	lockHeldDelay            = 10 * time.Millisecond
@@ -160,6 +164,9 @@ type Env struct {
 	// Root is the Env container's root directory path.
 	Root string
 
+	// Name is the hash of the specification file for this Env.
+	Name string
+
 	// Python is the path to the Env Python interpreter.
 	Python string
 
@@ -176,8 +183,6 @@ type Env struct {
 	// therefore, suitable for input to other "vpython" invocations.
 	EnvironmentStampPath string
 
-	// name is the hash of the specification file for this Env.
-	name string
 	// lockPath is the path to this Env-specific lock file. It will be at:
 	// "<baseDir>/.<name>.lock".
 	lockPath string
@@ -276,7 +281,7 @@ func (e *Env) withImpl(c context.Context, blocking bool, fn func(context.Context
 	}
 
 	// Perform a pruning round. Failure is non-fatal.
-	if perr := prune(c, e.Config, e.name); perr != nil {
+	if perr := prune(c, e.Config, e.Name); perr != nil {
 		logging.WithError(perr).Warningf(c, "Failed to perform pruning round after initialization.")
 	}
 
@@ -359,7 +364,7 @@ func (e *Env) AssertCompleteAndLoad() error {
 	// Ensure that the environment has its completion flag.
 	switch _, err := os.Stat(e.completeFlagPath); {
 	case filesystem.IsNotExist(err):
-		return errors.New("environment is not complete")
+		return ErrNotComplete
 	case err != nil:
 		return errors.Annotate(err).Reason("failed to check for completion flag").Err()
 	}

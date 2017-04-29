@@ -106,6 +106,7 @@ func (cfg *Config) mainDev(c context.Context, args []string) error {
 			subcommands.CmdHelp,
 			subcommandInstall,
 			subcommandVerify,
+			subcommandDelete,
 		},
 	}
 

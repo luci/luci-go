@@ -207,12 +207,12 @@ func (cfg *Config) envForName(name string, e *vpython.Environment) *Env {
 	return &Env{
 		Config:               cfg,
 		Root:                 venvRoot,
+		Name:                 name,
 		Python:               filepath.Join(binDir, "python"),
 		Environment:          e,
 		BinDir:               binDir,
 		EnvironmentStampPath: filepath.Join(venvRoot, fmt.Sprintf("environment.%s.pb.txt", vpython.Version)),
 
-		name:             name,
 		lockPath:         filepath.Join(cfg.BaseDir, fmt.Sprintf(".%s.lock", name)),
 		completeFlagPath: filepath.Join(venvRoot, "complete.flag"),
 	}

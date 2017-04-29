@@ -5,13 +5,10 @@
 package venv
 
 import (
-	"io"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 
@@ -35,67 +32,58 @@ func prune(c context.Context, cfg *Config, forceKeep string) error {
 	}
 	pruneThreshold := clock.Now(c).Add(-cfg.PruneThreshold)
 
-	// Get a listing of all VirtualEnv within the base directory.
-	dir, err := os.Open(cfg.BaseDir)
-	if err != nil {
-		return errors.Annotate(err).Reason("failed to open base directory: %(dir)s").
-			D("dir", cfg.BaseDir).
-			Err()
-	}
-	defer dir.Close()
-
 	// Run a series of independent scan/prune operations.
 	logging.Debugf(c, "Pruning entries in [%s] older than %s.", cfg.BaseDir, cfg.PruneThreshold)
 
+	// Iterate over all of our VirtualEnv candidates.
+	//
+	// Any pruning errors will be accumulated in "allErrs", so ForEach will only
+	// receive nil return values from the callback. This means that any error
+	// returned by ForEach was an actual error with the iteration itself.
 	var (
 		allErrs     errors.MultiError
 		totalPruned = 0
-		done        = false
 		hitLimitStr = ""
 	)
-	for !done {
-		fileInfos, err := dir.Readdir(pruneReadDirSize)
-		switch err {
-		case nil:
 
-		case io.EOF:
-			done = true
+	// We need to cancel if we hit our prune limit.
+	c, cancelFunc := context.WithCancel(c)
+	defer cancelFunc()
 
-		default:
-			return errors.Annotate(err).Reason("could not read directory contents: %(dir)s").
-				D("dir", err).
-				Err()
-		}
-
+	// Iterate over all VirtualEnv directories, regardless of their completion
+	// status.
+	it := Iterator{
 		// Shuffle the slice randomly. We do this in case others are also processing
 		// this directory simultaneously.
-		for i := range fileInfos {
-			j := mathrand.Intn(c, i+1)
-			fileInfos[i], fileInfos[j] = fileInfos[j], fileInfos[i]
+		Shuffle: true,
+	}
+	err := it.ForEach(c, cfg, func(c context.Context, e *Env) error {
+		if e.Name == forceKeep {
+			logging.Debugf(c, "Not pruning currently in-use environment: %s", e.Name)
+			return nil
 		}
 
-		for _, fi := range fileInfos {
-			// Ignore hidden files. This includes the package loader root.
-			if strings.HasPrefix(fi.Name(), ".") {
-				continue
-			}
+		switch pruned, err := maybePruneFile(c, e, pruneThreshold); {
+		case err != nil:
+			err = errors.Annotate(err).Reason("failed to prune file: %(name)s").
+				D("name", e.Name).
+				D("dir", e.Config.BaseDir).
+				Err()
+			allErrs = append(allErrs, err)
 
-			switch pruned, err := maybePruneFile(c, cfg, fi, pruneThreshold, forceKeep); {
-			case err != nil:
-				allErrs = append(allErrs, errors.Annotate(err).
-					Reason("failed to prune file: %(name)s").
-					D("name", fi.Name()).
-					D("dir", cfg.BaseDir).
-					Err())
-
-			case pruned:
-				totalPruned++
-				if cfg.MaxPrunesPerSweep > 0 && totalPruned >= cfg.MaxPrunesPerSweep {
-					logging.Debugf(c, "Hit prune limit of %d.", cfg.MaxPrunesPerSweep)
-					done, hitLimitStr = true, " (limit)"
-				}
+		case pruned:
+			totalPruned++
+			if cfg.MaxPrunesPerSweep > 0 && totalPruned >= cfg.MaxPrunesPerSweep {
+				logging.Debugf(c, "Hit prune limit of %d.", cfg.MaxPrunesPerSweep)
+				hitLimitStr = " (limit)"
+				cancelFunc()
 			}
 		}
+		return nil
+	})
+	if err != nil {
+		// Error during iteration.
+		return err
 	}
 
 	logging.Infof(c, "Pruned %d environment(s)%s with %d error(s)", totalPruned, hitLimitStr, len(allErrs))
@@ -107,18 +95,9 @@ func prune(c context.Context, cfg *Config, forceKeep string) error {
 
 // maybePruneFile examines the specified FileIfo within cfg.BaseDir and
 // determines if it should be pruned.
-func maybePruneFile(c context.Context, cfg *Config, fi os.FileInfo, pruneThreshold time.Time,
-	forceKeep string) (pruned bool, err error) {
-
-	name := fi.Name()
-	if !fi.IsDir() || name == forceKeep {
-		logging.Debugf(c, "Not pruning currently in-use file: %s", name)
-		return
-	}
-
+func maybePruneFile(c context.Context, e *Env, pruneThreshold time.Time) (pruned bool, err error) {
 	// Grab the lock file for this directory.
-	e := cfg.envForName(name, nil)
-	err = fslock.With(e.lockPath, func() error {
+	err = e.withLockNonBlocking(func() error {
 		// Read the complete flag file's timestamp.
 		switch st, err := os.Stat(e.completeFlagPath); {
 		case err == nil:
@@ -127,10 +106,10 @@ func maybePruneFile(c context.Context, cfg *Config, fi os.FileInfo, pruneThresho
 			}
 
 			logging.Infof(c, "Env [%s] is older than the prune threshold (%v < %v); pruning...",
-				e.name, st.ModTime(), pruneThreshold)
+				e.Name, st.ModTime(), pruneThreshold)
 
 		case os.IsNotExist(err):
-			logging.Infof(c, "Env [%s] has no completed flag; pruning...", e.name)
+			logging.Infof(c, "Env [%s] has no completed flag; pruning...", e.Name)
 
 		default:
 			return errors.Annotate(err).Reason("failed to stat complete flag: %(path)s").
