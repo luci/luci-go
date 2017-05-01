@@ -1,0 +1,9 @@
+runtime: go
+env: flex
+service: logs
+
+handlers:
+  - url: /log/raw/.*
+    script: _go_app
+    secure: always
+

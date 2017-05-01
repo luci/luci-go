@@ -13,23 +13,29 @@ dev:
 up: up-all up-dispatch
 
 up-all:
-	gae.py upload -A luci-milo --app-dir $(projdir)/appengine default pubsub api
+	gae.py upload -A luci-milo --app-dir $(projdir)/appengine/frontend default pubsub api
 
 up-default:
-	gae.py upload -A luci-milo --app-dir $(projdir)/appengine default
+	gae.py upload -A luci-milo --app-dir $(projdir)/appengine/frontend default
 
 up-pubsub:
-	gae.py upload -A luci-milo --app-dir $(projdir)/appengine pubsub
+	gae.py upload -A luci-milo --app-dir $(projdir)/appengine/frontend pubsub
 
 up-api:
-	gae.py upload -A luci-milo --app-dir $(projdir)/appengine api
+	gae.py upload -A luci-milo --app-dir $(projdir)/appengine/frontend api
 
 up-dispatch:
 	appcfg.py -A luci-milo update_dispatch $(projdir)/appengine/frontend
 
-up-dev:
+up-dev: up-dev-logs
 	gae.py upload -A luci-milo-dev --app-dir $(projdir)/appengine default pubsub api
 	appcfg.py -A luci-milo-dev update_dispatch $(projdir)/appengine/frontend
+
+up-dev-default:
+	gae.py upload -A luci-milo-dev --app-dir $(projdir)/appengine/frontend default
+
+up-dev-logs:
+	gcloud app deploy --project luci-milo-dev --version dev $(projdir)/appengine/logs/module-logs.yaml
 
 test:
 	go test ./...

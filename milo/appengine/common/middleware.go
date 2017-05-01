@@ -10,16 +10,21 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/gae/impl/cloud"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/appengine/gaeauth/server"
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/cloudlogging"
+	"github.com/luci/luci-go/common/logging/cloudlog"
 	"github.com/luci/luci-go/server/analytics"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
 )
+
+var authconfig *auth.Config
 
 // GetTemplateBundles is used to render HTML templates. It provides base args
 // passed to all templates.
@@ -62,6 +67,35 @@ func Base() router.MiddlewareChain {
 		withRequestMiddleware,
 		templates.WithTemplates(GetTemplateBundle()),
 	)
+}
+
+// FlexBase returns the basic middleware for use on appengine flex.  Flex does not
+// allow the use of appengine APIs.
+func FlexBase() router.MiddlewareChain {
+	// Use the cloud logger.
+	logger := func(c *router.Context, next router.Handler) {
+		project := info.AppID(c.Context)
+		logClient, err := cloudlogging.NewClient(
+			cloudlogging.ClientOptions{
+				ProjectID:    project,
+				LogID:        "gae_app",
+				ResourceType: "gae_app",
+			},
+			// TODO(hinoka): This may require authentication to actually work.
+			http.DefaultClient)
+		if err != nil {
+			panic(err)
+		}
+		c.Context = cloudlog.Use(c.Context, cloudlog.Config{}, logClient)
+		next(c)
+	}
+	// Installs the Info and Datastore services.
+	base := func(c *router.Context, next router.Handler) {
+		c.Context = cloud.UseFlex(c.Context)
+		next(c)
+	}
+	// Now chain it all together!
+	return router.NewMiddlewareChain(base, logger)
 }
 
 // The context key, so that we can embed the http.Request object into
