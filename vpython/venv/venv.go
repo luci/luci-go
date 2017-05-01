@@ -24,6 +24,7 @@ import (
 	"github.com/luci/luci-go/vpython/wheel"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/system/filesystem"
@@ -93,6 +94,9 @@ func EnvRootFromStampPath(path string) (string, error) {
 // If another process holds the lock, With will return an error (if blocking is
 // false) or try again until it obtains the lock (if blocking is true).
 func With(c context.Context, cfg Config, blocking bool, fn func(context.Context, *Env) error) error {
+	// Track which VirtualEnv we use so we can exempt them from pruning.
+	usedEnvs := stringset.New(2)
+
 	// Start with an empty VirtualEnv. We will use this to probe the local
 	// system.
 	//
@@ -101,10 +105,19 @@ func With(c context.Context, cfg Config, blocking bool, fn func(context.Context,
 	var e *vpython.Environment
 	if cfg.HasWheels() {
 		// Use an empty VirtualEnv to probe the runtime environment.
-		var err error
-		if e, err = getRuntimeEnvironment(c, blocking, cfg.WithoutWheels()); err != nil {
-			return errors.Annotate(err).Reason("failed to get runtime environment").Err()
+		//
+		// Disable pruning for this step since we'll be doing that later with the
+		// full environment initialization.
+		emptyEnv, err := cfg.WithoutWheels().makeEnv(c, nil)
+		if err != nil {
+			return errors.Annotate(err).Reason("failed to initialize empty probe environment").Err()
 		}
+		if err := emptyEnv.setupImpl(c, blocking); err != nil {
+			return errors.Annotate(err).Reason("failed to create empty probe environment").Err()
+		}
+
+		usedEnvs.Add(emptyEnv.Name)
+		e = emptyEnv.Environment
 	}
 
 	// Run the real config, now with runtime data.
@@ -112,42 +125,8 @@ func With(c context.Context, cfg Config, blocking bool, fn func(context.Context,
 	if err != nil {
 		return err
 	}
-	return env.withImpl(c, blocking, fn)
-}
-
-func getRuntimeEnvironment(c context.Context, blocking bool, cfg *Config) (*vpython.Environment, error) {
-	e, err := cfg.makeEnv(c, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// If we already have the environment specification for this environment, then
-	// load it.
-	switch err := e.AssertCompleteAndLoad(); {
-	case err != nil:
-		// Not a big deal, but
-		logging.Fields{
-			logging.ErrorKey: err,
-			"path":           e.EnvironmentStampPath,
-		}.Debugf(c, "Failed to load stamp file; performing full initialization.")
-
-	default:
-		logging.Debugf(c, "Loaded environment stamp from empty VirtualEnv: %s", e.Environment)
-
-		// Try and touch the complete flag. It doesn't matter if we fail, since all
-		// it will do is refrain from acknowledging the utility of the empty
-		// environment.
-		if err := e.touchCompleteFlagNonBlocking(); err != nil {
-			logging.Debugf(c, "Failed to update empty environment flag timestamp.")
-		}
-		return e.Environment, nil
-	}
-
-	// Fully initialize the Env, which will popluate its Environment.
-	if err := e.setupImpl(c, blocking); err != nil {
-		return nil, err
-	}
-	return e.Environment, nil
+	usedEnvs.Add(env.Name)
+	return env.withImpl(c, blocking, usedEnvs, fn)
 }
 
 // Env is a fully set-up Python virtual environment. It is configured
@@ -197,6 +176,19 @@ type Env struct {
 }
 
 func (e *Env) setupImpl(c context.Context, blocking bool) error {
+	// Fastest path: If this environment is already complete, then there is no
+	// additional setup necessary.
+	if err := e.AssertCompleteAndLoad(); err == nil {
+		logging.Debugf(c, "Environment is already initialized: %s", e.Environment)
+
+		// Try and touch the complete flag to mark this environment's utility.
+		if err := e.touchCompleteFlagNonBlocking(); err != nil {
+			logging.Debugf(c, "Failed to update environment timestamp.")
+		}
+
+		return nil
+	}
+
 	// Repeatedly try and create our Env. We do this so that if we
 	// encounter a lock, we will let the other process finish and try and leverage
 	// its success.
@@ -274,14 +266,16 @@ func (e *Env) setupImpl(c context.Context, blocking bool) error {
 	}
 }
 
-func (e *Env) withImpl(c context.Context, blocking bool, fn func(context.Context, *Env) error) error {
+func (e *Env) withImpl(c context.Context, blocking bool, used stringset.Set,
+	fn func(context.Context, *Env) error) error {
+
 	// Setup the VirtualEnv environment.
 	if err := e.setupImpl(c, blocking); err != nil {
 		return err
 	}
 
 	// Perform a pruning round. Failure is non-fatal.
-	if perr := prune(c, e.Config, e.Name); perr != nil {
+	if perr := prune(c, e.Config, used); perr != nil {
 		logging.WithError(perr).Warningf(c, "Failed to perform pruning round after initialization.")
 	}
 

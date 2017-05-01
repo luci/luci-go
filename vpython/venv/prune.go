@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 
@@ -23,9 +24,11 @@ const pruneReadDirSize = 128
 // prune examines environments in cfg's BaseDir. If any are found that are older
 // than the prune threshold in "cfg", they will be safely deleted.
 //
-// If forceKeep is not empty, prune will skip pruning the VirtualEnv named
-// "forceKeep", even if it is would otherwise be candidate for pruning.
-func prune(c context.Context, cfg *Config, forceKeep string) error {
+// If exempt is not nil, it contains a list of VirtualEnv names that will be
+// exempted from pruning. This is used to prevent pruning from modifying
+// environments that are known to be recently used, and to completely avoid a
+// case where an environment could be pruned while it's in use by this program.
+func prune(c context.Context, cfg *Config, exempt stringset.Set) error {
 	if cfg.PruneThreshold <= 0 {
 		// Pruning is disabled.
 		return nil
@@ -58,7 +61,7 @@ func prune(c context.Context, cfg *Config, forceKeep string) error {
 		Shuffle: true,
 	}
 	err := it.ForEach(c, cfg, func(c context.Context, e *Env) error {
-		if e.Name == forceKeep {
+		if exempt != nil && exempt.Has(e.Name) {
 			logging.Debugf(c, "Not pruning currently in-use environment: %s", e.Name)
 			return nil
 		}

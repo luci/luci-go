@@ -68,7 +68,7 @@ func (cr *deleteCommandRun) Run(app subcommands.Application, args []string, env 
 		}
 
 		if failures > 0 {
-			return errors.Reason("failed to delete %(count)d enviornment(s)").
+			return errors.Reason("failed to delete %(count)d environment(s)").
 				D("count", failures).
 				Err()
 		}

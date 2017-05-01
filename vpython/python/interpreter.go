@@ -44,7 +44,7 @@ func (i *Interpreter) IsolatedCommand(c context.Context, args ...string) *exec.C
 	// Isolate the supplied arguments.
 	args = append([]string{
 		"-B", // Don't compile "pyo" binaries.
-		"-E", // Don't use PYTHON* enviornment variables.
+		"-E", // Don't use PYTHON* environment variables.
 		"-s", // Don't use user 'site.py'.
 	}, args...)
 

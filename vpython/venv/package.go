@@ -18,7 +18,7 @@ import (
 type PackageLoader interface {
 	// Resolve processes the packages defined in e, updating their fields to their
 	// resolved values. Resolved packages must fully specify the package instance
-	// that is being deployed, and will be used when determining the enviornment's
+	// that is being deployed, and will be used when determining the environment's
 	// fingerprint (used for locking and naming).
 	Resolve(c context.Context, e *vpython.Environment) error
 

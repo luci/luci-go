@@ -163,7 +163,7 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 		cfg.Spec.Virtualenv = &cfg.Package
 	}
 
-	// Construct a new, independent Enviornment for this Env.
+	// Construct a new, independent Environment for this Env.
 	e = e.Clone()
 	e.Spec = cfg.Spec.Clone()
 
@@ -193,7 +193,7 @@ func (cfg *Config) envNameForSpec(s *vpython.Spec) string {
 // Prune performs a pruning round on the environment set described by this
 // Config.
 func (cfg *Config) Prune(c context.Context) error {
-	if err := prune(c, cfg, ""); err != nil {
+	if err := prune(c, cfg, nil); err != nil {
 		return errors.Annotate(err).Err()
 	}
 	return nil

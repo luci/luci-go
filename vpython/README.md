@@ -19,7 +19,7 @@ interpreter.
 an unmodified VirtualEnv package, standard setup methods, and local system
 resources. The result is transparent canonical VirtualEnv environment
 bootstrapping. `vpython` is also safe for concurrent invocation, using safe
-filesystem-level locking to perform any enviornment setup and management.
+filesystem-level locking to perform any environment setup and management.
 
 `vpython` itself is very fast. The wheel downloads and VirtualEnvs may also be
 cached and re-used, optimally limiting the runtime overhead of `vpython` to just
@@ -36,7 +36,7 @@ packages to CIPD).
 Once the packages are available:
 
 * Add `vpython` to `PATH`.
-* Write an enviornment specification naming packages.
+* Write an environment specification naming packages.
 * Change tool invocation from `python` to `vpython`.
 
 Using `vpython` offers several benefits to direct Python invocation, especially
@@ -150,10 +150,10 @@ Use wheels with the `cp27m` or `none` ABI tag. For example:
 `vpython`.
 
 `vpython` works with a default Python environment out of the box. To add
-vendored packges, you need to define an enviornment specification file that
+vendored packges, you need to define an environment specification file that
 describes which wheels to install.
 
-An enviornment specification file is a text protobuf defined as `Spec`
+An environment specification file is a text protobuf defined as `Spec`
 [here](./api/env/spec.proto). An example is:
 
 ```
@@ -194,7 +194,7 @@ invocation overhead.
 
 Once a VirtualEnv specification has been resolved, its resulting pinned
 specification is hashed and used as a key to that VirtualEnv. Other `vpython`
-invocations expressing hte same enviornment will naturally re-use that
+invocations expressing hte same environment will naturally re-use that
 VirtualEnv instead of creating their own.
 
 #### Download Caching
