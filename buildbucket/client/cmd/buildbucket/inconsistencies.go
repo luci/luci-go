@@ -1,6 +1,6 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+// Copyright 2016 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
 
 package main
 
@@ -11,11 +11,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/maruel/subcommands"
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/common/api/buildbucket/buildbucket/v1"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
-	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 )
 
 func cmdInconsistency(authOptions auth.Options) *subcommands.Command {
@@ -28,9 +29,8 @@ func cmdInconsistency(authOptions auth.Options) *subcommands.Command {
 			r := &inconsistencyRun{}
 			r.SetDefaultFlags(authOptions)
 			r.Flags.Int64Var(&r.since, "since", 0, "analyze builds since this timestamp. Defaults to 10 days ago.")
-			r.Flags.StringVar(&r.bucket, "bucket", "", `buildbucket bucket name, e.g. "master.tryserver.infra"`)
-			r.Flags.StringVar(&r.builders, "builder", "", `comma-separated list of builder names without swarming suffix, e.g. "Infra Presubmit"`)
-			r.Flags.StringVar(&r.builderSuffix, "builder-suffix", " (Swarming)", "builder name suffix")
+			r.Flags.Var(&r.builder1, "builder1", `colon-separated bucket and builder, e.g. "master.tryserver.chromium.linux:linux_chromium_rel_ng"`)
+			r.Flags.Var(&r.builder2, "builder2", `colon-separated bucket and builder of the alternative builder to compare to"`)
 			return r
 		},
 	}
@@ -38,23 +38,54 @@ func cmdInconsistency(authOptions auth.Options) *subcommands.Command {
 
 type inconsistencyRun struct {
 	baseCommandRun
-	since         int64
-	bucket        string
-	builders      string
-	builderSuffix string
-	client        *buildbucket.Service
+	since              int64
+	builder1, builder2 builderID
+	client             *buildbucket.Service
+}
+
+type builderID struct {
+	Bucket  string
+	Builder string
+}
+
+func (b *builderID) Set(v string) error {
+	parts := strings.SplitN(v, ":", 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("does not have ':'")
+	}
+	parsed := builderID{parts[0], parts[1]}
+	if err := parsed.Validate(); err != nil {
+		return err
+	}
+	*b = parsed
+	return nil
+}
+
+func (b builderID) String() string {
+	return b.Bucket + ":" + b.Builder
+}
+
+func (b *builderID) Validate() error {
+	if b.Bucket == "" {
+		return fmt.Errorf("bucket unspecified")
+	}
+	if b.Builder == "" {
+		return fmt.Errorf("builder unspecified")
+	}
+	return nil
 }
 
 func (r *inconsistencyRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
-	if r.bucket == "" {
-		return r.done(ctx, fmt.Errorf("bucket is not specified"))
-	}
-	if r.builders == "" {
-		return r.done(ctx, fmt.Errorf("builders are not specified"))
-	}
 	if len(args) > 0 {
 		return r.done(ctx, fmt.Errorf("unexpected arguments: %s", flag.Args()))
+	}
+
+	if err := r.builder1.Validate(); err != nil {
+		return r.done(ctx, fmt.Errorf("invalid -builder1: %s", err))
+	}
+	if err := r.builder2.Validate(); err != nil {
+		return r.done(ctx, fmt.Errorf("invalid -builder2: %s", err))
 	}
 
 	client, err := r.createClient(ctx)
@@ -77,90 +108,82 @@ func (r *inconsistencyRun) Run(a subcommands.Application, args []string, env sub
 		duration = time.Since(startingFrom)
 	}
 
-	for i, builder := range strings.Split(r.builders, ",") {
-		builder = strings.TrimSpace(builder)
-		if builder == "" {
-			continue
-		}
-
-		if i > 0 {
-			fmt.Println()
-		}
-		fmt.Printf("builder %q\n", builder)
-		if err := r.compareBuilder(ctx, builder, startingFrom); err != nil {
-			return r.done(ctx, err)
-		}
+	if err := r.compareBuilder(ctx, startingFrom); err != nil {
+		return r.done(ctx, err)
 	}
 	return 0
 }
 
-func (r *inconsistencyRun) compareBuilder(ctx context.Context, builder string, startingFrom time.Time) error {
+func (r *inconsistencyRun) compareBuilder(ctx context.Context, startingFrom time.Time) error {
 	fmt.Printf("searching for all builds since timestamp %d till %d...\n",
 		startingFrom.Unix(), time.Now().Unix())
 	// We will actually fetch builds after after time.Now too, but it is fine.
-	swarmingBuilds, err := r.fetchBuilds(r.bucket, builder+r.builderSuffix, startingFrom)
+	builds1, err := r.fetchBuilds(r.builder1, startingFrom)
 	if err != nil {
-		return fmt.Errorf("could not fetch builds: %s", err)
+		return fmt.Errorf("could not fetch %s builds: %s", r.builder1, err)
 	}
-	if len(swarmingBuilds) == 0 {
-		fmt.Printf("no swarming builds for builder %q\n", builder)
-		return nil
-	}
-	buildbotBuilds, err := r.fetchBuilds(r.bucket, builder, startingFrom)
-	if err != nil {
-		return fmt.Errorf("could not fetch builds: %s", err)
-	}
-	if len(buildbotBuilds) == 0 {
-		fmt.Printf("no buildbot builds for builder %q\n", builder)
+	if len(builds1) == 0 {
+		fmt.Printf("no %s builds\n", r.builder1)
 		return nil
 	}
 
-	swarmingBuildSets := groupBuilds(swarmingBuilds)
-	buildbotBuildSets := groupBuilds(buildbotBuilds)
+	builds2, err := r.fetchBuilds(r.builder2, startingFrom)
+	if err != nil {
+		return fmt.Errorf("could not fetch %s builds: %s", r.builder2, err)
+	}
+	if len(builds2) == 0 {
+		fmt.Printf("no %s builds\n", r.builder2)
+		return nil
+	}
+
+	buildSets1 := groupBuilds(builds1)
+	buildSets2 := groupBuilds(builds2)
 
 	consistentN := 0
 	inconsistentN := 0
-	for setName, swarmingSet := range swarmingBuildSets {
-		buildbotSet := buildbotBuildSets[setName]
-		if buildbotSet == nil {
-			fmt.Printf("no buildbot builds for buildset %s\n", setName)
+	for setName, set2 := range buildSets2 {
+		set1 := buildSets1[setName]
+		if set1 == nil {
+			fmt.Printf("no %s builds for buildset %s\n", r.builder1, setName)
 			continue
 		}
-		if buildbotSet.bestResult == swarmingSet.bestResult {
+		if set1.bestResult == set2.bestResult {
 			consistentN++
 			continue
 		}
 		inconsistentN++
 
 		fmt.Printf("%s is inconsistent\n", setName)
-		for _, b := range swarmingSet.builds {
+		for _, b := range set2.builds {
 			fmt.Printf("  %s %s\n", b.Result, b.Url)
 		}
-		for _, b := range buildbotSet.builds {
+		for _, b := range set1.builds {
 			fmt.Printf("  %s %s\n", b.Result, b.Url)
 		}
 	}
 
-	fmt.Printf("%0.2f%% consistent build sets, %d buildbot builds, %d swarming builds\n",
-		100*float64(consistentN)/float64(consistentN+inconsistentN), len(buildbotBuilds), len(swarmingBuilds))
+	fmt.Printf("%0.2f%% consistent build sets, %d %s builds, %d %s builds\n",
+		100*float64(consistentN)/float64(consistentN+inconsistentN),
+		len(builds1), r.builder1,
+		len(builds2), r.builder2)
 
-	swarmingTime := medianTime(swarmingBuilds)
-	buildbotTime := medianTime(buildbotBuilds)
-	factor := float64(buildbotTime) / float64(swarmingTime)
+	time1 := medianTime(builds1)
+	time2 := medianTime(builds2)
+	factor := float64(time1) / float64(time2)
 	if factor >= 1 {
-		fmt.Printf("swarming is %.1fx faster\n", factor)
+		fmt.Printf("%s is %.1fx faster\n", r.builder2, factor)
 	} else {
-		fmt.Printf("swarming is %.1fx slower\n", 1/factor)
+		fmt.Printf("%s is %.1fx slower\n", r.builder2, 1/factor)
 	}
-	fmt.Printf("median times: buildbot %s, swarming %s\n", buildbotTime, swarmingTime)
-
+	fmt.Printf("%s median time: %s\n", r.builder1, time1)
+	fmt.Printf("%s median time: %s\n", r.builder2, time2)
 	return nil
 }
 
-func (r *inconsistencyRun) fetchBuilds(bucket, builder string, startingFrom time.Time) ([]*buildbucket.ApiBuildMessage, error) {
+func (r *inconsistencyRun) fetchBuilds(builder builderID, startingFrom time.Time) ([]*buildbucket.ApiBuildMessage, error) {
 	req := r.client.Search()
-	req.Bucket(bucket)
-	req.Tag("builder:" + builder)
+	req.Bucket(builder.Bucket)
+	req.Tag("builder:" + builder.Builder)
 	req.Status("COMPLETED")
 	req.MaxBuilds(100)
 
