@@ -158,7 +158,11 @@
               <div class="status-{{.Status}} result">
                 <b>Steps</b>
                 {{ if .Duration -}}
-                <span style="float:right">( {{ .Duration | humanDuration }} )</span>
+                <span style="float:right"
+                      class="duration"
+                      data-starttime="{{ .Started | formatTime }}"
+                      {{ if .Finished }}data-endtime="{{ .Finished | formatTime }}"{{ end }}>
+                      ( {{ .Duration | humanDuration }} )</span>
                 {{- end }}
               </div>
               <ul>
@@ -175,7 +179,11 @@
             <div class="status-{{.Status}} result">
               <b>{{.Label}}</b>
               {{ if .Duration -}}
-                <span style="float:right">( {{ .Duration | humanDuration }} )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="{{ .Started | formatTime }}"
+                    {{ if .Finished }}data-endtime="{{ .Finished | formatTime }}"{{ end }}>
+                    ( {{ .Duration | humanDuration }} )</span>
               {{- end }}
               <span>
                 {{ range .Text -}}

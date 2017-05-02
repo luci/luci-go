@@ -12,8 +12,12 @@
     #30608
 </title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
+<link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
+<script src="/static/common/third_party/js/moment-with-locales.min.js"></script>
+<script src="/static/common/third_party/js/moment-timezone-with-data-2012-2022.min.js"></script>
 <script src="/static/common/js/time.js"></script>
 <script src="/static/common/third_party/js/jquery.min.js"></script>
+<script src="/static/common/third_party/js/jquery-ui.min.js"></script>
 
 <link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/green-32.png">
 
@@ -115,7 +119,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>steps</b>
-              <span style="float:right">( 15 mins 30 secs )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-06-08T20:37:26Z"
+                    data-endtime="2016-06-08T20:52:56Z">
+                    ( 15 mins 30 secs )</span>
               <span>
                 <div class="step-text">running steps via annotated script</div>
               </span>
@@ -137,7 +145,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>update_scripts</b>
-              <span style="float:right">( 24 secs )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-06-08T20:37:31Z"
+                    data-endtime="2016-06-08T20:37:56Z">
+                    ( 24 secs )</span>
               <span>
                 <div class="step-text">update_scripts</div><div class="step-text">git - 94dbe001292dcec3423c5d1b0374826ff89a8f46</div>
               </span>
@@ -155,7 +167,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>setup_properties</b>
-              <span style="float:right">( 6 secs )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-06-08T20:37:56Z"
+                    data-endtime="2016-06-08T20:38:02Z">
+                    ( 6 secs )</span>
               <span>
                 <div class="step-text">setup_properties</div>
               </span>
@@ -171,7 +187,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>setup_build</b>
-              <span style="float:right">( 1 ms )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-06-08T20:38:08Z"
+                    data-endtime="2016-06-08T20:38:08Z">
+                    ( 1 ms )</span>
               <span>
                 <div class="step-text">setup_build</div><div class="step-text">running recipe: &#34;chromium&#34;</div>
               </span>
@@ -189,7 +209,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>taskkill</b>
-              <span style="float:right">( 11 secs )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-06-08T20:38:08Z"
+                    data-endtime="2016-06-08T20:38:19Z">
+                    ( 11 secs )</span>
               <span>
                 <div class="step-text">taskkill</div>
               </span>
@@ -205,7 +229,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>bot_update</b>
-              <span style="float:right">( 1 mins 4 secs )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-06-08T20:38:19Z"
+                    data-endtime="2016-06-08T20:39:23Z">
+                    ( 1 mins 4 secs )</span>
               <span>
                 <div class="step-text">bot_update</div><div class="step-text">[133GB/2047GB used (6%)]</div>
               </span>
@@ -223,7 +251,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>ensure_goma</b>
-              <span style="float:right">( 2 ms )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-06-08T20:39:24Z"
+                    data-endtime="2016-06-08T20:39:24Z">
+                    ( 2 ms )</span>
               <span>
                 <div class="step-text">ensure_goma</div>
               </span>
@@ -239,7 +271,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>ensure_goma.install cipd</b>
-              <span style="float:right">( 5 ms )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-06-08T20:39:23Z"
+                    data-endtime="2016-06-08T20:39:23Z">
+                    ( 5 ms )</span>
               <span>
                 <div class="step-text">ensure_goma.install cipd</div><div class="step-text">cipd instance_id: bccdb9a605037e3dd2a8a64e79e08f691a6f159d</div>
               </span>
@@ -257,7 +293,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>ensure_goma.ensure_installed</b>
-              <span style="float:right">( 4 ms )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-06-08T20:39:23Z"
+                    data-endtime="2016-06-08T20:39:23Z">
+                    ( 4 ms )</span>
               <span>
                 <div class="step-text">ensure_goma.ensure_installed</div>
               </span>
@@ -275,7 +315,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>gclient runhooks</b>
-              <span style="float:right">( 15 secs )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-06-08T20:39:24Z"
+                    data-endtime="2016-06-08T20:39:39Z">
+                    ( 15 secs )</span>
               <span>
                 <div class="step-text">gclient runhooks</div>
               </span>
@@ -291,7 +335,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>get compile targets for scripts</b>
-              <span style="float:right">( 2 secs )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-06-08T20:39:39Z"
+                    data-endtime="2016-06-08T20:39:41Z">
+                    ( 2 secs )</span>
               <span>
                 <div class="step-text">get compile targets for scripts</div>
               </span>
@@ -309,7 +357,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>read test spec</b>
-              <span style="float:right">( 10 secs )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-06-08T20:39:41Z"
+                    data-endtime="2016-06-08T20:39:51Z">
+                    ( 10 secs )</span>
               <span>
                 <div class="step-text">read test spec</div><div class="step-text">path: C:\b\build\slave\CrWinGoma\build\src\testing\buildbot\chromium.fyi.json</div>
               </span>
@@ -327,7 +379,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>cleanup_temp</b>
-              <span style="float:right">( 12 ms )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-06-08T20:39:51Z"
+                    data-endtime="2016-06-08T20:39:51Z">
+                    ( 12 ms )</span>
               <span>
                 <div class="step-text">cleanup_temp</div>
               </span>
@@ -343,7 +399,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>generate_build_files</b>
-              <span style="float:right">( 45 secs )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-06-08T20:39:51Z"
+                    data-endtime="2016-06-08T20:40:37Z">
+                    ( 45 secs )</span>
               <span>
                 <div class="step-text">generate_build_files</div>
               </span>
@@ -359,7 +419,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>compile</b>
-              <span style="float:right">( 11 mins 2 secs )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-06-08T20:40:37Z"
+                    data-endtime="2016-06-08T20:51:39Z">
+                    ( 11 mins 2 secs )</span>
               <span>
                 <div class="step-text">compile</div>
               </span>
@@ -377,7 +441,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>base_unittests</b>
-              <span style="float:right">( 35 secs )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-06-08T20:51:39Z"
+                    data-endtime="2016-06-08T20:52:15Z">
+                    ( 35 secs )</span>
               <span>
                 <div class="step-text">base_unittests</div><div class="step-text">base_unittests</div><div class="step-text">36 disabled</div><div class="step-text">2 flaky</div>
               </span>
@@ -393,7 +461,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>content_unittests</b>
-              <span style="float:right">( 40 secs )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-06-08T20:52:15Z"
+                    data-endtime="2016-06-08T20:52:56Z">
+                    ( 40 secs )</span>
               <span>
                 <div class="step-text">content_unittests</div><div class="step-text">content_unittests</div><div class="step-text">10 disabled</div>
               </span>
@@ -409,7 +481,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>process_dumps</b>
-              <span style="float:right">( 2 ms )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-06-08T20:52:56Z"
+                    data-endtime="2016-06-08T20:52:56Z">
+                    ( 2 ms )</span>
               <span>
                 <div class="step-text">process_dumps</div>
               </span>
@@ -425,7 +501,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>recipe result</b>
-              <span style="float:right">( 86 ms )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-06-08T20:52:56Z"
+                    data-endtime="2016-06-08T20:52:56Z">
+                    ( 86 ms )</span>
               <span>
                 <div class="step-text">recipe result</div>
               </span>
@@ -1288,6 +1368,11 @@ $(document).ready(function() {
 (function () {
   'use strict';
   milo.makeTimesLocal();
+  milo.annotateDurations();
+  $(document).tooltip({
+    show: false,
+    hide: false
+  });
 })();
 </script>
 <script>

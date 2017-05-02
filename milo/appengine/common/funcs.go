@@ -30,6 +30,7 @@ var funcMap = template.FuncMap{
 	"sub":            sub,
 	"consoleHeader":  consoleHeader,
 	"pagedURL":       pagedURL,
+	"formatTime":     formatTime,
 }
 
 // localTime returns a <span> element with t in human format
@@ -156,6 +157,11 @@ func parseRFC3339(s string) time.Time {
 		return t
 	}
 	return time.Time{}
+}
+
+// formatTime takes a time object and returns a formatted RFC3339 string.
+func formatTime(t time.Time) string {
+	return t.Format(time.RFC3339)
 }
 
 // linkifyTemplate is the template used in "linkify". Because the template,

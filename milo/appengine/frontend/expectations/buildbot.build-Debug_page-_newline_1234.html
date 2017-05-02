@@ -12,8 +12,12 @@
     #0
 </title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
+<link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
+<script src="/static/common/third_party/js/moment-with-locales.min.js"></script>
+<script src="/static/common/third_party/js/moment-timezone-with-data-2012-2022.min.js"></script>
 <script src="/static/common/js/time.js"></script>
 <script src="/static/common/third_party/js/jquery.min.js"></script>
+<script src="/static/common/third_party/js/jquery-ui.min.js"></script>
 
 <link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/red-32.png">
 
@@ -113,7 +117,11 @@
           <li class="verbosity-Normal">
             <div class="status-Failure result">
               <b>steps</b>
-              <span style="float:right">( 19 mins 36 secs )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-06-27T23:30:30Z"
+                    data-endtime="2016-06-27T23:50:06Z">
+                    ( 19 mins 36 secs )</span>
               <span>
                 <div class="step-text">line 1</div><div class="step-text">&nbsp;</div><div class="step-text">line 3</div>
               </span>
@@ -201,6 +209,11 @@ $(document).ready(function() {
 (function () {
   'use strict';
   milo.makeTimesLocal();
+  milo.annotateDurations();
+  $(document).tooltip({
+    show: false,
+    hide: false
+  });
 })();
 </script>
 <script>

@@ -621,6 +621,11 @@ li {
   padding: 0.3em 1em 0.3em 1em;
 }
 
+.ui-tooltip {
+    white-space: pre-line;
+    font-size: medium;
+}
+
 /* log view */
 .log * {
   vlink: #800080;

@@ -12,8 +12,12 @@
     2fb1b35e1da25710
 </title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
+<link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
+<script src="/static/common/third_party/js/moment-with-locales.min.js"></script>
+<script src="/static/common/third_party/js/moment-timezone-with-data-2012-2022.min.js"></script>
 <script src="/static/common/js/time.js"></script>
 <script src="/static/common/third_party/js/jquery.min.js"></script>
+<script src="/static/common/third_party/js/jquery-ui.min.js"></script>
 
 <link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/gray-32.png">
 
@@ -147,6 +151,11 @@ $(document).ready(function() {
 (function () {
   'use strict';
   milo.makeTimesLocal();
+  milo.annotateDurations();
+  $(document).tooltip({
+    show: false,
+    hide: false
+  });
 })();
 </script>
 <script>

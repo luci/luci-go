@@ -12,8 +12,12 @@
     2d8d62f6be545b10
 </title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
+<link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
+<script src="/static/common/third_party/js/moment-with-locales.min.js"></script>
+<script src="/static/common/third_party/js/moment-timezone-with-data-2012-2022.min.js"></script>
 <script src="/static/common/js/time.js"></script>
 <script src="/static/common/third_party/js/jquery.min.js"></script>
+<script src="/static/common/third_party/js/jquery-ui.min.js"></script>
 
 <link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/yellow-32.png">
 
@@ -101,7 +105,11 @@
           <li class="verbosity-Hidden">
             <div class="status-Success result">
               <b>setup_build</b>
-              <span style="float:right">( 49 ms )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-11-14T22:36:12Z"
+                    data-endtime="2016-11-14T22:36:13Z">
+                    ( 49 ms )</span>
               <span>
                 <div class="step-text">running recipe: &#34;magenta&#34;</div>
               </span>
@@ -119,7 +127,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>install cipd</b>
-              <span style="float:right">( 430 ms )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-11-14T22:36:13Z"
+                    data-endtime="2016-11-14T22:36:13Z">
+                    ( 430 ms )</span>
               <span>
                 <div class="step-text">cipd instance_id: d1ec9d904caee34beffec0a691a79991122037ba</div>
               </span>
@@ -137,7 +149,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>ensure_installed</b>
-              <span style="float:right">( 229 ms )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-11-14T22:36:13Z"
+                    data-endtime="2016-11-14T22:36:13Z">
+                    ( 229 ms )</span>
               <span>
                 
               </span>
@@ -155,7 +171,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>jiri init</b>
-              <span style="float:right">( 380 ms )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-11-14T22:36:13Z"
+                    data-endtime="2016-11-14T22:36:14Z">
+                    ( 380 ms )</span>
               <span>
                 
               </span>
@@ -171,7 +191,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>jiri project clean</b>
-              <span style="float:right">( 29 ms )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-11-14T22:36:14Z"
+                    data-endtime="2016-11-14T22:36:14Z">
+                    ( 29 ms )</span>
               <span>
                 
               </span>
@@ -203,7 +227,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>jiri update</b>
-              <span style="float:right">( 59 secs )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-11-14T22:36:14Z"
+                    data-endtime="2016-11-14T22:37:14Z">
+                    ( 59 secs )</span>
               <span>
                 
               </span>
@@ -236,7 +264,11 @@
           <li class="verbosity-Normal">
             <div class="status-Success result">
               <b>build.cleanup</b>
-              <span style="float:right">( 1 secs )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-11-14T22:37:14Z"
+                    data-endtime="2016-11-14T22:37:16Z">
+                    ( 1 secs )</span>
               <span>
                 
               </span>
@@ -252,7 +284,11 @@
           <li class="verbosity-Interesting">
             <div class="status-Failure result">
               <b>build.build</b>
-              <span style="float:right">( 42 secs )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-11-14T22:37:16Z"
+                    data-endtime="2016-11-14T22:37:58Z">
+                    ( 42 secs )</span>
               <span>
                 
               </span>
@@ -379,6 +415,11 @@ $(document).ready(function() {
 (function () {
   'use strict';
   milo.makeTimesLocal();
+  milo.annotateDurations();
+  $(document).tooltip({
+    show: false,
+    hide: false
+  });
 })();
 </script>
 <script>

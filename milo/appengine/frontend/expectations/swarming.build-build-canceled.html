@@ -12,8 +12,12 @@
     2d8d62f6be545b10
 </title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
+<link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
+<script src="/static/common/third_party/js/moment-with-locales.min.js"></script>
+<script src="/static/common/third_party/js/moment-timezone-with-data-2012-2022.min.js"></script>
 <script src="/static/common/js/time.js"></script>
 <script src="/static/common/third_party/js/jquery.min.js"></script>
+<script src="/static/common/third_party/js/jquery-ui.min.js"></script>
 
 <link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/red-32.png">
 
@@ -99,7 +103,11 @@
             <li class="verbosity-Interesting">
               <div class="status-Failure result">
                 <b>Steps</b>
-                <span style="float:right">( 1 hrs )</span>
+                <span style="float:right"
+                      class="duration"
+                      data-starttime="2016-03-14T10:00:01Z"
+                      data-endtime="2016-03-14T11:00:18Z">
+                      ( 1 hrs )</span>
               </div>
               <ul>
                 
@@ -114,7 +122,11 @@
           <li class="verbosity-Hidden">
             <div class="status-Success result">
               <b>recipe bootstrap</b>
-              <span style="float:right">( 2 secs )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-03-14T10:00:02Z"
+                    data-endtime="2016-03-14T10:00:04Z">
+                    ( 2 secs )</span>
               <span>
                 
               </span>
@@ -130,7 +142,11 @@
           <li class="verbosity-Hidden">
             <div class="status-Success result">
               <b>setup_build</b>
-              <span style="float:right">( 1 secs )</span>
+              <span style="float:right"
+                    class="duration"
+                    data-starttime="2016-03-14T10:00:02Z"
+                    data-endtime="2016-03-14T10:00:03Z">
+                    ( 1 secs )</span>
               <span>
                 <div class="step-text">running recipe: &#34;v8&#34;</div>
               </span>
@@ -261,6 +277,11 @@ $(document).ready(function() {
 (function () {
   'use strict';
   milo.makeTimesLocal();
+  milo.annotateDurations();
+  $(document).tooltip({
+    show: false,
+    hide: false
+  });
 })();
 </script>
 <script>
