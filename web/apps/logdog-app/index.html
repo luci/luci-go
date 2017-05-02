@@ -9,6 +9,9 @@
   <!-- Chrome for Android theme color -->
   <meta name="theme-color" content="#2E3AA1">
 
+  <!-- Used for routing. Must import before require.js. -->
+  <script src="inc/bower_components/page/page.js"></script>
+
   <!-- Setup Polymer -->
   <script src="inc/bower_components/webcomponentsjs/webcomponents-lite.min.js">
 
@@ -33,6 +36,7 @@
 </logdog-app>
 
 <script>
+  console.log("Setting up app.");
   // Grab a reference to our auto-binding template
   // and give it some initial binding values
   // Learn more about auto-binding templates at http://goo.gl/Dx1u2g

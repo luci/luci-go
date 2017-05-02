@@ -19,7 +19,11 @@
 <link rel="import" href="../../inc/bower_components/paper-toast/paper-toast.html">
 <link rel="import" href="../../inc/bower_components/paper-toolbar/paper-toolbar.html">
 
+<!-- Inline our main TypeScript -->
+<script src="../../scripts-ts/main.js"></script>
+
 <link rel="import" href="logdog-home-page.html">
+<link rel="import" href="../../inc/logdog-app-base/logdog-app-base.html">
 <link rel="import" href="../../inc/logdog-list-view/logdog-list-view.html">
 <link rel="import" href="../../inc/logdog-stream-view/logdog-stream-view.html">
 <link rel="import" href="../../inc/auth/auth-signin.html">
@@ -136,7 +140,7 @@ An element for the main LogDog web app.
 
   <paper-toast id="toast">
     <span class="toast-hide-button" role="button" tabindex="0"
-        onclick="app.$.toast.hide()">Ok</span>
+        onclick="$.toast.hide()">Ok</span>
   </paper-toast>
 
 </template>
@@ -156,7 +160,7 @@ An element for the main LogDog web app.
       host: {
         type: String,
         notify: true,
-        value: app.host,
+        value: logdog.host,
       },
       clientId: {
         type: String,

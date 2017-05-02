@@ -15,6 +15,7 @@ namespace LogDog {
 
   /** Locally-typed LogStreamDescriptor RPC protobuf object class. */
   export class LogStreamDescriptor {
+    readonly name: string;
     readonly timestamp: Date;
 
     static make(desc: any): LogStreamDescriptor {

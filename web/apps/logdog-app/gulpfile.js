@@ -9,7 +9,13 @@
 // Include Gulp & tools we'll use
 var gulp = require('gulp');
 var luci = require('../gulp-common.js');
+var path = require('path');
 
 luci.setup(gulp, {
   dir: __dirname,
+  includes: function(gulp, layout) {
+    return gulp.src([
+        path.join('inc', 'bower_components', 'page', 'page.js'),
+    ]).pipe(gulp.dest(layout.dist('inc/bower_components/page')));
+  },
 });

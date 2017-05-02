@@ -6,6 +6,9 @@
 
 <link rel="import" href="../../inc/bower_components/polymer/polymer.html">
 
+<!-- Inline our main TypeScript -->
+<script src="../../scripts-ts/main.js"></script>
+
 <link rel="import" href="../../inc/bower_components/paper-styles/default-theme.html">
 <link rel="import" href="../../inc/bower_components/paper-styles/typography.html">
 
@@ -14,7 +17,6 @@
 <link rel="import" href="../../inc/auth/auth-signin.html">
 
 <link rel="stylesheet" href="../../styles/main.css">
-
 
 <!--
 An element for the LogDog lightweight view app of a single set of streams.
@@ -32,7 +34,9 @@ The streams are specified by full path using the "s=" query parameter.
     #banner {
       background-color: #FAFAFA;
       overflow: hidden;
-      vertical-align: center;
+      border-color: lightcoral;
+      border-width: 0px 0px 2px 0px;
+      border-style: solid;
     }
 
     .banner-content {
@@ -50,12 +54,7 @@ The streams are specified by full path using the "s=" query parameter.
     #auth-bubble {
       float: right;
       display: inline-block;
-      border: solid #AAAAAA;
-      border-radius: 5px;
-      border-width: 1px;
-      padding: 2px;
-      margin-left: auto;
-      margin-right: 0;
+      border: none;
     }
   </style>
 
@@ -79,12 +78,12 @@ The streams are specified by full path using the "s=" query parameter.
       </template>
     </div>
 
-    <template is="dom-if" if="{{_hasStreams}}">
-      <logdog-stream-view
-        id="view"
-        host="[[host]]"
-        streams="[[streams]]"></logdog-stream-view>
-    </template>
+    <logdog-stream-view
+      id="streamView"
+      host="[[host]]"
+      mobile="[[mobile]]"
+      metadata="[[metadata]]"
+      streams="[[streams]]"></logdog-stream-view>
   </div>
 </template>
 
@@ -97,20 +96,29 @@ The streams are specified by full path using the "s=" query parameter.
       host: {
         type: String,
         notify: true,
+        value: null,
       },
+
       clientId: {
         type: String,
-        nofity: true,
+        value: null,
       },
-      accessToken: {
-        type: String,
-        notify: true,
-        readOnly: true,
-      },
+
       streams: {
         type: Array,
-        notify: true,
+        value: [],
         readOnly: true,
+      },
+
+      metadata: {
+        type: String,
+        value: false,
+        readOnly: true,
+      },
+
+      mobile: {
+        type: Boolean,
+        value: false,
       },
 
       _hasStreams: {
@@ -122,12 +130,28 @@ The streams are specified by full path using the "s=" query parameter.
       '_updatePageTitle(streams)',
     ],
 
-    attached: function() {
+    ready: function() {
+      // Test if we're mobile.
+      this.mobile = false;
+      if ( window.matchMedia ) {
+        this.mobile = window.matchMedia(
+            "only screen and (max-width: 760px)").maches;
+      }
+
       // Parse the stream names from the "s" query parameter.
       var queryString = window.location.search.replace(/^\?/, "");
       var streams = logdog.getQueryValues(queryString, "s").
           map(logdog.correctStreamPath);
       this._setStreams(streams);
+
+      // Parse the metadata option.
+      this._setMetadata(!!logdog.getQueryValue(queryString, "m", false));
+
+      // Parse the host option.
+      var host = logdog.getQueryValue(queryString, "h", undefined);
+      if (host) {
+        this.host = host;
+      }
     },
 
     _onSignin: function(e) {
@@ -142,11 +166,56 @@ The streams are specified by full path using the "s=" query parameter.
     },
 
     _updatePageTitle: function(streams) {
+      var paths = (streams || []).map(s => LogDog.StreamPath.splitProject(s));
+
+      var commonProject = this._getCommonStreamField(paths, p => p.project);
+      var commonPrefix = this._getCommonStreamField(paths, p => p.prefix);
+
       var title = 'LogDog';
-      if (streams && streams.length) {
-        title += ': ' + streams.join(' ');
+      if (commonProject) {
+        title += '(' + commonProject + '): ';
+
+        if (commonPrefix) {
+          title += commonPrefix + '/+/ ';
+        }
+      } else {
+        title += ': ';
       }
+
+      if (paths.length) {
+        var vals = paths.map(p => {
+          if (commonProject) {
+            if (commonPrefix) {
+              return p.name;
+            }
+            return p.path;
+          }
+          return p.fullName();
+        });
+
+        if (commonProject && commonPrefix) {
+          title += vals.join('&');
+        } else {
+          title += vals.join(' ');
+        }
+      }
+
       document.title = title;
+    },
+
+    _getCommonStreamField: function(paths, fn) {
+      var commonValue;
+      paths.forEach((path, idx) => {
+        var v = fn(path);
+        if (idx === 0) {
+          commonValue = v;
+        } else if (commonValue !== v) {
+          commonValue = undefined;
+          return false;
+        }
+        return true;
+      });
+      return commonValue;
     },
   });
 

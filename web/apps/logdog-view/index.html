@@ -42,10 +42,8 @@
   var app = document.querySelector('#app');
 
   // Set up our default LogDog host.
-  app.host = window.location.hostname;
-  if (app.host === "localhost") {
-    // Running locally. Bind to our development instance.
-    app.host = "luci-logdog-dev.appspot.com";
+  if (! app.host) {
+    app.host = window.location.hostname;
   }
 </script>
 

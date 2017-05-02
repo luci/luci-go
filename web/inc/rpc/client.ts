@@ -34,7 +34,7 @@ namespace luci {
    * its
    * Promises to provide retries and advanced capabilities.
    */
-  interface PolymerClient {
+  export interface PolymerClient {
     /** Name of the RPC service to invoke. */
     service: string;
     /** Name of the RPC method to invoke. */
