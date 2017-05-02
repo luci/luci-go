@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/common/data/text/units"
 	"github.com/luci/luci-go/common/isolated"
@@ -28,8 +30,10 @@ func init() {
 
 func TestArchiverEmpty(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
+
 	Convey(`An empty archiver should produce sane output.`, t, func() {
-		a := New(isolatedclient.New(nil, nil, "https://localhost:1", isolatedclient.DefaultNamespace, nil, nil), nil)
+		a := New(ctx, isolatedclient.New(nil, nil, "https://localhost:1", isolatedclient.DefaultNamespace, nil, nil), nil)
 		stats := a.Stats()
 		So(stats.TotalHits(), ShouldResemble, 0)
 		So(stats.TotalMisses(), ShouldResemble, 0)
@@ -41,11 +45,13 @@ func TestArchiverEmpty(t *testing.T) {
 
 func TestArchiverFile(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
+
 	Convey(`An archiver should handle file archival operations.`, t, func() {
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		a := New(isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
+		a := New(ctx, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
 
 		fEmpty, err := ioutil.TempFile("", "archiver")
 		So(err, ShouldBeNil)
@@ -85,11 +91,13 @@ func TestArchiverFile(t *testing.T) {
 
 func TestArchiverFileHit(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
+
 	Convey(`An archiver should correctly cache an archived file.`, t, func() {
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		a := New(isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
+		a := New(ctx, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
 		server.Inject([]byte("foo"))
 		item := a.Push("foo", isolatedclient.NewBytesSource([]byte("foo")), 0)
 		item.WaitForHashed()
@@ -106,11 +114,13 @@ func TestArchiverFileHit(t *testing.T) {
 
 func TestArchiverCancel(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
+
 	Convey(`A cancelled archiver should produce sane output.`, t, func() {
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		a := New(isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
+		a := New(ctx, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
 
 		tmpDir, err := ioutil.TempDir("", "archiver")
 		So(err, ShouldBeNil)
@@ -143,8 +153,10 @@ func TestArchiverCancel(t *testing.T) {
 
 func TestArchiverPushClosed(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
+
 	Convey(`A closed archiver should ignore additional input.`, t, func() {
-		a := New(nil, nil)
+		a := New(ctx, nil, nil)
 		So(a.Close(), ShouldBeNil)
 		So(a.PushFile("ignored", "ignored", 0), ShouldBeNil)
 	})

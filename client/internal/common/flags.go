@@ -13,6 +13,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/logging/gologger"
 	"github.com/luci/luci-go/common/runtime/tracer"
 )
 
@@ -64,6 +68,26 @@ func (d *Flags) StartTracing() (io.Closer, error) {
 		return &tracingState{}, err
 	}
 	return &tracingState{f}, nil
+}
+
+// MakeLoggingContext makes a luci-go/common/logging compatible context using
+// gologger onto the given writer.
+//
+// The default logging level will be Info, with Warning and Debug corresponding
+// to quiet/verbose respectively.
+func (d *Flags) MakeLoggingContext(out io.Writer) context.Context {
+	ret := (&gologger.LoggerConfig{
+		Out:    out,
+		Format: gologger.PickStdFormat(out),
+	}).Use(context.Background())
+	if d.Quiet {
+		ret = logging.SetLevel(ret, logging.Warning)
+	} else if d.Verbose {
+		ret = logging.SetLevel(ret, logging.Debug)
+	} else {
+		ret = logging.SetLevel(ret, logging.Info)
+	}
+	return ret
 }
 
 // Private stuff.

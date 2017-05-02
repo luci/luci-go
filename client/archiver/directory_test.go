@@ -14,6 +14,8 @@ import (
 	"sync"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/common/data/text/units"
 	"github.com/luci/luci-go/common/isolated"
@@ -45,11 +47,13 @@ func TestWalkBadRegexp(t *testing.T) {
 func TestPushDirectory(t *testing.T) {
 	// Uploads a real directory. 2 times the same file.
 	t.Parallel()
+	emptyContext := context.Background()
+
 	Convey(`Pushing a real directory should upload the directory.`, t, func() {
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		a := New(isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
+		a := New(emptyContext, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
 
 		// Setup temporary directory.
 		tmpDir, err := ioutil.TempDir("", "archiver")

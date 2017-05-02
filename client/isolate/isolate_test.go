@@ -14,6 +14,8 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/client/archiver"
 	"github.com/luci/luci-go/client/internal/common"
 	isolateservice "github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
@@ -54,11 +56,13 @@ func TestReplaceVars(t *testing.T) {
 func TestArchive(t *testing.T) {
 	// Create a .isolate file and archive it.
 	t.Parallel()
+	ctx := context.Background()
+
 	Convey(`Tests the creation and archival of an isolate file.`, t, func() {
 		server := isolatedfake.New()
 		ts := httptest.NewServer(server)
 		defer ts.Close()
-		a := archiver.New(isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
+		a := archiver.New(ctx, isolatedclient.New(nil, nil, ts.URL, isolatedclient.DefaultNamespace, nil, nil), nil)
 
 		// Setup temporary directory.
 		//   /base/bar
@@ -217,8 +221,10 @@ func TestArchive(t *testing.T) {
 // Test that if the isolate file is not found, the error is properly propagated.
 func TestArchiveFileNotFoundReturnsError(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
+
 	Convey(`The client should handle missing isolate files.`, t, func() {
-		a := archiver.New(isolatedclient.New(nil, nil, "http://unused", isolatedclient.DefaultNamespace, nil, nil), nil)
+		a := archiver.New(ctx, isolatedclient.New(nil, nil, "http://unused", isolatedclient.DefaultNamespace, nil, nil), nil)
 		opts := &ArchiveOptions{
 			Isolate:  "/this-file-does-not-exist",
 			Isolated: "/this-file-doesnt-either",

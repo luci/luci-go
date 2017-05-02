@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"sync"
 	"time"
@@ -21,6 +20,7 @@ import (
 	"github.com/luci/luci-go/common/data/text/units"
 	"github.com/luci/luci-go/common/isolated"
 	"github.com/luci/luci-go/common/isolatedclient"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/runtime/tracer"
 )
 
@@ -108,9 +108,14 @@ func (s *Stats) deepCopy() *Stats {
 }
 
 // New returns a thread-safe Archiver instance.
-func New(c *isolatedclient.Client, out io.Writer) *Archiver {
+//
+// If not nil, out will contain tty-oriented progress information.
+//
+// ctx will be used for logging.
+func New(ctx context.Context, c *isolatedclient.Client, out io.Writer) *Archiver {
 	// TODO(maruel): Cache hashes and server cache presence.
 	a := &Archiver{
+		ctx:                   ctx,
 		canceler:              common.NewCanceler(),
 		progress:              progress.New(headers, out),
 		c:                     c,
@@ -298,6 +303,7 @@ func (i *Item) link(child *Item) {
 //   - Uploading cache misses.
 type Archiver struct {
 	// Immutable.
+	ctx                   context.Context
 	c                     *isolatedclient.Client
 	maxConcurrentHash     int           // Stage 2; Disk I/O bound.
 	maxConcurrentContains int           // Stage 3; Server overload due to parallelism (DDoS).
@@ -608,7 +614,7 @@ func (a *Archiver) doContains(items []*Item) {
 			a.stage4UploadChan <- items[index]
 		}
 	}
-	log.Printf("Looked up %d items\n", len(items))
+	logging.Infof(a.ctx, "Looked up %d items\n", len(items))
 }
 
 // doUpload is called by stage 4.
@@ -628,5 +634,5 @@ func (a *Archiver) doUpload(item *Item) {
 	a.statsLock.Lock()
 	a.stats.Pushed = append(a.stats.Pushed, u)
 	a.statsLock.Unlock()
-	log.Printf("Uploaded %7s: %s\n", size, item.DisplayName)
+	logging.Infof(a.ctx, "Uploaded %7s: %s\n", size, item.DisplayName)
 }

@@ -58,7 +58,6 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	out := os.Stdout
 	prefix := "\n"
 	if c.defaultFlags.Quiet {
-		out = nil
 		prefix = ""
 	}
 
@@ -67,7 +66,8 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 		return err
 	}
 
-	arch := archiver.New(isolatedclient.New(nil, authClient, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil), out)
+	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
+	arch := archiver.New(ctx, isolatedclient.New(nil, authClient, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil), out)
 	common.CancelOnCtrlC(arch)
 	items := make([]*archiver.Item, 0, len(c.files)+len(c.dirs))
 	names := make([]string, 0, cap(items))

@@ -61,7 +61,6 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	out := os.Stdout
 	prefix := "\n"
 	if c.defaultFlags.Quiet {
-		out = nil
 		prefix = ""
 	}
 	start := time.Now()
@@ -69,7 +68,8 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	if err != nil {
 		return err
 	}
-	arch := archiver.New(isolatedclient.New(nil, client, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil), out)
+	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
+	arch := archiver.New(ctx, isolatedclient.New(nil, client, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil), out)
 	common.CancelOnCtrlC(arch)
 	item := isolate.Archive(arch, &c.ArchiveOptions)
 	item.WaitForHashed()
