@@ -138,7 +138,7 @@ namespace LogDog {
 
       // Instantiate our view, and install callbacks.
       let profile =
-          ((this.comp.mobile) ? Model.DEFAULT_PROFILE : Model.MOBILE_PROFILE);
+          ((this.comp.mobile) ? Model.MOBILE_PROFILE : Model.DEFAULT_PROFILE);
       this.model =
           new LogDog.Model(new luci.Client(this.comp.$.client), profile, this);
       this.handleStreamsChanged();
