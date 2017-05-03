@@ -185,6 +185,7 @@ func (r *isolateRun) initCipdClient(ctx context.Context, httpAuth *http.Client, 
 	opts := cipd.ClientOptions{
 		ServiceURL:          serviceURL,
 		Root:                r.workDir,
+		CacheDir:            r.cipdCacheDir,
 		AuthenticatedClient: httpAuth,
 		AnonymousClient:     http.DefaultClient,
 	}

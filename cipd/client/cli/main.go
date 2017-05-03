@@ -272,6 +272,7 @@ func (opts *clientOptions) makeCipdClient(ctx context.Context, root string) (cip
 	realOpts := cipd.ClientOptions{
 		ServiceURL:          opts.serviceURL,
 		Root:                root,
+		CacheDir:            opts.cacheDir,
 		AuthenticatedClient: client,
 		AnonymousClient:     http.DefaultClient,
 	}
