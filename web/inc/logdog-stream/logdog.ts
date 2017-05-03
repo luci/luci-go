@@ -17,6 +17,7 @@ namespace LogDog {
   export class LogStreamDescriptor {
     readonly name: string;
     readonly timestamp: Date;
+    readonly tags: {[key: string]: string};
 
     static make(desc: any): LogStreamDescriptor {
       desc.timestamp = new Date(desc.timestamp);

@@ -53,6 +53,8 @@ namespace LogDog {
     bottom: boolean;
     /** Is the content fully loaded? */
     fullyLoaded: boolean;
+    /** If not undefined, link to this URL for the log stream. */
+    logStreamUrl: string | undefined;
 
     /** Text in the status bar. */
     loadingState: LoadingState;
@@ -82,6 +84,7 @@ namespace LogDog {
 
     // Polymer properties.
     streams: string[];
+    streamLinkUrl: string | undefined;
     mobile: boolean;
     isSplit: boolean;
     metadata: boolean;
@@ -464,6 +467,7 @@ namespace LogDog {
       this.comp._setIsSplit(c.split);
       this.comp._updateSplitVisible(c.split && this.renderedLogs);
       this.comp._updateBottomVisible(c.bottom && this.renderedLogs);
+      this.comp.streamLinkUrl = c.logStreamUrl;
 
       this.comp._setShowStreamingControls(this.renderedLogs && !c.fullyLoaded);
       if (c.fullyLoaded) {

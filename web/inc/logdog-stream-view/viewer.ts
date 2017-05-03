@@ -198,6 +198,8 @@ namespace LogDog {
     /** Are we in the middle of rendering logs? */
     private rendering = true;
 
+    private cachedLogStreamUrl: string|undefined = undefined;
+
     private loadingStateValue: LoadingState = LoadingState.NONE;
     private streamStatusValue: StreamStatusEntry[];
 
@@ -360,6 +362,7 @@ namespace LogDog {
         split: this.isSplit,
         bottom: !this.fetchedEndOfStream,
         fullyLoaded: (this.fetchedFullStream && (!this.rendering)),
+        logStreamUrl: this.logStreamUrl,
         loadingState: this.loadingState,
         streamStatus: this.streamStatus,
       });
@@ -647,12 +650,20 @@ namespace LogDog {
     private get fetchedFullStream(): boolean {
       return (this.fetchedEndOfStream && (!this.isSplit));
     }
+
+    private get logStreamUrl(): string|undefined {
+      if (!this.cachedLogStreamUrl) {
+        this.cachedLogStreamUrl = this.provider.getLogStreamUrl();
+      }
+      return this.cachedLogStreamUrl;
+    }
   }
 
   /** Generic interface for a log provider. */
   interface LogProvider {
     setStreamStatusCallback(cb: StreamStatusCallback): void;
     fetch(op: luci.Operation, l: Location): Promise<BufferedLogs>;
+    getLogStreamUrl(): string|undefined;
 
     /** Will return null if this LogProvider doesn't support splitting. */
     split(): SplitLogProvider|null;
@@ -761,6 +772,18 @@ namespace LogDog {
       } catch (err) {
         throw resolveErr(err);
       }
+    }
+
+    get descriptor() {
+      return this.fetcher.desc;
+    }
+
+    getLogStreamUrl(): string|undefined {
+      let desc = this.descriptor;
+      if (desc) {
+        return (desc.tags || {})['logdog.viewer_url'];
+      }
+      return undefined;
     }
 
     setStreamStatusCallback(cb: StreamStatusCallback) {
@@ -1086,6 +1109,19 @@ namespace LogDog {
           return entry.status;
         }));
       }
+    }
+
+    getLogStreamUrl(): string|undefined {
+      // Return the first log stream viewer URL. IF we have a shared prefix,
+      // this will always work. Otherwise, returning something is better than
+      // nothing, so if any of the base streams have a URL, we will return it.
+      for (let s of this.streams) {
+        let url = s.ls.getLogStreamUrl();
+        if (url) {
+          return url;
+        }
+      }
+      return undefined;
     }
 
     /**

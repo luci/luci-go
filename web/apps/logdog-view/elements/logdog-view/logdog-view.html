@@ -63,7 +63,12 @@ The streams are specified by full path using the "s=" query parameter.
       <span class="banner-content">
         <h1><a href="/">LogDog</a>
           <template is="dom-if" if="{{_hasStreams}}">
-            : [[streams]]
+            <template is="dom-if" if="{{streamLinkUrl}}">
+              : <a href="{{streamLinkUrl}}">[[streams]]</a>
+            </template>
+            <template is="dom-if" if="{{!streamLinkUrl}}">
+              : [[streams]]
+            </template>
           </template>
           <template is="dom-if" if="{{!_hasStreams}}">
             (No Streams Provided)
@@ -83,7 +88,8 @@ The streams are specified by full path using the "s=" query parameter.
       host="[[host]]"
       mobile="[[mobile]]"
       metadata="[[metadata]]"
-      streams="[[streams]]"></logdog-stream-view>
+      streams="[[streams]]"
+      stream-link-url="{{streamLinkUrl}}"></logdog-stream-view>
   </div>
 </template>
 
@@ -108,6 +114,12 @@ The streams are specified by full path using the "s=" query parameter.
         type: Array,
         value: [],
         readOnly: true,
+      },
+
+      streamLinkUrl: {
+        type: String,
+        value: null,
+        notify: true,
       },
 
       metadata: {

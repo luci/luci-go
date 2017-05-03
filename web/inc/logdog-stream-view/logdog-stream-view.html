@@ -480,6 +480,13 @@ An element for rendering muxed LogDog log streams.
         computed: '_computeBackfillIconName(backfill)',
       },
 
+      /** If populated, the stream name at the top will link to this URL. */
+      streamLinkUrl: {
+        type: String,
+        value: null,
+        notify: true,
+      },
+
       /**
        * The current stream status. This is an Array of objects:
        *   obj.name is the name of the stream.
