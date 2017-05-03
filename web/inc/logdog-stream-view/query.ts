@@ -17,28 +17,28 @@ namespace LogDog {
   /**
    * Issues a query and iteratively pulls up to limit results.
    */
-  export function queryAll(
-      client: LogDog.Client, req: QueryRequest,
-      limit: number): Promise<QueryResult[]> {
+  export async function
+  queryAll(client: LogDog.Client, req: QueryRequest, limit: number):
+      Promise<QueryResult[]> {
     let results: QueryResult[] = [];
-    let cursor: string;
-    limit = (limit || 100);
+    let cursor = '';
 
-    let fetchRound = (first: boolean): Promise<QueryResult[]> => {
-      let remaining = (limit - results.length);
-      if (remaining <= 0 || (!(first || cursor))) {
-        return Promise.resolve(results);
+    for (let remaining = (limit || 100); remaining > 0;) {
+      console.log('Query', cursor, remaining);
+      let resp = await client.query(req, cursor, remaining);
+      if (!resp[0].length) {
+        break;
       }
 
-      return client.query(req, cursor, remaining).then(round => {
-        if (round[0]) {
-          results.push.apply(results, round[0]);
-        }
-        cursor = round[1];
-        return fetchRound(false);
-      });
-    };
+      results.push.apply(results, resp[0]);
+      remaining -= resp[0].length;
 
-    return fetchRound(true);
+      cursor = resp[1];
+      if (!(cursor && cursor.length)) {
+        break;
+      }
+    }
+
+    return results;
   }
 }

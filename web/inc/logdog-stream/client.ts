@@ -45,7 +45,7 @@ namespace LogDog {
     constructor(private client: luci.Client) {}
 
     /** Get executes a Get RPC. */
-    get(req: GetRequest): Promise<GetResponse> {
+    async get(req: GetRequest): Promise<GetResponse> {
       if (this.debug) {
         console.log('logdog.Logs.Get:', req);
       }
@@ -53,7 +53,7 @@ namespace LogDog {
     }
 
     /** Tail executes a Tail RPC. */
-    tail(stream: StreamPath, state: boolean): Promise<GetResponse> {
+    async tail(stream: StreamPath, state: boolean): Promise<GetResponse> {
       let request: TailRequest = {
         project: stream.project,
         path: stream.path,
@@ -76,7 +76,7 @@ namespace LogDog {
      * @return a Promise that resolves to the query results and continuation
      *     cursor. The cursor may be empty if the query finished.
      */
-    query(params: QueryRequest, cursor = '', limit = 0):
+    async query(params: QueryRequest, cursor = '', limit = 0):
         Promise<[QueryResult[], string]> {
       let project = params.project;
       let body: any = {
@@ -115,25 +115,23 @@ namespace LogDog {
         }[];
         next: string;
       };
+      let resp: responseType =
+          await this.client.call('logdog.Logs', 'Query', body);
 
-      return this.client.call('logdog.Logs', 'Query', body)
-          .then((resp: responseType): [QueryResult[], string] => {
-
-            // Package the response in QueryResults.
-            let results = (resp.streams || []).map(entry => {
-              let res: QueryResult = {
-                stream: new LogDog.StreamPath(project, entry.path),
-              };
-              if (entry.state) {
-                res.state = LogDog.LogStreamState.make(entry.state);
-              }
-              if (entry.desc) {
-                res.desc = LogDog.LogStreamDescriptor.make(entry.desc);
-              }
-              return res;
-            });
-            return [results, resp.next];
-          });
+      // Package the response in QueryResults.
+      let results = (resp.streams || []).map(entry => {
+        let res: QueryResult = {
+          stream: new LogDog.StreamPath(project, entry.path),
+        };
+        if (entry.state) {
+          res.state = LogDog.LogStreamState.make(entry.state);
+        }
+        if (entry.desc) {
+          res.desc = LogDog.LogStreamDescriptor.make(entry.desc);
+        }
+        return res;
+      });
+      return [results, resp.next];
     }
   }
 }

@@ -7,8 +7,9 @@
     "noUnusedLocals": true,
     "strictNullChecks": true,
     "sourceMap": true,
+    "removeComments": true,
 
     "module": "amd",
-    "target": "ES5"
+    "target": "ES6"
   }
 }

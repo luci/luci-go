@@ -14,7 +14,7 @@ namespace luci {
    * An optional Operation may be supplied, in which case sleep Promise will be
    * automatically cancelled if the Operation is cancelled.
    */
-  export function sleepPromise(delay = 0, op?: Operation): Promise<void> {
+  export function sleepPromise(delay = 0, op?: Operation) {
     if (delay < 0) {
       delay = 0;
     }

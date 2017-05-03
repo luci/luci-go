@@ -177,22 +177,22 @@ namespace LogDog {
     }
 
     /** Called when the "streams" property value changes. */
-    handleStreamsChanged() {
+    async handleStreamsChanged() {
       if (!this.model) {
         return;
       }
 
-      this.model.resolve(this.comp.streams).then(() => {
-        // If we're not on mobile, start with playing state.
-        this.comp.playing = (!this.comp.mobile);
+      await this.model.resolve(this.comp.streams);
 
-        // Perform the initial fetch after resolution.
-        if (this.model) {
-          this.model.setAutomatic(this.comp.playing);
-          this.model.setFetchFromTail(!this.comp.backfill);
-          this.model.fetch(false);
-        }
-      });
+      // If we're not on mobile, start with playing state.
+      this.comp.playing = (!this.comp.mobile);
+
+      // Perform the initial fetch after resolution.
+      if (this.model) {
+        this.model.setAutomatic(this.comp.playing);
+        this.model.setFetchFromTail(!this.comp.backfill);
+        this.model.fetch(false);
+      }
     }
 
     /** Called when the "playing" property value changes. */

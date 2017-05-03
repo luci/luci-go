@@ -31,7 +31,7 @@ namespace luci {
      * Wraps a Promise, returning a Promise whose resolve and reject methods
      * will throw a CANCELLED error if this Operation has been cancelled.
      */
-    wrap<T>(p: Promise<T>): Promise<T> {
+    async wrap<T>(p: Promise<T>) {
       return new Promise((resolve, reject) => {
         p.then(
             result => {

@@ -179,8 +179,7 @@ namespace LogDog {
      * Returns a Promise that will resolve to the next block of logs in the
      * stream.
      *
-     * @return {Promise[LogDog.LogEntry[]]} A Promise that will resolve to the
-     *     next block of logs in the stream.
+     * @return A Fetch object configured with the fetch result.
      */
     get(op: luci.Operation, index: number, opts: FetcherOptions): Fetch {
       let ctx = new FetchContext(op);
@@ -202,11 +201,11 @@ namespace LogDog {
       let allLogs: LogDog.LogEntry[] = [];
 
       let ctx = new FetchContext(op);
-      let getIter = (): Promise<LogDog.LogEntry[]> => {
+      let getIter = async () => {
         op.assert();
 
         if (count <= 0) {
-          return Promise.resolve(allLogs);
+          return allLogs;
         }
 
         // Perform Gets until we have the requested number of logs. We don't
@@ -216,19 +215,19 @@ namespace LogDog {
           logCount: count,
           sparse: true,
         };
-        return this.getIndex(ctx, startIndex, opts).then(logs => {
-          op.assert();
 
-          if (logs && logs.length) {
-            allLogs.push.apply(allLogs, logs);
-            startIndex += logs.length;
-            count -= logs.length;
-          }
-          if (count > 0) {
-            // Recurse.
-          }
-          return Promise.resolve(allLogs);
-        });
+        let logs = await this.getIndex(ctx, startIndex, opts);
+        op.assert();
+
+        if (logs && logs.length) {
+          allLogs.push.apply(allLogs, logs);
+          startIndex += logs.length;
+          count -= logs.length;
+        }
+        if (count > 0) {
+          // Recurse.
+        }
+        return allLogs;
       };
       return new Fetch(ctx, getIter());
     }
@@ -238,35 +237,35 @@ namespace LogDog {
      */
     getLatest(op: luci.Operation): Fetch {
       let errNoLogs = new Error('no logs, streaming');
-      let streamingRetry = new luci.RetryIterator(Fetcher.streamingRetry);
       let ctx = new FetchContext(op);
-      return new Fetch(
-          ctx,
-          streamingRetry.do(
-              () => {
-                return this.doTail(ctx).then(logs => {
-                  if (!(logs && logs.length)) {
-                    throw errNoLogs;
-                  }
-                  return logs;
-                });
-              },
-              (err: Error, delay: number) => {
-                if (err !== errNoLogs) {
-                  throw err;
-                }
 
-                // No logs were returned, and we expect logs, so we're
-                // streaming. Try again after a delay.
-                ctx.updateStatus(FetchStatus.STREAMING);
-                console.warn(
-                    this.stream,
-                    `: No logs returned; retrying after ${delay}ms...`);
-              }));
+      let streamingRetry = new luci.RetryIterator(Fetcher.streamingRetry);
+      let retryPromise = streamingRetry.do(
+          async () => {
+            let logs = await this.doTail(ctx);
+            if (!(logs && logs.length)) {
+              throw errNoLogs;
+            }
+            return logs;
+          },
+          (err: Error, delay: number) => {
+            if (err !== errNoLogs) {
+              throw err;
+            }
+
+            // No logs were returned, and we expect logs, so we're
+            // streaming. Try again after a delay.
+            ctx.updateStatus(FetchStatus.STREAMING);
+            console.warn(
+                this.stream,
+                `: No logs returned; retrying after ${delay}ms...`);
+          });
+
+      return new Fetch(ctx, retryPromise);
     }
 
-    private getIndex(ctx: FetchContext, index: number, opts: FetcherOptions):
-        Promise<LogDog.LogEntry[]> {
+    private async getIndex(
+        ctx: FetchContext, index: number, opts: FetcherOptions) {
       // (Testing) Constrain our max logs, if set.
       if (Fetcher.maxLogsPerGet > 0) {
         if ((!opts.logCount) || opts.logCount > Fetcher.maxLogsPerGet) {
@@ -275,56 +274,53 @@ namespace LogDog {
       }
 
       // We will retry continuously until we get a log (streaming).
-      let streamingRetry = new luci.RetryIterator(Fetcher.streamingRetry);
       let errNoLogs = new Error('no logs, streaming');
-      return streamingRetry
-          .do(
-              () => {
-                // If we're asking for a log beyond our stream, don't bother.
-                if (this.terminalIndex >= 0 && index > this.terminalIndex) {
-                  return Promise.resolve([]);
-                }
 
-                return this.doGet(ctx, index, opts).then(logs => {
-                  ctx.op.assert();
+      let streamingRetry = new luci.RetryIterator(Fetcher.streamingRetry);
+      let logs = await streamingRetry.do(
+          async () => {
+            // If we're asking for a log beyond our stream, don't bother.
+            if (this.terminalIndex >= 0 && index > this.terminalIndex) {
+              return [];
+            }
 
-                  if (!(logs && logs.length)) {
-                    // (Retry)
-                    throw errNoLogs;
-                  }
-
-                  return logs;
-                });
-              },
-              (err: Error, delay: number) => {
-                ctx.op.assert();
-
-                if (err !== errNoLogs) {
-                  throw err;
-                }
-
-                // No logs were returned, and we expect logs, so we're
-                // streaming. Try again after a delay.
-                ctx.updateStatus(FetchStatus.STREAMING);
-                console.warn(
-                    this.stream,
-                    `: No logs returned; retrying after ${delay}ms...`);
-              })
-          .then(logs => {
+            let fetchLogs = await this.doGet(ctx, index, opts);
             ctx.op.assert();
 
-            // Since we allow non-contiguous Get, we may get back more logs than
-            // we actually expected. Prune any such additional.
-            if (opts.sparse && opts.logCount && opts.logCount > 0) {
-              let maxStreamIndex = index + opts.logCount - 1;
-              logs = logs.filter(le => le.streamIndex <= maxStreamIndex);
+            if (!(fetchLogs && fetchLogs.length)) {
+              // (Retry)
+              throw errNoLogs;
             }
-            return logs;
+            return fetchLogs;
+          },
+          (err: Error, delay: number) => {
+            ctx.op.assert();
+
+            if (err !== errNoLogs) {
+              throw err;
+            }
+
+            // No logs were returned, and we expect logs, so we're streaming.
+            // Try again after a delay.
+            ctx.updateStatus(FetchStatus.STREAMING);
+            console.warn(
+                this.stream,
+                `: No logs returned; retrying after ${delay}ms...`);
           });
+
+      ctx.op.assert();
+
+      // Since we allow non-contiguous Get, we may get back more logs than
+      // we actually expected. Prune any such additional.
+      if (opts.sparse && opts.logCount && opts.logCount > 0) {
+        let maxStreamIndex = index + opts.logCount - 1;
+        logs = logs.filter(le => le.streamIndex <= maxStreamIndex);
+      }
+      return logs;
     }
 
-    private doGet(ctx: FetchContext, index: number, opts: FetcherOptions):
-        Promise<LogDog.LogEntry[]> {
+    private async doGet(
+        ctx: FetchContext, index: number, opts: FetcherOptions) {
       let request: LogDog.GetRequest = {
         project: this.stream.project,
         path: this.stream.path,
@@ -349,33 +345,24 @@ namespace LogDog {
 
       // Perform our Get, waiting until the stream actually exists.
       let missingRetry = new luci.RetryIterator(Fetcher.missingRetry);
-      return missingRetry
-          .do(
-              () => {
-                ctx.updateStatus(FetchStatus.LOADING);
-                return this.client.get(request);
-              },
-              this.doRetryIfMissing(ctx))
-          .then((resp: GetResponse) => {
-            let fr = FetchResult.make(resp, this.lastDesc);
-            return this.afterProcessResult(ctx, fr);
-          });
+      let resp = await missingRetry.do(() => {
+        ctx.updateStatus(FetchStatus.LOADING);
+        return this.client.get(request);
+      }, this.doRetryIfMissing(ctx));
+      let fr = FetchResult.make(resp, this.lastDesc);
+      return this.afterProcessResult(ctx, fr);
     }
 
-    private doTail(ctx: FetchContext): Promise<LogDog.LogEntry[]> {
+    private async doTail(ctx: FetchContext) {
       let missingRetry = new luci.RetryIterator(Fetcher.missingRetry);
-      return missingRetry
-          .do(
-              () => {
-                ctx.updateStatus(FetchStatus.LOADING);
-                let needsState = (this.terminalIndex < 0);
-                return this.client.tail(this.stream, needsState);
-              },
-              this.doRetryIfMissing(ctx))
-          .then((resp: GetResponse) => {
-            let fr = FetchResult.make(resp, this.lastDesc);
-            return this.afterProcessResult(ctx, fr);
-          });
+      let resp = await missingRetry.do(() => {
+        ctx.updateStatus(FetchStatus.LOADING);
+        let needsState = (this.terminalIndex < 0);
+        return this.client.tail(this.stream, needsState);
+      }, this.doRetryIfMissing(ctx));
+
+      let fr = FetchResult.make(resp, this.lastDesc);
+      return this.afterProcessResult(ctx, fr);
     }
 
     private afterProcessResult(ctx: FetchContext, fr: FetchResult):

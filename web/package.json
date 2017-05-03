@@ -5,7 +5,7 @@
     "browser-sync": "^2.7.7",
     "connect-history-api-fallback": "^1.1.0",
     "del": "^2.0.2",
-    "es6-promise": "~3.0.2",
+    "es6-promise": "^4.1.0",
     "glob-all": "^3.0.1",
     "gulp": "^3.8.5",
     "gulp-autoprefixer": "^3.1.0",
@@ -36,8 +36,8 @@
     "merge-stream": "^1.0.0",
     "run-sequence": "^1.0.2",
     "tslint": "^4.2.0",
-    "typescript": "^2.0.10",
-    "vulcanize": "^1.14.12",
+    "typescript": "^2.3.2",
+    "vulcanize": "^1.15.4",
     "yargs": "~4.8.0"
   },
   "scripts": {
@@ -47,9 +47,5 @@
   },
   "engines": {
     "node": ">=0.10.0"
-  },
-  "dependencies": {
-    "@types/es6-promise": "0.0.32",
-    "ts-promise": "^0.3.4"
   }
 }

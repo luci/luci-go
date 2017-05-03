@@ -9,8 +9,8 @@
 ///<reference path="../luci-sleep-promise/promise.ts" />
 ///<reference path="../rpc/client.ts" />
 ///<reference path="fetcher.ts" />
-///<reference path="interface.ts" />
 ///<reference path="query.ts" />
+///<reference path="view.ts" />
 
 namespace LogDog {
 
@@ -217,89 +217,94 @@ namespace LogDog {
      * @return a Promise that will resolve once all log streams have been
      *   identified and the configured.
      */
-    resolve(paths: string[]): Promise<void> {
+    async resolve(paths: string[]) {
       this.reset();
 
       // For any path that is a query, execute that query.
       this.loadingState = LoadingState.RESOLVING;
-      return Promise
-          .all(paths.map(path => {
-            let stream = LogDog.StreamPath.splitProject(path);
-            if (!LogDog.isQuery(stream.path)) {
-              return Promise.resolve([stream]);
+      let streamBlocks: LogDog.StreamPath[][];
+      try {
+        streamBlocks = await this.resolvePathsIntoStreams(paths);
+      } catch (err) {
+        this.loadingState = LoadingState.ERROR;
+        console.error('Failed to resolve log streams:', err);
+        return;
+      }
+
+      // Flatten them all.
+      let streams: LogDog.StreamPath[] = [];
+      for (let streamBlock of streamBlocks) {
+        streams.push.apply(streams, streamBlock);
+      }
+
+      let initialFetchSize = (streams.length <= 1) ?
+          this.profile.initialFetchSize :
+          this.profile.multiInitialFetchSize;
+
+      // Generate a LogStream client entry for each composite stream.
+      let logStreams = streams.map((stream) => {
+        console.log('Resolved log stream:', stream);
+        return new LogStream(
+            this.client, stream, initialFetchSize, this.profile.fetchSize);
+      });
+
+      // Reset any existing state.
+      this.reset();
+
+      // If we have exactly one stream, then use it directly. This allows
+      // it to split.
+      let provider: LogProvider;
+      switch (logStreams.length) {
+        case 0:
+          provider = this.nullProvider();
+          break;
+        case 1:
+          provider = logStreams[0];
+          break;
+        default:
+          provider = new AggregateLogStream(logStreams);
+          break;
+      }
+      provider.setStreamStatusCallback((st: LogStreamStatus[]) => {
+        if (this.provider === provider) {
+          this.streamStatus = this.buildStreamStatus(st);
+        }
+      });
+      this.provider = provider;
+      this.loadingState = LoadingState.NONE;
+    }
+
+    private resolvePathsIntoStreams(paths: string[]) {
+      return Promise.all(paths.map(async path => {
+        let stream = LogDog.StreamPath.splitProject(path);
+        if (!LogDog.isQuery(stream.path)) {
+          return [stream];
+        }
+
+        // This "path" is really a query. Construct and execute.
+        //
+        // If we failed due to an auth error, but our auth changed during the
+        // operation, try again automatically.
+        let query: LogDog.QueryRequest = {
+          project: stream.project,
+          path: stream.path,
+          streamType: LogDog.StreamType.TEXT,
+        };
+
+        while (true) {
+          try {
+            let results = await LogDog.queryAll(this.client, query, 100);
+            return results.map(qr => qr.stream);
+          } catch (err) {
+            err = resolveErr(err);
+            if (err !== NOT_AUTHENTICATED) {
+              throw err;
             }
 
-            // This "path" is really a query. Construct and execute.
-            let doQuery = (): Promise<LogDog.StreamPath[]> => {
-              return LogDog
-                  .queryAll(
-                      this.client, {
-                        project: stream.project,
-                        path: stream.path,
-                        streamType: LogDog.StreamType.TEXT,
-                      },
-                      100)
-                  .then(result => result.map(qr => qr.stream))
-                  .catch((err: Error) => {
-                    err = resolveErr(err);
-                    if (err === NOT_AUTHENTICATED) {
-                      return this.authChangedPromise.then(() => {
-                        return doQuery();
-                      });
-                    }
-
-                    throw err;
-                  });
-            };
-            return doQuery();
-          }))
-          .then((streamBlocks) => {
-            let streams: LogDog.StreamPath[] = [];
-            for (let streamBlock of (streamBlocks || [])) {
-              streams.push.apply(streams, streamBlock);
-            };
-
-            let initialFetchSize =
-                ((streams.length <= 1) ? this.profile.initialFetchSize :
-                                         this.profile.multiInitialFetchSize);
-
-            // Generate a LogStream client entry for each composite stream.
-            let logStreams = streams.map((stream) => {
-              console.log('Resolved log stream:', stream);
-              return new LogStream(
-                  this.client, stream, initialFetchSize,
-                  this.profile.fetchSize);
-            });
-
-            // Reset any existing state.
-            this.reset();
-
-            // If we have exactly one stream, then use it directly. This allows
-            // it to split.
-            let provider: LogProvider;
-            switch (logStreams.length) {
-              case 0:
-                provider = this.nullProvider();
-                break;
-              case 1:
-                provider = logStreams[0];
-                break;
-              default:
-                provider = new AggregateLogStream(logStreams);
-                break;
-            }
-            provider.setStreamStatusCallback((st: LogStreamStatus[]) => {
-              if (this.provider === provider) {
-                this.streamStatus = this.buildStreamStatus(st);
-              }
-            });
-            this.provider = provider;
-            this.loadingState = LoadingState.NONE;
-          })
-          .catch((err: Error) => {
-            this.loadingState = LoadingState.ERROR;
-            console.error('Failed to resolve log streams:', err);
-          });
+            await this.authChangedPromise;
+          }
+        }
+      }));
     }
 
     /**
@@ -385,7 +390,7 @@ namespace LogDog {
      *
      * This cancels the current fetch, if one is in progress.
      */
-    split(): Promise<void> {
+    async split() {
       // If we haven't already split, and our provider lets us split, then go
       // ahead and do so.
       if (this.providerCanSplit) {
@@ -404,7 +409,7 @@ namespace LogDog {
      * @param cancel true if we should abandon any current fetches.
      * @return A Promise that will resolve when the fetch operation is complete.
      */
-    fetch(cancel: boolean): Promise<void> {
+    async fetch(cancel: boolean) {
       if (this.isSplit) {
         if (this.fetchFromTail) {
           // Next fetch grabs logs from the bottom (continue tailing).
@@ -425,7 +430,7 @@ namespace LogDog {
     }
 
     /** Fetch logs from an explicit location. */
-    fetchLocation(l: Location, cancel: boolean): Promise<void> {
+    async fetchLocation(l: Location, cancel: boolean): Promise<void> {
       if (this.currentFetchPromise && (!cancel)) {
         return this.currentFetchPromise;
       }
@@ -433,7 +438,7 @@ namespace LogDog {
       // If our provider is finished, then do nothing.
       if (this.fetchedFullStream) {
         // There are no more logs.
-        return Promise.resolve(undefined);
+        return undefined;
       }
 
       // If we're asked to fetch BOTTOM, but we're not split, fetch HEAD
@@ -448,83 +453,87 @@ namespace LogDog {
       // Rotate our fetch ID. This will effectively cancel any pending fetches.
       this.currentOperation = new luci.Operation();
       this.currentFetchPromise =
-          this.provider.fetch(this.currentOperation, l)
-              .then((buf) => {
-                // Clear our fetching status.
-                this.rendering = true;
-                this.loadingState = LoadingState.RENDERING;
-                let hasLogs = (buf && buf.peek());
+          this.fetchLocationImpl(l, this.currentOperation);
+      try {
+        await this.currentFetchPromise;
+      } catch (err) {
+        // If we've been canceled, discard this result.
+        if (err === luci.Operation.CANCELLED) {
+          return;
+        }
 
-                // Resolve any previous rendering Promise that we have. This
-                // makes sure our rendering and fetching don't get more than
-                // one round out of sync.
-                return (this.renderPromise || Promise.resolve(undefined))
-                    .then(() => {
-                      // Post-fetch cleanup.
-                      this.clearCurrentOperation();
+        this.clearCurrentOperation();
+        if (err === NOT_AUTHENTICATED) {
+          this.loadingState = LoadingState.NEEDS_AUTH;
 
-                      // Clear our loading state (updates controls
-                      // automatically).
-                      this.loadingState = LoadingState.RENDERING;
+          // We failed because we were not authenticated. Mark this
+          // so we can retry if that state changes.
+          await this.authChangedPromise;
 
-                      // Initiate the next render. This will happen in the
-                      // background while we enqueue our next fetch.
-                      this.renderPromise = this.renderLogs(buf, l).then(() => {
-                        this.renderPromise = null;
-                        if (this.loadingState === LoadingState.RENDERING) {
-                          this.loadingState = LoadingState.NONE;
-                        }
-                      });
+          // Our authentication state changed during the fetch!
+          // Retry automatically.
+          return this.fetchLocation(l, false);
+        }
 
-                      if (this.fetchedFullStream) {
-                        return;
-                      }
+        console.error('Failed to load log streams:', err);
+      };
 
-                      // The fetch is finished. If we're automatic, and we
-                      // got logs, start the next.
-                      if (this.automatic && hasLogs) {
-                        console.log('Automatic: starting next fetch.');
-                        return this.fetch(false);
-                      }
-                    });
-              })
-              .catch((err: Error) => {
-                // If we've been canceled, discard this result.
-                if (err === luci.Operation.CANCELLED) {
-                  return;
-                }
-
-                this.clearCurrentOperation();
-                if (err === NOT_AUTHENTICATED) {
-                  this.loadingState = LoadingState.NEEDS_AUTH;
-
-                  // We failed because we were not authenticated. Mark this
-                  // so we can retry if that state changes.
-                  return this.authChangedPromise.then(() => {
-                    // Our authentication state changed during the fetch!
-                    // Retry automatically.
-                    this.fetchLocation(l, false);
-                  });
-                }
-
-                console.error('Failed to load log streams:', err);
-              });
       return this.currentFetchPromise;
     }
 
-    private renderLogs(buf: BufferedLogs, l: Location): Promise<void> {
-      if (!(buf && buf.peek())) {
-        return Promise.resolve(undefined);
+    private async fetchLocationImpl(l: Location, op: luci.Operation) {
+      let buf = await this.provider.fetch(op, l);
+
+      // Clear our fetching status.
+      this.rendering = true;
+      this.loadingState = LoadingState.RENDERING;
+      let hasLogs = (buf && buf.peek());
+
+      // Resolve any previous rendering Promise that we have. This
+      // makes sure our rendering and fetching don't get more than
+      // one round out of sync.
+      if (this.renderPromise) {
+        await this.renderPromise;
+      }
+      // Post-fetch cleanup.
+      this.clearCurrentOperation();
+
+      // Clear our loading state (updates controls automatically).
+      this.loadingState = LoadingState.RENDERING;
+
+      // Initiate the next render. This will happen in the
+      // background while we enqueue our next fetch.
+      let doRender = async () => {
+        await this.renderLogs(buf, l);
+        if (this.loadingState === LoadingState.RENDERING) {
+          this.loadingState = LoadingState.NONE;
+        }
+      };
+      this.renderPromise = doRender();
+
+      if (this.fetchedFullStream) {
+        return;
       }
 
-      let lines = 0;
+      // The fetch is finished. If we're automatic, and we got logs, start the
+      // next fetch.
+      if (this.automatic && hasLogs) {
+        console.log('Automatic: starting next fetch.');
+        return this.fetch(false);
+      }
+    }
+
+    private async renderLogs(buf: BufferedLogs, l: Location) {
+      if (!(buf && buf.peek())) {
+        return;
+      }
+
       let logBlock: LogDog.LogEntry[] = [];
       let appendBlock = () => {
         if (logBlock.length) {
           console.log('Rendering', logBlock.length, 'logs...');
           this.view.pushLogEntries(logBlock, l);
           logBlock.length = 0;
-          lines = 0;
 
           // Update our status and controls.
           this.updateControls();
@@ -532,33 +541,27 @@ namespace LogDog {
       };
 
       // Create a promise loop to push logs at intervals.
-      let pushLogs = (): Promise<void> => {
-        return Promise.resolve().then(() => {
-          // Add logs until we reach our interval lines.
-          for (let nextLog = buf.next(); (nextLog); nextLog = buf.next()) {
-            // If we've exceeded our burst, then interleave a sleep (yield).
-            if (Model.logAppendInterval > 0 &&
-                lines >= Model.logAppendInterval) {
-              appendBlock();
+      let lines = 0;
+      for (let nextLog = buf.next(); (nextLog); nextLog = buf.next()) {
+        // Add the next log to the append block.
+        logBlock.push(nextLog);
+        if (nextLog.text && nextLog.text.lines) {
+          lines += nextLog.text.lines.length;
+        }
 
-              return luci.sleepPromise(Model.logAppendDelay).then(() => {
-                // Enqueue the next push round.
-                return pushLogs();
-              });
-            }
-
-            // Add the next log to the append block.
-            logBlock.push(nextLog);
-            if (nextLog.text && nextLog.text.lines) {
-              lines += nextLog.text.lines.length;
-            }
-          }
-
-          // If there are any buffered logs, append that block.
+        // Add logs until we reach our interval lines.
+        // If we've exceeded our burst, then interleave a sleep (yield). This
+        // will reduce user jank a bit.
+        if (Model.logAppendInterval > 0 && lines >= Model.logAppendInterval) {
           appendBlock();
-        });
-      };
-      return pushLogs();
+
+          await luci.sleepPromise(Model.logAppendDelay);
+          lines = 0;
+        }
+      }
+
+      // If there are any buffered logs, append that block.
+      appendBlock();
     }
 
     /**
@@ -711,7 +714,7 @@ namespace LogDog {
       return undefined;
     }
 
-    fetch(op: luci.Operation, l: Location): Promise<BufferedLogs> {
+    async fetch(op: luci.Operation, l: Location) {
       this.clearActiveFetch();
 
       // Determine which method to use based on the insertion point and current
@@ -735,16 +738,14 @@ namespace LogDog {
           throw new Error('Unknown Location: ' + l);
       }
 
-      return getLogs
-          .then((logs: LogDog.LogEntry[]) => {
-            this.initialFetch = false;
-            this.statusChanged();
-            return new BufferedLogs(logs);
-          })
-          .catch((err: Error) => {
-            err = resolveErr(err);
-            throw err;
-          });
+      try {
+        let logs = await getLogs;
+        this.initialFetch = false;
+        this.statusChanged();
+        return new BufferedLogs(logs);
+      } catch (err) {
+        throw resolveErr(err);
+      }
     }
 
     setStreamStatusCallback(cb: StreamStatusCallback) {
@@ -887,13 +888,13 @@ namespace LogDog {
       return opts;
     }
 
-    private getHead(op: luci.Operation): Promise<LogDog.LogEntry[]> {
+    private async getHead(op: luci.Operation) {
       this.updateIndexes();
 
       if (this.finished) {
         // Our HEAD region has met/surpassed our TAIL region, so there are no
         // HEAD logs to return. Only bottom.
-        return Promise.resolve();
+        return null;
       }
 
       // If we have a tail pointer, only fetch HEAD up to that point.
@@ -904,29 +905,29 @@ namespace LogDog {
 
       let f =
           this.setActiveFetch(this.fetcher.get(op, this.nextHeadIndex, opts));
-      return f.p.then((logs) => {
-        if (logs && logs.length) {
-          this.nextHeadIndex = (logs[logs.length - 1].streamIndex + 1);
-          this.updateIndexes();
-        }
-        return logs;
-      });
+      let logs = await f.p;
+      if (logs && logs.length) {
+        this.nextHeadIndex = (logs[logs.length - 1].streamIndex + 1);
+        this.updateIndexes();
+      }
+      return logs;
     }
 
-    private getTail(op: luci.Operation): Promise<LogDog.LogEntry[]> {
+    private async getTail(op: luci.Operation) {
       // If we haven't performed a Tail before, start with one.
       if (this.firstTailIndex < 0) {
         let tidx = this.fetcher.terminalIndex;
         if (tidx < 0) {
           let f = this.setActiveFetch(this.fetcher.getLatest(op));
-          return f.p.then((logs) => {
-            // Mark our initial "tail" position.
-            if (logs && logs.length) {
-              this.firstTailIndex = logs[0].streamIndex;
-              this.updateIndexes();
-            }
-            return logs;
-          });
+
+          let logs = await f.p;
+
+          // Mark our initial "tail" position.
+          if (logs && logs.length) {
+            this.firstTailIndex = logs[0].streamIndex;
+            this.updateIndexes();
+          }
+          return logs;
         }
 
         this.firstTailIndex = (tidx + 1);
@@ -936,7 +937,7 @@ namespace LogDog {
       // We're doing incremental reverse fetches. If we're finished tailing,
       // return no logs.
       if (!this.isSplit()) {
-        return Promise.resolve([]);
+        return [];
       }
 
       // Determine our walkback region.
@@ -952,19 +953,19 @@ namespace LogDog {
 
       // Fetch the full walkback region.
       let f = this.setActiveFetch(this.fetcher.getAll(op, startIndex, count));
-      return f.p.then((logs) => {
-        this.firstTailIndex = startIndex;
-        this.updateIndexes();
-        return logs;
-      });
+      let logs = await f.p;
+
+      this.firstTailIndex = startIndex;
+      this.updateIndexes();
+      return logs;
     }
 
-    private getBottom(op: luci.Operation): Promise<LogDog.LogEntry[]> {
+    private async getBottom(op: luci.Operation) {
       this.updateIndexes();
 
       // If there are no more logs in the stream, return no logs.
       if (this.fetchedEndOfStream()) {
-        return Promise.resolve([]);
+        return [];
       }
 
       // If our bottom index isn't initialized, initialize it via tail.
@@ -975,12 +976,11 @@ namespace LogDog {
       let opts = this.nextFetcherOptions();
       let f =
           this.setActiveFetch(this.fetcher.get(op, this.nextBottomIndex, opts));
-      return f.p.then(logs => {
-        if (logs && logs.length) {
-          this.nextBottomIndex = (logs[logs.length - 1].streamIndex + 1);
-        }
-        return logs;
-      });
+      let logs = await f.p;
+      if (logs && logs.length) {
+        this.nextBottomIndex = (logs[logs.length - 1].streamIndex + 1);
+      }
+      return logs;
     }
   }
 
@@ -1000,7 +1000,7 @@ namespace LogDog {
   class AggregateLogStream implements LogProvider {
     private streams: AggregateLogStream.Entry[];
     private active: AggregateLogStream.Entry[];
-    private currentNextPromise: Promise<BufferedLogs>|null;
+    private currentNextPromise: Promise<BufferedLogs[]>|null;
     private compareLogs: (a: LogDog.LogEntry, b: LogDog.LogEntry) => number;
 
     private streamStatusCallback: StreamStatusCallback;
@@ -1015,12 +1015,7 @@ namespace LogDog {
           }
         });
 
-        return {
-          ls: ls,
-          buffer: new BufferedLogs(null),
-          needsAuth: false,
-          status: ls.getStreamStatus(),
-        };
+        return new AggregateLogStream.Entry(ls);
       });
 
       // Subset of input streams that are still active (not finished).
@@ -1081,7 +1076,7 @@ namespace LogDog {
     /**
      * Implements LogProvider.next
      */
-    fetch(op: luci.Operation, _: Location): Promise<BufferedLogs> {
+    async fetch(op: luci.Operation, _: Location) {
       // If we're already are fetching the next buffer, this is an error.
       if (this.currentNextPromise) {
         throw new Error('In-progress next(), cannot start another.');
@@ -1102,19 +1097,26 @@ namespace LogDog {
       if (!this.active.length) {
         // No active streams, so we're finished. Permanently set our promise to
         // the finished state.
-        return Promise.resolve();
+        return;
       }
 
+      let buffers: BufferedLogs[];
+      this.currentNextPromise = this.ensureActiveBuffers(op);
+      try {
+        buffers = await this.currentNextPromise;
+      } finally {
+        this.currentNextPromise = null;
+      }
+      return this._aggregateBuffers(buffers);
+    }
+
+    private async ensureActiveBuffers(op: luci.Operation):
+        Promise<BufferedLogs[]|null> {
       // Fill all buffers for all active streams. This may result in an RPC to
       // load new buffer content for streams whose buffers are empty.
-      //
-      // If any stream doesn't currently have buffered logs, we will call their
-      // "next()" methods to pull the next set of logs. This will result in one
-      // of three possibilities:
-      // - A BufferedLogs will be returned containing the next logs for this
-      //   stream. The log stream may also be finished.
-      // - null will be returned, and this log stream must now be finished.
-      // - An error will be returned.
+      await Promise.all(this.active.map((entry) => entry.ensure(op)));
+
+      // Examine the error status of each stream.
       //
       // The error is interesting, since we must present a common error view to
       // our caller. If all returned errors are "NOT_AUTHENTICATED", we will
@@ -1125,52 +1127,21 @@ namespace LogDog {
       // On success, the "buffer" for the entry will be populated. On failure,
       // an error will be returned. Because Promise.all fails fast, we will
       // catch inner errors and return them as values (null if no error).
-      this.currentNextPromise =
-          Promise
-              .all<Error|null>(this.active.map((entry) => {
-                // If the entry's buffer still has data, use it immediately.
-                if (entry.buffer && entry.buffer.peek()) {
-                  return null;
-                }
+      let buffers = new Array<BufferedLogs>(this.active.length);
+      let errors = new Array<Error>();
+      this.active.forEach((entry, idx) => {
+        buffers[idx] = entry.buffer;
+        if (entry.lastError) {
+          errors.push(entry.lastError);
+        }
+      });
 
-                // No buffered logs. Call the stream's "next()" method to get
-                // some.
-                return entry.ls.fetch(op, Location.HEAD)
-                    .then((buffer) => {
-                      // Retain this buffer.
-                      entry.buffer = buffer;
-                      return null;
-                    })
-                    .catch((error: Error) => {
-                      // Log stream source of error. Raise a generic "failed to
-                      // buffer" error. This will become a permanent failure.
-                      console.error(
-                          'Error loading buffer for',
-                          entry.ls.stream.fullName(), '(', entry.ls,
-                          '): ', error);
-                      return error;
-                    });
-              }))
-              .then((results: Error[]): BufferedLogs => {
-                // Identify any errors that we hit.
-                let buffers = new Array<BufferedLogs>(this.active.length);
-                let errors: Error[] = [];
-                results.forEach((err, idx) => {
-                  buffers[idx] = this.active[idx].buffer;
-                  if (err) {
-                    errors[idx] = err;
-                  }
-                });
-
-                // We are done, and will return a value.
-                this.currentNextPromise = null;
-                if (errors.length) {
-                  throw this._aggregateErrors(errors);
-                }
-                return this._aggregateBuffers(buffers);
-              });
-
-      return this.currentNextPromise;
+      // We are done, and will return a value.
+      this.currentNextPromise = null;
+      if (errors.length) {
+        throw this._aggregateErrors(errors);
+      }
+      return buffers;
     }
 
     private _aggregateErrors(errors: Error[]): Error {
@@ -1248,9 +1219,38 @@ namespace LogDog {
   /** Internal namespace for AggregateLogStream types. */
   namespace AggregateLogStream {
     /** Entry is an entry for a single log stream and its buffered logs. */
-    export type Entry = {
-      ls: LogStream; buffer: BufferedLogs; needsAuth: boolean;
+    export class Entry {
+      buffer = new BufferedLogs(null);
       status: LogStreamStatus;
+      lastError: Error|null;
+
+      constructor(readonly ls: LogStream) {
+        this.status = ls.getStreamStatus();
+      }
+
+      get active() {
+        return (
+            (!this.buffer) || this.buffer.peek() ||
+            this.ls.fetchedEndOfStream());
+      }
+
+      async ensure(op: luci.Operation) {
+        this.lastError = null;
+        if (this.buffer && this.buffer.peek()) {
+          return;
+        }
+
+        try {
+          this.buffer = await this.ls.fetch(op, Location.HEAD);
+        } catch (e) {
+          // Log stream source of error. Raise a generic "failed to
+          // buffer" error. This will become a permanent failure.
+          console.error(
+              'Error loading buffer for', this.ls.stream.fullName(), '(',
+              this.ls, '): ', e);
+          this.lastError = e;
+        }
+      }
     };
   }
 
