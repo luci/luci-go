@@ -67,6 +67,19 @@ exports.setup_common = function(gulp) {
         .pipe(tslint.report());
   });
 
+  gulp.task('check-ts', function() {
+    // Transpile each TypeScript module independently into JavaScript.
+    var tsconfigPath = path.join(exports.incDir, 'tsconfig.json');
+
+    // Compile the files in "scripts-ts/*.ts" into a single out file.
+    var tsProj = ts.createProject(tsconfigPath, {
+      typeRoots: [path.join(exports.base, 'node_modules', '@types')],
+    });
+
+    return gulp.src(['**/*.ts', '!bower_components/**'], {cwd: exports.incDir})
+        .pipe(tsProj());
+  });
+
   gulp.task('check-format', function() {
     process.chdir(exports.base);
     return gulp.src('inc/*/*.ts')
@@ -90,7 +103,7 @@ exports.setup_common = function(gulp) {
   gulp.task('lint', ['tslint']);
 
   // Build production files, the default task
-  gulp.task('presubmit', ['lint', 'check-format']);
+  gulp.task('presubmit', ['lint', 'check-format', 'check-ts']);
 };
 
 // Project-specific tasks.
