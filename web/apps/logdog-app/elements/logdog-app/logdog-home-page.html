@@ -33,10 +33,6 @@ An element for the main LogDog web app.
     aside > p {
       font-size: .9em;
     }
-
-    section {
-
-    }
   </style>
 
 
@@ -47,17 +43,9 @@ An element for the main LogDog web app.
   <section>
     <!-- Introduction -->
     <div>
-      <p>LogDog is an ongoing Chrome Infrastructure Team project to stream,
-      collect, archive, and serve Chromium build logs and associated data. It is
-      part of the larger <a href="https://github.com/luci">LUCI</a> project.</p>
-
-      <p><strong>Note: LogDog is currently in development.</strong> It is being
-      rolled out to select Chromium project waterfalls to exercise the system
-      under load and collect real-world data for other LUCI systems to use.</p>
-
-      <p>While there is developer aim to keep its APIs, data format, and data
-      archives stable, Chrome Infra may need to disrupt some or all of these
-      during development and preparation for production deployment.</p>
+      <p>LogDog is a Chrome Operations Team project to stream, collect, archive,
+      and serve Chromium project build logs and associated data. It is part of
+      the larger <a href="https://github.com/luci">LUCI</a> project.</p>
     </div>
 
     <!-- FAQ -->
@@ -71,11 +59,13 @@ An element for the main LogDog web app.
       <h1>Where are the LogDog APIs?</h1>
 
       </p>LogDog supports interaction via
-      <a href="https://github.com/luci/luci-go/tree/master/common/prpc">pRPC</a>,
+      <a href="https://github.com/luci/luci-go/tree/master/grpc/prpc">pRPC</a>,
       a gRPC-inspired protocol. It supports <strong>JSON</strong> and
       <strong>Protocol Buffers</strong> formats.</p>
 
-      <p>You can try its APIs with the <a href="/rpcexplorer/">RPC Explorer</a>!
+      <p>You can try its APIs with the
+      <a target="_blank" href="/rpcexplorer/services/logdog.Logs/">
+      RPC Explorer</a>!
     </div>
 
     <div>
@@ -83,9 +73,9 @@ An element for the main LogDog web app.
 
       </p>LogDog currently stores log data indefinitely in
       <a href="https://cloud.google.com/storage/docs/overview">Google Cloud
-        Storage</a>. It is accessible immediately through LogDog APIs. If
+      Storage</a>. It is accessible immediately through LogDog APIs. If
       programmatic log data access is needed, please contact the Chrome
-      Infrastructure team..</p>
+      Operations team.</p>
     </div>
 
     <div>

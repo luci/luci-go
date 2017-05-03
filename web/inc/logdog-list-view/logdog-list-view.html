@@ -6,7 +6,6 @@
 
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/iron-icon/iron-icon.html">
-<link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../bower_components/paper-material/paper-material.html">
 <link rel="import" href="../logdog-styles/app-theme.html">
 <link rel="import" href="../rpc/rpc-client.html">
@@ -34,11 +33,17 @@
   <style is="custom-style">
     #nav {
       padding: 4px 4px 4px 4px;
+      margin: 10px 0px 10px 0px;
     }
 
-    paper-button {
+    a {
+      border-style: solid;
+      border-color: lightgray;
+      border-width: 1px;
+      user-select: none;
       margin: 8px;
       padding: 4px 4px 4px 4px;
+      cursor: pointer;
     }
   </style>
 
@@ -46,34 +51,26 @@
     <div id="nav">
       <!-- "Back to the beginning" zero button -->
       <template is="dom-if" if="[[_hasValue(_links.zero)]]">
-        <paper-button
-            raised
-            data-args$="[[_links.zero]]"
-            on-tap="_loadOffset">
+        <a on-click="_loadOffset"
+           data-args$="{{ _links.zero }}">
           [[_links.zero]]
-        </paper-button>
+        </a>
       </template>
 
       <!-- Previous page button -->
       <template is="dom-if" if="[[_hasValue(_links.prev)]]">
-        <paper-button
-            raised
-            data-args$="[[_links.prev]]"
-            on-tap="_loadOffset">
-          <iron-icon icon="icons:chevron-left"></iron-icon>
-          [[_links.prev]]
-        </paper-button>
+        <a on-click="_loadOffset"
+           data-args$="{{ _links.prev }}">
+          &lt; [[_links.prev]]
+        </a>
       </template>
 
       <!-- Next page button -->
       <template is="dom-if" if="[[_hasValue(_links.next)]]">
-        <paper-button
-            raised
-            data-args$="[[_links.next]]"
-            on-tap="_loadOffset">
-          [[_links.next]]
-          <iron-icon icon="icons:chevron-right"></iron-icon>
-        </paper-button>
+        <a on-click="_loadOffset"
+           data-args$="{{ _links.next }}">
+          [[_links.next]] &gt;
+        </a>
       </template>
     </div>
   </template>
@@ -178,6 +175,7 @@ An element for fetching complete LogDog log streams.
     #list {
       text-decoration: none;
       width: 90%;
+      margin: 10px 10px 10px 10px;
     }
     #list a {
       color: var(--primary-text-color);
@@ -187,21 +185,26 @@ An element for fetching complete LogDog log streams.
       padding: 0;
       margin: 0;
       list-style-type: none;
+      border-width: 1px;
+      border-color: darkgray;
+      border-style: solid;
     }
     #list li {
       padding: 2px 2px 2px 2px;
+      margin: 5px 10px 5px 10px;
+      font-size: 1.1em;
+    }
+    #list li a {
+      display: block;
     }
     #list li:nth-of-type(odd) {
-      background-color: var(--light-primary-color);
+      background-color: white;
     }
     #list li:nth-of-type(even) {
-      background-color: var(--light-primary-alternate-color);
+      background-color: #f2f2f2;
     }
     #list .stream-component {
       font-weight: bold;
-    }
-    #list paper-material {
-      padding: 4px 4px 4px 4px;
     }
   </style>
 
@@ -250,9 +253,7 @@ An element for fetching complete LogDog log streams.
         <template is="dom-repeat" items="[[paths]]">
           <li class="path-component">
             <a href="[[linkBase]][[item.full]]">
-              <paper-material elevation="1">
               [[item.value]]
-              </paper-material>
             </a>
           </li>
         </template>
@@ -261,9 +262,7 @@ An element for fetching complete LogDog log streams.
         <template is="dom-repeat" items="[[streams]]">
           <li class="stream-component">
             <a href="[[streamLinkBase]]?s=[[item.full]]">
-              <paper-material elevation="1">
-                [[item.value]]
-              </paper-material>
+              [[item.value]]
             </a>
           </li>
         </template>
