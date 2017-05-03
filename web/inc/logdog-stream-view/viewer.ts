@@ -151,6 +151,12 @@ namespace LogDog {
     };
 
     /**
+     * Amount of time after which we consider the build to have been loading
+     * "for a while".
+     */
+    private static LOADING_WHILE_THRESHOLD_MS = 60000;  // 1 Minute
+
+    /**
      * If >0, the maximum number of log lines to push at a time. We will sleep
      * in between these entries to allow the rest of the app to be responsive
      * during log dumping.
@@ -449,6 +455,12 @@ namespace LogDog {
 
       // If we're not split, always fetch from BOTTOM.
       this.loadingState = LoadingState.LOADING;
+      let loadingWhileTimer =
+          new luci.Timer(Model.LOADING_WHILE_THRESHOLD_MS, () => {
+            if (this.loadingState === LoadingState.LOADING) {
+              this.loadingState = LoadingState.LOADING_BEEN_A_WHILE;
+            }
+          });
 
       // Rotate our fetch ID. This will effectively cancel any pending fetches.
       this.currentOperation = new luci.Operation();
@@ -457,6 +469,8 @@ namespace LogDog {
       try {
         await this.currentFetchPromise;
       } catch (err) {
+        loadingWhileTimer.cancel();
+
         // If we've been canceled, discard this result.
         if (err === luci.Operation.CANCELLED) {
           return;
@@ -478,6 +492,7 @@ namespace LogDog {
         console.error('Failed to load log streams:', err);
       };
 
+      loadingWhileTimer.cancel();
       return this.currentFetchPromise;
     }
 

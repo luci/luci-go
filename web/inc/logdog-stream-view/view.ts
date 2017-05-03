@@ -24,6 +24,8 @@ namespace LogDog {
     RESOLVING,
     /** Loading stream content, alternates with RENDERING. */
     LOADING,
+    /** Version of LOADING when the stream has been loading for a long time. */
+    LOADING_BEEN_A_WHILE,
     /** Rendering loaded stream content. */
     RENDERING,
     /** Error: Attempt to load failed w/ "Unauthenticated". */
@@ -474,6 +476,9 @@ namespace LogDog {
           break;
         case LogDog.LoadingState.LOADING:
           this.loadStatusBar('Loading streams...');
+          break;
+        case LogDog.LoadingState.LOADING_BEEN_A_WHILE:
+          this.loadStatusBar('Loading streams (has the build crashed?)...');
           break;
         case LogDog.LoadingState.RENDERING:
           this.loadStatusBar('Rendering logs.');
