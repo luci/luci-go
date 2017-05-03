@@ -1023,6 +1023,62 @@ namespace LogDog {
   }
 
   /**
+   * LogSorter is an interface that used by AggregateLogStream to extract sorted
+   * logs from a set of BufferedLogs.
+   *
+   * It is used to compare two log entries to determine their relative order.
+   */
+  type LogSorter = {
+    /** Returns true if "a" comes before "b".  */
+    before: (a: LogDog.LogEntry, b: LogDog.LogEntry) => number;
+
+    /**
+     * If implemented, returns an implicit next log in the buffer set.
+     *
+     * This is useful if the next log can be determined from the current
+     * buffered data, even if it is partial or incomplete.
+     */
+    implicitNext?: (prev: LogDog.LogEntry, buffers: BufferedLogs[]) =>
+                       LogDog.LogEntry | null;
+  };
+
+  const prefixIndexLogSorter: LogSorter = {
+    before: (a: LogDog.LogEntry, b: LogDog.LogEntry) => {
+      return (a.prefixIndex - b.prefixIndex);
+    },
+
+    implicitNext: (prev: LogDog.LogEntry, buffers: BufferedLogs[]) => {
+      let nextPrefixIndex = (prev.prefixIndex + 1);
+      for (let buf of buffers) {
+        let le = buf.peek();
+        if (le && le.prefixIndex === nextPrefixIndex) {
+          return buf.next();
+        }
+      }
+      return null;
+    },
+  };
+
+  const timestampLogSorter: LogSorter = {
+    before: (a: LogDog.LogEntry, b: LogDog.LogEntry) => {
+      if (a.timestamp) {
+        if (b.timestamp) {
+          return a.timestamp.getTime() - b.timestamp.getTime();
+        }
+        return 1;
+      }
+      if (b.timestamp) {
+        return -1;
+      }
+      return 0;
+    },
+
+    // No implicit "next" with timestamp-based logs, since the next log in
+    // an empty buffer may actually be the next contiguous log.
+    implicitNext: undefined,
+  };
+
+  /**
    * An aggregate log stream. It presents a single-stream view, but is really
    * composed of several log streams interleaved based on their prefix indices
    * (if they share a prefix) or timestamps (if they don't).
@@ -1039,7 +1095,7 @@ namespace LogDog {
     private streams: AggregateLogStream.Entry[];
     private active: AggregateLogStream.Entry[];
     private currentNextPromise: Promise<BufferedLogs[]>|null;
-    private compareLogs: (a: LogDog.LogEntry, b: LogDog.LogEntry) => number;
+    private readonly logSorter: LogSorter;
 
     private streamStatusCallback: StreamStatusCallback;
 
@@ -1074,20 +1130,11 @@ namespace LogDog {
         return template.samePrefixAs(entry.ls.stream);
       });
 
-      this.compareLogs = ((sharedPrefix) ? (a, b) => {
-        return (a.prefixIndex - b.prefixIndex);
-      } : (a, b) => {
-        if (a.timestamp) {
-          if (b.timestamp) {
-            return a.timestamp.getTime() - b.timestamp.getTime();
-          }
-          return 1;
-        } else if (b.timestamp) {
-          return -1;
-        } else {
-          return 0;
-        }
-      });
+      if (sharedPrefix) {
+        this.logSorter = prefixIndexLogSorter;
+      } else {
+        this.logSorter = timestampLogSorter;
+      }
     }
 
     split(): SplitLogProvider|null {
@@ -1223,7 +1270,6 @@ namespace LogDog {
           // its entries are sorted, then that buffer is a return value.
           return new BufferedLogs(buffers[0].getAll());
         default:
-          // Nothing to do.
           break;
       }
 
@@ -1240,12 +1286,16 @@ namespace LogDog {
       }
 
       // Assemble our aggregate buffer array.
+      //
+      // As we add log entries, latestAdded will be updated to point to the most
+      // recently added LogEntry.
       let entries: LogDog.LogEntry[] = [];
+      let latestAdded: LogDog.LogEntry|null = null;
       while (true) {
         // Choose the next stream.
         let earliest = 0;
         for (let i = 1; i < buffers.length; i++) {
-          if (this.compareLogs(peek[i], peek[earliest]) < 0) {
+          if (this.logSorter.before(peek[i], peek[earliest])) {
             earliest = i;
           }
         }
@@ -1253,17 +1303,31 @@ namespace LogDog {
         // Get the next log from the earliest stream.
         let next = buffers[earliest].next();
         if (next) {
-          entries.push(next);
+          latestAdded = next;
+          entries.push(latestAdded);
         }
 
         // Repopulate that buffer's "peek" value. If the buffer has no more
-        // entries, then we're done.
+        // entries, then we're done this round.
         next = buffers[earliest].peek();
         if (!next) {
-          return new BufferedLogs(entries);
+          break;
         }
         peek[earliest] = next;
       }
+
+      // One or more of our buffers is exhausted. If we have the ability to load
+      // implicit next logs, try and extract more using that.
+      if (latestAdded && this.logSorter.implicitNext) {
+        while (true) {
+          latestAdded = this.logSorter.implicitNext(latestAdded, buffers);
+          if (!latestAdded) {
+            break;
+          }
+          entries.push(latestAdded);
+        }
+      }
+      return new BufferedLogs(entries);
     }
   }
 
@@ -1322,6 +1386,14 @@ namespace LogDog {
      */
     peek(): LogDog.LogEntry|null {
       return (this.logs) ? (this.logs[this.index]) : (null);
+    }
+
+    /**
+     * Returns a copy of the remaining logs in the buffer.
+     * If there are no logs, an empty array will be returned.
+     */
+    peekAll(): LogDog.LogEntry[] {
+      return (this.logs || []).slice(0);
     }
 
     /**
