@@ -20,7 +20,7 @@ const VersionMetadataKey = "X-Luci-Service-Version"
 
 // GetServiceVersion extracts requested service version from metadata in c.
 func GetServiceVersion(c context.Context, defaultVer string) string {
-	if md, ok := metadata.FromContext(c); ok {
+	if md, ok := metadata.FromIncomingContext(c); ok {
 		values := md[VersionMetadataKey]
 		if len(values) != 0 {
 			return values[0]

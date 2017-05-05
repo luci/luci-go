@@ -139,14 +139,14 @@ func TestDecoding(t *testing.T) {
 		Convey("Content-Type", func() {
 			c, err := parseHeader(c, header("Content-Type", "blah"))
 			So(err, ShouldBeNil)
-			_, ok := metadata.FromContext(c)
+			_, ok := metadata.FromIncomingContext(c)
 			So(ok, ShouldBeFalse)
 		})
 
 		Convey("Accept", func() {
 			c, err := parseHeader(c, header("Accept", "blah"))
 			So(err, ShouldBeNil)
-			_, ok := metadata.FromContext(c)
+			_, ok := metadata.FromIncomingContext(c)
 			So(ok, ShouldBeFalse)
 		})
 
@@ -154,7 +154,7 @@ func TestDecoding(t *testing.T) {
 			test := func(c context.Context, header http.Header, expectedMetadata metadata.MD) {
 				c, err := parseHeader(c, header)
 				So(err, ShouldBeNil)
-				md, ok := metadata.FromContext(c)
+				md, ok := metadata.FromIncomingContext(c)
 				So(ok, ShouldBeTrue)
 				So(md, ShouldResemble, expectedMetadata)
 			}
@@ -169,7 +169,7 @@ func TestDecoding(t *testing.T) {
 			})
 
 			Convey("with metadata in context", func() {
-				c = metadata.NewContext(c, metadata.MD{
+				c = metadata.NewIncomingContext(c, metadata.MD{
 					"X": []string{"0"},
 					"Z": []string{"1"},
 				})

@@ -56,7 +56,7 @@ func readMessage(r *http.Request, msg proto.Message) *protocolError {
 		err = proto.Unmarshal(buf, msg)
 
 	default:
-		panic(fmt.Errorf("impossible: invalid format %s", format))
+		panic(fmt.Errorf("impossible: invalid format %v", format))
 	}
 	if err != nil {
 		return errorf(http.StatusBadRequest, "could not decode body: %s", err)
@@ -76,7 +76,7 @@ func readMessage(r *http.Request, msg proto.Message) *protocolError {
 func parseHeader(c context.Context, header http.Header) (context.Context, error) {
 	origC := c
 
-	md, ok := metadata.FromContext(c)
+	md, ok := metadata.FromIncomingContext(c)
 	if ok {
 		md = md.Copy()
 	} else {
@@ -120,7 +120,7 @@ func parseHeader(c context.Context, header http.Header) (context.Context, error)
 		}
 	}
 	if addedMeta {
-		c = metadata.NewContext(c, md)
+		c = metadata.NewIncomingContext(c, md)
 	}
 	return c, nil
 }
