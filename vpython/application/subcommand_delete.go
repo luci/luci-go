@@ -42,9 +42,11 @@ func (cr *deleteCommandRun) Run(app subcommands.Application, args []string, env 
 
 	return run(c, func(c context.Context) error {
 		if !cr.all {
-			return venv.With(c, a.opts.EnvConfig, true, func(c context.Context, e *venv.Env) error {
-				return e.Delete(c)
-			})
+			if err := venv.Delete(c, a.opts.EnvConfig); err != nil {
+				return err
+			}
+			logging.Infof(c, "Successfully deleted environment.")
+			return nil
 		}
 
 		it := venv.Iterator{

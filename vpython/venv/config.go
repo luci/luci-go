@@ -142,12 +142,6 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 		}
 	}
 
-	if err := filesystem.MakeDirs(cfg.BaseDir); err != nil {
-		return nil, errors.Annotate(err).Reason("could not create environment root: %(root)s").
-			D("root", cfg.BaseDir).
-			Err()
-	}
-
 	// Ensure and normalize our specification file.
 	if cfg.Spec == nil {
 		cfg.Spec = &vpython.Spec{}
@@ -173,6 +167,13 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 
 	if err := cfg.resolvePythonInterpreter(c, e.Spec); err != nil {
 		return nil, errors.Annotate(err).Reason("failed to resolve system Python interpreter").Err()
+	}
+
+	// Ensure that our base directory exists.
+	if err := filesystem.MakeDirs(cfg.BaseDir); err != nil {
+		return nil, errors.Annotate(err).Reason("could not create environment root: %(root)s").
+			D("root", cfg.BaseDir).
+			Err()
 	}
 
 	// Generate our environment name based on the deterministic hash of its

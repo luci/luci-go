@@ -40,11 +40,43 @@ type Iterator struct {
 // If the supplied Context is cancelled, iteration will stop prematurely and
 // return the Context's error.
 func (it *Iterator) ForEach(c context.Context, cfg *Config, cb func(context.Context, *Env) error) error {
+	return iterDir(c, cfg.BaseDir, func(fileInfos []os.FileInfo) error {
+		if it.Shuffle {
+			for i := range fileInfos {
+				j := mathrand.Intn(c, i+1)
+				fileInfos[i], fileInfos[j] = fileInfos[j], fileInfos[i]
+			}
+		}
+
+		for _, fi := range fileInfos {
+			// Ignore hidden files.
+			if !fi.IsDir() || strings.HasPrefix(fi.Name(), ".") {
+				continue
+			}
+
+			e := cfg.envForName(fi.Name(), nil)
+			if it.OnlyComplete {
+				if err := e.AssertCompleteAndLoad(); err != nil {
+					logging.WithError(err).Debugf(c, "Skipping VirtualEnv %s; not complete.", fi.Name())
+					continue
+				}
+			}
+
+			if err := cb(c, e); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
+func iterDir(c context.Context, dirPath string, cb func([]os.FileInfo) error) error {
 	// Get a listing of all VirtualEnv within the base directory.
-	dir, err := os.Open(cfg.BaseDir)
+	dir, err := os.Open(dirPath)
 	if err != nil {
 		return errors.Annotate(err).Reason("failed to open base directory: %(dir)s").
-			D("dir", cfg.BaseDir).
+			D("dir", dirPath).
 			Err()
 	}
 	defer dir.Close()
@@ -67,34 +99,12 @@ func (it *Iterator) ForEach(c context.Context, cfg *Config, cb func(context.Cont
 
 		default:
 			return errors.Annotate(err).Reason("could not read directory contents: %(dir)s").
-				D("dir", err).
+				D("dir", dirPath).
 				Err()
 		}
 
-		if it.Shuffle {
-			for i := range fileInfos {
-				j := mathrand.Intn(c, i+1)
-				fileInfos[i], fileInfos[j] = fileInfos[j], fileInfos[i]
-			}
-		}
-
-		for _, fi := range fileInfos {
-			// Ignore hidden files.
-			if !fi.IsDir() || strings.HasPrefix(fi.Name(), ".") {
-				continue
-			}
-
-			e := cfg.envForName(fi.Name(), nil)
-			if it.OnlyComplete {
-				if err := e.AssertCompleteAndLoad(); err != nil {
-					logging.WithError(err).Debugf(c, "Skipping VirtualEnv %s; not complete.")
-					continue
-				}
-			}
-
-			if err := cb(c, e); err != nil {
-				return err
-			}
+		if err := cb(fileInfos); err != nil {
+			return err
 		}
 	}
 

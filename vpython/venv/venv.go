@@ -12,7 +12,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/danjacques/gofslock/fslock"
@@ -35,8 +34,7 @@ import (
 var ErrNotComplete = errors.New("environment is not complete")
 
 const (
-	lockHeldDelay            = 10 * time.Millisecond
-	defaultKeepAliveInterval = 1 * time.Hour
+	lockHeldDelay = 10 * time.Millisecond
 )
 
 // blocker is an fslock.Blocker implementation that sleeps lockHeldDelay in
@@ -44,8 +42,8 @@ const (
 func blocker(c context.Context) fslock.Blocker {
 	return func() error {
 		logging.Debugf(c, "Lock is currently held. Sleeping %v and retrying...", lockHeldDelay)
-		clock.Sleep(c, lockHeldDelay)
-		return nil
+		tr := clock.Sleep(c, lockHeldDelay)
+		return tr.Err
 	}
 }
 
@@ -56,7 +54,7 @@ func withTempDir(l logging.Logger, prefix string, fn func(string) error) error {
 	}
 	defer func() {
 		if err := filesystem.RemoveAll(tdir); err != nil {
-			l.Warningf("Failed to remove temporary directory: %s", err)
+			l.Infof("Failed to remove temporary directory: %s", err)
 		}
 	}()
 
@@ -112,7 +110,7 @@ func With(c context.Context, cfg Config, blocking bool, fn func(context.Context,
 		if err != nil {
 			return errors.Annotate(err).Reason("failed to initialize empty probe environment").Err()
 		}
-		if err := emptyEnv.setupImpl(c, blocking); err != nil {
+		if err := emptyEnv.ensure(c, blocking); err != nil {
 			return errors.Annotate(err).Reason("failed to create empty probe environment").Err()
 		}
 
@@ -127,6 +125,22 @@ func With(c context.Context, cfg Config, blocking bool, fn func(context.Context,
 	}
 	usedEnvs.Add(env.Name)
 	return env.withImpl(c, blocking, usedEnvs, fn)
+}
+
+// Delete removes all resources consumed by an environment.
+//
+// Delete will acquire an exclusive lock on the environment and assert that it
+// is not in use prior to deletion. This is non-blocking, and an error will be
+// returned if the lock could not be acquired.
+//
+// If deletion fails, a wrapped error will be returned.
+func Delete(c context.Context, cfg Config) error {
+	// Attempt to acquire the environment's lock.
+	e, err := cfg.makeEnv(c, nil)
+	if err != nil {
+		return err
+	}
+	return e.Delete(c)
 }
 
 // Env is a fully set-up Python virtual environment. It is configured
@@ -175,17 +189,13 @@ type Env struct {
 	interpreter *python.Interpreter
 }
 
-func (e *Env) setupImpl(c context.Context, blocking bool) error {
+// ensure ensures that the configured VirtualEnv is set-up. This may involve
+// a fast-path completion flag check or a slow lock/build phase.
+func (e *Env) ensure(c context.Context, blocking bool) (err error) {
 	// Fastest path: If this environment is already complete, then there is no
 	// additional setup necessary.
 	if err := e.AssertCompleteAndLoad(); err == nil {
 		logging.Debugf(c, "Environment is already initialized: %s", e.Environment)
-
-		// Try and touch the complete flag to mark this environment's utility.
-		if err := e.touchCompleteFlagNonBlocking(); err != nil {
-			logging.Debugf(c, "Failed to update environment timestamp.")
-		}
-
 		return nil
 	}
 
@@ -193,12 +203,22 @@ func (e *Env) setupImpl(c context.Context, blocking bool) error {
 	// encounter a lock, we will let the other process finish and try and leverage
 	// its success.
 	for {
-		// We will be creating the Env. We will lock around a file for this Env hash
-		// so that any other processes that may be trying to simultaneously
-		// manipulate Env will be forced to wait.
-		err := e.withLockNonBlocking(func() error {
-			// Check for completion flag.
-			if err := e.AssertCompleteAndLoad(); err != nil {
+		// We will be creating the Env. Acquire an exclusive lock so that any other
+		// processes will wait for our setup to complete.
+		switch lock, err := e.acquireExclusiveLock(); err {
+		case nil:
+			// We MUST successfully release our exclusive lock on completion.
+			return mustReleaseLock(c, lock, func() error {
+				// Fast path: if our complete flag is present, assume that the
+				// environment is setup and complete. No additional work is necessary.
+				err := e.AssertCompleteAndLoad()
+				if err == nil {
+					// This will generally happen if another process created the environment
+					// in between when we checked for the completion stamp initially and
+					// when we actually obtained the lock.
+					logging.Debugf(c, "Completion flag found! Environment is set-up: %s", e.completeFlagPath)
+					return nil
+				}
 				logging.WithError(err).Debugf(c, "VirtualEnv is not complete.")
 
 				// No complete flag. Create a new VirtualEnv here.
@@ -206,41 +226,23 @@ func (e *Env) setupImpl(c context.Context, blocking bool) error {
 					return errors.Annotate(err).Reason("failed to create new VirtualEnv").Err()
 				}
 
-				// Successfully created the environment! Mark this with a completion
-				// flag.
+				// Mark that this environment is complete. This MUST succeed so other
+				// instances know that this environment is complete.
 				if err := e.touchCompleteFlagLocked(); err != nil {
 					return errors.Annotate(err).Reason("failed to create complete flag").Err()
 				}
-			} else {
-				// Fast path: if our complete flag is present, assume that the
-				// environment is setup and complete. No locking or additional work
-				// necessary.
-				//
-				// This will generally happen if another process created the environment
-				// in between when we checked for the completion stamp initially and
-				// when we actually obtained the lock.
-				logging.Debugf(c, "Completion flag found! Environment is set-up: %s", e.completeFlagPath)
 
-				// Mark that we care about this environment. This is non-fatal if it
-				// fails.
-				if err := e.touchCompleteFlagLocked(); err != nil {
-					logging.WithError(err).Warningf(c, "Failed to update existing complete flag.")
-				}
-			}
-
-			return nil
-		})
-		switch err {
-		case nil:
-			return nil
+				logging.Debugf(c, "Successfully created new virtual environment [%s]!", e.Name)
+				return nil
+			})
 
 		case fslock.ErrLockHeld:
-			// Try again to load the environment stamp, asserting the existence of the
-			// completion flag in the process. If another process has created the
-			// environment, we may be able to use it without ever having to obtain
-			// its lock!
+			// We couldn't get an exclusive lock. Try again to load the environment
+			// stamp, asserting the existence of the completion flag in the process.
+			// If another process has created the environment, we may be able to use
+			// it without ever having to obtain its lock!
 			if err := e.AssertCompleteAndLoad(); err == nil {
-				logging.Infof(c, "Completion stamp was created while waiting for lock: %s", e.EnvironmentStampPath)
+				logging.Infof(c, "Environment was completed while waiting for lock: %s", e.EnvironmentStampPath)
 				return nil
 			}
 
@@ -248,17 +250,14 @@ func (e *Env) setupImpl(c context.Context, blocking bool) error {
 				logging.ErrorKey: err,
 				"path":           e.EnvironmentStampPath,
 			}.Debugf(c, "Lock is held, and environment is not complete.")
-
 			if !blocking {
 				return errors.Annotate(err).Reason("VirtualEnv lock is currently held (non-blocking)").Err()
 			}
 
 			// Some other process holds the lock. Sleep a little and retry.
-			logging.Infof(c, "VirtualEnv lock is currently held. Retrying after delay (%s)...", lockHeldDelay)
-			if tr := clock.Sleep(c, lockHeldDelay); tr.Incomplete() {
-				return tr.Err
+			if err := blocker(c)(); err != nil {
+				return err
 			}
-			continue
 
 		default:
 			return errors.Annotate(err).Reason("failed to create VirtualEnv").Err()
@@ -267,44 +266,77 @@ func (e *Env) setupImpl(c context.Context, blocking bool) error {
 }
 
 func (e *Env) withImpl(c context.Context, blocking bool, used stringset.Set,
-	fn func(context.Context, *Env) error) error {
+	fn func(context.Context, *Env) error) (err error) {
 
 	// Setup the VirtualEnv environment.
-	if err := e.setupImpl(c, blocking); err != nil {
-		return err
-	}
-
-	// Perform a pruning round. Failure is non-fatal.
-	if perr := prune(c, e.Config, used); perr != nil {
-		logging.WithError(perr).Warningf(c, "Failed to perform pruning round after initialization.")
-	}
-
-	// Set-up our environment Context.
-	var monitorWG sync.WaitGroup
-	c, cancelFunc := context.WithCancel(c)
-	defer func() {
-		// Cancel our Context and reap our monitor goroutine(s).
-		cancelFunc()
-		monitorWG.Wait()
-	}()
-
-	// If we have a prune threshold, touch the "complete flag" periodically.
 	//
-	// Our refresh interval must be at least 1/4 the prune threshold, but ideally
-	// would be higher.
-	if interval := e.Config.PruneThreshold / 4; interval > 0 {
-		if interval > defaultKeepAliveInterval {
-			interval = defaultKeepAliveInterval
+	// Setup will obtain an exclusive lock on the environment for set-up and
+	// release it when it finishes. We will then obtain a shared lock on the
+	// environment to represent its use.
+	//
+	// An exclusive lock may be taken on the environment in between the exclusive
+	// lock being released and the shared lock being obtained. If that happens,
+	// we will (if configured to block) repeat our loop and call "ensure" again.
+	for {
+		if err := e.ensure(c, blocking); err != nil {
+			return err
 		}
 
-		monitorWG.Add(1)
-		go func() {
-			defer monitorWG.Done()
-			e.keepAliveMonitor(c, interval, cancelFunc)
-		}()
-	}
+		// Acquire a shared lock on the environment to note its continued usage.
+		switch lock, err := e.acquireSharedLock(); err {
+		case nil:
+			logging.Debugf(c, "Acquired shared lock for: %s", e.Name)
 
-	return fn(c, e)
+			environmentWasIncomplete := false
+			err := mustReleaseLock(c, lock, func() error {
+				// Assert that the environment wasn't deleted in between creation and
+				// our acquisition of the lock.
+				if err := e.assertComplete(); err != nil {
+					logging.WithError(err).Infof(c, "Environment is no longer complete; recreating...")
+					environmentWasIncomplete = true
+					return nil
+				}
+
+				// Try and touch the complete flag to update its timestamp and mark this
+				// environment's utility.
+				if err := e.touchCompleteFlagLocked(); err != nil {
+					logging.Debugf(c, "Failed to update environment timestamp.")
+				}
+
+				// Perform a pruning round. Failure is non-fatal.
+				if perr := prune(c, e.Config, used); perr != nil {
+					logging.WithError(perr).Infof(c, "Failed to perform pruning round after initialization.")
+				}
+
+				return fn(c, e)
+			})
+			if err != nil {
+				return err
+			}
+
+			logging.Debugf(c, "Released shared lock for: %s", e.Name)
+			if !environmentWasIncomplete {
+				return nil
+			}
+
+		case fslock.ErrLockHeld:
+			logging.Fields{
+				logging.ErrorKey: err,
+				"path":           e.EnvironmentStampPath,
+			}.Debugf(c, "Could not obtain shared usage lock.")
+			if !blocking {
+				return errors.Annotate(err).Reason("VirtualEnv lock is currently held (non-blocking)").Err()
+			}
+
+			// Some other process holds the lock. Sleep a little and retry.
+			if err := blocker(c)(); err != nil {
+				return err
+			}
+
+		default:
+			return errors.Annotate(err).Reason("failed to use VirtualEnv").Err()
+		}
+	}
 }
 
 // Interpreter returns the VirtualEnv's isolated Python Interpreter instance.
@@ -317,26 +349,12 @@ func (e *Env) Interpreter() *python.Interpreter {
 	return e.interpreter
 }
 
-func (e *Env) withLockNonBlocking(fn func() error) error {
+func (e *Env) acquireExclusiveLock() (fslock.Handle, error) { return fslock.Lock(e.lockPath) }
+
+func (e *Env) acquireSharedLock() (fslock.Handle, error) { return fslock.LockShared(e.lockPath) }
+
+func (e *Env) withExclusiveLockNonBlocking(fn func() error) error {
 	return fslock.With(e.lockPath, fn)
-}
-
-func (e *Env) withLockBlocking(c context.Context, fn func() error) error {
-	return fslock.WithBlocking(e.lockPath, blocker(c), fn)
-}
-
-// Delete deletes this environment, if it exists.
-func (e *Env) Delete(c context.Context) error {
-	err := e.withLockBlocking(c, func() error {
-		if err := e.deleteLocked(c); err != nil {
-			return errors.Annotate(err).Err()
-		}
-		return nil
-	})
-	if err != nil {
-		errors.Annotate(err).Reason("failed to delete environment").Err()
-	}
-	return nil
 }
 
 // WriteEnvironmentStamp writes a text protobuf form of spec to path.
@@ -355,12 +373,8 @@ func (e *Env) WriteEnvironmentStamp() error {
 // An error is returned if the completion flag does not exist, or if the
 // VirtualEnv environment stamp could not be loaded.
 func (e *Env) AssertCompleteAndLoad() error {
-	// Ensure that the environment has its completion flag.
-	switch _, err := os.Stat(e.completeFlagPath); {
-	case filesystem.IsNotExist(err):
-		return ErrNotComplete
-	case err != nil:
-		return errors.Annotate(err).Reason("failed to check for completion flag").Err()
+	if err := e.assertComplete(); err != nil {
+		return err
 	}
 
 	content, err := ioutil.ReadFile(e.EnvironmentStampPath)
@@ -380,10 +394,22 @@ func (e *Env) AssertCompleteAndLoad() error {
 	return nil
 }
 
+func (e *Env) assertComplete() error {
+	// Ensure that the environment has its completion flag.
+	switch _, err := os.Stat(e.completeFlagPath); {
+	case filesystem.IsNotExist(err):
+		return ErrNotComplete
+	case err != nil:
+		return errors.Annotate(err).Reason("failed to check for completion flag").Err()
+	default:
+		return nil
+	}
+}
+
 func (e *Env) createLocked(c context.Context) error {
 	// If our root directory already exists, delete it.
 	if _, err := os.Stat(e.Root); err == nil {
-		logging.Warningf(c, "Deleting existing VirtualEnv: %s", e.Root)
+		logging.Infof(c, "Deleting existing VirtualEnv: %s", e.Root)
 		if err := filesystem.RemoveAll(e.Root); err != nil {
 			return errors.Reason("failed to remove existing root").Err()
 		}
@@ -625,32 +651,6 @@ func (e *Env) finalize(c context.Context) error {
 	return nil
 }
 
-// touchCompleteFlagNonBlocking touches the complete flag, creating it and/or
-// updating its timestamp.
-//
-// If the lock for this VirtualEnv is already held, we will fail with
-// fslock.ErrLockHeld.
-func (e *Env) touchCompleteFlagNonBlocking() error {
-	err := e.withLockNonBlocking(e.touchCompleteFlagLocked)
-	if err != nil {
-		return errors.Annotate(err).Reason("failed to touch complete flag").Err()
-	}
-	return err
-}
-
-// touchCompleteFlagBlocking touches the complete flag, creating it and/or
-// updating its timestamp.
-//
-// If the lock for this VirtualEnv is already held, we will block until it is
-// not and then update the flag.
-func (e *Env) touchCompleteFlagBlocking(c context.Context) error {
-	err := e.withLockBlocking(c, e.touchCompleteFlagLocked)
-	if err != nil {
-		return errors.Annotate(err).Reason("failed to touch complete flag").Err()
-	}
-	return err
-}
-
 func (e *Env) touchCompleteFlagLocked() error {
 	if err := filesystem.Touch(e.completeFlagPath, time.Time{}, 0644); err != nil {
 		return errors.Annotate(err).Err()
@@ -658,48 +658,75 @@ func (e *Env) touchCompleteFlagLocked() error {
 	return nil
 }
 
-func (e *Env) deleteLocked(c context.Context) error {
-	// Delete our environment directory.
-	if err := filesystem.RemoveAll(e.Root); err != nil {
-		return errors.Annotate(err).Reason("failed to delete environment root").Err()
+// Delete removes all resources consumed by an environment.
+//
+// Delete will acquire an exclusive lock on the environment and assert that it
+// is not in use prior to deletion. This is non-blocking, and an error will be
+// returned if the lock could not be acquired.
+//
+// If the environment was not deleted, a non-nil wrapped error will be returned.
+// If the deletion failed because the lock was held, a wrapped
+// fslock.ErrLockHeld  will be returned.
+func (e *Env) Delete(c context.Context) error {
+	removedLock := false
+	err := e.withExclusiveLockNonBlocking(func() error {
+		logging.Debugf(c, "(Delete) Got exclusive lock for: %s", e.Name)
+
+		// Delete our environment directory.
+		if err := filesystem.RemoveAll(e.Root); err != nil {
+			return errors.Annotate(err).Reason("failed to delete environment root").Err()
+		}
+
+		// Attempt to delete our lock. On POSIX systems, this will successfully
+		// delete the lock. On Windows systems, there will be contention, since the
+		// lock is held by us.
+		//
+		// In this case, we'll try again to delete it after we release the lock.
+		// If someone else takes out the lock in between, the delete will similarly
+		// fail.
+		if err := os.Remove(e.lockPath); err == nil {
+			removedLock = true
+		} else {
+			logging.WithError(err).Debugf(c, "failed to delete lock file while holding lock: %s", e.lockPath)
+		}
+		return nil
+	})
+	logging.Debugf(c, "(Delete) Released exclusive lock for: %s", e.Name)
+
+	if err != nil {
+		return errors.Annotate(err).Reason("failed to delete environment").Err()
 	}
 
-	// Delete our lock path.
-	if err := os.Remove(e.lockPath); err != nil {
-		return errors.Annotate(err).Reason("failed to delete lock").Err()
+	// Try and remove the lock now that we don't hold it.
+	if !removedLock {
+		if err := os.Remove(e.lockPath); err != nil {
+			return errors.Annotate(err).Reason("failed to remove lock").Err()
+		}
 	}
 	return nil
 }
 
-// keepAliveMonitor periodically refreshes the environment's "completed" flag
-// timestamp.
+// completionFlagTimestamp returns the timestamp on the environment's completion
+// flag.
 //
-// It runs in its own goroutine.
-func (e *Env) keepAliveMonitor(c context.Context, interval time.Duration, cancelFunc context.CancelFunc) {
-	timer := clock.NewTimer(c)
-	defer timer.Stop()
+// If the completion flag does not exist (incomplete environment), a zero time
+// will be returned with no error.
+//
+// If an error is encountered while checking for the timestamp, it will be
+// returned.
+func (e *Env) completionFlagTimestamp() (time.Time, error) {
+	// Read the complete flag file's timestamp.
+	switch st, err := os.Stat(e.completeFlagPath); {
+	case err == nil:
+		return st.ModTime(), nil
 
-	for {
-		logging.Debugf(c, "Keep-alive: Sleeping %s...", interval)
-		timer.Reset(interval)
-		select {
-		case <-c.Done():
-			logging.WithError(c.Err()).Debugf(c, "Keep-alive: monitor's Context was cancelled.")
-			return
+	case os.IsNotExist(err):
+		return time.Time{}, nil
 
-		case tr := <-timer.GetC():
-			if tr.Err != nil {
-				logging.WithError(tr.Err).Debugf(c, "Keep-alive: monitor's timer finished.")
-				return
-			}
-		}
-
-		logging.Debugf(c, "Keep-alive: Updating completed flag timestamp.")
-		if err := e.touchCompleteFlagBlocking(c); err != nil {
-			errors.Log(c, errors.Annotate(err).Reason("failed to refresh timestamp").Err())
-			cancelFunc()
-			return
-		}
+	default:
+		return time.Time{}, errors.Annotate(err).Reason("failed to stat completion flag: %(path)s").
+			D("path", e.completeFlagPath).
+			Err()
 	}
 }
 
@@ -717,4 +744,17 @@ func attachOutputForLogging(c context.Context, l logging.Level, cmd *exec.Cmd) {
 			cmd.Stderr = os.Stderr
 		}
 	}
+}
+
+// mustReleaseLock calls the wrapped function, releasing the lock at the end
+// of its execution. If the lock could not be released, this function will
+// panic, since the locking state can no longer be determined.
+func mustReleaseLock(c context.Context, lock fslock.Handle, fn func() error) error {
+	defer func() {
+		if err := lock.Unlock(); err != nil {
+			errors.Log(c, errors.Annotate(err).Reason("failed to release lock").Err())
+			panic(err)
+		}
+	}()
+	return fn()
 }

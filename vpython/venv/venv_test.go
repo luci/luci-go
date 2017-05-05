@@ -9,6 +9,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -195,11 +196,17 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 				So(v.Environment.Spec.Virtualenv, ShouldNotBeNil)
 				So(v.Environment.Spec.PythonVersion, ShouldNotEqual, "")
 
-				// We should be able to delete it.
-				So(v.Delete(c), ShouldBeNil)
 				return nil
 			})
 			So(err, ShouldBeNil)
+
+			// We should be able to delete it.
+			v, err := config.makeEnv(c, nil)
+			So(err, ShouldBeNil)
+
+			So(v.Delete(c), ShouldBeNil)
+			So(v.Root, shouldNotExist)
+			So(v.lockPath, shouldNotExist)
 		})
 
 		Convey(`Testing new environment setup race`, func() {
@@ -247,7 +254,7 @@ func TestVirtualEnv(t *testing.T) {
 		ri   *resolvedInterpreter
 	}{
 		{"python27", python27},
-		//{"python3", python3},
+		{"python3", python3},
 	} {
 		tc := tc
 
@@ -266,4 +273,16 @@ func loadJSON(path string, dst interface{}) error {
 		return errors.Annotate(err).Reason("failed to unmarshal JSON").Err()
 	}
 	return nil
+}
+
+func shouldNotExist(actual interface{}, expected ...interface{}) string {
+	path := actual.(string)
+	switch _, err := os.Stat(path); {
+	case err == nil:
+		return fmt.Sprintf("Path %q should not exist, but it does.", path)
+	case os.IsNotExist(err):
+		return ""
+	default:
+		return fmt.Sprintf("Couldn't check if %q exists: %s", path, err)
+	}
 }

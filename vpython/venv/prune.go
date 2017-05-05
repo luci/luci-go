@@ -5,16 +5,13 @@
 package venv
 
 import (
-	"os"
-	"time"
+	"github.com/danjacques/gofslock/fslock"
+	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
-
-	"github.com/danjacques/gofslock/fslock"
-	"golang.org/x/net/context"
 )
 
 // pruneReadDirSize is the number of entries to read in a directory at a time
@@ -29,14 +26,17 @@ const pruneReadDirSize = 128
 // environments that are known to be recently used, and to completely avoid a
 // case where an environment could be pruned while it's in use by this program.
 func prune(c context.Context, cfg *Config, exempt stringset.Set) error {
-	if cfg.PruneThreshold <= 0 {
+	pruneThreshold := cfg.PruneThreshold
+	if pruneThreshold <= 0 {
 		// Pruning is disabled.
 		return nil
 	}
-	pruneThreshold := clock.Now(c).Add(-cfg.PruneThreshold)
+
+	now := clock.Now(c)
+	minPruneAge := now.Add(-pruneThreshold)
 
 	// Run a series of independent scan/prune operations.
-	logging.Debugf(c, "Pruning entries in [%s] older than %s.", cfg.BaseDir, cfg.PruneThreshold)
+	logging.Debugf(c, "Pruning entries in [%s] older than %s (%s).", cfg.BaseDir, pruneThreshold, minPruneAge)
 
 	// Iterate over all of our VirtualEnv candidates.
 	//
@@ -66,21 +66,29 @@ func prune(c context.Context, cfg *Config, exempt stringset.Set) error {
 			return nil
 		}
 
-		switch pruned, err := maybePruneFile(c, e, pruneThreshold); {
-		case err != nil:
-			err = errors.Annotate(err).Reason("failed to prune file: %(name)s").
-				D("name", e.Name).
-				D("dir", e.Config.BaseDir).
-				Err()
-			allErrs = append(allErrs, err)
+		if ts, err := e.completionFlagTimestamp(); err == nil && ts.After(minPruneAge) {
+			logging.Debugf(c, "Environment [%s] is younger than minimum prune age (%s).", e.Name, ts)
+			return nil
+		}
 
-		case pruned:
+		switch err := e.Delete(c); errors.Unwrap(err) {
+		case nil:
 			totalPruned++
 			if cfg.MaxPrunesPerSweep > 0 && totalPruned >= cfg.MaxPrunesPerSweep {
 				logging.Debugf(c, "Hit prune limit of %d.", cfg.MaxPrunesPerSweep)
 				hitLimitStr = " (limit)"
 				cancelFunc()
 			}
+
+		case fslock.ErrLockHeld:
+			logging.WithError(err).Debugf(c, "Environment [%s] is in use.", e.Name)
+
+		default:
+			err = errors.Annotate(err).Reason("failed to prune file: %(name)s").
+				D("name", e.Name).
+				D("dir", e.Config.BaseDir).
+				Err()
+			allErrs = append(allErrs, err)
 		}
 		return nil
 	})
@@ -94,50 +102,4 @@ func prune(c context.Context, cfg *Config, exempt stringset.Set) error {
 		return allErrs
 	}
 	return nil
-}
-
-// maybePruneFile examines the specified FileIfo within cfg.BaseDir and
-// determines if it should be pruned.
-func maybePruneFile(c context.Context, e *Env, pruneThreshold time.Time) (pruned bool, err error) {
-	// Grab the lock file for this directory.
-	err = e.withLockNonBlocking(func() error {
-		// Read the complete flag file's timestamp.
-		switch st, err := os.Stat(e.completeFlagPath); {
-		case err == nil:
-			if !st.ModTime().Before(pruneThreshold) {
-				return nil
-			}
-
-			logging.Infof(c, "Env [%s] is older than the prune threshold (%v < %v); pruning...",
-				e.Name, st.ModTime(), pruneThreshold)
-
-		case os.IsNotExist(err):
-			logging.Infof(c, "Env [%s] has no completed flag; pruning...", e.Name)
-
-		default:
-			return errors.Annotate(err).Reason("failed to stat complete flag: %(path)s").
-				D("path", e.completeFlagPath).
-				Err()
-		}
-
-		// Delete the environment. We currently hold its lock, so use deleteLocked.
-		if err := e.deleteLocked(c); err != nil {
-			return errors.Annotate(err).Reason("failed to delete Env").Err()
-		}
-		pruned = true
-		return nil
-	})
-	switch err {
-	case nil:
-		return
-
-	case fslock.ErrLockHeld:
-		// Something else currently holds the lock for this directory, so ignore it.
-		logging.Warningf(c, "Lock [%s] is currently held; skipping.", e.lockPath)
-		return
-
-	default:
-		err = errors.Annotate(err).Err()
-		return
-	}
 }
