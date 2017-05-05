@@ -64,10 +64,10 @@ func TestParsePythonCommandLine(t *testing.T) {
 			},
 		},
 
-		{[]string{"-a", "-b", "-W", "foo", "-Wbar", "-c", "<script>", "--", "arg"},
+		{[]string{"-a", "-b", "-tt", "-W", "foo", "-Wbar", "-c", "<script>", "--", "arg"},
 			CommandLine{
 				Target: CommandTarget{"<script>"},
-				Flags:  []string{"-a", "-b", "-W", "foo", "-Wbar"},
+				Flags:  []string{"-a", "-b", "-tt", "-W", "foo", "-Wbar"},
 				Args:   []string{"--", "arg"},
 			},
 		},

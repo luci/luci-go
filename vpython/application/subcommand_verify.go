@@ -35,23 +35,23 @@ type verifyCommandRun struct {
 
 func (cr *verifyCommandRun) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	c := cli.GetContext(app, cr, env)
-	cfg := getConfig(c, args)
+	a := getApplication(c, args)
 
 	return run(c, func(c context.Context) error {
 		// Make sure that we can resolve the referenced specifiction.
-		if err := cfg.opts.ResolveSpec(c); err != nil {
+		if err := a.opts.ResolveSpec(c); err != nil {
 			return errors.Annotate(err).Reason("failed to resolve specification").Err()
 		}
-		if err := spec.Normalize(cfg.opts.EnvConfig.Spec, &cfg.opts.EnvConfig.Package); err != nil {
+		if err := spec.Normalize(a.opts.EnvConfig.Spec, &a.opts.EnvConfig.Package); err != nil {
 			return errors.Annotate(err).Reason("failed to normalize specification").Err()
 		}
-		s := cfg.opts.EnvConfig.Spec
+		s := a.opts.EnvConfig.Spec
 		renderedSpec := spec.Render(s)
 		logging.Infof(c, "Successfully verified specification:\n%s", renderedSpec)
 
 		// Run our Verification generator and verify each generated environment.
-		if cfg.WithVerificationConfig != nil {
-			err := cfg.WithVerificationConfig(c, func(cfg Config, verificationScenarios []*vpython.Pep425Tag) error {
+		if a.WithVerificationConfig != nil {
+			err := a.WithVerificationConfig(c, func(cfg Config, verificationScenarios []*vpython.Pep425Tag) error {
 				if len(s.VerifyPep425Tag) > 0 {
 					verificationScenarios = s.VerifyPep425Tag
 				}

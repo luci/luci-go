@@ -12,14 +12,14 @@ import (
 
 var appKey = "github.com/luci/luci-go/vpython/application.A"
 
-func withConfig(c context.Context, cfg *Config) context.Context {
-	return context.WithValue(c, &appKey, cfg)
+func withApplication(c context.Context, a *application) context.Context {
+	return context.WithValue(c, &appKey, a)
 }
 
-func getConfig(c context.Context, args []string) *Config {
-	cfg := c.Value(&appKey).(*Config)
-	cfg.opts.Args = args
-	return cfg
+func getApplication(c context.Context, args []string) *application {
+	a := c.Value(&appKey).(*application)
+	a.opts.Args = args
+	return a
 }
 
 func run(c context.Context, fn func(context.Context) error) int {

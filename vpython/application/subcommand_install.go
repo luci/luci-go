@@ -31,10 +31,10 @@ type installCommandRun struct {
 
 func (cr *installCommandRun) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	c := cli.GetContext(app, cr, env)
-	cfg := getConfig(c, args)
+	a := getApplication(c, args)
 
 	return run(c, func(c context.Context) error {
-		err := venv.With(c, cfg.opts.EnvConfig, false, func(context.Context, *venv.Env) error {
+		err := venv.With(c, a.opts.EnvConfig, false, func(context.Context, *venv.Env) error {
 			return nil
 		})
 		if err != nil {

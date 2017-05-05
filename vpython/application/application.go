@@ -18,9 +18,11 @@ import (
 
 	"github.com/luci/luci-go/vpython"
 	vpythonAPI "github.com/luci/luci-go/vpython/api/vpython"
+	"github.com/luci/luci-go/vpython/python"
 	"github.com/luci/luci-go/vpython/spec"
 	"github.com/luci/luci-go/vpython/venv"
 
+	cipdVersion "github.com/luci/luci-go/cipd/version"
 	"github.com/luci/luci-go/common/cli"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
@@ -86,12 +88,21 @@ type Config struct {
 	//
 	// If nil, verification will only include the validation of the spec protobuf.
 	WithVerificationConfig func(context.Context, func(Config, []*vpythonAPI.Pep425Tag) error) error
+}
+
+type application struct {
+	*Config
 
 	// opts is the set of configured options.
 	opts vpython.Options
+
+	help      bool
+	devMode   bool
+	specPath  string
+	logConfig logging.Config
 }
 
-func (cfg *Config) mainDev(c context.Context, args []string) error {
+func (a *application) mainDev(c context.Context, args []string) error {
 	app := cli.Application{
 		Name:  "vpython",
 		Title: "VirtualEnv Python Bootstrap (Development Mode)",
@@ -100,7 +111,7 @@ func (cfg *Config) mainDev(c context.Context, args []string) error {
 			c := c
 
 			// Install our Config instance into the Context.
-			return withConfig(c, cfg)
+			return withApplication(c, a)
 		},
 		Commands: []*subcommands.Command{
 			subcommands.CmdHelp,
@@ -113,78 +124,68 @@ func (cfg *Config) mainDev(c context.Context, args []string) error {
 	return ReturnCodeError(subcommands.Run(&app, args))
 }
 
-func (cfg *Config) mainImpl(c context.Context, args []string) error {
-	logConfig := logging.Config{
-		Level: logging.Error,
-	}
+func (a *application) addToFlagSet(fs *flag.FlagSet) {
+	fs.BoolVar(&a.help, "help", a.help,
+		"Display help for 'vpython' top-level arguments.")
+	fs.BoolVar(&a.help, "h", a.help,
+		"Display help for 'vpython' top-level arguments (same as -help).")
+	fs.BoolVar(&a.devMode, "dev", a.devMode,
+		"Enter development / subcommand mode (use 'help' for more options).")
+	fs.StringVar(&a.opts.EnvConfig.Python, "python", a.opts.EnvConfig.Python,
+		"Path to system Python interpreter to use. Default is found on PATH.")
+	fs.StringVar(&a.opts.WorkDir, "workdir", a.opts.WorkDir,
+		"Working directory to run the Python interpreter in. Default is current working directory.")
+	fs.StringVar(&a.opts.EnvConfig.BaseDir, "root", a.opts.EnvConfig.BaseDir,
+		"Path to virtual environment root directory. Default is the working directory. "+
+			"If explicitly set to empty string, a temporary directory will be used and cleaned up "+
+			"on completion.")
+	fs.StringVar(&a.specPath, "spec", a.specPath,
+		"Path to environment specification file to load. Default probes for one.")
 
-	env := environ.System()
-	cfg.opts = vpython.Options{
-		EnvConfig: venv.Config{
-			BaseDir:           "", // (Determined below).
-			MaxHashLen:        6,
-			Package:           cfg.VENVPackage,
-			PruneThreshold:    cfg.PruneThreshold,
-			MaxPrunesPerSweep: cfg.MaxPrunesPerSweep,
-			MaxScriptPathLen:  cfg.MaxScriptPathLen,
-			Loader:            cfg.PackageLoader,
-		},
-		WaitForEnv: true,
-		Environ:    env,
-	}
+	a.logConfig.AddFlags(fs)
+}
 
+func (a *application) mainImpl(c context.Context, args []string) error {
 	// Determine our VirtualEnv base directory.
-	if v, ok := env.Get(VirtualEnvRootENV); ok {
-		cfg.opts.EnvConfig.BaseDir = v
+	if v, ok := a.opts.Environ.Get(VirtualEnvRootENV); ok {
+		a.opts.EnvConfig.BaseDir = v
 	} else {
 		hdir, err := homedir.Dir()
 		if err != nil {
 			return errors.Annotate(err).Reason("failed to get user home directory").Err()
 		}
-		cfg.opts.EnvConfig.BaseDir = filepath.Join(hdir, ".vpython")
+		a.opts.EnvConfig.BaseDir = filepath.Join(hdir, ".vpython")
 	}
 
-	var specPath string
-	var devMode bool
-
+	// Extract "vpython" arguments and parse them.
 	fs := flag.NewFlagSet("", flag.ExitOnError)
-	fs.BoolVar(&devMode, "dev", devMode,
-		"Enter development / subcommand mode (use 'help' for more options).")
-	fs.StringVar(&cfg.opts.EnvConfig.Python, "python", cfg.opts.EnvConfig.Python,
-		"Path to system Python interpreter to use. Default is found on PATH.")
-	fs.StringVar(&cfg.opts.WorkDir, "workdir", cfg.opts.WorkDir,
-		"Working directory to run the Python interpreter in. Default is current working directory.")
-	fs.StringVar(&cfg.opts.EnvConfig.BaseDir, "root", cfg.opts.EnvConfig.BaseDir,
-		"Path to virtual environment root directory. Default is the working directory. "+
-			"If explicitly set to empty string, a temporary directory will be used and cleaned up "+
-			"on completion.")
-	fs.StringVar(&specPath, "spec", specPath,
-		"Path to environment specification file to load. Default probes for one.")
-	logConfig.AddFlags(fs)
+	fs.SetOutput(os.Stdout) // Python uses STDOUT for help and flag information.
 
-	if err := fs.Parse(args); err != nil {
-		if err == flag.ErrHelp {
-			return nil
-		}
+	a.addToFlagSet(fs)
+	selfArgs, args := extractFlagsForSet(args, fs)
+	if err := fs.Parse(selfArgs); err != nil && err != flag.ErrHelp {
 		return errors.Annotate(err).Reason("failed to parse flags").Err()
 	}
-	args = fs.Args()
 
-	c = logConfig.Set(c)
+	if a.help {
+		return a.showPythonHelp(c, fs)
+	}
+
+	c = a.logConfig.Set(c)
 
 	// If an spec path was manually specified, load and use it.
-	if specPath != "" {
+	if a.specPath != "" {
 		var err error
-		if cfg.opts.EnvConfig.Spec, err = spec.Load(specPath); err != nil {
+		if a.opts.EnvConfig.Spec, err = spec.Load(a.specPath); err != nil {
 			return errors.Annotate(err).Reason("failed to load specification file (-spec) from: %(path)s").
-				D("path", specPath).
+				D("path", a.specPath).
 				Err()
 		}
 	}
 
 	// If an empty BaseDir was specified, use a temporary directory and clean it
 	// up on completion.
-	if cfg.opts.EnvConfig.BaseDir == "" {
+	if a.opts.EnvConfig.BaseDir == "" {
 		tdir, err := ioutil.TempDir("", "vpython")
 		if err != nil {
 			return errors.Annotate(err).Reason("failed to create temporary directory").Err()
@@ -195,16 +196,16 @@ func (cfg *Config) mainImpl(c context.Context, args []string) error {
 				logging.WithError(terr).Warningf(c, "Failed to clean up temporary directory; leaking: %s", tdir)
 			}
 		}()
-		cfg.opts.EnvConfig.BaseDir = tdir
+		a.opts.EnvConfig.BaseDir = tdir
 	}
 
 	// Development mode (subcommands).
-	if devMode {
-		return cfg.mainDev(c, args)
+	if a.devMode {
+		return a.mainDev(c, args)
 	}
 
-	cfg.opts.Args = args
-	if err := vpython.Run(c, cfg.opts); err != nil {
+	a.opts.Args = args
+	if err := vpython.Run(c, a.opts); err != nil {
 		// If the process failed because of a non-zero return value, return that
 		// as our error.
 		if rc, has := exitcode.Get(errors.Unwrap(err)); has {
@@ -216,12 +217,64 @@ func (cfg *Config) mainImpl(c context.Context, args []string) error {
 	return nil
 }
 
+func (a *application) showPythonHelp(c context.Context, fs *flag.FlagSet) error {
+	self, err := os.Executable()
+	if err != nil {
+		self = "vpython"
+	}
+	vers, err := cipdVersion.GetStartupVersion()
+	if err == nil && vers.PackageName != "" && vers.InstanceID != "" {
+		self = fmt.Sprintf("%s (%s@%s)", self, vers.PackageName, vers.InstanceID)
+	}
+
+	fmt.Fprintf(os.Stdout, "Usage of %s:\n", self)
+	fs.SetOutput(os.Stdout)
+	fs.PrintDefaults()
+
+	i, err := python.Find(c, python.Version{})
+	if err != nil {
+		return errors.Annotate(err).Reason("could not find Python interpreter for help").Err()
+	}
+
+	// Redirect all "--help" to Stdout for consistency.
+	fmt.Fprintf(os.Stdout, "\nPython help for %s:\n", i.Python)
+	cmd := i.IsolatedCommand(c, "--help")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stdout
+	if err := cmd.Run(); err != nil {
+		return errors.Annotate(err).Reason("failed to dump Python help from: %(interpreter)s").
+			D("interpreter", i.Python).
+			Err()
+	}
+	return nil
+}
+
 // Main is the main application entry point.
 func (cfg *Config) Main(c context.Context) int {
 	c = gologger.StdConfig.Use(c)
 	c = logging.SetLevel(c, logging.Error)
 
+	a := application{
+		Config: cfg,
+		opts: vpython.Options{
+			EnvConfig: venv.Config{
+				BaseDir:           "", // (Determined below).
+				MaxHashLen:        6,
+				Package:           cfg.VENVPackage,
+				PruneThreshold:    cfg.PruneThreshold,
+				MaxPrunesPerSweep: cfg.MaxPrunesPerSweep,
+				MaxScriptPathLen:  cfg.MaxScriptPathLen,
+				Loader:            cfg.PackageLoader,
+			},
+			WaitForEnv: true,
+			Environ:    environ.System(),
+		},
+		logConfig: logging.Config{
+			Level: logging.Error,
+		},
+	}
+
 	return run(c, func(c context.Context) error {
-		return cfg.mainImpl(c, os.Args[1:])
+		return a.mainImpl(c, os.Args[1:])
 	})
 }

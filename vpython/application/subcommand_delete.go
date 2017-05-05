@@ -38,11 +38,11 @@ type deleteCommandRun struct {
 
 func (cr *deleteCommandRun) Run(app subcommands.Application, args []string, env subcommands.Env) int {
 	c := cli.GetContext(app, cr, env)
-	cfg := getConfig(c, args)
+	a := getApplication(c, args)
 
 	return run(c, func(c context.Context) error {
 		if !cr.all {
-			return venv.With(c, cfg.opts.EnvConfig, true, func(c context.Context, e *venv.Env) error {
+			return venv.With(c, a.opts.EnvConfig, true, func(c context.Context, e *venv.Env) error {
 				return e.Delete(c)
 			})
 		}
@@ -51,7 +51,7 @@ func (cr *deleteCommandRun) Run(app subcommands.Application, args []string, env 
 			OnlyComplete: true,
 		}
 		failures := 0
-		err := it.ForEach(c, &cfg.opts.EnvConfig, func(c context.Context, e *venv.Env) error {
+		err := it.ForEach(c, &a.opts.EnvConfig, func(c context.Context, e *venv.Env) error {
 			logging.Debugf(c, "Attempting to delete VirtualEnv [%s]...", e.Name)
 
 			if err := e.Delete(c); err != nil {
