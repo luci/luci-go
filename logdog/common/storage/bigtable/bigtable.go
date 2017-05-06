@@ -9,9 +9,12 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigtable"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
+
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/common/storage"
-	"golang.org/x/net/context"
 )
 
 const (
@@ -75,7 +78,7 @@ func (t *btTableProd) putLogData(c context.Context, rk *rowKey, data []byte) err
 
 	rowExists := false
 	if err := t.base.logTable.Apply(c, rk.encode(), cm, bigtable.GetCondMutationResult(&rowExists)); err != nil {
-		return grpcutil.WrapIfTransient(err)
+		return wrapIfTransientForApply(err)
 	}
 	if rowExists {
 		return storage.ErrExists
@@ -180,4 +183,20 @@ func getReadItem(row bigtable.Row, family, column string) *bigtable.ReadItem {
 		}
 	}
 	return nil
+}
+
+func wrapIfTransientForApply(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	// For Apply, assume that anything other than InvalidArgument (bad data) is
+	// transient. We exempt InvalidArgument because our data construction is
+	// deterministic, and so this request can never succeed.
+	switch code := grpcutil.Code(err); code {
+	case codes.InvalidArgument:
+		return err
+	default:
+		return errors.WrapTransient(err)
+	}
 }
