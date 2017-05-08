@@ -66,6 +66,19 @@ func Run(c context.Context, opts Options) error {
 			e = environ.System()
 		}
 
+		// Remove PYTHONPATH and PYTHONHOME from the environment. This prevents them
+		// from being propagated to delegate processes (e.g., "vpython" script calls
+		// Python script, the "vpython" one uses the Interpreter's IsolatedCommand
+		// to isolate the initial run, but the delegate command blindly uses the
+		// environment that it's provided).
+		//
+		// Also set PYTHONNOUSERSITE, which prevents a user's "site" configuration
+		// from influencing Python startup. The system "site" should already be
+		// ignored b/c we're using the VirtualEnv Python interpreter.
+		e.Remove("PYTHONPATH")
+		e.Remove("PYTHONHOME")
+		e.Set("PYTHONNOUSERSITE", "1")
+
 		e.Set("VIRTUAL_ENV", ve.Root) // Set by VirtualEnv script.
 		if ve.EnvironmentStampPath != "" {
 			e.Set(EnvironmentStampPathENV, ve.EnvironmentStampPath)
