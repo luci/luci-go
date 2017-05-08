@@ -29,6 +29,10 @@ import (
 	"github.com/luci/luci-go/common/system/filesystem"
 )
 
+// EnvironmentVersion is an environment version string. It must advance each
+// time the layout of a VirtualEnv environment changes.
+const EnvironmentVersion = "v1"
+
 // ErrNotComplete is a sentinel error returned by AssertCompleteAndLoad to
 // indicate that the Environment is missing its completion flag.
 var ErrNotComplete = errors.New("environment is not complete")
@@ -616,21 +620,6 @@ func (e *Env) installWheels(c context.Context, bootstrapDir, pkgDir string) erro
 }
 
 func (e *Env) finalize(c context.Context) error {
-	// Uninstall "pip" and "wheel", preventing (easy) augmentation of the
-	// environment.
-	if !e.Config.testPreserveInstallationCapability {
-		cmd := e.Interpreter().IsolatedCommand(c,
-			"-m", "pip",
-			"uninstall",
-			"--quiet",
-			"--yes",
-			"pip", "wheel")
-		attachOutputForLogging(c, logging.Debug, cmd)
-		if err := cmd.Run(); err != nil {
-			return errors.Annotate(err).Reason("failed to install wheels").Err()
-		}
-	}
-
 	// Change all files to read-only, except:
 	// - Our root directory, which must be writable in order to update our
 	//   completion flag.

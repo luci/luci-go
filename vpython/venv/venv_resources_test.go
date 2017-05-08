@@ -204,8 +204,7 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 		Spec:   &vpython.Spec{},
 
 		// Testing parameters for this bootstrap wheel-building environment.
-		testPreserveInstallationCapability: true,
-		testLeaveReadWrite:                 true,
+		testLeaveReadWrite: true,
 	}
 
 	// Build the wheel in a temporary directory, then copy it into outDir. This

@@ -184,7 +184,7 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 // EnvName returns the VirtualEnv environment name for the environment that cfg
 // describes.
 func (cfg *Config) envNameForSpec(s *vpython.Spec) string {
-	name := spec.Hash(s)
+	name := spec.Hash(s, EnvironmentVersion)
 	if cfg.MaxHashLen > 0 && len(name) > cfg.MaxHashLen {
 		name = name[:cfg.MaxHashLen]
 	}

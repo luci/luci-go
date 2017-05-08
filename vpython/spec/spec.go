@@ -45,7 +45,10 @@ func Normalize(spec *vpython.Spec, defaultVENVPackage *vpython.Spec_Package) err
 
 // Hash hashes the contents of the supplied "spec" and returns the result as
 // a hex-encoded string.
-func Hash(spec *vpython.Spec) string {
+//
+// If not empty, the contents of extra are prefixed to hash string. This can
+// be used to factor additional influences into the spec hash.
+func Hash(spec *vpython.Spec, extra string) string {
 	data, err := proto.Marshal(spec)
 	if err != nil {
 		panic(fmt.Errorf("failed to marshal proto: %v", err))
@@ -58,6 +61,9 @@ func Hash(spec *vpython.Spec) string {
 	}
 
 	hash := sha256.New()
+	if extra != "" {
+		mustWrite(fmt.Fprintf(hash, "%s:", extra))
+	}
 	mustWrite(fmt.Fprintf(hash, "%s:", vpython.Version))
 	mustWrite(hash.Write(data))
 	return hex.EncodeToString(hash.Sum(nil))

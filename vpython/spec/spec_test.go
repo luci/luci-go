@@ -37,7 +37,8 @@ func TestNormalizeAndHash(t *testing.T) {
 				Wheel: []*vpython.Spec_Package{pkgBar, pkgBaz, pkgFoo},
 			})
 
-			So(Hash(&spec), ShouldEqual, "b4221081c43e8319ceb71a2e9d3bd83701b726a0976380feac4d04825226f935")
+			So(Hash(&spec, ""), ShouldEqual, "b4221081c43e8319ceb71a2e9d3bd83701b726a0976380feac4d04825226f935")
+			So(Hash(&spec, "extra"), ShouldEqual, "01a8d5f5a6f7b2cd91ce6f2b5fefb931828e28b90d0fb07a271597eaa4f6c547")
 		})
 
 		Convey(`Will fail to normalize if there are duplicate wheels.`, func() {
