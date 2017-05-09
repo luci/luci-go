@@ -35,7 +35,7 @@ func TestBuilder(t *testing.T) {
 	}
 
 	Convey("Builder", t, func() {
-		c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
+		c := memory.UseWithAppID(context.Background(), "luci-milo-dev")
 		c, _ = testclock.UseTime(c, time.Date(2016, time.March, 14, 11, 0, 0, 0, time.UTC))
 		c = testconfig.WithCommonClient(c, memcfg.New(bktConfigFull))
 		// Update the service config so that the settings are loaded.
@@ -79,7 +79,7 @@ buildbucket: {
 `
 
 var bktConfigFull = map[string]memcfg.ConfigSet{
-	"services/luci-milo": {
+	"services/luci-milo-dev": {
 		"settings.cfg": bktConfig,
 	},
 }

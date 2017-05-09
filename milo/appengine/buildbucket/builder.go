@@ -18,12 +18,14 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/api/googleapi"
 
+	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/api/buildbucket/buildbucket/v1"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
 	"github.com/luci/luci-go/common/sync/parallel"
+
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/common"
 )
@@ -151,7 +153,7 @@ func toMiloBuild(c context.Context, build *buildbucket.ApiBuildMessage) *resp.Bu
 		switch {
 		case err != nil:
 			logging.Errorf(c, "invalid URL in build %d: %s", build.Id, err)
-		case parsed.Host == "luci-milo.appspot.com":
+		case parsed.Host == info.DefaultVersionHostname(c):
 			parsed.Host = ""
 			parsed.Scheme = ""
 			u = parsed.String()
