@@ -17,7 +17,6 @@ import (
 	"github.com/luci/luci-go/server/auth/service/protocol"
 	"github.com/luci/luci-go/server/auth/signing"
 	"github.com/luci/luci-go/server/auth/signing/signingtest"
-	"github.com/luci/luci-go/server/secrets"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -98,47 +97,6 @@ func TestSnapshotDB(t *testing.T) {
 		So(call("user:abc@example.com"), ShouldBeFalse)
 		So(call("user:abc@example.com", "unknown", "direct"), ShouldBeTrue)
 		So(call("user:abc@example.com", "via glob", "direct"), ShouldBeTrue)
-	})
-
-	Convey("SharedSecrets works", t, func() {
-		c := context.Background()
-		db, err := NewSnapshotDB(&protocol.AuthDB{
-			Secrets: []*protocol.AuthSecret{
-				{
-					Name: strPtr("secret-1"),
-					Values: [][]byte{
-						[]byte("current"),
-					},
-				},
-				{
-					Name: strPtr("secret-2"),
-					Values: [][]byte{
-						[]byte("current"),
-						[]byte("prev1"),
-						[]byte("prev2"),
-					},
-				},
-				{
-					Name: strPtr("empty"),
-				},
-			},
-		}, "http://auth-service", 1234)
-		So(err, ShouldBeNil)
-
-		s, err := db.SharedSecrets(c)
-		So(err, ShouldBeNil)
-		So(s, ShouldResemble, secrets.StaticStore{
-			"secret-1": {
-				Current: secrets.NamedBlob{Blob: []byte("current")},
-			},
-			"secret-2": {
-				Current: secrets.NamedBlob{Blob: []byte("current")},
-				Previous: []secrets.NamedBlob{
-					{Blob: []byte("prev1")},
-					{Blob: []byte("prev2")},
-				},
-			},
-		})
 	})
 
 	Convey("GetCertificates works", t, func(c C) {

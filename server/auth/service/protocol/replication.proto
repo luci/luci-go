@@ -4,7 +4,7 @@
 
 // This file is copied from luci-py.git:
 // appengine/components/components/auth/proto/replication.proto
-// Commit: fa51b14f344c2e31416f94b6f0d00e5129b4de3d
+// Commit: def5fc8357e1334184e34d08750c8a8ab17d3141
 //
 // Changes: renamed package to 'protocol'.
 
@@ -115,19 +115,6 @@ message AuthGroup {
 }
 
 
-// Some secret blob. Corresponds to AuthSecret entity in model.py.
-message AuthSecret {
-  // Name of the secret.
-  required string name = 1;
-  // Last several values of a secret, with current value in front.
-  repeated bytes values = 2;
-  // When secret was modified last time. Microseconds since epoch.
-  required int64 modified_ts = 3;
-  // Who modified the secret last time.
-  required string modified_by = 4;
-}
-
-
 // A named set of whitelisted IP addresses. Corresponds to AuthIPWhitelist
 // entity in model.py.
 message AuthIPWhitelist {
@@ -169,9 +156,9 @@ message AuthIPWhitelistAssignment {
 
 
 // An entire database of auth configuration that is being replicated.
-// Corresponds to AuthGlobalConfig entity in model.py, plus a list of all groups
-// and a list of global secrets.
 message AuthDB {
+  reserved 5; // used to be 'secrets', no longer used
+
   // OAuth2 client_id to use to mint new OAuth2 tokens.
   required string oauth_client_id = 1;
   // OAuth2 client secret. Not so secret really, since it's passed to clients.
@@ -180,8 +167,6 @@ message AuthDB {
   repeated string oauth_additional_client_ids = 3;
   // All groups.
   repeated AuthGroup groups = 4;
-  // Global secrets shared between services.
-  repeated AuthSecret secrets = 5;
   // All IP whitelists.
   repeated AuthIPWhitelist ip_whitelists = 6;
   // Mapping 'account -> IP whitlist to use for that account'.

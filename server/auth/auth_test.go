@@ -14,7 +14,6 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/server/secrets"
 
 	"github.com/luci/luci-go/server/auth/authdb"
 	"github.com/luci/luci-go/server/auth/identity"
@@ -248,10 +247,6 @@ func (db *fakeDB) IsAllowedOAuthClientID(c context.Context, email, clientID stri
 
 func (db *fakeDB) IsMember(c context.Context, id identity.Identity, groups ...string) (bool, error) {
 	return len(groups) != 0, nil
-}
-
-func (db *fakeDB) SharedSecrets(c context.Context) (secrets.Store, error) {
-	return nil, errors.New("fakeDB: SharedSecrets is not implemented")
 }
 
 func (db *fakeDB) GetCertificates(c context.Context, id identity.Identity) (*signing.PublicCertificates, error) {

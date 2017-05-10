@@ -11,7 +11,6 @@ import (
 
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/signing"
-	"github.com/luci/luci-go/server/secrets"
 )
 
 // DB is interface to access a database of authorization related information.
@@ -28,12 +27,6 @@ type DB interface {
 	// Unknown groups are considered empty. May return errors if underlying
 	// datastore has issues.
 	IsMember(c context.Context, id identity.Identity, groups ...string) (bool, error)
-
-	// SharedSecrets is secrets.Store with secrets in Auth DB.
-	//
-	// Such secrets are usually generated on central Auth Service and are known
-	// to all trusted services (so that they can use them to exchange data).
-	SharedSecrets(c context.Context) (secrets.Store, error)
 
 	// GetCertificates returns a bundle with certificates of a trusted signer.
 	//

@@ -9,8 +9,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/server/secrets"
-
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authdb"
 	"github.com/luci/luci-go/server/auth/identity"
@@ -54,11 +52,6 @@ func (db FakeDB) IsMember(c context.Context, id identity.Identity, groups ...str
 // IsAllowedOAuthClientID is part of authdb.DB interface. Panics.
 func (db FakeDB) IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error) {
 	panic("FakeDB.IsAllowedOAuthClientID must not be called")
-}
-
-// SharedSecrets is part of authdb.DB interface. Panics.
-func (db FakeDB) SharedSecrets(c context.Context) (secrets.Store, error) {
-	panic("FakeDB.SharedSecrets must not be called")
 }
 
 // GetCertificates is part of authdb.DB interface. Panics.

@@ -18,7 +18,6 @@ import (
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/service/protocol"
 	"github.com/luci/luci-go/server/auth/signing"
-	"github.com/luci/luci-go/server/secrets"
 )
 
 // OAuth client_id of https://apis-explorer.appspot.com/.
@@ -36,7 +35,6 @@ type SnapshotDB struct {
 
 	clientIDs map[string]struct{} // set of allowed client IDs
 	groups    map[string]*group   // map of all known groups
-	secrets   secrets.StaticStore // secrets shared by all service with this DB
 
 	assignments map[identity.Identity]string // IP whitelist assignements
 	whitelists  map[string][]net.IPNet       // IP whitelists
@@ -128,25 +126,6 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64) (*
 				gr.nested = append(gr.nested, nestedGroup)
 			}
 		}
-	}
-
-	// Load all shared secrets.
-	db.secrets = make(secrets.StaticStore, len(authDB.GetSecrets()))
-	for _, s := range authDB.GetSecrets() {
-		values := s.GetValues()
-		if len(values) == 0 {
-			continue
-		}
-		secret := secrets.Secret{
-			Current: secrets.NamedBlob{Blob: values[0]}, // most recent on top
-		}
-		if len(values) > 1 {
-			secret.Previous = make([]secrets.NamedBlob, len(values)-1)
-			for i := 1; i < len(values); i++ {
-				secret.Previous[i-1] = secrets.NamedBlob{Blob: values[i]}
-			}
-		}
-		db.secrets[secrets.Key(s.GetName())] = secret
 	}
 
 	// Build map of IP whitelist assignments.
@@ -285,14 +264,6 @@ func (db *SnapshotDB) isMemberImpl(c context.Context, id identity.Identity, grou
 		return isMember(gr), nil
 	}
 	return false, nil
-}
-
-// SharedSecrets is secrets.Store with secrets in Auth DB.
-//
-// Such secrets are usually generated on central Auth Service and are known
-// to all trusted services (so that they can use them to exchange data).
-func (db *SnapshotDB) SharedSecrets(c context.Context) (secrets.Store, error) {
-	return db.secrets, nil
 }
 
 // GetCertificates returns a bundle with certificates of a trusted signer.
