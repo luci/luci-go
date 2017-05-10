@@ -6,13 +6,30 @@ package python
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/luci/luci-go/common/errors"
 )
 
+// canonicalVersionRE is a regular expression that can match canonical Python
+// versions.
+//
+// This has been modified from the PEP440 canonical regular expression to
+// exclude parts outside of the (major.minor.patch...) section.
+var canonicalVersionRE = regexp.MustCompile(
+	`^([1-9]\d*!)?` +
+		`((0|[1-9]\d*)(\.(0|[1-9]\d*))*)` +
+		`(((a|b|rc)(0|[1-9]\d*))?(\.post(0|[1-9]\d*))?(\.dev(0|[1-9]\d*))?)` +
+		`(\+.*)?$`)
+
 // Version is a Python interpreter version.
+//
+// It is a simplified version of the Python interpreter version scheme defined
+// in PEP 440: https://www.python.org/dev/peps/pep-0440/
+//
+// Notably, it extracts the major, minor, and patch values out of the version.
 type Version struct {
 	Major int
 	Minor int
@@ -21,9 +38,18 @@ type Version struct {
 
 // ParseVersion parses a Python version from a version string (e.g., "1.2.3").
 func ParseVersion(s string) (Version, error) {
-	if len(s) == 0 {
-		return Version{}, nil
+	var v Version
+	if s == "" {
+		return v, nil
 	}
+
+	match := canonicalVersionRE.FindStringSubmatch(s)
+	if match == nil {
+		return v, errors.Reason("non-canonical Python version string: %(value)q").
+			D("value", s).
+			Err()
+	}
+	parts := strings.Split(match[2], ".")
 
 	parseVersion := func(value string) (int, error) {
 		version, err := strconv.Atoi(value)
@@ -32,44 +58,29 @@ func ParseVersion(s string) (Version, error) {
 				D("value", value).
 				Err()
 		}
-		if version < 0 {
-			return 0, errors.Reason("version (%(version)d) must not be negative").
-				D("version", version).
-				Err()
-		}
 		return version, nil
 	}
 
-	var v Version
-	parts := strings.Split(s, ".")
+	// Regexp match guarantees that "parts" will have at least one component, and
+	// that all components are well-formed numbers.
 	var err error
-	switch l := len(parts); l {
-	case 3:
+	if len(parts) >= 3 {
 		if v.Patch, err = parseVersion(parts[2]); err != nil {
 			return v, errors.Annotate(err).Reason("invalid patch value").Err()
 		}
-		fallthrough
-
-	case 2:
+	}
+	if len(parts) >= 2 {
 		if v.Minor, err = parseVersion(parts[1]); err != nil {
 			return v, errors.Annotate(err).Reason("invalid minor value").Err()
 		}
-		fallthrough
-
-	case 1:
-		if v.Major, err = parseVersion(parts[0]); err != nil {
-			return v, errors.Annotate(err).Reason("invalid major value").Err()
-		}
-		if v.IsZero() {
-			return v, errors.Reason("version is incomplete").Err()
-		}
-		return v, nil
-
-	default:
-		return v, errors.Reason("unsupported number of parts (%(count)d)").
-			D("count", l).
-			Err()
 	}
+	if v.Major, err = parseVersion(parts[0]); err != nil {
+		return v, errors.Annotate(err).Reason("invalid major value").Err()
+	}
+	if v.IsZero() {
+		return v, errors.Reason("version is incomplete").Err()
+	}
+	return v, nil
 }
 
 func (v Version) String() string {

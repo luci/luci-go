@@ -28,6 +28,15 @@ func TestParseVersion(t *testing.T) {
 		{"2", Version{2, 0, 0}},
 		{"2.7", Version{2, 7, 0}},
 		{"2.7.12", Version{2, 7, 12}},
+		{"2.7.12+", Version{2, 7, 12}},
+		{"2.7.12+local version string", Version{2, 7, 12}},
+		{"1.4rc1", Version{1, 4, 0}},
+		{"2.7a3", Version{2, 7, 0}},
+		{"1.0b2.post345.dev456", Version{1, 0, 0}},
+		{"1.0+abc.7", Version{1, 0, 0}},
+		{"1.0.dev4", Version{1, 0, 0}},
+		{"1.0.post4", Version{1, 0, 0}},
+		{"2!1.0", Version{1, 0, 0}},
 		{"1000.0.1", Version{1000, 0, 1}},
 	}
 
@@ -35,13 +44,9 @@ func TestParseVersion(t *testing.T) {
 		input string
 		err   string
 	}{
-		{"a", "invalid number value"},
-		{"1.2.3.4", "unsupported number of parts"},
-		{"1.-2.1337", "must not be negative"},
+		{"a", "non-canonical Python version string"},
 		{"0.1.2", "version is incomplete"},
-		{"1.1.X", "invalid patch value"},
-		{"1.Y.1", "invalid minor value"},
-		{"Y.1.1", "invalid major value"},
+		{"1.1.X", "non-canonical Python version string"},
 	}
 
 	Convey(`Testing ParseVersion`, t, func() {

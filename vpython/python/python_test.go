@@ -147,7 +147,9 @@ func TestInterpreterGetVersion(t *testing.T) {
 		vers   Version
 	}{
 		{"Python 2.7.1\n", Version{2, 7, 1}},
+		{"Python 2.7.1+local string", Version{2, 7, 1}},
 		{"Python 3", Version{3, 0, 0}},
+		{"Python 3.1.2.3.4", Version{3, 1, 2}},
 	}
 
 	versionFailures := []struct {
@@ -157,8 +159,7 @@ func TestInterpreterGetVersion(t *testing.T) {
 		{"", "unknown version output"},
 		{"Python2.7.11\n", "unknown version output"},
 		{"Python", "unknown version output"},
-		{"Python 2.7.11 foo bar junk", "invalid number value"},
-		{"Python 3.1.2.3.4", "failed to parse version"},
+		{"Python 2.7.11 foo bar junk", "non-canonical Python version string"},
 	}
 
 	Convey(`Testing Interpreter.GetVersion`, t, func() {
