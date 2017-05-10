@@ -4,12 +4,12 @@
     "Status": "Failure",
     "Source": {
       "Label": "Task 2d8d62f6be545b10",
-      "URL": "https://example.com/user/task/2d8d62f6be545b10"
+      "URL": "https://example.com/task?id=2d8d62f6be545b10\u0026show_raw=1"
     },
     "MainLink": [
       {
         "Label": "Task 2d8d62f6be545b10",
-        "URL": "https://example.com/user/task/2d8d62f6be545b10"
+        "URL": "https://example.com/task?id=2d8d62f6be545b10\u0026show_raw=1"
       }
     ],
     "SubLink": [

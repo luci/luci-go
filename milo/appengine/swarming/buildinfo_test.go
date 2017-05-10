@@ -135,7 +135,7 @@ func TestBuildInfo(t *testing.T) {
 					Link: &miloProto.Link{
 						Label: "Task 12340",
 						Value: &miloProto.Link_Url{
-							Url: "https://swarming.example.com/user/task/12340",
+							Url: "https://swarming.example.com/task?id=12340&show_raw=1",
 						},
 					},
 					Property: []*miloProto.Step_Property{
@@ -179,7 +179,7 @@ func TestBuildInfo(t *testing.T) {
 					Link: &miloProto.Link{
 						Label: "Task 12340",
 						Value: &miloProto.Link_Url{
-							Url: "https://swarming.example.com/user/task/12340",
+							Url: "https://swarming.example.com/task?id=12340&show_raw=1",
 						},
 					},
 					Property: []*miloProto.Step_Property{
