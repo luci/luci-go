@@ -80,28 +80,6 @@ func TestSanitize(t *testing.T) {
 			`&lt;<a rel="noopener" target="_blank" href="about:invalid#sanitized&amp;reason=disallowed-scheme"></a>`,
 		},
 
-		// Tables
-		{
-			`<table>
-				<tr colspan="2">
-					<td rowspan=2>a</td>
-				</tr>
-				<tr style="">
-					<td>b</td>
-					<td>c</td>
-				</tr>
-			</table>`,
-			`<table>
-				<tr colspan="2">
-					<td rowspan="2">a</td>
-				</tr>
-				<tr>
-					<td>b</td>
-					<td>c</td>
-				</tr>
-			</table>`,
-		},
-
 		// Other
 		{
 			`<div><strong>hello</strong></div>`,
