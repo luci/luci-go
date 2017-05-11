@@ -95,6 +95,9 @@ func Run(c context.Context, opts Options) error {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 
+		logging.Debugf(c, "Running Python command: %s\nWorkDir: %s\nEnv: %s", cmd.Args, cmd.Dir, cmd.Env)
+
+		// Output the Python command being executed.
 		if err := runAndForwardSignals(c, cmd, cancelFunc); err != nil {
 			return errors.Annotate(err).Reason("failed to execute bootstrapped Python").Err()
 		}
