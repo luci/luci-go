@@ -1272,13 +1272,9 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir str
 		return err
 	}
 
-	// Make sure to close the file if paniced before OpenInstance call below.
-	owned := false
 	defer func() {
-		if !owned {
-			if err := instanceFile.Close(); err != nil {
-				logging.Warningf(ctx, "cipd: failed to close the package file - %s", err)
-			}
+		if err := instanceFile.Close(); err != nil && err != os.ErrClosed {
+			logging.Warningf(ctx, "cipd: failed to close the package file - %s", err)
 		}
 	}()
 
@@ -1289,14 +1285,8 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir str
 		return err
 	}
 
-	owned = true // disarm the defer above, instance.Close closes instanceFile.
-	defer func() {
-		if err := instance.Close(); err != nil {
-			logging.Warningf(ctx, "cipd: failed to close the instance - %s", err)
-		}
-		// Opportunistically clean up trashed files.
-		client.doBatchAwareOp(ctx, batchAwareOpCleanupTrash)
-	}()
+	// Opportunistically clean up trashed files.
+	defer client.doBatchAwareOp(ctx, batchAwareOpCleanupTrash)
 
 	// Deploy it. 'defer' will take care of removing the temp file if needed.
 	_, err = client.deployer.DeployInstance(ctx, subdir, instance)

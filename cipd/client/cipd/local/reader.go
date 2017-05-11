@@ -39,9 +39,6 @@ const (
 
 // PackageInstance represents a binary CIPD package file (with manifest inside).
 type PackageInstance interface {
-	// Close shuts down the package and its data provider.
-	Close() error
-
 	// Pin identifies package name and concreted instance ID of this package file.
 	Pin() common.Pin
 
@@ -60,12 +57,6 @@ type PackageInstance interface {
 // If instanceID is not empty and verification mode is VerifyHash,
 // OpenInstance will check that package data matches the given instanceID. It
 // skips this check if verification mode is SkipHashVerification.
-//
-// If the call succeeds, PackageInstance takes ownership of io.ReadSeeker. If it
-// also implements io.Closer, it will be closed when package.Close() is called.
-//
-// If an error is returned, io.ReadSeeker remains unowned and caller is r
-// esponsible for closing it (if required).
 func OpenInstance(ctx context.Context, r io.ReadSeeker, instanceID string, v VerificationMode) (PackageInstance, error) {
 	out := &packageInstance{data: r}
 	if err := out.open(instanceID, v); err != nil {
@@ -75,14 +66,20 @@ func OpenInstance(ctx context.Context, r io.ReadSeeker, instanceID string, v Ver
 }
 
 // OpenInstanceFile opens a package instance file on disk.
-func OpenInstanceFile(ctx context.Context, path string, instanceID string, v VerificationMode) (inst PackageInstance, err error) {
+//
+// The caller of this function must call closer() if err != nil to close the
+// underlying file.
+func OpenInstanceFile(ctx context.Context, path string, instanceID string, v VerificationMode) (inst PackageInstance, closer func() error, err error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return
 	}
 	inst, err = OpenInstance(ctx, file, instanceID, v)
 	if err != nil {
+		inst = nil
 		file.Close()
+	} else {
+		closer = file.Close
 	}
 	return
 }
@@ -410,20 +407,6 @@ func (inst *packageInstance) open(instanceID string, v VerificationMode) error {
 	}
 
 	return nil
-}
-
-func (inst *packageInstance) Close() (err error) {
-	if inst.data != nil {
-		if closer, ok := inst.data.(io.Closer); ok {
-			err = closer.Close()
-		}
-		inst.data = nil
-	}
-	inst.instanceID = ""
-	inst.zip = nil
-	inst.files = []File{}
-	inst.manifest = Manifest{}
-	return
 }
 
 func (inst *packageInstance) Pin() common.Pin {

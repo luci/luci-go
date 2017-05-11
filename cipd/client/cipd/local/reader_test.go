@@ -64,9 +64,6 @@ func TestPackageReading(t *testing.T) {
 
 		// Open it.
 		inst, err := OpenInstance(ctx, bytes.NewReader(out.Bytes()), "", VerifyHash)
-		if inst != nil {
-			defer inst.Close()
-		}
 		So(inst, ShouldNotBeNil)
 		So(err, ShouldBeNil)
 		So(inst.Pin(), ShouldResemble, Pin{"testing", "23f2c4900785ac8faa2f38e473925b840e574ccc"})
@@ -107,7 +104,6 @@ func TestPackageReading(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(inst, ShouldNotBeNil)
 		So(inst.Pin(), ShouldResemble, Pin{"testing", "23f2c4900785ac8faa2f38e473925b840e574ccc"})
-		inst.Close()
 
 		// Attempt to open it, providing incorrect instance ID.
 		inst, err = OpenInstance(ctx, source, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", VerifyHash)
@@ -119,7 +115,6 @@ func TestPackageReading(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(inst, ShouldNotBeNil)
 		So(inst.Pin(), ShouldResemble, Pin{"testing", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
-		inst.Close()
 	})
 
 	Convey("OpenInstanceFile works", t, func() {
@@ -139,12 +134,10 @@ func TestPackageReading(t *testing.T) {
 		tempFile.Close()
 
 		// Read the package.
-		inst, err := OpenInstanceFile(ctx, tempFilePath, "", VerifyHash)
-		if inst != nil {
-			defer inst.Close()
-		}
-		So(inst, ShouldNotBeNil)
+		inst, closer, err := OpenInstanceFile(ctx, tempFilePath, "", VerifyHash)
 		So(err, ShouldBeNil)
+		defer closer()
+		So(inst, ShouldNotBeNil)
 	})
 
 	Convey("ExtractInstance works", t, func() {
@@ -176,9 +169,6 @@ func TestPackageReading(t *testing.T) {
 
 		// Extract files.
 		inst, err := OpenInstance(ctx, bytes.NewReader(out.Bytes()), "", VerifyHash)
-		if inst != nil {
-			defer inst.Close()
-		}
 		So(err, ShouldBeNil)
 		dest := &testDestination{}
 		err = ExtractInstance(ctx, inst, dest, func(f File) bool {

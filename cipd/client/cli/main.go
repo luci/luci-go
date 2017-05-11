@@ -1545,11 +1545,11 @@ func (c *deployRun) Run(a subcommands.Application, args []string, env subcommand
 }
 
 func deployInstanceFile(ctx context.Context, root string, instanceFile string) (common.Pin, error) {
-	inst, err := local.OpenInstanceFile(ctx, instanceFile, "", local.VerifyHash)
+	inst, closer, err := local.OpenInstanceFile(ctx, instanceFile, "", local.VerifyHash)
 	if err != nil {
 		return common.Pin{}, err
 	}
-	defer inst.Close()
+	defer closer()
 	inspectInstance(ctx, inst, false)
 
 	d := local.NewDeployer(root)
@@ -1627,12 +1627,12 @@ func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile s
 	// the hash.
 	out.Close()
 	ok = true
-	inst, err := local.OpenInstanceFile(ctx, instanceFile, pin.InstanceID, local.SkipHashVerification)
+	inst, closer, err := local.OpenInstanceFile(ctx, instanceFile, pin.InstanceID, local.SkipHashVerification)
 	if err != nil {
 		os.Remove(instanceFile)
 		return common.Pin{}, err
 	}
-	defer inst.Close()
+	defer closer()
 	inspectInstance(ctx, inst, false)
 	return inst.Pin(), nil
 }
@@ -1667,11 +1667,11 @@ func (c *inspectRun) Run(a subcommands.Application, args []string, env subcomman
 }
 
 func inspectInstanceFile(ctx context.Context, instanceFile string, listFiles bool) (common.Pin, error) {
-	inst, err := local.OpenInstanceFile(ctx, instanceFile, "", local.VerifyHash)
+	inst, closer, err := local.OpenInstanceFile(ctx, instanceFile, "", local.VerifyHash)
 	if err != nil {
 		return common.Pin{}, err
 	}
-	defer inst.Close()
+	defer closer()
 	inspectInstance(ctx, inst, listFiles)
 	return inst.Pin(), nil
 }
@@ -1752,11 +1752,11 @@ func (c *registerRun) Run(a subcommands.Application, args []string, env subcomma
 }
 
 func registerInstanceFile(ctx context.Context, instanceFile string, opts *registerOpts) (common.Pin, error) {
-	inst, err := local.OpenInstanceFile(ctx, instanceFile, "", local.VerifyHash)
+	inst, closer, err := local.OpenInstanceFile(ctx, instanceFile, "", local.VerifyHash)
 	if err != nil {
 		return common.Pin{}, err
 	}
-	defer inst.Close()
+	defer closer()
 	client, err := opts.clientOptions.makeCipdClient(ctx, "")
 	if err != nil {
 		return common.Pin{}, err

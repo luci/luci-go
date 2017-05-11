@@ -147,7 +147,6 @@ func TestRegisterInstance(t *testing.T) {
 		// Open it for reading.
 		inst, err := local.OpenInstance(ctx, bytes.NewReader(out.Bytes()), "", local.VerifyHash)
 		So(err, ShouldBeNil)
-		defer inst.Close()
 
 		Convey("RegisterInstance full flow", func(c C) {
 			client := mockClient(c, "", []expectedHTTPCall{
@@ -487,13 +486,13 @@ func TestFetch(t *testing.T) {
 		inst := buildInstanceInMemory(ctx, "testing/package", []local.File{
 			local.NewTestFile("file", "test data", false),
 		})
-		defer inst.Close()
 
 		client := mockClientForFetch(c, tempDir, []local.PackageInstance{inst})
 
 		Convey("FetchInstance (no cache)", func() {
 			reader, err := client.FetchInstance(ctx, inst.Pin())
 			So(err, ShouldBeNil)
+			defer reader.Close() // just in case
 
 			// Backed by a temp file.
 			tmpFile := reader.(deleteOnClose)
@@ -503,7 +502,7 @@ func TestFetch(t *testing.T) {
 			fetched, err := local.OpenInstance(ctx, reader, "", local.VerifyHash)
 			So(err, ShouldBeNil)
 			So(fetched.Pin(), ShouldResemble, inst.Pin())
-			fetched.Close() // this closes the 'reader' too
+			tmpFile.Close()
 
 			// The temp file is gone.
 			_, err = os.Stat(tmpFile.Name())
@@ -515,6 +514,7 @@ func TestFetch(t *testing.T) {
 
 			reader, err := client.FetchInstance(ctx, inst.Pin())
 			So(err, ShouldBeNil)
+			defer reader.Close()
 
 			// Backed by a real file.
 			cachedFile := reader.(*os.File)
@@ -524,7 +524,6 @@ func TestFetch(t *testing.T) {
 			fetched, err := local.OpenInstance(ctx, reader, "", local.VerifyHash)
 			So(err, ShouldBeNil)
 			So(fetched.Pin(), ShouldResemble, inst.Pin())
-			fetched.Close() // this closes the 'reader' too
 
 			// The real file is still there, in the cache.
 			_, err = os.Stat(cachedFile.Name())
@@ -553,10 +552,10 @@ func TestFetch(t *testing.T) {
 			So(err, ShouldBeNil)
 			out.Close()
 
-			fetched, err := local.OpenInstanceFile(ctx, tempFile, "", local.VerifyHash)
+			fetched, closer, err := local.OpenInstanceFile(ctx, tempFile, "", local.VerifyHash)
 			So(err, ShouldBeNil)
+			defer closer()
 			So(fetched.Pin(), ShouldResemble, inst.Pin())
-			fetched.Close()
 		})
 
 		Convey("FetchInstanceTo (with cache)", func() {
@@ -571,10 +570,10 @@ func TestFetch(t *testing.T) {
 			So(err, ShouldBeNil)
 			out.Close()
 
-			fetched, err := local.OpenInstanceFile(ctx, tempFile, "", local.VerifyHash)
+			fetched, closer, err := local.OpenInstanceFile(ctx, tempFile, "", local.VerifyHash)
 			So(err, ShouldBeNil)
+			defer closer()
 			So(fetched.Pin(), ShouldResemble, inst.Pin())
-			fetched.Close()
 		})
 
 		Convey("FetchAndDeployInstance works", func() {
@@ -652,11 +651,8 @@ func TestEnsurePackages(t *testing.T) {
 		Convey("EnsurePackages full flow", func(c C) {
 			// Prepare a bunch of packages.
 			a1 := buildInstanceInMemory(ctx, "pkg/a", []local.File{local.NewTestFile("file a 1", "test data", false)})
-			defer a1.Close()
 			a2 := buildInstanceInMemory(ctx, "pkg/a", []local.File{local.NewTestFile("file a 2", "test data", false)})
-			defer a2.Close()
 			b := buildInstanceInMemory(ctx, "pkg/b", []local.File{local.NewTestFile("file b", "test data", false)})
-			defer b.Close()
 
 			pil := func(insts ...local.PackageInstance) []local.PackageInstance {
 				return insts
