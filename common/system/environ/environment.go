@@ -130,6 +130,19 @@ func (e *Env) Remove(k string) bool {
 	return false
 }
 
+// Update adds all key/value from other to the current environment. If there is
+// a duplicate key, the value from other will overwrite the value from e.
+//
+// Values from other will be sorted and added in alphabetic order. This means
+// that if e is case insensitive and there are multiple keys in other that
+// converge on the same case insensitive key, the one that is alphabetically
+// highest will be added.
+func (e *Env) Update(other Env) {
+	for _, entry := range other.Sorted() {
+		e.SetEntry(entry)
+	}
+}
+
 //
 // NOTE to implementers: all mutation methods MUST accept a pointer Env, as they
 // may mutate the underlying "env" map value.
@@ -205,6 +218,18 @@ func (e Env) Clone() Env {
 		}
 	}
 	return clone
+}
+
+// Iter iterates through all of the key/value pairs in Env and invokes the
+// supplied callback, cb, for each element.
+//
+// If the callback returns false, iteration will stop immediately.
+func (e Env) Iter(cb func(k, v string) bool) {
+	for _, v := range e.env {
+		if !cb(Split(v)) {
+			break
+		}
+	}
 }
 
 // Split splits the supplied environment variable value into a key/value pair.

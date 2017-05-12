@@ -145,13 +145,19 @@ func TestEnvironmentManipulation(t *testing.T) {
 			So(ok, ShouldBeFalse)
 		})
 
-		Convey(`Can be converted into a map`, func() {
+		Convey(`Can be converted into a map and enumerated`, func() {
 			So(env.Map(), ShouldResemble, map[string]string{
 				"PYTHONPATH": "/foo:/bar:/baz",
 				"http_proxy": "http://example.com",
 				"novalue":    "",
 			})
 
+			buildMap := make(map[string]string)
+			env.Iter(func(k, v string) bool {
+				buildMap[k] = v
+				return true
+			})
+			So(env.Map(), ShouldResemble, buildMap)
 		})
 
 		Convey(`Can update its values.`, func() {
@@ -189,6 +195,20 @@ func TestEnvironmentManipulation(t *testing.T) {
 				So(orig.Sorted(), ShouldResemble, []string{
 					"PYTHONPATH=/foo:/bar:/baz",
 					"http_proxy=http://example.com",
+					"novalue=",
+				})
+
+				var mergeMe Env
+				mergeMe.LoadSlice([]string{
+					"http_PROXY=foo",
+					"HTTP_PROXY=FOO",
+					"newkey=value",
+				})
+				orig.Update(mergeMe)
+				So(orig.Sorted(), ShouldResemble, []string{
+					"PYTHONPATH=/foo:/bar:/baz",
+					"http_PROXY=foo",
+					"newkey=value",
 					"novalue=",
 				})
 			})
