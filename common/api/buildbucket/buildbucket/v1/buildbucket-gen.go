@@ -230,6 +230,8 @@ func (s *ApiBuildResponseMessage) MarshalJSON() ([]byte, error) {
 type ApiCancelBatchRequestMessage struct {
 	BuildIds googleapi.Int64s `json:"build_ids,omitempty"`
 
+	ResultDetailsJson string `json:"result_details_json,omitempty"`
+
 	// ForceSendFields is a list of field names (e.g. "BuildIds") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
@@ -310,6 +312,33 @@ type ApiCancelBatchResponseMessageOneResult struct {
 
 func (s *ApiCancelBatchResponseMessageOneResult) MarshalJSON() ([]byte, error) {
 	type noMethod ApiCancelBatchResponseMessageOneResult
+	raw := noMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+type ApiCancelRequestBodyMessage struct {
+	ResultDetailsJson string `json:"result_details_json,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "ResultDetailsJson")
+	// to unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "ResultDetailsJson") to
+	// include in API requests with the JSON null value. By default, fields
+	// with empty values are omitted from API requests. However, any field
+	// with an empty value appearing in NullFields will be sent to the
+	// server as null. It is an error if a field in this list has a
+	// non-empty value. This may be used to include null fields in Patch
+	// requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *ApiCancelRequestBodyMessage) MarshalJSON() ([]byte, error) {
+	type noMethod ApiCancelRequestBodyMessage
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
@@ -1024,17 +1053,19 @@ func (c *BackfillTagIndexCall) Do(opts ...googleapi.CallOption) error {
 // method id "buildbucket.cancel":
 
 type CancelCall struct {
-	s          *Service
-	id         int64
-	urlParams_ gensupport.URLParams
-	ctx_       context.Context
-	header_    http.Header
+	s                           *Service
+	id                          int64
+	apicancelrequestbodymessage *ApiCancelRequestBodyMessage
+	urlParams_                  gensupport.URLParams
+	ctx_                        context.Context
+	header_                     http.Header
 }
 
 // Cancel: Cancels a build.
-func (s *Service) Cancel(id int64) *CancelCall {
+func (s *Service) Cancel(id int64, apicancelrequestbodymessage *ApiCancelRequestBodyMessage) *CancelCall {
 	c := &CancelCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.id = id
+	c.apicancelrequestbodymessage = apicancelrequestbodymessage
 	return c
 }
 
@@ -1070,6 +1101,11 @@ func (c *CancelCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.apicancelrequestbodymessage)
+	if err != nil {
+		return nil, err
+	}
+	reqHeaders.Set("Content-Type", "application/json")
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "builds/{id}/cancel")
 	urls += "?" + c.urlParams_.Encode()
@@ -1134,6 +1170,10 @@ func (c *CancelCall) Do(opts ...googleapi.CallOption) (*ApiBuildResponseMessage,
 	//     }
 	//   },
 	//   "path": "builds/{id}/cancel",
+	//   "request": {
+	//     "$ref": "ApiCancelRequestBodyMessage",
+	//     "parameterName": "resource"
+	//   },
 	//   "response": {
 	//     "$ref": "ApiBuildResponseMessage"
 	//   },

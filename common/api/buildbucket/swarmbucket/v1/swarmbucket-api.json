@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/TKnGlqBvxq3Tnq1YZfSctOWiTo4\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/lsH1QT-cqP1N0YIBt5a4z6BEjfE\"",
  "discoveryVersion": "v1",
  "id": "swarmbucket:v1",
  "name": "swarmbucket",
@@ -158,6 +158,9 @@
    "id": "SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage",
    "type": "object",
    "properties": {
+    "api_explorer_link": {
+     "type": "boolean"
+    },
     "build_request": {
      "$ref": "ApiPutRequestMessage"
     }

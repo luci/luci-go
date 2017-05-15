@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/oaseV8it1U6MhdnhHe3SGj1qZh0\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/fqSlEBDWUy38USUQ5BGndLM--bM\"",
  "discoveryVersion": "v1",
  "id": "buildbucket:v1",
  "name": "buildbucket",
@@ -236,6 +236,9 @@
       "type": "string",
       "format": "int64"
      }
+    },
+    "result_details_json": {
+     "type": "string"
     }
    }
   },
@@ -265,6 +268,15 @@
     },
     "error": {
      "$ref": "ApiErrorMessage"
+    }
+   }
+  },
+  "ApiCancelRequestBodyMessage": {
+   "id": "ApiCancelRequestBodyMessage",
+   "type": "object",
+   "properties": {
+    "result_details_json": {
+     "type": "string"
     }
    }
   },
@@ -642,6 +654,10 @@
    "parameterOrder": [
     "id"
    ],
+   "request": {
+    "$ref": "ApiCancelRequestBodyMessage",
+    "parameterName": "resource"
+   },
    "response": {
     "$ref": "ApiBuildResponseMessage"
    },
