@@ -196,7 +196,10 @@ func (i *Client) Fetch(c context.Context, item *isolateservice.HandlersEndpoints
 		if err != nil {
 			return err
 		}
-		decompressor := isolated.GetDecompressor(bytes.NewReader(decoded))
+		decompressor, err := isolated.GetDecompressor(bytes.NewReader(decoded))
+		if err != nil {
+			return err
+		}
 		defer decompressor.Close()
 		_, err = io.Copy(dest, decompressor)
 		return err
@@ -239,7 +242,10 @@ func (i *Client) doPush(c context.Context, state *PushState, source Source) (err
 
 func (i *Client) doPushDB(c context.Context, state *PushState, reader io.Reader) error {
 	buf := bytes.Buffer{}
-	compressor := isolated.GetCompressor(&buf)
+	compressor, err := isolated.GetCompressor(&buf)
+	if err != nil {
+		return err
+	}
 	if _, err := io.Copy(compressor, reader); err != nil {
 		return err
 	}
@@ -265,12 +271,15 @@ func (gcs defaultGCSHandler) Fetch(c context.Context, i *Client, content isolate
 	}
 	handler := func(resp *http.Response) error {
 		defer resp.Body.Close()
-		decompressor := isolated.GetDecompressor(resp.Body)
+		decompressor, err := isolated.GetDecompressor(resp.Body)
+		if err != nil {
+			return err
+		}
 		defer decompressor.Close()
 		if _, err := dest.Seek(0, os.SEEK_SET); err != nil {
 			return err
 		}
-		_, err := io.Copy(dest, decompressor)
+		_, err = io.Copy(dest, decompressor)
 		return err
 	}
 	_, err := lhttp.NewRequest(c, i.authClient, i.retryFactory, rgen, handler, nil)()
@@ -333,8 +342,11 @@ func newCompressed(src io.ReadCloser) io.ReadCloser {
 	pr, pw := io.Pipe()
 	go func() {
 		// The compressor itself is not thread safe.
-		compressor := isolated.GetCompressor(pw)
-
+		compressor, err := isolated.GetCompressor(pw)
+		if err != nil {
+			pw.CloseWithError(err)
+			return
+		}
 		buf := make([]byte, 4096)
 		if _, err := io.CopyBuffer(compressor, src, buf); err != nil {
 			pw.CloseWithError(err)

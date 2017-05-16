@@ -17,7 +17,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
+	isolateservice "github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
 	"github.com/luci/luci-go/common/isolated"
 )
 
@@ -187,7 +187,13 @@ func (server *isolatedFake) fakeCloudStorage(w http.ResponseWriter, r *http.Requ
 		server.Fail(fmt.Errorf("invalid method: %s", r.Method))
 		return
 	}
-	raw, err := ioutil.ReadAll(isolated.GetDecompressor(r.Body))
+	decompressor, err := isolated.GetDecompressor(r.Body)
+	if err != nil {
+		w.WriteHeader(500)
+		server.Fail(err)
+		return
+	}
+	raw, err := ioutil.ReadAll(decompressor)
 	if err != nil {
 		w.WriteHeader(500)
 		server.Fail(err)
@@ -262,7 +268,12 @@ func (server *isolatedFake) storeInline(r *http.Request) interface{} {
 		server.Fail(err)
 		return map[string]string{"err": err.Error()}
 	}
-	raw, err := ioutil.ReadAll(isolated.GetDecompressor(bytes.NewReader(blob)))
+	decompressor, err := isolated.GetDecompressor(bytes.NewReader(blob))
+	if err != nil {
+		server.Fail(err)
+		return map[string]string{"err": err.Error()}
+	}
+	raw, err := ioutil.ReadAll(decompressor)
 	if err != nil {
 		server.Fail(err)
 		return map[string]string{"err": err.Error()}

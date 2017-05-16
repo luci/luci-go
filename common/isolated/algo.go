@@ -10,7 +10,6 @@ import (
 	"crypto/sha1"
 	"hash"
 	"io"
-	"log"
 )
 
 // GetHash returns a fresh instance of the hashing algorithm to be used to
@@ -26,13 +25,8 @@ func GetHash() hash.Hash {
 // It must be closed after use.
 //
 // It is currently hardcoded to RFC 1950 (zlib).
-func GetDecompressor(in io.Reader) io.ReadCloser {
-	d, err := newZlibReader(in)
-	if err != nil {
-		// The data is corrupted.
-		log.Printf("%s", err)
-	}
-	return d
+func GetDecompressor(in io.Reader) (io.ReadCloser, error) {
+	return newZlibReader(in)
 }
 
 // GetCompressor returns a fresh instance of the compression algorithm.
@@ -40,9 +34,8 @@ func GetDecompressor(in io.Reader) io.ReadCloser {
 // It must be closed after use.
 //
 // It is currently hardcoded to RFC 1950 (zlib).
-func GetCompressor(out io.Writer) io.WriteCloser {
-	c, _ := newZlibWriterLevel(out, 7)
-	return c
+func GetCompressor(out io.Writer) (io.WriteCloser, error) {
+	return newZlibWriterLevel(out, 7)
 }
 
 // HexDigest is the hash of a file that is hex-encoded. Only lower case letters
