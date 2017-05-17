@@ -946,6 +946,10 @@ func (s *SwarmingRpcsPerformanceStats) UnmarshalJSON(data []byte) error {
 type SwarmingRpcsServerDetails struct {
 	BotVersion string `json:"bot_version,omitempty"`
 
+	DefaultIsolateNamespace string `json:"default_isolate_namespace,omitempty"`
+
+	DefaultIsolateServer string `json:"default_isolate_server,omitempty"`
+
 	DisplayServerUrlTemplate string `json:"display_server_url_template,omitempty"`
 
 	LuciConfig string `json:"luci_config,omitempty"`

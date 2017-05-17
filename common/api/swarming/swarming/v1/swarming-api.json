@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/a319reLq7TcE0ot37uvUfe0c0XQ\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/HcoTHCrkOXbRO4Hvw3XdX_0qCk4\"",
  "discoveryVersion": "v1",
  "id": "swarming:v1",
  "name": "swarming",
@@ -552,6 +552,12 @@
    "description": "Reports details about the server.",
    "properties": {
     "bot_version": {
+     "type": "string"
+    },
+    "default_isolate_namespace": {
+     "type": "string"
+    },
+    "default_isolate_server": {
      "type": "string"
     },
     "display_server_url_template": {
