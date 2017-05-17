@@ -547,16 +547,6 @@ namespace LogDog {
       }
 
       let logBlock: LogDog.LogEntry[] = [];
-      let appendBlock = () => {
-        if (logBlock.length) {
-          console.log('Rendering', logBlock.length, 'logs...');
-          this.view.pushLogEntries(logBlock, l);
-          logBlock.length = 0;
-
-          // Update our status and controls.
-          this.updateControls();
-        }
-      };
 
       // Create a promise loop to push logs at intervals.
       let lines = 0;
@@ -571,7 +561,7 @@ namespace LogDog {
         // If we've exceeded our burst, then interleave a sleep (yield). This
         // will reduce user jank a bit.
         if (Model.logAppendInterval > 0 && lines >= Model.logAppendInterval) {
-          appendBlock();
+          this.appendBlock(logBlock, l);
 
           await luci.sleepPromise(Model.logAppendDelay);
           lines = 0;
@@ -579,7 +569,26 @@ namespace LogDog {
       }
 
       // If there are any buffered logs, append that block.
-      appendBlock();
+      this.appendBlock(logBlock, l);
+    }
+
+    /**
+     * Appends the contents of the "block" array to the viewer, consuming
+     * "block" in the process.
+     *
+     * Block will be reset (but not resized) to zero elements after appending.
+     */
+    private appendBlock(block: LogDog.LogEntry[], l: Location) {
+      if (!block.length) {
+        return;
+      }
+
+      console.log('Rendering', block.length, 'logs...');
+      this.view.pushLogEntries(block, l);
+      block.length = 0;
+
+      // Update our status and controls.
+      this.updateControls();
     }
 
     /**
