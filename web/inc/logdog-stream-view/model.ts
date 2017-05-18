@@ -330,8 +330,23 @@ namespace LogDog {
       return new AggregateLogStream([]);
     }
 
-    private clearCurrentOperation() {
+    /**
+     * Clears the current operation, cancelling it if set. If the operation is
+     * cleared, the current fetch and rendering states will be reset.
+     *
+     * @param op if provided, only cancel the current operation if it equals
+     *     the supplied "op". If "op" does not match the current operation, it
+     *     will be cancelled, but the current operation will be left in-tact.
+     *     If "op" is undefined, cancel the current operation regardless.
+     */
+    private clearCurrentOperation(op?: luci.Operation) {
       if (this.currentOperation) {
+        if (op && op !== this.currentOperation) {
+          // Conditional clear, and we are not the current operation, so do
+          // nothing.
+          op.cancel();
+          return;
+        }
         this.currentOperation.cancel();
         this.currentOperation = this.currentFetchPromise = null;
       }
@@ -443,6 +458,7 @@ namespace LogDog {
       if (this.currentFetchPromise && (!cancel)) {
         return this.currentFetchPromise;
       }
+      this.clearCurrentOperation();
 
       // If our provider is finished, then do nothing.
       if (this.fetchedFullStream) {
@@ -456,56 +472,74 @@ namespace LogDog {
         l = Location.HEAD;
       }
 
-      // If we're not split, always fetch from BOTTOM.
-      this.loadingState = LoadingState.LOADING;
-      let loadingWhileTimer =
-          new luci.Timer(Model.LOADING_WHILE_THRESHOLD_MS, () => {
-            if (this.loadingState === LoadingState.LOADING) {
-              this.loadingState = LoadingState.LOADING_BEEN_A_WHILE;
-            }
-          });
-
       // Rotate our fetch ID. This will effectively cancel any pending fetches.
       this.currentOperation = new luci.Operation();
       this.currentFetchPromise =
           this.fetchLocationImpl(l, this.currentOperation);
-      try {
-        await this.currentFetchPromise;
-      } catch (err) {
-        loadingWhileTimer.cancel();
-
-        // If we've been canceled, discard this result.
-        if (err === luci.Operation.CANCELLED) {
-          return;
-        }
-
-        this.clearCurrentOperation();
-        if (err === NOT_AUTHENTICATED) {
-          this.loadingState = LoadingState.NEEDS_AUTH;
-
-          // We failed because we were not authenticated. Mark this
-          // so we can retry if that state changes.
-          await this.authChangedPromise;
-
-          // Our authentication state changed during the fetch!
-          // Retry automatically.
-          return this.fetchLocation(l, false);
-        }
-
-        console.error('Failed to load log streams:', err);
-      };
-
-      loadingWhileTimer.cancel();
       return this.currentFetchPromise;
     }
 
     private async fetchLocationImpl(l: Location, op: luci.Operation) {
+      for (let continueFetching = true; continueFetching;) {
+        this.loadingState = LoadingState.LOADING;
+
+        let loadingWhileTimer =
+            new luci.Timer(Model.LOADING_WHILE_THRESHOLD_MS, () => {
+              if (this.loadingState === LoadingState.LOADING) {
+                this.loadingState = LoadingState.LOADING_BEEN_A_WHILE;
+              }
+            });
+
+        let hasLogs = false;
+        try {
+          hasLogs = await this.fetchLocationRound(l, op);
+        } catch (err) {
+          // Cancel the timer here, since we may enter other states in this
+          // "catch" block and we don't want to have the timer override them.
+          loadingWhileTimer.cancel();
+
+          // If we've been canceled, discard this result.
+          if (err === luci.Operation.CANCELLED) {
+            return;
+          }
+
+          this.clearCurrentOperation(op);
+          if (err === NOT_AUTHENTICATED) {
+            this.loadingState = LoadingState.NEEDS_AUTH;
+
+            // We failed because we were not authenticated. Mark this
+            // so we can retry if that state changes.
+            await this.authChangedPromise;
+
+            // Our authentication state changed during the fetch!
+            // Retry automatically.
+            continueFetching = true;
+            continue;
+          }
+
+          console.error('Failed to load log streams:', err);
+          return;
+        } finally {
+          loadingWhileTimer.cancel();
+        }
+
+        continueFetching = (this.automatic && hasLogs);
+        if (continueFetching) {
+          console.log('Automatic: starting next fetch.');
+        }
+      }
+
+      // Post-fetch cleanup.
+      this.clearCurrentOperation(op);
+    }
+
+    private async fetchLocationRound(l: Location, op: luci.Operation) {
       let buf = await this.provider.fetch(op, l);
 
       // Clear our fetching status.
       this.rendering = true;
       this.loadingState = LoadingState.RENDERING;
-      let hasLogs = (buf && buf.peek());
+      let hasLogs = !!(buf && buf.peek());
 
       // Resolve any previous rendering Promise that we have. This
       // makes sure our rendering and fetching don't get more than
@@ -513,8 +547,6 @@ namespace LogDog {
       if (this.renderPromise) {
         await this.renderPromise;
       }
-      // Post-fetch cleanup.
-      this.clearCurrentOperation();
 
       // Clear our loading state (updates controls automatically).
       this.loadingState = LoadingState.RENDERING;
@@ -530,15 +562,9 @@ namespace LogDog {
       this.renderPromise = doRender();
 
       if (this.fetchedFullStream) {
-        return;
+        return false;
       }
-
-      // The fetch is finished. If we're automatic, and we got logs, start the
-      // next fetch.
-      if (this.automatic && hasLogs) {
-        console.log('Automatic: starting next fetch.');
-        return this.fetch(false);
-      }
+      return hasLogs;
     }
 
     private async renderLogs(buf: BufferedLogs, l: Location) {
@@ -720,14 +746,7 @@ namespace LogDog {
       this.fetcher = new LogDog.Fetcher(client, stream);
     }
 
-    private clearActiveFetch() {
-      if (this.activeFetch) {
-        this.activeFetch.op.cancel();
-      }
-    }
-
     private setActiveFetch(fetch: LogDog.Fetch): LogDog.Fetch {
-      this.clearActiveFetch();
       this.activeFetch = fetch;
       this.activeFetch.addStateChangedCallback((_: LogDog.Fetch) => {
         this.statusChanged();
@@ -750,8 +769,6 @@ namespace LogDog {
     }
 
     async fetch(op: luci.Operation, l: Location) {
-      this.clearActiveFetch();
-
       // Determine which method to use based on the insertion point and current
       // log stream fetch state.
       let getLogs: Promise<LogDog.LogEntry[]>;
