@@ -349,6 +349,7 @@ func newCompressed(src io.ReadCloser) io.ReadCloser {
 		}
 		buf := make([]byte, 4096)
 		if _, err := io.CopyBuffer(compressor, src, buf); err != nil {
+			compressor.Close()
 			pw.CloseWithError(err)
 			return
 		}

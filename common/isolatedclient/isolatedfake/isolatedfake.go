@@ -193,6 +193,7 @@ func (server *isolatedFake) fakeCloudStorage(w http.ResponseWriter, r *http.Requ
 		server.Fail(err)
 		return
 	}
+	defer decompressor.Close()
 	raw, err := ioutil.ReadAll(decompressor)
 	if err != nil {
 		w.WriteHeader(500)
@@ -273,6 +274,7 @@ func (server *isolatedFake) storeInline(r *http.Request) interface{} {
 		server.Fail(err)
 		return map[string]string{"err": err.Error()}
 	}
+	defer decompressor.Close()
 	raw, err := ioutil.ReadAll(decompressor)
 	if err != nil {
 		server.Fail(err)
