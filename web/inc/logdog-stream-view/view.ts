@@ -239,6 +239,11 @@ namespace LogDog {
       this.comp.playing = false;
     }
 
+    /** Called when the "scroll to split" button is clicked. */
+    handleScrollToSplitClicked() {
+      this.maybeScrollToElement(this.comp.$.logSplit, true, true);
+    }
+
     /** Called when a sign-in event is fired from "google-signin-aware". */
     handleSignin() {
       if (this.model) {

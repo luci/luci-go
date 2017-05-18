@@ -494,6 +494,8 @@ namespace LogDog {
         try {
           hasLogs = await this.fetchLocationRound(l, op);
         } catch (err) {
+          console.log('Fetch failed with error:', err);
+
           // Cancel the timer here, since we may enter other states in this
           // "catch" block and we don't want to have the timer override them.
           loadingWhileTimer.cancel();
@@ -503,7 +505,6 @@ namespace LogDog {
             return;
           }
 
-          this.clearCurrentOperation(op);
           if (err === NOT_AUTHENTICATED) {
             this.loadingState = LoadingState.NEEDS_AUTH;
 
