@@ -8,6 +8,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"hash"
 	"io"
@@ -37,6 +38,8 @@ const (
 	SkipHashVerification VerificationMode = 1
 )
 
+var ErrHashMismatch = errors.New("package hash mismatch")
+
 // PackageInstance represents a binary CIPD package file (with manifest inside).
 type PackageInstance interface {
 	// Pin identifies package name and concreted instance ID of this package file.
@@ -49,6 +52,16 @@ type PackageInstance interface {
 	DataReader() io.ReadSeeker
 }
 
+// InstanceFile is an underlying data file for a PackageInstance.
+type InstanceFile interface {
+	io.ReadSeeker
+
+	// Close is a bit non-standard, and can be used to indicate to the storage
+	// (filesystem and/or cache) layer that this instance is actaully bad. The
+	// storage layer can then evict/revoke, etc. the bad file.
+	Close(ctx context.Context, corrupt bool) error
+}
+
 // OpenInstance prepares the package for extraction.
 //
 // If instanceID is an empty string, OpenInstance will calculate the hash
@@ -57,13 +70,19 @@ type PackageInstance interface {
 // If instanceID is not empty and verification mode is VerifyHash,
 // OpenInstance will check that package data matches the given instanceID. It
 // skips this check if verification mode is SkipHashVerification.
-func OpenInstance(ctx context.Context, r io.ReadSeeker, instanceID string, v VerificationMode) (PackageInstance, error) {
+func OpenInstance(ctx context.Context, r InstanceFile, instanceID string, v VerificationMode) (PackageInstance, error) {
 	out := &packageInstance{data: r}
 	if err := out.open(instanceID, v); err != nil {
 		return nil, err
 	}
 	return out, nil
 }
+
+type dummyInstance struct {
+	*os.File
+}
+
+func (d dummyInstance) Close(context.Context, bool) error { return d.File.Close() }
 
 // OpenInstanceFile opens a package instance file on disk.
 //
@@ -74,7 +93,7 @@ func OpenInstanceFile(ctx context.Context, path string, instanceID string, v Ver
 	if err != nil {
 		return
 	}
-	inst, err = OpenInstance(ctx, file, instanceID, v)
+	inst, err = OpenInstance(ctx, dummyInstance{file}, instanceID, v)
 	if err != nil {
 		inst = nil
 		file.Close()
@@ -312,7 +331,7 @@ func (r *progressReporter) advance(f File) {
 // PackageInstance implementation.
 
 type packageInstance struct {
-	data       io.ReadSeeker
+	data       InstanceFile
 	instanceID string
 	zip        *zip.Reader
 	files      []File
@@ -320,6 +339,8 @@ type packageInstance struct {
 }
 
 // open reads the package data, verifies SHA1 hash and reads manifest.
+//
+// It doesn't check for corruption, but the caller must do so.
 func (inst *packageInstance) open(instanceID string, v VerificationMode) error {
 	var dataSize int64
 	var err error
@@ -346,7 +367,7 @@ func (inst *packageInstance) open(instanceID string, v VerificationMode) error {
 			return err
 		}
 		if common.InstanceIDFromHash(h) != instanceID {
-			return fmt.Errorf("package hash mismatch")
+			return ErrHashMismatch
 		}
 
 	case v == SkipHashVerification:
@@ -418,6 +439,15 @@ func (inst *packageInstance) Pin() common.Pin {
 
 func (inst *packageInstance) Files() []File             { return inst.files }
 func (inst *packageInstance) DataReader() io.ReadSeeker { return inst.data }
+
+// IsCorruptionError returns true iff err indicates corruption.
+func IsCorruptionError(err error) bool {
+	switch err {
+	case zip.ErrFormat, zip.ErrChecksum, zip.ErrAlgorithm, ErrHashMismatch:
+		return true
+	}
+	return false
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Utilities.

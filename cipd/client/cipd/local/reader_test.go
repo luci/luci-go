@@ -49,6 +49,16 @@ func shouldBeSameJSONDict(actual interface{}, expected ...interface{}) string {
 	return ShouldEqual(actualNorm, expectedNorm)
 }
 
+type bytesInstanceFile struct {
+	*bytes.Reader
+}
+
+func (bytesInstanceFile) Close(context.Context, bool) error { return nil }
+
+func bytesFile(data []byte) InstanceFile {
+	return bytesInstanceFile{bytes.NewReader(data)}
+}
+
 func TestPackageReading(t *testing.T) {
 	ctx := context.Background()
 
@@ -63,7 +73,7 @@ func TestPackageReading(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Open it.
-		inst, err := OpenInstance(ctx, bytes.NewReader(out.Bytes()), "", VerifyHash)
+		inst, err := OpenInstance(ctx, bytesFile(out.Bytes()), "", VerifyHash)
 		So(inst, ShouldNotBeNil)
 		So(err, ShouldBeNil)
 		So(inst.Pin(), ShouldResemble, Pin{"testing", "23f2c4900785ac8faa2f38e473925b840e574ccc"})
@@ -99,7 +109,7 @@ func TestPackageReading(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Attempt to open it, providing correct instance ID, should work.
-		source := bytes.NewReader(out.Bytes())
+		source := bytesFile(out.Bytes())
 		inst, err := OpenInstance(ctx, source, "23f2c4900785ac8faa2f38e473925b840e574ccc", VerifyHash)
 		So(err, ShouldBeNil)
 		So(inst, ShouldNotBeNil)
@@ -168,7 +178,7 @@ func TestPackageReading(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Extract files.
-		inst, err := OpenInstance(ctx, bytes.NewReader(out.Bytes()), "", VerifyHash)
+		inst, err := OpenInstance(ctx, bytesFile(out.Bytes()), "", VerifyHash)
 		So(err, ShouldBeNil)
 		dest := &testDestination{}
 		err = ExtractInstance(ctx, inst, dest, func(f File) bool {

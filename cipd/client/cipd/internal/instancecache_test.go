@@ -53,7 +53,7 @@ func TestInstanceCache(t *testing.T) {
 			buf, err := ioutil.ReadAll(r)
 			So(err, ShouldBeNil)
 			So(string(buf), ShouldEqual, data)
-			So(r.Close(), ShouldBeNil)
+			So(r.Close(ctx, false), ShouldBeNil)
 		}
 
 		Convey("Works", func() {
@@ -63,7 +63,7 @@ func TestInstanceCache(t *testing.T) {
 			pin := common.Pin{"pkg", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}
 			r, err := cache.Get(ctx, pin, now)
 			So(os.IsNotExist(err), ShouldBeTrue)
-			So(r, ShouldBeNil)
+			So(r, ShouldResemble, nil)
 
 			// Add new.
 			put(cache, pin, "blah")
@@ -101,7 +101,7 @@ func TestInstanceCache(t *testing.T) {
 			for i := 0; i < testInstanceCacheMaxSize*2; i++ {
 				r, err := cache.Get(ctx, pini(i), now)
 				if r != nil {
-					r.Close()
+					r.Close(ctx, false)
 				}
 				So(os.IsNotExist(err), ShouldEqual, i < testInstanceCacheMaxSize)
 			}
@@ -127,7 +127,7 @@ func TestInstanceCache(t *testing.T) {
 			for i := 0; i < 8; i++ {
 				r, _ := cache.Get(ctx, pini(i), now)
 				if r != nil {
-					r.Close()
+					r.Close(ctx, false)
 					alive = append(alive, i)
 				}
 			}

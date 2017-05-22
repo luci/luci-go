@@ -70,10 +70,50 @@ func NewInstanceCache(fs local.FileSystem) *InstanceCache {
 	}
 }
 
+type cacheFile struct {
+	*os.File
+	fs local.FileSystem
+}
+
+// Close removes this file from the cache if corrupt is true.
+//
+// This will be true if the cached file is determined to be broken at a higher
+// level.
+//
+// This implements local.InstanceFile
+func (f *cacheFile) Close(ctx context.Context, corrupt bool) error {
+	var err error
+	if err = f.File.Close(); err != nil && err != os.ErrClosed {
+		corruptText := ""
+		if corrupt {
+			corruptText = " corrupt"
+		}
+		logging.WithError(err).Warningf(ctx, "failed to close%s cache file", corruptText)
+	} else {
+		err = nil
+	}
+	if corrupt {
+		var err2 error
+		if err2 = f.fs.EnsureFileGone(ctx, f.Name()); err2 != nil {
+			logging.WithError(err2).Warningf(ctx, "failed to delete corrupt cache file")
+		}
+		// only return err2 if err was already nil
+		if err == nil {
+			err = err2
+		}
+	}
+	return err
+}
+
+// UnderlyingFile is only used by tests and shouldn't be used directly.
+func (f *cacheFile) UnderlyingFile() *os.File {
+	return f.File
+}
+
 // Get searches for the instance in the cache and opens it for reading.
 //
 // If the instance is not found, returns an os.IsNotExists error.
-func (c *InstanceCache) Get(ctx context.Context, pin common.Pin, now time.Time) (*os.File, error) {
+func (c *InstanceCache) Get(ctx context.Context, pin common.Pin, now time.Time) (local.InstanceFile, error) {
 	if err := common.ValidatePin(pin); err != nil {
 		return nil, err
 	}
@@ -92,7 +132,7 @@ func (c *InstanceCache) Get(ctx context.Context, pin common.Pin, now time.Time) 
 		touch(s, pin.InstanceID, now)
 	})
 
-	return f, nil
+	return &cacheFile{f, c.fs}, nil
 }
 
 // Put caches an instance.
@@ -197,6 +237,10 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, n
 		}
 		return true
 	})
+
+	if err := c.fs.CleanupTrash(ctx); err != nil {
+		logging.Warningf(ctx, "cipd: failed to cleanup cache trash (this is fine) - %s", err)
+	}
 }
 
 // readState loads cache state from the state file.

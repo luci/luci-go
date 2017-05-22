@@ -256,7 +256,9 @@ func (f *fsImpl) EnsureFileGone(ctx context.Context, path string) error {
 	}
 	if err = os.Remove(path); err != nil && !os.IsNotExist(err) {
 		logging.Warningf(ctx, "fs: failed to remove %s - %s", path, err)
-		return err
+		if f.moveToTrash(ctx, path) == "" {
+			return err
+		}
 	}
 	return nil
 }

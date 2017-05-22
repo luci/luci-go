@@ -31,6 +31,22 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func underlyingFile(i local.InstanceFile) *os.File {
+	return i.(interface {
+		UnderlyingFile() *os.File
+	}).UnderlyingFile()
+}
+
+type bytesInstanceFile struct {
+	*bytes.Reader
+}
+
+func (bytesInstanceFile) Close(context.Context, bool) error { return nil }
+
+func bytesFile(data []byte) local.InstanceFile {
+	return bytesInstanceFile{bytes.NewReader(data)}
+}
+
 func TestUploadToCAS(t *testing.T) {
 	ctx := makeTestContext()
 
@@ -145,7 +161,7 @@ func TestRegisterInstance(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Open it for reading.
-		inst, err := local.OpenInstance(ctx, bytes.NewReader(out.Bytes()), "", local.VerifyHash)
+		inst, err := local.OpenInstance(ctx, bytesFile(out.Bytes()), "", local.VerifyHash)
 		So(err, ShouldBeNil)
 
 		Convey("RegisterInstance full flow", func(c C) {
@@ -487,102 +503,151 @@ func TestFetch(t *testing.T) {
 			local.NewTestFile("file", "test data", false),
 		})
 
-		client := mockClientForFetch(c, tempDir, []local.PackageInstance{inst})
+		Convey("fetching once", func() {
+			client := mockClientForFetch(c, tempDir, []local.PackageInstance{inst})
 
-		Convey("FetchInstance (no cache)", func() {
-			reader, err := client.FetchInstance(ctx, inst.Pin())
-			So(err, ShouldBeNil)
-			defer reader.Close() // just in case
+			Convey("FetchInstance (no cache)", func() {
+				reader, err := client.FetchInstance(ctx, inst.Pin())
+				So(err, ShouldBeNil)
+				defer reader.Close(ctx, false) // just in case
 
-			// Backed by a temp file.
-			tmpFile := reader.(deleteOnClose)
-			_, err = os.Stat(tmpFile.Name())
-			So(err, ShouldBeNil)
+				// Backed by a temp file.
+				tmpFile := reader.(deleteOnClose)
+				_, err = os.Stat(tmpFile.Name())
+				So(err, ShouldBeNil)
 
-			fetched, err := local.OpenInstance(ctx, reader, "", local.VerifyHash)
-			So(err, ShouldBeNil)
-			So(fetched.Pin(), ShouldResemble, inst.Pin())
-			tmpFile.Close()
+				fetched, err := local.OpenInstance(ctx, reader, "", local.VerifyHash)
+				So(err, ShouldBeNil)
+				So(fetched.Pin(), ShouldResemble, inst.Pin())
+				tmpFile.Close(ctx, false)
 
-			// The temp file is gone.
-			_, err = os.Stat(tmpFile.Name())
-			So(os.IsNotExist(err), ShouldBeTrue)
+				// The temp file is gone.
+				_, err = os.Stat(tmpFile.Name())
+				So(os.IsNotExist(err), ShouldBeTrue)
+			})
+
+			Convey("FetchInstance (with cache)", func() {
+				client.CacheDir = filepath.Join(tempDir, "instance_cache")
+
+				reader, err := client.FetchInstance(ctx, inst.Pin())
+				So(err, ShouldBeNil)
+				defer reader.Close(ctx, false)
+
+				// Backed by a real file.
+				cachedFile := underlyingFile(reader)
+				info1, err := os.Stat(cachedFile.Name())
+				So(err, ShouldBeNil)
+
+				fetched, err := local.OpenInstance(ctx, reader, "", local.VerifyHash)
+				So(err, ShouldBeNil)
+				So(fetched.Pin(), ShouldResemble, inst.Pin())
+
+				// The real file is still there, in the cache.
+				_, err = os.Stat(cachedFile.Name())
+				So(err, ShouldBeNil)
+
+				// Fetch again.
+				reader, err = client.FetchInstance(ctx, inst.Pin())
+				So(err, ShouldBeNil)
+
+				// Got same exact file.
+				cachedFile = underlyingFile(reader)
+				info2, err := os.Stat(cachedFile.Name())
+				So(err, ShouldBeNil)
+				So(os.SameFile(info1, info2), ShouldBeTrue)
+
+				reader.Close(ctx, false)
+			})
+
+			Convey("FetchInstanceTo (no cache)", func() {
+				tempFile := filepath.Join(tempDir, "pkg")
+				out, err := os.OpenFile(tempFile, os.O_WRONLY|os.O_CREATE, 0666)
+				So(err, ShouldBeNil)
+				defer out.Close()
+
+				err = client.FetchInstanceTo(ctx, inst.Pin(), out)
+				So(err, ShouldBeNil)
+				out.Close()
+
+				fetched, closer, err := local.OpenInstanceFile(ctx, tempFile, "", local.VerifyHash)
+				So(err, ShouldBeNil)
+				defer closer()
+				So(fetched.Pin(), ShouldResemble, inst.Pin())
+			})
+
+			Convey("FetchInstanceTo (with cache)", func() {
+				client.CacheDir = filepath.Join(tempDir, "instance_cache")
+
+				tempFile := filepath.Join(tempDir, "pkg")
+				out, err := os.OpenFile(tempFile, os.O_WRONLY|os.O_CREATE, 0666)
+				So(err, ShouldBeNil)
+				defer out.Close()
+
+				err = client.FetchInstanceTo(ctx, inst.Pin(), out)
+				So(err, ShouldBeNil)
+				out.Close()
+
+				fetched, closer, err := local.OpenInstanceFile(ctx, tempFile, "", local.VerifyHash)
+				So(err, ShouldBeNil)
+				defer closer()
+				So(fetched.Pin(), ShouldResemble, inst.Pin())
+			})
+
+			Convey("FetchAndDeployInstance works", func() {
+				// Install the package, fetching it from the fake server.
+				err := client.FetchAndDeployInstance(ctx, "", inst.Pin())
+				So(err, ShouldBeNil)
+
+				// The file from the package should be installed.
+				data, err := ioutil.ReadFile(filepath.Join(tempDir, "file"))
+				So(err, ShouldBeNil)
+				So(data, ShouldResemble, []byte("test data"))
+			})
 		})
 
-		Convey("FetchInstance (with cache)", func() {
+		Convey("FetchAndDeployInstance works with busted cache", func() {
+			client := mockClientForFetch(c, tempDir, []local.PackageInstance{inst, inst})
 			client.CacheDir = filepath.Join(tempDir, "instance_cache")
+			cache := client.getInstanceCache(ctx)
 
-			reader, err := client.FetchInstance(ctx, inst.Pin())
-			So(err, ShouldBeNil)
-			defer reader.Close()
-
-			// Backed by a real file.
-			cachedFile := reader.(*os.File)
-			info1, err := os.Stat(cachedFile.Name())
-			So(err, ShouldBeNil)
-
-			fetched, err := local.OpenInstance(ctx, reader, "", local.VerifyHash)
-			So(err, ShouldBeNil)
-			So(fetched.Pin(), ShouldResemble, inst.Pin())
-
-			// The real file is still there, in the cache.
-			_, err = os.Stat(cachedFile.Name())
-			So(err, ShouldBeNil)
-
-			// Fetch again.
-			reader, err = client.FetchInstance(ctx, inst.Pin())
-			So(err, ShouldBeNil)
-
-			// Got same exact file.
-			cachedFile = reader.(*os.File)
-			info2, err := os.Stat(cachedFile.Name())
-			So(err, ShouldBeNil)
-			So(os.SameFile(info1, info2), ShouldBeTrue)
-
-			reader.Close()
-		})
-
-		Convey("FetchInstanceTo (no cache)", func() {
-			tempFile := filepath.Join(tempDir, "pkg")
-			out, err := os.OpenFile(tempFile, os.O_WRONLY|os.O_CREATE, 0666)
-			So(err, ShouldBeNil)
-			defer out.Close()
-
-			err = client.FetchInstanceTo(ctx, inst.Pin(), out)
-			So(err, ShouldBeNil)
-			out.Close()
-
-			fetched, closer, err := local.OpenInstanceFile(ctx, tempFile, "", local.VerifyHash)
-			So(err, ShouldBeNil)
-			defer closer()
-			So(fetched.Pin(), ShouldResemble, inst.Pin())
-		})
-
-		Convey("FetchInstanceTo (with cache)", func() {
-			client.CacheDir = filepath.Join(tempDir, "instance_cache")
-
-			tempFile := filepath.Join(tempDir, "pkg")
-			out, err := os.OpenFile(tempFile, os.O_WRONLY|os.O_CREATE, 0666)
-			So(err, ShouldBeNil)
-			defer out.Close()
-
-			err = client.FetchInstanceTo(ctx, inst.Pin(), out)
-			So(err, ShouldBeNil)
-			out.Close()
-
-			fetched, closer, err := local.OpenInstanceFile(ctx, tempFile, "", local.VerifyHash)
-			So(err, ShouldBeNil)
-			defer closer()
-			So(fetched.Pin(), ShouldResemble, inst.Pin())
-		})
-
-		Convey("FetchAndDeployInstance works", func() {
 			// Install the package, fetching it from the fake server.
 			err := client.FetchAndDeployInstance(ctx, "", inst.Pin())
 			So(err, ShouldBeNil)
 
 			// The file from the package should be installed.
 			data, err := ioutil.ReadFile(filepath.Join(tempDir, "file"))
+			So(err, ShouldBeNil)
+			So(data, ShouldResemble, []byte("test data"))
+
+			// we can now fetch the cached file
+			cachedFile, err := cache.Get(ctx, inst.Pin(), clock.Now(ctx))
+			So(err, ShouldBeNil)
+			So(cachedFile.Close(ctx, false), ShouldBeNil)
+
+			// now we goof up the cached file
+			err = ioutil.WriteFile(underlyingFile(cachedFile).Name(), []byte("bananas"), 0666)
+			So(err, ShouldBeNil)
+
+			// uninstall the package
+			err = client.deployer.RemoveDeployed(ctx, "", inst.Pin().PackageName)
+			So(err, ShouldBeNil)
+
+			// Install the package again. This time we should hit, and invalidate,
+			// the cache.
+			err = client.FetchAndDeployInstance(ctx, "", inst.Pin())
+			So(err, ShouldBeNil)
+
+			// the cache file is different
+			cachedFile, err = cache.Get(ctx, inst.Pin(), clock.Now(ctx))
+			So(err, ShouldBeNil)
+			So(cachedFile.Close(ctx, false), ShouldBeNil)
+
+			data, err = ioutil.ReadFile(underlyingFile(cachedFile).Name())
+			So(err, ShouldBeNil)
+			So(string(data), ShouldNotStartWith, "bananas")
+
+			// However, the file from the package should be installed again.
+			data, err = ioutil.ReadFile(filepath.Join(tempDir, "file"))
 			So(err, ShouldBeNil)
 			So(data, ShouldResemble, []byte("test data"))
 		})
@@ -831,7 +896,7 @@ func buildInstanceInMemory(ctx context.Context, pkgName string, files []local.Fi
 		CompressionLevel: 5,
 	})
 	So(err, ShouldBeNil)
-	inst, err := local.OpenInstance(ctx, bytes.NewReader(out.Bytes()), "", local.VerifyHash)
+	inst, err := local.OpenInstance(ctx, bytesFile(out.Bytes()), "", local.VerifyHash)
 	So(err, ShouldBeNil)
 	return inst
 }

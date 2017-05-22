@@ -414,9 +414,9 @@ type Client interface {
 	//
 	// It verifies that the package hash matches pin.InstanceID.
 	//
-	// It returns an ReadSeekCloser pointing to the raw package data. The caller
+	// It returns an InstanceFile pointing to the raw package data. The caller
 	// must close it when done.
-	FetchInstance(ctx context.Context, pin common.Pin) (ReadSeekCloser, error)
+	FetchInstance(ctx context.Context, pin common.Pin) (local.InstanceFile, error)
 
 	// FetchInstanceTo downloads a package instance file into the given writer.
 	//
@@ -1107,7 +1107,7 @@ func (client *clientImpl) FetchInstanceRefs(ctx context.Context, pin common.Pin,
 	return client.remote.fetchRefs(ctx, pin, refs)
 }
 
-func (client *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (ReadSeekCloser, error) {
+func (client *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (local.InstanceFile, error) {
 	if err := common.ValidatePin(pin); err != nil {
 		return nil, err
 	}
@@ -1136,7 +1136,7 @@ func (client *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, o
 		return err
 	}
 	defer func() {
-		if err := input.Close(); err != nil {
+		if err := input.Close(ctx, false); err != nil {
 			logging.Warningf(ctx, "cipd: failed to close the package file - %s", err)
 		}
 	}()
@@ -1146,7 +1146,7 @@ func (client *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, o
 	return err
 }
 
-func (client *clientImpl) fetchInstanceNoCache(ctx context.Context, pin common.Pin) (ReadSeekCloser, error) {
+func (client *clientImpl) fetchInstanceNoCache(ctx context.Context, pin common.Pin) (local.InstanceFile, error) {
 	// Use temp file for storing package data. Delete it when the caller is done
 	// with it.
 	f, err := client.deployer.TempFile(ctx, pin.InstanceID)
@@ -1159,7 +1159,7 @@ func (client *clientImpl) fetchInstanceNoCache(ctx context.Context, pin common.P
 	ok := false
 	defer func() {
 		if !ok {
-			if err := tmp.Close(); err != nil {
+			if err := tmp.Close(ctx, false); err != nil {
 				logging.Warningf(ctx, "cipd: failed to close the temp file - %s", err)
 			}
 		}
@@ -1169,7 +1169,6 @@ func (client *clientImpl) fetchInstanceNoCache(ctx context.Context, pin common.P
 		return nil, err
 	}
 
-	// Return exact same file as ReadSeekCloser.
 	if _, err := tmp.Seek(0, os.SEEK_SET); err != nil {
 		return nil, err
 	}
@@ -1177,7 +1176,7 @@ func (client *clientImpl) fetchInstanceNoCache(ctx context.Context, pin common.P
 	return tmp, nil
 }
 
-func (client *clientImpl) fetchInstanceWithCache(ctx context.Context, pin common.Pin, cache *internal.InstanceCache) (ReadSeekCloser, error) {
+func (client *clientImpl) fetchInstanceWithCache(ctx context.Context, pin common.Pin, cache *internal.InstanceCache) (local.InstanceFile, error) {
 	attempt := 0
 	for {
 		attempt++
@@ -1266,30 +1265,40 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir str
 		return err
 	}
 
-	// Fetch the package (verifying its hash) and obtain a pointer to its data.
-	instanceFile, err := client.FetchInstance(ctx, pin)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		if err := instanceFile.Close(); err != nil && err != os.ErrClosed {
-			logging.Warningf(ctx, "cipd: failed to close the package file - %s", err)
+	doit := func() error {
+		// Fetch the package (verifying its hash) and obtain a pointer to its data.
+		instanceFile, err := client.FetchInstance(ctx, pin)
+		if err != nil {
+			return err
 		}
-	}()
 
-	// Open the instance. This reads its manifest. 'FetchInstance' has verified
-	// the hash already, so skip verification.
-	instance, err := local.OpenInstance(ctx, instanceFile, pin.InstanceID, local.SkipHashVerification)
-	if err != nil {
+		defer func() {
+			corrupt := local.IsCorruptionError(err)
+			if err := instanceFile.Close(ctx, corrupt); err != nil && err != os.ErrClosed {
+				logging.Warningf(ctx, "cipd: failed to close the package file - %s", err)
+			}
+		}()
+
+		// Open the instance. This reads its manifest. 'FetchInstance' has verified
+		// the hash already, so skip verification.
+		instance, err := local.OpenInstance(ctx, instanceFile, pin.InstanceID, local.SkipHashVerification)
+		if err != nil {
+			return err
+		}
+
+		// Opportunistically clean up trashed files.
+		defer client.doBatchAwareOp(ctx, batchAwareOpCleanupTrash)
+
+		// Deploy it. 'defer' will take care of removing the temp file if needed.
+		_, err = client.deployer.DeployInstance(ctx, subdir, instance)
 		return err
 	}
 
-	// Opportunistically clean up trashed files.
-	defer client.doBatchAwareOp(ctx, batchAwareOpCleanupTrash)
-
-	// Deploy it. 'defer' will take care of removing the temp file if needed.
-	_, err = client.deployer.DeployInstance(ctx, subdir, instance)
+	err := doit()
+	if err != nil && local.IsCorruptionError(err) {
+		logging.WithError(err).Warningf(ctx, "cipd: unpacking failed, retrying.")
+		err = doit()
+	}
 	return err
 }
 
@@ -1441,7 +1450,7 @@ type deleteOnClose struct {
 	*os.File
 }
 
-func (d deleteOnClose) Close() (err error) {
+func (d deleteOnClose) Close(ctx context.Context, corrupt bool) (err error) {
 	name := d.File.Name()
 	defer func() {
 		if rmErr := os.Remove(name); err == nil && rmErr != nil && !os.IsNotExist(rmErr) {
@@ -1449,6 +1458,11 @@ func (d deleteOnClose) Close() (err error) {
 		}
 	}()
 	return d.File.Close()
+}
+
+// UnderlyingFile is only used by tests and shouldn't be used directly.
+func (d deleteOnClose) UnderlyingFile() *os.File {
+	return d.File
 }
 
 // Private stuff.
