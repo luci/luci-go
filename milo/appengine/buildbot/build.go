@@ -226,6 +226,11 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 			}
 		}
 
+		// Raise the interesting-ness if the step is not "Success".
+		if bc.Status != resp.Success {
+			bc.Verbosity = resp.Interesting
+		}
+
 		remainingAliases := stringset.New(len(step.Aliases))
 		for linkAnchor := range step.Aliases {
 			remainingAliases.Add(linkAnchor)

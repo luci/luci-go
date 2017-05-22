@@ -54,7 +54,7 @@
       "Duration": 1176393916928,
       "Type": "Recipe",
       "LevelsDeep": 0,
-      "Verbosity": 0,
+      "Verbosity": 2,
       "Text": [
         "line 1",
         "",

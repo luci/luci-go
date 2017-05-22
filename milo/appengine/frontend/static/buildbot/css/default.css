@@ -719,6 +719,14 @@ div.step-text:first-child {
     display: inline;
 }
 
-.hide .verbosity-Hidden {
+.standard .verbosity-Hidden {
+  display: none;
+}
+
+.interesting .verbosity-Hidden {
+  display: none;
+}
+
+.interesting .verbosity-Normal {
   display: none;
 }

@@ -109,16 +109,21 @@
 
       
         <h2>Steps and Logfiles:</h2>
-        <input type="checkbox" id="showHidden">
-        <label for="showHidden">Show hidden <span id="numHidden"></span></label>
-        <ol id="steps" class="hide">
+        Show:
+        <input type="radio" name="hider" id="showAll">
+          <label for="showAll">All</label>
+        <input type="radio" name="hider" id="showStandard" checked>
+          <label for="showStandard">Standard</label>
+        <input type="radio" name="hider" id="showInteresting">
+          <label for="showInteresting">Interesting Only</label>
+        <ol id="steps" class="standard">
 
           
             
           
 
           
-          <li class="verbosity-Normal">
+          <li class="verbosity-Interesting">
             <div class="status-Failure result">
               <b>steps</b>
               <span style="float:right"
@@ -133,6 +138,10 @@
             <ul>
               
                 <li><a href="http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/steps/logs/stdio">stdio</a></li>
+                    <link rel="prerender" href="http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/steps/logs/stdio">
+                    <link rel="prefetch" href="http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/steps/logs/stdio">
+                  
+                
               
                 <li><a href="http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/steps/logs/preamble">preamble</a></li>
               
@@ -568,7 +577,7 @@
             </ul>
           </li>
           
-          <li class="verbosity-Normal">
+          <li class="verbosity-Interesting">
             <div class="status-Failure result">
               <b>compile (with patch)</b>
               <span style="float:right"
@@ -583,6 +592,10 @@
             <ul>
               
                 <li><a href="http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/compile%20%28with%20patch%29/logs/stdio">stdio</a></li>
+                    <link rel="prerender" href="http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/compile%20%28with%20patch%29/logs/stdio">
+                    <link rel="prefetch" href="http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/compile%20%28with%20patch%29/logs/stdio">
+                  
+                
               
                 <li><a href="http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/compile%20%28with%20patch%29/logs/json.output">json.output</a></li>
               
@@ -1106,24 +1119,25 @@
 </div>
 <script language="javascript">
 $(document).ready(function() {
-  var check = function(checked) {
-    var things = $("#steps");
-    if (checked) {
-      $("#steps").removeClass("hide");
-    } else {
-      $("#steps").addClass("hide");
-    }
-    var numHidden = $(".verbosity-Hidden").length;
-    if (numHidden > 0) {
-      $("#numHidden").text("(" + numHidden + " hidden)");
-    } else {
-      $("#numHidden").text("");
-    }
-  };
 
-  check($("#showHidden").is(":checked"));
-  $("#showHidden").click(function(e) {
-    check($(this).is(":checked"));
+  var check = function(className) {
+    $("#steps").removeClass("all standard interesting").addClass(className)
+  }
+
+  $("#showInteresting").click(function(e) {
+    check("interesting");
+  });
+  $("#showStandard").click(function(e) {
+    check("standard");
+  });
+  $("#showAll").click(function(e) {
+    check("all");
+  });
+
+  $("input[name='hider']").each(function(){
+    if ($(this).prop("checked")) {
+      $(this).click();
+    }
   });
 });
 </script>

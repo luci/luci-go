@@ -102,24 +102,25 @@
 </div>
 <script language="javascript">
 $(document).ready(function() {
-  var check = function(checked) {
-    var things = $("#steps");
-    if (checked) {
-      $("#steps").removeClass("hide");
-    } else {
-      $("#steps").addClass("hide");
-    }
-    var numHidden = $(".verbosity-Hidden").length;
-    if (numHidden > 0) {
-      $("#numHidden").text("(" + numHidden + " hidden)");
-    } else {
-      $("#numHidden").text("");
-    }
-  };
 
-  check($("#showHidden").is(":checked"));
-  $("#showHidden").click(function(e) {
-    check($(this).is(":checked"));
+  var check = function(className) {
+    $("#steps").removeClass("all standard interesting").addClass(className)
+  }
+
+  $("#showInteresting").click(function(e) {
+    check("interesting");
+  });
+  $("#showStandard").click(function(e) {
+    check("standard");
+  });
+  $("#showAll").click(function(e) {
+    check("all");
+  });
+
+  $("input[name='hider']").each(function(){
+    if ($(this).prop("checked")) {
+      $(this).click();
+    }
   });
 });
 </script>

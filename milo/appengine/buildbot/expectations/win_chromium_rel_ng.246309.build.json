@@ -66,7 +66,7 @@
       "Duration": 1176393916928,
       "Type": "Recipe",
       "LevelsDeep": 0,
-      "Verbosity": 0,
+      "Verbosity": 2,
       "Text": [
         "running steps via annotated script"
       ]
@@ -589,7 +589,7 @@
       "Duration": 132432765952,
       "Type": "Recipe",
       "LevelsDeep": 0,
-      "Verbosity": 0,
+      "Verbosity": 2,
       "Text": [
         "compile (with patch)"
       ]
