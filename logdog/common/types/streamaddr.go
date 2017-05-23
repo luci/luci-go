@@ -39,6 +39,25 @@ func (s *StreamAddr) Set(v string) error {
 	return nil
 }
 
+// Validate returns an error if the supplied StreamAddr is not valid.
+func (s *StreamAddr) Validate() error {
+	if s.Host == "" {
+		return errors.New("cannot have empty Host")
+	}
+	if err := s.Project.Validate(); err != nil {
+		return err
+	}
+	if err := s.Path.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// IsZero returns true iff all fields are empty.
+func (s *StreamAddr) IsZero() bool {
+	return s.Host == "" && s.Path == "" && s.Project == ""
+}
+
 // String returns a string representation of this address.
 func (s *StreamAddr) String() string { return s.URL().String() }
 
