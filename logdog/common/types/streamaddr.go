@@ -18,13 +18,13 @@ const logDogURLScheme = "logdog"
 // StreamAddr is a fully-qualified LogDog stream address.
 type StreamAddr struct {
 	// Host is the LogDog host.
-	Host string
+	Host string `json:"host,omitempty"`
 
 	// Project is the LUCI project name that this log belongs to.
-	Project cfgtypes.ProjectName
+	Project cfgtypes.ProjectName `json:"project,omitempty"`
 
 	// Path is the LogDog stream path.
-	Path StreamPath
+	Path StreamPath `json:"path,omitempty"`
 }
 
 var _ flag.Value = (*StreamAddr)(nil)

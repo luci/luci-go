@@ -5,6 +5,7 @@
 package types
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"net/url"
@@ -77,6 +78,38 @@ func TestStreamAddr(t *testing.T) {
 		Convey(`bad`, func() {
 			So(fs.Parse([]string{"-addr", "://host/project/a/+/b"}), ShouldErrLike,
 				"failed to parse URL")
+		})
+	})
+
+	Convey(`StreamAddr as a json value`, t, func() {
+		a := &StreamAddr{}
+
+		Convey(`good`, func() {
+			Convey(`zero`, func() {
+				data, err := json.Marshal(a)
+				So(err, ShouldBeNil)
+				So(string(data), ShouldResemble, `{}`)
+				So(json.Unmarshal(data, a), ShouldBeNil)
+				So(a, ShouldResemble, &StreamAddr{})
+			})
+
+			Convey(`full`, func() {
+				a.Host = "host"
+				a.Project = "project"
+				a.Path = "a/+/b"
+				data, err := json.Marshal(a)
+				So(err, ShouldBeNil)
+				So(string(data), ShouldResemble, `{"host":"host","project":"project","path":"a/+/b"}`)
+
+				a2 := &StreamAddr{}
+				So(json.Unmarshal(data, a2), ShouldBeNil)
+				So(a2, ShouldResemble, a)
+			})
+		})
+
+		Convey(`bad`, func() {
+			So(json.Unmarshal([]byte(`{"host":"host","project":"project","path":"fake"}`), a), ShouldErrLike,
+				"must contain at least one character") // from bad Path
 		})
 	})
 }
