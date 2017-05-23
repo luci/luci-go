@@ -5,6 +5,7 @@
 package types
 
 import (
+	"flag"
 	"fmt"
 	"net/url"
 	"testing"
@@ -56,5 +57,26 @@ func TestStreamAddr(t *testing.T) {
 				So(err, ShouldErrLike, tc.err)
 			})
 		}
+	})
+
+	Convey(`StreamAddr is a flag.Value`, t, func() {
+		fs := flag.NewFlagSet("testing", flag.ContinueOnError)
+		a := &StreamAddr{}
+
+		fs.Var(a, "addr", "its totally an address of a thing")
+
+		Convey(`good`, func() {
+			So(fs.Parse([]string{"-addr", "logdog://host/project/a/+/b"}), ShouldBeNil)
+			So(a, ShouldResemble, &StreamAddr{
+				"host",
+				"project",
+				"a/+/b",
+			})
+		})
+
+		Convey(`bad`, func() {
+			So(fs.Parse([]string{"-addr", "://host/project/a/+/b"}), ShouldErrLike,
+				"failed to parse URL")
+		})
 	})
 }

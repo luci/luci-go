@@ -5,6 +5,7 @@
 package types
 
 import (
+	"flag"
 	"net/url"
 	"strings"
 
@@ -24,6 +25,18 @@ type StreamAddr struct {
 
 	// Path is the LogDog stream path.
 	Path StreamPath
+}
+
+var _ flag.Value = (*StreamAddr)(nil)
+
+// Set implements flag.Value
+func (s *StreamAddr) Set(v string) error {
+	a, err := ParseURL(v)
+	if err != nil {
+		return err
+	}
+	*s = *a
+	return nil
 }
 
 // String returns a string representation of this address.
