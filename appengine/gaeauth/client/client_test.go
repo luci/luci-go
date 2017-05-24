@@ -52,14 +52,18 @@ func TestGetAccessToken(t *testing.T) {
 
 		// Closer to expiration, the token is updated, at some random invocation,
 		// (depends on the seed, defines the loop limit in the test).
-		clock.Get(c).(testclock.TestClock).Add(19 * time.Minute)
-		for i := 0; i < 12; i++ {
+		clock.Get(c).(testclock.TestClock).Add(26 * time.Minute)
+		for i := 0; ; i++ {
 			ctx = mockAccessTokenRPC(c, []string{"A", "B"}, fmt.Sprintf("access_token_%d", i+2), testclock.TestRecentTimeUTC.Add(2*time.Hour))
 			tok, err = GetAccessToken(ctx, []string{"B", "B", "A"})
 			So(err, ShouldBeNil)
+			if tok.AccessToken != "access_token_1" {
+				break // got refreshed token!
+			}
+			So(i, ShouldBeLessThan, 1000) // the test is hanging, this means randomization doesn't work
 		}
 		So(tok, ShouldResemble, &oauth2.Token{
-			AccessToken: "access_token_13",
+			AccessToken: "access_token_3",
 			TokenType:   "Bearer",
 			Expiry:      testclock.TestRecentTimeUTC.Add(2 * time.Hour).Add(-expirationMinLifetime),
 		})

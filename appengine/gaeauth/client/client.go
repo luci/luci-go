@@ -91,7 +91,7 @@ const (
 	// expirationMinLifetime is minimal possible lifetime of a returned token.
 	expirationMinLifetime = 2 * time.Minute
 	// expirationRandomization defines how much to randomize expiration time.
-	expirationRandomization = 10 * time.Minute
+	expirationRandomization = 3 * time.Minute
 )
 
 func normalizeScopes(scopes []string) ([]string, cacheKey) {
