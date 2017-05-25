@@ -36,7 +36,6 @@ func BuildHandler(c *router.Context) {
 
 // Render implements settings.ThemedHandler.
 func (s *AnnotationStreamHandler) Render(c *router.Context) {
-
 	as := AnnotationStream{
 		Project: cfgtypes.ProjectName(c.Params.ByName("project")),
 		Path:    types.StreamPath(strings.Trim(c.Params.ByName("path"), "/")),
@@ -48,7 +47,8 @@ func (s *AnnotationStreamHandler) Render(c *router.Context) {
 
 	// Setup our LogDog client.
 	var err error
-	if as.Client, err = NewClient(c.Context, ""); err != nil {
+	host := strings.TrimSpace(c.Params.ByName("logdog_host"))
+	if as.Client, err = NewClient(c.Context, host); err != nil {
 		log.WithError(err).Errorf(c.Context, "Failed to generate LogDog client.")
 		common.ErrorPage(c, http.StatusInternalServerError, "Failed to generate LogDog client")
 		return

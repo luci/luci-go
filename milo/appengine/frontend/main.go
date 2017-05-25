@@ -61,7 +61,9 @@ func init() {
 	r.GET("/buildbot/:master/:builder/", basemw, buildbot.BuilderHandler)
 
 	// LogDog Milo Annotation Streams.
-	r.GET("/logdog/build/:project/*prefix", basemw, logdog.BuildHandler)
+	// This mimicks the `logdog://logdog_host/project/*path` url scheme seen on
+	// swarming tasks.
+	r.GET("/raw/build/:logdog_host/:project/*path", basemw, logdog.BuildHandler)
 
 	// PubSub subscription endpoints.
 	r.POST("/_ah/push-handlers/buildbot", basemw, buildbot.PubSubHandler)
