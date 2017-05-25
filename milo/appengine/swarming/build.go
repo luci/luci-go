@@ -533,6 +533,31 @@ func (bl *buildLoader) newEmptyAnnotationStream(c context.Context, addr *types.S
 	return &as, nil
 }
 
+// failedToStart is called in the case where logdog-only mode is on but the
+// stream doesn't exist and the swarming job is complete.  It modifies the build
+// to add information that would've otherwise been in the annotation stream.
+func failedToStart(c context.Context, build *resp.MiloBuild, res *swarming.SwarmingRpcsTaskResult, host string) error {
+	var err error
+	build.Summary.Status = resp.InfraFailure
+	build.Summary.Started, err = time.Parse(SwarmingTimeLayout, res.StartedTs)
+	if err != nil {
+		return err
+	}
+	build.Summary.Finished, err = time.Parse(SwarmingTimeLayout, res.CompletedTs)
+	if err != nil {
+		return err
+	}
+	build.Summary.Duration = build.Summary.Finished.Sub(build.Summary.Started)
+	infoComp := infoComponent(resp.InfraFailure,
+		"LogDog stream not found", "Job likely failed to start.")
+	infoComp.Started = build.Summary.Started
+	infoComp.Finished = build.Summary.Finished
+	infoComp.Duration = build.Summary.Duration
+	infoComp.Verbosity = resp.Interesting
+	build.Components = append(build.Components, infoComp)
+	return addTaskToBuild(c, host, res, build)
+}
+
 func (bl *buildLoader) swarmingBuildImpl(c context.Context, svc swarmingService, linkBase, taskID string) (*resp.MiloBuild, error) {
 	// Fetch the data from Swarming
 	var logDogStreamAddr *types.StreamAddr
@@ -602,6 +627,15 @@ func (bl *buildLoader) swarmingBuildImpl(c context.Context, svc swarmingService,
 		if s, err = as.Fetch(c); err != nil {
 			switch errors.Unwrap(err) {
 			case coordinator.ErrNoSuchStream:
+				// The stream was not found.  This could be due to one of two things:
+				// 1. The step just started and we're just waiting for the logs
+				// to propogage to logdog.
+				// 2. The bootsrap on the client failed, and never sent data to logdog.
+				// This would be evident because the swarming result would be a failure.
+				if fr.res.State == TaskCompleted {
+					err = failedToStart(c, &build, fr.res, svc.getHost())
+					return &build, err
+				}
 				logging.WithError(err).Errorf(c, "User cannot access stream.")
 				build.Components = append(build.Components, infoComponent(resp.Running,
 					"Waiting...", "waiting for annotation stream"))
