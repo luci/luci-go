@@ -134,6 +134,16 @@ func TestBuildInfo(t *testing.T) {
 			},
 		}
 
+		Convey("Load an invalid build", func() {
+			_, err := bip.GetBuildInfo(c,
+				&milo.BuildInfoRequest_BuildBot{
+					MasterName:  "foo master",
+					BuilderName: "bar builder",
+					BuildNumber: 1334,
+				}, "")
+			So(err.Error(), ShouldResemble, "rpc error: code = Unauthenticated desc = ")
+		})
+
 		Convey("Can load a BuildBot build by log location.", func() {
 			build.Properties = append(build.Properties, []*buildbotProperty{
 				{Name: "log_location", Value: "logdog://example.com/testproject/foo/bar/+/baz/annotations"},

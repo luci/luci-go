@@ -49,17 +49,17 @@ func TestBuild(t *testing.T) {
 	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
 
 	if *generate {
-		for _, tc := range testCases {
-			fmt.Printf("Generating expectations for %s/%s\n", tc.builder, tc.build)
-			build, err := build(c, "debug", tc.builder, tc.build)
+		for _, tc := range TestCases {
+			fmt.Printf("Generating expectations for %s/%s\n", tc.Builder, tc.Build)
+			build, err := Build(c, "debug", tc.Builder, tc.Build)
 			if err != nil {
-				panic(fmt.Errorf("Could not run build() for %s/%s: %s", tc.builder, tc.build, err))
+				panic(fmt.Errorf("Could not run build() for %s/%s: %s", tc.Builder, tc.Build, err))
 			}
 			buildJSON, err := json.MarshalIndent(build, "", "  ")
 			if err != nil {
-				panic(fmt.Errorf("Could not JSON marshal %s/%s: %s", tc.builder, tc.build, err))
+				panic(fmt.Errorf("Could not JSON marshal %s/%s: %s", tc.Builder, tc.Build, err))
 			}
-			fname := fmt.Sprintf("%s.%d.build.json", tc.builder, tc.build)
+			fname := fmt.Sprintf("%s.%d.build.json", tc.Builder, tc.Build)
 			fpath := path.Join("expectations", fname)
 			err = ioutil.WriteFile(fpath, []byte(buildJSON), 0644)
 			if err != nil {
@@ -76,11 +76,11 @@ func TestBuild(t *testing.T) {
 			IdentityGroups: []string{"all"},
 		})
 
-		for _, tc := range testCases {
-			Convey(fmt.Sprintf("Test Case: %s/%s", tc.builder, tc.build), func() {
-				build, err := build(c, "debug", tc.builder, tc.build)
+		for _, tc := range TestCases {
+			Convey(fmt.Sprintf("Test Case: %s/%s", tc.Builder, tc.Build), func() {
+				build, err := Build(c, "debug", tc.Builder, tc.Build)
 				So(err, ShouldBeNil)
-				fname := fmt.Sprintf("%s.%d.build.json", tc.builder, tc.build)
+				fname := fmt.Sprintf("%s.%d.build.json", tc.Builder, tc.Build)
 				So(build, shouldMatchExpectationsFor, fname)
 			})
 		}

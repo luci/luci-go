@@ -97,6 +97,27 @@ func TestPubSub(t *testing.T) {
 
 		rand.Seed(5)
 
+		Convey("Remove source changes", func() {
+			m := &buildbotMaster{
+				Name: "fake",
+				Builders: map[string]*buildbotBuilder{
+					"fake builder": {
+						PendingBuildStates: []*buildbotPending{
+							{
+								Source: buildbotSourceStamp{
+									Changes: []buildbotChange{{Comments: "foo"}},
+								},
+							},
+						},
+					},
+				},
+			}
+			So(putDSMasterJSON(c, m, false), ShouldBeNil)
+			lm, _, err := getMasterJSON(c, "fake")
+			So(err, ShouldBeNil)
+			So(lm.Builders["fake builder"].PendingBuildStates[0].Source.Changes[0].Comments, ShouldResemble, "")
+		})
+
 		Convey("Save build entry", func() {
 			build := &buildbotBuild{
 				Master:      "Fake Master",

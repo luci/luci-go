@@ -30,7 +30,7 @@ var authconfig *auth.Config
 // passed to all templates.
 func GetTemplateBundle() *templates.Bundle {
 	return &templates.Bundle{
-		Loader:          templates.FileSystemLoader("templates"),
+		Loader:          templates.FileSystemLoader("../frontend/templates"),
 		DebugMode:       info.IsDevAppServer,
 		DefaultTemplate: "base",
 		DefaultArgs: func(c context.Context) (templates.Args, error) {

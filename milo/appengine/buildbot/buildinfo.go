@@ -62,12 +62,15 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 
 	// Load the BuildBot build from datastore.
 	build, err := getBuild(c, req.MasterName, req.BuilderName, int(req.BuildNumber))
-	if err != nil {
-		if err == errBuildNotFound {
-			return nil, grpcutil.Errf(codes.NotFound, "Build #%d for master %q, builder %q was not found",
-				req.BuildNumber, req.MasterName, req.BuilderName)
-		}
-
+	switch err {
+	case errBuildNotFound:
+		return nil, grpcutil.Errf(codes.NotFound, "Build #%d for master %q, builder %q was not found",
+			req.BuildNumber, req.MasterName, req.BuilderName)
+	case errNotAuth:
+		return nil, grpcutil.Unauthenticated
+	case nil:
+		// continue
+	default:
 		logging.WithError(err).Errorf(c, "Failed to load build info.")
 		return nil, grpcutil.Internal
 	}

@@ -20,7 +20,6 @@ import (
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/milo/appengine/buildbot"
 	"github.com/luci/luci-go/milo/appengine/common"
 	"github.com/luci/luci-go/milo/appengine/swarming"
 	"github.com/luci/luci-go/server/auth"
@@ -40,8 +39,8 @@ type testPackage struct {
 
 var (
 	allPackages = []testPackage{
-		{buildbot.BuildTestData, "buildbot.build", "build.html"},
-		{buildbot.BuilderTestData, "buildbot.builder", "builder.html"},
+		{buildbotBuildTestData, "buildbot.build", "build.html"},
+		{buildbotBuilderTestData, "buildbot.builder", "builder.html"},
 		{swarming.BuildTestData, "swarming.build", "build.html"},
 		{swarming.LogTestData, "swarming.log", "log.html"},
 		{frontpageTestData, "frontpage", "frontpage.html"},

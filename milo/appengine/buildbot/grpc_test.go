@@ -7,6 +7,9 @@ package buildbot
 import (
 	"testing"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -20,13 +23,29 @@ func TestGRPC(t *testing.T) {
 	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
 
 	Convey(`A test environment`, t, func() {
-		// Add in a public master to satisfy acl.
 		name := "testmaster"
 		bname := "testbuilder"
-		me := &buildbotMasterEntry{Name: name, Internal: false}
-		ds.Put(c, me)
+		master := &buildbotMaster{
+			Name:     name,
+			Builders: map[string]*buildbotBuilder{"fake": {}},
+			Slaves: map[string]*buildbotSlave{
+				"foo": {
+					RunningbuildsMap: map[string][]int{
+						"fake": {1},
+					},
+				},
+			},
+		}
+
+		So(putDSMasterJSON(c, master, false), ShouldBeNil)
+		So(ds.Put(c, &buildbotBuild{
+			Master:      name,
+			Buildername: "fake",
+			Number:      1,
+		}), ShouldBeNil)
 		ds.GetTestable(c).Consistent(true)
 		ds.GetTestable(c).AutoIndex(true)
+		svc := Service{}
 
 		Convey(`Get finished builds`, func() {
 			// Add in some builds.
@@ -46,7 +65,6 @@ func TestGRPC(t *testing.T) {
 			})
 			ds.GetTestable(c).CatchupIndexes()
 
-			svc := Service{}
 			r := &milo.BuildbotBuildsRequest{
 				Master:  name,
 				Builder: bname,
@@ -64,6 +82,61 @@ func TestGRPC(t *testing.T) {
 				result, err := svc.GetBuildbotBuildsJSON(c, r)
 				So(err, ShouldBeNil)
 				So(len(result.Builds), ShouldEqual, 6)
+			})
+
+			Convey(`Good cursor`, func() {
+				r.Cursor = result.GetCursor()
+				_, err := svc.GetBuildbotBuildsJSON(c, r)
+				So(err, ShouldBeNil)
+			})
+			Convey(`Bad cursor`, func() {
+				r.Cursor = "foobar"
+				_, err := svc.GetBuildbotBuildsJSON(c, r)
+				So(err, ShouldResemble,
+					grpc.Errorf(codes.InvalidArgument,
+						"Invalid cursor: Failed to Base64-decode cursor: illegal base64 data at input byte 4"))
+			})
+			Convey(`Bad request`, func() {
+				_, err := svc.GetBuildbotBuildsJSON(c, &milo.BuildbotBuildsRequest{})
+				So(err, ShouldResemble, grpc.Errorf(codes.InvalidArgument, "No master specified"))
+				_, err = svc.GetBuildbotBuildsJSON(c, &milo.BuildbotBuildsRequest{Master: name})
+				So(err, ShouldResemble, grpc.Errorf(codes.InvalidArgument, "No builder specified"))
+			})
+		})
+
+		Convey(`Get Master`, func() {
+			Convey(`Bad request`, func() {
+				_, err := svc.GetCompressedMasterJSON(c, &milo.MasterRequest{})
+				So(err, ShouldResemble, grpc.Errorf(codes.InvalidArgument, "No master specified"))
+			})
+			_, err := svc.GetCompressedMasterJSON(c, &milo.MasterRequest{Name: name})
+			So(err, ShouldBeNil)
+		})
+
+		Convey(`Get Build`, func() {
+			Convey(`Invalid input`, func() {
+				_, err := svc.GetBuildbotBuildJSON(c, &milo.BuildbotBuildRequest{})
+				So(err, ShouldResemble, grpc.Errorf(codes.InvalidArgument, "No master specified"))
+				_, err = svc.GetBuildbotBuildJSON(c, &milo.BuildbotBuildRequest{
+					Master: "foo",
+				})
+				So(err, ShouldResemble, grpc.Errorf(codes.InvalidArgument, "No builder specified"))
+			})
+			Convey(`Basic`, func() {
+				_, err := svc.GetBuildbotBuildJSON(c, &milo.BuildbotBuildRequest{
+					Master:   name,
+					Builder:  "fake",
+					BuildNum: 1,
+				})
+				So(err, ShouldBeNil)
+			})
+			Convey(`Basic Not found`, func() {
+				_, err := svc.GetBuildbotBuildJSON(c, &milo.BuildbotBuildRequest{
+					Master:   name,
+					Builder:  "fake",
+					BuildNum: 2,
+				})
+				So(err, ShouldResemble, grpc.Errorf(codes.Unauthenticated, "Unauthenticated request"))
 			})
 		})
 	})

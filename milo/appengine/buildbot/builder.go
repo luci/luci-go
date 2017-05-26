@@ -152,6 +152,18 @@ var errMasterNotFound = errors.New(
 	"Either the request resource was not found or you have insufficient permissions")
 var errNotAuth = errors.New("You are not authenticated, try logging in")
 
+type errBuilderNotFound struct {
+	master    string
+	builder   string
+	available []string
+}
+
+func (e errBuilderNotFound) Error() string {
+	avail := strings.Join(e.available, "\n")
+	return fmt.Sprintf("Cannot find builder %q in master %q.\nAvailable builders: \n%s",
+		e.builder, e.master, avail)
+}
+
 // builderImpl is the implementation for getting a milo builder page from buildbot.
 // This gets:
 // * Current Builds from querying the master json from the datastore.
@@ -192,10 +204,7 @@ func builderImpl(
 			keys = append(keys, k)
 		}
 		sort.Strings(keys)
-		avail := strings.Join(keys, "\n")
-		return nil, fmt.Errorf(
-			"Cannot find builder %s in master %s.\nAvailable builders: \n%s",
-			builderName, masterName, avail)
+		return nil, errBuilderNotFound{masterName, builderName, keys}
 	}
 	// Extract pending builds out of the master json.
 	result.PendingBuilds = make([]*resp.BuildSummary, len(p.PendingBuildStates))

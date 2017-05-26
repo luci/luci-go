@@ -38,7 +38,7 @@ func BuildHandler(c *router.Context) {
 		return
 	}
 
-	result, err := build(c.Context, master, builder, num)
+	result, err := Build(c.Context, master, builder, num)
 	if err != nil {
 		var code int
 		switch err {
@@ -83,13 +83,18 @@ func BuilderHandler(c *router.Context) {
 	cursor := c.Request.FormValue("cursor")
 
 	result, err := builderImpl(c.Context, master, builder, limit, cursor)
-	if err != nil {
+	_, notFound := err.(errBuilderNotFound)
+	switch {
+	case err == nil:
+		templates.MustRender(c.Context, c.Writer, "pages/builder.html", templates.Args{
+			"Builder": result,
+		})
+	case err == errNotAuth:
+		common.ErrorPage(c, http.StatusUnauthorized, err.Error())
+	case notFound:
+		common.ErrorPage(c, http.StatusNotFound, err.Error())
+	default: // err != nil
 		common.ErrorPage(c, http.StatusInternalServerError, err.Error())
-		return
 	}
-
-	// Render into the template
-	templates.MustRender(c.Context, c.Writer, "pages/builder.html", templates.Args{
-		"Builder": result,
-	})
+	return
 }

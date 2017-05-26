@@ -480,7 +480,7 @@ func getDebugBuild(c context.Context, builder string, buildNum int) (*buildbotBu
 }
 
 // build fetches a buildbot build and translates it into a miloBuild.
-func build(c context.Context, master, builder string, buildNum int) (*resp.MiloBuild, error) {
+func Build(c context.Context, master, builder string, buildNum int) (*resp.MiloBuild, error) {
 	var b *buildbotBuild
 	var err error
 	if master == "debug" {
