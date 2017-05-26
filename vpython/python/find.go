@@ -45,10 +45,14 @@ func Find(c context.Context, vers Version) (*Interpreter, error) {
 		}
 
 		i := Interpreter{Python: p}
+		if err := i.Normalize(); err != nil {
+			return nil, err
+		}
+
 		iv, err := i.GetVersion(c)
 		if err != nil {
 			return nil, errors.Annotate(err).Reason("failed to get version for: %(interp)q").
-				D("interp", p).
+				D("interp", i.Python).
 				Err()
 		}
 		if vers.IsSatisfiedBy(iv) {

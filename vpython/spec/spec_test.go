@@ -22,6 +22,7 @@ func TestNormalizeAndHash(t *testing.T) {
 
 	Convey(`Test manifest generation`, t, func() {
 		var spec vpython.Spec
+		var rt vpython.Runtime
 
 		Convey(`Will normalize an empty spec`, func() {
 			So(Normalize(&spec, pkgFoo), ShouldBeNil)
@@ -37,8 +38,8 @@ func TestNormalizeAndHash(t *testing.T) {
 				Wheel: []*vpython.Spec_Package{pkgBar, pkgBaz, pkgFoo},
 			})
 
-			So(Hash(&spec, ""), ShouldEqual, "b4221081c43e8319ceb71a2e9d3bd83701b726a0976380feac4d04825226f935")
-			So(Hash(&spec, "extra"), ShouldEqual, "01a8d5f5a6f7b2cd91ce6f2b5fefb931828e28b90d0fb07a271597eaa4f6c547")
+			So(Hash(&spec, &rt, ""), ShouldEqual, "7e80b8643051ce0d82bf44fb180687e988791cfd7f3da39861370f0a56fc80f8")
+			So(Hash(&spec, &rt, "extra"), ShouldEqual, "140a02bb88b011d4aceafb9533266288fd4b441c3bdb70494419b3ef76457f34")
 		})
 
 		Convey(`Will fail to normalize if there are duplicate wheels.`, func() {

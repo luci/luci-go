@@ -5,11 +5,17 @@
 package python
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"io"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/system/filesystem"
 
 	"golang.org/x/net/context"
 )
@@ -27,9 +33,31 @@ type Interpreter struct {
 	cachedVersion   *Version
 	cachedVersionMu sync.Mutex
 
+	// cachedHash is the cached SHA256 hash string of the interpreter's binary
+	// contents. It is populated once, protected by cachedHashOnce.
+	cachedHash     string
+	cachedHashErr  error
+	cachedHashOnce sync.Once
+
 	// testCommandHook, if not nil, is called on generated Command results prior
 	// to returning them.
 	testCommandHook func(*exec.Cmd)
+}
+
+// Normalize normalizes the Interpreter configuration by resolving relative
+// paths into absolute paths and evaluating symlnks.
+func (i *Interpreter) Normalize() error {
+	if err := filesystem.AbsPath(&i.Python); err != nil {
+		return err
+	}
+	resolved, err := filepath.EvalSymlinks(i.Python)
+	if err != nil {
+		return errors.Annotate(err).Reason("could not evaluate symlinks for: %(path)q").
+			D("path", i.Python).
+			Err()
+	}
+	i.Python = resolved
+	return nil
 }
 
 // IsolatedCommand returns a configurable exec.Cmd structure bound to this
@@ -83,6 +111,34 @@ func (i *Interpreter) GetVersion(c context.Context) (v Version, err error) {
 
 	i.cachedVersion = &v
 	return
+}
+
+// Hash returns the SHA256 hash string of this interpreter.
+//
+// The hash value is cached; if called multiple times, the cached value will
+// be returned.
+func (i *Interpreter) Hash() (string, error) {
+	hashInterpreter := func(path string) (string, error) {
+		fd, err := os.Open(i.Python)
+		if err != nil {
+			return "", errors.Annotate(err).Reason("failed to open interpreter").Err()
+		}
+		defer fd.Close()
+
+		hash := sha256.New()
+		if _, err := io.Copy(hash, fd); err != nil {
+			return "", errors.Annotate(err).Reason("failed to read [%(path)s] for hashing").
+				D("path", path).
+				Err()
+		}
+
+		return hex.EncodeToString(hash.Sum(nil)), nil
+	}
+
+	i.cachedHashOnce.Do(func() {
+		i.cachedHash, i.cachedHashErr = hashInterpreter(i.Python)
+	})
+	return i.cachedHash, i.cachedHashErr
 }
 
 func parseVersionOutput(output string) (Version, error) {

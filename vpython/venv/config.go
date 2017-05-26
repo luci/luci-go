@@ -74,6 +74,9 @@ type Config struct {
 	// "resolvePythonInterpreter".
 	si *python.Interpreter
 
+	// rt is the resolved Python runtime.
+	rt vpython.Runtime
+
 	// testPreserveInstallationCapability is a testing parameter. If true, the
 	// VirtualEnv's ability to install will be preserved after the setup. This is
 	// used by the test whell generation bootstrap code.
@@ -168,6 +171,17 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 	if err := cfg.resolvePythonInterpreter(c, e.Spec); err != nil {
 		return nil, errors.Annotate(err).Reason("failed to resolve system Python interpreter").Err()
 	}
+	rt := vpython.Runtime{
+		Path:    cfg.si.Python,
+		Version: e.Spec.PythonVersion,
+	}
+
+	var err error
+	if rt.Hash, err = cfg.si.Hash(); err != nil {
+		return nil, err
+	}
+	e.Runtime = &rt
+	logging.Debugf(c, "Resolved system Python runtime (%s @ %s): %s", rt.Version, rt.Hash, rt.Path)
 
 	// Ensure that our base directory exists.
 	if err := filesystem.MakeDirs(cfg.BaseDir); err != nil {
@@ -178,13 +192,13 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 
 	// Generate our environment name based on the deterministic hash of its
 	// fully-resolved specification.
-	return cfg.envForName(cfg.envNameForSpec(e.Spec), e), nil
+	return cfg.envForName(cfg.envNameForSpec(e.Spec, e.Runtime), e), nil
 }
 
 // EnvName returns the VirtualEnv environment name for the environment that cfg
 // describes.
-func (cfg *Config) envNameForSpec(s *vpython.Spec) string {
-	name := spec.Hash(s, EnvironmentVersion)
+func (cfg *Config) envNameForSpec(s *vpython.Spec, rt *vpython.Runtime) string {
+	name := spec.Hash(s, rt, EnvironmentVersion)
 	if cfg.MaxHashLen > 0 && len(name) > cfg.MaxHashLen {
 		name = name[:cfg.MaxHashLen]
 	}
@@ -201,6 +215,9 @@ func (cfg *Config) Prune(c context.Context) error {
 }
 
 // envForName creates an Env for a named directory.
+//
+// The Environment, e, can be nil; however, code paths that require it may not
+// be called.
 func (cfg *Config) envForName(name string, e *vpython.Environment) *Env {
 	// Env-specific root directory: <BaseDir>/<name>
 	venvRoot := filepath.Join(cfg.BaseDir, name)
@@ -241,6 +258,9 @@ func (cfg *Config) resolvePythonInterpreter(c context.Context, s *vpython.Spec) 
 			Python: cfg.Python,
 		}
 	}
+	if err := cfg.si.Normalize(); err != nil {
+		return err
+	}
 
 	// Confirm that the version of the interpreter matches that which is
 	// expected.
@@ -264,7 +284,6 @@ func (cfg *Config) resolvePythonInterpreter(c context.Context, s *vpython.Spec) 
 			D("python", cfg.Python).
 			Err()
 	}
-	logging.Debugf(c, "Resolved system Python interpreter (%s): %s", s.PythonVersion, cfg.Python)
 	return nil
 }
 

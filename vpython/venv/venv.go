@@ -516,13 +516,25 @@ func (e *Env) installVirtualEnv(c context.Context, pkgDir string) error {
 	if len(matches) == 0 {
 		return errors.Reason("no 'virtualenv-' directory provided by package").Err()
 	}
+	venvDir := matches[0]
 
 	logging.Debugf(c, "Creating VirtualEnv at: %s", e.Root)
 	cmd := e.Config.systemInterpreter().IsolatedCommand(c,
 		"virtualenv.py",
 		"--no-download",
 		e.Root)
-	cmd.Dir = matches[0]
+	cmd.Dir = venvDir
+	attachOutputForLogging(c, logging.Debug, cmd)
+	if err := cmd.Run(); err != nil {
+		return errors.Annotate(err).Reason("failed to create VirtualEnv").Err()
+	}
+
+	logging.Debugf(c, "Making VirtualEnv relocatable at: %s", e.Root)
+	cmd = e.Interpreter().IsolatedCommand(c,
+		"virtualenv.py",
+		"--relocatable",
+		e.Root)
+	cmd.Dir = venvDir
 	attachOutputForLogging(c, logging.Debug, cmd)
 	if err := cmd.Run(); err != nil {
 		return errors.Annotate(err).Reason("failed to create VirtualEnv").Err()

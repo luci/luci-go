@@ -43,16 +43,21 @@ func Normalize(spec *vpython.Spec, defaultVENVPackage *vpython.Spec_Package) err
 	return nil
 }
 
-// Hash hashes the contents of the supplied "spec" and returns the result as
-// a hex-encoded string.
+// Hash hashes the contents of the supplied "spec" and "rt" and returns the
+// result as a hex-encoded string.
 //
 // If not empty, the contents of extra are prefixed to hash string. This can
 // be used to factor additional influences into the spec hash.
-func Hash(spec *vpython.Spec, extra string) string {
-	data, err := proto.Marshal(spec)
-	if err != nil {
-		panic(fmt.Errorf("failed to marshal proto: %v", err))
+func Hash(spec *vpython.Spec, rt *vpython.Runtime, extra string) string {
+	mustMarshal := func(msg proto.Message) []byte {
+		data, err := proto.Marshal(msg)
+		if err != nil {
+			panic(fmt.Errorf("failed to marshal proto: %v", err))
+		}
+		return data
 	}
+	specData := mustMarshal(spec)
+	rtData := mustMarshal(rt)
 
 	mustWrite := func(v int, err error) {
 		if err != nil {
@@ -65,7 +70,9 @@ func Hash(spec *vpython.Spec, extra string) string {
 		mustWrite(fmt.Fprintf(hash, "%s:", extra))
 	}
 	mustWrite(fmt.Fprintf(hash, "%s:", vpython.Version))
-	mustWrite(hash.Write(data))
+	mustWrite(hash.Write(specData))
+	mustWrite(hash.Write([]byte(":")))
+	mustWrite(hash.Write(rtData))
 	return hex.EncodeToString(hash.Sum(nil))
 }
 
