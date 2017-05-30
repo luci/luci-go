@@ -731,7 +731,7 @@ func isAllowed(c context.Context, tags []string) bool {
 // taskPageURL returns a URL to a human-consumable page of a swarming task.
 // Supports server aliases.
 func taskPageURL(swarmingHostname, taskID string) string {
-	return fmt.Sprintf("https://%s/task?id=%s&show_raw=1", swarmingHostname, taskID)
+	return fmt.Sprintf("https://%s/task?id=%s&show_raw=1&wide_logs=true", swarmingHostname, taskID)
 }
 
 // botPageURL returns a URL to a human-consumable page of a swarming bot.

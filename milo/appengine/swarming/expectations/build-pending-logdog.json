@@ -4,12 +4,12 @@
     "Status": "NotRun",
     "Source": {
       "Label": "Task 2fb1b35e1da25710",
-      "URL": "https://example.com/task?id=2fb1b35e1da25710\u0026show_raw=1"
+      "URL": "https://example.com/task?id=2fb1b35e1da25710\u0026show_raw=1\u0026wide_logs=true"
     },
     "MainLink": [
       {
         "Label": "Task 2fb1b35e1da25710",
-        "URL": "https://example.com/task?id=2fb1b35e1da25710\u0026show_raw=1"
+        "URL": "https://example.com/task?id=2fb1b35e1da25710\u0026show_raw=1\u0026wide_logs=true"
       }
     ],
     "Started": "0001-01-01T00:00:00Z",
