@@ -33,6 +33,13 @@ type Config struct {
 	// BaseDir is the parent directory of all VirtualEnv.
 	BaseDir string
 
+	// OverrideName overrides the name of the specified VirtualEnv.
+	//
+	// Because the name is no longer derived from the specification, this will
+	// force revalidation and deletion of any existing content if it is not a
+	// fully defined and matching VirtualEnv
+	OverrideName string
+
 	// Package is the VirtualEnv package to install. It must be non-nil and
 	// valid. It will be used if the environment specification doesn't supply an
 	// overriding one.
@@ -97,6 +104,7 @@ func (cfg *Config) WithoutWheels() *Config {
 	}
 
 	clone := *cfg
+	clone.OverrideName = ""
 	clone.Spec = clone.Spec.Clone()
 	clone.Spec.Wheel = nil
 	return &clone
@@ -145,24 +153,20 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 		}
 	}
 
-	// Ensure and normalize our specification file.
-	if cfg.Spec == nil {
-		cfg.Spec = &vpython.Spec{}
-	} else {
-		cfg.Spec = cfg.Spec.Clone()
-	}
-	if err := spec.Normalize(cfg.Spec, &cfg.Package); err != nil {
-		return nil, errors.Annotate(err).Reason("invalid specification").Err()
-	}
-
-	// Choose our VirtualEnv package.
-	if cfg.Spec.Virtualenv == nil {
-		cfg.Spec.Virtualenv = &cfg.Package
-	}
-
 	// Construct a new, independent Environment for this Env.
 	e = e.Clone()
-	e.Spec = cfg.Spec.Clone()
+	if cfg.Spec != nil {
+		e.Spec = cfg.Spec.Clone()
+	}
+	if err := spec.NormalizeEnvironment(e); err != nil {
+		return nil, errors.Annotate(err).Reason("invalid environment").Err()
+	}
+
+	// If the environment doesn't specify a VirtualEnv package (expected), use
+	// our default.
+	if e.Spec.Virtualenv == nil {
+		e.Spec.Virtualenv = &cfg.Package
+	}
 
 	if err := cfg.Loader.Resolve(c, e); err != nil {
 		return nil, errors.Annotate(err).Reason("failed to resolve packages").Err()
@@ -171,17 +175,15 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 	if err := cfg.resolvePythonInterpreter(c, e.Spec); err != nil {
 		return nil, errors.Annotate(err).Reason("failed to resolve system Python interpreter").Err()
 	}
-	rt := vpython.Runtime{
-		Path:    cfg.si.Python,
-		Version: e.Spec.PythonVersion,
-	}
+	e.Runtime.Path = cfg.si.Python
+	e.Runtime.Version = e.Spec.PythonVersion
 
 	var err error
-	if rt.Hash, err = cfg.si.Hash(); err != nil {
+	if e.Runtime.Hash, err = cfg.si.Hash(); err != nil {
 		return nil, err
 	}
-	e.Runtime = &rt
-	logging.Debugf(c, "Resolved system Python runtime (%s @ %s): %s", rt.Version, rt.Hash, rt.Path)
+	logging.Debugf(c, "Resolved system Python runtime (%s @ %s): %s",
+		e.Runtime.Version, e.Runtime.Hash, e.Runtime.Path)
 
 	// Ensure that our base directory exists.
 	if err := filesystem.MakeDirs(cfg.BaseDir); err != nil {
@@ -192,7 +194,12 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 
 	// Generate our environment name based on the deterministic hash of its
 	// fully-resolved specification.
-	return cfg.envForName(cfg.envNameForSpec(e.Spec, e.Runtime), e), nil
+	envName := cfg.OverrideName
+	if envName == "" {
+		envName = cfg.envNameForSpec(e.Spec, e.Runtime)
+	}
+	env := cfg.envForName(envName, e)
+	return env, nil
 }
 
 // EnvName returns the VirtualEnv environment name for the environment that cfg

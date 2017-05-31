@@ -20,6 +20,7 @@ import (
 
 	"github.com/luci/luci-go/vpython/api/vpython"
 	"github.com/luci/luci-go/vpython/python"
+	"github.com/luci/luci-go/vpython/spec"
 	"github.com/luci/luci-go/vpython/wheel"
 
 	"github.com/luci/luci-go/common/clock"
@@ -393,6 +394,25 @@ func (e *Env) AssertCompleteAndLoad() error {
 		return errors.Annotate(err).Reason("failed to unmarshal vpython.Env stamp from: %(path)s").
 			D("path", e.EnvironmentStampPath).
 			Err()
+	}
+	if err := spec.NormalizeEnvironment(&environment); err != nil {
+		return errors.Annotate(err).Reason("failed to normalize stamp environment").Err()
+	}
+
+	// If we are configured with an environment, validate that it matches the
+	// the environment that we just loaded.
+	//
+	// We only consider our environment-defining fields (Spec and Runtime).
+	//
+	// Note that both environments will have been normalized at this point, so
+	// comparison should be reliable.
+	if e.Environment != nil {
+		if !proto.Equal(e.Environment.Spec, environment.Spec) {
+			return errors.New("environment stamp specification does not match")
+		}
+		if !proto.Equal(e.Environment.Runtime, environment.Runtime) {
+			return errors.New("environment stamp runtime does not match")
+		}
 	}
 	e.Environment = &environment
 	return nil

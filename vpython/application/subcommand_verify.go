@@ -42,7 +42,10 @@ func (cr *verifyCommandRun) Run(app subcommands.Application, args []string, env 
 		if err := a.opts.ResolveSpec(c); err != nil {
 			return errors.Annotate(err).Reason("failed to resolve specification").Err()
 		}
-		if err := spec.Normalize(a.opts.EnvConfig.Spec, &a.opts.EnvConfig.Package); err != nil {
+		if a.opts.EnvConfig.Spec.Virtualenv == nil {
+			a.opts.EnvConfig.Spec.Virtualenv = &a.opts.EnvConfig.Package
+		}
+		if err := spec.NormalizeSpec(a.opts.EnvConfig.Spec); err != nil {
 			return errors.Annotate(err).Reason("failed to normalize specification").Err()
 		}
 		s := a.opts.EnvConfig.Spec

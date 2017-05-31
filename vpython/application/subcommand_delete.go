@@ -24,7 +24,7 @@ var subcommandDelete = &subcommands.Command{
 		var cr deleteCommandRun
 
 		fs := cr.GetFlags()
-		fs.BoolVar(&cr.all, "all", false, "Delete all VirtualEnv environments, rather than the current ones.")
+		fs.BoolVar(&cr.all, "all", cr.all, "Delete all VirtualEnv environments, rather than the current ones.")
 
 		return &cr
 	},

@@ -21,13 +21,27 @@ import (
 // Render creates a human-readable string from spec.
 func Render(spec *vpython.Spec) string { return proto.MarshalTextString(spec) }
 
-// Normalize normalizes the specification Message such that two messages
-// with identical meaning will have identical representation.
-func Normalize(spec *vpython.Spec, defaultVENVPackage *vpython.Spec_Package) error {
-	if spec.Virtualenv == nil {
-		spec.Virtualenv = defaultVENVPackage
+// NormalizeEnvironment normalizes the supplied Environment such that two
+// messages with identical meaning will have identical representation.
+func NormalizeEnvironment(env *vpython.Environment) error {
+	if env.Spec == nil {
+		env.Spec = &vpython.Spec{}
+	}
+	if err := NormalizeSpec(env.Spec); err != nil {
+		return err
 	}
 
+	if env.Runtime == nil {
+		env.Runtime = &vpython.Runtime{}
+	}
+
+	sort.Sort(pep425TagSlice(env.Pep425Tag))
+	return nil
+}
+
+// NormalizeSpec normalizes the specification Message such that two messages
+// with identical meaning will have identical representation.
+func NormalizeSpec(spec *vpython.Spec) error {
 	sort.Sort(specPackageSlice(spec.Wheel))
 
 	// No duplicate packages. Since we're sorted, we can just check for no
@@ -85,5 +99,18 @@ func (s specPackageSlice) Less(i, j int) bool {
 	return sortby.Chain{
 		func(i, j int) bool { return s[i].Name < s[j].Name },
 		func(i, j int) bool { return s[i].Version < s[j].Version },
+	}.Use(i, j)
+}
+
+type pep425TagSlice []*vpython.Pep425Tag
+
+func (s pep425TagSlice) Len() int      { return len(s) }
+func (s pep425TagSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+func (s pep425TagSlice) Less(i, j int) bool {
+	return sortby.Chain{
+		func(i, j int) bool { return s[i].Version < s[j].Version },
+		func(i, j int) bool { return s[i].Abi < s[j].Abi },
+		func(i, j int) bool { return s[i].Arch < s[j].Arch },
 	}.Use(i, j)
 }
