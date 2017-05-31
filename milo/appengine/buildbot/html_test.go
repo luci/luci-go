@@ -44,7 +44,7 @@ func request(c context.Context, params map[string]string) *router.Context {
 func TestHtml(t *testing.T) {
 	c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
 	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
-	c = templates.Use(c, common.GetTemplateBundle())
+	c = templates.Use(c, common.GetTemplateBundle("../frontend/templates"))
 	c = auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
 	putDSMasterJSON(c, &buildbotMaster{
 		Name:     "fake",

@@ -35,7 +35,7 @@ func init() {
 	r := router.New()
 	gaemiddleware.InstallHandlers(r)
 
-	basemw := common.Base()
+	basemw := common.Base("templates")
 	r.GET("/", basemw, frontpageHandler)
 
 	// Admin and cron endpoints.

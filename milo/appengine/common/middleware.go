@@ -27,10 +27,11 @@ import (
 var authconfig *auth.Config
 
 // GetTemplateBundles is used to render HTML templates. It provides base args
-// passed to all templates.
-func GetTemplateBundle() *templates.Bundle {
+// passed to all templates.  It takes a path to the template folder, relative
+// to the path of the binary during runtime.
+func GetTemplateBundle(templatePath string) *templates.Bundle {
 	return &templates.Bundle{
-		Loader:          templates.FileSystemLoader("../frontend/templates"),
+		Loader:          templates.FileSystemLoader(templatePath),
 		DebugMode:       info.IsDevAppServer,
 		DefaultTemplate: "base",
 		DefaultArgs: func(c context.Context) (templates.Args, error) {
@@ -61,11 +62,11 @@ func GetTemplateBundle() *templates.Bundle {
 }
 
 // Base returns the basic LUCI appengine middlewares.
-func Base() router.MiddlewareChain {
+func Base(templatePath string) router.MiddlewareChain {
 	return gaemiddleware.BaseProd().Extend(
 		auth.Authenticate(server.CookieAuth),
 		withRequestMiddleware,
-		templates.WithTemplates(GetTemplateBundle()),
+		templates.WithTemplates(GetTemplateBundle(templatePath)),
 	)
 }
 
