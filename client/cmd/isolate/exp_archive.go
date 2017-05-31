@@ -101,7 +101,7 @@ func (c *expArchiveRun) main() error {
 	}
 	client := isolatedclient.New(nil, authCl, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
 
-	// Set up a checker an uploader. We limit the uploader to one concurrent
+	// Set up a checker and uploader. We limit the uploader to one concurrent
 	// upload, since the uploads are all coming from disk (with the exception of
 	// the isolated JSON itself) and we only want a single goroutine reading from
 	// disk at once.
@@ -291,7 +291,7 @@ func (c *expArchiveRun) main() error {
 			MissBytes:   &checker.Miss.Bytes,
 			IsolateHash: []string{string(isolItem.Digest)},
 		}
-		if err := logStats(ctx, logger, start, end, archiveDetails); err != nil {
+		if err := logStats(ctx, logger, start, end, archiveDetails, getBuildbotInfo()); err != nil {
 			log.Printf("Failed to log to eventlog: %v", err)
 		}
 	}
@@ -342,7 +342,30 @@ func hashFile(path string) (isolated.HexDigest, error) {
 	return isolated.Hash(f)
 }
 
-func logStats(ctx context.Context, logger *eventlog.Client, start, end time.Time, archiveDetails *logpb.IsolateClientEvent_ArchiveDetails) error {
+// buildbotInfo contains information about the build in which this command was run.
+type buildbotInfo struct {
+	// Variables which are not present in the environment are nil.
+	master, builder, buildID, slave *string
+}
+
+// getBuildbotInfo poulates a buildbotInfo with information from the environment.
+func getBuildbotInfo() *buildbotInfo {
+	getEnvValue := func(key string) *string {
+		if val, ok := os.LookupEnv(key); ok {
+			return &val
+		}
+		return nil
+	}
+
+	return &buildbotInfo{
+		master:  getEnvValue("BUILDBOT_MASTERNAME"),
+		builder: getEnvValue("BUILDBOT_BUILDERNAME"),
+		buildID: getEnvValue("BUILDBOT_BUILDNUMBER"),
+		slave:   getEnvValue("BUILDBOT_SLAVENAME"),
+	}
+}
+
+func logStats(ctx context.Context, logger *eventlog.Client, start, end time.Time, archiveDetails *logpb.IsolateClientEvent_ArchiveDetails, bi *buildbotInfo) error {
 	event := logger.NewLogEvent(ctx, eventlog.Point())
 	event.InfraEvent.IsolateClientEvent = &logpb.IsolateClientEvent{
 		Binary: &logpb.Binary{
@@ -351,9 +374,12 @@ func logStats(ctx context.Context, logger *eventlog.Client, start, end time.Time
 		},
 		Operation:      logpb.IsolateClientEvent_ARCHIVE.Enum(),
 		ArchiveDetails: archiveDetails,
-		// TODO(mcgreevy): fill out Master, Builder, BuildId, Slave.
-		StartTsUsec: proto.Int64(int64(start.UnixNano() / 1e3)),
-		EndTsUsec:   proto.Int64(int64(end.UnixNano() / 1e3)),
+		Master:         bi.master,
+		Builder:        bi.builder,
+		BuildId:        bi.buildID,
+		Slave:          bi.slave,
+		StartTsUsec:    proto.Int64(int64(start.UnixNano() / 1e3)),
+		EndTsUsec:      proto.Int64(int64(end.UnixNano() / 1e3)),
 	}
 	return logger.LogSync(ctx, event)
 }
