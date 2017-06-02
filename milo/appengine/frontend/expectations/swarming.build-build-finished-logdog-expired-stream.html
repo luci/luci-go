@@ -83,7 +83,7 @@
         <input type="radio" name="hider" id="showStandard" checked>
           <label for="showStandard">Standard</label>
         <input type="radio" name="hider" id="showInteresting">
-          <label for="showInteresting">Interesting Only</label>
+          <label for="showInteresting">Non-Green Only</label>
         <ol id="steps" class="standard">
 
           
@@ -93,12 +93,11 @@
           
           <li class="verbosity-Interesting">
             <div class="status-InfraFailure result">
-              <b>LogDog stream not found</b>
-              <span style="float:right"
-                    class="duration"
+              <span class="duration"
                     data-starttime="2016-03-14T10:00:01Z"
                     data-endtime="2016-03-14T11:00:18Z">
                     ( 1 hrs )</span>
+              <b>LogDog stream not found</b>
               <span>
                 <div class="step-text">Job likely failed to start.</div>
               </span>
@@ -107,7 +106,7 @@
               
               
               
-                <li> - no logs - </li>
+                <li class="sublink"> - no logs - </li>
               
             </ul>
           </li>
@@ -121,7 +120,7 @@
 
       <h2>Build Properties:</h2>
 
-      <table class="info" width="100%">
+      <table class="info BuildProperties" width="100%">
       <tr><th>Name</th><th>Value</th><th>Source</th></tr>
 
         
@@ -129,7 +128,7 @@
           
             <tr>
               <td class="left">Exit Code</td>
-              <td>1</td>
+              <td class="middle"><abbr title="1">1</abbr></td>
               <td>Swarming</td>
             </tr>
           

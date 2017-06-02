@@ -83,19 +83,19 @@
         <input type="radio" name="hider" id="showStandard" checked>
           <label for="showStandard">Standard</label>
         <input type="radio" name="hider" id="showInteresting">
-          <label for="showInteresting">Interesting Only</label>
+          <label for="showInteresting">Non-Green Only</label>
         <ol id="steps" class="standard">
 
           
             
             <li class="verbosity-Interesting">
               <div class="status-Failure result">
-                <b>Steps</b>
                 
+                <b>Steps</b>
               </div>
               <ul>
                 
-                <li><a href="foo/stdout">stdout</a></li>
+                <li class="sublink"><a href="foo/stdout">stdout</a></li>
                 
               </ul>
             </li>
@@ -105,21 +105,20 @@
           
           <li class="verbosity-Normal">
             <div class="status-Success result">
-              <b>update_scripts</b>
-              <span style="float:right"
-                    class="duration"
+              <span class="duration"
                     data-starttime="2016-03-14T10:00:02Z"
                     data-endtime="2016-03-14T10:00:03Z">
                     ( 1 secs )</span>
+              <b>update_scripts</b>
               <span>
                 <div class="step-text">git - 1fb19c56e954ada4c990ed04cf8a004e16def555</div>
               </span>
             </div>
             <ul>
               
-                <li><a href="foo/steps/update_scripts/0/stdout">stdout</a></li>
+                <li class="sublink"><a href="foo/steps/update_scripts/0/stdout">stdout</a></li>
               
-                <li><a href="foo/steps/update_scripts/0/logs/gclient_json/0">gclient_json</a></li>
+                <li class="sublink"><a href="foo/steps/update_scripts/0/logs/gclient_json/0">gclient_json</a></li>
               
               
             </ul>
@@ -127,21 +126,20 @@
           
           <li class="verbosity-Hidden">
             <div class="status-Success result">
-              <b>setup_build</b>
-              <span style="float:right"
-                    class="duration"
+              <span class="duration"
                     data-starttime="2016-03-14T10:00:04Z"
                     data-endtime="2016-03-14T10:00:05Z">
                     ( 1 secs )</span>
+              <b>setup_build</b>
               <span>
                 <div class="step-text">running recipe: &#34;infra/infra_repo_trybot&#34;</div>
               </span>
             </div>
             <ul>
               
-                <li><a href="foo/steps/setup_build/0/stdout">stdout</a></li>
+                <li class="sublink"><a href="foo/steps/setup_build/0/stdout">stdout</a></li>
               
-                <li><a href="foo/steps/setup_build/0/logs/run_recipe/0">run_recipe</a></li>
+                <li class="sublink"><a href="foo/steps/setup_build/0/logs/run_recipe/0">run_recipe</a></li>
               
               
             </ul>
@@ -149,23 +147,22 @@
           
           <li class="verbosity-Normal">
             <div class="status-Success result">
-              <b>bot_update</b>
-              <span style="float:right"
-                    class="duration"
+              <span class="duration"
                     data-starttime="2016-03-14T10:00:06Z"
                     data-endtime="2016-03-14T10:00:07Z">
                     ( 1 secs )</span>
+              <b>bot_update</b>
               <span>
                 <div class="step-text">[21GB/295GB used (7%)] PATCH FAILED</div>
               </span>
             </div>
             <ul>
               
-                <li><a href="foo/steps/bot_update/0/stdout">stdout</a></li>
+                <li class="sublink"><a href="foo/steps/bot_update/0/stdout">stdout</a></li>
               
-                <li><a href="foo/steps/bot_update/0/logs/json.output/0">json.output</a></li>
+                <li class="sublink"><a href="foo/steps/bot_update/0/logs/json.output/0">json.output</a></li>
               
-                <li><a href="foo/steps/bot_update/0/logs/patch_error/0">patch error</a></li>
+                <li class="sublink"><a href="foo/steps/bot_update/0/logs/patch_error/0">patch error</a></li>
               
               
             </ul>
@@ -173,19 +170,18 @@
           
           <li class="verbosity-Interesting">
             <div class="status-Failure result">
-              <b>Patch failure</b>
-              <span style="float:right"
-                    class="duration"
+              <span class="duration"
                     data-starttime="2016-03-14T10:00:08Z"
                     data-endtime="2016-03-14T10:00:09Z">
                     ( 1 secs )</span>
+              <b>Patch failure</b>
               <span>
                 <div class="step-text">Check the bot_update step for details</div>
               </span>
             </div>
             <ul>
               
-                <li><a href="foo/steps/Patch_failure/0/stdout">stdout</a></li>
+                <li class="sublink"><a href="foo/steps/Patch_failure/0/stdout">stdout</a></li>
                     <link rel="prerender" href="foo/steps/Patch_failure/0/stdout">
                     <link rel="prefetch" href="foo/steps/Patch_failure/0/stdout">
                   
@@ -197,21 +193,20 @@
           
           <li class="verbosity-Normal">
             <div class="status-Success result">
-              <b>recipe failure reason</b>
-              <span style="float:right"
-                    class="duration"
+              <span class="duration"
                     data-starttime="2016-03-14T10:00:10Z"
                     data-endtime="2016-03-14T10:00:11Z">
                     ( 1 secs )</span>
+              <b>recipe failure reason</b>
               <span>
                 
               </span>
             </div>
             <ul>
               
-                <li><a href="foo/steps/recipe_failure_reason/0/stdout">stdout</a></li>
+                <li class="sublink"><a href="foo/steps/recipe_failure_reason/0/stdout">stdout</a></li>
               
-                <li><a href="foo/steps/recipe_failure_reason/0/logs/failure_reason/0">failure reason</a></li>
+                <li class="sublink"><a href="foo/steps/recipe_failure_reason/0/logs/failure_reason/0">failure reason</a></li>
               
               
             </ul>
@@ -226,7 +221,7 @@
 
       <h2>Build Properties:</h2>
 
-      <table class="info" width="100%">
+      <table class="info BuildProperties" width="100%">
       <tr><th>Name</th><th>Value</th><th>Source</th></tr>
 
         
@@ -234,13 +229,13 @@
           
             <tr>
               <td class="left">build_scm</td>
-              <td>&#34;git&#34;</td>
+              <td class="middle"><abbr title="&#34;git&#34;">&#34;git&#34;</abbr></td>
               <td>update_scripts</td>
             </tr>
           
             <tr>
               <td class="left">build_revision</td>
-              <td>&#34;1fb19c56e954ada4c990ed04cf8a004e16def555&#34;</td>
+              <td class="middle"><abbr title="&#34;1fb19c56e954ada4c990ed04cf8a004e16def555&#34;">&#34;1fb19c56e954ada4c990ed04cf8a004e16def555&#34;</abbr></td>
               <td>update_scripts</td>
             </tr>
           
@@ -261,55 +256,55 @@
           
             <tr>
               <td class="left">recipe</td>
-              <td>infra/infra_repo_trybot</td>
+              <td class="middle"><abbr title="infra/infra_repo_trybot">infra/infra_repo_trybot</abbr></td>
               <td>Main</td>
             </tr>
           
             <tr>
               <td class="left">buildername</td>
-              <td>Infra Linux Trusty 64 Tester</td>
+              <td class="middle"><abbr title="Infra Linux Trusty 64 Tester">Infra Linux Trusty 64 Tester</abbr></td>
               <td>Main</td>
             </tr>
           
             <tr>
               <td class="left">mastername</td>
-              <td>tryserver.infra</td>
+              <td class="middle"><abbr title="tryserver.infra">tryserver.infra</abbr></td>
               <td>Main</td>
             </tr>
           
             <tr>
               <td class="left">buildnumber</td>
-              <td>1</td>
+              <td class="middle"><abbr title="1">1</abbr></td>
               <td>Main</td>
             </tr>
           
             <tr>
               <td class="left">slavename</td>
-              <td>fakeslave</td>
+              <td class="middle"><abbr title="fakeslave">fakeslave</abbr></td>
               <td>Main</td>
             </tr>
           
             <tr>
               <td class="left">patchset</td>
-              <td>1</td>
+              <td class="middle"><abbr title="1">1</abbr></td>
               <td>Main</td>
             </tr>
           
             <tr>
               <td class="left">issue</td>
-              <td>1431683003</td>
+              <td class="middle"><abbr title="1431683003">1431683003</abbr></td>
               <td>Main</td>
             </tr>
           
             <tr>
               <td class="left">patch_project</td>
-              <td>infra</td>
+              <td class="middle"><abbr title="infra">infra</abbr></td>
               <td>Main</td>
             </tr>
           
             <tr>
               <td class="left">revision</td>
-              <td>HEAD</td>
+              <td class="middle"><abbr title="HEAD">HEAD</abbr></td>
               <td>Main</td>
             </tr>
           
@@ -318,7 +313,7 @@
           
             <tr>
               <td class="left">Exit Code</td>
-              <td>0</td>
+              <td class="middle"><abbr title="0">0</abbr></td>
               <td>Swarming</td>
             </tr>
           

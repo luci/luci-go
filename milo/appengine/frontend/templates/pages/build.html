@@ -154,25 +154,24 @@
         <input type="radio" name="hider" id="showStandard" checked>
           <label for="showStandard">Standard</label>
         <input type="radio" name="hider" id="showInteresting">
-          <label for="showInteresting">Interesting Only</label>
+          <label for="showInteresting">Non-Green Only</label>
         <ol id="steps" class="standard">
 
           {{ with .Build.Summary }}
             {{ if .SubLink }}
             <li class="verbosity-{{.Verbosity.String}}">
               <div class="status-{{.Status}} result">
-                <b>Steps</b>
                 {{ if .Duration -}}
-                <span style="float:right"
-                      class="duration"
+                <span class="duration"
                       data-starttime="{{ .Started | formatTime }}"
                       {{ if .Finished }}data-endtime="{{ .Finished | formatTime }}"{{ end }}>
                       ( {{ .Duration | humanDuration }} )</span>
                 {{- end }}
+                <b>Steps</b>
               </div>
               <ul>
                 {{ range .SubLink  }}
-                <li>{{ . | linkifySet }}</li>
+                <li class="sublink">{{ . | linkifySet }}</li>
                 {{ end }}
               </ul>
             </li>
@@ -182,14 +181,13 @@
           {{ range .Build.Components  }}
           <li class="verbosity-{{.Verbosity.String}}">
             <div class="status-{{.Status}} result">
-              <b>{{.Label}}</b>
               {{ if .Duration -}}
-              <span style="float:right"
-                    class="duration"
+              <span class="duration"
                     data-starttime="{{ .Started | formatTime }}"
                     {{ if .Finished }}data-endtime="{{ .Finished | formatTime }}"{{ end }}>
                     ( {{ .Duration | humanDuration }} )</span>
               {{- end }}
+              <b>{{.Label}}</b>
               <span>
                 {{ range .Text -}}
                   <div class="step-text">
@@ -200,7 +198,7 @@
             </div>
             <ul>
               {{ if .MainLink }}
-                <li>{{.MainLink | linkifySet}}</li>
+                <li class="sublink">{{.MainLink | linkifySet}}</li>
                 {{- if eq .Verbosity.String "Interesting" -}}
                   {{ range .MainLink }}
                     <link rel="prerender" href="{{.URL}}">
@@ -209,10 +207,10 @@
                 {{ end }}
               {{- end }}
               {{ range .SubLink }}
-                <li>{{. | linkifySet}}</li>
+                <li class="sublink">{{. | linkifySet}}</li>
               {{ end }}
               {{ if not (or .MainLink .SubLink) }}
-                <li> - no logs - </li>
+                <li class="sublink"> - no logs - </li>
               {{ end }}
             </ul>
           </li>
@@ -226,7 +224,7 @@
 
       <h2>Build Properties:</h2>
 
-      <table class="info" width="100%">
+      <table class="info BuildProperties" width="100%">
       <tr><th>Name</th><th>Value</th><th>Source</th></tr>
 
         {{ range .Build.PropertyGroup }}
@@ -234,7 +232,7 @@
           {{ range .Property }}
             <tr>
               <td class="left">{{.Key}}</td>
-              <td>{{.Value}}</td>
+              <td class="middle"><abbr title="{{.Value}}">{{.Value}}</abbr></td>
               <td>{{$name}}</td>
             </tr>
           {{ end }}

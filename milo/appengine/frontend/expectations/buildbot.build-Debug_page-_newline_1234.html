@@ -111,7 +111,7 @@
         <input type="radio" name="hider" id="showStandard" checked>
           <label for="showStandard">Standard</label>
         <input type="radio" name="hider" id="showInteresting">
-          <label for="showInteresting">Interesting Only</label>
+          <label for="showInteresting">Non-Green Only</label>
         <ol id="steps" class="standard">
 
           
@@ -121,12 +121,11 @@
           
           <li class="verbosity-Interesting">
             <div class="status-Failure result">
-              <b>steps</b>
-              <span style="float:right"
-                    class="duration"
+              <span class="duration"
                     data-starttime="2016-06-27T23:30:30Z"
                     data-endtime="2016-06-27T23:50:06Z">
                     ( 19 mins 36 secs )</span>
+              <b>steps</b>
               <span>
                 <div class="step-text">line 1</div><div class="step-text">&nbsp;</div><div class="step-text">line 3</div>
               </span>
@@ -134,7 +133,7 @@
             <ul>
               
               
-                <li><a href="http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/steps/logs/preamble">preamble</a></li>
+                <li class="sublink"><a href="http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/steps/logs/preamble">preamble</a></li>
               
               
             </ul>
@@ -149,7 +148,7 @@
 
       <h2>Build Properties:</h2>
 
-      <table class="info" width="100%">
+      <table class="info BuildProperties" width="100%">
       <tr><th>Name</th><th>Value</th><th>Source</th></tr>
 
         

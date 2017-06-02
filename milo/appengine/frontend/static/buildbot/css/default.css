@@ -100,6 +100,12 @@ div.Announcement>div.Closed {
   text-align: center;
 }
 
+.BuildProperties td.middle {
+  max-width: 250px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
 td.Time {
   color: #000;
   border-bottom: 1px solid #aaa;
@@ -250,6 +256,10 @@ td.Alt {
 
 tr:nth-child(even) {
   background-color: #ddd;
+}
+
+li.sublink:nth-child(odd) {
+  background-color: #eee;
 }
 
 .account-picture {
@@ -631,6 +641,12 @@ li {
   vlink: #800080;
   font-family: "Courier New", courier, monotype, monospace;
   font-size: 1.5em;
+}
+
+span.duration {
+  text-align: right;
+  float: right;
+  display: inline-block;
 }
 
 span.stdout {

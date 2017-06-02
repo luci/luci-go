@@ -83,7 +83,7 @@
         <input type="radio" name="hider" id="showStandard" checked>
           <label for="showStandard">Standard</label>
         <input type="radio" name="hider" id="showInteresting">
-          <label for="showInteresting">Interesting Only</label>
+          <label for="showInteresting">Non-Green Only</label>
         <ol id="steps" class="standard">
 
           
@@ -93,8 +93,8 @@
           
           <li class="verbosity-Normal">
             <div class="status-Running result">
-              <b>Waiting...</b>
               
+              <b>Waiting...</b>
               <span>
                 <div class="step-text">waiting for annotation stream</div>
               </span>
@@ -103,7 +103,7 @@
               
               
               
-                <li> - no logs - </li>
+                <li class="sublink"> - no logs - </li>
               
             </ul>
           </li>
@@ -117,7 +117,7 @@
 
       <h2>Build Properties:</h2>
 
-      <table class="info" width="100%">
+      <table class="info BuildProperties" width="100%">
       <tr><th>Name</th><th>Value</th><th>Source</th></tr>
 
         

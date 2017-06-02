@@ -83,23 +83,22 @@
         <input type="radio" name="hider" id="showStandard" checked>
           <label for="showStandard">Standard</label>
         <input type="radio" name="hider" id="showInteresting">
-          <label for="showInteresting">Interesting Only</label>
+          <label for="showInteresting">Non-Green Only</label>
         <ol id="steps" class="standard">
 
           
             
             <li class="verbosity-Interesting">
               <div class="status-Failure result">
-                <b>Steps</b>
-                <span style="float:right"
-                      class="duration"
+                <span class="duration"
                       data-starttime="2016-03-14T10:00:01Z"
                       data-endtime="2016-03-14T11:00:18Z">
                       ( 1 hrs )</span>
+                <b>Steps</b>
               </div>
               <ul>
                 
-                <li><a href="foo/stdout">stdout</a></li>
+                <li class="sublink"><a href="foo/stdout">stdout</a></li>
                 
               </ul>
             </li>
@@ -109,19 +108,18 @@
           
           <li class="verbosity-Hidden">
             <div class="status-Success result">
-              <b>recipe bootstrap</b>
-              <span style="float:right"
-                    class="duration"
+              <span class="duration"
                     data-starttime="2016-03-14T10:00:02Z"
                     data-endtime="2016-03-14T10:00:09Z">
                     ( 7 secs )</span>
+              <b>recipe bootstrap</b>
               <span>
                 
               </span>
             </div>
             <ul>
               
-                <li><a href="foo/steps/recipe_bootstrap/0/stdout">stdout</a></li>
+                <li class="sublink"><a href="foo/steps/recipe_bootstrap/0/stdout">stdout</a></li>
               
               
             </ul>
@@ -129,21 +127,20 @@
           
           <li class="verbosity-Hidden">
             <div class="status-Success result">
-              <b>setup_build</b>
-              <span style="float:right"
-                    class="duration"
+              <span class="duration"
                     data-starttime="2016-03-14T10:00:03Z"
                     data-endtime="2016-03-14T10:00:04Z">
                     ( 1 secs )</span>
+              <b>setup_build</b>
               <span>
                 <div class="step-text">running recipe: &#34;v8&#34;</div>
               </span>
             </div>
             <ul>
               
-                <li><a href="foo/steps/setup_build/0/stdout">stdout</a></li>
+                <li class="sublink"><a href="foo/steps/setup_build/0/stdout">stdout</a></li>
               
-                <li><a href="foo/steps/setup_build/0/logs/run_recipe/0">run_recipe</a></li>
+                <li class="sublink"><a href="foo/steps/setup_build/0/logs/run_recipe/0">run_recipe</a></li>
               
               
             </ul>
@@ -151,25 +148,24 @@
           
           <li class="verbosity-Interesting">
             <div class="status-InfraFailure result">
-              <b>bot_update</b>
-              <span style="float:right"
-                    class="duration"
+              <span class="duration"
                     data-starttime="2016-03-14T10:00:05Z"
                     data-endtime="2016-03-14T10:00:06Z">
                     ( 1 secs )</span>
+              <b>bot_update</b>
               <span>
                 
               </span>
             </div>
             <ul>
               
-                <li><a href="foo/steps/bot_update/0/stdout">stdout</a></li>
+                <li class="sublink"><a href="foo/steps/bot_update/0/stdout">stdout</a></li>
                     <link rel="prerender" href="foo/steps/bot_update/0/stdout">
                     <link rel="prefetch" href="foo/steps/bot_update/0/stdout">
                   
                 
               
-                <li><a href="foo/steps/bot_update/0/logs/json.output__invalid_/0">json.output (invalid)</a></li>
+                <li class="sublink"><a href="foo/steps/bot_update/0/logs/json.output__invalid_/0">json.output (invalid)</a></li>
               
               
             </ul>
@@ -177,25 +173,24 @@
           
           <li class="verbosity-Interesting">
             <div class="status-InfraFailure result">
-              <b>Uncaught Exception</b>
-              <span style="float:right"
-                    class="duration"
+              <span class="duration"
                     data-starttime="2016-03-14T10:00:07Z"
                     data-endtime="2016-03-14T10:00:08Z">
                     ( 1 secs )</span>
+              <b>Uncaught Exception</b>
               <span>
                 
               </span>
             </div>
             <ul>
               
-                <li><a href="foo/steps/Uncaught_Exception/0/stdout">stdout</a></li>
+                <li class="sublink"><a href="foo/steps/Uncaught_Exception/0/stdout">stdout</a></li>
                     <link rel="prerender" href="foo/steps/Uncaught_Exception/0/stdout">
                     <link rel="prefetch" href="foo/steps/Uncaught_Exception/0/stdout">
                   
                 
               
-                <li><a href="foo/steps/Uncaught_Exception/0/logs/exception/0">exception</a></li>
+                <li class="sublink"><a href="foo/steps/Uncaught_Exception/0/logs/exception/0">exception</a></li>
               
               
             </ul>
@@ -210,7 +205,7 @@
 
       <h2>Build Properties:</h2>
 
-      <table class="info" width="100%">
+      <table class="info BuildProperties" width="100%">
       <tr><th>Name</th><th>Value</th><th>Source</th></tr>
 
         
@@ -218,25 +213,25 @@
           
             <tr>
               <td class="left">path_config</td>
-              <td>kitchen</td>
+              <td class="middle"><abbr title="kitchen">kitchen</abbr></td>
               <td>recipe bootstrap</td>
             </tr>
           
             <tr>
               <td class="left">slavename</td>
-              <td>fakeslave</td>
+              <td class="middle"><abbr title="fakeslave">fakeslave</abbr></td>
               <td>recipe bootstrap</td>
             </tr>
           
             <tr>
               <td class="left">buildername</td>
-              <td>infra-continuous-precise-32</td>
+              <td class="middle"><abbr title="infra-continuous-precise-32">infra-continuous-precise-32</abbr></td>
               <td>recipe bootstrap</td>
             </tr>
           
             <tr>
               <td class="left">mastername</td>
-              <td>chromium.infra</td>
+              <td class="middle"><abbr title="chromium.infra">chromium.infra</abbr></td>
               <td>recipe bootstrap</td>
             </tr>
           
@@ -257,7 +252,7 @@
           
             <tr>
               <td class="left">Exit Code</td>
-              <td>0</td>
+              <td class="middle"><abbr title="0">0</abbr></td>
               <td>Swarming</td>
             </tr>
           
