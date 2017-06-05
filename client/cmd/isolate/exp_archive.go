@@ -22,7 +22,6 @@ import (
 
 	"github.com/luci/luci-go/client/isolate"
 	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/eventlog"
 	logpb "github.com/luci/luci-go/common/eventlog/proto"
 	"github.com/luci/luci-go/common/isolated"
 	"github.com/luci/luci-go/common/isolatedclient"
@@ -280,20 +279,17 @@ func (c *expArchiveRun) main() error {
 
 	end := time.Now()
 
-	if endpoint := eventlogEndpoint(c.isolateFlags.EventlogEndpoint); endpoint != "" {
-		logger := eventlog.NewClient(ctx, endpoint)
-
-		// TODO(mcgreevy): fill out more stats in archiveDetails.
-		archiveDetails := &logpb.IsolateClientEvent_ArchiveDetails{
-			HitCount:    proto.Int64(int64(checker.Hit.Count)),
-			MissCount:   proto.Int64(int64(checker.Miss.Count)),
-			HitBytes:    &checker.Hit.Bytes,
-			MissBytes:   &checker.Miss.Bytes,
-			IsolateHash: []string{string(isolItem.Digest)},
-		}
-		if err := logStats(ctx, logger, start, end, archiveDetails, getBuildbotInfo()); err != nil {
-			log.Printf("Failed to log to eventlog: %v", err)
-		}
+	archiveDetails := &logpb.IsolateClientEvent_ArchiveDetails{
+		HitCount:    proto.Int64(int64(checker.Hit.Count)),
+		MissCount:   proto.Int64(int64(checker.Miss.Count)),
+		HitBytes:    &checker.Hit.Bytes,
+		MissBytes:   &checker.Miss.Bytes,
+		IsolateHash: []string{string(isolItem.Digest)},
+	}
+	eventlogger := NewLogger(ctx, c.isolateFlags.EventlogEndpoint)
+	op := logpb.IsolateClientEvent_ARCHIVE.Enum()
+	if err := eventlogger.logStats(ctx, op, start, end, archiveDetails); err != nil {
+		log.Printf("Failed to log to eventlog: %v", err)
 	}
 
 	return nil
@@ -340,57 +336,4 @@ func hashFile(path string) (isolated.HexDigest, error) {
 	}
 	defer f.Close()
 	return isolated.Hash(f)
-}
-
-// buildbotInfo contains information about the build in which this command was run.
-type buildbotInfo struct {
-	// Variables which are not present in the environment are nil.
-	master, builder, buildID, slave *string
-}
-
-// getBuildbotInfo poulates a buildbotInfo with information from the environment.
-func getBuildbotInfo() *buildbotInfo {
-	getEnvValue := func(key string) *string {
-		if val, ok := os.LookupEnv(key); ok {
-			return &val
-		}
-		return nil
-	}
-
-	return &buildbotInfo{
-		master:  getEnvValue("BUILDBOT_MASTERNAME"),
-		builder: getEnvValue("BUILDBOT_BUILDERNAME"),
-		buildID: getEnvValue("BUILDBOT_BUILDNUMBER"),
-		slave:   getEnvValue("BUILDBOT_SLAVENAME"),
-	}
-}
-
-func logStats(ctx context.Context, logger *eventlog.Client, start, end time.Time, archiveDetails *logpb.IsolateClientEvent_ArchiveDetails, bi *buildbotInfo) error {
-	event := logger.NewLogEvent(ctx, eventlog.Point())
-	event.InfraEvent.IsolateClientEvent = &logpb.IsolateClientEvent{
-		Binary: &logpb.Binary{
-			Name:          proto.String("isolate"),
-			VersionNumber: proto.String(version),
-		},
-		Operation:      logpb.IsolateClientEvent_ARCHIVE.Enum(),
-		ArchiveDetails: archiveDetails,
-		Master:         bi.master,
-		Builder:        bi.builder,
-		BuildId:        bi.buildID,
-		Slave:          bi.slave,
-		StartTsUsec:    proto.Int64(int64(start.UnixNano() / 1e3)),
-		EndTsUsec:      proto.Int64(int64(end.UnixNano() / 1e3)),
-	}
-	return logger.LogSync(ctx, event)
-}
-
-func eventlogEndpoint(endpointFlag string) string {
-	switch endpointFlag {
-	case "test":
-		return eventlog.TestEndpoint
-	case "prod":
-		return eventlog.ProdEndpoint
-	default:
-		return endpointFlag
-	}
 }

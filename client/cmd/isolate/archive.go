@@ -7,10 +7,12 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
 	"github.com/luci/luci-go/client/archiver"
@@ -18,6 +20,7 @@ import (
 	"github.com/luci/luci-go/client/isolate"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/data/text/units"
+	logpb "github.com/luci/luci-go/common/eventlog/proto"
 	"github.com/luci/luci-go/common/isolatedclient"
 )
 
@@ -81,12 +84,29 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	if err2 := arch.Close(); err == nil {
 		err = err2
 	}
+	stats := arch.Stats()
 	if !c.defaultFlags.Quiet {
 		duration := time.Since(start)
-		stats := arch.Stats()
 		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", stats.TotalHits(), stats.TotalBytesHits())
 		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", stats.TotalMisses(), stats.TotalBytesPushed())
 		fmt.Fprintf(os.Stderr, "Duration: %s\n", units.Round(duration, time.Millisecond))
+	}
+
+	end := time.Now()
+
+	archiveDetails := &logpb.IsolateClientEvent_ArchiveDetails{
+		HitCount:  proto.Int64(int64(stats.TotalHits())),
+		MissCount: proto.Int64(int64(stats.TotalMisses())),
+		HitBytes:  proto.Int64(int64(stats.TotalBytesHits())),
+		MissBytes: proto.Int64(int64(stats.TotalBytesPushed())),
+	}
+	if item.Error() != nil {
+		archiveDetails.IsolateHash = []string{string(item.Digest())}
+	}
+	eventlogger := NewLogger(ctx, c.isolateFlags.EventlogEndpoint)
+	op := logpb.IsolateClientEvent_LEGACY_ARCHIVE.Enum()
+	if err := eventlogger.logStats(ctx, op, start, end, archiveDetails); err != nil {
+		log.Printf("Failed to log to eventlog: %v", err)
 	}
 	return err
 }
