@@ -33,6 +33,7 @@ func cmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 			c := archiveRun{}
 			c.commonServerFlags.Init(defaultAuthOpts)
 			c.isolateFlags.Init(&c.Flags)
+			c.loggingFlags.Init(&c.Flags)
 			return &c
 		},
 	}
@@ -41,6 +42,7 @@ func cmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 type archiveRun struct {
 	commonServerFlags
 	isolateFlags
+	loggingFlags loggingFlags
 }
 
 func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
@@ -103,7 +105,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	if item.Error() != nil {
 		archiveDetails.IsolateHash = []string{string(item.Digest())}
 	}
-	eventlogger := NewLogger(ctx, c.isolateFlags.EventlogEndpoint)
+	eventlogger := NewLogger(ctx, c.loggingFlags.EventlogEndpoint)
 	op := logpb.IsolateClientEvent_LEGACY_ARCHIVE.Enum()
 	if err := eventlogger.logStats(ctx, op, start, end, archiveDetails); err != nil {
 		log.Printf("Failed to log to eventlog: %v", err)

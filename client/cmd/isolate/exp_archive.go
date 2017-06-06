@@ -50,6 +50,7 @@ func cmdExpArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 			c := &expArchiveRun{}
 			c.commonServerFlags.Init(defaultAuthOpts)
 			c.isolateFlags.Init(&c.Flags)
+			c.loggingFlags.Init(&c.Flags)
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "",
 				"Write isolated digests of archived trees to this file as JSON")
 			return c
@@ -62,6 +63,7 @@ func cmdExpArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 type expArchiveRun struct {
 	commonServerFlags // Provides the GetFlags method.
 	isolateFlags      isolateFlags
+	loggingFlags      loggingFlags
 	dumpJSON          string
 }
 
@@ -286,7 +288,7 @@ func (c *expArchiveRun) main() error {
 		MissBytes:   &checker.Miss.Bytes,
 		IsolateHash: []string{string(isolItem.Digest)},
 	}
-	eventlogger := NewLogger(ctx, c.isolateFlags.EventlogEndpoint)
+	eventlogger := NewLogger(ctx, c.loggingFlags.EventlogEndpoint)
 	op := logpb.IsolateClientEvent_ARCHIVE.Enum()
 	if err := eventlogger.logStats(ctx, op, start, end, archiveDetails); err != nil {
 		log.Printf("Failed to log to eventlog: %v", err)
