@@ -43,6 +43,10 @@ const (
 	// Like "-root", if this value is present but empty, a tempdir will be used
 	// for the VirtualEnv root.
 	VirtualEnvRootENV = "VPYTHON_VIRTUALENV_ROOT"
+
+	// DefaultSpecENV is an enviornment variable that, if set, will be used as the
+	// default VirtualEnv spec file if none is provided or found through probing.
+	DefaultSpecENV = "VPYTHON_DEFAULT_SPEC"
 )
 
 // ReturnCodeError is an error wrapping a return code value.
@@ -199,10 +203,16 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 
 	// If an spec path was manually specified, load and use it.
 	if a.specPath != "" {
-		var err error
-		if a.opts.EnvConfig.Spec, err = spec.Load(a.specPath); err != nil {
-			return errors.Annotate(err).Reason("failed to load specification file (-spec) from: %(path)s").
-				D("path", a.specPath).
+		var sp vpythonAPI.Spec
+		if err := spec.Load(a.specPath, &sp); err != nil {
+			return err
+		}
+		a.opts.EnvConfig.Spec = &sp
+	} else if specPath := a.opts.Environ.GetEmpty(DefaultSpecENV); specPath != "" {
+		if err := spec.Load(specPath, &a.opts.DefaultSpec); err != nil {
+			return errors.Annotate(err).
+				Reason("failed to load default specification file ("+DefaultSpecENV+"from: %(path)s").
+				D("path", specPath).
 				Err()
 		}
 	}

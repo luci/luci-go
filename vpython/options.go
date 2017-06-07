@@ -26,6 +26,10 @@ type Options struct {
 	// EnvConfig is the VirtualEnv configuration to run from.
 	EnvConfig venv.Config
 
+	// DefaultSpec is the default specification to use, if no specification was
+	// supplied or probed.
+	DefaultSpec vpython.Spec
+
 	// SpecLoader is the spec.Loader to use to load a specification file for a
 	// given script.
 	//
@@ -145,17 +149,20 @@ func (o *Options) ResolveSpec(c context.Context) error {
 
 	// Do we have a spec file in the environment?
 	if v, ok := o.Environ.Get(EnvironmentStampPathENV); ok {
-		if o.EnvConfig.Spec, err = spec.Load(v); err != nil {
+		var sp vpython.Spec
+		if err := spec.Load(v, &sp); err != nil {
 			return errors.Annotate(err).Reason("failed to load environment-supplied spec from: %(path)s").
 				D("path", v).
 				Err()
 		}
+
 		logging.Infof(c, "Loaded spec from environment: %s", v)
+		o.EnvConfig.Spec = &sp
 		return nil
 	}
 
-	// Unable to load a spec.
-	logging.Infof(c, "Unable to resolve specification path. Using empty specification.")
-	o.EnvConfig.Spec = &vpython.Spec{}
+	// If standard resolution doesn't yield a spec, fall back on our default spec.
+	logging.Infof(c, "Unable to resolve specification path. Using default specification.")
+	o.EnvConfig.Spec = &o.DefaultSpec
 	return nil
 }
