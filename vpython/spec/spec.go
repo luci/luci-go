@@ -44,7 +44,7 @@ func NormalizeEnvironment(env *vpython.Environment) error {
 //
 // NormalizeSpec will prune any Wheel entries that don't match the specified
 // tags, and will remove the match entries from any remaining Wheel entries.
-func NormalizeSpec(spec *vpython.Spec, tags []*vpython.Pep425Tag) error {
+func NormalizeSpec(spec *vpython.Spec, tags []*vpython.PEP425Tag) error {
 	if spec.Virtualenv != nil && len(spec.Virtualenv.MatchTag) > 0 {
 		// The VirtualEnv package may not specify a match tag.
 		spec.Virtualenv.MatchTag = nil
@@ -124,15 +124,15 @@ func (s specPackageSlice) Less(i, j int) bool {
 	}.Use(i, j)
 }
 
-type pep425TagSlice []*vpython.Pep425Tag
+type pep425TagSlice []*vpython.PEP425Tag
 
 func (s pep425TagSlice) Len() int      { return len(s) }
 func (s pep425TagSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 func (s pep425TagSlice) Less(i, j int) bool {
 	return sortby.Chain{
-		func(i, j int) bool { return s[i].Version < s[j].Version },
+		func(i, j int) bool { return s[i].Python < s[j].Python },
 		func(i, j int) bool { return s[i].Abi < s[j].Abi },
-		func(i, j int) bool { return s[i].Arch < s[j].Arch },
+		func(i, j int) bool { return s[i].Platform < s[j].Platform },
 	}.Use(i, j)
 }

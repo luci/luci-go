@@ -102,7 +102,7 @@ type Config struct {
 	// verification scenarios.
 	//
 	// If nil, verification will only include the validation of the spec protobuf.
-	WithVerificationConfig func(context.Context, func(Config, []*vpythonAPI.Pep425Tag) error) error
+	WithVerificationConfig func(context.Context, func(Config, []*vpythonAPI.PEP425Tag) error) error
 }
 
 type application struct {

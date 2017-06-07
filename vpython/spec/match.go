@@ -15,7 +15,7 @@ import (
 // always match regardless of the supplied PEP425 tags.
 //
 // See PEP425Matches for more information.
-func PackageMatches(pkg *vpython.Spec_Package, tags []*vpython.Pep425Tag) bool {
+func PackageMatches(pkg *vpython.Spec_Package, tags []*vpython.PEP425Tag) bool {
 	if len(pkg.MatchTag) == 0 {
 		return true
 	}
@@ -32,20 +32,20 @@ func PackageMatches(pkg *vpython.Spec_Package, tags []*vpython.Pep425Tag) bool {
 //
 // A match is determined if the non-zero fields in match equal the equivalent
 // fields in a tag.
-func PEP425Matches(match *vpython.Pep425Tag, tags []*vpython.Pep425Tag) bool {
+func PEP425Matches(match *vpython.PEP425Tag, tags []*vpython.PEP425Tag) bool {
 	// Special case: empty match matches nothing.
 	if match.IsZero() {
 		return false
 	}
 
 	for _, tag := range tags {
-		if v := match.Version; v != "" && tag.Version != v {
+		if v := match.Python; v != "" && tag.Python != v {
 			continue
 		}
 		if v := match.Abi; v != "" && tag.Abi != v {
 			continue
 		}
-		if v := match.Arch; v != "" && tag.Arch != v {
+		if v := match.Platform; v != "" && tag.Platform != v {
 			continue
 		}
 		return true

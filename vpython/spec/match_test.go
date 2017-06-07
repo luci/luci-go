@@ -14,15 +14,15 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func mkTag(version, abi, arch string) *vpython.Pep425Tag {
-	return &vpython.Pep425Tag{
-		Version: version,
-		Abi:     abi,
-		Arch:    arch,
+func mkTag(python, abi, platform string) *vpython.PEP425Tag {
+	return &vpython.PEP425Tag{
+		Python:   python,
+		Abi:      abi,
+		Platform: platform,
 	}
 }
 
-func tagString(tags []*vpython.Pep425Tag) string {
+func tagString(tags []*vpython.PEP425Tag) string {
 	parts := make([]string, len(tags))
 	for i, tag := range tags {
 		parts[i] = tag.TagString()
@@ -34,23 +34,23 @@ func TestPEP425Matches(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		tags       []*vpython.Pep425Tag
-		matches    []*vpython.Pep425Tag
-		notMatches []*vpython.Pep425Tag
+		tags       []*vpython.PEP425Tag
+		matches    []*vpython.PEP425Tag
+		notMatches []*vpython.PEP425Tag
 	}{
 		{
 			tags: nil,
-			notMatches: []*vpython.Pep425Tag{
+			notMatches: []*vpython.PEP425Tag{
 				mkTag("", "", ""),
 				mkTag("cp27", "cp27mu", "manylinux1_x86_64"),
 			},
 		},
 		{
-			tags: []*vpython.Pep425Tag{
+			tags: []*vpython.PEP425Tag{
 				mkTag("cp27", "cp27mu", "manylinux1_x86_64"),
 				mkTag("py2", "cp27m", "macosx_10_9_universal"),
 			},
-			matches: []*vpython.Pep425Tag{
+			matches: []*vpython.PEP425Tag{
 				mkTag("cp27", "", ""),
 				mkTag("", "cp27mu", ""),
 				mkTag("", "", "manylinux1_x86_64"),
@@ -59,20 +59,20 @@ func TestPEP425Matches(t *testing.T) {
 				mkTag("", "", "macosx_10_9_universal"),
 				mkTag("", "cp27mu", "manylinux1_x86_64"),
 			},
-			notMatches: []*vpython.Pep425Tag{
+			notMatches: []*vpython.PEP425Tag{
 				mkTag("", "", ""),
 				mkTag("cp27", "cp27mu", "win_amd64"),
 				mkTag("cp27", "cp27mu", "macosx_10_9_universal"),
 			},
 		},
 		{
-			tags: []*vpython.Pep425Tag{
+			tags: []*vpython.PEP425Tag{
 				mkTag("cp27", "cp27mu", ""),
 			},
-			matches: []*vpython.Pep425Tag{
+			matches: []*vpython.PEP425Tag{
 				mkTag("cp27", "cp27mu", ""),
 			},
-			notMatches: []*vpython.Pep425Tag{
+			notMatches: []*vpython.PEP425Tag{
 				mkTag("", "", ""),
 				mkTag("cp27", "cp27mu", "otherArch"),
 			},
@@ -101,7 +101,7 @@ func TestPEP425Matches(t *testing.T) {
 func TestPackageMatches(t *testing.T) {
 	t.Parallel()
 
-	mkPkg := func(name string, tags ...*vpython.Pep425Tag) *vpython.Spec_Package {
+	mkPkg := func(name string, tags ...*vpython.PEP425Tag) *vpython.Spec_Package {
 		return &vpython.Spec_Package{
 			Name:     name,
 			MatchTag: tags,
@@ -109,7 +109,7 @@ func TestPackageMatches(t *testing.T) {
 	}
 
 	testCases := []struct {
-		tags         []*vpython.Pep425Tag
+		tags         []*vpython.PEP425Tag
 		matchPkgs    []*vpython.Spec_Package
 		notMatchPkgs []*vpython.Spec_Package
 	}{
@@ -124,7 +124,7 @@ func TestPackageMatches(t *testing.T) {
 			},
 		},
 		{
-			tags: []*vpython.Pep425Tag{
+			tags: []*vpython.PEP425Tag{
 				mkTag("cp27", "cp27mu", "manylinux1_x86_64"),
 				mkTag("py2", "cp27m", "macosx_10_9_universal"),
 			},

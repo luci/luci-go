@@ -15,7 +15,7 @@ import (
 //
 // This version string is used in the generation of filenames, and must be
 // filesystem-compatible.
-const Version = "v1"
+const Version = "v2"
 
 // Clone returns a deep clone of the supplied Environment.
 //
@@ -28,27 +28,27 @@ func (e *Environment) Clone() *Environment {
 }
 
 // IsZero returns true if this tag is a zero value.
-func (t *Pep425Tag) IsZero() bool {
-	return t == nil || (t.Version == "" && t.Abi == "" && t.Arch == "")
+func (t *PEP425Tag) IsZero() bool {
+	return t == nil || (t.Python == "" && t.Abi == "" && t.Platform == "")
 }
 
 // TagString returns an underscore-separated string containing t's fields.
-func (t *Pep425Tag) TagString() string {
-	return strings.Join([]string{t.Version, t.Abi, t.Arch}, "-")
+func (t *PEP425Tag) TagString() string {
+	return strings.Join([]string{t.Python, t.Abi, t.Platform}, "-")
 }
 
 // HasABI returns true if t declares that it only works with a specific ABI.
-func (t *Pep425Tag) HasABI() bool { return t.Abi != "none" }
+func (t *PEP425Tag) HasABI() bool { return t.Abi != "none" }
 
-// AnyArch returns true if t declares that it works on any architecture.
-func (t *Pep425Tag) AnyArch() bool { return t.Arch == "any" }
+// AnyPlatform returns true if t declares that it works on any platform.
+func (t *PEP425Tag) AnyPlatform() bool { return t.Platform == "any" }
 
 // Count returns the number of populated fields in this tag.
-func (t *Pep425Tag) Count() (v int) {
+func (t *PEP425Tag) Count() (v int) {
 	if t.HasABI() {
 		v++
 	}
-	if t.AnyArch() {
+	if t.AnyPlatform() {
 		v++
 	}
 	return

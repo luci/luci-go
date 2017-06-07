@@ -13,9 +13,9 @@ import (
 // PlatformForPEP425Tag returns the CIPD platform inferred from a given Python
 // PEP425 tag.
 //
-// If the platform could not be determined, an empoty string will be returned.
-func PlatformForPEP425Tag(t *vpython.Pep425Tag) string {
-	switch archSplit := strings.SplitN(t.Arch, "_", 2); archSplit[0] {
+// If the platform could not be determined, an empty string will be returned.
+func PlatformForPEP425Tag(t *vpython.PEP425Tag) string {
+	switch platSplit := strings.SplitN(t.Platform, "_", 2); platSplit[0] {
 	case "linux", "manylinux1":
 		// Grab the remainder.
 		//
@@ -24,8 +24,8 @@ func PlatformForPEP425Tag(t *vpython.Pep425Tag) string {
 		// - manylinux1_x86_64
 		// - linux_arm64
 		cpu := ""
-		if len(archSplit) > 1 {
-			cpu = archSplit[1]
+		if len(platSplit) > 1 {
+			cpu = platSplit[1]
 		}
 		switch cpu {
 		case "i686":
@@ -52,10 +52,10 @@ func PlatformForPEP425Tag(t *vpython.Pep425Tag) string {
 		// Examples:
 		// - macosx_10_10_intel
 		// - macosx_10_10_i386
-		if len(archSplit) == 1 {
+		if len(platSplit) == 1 {
 			return ""
 		}
-		suffixSplit := strings.SplitN(archSplit[1], "_", -1)
+		suffixSplit := strings.SplitN(platSplit[1], "_", -1)
 		switch suffixSplit[len(suffixSplit)-1] {
 		case "intel", "x86_64", "fat64", "universal":
 			return "mac-amd64"
@@ -71,10 +71,10 @@ func PlatformForPEP425Tag(t *vpython.Pep425Tag) string {
 	case "win":
 		// Examples:
 		// - win_amd64
-		if len(archSplit) == 1 {
+		if len(platSplit) == 1 {
 			return ""
 		}
-		switch archSplit[1] {
+		switch platSplit[1] {
 		case "amd64":
 			return "windows-amd64"
 		default:

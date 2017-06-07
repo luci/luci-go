@@ -17,18 +17,18 @@ func TestNormalizeAndHash(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Test manifest generation`, t, func() {
-		otherTag := &vpython.Pep425Tag{Version: "otherVersion", Abi: "otherABI", Arch: "otherArch"}
-		maybeTag := &vpython.Pep425Tag{Version: "maybeVersion", Abi: "maybeABI", Arch: "maybeArch"}
+		otherTag := &vpython.PEP425Tag{Python: "otherPython", Abi: "otherABI", Platform: "otherPlatform"}
+		maybeTag := &vpython.PEP425Tag{Python: "maybePython", Abi: "maybeABI", Platform: "maybePlatform"}
 
 		pkgFoo := &vpython.Spec_Package{Name: "foo", Version: "1"}
 		pkgBar := &vpython.Spec_Package{Name: "bar", Version: "2"}
 		pkgBaz := &vpython.Spec_Package{Name: "baz", Version: "3"}
-		pkgMaybe := &vpython.Spec_Package{Name: "maybe", Version: "3", MatchTag: []*vpython.Pep425Tag{
-			{Version: maybeTag.Version},
+		pkgMaybe := &vpython.Spec_Package{Name: "maybe", Version: "3", MatchTag: []*vpython.PEP425Tag{
+			{Python: maybeTag.Python},
 		}}
 
 		env := vpython.Environment{
-			Pep425Tag: []*vpython.Pep425Tag{otherTag},
+			Pep425Tag: []*vpython.PEP425Tag{otherTag},
 		}
 		var rt vpython.Runtime
 
@@ -37,7 +37,7 @@ func TestNormalizeAndHash(t *testing.T) {
 			So(env, ShouldResemble, vpython.Environment{
 				Spec:      &vpython.Spec{},
 				Runtime:   &vpython.Runtime{},
-				Pep425Tag: []*vpython.Pep425Tag{otherTag},
+				Pep425Tag: []*vpython.PEP425Tag{otherTag},
 			})
 		})
 
@@ -51,8 +51,8 @@ func TestNormalizeAndHash(t *testing.T) {
 					Wheel: []*vpython.Spec_Package{pkgBar, pkgBaz, pkgFoo},
 				})
 
-				So(Hash(env.Spec, &rt, ""), ShouldEqual, "7e80b8643051ce0d82bf44fb180687e988791cfd7f3da39861370f0a56fc80f8")
-				So(Hash(env.Spec, &rt, "extra"), ShouldEqual, "140a02bb88b011d4aceafb9533266288fd4b441c3bdb70494419b3ef76457f34")
+				So(Hash(env.Spec, &rt, ""), ShouldEqual, "1e32c02610b51f8c3807203fccd3e8d01d252868d52eb4ee9df135ef6533c5ae")
+				So(Hash(env.Spec, &rt, "extra"), ShouldEqual, "d047eb021f50534c050aaa10c70dc7b4a9b511fab00cf67a191b2b0805f24420")
 			})
 
 			Convey(`With match tags`, func() {

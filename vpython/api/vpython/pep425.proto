@@ -6,13 +6,13 @@ syntax = "proto3";
 
 package vpython;
 
-// Represnets a Python PEP425 tag.
-message Pep425Tag {
-  // Version is the PEP425 version tag (e.g., "cp27").
-  string version  = 1;
-  // ABI is the PEP425 ABI tag (e.g., "cp27mu", "none").
+// Represents a Python PEP425 tag.
+message PEP425Tag {
+  // Python is the PEP425 python tag (e.g., "cp27").
+  string python  = 1;
+  // ABI is the PEP425 "python ABI" tag (e.g., "cp27mu", "none").
   string abi = 2;
-  // Arch is the PEP425 architecture tag (e.g., "linux_x86_64", "armv7l",
-  // "any").
-  string arch = 3;
+  // Platform is the PEP425 "python platform" tag (e.g., "linux_x86_64",
+  // "armv7l", "any").
+  string platform = 3;
 }

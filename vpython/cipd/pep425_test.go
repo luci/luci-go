@@ -13,11 +13,11 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func mkTag(arch string) *vpython.Pep425Tag {
-	return &vpython.Pep425Tag{
-		Version: "cp27",
-		Abi:     "none",
-		Arch:    arch,
+func mkTag(plat string) *vpython.PEP425Tag {
+	return &vpython.PEP425Tag{
+		Python:   "cp27",
+		Abi:      "none",
+		Platform: plat,
 	}
 }
 
@@ -25,7 +25,7 @@ func TestPlatformForPEP425Tag(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		tag      *vpython.Pep425Tag
+		tag      *vpython.PEP425Tag
 		platform string
 	}{
 		{mkTag("junk_i686"), ""},

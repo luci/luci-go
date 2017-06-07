@@ -62,7 +62,7 @@ func (cr *verifyCommandRun) Run(app subcommands.Application, args []string, env 
 
 		// Run our Verification generator and verify each generated environment.
 		if a.WithVerificationConfig != nil {
-			err := a.WithVerificationConfig(c, func(cfg Config, verificationScenarios []*vpython.Pep425Tag) error {
+			err := a.WithVerificationConfig(c, func(cfg Config, verificationScenarios []*vpython.PEP425Tag) error {
 				if len(s.VerifyPep425Tag) > 0 {
 					verificationScenarios = s.VerifyPep425Tag
 				}
@@ -75,7 +75,7 @@ func (cr *verifyCommandRun) Run(app subcommands.Application, args []string, env 
 					// Create a verification environment to pass to our package loader.
 					e := vpython.Environment{
 						Spec:      s.Clone(),
-						Pep425Tag: []*vpython.Pep425Tag{vs},
+						Pep425Tag: []*vpython.PEP425Tag{vs},
 					}
 					if err := spec.NormalizeEnvironment(&e); err != nil {
 						logging.Errorf(c, "Failed to normalize environment against %q: %s", vs.TagString(), err)
