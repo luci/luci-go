@@ -42,13 +42,21 @@ func (cr *verifyCommandRun) Run(app subcommands.Application, args []string, env 
 		if err := a.opts.ResolveSpec(c); err != nil {
 			return errors.Annotate(err).Reason("failed to resolve specification").Err()
 		}
-		if a.opts.EnvConfig.Spec.Virtualenv == nil {
-			a.opts.EnvConfig.Spec.Virtualenv = &a.opts.EnvConfig.Package
+
+		s := a.opts.EnvConfig.Spec
+		if s == nil {
+			s = &vpython.Spec{}
 		}
-		if err := spec.NormalizeSpec(a.opts.EnvConfig.Spec); err != nil {
+		if s.Virtualenv == nil {
+			s.Virtualenv = &a.opts.EnvConfig.Package
+		}
+
+		// Verify that the spec can be normalized. This may modify it, so we will
+		// normalize a clone.
+		if err := spec.NormalizeSpec(s.Clone(), nil); err != nil {
 			return errors.Annotate(err).Reason("failed to normalize specification").Err()
 		}
-		s := a.opts.EnvConfig.Spec
+
 		renderedSpec := spec.Render(s)
 		logging.Infof(c, "Successfully verified specification:\n%s", renderedSpec)
 
@@ -68,6 +76,11 @@ func (cr *verifyCommandRun) Run(app subcommands.Application, args []string, env 
 					e := vpython.Environment{
 						Spec:      s.Clone(),
 						Pep425Tag: []*vpython.Pep425Tag{vs},
+					}
+					if err := spec.NormalizeEnvironment(&e); err != nil {
+						logging.Errorf(c, "Failed to normalize environment against %q: %s", vs.TagString(), err)
+						failures = append(failures, vs.TagString())
+						continue
 					}
 
 					if err := cfg.PackageLoader.Resolve(c, &e); err != nil {

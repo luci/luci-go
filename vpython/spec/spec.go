@@ -27,7 +27,7 @@ func NormalizeEnvironment(env *vpython.Environment) error {
 	if env.Spec == nil {
 		env.Spec = &vpython.Spec{}
 	}
-	if err := NormalizeSpec(env.Spec); err != nil {
+	if err := NormalizeSpec(env.Spec, env.Pep425Tag); err != nil {
 		return err
 	}
 
@@ -41,7 +41,29 @@ func NormalizeEnvironment(env *vpython.Environment) error {
 
 // NormalizeSpec normalizes the specification Message such that two messages
 // with identical meaning will have identical representation.
-func NormalizeSpec(spec *vpython.Spec) error {
+//
+// NormalizeSpec will prune any Wheel entries that don't match the specified
+// tags, and will remove the match entries from any remaining Wheel entries.
+func NormalizeSpec(spec *vpython.Spec, tags []*vpython.Pep425Tag) error {
+	if spec.Virtualenv != nil && len(spec.Virtualenv.MatchTag) > 0 {
+		// The VirtualEnv package may not specify a match tag.
+		spec.Virtualenv.MatchTag = nil
+	}
+
+	// Apply match filters, prune any entries that don't match, and clear the
+	// MatchTag entries for those that do.
+	pos := 0
+	for _, wheel := range spec.Wheel {
+		if !PackageMatches(wheel, tags) {
+			continue
+		}
+
+		wheel.MatchTag = nil
+		spec.Wheel[pos] = wheel
+		pos++
+	}
+	spec.Wheel = spec.Wheel[:pos]
+
 	sort.Sort(specPackageSlice(spec.Wheel))
 
 	// No duplicate packages. Since we're sorted, we can just check for no

@@ -38,6 +38,18 @@ message Spec {
     // - For CIPD, this will be any recognized CIPD version (i.e., ID, tag, or
     //   ref).
     string version = 2;
+
+    // Optional PEP425 tags to determine whether this package is included on the
+    // target system. If no match tags are specified, this package will always
+    // be included. If match tags are specified, the package will be included if
+    // any system PEP425 tags match at least one of the match tags.
+    //
+    // A match will succeed if any system PEP425 tag field matches the
+    // corresponding field in the PEP425 tag. If the match tag omits a field
+    // (partial), that field will not be considered. For example, if a match
+    // tag specifies just an ABI field, any system PEP425 tag with that ABI will
+    // be considered a successful match, regardless of other field values.
+    repeated vpython.Pep425Tag match_tag = 3;
   }
   repeated Package wheel = 2;
 
