@@ -20,8 +20,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-type runnerFunc func(cmd *exec.Cmd, capture bool) (string, error)
-
 // Interpreter represents a system Python interpreter. It exposes the ability
 // to use common functionality of that interpreter.
 type Interpreter struct {
@@ -104,8 +102,7 @@ func (i *Interpreter) GetVersion(c context.Context) (v Version, err error) {
 		return
 	}
 
-	if v, err = parseVersionOutput(strings.TrimSpace(string(out))); err != nil {
-		err = errors.Annotate(err).Err()
+	if v, err = ParseVersionOutput(string(out)); err != nil {
 		return
 	}
 
@@ -141,13 +138,17 @@ func (i *Interpreter) Hash() (string, error) {
 	return i.cachedHash, i.cachedHashErr
 }
 
-func parseVersionOutput(output string) (Version, error) {
+// ParseVersionOutput parses a Version out of the output of a "--version" Python
+// invocation.
+func ParseVersionOutput(output string) (Version, error) {
+	s := strings.TrimSpace(string(output))
+
 	// Expected output:
 	// Python X.Y.Z
-	parts := strings.SplitN(output, " ", 2)
+	parts := strings.SplitN(s, " ", 2)
 	if len(parts) != 2 || parts[0] != "Python" {
 		return Version{}, errors.Reason("unknown version output").
-			D("output", output).
+			D("output", s).
 			Err()
 	}
 

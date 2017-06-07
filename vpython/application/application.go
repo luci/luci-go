@@ -30,6 +30,7 @@ import (
 	"github.com/luci/luci-go/common/system/environ"
 	"github.com/luci/luci-go/common/system/exitcode"
 	"github.com/luci/luci-go/common/system/filesystem"
+	"github.com/luci/luci-go/common/system/prober"
 )
 
 const (
@@ -64,6 +65,16 @@ type Config struct {
 
 	// VENVPackage is the VirtualEnv package to use for bootstrap generation.
 	VENVPackage vpythonAPI.Spec_Package
+
+	// RelativePathOverride is a series of forward-slash-delimited paths to
+	// directories relative to the "vpython" executable that will be checked
+	// for Python targets prior to checking PATH. This allows bundles (e.g., CIPD)
+	// that include both the wrapper and a real implementation, to force the
+	// wrapper to use the bundled implementation if present.
+	//
+	// See "github.com/luci/luci-go/common/wrapper/prober.Probe"'s
+	// RelativePathOverride member for more information.
+	RelativePathOverride []string
 
 	// PruneThreshold, if > 0, is the maximum age of a VirtualEnv before it
 	// becomes candidate for pruning. If <= 0, no pruning will be performed.
@@ -145,7 +156,7 @@ func (a *application) addToFlagSet(fs *flag.FlagSet) {
 	a.logConfig.AddFlags(fs)
 }
 
-func (a *application) mainImpl(c context.Context, args []string) error {
+func (a *application) mainImpl(c context.Context, argv0 string, args []string) error {
 	// Determine our VirtualEnv base directory.
 	if v, ok := a.opts.Environ.Get(VirtualEnvRootENV); ok {
 		a.opts.EnvConfig.BaseDir = v
@@ -167,8 +178,21 @@ func (a *application) mainImpl(c context.Context, args []string) error {
 		return errors.Annotate(err).Reason("failed to parse flags").Err()
 	}
 
+	// Identify the "self" executable. Use this to construct a "lookPath", which
+	// will be used to locate the base Python interpreter.
+	lp := lookPath{
+		probeBase: prober.Probe{
+			RelativePathOverride: a.RelativePathOverride,
+		},
+		env: a.opts.Environ,
+	}
+	if err := lp.probeBase.ResolveSelf(argv0); err != nil {
+		logging.WithError(err).Warningf(c, "Failed to resolve 'self'")
+	}
+	a.opts.EnvConfig.LookPathFunc = lp.look
+
 	if a.help {
-		return a.showPythonHelp(c, fs)
+		return a.showPythonHelp(c, fs, &lp)
 	}
 
 	c = a.logConfig.Set(c)
@@ -217,7 +241,7 @@ func (a *application) mainImpl(c context.Context, args []string) error {
 	return nil
 }
 
-func (a *application) showPythonHelp(c context.Context, fs *flag.FlagSet) error {
+func (a *application) showPythonHelp(c context.Context, fs *flag.FlagSet, lp *lookPath) error {
 	self, err := os.Executable()
 	if err != nil {
 		self = "vpython"
@@ -231,7 +255,7 @@ func (a *application) showPythonHelp(c context.Context, fs *flag.FlagSet) error 
 	fs.SetOutput(os.Stdout)
 	fs.PrintDefaults()
 
-	i, err := python.Find(c, python.Version{})
+	i, err := python.Find(c, python.Version{}, lp.look)
 	if err != nil {
 		return errors.Annotate(err).Reason("could not find Python interpreter for help").Err()
 	}
@@ -251,6 +275,13 @@ func (a *application) showPythonHelp(c context.Context, fs *flag.FlagSet) error 
 
 // Main is the main application entry point.
 func (cfg *Config) Main(c context.Context) int {
+	// Implementation of "checkWrapper": if CheckWrapperENV is set, we immediately
+	// exit with a non-zero value.
+	env := environ.System()
+	if wrapperCheck(env) {
+		return 1
+	}
+
 	c = gologger.StdConfig.Use(c)
 	c = logging.SetLevel(c, logging.Error)
 
@@ -267,7 +298,7 @@ func (cfg *Config) Main(c context.Context) int {
 				Loader:            cfg.PackageLoader,
 			},
 			WaitForEnv: true,
-			Environ:    environ.System(),
+			Environ:    env,
 		},
 		logConfig: logging.Config{
 			Level: logging.Error,
@@ -275,6 +306,6 @@ func (cfg *Config) Main(c context.Context) int {
 	}
 
 	return run(c, func(c context.Context) error {
-		return a.mainImpl(c, os.Args[1:])
+		return a.mainImpl(c, os.Args[0], os.Args[1:])
 	})
 }

@@ -49,6 +49,10 @@ type Config struct {
 	// based on the Spec and the current PATH.
 	Python string
 
+	// LookPathFunc, if not nil, will be used instead of exec.LookPath to find the
+	// underlying Python interpreter.
+	LookPathFunc python.LookPathFunc
+
 	// Spec is the specification file to use to construct the VirtualEnv. If
 	// nil, or if fields are missing, they will be filled in by probing the system
 	// PATH.
@@ -254,7 +258,7 @@ func (cfg *Config) resolvePythonInterpreter(c context.Context, s *vpython.Spec) 
 	if cfg.Python == "" {
 		// No explicitly-specified Python path. Determine one based on the
 		// specification.
-		if cfg.si, err = python.Find(c, specVers); err != nil {
+		if cfg.si, err = python.Find(c, specVers, cfg.LookPathFunc); err != nil {
 			return errors.Annotate(err).Reason("could not find Python for: %(vers)s").
 				D("vers", specVers).
 				Err()
