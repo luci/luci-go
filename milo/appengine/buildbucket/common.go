@@ -70,7 +70,7 @@ func newBuildbucketClient(c context.Context, server string) (*buildbucket.Servic
 }
 
 // parseStatus converts a buildbucket build status to resp.Status.
-func parseStatus(build *buildbucket.ApiBuildMessage) (resp.Status, error) {
+func parseStatus(build *buildbucket.ApiCommonBuildMessage) (resp.Status, error) {
 	switch build.Status {
 	case StatusScheduled:
 		return resp.NotRun, nil
@@ -105,7 +105,7 @@ func parseStatus(build *buildbucket.ApiBuildMessage) (resp.Status, error) {
 
 // getChangeList tries to extract CL information from a buildbucket build.
 func getChangeList(
-	build *buildbucket.ApiBuildMessage, params *buildParameters,
+	build *buildbucket.ApiCommonBuildMessage, params *buildParameters,
 	resultDetails *resultDetails) (result *resp.Commit) {
 
 	prop := &params.Properties

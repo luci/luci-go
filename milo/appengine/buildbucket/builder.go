@@ -56,7 +56,7 @@ func search(c context.Context, client *buildbucket.Service, req *buildbucket.Sea
 // The returned builds are sorted by build creation descending.
 // count defines maximum number of builds to fetch; if <0, defaults to 100.
 func fetchBuilds(c context.Context, client *buildbucket.Service, bucket, builder,
-	status string, count int) ([]*buildbucket.ApiBuildMessage, error) {
+	status string, count int) ([]*buildbucket.ApiCommonBuildMessage, error) {
 
 	req := client.Search()
 	req.Bucket(bucket)
@@ -67,7 +67,7 @@ func fetchBuilds(c context.Context, client *buildbucket.Service, bucket, builder
 		count = 100
 	}
 
-	fetched := make([]*buildbucket.ApiBuildMessage, 0, count)
+	fetched := make([]*buildbucket.ApiCommonBuildMessage, 0, count)
 	start := clock.Now(c)
 	for len(fetched) < count {
 		req.MaxBuilds(int64(count - len(fetched)))
@@ -94,7 +94,7 @@ func fetchBuilds(c context.Context, client *buildbucket.Service, bucket, builder
 // toMiloBuild converts a buildbucket build to a milo build.
 // In case of an error, returns a build with a description of the error
 // and logs the error.
-func toMiloBuild(c context.Context, build *buildbucket.ApiBuildMessage) *resp.BuildSummary {
+func toMiloBuild(c context.Context, build *buildbucket.ApiCommonBuildMessage) *resp.BuildSummary {
 	// Parsing of parameters and result details is best effort.
 	var params buildParameters
 	if err := json.NewDecoder(strings.NewReader(build.ParametersJson)).Decode(&params); err != nil {

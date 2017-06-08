@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/fqSlEBDWUy38USUQ5BGndLM--bM\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/MtSXvlSdeFKpaUaZwUT8TnMkozE\"",
  "discoveryVersion": "v1",
  "id": "buildbucket:v1",
  "name": "buildbucket",
@@ -93,13 +93,96 @@
     }
    }
   },
-  "ApiBuildMessage": {
-   "id": "ApiBuildMessage",
+  "ApiBuildResponseMessage": {
+   "id": "ApiBuildResponseMessage",
+   "type": "object",
+   "properties": {
+    "build": {
+     "$ref": "ApiCommonBuildMessage",
+     "description": "Describes model.Build, see its docstring."
+    },
+    "error": {
+     "$ref": "ApiErrorMessage"
+    }
+   }
+  },
+  "ApiCancelBatchRequestMessage": {
+   "id": "ApiCancelBatchRequestMessage",
+   "type": "object",
+   "properties": {
+    "build_ids": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "format": "int64"
+     }
+    },
+    "result_details_json": {
+     "type": "string"
+    }
+   }
+  },
+  "ApiCancelBatchResponseMessage": {
+   "id": "ApiCancelBatchResponseMessage",
+   "type": "object",
+   "properties": {
+    "results": {
+     "type": "array",
+     "items": {
+      "$ref": "ApiCancelBatchResponseMessageOneResult"
+     }
+    }
+   }
+  },
+  "ApiCancelBatchResponseMessageOneResult": {
+   "id": "ApiCancelBatchResponseMessageOneResult",
+   "type": "object",
+   "properties": {
+    "build": {
+     "$ref": "ApiCommonBuildMessage",
+     "description": "Describes model.Build, see its docstring."
+    },
+    "build_id": {
+     "type": "string",
+     "format": "int64"
+    },
+    "error": {
+     "$ref": "ApiErrorMessage"
+    }
+   }
+  },
+  "ApiCancelRequestBodyMessage": {
+   "id": "ApiCancelRequestBodyMessage",
+   "type": "object",
+   "properties": {
+    "result_details_json": {
+     "type": "string"
+    }
+   }
+  },
+  "ApiCommonBuildMessage": {
+   "id": "ApiCommonBuildMessage",
    "type": "object",
    "description": "Describes model.Build, see its docstring.",
    "properties": {
     "bucket": {
      "type": "string"
+    },
+    "canary": {
+     "type": "boolean"
+    },
+    "canary_preference": {
+     "type": "string",
+     "enum": [
+      "AUTO",
+      "CANARY",
+      "PROD"
+     ],
+     "enumDescriptions": [
+      "",
+      "",
+      ""
+     ]
     },
     "cancelation_reason": {
      "type": "string",
@@ -210,73 +293,6 @@
     "utcnow_ts": {
      "type": "string",
      "format": "int64"
-    }
-   }
-  },
-  "ApiBuildResponseMessage": {
-   "id": "ApiBuildResponseMessage",
-   "type": "object",
-   "properties": {
-    "build": {
-     "$ref": "ApiBuildMessage",
-     "description": "Describes model.Build, see its docstring."
-    },
-    "error": {
-     "$ref": "ApiErrorMessage"
-    }
-   }
-  },
-  "ApiCancelBatchRequestMessage": {
-   "id": "ApiCancelBatchRequestMessage",
-   "type": "object",
-   "properties": {
-    "build_ids": {
-     "type": "array",
-     "items": {
-      "type": "string",
-      "format": "int64"
-     }
-    },
-    "result_details_json": {
-     "type": "string"
-    }
-   }
-  },
-  "ApiCancelBatchResponseMessage": {
-   "id": "ApiCancelBatchResponseMessage",
-   "type": "object",
-   "properties": {
-    "results": {
-     "type": "array",
-     "items": {
-      "$ref": "ApiCancelBatchResponseMessageOneResult"
-     }
-    }
-   }
-  },
-  "ApiCancelBatchResponseMessageOneResult": {
-   "id": "ApiCancelBatchResponseMessageOneResult",
-   "type": "object",
-   "properties": {
-    "build": {
-     "$ref": "ApiBuildMessage",
-     "description": "Describes model.Build, see its docstring."
-    },
-    "build_id": {
-     "type": "string",
-     "format": "int64"
-    },
-    "error": {
-     "$ref": "ApiErrorMessage"
-    }
-   }
-  },
-  "ApiCancelRequestBodyMessage": {
-   "id": "ApiCancelRequestBodyMessage",
-   "type": "object",
-   "properties": {
-    "result_details_json": {
-     "type": "string"
     }
    }
   },
@@ -501,7 +517,7 @@
    "type": "object",
    "properties": {
     "build": {
-     "$ref": "ApiBuildMessage",
+     "$ref": "ApiCommonBuildMessage",
      "description": "Describes model.Build, see its docstring."
     },
     "client_operation_id": {
@@ -518,6 +534,19 @@
    "properties": {
     "bucket": {
      "type": "string"
+    },
+    "canary_preference": {
+     "type": "string",
+     "enum": [
+      "AUTO",
+      "CANARY",
+      "PROD"
+     ],
+     "enumDescriptions": [
+      "",
+      "",
+      ""
+     ]
     },
     "client_operation_id": {
      "type": "string"
@@ -564,7 +593,7 @@
      "type": "array",
      "description": "Describes model.Build, see its docstring.",
      "items": {
-      "$ref": "ApiBuildMessage"
+      "$ref": "ApiCommonBuildMessage"
      }
     },
     "error": {
@@ -579,6 +608,9 @@
    "id": "ApiStartRequestBodyMessage",
    "type": "object",
    "properties": {
+    "canary": {
+     "type": "boolean"
+    },
     "lease_key": {
      "type": "string",
      "format": "int64"
@@ -1045,6 +1077,10 @@
     "bucket": {
      "type": "string",
      "repeated": true,
+     "location": "query"
+    },
+    "canary": {
+     "type": "boolean",
      "location": "query"
     },
     "cancelation_reason": {

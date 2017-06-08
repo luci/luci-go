@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/lsH1QT-cqP1N0YIBt5a4z6BEjfE\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/jlDToyXYcVJZQjtczFF8dW6phEA\"",
  "discoveryVersion": "v1",
  "id": "swarmbucket:v1",
  "name": "swarmbucket",
@@ -93,6 +93,19 @@
    "properties": {
     "bucket": {
      "type": "string"
+    },
+    "canary_preference": {
+     "type": "string",
+     "enum": [
+      "AUTO",
+      "CANARY",
+      "PROD"
+     ],
+     "enumDescriptions": [
+      "",
+      "",
+      ""
+     ]
     },
     "client_operation_id": {
      "type": "string"

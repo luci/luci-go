@@ -107,6 +107,12 @@ func (s *ApiPubSubCallbackMessage) MarshalJSON() ([]byte, error) {
 type ApiPutRequestMessage struct {
 	Bucket string `json:"bucket,omitempty"`
 
+	// Possible values:
+	//   "AUTO"
+	//   "CANARY"
+	//   "PROD"
+	CanaryPreference string `json:"canary_preference,omitempty"`
+
 	ClientOperationId string `json:"client_operation_id,omitempty"`
 
 	LeaseExpirationTs int64 `json:"lease_expiration_ts,omitempty,string"`

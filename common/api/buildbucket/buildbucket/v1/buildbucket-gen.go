@@ -113,90 +113,9 @@ func (s *ApiBucketMessage) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-// ApiBuildMessage: Describes model.Build, see its docstring.
-type ApiBuildMessage struct {
-	Bucket string `json:"bucket,omitempty"`
-
-	// Possible values:
-	//   "CANCELED_EXPLICITLY"
-	//   "TIMEOUT"
-	CancelationReason string `json:"cancelation_reason,omitempty"`
-
-	CompletedTs int64 `json:"completed_ts,omitempty,string"`
-
-	CreatedBy string `json:"created_by,omitempty"`
-
-	CreatedTs int64 `json:"created_ts,omitempty,string"`
-
-	// Possible values:
-	//   "BUILDBUCKET_FAILURE"
-	//   "BUILD_FAILURE"
-	//   "INFRA_FAILURE"
-	//   "INVALID_BUILD_DEFINITION"
-	FailureReason string `json:"failure_reason,omitempty"`
-
-	Id int64 `json:"id,omitempty,string"`
-
-	LeaseExpirationTs int64 `json:"lease_expiration_ts,omitempty,string"`
-
-	LeaseKey int64 `json:"lease_key,omitempty,string"`
-
-	ParametersJson string `json:"parameters_json,omitempty"`
-
-	// Possible values:
-	//   "CANCELED"
-	//   "FAILURE"
-	//   "SUCCESS"
-	Result string `json:"result,omitempty"`
-
-	ResultDetailsJson string `json:"result_details_json,omitempty"`
-
-	RetryOf int64 `json:"retry_of,omitempty,string"`
-
-	StartedTs int64 `json:"started_ts,omitempty,string"`
-
-	// Possible values:
-	//   "COMPLETED"
-	//   "SCHEDULED"
-	//   "STARTED"
-	Status string `json:"status,omitempty"`
-
-	StatusChangedTs int64 `json:"status_changed_ts,omitempty,string"`
-
-	Tags []string `json:"tags,omitempty"`
-
-	UpdatedTs int64 `json:"updated_ts,omitempty,string"`
-
-	Url string `json:"url,omitempty"`
-
-	UtcnowTs int64 `json:"utcnow_ts,omitempty,string"`
-
-	// ForceSendFields is a list of field names (e.g. "Bucket") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Bucket") to include in API
-	// requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
-}
-
-func (s *ApiBuildMessage) MarshalJSON() ([]byte, error) {
-	type noMethod ApiBuildMessage
-	raw := noMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
-}
-
 type ApiBuildResponseMessage struct {
 	// Build: Describes model.Build, see its docstring.
-	Build *ApiBuildMessage `json:"build,omitempty"`
+	Build *ApiCommonBuildMessage `json:"build,omitempty"`
 
 	Error *ApiErrorMessage `json:"error,omitempty"`
 
@@ -287,7 +206,7 @@ func (s *ApiCancelBatchResponseMessage) MarshalJSON() ([]byte, error) {
 
 type ApiCancelBatchResponseMessageOneResult struct {
 	// Build: Describes model.Build, see its docstring.
-	Build *ApiBuildMessage `json:"build,omitempty"`
+	Build *ApiCommonBuildMessage `json:"build,omitempty"`
 
 	BuildId int64 `json:"build_id,omitempty,string"`
 
@@ -339,6 +258,95 @@ type ApiCancelRequestBodyMessage struct {
 
 func (s *ApiCancelRequestBodyMessage) MarshalJSON() ([]byte, error) {
 	type noMethod ApiCancelRequestBodyMessage
+	raw := noMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+// ApiCommonBuildMessage: Describes model.Build, see its docstring.
+type ApiCommonBuildMessage struct {
+	Bucket string `json:"bucket,omitempty"`
+
+	Canary bool `json:"canary,omitempty"`
+
+	// Possible values:
+	//   "AUTO"
+	//   "CANARY"
+	//   "PROD"
+	CanaryPreference string `json:"canary_preference,omitempty"`
+
+	// Possible values:
+	//   "CANCELED_EXPLICITLY"
+	//   "TIMEOUT"
+	CancelationReason string `json:"cancelation_reason,omitempty"`
+
+	CompletedTs int64 `json:"completed_ts,omitempty,string"`
+
+	CreatedBy string `json:"created_by,omitempty"`
+
+	CreatedTs int64 `json:"created_ts,omitempty,string"`
+
+	// Possible values:
+	//   "BUILDBUCKET_FAILURE"
+	//   "BUILD_FAILURE"
+	//   "INFRA_FAILURE"
+	//   "INVALID_BUILD_DEFINITION"
+	FailureReason string `json:"failure_reason,omitempty"`
+
+	Id int64 `json:"id,omitempty,string"`
+
+	LeaseExpirationTs int64 `json:"lease_expiration_ts,omitempty,string"`
+
+	LeaseKey int64 `json:"lease_key,omitempty,string"`
+
+	ParametersJson string `json:"parameters_json,omitempty"`
+
+	// Possible values:
+	//   "CANCELED"
+	//   "FAILURE"
+	//   "SUCCESS"
+	Result string `json:"result,omitempty"`
+
+	ResultDetailsJson string `json:"result_details_json,omitempty"`
+
+	RetryOf int64 `json:"retry_of,omitempty,string"`
+
+	StartedTs int64 `json:"started_ts,omitempty,string"`
+
+	// Possible values:
+	//   "COMPLETED"
+	//   "SCHEDULED"
+	//   "STARTED"
+	Status string `json:"status,omitempty"`
+
+	StatusChangedTs int64 `json:"status_changed_ts,omitempty,string"`
+
+	Tags []string `json:"tags,omitempty"`
+
+	UpdatedTs int64 `json:"updated_ts,omitempty,string"`
+
+	Url string `json:"url,omitempty"`
+
+	UtcnowTs int64 `json:"utcnow_ts,omitempty,string"`
+
+	// ForceSendFields is a list of field names (e.g. "Bucket") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "Bucket") to include in API
+	// requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *ApiCommonBuildMessage) MarshalJSON() ([]byte, error) {
+	type noMethod ApiCommonBuildMessage
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
@@ -761,7 +769,7 @@ func (s *ApiPutBatchResponseMessage) MarshalJSON() ([]byte, error) {
 
 type ApiPutBatchResponseMessageOneResult struct {
 	// Build: Describes model.Build, see its docstring.
-	Build *ApiBuildMessage `json:"build,omitempty"`
+	Build *ApiCommonBuildMessage `json:"build,omitempty"`
 
 	ClientOperationId string `json:"client_operation_id,omitempty"`
 
@@ -792,6 +800,12 @@ func (s *ApiPutBatchResponseMessageOneResult) MarshalJSON() ([]byte, error) {
 
 type ApiPutRequestMessage struct {
 	Bucket string `json:"bucket,omitempty"`
+
+	// Possible values:
+	//   "AUTO"
+	//   "CANARY"
+	//   "PROD"
+	CanaryPreference string `json:"canary_preference,omitempty"`
 
 	ClientOperationId string `json:"client_operation_id,omitempty"`
 
@@ -859,7 +873,7 @@ func (s *ApiRetryRequestMessage) MarshalJSON() ([]byte, error) {
 
 type ApiSearchResponseMessage struct {
 	// Builds: Describes model.Build, see its docstring.
-	Builds []*ApiBuildMessage `json:"builds,omitempty"`
+	Builds []*ApiCommonBuildMessage `json:"builds,omitempty"`
 
 	Error *ApiErrorMessage `json:"error,omitempty"`
 
@@ -893,11 +907,13 @@ func (s *ApiSearchResponseMessage) MarshalJSON() ([]byte, error) {
 }
 
 type ApiStartRequestBodyMessage struct {
+	Canary bool `json:"canary,omitempty"`
+
 	LeaseKey int64 `json:"lease_key,omitempty,string"`
 
 	Url string `json:"url,omitempty"`
 
-	// ForceSendFields is a list of field names (e.g. "LeaseKey") to
+	// ForceSendFields is a list of field names (e.g. "Canary") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the
@@ -905,8 +921,8 @@ type ApiStartRequestBodyMessage struct {
 	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "LeaseKey") to include in
-	// API requests with the JSON null value. By default, fields with empty
+	// NullFields is a list of field names (e.g. "Canary") to include in API
+	// requests with the JSON null value. By default, fields with empty
 	// values are omitted from API requests. However, any field with an
 	// empty value appearing in NullFields will be sent to the server as
 	// null. It is an error if a field in this list has a non-empty value.
@@ -3194,6 +3210,12 @@ func (c *SearchCall) Bucket(bucket ...string) *SearchCall {
 	return c
 }
 
+// Canary sets the optional parameter "canary":
+func (c *SearchCall) Canary(canary bool) *SearchCall {
+	c.urlParams_.Set("canary", fmt.Sprint(canary))
+	return c
+}
+
 // CancelationReason sets the optional parameter "cancelation_reason":
 //
 // Possible values:
@@ -3367,6 +3389,10 @@ func (c *SearchCall) Do(opts ...googleapi.CallOption) (*ApiSearchResponseMessage
 	//       "location": "query",
 	//       "repeated": true,
 	//       "type": "string"
+	//     },
+	//     "canary": {
+	//       "location": "query",
+	//       "type": "boolean"
 	//     },
 	//     "cancelation_reason": {
 	//       "enum": [

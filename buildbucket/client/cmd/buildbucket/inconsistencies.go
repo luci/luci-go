@@ -180,14 +180,14 @@ func (r *inconsistencyRun) compareBuilder(ctx context.Context, startingFrom time
 	return nil
 }
 
-func (r *inconsistencyRun) fetchBuilds(builder builderID, startingFrom time.Time) ([]*buildbucket.ApiBuildMessage, error) {
+func (r *inconsistencyRun) fetchBuilds(builder builderID, startingFrom time.Time) ([]*buildbucket.ApiCommonBuildMessage, error) {
 	req := r.client.Search()
 	req.Bucket(builder.Bucket)
 	req.Tag("builder:" + builder.Builder)
 	req.Status("COMPLETED")
 	req.MaxBuilds(100)
 
-	var result []*buildbucket.ApiBuildMessage
+	var result []*buildbucket.ApiCommonBuildMessage
 	for {
 		res, err := req.Do()
 		if err != nil {
@@ -213,12 +213,12 @@ func (r *inconsistencyRun) fetchBuilds(builder builderID, startingFrom time.Time
 }
 
 type buildSet struct {
-	builds     []*buildbucket.ApiBuildMessage
+	builds     []*buildbucket.ApiCommonBuildMessage
 	bestResult string
 }
 
 // groupBuilds groups builds by buildset tag.
-func groupBuilds(builds []*buildbucket.ApiBuildMessage) map[string]*buildSet {
+func groupBuilds(builds []*buildbucket.ApiCommonBuildMessage) map[string]*buildSet {
 	results := map[string]*buildSet{}
 	for _, b := range builds {
 		tags := parseTags(b.Tags)
@@ -242,7 +242,7 @@ func groupBuilds(builds []*buildbucket.ApiBuildMessage) map[string]*buildSet {
 }
 
 // medianTime returns median completed_time - created_time of successful builds.
-func medianTime(builds []*buildbucket.ApiBuildMessage) time.Duration {
+func medianTime(builds []*buildbucket.ApiCommonBuildMessage) time.Duration {
 	if len(builds) == 0 {
 		return 0
 	}

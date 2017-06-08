@@ -353,7 +353,7 @@ func (m TaskManager) checkBuildStatus(c context.Context, ctl task.Controller) er
 
 // handleBuildResult processes buildbucket results message updating the state
 // of the invocation.
-func (m TaskManager) handleBuildResult(c context.Context, ctl task.Controller, r *buildbucket.ApiBuildMessage) {
+func (m TaskManager) handleBuildResult(c context.Context, ctl task.Controller, r *buildbucket.ApiCommonBuildMessage) {
 	ctl.DebugLog(
 		"Build %d: status %q, result %q, failure_reason %q, cancelation_reason %q",
 		r.Id, r.Status, r.Result, r.FailureReason, r.CancelationReason)
