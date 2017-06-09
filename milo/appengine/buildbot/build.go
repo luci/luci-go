@@ -393,7 +393,7 @@ func blame(b *buildbotBuild) (result []*resp.Commit) {
 		result = append(result, &resp.Commit{
 			AuthorEmail: c.Who,
 			Repo:        c.Repository,
-			CommitTime:  time.Unix(int64(c.When), 0),
+			CommitTime:  time.Unix(int64(c.When), 0).UTC(),
 			Revision: &resp.Link{
 				URL:   c.Revlink,
 				Label: c.Revision,

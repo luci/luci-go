@@ -79,7 +79,7 @@ type analyticsSettings struct {
 
 func TestPages(t *testing.T) {
 	fixZeroDurationRE := regexp.MustCompile(`(Running for:|waiting) 0s?`)
-	_ = func(text string) string {
+	fixZeroDuration := func(text string) string {
 		return fixZeroDurationRE.ReplaceAllLiteralString(text, "[ZERO DURATION]")
 	}
 
@@ -107,10 +107,9 @@ func TestPages(t *testing.T) {
 						if *generate {
 							mustWrite(fname, buf)
 						} else {
-							_, err := load(fname)
+							localBuf, err := load(fname)
 							So(err, ShouldBeNil)
-							// TODO(hinoka): Fix and re-enable.  crbug/731562.
-							// So(fixZeroDuration(string(buf)), ShouldEqual, fixZeroDuration(string(localBuf)))
+							So(fixZeroDuration(string(buf)), ShouldEqual, fixZeroDuration(string(localBuf)))
 						}
 					})
 				}

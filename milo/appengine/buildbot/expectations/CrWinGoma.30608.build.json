@@ -689,7 +689,7 @@
     {
       "AuthorName": "",
       "AuthorEmail": "moshayedi@chromium.org",
-      "CommitTime": "2016-06-08T13:23:28-07:00",
+      "CommitTime": "2016-06-08T20:23:28Z",
       "Repo": "https://chromium.googlesource.com/chromium/src",
       "Branch": "",
       "RequestRevision": null,
@@ -731,7 +731,7 @@
     {
       "AuthorName": "",
       "AuthorEmail": "fsamuel@chromium.org",
-      "CommitTime": "2016-06-08T13:25:32-07:00",
+      "CommitTime": "2016-06-08T20:25:32Z",
       "Repo": "https://chromium.googlesource.com/chromium/src",
       "Branch": "",
       "RequestRevision": null,
@@ -754,7 +754,7 @@
     {
       "AuthorName": "",
       "AuthorEmail": "gab@chromium.org",
-      "CommitTime": "2016-06-08T13:25:33-07:00",
+      "CommitTime": "2016-06-08T20:25:33Z",
       "Repo": "https://chromium.googlesource.com/chromium/src",
       "Branch": "",
       "RequestRevision": null,
@@ -778,7 +778,7 @@
     {
       "AuthorName": "",
       "AuthorEmail": "dtseng@chromium.org",
-      "CommitTime": "2016-06-08T13:27:19-07:00",
+      "CommitTime": "2016-06-08T20:27:19Z",
       "Repo": "https://chromium.googlesource.com/chromium/src",
       "Branch": "",
       "RequestRevision": null,
@@ -801,7 +801,7 @@
     {
       "AuthorName": "",
       "AuthorEmail": "yolandyan@google.com",
-      "CommitTime": "2016-06-08T13:30:29-07:00",
+      "CommitTime": "2016-06-08T20:30:29Z",
       "Repo": "https://chromium.googlesource.com/chromium/src",
       "Branch": "",
       "RequestRevision": null,
@@ -823,7 +823,7 @@
     {
       "AuthorName": "",
       "AuthorEmail": "dcheng@chromium.org",
-      "CommitTime": "2016-06-08T13:32:34-07:00",
+      "CommitTime": "2016-06-08T20:32:34Z",
       "Repo": "https://chromium.googlesource.com/chromium/src",
       "Branch": "",
       "RequestRevision": null,
@@ -880,7 +880,7 @@
     {
       "AuthorName": "",
       "AuthorEmail": "agrieve@chromium.org",
-      "CommitTime": "2016-06-08T13:32:35-07:00",
+      "CommitTime": "2016-06-08T20:32:35Z",
       "Repo": "https://chromium.googlesource.com/chromium/src",
       "Branch": "",
       "RequestRevision": null,

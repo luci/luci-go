@@ -210,11 +210,11 @@ func builderImpl(
 	result.PendingBuilds = make([]*resp.BuildSummary, len(p.PendingBuildStates))
 	logging.Debugf(c, "Number of pending builds: %d", len(p.PendingBuildStates))
 	for i, pb := range p.PendingBuildStates {
-		start := time.Unix(int64(pb.SubmittedAt), 0)
+		start := time.Unix(int64(pb.SubmittedAt), 0).UTC()
 		result.PendingBuilds[i] = &resp.BuildSummary{
 			PendingTime: resp.Interval{
 				Started:  start,
-				Duration: time.Now().Sub(start),
+				Duration: clock.Now(c).UTC().Sub(start),
 			},
 		}
 		result.PendingBuilds[i].Blame = make([]*resp.Commit, len(pb.Source.Changes))

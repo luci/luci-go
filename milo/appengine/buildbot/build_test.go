@@ -78,11 +78,10 @@ func TestBuild(t *testing.T) {
 
 		for _, tc := range TestCases {
 			Convey(fmt.Sprintf("Test Case: %s/%s", tc.Builder, tc.Build), func() {
-				_, err := Build(c, "debug", tc.Builder, tc.Build)
+				build, err := Build(c, "debug", tc.Builder, tc.Build)
 				So(err, ShouldBeNil)
-				_ = fmt.Sprintf("%s.%d.build.json", tc.Builder, tc.Build)
-				// TODO(hinoka): Fix and re-enable.  crbug/731562.
-				// So(build, shouldMatchExpectationsFor, fname)
+				fname := fmt.Sprintf("%s.%d.build.json", tc.Builder, tc.Build)
+				So(build, shouldMatchExpectationsFor, fname)
 			})
 		}
 
