@@ -362,8 +362,6 @@ exports.setup = function(gulp, config) {
   exports.setup_common(gulp);
 };
 
-require('es6-promise').polyfill();
-
 // Load custom tasks from the `tasks` directory
 try {
   require('require-dir')('tasks');

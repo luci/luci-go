@@ -13,9 +13,11 @@ This script can be run in one of three modes:
 """
 
 import argparse
+import itertools
 import logging
 import os
 import pipes
+import shutil
 import subprocess
 import sys
 
@@ -63,6 +65,7 @@ class Toolchain(object):
         install_npm_deps,
         os.path.join(web_dir, '.npm.installed'),
         os.path.join(web_dir, 'package.json'),
+        [os.path.join(web_dir, 'node_modules')],
         force)
 
     # Install Bower deps from "bower.json".
@@ -72,12 +75,13 @@ class Toolchain(object):
         install_bower_deps,
         os.path.join(web_dir, '.bower.installed'),
         os.path.join(web_dir, 'bower.json'),
+        [os.path.join(web_dir, 'inc', 'bower_components')],
         force)
 
     return tc
 
   @staticmethod
-  def _call_if_outdated(fn, manifest_path, defs_path, force):
+  def _call_if_outdated(fn, manifest_path, defs_path, clean_paths, force):
     """Will call "fn" if the file at "install_path" doesn't match "spec".
 
     If "fn" completes without raising an exception, the "spec" file will be
@@ -88,6 +92,8 @@ class Toolchain(object):
       fn (callable): The function to call if they don't match.
       manifest_path (str): The path to the installed state file.
       defs_path (str): The path to the source spec file.
+      clean_paths (list): Path of destination files and directories to clean on
+          reprovision.
       force (bool): If true, call the function regardless.
     """
     with open(defs_path, 'r') as fd:
@@ -98,6 +104,15 @@ class Toolchain(object):
         current = fd.read()
       if spec_data == current:
         return
+
+    # Clean all paths.
+    for path in itertools.chain(clean_paths, (manifest_path,)):
+      if os.path.isdir(path):
+        LOGGER.info('Purging directory on reprovision: %r', path)
+        shutil.rmtree(path)
+      elif os.path.isfile(path):
+        LOGGER.info('Purging file on reprovision: %r', path)
+        os.remove(path)
 
     # Either forcing or out of date.
     fn()
