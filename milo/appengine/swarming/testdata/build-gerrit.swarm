@@ -1,0 +1,9 @@
+{
+  "state": "RUNNING",
+  "started_ts": "2016-03-14T10:00:01.850710",
+  "tags": [
+    "allow_milo:1",
+    "buildset:patch/gerrit/chromium-review.googlesource.com/513444/32"
+  ],
+  "task_id": "2d8d62f6be545b10"
+}

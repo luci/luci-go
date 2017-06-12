@@ -16,7 +16,7 @@
       "ExecutionTime": {
         "Started": "2016-06-30T23:05:10.54916Z",
         "Finished": "0001-01-01T00:00:00Z",
-        "Duration": -9374632844720000
+        "Duration": -12855526844719993
       },
       "Revision": "HEAD",
       "Text": [
@@ -57,7 +57,7 @@
       "PendingTime": {
         "Started": "2016-06-30T23:23:35.73683Z",
         "Finished": "0001-01-01T00:00:00Z",
-        "Duration": -9375815736830000
+        "Duration": -12856709736829993
       },
       "ExecutionTime": {
         "Started": "0001-01-01T00:00:00Z",

@@ -10,6 +10,7 @@ import (
 
 	swarming "github.com/luci/luci-go/common/api/swarming/swarming/v1"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
+	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
 	"github.com/luci/luci-go/logdog/client/coordinator"
 	milo "github.com/luci/luci-go/milo/api/proto"
@@ -28,6 +29,7 @@ type testSwarmingService struct {
 	host string
 	req  swarming.SwarmingRpcsTaskRequest
 	res  swarming.SwarmingRpcsTaskResult
+	out  string
 }
 
 func (sf *testSwarmingService) getHost() string { return sf.host }
@@ -42,6 +44,10 @@ func (sf *testSwarmingService) getSwarmingRequest(c context.Context, taskID stri
 	*swarming.SwarmingRpcsTaskRequest, error) {
 
 	return &sf.req, nil
+}
+
+func (sf *testSwarmingService) getTaskOutput(c context.Context, taskID string) (string, error) {
+	return sf.out, nil
 }
 
 func TestBuildInfo(t *testing.T) {
@@ -191,6 +197,13 @@ func TestBuildInfo(t *testing.T) {
 					Prefix: "swarm/swarming.example.com/12341",
 					Name:   "annotations",
 				},
+			})
+
+			Convey("Will return NotFound if the build is internal", func() {
+				testSvc.res.Tags = testSvc.res.Tags[1:]
+				testSvc.req.Tags = testSvc.req.Tags[1:]
+				_, err := bip.GetBuildInfo(c, biReq.GetSwarming(), "testproject")
+				So(err, ShouldResemble, grpcutil.NotFound)
 			})
 		})
 	})

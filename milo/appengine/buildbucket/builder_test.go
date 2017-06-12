@@ -12,7 +12,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/luci-go/common/clock/testclock"
@@ -36,7 +35,7 @@ func TestBuilder(t *testing.T) {
 
 	Convey("Builder", t, func() {
 		c := memory.UseWithAppID(context.Background(), "luci-milo-dev")
-		c, _ = testclock.UseTime(c, time.Date(2016, time.March, 14, 11, 0, 0, 0, time.UTC))
+		c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC)
 		c = testconfig.WithCommonClient(c, memcfg.New(bktConfigFull))
 		// Update the service config so that the settings are loaded.
 		err := common.UpdateServiceConfig(c)

@@ -49,6 +49,7 @@ func TestBuild(t *testing.T) {
 
 	if *generate {
 		c := context.Background()
+		// This is one hour after the start timestamp in the sample test data.
 		c, _ = testclock.UseTime(c, time.Date(2016, time.March, 14, 11, 0, 0, 0, time.UTC))
 		c = memory.UseWithAppID(c, "dev~luci-milo")
 		c = testconfig.WithCommonClient(c, memcfg.New(aclConfgs))
@@ -84,6 +85,7 @@ func TestBuild(t *testing.T) {
 
 	Convey(`A test Environment`, t, func() {
 		c := context.Background()
+		// This is one hour after the start timestamp in the sample test data.
 		c, _ = testclock.UseTime(c, time.Date(2016, time.March, 14, 11, 0, 0, 0, time.UTC))
 		c = memory.UseWithAppID(c, "dev~luci-milo")
 		c = testconfig.WithCommonClient(c, memcfg.New(aclConfgs))
