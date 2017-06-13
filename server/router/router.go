@@ -118,6 +118,14 @@ func (r *Router) GetParams(method, path string) (httprouter.Params, bool) {
 	return nil, false
 }
 
+// NotFound sets the handler to be called when no matching route is found.
+func (r *Router) NotFound(mc MiddlewareChain, h Handler) {
+	handle := r.adapt(mc, h)
+	r.hrouter.NotFound = http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		handle(rw, req, nil)
+	})
+}
+
 // adapt adapts given middleware chain and handler into a httprouter-style handle.
 func (r *Router) adapt(mc MiddlewareChain, h Handler) httprouter.Handle {
 	return httprouter.Handle(func(rw http.ResponseWriter, req *http.Request, p httprouter.Params) {
