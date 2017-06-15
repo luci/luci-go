@@ -176,7 +176,7 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	duration := time.Since(start)
 	// Only write the file once upload is confirmed.
 	if err == nil && c.dumpJSON != "" {
-		err = common.WriteJSONFile(c.dumpJSON, data)
+		err = writeJSONDigestFile(c.dumpJSON, data)
 	}
 	if !c.defaultFlags.Quiet {
 		stats := arch.Stats()
@@ -234,6 +234,32 @@ func strippedIsolatedName(isolated string) string {
 		return name[0:dotIndex]
 	}
 	return name
+}
+
+func writeJSONDigestFile(filePath string, data map[string]isolated.HexDigest) error {
+	digestBytes, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return fmt.Errorf("encoding digest JSON: %s", err)
+	}
+	return writeFile(filePath, digestBytes)
+}
+
+// writeFile writes data to filePath. File permission is set to user only.
+func writeFile(filePath string, data []byte) error {
+	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		return fmt.Errorf("opening %s: %s", filePath, err)
+	}
+	// NOTE: We don't defer f.Close here, because it may return an error.
+
+	_, writeErr := f.Write(data)
+	closeErr := f.Close()
+	if writeErr != nil {
+		return fmt.Errorf("writing %s: %s", filePath, writeErr)
+	} else if closeErr != nil {
+		return fmt.Errorf("closing %s: %s", filePath, closeErr)
+	}
+	return nil
 }
 
 func (c *batchArchiveRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
