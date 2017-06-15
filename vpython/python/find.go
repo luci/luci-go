@@ -8,6 +8,7 @@ import (
 	"os/exec"
 
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/logging"
 
 	"golang.org/x/net/context"
 )
@@ -42,16 +43,6 @@ type LookPathFunc func(c context.Context, target string) (*LookPathResult, error
 // In order to accommodate multiple configurations on operating systems, Find
 // will attempt to identify versions that appear on the path
 func Find(c context.Context, vers Version, lookPath LookPathFunc) (*Interpreter, error) {
-	if lookPath == nil {
-		lookPath = func(c context.Context, target string) (*LookPathResult, error) {
-			v, err := exec.LookPath(target)
-			if err != nil {
-				return nil, err
-			}
-			return &LookPathResult{Path: v}, nil
-		}
-	}
-
 	// pythonM.m, pythonM, python
 	searches := make([]string, 0, 3)
 	pv := vers
@@ -66,45 +57,70 @@ func Find(c context.Context, vers Version, lookPath LookPathFunc) (*Interpreter,
 	}
 	searches = append(searches, pv.PythonBase())
 
-	for _, s := range searches {
-		lpr, err := lookPath(c, s)
-		if err != nil {
-			if e, ok := err.(*exec.Error); ok && e.Err == exec.ErrNotFound {
-				// Not found is okay.
-				continue
-			}
-			return nil, errors.Annotate(err).Reason("failed to search PATH for: %(interp)q").
-				D("interp", s).
-				Err()
+	lookErrs := errors.NewLazyMultiError(len(searches))
+	for i, s := range searches {
+		interp, err := findInterpreter(c, s, vers, lookPath)
+		if err == nil {
+			return interp, nil
 		}
 
-		i := Interpreter{
-			Python: lpr.Path,
-		}
-
-		// If our LookPathResult included a target version, install that into the
-		// Interpreter, allowing it to use this cached value when GetVersion is
-		// called instead of needing to perform an additional lookup.
-		//
-		// Note that our LookPathResult may not populate Version, in which case we
-		// will not pre-cache it.
-		if !lpr.Version.IsZero() {
-			i.cachedVersion = &lpr.Version
-		}
-		if err := i.Normalize(); err != nil {
-			return nil, err
-		}
-
-		iv, err := i.GetVersion(c)
-		if err != nil {
-			return nil, errors.Annotate(err).Reason("failed to get version for: %(interp)q").
-				D("interp", i.Python).
-				Err()
-		}
-		if vers.IsSatisfiedBy(iv) {
-			return &i, nil
-		}
+		logging.WithError(err).Debugf(c, "Could not find Python for: %q.", s)
+		lookErrs.Assign(i, err)
 	}
 
-	return nil, errors.New("no Python found")
+	// No Python interpreter could be identified.
+	return nil, errors.Annotate(lookErrs.Get()).Reason("no Python found").Err()
+}
+
+func findInterpreter(c context.Context, name string, vers Version, lookPath LookPathFunc) (*Interpreter, error) {
+	if lookPath == nil {
+		lookPath = osExecLookPath
+	}
+	lpr, err := lookPath(c, name)
+	if err != nil {
+		return nil, errors.Annotate(err).Reason("could not find executable for: %(name)q").
+			D("name", name).
+			Err()
+	}
+
+	i := Interpreter{
+		Python: lpr.Path,
+	}
+
+	// If our LookPathResult included a target version, install that into the
+	// Interpreter, allowing it to use this cached value when GetVersion is
+	// called instead of needing to perform an additional lookup.
+	//
+	// Note that our LookPathResult may not populate Version, in which case we
+	// will not pre-cache it.
+	if !lpr.Version.IsZero() {
+		i.cachedVersion = &lpr.Version
+	}
+	if err := i.Normalize(); err != nil {
+		return nil, err
+	}
+
+	iv, err := i.GetVersion(c)
+	if err != nil {
+		return nil, errors.Annotate(err).Reason("failed to get version for: %(interp)q").
+			D("interp", i.Python).
+			Err()
+	}
+	if !vers.IsSatisfiedBy(iv) {
+		return nil, errors.Reason("interpreter %(interp)q version %(interpVersion)q does not satisfy %(version)q").
+			D("interp", i.Python).
+			D("interpVersion", iv).
+			D("version", vers).
+			Err()
+	}
+
+	return &i, nil
+}
+
+func osExecLookPath(c context.Context, target string) (*LookPathResult, error) {
+	v, err := exec.LookPath(target)
+	if err != nil {
+		return nil, err
+	}
+	return &LookPathResult{Path: v}, nil
 }
