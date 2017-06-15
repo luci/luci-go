@@ -5,8 +5,10 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -187,23 +189,39 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 
 // processGenJSON validates a genJSON file and returns the contents.
 func processGenJSON(genJSONPath string) (*isolate.ArchiveOptions, error) {
+	f, err := os.Open(genJSONPath)
+	if err != nil {
+		return nil, fmt.Errorf("opening %s: %s", genJSONPath, err)
+	}
+	defer f.Close()
+
+	opts, err := processGenJSONData(f)
+	if err != nil {
+		return nil, fmt.Errorf("processing %s: %s", genJSONPath, err)
+	}
+	return opts, nil
+}
+
+// processGenJSONData performs the function of processGenJSON, but operates on an io.Reader.
+func processGenJSONData(r io.Reader) (*isolate.ArchiveOptions, error) {
 	data := &struct {
 		Args    []string
 		Dir     string
 		Version int
 	}{}
-	if err := common.ReadJSONFile(genJSONPath, data); err != nil {
-		return nil, err
+	if err := json.NewDecoder(r).Decode(data); err != nil {
+		return nil, fmt.Errorf("failed to decode: %s", err)
 	}
+
 	if data.Version != isolate.IsolatedGenJSONVersion {
-		return nil, fmt.Errorf("invalid version %d in %s", data.Version, genJSONPath)
+		return nil, fmt.Errorf("invalid version %d", data.Version)
 	}
 	if !common.IsDirectory(data.Dir) {
-		return nil, fmt.Errorf("invalid dir %s in %s", data.Dir, genJSONPath)
+		return nil, fmt.Errorf("invalid dir %s", data.Dir)
 	}
 	opts, err := parseArchiveCMD(data.Args, data.Dir)
 	if err != nil {
-		return nil, fmt.Errorf("invalid archive command in %s: %s", genJSONPath, err)
+		return nil, fmt.Errorf("invalid archive command: %s", err)
 	}
 	return opts, nil
 }

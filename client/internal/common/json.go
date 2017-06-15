@@ -10,19 +10,6 @@ import (
 	"os"
 )
 
-// ReadJSONFile reads a file and decode it as JSON.
-func ReadJSONFile(filePath string, object interface{}) error {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return fmt.Errorf("failed to open %s: %s", filePath, err)
-	}
-	defer f.Close()
-	if err = json.NewDecoder(f).Decode(object); err != nil {
-		return fmt.Errorf("failed to decode %s: %s", filePath, err)
-	}
-	return nil
-}
-
 // WriteJSONFile writes object as json encoded into filePath with 2 spaces
 // indentation. File permission is set to user only.
 func WriteJSONFile(filePath string, object interface{}) error {
