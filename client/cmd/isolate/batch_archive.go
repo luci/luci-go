@@ -133,7 +133,7 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	}
 	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
 	arch := archiver.New(ctx, isolatedclient.New(nil, client, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil), out)
-	common.CancelOnCtrlC(arch)
+	CancelOnCtrlC(arch)
 	type tmp struct {
 		*archiver.Item
 		name string
