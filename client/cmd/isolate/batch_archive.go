@@ -18,7 +18,6 @@ import (
 	"github.com/maruel/subcommands"
 
 	"github.com/luci/luci-go/client/archiver"
-	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/isolate"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/data/text/units"
@@ -216,9 +215,11 @@ func processGenJSONData(r io.Reader) (*isolate.ArchiveOptions, error) {
 	if data.Version != isolate.IsolatedGenJSONVersion {
 		return nil, fmt.Errorf("invalid version %d", data.Version)
 	}
-	if !common.IsDirectory(data.Dir) {
+
+	if fileInfo, err := os.Stat(data.Dir); err != nil || !fileInfo.IsDir() {
 		return nil, fmt.Errorf("invalid dir %s", data.Dir)
 	}
+
 	opts, err := parseArchiveCMD(data.Args, data.Dir)
 	if err != nil {
 		return nil, fmt.Errorf("invalid archive command: %s", err)

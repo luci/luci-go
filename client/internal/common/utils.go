@@ -12,12 +12,6 @@ import (
 	"github.com/luci/luci-go/common/system/terminal"
 )
 
-// IsDirectory returns true if path is a directory and is accessible.
-func IsDirectory(path string) bool {
-	fileInfo, err := os.Stat(path)
-	return err == nil && fileInfo.IsDir()
-}
-
 // IsWindows returns True when running on the best OS there is.
 func IsWindows() bool {
 	return runtime.GOOS == "windows"
