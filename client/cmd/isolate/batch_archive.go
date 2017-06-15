@@ -134,44 +134,25 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
 	arch := archiver.New(ctx, isolatedclient.New(nil, client, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil), out)
 	CancelOnCtrlC(arch)
-	type tmp struct {
+
+	type namedItem struct {
 		*archiver.Item
 		name string
 	}
-	items := make(chan *tmp, len(args))
+	items := make(chan *namedItem, len(args))
 	var wg sync.WaitGroup
 	for _, arg := range args {
 		wg.Add(1)
-		go func(genJsonPath string) {
+		go func(genJSONPath string) {
 			defer wg.Done()
-			data := &struct {
-				Args    []string
-				Dir     string
-				Version int
-			}{}
-			if err := common.ReadJSONFile(genJsonPath, data); err != nil {
+			if opts, err := processGenJSON(genJSONPath); err != nil {
 				arch.Cancel(err)
-				return
+			} else {
+				items <- &namedItem{
+					isolate.Archive(arch, opts),
+					strippedIsolatedName(opts.Isolated),
+				}
 			}
-			if data.Version != isolate.IsolatedGenJSONVersion {
-				arch.Cancel(fmt.Errorf("invalid version %d in %s", data.Version, genJsonPath))
-				return
-			}
-			if !common.IsDirectory(data.Dir) {
-				arch.Cancel(fmt.Errorf("invalid dir %s in %s", data.Dir, genJsonPath))
-				return
-			}
-			opts, err := parseArchiveCMD(data.Args, data.Dir)
-			if err != nil {
-				arch.Cancel(fmt.Errorf("invalid archive command in %s: %s", genJsonPath, err))
-				return
-			}
-			name := filepath.Base(opts.Isolated)
-			// Strip the extension if there is one.
-			if dotIndex := strings.LastIndex(name, "."); dotIndex != -1 {
-				name = name[0:dotIndex]
-			}
-			items <- &tmp{isolate.Archive(arch, opts), name}
 		}(arg)
 	}
 	go func() {
@@ -202,6 +183,39 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 		fmt.Fprintf(os.Stderr, "Duration: %s\n", units.Round(duration, time.Millisecond))
 	}
 	return err
+}
+
+// processGenJSON validates a genJSON file and returns the contents.
+func processGenJSON(genJSONPath string) (*isolate.ArchiveOptions, error) {
+	data := &struct {
+		Args    []string
+		Dir     string
+		Version int
+	}{}
+	if err := common.ReadJSONFile(genJSONPath, data); err != nil {
+		return nil, err
+	}
+	if data.Version != isolate.IsolatedGenJSONVersion {
+		return nil, fmt.Errorf("invalid version %d in %s", data.Version, genJSONPath)
+	}
+	if !common.IsDirectory(data.Dir) {
+		return nil, fmt.Errorf("invalid dir %s in %s", data.Dir, genJSONPath)
+	}
+	opts, err := parseArchiveCMD(data.Args, data.Dir)
+	if err != nil {
+		return nil, fmt.Errorf("invalid archive command in %s: %s", genJSONPath, err)
+	}
+	return opts, nil
+}
+
+// strippedIsolatedName returns the base name of an isolated path, with the extension (if any) removed.
+func strippedIsolatedName(isolated string) string {
+	name := filepath.Base(isolated)
+	// Strip the extension if there is one.
+	if dotIndex := strings.LastIndex(name, "."); dotIndex != -1 {
+		return name[0:dotIndex]
+	}
+	return name
 }
 
 func (c *batchArchiveRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
