@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"path"
+	"runtime"
 	"strings"
 
 	"github.com/luci/luci-go/common/errors"
@@ -132,4 +133,9 @@ func posixRel(basepath, targpath string) (string, error) {
 		return string(buf), nil
 	}
 	return targ[t0:], nil
+}
+
+// IsWindows returns True when running on the best OS there is.
+func IsWindows() bool {
+	return runtime.GOOS == "windows"
 }

@@ -17,7 +17,7 @@ import (
 	"strings"
 
 	"github.com/luci/luci-go/client/archiver"
-	"github.com/luci/luci-go/client/internal/common"
+	"github.com/luci/luci-go/common/flag/stringlistflag"
 	"github.com/luci/luci-go/common/flag/stringmapflag"
 	"github.com/luci/luci-go/common/isolated"
 	"github.com/luci/luci-go/common/isolatedclient"
@@ -50,7 +50,7 @@ type Tree struct {
 type ArchiveOptions struct {
 	Isolate         string              `json:"isolate"`
 	Isolated        string              `json:"isolated"`
-	Blacklist       common.Strings      `json:"blacklist"`
+	Blacklist       stringlistflag.Flag `json:"blacklist"`
 	PathVariables   stringmapflag.Value `json:"path_variables"`
 	ExtraVariables  stringmapflag.Value `json:"extra_variables"`
 	ConfigVariables stringmapflag.Value `json:"config_variables"`
@@ -58,9 +58,9 @@ type ArchiveOptions struct {
 
 // Init initializes with non-nil values.
 func (a *ArchiveOptions) Init() {
-	a.Blacklist = common.Strings{}
+	a.Blacklist = stringlistflag.Flag{}
 	a.PathVariables = map[string]string{}
-	if common.IsWindows() {
+	if IsWindows() {
 		a.PathVariables["EXECUTABLE_SUFFIX"] = ".exe"
 	} else {
 		a.PathVariables["EXECUTABLE_SUFFIX"] = ""
@@ -75,7 +75,7 @@ func (a *ArchiveOptions) PostProcess(cwd string) {
 	if len(a.Blacklist) == 0 {
 		// This cannot be generalized as ".*" as there is known use that require
 		// a ".pki" directory to be mapped.
-		a.Blacklist = common.Strings{
+		a.Blacklist = stringlistflag.Flag{
 			// Temporary python files.
 			"*.pyc",
 			// Temporary vim files.

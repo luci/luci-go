@@ -15,7 +15,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/common/isolated"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -387,7 +386,7 @@ func TestLoadIsolateAsConfig(t *testing.T) {
 	t.Parallel()
 	Convey(`Isolate should properly load a config from a isolate file.`, t, func() {
 		root := "/dir"
-		if common.IsWindows() {
+		if IsWindows() {
 			root = "x:\\dir"
 		}
 		isolate, err := LoadIsolateAsConfig(root, []byte(sampleIsolateData))
@@ -401,7 +400,7 @@ func TestLoadIsolateForConfigMissingVars(t *testing.T) {
 	Convey(`Isolate should properly handle missing variables when loading a config.`, t, func() {
 		isoData := []byte(sampleIsolateData)
 		root := "/dir"
-		if common.IsWindows() {
+		if IsWindows() {
 			root = "x:\\dir"
 		}
 		_, _, _, _, err := LoadIsolateForConfig(root, isoData, nil)
@@ -423,7 +422,7 @@ func TestLoadIsolateForConfig(t *testing.T) {
 	Convey(`Isolate should properly load and return config data from a isolate file.`, t, func() {
 		// Case linux64, matches first condition.
 		root := "/dir"
-		if common.IsWindows() {
+		if IsWindows() {
 			root = "x:\\dir"
 		}
 		vars := map[string]string{"bit": "64", "OS": "linux"}
@@ -558,7 +557,7 @@ func TestConfigSettingsUnionRight(t *testing.T) {
 
 // absToOS converts a POSIX path to OS specific format.
 func absToOS(p string) string {
-	if common.IsWindows() {
+	if IsWindows() {
 		return "e:" + strings.Replace(p, "/", "\\", -1)
 	}
 	return p

@@ -17,9 +17,9 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/client/archiver"
-	"github.com/luci/luci-go/client/internal/common"
 	isolateservice "github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
 	"github.com/luci/luci-go/common/data/text/units"
+	"github.com/luci/luci-go/common/flag/stringlistflag"
 	"github.com/luci/luci-go/common/isolated"
 	"github.com/luci/luci-go/common/isolatedclient"
 	"github.com/luci/luci-go/common/isolatedclient/isolatedfake"
@@ -111,7 +111,7 @@ func TestArchive(t *testing.T) {
 	}`
 		isolatePath := filepath.Join(fooDir, "baz.isolate")
 		So(ioutil.WriteFile(isolatePath, []byte(isolate), 0600), ShouldBeNil)
-		if !common.IsWindows() {
+		if !IsWindows() {
 			So(os.Symlink(filepath.Join("base", "bar"), filepath.Join(tmpDir, "link")), ShouldBeNil)
 		} else {
 			So(ioutil.WriteFile(filepath.Join(tmpDir, "link"), []byte("no link on Windows"), 0600), ShouldBeNil)
@@ -119,7 +119,7 @@ func TestArchive(t *testing.T) {
 		opts := &ArchiveOptions{
 			Isolate:         isolatePath,
 			Isolated:        filepath.Join(tmpDir, "baz.isolated"),
-			Blacklist:       common.Strings{"ignored", "*.isolate"},
+			Blacklist:       stringlistflag.Flag{"ignored", "*.isolate"},
 			PathVariables:   map[string]string{"VAR": "wonderful"},
 			ExtraVariables:  map[string]string{"EXTRA": "really"},
 			ConfigVariables: map[string]string{"OS": "amiga"},
@@ -131,7 +131,7 @@ func TestArchive(t *testing.T) {
 		So(a.Close(), ShouldBeNil)
 
 		mode := 0600
-		if common.IsWindows() {
+		if IsWindows() {
 			mode = 0666
 		}
 
@@ -170,7 +170,7 @@ func TestArchive(t *testing.T) {
 			RelativeCwd: "foo",
 			Version:     isolated.IsolatedFormatVersion,
 		}
-		if !common.IsWindows() {
+		if !IsWindows() {
 			isolatedData.Files["link"] = isolated.SymLink(filepath.Join("base", "bar"))
 		} else {
 			isolatedData.Files["link"] = isolated.BasicFile("12339b9756c2994f85c310d560bc8c142a6b79a1", 0666, 18)
@@ -187,7 +187,7 @@ func TestArchive(t *testing.T) {
 			string(isolatedHash):                       isolatedEncoded,
 			string(secondIsolatedHash):                 secondIsolatedEncoded,
 		}
-		if common.IsWindows() {
+		if IsWindows() {
 			expected["12339b9756c2994f85c310d560bc8c142a6b79a1"] = "no link on Windows"
 		}
 		actual := map[string]string{}
@@ -202,7 +202,7 @@ func TestArchive(t *testing.T) {
 		So(stats.TotalHits(), ShouldBeZeroValue)
 		So(stats.TotalBytesHits(), ShouldResemble, units.Size(0))
 		size := 3 + 4 + len(baseIsolatedEncoded) + len(isolatedEncoded) + len(secondIsolatedEncoded)
-		if !common.IsWindows() {
+		if !IsWindows() {
 			So(stats.TotalMisses(), ShouldEqual, 5)
 			So(stats.TotalBytesPushed(), ShouldResemble, units.Size(size))
 		} else {

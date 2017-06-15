@@ -24,7 +24,6 @@ import (
 	"go/parser"
 	"go/token"
 
-	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/common/isolated"
 	"github.com/yosuke-furukawa/json5/encoding/json5"
 )
@@ -202,7 +201,7 @@ func loadIncludedIsolate(isolateDir, include string) (*Configs, error) {
 		return nil, fmt.Errorf("failed to load configuration; absolute include path %s", include)
 	}
 	includedIsolate := filepath.Clean(filepath.Join(isolateDir, include))
-	if common.IsWindows() && (strings.ToLower(includedIsolate)[0] != strings.ToLower(isolateDir)[0]) {
+	if IsWindows() && (strings.ToLower(includedIsolate)[0] != strings.ToLower(isolateDir)[0]) {
 		return nil, errors.New("can't reference a .isolate file from another drive")
 	}
 	content, err := ioutil.ReadFile(includedIsolate)
@@ -412,7 +411,7 @@ func (lhs *ConfigSettings) union(rhs *ConfigSettings) (*ConfigSettings, error) {
 		return lhs, nil
 	}
 
-	if common.IsWindows() && strings.ToLower(lhs.IsolateDir)[0] != strings.ToLower(rhs.IsolateDir)[0] {
+	if IsWindows() && strings.ToLower(lhs.IsolateDir)[0] != strings.ToLower(rhs.IsolateDir)[0] {
 		return nil, errors.New("All .isolate files must be on same drive")
 	}
 
@@ -789,7 +788,7 @@ func processConditionAst(expr ast.Expr, varsAndValues variablesValuesSet) (map[t
 				return true
 			}
 			if n.Op != token.EQL {
-				err = fmt.Errorf("unknown binary operator %s\n", n.Op)
+				err = fmt.Errorf("unknown binary operator %s", n.Op)
 				return false
 			}
 			id, value, tmpErr := verifyIDEqualValue(n)
@@ -806,7 +805,7 @@ func processConditionAst(expr ast.Expr, varsAndValues variablesValuesSet) (map[t
 		case *ast.ParenExpr:
 			return true
 		default:
-			err = fmt.Errorf("unknown expression type %T\n", n)
+			err = fmt.Errorf("unknown expression type %T", n)
 			return false
 		}
 		// unreachable
