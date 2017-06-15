@@ -48,6 +48,12 @@ func TestExtractFlagsForSet(t *testing.T) {
 				[]string{"-log-level"},
 				[]string{"--", "ohai"},
 			},
+
+			{
+				[]string{"--log-level", "debug", "-d", "--", "script"},
+				[]string{"--log-level", "debug"},
+				[]string{"-d", "--", "script"},
+			},
 		} {
 			Convey(fmt.Sprintf(`Flags %v are split into %v and %v`, tc.args, tc.self, tc.extra), func() {
 				self, extra := extractFlagsForSet(tc.args, fs)

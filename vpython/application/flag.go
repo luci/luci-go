@@ -95,7 +95,7 @@ func extractFlagsForSet(args []string, fs *flag.FlagSet) (fsArgs, remainder []st
 	for i := 0; i < len(candidates); {
 		consume := processOne(candidates[i:])
 		if consume == 0 {
-			fsArgs, remainder = args[:i], candidates[i:]
+			fsArgs, remainder = args[:i], args[i:]
 			return
 		}
 		i += consume
