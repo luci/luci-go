@@ -24,6 +24,18 @@ footer {
   clear: both;
 }
 
+.prelude {
+  float: left;
+}
+
+.main {
+  float: left;
+}
+
+.epiloge {
+  clear: both;
+}
+
 .auth {
   position:absolute;
   top:5px;
@@ -262,6 +274,29 @@ li.sublink:nth-child(odd) {
   background-color: #eee;
 }
 
+.graph {
+  width: 200px;
+  text-align: left;
+}
+
+.bar {
+  display: inline-block;
+  height: 10px;
+  border: 1px solid black;
+}
+
+.idle {
+  background-color: #8d4;
+}
+
+.busy {
+  background-color: #fd3;
+}
+
+.disconnected {
+  background-color: #c6c;
+}
+
 .account-picture {
   border-radius: 6px;
   width: 25px;
@@ -399,26 +434,13 @@ div.BuildWaterfall {
 }
 
 /* LastBuild, BuildStep states */
-.status-Success {
+.success, .status-Success, .status-Idle {
   color: #000;
   background-color: #8d4;
   border-color: #4F8530;
 }
 
-.success {
-  color: #000;
-  background-color: #8d4;
-  border-color: #4F8530;
-}
-
-.status-Failure {
-  color: #000;
-  background-color: #e88;
-  border-color: #A77272;
-  border-style: solid;
-}
-
-.failure {
+.failure, .status-Failure {
   color: #000;
   background-color: #e88;
   border-color: #A77272;
@@ -462,7 +484,7 @@ div.BuildWaterfall {
   border-color: #AADDEE;
 }
 
-.exception, .retry, .status-Exception {
+.exception, .retry, .status-Exception, .status-Disconnected {
   color: #FFFFFF;
   background-color: #c6c;
   border-color: #ACA0B3;
@@ -474,7 +496,7 @@ div.BuildWaterfall {
   border-color: #ccc;
 }
 
-.running, .waiting, td.building, .status-Running {
+.running, .waiting, td.building, .status-Running, .status-Busy {
   color: #000;
   background-color: #fd3;
   border-color: #C5C56D;

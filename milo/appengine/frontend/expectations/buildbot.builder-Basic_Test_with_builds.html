@@ -29,82 +29,118 @@
   
 <h1>Builder <a href="/foobar">Sample Builder</a></h1>
 
-
-  <h2>Current Builds (1):</h2>
-  <ul>
+<div class="prelude">
+  <div class="column">
   
-    <li><a href="https://some.url/path">Some current build</a>
-      
-      
-        
-      
-      [Running for: 0]
-      
-    </li>
-  
-  </ul>
-
-
-
-  <h2>Pending Build Requests (1):</h2>
-  <ul>
-  
-    <li><small>(, waiting 0)</small>
-
     
-    
-      
-    
-
-    </li>
-  
-  </ul>
-
-
-
-  <h2>Recent Builds:</h2>
-
-  <table class="info">
-    <tr>
-      <th>Time</th>
-      <th>Revision</th>
-      <th>Result</th>
-      <th>Build #</th>
-      <th>Changes</th>
-      <th>Info</th>
-    </tr>
-
-    
-      <tr>
-        <td></td>
-        <td class="revision">deadbeef</td>
-        
-          <td> NotRun </td>
-        
-        <td><a href="https://some.url/path">Some current build</a></td>
-        <td>
-          
-          
+      <h2>Machine Pool:</h2>
+      <table>
+        <tr>
+          <td>Idle</td><td>5</td>
+          <td class="graph">
             
+              <div class="bar idle" style="width: 33.3%"></div>
+            
+          </td>
+        </tr><tr>
+          <td>Busy</td><td>8</td>
+          <td class="graph">
+            
+              <div class="bar busy" style="width: 53.3%"></div>
+            
+          </td>
+        </tr><tr>
+          <td>Disconnected</td><td>13</td>
+          <td class="graph">
+            
+              <div class="bar disconnected"
+                   style="width: 86.7%"></div>
+            
+          </td>
+        </tr>
+      </table>
+      <details>
+        <summary>15 bots</summary>
+        <table class="info">
+          <tr><th>Name</th><th>Status</th></tr>
           
-        </td>
-        <td class="left">
-          
-        </td>
-      </tr>
+        </table>
+      </details>
     
-  </table>
+  
+  </div>
 
+  <div class="column">
+  
+    <h2>Current Builds (1):</h2>
+    <ul>
+    
+      <li><a href="https://some.url/path">Some current build</a>
+        
+        [Running for: 0]
+        
+      </li>
+    
+    </ul>
+  
+  </div>
 
+  <div class="column">
+  <h2>Pending Build Requests (1):</h2>
+    <ul><li>
+        <small>(, waiting 0)</small></li></ul>
+  
+  </div>
+</div>
 
-(Show:
-<a href="/foobar">default</a>
-<a href="/foobar?limit=25">25</a>
-<a href="/foobar?limit=50">50</a>
-<a href="/foobar?limit=100">100</a>
-<a href="/foobar?limit=200">200</a>
-)
+<div class="main">
+  
+    <h2>Recent Builds:</h2>
 
+    <table class="info">
+      <tr>
+        <th>Time</th>
+        <th>Revision</th>
+        <th>Result</th>
+        <th>Build #</th>
+        <th>Changes</th>
+        <th>Info</th>
+      </tr>
+
+      
+        <tr>
+          <td></td>
+          <td class="revision">deadbeef</td>
+          
+            <td> NotRun </td>
+          
+          <td><a href="https://some.url/path">Some current build</a></td>
+          <td>
+            
+            
+              
+            
+          </td>
+          <td class="left">
+            
+          </td>
+        </tr>
+      
+    </table>
+  
+</div>
+
+<div class="epiloge">
+  
+  (Show:
+  <a href="/foobar">default</a>
+  <a href="/foobar?limit=25">25</a>
+  <a href="/foobar?limit=50">50</a>
+  <a href="/foobar?limit=100">100</a>
+  <a href="/foobar?limit=200">200</a>
+  )
+  
+</div>
 
 
   <footer>

@@ -2,6 +2,8 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
+//go:generate stringer -type=BotStatus
+
 package resp
 
 import "time"
@@ -70,10 +72,26 @@ type Builder struct {
 	NextCursor string `json:",omitempty"`
 }
 
+type BotStatus int
+
+const (
+	UnknownStatus BotStatus = iota
+	Idle
+	Busy
+	Disconnected
+)
+
+// Bot represents a single bot.
+type Bot struct {
+	Name   Link
+	Status BotStatus
+}
+
 // MachinePool represents the capacity and availability of a builder.
 type MachinePool struct {
-	Connected int
-	Total     int
-	Free      int
-	Used      int
+	Total        int
+	Disconnected int
+	Idle         int
+	Busy         int
+	Bots         []Bot
 }

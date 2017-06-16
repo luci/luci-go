@@ -54,6 +54,12 @@ func buildbotBuilderTestData() []common.TestBundle {
 			Data: templates.Args{
 				"Builder": &resp.Builder{
 					Name: "Sample Builder",
+					MachinePool: &resp.MachinePool{
+						Total:        15,
+						Disconnected: 13,
+						Idle:         5,
+						Busy:         8,
+					},
 					CurrentBuilds: []*resp.BuildSummary{
 						{
 							Link: &resp.Link{

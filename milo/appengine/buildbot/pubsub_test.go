@@ -113,7 +113,7 @@ func TestPubSub(t *testing.T) {
 				},
 			}
 			So(putDSMasterJSON(c, m, false), ShouldBeNil)
-			lm, _, err := getMasterJSON(c, "fake")
+			lm, _, _, err := getMasterJSON(c, "fake")
 			So(err, ShouldBeNil)
 			So(lm.Builders["fake builder"].PendingBuildStates[0].Source.Changes[0].Comments, ShouldResemble, "")
 		})
@@ -258,7 +258,7 @@ func TestPubSub(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(loadB.Master, ShouldEqual, "Fake Master")
 				So(loadB.Currentstep.(string), ShouldEqual, "this is a string")
-				m, t, err := getMasterJSON(c, "Fake Master")
+				m, _, t, err := getMasterJSON(c, "Fake Master")
 				So(err, ShouldBeNil)
 				So(t.Unix(), ShouldEqual, 981173106)
 				So(m.Name, ShouldEqual, "Fake Master")
@@ -284,7 +284,7 @@ func TestPubSub(t *testing.T) {
 					Params:  p,
 				})
 				So(h.Code, ShouldEqual, 200)
-				m, t, err := getMasterJSON(c, "Fake Master")
+				m, _, t, err := getMasterJSON(c, "Fake Master")
 				So(err, ShouldBeNil)
 				So(m.Project.Title, ShouldEqual, "some other title")
 				So(t.Unix(), ShouldEqual, 981173107)
@@ -478,7 +478,7 @@ func TestPubSub(t *testing.T) {
 				So(loadB.Master, ShouldEqual, "Fake Master")
 				So(loadB.Internal, ShouldEqual, true)
 				So(loadB.Currentstep.(string), ShouldEqual, "this is a string")
-				m, t, err := getMasterJSON(c, "Fake Master")
+				m, _, t, err := getMasterJSON(c, "Fake Master")
 				So(err, ShouldBeNil)
 				So(t.Unix(), ShouldEqual, 981173106)
 				So(m.Name, ShouldEqual, "Fake Master")

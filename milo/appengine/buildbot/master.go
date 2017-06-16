@@ -86,13 +86,14 @@ func getMasterEntry(c context.Context, name string) (*buildbotMasterEntry, error
 // the buildbotMaster struct (if found), whether or not it is internal,
 // the last modified time, and an error if not found.
 func getMasterJSON(c context.Context, name string) (
-	master *buildbotMaster, t time.Time, err error) {
+	master *buildbotMaster, internal bool, t time.Time, err error) {
 	master = &buildbotMaster{}
 	entry, err := getMasterEntry(c, name)
 	if err != nil {
 		return
 	}
 	t = entry.Modified
+	internal = entry.Internal
 	err = decodeMasterEntry(c, entry, master)
 	return
 }

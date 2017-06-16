@@ -5,130 +5,186 @@
       type="image/png" href="/static/common/favicon/milo-32.png">
 {{end}}
 
+{{define "blamelist"}}
+{{ if . }}
+  {{ $nb := len . }}
+  {{ if lt $nb 4 }}
+    {{ range $i, $c := . -}}
+      {{- if gt $i 0 }}, {{ end -}}
+      {{- if .Changelist -}}
+        {{- .Changelist | linkify -}}
+        {{- if .AuthorEmail -}}
+          by {{- .AuthorEmail -}}
+        {{- end -}}
+      {{- else if .AuthorEmail -}}
+        (<a href="{{ .CommitURL }}">{{ .AuthorEmail }}</a>)
+      {{- else -}}
+        (<a href="{{ .CommitURL }}">Unknown Author</a>)
+      {{- end -}}
+    {{- end -}}
+  {{- else -}}
+    ({{ $nb }} changes)
+  {{- end }}
+{{ end }}
+{{end}}
+
 {{define "body"}}
 <h1>Builder <a href="{{ pagedURL .Request -1 "EMPTY" }}">{{.Builder.Name}}</a></h1>
 
-{{ if .Builder.CurrentBuilds }}
-  <h2>Current Builds ({{len .Builder.CurrentBuilds}}):</h2>
-  <ul>
-  {{ range .Builder.CurrentBuilds }}
-    <li>{{ .Link | linkify }}
-      {{ $nb := len .Blame }}
-      {{ if lt $nb 4 }}
-        {{ range $i, $c := .Blame }}
-          {{ if gt $i 0 }},{{ end }}
-          {{ if .Changelist }}
-            {{ .Changelist | linkify }}
-            {{ if .AuthorEmail }}
-              by {{ .AuthorEmail }}
+<div class="prelude">
+  <div class="column">
+  {{ if .Builder.MachinePool }}
+    {{ with .Builder.MachinePool }}
+      <h2>Machine Pool:</h2>
+      <table>
+        <tr>
+          <td>Idle</td><td>{{ .Idle }}</td>
+          <td class="graph">
+            {{ if gt .Idle 0 }}
+              <div class="bar idle" style="width: {{ percent .Idle .Total }}%"></div>
             {{ end }}
-          {{ else }}
-            (<a href="{{ .CommitURL }}">{{ .AuthorEmail }}</a>)
+          </td>
+        </tr><tr>
+          <td>Busy</td><td>{{ .Busy }}</td>
+          <td class="graph">
+            {{ if gt .Busy 0 }}
+              <div class="bar busy" style="width: {{ percent .Busy .Total }}%"></div>
+            {{ end }}
+          </td>
+        </tr><tr>
+          <td>Disconnected</td><td>{{ .Disconnected }}</td>
+          <td class="graph">
+            {{ if gt .Disconnected 0 }}
+              <div class="bar disconnected"
+                   style="width: {{ percent .Disconnected .Total }}%"></div>
+            {{ end }}
+          </td>
+        </tr>
+      </table>
+      <details>
+        <summary>{{ .Total }} bots</summary>
+        <table class="info">
+          <tr><th>Name</th><th>Status</th></tr>
+          {{ range .Bots }}
+            <tr>
+              <td>{{ .Name | linkify }}</td>
+              <td class="status-{{ .Status.String }}">{{ .Status.String }}</td>
+            </tr>
           {{ end }}
-        {{ end }}
-      {{ else }}
-        ({{ $nb }} changes)
-      {{ end }}
-      [Running for: {{ .ExecutionTime.Duration | humanDuration }}]
-      {{ range .Text }} {{ . }}{{ end }}
-    </li>
-  {{ end }}
-  </ul>
-{{ else }}
-  <h2>No current builds</h2>
-{{ end }}
-
-{{ if .Builder.PendingBuilds }}
-  <h2>Pending Build Requests ({{len .Builder.PendingBuilds}}):</h2>
-  <ul>
-  {{ range .Builder.PendingBuilds }}
-    <li><small>({{ .PendingTime.Started | localTime "" }}, waiting {{ .PendingTime.Duration | humanDuration }})</small>
-
-    {{ $nb := len .Blame }}
-    {{ if lt $nb 4 }}
-      {{ range $i, $c := .Blame }}
-        (<a href="{{ .CommitURL }}">{{ .AuthorEmail }}</a>)
-        {{ if ne $i (sub $nb 1) }},{{ end }}
-      {{ end }}
-    {{ else }}
-      ({{ $nb }} changes)
+        </table>
+      </details>
     {{ end }}
-
-    </li>
   {{ end }}
-  </ul>
-{{ else }}
-  <h2>No Pending Build Requests</h2>
-{{ end }}
+  </div>
 
-{{ if .Builder.FinishedBuilds }}
-  <h2>Recent Builds:</h2>
+  <div class="column">
+  {{ if .Builder.CurrentBuilds }}
+    <h2>Current Builds ({{len .Builder.CurrentBuilds}}):</h2>
+    <ul>
+    {{ range .Builder.CurrentBuilds }}
+      <li>{{ .Link | linkify }}
+        {{ with .Blame }}{{ template "blamelist" }}{{ end }}
+        [Running for: {{ .ExecutionTime.Duration | humanDuration }}]
+        {{ range .Text }} {{ . }}{{ end }}
+      </li>
+    {{ end }}
+    </ul>
+  {{ else }}
+    <h2>No current builds</h2>
+  {{ end }}
+  </div>
 
-  <table class="info">
-    <tr>
-      <th>Time</th>
-      <th>Revision</th>
-      <th>Result</th>
-      <th>Build #</th>
-      <th>Changes</th>
-      <th>Info</th>
-    </tr>
+  <div class="column">
+  {{ if .Builder.PendingBuilds -}}
+    <h2>Pending Build Requests ({{len .Builder.PendingBuilds}}):</h2>
+    <ul>
+    {{- range .Builder.PendingBuilds -}}
+      <li>
+        <small>({{- .PendingTime.Started | localTime "" }}, waiting {{ .PendingTime.Duration | humanDuration -}})</small>
+        {{- with .Blame }}{{- template "blamelist" -}}{{- end -}}
+      </li>
+    {{- end -}}
+    </ul>
+  {{ else }}
+    <h2>No Pending Build Requests</h2>
+  {{ end }}
+  </div>
+</div>
 
-    {{ range .Builder.FinishedBuilds }}
+<div class="main">
+  {{ if .Builder.FinishedBuilds }}
+    <h2>Recent Builds:</h2>
+
+    <table class="info">
       <tr>
-        <td>{{ .ExecutionTime.Finished | localTime "" }}</td>
-        <td class="revision">{{ .Revision }}</td>
-        {{ if eq .Status.String "Success" }}
-          <td class="status-Success">Success</td>
-        {{ else if eq .Status.String "Failure" }}
-          <td class="status-Failure">Failed</td>
-        {{ else if eq .Status.String "InfraFailure" }}
-          <td class="status-Exception">Infra Failure</td>
-        {{ else if eq .Status.String "Exception" }}
-          <td class="status-Exception">Exception</td>
-        {{ else }}
-          <td> {{ .Status.String }} </td>
-        {{ end }}
-        <td>{{ .Link | linkify }}</td>
-        <td>
-          {{ $nb := len .Blame }}
-          {{ if lt $nb 4 }}
-            {{ range $i, $c := .Blame }}
-              {{ if gt $i 0 }},{{ end }}
-              {{ if .Changelist }}
-                {{ .Changelist | linkify }}
-                {{ if .AuthorEmail }}
-                  by {{ .AuthorEmail }}
-                {{ end }}
-              {{ else }}
-                (<a href="{{ .CommitURL }}">{{ .AuthorEmail }}</a>)
-              {{ end }}
-            {{ end }}
-          {{ else }}
-            ({{ $nb }} changes)
-          {{ end }}
-        </td>
-        <td class="left">
-          {{ range $i, $value := .Text }}
-            {{ if gt $i 0 }}<br>{{ end }}
-            {{ . }}
-          {{ end }}
-        </td>
+        <th>Time</th>
+        <th>Revision</th>
+        <th>Result</th>
+        <th>Build #</th>
+        <th>Changes</th>
+        <th>Info</th>
       </tr>
-    {{ end }}
-  </table>
-{{ else }}
-  <h2>No Recent Builds</h2>
-{{ end }}
 
-{{ if .Builder.PrevCursor }}<a href="{{ pagedURL .Request 0 .Builder.PrevCursor }}">Prev</a>{{ end }}
-(Show:
-<a href="{{ pagedURL .Request -1 "" }}">default</a>
-<a href="{{ pagedURL .Request 25 "" }}">25</a>
-<a href="{{ pagedURL .Request 50 "" }}">50</a>
-<a href="{{ pagedURL .Request 100 "" }}">100</a>
-<a href="{{ pagedURL .Request 200 "" }}">200</a>
-)
-{{ if .Builder.NextCursor }}<a href="{{ pagedURL .Request 0 .Builder.NextCursor}}">Next</a>{{ end }}
+      {{ range .Builder.FinishedBuilds }}
+        <tr>
+          <td>{{ .ExecutionTime.Finished | localTime "" }}</td>
+          <td class="revision">{{ .Revision }}</td>
+          {{ if eq .Status.String "Success" }}
+            <td class="status-Success">Success</td>
+          {{ else if eq .Status.String "Failure" }}
+            <td class="status-Failure">Failed</td>
+          {{ else if eq .Status.String "InfraFailure" }}
+            <td class="status-Exception">Infra Failure</td>
+          {{ else if eq .Status.String "Exception" }}
+            <td class="status-Exception">Exception</td>
+          {{ else }}
+            <td> {{ .Status.String }} </td>
+          {{ end }}
+          <td>{{ .Link | linkify }}</td>
+          <td>
+            {{ $nb := len .Blame }}
+            {{ if lt $nb 4 }}
+              {{ range $i, $c := .Blame }}
+                {{ if gt $i 0 }},{{ end }}
+                {{ if .Changelist }}
+                  {{ .Changelist | linkify }}
+                  {{ if .AuthorEmail }}
+                    by {{ .AuthorEmail }}
+                  {{ end }}
+                {{ else }}
+                  (<a href="{{ .CommitURL }}">{{ .AuthorEmail }}</a>)
+                {{ end }}
+              {{ end }}
+            {{ else }}
+              ({{ $nb }} changes)
+            {{ end }}
+          </td>
+          <td class="left">
+            {{ range $i, $value := .Text }}
+              {{ if gt $i 0 }}<br>{{ end }}
+              {{ . }}
+            {{ end }}
+          </td>
+        </tr>
+      {{ end }}
+    </table>
+  {{ else }}
+    <h2>No Recent Builds</h2>
+  {{ end }}
+</div>
+
+<div class="epiloge">
+  {{ if .Builder.PrevCursor }}<a href="{{ pagedURL .Request 0 .Builder.PrevCursor }}">Prev</a>{{ end }}
+  (Show:
+  <a href="{{ pagedURL .Request -1 "" }}">default</a>
+  <a href="{{ pagedURL .Request 25 "" }}">25</a>
+  <a href="{{ pagedURL .Request 50 "" }}">50</a>
+  <a href="{{ pagedURL .Request 100 "" }}">100</a>
+  <a href="{{ pagedURL .Request 200 "" }}">200</a>
+  )
+  {{ if .Builder.NextCursor }}
+    <a href="{{ pagedURL .Request 0 .Builder.NextCursor}}">Next</a>
+  {{ end }}
+</div>
 
 {{end}}

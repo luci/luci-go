@@ -164,6 +164,39 @@ func (e errBuilderNotFound) Error() string {
 		e.builder, e.master, avail)
 }
 
+func summarizeSlavePool(
+	baseURL string, slaves []string, slaveMap map[string]*buildbotSlave) *resp.MachinePool {
+
+	mp := &resp.MachinePool{
+		Total: len(slaves),
+		Bots:  make([]resp.Bot, 0, len(slaves)),
+	}
+	for _, slaveName := range slaves {
+		slave, ok := slaveMap[slaveName]
+		bot := resp.Bot{
+			Name: resp.Link{
+				Label: slaveName,
+				URL:   fmt.Sprintf("%s/buildslaves/%s", baseURL, slaveName),
+			},
+		}
+		switch {
+		case !ok:
+			// This shouldn't happen
+		case !slave.Connected:
+			bot.Status = resp.Disconnected
+			mp.Disconnected++
+		case len(slave.RunningbuildsMap) > 0:
+			bot.Status = resp.Busy
+			mp.Busy++
+		default:
+			bot.Status = resp.Idle
+			mp.Idle++
+		}
+		mp.Bots = append(mp.Bots, bot)
+	}
+	return mp
+}
+
 // builderImpl is the implementation for getting a milo builder page from buildbot.
 // This gets:
 // * Current Builds from querying the master json from the datastore.
@@ -184,7 +217,7 @@ func builderImpl(
 	result := &resp.Builder{
 		Name: builderName,
 	}
-	master, t, err := getMasterJSON(c, masterName)
+	master, internal, t, err := getMasterJSON(c, masterName)
 	if err != nil {
 		return nil, err
 	}
@@ -225,6 +258,12 @@ func builderImpl(
 			}
 		}
 	}
+
+	baseURL := "https://build.chromium.org/p/"
+	if internal {
+		baseURL = "https://uberchromegw.corp.google.com/i/"
+	}
+	result.MachinePool = summarizeSlavePool(baseURL+master.Name, p.Slaves, master.Slaves)
 
 	// This is CPU bound anyways, so there's no need to do this in parallel.
 	finishedBuilds, nextCursor, err := getBuilds(c, masterName, builderName, true, limit, thisCursor)

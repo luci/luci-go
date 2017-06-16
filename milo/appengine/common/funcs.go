@@ -31,6 +31,7 @@ var funcMap = template.FuncMap{
 	"consoleHeader":  consoleHeader,
 	"pagedURL":       pagedURL,
 	"formatTime":     formatTime,
+	"percent":        percent,
 }
 
 // localTime returns a <span> element with t in human format
@@ -243,6 +244,12 @@ func pagedURL(r *http.Request, limit int, cursor string) string {
 	result := *r.URL
 	result.RawQuery = values.Encode()
 	return result.String()
+}
+
+// percent divides one number by a divisor and returns the percentage in string form.
+func percent(numerator, divisor int) string {
+	p := float64(numerator) * 100.0 / float64(divisor)
+	return fmt.Sprintf("%.1f", p)
 }
 
 func init() {
