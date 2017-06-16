@@ -801,7 +801,7 @@ func (s *SwarmingRpcsFilesRef) MarshalJSON() ([]byte, error) {
 }
 
 // SwarmingRpcsNewTaskRequest: Description of a new task request as
-// described by the client.
+// described by the client. This message is used to create a new task.
 type SwarmingRpcsNewTaskRequest struct {
 	ExpirationSecs int64 `json:"expiration_secs,omitempty,string"`
 
@@ -1178,7 +1178,8 @@ func (s *SwarmingRpcsTaskProperties) MarshalJSON() ([]byte, error) {
 }
 
 // SwarmingRpcsTaskRequest: Description of a task request as registered
-// by the server.
+// by the server. This message is used when retrieving information about
+// an existing task. See NewtaskRequest for more details.
 type SwarmingRpcsTaskRequest struct {
 	Authenticated string `json:"authenticated,omitempty"`
 
@@ -1236,6 +1237,8 @@ func (s *SwarmingRpcsTaskRequest) MarshalJSON() ([]byte, error) {
 // TaskRequest.
 type SwarmingRpcsTaskRequestMetadata struct {
 	// Request: Description of a task request as registered by the server.
+	// This message is used when retrieving information about an existing
+	// task. See NewtaskRequest for more details.
 	Request *SwarmingRpcsTaskRequest `json:"request,omitempty"`
 
 	TaskId string `json:"task_id,omitempty"`
@@ -1276,6 +1279,8 @@ type SwarmingRpcsTaskRequests struct {
 	Cursor string `json:"cursor,omitempty"`
 
 	// Items: Description of a task request as registered by the server.
+	// This message is used when retrieving information about an existing
+	// task. See NewtaskRequest for more details.
 	Items []*SwarmingRpcsTaskRequest `json:"items,omitempty"`
 
 	Now string `json:"now,omitempty"`

@@ -81,6 +81,8 @@ type ApiBucketMessage struct {
 
 	ConfigFileUrl string `json:"config_file_url,omitempty"`
 
+	Error *ApiErrorMessage `json:"error,omitempty"`
+
 	Name string `json:"name,omitempty"`
 
 	ProjectId string `json:"project_id,omitempty"`

@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/rIZuuuOZVQ0han_24mPbE0E6a34\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/uU7r6aVkhK99QQU9BMOEsttsF8s\"",
  "discoveryVersion": "v1",
  "id": "swarming:v1",
  "name": "swarming",
@@ -461,7 +461,7 @@
   "SwarmingRpcsNewTaskRequest": {
    "id": "SwarmingRpcsNewTaskRequest",
    "type": "object",
-   "description": "Description of a new task request as described by the client.",
+   "description": "Description of a new task request as described by the client. This message is used to create a new task.",
    "properties": {
     "expiration_secs": {
      "type": "string",
@@ -710,7 +710,7 @@
   "SwarmingRpcsTaskRequest": {
    "id": "SwarmingRpcsTaskRequest",
    "type": "object",
-   "description": "Description of a task request as registered by the server.",
+   "description": "Description of a task request as registered by the server. This message is used when retrieving information about an existing task. See NewtaskRequest for more details.",
    "properties": {
     "authenticated": {
      "type": "string"
@@ -764,7 +764,7 @@
    "properties": {
     "request": {
      "$ref": "SwarmingRpcsTaskRequest",
-     "description": "Description of a task request as registered by the server."
+     "description": "Description of a task request as registered by the server. This message is used when retrieving information about an existing task. See NewtaskRequest for more details."
     },
     "task_id": {
      "type": "string"
@@ -785,7 +785,7 @@
     },
     "items": {
      "type": "array",
-     "description": "Description of a task request as registered by the server.",
+     "description": "Description of a task request as registered by the server. This message is used when retrieving information about an existing task. See NewtaskRequest for more details.",
      "items": {
       "$ref": "SwarmingRpcsTaskRequest"
      }
