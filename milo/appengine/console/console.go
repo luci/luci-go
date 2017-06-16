@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
@@ -17,7 +19,6 @@ import (
 	"github.com/luci/luci-go/milo/appengine/common"
 	"github.com/luci/luci-go/milo/common/config"
 	"github.com/luci/luci-go/server/router"
-	"golang.org/x/net/context"
 )
 
 // Returns results of build[commit_index][builder_index]
