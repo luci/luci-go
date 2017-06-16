@@ -9,18 +9,21 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
 	"github.com/luci/luci-go/client/archiver"
 	"github.com/luci/luci-go/client/isolate"
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/data/text/units"
+	logpb "github.com/luci/luci-go/common/eventlog/proto"
 	"github.com/luci/luci-go/common/isolated"
 	"github.com/luci/luci-go/common/isolatedclient"
 )
@@ -46,6 +49,7 @@ isolate. Format of files is:
 		CommandRun: func() subcommands.CommandRun {
 			c := batchArchiveRun{}
 			c.commonServerFlags.Init(defaultAuthOpts)
+			c.loggingFlags.Init(&c.Flags)
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "",
 				"Write isolated digests of archived trees to this file as JSON")
 			return &c
@@ -55,7 +59,8 @@ isolate. Format of files is:
 
 type batchArchiveRun struct {
 	commonServerFlags
-	dumpJSON string
+	loggingFlags loggingFlags
+	dumpJSON     string
 }
 
 func (c *batchArchiveRun) Parse(a subcommands.Application, args []string) error {
@@ -162,11 +167,14 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	}()
 
 	data := map[string]isolated.HexDigest{}
+	var digests []string
 	for item := range items {
 		item.WaitForHashed()
 		if item.Error() == nil {
-			data[item.name] = item.Digest()
-			fmt.Printf("%s%s  %s\n", prefix, item.Digest(), item.name)
+			d := item.Digest()
+			data[item.name] = d
+			digests = append(digests, string(d))
+			fmt.Printf("%s%s  %s\n", prefix, d, item.name)
 		} else {
 			fmt.Fprintf(os.Stderr, "%s%s  %s\n", prefix, item.name, item.Error())
 		}
@@ -177,12 +185,29 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 	if err == nil && c.dumpJSON != "" {
 		err = writeJSONDigestFile(c.dumpJSON, data)
 	}
+
+	stats := arch.Stats()
 	if !c.defaultFlags.Quiet {
-		stats := arch.Stats()
 		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", stats.TotalHits(), stats.TotalBytesHits())
 		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", stats.TotalMisses(), stats.TotalBytesPushed())
 		fmt.Fprintf(os.Stderr, "Duration: %s\n", units.Round(duration, time.Millisecond))
 	}
+
+	end := time.Now()
+	archiveDetails := &logpb.IsolateClientEvent_ArchiveDetails{
+		HitCount:    proto.Int64(int64(stats.TotalHits())),
+		MissCount:   proto.Int64(int64(stats.TotalMisses())),
+		HitBytes:    proto.Int64(int64(stats.TotalBytesHits())),
+		MissBytes:   proto.Int64(int64(stats.TotalBytesPushed())),
+		IsolateHash: digests,
+	}
+
+	eventlogger := NewLogger(ctx, c.loggingFlags.EventlogEndpoint)
+	op := logpb.IsolateClientEvent_BATCH_ARCHIVE.Enum()
+	if err := eventlogger.logStats(ctx, op, start, end, archiveDetails); err != nil {
+		log.Printf("Failed to log to eventlog: %v", err)
+	}
+
 	return err
 }
 
