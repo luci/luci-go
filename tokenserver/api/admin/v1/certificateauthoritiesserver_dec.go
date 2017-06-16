@@ -13,7 +13,7 @@ type DecoratedCertificateAuthorities struct {
 	// Service is the service to decorate.
 	Service CertificateAuthoritiesServer
 	// Prelude is called for each method before forwarding the call to Service.
-	// If Prelude returns an error, it the call is skipped and the error is
+	// If Prelude returns an error, then the call is skipped and the error is
 	// processed via the Postlude (if one is defined), or it is returned directly.
 	Prelude func(c context.Context, methodName string, req proto.Message) (context.Context, error)
 	// Postlude is called for each method after Service has processed the call, or
