@@ -5,6 +5,9 @@ to "build" web applications.
 
 ## Setup
 
+*Hint*: If you are using infra.git gclient solution, you can skip the following
+steps after running `eval go/env.go`.
+
 1.  Install node & npm: https://docs.npmjs.com/getting-started/installing-node
 1.  Install the rest: `./web.py install`
 
