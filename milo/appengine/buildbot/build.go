@@ -22,6 +22,7 @@ import (
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
+	"github.com/luci/luci-go/milo/appengine/common/model"
 )
 
 var errBuildNotFound = errors.New("Build not found")
@@ -44,24 +45,24 @@ func getBuild(c context.Context, master, builder string, buildNum int) (*buildbo
 	return result, err
 }
 
-// result2Status translates a buildbot result integer into a resp.Status.
-func result2Status(s *int) (status resp.Status) {
+// result2Status translates a buildbot result integer into a model.Status.
+func result2Status(s *int) (status model.Status) {
 	if s == nil {
-		return resp.Running
+		return model.Running
 	}
 	switch *s {
 	case 0:
-		status = resp.Success
+		status = model.Success
 	case 1:
-		status = resp.Warning
+		status = model.Warning
 	case 2:
-		status = resp.Failure
+		status = model.Failure
 	case 3:
-		status = resp.NotRun // Skipped
+		status = model.NotRun // Skipped
 	case 4:
-		status = resp.Exception
+		status = model.Exception
 	case 5:
-		status = resp.WaitingDependency // Retry
+		status = model.WaitingDependency // Retry
 	default:
 		panic(fmt.Errorf("Unknown status %d", s))
 	}
@@ -135,9 +136,9 @@ func getBanner(c context.Context, b *buildbotBuild) *resp.LogoBanner {
 func summary(c context.Context, b *buildbotBuild) resp.BuildComponent {
 	// TODO(hinoka): use b.toStatus()
 	// Status
-	var status resp.Status
+	var status model.Status
 	if b.Currentstep != nil {
-		status = resp.Running
+		status = model.Running
 	} else {
 		status = result2Status(b.Results)
 	}
@@ -150,22 +151,18 @@ func summary(c context.Context, b *buildbotBuild) resp.BuildComponent {
 	if b.Internal {
 		host = "uberchromegw.corp.google.com/i"
 	}
-	bot := &resp.Link{
-		Label: b.Slave,
-		URL:   fmt.Sprintf("https://%s/%s/buildslaves/%s", host, b.Master, b.Slave),
-	}
-	source := &resp.Link{
-		Label: fmt.Sprintf("%s/%s/%d", b.Master, b.Buildername, b.Number),
-		URL: fmt.Sprintf(
-			"https://%s/%s/builders/%s/builds/%d",
+	bot := resp.NewLink(
+		b.Slave,
+		fmt.Sprintf("https://%s/%s/buildslaves/%s", host, b.Master, b.Slave),
+	)
+	source := resp.NewLink(
+		fmt.Sprintf("%s/%s/%d", b.Master, b.Buildername, b.Number),
+		fmt.Sprintf("https://%s/%s/builders/%s/builds/%d",
 			host, b.Master, b.Buildername, b.Number),
-	}
+	)
 
 	// The link to the builder page.
-	parent := &resp.Link{
-		Label: b.Buildername,
-		URL:   ".",
-	}
+	parent := resp.NewLink(b.Buildername, ".")
 
 	// Do a best effort lookup for the bot information to fill in OS/Platform info.
 	banner := getBanner(c, b)
@@ -210,20 +207,20 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 
 		// Figure out the status.
 		if !step.IsStarted {
-			bc.Status = resp.NotRun
+			bc.Status = model.NotRun
 		} else if !step.IsFinished {
-			bc.Status = resp.Running
+			bc.Status = model.Running
 		} else {
 			if len(step.Results) > 0 {
 				status := int(step.Results[0].(float64))
 				bc.Status = result2Status(&status)
 			} else {
-				bc.Status = resp.Success
+				bc.Status = model.Success
 			}
 		}
 
 		// Raise the interesting-ness if the step is not "Success".
-		if bc.Status != resp.Success {
+		if bc.Status != model.Success {
 			bc.Verbosity = resp.Interesting
 		}
 
@@ -254,12 +251,9 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 		}
 
 		for _, l := range step.Logs {
-			logLink := resp.Link{
-				Label: l[0],
-				URL:   l[1],
-			}
+			logLink := resp.NewLink(l[0], l[1])
 
-			links := getLinksWithAliases(&logLink, true)
+			links := getLinksWithAliases(logLink, true)
 			if logLink.Label == "stdio" {
 				bc.MainLink = links
 			} else {
@@ -276,12 +270,9 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 		}
 		sort.Strings(names)
 		for _, name := range names {
-			logLink := resp.Link{
-				Label: name,
-				URL:   step.Urls[name],
-			}
+			logLink := resp.NewLink(name, step.Urls[name])
 
-			bc.SubLink = append(bc.SubLink, getLinksWithAliases(&logLink, false))
+			bc.SubLink = append(bc.SubLink, getLinksWithAliases(logLink, false))
 		}
 
 		// Add any unused aliases directly.
@@ -390,10 +381,7 @@ func blame(b *buildbotBuild) (result []*resp.Commit) {
 			AuthorEmail: c.Who,
 			Repo:        c.Repository,
 			CommitTime:  time.Unix(int64(c.When), 0).UTC(),
-			Revision: &resp.Link{
-				URL:   c.Revlink,
-				Label: c.Revision,
-			},
+			Revision:    resp.NewLink(c.Revision, c.Revlink),
 			Description: c.Comments,
 			Title:       strings.Split(c.Comments, "\n")[0],
 			File:        files,
@@ -442,18 +430,16 @@ func sourcestamp(c context.Context, b *buildbotBuild) *resp.SourceStamp {
 	if issue != -1 {
 		if rietveld != "" {
 			rietveld = strings.TrimRight(rietveld, "/")
-			ss.Changelist = &resp.Link{
-				Label: fmt.Sprintf("Issue %d", issue),
-				URL:   fmt.Sprintf("%s/%d", rietveld, issue),
-			}
+			ss.Changelist = resp.NewLink(
+				fmt.Sprintf("Issue %d", issue),
+				fmt.Sprintf("%s/%d", rietveld, issue),
+			)
 		} else {
 			logging.Warningf(c, "Found issue but not rietveld property.")
 		}
 	}
 	if got_revision != "" {
-		ss.Revision = &resp.Link{
-			Label: got_revision,
-		}
+		ss.Revision = resp.NewLink(got_revision, "")
 		if repository != "" {
 			ss.Revision.URL = repository + "/+/" + got_revision
 		}

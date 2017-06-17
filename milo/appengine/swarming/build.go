@@ -25,6 +25,7 @@ import (
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/common"
+	"github.com/luci/luci-go/milo/appengine/common/model"
 	"github.com/luci/luci-go/milo/appengine/logdog"
 	"github.com/luci/luci-go/server/auth"
 )
@@ -264,10 +265,8 @@ func addBuilderLink(c context.Context, build *resp.MiloBuild, tags map[string]st
 	bucket := tags["buildbucket_bucket"]
 	builder := tags["builder"]
 	if bucket != "" && builder != "" {
-		build.Summary.ParentLabel = &resp.Link{
-			Label: builder,
-			URL:   fmt.Sprintf("/buildbucket/%s/%s", bucket, builder),
-		}
+		build.Summary.ParentLabel = resp.NewLink(
+			builder, fmt.Sprintf("/buildbucket/%s/%s", bucket, builder))
 	}
 }
 
@@ -408,10 +407,8 @@ func addBuildsetInfo(build *resp.MiloBuild, tags map[string]string) {
 		if build.SourceStamp == nil {
 			build.SourceStamp = &resp.SourceStamp{}
 		}
-		build.SourceStamp.Changelist = &resp.Link{
-			Label: "Gerrit CL",
-			URL:   fmt.Sprintf("https://%s/c/%s/%s", parts[0], parts[1], parts[2]),
-		}
+		build.SourceStamp.Changelist = resp.NewLink(
+			"Gerrit CL", fmt.Sprintf("https://%s/c/%s/%s", parts[0], parts[1], parts[2]))
 
 	}
 }
@@ -435,20 +432,14 @@ func addRecipeLink(build *resp.MiloBuild, tags map[string]string) {
 			}
 			name += " @ " + revision
 		}
-		build.Summary.Recipe = &resp.Link{
-			Label: name,
-			URL:   repoURL,
-		}
+		build.Summary.Recipe = resp.NewLink(name, repoURL)
 	}
 }
 
 func addTaskToBuild(c context.Context, server string, sr *swarming.SwarmingRpcsTaskResult, build *resp.MiloBuild) error {
 	build.Summary.Label = sr.TaskId
 	build.Summary.Type = resp.Recipe
-	build.Summary.Source = &resp.Link{
-		Label: "Task " + sr.TaskId,
-		URL:   taskPageURL(server, sr.TaskId),
-	}
+	build.Summary.Source = resp.NewLink("Task "+sr.TaskId, taskPageURL(server, sr.TaskId))
 
 	// Extract more swarming specific information into the properties.
 	if props := taskProperties(sr); len(props.Property) > 0 {
@@ -463,10 +454,7 @@ func addTaskToBuild(c context.Context, server string, sr *swarming.SwarmingRpcsT
 
 	// Add a link to the bot.
 	if sr.BotId != "" {
-		build.Summary.Bot = &resp.Link{
-			Label: sr.BotId,
-			URL:   botPageURL(server, sr.BotId),
-		}
+		build.Summary.Bot = resp.NewLink(sr.BotId, botPageURL(server, sr.BotId))
 	}
 
 	return nil
@@ -538,7 +526,7 @@ func (bl *buildLoader) newEmptyAnnotationStream(c context.Context, addr *types.S
 // to add information that would've otherwise been in the annotation stream.
 func failedToStart(c context.Context, build *resp.MiloBuild, res *swarming.SwarmingRpcsTaskResult, host string) error {
 	var err error
-	build.Summary.Status = resp.InfraFailure
+	build.Summary.Status = model.InfraFailure
 	build.Summary.Started, err = time.Parse(SwarmingTimeLayout, res.StartedTs)
 	if err != nil {
 		return err
@@ -548,7 +536,7 @@ func failedToStart(c context.Context, build *resp.MiloBuild, res *swarming.Swarm
 		return err
 	}
 	build.Summary.Duration = build.Summary.Finished.Sub(build.Summary.Started)
-	infoComp := infoComponent(resp.InfraFailure,
+	infoComp := infoComponent(model.InfraFailure,
 		"LogDog stream not found", "Job likely failed to start.")
 	infoComp.Started = build.Summary.Started
 	infoComp.Finished = build.Summary.Finished
@@ -637,17 +625,17 @@ func (bl *buildLoader) swarmingBuildImpl(c context.Context, svc swarmingService,
 					return &build, err
 				}
 				logging.WithError(err).Errorf(c, "User cannot access stream.")
-				build.Components = append(build.Components, infoComponent(resp.Running,
+				build.Components = append(build.Components, infoComponent(model.Running,
 					"Waiting...", "waiting for annotation stream"))
 
 			case coordinator.ErrNoAccess:
 				logging.WithError(err).Errorf(c, "User cannot access stream.")
-				build.Components = append(build.Components, infoComponent(resp.Failure,
+				build.Components = append(build.Components, infoComponent(model.Failure,
 					"No Access", "no access to annotation stream"))
 
 			default:
 				logging.WithError(err).Errorf(c, "Failed to load LogDog annotation stream.")
-				build.Components = append(build.Components, infoComponent(resp.InfraFailure,
+				build.Components = append(build.Components, infoComponent(model.InfraFailure,
 					"Error", "failed to load annotation stream"))
 			}
 		}
@@ -659,11 +647,10 @@ func (bl *buildLoader) swarmingBuildImpl(c context.Context, svc swarmingService,
 		var err error
 		lds, err = streamsFromAnnotatedLog(c, fr.log)
 		if err != nil {
-			comp := infoComponent(resp.InfraFailure, "Milo annotation parser", err.Error())
-			comp.SubLink = append(comp.SubLink, resp.LinkSet{&resp.Link{
-				Label: "swarming task",
-				URL:   taskPageURL(svc.getHost(), taskID),
-			}})
+			comp := infoComponent(model.InfraFailure, "Milo annotation parser", err.Error())
+			comp.SubLink = append(comp.SubLink, resp.LinkSet{
+				resp.NewLink("swarming task", taskPageURL(svc.getHost(), taskID)),
+			})
 			build.Components = append(build.Components, comp)
 		}
 
@@ -691,7 +678,7 @@ func (bl *buildLoader) swarmingBuildImpl(c context.Context, svc swarmingService,
 	return &build, nil
 }
 
-func infoComponent(st resp.Status, label, text string) *resp.BuildComponent {
+func infoComponent(st model.Status, label, text string) *resp.BuildComponent {
 	return &resp.BuildComponent{
 		Type:   resp.Summary,
 		Label:  label,
@@ -762,20 +749,14 @@ func (b swarmingURLBuilder) BuildLink(l *miloProto.Link) *resp.Link {
 		} else {
 			u.Path = strings.TrimSuffix(u.Path, "/") + "/" + ls.Name
 		}
-		link := resp.Link{
-			Label: l.Label,
-			URL:   u.String(),
-		}
+		link := resp.NewLink(l.Label, u.String())
 		if link.Label == "" {
 			link.Label = ls.Name
 		}
-		return &link
+		return link
 
 	case *miloProto.Link_Url:
-		return &resp.Link{
-			Label: l.Label,
-			URL:   t.Url,
-		}
+		return resp.NewLink(l.Label, t.Url)
 
 	default:
 		return nil

@@ -203,24 +203,18 @@ func (b *ViewerURLBuilder) BuildLink(l *miloProto.Link) *resp.Link {
 		}
 
 		u := viewer.GetURL(server, b.Project, prefix.Join(types.StreamName(ls.Name)))
-		link := resp.Link{
-			Label: l.Label,
-			URL:   u,
-		}
+		link := resp.NewLink(l.Label, u)
 		if link.Label == "" {
 			link.Label = ls.Name
 		}
-		return &link
+		return link
 
 	case *miloProto.Link_Url:
-		link := resp.Link{
-			Label: l.Label,
-			URL:   t.Url,
-		}
+		link := resp.NewLink(l.Label, t.Url)
 		if link.Label == "" {
 			link.Label = "unnamed"
 		}
-		return &link
+		return link
 
 	default:
 		// Don't know how to render.

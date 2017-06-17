@@ -15,6 +15,7 @@ import (
 	"github.com/luci/luci-go/common/api/buildbucket/buildbucket/v1"
 	"github.com/luci/luci-go/common/api/buildbucket/swarmbucket/v1"
 	"github.com/luci/luci-go/milo/api/resp"
+	"github.com/luci/luci-go/milo/appengine/common/model"
 	"github.com/luci/luci-go/server/auth"
 )
 
@@ -70,29 +71,29 @@ func newBuildbucketClient(c context.Context, server string) (*buildbucket.Servic
 }
 
 // parseStatus converts a buildbucket build status to resp.Status.
-func parseStatus(build *buildbucket.ApiCommonBuildMessage) (resp.Status, error) {
+func parseStatus(build *buildbucket.ApiCommonBuildMessage) (model.Status, error) {
 	switch build.Status {
 	case StatusScheduled:
-		return resp.NotRun, nil
+		return model.NotRun, nil
 
 	case StatusStarted:
-		return resp.Running, nil
+		return model.Running, nil
 
 	case StatusCompleted:
 		switch build.Result {
 		case "SUCCESS":
-			return resp.Success, nil
+			return model.Success, nil
 
 		case "FAILURE":
 			switch build.FailureReason {
 			case "BUILD_FAILURE":
-				return resp.Failure, nil
+				return model.Failure, nil
 			default:
-				return resp.InfraFailure, nil
+				return model.InfraFailure, nil
 			}
 
 		case "CANCELED":
-			return resp.InfraFailure, nil
+			return model.InfraFailure, nil
 
 		default:
 			return 0, fmt.Errorf("unexpected buildbucket build result %q", build.Result)
@@ -113,16 +114,16 @@ func getChangeList(
 	case "rietveld":
 		if prop.RietveldURL != "" && prop.Issue != 0 {
 			result = &resp.Commit{
-				RequestRevision: &resp.Link{Label: prop.Revision},
-				Changelist: &resp.Link{
-					Label: fmt.Sprintf("Rietveld CL %d", prop.Issue),
-					URL:   fmt.Sprintf("%s/%d/#ps%d", prop.RietveldURL, prop.Issue, prop.PatchSet),
-				},
+				RequestRevision: resp.NewLink(prop.Revision, ""),
+				Changelist: resp.NewLink(
+					fmt.Sprintf("Rietveld CL %d", prop.Issue),
+					fmt.Sprintf("%s/%d/#ps%d", prop.RietveldURL, prop.Issue, prop.PatchSet),
+				),
 			}
 			if resultDetails.Properties.GotRevision != "" {
 				// TODO(hinoka): Figure out the full URL for these revisions, add it
 				// to the URL field.
-				result.Revision = &resp.Link{Label: resultDetails.Properties.GotRevision}
+				result.Revision = resp.NewLink(resultDetails.Properties.GotRevision, "")
 			}
 		}
 
@@ -133,11 +134,10 @@ func getChangeList(
 				path = fmt.Sprintf("%d/%d", prop.GerritPatchIssue, prop.GerritPatchSet)
 			}
 			result = &resp.Commit{
-				Changelist: &resp.Link{
-					Label: fmt.Sprintf("Gerrit CL %d", prop.GerritPatchIssue),
-					URL: fmt.Sprintf(
-						"%s/c/%s", prop.GerritPatchURL, path),
-				},
+				Changelist: resp.NewLink(
+					fmt.Sprintf("Gerrit CL %d", prop.GerritPatchIssue),
+					fmt.Sprintf("%s/c/%s", prop.GerritPatchURL, path),
+				),
 			}
 		}
 	}

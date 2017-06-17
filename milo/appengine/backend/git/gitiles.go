@@ -113,10 +113,7 @@ func GetCommits(c context.Context, repoURL, treeish string, limit int) ([]resp.C
 			AuthorName:  log.Author.Name,
 			AuthorEmail: log.Author.Email,
 			Repo:        repoURL,
-			Revision: &resp.Link{
-				Label: log.Commit,
-				URL:   repoURL + "/+/" + log.Commit,
-			},
+			Revision:    resp.NewLink(log.Commit, repoURL+"/+/"+log.Commit),
 			Description: log.Message,
 			Title:       strings.SplitN(log.Message, "\n", 2)[0],
 			// TODO(hinoka): Fill in the rest of resp.Commit and add those details

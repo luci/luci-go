@@ -28,6 +28,7 @@ import (
 
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/common"
+	"github.com/luci/luci-go/milo/appengine/common/model"
 )
 
 // search executes the search request with retries and exponential back-off.
@@ -118,7 +119,7 @@ func toMiloBuild(c context.Context, build *buildbucket.ApiCommonBuildMessage) *r
 	if err != nil {
 		// almost never happens
 		logging.WithError(err).Errorf(c, "could not convert status of build %d", build.Id)
-		result.Status = resp.InfraFailure
+		result.Status = model.InfraFailure
 		result.Text = append(result.Text, fmt.Sprintf("invalid build: %s", err))
 	}
 
@@ -159,10 +160,7 @@ func toMiloBuild(c context.Context, build *buildbucket.ApiCommonBuildMessage) *r
 			u = parsed.String()
 		}
 
-		result.Link = &resp.Link{
-			URL:   u,
-			Label: strconv.FormatInt(build.Id, 10),
-		}
+		result.Link = resp.NewLink(strconv.FormatInt(build.Id, 10), u)
 
 		// compute the best link label
 		if taskID := tags["swarming_task_id"]; taskID != "" {
@@ -204,13 +202,13 @@ func getDebugBuilds(c context.Context, bucket, builder string, maxCompletedBuild
 	for _, bb := range res.Builds {
 		mb := toMiloBuild(c, bb)
 		switch mb.Status {
-		case resp.NotRun:
+		case model.NotRun:
 			target.PendingBuilds = append(target.PendingBuilds, mb)
 
-		case resp.Running:
+		case model.Running:
 			target.CurrentBuilds = append(target.CurrentBuilds, mb)
 
-		case resp.Success, resp.Failure, resp.InfraFailure, resp.Warning:
+		case model.Success, model.Failure, model.InfraFailure, model.Warning:
 			if len(target.FinishedBuilds) < maxCompletedBuilds {
 				target.FinishedBuilds = append(target.FinishedBuilds, mb)
 			}

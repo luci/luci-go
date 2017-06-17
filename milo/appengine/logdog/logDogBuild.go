@@ -14,6 +14,7 @@ import (
 	"github.com/luci/luci-go/common/proto/google"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
 	"github.com/luci/luci-go/milo/api/resp"
+	"github.com/luci/luci-go/milo/appengine/common/model"
 )
 
 // URLBuilder constructs URLs for various link types.
@@ -40,60 +41,60 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, isMain bool, buildComple
 	comp := &resp.BuildComponent{Label: anno.Name}
 	switch anno.Status {
 	case miloProto.Status_RUNNING:
-		comp.Status = resp.Running
+		comp.Status = model.Running
 
 	case miloProto.Status_SUCCESS:
-		comp.Status = resp.Success
+		comp.Status = model.Success
 
 	case miloProto.Status_FAILURE:
 		if fd := anno.GetFailureDetails(); fd != nil {
 			switch fd.Type {
 			case miloProto.FailureDetails_EXCEPTION, miloProto.FailureDetails_INFRA:
-				comp.Status = resp.InfraFailure
+				comp.Status = model.InfraFailure
 
 			case miloProto.FailureDetails_EXPIRED:
-				comp.Status = resp.Expired
+				comp.Status = model.Expired
 
 			case miloProto.FailureDetails_DM_DEPENDENCY_FAILED:
-				comp.Status = resp.DependencyFailure
+				comp.Status = model.DependencyFailure
 
 			default:
-				comp.Status = resp.Failure
+				comp.Status = model.Failure
 			}
 
 			if fd.Text != "" {
 				comp.Text = append(comp.Text, fd.Text)
 			}
 		} else {
-			comp.Status = resp.Failure
+			comp.Status = model.Failure
 		}
 
 	case miloProto.Status_PENDING:
-		comp.Status = resp.NotRun
+		comp.Status = model.NotRun
 
 		// Missing the case of waiting on unfinished dependency...
 	default:
-		comp.Status = resp.NotRun
+		comp.Status = model.NotRun
 	}
 
 	if !(buildCompletedTime.IsZero() || comp.Status.Terminal()) {
 		// The build has completed, but this step has not. Mark it as an
 		// infrastructure failure.
-		comp.Status = resp.InfraFailure
+		comp.Status = model.InfraFailure
 	}
 
 	// Hide the unimportant steps, highlight the interesting ones.
 	switch comp.Status {
-	case resp.NotRun, resp.Running:
+	case model.NotRun, model.Running:
 		if isMain {
 			comp.Verbosity = resp.Hidden
 		}
 
-	case resp.Success:
+	case model.Success:
 		if _, ok := builtIn[anno.Name]; ok || isMain {
 			comp.Verbosity = resp.Hidden
 		}
-	case resp.InfraFailure, resp.Failure:
+	case model.InfraFailure, model.Failure:
 		comp.Verbosity = resp.Interesting
 	}
 
@@ -150,7 +151,7 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, isMain bool, buildComple
 	switch {
 	case !comp.Finished.IsZero():
 		till = comp.Finished
-	case comp.Status == resp.Running:
+	case comp.Status == model.Running:
 		till = now
 	case !buildCompletedTime.IsZero():
 		till = buildCompletedTime
@@ -203,7 +204,7 @@ func AddLogDogToBuild(
 
 		bss := miloBuildStep(ub, anno, false, buildCompletedTime, now)
 		for _, bs := range bss {
-			if bs.Status != resp.Success {
+			if bs.Status != model.Success {
 				build.Summary.Text = append(
 					build.Summary.Text, fmt.Sprintf("%s %s", bs.Status, bs.Label))
 			}

@@ -6,7 +6,11 @@
 
 package resp
 
-import "time"
+import (
+	"time"
+
+	"github.com/luci/luci-go/milo/appengine/common/model"
+)
 
 // Interval is a time interval which has a start, an end and a duration.
 type Interval struct {
@@ -23,7 +27,7 @@ type BuildSummary struct {
 	Link *Link
 
 	// Status of the build.
-	Status Status
+	Status model.Status
 
 	// Pending is time interval that this build was pending.
 	PendingTime Interval

@@ -140,12 +140,10 @@ func GetAllBuilders(c context.Context) (*resp.CIService, error) {
 		}
 		sort.Strings(sb)
 		for _, bn := range sb {
-			ml.Builders = append(ml.Builders, resp.Link{
-				Label: bn,
-				// Go templates escapes this for us, and also
-				// slashes are not allowed in builder names.
-				URL: fmt.Sprintf("/buildbot/%s/%s", entry.Name, bn),
-			})
+			// Go templates escapes this for us, and also
+			// slashes are not allowed in builder names.
+			ml.Builders = append(ml.Builders, *resp.NewLink(
+				bn, fmt.Sprintf("/buildbot/%s/%s", entry.Name, bn)))
 		}
 		result.BuilderGroups = append(result.BuilderGroups, ml)
 	}

@@ -69,10 +69,7 @@ func mergeText(text []string) []string {
 func getBuildSummary(b *buildbotBuild) *resp.BuildSummary {
 	started, finished, duration := parseTimes(nil, b.Times)
 	return &resp.BuildSummary{
-		Link: &resp.Link{
-			URL:   fmt.Sprintf("%d", b.Number),
-			Label: fmt.Sprintf("#%d", b.Number),
-		},
+		Link:   resp.NewLink(fmt.Sprintf("#%d", b.Number), fmt.Sprintf("%d", b.Number)),
 		Status: b.toStatus(),
 		ExecutionTime: resp.Interval{
 			Started:  started,
@@ -174,10 +171,10 @@ func summarizeSlavePool(
 	for _, slaveName := range slaves {
 		slave, ok := slaveMap[slaveName]
 		bot := resp.Bot{
-			Name: resp.Link{
-				Label: slaveName,
-				URL:   fmt.Sprintf("%s/buildslaves/%s", baseURL, slaveName),
-			},
+			Name: *resp.NewLink(
+				slaveName,
+				fmt.Sprintf("%s/buildslaves/%s", baseURL, slaveName),
+			),
 		}
 		switch {
 		case !ok:

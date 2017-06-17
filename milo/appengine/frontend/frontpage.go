@@ -52,14 +52,8 @@ func frontpageTestData() []common.TestBundle {
 						{
 							Name: "Example master A",
 							Builders: []resp.Link{
-								{
-									Label: "Example builder",
-									URL:   "/master1/buildera",
-								},
-								{
-									Label: "Example builder 2",
-									URL:   "/master1/builderb",
-								},
+								*resp.NewLink("Example builder", "/master1/buildera"),
+								*resp.NewLink("Example builder 2", "/master1/builderb"),
 							},
 						},
 					},

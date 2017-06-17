@@ -14,6 +14,7 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/milo/api/resp"
+	"github.com/luci/luci-go/milo/appengine/common/model"
 )
 
 // This file contains all of the structs that define buildbot json endpoints.
@@ -65,10 +66,7 @@ type buildbotLinkAlias struct {
 }
 
 func (a *buildbotLinkAlias) toLink() *resp.Link {
-	return &resp.Link{
-		Label: a.Text,
-		URL:   a.URL,
-	}
+	return resp.NewLink(a.Text, a.URL)
 }
 
 type buildbotProperty struct {
@@ -146,10 +144,10 @@ type buildbotBuild struct {
 	OSVersion string `json:"osVersion"`
 }
 
-func (b *buildbotBuild) toStatus() resp.Status {
-	var result resp.Status
+func (b *buildbotBuild) toStatus() model.Status {
+	var result model.Status
 	if b.Currentstep != nil {
-		result = resp.Running
+		result = model.Running
 	} else {
 		result = result2Status(b.Results)
 	}

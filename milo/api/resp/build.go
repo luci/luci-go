@@ -2,13 +2,16 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-//go:generate stringer -type=Status,ComponentType,Verbosity
+//go:generate stringer -type=Verbosity
+//go:generate stringer -type=ComponentType
 
 package resp
 
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/luci/luci-go/milo/appengine/common/model"
 )
 
 // MiloBuild denotes a full renderable Milo build page.
@@ -109,60 +112,6 @@ type BuildProgress struct {
 	percent uint32
 }
 
-// Status is a discrete status for the purpose of colorizing a component.
-// These are based off the Material Design Bootstrap color palettes.
-type Status int
-
-const (
-	// NotRun if the component has not yet been run.
-	NotRun Status = iota // 100 Gray
-
-	// Running if the component is currently running.
-	Running // 100 Teal
-
-	// Success if the component has finished executing and is not noteworthy.
-	Success // A200 Green
-
-	// Failure if the component has finished executing and contains a failure.
-	Failure // A200 Red
-
-	// Warning just like from the buildbot days.
-	Warning // 200 Yellow
-
-	// InfraFailure if the component has finished incompletely due to a failure in infra.
-	InfraFailure // A100 Purple
-
-	// Exception if the component has finished incompletely and unexpectedly. This
-	// is used for buildbot builds.
-	Exception // A100 Purple
-
-	// Expired if the component was never scheduled due to resource exhaustion.
-	Expired // A200 Purple
-
-	// DependencyFailure if the component has finished incompletely due to a failure in a
-	// dependency.
-	DependencyFailure // 100 Amber
-
-	// WaitingDependency if the component has finished or paused execution due to an
-	// incomplete dep.
-	WaitingDependency // 100 Brown
-)
-
-// Terminal returns true if the step status won't change.
-func (s Status) Terminal() bool {
-	switch s {
-	case Success, Failure, InfraFailure, Warning, DependencyFailure, Expired:
-		return true
-	default:
-		return false
-	}
-}
-
-// MarshalJSON renders enums into String rather than an int when marshalling.
-func (s Status) MarshalJSON() ([]byte, error) {
-	return json.Marshal(s.String())
-}
-
 // ComponentType is the type of build component.
 type ComponentType int
 
@@ -215,7 +164,7 @@ type BuildComponent struct {
 	Label string
 
 	// Status of the build.
-	Status Status
+	Status model.Status
 
 	// Banner is a banner of logos that define the OS and devices this
 	// component is associated with.
@@ -292,11 +241,7 @@ type LinkSet []*Link
 //
 // JSON tags here are for test expectations.
 type Link struct {
-	// Title of the link.  Shows up as the main label.
-	Label string
-
-	// The destination for the link, stuck in a <a href> tag.
-	URL string
+	model.Link
 
 	// An icon for the link.  Not compatible with label.  Rendered as <img>
 	Img string `json:",omitempty"`
@@ -306,4 +251,9 @@ type Link struct {
 
 	// Alias, if true, means that this link is an [alias link].
 	Alias bool `json:",omitempty"`
+}
+
+// NewLink does just about what you'd expect.
+func NewLink(label, url string) *Link {
+	return &Link{Link: model.Link{Label: label, URL: url}}
 }

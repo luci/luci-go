@@ -29,6 +29,7 @@ import (
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/common"
+	"github.com/luci/luci-go/milo/appengine/common/model"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/templates"
@@ -236,7 +237,7 @@ func BuildTestData() []common.TestBundle {
 	basic := resp.MiloBuild{
 		Summary: resp.BuildComponent{
 			Label:    "Test swarming build",
-			Status:   resp.Success,
+			Status:   model.Success,
 			Started:  time.Date(2016, 1, 2, 15, 4, 5, 999999999, time.UTC),
 			Finished: time.Date(2016, 1, 2, 15, 4, 6, 999999999, time.UTC),
 			Duration: time.Second,

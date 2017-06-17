@@ -13,6 +13,7 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/milo/api/resp"
+	"github.com/luci/luci-go/milo/appengine/common/model"
 
 	"golang.org/x/net/context"
 )
@@ -66,16 +67,15 @@ func GetConsoleBuilds(
 					return err
 				}
 				t2 := clock.Now(c)
-				var currentStatus *resp.Status
+				var currentStatus *model.Status
 				for j, commit := range commits {
 					for _, build := range builds {
 						if build.Sourcestamp.Revision == commit {
 							results[j][i] = &resp.ConsoleBuild{
-								Link: &resp.Link{
-									Label: strings.Join(build.Text, " "),
-									URL: fmt.Sprintf(
-										"/buildbot/%s/%s/%d", master, builderName, build.Number),
-								},
+								Link: resp.NewLink(
+									strings.Join(build.Text, " "),
+									fmt.Sprintf("/buildbot/%s/%s/%d", master, builderName, build.Number),
+								),
 								Status: build.toStatus(),
 							}
 							currentStatus = &results[j][i].Status

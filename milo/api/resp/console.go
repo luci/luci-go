@@ -4,6 +4,8 @@
 
 package resp
 
+import "github.com/luci/luci-go/milo/appengine/common/model"
+
 // This file contains the structures for defining a Console view.
 // Console: The main entry point and the overall struct for a console page.
 // BuilderRef: Used both as an input to request a builder and headers for the console.
@@ -50,5 +52,5 @@ type ConsoleBuild struct {
 	Link *Link
 
 	// Status of the build.
-	Status Status
+	Status model.Status
 }
