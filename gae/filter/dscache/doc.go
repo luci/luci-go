@@ -160,7 +160,7 @@
 //
 // AppEngine's memcache reserves the right to evict keys at any moment. This is
 // especially true for shared memcache, which is subject to pressures outside of
-// your application. When when eviction happens due to memory pressure,
+// your application. When eviction happens due to memory pressure,
 // least-recently-used values are evicted first.
 //
 // https://cloud.google.com/appengine/docs/go/memcache/#Go_How_cached_data_expires
