@@ -31,6 +31,15 @@ func TestLUCIContextProvider(t *testing.T) {
 		So(err, ShouldErrLike, `no "local_auth" in LUCI_CONTEXT`)
 	})
 
+	Convey("Requires default_account_id", t, func() {
+		ctx := context.Background()
+		ctx = lucictx.SetLocalAuth(ctx, &lucictx.LocalAuth{
+			Accounts: []lucictx.LocalAuthAccount{{ID: "zzz"}},
+		})
+		_, err := NewLUCIContextTokenProvider(ctx, []string{"A"}, http.DefaultTransport)
+		So(err, ShouldErrLike, `no "default_account_id"`)
+	})
+
 	Convey("With mock server", t, func(c C) {
 		requests := make(chan rpcs.GetOAuthTokenRequest, 10000)
 		responses := make(chan interface{}, 1)
@@ -65,8 +74,9 @@ func TestLUCIContextProvider(t *testing.T) {
 
 		ctx := context.Background()
 		ctx = lucictx.SetLocalAuth(ctx, &lucictx.LocalAuth{
-			RPCPort: uint32(ts.Listener.Addr().(*net.TCPAddr).Port),
-			Secret:  []byte("zekret"),
+			RPCPort:          uint32(ts.Listener.Addr().(*net.TCPAddr).Port),
+			Secret:           []byte("zekret"),
+			DefaultAccountID: "acc_id",
 		})
 
 		p, err := NewLUCIContextTokenProvider(ctx, []string{"B", "A"}, http.DefaultTransport)
@@ -87,8 +97,9 @@ func TestLUCIContextProvider(t *testing.T) {
 			})
 
 			So(<-requests, ShouldResemble, rpcs.GetOAuthTokenRequest{
-				Scopes: []string{"B", "A"},
-				Secret: []byte("zekret"),
+				Scopes:    []string{"B", "A"},
+				Secret:    []byte("zekret"),
+				AccountID: "acc_id",
 			})
 		})
 

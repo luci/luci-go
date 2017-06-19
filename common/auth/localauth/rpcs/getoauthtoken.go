@@ -5,23 +5,28 @@
 package rpcs
 
 import (
-	"fmt"
+	"github.com/luci/luci-go/common/errors"
 )
 
 // GetOAuthTokenRequest is parameters for GetOAuthToken RPC call.
 type GetOAuthTokenRequest struct {
-	Scopes []string `json:"scopes"`
-	Secret []byte   `json:"secret"`
+	Scopes    []string `json:"scopes"`
+	Secret    []byte   `json:"secret"`
+	AccountID string   `json:"account_id"`
 }
 
-// Validate checks that scopes and secret are set.
+// Validate checks that the request is structurally valid.
 func (r *GetOAuthTokenRequest) Validate() error {
 	switch {
 	case len(r.Scopes) == 0:
-		return fmt.Errorf(`Field "scopes" is required.`)
+		return errors.New(`field "scopes" is required`)
 	case len(r.Secret) == 0:
-		return fmt.Errorf(`Field "secret" is required.`)
+		return errors.New(`field "secret" is required`)
 	}
+	// TODO(vadimsh): Uncomment when all old auth server are turned off.
+	//case r.AccountID == "":
+	//	return errors.New(`field "account_id" is required`)
+	//}
 	return nil
 }
 

@@ -21,12 +21,22 @@ func TestPredefinedTypes(t *testing.T) {
 		Convey("local_auth", func() {
 			So(GetLocalAuth(c), ShouldBeNil)
 
-			c = SetLocalAuth(c, &LocalAuth{100, []byte("foo")})
+			localAuth := LocalAuth{
+				RPCPort: 100,
+				Secret:  []byte("foo"),
+				Accounts: []LocalAuthAccount{
+					{"test"},
+				},
+				DefaultAccountID: "test",
+			}
+
+			c = SetLocalAuth(c, &localAuth)
 			rawJSON := json.RawMessage{}
 			Get(c, "local_auth", &rawJSON)
-			So(string(rawJSON), ShouldEqual, `{"rpc_port":100,"secret":"Zm9v"}`)
+			So(string(rawJSON), ShouldEqual, `{"rpc_port":100,"secret":"Zm9v",`+
+				`"accounts":[{"id":"test"}],"default_account_id":"test"}`)
 
-			So(GetLocalAuth(c), ShouldResemble, &LocalAuth{100, []byte("foo")})
+			So(GetLocalAuth(c), ShouldResemble, &localAuth)
 		})
 
 		Convey("swarming", func() {

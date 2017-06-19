@@ -503,8 +503,18 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 		return ExitCodeNoValidToken
 	}
 
+	// We currently always setup a context with one account (which is also
+	// default). To avoid confusion where it comes from, we name it 'authutil'.
+	// Most tools should not care how it is named, as long as it is specified as
+	// 'default_account_id' in LUCI_CONTEXT["local_auth"].
+	srv := &localauth.Server{
+		TokenGenerators: map[string]localauth.TokenGenerator{
+			"authutil": gen,
+		},
+		DefaultAccountID: "authutil",
+	}
+
 	// Enter the environment with the local auth server.
-	srv := &localauth.Server{TokenGenerator: gen}
 	err = localauth.WithLocalAuth(ctx, srv, func(ctx context.Context) error {
 		// Put the new LUCI_CONTEXT file, prepare cmd environ.
 		exported, err := lucictx.Export(ctx, "")

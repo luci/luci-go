@@ -24,13 +24,15 @@ func TestWithLocalAuth(t *testing.T) {
 	ctx := context.Background()
 	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeLocal)
 
+	gen := func(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
+		return &oauth2.Token{
+			AccessToken: "tok",
+			Expiry:      clock.Now(ctx).Add(30 * time.Minute),
+		}, nil
+	}
+
 	srv := Server{
-		TokenGenerator: func(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
-			return &oauth2.Token{
-				AccessToken: "tok",
-				Expiry:      clock.Now(ctx).Add(30 * time.Minute),
-			}, nil
-		},
+		TokenGenerators: map[string]TokenGenerator{"acc_id": gen},
 	}
 
 	Convey("Works", t, func() {
@@ -38,8 +40,9 @@ func TestWithLocalAuth(t *testing.T) {
 			p := lucictx.GetLocalAuth(ctx)
 			So(p, ShouldNotBeNil)
 			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]interface{}{
-				"scopes": []string{"B", "A"},
-				"secret": p.Secret,
+				"scopes":     []string{"B", "A"},
+				"secret":     p.Secret,
+				"account_id": "acc_id",
 			})
 			So(call(req), ShouldEqual, `HTTP 200 (json): {"access_token":"tok","expiry":1454502906}`)
 			return nil

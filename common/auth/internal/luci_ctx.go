@@ -39,10 +39,17 @@ type luciContextTokenProvider struct {
 // description of how to locate and contact the local auth server.
 //
 // See common/auth/localauth package for the implementation of the server.
+//
+// TODO(vadimsh): This method currently supports both "old" auth server that
+// don't understand "account_id", and new servers that do. Remove support for
+// old servers once Swarming is updated to understand new protocol.
 func NewLUCIContextTokenProvider(ctx context.Context, scopes []string, transport http.RoundTripper) (TokenProvider, error) {
 	localAuth := lucictx.GetLocalAuth(ctx)
 	if localAuth == nil {
 		return nil, fmt.Errorf(`no "local_auth" in LUCI_CONTEXT`)
+	}
+	if !localAuth.CanUseByDefault() {
+		return nil, fmt.Errorf(`no "default_account_id" in LUCI_CONTEXT["local_auth"]`)
 	}
 
 	// All authenticators share singleton in-process token cache, see
@@ -90,8 +97,9 @@ func (p *luciContextTokenProvider) MintToken(ctx context.Context, base *oauth2.T
 	// should just make a single attempt, and mark an error as transient to
 	// trigger a retry, if necessary.
 	request := rpcs.GetOAuthTokenRequest{
-		Scopes: p.scopes,
-		Secret: p.localAuth.Secret,
+		Scopes:    p.scopes,
+		Secret:    p.localAuth.Secret,
+		AccountID: p.localAuth.DefaultAccountID, // note: this is "" for old servers
 	}
 	if err := request.Validate(); err != nil {
 		return nil, err // should not really happen

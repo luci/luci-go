@@ -90,28 +90,38 @@ func TestProtocol(t *testing.T) {
 		// Use channels to pass mocked requests/responses back and forth.
 		requests := make(chan []string, 10000)
 		responses := make(chan interface{}, 1)
+
+		testGen := func(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
+			requests <- scopes
+			var resp interface{}
+			select {
+			case resp = <-responses:
+			default:
+				c.Println("Unexpected token request")
+				return nil, fmt.Errorf("Unexpected request")
+			}
+			switch resp := resp.(type) {
+			case error:
+				return nil, resp
+			case *oauth2.Token:
+				return resp, nil
+			default:
+				panic("unknown response")
+			}
+		}
+
 		s := Server{
-			TokenGenerator: func(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
-				requests <- scopes
-				var resp interface{}
-				select {
-				case resp = <-responses:
-				default:
-					c.Println("Unexpected token request")
-					return nil, fmt.Errorf("Unexpected request")
-				}
-				switch resp := resp.(type) {
-				case error:
-					return nil, resp
-				case *oauth2.Token:
-					return resp, nil
-				default:
-					panic("unknown response")
-				}
+			TokenGenerators: map[string]TokenGenerator{
+				"acc_id":     testGen,
+				"another_id": testGen,
 			},
+			DefaultAccountID: "acc_id",
 		}
 		p, err := s.Initialize(ctx)
 		So(err, ShouldBeNil)
+
+		So(p.Accounts, ShouldResemble, []lucictx.LocalAuthAccount{{ID: "acc_id"}, {ID: "another_id"}})
+		So(p.DefaultAccountID, ShouldEqual, "acc_id")
 
 		done := make(chan struct{})
 		go func() {
@@ -125,8 +135,9 @@ func TestProtocol(t *testing.T) {
 
 		goodRequest := func() *http.Request {
 			return prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]interface{}{
-				"scopes": []string{"B", "A"},
-				"secret": p.Secret,
+				"scopes":     []string{"B", "A"},
+				"secret":     p.Secret,
+				"account_id": "acc_id",
 			})
 		}
 
@@ -201,22 +212,40 @@ func TestProtocol(t *testing.T) {
 			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]interface{}{
 				"secret": p.Secret,
 			})
-			So(call(req), ShouldEqual, `HTTP 400: Field "scopes" is required.`)
+			So(call(req), ShouldEqual, `HTTP 400: Bad request: field "scopes" is required.`)
 		})
 
 		Convey("No secret", func() {
 			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]interface{}{
 				"scopes": []string{"B", "A"},
 			})
-			So(call(req), ShouldEqual, `HTTP 400: Field "secret" is required.`)
+			So(call(req), ShouldEqual, `HTTP 400: Bad request: field "secret" is required.`)
 		})
 
 		Convey("Bad secret", func() {
 			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]interface{}{
-				"scopes": []string{"B", "A"},
-				"secret": []byte{0, 1, 2, 3},
+				"scopes":     []string{"B", "A"},
+				"secret":     []byte{0, 1, 2, 3},
+				"account_id": "acc_id",
 			})
 			So(call(req), ShouldEqual, `HTTP 403: Invalid secret.`)
+		})
+
+		Convey("No account ID", func() {
+			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]interface{}{
+				"scopes": []string{"B", "A"},
+				"secret": p.Secret,
+			})
+			So(call(req), ShouldEqual, `HTTP 400: Bad request: field "account_id" is required.`)
+		})
+
+		Convey("Unknown account ID", func() {
+			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]interface{}{
+				"scopes":     []string{"B", "A"},
+				"secret":     p.Secret,
+				"account_id": "unknown_acc_id",
+			})
+			So(call(req), ShouldEqual, `HTTP 404: Unrecognized account ID "unknown_acc_id".`)
 		})
 
 		Convey("Token generator returns fatal error", func() {

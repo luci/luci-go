@@ -345,19 +345,27 @@ type Options struct {
 // Beware: it may do relatively heavy calls on first usage (to detect GCE
 // environment). Fast after that.
 func SelectBestMethod(ctx context.Context, opts Options) Method {
-	switch {
-	case opts.ServiceAccountJSONPath != "" || len(opts.ServiceAccountJSON) != 0:
+	// Asked to use JSON private key.
+	if opts.ServiceAccountJSONPath != "" || len(opts.ServiceAccountJSON) != 0 {
 		if opts.ServiceAccountJSONPath == GCEServiceAccount {
 			return GCEMetadataMethod
 		}
 		return ServiceAccountMethod
-	case lucictx.GetLocalAuth(ctx) != nil:
-		return LUCIContextMethod
-	case opts.GCEAllowAsDefault && metadata.OnGCE():
-		return GCEMetadataMethod
-	default:
-		return UserCredentialsMethod
 	}
+
+	// Have a local auth server and an account we are allowed to pick by default.
+	// If no default account is given, don't automatically pick up this method.
+	if la := lucictx.GetLocalAuth(ctx); la != nil && la.CanUseByDefault() {
+		return LUCIContextMethod
+	}
+
+	// Running on GCE and callers are fine with automagically picking up GCE
+	// metadata server.
+	if opts.GCEAllowAsDefault && metadata.OnGCE() {
+		return GCEMetadataMethod
+	}
+
+	return UserCredentialsMethod
 }
 
 // AllowsArbitraryScopes returns true if given authenticator options allow
