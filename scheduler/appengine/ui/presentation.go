@@ -22,6 +22,7 @@ import (
 	"github.com/luci/luci-go/scheduler/appengine/catalog"
 	"github.com/luci/luci-go/scheduler/appengine/engine"
 	"github.com/luci/luci-go/scheduler/appengine/messages"
+	"github.com/luci/luci-go/scheduler/appengine/presentation"
 	"github.com/luci/luci-go/scheduler/appengine/schedule"
 	"github.com/luci/luci-go/scheduler/appengine/task"
 )
@@ -47,12 +48,15 @@ type schedulerJob struct {
 	traits    task.Traits // as extracted from corresponding task.Manager
 }
 
-var stateToLabelClass = map[engine.StateKind]string{
-	engine.JobStateDisabled:  "label-default",
-	engine.JobStateScheduled: "label-primary",
-	engine.JobStateSuspended: "label-default",
-	engine.JobStateRunning:   "label-info",
-	engine.JobStateOverrun:   "label-warning",
+var stateToLabelClass = map[presentation.PublicStateKind]string{
+	presentation.PublicStateRetrying:  "label-danger",
+	presentation.PublicStatePaused:    "label-default",
+	presentation.PublicStateScheduled: "label-primary",
+	presentation.PublicStateSuspended: "label-default",
+	presentation.PublicStateRunning:   "label-info",
+	presentation.PublicStateOverrun:   "label-warning",
+	presentation.PublicStateWaiting:   "label-warning",
+	presentation.PublicStateStarting:  "label-default",
 }
 
 var flavorToIconClass = []string{
@@ -69,19 +73,9 @@ var flavorToTitle = []string{
 
 // makeJob builds UI presentation for engine.Job.
 func makeJob(c context.Context, j *engine.Job) *schedulerJob {
-	// Grab the task.Manager that's responsible for handling this job and
-	// query if for the list of traits applying to this job.
-	var manager task.Manager
-	cat := config(c).Catalog
-	taskDef, err := cat.UnmarshalTask(j.Task)
+	traits, err := presentation.GetJobTraits(c, config(c).Catalog, j)
 	if err != nil {
-		logging.WithError(err).Warningf(c, "Failed to unmarshal task proto for %s", j.JobID)
-	} else {
-		manager = cat.GetTaskManager(taskDef)
-	}
-	traits := task.Traits{}
-	if manager != nil {
-		traits = manager.Traits()
+		logging.WithError(err).Warningf(c, "Failed to get task traits for %s", j.JobID)
 	}
 
 	now := clock.Now(c).UTC()
@@ -96,48 +90,13 @@ func makeJob(c context.Context, j *engine.Job) *schedulerJob {
 	}
 
 	// Internal state names aren't very user friendly. Introduce some aliases.
-	state := ""
-	labelClass := ""
-	switch {
-	case j.State.IsRetrying():
-		// Retries happen when invocation fails to launch (move from "STARTING" to
-		// "RUNNING" state). Such invocation is retried (as new invocation). When
-		// a retry is enqueued, we display the job state as "RETRYING" (even though
-		// technically it is still "QUEUED").
-		state = "RETRYING"
-		labelClass = "label-danger"
-	case !traits.Multistage && j.State.InvocationID != 0:
-		// The job has an active invocation and the engine has called LaunchTask for
-		// it already. Jobs with Multistage == false trait do all their work in
-		// LaunchTask, so we display them as "RUNNING" (instead of "STARTING").
-		state = "RUNNING"
-		labelClass = "label-info"
-	case j.State.State == engine.JobStateQueued:
-		// An invocation has been added to the task queue, and the engine hasn't
-		// attempted to launch it yet.
-		state = "STARTING"
-		labelClass = "label-default"
-	case j.State.State == engine.JobStateSlowQueue:
+	state := presentation.GetPublicStateKind(j, traits)
+	labelClass := stateToLabelClass[state]
+	if j.State.State == engine.JobStateSlowQueue {
 		// Job invocation is still in the task queue, but new invocation should be
 		// starting now (so the queue is lagging for some reason).
-		state = "STARTING"
 		labelClass = "label-warning"
-	case j.Paused && j.State.State == engine.JobStateSuspended:
-		// Paused jobs don't have a schedule, so they are always in "SUSPENDED"
-		// state. Make it clearer that they are just paused. This applies to both
-		// triggered and periodic jobs.
-		state = "PAUSED"
-		labelClass = "label-default"
-	case j.State.State == engine.JobStateSuspended && j.Flavor == catalog.JobFlavorTriggered:
-		// Triggered jobs don't run on a schedule. They are in "SUSPENDED" state
-		// between triggering events, rename it to "WAITING" for clarity.
-		state = "WAITING"
-		labelClass = "label-default"
-	default:
-		state = string(j.State.State)
-		labelClass = stateToLabelClass[j.State.State]
 	}
-
 	// Put triggers after regular jobs.
 	sortGroup := "A"
 	if j.Flavor == catalog.JobFlavorTrigger {
@@ -154,7 +113,7 @@ func makeJob(c context.Context, j *engine.Job) *schedulerJob {
 		Definition:     taskToText(j.Task),
 		Revision:       j.Revision,
 		RevisionURL:    j.RevisionURL,
-		State:          state,
+		State:          string(state),
 		Overruns:       j.State.Overruns,
 		NextRun:        nextRun,
 		Paused:         j.Paused,

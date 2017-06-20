@@ -8,6 +8,10 @@ It is generated from these files:
 	github.com/luci/luci-go/scheduler/api/scheduler/v1/scheduler.proto
 
 It has these top-level messages:
+	JobsRequest
+	JobsReply
+	Job
+	JobState
 */
 package scheduler
 
@@ -33,6 +37,102 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
+type JobsRequest struct {
+	// If not specified or "", all projects' jobs are returned.
+	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
+}
+
+func (m *JobsRequest) Reset()                    { *m = JobsRequest{} }
+func (m *JobsRequest) String() string            { return proto.CompactTextString(m) }
+func (*JobsRequest) ProtoMessage()               {}
+func (*JobsRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+
+func (m *JobsRequest) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+type JobsReply struct {
+	Jobs []*Job `protobuf:"bytes,1,rep,name=jobs" json:"jobs,omitempty"`
+}
+
+func (m *JobsReply) Reset()                    { *m = JobsReply{} }
+func (m *JobsReply) String() string            { return proto.CompactTextString(m) }
+func (*JobsReply) ProtoMessage()               {}
+func (*JobsReply) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+
+func (m *JobsReply) GetJobs() []*Job {
+	if m != nil {
+		return m.Jobs
+	}
+	return nil
+}
+
+type Job struct {
+	Id       string    `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Project  string    `protobuf:"bytes,2,opt,name=project" json:"project,omitempty"`
+	Schedule string    `protobuf:"bytes,3,opt,name=schedule" json:"schedule,omitempty"`
+	State    *JobState `protobuf:"bytes,4,opt,name=state" json:"state,omitempty"`
+}
+
+func (m *Job) Reset()                    { *m = Job{} }
+func (m *Job) String() string            { return proto.CompactTextString(m) }
+func (*Job) ProtoMessage()               {}
+func (*Job) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+
+func (m *Job) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *Job) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *Job) GetSchedule() string {
+	if m != nil {
+		return m.Schedule
+	}
+	return ""
+}
+
+func (m *Job) GetState() *JobState {
+	if m != nil {
+		return m.State
+	}
+	return nil
+}
+
+type JobState struct {
+	UiStatus string `protobuf:"bytes,1,opt,name=ui_status,json=uiStatus" json:"ui_status,omitempty"`
+}
+
+func (m *JobState) Reset()                    { *m = JobState{} }
+func (m *JobState) String() string            { return proto.CompactTextString(m) }
+func (*JobState) ProtoMessage()               {}
+func (*JobState) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
+func (m *JobState) GetUiStatus() string {
+	if m != nil {
+		return m.UiStatus
+	}
+	return ""
+}
+
+func init() {
+	proto.RegisterType((*JobsRequest)(nil), "scheduler.JobsRequest")
+	proto.RegisterType((*JobsReply)(nil), "scheduler.JobsReply")
+	proto.RegisterType((*Job)(nil), "scheduler.Job")
+	proto.RegisterType((*JobState)(nil), "scheduler.JobState")
+}
+
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
 var _ grpc.ClientConn
@@ -44,6 +144,8 @@ const _ = grpc.SupportPackageIsVersion4
 // Client API for Scheduler service
 
 type SchedulerClient interface {
+	// GetJobs fetches all jobs satisfying JobsRequest and visibility ACLs.
+	GetJobs(ctx context.Context, in *JobsRequest, opts ...grpc.CallOption) (*JobsReply, error)
 }
 type schedulerPRPCClient struct {
 	client *prpc.Client
@@ -51,6 +153,15 @@ type schedulerPRPCClient struct {
 
 func NewSchedulerPRPCClient(client *prpc.Client) SchedulerClient {
 	return &schedulerPRPCClient{client}
+}
+
+func (c *schedulerPRPCClient) GetJobs(ctx context.Context, in *JobsRequest, opts ...grpc.CallOption) (*JobsReply, error) {
+	out := new(JobsReply)
+	err := c.client.Call(ctx, "scheduler.Scheduler", "GetJobs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 type schedulerClient struct {
@@ -61,21 +172,55 @@ func NewSchedulerClient(cc *grpc.ClientConn) SchedulerClient {
 	return &schedulerClient{cc}
 }
 
+func (c *schedulerClient) GetJobs(ctx context.Context, in *JobsRequest, opts ...grpc.CallOption) (*JobsReply, error) {
+	out := new(JobsReply)
+	err := grpc.Invoke(ctx, "/scheduler.Scheduler/GetJobs", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Scheduler service
 
 type SchedulerServer interface {
+	// GetJobs fetches all jobs satisfying JobsRequest and visibility ACLs.
+	GetJobs(context.Context, *JobsRequest) (*JobsReply, error)
 }
 
 func RegisterSchedulerServer(s prpc.Registrar, srv SchedulerServer) {
 	s.RegisterService(&_Scheduler_serviceDesc, srv)
 }
 
+func _Scheduler_GetJobs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JobsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SchedulerServer).GetJobs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/scheduler.Scheduler/GetJobs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SchedulerServer).GetJobs(ctx, req.(*JobsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Scheduler_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "scheduler.Scheduler",
 	HandlerType: (*SchedulerServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams:     []grpc.StreamDesc{},
-	Metadata:    "github.com/luci/luci-go/scheduler/api/scheduler/v1/scheduler.proto",
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetJobs",
+			Handler:    _Scheduler_GetJobs_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "github.com/luci/luci-go/scheduler/api/scheduler/v1/scheduler.proto",
 }
 
 func init() {
@@ -83,11 +228,22 @@ func init() {
 }
 
 var fileDescriptor0 = []byte{
-	// 87 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x72, 0x4a, 0xcf, 0x2c, 0xc9,
-	0x28, 0x4d, 0xd2, 0x4b, 0xce, 0xcf, 0xd5, 0xcf, 0x29, 0x4d, 0xce, 0x04, 0x13, 0xba, 0xe9, 0xf9,
-	0xfa, 0xc5, 0xc9, 0x19, 0xa9, 0x29, 0xa5, 0x39, 0xa9, 0x45, 0xfa, 0x89, 0x05, 0x99, 0x48, 0xbc,
-	0x32, 0x43, 0x04, 0x47, 0xaf, 0xa0, 0x28, 0xbf, 0x24, 0x5f, 0x88, 0x13, 0x2e, 0x60, 0xc4, 0xcd,
-	0xc5, 0x19, 0x0c, 0xe3, 0x24, 0xb1, 0x81, 0xa5, 0x8d, 0x01, 0x01, 0x00, 0x00, 0xff, 0xff, 0x52,
-	0x17, 0x2a, 0x0f, 0x64, 0x00, 0x00, 0x00,
+	// 257 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x64, 0x90, 0xc1, 0x6b, 0x83, 0x30,
+	0x14, 0xc6, 0x51, 0xbb, 0xd5, 0x3c, 0xa1, 0x87, 0x6c, 0x8c, 0xd0, 0x5d, 0x24, 0x97, 0xba, 0xc3,
+	0x94, 0xb9, 0xc3, 0xee, 0x63, 0x30, 0xf0, 0xa8, 0x7f, 0xc0, 0x68, 0x34, 0xb4, 0x29, 0x8e, 0x64,
+	0x26, 0x29, 0xf4, 0xbf, 0x1f, 0xa6, 0x4d, 0x5b, 0xe9, 0x25, 0xf0, 0xfb, 0xbe, 0xc7, 0xf7, 0xe5,
+	0x3d, 0xf8, 0xdc, 0x08, 0xb3, 0xb5, 0x2c, 0x6f, 0xe5, 0x6f, 0xd1, 0xdb, 0x56, 0xb8, 0xe7, 0x75,
+	0x23, 0x0b, 0xdd, 0x6e, 0x79, 0x67, 0x7b, 0x3e, 0x14, 0x6b, 0x25, 0xae, 0x68, 0xff, 0x76, 0x81,
+	0x5c, 0x0d, 0xd2, 0x48, 0x8c, 0xce, 0x02, 0x5d, 0x41, 0x52, 0x49, 0xa6, 0x6b, 0xfe, 0x67, 0xb9,
+	0x36, 0x98, 0xc0, 0x5c, 0x0d, 0x72, 0xc7, 0x5b, 0x43, 0x82, 0x34, 0xc8, 0x50, 0xed, 0x91, 0x16,
+	0x80, 0x8e, 0x83, 0xaa, 0x3f, 0x60, 0x0a, 0xb3, 0x9d, 0x64, 0x9a, 0x04, 0x69, 0x94, 0x25, 0xe5,
+	0x22, 0xbf, 0x14, 0x54, 0x92, 0xd5, 0xce, 0xa3, 0x7b, 0x88, 0x2a, 0xc9, 0xf0, 0x02, 0x42, 0xd1,
+	0x9d, 0xc2, 0x42, 0xd1, 0x5d, 0x37, 0x84, 0x93, 0x06, 0xbc, 0x84, 0xd8, 0xe7, 0x90, 0xc8, 0x59,
+	0x67, 0xc6, 0x2f, 0x70, 0xa7, 0xcd, 0xda, 0x70, 0x32, 0x4b, 0x83, 0x2c, 0x29, 0x1f, 0xa6, 0x8d,
+	0xcd, 0x68, 0xd5, 0xc7, 0x09, 0xba, 0x82, 0xd8, 0x4b, 0xf8, 0x19, 0x90, 0x15, 0x3f, 0xa3, 0x6e,
+	0xf5, 0xe9, 0x0f, 0xb1, 0x15, 0x8d, 0xe3, 0xf2, 0x0b, 0x50, 0xe3, 0x53, 0xf0, 0x07, 0xcc, 0xbf,
+	0xb9, 0x19, 0x37, 0xc4, 0x4f, 0xd3, 0x70, 0x7f, 0x9b, 0xe5, 0xe3, 0x8d, 0xae, 0xfa, 0x03, 0xbb,
+	0x77, 0x27, 0x7d, 0xff, 0x0f, 0x00, 0x00, 0xff, 0xff, 0xf4, 0x19, 0xb3, 0x57, 0x98, 0x01, 0x00,
+	0x00,
 }

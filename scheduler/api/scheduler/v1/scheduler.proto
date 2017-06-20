@@ -9,5 +9,29 @@ package scheduler;
 
 // Scheduler exposes the public API of the Scheduler service.
 service Scheduler {
-  // TODO
+  // TODO: still in progress.
+
+  // GetJobs fetches all jobs satisfying JobsRequest and visibility ACLs.
+  rpc GetJobs(JobsRequest) returns (JobsReply);
+}
+
+message JobsRequest {
+  // If not specified or "", all projects' jobs are returned.
+  string project = 1;
+}
+
+message JobsReply {
+  repeated Job jobs = 1;
+}
+
+message Job {
+  string id = 1;
+  string project = 2;
+  string schedule = 3;
+
+  JobState state = 4;
+}
+
+message JobState {
+  string ui_status = 1;
 }
