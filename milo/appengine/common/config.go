@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
+
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/data/caching/proccache"
@@ -15,10 +18,8 @@ import (
 	"github.com/luci/luci-go/luci_config/server/cfgclient"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
-	"github.com/luci/luci-go/milo/common/config"
 
-	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
+	"github.com/luci/luci-go/milo/api/config"
 )
 
 // Project is a LUCI project.

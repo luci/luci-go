@@ -13,12 +13,13 @@ import (
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/server/router"
+
+	"github.com/luci/luci-go/milo/api/config"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/appengine/backend/git"
 	"github.com/luci/luci-go/milo/appengine/buildbot"
 	"github.com/luci/luci-go/milo/appengine/common"
-	"github.com/luci/luci-go/milo/common/config"
-	"github.com/luci/luci-go/server/router"
 )
 
 // Returns results of build[commit_index][builder_index]
