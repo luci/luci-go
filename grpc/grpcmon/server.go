@@ -9,6 +9,7 @@ import (
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/tsmon/distribution"
@@ -44,22 +45,32 @@ var (
 func NewUnaryServerInterceptor(next grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		started := clock.Now(ctx)
+		panicing := true
 		defer func() {
-			reportServerRPCMetrics(ctx, info.FullMethod, err, clock.Now(ctx).Sub(started))
+			// We don't want to recover anything, but we want to log Internal error
+			// in case of a panic. We pray here reportServerRPCMetrics is very
+			// lightweight and it doesn't panic itself.
+			code := codes.OK
+			switch {
+			case err != nil:
+				code = grpc.Code(err)
+			case panicing:
+				code = codes.Internal
+			}
+			reportServerRPCMetrics(ctx, info.FullMethod, code, clock.Now(ctx).Sub(started))
 		}()
 		if next != nil {
-			return next(ctx, req, info, handler)
+			resp, err = next(ctx, req, info, handler)
+		} else {
+			resp, err = handler(ctx, req)
 		}
-		return handler(ctx, req)
+		panicing = false // normal exit, no panic happened, disarms defer
+		return
 	}
 }
 
 // reportServerRPCMetrics sends metrics after RPC handler has finished.
-func reportServerRPCMetrics(ctx context.Context, method string, err error, dur time.Duration) {
-	code := 0
-	if err != nil {
-		code = int(grpc.Code(err))
-	}
-	grpcServerCount.Add(ctx, 1, method, code)
-	grpcServerDuration.Add(ctx, float64(dur.Nanoseconds()/1e6), method, code)
+func reportServerRPCMetrics(ctx context.Context, method string, code codes.Code, dur time.Duration) {
+	grpcServerCount.Add(ctx, 1, method, int(code))
+	grpcServerDuration.Add(ctx, float64(dur.Nanoseconds()/1e6), method, int(code))
 }

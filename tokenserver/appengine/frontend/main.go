@@ -18,6 +18,7 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/grpc/discovery"
 	"github.com/luci/luci-go/grpc/grpcmon"
+	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/grpc/prpc"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
@@ -55,9 +56,10 @@ func init() {
 		http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
 	})
 
-	// Install all RPC servers.
+	// Install all RPC servers. Catch panics, report metrics to tsmon (including
+	// panics themselves, as Internal errors).
 	api := prpc.Server{
-		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil),
+		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(grpcutil.NewUnaryServerPanicCatcher(nil)),
 	}
 	admin.RegisterCertificateAuthoritiesServer(&api, &admin.DecoratedCertificateAuthorities{
 		Service: certauthorities.NewServer(),
