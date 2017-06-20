@@ -2,7 +2,7 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-package git
+package gitiles
 
 import (
 	"encoding/json"
@@ -33,7 +33,7 @@ type Author struct {
 }
 
 // Committer is the committer information returned from a gitiles log request.
-type Commiter struct {
+type Committer struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
 	Time  string `json:"time"`
@@ -41,12 +41,12 @@ type Commiter struct {
 
 // Log is the Log information of a commit returned from a gitiles log request.
 type Log struct {
-	Commit    string   `json:"commit"`
-	Tree      string   `json:"tree"`
-	Parents   []string `json:"parents"`
-	Author    Author   `json:"author"`
-	Committer Commiter `json:"committer"`
-	Message   string   `json:"message"`
+	Commit    string    `json:"commit"`
+	Tree      string    `json:"tree"`
+	Parents   []string  `json:"parents"`
+	Author    Author    `json:"author"`
+	Committer Committer `json:"committer"`
+	Message   string    `json:"message"`
 }
 
 // Commit is the JSON response from querying gitiles for a log request.

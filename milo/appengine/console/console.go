@@ -17,9 +17,9 @@ import (
 
 	"github.com/luci/luci-go/milo/api/config"
 	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/appengine/backend/git"
 	"github.com/luci/luci-go/milo/appengine/buildbot"
 	"github.com/luci/luci-go/milo/appengine/common"
+	"github.com/luci/luci-go/milo/appengine/common/gitiles"
 )
 
 // Returns results of build[commit_index][builder_index]
@@ -65,7 +65,7 @@ func console(c context.Context, project, name string) (*resp.Console, error) {
 	if err != nil {
 		return nil, err
 	}
-	commits, err := git.GetCommits(c, def.RepoURL, def.Branch, 25)
+	commits, err := gitiles.GetCommits(c, def.RepoURL, def.Branch, 25)
 	if err != nil {
 		return nil, err
 	}
