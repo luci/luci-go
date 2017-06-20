@@ -2,7 +2,7 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-package buildinfo
+package rpc
 
 import (
 	"github.com/luci/luci-go/grpc/grpcutil"
@@ -16,18 +16,18 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Service is a BuildInfoServer implementation.
-type Service struct {
+// BuildInfoService is a BuildInfoServer implementation.
+type BuildInfoService struct {
 	// BuildBot is the BuildInfoProvider for the BuildBot service.
 	BuildBot buildbot.BuildInfoProvider
 	// Swarming is the BuildInfoProvider for the Swarming service.
 	Swarming swarming.BuildInfoProvider
 }
 
-var _ milo.BuildInfoServer = (*Service)(nil)
+var _ milo.BuildInfoServer = (*BuildInfoService)(nil)
 
 // Get implements milo.BuildInfoServer.
-func (svc *Service) Get(c context.Context, req *milo.BuildInfoRequest) (*milo.BuildInfoResponse, error) {
+func (svc *BuildInfoService) Get(c context.Context, req *milo.BuildInfoRequest) (*milo.BuildInfoResponse, error) {
 	projectHint := cfgtypes.ProjectName(req.ProjectHint)
 	if projectHint != "" {
 		if err := projectHint.Validate(); err != nil {

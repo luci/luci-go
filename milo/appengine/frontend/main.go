@@ -17,10 +17,10 @@ import (
 	milo "github.com/luci/luci-go/milo/api/proto"
 	"github.com/luci/luci-go/milo/appengine/buildbot"
 	"github.com/luci/luci-go/milo/appengine/buildbucket"
-	"github.com/luci/luci-go/milo/appengine/buildinfo"
 	"github.com/luci/luci-go/milo/appengine/common"
 	"github.com/luci/luci-go/milo/appengine/console"
 	"github.com/luci/luci-go/milo/appengine/logdog"
+	"github.com/luci/luci-go/milo/appengine/rpc"
 	"github.com/luci/luci-go/milo/appengine/swarming"
 	"github.com/luci/luci-go/server/router"
 )
@@ -77,7 +77,7 @@ func init() {
 		Prelude: emptyPrelude,
 	})
 	milo.RegisterBuildInfoServer(&api, &milo.DecoratedBuildInfo{
-		Service: &buildinfo.Service{},
+		Service: &rpc.BuildInfoService{},
 		Prelude: emptyPrelude,
 	})
 	discovery.Enable(&api)
