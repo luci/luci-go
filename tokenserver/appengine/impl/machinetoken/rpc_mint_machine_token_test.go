@@ -18,6 +18,7 @@ import (
 	"github.com/luci/luci-go/server/auth/authtest"
 
 	"github.com/luci/luci-go/tokenserver/api"
+	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 	"github.com/luci/luci-go/tokenserver/api/minter/v1"
 	"github.com/luci/luci-go/tokenserver/appengine/impl/certconfig"
 
@@ -25,8 +26,10 @@ import (
 )
 
 func TestMintMachineTokenRPC(t *testing.T) {
-	Convey("works", t, func() {
-		ctx := auth.WithState(testingContext(), &authtest.FakeState{
+	t.Parallel()
+
+	Convey("Successful RPC", t, func() {
+		ctx := auth.WithState(testingContext(testingCA), &authtest.FakeState{
 			PeerIPOverride: net.ParseIP("127.10.10.10"),
 		})
 
@@ -71,6 +74,39 @@ func TestMintMachineTokenRPC(t *testing.T) {
 			CA:        &testingCA,
 			PeerIP:    net.ParseIP("127.10.10.10"),
 			RequestID: "gae-request-id",
+		})
+	})
+
+	Convey("Unsuccessful RPC", t, func() {
+		// Modify testing CA to have no domains whitelisted.
+		testingCA := certconfig.CA{
+			CN: "Fake CA: fake.ca",
+			ParsedConfig: &admin.CertificateAuthorityConfig{
+				UniqueId: 123,
+			},
+		}
+		ctx := auth.WithState(testingContext(testingCA), &authtest.FakeState{
+			PeerIPOverride: net.ParseIP("127.10.10.10"),
+		})
+
+		impl := MintMachineTokenRPC{
+			Signer: testingSigner(),
+			CheckCertificate: func(_ context.Context, cert *x509.Certificate) (*certconfig.CA, error) {
+				return &testingCA, nil
+			},
+			LogToken: func(c context.Context, info *MintedTokenInfo) error {
+				panic("must not be called") // we log only successfully generated tokens
+			},
+		}
+
+		// This request is structurally valid, but forbidden by CA config. It
+		// generates MintMachineTokenResponse with non-zero error code.
+		resp, err := impl.MintMachineToken(ctx, testingMachineTokenRequest(ctx))
+		So(err, ShouldBeNil)
+		So(resp, ShouldResemble, &minter.MintMachineTokenResponse{
+			ServiceVersion: "unit-tests/mocked-ver",
+			ErrorCode:      minter.ErrorCode_BAD_TOKEN_ARGUMENTS,
+			ErrorMessage:   `the domain "fake.domain" is not whitelisted in the config`,
 		})
 	})
 }

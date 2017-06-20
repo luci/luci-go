@@ -22,7 +22,7 @@ import (
 
 func TestInspectMachineTokenRPC(t *testing.T) {
 	Convey("with mocked context", t, func() {
-		ctx := testingContext()
+		ctx := testingContext(testingCA)
 		impl := InspectMachineTokenRPC{
 			Signer: testingSigner(),
 		}

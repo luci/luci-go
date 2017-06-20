@@ -109,14 +109,13 @@ var testingCA = certconfig.CA{
 	UpdatedRev: "cfg-updated-rev",
 }
 
-func testingContext() context.Context {
+func testingContext(ca certconfig.CA) context.Context {
 	ctx := gaetesting.TestingContext()
 	ctx = info.GetTestable(ctx).SetRequestID("gae-request-id")
 	ctx, _ = testclock.UseTime(ctx, testingTime)
 
 	// Put mocked CA config in the datastore.
-	ca := testingCA
-	ds.Put(ctx, &ca) // put a copy, Put modifies the object
+	ds.Put(ctx, &ca)
 	certconfig.StoreCAUniqueIDToCNMap(ctx, map[int64]string{
 		ca.ParsedConfig.UniqueId: ca.CN,
 	})

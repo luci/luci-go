@@ -19,7 +19,7 @@ import (
 
 func TestMintedTokenInfo(t *testing.T) {
 	Convey("produces correct row map", t, func() {
-		ctx := testingContext()
+		ctx := testingContext(testingCA)
 
 		info := MintedTokenInfo{
 			Request: testingRawRequest(ctx),

@@ -140,8 +140,19 @@ func (r *MintMachineTokenRPC) MintMachineToken(c context.Context, req *minter.Mi
 	switch tokenReq.TokenType {
 	case tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN:
 		resp, body, err := r.mintLuciMachineToken(c, args)
-		if err != nil {
+		switch {
+		case err != nil: // grpc-level error
 			return nil, err
+		case resp == nil: // should not happen
+			panic("both resp and err can't be nil")
+		case resp.ErrorCode != 0: // logic-level error
+			if resp.TokenResponse != nil {
+				panic("TokenResponse must be nil if ErrorCode != 0")
+			}
+			return resp, nil
+		}
+		if resp.TokenResponse == nil {
+			panic("TokenResponse must not be nil if ErrorCode == 0")
 		}
 		if r.LogToken != nil {
 			// Errors during logging are considered not fatal. bqlog library has
