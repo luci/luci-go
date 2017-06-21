@@ -99,8 +99,8 @@ var xsrfToken = "{{.XsrfToken}}";
 var postJobAction = function(btn, action) {
   var form = $(btn).closest("form");
   var projectID = $("input#projectID", form).val();
-  var jobID = $("input#jobID", form).val();
-  var url = "/actions/" + action + "/" + projectID + "/" + jobID;
+  var jobName = $("input#jobName", form).val();
+  var url = "/actions/" + action + "/" + projectID + "/" + jobName;
   if (!form.attr("submitted")) {
     $("input#xsrf_token", form).val(xsrfToken);
     form.attr("action", url);
@@ -116,7 +116,7 @@ var postJobAction = function(btn, action) {
 <form style="display: inline" method="POST">
   <input type="hidden" id="xsrf_token" name="xsrf_token" value="">
   <input type="hidden" id="projectID" value="{{.ProjectID}}">
-  <input type="hidden" id="jobID" value="{{.JobID}}">
+  <input type="hidden" id="jobName" value="{{.JobName}}">
   <div class="btn-group btn-group-xs" role="group">
     {{if .Paused}}
       <button type="button" class="btn btn-primary" onclick="postJobAction(this, 'resumeJob')">
@@ -145,9 +145,9 @@ var xsrfToken = "{{.XsrfToken}}";
 var postInvocationAction = function(btn, action) {
   var form = $(btn).closest("form");
   var projectID = $("input#projectID", form).val();
-  var jobID = $("input#jobID", form).val();
+  var jobName = $("input#jobName", form).val();
   var invID = $("input#invID", form).val();
-  var url = "/actions/" + action + "/" + projectID + "/" + jobID + "/" + invID;
+  var url = "/actions/" + action + "/" + projectID + "/" + jobName + "/" + invID;
   if (!form.attr("submitted")) {
     $("input#xsrf_token", form).val(xsrfToken);
     form.attr("action", url);
@@ -163,7 +163,7 @@ var postInvocationAction = function(btn, action) {
 <form style="display: inline" method="POST">
   <input type="hidden" id="xsrf_token" name="xsrf_token" value="">
   <input type="hidden" id="projectID" value="{{.ProjectID}}">
-  <input type="hidden" id="jobID" value="{{.JobID}}">
+  <input type="hidden" id="jobName" value="{{.JobName}}">
   <input type="hidden" id="invID" value="{{.InvID}}">
   <div class="btn-group btn-group-xs" role="group">
     <button type="button" class="btn btn-danger" onclick="postInvocationAction(this, 'abortInvocation')">
@@ -177,5 +177,5 @@ var postInvocationAction = function(btn, action) {
 {{define "job-id-ref"}}
 <span class="glyphicon {{.JobFlavorIcon}}" aria-hidden="true" title="{{.JobFlavorTitle}}">
 </span>
-<a href="/jobs/{{.ProjectID}}/{{.JobID}}">{{.JobID}}</a>
+<a href="/jobs/{{.ProjectID}}/{{.JobName}}">{{.JobName}}</a>
 {{end}}

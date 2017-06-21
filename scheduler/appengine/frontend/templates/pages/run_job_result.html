@@ -1,4 +1,4 @@
-{{define "title"}}LUCI Scheduler :: {{.ProjectID}} :: {{.JobID}}{{end}}
+{{define "title"}}LUCI Scheduler :: {{.ProjectID}} :: {{.JobName}}{{end}}
 
 {{define "head"}}
 {{end}}
@@ -8,7 +8,7 @@
 <ol class="breadcrumb">
   <li><a href="/">All projects</a></li>
   <li><a href="/jobs/{{.ProjectID}}">{{.ProjectID}}</a></li>
-  <li class="active"><a href="/jobs/{{.ProjectID}}/{{.JobID}}">{{.JobID}}</a></li>
+  <li class="active"><a href="/jobs/{{.ProjectID}}/{{.JobName}}">{{.JobName}}</a></li>
 </ol>
 
 <div class="container">

@@ -1,4 +1,4 @@
-{{define "title"}}LUCI Scheduler :: {{.Job.ProjectID}} :: {{.Job.JobID}} :: {{.Inv.InvID}}{{end}}
+{{define "title"}}LUCI Scheduler :: {{.Job.ProjectID}} :: {{.Job.JobName}} :: {{.Inv.InvID}}{{end}}
 
 {{define "head"}}
 <style type="text/css">
@@ -15,7 +15,7 @@
   <li><a href="/">All projects</a></li>
   <li><a href="/jobs/{{.Job.ProjectID}}">{{.Job.ProjectID}}</a></li>
   <li>{{template "job-id-ref" .Job}}</li>
-  <li class="active"><a href="/jobs/{{.Job.ProjectID}}/{{.Job.JobID}}/{{.Inv.InvID}}">{{.Inv.InvID}}</a></li>
+  <li class="active"><a href="/jobs/{{.Job.ProjectID}}/{{.Job.JobName}}/{{.Inv.InvID}}">{{.Inv.InvID}}</a></li>
 </ol>
 
 <div class="container">

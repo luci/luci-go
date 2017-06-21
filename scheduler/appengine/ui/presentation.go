@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"fmt"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/dustin/go-humanize"
@@ -30,7 +29,7 @@ import (
 // schedulerJob is UI representation of engine.Job entity.
 type schedulerJob struct {
 	ProjectID      string
-	JobID          string
+	JobName        string
 	Schedule       string
 	Definition     string
 	Revision       string
@@ -103,12 +102,9 @@ func makeJob(c context.Context, j *engine.Job) *schedulerJob {
 		sortGroup = "B"
 	}
 
-	// JobID has form <project>/<id>. Split it into components.
-	chunks := strings.Split(j.JobID, "/")
-
 	return &schedulerJob{
-		ProjectID:      chunks[0],
-		JobID:          chunks[1],
+		ProjectID:      j.ProjectID,
+		JobName:        j.GetJobName(),
 		Schedule:       j.Schedule,
 		Definition:     taskToText(j.Task),
 		Revision:       j.Revision,
@@ -150,7 +146,7 @@ func (s sortedJobs) Less(i, j int) bool {
 	return sortby.Chain{
 		func(i, j int) bool { return s[i].ProjectID < s[j].ProjectID },
 		func(i, j int) bool { return s[i].sortGroup < s[j].sortGroup },
-		func(i, j int) bool { return s[i].JobID < s[j].JobID },
+		func(i, j int) bool { return s[i].JobName < s[j].JobName },
 	}.Use(i, j)
 }
 
@@ -168,7 +164,7 @@ func sortJobs(c context.Context, jobs []*engine.Job) sortedJobs {
 // invocation is UI representation of engine.Invocation entity.
 type invocation struct {
 	ProjectID   string
-	JobID       string
+	JobName     string
 	InvID       int64
 	Attempt     int64
 	Revision    string
@@ -232,7 +228,7 @@ func makeInvocation(j *schedulerJob, i *engine.Invocation) *invocation {
 
 	return &invocation{
 		ProjectID:   j.ProjectID,
-		JobID:       j.JobID,
+		JobName:     j.JobName,
 		InvID:       i.ID,
 		Attempt:     i.RetryCount + 1,
 		Revision:    i.Revision,

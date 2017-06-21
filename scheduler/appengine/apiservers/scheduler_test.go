@@ -47,14 +47,14 @@ func TestGetJobsApi(t *testing.T) {
 			fakeEng.getAllJobs = func() ([]*engine.Job, error) {
 				return []*engine.Job{
 					{
-						JobID:     "foo",
+						JobID:     "bar/foo",
 						ProjectID: "bar",
 						Schedule:  "0 * * * * * *",
 						State:     engine.JobState{State: engine.JobStateRunning},
 						Task:      taskBlob,
 					},
 					{
-						JobID:     "faz",
+						JobID:     "baz/faz",
 						Paused:    true,
 						ProjectID: "baz",
 						Schedule:  "with 1m interval",
@@ -67,13 +67,13 @@ func TestGetJobsApi(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(reply.GetJobs(), ShouldResemble, []*scheduler.Job{
 				{
-					Id:       "foo",
+					Name:     "foo",
 					Project:  "bar",
 					Schedule: "0 * * * * * *",
 					State:    &scheduler.JobState{UiStatus: "RUNNING"},
 				},
 				{
-					Id:       "faz",
+					Name:     "faz",
 					Project:  "baz",
 					Schedule: "with 1m interval",
 					State:    &scheduler.JobState{UiStatus: "PAUSED"},
@@ -86,7 +86,7 @@ func TestGetJobsApi(t *testing.T) {
 				So(projectID, ShouldEqual, "bar")
 				return []*engine.Job{
 					{
-						JobID:     "foo",
+						JobID:     "bar/foo",
 						ProjectID: "bar",
 						Schedule:  "0 * * * * * *",
 						State:     engine.JobState{State: engine.JobStateRunning},
@@ -98,7 +98,7 @@ func TestGetJobsApi(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(reply.GetJobs(), ShouldResemble, []*scheduler.Job{
 				{
-					Id:       "foo",
+					Name:     "foo",
 					Project:  "bar",
 					Schedule: "0 * * * * * *",
 					State:    &scheduler.JobState{UiStatus: "RUNNING"},

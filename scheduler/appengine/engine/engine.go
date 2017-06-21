@@ -257,6 +257,13 @@ type Job struct {
 	State JobState
 }
 
+// GetJobName returns name of this Job as defined its project's config.
+func (e *Job) GetJobName() string {
+	// JobID has form <project>/<id>. Split it into components.
+	chunks := strings.Split(e.JobID, "/")
+	return chunks[1]
+}
+
 // effectiveSchedule returns schedule string to use for the job, considering its
 // Paused field.
 //

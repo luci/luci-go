@@ -42,7 +42,7 @@ func (s SchedulerServer) GetJobs(ctx context.Context, in *scheduler.JobsRequest)
 			return nil, grpc.Errorf(codes.Internal, "failed to get traits: %s", err)
 		}
 		jobs[i] = &scheduler.Job{
-			Id:       ej.JobID,
+			Name:     ej.GetJobName(),
 			Project:  ej.ProjectID,
 			Schedule: ej.Schedule,
 			State: &scheduler.JobState{

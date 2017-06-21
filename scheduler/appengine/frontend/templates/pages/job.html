@@ -1,4 +1,4 @@
-{{define "title"}}LUCI Scheduler :: {{.Job.ProjectID}} :: {{.Job.JobID}}{{end}}
+{{define "title"}}LUCI Scheduler :: {{.Job.ProjectID}} :: {{.Job.JobName}}{{end}}
 
 {{define "head"}}
 <style type="text/css">
@@ -62,7 +62,7 @@
         <tbody>
         {{range .Invocations }}
           <tr class="{{.RowClass}}">
-            <td><a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobID}}/{{.InvID}}">{{.InvID}}</a></td>
+            <td><a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobName}}/{{.InvID}}">{{.InvID}}</a></td>
             <td>{{.Started}}</td>
             <td>{{.TriggeredBy}}</td>
             <td>{{.Duration}}</td>
@@ -82,9 +82,9 @@
           {{if .PrevCursor}}
             <li class="previous">
               {{if eq .PrevCursor "NULL"}}
-              <a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobID}}">
+              <a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobName}}">
               {{else}}
-              <a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobID}}?c={{.PrevCursor}}">
+              <a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobName}}?c={{.PrevCursor}}">
               {{end}}
                 <span aria-hidden="true">&larr;</span> Newer
               </a>
@@ -96,7 +96,7 @@
           {{end}}
           {{if .NextCursor}}
             <li class="next">
-              <a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobID}}?c={{.NextCursor}}">
+              <a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobName}}?c={{.NextCursor}}">
                 Older <span aria-hidden="true">&rarr;</span>
               </a>
             </li>

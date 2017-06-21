@@ -25,7 +25,7 @@ message JobsReply {
 }
 
 message Job {
-  string id = 1;
+  string name = 1;
   string project = 2;
   string schedule = 3;
 
