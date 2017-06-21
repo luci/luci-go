@@ -46,7 +46,10 @@
     },
     "Description": "",
     "Title": "",
-    "Changelist": null,
+    "Changelist": {
+      "Label": "Rietveld CL 2860873002",
+      "URL": "https://codereview.chromium.org/2860873002"
+    },
     "CommitURL": "",
     "File": null,
     "Source": ""
