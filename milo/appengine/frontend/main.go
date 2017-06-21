@@ -16,7 +16,7 @@ import (
 	"github.com/luci/luci-go/grpc/prpc"
 	milo "github.com/luci/luci-go/milo/api/proto"
 	"github.com/luci/luci-go/milo/appengine/common"
-	"github.com/luci/luci-go/milo/appengine/console"
+	"github.com/luci/luci-go/milo/appengine/frontend/console"
 	"github.com/luci/luci-go/milo/appengine/job_source/buildbot"
 	"github.com/luci/luci-go/milo/appengine/job_source/buildbucket"
 	"github.com/luci/luci-go/milo/appengine/job_source/raw_presentation"
