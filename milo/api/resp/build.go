@@ -11,7 +11,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/luci/luci-go/milo/appengine/common/model"
+	"github.com/luci/luci-go/milo/common/model"
 )
 
 // MiloBuild denotes a full renderable Milo build page.
