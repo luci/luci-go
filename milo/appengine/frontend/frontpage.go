@@ -10,9 +10,9 @@ import (
 
 	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/appengine/buildbot"
-	"github.com/luci/luci-go/milo/appengine/buildbucket"
 	"github.com/luci/luci-go/milo/appengine/common"
+	"github.com/luci/luci-go/milo/appengine/job_source/buildbot"
+	"github.com/luci/luci-go/milo/appengine/job_source/buildbucket"
 )
 
 func frontpageHandler(c *router.Context) {

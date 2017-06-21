@@ -51,7 +51,7 @@ func TestBuild(t *testing.T) {
 	if *generate {
 		for _, tc := range TestCases {
 			fmt.Printf("Generating expectations for %s/%s\n", tc.Builder, tc.Build)
-			build, err := Build(c, "debug", tc.Builder, tc.Build)
+			build, err := DebugBuild(c, ".", tc.Builder, tc.Build)
 			if err != nil {
 				panic(fmt.Errorf("Could not run build() for %s/%s: %s", tc.Builder, tc.Build, err))
 			}
@@ -78,7 +78,7 @@ func TestBuild(t *testing.T) {
 
 		for _, tc := range TestCases {
 			Convey(fmt.Sprintf("Test Case: %s/%s", tc.Builder, tc.Build), func() {
-				build, err := Build(c, "debug", tc.Builder, tc.Build)
+				build, err := DebugBuild(c, ".", tc.Builder, tc.Build)
 				So(err, ShouldBeNil)
 				fname := fmt.Sprintf("%s.%d.build.json", tc.Builder, tc.Build)
 				So(build, shouldMatchExpectationsFor, fname)

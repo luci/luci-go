@@ -17,9 +17,9 @@ import (
 
 	"github.com/luci/luci-go/milo/api/config"
 	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/appengine/buildbot"
 	"github.com/luci/luci-go/milo/appengine/common"
 	"github.com/luci/luci-go/milo/appengine/common/gitiles"
+	"github.com/luci/luci-go/milo/appengine/job_source/buildbot"
 )
 
 // Returns results of build[commit_index][builder_index]

@@ -18,7 +18,7 @@ import (
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	milo "github.com/luci/luci-go/milo/api/proto"
-	"github.com/luci/luci-go/milo/appengine/logdog"
+	"github.com/luci/luci-go/milo/appengine/job_source/raw_presentation"
 
 	"google.golang.org/grpc/codes"
 
@@ -41,7 +41,7 @@ func (p *BuildInfoProvider) newLogdogClient(c context.Context) (*coordinator.Cli
 	if p.LogdogClientFunc != nil {
 		return p.LogdogClientFunc(c)
 	}
-	return logdog.NewClient(c, "")
+	return raw_presentation.NewClient(c, "")
 }
 
 // GetBuildInfo resolves a Milo protobuf Step for a given BuildBot build.
@@ -92,7 +92,7 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 	logging.Infof(c, "Resolved annotation stream: %s / %s", addr.Project, addr.Path)
 
 	// Load the annotation protobuf.
-	as := logdog.AnnotationStream{
+	as := raw_presentation.AnnotationStream{
 		Client:  client,
 		Path:    addr.Path,
 		Project: addr.Project,

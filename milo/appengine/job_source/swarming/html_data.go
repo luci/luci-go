@@ -38,16 +38,18 @@ import (
 type testCase struct {
 	name string
 
+	swarmingRelDir string
+
 	swarmResult string
 	swarmOutput string
 	annotations string
 }
 
-func getTestCases() []*testCase {
+func getTestCases(swarmingRelDir string) []*testCase {
 	testCases := make(map[string]*testCase)
 
-	// References "milo/appengine/swarming/testdata".
-	testdata := filepath.Join("..", "swarming", "testdata")
+	// References "milo/appengine/job_source/swarming/testdata".
+	testdata := filepath.Join(swarmingRelDir, "testdata")
 	f, err := ioutil.ReadDir(testdata)
 	if err != nil {
 		panic(err)
@@ -62,6 +64,7 @@ func getTestCases() []*testCase {
 			tc = &testCase{name: name}
 			testCases[name] = tc
 		}
+		tc.swarmingRelDir = swarmingRelDir
 
 		switch {
 		case len(parts) == 1:
@@ -96,7 +99,7 @@ func (tc *testCase) getContent(name string) []byte {
 	// ../swarming below assumes that
 	// - this code is not executed by tests outside of this dir
 	// - this dir is a sibling of frontend dir
-	path := filepath.Join("..", "swarming", "testdata", name)
+	path := filepath.Join(tc.swarmingRelDir, "testdata", name)
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		panic(fmt.Errorf("failed to read [%s]: %s", path, err))
@@ -233,7 +236,7 @@ func datagramGetResponse(project, prefix string, msg proto.Message) *logdog.GetR
 }
 
 // BuildTestData returns sample test data for swarming build pages.
-func BuildTestData() []common.TestBundle {
+func BuildTestData(swarmingRelDir string) []common.TestBundle {
 	basic := resp.MiloBuild{
 		Summary: resp.BuildComponent{
 			Label:    "Test swarming build",
@@ -258,7 +261,7 @@ func BuildTestData() []common.TestBundle {
 	})
 	c, _ = testclock.UseTime(c, time.Date(2016, time.March, 14, 11, 0, 0, 0, time.UTC))
 
-	for _, tc := range getTestCases() {
+	for _, tc := range getTestCases(swarmingRelDir) {
 		svc := debugSwarmingService{tc}
 		bl := buildLoader{
 			logDogClientFunc: logDogClientFunc(tc),

@@ -58,7 +58,7 @@ func TestBuild(t *testing.T) {
 			IdentityGroups: []string{"all", "googlers"},
 		})
 
-		for _, tc := range getTestCases() {
+		for _, tc := range getTestCases(".") {
 			bl := buildLoader{
 				logDogClientFunc: logDogClientFunc(tc),
 			}
@@ -94,7 +94,7 @@ func TestBuild(t *testing.T) {
 			IdentityGroups: []string{"all", "googlers"},
 		})
 
-		for _, tc := range getTestCases() {
+		for _, tc := range getTestCases(".") {
 			Convey(fmt.Sprintf("Test Case: %s", tc.name), func() {
 				bl := buildLoader{
 					logDogClientFunc: logDogClientFunc(tc),

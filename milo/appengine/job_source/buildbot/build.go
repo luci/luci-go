@@ -447,33 +447,7 @@ func sourcestamp(c context.Context, b *buildbotBuild) *resp.SourceStamp {
 	return ss
 }
 
-func getDebugBuild(c context.Context, builder string, buildNum int) (*buildbotBuild, error) {
-	fname := fmt.Sprintf("%s.%d.json", builder, buildNum)
-	// ../buildbot below assumes that
-	// - this code is not executed by tests outside of this dir
-	// - this dir is a sibling of frontend dir
-	path := filepath.Join("..", "buildbot", "testdata", fname)
-	raw, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	b := &buildbotBuild{}
-	return b, json.Unmarshal(raw, b)
-}
-
-// build fetches a buildbot build and translates it into a miloBuild.
-func Build(c context.Context, master, builder string, buildNum int) (*resp.MiloBuild, error) {
-	var b *buildbotBuild
-	var err error
-	if master == "debug" {
-		b, err = getDebugBuild(c, builder, buildNum)
-	} else {
-		b, err = getBuild(c, master, builder, buildNum)
-	}
-	if err != nil {
-		return nil, err
-	}
-
+func renderBuild(c context.Context, b *buildbotBuild) *resp.MiloBuild {
 	// Modify the build for rendering.
 	updatePostProcessBuild(b)
 
@@ -484,7 +458,34 @@ func Build(c context.Context, master, builder string, buildNum int) (*resp.MiloB
 		Components:    components(b),
 		PropertyGroup: properties(b),
 		Blame:         blame(b),
-	}, nil
+	}
+}
+
+// DebugBuild fetches a debugging build for testing.
+func DebugBuild(c context.Context, relBuildbotDir string, builder string, buildNum int) (*resp.MiloBuild, error) {
+	fname := fmt.Sprintf("%s.%d.json", builder, buildNum)
+	// ../buildbot below assumes that
+	// - this code is not executed by tests outside of this dir
+	// - this dir is a sibling of frontend dir
+	path := filepath.Join(relBuildbotDir, "testdata", fname)
+	raw, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	b := &buildbotBuild{}
+	if err := json.Unmarshal(raw, b); err != nil {
+		return nil, err
+	}
+	return renderBuild(c, b), nil
+}
+
+// Build fetches a buildbot build and translates it into a miloBuild.
+func Build(c context.Context, master, builder string, buildNum int) (*resp.MiloBuild, error) {
+	b, err := getBuild(c, master, builder, buildNum)
+	if err != nil {
+		return nil, err
+	}
+	return renderBuild(c, b), nil
 }
 
 // updatePostProcessBuild transforms a build from its raw JSON format into the

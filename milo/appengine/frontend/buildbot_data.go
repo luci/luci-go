@@ -10,8 +10,8 @@ import (
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/appengine/buildbot"
 	"github.com/luci/luci-go/milo/appengine/common"
+	"github.com/luci/luci-go/milo/appengine/job_source/buildbot"
 	"github.com/luci/luci-go/server/templates"
 	"golang.org/x/net/context"
 )
@@ -22,7 +22,7 @@ func buildbotBuildTestData() []common.TestBundle {
 	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
 	bundles := []common.TestBundle{}
 	for _, tc := range buildbot.TestCases {
-		build, err := buildbot.Build(c, "debug", tc.Builder, tc.Build)
+		build, err := buildbot.DebugBuild(c, "../job_source/buildbot", tc.Builder, tc.Build)
 		if err != nil {
 			panic(fmt.Errorf(
 				"Encountered error while building debug/%s/%s.\n%s",

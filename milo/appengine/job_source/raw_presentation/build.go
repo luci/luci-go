@@ -2,7 +2,7 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-package logdog
+package raw_presentation
 
 import (
 	"errors"
@@ -18,7 +18,7 @@ import (
 	"github.com/luci/luci-go/logdog/common/viewer"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/appengine/logdog/internal"
+	"github.com/luci/luci-go/milo/appengine/job_source/raw_presentation/internal"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"

@@ -8,8 +8,8 @@ import (
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	milo "github.com/luci/luci-go/milo/api/proto"
-	"github.com/luci/luci-go/milo/appengine/buildbot"
-	"github.com/luci/luci-go/milo/appengine/swarming"
+	"github.com/luci/luci-go/milo/appengine/job_source/buildbot"
+	"github.com/luci/luci-go/milo/appengine/job_source/swarming"
 
 	"google.golang.org/grpc/codes"
 

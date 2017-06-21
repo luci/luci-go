@@ -21,7 +21,7 @@ import (
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/milo/appengine/common"
-	"github.com/luci/luci-go/milo/appengine/swarming"
+	"github.com/luci/luci-go/milo/appengine/job_source/swarming"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/auth/identity"
@@ -41,7 +41,9 @@ var (
 	allPackages = []testPackage{
 		{buildbotBuildTestData, "buildbot.build", "build.html"},
 		{buildbotBuilderTestData, "buildbot.builder", "builder.html"},
-		{swarming.BuildTestData, "swarming.build", "build.html"},
+		{func() []common.TestBundle {
+			return swarming.BuildTestData("../job_source/swarming")
+		}, "swarming.build", "build.html"},
 		{swarming.LogTestData, "swarming.log", "log.html"},
 		{frontpageTestData, "frontpage", "frontpage.html"},
 	}
