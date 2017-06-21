@@ -40,7 +40,8 @@ func (m *TokenServerConfig) GetCertificateAuthority() []*CertificateAuthorityCon
 // splits FQDN into a hostname ("slave43-c1") and a domain name
 // ("c.chromecompute.google.com.internal"), searches for a domain name in
 // "known_domains" set, and, if it is present, uses parameters described there
-// for generating a token with machine_id <hostname>@<token-server-url>.
+// for generating a token that contains machine's FQDN and certificate serial
+// number (among other things, see MachineTokenBody in machine_token.proto).
 type CertificateAuthorityConfig struct {
 	UniqueId int64  `protobuf:"varint,6,opt,name=unique_id,json=uniqueId" json:"unique_id,omitempty"`
 	Cn       string `protobuf:"bytes,1,opt,name=cn" json:"cn,omitempty"`
@@ -101,6 +102,10 @@ func (m *CertificateAuthorityConfig) GetKnownDomains() []*DomainConfig {
 // DomainConfig is used inside CertificateAuthorityConfig.
 type DomainConfig struct {
 	// Domain is domain names of hosts this config applies to.
+	//
+	// Machines that reside in a subdomain of given domain are also considered
+	// part of it, e.g. both FQDNs "host.example.com" and "host.abc.example.com"
+	// match domain "example.com".
 	Domain []string `protobuf:"bytes,1,rep,name=domain" json:"domain,omitempty"`
 	// MachineTokenLifetime is how long generated machine tokens live, in seconds.
 	//

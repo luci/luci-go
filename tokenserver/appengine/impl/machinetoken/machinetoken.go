@@ -71,10 +71,7 @@ func (p *MintParams) Validate() error {
 	if len(chunks) != 2 {
 		return fmt.Errorf("not a valid FQDN %q", p.FQDN)
 	}
-	host, domain := chunks[0], chunks[1]
-	if strings.ContainsRune(host, '@') {
-		return fmt.Errorf("forbidden character '@' in hostname %q", host)
-	}
+	domain := chunks[1] // e.g. "us-central1-a.c.project-id.internal"
 
 	// Check DomainConfig for given domain.
 	domainCfg := domainConfig(p.Config, domain)
@@ -94,13 +91,16 @@ func (p *MintParams) Validate() error {
 	return nil
 }
 
-// domainConfig returns DomainConfig for a domain.
+// domainConfig returns DomainConfig (part of *.cfg file) for a given domain.
 //
-// Returns nil if there's no such config.
+// It enumerates all domains specified in the config finding first domain that
+// is equal to 'domain' or has it as a subdomain.
+//
+// Returns nil if requested domain is not represented in the config.
 func domainConfig(cfg *admin.CertificateAuthorityConfig, domain string) *admin.DomainConfig {
 	for _, domainCfg := range cfg.KnownDomains {
 		for _, domainInCfg := range domainCfg.Domain {
-			if domainInCfg == domain {
+			if domainInCfg == domain || strings.HasSuffix(domain, "."+domainInCfg) {
 				return domainCfg
 			}
 		}

@@ -43,6 +43,11 @@ func TestMintParamsValidation(t *testing.T) {
 			So(params.Validate(), ShouldBeNil)
 		})
 
+		Convey("good params with subdomain", func() {
+			params.FQDN = "host.subdomain.domain"
+			So(params.Validate(), ShouldBeNil)
+		})
+
 		Convey("bad FQDN case", func() {
 			params.FQDN = "HOST.domain"
 			So(params.Validate(), ShouldErrLike, "expecting FQDN in lowercase")
@@ -51,11 +56,6 @@ func TestMintParamsValidation(t *testing.T) {
 		Convey("bad FQDN", func() {
 			params.FQDN = "host"
 			So(params.Validate(), ShouldErrLike, "not a valid FQDN")
-		})
-
-		Convey("bad char in FQDN", func() {
-			params.FQDN = "host@.domain"
-			So(params.Validate(), ShouldErrLike, "forbidden character")
 		})
 
 		Convey("not whitelisted", func() {
