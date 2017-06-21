@@ -18,7 +18,7 @@ import (
 	"github.com/luci/luci-go/logdog/common/viewer"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/job_source/raw_presentation/internal"
+	"github.com/luci/luci-go/milo/build_source/raw_presentation/internal"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"

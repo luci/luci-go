@@ -48,7 +48,7 @@ type testCase struct {
 func getTestCases(swarmingRelDir string) []*testCase {
 	testCases := make(map[string]*testCase)
 
-	// References "milo/appengine/job_source/swarming/testdata".
+	// References "milo/appengine/build_source/swarming/testdata".
 	testdata := filepath.Join(swarmingRelDir, "testdata")
 	f, err := ioutil.ReadDir(testdata)
 	if err != nil {

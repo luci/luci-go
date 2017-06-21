@@ -12,7 +12,7 @@ import (
 	miloProto "github.com/luci/luci-go/common/proto/milo"
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamclient"
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
-	"github.com/luci/luci-go/milo/job_source/raw_presentation"
+	"github.com/luci/luci-go/milo/build_source/raw_presentation"
 )
 
 // In-memory datastructure to hold a fake butler client.

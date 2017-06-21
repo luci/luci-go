@@ -24,9 +24,9 @@ import (
 	"github.com/luci/luci-go/logdog/client/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/milo/api/resp"
+	"github.com/luci/luci-go/milo/build_source/raw_presentation"
 	"github.com/luci/luci-go/milo/common"
 	"github.com/luci/luci-go/milo/common/model"
-	"github.com/luci/luci-go/milo/job_source/raw_presentation"
 	"github.com/luci/luci-go/server/auth"
 )
 

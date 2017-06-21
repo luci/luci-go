@@ -18,7 +18,7 @@ import (
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	milo "github.com/luci/luci-go/milo/api/proto"
-	"github.com/luci/luci-go/milo/job_source/raw_presentation"
+	"github.com/luci/luci-go/milo/build_source/raw_presentation"
 
 	"google.golang.org/grpc/codes"
 
