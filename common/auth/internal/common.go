@@ -197,22 +197,20 @@ func TokenExpiresInRnd(ctx context.Context, t *oauth2.Token, lifetime time.Durat
 	return t.Expiry.Before(deadline.Add(rnd))
 }
 
-// EqualTokens returns true if both token object have same access token.
+// EqualTokens returns true if tokens are equal.
 //
 // 'nil' token corresponds to an empty access token.
 func EqualTokens(a, b *oauth2.Token) bool {
 	if a == b {
 		return true
 	}
-	aTok := ""
-	if a != nil {
-		aTok = a.AccessToken
+	if a == nil {
+		a = &oauth2.Token{}
 	}
-	bTok := ""
-	if b != nil {
-		bTok = b.AccessToken
+	if b == nil {
+		b = &oauth2.Token{}
 	}
-	return aTok == bTok
+	return a.AccessToken == b.AccessToken && a.Expiry.Equal(b.Expiry)
 }
 
 // isBadTokenError sniffs out HTTP 400/401 from token source errors.
