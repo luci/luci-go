@@ -5,7 +5,12 @@
 package apiservers
 
 import (
+	"fmt"
 	"testing"
+	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"golang.org/x/net/context"
 
@@ -17,6 +22,7 @@ import (
 	"github.com/luci/luci-go/scheduler/appengine/catalog"
 	"github.com/luci/luci-go/scheduler/appengine/engine"
 	"github.com/luci/luci-go/scheduler/appengine/messages"
+	"github.com/luci/luci-go/scheduler/appengine/task"
 	"github.com/luci/luci-go/scheduler/appengine/task/urlfetch"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -28,13 +34,9 @@ func TestGetJobsApi(t *testing.T) {
 	Convey("Scheduler GetJobs API works", t, func() {
 		ctx := gaetesting.TestingContext()
 		fakeEng, catalog := newTestEngine()
-		So(catalog.RegisterTaskManager(&urlfetch.TaskManager{}), ShouldBeNil)
-
-		ss := SchedulerServer{fakeEng, catalog}
-		taskBlob, err := proto.Marshal(&messages.TaskDefWrapper{
-			UrlFetch: &messages.UrlFetchTask{Url: "http://example.com/path"},
-		})
+		fakeTaskBlob, err := registerUrlFetcher(catalog)
 		So(err, ShouldBeNil)
+		ss := SchedulerServer{fakeEng, catalog}
 
 		Convey("Empty", func() {
 			fakeEng.getAllJobs = func() ([]*engine.Job, error) { return []*engine.Job{}, nil }
@@ -51,7 +53,7 @@ func TestGetJobsApi(t *testing.T) {
 						ProjectID: "bar",
 						Schedule:  "0 * * * * * *",
 						State:     engine.JobState{State: engine.JobStateRunning},
-						Task:      taskBlob,
+						Task:      fakeTaskBlob,
 					},
 					{
 						JobID:     "baz/faz",
@@ -59,7 +61,7 @@ func TestGetJobsApi(t *testing.T) {
 						ProjectID: "baz",
 						Schedule:  "with 1m interval",
 						State:     engine.JobState{State: engine.JobStateSuspended},
-						Task:      taskBlob,
+						Task:      fakeTaskBlob,
 					},
 				}, nil
 			}
@@ -90,7 +92,7 @@ func TestGetJobsApi(t *testing.T) {
 						ProjectID: "bar",
 						Schedule:  "0 * * * * * *",
 						State:     engine.JobState{State: engine.JobStateRunning},
-						Task:      taskBlob,
+						Task:      fakeTaskBlob,
 					},
 				}, nil
 			}
@@ -108,7 +110,94 @@ func TestGetJobsApi(t *testing.T) {
 	})
 }
 
+func TestGetInvocationsApi(t *testing.T) {
+	t.Parallel()
+
+	Convey("Scheduler GetInvocations API works", t, func() {
+		ctx := gaetesting.TestingContext()
+		fakeEng, catalog := newTestEngine()
+		_, err := registerUrlFetcher(catalog)
+		So(err, ShouldBeNil)
+		ss := SchedulerServer{fakeEng, catalog}
+
+		Convey("Job not found", func() {
+			fakeEng.getJob = func(JobID string) (*engine.Job, error) { return nil, nil }
+			_, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{Project: "not", Job: "exists"})
+			s, ok := status.FromError(err)
+			So(ok, ShouldBeTrue)
+			So(s.Code(), ShouldEqual, codes.NotFound)
+		})
+
+		Convey("DS error", func() {
+			fakeEng.getJob = func(JobID string) (*engine.Job, error) { return nil, fmt.Errorf("ds error") }
+			_, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{Project: "proj", Job: "job"})
+			s, ok := status.FromError(err)
+			So(ok, ShouldBeTrue)
+			So(s.Code(), ShouldEqual, codes.Internal)
+		})
+
+		fakeEng.getJob = func(JobID string) (*engine.Job, error) {
+			return &engine.Job{JobID: "proj/job", ProjectID: "proj"}, nil
+		}
+
+		Convey("Emtpy with huge pagesize", func() {
+			fakeEng.listInvocations = func(pageSize int, cursor string) ([]*engine.Invocation, string, error) {
+				So(pageSize, ShouldEqual, 50)
+				So(cursor, ShouldEqual, "")
+				return nil, "", nil
+			}
+			r, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{Project: "proj", Job: "job", PageSize: 1e9})
+			So(err, ShouldBeNil)
+			So(r.GetNextCursor(), ShouldEqual, "")
+			So(r.GetInvocations(), ShouldBeEmpty)
+		})
+
+		Convey("Some with custom pagesize and cursor", func() {
+			started := time.Unix(123123123, 0).UTC()
+			finished := time.Unix(321321321, 0).UTC()
+			fakeEng.listInvocations = func(pageSize int, cursor string) ([]*engine.Invocation, string, error) {
+				So(pageSize, ShouldEqual, 5)
+				So(cursor, ShouldEqual, "cursor")
+				return []*engine.Invocation{
+					{ID: 12, Revision: "deadbeef", Status: task.StatusRunning, Started: started,
+						TriggeredBy: identity.Identity("user:bot@example.com")},
+					{ID: 13, Revision: "deadbeef", Status: task.StatusAborted, Started: started, Finished: finished,
+						ViewURL: "https://example.com/13"},
+				}, "next", nil
+			}
+			r, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{
+				Project: "proj", Job: "job", PageSize: 5, Cursor: "cursor"})
+			So(err, ShouldBeNil)
+			So(r.GetNextCursor(), ShouldEqual, "next")
+			So(r.GetInvocations(), ShouldResemble, []*scheduler.Invocation{
+				{
+					Project: "proj", Job: "job", ConfigRevision: "deadbeef",
+					Id: 12, Final: false, Status: "RUNNING",
+					StartedTs:   started.UnixNano() / 1000,
+					TriggeredBy: "user:bot@example.com",
+				},
+				{
+					Project: "proj", Job: "job", ConfigRevision: "deadbeef",
+					Id: 13, Final: true, Status: "ABORTED",
+					StartedTs: started.UnixNano() / 1000, FinishedTs: finished.UnixNano() / 1000,
+					ViewUrl: "https://example.com/13",
+				},
+			})
+		})
+
+	})
+}
+
 ////
+
+func registerUrlFetcher(cat catalog.Catalog) ([]byte, error) {
+	if err := cat.RegisterTaskManager(&urlfetch.TaskManager{}); err != nil {
+		return nil, err
+	}
+	return proto.Marshal(&messages.TaskDefWrapper{
+		UrlFetch: &messages.UrlFetchTask{Url: "http://example.com/path"},
+	})
+}
 
 func newTestEngine() (*fakeEngine, catalog.Catalog) {
 	cat := catalog.New("scheduler.cfg")
@@ -116,8 +205,10 @@ func newTestEngine() (*fakeEngine, catalog.Catalog) {
 }
 
 type fakeEngine struct {
-	getAllJobs     func() ([]*engine.Job, error)
-	getProjectJobs func(projectID string) ([]*engine.Job, error)
+	getAllJobs      func() ([]*engine.Job, error)
+	getProjectJobs  func(projectID string) ([]*engine.Job, error)
+	getJob          func(jobID string) (*engine.Job, error)
+	listInvocations func(pageSize int, cursor string) ([]*engine.Invocation, string, error)
 }
 
 func (f *fakeEngine) GetAllProjects(c context.Context) ([]string, error) {
@@ -133,11 +224,11 @@ func (f *fakeEngine) GetProjectJobs(c context.Context, projectID string) ([]*eng
 }
 
 func (f *fakeEngine) GetJob(c context.Context, jobID string) (*engine.Job, error) {
-	panic("not implemented")
+	return f.getJob(jobID)
 }
 
 func (f *fakeEngine) ListInvocations(c context.Context, jobID string, pageSize int, cursor string) ([]*engine.Invocation, string, error) {
-	panic("not implemented")
+	return f.listInvocations(pageSize, cursor)
 }
 
 func (f *fakeEngine) GetInvocation(c context.Context, jobID string, invID int64) (*engine.Invocation, error) {

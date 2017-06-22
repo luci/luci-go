@@ -52,3 +52,41 @@ func (s SchedulerServer) GetJobs(ctx context.Context, in *scheduler.JobsRequest)
 	}
 	return &scheduler.JobsReply{Jobs: jobs}, nil
 }
+
+func (s SchedulerServer) GetInvocations(ctx context.Context, in *scheduler.InvocationsRequest) (*scheduler.InvocationsReply, error) {
+	ejob, err := s.Engine.GetJob(ctx, in.GetProject()+"/"+in.GetJob())
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "datastore error: %s", err)
+	}
+	if ejob == nil {
+		return nil, grpc.Errorf(codes.NotFound, "Job does not exist or you have no access")
+	}
+
+	pageSize := 50
+	if in.PageSize > 0 && int(in.PageSize) < pageSize {
+		pageSize = int(in.PageSize)
+	}
+
+	einvs, cursor, err := s.Engine.ListInvocations(ctx, ejob.JobID, pageSize, in.GetCursor())
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "datastore error: %s", err)
+	}
+	invs := make([]*scheduler.Invocation, len(einvs))
+	for i, einv := range einvs {
+		invs[i] = &scheduler.Invocation{
+			Id:             einv.ID,
+			Job:            ejob.GetJobName(),
+			Project:        ejob.ProjectID,
+			StartedTs:      einv.Started.UnixNano() / 1000,
+			TriggeredBy:    string(einv.TriggeredBy),
+			Status:         string(einv.Status),
+			Final:          einv.Status.Final(),
+			ConfigRevision: einv.Revision,
+			ViewUrl:        einv.ViewURL,
+		}
+		if einv.Status.Final() {
+			invs[i].FinishedTs = einv.Finished.UnixNano() / 1000
+		}
+	}
+	return &scheduler.InvocationsReply{Invocations: invs, NextCursor: cursor}, nil
+}
