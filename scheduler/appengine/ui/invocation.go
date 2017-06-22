@@ -15,11 +15,12 @@ import (
 	"github.com/luci/luci-go/server/templates"
 
 	"github.com/luci/luci-go/scheduler/appengine/engine"
+	"github.com/luci/luci-go/scheduler/appengine/presentation"
 )
 
 func invocationPage(c *router.Context) {
 	projectID := c.Params.ByName("ProjectID")
-	jobID := c.Params.ByName("JobID")
+	jobName := c.Params.ByName("JobName")
 	invID, err := strconv.ParseInt(c.Params.ByName("InvID"), 10, 64)
 	if err != nil {
 		http.Error(c.Writer, "No such invocation", http.StatusNotFound)
@@ -36,12 +37,12 @@ func invocationPage(c *router.Context) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		inv, err1 = eng.GetInvocation(c.Context, projectID+"/"+jobID, invID)
+		inv, err1 = eng.GetInvocation(c.Context, projectID+"/"+jobName, invID)
 	}()
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		job, err2 = eng.GetJob(c.Context, projectID+"/"+jobID)
+		job, err2 = eng.GetJob(c.Context, projectID+"/"+jobName)
 	}()
 	wg.Wait()
 
@@ -78,9 +79,9 @@ func abortInvocationAction(c *router.Context) {
 
 func handleInvAction(c *router.Context, cb func(string, int64) error) {
 	projectID := c.Params.ByName("ProjectID")
-	jobID := c.Params.ByName("JobID")
+	jobName := c.Params.ByName("JobName")
 	invID := c.Params.ByName("InvID")
-	if !isJobOwner(c.Context, projectID, jobID) {
+	if !presentation.IsJobOwner(c.Context, projectID, jobName) {
 		http.Error(c.Writer, "Forbidden", 403)
 		return
 	}
@@ -89,8 +90,8 @@ func handleInvAction(c *router.Context, cb func(string, int64) error) {
 		http.Error(c.Writer, "Bad invocation ID", 400)
 		return
 	}
-	if err := cb(projectID+"/"+jobID, invIDAsInt); err != nil {
+	if err := cb(projectID+"/"+jobName, invIDAsInt); err != nil {
 		panic(err)
 	}
-	http.Redirect(c.Writer, c.Request, fmt.Sprintf("/jobs/%s/%s/%s", projectID, jobID, invID), http.StatusFound)
+	http.Redirect(c.Writer, c.Request, fmt.Sprintf("/jobs/%s/%s/%s", projectID, jobName, invID), http.StatusFound)
 }

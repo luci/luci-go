@@ -13,6 +13,7 @@ import (
 
 	mc "github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/scheduler/appengine/presentation"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
@@ -22,11 +23,11 @@ func jobPage(ctx *router.Context) {
 	c, w, r, p := ctx.Context, ctx.Writer, ctx.Request, ctx.Params
 
 	projectID := p.ByName("ProjectID")
-	jobID := p.ByName("JobID")
+	jobName := p.ByName("JobName")
 	cursor := r.URL.Query().Get("c")
 
 	// Grab the job from the datastore.
-	job, err := config(c).Engine.GetJob(c, projectID+"/"+jobID)
+	job, err := config(c).Engine.GetJob(c, projectID+"/"+jobName)
 	if err != nil {
 		panic(err)
 	}
@@ -91,8 +92,8 @@ func runJobAction(ctx *router.Context) {
 	c, w, r, p := ctx.Context, ctx.Writer, ctx.Request, ctx.Params
 
 	projectID := p.ByName("ProjectID")
-	jobID := p.ByName("JobID")
-	if !isJobOwner(c, projectID, jobID) {
+	jobName := p.ByName("JobName")
+	if !presentation.IsJobOwner(c, projectID, jobName) {
 		http.Error(w, "Forbidden", 403)
 		return
 	}
@@ -102,7 +103,7 @@ func runJobAction(ctx *router.Context) {
 	genericReply := func(err error) {
 		templates.MustRender(c, w, "pages/run_job_result.html", map[string]interface{}{
 			"ProjectID": projectID,
-			"JobID":     jobID,
+			"JobName":   jobName,
 			"Error":     err,
 		})
 	}
@@ -110,8 +111,8 @@ func runJobAction(ctx *router.Context) {
 	// Enqueue new invocation request, and wait for corresponding invocation to
 	// appear. Give up if task queue or datastore indexes are lagging too much.
 	e := config(c).Engine
-	fullJobID := projectID + "/" + jobID
-	invNonce, err := e.TriggerInvocation(c, fullJobID, auth.CurrentIdentity(c))
+	jobID := projectID + "/" + jobName
+	invNonce, err := e.TriggerInvocation(c, jobID, auth.CurrentIdentity(c))
 	if err != nil {
 		genericReply(err)
 		return
@@ -132,7 +133,7 @@ func runJobAction(ctx *router.Context) {
 		invs, _ := e.GetInvocationsByNonce(c, invNonce)
 		bestTS := time.Time{}
 		for _, inv := range invs {
-			if inv.JobKey.StringID() == fullJobID && inv.Started.Sub(bestTS) > 0 {
+			if inv.JobKey.StringID() == jobID && inv.Started.Sub(bestTS) > 0 {
 				invID = inv.ID
 				bestTS = inv.Started
 			}
@@ -140,7 +141,7 @@ func runJobAction(ctx *router.Context) {
 	}
 
 	if invID != 0 {
-		http.Redirect(w, r, fmt.Sprintf("/jobs/%s/%s/%d", projectID, jobID, invID), http.StatusFound)
+		http.Redirect(w, r, fmt.Sprintf("/jobs/%s/%s/%d", projectID, jobName, invID), http.StatusFound)
 	} else {
 		genericReply(nil) // deadline
 	}
@@ -169,13 +170,13 @@ func abortJobAction(c *router.Context) {
 
 func handleJobAction(c *router.Context, cb func(string) error) {
 	projectID := c.Params.ByName("ProjectID")
-	jobID := c.Params.ByName("JobID")
-	if !isJobOwner(c.Context, projectID, jobID) {
+	jobName := c.Params.ByName("JobName")
+	if !presentation.IsJobOwner(c.Context, projectID, jobName) {
 		http.Error(c.Writer, "Forbidden", 403)
 		return
 	}
-	if err := cb(projectID + "/" + jobID); err != nil {
+	if err := cb(projectID + "/" + jobName); err != nil {
 		panic(err)
 	}
-	http.Redirect(c.Writer, c.Request, fmt.Sprintf("/jobs/%s/%s", projectID, jobID), http.StatusFound)
+	http.Redirect(c.Writer, c.Request, fmt.Sprintf("/jobs/%s/%s", projectID, jobName), http.StatusFound)
 }

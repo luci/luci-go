@@ -44,16 +44,16 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, cfg Config) 
 
 	r.GET("/", m, indexPage)
 	r.GET("/jobs/:ProjectID", m, projectPage)
-	r.GET("/jobs/:ProjectID/:JobID", m, jobPage)
-	r.GET("/jobs/:ProjectID/:JobID/:InvID", m, invocationPage)
+	r.GET("/jobs/:ProjectID/:JobName", m, jobPage)
+	r.GET("/jobs/:ProjectID/:JobName/:InvID", m, invocationPage)
 
 	// All POST forms must be protected with XSRF token.
 	mxsrf := m.Extend(xsrf.WithTokenCheck)
-	r.POST("/actions/runJob/:ProjectID/:JobID", mxsrf, runJobAction)
-	r.POST("/actions/pauseJob/:ProjectID/:JobID", mxsrf, pauseJobAction)
-	r.POST("/actions/resumeJob/:ProjectID/:JobID", mxsrf, resumeJobAction)
-	r.POST("/actions/abortJob/:ProjectID/:JobID", mxsrf, abortJobAction)
-	r.POST("/actions/abortInvocation/:ProjectID/:JobID/:InvID", mxsrf, abortInvocationAction)
+	r.POST("/actions/runJob/:ProjectID/:JobName", mxsrf, runJobAction)
+	r.POST("/actions/pauseJob/:ProjectID/:JobName", mxsrf, pauseJobAction)
+	r.POST("/actions/resumeJob/:ProjectID/:JobName", mxsrf, resumeJobAction)
+	r.POST("/actions/abortJob/:ProjectID/:JobName", mxsrf, abortJobAction)
+	r.POST("/actions/abortInvocation/:ProjectID/:JobName/:InvID", mxsrf, abortInvocationAction)
 }
 
 type configContextKey int

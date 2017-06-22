@@ -2,7 +2,7 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-package ui
+package presentation
 
 import (
 	"golang.org/x/net/context"
@@ -10,7 +10,7 @@ import (
 	"github.com/luci/luci-go/server/auth"
 )
 
-func isJobOwner(c context.Context, projectID, jobID string) bool {
+func IsJobOwner(c context.Context, projectID, jobName string) bool {
 	// TODO(vadimsh): Do real ACLs.
 	ok, err := auth.IsMember(c, "administrators")
 	if err != nil {
