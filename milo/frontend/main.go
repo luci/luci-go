@@ -30,7 +30,7 @@ func emptyPrelude(c context.Context, methodName string, req proto.Message) (cont
 }
 
 // Where it all begins!!!
-func init() {
+func Run() {
 	// Register plain ol' http handlers.
 	r := router.New()
 	gaemiddleware.InstallHandlers(r)

@@ -1,0 +1,11 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+package appengine
+
+import "github.com/luci/luci-go/milo/frontend"
+
+func init() {
+	frontend.Run()
+}
