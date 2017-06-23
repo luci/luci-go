@@ -11,6 +11,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 
 	"golang.org/x/net/context"
+	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )
 
@@ -42,6 +43,16 @@ type rdsImpl struct {
 	ps prodState
 }
 
+func fixMultiError(err error) error {
+	if err == nil {
+		return nil
+	}
+	if baseME, ok := err.(appengine.MultiError); ok {
+		return errors.NewMultiError(baseME...)
+	}
+	return err
+}
+
 func idxCallbacker(err error, amt int, cb func(idx int, err error) error) error {
 	if err == nil {
 		for i := 0; i < amt; i++ {
@@ -51,7 +62,7 @@ func idxCallbacker(err error, amt int, cb func(idx int, err error) error) error 
 		}
 		return nil
 	}
-	err = errors.Fix(err)
+	err = fixMultiError(err)
 	me, ok := err.(errors.MultiError)
 	if ok {
 		for i, err := range me {

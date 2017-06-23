@@ -135,6 +135,16 @@ func (bds *boundDatastore) Count(q *ds.FinalizedQuery) (int64, error) {
 	return int64(v), nil
 }
 
+func fixMultiError(err error) error {
+	if err == nil {
+		return nil
+	}
+	if baseME, ok := err.(datastore.MultiError); ok {
+		return errors.NewMultiError(baseME...)
+	}
+	return err
+}
+
 func idxCallbacker(err error, amt int, cb func(idx int, err error) error) error {
 	if err == nil {
 		for i := 0; i < amt; i++ {
@@ -145,7 +155,7 @@ func idxCallbacker(err error, amt int, cb func(idx int, err error) error) error 
 		return nil
 	}
 
-	err = errors.Fix(err)
+	err = fixMultiError(err)
 	if me, ok := err.(errors.MultiError); ok {
 		for i, err := range me {
 			if err := cb(i, normalizeError(err)); err != nil {
