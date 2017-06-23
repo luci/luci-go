@@ -561,7 +561,6 @@ func (a *Authenticator) PerRPCCredentials() (credentials.PerRPCCredentials, erro
 
 // GetAccessToken returns a valid access token with specified minimum lifetime.
 //
-//
 // Does not interact with the user. May return ErrLoginRequired.
 func (a *Authenticator) GetAccessToken(lifetime time.Duration) (*oauth2.Token, error) {
 	tok, err := a.currentToken()
@@ -569,8 +568,13 @@ func (a *Authenticator) GetAccessToken(lifetime time.Duration) (*oauth2.Token, e
 		return nil, err
 	}
 	if tok == nil || internal.TokenExpiresInRnd(a.ctx, tok, lifetime) {
+		// Give 5 sec extra to make sure callers definitely receive a token that
+		// has at least 'lifetime' seconds of life left. Without this margin, we
+		// can get into an unlucky situation where the token is valid here, but
+		// no longer valid (has fewer than 'lifetime' life left) up the stack, due
+		// to the passage of time.
 		var err error
-		tok, err = a.refreshToken(tok, lifetime)
+		tok, err = a.refreshToken(tok, lifetime+5*time.Second)
 		if err != nil {
 			return nil, err
 		}
@@ -998,30 +1002,15 @@ func (a *Authenticator) getBaseTokenLocked(ctx context.Context, lifetime time.Du
 //
 // Used as a callback for NewModifyingTransport.
 func (a *Authenticator) authTokenInjector(req *http.Request) error {
-	// Grab a currently known token or fail if 'ensureInitialized' failed.
-	tok, err := a.currentToken()
-	if err != nil {
+	switch tok, err := a.GetAccessToken(minAcceptedLifetime); {
+	case err == ErrLoginRequired && a.effectiveLoginMode() == OptionalLogin:
+		return nil // skip auth, no need for modifications
+	case err != nil:
 		return err
+	default:
+		tok.SetAuthHeader(req)
+		return nil
 	}
-
-	// Attempt to refresh the token, if required. Revert to non-authed call if
-	// token can't be refreshed and running in OptionalLogin mode.
-	if tok == nil || internal.TokenExpiresInRnd(a.ctx, tok, minAcceptedLifetime) {
-		var err error
-		tok, err = a.refreshToken(tok, minAcceptedLifetime)
-		switch {
-		case err == ErrLoginRequired && a.effectiveLoginMode() == OptionalLogin:
-			return nil // skip auth, no need for modifications
-		case err != nil:
-			return err
-		// Note: no randomization here. It is a sanity check that verifies
-		// refreshToken did its job.
-		case internal.TokenExpiresIn(a.ctx, tok, minAcceptedLifetime):
-			return fmt.Errorf("auth: failed to refresh the token")
-		}
-	}
-	tok.SetAuthHeader(req)
-	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
