@@ -17,7 +17,7 @@ import (
 // WorkPool blocks until all the generator completes and all workers have
 // finished their tasks.
 func WorkPool(workers int, gen func(chan<- func() error)) error {
-	return errors.MultiErrorFromErrors(Run(workers, gen))
+	return multiErrorFromErrors(Run(workers, gen))
 }
 
 // FanOutIn is useful to quickly parallelize a group of tasks.
@@ -33,4 +33,24 @@ func WorkPool(workers int, gen func(chan<- func() error)) error {
 // This function is equivalent to WorkPool(0, gen).
 func FanOutIn(gen func(chan<- func() error)) error {
 	return WorkPool(0, gen)
+}
+
+// multiErrorFromErrors takes an error-channel, blocks on it, and returns
+// a MultiError for any errors pushed to it over the channel, or nil if
+// all the errors were nil.
+func multiErrorFromErrors(ch <-chan error) error {
+	if ch == nil {
+		return nil
+	}
+	ret := errors.MultiError(nil)
+	for e := range ch {
+		if e == nil {
+			continue
+		}
+		ret = append(ret, e)
+	}
+	if len(ret) == 0 {
+		return nil
+	}
+	return ret
 }

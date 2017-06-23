@@ -6,11 +6,6 @@ package errors
 
 import (
 	"fmt"
-	"reflect"
-)
-
-var (
-	multiErrorType = reflect.TypeOf(MultiError(nil))
 )
 
 // MultiError is a simple `error` implementation which represents multiple
@@ -84,41 +79,6 @@ func SingleError(err error) error {
 			return nil
 		}
 		return me[0]
-	}
-	return err
-}
-
-// MultiErrorFromErrors takes an error-channel, blocks on it, and returns
-// a MultiError for any errors pushed to it over the channel, or nil if
-// all the errors were nil.
-func MultiErrorFromErrors(ch <-chan error) error {
-	if ch == nil {
-		return nil
-	}
-	ret := MultiError(nil)
-	for e := range ch {
-		if e == nil {
-			continue
-		}
-		ret = append(ret, e)
-	}
-	if len(ret) == 0 {
-		return nil
-	}
-	return ret
-}
-
-// Fix will convert a MultiError compatible type (e.g. []error) to this
-// version of MultiError.
-func Fix(err error) error {
-	if err != nil {
-		// we know that err already conforms to the error interface (or the caller's
-		// method wouldn't compile), so check to see if the error's underlying type
-		// looks like one of the special error types we implement.
-		v := reflect.ValueOf(err)
-		if v.Type().ConvertibleTo(multiErrorType) {
-			err = v.Convert(multiErrorType).Interface().(error)
-		}
 	}
 	return err
 }

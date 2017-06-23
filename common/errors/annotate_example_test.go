@@ -50,8 +50,14 @@ func someIntermediateFunc(vals ...int) error {
 		defer close(errch)
 		errch <- Annotate(errorWrapper(someLibFunc(vals...))).Reason("could not process").Err()
 	}()
-	if err := MultiErrorFromErrors(errch); err != nil {
-		return Annotate(err).Reason("while processing %(vals)v").D("vals", vals).Err()
+	me := MultiError(nil)
+	for err := range errch {
+		if err != nil {
+			me = append(me, err)
+		}
+	}
+	if me != nil {
+		return Annotate(me).Reason("while processing %(vals)v").D("vals", vals).Err()
 	}
 	return nil
 }
@@ -102,11 +108,11 @@ func ExampleAnnotate() {
 	// ... skipped SOME frames in pkg "runtime"...
 	//
 	// GOROUTINE LINE
-	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:54 - errors.someIntermediateFunc()
+	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:60 - errors.someIntermediateFunc()
 	//   reason: "while processing [3]"
 	//   "vals" = []int{3}
 	//
-	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:60 - errors.ExampleAnnotate()
+	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:66 - errors.ExampleAnnotate()
 	//   reason: "top level"
 	//
 	// #? testing/example.go:XXX - testing.runExample()
@@ -114,5 +120,4 @@ func ExampleAnnotate() {
 	// #? testing/testing.go:XXX - testing.(*M).Run()
 	// ... skipped SOME frames in pkg "_test"...
 	// ... skipped SOME frames in pkg "runtime"...
-
 }

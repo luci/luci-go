@@ -12,10 +12,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-type otherMEType []error
-
-func (o otherMEType) Error() string { return "FAIL" }
-
 func TestMultiError(t *testing.T) {
 	t.Parallel()
 
@@ -23,32 +19,6 @@ func TestMultiError(t *testing.T) {
 		var me error = MultiError{fmt.Errorf("hello"), fmt.Errorf("bob")}
 
 		So(me.Error(), ShouldEqual, `hello (and 1 other error)`)
-
-		Convey("MultiErrorFromErrors with errors works", func() {
-			mec := make(chan error, 4)
-			mec <- nil
-			mec <- fmt.Errorf("first error")
-			mec <- nil
-			mec <- fmt.Errorf("what")
-			close(mec)
-
-			err := MultiErrorFromErrors(mec)
-			So(err.Error(), ShouldEqual, `first error (and 1 other error)`)
-		})
-
-		Convey("MultiErrorFromErrors with nil works", func() {
-			So(MultiErrorFromErrors(nil), ShouldBeNil)
-
-			c := make(chan error)
-			close(c)
-			So(MultiErrorFromErrors(c), ShouldBeNil)
-
-			c = make(chan error, 2)
-			c <- nil
-			c <- nil
-			close(c)
-			So(MultiErrorFromErrors(c), ShouldBeNil)
-		})
 	})
 }
 
@@ -85,35 +55,4 @@ func TestUpstreamErrors(t *testing.T) {
 		e := errors.New("unique")
 		So(SingleError(e), ShouldEqual, e)
 	})
-
-	Convey("Test MultiError Conversion", t, func() {
-		ome := otherMEType{errors.New("sup")}
-		So(Fix(ome), ShouldHaveSameTypeAs, MultiError{})
-	})
-
-	Convey("Fix passes through", t, func() {
-		e := errors.New("unique")
-		So(Fix(e), ShouldEqual, e)
-	})
-}
-
-func ExampleMultiError() {
-	errCh := make(chan error, 10)
-	errCh <- nil // nils are ignored
-	errCh <- fmt.Errorf("what")
-	close(errCh)
-
-	err := MultiErrorFromErrors(errCh)
-	fmt.Printf("got: %s len=%d\n", err, len(err.(MultiError)))
-
-	errCh = make(chan error, 10)
-	errCh <- nil // and if the channel only has nils
-	close(errCh)
-
-	err = MultiErrorFromErrors(errCh) // then it returns nil
-	fmt.Printf("got: %v\n", err)
-
-	// Output:
-	// got: what len=1
-	// got: <nil>
 }
