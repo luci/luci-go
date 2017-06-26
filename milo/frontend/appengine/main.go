@@ -4,8 +4,10 @@
 
 package appengine
 
-import "github.com/luci/luci-go/milo/frontend"
+import (
+	"github.com/luci/luci-go/milo/frontend"
+)
 
 func init() {
-	frontend.Run()
+	frontend.Run("templates")
 }

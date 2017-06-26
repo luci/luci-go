@@ -41,7 +41,7 @@ func requestCtx(c context.Context, params ...httprouter.Param) *router.Context {
 func TestHtml(t *testing.T) {
 	c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
 	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
-	c = templates.Use(c, common.GetTemplateBundle("../../frontend/templates"))
+	c = templates.Use(c, common.GetTemplateBundle("../../frontend/appengine/templates"))
 	c = auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
 
 	Convey(`HTML handler tests`, t, func() {
