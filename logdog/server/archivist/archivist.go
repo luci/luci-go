@@ -19,6 +19,7 @@ import (
 	"github.com/luci/luci-go/common/gcloud/gs"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
@@ -344,7 +345,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 	// We will handle error creating the plan and executing the plan in the same
 	// switch statement below.
 	switch err = staged.stage(c); {
-	case errors.IsTransient(err):
+	case transient.Tag.In(err):
 		// If this is a transient error, exit immediately and do not delete the
 		// archival task.
 		log.WithError(err).Warningf(c, "TRANSIENT error during archival operation.")
@@ -579,7 +580,7 @@ func (sa *stagedArchival) stage(c context.Context) (err error) {
 	var terr errors.MultiError
 	defer func() {
 		if err == nil && len(terr) > 0 {
-			err = errors.WrapTransient(terr)
+			err = transient.Tag.Apply(terr)
 		}
 	}()
 

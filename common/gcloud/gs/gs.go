@@ -13,6 +13,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/retry/transient"
 
 	gs "cloud.google.com/go/storage"
 	"golang.org/x/net/context"
@@ -132,7 +133,7 @@ func (c *prodClient) Rename(src, dst Path) error {
 	}
 
 	// First stage: CopyTo
-	err = retry.Retry(c, retry.TransientOnly(retry.Default), func() error {
+	err = retry.Retry(c, transient.Only(retry.Default), func() error {
 		if _, err := dstObj.CopierFrom(srcObj).Run(c); err != nil {
 			// The storage library doesn't return gs.ErrObjectNotExist when Delete
 			// returns a 404. Catch that explicitly.
@@ -141,7 +142,7 @@ func (c *prodClient) Rename(src, dst Path) error {
 			}
 
 			// Assume all unexpected errors are transient.
-			return errors.WrapTransient(err)
+			return transient.Tag.Apply(err)
 		}
 		return nil
 	}, func(err error, d time.Duration) {
@@ -176,7 +177,7 @@ func (c *prodClient) Delete(p Path) error {
 }
 
 func (c *prodClient) deleteObject(o *gs.ObjectHandle) error {
-	return retry.Retry(c, retry.TransientOnly(retry.Default), func() error {
+	return retry.Retry(c, transient.Only(retry.Default), func() error {
 		if err := o.Delete(c); err != nil {
 			// The storage library doesn't return gs.ErrObjectNotExist when Delete
 			// returns a 404. Catch that explicitly.
@@ -186,7 +187,7 @@ func (c *prodClient) deleteObject(o *gs.ObjectHandle) error {
 			}
 
 			// Assume all unexpected errors are transient.
-			return errors.WrapTransient(err)
+			return transient.Tag.Apply(err)
 		}
 		return nil
 	}, func(err error, d time.Duration) {

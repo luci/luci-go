@@ -17,10 +17,10 @@ import (
 	"google.golang.org/api/googleapi"
 
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/gcloud/googleoauth"
 	"github.com/luci/luci-go/common/gcloud/iam"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 )
 
 // MintAccessTokenParams is passed to MintAccessTokenForServiceAccount.
@@ -161,9 +161,8 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 			if err != nil {
 				if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code < 500 {
 					return nil, err, fmt.Sprintf("ERROR_MINTING_HTTP_%d", apiErr.Code)
-				} else {
-					return nil, errors.WrapTransient(err), "ERROR_TRANSIENT_IN_MINTING"
 				}
+				return nil, transient.Tag.Apply(err), "ERROR_TRANSIENT_IN_MINTING"
 			}
 
 			// Log details about the new token.

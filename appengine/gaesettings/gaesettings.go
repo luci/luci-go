@@ -18,8 +18,8 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/server/settings"
 )
 
@@ -81,7 +81,7 @@ func (s Storage) FetchAllSettings(c context.Context) (*settings.Bundle, error) {
 	case err == ds.ErrNoSuchEntity:
 		break
 	case err != nil:
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	}
 
 	pairs := map[string]*json.RawMessage{}
@@ -151,7 +151,7 @@ func (s Storage) UpdateSetting(c context.Context, key string, value json.RawMess
 	if fatalFail != nil {
 		return fatalFail
 	}
-	return errors.WrapTransient(err)
+	return transient.Tag.Apply(err)
 }
 
 // GetConsistencyTime returns "last modification time" + "expiration period".
@@ -169,6 +169,6 @@ func (s Storage) GetConsistencyTime(c context.Context) (time.Time, error) {
 	case ds.ErrNoSuchEntity:
 		return time.Time{}, nil
 	default:
-		return time.Time{}, errors.WrapTransient(err)
+		return time.Time{}, transient.Tag.Apply(err)
 	}
 }

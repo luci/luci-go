@@ -9,9 +9,9 @@ import (
 	"time"
 
 	gs "cloud.google.com/go/storage"
-	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/retry/transient"
 	"golang.org/x/net/context"
 )
 
@@ -42,11 +42,11 @@ func (w *prodWriter) Write(d []byte) (a int, err error) {
 		w.Writer = w.client.baseClient.Bucket(w.bucket).Object(w.relpath).NewWriter(w)
 	}
 
-	err = retry.Retry(w, retry.TransientOnly(retry.Default), func() (ierr error) {
+	err = retry.Retry(w, transient.Only(retry.Default), func() (ierr error) {
 		a, ierr = w.Writer.Write(d)
 
 		// Assume all Write errors are transient.
-		ierr = errors.WrapTransient(ierr)
+		ierr = transient.Tag.Apply(ierr)
 		return
 	}, func(err error, d time.Duration) {
 		log.Fields{
@@ -66,7 +66,7 @@ func (w *prodWriter) Close() error {
 		return nil
 	}
 
-	return retry.Retry(w, retry.TransientOnly(retry.Default),
+	return retry.Retry(w, transient.Only(retry.Default),
 		w.Writer.Close,
 		func(err error, d time.Duration) {
 			log.Fields{

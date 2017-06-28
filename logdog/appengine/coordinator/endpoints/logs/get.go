@@ -11,6 +11,7 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
 	"github.com/luci/luci-go/logdog/api/logpb"
@@ -210,7 +211,7 @@ func getHead(c context.Context, req *logdog.GetRequest, st coordinator.Storage, 
 
 	var ierr error
 	count := 0
-	err := retry.Retry(c, retry.TransientOnly(retry.Default), func() error {
+	err := retry.Retry(c, transient.Only(retry.Default), func() error {
 		// Issue the Get request. This may return a transient error, in which case
 		// we will retry.
 		return st.Get(sreq, func(e *storage.Entry) bool {
@@ -274,7 +275,7 @@ func getTail(c context.Context, st coordinator.Storage, project cfgtypes.Project
 	}.Debugf(c, "Issuing Tail request.")
 
 	var e *storage.Entry
-	err := retry.Retry(c, retry.TransientOnly(retry.Default), func() (err error) {
+	err := retry.Retry(c, transient.Only(retry.Default), func() (err error) {
 		e, err = st.Tail(project, path)
 		return
 	}, func(err error, delay time.Duration) {

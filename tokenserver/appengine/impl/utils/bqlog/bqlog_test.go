@@ -25,6 +25,7 @@ import (
 	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -266,7 +267,7 @@ func TestFlush(t *testing.T) {
 			}
 
 			testingLog.insertMock = func(_ context.Context, r *bigquery.TableDataInsertAllRequest) (*bigquery.TableDataInsertAllResponse, error) {
-				return nil, errors.WrapTransient(fmt.Errorf("omg, transient error"))
+				return nil, errors.New("omg, transient error", transient.Tag)
 			}
 
 			tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {

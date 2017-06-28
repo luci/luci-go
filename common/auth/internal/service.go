@@ -15,8 +15,8 @@ import (
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
 
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 )
 
 type serviceAccountTokenProvider struct {
@@ -87,7 +87,7 @@ func (p *serviceAccountTokenProvider) MintToken(ctx context.Context, base *oauth
 	switch newTok, err := grabToken(cfg.TokenSource(ctx)); {
 	case err == nil:
 		return newTok, nil
-	case errors.IsTransient(err):
+	case transient.Tag.In(err):
 		logging.Warningf(ctx, "Error when creating access token - %s", err)
 		return nil, err
 	default:

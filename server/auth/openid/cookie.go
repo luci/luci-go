@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/server/tokens"
 	"golang.org/x/net/context"
 )
@@ -57,7 +57,7 @@ func decodeSessionCookie(c context.Context, r *http.Request) (string, error) {
 	}
 	payload, err := sessionCookieToken.Validate(c, cookie.Value, nil)
 	switch {
-	case errors.IsTransient(err):
+	case transient.Tag.In(err):
 		return "", err
 	case err != nil:
 		logging.Warningf(c, "Failed to decode session cookie %q: %s", cookie.Value, err)

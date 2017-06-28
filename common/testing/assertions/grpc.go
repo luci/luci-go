@@ -7,6 +7,7 @@ package assertions
 import (
 	"fmt"
 
+	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -55,7 +56,7 @@ func ShouldHaveRPCCode(actual interface{}, expected ...interface{}) string {
 		return "Expected argument must have the form: [codes.Code[string]]"
 	}
 
-	if acode := grpc.Code(aerr); acode != ecode {
+	if acode := grpcutil.Code(aerr); acode != ecode {
 		return fmt.Sprintf("expected gRPC code %q (%d), not %q (%d), type %T: %v",
 			ecode, ecode, acode, acode, actual, actual)
 	}

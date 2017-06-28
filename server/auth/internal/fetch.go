@@ -11,8 +11,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 
 	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
@@ -118,7 +118,7 @@ func fetchJSON(c context.Context, client *http.Client, val interface{}, f func()
 	resp, err := ctxhttp.Do(c, client, r)
 	if err != nil {
 		logging.Errorf(c, "auth: URL fetch failed, can't connect - %s", err)
-		return errors.WrapTransient(err)
+		return transient.Tag.Apply(err)
 	}
 	defer func() {
 		ioutil.ReadAll(resp.Body)
@@ -133,7 +133,7 @@ func fetchJSON(c context.Context, client *http.Client, val interface{}, f func()
 		logging.Errorf(c, "auth: URL fetch failed - HTTP %d - %s", resp.StatusCode, string(body))
 		err := fmt.Errorf("auth: HTTP code (%d) when fetching %s", resp.StatusCode, r.URL)
 		if resp.StatusCode >= 500 {
-			return errors.WrapTransient(err)
+			return transient.Tag.Apply(err)
 		}
 		return err
 	}

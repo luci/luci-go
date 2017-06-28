@@ -21,6 +21,7 @@ import (
 	"github.com/luci/luci-go/server/auth/signing"
 
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -176,7 +177,7 @@ func TestMiddleware(t *testing.T) {
 
 	Convey("Transient error", t, func() {
 		rr := call(&Authenticator{
-			Methods: []Method{fakeAuthMethod{err: errors.WrapTransient(errors.New("boo"))}},
+			Methods: []Method{fakeAuthMethod{err: errors.New("boo", transient.Tag)}},
 		})
 		So(rr.Code, ShouldEqual, 500)
 		So(rr.Body.String(), ShouldEqual, "Transient error during authentication\n")

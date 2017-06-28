@@ -20,6 +20,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/gcloud/googleoauth"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
 )
@@ -78,7 +79,7 @@ func (m *OAuth2Method) authenticateProd(c context.Context, scopes []string) (*au
 			ClientID:  u.ClientID,
 		}, nil
 	}
-	return nil, errors.WrapTransient(err)
+	return nil, transient.Tag.Apply(err)
 }
 
 type tokenCheckCache string
@@ -109,7 +110,8 @@ func (m *OAuth2Method) authenticateDevServer(c context.Context, header string, s
 		if err == googleoauth.ErrBadToken {
 			return nil, err
 		}
-		return nil, errors.WrapTransient(fmt.Errorf("oauth: transient error when validating token - %s", err))
+		return nil, errors.Annotate(err).Reason("oauth: transient error when validating token").
+			Tag(transient.Tag).Err()
 	}
 
 	// Verify the token contains a validated email.

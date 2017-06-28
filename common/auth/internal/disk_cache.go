@@ -15,9 +15,9 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/retry/transient"
 )
 
 const (
@@ -198,7 +198,7 @@ func (c *DiskTokenCache) writeCacheFile(cache *cacheFile, now time.Time) error {
 	// a retry in updateCacheFile.
 	if err = os.Rename(tmp.Name(), c.absPath()); err != nil {
 		cleanup()
-		return errors.WrapTransient(err)
+		return transient.Tag.Apply(err)
 	}
 	return nil
 }
@@ -222,7 +222,7 @@ func (c *DiskTokenCache) updateCacheFile(cb func(*cacheFile, time.Time) bool) er
 			Multiplier: 1.5,
 		}
 	}
-	return retry.Retry(c.Context, retry.TransientOnly(retryParams), func() error {
+	return retry.Retry(c.Context, transient.Only(retryParams), func() error {
 		cache, err := c.readCacheFile()
 		if err != nil {
 			return err

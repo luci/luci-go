@@ -14,6 +14,7 @@ import (
 
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authdb"
@@ -74,7 +75,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, adminAuth au
 // replyError sends HTML error page with status 500 on transient errors or 400
 // on fatal ones.
 func replyError(c context.Context, rw http.ResponseWriter, err error) {
-	if errors.IsTransient(err) {
+	if transient.Tag.In(err) {
 		rw.WriteHeader(http.StatusInternalServerError)
 	} else {
 		rw.WriteHeader(http.StatusBadRequest)
@@ -135,7 +136,7 @@ func adminAutologin(c *router.Context, next router.Handler) {
 		url, err := auth.LoginURL(c.Context, destURL.String())
 		if err != nil {
 			logging.WithError(err).Errorf(c.Context, "Error when generating login URL")
-			if errors.IsTransient(err) {
+			if transient.Tag.In(err) {
 				http.Error(c.Writer, "Transient error when generating login URL, see logs", 500)
 			} else {
 				http.Error(c.Writer, "Can't generate login URL, see logs", 401)

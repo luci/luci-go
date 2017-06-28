@@ -12,9 +12,9 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/api/googleapi"
 
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/gcloud/googleoauth"
 	"github.com/luci/luci-go/common/gcloud/iam"
+	"github.com/luci/luci-go/common/retry/transient"
 )
 
 type iamTokenProvider struct {
@@ -70,7 +70,7 @@ func (p *iamTokenProvider) MintToken(ctx context.Context, base *oauth2.Token) (*
 	if apiErr, _ := err.(*googleapi.Error); apiErr != nil && apiErr.Code < 500 {
 		return nil, err
 	}
-	return nil, errors.WrapTransient(err)
+	return nil, transient.Tag.Apply(err)
 }
 
 func (p *iamTokenProvider) RefreshToken(ctx context.Context, prev, base *oauth2.Token) (*oauth2.Token, error) {

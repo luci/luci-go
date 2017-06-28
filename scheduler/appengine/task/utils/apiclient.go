@@ -5,7 +5,7 @@
 package utils
 
 import (
-	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 	"google.golang.org/api/googleapi"
 )
 
@@ -26,7 +26,7 @@ func IsTransientAPIError(err error) bool {
 // necessary.
 func WrapAPIError(err error) error {
 	if IsTransientAPIError(err) {
-		return errors.WrapTransient(err)
+		return transient.Tag.Apply(err)
 	}
 	return err
 }

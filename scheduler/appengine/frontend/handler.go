@@ -35,8 +35,8 @@ import (
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 
 	"github.com/luci/luci-go/common/data/rand/mathrand"
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 
 	"github.com/luci/luci-go/scheduler/api/scheduler/v1"
 
@@ -85,7 +85,7 @@ func (c *requestContext) fail(code int, msg string, args ...interface{}) {
 // retrying the task.
 func (c *requestContext) err(e error, msg string, args ...interface{}) {
 	code := 500
-	if !errors.IsTransient(e) {
+	if !transient.Tag.In(e) {
 		code = 202
 	}
 	args = append(args, e)
@@ -253,7 +253,7 @@ func readConfigCron(c *router.Context) {
 		})
 	}
 	if err = tq.Add(rc.Context, "read-project-config", tasks...); err != nil {
-		rc.err(errors.WrapTransient(err), "Failed to add tasks to task queue")
+		rc.err(transient.Tag.Apply(err), "Failed to add tasks to task queue")
 	} else {
 		rc.ok()
 	}

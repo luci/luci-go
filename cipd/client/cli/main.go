@@ -25,9 +25,9 @@ import (
 
 	"github.com/luci/luci-go/common/auth"
 	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/gologger"
+	"github.com/luci/luci-go/common/retry/transient"
 
 	"github.com/luci/luci-go/client/authcli"
 
@@ -843,7 +843,7 @@ func (c *checkUpdatesRun) Run(a subcommands.Application, args []string, env subc
 	_, actions, err := ensurePackages(ctx, c.rootDir, c.ensureFile, true, c.clientOptions)
 	if err != nil {
 		ret := c.done(actions, err)
-		if errors.IsTransient(err) {
+		if transient.Tag.In(err) {
 			return ret // fail as usual
 		}
 		return 0 // on fatal errors ask puppet to run 'ensure' for real

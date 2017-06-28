@@ -7,6 +7,7 @@ package mutate
 import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/data/bit_field"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
@@ -50,7 +51,8 @@ func (a *AddDeps) RollForward(c context.Context) (muts []tumble.Mutation, err er
 	}
 
 	fwdDeps, err := filterExisting(c, model.FwdDepsFromList(c, a.Auth.Id.AttemptID(), a.Deps))
-	err = grpcutil.Annotate(err, codes.Internal).Reason("while filtering deps").Err()
+	err = errors.Annotate(err).Tag(grpcutil.Tag.With(codes.Internal)).
+		Reason("while filtering deps").Err()
 	if err != nil || len(fwdDeps) == 0 {
 		return
 	}
@@ -64,7 +66,8 @@ func (a *AddDeps) RollForward(c context.Context) (muts []tumble.Mutation, err er
 	}
 
 	if err = ds.Put(c, fwdDeps, atmpt, ex); err != nil {
-		err = grpcutil.Annotate(err, codes.Internal).Reason("putting stuff").Err()
+		err = errors.Annotate(err).Tag(grpcutil.Tag.With(codes.Internal)).
+			Reason("putting stuff").Err()
 		return
 	}
 

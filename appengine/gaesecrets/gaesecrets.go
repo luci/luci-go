@@ -23,7 +23,7 @@ import (
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/caching/proccache"
-	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/server/secrets"
 )
 
@@ -98,7 +98,7 @@ func (s *storeImpl) getSecretFromDatastore(k secrets.Key) (secrets.Secret, error
 	ent := secretEntity{ID: s.cfg.Prefix + ":" + string(k)}
 	err = ds.Get(c, &ent)
 	if err != nil && err != ds.ErrNoSuchEntity {
-		return secrets.Secret{}, errors.WrapTransient(err)
+		return secrets.Secret{}, transient.Tag.Apply(err)
 	}
 
 	// Autogenerate and put into the datastore.
@@ -108,10 +108,10 @@ func (s *storeImpl) getSecretFromDatastore(k secrets.Key) (secrets.Secret, error
 		}
 		ent.Created = clock.Now(s.ctx).UTC()
 		if ent.Secret, err = s.generateSecret(); err != nil {
-			return secrets.Secret{}, errors.WrapTransient(err)
+			return secrets.Secret{}, transient.Tag.Apply(err)
 		}
 		if ent.SecretID, err = s.generateSecretID(ent.Created); err != nil {
-			return secrets.Secret{}, errors.WrapTransient(err)
+			return secrets.Secret{}, transient.Tag.Apply(err)
 		}
 		err = ds.RunInTransaction(c, func(c context.Context) error {
 			newOne := secretEntity{ID: ent.ID}
@@ -126,7 +126,7 @@ func (s *storeImpl) getSecretFromDatastore(k secrets.Key) (secrets.Secret, error
 			}
 		}, nil)
 		if err != nil {
-			return secrets.Secret{}, errors.WrapTransient(err)
+			return secrets.Secret{}, transient.Tag.Apply(err)
 		}
 	}
 

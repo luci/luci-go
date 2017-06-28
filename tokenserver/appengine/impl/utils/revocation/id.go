@@ -8,7 +8,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 )
 
 // GenerateTokenID produces an int64 that can be used as a token identifier.
@@ -24,7 +24,7 @@ func GenerateTokenID(c context.Context, kind string) (int64, error) {
 		datastore.NewKey(c, kind, "", 0, nil),
 	}
 	if err := datastore.AllocateIDs(c, keys); err != nil {
-		return 0, errors.WrapTransient(err)
+		return 0, transient.Tag.Apply(err)
 	}
 	return keys[0].IntID(), nil
 }

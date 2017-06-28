@@ -14,8 +14,8 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/grpc/grpcutil"
 
 	"github.com/luci/luci-go/tokenserver/api/minter/v1"
@@ -55,13 +55,6 @@ type RPCError struct {
 	ErrorCode      minter.ErrorCode // protocol-level status code
 	ServiceVersion string           // version of the backend, if known
 }
-
-// IsTransient is needed to implement errors.Transient.
-func (e RPCError) IsTransient() bool {
-	return e.error != nil && grpcutil.IsTransientCode(e.GrpcCode)
-}
-
-var _ errors.Transient = RPCError{}
 
 // MintMachineToken signs the request using the signer and sends it.
 //
@@ -116,10 +109,15 @@ func (c *Client) MintMachineToken(ctx context.Context, req *minter.MachineTokenR
 
 	// Fatal pRPC-level error or transient error in case retries didn't help.
 	if err != nil {
-		return nil, RPCError{
+		code := grpc.Code(err)
+		err = RPCError{
 			error:    err,
-			GrpcCode: grpc.Code(err),
+			GrpcCode: code,
 		}
+		if grpcutil.IsTransientCode(code) {
+			err = transient.Tag.Apply(err)
+		}
+		return nil, err
 	}
 
 	// The response still may indicate a fatal error.

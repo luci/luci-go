@@ -10,7 +10,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/server/auth/signing"
 )
 
@@ -53,7 +53,7 @@ type Signer struct {
 func (s *Signer) SignToken(c context.Context, body proto.Message) (string, error) {
 	info, err := s.Signer.ServiceInfo(c)
 	if err != nil {
-		return "", errors.WrapTransient(err)
+		return "", transient.Tag.Apply(err)
 	}
 	blob, err := proto.Marshal(body)
 	if err != nil {
@@ -62,7 +62,7 @@ func (s *Signer) SignToken(c context.Context, body proto.Message) (string, error
 	withCtx := prependSigningContext(blob, s.SigningContext)
 	keyID, sig, err := s.Signer.SignBytes(c, withCtx)
 	if err != nil {
-		return "", errors.WrapTransient(err)
+		return "", transient.Tag.Apply(err)
 	}
 	tok, err := proto.Marshal(s.Wrap(&Unwrapped{
 		Body:         blob,

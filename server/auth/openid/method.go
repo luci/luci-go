@@ -17,6 +17,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
 )
@@ -364,7 +365,7 @@ func removeCookie(rw http.ResponseWriter, r *http.Request, cookie string) {
 // HTTP 400 on fatal errors (that can happen only on bad requests).
 func replyError(c context.Context, rw http.ResponseWriter, err error, msg string, args ...interface{}) {
 	code := http.StatusBadRequest
-	if errors.IsTransient(err) {
+	if transient.Tag.In(err) {
 		code = http.StatusInternalServerError
 	}
 	msg = fmt.Sprintf(msg, args...)

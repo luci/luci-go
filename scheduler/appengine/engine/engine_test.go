@@ -25,6 +25,7 @@ import (
 	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/server/secrets/testsecrets"
 
 	"github.com/luci/luci-go/scheduler/appengine/catalog"
@@ -198,7 +199,7 @@ func TestTransactionRetries(t *testing.T) {
 				Revision: "rev1",
 				Schedule: "*/5 * * * * * *",
 			}})
-		So(errors.IsTransient(err), ShouldBeTrue)
+		So(transient.Tag.In(err), ShouldBeTrue)
 		So(allJobs(c), ShouldResemble, []Job{})
 		ensureZeroTasks(c, "timers-q")
 		ensureZeroTasks(c, "invs-q")
@@ -330,9 +331,9 @@ func TestFullFlow(t *testing.T) {
 			So(ctl.Task(), ShouldResemble, &messages.NoopTask{})
 
 			ctl.DebugLog("oops, fail")
-			return errors.WrapTransient(errors.New("oops"))
+			return errors.New("oops", transient.Tag)
 		}
-		So(errors.IsTransient(e.ExecuteSerializedAction(c, invTask.Payload, 0)), ShouldBeTrue)
+		So(transient.Tag.In(e.ExecuteSerializedAction(c, invTask.Payload, 0)), ShouldBeTrue)
 
 		// Still in QUEUED state, but with InvocatioID assigned.
 		jobs := allJobs(c)
@@ -745,7 +746,7 @@ func TestProcessPubSubPush(t *testing.T) {
 			}
 			blob, err := json.Marshal(&msg)
 			So(err, ShouldBeNil)
-			So(errors.IsTransient(e.ProcessPubSubPush(c, blob)), ShouldBeFalse)
+			So(transient.Tag.In(e.ProcessPubSubPush(c, blob)), ShouldBeFalse)
 		})
 	})
 }

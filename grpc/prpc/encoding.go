@@ -88,7 +88,7 @@ func respondMessage(msg proto.Message, format Format) *response {
 		res.body = buf.Bytes()
 
 	default:
-		panic(fmt.Errorf("impossible: invalid format %s", format))
+		panic(fmt.Errorf("impossible: invalid format %d", format))
 
 	}
 	if err != nil {

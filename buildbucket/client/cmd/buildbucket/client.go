@@ -15,9 +15,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/retry/transient"
 	"golang.org/x/net/context/ctxhttp"
 )
 
@@ -50,7 +50,7 @@ func (c *client) call(ctx context.Context, method, urlStr string, body interface
 
 	err = retry.Retry(
 		ctx,
-		retry.TransientOnly(retry.Default),
+		transient.Only(retry.Default),
 		func() error {
 			req := &http.Request{Method: method, URL: u}
 			if bodyBytes != nil {
@@ -58,14 +58,13 @@ func (c *client) call(ctx context.Context, method, urlStr string, body interface
 			}
 			res, err := ctxhttp.Do(ctx, c.HTTP, req)
 			if err != nil {
-				return errors.WrapTransient(err)
+				return transient.Tag.Apply(err)
 			}
 
 			defer res.Body.Close()
 			if res.StatusCode >= 500 {
 				bodyBytes, _ := ioutil.ReadAll(res.Body)
-				return errors.WrapTransient(fmt.Errorf(
-					"status %s: %s", res.Status, bodyBytes))
+				return transient.Tag.Apply(fmt.Errorf("status %s: %s", res.Status, bodyBytes))
 			}
 
 			response, err = ioutil.ReadAll(res.Body)

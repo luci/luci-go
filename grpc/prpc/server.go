@@ -15,8 +15,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/server/router"
 )
 
@@ -119,7 +119,7 @@ func (s *Server) authenticate() router.Middleware {
 
 	return func(c *router.Context, next router.Handler) {
 		switch ctx, err := a.Authenticate(c.Context, c.Request); {
-		case errors.IsTransient(err):
+		case transient.Tag.In(err):
 			res := errResponse(codes.Internal, http.StatusInternalServerError, escapeFmt(err.Error()))
 			res.write(c.Context, c.Writer)
 		case err != nil:

@@ -8,9 +8,9 @@ import (
 	"fmt"
 
 	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/retry/transient"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/distributor"
 	"github.com/luci/luci-go/dm/appengine/model"
@@ -86,7 +86,7 @@ func (s *ScheduleExecution) RollForward(c context.Context) (muts []tumble.Mutati
 	}
 	e.DistributorToken = string(distTok)
 	if err != nil {
-		if errors.IsTransient(err) {
+		if transient.Tag.In(err) {
 			// tumble will retry us later
 			logging.WithError(err).Errorf(c, "got transient error in ScheduleExecution")
 			return

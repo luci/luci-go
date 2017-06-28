@@ -14,7 +14,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/server/auth/signing"
 )
 
@@ -153,7 +153,7 @@ func (i *Inspector) checkLifetime(c context.Context, body proto.Message) string 
 func (i *Inspector) checkSignature(c context.Context, unwrapped *Unwrapped) (string, error) {
 	certsBundle, err := i.Certificates.Certificates(c)
 	if err != nil {
-		return "", errors.WrapTransient(err)
+		return "", transient.Tag.Apply(err)
 	}
 	cert, err := certsBundle.CertificateForKey(unwrapped.KeyID)
 	if err != nil {

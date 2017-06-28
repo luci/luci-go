@@ -12,6 +12,7 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/distributor/fake"
 	"github.com/luci/luci-go/dm/appengine/model"
@@ -71,7 +72,7 @@ func TestScheduleExecution(t *testing.T) {
 			})
 
 			Convey("transient", func() {
-				dist.RunError = errors.WrapTransient(errors.New("transient failure"))
+				dist.RunError = errors.New("transient failure", transient.Tag)
 
 				muts, err := se.RollForward(c)
 				So(err, ShouldErrLike, "transient")

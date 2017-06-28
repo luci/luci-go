@@ -16,6 +16,7 @@ import (
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/server/auth"
 )
 
@@ -60,7 +61,7 @@ func configureTopic(c context.Context, topic, sub, pushURL, publisher, pubSubURL
 	_, err = service.Projects.Topics.Create(topic, &pubsub.Topic{}).Context(c).Do()
 	if err != nil && !isHTTP409(err) {
 		logging.Errorf(c, "Failed - %s", err)
-		return errors.WrapTransient(err)
+		return transient.Tag.Apply(err)
 	}
 
 	// Create the subscription to this topic. Ignore HTTP 409.
@@ -74,7 +75,7 @@ func configureTopic(c context.Context, topic, sub, pushURL, publisher, pubSubURL
 	}).Context(c).Do()
 	if err != nil && !isHTTP409(err) {
 		logging.Errorf(c, "Failed - %s", err)
-		return errors.WrapTransient(err)
+		return transient.Tag.Apply(err)
 	}
 
 	// Modify topic's IAM policy to allow publisher to publish.
@@ -98,7 +99,7 @@ func configureTopic(c context.Context, topic, sub, pushURL, publisher, pubSubURL
 		}
 		logging.Errorf(c, "Failed - %s", err)
 	}
-	return errors.WrapTransient(err)
+	return transient.Tag.Apply(err)
 }
 
 // pullSubcription pulls one message from PubSub subscription.

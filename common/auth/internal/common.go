@@ -18,6 +18,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 )
 
 // expiryRandInterval is used by TokenExpiresInRnd.
@@ -256,7 +257,7 @@ func grabToken(src oauth2.TokenSource) (*oauth2.Token, error) {
 		// error a bunch of times is not very bad, so pick safer approach and assume
 		// any error is transient. Revoked refresh token or bad credentials (most
 		// common source of fatal errors) is already handled above.
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	default:
 		return tok, nil
 	}

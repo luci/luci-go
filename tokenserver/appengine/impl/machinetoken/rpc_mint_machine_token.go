@@ -17,9 +17,9 @@ import (
 
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/signing"
 
@@ -216,7 +216,7 @@ func (r *MintMachineTokenRPC) mintLuciMachineToken(c context.Context, args mintT
 				},
 			},
 		}, body, nil
-	case errors.IsTransient(err):
+	case transient.Tag.In(err):
 		return nil, nil, grpc.Errorf(codes.Internal, "failed to generate machine token - %s", err)
 	default:
 		resp, err := r.mintingErrorResponse(c, minter.ErrorCode_MACHINE_TOKEN_MINTING_ERROR, "%s", err)

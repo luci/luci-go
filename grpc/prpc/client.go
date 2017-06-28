@@ -26,6 +26,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/grpc/grpcutil"
 )
 
@@ -153,7 +154,7 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 	var contentType string
 	err = retry.Retry(
 		ctx,
-		retry.TransientOnly(options.Retry),
+		transient.Only(options.Retry),
 		func() error {
 			ctx := ctx
 			logging.Debugf(ctx, "RPC %s/%s.%s", c.Host, serviceName, methodName)
@@ -203,7 +204,8 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 			}
 			if err != nil {
 				// Treat all errors here as transient.
-				return errors.WrapTransient(fmt.Errorf("failed to send request: %s", err))
+				return errors.Annotate(err).Reason("failed to send request").
+					Tag(transient.Tag).Err()
 			}
 
 			if options.resHeaderMetadata != nil {
@@ -266,7 +268,7 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 				// AppEngine), and should be automatically retried even if a gRPC code
 				// header is not supplied.
 				if res.StatusCode >= http.StatusInternalServerError {
-					err = errors.WrapTransient(err)
+					err = transient.Tag.Apply(err)
 				}
 				return err
 			}
@@ -282,7 +284,7 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 				desc := strings.TrimSuffix(buf.String(), "\n")
 				err := grpcutil.Errf(code, "%s", desc)
 				if grpcutil.IsTransientCode(code) {
-					err = errors.WrapTransient(err)
+					err = transient.Tag.Apply(err)
 				}
 				return err
 			}

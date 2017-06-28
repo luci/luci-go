@@ -22,8 +22,8 @@ import (
 	"github.com/luci/luci-go/common/data/caching/proccache"
 	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/data/stringset"
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 )
 
 // GetAccessToken returns an OAuth access token representing app's service
@@ -49,7 +49,7 @@ func GetAccessToken(c context.Context, scopes []string) (*oauth2.Token, error) {
 	logging.Debugf(c, "Getting an access token for scopes %q", strings.Join(scopes, ", "))
 	accessToken, exp, err := info.AccessToken(c, scopes...)
 	if err != nil {
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	}
 	logging.Debugf(c, "The token expires in %s", exp.Sub(clock.Now(c)))
 

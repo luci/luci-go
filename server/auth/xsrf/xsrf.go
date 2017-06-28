@@ -18,8 +18,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
@@ -76,7 +76,7 @@ func WithTokenCheck(c *router.Context, next router.Handler) {
 		return
 	}
 	switch err := Check(c.Context, tok); {
-	case errors.IsTransient(err):
+	case transient.Tag.In(err):
 		replyError(c.Context, c.Writer, http.StatusInternalServerError, "Transient error when checking XSRF token - %s", err)
 	case err != nil:
 		replyError(c.Context, c.Writer, http.StatusForbidden, "Bad XSRF token - %s", err)

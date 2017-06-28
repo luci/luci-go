@@ -13,6 +13,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/logdog/common/storage"
 	"golang.org/x/net/context"
 )
@@ -41,13 +42,13 @@ func tableExists(ctx context.Context, c *bigtable.AdminClient, name string) (boo
 }
 
 func waitForTable(ctx context.Context, c *bigtable.AdminClient, name string) error {
-	return retry.Retry(ctx, retry.TransientOnly(retry.Default), func() error {
+	return retry.Retry(ctx, transient.Only(retry.Default), func() error {
 		exists, err := tableExists(ctx, c, name)
 		if err != nil {
 			return err
 		}
 		if !exists {
-			return errors.WrapTransient(errors.New("table does not exist"))
+			return errors.New("table does not exist", transient.Tag)
 		}
 		return nil
 	}, func(err error, delay time.Duration) {

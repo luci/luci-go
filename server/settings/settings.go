@@ -23,6 +23,7 @@ import (
 	"github.com/luci/luci-go/common/data/caching/lazyslot"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/retry/transient"
 )
 
 var (
@@ -131,7 +132,7 @@ func New(storage Storage) *Settings {
 		values: lazyslot.Slot{
 			Timeout: 15 * time.Second, // retry for 15 sec at most
 			Fetcher: func(c context.Context, _ lazyslot.Value) (result lazyslot.Value, err error) {
-				err = retry.Retry(c, retry.TransientOnly(retry.Default), func() error {
+				err = retry.Retry(c, transient.Only(retry.Default), func() error {
 					ctx, _ := clock.WithTimeout(c, 2*time.Second) // trigger a retry after 2 sec RPC timeout
 					result, err = attemptToFetchSettings(ctx, storage)
 					return err

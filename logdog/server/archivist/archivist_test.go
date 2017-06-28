@@ -15,6 +15,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/gcloud/gs"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/common/storage"
@@ -470,7 +471,7 @@ func TestHandleArchive(t *testing.T) {
 
 			Convey(`When a transient archival error occurs, will not consume the task.`, func() {
 				addTestEntry(project, 0, 1, 2, 3, 4)
-				gsc.newWriterErr = func(*testGSWriter) error { return errors.WrapTransient(errors.New("test error")) }
+				gsc.newWriterErr = func(*testGSWriter) error { return errors.New("test error", transient.Tag) }
 
 				So(ar.archiveTaskImpl(c, task), ShouldErrLike, "test error")
 				So(task.consumed, ShouldBeFalse)
@@ -670,7 +671,7 @@ func TestHandleArchive(t *testing.T) {
 					{"writer create failure", func() {
 						gsc.newWriterErr = func(w *testGSWriter) error {
 							if strings.HasSuffix(string(w.path), failName) {
-								return errors.WrapTransient(errors.New("test error"))
+								return errors.New("test error", transient.Tag)
 							}
 							return nil
 						}
@@ -679,7 +680,7 @@ func TestHandleArchive(t *testing.T) {
 					{"write failure", func() {
 						gsc.newWriterErr = func(w *testGSWriter) error {
 							if strings.HasSuffix(string(w.path), failName) {
-								w.writeErr = errors.WrapTransient(errors.New("test error"))
+								w.writeErr = errors.New("test error", transient.Tag)
 							}
 							return nil
 						}
@@ -688,7 +689,7 @@ func TestHandleArchive(t *testing.T) {
 					{"rename failure", func() {
 						gsc.renameErr = func(src, dst gs.Path) error {
 							if strings.HasSuffix(string(src), failName) {
-								return errors.WrapTransient(errors.New("test error"))
+								return errors.New("test error", transient.Tag)
 							}
 							return nil
 						}
@@ -697,7 +698,7 @@ func TestHandleArchive(t *testing.T) {
 					{"close failure", func() {
 						gsc.newWriterErr = func(w *testGSWriter) error {
 							if strings.HasSuffix(string(w.path), failName) {
-								w.closeErr = errors.WrapTransient(errors.New("test error"))
+								w.closeErr = errors.New("test error", transient.Tag)
 							}
 							return nil
 						}
@@ -708,7 +709,7 @@ func TestHandleArchive(t *testing.T) {
 						// be returned.
 						gsc.newWriterErr = func(w *testGSWriter) error {
 							if strings.HasSuffix(string(w.path), failName) {
-								w.writeErr = errors.WrapTransient(errors.New("test error"))
+								w.writeErr = errors.New("test error", transient.Tag)
 							}
 							return nil
 						}

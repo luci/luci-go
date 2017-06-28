@@ -211,7 +211,7 @@ func TestClient(t *testing.T) {
 				}
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(err.Error(), ShouldContainSubstring, "failed to send request")
+				So(err.Error(), ShouldEqual, context.DeadlineExceeded.Error())
 				So(retries, ShouldEqual, 0)
 			})
 

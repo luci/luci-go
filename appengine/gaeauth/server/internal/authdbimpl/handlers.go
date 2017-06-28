@@ -17,6 +17,7 @@ import (
 
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/server/auth/service"
 	"github.com/luci/luci-go/server/router"
 )
@@ -149,7 +150,7 @@ func processPubSubRequest(c context.Context, rw http.ResponseWriter, r *http.Req
 // replyError sends HTTP 500 on transient errors, HTTP 400 on fatal ones.
 func replyError(c context.Context, rw http.ResponseWriter, err error) {
 	logging.Errorf(c, "Error while processing PubSub notification - %s", err)
-	if errors.IsTransient(err) {
+	if transient.Tag.In(err) {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 	} else {
 		http.Error(rw, err.Error(), http.StatusBadRequest)

@@ -7,6 +7,7 @@ package deps
 import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/dm/api/acls"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/luci_config/server/cfgclient"
@@ -23,7 +24,7 @@ func loadAcls(c context.Context) (ret *acls.Acls, err error) {
 
 	ret = &acls.Acls{}
 	if err := cfgclient.Get(c, cfgclient.AsService, cSet, file, textproto.Message(ret), nil); err != nil {
-		return nil, errors.Annotate(err).Transient().
+		return nil, errors.Annotate(err).Tag(transient.Tag).
 			D("cSet", cSet).D("file", file).InternalReason("loading config").Err()
 	}
 	return
@@ -33,7 +34,7 @@ func inGroups(c context.Context, groups []string) error {
 	for _, grp := range groups {
 		ok, err := auth.IsMember(c, grp)
 		if err != nil {
-			return grpcutil.Annotate(err, codes.Internal).Reason("failed group check").Err()
+			return grpcAnnotate(err, codes.Internal).Reason("failed group check").Err()
 		}
 		if ok {
 			return nil

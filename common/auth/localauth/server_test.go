@@ -21,6 +21,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/lucictx"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -262,7 +263,7 @@ func TestProtocol(t *testing.T) {
 		})
 
 		Convey("Token generator returns transient error", func() {
-			responses <- errors.WrapTransient(fmt.Errorf("transient"))
+			responses <- errors.New("transient", transient.Tag)
 			So(call(goodRequest()), ShouldEqual, `HTTP 500: Transient error - transient`)
 		})
 	})

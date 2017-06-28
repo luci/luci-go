@@ -21,7 +21,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/caching/lazyslot"
 	"github.com/luci/luci-go/common/data/caching/proccache"
-	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 
 	"github.com/luci/luci-go/tokenserver/appengine/impl/certconfig"
 )
@@ -140,7 +140,7 @@ func GetCertChecker(c context.Context, cn string) (*CertChecker, error) {
 		// the process lifetime.
 		switch exists, err := ds.Exists(c, ds.NewKey(c, "CA", cn, 0, nil)); {
 		case err != nil:
-			return nil, 0, errors.WrapTransient(err)
+			return nil, 0, transient.Tag.Apply(err)
 		case !exists.All():
 			return nil, 0, Error{
 				error:  fmt.Errorf("no such CA %q", cn),
@@ -283,7 +283,7 @@ func (ch *CertChecker) refetchCA(c context.Context) (*certconfig.CA, error) {
 	case err == ds.ErrNoSuchEntity:
 		return &certconfig.CA{}, nil // GetCA knows that empty struct means "no such CA"
 	case err != nil:
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	}
 
 	parsedConf, err := ca.ParseConfig()

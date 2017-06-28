@@ -24,13 +24,18 @@ import (
 	"github.com/luci/luci-go/common/runtime/goroutine"
 )
 
-// Datum is a single data entry value for StackContext.Data.
+// Datum is a single data entry value for stackContext.Data.
+//
+// It's a tuple of Value (the actual data value you care about), and
+// StackFormat, which is a fmt-style string for how this Datum should be
+// rendered when using RenderStack. If StackFormat is left empty, "%#v" will be
+// used.
 type Datum struct {
 	Value       interface{}
 	StackFormat string
 }
 
-// Data is used to add data to a StackContext.
+// Data is used to add data when Annotate'ing an error.
 type Data map[string]Datum
 
 type stack struct {
@@ -63,33 +68,33 @@ func (s *stack) findPointOfDivergence(other *stack) int {
 	return myIdx
 }
 
-// StackContexter is the interface that an error may implement if it has data
+// stackContexter is the interface that an error may implement if it has data
 // associated with a specific stack frame.
-type StackContexter interface {
-	StackContext() StackContext
+type stackContexter interface {
+	stackContext() stackContext
 }
 
-// StackFrameInfo holds a stack and an index into that stack for association
-// with StackContexts.
-type StackFrameInfo struct {
+// stackFrameInfo holds a stack and an index into that stack for association
+// with stackContexts.
+type stackFrameInfo struct {
 	frameIdx int
 	forStack *stack
 }
 
-// StackContext represents the annotation data associated with an error, or an
+// stackContext represents the annotation data associated with an error, or an
 // annotation of an error.
-type StackContext struct {
-	FrameInfo StackFrameInfo
-	// Reason is the publicly-facing reason, and will show up in the Error()
+type stackContext struct {
+	frameInfo stackFrameInfo
+	// reason is the publicly-facing reason, and will show up in the Error()
 	// string.
-	Reason string
+	reason string
 
 	// InternalReason is used for printing tracebacks, but is otherwise formatted
-	// like Reason.
-	InternalReason string
-	Data           Data
+	// like reason.
+	internalReason string
+	data           Data
 
-	Transient bool
+	tags map[TagKey]interface{}
 }
 
 // We're looking for %(sometext) which is not preceded by a %. sometext may be
@@ -136,17 +141,17 @@ func (d Data) Format(format string) string {
 	return fmt.Sprintf(strings.Join(parts, ""), args...)
 }
 
-// RenderPublic renders the public error.Error()-style string for this frame,
+// renderPublic renders the public error.Error()-style string for this frame,
 // using the Reason and Data to produce a human readable string.
-func (s *StackContext) RenderPublic(inner error) string {
-	if s.Reason == "" {
+func (s *stackContext) renderPublic(inner error) string {
+	if s.reason == "" {
 		if inner != nil {
 			return inner.Error()
 		}
 		return ""
 	}
 
-	basis := s.Data.Format(s.Reason)
+	basis := s.data.Format(s.reason)
 	if inner != nil {
 		return fmt.Sprintf("%s: %s", basis, inner)
 	}
@@ -156,15 +161,15 @@ func (s *StackContext) RenderPublic(inner error) string {
 // render renders the frame as a single entry in a stack trace. This looks like:
 //
 //  I am an internal reson formatted with key1: value
-//  reason: "The literal content of the Reason field: %(key2)d"
+//  reason: "The literal content of the reason field: %(key2)d"
 //  "key1" = "value"
 //  "key2" = 10
-func (s *StackContext) render() Lines {
-	siz := len(s.Data)
-	if s.InternalReason != "" {
+func (s *stackContext) render() Lines {
+	siz := len(s.data)
+	if s.internalReason != "" {
 		siz++
 	}
-	if s.Reason != "" {
+	if s.reason != "" {
 		siz++
 	}
 	if siz == 0 {
@@ -173,76 +178,78 @@ func (s *StackContext) render() Lines {
 
 	ret := make(Lines, 0, siz)
 
-	if s.InternalReason != "" {
-		ret = append(ret, s.Data.Format(s.InternalReason))
+	if s.internalReason != "" {
+		ret = append(ret, s.data.Format(s.internalReason))
 	}
-	if s.Reason != "" {
-		ret = append(ret, fmt.Sprintf("reason: %q", s.Data.Format(s.Reason)))
+	if s.reason != "" {
+		ret = append(ret, fmt.Sprintf("reason: %q", s.data.Format(s.reason)))
 	}
-	if s.Transient {
-		ret = append(ret, "transient: true")
+	for key, val := range s.tags {
+		ret = append(ret, fmt.Sprintf("tag[%q]: %#v", key.description, val))
 	}
 
-	if len(s.Data) > 0 {
-		for k, v := range s.Data {
+	if len(s.data) > 0 {
+		for k, v := range s.data {
 			if v.StackFormat == "" || v.StackFormat == "%#v" {
 				ret = append(ret, fmt.Sprintf("%q = %#v", k, v.Value))
 			} else {
 				ret = append(ret, fmt.Sprintf("%q = "+v.StackFormat, k, v.Value))
 			}
 		}
-		sort.Strings(ret[len(ret)-len(s.Data):])
+		sort.Strings(ret[len(ret)-len(s.data):])
 	}
 
 	return ret
 }
 
-// AddData does a 'dict.update' addition of the data.
-func (s *StackContext) AddData(data Data) {
-	if s.Data == nil {
-		s.Data = make(Data, len(data))
+// addData does a 'dict.update' addition of the data.
+func (s *stackContext) addData(data Data) {
+	if s.data == nil {
+		s.data = make(Data, len(data))
 	}
 	for k, v := range data {
-		s.Data[k] = v
+		s.data[k] = v
 	}
 }
 
-// AddDatum adds a single data item to the Data in this frame
-func (s *StackContext) AddDatum(key string, value interface{}, format string) {
-	if s.Data == nil {
-		s.Data = Data{key: {value, format}}
+// addDatum adds a single data item to the Data in this frame
+func (s *stackContext) addDatum(key string, value interface{}, format string) {
+	if s.data == nil {
+		s.data = Data{key: {value, format}}
 	} else {
-		s.Data[key] = Datum{value, format}
+		s.data[key] = Datum{value, format}
 	}
 }
 
 type terminalStackError struct {
 	error
-	finfo StackFrameInfo
+	finfo stackFrameInfo
+	tags  map[TagKey]interface{}
 }
 
 var _ interface {
 	error
-	StackContexter
+	stackContexter
 } = (*terminalStackError)(nil)
 
-func (e *terminalStackError) StackContext() StackContext { return StackContext{FrameInfo: e.finfo} }
+func (e *terminalStackError) stackContext() stackContext {
+	return stackContext{frameInfo: e.finfo, tags: e.tags}
+}
 
 type annotatedError struct {
 	inner error
-	ctx   StackContext
+	ctx   stackContext
 }
 
 var _ interface {
 	error
-	StackContexter
+	stackContexter
 	Wrapped
 } = (*annotatedError)(nil)
 
-func (e *annotatedError) Error() string              { return e.ctx.RenderPublic(e.inner) }
-func (e *annotatedError) StackContext() StackContext { return e.ctx }
+func (e *annotatedError) Error() string              { return e.ctx.renderPublic(e.inner) }
+func (e *annotatedError) stackContext() stackContext { return e.ctx }
 func (e *annotatedError) InnerError() error          { return e.inner }
-func (e *annotatedError) IsTransient() bool          { return e.ctx.Transient }
 
 // Annotator is a builder for annotating errors. Obtain one by calling Annotate
 // on an existing error or using Reason.
@@ -250,7 +257,7 @@ func (e *annotatedError) IsTransient() bool          { return e.ctx.Transient }
 // See the example test for Annotate to see how this is meant to be used.
 type Annotator struct {
 	inner error
-	ctx   StackContext
+	ctx   stackContext
 }
 
 // Reason adds a PUBLICLY READABLE reason string (for humans) to this error.
@@ -273,7 +280,7 @@ func (a *Annotator) Reason(reason string) *Annotator {
 	if a == nil {
 		return a
 	}
-	a.ctx.Reason = reason
+	a.ctx.reason = reason
 	return a
 }
 
@@ -284,7 +291,7 @@ func (a *Annotator) InternalReason(reason string) *Annotator {
 	if a == nil {
 		return a
 	}
-	a.ctx.InternalReason = reason
+	a.ctx.internalReason = reason
 	return a
 }
 
@@ -302,7 +309,7 @@ func (a *Annotator) D(key string, value interface{}, format ...string) *Annotato
 	default:
 		panic(fmt.Errorf("len(format) > 1: %d", len(format)))
 	}
-	a.ctx.AddDatum(key, value, formatVal)
+	a.ctx.addDatum(key, value, formatVal)
 	return a
 }
 
@@ -311,18 +318,31 @@ func (a *Annotator) Data(data Data) *Annotator {
 	if a == nil {
 		return a
 	}
-	a.ctx.AddData(data)
+	a.ctx.addData(data)
 	return a
 }
 
-// Transient marks this error as transient. If the inner error is already
-// transient, this has no effect.
-func (a *Annotator) Transient() *Annotator {
+// Tag adds a tag with an optional value to this error.
+//
+// `value` is a unary optional argument, and must be a simple type (i.e. has
+// a reflect.Kind which is a base data type like bool, string, or int).
+func (a *Annotator) Tag(tags ...TagValueGenerator) *Annotator {
 	if a == nil {
 		return a
 	}
-	if !IsTransient(a.inner) {
-		a.ctx.Transient = true
+	tagMap := make(map[TagKey]interface{}, len(tags))
+	for _, t := range tags {
+		v := t.GenerateErrorTagValue()
+		tagMap[v.Key] = v.Value
+	}
+	if len(tagMap) > 0 {
+		if a.ctx.tags == nil {
+			a.ctx.tags = tagMap
+		} else {
+			for k, v := range tagMap {
+				a.ctx.tags[k] = v
+			}
+		}
 	}
 	return a
 }
@@ -345,6 +365,9 @@ func Log(c context.Context, err error) {
 }
 
 // Lines is just a list of printable lines.
+//
+// It's a type because it's most frequently used as []Lines, and [][]string
+// doesn't read well.
 type Lines []string
 
 // RenderedFrame represents a single, rendered stack frame.
@@ -538,7 +561,7 @@ func RenderStack(err error) *RenderedError {
 
 	lastAnnotatedFrame := 0
 	var wrappers = []Lines{}
-	getCurFrame := func(fi *StackFrameInfo) *RenderedFrame {
+	getCurFrame := func(fi *stackFrameInfo) *RenderedFrame {
 		if len(ret.Stacks) == 0 || ret.Stacks[len(ret.Stacks)-1].GoID != fi.forStack.id {
 			lastAnnotatedFrame = len(fi.forStack.frames) - 1
 			toAdd := &RenderedStack{
@@ -565,10 +588,10 @@ func RenderStack(err error) *RenderedError {
 	}
 
 	for err != nil {
-		if sc, ok := err.(StackContexter); ok {
-			ctx := sc.StackContext()
-			if stk := ctx.FrameInfo.forStack; stk != nil {
-				frm := getCurFrame(&ctx.FrameInfo)
+		if sc, ok := err.(stackContexter); ok {
+			ctx := sc.stackContext()
+			if stk := ctx.frameInfo.forStack; stk != nil {
+				frm := getCurFrame(&ctx.frameInfo)
 				if rendered := ctx.render(); len(rendered) > 0 {
 					frm.Annotations = append(frm.Annotations, rendered)
 				}
@@ -581,7 +604,7 @@ func RenderStack(err error) *RenderedError {
 		switch x := err.(type) {
 		case MultiError:
 			// TODO(riannucci): it's kinda dumb that we have to walk the MultiError
-			// twice (once in its StackContext method, and again here).
+			// twice (once in its stackContext method, and again here).
 			err = x.First()
 		case Wrapped:
 			err = x.InnerError()
@@ -613,7 +636,7 @@ func Annotate(err error) *Annotator {
 	if err == nil {
 		return nil
 	}
-	return &Annotator{err, StackContext{FrameInfo: StackFrameInfoForError(1, err)}}
+	return &Annotator{err, stackContext{frameInfo: stackFrameInfoForError(1, err)}}
 }
 
 // Reason builds a new Annotator starting with reason. This allows you to use
@@ -625,16 +648,24 @@ func Annotate(err error) *Annotator {
 // Prefer this form to errors.New(fmt.Sprintf("..."))
 func Reason(reason string) *Annotator {
 	currentStack := captureStack(1)
-	frameInfo := StackFrameInfo{0, currentStack}
-	return (&Annotator{nil, StackContext{FrameInfo: frameInfo}}).Reason(reason)
+	frameInfo := stackFrameInfo{0, currentStack}
+	return (&Annotator{nil, stackContext{frameInfo: frameInfo}}).Reason(reason)
 }
 
 // New is an API-compatible version of the standard errors.New function. Unlike
 // the stdlib errors.New, this will capture the current stack information at the
 // place this error was created.
-func New(msg string) error {
-	return &terminalStackError{errors.New(msg),
-		StackFrameInfo{forStack: captureStack(1)}}
+func New(msg string, tags ...TagValueGenerator) error {
+	tse := &terminalStackError{
+		errors.New(msg), stackFrameInfo{forStack: captureStack(1)}, nil}
+	if len(tags) > 0 {
+		tse.tags = make(map[TagKey]interface{}, len(tags))
+		for _, t := range tags {
+			v := t.GenerateErrorTagValue()
+			tse.tags[v.Key] = v.Value
+		}
+	}
+	return tse
 }
 
 func captureStack(skip int) *stack {
@@ -651,8 +682,8 @@ func captureStack(skip int) *stack {
 
 func getCapturedStack(err error) (ret *stack) {
 	Walk(err, func(err error) bool {
-		if sc, ok := err.(StackContexter); ok {
-			ret = sc.StackContext().FrameInfo.forStack
+		if sc, ok := err.(stackContexter); ok {
+			ret = sc.stackContext().frameInfo.forStack
 			return false
 		}
 		return true
@@ -660,46 +691,26 @@ func getCapturedStack(err error) (ret *stack) {
 	return
 }
 
-// StackFrameInfoForError returns a StackFrameInfo suitable for use to implement
-// the StackContexter interface.
+// stackFrameInfoForError returns a stackFrameInfo suitable for use to implement
+// the stackContexter interface.
 //
 // It skips the provided number of frames when collecting the current trace
 // (which should be equal to the number of functions between your error library
 // and the user's code).
 //
-// The returned StackFrameInfo will find the appropriate frame in the error's
+// The returned stackFrameInfo will find the appropriate frame in the error's
 // existing stack information (if the error was created with errors.New), or
 // include the current stack if it was not.
-func StackFrameInfoForError(skip int, err error) StackFrameInfo {
+func stackFrameInfoForError(skip int, err error) stackFrameInfo {
 	currentStack := captureStack(skip + 1)
 	currentlyCapturedStack := getCapturedStack(err)
 	if currentlyCapturedStack == nil || currentStack.id != currentlyCapturedStack.id {
 		// This is the very first annotation on this error OR
 		// We switched goroutines.
-		return StackFrameInfo{forStack: currentStack}
+		return stackFrameInfo{forStack: currentStack}
 	}
-	return StackFrameInfo{
+	return stackFrameInfo{
 		frameIdx: currentlyCapturedStack.findPointOfDivergence(currentStack),
 		forStack: currentlyCapturedStack,
 	}
-}
-
-// ExtractData walks the error and extracts the given key's data from
-// Annotations (e.g. data added with D(key, <value>) will return <value>).
-//
-// The first matching key encountered (e.g. highest up the callstack) will be
-// returned.
-//
-// If the error does not contain key at all, this returns nil.
-func ExtractData(err error, key string) (ret interface{}) {
-	Walk(err, func(err error) bool {
-		if sc, ok := err.(StackContexter); ok {
-			if d, ok := sc.StackContext().Data[key]; ok {
-				ret = d.Value
-				return false
-			}
-		}
-		return true
-	})
-	return
 }

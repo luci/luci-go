@@ -44,6 +44,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/retry/transient"
 
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
@@ -558,7 +559,7 @@ func (f *asyncFlusher) upload(ctx context.Context, chunk chunk) (int, error) {
 	// Now actually send all the entries with retries.
 	var lastResp *bigquery.TableDataInsertAllResponse
 	taggedCtx := clock.Tag(ctx, "insert-retry") // used by tests
-	err := retry.Retry(taggedCtx, retry.TransientOnly(f.retryParams), func() error {
+	err := retry.Retry(taggedCtx, transient.Only(f.retryParams), func() error {
 		startTime := clock.Now(ctx)
 		var err error
 		lastResp, err = f.Insert(ctx, &bigquery.TableDataInsertAllRequest{
@@ -578,7 +579,7 @@ func (f *asyncFlusher) upload(ctx context.Context, chunk chunk) (int, error) {
 		dt := clock.Since(ctx, startTime)
 		bigQueryLatency.Add(ctx, float64(dt.Nanoseconds()/1e6), f.TableRef, "insertAll", status)
 		if code >= 500 {
-			return errors.WrapTransient(err)
+			return transient.Tag.Apply(err)
 		}
 		return err
 	}, func(err error, wait time.Duration) {
@@ -589,7 +590,7 @@ func (f *asyncFlusher) upload(ctx context.Context, chunk chunk) (int, error) {
 	})
 	if err != nil {
 		logging.WithError(err).Errorf(ctx, "Failed to send data to BigQuery")
-		if !errors.IsTransient(err) && err != context.DeadlineExceeded {
+		if !transient.Tag.In(err) && err != context.DeadlineExceeded {
 			chunk.Done(ctx)
 		}
 		return 0, err

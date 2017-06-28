@@ -41,6 +41,7 @@ import (
 	"github.com/luci/luci-go/common/gcloud/iam"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/lucictx"
 )
 
@@ -1195,7 +1196,7 @@ func retryParams() retry.Iterator {
 // mintTokenWithRetries calls provider's MintToken() retrying on transient
 // errors a bunch of times. Called only for non-interactive providers.
 func (t *tokenWithProvider) mintTokenWithRetries(ctx context.Context, base *oauth2.Token) (tok *oauth2.Token, err error) {
-	err = retry.Retry(ctx, retry.TransientOnly(retryParams), func() error {
+	err = retry.Retry(ctx, transient.Only(retryParams), func() error {
 		tok, err = t.provider.MintToken(ctx, base)
 		return err
 	}, nil)
@@ -1205,7 +1206,7 @@ func (t *tokenWithProvider) mintTokenWithRetries(ctx context.Context, base *oaut
 // refreshTokenWithRetries calls providers' RefreshToken(...) retrying on
 // transient errors a bunch of times.
 func (t *tokenWithProvider) refreshTokenWithRetries(ctx context.Context, prev, base *oauth2.Token) (tok *oauth2.Token, err error) {
-	err = retry.Retry(ctx, retry.TransientOnly(retryParams), func() error {
+	err = retry.Retry(ctx, transient.Only(retryParams), func() error {
 		tok, err = t.provider.RefreshToken(ctx, prev, base)
 		return err
 	}, nil)

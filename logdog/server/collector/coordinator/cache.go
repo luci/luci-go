@@ -10,8 +10,8 @@ import (
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/caching/lru"
-	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/common/sync/promise"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/metric"
@@ -200,7 +200,7 @@ func (ce *cacheEntry) registerStream(ctx context.Context, coord Coordinator, st 
 		// If the promise failed transiently, clear it so that subsequent callers
 		// will regenerate a new promise. ONLY clear it if it it is the same
 		// promise, as different callers may have already cleared/rengerated it.
-		if errors.IsTransient(err) {
+		if transient.Tag.In(err) {
 			ce.withLock(func() {
 				if ce.registerP == p {
 					ce.registerP = nil
@@ -267,7 +267,7 @@ func (ce *cacheEntry) terminateStream(ctx context.Context, coord Coordinator, tr
 	if _, err := p.Get(ctx); err != nil {
 		// If this is a transient error, delete this Promise so future termination
 		// attempts will retry for this stream.
-		if errors.IsTransient(err) {
+		if transient.Tag.In(err) {
 			ce.withLock(func() {
 				if ce.terminateP == p {
 					ce.terminateP = nil

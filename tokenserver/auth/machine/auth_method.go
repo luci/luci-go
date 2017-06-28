@@ -17,6 +17,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/signing"
@@ -90,11 +91,11 @@ func (m *MachineTokenAuthMethod) Authenticate(c context.Context, r *http.Request
 	// Reject tokens from unknown token servers right away.
 	db, err := auth.GetDB(c)
 	if err != nil {
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	}
 	ok, err := db.IsMember(c, signerServiceAccount, TokenServersGroup)
 	if err != nil {
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	}
 	if !ok {
 		logTokenError(c, r, body, nil, "Unknown token issuer - %q", body.IssuedBy)
@@ -109,7 +110,7 @@ func (m *MachineTokenAuthMethod) Authenticate(c context.Context, r *http.Request
 
 	// Check the token was actually signed by the server.
 	if err = m.checkSignature(c, body.IssuedBy, envelope); err != nil {
-		if errors.IsTransient(err) {
+		if transient.Tag.In(err) {
 			return nil, err
 		}
 		logTokenError(c, r, body, err, "Bad signature")
@@ -187,7 +188,7 @@ func (m *MachineTokenAuthMethod) checkSignature(c context.Context, signerEmail s
 	}
 	certs, err := fetcher(c, signerEmail)
 	if err != nil {
-		return errors.WrapTransient(err)
+		return transient.Tag.Apply(err)
 	}
 	return certs.CheckSignature(envelope.KeyId, envelope.TokenBody, envelope.RsaSha256)
 }

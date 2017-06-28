@@ -17,7 +17,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/caching/lazyslot"
 	"github.com/luci/luci-go/common/data/caching/proccache"
-	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 )
@@ -76,7 +76,7 @@ func ListCAs(c context.Context) ([]string, error) {
 	keys := []*ds.Key{}
 	q := ds.NewQuery("CA").Eq("Removed", false).KeysOnly(true)
 	if err := ds.GetAll(c, q, &keys); err != nil {
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	}
 	names := make([]string, len(keys))
 	for i, key := range keys {
@@ -105,7 +105,7 @@ func StoreCAUniqueIDToCNMap(c context.Context, mapping map[int64]string) error {
 	}
 	// Note that in practice 'mapping' is usually very small, so we are not
 	// concerned about 1MB entity size limit.
-	return errors.WrapTransient(ds.Put(c, &CAUniqueIDToCNMap{
+	return transient.Tag.Apply(ds.Put(c, &CAUniqueIDToCNMap{
 		GobEncodedMap: buf.Bytes(),
 	}))
 }
@@ -117,7 +117,7 @@ func LoadCAUniqueIDToCNMap(c context.Context) (map[int64]string, error) {
 	case err == ds.ErrNoSuchEntity:
 		return nil, nil
 	case err != nil:
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	}
 	dec := gob.NewDecoder(bytes.NewReader(ent.GobEncodedMap))
 	out := map[int64]string{}

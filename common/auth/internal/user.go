@@ -11,8 +11,8 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 )
 
 type userAuthTokenProvider struct {
@@ -88,7 +88,7 @@ func (p *userAuthTokenProvider) RefreshToken(ctx context.Context, prev, base *oa
 	switch newTok, err := grabToken(p.config.TokenSource(ctx, &t)); {
 	case err == nil:
 		return newTok, nil
-	case errors.IsTransient(err):
+	case transient.Tag.In(err):
 		logging.Warningf(ctx, "Transient error when refreshing the token - %s", err)
 		return nil, err
 	default:

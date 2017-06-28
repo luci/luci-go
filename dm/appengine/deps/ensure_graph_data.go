@@ -143,7 +143,7 @@ func journalQuestAttempts(c context.Context, newQuests []*model.Quest, newAttemp
 			DoNotMergeQuest: true,
 		})
 	}
-	return grpcutil.Annotate(tumble.AddToJournal(c, muts...), codes.Internal).
+	return grpcAnnotate(tumble.AddToJournal(c, muts...), codes.Internal).
 		Reason("attempting to journal").Err()
 }
 
@@ -176,7 +176,7 @@ func (d *deps) ensureGraphData(c context.Context, req *dm.EnsureGraphDataReq, ne
 		}
 	})
 	if err != nil {
-		return grpcutil.Annotate(err, codes.Internal).Reason("failed to gather prerequisites").Err()
+		return grpcAnnotate(err, codes.Internal).Reason("failed to gather prerequisites").Err()
 	}
 
 	// Now that we've walked the graph, prune the lists of new Quest and Attempts
@@ -185,7 +185,7 @@ func (d *deps) ensureGraphData(c context.Context, req *dm.EnsureGraphDataReq, ne
 	newQuests, newQuestSet := filterQuestsByNewTemplateData(rsp.Result, newQuests)
 	newAttempts, newAttemptsLen, err := filterAttemptsByDNE(rsp.Result, newAttempts, newQuestSet)
 	if err != nil {
-		return grpcutil.Annotate(err, codes.InvalidArgument).Reason("filterAttemptsByDNE").Err()
+		return grpcAnnotate(err, codes.InvalidArgument).Reason("filterAttemptsByDNE").Err()
 	}
 
 	// we're just asserting nodes, no edges, so journal whatever's left
@@ -299,7 +299,7 @@ func renderRequest(c context.Context, req *dm.EnsureGraphDataReq) (rsp *dm.Ensur
 		}
 
 		if err = d.Validate(qDesc.DistributorParameters); err != nil {
-			err = grpcutil.Annotate(err, codes.InvalidArgument).
+			err = grpcAnnotate(err, codes.InvalidArgument).
 				Reason("JSON distributor parameters are invalid for this distributor configuration.").Err()
 			return
 		}
@@ -368,7 +368,7 @@ func (d *deps) EnsureGraphData(c context.Context, req *dm.EnsureGraphDataReq) (r
 		logging.Fields{"execution": req.ForExecution.Id}.Infof(c, "on behalf of")
 		_, _, err := model.AuthenticateExecution(c, req.ForExecution)
 		if err != nil {
-			return nil, grpcutil.Annotate(err, codes.Unauthenticated).Reason("bad execution auth").Err()
+			return nil, grpcAnnotate(err, codes.Unauthenticated).Reason("bad execution auth").Err()
 		}
 	} else {
 		if err = canWrite(c); err != nil {

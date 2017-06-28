@@ -5,10 +5,11 @@
 package grpcutil
 
 import (
-	"github.com/luci/luci-go/common/errors"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+
+	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 )
 
 var (
@@ -81,28 +82,36 @@ func WrapIfTransient(err error) error {
 	}
 
 	if IsTransientCode(Code(err)) {
-		err = errors.WrapTransient(err)
+		err = transient.Tag.Apply(err)
 	}
 	return err
 }
 
-const grpcCodeKey = "__grpcutil.Code"
+type grpcCodeTag struct{ Key errors.TagKey }
+
+func (g grpcCodeTag) With(code codes.Code) errors.TagValue { return errors.MkTagValue(g.Key, code) }
+func (g grpcCodeTag) In(err error) (v codes.Code, ok bool) {
+	d, ok := errors.TagValueIn(g.Key, err)
+	if ok {
+		v = d.(codes.Code)
+	}
+	return
+}
+
+// Tag may be used to associate a gRPC status code with this error.
+//
+// The tag value MUST be a "google.golang.org/grpc/codes".Code.
+var Tag = grpcCodeTag{errors.NewTagKey("gRPC Code")}
 
 // Code returns the gRPC code for a given error.
 //
 // In addition to the functionality of grpc.Code, this will unwrap any wrapped
 // errors before asking for its code.
 func Code(err error) codes.Code {
-	if code := errors.ExtractData(err, grpcCodeKey); code != nil {
-		return code.(codes.Code)
+	if code, ok := Tag.In(err); ok {
+		return code
 	}
 	return grpc.Code(errors.Unwrap(err))
-}
-
-// Annotate begins annotating the error, and adds the given gRPC code.
-// This code may be extracted with the Code function in this package.
-func Annotate(err error, code codes.Code) *errors.Annotator {
-	return errors.Annotate(err).D(grpcCodeKey, code)
 }
 
 // ToGRPCErr is a shorthand for Errf(Code(err), "%s", err)

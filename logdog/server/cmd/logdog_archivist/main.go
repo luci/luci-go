@@ -14,6 +14,7 @@ import (
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/metric"
@@ -145,7 +146,7 @@ func (a *application) runArchivist(c context.Context) error {
 		}
 	}
 
-	err = retry.Retry(c, retry.TransientOnly(retryForever), func() error {
+	err = retry.Retry(c, transient.Only(retryForever), func() error {
 		return grpcutil.WrapIfTransient(sub.Receive(c, func(c context.Context, msg *pubsub.Message) {
 			c = log.SetFields(c, log.Fields{
 				"messageID": msg.ID,

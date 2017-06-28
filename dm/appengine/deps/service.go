@@ -35,7 +35,7 @@ func depsServerPrelude(c context.Context, methodName string, req proto.Message) 
 		Normalize() error
 	}); ok {
 		if err := norm.Normalize(); err != nil {
-			return nil, grpcutil.Annotate(err, codes.InvalidArgument).Reason("invalid request").Err()
+			return nil, grpcAnnotate(err, codes.InvalidArgument).Reason("invalid request").Err()
 		}
 	}
 	return c, nil

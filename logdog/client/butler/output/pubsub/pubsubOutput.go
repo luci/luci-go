@@ -16,6 +16,7 @@ import (
 	gcps "github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/client/butler/output"
@@ -194,7 +195,7 @@ func (o *pubSubOutput) buildMessage(buf *buffer, bundle *logpb.ButlerLogBundle) 
 func (o *pubSubOutput) publishMessage(message *pubsub.Message) error {
 	var messageID string
 	transientErrors := 0
-	err := retry.Retry(o, retry.TransientOnly(indefiniteRetry), func() (err error) {
+	err := retry.Retry(o, transient.Only(indefiniteRetry), func() (err error) {
 		ctx := o.Context
 		if o.RPCTimeout > 0 {
 			var cancelFunc context.CancelFunc
@@ -205,7 +206,7 @@ func (o *pubSubOutput) publishMessage(message *pubsub.Message) error {
 		messageID, err = o.Topic.Publish(ctx, message)
 		if err == context.DeadlineExceeded {
 			// If we hit our publish deadline, retry.
-			err = errors.WrapTransient(err)
+			err = transient.Tag.Apply(err)
 		} else {
 			err = grpcutil.WrapIfTransient(err)
 		}

@@ -10,7 +10,6 @@ import (
 	"io"
 
 	"github.com/luci/luci-go/common/data/recordio"
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/logdog/api/logpb"
@@ -152,10 +151,6 @@ func Archive(m Manifest) error {
 		}
 	})
 
-	// If any of the returned errors was transient, return a transient error.
-	if errors.Any(err, errors.IsTransient) {
-		err = errors.WrapTransient(err)
-	}
 	return err
 }
 

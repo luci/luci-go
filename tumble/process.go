@@ -16,6 +16,7 @@ import (
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/common/sync/parallel"
 
 	"github.com/luci/gae/filter/txnBuf"
@@ -233,7 +234,7 @@ func (t *processTask) process(c context.Context, cfg *Config, q *ds.Query) error
 			numProcessed, errCount, transientErrCount)
 		switch {
 		case transientErrCount > 0:
-			return errors.WrapTransient(errors.New("transient error during shard processing"))
+			return errors.New("transient error during shard processing", transient.Tag)
 		case errCount > 0:
 			return errors.New("encountered non-transient error during shard processing")
 		}

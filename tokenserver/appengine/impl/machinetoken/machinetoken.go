@@ -18,7 +18,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/server/auth/signing"
 
 	"github.com/luci/luci-go/tokenserver/api"
@@ -126,7 +126,7 @@ func Mint(c context.Context, params *MintParams) (*tokenserver.MachineTokenBody,
 
 	srvInfo, err := params.Signer.ServiceInfo(c)
 	if err != nil {
-		return nil, "", errors.WrapTransient(err)
+		return nil, "", transient.Tag.Apply(err)
 	}
 
 	body := &tokenserver.MachineTokenBody{

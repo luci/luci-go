@@ -13,6 +13,7 @@ import (
 
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
@@ -245,7 +246,7 @@ func TestStreamStateCache(t *testing.T) {
 			Convey(`RegisterStream`, func() {
 				Convey(`A transient registration error will result in a RegisterStream error.`, func() {
 					tcc.errC = make(chan error, 1)
-					tcc.errC <- errors.WrapTransient(errors.New("test error"))
+					tcc.errC <- errors.New("test error", transient.Tag)
 
 					_, err := ssc.RegisterStream(c, &st, nil)
 					So(err, ShouldNotBeNil)
@@ -287,10 +288,10 @@ func TestStreamStateCache(t *testing.T) {
 
 				Convey(`The termination endpoint returns a transient error, it will propagate.`, func() {
 					tcc.errC = make(chan error, 1)
-					tcc.errC <- errors.WrapTransient(errors.New("test error"))
+					tcc.errC <- errors.New("test error", transient.Tag)
 
 					err := ssc.TerminateStream(c, &tr)
-					So(errors.IsTransient(err), ShouldBeTrue)
+					So(transient.Tag.In(err), ShouldBeTrue)
 					So(tcc.calls, ShouldEqual, 1)
 
 					Convey(`A second attempt will call through, try again, and succeed.`, func() {

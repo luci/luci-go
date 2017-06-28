@@ -14,7 +14,7 @@ import (
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/data/caching/proccache"
-	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/common/sync/mutexpool"
 	"github.com/luci/luci-go/server/auth"
 )
@@ -40,7 +40,7 @@ func (m *Memcache) Get(c context.Context, key string) ([]byte, error) {
 	case err == mc.ErrCacheMiss:
 		return nil, nil
 	case err != nil:
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	default:
 		m.setLocal(c, key, itm.Value(), itm.Expiration())
 		return itm.Value(), nil
@@ -57,14 +57,14 @@ func (m *Memcache) Set(c context.Context, key string, value []byte, exp time.Dur
 	cc := m.cacheContext(c)
 	item := mc.NewItem(cc, key).SetValue(value).SetExpiration(exp)
 	if err := mc.Set(cc, item); err != nil {
-		return errors.WrapTransient(err)
+		return transient.Tag.Apply(err)
 	}
 	return nil
 }
 
 // WithLocalMutex calls 'f' under local mutex.
-func (mc *Memcache) WithLocalMutex(c context.Context, key string, f func()) {
-	mc.locks.WithMutex(key, f)
+func (m *Memcache) WithLocalMutex(c context.Context, key string, f func()) {
+	m.locks.WithMutex(key, f)
 }
 
 // cacheContext returns properly namespaced luci/gae context.

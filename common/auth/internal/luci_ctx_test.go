@@ -16,7 +16,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/luci/luci-go/common/auth/localauth/rpcs"
-	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/lucictx"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -108,7 +108,7 @@ func TestLUCIContextProvider(t *testing.T) {
 			tok, err := p.MintToken(ctx, nil)
 			So(tok, ShouldBeNil)
 			So(err, ShouldErrLike, `local auth - HTTP 500`)
-			So(errors.IsTransient(err), ShouldBeTrue)
+			So(transient.Tag.In(err), ShouldBeTrue)
 		})
 
 		Convey("HTTP 403", func() {
@@ -116,7 +116,7 @@ func TestLUCIContextProvider(t *testing.T) {
 			tok, err := p.MintToken(ctx, nil)
 			So(tok, ShouldBeNil)
 			So(err, ShouldErrLike, `local auth - HTTP 403`)
-			So(errors.IsTransient(err), ShouldBeFalse)
+			So(transient.Tag.In(err), ShouldBeFalse)
 		})
 
 		Convey("RPC level error", func() {
@@ -129,7 +129,7 @@ func TestLUCIContextProvider(t *testing.T) {
 			tok, err := p.MintToken(ctx, nil)
 			So(tok, ShouldBeNil)
 			So(err, ShouldErrLike, `local auth - RPC code 123: omg, error`)
-			So(errors.IsTransient(err), ShouldBeFalse)
+			So(transient.Tag.In(err), ShouldBeFalse)
 		})
 	})
 }

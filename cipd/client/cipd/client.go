@@ -52,6 +52,7 @@ import (
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 
 	"github.com/luci/luci-go/cipd/client/cipd/common"
 	"github.com/luci/luci-go/cipd/client/cipd/internal"
@@ -84,27 +85,27 @@ const (
 
 var (
 	// ErrFinalizationTimeout is returned if CAS service can not finalize upload fast enough.
-	ErrFinalizationTimeout = errors.WrapTransient(errors.New("timeout while waiting for CAS service to finalize the upload"))
+	ErrFinalizationTimeout = errors.New("timeout while waiting for CAS service to finalize the upload", transient.Tag)
 	// ErrBadUpload is returned when a package file is uploaded, but servers asks us to upload it again.
-	ErrBadUpload = errors.WrapTransient(errors.New("package file is uploaded, but servers asks us to upload it again"))
+	ErrBadUpload = errors.New("package file is uploaded, but servers asks us to upload it again", transient.Tag)
 	// ErrBadUploadSession is returned by UploadToCAS if provided UploadSession is not valid.
 	ErrBadUploadSession = errors.New("uploadURL must be set if UploadSessionID is used")
 	// ErrUploadSessionDied is returned by UploadToCAS if upload session suddenly disappeared.
-	ErrUploadSessionDied = errors.WrapTransient(errors.New("upload session is unexpectedly missing"))
+	ErrUploadSessionDied = errors.New("upload session is unexpectedly missing", transient.Tag)
 	// ErrNoUploadSessionID is returned by UploadToCAS if server didn't provide upload session ID.
 	ErrNoUploadSessionID = errors.New("server didn't provide upload session ID")
 	// ErrSetRefTimeout is returned when service refuses to move a ref for a long time.
-	ErrSetRefTimeout = errors.WrapTransient(errors.New("timeout while moving a ref"))
+	ErrSetRefTimeout = errors.New("timeout while moving a ref", transient.Tag)
 	// ErrAttachTagsTimeout is returned when service refuses to accept tags for a long time.
-	ErrAttachTagsTimeout = errors.WrapTransient(errors.New("timeout while attaching tags"))
+	ErrAttachTagsTimeout = errors.New("timeout while attaching tags", transient.Tag)
 	// ErrDownloadError is returned by FetchInstance on download errors.
-	ErrDownloadError = errors.WrapTransient(errors.New("failed to download the package file after multiple attempts"))
+	ErrDownloadError = errors.New("failed to download the package file after multiple attempts", transient.Tag)
 	// ErrUploadError is returned by RegisterInstance and UploadToCAS on upload errors.
-	ErrUploadError = errors.WrapTransient(errors.New("failed to upload the package file after multiple attempts"))
+	ErrUploadError = errors.New("failed to upload the package file after multiple attempts", transient.Tag)
 	// ErrAccessDenined is returned by calls talking to backend on 401 or 403 HTTP errors.
 	ErrAccessDenined = errors.New("access denied (not authenticated or not enough permissions)")
 	// ErrBackendInaccessible is returned by calls talking to backed if it doesn't response.
-	ErrBackendInaccessible = errors.WrapTransient(errors.New("request to the backend failed after multiple attempts"))
+	ErrBackendInaccessible = errors.New("request to the backend failed after multiple attempts", transient.Tag)
 	// ErrEnsurePackagesFailed is returned by EnsurePackages if something is not right.
 	ErrEnsurePackagesFailed = errors.New("failed to update packages, see the log")
 	// ErrPackageNotFound is returned by DeletePackage if the package doesn't exist.

@@ -15,6 +15,7 @@ import (
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/server/router"
 
@@ -225,7 +226,7 @@ func (s *Service) ProcessShardHandler(ctx *router.Context, loop bool) {
 	if err != nil {
 		logging.Errorf(c, "failure! %s", err)
 
-		if errors.IsTransient(err) {
+		if transient.Tag.In(err) {
 			rw.Header().Add(transientHTTPHeader, "true")
 		}
 		rw.WriteHeader(http.StatusInternalServerError)

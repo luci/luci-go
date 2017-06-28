@@ -18,6 +18,7 @@ import (
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/api/buildbucket/buildbucket/v1"
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/scheduler/appengine/messages"
 	"github.com/luci/luci-go/scheduler/appengine/task"
 	"github.com/luci/luci-go/scheduler/appengine/task/utils"
@@ -296,7 +297,7 @@ func (m TaskManager) checkBuildStatus(c context.Context, ctl task.Controller) er
 	// still running LaunchTask when saving the invocation, it will only make the
 	// matters worse.
 	case status == task.StatusStarting:
-		return errors.WrapTransient(errors.New("invocation is still starting, try again later"))
+		return errors.New("invocation is still starting, try again later", transient.Tag)
 	case status != task.StatusRunning:
 		return fmt.Errorf("unexpected invocation status %q, expecting %q", status, task.StatusRunning)
 	}
@@ -317,7 +318,7 @@ func (m TaskManager) checkBuildStatus(c context.Context, ctl task.Controller) er
 	if err != nil {
 		ctl.DebugLog("Failed to fetch buildbucket build - %s", err)
 		err = utils.WrapAPIError(err)
-		if !errors.IsTransient(err) {
+		if !transient.Tag.In(err) {
 			ctl.State().Status = task.StatusFailed
 		}
 		return err

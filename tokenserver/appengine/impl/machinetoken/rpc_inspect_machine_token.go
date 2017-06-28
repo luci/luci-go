@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/server/auth/signing"
 
 	tokenserver "github.com/luci/luci-go/tokenserver/api"
@@ -95,7 +95,7 @@ func (r *InspectMachineTokenRPC) InspectMachineToken(c context.Context, req *adm
 	// Grab CertChecker for this CA. It has CRL cached.
 	certChecker, err := certchecker.GetCertChecker(c, caName)
 	switch {
-	case errors.IsTransient(err):
+	case transient.Tag.In(err):
 		return nil, grpc.Errorf(codes.Internal, "can't fetch CRL - %s", err)
 	case err != nil:
 		addReason(fmt.Sprintf("can't fetch CRL - %s", err))

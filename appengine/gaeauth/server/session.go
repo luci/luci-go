@@ -15,8 +15,8 @@ import (
 	ds "github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
 )
@@ -87,7 +87,7 @@ func (s *SessionStore) OpenSession(c context.Context, userID string, u *auth.Use
 	}, nil)
 
 	if err != nil {
-		return "", errors.WrapTransient(err)
+		return "", transient.Tag.Apply(err)
 	}
 	return sessionID, nil
 }
@@ -105,7 +105,7 @@ func (s *SessionStore) CloseSession(c context.Context, sessionID string) error {
 	default:
 		ent.IsClosed = true
 		ent.Closed = clock.Now(c).UTC()
-		return errors.WrapTransient(ds.Put(ds.WithoutTransaction(c), ent))
+		return transient.Tag.Apply(ds.Put(ds.WithoutTransaction(c), ent))
 	}
 }
 
@@ -161,7 +161,7 @@ func (s *SessionStore) fetchSession(c context.Context, sessionID string) (*sessi
 	case ds.ErrNoSuchEntity:
 		return nil, nil
 	default:
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	}
 }
 

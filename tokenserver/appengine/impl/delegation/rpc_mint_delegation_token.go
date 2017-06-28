@@ -16,8 +16,8 @@ import (
 
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/authdb"
 	"github.com/luci/luci-go/server/auth/delegation/messages"
@@ -125,7 +125,7 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 	// to resolve "https://<service-url>" entries to "service:<id>" entries.
 	query, err := buildRulesQuery(c, req, callerID)
 	if err != nil {
-		if errors.IsTransient(err) {
+		if transient.Tag.In(err) {
 			logging.WithError(err).Errorf(c, "buildRulesQuery failed")
 			return nil, grpc.Errorf(codes.Internal, "failure when resolving target service ID - %s", err)
 		}
@@ -136,7 +136,7 @@ func (r *MintDelegationTokenRPC) MintDelegationToken(c context.Context, req *min
 	// Consult the config to find the rule that allows this operation (if any).
 	rule, err := rules.FindMatchingRule(c, query)
 	if err != nil {
-		if errors.IsTransient(err) {
+		if transient.Tag.In(err) {
 			logging.WithError(err).Errorf(c, "FindMatchingRule failed")
 			return nil, grpc.Errorf(codes.Internal, "failure when checking rules - %s", err)
 		}
@@ -349,7 +349,7 @@ func resolveServiceIDs(c context.Context, urls []string, out *identityset.Set) e
 	for i := 0; i < len(urls); i++ {
 		result := <-ch
 		if result.Err != nil {
-			if errors.IsTransient(result.Err) {
+			if transient.Tag.In(result.Err) {
 				return result.Err
 			}
 			return fmt.Errorf("could not resolve %q to service ID - %s", result.URL, result.Err)

@@ -21,6 +21,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/common/retry/transient"
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 
@@ -273,7 +274,7 @@ func (ch *CRLChecker) refetchShard(c context.Context, idx int, prev lazyslot.Val
 		case err == ds.ErrNoSuchEntity:
 			return lazyslot.Value{}, fmt.Errorf("shard header %q is missing", hdr.ID)
 		case err != nil:
-			return lazyslot.Value{}, errors.WrapTransient(err)
+			return lazyslot.Value{}, transient.Tag.Apply(err)
 		}
 		// The currently cached copy is still good enough?
 		if hdr.SHA1 == prevState.sha1 {
@@ -292,7 +293,7 @@ func (ch *CRLChecker) refetchShard(c context.Context, idx int, prev lazyslot.Val
 	case err == ds.ErrNoSuchEntity:
 		return lazyslot.Value{}, fmt.Errorf("shard body %q is missing", hdr.ID)
 	case err != nil:
-		return lazyslot.Value{}, errors.WrapTransient(err)
+		return lazyslot.Value{}, transient.Tag.Apply(err)
 	}
 
 	// Unzip and deserialize.

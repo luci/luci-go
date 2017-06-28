@@ -5,7 +5,6 @@
 package auth
 
 import (
-	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -21,6 +20,7 @@ import (
 	"github.com/luci/luci-go/common/clock/testclock"
 	"github.com/luci/luci-go/common/data/rand/mathrand"
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
@@ -591,7 +591,7 @@ func (p *fakeTokenProvider) RefreshToken(ctx context.Context, prev, base *oauth2
 	p.baseTokenInRefresh = base
 	if p.transientRefreshErrors != 0 {
 		p.transientRefreshErrors--
-		return nil, errors.WrapTransient(fmt.Errorf("transient error"))
+		return nil, errors.New("transient error", transient.Tag)
 	}
 	if p.revokedCreds {
 		return nil, internal.ErrBadCredentials

@@ -48,13 +48,12 @@ func (m MultiError) First() error {
 	return nil
 }
 
-// StackContext implements StackContexter.
-func (m MultiError) StackContext() StackContext {
+func (m MultiError) stackContext() stackContext {
 	n, _ := m.Summary()
 
-	return StackContext{
-		InternalReason: "MultiError %(non-nil)d/%(total)d: following first non-nil error.",
-		Data: Data{
+	return stackContext{
+		internalReason: "MultiError %(non-nil)d/%(total)d: following first non-nil error.",
+		data: Data{
 			"non-nil": {Value: n},
 			"total":   {Value: len(m)},
 		},

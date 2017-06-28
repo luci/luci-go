@@ -19,6 +19,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/server/auth"
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
@@ -68,7 +69,7 @@ func (r *FetchCRLRPC) FetchCRL(c context.Context, req *admin.FetchCRLRequest) (*
 	fetchCtx, _ := clock.WithTimeout(c, time.Minute)
 	crlDer, newEtag, err := fetchCRL(fetchCtx, cfg, knownETag)
 	switch {
-	case errors.IsTransient(err):
+	case transient.Tag.In(err):
 		return nil, grpc.Errorf(codes.Internal, "transient error when fetching CRL - %s", err)
 	case err != nil:
 		return nil, grpc.Errorf(codes.Unknown, "can't fetch CRL - %s", err)
@@ -81,7 +82,7 @@ func (r *FetchCRLRPC) FetchCRL(c context.Context, req *admin.FetchCRLRequest) (*
 		logging.Infof(c, "Fetched CRL size is %d bytes, etag is %s", len(crlDer), newEtag)
 		crl, err = validateAndStoreCRL(c, crlDer, newEtag, ca, crl)
 		switch {
-		case errors.IsTransient(err):
+		case transient.Tag.In(err):
 			return nil, grpc.Errorf(codes.Internal, "transient error when storing CRL - %s", err)
 		case err != nil:
 			return nil, grpc.Errorf(codes.Unknown, "bad CRL - %s", err)
@@ -120,7 +121,7 @@ func fetchCRL(c context.Context, cfg *admin.CertificateAuthorityConfig, knownETa
 	cl := http.Client{Transport: transport}
 	resp, err := cl.Do(req)
 	if err != nil {
-		return nil, "", errors.WrapTransient(err)
+		return nil, "", transient.Tag.Apply(err)
 	}
 	defer resp.Body.Close()
 
@@ -135,13 +136,14 @@ func fetchCRL(c context.Context, cfg *admin.CertificateAuthorityConfig, knownETa
 	// Read the body in its entirety.
 	blob, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, "", errors.WrapTransient(err)
+		return nil, "", transient.Tag.Apply(err)
 	}
 
 	// Transient error?
 	if resp.StatusCode >= http.StatusInternalServerError {
 		logging.Warningf(c, "GET %s - HTTP %d; %q", cfg.CrlUrl, resp.StatusCode, string(blob))
-		return nil, "", errors.WrapTransient(fmt.Errorf("server replied with HTTP %d", resp.StatusCode))
+		return nil, "", errors.Reason("server replied with HTTP %(code)d").
+			D("code", resp.StatusCode).Tag(transient.Tag).Err()
 	}
 
 	// Something we don't support or expect?
@@ -213,7 +215,7 @@ func validateAndStoreCRL(c context.Context, crlDer []byte, etag string, ca *CA, 
 		return ds.Put(c, toPut)
 	}, nil)
 	if err != nil {
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	}
 
 	logging.Infof(c, "CRL for %q is updated, entity version is %d", ca.CN, updated.EntityVersion)

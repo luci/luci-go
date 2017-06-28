@@ -7,7 +7,6 @@ package validation
 import (
 	"testing"
 
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -40,8 +39,13 @@ func TestValidation(t *testing.T) {
 
 		singleErr := err.(*Error).Errors[0]
 		So(singleErr.Error(), ShouldEqual, `in "file.cfg" (ctx 123): blah zzz`)
-		So(errors.ExtractData(singleErr, "file"), ShouldEqual, "file.cfg")
-		So(errors.ExtractData(singleErr, "element"), ShouldResemble, []string{"ctx 123"})
+		d, ok := fileTag.In(singleErr)
+		So(ok, ShouldBeTrue)
+		So(d, ShouldEqual, "file.cfg")
+
+		elts, ok := elementTag.In(singleErr)
+		So(ok, ShouldBeTrue)
+		So(elts, ShouldResemble, []string{"ctx 123"})
 	})
 
 	Convey("Regular usage", t, func() {

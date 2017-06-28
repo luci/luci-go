@@ -12,6 +12,7 @@ import (
 
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 
 	"github.com/luci/luci-go/server/auth/delegation"
 	"github.com/luci/luci-go/server/auth/identity"
@@ -117,7 +118,7 @@ func (a *Authenticator) GetMiddleware() router.Middleware {
 	return func(c *router.Context, next router.Handler) {
 		ctx, err := a.Authenticate(c.Context, c.Request)
 		switch {
-		case errors.IsTransient(err):
+		case transient.Tag.In(err):
 			replyError(c.Context, c.Writer, 500, "Transient error during authentication", err)
 		case err != nil:
 			replyError(c.Context, c.Writer, 401, "Authentication error", err)
@@ -244,7 +245,7 @@ func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (contex
 			OwnServiceIdentity:   ownServiceIdentity,
 		})
 		if err != nil {
-			if errors.IsTransient(err) {
+			if transient.Tag.In(err) {
 				report(err, "ERROR_TRANSIENT_IN_TOKEN_CHECK")
 			} else {
 				report(err, "ERROR_BAD_DELEGATION_TOKEN")

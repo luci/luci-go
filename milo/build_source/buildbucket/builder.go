@@ -24,6 +24,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/common/sync/parallel"
 
 	"github.com/luci/luci-go/milo/api/resp"
@@ -38,12 +39,12 @@ func search(c context.Context, client *buildbucket.Service, req *buildbucket.Sea
 	var res *buildbucket.ApiSearchResponseMessage
 	err := retry.Retry(
 		c,
-		retry.TransientOnly(retry.Default),
+		transient.Only(retry.Default),
 		func() error {
 			var err error
 			res, err = req.Do()
 			if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code >= 500 {
-				err = errors.WrapTransient(apiErr)
+				err = transient.Tag.Apply(apiErr)
 			}
 			return err
 		},

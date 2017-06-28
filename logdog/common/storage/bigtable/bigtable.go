@@ -12,7 +12,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/logdog/common/storage"
 )
@@ -197,6 +197,6 @@ func wrapIfTransientForApply(err error) error {
 	case codes.InvalidArgument:
 		return err
 	default:
-		return errors.WrapTransient(err)
+		return transient.Tag.Apply(err)
 	}
 }

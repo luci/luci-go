@@ -18,6 +18,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/retry/transient"
 )
 
 const (
@@ -57,7 +58,7 @@ type RequestGen func() (*http.Request, error)
 func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen RequestGen,
 	handler Handler, errorHandler ErrorHandler) func() (int, error) {
 	if rFn == nil {
-		rFn = retry.TransientOnly(retry.Default)
+		rFn = transient.Only(retry.Default)
 	}
 	if errorHandler == nil {
 		errorHandler = func(resp *http.Response, err error) error {
@@ -83,20 +84,20 @@ func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen Req
 			if err != nil {
 				// Retry every error. This is sad when you specify an invalid hostname but
 				// it's better than failing when DNS resolution is flaky.
-				return errorHandler(nil, errors.WrapTransient(err))
+				return errorHandler(nil, transient.Tag.Apply(err))
 			}
 			status = resp.StatusCode
 
 			switch {
 			case status == 408, status == 429, status >= 500:
 				// The HTTP status code means the request should be retried.
-				err = errors.WrapTransient(
-					fmt.Errorf("http request failed: %s (HTTP %d)", http.StatusText(status), status))
+				err = errors.Reason("http request failed: %(text)s (HTTP %(code)d)").
+					D("text", http.StatusText(status)).D("code", status).Tag(transient.Tag).Err()
 			case status == 404 && strings.HasPrefix(req.URL.Path, "/_ah/api/"):
 				// Endpoints occasionally return 404 on valid requests!
 				logging.Infof(ctx, "lhttp.Do() got a Cloud Endpoints 404: %#v", resp.Header)
-				err = errors.WrapTransient(
-					fmt.Errorf("http request failed (endpoints): %s (HTTP %d)", http.StatusText(status), status))
+				err = errors.Reason("http request failed (endpoints): %(text)s (HTTP %(code)d)").
+					D("text", http.StatusText(status)).D("code", status).Tag(transient.Tag).Err()
 			case status >= 400:
 				// Any other failure code is a hard failure.
 				err = fmt.Errorf("http request failed: %s (HTTP %d)", http.StatusText(status), status)
@@ -157,7 +158,8 @@ func NewRequestJSON(ctx context.Context, c *http.Client, rFn retry.Factory, url,
 		}
 		if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
 			// Retriable.
-			return errors.WrapTransient(fmt.Errorf("bad response %s: %s", url, err))
+			return errors.Annotate(err).Reason("bad response %(url)s").
+				D("url", url).Tag(transient.Tag).Err()
 		}
 		return nil
 	}, nil), nil

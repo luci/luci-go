@@ -13,9 +13,9 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/luci/luci-go/grpc/prpc"
 	"github.com/luci/luci-go/server/auth/delegation"
@@ -25,7 +25,7 @@ import (
 )
 
 var (
-	// ErrTokenServerNotConfigured is returned by MintDelegationToken if the
+	// ErrTokenServiceNotConfigured is returned by MintDelegationToken if the
 	// token service URL is not configured. This usually means the corresponding
 	// auth service is not paired with a token server.
 	ErrTokenServiceNotConfigured = fmt.Errorf("auth: token service URL is not configured")
@@ -235,7 +235,7 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 			})
 			if err != nil {
 				err = grpcutil.WrapIfTransient(err)
-				if errors.IsTransient(err) {
+				if transient.Tag.In(err) {
 					return nil, err, "ERROR_TRANSIENT_IN_MINTING"
 				}
 				return nil, err, "ERROR_MINTING"

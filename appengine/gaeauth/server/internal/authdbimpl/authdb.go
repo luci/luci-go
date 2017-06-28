@@ -16,6 +16,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/server/auth/service"
 	"github.com/luci/luci-go/server/auth/service/protocol"
 )
@@ -74,7 +75,7 @@ func GetLatestSnapshotInfo(c context.Context) (*SnapshotInfo, error) {
 		return nil, nil
 	case err != nil:
 		report("ERROR_TRANSIENT")
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	default:
 		report("SUCCESS")
 		return &info, nil
@@ -103,7 +104,7 @@ func GetAuthDBSnapshot(c context.Context, id string) (*protocol.AuthDB, error) {
 		return nil, err // not transient
 	case err != nil:
 		report("ERROR_TRANSIENT")
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	}
 
 	db, err := service.InflateAuthDB(snap.AuthDBDeflated)
@@ -173,7 +174,7 @@ func ConfigureAuthService(c context.Context, baseURL, authServiceURL string) err
 	// It makes syncAuthDB fetch changes from `authServiceURL`, thus promoting
 	// `authServiceURL` to the status of main auth service.
 	if err := ds.Put(ds.WithoutTransaction(c), info); err != nil {
-		return errors.WrapTransient(err)
+		return transient.Tag.Apply(err)
 	}
 
 	// Stop getting notifications from previously used auth service.
@@ -206,7 +207,7 @@ func fetchSnapshot(c context.Context, info *SnapshotInfo) error {
 		FetchedAt:      clock.Now(c).UTC(),
 	}
 	logging.Infof(c, "Lag: %s", ent.FetchedAt.Sub(ent.CreatedAt))
-	return errors.WrapTransient(ds.Put(ds.WithoutTransaction(c), &ent))
+	return transient.Tag.Apply(ds.Put(ds.WithoutTransaction(c), &ent))
 }
 
 // syncAuthDB fetches latest AuthDB snapshot from the configured auth service,
@@ -288,7 +289,7 @@ func syncAuthDB(c context.Context) (*SnapshotInfo, error) {
 
 	if err != nil {
 		report("ERROR_COMMITTING")
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	}
 
 	report("SUCCESS_UPDATED")

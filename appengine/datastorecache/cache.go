@@ -13,6 +13,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/server/router"
 
 	"github.com/luci/gae/impl/prod/constraints"
@@ -296,7 +297,7 @@ func (bci *boundCacheInst) get(c context.Context, key []byte) (Value, error) {
 		delta        time.Duration
 	)
 	err := retry.Retry(clock.Tag(c, "datastoreCacheLockRetry"),
-		retry.TransientOnly(bci.refreshRetryFactory), func() error {
+		transient.Only(bci.refreshRetryFactory), func() error {
 
 			// This is a retry. If the entry was missing before, check to see if some
 			// other process has since added it to the datastore.
@@ -336,7 +337,7 @@ func (bci *boundCacheInst) get(c context.Context, key []byte) (Value, error) {
 
 			case ErrFailedToLock:
 				// Retry after delay.
-				return errors.WrapTransient(err)
+				return transient.Tag.Apply(err)
 
 			default:
 				log.WithError(err).Warningf(c, "Unexpected failure obtaining initial load lock.")

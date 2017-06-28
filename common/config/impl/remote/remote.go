@@ -15,8 +15,8 @@ import (
 
 	configApi "github.com/luci/luci-go/common/api/luci_config/config/v1"
 	"github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 )
 
 // ClientFactory returns HTTP client to use (given a context).
@@ -293,7 +293,7 @@ func apiErr(e error) error {
 		return config.ErrNoConfig
 	}
 	if err.Code >= 500 {
-		return errors.WrapTransient(err)
+		return transient.Tag.Apply(err)
 	}
 	return err
 }

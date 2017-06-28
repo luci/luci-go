@@ -20,8 +20,8 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/luci/luci-go/common/auth/localauth/rpcs"
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/lucictx"
 )
 
@@ -119,18 +119,18 @@ func (p *luciContextTokenProvider) MintToken(ctx context.Context, base *oauth2.T
 
 	httpResp, err := ctxhttp.Do(ctx, &http.Client{Transport: p.transport}, httpReq)
 	if err != nil {
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	}
 	defer httpResp.Body.Close()
 	respBody, err := ioutil.ReadAll(httpResp.Body)
 	if err != nil {
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	}
 
 	if httpResp.StatusCode != 200 {
 		err := fmt.Errorf("local auth - HTTP %d: %s", httpResp.StatusCode, strings.TrimSpace(string(respBody)))
 		if httpResp.StatusCode >= 500 {
-			return nil, errors.WrapTransient(err)
+			return nil, transient.Tag.Apply(err)
 		}
 		return nil, err
 	}

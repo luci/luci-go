@@ -44,6 +44,33 @@ type Context struct {
 	element []string          // logical path of a sub-element we validate, see Enter
 }
 
+type fileTagType struct{ Key errors.TagKey }
+
+func (f fileTagType) With(name string) errors.TagValue { return errors.MkTagValue(f.Key, name) }
+func (f fileTagType) In(err error) (v string, ok bool) {
+	d, ok := errors.TagValueIn(f.Key, err)
+	if ok {
+		v = d.(string)
+	}
+	return
+}
+
+type elementTagType struct{ Key errors.TagKey }
+
+func (e elementTagType) With(elements []string) errors.TagValue {
+	return errors.MkTagValue(e.Key, append([]string(nil), elements...))
+}
+func (e elementTagType) In(err error) (v []string, ok bool) {
+	d, ok := errors.TagValueIn(e.Key, err)
+	if ok {
+		v = d.([]string)
+	}
+	return
+}
+
+var fileTag = fileTagType{errors.NewTagKey("holds the file name for tests")}
+var elementTag = elementTagType{errors.NewTagKey("holds the elements for tests")}
+
 // Error records a validation error.
 func (v *Context) Error(msg string, args ...interface{}) {
 	ctx := ""
@@ -67,8 +94,7 @@ func (v *Context) Error(msg string, args ...interface{}) {
 
 	// Make the file and the logical path also usable through error inspection.
 	err := errors.Reason(fmt.Sprintf(msg, args...)).
-		D("file", v.file).
-		D("element", append([]string{}, v.element...)).Err()
+		Tag(fileTag.With(v.file), elementTag.With(v.element)).Err()
 	v.errors = append(v.errors, err)
 }
 

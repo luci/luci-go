@@ -23,8 +23,8 @@ import (
 	"github.com/luci/luci-go/common/auth/localauth/rpcs"
 	"github.com/luci/luci-go/common/data/rand/cryptorand"
 	"github.com/luci/luci-go/common/data/stringset"
-	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/common/runtime/paniccatcher"
 	"github.com/luci/luci-go/lucictx"
 )
@@ -42,9 +42,9 @@ import (
 // duration (which is typically on order of minutes), but it may live longer.
 // Clients may cache the returned token for the duration of its lifetime.
 //
-// May return transient errors (in errors.IsTransient returning true sense).
-// Such errors result in HTTP 500 responses. This is appropriate for non-fatal
-// errors. Clients may immediately retry requests on such errors.
+// May return transient errors (in transient.Tag.In(err) returning true
+// sense). Such errors result in HTTP 500 responses. This is appropriate for
+// non-fatal errors. Clients may immediately retry requests on such errors.
 //
 // Any non-transient error is considered fatal and results in an RPC-level
 // error response ({"error": ...}). Clients must treat such responses as fatal
@@ -335,7 +335,7 @@ func (h *protocolHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	// Transient errors are returned as HTTP 500 responses.
-	if errors.IsTransient(err) {
+	if transient.Tag.In(err) {
 		http.Error(rw, fmt.Sprintf("Transient error - %s", err), http.StatusInternalServerError)
 		return
 	}

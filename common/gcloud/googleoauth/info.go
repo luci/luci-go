@@ -11,6 +11,7 @@ import (
 
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 	"google.golang.org/api/googleapi"
 
 	"golang.org/x/net/context"
@@ -79,7 +80,7 @@ func GetTokenInfo(c context.Context, params TokenInfoParams) (*TokenInfo, error)
 	resp, err := ctxhttp.Get(c, params.Client, params.Endpoint+"?"+v.Encode())
 	if err != nil {
 		logging.WithError(err).Errorf(c, "POST %s failed", params.Endpoint)
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	}
 	defer googleapi.CloseBody(resp)
 	if err := googleapi.CheckResponse(resp); err != nil {
@@ -87,7 +88,7 @@ func GetTokenInfo(c context.Context, params TokenInfoParams) (*TokenInfo, error)
 		if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code < 500 {
 			return nil, ErrBadToken
 		}
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	}
 
 	info := &TokenInfo{}
@@ -95,7 +96,7 @@ func GetTokenInfo(c context.Context, params TokenInfoParams) (*TokenInfo, error)
 		// This should never happen. If it does, the token endpoint has gone mad,
 		// and maybe it will recover soon. So mark the error as transient.
 		logging.WithError(err).Errorf(c, "Bad token info endpoint response")
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	}
 
 	return info, nil

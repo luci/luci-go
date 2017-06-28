@@ -8,7 +8,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/retry/transient"
 )
 
 // importedPolicyHeader is an entity that holds metadata about a cached policy.
@@ -55,7 +55,7 @@ func updateImportedPolicy(c context.Context, name, rev, sha256 string, serialize
 		SHA256:   sha256,
 		Data:     serialized,
 	}
-	return errors.WrapTransient(datastore.RunInTransaction(c, func(c context.Context) error {
+	return transient.Tag.Apply(datastore.RunInTransaction(c, func(c context.Context) error {
 		return datastore.Put(c, header, body)
 	}, nil))
 }
@@ -69,7 +69,7 @@ func getImportedPolicyHeader(c context.Context, name string) (*importedPolicyHea
 	case err == datastore.ErrNoSuchEntity:
 		return nil, nil
 	case err != nil:
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	}
 	return e, nil
 }
@@ -85,7 +85,7 @@ func getImportedPolicyBody(c context.Context, name string) (*importedPolicyBody,
 	case err == datastore.ErrNoSuchEntity:
 		return nil, nil
 	case err != nil:
-		return nil, errors.WrapTransient(err)
+		return nil, transient.Tag.Apply(err)
 	}
 	return e, nil
 }

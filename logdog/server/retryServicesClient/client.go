@@ -10,6 +10,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/grpc/grpcutil"
 	s "github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
 	"golang.org/x/net/context"
@@ -34,7 +35,7 @@ func New(c s.ServicesClient, f retry.Factory) s.ServicesClient {
 	if f == nil {
 		f = retry.Default
 	}
-	return &client{c, retry.TransientOnly(f)}
+	return &client{c, transient.Only(f)}
 }
 
 func (c *client) GetConfig(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (r *s.GetConfigResponse, err error) {

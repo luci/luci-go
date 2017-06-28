@@ -15,6 +15,7 @@ import (
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/common/retry"
+	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/common/tsmon/distribution"
 	"github.com/luci/luci-go/common/tsmon/field"
 	"github.com/luci/luci-go/common/tsmon/metric"
@@ -150,7 +151,7 @@ func (a *application) runCollector(c context.Context) error {
 		}
 	}
 
-	err = retry.Retry(c, retry.TransientOnly(retryForever), func() error {
+	err = retry.Retry(c, transient.Only(retryForever), func() error {
 		return grpcutil.WrapIfTransient(psSub.Receive(c, func(c context.Context, msg *pubsub.Message) {
 			c = log.SetField(c, "messageID", msg.ID)
 			if a.processMessage(c, &coll, msg) {
@@ -191,7 +192,7 @@ func (a *application) processMessage(c context.Context, coll *collector.Collecto
 	tsTaskProcessingTime.Add(c, duration.Seconds()*1000)
 
 	switch {
-	case errors.IsTransient(err):
+	case transient.Tag.In(err):
 		// Do not consume
 		log.Fields{
 			log.ErrorKey: err,

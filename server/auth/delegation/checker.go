@@ -15,6 +15,7 @@ import (
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/retry/transient"
 
 	"github.com/luci/luci-go/server/auth/identity"
 	"github.com/luci/luci-go/server/auth/signing"
@@ -95,7 +96,7 @@ func CheckToken(c context.Context, params CheckTokenParams) (identity.Identity, 
 	// Signed serialized subtoken -> Subtoken proto.
 	subtoken, err := unsealToken(c, tok, params.CertificatesProvider)
 	if err != nil {
-		if errors.IsTransient(err) {
+		if transient.Tag.In(err) {
 			logging.Warningf(c, "auth: Transient error when checking delegation token signature - %s", err)
 			return "", err
 		}
@@ -178,7 +179,7 @@ func checkSubtoken(c context.Context, subtoken *messages.Subtoken, params *Check
 
 	// Do the audience check (may use group lookups).
 	if err := checkSubtokenAudience(c, subtoken, params.PeerID, params.GroupsChecker); err != nil {
-		if errors.IsTransient(err) {
+		if transient.Tag.In(err) {
 			logging.Warningf(c, "auth: Transient error when checking delegation token audience - %s", err)
 			return "", err
 		}

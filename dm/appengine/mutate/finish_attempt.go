@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/luci/luci-go/dm/appengine/model"
@@ -54,7 +55,8 @@ func (f *FinishAttempt) RollForward(c context.Context) (muts []tumble.Mutation, 
 	atmpt.Result.Data = &rslt
 	atmpt.Result.Data.Object = ""
 
-	err = grpcutil.Annotate(ds.Put(c, atmpt, ar), codes.Internal).Reason("during Put").Err()
+	err = errors.Annotate(ds.Put(c, atmpt, ar)).Tag(grpcutil.Tag.With(codes.Internal)).
+		Reason("during Put").Err()
 	return
 }
 
