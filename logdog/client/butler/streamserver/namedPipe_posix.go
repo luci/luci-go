@@ -32,17 +32,13 @@ func NewUNIXDomainSocketServer(ctx context.Context, path string) (StreamServer, 
 	case l == 0:
 		return nil, errors.New("cannot have empty path")
 	case l > maxPOSIXNamedSocketLength:
-		return nil, errors.Reason("path exceeds maximum length %(max)d").
-			D("path", path).
-			D("max", maxPOSIXNamedSocketLength).
-			Err()
+		return nil, errors.Reason("path exceeds maximum length %d", maxPOSIXNamedSocketLength).
+			InternalReason("path(%s)", path).Err()
 	}
 
 	abs, err := filepath.Abs(path)
 	if err != nil {
-		return nil, errors.Annotate(err).Reason("could not get absolute path of [%(path)s]").
-			D("path", path).
-			Err()
+		return nil, errors.Annotate(err, "could not get absolute path of [%s]", path).Err()
 	}
 	path = abs
 

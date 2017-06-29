@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
+	"strings"
 
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/common/auth"
@@ -54,7 +55,7 @@ func (a *application) getGSClient(c context.Context) (gs.Client, error) {
 	authenticator := auth.NewAuthenticator(c, auth.OptionalLogin, a.authOpts)
 	transport, err := authenticator.Transport()
 	if err != nil {
-		return nil, errors.Annotate(err).Reason("failed to get auth transport").Err()
+		return nil, errors.Annotate(err, "failed to get auth transport").Err()
 	}
 	return gs.NewProdClient(c, transport)
 }
@@ -117,11 +118,8 @@ func main() {
 }
 
 func renderErr(c context.Context, err error) {
-	rerr := errors.RenderStack(err)
-
-	var buf bytes.Buffer
-	rerr.DumpTo(&buf)
-	log.Errorf(c, "Error encountered during operation: %s\n%s", err, buf.Bytes())
+	log.Errorf(c, "Error encountered during operation: %s\n%s", err,
+		strings.Join(errors.RenderStack(err), "\n"))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -251,14 +249,14 @@ func (cmd *cmdRunDumpStream) Run(baseApp subcommands.Application, args []string,
 
 			var desc logpb.LogStreamDescriptor
 			if err := unmarshalAndDump(c, os.Stdout, d, &desc); err != nil {
-				return errors.Annotate(err).Reason("failed to dump log descriptor").Err()
+				return errors.Annotate(err, "failed to dump log descriptor").Err()
 			}
 			return nil
 		}
 
 		var entry logpb.LogEntry
 		if err := unmarshalAndDump(c, os.Stdout, d, &entry); err != nil {
-			return errors.Annotate(err).Reason("failed to dump log entry").Err()
+			return errors.Annotate(err, "failed to dump log entry").Err()
 		}
 		return nil
 	})
@@ -464,8 +462,8 @@ func dumpRecordIO(c context.Context, r io.Reader, cb func(context.Context, []byt
 			break
 
 		default:
-			return errors.Annotate(err).Reason("Encountered error reading log stream.").
-				D("frameIndex", frameIndex).Err()
+			return errors.Annotate(err, "Encountered error reading log stream.").
+				InternalReason("frameIndex(%d)", frameIndex).Err()
 		}
 
 		if frameSize > 0 {
@@ -473,8 +471,8 @@ func dumpRecordIO(c context.Context, r io.Reader, cb func(context.Context, []byt
 			buf.Grow(int(frameSize))
 
 			if _, err := buf.ReadFrom(r); err != nil {
-				return errors.Annotate(err).Reason("Failed to buffer frame.").
-					D("frameIndex", frameIndex).Err()
+				return errors.Annotate(err, "Failed to buffer frame.").
+					InternalReason("frameIndex(%d)", frameIndex).Err()
 			}
 
 			if err := cb(c, buf.Bytes()); err != nil {

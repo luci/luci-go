@@ -104,9 +104,7 @@ func (lp *lookPath) checkWrapper(c context.Context, path string, env environ.Env
 	output, err := cmd.CombinedOutput()
 	rc, ok := exitcode.Get(err)
 	if !ok {
-		err = errors.Annotate(err).Reason("failed to check if %(path)q is a wrapper").
-			D("path", path).
-			Err()
+		err = errors.Annotate(err, "failed to check if %q is a wrapper", path).Err()
 		return
 	}
 
@@ -130,7 +128,7 @@ func (lp *lookPath) checkWrapper(c context.Context, path string, env environ.Env
 		// The target returned non-zero, but didn't identify as a wrapper. It is
 		// likely something that happens to be named the same thing as the target,
 		// which is an error.
-		err = errors.Annotate(err).Reason("wrapper check returned non-zero").Err()
+		err = errors.Annotate(err, "wrapper check returned non-zero").Err()
 	}
 
 	return

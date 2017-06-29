@@ -53,7 +53,7 @@ func TestIsNotExist(t *testing.T) {
 			So(IsNotExist(errors.New("something")), ShouldBeFalse)
 
 			So(IsNotExist(err), ShouldBeTrue)
-			So(IsNotExist(errors.Annotate(err).Reason("annotated").Err()), ShouldBeTrue)
+			So(IsNotExist(errors.Annotate(err, "annotated").Err()), ShouldBeTrue)
 		})
 	})
 }

@@ -43,8 +43,7 @@ func Backend(b backend.B, exp time.Duration) backend.B {
 				// Value was cached, successfully retrieved.
 				v, err := caching.DecodeValue(mci.Value())
 				if err != nil {
-					return nil, errors.Annotate(err).Reason("failed to decode cache value from %(key)q").
-						D("key", k).Err()
+					return nil, errors.Annotate(err, "failed to decode cache value from %q", k).Err()
 				}
 				return v, nil
 
@@ -60,17 +59,16 @@ func Backend(b backend.B, exp time.Duration) backend.B {
 				err = func() error {
 					d, err := v.Encode()
 					if err != nil {
-						return errors.Annotate(err).Reason("failed to encode value").Err()
+						return errors.Annotate(err, "failed to encode value").Err()
 					}
 
 					if len(d) > maxMemCacheSize {
-						return errors.Reason("entry exceeds memcache size (%(size)d > %(max)d)").
-							D("size", len(d)).D("max", maxMemCacheSize).Err()
+						return errors.Reason("entry exceeds memcache size (%d > %d)", len(d), maxMemCacheSize).Err()
 					}
 
 					item := mc.NewItem(c, k).SetValue(d).SetExpiration(exp)
 					if err := mc.Set(c, item); err != nil {
-						return errors.Annotate(err).Err()
+						return errors.Annotate(err, "").Err()
 					}
 					return nil
 				}()

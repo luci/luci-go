@@ -7,10 +7,10 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/luci/luci-go/client/authcli"
 	"github.com/luci/luci-go/common/auth"
@@ -62,7 +62,7 @@ func (app *application) getBigTableClient(c context.Context) (storage.Storage, e
 	a := auth.NewAuthenticator(c, auth.SilentLogin, app.authOpts)
 	tsrc, err := a.TokenSource()
 	if err != nil {
-		return nil, errors.Annotate(err).Reason("failed to get token source").Err()
+		return nil, errors.Annotate(err, "failed to get token source").Err()
 	}
 
 	return bigtable.New(c, bigtable.Options{
@@ -147,11 +147,8 @@ func main() {
 }
 
 func renderErr(c context.Context, err error) {
-	rerr := errors.RenderStack(err)
-
-	var buf bytes.Buffer
-	rerr.DumpTo(&buf)
-	log.Errorf(c, "Error encountered during operation: %s\n%s", err, buf.Bytes())
+	log.Errorf(c, "Error encountered during operation: %s\n%s", err,
+		strings.Join(errors.RenderStack(err), "\n"))
 }
 
 func unmarshalAndDump(c context.Context, out io.Writer, data []byte, msg proto.Message) error {
@@ -214,7 +211,7 @@ func (cmd *cmdRunGet) Run(baseApp subcommands.Application, args []string, _ subc
 
 	stClient, err := app.getBigTableClient(c)
 	if err != nil {
-		renderErr(c, errors.Annotate(err).Reason("failed to create storage client").Err())
+		renderErr(c, errors.Annotate(err, "failed to create storage client").Err())
 		return 1
 	}
 	defer stClient.Close()
@@ -246,11 +243,11 @@ func (cmd *cmdRunGet) Run(baseApp subcommands.Application, args []string, _ subc
 		})
 		switch {
 		case innerErr != nil:
-			renderErr(c, errors.Annotate(err).Reason("failed to process fetched log entries").Err())
+			renderErr(c, errors.Annotate(err, "failed to process fetched log entries").Err())
 			return 1
 
 		case err != nil:
-			renderErr(c, errors.Annotate(err).Reason("Failed to Get log entries.").Err())
+			renderErr(c, errors.Annotate(err, "Failed to Get log entries.").Err())
 			return 1
 		}
 	}
@@ -298,7 +295,7 @@ func (cmd *cmdRunTail) Run(baseApp subcommands.Application, args []string, _ sub
 
 	stClient, err := app.getBigTableClient(c)
 	if err != nil {
-		renderErr(c, errors.Annotate(err).Reason("failed to create storage client").Err())
+		renderErr(c, errors.Annotate(err, "failed to create storage client").Err())
 		return 1
 	}
 	defer stClient.Close()
@@ -307,7 +304,7 @@ func (cmd *cmdRunTail) Run(baseApp subcommands.Application, args []string, _ sub
 		log.Infof(c, "Tail round %d.", round+1)
 		e, err := stClient.Tail(cfgtypes.ProjectName(cmd.project), types.StreamPath(cmd.path))
 		if err != nil {
-			renderErr(c, errors.Annotate(err).Reason("failed to tail log entries").Err())
+			renderErr(c, errors.Annotate(err, "failed to tail log entries").Err())
 			return 1
 		}
 
@@ -318,7 +315,7 @@ func (cmd *cmdRunTail) Run(baseApp subcommands.Application, args []string, _ sub
 
 		le, err := e.GetLogEntry()
 		if err != nil {
-			renderErr(c, errors.Annotate(err).Reason("failed to unmarshal log entry").Err())
+			renderErr(c, errors.Annotate(err, "failed to unmarshal log entry").Err())
 			return 1
 		}
 
@@ -327,7 +324,7 @@ func (cmd *cmdRunTail) Run(baseApp subcommands.Application, args []string, _ sub
 			"size":  len(e.D),
 		}.Debugf(c, "Dumping tail entry.")
 		if err := unmarshalAndDump(c, os.Stdout, nil, le); err != nil {
-			renderErr(c, errors.Annotate(err).Reason("failed to dump log entry").Err())
+			renderErr(c, errors.Annotate(err, "failed to dump log entry").Err())
 			return 1
 		}
 	}

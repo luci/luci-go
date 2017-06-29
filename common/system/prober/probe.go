@@ -85,14 +85,12 @@ func (p *Probe) ResolveSelf(argv0 string) error {
 	// Get the authoritative executable from the system.
 	exec, err := os.Executable()
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to get executable").Err()
+		return errors.Annotate(err, "failed to get executable").Err()
 	}
 
 	execStat, err := os.Stat(exec)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to stat executable: %(path)s").
-			D("path", exec).
-			Err()
+		return errors.Annotate(err, "failed to stat executable: %s", exec).Err()
 	}
 
 	// Before using "os.Executable" result, which is known to resolve symlinks on
@@ -188,9 +186,7 @@ func (p *Probe) Locate(c context.Context, cached string, env environ.Env) (strin
 	}
 
 	return "", errors.Reason("could not find target in system").
-		D("target", p.Target).
-		D("dirs", pathDirs).
-		Err()
+		InternalReason("target(%s)/dirs(%v)", p.Target, pathDirs).Err()
 }
 
 // checkDir checks "checkDir" for our Target executable. It ignores

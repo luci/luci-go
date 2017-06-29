@@ -127,14 +127,14 @@ func (x *workExecutor) run(c context.Context) (int, error) {
 		// error without conflicting.
 		stdoutPipe, err := cmd.StdoutPipe()
 		if err != nil {
-			return -1, errors.Annotate(err).Reason("failed to create STDOUT pipe").Err()
+			return -1, errors.Annotate(err, "failed to create STDOUT pipe").Err()
 		}
 		stdoutPipe = &closeOnceReader{ReadCloser: stdoutPipe}
 		defer stdoutPipe.Close()
 
 		stderrPipe, err := cmd.StderrPipe()
 		if err != nil {
-			return -1, errors.Annotate(err).Reason("failed to create STDERR pipe").Err()
+			return -1, errors.Annotate(err, "failed to create STDERR pipe").Err()
 		}
 		stderrPipe = &closeOnceReader{ReadCloser: stderrPipe}
 		defer stderrPipe.Close()
@@ -207,8 +207,8 @@ func (x *workExecutor) run(c context.Context) (int, error) {
 		"cwd": x.workdir,
 	}.Debugf(c, "Running command: %s %s.", x.command, x.args)
 	if err := cmd.Start(); err != nil {
-		return -1, errors.Annotate(err).Reason("failed to start command").
-			D("command", x.command).D("args", x.args).D("cwd", x.workdir).Err()
+		return -1, errors.Annotate(err, "failed to start command").
+			InternalReason("command(%s)/args(%v)/cwd(%s)", x.command, x.args, x.workdir).Err()
 	}
 
 	// Wait for our stream processing to finish.
@@ -222,8 +222,8 @@ func (x *workExecutor) run(c context.Context) (int, error) {
 			return rc, nil
 		}
 
-		return -1, errors.Annotate(err).Reason("failed to wait for command").
-			D("command", x.command).D("args", x.args).D("cwd", x.workdir).Err()
+		return -1, errors.Annotate(err, "failed to wait for command").
+			InternalReason("command(%s)/args(%v)/cwd(%s)", x.command, x.args, x.workdir).Err()
 	}
 
 	log.Debugf(c, "Command completed with zero return code: %s %s", x.command, x.args)
@@ -233,7 +233,7 @@ func (x *workExecutor) run(c context.Context) (int, error) {
 func (x *workExecutor) check(c context.Context) error {
 	switch rc, err := x.run(c); {
 	case err != nil:
-		return errors.Annotate(err).Err()
+		return errors.Annotate(err, "").Err()
 
 	case rc != 0:
 		log.Fields{
@@ -243,8 +243,8 @@ func (x *workExecutor) check(c context.Context) error {
 			"cwd":        x.workdir,
 		}.Errorf(c, "Command failed with error return code.\nSTDOUT:\n%s\n\nSTDERR:\n%s",
 			x.stdout.String(), x.stderr.String())
-		return errors.Reason("process exited with return code: %(returnCode)d").
-			D("command", x.command).D("args", x.args).D("cwd", x.workdir).D("returnCode", rc).Err()
+		return errors.Reason("process exited with return code: %d", rc).
+			InternalReason("command(%s)/args(%v)/cwd(%s)", x.command, x.args, x.workdir).Err()
 
 	default:
 		return nil
@@ -289,7 +289,7 @@ func (w *teeWriter) Write(d []byte) (amt int, err error) {
 	amt, err = w.base.Write(d)
 	if amt > 0 {
 		if _, ierr := w.tee.Write(d[:amt]); ierr != nil {
-			panic(errors.Annotate(ierr).Reason("failed to write to tee writer").Err())
+			panic(errors.Annotate(ierr, "failed to write to tee writer").Err())
 		}
 	}
 	return

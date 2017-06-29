@@ -5,7 +5,6 @@
 package errors
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 	"testing"
@@ -19,7 +18,7 @@ var (
 	fixTestingLine = regexp.MustCompile(`(testing/\w+.go):\d+`)
 )
 
-func FixForTest(lines Lines) Lines {
+func FixForTest(lines []string) []string {
 	for i, l := range lines {
 		switch {
 		case strings.HasPrefix(l, "goroutine"):
@@ -40,11 +39,8 @@ func TestAnnotation(t *testing.T) {
 	t.Parallel()
 
 	Convey("Test annotation struct", t, func() {
-		e := (Annotate(New("bad thing")).
-			Reason("%(first)d some error: %(second)q").
-			D("extra", 8.2, "%.3f").
-			D("first", 20, "0x%08x").
-			D("second", "stringy").Err())
+		e := Annotate(New("bad thing"), "%d some error: %q", 20, "stringy").
+			InternalReason("extra(%.3f)", 8.2).Err()
 		ae := e.(*annotatedError)
 
 		Convey("annotation can render itself for public usage", func() {
@@ -52,91 +48,53 @@ func TestAnnotation(t *testing.T) {
 		})
 
 		Convey("annotation can render itself for internal usage", func() {
-			lines := RenderStack(e).ToLines(
-				`runtime`, `github.com/jtolds/gls`,
+			lines := RenderStack(e, `runtime`, `github.com/jtolds/gls`,
 				`github.com/smartystreets/goconvey/convey`)
 			FixForTest(lines)
 
-			So(lines, ShouldResemble, Lines{
+			So(lines, ShouldResemble, []string{
 				`original error: bad thing`,
 				``,
 				`GOROUTINE LINE`,
-				`#? github.com/luci/luci-go/common/errors/annotate_test.go:47 - errors.TestAnnotation.func1()`,
-				`  reason: "20 some error: \"stringy\""`,
-				`  "extra" = 8.200`,
-				`  "first" = 0x00000014`,
-				`  "second" = "stringy"`,
+				`#? github.com/luci/luci-go/common/errors/annotate_test.go:43 - errors.TestAnnotation.func1()`,
+				`  reason: 20 some error: "stringy"`,
+				`  internal reason: extra(8.200)`,
 				``,
 				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
 				`... skipped SOME frames in pkg "github.com/jtolds/gls"...`,
 				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
 				``,
-				`#? github.com/luci/luci-go/common/errors/annotate_test.go:110 - errors.TestAnnotation()`,
+				`#? github.com/luci/luci-go/common/errors/annotate_test.go:99 - errors.TestAnnotation()`,
 				`#? testing/testing.go:XXX - testing.tRunner()`,
 				`... skipped SOME frames in pkg "runtime"...`,
 			})
 		})
 
 		Convey("can render whole stack", func() {
-			e = Annotate(e).Reason("outer frame %(first)s").D("first", "outer").Err()
-			lines := RenderStack(e).ToLines(
-				`runtime`, `github.com/jtolds/gls`,
+			e = Annotate(e, "outer frame %s", "outer").Err()
+			lines := RenderStack(e, `runtime`, `github.com/jtolds/gls`,
 				`github.com/smartystreets/goconvey/convey`)
 			FixForTest(lines)
 
-			So(lines, ShouldResemble, Lines{
+			So(lines, ShouldResemble, []string{
 				`original error: bad thing`,
 				``,
 				`GOROUTINE LINE`,
-				`#? github.com/luci/luci-go/common/errors/annotate_test.go:47 - errors.TestAnnotation.func1()`,
+				`#? github.com/luci/luci-go/common/errors/annotate_test.go:43 - errors.TestAnnotation.func1()`,
 				`  annotation #0:`,
-				`    reason: "outer frame outer"`,
-				`    "first" = "outer"`,
+				`    reason: outer frame outer`,
 				`  annotation #1:`,
-				`    reason: "20 some error: \"stringy\""`,
-				`    "extra" = 8.200`,
-				`    "first" = 0x00000014`,
-				`    "second" = "stringy"`,
+				`    reason: 20 some error: "stringy"`,
+				`    internal reason: extra(8.200)`,
 				``,
 				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
 				`... skipped SOME frames in pkg "github.com/jtolds/gls"...`,
 				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
 				``,
-				`#? github.com/luci/luci-go/common/errors/annotate_test.go:110 - errors.TestAnnotation()`,
+				`#? github.com/luci/luci-go/common/errors/annotate_test.go:99 - errors.TestAnnotation()`,
 				`#? testing/testing.go:XXX - testing.tRunner()`,
 				`... skipped SOME frames in pkg "runtime"...`,
 			})
 		})
-	})
-}
-
-func TestDataFormat(t *testing.T) {
-	t.Parallel()
-
-	testCases := []struct {
-		format   string
-		expected string
-	}{
-		{"", ""},
-		{"no replacements", `no replacements`},
-		{"%(foo)s", `bar`},
-		{"%%(foo)s", `%(foo)s`},
-		{"%(foo)s|%(foo)s|%(foo)s", `bar|bar|bar`},
-		{"|%(foo)s|%(foo)s|%(foo)s|", `|bar|bar|bar|`},
-		{"%(missing)s", `MISSING(key="missing")`},
-		{"replacing %(foo)q", `replacing "bar"`},
-		{"replacing (%(foo)q)", `replacing ("bar")`},
-	}
-
-	Convey(`A testing Data object`, t, func() {
-		data := Data{
-			"foo": {"bar", ""},
-		}
-
-		for _, testCase := range testCases {
-			Convey(fmt.Sprintf(`Formatting %q yields: %q`, testCase.format, testCase.expected), func() {
-				So(data.Format(testCase.format), ShouldEqual, testCase.expected)
-			})
-		}
 	})
 }

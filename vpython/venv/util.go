@@ -15,16 +15,16 @@ import (
 func writeTextProto(path string, msg proto.Message) error {
 	fd, err := os.Create(path)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to create output file").Err()
+		return errors.Annotate(err, "failed to create output file").Err()
 	}
 
 	if err := proto.MarshalText(fd, msg); err != nil {
 		_ = fd.Close()
-		return errors.Annotate(err).Reason("failed to output text protobuf").Err()
+		return errors.Annotate(err, "failed to output text protobuf").Err()
 	}
 
 	if err := fd.Close(); err != nil {
-		return errors.Annotate(err).Reason("failed to Close temporary file").Err()
+		return errors.Annotate(err, "failed to Close temporary file").Err()
 	}
 
 	return nil

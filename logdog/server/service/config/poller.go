@@ -92,10 +92,7 @@ func (p *ChangePoller) Run(c context.Context) {
 func (p *ChangePoller) Refresh(c context.Context) error {
 	var meta cfgclient.Meta
 	if err := cfgclient.Get(c, cfgclient.AsService, p.ConfigSet, p.Path, nil, &meta); err != nil {
-		return errors.Annotate(err).Reason("failed to reload config %(configSet)s :: %(path)s").
-			D("configSet", p.ConfigSet).
-			D("path", p.Path).
-			Err()
+		return errors.Annotate(err, "failed to reload config %s :: %s", p.ConfigSet, p.Path).Err()
 	}
 
 	p.ContentHash = meta.ContentHash

@@ -202,7 +202,7 @@ func (v *Value) ConfigItems() []*backend.Item {
 func DecodeValue(d []byte) (*Value, error) {
 	var v Value
 	if err := Decode(d, &v); err != nil {
-		return nil, errors.Annotate(err).Err()
+		return nil, errors.Annotate(err, "").Err()
 	}
 	return &v, nil
 }
@@ -290,7 +290,7 @@ func (b *Backend) Get(c context.Context, configSet, path string, p backend.Param
 				"configSet":  configSet,
 				"path":       path,
 			}.Errorf(c, "(Hard Failure) failed to load cache value.")
-			return nil, errors.Annotate(err).Err()
+			return nil, errors.Annotate(err, "").Err()
 		}
 
 		log.Fields{
@@ -332,7 +332,7 @@ func (b *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string,
 				"type":       t,
 				"path":       path,
 			}.Errorf(c, "(Hard Failure) failed to load cache value.")
-			return nil, errors.Annotate(err).Err()
+			return nil, errors.Annotate(err, "").Err()
 		}
 
 		log.Fields{
@@ -364,7 +364,7 @@ func (b *Backend) ConfigSetURL(c context.Context, configSet string, p backend.Pa
 				"authority":  p.Authority,
 				"configSet":  configSet,
 			}.Errorf(c, "(Hard Failure) failed to load cache value.")
-			err = errors.Annotate(err).Err()
+			err = errors.Annotate(err, "").Err()
 			return
 		}
 
@@ -384,7 +384,7 @@ func (b *Backend) ConfigSetURL(c context.Context, configSet string, p backend.Pa
 
 	up, err := url.Parse(value.URL)
 	if err != nil {
-		err = errors.Annotate(err).Reason("failed to parse cached URL: %(value)q").D("value", value.URL).Err()
+		err = errors.Annotate(err, "failed to parse cached URL: %q", value.URL).Err()
 		return
 	}
 
@@ -415,7 +415,7 @@ func CacheLoad(c context.Context, b backend.B, k Key, v *Value) (rv *Value, err 
 	case OpConfigSetURL:
 		rv, err = doConfigSetURL(c, b, k.ConfigSet, k.Params())
 	default:
-		return nil, errors.Reason("unknown operation: %(op)v").D("op", k.Op).Err()
+		return nil, errors.Reason("unknown operation: %v", k.Op).Err()
 	}
 	if err != nil {
 		return nil, err
@@ -459,7 +459,7 @@ func doGet(c context.Context, b backend.B, configSet, path string, v *Value, p b
 			return v, nil
 
 		default:
-			return nil, errors.Annotate(err).Err()
+			return nil, errors.Annotate(err, "").Err()
 		}
 	}
 
@@ -475,7 +475,7 @@ func doGet(c context.Context, b backend.B, configSet, path string, v *Value, p b
 		return v, nil
 
 	default:
-		return nil, errors.Annotate(err).Err()
+		return nil, errors.Annotate(err, "").Err()
 	}
 }
 
@@ -492,7 +492,7 @@ func doGetAll(c context.Context, b backend.B, t backend.GetAllTarget, path strin
 
 		items, err := b.GetAll(c, t, path, noContentP)
 		if err != nil {
-			return nil, errors.Annotate(err).Reason("failed RPC (hash-only)").Err()
+			return nil, errors.Annotate(err, "failed RPC (hash-only)").Err()
 		}
 
 		// If we already have a cached item, validate it.
@@ -526,7 +526,7 @@ func doGetAll(c context.Context, b backend.B, t backend.GetAllTarget, path strin
 	// Perform a full-content request.
 	items, err := b.GetAll(c, t, path, p)
 	if err != nil {
-		return nil, errors.Annotate(err).Err()
+		return nil, errors.Annotate(err, "").Err()
 	}
 	var retV Value
 	retV.LoadItems(items...)

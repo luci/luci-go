@@ -142,8 +142,8 @@ func fetchCRL(c context.Context, cfg *admin.CertificateAuthorityConfig, knownETa
 	// Transient error?
 	if resp.StatusCode >= http.StatusInternalServerError {
 		logging.Warningf(c, "GET %s - HTTP %d; %q", cfg.CrlUrl, resp.StatusCode, string(blob))
-		return nil, "", errors.Reason("server replied with HTTP %(code)d").
-			D("code", resp.StatusCode).Tag(transient.Tag).Err()
+		return nil, "", errors.Reason("server replied with HTTP %d", resp.StatusCode).
+			Tag(transient.Tag).Err()
 	}
 
 	// Something we don't support or expect?

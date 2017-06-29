@@ -45,9 +45,7 @@ const (
 func Load(path string, spec *vpython.Spec) error {
 	content, err := ioutil.ReadFile(path)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to load file from: %(path)s").
-			D("path", path).
-			Err()
+		return errors.Annotate(err, "failed to load file from: %s", path).Err()
 	}
 
 	return Parse(string(content), spec)
@@ -56,7 +54,7 @@ func Load(path string, spec *vpython.Spec) error {
 // Parse loads a specification message from a content string.
 func Parse(content string, spec *vpython.Spec) error {
 	if err := cproto.UnmarshalTextML(content, spec); err != nil {
-		return errors.Annotate(err).Reason("failed to unmarshal vpython.Spec").Err()
+		return errors.Annotate(err, "failed to unmarshal vpython.Spec").Err()
 	}
 	return nil
 }
@@ -158,7 +156,7 @@ func (l *Loader) LoadForScript(c context.Context, path string, isModule bool) (*
 	// Partner File: Try loading the spec from an adjacent file.
 	specPath, err := l.findForScript(path, isModule)
 	if err != nil {
-		return nil, errors.Annotate(err).Reason("failed to scan for filesystem spec").Err()
+		return nil, errors.Annotate(err, "failed to scan for filesystem spec").Err()
 	}
 	if specPath != "" {
 		var spec vpython.Spec
@@ -178,9 +176,7 @@ func (l *Loader) LoadForScript(c context.Context, path string, isModule bool) (*
 	}
 	switch spec, err := l.parseFrom(mainScript); {
 	case err != nil:
-		return nil, errors.Annotate(err).Reason("failed to parse inline spec from: %(script)s").
-			D("script", mainScript).
-			Err()
+		return nil, errors.Annotate(err, "failed to parse inline spec from: %s", mainScript).Err()
 
 	case spec != nil:
 		logging.Infof(c, "Loaded inline spec from: %s", mainScript)
@@ -228,9 +224,7 @@ func (l *Loader) findForScript(path string, isModule bool) (string, error) {
 				// Not a Python module, so we're done our search.
 				return "", nil
 			}
-			return "", errors.Annotate(err).Reason("failed to stat for: %(path)").
-				D("path", initPath).
-				Err()
+			return "", errors.Annotate(err, "failed to stat for: %s", path).Err()
 		}
 
 		// Does a spec file exist for this path?
@@ -249,9 +243,7 @@ func (l *Loader) findForScript(path string, isModule bool) (string, error) {
 			}
 
 		default:
-			return "", errors.Annotate(err).Reason("failed to check for spec file at: %(path)s").
-				D("path", specPath).
-				Err()
+			return "", errors.Annotate(err, "failed to check for spec file at: %s", specPath).Err()
 		}
 	}
 }
@@ -259,7 +251,7 @@ func (l *Loader) findForScript(path string, isModule bool) (string, error) {
 func (l *Loader) parseFrom(path string) (*vpython.Spec, error) {
 	fd, err := os.Open(path)
 	if err != nil {
-		return nil, errors.Annotate(err).Reason("failed to open file").Err()
+		return nil, errors.Annotate(err, "failed to open file").Err()
 	}
 	defer fd.Close()
 
@@ -296,7 +288,7 @@ func (l *Loader) parseFrom(path string) (*vpython.Spec, error) {
 		}
 	}
 	if err := s.Err(); err != nil {
-		return nil, errors.Annotate(err).Reason("error scanning file").Err()
+		return nil, errors.Annotate(err, "error scanning file").Err()
 	}
 	if len(content) == 0 {
 		return nil, nil
@@ -330,9 +322,7 @@ func (l *Loader) parseFrom(path string) (*vpython.Spec, error) {
 	// Process the resulting file.
 	var spec vpython.Spec
 	if err := Parse(strings.Join(content, "\n"), &spec); err != nil {
-		return nil, errors.Annotate(err).Reason("failed to parse spec file from: %(path)s").
-			D("path", path).
-			Err()
+		return nil, errors.Annotate(err, "failed to parse spec file from: %s", path).Err()
 	}
 	return &spec, nil
 }
@@ -352,9 +342,7 @@ func (l *Loader) findCommonWalkingFrom(startDir string) (string, error) {
 
 		default:
 			// Failed to load specification from this file.
-			return "", errors.Annotate(err).Reason("failed to stat common spec file at: %(path)s").
-				D("path", checkPath).
-				Err()
+			return "", errors.Annotate(err, "failed to stat common spec file at: %s", checkPath).Err()
 		}
 
 		// If we have any barrier files, check to see if they are present in this

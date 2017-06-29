@@ -50,7 +50,7 @@ func (cr *installCommandRun) Run(app subcommands.Application, args []string, env
 			return nil
 		})
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to setup the environment").Err()
+			return errors.Annotate(err, "failed to setup the environment").Err()
 		}
 
 		logging.Infof(c, "Successfully setup the environment.")

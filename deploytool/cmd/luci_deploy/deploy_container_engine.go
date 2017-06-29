@@ -119,7 +119,7 @@ func (d *containerEngineDeployment) stage(w *work, root *managedfs.Dir, params *
 
 	podRoot, err := root.EnsureDirectory("pods")
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to create pods directory").Err()
+		return errors.Annotate(err, "failed to create pods directory").Err()
 	}
 
 	// Stage in parallel. We will stage all pods before we stage any containers,
@@ -135,8 +135,7 @@ func (d *containerEngineDeployment) stage(w *work, root *managedfs.Dir, params *
 
 				var err error
 				if cluster.kubeCtx, err = getContainerEngineKubernetesContext(w, cluster.cluster); err != nil {
-					return errors.Annotate(err).Reason("failed to get Kubernetes context for %(cluster)q").
-						D("cluster", cluster.cluster.Name).Err()
+					return errors.Annotate(err, "failed to get Kubernetes context for %q", cluster.cluster.Name).Err()
 				}
 			}
 			return nil
@@ -149,8 +148,7 @@ func (d *containerEngineDeployment) stage(w *work, root *managedfs.Dir, params *
 				name := pod.pod.comp.comp.Name
 				podDir, err := podRoot.EnsureDirectory(name)
 				if err != nil {
-					return errors.Annotate(err).Reason("failed to create pod directory for %(pod)q").
-						D("pod", name).Err()
+					return errors.Annotate(err, "failed to create pod directory for %q", name).Err()
 				}
 
 				return pod.stage(w, podDir, params)
@@ -164,7 +162,7 @@ func (d *containerEngineDeployment) stage(w *work, root *managedfs.Dir, params *
 	// Now that pods are deployed, deploy our clusters.
 	clusterRoot, err := root.EnsureDirectory("clusters")
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to create clusters directory").Err()
+		return errors.Annotate(err, "failed to create clusters directory").Err()
 	}
 
 	return w.RunMulti(func(workC chan<- func() error) {
@@ -175,8 +173,7 @@ func (d *containerEngineDeployment) stage(w *work, root *managedfs.Dir, params *
 			workC <- func() error {
 				clusterDir, err := clusterRoot.EnsureDirectory(cluster.cluster.Name)
 				if err != nil {
-					return errors.Annotate(err).Reason("failed to create cluster directory for %(cluster)q").
-						D("cluster", cluster.cluster.Name).Err()
+					return errors.Annotate(err, "failed to create cluster directory for %q", cluster.cluster.Name).Err()
 				}
 
 				return cluster.stage(w, clusterDir)
@@ -272,7 +269,7 @@ func (c *containerEngineDeploymentCluster) stage(w *work, root *managedfs.Dir) e
 			workC <- func() error {
 				stageDir, err := root.EnsureDirectory(string(bp.sp.pod.comp.comp.title))
 				if err != nil {
-					return errors.Annotate(err).Reason("failed to create staging directory").Err()
+					return errors.Annotate(err, "failed to create staging directory").Err()
 				}
 
 				return bp.stage(w, stageDir)
@@ -327,7 +324,7 @@ func (bp *containerEngineBoundPod) stage(w *work, root *managedfs.Dir) error {
 
 	deploymentYAML := root.File("deployment.yaml")
 	if err := deploymentYAML.GenerateYAML(w, depYAML); err != nil {
-		return errors.Annotate(err).Reason("failed to generate deployment YAML").Err()
+		return errors.Annotate(err, "failed to generate deployment YAML").Err()
 	}
 	bp.deploymentYAMLPath = deploymentYAML.String()
 	return nil
@@ -336,7 +333,7 @@ func (bp *containerEngineBoundPod) stage(w *work, root *managedfs.Dir) error {
 func (bp *containerEngineBoundPod) commit(w *work) error {
 	kubectl, err := bp.c.kubectl(w)
 	if err != nil {
-		return errors.Annotate(err).Err()
+		return errors.Annotate(err, "").Err()
 	}
 
 	// Get the current deployment status for this pod.
@@ -362,7 +359,7 @@ func (bp *containerEngineBoundPod) commit(w *work) error {
 				"managedBy":  v,
 				"deployment": bp.sp.deploymentName,
 			}.Errorf(w, "Current deployment is not managed.")
-			return errors.Reason("unknown manager %(managedBy)q").D("managedBy", v).Err()
+			return errors.Reason("unknown manager %q", v).Err()
 		}
 
 		// Is the current deployment tagged at the current version?
@@ -374,8 +371,7 @@ func (bp *containerEngineBoundPod) commit(w *work) error {
 		switch {
 		case err != nil:
 			if !bp.c.gke.ignoreCurrentVersion {
-				return errors.Annotate(err).Reason("failed to parse current version %(version)q").
-					D("version", currentVersion).Err()
+				return errors.Annotate(err, "failed to parse current version %q", currentVersion).Err()
 			}
 
 			log.Fields{
@@ -406,13 +402,12 @@ func (bp *containerEngineBoundPod) commit(w *work) error {
 			"deployVersion":  bp.sp.version,
 		}.Infof(w, "Deploying new pod configuration.")
 		if err := kubectl.exec("apply", "-f", bp.deploymentYAMLPath).check(w); err != nil {
-			return errors.Annotate(err).Reason("failed to create new deployment configuration").Err()
+			return errors.Annotate(err, "failed to create new deployment configuration").Err()
 		}
 		return nil
 
 	default:
-		return errors.Annotate(err).Reason("failed to get status for deployment %(deployment)q").
-			D("deployment", bp.sp.deploymentName).Err()
+		return errors.Annotate(err, "failed to get status for deployment %q", bp.sp.deploymentName).Err()
 	}
 }
 
@@ -449,7 +444,7 @@ func (sp *stagedGKEPod) stage(w *work, root *managedfs.Dir, params *deployParams
 		var err error
 		sp.version, err = makeCloudProjectVersion(sp.cloudProject(), sp.pod.comp.source())
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to get cloud version").Err()
+			return errors.Annotate(err, "failed to get cloud version").Err()
 		}
 	}
 
@@ -484,10 +479,10 @@ func (sp *stagedGKEPod) stage(w *work, root *managedfs.Dir, params *deployParams
 		// Construct a GOPATH for this module.
 		goPath, err := root.EnsureDirectory("gopath")
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to create GOPATH base").Err()
+			return errors.Annotate(err, "failed to create GOPATH base").Err()
 		}
 		if err := stageGoPath(w, comp, goPath); err != nil {
-			return errors.Annotate(err).Reason("failed to stage GOPATH").Err()
+			return errors.Annotate(err, "failed to stage GOPATH").Err()
 		}
 		sp.goPath = []string{goPath.String()}
 	}
@@ -495,7 +490,7 @@ func (sp *stagedGKEPod) stage(w *work, root *managedfs.Dir, params *deployParams
 	// Stage each of our containers.
 	containersDir, err := root.EnsureDirectory("containers")
 	if err != nil {
-		return errors.Annotate(err).Err()
+		return errors.Annotate(err, "").Err()
 	}
 	err = w.RunMulti(func(workC chan<- func() error) {
 		// Stage each component.
@@ -504,12 +499,11 @@ func (sp *stagedGKEPod) stage(w *work, root *managedfs.Dir, params *deployParams
 			workC <- func() error {
 				containerDir, err := containersDir.EnsureDirectory(skc.Name)
 				if err != nil {
-					return errors.Annotate(err).Err()
+					return errors.Annotate(err, "").Err()
 				}
 
 				if err := skc.stage(w, containerDir); err != nil {
-					return errors.Annotate(err).Reason("failed to stage container %(container)q").
-						D("container", skc.Name).Err()
+					return errors.Annotate(err, "failed to stage container %q", skc.Name).Err()
 				}
 				return nil
 			}
@@ -520,7 +514,7 @@ func (sp *stagedGKEPod) stage(w *work, root *managedfs.Dir, params *deployParams
 	}
 
 	if err := root.CleanUp(); err != nil {
-		return errors.Annotate(err).Reason("failed to cleanup staging area").Err()
+		return errors.Annotate(err, "failed to cleanup staging area").Err()
 	}
 	return nil
 }
@@ -577,10 +571,10 @@ func (skc *stagedKubernetesContainer) stage(w *work, root *managedfs.Dir) error 
 	// Build each Component.
 	buildDir, err := root.EnsureDirectory("build")
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to create build directory").Err()
+		return errors.Annotate(err, "failed to create build directory").Err()
 	}
 	if err := buildComponent(w, skc.pod.pod.comp, buildDir); err != nil {
-		return errors.Annotate(err).Reason("failed to build component").Err()
+		return errors.Annotate(err, "failed to build component").Err()
 	}
 
 	switch skc.Type {
@@ -589,13 +583,13 @@ func (skc *stagedKubernetesContainer) stage(w *work, root *managedfs.Dir) error 
 		skc.buildFn = func(w *work) error {
 			path, err := skc.pod.pod.comp.buildPath(skc.GetBuild())
 			if err != nil {
-				return errors.Annotate(err).Err()
+				return errors.Annotate(err, "").Err()
 			}
 			return skc.buildGo(w, path)
 		}
 
 	default:
-		return errors.Reason("unknown Kubernetes pod type %(type)T").D("type", skc.Type).Err()
+		return errors.Reason("unknown Kubernetes pod type %T", skc.Type).Err()
 	}
 	return nil
 }
@@ -611,13 +605,13 @@ func (skc *stagedKubernetesContainer) build(w *work) error {
 func (skc *stagedKubernetesContainer) buildGo(w *work, entryPath string) error {
 	gcloud, err := w.tools.gcloud(skc.pod.cloudProject().Name)
 	if err != nil {
-		return errors.Annotate(err).Reason("could not get gcloud tool").Err()
+		return errors.Annotate(err, "could not get gcloud tool").Err()
 	}
 
 	// Use "aedeploy" to gather GOPATH and build against our root.
 	aedeploy, err := w.tools.aedeploy(skc.pod.goPath)
 	if err != nil {
-		return errors.Annotate(err).Err()
+		return errors.Annotate(err, "").Err()
 	}
 
 	x := gcloud.exec("docker", "--", "build", "-t", skc.image, ".")
@@ -627,12 +621,11 @@ func (skc *stagedKubernetesContainer) buildGo(w *work, entryPath string) error {
 func (skc *stagedKubernetesContainer) push(w *work) error {
 	gcloud, err := w.tools.gcloud(skc.pod.cloudProject().Name)
 	if err != nil {
-		return errors.Annotate(err).Reason("could not get gcloud tool").Err()
+		return errors.Annotate(err, "could not get gcloud tool").Err()
 	}
 
 	if err := gcloud.exec("docker", "--", "push", skc.image).check(w); err != nil {
-		return errors.Annotate(err).Reason("failed to push Docker image %(image)q").
-			D("image", skc.image).Err()
+		return errors.Annotate(err, "failed to push Docker image %q", skc.image).Err()
 	}
 	return nil
 }
@@ -645,18 +638,18 @@ func getContainerEngineKubernetesContext(w *work, cluster *layoutDeploymentGKECl
 
 	kubectl, err := w.tools.kubectl(kubeCtx)
 	if err != nil {
-		return "", errors.Annotate(err).Err()
+		return "", errors.Annotate(err, "").Err()
 	}
 
 	// Check if the context is already installed in our Kubernetes configuration.
 	switch has, err := kubectl.hasContext(w); {
 	case err != nil:
-		return "", errors.Annotate(err).Reason("failed to check for Kubernetes context").Err()
+		return "", errors.Annotate(err, "failed to check for Kubernetes context").Err()
 
 	case !has:
 		gcloud, err := w.tools.gcloud(cluster.cloudProject.Name)
 		if err != nil {
-			return "", errors.Annotate(err).Err()
+			return "", errors.Annotate(err, "").Err()
 		}
 
 		// The context isn't cached, we will fetch it via:
@@ -666,13 +659,13 @@ func getContainerEngineKubernetesContext(w *work, cluster *layoutDeploymentGKECl
 			"get-credentials", cluster.Name,
 			"--zone", cluster.Zone)
 		if err := x.check(w); err != nil {
-			return "", errors.Annotate(err).Reason("failed to get cluster credentials").Err()
+			return "", errors.Annotate(err, "failed to get cluster credentials").Err()
 		}
 		switch has, err = kubectl.hasContext(w); {
 		case err != nil:
-			return "", errors.Annotate(err).Reason("failed to confirm Kubernetes context").Err()
+			return "", errors.Annotate(err, "failed to confirm Kubernetes context").Err()
 		case !has:
-			return "", errors.Reason("context %(context)q missing after fetching credentials").D("context", kubeCtx).Err()
+			return "", errors.Reason("context %q missing after fetching credentials", kubeCtx).Err()
 		}
 	}
 	return kubeCtx, nil

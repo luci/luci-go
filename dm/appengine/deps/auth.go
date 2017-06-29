@@ -24,8 +24,8 @@ func loadAcls(c context.Context) (ret *acls.Acls, err error) {
 
 	ret = &acls.Acls{}
 	if err := cfgclient.Get(c, cfgclient.AsService, cSet, file, textproto.Message(ret), nil); err != nil {
-		return nil, errors.Annotate(err).Tag(transient.Tag).
-			D("cSet", cSet).D("file", file).InternalReason("loading config").Err()
+		return nil, errors.Annotate(err, "").Tag(transient.Tag).
+			InternalReason("loading config :: cSet(%v)/file(%v)", cSet, file).Err()
 	}
 	return
 }
@@ -34,7 +34,7 @@ func inGroups(c context.Context, groups []string) error {
 	for _, grp := range groups {
 		ok, err := auth.IsMember(c, grp)
 		if err != nil {
-			return grpcAnnotate(err, codes.Internal).Reason("failed group check").Err()
+			return grpcAnnotate(err, codes.Internal, "failed group check").Err()
 		}
 		if ok {
 			return nil

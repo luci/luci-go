@@ -88,12 +88,12 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 		return nil, errors.New("no host supplied")
 	}
 	if err := cfg.Project.Validate(); err != nil {
-		return nil, errors.Annotate(err).Reason("failed to validate project").
-			D("project", cfg.Project).Err()
+		return nil, errors.Annotate(err, "failed to validate project").
+			InternalReason("project(%v)", cfg.Project).Err()
 	}
 	if err := cfg.Prefix.Validate(); err != nil {
-		return nil, errors.Annotate(err).Reason("failed to validate prefix").
-			D("prefix", cfg.Prefix).Err()
+		return nil, errors.Annotate(err, "failed to validate prefix").
+			InternalReason("prefix(%v)", cfg.Prefix).Err()
 	}
 
 	// Open a pRPC client to our Coordinator instance.

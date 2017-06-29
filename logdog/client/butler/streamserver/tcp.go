@@ -57,10 +57,7 @@ func NewTCP6Server(ctx context.Context, spec string) (StreamServer, error) {
 func newTCPServerImpl(ctx context.Context, netType, spec string, loopback net.IP) (StreamServer, error) {
 	tcpAddr, err := net.ResolveTCPAddr(netType, spec)
 	if err != nil {
-		return nil, errors.Annotate(err).Reason("could not resolve %(net)q address %(addr)q").
-			D("net", netType).
-			D("addr", spec).
-			Err()
+		return nil, errors.Annotate(err, "could not resolve %q address %q", netType, spec).Err()
 	}
 
 	if tcpAddr.IP == nil {
@@ -73,10 +70,7 @@ func newTCPServerImpl(ctx context.Context, netType, spec string, loopback net.IP
 		gen: func() (net.Listener, string, error) {
 			l, err := net.ListenTCP(netType, tcpAddr)
 			if err != nil {
-				return nil, "", errors.Annotate(err).Reason("failed to listen to %(net)q address %(addr)q").
-					D("net", netType).
-					D("addr", tcpAddr).
-					Err()
+				return nil, "", errors.Annotate(err, "failed to listen to %q address %q", netType, tcpAddr).Err()
 			}
 
 			addr := fmt.Sprintf("%s:%s", netType, l.Addr().String())

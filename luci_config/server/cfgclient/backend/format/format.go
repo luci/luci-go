@@ -37,14 +37,12 @@ func (b *Backend) Get(c context.Context, configSet, path string, p backend.Param
 	if !p.FormatSpec.Unformatted() {
 		formatter, err := getFormatter(p.FormatSpec.Formatter)
 		if err != nil {
-			return nil, errors.Annotate(err).Reason("failed to get formatter for %(format)q").
-				D("format", p.FormatSpec).Err()
+			return nil, errors.Annotate(err, "failed to get formatter for %q", p.FormatSpec).Err()
 		}
 
 		if err := b.formatItem(item, formatter, p.FormatSpec); err != nil {
-			return nil, errors.Annotate(err).Reason("failed to format item to %(format)q, data %(data)q").
-				D("format", p.FormatSpec.Formatter).
-				D("data", p.FormatSpec.Data).Err()
+			return nil, errors.Annotate(err, "failed to format item to %q, data %q",
+				p.FormatSpec.Formatter, p.FormatSpec.Data).Err()
 		}
 	}
 	return item, nil
@@ -62,9 +60,8 @@ func (b *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string,
 	if !p.FormatSpec.Unformatted() {
 		formatter, err := getFormatter(p.FormatSpec.Formatter)
 		if err != nil {
-			return nil, errors.Annotate(err).Reason("failed to get formatter for %(format)q, data %(data)q").
-				D("format", p.FormatSpec.Formatter).
-				D("data", p.FormatSpec.Data).Err()
+			return nil, errors.Annotate(err, "failed to get formatter for %q, data %q",
+				p.FormatSpec.Formatter, p.FormatSpec.Data).Err()
 		}
 
 		lme := errors.NewLazyMultiError(len(items))
@@ -75,9 +72,8 @@ func (b *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string,
 		}
 
 		if err := lme.Get(); err != nil {
-			return nil, errors.Annotate(err).Reason("failed to format items to %(format)q, data %(data)q").
-				D("format", p.FormatSpec.Formatter).
-				D("data", p.FormatSpec.Data).Err()
+			return nil, errors.Annotate(err, "failed to format items to %q, data %q",
+				p.FormatSpec.Formatter, p.FormatSpec.Data).Err()
 		}
 	}
 	return items, nil
@@ -92,7 +88,7 @@ func (b *Backend) formatItem(it *backend.Item, formatter Formatter, fs backend.F
 	// Item is not formatted, so format it.
 	content, err := formatter.FormatItem(it.Content, fs.Data)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to format item").Err()
+		return errors.Annotate(err, "failed to format item").Err()
 	}
 	it.Content = content
 	it.FormatSpec = fs

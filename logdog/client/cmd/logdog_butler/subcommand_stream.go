@@ -92,7 +92,7 @@ func (cmd *streamCommandRun) Run(app subcommands.Application, args []string, _ s
 	// Instantiate our Processor.
 	err = a.runWithButler(output, func(b *butler.Butler) error {
 		if err := b.AddStream(streamFile, cmd.stream.properties()); err != nil {
-			return errors.Annotate(err).Reason("failed to add stream").Err()
+			return errors.Annotate(err, "failed to add stream").Err()
 		}
 
 		b.Activate()

@@ -140,7 +140,7 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 		logging.Debugf(c, "Using tempdir-relative environment root: %s", cfg.BaseDir)
 	}
 	if err := filesystem.AbsPath(&cfg.BaseDir); err != nil {
-		return nil, errors.Annotate(err).Reason("failed to resolve absolute path of base directory").Err()
+		return nil, errors.Annotate(err, "failed to resolve absolute path of base directory").Err()
 	}
 
 	// Enforce maximum path length.
@@ -148,11 +148,10 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 		if longestPath := longestGeneratedScriptPath(cfg.BaseDir); longestPath != "" {
 			longestPathLen := utf8.RuneCountInString(longestPath)
 			if longestPathLen > cfg.MaxScriptPathLen {
-				return nil, errors.Reason("expected deepest path length (%(len)d) exceeds threshold (%(threshold)d)").
-					D("len", longestPathLen).
-					D("threshold", cfg.MaxScriptPathLen).
-					D("longestPath", longestPath).
-					Err()
+				return nil, errors.Reason(
+					"expected deepest path length (%d) exceeds threshold (%d)",
+					longestPathLen, cfg.MaxScriptPathLen,
+				).InternalReason("longestPath(%q)", longestPath).Err()
 			}
 		}
 	}
@@ -163,7 +162,7 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 		e.Spec = cfg.Spec.Clone()
 	}
 	if err := spec.NormalizeEnvironment(e); err != nil {
-		return nil, errors.Annotate(err).Reason("invalid environment").Err()
+		return nil, errors.Annotate(err, "invalid environment").Err()
 	}
 
 	// If the environment doesn't specify a VirtualEnv package (expected), use
@@ -173,11 +172,11 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 	}
 
 	if err := cfg.Loader.Resolve(c, e); err != nil {
-		return nil, errors.Annotate(err).Reason("failed to resolve packages").Err()
+		return nil, errors.Annotate(err, "failed to resolve packages").Err()
 	}
 
 	if err := cfg.resolvePythonInterpreter(c, e.Spec); err != nil {
-		return nil, errors.Annotate(err).Reason("failed to resolve system Python interpreter").Err()
+		return nil, errors.Annotate(err, "failed to resolve system Python interpreter").Err()
 	}
 	e.Runtime.Path = cfg.si.Python
 	e.Runtime.Version = e.Spec.PythonVersion
@@ -191,9 +190,7 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 
 	// Ensure that our base directory exists.
 	if err := filesystem.MakeDirs(cfg.BaseDir); err != nil {
-		return nil, errors.Annotate(err).Reason("could not create environment root: %(root)s").
-			D("root", cfg.BaseDir).
-			Err()
+		return nil, errors.Annotate(err, "could not create environment root: %s", cfg.BaseDir).Err()
 	}
 
 	// Generate our environment name based on the deterministic hash of its
@@ -220,7 +217,7 @@ func (cfg *Config) envNameForSpec(s *vpython.Spec, rt *vpython.Runtime) string {
 // Config.
 func (cfg *Config) Prune(c context.Context) error {
 	if err := prune(c, cfg, nil); err != nil {
-		return errors.Annotate(err).Err()
+		return errors.Annotate(err, "").Err()
 	}
 	return nil
 }
@@ -250,18 +247,14 @@ func (cfg *Config) envForName(name string, e *vpython.Environment) *Env {
 func (cfg *Config) resolvePythonInterpreter(c context.Context, s *vpython.Spec) error {
 	specVers, err := python.ParseVersion(s.PythonVersion)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to parse Python version from: %(value)q").
-			D("value", s.PythonVersion).
-			Err()
+		return errors.Annotate(err, "failed to parse Python version from: %q", s.PythonVersion).Err()
 	}
 
 	if cfg.Python == "" {
 		// No explicitly-specified Python path. Determine one based on the
 		// specification.
 		if cfg.si, err = python.Find(c, specVers, cfg.LookPathFunc); err != nil {
-			return errors.Annotate(err).Reason("could not find Python for: %(vers)s").
-				D("vers", specVers).
-				Err()
+			return errors.Annotate(err, "could not find Python for: %s", specVers).Err()
 		}
 		cfg.Python = cfg.si.Python
 	} else {
@@ -277,23 +270,16 @@ func (cfg *Config) resolvePythonInterpreter(c context.Context, s *vpython.Spec) 
 	// expected.
 	interpreterVers, err := cfg.si.GetVersion(c)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to determine Python version for: %(python)s").
-			D("python", cfg.Python).
-			Err()
+		return errors.Annotate(err, "failed to determine Python version for: %s", cfg.Python).Err()
 	}
 	if !specVers.IsSatisfiedBy(interpreterVers) {
-		return errors.Reason("supplied Python version (%(supplied)s) doesn't match specification (%(spec)s)").
-			D("supplied", interpreterVers).
-			D("spec", specVers).
-			Err()
+		return errors.Reason("supplied Python version (%s) doesn't match specification (%s)", interpreterVers, specVers).Err()
 	}
 	s.PythonVersion = interpreterVers.String()
 
 	// Resolve to absolute path.
 	if err := filesystem.AbsPath(&cfg.Python); err != nil {
-		return errors.Annotate(err).Reason("could not get absolute path for: %(python)s").
-			D("python", cfg.Python).
-			Err()
+		return errors.Annotate(err, "could not get absolute path for: %s", cfg.Python).Err()
 	}
 	return nil
 }

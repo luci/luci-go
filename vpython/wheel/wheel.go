@@ -48,7 +48,7 @@ func (wn *Name) String() string {
 func ParseName(v string) (wn Name, err error) {
 	base := strings.TrimSuffix(v, ".whl")
 	if len(base) == len(v) {
-		err = errors.Reason("missing .whl suffix").Err()
+		err = errors.New("missing .whl suffix")
 		return
 	}
 
@@ -68,9 +68,7 @@ func ParseName(v string) (wn Name, err error) {
 		wn.PlatformTag = parts[4+skip]
 
 	default:
-		err = errors.Reason("unknown number of segments (%(segments)d)").
-			D("segments", len(parts)).
-			Err()
+		err = errors.Reason("unknown number of segments (%d)", len(parts)).Err()
 		return
 	}
 	return
@@ -82,19 +80,15 @@ func ScanDir(dir string) ([]Name, error) {
 	globPattern := filepath.Join(dir, "*.whl")
 	matches, err := filepath.Glob(globPattern)
 	if err != nil {
-		return nil, errors.Annotate(err).Reason("failed to list wheel directory: %(dir)s").
-			D("dir", dir).
-			D("pattern", globPattern).
-			Err()
+		return nil, errors.Annotate(err, "failed to list wheel directory: %s", dir).
+			InternalReason("pattern(%s)", globPattern).Err()
 	}
 
 	names := make([]Name, 0, len(matches))
 	for _, match := range matches {
 		switch st, err := os.Stat(match); {
 		case err != nil:
-			return nil, errors.Annotate(err).Reason("failed to stat wheel: %(path)s").
-				D("path", match).
-				Err()
+			return nil, errors.Annotate(err, "failed to stat wheel: %s", match).Err()
 
 		case st.IsDir():
 			// Ignore directories.
@@ -105,10 +99,8 @@ func ScanDir(dir string) ([]Name, error) {
 			name := filepath.Base(match)
 			wheelName, err := ParseName(name)
 			if err != nil {
-				return nil, errors.Annotate(err).Reason("failed to parse wheel from: %(name)s").
-					D("name", name).
-					D("dir", dir).
-					Err()
+				return nil, errors.Annotate(err, "failed to parse wheel from: %s", name).
+					InternalReason("dir(%s)", dir).Err()
 			}
 			names = append(names, wheelName)
 		}
@@ -124,12 +116,12 @@ func ScanDir(dir string) ([]Name, error) {
 func WriteRequirementsFile(path string, wheels []Name) (err error) {
 	fd, err := os.Create(path)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to create requirements file").Err()
+		return errors.Annotate(err, "failed to create requirements file").Err()
 	}
 	defer func() {
 		closeErr := fd.Close()
 		if closeErr != nil && err == nil {
-			err = errors.Annotate(closeErr).Reason("failed to Close").Err()
+			err = errors.Annotate(closeErr, "failed to Close").Err()
 		}
 	}()
 
@@ -148,7 +140,7 @@ func WriteRequirementsFile(path string, wheels []Name) (err error) {
 		seen[archetype] = struct{}{}
 
 		if _, err := fmt.Fprintf(fd, "%s==%s\n", archetype.Distribution, archetype.Version); err != nil {
-			return errors.Annotate(err).Reason("failed to write to requirements file").Err()
+			return errors.Annotate(err, "failed to write to requirements file").Err()
 		}
 	}
 

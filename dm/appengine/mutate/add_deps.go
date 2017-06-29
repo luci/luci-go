@@ -51,8 +51,7 @@ func (a *AddDeps) RollForward(c context.Context) (muts []tumble.Mutation, err er
 	}
 
 	fwdDeps, err := filterExisting(c, model.FwdDepsFromList(c, a.Auth.Id.AttemptID(), a.Deps))
-	err = errors.Annotate(err).Tag(grpcutil.Tag.With(codes.Internal)).
-		Reason("while filtering deps").Err()
+	err = errors.Annotate(err, "while filtering deps").Tag(grpcutil.Tag.With(codes.Internal)).Err()
 	if err != nil || len(fwdDeps) == 0 {
 		return
 	}
@@ -66,8 +65,7 @@ func (a *AddDeps) RollForward(c context.Context) (muts []tumble.Mutation, err er
 	}
 
 	if err = ds.Put(c, fwdDeps, atmpt, ex); err != nil {
-		err = errors.Annotate(err).Tag(grpcutil.Tag.With(codes.Internal)).
-			Reason("putting stuff").Err()
+		err = errors.Annotate(err, "putting stuff").Tag(grpcutil.Tag.With(codes.Internal)).Err()
 		return
 	}
 

@@ -183,7 +183,7 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 	c = s.loggingFlags.Set(c)
 
 	if err := s.profiler.Start(); err != nil {
-		return errors.Annotate(err).Reason("failed to start profiler").Err()
+		return errors.Annotate(err, "failed to start profiler").Err()
 	}
 	defer s.profiler.Stop()
 
@@ -400,7 +400,7 @@ func (s *Service) initConfig(c *context.Context) error {
 			}
 			u, err := url.Parse(ccfg.ConfigServiceUrl)
 			if err != nil {
-				return errors.Annotate(err).Reason("failed to parse config service URL").Err()
+				return errors.Annotate(err, "failed to parse config service URL").Err()
 			}
 			host = u.Host
 		}
@@ -436,7 +436,7 @@ func (s *Service) initConfig(c *context.Context) error {
 	var meta cfgclient.Meta
 	cset, path := s.ServiceConfigPath()
 	if err := cfgclient.Get(*c, cfgclient.AsService, cset, path, textproto.Message(&s.serviceConfig), &meta); err != nil {
-		return errors.Annotate(err).Reason("failed to load service config").Err()
+		return errors.Annotate(err, "failed to load service config").Err()
 	}
 
 	// Create a poller for our service config.
@@ -482,8 +482,7 @@ func (s *Service) ProjectConfig(c context.Context, proj cfgtypes.ProjectName) (*
 	var pcfg svcconfig.ProjectConfig
 	msg, err := s.configCache.Get(c, cset, path, &pcfg)
 	if err != nil {
-		return nil, errors.Annotate(err).Reason("failed to load project config from %(cset)s.%(path)s").
-			D("cset", cset).D("path", path).Err()
+		return nil, errors.Annotate(err, "failed to load project config from %s.%s", cset, path).Err()
 	}
 	return msg.(*svcconfig.ProjectConfig), nil
 }

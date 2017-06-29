@@ -70,9 +70,7 @@ func NormalizeSpec(spec *vpython.Spec, tags []*vpython.PEP425Tag) error {
 	// immediate repetitions.
 	for i, pkg := range spec.Wheel {
 		if i > 0 && pkg.Name == spec.Wheel[i-1].Name {
-			return errors.Reason("duplicate spec entries for package %(path)q").
-				D("name", pkg.Name).
-				Err()
+			return errors.Reason("duplicate spec entries for package %q", pkg.Name).Err()
 		}
 	}
 

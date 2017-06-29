@@ -64,7 +64,7 @@ func getFormatter(f string) (Formatter, error) {
 
 	formatter := registry.r[f]
 	if formatter == nil {
-		return nil, errors.Reason("unknown formatter: %(formatter)q").D("formatter", f).Err()
+		return nil, errors.Reason("unknown formatter: %q", f).Err()
 	}
 	return formatter, nil
 }

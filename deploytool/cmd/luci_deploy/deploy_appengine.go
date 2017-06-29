@@ -83,7 +83,7 @@ func (d *gaeDeployment) stage(w *work, root *managedfs.Dir, params *deployParams
 	// Generate a directory for our deployment's modules.
 	moduleBaseDir, err := root.EnsureDirectory("modules")
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to create modules directory").Err()
+		return errors.Annotate(err, "failed to create modules directory").Err()
 	}
 
 	// Stage each module in parallel. Also, generate AppEngine-wide YAMLs.
@@ -99,19 +99,17 @@ func (d *gaeDeployment) stage(w *work, root *managedfs.Dir, params *deployParams
 			workC <- func() error {
 				moduleDir, err := moduleBaseDir.EnsureDirectory(string(module.comp.comp.title))
 				if err != nil {
-					return errors.Annotate(err).Reason("failed to create module directory for %(module)q").
-						D("module", module.comp.comp.title).Err()
+					return errors.Annotate(err, "failed to create module directory for %q", module.comp.comp.title).Err()
 				}
 				if err := module.stage(w, moduleDir, params); err != nil {
-					return errors.Annotate(err).Reason("failed to stage module %(name)q").
-						D("name", module.comp.comp.title).Err()
+					return errors.Annotate(err, "failed to stage module %q", module.comp.comp.title).Err()
 				}
 				return nil
 			}
 		}
 	})
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to stage modules").Err()
+		return errors.Annotate(err, "failed to stage modules").Err()
 	}
 
 	// Build our verison/module map for commit.
@@ -158,7 +156,7 @@ func (d *gaeDeployment) push(w *work) error {
 	// GAE requirement for initial deployments.
 	if module := d.modules[gaeDefaultModule]; module != nil {
 		if err := module.pushFn(w); err != nil {
-			return errors.Annotate(err).Reason("failed to push default module").Err()
+			return errors.Annotate(err, "failed to push default module").Err()
 		}
 	}
 
@@ -200,8 +198,7 @@ func (d *gaeDeployment) commit(w *work) error {
 				mod := mod
 				workC <- func() error {
 					if err := gcloud.exec("app", "versions", "migrate", "--service", mod, v).check(w); err != nil {
-						return errors.Annotate(err).Reason("failed to set default version").
-							D("version", v).Err()
+						return errors.Annotate(err, "failed to set default version: %q", v).Err()
 					}
 					return nil
 				}
@@ -209,7 +206,7 @@ func (d *gaeDeployment) commit(w *work) error {
 		}
 	})
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to set default versions").Err()
+		return errors.Annotate(err, "failed to set default versions").Err()
 	}
 
 	// If any modules were installed as default, push our new related configs.
@@ -223,10 +220,7 @@ func (d *gaeDeployment) commit(w *work) error {
 
 			deployablePath := d.yamlDir.File(deployable).String()
 			if err := gcloud.exec("app", "deploy", deployablePath).check(w); err != nil {
-				return errors.Annotate(err).Reason("failed to deploy YAML %(deployable)q from [%(path)s]").
-					D("deployable", deployable).
-					D("path", deployablePath).
-					Err()
+				return errors.Annotate(err, "failed to deploy YAML %q from [%s]", deployable, deployablePath).Err()
 			}
 		}
 	}
@@ -243,16 +237,16 @@ func (d *gaeDeployment) generateYAMLs(w *work, root *managedfs.Dir) error {
 	yamls["index.yaml"] = gaeBuildIndexYAML(d.project)
 	yamls["cron.yaml"] = gaeBuildCronYAML(d.project)
 	if yamls["dispatch.yaml"], err = gaeBuildDispatchYAML(d.project); err != nil {
-		return errors.Annotate(err).Reason("failed to generate dispatch.yaml").Err()
+		return errors.Annotate(err, "failed to generate dispatch.yaml").Err()
 	}
 	if yamls["queue.yaml"], err = gaeBuildQueueYAML(d.project); err != nil {
-		return errors.Annotate(err).Reason("failed to generate index.yaml").Err()
+		return errors.Annotate(err, "failed to generate index.yaml").Err()
 	}
 
 	for k, v := range yamls {
 		f := root.File(k)
 		if err := f.GenerateYAML(w, v); err != nil {
-			return errors.Annotate(err).Reason("failed to generate %(yaml)q").D("yaml", k).Err()
+			return errors.Annotate(err, "failed to generate %q", k).Err()
 		}
 	}
 
@@ -302,7 +296,7 @@ func (m *stagedGAEModule) stage(w *work, root *managedfs.Dir, params *deployPara
 		var err error
 		m.version, err = makeCloudProjectVersion(m.comp.dep.cloudProject, m.comp.source())
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to calculate cloud project version").Err()
+			return errors.Annotate(err, "failed to calculate cloud project version").Err()
 		}
 	}
 
@@ -323,7 +317,7 @@ func (m *stagedGAEModule) stage(w *work, root *managedfs.Dir, params *deployPara
 	// interfere with app files.
 	deployDir, err := root.EnsureDirectory("__deploy")
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to create deploy directory").Err()
+		return errors.Annotate(err, "failed to create deploy directory").Err()
 	}
 
 	// Build each Component. We will delete any existing contents and leave it
@@ -331,16 +325,16 @@ func (m *stagedGAEModule) stage(w *work, root *managedfs.Dir, params *deployPara
 	// there.
 	buildDir, err := deployDir.EnsureDirectory("build")
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to create build directory").Err()
+		return errors.Annotate(err, "failed to create build directory").Err()
 	}
 	if err := buildDir.CleanUp(); err != nil {
-		return errors.Annotate(err).Reason("failed to cleanup build directory").Err()
+		return errors.Annotate(err, "failed to cleanup build directory").Err()
 	}
 	buildDir.Ignore()
 
 	// Build our Component into this directory.
 	if err := buildComponent(w, m.comp, buildDir); err != nil {
-		return errors.Annotate(err).Reason("failed to build component").Err()
+		return errors.Annotate(err, "failed to build component").Err()
 	}
 
 	switch t := m.GetRuntime().(type) {
@@ -350,24 +344,23 @@ func (m *stagedGAEModule) stage(w *work, root *managedfs.Dir, params *deployPara
 		// Construct a GOPATH for this module.
 		goPath, err := root.EnsureDirectory("gopath")
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to create GOPATH base").Err()
+			return errors.Annotate(err, "failed to create GOPATH base").Err()
 		}
 		if err := stageGoPath(w, m.comp, goPath); err != nil {
-			return errors.Annotate(err).Reason("failed to stage GOPATH").Err()
+			return errors.Annotate(err, "failed to stage GOPATH").Err()
 		}
 
 		// Generate a stub Go package, which we will populate with an entry point.
 		goSrcDir, err := root.EnsureDirectory("src")
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to create stub source directory").Err()
+			return errors.Annotate(err, "failed to create stub source directory").Err()
 		}
 
 		mainPkg := fmt.Sprintf("%s/main", m.comp.comp.title)
 		mainPkgParts := strings.Split(mainPkg, "/")
 		mainPkgDir, err := goSrcDir.EnsureDirectory(mainPkgParts[0], mainPkgParts[1:]...)
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to create directory for main package %(pkg)q").
-				D("pkg", mainPkg).Err()
+			return errors.Annotate(err, "failed to create directory for main package %q", mainPkg).Err()
 		}
 		m.goPath = []string{root.String(), goPath.String()}
 
@@ -380,11 +373,11 @@ func (m *stagedGAEModule) stage(w *work, root *managedfs.Dir, params *deployPara
 			// space is outside of the main package space.
 			pkgPath := findGoPackage(t.GoModule.EntryPackage, m.goPath)
 			if pkgPath == "" {
-				return errors.Reason("unable to find path for %(package)q").D("package", t.GoModule.EntryPackage).Err()
+				return errors.Reason("unable to find path for %q", t.GoModule.EntryPackage).Err()
 			}
 
 			if err := mainPkgDir.ShallowSymlinkFrom(pkgPath, true); err != nil {
-				return errors.Annotate(err).Reason("failed to create shallow symlink of main module").Err()
+				return errors.Annotate(err, "failed to create shallow symlink of main module").Err()
 			}
 
 			m.localBuildFn = func(w *work) error {
@@ -397,7 +390,7 @@ func (m *stagedGAEModule) stage(w *work, root *managedfs.Dir, params *deployPara
 			// Generate a classic GAE stub. Since GAE works through "init()", all this
 			// stub has to do is import the actual entry point package.
 			if err := m.writeGoClassicGAEStub(w, mainPkgDir, gom.EntryPackage); err != nil {
-				return errors.Annotate(err).Reason("failed to generate GAE classic entry stub").Err()
+				return errors.Annotate(err, "failed to generate GAE classic entry stub").Err()
 			}
 
 			m.localBuildFn = func(w *work) error {
@@ -423,7 +416,7 @@ func (m *stagedGAEModule) stage(w *work, root *managedfs.Dir, params *deployPara
 	// under our deployment directory.
 	staticDir, err := deployDir.EnsureDirectory("static")
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to create static directory").Err()
+		return errors.Annotate(err, "failed to create static directory").Err()
 	}
 
 	staticMap := make(map[string]string)
@@ -449,7 +442,7 @@ func (m *stagedGAEModule) stage(w *work, root *managedfs.Dir, params *deployPara
 			// Get the actual path for this BuildPath entry.
 			dirPath, err := m.comp.buildPath(bp)
 			if err != nil {
-				return errors.Annotate(err).Reason("cannot resolve static directory").Err()
+				return errors.Annotate(err, "cannot resolve static directory").Err()
 			}
 
 			// Do we already have a static map entry for this filesystem source path?
@@ -457,11 +450,10 @@ func (m *stagedGAEModule) stage(w *work, root *managedfs.Dir, params *deployPara
 			if !ok {
 				sd := staticDir.File(strconv.Itoa(len(staticMap)))
 				if err := sd.SymlinkFrom(dirPath, true); err != nil {
-					return errors.Annotate(err).Reason("failed to symlink static content for [%(path)s]").
-						D("path", dirPath).Err()
+					return errors.Annotate(err, "failed to symlink static content for [%s]", dirPath).Err()
 				}
 				if staticName, err = root.RelPathFrom(sd.String()); err != nil {
-					return errors.Annotate(err).Reason("failed to get relative path").Err()
+					return errors.Annotate(err, "failed to get relative path").Err()
 				}
 				staticMap[dirPath] = staticName
 			}
@@ -472,7 +464,7 @@ func (m *stagedGAEModule) stage(w *work, root *managedfs.Dir, params *deployPara
 	// "app.yaml" / "module.yaml"
 	appYAML, err := gaeBuildAppYAML(m.AppEngineModule, staticBuildPathMap)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to generate module YAML").Err()
+		return errors.Annotate(err, "failed to generate module YAML").Err()
 	}
 
 	appYAMLName := "module.yaml"
@@ -482,15 +474,14 @@ func (m *stagedGAEModule) stage(w *work, root *managedfs.Dir, params *deployPara
 	}
 	f := base.File(appYAMLName)
 	if err := f.GenerateYAML(w, appYAML); err != nil {
-		return errors.Annotate(err).Reason("failed to generate %(filename)q file").
-			D("filename", appYAMLName).Err()
+		return errors.Annotate(err, "failed to generate %q file", appYAMLName).Err()
 	}
 	s := f.String()
 	appYAMLPath = &s
 
 	// Cleanup our staging filesystem.
 	if err := root.CleanUp(); err != nil {
-		return errors.Annotate(err).Reason("failed to cleanup component directory").Err()
+		return errors.Annotate(err, "failed to cleanup component directory").Err()
 	}
 	return nil
 }
@@ -525,7 +516,7 @@ func (m *stagedGAEModule) pushClassic(w *work, appYAMLPath string) error {
 		cwd(appPath)
 	x = addGoEnv(m.goPath, x)
 	if err := x.check(w); err != nil {
-		return errors.Annotate(err).Reason("failed to deploy classic GAE module").Err()
+		return errors.Annotate(err, "failed to deploy classic GAE module").Err()
 	}
 	return nil
 }
@@ -534,10 +525,10 @@ func (m *stagedGAEModule) pushClassic(w *work, appYAMLPath string) error {
 func (m *stagedGAEModule) localBuildGo(w *work, mainPkg string) error {
 	gt, err := w.goTool(m.goPath)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to get Go tool").Err()
+		return errors.Annotate(err, "failed to get Go tool").Err()
 	}
 	if err := gt.build(w, "", mainPkg); err != nil {
-		return errors.Annotate(err).Reason("failed to local build %(pkg)q").D("pkg", mainPkg).Err()
+		return errors.Annotate(err, "failed to local build %q", mainPkg).Err()
 	}
 	return nil
 }
@@ -549,7 +540,7 @@ func (m *stagedGAEModule) pushGoMVM(w *work, appYAMLPath string) error {
 	// Deploy Managed VM.
 	aedeploy, err := w.tools.aedeploy(m.goPath)
 	if err != nil {
-		return errors.Annotate(err).Err()
+		return errors.Annotate(err, "").Err()
 	}
 
 	gcloud, err := w.tools.gcloud(m.gaeDep.project.Name)
@@ -578,7 +569,7 @@ func (m *stagedGAEModule) pushGoMVM(w *work, appYAMLPath string) error {
 
 	x := aedeploy.bootstrap(gcloud.exec(gcloudArgs[0], gcloudArgs[1:]...)).outputAt(logLevel).cwd(appDir)
 	if err := x.check(w); err != nil {
-		return errors.Annotate(err).Reason("failed to deploy managed VM").Err()
+		return errors.Annotate(err, "failed to deploy managed VM").Err()
 	}
 	return nil
 }

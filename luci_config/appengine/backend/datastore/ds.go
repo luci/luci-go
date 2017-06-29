@@ -143,7 +143,7 @@ func (dc *Config) cacheGet(c context.Context, key caching.Key, l caching.Loader)
 	// operation that is being performed.
 	encKey, err := caching.Encode(&key)
 	if err != nil {
-		return nil, errors.Annotate(err).Reason("failed to encode cache key").Err()
+		return nil, errors.Annotate(err, "failed to encode cache key").Err()
 	}
 
 	// Construct a cache handler.
@@ -154,13 +154,13 @@ func (dc *Config) cacheGet(c context.Context, key caching.Key, l caching.Loader)
 
 	// Decode our response.
 	if v.Schema != dsCacheSchema {
-		return nil, errors.Reason("response schema (%(resp)q) doesn't match current (%(cur)q)").
-			D("resp", v.Schema).D("cur", dsCacheSchema).Err()
+		return nil, errors.Reason("response schema (%q) doesn't match current (%q)",
+			v.Schema, dsCacheSchema).Err()
 	}
 
 	cacheValue, err := caching.DecodeValue(v.Data)
 	if err != nil {
-		return nil, errors.Annotate(err).Reason("failed to decode cached value").Err()
+		return nil, errors.Annotate(err, "failed to decode cached value").Err()
 	}
 
 	// Prune any responses that are not permitted for the supplied Authority.
@@ -250,7 +250,7 @@ func (dch *dsCacheHandler) Refresh(c context.Context, key []byte, v datastorecac
 	// Decode the key into our caching key.
 	var ck caching.Key
 	if err := caching.Decode(key, &ck); err != nil {
-		return v, errors.Annotate(err).Reason("failed to decode cache key").Err()
+		return v, errors.Annotate(err, "failed to decode cache key").Err()
 	}
 
 	var cv *caching.Value
@@ -258,7 +258,7 @@ func (dch *dsCacheHandler) Refresh(c context.Context, key []byte, v datastorecac
 		// We have a currently-cached value, so decode it into "cv".
 		var err error
 		if cv, err = caching.DecodeValue(v.Data); err != nil {
-			return v, errors.Annotate(err).Reason("failed to decode cache value").Err()
+			return v, errors.Annotate(err, "failed to decode cache value").Err()
 		}
 	}
 
@@ -272,7 +272,7 @@ func (dch *dsCacheHandler) Refresh(c context.Context, key []byte, v datastorecac
 	// Perform a cache load on this value.
 	cv, err := dch.loader(c, ck, cv)
 	if err != nil {
-		return v, errors.Annotate(err).Reason("failed to load cache value").Err()
+		return v, errors.Annotate(err, "failed to load cache value").Err()
 	}
 
 	keyDesc := ck.String()
@@ -281,7 +281,7 @@ func (dch *dsCacheHandler) Refresh(c context.Context, key []byte, v datastorecac
 
 	// Encode the resulting cache value.
 	if v.Data, err = cv.Encode(); err != nil {
-		return v, errors.Annotate(err).Reason("failed to encode cache value").Err()
+		return v, errors.Annotate(err, "failed to encode cache value").Err()
 	}
 	v.Schema = dsCacheSchema
 	v.Description = keyDesc + ": " + valueDesc

@@ -52,11 +52,8 @@ func (m MultiError) stackContext() stackContext {
 	n, _ := m.Summary()
 
 	return stackContext{
-		internalReason: "MultiError %(non-nil)d/%(total)d: following first non-nil error.",
-		data: Data{
-			"non-nil": {Value: n},
-			"total":   {Value: len(m)},
-		},
+		internalReason: fmt.Sprintf(
+			"MultiError %d/%d: following first non-nil error.", n, len(m)),
 	}
 }
 

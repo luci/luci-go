@@ -40,7 +40,7 @@ func (f *NotifyExecution) RollForward(c context.Context) (muts []tumble.Mutation
 
 	q := &model.Quest{ID: f.Notification.ID.Quest}
 	if err := ds.Get(ds.WithoutTransaction(c), q); err != nil {
-		return nil, errors.Annotate(err).Reason("getting Quest").Err()
+		return nil, errors.Annotate(err, "getting Quest").Err()
 	}
 	rslt, err := dist.HandleNotification(&q.Desc, f.Notification)
 	if err != nil {

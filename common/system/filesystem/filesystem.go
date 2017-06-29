@@ -19,7 +19,7 @@ func IsNotExist(err error) bool { return os.IsNotExist(errors.Unwrap(err)) }
 // mask to all created directories.
 func MakeDirs(path string) error {
 	if err := os.MkdirAll(path, 0755); err != nil {
-		return errors.Annotate(err).Err()
+		return errors.Annotate(err, "").Err()
 	}
 	return nil
 }
@@ -29,9 +29,8 @@ func MakeDirs(path string) error {
 func AbsPath(base *string) error {
 	v, err := filepath.Abs(*base)
 	if err != nil {
-		return errors.Annotate(err).Reason("unable to resolve absolute path").
-			D("base", *base).
-			Err()
+		return errors.Annotate(err, "unable to resolve absolute path").
+			InternalReason("base(%q)", *base).Err()
 	}
 	*base = v
 	return nil
@@ -45,7 +44,7 @@ func Touch(path string, when time.Time, mode os.FileMode) error {
 	fd, err := os.OpenFile(path, (os.O_CREATE | os.O_RDWR), mode)
 	if err == nil {
 		if err := fd.Close(); err != nil {
-			return errors.Annotate(err).Reason("failed to close new file").Err()
+			return errors.Annotate(err, "failed to close new file").Err()
 		}
 		if when.IsZero() {
 			// If "now" was specified, and we created a new file, then its times will
@@ -62,9 +61,7 @@ func Touch(path string, when time.Time, mode os.FileMode) error {
 		when = time.Now()
 	}
 	if err := os.Chtimes(path, when, when); err != nil {
-		return errors.Annotate(err).Reason("failed to Chtimes").
-			D("path", path).
-			Err()
+		return errors.Annotate(err, "failed to Chtimes").InternalReason("path(%q)", path).Err()
 	}
 
 	return nil
@@ -78,9 +75,7 @@ func RemoveAll(path string) error {
 		if fi == nil {
 			var err error
 			if fi, err = os.Lstat(path); err != nil {
-				return errors.Annotate(err).Reason("could not Lstat path").
-					D("path", path).
-					Err()
+				return errors.Annotate(err, "could not Lstat path").InternalReason("path(%q)", path).Err()
 			}
 		}
 
@@ -89,24 +84,17 @@ func RemoveAll(path string) error {
 		if (mode & 0200) == 0 {
 			mode |= 0200
 			if err := os.Chmod(path, mode); err != nil {
-				return errors.Annotate(err).Reason("could not Chmod path").
-					D("mode", mode).
-					D("path", path).
-					Err()
+				return errors.Annotate(err, "could not Chmod path").InternalReason("mode(%#o)/path(%q)", mode, path).Err()
 			}
 		}
 
 		if err := os.Remove(path); err != nil {
-			return errors.Annotate(err).Reason("failed to remove path").
-				D("path", path).
-				Err()
+			return errors.Annotate(err, "failed to remove path").InternalReason("path(%q)", path).Err()
 		}
 		return nil
 	})
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to recurisvely remove path").
-			D("path", path).
-			Err()
+		return errors.Annotate(err, "failed to recurisvely remove path").InternalReason("path(%q)", path).Err()
 	}
 	return nil
 }
@@ -126,23 +114,21 @@ func recursiveChmod(path string, filter func(string) bool, chmod func(mode os.Fi
 
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return errors.Annotate(err).Err()
+			return errors.Annotate(err, "").Err()
 		}
 
 		mode := info.Mode()
 		if (mode.IsRegular() || mode.IsDir()) && filter(path) {
 			if newMode := chmod(mode); newMode != mode {
 				if err := os.Chmod(path, newMode); err != nil {
-					return errors.Annotate(err).Reason("failed to Chmod").
-						D("path", path).
-						Err()
+					return errors.Annotate(err, "failed to Chmod").InternalReason("path(%q)", path).Err()
 				}
 			}
 		}
 		return nil
 	})
 	if err != nil {
-		return errors.Annotate(err).Err()
+		return errors.Annotate(err, "").Err()
 	}
 	return nil
 }

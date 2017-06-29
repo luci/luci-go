@@ -40,7 +40,7 @@ func substitute(vp *string, subs map[string]string) error {
 		} else {
 			// panic to immediately stop matching. This will be caught at the top of
 			// this function.
-			return errors.Reason("undefined parameter %(key)q").D("key", key).Err()
+			return errors.Reason("undefined parameter %q", key).Err()
 		}
 	}
 

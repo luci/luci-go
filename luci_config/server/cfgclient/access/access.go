@@ -52,8 +52,8 @@ func Check(c context.Context, a backend.Authority, configSet cfgtypes.ConfigSet)
 	var pcfg configPB.ProjectCfg
 	if err := cfgclient.Get(c, cfgclient.AsService, projectConfigSet, cfgclient.ProjectConfigPath,
 		textproto.Message(&pcfg), nil); err != nil {
-		return errors.Annotate(err).Reason("failed to load %(path)q in %(configSet)q").
-			D("path", cfgclient.ProjectConfigPath).D("configSet", projectConfigSet).Err()
+		return errors.Annotate(err, "failed to load %q in %q",
+			cfgclient.ProjectConfigPath, projectConfigSet).Err()
 	}
 
 	id := identity.AnonymousIdentity
@@ -80,7 +80,7 @@ func Check(c context.Context, a backend.Authority, configSet cfgtypes.ConfigSet)
 	if len(checkGroups) > 0 {
 		switch canAccess, err := auth.IsMember(c, checkGroups...); {
 		case err != nil:
-			return errors.Annotate(err).Reason("failed to check group membership").Err()
+			return errors.Annotate(err, "failed to check group membership").Err()
 		case canAccess:
 			return nil
 		}

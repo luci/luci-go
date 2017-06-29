@@ -87,7 +87,7 @@ func (t *TimeoutExecution) RollForward(c context.Context) (muts []tumble.Mutatio
 		var realRslt *dm.Result
 		q := model.QuestFromID(t.For.Quest)
 		if err = ds.Get(ds.WithoutTransaction(c), q); err != nil {
-			err = errors.Annotate(err).Reason("loading quest").Err()
+			err = errors.Annotate(err, "loading quest").Err()
 			return
 		}
 		realRslt, err = dist.GetStatus(&q.Desc, distributor.Token(e.DistributorToken))

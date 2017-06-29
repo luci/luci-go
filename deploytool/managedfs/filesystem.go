@@ -64,7 +64,7 @@ type Filesystem struct {
 func New(rootDir string) (*Filesystem, error) {
 	rootDir = filepath.Clean(rootDir)
 	if err := ensureDirectory(rootDir); err != nil {
-		return nil, errors.Annotate(err).Reason("failed to create root directory").Err()
+		return nil, errors.Annotate(err, "failed to create root directory").Err()
 	}
 	fs := Filesystem{
 		rootDir: rootDir,
@@ -115,14 +115,13 @@ func (d *Dir) RelPath() string { return d.relPath }
 // that targpath is under the Filesystem root.
 func (d *Dir) RelPathFrom(targpath string) (string, error) {
 	if !isSubpath(d.fs.rootDir, targpath) {
-		return "", errors.Reason("[%(path)s] is not a subpath of [%(root)s]").
-			D("path", targpath).D("root", d.fs.rootDir).Err()
+		return "", errors.Reason("[%s] is not a subpath of [%s]", targpath, d.fs.rootDir).Err()
 	}
 
 	rel, err := filepath.Rel(d.String(), targpath)
 	if err != nil {
-		return "", errors.Annotate(err).Reason("could not calculate relative path from [%(dir)s] to [%(path)s]").
-			D("dir", d.String()).D("path", targpath).Err()
+		return "", errors.Annotate(err, "could not calculate relative path from [%s] to [%s]",
+			d.String(), targpath).Err()
 	}
 	return rel, nil
 }
@@ -187,8 +186,7 @@ func (d *Dir) registerSubDir(elem string) (subDir *Dir) {
 // If the described directory doesn't exist, it will be created.
 func (d *Dir) EnsureDirectory(elem string, elems ...string) (*Dir, error) {
 	if !isValidSinglePathComponent(elem) {
-		return nil, errors.Reason("invalid path component #0: %(comp)q").
-			D("comp", elem).Err()
+		return nil, errors.Reason("invalid path component #0: %q", elem).Err()
 	}
 
 	// No element may have a path separator in it.
@@ -197,8 +195,7 @@ func (d *Dir) EnsureDirectory(elem string, elems ...string) (*Dir, error) {
 	components = append(components, elem)
 	for i, comp := range elems {
 		if !isValidSinglePathComponent(comp) {
-			return nil, errors.Reason("invalid path component #%(index)d: %(comp)q").
-				D("index", i+1).D("comp", comp).Err()
+			return nil, errors.Reason("invalid path component #%d: %q", i+1, comp).Err()
 		}
 		components = append(components, comp)
 	}
@@ -206,7 +203,7 @@ func (d *Dir) EnsureDirectory(elem string, elems ...string) (*Dir, error) {
 	// Make the full subdirectory path.
 	fullPath := filepath.Join(components...)
 	if err := ensureDirectory(fullPath); err != nil {
-		return nil, errors.Annotate(err).Reason("failed to create directory [%(path)s]").D("path", fullPath).Err()
+		return nil, errors.Annotate(err, "failed to create directory [%s]", fullPath).Err()
 	}
 
 	// Return the last managed directory node.
@@ -217,7 +214,7 @@ func (d *Dir) EnsureDirectory(elem string, elems ...string) (*Dir, error) {
 func (d *Dir) ShallowSymlinkFrom(dir string, rel bool) error {
 	fis, err := ioutil.ReadDir(dir)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to read directory [%(path)s]").D("path", dir).Err()
+		return errors.Annotate(err, "failed to read directory [%s]", dir).Err()
 	}
 
 	for _, fi := range fis {
@@ -237,7 +234,7 @@ func (d *Dir) ShallowSymlinkFrom(dir string, rel bool) error {
 // File creates a new managed File immediately within d.
 func (d *Dir) File(name string) *File {
 	if !isValidSinglePathComponent(name) {
-		panic(errors.Reason("invalid path component: %(name)q").D("name", name).Err())
+		panic(errors.Reason("invalid path component: %q", name).Err())
 	}
 
 	// Register this file with its managed directory.
@@ -291,7 +288,7 @@ func (d *Dir) cleanupLocked() error {
 	// List the contents of this directory.
 	fis, err := ioutil.ReadDir(d.String())
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to read directory %(dir)q").D("dir", d.String()).Err()
+		return errors.Annotate(err, "failed to read directory %q", d.String()).Err()
 	}
 
 	for _, fi := range fis {
@@ -317,12 +314,12 @@ func (d *Dir) cleanupLocked() error {
 		// Safety / sanity check, the path under consideration for deletion MUST be
 		// underneath of our filesystem's root.
 		if !isSubpath(d.fs.rootDir, fiPath) {
-			panic(errors.Reason("about to delete [%(path)q], which is not a subdirectory of [%(root)q]").
-				D("path", fiPath).D("root", d.fs.rootDir).Err())
+			panic(errors.Reason("about to delete [%q], which is not a subdirectory of [%q]",
+				fiPath, d.fs.rootDir).Err())
 		}
 
 		if err := os.RemoveAll(fiPath); err != nil {
-			return errors.Annotate(err).Reason("failed to delete unmanaged [%(path)q]").D("path", fiPath).Err()
+			return errors.Annotate(err, "failed to delete unmanaged [%q]", fiPath).Err()
 		}
 	}
 	return nil
@@ -355,15 +352,14 @@ func (f *File) SymlinkFrom(from string, rel bool) error {
 
 	// Assert that our "from" field exists.
 	if _, err := os.Stat(from); err != nil {
-		return errors.Annotate(err).Reason("failed to stat symlink from [%(path)s]").
-			D("path", from).Err()
+		return errors.Annotate(err, "failed to stat symlink from [%s]", from).Err()
 	}
 
 	// "from" must be a path under the filesystem base.
 	if rel {
 		var err error
 		if from, err = f.dir.RelPathFrom(from); err != nil {
-			return errors.Annotate(err).Reason("failed to calculate relative path").Err()
+			return errors.Annotate(err, "failed to calculate relative path").Err()
 		}
 	}
 
@@ -384,8 +380,7 @@ func (f *File) SymlinkFrom(from string, rel bool) error {
 	}
 
 	if err := os.Symlink(from, to); err != nil {
-		return errors.Annotate(err).Reason("failed to symlink [%(from)s] => [%(to)s]").
-			D("from", from).D("to", to).Err()
+		return errors.Annotate(err, "failed to symlink [%s] => [%s]", from, to).Err()
 	}
 	return nil
 }
@@ -396,8 +391,7 @@ func (f *File) CopyFrom(src string) (rerr error) {
 
 	s, err := os.Open(src)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to open [%(source)s]").
-			D("source", src).Err()
+		return errors.Annotate(err, "failed to open [%s]", src).Err()
 	}
 	defer func() {
 		cerr := s.Close()
@@ -408,8 +402,7 @@ func (f *File) CopyFrom(src string) (rerr error) {
 
 	d, err := createFile(dst)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to create [%(dest)s]").
-			D("dest", dst).Err()
+		return errors.Annotate(err, "failed to create [%s]", dst).Err()
 	}
 	defer func() {
 		cerr := d.Close()
@@ -422,8 +415,7 @@ func (f *File) CopyFrom(src string) (rerr error) {
 		_, err = io.CopyBuffer(d, s, buf)
 	})
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to copy from [%(source)s] => [%(dest)s]").
-			D("source", src).D("dest", dst).Err()
+		return errors.Annotate(err, "failed to copy from [%s] => [%s]", src, dst).Err()
 	}
 	return nil
 }
@@ -438,8 +430,7 @@ func (f *File) SameAs(other string) (bool, error) {
 		if isNotExist(err) {
 			return false, nil
 		}
-		return false, errors.Annotate(err).Reason("failed to stat [%(self)s]").
-			D("self", myPath).Err()
+		return false, errors.Annotate(err, "failed to stat [%s]", myPath).Err()
 	}
 
 	otherStat, err := os.Lstat(other)
@@ -447,8 +438,7 @@ func (f *File) SameAs(other string) (bool, error) {
 		if isNotExist(err) {
 			return false, nil
 		}
-		return false, errors.Annotate(err).Reason("failed to stat [%(other)s]").
-			D("other", other).Err()
+		return false, errors.Annotate(err, "failed to stat [%s]", other).Err()
 	}
 
 	if os.SameFile(myStat, otherStat) {
@@ -458,15 +448,13 @@ func (f *File) SameAs(other string) (bool, error) {
 	// Not the same file, and both exist, so let's compare byte-for-byte.
 	myFD, err := os.Open(f.String())
 	if err != nil {
-		return false, errors.Annotate(err).Reason("failed to open [%(self)s]").
-			D("self", myPath).Err()
+		return false, errors.Annotate(err, "failed to open [%s]", myPath).Err()
 	}
 	defer myFD.Close()
 
 	otherFD, err := os.Open(other)
 	if err != nil {
-		return false, errors.Annotate(err).Reason("failed to option [%(other)s]").
-			D("other", other).Err()
+		return false, errors.Annotate(err, "failed to option [%s]", other).Err()
 	}
 	defer otherFD.Close()
 
@@ -477,8 +465,7 @@ func (f *File) SameAs(other string) (bool, error) {
 		})
 	})
 	if err != nil {
-		return false, errors.Annotate(err).Reason("failed to compare files [%(self)s] to [$(other)s]").
-			D("self", myPath).D("other", other).Err()
+		return false, errors.Annotate(err, "failed to compare files [%s] to [%s]", myPath, other).Err()
 	}
 	return same, nil
 }
@@ -511,7 +498,7 @@ func (f *File) GenerateTextProto(c context.Context, msg proto.Message) error {
 
 		// Write YAML contents.
 		if err := proto.MarshalText(fd, msg); err != nil {
-			return errors.Annotate(err).Err()
+			return errors.Annotate(err, "").Err()
 		}
 		return nil
 	})
@@ -549,7 +536,7 @@ func (f *File) GenerateYAML(c context.Context, obj interface{}) error {
 
 		// Write YAML contents.
 		if _, err := fd.Write(d); err != nil {
-			return errors.Annotate(err).Err()
+			return errors.Annotate(err, "").Err()
 		}
 		return nil
 	})
@@ -582,7 +569,7 @@ func (f *File) GenerateGo(c context.Context, content string) error {
 
 		// Write Go content.
 		if _, err := fmt.Fprint(fd, content); err != nil {
-			return errors.Annotate(err).Err()
+			return errors.Annotate(err, "").Err()
 		}
 		return nil
 	})

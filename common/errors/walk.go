@@ -55,11 +55,3 @@ func Any(err error, fn func(error) bool) (any bool) {
 	})
 	return
 }
-
-// Contains performs a Walk traversal of an error, returning true if it is or
-// contains the supplied sentinel error.
-func Contains(err, sentinel error) bool {
-	return Any(err, func(err error) bool {
-		return err == sentinel
-	})
-}

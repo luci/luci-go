@@ -76,7 +76,7 @@ func (cmd *cmdCheckoutRun) Run(app subcommands.Application, args []string, env s
 func checkout(w *work, l *deployLayout, applyOverrides bool) error {
 	frozen, err := l.initFrozenCheckout(w)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to initialize checkout").Err()
+		return errors.Annotate(err, "failed to initialize checkout").Err()
 	}
 
 	// reg is our internal checkout registry. This represents the actual
@@ -84,17 +84,16 @@ func checkout(w *work, l *deployLayout, applyOverrides bool) error {
 	// repository will be deduplicated here.
 	fs, err := l.workingFilesystem()
 	if err != nil {
-		return errors.Annotate(err).Err()
+		return errors.Annotate(err, "").Err()
 	}
 	checkoutDir, err := fs.Base().EnsureDirectory(checkoutsSubdir)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to create checkout directory").Err()
+		return errors.Annotate(err, "failed to create checkout directory").Err()
 	}
 
 	repoDir, err := checkoutDir.EnsureDirectory("repository")
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to create repository directory %(dir)q").
-			D("dir", repoDir).Err()
+		return errors.Annotate(err, "failed to create repository directory %q", repoDir).Err()
 	}
 
 	reg := checkoutRegistry{
@@ -132,8 +131,7 @@ func checkout(w *work, l *deployLayout, applyOverrides bool) error {
 			}
 
 			if err := sc.addRegistryRepos(&reg); err != nil {
-				return errors.Annotate(err).Reason("failed to add [%(sourceCheckout)s] to registry").
-					D("sourceCheckout", sc).Err()
+				return errors.Annotate(err, "failed to add [%s] to registry", sc).Err()
 			}
 
 			// If we're overriding sources, and this source is overridden, then apply
@@ -151,8 +149,7 @@ func checkout(w *work, l *deployLayout, applyOverrides bool) error {
 					sc.FrozenLayout_Source.Source.Tainted = true
 
 					if err := sc.addRegistryRepos(&reg); err != nil {
-						return errors.Annotate(err).Reason("failed to add (overridden) [%(sourceCheckout)s] to registry").
-							D("sourceCheckout", sc).Err()
+						return errors.Annotate(err, "failed to add (overridden) [%s] to registry", sc).Err()
 					}
 				}
 			}
@@ -164,13 +161,13 @@ func checkout(w *work, l *deployLayout, applyOverrides bool) error {
 		sgSources[sgKey] = groupSrcs
 	}
 	if err := reg.checkout(w); err != nil {
-		return errors.Annotate(err).Reason("failed to checkout sources").Err()
+		return errors.Annotate(err, "failed to checkout sources").Err()
 	}
 
 	// Execute each source checkout in parallel.
 	sourcesDir, err := checkoutDir.EnsureDirectory("sources")
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to create sources directory").Err()
+		return errors.Annotate(err, "failed to create sources directory").Err()
 	}
 
 	err = w.RunMulti(func(workC chan<- func() error) {
@@ -179,12 +176,11 @@ func checkout(w *work, l *deployLayout, applyOverrides bool) error {
 			workC <- func() error {
 				root, err := sourcesDir.EnsureDirectory(sc.group, sc.name)
 				if err != nil {
-					return errors.Annotate(err).Reason("failed to create checkout directory").Err()
+					return errors.Annotate(err, "failed to create checkout directory").Err()
 				}
 
 				if err := sc.checkout(w, root); err != nil {
-					return errors.Annotate(err).Reason("failed to checkout %(sourceCheckout)s").
-						D("sourceCheckout", sc).Err()
+					return errors.Annotate(err, "failed to checkout %s", sc).Err()
 				}
 				return nil
 			}
@@ -205,8 +201,7 @@ func checkout(w *work, l *deployLayout, applyOverrides bool) error {
 		hash := sha256.New()
 		for _, sc := range sgSources[sgKey] {
 			if sc.Revision == "" {
-				return errors.Reason("source %(sourceCheckout)q has an empty revision").
-					D("sourceCheckout", sc.String()).Err()
+				return errors.Reason("source %q has an empty revision", sc).Err()
 			}
 			fmt.Fprintf(hash, "%s@%s\x00", sc.name, sc.Revision)
 
@@ -228,11 +223,11 @@ func checkout(w *work, l *deployLayout, applyOverrides bool) error {
 	// Create the frozen checkout file.
 	frozenFile := checkoutDir.File(frozenCheckoutName)
 	if err := frozenFile.GenerateTextProto(w, frozen); err != nil {
-		return errors.Annotate(err).Reason("failed to create frozen checkout protobuf").Err()
+		return errors.Annotate(err, "failed to create frozen checkout protobuf").Err()
 	}
 
 	if err := checkoutDir.CleanUp(); err != nil {
-		return errors.Annotate(err).Reason("failed to do full cleanup of cleanup sources filesystem").Err()
+		return errors.Annotate(err, "failed to do full cleanup of cleanup sources filesystem").Err()
 	}
 
 	return nil
@@ -243,7 +238,7 @@ func checkoutFrozen(l *deployLayout) (*deploy.FrozenLayout, error) {
 
 	var frozen deploy.FrozenLayout
 	if err := unmarshalTextProtobuf(path, &frozen); err != nil {
-		return nil, errors.Annotate(err).Err()
+		return nil, errors.Annotate(err, "").Err()
 	}
 	return &frozen, nil
 }
@@ -277,7 +272,7 @@ func (sc *sourceCheckout) addRegistryRepos(reg *checkoutRegistry) error {
 
 		u, err := url.Parse(g.Url)
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to parse Git URL [%(url)s]").D("url", g.Url).Err()
+			return errors.Annotate(err, "failed to parse Git URL [%s]", g.Url).Err()
 		}
 
 		// Add a Git checkout operation for this source to the registry.
@@ -302,12 +297,12 @@ func (sc *sourceCheckout) checkout(w *work, root *managedfs.Dir) error {
 
 		// Add a symlink between our raw checkout and our current checkout.
 		if err := checkoutPath.SymlinkFrom(sc.cs.path, true); err != nil {
-			return errors.Annotate(err).Err()
+			return errors.Annotate(err, "").Err()
 		}
 		sc.Relpath = checkoutPath.RelPath()
 
 	default:
-		return errors.Reason("don't know how to checkout %(type)T").D("type", t).Err()
+		return errors.Reason("don't know how to checkout %T", t).Err()
 	}
 
 	sc.Revision = sc.cs.revision
@@ -400,7 +395,7 @@ func (reg *checkoutRegistry) checkout(w *work) error {
 				// Perform the actual checkout operation.
 				checkoutDir, err := reg.repoDir.EnsureDirectory(hex.EncodeToString(pathHash[:]))
 				if err != nil {
-					return errors.Annotate(err).Reason("failed to create checkout directory for %(key)q").D("key", key).Err()
+					return errors.Annotate(err, "failed to create checkout directory for %q", key).Err()
 				}
 
 				log.Fields{
@@ -419,7 +414,7 @@ func (reg *checkoutRegistry) checkout(w *work) error {
 				// If there is a deployment configuration, load/parse/execute it.
 				sl, err := loadSourceLayout(cs.path)
 				if err != nil {
-					return errors.Annotate(err).Reason("failed to load source layout").Err()
+					return errors.Annotate(err, "failed to load source layout").Err()
 				}
 
 				var sir deploy.SourceInitResult
@@ -431,8 +426,7 @@ func (reg *checkoutRegistry) checkout(w *work) error {
 							for i, in := range sl.Init {
 								inResult, err := sourceInit(w, cs.path, in)
 								if err != nil {
-									return errors.Annotate(err).Reason("failed to run source init #%(index)d").
-										D("index", i).Err()
+									return errors.Annotate(err, "failed to run source init #%d", i).Err()
 								}
 
 								// Merge this SourceInitResult into the common repository
@@ -520,7 +514,7 @@ func (g *gitCheckoutOperation) checkout(w *work, cs *checkoutSingleton, dir *man
 		switch st, err := os.Stat(gitDir); {
 		case err == nil:
 			if !st.IsDir() {
-				return errors.Reason("checkout Git path [%(path)s] exists, and is not a directory").D("path", gitDir).Err()
+				return errors.Reason("checkout Git path [%s] exists, and is not a directory", gitDir).Err()
 			}
 
 		case isNotExist(err):
@@ -533,12 +527,12 @@ func (g *gitCheckoutOperation) checkout(w *work, cs *checkoutSingleton, dir *man
 				return err
 			}
 			if err = git.exec(path, "update-ref", resetRef, ref).check(w); err != nil {
-				return errors.Annotate(err).Reason("failed to checkout %(ref)q from %(url)q").D("ref", ref).D("url", g.url).Err()
+				return errors.Annotate(err, "failed to checkout %q from %q", ref, g.url).Err()
 			}
 			needsFetch = false
 
 		default:
-			return errors.Annotate(err).Reason("failed to stat checkout Git directory [%(dir)s]").D("dir", gitDir).Err()
+			return errors.Annotate(err, "failed to stat checkout Git directory [%s]", gitDir).Err()
 		}
 
 		// Check out the desired commit/ref by resetting the repository.
@@ -548,7 +542,7 @@ func (g *gitCheckoutOperation) checkout(w *work, cs *checkoutSingleton, dir *man
 		x := git.exec(path, "rev-parse", ref)
 		switch rc, err := x.run(w); {
 		case err != nil:
-			return errors.Annotate(err).Reason("failed to check for commit %(ref)q").D("ref", ref).Err()
+			return errors.Annotate(err, "failed to check for commit %q", ref).Err()
 
 		case rc == 0:
 			// If the ref resolved to itself, then it's a commit and it's already in the
@@ -563,14 +557,13 @@ func (g *gitCheckoutOperation) checkout(w *work, cs *checkoutSingleton, dir *man
 			// If our checkout isn't ready, fetch the ref remotely.
 			if needsFetch {
 				if err := git.exec(path, "fetch", "origin", fmt.Sprintf("%s:%s", ref, resetRef)).check(w); err != nil {
-					return errors.Annotate(err).Reason("failed to fetch %(ref)q from remote").D("ref", ref).Err()
+					return errors.Annotate(err, "failed to fetch %q from remote", ref).Err()
 				}
 			}
 
 			// Reset to "resetRef".
 			if err := git.exec(path, "reset", "--hard", resetRef).check(w); err != nil {
-				return errors.Annotate(err).Reason("failed to checkout %(ref)q (%(localRef)q) from %(url)q").
-					D("ref", ref).D("localRef", resetRef).D("url", g.url).Err()
+				return errors.Annotate(err, "failed to checkout %q (%q) from %q", ref, resetRef, g.url).Err()
 			}
 		}
 	}
@@ -600,7 +593,7 @@ func (g *gitCheckoutOperation) checkout(w *work, cs *checkoutSingleton, dir *man
 		}
 	})
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to get Git repository properties").Err()
+		return errors.Annotate(err, "failed to get Git repository properties").Err()
 	}
 
 	// We're tainted if our merge base doesn't equal our current revision.
@@ -659,7 +652,7 @@ func sourceInit(w *work, path string, in *deploy.SourceLayout_Init) (*deploy.Sou
 
 			scriptPath := deployToNative(path, ps.Path)
 			if err := python.exec(scriptPath, path, resultPath).cwd(path).check(w); err != nil {
-				return errors.Annotate(err).Reason("failed to execute [%(scriptPath)s]").D("scriptPath", scriptPath).Err()
+				return errors.Annotate(err, "failed to execute [%s]", scriptPath).Err()
 			}
 
 			switch err := unmarshalTextProtobuf(resultPath, &r); {
@@ -667,13 +660,12 @@ func sourceInit(w *work, path string, in *deploy.SourceLayout_Init) (*deploy.Sou
 				return nil
 
 			default:
-				return errors.Annotate(err).Reason("failed to stat SourceInitResult [%(resultPath)s]").
-					D("resultPath", resultPath).Err()
+				return errors.Annotate(err, "failed to stat SourceInitResult [%s]", resultPath).Err()
 			}
 		})
 		return &r, err
 
 	default:
-		return nil, errors.Reason("unknown source init type %(type)T").D("type", t).Err()
+		return nil, errors.Reason("unknown source init type %T", t).Err()
 	}
 }

@@ -84,10 +84,8 @@ func prune(c context.Context, cfg *Config, exempt stringset.Set) error {
 			logging.WithError(err).Debugf(c, "Environment [%s] is in use.", e.Name)
 
 		default:
-			err = errors.Annotate(err).Reason("failed to prune file: %(name)s").
-				D("name", e.Name).
-				D("dir", e.Config.BaseDir).
-				Err()
+			err = errors.Annotate(err, "failed to prune file: %s", e.Name).
+				InternalReason("dir(%q)", e.Config.BaseDir).Err()
 			allErrs = append(allErrs, err)
 		}
 		return nil

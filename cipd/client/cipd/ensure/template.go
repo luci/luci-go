@@ -34,14 +34,13 @@ func expandTemplate(template string, expansionLookup map[string]string) (pkg str
 				return value
 			}
 
-			err = errors.Reason("unknown variable in ${%(contents)s}").
-				D("contents", contents).Err()
+			err = errors.Reason("unknown variable in ${%s}", contents).Err()
 		}
 
 		// ${varName=value,value}
 		ourValue, ok := expansionLookup[varNameValues[0]]
 		if !ok {
-			err = errors.Reason("unknown variable %(parm)q").D("parm", parm).Err()
+			err = errors.Reason("unknown variable %q", parm).Err()
 			return parm
 		}
 
@@ -57,8 +56,7 @@ func expandTemplate(template string, expansionLookup map[string]string) (pkg str
 		err = errSkipTemplate
 	}
 	if err == nil && strings.ContainsRune(pkg, '$') {
-		err = errors.Reason("unable to process some variables in %(template)q").
-			D("template", template).Err()
+		err = errors.Reason("unable to process some variables in %q", template).Err()
 	}
 	if err == nil {
 		err = common.ValidatePackageName(pkg)

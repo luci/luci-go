@@ -110,7 +110,7 @@ func (m *OAuth2Method) authenticateDevServer(c context.Context, header string, s
 		if err == googleoauth.ErrBadToken {
 			return nil, err
 		}
-		return nil, errors.Annotate(err).Reason("oauth: transient error when validating token").
+		return nil, errors.Annotate(err, "oauth: transient error when validating token").
 			Tag(transient.Tag).Err()
 	}
 

@@ -16,7 +16,7 @@ import (
 
 func ensureDirectory(path string) error {
 	if err := os.MkdirAll(path, 0755); err != nil {
-		return errors.Annotate(err).Reason("failed to create directory [%(path)s]").D("path", path).Err()
+		return errors.Annotate(err, "failed to create directory [%s]", path).Err()
 	}
 	return nil
 }
@@ -32,15 +32,15 @@ func createFile(path string) (*os.File, error) {
 		break
 
 	case err != nil:
-		return nil, errors.Annotate(err).Reason("failed to lstat [%(path)s]").D("path", path).Err()
+		return nil, errors.Annotate(err, "failed to lstat [%s]", path).Err()
 
 	case st.IsDir():
-		return nil, errors.Reason("cannot create; path [%(path)s] is a directory").D("path", path).Err()
+		return nil, errors.Reason("cannot create; path [%s] is a directory", path).Err()
 
 	default:
 		// Exists, and is a file/link, so unlink.
 		if err := os.Remove(path); err != nil {
-			return nil, errors.Annotate(err).Reason("failed to remove existing [%(path)s]").D("path", path).Err()
+			return nil, errors.Annotate(err, "failed to remove existing [%s]", path).Err()
 		}
 	}
 
@@ -76,7 +76,7 @@ func byteCompare(a, b io.Reader, aBuf, bBuf []byte) (bool, error) {
 		ac, err := a.Read(aBuf)
 		if err != nil {
 			if err != io.EOF {
-				return false, errors.Annotate(err).Reason("failed to read").Err()
+				return false, errors.Annotate(err, "failed to read").Err()
 			}
 			ac = 0
 			done = true
@@ -85,7 +85,7 @@ func byteCompare(a, b io.Reader, aBuf, bBuf []byte) (bool, error) {
 		bc, err := b.Read(bBuf)
 		if err != nil {
 			if err != io.EOF {
-				return false, errors.Annotate(err).Reason("failed to read").Err()
+				return false, errors.Annotate(err, "failed to read").Err()
 			}
 			bc = 0
 		}

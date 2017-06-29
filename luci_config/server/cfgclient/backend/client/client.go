@@ -75,7 +75,7 @@ func (be *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string
 	case backend.GetAllRef:
 		fn = svc.GetRefConfigs
 	default:
-		return nil, errors.Reason("unknown GetAllType: %(type)q").D("type", t).Err()
+		return nil, errors.Reason("unknown GetAllType: %q", t).Err()
 	}
 
 	cfgs, err := fn(c, path, !p.Content)

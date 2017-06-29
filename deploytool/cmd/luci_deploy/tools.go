@@ -48,7 +48,7 @@ func (t *tools) getLookup(command string) (string, error) {
 
 	if path == "" {
 		// Lookup was attempted, but tool could not be found.
-		return "", errors.Reason("tool %(toolName)q is not available").D("toolName", command).Err()
+		return "", errors.Reason("tool %q is not available", command).Err()
 	}
 	return path, nil
 }
@@ -173,7 +173,8 @@ func (t *gitTool) getRevListCount(c context.Context, gitDir string) (int, error)
 	output := strings.TrimSpace(x.stdout.String())
 	v, err := strconv.Atoi(output)
 	if err != nil {
-		return 0, errors.Annotate(err).Reason("failed to parse rev-list count").D("output", output).Err()
+		return 0, errors.Annotate(err, "failed to parse rev-list count").
+			InternalReason("output(%s)", output).Err()
 	}
 	return v, nil
 }

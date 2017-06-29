@@ -33,7 +33,7 @@ func loadUserConfig(c context.Context, cfg *deploy.UserConfig) error {
 		log.Debugf(c, "No user config found at: %s", configPath)
 
 	default:
-		return errors.Annotate(err).Reason("failed to load config at [%(path)s]").D("path", configPath).Err()
+		return errors.Annotate(err, "failed to load config at [%s]", configPath).Err()
 	}
 
 	return nil

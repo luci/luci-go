@@ -51,14 +51,14 @@ func (b cloudProjectVersionBuilder) build(cp *layoutDeploymentCloudProject, src 
 		if src.sg.Tainted {
 			username, err := b.getCurrentUser()
 			if err != nil {
-				return nil, errors.Annotate(err).Reason("could not get tained user").Err()
+				return nil, errors.Annotate(err, "could not get tained user").Err()
 			}
 			cpv.taintedUser = cloudVersionStringNormalize(username)
 		}
 		return &cpv, nil
 
 	default:
-		return nil, errors.Reason("unknown version scheme %(scheme)v").D("scheme", vs).Err()
+		return nil, errors.Reason("unknown version scheme %v", vs).Err()
 	}
 }
 
@@ -70,7 +70,7 @@ func (b *cloudProjectVersionBuilder) getCurrentUser() (string, error) {
 	// Default "currentUser" function uses "os.User".
 	user, err := user.Current()
 	if err != nil {
-		return "", errors.Annotate(err).Reason("could not get tained user").Err()
+		return "", errors.Annotate(err, "could not get tained user").Err()
 	}
 	return user.Username, nil
 }
@@ -95,12 +95,11 @@ func parseCloudProjectVersion(vs deploy.Deployment_CloudProject_VersionScheme, v
 			return &cpv, nil
 
 		default:
-			return nil, errors.Reason("bad version %(version)q for scheme %(scheme)T").
-				D("version", v).D("scheme", vs).Err()
+			return nil, errors.Reason("bad version %q for scheme %T", v, vs).Err()
 		}
 
 	default:
-		return nil, errors.Reason("unknown version scheme %(scheme)T").D("scheme", vs).Err()
+		return nil, errors.Reason("unknown version scheme %T", vs).Err()
 	}
 }
 

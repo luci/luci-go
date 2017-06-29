@@ -68,7 +68,7 @@ func (e *Entry) GetLogEntry() (*logpb.LogEntry, error) {
 
 		var le logpb.LogEntry
 		if err := proto.Unmarshal(e.D, &le); err != nil {
-			return nil, errors.Annotate(err).Reason("failed to unmarshal").Err()
+			return nil, errors.Annotate(err, "failed to unmarshal").Err()
 		}
 		e.le = &le
 	}

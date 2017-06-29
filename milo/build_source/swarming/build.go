@@ -506,7 +506,7 @@ func (bl *buildLoader) newEmptyAnnotationStream(c context.Context, addr *types.S
 	}
 	client, err := fn(c, addr.Host)
 	if err != nil {
-		return nil, errors.Annotate(err).Reason("failed to create LogDog client").Err()
+		return nil, errors.Annotate(err, "failed to create LogDog client").Err()
 	}
 
 	as := raw_presentation.AnnotationStream{
@@ -515,7 +515,7 @@ func (bl *buildLoader) newEmptyAnnotationStream(c context.Context, addr *types.S
 		Path:    addr.Path,
 	}
 	if err := as.Normalize(); err != nil {
-		return nil, errors.Annotate(err).Reason("failed to normalize annotation stream parameters").Err()
+		return nil, errors.Annotate(err, "failed to normalize annotation stream parameters").Err()
 	}
 
 	return &as, nil
@@ -602,7 +602,7 @@ func (bl *buildLoader) swarmingBuildImpl(c context.Context, svc swarmingService,
 		// If the LogDog stream is available, load the step from that.
 		as, err := bl.newEmptyAnnotationStream(c, logDogStreamAddr)
 		if err != nil {
-			return nil, errors.Annotate(err).Reason("failed to create LogDog annotation stream").Err()
+			return nil, errors.Annotate(err, "failed to create LogDog annotation stream").Err()
 		}
 
 		prefix, _ := logDogStreamAddr.Path.Split()

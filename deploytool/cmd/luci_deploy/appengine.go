@@ -193,7 +193,7 @@ func gaeBuildAppYAML(aem *deploy.AppEngineModule, staticMap map[*deploy.BuildPat
 		isStub = true
 
 	default:
-		return nil, errors.Reason("unsupported runtime %(runtime)q").D("runtime", aem.Runtime).Err()
+		return nil, errors.Reason("unsupported runtime %q", aem.Runtime).Err()
 	}
 
 	// Classic / Managed VM Properties
@@ -232,7 +232,7 @@ func gaeBuildAppYAML(aem *deploy.AppEngineModule, staticMap map[*deploy.BuildPat
 			icPrefix = "B"
 
 		default:
-			return nil, errors.Reason("unknown scaling type %(type)T").D("type", sc).Err()
+			return nil, errors.Reason("unknown scaling type %T", sc).Err()
 		}
 		appYAML.InstanceClass = p.Classic.InstanceClass.AppYAMLString(icPrefix)
 
@@ -275,8 +275,8 @@ func gaeBuildAppYAML(aem *deploy.AppEngineModule, staticMap map[*deploy.BuildPat
 				entry.StaticFiles = filepath.Join(relDir, sf.UrlMap)
 
 			default:
-				return nil, errors.Reason("don't know how to handle content %(content)T").
-					D("content", t).D("url", handler.Url).Err()
+				return nil, errors.Reason("don't know how to handle content %T", t).
+					InternalReason("url(%q)", handler.Url).Err()
 			}
 
 			if entry.Script != "" && isStub {
@@ -338,8 +338,7 @@ func gaeBuildDispatchYAML(cp *layoutDeploymentCloudProject) (*gaeDispatchYAML, e
 		}
 	}
 	if count := len(dispatchYAML.Dispatch); count > 10 {
-		return nil, errors.Reason("dispatch file has more than 10 routing rules (%(count)d)").
-			D("count", count).Err()
+		return nil, errors.Reason("dispatch file has more than 10 routing rules (%d)", count).Err()
 	}
 	return &dispatchYAML, nil
 }
@@ -369,7 +368,7 @@ func gaeBuildQueueYAML(cp *layoutDeploymentCloudProject) (*gaeQueueYAML, error) 
 				}
 
 			default:
-				return nil, errors.Reason("unknown task queue type %(type)T").D("type", t).Err()
+				return nil, errors.Reason("unknown task queue type %T", t).Err()
 			}
 
 			queueYAML.Queue = append(queueYAML.Queue, &entry)
@@ -383,13 +382,12 @@ func gaeBuildQueueYAML(cp *layoutDeploymentCloudProject) (*gaeQueueYAML, error) 
 func loadIndexYAMLResource(path string) (*deploy.AppEngineResources, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, errors.Annotate(err).Reason("failed to load [%(path)s]").D("path", path).Err()
+		return nil, errors.Annotate(err, "failed to load [%s]", path).Err()
 	}
 
 	var indexYAML gaeIndexYAML
 	if err := yaml.Unmarshal(data, &indexYAML); err != nil {
-		return nil, errors.Annotate(err).Reason("could not load 'index.yaml' from [%(path)s]").
-			D("path", path).Err()
+		return nil, errors.Annotate(err, "could not load 'index.yaml' from [%s]", path).Err()
 	}
 
 	var res deploy.AppEngineResources
@@ -404,8 +402,8 @@ func loadIndexYAMLResource(path string) (*deploy.AppEngineResources, error) {
 			for pidx, idxProp := range idx.Properties {
 				dir, err := deploy.IndexDirectionFromAppYAMLString(idxProp.Direction)
 				if err != nil {
-					return nil, errors.Annotate(err).Reason("could not identify direction for entry").
-						D("index", i).D("propertyIndex", pidx).Err()
+					return nil, errors.Annotate(err, "could not identify direction for entry").
+						InternalReason("index(%d)/propertyIndex(%d)", i, pidx).Err()
 				}
 
 				entry.Property[pidx] = &deploy.AppEngineResources_Index_Property{

@@ -50,7 +50,7 @@ type FormattingResolver interface {
 
 func assertEmptyFormat(it *backend.Item) error {
 	if !it.FormatSpec.Unformatted() {
-		return errors.Reason("unknown format: %(format)q").D("format", it.FormatSpec.Formatter).Err()
+		return errors.Reason("unknown format: %q", it.FormatSpec.Formatter).Err()
 	}
 	return nil
 }

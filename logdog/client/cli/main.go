@@ -123,7 +123,7 @@ func (a *application) resolveHost(host string) (string, error) {
 func (a *application) coordinatorClient(host string) (*coordinator.Client, error) {
 	host, err := a.resolveHost(host)
 	if err != nil {
-		return nil, errors.Annotate(err).Err()
+		return nil, errors.Annotate(err, "").Err()
 	}
 
 	// Get our Coordinator client instance.

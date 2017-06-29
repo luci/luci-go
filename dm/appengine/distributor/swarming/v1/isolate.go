@@ -94,10 +94,7 @@ func pushIsolate(c context.Context, isolateURL string, chunks []isoChunk) error 
 		anonC, authC, isolateURL, isolatedclient.DefaultNamespace, nil, nil)
 	states, err := isoClient.Contains(c, dgsts)
 	if err != nil {
-		err = errors.Annotate(err).
-			D("count", len(dgsts)).
-			Reason("checking containment for %(count)d digests").
-			Err()
+		err = errors.Annotate(err, "checking containment for %d digests", len(dgsts)).Err()
 		return err
 	}
 	return parallel.FanOutIn(func(ch chan<- func() error) {
@@ -127,7 +124,7 @@ func prepIsolate(c context.Context, isolateURL string, desc *dm.Quest_Desc, prev
 		{data: isoData, file: isoFile, isIso: true},
 	})
 	if err != nil {
-		err = errors.Annotate(err).Reason("pushing new Isolated").Err()
+		err = errors.Annotate(err, "pushing new Isolated").Err()
 		return nil, err
 	}
 

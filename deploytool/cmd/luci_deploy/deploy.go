@@ -109,13 +109,13 @@ func (cmd *cmdDeployRun) Run(app subcommands.Application, args []string, env sub
 		if cmd.checkout {
 			// Perform a full checkout.
 			if err := checkout(w, &a.layout, false); err != nil {
-				return errors.Annotate(err).Reason("failed to checkout sources").Err()
+				return errors.Annotate(err, "failed to checkout sources").Err()
 			}
 		}
 
 		// Load our frozen checkout.
 		if err := a.layout.loadFrozenLayout(w); err != nil {
-			return errors.Annotate(err).Reason("failed to load frozen checkout").Err()
+			return errors.Annotate(err, "failed to load frozen checkout").Err()
 		}
 		return nil
 	})
@@ -150,7 +150,7 @@ func (cmd *cmdDeployRun) Run(app subcommands.Application, args []string, env sub
 
 	err = a.runWork(c, func(w *work) error {
 		if err := cmd.dp.initialize(w, &a.layout); err != nil {
-			return errors.Annotate(err).Reason("failed to initialize").Err()
+			return errors.Annotate(err, "failed to initialize").Err()
 		}
 
 		return cmd.dp.deploy(w)
@@ -231,8 +231,7 @@ func (dp *deploymentPlan) initialize(w *work, l *deployLayout) error {
 				pReg = &dp.reg
 			}
 			if err := comp.loadSourceComponent(pReg); err != nil {
-				return errors.Annotate(err).Reason("failed to load component %(comp)q").
-					D("comp", comp.String()).Err()
+				return errors.Annotate(err, "failed to load component %q", comp).Err()
 			}
 		}
 	}
@@ -244,17 +243,17 @@ func (dp *deploymentPlan) deploy(w *work) error {
 	// Create our working root and staging/build subdirectories.
 	fs, err := dp.layout.workingFilesystem()
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to create working directory").Err()
+		return errors.Annotate(err, "failed to create working directory").Err()
 	}
 
 	stagingDir, err := fs.Base().EnsureDirectory("staging")
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to create staging directory").Err()
+		return errors.Annotate(err, "failed to create staging directory").Err()
 	}
 
 	// Stage: Staging
 	if err := dp.reg.stage(w, stagingDir, &dp.params); err != nil {
-		return errors.Annotate(err).Reason("failed to stage").Err()
+		return errors.Annotate(err, "failed to stage").Err()
 	}
 	if dp.params.stage <= deployStaging {
 		return nil
@@ -262,7 +261,7 @@ func (dp *deploymentPlan) deploy(w *work) error {
 
 	// Stage: Local Build
 	if err := dp.reg.localBuild(w); err != nil {
-		return errors.Annotate(err).Reason("failed to perform local build").Err()
+		return errors.Annotate(err, "failed to perform local build").Err()
 	}
 	if dp.params.stage <= deployLocalBuild {
 		return nil
@@ -270,7 +269,7 @@ func (dp *deploymentPlan) deploy(w *work) error {
 
 	// Stage: Push
 	if err := dp.reg.push(w); err != nil {
-		return errors.Annotate(err).Reason("failed to push components").Err()
+		return errors.Annotate(err, "failed to push components").Err()
 	}
 	if dp.params.stage <= deployPush {
 		return nil
@@ -278,7 +277,7 @@ func (dp *deploymentPlan) deploy(w *work) error {
 
 	// Stage: Commit
 	if err := dp.reg.commit(w); err != nil {
-		return errors.Annotate(err).Reason("failed to commit").Err()
+		return errors.Annotate(err, "failed to commit").Err()
 	}
 	return nil
 }
@@ -387,8 +386,7 @@ func (reg *deploymentRegistry) stage(w *work, stageDir *managedfs.Dir, params *d
 			workC <- func() error {
 				depDir, err := stageDir.EnsureDirectory(string(proj.project.dep.title), "appengine")
 				if err != nil {
-					return errors.Annotate(err).Reason("failed to create deployment directory for %(deployment)q").
-						D("deployment", proj.project.dep.title).Err()
+					return errors.Annotate(err, "failed to create deployment directory for %q", proj.project.dep.title).Err()
 				}
 				return proj.stage(w, depDir, params)
 			}
@@ -400,8 +398,7 @@ func (reg *deploymentRegistry) stage(w *work, stageDir *managedfs.Dir, params *d
 			workC <- func() error {
 				depDir, err := stageDir.EnsureDirectory(string(proj.project.dep.title), "container_engine")
 				if err != nil {
-					return errors.Annotate(err).Reason("failed to create deployment directory for %(deployment)q").
-						D("deployment", proj.project.dep.title).Err()
+					return errors.Annotate(err, "failed to create deployment directory for %q", proj.project.dep.title).Err()
 				}
 				return proj.stage(w, depDir, params)
 			}

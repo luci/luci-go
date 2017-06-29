@@ -66,37 +66,10 @@ func TestAny(t *testing.T) {
 		for _, err := range []error{
 			testErr,
 			MultiError{errors.New("other error"), MultiError{testErr, nil}},
-			Annotate(testErr).Reason("error test").Err(),
+			Annotate(testErr, "error test").Err(),
 		} {
 			Convey(fmt.Sprintf(`Registers true for %T %v`, err, err), func() {
 				So(Any(err, filter), ShouldBeTrue)
-			})
-		}
-	})
-}
-
-func TestContains(t *testing.T) {
-	t.Parallel()
-
-	Convey(`Testing the Contains function for a sentinel error`, t, func() {
-		sentinel := errors.New("test error")
-
-		for _, err := range []error{
-			nil,
-			errors.New("foo"),
-			errors.New("test error"),
-		} {
-			Convey(fmt.Sprintf(`Registers false for %T %v`, err, err), func() {
-				So(Contains(err, sentinel), ShouldBeFalse)
-			})
-		}
-
-		for _, err := range []error{
-			sentinel,
-			MultiError{errors.New("other error"), MultiError{sentinel, nil}},
-		} {
-			Convey(fmt.Sprintf(`Registers true for %T %v`, err, err), func() {
-				So(Contains(err, sentinel), ShouldBeTrue)
 			})
 		}
 	})

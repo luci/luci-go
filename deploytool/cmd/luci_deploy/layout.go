@@ -42,7 +42,7 @@ func (s *layoutSource) checkoutPath() string {
 //	  within the source root (e.g., "relpath" is prepended to it).
 func (s *layoutSource) pathTo(p, relpath string) string {
 	if s.Relpath == "" {
-		panic(errors.Reason("source %(source)q is not checked out").D("source", s).Err())
+		panic(errors.Reason("source %q is not checked out", s).Err())
 	}
 
 	// If this is absolute, take it relative to source root.
@@ -127,7 +127,7 @@ func (d *layoutDeployment) String() string { return string(d.title) }
 // left-to-right manner.
 func (d *layoutDeployment) substituteParams(vp *string) error {
 	if err := substitute(vp, d.Parameter); err != nil {
-		return errors.Annotate(err).Err()
+		return errors.Annotate(err, "").Err()
 	}
 	return nil
 }
@@ -179,20 +179,19 @@ func (comp *layoutDeploymentComponent) buildPath(bp *deploy.BuildPath) (string, 
 	if path, ok := comp.buildPathMap[bp]; ok {
 		return path, nil
 	}
-	return "", errors.Reason("no build path resolved for: %(bp)+v").D("bp", bp, "%+v").Err()
+	return "", errors.Reason("no build path resolved for: %+v", bp).Err()
 }
 
 func (comp *layoutDeploymentComponent) loadSourceComponent(reg componentRegistrar) error {
 	if err := unmarshalTextProtobuf(comp.source().pathTo(comp.comp.Path, ""), &comp.Component); err != nil {
-		return errors.Annotate(err).Reason("failed to load source component %(component)q").D("component", comp).Err()
+		return errors.Annotate(err, "failed to load source component %q", comp).Err()
 	}
 
 	// Referenced build paths.
 	for i, p := range comp.BuildPath {
 		var msg deploy.Component_Build
 		if err := unmarshalTextProtobuf(comp.pathTo(p), &msg); err != nil {
-			return errors.Annotate(err).Reason("failed to load component Build #%(index)d from [%(path)s]").
-				D("index", i).D("path", p).Err()
+			return errors.Annotate(err, "failed to load component Build #%d from [%s]", i, p).Err()
 		}
 		comp.Build = append(comp.Build, &msg)
 	}
@@ -207,8 +206,7 @@ func (comp *layoutDeploymentComponent) loadSourceComponent(reg componentRegistra
 		// - All referenced path parameters will be loaded and appended onto their
 		//   non-path members.
 		if dep.cloudProject == nil {
-			return errors.Reason("AppEngine module %(comp)q requires a cloud project").
-				D("comp", comp).Err()
+			return errors.Reason("AppEngine module %q requires a cloud project", comp).Err()
 		}
 
 		aem := t.AppengineModule
@@ -225,8 +223,7 @@ func (comp *layoutDeploymentComponent) loadSourceComponent(reg componentRegistra
 		for i, p := range aem.HandlerPath {
 			var msg deploy.AppEngineModule_HandlerSet
 			if err := unmarshalTextProtobuf(comp.pathTo(p), &msg); err != nil {
-				return errors.Annotate(err).Reason("failed to load HandlerSet #%(index)d for %(component)q").
-					D("index", i).D("component", comp).Err()
+				return errors.Annotate(err, "failed to load HandlerSet #%d for %q", i, comp).Err()
 			}
 			module.Handlers.Handler = append(module.Handlers.Handler, msg.Handler...)
 		}
@@ -237,8 +234,7 @@ func (comp *layoutDeploymentComponent) loadSourceComponent(reg componentRegistra
 			path := module.comp.pathTo(p)
 			res, err := loadIndexYAMLResource(path)
 			if err != nil {
-				return errors.Annotate(err).Reason("failed to load 'index.yaml' from [%(path)s]").
-					D("path", path).Err()
+				return errors.Annotate(err, "failed to load 'index.yaml' from [%s]", path).Err()
 			}
 			dep.cloudProject.appendResources(res, &module)
 		}
@@ -250,14 +246,14 @@ func (comp *layoutDeploymentComponent) loadSourceComponent(reg componentRegistra
 
 		for i, p := range module.ResourcePath {
 			if err := comp.dep.substituteParams(&p); err != nil {
-				return errors.Annotate(err).Reason("failed to substitute parameters for resource path").
-					D("path", p).Err()
+				return errors.Annotate(err, "failed to substitute parameters for resource path").
+					InternalReason("path(%s)", p).Err()
 			}
 
 			var res deploy.AppEngineResources
 			if err := unmarshalTextProtobuf(comp.pathTo(p), &res); err != nil {
-				return errors.Annotate(err).Reason("failed to load Resources #%(index)d for %(component)").
-					D("index", i).D("path", p).D("component", comp).Err()
+				return errors.Annotate(err, "failed to load Resources #%d for %q", i, comp).
+					InternalReason("path(%s)", p).Err()
 			}
 			dep.cloudProject.appendResources(&res, &module)
 		}
@@ -270,8 +266,7 @@ func (comp *layoutDeploymentComponent) loadSourceComponent(reg componentRegistra
 
 	case *deploy.Component_GkePod:
 		if len(comp.gkePods) == 0 {
-			return errors.Reason("GKE Container %(comp)q is not bound to a GKE cluster").
-				D("comp", comp.String()).Err()
+			return errors.Reason("GKE Container %q is not bound to a GKE cluster", comp).Err()
 		}
 
 		comp.gkePod = &layoutDeploymentGKEPod{
@@ -289,7 +284,7 @@ func (comp *layoutDeploymentComponent) loadSourceComponent(reg componentRegistra
 		if len(invalidLabels) > 0 {
 			sort.Strings(invalidLabels)
 			return errors.Reason("user-supplied labels may not use deploytool prefix").
-				D("labels", invalidLabels).Err()
+				InternalReason("labels(%v)", invalidLabels).Err()
 		}
 
 		for _, bp := range comp.gkePods {
@@ -319,7 +314,7 @@ func (comp *layoutDeploymentComponent) expandPaths() error {
 		if bp.DirKey != "" {
 			dir, ok := comp.buildDirs[bp.DirKey]
 			if !ok {
-				return errors.Reason("Invalid `dir_key` value: %(dirKey)q").D("dirKey", bp.DirKey).Err()
+				return errors.Reason("Invalid `dir_key` value: %q", bp.DirKey).Err()
 			}
 			resolved = deployToNative(dir, bp.Path)
 		} else {
@@ -349,16 +344,16 @@ func (comp *layoutDeploymentComponent) expandPaths() error {
 							Build: &deploy.BuildPath{Path: bd.Path},
 						}
 						if err := resolveBuildPath(sf.GetBuild()); err != nil {
-							return errors.Annotate(err).Err()
+							return errors.Annotate(err, "").Err()
 						}
 
 					case *deploy.AppEngineModule_Handler_StaticFiles_Build:
 						if err := resolveBuildPath(bd.Build); err != nil {
-							return errors.Annotate(err).Err()
+							return errors.Annotate(err, "").Err()
 						}
 
 					default:
-						return errors.Reason("unknown `base_dir` type %(type)T").D("type", bd).Err()
+						return errors.Reason("unknown `base_dir` type %T", bd).Err()
 					}
 
 				case *deploy.AppEngineModule_Handler_StaticDir:
@@ -368,12 +363,12 @@ func (comp *layoutDeploymentComponent) expandPaths() error {
 						StaticBuildDir: &deploy.BuildPath{Path: c.StaticDir},
 					}
 					if err := resolveBuildPath(handler.GetStaticBuildDir()); err != nil {
-						return errors.Annotate(err).Err()
+						return errors.Annotate(err, "").Err()
 					}
 
 				case *deploy.AppEngineModule_Handler_StaticBuildDir:
 					if err := resolveBuildPath(c.StaticBuildDir); err != nil {
-						return errors.Annotate(err).Err()
+						return errors.Annotate(err, "").Err()
 					}
 				}
 			}
@@ -388,16 +383,16 @@ func (comp *layoutDeploymentComponent) expandPaths() error {
 					Build: &deploy.BuildPath{Path: df.Path},
 				}
 				if err := resolveBuildPath(container.GetBuild()); err != nil {
-					return errors.Annotate(err).Err()
+					return errors.Annotate(err, "").Err()
 				}
 
 			case *deploy.KubernetesPod_Container_Build:
 				if err := resolveBuildPath(df.Build); err != nil {
-					return errors.Annotate(err).Err()
+					return errors.Annotate(err, "").Err()
 				}
 
 			default:
-				return errors.Reason("unknown `dockerfile` type %(type)T").D("type", df).Err()
+				return errors.Reason("unknown `dockerfile` type %T", df).Err()
 			}
 		}
 	}
@@ -529,7 +524,7 @@ type deployLayout struct {
 func (l *deployLayout) workingFilesystem() (*managedfs.Filesystem, error) {
 	fs, err := managedfs.New(l.WorkingPath)
 	if err != nil {
-		return nil, errors.Annotate(err).Err()
+		return nil, errors.Annotate(err, "").Err()
 	}
 	return fs, nil
 }
@@ -543,16 +538,16 @@ func (l *deployLayout) getDeploymentComponent(v string) (*layoutDeployment, *lay
 
 	dep := l.deployments[deployment]
 	if dep == nil {
-		return nil, nil, errors.Reason("unknown Deployment %(dep)q").
-			D("value", v).D("dep", deployment).Err()
+		return nil, nil, errors.Reason("unknown Deployment %q", deployment).
+			InternalReason("value(%s)", v).Err()
 	}
 
 	// If a component was specified, only add that component.
 	if component != "" {
 		comp := dep.components[component]
 		if comp == nil {
-			return nil, nil, errors.Reason("unknown Deployment Component %(value)q").
-				D("value", v).D("dep", deployment).D("comp", component).Err()
+			return nil, nil, errors.Reason("unknown Deployment Component %q", v).
+				InternalReason("dep(%s)/comp(%s)", deployment, component).Err()
 		}
 		return dep, comp, nil
 	}
@@ -565,7 +560,7 @@ func (l *deployLayout) matchDeploymentComponent(m string, cb func(*layoutDeploym
 
 		matched, err := filepath.Match(m, dep.String())
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to match %(pattern)q").D("pattern", m).Err()
+			return errors.Annotate(err, "failed to match %q", m).Err()
 		}
 		if matched {
 			// Matches entire deployment.
@@ -579,7 +574,7 @@ func (l *deployLayout) matchDeploymentComponent(m string, cb func(*layoutDeploym
 
 			matched, err := filepath.Match(m, comp.String())
 			if err != nil {
-				return errors.Annotate(err).Reason("failed to match %(pattern)q").D("pattern", m).Err()
+				return errors.Annotate(err, "failed to match %q", m).Err()
 			}
 			if matched {
 				cb(dep, comp)
@@ -608,7 +603,7 @@ func (l *deployLayout) load(c context.Context, path string) error {
 
 	// Load the user config, if available.
 	if err := loadUserConfig(c, &l.user); err != nil {
-		return errors.Annotate(err).Reason("failed to load user config").Err()
+		return errors.Annotate(err, "failed to load user config").Err()
 	}
 	if len(l.user.SourceOverride) > 0 {
 		l.userSourceOverrides = make(map[string]*deploy.Source, len(l.user.SourceOverride))
@@ -639,8 +634,7 @@ func (l *deployLayout) load(c context.Context, path string) error {
 
 	absWorkingPath, err := filepath.Abs(l.WorkingPath)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to resolve absolute path for %(path)q").
-			D("path", l.WorkingPath).Err()
+		return errors.Annotate(err, "failed to resolve absolute path for %q", l.WorkingPath).Err()
 	}
 	l.WorkingPath = absWorkingPath
 	return nil
@@ -649,7 +643,7 @@ func (l *deployLayout) load(c context.Context, path string) error {
 func (l *deployLayout) initFrozenCheckout(c context.Context) (*deploy.FrozenLayout, error) {
 	fis, err := ioutil.ReadDir(l.SourcesPath)
 	if err != nil {
-		return nil, errors.Annotate(err).Reason("failed to read directory").Err()
+		return nil, errors.Annotate(err, "failed to read directory").Err()
 	}
 
 	// Build internal and frozen layout in parallel.
@@ -697,7 +691,7 @@ func (l *deployLayout) initFrozenCheckout(c context.Context) (*deploy.FrozenLayo
 
 			t, err := titleFromConfigPath(name)
 			if err != nil {
-				return errors.Annotate(err).Reason("invalid source title").Err()
+				return errors.Annotate(err, "invalid source title").Err()
 			}
 
 			src := deploy.FrozenLayout_Source{
@@ -707,8 +701,7 @@ func (l *deployLayout) initFrozenCheckout(c context.Context) (*deploy.FrozenLayo
 			return nil
 		})
 		if err != nil {
-			return nil, errors.Annotate(err).Reason("failed to load source group %(name)q from [%(path)s]").
-				D("name", name).D("path", path).Err()
+			return nil, errors.Annotate(err, "failed to load source group %q from [%s]", name, path).Err()
 		}
 
 		frozen.SourceGroup[string(name)] = &sg
@@ -721,7 +714,7 @@ func (l *deployLayout) loadFrozenLayout(c context.Context) error {
 	// Load the frozen configuration file from disk.
 	frozen, err := checkoutFrozen(l)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to load frozen checkout").Err()
+		return errors.Annotate(err, "failed to load frozen checkout").Err()
 	}
 
 	// Load our source groups and sources.
@@ -748,12 +741,10 @@ func (l *deployLayout) loadFrozenLayout(c context.Context) error {
 
 	// Build our internally-connected structures from the frozen layout.
 	if err := l.loadApps(c); err != nil {
-		return errors.Annotate(err).Reason("failed to load applications from [%(path)s]").
-			D("path", l.ApplicationsPath).Err()
+		return errors.Annotate(err, "failed to load applications from [%s]", l.ApplicationsPath).Err()
 	}
 	if err := l.loadDeployments(c); err != nil {
-		return errors.Annotate(err).Reason("failed to load deployments from [%(path)s]").
-			D("path", l.DeploymentsPath).Err()
+		return errors.Annotate(err, "failed to load deployments from [%s]", l.DeploymentsPath).Err()
 	}
 	return nil
 }
@@ -761,7 +752,7 @@ func (l *deployLayout) loadFrozenLayout(c context.Context) error {
 func (l *deployLayout) loadApps(c context.Context) error {
 	fis, err := ioutil.ReadDir(l.ApplicationsPath)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to read directory").Err()
+		return errors.Annotate(err, "failed to read directory").Err()
 	}
 	apps := make(map[title]*deploy.Application, len(fis))
 	var appBase deploy.Application
@@ -770,7 +761,7 @@ func (l *deployLayout) loadApps(c context.Context) error {
 
 		t, err := titleFromConfigPath(name)
 		if err != nil {
-			return errors.Annotate(err).Reason("invalid application title").Err()
+			return errors.Annotate(err, "invalid application title").Err()
 		}
 
 		apps[t] = &cpy
@@ -793,8 +784,7 @@ func (l *deployLayout) loadApps(c context.Context) error {
 		for _, comp := range proj.Component {
 			compT := title(comp.Name)
 			if err := compT.validate(); err != nil {
-				return errors.Annotate(err).Reason("application %(app)q component %(component)q is not a valid component title").
-					D("app", t).D("component", comp.Name).Err()
+				return errors.Annotate(err, "application %q component %q is not a valid component title", t, comp.Name).Err()
 			}
 			proj.components[compT] = &layoutAppComponent{
 				Application_Component: comp,
@@ -811,7 +801,7 @@ func (l *deployLayout) loadApps(c context.Context) error {
 func (l *deployLayout) loadDeployments(c context.Context) error {
 	fis, err := ioutil.ReadDir(l.DeploymentsPath)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to read directory").Err()
+		return errors.Annotate(err, "failed to read directory").Err()
 	}
 	deployments := make(map[title]*deploy.Deployment, len(fis))
 	var deploymentBase deploy.Deployment
@@ -820,7 +810,7 @@ func (l *deployLayout) loadDeployments(c context.Context) error {
 
 		t, err := titleFromConfigPath(name)
 		if err != nil {
-			return errors.Annotate(err).Reason("invalid deployment title").Err()
+			return errors.Annotate(err, "invalid deployment title").Err()
 		}
 
 		deployments[t] = &cpy
@@ -834,8 +824,7 @@ func (l *deployLayout) loadDeployments(c context.Context) error {
 	for t, d := range deployments {
 		dep, err := l.loadDeployment(t, d)
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to load deployment (%(deployment)q)").
-				D("deployment", t).Err()
+			return errors.Annotate(err, "failed to load deployment (%q)", t).Err()
 		}
 		l.deployments[t] = dep
 		l.deploymentNames = append(l.deploymentNames, dep.title)
@@ -852,14 +841,13 @@ func (l *deployLayout) loadDeployment(t title, d *deploy.Deployment) (*layoutDep
 		sg:         l.sourceGroups[title(d.SourceGroup)],
 	}
 	if dep.sg == nil {
-		return nil, errors.Reason("unknown source group %(sourceGroup)q").
-			D("sourceGroup", d.SourceGroup).Err()
+		return nil, errors.Reason("unknown source group %q", d.SourceGroup).Err()
 	}
 
 	// Resolve our application.
 	dep.app = l.apps[title(dep.Application)]
 	if dep.app == nil {
-		return nil, errors.Reason("unknown application %(app)q").D("app", dep.Application).Err()
+		return nil, errors.Reason("unknown application %q", dep.Application).Err()
 	}
 
 	// Initialize our Components. Their protobufs cannot not be loaded until
@@ -873,14 +861,12 @@ func (l *deployLayout) loadDeployment(t title, d *deploy.Deployment) (*layoutDep
 			sources: []*layoutSource{dep.sg.sources[title(projComp.Source)]},
 		}
 		if comp.sources[0] == nil {
-			return nil, errors.Reason("application references non-existent source %(source)q").
-				D("source", projComp.Source).Err()
+			return nil, errors.Reason("application references non-existent source %q", projComp.Source).Err()
 		}
 		for _, os := range projComp.OtherSource {
 			src := dep.sg.sources[title(os)]
 			if src == nil {
-				return nil, errors.Reason("application references non-existent other source %(source)q").
-					D("source", os).Err()
+				return nil, errors.Reason("application references non-existent other source %q", os).Err()
 			}
 			comp.sources = append(comp.sources, src)
 		}
@@ -899,8 +885,7 @@ func (l *deployLayout) loadDeployment(t title, d *deploy.Deployment) (*layoutDep
 			l.cloudProjects = make(map[string]*layoutDeploymentCloudProject)
 		}
 		if cur, ok := l.cloudProjects[cp.Name]; ok {
-			return nil, errors.Reason("cloud project %(name)q defined by both %(curDep)q and %(thisDep)q").
-				D("name", cp.Name).D("curDep", cur.dep.title).D("thisDep", dep.title).Err()
+			return nil, errors.Reason("cloud project %q defined by both %q and %q", cp.Name, cur.dep.title, dep.title).Err()
 		}
 		l.cloudProjects[cp.Name] = &cp
 
@@ -917,12 +902,10 @@ func (l *deployLayout) loadDeployment(t title, d *deploy.Deployment) (*layoutDep
 					comp := dep.components[title(b.Name)]
 					switch {
 					case comp == nil:
-						return nil, errors.Reason("unknown component %(comp)q for cluster %(name)q").
-							D("comp", b.Name).D("name", gke.Name).Err()
+						return nil, errors.Reason("unknown component %q for cluster %q", b.Name, gke.Name).Err()
 
 					case b.Replicas <= 0:
-						return nil, errors.Reason("GKE component %(comp)q must have at least 1 replica").
-							D("comp", b.Name).Err()
+						return nil, errors.Reason("GKE component %q must have at least 1 replica", b.Name).Err()
 					}
 
 					bp := &layoutDeploymentGKEPodBinding{
@@ -975,16 +958,14 @@ func findLayout(filename, dir string) (string, error) {
 			break
 
 		default:
-			return "", errors.Annotate(err).Reason("failed to state %(path)q").
-				D("path", path).Err()
+			return "", errors.Annotate(err, "failed to state %q", path).Err()
 		}
 
 		// Walk up one directory.
 		oldDir := dir
 		dir, _ = filepath.Split(dir)
 		if oldDir == dir {
-			return "", errors.Reason("could not find %(filename)q starting from %(dir)q").
-				D("filename", filename).D("dir", dir).Err()
+			return "", errors.Reason("could not find %q starting from %q", filename, dir).Err()
 		}
 	}
 }

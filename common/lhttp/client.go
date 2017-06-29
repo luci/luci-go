@@ -91,13 +91,13 @@ func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen Req
 			switch {
 			case status == 408, status == 429, status >= 500:
 				// The HTTP status code means the request should be retried.
-				err = errors.Reason("http request failed: %(text)s (HTTP %(code)d)").
-					D("text", http.StatusText(status)).D("code", status).Tag(transient.Tag).Err()
+				err = errors.Reason("http request failed: %s (HTTP %d)", http.StatusText(status), status).
+					Tag(transient.Tag).Err()
 			case status == 404 && strings.HasPrefix(req.URL.Path, "/_ah/api/"):
 				// Endpoints occasionally return 404 on valid requests!
 				logging.Infof(ctx, "lhttp.Do() got a Cloud Endpoints 404: %#v", resp.Header)
-				err = errors.Reason("http request failed (endpoints): %(text)s (HTTP %(code)d)").
-					D("text", http.StatusText(status)).D("code", status).Tag(transient.Tag).Err()
+				err = errors.Reason("http request failed (endpoints): %s (HTTP %d)", http.StatusText(status), status).
+					Tag(transient.Tag).Err()
 			case status >= 400:
 				// Any other failure code is a hard failure.
 				err = fmt.Errorf("http request failed: %s (HTTP %d)", http.StatusText(status), status)
@@ -158,8 +158,7 @@ func NewRequestJSON(ctx context.Context, c *http.Client, rFn retry.Factory, url,
 		}
 		if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
 			// Retriable.
-			return errors.Annotate(err).Reason("bad response %(url)s").
-				D("url", url).Tag(transient.Tag).Err()
+			return errors.Annotate(err, "bad response %s", url).Tag(transient.Tag).Err()
 		}
 		return nil
 	}, nil), nil

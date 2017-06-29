@@ -36,7 +36,7 @@ func (gat GetAllTarget) MarshalJSON() ([]byte, error) {
 	case GetAllRef:
 		return refJSON, nil
 	default:
-		return nil, errors.Reason("unknown GetAllTarget: %(value)v").D("value", gat).Err()
+		return nil, errors.Reason("unknown GetAllTarget: %v", gat).Err()
 	}
 }
 
@@ -48,7 +48,7 @@ func (gat *GetAllTarget) UnmarshalJSON(d []byte) error {
 	case bytes.Equal(d, refJSON):
 		*gat = GetAllRef
 	default:
-		return errors.Reason("unknown GetAllTarget: %(value)q").D("value", d).Err()
+		return errors.Reason("unknown GetAllTarget: %q", d).Err()
 	}
 	return nil
 }

@@ -60,17 +60,17 @@ func (o *Options) resolve(c context.Context) error {
 	if o.WorkDir == "" {
 		wd, err := os.Getwd()
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to get working directory").Err()
+			return errors.Annotate(err, "failed to get working directory").Err()
 		}
 		o.WorkDir = wd
 	}
 	if err := filesystem.AbsPath(&o.WorkDir); err != nil {
-		return errors.Annotate(err).Reason("failed to resolve absolute path of WorkDir").Err()
+		return errors.Annotate(err, "failed to resolve absolute path of WorkDir").Err()
 	}
 
 	// Resolve our target python script.
 	if err := o.ResolveSpec(c); err != nil {
-		return errors.Annotate(err).Reason("failed to resolve Python script").Err()
+		return errors.Annotate(err, "failed to resolve Python script").Err()
 	}
 
 	// If no environment base directory was supplied, create one under the current
@@ -80,9 +80,7 @@ func (o *Options) resolve(c context.Context) error {
 		if v, ok := o.Environ.Get(EnvironmentStampPathENV); ok {
 			var err error
 			if o.EnvConfig.BaseDir, err = venv.EnvRootFromStampPath(v); err != nil {
-				return errors.Annotate(err).Reason("failed to get env root from environment: %(path)s").
-					D("path", v).
-					Err()
+				return errors.Annotate(err, "failed to get env root from environment: %s", v).Err()
 			}
 			logging.Debugf(c, "Loaded environment root from environment variable: %s", o.EnvConfig.BaseDir)
 		}
@@ -102,7 +100,7 @@ func (o *Options) ResolveSpec(c context.Context) error {
 	// invoked with.
 	cmd, err := python.ParseCommandLine(o.Args)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to parse Python command-line").Err()
+		return errors.Annotate(err, "failed to parse Python command-line").Err()
 	}
 
 	// If we're running a Python script, assert that the target script exists.
@@ -114,17 +112,13 @@ func (o *Options) ResolveSpec(c context.Context) error {
 
 		// Resolve to absolute script path.
 		if err := filesystem.AbsPath(&script.Path); err != nil {
-			return errors.Annotate(err).Reason("failed to get absolute path of: %(path)s").
-				D("path", cmd.Target).
-				Err()
+			return errors.Annotate(err, "failed to get absolute path of: %s", cmd.Target).Err()
 		}
 
 		// Confirm that the script path actually exists.
 		st, err := os.Stat(script.Path)
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to stat Python script: %(path)s").
-				D("path", cmd.Target).
-				Err()
+			return errors.Annotate(err, "failed to stat Python script: %s", cmd.Target).Err()
 		}
 
 		// If the script is a directory, then we assume that we're doing a module
@@ -136,10 +130,8 @@ func (o *Options) ResolveSpec(c context.Context) error {
 	if isScriptTarget {
 		spec, err := o.SpecLoader.LoadForScript(c, script.Path, isModule)
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to load spec for script: %(path)s").
-				D("path", cmd.Target).
-				D("isModule", isModule).
-				Err()
+			return errors.Annotate(err, "failed to load spec for script: %s", cmd.Target).
+				InternalReason("isModule(%v)", isModule).Err()
 		}
 		if spec != nil {
 			o.EnvConfig.Spec = spec
@@ -151,9 +143,7 @@ func (o *Options) ResolveSpec(c context.Context) error {
 	if v, ok := o.Environ.Get(EnvironmentStampPathENV); ok {
 		var sp vpython.Spec
 		if err := spec.Load(v, &sp); err != nil {
-			return errors.Annotate(err).Reason("failed to load environment-supplied spec from: %(path)s").
-				D("path", v).
-				Err()
+			return errors.Annotate(err, "failed to load environment-supplied spec from: %s", v).Err()
 		}
 
 		logging.Infof(c, "Loaded spec from environment: %s", v)

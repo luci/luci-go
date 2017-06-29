@@ -204,8 +204,7 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 			}
 			if err != nil {
 				// Treat all errors here as transient.
-				return errors.Annotate(err).Reason("failed to send request").
-					Tag(transient.Tag).Err()
+				return errors.Annotate(err, "failed to send request").Tag(transient.Tag).Err()
 			}
 
 			if options.resHeaderMetadata != nil {

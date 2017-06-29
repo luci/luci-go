@@ -267,10 +267,10 @@ func TestVirtualEnv(t *testing.T) {
 func loadJSON(path string, dst interface{}) error {
 	content, err := ioutil.ReadFile(path)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to open file").Err()
+		return errors.Annotate(err, "failed to open file").Err()
 	}
 	if err := json.Unmarshal(content, dst); err != nil {
-		return errors.Annotate(err).Reason("failed to unmarshal JSON").Err()
+		return errors.Annotate(err, "failed to unmarshal JSON").Err()
 	}
 	return nil
 }

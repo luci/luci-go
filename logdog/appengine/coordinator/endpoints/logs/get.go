@@ -140,7 +140,7 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog
 	svc := coordinator.GetServices(c)
 	st, err := svc.StorageForStream(c, lst)
 	if err != nil {
-		return errors.Annotate(err).InternalReason("failed to create storage instance").Err()
+		return errors.Annotate(err, "").InternalReason("failed to create storage instance").Err()
 	}
 	defer st.Close()
 
@@ -166,7 +166,7 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog
 		signedURLs, err := st.GetSignedURLs(c, &signingRequest)
 		switch {
 		case err != nil:
-			return errors.Annotate(err).InternalReason("failed to generate signed URL").Err()
+			return errors.Annotate(err, "").InternalReason("failed to generate signed URL").Err()
 
 		case signedURLs == nil:
 			log.Debugf(c, "Signed URL was requested, but is not supported by storage.")

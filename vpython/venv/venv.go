@@ -55,7 +55,7 @@ func blocker(c context.Context) fslock.Blocker {
 func withTempDir(l logging.Logger, prefix string, fn func(string) error) error {
 	tdir, err := ioutil.TempDir("", prefix)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to create temporary directory").Err()
+		return errors.Annotate(err, "failed to create temporary directory").Err()
 	}
 	defer func() {
 		if err := filesystem.RemoveAll(tdir); err != nil {
@@ -76,9 +76,8 @@ func withTempDir(l logging.Logger, prefix string, fn func(string) error) error {
 // could have overridden it or exported their own, let's make sure.
 func EnvRootFromStampPath(path string) (string, error) {
 	if err := filesystem.AbsPath(&path); err != nil {
-		return "", errors.Annotate(err).
-			Reason("failed to get absolute path for specification file path: %(path)s").
-			Err()
+		return "", errors.Annotate(err,
+			"failed to get absolute path for specification file path: %(path)s", path).Err()
 	}
 	return filepath.Dir(filepath.Dir(path)), nil
 }
@@ -113,10 +112,10 @@ func With(c context.Context, cfg Config, blocking bool, fn func(context.Context,
 		// full environment initialization.
 		emptyEnv, err := cfg.WithoutWheels().makeEnv(c, nil)
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to initialize empty probe environment").Err()
+			return errors.Annotate(err, "failed to initialize empty probe environment").Err()
 		}
 		if err := emptyEnv.ensure(c, blocking); err != nil {
-			return errors.Annotate(err).Reason("failed to create empty probe environment").Err()
+			return errors.Annotate(err, "failed to create empty probe environment").Err()
 		}
 
 		usedEnvs.Add(emptyEnv.Name)
@@ -228,13 +227,13 @@ func (e *Env) ensure(c context.Context, blocking bool) (err error) {
 
 				// No complete flag. Create a new VirtualEnv here.
 				if err := e.createLocked(c); err != nil {
-					return errors.Annotate(err).Reason("failed to create new VirtualEnv").Err()
+					return errors.Annotate(err, "failed to create new VirtualEnv").Err()
 				}
 
 				// Mark that this environment is complete. This MUST succeed so other
 				// instances know that this environment is complete.
 				if err := e.touchCompleteFlagLocked(); err != nil {
-					return errors.Annotate(err).Reason("failed to create complete flag").Err()
+					return errors.Annotate(err, "failed to create complete flag").Err()
 				}
 
 				logging.Debugf(c, "Successfully created new virtual environment [%s]!", e.Name)
@@ -256,7 +255,7 @@ func (e *Env) ensure(c context.Context, blocking bool) (err error) {
 				"path":           e.EnvironmentStampPath,
 			}.Debugf(c, "Lock is held, and environment is not complete.")
 			if !blocking {
-				return errors.Annotate(err).Reason("VirtualEnv lock is currently held (non-blocking)").Err()
+				return errors.Annotate(err, "VirtualEnv lock is currently held (non-blocking)").Err()
 			}
 
 			// Some other process holds the lock. Sleep a little and retry.
@@ -265,7 +264,7 @@ func (e *Env) ensure(c context.Context, blocking bool) (err error) {
 			}
 
 		default:
-			return errors.Annotate(err).Reason("failed to create VirtualEnv").Err()
+			return errors.Annotate(err, "failed to create VirtualEnv").Err()
 		}
 	}
 }
@@ -330,7 +329,7 @@ func (e *Env) withImpl(c context.Context, blocking bool, used stringset.Set,
 				"path":           e.EnvironmentStampPath,
 			}.Debugf(c, "Could not obtain shared usage lock.")
 			if !blocking {
-				return errors.Annotate(err).Reason("VirtualEnv lock is currently held (non-blocking)").Err()
+				return errors.Annotate(err, "VirtualEnv lock is currently held (non-blocking)").Err()
 			}
 
 			// Some other process holds the lock. Sleep a little and retry.
@@ -339,7 +338,7 @@ func (e *Env) withImpl(c context.Context, blocking bool, used stringset.Set,
 			}
 
 		default:
-			return errors.Annotate(err).Reason("failed to use VirtualEnv").Err()
+			return errors.Annotate(err, "failed to use VirtualEnv").Err()
 		}
 	}
 }
@@ -384,19 +383,16 @@ func (e *Env) AssertCompleteAndLoad() error {
 
 	content, err := ioutil.ReadFile(e.EnvironmentStampPath)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to load file from: %(path)s").
-			D("path", e.EnvironmentStampPath).
-			Err()
+		return errors.Annotate(err, "failed to load file from: %s", e.EnvironmentStampPath).Err()
 	}
 
 	var environment vpython.Environment
 	if err := proto.UnmarshalText(string(content), &environment); err != nil {
-		return errors.Annotate(err).Reason("failed to unmarshal vpython.Env stamp from: %(path)s").
-			D("path", e.EnvironmentStampPath).
-			Err()
+		return errors.Annotate(err, "failed to unmarshal vpython.Env stamp from: %s",
+			e.EnvironmentStampPath).Err()
 	}
 	if err := spec.NormalizeEnvironment(&environment); err != nil {
-		return errors.Annotate(err).Reason("failed to normalize stamp environment").Err()
+		return errors.Annotate(err, "failed to normalize stamp environment").Err()
 	}
 
 	// If we are configured with an environment, validate that it matches the
@@ -424,7 +420,7 @@ func (e *Env) assertComplete() error {
 	case filesystem.IsNotExist(err):
 		return ErrNotComplete
 	case err != nil:
-		return errors.Annotate(err).Reason("failed to check for completion flag").Err()
+		return errors.Annotate(err, "failed to check for completion flag").Err()
 	default:
 		return nil
 	}
@@ -441,7 +437,7 @@ func (e *Env) createLocked(c context.Context) error {
 
 	// Make sure our environment's base directory exists.
 	if err := filesystem.MakeDirs(e.Root); err != nil {
-		return errors.Annotate(err).Reason("failed to create environment root").Err()
+		return errors.Annotate(err, "failed to create environment root").Err()
 	}
 	logging.Infof(c, "Using virtual environment root: %s", e.Root)
 
@@ -460,23 +456,23 @@ func (e *Env) createLocked(c context.Context) error {
 	err := withTempDir(logging.Get(c), "vpython_bootstrap", func(bootstrapDir string) error {
 		pkgDir := filepath.Join(bootstrapDir, "packages")
 		if err := filesystem.MakeDirs(pkgDir); err != nil {
-			return errors.Annotate(err).Reason("could not create bootstrap packages directory").Err()
+			return errors.Annotate(err, "could not create bootstrap packages directory").Err()
 		}
 
 		if err := e.downloadPackages(c, pkgDir, packages); err != nil {
-			return errors.Annotate(err).Reason("failed to download packages").Err()
+			return errors.Annotate(err, "failed to download packages").Err()
 		}
 
 		// Installing base VirtualEnv.
 		if err := e.installVirtualEnv(c, pkgDir); err != nil {
-			return errors.Annotate(err).Reason("failed to install VirtualEnv").Err()
+			return errors.Annotate(err, "failed to install VirtualEnv").Err()
 		}
 
 		// Load PEP425 tags, if we don't already have them.
 		if e.Environment.Pep425Tag == nil {
 			pep425Tags, err := e.getPEP425Tags(c)
 			if err != nil {
-				return errors.Annotate(err).Reason("failed to get PEP425 tags").Err()
+				return errors.Annotate(err, "failed to get PEP425 tags").Err()
 			}
 			e.Environment.Pep425Tag = pep425Tags
 		}
@@ -485,7 +481,7 @@ func (e *Env) createLocked(c context.Context) error {
 		if len(e.Environment.Spec.Wheel) > 0 {
 			// Install wheels into our VirtualEnv.
 			if err := e.installWheels(c, bootstrapDir, pkgDir); err != nil {
-				return errors.Annotate(err).Reason("failed to install wheels").Err()
+				return errors.Annotate(err, "failed to install wheels").Err()
 			}
 		}
 		return nil
@@ -496,15 +492,14 @@ func (e *Env) createLocked(c context.Context) error {
 
 	// Write our specification file.
 	if err := e.WriteEnvironmentStamp(); err != nil {
-		return errors.Annotate(err).Reason("failed to write environment stamp file to: %(path)s").
-			D("path", e.EnvironmentStampPath).
-			Err()
+		return errors.Annotate(err, "failed to write environment stamp file to: %s",
+			e.EnvironmentStampPath).Err()
 	}
 	logging.Debugf(c, "Wrote environment stamp file to: %s", e.EnvironmentStampPath)
 
 	// Finalize our VirtualEnv for bootstrap execution.
 	if err := e.finalize(c); err != nil {
-		return errors.Annotate(err).Reason("failed to prepare VirtualEnv").Err()
+		return errors.Annotate(err, "failed to prepare VirtualEnv").Err()
 	}
 
 	return nil
@@ -514,7 +509,7 @@ func (e *Env) downloadPackages(c context.Context, dst string, packages []*vpytho
 	// Create a wheel sub-directory underneath of root.
 	logging.Debugf(c, "Loading %d package(s) into: %s", len(packages), dst)
 	if err := e.Config.Loader.Ensure(c, dst, packages); err != nil {
-		return errors.Annotate(err).Reason("failed to download packages").Err()
+		return errors.Annotate(err, "failed to download packages").Err()
 	}
 	return nil
 }
@@ -523,15 +518,14 @@ func (e *Env) installVirtualEnv(c context.Context, pkgDir string) error {
 	// Create our VirtualEnv package staging sub-directory underneath of root.
 	bsDir := filepath.Join(e.Root, ".virtualenv")
 	if err := filesystem.MakeDirs(bsDir); err != nil {
-		return errors.Annotate(err).Reason("failed to create VirtualEnv bootstrap directory").
-			D("path", bsDir).
-			Err()
+		return errors.Annotate(err, "failed to create VirtualEnv bootstrap directory").
+			InternalReason("path(%s)", bsDir).Err()
 	}
 
 	// Identify the virtualenv directory: will have "virtualenv-" prefix.
 	matches, err := filepath.Glob(filepath.Join(pkgDir, "virtualenv-*"))
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to glob for 'virtualenv-' directory").Err()
+		return errors.Annotate(err, "failed to glob for 'virtualenv-' directory").Err()
 	}
 	if len(matches) == 0 {
 		return errors.Reason("no 'virtualenv-' directory provided by package").Err()
@@ -546,7 +540,7 @@ func (e *Env) installVirtualEnv(c context.Context, pkgDir string) error {
 	cmd.Dir = venvDir
 	attachOutputForLogging(c, logging.Debug, cmd)
 	if err := cmd.Run(); err != nil {
-		return errors.Annotate(err).Reason("failed to create VirtualEnv").Err()
+		return errors.Annotate(err, "failed to create VirtualEnv").Err()
 	}
 
 	logging.Debugf(c, "Making VirtualEnv relocatable at: %s", e.Root)
@@ -557,7 +551,7 @@ func (e *Env) installVirtualEnv(c context.Context, pkgDir string) error {
 	cmd.Dir = venvDir
 	attachOutputForLogging(c, logging.Debug, cmd)
 	if err := cmd.Run(); err != nil {
-		return errors.Annotate(err).Reason("failed to create VirtualEnv").Err()
+		return errors.Annotate(err, "failed to create VirtualEnv").Err()
 	}
 
 	return nil
@@ -584,23 +578,19 @@ func (e *Env) getPEP425Tags(c context.Context) ([]*vpython.PEP425Tag, error) {
 
 	attachOutputForLogging(c, logging.Debug, cmd)
 	if err := cmd.Run(); err != nil {
-		return nil, errors.Annotate(err).Reason("failed to get PEP425 tags").Err()
+		return nil, errors.Annotate(err, "failed to get PEP425 tags").Err()
 	}
 
 	var tagEntries []pep425TagEntry
 	if err := json.Unmarshal(stdout.Bytes(), &tagEntries); err != nil {
-		return nil, errors.Annotate(err).Reason("failed to unmarshal PEP425 tag output: %(output)s").
-			D("output", stdout.String()).
-			Err()
+		return nil, errors.Annotate(err, "failed to unmarshal PEP425 tag output: %s", stdout).Err()
 	}
 
 	tags := make([]*vpython.PEP425Tag, len(tagEntries))
 	for i, te := range tagEntries {
 		if len(te) != 3 {
-			return nil, errors.Reason("invalid PEP425 tag entry: %(entry)v").
-				D("entry", te).
-				D("index", i).
-				Err()
+			return nil, errors.Reason("invalid PEP425 tag entry: %v", te).
+				InternalReason("index(%d)", i).Err()
 		}
 
 		tags[i] = &vpython.PEP425Tag{
@@ -626,14 +616,14 @@ func (e *Env) installWheels(c context.Context, bootstrapDir, pkgDir string) erro
 	// Identify all downloaded wheels and parse them.
 	wheels, err := wheel.ScanDir(pkgDir)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to load wheels").Err()
+		return errors.Annotate(err, "failed to load wheels").Err()
 	}
 
 	// Build a "wheel" requirements file.
 	reqPath := filepath.Join(bootstrapDir, "requirements.txt")
 	logging.Debugf(c, "Rendering requirements file to: %s", reqPath)
 	if err := wheel.WriteRequirementsFile(reqPath, wheels); err != nil {
-		return errors.Annotate(err).Reason("failed to render requirements file").Err()
+		return errors.Annotate(err, "failed to render requirements file").Err()
 	}
 
 	cmd := e.Interpreter().IsolatedCommand(c,
@@ -646,7 +636,7 @@ func (e *Env) installWheels(c context.Context, bootstrapDir, pkgDir string) erro
 		"--requirement", reqPath)
 	attachOutputForLogging(c, logging.Debug, cmd)
 	if err := cmd.Run(); err != nil {
-		return errors.Annotate(err).Reason("failed to install wheels").Err()
+		return errors.Annotate(err, "failed to install wheels").Err()
 	}
 	return nil
 }
@@ -666,7 +656,7 @@ func (e *Env) finalize(c context.Context) error {
 			}
 		})
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to mark environment read-only").Err()
+			return errors.Annotate(err, "failed to mark environment read-only").Err()
 		}
 	}
 	return nil
@@ -674,7 +664,7 @@ func (e *Env) finalize(c context.Context) error {
 
 func (e *Env) touchCompleteFlagLocked() error {
 	if err := filesystem.Touch(e.completeFlagPath, time.Time{}, 0644); err != nil {
-		return errors.Annotate(err).Err()
+		return errors.Annotate(err, "").Err()
 	}
 	return nil
 }
@@ -695,7 +685,7 @@ func (e *Env) Delete(c context.Context) error {
 
 		// Delete our environment directory.
 		if err := filesystem.RemoveAll(e.Root); err != nil {
-			return errors.Annotate(err).Reason("failed to delete environment root").Err()
+			return errors.Annotate(err, "failed to delete environment root").Err()
 		}
 
 		// Attempt to delete our lock. On POSIX systems, this will successfully
@@ -715,13 +705,13 @@ func (e *Env) Delete(c context.Context) error {
 	logging.Debugf(c, "(Delete) Released exclusive lock for: %s", e.Name)
 
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to delete environment").Err()
+		return errors.Annotate(err, "failed to delete environment").Err()
 	}
 
 	// Try and remove the lock now that we don't hold it.
 	if !removedLock {
 		if err := os.Remove(e.lockPath); err != nil {
-			return errors.Annotate(err).Reason("failed to remove lock").Err()
+			return errors.Annotate(err, "failed to remove lock").Err()
 		}
 	}
 	return nil
@@ -745,9 +735,8 @@ func (e *Env) completionFlagTimestamp() (time.Time, error) {
 		return time.Time{}, nil
 
 	default:
-		return time.Time{}, errors.Annotate(err).Reason("failed to stat completion flag: %(path)s").
-			D("path", e.completeFlagPath).
-			Err()
+		return time.Time{}, errors.Annotate(err, "failed to stat completion flag: %s",
+			e.completeFlagPath).Err()
 	}
 }
 
@@ -773,7 +762,7 @@ func attachOutputForLogging(c context.Context, l logging.Level, cmd *exec.Cmd) {
 func mustReleaseLock(c context.Context, lock fslock.Handle, fn func() error) error {
 	defer func() {
 		if err := lock.Unlock(); err != nil {
-			errors.Log(c, errors.Annotate(err).Reason("failed to release lock").Err())
+			errors.Log(c, errors.Annotate(err, "failed to release lock").Err())
 			panic(err)
 		}
 	}()

@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"sort"
 	"strings"
@@ -23,20 +22,6 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/runtime/goroutine"
 )
-
-// Datum is a single data entry value for stackContext.Data.
-//
-// It's a tuple of Value (the actual data value you care about), and
-// StackFormat, which is a fmt-style string for how this Datum should be
-// rendered when using RenderStack. If StackFormat is left empty, "%#v" will be
-// used.
-type Datum struct {
-	Value       interface{}
-	StackFormat string
-}
-
-// Data is used to add data when Annotate'ing an error.
-type Data map[string]Datum
 
 type stack struct {
 	id     goroutine.ID
@@ -85,87 +70,34 @@ type stackFrameInfo struct {
 // annotation of an error.
 type stackContext struct {
 	frameInfo stackFrameInfo
-	// reason is the publicly-facing reason, and will show up in the Error()
-	// string.
+	// publicly-facing reason, and will show up in the Error() string.
 	reason string
 
-	// InternalReason is used for printing tracebacks, but is otherwise formatted
-	// like reason.
+	// used for printing tracebacks, but will not show up in the Error() string.
 	internalReason string
-	data           Data
 
+	// tags are any data associated with this frame.
 	tags map[TagKey]interface{}
 }
 
-// We're looking for %(sometext) which is not preceded by a %. sometext may be
-// any characters except for a close paren.
-//
-// Submatch indices:
-// [0:1] Full match
-// [2:3] Text before the (...) pair (including the '%').
-// [4:5] (key)
-var namedFormatMatcher = regexp.MustCompile(`((?:^|[^%])%)\(([^)]+)\)`)
-
-// Format uses the data contained in this Data map to format the provided
-// string. Items from the map are looked up in python dict-format style, e.g.
-//
-//   %(key)d
-//
-// Will look up the item "key", and then format as a decimal number it using the
-// value for "key" in this Data map. Like python, a given item may appear
-// multiple times in the format string.
-//
-// All formatting directives are identical to the ones used by fmt.Sprintf.
-func (d Data) Format(format string) string {
-	smi := namedFormatMatcher.FindAllStringSubmatchIndex(format, -1)
-
-	var (
-		parts = make([]string, 0, len(smi)+1)
-		args  = make([]interface{}, 0, len(smi))
-		pos   = 0
-	)
-	for _, match := range smi {
-		// %(key)s => %s
-		parts = append(parts, format[pos:match[3]])
-		pos = match[1]
-
-		// Add key to args.
-		key := format[match[4]:match[5]]
-		if v, ok := d[key]; ok {
-			args = append(args, v.Value)
-		} else {
-			args = append(args, fmt.Sprintf("MISSING(key=%q)", key))
-		}
-	}
-	parts = append(parts, format[pos:])
-	return fmt.Sprintf(strings.Join(parts, ""), args...)
-}
-
 // renderPublic renders the public error.Error()-style string for this frame,
-// using the Reason and Data to produce a human readable string.
+// combining this frame's Reason with the inner error.
 func (s *stackContext) renderPublic(inner error) string {
-	if s.reason == "" {
-		if inner != nil {
-			return inner.Error()
-		}
-		return ""
+	switch {
+	case inner == nil:
+		return s.reason
+	case s.reason == "":
+		return inner.Error()
 	}
-
-	basis := s.data.Format(s.reason)
-	if inner != nil {
-		return fmt.Sprintf("%s: %s", basis, inner)
-	}
-	return basis
+	return fmt.Sprintf("%s: %s", s.reason, inner.Error())
 }
 
 // render renders the frame as a single entry in a stack trace. This looks like:
 //
-//  I am an internal reson formatted with key1: value
 //  reason: "The literal content of the reason field: %(key2)d"
-//  "key1" = "value"
-//  "key2" = 10
-func (s *stackContext) render() Lines {
-	siz := len(s.data)
+//  internal reason: I am an internal reason formatted with key1: value
+func (s *stackContext) render() lines {
+	siz := len(s.tags)
 	if s.internalReason != "" {
 		siz++
 	}
@@ -176,49 +108,23 @@ func (s *stackContext) render() Lines {
 		return nil
 	}
 
-	ret := make(Lines, 0, siz)
-
-	if s.internalReason != "" {
-		ret = append(ret, s.data.Format(s.internalReason))
-	}
+	ret := make(lines, 0, siz)
 	if s.reason != "" {
-		ret = append(ret, fmt.Sprintf("reason: %q", s.data.Format(s.reason)))
+		ret = append(ret, fmt.Sprintf("reason: %s", s.reason))
 	}
-	for key, val := range s.tags {
-		ret = append(ret, fmt.Sprintf("tag[%q]: %#v", key.description, val))
+	if s.internalReason != "" {
+		ret = append(ret, fmt.Sprintf("internal reason: %s", s.internalReason))
 	}
-
-	if len(s.data) > 0 {
-		for k, v := range s.data {
-			if v.StackFormat == "" || v.StackFormat == "%#v" {
-				ret = append(ret, fmt.Sprintf("%q = %#v", k, v.Value))
-			} else {
-				ret = append(ret, fmt.Sprintf("%q = "+v.StackFormat, k, v.Value))
-			}
-		}
-		sort.Strings(ret[len(ret)-len(s.data):])
+	keys := make(tagKeySlice, 0, len(s.tags))
+	for key := range s.tags {
+		keys = append(keys, key)
+	}
+	sort.Sort(keys)
+	for _, key := range keys {
+		ret = append(ret, fmt.Sprintf("tag[%q]: %#v", key.description, s.tags[key]))
 	}
 
 	return ret
-}
-
-// addData does a 'dict.update' addition of the data.
-func (s *stackContext) addData(data Data) {
-	if s.data == nil {
-		s.data = make(Data, len(data))
-	}
-	for k, v := range data {
-		s.data[k] = v
-	}
-}
-
-// addDatum adds a single data item to the Data in this frame
-func (s *stackContext) addDatum(key string, value interface{}, format string) {
-	if s.data == nil {
-		s.data = Data{key: {value, format}}
-	} else {
-		s.data[key] = Datum{value, format}
-	}
 }
 
 type terminalStackError struct {
@@ -260,65 +166,20 @@ type Annotator struct {
 	ctx   stackContext
 }
 
-// Reason adds a PUBLICLY READABLE reason string (for humans) to this error.
-//
-// You should assume that end-users (including unauthenticated end users) may
-// see the text in here.
-//
-// These reasons will be used to compose the result of the final Error() when
-// rendering this error, and will also be used to decorate the error
-// annotation stack when logging the error using the Log function.
-//
-// In a webserver context, if you don't want users to see some information about
-// this error, don't put it in the Reason.
-//
-// This explanation may have formatting instructions in the form of:
-//   %(key)...
-// where key is the name of one of the entries submitted to either D or Data.
-// The `...` may be any Printf-compatible formatting directive.
-func (a *Annotator) Reason(reason string) *Annotator {
-	if a == nil {
-		return a
-	}
-	a.ctx.reason = reason
-	return a
-}
-
 // InternalReason adds a stack-trace-only internal reason string (for humans) to
-// this error. This is formatted like Reason, but will not be visible in the
-// Error() string.
-func (a *Annotator) InternalReason(reason string) *Annotator {
+// this error.
+//
+// The text here will only be visible when using `errors.Log` or
+// `errors.RenderStack`, not when calling the .Error() method of the resulting
+// error.
+//
+// The `reason` string is formatted with `args` and may contain Sprintf-style
+// formatting directives.
+func (a *Annotator) InternalReason(reason string, args ...interface{}) *Annotator {
 	if a == nil {
 		return a
 	}
-	a.ctx.internalReason = reason
-	return a
-}
-
-// D adds a single datum to this error. Only one format may be specified. If
-// format is omitted or the empty string, the format "%#v" will be used.
-func (a *Annotator) D(key string, value interface{}, format ...string) *Annotator {
-	if a == nil {
-		return a
-	}
-	formatVal := ""
-	switch len(format) {
-	case 0:
-	case 1:
-		formatVal = format[0]
-	default:
-		panic(fmt.Errorf("len(format) > 1: %d", len(format)))
-	}
-	a.ctx.addDatum(key, value, formatVal)
-	return a
-}
-
-// Data adds data to this error.
-func (a *Annotator) Data(data Data) *Annotator {
-	if a == nil {
-		return a
-	}
-	a.ctx.addData(data)
+	a.ctx.internalReason = fmt.Sprintf(reason, args...)
 	return a
 }
 
@@ -357,43 +218,45 @@ func (a *Annotator) Err() error {
 
 // Log logs the full error. If this is an Annotated error, it will log the full
 // stack information as well.
-func Log(c context.Context, err error) {
+//
+// This is a shortcut for logging the output of RenderStack(err).
+func Log(c context.Context, err error, excludePkgs ...string) {
 	log := logging.Get(c)
-	for _, l := range RenderStack(err).ToLines() {
+	for _, l := range RenderStack(err, excludePkgs...) {
 		log.Errorf("%s", l)
 	}
 }
 
-// Lines is just a list of printable lines.
+// lines is just a list of printable lines.
 //
-// It's a type because it's most frequently used as []Lines, and [][]string
+// It's a type because it's most frequently used as []lines, and [][]string
 // doesn't read well.
-type Lines []string
+type lines []string
 
-// RenderedFrame represents a single, rendered stack frame.
-type RenderedFrame struct {
-	Pkg      string
-	File     string
-	LineNum  int
-	FuncName string
+// renderedFrame represents a single, rendered stack frame.
+type renderedFrame struct {
+	pkg      string
+	file     string
+	lineNum  int
+	funcName string
 
-	// Wrappers is any frame-info-less errors.Wrapped that were encountered when
+	// wrappers is any frame-info-less errors.Wrapped that were encountered when
 	// rendering that didn't have any associated frame info: this is the closest
 	// frame to where they were added to the error.
-	Wrappers []Lines
+	wrappers []lines
 
-	// Annotations is any Annotate context associated directly with this Frame.
-	Annotations []Lines
+	// annotations is any Annotate context associated directly with this Frame.
+	annotations []lines
 }
 
 var nlSlice = []byte{'\n'}
 
-// DumpWrappersTo formats the Wrappers portion of this RenderedFrame.
-func (r *RenderedFrame) DumpWrappersTo(w io.Writer, from, to int) (n int, err error) {
+// dumpWrappersTo formats the wrappers portion of this renderedFrame.
+func (r *renderedFrame) dumpWrappersTo(w io.Writer, from, to int) (n int, err error) {
 	return iotools.WriteTracker(w, func(rawWriter io.Writer) error {
 		w := &indented.Writer{Writer: rawWriter, UseSpaces: true}
 		fmt.Fprintf(w, "From frame %d to %d, the following wrappers were found:\n", from, to)
-		for i, wrp := range r.Wrappers {
+		for i, wrp := range r.wrappers {
 			if i != 0 {
 				w.Write(nlSlice)
 			}
@@ -411,23 +274,23 @@ func (r *RenderedFrame) DumpWrappersTo(w io.Writer, from, to int) (n int, err er
 	})
 }
 
-// DumpTo formats the Header and Annotations for this RenderedFrame.
-func (r *RenderedFrame) DumpTo(w io.Writer, idx int) (n int, err error) {
+// dumpTo formats the Header and annotations for this renderedFrame.
+func (r *renderedFrame) dumpTo(w io.Writer, idx int) (n int, err error) {
 	return iotools.WriteTracker(w, func(rawWriter io.Writer) error {
 		w := &indented.Writer{Writer: rawWriter, UseSpaces: true}
 
-		fmt.Fprintf(w, "#%d %s/%s:%d - %s()\n", idx, r.Pkg, r.File,
-			r.LineNum, r.FuncName)
+		fmt.Fprintf(w, "#%d %s/%s:%d - %s()\n", idx, r.pkg, r.file,
+			r.lineNum, r.funcName)
 		w.Level += 2
-		switch len(r.Annotations) {
+		switch len(r.annotations) {
 		case 0:
 			// pass
 		case 1:
-			for _, line := range r.Annotations[0] {
+			for _, line := range r.annotations[0] {
 				fmt.Fprintf(w, "%s\n", line)
 			}
 		default:
-			for i, ann := range r.Annotations {
+			for i, ann := range r.annotations {
 				fmt.Fprintf(w, "annotation #%d:\n", i)
 				w.Level += 2
 				for _, line := range ann {
@@ -440,18 +303,18 @@ func (r *RenderedFrame) DumpTo(w io.Writer, idx int) (n int, err error) {
 	})
 }
 
-// RenderedStack is a single rendered stack from one goroutine.
-type RenderedStack struct {
-	GoID   goroutine.ID
-	Frames []*RenderedFrame
+// renderedStack is a single rendered stack from one goroutine.
+type renderedStack struct {
+	goID   goroutine.ID
+	frames []*renderedFrame
 }
 
-// DumpTo formats the full stack.
-func (r *RenderedStack) DumpTo(w io.Writer, excludePkgs ...string) (n int, err error) {
+// dumpTo formats the full stack.
+func (r *renderedStack) dumpTo(w io.Writer, excludePkgs ...string) (n int, err error) {
 	excludeSet := stringset.NewFromSlice(excludePkgs...)
 
 	return iotools.WriteTracker(w, func(w io.Writer) error {
-		fmt.Fprintf(w, "goroutine %d:\n", r.GoID)
+		fmt.Fprintf(w, "goroutine %d:\n", r.goID)
 
 		lastIdx := 0
 		needNL := false
@@ -468,31 +331,31 @@ func (r *RenderedStack) DumpTo(w io.Writer, excludePkgs ...string) (n int, err e
 				skipPkg = ""
 			}
 		}
-		for i, f := range r.Frames {
+		for i, f := range r.frames {
 			if needNL {
 				w.Write(nlSlice)
 				needNL = false
 			}
-			if excludeSet.Has(f.Pkg) {
-				if skipPkg == f.Pkg {
+			if excludeSet.Has(f.pkg) {
+				if skipPkg == f.pkg {
 					skipCount++
 				} else {
 					flushSkips("")
 					skipCount++
-					skipPkg = f.Pkg
+					skipPkg = f.pkg
 				}
 				continue
 			}
 			flushSkips("\n")
-			if len(f.Wrappers) > 0 {
-				f.DumpWrappersTo(w, lastIdx, i)
+			if len(f.wrappers) > 0 {
+				f.dumpWrappersTo(w, lastIdx, i)
 				w.Write(nlSlice)
 			}
-			if len(f.Annotations) > 0 {
+			if len(f.annotations) > 0 {
 				lastIdx = i
 				needNL = true
 			}
-			f.DumpTo(w, i)
+			f.dumpTo(w, i)
 		}
 		flushSkips("")
 
@@ -500,38 +363,38 @@ func (r *RenderedStack) DumpTo(w io.Writer, excludePkgs ...string) (n int, err e
 	})
 }
 
-// RenderedError is a series of RenderedStacks, one for each goroutine that the
+// renderedError is a series of RenderedStacks, one for each goroutine that the
 // error was annotated on.
-type RenderedError struct {
-	OriginalError string
-	Stacks        []*RenderedStack
+type renderedError struct {
+	originalError string
+	stacks        []*renderedStack
 }
 
-// ToLines renders a full-information stack trace as a series of lines.
-func (r *RenderedError) ToLines(excludePkgs ...string) Lines {
+// toLines renders a full-information stack trace as a series of lines.
+func (r *renderedError) toLines(excludePkgs ...string) lines {
 	buf := bytes.Buffer{}
-	r.DumpTo(&buf, excludePkgs...)
+	r.dumpTo(&buf, excludePkgs...)
 	return strings.Split(strings.TrimSuffix(buf.String(), "\n"), "\n")
 }
 
-// DumpTo writes the full-information stack trace to the writer.
-func (r *RenderedError) DumpTo(w io.Writer, excludePkgs ...string) (n int, err error) {
+// dumpTo writes the full-information stack trace to the writer.
+func (r *renderedError) dumpTo(w io.Writer, excludePkgs ...string) (n int, err error) {
 	return iotools.WriteTracker(w, func(w io.Writer) error {
-		if r.OriginalError != "" {
-			fmt.Fprintf(w, "original error: %s\n\n", r.OriginalError)
+		if r.originalError != "" {
+			fmt.Fprintf(w, "original error: %s\n\n", r.originalError)
 		}
 
-		for i := len(r.Stacks) - 1; i >= 0; i-- {
-			if i != len(r.Stacks)-1 {
+		for i := len(r.stacks) - 1; i >= 0; i-- {
+			if i != len(r.stacks)-1 {
 				w.Write(nlSlice)
 			}
-			r.Stacks[i].DumpTo(w, excludePkgs...)
+			r.stacks[i].dumpTo(w, excludePkgs...)
 		}
 		return nil
 	})
 }
 
-func frameHeaderDetails(frm uintptr) (pkg, filename, funcname string, lineno int) {
+func frameHeaderDetails(frm uintptr) (pkg, filename, funcName string, lineno int) {
 	// this `frm--` is to get the correct line/function information, since the
 	// Frame is actually the `return` pc. See runtime.Callers.
 	frm--
@@ -546,45 +409,49 @@ func frameHeaderDetails(frm uintptr) (pkg, filename, funcname string, lineno int
 	fnName := fn.Name()
 	lastSlash := strings.LastIndex(fnName, "/")
 	if lastSlash == -1 {
-		funcname = fnName
+		funcName = fnName
 		pkg = pkgTopLevelName
 	} else {
-		funcname = fnName[lastSlash+1:]
+		funcName = fnName[lastSlash+1:]
 		pkg = fmt.Sprintf("%s/%s", fnName[:lastSlash], pkgTopLevelName)
 	}
 	return
 }
 
-// RenderStack renders the error to a RenderedError.
-func RenderStack(err error) *RenderedError {
-	ret := &RenderedError{}
+// RenderStack renders the error to a list of lines.
+func RenderStack(err error, excludePkgs ...string) []string {
+	return renderStack(err).toLines(excludePkgs...)
+}
+
+func renderStack(err error) *renderedError {
+	ret := &renderedError{}
 
 	lastAnnotatedFrame := 0
-	var wrappers = []Lines{}
-	getCurFrame := func(fi *stackFrameInfo) *RenderedFrame {
-		if len(ret.Stacks) == 0 || ret.Stacks[len(ret.Stacks)-1].GoID != fi.forStack.id {
+	var wrappers = []lines{}
+	getCurFrame := func(fi *stackFrameInfo) *renderedFrame {
+		if len(ret.stacks) == 0 || ret.stacks[len(ret.stacks)-1].goID != fi.forStack.id {
 			lastAnnotatedFrame = len(fi.forStack.frames) - 1
-			toAdd := &RenderedStack{
-				GoID:   fi.forStack.id,
-				Frames: make([]*RenderedFrame, len(fi.forStack.frames)),
+			toAdd := &renderedStack{
+				goID:   fi.forStack.id,
+				frames: make([]*renderedFrame, len(fi.forStack.frames)),
 			}
 			for i, frm := range fi.forStack.frames {
 				pkgPath, filename, functionName, line := frameHeaderDetails(frm)
-				toAdd.Frames[i] = &RenderedFrame{
-					Pkg: pkgPath, File: filename, LineNum: line, FuncName: functionName}
+				toAdd.frames[i] = &renderedFrame{
+					pkg: pkgPath, file: filename, lineNum: line, funcName: functionName}
 			}
-			ret.Stacks = append(ret.Stacks, toAdd)
+			ret.stacks = append(ret.stacks, toAdd)
 		}
-		curStack := ret.Stacks[len(ret.Stacks)-1]
+		curStack := ret.stacks[len(ret.stacks)-1]
 
 		if fi.frameIdx < lastAnnotatedFrame {
 			lastAnnotatedFrame = fi.frameIdx
-			frm := curStack.Frames[lastAnnotatedFrame]
-			frm.Wrappers = wrappers
+			frm := curStack.frames[lastAnnotatedFrame]
+			frm.wrappers = wrappers
 			wrappers = nil
 			return frm
 		}
-		return curStack.Frames[lastAnnotatedFrame]
+		return curStack.frames[lastAnnotatedFrame]
 	}
 
 	for err != nil {
@@ -593,13 +460,13 @@ func RenderStack(err error) *RenderedError {
 			if stk := ctx.frameInfo.forStack; stk != nil {
 				frm := getCurFrame(&ctx.frameInfo)
 				if rendered := ctx.render(); len(rendered) > 0 {
-					frm.Annotations = append(frm.Annotations, rendered)
+					frm.annotations = append(frm.annotations, rendered)
 				}
 			} else {
 				wrappers = append(wrappers, ctx.render())
 			}
 		} else {
-			wrappers = append(wrappers, Lines{fmt.Sprintf("unknown wrapper %T", err)})
+			wrappers = append(wrappers, lines{fmt.Sprintf("unknown wrapper %T", err)})
 		}
 		switch x := err.(type) {
 		case MultiError:
@@ -609,7 +476,7 @@ func RenderStack(err error) *RenderedError {
 		case Wrapped:
 			err = x.InnerError()
 		default:
-			ret.OriginalError = err.Error()
+			ret.originalError = err.Error()
 			err = nil
 		}
 	}
@@ -618,8 +485,9 @@ func RenderStack(err error) *RenderedError {
 }
 
 // Annotate captures the current stack frame and returns a new annotatable
-// error. You can add additional metadata to this error with its methods and
-// then get the new derived error with the Err() function.
+// error, attaching the publically readable `reason` format string to the error.
+// You can add additional metadata to this error with the 'InternalReason' and
+// 'Tag' methods, and then obtain a real `error` with the Err() function.
 //
 // If this is passed nil, it will return a no-op Annotator whose .Err() function
 // will also return nil.
@@ -628,28 +496,42 @@ func RenderStack(err error) *RenderedError {
 // returned error.
 //
 // Rendering the derived error with Error() will render a summary version of all
-// the Reasons as well as the initial underlying errors Error() text. It is
-// intended that the initial underlying error and all annotated Reasons only
-// contain user-visible information, so that the accumulated error may be
+// the public `reason`s as well as the initial underlying error's Error() text.
+// It is intended that the initial underlying error and all annotated reasons
+// only contain user-visible information, so that the accumulated error may be
 // returned to the user without worrying about leakage.
-func Annotate(err error) *Annotator {
+//
+// You should assume that end-users (including unauthenticated end users) may
+// see the text in the `reason` field here. To only attach an internal reason,
+// leave the `reason` argument blank and don't pass any additional formatting
+// arguments.
+//
+// The `reason` string is formatted with `args` and may contain Sprintf-style
+// formatting directives.
+func Annotate(err error, reason string, args ...interface{}) *Annotator {
 	if err == nil {
 		return nil
 	}
-	return &Annotator{err, stackContext{frameInfo: stackFrameInfoForError(1, err)}}
+	return &Annotator{err, stackContext{
+		frameInfo: stackFrameInfoForError(1, err),
+		reason:    fmt.Sprintf(reason, args...),
+	}}
 }
 
 // Reason builds a new Annotator starting with reason. This allows you to use
 // all the formatting directives you would normally use with Annotate, in case
-// your originating error needs formatting directives:
+// your originating error needs tags or an internal reason.
 //
-//   errors.Reason("something bad: %(value)d").D("value", 100)).Err()
+//   errors.Reason("something bad: %d", value).Tag(transient.Tag).Err()
 //
 // Prefer this form to errors.New(fmt.Sprintf("..."))
-func Reason(reason string) *Annotator {
+func Reason(reason string, args ...interface{}) *Annotator {
 	currentStack := captureStack(1)
 	frameInfo := stackFrameInfo{0, currentStack}
-	return (&Annotator{nil, stackContext{frameInfo: frameInfo}}).Reason(reason)
+	return (&Annotator{nil, stackContext{
+		frameInfo: frameInfo,
+		reason:    fmt.Sprintf(reason, args...),
+	}})
 }
 
 // New is an API-compatible version of the standard errors.New function. Unlike

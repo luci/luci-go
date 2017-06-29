@@ -86,7 +86,7 @@ func getManager(c context.Context, a *application, name string) (*manageApp, err
 			return mApp.dp.initialize(w, &a.layout)
 		})
 		if err != nil {
-			return nil, errors.Annotate(err).Reason("failed to initialize deployment plan").Err()
+			return nil, errors.Annotate(err, "failed to initialize deployment plan").Err()
 		}
 
 		switch comp.GetComponent().(type) {
@@ -136,7 +136,7 @@ func getManager(c context.Context, a *application, name string) (*manageApp, err
 			return mApp.dp.initialize(w, &a.layout)
 		})
 		if err != nil {
-			return nil, errors.Annotate(err).Reason("failed to initialize deployment plan").Err()
+			return nil, errors.Annotate(err, "failed to initialize deployment plan").Err()
 		}
 
 		if cp := dep.cloudProject; cp != nil {
@@ -182,12 +182,12 @@ func (cmd *manageGKEPodKubectlCommandRun) Run(app subcommands.Application, args 
 	err = a.runWork(c, func(w *work) error {
 		kubeCtx, err := getContainerEngineKubernetesContext(w, bp.cluster)
 		if err != nil {
-			return errors.Annotate(err).Err()
+			return errors.Annotate(err, "").Err()
 		}
 
 		kubectl, err := w.tools.kubectl(kubeCtx)
 		if err != nil {
-			return errors.Annotate(err).Err()
+			return errors.Annotate(err, "").Err()
 		}
 
 		rv, err = kubectl.exec(args...).forwardOutput().run(w)
@@ -252,11 +252,11 @@ func (cmd *manageGKEPodCreateClusterCommandRun) Run(app subcommands.Application,
 		cloudProjectName := bp.pod.comp.dep.cloudProject.Name
 		gcloud, err := w.tools.gcloud(cloudProjectName)
 		if err != nil {
-			return errors.Annotate(err).Err()
+			return errors.Annotate(err, "").Err()
 		}
 
 		if rv, err = gcloud.exec(gcloudArgs[0], gcloudArgs[1:]...).run(w); err != nil {
-			return errors.Annotate(err).Reason("failed to run 'gcloud' command").Err()
+			return errors.Annotate(err, "failed to run 'gcloud' command").Err()
 		}
 		return nil
 	})
@@ -275,9 +275,7 @@ func getPodBindingForCluster(comp *layoutDeploymentComponent, cluster string) (*
 	case cluster != "":
 		cluster := comp.dep.cloudProject.gkeClusters[cluster]
 		if cluster == nil {
-			return nil, errors.Reason("invalid GKE cluster name: %(name)q").
-				D("name", cluster).
-				Err()
+			return nil, errors.Reason("invalid GKE cluster name: %q", cluster).Err()
 		}
 		for _, gkeBP := range comp.gkePods {
 			if gkeBP.cluster == cluster {
@@ -299,8 +297,7 @@ func getPodBindingForCluster(comp *layoutDeploymentComponent, cluster string) (*
 		}
 
 		return nil, errors.Reason("the Kubernetes pod is bound to multiple clusters. Specify one with -cluster").
-			D("clusters", clusters).
-			Err()
+			InternalReason("clusters(%v)", clusters).Err()
 	}
 	if bp == nil {
 		return nil, errors.New("Could not identify cluster for pod.")

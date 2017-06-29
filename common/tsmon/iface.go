@@ -80,8 +80,7 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 	// Load the config file, and override its values with flags.
 	config, err := loadConfig(fl.ConfigFile)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to load config file at [%(path)s]").
-			D("path", fl.ConfigFile).Err()
+		return errors.Annotate(err, "failed to load config file at [%s]", fl.ConfigFile).Err()
 	}
 
 	if fl.Endpoint != "" {
@@ -97,7 +96,7 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 	mon, err := initMonitor(c, config)
 	switch {
 	case err != nil:
-		return errors.Annotate(err).Reason("failed to initialize monitor").Err()
+		return errors.Annotate(err, "failed to initialize monitor").Err()
 	case mon == nil:
 		return nil // tsmon is disabled
 	}
@@ -126,7 +125,7 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 	fl.Target.SetDefaultsFromHostname()
 	t, err := target.NewFromFlags(&fl.Target)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to configure target from flags").Err()
+		return errors.Annotate(err, "failed to configure target from flags").Err()
 	}
 
 	Initialize(c, mon, store.NewInMemory(t))

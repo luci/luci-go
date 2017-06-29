@@ -439,7 +439,7 @@ func (t *kubeTool) getResource(c context.Context, resource string, obj interface
 
 	default:
 		if err := yaml.Unmarshal(x.stdout.Bytes(), obj); err != nil {
-			return errors.Annotate(err).Reason("failed to unmarshal YAML %(type)T").D("type", obj).Err()
+			return errors.Annotate(err, "failed to unmarshal YAML %T", obj).Err()
 		}
 		return nil
 	}

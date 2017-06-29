@@ -61,7 +61,7 @@ func (pl *PackageLoader) Resolve(c context.Context, e *vpython.Environment) erro
 	if pl.Template != nil {
 		loaderTemplate, err := pl.Template(c, e)
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to get CIPD template arguments").Err()
+			return errors.Annotate(err, "failed to get CIPD template arguments").Err()
 		}
 		for k, v := range loaderTemplate {
 			template[k] = v
@@ -115,7 +115,7 @@ func (pl *PackageLoader) resolveWithOpts(c context.Context, opts cipd.ClientOpti
 
 	client, err := cipd.NewClient(opts)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to generate CIPD client").Err()
+		return errors.Annotate(err, "failed to generate CIPD client").Err()
 	}
 
 	// Start a CIPD client batch.
@@ -126,10 +126,7 @@ func (pl *PackageLoader) resolveWithOpts(c context.Context, opts cipd.ClientOpti
 	resolved, err := ef.ResolveWith(func(pkg, vers string) (common.Pin, error) {
 		pin, err := client.ResolveVersion(c, pkg, vers)
 		if err != nil {
-			return pin, errors.Annotate(err).Reason("failed to resolve package %(package)q at version %(version)q").
-				D("package", pkg).
-				D("version", vers).
-				Err()
+			return pin, errors.Annotate(err, "failed to resolve package %q at version %q", pkg, vers).Err()
 		}
 
 		logging.Fields{
@@ -161,7 +158,7 @@ func (pl *PackageLoader) resolveWithOpts(c context.Context, opts cipd.ClientOpti
 func (pl *PackageLoader) Ensure(c context.Context, root string, packages []*vpython.Spec_Package) error {
 	pins, err := packagesToPins(packages)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to convert packages to CIPD pins").Err()
+		return errors.Annotate(err, "failed to convert packages to CIPD pins").Err()
 	}
 	pinSlice := common.PinSliceBySubdir{
 		"": pins,
@@ -172,7 +169,7 @@ func (pl *PackageLoader) Ensure(c context.Context, root string, packages []*vpyt
 	opts.Root = root
 	client, err := cipd.NewClient(opts)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to generate CIPD client").Err()
+		return errors.Annotate(err, "failed to generate CIPD client").Err()
 	}
 
 	// Start a CIPD client batch.
@@ -181,7 +178,7 @@ func (pl *PackageLoader) Ensure(c context.Context, root string, packages []*vpyt
 
 	actionMap, err := client.EnsurePackages(c, pinSlice, false)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to install CIPD packages").Err()
+		return errors.Annotate(err, "failed to install CIPD packages").Err()
 	}
 	if len(actionMap) > 0 {
 		errorCount := 0
@@ -192,9 +189,7 @@ func (pl *PackageLoader) Ensure(c context.Context, root string, packages []*vpyt
 			}
 		}
 		if errorCount > 0 {
-			return errors.Reason("CIPD package installation encountered %(count)d error(s)").
-				D("count", errorCount).
-				Err()
+			return errors.Reason("CIPD package installation encountered %d error(s)", errorCount).Err()
 		}
 	}
 	return nil

@@ -36,8 +36,7 @@ func stageGoPath(w *work, comp *layoutDeploymentComponent, root *managedfs.Dir) 
 		for _, gopath := range src.InitResult.GoPath {
 			// Make sure our Go package isn't a directory.
 			if _, ok := dirs[gopath.GoPackage]; ok {
-				return errors.Reason("GOPATH %(package)q is both a package and directory").
-					D("package", gopath.GoPackage).Err()
+				return errors.Reason("GOPATH %q is both a package and directory", gopath.GoPackage).Err()
 			}
 
 			// Check intermediate paths to make sure there isn't a deployment
@@ -45,8 +44,7 @@ func stageGoPath(w *work, comp *layoutDeploymentComponent, root *managedfs.Dir) 
 			pkgParts := splitGoPackage(gopath.GoPackage)
 			for _, parentPkg := range pkgParts[:len(pkgParts)-1] {
 				if _, ok := build[parentPkg]; ok {
-					return errors.Reason("GOPATH %(package)q is both a package and directory").
-						D("package", parentPkg).Err()
+					return errors.Reason("GOPATH %q is both a package and directory", parentPkg).Err()
 				}
 				dirs[parentPkg] = struct{}{}
 			}
@@ -70,13 +68,12 @@ func stageGoPath(w *work, comp *layoutDeploymentComponent, root *managedfs.Dir) 
 			var err error
 			d, err = d.EnsureDirectory(comp)
 			if err != nil {
-				return errors.Annotate(err).Reason("could not create GOPATH parent directory [%(path)s]").
-					D("path", d).Err()
+				return errors.Annotate(err, "could not create GOPATH parent directory [%s]", d).Err()
 			}
 		}
 		link := d.File(pkgComponents[len(pkgComponents)-1])
 		if err := link.SymlinkFrom(src, true); err != nil {
-			return errors.Annotate(err).Reason("failed to create GOPATH link").Err()
+			return errors.Annotate(err, "failed to create GOPATH link").Err()
 		}
 	}
 	return nil

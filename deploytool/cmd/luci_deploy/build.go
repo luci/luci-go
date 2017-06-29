@@ -35,8 +35,7 @@ func flattenVarToDir(v string) string {
 // to update its directory.
 func buildComponent(w *work, c *layoutDeploymentComponent, root *managedfs.Dir) error {
 	if src := c.source(); !src.Source.RunScripts {
-		return errors.Reason("refusing to run scripts (run_scripts is false for %(source)q)").
-			D("source", src.title).Err()
+		return errors.Reason("refusing to run scripts (run_scripts is false for %q)", src.title).Err()
 	}
 
 	// Create our build directories and map them to variables.
@@ -44,12 +43,12 @@ func buildComponent(w *work, c *layoutDeploymentComponent, root *managedfs.Dir) 
 	dirs := make([]*managedfs.Dir, len(c.Build))
 	for i, b := range c.Build {
 		if _, has := c.buildDirs[b.DirKey]; has {
-			return errors.Reason("duplicate build key [%(key)s]").D("key", b.DirKey).Err()
+			return errors.Reason("duplicate build key [%s]", b.DirKey).Err()
 		}
 
 		dir, err := root.EnsureDirectory(fmt.Sprintf("%d_%s", i, flattenVarToDir(b.DirKey)))
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to create build directory").Err()
+			return errors.Annotate(err, "failed to create build directory").Err()
 		}
 
 		dirs[i] = dir
@@ -58,7 +57,7 @@ func buildComponent(w *work, c *layoutDeploymentComponent, root *managedfs.Dir) 
 
 	// Apply build directories.
 	if err := c.expandPaths(); err != nil {
-		return errors.Annotate(err).Reason("failed to expand component paths").Err()
+		return errors.Annotate(err, "failed to expand component paths").Err()
 	}
 
 	// Run all of our build scripts in parallel.
@@ -71,7 +70,7 @@ func buildComponent(w *work, c *layoutDeploymentComponent, root *managedfs.Dir) 
 		}
 	})
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to run component builds").Err()
+		return errors.Annotate(err, "failed to run component builds").Err()
 	}
 	return nil
 }
@@ -96,11 +95,11 @@ func runComponentBuild(w *work, c *layoutDeploymentComponent, b *deploy.Componen
 		args = append(args, ps.ExtraArgs...)
 
 		if err := python.exec(scriptPath, args...).cwd(buildDir).check(w); err != nil {
-			return errors.Annotate(err).Reason("failed to execute [%(scriptPath)s]").D("scriptPath", scriptPath).Err()
+			return errors.Annotate(err, "failed to execute [%s]", scriptPath).Err()
 		}
 		return nil
 
 	default:
-		return errors.Reason("unknown build type %(type)T").D("type", t).Err()
+		return errors.Reason("unknown build type %T", t).Err()
 	}
 }

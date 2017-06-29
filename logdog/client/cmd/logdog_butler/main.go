@@ -5,7 +5,6 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"net/http"
@@ -217,15 +216,8 @@ func logAnnotatedErr(ctx context.Context, err error, f string, args ...interface
 		return
 	}
 
-	var buf bytes.Buffer
-	st := errors.RenderStack(err)
-	if _, derr := st.DumpTo(&buf); derr != nil {
-		// This can't really fail, since we're rendering to a Buffer.
-		panic(derr)
-	}
-
 	nargs := make([]interface{}, len(args)+1)
-	nargs[copy(nargs, args)] = buf.Bytes()
+	nargs[copy(nargs, args)] = strings.Join(errors.RenderStack(err), "\n")
 
 	if f == "" {
 		f = "Captured error stack:"

@@ -4,12 +4,9 @@
 
 package errors
 
-type (
-	// TagKeyOrValue is used for functions taking either a TagKey or a TagValue.
-	TagKeyOrValue interface {
-		isTagKeyOrValue()
-	}
+import "sort"
 
+type (
 	tagDescription struct {
 		description string
 	}
@@ -17,6 +14,8 @@ type (
 	// TagKey objects are used for applying tags and finding tags/values in
 	// errors. See NewTag for details.
 	TagKey *tagDescription
+
+	tagKeySlice []TagKey
 
 	// TagValue represents a (tag, value) to be used with Annotate.Tag, or may be
 	// applied to an error directly with the Apply method.
@@ -36,6 +35,12 @@ type (
 	}
 )
 
+var _ sort.Interface = tagKeySlice(nil)
+
+func (s tagKeySlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s tagKeySlice) Len() int           { return len(s) }
+func (s tagKeySlice) Less(i, j int) bool { return s[i].description < s[j].description }
+
 // TagValueIn will retrieve the tagged value from the error that's associated
 // with this key, and a boolean indicating if the tag was present or not.
 func TagValueIn(t TagKey, err error) (value interface{}, ok bool) {
@@ -54,18 +59,13 @@ func TagValueIn(t TagKey, err error) (value interface{}, ok bool) {
 func (t TagValue) GenerateErrorTagValue() TagValue { return t }
 
 // Apply applies this tag value (key+value) directly to the error. This is
-// a shortcut for `errors.Annotate(err).Tag(t).Err()`.
+// a shortcut for `errors.Annotate(err, "").Tag(t).Err()`.
 func (t TagValue) Apply(err error) error {
 	if err == nil {
 		return nil
 	}
 	a := &Annotator{err, stackContext{frameInfo: stackFrameInfoForError(1, err)}}
 	return a.Tag(t).Err()
-}
-
-// MkTagValue is a shortcut for errors.TagValue{Key: key, Value: val}.
-func MkTagValue(key TagKey, val interface{}) TagValue {
-	return TagValue{key, val}
 }
 
 // BoolTag is an error tag implementation which holds a boolean value.
@@ -118,7 +118,7 @@ func (b BoolTag) In(err error) bool {
 //   type SomeType int
 //   type myTag struct { Key errors.TagKey }
 //   func (m myTag) With(value SomeType) errors.TagValue {
-//     return errors.MkTagValue(vm.Key, value)
+//     return errors.TagValue{Key: vm.Key, Value: value}
 //   }
 //   func (m myTag) In(err error) (v SomeType, ok bool) {
 //     d, ok := errors.TagValueIn(m.Key, err)

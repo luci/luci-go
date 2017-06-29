@@ -87,9 +87,7 @@ func resolveHost(host string) (string, error) {
 	case defaultLogDogHost, "luci-logdog-dev.appspot.com":
 		return host, nil
 	default:
-		return "", errors.Reason("host %(host)q is not whitelisted").
-			D("host", host).
-			Err()
+		return "", errors.Reason("host %q is not whitelisted", host).Err()
 	}
 }
 

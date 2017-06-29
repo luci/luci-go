@@ -220,26 +220,23 @@ func resolveLogDogStreamAddrFromTags(tags map[string]string, taskID string, tryN
 	// Gather our Swarming task template parameters and perform a substitution.
 	runID, err := getRunID(taskID, tryNumber)
 	if err != nil {
-		return nil, errors.Annotate(err).Err()
+		return nil, errors.Annotate(err, "").Err()
 	}
 	p := tasktemplate.Params{
 		SwarmingRunID: runID,
 	}
 	if logLocation, err = p.Resolve(logLocation); err != nil {
-		return nil, errors.Annotate(err).Reason("failed to resolve swarming task templating in 'log_location'").Err()
+		return nil, errors.Annotate(err, "failed to resolve swarming task templating in 'log_location'").Err()
 	}
 
 	addr, err := types.ParseURL(logLocation)
 	if err != nil {
-		return nil, errors.Annotate(err).Reason("could not parse LogDog stream from location").Err()
+		return nil, errors.Annotate(err, "could not parse LogDog stream from location").Err()
 	}
 
 	// The LogDog stream's project should match the LUCI project.
 	if string(addr.Project) != luciProject {
-		return nil, errors.Reason("stream project %(streamProject)q doesn't match LUCI project %(luciProject)q").
-			D("luciProject", luciProject).
-			D("streamProject", addr.Project).
-			Err()
+		return nil, errors.Reason("stream project %q doesn't match LUCI project %q", addr.Project, luciProject).Err()
 	}
 
 	return addr, nil
@@ -259,17 +256,13 @@ func getRunID(taskID string, tryNumber int64) (string, error) {
 
 	// Parse "tryNumber" as a hex string.
 	if tryNumber < 0 || tryNumber > 0x0F {
-		return "", errors.Reason("try number %(try)d exceeds 4 bits").
-			D("try", tryNumber).
-			Err()
+		return "", errors.Reason("try number %d exceeds 4 bits", tryNumber).Err()
 	}
 
 	lastChar, lastCharSize := utf8.DecodeLastRuneInString(taskID)
 	v, err := strconv.ParseUint(string(lastChar), 16, 8)
 	if err != nil {
-		return "", errors.Annotate(err).Reason("failed to parse hex from rune: %(rune)r").
-			D("rune", lastChar).
-			Err()
+		return "", errors.Annotate(err, "failed to parse hex from rune: %r", lastChar).Err()
 	}
 
 	return taskID[:len(taskID)-lastCharSize] + strconv.FormatUint((v|uint64(tryNumber)), 16), nil

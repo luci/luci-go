@@ -75,9 +75,7 @@ func iterDir(c context.Context, dirPath string, cb func([]os.FileInfo) error) er
 	// Get a listing of all VirtualEnv within the base directory.
 	dir, err := os.Open(dirPath)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to open base directory: %(dir)s").
-			D("dir", dirPath).
-			Err()
+		return errors.Annotate(err, "failed to open base directory: %s", dirPath).Err()
 	}
 	defer dir.Close()
 
@@ -98,9 +96,7 @@ func iterDir(c context.Context, dirPath string, cb func([]os.FileInfo) error) er
 			done = true
 
 		default:
-			return errors.Annotate(err).Reason("could not read directory contents: %(dir)s").
-				D("dir", dirPath).
-				Err()
+			return errors.Annotate(err, "could not read directory contents: %s", dirPath).Err()
 		}
 
 		if err := cb(fileInfos); err != nil {

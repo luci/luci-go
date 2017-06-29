@@ -10,6 +10,6 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func grpcAnnotate(err error, code codes.Code) *errors.Annotator {
-	return errors.Annotate(err).Tag(grpcutil.Tag.With(code))
+func grpcAnnotate(err error, code codes.Code, reason string, args ...interface{}) *errors.Annotator {
+	return errors.Annotate(err, reason, args...).Tag(grpcutil.Tag.With(code))
 }

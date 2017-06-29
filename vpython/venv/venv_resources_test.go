@@ -91,12 +91,12 @@ type testingLoader struct {
 func loadTestEnvironment(ctx context.Context, t *testing.T) (*testingLoader, error) {
 	wd, err := os.Getwd()
 	if err != nil {
-		return nil, errors.Annotate(err).Reason("failed to get working directory").Err()
+		return nil, errors.Annotate(err, "failed to get working directory").Err()
 	}
 
 	cacheDir := filepath.Join(wd, ".venv_test_cache")
 	if err := filesystem.MakeDirs(cacheDir); err != nil {
-		return nil, errors.Annotate(err).Reason("failed to create cache dir").Err()
+		return nil, errors.Annotate(err, "failed to create cache dir").Err()
 	}
 
 	tl := testingLoader{
@@ -158,9 +158,7 @@ func (tl *testingLoader) installPackage(name, root string) error {
 		return copyFileIntoDir(tl.pantsWheelPath, root)
 
 	default:
-		return errors.Reason("don't know how to install %(package)q").
-			D("package", name).
-			Err()
+		return errors.Reason("don't know how to install %q", name).Err()
 	}
 }
 
@@ -168,9 +166,7 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 	ctx := context.Background()
 	w, err := wheel.ParseName(name)
 	if err != nil {
-		return "", errors.Annotate(err).Reason("failed to parse wheel name %(name)q").
-			D("name", name).
-			Err()
+		return "", errors.Annotate(err, "failed to parse wheel name %q", name).Err()
 	}
 
 	outWheelPath := filepath.Join(outDir, w.String())
@@ -184,9 +180,7 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 		break
 
 	default:
-		return "", errors.Annotate(err).Reason("failed to stat wheel path [%(path)s]").
-			D("path", outWheelPath).
-			Err()
+		return "", errors.Annotate(err, "failed to stat wheel path [%s]", outWheelPath).Err()
 	}
 
 	srcDir := filepath.Join(testDataDir, w.Distribution+".src")
@@ -234,22 +228,22 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 				"--dist-dir", distDir)
 			cmd.Dir = srcDir
 			if err := cmd.Run(); err != nil {
-				return errors.Annotate(err).Reason("failed to build wheel").Err()
+				return errors.Annotate(err, "failed to build wheel").Err()
 			}
 			return nil
 		})
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to build wheel").Err()
+			return errors.Annotate(err, "failed to build wheel").Err()
 		}
 
 		// Assert that the expected wheel file was generated, and copy it into
 		// outDir.
 		wheelPath := filepath.Join(distDir, w.String())
 		if _, err := os.Stat(wheelPath); err != nil {
-			return errors.Annotate(err).Reason("failed to generate wheel").Err()
+			return errors.Annotate(err, "failed to generate wheel").Err()
 		}
 		if err := copyFileIntoDir(wheelPath, outDir); err != nil {
-			return errors.Annotate(err).Reason("failed to install wheel").Err()
+			return errors.Annotate(err, "failed to install wheel").Err()
 		}
 
 		return nil
@@ -298,9 +292,7 @@ MainLoop:
 			t.Logf("Failed to load from URL %q: %s", url, err)
 		}
 
-		return errors.Reason("failed to acquire remote file %(name)q").
-			D("name", rf.name).
-			Err()
+		return errors.Reason("failed to acquire remote file %q", rf.name).Err()
 	}
 
 	return nil
@@ -313,13 +305,13 @@ func getCachedFileLocked(t *testing.T, cachePath, hash string) error {
 func validateHash(t *testing.T, path, hash string, deleteIfInvalid bool) error {
 	fd, err := os.Open(path)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to open file").Err()
+		return errors.Annotate(err, "failed to open file").Err()
 	}
 	defer fd.Close()
 
 	h := sha256.New()
 	if _, err := io.Copy(h, fd); err != nil {
-		return errors.Annotate(err).Reason("failed to hash file").Err()
+		return errors.Annotate(err, "failed to hash file").Err()
 	}
 
 	if err := hashesEqual(h, hash); err != nil {
@@ -338,10 +330,7 @@ func validateHash(t *testing.T, path, hash string, deleteIfInvalid bool) error {
 
 func hashesEqual(h hash.Hash, expected string) error {
 	if v := hex.EncodeToString(h.Sum(nil)); v != expected {
-		return errors.Reason("hash %(actual)q doesn't match expected %(expected)q").
-			D("actual", v).
-			D("expected", expected).
-			Err()
+		return errors.Reason("hash %q doesn't match expected %q", v, expected).Err()
 	}
 	return nil
 }
@@ -358,19 +347,16 @@ func cacheFromCIPDLocked(ctx context.Context, t *testing.T, cachePath, name, has
 
 		client, err := cipd.NewClient(opts)
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to create CIPD client").Err()
+			return errors.Annotate(err, "failed to create CIPD client").Err()
 		}
 
 		pin, err := client.ResolveVersion(ctx, pkg, version)
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to resolve CIPD version for %(pkg)s @%(version)s").
-				D("pkg", pkg).
-				D("version", version).
-				Err()
+			return errors.Annotate(err, "failed to resolve CIPD version for %s @%s", pkg, version).Err()
 		}
 
 		if err := client.FetchAndDeployInstance(ctx, "", pin); err != nil {
-			return errors.Annotate(err).Reason("failed to fetch/deploy CIPD package").Err()
+			return errors.Annotate(err, "failed to fetch/deploy CIPD package").Err()
 		}
 
 		path := filepath.Join(opts.Root, name)
@@ -380,7 +366,7 @@ func cacheFromCIPDLocked(ctx context.Context, t *testing.T, cachePath, name, has
 		}
 
 		if err := copyFile(path, cachePath, nil); err != nil {
-			return errors.Annotate(err).Reason("failed to install CIPD package file").Err()
+			return errors.Annotate(err, "failed to install CIPD package file").Err()
 		}
 
 		return nil
@@ -400,14 +386,14 @@ func cacheFromURLLocked(t *testing.T, cachePath, hash, url string) (err error) {
 	}
 	defer func() {
 		if closeErr := fd.Close(); closeErr != nil && err == nil {
-			err = errors.Annotate(closeErr).Reason("failed to close file").Err()
+			err = errors.Annotate(closeErr, "failed to close file").Err()
 		}
 	}()
 
 	h := sha256.New()
 	tr := io.TeeReader(resp.Body, h)
 	if _, err := io.Copy(fd, tr); err != nil {
-		return errors.Annotate(err).Reason("failed to download").Err()
+		return errors.Annotate(err, "failed to download").Err()
 	}
 
 	if err = hashesEqual(h, hash); err != nil {
@@ -419,7 +405,7 @@ func cacheFromURLLocked(t *testing.T, cachePath, hash, url string) (err error) {
 func unzip(src, dst string) error {
 	fd, err := zip.OpenReader(src)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to open ZIP reader").Err()
+		return errors.Annotate(err, "failed to open ZIP reader").Err()
 	}
 	defer fd.Close()
 
@@ -430,7 +416,7 @@ func unzip(src, dst string) error {
 		// Unzip this entry.
 		if fi.IsDir() {
 			if err := os.MkdirAll(path, 0755); err != nil {
-				return errors.Annotate(err).Reason("failed to mkdir").Err()
+				return errors.Annotate(err, "failed to mkdir").Err()
 			}
 		} else {
 			if err := copyFileOpener(f.Open, path, fi); err != nil {
@@ -453,26 +439,26 @@ func copyFile(src, dst string, fi os.FileInfo) error {
 func copyFileOpener(opener func() (io.ReadCloser, error), dst string, fi os.FileInfo) (err error) {
 	sfd, err := opener()
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to open source").Err()
+		return errors.Annotate(err, "failed to open source").Err()
 	}
 	defer sfd.Close()
 
 	dfd, err := os.Create(dst)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to create destination").Err()
+		return errors.Annotate(err, "failed to create destination").Err()
 	}
 	defer func() {
 		if closeErr := dfd.Close(); closeErr != nil && err == nil {
-			err = errors.Annotate(closeErr).Reason("failed to close destination").Err()
+			err = errors.Annotate(closeErr, "failed to close destination").Err()
 		}
 	}()
 
 	if _, err := io.Copy(dfd, sfd); err != nil {
-		return errors.Annotate(err).Reason("failed to copy file").Err()
+		return errors.Annotate(err, "failed to copy file").Err()
 	}
 	if fi != nil {
 		if err := os.Chmod(dst, fi.Mode()); err != nil {
-			return errors.Annotate(err).Reason("failed to chmod").Err()
+			return errors.Annotate(err, "failed to chmod").Err()
 		}
 	}
 	return nil

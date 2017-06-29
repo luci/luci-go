@@ -83,8 +83,6 @@ func (u streamServerURI) resolve(ctx context.Context) (streamserver.StreamServer
 		return streamserver.NewTCP6Server(ctx, spec)
 
 	default:
-		return nil, errors.Reason("unknown stream server type: %(type)q").
-			D("type", typ).
-			Err()
+		return nil, errors.Reason("unknown stream server type: %q", typ).Err()
 	}
 }

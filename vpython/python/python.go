@@ -104,7 +104,7 @@ func ParseCommandLine(args []string) (cmd CommandLine, err error) {
 		// Extract the flag Target. -f<lag>
 		r, l := utf8.DecodeRuneInString(flag)
 		if r == utf8.RuneError {
-			err = errors.Reason("invalid rune in flag #%(index)d").D("index", i).Err()
+			err = errors.Reason("invalid rune in flag #%d", i).Err()
 			return
 		}
 
@@ -116,10 +116,7 @@ func ParseCommandLine(args []string) (cmd CommandLine, err error) {
 			}
 
 			if i >= len(args) {
-				return "", errors.Reason("two-value flag -%(flag)c missing second value at %(index)d").
-					D("flag", r).
-					D("index", i).
-					Err()
+				return "", errors.Reason("two-value flag -%c missing second value at %d", r, i).Err()
 			}
 
 			value := args[i]

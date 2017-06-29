@@ -175,7 +175,7 @@ func Export(ctx context.Context, dir string) (Exported, error) {
 	// may have secrets.
 	f, err := ioutil.TempFile(dir, "luci_context.")
 	if err != nil {
-		return nil, errors.Annotate(err).Reason("creating luci_context file").Err()
+		return nil, errors.Annotate(err, "creating luci_context file").Err()
 	}
 
 	l := &liveExport{path: f.Name()}
@@ -184,7 +184,7 @@ func Export(ctx context.Context, dir string) (Exported, error) {
 	f.Close() // intentionally do this even on error.
 	if err != nil {
 		l.Close() // cleans up the tempfile
-		return nil, errors.Annotate(err).Reason("writing luci_context").Err()
+		return nil, errors.Annotate(err, "writing luci_context").Err()
 	}
 	return l, nil
 }

@@ -156,7 +156,7 @@ func IndexDirectionFromAppYAMLString(v string) (AppEngineResources_Index_Directi
 		return AppEngineResources_Index_DESCENDING, nil
 
 	default:
-		return 0, errors.Reason("invalid index direction %(value)q").D("value", v).Err()
+		return 0, errors.Reason("invalid index direction %q", v).Err()
 	}
 }
 

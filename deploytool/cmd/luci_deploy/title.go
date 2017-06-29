@@ -21,8 +21,7 @@ func (t title) validate() error {
 	idx := 0
 	for _, r := range t {
 		if !(unicode.IsLetter(r) || unicode.IsNumber(r) || r == '-') {
-			return errors.Reason("character at %(pos)d (%(char)c) is not permitted in a title").
-				D("pos", idx).D("char", r).Err()
+			return errors.Reason("character at %d (%c) is not permitted in a title", idx, r).Err()
 		}
 		idx++
 	}

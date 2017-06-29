@@ -89,7 +89,9 @@ func WrapIfTransient(err error) error {
 
 type grpcCodeTag struct{ Key errors.TagKey }
 
-func (g grpcCodeTag) With(code codes.Code) errors.TagValue { return errors.MkTagValue(g.Key, code) }
+func (g grpcCodeTag) With(code codes.Code) errors.TagValue {
+	return errors.TagValue{Key: g.Key, Value: code}
+}
 func (g grpcCodeTag) In(err error) (v codes.Code, ok bool) {
 	d, ok := errors.TagValueIn(g.Key, err)
 	if ok {

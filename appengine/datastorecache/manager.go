@@ -5,7 +5,6 @@
 package datastorecache
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
 	"strings"
@@ -41,17 +40,15 @@ func errHTTPHandler(fn func(c context.Context, req *http.Request, params httprou
 		// maximum log message size with a full stack.
 		stk := errors.RenderStack(err)
 		log.WithError(err).Errorf(ctx.Context, "Handler returned error.")
-		for _, line := range stk.ToLines() {
+		for _, line := range stk {
 			log.Errorf(ctx.Context, ">> %s", line)
 		}
 
 		dumpErr := func() error {
-			var buf bytes.Buffer
-			if _, err := stk.DumpTo(&buf); err != nil {
-				return err
-			}
-			if _, err := buf.WriteTo(ctx.Writer); err != nil {
-				return err
+			for _, line := range stk {
+				if _, err := ctx.Writer.Write([]byte(line + "\n")); err != nil {
+					return err
+				}
 			}
 			return nil
 		}()
@@ -148,12 +145,12 @@ func (ms *managerShard) run(c context.Context) error {
 		}()
 
 		if err := ms.runLocked(c); err != nil {
-			return errors.Annotate(err).Err()
+			return errors.Annotate(err, "running maintenance loop").Err()
 		}
 
 		// If we observed errors during processing, note this.
 		if ms.errors > 0 {
-			return errors.Reason("%(count)d error(s) encountered during processing").D("count", ms.errors).Err()
+			return errors.Reason("%d error(s) encountered during processing", ms.errors).Err()
 		}
 		return nil
 	})
@@ -330,7 +327,7 @@ func (ms *managerShard) runLocked(c context.Context) error {
 		return nil
 	})
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to run entry query").Err()
+		return errors.Annotate(err, "failed to run entry query").Err()
 	}
 
 	// Flush any outstanding entries (ignore error, will always be nil).

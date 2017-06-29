@@ -110,15 +110,13 @@ func newSwarmClient(c context.Context, cfg *sv1.Config) *swarm.Service {
 func parseParams(desc *dm.Quest_Desc) (ret *sv1.Parameters, err error) {
 	ret = &sv1.Parameters{}
 	if err = jsonpb.UnmarshalString(desc.DistributorParameters, ret); err != nil {
-		err = errors.Annotate(err).
-			Reason("unmarshalling DistributorParameters").
+		err = errors.Annotate(err, "unmarshalling DistributorParameters").
 			InternalReason("These paramaeters were already validated?").
 			Err()
 		return
 	}
 	if err = ret.Normalize(); err != nil {
-		err = errors.Annotate(err).
-			Reason("normalizing DistributorParameters").
+		err = errors.Annotate(err, "normalizing DistributorParameters").
 			InternalReason("These paramaeters were already normalized successfully once?").
 			Err()
 		return
@@ -138,7 +136,7 @@ func (d *swarmingDist) Run(desc *dm.Quest_Desc, auth *dm.Execution_Auth, prev *d
 	if prev != nil {
 		prevParsed = &sv1.Result{}
 		if err = jsonpb.UnmarshalString(prev.Object, prevParsed); err != nil {
-			err = errors.Annotate(err).Reason("parsing previous result").Err()
+			err = errors.Annotate(err, "parsing previous result").Err()
 			return
 		}
 	}
@@ -146,7 +144,7 @@ func (d *swarmingDist) Run(desc *dm.Quest_Desc, auth *dm.Execution_Auth, prev *d
 	isoCtx, _ := context.WithTimeout(d, 30*time.Second)
 	iso, err := prepIsolate(isoCtx, d.sCfg.Isolate.Url, desc, prev, params)
 	if err != nil {
-		err = errors.Annotate(err).Reason("prepping Isolated").Err()
+		err = errors.Annotate(err, "prepping Isolated").Err()
 		return
 	}
 
@@ -166,7 +164,7 @@ func (d *swarmingDist) Run(desc *dm.Quest_Desc, auth *dm.Execution_Auth, prev *d
 
 	topic, token, err := d.cfg.PrepareTopic(d, auth.Id)
 	if err != nil {
-		err = errors.Annotate(err).Reason("preparing topic").Err()
+		err = errors.Annotate(err, "preparing topic").Err()
 		return
 	}
 
@@ -222,7 +220,7 @@ func (d *swarmingDist) Run(desc *dm.Quest_Desc, auth *dm.Execution_Auth, prev *d
 		return
 	}, retry.LogCallback(d, "swarm.Tasks.New"))
 	if err != nil {
-		err = errors.Annotate(err).Reason("calling swarm.Tasks.New").Err()
+		err = errors.Annotate(err, "calling swarm.Tasks.New").Err()
 		return
 	}
 
@@ -362,9 +360,9 @@ func (*swarmingDist) HandleTaskQueueTask(r *http.Request) ([]*distributor.Notifi
 func (*swarmingDist) Validate(payload string) error {
 	msg := &sv1.Parameters{}
 	if err := jsonpb.UnmarshalString(payload, msg); err != nil {
-		return errors.Annotate(err).Reason("unmarshal").D("payload", payload).Err()
+		return errors.Annotate(err, "unmarshal").InternalReason("payload(%v)", payload).Err()
 	}
-	return errors.Annotate(msg.Normalize()).Reason("normalize").D("payload", payload).Err()
+	return errors.Annotate(msg.Normalize(), "normalize").InternalReason("payload(%v)", payload).Err()
 }
 
 func factory(c context.Context, cfg *distributor.Config) (distributor.D, error) {

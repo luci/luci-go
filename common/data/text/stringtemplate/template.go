@@ -60,9 +60,7 @@ func Resolve(v string, subst map[string]string) (string, error) {
 		switch {
 		case match[8] >= 0:
 			// Invalid.
-			return "", errors.Reason("invalid template: %(template)q").
-				D("template", v).
-				Err()
+			return "", errors.Reason("invalid template: %q", v).Err()
 
 		case match[2] >= 0:
 			// Escaped.
@@ -90,9 +88,7 @@ func Resolve(v string, subst map[string]string) (string, error) {
 
 		subst, ok := subst[key]
 		if !ok {
-			return "", errors.Reason("no substitution for %(key)q").
-				D("key", key).
-				Err()
+			return "", errors.Reason("no substitution for %q", key).Err()
 		}
 		parts = append(parts, subst)
 	}

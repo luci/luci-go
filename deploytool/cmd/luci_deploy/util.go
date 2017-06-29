@@ -22,8 +22,7 @@ func unmarshalTextProtobuf(path string, msg proto.Message) error {
 	switch {
 	case err == nil:
 		if err := proto.UnmarshalText(string(data), msg); err != nil {
-			return errors.Annotate(err).Reason("failed to unmarshal %(type)T from [%(path)s]").
-				D("type", msg).D("path", path).Err()
+			return errors.Annotate(err, "failed to unmarshal %T from [%s]", msg, path).Err()
 		}
 		return nil
 
@@ -32,7 +31,7 @@ func unmarshalTextProtobuf(path string, msg proto.Message) error {
 		return err
 
 	default:
-		return errors.Annotate(err).Reason("failed to read data from [%(path)s]").D("path", path).Err()
+		return errors.Annotate(err, "failed to read data from [%s]", path).Err()
 	}
 }
 
@@ -44,10 +43,10 @@ func unmarshalTextProtobufDir(base string, fis []os.FileInfo, msg proto.Message,
 		}
 
 		if err := unmarshalTextProtobuf(filepath.Join(base, name), msg); err != nil {
-			return errors.Annotate(err).Reason("failed to unmarshal file [%(name)s]").D("name", name).Err()
+			return errors.Annotate(err, "failed to unmarshal file [%s]", name).Err()
 		}
 		if err := cb(name); err != nil {
-			return errors.Annotate(err).Reason("failed to process file [%(name)s]").D("name", name).Err()
+			return errors.Annotate(err, "failed to process file [%s]", name).Err()
 		}
 	}
 	return nil
@@ -56,7 +55,7 @@ func unmarshalTextProtobufDir(base string, fis []os.FileInfo, msg proto.Message,
 func logError(c context.Context, err error, f string, args ...interface{}) {
 	log.WithError(err).Errorf(c, f, args...)
 	if log.IsLogging(c, log.Debug) {
-		log.Debugf(c, "Error stack:\n%s", strings.Join(errors.RenderStack(err).ToLines(), "\n"))
+		log.Debugf(c, "Error stack:\n%s", strings.Join(errors.RenderStack(err), "\n"))
 	}
 }
 

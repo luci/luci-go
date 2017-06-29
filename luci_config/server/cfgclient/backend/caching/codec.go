@@ -24,10 +24,10 @@ func Encode(v interface{}) ([]byte, error) {
 
 	if err := enc.Encode(v); err != nil {
 		zw.Close()
-		return nil, errors.Annotate(err).Reason("failed to JSON-encode").Err()
+		return nil, errors.Annotate(err, "failed to JSON-encode").Err()
 	}
 	if err := zw.Close(); err != nil {
-		return nil, errors.Annotate(err).Reason("failed to Close zlib Writer").Err()
+		return nil, errors.Annotate(err, "failed to Close zlib Writer").Err()
 	}
 	return buf.Bytes(), nil
 }
@@ -37,12 +37,12 @@ func Encode(v interface{}) ([]byte, error) {
 func Decode(d []byte, v interface{}) error {
 	zr, err := zlib.NewReader(bytes.NewReader(d))
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to create zlib Reader").Err()
+		return errors.Annotate(err, "failed to create zlib Reader").Err()
 	}
 	defer zr.Close()
 
 	if err := json.NewDecoder(zr).Decode(v); err != nil {
-		return errors.Annotate(err).Reason("failed to JSON-decode").Err()
+		return errors.Annotate(err, "failed to JSON-decode").Err()
 	}
 	return nil
 }

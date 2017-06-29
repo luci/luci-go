@@ -50,9 +50,7 @@ func (i *Interpreter) Normalize() error {
 	}
 	resolved, err := filepath.EvalSymlinks(i.Python)
 	if err != nil {
-		return errors.Annotate(err).Reason("could not evaluate symlinks for: %(path)q").
-			D("path", i.Python).
-			Err()
+		return errors.Annotate(err, "could not evaluate symlinks for: %q", i.Python).Err()
 	}
 	i.Python = resolved
 	return nil
@@ -98,7 +96,7 @@ func (i *Interpreter) GetVersion(c context.Context) (v Version, err error) {
 	cmd := i.IsolatedCommand(c, "--version")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		err = errors.Annotate(err).Err()
+		err = errors.Annotate(err, "").Err()
 		return
 	}
 
@@ -118,15 +116,13 @@ func (i *Interpreter) Hash() (string, error) {
 	hashInterpreter := func(path string) (string, error) {
 		fd, err := os.Open(i.Python)
 		if err != nil {
-			return "", errors.Annotate(err).Reason("failed to open interpreter").Err()
+			return "", errors.Annotate(err, "failed to open interpreter").Err()
 		}
 		defer fd.Close()
 
 		hash := sha256.New()
 		if _, err := io.Copy(hash, fd); err != nil {
-			return "", errors.Annotate(err).Reason("failed to read [%(path)s] for hashing").
-				D("path", path).
-				Err()
+			return "", errors.Annotate(err, "failed to read [%s] for hashing", path).Err()
 		}
 
 		return hex.EncodeToString(hash.Sum(nil)), nil
@@ -148,15 +144,12 @@ func ParseVersionOutput(output string) (Version, error) {
 	parts := strings.SplitN(s, " ", 2)
 	if len(parts) != 2 || parts[0] != "Python" {
 		return Version{}, errors.Reason("unknown version output").
-			D("output", s).
-			Err()
+			InternalReason("output(%q)", s).Err()
 	}
 
 	v, err := ParseVersion(parts[1])
 	if err != nil {
-		err = errors.Annotate(err).Reason("failed to parse version from: %(value)q").
-			D("value", parts[1]).
-			Err()
+		err = errors.Annotate(err, "failed to parse version from: %q", parts[1]).Err()
 		return v, err
 	}
 	return v, nil

@@ -137,7 +137,7 @@ func (f *File) ResolveWith(rslv VersionResolver, templateArgs map[string]string)
 	if f.ServiceURL != "" {
 		// double check the url
 		if _, err := url.Parse(f.ServiceURL); err != nil {
-			return nil, errors.Annotate(err).Reason("bad ServiceURL").Err()
+			return nil, errors.Annotate(err, "bad ServiceURL").Err()
 		}
 	}
 
@@ -153,10 +153,7 @@ func (f *File) ResolveWith(rslv VersionResolver, templateArgs map[string]string)
 	for subdir, pkgs := range f.PackagesBySubdir {
 		// double-check the subdir
 		if err := common.ValidateSubdir(subdir); err != nil {
-			return nil, errors.Annotate(err).
-				Reason("normalizing %(subdir)q").
-				D("subdir", subdir).
-				Err()
+			return nil, errors.Annotate(err, "normalizing %q", subdir).Err()
 		}
 		for _, pkg := range pkgs {
 			pin, err := pkg.Resolve(rslv, templateArgs)
@@ -164,17 +161,13 @@ func (f *File) ResolveWith(rslv VersionResolver, templateArgs map[string]string)
 				continue
 			}
 			if err != nil {
-				return nil, errors.Annotate(err).Reason("resolving package").Err()
+				return nil, errors.Annotate(err, "resolving package").Err()
 			}
 
 			if origLineNo, ok := resolvedPkgDupList[subdir][pin.PackageName]; ok {
 				return nil, errors.
-					Reason("duplicate package in subdir %(subdir)q: %(pkg)q: defined on line %(orig)d and %(new)d").
-					D("subdir", subdir).
-					D("pkg", pin.PackageName).
-					D("orig", origLineNo).
-					D("new", pkg.LineNo).
-					Err()
+					Reason("duplicate package in subdir %q: %q: defined on line %d and %d",
+						subdir, pin.PackageName, origLineNo, pkg.LineNo).Err()
 			}
 			if resolvedPkgDupList[subdir] == nil {
 				resolvedPkgDupList[subdir] = map[string]int{}

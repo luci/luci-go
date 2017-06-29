@@ -40,7 +40,7 @@ func (cr *verifyCommandRun) Run(app subcommands.Application, args []string, env 
 	return run(c, func(c context.Context) error {
 		// Make sure that we can resolve the referenced specifiction.
 		if err := a.opts.ResolveSpec(c); err != nil {
-			return errors.Annotate(err).Reason("failed to resolve specification").Err()
+			return errors.Annotate(err, "failed to resolve specification").Err()
 		}
 
 		s := a.opts.EnvConfig.Spec
@@ -54,7 +54,7 @@ func (cr *verifyCommandRun) Run(app subcommands.Application, args []string, env 
 		// Verify that the spec can be normalized. This may modify it, so we will
 		// normalize a clone.
 		if err := spec.NormalizeSpec(s.Clone(), nil); err != nil {
-			return errors.Annotate(err).Reason("failed to normalize specification").Err()
+			return errors.Annotate(err, "failed to normalize specification").Err()
 		}
 
 		renderedSpec := spec.Render(s)

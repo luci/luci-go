@@ -5,7 +5,6 @@
 package isolate
 
 import (
-	"fmt"
 	"log"
 	"path"
 	"runtime"
@@ -20,7 +19,7 @@ func assertNoError(err error) {
 	if err == nil {
 		return
 	}
-	log.Panic(errors.RenderStack(fmt.Errorf("assertion failed due to error: %s", err)).ToLines())
+	log.Panic(errors.RenderStack(errors.Annotate(err, "assertion failed").Err()))
 }
 
 func assert(condition bool, info ...interface{}) {
@@ -28,9 +27,9 @@ func assert(condition bool, info ...interface{}) {
 		return
 	}
 	if len(info) == 0 {
-		log.Panic(errors.RenderStack(errors.New("assertion failed")).ToLines())
+		log.Panic(errors.RenderStack(errors.New("assertion failed")))
 	} else if format, ok := info[0].(string); ok {
-		log.Panic(errors.RenderStack(fmt.Errorf("assertion failed: "+format, info[1:]...)).ToLines())
+		log.Panic(errors.RenderStack(errors.Reason("assertion failed: "+format, info[1:]...).Err()))
 	}
 }
 

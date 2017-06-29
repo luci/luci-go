@@ -47,19 +47,13 @@ func (p *PackageDef) Resolve(rslv VersionResolver, templateArgs map[string]strin
 		return
 	}
 	if err != nil {
-		err = errors.Annotate(err).
-			Reason("failed to resolve package template (line %(line)d)").
-			D("line", p.LineNo).
-			Err()
+		err = errors.Annotate(err, "failed to resolve package template (line %d)", p.LineNo).Err()
 		return
 	}
 
 	pin, err = rslv(pin.PackageName, p.UnresolvedVersion)
 	if err != nil {
-		err = errors.Annotate(err).
-			Reason("failed to resolve package version (line %(line)d)").
-			D("line", p.LineNo).
-			Err()
+		err = errors.Annotate(err, "failed to resolve package version (line %d)", p.LineNo).Err()
 		return
 	}
 

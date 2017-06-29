@@ -58,7 +58,7 @@ func withTempDir(f func(string) error) error {
 	// Create a temporary directory.
 	tdir, err := ioutil.TempDir("", "luci_deploytool")
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to create tempdir").Err()
+		return errors.Annotate(err, "failed to create tempdir").Err()
 	}
 	defer os.RemoveAll(tdir)
 

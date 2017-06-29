@@ -25,14 +25,14 @@ import (
 
 func mainImpl(args []string) (int, error) {
 	if len(args) < 1 {
-		return 1, errors.Reason("accepts one argument: package").Err()
+		return 1, errors.New("accepts one argument: package")
 	}
 	pkg, args := args[0], args[1:]
 
 	// Create a temporary output directory to build into.
 	tmpdir, err := ioutil.TempDir("", "luci-gorun")
 	if err != nil {
-		return 1, errors.Annotate(err).Reason("failed to create temporary directory").Err()
+		return 1, errors.Annotate(err, "failed to create temporary directory").Err()
 	}
 	defer os.RemoveAll(tmpdir)
 
@@ -46,7 +46,7 @@ func mainImpl(args []string) (int, error) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		return 1, errors.Annotate(err).Reason("failed to build: %(package)s").D("package", pkg).Err()
+		return 1, errors.Annotate(err, "failed to build: %s", pkg).Err()
 	}
 
 	// Run the package.
@@ -58,7 +58,7 @@ func mainImpl(args []string) (int, error) {
 		if rc, ok := exitcode.Get(err); ok {
 			return rc, nil
 		}
-		return 1, errors.Annotate(err).Reason("failed to run: %(package)s").D("package", pkg).Err()
+		return 1, errors.Annotate(err, "failed to run: %s", pkg).Err()
 	}
 
 	return 0, nil
@@ -67,7 +67,9 @@ func mainImpl(args []string) (int, error) {
 func main() {
 	rc, err := mainImpl(os.Args[1:])
 	if err != nil {
-		_, _ = errors.RenderStack(err).DumpTo(os.Stderr)
+		for _, line := range errors.RenderStack(err) {
+			os.Stderr.WriteString(line + "\n")
+		}
 	}
 	os.Exit(rc)
 }

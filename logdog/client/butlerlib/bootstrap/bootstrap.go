@@ -74,7 +74,7 @@ func getFromEnv(env environ.Environment, reg *streamclient.Registry) (*Bootstrap
 func (bs *Bootstrap) initializeClient(v string, reg *streamclient.Registry) error {
 	c, err := reg.NewClient(v)
 	if err != nil {
-		return errors.Annotate(err).Reason("bootstrap: failed to create stream client [%(config)s]").D("config", v).Err()
+		return errors.Annotate(err, "bootstrap: failed to create stream client [%s]", v).Err()
 	}
 	bs.Client = c
 	return nil

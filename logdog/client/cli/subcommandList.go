@@ -60,7 +60,7 @@ func (cmd *listCommandRun) Run(scApp subcommands.Application, args []string, _ s
 
 	coord, err := a.coordinatorClient("")
 	if err != nil {
-		errors.Log(a, errors.Annotate(err).Reason("could not create Coordinator client").Err())
+		errors.Log(a, errors.Annotate(err, "could not create Coordinator client").Err())
 		return 1
 	}
 

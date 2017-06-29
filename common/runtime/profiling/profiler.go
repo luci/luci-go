@@ -95,7 +95,7 @@ func (p *Profiler) Start() error {
 	if p.ProfileCPU {
 		out, err := os.Create(p.generateOutPath("cpu"))
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to create CPU profile output file").Err()
+			return errors.Annotate(err, "failed to create CPU profile output file").Err()
 		}
 		pprof.StartCPUProfile(out)
 		p.profilingCPU = true
@@ -103,7 +103,7 @@ func (p *Profiler) Start() error {
 
 	if p.BindHTTP != "" {
 		if err := p.startHTTP(); err != nil {
-			return errors.Annotate(err).Reason("failed to start HTTP server").Err()
+			return errors.Annotate(err, "failed to start HTTP server").Err()
 		}
 	}
 
@@ -126,8 +126,7 @@ func (p *Profiler) startHTTP() error {
 	// Bind to our profiling port.
 	l, err := net.Listen("tcp4", p.BindHTTP)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to bind to TCP4 address: %(addr)q").
-			D("addr", p.BindHTTP).Err()
+		return errors.Annotate(err, "failed to bind to TCP4 address: %q", p.BindHTTP).Err()
 	}
 
 	server := http.Server{
@@ -168,7 +167,7 @@ func (p *Profiler) DumpSnapshot() error {
 
 	if p.ProfileHeap {
 		if err := p.dumpHeapProfile(); err != nil {
-			return errors.Annotate(err).Reason("failed to dump heap profile").Err()
+			return errors.Annotate(err, "failed to dump heap profile").Err()
 		}
 	}
 
@@ -178,14 +177,14 @@ func (p *Profiler) DumpSnapshot() error {
 func (p *Profiler) dumpHeapProfile() error {
 	fd, err := os.Create(p.generateOutPath("memory"))
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to create output file").Err()
+		return errors.Annotate(err, "failed to create output file").Err()
 	}
 	defer fd.Close()
 
 	// Get up-to-date statistics.
 	runtime.GC()
 	if err := pprof.WriteHeapProfile(fd); err != nil {
-		return errors.Annotate(err).Reason("failed to write heap profile").Err()
+		return errors.Annotate(err, "failed to write heap profile").Err()
 	}
 	return nil
 }

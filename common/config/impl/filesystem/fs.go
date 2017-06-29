@@ -185,16 +185,13 @@ func New(basePath string) (config.Interface, error) {
 			return nil, err
 		}
 		if !inf.IsDir() {
-			return nil, (errors.Reason("filesystem.New(%(basePath)q): does not link to a directory").
-				D("basePath", basePath).Err())
+			return nil, errors.Reason("filesystem.New(%q): does not link to a directory", basePath).Err()
 		}
 		if len(ret.basePath.explode()) < 1 {
-			return nil, (errors.Reason("filesystem.New(%(basePath)q): not enough tokens in path").
-				D("basePath", basePath).Err())
+			return nil, errors.Reason("filesystem.New(%q): not enough tokens in path", basePath).Err()
 		}
 	} else if !inf.IsDir() {
-		return nil, (errors.Reason("filesystem.New(%(basePath)q): not a directory").
-			D("basePath", basePath).Err())
+		return nil, errors.Reason("filesystem.New(%q): not a directory", basePath).Err()
 	}
 	return ret, nil
 }

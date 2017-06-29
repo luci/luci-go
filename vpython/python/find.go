@@ -69,7 +69,7 @@ func Find(c context.Context, vers Version, lookPath LookPathFunc) (*Interpreter,
 	}
 
 	// No Python interpreter could be identified.
-	return nil, errors.Annotate(lookErrs.Get()).Reason("no Python found").Err()
+	return nil, errors.Annotate(lookErrs.Get(), "no Python found").Err()
 }
 
 func findInterpreter(c context.Context, name string, vers Version, lookPath LookPathFunc) (*Interpreter, error) {
@@ -78,9 +78,7 @@ func findInterpreter(c context.Context, name string, vers Version, lookPath Look
 	}
 	lpr, err := lookPath(c, name)
 	if err != nil {
-		return nil, errors.Annotate(err).Reason("could not find executable for: %(name)q").
-			D("name", name).
-			Err()
+		return nil, errors.Annotate(err, "could not find executable for: %q", name).Err()
 	}
 
 	i := Interpreter{
@@ -102,16 +100,10 @@ func findInterpreter(c context.Context, name string, vers Version, lookPath Look
 
 	iv, err := i.GetVersion(c)
 	if err != nil {
-		return nil, errors.Annotate(err).Reason("failed to get version for: %(interp)q").
-			D("interp", i.Python).
-			Err()
+		return nil, errors.Annotate(err, "failed to get version for: %q", i.Python).Err()
 	}
 	if !vers.IsSatisfiedBy(iv) {
-		return nil, errors.Reason("interpreter %(interp)q version %(interpVersion)q does not satisfy %(version)q").
-			D("interp", i.Python).
-			D("interpVersion", iv).
-			D("version", vers).
-			Err()
+		return nil, errors.Reason("interpreter %q version %q does not satisfy %q", i.Python, iv, vers).Err()
 	}
 
 	return &i, nil

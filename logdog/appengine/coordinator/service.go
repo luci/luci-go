@@ -508,13 +508,13 @@ func (si *googleStorage) Close() {
 func (si *googleStorage) GetSignedURLs(c context.Context, req *URLSigningRequest) (*URLSigningResponse, error) {
 	info, err := si.svc.signer.ServiceInfo(c)
 	if err != nil {
-		return nil, errors.Annotate(err).InternalReason("failed to get service info").Err()
+		return nil, errors.Annotate(err, "").InternalReason("failed to get service info").Err()
 	}
 
 	lifetime := req.Lifetime
 	switch {
 	case lifetime < 0:
-		return nil, errors.Reason("invalid signed URL lifetime: %(lifetime)s").D("lifetime", lifetime).Err()
+		return nil, errors.Reason("invalid signed URL lifetime: %s", lifetime).Err()
 
 	case lifetime > maxSignedURLLifetime:
 		lifetime = maxSignedURLLifetime
@@ -537,8 +537,8 @@ func (si *googleStorage) GetSignedURLs(c context.Context, req *URLSigningRequest
 	doSign := func(path gs.Path) (string, error) {
 		url, err := gcst.SignedURL(path.Bucket(), path.Filename(), &opts)
 		if err != nil {
-			return "", errors.Annotate(err).InternalReason("failed to sign URL").
-				D("bucket", path.Bucket()).D("filename", path.Filename).Err()
+			return "", errors.Annotate(err, "").InternalReason(
+				"failed to sign URL: bucket(%s)/filename(%s)", path.Bucket(), path.Filename).Err()
 		}
 		return url, nil
 	}
@@ -546,14 +546,14 @@ func (si *googleStorage) GetSignedURLs(c context.Context, req *URLSigningRequest
 	// Sign stream URL.
 	if req.Stream {
 		if resp.Stream, err = doSign(si.stream); err != nil {
-			return nil, errors.Annotate(err).InternalReason("failed to sign stream URL").Err()
+			return nil, errors.Annotate(err, "").InternalReason("failed to sign stream URL").Err()
 		}
 	}
 
 	// Sign index URL.
 	if req.Index {
 		if resp.Index, err = doSign(si.index); err != nil {
-			return nil, errors.Annotate(err).InternalReason("failed to sign index URL").Err()
+			return nil, errors.Annotate(err, "").InternalReason("failed to sign index URL").Err()
 		}
 	}
 

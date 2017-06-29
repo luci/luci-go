@@ -167,7 +167,7 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 	} else {
 		hdir, err := homedir.Dir()
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to get user home directory").Err()
+			return errors.Annotate(err, "failed to get user home directory").Err()
 		}
 		a.opts.EnvConfig.BaseDir = filepath.Join(hdir, ".vpython")
 	}
@@ -179,7 +179,7 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 	a.addToFlagSet(fs)
 	selfArgs, args := extractFlagsForSet(args, fs)
 	if err := fs.Parse(selfArgs); err != nil && err != flag.ErrHelp {
-		return errors.Annotate(err).Reason("failed to parse flags").Err()
+		return errors.Annotate(err, "failed to parse flags").Err()
 	}
 
 	// Identify the "self" executable. Use this to construct a "lookPath", which
@@ -210,10 +210,8 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 		a.opts.EnvConfig.Spec = &sp
 	} else if specPath := a.opts.Environ.GetEmpty(DefaultSpecENV); specPath != "" {
 		if err := spec.Load(specPath, &a.opts.DefaultSpec); err != nil {
-			return errors.Annotate(err).
-				Reason("failed to load default specification file ("+DefaultSpecENV+"from: %(path)s").
-				D("path", specPath).
-				Err()
+			return errors.Annotate(err, "failed to load default specification file (%s) from %s",
+				DefaultSpecENV, specPath).Err()
 		}
 	}
 
@@ -222,7 +220,7 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 	if a.opts.EnvConfig.BaseDir == "" {
 		tdir, err := ioutil.TempDir("", "vpython")
 		if err != nil {
-			return errors.Annotate(err).Reason("failed to create temporary directory").Err()
+			return errors.Annotate(err, "failed to create temporary directory").Err()
 		}
 		defer func() {
 			logging.Debugf(c, "Removing temporary directory: %s", tdir)
@@ -246,7 +244,7 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 			err = ReturnCodeError(rc)
 		}
 
-		return errors.Annotate(err).Err()
+		return errors.Annotate(err, "").Err()
 	}
 	return nil
 }
@@ -267,7 +265,7 @@ func (a *application) showPythonHelp(c context.Context, fs *flag.FlagSet, lp *lo
 
 	i, err := python.Find(c, python.Version{}, lp.look)
 	if err != nil {
-		return errors.Annotate(err).Reason("could not find Python interpreter for help").Err()
+		return errors.Annotate(err, "could not find Python interpreter for help").Err()
 	}
 
 	// Redirect all "--help" to Stdout for consistency.
@@ -276,9 +274,7 @@ func (a *application) showPythonHelp(c context.Context, fs *flag.FlagSet, lp *lo
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stdout
 	if err := cmd.Run(); err != nil {
-		return errors.Annotate(err).Reason("failed to dump Python help from: %(interpreter)s").
-			D("interpreter", i.Python).
-			Err()
+		return errors.Annotate(err, "failed to dump Python help from: %s", i.Python).Err()
 	}
 	return nil
 }

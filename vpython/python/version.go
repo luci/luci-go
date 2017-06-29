@@ -45,18 +45,14 @@ func ParseVersion(s string) (Version, error) {
 
 	match := canonicalVersionRE.FindStringSubmatch(s)
 	if match == nil {
-		return v, errors.Reason("non-canonical Python version string: %(value)q").
-			D("value", s).
-			Err()
+		return v, errors.Reason("non-canonical Python version string: %q", s).Err()
 	}
 	parts := strings.Split(match[2], ".")
 
 	parseVersion := func(value string) (int, error) {
 		version, err := strconv.Atoi(value)
 		if err != nil {
-			return 0, errors.Annotate(err).Reason("invalid number value: %(value)q").
-				D("value", value).
-				Err()
+			return 0, errors.Annotate(err, "invalid number value: %q", value).Err()
 		}
 		return version, nil
 	}
@@ -66,16 +62,16 @@ func ParseVersion(s string) (Version, error) {
 	var err error
 	if len(parts) >= 3 {
 		if v.Patch, err = parseVersion(parts[2]); err != nil {
-			return v, errors.Annotate(err).Reason("invalid patch value").Err()
+			return v, errors.Annotate(err, "invalid patch value").Err()
 		}
 	}
 	if len(parts) >= 2 {
 		if v.Minor, err = parseVersion(parts[1]); err != nil {
-			return v, errors.Annotate(err).Reason("invalid minor value").Err()
+			return v, errors.Annotate(err, "invalid minor value").Err()
 		}
 	}
 	if v.Major, err = parseVersion(parts[0]); err != nil {
-		return v, errors.Annotate(err).Reason("invalid major value").Err()
+		return v, errors.Annotate(err, "invalid major value").Err()
 	}
 	if v.IsZero() {
 		return v, errors.Reason("version is incomplete").Err()

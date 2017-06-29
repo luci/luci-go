@@ -50,7 +50,7 @@ const (
 func Run(c context.Context, opts Options) error {
 	// Resolve our Options.
 	if err := opts.resolve(c); err != nil {
-		return errors.Annotate(err).Reason("could not resolve options").Err()
+		return errors.Annotate(err, "could not resolve options").Err()
 	}
 
 	// Create a local cancellation option (signal handling).
@@ -99,12 +99,12 @@ func Run(c context.Context, opts Options) error {
 
 		// Output the Python command being executed.
 		if err := runAndForwardSignals(c, cmd, cancelFunc); err != nil {
-			return errors.Annotate(err).Reason("failed to execute bootstrapped Python").Err()
+			return errors.Annotate(err, "failed to execute bootstrapped Python").Err()
 		}
 		return nil
 	})
 	if err != nil {
-		return errors.Annotate(err).Err()
+		return errors.Annotate(err, "").Err()
 	}
 	return nil
 }
@@ -121,7 +121,7 @@ func runAndForwardSignals(c context.Context, cmd *exec.Cmd, cancelFunc context.C
 	}()
 
 	if err := cmd.Start(); err != nil {
-		return errors.Annotate(err).Reason("failed to start process").Err()
+		return errors.Annotate(err, "failed to start process").Err()
 	}
 
 	logging.Fields{
@@ -149,7 +149,7 @@ func runAndForwardSignals(c context.Context, cmd *exec.Cmd, cancelFunc context.C
 	err := cmd.Wait()
 	logging.Debugf(c, "Python subprocess has terminated: %v", err)
 	if err != nil {
-		return errors.Annotate(err).Err()
+		return errors.Annotate(err, "").Err()
 	}
 	return nil
 }

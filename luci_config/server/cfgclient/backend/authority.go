@@ -52,7 +52,7 @@ func (a Authority) MarshalJSON() ([]byte, error) {
 	case AsUser:
 		return asUserJSON, nil
 	default:
-		return nil, errors.Reason("unknown authority: %(auth)v").D("auth", a).Err()
+		return nil, errors.Reason("unknown authority: %v", a).Err()
 	}
 }
 
@@ -66,7 +66,7 @@ func (a *Authority) UnmarshalJSON(d []byte) error {
 	case bytes.Equal(d, asUserJSON):
 		*a = AsUser
 	default:
-		return errors.Reason("unknown authority JSON value: %(auth)v").D("auth", d).Err()
+		return errors.Reason("unknown authority JSON value: %v", d).Err()
 	}
 	return nil
 }

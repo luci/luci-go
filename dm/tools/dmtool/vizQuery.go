@@ -234,7 +234,7 @@ func (r *visQueryRun) Run(a subcommands.Application, args []string, env subcomma
 	for c.Err() == nil {
 		gdata, err := runQuery(c, dc, query)
 		if err != nil {
-			if errors.Contains(err, context.Canceled) {
+			if errors.Any(err, func(err error) bool { return err == context.Canceled }) {
 				return 0
 			}
 			logging.WithError(err).Errorf(c, "error running query")

@@ -123,7 +123,7 @@ func (p *Policy) ImportConfigs(c context.Context) (rev string, err error) {
 		err = errors.New("no configs fetched by the callback")
 	}
 	if err != nil {
-		return "", errors.Annotate(err).Reason("failed to fetch policy configs").Err()
+		return "", errors.Annotate(err, "failed to fetch policy configs").Err()
 	}
 	rev = fetcher.Revision()
 
@@ -132,7 +132,7 @@ func (p *Policy) ImportConfigs(c context.Context) (rev string, err error) {
 	// SHA256 digest).
 	cfgBlob, err := serializeBundle(bundle)
 	if err != nil {
-		return "", errors.Annotate(err).Reason("failed to serialize the configs").Err()
+		return "", errors.Annotate(err, "failed to serialize the configs").Err()
 	}
 	digest := sha256.Sum256(cfgBlob)
 	digestHex := hex.EncodeToString(digest[:])
@@ -141,7 +141,7 @@ func (p *Policy) ImportConfigs(c context.Context) (rev string, err error) {
 	// Do we have it already?
 	existingHdr, err := getImportedPolicyHeader(c, p.Name)
 	if err != nil {
-		return "", errors.Annotate(err).Reason("failed to grab ImportedPolicyHeader").Err()
+		return "", errors.Annotate(err, "failed to grab ImportedPolicyHeader").Err()
 	}
 	if existingHdr != nil && digestHex == existingHdr.SHA256 {
 		logging.Infof(
@@ -160,9 +160,7 @@ func (p *Policy) ImportConfigs(c context.Context) (rev string, err error) {
 		v := validation.Context{Logger: logging.Get(c)}
 		p.Validate(bundle, &v)
 		if err := v.Finalize(); err != nil {
-			return "", errors.Annotate(err).
-				Reason("configs at rev %(rev)s are invalid").
-				D("rev", rev).Err()
+			return "", errors.Annotate(err, "configs at rev %s are invalid", rev).Err()
 		}
 	}
 
@@ -173,7 +171,7 @@ func (p *Policy) ImportConfigs(c context.Context) (rev string, err error) {
 		err = errors.New("wrong revision in result of Prepare callback")
 	}
 	if err != nil {
-		return "", errors.Annotate(err).Reason("failed to convert configs into a queryable form").Err()
+		return "", errors.Annotate(err, "failed to convert configs into a queryable form").Err()
 	}
 
 	logging.Infof(c, "Storing new configs")
@@ -210,7 +208,7 @@ func (p *Policy) grabQueryable(c context.Context, prev lazyslot.Value) (val lazy
 	hdr, err := getImportedPolicyHeader(c, p.Name)
 	switch {
 	case err != nil:
-		err = errors.Annotate(err).Reason("failed to fetch importedPolicyHeader entity").Err()
+		err = errors.Annotate(err, "failed to fetch importedPolicyHeader entity").Err()
 		return
 	case hdr == nil:
 		err = ErrNoPolicy
@@ -231,7 +229,7 @@ func (p *Policy) grabQueryable(c context.Context, prev lazyslot.Value) (val lazy
 	body, err := getImportedPolicyBody(c, p.Name)
 	switch {
 	case err != nil:
-		err = errors.Annotate(err).Reason("failed to fetch importedPolicyBody entity").Err()
+		err = errors.Annotate(err, "failed to fetch importedPolicyBody entity").Err()
 		return
 	case body == nil: // this is rare, the body shouldn't disappear
 		logging.Errorf(c, "The policy body is unexpectedly gone")
@@ -249,7 +247,7 @@ func (p *Policy) grabQueryable(c context.Context, prev lazyslot.Value) (val lazy
 	logging.Infof(c, "Using configs at rev %s", body.Revision)
 	configs, unknown, err := deserializeBundle(body.Data)
 	if err != nil {
-		err = errors.Annotate(err).Reason("failed to deserialize cached configs").Err()
+		err = errors.Annotate(err, "failed to deserialize cached configs").Err()
 		return
 	}
 	if len(unknown) != 0 {
@@ -261,7 +259,7 @@ func (p *Policy) grabQueryable(c context.Context, prev lazyslot.Value) (val lazy
 	}
 	queryable, err := p.Prepare(configs, body.Revision)
 	if err != nil {
-		err = errors.Annotate(err).Reason("failed to process cached configs").Err()
+		err = errors.Annotate(err, "failed to process cached configs").Err()
 		return
 	}
 

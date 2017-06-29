@@ -5,7 +5,6 @@
 package deps
 
 import (
-	"bytes"
 	"os"
 
 	"github.com/golang/protobuf/proto"
@@ -35,7 +34,7 @@ func depsServerPrelude(c context.Context, methodName string, req proto.Message) 
 		Normalize() error
 	}); ok {
 		if err := norm.Normalize(); err != nil {
-			return nil, grpcAnnotate(err, codes.InvalidArgument).Reason("invalid request").Err()
+			return nil, grpcAnnotate(err, codes.InvalidArgument, "invalid request").Err()
 		}
 	}
 	return c, nil
@@ -65,9 +64,7 @@ func depsServerPostlude(c context.Context, methodName string, rsp proto.Message,
 			printStack = !omitStack
 		}
 		if printStack {
-			buf := &bytes.Buffer{}
-			errors.RenderStack(err).DumpTo(buf)
-			logging.Errorf(c, "%s", buf.String())
+			errors.Log(c, err)
 		} else {
 			logging.Infof(c, "returning gRPC code: %s", code)
 		}

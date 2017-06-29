@@ -74,7 +74,7 @@ func (cmd *latestCommandRun) Run(scApp subcommands.Application, args []string, _
 
 	coord, err := a.coordinatorClient(addr.Host)
 	if err != nil {
-		errors.Log(a, errors.Annotate(err).Reason("failed to create Coordinator client").Err())
+		errors.Log(a, errors.Annotate(err, "failed to create Coordinator client").Err())
 		return 1
 	}
 

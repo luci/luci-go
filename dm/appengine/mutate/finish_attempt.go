@@ -55,8 +55,7 @@ func (f *FinishAttempt) RollForward(c context.Context) (muts []tumble.Mutation, 
 	atmpt.Result.Data = &rslt
 	atmpt.Result.Data.Object = ""
 
-	err = errors.Annotate(ds.Put(c, atmpt, ar)).Tag(grpcutil.Tag.With(codes.Internal)).
-		Reason("during Put").Err()
+	err = errors.Annotate(ds.Put(c, atmpt, ar), "during Put").Tag(grpcutil.Tag.With(codes.Internal)).Err()
 	return
 }
 

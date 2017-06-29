@@ -46,7 +46,9 @@ type Context struct {
 
 type fileTagType struct{ Key errors.TagKey }
 
-func (f fileTagType) With(name string) errors.TagValue { return errors.MkTagValue(f.Key, name) }
+func (f fileTagType) With(name string) errors.TagValue {
+	return errors.TagValue{Key: f.Key, Value: name}
+}
 func (f fileTagType) In(err error) (v string, ok bool) {
 	d, ok := errors.TagValueIn(f.Key, err)
 	if ok {
@@ -58,7 +60,7 @@ func (f fileTagType) In(err error) (v string, ok bool) {
 type elementTagType struct{ Key errors.TagKey }
 
 func (e elementTagType) With(elements []string) errors.TagValue {
-	return errors.MkTagValue(e.Key, append([]string(nil), elements...))
+	return errors.TagValue{Key: e.Key, Value: append([]string(nil), elements...)}
 }
 func (e elementTagType) In(err error) (v []string, ok bool) {
 	d, ok := errors.TagValueIn(e.Key, err)

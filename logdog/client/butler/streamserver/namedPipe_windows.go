@@ -25,10 +25,8 @@ func NewNamedPipeServer(ctx context.Context, name string) (StreamServer, error) 
 	case l == 0:
 		return nil, errors.New("cannot have empty name")
 	case l > maxWindowsNamedPipeLength:
-		return nil, errors.Reason("name exceeds maximum length %(max)d").
-			D("name", name).
-			D("max", maxWindowsNamedPipeLength).
-			Err()
+		return nil, errors.Reason("name exceeds maximum length %d", maxWindowsNamedPipeLength).
+			InternalReason("name(%s)", name).Err()
 	}
 
 	ctx = log.SetField(ctx, "name", name)
@@ -44,7 +42,7 @@ func NewNamedPipeServer(ctx context.Context, name string) (StreamServer, error) 
 
 			l, err := winio.ListenPipe(pipePath, nil)
 			if err != nil {
-				return nil, "", errors.Annotate(err).Reason("failed to listen on named pipe").Err()
+				return nil, "", errors.Annotate(err, "failed to listen on named pipe").Err()
 			}
 			return l, address, nil
 		},

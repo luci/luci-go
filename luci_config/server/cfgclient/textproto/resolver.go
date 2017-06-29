@@ -81,7 +81,7 @@ func Slice(out interface{}) interface {
 
 	v := reflect.ValueOf(out)
 	if !r.loadMulti(v) {
-		panic(errors.Reason("%(type)s is not a pointer to a slice of protobuf message types").D("type", v.Type()).Err())
+		panic(errors.Reason("%s is not a pointer to a slice of protobuf message types", v.Type()).Err())
 	}
 	return &r
 }
@@ -144,18 +144,18 @@ func (r *resolver) resolveItem(out proto.Message, content string, format string)
 	case "":
 		// Not formatted (text protobuf).
 		if err := luciProto.UnmarshalTextML(content, out); err != nil {
-			return errors.Annotate(err).Reason("failed to unmarshal text protobuf").Err()
+			return errors.Annotate(err, "failed to unmarshal text protobuf").Err()
 		}
 		return nil
 
 	case BinaryFormat:
 		if err := parseBinaryContent(content, out); err != nil {
-			return errors.Annotate(err).Reason("failed to unmarshal binary protobuf").Err()
+			return errors.Annotate(err, "failed to unmarshal binary protobuf").Err()
 		}
 		return nil
 
 	default:
-		return errors.Reason("unsupported content format: %(format)q").D("format", format).Err()
+		return errors.Reason("unsupported content format: %q", format).Err()
 	}
 }
 
@@ -174,20 +174,19 @@ type Formatter struct{}
 func (f *Formatter) FormatItem(c, fd string) (string, error) {
 	archetype := proto.MessageType(fd)
 	if archetype == nil {
-		return "", errors.Reason("unknown proto.Message type %(type)q in formatter data").
-			D("type", fd).Err()
+		return "", errors.Reason("unknown proto.Message type %q in formatter data", fd).Err()
 	}
 	msg := archetypeMessage(archetype)
 
 	// Convert from config to protobuf.
 	if err := luciProto.UnmarshalTextML(c, msg); err != nil {
-		return "", errors.Annotate(err).Reason("failed to unmarshal text protobuf content").Err()
+		return "", errors.Annotate(err, "failed to unmarshal text protobuf content").Err()
 	}
 
 	// Binary format.
 	bc, err := makeBinaryContent(msg)
 	if err != nil {
-		return "", errors.Annotate(err).Err()
+		return "", errors.Annotate(err, "").Err()
 	}
 	return bc, nil
 }
@@ -210,15 +209,15 @@ func archetypeMessage(t reflect.Type) proto.Message {
 func makeBinaryContent(msg proto.Message) (string, error) {
 	d, err := proto.Marshal(msg)
 	if err != nil {
-		return "", errors.Annotate(err).Reason("failed to marshal message").Err()
+		return "", errors.Annotate(err, "failed to marshal message").Err()
 	}
 
 	var buf bytes.Buffer
 	if _, err := cmpbin.WriteString(&buf, proto.MessageName(msg)); err != nil {
-		return "", errors.Annotate(err).Reason("failed to write message name").Err()
+		return "", errors.Annotate(err, "failed to write message name").Err()
 	}
 	if _, err := cmpbin.WriteBytes(&buf, d); err != nil {
-		return "", errors.Annotate(err).Reason("failed to write binary message content").Err()
+		return "", errors.Annotate(err, "failed to write binary message content").Err()
 	}
 	return buf.String(), nil
 }
@@ -233,22 +232,21 @@ func parseBinaryContent(v string, msg proto.Message) error {
 	r := strings.NewReader(v)
 	encName, _, err := cmpbin.ReadString(r)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to read message name").Err()
+		return errors.Annotate(err, "failed to read message name").Err()
 	}
 
 	// Construct a message for this.
 	if name := proto.MessageName(msg); name != encName {
-		return errors.Reason("message name %(name)q doesn't match encoded name %(enc)q").
-			D("name", name).D("enc", encName).Err()
+		return errors.Reason("message name %q doesn't match encoded name %q", name, encName).Err()
 	}
 
 	// We have the right message, unmarshal.
 	d, _, err := cmpbin.ReadBytes(r)
 	if err != nil {
-		return errors.Annotate(err).Reason("failed to read binary message content").Err()
+		return errors.Annotate(err, "failed to read binary message content").Err()
 	}
 	if err := proto.Unmarshal(d, msg); err != nil {
-		return errors.Annotate(err).Reason("failed to unmarshal message").Err()
+		return errors.Annotate(err, "failed to unmarshal message").Err()
 	}
 	return nil
 }
