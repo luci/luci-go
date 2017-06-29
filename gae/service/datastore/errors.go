@@ -27,8 +27,8 @@ var (
 // MakeErrInvalidKey returns an errors.Annotator instance that wraps an invalid
 // key error. Calling IsErrInvalidKey on this Annotator or its derivatives will
 // return true.
-func MakeErrInvalidKey() *errors.Annotator {
-	return errors.Annotate(datastore.ErrInvalidKey)
+func MakeErrInvalidKey(reason string, args ...interface{}) *errors.Annotator {
+	return errors.Annotate(datastore.ErrInvalidKey, reason, args...)
 }
 
 // IsErrInvalidKey tests if a given error is a wrapped datastore.ErrInvalidKey

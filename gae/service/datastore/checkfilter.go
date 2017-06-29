@@ -19,7 +19,6 @@ type checkFilter struct {
 }
 
 func (tcf *checkFilter) RunInTransaction(f func(c context.Context) error, opts *TransactionOptions) error {
-
 	if f == nil {
 		return fmt.Errorf("datastore: RunInTransaction function is nil")
 	}
@@ -48,11 +47,9 @@ func (tcf *checkFilter) GetMulti(keys []*Key, meta MultiMetaGetter, cb GetMultiC
 		var err error
 		switch {
 		case k.IsIncomplete():
-			err = MakeErrInvalidKey().Reason("key [%(key)s] is incomplete").
-				D("key", k).Err()
+			err = MakeErrInvalidKey("key [%s] is incomplete", k).Err()
 		case !k.Valid(true, tcf.kc):
-			err = MakeErrInvalidKey().Reason("key [%(key)s] is not valid in context %(context)s").
-				D("key", k).D("context", tcf.kc).Err()
+			err = MakeErrInvalidKey("key [%s] is not valid in context %s", k, tcf.kc).Err()
 		}
 		if err != nil {
 			lme.Assign(i, err)
@@ -80,8 +77,7 @@ func (tcf *checkFilter) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) e
 	lme := errors.NewLazyMultiError(len(keys))
 	for i, k := range keys {
 		if !k.PartialValid(tcf.kc) {
-			lme.Assign(i, MakeErrInvalidKey().Reason("key [%(key)s] is not partially valid in context %(context)s").
-				D("key", k).D("context", tcf.kc).Err())
+			lme.Assign(i, MakeErrInvalidKey("key [%s] is not partially valid in context %s", k, tcf.kc).Err())
 			continue
 		}
 		v := vals[i]
@@ -111,11 +107,9 @@ func (tcf *checkFilter) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
 		var err error
 		switch {
 		case k.IsIncomplete():
-			err = MakeErrInvalidKey().Reason("key [%(key)s] is incomplete").
-				D("key", k).Err()
+			err = MakeErrInvalidKey("key [%s] is incomplete", k).Err()
 		case !k.Valid(false, tcf.kc):
-			err = MakeErrInvalidKey().Reason("key [%(key)s] is not valid in context %(context)s").
-				D("key", k).D("context", tcf.kc).Err()
+			err = MakeErrInvalidKey("key [%s] is not valid in context %s", k, tcf.kc).Err()
 		}
 		if err != nil {
 			lme.Assign(i, err)
