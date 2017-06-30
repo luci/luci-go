@@ -77,6 +77,77 @@ type Item struct {
 	Digest isolated.HexDigest
 }
 
+// itemGroup is a list of Items, plus a count of the aggregate size.
+type itemGroup struct {
+	items     []*Item
+	totalSize int64
+}
+
+func (ig *itemGroup) AddItem(item *Item) {
+	ig.items = append(ig.items, item)
+	ig.totalSize += item.Size
+}
+
+// partitioningWalker contains the state necessary to partition isolate deps by handling multiple os.WalkFunc invocations.
+type partitioningWalker struct {
+	// rootDir must be initialized before walkFn is called.
+	rootDir string
+
+	parts partitionedDeps
+}
+
+// partitionedDeps contains a list of items to be archived, partitioned into symlinks and files categorized by size.
+type partitionedDeps struct {
+	links          itemGroup
+	filesToArchive itemGroup
+	indivFiles     itemGroup
+}
+
+// walkFn implements filepath.WalkFunc, for use traversing a directory hierarchy to be isolated.
+// It accumulates files in pw.parts, partitioned into symlinks and files categorized by size.
+func (pw *partitioningWalker) walkFn(path string, info os.FileInfo, err error) error {
+	if err != nil {
+		return err
+	}
+	if info.IsDir() {
+		return nil
+	}
+
+	relPath, err := filepath.Rel(pw.rootDir, path)
+	if err != nil {
+		return err
+	}
+
+	item := &Item{
+		Path:    path,
+		RelPath: relPath,
+		Mode:    info.Mode(),
+		Size:    info.Size(),
+	}
+
+	switch {
+	case item.Mode&os.ModeSymlink == os.ModeSymlink:
+		pw.parts.links.AddItem(item)
+	case item.Size < archiveThreshold:
+		pw.parts.filesToArchive.AddItem(item)
+	default:
+		pw.parts.indivFiles.AddItem(item)
+	}
+	return nil
+}
+
+// partitionDeps walks each of the deps, partioning the results into symlinks and files categorized by size.
+func partitionDeps(deps []string, rootDir string) (partitionedDeps, error) {
+	walker := partitioningWalker{rootDir: rootDir}
+	for _, dep := range deps {
+		// Try to walk dep. If dep is a file (or symlink), the inner function is called exactly once.
+		if err := filepath.Walk(filepath.Clean(dep), walker.walkFn); err != nil {
+			return partitionedDeps{}, err
+		}
+	}
+	return walker.parts, nil
+}
+
 // main contains the core logic for experimental archive.
 func (c *expArchiveRun) main() error {
 	// TODO(djd): This func is long and has a lot of internal complexity (like,
@@ -109,57 +180,22 @@ func (c *expArchiveRun) main() error {
 	checker := NewChecker(ctx, client)
 	uploader := NewUploader(ctx, client, 1)
 
-	// Walk each of the deps, partioning the results into symlinks and files categorised by size.
-	var links, archiveFiles, indivFiles []*Item
-	var archiveSize, indivSize int64 // Cumulative size of archived/individual files.
-	for _, dep := range deps {
-		// Try to walk dep. If dep is a file (or symlink), the inner function is called exactly once.
-		err := filepath.Walk(filepath.Clean(dep), func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			if info.IsDir() {
-				return nil
-			}
-
-			relPath, err := filepath.Rel(rootDir, path)
-			if err != nil {
-				return err
-			}
-
-			item := &Item{
-				Path:    path,
-				RelPath: relPath,
-				Mode:    info.Mode(),
-				Size:    info.Size(),
-			}
-
-			switch {
-			case item.Mode&os.ModeSymlink == os.ModeSymlink:
-				links = append(links, item)
-			case item.Size < archiveThreshold:
-				archiveFiles = append(archiveFiles, item)
-				archiveSize += item.Size
-			default:
-				indivFiles = append(indivFiles, item)
-				indivSize += item.Size
-			}
-			return nil
-		})
-		if err != nil {
-			return err
-		}
+	parts, err := partitionDeps(deps, rootDir)
+	if err != nil {
+		return fmt.Errorf("partitioning deps: %v", err)
 	}
 
 	// Construct a map of the files that constitute the isolate.
 	files := make(map[string]isolated.File)
 
-	log.Printf("Isolate expanded to %d files (total size %s) and %d symlinks", len(archiveFiles)+len(indivFiles), humanize.Bytes(uint64(archiveSize+indivSize)), len(links))
-	log.Printf("\t%d files (%s) to be isolated individually", len(indivFiles), humanize.Bytes(uint64(indivSize)))
-	log.Printf("\t%d files (%s) to be isolated in archives", len(archiveFiles), humanize.Bytes(uint64(archiveSize)))
+	numFiles := len(parts.filesToArchive.items) + len(parts.indivFiles.items)
+	filesSize := uint64(parts.filesToArchive.totalSize + parts.indivFiles.totalSize)
+	log.Printf("Isolate expanded to %d files (total size %s) and %d symlinks", numFiles, humanize.Bytes(filesSize), len(parts.links.items))
+	log.Printf("\t%d files (%s) to be isolated individually", len(parts.indivFiles.items), humanize.Bytes(uint64(parts.indivFiles.totalSize)))
+	log.Printf("\t%d files (%s) to be isolated in archives", len(parts.filesToArchive.items), humanize.Bytes(uint64(parts.filesToArchive.totalSize)))
 
 	// Handle the symlinks.
-	for _, item := range links {
+	for _, item := range parts.links.items {
 		l, err := os.Readlink(item.Path)
 		if err != nil {
 			return fmt.Errorf("unable to resolve symlink for %q: %v", item.Path, err)
@@ -168,7 +204,7 @@ func (c *expArchiveRun) main() error {
 	}
 
 	// Handle the small to-be-archived files.
-	bundles := ShardItems(archiveFiles, archiveMaxSize)
+	bundles := ShardItems(parts.filesToArchive.items, archiveMaxSize)
 	log.Printf("\t%d TAR archives to be isolated", len(bundles))
 
 	for _, bundle := range bundles {
@@ -202,7 +238,7 @@ func (c *expArchiveRun) main() error {
 	}
 
 	// Handle the large individually-uploaded files.
-	for _, item := range indivFiles {
+	for _, item := range parts.indivFiles.items {
 		d, err := hashFile(item.Path)
 		if err != nil {
 			return err
@@ -222,7 +258,8 @@ func (c *expArchiveRun) main() error {
 
 	// Marshal the isolated file into JSON, and create an Item to describe it.
 	isol.Files = files
-	isolJSON, err := json.Marshal(isol)
+	var isolJSON []byte
+	isolJSON, err = json.Marshal(isol)
 	if err != nil {
 		return err
 	}
