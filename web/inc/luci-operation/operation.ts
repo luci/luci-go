@@ -32,7 +32,7 @@ namespace luci {
      * will throw a CANCELLED error if this Operation has been cancelled.
      */
     async wrap<T>(p: Promise<T>) {
-      return new Promise((resolve, reject) => {
+      return new Promise<T>((resolve, reject) => {
         p.then(
             result => {
               this.assert();

@@ -540,7 +540,7 @@ namespace LogDog {
       // Clear our fetching status.
       this.rendering = true;
       this.loadingState = LoadingState.RENDERING;
-      let hasLogs = !!(buf && buf.peek());
+      let hasLogs = !!(buf.peek());
 
       // Resolve any previous rendering Promise that we have. This
       // makes sure our rendering and fetching don't get more than
@@ -959,7 +959,7 @@ namespace LogDog {
       if (this.finished) {
         // Our HEAD region has met/surpassed our TAIL region, so there are no
         // HEAD logs to return. Only bottom.
-        return null;
+        return [];
       }
 
       // If we have a tail pointer, only fetch HEAD up to that point.
@@ -1222,7 +1222,7 @@ namespace LogDog {
       if (!this.active.length) {
         // No active streams, so we're finished. Permanently set our promise to
         // the finished state.
-        return;
+        return new BufferedLogs(null);
       }
 
       let buffers: BufferedLogs[];
@@ -1235,8 +1235,7 @@ namespace LogDog {
       return this._aggregateBuffers(buffers);
     }
 
-    private async ensureActiveBuffers(op: luci.Operation):
-        Promise<BufferedLogs[]|null> {
+    private async ensureActiveBuffers(op: luci.Operation) {
       // Fill all buffers for all active streams. This may result in an RPC to
       // load new buffer content for streams whose buffers are empty.
       await Promise.all(this.active.map((entry) => entry.ensure(op)));

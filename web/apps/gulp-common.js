@@ -22,12 +22,14 @@ exports.plugins = require('gulp-load-plugins')({
 // Include Gulp & tools we'll use
 var $ = exports.plugins;
 var browserSync = require('browser-sync');
+var cleanCSS = require('gulp-clean-css');
 var debug = require('gulp-debug');
 var del = require('del');
 var format = require('gulp-clang-format');
 var fs = require('fs');
 var glob = require('glob-all');
 var gulpIf = require('gulp-if');
+var htmlmin = require('gulp-htmlmin');
 var historyApiFallback = require('connect-history-api-fallback');
 var hyd = require('hydrolysis');
 var merge = require('merge-stream');
@@ -141,7 +143,7 @@ exports.setup = function(gulp, config) {
       }))
       .pipe($.autoprefixer(AUTOPREFIXER_BROWSERS))
       .pipe(gulp.dest('.tmp/' + stylesPath))
-      .pipe($.minifyCss())
+      .pipe(cleanCSS())
       .pipe(gulp.dest(layout.dist(stylesPath)))
       .pipe($.size({title: stylesPath}));
   };
@@ -169,14 +171,14 @@ exports.setup = function(gulp, config) {
       })))
       // Concatenate and minify styles
       // In case you are still using useref build blocks
-      .pipe($.if('*.css', $.minifyCss()))
+      .pipe($.if('*.css', cleanCSS()))
       .pipe(assets.restore())
       .pipe($.useref())
       // Minify any HTML
-      .pipe($.if('*.html', $.minifyHtml({
-        quotes: true,
-        empty: true,
-        spare: true
+      .pipe($.if('*.html', htmlmin({
+        remoteAttributeQuotes: false,
+        remoteEmptyAttributes: false,
+        remoteRedundantAttributes: false,
       })))
       // Output files
       .pipe(gulp.dest(dest))

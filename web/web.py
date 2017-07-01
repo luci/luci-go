@@ -61,6 +61,7 @@ class Toolchain(object):
     # Install NPM deps from "package.json".
     def install_npm_deps():
       tc.npm('install', cwd=web_dir)
+      tc.npm('prune', cwd=web_dir)
     cls._call_if_outdated(
         install_npm_deps,
         os.path.join(web_dir, '.npm.installed'),
