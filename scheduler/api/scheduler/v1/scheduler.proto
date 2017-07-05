@@ -4,13 +4,12 @@
 
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
+
 package scheduler;
 
-
-// Scheduler exposes the public API of the Scheduler service.
+// Scheduler exposes public API of the Scheduler service.
 service Scheduler {
-  // TODO: still in progress.
-
   // GetJobs fetches all jobs satisfying JobsRequest and visibility ACLs.
   // If JobsRequest.project is specified but the project doesn't exist, empty
   // list of Jobs is returned.
@@ -18,68 +17,113 @@ service Scheduler {
 
   // GetInvocations fetches invocations of a given job, most recent first.
   rpc GetInvocations(InvocationsRequest) returns (InvocationsReply);
+
+  // PauseJob will prevent automatic triggering of a job. Manual triggering such
+  // as through this API is still allowed. Any pending or running invocations
+  // are still executed. PauseJob does nothing if job is already paused.
+  rpc PauseJob(JobRef) returns (google.protobuf.Empty);
+
+  // ResumeJob resumes paused job. ResumeJob does nothing if job is not paused.
+  rpc ResumeJob(JobRef) returns (google.protobuf.Empty);
+
+  // AbortJob resets the job to scheduled state, aborting a currently pending or
+  // running invocation if any.
+  //
+  // Note, that this is similar to AbortInvocation except that AbortInvocation
+  // requires invocation ID and doesn't ensure that the invocation aborted is
+  // actually latest triggered for the job.
+  rpc AbortJob(JobRef) returns (google.protobuf.Empty);
+
+  // AbortInvocation aborts a given job invocation.
+  // If an invocation is final, AbortInvocation does nothing.
+  //
+  // If you want to abort a specific hung invocation, use this request instead
+  // of AbortJob.
+  rpc AbortInvocation(InvocationRef) returns (google.protobuf.Empty);
 }
 
 message JobsRequest {
   // If not specified or "", all projects' jobs are returned.
   string project = 1;
+  string cursor = 2;
+  // page_size is currently not implemented and is ignored.
+  int32 page_size = 3;
 }
 
 message JobsReply {
   repeated Job jobs = 1;
+  string next_cursor = 2;
 }
 
-message Job {
-  string name = 1;
-  string project = 2;
-  string schedule = 3;
-
-  JobState state = 4;
-}
-
-message JobState {
-  string ui_status = 1;
-}
-
-
-message InvocationsRequest{
-  string project = 1;
-  string job = 2;
-  string cursor = 3;
+message InvocationsRequest {
+  JobRef job_ref = 1;
+  string cursor = 2;
   // page_size defaults to 50 which is maximum.
-  int32 page_size = 4;
+  int32 page_size = 3;
 }
 
-message InvocationsReply{
+message InvocationsReply {
   repeated Invocation invocations = 1;
   string next_cursor = 2;
 }
 
-message Invocation {
-  int64 id = 1;
+// JobRef uniquely identifies a job.
+message JobRef {
+  string project = 1;
   string job = 2;
-  string project = 3;
+}
 
-  // TODO(tandrii): consider exposing InvocationNonce and RetryCount as these
-  // could be important to consumers of API in order to combine multiple
-  // attempts of what was supposed to be just one invocation.
+// InvocationRef uniquely identifies an invocation of a job.
+message InvocationRef {
+  JobRef job_ref = 1;
+  // invocation_id is a unique integer among all invocations for a given job.
+  // However, there could be invocations with the same invocation_id but
+  // belonging to different jobs.
+  int64 invocation_id = 2;
+}
+
+// Job descibes currently configured job.
+message Job {
+  JobRef job_ref = 1;
+  string schedule = 2;
+
+  JobState state = 3;
+}
+
+// JobState describes current Job state as one of these strings:
+//   "DISABLED"
+//   "OVERRUN"
+//   "PAUSED"
+//   "RETRYING"
+//   "RUNNING"
+//   "SCHEDULED"
+//   "STARTING"
+//   "SUSPENDED"
+//   "WAITING"
+message JobState {
+  string ui_status = 1;
+}
+
+// Invocation describes properties of one job execution.
+message Invocation {
+  InvocationRef invocation_ref = 1;
 
   // start_ts is unix timestamp in microseconds.
-  int64 started_ts = 4;
+  int64 started_ts = 2;
   // finished_ts is unix timestamp in microseconds. Set only if final is true.
-  int64 finished_ts = 5;
+  int64 finished_ts = 3;
   // triggered_by is an identity ("kind:value") which is specified only if
   // invocation was triggered by not the scheduler service itself.
-  string triggered_by = 6;
+  string triggered_by = 4;
   // Latest status of a job.
-  string status = 7;
-  // If true, the status of the job is final and won't change.
-  bool final = 8;
+  string status = 5;
+  // If true, this invocation properties are final and won't be changed.
+  bool final = 6;
 
   // config_revision pins project/job config version according to which this
   // invocation was created.
-  string config_revision = 9;
+  string config_revision = 7;
 
   // view_url points to human readable page for a given invocation if available.
-  string view_url = 10;
+  string view_url = 8;
 }

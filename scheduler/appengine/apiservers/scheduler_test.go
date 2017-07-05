@@ -15,10 +15,13 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/luci/luci-go/appengine/gaetesting"
+	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/auth/identity"
 
-	scheduler "github.com/luci/luci-go/scheduler/api/scheduler/v1"
+	"github.com/luci/luci-go/scheduler/api/scheduler/v1"
 	"github.com/luci/luci-go/scheduler/appengine/catalog"
 	"github.com/luci/luci-go/scheduler/appengine/engine"
 	"github.com/luci/luci-go/scheduler/appengine/messages"
@@ -69,14 +72,12 @@ func TestGetJobsApi(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(reply.GetJobs(), ShouldResemble, []*scheduler.Job{
 				{
-					Name:     "foo",
-					Project:  "bar",
+					JobRef:   &scheduler.JobRef{Job: "foo", Project: "bar"},
 					Schedule: "0 * * * * * *",
 					State:    &scheduler.JobState{UiStatus: "RUNNING"},
 				},
 				{
-					Name:     "faz",
-					Project:  "baz",
+					JobRef:   &scheduler.JobRef{Job: "faz", Project: "baz"},
 					Schedule: "with 1m interval",
 					State:    &scheduler.JobState{UiStatus: "PAUSED"},
 				},
@@ -100,8 +101,7 @@ func TestGetJobsApi(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(reply.GetJobs(), ShouldResemble, []*scheduler.Job{
 				{
-					Name:     "foo",
-					Project:  "bar",
+					JobRef:   &scheduler.JobRef{Job: "foo", Project: "bar"},
 					Schedule: "0 * * * * * *",
 					State:    &scheduler.JobState{UiStatus: "RUNNING"},
 				},
@@ -122,7 +122,9 @@ func TestGetInvocationsApi(t *testing.T) {
 
 		Convey("Job not found", func() {
 			fakeEng.getJob = func(JobID string) (*engine.Job, error) { return nil, nil }
-			_, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{Project: "not", Job: "exists"})
+			_, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{
+				JobRef: &scheduler.JobRef{Project: "not", Job: "exists"},
+			})
 			s, ok := status.FromError(err)
 			So(ok, ShouldBeTrue)
 			So(s.Code(), ShouldEqual, codes.NotFound)
@@ -130,7 +132,9 @@ func TestGetInvocationsApi(t *testing.T) {
 
 		Convey("DS error", func() {
 			fakeEng.getJob = func(JobID string) (*engine.Job, error) { return nil, fmt.Errorf("ds error") }
-			_, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{Project: "proj", Job: "job"})
+			_, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{
+				JobRef: &scheduler.JobRef{Project: "proj", Job: "job"},
+			})
 			s, ok := status.FromError(err)
 			So(ok, ShouldBeTrue)
 			So(s.Code(), ShouldEqual, codes.Internal)
@@ -146,7 +150,10 @@ func TestGetInvocationsApi(t *testing.T) {
 				So(cursor, ShouldEqual, "")
 				return nil, "", nil
 			}
-			r, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{Project: "proj", Job: "job", PageSize: 1e9})
+			r, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{
+				JobRef:   &scheduler.JobRef{Project: "proj", Job: "job"},
+				PageSize: 1e9,
+			})
 			So(err, ShouldBeNil)
 			So(r.GetNextCursor(), ShouldEqual, "")
 			So(r.GetInvocations(), ShouldBeEmpty)
@@ -166,25 +173,170 @@ func TestGetInvocationsApi(t *testing.T) {
 				}, "next", nil
 			}
 			r, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{
-				Project: "proj", Job: "job", PageSize: 5, Cursor: "cursor"})
+				JobRef:   &scheduler.JobRef{Project: "proj", Job: "job"},
+				PageSize: 5,
+				Cursor:   "cursor",
+			})
 			So(err, ShouldBeNil)
 			So(r.GetNextCursor(), ShouldEqual, "next")
 			So(r.GetInvocations(), ShouldResemble, []*scheduler.Invocation{
 				{
-					Project: "proj", Job: "job", ConfigRevision: "deadbeef",
-					Id: 12, Final: false, Status: "RUNNING",
-					StartedTs:   started.UnixNano() / 1000,
-					TriggeredBy: "user:bot@example.com",
+					InvocationRef: &scheduler.InvocationRef{
+						JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},
+						InvocationId: 12,
+					},
+					ConfigRevision: "deadbeef",
+					Final:          false,
+					Status:         "RUNNING",
+					StartedTs:      started.UnixNano() / 1000,
+					TriggeredBy:    "user:bot@example.com",
 				},
 				{
-					Project: "proj", Job: "job", ConfigRevision: "deadbeef",
-					Id: 13, Final: true, Status: "ABORTED",
-					StartedTs: started.UnixNano() / 1000, FinishedTs: finished.UnixNano() / 1000,
-					ViewUrl: "https://example.com/13",
+					InvocationRef: &scheduler.InvocationRef{
+						JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},
+						InvocationId: 13,
+					},
+					ConfigRevision: "deadbeef",
+					Final:          true,
+					Status:         "ABORTED",
+					StartedTs:      started.UnixNano() / 1000,
+					FinishedTs:     finished.UnixNano() / 1000,
+					ViewUrl:        "https://example.com/13",
 				},
 			})
 		})
+	})
+}
 
+func TestJobActionsApi(t *testing.T) {
+	t.Parallel()
+
+	Convey("works", t, func() {
+		ctx := gaetesting.TestingContext()
+		fakeEng, catalog := newTestEngine()
+		ss := SchedulerServer{fakeEng, catalog}
+
+		Convey("PermissionDenied", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity:       "user:dog@example.com",
+				IdentityGroups: []string{"dogs"},
+			})
+
+			Convey("Pause", func() {
+				_, err := ss.PauseJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
+				s, ok := status.FromError(err)
+				So(ok, ShouldBeTrue)
+				So(s.Code(), ShouldEqual, codes.PermissionDenied)
+			})
+
+			Convey("Abort", func() {
+				_, err := ss.AbortJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
+				s, ok := status.FromError(err)
+				So(ok, ShouldBeTrue)
+				So(s.Code(), ShouldEqual, codes.PermissionDenied)
+			})
+		})
+
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity:       "user:admin@example.com",
+			IdentityGroups: []string{"administrators"},
+		})
+
+		Convey("OK", func() {
+			onAction := func(jobID string, who identity.Identity) error {
+				So(jobID, ShouldEqual, "proj/job")
+				So(who.Email(), ShouldEqual, "admin@example.com")
+				return nil
+			}
+
+			Convey("Pause", func() {
+				fakeEng.pauseJob = onAction
+				r, err := ss.PauseJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
+				So(err, ShouldBeNil)
+				So(r, ShouldResemble, &empty.Empty{})
+			})
+
+			Convey("Resume", func() {
+				fakeEng.resumeJob = onAction
+				r, err := ss.ResumeJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
+				So(err, ShouldBeNil)
+				So(r, ShouldResemble, &empty.Empty{})
+			})
+
+			Convey("Abort", func() {
+				fakeEng.abortJob = onAction
+				r, err := ss.AbortJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
+				So(err, ShouldBeNil)
+				So(r, ShouldResemble, &empty.Empty{})
+			})
+		})
+
+		Convey("NotFound", func() {
+			fakeEng.pauseJob = func(jobID string, who identity.Identity) error {
+				return engine.ErrNoSuchJob
+			}
+			_, err := ss.PauseJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
+			s, ok := status.FromError(err)
+			So(ok, ShouldBeTrue)
+			So(s.Code(), ShouldEqual, codes.NotFound)
+		})
+	})
+}
+
+func TestAbortInvocationApi(t *testing.T) {
+	t.Parallel()
+
+	Convey("works", t, func() {
+		ctx := gaetesting.TestingContext()
+		fakeEng, catalog := newTestEngine()
+		ss := SchedulerServer{fakeEng, catalog}
+
+		Convey("PermissionDenied", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity:       "user:dog@example.com",
+				IdentityGroups: []string{"dogs"},
+			})
+			_, err := ss.AbortInvocation(ctx, &scheduler.InvocationRef{
+				JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},
+				InvocationId: 12,
+			})
+			s, ok := status.FromError(err)
+			So(ok, ShouldBeTrue)
+			So(s.Code(), ShouldEqual, codes.PermissionDenied)
+		})
+
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity:       "user:admin@example.com",
+			IdentityGroups: []string{"administrators"},
+		})
+
+		Convey("OK", func() {
+			fakeEng.abortInvocation = func(jobID string, invID int64, who identity.Identity) error {
+				So(jobID, ShouldEqual, "proj/job")
+				So(who.Email(), ShouldEqual, "admin@example.com")
+				So(invID, ShouldEqual, 12)
+				return nil
+			}
+			r, err := ss.AbortInvocation(ctx, &scheduler.InvocationRef{
+				JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},
+				InvocationId: 12,
+			})
+			So(err, ShouldBeNil)
+			So(r, ShouldResemble, &empty.Empty{})
+		})
+
+		Convey("Error", func() {
+			fakeEng.abortInvocation = func(jobID string, invID int64, who identity.Identity) error {
+				return engine.ErrNoSuchInvocation
+			}
+			_, err := ss.AbortInvocation(ctx, &scheduler.InvocationRef{
+				JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},
+				InvocationId: 12,
+			})
+			s, ok := status.FromError(err)
+			So(ok, ShouldBeTrue)
+			So(s.Code(), ShouldEqual, codes.NotFound)
+		})
 	})
 }
 
@@ -209,6 +361,11 @@ type fakeEngine struct {
 	getProjectJobs  func(projectID string) ([]*engine.Job, error)
 	getJob          func(jobID string) (*engine.Job, error)
 	listInvocations func(pageSize int, cursor string) ([]*engine.Invocation, string, error)
+
+	pauseJob        func(jobID string, who identity.Identity) error
+	resumeJob       func(jobID string, who identity.Identity) error
+	abortJob        func(jobID string, who identity.Identity) error
+	abortInvocation func(jobID string, invID int64, who identity.Identity) error
 }
 
 func (f *fakeEngine) GetAllProjects(c context.Context) ([]string, error) {
@@ -264,17 +421,17 @@ func (f *fakeEngine) TriggerInvocation(c context.Context, jobID string, triggere
 }
 
 func (f *fakeEngine) PauseJob(c context.Context, jobID string, who identity.Identity) error {
-	panic("not implemented")
+	return f.pauseJob(jobID, who)
 }
 
 func (f *fakeEngine) ResumeJob(c context.Context, jobID string, who identity.Identity) error {
-	panic("not implemented")
+	return f.resumeJob(jobID, who)
 }
 
 func (f *fakeEngine) AbortInvocation(c context.Context, jobID string, invID int64, who identity.Identity) error {
-	panic("not implemented")
+	return f.abortInvocation(jobID, invID, who)
 }
 
 func (f *fakeEngine) AbortJob(c context.Context, jobID string, who identity.Identity) error {
-	panic("not implemented")
+	return f.abortJob(jobID, who)
 }

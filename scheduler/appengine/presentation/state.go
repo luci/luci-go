@@ -20,6 +20,8 @@ import (
 // detail.
 type PublicStateKind string
 
+// When a PublicStateKind is added/removed/updated, update scheduler api proto
+// doc for `JobState`.
 const (
 	PublicStateDisabled  PublicStateKind = "DISABLED"
 	PublicStateOverrun   PublicStateKind = "OVERRUN"

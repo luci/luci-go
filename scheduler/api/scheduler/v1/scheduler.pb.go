@@ -10,10 +10,12 @@ It is generated from these files:
 It has these top-level messages:
 	JobsRequest
 	JobsReply
-	Job
-	JobState
 	InvocationsRequest
 	InvocationsReply
+	JobRef
+	InvocationRef
+	Job
+	JobState
 	Invocation
 */
 package scheduler
@@ -23,6 +25,7 @@ import prpc "github.com/luci/luci-go/grpc/prpc"
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
+import google_protobuf "github.com/golang/protobuf/ptypes/empty"
 
 import (
 	context "golang.org/x/net/context"
@@ -43,6 +46,9 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 type JobsRequest struct {
 	// If not specified or "", all projects' jobs are returned.
 	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
+	Cursor  string `protobuf:"bytes,2,opt,name=cursor" json:"cursor,omitempty"`
+	// page_size is currently not implemented and is ignored.
+	PageSize int32 `protobuf:"varint,3,opt,name=page_size,json=pageSize" json:"page_size,omitempty"`
 }
 
 func (m *JobsRequest) Reset()                    { *m = JobsRequest{} }
@@ -57,8 +63,23 @@ func (m *JobsRequest) GetProject() string {
 	return ""
 }
 
+func (m *JobsRequest) GetCursor() string {
+	if m != nil {
+		return m.Cursor
+	}
+	return ""
+}
+
+func (m *JobsRequest) GetPageSize() int32 {
+	if m != nil {
+		return m.PageSize
+	}
+	return 0
+}
+
 type JobsReply struct {
-	Jobs []*Job `protobuf:"bytes,1,rep,name=jobs" json:"jobs,omitempty"`
+	Jobs       []*Job `protobuf:"bytes,1,rep,name=jobs" json:"jobs,omitempty"`
+	NextCursor string `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor" json:"next_cursor,omitempty"`
 }
 
 func (m *JobsReply) Reset()                    { *m = JobsReply{} }
@@ -73,87 +94,30 @@ func (m *JobsReply) GetJobs() []*Job {
 	return nil
 }
 
-type Job struct {
-	Name     string    `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Project  string    `protobuf:"bytes,2,opt,name=project" json:"project,omitempty"`
-	Schedule string    `protobuf:"bytes,3,opt,name=schedule" json:"schedule,omitempty"`
-	State    *JobState `protobuf:"bytes,4,opt,name=state" json:"state,omitempty"`
-}
-
-func (m *Job) Reset()                    { *m = Job{} }
-func (m *Job) String() string            { return proto.CompactTextString(m) }
-func (*Job) ProtoMessage()               {}
-func (*Job) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
-
-func (m *Job) GetName() string {
+func (m *JobsReply) GetNextCursor() string {
 	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *Job) GetProject() string {
-	if m != nil {
-		return m.Project
-	}
-	return ""
-}
-
-func (m *Job) GetSchedule() string {
-	if m != nil {
-		return m.Schedule
-	}
-	return ""
-}
-
-func (m *Job) GetState() *JobState {
-	if m != nil {
-		return m.State
-	}
-	return nil
-}
-
-type JobState struct {
-	UiStatus string `protobuf:"bytes,1,opt,name=ui_status,json=uiStatus" json:"ui_status,omitempty"`
-}
-
-func (m *JobState) Reset()                    { *m = JobState{} }
-func (m *JobState) String() string            { return proto.CompactTextString(m) }
-func (*JobState) ProtoMessage()               {}
-func (*JobState) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
-
-func (m *JobState) GetUiStatus() string {
-	if m != nil {
-		return m.UiStatus
+		return m.NextCursor
 	}
 	return ""
 }
 
 type InvocationsRequest struct {
-	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
-	Job     string `protobuf:"bytes,2,opt,name=job" json:"job,omitempty"`
-	Cursor  string `protobuf:"bytes,3,opt,name=cursor" json:"cursor,omitempty"`
+	JobRef *JobRef `protobuf:"bytes,1,opt,name=job_ref,json=jobRef" json:"job_ref,omitempty"`
+	Cursor string  `protobuf:"bytes,2,opt,name=cursor" json:"cursor,omitempty"`
 	// page_size defaults to 50 which is maximum.
-	PageSize int32 `protobuf:"varint,4,opt,name=page_size,json=pageSize" json:"page_size,omitempty"`
+	PageSize int32 `protobuf:"varint,3,opt,name=page_size,json=pageSize" json:"page_size,omitempty"`
 }
 
 func (m *InvocationsRequest) Reset()                    { *m = InvocationsRequest{} }
 func (m *InvocationsRequest) String() string            { return proto.CompactTextString(m) }
 func (*InvocationsRequest) ProtoMessage()               {}
-func (*InvocationsRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+func (*InvocationsRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
-func (m *InvocationsRequest) GetProject() string {
+func (m *InvocationsRequest) GetJobRef() *JobRef {
 	if m != nil {
-		return m.Project
+		return m.JobRef
 	}
-	return ""
-}
-
-func (m *InvocationsRequest) GetJob() string {
-	if m != nil {
-		return m.Job
-	}
-	return ""
+	return nil
 }
 
 func (m *InvocationsRequest) GetCursor() string {
@@ -178,7 +142,7 @@ type InvocationsReply struct {
 func (m *InvocationsReply) Reset()                    { *m = InvocationsReply{} }
 func (m *InvocationsReply) String() string            { return proto.CompactTextString(m) }
 func (*InvocationsReply) ProtoMessage()               {}
-func (*InvocationsReply) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+func (*InvocationsReply) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
 func (m *InvocationsReply) GetInvocations() []*Invocation {
 	if m != nil {
@@ -194,52 +158,149 @@ func (m *InvocationsReply) GetNextCursor() string {
 	return ""
 }
 
-type Invocation struct {
-	Id      int64  `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
+// JobRef uniquely identifies a job.
+type JobRef struct {
+	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
 	Job     string `protobuf:"bytes,2,opt,name=job" json:"job,omitempty"`
-	Project string `protobuf:"bytes,3,opt,name=project" json:"project,omitempty"`
-	// start_ts is unix timestamp in microseconds.
-	StartedTs int64 `protobuf:"varint,4,opt,name=started_ts,json=startedTs" json:"started_ts,omitempty"`
-	// finished_ts is unix timestamp in microseconds. Set only if final is true.
-	FinishedTs int64 `protobuf:"varint,5,opt,name=finished_ts,json=finishedTs" json:"finished_ts,omitempty"`
-	// triggered_by is an identity ("kind:value") which is specified only if
-	// invocation was triggered by not the scheduler service itself.
-	TriggeredBy string `protobuf:"bytes,6,opt,name=triggered_by,json=triggeredBy" json:"triggered_by,omitempty"`
-	// Latest status of a job.
-	Status string `protobuf:"bytes,7,opt,name=status" json:"status,omitempty"`
-	// If true, the status of the job is final and won't change.
-	Final bool `protobuf:"varint,8,opt,name=final" json:"final,omitempty"`
-	// config_revision pins project/job config version according to which this
-	// invocation was created.
-	ConfigRevision string `protobuf:"bytes,9,opt,name=config_revision,json=configRevision" json:"config_revision,omitempty"`
-	// view_url points to human readable page for a given invocation if available.
-	ViewUrl string `protobuf:"bytes,10,opt,name=view_url,json=viewUrl" json:"view_url,omitempty"`
 }
 
-func (m *Invocation) Reset()                    { *m = Invocation{} }
-func (m *Invocation) String() string            { return proto.CompactTextString(m) }
-func (*Invocation) ProtoMessage()               {}
-func (*Invocation) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
+func (m *JobRef) Reset()                    { *m = JobRef{} }
+func (m *JobRef) String() string            { return proto.CompactTextString(m) }
+func (*JobRef) ProtoMessage()               {}
+func (*JobRef) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
 
-func (m *Invocation) GetId() int64 {
+func (m *JobRef) GetProject() string {
 	if m != nil {
-		return m.Id
+		return m.Project
 	}
-	return 0
+	return ""
 }
 
-func (m *Invocation) GetJob() string {
+func (m *JobRef) GetJob() string {
 	if m != nil {
 		return m.Job
 	}
 	return ""
 }
 
-func (m *Invocation) GetProject() string {
+// InvocationRef uniquely identifies an invocation of a job.
+type InvocationRef struct {
+	JobRef *JobRef `protobuf:"bytes,1,opt,name=job_ref,json=jobRef" json:"job_ref,omitempty"`
+	// invocation_id is a unique integer among all invocations for a given job.
+	// However, there could be invocations with the same invocation_id but
+	// belonging to different jobs.
+	InvocationId int64 `protobuf:"varint,2,opt,name=invocation_id,json=invocationId" json:"invocation_id,omitempty"`
+}
+
+func (m *InvocationRef) Reset()                    { *m = InvocationRef{} }
+func (m *InvocationRef) String() string            { return proto.CompactTextString(m) }
+func (*InvocationRef) ProtoMessage()               {}
+func (*InvocationRef) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+
+func (m *InvocationRef) GetJobRef() *JobRef {
 	if m != nil {
-		return m.Project
+		return m.JobRef
+	}
+	return nil
+}
+
+func (m *InvocationRef) GetInvocationId() int64 {
+	if m != nil {
+		return m.InvocationId
+	}
+	return 0
+}
+
+// Job descibes currently configured job.
+type Job struct {
+	JobRef   *JobRef   `protobuf:"bytes,1,opt,name=job_ref,json=jobRef" json:"job_ref,omitempty"`
+	Schedule string    `protobuf:"bytes,2,opt,name=schedule" json:"schedule,omitempty"`
+	State    *JobState `protobuf:"bytes,3,opt,name=state" json:"state,omitempty"`
+}
+
+func (m *Job) Reset()                    { *m = Job{} }
+func (m *Job) String() string            { return proto.CompactTextString(m) }
+func (*Job) ProtoMessage()               {}
+func (*Job) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
+
+func (m *Job) GetJobRef() *JobRef {
+	if m != nil {
+		return m.JobRef
+	}
+	return nil
+}
+
+func (m *Job) GetSchedule() string {
+	if m != nil {
+		return m.Schedule
 	}
 	return ""
+}
+
+func (m *Job) GetState() *JobState {
+	if m != nil {
+		return m.State
+	}
+	return nil
+}
+
+// JobState describes current Job state as one of these strings:
+//   "DISABLED"
+//   "OVERRUN"
+//   "PAUSED"
+//   "RETRYING"
+//   "RUNNING"
+//   "SCHEDULED"
+//   "STARTING"
+//   "SUSPENDED"
+//   "WAITING"
+type JobState struct {
+	UiStatus string `protobuf:"bytes,1,opt,name=ui_status,json=uiStatus" json:"ui_status,omitempty"`
+}
+
+func (m *JobState) Reset()                    { *m = JobState{} }
+func (m *JobState) String() string            { return proto.CompactTextString(m) }
+func (*JobState) ProtoMessage()               {}
+func (*JobState) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{7} }
+
+func (m *JobState) GetUiStatus() string {
+	if m != nil {
+		return m.UiStatus
+	}
+	return ""
+}
+
+// Invocation describes properties of one job execution.
+type Invocation struct {
+	InvocationRef *InvocationRef `protobuf:"bytes,1,opt,name=invocation_ref,json=invocationRef" json:"invocation_ref,omitempty"`
+	// start_ts is unix timestamp in microseconds.
+	StartedTs int64 `protobuf:"varint,2,opt,name=started_ts,json=startedTs" json:"started_ts,omitempty"`
+	// finished_ts is unix timestamp in microseconds. Set only if final is true.
+	FinishedTs int64 `protobuf:"varint,3,opt,name=finished_ts,json=finishedTs" json:"finished_ts,omitempty"`
+	// triggered_by is an identity ("kind:value") which is specified only if
+	// invocation was triggered by not the scheduler service itself.
+	TriggeredBy string `protobuf:"bytes,4,opt,name=triggered_by,json=triggeredBy" json:"triggered_by,omitempty"`
+	// Latest status of a job.
+	Status string `protobuf:"bytes,5,opt,name=status" json:"status,omitempty"`
+	// If true, this invocation properties are final and won't be changed.
+	Final bool `protobuf:"varint,6,opt,name=final" json:"final,omitempty"`
+	// config_revision pins project/job config version according to which this
+	// invocation was created.
+	ConfigRevision string `protobuf:"bytes,7,opt,name=config_revision,json=configRevision" json:"config_revision,omitempty"`
+	// view_url points to human readable page for a given invocation if available.
+	ViewUrl string `protobuf:"bytes,8,opt,name=view_url,json=viewUrl" json:"view_url,omitempty"`
+}
+
+func (m *Invocation) Reset()                    { *m = Invocation{} }
+func (m *Invocation) String() string            { return proto.CompactTextString(m) }
+func (*Invocation) ProtoMessage()               {}
+func (*Invocation) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{8} }
+
+func (m *Invocation) GetInvocationRef() *InvocationRef {
+	if m != nil {
+		return m.InvocationRef
+	}
+	return nil
 }
 
 func (m *Invocation) GetStartedTs() int64 {
@@ -294,10 +355,12 @@ func (m *Invocation) GetViewUrl() string {
 func init() {
 	proto.RegisterType((*JobsRequest)(nil), "scheduler.JobsRequest")
 	proto.RegisterType((*JobsReply)(nil), "scheduler.JobsReply")
-	proto.RegisterType((*Job)(nil), "scheduler.Job")
-	proto.RegisterType((*JobState)(nil), "scheduler.JobState")
 	proto.RegisterType((*InvocationsRequest)(nil), "scheduler.InvocationsRequest")
 	proto.RegisterType((*InvocationsReply)(nil), "scheduler.InvocationsReply")
+	proto.RegisterType((*JobRef)(nil), "scheduler.JobRef")
+	proto.RegisterType((*InvocationRef)(nil), "scheduler.InvocationRef")
+	proto.RegisterType((*Job)(nil), "scheduler.Job")
+	proto.RegisterType((*JobState)(nil), "scheduler.JobState")
 	proto.RegisterType((*Invocation)(nil), "scheduler.Invocation")
 }
 
@@ -318,6 +381,25 @@ type SchedulerClient interface {
 	GetJobs(ctx context.Context, in *JobsRequest, opts ...grpc.CallOption) (*JobsReply, error)
 	// GetInvocations fetches invocations of a given job, most recent first.
 	GetInvocations(ctx context.Context, in *InvocationsRequest, opts ...grpc.CallOption) (*InvocationsReply, error)
+	// PauseJob will prevent automatic triggering of a job. Manual triggering such
+	// as through this API is still allowed. Any pending or running invocations
+	// are still executed. PauseJob does nothing if job is already paused.
+	PauseJob(ctx context.Context, in *JobRef, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
+	// ResumeJob resumes paused job. ResumeJob does nothing if job is not paused.
+	ResumeJob(ctx context.Context, in *JobRef, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
+	// AbortJob resets the job to scheduled state, aborting a currently pending or
+	// running invocation if any.
+	//
+	// Note, that this is similar to AbortInvocation except that AbortInvocation
+	// requires invocation ID and doesn't ensure that the invocation aborted is
+	// actually latest triggered for the job.
+	AbortJob(ctx context.Context, in *JobRef, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
+	// AbortInvocation aborts a given job invocation.
+	// If an invocation is final, AbortInvocation does nothing.
+	//
+	// If you want to abort a specific hung invocation, use this request instead
+	// of AbortJob.
+	AbortInvocation(ctx context.Context, in *InvocationRef, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
 }
 type schedulerPRPCClient struct {
 	client *prpc.Client
@@ -339,6 +421,42 @@ func (c *schedulerPRPCClient) GetJobs(ctx context.Context, in *JobsRequest, opts
 func (c *schedulerPRPCClient) GetInvocations(ctx context.Context, in *InvocationsRequest, opts ...grpc.CallOption) (*InvocationsReply, error) {
 	out := new(InvocationsReply)
 	err := c.client.Call(ctx, "scheduler.Scheduler", "GetInvocations", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *schedulerPRPCClient) PauseJob(ctx context.Context, in *JobRef, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
+	out := new(google_protobuf.Empty)
+	err := c.client.Call(ctx, "scheduler.Scheduler", "PauseJob", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *schedulerPRPCClient) ResumeJob(ctx context.Context, in *JobRef, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
+	out := new(google_protobuf.Empty)
+	err := c.client.Call(ctx, "scheduler.Scheduler", "ResumeJob", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *schedulerPRPCClient) AbortJob(ctx context.Context, in *JobRef, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
+	out := new(google_protobuf.Empty)
+	err := c.client.Call(ctx, "scheduler.Scheduler", "AbortJob", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *schedulerPRPCClient) AbortInvocation(ctx context.Context, in *InvocationRef, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
+	out := new(google_protobuf.Empty)
+	err := c.client.Call(ctx, "scheduler.Scheduler", "AbortInvocation", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -371,6 +489,42 @@ func (c *schedulerClient) GetInvocations(ctx context.Context, in *InvocationsReq
 	return out, nil
 }
 
+func (c *schedulerClient) PauseJob(ctx context.Context, in *JobRef, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
+	out := new(google_protobuf.Empty)
+	err := grpc.Invoke(ctx, "/scheduler.Scheduler/PauseJob", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *schedulerClient) ResumeJob(ctx context.Context, in *JobRef, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
+	out := new(google_protobuf.Empty)
+	err := grpc.Invoke(ctx, "/scheduler.Scheduler/ResumeJob", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *schedulerClient) AbortJob(ctx context.Context, in *JobRef, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
+	out := new(google_protobuf.Empty)
+	err := grpc.Invoke(ctx, "/scheduler.Scheduler/AbortJob", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *schedulerClient) AbortInvocation(ctx context.Context, in *InvocationRef, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
+	out := new(google_protobuf.Empty)
+	err := grpc.Invoke(ctx, "/scheduler.Scheduler/AbortInvocation", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Scheduler service
 
 type SchedulerServer interface {
@@ -380,6 +534,25 @@ type SchedulerServer interface {
 	GetJobs(context.Context, *JobsRequest) (*JobsReply, error)
 	// GetInvocations fetches invocations of a given job, most recent first.
 	GetInvocations(context.Context, *InvocationsRequest) (*InvocationsReply, error)
+	// PauseJob will prevent automatic triggering of a job. Manual triggering such
+	// as through this API is still allowed. Any pending or running invocations
+	// are still executed. PauseJob does nothing if job is already paused.
+	PauseJob(context.Context, *JobRef) (*google_protobuf.Empty, error)
+	// ResumeJob resumes paused job. ResumeJob does nothing if job is not paused.
+	ResumeJob(context.Context, *JobRef) (*google_protobuf.Empty, error)
+	// AbortJob resets the job to scheduled state, aborting a currently pending or
+	// running invocation if any.
+	//
+	// Note, that this is similar to AbortInvocation except that AbortInvocation
+	// requires invocation ID and doesn't ensure that the invocation aborted is
+	// actually latest triggered for the job.
+	AbortJob(context.Context, *JobRef) (*google_protobuf.Empty, error)
+	// AbortInvocation aborts a given job invocation.
+	// If an invocation is final, AbortInvocation does nothing.
+	//
+	// If you want to abort a specific hung invocation, use this request instead
+	// of AbortJob.
+	AbortInvocation(context.Context, *InvocationRef) (*google_protobuf.Empty, error)
 }
 
 func RegisterSchedulerServer(s prpc.Registrar, srv SchedulerServer) {
@@ -422,6 +595,78 @@ func _Scheduler_GetInvocations_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Scheduler_PauseJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JobRef)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SchedulerServer).PauseJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/scheduler.Scheduler/PauseJob",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SchedulerServer).PauseJob(ctx, req.(*JobRef))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Scheduler_ResumeJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JobRef)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SchedulerServer).ResumeJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/scheduler.Scheduler/ResumeJob",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SchedulerServer).ResumeJob(ctx, req.(*JobRef))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Scheduler_AbortJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JobRef)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SchedulerServer).AbortJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/scheduler.Scheduler/AbortJob",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SchedulerServer).AbortJob(ctx, req.(*JobRef))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Scheduler_AbortInvocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InvocationRef)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SchedulerServer).AbortInvocation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/scheduler.Scheduler/AbortInvocation",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SchedulerServer).AbortInvocation(ctx, req.(*InvocationRef))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Scheduler_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "scheduler.Scheduler",
 	HandlerType: (*SchedulerServer)(nil),
@@ -434,6 +679,22 @@ var _Scheduler_serviceDesc = grpc.ServiceDesc{
 			MethodName: "GetInvocations",
 			Handler:    _Scheduler_GetInvocations_Handler,
 		},
+		{
+			MethodName: "PauseJob",
+			Handler:    _Scheduler_PauseJob_Handler,
+		},
+		{
+			MethodName: "ResumeJob",
+			Handler:    _Scheduler_ResumeJob_Handler,
+		},
+		{
+			MethodName: "AbortJob",
+			Handler:    _Scheduler_AbortJob_Handler,
+		},
+		{
+			MethodName: "AbortInvocation",
+			Handler:    _Scheduler_AbortInvocation_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "github.com/luci/luci-go/scheduler/api/scheduler/v1/scheduler.proto",
@@ -444,37 +705,45 @@ func init() {
 }
 
 var fileDescriptor0 = []byte{
-	// 509 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x53, 0x4d, 0x6f, 0xd3, 0x40,
-	0x10, 0x95, 0xe3, 0x7c, 0xd8, 0x63, 0x14, 0xaa, 0xa1, 0x54, 0xa6, 0x55, 0x45, 0xf0, 0x25, 0xe1,
-	0x40, 0x22, 0xc2, 0xa1, 0xf7, 0x72, 0xa8, 0x88, 0x38, 0x39, 0xe5, 0x6c, 0xd9, 0xce, 0xc6, 0xd9,
-	0xc8, 0xf5, 0x9a, 0xdd, 0x75, 0x20, 0xf9, 0x19, 0xdc, 0xf9, 0xaf, 0x68, 0xd7, 0xeb, 0xc4, 0x11,
-	0x45, 0x5c, 0xac, 0x7d, 0x6f, 0x76, 0x67, 0xde, 0x9b, 0x19, 0xc3, 0x7d, 0x46, 0xe5, 0xa6, 0x4a,
-	0xa6, 0x29, 0x7b, 0x9a, 0xe5, 0x55, 0x4a, 0xf5, 0xe7, 0x43, 0xc6, 0x66, 0x22, 0xdd, 0x90, 0x55,
-	0x95, 0x13, 0x3e, 0x8b, 0x4b, 0xda, 0x42, 0xbb, 0x8f, 0x27, 0x30, 0x2d, 0x39, 0x93, 0x0c, 0xdd,
-	0x23, 0x11, 0x8c, 0xc1, 0x5b, 0xb0, 0x44, 0x84, 0xe4, 0x7b, 0x45, 0x84, 0x44, 0x1f, 0x06, 0x25,
-	0x67, 0x5b, 0x92, 0x4a, 0xdf, 0x1a, 0x59, 0x13, 0x37, 0x6c, 0x60, 0x30, 0x03, 0xb7, 0xbe, 0x58,
-	0xe6, 0x7b, 0x0c, 0xa0, 0xbb, 0x65, 0x89, 0xf0, 0xad, 0x91, 0x3d, 0xf1, 0xe6, 0xc3, 0xe9, 0xa9,
-	0xc0, 0x82, 0x25, 0xa1, 0x8e, 0x05, 0x07, 0xb0, 0x17, 0x2c, 0x41, 0x84, 0x6e, 0x11, 0x3f, 0x11,
-	0x93, 0x4e, 0x9f, 0xdb, 0x55, 0x3a, 0x67, 0x55, 0xf0, 0x1a, 0x9c, 0x26, 0x97, 0x6f, 0xeb, 0xd0,
-	0x11, 0xe3, 0x7b, 0xe8, 0x09, 0x19, 0x4b, 0xe2, 0x77, 0x47, 0xd6, 0xc4, 0x9b, 0xbf, 0x3a, 0xaf,
-	0xba, 0x54, 0xa1, 0xb0, 0xbe, 0x11, 0x8c, 0xc1, 0x69, 0x28, 0xbc, 0x01, 0xb7, 0xa2, 0x91, 0xe2,
-	0x2b, 0x61, 0x54, 0x38, 0x15, 0x5d, 0x6a, 0x1c, 0x54, 0x80, 0x5f, 0x8a, 0x1d, 0x4b, 0x63, 0x49,
-	0x59, 0xf1, 0xff, 0x2e, 0xe0, 0x05, 0xd8, 0x5b, 0x96, 0x18, 0xd5, 0xea, 0x88, 0x57, 0xd0, 0x4f,
-	0x2b, 0x2e, 0x18, 0x37, 0x7a, 0x0d, 0x52, 0x65, 0xcb, 0x38, 0x23, 0x91, 0xa0, 0x87, 0x5a, 0x71,
-	0x2f, 0x74, 0x14, 0xb1, 0xa4, 0x07, 0x12, 0xe4, 0x70, 0x71, 0x56, 0x56, 0xf5, 0xf4, 0x0e, 0x3c,
-	0x7a, 0xe2, 0x4c, 0x6b, 0x5f, 0xb7, 0x4c, 0x9e, 0x5e, 0x84, 0xed, 0x9b, 0xf8, 0x16, 0xbc, 0x82,
-	0xfc, 0x94, 0x91, 0x91, 0x51, 0x6b, 0x03, 0x45, 0x7d, 0xd6, 0x4c, 0xf0, 0xbb, 0x03, 0x70, 0x7a,
-	0x8c, 0x43, 0xe8, 0xd0, 0x95, 0x36, 0x66, 0x87, 0x1d, 0xba, 0x7a, 0xc6, 0x53, 0xcb, 0xbf, 0x7d,
-	0xee, 0xff, 0x16, 0x40, 0xc8, 0x98, 0x4b, 0xb2, 0x8a, 0xa4, 0xd0, 0xb6, 0xec, 0xd0, 0x35, 0xcc,
-	0xa3, 0x96, 0xb2, 0xa6, 0x05, 0x15, 0x9b, 0x3a, 0xde, 0xd3, 0x71, 0x68, 0xa8, 0x47, 0x81, 0xef,
-	0xe0, 0x85, 0xe4, 0x34, 0xcb, 0x08, 0x27, 0xab, 0x28, 0xd9, 0xfb, 0x7d, 0x9d, 0xde, 0x3b, 0x72,
-	0xf7, 0x7b, 0xd5, 0x50, 0x33, 0xac, 0x41, 0xdd, 0xd0, 0x1a, 0xe1, 0x25, 0xf4, 0xd6, 0xb4, 0x88,
-	0x73, 0xdf, 0x19, 0x59, 0x13, 0x27, 0xac, 0x01, 0x8e, 0xe1, 0x65, 0xca, 0x8a, 0x35, 0xcd, 0x22,
-	0x4e, 0x76, 0x54, 0x50, 0x56, 0xf8, 0xae, 0x7e, 0x36, 0xac, 0xe9, 0xd0, 0xb0, 0xf8, 0x06, 0x9c,
-	0x1d, 0x25, 0x3f, 0xa2, 0x8a, 0xe7, 0x3e, 0xd4, 0xa6, 0x14, 0xfe, 0xc6, 0xf3, 0xf9, 0x2f, 0x0b,
-	0xdc, 0x65, 0xd3, 0x66, 0xbc, 0x83, 0xc1, 0x03, 0x91, 0x6a, 0xd7, 0xf1, 0xea, 0x7c, 0xc5, 0x9a,
-	0xfd, 0xb8, 0xbe, 0xfc, 0x8b, 0x57, 0x03, 0xfc, 0x0a, 0xc3, 0x07, 0x22, 0x5b, 0x73, 0xc5, 0xdb,
-	0x67, 0xa7, 0x77, 0x4c, 0x73, 0xf3, 0xaf, 0x70, 0x99, 0xef, 0x93, 0xbe, 0xfe, 0x55, 0x3f, 0xfd,
-	0x09, 0x00, 0x00, 0xff, 0xff, 0xfb, 0xfa, 0x4f, 0xce, 0xf0, 0x03, 0x00, 0x00,
+	// 626 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x54, 0xef, 0x4f, 0xd3, 0x40,
+	0x18, 0xce, 0x18, 0xdb, 0xda, 0xb7, 0x30, 0xf0, 0x44, 0x52, 0x47, 0x88, 0xb3, 0x7e, 0x60, 0x9a,
+	0xb8, 0xc5, 0x29, 0xf2, 0xd1, 0x08, 0x31, 0x04, 0xe2, 0x07, 0xd2, 0xe1, 0x37, 0x93, 0xda, 0x76,
+	0xd7, 0x72, 0x4b, 0xe9, 0xcd, 0xfb, 0x31, 0x19, 0x7f, 0x8e, 0xff, 0xa7, 0x89, 0xb9, 0x6b, 0xbb,
+	0x76, 0x02, 0x9a, 0xf9, 0x65, 0xeb, 0xf3, 0xbc, 0xf7, 0xbe, 0xf7, 0xbc, 0xbf, 0x0e, 0x8e, 0x63,
+	0x22, 0xae, 0x64, 0xd0, 0x0f, 0xe9, 0xf5, 0x20, 0x91, 0x21, 0xd1, 0x3f, 0xaf, 0x63, 0x3a, 0xe0,
+	0xe1, 0x15, 0x1e, 0xcb, 0x04, 0xb3, 0x81, 0x3f, 0x25, 0x15, 0x34, 0x7b, 0x53, 0x82, 0xfe, 0x94,
+	0x51, 0x41, 0x91, 0xb9, 0x20, 0x3a, 0x7b, 0x31, 0xa5, 0x71, 0x82, 0x07, 0xda, 0x10, 0xc8, 0x68,
+	0x80, 0xaf, 0xa7, 0x62, 0x9e, 0x9d, 0x73, 0xbe, 0x82, 0x75, 0x4e, 0x03, 0xee, 0xe2, 0xef, 0x12,
+	0x73, 0x81, 0x6c, 0x68, 0x4d, 0x19, 0x9d, 0xe0, 0x50, 0xd8, 0xb5, 0x6e, 0xad, 0x67, 0xba, 0x05,
+	0x44, 0xbb, 0xd0, 0x0c, 0x25, 0xe3, 0x94, 0xd9, 0x6b, 0xda, 0x90, 0x23, 0xb4, 0x07, 0xe6, 0xd4,
+	0x8f, 0xb1, 0xc7, 0xc9, 0x2d, 0xb6, 0xeb, 0xdd, 0x5a, 0xaf, 0xe1, 0x1a, 0x8a, 0x18, 0x91, 0x5b,
+	0xec, 0x5c, 0x80, 0x99, 0x45, 0x9f, 0x26, 0x73, 0xe4, 0xc0, 0xfa, 0x84, 0x06, 0xdc, 0xae, 0x75,
+	0xeb, 0x3d, 0x6b, 0xd8, 0xee, 0x97, 0x92, 0xcf, 0x69, 0xe0, 0x6a, 0x1b, 0x7a, 0x06, 0x56, 0x8a,
+	0x6f, 0x84, 0xb7, 0x74, 0x15, 0x28, 0xea, 0x44, 0x33, 0x8e, 0x04, 0x74, 0x96, 0xce, 0x68, 0xe8,
+	0x0b, 0x42, 0xd3, 0x85, 0xec, 0x57, 0xd0, 0x9a, 0xd0, 0xc0, 0x63, 0x38, 0xd2, 0xb2, 0xad, 0xe1,
+	0xa3, 0x3f, 0xa2, 0xe3, 0xc8, 0x6d, 0x4e, 0xf4, 0xff, 0xff, 0x25, 0x92, 0xc0, 0xf6, 0xd2, 0xb5,
+	0x2a, 0x9f, 0x23, 0xb0, 0x48, 0xc9, 0xe5, 0x69, 0x3d, 0xa9, 0x5c, 0x5c, 0x7a, 0xb8, 0xd5, 0x93,
+	0xff, 0x4e, 0xf2, 0x1d, 0x34, 0x33, 0xd1, 0x7f, 0xe9, 0xc7, 0x36, 0xd4, 0x27, 0x34, 0xc8, 0x9d,
+	0xd5, 0xa7, 0xf3, 0x0d, 0x36, 0x2b, 0x37, 0xe2, 0x68, 0xa5, 0xaa, 0xbc, 0x80, 0xcd, 0x52, 0xa2,
+	0x47, 0xc6, 0x3a, 0x70, 0xdd, 0xdd, 0x28, 0xc9, 0xb3, 0xb1, 0x73, 0x03, 0xf5, 0x73, 0x1a, 0xac,
+	0x14, 0xb7, 0x03, 0x46, 0x61, 0xcb, 0xb5, 0x2e, 0x30, 0x7a, 0x09, 0x0d, 0x2e, 0x7c, 0x91, 0x55,
+	0xdb, 0x1a, 0x3e, 0x5e, 0x8e, 0x32, 0x52, 0x26, 0x37, 0x3b, 0xe1, 0x1c, 0x80, 0x51, 0x50, 0xaa,
+	0x51, 0x92, 0x78, 0x8a, 0x97, 0x3c, 0xaf, 0x8a, 0x21, 0xc9, 0x48, 0x63, 0xe7, 0xe7, 0x1a, 0x40,
+	0x59, 0x05, 0xf4, 0x01, 0xda, 0x95, 0xb4, 0x4a, 0xc5, 0xf6, 0xfd, 0x6d, 0xc2, 0x91, 0x5b, 0x29,
+	0x83, 0xd2, 0xbf, 0x0f, 0xc0, 0x85, 0xcf, 0x04, 0x1e, 0x7b, 0x82, 0xe7, 0x45, 0x31, 0x73, 0xe6,
+	0x52, 0xb7, 0x32, 0x22, 0x29, 0xe1, 0x57, 0x99, 0xbd, 0xae, 0xed, 0x50, 0x50, 0x97, 0x1c, 0x3d,
+	0x87, 0x0d, 0xc1, 0x48, 0x1c, 0x63, 0x86, 0xc7, 0x5e, 0x30, 0xb7, 0xd7, 0xb5, 0x5e, 0x6b, 0xc1,
+	0x1d, 0xcf, 0xd5, 0x40, 0xe6, 0xc9, 0x34, 0xb2, 0x81, 0xcc, 0x10, 0xda, 0x81, 0x46, 0x44, 0x52,
+	0x3f, 0xb1, 0x9b, 0xdd, 0x5a, 0xcf, 0x70, 0x33, 0x80, 0x0e, 0x60, 0x2b, 0xa4, 0x69, 0x44, 0x62,
+	0x8f, 0xe1, 0x19, 0xe1, 0x84, 0xa6, 0x76, 0x4b, 0xbb, 0xb5, 0x33, 0xda, 0xcd, 0x59, 0xf4, 0x14,
+	0x8c, 0x19, 0xc1, 0x3f, 0x3c, 0xc9, 0x12, 0xdb, 0xc8, 0x66, 0x47, 0xe1, 0x2f, 0x2c, 0x19, 0xfe,
+	0x5a, 0x03, 0x73, 0x54, 0xe4, 0x8f, 0x8e, 0xa0, 0x75, 0x8a, 0x85, 0xda, 0x53, 0xb4, 0xbb, 0xdc,
+	0x82, 0x62, 0xbf, 0x3a, 0x3b, 0x77, 0x78, 0xb5, 0x00, 0x9f, 0xa1, 0x7d, 0x8a, 0x45, 0x65, 0x2f,
+	0xd0, 0xfe, 0xbd, 0x65, 0x5d, 0x84, 0xd9, 0x7b, 0xc8, 0xac, 0xa2, 0x1d, 0x82, 0x71, 0xe1, 0x4b,
+	0x8e, 0xd5, 0x84, 0xdd, 0x1d, 0xa8, 0xce, 0x6e, 0x3f, 0x7b, 0xc6, 0xfa, 0xc5, 0x33, 0xd6, 0xff,
+	0xa4, 0x9e, 0x31, 0xf4, 0x1e, 0x4c, 0x17, 0x73, 0x79, 0xbd, 0xaa, 0xdf, 0x21, 0x18, 0x1f, 0x03,
+	0xca, 0xc4, 0x8a, 0x6e, 0x27, 0xb0, 0xa5, 0xdd, 0x2a, 0x33, 0xf6, 0xe0, 0x2c, 0x3d, 0x14, 0x24,
+	0x68, 0x6a, 0xfc, 0xf6, 0x77, 0x00, 0x00, 0x00, 0xff, 0xff, 0xed, 0x96, 0x86, 0x3e, 0xe9, 0x05,
+	0x00, 0x00,
 }

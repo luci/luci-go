@@ -10,6 +10,7 @@ import (
 	"github.com/luci/luci-go/server/auth"
 )
 
+// TODO(tandrii): move this to new acl package.
 func IsJobOwner(c context.Context, projectID, jobName string) bool {
 	// TODO(vadimsh): Do real ACLs.
 	ok, err := auth.IsMember(c, "administrators")

@@ -43,6 +43,11 @@ import (
 	"github.com/luci/luci-go/scheduler/appengine/task"
 )
 
+var (
+	ErrNoSuchJob        = errors.New("no such job")
+	ErrNoSuchInvocation = errors.New("the invocation doesn't exist")
+)
+
 // Engine manages all scheduler jobs: keeps track of their state, runs state
 // machine transactions, starts new invocations, etc. A method returns
 // errors.Transient if the error is non-fatal and the call should be retried
@@ -118,7 +123,7 @@ type Engine interface {
 	// running invocations are still executed.
 	PauseJob(c context.Context, jobID string, who identity.Identity) error
 
-	// ResumeJob resumed paused job. Doesn't nothing if the job is not paused.
+	// ResumeJob resumes paused job. Doesn't nothing if the job is not paused.
 	ResumeJob(c context.Context, jobID string, who identity.Identity) error
 
 	// AbortInvocation forcefully moves the invocation to failed state.
@@ -1041,7 +1046,7 @@ func (e *engineImpl) TriggerInvocation(c context.Context, jobID string, triggere
 	var invNonce int64
 	err2 := e.txn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
 		if isNew {
-			err = errors.New("no such job")
+			err = ErrNoSuchJob
 			return errSkipPut
 		}
 		if !job.Enabled {
@@ -1074,7 +1079,7 @@ func (e *engineImpl) ResumeJob(c context.Context, jobID string, who identity.Ide
 func (e *engineImpl) setPausedFlag(c context.Context, jobID string, paused bool, who identity.Identity) error {
 	return e.txn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
 		if isNew || !job.Enabled {
-			return errors.New("no such job")
+			return ErrNoSuchJob
 		}
 		if job.Paused == paused {
 			return errSkipPut
@@ -1104,7 +1109,7 @@ func (e *engineImpl) AbortInvocation(c context.Context, jobID string, invID int6
 		return err
 	case inv == nil:
 		logging.Errorf(c, "The invocation doesn't exist")
-		return errors.New("the invocation doesn't exist")
+		return ErrNoSuchInvocation
 	case inv.Status.Final():
 		return nil
 	}
@@ -1308,7 +1313,7 @@ func (e *engineImpl) invocationTimerTick(c context.Context, jobID string, invID 
 		return err
 	}
 	if inv == nil {
-		return errors.New("the invocation doesn't exist")
+		return ErrNoSuchInvocation
 	}
 
 	// Finished invocations are immutable, skip the message.
@@ -1693,7 +1698,7 @@ func (e *engineImpl) handlePubSubMessage(c context.Context, msg *pubsub.PubsubMe
 		return err
 	}
 	if inv == nil {
-		return errors.New("the invocation doesn't exist")
+		return ErrNoSuchInvocation
 	}
 
 	// Finished invocations are immutable, skip the message.
