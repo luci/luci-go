@@ -21,6 +21,9 @@ func TestMustNamespace(t *testing.T) {
 		So(info.AppID(c), ShouldEqual, "app-id")
 		So(info.FullyQualifiedAppID(c), ShouldEqual, "dev~app-id")
 		So(info.RequestID(c), ShouldEqual, "test-request-id")
+		sa, err := info.ServiceAccount(c)
+		So(err, ShouldBeNil)
+		So(sa, ShouldEqual, "gae_service_account@example.com")
 
 		// Setting to "override" applies to initial context.
 		c = info.GetTestable(c).SetRequestID("override")

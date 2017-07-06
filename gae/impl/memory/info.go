@@ -93,6 +93,10 @@ func (gi *giImpl) IsDevAppServer() bool {
 	return true
 }
 
+func (gi *giImpl) ServiceAccount() (string, error) {
+	return "gae_service_account@example.com", nil
+}
+
 func (gi *giImpl) VersionID() string {
 	return curGID(gi.c).versionID
 }
