@@ -88,6 +88,7 @@ message Job {
   string schedule = 2;
 
   JobState state = 3;
+  bool paused = 4;
 }
 
 // JobState describes current Job state as one of these strings:

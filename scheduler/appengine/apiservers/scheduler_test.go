@@ -75,11 +75,13 @@ func TestGetJobsApi(t *testing.T) {
 					JobRef:   &scheduler.JobRef{Job: "foo", Project: "bar"},
 					Schedule: "0 * * * * * *",
 					State:    &scheduler.JobState{UiStatus: "RUNNING"},
+					Paused:   false,
 				},
 				{
 					JobRef:   &scheduler.JobRef{Job: "faz", Project: "baz"},
 					Schedule: "with 1m interval",
 					State:    &scheduler.JobState{UiStatus: "PAUSED"},
+					Paused:   true,
 				},
 			})
 		})
@@ -104,6 +106,34 @@ func TestGetJobsApi(t *testing.T) {
 					JobRef:   &scheduler.JobRef{Job: "foo", Project: "bar"},
 					Schedule: "0 * * * * * *",
 					State:    &scheduler.JobState{UiStatus: "RUNNING"},
+					Paused:   false,
+				},
+			})
+		})
+
+		Convey("Paused but currently running job", func() {
+			fakeEng.getProjectJobs = func(projectID string) ([]*engine.Job, error) {
+				So(projectID, ShouldEqual, "bar")
+				return []*engine.Job{
+					{
+						// Job which is paused but its latest invocation still running.
+						JobID:     "bar/foo",
+						ProjectID: "bar",
+						Schedule:  "0 * * * * * *",
+						State:     engine.JobState{State: engine.JobStateRunning},
+						Paused:    true,
+						Task:      fakeTaskBlob,
+					},
+				}, nil
+			}
+			reply, err := ss.GetJobs(ctx, &scheduler.JobsRequest{Project: "bar"})
+			So(err, ShouldBeNil)
+			So(reply.GetJobs(), ShouldResemble, []*scheduler.Job{
+				{
+					JobRef:   &scheduler.JobRef{Job: "foo", Project: "bar"},
+					Schedule: "0 * * * * * *",
+					State:    &scheduler.JobState{UiStatus: "RUNNING"},
+					Paused:   true,
 				},
 			})
 		})

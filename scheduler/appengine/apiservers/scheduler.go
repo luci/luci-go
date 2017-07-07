@@ -58,6 +58,7 @@ func (s SchedulerServer) GetJobs(ctx context.Context, in *scheduler.JobsRequest)
 			State: &scheduler.JobState{
 				UiStatus: string(presentation.GetPublicStateKind(ej, traits)),
 			},
+			Paused: ej.Paused,
 		}
 	}
 	return &scheduler.JobsReply{Jobs: jobs, NextCursor: ""}, nil
