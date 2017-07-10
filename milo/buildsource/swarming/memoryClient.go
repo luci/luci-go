@@ -12,7 +12,7 @@ import (
 	miloProto "github.com/luci/luci-go/common/proto/milo"
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamclient"
 	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
-	"github.com/luci/luci-go/milo/build_source/raw_presentation"
+	"github.com/luci/luci-go/milo/buildsource/rawpresentation"
 )
 
 // In-memory datastructure to hold a fake butler client.
@@ -24,8 +24,8 @@ type memoryStream struct {
 	isDatagram bool
 }
 
-func (s *memoryStream) ToLogDogStream() (*raw_presentation.Stream, error) {
-	result := &raw_presentation.Stream{
+func (s *memoryStream) ToLogDogStream() (*rawpresentation.Stream, error) {
+	result := &rawpresentation.Stream{
 		Closed:     s.closed,
 		IsDatagram: s.isDatagram,
 		Path:       s.props.Name,
@@ -83,7 +83,7 @@ func (c *memoryClient) NewStream(f streamproto.Flags) (streamclient.Stream, erro
 	return &s, nil
 }
 
-func (c *memoryClient) addLogDogTextStream(s *raw_presentation.Streams, ls *miloProto.LogdogStream) error {
+func (c *memoryClient) addLogDogTextStream(s *rawpresentation.Streams, ls *miloProto.LogdogStream) error {
 	var keys []string
 	for k := range c.stream {
 		keys = append(keys, k)
@@ -105,7 +105,7 @@ func (c *memoryClient) addLogDogTextStream(s *raw_presentation.Streams, ls *milo
 
 // addToStreams adds the set of stream with a given base path to the logdog
 // stream map.  A base path is assumed to have a stream named "annotations".
-func (c *memoryClient) addToStreams(s *raw_presentation.Streams, anno *miloProto.Step) error {
+func (c *memoryClient) addToStreams(s *rawpresentation.Streams, anno *miloProto.Step) error {
 	if lds := anno.StdoutStream; lds != nil {
 		if err := c.addLogDogTextStream(s, lds); err != nil {
 			return fmt.Errorf(
@@ -148,9 +148,9 @@ func (c *memoryClient) addToStreams(s *raw_presentation.Streams, anno *miloProto
 	return nil
 }
 
-func (c *memoryClient) ToLogDogStreams() (*raw_presentation.Streams, error) {
-	result := &raw_presentation.Streams{}
-	result.Streams = map[string]*raw_presentation.Stream{}
+func (c *memoryClient) ToLogDogStreams() (*rawpresentation.Streams, error) {
+	result := &rawpresentation.Streams{}
+	result.Streams = map[string]*rawpresentation.Stream{}
 
 	// Register annotation stream.
 	const annotationStreamName = "annotations"

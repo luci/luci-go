@@ -17,7 +17,7 @@ import (
 
 	"github.com/luci/luci-go/milo/api/config"
 	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/build_source/buildbot"
+	"github.com/luci/luci-go/milo/buildsource/buildbot"
 	"github.com/luci/luci-go/milo/common"
 	"github.com/luci/luci-go/milo/common/gitiles"
 )

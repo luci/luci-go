@@ -24,7 +24,7 @@ import (
 	"github.com/luci/luci-go/logdog/client/coordinator"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/build_source/raw_presentation"
+	"github.com/luci/luci-go/milo/buildsource/rawpresentation"
 	"github.com/luci/luci-go/milo/common"
 	"github.com/luci/luci-go/milo/common/model"
 	"github.com/luci/luci-go/server/auth"
@@ -462,7 +462,7 @@ func addTaskToBuild(c context.Context, server string, sr *swarming.SwarmingRpcsT
 
 // streamsFromAnnotatedLog takes in an annotated log and returns a fully
 // populated set of logdog streams
-func streamsFromAnnotatedLog(ctx context.Context, log string) (*raw_presentation.Streams, error) {
+func streamsFromAnnotatedLog(ctx context.Context, log string) (*rawpresentation.Streams, error) {
 	c := &memoryClient{}
 	p := annotee.New(ctx, annotee.Options{
 		Client:                 c,
@@ -498,18 +498,18 @@ type buildLoader struct {
 }
 
 func (bl *buildLoader) newEmptyAnnotationStream(c context.Context, addr *types.StreamAddr) (
-	*raw_presentation.AnnotationStream, error) {
+	*rawpresentation.AnnotationStream, error) {
 
 	fn := bl.logDogClientFunc
 	if fn == nil {
-		fn = raw_presentation.NewClient
+		fn = rawpresentation.NewClient
 	}
 	client, err := fn(c, addr.Host)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create LogDog client").Err()
 	}
 
-	as := raw_presentation.AnnotationStream{
+	as := rawpresentation.AnnotationStream{
 		Client:  client,
 		Project: addr.Project,
 		Path:    addr.Path,
@@ -587,8 +587,8 @@ func (bl *buildLoader) swarmingBuildImpl(c context.Context, svc swarmingService,
 
 	var build resp.MiloBuild
 	var s *miloProto.Step
-	var lds *raw_presentation.Streams
-	var ub raw_presentation.URLBuilder
+	var lds *rawpresentation.Streams
+	var ub rawpresentation.URLBuilder
 
 	// Load the build from the available data.
 	//
@@ -606,7 +606,7 @@ func (bl *buildLoader) swarmingBuildImpl(c context.Context, svc swarmingService,
 		}
 
 		prefix, _ := logDogStreamAddr.Path.Split()
-		ub = &raw_presentation.ViewerURLBuilder{
+		ub = &rawpresentation.ViewerURLBuilder{
 			Host:    logDogStreamAddr.Host,
 			Prefix:  prefix,
 			Project: logDogStreamAddr.Project,
@@ -668,7 +668,7 @@ func (bl *buildLoader) swarmingBuildImpl(c context.Context, svc swarmingService,
 		if err := addTaskToMiloStep(c, svc.getHost(), fr.res, s); err != nil {
 			return nil, err
 		}
-		raw_presentation.AddLogDogToBuild(c, ub, s, &build)
+		rawpresentation.AddLogDogToBuild(c, ub, s, &build)
 	}
 
 	if err := addTaskToBuild(c, svc.getHost(), fr.res, &build); err != nil {

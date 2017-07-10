@@ -15,10 +15,10 @@ import (
 	"github.com/luci/luci-go/grpc/grpcmon"
 	"github.com/luci/luci-go/grpc/prpc"
 	milo "github.com/luci/luci-go/milo/api/proto"
-	"github.com/luci/luci-go/milo/build_source/buildbot"
-	"github.com/luci/luci-go/milo/build_source/buildbucket"
-	"github.com/luci/luci-go/milo/build_source/raw_presentation"
-	"github.com/luci/luci-go/milo/build_source/swarming"
+	"github.com/luci/luci-go/milo/buildsource/buildbot"
+	"github.com/luci/luci-go/milo/buildsource/buildbucket"
+	"github.com/luci/luci-go/milo/buildsource/rawpresentation"
+	"github.com/luci/luci-go/milo/buildsource/swarming"
 	"github.com/luci/luci-go/milo/common"
 	"github.com/luci/luci-go/milo/frontend/console"
 	"github.com/luci/luci-go/milo/rpc"
@@ -63,7 +63,7 @@ func Run(templatePath string) {
 	// LogDog Milo Annotation Streams.
 	// This mimicks the `logdog://logdog_host/project/*path` url scheme seen on
 	// swarming tasks.
-	r.GET("/raw/build/:logdog_host/:project/*path", basemw, raw_presentation.BuildHandler)
+	r.GET("/raw/build/:logdog_host/:project/*path", basemw, rawpresentation.BuildHandler)
 
 	// PubSub subscription endpoints.
 	r.POST("/_ah/push-handlers/buildbot", basemw, buildbot.PubSubHandler)

@@ -10,8 +10,8 @@ import (
 
 	"github.com/luci/luci-go/common/sync/parallel"
 	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/build_source/buildbot"
-	"github.com/luci/luci-go/milo/build_source/buildbucket"
+	"github.com/luci/luci-go/milo/buildsource/buildbot"
+	"github.com/luci/luci-go/milo/buildsource/buildbucket"
 	"github.com/luci/luci-go/milo/common"
 )
 
