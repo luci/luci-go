@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"compress/zlib"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -50,17 +49,6 @@ var (
 		// Status can be one of 2 options.  "success", "failure".
 		field.String("status"))
 )
-
-type pubSubMessage struct {
-	Attributes map[string]string `json:"attributes"`
-	Data       string            `json:"data"`
-	MessageID  string            `json:"message_id"`
-}
-
-type pubSubSubscription struct {
-	Message      pubSubMessage `json:"message"`
-	Subscription string        `json:"subscription"`
-}
 
 type buildMasterMsg struct {
 	Master *buildbotMaster  `json:"master"`
@@ -110,11 +98,6 @@ func putDSMasterJSON(
 	logging.Debugf(c, "Length of json data: %d", cw.Count)
 	logging.Debugf(c, "Length of gzipped data: %d", len(entry.Data))
 	return ds.Put(c, &entry)
-}
-
-// GetData returns the expanded form of Data (decoded from base64).
-func (m *pubSubSubscription) GetData() ([]byte, error) {
-	return base64.StdEncoding.DecodeString(m.Message.Data)
 }
 
 // unmarshal a gzipped byte stream into a list of buildbot builds and masters.
@@ -293,7 +276,7 @@ func PubSubHandler(ctx *router.Context) {
 // a status code.  StatusOK (200) for okay (ACK implied, don't retry).
 // Anything else will signal to pubsub to retry.
 func pubSubHandlerImpl(c context.Context, r *http.Request) int {
-	msg := pubSubSubscription{}
+	msg := common.PubSubSubscription{}
 	now := int(clock.Now(c).Unix())
 	defer r.Body.Close()
 	dec := json.NewDecoder(r.Body)

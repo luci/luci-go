@@ -67,6 +67,7 @@ func Run(templatePath string) {
 
 	// PubSub subscription endpoints.
 	r.POST("/_ah/push-handlers/buildbot", basemw, buildbot.PubSubHandler)
+	r.POST("/_ah/push-handlers/buildbucket", basemw, buildbucket.PubSubHandler)
 
 	// pRPC style endpoints.
 	api := prpc.Server{

@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"cloud.google.com/go/datastore"
+	"google.golang.org/appengine"
 
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/common"
@@ -41,13 +42,21 @@ func ConfigsHandler(c *router.Context) {
 // UpdateHandler is an HTTP handler that handles configuration update requests.
 func UpdateConfigHandler(ctx *router.Context) {
 	c, h := ctx.Context, ctx.Writer
+	// Needed to access the PubSub API
+	c = appengine.WithContext(c, ctx.Request)
 	projErr := common.UpdateProjectConfigs(c)
 	if projErr != nil {
 		logging.WithError(projErr).Errorf(c, "project update handler encountered error")
 	}
-	servErr := common.UpdateServiceConfig(c)
+	settings, servErr := common.UpdateServiceConfig(c)
 	if servErr != nil {
 		logging.WithError(servErr).Errorf(c, "service update handler encountered error")
+	} else {
+		servErr = common.EnsurePubSubSubscribed(c, settings)
+		if servErr != nil {
+			logging.WithError(servErr).Errorf(
+				c, "pubsub subscriber handler encountered error")
+		}
 	}
 	if projErr != nil || servErr != nil {
 		h.WriteHeader(http.StatusInternalServerError)

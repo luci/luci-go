@@ -110,7 +110,7 @@ func GetCurrentServiceConfig(c context.Context) (*ServiceConfig, error) {
 
 // UpdateServiceConfig fetches the service config from luci-config
 // and then stores a snapshot of the configuration in datastore.
-func UpdateServiceConfig(c context.Context) error {
+func UpdateServiceConfig(c context.Context) (*config.Settings, error) {
 	// Load the settings from luci-config.
 	cs := string(cfgclient.CurrentServiceConfigSet(c))
 	// Acquire the raw config client.
@@ -118,12 +118,13 @@ func UpdateServiceConfig(c context.Context) error {
 	// Our global config name is called settings.cfg.
 	cfg, err := lucicfg.GetConfig(c, cs, "settings.cfg", false)
 	if err != nil {
-		return fmt.Errorf("could not load settings.cfg from luci-config: %s", err)
+		return nil, fmt.Errorf("could not load settings.cfg from luci-config: %s", err)
 	}
 	settings := &config.Settings{}
 	err = proto.UnmarshalText(cfg.Content, settings)
 	if err != nil {
-		return fmt.Errorf("could not unmarshal proto from luci-config:\n%s", cfg.Content)
+		return nil, fmt.Errorf(
+			"could not unmarshal proto from luci-config:\n%s", cfg.Content)
 	}
 	newConfig := ServiceConfig{
 		ID:          ServiceConfigID,
@@ -133,7 +134,7 @@ func UpdateServiceConfig(c context.Context) error {
 	}
 	newConfig.Data, err = proto.Marshal(settings)
 	if err != nil {
-		return fmt.Errorf("could not marshal proto into binary\n%s", newConfig.Text)
+		return nil, fmt.Errorf("could not marshal proto into binary\n%s", newConfig.Text)
 	}
 
 	// Do the revision check & swap in a datastore transaction.
@@ -160,11 +161,11 @@ func UpdateServiceConfig(c context.Context) error {
 	}, nil)
 
 	if err != nil {
-		return fmt.Errorf("failed to update config entry in transaction", err)
+		return nil, fmt.Errorf("failed to update config entry in transaction", err)
 	}
 	logging.Infof(c, "successfully updated to new config")
 
-	return nil
+	return settings, nil
 }
 
 // UpdateProjectConfigs internal project configuration based off luci-config.

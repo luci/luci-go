@@ -38,7 +38,7 @@ func TestBuilder(t *testing.T) {
 		c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC)
 		c = testconfig.WithCommonClient(c, memcfg.New(bktConfigFull))
 		// Update the service config so that the settings are loaded.
-		err := common.UpdateServiceConfig(c)
+		_, err := common.UpdateServiceConfig(c)
 		So(err, ShouldBeNil)
 
 		for _, tc := range testCases {
@@ -74,6 +74,7 @@ func TestBuilder(t *testing.T) {
 var bktConfig = `
 buildbucket: {
 	host: "debug"
+	project: "debug"
 }
 `
 

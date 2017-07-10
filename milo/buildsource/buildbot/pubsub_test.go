@@ -71,9 +71,9 @@ func newCombinedPsBody(bs []*buildbotBuild, m *buildbotMaster, internal bool) io
 	if internal {
 		sub = "projects/luci-milo/subscriptions/buildbot-private"
 	}
-	msg := pubSubSubscription{
+	msg := common.PubSubSubscription{
 		Subscription: sub,
-		Message: pubSubMessage{
+		Message: common.PubSubMessage{
 			Data: base64.StdEncoding.EncodeToString(b.Bytes()),
 		},
 	}
@@ -92,7 +92,7 @@ func TestPubSub(t *testing.T) {
 			IdentityGroups: []string{"all"},
 		})
 		// Update the service config so that the settings are loaded.
-		err := common.UpdateServiceConfig(c)
+		_, err := common.UpdateServiceConfig(c)
 		So(err, ShouldBeNil)
 
 		rand.Seed(5)

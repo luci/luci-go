@@ -29,7 +29,7 @@ func TestConfig(t *testing.T) {
 		Convey("Tests about global configs", func() {
 			Convey("Read a config before anything is set", func() {
 				c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
-				err := UpdateServiceConfig(c)
+				_, err := UpdateServiceConfig(c)
 				So(err, ShouldResemble, errors.New("could not load settings.cfg from luci-config: no such config"))
 				settings := GetSettings(c)
 				So(settings.Buildbot.InternalReader, ShouldEqual, "")
@@ -39,16 +39,17 @@ func TestConfig(t *testing.T) {
 					"settings.cfg": settingsCfg,
 				}
 				c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
-				err := UpdateServiceConfig(c)
+				rSettings, err := UpdateServiceConfig(c)
 				So(err, ShouldBeNil)
 				settings := GetSettings(c)
+				So(rSettings, ShouldResemble, settings)
 				So(settings.Buildbot.InternalReader, ShouldEqual, "googlers")
 			})
 		})
 
 		Convey("Send update", func() {
 			c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
-			err := UpdateServiceConfig(c)
+			_, err := UpdateServiceConfig(c)
 			So(err, ShouldBeNil)
 			// Send update here
 			err = UpdateProjectConfigs(c)
@@ -72,7 +73,7 @@ func TestConfig(t *testing.T) {
 
 		Convey("Reject duplicate configs.", func() {
 			c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
-			err := UpdateServiceConfig(c)
+			_, err := UpdateServiceConfig(c)
 			So(err, ShouldBeNil)
 			mockedConfigs["projects/bar.git"] = memcfg.ConfigSet{"luci-milo.cfg": barCfg}
 
