@@ -2,8 +2,10 @@
 // Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
-// Package logging implements Logger, a gRPC glog.Logger implementation backed
+// Package logging implements a gRPC glog.Logger implementation backed
 // by a github.com/luci/luci-go/common/logging Logger.
+//
+// The logger can be installed by calling Install.
 package logging
 
 import (
@@ -11,81 +13,122 @@ import (
 	"runtime"
 	"strings"
 
-	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/logging"
 
 	"google.golang.org/grpc/grpclog"
 )
 
-type grpcLogger struct {
-	// Base is the base logger instance.
-	base log.Logger
+// Suppress is a sentinel logging level that instructs the logger to suppress
+// all non-fatal logging output. This is NOT a valid logging.Level, and should
+// not be used as such.
+var Suppress = logging.Level(logging.Error + 1)
 
-	// logPrints is true if Print statements should be logged.
-	logPrints bool
+type grpcLogger struct {
+	base   logging.Logger
+	vLevel int
 }
 
 // Install installs a logger as the gRPC library's logger. The installation is
 // not protected by a mutex, so this must be set somewhere that atomic access is
 // guaranteed.
-func Install(base log.Logger, logPrints bool) {
-	grpclog.SetLogger(&grpcLogger{
-		base:      base,
-		logPrints: logPrints,
+//
+// A special logging level, "Suppress", can be provided to suppress all
+// non-fatal logging output .
+//
+// gRPC V=level and error terminology translation is as follows:
+// - V=0, ERROR (low verbosity) is logged at logging.ERROR level.
+// - V=1, WARNING (medium verbosity) is logged at logging.WARNING level.
+// - V=2, INFO (high verbosity) is logged at logging.DEBUG level.
+func Install(base logging.Logger, level logging.Level) {
+	grpclog.SetLoggerV2(&grpcLogger{
+		base:   base,
+		vLevel: translateLevel(level),
 	})
 }
 
-func makeArgFormatString(args []interface{}) string {
-	if len(args) == 0 {
-		return ""
+func (gl *grpcLogger) Info(args ...interface{}) {
+	if gl.V(2) {
+		gl.base.LogCall(logging.Debug, 2, makeArgFormatString(args), args)
 	}
-	return strings.TrimSuffix(strings.Repeat("%v ", len(args)), " ")
+}
+
+func (gl *grpcLogger) Infof(format string, args ...interface{}) {
+	if gl.V(2) {
+		gl.base.LogCall(logging.Debug, 2, format, args)
+	}
+}
+
+func (gl *grpcLogger) Infoln(args ...interface{}) {
+	if gl.V(2) {
+		gl.base.LogCall(logging.Debug, 2, makeArgFormatString(args), args)
+	}
+}
+
+func (gl *grpcLogger) Warning(args ...interface{}) {
+	if gl.V(1) {
+		gl.base.LogCall(logging.Warning, 2, makeArgFormatString(args), args)
+	}
+}
+
+func (gl *grpcLogger) Warningf(format string, args ...interface{}) {
+	if gl.V(1) {
+		gl.base.LogCall(logging.Warning, 2, format, args)
+	}
+}
+
+func (gl *grpcLogger) Warningln(args ...interface{}) {
+	if gl.V(1) {
+		gl.base.LogCall(logging.Warning, 2, makeArgFormatString(args), args)
+	}
+}
+
+func (gl *grpcLogger) Error(args ...interface{}) {
+	if gl.V(0) {
+		gl.base.LogCall(logging.Error, 2, makeArgFormatString(args), args)
+	}
+}
+
+func (gl *grpcLogger) Errorf(format string, args ...interface{}) {
+	if gl.V(0) {
+		gl.base.LogCall(logging.Error, 2, format, args)
+	}
+}
+
+func (gl *grpcLogger) Errorln(args ...interface{}) {
+	if gl.V(0) {
+		gl.base.LogCall(logging.Error, 2, makeArgFormatString(args), args)
+	}
 }
 
 func (gl *grpcLogger) Fatal(args ...interface{}) {
-	gl.base.LogCall(log.Error, 2, makeArgFormatString(args), args)
+	gl.base.LogCall(logging.Error, 2, makeArgFormatString(args), args)
 	gl.logStackTraceAndDie()
 }
 
 func (gl *grpcLogger) Fatalf(format string, args ...interface{}) {
-	gl.base.LogCall(log.Error, 2, format, args)
+	gl.base.LogCall(logging.Error, 2, format, args)
 	gl.logStackTraceAndDie()
 }
 
 func (gl *grpcLogger) Fatalln(args ...interface{}) {
-	gl.base.LogCall(log.Error, 2, makeArgFormatString(args), args)
+	gl.base.LogCall(logging.Error, 2, makeArgFormatString(args), args)
 	gl.logStackTraceAndDie()
 }
 
-func (gl *grpcLogger) Print(args ...interface{}) {
-	if !gl.logPrints {
-		return
-	}
-	gl.base.LogCall(log.Info, 2, makeArgFormatString(args), args)
-}
-
-func (gl *grpcLogger) Printf(format string, args ...interface{}) {
-	if !gl.logPrints {
-		return
-	}
-	gl.base.LogCall(log.Info, 2, format, args)
-}
-
-func (gl *grpcLogger) Println(args ...interface{}) {
-	if !gl.logPrints {
-		return
-	}
-	gl.base.LogCall(log.Info, 2, makeArgFormatString(args), args)
+func (gl *grpcLogger) V(l int) bool {
+	return gl.vLevel >= l
 }
 
 func (gl *grpcLogger) logStackTraceAndDie() {
-	gl.base.LogCall(log.Error, 3, "Stack Trace:\n%s", []interface{}{stacks(true)})
-	osExit(255)
+	gl.base.LogCall(logging.Error, 3, "Stack Trace:\n%s", []interface{}{stacks(true)})
+	fatalExit()
 }
 
-// osExit is an operating system exit function used by "Fatal" logs. It is a
-// variable here so it can be stubbed for testing.
-var osExit = func(rc int) {
-	os.Exit(rc)
+// fatalExit is an operating system exit function used by "Fatal" logs. It is a
+// variable here so it can be stubbed for testing, but will exit with a non-zero
+// return code by default.
+var fatalExit = func() {
+	os.Exit(1)
 }
 
 // stacks is a wrapper for runtime.Stack that attempts to recover the data for
@@ -110,4 +153,25 @@ func stacks(all bool) []byte {
 		n *= 2
 	}
 	return trace
+}
+
+func makeArgFormatString(args []interface{}) string {
+	if len(args) == 0 {
+		return ""
+	}
+	return strings.TrimSuffix(strings.Repeat("%v ", len(args)), " ")
+}
+
+// translateLevel translates a "verbose level" to a logging level.
+func translateLevel(l logging.Level) int {
+	switch l {
+	case Suppress:
+		return -1
+	case logging.Error:
+		return 0
+	case logging.Warning, logging.Info:
+		return 1
+	default:
+		return 2
+	}
 }

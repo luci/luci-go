@@ -267,7 +267,13 @@ func mainImpl(ctx context.Context, defaultAuthOpts auth.Options, argv []string) 
 	// Install a global gRPC logger adapter. This routes gRPC log messages that
 	// are emitted through our logger. We only log gRPC prints if our logger is
 	// configured to log info-level or lower.
-	grpcLogging.Install(log.Get(a.Context), log.IsLogging(a.Context, log.Info))
+	logger := log.Get(a.Context)
+	if log.IsLogging(a.Context, log.Info) {
+		grpcLogging.Install(logger, log.GetLevel(a.Context))
+	} else {
+		// If we're not logging at INFO-level, suppress all gRPC logging output.
+		grpcLogging.Install(logger, grpcLogging.Suppress)
+	}
 
 	if err := a.project.Validate(); err != nil {
 		log.WithError(err).Errorf(a, "Invalid project (-project).")

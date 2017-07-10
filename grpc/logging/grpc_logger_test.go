@@ -5,18 +5,16 @@
 package logging
 
 import (
-	"sync"
+	"fmt"
 	"testing"
 
-	log "github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/logging/memlogger"
 
 	"google.golang.org/grpc/grpclog"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-type grpcInstallMutex sync.Mutex
 
 // TestGRPCLogger assumes that it has exclusive ownership of the grpclog
 // package. Each test MUST execute in series, as they install a global logger
@@ -25,71 +23,98 @@ func TestGRPCLogger(t *testing.T) {
 	Convey(`Testing gRPC logger adapter`, t, func() {
 		var base memlogger.MemLogger
 
-		// Stub the "os.Exit" functionality so we don't actually exit.
-		var exitRC int
-		osExit = func(rc int) { exitRC = rc }
+		// Override "fatalExit" so our Fatal* tests don't actually exit.
+		exitCalls := 0
+		fatalExit = func() {
+			exitCalls++
+		}
 
-		Convey(`An adapter that logs prints`, func() {
-			Install(&base, true)
+		for _, l := range []logging.Level{
+			logging.Debug,
+			logging.Info,
+			logging.Warning,
+			logging.Error,
+			Suppress,
+		} {
+			var name string
+			if l == Suppress {
+				name = "SUPPRESSED"
+			} else {
+				name = l.String()
+			}
+			Convey(fmt.Sprintf(`At logging level %q`, name), func() {
+				Convey(`Logs correctly`, func() {
+					Install(&base, l)
 
-			Convey(`Can log a fatal message.`, func() {
-				grpclog.Fatalln("foo", 1, "bar", 2)
-				So(exitRC, ShouldEqual, 255)
+					// expected will accumulate during logging based on the current test
+					// log level, "l".
+					var expected []memlogger.LogEntry
 
-				exitRC = 0
-				grpclog.Fatal("foo", 1, "bar", 2)
-				So(exitRC, ShouldEqual, 255)
+					// Info
+					grpclog.Info("info", "foo", "bar")
+					grpclog.Infof("infof(%q, %q)", "foo", "bar")
+					grpclog.Infoln("infoln", "foo", "bar")
+					switch l {
+					case Suppress, logging.Error, logging.Warning, logging.Info:
+					default:
+						expected = append(expected, []memlogger.LogEntry{
+							{logging.Debug, "info foo bar", nil, 3},
+							{logging.Debug, `infof("foo", "bar")`, nil, 3},
+							{logging.Debug, "infoln foo bar", nil, 3},
+						}...)
+					}
 
-				// Actually test the log messages for "Fatalf".
-				base.Reset()
-				exitRC = 0
-				grpclog.Fatalf("foo(%d)", 42)
-				So(exitRC, ShouldEqual, 255)
+					// Warning
+					grpclog.Warning("warning", "foo", "bar")
+					grpclog.Warningf("warningf(%q, %q)", "foo", "bar")
+					grpclog.Warningln("warningln", "foo", "bar")
+					switch l {
+					case Suppress, logging.Error:
+					default:
+						expected = append(expected, []memlogger.LogEntry{
+							{logging.Warning, "warning foo bar", nil, 3},
+							{logging.Warning, `warningf("foo", "bar")`, nil, 3},
+							{logging.Warning, "warningln foo bar", nil, 3},
+						}...)
+					}
 
-				msgs := base.Messages()
-				So(msgs, ShouldHaveLength, 2)
+					// Error
+					grpclog.Error("error", "foo", "bar")
+					grpclog.Errorf("errorf(%q, %q)", "foo", "bar")
+					grpclog.Errorln("errorln", "foo", "bar")
+					switch l {
+					case Suppress:
+					default:
+						expected = append(expected, []memlogger.LogEntry{
+							{logging.Error, "error foo bar", nil, 3},
+							{logging.Error, `errorf("foo", "bar")`, nil, 3},
+							{logging.Error, "errorln foo bar", nil, 3},
+						}...)
+					}
 
-				So(msgs[0].Level, ShouldEqual, log.Error)
-				So(msgs[0].CallDepth, ShouldEqual, 3)
-				So(msgs[0].Msg, ShouldEqual, "foo(42)")
+					So(base.Messages(), ShouldResemble, expected)
 
-				So(msgs[1].Level, ShouldEqual, log.Error)
-				So(msgs[1].CallDepth, ShouldEqual, 4)
-				So(msgs[1].Msg, ShouldStartWith, "Stack Trace:\n")
+					for i := 0; i < 3; i++ {
+						exp := i <= translateLevel(l)
+						t.Logf("Testing %q V(%d) => %v", name, i, exp)
+						So(grpclog.V(i), ShouldEqual, exp)
+					}
+				})
 
-			})
+				// XXX: disabled, pending https://github.com/grpc/grpc-go/issues/1360
+				SkipConvey(`Handles Fatal calls`, func() {
+					grpclog.Fatal("fatal", "foo", "bar")
+					grpclog.Fatalf("fatalf(%q, %q)", "foo", "bar")
+					grpclog.Fatalln("fatalln", "foo", "bar")
 
-			Convey(`Will log a print message.`, func() {
-				grpclog.Printf("foo(%d)", 42)
-				grpclog.Println("bar")
-				grpclog.Print("baz", 1337)
-				So(exitRC, ShouldEqual, 0)
-
-				msgs := base.Messages()
-				So(msgs, ShouldResemble, []memlogger.LogEntry{
-					{log.Info, "foo(42)", nil, 3},
-					{log.Info, "bar", nil, 3},
-					{log.Info, "baz 1337", nil, 3},
+					So(base.Messages(), ShouldResemble, []memlogger.LogEntry{
+						{logging.Error, "fatal foo bar", nil, 3},
+						{logging.Error, `fatalf("foo", "bar")`, nil, 3},
+						{logging.Error, "fatalln foo bar", nil, 3},
+					})
+					So(exitCalls, ShouldEqual, 3)
 				})
 			})
-		})
-
-		Convey(`An adapter that doesn't log print`, func() {
-			Install(&base, false)
-
-			Convey(`Still prints fatal messages and exits.`, func() {
-				grpclog.Fatal("Something weng wrong!")
-				So(exitRC, ShouldEqual, 255)
-				So(base.Messages(), ShouldHaveLength, 2)
-			})
-
-			Convey(`Doesn't forwawrd Print messages.`, func() {
-				grpclog.Printf("foo(%d)", 42)
-				grpclog.Println("bar")
-				grpclog.Print("baz", 1337)
-				So(exitRC, ShouldEqual, 0)
-				So(base.Messages(), ShouldHaveLength, 0)
-			})
-		})
+		}
 	})
 }
