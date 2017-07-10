@@ -11,16 +11,8 @@ message Project {
   // ID is the identifier for the project, if different from its repository name.
   string ID = 1;
 
-  // Readers is the list of gaia users or Chrome-infra-auth groups allowed to view
-  // the project.
-  repeated string Readers = 2;
-
-  // Writers is the list of gaia users or Chrome-infra-auth groups allowed to
-  // perform actions on parts of the project.
-  repeated string Writers = 3;
-
   // Consoles is a list of consoles to define under /console/
-  repeated Console Consoles = 4;
+  repeated Console Consoles = 2;
 }
 
 // Console is a waterfall definition consisting of one or more builders.
@@ -33,29 +25,34 @@ message Console {
   // displayed in the title.
   string Name = 2;
 
-  // RepoURL is the name of the git repository to display as the rows of the console.
+  // RepoURL is the URL of the git repository to display as the rows of the console.
   string RepoURL = 3;
 
   // Branch is the branch to pull commits from when displaying the console.
   string Branch = 4;
 
+  // ManifestName is the name of the manifest the waterfall looks at.
+  // By convention, Manifest Names can be:
+  // * UNPATCHED - For non patched builds, such as continuous builds
+  // * PATCHED - For patched builds, such as those on try jobs
+  string ManifestName = 5;
+
   // Builders is a list of builder configurations to display as the columns of the console.
-  repeated Builder Builders = 5;
+  repeated Builder Builders = 6;
 }
 
 // A builder is a reference to a Milo builder.
 message Builder {
-  // Module is the name of the Milo module this builder is in reference to.
-  string Module = 1;
-
-  // Name is the identifier to find the builder within the module.
-  string Name = 2;
+  // Name is the identifier to find the builder, which includes the module.
+  // Buildbot builds would be like "buildbot/chromium.linux/Linux Tests"
+  // Buildbucket builds would be like "buildbucket/luci.chromium.try/linux_chromium_rel_ng"
+  string Name = 1;
 
   // Category describes the hierarchy of the builder on the header of the
   // console as a "|" delimited list.  Neighboring builders with common ancestors
   // will be have their headers merged.
-  string Category = 3;
+  string Category = 2;
 
   // ShortName is the 1-3 character abbreviation of the builder.
-  string ShortName = 4;
+  string ShortName = 3;
 }

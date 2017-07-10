@@ -55,8 +55,7 @@ func TestConsole(t *testing.T) {
 		Convey(`Basic`, func() {
 			ref := []resp.BuilderRef{
 				{
-					Module:    "buildbot",
-					Name:      "fake/fake",
+					Name:      "buildbot/fake/fake",
 					Category:  []string{"np"},
 					ShortName: "np",
 				},

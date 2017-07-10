@@ -13,28 +13,20 @@ import (
 
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/server/router"
-
 	"github.com/luci/luci-go/milo/api/config"
 	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/buildsource/buildbot"
 	"github.com/luci/luci-go/milo/common"
 	"github.com/luci/luci-go/milo/common/gitiles"
+	"github.com/luci/luci-go/milo/common/model"
+	"github.com/luci/luci-go/server/router"
 )
 
 // Returns results of build[commit_index][builder_index]
 func GetConsoleBuilds(
-	c context.Context, module string,
-	builders []resp.BuilderRef, commits []string) (
-	[][]*resp.ConsoleBuild, error) {
+	c context.Context, builders []resp.BuilderRef, commits []string) (
+	[][]*model.BuildSummary, error) {
 
-	switch module {
-	case "buildbot":
-		return buildbot.GetConsoleBuilds(c, builders, commits)
-	// The case for buildbucket and dm goes here.
-	default:
-		panic(fmt.Errorf("Unrecognized module %s", module))
-	}
+	panic("Nothing to see here, check back later.")
 }
 
 // getConsoleDef finds the console definition as defined by any project.
@@ -57,6 +49,18 @@ func Main(ctx *router.Context) {
 	proj := p.ByName("project")
 	http.Redirect(w, r, fmt.Sprintf("/console/%s/main", proj), http.StatusMovedPermanently)
 	return
+}
+
+func summaryToConsole(bs []*model.BuildSummary) []*resp.ConsoleBuild {
+	cb := make([]*resp.ConsoleBuild, 0, len(bs))
+	for _, b := range bs {
+		cb = append(cb, &resp.ConsoleBuild{
+			// TODO(hinoka): This should link to the actual build.
+			Link:   resp.NewLink(b.BuildKey.String(), "#"),
+			Status: b.Summary.Status,
+		})
+	}
+	return cb
 }
 
 func console(c context.Context, project, name string) (*resp.Console, error) {
@@ -82,10 +86,10 @@ func console(c context.Context, project, name string) (*resp.Console, error) {
 	builders := make([]resp.BuilderRef, len(def.Builders))
 	for i, b := range def.Builders {
 		builders[i] = resp.BuilderRef{
-			b.Module, b.Name, strings.Split(b.Category, "|"), b.ShortName,
+			b.Name, strings.Split(b.Category, "|"), b.ShortName,
 		}
 	}
-	cb, err := GetConsoleBuilds(c, "buildbot", builders, commitNames)
+	cb, err := GetConsoleBuilds(c, builders, commitNames)
 	tConsole := clock.Now(c)
 	logging.Debugf(c, "Loading the console took a total of %s.", tConsole.Sub(tGitiles))
 	if err != nil {
@@ -95,7 +99,7 @@ func console(c context.Context, project, name string) (*resp.Console, error) {
 	for i, commit := range commitLinks {
 		// TODO(hinoka): Not like this
 		ccb[i].Commit = resp.Commit{Revision: commit}
-		ccb[i].Build = cb[i]
+		ccb[i].Build = summaryToConsole(cb[i])
 	}
 
 	cs := &resp.Console{

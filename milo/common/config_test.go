@@ -59,8 +59,6 @@ func TestConfig(t *testing.T) {
 				p, err := GetProject(c, "foo")
 				So(err, ShouldBeNil)
 				So(p.ID, ShouldEqual, "foo")
-				So(p.Readers, ShouldResemble, []string{"public", "foo@bar.com"})
-				So(p.Writers, ShouldResemble, []string(nil))
 			})
 
 			Convey("Check Console config updated", func() {
@@ -85,21 +83,17 @@ func TestConfig(t *testing.T) {
 
 var fooCfg = `
 ID: "foo"
-Readers: "public"
-Readers: "foo@bar.com"
 Consoles: {
 	Name: "default"
 	RepoURL: "https://chromium.googlesource.com/foo/bar"
 	Branch: "master"
 	Builders: {
-		Module: "buildbucket"
-		Name: "luci.foo.something"
+		Name: "buildbucket/luci.foo.something/bar"
 		Category: "main|something"
 		ShortName: "s"
 	}
 	Builders: {
-		Module: "buildbucket"
-		Name: "luci.foo.other"
+		Name: "buildbucket/luci.foo.other/baz"
 		Category: "main|other"
 		ShortName: "o"
 	}

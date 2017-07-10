@@ -27,10 +27,7 @@ type Console struct {
 // BuilderRef is an unambiguous reference to a builder, along with metadata on how
 // to lay it out for rendering.
 type BuilderRef struct {
-	// Module is the name of the module this builder belongs to.  This could be "buildbot",
-	// "buildbucket", or "dm".
-	Module string
-	// Name is the canonical reference to a specific builder in a specific module.
+	// Name is the canonical reference to a specific builder.
 	Name string
 	// Category is a pipe "|" deliminated list of short strings used to catagorize
 	// and organize builders.  Adjacent builders with common categories will be
