@@ -136,7 +136,7 @@ func TestGRPC(t *testing.T) {
 					Builder:  "fake",
 					BuildNum: 2,
 				})
-				So(err, ShouldResemble, grpc.Errorf(codes.Unauthenticated, "Unauthenticated request"))
+				So(err, ShouldResemble, grpc.Errorf(codes.NotFound, "Build not found"))
 			})
 		})
 	})

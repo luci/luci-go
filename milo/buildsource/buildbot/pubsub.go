@@ -68,6 +68,12 @@ type buildbotMasterEntry struct {
 	Modified time.Time
 }
 
+// buildbotMasterPublic is a struct that exists for public builtbot masters, and
+// not for internal masters. It's used for ACL checks.
+type buildbotMasterPublic struct {
+	Name string `gae:"$id"`
+}
+
 func putDSMasterJSON(
 	c context.Context, master *buildbotMaster, internal bool) error {
 	for _, builder := range master.Builders {
@@ -86,6 +92,17 @@ func putDSMasterJSON(
 		Internal: internal,
 		Modified: clock.Now(c).UTC(),
 	}
+	toPut := []interface{}{&entry}
+	publicTag := &buildbotMasterPublic{master.Name}
+	if internal {
+		// do the deletion immediately so that the 'public' bit is removed from
+		// datastore before any internal details are actually written to datastore.
+		if err := ds.Delete(c, publicTag); err != nil && err != ds.ErrNoSuchEntity {
+			return err
+		}
+	} else {
+		toPut = append(toPut, publicTag)
+	}
 	gzbs := bytes.Buffer{}
 	gsw := gzip.NewWriter(&gzbs)
 	cw := iotools.CountingWriter{Writer: gsw}
@@ -97,7 +114,7 @@ func putDSMasterJSON(
 	entry.Data = gzbs.Bytes()
 	logging.Debugf(c, "Length of json data: %d", cw.Count)
 	logging.Debugf(c, "Length of gzipped data: %d", len(entry.Data))
-	return ds.Put(c, &entry)
+	return ds.Put(c, toPut)
 }
 
 // unmarshal a gzipped byte stream into a list of buildbot builds and masters.

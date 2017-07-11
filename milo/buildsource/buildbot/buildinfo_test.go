@@ -114,6 +114,9 @@ func TestBuildInfo(t *testing.T) {
 			},
 		}
 
+		// mark foo master as public
+		So(ds.Put(c, &buildbotMasterPublic{"foo master"}), ShouldBeNil)
+
 		logdogStep := miloProto.Step{
 			Command: &miloProto.Step_Command{
 				CommandLine: []string{"foo", "bar", "baz"},
@@ -141,7 +144,8 @@ func TestBuildInfo(t *testing.T) {
 					BuilderName: "bar builder",
 					BuildNumber: 1334,
 				}, "")
-			So(err.Error(), ShouldResemble, "rpc error: code = Unauthenticated desc = ")
+			So(err, ShouldErrLike,
+				"rpc error: code = NotFound desc = Build #1334 for master \"foo master\", builder \"bar builder\" was not found")
 		})
 
 		Convey("Can load a BuildBot build by log location.", func() {

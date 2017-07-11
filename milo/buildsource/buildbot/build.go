@@ -31,6 +31,10 @@ var errBuildNotFound = errors.New("Build not found")
 // getBuild fetches a buildbot build from the datastore and checks ACLs.
 // The return code matches the master responses.
 func getBuild(c context.Context, master, builder string, buildNum int) (*buildbotBuild, error) {
+	if err := canAccessMaster(c, master); err != nil {
+		return nil, err
+	}
+
 	result := &buildbotBuild{
 		Master:      master,
 		Buildername: builder,
@@ -38,8 +42,7 @@ func getBuild(c context.Context, master, builder string, buildNum int) (*buildbo
 	}
 
 	err := datastore.Get(c, result)
-	err = checkAccess(c, err, result.Internal)
-	if err == errMasterNotFound {
+	if err == datastore.ErrNoSuchEntity {
 		err = errBuildNotFound
 	}
 

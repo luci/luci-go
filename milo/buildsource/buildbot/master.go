@@ -36,49 +36,44 @@ func decodeMasterEntry(
 	return nil
 }
 
-// User not logged in, master found, master public: nil
-// User not logged in, master not found: 401
-// User not logged in, master internal: 401
-// User logged in, master found, master internal: nil
-// User logged in, master not found: 404
-// User logged in, master found, master internal: 404
-// Other error: 500
-func checkAccess(c context.Context, err error, internal bool) error {
+// canAccessMaster returns nil iff the currently logged in user is able to see
+// internal masters, or if the given master is a known public master.
+func canAccessMaster(c context.Context, name string) error {
 	cu := auth.CurrentUser(c)
-	switch {
-	case err == ds.ErrNoSuchEntity:
-		if cu.Identity == identity.AnonymousIdentity {
-			return errNotAuth
-		}
-		return errMasterNotFound
-	case err != nil:
-		return err
-	}
-
-	// Do the ACL check if the entry is internal.
-	if internal {
-		allowed, err := common.IsAllowedInternal(c)
-		if err != nil {
+	if cu.Identity != identity.AnonymousIdentity {
+		// If we're logged in, and we can see internal stuff, return nil.
+		//
+		// getMasterEntry will maybe return 404 later if the master doesn't actually
+		// exist.
+		if allowed, err := common.IsAllowedInternal(c); err != nil || allowed {
 			return err
 		}
-		if !allowed {
-			if cu.Identity == identity.AnonymousIdentity {
-				return errNotAuth
-			}
-			return errMasterNotFound
-		}
 	}
 
-	return nil
+	// We're not logged in, or we can only see public stuff, so see if the master
+	// is public.
+	if err := ds.Get(c, &buildbotMasterPublic{name}); err == nil {
+		// It exists and is public
+		return nil
+	}
+
+	// They need to log in before we can tell them more stuff.
+	return errNotAuth
 }
 
 // getMasterEntry feches the named master and does an ACL check on the
 // current user.
 // It returns:
 func getMasterEntry(c context.Context, name string) (*buildbotMasterEntry, error) {
+	if err := canAccessMaster(c, name); err != nil {
+		return nil, err
+	}
+
 	entry := buildbotMasterEntry{Name: name}
 	err := ds.Get(c, &entry)
-	err = checkAccess(c, err, entry.Internal)
+	if err == ds.ErrNoSuchEntity {
+		err = errMasterNotFound
+	}
 	return &entry, err
 }
 
