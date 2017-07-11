@@ -40,7 +40,8 @@ func decodeMasterEntry(
 // internal masters, or if the given master is a known public master.
 func canAccessMaster(c context.Context, name string) error {
 	cu := auth.CurrentUser(c)
-	if cu.Identity != identity.AnonymousIdentity {
+	anon := cu.Identity == identity.AnonymousIdentity
+	if !anon {
 		// If we're logged in, and we can see internal stuff, return nil.
 		//
 		// getMasterEntry will maybe return 404 later if the master doesn't actually
@@ -57,8 +58,13 @@ func canAccessMaster(c context.Context, name string) error {
 		return nil
 	}
 
-	// They need to log in before we can tell them more stuff.
-	return errNotAuth
+	if anon {
+		// They need to log in before we can tell them more stuff.
+		return errNotAuth
+	}
+
+	// They are logged in but have no access, so tell them it's missing.
+	return errMasterNotFound
 }
 
 // getMasterEntry feches the named master and does an ACL check on the
