@@ -21,11 +21,9 @@ func TestNormalizeAndHash(t *testing.T) {
 		maybeTag := &vpython.PEP425Tag{Python: "maybePython", Abi: "maybeABI", Platform: "maybePlatform"}
 
 		pkgFoo := &vpython.Spec_Package{Name: "foo", Version: "1"}
+		pkgFooV2 := &vpython.Spec_Package{Name: "foo", Version: "2"}
 		pkgBar := &vpython.Spec_Package{Name: "bar", Version: "2"}
 		pkgBaz := &vpython.Spec_Package{Name: "baz", Version: "3"}
-		pkgMaybe := &vpython.Spec_Package{Name: "maybe", Version: "3", MatchTag: []*vpython.PEP425Tag{
-			{Python: maybeTag.Python},
-		}}
 
 		env := vpython.Environment{
 			Pep425Tag: []*vpython.PEP425Tag{otherTag},
@@ -55,7 +53,10 @@ func TestNormalizeAndHash(t *testing.T) {
 				So(Hash(env.Spec, &rt, "extra"), ShouldEqual, "d047eb021f50534c050aaa10c70dc7b4a9b511fab00cf67a191b2b0805f24420")
 			})
 
-			Convey(`With match tags`, func() {
+			Convey(`With a match entry, will match tags`, func() {
+				pkgMaybe := &vpython.Spec_Package{Name: "maybe", Version: "3", MatchTag: []*vpython.PEP425Tag{
+					{Python: maybeTag.Python},
+				}}
 				env.Spec.Wheel = []*vpython.Spec_Package{pkgFoo, pkgMaybe}
 
 				Convey(`Will omit the package if it doesn't match a tag`, func() {
@@ -77,15 +78,56 @@ func TestNormalizeAndHash(t *testing.T) {
 				})
 			})
 
-			Convey(`Will fail to normalize if there are duplicate wheels.`, func() {
-				env.Spec.Wheel = []*vpython.Spec_Package{pkgFoo, pkgFoo, pkgBar, pkgBaz}
-				So(NormalizeEnvironment(&env), ShouldErrLike, "duplicate spec entries")
+			Convey(`With multiple match entries, will match tags`, func() {
+				pkgMaybe := &vpython.Spec_Package{Name: "maybe", Version: "3", MatchTag: []*vpython.PEP425Tag{
+					{Python: maybeTag.Python},
+				}}
+				pkgMaybeNonexistTag := &vpython.Spec_Package{Name: "maybe", Version: "3", MatchTag: []*vpython.PEP425Tag{
+					{Python: "nonexist"},
+				}}
+				env.Spec.Wheel = []*vpython.Spec_Package{pkgMaybe, pkgFoo, pkgMaybeNonexistTag}
+				env.Pep425Tag = append(env.Pep425Tag, maybeTag)
 
-				// Even if the versions differ.
-				fooClone := *pkgFoo
-				fooClone.Version = "other"
-				env.Spec.Wheel = []*vpython.Spec_Package{pkgFoo, &fooClone, pkgBar, pkgBaz}
-				So(NormalizeEnvironment(&env), ShouldErrLike, "duplicate spec entries")
+				So(NormalizeEnvironment(&env), ShouldBeNil)
+
+				pkgMaybe.MatchTag = nil
+				So(env.Spec, ShouldResemble, &vpython.Spec{
+					Wheel: []*vpython.Spec_Package{pkgFoo, pkgMaybe},
+				})
+			})
+
+			Convey(`With one absolute and one match, will always match`, func() {
+				pkgAlways := &vpython.Spec_Package{Name: "maybe", Version: "3"}
+				pkgMaybeNonexistTag := &vpython.Spec_Package{Name: "maybe", Version: "3", MatchTag: []*vpython.PEP425Tag{
+					{Python: "nonexist"},
+				}}
+				env.Spec.Wheel = []*vpython.Spec_Package{pkgFoo, pkgMaybeNonexistTag}
+				env.Pep425Tag = append(env.Pep425Tag, maybeTag)
+
+				So(NormalizeEnvironment(&env), ShouldBeNil)
+				So(env.Spec, ShouldResemble, &vpython.Spec{
+					Wheel: []*vpython.Spec_Package{pkgFoo},
+				})
+
+				env.Spec.Wheel = []*vpython.Spec_Package{pkgAlways, pkgFoo, pkgMaybeNonexistTag}
+
+				So(NormalizeEnvironment(&env), ShouldBeNil)
+				So(env.Spec, ShouldResemble, &vpython.Spec{
+					Wheel: []*vpython.Spec_Package{pkgFoo, pkgAlways},
+				})
+			})
+
+			Convey(`Will normalize if there are duplicate wheels that share a version.`, func() {
+				env.Spec.Wheel = []*vpython.Spec_Package{pkgFoo, pkgFoo, pkgBar, pkgBaz}
+				So(NormalizeEnvironment(&env), ShouldBeNil)
+				So(env.Spec, ShouldResemble, &vpython.Spec{
+					Wheel: []*vpython.Spec_Package{pkgBar, pkgBaz, pkgFoo},
+				})
+			})
+
+			Convey(`Will fail to normalize if there are duplicate wheels with different versions.`, func() {
+				env.Spec.Wheel = []*vpython.Spec_Package{pkgFoo, pkgFooV2, pkgFoo, pkgBar, pkgBaz}
+				So(NormalizeEnvironment(&env), ShouldErrLike, "multiple versions for package")
 			})
 		})
 	})

@@ -30,6 +30,11 @@ type Options struct {
 	// supplied or probed.
 	DefaultSpec vpython.Spec
 
+	// BaseWheels is the set of wheels to include in the spec. These will always
+	// be merged into the runtime spec and normalized, such that any duplicate
+	// wheels will be deduplicated.
+	BaseWheels []*vpython.Spec_Package
+
 	// SpecLoader is the spec.Loader to use to load a specification file for a
 	// given script.
 	//
@@ -71,6 +76,10 @@ func (o *Options) resolve(c context.Context) error {
 	// Resolve our target python script.
 	if err := o.ResolveSpec(c); err != nil {
 		return errors.Annotate(err, "failed to resolve Python script").Err()
+	}
+	if len(o.BaseWheels) > 0 {
+		o.EnvConfig.Spec = o.EnvConfig.Spec.Clone()
+		o.EnvConfig.Spec.Wheel = append(o.EnvConfig.Spec.Wheel, o.BaseWheels...)
 	}
 
 	// If no environment base directory was supplied, create one under the current

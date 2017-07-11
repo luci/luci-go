@@ -70,6 +70,11 @@ type Config struct {
 	// VENVPackage is the VirtualEnv package to use for bootstrap generation.
 	VENVPackage vpythonAPI.Spec_Package
 
+	// BaseWheels is the set of wheels to include in the spec. These will always
+	// be merged into the runtime spec and normalized, such that any duplicate
+	// wheels will be deduplicated.
+	BaseWheels []*vpythonAPI.Spec_Package
+
 	// RelativePathOverride is a series of forward-slash-delimited paths to
 	// directories relative to the "vpython" executable that will be checked
 	// for Python targets prior to checking PATH. This allows bundles (e.g., CIPD)
@@ -201,7 +206,7 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 
 	c = a.logConfig.Set(c)
 
-	// If an spec path was manually specified, load and use it.
+	// If a spec path was manually specified, load and use it.
 	if a.specPath != "" {
 		var sp vpythonAPI.Spec
 		if err := spec.Load(a.specPath, &sp); err != nil {
@@ -303,6 +308,7 @@ func (cfg *Config) Main(c context.Context) int {
 				MaxScriptPathLen:  cfg.MaxScriptPathLen,
 				Loader:            cfg.PackageLoader,
 			},
+			BaseWheels: cfg.BaseWheels,
 			WaitForEnv: true,
 			Environ:    env,
 		},

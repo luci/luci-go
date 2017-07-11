@@ -42,38 +42,59 @@ func NormalizeEnvironment(env *vpython.Environment) error {
 // NormalizeSpec normalizes the specification Message such that two messages
 // with identical meaning will have identical representation.
 //
+// If multiple wheel entries exist for the same package name, they must also
+// share a version. If they don't, an error will be returned. Otherwise, they
+// will be merged into a single wheel entry.
+//
 // NormalizeSpec will prune any Wheel entries that don't match the specified
 // tags, and will remove the match entries from any remaining Wheel entries.
 func NormalizeSpec(spec *vpython.Spec, tags []*vpython.PEP425Tag) error {
-	if spec.Virtualenv != nil && len(spec.Virtualenv.MatchTag) > 0 {
-		// The VirtualEnv package may not specify a match tag.
-		spec.Virtualenv.MatchTag = nil
+	// If we have a VirtualEnv package, validate and normalize it.
+	if pkg := spec.Virtualenv; pkg != nil {
+		if len(pkg.MatchTag) > 0 {
+			// The VirtualEnv package may not specify a match tag.
+			pkg.MatchTag = nil
+		}
 	}
 
 	// Apply match filters, prune any entries that don't match, and clear the
 	// MatchTag entries for those that do.
+	//
+	// Make sure the VirtualEnv package isn't listed in the wheels list.
+	//
+	// Track the versions for each package and assert that any duplicate packages
+	// don't share a version.
 	pos := 0
-	for _, wheel := range spec.Wheel {
-		if !PackageMatches(wheel, tags) {
+	packageVersions := make(map[string]string, len(spec.Wheel))
+	for _, w := range spec.Wheel {
+		if spec.Virtualenv != nil && spec.Virtualenv.Name == w.Name {
+			return errors.Reason("wheel %q cannot be the VirtualEnv package", w.Name).Err()
+		}
+
+		// If this package has already been included, assert version consistency.
+		if v, ok := packageVersions[w.Name]; ok {
+			if v != w.Version {
+				return errors.Reason("multiple versions for package %q: %q != %q", w.Name, w.Version, v).Err()
+			}
+
+			// This package has already been included, so we can ignore it.
 			continue
 		}
 
-		wheel.MatchTag = nil
-		spec.Wheel[pos] = wheel
+		// If this package doesn't match the tag set, skip it.
+		if !PackageMatches(w, tags) {
+			continue
+		}
+
+		// Mark that this package was included, so we can assert version consistency
+		// and avoid duplicates.
+		packageVersions[w.Name] = w.Version
+		w.MatchTag = nil
+		spec.Wheel[pos] = w
 		pos++
 	}
 	spec.Wheel = spec.Wheel[:pos]
-
 	sort.Sort(specPackageSlice(spec.Wheel))
-
-	// No duplicate packages. Since we're sorted, we can just check for no
-	// immediate repetitions.
-	for i, pkg := range spec.Wheel {
-		if i > 0 && pkg.Name == spec.Wheel[i-1].Name {
-			return errors.Reason("duplicate spec entries for package %q", pkg.Name).Err()
-		}
-	}
-
 	return nil
 }
 
