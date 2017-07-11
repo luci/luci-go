@@ -27,7 +27,7 @@ import (
 // In a production system, this will be completely defaults. For testing, the
 // various services and data sources may be substituted for testing stubs.
 type BuildInfoProvider struct {
-	bl buildLoader
+	bl BuildLoader
 
 	// swarmingServiceFunc returns a swarmingService instance for the supplied
 	// parameters.
@@ -38,7 +38,7 @@ type BuildInfoProvider struct {
 
 func (p *BuildInfoProvider) newSwarmingService(c context.Context, host string) (swarmingService, error) {
 	if p.swarmingServiceFunc == nil {
-		return newProdService(c, host)
+		return NewProdService(c, host)
 	}
 	return p.swarmingServiceFunc(c, host)
 }

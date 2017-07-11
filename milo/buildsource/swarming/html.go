@@ -49,7 +49,7 @@ func getSwarmingHost(c context.Context, r *http.Request) (string, error) {
 type Build struct {
 	// bl is the buildLoader to use. A zero value is suitable for production, but
 	// this can be overridden for testing.
-	bl buildLoader
+	bl BuildLoader
 }
 
 // LogHandler writes the build log to the given response writer.
@@ -71,7 +71,7 @@ func LogHandler(c *router.Context) {
 			fmt.Sprintf("no swarming host: %s", err.Error()))
 		return
 	}
-	sf, err := newProdService(c.Context, hostname)
+	sf, err := NewProdService(c.Context, hostname)
 	if err != nil {
 		common.ErrorPage(c, errCode(err), err.Error())
 		return
@@ -108,13 +108,13 @@ func (b Build) Render(c *router.Context) {
 			fmt.Sprintf("no swarming host: %s", err.Error()))
 		return
 	}
-	sf, err := newProdService(c.Context, hostname)
+	sf, err := NewProdService(c.Context, hostname)
 	if err != nil {
 		common.ErrorPage(c, errCode(err), err.Error())
 		return
 	}
 
-	result, err := b.bl.swarmingBuildImpl(c.Context, sf, c.Request.URL.String(), id)
+	result, err := b.bl.SwarmingBuildImpl(c.Context, sf, c.Request.URL.String(), id)
 	if err != nil {
 		common.ErrorPage(c, errCode(err), err.Error())
 		return

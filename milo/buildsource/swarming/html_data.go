@@ -263,11 +263,11 @@ func BuildTestData(swarmingRelDir string) []common.TestBundle {
 
 	for _, tc := range getTestCases(swarmingRelDir) {
 		svc := debugSwarmingService{tc}
-		bl := buildLoader{
+		bl := BuildLoader{
 			logDogClientFunc: logDogClientFunc(tc),
 		}
 
-		build, err := bl.swarmingBuildImpl(c, svc, "foo", tc.name)
+		build, err := bl.SwarmingBuildImpl(c, svc, "foo", tc.name)
 		if err != nil {
 			panic(fmt.Errorf("Error while processing %s: %s", tc.name, err))
 		}

@@ -89,7 +89,7 @@ type prodSwarmingService struct {
 	client *swarming.Service
 }
 
-func newProdService(c context.Context, host string) (*prodSwarmingService, error) {
+func NewProdService(c context.Context, host string) (*prodSwarmingService, error) {
 	client, err := getSwarmingClient(c, host)
 	if err != nil {
 		return nil, err
@@ -485,11 +485,11 @@ func streamsFromAnnotatedLog(ctx context.Context, log string) (*rawpresentation.
 	return c.ToLogDogStreams()
 }
 
-// buildLoader represents the ability to load a Milo build from a Swarming task.
+// BuildLoader represents the ability to load a Milo build from a Swarming task.
 //
 // It exists so that the internal build loading functionality can be stubbed out
 // for testing.
-type buildLoader struct {
+type BuildLoader struct {
 	// logdogClientFunc returns a coordinator Client instance for the supplied
 	// parameters.
 	//
@@ -497,7 +497,7 @@ type buildLoader struct {
 	logDogClientFunc func(c context.Context, host string) (*coordinator.Client, error)
 }
 
-func (bl *buildLoader) newEmptyAnnotationStream(c context.Context, addr *types.StreamAddr) (
+func (bl *BuildLoader) newEmptyAnnotationStream(c context.Context, addr *types.StreamAddr) (
 	*rawpresentation.AnnotationStream, error) {
 
 	fn := bl.logDogClientFunc
@@ -546,7 +546,7 @@ func failedToStart(c context.Context, build *resp.MiloBuild, res *swarming.Swarm
 	return addTaskToBuild(c, host, res, build)
 }
 
-func (bl *buildLoader) swarmingBuildImpl(c context.Context, svc swarmingService, linkBase, taskID string) (*resp.MiloBuild, error) {
+func (bl *BuildLoader) SwarmingBuildImpl(c context.Context, svc swarmingService, linkBase, taskID string) (*resp.MiloBuild, error) {
 	// Fetch the data from Swarming
 	var logDogStreamAddr *types.StreamAddr
 

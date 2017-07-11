@@ -257,3 +257,40 @@ type Link struct {
 func NewLink(label, url string) *Link {
 	return &Link{Link: model.Link{Label: label, URL: url}}
 }
+
+func (comp *BuildComponent) toModelSummary() model.Summary {
+	return model.Summary{
+		Status: comp.Status,
+		Start:  comp.Started,
+		End:    comp.Finished,
+		Text:   comp.Text,
+	}
+}
+
+// SummarizeTo summarizes the data into a given model.BuildSummary.
+func (rb *MiloBuild) SummarizeTo(bs *model.BuildSummary) {
+	bs.Summary = rb.Summary.toModelSummary()
+	if rb.Summary.Status == model.Running {
+		// Assume the last step is the current step.
+		if len(rb.Components) > 0 {
+			cs := rb.Components[len(rb.Components)-1]
+			bs.CurrentStep = cs.toModelSummary()
+		}
+	}
+	if rb.SourceStamp != nil {
+		// TODO(hinoka): This should be full manifests, but lets just use single
+		// revisions for now.
+		if rb.SourceStamp.Revision != nil {
+			bs.Manifests = append(bs.Manifests, model.ManifestLink{
+				Name: "REVISION",
+				ID:   []byte(rb.SourceStamp.Revision.Label),
+			})
+		}
+		if rb.SourceStamp.Changelist != nil {
+			bs.Patches = append(bs.Patches, model.PatchInfo{
+				Link:        rb.SourceStamp.Changelist.Link,
+				AuthorEmail: rb.SourceStamp.AuthorEmail,
+			})
+		}
+	}
+}

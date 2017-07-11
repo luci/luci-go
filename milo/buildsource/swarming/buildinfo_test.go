@@ -80,7 +80,7 @@ func TestBuildInfo(t *testing.T) {
 			},
 		}
 		bip := BuildInfoProvider{
-			bl: buildLoader{
+			bl: BuildLoader{
 				logDogClientFunc: func(c context.Context, host string) (*coordinator.Client, error) {
 					if host == "" {
 						host = "example.com"
