@@ -99,8 +99,7 @@ func maybeGetBuild(
 		return nil, err
 	}
 	bl := swarming.BuildLoader{}
-	// The linkBase is not necessary for the summary.
-	return bl.SwarmingBuildImpl(c, swarmingSvc, "", task)
+	return bl.SwarmingBuildImpl(c, swarmingSvc, task)
 }
 
 // processBuild queries swarming and logdog for annotation data, then adds or

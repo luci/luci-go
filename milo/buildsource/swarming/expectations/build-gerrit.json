@@ -16,7 +16,7 @@
       [
         {
           "Label": "stdout",
-          "URL": "foo/stdout"
+          "URL": "/swarming/task/build-gerrit/stdout"
         }
       ]
     ],
@@ -55,7 +55,7 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "foo/steps/recipe_bootstrap/0/stdout"
+          "URL": "/swarming/task/build-gerrit/steps/recipe_bootstrap/0/stdout"
         }
       ],
       "SubLink": [

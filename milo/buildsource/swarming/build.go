@@ -546,7 +546,7 @@ func failedToStart(c context.Context, build *resp.MiloBuild, res *swarming.Swarm
 	return addTaskToBuild(c, host, res, build)
 }
 
-func (bl *BuildLoader) SwarmingBuildImpl(c context.Context, svc swarmingService, linkBase, taskID string) (*resp.MiloBuild, error) {
+func (bl *BuildLoader) SwarmingBuildImpl(c context.Context, svc swarmingService, taskID string) (*resp.MiloBuild, error) {
 	// Fetch the data from Swarming
 	var logDogStreamAddr *types.StreamAddr
 
@@ -657,11 +657,11 @@ func (bl *BuildLoader) SwarmingBuildImpl(c context.Context, svc swarmingService,
 		if lds != nil && lds.MainStream != nil && lds.MainStream.Data != nil {
 			s = lds.MainStream.Data
 		}
-		ub = swarmingURLBuilder(linkBase)
+		ub = swarmingURLBuilder(taskID)
 
 	default:
 		s = &miloProto.Step{}
-		ub = swarmingURLBuilder(linkBase)
+		ub = swarmingURLBuilder(taskID)
 	}
 
 	if s != nil {
@@ -727,29 +727,22 @@ func botPageURL(swarmingHostname, botID string) string {
 	return fmt.Sprintf("https://%s/restricted/bot/%s", swarmingHostname, botID)
 }
 
+// URLBase is the routing prefix for swarming endpoints. It's here so that it
+// can be a constant between the swarmingURLBuilder and the frontend.
+const URLBase = "/swarming/task"
+
 // swarmingURLBuilder is a logdog.URLBuilder that builds Milo swarming log
 // links.
 //
-// The string value for this should be the "linkBase" parameter value supplied
-// to swarmingBuildImpl.
+// It should be the swarming task id.
 type swarmingURLBuilder string
 
 func (b swarmingURLBuilder) BuildLink(l *miloProto.Link) *resp.Link {
-	u, err := url.Parse(string(b))
-	if err != nil {
-		return nil
-	}
-
 	switch t := l.Value.(type) {
 	case *miloProto.Link_LogdogStream:
 		ls := t.LogdogStream
 
-		if u.Path == "" {
-			u.Path = ls.Name
-		} else {
-			u.Path = strings.TrimSuffix(u.Path, "/") + "/" + ls.Name
-		}
-		link := resp.NewLink(l.Label, u.String())
+		link := resp.NewLink(l.Label, fmt.Sprintf("%s/%s/%s", URLBase, b, ls.Name))
 		if link.Label == "" {
 			link.Label = ls.Name
 		}

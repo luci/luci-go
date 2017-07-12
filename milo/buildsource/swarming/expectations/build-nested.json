@@ -32,7 +32,7 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "foo/steps/recipe_bootstrap/0/stdout"
+          "URL": "/swarming/task/build-nested/steps/recipe_bootstrap/0/stdout"
         }
       ],
       "Started": "2016-11-14T22:36:06Z",
@@ -49,14 +49,14 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "foo/steps/setup_build/0/stdout"
+          "URL": "/swarming/task/build-nested/steps/setup_build/0/stdout"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "run_recipe",
-            "URL": "foo/steps/setup_build/0/logs/run_recipe/0"
+            "URL": "/swarming/task/build-nested/steps/setup_build/0/logs/run_recipe/0"
           }
         ]
       ],
@@ -76,14 +76,14 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "foo/steps/install_cipd/0/stdout"
+          "URL": "/swarming/task/build-nested/steps/install_cipd/0/stdout"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "json.output",
-            "URL": "foo/steps/install_cipd/0/logs/json.output/0"
+            "URL": "/swarming/task/build-nested/steps/install_cipd/0/logs/json.output/0"
           }
         ]
       ],
@@ -103,14 +103,14 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "foo/steps/ensure_installed/0/stdout"
+          "URL": "/swarming/task/build-nested/steps/ensure_installed/0/stdout"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "json.output",
-            "URL": "foo/steps/ensure_installed/0/logs/json.output/0"
+            "URL": "/swarming/task/build-nested/steps/ensure_installed/0/logs/json.output/0"
           }
         ]
       ],
@@ -128,7 +128,7 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "foo/steps/jiri_init/0/stdout"
+          "URL": "/swarming/task/build-nested/steps/jiri_init/0/stdout"
         }
       ],
       "Started": "2016-11-14T22:36:13.68Z",
@@ -145,7 +145,7 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "foo/steps/jiri_project_clean/0/stdout"
+          "URL": "/swarming/task/build-nested/steps/jiri_project_clean/0/stdout"
         }
       ],
       "Started": "2016-11-14T22:36:14.06Z",
@@ -162,7 +162,7 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "foo/steps/jiri_import/0/stdout"
+          "URL": "/swarming/task/build-nested/steps/jiri_import/0/stdout"
         }
       ],
       "Started": "2016-11-14T22:36:14.089999872Z",
@@ -179,7 +179,7 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "foo/steps/jiri_update/0/stdout"
+          "URL": "/swarming/task/build-nested/steps/jiri_update/0/stdout"
         }
       ],
       "Started": "2016-11-14T22:36:14.089999872Z",
@@ -207,7 +207,7 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "foo/steps/build/0/steps/cleanup/0/stdout"
+          "URL": "/swarming/task/build-nested/steps/build/0/steps/cleanup/0/stdout"
         }
       ],
       "Started": "2016-11-14T22:37:14.78Z",
@@ -224,7 +224,7 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "foo/steps/build/0/steps/build/0/stdout"
+          "URL": "/swarming/task/build-nested/steps/build/0/steps/build/0/stdout"
         }
       ],
       "Started": "2016-11-14T22:37:16.329999872Z",

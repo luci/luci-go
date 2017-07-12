@@ -16,7 +16,7 @@
       [
         {
           "Label": "stdout",
-          "URL": "foo/stdout"
+          "URL": "/swarming/task/build-patch-failure/stdout"
         }
       ]
     ],
@@ -38,14 +38,14 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "foo/steps/update_scripts/0/stdout"
+          "URL": "/swarming/task/build-patch-failure/steps/update_scripts/0/stdout"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "gclient_json",
-            "URL": "foo/steps/update_scripts/0/logs/gclient_json/0"
+            "URL": "/swarming/task/build-patch-failure/steps/update_scripts/0/logs/gclient_json/0"
           }
         ]
       ],
@@ -65,14 +65,14 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "foo/steps/setup_build/0/stdout"
+          "URL": "/swarming/task/build-patch-failure/steps/setup_build/0/stdout"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "run_recipe",
-            "URL": "foo/steps/setup_build/0/logs/run_recipe/0"
+            "URL": "/swarming/task/build-patch-failure/steps/setup_build/0/logs/run_recipe/0"
           }
         ]
       ],
@@ -92,20 +92,20 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "foo/steps/bot_update/0/stdout"
+          "URL": "/swarming/task/build-patch-failure/steps/bot_update/0/stdout"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "json.output",
-            "URL": "foo/steps/bot_update/0/logs/json.output/0"
+            "URL": "/swarming/task/build-patch-failure/steps/bot_update/0/logs/json.output/0"
           }
         ],
         [
           {
             "Label": "patch error",
-            "URL": "foo/steps/bot_update/0/logs/patch_error/0"
+            "URL": "/swarming/task/build-patch-failure/steps/bot_update/0/logs/patch_error/0"
           }
         ]
       ],
@@ -125,7 +125,7 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "foo/steps/Patch_failure/0/stdout"
+          "URL": "/swarming/task/build-patch-failure/steps/Patch_failure/0/stdout"
         }
       ],
       "Started": "2016-03-14T10:00:08Z",
@@ -144,14 +144,14 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "foo/steps/recipe_failure_reason/0/stdout"
+          "URL": "/swarming/task/build-patch-failure/steps/recipe_failure_reason/0/stdout"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "failure reason",
-            "URL": "foo/steps/recipe_failure_reason/0/logs/failure_reason/0"
+            "URL": "/swarming/task/build-patch-failure/steps/recipe_failure_reason/0/logs/failure_reason/0"
           }
         ]
       ],

@@ -16,7 +16,7 @@
       [
         {
           "Label": "stdout",
-          "URL": "foo/stdout"
+          "URL": "/swarming/task/build-running/stdout"
         }
       ]
     ],
@@ -38,7 +38,7 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "foo/steps/recipe_bootstrap/0/stdout"
+          "URL": "/swarming/task/build-running/steps/recipe_bootstrap/0/stdout"
         }
       ],
       "Started": "2016-03-14T10:00:02Z",
@@ -55,14 +55,14 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "foo/steps/setup_build/0/stdout"
+          "URL": "/swarming/task/build-running/steps/setup_build/0/stdout"
         }
       ],
       "SubLink": [
         [
           {
             "Label": "run_recipe",
-            "URL": "foo/steps/setup_build/0/logs/run_recipe/0"
+            "URL": "/swarming/task/build-running/steps/setup_build/0/logs/run_recipe/0"
           }
         ]
       ],
@@ -82,7 +82,7 @@
       "MainLink": [
         {
           "Label": "stdout",
-          "URL": "foo/steps/bot_update/0/stdout"
+          "URL": "/swarming/task/build-running/steps/bot_update/0/stdout"
         }
       ],
       "Started": "2016-03-14T10:00:05Z",

@@ -29,7 +29,7 @@ func emptyPrelude(c context.Context, methodName string, req proto.Message) (cont
 	return c, nil
 }
 
-// Where it all begins!!!
+// Run sets up all the routes and runs the server.
 func Run(templatePath string) {
 	// Register plain ol' http handlers.
 	r := router.New()
@@ -47,8 +47,8 @@ func Run(templatePath string) {
 	r.GET("/console/:project", basemw, console.Main)
 
 	// Swarming
-	r.GET("/swarming/task/:id/steps/*logname", basemw, swarming.LogHandler)
-	r.GET("/swarming/task/:id", basemw, swarming.BuildHandler)
+	r.GET(swarming.URLBase+"/:id/steps/*logname", basemw, swarming.LogHandler)
+	r.GET(swarming.URLBase+"/:id", basemw, swarming.BuildHandler)
 	// Backward-compatible URLs for Swarming:
 	r.GET("/swarming/prod/:id/steps/*logname", basemw, swarming.LogHandler)
 	r.GET("/swarming/prod/:id", basemw, swarming.BuildHandler)

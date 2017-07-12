@@ -114,7 +114,7 @@ func (b Build) Render(c *router.Context) {
 		return
 	}
 
-	result, err := b.bl.SwarmingBuildImpl(c.Context, sf, c.Request.URL.String(), id)
+	result, err := b.bl.SwarmingBuildImpl(c.Context, sf, id)
 	if err != nil {
 		common.ErrorPage(c, errCode(err), err.Error())
 		return
