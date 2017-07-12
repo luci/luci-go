@@ -1,6 +1,16 @@
-// Copyright 2016 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2016 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package errors
 
@@ -56,7 +66,7 @@ func TestAnnotation(t *testing.T) {
 				`original error: bad thing`,
 				``,
 				`GOROUTINE LINE`,
-				`#? github.com/luci/luci-go/common/errors/annotate_test.go:43 - errors.TestAnnotation.func1()`,
+				`#? github.com/luci/luci-go/common/errors/annotate_test.go:53 - errors.TestAnnotation.func1()`,
 				`  reason: 20 some error: "stringy"`,
 				`  internal reason: extra(8.200)`,
 				``,
@@ -64,7 +74,7 @@ func TestAnnotation(t *testing.T) {
 				`... skipped SOME frames in pkg "github.com/jtolds/gls"...`,
 				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
 				``,
-				`#? github.com/luci/luci-go/common/errors/annotate_test.go:99 - errors.TestAnnotation()`,
+				`#? github.com/luci/luci-go/common/errors/annotate_test.go:109 - errors.TestAnnotation()`,
 				`#? testing/testing.go:XXX - testing.tRunner()`,
 				`... skipped SOME frames in pkg "runtime"...`,
 			})
@@ -80,7 +90,7 @@ func TestAnnotation(t *testing.T) {
 				`original error: bad thing`,
 				``,
 				`GOROUTINE LINE`,
-				`#? github.com/luci/luci-go/common/errors/annotate_test.go:43 - errors.TestAnnotation.func1()`,
+				`#? github.com/luci/luci-go/common/errors/annotate_test.go:53 - errors.TestAnnotation.func1()`,
 				`  annotation #0:`,
 				`    reason: outer frame outer`,
 				`  annotation #1:`,
@@ -91,7 +101,7 @@ func TestAnnotation(t *testing.T) {
 				`... skipped SOME frames in pkg "github.com/jtolds/gls"...`,
 				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
 				``,
-				`#? github.com/luci/luci-go/common/errors/annotate_test.go:99 - errors.TestAnnotation()`,
+				`#? github.com/luci/luci-go/common/errors/annotate_test.go:109 - errors.TestAnnotation()`,
 				`#? testing/testing.go:XXX - testing.tRunner()`,
 				`... skipped SOME frames in pkg "runtime"...`,
 			})

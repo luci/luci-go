@@ -1,6 +1,16 @@
-// Copyright 2016 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2016 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package errors
 
@@ -76,35 +86,35 @@ func ExampleAnnotate() {
 	//
 	// full error:
 	// GOROUTINE LINE
-	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:14 - errors.someProcessingFunction()
+	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:24 - errors.someProcessingFunction()
 	//   reason: bad number: 1
 	//
-	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:16 - errors.someProcessingFunction()
+	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:26 - errors.someProcessingFunction()
 	//   internal reason: val(2)
 	//
-	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:16 - errors.someProcessingFunction()
+	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:26 - errors.someProcessingFunction()
 	//   internal reason: val(3)
 	//
 	// From frame 2 to 3, the following wrappers were found:
 	//   unknown wrapper *errors.MiscWrappedError
 	//
-	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:25 - errors.someLibFunc()
+	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:35 - errors.someLibFunc()
 	//   reason: processing 3
 	//   internal reason: secret(value)/i(0)
 	//
 	// From frame 3 to 4, the following wrappers were found:
 	//   internal reason: MultiError 1/1: following first non-nil error.
 	//
-	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:49 - errors.someIntermediateFunc.func1()
+	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:59 - errors.someIntermediateFunc.func1()
 	//   reason: could not process
 	//
 	// ... skipped SOME frames in pkg "runtime"...
 	//
 	// GOROUTINE LINE
-	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:58 - errors.someIntermediateFunc()
+	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:68 - errors.someIntermediateFunc()
 	//   reason: while processing [3]
 	//
-	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:64 - errors.ExampleAnnotate()
+	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:74 - errors.ExampleAnnotate()
 	//   reason: top level
 	//
 	// #? testing/example.go:XXX - testing.runExample()
