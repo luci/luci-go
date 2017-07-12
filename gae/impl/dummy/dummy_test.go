@@ -56,6 +56,16 @@ func TestContextAccess(t *testing.T) {
 				defer p()
 				infoS.Raw(c).Datacenter()
 			}, ShouldPanicWith, "dummy: method Info.Datacenter is not implemented")
+
+			Convey("ModuleHostname", func() {
+				host, err := infoS.ModuleHostname(c, "", "", "")
+				So(err, ShouldBeNil)
+				So(host, ShouldEqual, "version.module.dummy-appid.example.com")
+
+				host, err = infoS.ModuleHostname(c, "wut", "10", "")
+				So(err, ShouldBeNil)
+				So(host, ShouldEqual, "10.wut.dummy-appid.example.com")
+			})
 		})
 
 		Convey("Datastore", func() {

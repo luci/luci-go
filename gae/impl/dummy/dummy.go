@@ -164,10 +164,19 @@ func (i) AppID() string               { return "appid" }
 func (i) FullyQualifiedAppID() string { return "dummy~appid" }
 func (i) GetNamespace() string        { return "dummy-namespace" }
 func (i) ModuleHostname(module, version, instance string) (string, error) {
-	panic(ni())
+	if instance != "" {
+		panic(ni())
+	}
+	if module == "" {
+		module = "module"
+	}
+	if version == "" {
+		version = "version"
+	}
+	return fmt.Sprintf("%s.%s.dummy-appid.example.com", version, module), nil
 }
-func (i) ModuleName() string                                             { panic(ni()) }
-func (i) DefaultVersionHostname() string                                 { panic(ni()) }
+func (i) ModuleName() string                                             { return "module" }
+func (i) DefaultVersionHostname() string                                 { return "dummy-appid.example.com" }
 func (i) PublicCertificates() ([]info.Certificate, error)                { panic(ni()) }
 func (i) RequestID() string                                              { panic(ni()) }
 func (i) ServiceAccount() (string, error)                                { panic(ni()) }
