@@ -35,15 +35,8 @@ type Repo struct {
 	Branch string
 }
 
-// Author is the author returned from a gitiles log request.
-type Author struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Time  string `json:"time"`
-}
-
-// Committer is the committer information returned from a gitiles log request.
-type Committer struct {
+// User is the author or the committer returned from a gitiles log request.
+type User struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
 	Time  string `json:"time"`
@@ -51,12 +44,12 @@ type Committer struct {
 
 // Log is the Log information of a commit returned from a gitiles log request.
 type Log struct {
-	Commit    string    `json:"commit"`
-	Tree      string    `json:"tree"`
-	Parents   []string  `json:"parents"`
-	Author    Author    `json:"author"`
-	Committer Committer `json:"committer"`
-	Message   string    `json:"message"`
+	Commit    string   `json:"commit"`
+	Tree      string   `json:"tree"`
+	Parents   []string `json:"parents"`
+	Author    User     `json:"author"`
+	Committer User     `json:"committer"`
+	Message   string   `json:"message"`
 }
 
 // Commit is the JSON response from querying gitiles for a log request.
