@@ -37,6 +37,12 @@ up-dev-default:
 up-dev-logs:
 	gcloud app deploy --project luci-milo-dev --version dev $(projdir)/logs/module-logs.yaml
 
+switch:
+	gcloud --project luci-milo app versions migrate $$(gae.py version -A luci-milo --app-dir $(projdir)/frontend/appengine)
+
+switch-dev:
+	gcloud --project luci-milo-dev app versions migrate $$(gae.py version -A luci-milo-dev --app-dir $(projdir)/frontend/appengine)
+
 test:
 	go test ./...
 
