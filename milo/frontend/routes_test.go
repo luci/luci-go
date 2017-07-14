@@ -30,6 +30,8 @@ import (
 
 	"github.com/luci/gae/impl/memory"
 	"github.com/luci/luci-go/common/clock/testclock"
+	"github.com/luci/luci-go/milo/api/resp"
+	"github.com/luci/luci-go/milo/buildsource/buildbot"
 	"github.com/luci/luci-go/milo/buildsource/swarming"
 	"github.com/luci/luci-go/milo/common"
 	"github.com/luci/luci-go/server/auth"
@@ -98,13 +100,13 @@ func TestPages(t *testing.T) {
 	Convey("Testing basic rendering.", t, func() {
 		c := context.Background()
 		c = memory.Use(c)
-		c = common.WithRequest(c, &http.Request{URL: &url.URL{Path: "/foobar"}})
+		c = withRequest(c, &http.Request{URL: &url.URL{Path: "/foobar"}})
 		c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
 		c = auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
 		c = settings.Use(c, settings.New(&settings.MemoryStorage{Expiration: time.Second}))
 		err := settings.Set(c, "analytics", &analyticsSettings{"UA-12345-01"}, "", "")
 		So(err, ShouldBeNil)
-		c = templates.Use(c, common.GetTemplateBundle("appengine/templates"))
+		c = templates.Use(c, getTemplateBundle("appengine/templates"))
 		for _, p := range allPackages {
 			Convey(fmt.Sprintf("Testing handler %q", p.DisplayName), func() {
 				for _, b := range p.Data() {
@@ -128,4 +130,64 @@ func TestPages(t *testing.T) {
 			})
 		}
 	})
+}
+
+// buildbotBuildTestData returns sample test data for build pages.
+func buildbotBuildTestData() []common.TestBundle {
+	c := memory.Use(context.Background())
+	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
+	bundles := []common.TestBundle{}
+	for _, tc := range buildbot.TestCases {
+		build, err := buildbot.DebugBuild(c, "../buildsource/buildbot", tc.Builder, tc.Build)
+		if err != nil {
+			panic(fmt.Errorf(
+				"Encountered error while building debug/%s/%s.\n%s",
+				tc.Builder, tc.Build, err))
+		}
+		bundles = append(bundles, common.TestBundle{
+			Description: fmt.Sprintf("Debug page: %s/%d", tc.Builder, tc.Build),
+			Data: templates.Args{
+				"Build": build,
+			},
+		})
+	}
+	return bundles
+}
+
+// buildbotBuilderTestData returns sample test data for builder pages.
+func buildbotBuilderTestData() []common.TestBundle {
+	l := resp.NewLink("Some current build", "https://some.url/path")
+	return []common.TestBundle{
+		{
+			Description: "Basic Test no builds",
+			Data: templates.Args{
+				"Builder": &resp.Builder{
+					Name: "Sample Builder",
+				},
+			},
+		},
+		{
+			Description: "Basic Test with builds",
+			Data: templates.Args{
+				"Builder": &resp.Builder{
+					Name: "Sample Builder",
+					MachinePool: &resp.MachinePool{
+						Total:        15,
+						Disconnected: 13,
+						Idle:         5,
+						Busy:         8,
+					},
+					CurrentBuilds: []*resp.BuildSummary{
+						{Link: l, Revision: "deadbeef"},
+					},
+					PendingBuilds: []*resp.BuildSummary{
+						{Link: l, Revision: "deadbeef"},
+					},
+					FinishedBuilds: []*resp.BuildSummary{
+						{Link: l, Revision: "deadbeef"},
+					},
+				},
+			},
+		},
+	}
 }

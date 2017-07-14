@@ -20,6 +20,7 @@ import (
 	"cloud.google.com/go/datastore"
 	"google.golang.org/appengine"
 
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/common"
 	"github.com/luci/luci-go/server/router"
@@ -30,16 +31,12 @@ import (
 func ConfigsHandler(c *router.Context) {
 	projects, err := common.GetAllProjects(c.Context)
 	if err != nil {
-		common.ErrorPage(
-			c, http.StatusInternalServerError,
-			"Error while getting projects: "+err.Error())
+		ErrorHandler(c, errors.Annotate(err, "Error while getting projects").Err())
 		return
 	}
 	sc, err := common.GetCurrentServiceConfig(c.Context)
 	if err != nil && err != datastore.ErrNoSuchEntity {
-		common.ErrorPage(
-			c, http.StatusInternalServerError,
-			"Error while getting service config: "+err.Error())
+		ErrorHandler(c, errors.Annotate(err, "Error while getting service config").Err())
 		return
 	}
 

@@ -29,6 +29,7 @@ import (
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	milo "github.com/luci/luci-go/milo/api/proto"
 	"github.com/luci/luci-go/milo/buildsource/rawpresentation"
+	"github.com/luci/luci-go/milo/common"
 
 	"google.golang.org/grpc/codes"
 
@@ -72,17 +73,19 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 
 	// Load the BuildBot build from datastore.
 	build, err := getBuild(c, req.MasterName, req.BuilderName, int(req.BuildNumber))
-	switch err {
-	case errBuildNotFound:
-		return nil, grpcutil.Errf(codes.NotFound, "Build #%d for master %q, builder %q was not found",
-			req.BuildNumber, req.MasterName, req.BuilderName)
-	case errNotAuth:
-		return nil, grpcutil.Unauthenticated
-	case nil:
-		// continue
-	default:
-		logging.WithError(err).Errorf(c, "Failed to load build info.")
-		return nil, grpcutil.Internal
+	if err != nil {
+		switch common.ErrorTag.In(err) {
+		case common.CodeNotFound:
+			return nil, grpcutil.Errf(codes.NotFound, "Build #%d for master %q, builder %q was not found",
+				req.BuildNumber, req.MasterName, req.BuilderName)
+
+		case common.CodeUnauthorized:
+			return nil, grpcutil.Unauthenticated
+
+		default:
+			logging.WithError(err).Errorf(c, "Failed to load build info.")
+			return nil, grpcutil.Internal
+		}
 	}
 
 	// Create a new LogDog client.

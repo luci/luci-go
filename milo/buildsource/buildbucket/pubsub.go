@@ -52,8 +52,8 @@ var (
 )
 
 type parameters struct {
-	builderName string `json:"builder_name"`
-	properties  string `json:"properties"`
+	BuilderName string `json:"builder_name"`
+	Properties  string `json:"properties"`
 }
 
 func isLUCI(build *bucketApi.ApiCommonBuildMessage) bool {
@@ -184,7 +184,7 @@ func handlePubSubBuild(c context.Context, data *psMsg) error {
 		return err
 	}
 	logging.Debugf(c, "Received from %s: build %s/%s (%s)\n%s",
-		host, build.Bucket, p.builderName, build.Status, build)
+		host, build.Bucket, p.BuilderName, build.Status, build)
 	if !isLUCI(build) {
 		logging.Infof(c, "This is not a luci build, ignoring")
 		buildCounter.Add(c, 1, build.Bucket, isLUCI(build), build.Status, "Rejected")
@@ -205,7 +205,7 @@ func handlePubSubBuild(c context.Context, data *psMsg) error {
 	buildCounter.Add(c, 1, build.Bucket, isLUCI(build), build.Status, action)
 
 	return saveBuildSummary(
-		c, datastore.MakeKey(c, "buildEntry", buildEntry.key), p.builderName, buildEntry)
+		c, datastore.MakeKey(c, "buildEntry", buildEntry.key), p.BuilderName, buildEntry)
 }
 
 // This returns 500 (Internal Server Error) if it encounters a transient error,

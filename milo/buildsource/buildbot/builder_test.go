@@ -67,31 +67,43 @@ func TestBuilder(t *testing.T) {
 	Convey(`A test Environment`, t, func() {
 
 		Convey(`Invalid builder`, func() {
-			_, err := builderImpl(c, "fake", "not real builder", 2, "")
+			_, err := GetBuilder(c, "fake", "not real builder", 2, nil)
 			So(err.Error(), ShouldResemble, "Cannot find builder \"not real builder\" in master \"fake\".\nAvailable builders: \nfake")
 		})
 		Convey(`Basic 3 build builder`, func() {
 			Convey(`Fetch 2`, func() {
-				response, err := builderImpl(c, "fake", "fake", 2, "")
+				response, err := GetBuilder(c, "fake", "fake", 2, nil)
 				So(err, ShouldBeNil)
 				So(len(response.FinishedBuilds), ShouldEqual, 2)
 				So(response.NextCursor, ShouldNotEqual, "")
 				So(response.PrevCursor, ShouldEqual, "")
 				So(response.FinishedBuilds[0].Link.Label, ShouldEqual, "#10")
 				So(response.FinishedBuilds[0].Text, ShouldResemble, []string{"failed stuff"})
+
+				cursor, err := datastore.DecodeCursor(c, response.NextCursor)
+				So(err, ShouldBeNil)
+
 				Convey(`Fetch another 2`, func() {
-					response2, err := builderImpl(c, "fake", "fake", 2, response.NextCursor)
+					response2, err := GetBuilder(c, "fake", "fake", 2, cursor)
 					So(err, ShouldBeNil)
 					So(len(response2.FinishedBuilds), ShouldEqual, 2)
 					So(response2.PrevCursor, ShouldEqual, "EMPTY")
+
+					cursor, err := datastore.DecodeCursor(c, response2.NextCursor)
+					So(err, ShouldBeNil)
+
 					Convey(`Fetch another 2`, func() {
-						response3, err := builderImpl(c, "fake", "fake", 2, response2.NextCursor)
+						response3, err := GetBuilder(c, "fake", "fake", 2, cursor)
 						So(err, ShouldBeNil)
 						So(len(response3.FinishedBuilds), ShouldEqual, 2)
 						So(response3.PrevCursor, ShouldNotEqual, "")
 						So(response3.PrevCursor, ShouldNotEqual, "EMPTY")
+
+						cursor, err := datastore.DecodeCursor(c, response3.NextCursor)
+						So(err, ShouldBeNil)
+
 						Convey(`Fetch the rest`, func() {
-							response4, err := builderImpl(c, "fake", "fake", 20, response3.NextCursor)
+							response4, err := GetBuilder(c, "fake", "fake", 20, cursor)
 							So(err, ShouldBeNil)
 							So(len(response4.FinishedBuilds), ShouldEqual, 4)
 						})

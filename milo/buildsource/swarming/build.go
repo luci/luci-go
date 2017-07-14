@@ -42,7 +42,7 @@ import (
 
 // errNotMiloJob is returned if a Swarming task is fetched that does not self-
 // identify as a Milo job.
-var errNotMiloJob = errors.New("Not a Milo Job or access denied")
+var errNotMiloJob = errors.New("Not a Milo Job or access denied", common.CodeNoAccess)
 
 // SwarmingTimeLayout is time layout used by swarming.
 const SwarmingTimeLayout = "2006-01-02T15:04:05.999999999"
@@ -777,4 +777,85 @@ func swarmingTags(v []string) map[string]string {
 		res[parts[0]] = value
 	}
 	return res
+}
+
+// BuildID is swarming's notion of a Build. See buildsource.ID.
+type BuildID struct {
+	// (Required) The Swarming TaskID.
+	TaskID string
+
+	// (Optional) The Swarming host. If empty, will use the
+	// milo-instance-configured swarming host.
+	Host string
+}
+
+// getSwarmingHost parses the swarming hostname out of the context.  If
+// none is specified, get the default swarming host out of the global
+// configs.
+func (b *BuildID) getSwarmingHost(c context.Context) (server string, err error) {
+	server = b.Host
+	settings := common.GetSettings(c)
+	if settings.Swarming == nil {
+		err := errors.New("swarming not in settings")
+		logging.WithError(err).Errorf(c, "Go configure swarming in the settings page.")
+		return "", err
+	}
+	if server == "" || server == settings.Swarming.DefaultHost {
+		return settings.Swarming.DefaultHost, nil
+	}
+	// If it is specified, validate the hostname.
+	for _, hostname := range settings.Swarming.AllowedHosts {
+		if server == hostname {
+			return server, nil
+		}
+	}
+	return "", errors.New("unknown swarming host", common.CodeParameterError)
+}
+
+func (b *BuildID) validate() error {
+	if b.TaskID == "" {
+		return errors.New("no swarming task id", common.CodeParameterError)
+	}
+	return nil
+}
+
+// Get implements buildsource.ID
+func (b *BuildID) Get(c context.Context) (*resp.MiloBuild, error) {
+	if err := b.validate(); err != nil {
+		return nil, err
+	}
+
+	hostname, err := b.getSwarmingHost(c)
+	if err != nil {
+		return nil, err
+	}
+	sf, err := NewProdService(c, hostname)
+	if err != nil {
+		return nil, err
+	}
+
+	return (&BuildLoader{}).SwarmingBuildImpl(c, sf, b.TaskID)
+}
+
+// GetLog implements buildsource.ID
+func (b *BuildID) GetLog(c context.Context, logname string) (text string, closed bool, err error) {
+	if err = b.validate(); err != nil {
+		return
+	}
+	if logname == "" {
+		err = errors.New("no log name", common.CodeParameterError)
+		return
+	}
+
+	hostname, err := b.getSwarmingHost(c)
+	if err != nil {
+		return
+	}
+
+	sf, err := NewProdService(c, hostname)
+	if err != nil {
+		return
+	}
+
+	return swarmingBuildLogImpl(c, sf, b.TaskID, logname)
 }

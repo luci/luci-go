@@ -231,15 +231,24 @@ func getDebugBuilds(c context.Context, bucket, builder string, maxCompletedBuild
 	return nil
 }
 
-type builderQuery struct {
-	Bucket  string
-	Builder string
-	Limit   int
+// parseTimestamp converts buildbucket timestamp in microseconds to time.Time
+func parseTimestamp(microseconds int64) time.Time {
+	if microseconds == 0 {
+		return time.Time{}
+	}
+	return time.Unix(microseconds/1e6, microseconds%1e6*1000).UTC()
 }
 
-// builderImpl is the implementation for getting a milo builder page from buildbucket.
-// if maxCompletedBuilds < 0, 25 is used.
-func builderImpl(c context.Context, q builderQuery) (*resp.Builder, error) {
+type newBuildsFirst []*resp.BuildSummary
+
+func (a newBuildsFirst) Len() int      { return len(a) }
+func (a newBuildsFirst) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a newBuildsFirst) Less(i, j int) bool {
+	return a[i].PendingTime.Started.After(a[j].PendingTime.Started)
+}
+
+// GetBuilder is used by buildsource.BuilderID.Get to obtain the resp.Builder.
+func GetBuilder(c context.Context, bucket, builder string, limit int) (*resp.Builder, error) {
 	settings := common.GetSettings(c)
 	if settings.Buildbucket == nil || settings.Buildbucket.Host == "" {
 		logging.Errorf(c, "missing buildbucket settings")
@@ -247,15 +256,15 @@ func builderImpl(c context.Context, q builderQuery) (*resp.Builder, error) {
 	}
 	host := settings.Buildbucket.Host
 
-	if q.Limit < 0 {
-		q.Limit = 20
+	if limit < 0 {
+		limit = 20
 	}
 
 	result := &resp.Builder{
-		Name: q.Builder,
+		Name: builder,
 	}
 	if host == "debug" {
-		return result, getDebugBuilds(c, q.Bucket, q.Builder, q.Limit, result)
+		return result, getDebugBuilds(c, bucket, builder, limit, result)
 	}
 	client, err := newBuildbucketClient(c, host)
 	if err != nil {
@@ -263,7 +272,7 @@ func builderImpl(c context.Context, q builderQuery) (*resp.Builder, error) {
 	}
 
 	fetch := func(target *[]*resp.BuildSummary, status string, count int) error {
-		builds, err := fetchBuilds(c, client, q.Bucket, q.Builder, status, count)
+		builds, err := fetchBuilds(c, client, bucket, builder, status, count)
 		if err != nil {
 			logging.Errorf(c, "Could not fetch builds with status %s: %s", status, err)
 			return err
@@ -285,23 +294,7 @@ func builderImpl(c context.Context, q builderQuery) (*resp.Builder, error) {
 			return fetch(&result.CurrentBuilds, StatusStarted, -1)
 		}
 		work <- func() error {
-			return fetch(&result.FinishedBuilds, StatusCompleted, q.Limit)
+			return fetch(&result.FinishedBuilds, StatusCompleted, limit)
 		}
 	})
-}
-
-// parseTimestamp converts buildbucket timestamp in microseconds to time.Time
-func parseTimestamp(microseconds int64) time.Time {
-	if microseconds == 0 {
-		return time.Time{}
-	}
-	return time.Unix(microseconds/1e6, microseconds%1e6*1000).UTC()
-}
-
-type newBuildsFirst []*resp.BuildSummary
-
-func (a newBuildsFirst) Len() int      { return len(a) }
-func (a newBuildsFirst) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a newBuildsFirst) Less(i, j int) bool {
-	return a[i].PendingTime.Started.After(a[j].PendingTime.Started)
 }

@@ -20,16 +20,26 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/luci/luci-go/milo/common"
+	"github.com/luci/gae/impl/cloud"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
 )
+
+// flexBase returns the basic middleware for use on appengine flex.  Flex does not
+// allow the use of appengine APIs.
+func flexBase() router.MiddlewareChain {
+	// Installs the Info and Datastore services.
+	return router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
+		c.Context = cloud.UseFlex(c.Context)
+		next(c)
+	})
+}
 
 // Where it all begins!!!
 func main() {
 	r := router.New()
 
-	base := common.FlexBase()
+	base := flexBase()
 	r.GET("/log/raw/*path", base, rawLog)
 
 	// Health check, for the appengine flex environment.

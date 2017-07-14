@@ -23,8 +23,13 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/net/context"
+
+	. "github.com/smartystreets/goconvey/convey"
+
 	"github.com/luci/gae/impl/memory"
 	ds "github.com/luci/gae/service/datastore"
+
 	"github.com/luci/luci-go/common/clock/testclock"
 	memcfg "github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
@@ -32,9 +37,7 @@ import (
 	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/auth/identity"
 
-	"golang.org/x/net/context"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/luci/luci-go/milo/common"
 )
 
 var generate = flag.Bool("test.generate", false, "Generate expectations instead of running tests.")
@@ -103,7 +106,7 @@ func TestBuild(t *testing.T) {
 				Internal:    true,
 			})
 			_, err := getBuild(c, "fake", "fake", 1)
-			So(err, ShouldResemble, errNotAuth)
+			So(common.ErrorTag.In(err), ShouldEqual, common.CodeUnauthorized)
 		})
 	})
 }

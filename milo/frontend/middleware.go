@@ -1,26 +1,30 @@
-// Copyright 2016 The LUCI Authors.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
 
-package common
+package frontend
 
 import (
 	"bytes"
 	"fmt"
 	"html/template"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/net/context"
+
+	"github.com/luci/gae/service/info"
+
+	"github.com/luci/luci-go/appengine/gaeauth/server"
+	"github.com/luci/luci-go/appengine/gaemiddleware"
+	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/server/analytics"
+	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/identity"
+	"github.com/luci/luci-go/server/router"
+	"github.com/luci/luci-go/server/templates"
 
 	"github.com/luci/luci-go/milo/api/resp"
 )
@@ -220,6 +224,29 @@ func shortHash(s string) string {
 	return s
 }
 
+// GetLimit extracts the "limit", "numbuilds", or "num_builds" http param from
+// the request, or returns "-1" implying no limit was specified.
+func GetLimit(r *http.Request) (int, error) {
+	sLimit := r.FormValue("limit")
+	if sLimit == "" {
+		sLimit = r.FormValue("numbuilds")
+		if sLimit == "" {
+			sLimit = r.FormValue("num_builds")
+			if sLimit == "" {
+				return -1, nil
+			}
+		}
+	}
+	limit, err := strconv.Atoi(sLimit)
+	if err != nil {
+		return -1, fmt.Errorf("limit parameter value %q is not a number: %s", sLimit, err)
+	}
+	if limit < 0 {
+		return -1, fmt.Errorf("limit parameter value %q is less than 0", sLimit)
+	}
+	return limit, nil
+}
+
 // pagedURL returns a self URL with the given cursor and limit paging options.
 // if limit is set to 0, then inherit whatever limit is set in request.  If
 // both are unspecified, then limit is omitted.
@@ -281,4 +308,74 @@ func init() {
 					`{{else if .Alias}}[{{.Label}}]` +
 					`{{else}}{{.Label}}{{end}}` +
 					`</a>`))
+}
+
+var authconfig *auth.Config
+
+// getTemplateBundles is used to render HTML templates. It provides base args
+// passed to all templates.  It takes a path to the template folder, relative
+// to the path of the binary during runtime.
+func getTemplateBundle(templatePath string) *templates.Bundle {
+	return &templates.Bundle{
+		Loader:          templates.FileSystemLoader(templatePath),
+		DebugMode:       info.IsDevAppServer,
+		DefaultTemplate: "base",
+		DefaultArgs: func(c context.Context) (templates.Args, error) {
+			r := getRequest(c)
+			path := r.URL.Path
+			loginURL, err := auth.LoginURL(c, path)
+			if err != nil {
+				return nil, err
+			}
+			logoutURL, err := auth.LogoutURL(c, path)
+			if err != nil {
+				return nil, err
+			}
+			return templates.Args{
+				"AppVersion":  strings.Split(info.VersionID(c), ".")[0],
+				"IsAnonymous": auth.CurrentIdentity(c) == identity.AnonymousIdentity,
+				"User":        auth.CurrentUser(c),
+				"LoginURL":    loginURL,
+				"LogoutURL":   logoutURL,
+				"CurrentTime": clock.Now(c),
+				"Analytics":   analytics.Snippet(c),
+				"RequestID":   info.RequestID(c),
+				"Request":     r,
+			}, nil
+		},
+		FuncMap: funcMap,
+	}
+}
+
+// base returns the basic LUCI appengine middlewares.
+func base(templatePath string) router.MiddlewareChain {
+	return gaemiddleware.BaseProd().Extend(
+		auth.Authenticate(server.CookieAuth),
+		withRequestMiddleware,
+		templates.WithTemplates(getTemplateBundle(templatePath)),
+	)
+}
+
+// The context key, so that we can embed the http.Request object into
+// the context.
+var requestKey = "http.request"
+
+// withRequest returns a context with the http.Request object
+// in it.
+func withRequest(c context.Context, r *http.Request) context.Context {
+	return context.WithValue(c, &requestKey, r)
+}
+
+// withRequestMiddleware is a middleware that installs a request into the context.
+// This is used for various things in the default template.
+func withRequestMiddleware(c *router.Context, next router.Handler) {
+	c.Context = withRequest(c.Context, c.Request)
+	next(c)
+}
+
+func getRequest(c context.Context) *http.Request {
+	if req, ok := c.Value(&requestKey).(*http.Request); ok {
+		return req
+	}
+	panic("No http.request found in context")
 }

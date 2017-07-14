@@ -28,6 +28,7 @@ import (
 	"github.com/luci/luci-go/common/iotools"
 	"github.com/luci/luci-go/common/logging"
 	milo "github.com/luci/luci-go/milo/api/proto"
+	"github.com/luci/luci-go/milo/common"
 	"github.com/luci/luci-go/server/auth"
 )
 
@@ -52,13 +53,15 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 		cu.Identity, req.Master, req.Builder, req.BuildNum)
 
 	b, err := getBuild(c, req.Master, req.Builder, int(req.BuildNum))
-	switch {
-	case err == errBuildNotFound:
-		return nil, grpc.Errorf(codes.NotFound, "Build not found")
-	case err == errNotAuth:
-		return nil, grpc.Errorf(codes.Unauthenticated, "Unauthenticated request")
-	case err != nil:
-		return nil, err
+	if err != nil {
+		switch common.ErrorTag.In(err) {
+		case common.CodeNotFound:
+			return nil, grpc.Errorf(codes.NotFound, "Build not found")
+		case common.CodeUnauthorized:
+			return nil, grpc.Errorf(codes.Unauthenticated, "Unauthenticated request")
+		default:
+			return nil, err
+		}
 	}
 
 	updatePostProcessBuild(b)
@@ -91,15 +94,15 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 	logging.Debugf(c, "%s is requesting %s/%s (limit %d, cursor %s)",
 		cu.Identity, req.Master, req.Builder, limit, req.Cursor)
 
-	// Perform an ACL check by fetching the master.
-	_, err := getMasterEntry(c, req.Master)
-	switch {
-	case err == errMasterNotFound:
-		return nil, grpc.Errorf(codes.NotFound, "Master not found")
-	case err == errNotAuth:
-		return nil, grpc.Errorf(codes.Unauthenticated, "Unauthenticated request")
-	case err != nil:
-		return nil, err
+	if err := canAccessMaster(c, req.Master); err != nil {
+		switch common.ErrorTag.In(err) {
+		case common.CodeNotFound:
+			return nil, grpc.Errorf(codes.NotFound, "Master not found")
+		case common.CodeUnauthorized:
+			return nil, grpc.Errorf(codes.Unauthenticated, "Unauthenticated request")
+		default:
+			return nil, err
+		}
 	}
 
 	q := datastore.NewQuery("buildbotBuild")
@@ -139,7 +142,7 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 		Builds: results,
 	}
 	if nextCursor != nil {
-		buildsJSON.Cursor = (*nextCursor).String()
+		buildsJSON.Cursor = nextCursor.String()
 	}
 	return buildsJSON, nil
 }
@@ -157,14 +160,17 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 	logging.Debugf(c, "%s is making a master request for %s", cu.Identity, req.Name)
 
 	entry, err := getMasterEntry(c, req.Name)
-	switch {
-	case err == errMasterNotFound:
-		return nil, errNotFoundGRPC
-	case err == errNotAuth:
-		return nil, grpc.Errorf(codes.Unauthenticated, "Unauthenticated request")
-	case err != nil:
-		return nil, err
+	if err != nil {
+		switch common.ErrorTag.In(err) {
+		case common.CodeNotFound:
+			return nil, errNotFoundGRPC
+		case common.CodeUnauthorized:
+			return nil, grpc.Errorf(codes.Unauthenticated, "Unauthenticated request")
+		default:
+			return nil, err
+		}
 	}
+
 	// Decompress it so we can inject current build information.
 	master := &buildbotMaster{}
 	if err = decodeMasterEntry(c, entry, master); err != nil {

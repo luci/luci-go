@@ -15,10 +15,13 @@
 package rawpresentation
 
 import (
-	"errors"
-	"fmt"
+	"strings"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/errors"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
 	miloProto "github.com/luci/luci-go/common/proto/milo"
@@ -29,9 +32,7 @@ import (
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/buildsource/rawpresentation/internal"
-
-	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
+	"github.com/luci/luci-go/milo/common"
 )
 
 const (
@@ -60,11 +61,11 @@ type AnnotationStream struct {
 // Normalize validates and normalizes the stream's parameters.
 func (as *AnnotationStream) Normalize() error {
 	if err := as.Project.Validate(); err != nil {
-		return fmt.Errorf("Invalid project name: %s", as.Project)
+		return errors.Annotate(err, "Invalid project name: %s", as.Project).Tag(common.CodeParameterError).Err()
 	}
 
 	if err := as.Path.Validate(); err != nil {
-		return fmt.Errorf("Invalid log stream path %q: %s", as.Path, err)
+		return errors.Annotate(err, "Invalid log stream path %q", as.Path).Tag(common.CodeParameterError).Err()
 	}
 
 	return nil
@@ -229,5 +230,61 @@ func (b *ViewerURLBuilder) BuildLink(l *miloProto.Link) *resp.Link {
 	default:
 		// Don't know how to render.
 		return nil
+	}
+}
+
+// BuildID implements buildsource.ID.
+type BuildID struct {
+	Host    string
+	Project cfgtypes.ProjectName
+	Path    types.StreamPath
+}
+
+// GetLog implements buildsource.ID.
+func (b *BuildID) GetLog(context.Context, string) (string, bool, error) { panic("not implemented") }
+
+// Get implements buildsource.ID.
+func (b *BuildID) Get(c context.Context) (*resp.MiloBuild, error) {
+	as := AnnotationStream{
+		Project: b.Project,
+		Path:    b.Path,
+	}
+	if err := as.Normalize(); err != nil {
+		return nil, err
+	}
+
+	// Setup our LogDog client.
+	var err error
+	if as.Client, err = NewClient(c, b.Host); err != nil {
+		return nil, errors.Annotate(err, "generating LogDog Client").Err()
+	}
+
+	// Load the Milo annotation protobuf from the annotation stream.
+	switch _, err := as.Fetch(c); errors.Unwrap(err) {
+	case nil, errNoEntries:
+
+	case coordinator.ErrNoSuchStream:
+		return nil, common.CodeNotFound.Tag().Apply(err)
+
+	case coordinator.ErrNoAccess:
+		return nil, common.CodeNoAccess.Tag().Apply(err)
+
+	case errNotMilo, errNotDatagram:
+		// The user requested a LogDog url that isn't a Milo annotation.
+		return nil, common.CodeParameterError.Tag().Apply(err)
+
+	default:
+		return nil, errors.Annotate(err, "failed to load stream").Err()
+	}
+
+	return as.toMiloBuild(c), nil
+}
+
+// NewBuildID generates a new un-validated BuildID.
+func NewBuildID(host, project, path string) *BuildID {
+	return &BuildID{
+		strings.TrimSpace(host),
+		cfgtypes.ProjectName(project),
+		types.StreamPath(strings.Trim(path, "/")),
 	}
 }

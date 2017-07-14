@@ -16,7 +16,6 @@ package buildbot
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -31,12 +30,12 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/data/stringset"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
+	"github.com/luci/luci-go/milo/common"
 	"github.com/luci/luci-go/milo/common/model"
 )
-
-var errBuildNotFound = errors.New("Build not found")
 
 // getBuild fetches a buildbot build from the datastore and checks ACLs.
 // The return code matches the master responses.
@@ -53,7 +52,7 @@ func getBuild(c context.Context, master, builder string, buildNum int) (*buildbo
 
 	err := datastore.Get(c, result)
 	if err == datastore.ErrNoSuchEntity {
-		err = errBuildNotFound
+		err = errors.New("build not found", common.CodeNotFound)
 	}
 
 	return result, err
@@ -671,4 +670,36 @@ func promoteLogDogLinks(s *buildbotStep, isInitialStep bool, linkMap map[string]
 		})
 	}
 	s.Aliases = newAliases
+}
+
+// BuildID is buildbots's notion of a Build. See buildsource.ID.
+type BuildID struct {
+	Master      string
+	BuilderName string
+	BuildNumber string
+}
+
+// GetLog implements buildsource.ID.
+func (b *BuildID) GetLog(context.Context, string) (string, bool, error) { panic("not implemented") }
+
+// Get implements buildsource.ID.
+func (b *BuildID) Get(c context.Context) (*resp.MiloBuild, error) {
+	num, err := strconv.ParseInt(b.BuildNumber, 10, 0)
+	if err != nil {
+		return nil, errors.Annotate(err, "BuildNumber is not a number").
+			Tag(common.CodeParameterError).
+			Err()
+	}
+	if num <= 0 {
+		return nil, errors.New("BuildNumber must be > 0", common.CodeParameterError)
+	}
+
+	if b.Master == "" {
+		return nil, errors.New("Master name is required", common.CodeParameterError)
+	}
+	if b.BuilderName == "" {
+		return nil, errors.New("BuilderName name is required", common.CodeParameterError)
+	}
+
+	return Build(c, b.Master, b.BuilderName, int(num))
 }

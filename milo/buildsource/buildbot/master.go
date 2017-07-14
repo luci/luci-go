@@ -23,6 +23,7 @@ import (
 	"time"
 
 	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/common"
@@ -70,11 +71,12 @@ func canAccessMaster(c context.Context, name string) error {
 
 	if anon {
 		// They need to log in before we can tell them more stuff.
-		return errNotAuth
+		return errors.New("public master not found", common.CodeUnauthorized)
+
 	}
 
 	// They are logged in but have no access, so tell them it's missing.
-	return errMasterNotFound
+	return errors.New("master not found", common.CodeNotFound)
 }
 
 // getMasterEntry feches the named master and does an ACL check on the
@@ -88,7 +90,7 @@ func getMasterEntry(c context.Context, name string) (*buildbotMasterEntry, error
 	entry := buildbotMasterEntry{Name: name}
 	err := ds.Get(c, &entry)
 	if err == ds.ErrNoSuchEntity {
-		err = errMasterNotFound
+		return nil, errors.New("master not found", common.CodeNotFound)
 	}
 	return &entry, err
 }

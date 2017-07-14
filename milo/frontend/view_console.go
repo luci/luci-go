@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2017 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package console
+package frontend
 
 import (
 	"fmt"
@@ -23,16 +23,19 @@ import (
 
 	"github.com/luci/luci-go/common/api/gitiles"
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/server/router"
+	"github.com/luci/luci-go/server/templates"
+
 	"github.com/luci/luci-go/milo/api/config"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/common"
 	"github.com/luci/luci-go/milo/common/model"
-	"github.com/luci/luci-go/server/router"
 )
 
 // Returns results of build[commit_index][builder_index]
-func GetConsoleBuilds(
+func getConsoleBuilds(
 	c context.Context, builders []resp.BuilderRef, commits []string) (
 	[][]*model.BuildSummary, error) {
 
@@ -50,15 +53,6 @@ func getConsoleDef(c context.Context, project, name string) (*config.Console, er
 	}
 	// TODO(hinoka): Remove builders that the user does not have access to.
 	return cs, nil
-}
-
-// Main is a redirect handler that redirects the user to the main console for a
-// particular project.
-func Main(ctx *router.Context) {
-	w, r, p := ctx.Writer, ctx.Request, ctx.Params
-	proj := p.ByName("project")
-	http.Redirect(w, r, fmt.Sprintf("/console/%s/main", proj), http.StatusMovedPermanently)
-	return
 }
 
 func summaryToConsole(bs []*model.BuildSummary) []*resp.ConsoleBuild {
@@ -99,7 +93,7 @@ func console(c context.Context, project, name string) (*resp.Console, error) {
 			b.Name, strings.Split(b.Category, "|"), b.ShortName,
 		}
 	}
-	cb, err := GetConsoleBuilds(c, builders, commitNames)
+	cb, err := getConsoleBuilds(c, builders, commitNames)
 	tConsole := clock.Now(c)
 	logging.Debugf(c, "Loading the console took a total of %s.", tConsole.Sub(tGitiles))
 	if err != nil {
@@ -140,4 +134,33 @@ func getCommits(c context.Context, repoURL, treeish string, limit int) ([]resp.C
 		}
 	}
 	return result, nil
+}
+
+// ConsoleHandler renders the console page.
+func ConsoleHandler(c *router.Context) {
+	project := c.Params.ByName("project")
+	if project == "" {
+		ErrorHandler(c, errors.New("Missing Project", common.CodeParameterError))
+		return
+	}
+	name := c.Params.ByName("name")
+
+	result, err := console(c.Context, project, name)
+	if err != nil {
+		ErrorHandler(c, err)
+		return
+	}
+
+	templates.MustRender(c.Context, c.Writer, "pages/console.html", templates.Args{
+		"Console": result,
+	})
+}
+
+// ConsoleMainHandler is a redirect handler that redirects the user to the main
+// console for a particular project.
+func ConsoleMainHandler(ctx *router.Context) {
+	w, r, p := ctx.Writer, ctx.Request, ctx.Params
+	proj := p.ByName("project")
+	http.Redirect(w, r, fmt.Sprintf("/console/%s/main", proj), http.StatusMovedPermanently)
+	return
 }

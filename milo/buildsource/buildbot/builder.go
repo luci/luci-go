@@ -17,7 +17,6 @@ package buildbot
 import (
 	"crypto/sha1"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -27,8 +26,10 @@ import (
 	"github.com/luci/gae/service/memcache"
 
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
+	"github.com/luci/luci-go/milo/common"
 	"golang.org/x/net/context"
 )
 
@@ -95,8 +96,8 @@ func getBuildSummary(b *buildbotBuild) *resp.BuildSummary {
 // getBuilds fetches all of the recent builds from the .  Note that
 // getBuilds() does not perform ACL checks.
 func getBuilds(
-	c context.Context, masterName, builderName string, finished bool, limit int, cursor *datastore.Cursor) (
-	[]*resp.BuildSummary, *datastore.Cursor, error) {
+	c context.Context, masterName, builderName string, finished bool, limit int, cursor datastore.Cursor) (
+	[]*resp.BuildSummary, datastore.Cursor, error) {
 
 	// TODO(hinoka): Builder specific structs.
 	result := []*resp.BuildSummary{}
@@ -106,7 +107,7 @@ func getBuilds(
 	q = q.Eq("builder", builderName)
 	q = q.Order("-number")
 	if cursor != nil {
-		q = q.Start(*cursor)
+		q = q.Start(cursor)
 	}
 	buildbots, nextCursor, err := runBuildsQuery(c, q, int32(limit))
 	if err != nil {
@@ -122,7 +123,7 @@ func getBuilds(
 // datastore cursor by creating a mapping of nextCursor -> thisCursor
 // in memcache.  maybeSetGetCursor stores the future mapping, then returns prevCursor
 // in the mapping for thisCursor -> prevCursor, if available.
-func maybeSetGetCursor(c context.Context, thisCursor, nextCursor *datastore.Cursor, limit int) (*datastore.Cursor, bool) {
+func maybeSetGetCursor(c context.Context, thisCursor, nextCursor datastore.Cursor, limit int) (datastore.Cursor, bool) {
 	key := func(c datastore.Cursor) string {
 		// Memcache key limit is 250 bytes, hash our cursor to get under this limit.
 		blob := sha1.Sum([]byte(c.String()))
@@ -130,12 +131,12 @@ func maybeSetGetCursor(c context.Context, thisCursor, nextCursor *datastore.Curs
 	}
 	// Set the next cursor to this cursor mapping, if available.
 	if nextCursor != nil {
-		item := memcache.NewItem(c, key(*nextCursor))
+		item := memcache.NewItem(c, key(nextCursor))
 		if thisCursor == nil {
 			// Make sure we know it exists, just empty
 			item.SetValue([]byte{})
 		} else {
-			item.SetValue([]byte((*thisCursor).String()))
+			item.SetValue([]byte(thisCursor.String()))
 		}
 		item.SetExpiration(24 * time.Hour)
 		memcache.Set(c, item)
@@ -144,31 +145,15 @@ func maybeSetGetCursor(c context.Context, thisCursor, nextCursor *datastore.Curs
 	if thisCursor == nil {
 		return nil, false
 	}
-	if item, err := memcache.GetKey(c, key(*thisCursor)); err == nil {
+	if item, err := memcache.GetKey(c, key(thisCursor)); err == nil {
 		if len(item.Value()) == 0 {
 			return nil, true
 		}
 		if prevCursor, err := datastore.DecodeCursor(c, string(item.Value())); err == nil {
-			return &prevCursor, true
+			return prevCursor, true
 		}
 	}
 	return nil, false
-}
-
-var errMasterNotFound = errors.New(
-	"Either the request resource was not found or you have insufficient permissions")
-var errNotAuth = errors.New("You are not authenticated, try logging in")
-
-type errBuilderNotFound struct {
-	master    string
-	builder   string
-	available []string
-}
-
-func (e errBuilderNotFound) Error() string {
-	avail := strings.Join(e.available, "\n")
-	return fmt.Sprintf("Cannot find builder %q in master %q.\nAvailable builders: \n%s",
-		e.builder, e.master, avail)
 }
 
 func summarizeSlavePool(
@@ -204,23 +189,13 @@ func summarizeSlavePool(
 	return mp
 }
 
-// builderImpl is the implementation for getting a milo builder page from buildbot.
+// GetBuilder is the implementation for getting a milo builder page from
+// buildbot.
+//
 // This gets:
-// * Current Builds from querying the master json from the datastore.
-// * Recent Builds from a cron job that backfills the recent builds.
-func builderImpl(
-	c context.Context, masterName, builderName string, limit int, cursor string) (
-	*resp.Builder, error) {
-
-	var thisCursor *datastore.Cursor
-	if cursor != "" {
-		tmpCur, err := datastore.DecodeCursor(c, cursor)
-		if err != nil {
-			return nil, fmt.Errorf("bad cursor: %s", err)
-		}
-		thisCursor = &tmpCur
-	}
-
+//   * Current Builds from querying the master json from the datastore.
+//   * Recent Builds from a cron job that backfills the recent builds.
+func GetBuilder(c context.Context, masterName, builderName string, limit int, cursor datastore.Cursor) (*resp.Builder, error) {
 	result := &resp.Builder{
 		Name: builderName,
 	}
@@ -244,7 +219,13 @@ func builderImpl(
 			keys = append(keys, k)
 		}
 		sort.Strings(keys)
-		return nil, errBuilderNotFound{masterName, builderName, keys}
+		// TODO(iannucci): add error-info-helper tags to give the error page enough
+		// information to render link-to-master and link-to-builder.
+		builders := strings.Join(keys, "\n")
+		return nil, errors.Reason(
+			"Cannot find builder %q in master %q.\nAvailable builders: \n%s",
+			builderName, masterName, builders,
+		).Tag(common.CodeNotFound).Err()
 	}
 	// Extract pending builds out of the master json.
 	result.PendingBuilds = make([]*resp.BuildSummary, len(p.PendingBuildStates))
@@ -273,20 +254,20 @@ func builderImpl(
 	result.MachinePool = summarizeSlavePool(baseURL+master.Name, p.Slaves, master.Slaves)
 
 	// This is CPU bound anyways, so there's no need to do this in parallel.
-	finishedBuilds, nextCursor, err := getBuilds(c, masterName, builderName, true, limit, thisCursor)
+	finishedBuilds, nextCursor, err := getBuilds(c, masterName, builderName, true, limit, cursor)
 	if err != nil {
 		return nil, err
 	}
-	if prevCursor, ok := maybeSetGetCursor(c, thisCursor, nextCursor, limit); ok {
+	if prevCursor, ok := maybeSetGetCursor(c, cursor, nextCursor, limit); ok {
 		if prevCursor == nil {
 			// Magic string to signal display prev without cursor
 			result.PrevCursor = "EMPTY"
 		} else {
-			result.PrevCursor = (*prevCursor).String()
+			result.PrevCursor = prevCursor.String()
 		}
 	}
 	if nextCursor != nil {
-		result.NextCursor = (*nextCursor).String()
+		result.NextCursor = nextCursor.String()
 	}
 	// Cursor is not needed for current builds.
 	currentBuilds, _, err := getBuilds(c, masterName, builderName, false, 0, nil)

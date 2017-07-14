@@ -18,14 +18,14 @@ import (
 type buildEntry struct {
 	// key is formulated via <project ID>:<build ID>.  From PubSub, project ID
 	// is determined via the topic name.
-	key string `gae:$id`
+	key string `gae:"$id"`
 
 	// buildData is the json marshalled form of
 	// a bucketApi.ApiCommonBuildMessage message.
-	buildbucketData []byte `gae:,noindex`
+	buildbucketData []byte `gae:",noindex"`
 
 	// respBuild is the resp.MiloBuild representation of the build.
-	respBuild *resp.MiloBuild `gae:,noindex`
+	respBuild *resp.MiloBuild `gae:",noindex"`
 
 	// project is the luci project name of the build.
 	project string

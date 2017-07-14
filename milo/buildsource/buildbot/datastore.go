@@ -44,13 +44,13 @@ func getBuildQueryBatcher(c context.Context) *datastore.Batcher {
 // along with a cursor.  We pass the limit here and apply it to the query as
 // an optimization because then we can create a build container of that size.
 func runBuildsQuery(c context.Context, q *datastore.Query, limit int32) (
-	[]*buildbotBuild, *datastore.Cursor, error) {
+	[]*buildbotBuild, datastore.Cursor, error) {
 
 	if limit != 0 {
 		q = q.Limit(limit)
 	}
 	builds := make([]*buildbotBuild, 0, limit)
-	var nextCursor *datastore.Cursor
+	var nextCursor datastore.Cursor
 	err := getBuildQueryBatcher(c).Run(
 		c, q, func(build *buildbotBuild, getCursor datastore.CursorCB) error {
 			builds = append(builds, build)
@@ -58,7 +58,7 @@ func runBuildsQuery(c context.Context, q *datastore.Query, limit int32) (
 			if err != nil {
 				return err
 			}
-			nextCursor = &tmpCursor
+			nextCursor = tmpCursor
 			return nil
 		})
 	return builds, nextCursor, err

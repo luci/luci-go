@@ -15,6 +15,7 @@
 package frontend
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/golang/protobuf/proto"
@@ -24,15 +25,15 @@ import (
 	"github.com/luci/luci-go/grpc/discovery"
 	"github.com/luci/luci-go/grpc/grpcmon"
 	"github.com/luci/luci-go/grpc/prpc"
+	"github.com/luci/luci-go/server/router"
+
 	milo "github.com/luci/luci-go/milo/api/proto"
+	"github.com/luci/luci-go/milo/buildsource"
 	"github.com/luci/luci-go/milo/buildsource/buildbot"
 	"github.com/luci/luci-go/milo/buildsource/buildbucket"
 	"github.com/luci/luci-go/milo/buildsource/rawpresentation"
 	"github.com/luci/luci-go/milo/buildsource/swarming"
-	"github.com/luci/luci-go/milo/common"
-	"github.com/luci/luci-go/milo/frontend/console"
 	"github.com/luci/luci-go/milo/rpc"
-	"github.com/luci/luci-go/server/router"
 )
 
 func emptyPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
@@ -45,7 +46,7 @@ func Run(templatePath string) {
 	r := router.New()
 	gaemiddleware.InstallHandlers(r)
 
-	basemw := common.Base(templatePath)
+	basemw := base(templatePath)
 	r.GET("/", basemw, frontpageHandler)
 
 	// Admin and cron endpoints.
@@ -53,27 +54,57 @@ func Run(templatePath string) {
 	r.GET("/admin/configs", basemw, ConfigsHandler)
 
 	// Console
-	r.GET("/console/:project/:name", basemw, console.ConsoleHandler)
-	r.GET("/console/:project", basemw, console.Main)
+	r.GET("/console/:project/:name", basemw, ConsoleHandler)
+	r.GET("/console/:project", basemw, ConsoleMainHandler)
 
 	// Swarming
-	r.GET(swarming.URLBase+"/:id/steps/*logname", basemw, swarming.LogHandler)
-	r.GET(swarming.URLBase+"/:id", basemw, swarming.BuildHandler)
+	r.GET(swarming.URLBase+"/:id/steps/*logname", basemw, func(c *router.Context) {
+		LogHandler(c, &swarming.BuildID{
+			TaskID: c.Params.ByName("id"),
+		}, c.Params.ByName("logname"))
+	})
+	r.GET(swarming.URLBase+"/:id", basemw, func(c *router.Context) {
+		BuildHandler(c, &swarming.BuildID{TaskID: c.Params.ByName("id")})
+	})
 	// Backward-compatible URLs for Swarming:
-	r.GET("/swarming/prod/:id/steps/*logname", basemw, swarming.LogHandler)
-	r.GET("/swarming/prod/:id", basemw, swarming.BuildHandler)
+	r.GET("/swarming/prod/:id/steps/*logname", basemw, func(c *router.Context) {
+		LogHandler(c, &swarming.BuildID{
+			TaskID: c.Params.ByName("id"),
+		}, c.Params.ByName("logname"))
+	})
+	r.GET("/swarming/prod/:id", basemw, func(c *router.Context) {
+		BuildHandler(c, &swarming.BuildID{TaskID: c.Params.ByName("id")})
+	})
 
 	// Buildbucket
-	r.GET("/buildbucket/:bucket/:builder", basemw, buildbucket.BuilderHandler)
+	r.GET("/buildbucket/:bucket/:builder", basemw, func(c *router.Context) {
+		BuilderHandler(c, buildsource.BuilderID(
+			fmt.Sprintf("buildbucket/%s/%s", c.Params.ByName("bucket"), c.Params.ByName("builder"))))
+	})
 
 	// Buildbot
-	r.GET("/buildbot/:master/:builder/:build", basemw, buildbot.BuildHandler)
-	r.GET("/buildbot/:master/:builder/", basemw, buildbot.BuilderHandler)
+	r.GET("/buildbot/:master/:builder/:build", basemw, func(c *router.Context) {
+		BuildHandler(c, &buildbot.BuildID{
+			Master:      c.Params.ByName("master"),
+			BuilderName: c.Params.ByName("builder"),
+			BuildNumber: c.Params.ByName("build"),
+		})
+	})
+	r.GET("/buildbot/:master/:builder/", basemw, func(c *router.Context) {
+		BuilderHandler(c, buildsource.BuilderID(
+			fmt.Sprintf("buildbot/%s/%s", c.Params.ByName("master"), c.Params.ByName("builder"))))
+	})
 
 	// LogDog Milo Annotation Streams.
 	// This mimicks the `logdog://logdog_host/project/*path` url scheme seen on
 	// swarming tasks.
-	r.GET("/raw/build/:logdog_host/:project/*path", basemw, rawpresentation.BuildHandler)
+	r.GET("/raw/build/:logdog_host/:project/*path", basemw, func(c *router.Context) {
+		BuildHandler(c, rawpresentation.NewBuildID(
+			c.Params.ByName("logdog_host"),
+			c.Params.ByName("project"),
+			c.Params.ByName("path"),
+		))
+	})
 
 	// PubSub subscription endpoints.
 	r.POST("/_ah/push-handlers/buildbot", basemw, buildbot.PubSubHandler)
