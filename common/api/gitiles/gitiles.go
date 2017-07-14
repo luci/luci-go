@@ -14,6 +14,8 @@
 
 package gitiles
 
+// TODO(tandrii): add tests.
+
 import (
 	"encoding/json"
 	"fmt"
@@ -21,29 +23,19 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/server/auth"
 	"golang.org/x/net/context"
 )
 
-// Repo defines a git repository.
-type Repo struct {
-	// Server is the full path to a git repository.  Server must start with https://
-	// and should not end with .git.
-	Server string
-	// Branch specifies a treeish of a git repository.  This is generally a branch.
-	Branch string
-}
-
-// User is the author or the committer returned from a gitiles log request.
+// User is the author or the committer returned from gitiles.
 type User struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
 	Time  string `json:"time"`
 }
 
-// Log is the Log information of a commit returned from a gitiles log request.
-type Log struct {
+// Commit is the information of a commit returned from gitiles.
+type Commit struct {
 	Commit    string   `json:"commit"`
 	Tree      string   `json:"tree"`
 	Parents   []string `json:"parents"`
@@ -52,10 +44,10 @@ type Log struct {
 	Message   string   `json:"message"`
 }
 
-// Commit is the JSON response from querying gitiles for a log request.
-type Commit struct {
-	Log  []Log  `json:"log"`
-	Next string `json:"next"`
+// LogResponse is the JSON response from querying gitiles for a log request.
+type LogResponse struct {
+	Log  []Commit `json:"log"`
+	Next string   `json:"next"`
 }
 
 // fixURL validates and normalizes a repoURL and treeish, and returns the
@@ -77,10 +69,10 @@ func fixURL(repoURL, treeish string) (string, error) {
 	return URL, nil
 }
 
-// GetCommits returns a list of commits based on a repo and treeish (usually
-// a branch).  This should be equivilent of a "git log <treeish>" call in
+// Log returns a list of commits based on a repo and treeish (usually
+// a branch). This should be equivilent of a "git log <treeish>" call in
 // that repository.
-func GetCommits(c context.Context, repoURL, treeish string, limit int) ([]resp.Commit, error) {
+func Log(c context.Context, repoURL, treeish string, limit int) ([]Commit, error) {
 	// TODO(hinoka): Respect the limit.
 	URL, err := fixURL(repoURL, treeish)
 	if err != nil {
@@ -102,26 +94,11 @@ func GetCommits(c context.Context, repoURL, treeish string, limit int) ([]resp.C
 	// Strip out the jsonp header, which is ")]}'"
 	trash := make([]byte, 4)
 	r.Body.Read(trash) // Read the jsonp header
-	commits := Commit{}
+	commits := LogResponse{}
 	if err := json.NewDecoder(r.Body).Decode(&commits); err != nil {
 		return nil, err
 	}
 	// TODO(hinoka): If there is a page and we have gotten less than the limit,
 	// keep making requests for the next page until we have enough commits.
-
-	// Move things into our own datastructure.
-	result := make([]resp.Commit, len(commits.Log))
-	for i, log := range commits.Log {
-		result[i] = resp.Commit{
-			AuthorName:  log.Author.Name,
-			AuthorEmail: log.Author.Email,
-			Repo:        repoURL,
-			Revision:    resp.NewLink(log.Commit, repoURL+"/+/"+log.Commit),
-			Description: log.Message,
-			Title:       strings.SplitN(log.Message, "\n", 2)[0],
-			// TODO(hinoka): Fill in the rest of resp.Commit and add those details
-			// in the html.
-		}
-	}
-	return result, nil
+	return commits.Log, nil
 }

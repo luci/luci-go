@@ -21,12 +21,12 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/api/gitiles"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/config"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/common"
-	"github.com/luci/luci-go/milo/common/gitiles"
 	"github.com/luci/luci-go/milo/common/model"
 	"github.com/luci/luci-go/server/router"
 )
@@ -79,7 +79,7 @@ func console(c context.Context, project, name string) (*resp.Console, error) {
 	if err != nil {
 		return nil, err
 	}
-	commits, err := gitiles.GetCommits(c, def.RepoURL, def.Branch, 25)
+	commits, err := getCommits(c, def.RepoURL, def.Branch, 25)
 	if err != nil {
 		return nil, err
 	}
@@ -119,4 +119,25 @@ func console(c context.Context, project, name string) (*resp.Console, error) {
 	}
 
 	return cs, nil
+}
+
+func getCommits(c context.Context, repoURL, treeish string, limit int) ([]resp.Commit, error) {
+	commits, err := gitiles.Log(c, repoURL, treeish, limit)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]resp.Commit, len(commits))
+	for i, log := range commits {
+		result[i] = resp.Commit{
+			AuthorName:  log.Author.Name,
+			AuthorEmail: log.Author.Email,
+			Repo:        repoURL,
+			Revision:    resp.NewLink(log.Commit, repoURL+"/+/"+log.Commit),
+			Description: log.Message,
+			Title:       strings.SplitN(log.Message, "\n", 2)[0],
+			// TODO(hinoka): Fill in the rest of resp.Commit and add those details
+			// in the html.
+		}
+	}
+	return result, nil
 }
