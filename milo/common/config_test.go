@@ -16,7 +16,6 @@ package common
 
 import (
 	"errors"
-	"strings"
 	"testing"
 
 	"github.com/luci/gae/impl/memory"
@@ -78,16 +77,6 @@ func TestConfig(t *testing.T) {
 				So(cs.RepoURL, ShouldEqual, "https://chromium.googlesource.com/foo/bar")
 			})
 		})
-
-		Convey("Reject duplicate configs.", func() {
-			c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
-			_, err := UpdateServiceConfig(c)
-			So(err, ShouldBeNil)
-			mockedConfigs["projects/bar.git"] = memcfg.ConfigSet{"luci-milo.cfg": barCfg}
-
-			err = UpdateProjectConfigs(c)
-			So(strings.HasPrefix(err.Error(), "Duplicate project ID"), ShouldEqual, true)
-		})
 	})
 }
 
@@ -110,10 +99,6 @@ Consoles: {
 }
 `
 
-var barCfg = `
-ID: "foo"
-`
-
 var settingsCfg = `
 buildbot: {
 	internal_reader: "googlers"
@@ -121,7 +106,7 @@ buildbot: {
 `
 
 var mockedConfigs = map[string]memcfg.ConfigSet{
-	"projects/foo.git": {
+	"projects/foo": {
 		"luci-milo.cfg": fooCfg,
 	},
 }

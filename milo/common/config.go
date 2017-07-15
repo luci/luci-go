@@ -24,6 +24,7 @@ import (
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
 	"github.com/luci/luci-go/common/data/caching/proccache"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/luci_config/server/cfgclient"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
@@ -34,13 +35,12 @@ import (
 
 // Project is a LUCI project.
 type Project struct {
-	// The ID of the project, as per self defined.  This is not the luci-config
-	// name.
+	// ID of the project, as per self defined.  This is the luci-config name.
 	ID string `gae:"$id"`
-	// The luci-config name of the project.
-	Name string
-	// The Project data in protobuf binary format.
+	// Data is the Project data in protobuf binary format.
 	Data []byte `gae:",noindex"`
+	// Revision is the latest revision we have of this project's config.
+	Revision string
 }
 
 // The key for the service config entity in datastore.
@@ -187,40 +187,51 @@ func UpdateProjectConfigs(c context.Context) error {
 	var (
 		configs []*config.Project
 		metas   []*cfgclient.Meta
+		merr    errors.MultiError
 	)
+
 	logging.Debugf(c, "fetching configs for %s", cfgName)
 	if err := cfgclient.Projects(c, cfgclient.AsService, cfgName, textproto.Slice(&configs), &metas); err != nil {
-		logging.WithError(err).Errorf(c, "Encountered error while getting project config for %s", cfgName)
-		return err
+		merr = err.(errors.MultiError)
+		// Some configs errored out, but we can continue with the ones that work still.
 	}
 
 	// A map of project ID to project.
 	projects := map[string]*Project{}
 	for i, proj := range configs {
-		projectName, _, _ := metas[i].ConfigSet.SplitProject()
+		meta := metas[i]
+		projectName, _, _ := meta.ConfigSet.SplitProject()
+		name := string(projectName)
+		projects[name] = nil
+		if merr != nil && merr[i] != nil {
+			logging.WithError(merr[i]).Warningf(c, "skipping %s due to error", name)
+			continue
+		}
 
-		logging.Infof(c, "Prossing %s", projectName)
-		if dup, ok := projects[proj.ID]; ok {
-			return fmt.Errorf(
-				"Duplicate project ID: %s. (%s and %s)", proj.ID, dup.Name, projectName)
-		}
 		p := &Project{
-			ID:   proj.ID,
-			Name: string(projectName),
+			ID:       name,
+			Revision: meta.Revision,
 		}
-		projects[proj.ID] = p
+
+		logging.Infof(c, "prossing %s", name)
 
 		var err error
 		p.Data, err = proto.Marshal(proj)
 		if err != nil {
-			return err
+			logging.WithError(err).Errorf(c, "Encountered error while processing project %s", name)
+			// Set this to nil to signal this project exists but we don't want to update it.
+			projects[name] = nil
+			continue
 		}
+		projects[name] = p
 	}
 
 	// Now load all the data into the datastore.
 	projs := make([]*Project, 0, len(projects))
 	for _, proj := range projects {
-		projs = append(projs, proj)
+		if proj != nil {
+			projs = append(projs, proj)
+		}
 	}
 	if err := datastore.Put(c, projs); err != nil {
 		return err
@@ -236,9 +247,7 @@ func UpdateProjectConfigs(c context.Context) error {
 			toDelete = append(toDelete, proj)
 		}
 	}
-	datastore.Delete(c, toDelete)
-
-	return nil
+	return datastore.Delete(c, toDelete)
 }
 
 // GetAllProjects returns all registered projects.
