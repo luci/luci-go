@@ -5,6 +5,11 @@ module: pubsub
 instance_class: F4_1G
 
 handlers:
+- url: /_ah/warmup
+  script: _go_app
+  secure: always
+  login: admin
+
 # Pubsub Handler.
 - url: /_ah/push-handlers/.*
   script: _go_app
