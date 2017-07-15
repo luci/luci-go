@@ -388,17 +388,19 @@ func properties(b *buildbotBuild) (result []*resp.PropertyGroup) {
 // blame extracts the commit and blame information from a buildbot build and
 // returns it as a list of Commits.
 func blame(b *buildbotBuild) (result []*resp.Commit) {
-	for _, c := range b.Sourcestamp.Changes {
-		files := c.GetFiles()
-		result = append(result, &resp.Commit{
-			AuthorEmail: c.Who,
-			Repo:        c.Repository,
-			CommitTime:  time.Unix(int64(c.When), 0).UTC(),
-			Revision:    resp.NewLink(c.Revision, c.Revlink),
-			Description: c.Comments,
-			Title:       strings.Split(c.Comments, "\n")[0],
-			File:        files,
-		})
+	if b.Sourcestamp != nil {
+		for _, c := range b.Sourcestamp.Changes {
+			files := c.GetFiles()
+			result = append(result, &resp.Commit{
+				AuthorEmail: c.Who,
+				Repo:        c.Repository,
+				CommitTime:  time.Unix(int64(c.When), 0).UTC(),
+				Revision:    resp.NewLink(c.Revision, c.Revlink),
+				Description: c.Comments,
+				Title:       strings.Split(c.Comments, "\n")[0],
+				File:        files,
+			})
+		}
 	}
 	return
 }

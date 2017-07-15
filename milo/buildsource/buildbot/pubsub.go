@@ -24,11 +24,12 @@ import (
 	"strings"
 	"time"
 
-	ds "github.com/luci/gae/service/datastore"
+	"github.com/luci/gae/service/datastore"
 	"github.com/luci/luci-go/common/clock"
 	"github.com/luci/luci-go/common/iotools"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/common"
+	"github.com/luci/luci-go/milo/common/model"
 	"github.com/luci/luci-go/server/router"
 
 	"golang.org/x/net/context"
@@ -107,7 +108,7 @@ func putDSMasterJSON(
 	if internal {
 		// do the deletion immediately so that the 'public' bit is removed from
 		// datastore before any internal details are actually written to datastore.
-		if err := ds.Delete(c, publicTag); err != nil && err != ds.ErrNoSuchEntity {
+		if err := datastore.Delete(c, publicTag); err != nil && err != datastore.ErrNoSuchEntity {
 			return err
 		}
 	} else {
@@ -124,7 +125,7 @@ func putDSMasterJSON(
 	entry.Data = gzbs.Bytes()
 	logging.Debugf(c, "Length of json data: %d", cw.Count)
 	logging.Debugf(c, "Length of gzipped data: %d", len(entry.Data))
-	return ds.Put(c, toPut)
+	return datastore.Put(c, toPut)
 }
 
 // unmarshal a gzipped byte stream into a list of buildbot builds and masters.
@@ -171,7 +172,7 @@ func getOSInfo(c context.Context, b *buildbotBuild, m *buildbotMaster) (
 	if m.Name == "" {
 		logging.Infof(c, "Fetching info for master %s", b.Master)
 		entry := buildbotMasterEntry{Name: b.Master}
-		err := ds.Get(c, &entry)
+		err := datastore.Get(c, &entry)
 		if err != nil {
 			logging.WithError(err).Errorf(
 				c, "Encountered error while fetching entry for %s", b.Master)
@@ -222,7 +223,18 @@ func expireBuild(c context.Context, b *buildbotBuild) error {
 	b.Results = &results
 	b.Currentstep = nil
 	b.Text = append(b.Text, "Build expired on Milo")
-	return ds.Put(c, b)
+	return datastore.Put(c, b)
+}
+
+// saveBuildSummary summerizes a build into a model.BuildSummary and then saves it.
+func saveBuildSummary(c context.Context, b *buildbotBuild) error {
+	resp := renderBuild(c, b)
+	bs := model.BuildSummary{
+		BuildKey:  datastore.KeyForObj(c, b),
+		BuilderID: fmt.Sprintf("buildbot/%s/%s", b.Master, b.Buildername),
+	}
+	resp.SummarizeTo(&bs)
+	return datastore.Put(c, &bs)
 }
 
 func doMaster(c context.Context, master *buildbotMaster, internal bool) int {
@@ -240,7 +252,7 @@ func doMaster(c context.Context, master *buildbotMaster, internal bool) int {
 
 	// Extract current builds data out of the master json, and use it to
 	// clean up expired builds.
-	q := ds.NewQuery("buildbotBuild").
+	q := datastore.NewQuery("buildbotBuild").
 		Eq("finished", false).
 		Eq("master", master.Name)
 	builds := []*buildbotBuild{}
@@ -362,7 +374,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 			Number:      build.Number,
 		}
 		buildExists := false
-		if err := ds.Get(c, existingBuild); err == nil {
+		if err := datastore.Get(c, existingBuild); err == nil {
 			if existingBuild.Finished {
 				// Never replace a completed build.
 				buildCounter.Add(
@@ -386,7 +398,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 		// Try to get the OS information on a best-effort basis.  This assumes that all
 		// builds come from one master.
 		build.OSFamily, build.OSVersion = getOSInfo(c, build, &cachedMaster)
-		err = ds.Put(c, build)
+		err = datastore.Put(c, build)
 		if err != nil {
 			if _, ok := err.(errTooBig); ok {
 				// This will never work, we don't want PubSub to retry.
@@ -396,6 +408,11 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 			}
 			// This is transient, we do want PubSub to retry.
 			logging.WithError(err).Errorf(c, "Could not save build in datastore")
+			return http.StatusInternalServerError
+		}
+		err = saveBuildSummary(c, build)
+		if err != nil {
+			logging.WithError(err).Errorf(c, "could not save build summary into datastore")
 			return http.StatusInternalServerError
 		}
 		if buildExists {
