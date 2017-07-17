@@ -7,6 +7,7 @@ Package milo is a generated protocol buffer package.
 It is generated from these files:
 	github.com/luci/luci-go/milo/api/proto/buildbot.proto
 	github.com/luci/luci-go/milo/api/proto/buildinfo.proto
+	github.com/luci/luci-go/milo/api/proto/console_git_info.proto
 
 It has these top-level messages:
 	MasterRequest
@@ -17,6 +18,7 @@ It has these top-level messages:
 	BuildbotBuildsJSON
 	BuildInfoRequest
 	BuildInfoResponse
+	ConsoleGitInfo
 */
 package milo
 

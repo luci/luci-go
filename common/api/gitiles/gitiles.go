@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/luci/luci-go/server/auth"
 	"golang.org/x/net/context"
@@ -32,6 +33,11 @@ type User struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
 	Time  string `json:"time"`
+}
+
+// GetTime returns the Time field as real data!
+func (u *User) GetTime() (time.Time, error) {
+	return time.Parse(time.ANSIC, u.Time)
 }
 
 // Commit is the information of a commit returned from gitiles.
