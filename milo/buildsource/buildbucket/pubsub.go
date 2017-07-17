@@ -6,7 +6,6 @@ package buildbucket
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -16,6 +15,7 @@ import (
 	"github.com/luci/gae/service/datastore"
 	bucketApi "github.com/luci/luci-go/common/api/buildbucket/buildbucket/v1"
 	"github.com/luci/luci-go/common/clock"
+	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/common/tsmon/field"
@@ -53,7 +53,6 @@ var (
 
 type parameters struct {
 	BuilderName string `json:"builder_name"`
-	Properties  string `json:"properties"`
 }
 
 func isLUCI(build *bucketApi.ApiCommonBuildMessage) bool {
@@ -175,10 +174,12 @@ func saveBuildSummary(
 func handlePubSubBuild(c context.Context, data *psMsg) error {
 	host := data.Hostname
 	build := &data.Build
+	// We only care about the "builder_name" key from the parameter.
 	p := parameters{}
 	err := json.Unmarshal([]byte(build.ParametersJson), &p)
 	if err != nil {
-		logging.WithError(err).Errorf(c, "could not unmarshal build parameters")
+		err = errors.Annotate(
+			err, "could not unmarshal build parameters %s", build.ParametersJson).Err()
 		buildCounter.Add(c, 1, build.Bucket, isLUCI(build), build.Status, "Rejected")
 		// Permanent error, since this is probably a type of build we do not recognize.
 		return err
