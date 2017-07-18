@@ -21,7 +21,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/luci/luci-go/common/isolated"
 	"github.com/luci/luci-go/common/isolatedclient"
@@ -72,20 +71,23 @@ func walk(root string, blacklist []string, c chan<- *walkItem) {
 			return
 		}
 	}
-	if strings.HasSuffix(root, string(filepath.Separator)) {
-		root = root[:len(root)-1]
-	}
-	rootLen := len(root) + 1
 	err := filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
 		total++
 		if err != nil {
 			return fmt.Errorf("walk(%q): %v", p, err)
 		}
-		if len(p) <= rootLen {
-			// Root directory.
-			return nil
+
+		relPath, err := filepath.Rel(root, p)
+		if err != nil {
+			return fmt.Errorf("walk: calculating relative path(%q): %v", p, err)
 		}
-		relPath := p[rootLen:]
+
+		// filepath.Rel is documented to call filepath.Clean on its result before returning it,
+		// which results in "." for an empty relative path.
+		if relPath == "." {
+			return nil // Root directory.
+		}
+
 		for _, b := range blacklist {
 			matched, _ := filepath.Match(b, relPath)
 			if !matched {
