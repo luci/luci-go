@@ -13,7 +13,11 @@ import (
 // BuilderHandler is responsible for taking a universal builder ID and rendering
 // the builder page (defined in ./appengine/templates/pages/builder.html).
 func BuilderHandler(c *router.Context, builderID buildsource.BuilderID) {
-	builder, err := builderID.Get(c.Context, c.Params.ByName("limit"), c.Params.ByName("cursor"))
+	limit := 25
+	if tLimit := GetLimit(c.Request, -1); tLimit >= 0 {
+		limit = tLimit
+	}
+	builder, err := builderID.Get(c.Context, limit, c.Request.FormValue("cursor"))
 	// TODO(iannucci, hinoka): make MiloBuild refer to annotation stream by
 	// host/prefix/path instead of by directly pulling it. Do all annotation
 	// stream rendering in the frontend.

@@ -225,26 +225,23 @@ func shortHash(s string) string {
 }
 
 // GetLimit extracts the "limit", "numbuilds", or "num_builds" http param from
-// the request, or returns "-1" implying no limit was specified.
-func GetLimit(r *http.Request) (int, error) {
+// the request, or returns def implying no limit was specified.
+func GetLimit(r *http.Request, def int) int {
 	sLimit := r.FormValue("limit")
 	if sLimit == "" {
 		sLimit = r.FormValue("numbuilds")
 		if sLimit == "" {
 			sLimit = r.FormValue("num_builds")
 			if sLimit == "" {
-				return -1, nil
+				return def
 			}
 		}
 	}
 	limit, err := strconv.Atoi(sLimit)
-	if err != nil {
-		return -1, fmt.Errorf("limit parameter value %q is not a number: %s", sLimit, err)
+	if err != nil || limit < 0 {
+		return def
 	}
-	if limit < 0 {
-		return -1, fmt.Errorf("limit parameter value %q is less than 0", sLimit)
-	}
-	return limit, nil
+	return limit
 }
 
 // pagedURL returns a self URL with the given cursor and limit paging options.
@@ -252,13 +249,7 @@ func GetLimit(r *http.Request) (int, error) {
 // both are unspecified, then limit is omitted.
 func pagedURL(r *http.Request, limit int, cursor string) string {
 	if limit == 0 {
-		var err error
-		limit, err = GetLimit(r)
-		if err != nil {
-			// This should not happen because the handler should've already validated the
-			// limit earlier in the process.
-			panic(err)
-		}
+		limit = GetLimit(r, -1)
 		if limit < 0 {
 			limit = 0
 		}

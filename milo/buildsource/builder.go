@@ -5,7 +5,6 @@
 package buildsource
 
 import (
-	"strconv"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -13,7 +12,6 @@ import (
 	"github.com/luci/gae/service/datastore"
 
 	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/buildsource/buildbot"
 	"github.com/luci/luci-go/milo/buildsource/buildbucket"
@@ -60,22 +58,8 @@ func (b BuilderID) Split() (backend, backendGroup, builderName string, err error
 
 // Get allows you to obtain the resp.Builder that corresponds with this
 // BuilderID.
-func (b BuilderID) Get(c context.Context, limitStr string, cursorStr string) (*resp.Builder, error) {
+func (b BuilderID) Get(c context.Context, limit int, cursorStr string) (*resp.Builder, error) {
 	// TODO(iannucci): replace these implementations with a BuildSummary query.
-
-	limit := 0
-	if limitStr != "" {
-		switch limitVal, err := strconv.ParseInt(limitStr, 10, 0); err {
-		case nil:
-			limit = int(limitVal)
-		default:
-			logging.WithError(err).Warningf(c, "ignoring bad limit %q", limitStr)
-		}
-	}
-	if limit <= 0 {
-		limit = 25
-	}
-
 	source, group, builder, err := b.Split()
 	if err != nil {
 		return nil, err
