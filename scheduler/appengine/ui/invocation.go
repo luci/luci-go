@@ -24,8 +24,8 @@ import (
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
 
+	"github.com/luci/luci-go/scheduler/appengine/acl"
 	"github.com/luci/luci-go/scheduler/appengine/engine"
-	"github.com/luci/luci-go/scheduler/appengine/presentation"
 )
 
 func invocationPage(c *router.Context) {
@@ -91,7 +91,7 @@ func handleInvAction(c *router.Context, cb func(string, int64) error) {
 	projectID := c.Params.ByName("ProjectID")
 	jobName := c.Params.ByName("JobName")
 	invID := c.Params.ByName("InvID")
-	if !presentation.IsJobOwner(c.Context, projectID, jobName) {
+	if !acl.IsJobOwner(c.Context, projectID, jobName) {
 		http.Error(c.Writer, "Forbidden", 403)
 		return
 	}

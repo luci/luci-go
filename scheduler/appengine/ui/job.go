@@ -23,7 +23,7 @@ import (
 
 	mc "github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/scheduler/appengine/presentation"
+	"github.com/luci/luci-go/scheduler/appengine/acl"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
@@ -103,7 +103,7 @@ func runJobAction(ctx *router.Context) {
 
 	projectID := p.ByName("ProjectID")
 	jobName := p.ByName("JobName")
-	if !presentation.IsJobOwner(c, projectID, jobName) {
+	if !acl.IsJobOwner(c, projectID, jobName) {
 		http.Error(w, "Forbidden", 403)
 		return
 	}
@@ -181,7 +181,7 @@ func abortJobAction(c *router.Context) {
 func handleJobAction(c *router.Context, cb func(string) error) {
 	projectID := c.Params.ByName("ProjectID")
 	jobName := c.Params.ByName("JobName")
-	if !presentation.IsJobOwner(c.Context, projectID, jobName) {
+	if !acl.IsJobOwner(c.Context, projectID, jobName) {
 		http.Error(c.Writer, "Forbidden", 403)
 		return
 	}

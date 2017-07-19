@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2017 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package presentation
+package acl
 
 import (
 	"golang.org/x/net/context"
@@ -20,7 +20,6 @@ import (
 	"github.com/luci/luci-go/server/auth"
 )
 
-// TODO(tandrii): move this to new acl package.
 func IsJobOwner(c context.Context, projectID, jobName string) bool {
 	// TODO(vadimsh): Do real ACLs.
 	ok, err := auth.IsMember(c, "administrators")

@@ -16,6 +16,7 @@ package apiservers
 
 import (
 	"github.com/luci/luci-go/scheduler/api/scheduler/v1"
+	"github.com/luci/luci-go/scheduler/appengine/acl"
 	"github.com/luci/luci-go/scheduler/appengine/catalog"
 	"github.com/luci/luci-go/scheduler/appengine/engine"
 	"github.com/luci/luci-go/scheduler/appengine/presentation"
@@ -146,7 +147,7 @@ func (s SchedulerServer) AbortInvocation(ctx context.Context, in *scheduler.Invo
 //// Private helpers.
 
 func runAction(ctx context.Context, jobRef *scheduler.JobRef, action func() error) (*empty.Empty, error) {
-	if !presentation.IsJobOwner(ctx, jobRef.GetProject(), jobRef.GetJob()) {
+	if !acl.IsJobOwner(ctx, jobRef.GetProject(), jobRef.GetJob()) {
 		return nil, grpc.Errorf(codes.PermissionDenied, "No permission to execute action")
 	}
 	switch err := action(); {
