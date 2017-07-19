@@ -15,9 +15,12 @@
 package model
 
 import (
+	"bytes"
 	"time"
 
 	"github.com/luci/gae/service/datastore"
+
+	"github.com/luci/luci-go/common/data/cmpbin"
 )
 
 // BuildSummary is a datastore model which is used for storing staandardized
@@ -42,40 +45,6 @@ type BuildSummary struct {
 	//   "buildbucket/<bucketname>/<buildername>"
 	BuilderID string
 
-	// KnownConsoleHash is used for backfilling and must always equal the raw
-	// value of:
-	//
-	//   sha256(sorted(ConsoleEpochs.keys())
-	//
-	// This is used to identify BuildSummaries which haven't yet been included in
-	// some new Console definition (or which have been removed from a Console
-	// definition).
-	KnownConsoleHash []byte
-
-	// ConsoleEpochs is used for backfilling, and is a series of cmpbin tuples:
-	//
-	//   (console_name[str], recorded_epoch[int])
-	//
-	// This maps which epoch (version) of a console definition this BuildSummary
-	// belongs to. Whenever a console definition changes, its epoch increases. The
-	// backfiller will then identify BuildSummary objects which are out of date
-	// and update them.
-	ConsoleEpochs [][]byte
-
-	// ConsoleTags contains query tags for the console view. These are cmpbin
-	// tuples which look like:
-	//
-	//   (console_name[str], sort_criteria[tuple], sort_values[tuple])
-	//
-	// `sort_criteria` are defined by the console definition, and will likely look
-	// like (manifest_name[str], repo_url[str]), but other sort_criteria may be
-	// added later.
-	//
-	// `sort_values` are defined by the selected sort_criteria, and will likely
-	// look like (commit_revision[str],). In any event, this string is opaque and
-	// only to be used by the console itself.
-	ConsoleTags [][]byte
-
 	// Created is the time when the Build was first created. Due to pending
 	// queues, this may be substantially before Summary.Start.
 	Created time.Time
@@ -94,4 +63,31 @@ type BuildSummary struct {
 	// We reserve the multi-patch case for advanced (multi-repo) tryjobs...
 	// Typically there will only be one patch associated with a build.
 	Patches []PatchInfo
+
+	// ManifestRevisionIndex has a single entry for each
+	//   0 ++ project ++ console ++ manifest_name ++ url ++ revision.decode('hex')
+	// which matched for this build. ++ is cmpbin concatenation.
+	//
+	// Example:
+	//   0 ++ "chromium" ++ "main" ++ "UNPATCHED" ++ "https://.../src.git" ++ deadbeef
+	//
+	// The list of interested consoles is compiled at build summarization time.
+	ManifestRevisionIndex [][]byte
+}
+
+// AddManifestRevisionIndex adds a new entry to ManifestRevisionIndex.
+//
+// `revision` should be the hex-decoded git revision.
+//
+// It's up to the caller to ensure that entries in ManifestRevisionIndex aren't
+// duplicated.
+func (bs *BuildSummary) AddManifestRevisionIndex(project, console, manifest, repoURL string, revision []byte) {
+	var buf bytes.Buffer
+	cmpbin.WriteUint(&buf, 0) // version
+	cmpbin.WriteString(&buf, project)
+	cmpbin.WriteString(&buf, console)
+	cmpbin.WriteString(&buf, manifest)
+	cmpbin.WriteString(&buf, repoURL)
+	cmpbin.WriteBytes(&buf, revision)
+	bs.ManifestRevisionIndex = append(bs.ManifestRevisionIndex, buf.Bytes())
 }

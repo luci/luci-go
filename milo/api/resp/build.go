@@ -18,9 +18,14 @@
 package resp
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"time"
 
+	"golang.org/x/net/context"
+
+	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/milo/common"
 	"github.com/luci/luci-go/milo/common/model"
 )
 
@@ -278,7 +283,7 @@ func (comp *BuildComponent) toModelSummary() model.Summary {
 }
 
 // SummarizeTo summarizes the data into a given model.BuildSummary.
-func (rb *MiloBuild) SummarizeTo(bs *model.BuildSummary) {
+func (rb *MiloBuild) SummarizeTo(c context.Context, bs *model.BuildSummary) error {
 	bs.Summary = rb.Summary.toModelSummary()
 	if rb.Summary.Status == model.Running {
 		// Assume the last step is the current step.
@@ -288,13 +293,29 @@ func (rb *MiloBuild) SummarizeTo(bs *model.BuildSummary) {
 		}
 	}
 	if rb.SourceStamp != nil {
-		// TODO(hinoka): This should be full manifests, but lets just use single
-		// revisions for now.
+		// TODO(hinoka, iannucci): This should be full manifests, but lets just use
+		// single revisions for now. HACKS!
 		if rb.SourceStamp.Revision != nil {
-			bs.Manifests = append(bs.Manifests, model.ManifestLink{
-				Name: "REVISION",
-				ID:   []byte(rb.SourceStamp.Revision.Label),
-			})
+			revisionBytes, err := hex.DecodeString(rb.SourceStamp.Revision.Label)
+			if err != nil {
+				logging.WithError(err).Warningf(c, "bad revision (not hex-decodable)")
+			} else {
+				bs.Manifests = append(bs.Manifests, model.ManifestLink{
+					Name: "REVISION",
+					ID:   []byte(rb.SourceStamp.Revision.Label),
+				})
+				consoles, err := common.GetConsolesForBuilder(c, bs.BuilderID)
+				if err != nil {
+					return err
+				}
+				for _, con := range consoles {
+					// HACK(iannucci): Until we have real manifest support, console
+					// definitions will specify their manifest as "REVISION", and we'll do
+					// lookups with null URL fields.
+					bs.AddManifestRevisionIndex(
+						con.ProjectID, con.Console.Name, "REVISION", "", revisionBytes)
+				}
+			}
 		}
 		if rb.SourceStamp.Changelist != nil {
 			bs.Patches = append(bs.Patches, model.PatchInfo{
@@ -303,4 +324,5 @@ func (rb *MiloBuild) SummarizeTo(bs *model.BuildSummary) {
 			})
 		}
 	}
+	return nil
 }

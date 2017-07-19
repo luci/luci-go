@@ -164,7 +164,9 @@ func saveBuildSummary(
 	}
 	if entry.respBuild != nil {
 		// Add info from the respBuild into the build summary if we have the data.
-		entry.respBuild.SummarizeTo(&bs)
+		if err := entry.respBuild.SummarizeTo(c, &bs); err != nil {
+			return err
+		}
 	}
 	logging.Debugf(c, "Created build summary: %#v", bs)
 	// Make datastore flakes transient errors

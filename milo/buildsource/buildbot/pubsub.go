@@ -233,7 +233,9 @@ func saveBuildSummary(c context.Context, b *buildbotBuild) error {
 		BuildKey:  datastore.KeyForObj(c, b),
 		BuilderID: fmt.Sprintf("buildbot/%s/%s", b.Master, b.Buildername),
 	}
-	resp.SummarizeTo(&bs)
+	if err := resp.SummarizeTo(c, &bs); err != nil {
+		return err
+	}
 	return datastore.Put(c, &bs)
 }
 

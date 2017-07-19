@@ -298,3 +298,29 @@ func GetConsole(c context.Context, projName, consoleName string) (*config.Consol
 	}
 	return nil, fmt.Errorf("Console %s not found in project %s", consoleName, projName)
 }
+
+// ProjectConsole is a simple tuple type for GetConsolesForBuilder.
+type ProjectConsole struct {
+	ProjectID string
+	Console   *config.Console
+}
+
+// GetConsolesForBuilder retrieves all the console definitions that this builder
+// belongs to.
+func GetConsolesForBuilder(c context.Context, builderName string) ([]*ProjectConsole, error) {
+	projs, err := GetAllProjects(c)
+	if err != nil {
+		return nil, err
+	}
+	ret := []*ProjectConsole{}
+	for _, p := range projs {
+		for _, con := range p.Consoles {
+			for _, b := range con.Builders {
+				if b.Name == builderName {
+					ret = append(ret, &ProjectConsole{p.ID, con})
+				}
+			}
+		}
+	}
+	return ret, nil
+}
