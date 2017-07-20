@@ -170,7 +170,7 @@ func KeyForObj(c context.Context, src interface{}) *Key {
 // by MetaGetter.GetMeta):
 //   - "key" (type: Key) - The full datastore key to use. Must not be nil.
 //     OR
-//   - "id" (type: int64 or string) - The id of the Key to create
+//   - "id" (type: int64 or string) - The id of the Key to create.
 //   - "kind" (optional, type: string) - The kind of the Key to create. If
 //     blank or not present, KeyForObjErr will extract the name of the src
 //     object's type.
@@ -571,8 +571,13 @@ func Get(c context.Context, dst ...interface{}) error {
 //	  be non-nil, and its underlying type must be either *S or *P.
 //
 // A *Key will be extracted from src via KeyForObj. If
-// extractedKey.Incomplete() is true, then Put will write the resolved (i.e.
-// automatic datastore-populated) *Key back to src.
+// extractedKey.IsIncomplete() is true, then Put will write the resolved
+// (datastore-generated) *Key back to src.
+//
+// NOTE: The datastore only autogenerates *Keys with integer IDs. Only models
+// which use a raw `$key` or integer-typed `$id` field are elegible for this.
+// A model with a string-typed `$id` field will not accept an integer id'd *Key
+// and will cause the Put to fail.
 //
 // If an error is encountered, the returned error value will depend on the
 // input arguments. If one argument is supplied, the result will be the

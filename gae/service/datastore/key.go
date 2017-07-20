@@ -250,7 +250,8 @@ func (k *Key) String() string {
 	return b.String()
 }
 
-// IsIncomplete returns true iff k doesn't have an id yet.
+// IsIncomplete returns true iff the last token of this Key doesn't define
+// either a StringID or an IntID.
 func (k *Key) IsIncomplete() bool {
 	return k.LastTok().IsIncomplete()
 }
