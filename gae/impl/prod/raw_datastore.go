@@ -201,6 +201,11 @@ func (d *rdsImpl) fixQuery(fq *ds.FinalizedQuery) (*datastore.Query, error) {
 					return nil, err
 				}
 
+				// Filter doesn't like ByteString, even though ByteString is the indexed
+				// counterpart of []byte... sigh.
+				if ds, ok := p.Value.(datastore.ByteString); ok {
+					p.Value = []byte(ds)
+				}
 				ret = ret.Filter(filt, p.Value)
 			}
 		}

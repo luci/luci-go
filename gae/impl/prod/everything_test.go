@@ -169,6 +169,16 @@ func TestBasicDatastore(t *testing.T) {
 				So(count, ShouldEqual, 1)
 			})
 
+			Convey("Can query for bytes", func() {
+				q := ds.NewQuery("TestStruct").Eq("ValueBS", []byte("allo"))
+				ds.Run(ctx, q, func(ts *TestStruct) {
+					So(*ts, ShouldResemble, orig)
+				})
+				count, err := ds.Count(ctx, q)
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 1)
+			})
+
 			Convey("Can project", func() {
 				q := ds.NewQuery("TestStruct").Project("ValueS")
 				rslts := []ds.PropertyMap{}
