@@ -67,7 +67,8 @@ func console(c context.Context, project, name string) (*resp.Console, error) {
 	for i, b := range def.Builders {
 		builderNames[i] = b
 		builders[i].Name = b
-		// TODO(hinoka): Add Categories and ShortNames back in.
+		_, _, builders[i].ShortName, _ = buildsource.BuilderID(b).Split()
+		// TODO(hinoka): Add Categories back in.
 	}
 
 	commitNames := make([]string, len(commitInfo.Commits))

@@ -20,7 +20,7 @@ th {
 {{ range $console.Commit }}
   <tr>
     <td>
-      {{ .Revision }}
+      {{ .Revision | linkify }}
     </td>
     {{ range .Build }}
       {{ if . }}

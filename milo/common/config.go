@@ -361,7 +361,6 @@ func GetAllConsoles(c context.Context, builderName string) ([]*Console, error) {
 	if builderName != "" {
 		q = q.Eq("Builders", builderName)
 	}
-	q.Order("ID")
 	con := []*Console{}
 	err := datastore.GetAll(c, q, &con)
 	return con, err

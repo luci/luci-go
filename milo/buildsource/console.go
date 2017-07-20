@@ -61,14 +61,14 @@ func GetConsoleRows(c context.Context, project string, console *common.Console, 
 		url = ""
 	}
 	partialKey := model.NewPartialManifestKey(project, console.ID, console.ManifestName, url)
-	q := datastore.NewQuery("BuildSummary").KeysOnly(true)
+	q := datastore.NewQuery("BuildSummary")
 	err := parallel.WorkPool(4, func(ch chan<- func() error) {
 		for i := range rawCommits {
 			i := i
 			r := &ConsoleRow{Commit: commits[i]}
 			ret[i] = r
 			ch <- func() error {
-				fullQ := q.Eq("ManifestKey", partialKey.AddRevision(rawCommits[i]))
+				fullQ := q.Eq("ManifestKeys", partialKey.AddRevision(rawCommits[i]))
 				return datastore.Run(c, fullQ, func(bs *model.BuildSummary) {
 					if builderSet.Has(bs.BuilderID) {
 						bid := BuilderID(bs.BuilderID)
