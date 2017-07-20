@@ -315,7 +315,7 @@ func (rb *MiloBuild) SummarizeTo(c context.Context, bs *model.BuildSummary) erro
 					Name: "REVISION",
 					ID:   []byte(rb.SourceStamp.Revision.Label),
 				})
-				consoles, err := common.GetConsolesForBuilder(c, bs.BuilderID)
+				consoles, err := common.GetAllConsoles(c, bs.BuilderID)
 				if err != nil {
 					return err
 				}
@@ -324,7 +324,7 @@ func (rb *MiloBuild) SummarizeTo(c context.Context, bs *model.BuildSummary) erro
 					// definitions will specify their manifest as "REVISION", and we'll do
 					// lookups with null URL fields.
 					bs.AddManifestKey(
-						con.ProjectID, con.Console.Name, "REVISION", "", revisionBytes)
+						con.GetProjectName(), con.ID, "REVISION", "", revisionBytes)
 				}
 			}
 		}

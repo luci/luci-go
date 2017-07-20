@@ -28,8 +28,9 @@ message Console {
   // RepoURL is the URL of the git repository to display as the rows of the console.
   string RepoURL = 3;
 
-  // Branch is the branch to pull commits from when displaying the console.
-  string Branch = 4;
+  // Ref is the ref to pull commits from when displaying the console.
+  // Eg. refs/heads/master
+  string Ref = 4;
 
   // ManifestName is the name of the manifest the waterfall looks at.
   // By convention, Manifest Names can be:

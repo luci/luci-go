@@ -29,7 +29,7 @@ import (
 
 // ConfigsHandler renders the page showing the currently loaded set of luci-configs.
 func ConfigsHandler(c *router.Context) {
-	projects, err := common.GetAllProjects(c.Context)
+	consoles, err := common.GetAllConsoles(c.Context, "")
 	if err != nil {
 		ErrorHandler(c, errors.Annotate(err, "Error while getting projects").Err())
 		return
@@ -41,7 +41,7 @@ func ConfigsHandler(c *router.Context) {
 	}
 
 	templates.MustRender(c.Context, c.Writer, "pages/configs.html", templates.Args{
-		"Projects":      projects,
+		"Consoles":      consoles,
 		"ServiceConfig": sc,
 	})
 }
@@ -51,7 +51,7 @@ func UpdateConfigHandler(ctx *router.Context) {
 	c, h := ctx.Context, ctx.Writer
 	// Needed to access the PubSub API
 	c = appengine.WithContext(c, ctx.Request)
-	projErr := common.UpdateProjectConfigs(c)
+	projErr := common.UpdateConsoles(c)
 	if projErr != nil {
 		logging.WithError(projErr).Errorf(c, "project update handler encountered error")
 	}

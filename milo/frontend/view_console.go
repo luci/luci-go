@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
-	"strings"
 
 	"golang.org/x/net/context"
 
@@ -30,7 +29,6 @@ import (
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
 
-	"github.com/luci/luci-go/milo/api/config"
 	"github.com/luci/luci-go/milo/api/resp"
 	"github.com/luci/luci-go/milo/buildsource"
 	"github.com/luci/luci-go/milo/common"
@@ -42,7 +40,7 @@ import (
 // If the user is not a reader of the project, this will return a 404.
 // TODO(hinoka): If the user is not a reader of any of of the builders returned,
 // that builder will be removed from list of results.
-func getConsoleDef(c context.Context, project, name string) (*config.Console, error) {
+func getConsoleDef(c context.Context, project, name string) (*common.Console, error) {
 	cs, err := common.GetConsole(c, project, name)
 	if err != nil {
 		return nil, err
@@ -57,7 +55,7 @@ func console(c context.Context, project, name string) (*resp.Console, error) {
 	if err != nil {
 		return nil, err
 	}
-	commitInfo, err := git.GetHistory(c, def.RepoURL, def.Branch, 25)
+	commitInfo, err := git.GetHistory(c, def.RepoURL, def.Ref, 25)
 	if err != nil {
 		return nil, err
 	}
@@ -67,10 +65,9 @@ func console(c context.Context, project, name string) (*resp.Console, error) {
 	builderNames := make([]string, len(def.Builders))
 	builders := make([]resp.BuilderRef, len(def.Builders))
 	for i, b := range def.Builders {
-		builderNames[i] = b.Name
-		builders[i].Name = b.Name
-		builders[i].Category = strings.Split(b.Category, "|")
-		builders[i].ShortName = b.ShortName
+		builderNames[i] = b
+		builders[i].Name = b
+		// TODO(hinoka): Add Categories and ShortNames back in.
 	}
 
 	commitNames := make([]string, len(commitInfo.Commits))
@@ -92,7 +89,7 @@ func console(c context.Context, project, name string) (*resp.Console, error) {
 			AuthorEmail: commit.AuthorEmail,
 			CommitTime:  google.TimeFromProto(commit.CommitTime),
 			Repo:        def.RepoURL,
-			Branch:      def.Branch,
+			Branch:      def.Ref, // TODO(hinoka): Actually this doesn't match, change branch to ref.
 			Description: commit.Msg,
 			Revision:    resp.NewLink(commitNames[row], def.RepoURL+"/+/"+commitNames[row]),
 		}
@@ -106,7 +103,7 @@ func console(c context.Context, project, name string) (*resp.Console, error) {
 	}
 
 	return &resp.Console{
-		Name:       def.Name,
+		Name:       def.ID,
 		Commit:     ccb,
 		BuilderRef: builders,
 	}, nil

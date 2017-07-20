@@ -61,19 +61,12 @@ func TestConfig(t *testing.T) {
 			_, err := UpdateServiceConfig(c)
 			So(err, ShouldBeNil)
 			// Send update here
-			err = UpdateProjectConfigs(c)
-			So(err, ShouldBeNil)
-
-			Convey("Check Project config updated", func() {
-				p, err := GetProject(c, "foo")
-				So(err, ShouldBeNil)
-				So(p.ID, ShouldEqual, "foo")
-			})
+			So(UpdateConsoles(c), ShouldBeNil)
 
 			Convey("Check Console config updated", func() {
 				cs, err := GetConsole(c, "foo", "default")
 				So(err, ShouldBeNil)
-				So(cs.Name, ShouldEqual, "default")
+				So(cs.ID, ShouldEqual, "default")
 				So(cs.RepoURL, ShouldEqual, "https://chromium.googlesource.com/foo/bar")
 			})
 		})
@@ -83,9 +76,9 @@ func TestConfig(t *testing.T) {
 var fooCfg = `
 ID: "foo"
 Consoles: {
-	Name: "default"
+	ID: "default"
 	RepoURL: "https://chromium.googlesource.com/foo/bar"
-	Branch: "master"
+	Ref: "master"
 	Builders: {
 		Name: "buildbucket/luci.foo.something/bar"
 		Category: "main|something"

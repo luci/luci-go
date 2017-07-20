@@ -25,7 +25,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/sync/parallel"
 
-	"github.com/luci/luci-go/milo/api/config"
+	"github.com/luci/luci-go/milo/common"
 	"github.com/luci/luci-go/milo/common/model"
 )
 
@@ -41,7 +41,7 @@ type ConsoleRow struct {
 // GetConsoleRows returns a row-oriented collection of BuildSummary
 // objects. Each row corresponds to the similarly-indexed commit in the
 // `commits` slice.
-func GetConsoleRows(c context.Context, project string, console *config.Console, commits, builders []string) ([]*ConsoleRow, error) {
+func GetConsoleRows(c context.Context, project string, console *common.Console, commits, builders []string) ([]*ConsoleRow, error) {
 	rawCommits := make([][]byte, len(commits))
 	for i, c := range commits {
 		var err error
@@ -60,7 +60,7 @@ func GetConsoleRows(c context.Context, project string, console *config.Console, 
 	if console.ManifestName == "REVISION" {
 		url = ""
 	}
-	partialKey := model.NewPartialManifestKey(project, console.Name, console.ManifestName, url)
+	partialKey := model.NewPartialManifestKey(project, console.ID, console.ManifestName, url)
 	q := datastore.NewQuery("BuildSummary").KeysOnly(true)
 	err := parallel.WorkPool(4, func(ch chan<- func() error) {
 		for i := range rawCommits {

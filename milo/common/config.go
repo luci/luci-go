@@ -16,6 +16,7 @@ package common
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -23,24 +24,81 @@ import (
 
 	"github.com/luci/gae/service/datastore"
 	"github.com/luci/gae/service/info"
+	configInterface "github.com/luci/luci-go/common/config"
 	"github.com/luci/luci-go/common/data/caching/proccache"
+	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/luci_config/server/cfgclient"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
 
 	"github.com/luci/luci-go/milo/api/config"
 )
 
-// Project is a LUCI project.
-type Project struct {
-	// ID of the project, as per self defined.  This is the luci-config name.
+// Console is af datastore entity representing a single console.
+type Console struct {
+	// Parent is a key to the parent Project entity where this console was
+	// defined in.
+	Parent *datastore.Key `gae:"$parent"`
+	// ID is the ID of the console.
 	ID string `gae:"$id"`
-	// Data is the Project data in protobuf binary format.
-	Data []byte `gae:",noindex"`
-	// Revision is the latest revision we have of this project's config.
+	// RepoURL and Ref combined defines the commits the show up on the left
+	// hand side of a Console.
+	RepoURL string
+	// RepoURL and Ref combined defines the commits the show up on the left
+	// hand side of a Console.
+	Ref string
+	// ManifestName is the name of the manifest to look for when querying for
+	// builds under this console.
+	ManifestName string
+	// URL is the URL to the luci-config definition of this console.
+	URL string
+	// Revision is the luci-config reivision from when this Console was retrieved.
 	Revision string
+	// Builders is a list of universal builder IDs.
+	Builders []string
+}
+
+// GetProjectName retrieves the project name of the console out of the Console's
+// parent key.
+func (con *Console) GetProjectName() string {
+	return con.Parent.StringID()
+}
+
+// NewConsole creates a fully populated console out of the luci-config proto
+// definition of a console.
+func NewConsole(project *datastore.Key, URL, revision string, con *config.Console) *Console {
+	return &Console{
+		Parent:       project,
+		ID:           con.ID,
+		RepoURL:      con.RepoURL,
+		Ref:          con.Ref,
+		ManifestName: con.ManifestName,
+		Revision:     revision,
+		URL:          URL,
+		Builders:     BuilderFromProto(con.Builders),
+	}
+}
+
+// BuilderFromProto tranforms a luci-config proto builder format into the datastore
+// format.
+func BuilderFromProto(cb []*config.Builder) []string {
+	builders := make([]string, len(cb))
+	for i, b := range cb {
+		builders[i] = b.Name
+	}
+	return builders
+}
+
+// LuciConfigURL returns a user friendly URL that specifies where to view
+// this console definition.
+func LuciConfigURL(c context.Context, configSet, path, revision string) string {
+	// TODO(hinoka): This shouldn't be hardcoded, instead we should get the
+	// luci-config instance from the context.  But we only use this instance at
+	// the moment so it is okay for now.
+	// TODO(hinoka): The UI doesn't allow specifying paths and revision yet.  Add
+	// that in when it is supported.
+	return fmt.Sprintf("https://luci-config.appspot.com/newui#/%s", configSet)
 }
 
 // The key for the service config entity in datastore.
@@ -178,149 +236,144 @@ func UpdateServiceConfig(c context.Context) (*config.Settings, error) {
 	return settings, nil
 }
 
-// UpdateProjectConfigs internal project configuration based off luci-config.
-// update updates Milo's configuration based off luci config.  This includes
-// scanning through all project and extract all console configs.
-func UpdateProjectConfigs(c context.Context) error {
+// updateProjectConsoles updates all of the consoles for a given project,
+// and then returns a set of known console names.
+func updateProjectConsoles(c context.Context, projectName string, cfg *configInterface.Config) (stringset.Set, error) {
+	proj := config.Project{}
+	if err := proto.UnmarshalText(cfg.Content, &proj); err != nil {
+		return nil, errors.Annotate(err, "unmarshalling proto").Err()
+	}
+
+	// Keep a list of known consoles so we can prune deleted ones later.
+	knownConsoles := stringset.New(len(proj.Consoles))
+	// Iterate through all the proto consoles, adding and replacing the
+	// known ones if needed.
+	parentKey := datastore.MakeKey(c, "Project", projectName)
+	for _, pc := range proj.Consoles {
+		knownConsoles.Add(pc.ID)
+		con, err := GetConsole(c, projectName, pc.ID)
+		switch err {
+		case datastore.ErrNoSuchEntity:
+			// continue
+		case nil:
+			// Check if revisions match, if so just skip it.
+			if con.Revision == cfg.Revision {
+				continue
+			}
+		default:
+			return nil, errors.Annotate(err, "checking %s", pc.ID).Err()
+		}
+		URL := LuciConfigURL(c, cfg.ConfigSet, cfg.Path, cfg.Revision)
+		con = NewConsole(parentKey, URL, cfg.Revision, pc)
+		if err = datastore.Put(c, con); err != nil {
+			return nil, errors.Annotate(err, "saving %s", pc.ID).Err()
+		} else {
+			logging.Infof(c, "saved a new %s / %s (revision %s)", projectName, con.ID, cfg.Revision)
+		}
+	}
+	return knownConsoles, nil
+}
+
+// UpdateConsoles updates internal console definitions entities based off luci-config.
+func UpdateConsoles(c context.Context) error {
 	cfgName := info.AppID(c) + ".cfg"
 
-	var (
-		configs []*config.Project
-		metas   []*cfgclient.Meta
-		merr    errors.MultiError
-	)
-
 	logging.Debugf(c, "fetching configs for %s", cfgName)
-	if err := cfgclient.Projects(c, cfgclient.AsService, cfgName, textproto.Slice(&configs), &metas); err != nil {
-		merr = err.(errors.MultiError)
-		// Some configs errored out, but we can continue with the ones that work still.
+	// Acquire the raw config client.
+	lucicfg := backend.Get(c).GetConfigInterface(c, backend.AsService)
+	// Project configs for Milo contains console definitions.
+	configs, err := lucicfg.GetProjectConfigs(c, cfgName, false)
+	if err != nil {
+		return errors.Annotate(err, "while fetching project configs").Err()
 	}
+	logging.Infof(c, "got %d project configs", len(configs))
 
-	// A map of project ID to project.
-	projects := map[string]*Project{}
-	for i, proj := range configs {
-		meta := metas[i]
-		projectName, _, _ := meta.ConfigSet.SplitProject()
-		name := string(projectName)
-		projects[name] = nil
-		if merr != nil && merr[i] != nil {
-			logging.WithError(merr[i]).Warningf(c, "skipping %s due to error", name)
-			continue
+	merr := errors.MultiError{}
+	knownProjects := map[string]stringset.Set{}
+	// Iterate through each project config, extracting the console definition.
+	for _, cfg := range configs {
+		// This looks like "projects/<project name>"
+		splitPath := strings.SplitN(cfg.ConfigSet, "/", 2)
+		if len(splitPath) != 2 {
+			return fmt.Errorf("Invalid config set path %s", cfg.ConfigSet)
 		}
-
-		p := &Project{
-			ID:       name,
-			Revision: meta.Revision,
-		}
-
-		logging.Infof(c, "prossing %s", name)
-
-		var err error
-		p.Data, err = proto.Marshal(proj)
-		if err != nil {
-			logging.WithError(err).Errorf(c, "Encountered error while processing project %s", name)
-			// Set this to nil to signal this project exists but we don't want to update it.
-			projects[name] = nil
-			continue
-		}
-		projects[name] = p
-	}
-
-	// Now load all the data into the datastore.
-	projs := make([]*Project, 0, len(projects))
-	for _, proj := range projects {
-		if proj != nil {
-			projs = append(projs, proj)
+		projectName := splitPath[1]
+		knownProjects[projectName] = nil
+		if kp, err := updateProjectConsoles(c, projectName, &cfg); err != nil {
+			err = errors.Annotate(err, "processing project %s", cfg.ConfigSet).Err()
+			merr = append(merr, err)
+		} else {
+			knownProjects[projectName] = kp
 		}
 	}
-	if err := datastore.Put(c, projs); err != nil {
-		return err
+
+	// Delete all the consoles that no longer exists or are part of deleted projects.
+	toDelete := []*datastore.Key{}
+	err = datastore.Run(c, datastore.NewQuery("Console"), func(key *datastore.Key) error {
+		proj := key.Parent().StringID()
+		id := key.StringID()
+		// If this console is either:
+		// 1. In a project that no longer exists, or
+		// 2. Not in the project, then delete it.
+		knownConsoles, ok := knownProjects[proj]
+		if !ok {
+			logging.Infof(
+				c, "deleting %s/%s because the project no longer exists", proj, id)
+			toDelete = append(toDelete, key)
+			return nil
+		}
+		if knownConsoles == nil {
+			// The project exists but we couldn't check it this time.  Skip it and
+			// try again the next cron cycle.
+			return nil
+		}
+		if !knownConsoles.Has(id) {
+			logging.Infof(
+				c, "deleting %s/%s because the console no longer exists", proj, id)
+			toDelete = append(toDelete, key)
+		}
+		return nil
+	})
+	if err != nil {
+		merr = append(merr, err)
+	} else if err := datastore.Delete(c, toDelete); err != nil {
+		merr = append(merr, err)
 	}
 
-	// Delete entries that no longer exist.
-	q := datastore.NewQuery("Project").KeysOnly(true)
-	allProjs := []Project{}
-	datastore.GetAll(c, q, &allProjs)
-	toDelete := []Project{}
-	for _, proj := range allProjs {
-		if _, ok := projects[proj.ID]; !ok {
-			toDelete = append(toDelete, proj)
-		}
+	// Print some stats.
+	processedConsoles := 0
+	for _, cons := range knownProjects {
+		processedConsoles += cons.Len()
 	}
-	return datastore.Delete(c, toDelete)
+	logging.Infof(
+		c, "processed %d consoles over %d projects", len(knownProjects), processedConsoles)
+
+	if len(merr) == 0 {
+		return nil
+	}
+	return merr
 }
 
-// GetAllProjects returns all registered projects.
-func GetAllProjects(c context.Context) ([]*config.Project, error) {
-	q := datastore.NewQuery("Project")
+// GetAllConsoles returns all registered projects with the builder name.
+// If builderName is empty, then this retrieves all Consoles.
+func GetAllConsoles(c context.Context, builderName string) ([]*Console, error) {
+	q := datastore.NewQuery("Console")
+	if builderName != "" {
+		q = q.Eq("Builders", builderName)
+	}
 	q.Order("ID")
-
-	ps := []*Project{}
-	err := datastore.GetAll(c, q, &ps)
-	if err != nil {
-		return nil, err
-	}
-	results := make([]*config.Project, len(ps))
-	for i, p := range ps {
-		results[i] = &config.Project{}
-		if err := proto.Unmarshal(p.Data, results[i]); err != nil {
-			return nil, err
-		}
-	}
-	return results, nil
+	con := []*Console{}
+	err := datastore.GetAll(c, q, &con)
+	return con, err
 }
 
-// GetProject returns the requested project.
-func GetProject(c context.Context, projName string) (*config.Project, error) {
-	// Next, Try datastore
-	p := Project{ID: projName}
-	if err := datastore.Get(c, &p); err != nil {
-		return nil, err
+// GetConsole returns the requested console.
+func GetConsole(c context.Context, proj, id string) (*Console, error) {
+	// TODO(hinoka): Memcache this.
+	con := Console{
+		Parent: datastore.MakeKey(c, "Project", proj),
+		ID:     id,
 	}
-	mp := config.Project{}
-	if err := proto.Unmarshal(p.Data, &mp); err != nil {
-		return nil, err
-	}
-
-	return &mp, nil
-}
-
-// GetConsole returns the requested console instance.
-func GetConsole(c context.Context, projName, consoleName string) (*config.Console, error) {
-	p, err := GetProject(c, projName)
-	if err != nil {
-		return nil, err
-	}
-	for _, cs := range p.Consoles {
-		if cs.Name == consoleName {
-			return cs, nil
-		}
-	}
-	return nil, fmt.Errorf("Console %s not found in project %s", consoleName, projName)
-}
-
-// ProjectConsole is a simple tuple type for GetConsolesForBuilder.
-type ProjectConsole struct {
-	ProjectID string
-	Console   *config.Console
-}
-
-// GetConsolesForBuilder retrieves all the console definitions that this builder
-// belongs to.
-func GetConsolesForBuilder(c context.Context, builderName string) ([]*ProjectConsole, error) {
-	projs, err := GetAllProjects(c)
-	if err != nil {
-		return nil, err
-	}
-	ret := []*ProjectConsole{}
-	for _, p := range projs {
-		for _, con := range p.Consoles {
-			for _, b := range con.Builders {
-				if b.Name == builderName {
-					ret = append(ret, &ProjectConsole{p.ID, con})
-				}
-			}
-		}
-	}
-	return ret, nil
+	err := datastore.Get(c, &con)
+	return &con, err
 }

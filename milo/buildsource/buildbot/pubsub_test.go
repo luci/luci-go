@@ -472,8 +472,6 @@ func TestPubSub(t *testing.T) {
 			})
 			So(h.Code, ShouldEqual, 200)
 			Convey("And stores correctly", func() {
-				err := common.UpdateProjectConfigs(c)
-				So(err, ShouldBeNil)
 				c = auth.WithState(c, &authtest.FakeState{
 					Identity:       "user:alicebob@google.com",
 					IdentityGroups: []string{"googlers", "all"},
