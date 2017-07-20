@@ -343,7 +343,9 @@ func UpdateConsoles(c context.Context) error {
 	// Print some stats.
 	processedConsoles := 0
 	for _, cons := range knownProjects {
-		processedConsoles += cons.Len()
+		if cons != nil {
+			processedConsoles += cons.Len()
+		}
 	}
 	logging.Infof(
 		c, "processed %d consoles over %d projects", len(knownProjects), processedConsoles)
