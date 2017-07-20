@@ -23,6 +23,20 @@ import (
 	"github.com/luci/luci-go/common/data/cmpbin"
 )
 
+// ManifestKey is an index entry for BuildSummary, which looks like
+//   0 ++ project ++ console ++ manifest_name ++ url ++ revision.decode('hex')
+//
+// This is used to index this BuildSummary as the row for any consoles that it
+// shows up in that use the Manifest/RepoURL/Revision indexing scheme.
+//
+// (++ is cmpbin concatenation)
+//
+// Example:
+//   0 ++ "chromium" ++ "main" ++ "UNPATCHED" ++ "https://.../src.git" ++ deadbeef
+//
+// The list of interested consoles is compiled at build summarization time.
+type ManifestKey []byte
+
 // BuildSummary is a datastore model which is used for storing staandardized
 // summarized build data, and is used for backend-agnostic views (i.e. builders,
 // console). It contains only data that:
@@ -64,30 +78,42 @@ type BuildSummary struct {
 	// Typically there will only be one patch associated with a build.
 	Patches []PatchInfo
 
-	// ManifestRevisionIndex has a single entry for each
-	//   0 ++ project ++ console ++ manifest_name ++ url ++ revision.decode('hex')
-	// which matched for this build. ++ is cmpbin concatenation.
-	//
-	// Example:
-	//   0 ++ "chromium" ++ "main" ++ "UNPATCHED" ++ "https://.../src.git" ++ deadbeef
-	//
-	// The list of interested consoles is compiled at build summarization time.
-	ManifestRevisionIndex [][]byte
+	// ManifestKeys is the list of ManifestKey entries for this BuildSummary.
+	ManifestKeys []ManifestKey
 }
 
-// AddManifestRevisionIndex adds a new entry to ManifestRevisionIndex.
+// AddManifestKey adds a new entry to ManifestKey.
 //
 // `revision` should be the hex-decoded git revision.
 //
-// It's up to the caller to ensure that entries in ManifestRevisionIndex aren't
+// It's up to the caller to ensure that entries in ManifestKey aren't
 // duplicated.
-func (bs *BuildSummary) AddManifestRevisionIndex(project, console, manifest, repoURL string, revision []byte) {
+func (bs *BuildSummary) AddManifestKey(project, console, manifest, repoURL string, revision []byte) {
+	bs.ManifestKeys = append(bs.ManifestKeys,
+		NewPartialManifestKey(project, console, manifest, repoURL).AddRevision(revision))
+}
+
+// PartialManifestKey is an incomplete ManifestKey key which can be made
+// complete by calling AddRevision.
+type PartialManifestKey []byte
+
+// AddRevision appends a git revision (as bytes) to the PartialManifestKey,
+// returning a full index value for BuildSummary.ManifestKey.
+func (p PartialManifestKey) AddRevision(revision []byte) ManifestKey {
+	var buf bytes.Buffer
+	buf.Write(p)
+	cmpbin.WriteBytes(&buf, revision)
+	return buf.Bytes()
+}
+
+// NewPartialManifestKey generates a ManifestKey prefix corresponding to
+// the given parameters.
+func NewPartialManifestKey(project, console, manifest, repoURL string) PartialManifestKey {
 	var buf bytes.Buffer
 	cmpbin.WriteUint(&buf, 0) // version
 	cmpbin.WriteString(&buf, project)
 	cmpbin.WriteString(&buf, console)
 	cmpbin.WriteString(&buf, manifest)
 	cmpbin.WriteString(&buf, repoURL)
-	cmpbin.WriteBytes(&buf, revision)
-	bs.ManifestRevisionIndex = append(bs.ManifestRevisionIndex, buf.Bytes())
+	return PartialManifestKey(buf.Bytes())
 }

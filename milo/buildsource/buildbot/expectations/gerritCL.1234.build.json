@@ -31,7 +31,6 @@
     "RequestRevision": null,
     "Revision": null,
     "Description": "",
-    "Title": "",
     "Changelist": {
       "Label": "Gerrit CL 12345",
       "URL": "https://example.com/c/12345"

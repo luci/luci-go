@@ -20,6 +20,7 @@ package resp
 import (
 	"encoding/hex"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -104,14 +105,24 @@ type Commit struct {
 	Revision *Link
 	// The commit message.
 	Description string
-	// The commit title, usually the first line of the commit message.
-	Title string
 	// Rietveld or Gerrit URL if the commit is a patch.
 	Changelist *Link
 	// Browsable URL of the commit.
 	CommitURL string
 	// List of changed filenames.
 	File []string
+}
+
+// Title is the first line of the commit message (Description).
+func (c *Commit) Title() string {
+	switch lines := strings.SplitN(c.Description, "\n", 2); len(lines) {
+	case 0:
+		return ""
+	case 1:
+		return c.Description
+	default:
+		return lines[0]
+	}
 }
 
 // BuildProgress is a way to show progress.  Percent should always be specified.
@@ -312,7 +323,7 @@ func (rb *MiloBuild) SummarizeTo(c context.Context, bs *model.BuildSummary) erro
 					// HACK(iannucci): Until we have real manifest support, console
 					// definitions will specify their manifest as "REVISION", and we'll do
 					// lookups with null URL fields.
-					bs.AddManifestRevisionIndex(
+					bs.AddManifestKey(
 						con.ProjectID, con.Console.Name, "REVISION", "", revisionBytes)
 				}
 			}

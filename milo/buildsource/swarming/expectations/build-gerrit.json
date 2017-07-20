@@ -39,7 +39,6 @@
     "RequestRevision": null,
     "Revision": null,
     "Description": "",
-    "Title": "",
     "Changelist": {
       "Label": "Gerrit CL",
       "URL": "https://chromium-review.googlesource.com/c/513444/32"

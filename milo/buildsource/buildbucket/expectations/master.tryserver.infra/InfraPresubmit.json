@@ -35,7 +35,6 @@
           },
           "Revision": null,
           "Description": "",
-          "Title": "",
           "Changelist": {
             "Label": "Rietveld CL 2112113002",
             "URL": "https://codereview.chromium.org/2112113002/#ps1"
@@ -81,7 +80,6 @@
           },
           "Revision": null,
           "Description": "",
-          "Title": "",
           "Changelist": {
             "Label": "Rietveld CL 2114743004",
             "URL": "https://codereview.chromium.org/2114743004/#ps1"

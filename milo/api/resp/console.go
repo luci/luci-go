@@ -14,7 +14,9 @@
 
 package resp
 
-import "github.com/luci/luci-go/milo/common/model"
+import (
+	"github.com/luci/luci-go/milo/common/model"
+)
 
 // This file contains the structures for defining a Console view.
 // Console: The main entry point and the overall struct for a console page.
@@ -50,14 +52,5 @@ type BuilderRef struct {
 // CommitBuild is a row in the console.  References a commit with a list of build summaries.
 type CommitBuild struct {
 	Commit
-	Build []*ConsoleBuild
-}
-
-// ConsoleBuild is a cell in the console. Contains all information required to render the cell.
-type ConsoleBuild struct {
-	// Link to the build.  Alt-text goes on the Label of the link
-	Link *Link
-
-	// Status of the build.
-	Status model.Status
+	Build []*model.BuildSummary
 }

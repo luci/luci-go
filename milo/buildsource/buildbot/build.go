@@ -397,7 +397,6 @@ func blame(b *buildbotBuild) (result []*resp.Commit) {
 				CommitTime:  time.Unix(int64(c.When), 0).UTC(),
 				Revision:    resp.NewLink(c.Revision, c.Revlink),
 				Description: c.Comments,
-				Title:       strings.Split(c.Comments, "\n")[0],
 				File:        files,
 			})
 		}

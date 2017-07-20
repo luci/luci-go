@@ -9,25 +9,27 @@ th {
 {{end}}
 
 {{define "body"}}
-<h1>{{.Console.Name}}</h1>
+{{ $console := .Console }}
+
+<h1>{{ $console.Name }}</h1>
 
 <table>
   <thead>
-    {{ .Console.BuilderRef | consoleHeader }}
+    {{ $console.Header }}
   </thead>
-{{ range .Console.Commit }}
+{{ range $console.Commit }}
   <tr>
     <td>
-      {{ .Commit.Revision }}
+      {{ .Revision }}
     </td>
     {{ range .Build }}
-    <td {{ if . }}class="status-{{.Status.String}}"{{ end }}>
       {{ if . }}
-        {{ if .Link }}
-          <a href="{{.Link.URL}}">x</a>
-        {{ end }}
+        <td class="status-{{.Summary.Status.String}}">
+          {{ . | $console.BuilderLink | linkify }}
+        </td>
+      {{ else }}
+        <td></td>
       {{ end }}
-    </td>
     {{ end }}
   </tr>
 {{ end }}
