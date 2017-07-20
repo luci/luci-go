@@ -84,7 +84,9 @@ func Log(c context.Context, repoURL, treeish string, limit int) ([]Commit, error
 	if err != nil {
 		return nil, err
 	}
-	t, err := auth.GetRPCTransport(c, auth.NoAuth)
+	t, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(
+		"https://www.googleapis.com/auth/gerritcodereview",
+	))
 	if err != nil {
 		return nil, err
 	}
