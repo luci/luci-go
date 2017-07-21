@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package gitiles allows querying git repositories hosted *.googlesource.com.
+// Package gitiles allows querying git repositories hosted on *.googlesource.com.
 package gitiles
