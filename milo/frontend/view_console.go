@@ -129,8 +129,8 @@ func (c consoleRenderer) Header() template.HTML {
 
 	result := ""
 	for row := 0; row < depth; row++ {
-		result += "<tr><th></th>"
-		// "" is the first node, " " is an empty node.
+		result += "<tr><th></th><th></th>"
+		// "" is the first two nodes, " " is an empty node.
 		current := ""
 		colspan := 0
 		for _, br := range cat {

@@ -5,6 +5,9 @@
 th {
   border: 1px silver;
 }
+.commit {
+  font-weight: bold;
+}
 </style>
 {{end}}
 
@@ -19,8 +22,13 @@ th {
   </thead>
 {{ range $console.Commit }}
   <tr>
+    <td>{{ .CommitTime | localTime "N/A" }}</td>
     <td>
-      {{ .Revision | linkify }}
+      <a href="{{.Revision.URL}}">
+        <span class="commit" title="{{.Description}}">
+          ({{ .AuthorEmail }})
+        </span>
+      </a>
     </td>
     {{ range .Build }}
       {{ if . }}
