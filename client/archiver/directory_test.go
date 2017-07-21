@@ -16,12 +16,10 @@ package archiver
 
 import (
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"sync"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -34,25 +32,6 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-func TestWalkBadRegexp(t *testing.T) {
-	Convey(`A bad regexp should fail when walking a directory.`, t, func() {
-		ch := make(chan *walkItem)
-		var wg sync.WaitGroup
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			defer close(ch)
-			walk("inexistent", []string{"a["}, ch)
-		}()
-		item := <-ch
-		So(item, ShouldResemble, &walkItem{err: errors.New("bad blacklist pattern \"a[\"")})
-		item, ok := <-ch
-		So(item, ShouldBeNil)
-		So(ok, ShouldBeFalse)
-		wg.Wait()
-	})
-}
 
 func TestPushDirectory(t *testing.T) {
 	// Uploads a real directory. 2 times the same file.

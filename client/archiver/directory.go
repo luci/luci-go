@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/common/isolated"
 	"github.com/luci/luci-go/common/isolatedclient"
 	"github.com/luci/luci-go/common/runtime/tracer"
@@ -31,15 +32,11 @@ type walkItem struct {
 	fullPath string
 	relPath  string
 	info     os.FileInfo
-	err      error
 }
 
 // walk() enumerates a directory tree synchronously and sends the items to
 // channel c.
-//
-// blacklist is a list of globs of files to ignore. Each blacklist glob is
-// relative to root.
-func walk(root string, blacklist []string, c chan<- *walkItem) {
+func walk(root string, fsView common.FilesystemView, c chan<- *walkItem) {
 	// TODO(maruel): Walk() sorts the file names list, which is not needed here
 	// and slows things down. Options:
 	// #1 Use os.File.Readdir() directly. It's in the stdlib and works fine, but
@@ -63,56 +60,43 @@ func walk(root string, blacklist []string, c chan<- *walkItem) {
 	total := 0
 	end := tracer.Span(root, "walk:"+filepath.Base(root), nil)
 	defer func() { end(tracer.Args{"root": root, "total": total}) }()
-	// Check patterns upfront, so it has consistent behavior w.r.t. bad glob
-	// patterns.
-	for _, b := range blacklist {
-		if _, err := filepath.Match(b, b); err != nil {
-			c <- &walkItem{err: fmt.Errorf("bad blacklist pattern \"%s\"", b)}
-			return
-		}
-	}
-	err := filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
+
+	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		total++
+
 		if err != nil {
-			return fmt.Errorf("walk(%q): %v", p, err)
+			return fmt.Errorf("walk(%q): %v", path, err)
 		}
 
-		relPath, err := filepath.Rel(root, p)
+		relPath, err := fsView.RelativePath(path)
 		if err != nil {
-			return fmt.Errorf("walk: calculating relative path(%q): %v", p, err)
+			return fmt.Errorf("walk(%q): %v", path, err)
 		}
 
-		// filepath.Rel is documented to call filepath.Clean on its result before returning it,
-		// which results in "." for an empty relative path.
-		if relPath == "." {
-			return nil // Root directory.
+		if relPath == "" { // empty string indicates skip.
+			return returnSkip(info)
 		}
 
-		for _, b := range blacklist {
-			matched, _ := filepath.Match(b, relPath)
-			if !matched {
-				// Also check at the base file name.
-				matched, _ = filepath.Match(b, filepath.Base(relPath))
-			}
-			if matched {
-				// Must not return io.SkipDir for file, filepath.walk() handles this
-				// badly.
-				if info.IsDir() {
-					return filepath.SkipDir
-				}
-				return nil
-			}
+		if !info.IsDir() {
+			c <- &walkItem{fullPath: path, relPath: relPath, info: info}
 		}
-		if info.IsDir() {
-			return nil
-		}
-		c <- &walkItem{fullPath: p, relPath: relPath, info: info}
 		return nil
 	})
+
 	if err != nil {
 		// No point continuing if an error occurred during walk.
 		log.Fatalf("Unable to walk %q: %v", root, err)
 	}
+
+}
+
+// returnSkip returns the return value expected from a filepath.WalkFunc in the case where no more processing of file should occur.
+func returnSkip(file os.FileInfo) error {
+	if file.IsDir() {
+		// Must not return io.SkipDir for file, filepath.walk() handles this badly.
+		return filepath.SkipDir
+	}
+	return nil
 }
 
 // PushDirectory walks a directory at root and creates a .isolated file.
@@ -132,26 +116,29 @@ func PushDirectory(a *Archiver, root string, relDir string, blacklist []string) 
 	end := tracer.Span(a, "PushDirectory", tracer.Args{"path": relDir, "root": root})
 	defer func() { end(tracer.Args{"total": total}) }()
 	c := make(chan *walkItem)
+
+	displayName := filepath.Base(root) + ".isolated"
+	s := &Item{DisplayName: displayName}
+	fsView, err := common.NewFilesystemView(root, blacklist)
+	if err != nil {
+		s.SetErr(err)
+		return s
+	}
+
 	go func() {
-		walk(root, blacklist, c)
+		walk(root, fsView, c)
 		close(c)
 	}()
 
-	displayName := filepath.Base(root) + ".isolated"
 	i := isolated.Isolated{
 		Algo:    "sha-1",
 		Files:   map[string]isolated.File{},
 		Version: isolated.IsolatedFormatVersion,
 	}
 	items := []*Item{}
-	s := &Item{DisplayName: displayName}
 	for item := range c {
 		if s.Error() != nil {
 			// Empty the queue.
-			continue
-		}
-		if item.err != nil {
-			s.SetErr(item.err)
 			continue
 		}
 		total++

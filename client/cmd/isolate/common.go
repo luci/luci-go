@@ -89,7 +89,7 @@ func (c *isolateFlags) Init(f *flag.FlagSet) {
 	f.StringVar(&c.Isolate, "i", "", "Alias for --isolate")
 	f.StringVar(&c.Isolated, "isolated", "", ".isolated file to generate or read")
 	f.StringVar(&c.Isolated, "s", "", "Alias for --isolated")
-	f.Var(&c.Blacklist, "blacklist", "List of regexp to use as blacklist filter when uploading directories")
+	f.Var(&c.Blacklist, "blacklist", "List of globs to use as blacklist filter when uploading directories")
 	f.Var(&c.ConfigVariables, "config-variable", "Config variables are used to determine which conditions should be matched when loading a .isolate file, default: [].")
 	f.Var(&c.PathVariables, "path-variable", "Path variables are used to replace file paths when loading a .isolate file, default: {}")
 	f.Var(&c.ExtraVariables, "extra-variable", "Extraneous variables are replaced on the command entry and on paths in the .isolate file but are not considered relative paths.")
