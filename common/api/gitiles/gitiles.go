@@ -160,7 +160,71 @@ func (c *Client) Log(ctx context.Context, repoURL, treeish string, limit int) ([
 	}
 }
 
+// Refs returns a map resolving each ref in a repo to git revision.
+//
+// refsPath limits which refs to resolve to only those matching {refsPath}/*.
+// refsPath should start with "refs" and should not include glob '*'.
+// Typically, "refs/heads" should be used.
+//
+// To fetch **all** refs in a repo, specify just "refs" but beware of two
+// caveats:
+//  * refs returned include a ref for each patchset for each Gerrit change
+//    associated with the repo
+//  * returned map will contain special "HEAD" ref whose value in resulting map
+//    will be name of the actual ref to which "HEAD" points, which is typically
+//    "refs/heads/master".
+//
+// Thus, if you are looking for all tags and all branches of repo, it's
+// recommended to issue two Refs calls limited to "refs/tags" and "refs/heads"
+// instead of one call for "refs".
+//
+// Since Gerrit allows per-ref ACLs, it is possible that some refs matching
+// refPrefix would not be present in results because current user isn't granted
+// read permission on them.
+func (c *Client) Refs(ctx context.Context, repoURL, refsPath string) (map[string]string, error) {
+	repoURL, err := NormalizeRepoURL(repoURL)
+	if err != nil {
+		return nil, err
+	}
+	if refsPath != "refs" && !strings.HasPrefix(refsPath, "refs/") {
+		return nil, fmt.Errorf("refsPath must start with \"refs\": %q", refsPath)
+	}
+	refsPath = strings.TrimRight(refsPath, "/")
+
+	subPath := fmt.Sprintf("+%s?format=json", url.PathEscape(refsPath))
+	resp := refsResponse{}
+	if err := c.get(ctx, repoURL, subPath, &resp); err != nil {
+		return nil, err
+	}
+	r := make(map[string]string, len(resp))
+	for ref, v := range resp {
+		switch {
+		case v.Value == "":
+			// Weird case of what looks like hash with a target in at least Chromium
+			// repo.
+			continue
+		case ref == "HEAD":
+			r["HEAD"] = v.Target
+		case refsPath != "refs":
+			// Gitiles omits refsPath from each ref if refsPath != "refs". Undo this
+			// inconsistency.
+			r[refsPath+"/"+ref] = v.Value
+		default:
+			r[ref] = v.Value
+		}
+	}
+	return r, nil
+}
+
 ////////////////////////////////////////////////////////////////////////////////
+
+type refsResponseRefInfo struct {
+	Value  string `json:"value"`
+	Target string `json:"target"`
+}
+
+// refsResponse is the JSON response from querying gitiles for a Refs request.
+type refsResponse map[string]refsResponseRefInfo
 
 // logResponse is the JSON response from querying gitiles for a log request.
 type logResponse struct {

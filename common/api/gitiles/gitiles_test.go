@@ -134,6 +134,66 @@ func TestLog(t *testing.T) {
 	})
 }
 
+func TestRefs(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("Refs Bad RefsPath", t, func() {
+
+		c := Client{nil, "https://a.googlesource.com/a/repo"}
+		_, err := c.Refs(context.Background(), "https://c.googlesource.com/repo", "bad")
+		So(err, ShouldNotBeNil)
+	})
+
+	Convey("Refs All", t, func() {
+		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintln(w, `)]}'
+				{
+					"refs/heads/master": { "value": "deadbeef" },
+					"refs/heads/infra/config": { "value": "0000beef" },
+					"refs/changes/01/123001/1": { "value": "123dead001beef1" },
+					"refs/other/ref": { "value": "ba6" },
+					"123deadbeef123": { "target": "f00" },
+					"HEAD": { "value": "deadbeef",
+										"target": "refs/heads/master" }
+				}
+			`)
+		})
+		defer srv.Close()
+		refs, err := c.Refs(ctx, "https://c.googlesource.com/repo", "refs")
+		So(err, ShouldBeNil)
+		So(refs, ShouldResemble, map[string]string{
+			"HEAD":                     "refs/heads/master",
+			"refs/heads/master":        "deadbeef",
+			"refs/heads/infra/config":  "0000beef",
+			"refs/other/ref":           "ba6",
+			"refs/changes/01/123001/1": "123dead001beef1",
+			// Skipping "123dead001beef1" which has no value.
+		})
+	})
+	Convey("Refs heads", t, func() {
+		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintln(w, `)]}'
+				{
+					"master": { "value": "deadbeef" },
+					"infra/config": { "value": "0000beef" }
+				}
+			`)
+		})
+		defer srv.Close()
+		refs, err := c.Refs(ctx, "https://c.googlesource.com/repo", "refs/heads")
+		So(err, ShouldBeNil)
+		So(refs, ShouldResemble, map[string]string{
+			"refs/heads/master":       "deadbeef",
+			"refs/heads/infra/config": "0000beef",
+		})
+	})
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 var (
