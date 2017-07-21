@@ -20,6 +20,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"regexp"
 
 	"golang.org/x/net/context"
@@ -32,6 +33,7 @@ import (
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/proto/google"
+	"github.com/luci/luci-go/server/auth"
 
 	milo "github.com/luci/luci-go/milo/api/proto"
 )
@@ -151,7 +153,14 @@ func GetHistory(c context.Context, url, commitish string, limit int) (*milo.Cons
 	ret := &milo.ConsoleGitInfo{}
 	cacheKey := fmt.Sprintf("GetHistory|%s|%s|%d", url, commitish, limit)
 	err = protoCache(c, useCache, cacheKey, ret, func() error {
-		rawEntries, err := gitiles.Log(c, url, commitish, limit)
+		t, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(
+			"https://www.googleapis.com/auth/gerritcodereview",
+		))
+		if err != nil {
+			return errors.Annotate(err, "getting RPC Transport").Err()
+		}
+		g := &gitiles.Client{Client: &http.Client{Transport: t}}
+		rawEntries, err := g.Log(c, url, commitish, limit)
 		if err != nil {
 			return errors.Annotate(err, "GetHistory").Err()
 		}

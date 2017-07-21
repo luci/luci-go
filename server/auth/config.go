@@ -32,7 +32,7 @@ import (
 // various interfaces used by the library.
 //
 // It lives in the context and must be installed there by some root middleware
-// (via ModifyContext call).
+// (via ModifyConfig call).
 type Config struct {
 	// DBProvider is a callback that returns most recent DB instance.
 	//
