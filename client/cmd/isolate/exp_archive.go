@@ -153,9 +153,8 @@ func (pw *partitioningWalker) walkFn(path string, info os.FileInfo, err error) e
 }
 
 // partitionDeps walks each of the deps, partioning the results into symlinks and files categorized by size.
-func partitionDeps(deps []string, rootDir string) (partitionedDeps, error) {
-	// TODO(mcgreevy): initialize FilesystemView with blacklist.
-	fsView, err := common.NewFilesystemView(rootDir, nil)
+func partitionDeps(deps []string, rootDir string, blacklist []string) (partitionedDeps, error) {
+	fsView, err := common.NewFilesystemView(rootDir, blacklist)
 	if err != nil {
 		return partitionedDeps{}, err
 	}
@@ -202,7 +201,7 @@ func (c *expArchiveRun) main() error {
 	checker := NewChecker(ctx, client)
 	uploader := NewUploader(ctx, client, 1)
 
-	parts, err := partitionDeps(deps, rootDir)
+	parts, err := partitionDeps(deps, rootDir, c.isolateFlags.ArchiveOptions.Blacklist)
 	if err != nil {
 		return fmt.Errorf("partitioning deps: %v", err)
 	}
@@ -377,10 +376,6 @@ func (c *expArchiveRun) Run(a subcommands.Application, args []string, _ subcomma
 	fmt.Fprintln(a.GetErr(), "WARNING: this command is experimental")
 	if err := c.parseFlags(args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-		return 1
-	}
-	if len(c.isolateFlags.ArchiveOptions.Blacklist) != 0 {
-		fmt.Fprintf(a.GetErr(), "%s: blacklist is not supported\n", a.GetName())
 		return 1
 	}
 	if err := c.main(); err != nil {
