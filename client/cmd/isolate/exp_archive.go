@@ -169,6 +169,74 @@ func partitionDeps(deps []string, rootDir string, blacklist []string) (partition
 	return walker.parts, nil
 }
 
+func uploadDeps(parts partitionedDeps, checker *Checker, uploader *Uploader) (map[string]isolated.File, error) {
+	// Construct a map of the files that constitute the isolate.
+	files := make(map[string]isolated.File)
+
+	// Handle the symlinks.
+	for _, item := range parts.links.items {
+		l, err := os.Readlink(item.Path)
+		if err != nil {
+			return nil, fmt.Errorf("unable to resolve symlink for %q: %v", item.Path, err)
+		}
+		files[item.RelPath] = isolated.SymLink(l)
+	}
+
+	// Handle the small to-be-archived files.
+	bundles := ShardItems(parts.filesToArchive.items, archiveMaxSize)
+	log.Printf("\t%d TAR archives to be isolated", len(bundles))
+
+	for _, bundle := range bundles {
+		bundle := bundle
+		digest, tarSize, err := bundle.Digest()
+		if err != nil {
+			return nil, err
+		}
+
+		log.Printf("Created tar archive %q (%s)", digest, humanize.Bytes(uint64(tarSize)))
+		log.Printf("\tcontains %d files (total %s)", len(bundle.Items), humanize.Bytes(uint64(bundle.ItemSize)))
+		// Mint an item for this tar.
+		item := &Item{
+			Path:    fmt.Sprintf(".%s.tar", digest),
+			RelPath: fmt.Sprintf(".%s.tar", digest),
+			Size:    tarSize,
+			Mode:    0644, // Read
+			Digest:  digest,
+		}
+		files[item.RelPath] = isolated.TarFile(item.Digest, int(item.Mode), item.Size)
+
+		checker.AddItem(item, false, func(item *Item, ps *isolatedclient.PushState) {
+			if ps == nil {
+				return
+			}
+			log.Printf("QUEUED %q for upload", item.RelPath)
+			uploader.Upload(item.RelPath, bundle.Contents, ps, func() {
+				log.Printf("UPLOADED %q", item.RelPath)
+			})
+		})
+	}
+
+	// Handle the large individually-uploaded files.
+	for _, item := range parts.indivFiles.items {
+		d, err := hashFile(item.Path)
+		if err != nil {
+			return nil, err
+		}
+		item.Digest = d
+		files[item.RelPath] = isolated.BasicFile(item.Digest, int(item.Mode), item.Size)
+		checker.AddItem(item, false, func(item *Item, ps *isolatedclient.PushState) {
+			if ps == nil {
+				return
+			}
+			log.Printf("QUEUED %q for upload", item.RelPath)
+			uploader.UploadFile(item, ps, func() {
+				log.Printf("UPLOADED %q", item.RelPath)
+			})
+		})
+	}
+	return files, nil
+}
+
 // main contains the core logic for experimental archive.
 func (c *expArchiveRun) main() error {
 	// TODO(djd): This func is long and has a lot of internal complexity (like,
@@ -206,75 +274,15 @@ func (c *expArchiveRun) main() error {
 		return fmt.Errorf("partitioning deps: %v", err)
 	}
 
-	// Construct a map of the files that constitute the isolate.
-	files := make(map[string]isolated.File)
-
 	numFiles := len(parts.filesToArchive.items) + len(parts.indivFiles.items)
 	filesSize := uint64(parts.filesToArchive.totalSize + parts.indivFiles.totalSize)
 	log.Printf("Isolate expanded to %d files (total size %s) and %d symlinks", numFiles, humanize.Bytes(filesSize), len(parts.links.items))
 	log.Printf("\t%d files (%s) to be isolated individually", len(parts.indivFiles.items), humanize.Bytes(uint64(parts.indivFiles.totalSize)))
 	log.Printf("\t%d files (%s) to be isolated in archives", len(parts.filesToArchive.items), humanize.Bytes(uint64(parts.filesToArchive.totalSize)))
 
-	// Handle the symlinks.
-	for _, item := range parts.links.items {
-		l, err := os.Readlink(item.Path)
-		if err != nil {
-			return fmt.Errorf("unable to resolve symlink for %q: %v", item.Path, err)
-		}
-		files[item.RelPath] = isolated.SymLink(l)
-	}
-
-	// Handle the small to-be-archived files.
-	bundles := ShardItems(parts.filesToArchive.items, archiveMaxSize)
-	log.Printf("\t%d TAR archives to be isolated", len(bundles))
-
-	for _, bundle := range bundles {
-		bundle := bundle
-		digest, tarSize, err := bundle.Digest()
-		if err != nil {
-			return err
-		}
-
-		log.Printf("Created tar archive %q (%s)", digest, humanize.Bytes(uint64(tarSize)))
-		log.Printf("\tcontains %d files (total %s)", len(bundle.Items), humanize.Bytes(uint64(bundle.ItemSize)))
-		// Mint an item for this tar.
-		item := &Item{
-			Path:    fmt.Sprintf(".%s.tar", digest),
-			RelPath: fmt.Sprintf(".%s.tar", digest),
-			Size:    tarSize,
-			Mode:    0644, // Read
-			Digest:  digest,
-		}
-		files[item.RelPath] = isolated.TarFile(item.Digest, int(item.Mode), item.Size)
-
-		checker.AddItem(item, false, func(item *Item, ps *isolatedclient.PushState) {
-			if ps == nil {
-				return
-			}
-			log.Printf("QUEUED %q for upload", item.RelPath)
-			uploader.Upload(item.RelPath, bundle.Contents, ps, func() {
-				log.Printf("UPLOADED %q", item.RelPath)
-			})
-		})
-	}
-
-	// Handle the large individually-uploaded files.
-	for _, item := range parts.indivFiles.items {
-		d, err := hashFile(item.Path)
-		if err != nil {
-			return err
-		}
-		item.Digest = d
-		files[item.RelPath] = isolated.BasicFile(item.Digest, int(item.Mode), item.Size)
-		checker.AddItem(item, false, func(item *Item, ps *isolatedclient.PushState) {
-			if ps == nil {
-				return
-			}
-			log.Printf("QUEUED %q for upload", item.RelPath)
-			uploader.UploadFile(item, ps, func() {
-				log.Printf("UPLOADED %q", item.RelPath)
-			})
-		})
+	files, err := uploadDeps(parts, checker, uploader)
+	if err != nil {
+		return err
 	}
 
 	// Marshal the isolated file into JSON, and create an Item to describe it.
