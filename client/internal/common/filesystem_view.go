@@ -16,6 +16,7 @@ package common
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 )
 
@@ -78,4 +79,17 @@ func (ff FilesystemView) skipRelPath(relPath string) bool {
 func match(pattern, name string) bool {
 	matched, _ := filepath.Match(pattern, name)
 	return matched
+}
+
+// WalkFuncSkipFile is a helper for implemenations of filepath.WalkFunc. The
+// value that it returns may in turn be returned by the WalkFunc implementaiton
+// to indicate that file should be skipped.
+func WalkFuncSkipFile(file os.FileInfo) error {
+	if file.IsDir() {
+		return filepath.SkipDir
+	}
+	// If we were to return SkipDir for a file, it would cause
+	// filepath.Walk to skip the file's containing directory, which we do
+	// not want (see https://golang.org/pkg/path/filepath/#WalkFunc).
+	return nil
 }

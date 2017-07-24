@@ -19,6 +19,8 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/luci/luci-go/client/internal/common"
 )
 
 // basicFileInfo implements some of os.FileInfo, and panics if unexpected parts
@@ -74,6 +76,16 @@ func directory(path string) file {
 }
 
 var errBang = errors.New("bang")
+
+// fsView constructs a FilesystemView with no blacklist.
+func fsView(root string) common.FilesystemView {
+	fsView, err := common.NewFilesystemView("/rootDir", nil)
+	if err != nil {
+		// NewFilesystemView only fails due to bad blacklists. So this should never occur.
+		panic("unexpected failure to construct FilesytemView")
+	}
+	return fsView
+}
 
 func TestWalkFn(t *testing.T) {
 	type testCase struct {
@@ -240,7 +252,7 @@ func TestWalkFn(t *testing.T) {
 
 TestCases:
 	for _, tc := range testCases {
-		pw := partitioningWalker{rootDir: "/rootDir"}
+		pw := partitioningWalker{fsView: fsView("/rootDir")}
 		for _, f := range tc.files {
 			if err := pw.walkFn(f.path, f.bfi, tc.walkFnErr); err != nil {
 				t.Errorf("partitioning deps(%s): walkFn got err %v; want nil", tc.name, err)
@@ -255,7 +267,7 @@ TestCases:
 }
 
 func TestWalkFn_BadRelpath(t *testing.T) {
-	pw := partitioningWalker{rootDir: "/rootDir"}
+	pw := partitioningWalker{fsView: fsView("/rootDir")}
 	f := regularFile("./patha", 1)
 	if err := pw.walkFn(f.path, f.bfi, nil); err == nil {
 		t.Errorf("testing bad relpath: walkFn returned nil err; want non-nil err")
@@ -263,7 +275,7 @@ func TestWalkFn_BadRelpath(t *testing.T) {
 }
 
 func TestWalkFn_ReturnsErrorsUnchanged(t *testing.T) {
-	pw := partitioningWalker{rootDir: "/rootDir"}
+	pw := partitioningWalker{fsView: fsView("/rootDir")}
 	f := regularFile("/rootDir/patha", 1)
 	if err := pw.walkFn(f.path, f.bfi, errBang); err != errBang {
 		t.Errorf("walkFn err: got: %v; want %v", err, errBang)
@@ -271,7 +283,7 @@ func TestWalkFn_ReturnsErrorsUnchanged(t *testing.T) {
 }
 
 func TestWalkFn_DoesNothingForDirectories(t *testing.T) {
-	pw := partitioningWalker{rootDir: "/rootDir"}
+	pw := partitioningWalker{fsView: fsView("/rootDir")}
 	f := directory("/rootDir/patha")
 	if err := pw.walkFn(f.path, f.bfi, nil); err != nil {
 		t.Errorf("walkFn err: got: %v; want nil", err)

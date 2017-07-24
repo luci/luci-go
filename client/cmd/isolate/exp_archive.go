@@ -30,6 +30,7 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/client/internal/common"
 	"github.com/luci/luci-go/client/isolate"
 	"github.com/luci/luci-go/common/auth"
 	logpb "github.com/luci/luci-go/common/eventlog/proto"
@@ -100,8 +101,8 @@ func (ig *itemGroup) AddItem(item *Item) {
 
 // partitioningWalker contains the state necessary to partition isolate deps by handling multiple os.WalkFunc invocations.
 type partitioningWalker struct {
-	// rootDir must be initialized before walkFn is called.
-	rootDir string
+	// fsView must be initialized before walkFn is called.
+	fsView common.FilesystemView
 
 	parts partitionedDeps
 }
@@ -119,13 +120,18 @@ func (pw *partitioningWalker) walkFn(path string, info os.FileInfo, err error) e
 	if err != nil {
 		return err
 	}
-	if info.IsDir() {
-		return nil
-	}
 
-	relPath, err := filepath.Rel(pw.rootDir, path)
+	relPath, err := pw.fsView.RelativePath(path)
 	if err != nil {
 		return err
+	}
+
+	if relPath == "" { // empty string indicates skip.
+		return common.WalkFuncSkipFile(info)
+	}
+
+	if info.IsDir() {
+		return nil
 	}
 
 	item := &Item{
@@ -148,7 +154,13 @@ func (pw *partitioningWalker) walkFn(path string, info os.FileInfo, err error) e
 
 // partitionDeps walks each of the deps, partioning the results into symlinks and files categorized by size.
 func partitionDeps(deps []string, rootDir string) (partitionedDeps, error) {
-	walker := partitioningWalker{rootDir: rootDir}
+	// TODO(mcgreevy): initialize FilesystemView with blacklist.
+	fsView, err := common.NewFilesystemView(rootDir, nil)
+	if err != nil {
+		return partitionedDeps{}, err
+	}
+
+	walker := partitioningWalker{fsView: fsView}
 	for _, dep := range deps {
 		// Try to walk dep. If dep is a file (or symlink), the inner function is called exactly once.
 		if err := filepath.Walk(filepath.Clean(dep), walker.walkFn); err != nil {

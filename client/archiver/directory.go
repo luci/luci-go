@@ -74,7 +74,7 @@ func walk(root string, fsView common.FilesystemView, c chan<- *walkItem) {
 		}
 
 		if relPath == "" { // empty string indicates skip.
-			return returnSkip(info)
+			return common.WalkFuncSkipFile(info)
 		}
 
 		if !info.IsDir() {
@@ -88,15 +88,6 @@ func walk(root string, fsView common.FilesystemView, c chan<- *walkItem) {
 		log.Fatalf("Unable to walk %q: %v", root, err)
 	}
 
-}
-
-// returnSkip returns the return value expected from a filepath.WalkFunc in the case where no more processing of file should occur.
-func returnSkip(file os.FileInfo) error {
-	if file.IsDir() {
-		// Must not return io.SkipDir for file, filepath.walk() handles this badly.
-		return filepath.SkipDir
-	}
-	return nil
 }
 
 // PushDirectory walks a directory at root and creates a .isolated file.
