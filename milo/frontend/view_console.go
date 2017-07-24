@@ -156,7 +156,7 @@ func (c consoleRenderer) Header() template.HTML {
 	}
 
 	// Last row: The actual builder shortnames.
-	result += "<tr><th></th>"
+	result += "<tr><th></th><th></th>"
 	for _, br := range c.BuilderRef {
 		result += fmt.Sprintf("<th>%s</th>", br.ShortName)
 	}
