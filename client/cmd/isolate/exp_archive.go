@@ -169,17 +169,32 @@ func partitionDeps(deps []string, rootDir string, blacklist []string) (partition
 	return walker.parts, nil
 }
 
-func uploadDeps(parts partitionedDeps, checker *Checker, uploader *Uploader) (map[string]isolated.File, error) {
-	// Construct a map of the files that constitute the isolate.
-	files := make(map[string]isolated.File)
+type uploadTracker struct {
+	checker  *Checker
+	uploader *Uploader
+	files    map[string]isolated.File
+}
 
+func newUploadTracker(checker *Checker, uploader *Uploader) *uploadTracker {
+	return &uploadTracker{
+		checker:  checker,
+		uploader: uploader,
+		files:    make(map[string]isolated.File),
+	}
+}
+
+func (ut *uploadTracker) Files() map[string]isolated.File {
+	return ut.files
+}
+
+func (ut *uploadTracker) UploadDeps(parts partitionedDeps) error {
 	// Handle the symlinks.
 	for _, item := range parts.links.items {
 		l, err := os.Readlink(item.Path)
 		if err != nil {
-			return nil, fmt.Errorf("unable to resolve symlink for %q: %v", item.Path, err)
+			return fmt.Errorf("unable to resolve symlink for %q: %v", item.Path, err)
 		}
-		files[item.RelPath] = isolated.SymLink(l)
+		ut.files[item.RelPath] = isolated.SymLink(l)
 	}
 
 	// Handle the small to-be-archived files.
@@ -190,7 +205,7 @@ func uploadDeps(parts partitionedDeps, checker *Checker, uploader *Uploader) (ma
 		bundle := bundle
 		digest, tarSize, err := bundle.Digest()
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		log.Printf("Created tar archive %q (%s)", digest, humanize.Bytes(uint64(tarSize)))
@@ -203,14 +218,14 @@ func uploadDeps(parts partitionedDeps, checker *Checker, uploader *Uploader) (ma
 			Mode:    0644, // Read
 			Digest:  digest,
 		}
-		files[item.RelPath] = isolated.TarFile(item.Digest, int(item.Mode), item.Size)
+		ut.files[item.RelPath] = isolated.TarFile(item.Digest, int(item.Mode), item.Size)
 
-		checker.AddItem(item, false, func(item *Item, ps *isolatedclient.PushState) {
+		ut.checker.AddItem(item, false, func(item *Item, ps *isolatedclient.PushState) {
 			if ps == nil {
 				return
 			}
 			log.Printf("QUEUED %q for upload", item.RelPath)
-			uploader.Upload(item.RelPath, bundle.Contents, ps, func() {
+			ut.uploader.Upload(item.RelPath, bundle.Contents, ps, func() {
 				log.Printf("UPLOADED %q", item.RelPath)
 			})
 		})
@@ -220,21 +235,21 @@ func uploadDeps(parts partitionedDeps, checker *Checker, uploader *Uploader) (ma
 	for _, item := range parts.indivFiles.items {
 		d, err := hashFile(item.Path)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		item.Digest = d
-		files[item.RelPath] = isolated.BasicFile(item.Digest, int(item.Mode), item.Size)
-		checker.AddItem(item, false, func(item *Item, ps *isolatedclient.PushState) {
+		ut.files[item.RelPath] = isolated.BasicFile(item.Digest, int(item.Mode), item.Size)
+		ut.checker.AddItem(item, false, func(item *Item, ps *isolatedclient.PushState) {
 			if ps == nil {
 				return
 			}
 			log.Printf("QUEUED %q for upload", item.RelPath)
-			uploader.UploadFile(item, ps, func() {
+			ut.uploader.UploadFile(item, ps, func() {
 				log.Printf("UPLOADED %q", item.RelPath)
 			})
 		})
 	}
-	return files, nil
+	return nil
 }
 
 // main contains the core logic for experimental archive.
@@ -280,13 +295,14 @@ func (c *expArchiveRun) main() error {
 	log.Printf("\t%d files (%s) to be isolated individually", len(parts.indivFiles.items), humanize.Bytes(uint64(parts.indivFiles.totalSize)))
 	log.Printf("\t%d files (%s) to be isolated in archives", len(parts.filesToArchive.items), humanize.Bytes(uint64(parts.filesToArchive.totalSize)))
 
-	files, err := uploadDeps(parts, checker, uploader)
-	if err != nil {
+	tracker := newUploadTracker(checker, uploader)
+	if err := tracker.UploadDeps(parts); err != nil {
 		return err
 	}
 
+	isol.Files = tracker.Files()
+
 	// Marshal the isolated file into JSON, and create an Item to describe it.
-	isol.Files = files
 	var isolJSON []byte
 	isolJSON, err = json.Marshal(isol)
 	if err != nil {
