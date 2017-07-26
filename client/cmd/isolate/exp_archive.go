@@ -187,18 +187,21 @@ func (ut *uploadTracker) Files() map[string]isolated.File {
 	return ut.files
 }
 
-func (ut *uploadTracker) UploadDeps(parts partitionedDeps) error {
-	// Handle the symlinks.
-	for _, item := range parts.links.items {
+// populateSymlinks adds an isolated.File to files for each provided symlink
+func (ut *uploadTracker) populateSymlinks(symlinks []*Item) error {
+	for _, item := range symlinks {
 		l, err := os.Readlink(item.Path)
 		if err != nil {
 			return fmt.Errorf("unable to resolve symlink for %q: %v", item.Path, err)
 		}
 		ut.files[item.RelPath] = isolated.SymLink(l)
 	}
+	return nil
+}
 
-	// Handle the small to-be-archived files.
-	bundles := ShardItems(parts.filesToArchive.items, archiveMaxSize)
+// tarAndUploadFiles creates bundles of files, uploads them, and adds each bundle to files.
+func (ut *uploadTracker) tarAndUploadFiles(smallFiles []*Item) error {
+	bundles := ShardItems(smallFiles, archiveMaxSize)
 	log.Printf("\t%d TAR archives to be isolated", len(bundles))
 
 	for _, bundle := range bundles {
@@ -230,9 +233,13 @@ func (ut *uploadTracker) UploadDeps(parts partitionedDeps) error {
 			})
 		})
 	}
+	return nil
+}
 
+// uploadFiles uploads each file and adds it to files.
+func (ut *uploadTracker) uploadFiles(files []*Item) error {
 	// Handle the large individually-uploaded files.
-	for _, item := range parts.indivFiles.items {
+	for _, item := range files {
 		d, err := hashFile(item.Path)
 		if err != nil {
 			return err
@@ -248,6 +255,21 @@ func (ut *uploadTracker) UploadDeps(parts partitionedDeps) error {
 				log.Printf("UPLOADED %q", item.RelPath)
 			})
 		})
+	}
+	return nil
+}
+
+func (ut *uploadTracker) UploadDeps(parts partitionedDeps) error {
+	if err := ut.populateSymlinks(parts.links.items); err != nil {
+		return err
+	}
+
+	if err := ut.tarAndUploadFiles(parts.filesToArchive.items); err != nil {
+		return err
+	}
+
+	if err := ut.uploadFiles(parts.indivFiles.items); err != nil {
+		return err
 	}
 	return nil
 }
