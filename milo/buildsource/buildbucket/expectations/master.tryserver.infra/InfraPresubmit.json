@@ -91,6 +91,7 @@
       "Build": null
     }
   ],
+  "PendingBuildNum": 0,
   "FinishedBuilds": null,
   "MachinePool": null
 }

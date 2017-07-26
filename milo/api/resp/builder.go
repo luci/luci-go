@@ -71,9 +71,12 @@ type Builder struct {
 	// Warning text, if any.
 	Warning string
 
-	CurrentBuilds  []*BuildSummary
-	PendingBuilds  []*BuildSummary
-	FinishedBuilds []*BuildSummary
+	CurrentBuilds []*BuildSummary
+	PendingBuilds []*BuildSummary
+	// PendingBuildNum is the number of pending builds, since the slice above
+	// may be a snapshot instead of the full set.
+	PendingBuildNum int
+	FinishedBuilds  []*BuildSummary
 
 	// MachinePool is primarily used by buildbot builders to list the set of
 	// machines that can run in a builder.  It has no meaning in buildbucket or dm

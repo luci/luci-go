@@ -96,7 +96,10 @@
 
   <div class="column">
   {{ if .Builder.PendingBuilds -}}
-    <h2>Pending Build Requests ({{len .Builder.PendingBuilds}}):</h2>
+		<h2>Pending Build Requests (
+			{{- if gt .Builder.PendingBuildNum (len .Builder.PendingBuilds) -}}
+				{{ .Builder.PendingBuildNum }} showing 
+			{{ end -}}{{- len .Builder.PendingBuilds -}}):</h2>
     <ul>
     {{- range .Builder.PendingBuilds -}}
       <li>

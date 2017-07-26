@@ -229,6 +229,7 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 	}
 	// Extract pending builds out of the master json.
 	result.PendingBuilds = make([]*resp.BuildSummary, len(p.PendingBuildStates))
+	result.PendingBuildNum = p.PendingBuilds
 	logging.Debugf(c, "Number of pending builds: %d", len(p.PendingBuildStates))
 	for i, pb := range p.PendingBuildStates {
 		start := time.Unix(int64(pb.SubmittedAt), 0).UTC()
