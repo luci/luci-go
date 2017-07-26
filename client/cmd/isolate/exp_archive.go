@@ -15,14 +15,11 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	humanize "github.com/dustin/go-humanize"
@@ -217,44 +214,9 @@ func (c *expArchiveRun) main() error {
 		return err
 	}
 
-	isolItem, isolJSON, err := tracker.Finalize(archiveOpts.Isolated)
+	isolDigest, err := tracker.Finalize(archiveOpts.Isolated, c.dumpJSON)
 	if err != nil {
 		return err
-	}
-
-	// Make sure that all pending items have been checked.
-	if err := checker.Close(); err != nil {
-		return err
-	}
-
-	// Make sure that all the uploads have completed successfully.
-	if err := uploader.Close(); err != nil {
-		return err
-	}
-
-	// Write the isolated file, and emit its digest to stdout.
-	if err := ioutil.WriteFile(archiveOpts.Isolated, isolJSON, 0644); err != nil {
-		return err
-	}
-	fmt.Printf("%s\t%s\n", isolItem.Digest, filepath.Base(archiveOpts.Isolated))
-
-	// Optionally, write the digest of the isolated file as JSON (in the same
-	// format as batch_archive).
-	if c.dumpJSON != "" {
-		// The name is the base name of the isolated file, extension stripped.
-		name := filepath.Base(archiveOpts.Isolated)
-		if i := strings.LastIndex(name, "."); i != -1 {
-			name = name[:i]
-		}
-		j, err := json.Marshal(map[string]isolated.HexDigest{
-			name: isolItem.Digest,
-		})
-		if err != nil {
-			return err
-		}
-		if err := ioutil.WriteFile(c.dumpJSON, j, 0644); err != nil {
-			return err
-		}
 	}
 
 	end := time.Now()
@@ -264,7 +226,7 @@ func (c *expArchiveRun) main() error {
 		MissCount:   proto.Int64(int64(checker.Miss.Count)),
 		HitBytes:    &checker.Hit.Bytes,
 		MissBytes:   &checker.Miss.Bytes,
-		IsolateHash: []string{string(isolItem.Digest)},
+		IsolateHash: []string{string(isolDigest)},
 	}
 	eventlogger := NewLogger(ctx, c.loggingFlags.EventlogEndpoint)
 	op := logpb.IsolateClientEvent_ARCHIVE.Enum()

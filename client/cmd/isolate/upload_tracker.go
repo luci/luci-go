@@ -17,9 +17,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	humanize "github.com/dustin/go-humanize"
 	"github.com/luci/luci-go/common/isolated"
@@ -138,14 +140,16 @@ func (ut *UploadTracker) uploadFiles(files []*Item) error {
 	return nil
 }
 
-// Finalize creates and uploads the isolate JSON at the isolatePath.
-// It returns the corresponding Item and its contents.
+// Finalize creates and uploads the isolate JSON at the isolatePath, and closes the checker and uploader.
+// It returns the isolate digest.
+// If dumpJSONPath is non-empty, the digest is also written to that path as
+// JSON (in the same format as batch_archive).
 // Finalize should only be called after UploadDeps.
-func (ut *UploadTracker) Finalize(isolatedPath string) (*Item, []byte, error) {
+func (ut *UploadTracker) Finalize(isolatedPath, dumpJSONPath string) (isolated.HexDigest, error) {
 	// Marshal the isolated file into JSON, and create an Item to describe it.
 	isolJSON, err := json.Marshal(ut.isol)
 	if err != nil {
-		return nil, []byte{}, err
+		return "", err
 	}
 	isolItem := &Item{
 		Path:    isolatedPath,
@@ -165,5 +169,47 @@ func (ut *UploadTracker) Finalize(isolatedPath string) (*Item, []byte, error) {
 		})
 	})
 
-	return isolItem, isolJSON, nil
+	// Make sure that all pending items have been checked.
+	if err := ut.checker.Close(); err != nil {
+		return "", err
+	}
+
+	// Make sure that all the uploads have completed successfully.
+	if err := ut.uploader.Close(); err != nil {
+		return "", err
+	}
+
+	// Write the isolated file, and emit its digest to stdout.
+	if err := ioutil.WriteFile(isolatedPath, isolJSON, 0644); err != nil {
+		return "", err
+	}
+
+	fmt.Printf("%s\t%s\n", isolItem.Digest, filepath.Base(isolatedPath))
+
+	if err := dumpJSON(isolatedPath, dumpJSONPath, isolItem); err != nil {
+		return "", err
+	}
+
+	return isolItem.Digest, nil
+}
+
+func dumpJSON(isolatedPath, dumpJSONPath string, isolItem *Item) error {
+	if dumpJSONPath == "" {
+		return nil
+	}
+	// The name is the base name of the isolated file, extension stripped.
+	name := filepath.Base(isolatedPath)
+	if i := strings.LastIndex(name, "."); i != -1 {
+		name = name[:i]
+	}
+	j, err := json.Marshal(map[string]isolated.HexDigest{
+		name: isolItem.Digest,
+	})
+	if err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(dumpJSONPath, j, 0644); err != nil {
+		return err
+	}
+	return nil
 }
