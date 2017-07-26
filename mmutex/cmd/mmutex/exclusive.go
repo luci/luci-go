@@ -1,13 +1,26 @@
-// Copyright 2017 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2017 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package main
 
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"time"
 
+	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
 
 	"github.com/luci/luci-go/mmutex/lib"
@@ -17,21 +30,34 @@ var cmdExclusive = &subcommands.Command{
 	UsageLine: "exclusive -- <command>",
 	ShortDesc: "acquires an exclusive lock before running the command",
 	CommandRun: func() subcommands.CommandRun {
-		return &cmdExclusiveRun{}
+		c := &cmdExclusiveRun{}
+		c.Flags.DurationVar(&c.fslockTimeout, "fslock-timeout", 0, "Lock acquisition timeout")
+		c.Flags.DurationVar(&c.fslockPollingInterval, "fslock-polling-interval", 0, "Lock acquisition polling interval")
+		return c
 	},
 }
 
 type cmdExclusiveRun struct {
 	subcommands.CommandRunBase
+	fslockTimeout         time.Duration
+	fslockPollingInterval time.Duration
 }
 
 func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	// TODO(charliea): Make sure that `args` has length greater than zero.
-
-	if err := lib.AcquireExclusiveLock(lockFilePath); err != nil {
-		fmt.Fprintf(os.Stderr, "error acquiring exclusive lock: %s\n", err)
+	if err := RunExclusive(args, c.fslockTimeout, c.fslockPollingInterval); err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		return 1
+	} else {
+		return 0
 	}
+}
 
-	return 0
+func RunExclusive(command []string, timeout time.Duration, pollingInterval time.Duration) error {
+	blocker := lib.CreateBlockerUntil(time.Now().Add(timeout), pollingInterval)
+	return fslock.WithBlocking(LockFilePath, blocker, func() error {
+		cmd := exec.Command(command[0], command[1:]...)
+		cmd.Stderr = os.Stderr
+		cmd.Stdout = os.Stdout
+		return cmd.Run()
+	})
 }

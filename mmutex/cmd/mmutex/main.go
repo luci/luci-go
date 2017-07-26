@@ -16,12 +16,13 @@ package main
 
 import (
 	"os"
+	"path"
 
 	"github.com/maruel/subcommands"
 )
 
-// TODO(charliea): Compute this path from $MMUTEX_LOCK_DIR rather than using a constant.
-const lockFilePath = "/tmp/lock"
+// TODO(charliea): Compute this path from $MMUTEX_LOCK_DIR rather than making it fixed.
+var LockFilePath = path.Join(os.TempDir(), "mmutex.lock")
 
 var application = &subcommands.DefaultApplication{
 	Name: "mmutex",
