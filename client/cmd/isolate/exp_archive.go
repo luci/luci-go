@@ -212,36 +212,15 @@ func (c *expArchiveRun) main() error {
 	log.Printf("\t%d files (%s) to be isolated individually", len(parts.indivFiles.items), humanize.Bytes(uint64(parts.indivFiles.totalSize)))
 	log.Printf("\t%d files (%s) to be isolated in archives", len(parts.filesToArchive.items), humanize.Bytes(uint64(parts.filesToArchive.totalSize)))
 
-	tracker := NewUploadTracker(checker, uploader)
+	tracker := NewUploadTracker(checker, uploader, isol)
 	if err := tracker.UploadDeps(parts); err != nil {
 		return err
 	}
 
-	isol.Files = tracker.Files()
-
-	// Marshal the isolated file into JSON, and create an Item to describe it.
-	var isolJSON []byte
-	isolJSON, err = json.Marshal(isol)
+	isolItem, isolJSON, err := tracker.Finalize(archiveOpts.Isolated)
 	if err != nil {
 		return err
 	}
-	isolItem := &Item{
-		Path:    archiveOpts.Isolated,
-		RelPath: filepath.Base(archiveOpts.Isolated),
-		Digest:  isolated.HashBytes(isolJSON),
-		Size:    int64(len(isolJSON)),
-	}
-
-	// Check and upload isolate JSON.
-	checker.AddItem(isolItem, true, func(item *Item, ps *isolatedclient.PushState) {
-		if ps == nil {
-			return
-		}
-		log.Printf("QUEUED %q for upload", item.RelPath)
-		uploader.UploadBytes(item.RelPath, isolJSON, ps, func() {
-			log.Printf("UPLOADED %q", item.RelPath)
-		})
-	})
 
 	// Make sure that all pending items have been checked.
 	if err := checker.Close(); err != nil {
