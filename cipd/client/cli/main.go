@@ -90,21 +90,31 @@ type cipdSubcommand struct {
 	subcommands.CommandRunBase
 
 	jsonOutput string
-	verbose    bool
+	logConfig  logging.Config
+
+	// TODO(dnj): Remove "verbose" flag once all current invocations of it are
+	// cleaned up and rolled out, as it is now deprecated in favor of "logConfig".
+	verbose bool
 }
 
 // ModifyContext implements cli.ContextModificator.
 func (c *cipdSubcommand) ModifyContext(ctx context.Context) context.Context {
 	if c.verbose {
 		ctx = logging.SetLevel(ctx, logging.Debug)
+	} else {
+		ctx = c.logConfig.Set(ctx)
 	}
 	return ctx
 }
 
 // registerBaseFlags registers common flags used by all subcommands.
 func (c *cipdSubcommand) registerBaseFlags() {
+	// Set the default log level.
+	c.logConfig.Level = logging.Info
+
 	c.Flags.StringVar(&c.jsonOutput, "json-output", "", "Path to write operation results to.")
-	c.Flags.BoolVar(&c.verbose, "verbose", false, "Enable more logging.")
+	c.Flags.BoolVar(&c.verbose, "verbose", false, "Enable more logging (deprecated, use -log-level=debug).")
+	c.logConfig.AddFlags(&c.Flags)
 }
 
 // checkArgs checks command line args.
