@@ -38,7 +38,7 @@ type (
 		Value interface{}
 	}
 
-	// A TagValueGenerator generates (TagKey, value) pairs, for use with Annoatator.Tag
+	// TagValueGenerator generates (TagKey, value) pairs, for use with Annoatator.Tag
 	// and New().
 	TagValueGenerator interface {
 		GenerateErrorTagValue() TagValue

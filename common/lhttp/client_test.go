@@ -140,7 +140,7 @@ func TestNewRequestGETFail(t *testing.T) {
 		}, nil)
 
 		status, err := clientReq()
-		So(err.Error(), ShouldResemble, "http request failed: Internal Server Error (HTTP 500) (attempts: 4)")
+		So(err.Error(), ShouldResemble, "gave up after 4 attempts: http request failed: Internal Server Error (HTTP 500)")
 		So(status, ShouldResemble, 500)
 	})
 }
@@ -187,7 +187,7 @@ func TestGetJSONBadResult(t *testing.T) {
 
 		actual := map[string]string{}
 		status, err := GetJSON(ctx, fast, http.DefaultClient, ts.URL, &actual)
-		So(err.Error(), ShouldResemble, "bad response "+ts.URL+": invalid character 'y' looking for beginning of value (attempts: 4)")
+		So(err.Error(), ShouldResemble, "gave up after 4 attempts: bad response "+ts.URL+": invalid character 'y' looking for beginning of value")
 		So(status, ShouldResemble, 200)
 		So(actual, ShouldResemble, map[string]string{})
 	})
@@ -207,7 +207,7 @@ func TestGetJSONBadResultIgnore(t *testing.T) {
 		defer ts.Close()
 
 		status, err := GetJSON(ctx, fast, http.DefaultClient, ts.URL, nil)
-		So(err.Error(), ShouldResemble, "bad response "+ts.URL+": invalid character 'y' looking for beginning of value (attempts: 4)")
+		So(err.Error(), ShouldResemble, "gave up after 4 attempts: bad response "+ts.URL+": invalid character 'y' looking for beginning of value")
 		So(status, ShouldResemble, 200)
 	})
 }
@@ -223,7 +223,7 @@ func TestGetJSONBadContentTypeIgnore(t *testing.T) {
 		defer ts.Close()
 
 		status, err := GetJSON(ctx, fast, http.DefaultClient, ts.URL, nil)
-		So(err.Error(), ShouldResemble, "unexpected Content-Type, expected \"application/json\", got \"text/plain; charset=utf-8\" (attempts: 4)")
+		So(err.Error(), ShouldResemble, "gave up after 4 attempts: unexpected Content-Type, expected \"application/json\", got \"text/plain; charset=utf-8\"")
 		So(status, ShouldResemble, 200)
 	})
 }

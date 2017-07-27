@@ -54,6 +54,20 @@ type ErrorHandler func(resp *http.Response, err error) error
 // documentation.
 type RequestGen func() (*http.Request, error)
 
+var httpTagKey = errors.NewTagKey("this is an HTTP error")
+
+func applyHTTPTag(err error, status int) error {
+	return errors.TagValue{Key: httpTagKey, Value: status}.Apply(err)
+}
+
+func IsHTTPError(err error) (status int, ok bool) {
+	d, ok := errors.TagValueIn(httpTagKey, err)
+	if ok {
+		status = d.(int)
+	}
+	return
+}
+
 // NewRequest returns a retriable request.
 //
 // The handler func is responsible for closing the response Body before
@@ -117,10 +131,11 @@ func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen Req
 				return handler(resp)
 			}
 
+			err = applyHTTPTag(err, status)
 			return errorHandler(resp, err)
 		}, nil)
 		if err != nil {
-			err = fmt.Errorf("%v (attempts: %d)", err, attempts)
+			err = errors.Annotate(err, "gave up after %d attempts", attempts).Err()
 		}
 		return status, err
 	}
