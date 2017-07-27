@@ -109,8 +109,11 @@ func (c *cipdSubcommand) ModifyContext(ctx context.Context) context.Context {
 
 // registerBaseFlags registers common flags used by all subcommands.
 func (c *cipdSubcommand) registerBaseFlags() {
-	// Set the default log level.
-	c.logConfig.Level = logging.Info
+	// Minimum default logging level is Info. This accommodates subcommands that
+	// don't explicitly set the log level, resulting in the zero value (Debug).
+	if c.logConfig.Level < logging.Info {
+		c.logConfig.Level = logging.Info
+	}
 
 	c.Flags.StringVar(&c.jsonOutput, "json-output", "", "Path to write operation results to.")
 	c.Flags.BoolVar(&c.verbose, "verbose", false, "Enable more logging (deprecated, use -log-level=debug).")
@@ -2034,6 +2037,10 @@ func cmdSelfUpdate(params Parameters) *subcommands.Command {
 		LongDesc:  "does an in-place upgrade to the current cipd binary",
 		CommandRun: func() subcommands.CommandRun {
 			s := &selfupdateRun{}
+
+			// By default, show a reduced number of logs unless something goes wrong.
+			s.logConfig.Level = logging.Warning
+
 			s.registerBaseFlags()
 			s.clientOptions.registerFlags(&s.Flags, params)
 			s.Flags.StringVar(&s.version, "version", "", "Version of the client to update to.")
