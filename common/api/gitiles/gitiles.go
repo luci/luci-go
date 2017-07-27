@@ -138,7 +138,8 @@ func (c *Client) Log(ctx context.Context, repoURL, treeish string, limit int) ([
 	if limit < 1 {
 		return nil, fmt.Errorf("limit must be at least 1, but %d provided", limit)
 	}
-	subPath := fmt.Sprintf("+log/%s?format=JSON", url.PathEscape(treeish))
+	// TODO(tandrii): s/QueryEscape/PathEscape once AE deployments are Go1.8+.
+	subPath := fmt.Sprintf("+log/%s?format=JSON", url.QueryEscape(treeish))
 	resp := &logResponse{}
 	if err := c.get(ctx, repoURL, subPath, resp); err != nil {
 		return nil, err
@@ -191,7 +192,8 @@ func (c *Client) Refs(ctx context.Context, repoURL, refsPath string) (map[string
 	}
 	refsPath = strings.TrimRight(refsPath, "/")
 
-	subPath := fmt.Sprintf("+%s?format=json", url.PathEscape(refsPath))
+	// TODO(tandrii): s/QueryEscape/PathEscape once AE deployments are Go1.8+.
+	subPath := fmt.Sprintf("+%s?format=json", url.QueryEscape(refsPath))
 	resp := refsResponse{}
 	if err := c.get(ctx, repoURL, subPath, &resp); err != nil {
 		return nil, err
