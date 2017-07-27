@@ -147,25 +147,18 @@ func (ut *UploadTracker) uploadFiles(files []*Item) error {
 // JSON (in the same format as batch_archive).
 // Finalize should only be called after UploadDeps.
 func (ut *UploadTracker) Finalize(isolatedPath string, dumpJSONWriter io.Writer) (isolated.HexDigest, error) {
-	// Marshal the isolated file into JSON, and create an Item to describe it.
-	isolJSON, err := json.Marshal(ut.isol)
+	isolFile, err := newIsolatedFile(ut.isol, isolatedPath)
 	if err != nil {
 		return "", err
 	}
-	isolItem := &Item{
-		Path:    isolatedPath,
-		RelPath: filepath.Base(isolatedPath),
-		Digest:  isolated.HashBytes(isolJSON),
-		Size:    int64(len(isolJSON)),
-	}
 
 	// Check and upload isolate JSON.
-	ut.checker.AddItem(isolItem, true, func(item *Item, ps *isolatedclient.PushState) {
+	ut.checker.AddItem(isolFile.item(), true, func(item *Item, ps *isolatedclient.PushState) {
 		if ps == nil {
 			return
 		}
 		log.Printf("QUEUED %q for upload", item.RelPath)
-		ut.uploader.UploadBytes(item.RelPath, isolJSON, ps, func() {
+		ut.uploader.UploadBytes(item.RelPath, isolFile.contents(), ps, func() {
 			log.Printf("UPLOADED %q", item.RelPath)
 		})
 	})
@@ -181,28 +174,66 @@ func (ut *UploadTracker) Finalize(isolatedPath string, dumpJSONWriter io.Writer)
 	}
 
 	// Write the isolated file, and emit its digest to stdout.
-	if err := ioutil.WriteFile(isolatedPath, isolJSON, 0644); err != nil {
+	if err := isolFile.writeJSONFile(); err != nil {
 		return "", err
 	}
 
-	fmt.Printf("%s\t%s\n", isolItem.Digest, filepath.Base(isolatedPath))
+	fmt.Printf("%s\t%s\n", isolFile.item().Digest, filepath.Base(isolatedPath))
 
-	if err := dumpJSON(isolatedPath, dumpJSONWriter, isolItem); err != nil {
+	if err := dumpJSON(isolFile.name(), dumpJSONWriter, isolFile.item()); err != nil {
 		return "", err
 	}
 
-	return isolItem.Digest, nil
+	return isolFile.item().Digest, nil
 }
 
-func dumpJSON(isolatedPath string, dumpJSONWriter io.Writer, isolItem *Item) error {
-	// The name is the base name of the isolated file, extension stripped.
-	name := filepath.Base(isolatedPath)
+func dumpJSON(isolName string, dumpJSONWriter io.Writer, isolItem *Item) error {
+	enc := json.NewEncoder(dumpJSONWriter)
+	return enc.Encode(map[string]isolated.HexDigest{
+		isolName: isolItem.Digest,
+	})
+}
+
+// isolatedFile is an isolated file which is stored in memory.
+// It can produce a corresponding Item, for upload to the server,
+// and also write its contents to the filesystem.
+type isolatedFile struct {
+	json []byte
+	path string
+}
+
+func newIsolatedFile(isol *isolated.Isolated, path string) (*isolatedFile, error) {
+	j, err := json.Marshal(isol)
+	if err != nil {
+		return &isolatedFile{}, err
+	}
+	return &isolatedFile{json: j, path: path}, nil
+}
+
+// item creates an *Item to represent the isolated JSON file.
+func (ij *isolatedFile) item() *Item {
+	return &Item{
+		Path:    ij.path,
+		RelPath: filepath.Base(ij.path),
+		Digest:  isolated.HashBytes(ij.json),
+		Size:    int64(len(ij.json)),
+	}
+}
+
+func (ij *isolatedFile) contents() []byte {
+	return ij.json
+}
+
+// writeJSONFile writes the file contents to the filesystem.
+func (ij *isolatedFile) writeJSONFile() error {
+	return ioutil.WriteFile(ij.path, ij.json, 0644)
+}
+
+// name returns the base name of the isolated file, extension stripped.
+func (ij *isolatedFile) name() string {
+	name := filepath.Base(ij.path)
 	if i := strings.LastIndex(name, "."); i != -1 {
 		name = name[:i]
 	}
-
-	enc := json.NewEncoder(dumpJSONWriter)
-	return enc.Encode(map[string]isolated.HexDigest{
-		name: isolItem.Digest,
-	})
+	return name
 }
