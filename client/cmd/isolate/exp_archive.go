@@ -15,10 +15,10 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -215,21 +215,19 @@ func (c *expArchiveRun) main() error {
 	if err := tracker.UploadDeps(parts); err != nil {
 		return err
 	}
+	isolSummary, err := tracker.Finalize(archiveOpts.Isolated)
+	if err != nil {
+		return err
+	}
 
-	var dumpJSONWriter io.Writer = ioutil.Discard
-
+	printSummary(isolSummary)
 	if c.dumpJSON != "" {
 		f, err := os.OpenFile(c.dumpJSON, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
 			return err
 		}
-		defer f.Close()
-		dumpJSONWriter = f
-	}
-
-	isolDigest, err := tracker.Finalize(archiveOpts.Isolated, dumpJSONWriter)
-	if err != nil {
-		return err
+		writeSummaryJSON(f, isolSummary)
+		f.Close()
 	}
 
 	end := time.Now()
@@ -239,7 +237,7 @@ func (c *expArchiveRun) main() error {
 		MissCount:   proto.Int64(int64(checker.Miss.Count)),
 		HitBytes:    &checker.Hit.Bytes,
 		MissBytes:   &checker.Miss.Bytes,
-		IsolateHash: []string{string(isolDigest)},
+		IsolateHash: []string{string(isolSummary.Digest)},
 	}
 	eventlogger := NewLogger(ctx, c.loggingFlags.EventlogEndpoint)
 	op := logpb.IsolateClientEvent_ARCHIVE.Enum()
@@ -248,6 +246,19 @@ func (c *expArchiveRun) main() error {
 	}
 
 	return nil
+}
+
+func writeSummaryJSON(w io.Writer, summaries ...IsolatedSummary) error {
+	m := make(map[string]isolated.HexDigest)
+	for _, summary := range summaries {
+		m[summary.Name] = summary.Digest
+	}
+
+	return json.NewEncoder(w).Encode(m)
+}
+
+func printSummary(summary IsolatedSummary) {
+	fmt.Printf("%s\t%s\n", summary.Digest, summary.Name)
 }
 
 func (c *expArchiveRun) parseFlags(args []string) error {

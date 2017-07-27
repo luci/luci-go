@@ -17,7 +17,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -38,6 +37,8 @@ type UploadTracker struct {
 
 // NewUploadTracker constructs an UploadTracker.  It tracks uploaded files in isol.Files.
 func NewUploadTracker(checker *Checker, uploader *Uploader, isol *isolated.Isolated) *UploadTracker {
+	// TODO: share a Checker and Uploader with other UploadTrackers
+	// when batch uploading.
 	isol.Files = make(map[string]isolated.File)
 	return &UploadTracker{
 		checker:  checker,
@@ -141,15 +142,20 @@ func (ut *UploadTracker) uploadFiles(files []*Item) error {
 	return nil
 }
 
+// IsolatedSummary contains an isolate name and its digest.
+type IsolatedSummary struct {
+	// Name is the base name an isolated file with any extension stripped
+	Name   string
+	Digest isolated.HexDigest
+}
+
 // Finalize creates and uploads the isolate JSON at the isolatePath, and closes the checker and uploader.
-// It returns the isolate digest.
-// If dumpJSONPath is non-empty, the digest is also written to that path as
-// JSON (in the same format as batch_archive).
+// It returns the isolate name and digest.
 // Finalize should only be called after UploadDeps.
-func (ut *UploadTracker) Finalize(isolatedPath string, dumpJSONWriter io.Writer) (isolated.HexDigest, error) {
+func (ut *UploadTracker) Finalize(isolatedPath string) (IsolatedSummary, error) {
 	isolFile, err := newIsolatedFile(ut.isol, isolatedPath)
 	if err != nil {
-		return "", err
+		return IsolatedSummary{}, err
 	}
 
 	// Check and upload isolate JSON.
@@ -165,33 +171,23 @@ func (ut *UploadTracker) Finalize(isolatedPath string, dumpJSONWriter io.Writer)
 
 	// Make sure that all pending items have been checked.
 	if err := ut.checker.Close(); err != nil {
-		return "", err
+		return IsolatedSummary{}, err
 	}
 
 	// Make sure that all the uploads have completed successfully.
 	if err := ut.uploader.Close(); err != nil {
-		return "", err
+		return IsolatedSummary{}, err
 	}
 
-	// Write the isolated file, and emit its digest to stdout.
+	// Write the isolated file...
 	if err := isolFile.writeJSONFile(); err != nil {
-		return "", err
+		return IsolatedSummary{}, err
 	}
 
-	fmt.Printf("%s\t%s\n", isolFile.item().Digest, filepath.Base(isolatedPath))
-
-	if err := dumpJSON(isolFile.name(), dumpJSONWriter, isolFile.item()); err != nil {
-		return "", err
-	}
-
-	return isolFile.item().Digest, nil
-}
-
-func dumpJSON(isolName string, dumpJSONWriter io.Writer, isolItem *Item) error {
-	enc := json.NewEncoder(dumpJSONWriter)
-	return enc.Encode(map[string]isolated.HexDigest{
-		isolName: isolItem.Digest,
-	})
+	return IsolatedSummary{
+		Name:   isolFile.name(),
+		Digest: isolFile.item().Digest,
+	}, nil
 }
 
 // isolatedFile is an isolated file which is stored in memory.
