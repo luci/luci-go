@@ -17,6 +17,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -145,7 +146,7 @@ func (ut *UploadTracker) uploadFiles(files []*Item) error {
 // If dumpJSONPath is non-empty, the digest is also written to that path as
 // JSON (in the same format as batch_archive).
 // Finalize should only be called after UploadDeps.
-func (ut *UploadTracker) Finalize(isolatedPath, dumpJSONPath string) (isolated.HexDigest, error) {
+func (ut *UploadTracker) Finalize(isolatedPath string, dumpJSONWriter io.Writer) (isolated.HexDigest, error) {
 	// Marshal the isolated file into JSON, and create an Item to describe it.
 	isolJSON, err := json.Marshal(ut.isol)
 	if err != nil {
@@ -186,30 +187,22 @@ func (ut *UploadTracker) Finalize(isolatedPath, dumpJSONPath string) (isolated.H
 
 	fmt.Printf("%s\t%s\n", isolItem.Digest, filepath.Base(isolatedPath))
 
-	if err := dumpJSON(isolatedPath, dumpJSONPath, isolItem); err != nil {
+	if err := dumpJSON(isolatedPath, dumpJSONWriter, isolItem); err != nil {
 		return "", err
 	}
 
 	return isolItem.Digest, nil
 }
 
-func dumpJSON(isolatedPath, dumpJSONPath string, isolItem *Item) error {
-	if dumpJSONPath == "" {
-		return nil
-	}
+func dumpJSON(isolatedPath string, dumpJSONWriter io.Writer, isolItem *Item) error {
 	// The name is the base name of the isolated file, extension stripped.
 	name := filepath.Base(isolatedPath)
 	if i := strings.LastIndex(name, "."); i != -1 {
 		name = name[:i]
 	}
-	j, err := json.Marshal(map[string]isolated.HexDigest{
+
+	enc := json.NewEncoder(dumpJSONWriter)
+	return enc.Encode(map[string]isolated.HexDigest{
 		name: isolItem.Digest,
 	})
-	if err != nil {
-		return err
-	}
-	if err := ioutil.WriteFile(dumpJSONPath, j, 0644); err != nil {
-		return err
-	}
-	return nil
 }

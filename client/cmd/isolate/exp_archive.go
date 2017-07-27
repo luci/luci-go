@@ -17,6 +17,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -214,7 +216,18 @@ func (c *expArchiveRun) main() error {
 		return err
 	}
 
-	isolDigest, err := tracker.Finalize(archiveOpts.Isolated, c.dumpJSON)
+	var dumpJSONWriter io.Writer = ioutil.Discard
+
+	if c.dumpJSON != "" {
+		f, err := os.OpenFile(c.dumpJSON, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		dumpJSONWriter = f
+	}
+
+	isolDigest, err := tracker.Finalize(archiveOpts.Isolated, dumpJSONWriter)
 	if err != nil {
 		return err
 	}
