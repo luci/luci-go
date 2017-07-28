@@ -59,17 +59,19 @@ exports.incDir = path.join(exports.base, 'inc');
 exports.setup_common = function(gulp) {
   // Verify TypeScript file integrity and formatting.
   gulp.task('tslint', function() {
-    process.chdir(exports.base);
+    process.chdir(exports.incDir);
 
-    return gulp.src('inc/*/*.ts')
+    return gulp.src(['**/*.ts', '!bower_components/**'])
         .pipe(tslint({
-            configuration: path.join(exports.base, 'inc', 'tslint.json'),
+            configuration: './tslint.json',
             formatter: 'verbose',
         }))
         .pipe(tslint.report());
   });
 
   gulp.task('check-ts', function() {
+    process.chdir(exports.incDir);
+
     // Transpile each TypeScript module independently into JavaScript.
     var tsconfigPath = path.join(exports.incDir, 'tsconfig.json');
 
@@ -78,13 +80,13 @@ exports.setup_common = function(gulp) {
       typeRoots: [path.join(exports.base, 'node_modules', '@types')],
     });
 
-    return gulp.src(['**/*.ts', '!bower_components/**'], {cwd: exports.incDir})
+    return gulp.src(['**/*.ts', '!bower_components/**'])
         .pipe(tsProj());
   });
 
   gulp.task('check-format', function() {
-    process.chdir(exports.base);
-    return gulp.src('inc/*/*.ts')
+    process.chdir(exports.incDir);
+    return gulp.src(['**/*.ts', '!bower_components/**'])
         .pipe(format.checkFormat())
         .on('warning', function(e) {
           process.stdout.write(e.message);
@@ -93,10 +95,10 @@ exports.setup_common = function(gulp) {
   });
 
   gulp.task('format', function() {
-    process.chdir(exports.base);
+    process.chdir(exports.incDir);
 
     // The base option ensures the glob doesn't strip prefixes.
-    return gulp.src('inc/*/*.ts', {base: '.'})
+    return gulp.src(['**/*.ts', '!bower_components/**'])
         .pipe(format.format())
         .pipe(gulp.dest('.'));
   });
@@ -109,12 +111,15 @@ exports.setup_common = function(gulp) {
 };
 
 // Project-specific tasks.
-exports.setup = function(gulp, config) {
-  var APP = path.basename(config.dir);
+exports.setup = function(gulp, appDir, config) {
+  var APP = path.basename(appDir);
   var DIST = path.join(exports.out, 'dist', APP);
 
   var layout = {
     app: APP,
+    dir: process.cwd(),
+    web: '../..',
+    inc: './inc',
     distPath: DIST,
 
     // NOTE: Takes vararg via "arguments".
@@ -160,7 +165,7 @@ exports.setup = function(gulp, config) {
 
   var optimizeHtmlTask = function(src, dest) {
     var assets = $.useref.assets({
-      searchPath: ['.tmp', config.dir]
+      searchPath: ['.tmp', '.']
     });
 
     return gulp.src(src)
@@ -190,21 +195,20 @@ exports.setup = function(gulp, config) {
   // Transpiles "inc/*/*.ts" and deposits the result alongside their source
   // "ts" files.
   gulp.task('ts', function() {
-    // Transpile each TypeScript module independently into JavaScript.
-    var tsconfigPath = path.join(exports.incDir, 'tsconfig.json');
-
     // Compile the files in "scripts-ts/*.ts" into a single out file.
-    var scriptsTs = path.join(config.dir, 'scripts-ts');
-    var tsProj = ts.createProject(tsconfigPath, {
+    var appTsDir = path.join(layout.inc, 'apps', layout.app);
+    var tsProj = ts.createProject(path.join(layout.inc, 'tsconfig.json'), {
       typeRoots: [path.join(exports.base, 'node_modules', '@types')],
-      outFile: 'main.js',
+      outFile: path.join(appTsDir, 'main.js'),
     });
 
-    return gulp.src('*.ts', {cwd: scriptsTs, exclude: ['*_test.ts']})
+    return gulp.src(path.join(layout.inc, 'apps', layout.app, '*.ts'), {
+          exclude: ['*_test.ts'],
+        })
         .pipe(sourcemaps.init())
-            .pipe(tsProj())
-            .pipe(sourcemaps.write('.'))
-            .pipe(gulp.dest(scriptsTs));
+        .pipe(tsProj())
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest(layout.inc))
   });
 
   // Compile and automatically prefix stylesheets

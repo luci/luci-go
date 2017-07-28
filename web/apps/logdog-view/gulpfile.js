@@ -10,6 +10,4 @@
 var gulp = require('gulp');
 var luci = require('../gulp-common.js');
 
-luci.setup(gulp, {
-  dir: __dirname,
-});
+luci.setup(gulp, __dirname, {});

@@ -4,4 +4,4 @@
   that can be found in the LICENSE file.
 */
 
-///<reference path="../inc/logdog-stream-view/model.ts" />
+///<reference path="../../logdog-stream-view/model.ts" />

@@ -7,8 +7,8 @@ dist/*/**
 apps/*/.tmp
 
 # Ignore compiled JavaScript.
-apps/*/scripts-ts/*.js
-apps/*/scripts-ts/*.js.map
+inc/apps/*/*.js
+inc/apps/*/*.js.map
 
 # Tag files for installed Bower/NPM.
 .npm.installed
