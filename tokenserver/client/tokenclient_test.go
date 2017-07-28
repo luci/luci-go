@@ -103,10 +103,6 @@ func (f *fakeRPCClient) MintMachineToken(ctx context.Context, in *minter.MintMac
 	return &f.Out, nil
 }
 
-func (f *fakeRPCClient) MintDelegationToken(context.Context, *minter.MintDelegationTokenRequest, ...grpc.CallOption) (*minter.MintDelegationTokenResponse, error) {
-	panic("not implemented")
-}
-
 // fakeSigner implements Signer.
 type fakeSigner struct{}
 

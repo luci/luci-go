@@ -38,10 +38,6 @@ type tokenMinterMock struct {
 	err      error
 }
 
-func (m *tokenMinterMock) MintMachineToken(context.Context, *minter.MintMachineTokenRequest, ...grpc.CallOption) (*minter.MintMachineTokenResponse, error) {
-	panic("not implemented")
-}
-
 func (m *tokenMinterMock) MintDelegationToken(ctx context.Context, in *minter.MintDelegationTokenRequest, opts ...grpc.CallOption) (*minter.MintDelegationTokenResponse, error) {
 	m.request = *in
 	if m.err != nil {

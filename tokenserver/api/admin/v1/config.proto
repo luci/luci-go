@@ -158,3 +158,28 @@ message DelegationRule {
   // Default is 12 hours.
   int64 max_validity_duration = 7;
 }
+
+
+// ServiceAccountsPermissions is read from service_accounts.cfg in luci-config.
+message ServiceAccountsPermissions {
+  // Rules specify how MintOAuthTokenViaGrant can be used.
+  //
+  // Rules are evaluated independently. One and only one rule should match the
+  // request to allow the operation. If none rules or more than one rule match,
+  // the request will be denied.
+  //
+  // See ServiceAccountRule comments for more details.
+  repeated ServiceAccountRule rules = 1;
+}
+
+
+// ServiceAccountRule describes a single allowed case of using service accounts.
+//
+// TODO(vadimsh): Implement.
+message ServiceAccountRule {
+  // A descriptive name of this rule, for the audit log.
+  string name = 1;
+
+  // Email of developers that owns this rule, to know who to contact.
+  repeated string owner = 2;
+}

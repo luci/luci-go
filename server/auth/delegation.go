@@ -20,6 +20,8 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/grpc"
+
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/clock"
@@ -105,7 +107,12 @@ type DelegationTokenParams struct {
 	// rpcClient is token server RPC client to use.
 	//
 	// Mocked in tests.
-	rpcClient minter.TokenMinterClient
+	rpcClient tokenMinterClient
+}
+
+// tokenMinterClient is subset of minter.TokenMinterClient we use.
+type tokenMinterClient interface {
+	MintDelegationToken(context.Context, *minter.MintDelegationTokenRequest, ...grpc.CallOption) (*minter.MintDelegationTokenResponse, error)
 }
 
 // delegationTokenCache is used to store delegation tokens in the cache.

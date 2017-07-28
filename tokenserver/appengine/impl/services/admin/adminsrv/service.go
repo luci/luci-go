@@ -24,6 +24,7 @@ import (
 	"github.com/luci/luci-go/tokenserver/appengine/impl/certconfig"
 	"github.com/luci/luci-go/tokenserver/appengine/impl/delegation"
 	"github.com/luci/luci-go/tokenserver/appengine/impl/machinetoken"
+	"github.com/luci/luci-go/tokenserver/appengine/impl/serviceaccounts"
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 )
@@ -32,8 +33,10 @@ import (
 type serverImpl struct {
 	certconfig.ImportCAConfigsRPC
 	delegation.ImportDelegationConfigsRPC
+	serviceaccounts.ImportServiceAccountsConfigsRPC
 	machinetoken.InspectMachineTokenRPC
 	delegation.InspectDelegationTokenRPC
+	serviceaccounts.InspectOAuthTokenGrantRPC
 }
 
 // NewServer returns prod AdminServer implementation.

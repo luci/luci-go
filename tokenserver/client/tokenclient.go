@@ -37,10 +37,16 @@ type Client struct {
 	//
 	// Use minter.NewTokenMinterClient (or NewTokenMinterPRPCClient) to
 	// create it. Note that transport-level authentication is not needed.
-	Client minter.TokenMinterClient
+	Client TokenMinterClient
 
 	// Signer knows how to sign requests using some private key.
 	Signer Signer
+}
+
+// TokenMinterClient is subset of minter.TokenMinterClient this package uses.
+type TokenMinterClient interface {
+	// MintMachineToken generates a new token for an authenticated machine.
+	MintMachineToken(context.Context, *minter.MintMachineTokenRequest, ...grpc.CallOption) (*minter.MintMachineTokenResponse, error)
 }
 
 // Signer knows how to sign requests using some private key.

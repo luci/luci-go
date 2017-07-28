@@ -47,7 +47,7 @@ type TokenFile struct {
 func (m *TokenFile) Reset()                    { *m = TokenFile{} }
 func (m *TokenFile) String() string            { return proto.CompactTextString(m) }
 func (*TokenFile) ProtoMessage()               {}
-func (*TokenFile) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (*TokenFile) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
 func (m *TokenFile) GetAccessToken() string {
 	if m != nil {
@@ -117,10 +117,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("github.com/luci/luci-go/tokenserver/api/token_file.proto", fileDescriptor1)
+	proto.RegisterFile("github.com/luci/luci-go/tokenserver/api/token_file.proto", fileDescriptor2)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor2 = []byte{
 	// 265 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x91, 0xb1, 0x4e, 0xf3, 0x30,
 	0x14, 0x85, 0x95, 0xf6, 0xff, 0x03, 0xbd, 0xed, 0x64, 0x09, 0x64, 0x16, 0x14, 0x75, 0xca, 0x42,

@@ -23,6 +23,7 @@ import (
 	"github.com/luci/luci-go/tokenserver/appengine/impl/certchecker"
 	"github.com/luci/luci-go/tokenserver/appengine/impl/delegation"
 	"github.com/luci/luci-go/tokenserver/appengine/impl/machinetoken"
+	"github.com/luci/luci-go/tokenserver/appengine/impl/serviceaccounts"
 
 	"github.com/luci/luci-go/tokenserver/api/minter/v1"
 )
@@ -34,6 +35,8 @@ import (
 type serverImpl struct {
 	machinetoken.MintMachineTokenRPC
 	delegation.MintDelegationTokenRPC
+	serviceaccounts.MintOAuthTokenGrantRPC
+	serviceaccounts.MintOAuthTokenViaGrantRPC
 }
 
 // NewServer returns prod TokenMinterServer implementation.

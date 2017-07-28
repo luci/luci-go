@@ -54,6 +54,21 @@ func (s *DecoratedAdmin) ImportDelegationConfigs(c context.Context, req *google_
 	return
 }
 
+func (s *DecoratedAdmin) ImportServiceAccountsConfigs(c context.Context, req *google_protobuf.Empty) (rsp *ImportedConfigs, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "ImportServiceAccountsConfigs", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.ImportServiceAccountsConfigs(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "ImportServiceAccountsConfigs", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedAdmin) InspectMachineToken(c context.Context, req *InspectMachineTokenRequest) (rsp *InspectMachineTokenResponse, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
@@ -80,6 +95,21 @@ func (s *DecoratedAdmin) InspectDelegationToken(c context.Context, req *InspectD
 	}
 	if s.Postlude != nil {
 		err = s.Postlude(c, "InspectDelegationToken", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedAdmin) InspectOAuthTokenGrant(c context.Context, req *InspectOAuthTokenGrantRequest) (rsp *InspectOAuthTokenGrantResponse, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "InspectOAuthTokenGrant", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.InspectOAuthTokenGrant(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "InspectOAuthTokenGrant", rsp, err)
 	}
 	return
 }

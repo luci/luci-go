@@ -6,11 +6,14 @@ Package tokenserver is a generated protocol buffer package.
 
 It is generated from these files:
 	github.com/luci/luci-go/tokenserver/api/machine_token.proto
+	github.com/luci/luci-go/tokenserver/api/oauth_token_grant.proto
 	github.com/luci/luci-go/tokenserver/api/token_file.proto
 
 It has these top-level messages:
 	MachineTokenBody
 	MachineTokenEnvelope
+	OAuthTokenGrantBody
+	OAuthTokenGrantEnvelope
 	TokenFile
 */
 package tokenserver
