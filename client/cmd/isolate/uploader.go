@@ -27,9 +27,18 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Uploader uses an isolatedclient.Client to upload items to the server.
+// Uploader uploads items to the server.
+// It has a single implementation, *ConcurrentUploader. See ConcurrentUploader for method documentation.
+type Uploader interface {
+	Close() error
+	Upload(name string, src isolatedclient.Source, ps *isolatedclient.PushState, done func())
+	UploadBytes(name string, b []byte, ps *isolatedclient.PushState, done func())
+	UploadFile(item *Item, ps *isolatedclient.PushState, done func())
+}
+
+// ConcurrentUploader uses an isolatedclient.Client to upload items to the server.
 // All methods are safe for concurrent use.
-type Uploader struct {
+type ConcurrentUploader struct {
 	ctx   context.Context
 	svc   isolateService
 	waitc chan bool // Used to cap concurrent uploads.
@@ -39,16 +48,16 @@ type Uploader struct {
 	err   error // The first error encountered, if any.
 }
 
-// NewUploader creates a new Uploader with the given isolated client.
+// NewUploader creates a new ConcurrentUploader with the given isolated client.
 // maxConcurrent controls maximum number of uploads to be in-flight at once.
 // The provided context is used to make all requests to the isolate server.
-func NewUploader(ctx context.Context, client *isolatedclient.Client, maxConcurrent int) *Uploader {
+func NewUploader(ctx context.Context, client *isolatedclient.Client, maxConcurrent int) *ConcurrentUploader {
 	return newUploader(ctx, client, maxConcurrent)
 }
 
-func newUploader(ctx context.Context, svc isolateService, maxConcurrent int) *Uploader {
+func newUploader(ctx context.Context, svc isolateService, maxConcurrent int) *ConcurrentUploader {
 	const concurrentUploads = 10
-	return &Uploader{
+	return &ConcurrentUploader{
 		ctx:   ctx,
 		svc:   svc,
 		waitc: make(chan bool, maxConcurrent),
@@ -58,7 +67,7 @@ func newUploader(ctx context.Context, svc isolateService, maxConcurrent int) *Up
 // Upload uploads an item from an isolated.Source. Upload does not block. If
 // not-nil, the done func will be invoked on upload completion (both success
 // and failure).
-func (u *Uploader) Upload(name string, src isolatedclient.Source, ps *isolatedclient.PushState, done func()) {
+func (u *ConcurrentUploader) Upload(name string, src isolatedclient.Source, ps *isolatedclient.PushState, done func()) {
 	u.wg.Add(1)
 	go u.upload(name, src, ps, done)
 }
@@ -68,7 +77,7 @@ func (u *Uploader) Upload(name string, src isolatedclient.Source, ps *isolatedcl
 // and failure). The provided byte slice b must not be modified until the
 // upload is completed.
 // TODO(djd): Consider using Upload directly and deleting UploadBytes.
-func (u *Uploader) UploadBytes(name string, b []byte, ps *isolatedclient.PushState, done func()) {
+func (u *ConcurrentUploader) UploadBytes(name string, b []byte, ps *isolatedclient.PushState, done func()) {
 	u.wg.Add(1)
 	go u.upload(name, byteSource(b), ps, done)
 }
@@ -77,7 +86,7 @@ func (u *Uploader) UploadBytes(name string, b []byte, ps *isolatedclient.PushSta
 // not-nil, the done func will be invoked on upload completion (both success
 // and failure).
 // TODO(djd): Consider using Upload directly and deleting UploadFile.
-func (u *Uploader) UploadFile(item *Item, ps *isolatedclient.PushState, done func()) {
+func (u *ConcurrentUploader) UploadFile(item *Item, ps *isolatedclient.PushState, done func()) {
 	u.wg.Add(1)
 	go u.upload(item.RelPath, fileSource(item.Path), ps, done)
 }
@@ -85,13 +94,13 @@ func (u *Uploader) UploadFile(item *Item, ps *isolatedclient.PushState, done fun
 // Close waits for any pending uploads (and associated done callbacks) to
 // complete, and returns the first encountered error if any.
 // Uploader cannot be used once it is closed.
-func (u *Uploader) Close() error {
+func (u *ConcurrentUploader) Close() error {
 	u.wg.Wait()
 	close(u.waitc) // Sanity check that we don't do any more uploading.
 	return u.err
 }
 
-func (u *Uploader) upload(name string, src isolatedclient.Source, ps *isolatedclient.PushState, done func()) {
+func (u *ConcurrentUploader) upload(name string, src isolatedclient.Source, ps *isolatedclient.PushState, done func()) {
 	u.waitc <- true
 	defer func() {
 		<-u.waitc
@@ -113,13 +122,13 @@ func (u *Uploader) upload(name string, src isolatedclient.Source, ps *isolatedcl
 	}
 }
 
-func (u *Uploader) getErr() error {
+func (u *ConcurrentUploader) getErr() error {
 	u.errMu.Lock()
 	defer u.errMu.Unlock()
 	return u.err
 }
 
-func (u *Uploader) setErr(err error) {
+func (u *ConcurrentUploader) setErr(err error) {
 	u.errMu.Lock()
 	defer u.errMu.Unlock()
 	if u.err == nil {

@@ -33,6 +33,13 @@ type isolateService interface {
 	Push(context.Context, *isolatedclient.PushState, isolatedclient.Source) error
 }
 
+// A Checker checks whether items are available on the server.
+// It has a single implementation, *BundlingChecker. See BundlingChecker for method documentation.
+type Checker interface {
+	AddItem(item *Item, isolated bool, callback CheckerCallback)
+	Close() error
+}
+
 // CheckerCallback is the callback used by Checker to indicate whether a file is
 // present on the isolate server. If the item not present, the callback will be
 // include the PushState necessary to upload it. Otherwise, the PushState will
@@ -45,10 +52,10 @@ type checkerItem struct {
 	callback CheckerCallback
 }
 
-// Checker uses the isolatedclient.Client to check whether items are available
+// BundlingChecker uses the isolatedclient.Client to check whether items are available
 // on the server.
-// Checker methods are safe to call concurrently.
-type Checker struct {
+// BundlingChecker methods are safe to call concurrently.
+type BundlingChecker struct {
 	ctx     context.Context
 	svc     isolateService
 	bundler *bundler.Bundler
@@ -68,14 +75,14 @@ func (cb *CountBytes) addFile(size int64) {
 	cb.Bytes += size
 }
 
-// NewChecker creates a NewChecker with the given isolated client.
+// NewChecker creates a new Checker with the given isolated client.
 // The provided context is used to make all requests to the isolate server.
-func NewChecker(ctx context.Context, client *isolatedclient.Client) *Checker {
+func NewChecker(ctx context.Context, client *isolatedclient.Client) *BundlingChecker {
 	return newChecker(ctx, client)
 }
 
-func newChecker(ctx context.Context, svc isolateService) *Checker {
-	c := &Checker{
+func newChecker(ctx context.Context, svc isolateService) *BundlingChecker {
+	c := &BundlingChecker{
 		svc: svc,
 		ctx: ctx,
 	}
@@ -99,7 +106,7 @@ func newChecker(ctx context.Context, svc isolateService) *Checker {
 // callback asynchronously. The isolated param indicates whether the given item
 // represents a JSON isolated manifest (as opposed to a regular file).
 // In the case of an error, the callback may never be invoked.
-func (c *Checker) AddItem(item *Item, isolated bool, callback CheckerCallback) {
+func (c *BundlingChecker) AddItem(item *Item, isolated bool, callback CheckerCallback) {
 	if err := c.bundler.Add(checkerItem{item, isolated, callback}, 0); err != nil {
 		// An error is only returned if the size is too big, but we always use
 		// zero size so no error is possible.
@@ -112,7 +119,7 @@ func (c *Checker) AddItem(item *Item, isolated bool, callback CheckerCallback) {
 // the checking process, if any.
 // After Close has returned, Checker is guaranteed to no longer invoke any
 // previously-provided callback.
-func (c *Checker) Close() error {
+func (c *BundlingChecker) Close() error {
 	c.bundler.Flush()
 	// After Close has returned, we know there are no outstanding running
 	// checks.
@@ -121,7 +128,7 @@ func (c *Checker) Close() error {
 
 // check is invoked from the bundler's handler. As such, it is only ever run
 // one invocation at a time.
-func (c *Checker) check(items []checkerItem) error {
+func (c *BundlingChecker) check(items []checkerItem) error {
 	var digests []*service.HandlersEndpointsV1Digest
 	for _, item := range items {
 		digests = append(digests, &service.HandlersEndpointsV1Digest{

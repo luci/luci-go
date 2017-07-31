@@ -15,9 +15,10 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -28,15 +29,41 @@ import (
 	"github.com/luci/luci-go/common/isolatedclient"
 )
 
+// limitedOS contains a subset of the functions from the os package.
+type limitedOS interface {
+	Readlink(string) (string, error)
+	openFiler
+}
+
+type openFiler interface {
+	// OpenFile is like os.OpenFile, but returns an io.WriteCloser since
+	// that's all we need and it's easier to implment with a fake.
+	OpenFile(string, int, os.FileMode) (io.WriteCloser, error)
+}
+
+// standardOS implements limitedOS by delegating to the standard library's os package.
+type standardOS struct{}
+
+func (sos standardOS) Readlink(name string) (string, error) {
+	return os.Readlink(name)
+}
+
+func (sos standardOS) OpenFile(name string, flag int, perm os.FileMode) (io.WriteCloser, error) {
+	return os.OpenFile(name, flag, perm)
+}
+
 // UploadTracker uploads and keeps track of files.
 type UploadTracker struct {
-	checker  *Checker
-	uploader *Uploader
+	checker  Checker
+	uploader Uploader
 	isol     *isolated.Isolated
+
+	// Override for testing.
+	lOS limitedOS
 }
 
 // NewUploadTracker constructs an UploadTracker.  It tracks uploaded files in isol.Files.
-func NewUploadTracker(checker *Checker, uploader *Uploader, isol *isolated.Isolated) *UploadTracker {
+func NewUploadTracker(checker Checker, uploader Uploader, isol *isolated.Isolated) *UploadTracker {
 	// TODO: share a Checker and Uploader with other UploadTrackers
 	// when batch uploading.
 	isol.Files = make(map[string]isolated.File)
@@ -44,6 +71,7 @@ func NewUploadTracker(checker *Checker, uploader *Uploader, isol *isolated.Isola
 		checker:  checker,
 		uploader: uploader,
 		isol:     isol,
+		lOS:      standardOS{},
 	}
 }
 
@@ -73,7 +101,7 @@ func (ut *UploadTracker) Files() map[string]isolated.File {
 // populateSymlinks adds an isolated.File to files for each provided symlink
 func (ut *UploadTracker) populateSymlinks(symlinks []*Item) error {
 	for _, item := range symlinks {
-		l, err := os.Readlink(item.Path)
+		l, err := ut.lOS.Readlink(item.Path)
 		if err != nil {
 			return fmt.Errorf("unable to resolve symlink for %q: %v", item.Path, err)
 		}
@@ -180,7 +208,7 @@ func (ut *UploadTracker) Finalize(isolatedPath string) (IsolatedSummary, error) 
 	}
 
 	// Write the isolated file...
-	if err := isolFile.writeJSONFile(); err != nil {
+	if err := isolFile.writeJSONFile(ut.lOS); err != nil {
 		return IsolatedSummary{}, err
 	}
 
@@ -221,8 +249,17 @@ func (ij *isolatedFile) contents() []byte {
 }
 
 // writeJSONFile writes the file contents to the filesystem.
-func (ij *isolatedFile) writeJSONFile() error {
-	return ioutil.WriteFile(ij.path, ij.json, 0644)
+func (ij *isolatedFile) writeJSONFile(opener openFiler) error {
+	f, err := opener.OpenFile(ij.path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(f, bytes.NewBuffer(ij.json))
+	err2 := f.Close()
+	if err != nil {
+		return err
+	}
+	return err2
 }
 
 // name returns the base name of the isolated file, extension stripped.
