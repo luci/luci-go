@@ -26,30 +26,30 @@ import (
 	"github.com/luci/luci-go/mmutex/lib"
 )
 
-var cmdExclusive = &subcommands.Command{
-	UsageLine: "exclusive [options] -- <command>",
-	ShortDesc: "acquires an exclusive lock before running the command",
+var cmdShared = &subcommands.Command{
+	UsageLine: "shared [options] -- <command>",
+	ShortDesc: "acquires a shared lock before running the command",
 	CommandRun: func() subcommands.CommandRun {
-		c := &cmdExclusiveRun{}
+		c := &cmdSharedRun{}
 		c.Flags.DurationVar(&c.fslockTimeout, "fslock-timeout", 2*time.Hour, "Lock acquisition timeout")
 		c.Flags.DurationVar(&c.fslockPollingInterval, "fslock-polling-interval", 5*time.Second, "Lock acquisition polling interval")
 		return c
 	},
 }
 
-type cmdExclusiveRun struct {
+type cmdSharedRun struct {
 	subcommands.CommandRunBase
 	fslockTimeout         time.Duration
 	fslockPollingInterval time.Duration
 }
 
-func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if err := RunExclusive(args, c.fslockTimeout, c.fslockPollingInterval); err != nil {
+func (c *cmdSharedRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if err := RunShared(args, c.fslockTimeout, c.fslockPollingInterval); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			return lib.GetExitCode(exitErr)
 		}
 
-		// We encountered an error that's unrelated to the command itself.
+		// The error pertains to this binary rather than the executed command.
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	} else {
@@ -57,9 +57,9 @@ func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subc
 	}
 }
 
-func RunExclusive(command []string, timeout time.Duration, pollingInterval time.Duration) error {
+func RunShared(command []string, timeout time.Duration, pollingInterval time.Duration) error {
 	blocker := lib.CreateBlockerUntil(time.Now().Add(timeout), pollingInterval)
-	return fslock.WithBlocking(LockFilePath, blocker, func() error {
+	return fslock.WithSharedBlocking(LockFilePath, blocker, func() error {
 		cmd := exec.Command(command[0], command[1:]...)
 		cmd.Stderr = os.Stderr
 		cmd.Stdout = os.Stdout

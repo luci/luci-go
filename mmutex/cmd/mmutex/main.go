@@ -47,6 +47,7 @@ The source for mmutex lives at:
   https://github.com/luci/luci-go/tree/master/mmutex`,
 	Commands: []*subcommands.Command{
 		cmdExclusive,
+		cmdShared,
 		subcommands.CmdHelp,
 	},
 }
