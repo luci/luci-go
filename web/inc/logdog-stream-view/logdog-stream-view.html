@@ -179,42 +179,34 @@ An element for rendering muxed LogDog log streams.
     <!-- Stream view options. -->
     <div id="mainView">
       <div id="buttons">
-        <!-- If we have exactly one stream, we will enable users to split. -->
-        <template is="dom-if" if="{{showStreamingControls}}">
-          <paper-icon-button class="paper-icon-button-highlight" toggles
-              title="Stick to bottom." icon="icons:update"
-              active="{{follow}}">
-          </paper-icon-button>
-
+        <template is="dom-if" if="{{showPlayPause}}">
           <paper-icon-button class="paper-icon-button-highlight" toggles
               title="Auto-Load" icon="{{playingIconName}}"
               active="{{playing}}">
           </paper-icon-button>
+        </template>
 
-          <template is="dom-if" if="{{canSplit}}">
-            <paper-icon-button
-                title="Jump to latest."
-                icon="editor:vertical-align-bottom"
-                on-tap="_splitClicked">
-            </paper-icon-button>
-          </template>
+        <template is="dom-if" if="{{showSplitButton}}">
+          <paper-icon-button
+              title="Jump to latest."
+              icon="editor:vertical-align-bottom"
+              on-tap="_splitClicked">
+          </paper-icon-button>
+        </template>
 
-          <template is="dom-if" if="{{isSplit}}">
-            <paper-icon-button title="Scroll to split"
-                icon="editor:vertical-align-center" on-tap="_scrollToSplit">
-            </paper-icon-button>
-          </template>
-
-          <template is="dom-if" if="{{isSplit}}">
+        <template is="dom-if" if="{{showStreamControls}}">
+          <template is="dom-if" if="{{showSplitControls}}">
             <paper-icon-button toggles
                 title="Load new logs, or backfill from top."
                 icon="{{backfillIconName}}"
                 active="{{backfill}}">
             </paper-icon-button>
-          </template>
-        </template>
 
-        <template is="dom-if" if="{{_not(playing)}}">
+            <paper-icon-button title="Scroll to split"
+                icon="editor:vertical-align-center" on-tap="_scrollToSplit">
+            </paper-icon-button>
+          </template>
+
           <paper-button class="paper-button-highlight" toggles raised
               active="{{wrapLines}}">
             Wrap
@@ -244,8 +236,7 @@ An element for rendering muxed LogDog log streams.
       </div>
 
       <!-- Muxed log content. -->
-      <div id="logContent"
-          on-mousewheel="_handleMouseWheel">
+      <div id="logContent">
         <div id="logs">
           <!-- Content will be populated with JavaScript as logs are loaded.
 
@@ -274,14 +265,14 @@ An element for rendering muxed LogDog log streams.
             <paper-button id="logSplitUp"
                 class="logFetchButton logSplitUpButton giant"
                 text="Load Above"
-                disabled="[[streamAnchorsNotClickable]]"
+                disabled="[[playing]]"
                 on-click="_handleUpClick">
               <iron-icon icon="file-upload"></iron-icon>
             </paper-button>
             <paper-button id="logSplitDown"
                 class="logFetchButton logSplitDownButton giant"
                 text="Load Below"
-                disabled="[[streamAnchorsNotClickable]]"
+                disabled="[[playing]]"
                 on-click="_handleDownClick">
               <iron-icon icon="file-download"></iron-icon>
             </paper-button>
@@ -294,7 +285,7 @@ An element for rendering muxed LogDog log streams.
             -->
             <paper-button id="logBottomButton"
                 class="logFetchButton logBottomButton giant"
-                disabled="[[streamAnchorsNotClickable]]"
+                disabled="[[playing]]"
                 on-click="_handleBottomClick">
               <iron-icon icon="arrow-drop-down"></iron-icon>
             </paper-button>
@@ -363,6 +354,13 @@ An element for rendering muxed LogDog log streams.
         notify: true,
       },
 
+      /** If populated, the stream name at the top will link to this URL. */
+      streamLinkUrl: {
+        type: String,
+        value: null,
+        notify: true,
+      },
+
       /**
        * If true, render metadata blocks alongside their log entries.
        *
@@ -389,61 +387,32 @@ An element for rendering muxed LogDog log streams.
         observer: "_wrapLinesChanged",
       },
 
-      /**
-       * If true, automatically scroll the page to the bottom of the logs
-       * while they are streaming.
-       */
-      follow: {
-        type: Boolean,
-        value: false,
-        observer: "_followChanged",
-      },
-
-      /**
-       * True if the stream is capable of being split.
-       *
-       * This is set by the viewer via "_updateControls".
-       *
-       * A split is a visual break in the log continuity, where content above
-       * the split contains logs starting at the beginning of the stream, while
-       * content below the split contains data from the last log entry in the
-       * stream at the time of the split.
-       */
-      canSplit: {
-        type: Boolean,
-        value: false,
-        readOnly: true,
-      },
-
-      /**
-       * True if log streaming controls should be visible.
-       *
-       * This is set by the viewer via "_updateControls".
-       */
-      showStreamingControls: {
+      /** Whether or not to show play/pause button. */
+      showPlayPause: {
         type: Boolean,
         value: true,
         readOnly: true,
       },
 
-      /**
-       * True if the view is currently split.
-       *
-       * This is set by the viewer via "_updateControls".
-       */
-      isSplit: {
+      /** Whether or not to show stream control buttons. */
+      showStreamControls: {
         type: Boolean,
         value: false,
         readOnly: true,
       },
 
-      /**
-       * True if the stream anchors (split bar buttons) can be clicked.
-       */
-      streamAnchorsNotClickable: {
+      /** Whether or not to show the "split streams" button. */
+      showSplitButton: {
         type: Boolean,
-        computed:
-          '_computeAnchorsNotClickable(playing, showStreamingControls)',
+        value: false,
+        readOnly: true,
+      },
+
+      /** Whether or not to show the split controls. */
+      showSplitControls: {
+        type: Boolean,
+        value: false,
+        readOnly: true,
       },
 
       /**
@@ -483,13 +452,6 @@ An element for rendering muxed LogDog log streams.
         computed: '_computeBackfillIconName(backfill)',
       },
 
-      /** If populated, the stream name at the top will link to this URL. */
-      streamLinkUrl: {
-        type: String,
-        value: null,
-        notify: true,
-      },
-
       /**
        * The current stream status. This is an Array of objects:
        *   obj.name is the name of the stream.
@@ -518,10 +480,14 @@ An element for rendering muxed LogDog log streams.
 
     attached: function() {
       this._view.reset();
+      this.$.logContent.addEventListener('wheel',
+          this._handleMouseWheel.bind(this));
     },
 
     detached: function() {
       this._view.detach();
+      this.$.logContent.removeEventListener('wheel',
+          this._handleMouseWheel.bind(this));
     },
 
     stop: function() {
@@ -533,7 +499,7 @@ An element for rendering muxed LogDog log streams.
     },
 
     _handleMouseWheel: function(e) {
-      this._view.handleMouseWheel();
+      this._view.handleMouseWheel(e.deltaY >= 0);
     },
 
     _handleDownClick: function(e) {
@@ -569,9 +535,9 @@ An element for rendering muxed LogDog log streams.
       this.toggleClass("wrapLines", v, this.$.logs);
      },
 
-    /** Callback when "follow" has changed. */
+    /** Callback when "playing" has changed. */
     _playingChanged: function(v) {
-      this._view.handlePlayingChanged(v);
+      this._view.handlePlayPauseChanged(v);
     },
 
     _computePlayingIconName: function(playing) {
@@ -579,7 +545,7 @@ An element for rendering muxed LogDog log streams.
           "av:pause-circle-outline" : "av:play-circle-outline" );
     },
 
-    /** Callback when "follow" has changed. */
+    /** Callback when "backfill" has changed. */
     _backfillChanged: function(v) {
       this._view.handleBackfillChanged(v);
     },
@@ -587,11 +553,6 @@ An element for rendering muxed LogDog log streams.
     _computeBackfillIconName: function(backfill) {
       return ( (backfill) ?
           "editor:border-bottom" : "editor:border-top" );
-    },
-
-    /** Callback when "follow" has changed. */
-    _followChanged: function(v) {
-      this._view.handleFollowChanged(v);
     },
 
     /** Callback when "split" button has been clicked. */
@@ -606,22 +567,7 @@ An element for rendering muxed LogDog log streams.
 
     _updateSplitVisible: function(v) {
       this.toggleClass("logFetchButtonVisible", v, this.$.logSplit);
-    },
-
-    _updateBottomVisible: function(v) {
       this.toggleClass("logFetchButtonVisible", v, this.$.logBottom);
-    },
-
-    _computeAnchorsNotClickable: function(playing, showStreamingControls,
-                                          rendering) {
-      // Anchors are not clickable if we're playing or the controls are
-      // not visible.
-      return ( playing || (!showStreamingControls) || rendering );
-    },
-
-    /** Filter function to invert a value. */
-    _not: function(v) {
-      return (!v);
     },
 
     _onSignin: function() {

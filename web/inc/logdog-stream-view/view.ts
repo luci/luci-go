@@ -28,6 +28,8 @@ namespace LogDog {
     LOADING_BEEN_A_WHILE,
     /** Rendering loaded stream content. */
     RENDERING,
+    /** No operations in progress, but the log isn't fully loaded.. */
+    PAUSED,
     /** Error: Attempt to load failed w/ "Unauthenticated". */
     NEEDS_AUTH,
     /** Error: generic loading failure. */
@@ -43,16 +45,26 @@ namespace LogDog {
     locationIsVisible(l: Location): boolean;
   }
 
-  /** Represents control visibility in the View. */
+  /** State of the split UI component. */
+  export enum SplitState {
+    /** The UI cannot be split. */
+    CANNOT_SPLIT,
+    /** The UI can be split, and isn't split. */
+    CAN_SPLIT,
+    /** The UI cannot be split, and is split. */
+    IS_SPLIT,
+  }
+
+  /**
+   * Represents state in the View.
+   *
+   * Modifying this will propagate to the view via "updateControls".
+   */
   type Controls = {
-    /** Are we completely finished loading stream data? */
-    canSplit: boolean;
-    /** Are we currently split? */
-    split: boolean;
-    /** Show the bottom bar? */
-    bottom: boolean;
     /** Is the content fully loaded? */
     fullyLoaded: boolean;
+    /** True if we should show the split option to the user. */
+    splitState: SplitState;
     /** If not undefined, link to this URL for the log stream. */
     logStreamUrl: string | undefined;
 
@@ -88,12 +100,17 @@ namespace LogDog {
     mobile: boolean;
     isSplit: boolean;
     metadata: boolean;
-    follow: boolean;
     playing: boolean;
     backfill: boolean;
 
     /** Polymer read-only setter functions. */
     _setStatusBar(v: StatusBarValue|null): void;
+
+    _setShowPlayPause(v: boolean): void;
+    _setShowStreamControls(v: boolean): void;
+    _setShowSplitButton(v: boolean): void;
+    _setShowSplitControls(v: boolean): void;
+
     _setCanSplit(v: boolean): void;
     _setIsSplit(v: boolean): void;
     _setShowStreamingControls(v: boolean): void;
@@ -127,6 +144,13 @@ namespace LogDog {
     private model: Model|null = null;
     private renderedLogs = false;
 
+    /**
+     * We start out following by default. Every time we add new logs to the
+     * bottom, we will scroll to them. If users scroll or pause, we will stop
+     * following permanently.
+     */
+    private following = true;
+
     constructor(readonly comp: Component) {}
 
     /** Resets and reloads current viewer state. */
@@ -156,8 +180,11 @@ namespace LogDog {
     }
 
     /** Called when a mouse wheel event occurs. */
-    handleMouseWheel() {
-      this.comp.follow = false;
+    handleMouseWheel(down: boolean) {
+      // Once someone scrolls, stop following.
+      if (!down) {
+        this.following = false;
+      }
     }
 
     /** Called when the split "Down" button is clicked. */
@@ -194,17 +221,36 @@ namespace LogDog {
 
       // Perform the initial fetch after resolution.
       if (this.model) {
-        this.model.setAutomatic(this.comp.playing);
+        this.model.automatic = this.comp.playing;
         this.model.setFetchFromTail(!this.comp.backfill);
         this.model.fetch(false);
       }
     }
 
+    stop() {
+      if (this.model) {
+        this.model.automatic = false;
+        this.model.clearCurrentOperation();
+      }
+    }
+
     /** Called when the "playing" property value changes. */
-    handlePlayingChanged(v: boolean) {
+    handlePlayPauseChanged(v: boolean) {
       if (this.model) {
         // If we're playing, begin log fetching.
-        this.model.setAutomatic(v);
+        this.model.automatic = v;
+
+        // Once someone manually uses this control, stop following.
+        //
+        // Only apply this after we've started rendering logs, since before that
+        // this may toggle during setup.
+        if (this.renderedLogs) {
+          this.following = false;
+        }
+
+        if (!v) {
+          this.model.clearCurrentOperation();
+        }
       }
     }
 
@@ -216,17 +262,6 @@ namespace LogDog {
       }
     }
 
-    /** Called when the "follow" property value changes. */
-    handleFollowChanged(v: boolean) {
-      if (this.model) {
-        if (v) {
-          // If follow is toggled on, automatically begin playing.
-          this.comp.playing = true;
-          this.maybeScrollToFollow();
-        }
-      }
-    }
-
     /** Called when the "split" button is clicked. */
     handleSplitClicked() {
       if (!this.model) {
@@ -234,14 +269,14 @@ namespace LogDog {
       }
 
       // After a split, toggle off playing.
-      this.model.split();
       this.model.setFetchFromTail(true);
+      this.model.split();
       this.comp.playing = false;
     }
 
     /** Called when the "scroll to split" button is clicked. */
     handleScrollToSplitClicked() {
-      this.maybeScrollToElement(this.comp.$.logSplit, true, true);
+      this.maybeScrollToElement(this.comp.$.logSplit, true);
     }
 
     /** Called when a sign-in event is fired from "google-signin-aware". */
@@ -249,6 +284,11 @@ namespace LogDog {
       if (this.model) {
         this.model.notifyAuthenticationChanged();
       }
+    }
+
+    /** Returns true if our Model is currently automatically loading logs. */
+    private get isPlaying() {
+      return (this.model && this.model.automatic);
     }
 
     /** Clears asynchornous scroll event status. */
@@ -387,7 +427,6 @@ namespace LogDog {
       // Add the log entry to the appropriate place.
       let anchor: Element|null;
       let scrollToTop = false;
-      let forceScroll = false;
       switch (insertion) {
         case Location.HEAD:
           // PREPEND to "logSplit".
@@ -396,6 +435,9 @@ namespace LogDog {
           // If we're not split, scroll to the log bottom. Otherwise, scroll to
           // the split.
           anchor = lastLogEntry;
+          if (this.following) {
+            this.maybeScrollToElement(anchor, scrollToTop);
+          }
           break;
 
         case Location.TAIL:
@@ -418,22 +460,20 @@ namespace LogDog {
 
           // When tailing, always scroll to the anchor point.
           scrollToTop = true;
-          forceScroll = true;
           break;
 
         case Location.BOTTOM:
           // PREPEND to "logBottom".
           anchor = this.comp.$.logBottom;
           this.comp.$.logs.insertBefore(logEntryChunk, anchor);
+          if (this.following) {
+            this.maybeScrollToElement(anchor, scrollToTop);
+          }
           break;
 
         default:
           anchor = null;
           break;
-      }
-
-      if (anchor) {
-        this.maybeScrollToElement(anchor, scrollToTop, forceScroll);
       }
     }
 
@@ -466,18 +506,30 @@ namespace LogDog {
       return this.elementInViewport(anchor);
     }
 
-
     updateControls(c: Controls) {
-      this.comp._setCanSplit(c.canSplit);
-      this.comp._setIsSplit(c.split);
-      this.comp._updateSplitVisible(c.split && this.renderedLogs);
-      this.comp._updateBottomVisible(c.bottom && this.renderedLogs);
-      this.comp.streamLinkUrl = c.logStreamUrl;
+      let canSplit = false;
+      let isSplit = false;
+      if (!c.fullyLoaded) {
+        switch (c.splitState) {
+          case SplitState.CAN_SPLIT:
+            canSplit = true;
+            break;
 
-      this.comp._setShowStreamingControls(this.renderedLogs && !c.fullyLoaded);
-      if (c.fullyLoaded) {
-        this.comp.playing = false;
+          case SplitState.IS_SPLIT:
+            isSplit = true;
+            break;
+
+          default:
+            break;
+        }
       }
+      this.comp._setShowPlayPause(!c.fullyLoaded);
+      this.comp._setShowStreamControls(c.fullyLoaded || !this.isPlaying);
+      this.comp._setShowSplitButton(canSplit && !this.isPlaying);
+      this.comp._setShowSplitControls(isSplit);
+      this.comp._updateSplitVisible(isSplit);
+
+      this.comp.streamLinkUrl = c.logStreamUrl;
 
       switch (c.loadingState) {
         case LogDog.LoadingState.RESOLVING:
@@ -491,6 +543,9 @@ namespace LogDog {
           break;
         case LogDog.LoadingState.RENDERING:
           this.loadStatusBar('Rendering logs.');
+          break;
+        case LogDog.LoadingState.PAUSED:
+          this.loadStatusBar('Paused.');
           break;
         case LogDog.LoadingState.NEEDS_AUTH:
           this.loadStatusBar('Not authenticated. Please log in.');
@@ -508,38 +563,20 @@ namespace LogDog {
       this.comp._setStreamStatus(c.streamStatus);
     }
 
-    /** Scrolls to the follow anchor point. */
-    private maybeScrollToFollow() {
-      // Determine our anchor element.
-      let e: HTMLElement;
-      if (this.comp.isSplit && this.comp.backfill) {
-        // Centering on the split element, at the bottom of the page.
-        e = this.comp.$.logSplit;
-      } else {
-        // Scroll to the bottom of the page.
-        e = this.comp.$.logEnd;
-      }
-
-      this.maybeScrollToElement(e, false, false);
-    }
-
     /**
      * Scrolls to the specified element, centering it at the top or bottom of
      * the view. By default,t his will only happen if "follow" is enabled;
      * however, it can be forced via "force".
      */
-    private maybeScrollToElement(
-        element: Element, topOfView: boolean, force: boolean) {
-      if (this.comp.follow || force) {
-        if (topOfView) {
-          element.scrollIntoView({
-            behavior: 'auto',
-            block: 'end',
-          });
-        } else {
-          // Bug? "block: start" doesn't seem to work the same as false.
-          element.scrollIntoView(false);
-        }
+    private maybeScrollToElement(element: Element, topOfView: boolean) {
+      if (topOfView) {
+        element.scrollIntoView({
+          behavior: 'auto',
+          block: 'end',
+        });
+      } else {
+        // Bug? "block: start" doesn't seem to work the same as false.
+        element.scrollIntoView(false);
       }
     }
 

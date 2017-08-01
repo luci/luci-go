@@ -60,24 +60,6 @@ namespace LogDog {
     BOTTOM,
   }
 
-  /**
-   * Interface of the specific Model functions used by the view. This is
-   * explicitly listed here as a reference for the functions that the
-   * model-viewer interface calls. See the Model class for method details.
-   *
-   * These methods are used to control the Model state and to nofity the Model
-   * of external events that occur.
-   */
-  interface ModelInterface {
-    fetch(cancel: boolean): Promise<void>;
-    split(): Promise<void>;
-
-    reset(): void;
-    setAutomatic(v: boolean): void;
-    setFetchFromTail(v: boolean): void;
-    notifyAuthenticationChanged(): void;
-  }
-
   /** A log loading profile type. */
   type ModelProfile = {
     /** The size of the first fetch. */
@@ -90,10 +72,6 @@ namespace LogDog {
 
   /**
    * Model manages stream loading.
-   *
-   * Model exports features to the user interface by conforming to
-   * ModelInterface. All Polymer Model functions must be documented in that
-   * interface.
    *
    * Model pushes state update to the user interface with the ViewBinding that
    * is provided to it on construction.
@@ -135,7 +113,7 @@ namespace LogDog {
    * The view may optionally expose itself as "mobile", indicating to the Model
    * that it should use mobile-friendly tuning parameters.
    */
-  export class Model implements ModelInterface {
+  export class Model {
     /** Default single-stream profile. */
     static DEFAULT_PROFILE: ModelProfile = {
       initialFetchSize: (1024 * 24),      // 24KiB
@@ -192,7 +170,7 @@ namespace LogDog {
     private currentFetchPromise: Promise<void>|null = null;
 
     /** Are we in automatic mode? */
-    private automatic = false;
+    private isAutomatic = false;
     /** Are we tailing? */
     private fetchFromTail = false;
     /** Are we in the middle of rendering logs? */
@@ -279,7 +257,12 @@ namespace LogDog {
         }
       });
       this.provider = provider;
-      this.loadingState = LoadingState.NONE;
+      this.setIdleLoadingState();
+    }
+
+    private setIdleLoadingState() {
+      this.loadingState = (this.fetchedFullStream) ? (LoadingState.NONE) :
+                                                     (LoadingState.PAUSED);
     }
 
     private resolvePathsIntoStreams(paths: string[]) {
@@ -326,6 +309,28 @@ namespace LogDog {
       this.updateControls();
     }
 
+    public get automatic() {
+      return this.isAutomatic;
+    }
+
+    /**
+     * Sets whether automatic loading is enabled.
+     *
+     * When enabled, a new fetch will immediately be dispatched when a previous
+     * fetch finishes so long as there is still stream data to load.
+     *
+     * This isn't a setter because we need to be able to export it via
+     * interface.
+     */
+    public set automatic(v: boolean) {
+      this.isAutomatic = v && !this.fetchedFullStream;
+      if (v) {
+        // Passively kick off a new fetch.
+        this.fetch(false);
+      }
+      this.updateControls();
+    }
+
     private nullProvider(): LogProvider {
       return new AggregateLogStream([]);
     }
@@ -339,7 +344,7 @@ namespace LogDog {
      *     will be cancelled, but the current operation will be left in-tact.
      *     If "op" is undefined, cancel the current operation regardless.
      */
-    private clearCurrentOperation(op?: luci.Operation) {
+    clearCurrentOperation(op?: luci.Operation) {
       if (this.currentOperation) {
         if (op && op !== this.currentOperation) {
           // Conditional clear, and we are not the current operation, so do
@@ -372,10 +377,16 @@ namespace LogDog {
     }
 
     private updateControls() {
+      let splitState: SplitState;
+      if (this.providerCanSplit) {
+        splitState = SplitState.CAN_SPLIT;
+      } else {
+        splitState =
+            (this.isSplit) ? (SplitState.IS_SPLIT) : (SplitState.CANNOT_SPLIT);
+      }
+
       this.view.updateControls({
-        canSplit: this.providerCanSplit,
-        split: this.isSplit,
-        bottom: !this.fetchedEndOfStream,
+        splitState: splitState,
         fullyLoaded: (this.fetchedFullStream && (!this.rendering)),
         logStreamUrl: this.logStreamUrl,
         loadingState: this.loadingState,
@@ -463,6 +474,7 @@ namespace LogDog {
       // If our provider is finished, then do nothing.
       if (this.fetchedFullStream) {
         // There are no more logs.
+        this.updateControls();
         return undefined;
       }
 
@@ -502,6 +514,7 @@ namespace LogDog {
 
           // If we've been canceled, discard this result.
           if (err === luci.Operation.CANCELLED) {
+            this.setIdleLoadingState();
             return;
           }
 
@@ -557,7 +570,7 @@ namespace LogDog {
       let doRender = async () => {
         await this.renderLogs(buf, l);
         if (this.loadingState === LoadingState.RENDERING) {
-          this.loadingState = LoadingState.NONE;
+          this.setIdleLoadingState();
         }
       };
       this.renderPromise = doRender();
@@ -626,20 +639,6 @@ namespace LogDog {
      */
     setFetchFromTail(v: boolean) {
       this.fetchFromTail = v;
-    }
-
-    /**
-     * Sets whether automatic loading is enabled.
-     *
-     * When enabled, a new fetch will immediately be dispatched when a previous
-     * fetch finishes so long as there is still stream data to load.
-     */
-    setAutomatic(v: boolean) {
-      this.automatic = v;
-      if (v) {
-        // Passively kick off a new fetch.
-        this.fetch(false);
-      }
     }
 
     private buildStreamStatus(v: LogStreamStatus[]): StreamStatusEntry[] {
