@@ -15,6 +15,7 @@
 package rawpresentation
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -205,6 +206,7 @@ func AddLogDogToBuild(
 	// TODO(hinoka): This is totes cachable.
 	buildCompletedTime := google.TimeFromProto(mainAnno.Ended)
 	build.Summary = *(miloBuildStep(ub, mainAnno, true, buildCompletedTime, now)[0])
+	propMap := map[string]string{}
 	for _, substepContainer := range mainAnno.Substep {
 		anno := substepContainer.GetStep()
 		if anno == nil {
@@ -225,6 +227,7 @@ func AddLogDogToBuild(
 					Key:   prop.Name,
 					Value: prop.Value,
 				})
+				propMap[prop.Name] = prop.Value
 			}
 			build.PropertyGroup = append(build.PropertyGroup, propGroup)
 		}
@@ -237,8 +240,23 @@ func AddLogDogToBuild(
 			Key:   prop.Name,
 			Value: prop.Value,
 		})
+		propMap[prop.Name] = prop.Value
 	}
 	build.PropertyGroup = append(build.PropertyGroup, propGroup)
+
+	// HACK(hinoka,iannucci): Extract revision out of properties.
+	if jrev, ok := propMap["got_revision"]; ok {
+		// got_revision is a json string, so it looks like "aaaaaabbcc123..."
+		var rev string
+		err := json.Unmarshal([]byte(jrev), &rev)
+		if err == nil {
+			if build.SourceStamp == nil {
+				build.SourceStamp = &resp.SourceStamp{}
+			}
+			build.SourceStamp.Revision = resp.NewLink(
+				rev, fmt.Sprintf("https://crrev.com/%s", rev))
+		}
+	}
 
 	return
 }
