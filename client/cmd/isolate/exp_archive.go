@@ -98,6 +98,17 @@ func (c *expArchiveRun) main() error {
 	archiver := NewTarringArchiver(checker, uploader)
 
 	isolSummary, err := archiver.Archive(archiveOpts)
+
+	// Make sure that all pending items have been checked.
+	if err := checker.Close(); err != nil {
+		return err
+	}
+
+	// Make sure that all the uploads have completed successfully.
+	if err := uploader.Close(); err != nil {
+		return err
+	}
+
 	printSummary(isolSummary)
 	if c.dumpJSON != "" {
 		f, err := os.OpenFile(c.dumpJSON, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)

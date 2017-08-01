@@ -197,16 +197,6 @@ func (ut *UploadTracker) Finalize(isolatedPath string) (IsolatedSummary, error) 
 		})
 	})
 
-	// Make sure that all pending items have been checked.
-	if err := ut.checker.Close(); err != nil {
-		return IsolatedSummary{}, err
-	}
-
-	// Make sure that all the uploads have completed successfully.
-	if err := ut.uploader.Close(); err != nil {
-		return IsolatedSummary{}, err
-	}
-
 	// Write the isolated file...
 	if err := isolFile.writeJSONFile(ut.lOS); err != nil {
 		return IsolatedSummary{}, err
