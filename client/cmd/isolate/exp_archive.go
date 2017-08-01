@@ -21,16 +21,12 @@ import (
 	"io"
 	"log"
 	"os"
-	"path/filepath"
 	"time"
 
-	humanize "github.com/dustin/go-humanize"
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/client/internal/common"
-	"github.com/luci/luci-go/client/isolate"
 	"github.com/luci/luci-go/common/auth"
 	logpb "github.com/luci/luci-go/common/eventlog/proto"
 	"github.com/luci/luci-go/common/isolated"
@@ -77,110 +73,10 @@ type expArchiveRun struct {
 	dumpJSON          string
 }
 
-// Item represents a file or symlink referenced by an isolate file.
-type Item struct {
-	Path    string
-	RelPath string
-	Size    int64
-	Mode    os.FileMode
-
-	Digest isolated.HexDigest
-}
-
-// itemGroup is a list of Items, plus a count of the aggregate size.
-type itemGroup struct {
-	items     []*Item
-	totalSize int64
-}
-
-func (ig *itemGroup) AddItem(item *Item) {
-	ig.items = append(ig.items, item)
-	ig.totalSize += item.Size
-}
-
-// partitioningWalker contains the state necessary to partition isolate deps by handling multiple os.WalkFunc invocations.
-type partitioningWalker struct {
-	// fsView must be initialized before walkFn is called.
-	fsView common.FilesystemView
-
-	parts partitionedDeps
-}
-
-// partitionedDeps contains a list of items to be archived, partitioned into symlinks and files categorized by size.
-type partitionedDeps struct {
-	links          itemGroup
-	filesToArchive itemGroup
-	indivFiles     itemGroup
-}
-
-// walkFn implements filepath.WalkFunc, for use traversing a directory hierarchy to be isolated.
-// It accumulates files in pw.parts, partitioned into symlinks and files categorized by size.
-func (pw *partitioningWalker) walkFn(path string, info os.FileInfo, err error) error {
-	if err != nil {
-		return err
-	}
-
-	relPath, err := pw.fsView.RelativePath(path)
-	if err != nil {
-		return err
-	}
-
-	if relPath == "" { // empty string indicates skip.
-		return common.WalkFuncSkipFile(info)
-	}
-
-	if info.IsDir() {
-		return nil
-	}
-
-	item := &Item{
-		Path:    path,
-		RelPath: relPath,
-		Mode:    info.Mode(),
-		Size:    info.Size(),
-	}
-
-	switch {
-	case item.Mode&os.ModeSymlink == os.ModeSymlink:
-		pw.parts.links.AddItem(item)
-	case item.Size < archiveThreshold:
-		pw.parts.filesToArchive.AddItem(item)
-	default:
-		pw.parts.indivFiles.AddItem(item)
-	}
-	return nil
-}
-
-// partitionDeps walks each of the deps, partioning the results into symlinks and files categorized by size.
-func partitionDeps(deps []string, rootDir string, blacklist []string) (partitionedDeps, error) {
-	fsView, err := common.NewFilesystemView(rootDir, blacklist)
-	if err != nil {
-		return partitionedDeps{}, err
-	}
-
-	walker := partitioningWalker{fsView: fsView}
-	for _, dep := range deps {
-		// Try to walk dep. If dep is a file (or symlink), the inner function is called exactly once.
-		if err := filepath.Walk(filepath.Clean(dep), walker.walkFn); err != nil {
-			return partitionedDeps{}, err
-		}
-	}
-	return walker.parts, nil
-}
-
 // main contains the core logic for experimental archive.
 func (c *expArchiveRun) main() error {
-	// TODO(djd): This func is long and has a lot of internal complexity (like,
-	// such as, archiveCallback). Refactor.
-
 	start := time.Now()
 	archiveOpts := &c.isolateFlags.ArchiveOptions
-	// Parse the incoming isolate file.
-	deps, rootDir, isol, err := isolate.ProcessIsolate(archiveOpts)
-	if err != nil {
-		return fmt.Errorf("failed to process isolate: %v", err)
-	}
-	log.Printf("Isolate referenced %d deps", len(deps))
 
 	// Set up a background context which is cancelled when this function returns.
 	ctx, cancel := context.WithCancel(context.Background())
@@ -199,27 +95,9 @@ func (c *expArchiveRun) main() error {
 	// disk at once.
 	checker := NewChecker(ctx, client)
 	uploader := NewUploader(ctx, client, 1)
+	archiver := NewTarringArchiver(checker, uploader)
 
-	parts, err := partitionDeps(deps, rootDir, c.isolateFlags.ArchiveOptions.Blacklist)
-	if err != nil {
-		return fmt.Errorf("partitioning deps: %v", err)
-	}
-
-	numFiles := len(parts.filesToArchive.items) + len(parts.indivFiles.items)
-	filesSize := uint64(parts.filesToArchive.totalSize + parts.indivFiles.totalSize)
-	log.Printf("Isolate expanded to %d files (total size %s) and %d symlinks", numFiles, humanize.Bytes(filesSize), len(parts.links.items))
-	log.Printf("\t%d files (%s) to be isolated individually", len(parts.indivFiles.items), humanize.Bytes(uint64(parts.indivFiles.totalSize)))
-	log.Printf("\t%d files (%s) to be isolated in archives", len(parts.filesToArchive.items), humanize.Bytes(uint64(parts.filesToArchive.totalSize)))
-
-	tracker := NewUploadTracker(checker, uploader, isol)
-	if err := tracker.UploadDeps(parts); err != nil {
-		return err
-	}
-	isolSummary, err := tracker.Finalize(archiveOpts.Isolated)
-	if err != nil {
-		return err
-	}
-
+	isolSummary, err := archiver.Archive(archiveOpts)
 	printSummary(isolSummary)
 	if c.dumpJSON != "" {
 		f, err := os.OpenFile(c.dumpJSON, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
