@@ -134,4 +134,5 @@ upload-static-dev: static-resources yamls
 			--project $(CLOUD_PROJECT) \
 			--version "dev" \
 			--quiet \
+			--no-promote \
 			static/module-static.yaml
