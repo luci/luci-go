@@ -1,0 +1,137 @@
+# Copyright 2017 The LUCI Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This Makefile (GNU) controls the construction and deployment of the
+# "luci-logdog" application. This is a common Makefile, and is expected to be
+# imported by an implementation-specific Makefile. The implementation-specific
+# Makefile must supply the following variables:
+#
+# - CLOUD_PROJECT
+#
+# The Makefile may supply the following optional variables:
+# - TAG: The AppEngine tag. If not specified, let "gae.py" choose a
+#   tag (default, important for production).
+
+.PHONY: default
+default: help
+
+# Assert that all required variables are provided.
+ifndef CLOUD_PROJECT
+$(error Missing required variable: CLOUD_PROJECT)
+endif
+
+# Determine "luci-go" repository paths.
+mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+APP_DIR := $(dir $(mkfile_path))
+LUCI_GO_DIR := $(abspath $(APP_DIR)/../../../..)
+
+# VPATH determines the relative paths of Makefile targets. We need to set it
+# here, since we're expecting to be invoked from a Makefile in a different
+# directory. This allows our relative paths to be resolved by `make`.
+VPATH := $(APP_DIR)
+
+# If a tag was provided, add it to the "GAE_PY" args.
+export LUCI_PY_USE_GCLOUD=1
+GAE_PY_EXTRA_ARGS =
+ifdef TAG
+GAE_PY_EXTRA_ARGS := $(GAE_PY_EXTRA_ARGS) -t $(TAG)
+endif
+
+ALL_SERVICES = default services backend static
+
+define HELP_BODY
+Manage LogDog distributions.
+
+Management targets:
+  web: Builds static web content into the 'static' module.
+
+Service Targets for: $(ALL_SERVICES)
+  upload-SERVICE: uploads an instance of the service, but doesn't migrate.
+  switch: Switches all services over to the uploaded version.
+
+Special Service Targets:
+  upload-static-dev: special command to upload an instance of the static
+    module named "dev". This can be whitelisted for OAuth for authenticated
+    testing.
+
+endef
+
+.PHONY: help
+help:
+	$(info $(HELP_BODY))
+
+.PHONY: yamls
+yamls: vmuser/app.yaml vmuser/dispatch.yaml vmuser/index.yaml
+
+.PHONY: web
+web:
+	-rm -rf $(APP_DIR)static/dist
+	$(LUCI_GO_DIR)/web/web.py build \
+		--build-dir $(APP_DIR)static \
+		logdog-app \
+		logdog-view \
+		rpcexplorer
+
+# Default resources definition.
+.PHONY: $(addsuffix -resources,$(ALL_SERVICES))
+$(addsuffix -resources,$(ALL_SERVICES))::
+
+# The "static" module requires additional resources.
+static-resources:: web
+
+##
+# Per-module Build Rules
+#
+# upload-<module>: Uploads the module, but doesn't set it to be default.
+# deploy-<module>: Uploads the module and sets it to be default.
+##
+
+.PHONY: $(addprefix upload-,$(ALL_SERVICES))
+$(addprefix upload-,$(ALL_SERVICES)): upload-%: %-resources yamls
+	cd $(APP_DIR) && \
+		gae.py upload \
+			-A $(CLOUD_PROJECT) \
+			$(GAE_PY_EXTRA_ARGS) \
+			--force \
+			$*
+
+.PHONY: upload
+upload: $(addsuffix -resources,$(ALL_SERVICES))
+	cd $(APP_DIR) && \
+		gae.py upload \
+			-A $(CLOUD_PROJECT) \
+			$(GAE_PY_EXTRA_ARGS) \
+			--force \
+			$(ALL_SERVICES)
+
+.PHONY: switch
+switch:
+	cd $(APP_DIR) && \
+		gcloud \
+			--project $(CLOUD_PROJECT) \
+			app versions migrate \
+				$$(gae.py version -A $(CLOUD_PROJECT) $(GAE_PY_EXTRA_ARGS)) \
+				$(addprefix --service=,$(ALL_SERVICES))
+
+# This is a special make target to upload the static module named "dev". This
+# version can be specifically whitelisted by the service account to enable
+# authentication and test a production instance.
+.PHONY: upload-static-dev
+upload-static-dev: static-resources yamls
+	cd $(APP_DIR) && \
+		gcloud app deploy \
+			--project $(CLOUD_PROJECT) \
+			--version "dev" \
+			--quiet \
+			static/module-static.yaml
