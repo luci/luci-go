@@ -18,8 +18,10 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/luci/luci-go/common/isolated"
@@ -30,7 +32,8 @@ import (
 // Fake OS imitiates a filesystem by storing file contents in a map.
 // It also provides a dummy Readlink implementation.
 type fakeOS struct {
-	files map[string]*bytes.Buffer
+	writeFiles map[string]*bytes.Buffer
+	readFiles  map[string]io.Reader
 }
 
 // shouldResembleByteMap asserts that actual (a map[string]*bytes.Buffer) contains
@@ -73,11 +76,20 @@ func (nopWriteCloser) Close() error { return nil }
 
 // implements OpenFile by returning a writer that writes to a bytes.Buffer.
 func (fos *fakeOS) OpenFile(name string, flag int, perm os.FileMode) (io.WriteCloser, error) {
-	if fos.files == nil {
-		fos.files = make(map[string]*bytes.Buffer)
+	if fos.writeFiles == nil {
+		fos.writeFiles = make(map[string]*bytes.Buffer)
 	}
-	fos.files[name] = &bytes.Buffer{}
-	return nopWriteCloser{fos.files[name]}, nil
+	fos.writeFiles[name] = &bytes.Buffer{}
+	return nopWriteCloser{fos.writeFiles[name]}, nil
+}
+
+// implements Open by returning a pre-configured Reader.
+func (fos *fakeOS) Open(name string) (io.ReadCloser, error) {
+	r, ok := fos.readFiles[name]
+	if !ok {
+		panic(fmt.Sprintf("fakeOS: file not found (%s); not implemented.", name))
+	}
+	return ioutil.NopCloser(r), nil
 }
 
 // fakeChecker implements Checker by responding to method invocations by
@@ -106,6 +118,8 @@ func (checker *fakeChecker) Close() error { return nil }
 type fakeUploader struct {
 	// uploadBytesCalls is a record of the arguments to each call of UploadBytes.
 	uploadBytesCalls []uploaderUploadBytesArgs
+	// uploadFileCalls is a record of the arguments to each call of UploadFile.
+	uploadFileCalls []uploaderUploadFileArgs
 
 	Uploader // TODO(mcgreevy): implement other methods.
 }
@@ -116,10 +130,20 @@ type uploaderUploadBytesArgs struct {
 	ps       *isolatedclient.PushState
 }
 
-func (uploader *fakeUploader) UploadBytes(relPath string, isolJSON []byte, ps *isolatedclient.PushState, f func()) {
-	uploader.uploadBytesCalls = append(uploader.uploadBytesCalls, uploaderUploadBytesArgs{relPath, isolJSON, ps})
+type uploaderUploadFileArgs struct {
+	item *Item
+	ps   *isolatedclient.PushState
 }
 
+func (uploader *fakeUploader) UploadBytes(relPath string, isolJSON []byte, ps *isolatedclient.PushState, done func()) {
+	uploader.uploadBytesCalls = append(uploader.uploadBytesCalls, uploaderUploadBytesArgs{relPath, isolJSON, ps})
+	done()
+}
+
+func (uploader *fakeUploader) UploadFile(item *Item, ps *isolatedclient.PushState, done func()) {
+	uploader.uploadFileCalls = append(uploader.uploadFileCalls, uploaderUploadFileArgs{item, ps})
+	done()
+}
 func (uploader *fakeUploader) Close() error { return nil }
 
 func TestSkipsUpload(t *testing.T) {
@@ -149,7 +173,7 @@ func TestSkipsUpload(t *testing.T) {
 
 		// In this test, the only item that is checked and uploaded is the generated isolated file.
 		wantIsolJSON := []byte(`{"algo":"","version":""}`)
-		So(fos.files, shouldResembleByteMap, map[string][]byte{"/a/isolatedPath": wantIsolJSON})
+		So(fos.writeFiles, shouldResembleByteMap, map[string][]byte{"/a/isolatedPath": wantIsolJSON})
 
 		So(isolSummary.Digest, ShouldResemble, isolated.HashBytes(wantIsolJSON))
 		So(isolSummary.Name, ShouldEqual, "isolatedPath")
@@ -185,7 +209,7 @@ func TestDontSkipUpload(t *testing.T) {
 
 		// In this test, the only item that is checked and uploaded is the generated isolated file.
 		wantIsolJSON := []byte(`{"algo":"","version":""}`)
-		So(fos.files, shouldResembleByteMap, map[string][]byte{"/a/isolatedPath": wantIsolJSON})
+		So(fos.writeFiles, shouldResembleByteMap, map[string][]byte{"/a/isolatedPath": wantIsolJSON})
 
 		So(isolSummary.Digest, ShouldResemble, isolated.HashBytes(wantIsolJSON))
 		So(isolSummary.Name, ShouldEqual, "isolatedPath")
@@ -236,7 +260,7 @@ func TestHandlesSymlinks(t *testing.T) {
 
 		// In this test, the only item that is checked and uploaded is the generated isolated file.
 		wantIsolJSON := []byte(`{"algo":"","files":{"c":{"l":"link:/a/b/c"}},"version":""}`)
-		So(fos.files, shouldResembleByteMap, map[string][]byte{"/a/isolatedPath": wantIsolJSON})
+		So(fos.writeFiles, shouldResembleByteMap, map[string][]byte{"/a/isolatedPath": wantIsolJSON})
 
 		So(isolSummary.Digest, ShouldResemble, isolated.HashBytes(wantIsolJSON))
 		So(isolSummary.Name, ShouldEqual, "isolatedPath")
@@ -246,3 +270,95 @@ func TestHandlesSymlinks(t *testing.T) {
 		})
 	})
 }
+
+func TestHandlesIndividualFiles(t *testing.T) {
+	t.Parallel()
+	Convey(`Individual files should be stored in the isolated json and uploaded`, t, func() {
+		isol := &isolated.Isolated{}
+
+		// non-nil PushState means don't skip the upload.
+		pushState := &isolatedclient.PushState{}
+		checker := &fakeChecker{ps: pushState}
+		uploader := &fakeUploader{}
+
+		ut := NewUploadTracker(checker, uploader, isol)
+		fos := &fakeOS{
+			readFiles: map[string]io.Reader{
+				"/a/b/foo": strings.NewReader("foo contents"),
+				"/a/b/bar": strings.NewReader("bar contents"),
+			},
+		}
+		ut.lOS = fos // Override filesystem calls with fake.
+
+		parts := partitionedDeps{
+			indivFiles: itemGroup{
+				items: []*Item{
+					{Path: "/a/b/foo", RelPath: "foo", Size: 1, Mode: 004},
+					{Path: "/a/b/bar", RelPath: "bar", Size: 2, Mode: 006},
+				},
+				totalSize: 3,
+			},
+		}
+		err := ut.UploadDeps(parts)
+		So(err, ShouldBeNil)
+
+		fooHash := isolated.HashBytes([]byte("foo contents"))
+		barHash := isolated.HashBytes([]byte("bar contents"))
+		wantFiles := map[string]isolated.File{
+			"foo": {
+				Digest: fooHash,
+				Mode:   Int(4),
+				Size:   Int64(1)},
+			"bar": {
+				Digest: barHash,
+				Mode:   Int(6),
+				Size:   Int64(2)},
+		}
+
+		So(ut.isol.Files, ShouldResemble, wantFiles)
+
+		So(uploader.uploadBytesCalls, ShouldEqual, nil)
+
+		isolSummary, err := ut.Finalize("/a/isolatedPath")
+		So(err, ShouldBeNil)
+
+		wantIsolJSONTmpl := `{"algo":"","files":{"bar":{"h":"%s","m":6,"s":2},"foo":{"h":"%s","m":4,"s":1}},"version":""}`
+		wantIsolJSON := []byte(fmt.Sprintf(wantIsolJSONTmpl, barHash, fooHash))
+		So(fos.writeFiles, shouldResembleByteMap, map[string][]byte{"/a/isolatedPath": wantIsolJSON})
+
+		So(isolSummary.Digest, ShouldResemble, isolated.HashBytes(wantIsolJSON))
+		So(isolSummary.Name, ShouldEqual, "isolatedPath")
+
+		So(uploader.uploadBytesCalls, ShouldResemble, []uploaderUploadBytesArgs{
+			{"isolatedPath", wantIsolJSON, checker.ps},
+		})
+		So(uploader.uploadFileCalls, ShouldResemble, []uploaderUploadFileArgs{
+			{
+				item: &Item{
+					Path:    "/a/b/foo",
+					RelPath: "foo",
+					Size:    1,
+					Mode:    os.FileMode(4),
+					Digest:  fooHash,
+				},
+				ps: pushState,
+			},
+			{
+				item: &Item{
+					Path:    "/a/b/bar",
+					RelPath: "bar",
+					Size:    2,
+					Mode:    os.FileMode(6),
+					Digest:  barHash,
+				},
+				ps: pushState,
+			},
+		})
+	})
+}
+
+// Int is a helper routine that allocates a new int value to store v and returns a pointer to it.
+func Int(i int) *int { return &i }
+
+// Int64 is a helper routine that allocates a new int64 value to store v and returns a pointer to it.
+func Int64(i int64) *int64 { return &i }

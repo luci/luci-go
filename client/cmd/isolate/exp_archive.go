@@ -179,12 +179,3 @@ func (c *expArchiveRun) Run(a subcommands.Application, args []string, _ subcomma
 	}
 	return 0
 }
-
-func hashFile(path string) (isolated.HexDigest, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-	return isolated.Hash(f)
-}

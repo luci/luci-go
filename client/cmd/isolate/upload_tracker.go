@@ -32,6 +32,11 @@ import (
 // limitedOS contains a subset of the functions from the os package.
 type limitedOS interface {
 	Readlink(string) (string, error)
+
+	// Open is like os.Open, but returns an io.ReadCloser since
+	// that's all we need and it's easier to implment with a fake.
+	Open(string) (io.ReadCloser, error)
+
 	openFiler
 }
 
@@ -46,6 +51,10 @@ type standardOS struct{}
 
 func (sos standardOS) Readlink(name string) (string, error) {
 	return os.Readlink(name)
+}
+
+func (sos standardOS) Open(name string) (io.ReadCloser, error) {
+	return os.Open(name)
 }
 
 func (sos standardOS) OpenFile(name string, flag int, perm os.FileMode) (io.WriteCloser, error) {
@@ -151,7 +160,7 @@ func (ut *UploadTracker) tarAndUploadFiles(smallFiles []*Item) error {
 func (ut *UploadTracker) uploadFiles(files []*Item) error {
 	// Handle the large individually-uploaded files.
 	for _, item := range files {
-		d, err := hashFile(item.Path)
+		d, err := ut.hashFile(item.Path)
 		if err != nil {
 			return err
 		}
@@ -206,6 +215,15 @@ func (ut *UploadTracker) Finalize(isolatedPath string) (IsolatedSummary, error) 
 		Name:   isolFile.name(),
 		Digest: isolFile.item().Digest,
 	}, nil
+}
+
+func (ut *UploadTracker) hashFile(path string) (isolated.HexDigest, error) {
+	f, err := ut.lOS.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	return isolated.Hash(f)
 }
 
 // isolatedFile is an isolated file which is stored in memory.
