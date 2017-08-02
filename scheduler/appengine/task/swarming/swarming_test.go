@@ -47,7 +47,7 @@ func TestValidateProtoMessage(t *testing.T) {
 
 	Convey("ValidateProtoMessage passes good minimal msg", t, func() {
 		So(tm.ValidateProtoMessage(&messages.SwarmingTask{
-			Server:  "https://blah.com",
+			Server:  "blah.com",
 			Command: []string{"echo", "Hi!"},
 		}), ShouldBeNil)
 	})
@@ -69,7 +69,7 @@ func TestValidateProtoMessage(t *testing.T) {
 		}
 		So(call(""), ShouldErrLike, "field 'server' is required")
 		So(call("%%%%"), ShouldErrLike, "invalid URL")
-		So(call("/abc"), ShouldErrLike, "not an absolute url")
+		So(call("/abc"), ShouldErrLike, "not a host root url")
 		So(call("https://host/not-root"), ShouldErrLike, "not a host root url")
 	})
 

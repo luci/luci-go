@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -61,6 +62,13 @@ func (m TaskManager) Traits() task.Traits {
 	}
 }
 
+func normalizeServerURL(s string) string {
+	if strings.HasPrefix(s, "https://") || strings.HasPrefix(s, "http://") {
+		return s
+	}
+	return "https://" + s
+}
+
 // ValidateProtoMessage is part of Manager interface.
 func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 	cfg, ok := msg.(*messages.BuildbucketTask)
@@ -75,7 +83,7 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 	if cfg.Server == "" {
 		return fmt.Errorf("field 'server' is required")
 	}
-	u, err := url.Parse(cfg.Server)
+	u, err := url.Parse(normalizeServerURL(cfg.Server))
 	if err != nil {
 		return fmt.Errorf("invalid URL %q: %s", cfg.Server, err)
 	}
@@ -164,8 +172,9 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 
 	// Make sure Buildbucket can publish PubSub messages, grab token that would
 	// identify this invocation when receiving PubSub notifications.
-	ctl.DebugLog("Preparing PubSub topic for %q", cfg.Server)
-	topic, authToken, err := ctl.PrepareTopic(c, cfg.Server)
+	serverURL := normalizeServerURL(cfg.Server)
+	ctl.DebugLog("Preparing PubSub topic for %q", serverURL)
+	topic, authToken, err := ctl.PrepareTopic(c, serverURL)
 	if err != nil {
 		ctl.DebugLog("Failed to prepare PubSub topic - %s", err)
 		return err
@@ -284,7 +293,7 @@ func (m TaskManager) createBuildbucketService(c context.Context, ctl task.Contro
 		return nil, err
 	}
 	cfg := ctl.Task().(*messages.BuildbucketTask)
-	service.BasePath = cfg.Server + "/_ah/api/buildbucket/v1/"
+	service.BasePath = normalizeServerURL(cfg.Server) + "/_ah/api/buildbucket/v1/"
 	return service, nil
 }
 
