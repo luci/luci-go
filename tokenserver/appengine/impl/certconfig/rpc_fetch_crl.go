@@ -117,7 +117,7 @@ func (r *FetchCRLRPC) FetchCRL(c context.Context, req *admin.FetchCRLRequest) (*
 func fetchCRL(c context.Context, cfg *admin.CertificateAuthorityConfig, knownETag string) (blob []byte, etag string, err error) {
 	// Pick auth or non-auth transport.
 	var transport http.RoundTripper
-	if cfg.UseOauth {
+	if cfg.UseOauth || len(cfg.OauthScopes) != 0 {
 		var scopes []string
 		if len(cfg.OauthScopes) != 0 {
 			scopes = cfg.OauthScopes
