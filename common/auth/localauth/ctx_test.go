@@ -32,7 +32,7 @@ func TestWithLocalAuth(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeLocal)
+	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
 	gen := func(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
 		return &oauth2.Token{
@@ -54,7 +54,7 @@ func TestWithLocalAuth(t *testing.T) {
 				"secret":     p.Secret,
 				"account_id": "acc_id",
 			})
-			So(call(req), ShouldEqual, `HTTP 200 (json): {"access_token":"tok","expiry":1454502906}`)
+			So(call(req), ShouldEqual, `HTTP 200 (json): {"access_token":"tok","expiry":1454474106}`)
 			return nil
 		})
 	})

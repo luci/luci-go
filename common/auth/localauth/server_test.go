@@ -95,7 +95,7 @@ func TestProtocol(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeLocal)
+	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
 	Convey("With server", t, func(c C) {
 		// Use channels to pass mocked requests/responses back and forth.
@@ -157,7 +157,7 @@ func TestProtocol(t *testing.T) {
 				AccessToken: "tok1",
 				Expiry:      clock.Now(ctx).Add(30 * time.Minute),
 			}
-			So(call(goodRequest()), ShouldEqual, `HTTP 200 (json): {"access_token":"tok1","expiry":1454502906}`)
+			So(call(goodRequest()), ShouldEqual, `HTTP 200 (json): {"access_token":"tok1","expiry":1454474106}`)
 			So(<-requests, ShouldResemble, []string{"A", "B"})
 
 			// application/json is also the default.
@@ -167,7 +167,7 @@ func TestProtocol(t *testing.T) {
 				AccessToken: "tok2",
 				Expiry:      clock.Now(ctx).Add(30 * time.Minute),
 			}
-			So(call(req), ShouldEqual, `HTTP 200 (json): {"access_token":"tok2","expiry":1454502906}`)
+			So(call(req), ShouldEqual, `HTTP 200 (json): {"access_token":"tok2","expiry":1454474106}`)
 			So(<-requests, ShouldResemble, []string{"A", "B"})
 		})
 
