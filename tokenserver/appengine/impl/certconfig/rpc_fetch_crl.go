@@ -16,6 +16,7 @@ package certconfig
 
 import (
 	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -105,10 +106,14 @@ func (r *FetchCRLRPC) FetchCRL(c context.Context, req *admin.FetchCRLRequest) (*
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// fetchCRL fetches a blob with der-encoded CRL from the CRL endpoint.
+// fetchCRL fetches a blob with pem or der-encoded CRL from the CRL endpoint.
 //
 // It knows how to use ETag headers to avoid fetching already known data.
 // May return transient and fatal errors.
+//
+// It attempts to parse the fetched data as PEM first. If successful, returns
+// decoded DER block. If the data doesn't look like a PEM block, returns it as
+// is, assuming it is already in the DER form.
 func fetchCRL(c context.Context, cfg *admin.CertificateAuthorityConfig, knownETag string) (blob []byte, etag string, err error) {
 	// Pick auth or non-auth transport.
 	var transport http.RoundTripper
@@ -150,11 +155,12 @@ func fetchCRL(c context.Context, cfg *admin.CertificateAuthorityConfig, knownETa
 		return nil, knownETag, nil
 	}
 
-	// Read the body in its entirety.
+	// Read the body in its entirety (plus new etag, if any).
 	blob, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, "", transient.Tag.Apply(err)
 	}
+	etag = resp.Header.Get("ETag")
 
 	// Transient error?
 	if resp.StatusCode >= http.StatusInternalServerError {
@@ -169,8 +175,27 @@ func fetchCRL(c context.Context, cfg *admin.CertificateAuthorityConfig, knownETa
 		return nil, "", fmt.Errorf("unexpected status HTTP %d", resp.StatusCode)
 	}
 
-	// Good enough.
-	return blob, resp.Header.Get("ETag"), nil
+	// Attempt to parse PEM. It's fine if it fails (block == nil), in that case we
+	// assume the body is already in the DER form. If it's not really DER, it will
+	// fail the subsequent validation step.
+	block, rest := pem.Decode(blob)
+	if block == nil {
+		return blob, etag, nil
+	}
+
+	// It is a PEM, but maybe it's not a CRL, or it has multiple blocks. Reject
+	// these with fatal errors.
+	if block.Type != "X509 CRL" {
+		logging.Errorf(c, "GET %s - bad CRL, expecting %q PEM, got %q", cfg.CrlUrl, "X509 CRL", block.Type)
+		return nil, "", fmt.Errorf("got %q PEM, not a CRL PEM", block.Type)
+	}
+	if len(rest) != 0 {
+		logging.Errorf(c, "GET %s - bad CRL, more than one PEM block", cfg.CrlUrl)
+		return nil, "", fmt.Errorf("bad CRL, more than one PEM block")
+	}
+
+	// Have a valid X509 CRL PEM, return its decoded body.
+	return block.Bytes, etag, nil
 }
 
 // validateAndStoreCRL handles incoming CRL blob fetched by 'fetchCRL'.

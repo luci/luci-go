@@ -74,7 +74,7 @@ func TestFetchCRLRPC(t *testing.T) {
 			So(err, ShouldErrLike, "doesn't have CRL defined")
 		})
 
-		Convey("FetchCRL works (no etags)", func() {
+		Convey("FetchCRL works (der, no etags)", func() {
 			ts := serveCRL()
 			defer ts.Close()
 
@@ -101,7 +101,35 @@ func TestFetchCRLRPC(t *testing.T) {
 			So(crl.RevokedCertsCount, ShouldEqual, 1) // fakeCACrl has only 1 SN
 		})
 
-		Convey("FetchCRL works (with etags)", func() {
+		Convey("FetchCRL works (pem, no etags)", func() {
+			ts := serveCRL()
+			defer ts.Close()
+
+			// Prepare config.
+			importConfig(fmt.Sprintf(`
+				certificate_authority {
+					cn: "Puppet CA: fake.ca"
+					cert_path: "certs/fake.ca.crt"
+					crl_url: %q
+				}
+			`, ts.URL))
+
+			// Import works.
+			ts.CRL = fakeCACrl
+			ts.ServePEM = true
+			err := callFetchCRL("Puppet CA: fake.ca", true)
+			So(err, ShouldBeNil)
+
+			// CRL is there.
+			crl := CRL{
+				Parent: ds.NewKey(ctx, "CA", "Puppet CA: fake.ca", 0, nil),
+			}
+			err = ds.Get(ctx, &crl)
+			So(err, ShouldBeNil)
+			So(crl.RevokedCertsCount, ShouldEqual, 1) // fakeCACrl has only 1 SN
+		})
+
+		Convey("FetchCRL works (der, with etags)", func() {
 			ts := serveCRL()
 			defer ts.Close()
 
@@ -175,9 +203,10 @@ t2WZsEUA7W8l45nbNg8m8l+nOEBCM7Pjycy8ZV7XFdT9iATn44huQi1CGw2xUpEX
 type crlServer struct {
 	*httptest.Server
 
-	Lock sync.Mutex
-	CRL  string
-	Etag string
+	Lock     sync.Mutex
+	CRL      string
+	Etag     string
+	ServePEM bool
 }
 
 // serveCRL starts a test server that serves CRL file.
@@ -186,16 +215,24 @@ func serveCRL() *crlServer {
 	s.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		s.Lock.Lock()
 		defer s.Lock.Unlock()
-		der, err := utils.ParsePEM(s.CRL, "X509 CRL")
-		if err != nil {
-			w.WriteHeader(500)
+
+		var blob []byte
+		if s.ServePEM {
+			blob = []byte(s.CRL)
 		} else {
-			if s.Etag != "" {
-				w.Header().Set("ETag", s.Etag)
+			der, err := utils.ParsePEM(s.CRL, "X509 CRL")
+			if err != nil {
+				w.WriteHeader(500)
+				return
 			}
-			w.WriteHeader(200)
-			w.Write(der)
+			blob = der
 		}
+
+		if s.Etag != "" {
+			w.Header().Set("ETag", s.Etag)
+		}
+		w.WriteHeader(200)
+		w.Write(blob)
 	}))
 	return s
 }
