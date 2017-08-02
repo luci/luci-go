@@ -347,7 +347,7 @@ namespace LogDog {
       let missingRetry = new luci.RetryIterator(Fetcher.missingRetry);
       let resp = await missingRetry.do(() => {
         ctx.updateStatus(FetchStatus.LOADING);
-        return this.client.get(request);
+        return this.client.get(ctx.op, request);
       }, this.doRetryIfMissing(ctx));
       let fr = FetchResult.make(resp, this.lastDesc);
       return this.afterProcessResult(ctx, fr);
@@ -358,7 +358,7 @@ namespace LogDog {
       let resp = await missingRetry.do(() => {
         ctx.updateStatus(FetchStatus.LOADING);
         let needsState = (this.terminalIndex < 0);
-        return this.client.tail(this.stream, needsState);
+        return this.client.tail(ctx.op, this.stream, needsState);
       }, this.doRetryIfMissing(ctx));
 
       let fr = FetchResult.make(resp, this.lastDesc);

@@ -6,6 +6,7 @@
 
 ///<reference path="../logdog-stream/logdog.ts" />
 ///<reference path="../logdog-stream/client.ts" />
+///<reference path="../luci-operation/operation.ts" />
 
 namespace LogDog {
 
@@ -17,15 +18,15 @@ namespace LogDog {
   /**
    * Issues a query and iteratively pulls up to limit results.
    */
-  export async function
-  queryAll(client: LogDog.Client, req: QueryRequest, limit: number):
-      Promise<QueryResult[]> {
+  export async function queryAll(
+      op: luci.Operation, client: LogDog.Client, req: QueryRequest,
+      limit: number): Promise<QueryResult[]> {
     let results: QueryResult[] = [];
     let cursor = '';
 
     for (let remaining = (limit || 100); remaining > 0;) {
       console.log('Query', cursor, remaining);
-      let resp = await client.query(req, cursor, remaining);
+      let resp = await client.query(op, req, cursor, remaining);
       if (!resp[0].length) {
         break;
       }

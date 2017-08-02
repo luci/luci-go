@@ -283,8 +283,9 @@ namespace LogDog {
         };
 
         while (true) {
+          let op = new luci.Operation();
           try {
-            let results = await LogDog.queryAll(this.client, query, 100);
+            let results = await LogDog.queryAll(op, this.client, query, 100);
             return results.map(qr => qr.stream);
           } catch (err) {
             err = resolveErr(err);

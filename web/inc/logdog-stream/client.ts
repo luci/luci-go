@@ -6,6 +6,7 @@
 
 ///<reference path="logdog.ts" />
 ///<reference path="../rpc/client.ts" />
+///<reference path="../luci-operation/operation.ts" />
 
 namespace LogDog {
 
@@ -45,15 +46,16 @@ namespace LogDog {
     constructor(private client: luci.Client) {}
 
     /** Get executes a Get RPC. */
-    async get(req: GetRequest): Promise<GetResponse> {
+    async get(op: luci.Operation, req: GetRequest): Promise<GetResponse> {
       if (this.debug) {
         console.log('logdog.Logs.Get:', req);
       }
-      return this.client.call('logdog.Logs', 'Get', req);
+      return this.client.callOp(op, 'logdog.Logs', 'Get', req);
     }
 
     /** Tail executes a Tail RPC. */
-    async tail(stream: StreamPath, state: boolean): Promise<GetResponse> {
+    async tail(op: luci.Operation, stream: StreamPath, state: boolean):
+        Promise<GetResponse> {
       let request: TailRequest = {
         project: stream.project,
         path: stream.path,
@@ -63,7 +65,7 @@ namespace LogDog {
       if (this.debug) {
         console.log('logdog.Logs.Tail:', request);
       }
-      return this.client.call('logdog.Logs', 'Tail', request);
+      return this.client.callOp(op, 'logdog.Logs', 'Tail', request);
     }
 
     /**
@@ -76,8 +78,9 @@ namespace LogDog {
      * @return a Promise that resolves to the query results and continuation
      *     cursor. The cursor may be empty if the query finished.
      */
-    async query(params: QueryRequest, cursor = '', limit = 0):
-        Promise<[QueryResult[], string]> {
+    async query(
+        op: luci.Operation, params: QueryRequest, cursor = '',
+        limit = 0): Promise<[QueryResult[], string]> {
       let project = params.project;
       let body: any = {
         project: project,
@@ -116,7 +119,7 @@ namespace LogDog {
         next: string;
       };
       let resp: responseType =
-          await this.client.call('logdog.Logs', 'Query', body);
+          await this.client.callOp(op, 'logdog.Logs', 'Query', body);
 
       // Package the response in QueryResults.
       let results = (resp.streams || []).map(entry => {
