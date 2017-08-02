@@ -32,6 +32,7 @@ message CertificateAuthorityConfig {
   string cert_path = 2; // path to the root certificate file in luci-config
   string crl_url = 3;   // where to fetch CRL from
   bool   use_oauth = 4; // true to send Authorization header when fetching CRL
+  repeated string oauth_scopes = 7; // OAuth scopes to use when fetching CRL
 
   // KnownDomains describes parameters to use for each particular domain.
   repeated DomainConfig known_domains = 5;

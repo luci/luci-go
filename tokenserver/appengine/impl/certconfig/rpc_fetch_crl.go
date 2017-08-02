@@ -35,8 +35,9 @@ import (
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 )
 
-// List of OAuth scopes to use for token sent to CRL endpoint.
-var crlFetchScopes = []string{
+// List of OAuth scopes to use for token sent to CRL endpoint if config doesn't
+// specify 'oauth_scopes' field.
+var crlFetchDefaultScopes = []string{
 	"https://www.googleapis.com/auth/userinfo.email",
 }
 
@@ -112,7 +113,13 @@ func fetchCRL(c context.Context, cfg *admin.CertificateAuthorityConfig, knownETa
 	// Pick auth or non-auth transport.
 	var transport http.RoundTripper
 	if cfg.UseOauth {
-		transport, err = auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(crlFetchScopes...))
+		var scopes []string
+		if len(cfg.OauthScopes) != 0 {
+			scopes = cfg.OauthScopes
+		} else {
+			scopes = crlFetchDefaultScopes
+		}
+		transport, err = auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(scopes...))
 	} else {
 		transport, err = auth.GetRPCTransport(c, auth.NoAuth)
 	}
