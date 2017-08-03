@@ -71,8 +71,11 @@ endef
 help:
 	$(info $(HELP_BODY))
 
+YAMLS = dispatch queue cron index
+YAML_PATHS = $(addprefix vmuser/,$(addsuffix .yaml,$(YAMLS)))
+
 .PHONY: yamls
-yamls: vmuser/app.yaml vmuser/dispatch.yaml vmuser/index.yaml
+yamls: vmuser/app.yaml $(YAML_PATHS)
 
 .PHONY: web
 web:
@@ -136,3 +139,10 @@ upload-static-dev: static-resources yamls
 			--quiet \
 			--no-promote \
 			static/module-static.yaml
+
+$(addprefix update-,$(YAMLS)): update-%:
+	cd $(APP_DIR) && \
+		gcloud app deploy \
+			--project $(CLOUD_PROJECT) \
+			--quiet \
+			vmuser/$*.yaml
