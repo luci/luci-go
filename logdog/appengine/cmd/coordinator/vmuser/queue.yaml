@@ -12,7 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# TODO(dnj): Delete this queue once the current Tumble backlog has drained.
 queue:
 - name: "tumble"
+  rate: 100/s
+  target: backend
+
+# This queue is responsible for archiving log streams that are either terminal
+# or have expired. This is handled by the "backend" module.
+- name: "archival"
   rate: 100/s
   target: backend

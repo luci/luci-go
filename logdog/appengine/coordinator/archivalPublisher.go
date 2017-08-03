@@ -17,11 +17,14 @@ package coordinator
 import (
 	"time"
 
-	gcps "cloud.google.com/go/pubsub"
-	"github.com/golang/protobuf/proto"
+	"github.com/luci/luci-go/common/gcloud/pubsub"
 	log "github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry"
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
+
+	gcps "cloud.google.com/go/pubsub"
+	"github.com/golang/protobuf/proto"
+
 	"golang.org/x/net/context"
 )
 
@@ -39,14 +42,8 @@ type ArchivalPublisher interface {
 }
 
 type pubsubArchivalPublisher struct {
-	// client is Pub/Sub client used by the publisher.
-	//
-	// This client is owned by the prodServicesInst that created this instnace,
-	// and should not be closed on shutdown here.
-	client *gcps.Client
-
-	// topic is the authenticated Pub/Sub topic handle to publish to.
-	topic *gcps.Topic
+	// publisher is the client used to publish messages.
+	publisher pubsub.Publisher
 
 	// publishIndexFunc is a function that will return a unique publish index
 	// for this request.
@@ -75,7 +72,7 @@ func (p *pubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTa
 			"key":     t.Key,
 		}.Infof(c, "Publishing archival message for stream.")
 
-		_, err := p.topic.Publish(c, &msg).Get(c)
+		_, err := p.publisher.Publish(c, &msg)
 		return err
 	}, func(err error, d time.Duration) {
 		log.Fields{

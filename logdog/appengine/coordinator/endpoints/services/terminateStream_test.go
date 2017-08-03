@@ -109,19 +109,19 @@ func TestTerminateStream(t *testing.T) {
 						// optimistic one. Assert that this happened by advancing time by
 						// the optimistic period and confirming the published archival
 						// request.
-						env.IterateTumbleAll(c)
+						env.RunTaskQueues(c, tls)
 						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{})
 
 						// Add our settle delay, confirm that archival is scheduled.
 						env.Clock.Add(10 * time.Second)
-						env.IterateTumbleAll(c)
+						env.RunTaskQueues(c, tls)
 						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
 
 						// Add our pessimistic delay, confirm that no additional tasks
 						// are scheduled (because pessimistic was replaced).
 						env.ArchivalPublisher.Clear()
 						env.Clock.Add(time.Hour)
-						env.IterateTumbleAll(c)
+						env.RunTaskQueues(c, tls)
 						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{})
 					})
 

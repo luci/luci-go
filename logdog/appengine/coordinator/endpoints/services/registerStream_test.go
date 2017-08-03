@@ -30,6 +30,7 @@ import (
 	ct "github.com/luci/luci-go/logdog/appengine/coordinator/coordinatorTest"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+
 	"golang.org/x/net/context"
 
 	. "github.com/luci/luci-go/common/testing/assertions"
@@ -103,7 +104,7 @@ func TestRegisterStream(t *testing.T) {
 					So(err, ShouldBeRPCOK)
 					So(resp, ShouldResemble, expResp)
 					ds.GetTestable(c).CatchupIndexes()
-					env.IterateTumbleAll(c)
+					env.RunTaskQueues(c, tls)
 
 					So(tls.Get(c), ShouldBeNil)
 
@@ -143,7 +144,7 @@ func TestRegisterStream(t *testing.T) {
 
 						Convey(`Forces an archival request after first archive expiration.`, func() {
 							env.Clock.Set(created.Add(time.Hour)) // 1 hour after initial registration.
-							env.IterateTumbleAll(c)
+							env.RunTaskQueues(c, tls)
 
 							So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
 						})
@@ -165,7 +166,7 @@ func TestRegisterStream(t *testing.T) {
 					So(err, ShouldBeRPCOK)
 					So(resp, ShouldResemble, expResp)
 					ds.GetTestable(c).CatchupIndexes()
-					env.IterateTumbleAll(c)
+					env.RunTaskQueues(c, tls)
 
 					So(tls.Get(c), ShouldBeNil)
 
@@ -186,12 +187,12 @@ func TestRegisterStream(t *testing.T) {
 					So(tls.Prefix.Secret, ShouldResemble, req.Secret)
 
 					// No pending archival requests.
-					env.IterateTumbleAll(c)
+					env.RunTaskQueues(c, tls)
 					So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{})
 
 					// When we advance to our settle delay, an archival task is scheduled.
 					env.Clock.Add(10 * time.Minute)
-					env.IterateTumbleAll(c)
+					env.RunTaskQueues(c, tls)
 
 					// Has a pending archival request.
 					So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
@@ -211,11 +212,11 @@ func TestRegisterStream(t *testing.T) {
 						// 12, confirm no archival, then advance another 12 and confirm that
 						// archival was tasked.
 						env.Clock.Add(12 * time.Hour)
-						env.IterateTumbleAll(c)
+						env.RunTaskQueues(c, tls)
 						So(env.ArchivalPublisher.Hashes(), ShouldHaveLength, 0)
 
 						env.Clock.Add(12 * time.Hour)
-						env.IterateTumbleAll(c)
+						env.RunTaskQueues(c, tls)
 						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
 					})
 
@@ -232,7 +233,7 @@ func TestRegisterStream(t *testing.T) {
 						ds.GetTestable(c).CatchupIndexes()
 
 						// The cleanup archival should be scheduled immediately.
-						env.IterateTumbleAll(c)
+						env.RunTaskQueues(c, tls)
 						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
 					})
 				})

@@ -22,6 +22,7 @@ import (
 
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
+	"github.com/luci/luci-go/logdog/appengine/coordinator/tasks"
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/tumble"
 
@@ -37,6 +38,7 @@ func init() {
 	base := gaemiddleware.BaseProd().Extend(coordinator.ProdCoordinatorService)
 	tmb.InstallHandlers(r, base)
 	gaemiddleware.InstallHandlersWithMiddleware(r, base)
+	tasks.InstallHandlers(r, base)
 
 	http.Handle("/", r)
 }

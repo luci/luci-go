@@ -197,7 +197,6 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 		return nil, errors.New("failed to get Pub/Sub client")
 	}
 	psTopic := psClient.Topic(topic)
-	ps.DisableTopicBundling(psTopic)
 
 	// Assert that our Topic exists.
 	exists, err := retryTopicExists(c, psTopic, cfg.RPCTimeout)

@@ -16,10 +16,15 @@ service: backend
 runtime: go
 api_version: go1
 
-instance_class: IC_2
+instance_class: F2
 
 handlers:
 - url: "/debug/*"
+  script: _go_app
+  secure: always
+  login: admin
+
+- url: "/internal/*"
   script: _go_app
   secure: always
   login: admin

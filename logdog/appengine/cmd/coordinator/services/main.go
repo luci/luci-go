@@ -22,6 +22,7 @@ import (
 
 	"github.com/luci/luci-go/appengine/gaemiddleware"
 	"github.com/luci/luci-go/grpc/prpc"
+
 	registrationPb "github.com/luci/luci-go/logdog/api/endpoints/coordinator/registration/v1"
 	servicesPb "github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"

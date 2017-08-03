@@ -18,6 +18,7 @@ It has these top-level messages:
 	TerminateStreamRequest
 	ArchiveStreamRequest
 	LogStreamState
+	ArchiveDispatchTask
 	ArchiveTask
 */
 package logdog
