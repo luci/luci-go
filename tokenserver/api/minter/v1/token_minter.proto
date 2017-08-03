@@ -340,7 +340,7 @@ message MintOAuthTokenGrantRequest {
   // user's OAuth token to the token server, where it can be validated.
   //
   // Required.
-  string end_user_identity = 3;
+  string end_user = 3;
 
   // Optional reason why the grant is created.
   //
@@ -374,7 +374,7 @@ message MintOAuthTokenViaGrantRequest {
   // The list of OAuth scopes the access token should have.
   //
   // The server may reject the request if some scopes are not allowed.
-  repeated string oauth_scopes = 2;
+  repeated string oauth_scope = 2;
 
   // Minimally accepted validity duration of the returned OAuth token (seconds).
   //

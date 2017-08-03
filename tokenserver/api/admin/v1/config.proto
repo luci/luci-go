@@ -91,7 +91,7 @@ message DelegationRule {
   // A descriptive name of this rule, for the audit log.
   string name = 1;
 
-  // Email of developers that added this rule, to know who to contact.
+  // Email of developers that own this rule, to know who to contact.
   repeated string owner = 2;
 
   // A set of callers to which this rule applies.
@@ -165,9 +165,11 @@ message DelegationRule {
 message ServiceAccountsPermissions {
   // Rules specify how MintOAuthTokenViaGrant can be used.
   //
-  // Rules are evaluated independently. One and only one rule should match the
-  // request to allow the operation. If none rules or more than one rule match,
-  // the request will be denied.
+  // Rules define a mapping {service account email -> authorization config},
+  // where 'service account email' is matched to 'service_account' field of
+  // ServiceAccountRule, and 'authorization config' is the rest of fields in
+  // ServiceAccountRule that define how exactly the given service account is
+  // allowed to be used.
   //
   // See ServiceAccountRule comments for more details.
   repeated ServiceAccountRule rules = 1;
@@ -176,11 +178,67 @@ message ServiceAccountsPermissions {
 
 // ServiceAccountRule describes a single allowed case of using service accounts.
 //
-// TODO(vadimsh): Implement.
+// The usage of a service account is initiated by an end user, through some
+// "proxy" service. For example, when a user posts a Swarming task that uses
+// a service account, the end user is whoever posts the task, and the proxy is
+// Swarming service itself.
+//
+// This rule specifies which end users are allowed to act as an account, and
+// through which proxies.
 message ServiceAccountRule {
   // A descriptive name of this rule, for the audit log.
   string name = 1;
 
-  // Email of developers that owns this rule, to know who to contact.
+  // Email of developers that own this rule, to know who to contact.
   repeated string owner = 2;
+
+  // Email of service accounts that this rule applies to.
+  //
+  // This is the "primary key" in the rules table: there can be only one rule
+  // that applies to a given service account.
+  repeated string service_account = 3;
+
+  // OAuth scopes we allow to be granted to the OAuth token.
+  //
+  // Any subset of given scopes is allowed. This field is evaluated in
+  // MintOAuthTokenViaGrant RPC handler, right before generating the OAuth
+  // token.
+  repeated string allowed_scope = 4;
+
+  // A set of identities that are allowed to act as the service account (perhaps
+  // indirectly through some other intermediary "proxy" service like Swarming).
+  //
+  // Users listed here are ultimately able to grab an OAuth token belonging to
+  // the service account.
+  //
+  // Each element is either:
+  //  * An identity string ("user:<email>").
+  //  * A group reference ("group:<name>").
+  repeated string end_user = 5;
+
+  // A set of identities that are allowed to act on behalf of end users when
+  // grabbing an OAuth token for the service account.
+  //
+  // These identities represent "proxy" services that do something with service
+  // accounts on behalf of end users. Only identities in this set are allowed
+  // to perform MintOAuthTokenGrant RPC.
+  //
+  // Each element is either:
+  //  * An identity string ("user:<email>").
+  //  * A group reference ("group:<name>").
+  repeated string proxy = 6;
+
+  // Maximum allowed validity duration (sec) of OAuth token grants.
+  //
+  // The grant is minted by MintOAuthTokenGrant RPC (called, for example, when
+  // Swarming task is posted), and checked by MintOAuthTokenViaGrant RPC (called
+  // when the task actually runs). So the allowed validity duration should
+  // account for possible queuing delays.
+  //
+  // This duration has no relation to the OAuth token lifetime. The OAuth token
+  // produced by MintOAuthTokenViaGrant can always live up to 1h regardless of
+  // validity duration of the grant.
+  //
+  // Default is 24 hours.
+  int64 max_grant_validity_duration = 7;
 }
