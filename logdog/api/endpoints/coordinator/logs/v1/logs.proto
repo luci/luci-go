@@ -266,108 +266,6 @@ message QueryResponse {
   string next = 3;
 }
 
-// ListRequest is the request structure for the user List endpoint.
-//
-// The List endpoint enables a directory-tree style traversal of the project
-// and log stream space.
-//
-// For example, if project "myproj" had streams "a/+/baz", a listing would
-// return:
-// - Request: project="", path="", Response: {myproj} (Project names)
-// - Request: project="myproj", path="", Response: {a} (Path components)
-// - Request: project="myproj", path="a", Response: {+} (Path component)
-// - Request: project="myproj", path="a/+", Response: {baz} (Stream component)
-message ListRequest {
-  // The project to query.
-  //
-  // If this is empty, the list results will show all projects that the user can
-  // access.
-  string project = 1;
-
-  // The path base to query.
-  //
-  // For example, log streams:
-  // - foo/bar/+/baz
-  // - foo/+/qux
-  //
-  // A query to path_base "foo" will return "bar" and "+", both path
-  // components.
-  string path_base = 2;
-
-  // State, if true, returns that the streams' full state instead of just its
-  // Path.
-  bool state = 3;
-
-  // If not empty, indicates that this query should continue at the point where
-  // the previous query left off.
-  string next = 4;
-
-  // If true, will return only streams. Otherwise, intermediate path components
-  // will also be returned.
-  bool stream_only = 5;
-
-  // If true, indicates that purged streams should show up in the listing. It is
-  // an error if a non-admin user requests this option.
-  bool include_purged = 6;
-
-  // Offset, if >= 0, instructs the list operation to skip the supplied number
-  // of results. This can be used for pagination.
-  int32 offset = 7;
-  // The maximum number of componts to return.
-  //
-  // If <= 0, no upper bound will be indicated. However, the returned result
-  // count is still be subject to internal constraints.
-  int32 max_results = 8;
-}
-
-// ListResponse is the response structure for the user List endpoint.
-message ListResponse {
-  // The project that the streams belong to.
-  //
-  // If the request was for the project tier of the list hierarchy, this will
-  // be empty, and the components list will contain project elements.
-  string project = 1;
-  // The hierarchy base that was requested.
-  string path_base = 2;
-
-  // If not empty, indicates that there are more list results available.
-  // These results can be requested by repeating the List request with the
-  // same Path field and supplying this value in the Next field.
-  string next = 3;
-
-  // The set of listed stream components.
-  message Component {
-    enum Type {
-      PATH = 0;
-      STREAM = 1;
-      PROJECT = 2;
-    }
-
-    // Name is the name of this path component.  When combined with the
-    // response Base, this will form the full stream path.
-    string name = 1;
-    // The type of the component.
-    Type type = 2;
-
-    // State is the log stream descriptor and state for this stream. It will
-    // only be filled if this is a STREAM component.
-    //
-    // It can be requested by setting the request's State field to true. If the
-    // Proto field is true, the State's Descriptor field will not be included.
-    LogStreamState state = 3;
-
-    // Descriptor is the JSON-packed log stream descriptor protobuf. It will
-    // only be filled if this is a STREAM component.
-    //
-    // A Descriptor entry corresponds to the Path with the same index.
-    //
-    // If the list request's State field is set, the descriptor will be
-    // populated.
-    logpb.LogStreamDescriptor desc = 4;
-  }
-  repeated Component components = 4;
-}
-
 // Logs is the user-facing log access and query endpoint service.
 service Logs {
   // Get returns state and log data for a single log stream.
@@ -378,7 +276,4 @@ service Logs {
 
   // Query returns log stream paths that match the requested query.
   rpc Query(QueryRequest) returns (QueryResponse);
-
-  // List returns log stream paths rooted under the path hierarchy.
-  rpc List(ListRequest) returns (ListResponse);
 }

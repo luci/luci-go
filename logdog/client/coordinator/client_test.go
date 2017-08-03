@@ -48,7 +48,3 @@ func (s *testLogsServiceBase) Tail(c context.Context, req *logdog.TailRequest) (
 func (s *testLogsServiceBase) Query(c context.Context, req *logdog.QueryRequest) (*logdog.QueryResponse, error) {
 	panic("not implemented")
 }
-
-func (s *testLogsServiceBase) List(c context.Context, req *logdog.ListRequest) (*logdog.ListResponse, error) {
-	panic("not implemented")
-}

@@ -170,7 +170,6 @@ func Main(ctx context.Context, params Parameters) int {
 				subcommands.CmdHelp,
 				newCatCommand(),
 				newQueryCommand(),
-				newListCommand(),
 				newLatestCommand(),
 				authcli.SubcommandLogin(authOptions, "auth-login", false),
 				authcli.SubcommandLogout(authOptions, "auth-logout", false),

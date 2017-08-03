@@ -66,18 +66,3 @@ func (s *DecoratedLogs) Query(c context.Context, req *QueryRequest) (rsp *QueryR
 	}
 	return
 }
-
-func (s *DecoratedLogs) List(c context.Context, req *ListRequest) (rsp *ListResponse, err error) {
-	var newCtx context.Context
-	if s.Prelude != nil {
-		newCtx, err = s.Prelude(c, "List", req)
-	}
-	if err == nil {
-		c = newCtx
-		rsp, err = s.Service.List(c, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(c, "List", rsp, err)
-	}
-	return
-}

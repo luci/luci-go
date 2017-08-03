@@ -28,7 +28,6 @@ import (
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	ct "github.com/luci/luci-go/logdog/appengine/coordinator/coordinatorTest"
-	"github.com/luci/luci-go/logdog/appengine/coordinator/hierarchy"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 	"golang.org/x/net/context"
@@ -125,26 +124,6 @@ func TestRegisterStream(t *testing.T) {
 
 					// No archival request yet.
 					So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{})
-
-					// Should have name components.
-					getNameComponents := func(b string) []string {
-						l, err := hierarchy.Get(c, hierarchy.Request{Project: string(tls.Project), PathBase: b})
-						if err != nil {
-							panic(err)
-						}
-						names := make([]string, len(l.Comp))
-						for i, e := range l.Comp {
-							names[i] = e.Name
-							if e.Stream {
-								names[i] += "$"
-							}
-						}
-						return names
-					}
-					So(getNameComponents(""), ShouldResemble, []string{"testing"})
-					So(getNameComponents("testing"), ShouldResemble, []string{"+"})
-					So(getNameComponents("testing/+"), ShouldResemble, []string{"foo"})
-					So(getNameComponents("testing/+/foo"), ShouldResemble, []string{"bar$"})
 
 					Convey(`Can register the stream again (idempotent).`, func() {
 						env.Clock.Set(created.Add(10 * time.Minute))

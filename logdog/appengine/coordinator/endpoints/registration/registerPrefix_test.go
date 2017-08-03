@@ -28,7 +28,6 @@ import (
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/registration/v1"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	ct "github.com/luci/luci-go/logdog/appengine/coordinator/coordinatorTest"
-	"github.com/luci/luci-go/logdog/appengine/coordinator/hierarchy"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/luci_config/common/cfgtypes"
 
@@ -112,23 +111,6 @@ func TestRegisterPrefix(t *testing.T) {
 				// 24 hours is default service prefix expiration.
 				Expiration: ds.RoundTime(clock.Now(c).Add(24 * time.Hour)),
 			})
-
-			// Should have registered path components.
-			getComponents := func(b string) []string {
-				l, err := hierarchy.Get(c, hierarchy.Request{Project: "proj-foo", PathBase: b})
-				if err != nil {
-					panic(err)
-				}
-				names := make([]string, len(l.Comp))
-				for i, e := range l.Comp {
-					names[i] = e.Name
-				}
-				return names
-			}
-			So(getComponents(""), ShouldResemble, []string{"testing"})
-			So(getComponents("testing"), ShouldResemble, []string{"prefix"})
-			So(getComponents("testing/prefix"), ShouldResemble, []string{"+"})
-			So(getComponents("testing/prefix/+"), ShouldResemble, []string{})
 
 			Convey(`Will refuse to register it again.`, func() {
 				_, err := svr.RegisterPrefix(c, &req)

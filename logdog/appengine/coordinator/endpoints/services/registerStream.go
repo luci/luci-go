@@ -26,7 +26,6 @@ import (
 	"github.com/luci/luci-go/logdog/api/logpb"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints"
-	"github.com/luci/luci-go/logdog/appengine/coordinator/hierarchy"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/mutations"
 	"github.com/luci/luci-go/logdog/common/types"
 	"github.com/luci/luci-go/tumble"
@@ -151,22 +150,6 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 		if !anyNoSuchEntity(err) {
 			log.WithError(err).Errorf(c, "Failed to check for log stream.")
 			return nil, err
-		}
-
-		// The stream is not registered. Perform a transactional registration via
-		// mutation.
-		//
-		// Determine which hierarchy components we need to add.
-		comps := hierarchy.Components(path, true)
-		if comps, err = hierarchy.Missing(c, comps); err != nil {
-			log.WithError(err).Warningf(c, "Failed to probe for missing hierarchy components.")
-		}
-
-		// Before we go into transaction, try and put these entries. This should not
-		// be contested, since components don't share an entity root.
-		if err := hierarchy.PutMulti(c, comps); err != nil {
-			log.WithError(err).Errorf(c, "Failed to add missing hierarchy components.")
-			return nil, grpcutil.Internal
 		}
 
 		// The stream does not exist. Proceed with transactional registration.

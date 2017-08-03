@@ -26,7 +26,6 @@ import (
 	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/registration/v1"
 	"github.com/luci/luci-go/logdog/appengine/coordinator"
 	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints"
-	"github.com/luci/luci-go/logdog/appengine/coordinator/hierarchy"
 	"github.com/luci/luci-go/logdog/common/types"
 
 	"golang.org/x/net/context"
@@ -107,24 +106,6 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 			"topic":      pubsubTopic,
 		}.Errorf(c, "Invalid transport Pub/Sub topic.")
 		return nil, grpcutil.Internal
-	}
-
-	// Best effort: register the stream prefix hierarchy components, including the
-	// separator.
-	//
-	// Determine which hierarchy components we need to add.
-	comps := hierarchy.Components(prefix.AsPathPrefix(""), false)
-	if comps, err = hierarchy.Missing(c, comps); err != nil {
-		log.WithError(err).Warningf(c, "Failed to probe for missing hierarchy components.")
-	}
-
-	// Before we go into transaction, try and put these entries. This should not
-	// be contested, since components don't share an entity root.
-	//
-	// If this fails, that's okay; we'll handle this when the stream gets
-	// registered.
-	if err := hierarchy.PutMulti(c, comps); err != nil {
-		log.WithError(err).Infof(c, "Failed to add missing hierarchy components.")
 	}
 
 	// The prefix doesn't appear to be registered. Prepare to transactionally
