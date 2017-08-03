@@ -30,9 +30,9 @@ import (
 	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/server/router"
 
+	"github.com/luci/luci-go/appengine/tq"
 	"github.com/luci/luci-go/scheduler/appengine/engine/cron"
 	"github.com/luci/luci-go/scheduler/appengine/engine/internal"
-	"github.com/luci/luci-go/scheduler/appengine/engine/tq"
 	"github.com/luci/luci-go/scheduler/appengine/schedule"
 )
 
