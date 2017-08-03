@@ -57,6 +57,19 @@ func TestDispatcher(t *testing.T) {
 				next(c)
 			}))
 		}
+		runTasks := func(ctx context.Context) []int {
+			var codes []int
+			for _, tasks := range taskqueue.GetTestable(ctx).GetScheduledTasks() {
+				for _, task := range tasks {
+					// Execute the task.
+					req := httptest.NewRequest("POST", "http://example.com"+task.Path, bytes.NewReader(task.Payload))
+					rw := httptest.NewRecorder()
+					r.ServeHTTP(rw, req)
+					codes = append(codes, rw.Code)
+				}
+			}
+			return codes
+		}
 
 		Convey("Single task", func() {
 			var calls []proto.Message
@@ -74,6 +87,7 @@ func TestDispatcher(t *testing.T) {
 			err := d.AddTask(ctx, &Task{
 				Payload:          &duration.Duration{Seconds: 123},
 				DeduplicationKey: "abc",
+				NamePrefix:       "prefix",
 				Title:            "abc-def",
 				Delay:            30 * time.Second,
 			})
@@ -81,7 +95,7 @@ func TestDispatcher(t *testing.T) {
 
 			// Added the task.
 			expectedPath := "/internal/tasks/default/abc-def"
-			expectedName := "afc6f8271b8598ee04e359916e6c584a9bc3c520a11dd5244e3399346ac0d3a7"
+			expectedName := "prefix-afc6f8271b8598ee04e359916e6c584a9bc3c520a11dd5244e3399346ac0d3a7"
 			expectedBody := []byte(`{"type":"google.protobuf.Duration","body":"123.000s"}`)
 			tasks := taskqueue.GetTestable(ctx).GetScheduledTasks()
 			So(tasks, ShouldResemble, taskqueue.QueueData{
@@ -101,6 +115,7 @@ func TestDispatcher(t *testing.T) {
 			err = d.AddTask(ctx, &Task{
 				Payload:          &duration.Duration{Seconds: 123},
 				DeduplicationKey: "abc",
+				NamePrefix:       "prefix",
 			})
 			So(err, ShouldBeNil)
 
@@ -108,16 +123,35 @@ func TestDispatcher(t *testing.T) {
 			tasks = taskqueue.GetTestable(ctx).GetScheduledTasks()
 			So(len(tasks["default"]), ShouldResemble, 1)
 
-			// Execute the task.
-			req := httptest.NewRequest("POST", "http://example.com"+expectedPath, bytes.NewReader(expectedBody))
-			rw := httptest.NewRecorder()
-			r.ServeHTTP(rw, req)
-
-			// Executed.
-			So(calls, ShouldResemble, []proto.Message{
-				&duration.Duration{Seconds: 123},
+			Convey("Executed", func() {
+				// Execute the task.
+				So(runTasks(ctx), ShouldResemble, []int{200})
+				So(calls, ShouldResemble, []proto.Message{
+					&duration.Duration{Seconds: 123},
+				})
 			})
-			So(rw.Code, ShouldEqual, 200)
+
+			Convey("Deleted", func() {
+				So(d.DeleteTask(ctx, &Task{
+					Payload:          &duration.Duration{Seconds: 123},
+					DeduplicationKey: "abc",
+					NamePrefix:       "prefix",
+				}), ShouldBeNil)
+
+				// Did not execute any tasks.
+				So(runTasks(ctx), ShouldHaveLength, 0)
+				So(calls, ShouldHaveLength, 0)
+			})
+		})
+
+		Convey("Deleting unknown task returns nil", func() {
+			handler := func(c context.Context, payload proto.Message, execCount int) error { return nil }
+			d.RegisterTask(&duration.Duration{}, handler, "default", nil)
+
+			So(d.DeleteTask(ctx, &Task{
+				Payload:          &duration.Duration{Seconds: 123},
+				DeduplicationKey: "something",
+			}), ShouldBeNil)
 		})
 
 		Convey("Many tasks", func() {
@@ -166,6 +200,10 @@ func TestDispatcher(t *testing.T) {
 			}
 			So(len(delaysDefault), ShouldEqual, 100)
 			So(len(delaysAnotherQ), ShouldEqual, 100)
+
+			// Delete the tasks.
+			So(d.DeleteTask(ctx, t...), ShouldBeNil)
+			So(runTasks(ctx), ShouldHaveLength, 0)
 		})
 
 		Convey("Execution errors", func() {
