@@ -22,5 +22,13 @@ dispatch:
   - url: "*/rpcexplorer/*"
     service: static
 
+  ##
+  # Always route logdog.Services and logdog.Registration RPCs to the "services"
+  # module.
+  ##
+
   - url: "*/prpc/logdog.Services/*"
+    service: services
+
+  - url: "*/prpc/logdog.Registration/*"
     service: services
