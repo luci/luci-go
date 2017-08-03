@@ -285,7 +285,7 @@ func NewLink(label, url string) *Link {
 }
 
 func (comp *BuildComponent) toModelSummary() model.Summary {
-	text := comp.Text
+	text := strings.Join(comp.Text, "\n")
 	// Max length for a datastore text field is 1500 char, but for summary purposes
 	// we don't really need anything much longer than 256 char or so.
 	const maxTextLen = 256
@@ -302,7 +302,7 @@ func (comp *BuildComponent) toModelSummary() model.Summary {
 		Status: comp.Status,
 		Start:  comp.Started,
 		End:    comp.Finished,
-		Text:   text,
+		Text:   strings.Split(text, "\n"),
 	}
 }
 
