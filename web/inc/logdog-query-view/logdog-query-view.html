@@ -1,0 +1,159 @@
+<!--
+  Copyright 2016 The LUCI Authors. All rights reserved.
+  Use of this source code is governed under the Apache License, Version 2.0
+  that can be found in the LICENSE file.
+  -->
+
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../logdog-styles/app-theme.html">
+<link rel="import" href="../rpc/rpc-client.html">
+<link rel="import" href="./logdog-query-panel.html">
+<link rel="import" href="../logdog-stream/logdog-stream.html">
+
+<!--
+An element for fetching complete LogDog log streams.
+-->
+<dom-module id="logdog-query-view">
+
+  <style>
+    #list {
+      text-decoration: none;
+      width: 90%;
+      margin: 10px 10px 10px 10px;
+    }
+    #list a {
+      color: var(--primary-text-color);
+      text-decoration: none;
+    }
+    #list ul {
+      padding: 0;
+      margin: 0;
+      list-style-type: none;
+      border-width: 1px;
+      border-color: darkgray;
+      border-style: solid;
+    }
+    #list li {
+      padding: 2px 2px 2px 2px;
+      margin: 5px 10px 5px 10px;
+      font-size: 1.1em;
+    }
+    #list li a {
+      display: block;
+    }
+    #list li:nth-of-type(odd) {
+      background-color: white;
+    }
+    #list li:nth-of-type(even) {
+      background-color: #f2f2f2;
+    }
+    #list .stream-component {
+      font-weight: bold;
+    }
+  </style>
+
+  <template>
+    <!-- Load server description -->
+    <rpc-client
+        id="client"
+        auto-token
+        host="[[host]]">
+    </rpc-client>
+
+    <!-- The current list view. -->
+    <logdog-query-panel id="queryPanel">
+    </logdog-query-panel>
+
+    <!-- The current list view. -->
+    <template is="dom-if" if="[[sharedPrefix]]">
+      <div id="sharedPrefix">
+        Shared Prefix: [[sharedPrefix]]
+      </div>
+    </template>
+    <div id="list" flex>
+      <ul>
+        <template is="dom-repeat" items="{{queryResults}}">
+          <li class="stream-component">
+            <a href="[[streamLinkBase]]?s=[[item.fullPath]]">
+              [[item.title]]
+            </a>
+          </li>
+        </template>
+      </ul>
+    </div>
+  </template>
+</dom-module>
+
+<script>
+  Polymer({
+    is: "logdog-query-view",
+    properties: {
+
+      hostAttributes: {
+        hidden: true,
+      },
+
+      /** The name ([host][:port]) of the pRPC host. */
+      host: {
+        type: String,
+        notify: true,
+      },
+
+      /**
+       * Generated stream links will use this parameter, referencing the
+       * selected streams with "s" query parameters.
+       */
+      streamLinkBase: {
+        type: String,
+        notify: true,
+      },
+
+      /**
+       * Populates the "shared prefix" field in the template.
+       *
+       * If this is null, the shared prefix field will not exist. If it is not
+       * null, it is a string to display as a shared prefix. This is set when
+       * all of the items in "queryResults" share the same prefix, in which
+       * case their text is abbreviated. This is a common situation in many
+       * queries.
+       */
+      sharedPrefix: {
+        type: String,
+        value: null,
+        readOnly: true,
+      },
+
+      /**
+       * The query results, set when a query returns.
+       *
+       * Each item in this array is a LogDog.QueryEntry object (see "view.ts").
+       */
+      queryResults: {
+        type: Array,
+        value: [],
+        readOnly: true,
+      },
+    },
+
+    created: function() {
+      this._view = new LogDog.QueryView(this);
+    },
+
+    attached: function() {
+      this._view.reset();
+    },
+
+    detached: function() {
+      this._view.reset();
+    },
+
+    ready: function() {
+      this._currentQuery = null;
+
+      this.$.queryPanel.addEventListener('query-selected', function(e) {
+        this._view.doQuery(this.$.queryPanel);
+      }.bind(this));
+    },
+  });
+</script>

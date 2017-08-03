@@ -494,6 +494,10 @@ An element for rendering muxed LogDog log streams.
       this._view.stop();
     },
 
+    reset: function() {
+      this._view.reset();
+    },
+
     _polymerAppendChild: function(e) {
       Polymer.dom(this.root).appendChild(e);
     },

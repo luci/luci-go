@@ -48,9 +48,9 @@
       app.route = "root";
     });
 
-    page("/list/*", function(data) {
-      app.route = "list";
-      app.$.list.base = logdog.correctStreamPath(data.params[0]);
+    page("/query/*", function(data) {
+      app.route = "query";
+      app.$.query.base = logdog.correctStreamPath(data.params[0]);
     });
 
     page("/stream/*", function(data) {

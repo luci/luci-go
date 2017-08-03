@@ -5,3 +5,4 @@
 */
 
 ///<reference path="../../logdog-stream-view/model.ts" />
+///<reference path="../../logdog-query-view/view.ts" />

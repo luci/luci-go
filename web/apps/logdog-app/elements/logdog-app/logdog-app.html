@@ -24,7 +24,7 @@
 
 <link rel="import" href="logdog-home-page.html">
 <link rel="import" href="../../inc/logdog-app-base/logdog-app-base.html">
-<link rel="import" href="../../inc/logdog-list-view/logdog-list-view.html">
+<link rel="import" href="../../inc/logdog-query-view/logdog-query-view.html">
 <link rel="import" href="../../inc/logdog-stream-view/logdog-stream-view.html">
 <link rel="import" href="../../inc/auth/auth-signin.html">
 
@@ -73,10 +73,10 @@ An element for the main LogDog web app.
           Home
         </paper-icon-item>
 
-        <paper-icon-item on-tap="_menuSelected" data-route="list"
-                         path="#!/list/">
+        <paper-icon-item on-tap="_menuSelected" data-route="query"
+                         path="#!/query/">
           <iron-icon icon="info"></iron-icon>
-          List
+          Query
         </paper-icon-item>
 
         <paper-icon-item on-tap="_menuSelected" data-route="stream"
@@ -116,16 +116,16 @@ An element for the main LogDog web app.
             <logdog-home-page></logdog-home-page>
           </section>
 
-          <section data-route="list">
-            <logdog-list-view
-                id="list"
+          <section data-route="query">
+            <logdog-query-view
+                id="query"
                 host="[[host]]"
-                link-base="#!/list/"
+                link-base="#!/query/"
                 stream-link-base="#!/stream/"
                 show-metadata="[[streamMetadata]]"
                 wrap-lines="[[streamWrapLines]]"
                 >
-            </logdog-list-view>
+            </logdog-query-view>
           </section>
 
           <section data-route="stream">
@@ -166,10 +166,6 @@ An element for the main LogDog web app.
         type: String,
         notify: true,
       },
-      listBase: {
-        type: String,
-        notify: true,
-      },
     },
 
     _menuSelected: function(e) {
@@ -180,6 +176,7 @@ An element for the main LogDog web app.
 
     _contentSelect: function(e) {
       if (this.route === "stream") {
+        console.log(this.$.stream);
         this.$.stream.reset();
       }
     },

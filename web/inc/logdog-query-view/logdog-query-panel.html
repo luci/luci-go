@@ -1,0 +1,112 @@
+<!--
+  Copyright 2016 The LUCI Authors. All rights reserved.
+  Use of this source code is governed under the Apache License, Version 2.0
+  that can be found in the LICENSE file.
+  -->
+
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/iron-form/iron-form.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../logdog-styles/app-theme.html">
+
+
+<!--
+An element for fetching complete LogDog log streams.
+-->
+<dom-module id="logdog-query-panel">
+
+  <style>
+    paper-button.indigo {
+      background-color: var(--paper-indigo-500);
+      color: white;
+      --paper-button-raised-keyboard-focus: {
+        background-color: var(--paper-pink-a200) !important;
+        color: white !important;
+      };
+    }
+  </style>
+
+  <template>
+
+    <iron-form id="form">
+      <paper-input
+          label="Project"
+          value="{{project}}"
+          on-keydown="_maybeSubmit"
+          required
+          auto-validate
+          error-message="A project is required.">
+      </paper-input>
+
+      <paper-input
+          label="Path Query"
+          value="{{path}}"
+          on-keydown="_maybeSubmit">
+      </paper-input>
+
+      <paper-dropdown-menu label="Stream Type" value="{{streamType}}">
+        <paper-listbox class="dropdown-content" selected="0">
+          <paper-item>Text</paper-item>
+          <paper-item>Binary</paper-item>
+          <paper-item>Datagram</paper-item>
+          <paper-item>Any</paper-item>
+        </paper-listbox>
+      </paper-dropdown-menu>
+
+      <paper-button
+          id="query"
+          class="indigo"
+          disabled$="[[_isQueryDisabled(project)]]"
+          on-tap="_handleQueryTap"
+          raised>
+        Query
+      </paper-button>
+    </iron-form>
+
+  </template>
+
+</dom-module>
+
+<script>
+  Polymer({
+    is: "logdog-query-panel",
+    properties: {
+
+      /** The log stream path to query. */
+      project: {
+        type: String,
+        notify: true,
+      },
+
+      /** The log stream path to query. */
+      path: {
+        type: String,
+        notify: true,
+      },
+
+      /** The stream type. */
+      streamType: {
+        type: String,
+        notify: true,
+      },
+    },
+
+    _isQueryDisabled(project) {
+      return (!project);
+    },
+
+    _handleQueryTap: function() {
+      this.dispatchEvent(new CustomEvent('query-selected'));
+    },
+
+    _maybeSubmit: function(e) {
+      if (e.key === 'Enter' && !this._isQueryDisabled(this.project)) {
+        this._handleQueryTap();
+      }
+    },
+  });
+</script>
