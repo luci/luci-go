@@ -35,7 +35,7 @@ import (
 	"github.com/luci/luci-go/milo/api/config"
 )
 
-// Console is af datastore entity representing a single console.
+// Console is a datastore entity representing a single console.
 type Console struct {
 	// Parent is a key to the parent Project entity where this console was
 	// defined in.
@@ -55,8 +55,17 @@ type Console struct {
 	URL string
 	// Revision is the luci-config reivision from when this Console was retrieved.
 	Revision string
-	// Builders is a list of universal builder IDs.
+	// Builders is a list of universal builder IDs.  This is indexed.
 	Builders []string
+	// BuilderMeta is an expanded set of builders containing additional metadata.
+	// This should always match the Builders field.
+	BuilderMetas []BuilderMeta
+}
+
+// BuilderMeta is a struct containing metadata about a builder.
+type BuilderMeta struct {
+	Category  string
+	ShortName string
 }
 
 // GetProjectName retrieves the project name of the console out of the Console's
@@ -77,6 +86,7 @@ func NewConsole(project *datastore.Key, URL, revision string, con *config.Consol
 		Revision:     revision,
 		URL:          URL,
 		Builders:     BuilderFromProto(con.Builders),
+		BuilderMetas: BuilderRefFromProto(con.Builders),
 	}
 }
 
@@ -86,6 +96,19 @@ func BuilderFromProto(cb []*config.Builder) []string {
 	builders := make([]string, len(cb))
 	for i, b := range cb {
 		builders[i] = b.Name
+	}
+	return builders
+}
+
+// BuilderRefFromProto tranforms a luci-config proto builder format into the
+// BuilderMeta format.
+func BuilderRefFromProto(cb []*config.Builder) []BuilderMeta {
+	builders := make([]BuilderMeta, len(cb))
+	for i, b := range cb {
+		builders[i] = BuilderMeta{
+			Category:  b.Category,
+			ShortName: b.ShortName,
+		}
 	}
 	return builders
 }
@@ -348,7 +371,7 @@ func UpdateConsoles(c context.Context) error {
 		}
 	}
 	logging.Infof(
-		c, "processed %d consoles over %d projects", len(knownProjects), processedConsoles)
+		c, "processed %d consoles over %d projects", processedConsoles, len(knownProjects))
 
 	if len(merr) == 0 {
 		return nil

@@ -155,6 +155,7 @@ func saveBuildSummary(
 	// TODO(hinoka): Console related items.
 	bs := model.BuildSummary{
 		BuildKey:  key,
+		SelfLink:  build.Url,
 		BuilderID: fmt.Sprintf("buildbucket/%s/%s", build.Bucket, builderName),
 		Created:   parseTimestamp(build.CreatedTs),
 		Summary: model.Summary{

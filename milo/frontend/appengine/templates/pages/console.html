@@ -26,14 +26,14 @@ th {
     <td>
       <a href="{{.Revision.URL}}">
         <span class="commit" title="{{.Description}}">
-          ({{ .AuthorEmail }})
+          {{ .AuthorEmail }}
         </span>
       </a>
     </td>
     {{ range .Build }}
       {{ if . }}
         <td class="status-{{.Summary.Status.String}}">
-          {{ . | $console.BuilderLink | linkify }}
+          <a href="{{ .SelfLink }}">x</a>
         </td>
       {{ else }}
         <td></td>
