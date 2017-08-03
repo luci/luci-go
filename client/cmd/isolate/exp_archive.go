@@ -27,6 +27,7 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/client/isolate"
 	"github.com/luci/luci-go/common/auth"
 	logpb "github.com/luci/luci-go/common/eventlog/proto"
 	"github.com/luci/luci-go/common/isolated"
@@ -89,6 +90,25 @@ func (c *expArchiveRun) main() error {
 	}
 	client := isolatedclient.New(nil, authCl, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
 
+	eventlogger := NewLogger(ctx, c.loggingFlags.EventlogEndpoint)
+
+	archiveDetails, err := doExpArchive(ctx, client, archiveOpts, c.dumpJSON)
+	if err != nil {
+		return err
+	}
+	end := time.Now()
+
+	op := logpb.IsolateClientEvent_ARCHIVE.Enum()
+	if err := eventlogger.logStats(ctx, op, start, end, archiveDetails); err != nil {
+		log.Printf("Failed to log to eventlog: %v", err)
+	}
+
+	return nil
+}
+
+// doExparchive performs the exparchive operation for an isolate specified by archiveOpts.
+// dumpJSON is the path to write a JSON summary of the uploaded isolate, in the same format as batch_archive.
+func doExpArchive(ctx context.Context, client *isolatedclient.Client, archiveOpts *isolate.ArchiveOptions, dumpJSON string) (*logpb.IsolateClientEvent_ArchiveDetails, error) {
 	// Set up a checker and uploader. We limit the uploader to one concurrent
 	// upload, since the uploads are all coming from disk (with the exception of
 	// the isolated JSON itself) and we only want a single goroutine reading from
@@ -98,28 +118,29 @@ func (c *expArchiveRun) main() error {
 	archiver := NewTarringArchiver(checker, uploader)
 
 	isolSummary, err := archiver.Archive(archiveOpts)
+	if err != nil {
+		return nil, err
+	}
 
 	// Make sure that all pending items have been checked.
 	if err := checker.Close(); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Make sure that all the uploads have completed successfully.
 	if err := uploader.Close(); err != nil {
-		return err
+		return nil, err
 	}
 
 	printSummary(isolSummary)
-	if c.dumpJSON != "" {
-		f, err := os.OpenFile(c.dumpJSON, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	if dumpJSON != "" {
+		f, err := os.OpenFile(dumpJSON, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		writeSummaryJSON(f, isolSummary)
 		f.Close()
 	}
-
-	end := time.Now()
 
 	archiveDetails := &logpb.IsolateClientEvent_ArchiveDetails{
 		HitCount:    proto.Int64(int64(checker.Hit.Count)),
@@ -128,13 +149,7 @@ func (c *expArchiveRun) main() error {
 		MissBytes:   &checker.Miss.Bytes,
 		IsolateHash: []string{string(isolSummary.Digest)},
 	}
-	eventlogger := NewLogger(ctx, c.loggingFlags.EventlogEndpoint)
-	op := logpb.IsolateClientEvent_ARCHIVE.Enum()
-	if err := eventlogger.logStats(ctx, op, start, end, archiveDetails); err != nil {
-		log.Printf("Failed to log to eventlog: %v", err)
-	}
-
-	return nil
+	return archiveDetails, nil
 }
 
 func writeSummaryJSON(w io.Writer, summaries ...IsolatedSummary) error {

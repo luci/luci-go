@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -73,38 +74,56 @@ func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
 }
 
 func (c *archiveRun) main(a subcommands.Application, args []string) error {
-	out := os.Stdout
-	prefix := "\n"
-	if c.defaultFlags.Quiet {
-		prefix = ""
-	}
 	start := time.Now()
-	client, err := c.createAuthClient()
+	authCl, err := c.createAuthClient()
 	if err != nil {
 		return err
 	}
 	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
-	arch := archiver.New(ctx, isolatedclient.New(nil, client, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil), out)
+	client := isolatedclient.New(nil, authCl, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
+
+	eventlogger := NewLogger(ctx, c.loggingFlags.EventlogEndpoint)
+
+	archiveDetails, err := doArchive(ctx, client, &c.ArchiveOptions, c.defaultFlags.Quiet, start)
+	if err != nil {
+		return err
+	}
+
+	end := time.Now()
+	op := logpb.IsolateClientEvent_LEGACY_ARCHIVE.Enum()
+	if err := eventlogger.logStats(ctx, op, start, end, archiveDetails); err != nil {
+		log.Printf("Failed to log to eventlog: %v", err)
+	}
+	return nil
+}
+
+// doArchive performs the archive operation for an isolate specified by archiveOpts.
+func doArchive(ctx context.Context, client *isolatedclient.Client, archiveOpts *isolate.ArchiveOptions, quiet bool, start time.Time) (*logpb.IsolateClientEvent_ArchiveDetails, error) {
+	prefix := "\n"
+	if quiet {
+		prefix = ""
+	}
+
+	arch := archiver.New(ctx, client, os.Stdout)
 	CancelOnCtrlC(arch)
-	item := isolate.Archive(arch, &c.ArchiveOptions)
+	item := isolate.Archive(arch, archiveOpts)
 	item.WaitForHashed()
+	var err error
 	if err = item.Error(); err != nil {
-		fmt.Printf("%s%s  %s\n", prefix, filepath.Base(c.Isolate), err)
+		fmt.Printf("%s%s  %s\n", prefix, filepath.Base(archiveOpts.Isolate), err)
 	} else {
-		fmt.Printf("%s%s  %s\n", prefix, item.Digest(), filepath.Base(c.Isolate))
+		fmt.Printf("%s%s  %s\n", prefix, item.Digest(), filepath.Base(archiveOpts.Isolate))
 	}
 	if err2 := arch.Close(); err == nil {
 		err = err2
 	}
 	stats := arch.Stats()
-	if !c.defaultFlags.Quiet {
+	if !quiet {
 		duration := time.Since(start)
 		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", stats.TotalHits(), stats.TotalBytesHits())
 		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", stats.TotalMisses(), stats.TotalBytesPushed())
 		fmt.Fprintf(os.Stderr, "Duration: %s\n", units.Round(duration, time.Millisecond))
 	}
-
-	end := time.Now()
 
 	archiveDetails := &logpb.IsolateClientEvent_ArchiveDetails{
 		HitCount:  proto.Int64(int64(stats.TotalHits())),
@@ -115,12 +134,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	if item.Error() != nil {
 		archiveDetails.IsolateHash = []string{string(item.Digest())}
 	}
-	eventlogger := NewLogger(ctx, c.loggingFlags.EventlogEndpoint)
-	op := logpb.IsolateClientEvent_LEGACY_ARCHIVE.Enum()
-	if err := eventlogger.logStats(ctx, op, start, end, archiveDetails); err != nil {
-		log.Printf("Failed to log to eventlog: %v", err)
-	}
-	return err
+	return archiveDetails, nil
 }
 
 func (c *archiveRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
