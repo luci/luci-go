@@ -356,6 +356,8 @@ func TestTaskQueue(t *testing.T) {
 			})
 
 			Convey("unless you add too many things", func() {
+				t.Name = ""
+
 				So(ds.RunInTransaction(c, func(c context.Context) error {
 					for i := 0; i < 5; i++ {
 						So(tq.Add(c, "", t.Duplicate()), ShouldBeNil)
@@ -366,6 +368,8 @@ func TestTaskQueue(t *testing.T) {
 			})
 
 			Convey("unless you Add to a bad queue", func() {
+				t.Name = ""
+
 				So(ds.RunInTransaction(c, func(c context.Context) error {
 					So(tq.Add(c, "meat", t).Error(), ShouldContainSubstring, "UNKNOWN_QUEUE")
 
@@ -373,6 +377,16 @@ func TestTaskQueue(t *testing.T) {
 						tq.Raw(c).GetTestable().CreateQueue("meat")
 						So(tq.Add(c, "meat", t), ShouldBeNil)
 					})
+
+					return nil
+				}, nil), ShouldBeNil)
+			})
+
+			Convey("unless the task is named", func() {
+				So(ds.RunInTransaction(c, func(c context.Context) error {
+					err := tq.Add(c, "", t) // Note: "t" has a Name from initial Add.
+					So(err, ShouldNotBeNil)
+					So(err.Error(), ShouldContainSubstring, "INVALID_TASK_NAME")
 
 					return nil
 				}, nil), ShouldBeNil)

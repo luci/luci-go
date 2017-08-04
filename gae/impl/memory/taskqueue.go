@@ -64,7 +64,7 @@ func (t *taskqueueImpl) AddMulti(tasks []*tq.Task, queueName string, cb tq.RawTa
 	}
 
 	for _, task := range tasks {
-		task, err := prepTask(t.ctx, task, q, t.ns)
+		task, err := prepTask(t.ctx, task, q, t.ns, false)
 		if err == nil {
 			err = q.addTask(task)
 		}
@@ -169,7 +169,7 @@ type taskqueueTxnImpl struct {
 var _ tq.RawInterface = (*taskqueueTxnImpl)(nil)
 
 func (t *taskqueueTxnImpl) addLocked(task *tq.Task, q *sortedQueue) (*tq.Task, error) {
-	toSched, err := prepTask(t.ctx, task, q, t.ns)
+	toSched, err := prepTask(t.ctx, task, q, t.ns, true)
 	if err != nil {
 		return nil, err
 	}
@@ -263,8 +263,12 @@ func (t *taskqueueTxnImpl) GetTestable() tq.Testable { return &taskQueueTestable
 
 ////////////////////////// private functions ///////////////////////////////////
 
-func prepTask(c context.Context, task *tq.Task, q *sortedQueue, ns string) (*tq.Task, error) {
+func prepTask(c context.Context, task *tq.Task, q *sortedQueue, ns string, inTxn bool) (*tq.Task, error) {
 	toSched := task.Duplicate()
+
+	if inTxn && task.Name != "" {
+		return nil, fmt.Errorf("taskqueue: INVALID_TASK_NAME: cannot add named task %q in transaction", task.Name)
+	}
 
 	if toSched.ETA.IsZero() {
 		toSched.ETA = clock.Now(c).Add(toSched.Delay)
