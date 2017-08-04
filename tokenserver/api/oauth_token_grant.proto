@@ -22,9 +22,7 @@ message OAuthTokenGrantBody {
   // TODO(vadimsh): It may later be used for revocation purposes.
   int64 token_id = 1;
 
-  // Service account identity the end user wants to act as.
-  //
-  // A string of the form "user:<email>".
+  // Service account email the end user wants to act as.
   string service_account = 2;
 
   // Who can pass this token to MintOAuthTokenViaGrant to get an OAuth token.
@@ -38,7 +36,7 @@ message OAuthTokenGrantBody {
   // A string of the form "user:<email>". On Swarming, this is an identity of
   // a user that posted the task.
   //
-  // This is informational field currently (not used in authorization checks).
+  // Used by MintOAuthTokenViaGrant to recheck that the access is still allowed.
   string end_user = 4;
 
   // When the token was generated (and when it becomes valid).

@@ -25,9 +25,7 @@ type OAuthTokenGrantBody struct {
 	//
 	// TODO(vadimsh): It may later be used for revocation purposes.
 	TokenId int64 `protobuf:"varint,1,opt,name=token_id,json=tokenId" json:"token_id,omitempty"`
-	// Service account identity the end user wants to act as.
-	//
-	// A string of the form "user:<email>".
+	// Service account email the end user wants to act as.
 	ServiceAccount string `protobuf:"bytes,2,opt,name=service_account,json=serviceAccount" json:"service_account,omitempty"`
 	// Who can pass this token to MintOAuthTokenViaGrant to get an OAuth token.
 	//
@@ -39,7 +37,7 @@ type OAuthTokenGrantBody struct {
 	// A string of the form "user:<email>". On Swarming, this is an identity of
 	// a user that posted the task.
 	//
-	// This is informational field currently (not used in authorization checks).
+	// Used by MintOAuthTokenViaGrant to recheck that the access is still allowed.
 	EndUser string `protobuf:"bytes,4,opt,name=end_user,json=endUser" json:"end_user,omitempty"`
 	// When the token was generated (and when it becomes valid).
 	IssuedAt *google_protobuf.Timestamp `protobuf:"bytes,5,opt,name=issued_at,json=issuedAt" json:"issued_at,omitempty"`
