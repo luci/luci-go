@@ -40,10 +40,11 @@ func TestValidation(t *testing.T) {
 					name: "rule 1"
 					owner: "developer@example.com"
 					service_account: "abc@robots.com"
-					allowed_scope: "https://scope"
+					allowed_scope: "https://www.googleapis.com/scope"
 					end_user: "user:abc@example.com"
-					end_user: "group:group-name"
+					end_user: "group:enduser-group"
 					proxy: "user:proxy@example.com"
+					proxy: "group:proxy-group"
 					max_grant_validity_duration: 3600
 				}
 
@@ -51,16 +52,115 @@ func TestValidation(t *testing.T) {
 					name: "rule 2"
 					owner: "developer@example.com"
 					service_account: "def@robots.com"
-					allowed_scope: "https://scope"
+					allowed_scope: "https://www.googleapis.com/scope"
 					end_user: "user:abc@example.com"
-					end_user: "group:group-name"
+					end_user: "group:enduser-group"
 					proxy: "user:proxy@example.com"
+					proxy: "group:proxy-group"
 					max_grant_validity_duration: 3600
 				}
 			`,
 		},
 
-		// TODO(vadimsh): Add more cases.
+		// Minimal config.
+		{
+			Cfg: `
+				rules {
+					name: "rule 1"
+				}
+			`,
+		},
+
+		{
+			Cfg: `
+				rules {
+					name: "rule 1"
+				}
+				rules {
+					name: "rule 1"
+				}
+			`,
+			Errors: []string{"two rules with identical name"},
+		},
+
+		{
+			Cfg: `
+				rules {
+					name: "rule 1"
+					service_account: "abc@robots.com"
+				}
+				rules {
+					name: "rule 2"
+					service_account: "abc@robots.com"
+				}
+			`,
+			Errors: []string{"mentioned by more than one rule"},
+		},
+
+		{
+			Cfg: `
+				rules {
+					service_account: "abc@robots.com"
+				}
+			`,
+			Errors: []string{`"name" is required`},
+		},
+
+		{
+			Cfg: `
+				rules {
+					name: "rule 1"
+					service_account: "not an email"
+				}
+			`,
+			Errors: []string{"bad value"},
+		},
+
+		{
+			Cfg: `
+				rules {
+					name: "rule 1"
+					allowed_scope: "not a scope"
+				}
+			`,
+			Errors: []string{"bad scope"},
+		},
+
+		{
+			Cfg: `
+				rules {
+					name: "rule 1"
+					end_user: "group:"
+					end_user: "user:not an email"
+				}
+			`,
+			Errors: []string{"bad group entry", "bad value"},
+		},
+
+		{
+			Cfg: `
+				rules {
+					name: "rule 1"
+					proxy: "group:"
+					proxy: "user:not an email"
+				}
+			`,
+			Errors: []string{"bad group entry", "bad value"},
+		},
+
+		{
+			Cfg: `
+				rules {
+					name: "rule 1"
+					max_grant_validity_duration: -1
+				}
+				rules {
+					name: "rule 2"
+					max_grant_validity_duration: 10000000
+				}
+			`,
+			Errors: []string{"must be positive", "must not exceed"},
+		},
 	}
 
 	Convey("Validation works", t, func(c C) {

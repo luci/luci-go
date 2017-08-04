@@ -43,7 +43,7 @@ func TestImportServiceAccountsConfigs(t *testing.T) {
 			name: "rule 1"
 			owner: "developer@example.com"
 			service_account: "abc@robots.com"
-			allowed_scope: "https://scope"
+			allowed_scope: "https://www.googleapis.com/scope"
 			end_user: "user:abc@example.com"
 			end_user: "group:group-name"
 			proxy: "user:proxy@example.com"
@@ -60,18 +60,18 @@ func TestImportServiceAccountsConfigs(t *testing.T) {
 		resp, err := rpc.ImportServiceAccountsConfigs(ctx, nil)
 		So(err, ShouldBeNil)
 		So(resp, ShouldResemble, &admin.ImportedConfigs{
-			Revision: "16d15198a351a6a9beb7afe6f3485c9a47b18f7d",
+			Revision: "1cf48bbdc045f33856894adf9c7d7e4211e28b2a",
 		})
 
 		// Have config now.
 		r, err = rules.Rules(ctx)
 		So(err, ShouldBeNil)
-		So(r.ConfigRevision(), ShouldEqual, "16d15198a351a6a9beb7afe6f3485c9a47b18f7d")
+		So(r.ConfigRevision(), ShouldEqual, "1cf48bbdc045f33856894adf9c7d7e4211e28b2a")
 
 		// Noop import.
 		resp, err = rpc.ImportServiceAccountsConfigs(ctx, nil)
 		So(err, ShouldBeNil)
-		So(resp.Revision, ShouldEqual, "16d15198a351a6a9beb7afe6f3485c9a47b18f7d")
+		So(resp.Revision, ShouldEqual, "1cf48bbdc045f33856894adf9c7d7e4211e28b2a")
 
 		// Try to import completely broken config.
 		ctx = prepareCfg(ctx, `I'm broken`)
@@ -80,7 +80,7 @@ func TestImportServiceAccountsConfigs(t *testing.T) {
 
 		// Old config is not replaced.
 		r, _ = rules.Rules(ctx)
-		So(r.ConfigRevision(), ShouldEqual, "16d15198a351a6a9beb7afe6f3485c9a47b18f7d")
+		So(r.ConfigRevision(), ShouldEqual, "1cf48bbdc045f33856894adf9c7d7e4211e28b2a")
 
 		// Roll time to expire local rules cache.
 		clk.Add(10 * time.Minute)
@@ -90,7 +90,7 @@ func TestImportServiceAccountsConfigs(t *testing.T) {
 			name: "rule 2"
 			owner: "developer@example.com"
 			service_account: "abc@robots.com"
-			allowed_scope: "https://scope"
+			allowed_scope: "https://www.googleapis.com/scope"
 			end_user: "user:abc@example.com"
 			end_user: "group:group-name"
 			proxy: "user:proxy@example.com"
@@ -101,13 +101,13 @@ func TestImportServiceAccountsConfigs(t *testing.T) {
 		resp, err = rpc.ImportServiceAccountsConfigs(ctx, nil)
 		So(err, ShouldBeNil)
 		So(resp, ShouldResemble, &admin.ImportedConfigs{
-			Revision: "663ea6e319c41b6fcee65d8d1d5c758813aa0fb1",
+			Revision: "7d835b8ae2e227099324bf17ee1f2c828011ff1c",
 		})
 
 		// It is now active.
 		r, err = rules.Rules(ctx)
 		So(err, ShouldBeNil)
-		So(r.ConfigRevision(), ShouldEqual, "663ea6e319c41b6fcee65d8d1d5c758813aa0fb1")
+		So(r.ConfigRevision(), ShouldEqual, "7d835b8ae2e227099324bf17ee1f2c828011ff1c")
 	})
 }
 

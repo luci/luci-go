@@ -19,7 +19,11 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/config/validation"
+	"github.com/luci/luci-go/common/data/stringset"
+
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
+	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/identityset"
 	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/policy"
 )
 
@@ -29,15 +33,31 @@ import (
 // very carefully.
 const serviceAccountsCfg = "service_accounts.cfg"
 
+const (
+	// defaultMaxGrantValidityDuration is value for max_grant_validity_duration if
+	// it isn't specified in the config.
+	defaultMaxGrantValidityDuration = 24 * 3600
+
+	// maxAllowedMaxGrantValidityDuration is maximal allowed value for
+	// max_grant_validity_duration in service_accounts.cfg.
+	maxAllowedMaxGrantValidityDuration = 7 * 24 * 3600
+)
+
 // Rules is queryable representation of service_accounts.cfg rules.
 type Rules struct {
-	revision string                 // config revision this policy is imported from
-	rules    map[string]*parsedRule // service account email -> rule for it
+	revision string           // config revision this policy is imported from
+	rules    map[string]*Rule // service account email -> rule for it
 }
 
-// parsedRule is queriable in-memory representation of ServiceAccountRule.
-type parsedRule struct {
-	// TODO(vadimsh): Implement.
+// Rule is queriable in-memory representation of ServiceAccountRule.
+//
+// It should be treated like read-only object. It is shared by many concurrent
+// requests.
+type Rule struct {
+	Rule          *admin.ServiceAccountRule // original proto with the rule
+	AllowedScopes stringset.Set             // parsed 'allowed_scope'
+	EndUsers      *identityset.Set          // parsed 'end_user'
+	Proxies       *identityset.Set          // parsed 'proxy'
 }
 
 // RulesCache is a stateful object with parsed service_accounts.cfg rules.
@@ -103,10 +123,29 @@ func prepareRules(cfg policy.ConfigBundle, revision string) (policy.Queryable, e
 	if !ok {
 		return nil, fmt.Errorf("wrong type of %s - %T", serviceAccountsCfg, cfg[serviceAccountsCfg])
 	}
-	// TODO(vadimsh): Convert parsed.Rules into map[string]*parsedRule.
-	_ = parsed
+
+	// Note: per policy.Policy API the config here was already validated when it
+	// was imported, but we double check core assumptions anyway. This check may
+	// fail if new code (with some new validation rules) uses old configs stored
+	// in the datastore (which were validated by old code). In practice this most
+	// certainly never happens.
+	rules := map[string]*Rule{}
+	for _, ruleProto := range parsed.Rules {
+		r, err := makeRule(ruleProto)
+		if err != nil {
+			return nil, err
+		}
+		for _, account := range ruleProto.ServiceAccount {
+			if rules[account] != nil {
+				return nil, fmt.Errorf("two rules for service account %q", account)
+			}
+			rules[account] = r
+		}
+	}
+
 	return &Rules{
 		revision: revision,
+		rules:    rules,
 	}, nil
 }
 
@@ -115,4 +154,46 @@ func (r *Rules) ConfigRevision() string {
 	return r.revision
 }
 
-// TODO(vadimsh): Implement rest of Rules.
+// Rule returns a rule governing the access to the given service account.
+//
+// Returns nil if such service account is not specified in the config.
+func (r *Rules) Rule(serviceAccount string) *Rule {
+	return r.rules[serviceAccount]
+}
+
+// makeRule converts ServiceAccountRule into queriable Rule.
+//
+// Mutates 'ruleProto' in-place filling in defaults.
+func makeRule(ruleProto *admin.ServiceAccountRule) (*Rule, error) {
+	v := validation.Context{}
+	validateRule(ruleProto.Name, ruleProto, &v)
+	if err := v.Finalize(); err != nil {
+		return nil, err
+	}
+
+	allowedScopes := stringset.New(len(ruleProto.AllowedScope))
+	for _, scope := range ruleProto.AllowedScope {
+		allowedScopes.Add(scope)
+	}
+
+	endUsers, err := identityset.FromStrings(ruleProto.EndUser, nil)
+	if err != nil {
+		return nil, fmt.Errorf("bad 'end_user' set - %s", err)
+	}
+
+	proxies, err := identityset.FromStrings(ruleProto.Proxy, nil)
+	if err != nil {
+		return nil, fmt.Errorf("bad 'proxy' set - %s", err)
+	}
+
+	if ruleProto.MaxGrantValidityDuration == 0 {
+		ruleProto.MaxGrantValidityDuration = defaultMaxGrantValidityDuration
+	}
+
+	return &Rule{
+		Rule:          ruleProto,
+		AllowedScopes: allowedScopes,
+		EndUsers:      endUsers,
+		Proxies:       proxies,
+	}, nil
+}
