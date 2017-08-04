@@ -33,9 +33,9 @@ import (
 type serverImpl struct {
 	certconfig.ImportCAConfigsRPC
 	delegation.ImportDelegationConfigsRPC
-	serviceaccounts.ImportServiceAccountsConfigsRPC
-	machinetoken.InspectMachineTokenRPC
 	delegation.InspectDelegationTokenRPC
+	machinetoken.InspectMachineTokenRPC
+	serviceaccounts.ImportServiceAccountsConfigsRPC
 	serviceaccounts.InspectOAuthTokenGrantRPC
 }
 
@@ -48,11 +48,14 @@ func NewServer() admin.AdminServer {
 		ImportDelegationConfigsRPC: delegation.ImportDelegationConfigsRPC{
 			RulesCache: delegation.GlobalRulesCache,
 		},
+		InspectDelegationTokenRPC: delegation.InspectDelegationTokenRPC{
+			Signer: signer,
+		},
 		InspectMachineTokenRPC: machinetoken.InspectMachineTokenRPC{
 			Signer: signer,
 		},
-		InspectDelegationTokenRPC: delegation.InspectDelegationTokenRPC{
-			Signer: signer,
+		ImportServiceAccountsConfigsRPC: serviceaccounts.ImportServiceAccountsConfigsRPC{
+			RulesCache: serviceaccounts.GlobalRulesCache,
 		},
 	}
 }

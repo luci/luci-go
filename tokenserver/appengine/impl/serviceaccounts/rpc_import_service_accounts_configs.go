@@ -10,15 +10,23 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/golang/protobuf/ptypes/empty"
+
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 )
 
-// ImportServiceAccountsConfigsRPC implements Admin.ImportServiceAccountsConfigs
+// ImportServiceAccountsConfigsRPC implements admin.ImportServiceAccountsConfigs
 // method.
 type ImportServiceAccountsConfigsRPC struct {
+	RulesCache *RulesCache // usually GlobalRulesCache, but replaced in tests
 }
 
 // ImportServiceAccountsConfigs fetches configs from from luci-config right now.
 func (r *ImportServiceAccountsConfigsRPC) ImportServiceAccountsConfigs(c context.Context, _ *empty.Empty) (*admin.ImportedConfigs, error) {
-	return nil, grpc.Errorf(codes.Unavailable, "not implemented")
+	rev, err := r.RulesCache.ImportConfigs(c)
+	if err != nil {
+		logging.WithError(err).Errorf(c, "Failed to fetch service accounts configs")
+		return nil, grpc.Errorf(codes.Internal, err.Error())
+	}
+	return &admin.ImportedConfigs{Revision: rev}, nil
 }
