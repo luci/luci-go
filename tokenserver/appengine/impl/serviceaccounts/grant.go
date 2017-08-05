@@ -15,9 +15,12 @@
 package serviceaccounts
 
 import (
+	"time"
+
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/common/proto/google"
 	"github.com/luci/luci-go/server/auth/signing"
 
 	"github.com/luci/luci-go/tokenserver/api"
@@ -48,4 +51,34 @@ func SignGrant(c context.Context, signer signing.Signer, tok *tokenserver.OAuthT
 		},
 	}
 	return s.SignToken(c, tok)
+}
+
+// InspectGrant returns information about the OAuth grant.
+//
+// Inspection.Envelope is either nil or *tokenserver.OAuthTokenGrantEnvelope.
+// Inspection.Body is either nil or *tokenserver.OAuthTokenGrantBody.
+func InspectGrant(c context.Context, certs tokensigning.CertificatesSupplier, tok string) (*tokensigning.Inspection, error) {
+	i := tokensigning.Inspector{
+		Certificates:   certs,
+		SigningContext: tokenSigningContext,
+		Envelope:       func() proto.Message { return &tokenserver.OAuthTokenGrantEnvelope{} },
+		Body:           func() proto.Message { return &tokenserver.OAuthTokenGrantBody{} },
+		Unwrap: func(e proto.Message) tokensigning.Unwrapped {
+			env := e.(*tokenserver.OAuthTokenGrantEnvelope)
+			return tokensigning.Unwrapped{
+				Body:         env.TokenBody,
+				RsaSHA256Sig: env.Pkcs1Sha256Sig,
+				KeyID:        env.KeyId,
+			}
+		},
+		Lifespan: func(b proto.Message) tokensigning.Lifespan {
+			body := b.(*tokenserver.OAuthTokenGrantBody)
+			issuedAt := google.TimeFromProto(body.IssuedAt)
+			return tokensigning.Lifespan{
+				NotBefore: issuedAt,
+				NotAfter:  issuedAt.Add(time.Duration(body.ValidityDuration) * time.Second),
+			}
+		},
+	}
+	return i.InspectToken(c, tok)
 }

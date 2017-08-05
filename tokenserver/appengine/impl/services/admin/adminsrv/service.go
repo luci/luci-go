@@ -57,5 +57,8 @@ func NewServer() admin.AdminServer {
 		ImportServiceAccountsConfigsRPC: serviceaccounts.ImportServiceAccountsConfigsRPC{
 			RulesCache: serviceaccounts.GlobalRulesCache,
 		},
+		InspectOAuthTokenGrantRPC: serviceaccounts.InspectOAuthTokenGrantRPC{
+			Signer: signer,
+		},
 	}
 }
