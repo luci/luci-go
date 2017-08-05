@@ -145,7 +145,7 @@ func playAnnotationScript(t *testing.T, name string, st *State) (string, error) 
 
 	scanner := bufio.NewScanner(f)
 	var nextErr string
-	for scanner.Scan() {
+	for lineNo := 1; scanner.Scan(); lineNo++ {
 		// Trim, discard empty lines and comment lines.
 		line := strings.TrimLeftFunc(scanner.Text(), unicode.IsSpace)
 		if len(line) == 0 || strings.HasPrefix(line, "#") {
@@ -167,10 +167,10 @@ func playAnnotationScript(t *testing.T, name string, st *State) (string, error) 
 				nextErr = ""
 
 				if err == nil {
-					return "", fmt.Errorf("expected error, but didn't encounter it: %q", expectedErr)
+					return "", fmt.Errorf("line %d: expected error, but didn't encounter it: %q", lineNo, expectedErr)
 				}
 				if !strings.Contains(err.Error(), expectedErr) {
-					return "", fmt.Errorf("expected error %q, but got: %v", expectedErr, err)
+					return "", fmt.Errorf("line %d: expected error %q, but got: %v", lineNo, expectedErr, err)
 				}
 			} else if err != nil {
 				return "", err

@@ -1,5 +1,12 @@
 name: "steps"
 status: FAILURE
+deployment_manifests: <
+  key: "cool_name"
+  value: <
+    url: "logdog://example.com/some/prefix/+/some/path"
+    sha256: "\xde\xad\xbe\xef\xde\xad\xbe\xef\xde\xad\xbe\xef\xde\xad\xbe\xef\xde\xad\xbe\xef\xde\xad\xbe\xef\xde\xad\xbe\xef\xde\xad\xbe\xef"
+  >
+>
 substep: <
   step: <
     name: "baz/qux"

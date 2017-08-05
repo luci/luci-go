@@ -89,5 +89,17 @@ BUILD_STEP qux
 STEP_NEST_LEVEL@999999999
 +time
 HALT_ON_FAILURE
+
+DEPLOYMENT_MANIFEST@cool_name@deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef@logdog://example.com/some/prefix/+/some/path
+
++error DEPLOYMENT_MANIFEST expected 3 params, got "neat"
+DEPLOYMENT_MANIFEST@neat
+
++error DEPLOYMENT_MANIFEST has bad hash:
+DEPLOYMENT_MANIFEST@neat@not_a_hash@logdog://example.com
+
++error repeated DEPLOYMENT_MANIFEST name "cool_name"
+DEPLOYMENT_MANIFEST@cool_name@badc0ffeebadc0ffeebadc0ffeebadc0ffeebadc0ffeebadc0ffeebadc0ffeeb@logdog://example.com/some/prefix/+/some/path
+
 BUILD_FAILED
 STEP_TEXT@will not be emitted, since we're halting on failure.

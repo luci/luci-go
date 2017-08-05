@@ -151,13 +151,15 @@ message Step {
     // Future hashes which match will not be loaded from the url, but will be
     // assumed to be identical. If the sha256 doesn't match the data at the URL,
     // Milo may render this build with the wrong manifest.
-    string sha256 = 2;
+    //
+    // This is the raw sha256, so it should be exactly 32 bytes.
+    bytes sha256 = 2;
   }
 
   // Maps the name of the Manifest, e.g. UNPATCHED, INFRA, etc. to the
   // ManifestLink. This name will be used in the milo console definition to
   // indicate which manifest data to sort the console view by.
-  map<string, ManifestLink> source_manifests = 25;
+  map<string, ManifestLink> deployment_manifests = 25;
 }
 
 // A Link is an optional label followed by a typed link to an external
