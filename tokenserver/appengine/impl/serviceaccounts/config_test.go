@@ -19,35 +19,40 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
 
+	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/policy"
 
+	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+const fakeConfig = `
+rules {
+	name: "rule 1"
+	owner: "developer@example.com"
+	service_account: "abc@robots.com"
+	service_account: "def@robots.com"
+	allowed_scope: "https://www.googleapis.com/scope1"
+	allowed_scope: "https://www.googleapis.com/scope2"
+	end_user: "user:enduser@example.com"
+	end_user: "group:enduser-group"
+	proxy: "user:proxy@example.com"
+	proxy: "group:proxy-group"
+}
+rules {
+	name: "rule 2"
+	service_account: "xyz@robots.com"
+}`
 
 func TestRules(t *testing.T) {
 	t.Parallel()
 
 	Convey("Loads", t, func() {
-		cfg, err := loadConfig(`
-			rules {
-				name: "rule 1"
-				owner: "developer@example.com"
-				service_account: "abc@robots.com"
-				service_account: "def@robots.com"
-				allowed_scope: "https://www.googleapis.com/scope1"
-				allowed_scope: "https://www.googleapis.com/scope2"
-				end_user: "user:abc@example.com"
-				end_user: "group:enduser-group"
-				proxy: "user:proxy@example.com"
-				proxy: "group:proxy-group"
-			}
-			rules {
-				name: "rule 2"
-				service_account: "xyz@robots.com"
-			}
-		`)
+		cfg, err := loadConfig(fakeConfig)
 		So(err, ShouldBeNil)
 		So(cfg, ShouldNotBeNil)
 
@@ -64,7 +69,7 @@ func TestRules(t *testing.T) {
 
 		So(rule.EndUsers.ToStrings(), ShouldResemble, []string{
 			"group:enduser-group",
-			"user:abc@example.com",
+			"user:enduser@example.com",
 		})
 		So(rule.Proxies.ToStrings(), ShouldResemble, []string{
 			"group:proxy-group",
@@ -75,6 +80,55 @@ func TestRules(t *testing.T) {
 		So(cfg.Rule("def@robots.com").Rule.Name, ShouldEqual, "rule 1")
 		So(cfg.Rule("xyz@robots.com").Rule.Name, ShouldEqual, "rule 2")
 		So(cfg.Rule("unknown@robots.com"), ShouldBeNil)
+	})
+
+	Convey("Check works", t, func() {
+		cfg, err := loadConfig(fakeConfig)
+		So(err, ShouldBeNil)
+		So(cfg, ShouldNotBeNil)
+
+		// Need an auth state for group membership checks to work.
+		ctx := auth.WithState(context.Background(), &authtest.FakeState{
+			Identity: "user:unused@example.com",
+		})
+
+		Convey("Happy path", func() {
+			r, err := cfg.Check(ctx, &RulesQuery{
+				ServiceAccount: "abc@robots.com",
+				Proxy:          "user:proxy@example.com",
+				EndUser:        "user:enduser@example.com",
+			})
+			So(err, ShouldBeNil)
+			So(r.Rule.Name, ShouldEqual, "rule 1")
+		})
+
+		Convey("Unknown service account", func() {
+			_, err := cfg.Check(ctx, &RulesQuery{
+				ServiceAccount: "unknown@robots.com",
+				Proxy:          "user:proxy@example.com",
+				EndUser:        "user:enduser@example.com",
+			})
+			So(err, ShouldBeRPCPermissionDenied, "unknown service account or not enough permissions to use it")
+		})
+
+		Convey("Unauthorized proxy", func() {
+			_, err := cfg.Check(ctx, &RulesQuery{
+				ServiceAccount: "abc@robots.com",
+				Proxy:          "user:unknown@example.com",
+				EndUser:        "user:enduser@example.com",
+			})
+			So(err, ShouldBeRPCPermissionDenied, "unknown service account or not enough permissions to use it")
+		})
+
+		Convey("Unauthorized end user", func() {
+			_, err := cfg.Check(ctx, &RulesQuery{
+				ServiceAccount: "abc@robots.com",
+				Proxy:          "user:proxy@example.com",
+				EndUser:        "user:unknown@example.com",
+			})
+			So(err, ShouldBeRPCPermissionDenied,
+				`per rule "rule 1" the user "user:unknown@example.com" is not authorized to use the service account "abc@robots.com"`)
+		})
 	})
 }
 

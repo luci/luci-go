@@ -39,6 +39,15 @@ func TestInspectOAuthTokenGrant(t *testing.T) {
 
 	rpc := InspectOAuthTokenGrantRPC{
 		Signer: signingtest.NewSigner(0, nil),
+		Rules: func(context.Context) (*Rules, error) {
+			return loadConfig(`rules {
+				name: "rule 1"
+				service_account: "serviceaccount@robots.com"
+				proxy: "user:proxy@example.com"
+				end_user: "user:enduser@example.com"
+				max_grant_validity_duration: 7200
+			}`)
+		},
 	}
 
 	original := &tokenserver.OAuthTokenGrantBody{
@@ -50,6 +59,14 @@ func TestInspectOAuthTokenGrant(t *testing.T) {
 		ValidityDuration: 3600,
 	}
 
+	matchingRule := &admin.ServiceAccountRule{
+		Name:                     "rule 1",
+		ServiceAccount:           []string{"serviceaccount@robots.com"},
+		Proxy:                    []string{"user:proxy@example.com"},
+		EndUser:                  []string{"user:enduser@example.com"},
+		MaxGrantValidityDuration: 7200,
+	}
+
 	tok, _ := SignGrant(ctx, rpc.Signer, original)
 
 	Convey("Happy path", t, func() {
@@ -58,11 +75,13 @@ func TestInspectOAuthTokenGrant(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 		So(resp, ShouldResemble, &admin.InspectOAuthTokenGrantResponse{
-			Valid:        true,
-			Signed:       true,
-			NonExpired:   true,
-			SigningKeyId: "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
-			TokenBody:    original,
+			Valid:          true,
+			Signed:         true,
+			NonExpired:     true,
+			SigningKeyId:   "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
+			TokenBody:      original,
+			AllowedByRules: true,
+			MatchingRule:   matchingRule,
 		})
 	})
 
@@ -104,6 +123,27 @@ func TestInspectOAuthTokenGrant(t *testing.T) {
 			InvalidityReason: "bad signature - crypto/rsa: verification error",
 			SigningKeyId:     "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
 			TokenBody:        original,
+			AllowedByRules:   true,
+			MatchingRule:     matchingRule,
+		})
+	})
+
+	Convey("Now allowed by rules", t, func() {
+		another := *original
+		another.ServiceAccount = "unknown@robots.com"
+		tok, _ := SignGrant(ctx, rpc.Signer, &another)
+
+		resp, err := rpc.InspectOAuthTokenGrant(ctx, &admin.InspectOAuthTokenGrantRequest{
+			Token: tok,
+		})
+		So(err, ShouldBeNil)
+		So(resp, ShouldResemble, &admin.InspectOAuthTokenGrantResponse{
+			Valid:            false,
+			Signed:           true,
+			NonExpired:       true,
+			InvalidityReason: "not allowed by the rules",
+			SigningKeyId:     "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
+			TokenBody:        &another,
 		})
 	})
 
@@ -122,6 +162,8 @@ func TestInspectOAuthTokenGrant(t *testing.T) {
 			InvalidityReason: "expired",
 			SigningKeyId:     "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
 			TokenBody:        original,
+			AllowedByRules:   true,
+			MatchingRule:     matchingRule,
 		})
 	})
 }

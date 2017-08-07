@@ -9,6 +9,7 @@ package tokenserver.admin;
 import "google/protobuf/empty.proto";
 
 import "github.com/luci/luci-go/server/auth/delegation/messages/delegation.proto";
+import "github.com/luci/luci-go/tokenserver/api/admin/v1/config.proto";
 import "github.com/luci/luci-go/tokenserver/api/machine_token.proto";
 import "github.com/luci/luci-go/tokenserver/api/oauth_token_grant.proto";
 
@@ -224,7 +225,8 @@ message InspectOAuthTokenGrantRequest {
 message InspectOAuthTokenGrantResponse {
   // True if the token is valid.
   //
-  // A token is valid if its signature is correct and it hasn't expired yet.
+  // A token is valid if its signature is correct, it hasn't expired yet and
+  // token server rules still allow it.
   bool valid = 1;
 
   // Human readable summary of why token is invalid.
@@ -261,4 +263,12 @@ message InspectOAuthTokenGrantResponse {
   //
   // May be empty if token was malformed and couldn't be deserialized.
   tokenserver.OAuthTokenGrantBody token_body = 6;
+
+  // The service_accounts.cfg rule that governs the service account usage.
+  //
+  // May be present even if the token is not allowed by it.
+  admin.ServiceAccountRule matching_rule = 7;
+
+  // True if current service_accounts.cfg rules allow this token.
+  bool allowed_by_rules = 8;
 }

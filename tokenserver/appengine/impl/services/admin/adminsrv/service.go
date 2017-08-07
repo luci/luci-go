@@ -59,6 +59,7 @@ func NewServer() admin.AdminServer {
 		},
 		InspectOAuthTokenGrantRPC: serviceaccounts.InspectOAuthTokenGrantRPC{
 			Signer: signer,
+			Rules:  serviceaccounts.GlobalRulesCache.Rules,
 		},
 	}
 }

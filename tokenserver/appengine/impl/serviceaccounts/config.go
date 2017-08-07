@@ -17,10 +17,15 @@ package serviceaccounts
 import (
 	"fmt"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"golang.org/x/net/context"
 
 	"github.com/luci/luci-go/common/config/validation"
 	"github.com/luci/luci-go/common/data/stringset"
+	"github.com/luci/luci-go/common/logging"
+	"github.com/luci/luci-go/server/auth/identity"
 
 	"github.com/luci/luci-go/tokenserver/api/admin/v1"
 	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/identityset"
@@ -58,6 +63,15 @@ type Rule struct {
 	AllowedScopes stringset.Set             // parsed 'allowed_scope'
 	EndUsers      *identityset.Set          // parsed 'end_user'
 	Proxies       *identityset.Set          // parsed 'proxy'
+}
+
+// RulesQuery describes circumstances of using some service account.
+//
+// Passed to 'Check'.
+type RulesQuery struct {
+	ServiceAccount string            // email of an account being used
+	Proxy          identity.Identity // who's calling the Token Server
+	EndUser        identity.Identity // who initiates the usage of an account
 }
 
 // RulesCache is a stateful object with parsed service_accounts.cfg rules.
@@ -159,6 +173,50 @@ func (r *Rules) ConfigRevision() string {
 // Returns nil if such service account is not specified in the config.
 func (r *Rules) Rule(serviceAccount string) *Rule {
 	return r.rules[serviceAccount]
+}
+
+// Check checks that rules allow the requested usage.
+//
+// Returns the corresponding rule on success, or gRPC error on failure.
+// The returned rule can be consulted further to check additional restrictions,
+// such as allowed OAuth scopes or validity duration.
+//
+// It is supposed to be called as part of some RPC handler. It logs errors
+// internally, so no need to log them outside.
+func (r *Rules) Check(c context.Context, query *RulesQuery) (*Rule, error) {
+	// Grab the rule for this account. Don't leak information about presence or
+	// absence of the account to the caller, they may not be authorized to see the
+	// account at all.
+	rule := r.rules[query.ServiceAccount]
+	if rule == nil {
+		logging.Errorf(c, "No rule for service account %q in the config rev %s", query.ServiceAccount, r.revision)
+		return nil, grpc.Errorf(codes.PermissionDenied, "unknown service account or not enough permissions to use it")
+	}
+	logging.Infof(c, "Found the matching rule %q in the config rev %s", rule.Rule.Name, r.revision)
+
+	// If the 'Proxy' is in 'Proxies' list, we assume it's known to us and we
+	// trust it enough to start returning more detailed error messages.
+	switch known, err := rule.Proxies.IsMember(c, query.Proxy); {
+	case err != nil:
+		logging.WithError(err).Errorf(c, "Failed to check membership of caller %q", query.Proxy)
+		return nil, grpc.Errorf(codes.Internal, "membership check failed")
+	case !known:
+		logging.Errorf(c, "Caller %q is not authorized to use account %q", query.Proxy, query.ServiceAccount)
+		return nil, grpc.Errorf(codes.PermissionDenied, "unknown service account or not enough permissions to use it")
+	}
+
+	switch known, err := rule.EndUsers.IsMember(c, query.EndUser); {
+	case err != nil:
+		logging.WithError(err).Errorf(c, "Failed to check membership of end user %q", query.EndUser)
+		return nil, grpc.Errorf(codes.Internal, "membership check failed")
+	case !known:
+		logging.Errorf(c, "End user %q is not authorized to use account %q", query.EndUser, query.ServiceAccount)
+		return nil, grpc.Errorf(
+			codes.PermissionDenied, "per rule %q the user %q is not authorized to use the service account %q",
+			rule.Rule.Name, query.EndUser, query.ServiceAccount)
+	}
+
+	return rule, nil
 }
 
 // makeRule converts ServiceAccountRule into queriable Rule.

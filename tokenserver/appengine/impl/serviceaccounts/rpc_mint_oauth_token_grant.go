@@ -102,46 +102,23 @@ func (r *MintOAuthTokenGrantRPC) MintOAuthTokenGrant(c context.Context, req *min
 		return nil, grpc.Errorf(codes.Internal, "failed to load service accounts rules")
 	}
 
-	// Grab the rule for this account. Don't leak information about presence or
-	// absence of the account to the caller, they may not be authorized to see the
-	// account at all.
-	rule := rules.Rule(req.ServiceAccount)
-	if rule == nil {
-		logging.Errorf(c, "No rule for service account %q in the config rev %s", req.ServiceAccount, rules.ConfigRevision())
-		return nil, grpc.Errorf(codes.PermissionDenied, "unknown service account or not enough permissions to use it")
-	}
-	logging.Infof(c, "Found the matching rule %q in the config rev %s", rule.Rule.Name, rules.ConfigRevision())
-
-	// If the caller is in 'Proxies' list, we assume it's known to us and we trust
-	// it enough to start returning more detailed error messages.
-	switch known, err := rule.Proxies.IsMember(c, callerID); {
-	case err != nil:
-		logging.WithError(err).Errorf(c, "Failed to check membership of caller %q", callerID)
-		return nil, grpc.Errorf(codes.Internal, "membership check failed")
-	case !known:
-		logging.Errorf(c, "Caller %q is not authorized to use account %q", callerID, req.ServiceAccount)
-		return nil, grpc.Errorf(codes.PermissionDenied, "unknown service account or not enough permissions to use it")
+	// Check that requested usage is allowed and grab the corresponding rule.
+	rule, err := rules.Check(c, &RulesQuery{
+		ServiceAccount: req.ServiceAccount,
+		Proxy:          callerID,
+		EndUser:        endUserID,
+	})
+	if err != nil {
+		return nil, err // it is already gRPC error, and it's already logged
 	}
 
-	// Check ValidityDuration next, it is easiest check.
+	// ValidityDuration check is specific to this RPC, it's not done by 'Check'.
 	if req.ValidityDuration == 0 {
 		req.ValidityDuration = 3600
 	}
 	if req.ValidityDuration > rule.Rule.MaxGrantValidityDuration {
 		logging.Errorf(c, "Requested validity is larger than max allowed: %d > %d", req.ValidityDuration, rule.Rule.MaxGrantValidityDuration)
 		return nil, grpc.Errorf(codes.InvalidArgument, "per rule %q the validity duration should be <= %d", rule.Rule.Name, rule.Rule.MaxGrantValidityDuration)
-	}
-
-	// Next is EndUsers check (involves membership lookups).
-	switch known, err := rule.EndUsers.IsMember(c, endUserID); {
-	case err != nil:
-		logging.WithError(err).Errorf(c, "Failed to check membership of end user %q", endUserID)
-		return nil, grpc.Errorf(codes.Internal, "membership check failed")
-	case !known:
-		logging.Errorf(c, "End user %q is not authorized to use account %q", endUserID, req.ServiceAccount)
-		return nil, grpc.Errorf(
-			codes.PermissionDenied, "per rule %q the user %q is not authorized to use the service account %q",
-			rule.Rule.Name, endUserID, req.ServiceAccount)
 	}
 
 	// All checks are done! Note that AllowedScopes is checked later during
