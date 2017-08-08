@@ -20,11 +20,9 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
 
-	"github.com/luci/luci-go/scheduler/appengine/acl"
 	"github.com/luci/luci-go/scheduler/appengine/engine"
 )
 
@@ -47,12 +45,12 @@ func invocationPage(c *router.Context) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		inv, err1 = eng.GetInvocation(c.Context, projectID+"/"+jobName, invID)
+		inv, err1 = eng.GetVisibleInvocation(c.Context, projectID+"/"+jobName, invID)
 	}()
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		job, err2 = eng.GetJob(c.Context, projectID+"/"+jobName)
+		job, err2 = eng.GetVisibleJob(c.Context, projectID+"/"+jobName)
 	}()
 	wg.Wait()
 
@@ -82,8 +80,7 @@ func invocationPage(c *router.Context) {
 
 func abortInvocationAction(c *router.Context) {
 	handleInvAction(c, func(jobID string, invID int64) error {
-		who := auth.CurrentIdentity(c.Context)
-		return config(c.Context).Engine.AbortInvocation(c.Context, jobID, invID, who)
+		return config(c.Context).Engine.AbortInvocation(c.Context, jobID, invID)
 	})
 }
 
@@ -91,17 +88,18 @@ func handleInvAction(c *router.Context, cb func(string, int64) error) {
 	projectID := c.Params.ByName("ProjectID")
 	jobName := c.Params.ByName("JobName")
 	invID := c.Params.ByName("InvID")
-	if !acl.IsJobOwner(c.Context, projectID, jobName) {
-		http.Error(c.Writer, "Forbidden", 403)
-		return
-	}
 	invIDAsInt, err := strconv.ParseInt(invID, 10, 64)
 	if err != nil {
 		http.Error(c.Writer, "Bad invocation ID", 400)
 		return
 	}
-	if err := cb(projectID+"/"+jobName, invIDAsInt); err != nil {
+	switch err := cb(projectID+"/"+jobName, invIDAsInt); {
+	case err == engine.ErrNoOwnerPermission:
+		http.Error(c.Writer, "Forbidden", 403)
+		return
+	case err != nil:
 		panic(err)
+	default:
+		http.Redirect(c.Writer, c.Request, fmt.Sprintf("/jobs/%s/%s/%s", projectID, jobName, invID), http.StatusFound)
 	}
-	http.Redirect(c.Writer, c.Request, fmt.Sprintf("/jobs/%s/%s/%s", projectID, jobName, invID), http.StatusFound)
 }

@@ -20,7 +20,7 @@ import (
 )
 
 func indexPage(c *router.Context) {
-	jobs, err := config(c.Context).Engine.GetAllJobs(c.Context)
+	jobs, err := config(c.Context).Engine.GetVisibleJobs(c.Context)
 	if err != nil {
 		panic(err)
 	}

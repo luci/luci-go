@@ -392,8 +392,12 @@ type SchedulerClient interface {
 	// PauseJob will prevent automatic triggering of a job. Manual triggering such
 	// as through this API is still allowed. Any pending or running invocations
 	// are still executed. PauseJob does nothing if job is already paused.
+	//
+	// Requires OWNER Job permission.
 	PauseJob(ctx context.Context, in *JobRef, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
 	// ResumeJob resumes paused job. ResumeJob does nothing if job is not paused.
+	//
+	// Requires OWNER Job permission.
 	ResumeJob(ctx context.Context, in *JobRef, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
 	// AbortJob resets the job to scheduled state, aborting a currently pending or
 	// running invocation if any.
@@ -401,12 +405,16 @@ type SchedulerClient interface {
 	// Note, that this is similar to AbortInvocation except that AbortInvocation
 	// requires invocation ID and doesn't ensure that the invocation aborted is
 	// actually latest triggered for the job.
+	//
+	// Requires OWNER Job permission.
 	AbortJob(ctx context.Context, in *JobRef, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
 	// AbortInvocation aborts a given job invocation.
 	// If an invocation is final, AbortInvocation does nothing.
 	//
 	// If you want to abort a specific hung invocation, use this request instead
 	// of AbortJob.
+	//
+	// Requires OWNER Job permission.
 	AbortInvocation(ctx context.Context, in *InvocationRef, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
 }
 type schedulerPRPCClient struct {
@@ -545,8 +553,12 @@ type SchedulerServer interface {
 	// PauseJob will prevent automatic triggering of a job. Manual triggering such
 	// as through this API is still allowed. Any pending or running invocations
 	// are still executed. PauseJob does nothing if job is already paused.
+	//
+	// Requires OWNER Job permission.
 	PauseJob(context.Context, *JobRef) (*google_protobuf.Empty, error)
 	// ResumeJob resumes paused job. ResumeJob does nothing if job is not paused.
+	//
+	// Requires OWNER Job permission.
 	ResumeJob(context.Context, *JobRef) (*google_protobuf.Empty, error)
 	// AbortJob resets the job to scheduled state, aborting a currently pending or
 	// running invocation if any.
@@ -554,12 +566,16 @@ type SchedulerServer interface {
 	// Note, that this is similar to AbortInvocation except that AbortInvocation
 	// requires invocation ID and doesn't ensure that the invocation aborted is
 	// actually latest triggered for the job.
+	//
+	// Requires OWNER Job permission.
 	AbortJob(context.Context, *JobRef) (*google_protobuf.Empty, error)
 	// AbortInvocation aborts a given job invocation.
 	// If an invocation is final, AbortInvocation does nothing.
 	//
 	// If you want to abort a specific hung invocation, use this request instead
 	// of AbortJob.
+	//
+	// Requires OWNER Job permission.
 	AbortInvocation(context.Context, *InvocationRef) (*google_protobuf.Empty, error)
 }
 

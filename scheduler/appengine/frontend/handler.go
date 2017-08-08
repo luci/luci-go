@@ -66,7 +66,7 @@ import (
 
 var (
 	globalCatalog catalog.Catalog
-	globalEngine  engine.Engine
+	globalEngine  engine.EngineInternal
 
 	// Known kinds of tasks.
 	managers = []task.Manager{
@@ -163,7 +163,7 @@ func init() {
 	gaemiddleware.InstallHandlersWithMiddleware(r, base)
 
 	ui.InstallHandlers(r, base, ui.Config{
-		Engine:        globalEngine,
+		Engine:        globalEngine.PublicAPI(),
 		Catalog:       globalCatalog,
 		TemplatesPath: "templates",
 	})
@@ -185,7 +185,7 @@ func init() {
 		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil),
 	}
 	scheduler.RegisterSchedulerServer(&api, apiservers.SchedulerServer{
-		Engine:  globalEngine,
+		Engine:  globalEngine.PublicAPI(),
 		Catalog: globalCatalog,
 	})
 	discovery.Enable(&api)

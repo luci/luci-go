@@ -27,8 +27,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/luci/luci-go/appengine/gaetesting"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/authtest"
 	"github.com/luci/luci-go/server/auth/identity"
 
 	"github.com/luci/luci-go/scheduler/api/scheduler/v1"
@@ -52,14 +50,14 @@ func TestGetJobsApi(t *testing.T) {
 		ss := SchedulerServer{fakeEng, catalog}
 
 		Convey("Empty", func() {
-			fakeEng.getAllJobs = func() ([]*engine.Job, error) { return []*engine.Job{}, nil }
+			fakeEng.getVisibleJobs = func() ([]*engine.Job, error) { return []*engine.Job{}, nil }
 			reply, err := ss.GetJobs(ctx, nil)
 			So(err, ShouldBeNil)
 			So(len(reply.GetJobs()), ShouldEqual, 0)
 		})
 
 		Convey("All Projects", func() {
-			fakeEng.getAllJobs = func() ([]*engine.Job, error) {
+			fakeEng.getVisibleJobs = func() ([]*engine.Job, error) {
 				return []*engine.Job{
 					{
 						JobID:     "bar/foo",
@@ -97,7 +95,7 @@ func TestGetJobsApi(t *testing.T) {
 		})
 
 		Convey("One Project", func() {
-			fakeEng.getProjectJobs = func(projectID string) ([]*engine.Job, error) {
+			fakeEng.getVisibleProjectJobs = func(projectID string) ([]*engine.Job, error) {
 				So(projectID, ShouldEqual, "bar")
 				return []*engine.Job{
 					{
@@ -122,7 +120,7 @@ func TestGetJobsApi(t *testing.T) {
 		})
 
 		Convey("Paused but currently running job", func() {
-			fakeEng.getProjectJobs = func(projectID string) ([]*engine.Job, error) {
+			fakeEng.getVisibleProjectJobs = func(projectID string) ([]*engine.Job, error) {
 				So(projectID, ShouldEqual, "bar")
 				return []*engine.Job{
 					{
@@ -161,7 +159,7 @@ func TestGetInvocationsApi(t *testing.T) {
 		ss := SchedulerServer{fakeEng, catalog}
 
 		Convey("Job not found", func() {
-			fakeEng.getJob = func(JobID string) (*engine.Job, error) { return nil, nil }
+			fakeEng.getVisibleJob = func(JobID string) (*engine.Job, error) { return nil, nil }
 			_, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{
 				JobRef: &scheduler.JobRef{Project: "not", Job: "exists"},
 			})
@@ -171,7 +169,7 @@ func TestGetInvocationsApi(t *testing.T) {
 		})
 
 		Convey("DS error", func() {
-			fakeEng.getJob = func(JobID string) (*engine.Job, error) { return nil, fmt.Errorf("ds error") }
+			fakeEng.getVisibleJob = func(JobID string) (*engine.Job, error) { return nil, fmt.Errorf("ds error") }
 			_, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{
 				JobRef: &scheduler.JobRef{Project: "proj", Job: "job"},
 			})
@@ -180,12 +178,12 @@ func TestGetInvocationsApi(t *testing.T) {
 			So(s.Code(), ShouldEqual, codes.Internal)
 		})
 
-		fakeEng.getJob = func(JobID string) (*engine.Job, error) {
+		fakeEng.getVisibleJob = func(JobID string) (*engine.Job, error) {
 			return &engine.Job{JobID: "proj/job", ProjectID: "proj"}, nil
 		}
 
 		Convey("Emtpy with huge pagesize", func() {
-			fakeEng.listInvocations = func(pageSize int, cursor string) ([]*engine.Invocation, string, error) {
+			fakeEng.listVisibleInvocations = func(pageSize int, cursor string) ([]*engine.Invocation, string, error) {
 				So(pageSize, ShouldEqual, 50)
 				So(cursor, ShouldEqual, "")
 				return nil, "", nil
@@ -202,7 +200,7 @@ func TestGetInvocationsApi(t *testing.T) {
 		Convey("Some with custom pagesize and cursor", func() {
 			started := time.Unix(123123123, 0).UTC()
 			finished := time.Unix(321321321, 0).UTC()
-			fakeEng.listInvocations = func(pageSize int, cursor string) ([]*engine.Invocation, string, error) {
+			fakeEng.listVisibleInvocations = func(pageSize int, cursor string) ([]*engine.Invocation, string, error) {
 				So(pageSize, ShouldEqual, 5)
 				So(cursor, ShouldEqual, "cursor")
 				return []*engine.Invocation{
@@ -257,12 +255,11 @@ func TestJobActionsApi(t *testing.T) {
 		ss := SchedulerServer{fakeEng, catalog}
 
 		Convey("PermissionDenied", func() {
-			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity:       "user:dog@example.com",
-				IdentityGroups: []string{"dogs"},
-			})
-
+			onAction := func(jobID string) error {
+				return engine.ErrNoOwnerPermission
+			}
 			Convey("Pause", func() {
+				fakeEng.pauseJob = onAction
 				_, err := ss.PauseJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
 				s, ok := status.FromError(err)
 				So(ok, ShouldBeTrue)
@@ -270,6 +267,7 @@ func TestJobActionsApi(t *testing.T) {
 			})
 
 			Convey("Abort", func() {
+				fakeEng.abortJob = onAction
 				_, err := ss.AbortJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
 				s, ok := status.FromError(err)
 				So(ok, ShouldBeTrue)
@@ -277,15 +275,9 @@ func TestJobActionsApi(t *testing.T) {
 			})
 		})
 
-		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity:       "user:admin@example.com",
-			IdentityGroups: []string{"administrators"},
-		})
-
 		Convey("OK", func() {
-			onAction := func(jobID string, who identity.Identity) error {
+			onAction := func(jobID string) error {
 				So(jobID, ShouldEqual, "proj/job")
-				So(who.Email(), ShouldEqual, "admin@example.com")
 				return nil
 			}
 
@@ -312,7 +304,7 @@ func TestJobActionsApi(t *testing.T) {
 		})
 
 		Convey("NotFound", func() {
-			fakeEng.pauseJob = func(jobID string, who identity.Identity) error {
+			fakeEng.pauseJob = func(jobID string) error {
 				return engine.ErrNoSuchJob
 			}
 			_, err := ss.PauseJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
@@ -332,10 +324,9 @@ func TestAbortInvocationApi(t *testing.T) {
 		ss := SchedulerServer{fakeEng, catalog}
 
 		Convey("PermissionDenied", func() {
-			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity:       "user:dog@example.com",
-				IdentityGroups: []string{"dogs"},
-			})
+			fakeEng.abortInvocation = func(jobID string, invID int64) error {
+				return engine.ErrNoOwnerPermission
+			}
 			_, err := ss.AbortInvocation(ctx, &scheduler.InvocationRef{
 				JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},
 				InvocationId: 12,
@@ -345,15 +336,9 @@ func TestAbortInvocationApi(t *testing.T) {
 			So(s.Code(), ShouldEqual, codes.PermissionDenied)
 		})
 
-		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity:       "user:admin@example.com",
-			IdentityGroups: []string{"administrators"},
-		})
-
 		Convey("OK", func() {
-			fakeEng.abortInvocation = func(jobID string, invID int64, who identity.Identity) error {
+			fakeEng.abortInvocation = func(jobID string, invID int64) error {
 				So(jobID, ShouldEqual, "proj/job")
-				So(who.Email(), ShouldEqual, "admin@example.com")
 				So(invID, ShouldEqual, 12)
 				return nil
 			}
@@ -366,7 +351,7 @@ func TestAbortInvocationApi(t *testing.T) {
 		})
 
 		Convey("Error", func() {
-			fakeEng.abortInvocation = func(jobID string, invID int64, who identity.Identity) error {
+			fakeEng.abortInvocation = func(jobID string, invID int64) error {
 				return engine.ErrNoSuchInvocation
 			}
 			_, err := ss.AbortInvocation(ctx, &scheduler.InvocationRef{
@@ -397,81 +382,61 @@ func newTestEngine() (*fakeEngine, catalog.Catalog) {
 }
 
 type fakeEngine struct {
-	getAllJobs      func() ([]*engine.Job, error)
-	getProjectJobs  func(projectID string) ([]*engine.Job, error)
-	getJob          func(jobID string) (*engine.Job, error)
-	listInvocations func(pageSize int, cursor string) ([]*engine.Invocation, string, error)
+	getVisibleJobs         func() ([]*engine.Job, error)
+	getVisibleProjectJobs  func(projectID string) ([]*engine.Job, error)
+	getVisibleJob          func(jobID string) (*engine.Job, error)
+	listVisibleInvocations func(pageSize int, cursor string) ([]*engine.Invocation, string, error)
 
-	pauseJob        func(jobID string, who identity.Identity) error
-	resumeJob       func(jobID string, who identity.Identity) error
-	abortJob        func(jobID string, who identity.Identity) error
-	abortInvocation func(jobID string, invID int64, who identity.Identity) error
+	pauseJob        func(jobID string) error
+	resumeJob       func(jobID string) error
+	abortJob        func(jobID string) error
+	abortInvocation func(jobID string, invID int64) error
 }
 
-func (f *fakeEngine) GetAllProjects(c context.Context) ([]string, error) {
+func (f *fakeEngine) GetVisibleJobs(c context.Context) ([]*engine.Job, error) {
+	return f.getVisibleJobs()
+}
+
+func (f *fakeEngine) GetVisibleProjectJobs(c context.Context, projectID string) ([]*engine.Job, error) {
+	return f.getVisibleProjectJobs(projectID)
+}
+
+func (f *fakeEngine) GetVisibleJob(c context.Context, jobID string) (*engine.Job, error) {
+	return f.getVisibleJob(jobID)
+}
+
+func (f *fakeEngine) ListVisibleInvocations(c context.Context, jobID string, pageSize int, cursor string) ([]*engine.Invocation, string, error) {
+	return f.listVisibleInvocations(pageSize, cursor)
+}
+
+func (f *fakeEngine) PauseJob(c context.Context, jobID string) error {
+	return f.pauseJob(jobID)
+}
+
+func (f *fakeEngine) ResumeJob(c context.Context, jobID string) error {
+	return f.resumeJob(jobID)
+}
+
+func (f *fakeEngine) AbortInvocation(c context.Context, jobID string, invID int64) error {
+	return f.abortInvocation(jobID, invID)
+}
+
+func (f *fakeEngine) AbortJob(c context.Context, jobID string) error {
+	return f.abortJob(jobID)
+}
+
+func (f *fakeEngine) GetVisibleInvocation(c context.Context, jobID string, invID int64) (*engine.Invocation, error) {
 	panic("not implemented")
 }
 
-func (f *fakeEngine) GetAllJobs(c context.Context) ([]*engine.Job, error) {
-	return f.getAllJobs()
-}
-
-func (f *fakeEngine) GetProjectJobs(c context.Context, projectID string) ([]*engine.Job, error) {
-	return f.getProjectJobs(projectID)
-}
-
-func (f *fakeEngine) GetJob(c context.Context, jobID string) (*engine.Job, error) {
-	return f.getJob(jobID)
-}
-
-func (f *fakeEngine) ListInvocations(c context.Context, jobID string, pageSize int, cursor string) ([]*engine.Invocation, string, error) {
-	return f.listInvocations(pageSize, cursor)
-}
-
-func (f *fakeEngine) GetInvocation(c context.Context, jobID string, invID int64) (*engine.Invocation, error) {
+func (f *fakeEngine) GetVisibleInvocationsByNonce(c context.Context, invNonce int64) ([]*engine.Invocation, error) {
 	panic("not implemented")
 }
 
-func (f *fakeEngine) GetInvocationsByNonce(c context.Context, invNonce int64) ([]*engine.Invocation, error) {
+func (f *fakeEngine) TriggerInvocation(c context.Context, jobID string) (int64, error) {
 	panic("not implemented")
 }
 
-func (f *fakeEngine) UpdateProjectJobs(c context.Context, projectID string, defs []catalog.Definition) error {
+func (f *fakeEngine) InternalAPI() engine.EngineInternal {
 	panic("not implemented")
-}
-
-func (f *fakeEngine) ResetAllJobsOnDevServer(c context.Context) error {
-	panic("not implemented")
-}
-
-func (f *fakeEngine) ExecuteSerializedAction(c context.Context, body []byte, retryCount int) error {
-	panic("not implemented")
-}
-
-func (f *fakeEngine) ProcessPubSubPush(c context.Context, body []byte) error {
-	panic("not implemented")
-}
-
-func (f *fakeEngine) PullPubSubOnDevServer(c context.Context, taskManagerName string, publisher string) error {
-	panic("not implemented")
-}
-
-func (f *fakeEngine) TriggerInvocation(c context.Context, jobID string, triggeredBy identity.Identity) (int64, error) {
-	panic("not implemented")
-}
-
-func (f *fakeEngine) PauseJob(c context.Context, jobID string, who identity.Identity) error {
-	return f.pauseJob(jobID, who)
-}
-
-func (f *fakeEngine) ResumeJob(c context.Context, jobID string, who identity.Identity) error {
-	return f.resumeJob(jobID, who)
-}
-
-func (f *fakeEngine) AbortInvocation(c context.Context, jobID string, invID int64, who identity.Identity) error {
-	return f.abortInvocation(jobID, invID, who)
-}
-
-func (f *fakeEngine) AbortJob(c context.Context, jobID string, who identity.Identity) error {
-	return f.abortJob(jobID, who)
 }

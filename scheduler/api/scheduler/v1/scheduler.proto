@@ -21,9 +21,13 @@ service Scheduler {
   // PauseJob will prevent automatic triggering of a job. Manual triggering such
   // as through this API is still allowed. Any pending or running invocations
   // are still executed. PauseJob does nothing if job is already paused.
+  //
+  // Requires OWNER Job permission.
   rpc PauseJob(JobRef) returns (google.protobuf.Empty);
 
   // ResumeJob resumes paused job. ResumeJob does nothing if job is not paused.
+  //
+  // Requires OWNER Job permission.
   rpc ResumeJob(JobRef) returns (google.protobuf.Empty);
 
   // AbortJob resets the job to scheduled state, aborting a currently pending or
@@ -32,6 +36,8 @@ service Scheduler {
   // Note, that this is similar to AbortInvocation except that AbortInvocation
   // requires invocation ID and doesn't ensure that the invocation aborted is
   // actually latest triggered for the job.
+  //
+  // Requires OWNER Job permission.
   rpc AbortJob(JobRef) returns (google.protobuf.Empty);
 
   // AbortInvocation aborts a given job invocation.
@@ -39,6 +45,8 @@ service Scheduler {
   //
   // If you want to abort a specific hung invocation, use this request instead
   // of AbortJob.
+  //
+  // Requires OWNER Job permission.
   rpc AbortInvocation(InvocationRef) returns (google.protobuf.Empty);
 }
 

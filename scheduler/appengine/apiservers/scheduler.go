@@ -16,11 +16,9 @@ package apiservers
 
 import (
 	"github.com/luci/luci-go/scheduler/api/scheduler/v1"
-	"github.com/luci/luci-go/scheduler/appengine/acl"
 	"github.com/luci/luci-go/scheduler/appengine/catalog"
 	"github.com/luci/luci-go/scheduler/appengine/engine"
 	"github.com/luci/luci-go/scheduler/appengine/presentation"
-	"github.com/luci/luci-go/server/auth"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -46,12 +44,12 @@ func (s SchedulerServer) GetJobs(ctx context.Context, in *scheduler.JobsRequest)
 	var ejobs []*engine.Job
 	var err error
 	if in.GetProject() == "" {
-		ejobs, err = s.Engine.GetAllJobs(ctx)
+		ejobs, err = s.Engine.GetVisibleJobs(ctx)
 	} else {
-		ejobs, err = s.Engine.GetProjectJobs(ctx, in.GetProject())
+		ejobs, err = s.Engine.GetVisibleProjectJobs(ctx, in.GetProject())
 	}
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "datastore error: %s", err)
+		return nil, grpc.Errorf(codes.Internal, "internal error: %s", err)
 	}
 
 	jobs := make([]*scheduler.Job, len(ejobs))
@@ -76,9 +74,9 @@ func (s SchedulerServer) GetJobs(ctx context.Context, in *scheduler.JobsRequest)
 }
 
 func (s SchedulerServer) GetInvocations(ctx context.Context, in *scheduler.InvocationsRequest) (*scheduler.InvocationsReply, error) {
-	ejob, err := s.Engine.GetJob(ctx, getJobId(in.GetJobRef()))
+	ejob, err := s.Engine.GetVisibleJob(ctx, getJobId(in.GetJobRef()))
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "datastore error: %s", err)
+		return nil, grpc.Errorf(codes.Internal, "internal error: %s", err)
 	}
 	if ejob == nil {
 		return nil, grpc.Errorf(codes.NotFound, "Job does not exist or you have no access")
@@ -89,9 +87,9 @@ func (s SchedulerServer) GetInvocations(ctx context.Context, in *scheduler.Invoc
 		pageSize = int(in.PageSize)
 	}
 
-	einvs, cursor, err := s.Engine.ListInvocations(ctx, ejob.JobID, pageSize, in.GetCursor())
+	einvs, cursor, err := s.Engine.ListVisibleInvocations(ctx, ejob.JobID, pageSize, in.GetCursor())
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "datastore error: %s", err)
+		return nil, grpc.Errorf(codes.Internal, "internal error: %s", err)
 	}
 	invs := make([]*scheduler.Invocation, len(einvs))
 	for i, einv := range einvs {
@@ -121,40 +119,39 @@ func (s SchedulerServer) GetInvocations(ctx context.Context, in *scheduler.Invoc
 
 func (s SchedulerServer) PauseJob(ctx context.Context, in *scheduler.JobRef) (*empty.Empty, error) {
 	return runAction(ctx, in, func() error {
-		return s.Engine.PauseJob(ctx, getJobId(in), auth.CurrentIdentity(ctx))
+		return s.Engine.PauseJob(ctx, getJobId(in))
 	})
 }
 
 func (s SchedulerServer) ResumeJob(ctx context.Context, in *scheduler.JobRef) (*empty.Empty, error) {
 	return runAction(ctx, in, func() error {
-		return s.Engine.ResumeJob(ctx, getJobId(in), auth.CurrentIdentity(ctx))
+		return s.Engine.ResumeJob(ctx, getJobId(in))
 	})
 }
 
 func (s SchedulerServer) AbortJob(ctx context.Context, in *scheduler.JobRef) (*empty.Empty, error) {
 	return runAction(ctx, in, func() error {
-		return s.Engine.AbortJob(ctx, getJobId(in), auth.CurrentIdentity(ctx))
+		return s.Engine.AbortJob(ctx, getJobId(in))
 	})
 }
 
 func (s SchedulerServer) AbortInvocation(ctx context.Context, in *scheduler.InvocationRef) (
 	*empty.Empty, error) {
 	return runAction(ctx, in.GetJobRef(), func() error {
-		return s.Engine.AbortInvocation(ctx, getJobId(in.GetJobRef()), in.GetInvocationId(), auth.CurrentIdentity(ctx))
+		return s.Engine.AbortInvocation(ctx, getJobId(in.GetJobRef()), in.GetInvocationId())
 	})
 }
 
 //// Private helpers.
 
 func runAction(ctx context.Context, jobRef *scheduler.JobRef, action func() error) (*empty.Empty, error) {
-	if !acl.IsJobOwner(ctx, jobRef.GetProject(), jobRef.GetJob()) {
-		return nil, grpc.Errorf(codes.PermissionDenied, "No permission to execute action")
-	}
 	switch err := action(); {
 	case err == nil:
 		return &empty.Empty{}, nil
 	case err == engine.ErrNoSuchJob:
-		return nil, grpc.Errorf(codes.NotFound, "no such job")
+		return nil, grpc.Errorf(codes.NotFound, "no such job or no READ permission")
+	case err == engine.ErrNoOwnerPermission:
+		return nil, grpc.Errorf(codes.PermissionDenied, "no OWNER permission")
 	case err == engine.ErrNoSuchInvocation:
 		return nil, grpc.Errorf(codes.NotFound, "no such invocation")
 	default:

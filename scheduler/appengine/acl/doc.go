@@ -1,4 +1,4 @@
-// Copyright 2015 The LUCI Authors.
+// Copyright 2017 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ui
-
-import (
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/server/templates"
-)
-
-func projectPage(c *router.Context) {
-	projectID := c.Params.ByName("ProjectID")
-	jobs, err := config(c.Context).Engine.GetVisibleProjectJobs(c.Context, projectID)
-	if err != nil {
-		panic(err)
-	}
-	templates.MustRender(c.Context, c.Writer, "pages/project.html", map[string]interface{}{
-		"ProjectID": projectID,
-		"Jobs":      sortJobs(c.Context, jobs),
-	})
-}
+// package acl implements ACLs for enforcement in API and UI.
+package acl

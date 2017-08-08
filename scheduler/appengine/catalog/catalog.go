@@ -33,6 +33,8 @@ import (
 	"github.com/luci/luci-go/luci_config/server/cfgclient"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
 
+	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/scheduler/appengine/acl"
 	"github.com/luci/luci-go/scheduler/appengine/messages"
 	"github.com/luci/luci-go/scheduler/appengine/schedule"
 	"github.com/luci/luci-go/scheduler/appengine/task"
@@ -111,6 +113,9 @@ const (
 type Definition struct {
 	// JobID is globally unique job identifier: "<ProjectID>/<JobName>".
 	JobID string
+
+	// Acls describes who can read and who owns this job.
+	Acls acl.GrantsByRole
 
 	// Flavor describes what category of jobs this is, see the enum.
 	Flavor JobFlavor
@@ -194,8 +199,8 @@ func (cat *catalog) GetAllProjects(c context.Context) ([]string, error) {
 }
 
 func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Definition, error) {
-	// TODO(vadimsh): This is a workaround for crbug.com/710619. Remove it once
-	// the bug is fixed.
+	// TODO(vadimsh): This is a workaround for http://crbug.com/710619. Remove it
+	// once the bug is fixed.
 	projects, err := cat.GetAllProjects(c)
 	if err != nil {
 		return nil, err
@@ -237,6 +242,12 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	if revisionURL != "" {
 		logging.Infof(c, "Importing %s", revisionURL)
 	}
+	// TODO(tandrii): make use of https://godoc.org/github.com/luci/luci-go/common/config/validation
+	knownAclSets, err := acl.ValidateAclSets(cfg.GetAclSets())
+	if err != nil {
+		logging.Errorf(c, "Invalid aclsets definition %s: %s", projectID, err)
+		return nil, errors.Annotate(err, "invalid aclsets in a project %s", projectID).Err()
+	}
 
 	out := make([]Definition, 0, len(cfg.Job)+len(cfg.Trigger))
 
@@ -267,8 +278,14 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		if schedule != "triggered" {
 			flavor = JobFlavorPeriodic
 		}
+		acls, err := acl.ValidateTaskAcls(knownAclSets, job.GetAclSets(), job.GetAcls())
+		if err != nil {
+			logging.Errorf(c, "Failed to compute task ACLs: %s/%s: %s", projectID, id, err)
+			continue
+		}
 		out = append(out, Definition{
 			JobID:       fmt.Sprintf("%s/%s", projectID, job.Id),
+			Acls:        *acls,
 			Flavor:      flavor,
 			Revision:    meta.Revision,
 			RevisionURL: revisionURL,
@@ -300,8 +317,14 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		if schedule == "" {
 			schedule = defaultTriggerSchedule
 		}
+		acls, err := acl.ValidateTaskAcls(knownAclSets, trigger.GetAclSets(), trigger.GetAcls())
+		if err != nil {
+			logging.Errorf(c, "Failed to compute task ACLs: %s/%s: %s", projectID, id, err)
+			continue
+		}
 		out = append(out, Definition{
 			JobID:       fmt.Sprintf("%s/%s", projectID, trigger.Id),
+			Acls:        *acls,
 			Flavor:      JobFlavorTrigger,
 			Revision:    meta.Revision,
 			RevisionURL: revisionURL,

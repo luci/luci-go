@@ -25,6 +25,7 @@ import (
 	memcfg "github.com/luci/luci-go/common/config/impl/memory"
 	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
 
+	"github.com/luci/luci-go/scheduler/appengine/acl"
 	"github.com/luci/luci-go/scheduler/appengine/messages"
 	"github.com/luci/luci-go/scheduler/appengine/task"
 
@@ -206,25 +207,29 @@ func TestConfigReading(t *testing.T) {
 			So(defs, ShouldResemble, []Definition{
 				{
 					JobID:    "project1/noop-job-1",
-					Revision: "776a16076543daae60a3c9df9a3ea2d7a4067045",
+					Acls:     acl.GrantsByRole{Readers: []string{"group:all"}, Owners: []string{"group:some-admins"}},
+					Revision: "847cf9c217f7bad214805f3bea7a30799383940b",
 					Schedule: "*/10 * * * * * *",
 					Task:     []uint8{0xa, 0x0},
 				},
 				{
 					JobID:    "project1/noop-job-2",
-					Revision: "776a16076543daae60a3c9df9a3ea2d7a4067045",
+					Acls:     acl.GrantsByRole{Readers: []string{"group:all"}, Owners: []string{"group:some-admins"}},
+					Revision: "847cf9c217f7bad214805f3bea7a30799383940b",
 					Schedule: "*/10 * * * * * *",
 					Task:     []uint8{0xa, 0x0},
 				},
 				{
 					JobID:    "project1/urlfetch-job-1",
-					Revision: "776a16076543daae60a3c9df9a3ea2d7a4067045",
+					Acls:     acl.GrantsByRole{Readers: []string{"group:all"}, Owners: []string{"group:debuggers", "group:some-admins"}},
+					Revision: "847cf9c217f7bad214805f3bea7a30799383940b",
 					Schedule: "*/10 * * * * * *",
 					Task:     []uint8{18, 21, 18, 19, 104, 116, 116, 112, 115, 58, 47, 47, 101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109},
 				},
 				{
 					JobID:    "project1/urlfetch-job-2",
-					Revision: "776a16076543daae60a3c9df9a3ea2d7a4067045",
+					Acls:     acl.GrantsByRole{Readers: []string{"group:all"}, Owners: []string{"group:some-admins"}},
+					Revision: "847cf9c217f7bad214805f3bea7a30799383940b",
 					Schedule: "*/10 * * * * * *",
 					Task:     []uint8{18, 21, 18, 19, 104, 116, 116, 112, 115, 58, 47, 47, 101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109},
 				},
@@ -330,9 +335,23 @@ func (b brokenTaskManager) ProtoMessageType() proto.Message {
 ////
 
 const project1Cfg = `
+
+acl_sets {
+	name: "public"
+	acls {
+		role: READER
+		granted_to: "group:all"
+	}
+	acls {
+		role: OWNER
+		granted_to: "group:some-admins"
+	}
+}
+
 job {
   id: "noop-job-1"
   schedule: "*/10 * * * * * *"
+	acl_sets: "public"
 
   noop: {}
 }
@@ -340,6 +359,7 @@ job {
 job {
   id: "noop-job-2"
   schedule: "*/10 * * * * * *"
+	acl_sets: "public"
 
   noop: {}
 }
@@ -355,6 +375,11 @@ job {
 job {
   id: "urlfetch-job-1"
   schedule: "*/10 * * * * * *"
+	acl_sets: "public"
+	acls {
+		role: OWNER
+		granted_to: "group:debuggers"
+	}
 
   url_fetch: {
     url: "https://example.com"
@@ -365,6 +390,7 @@ job {
 job {
   id: "urlfetch-job-2"
   schedule: "*/10 * * * * * *"
+	acl_sets: "public"
 
   task: {
     url_fetch: {

@@ -23,8 +23,7 @@ import (
 
 	mc "github.com/luci/gae/service/memcache"
 	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/scheduler/appengine/acl"
-	"github.com/luci/luci-go/server/auth"
+	"github.com/luci/luci-go/scheduler/appengine/engine"
 	"github.com/luci/luci-go/server/router"
 	"github.com/luci/luci-go/server/templates"
 )
@@ -37,17 +36,17 @@ func jobPage(ctx *router.Context) {
 	cursor := r.URL.Query().Get("c")
 
 	// Grab the job from the datastore.
-	job, err := config(c).Engine.GetJob(c, projectID+"/"+jobName)
+	job, err := config(c).Engine.GetVisibleJob(c, projectID+"/"+jobName)
 	if err != nil {
 		panic(err)
 	}
 	if job == nil {
-		http.Error(w, "No such job", http.StatusNotFound)
+		http.Error(w, "No such job or no access to it", http.StatusNotFound)
 		return
 	}
 
 	// Grab latest invocations from the datastore.
-	invs, nextCursor, err := config(c).Engine.ListInvocations(c, job.JobID, 50, cursor)
+	invs, nextCursor, err := config(c).Engine.ListVisibleInvocations(c, job.JobID, 50, cursor)
 	if err != nil {
 		panic(err)
 	}
@@ -103,10 +102,6 @@ func runJobAction(ctx *router.Context) {
 
 	projectID := p.ByName("ProjectID")
 	jobName := p.ByName("JobName")
-	if !acl.IsJobOwner(c, projectID, jobName) {
-		http.Error(w, "Forbidden", 403)
-		return
-	}
 
 	// genericReply renders "we did something (or we failed to do something)"
 	// page, shown on error or if invocation is starting for too long.
@@ -122,8 +117,11 @@ func runJobAction(ctx *router.Context) {
 	// appear. Give up if task queue or datastore indexes are lagging too much.
 	e := config(c).Engine
 	jobID := projectID + "/" + jobName
-	invNonce, err := e.TriggerInvocation(c, jobID, auth.CurrentIdentity(c))
-	if err != nil {
+	invNonce, err := e.TriggerInvocation(c, jobID)
+	if err == engine.ErrNoOwnerPermission {
+		http.Error(w, "Forbidden", 403)
+		return
+	} else if err != nil {
 		genericReply(err)
 		return
 	}
@@ -140,7 +138,7 @@ func runJobAction(ctx *router.Context) {
 		}
 		// Find most recent invocation with requested nonce. Ignore errors here,
 		// since GetInvocationsByNonce can return only transient ones.
-		invs, _ := e.GetInvocationsByNonce(c, invNonce)
+		invs, _ := e.GetVisibleInvocationsByNonce(c, invNonce)
 		bestTS := time.Time{}
 		for _, inv := range invs {
 			if inv.JobKey.StringID() == jobID && inv.Started.Sub(bestTS) > 0 {
@@ -159,34 +157,31 @@ func runJobAction(ctx *router.Context) {
 
 func pauseJobAction(c *router.Context) {
 	handleJobAction(c, func(jobID string) error {
-		who := auth.CurrentIdentity(c.Context)
-		return config(c.Context).Engine.PauseJob(c.Context, jobID, who)
+		return config(c.Context).Engine.PauseJob(c.Context, jobID)
 	})
 }
 
 func resumeJobAction(c *router.Context) {
 	handleJobAction(c, func(jobID string) error {
-		who := auth.CurrentIdentity(c.Context)
-		return config(c.Context).Engine.ResumeJob(c.Context, jobID, who)
+		return config(c.Context).Engine.ResumeJob(c.Context, jobID)
 	})
 }
 
 func abortJobAction(c *router.Context) {
 	handleJobAction(c, func(jobID string) error {
-		who := auth.CurrentIdentity(c.Context)
-		return config(c.Context).Engine.AbortJob(c.Context, jobID, who)
+		return config(c.Context).Engine.AbortJob(c.Context, jobID)
 	})
 }
 
 func handleJobAction(c *router.Context, cb func(string) error) {
 	projectID := c.Params.ByName("ProjectID")
 	jobName := c.Params.ByName("JobName")
-	if !acl.IsJobOwner(c.Context, projectID, jobName) {
+	switch err := cb(projectID + "/" + jobName); {
+	case err == engine.ErrNoOwnerPermission:
 		http.Error(c.Writer, "Forbidden", 403)
-		return
-	}
-	if err := cb(projectID + "/" + jobName); err != nil {
+	case err != nil:
 		panic(err)
+	default:
+		http.Redirect(c.Writer, c.Request, fmt.Sprintf("/jobs/%s/%s", projectID, jobName), http.StatusFound)
 	}
-	http.Redirect(c.Writer, c.Request, fmt.Sprintf("/jobs/%s/%s", projectID, jobName), http.StatusFound)
 }

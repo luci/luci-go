@@ -6,6 +6,37 @@ syntax = "proto3";
 
 package messages;
 
+// A single access control rule.
+//
+// WARNING: until ACLs are fully deployed, DO NOT rely on READER Role
+// limiting access to your project. Follow crbug/736770 if in doubt.
+// TODO(tandrii): REMOVE THIS WARNING once deployment is complete.
+message Acl {
+  enum Role {
+    // Can do read-only operations, such as listing invocations of a Job.
+    READER = 0;
+		// Same as READER + can modify state of a Job or Invocation such as
+		// triggering or aborting them.
+    // LUCI scheduler (this service) is an OWNER of each `Job` and `Trigger`, thus
+		// `Trigger`s are allowed to trigger all `Job`s defined in the same
+		// project, regardless of their respective ACLs.
+    OWNER = 1;
+  }
+  // Role denotes a list of actions that an identity can perform.
+  Role role = 1;
+  // Either email or "group:xyz" or auth service identity string "kind:name".
+  string granted_to = 2;
+}
+
+// A set of Acl messages. Can be referenced in a Job or Trigger by name.
+message AclSet {
+  // A name of the ACL set, unique for a project.
+  // Required. Must match regex '^[0-9A-Za-z_\-\.]{1,100}$'.
+  string name = 1;
+  // List of access control rules.
+  // The order does not matter.
+  repeated Acl acls = 2;
+}
 
 // Job specifies a single regular job belonging to a project.
 //
@@ -30,7 +61,7 @@ message Job {
   //     schedule. Overruns are not possible.
   //   - "continuously" is alias for "with 0s interval", meaning the job will
   //     run in a loop without any pauses.
-  //   - "triggered" schedule indicates that job is always started via "Run now"
+  //   - "triggered" schedule indicates that job is only started via "Run now"
   //     button or via a trigger.
   //
   // Default is "triggered".
@@ -44,6 +75,16 @@ message Job {
   // TODO(vadimsh): Remove this field once all configs are updated not to
   // use it.
   TaskDefWrapper task = 4;
+
+  // List of access control rules for the Job.
+  // The order does not matter.
+	// There can be at most 32 different acls for a Job, including those from
+	// acl_sets.
+  repeated Acl acls = 5;
+  // A list of ACL set names. Each ACL in each referenced ACL set will be
+  // included in this Job.
+  // The order does not matter.
+  repeated string acl_sets = 6;
 
   // One and only one field below must be set. It defines what this job does.
 
@@ -75,6 +116,16 @@ message Trigger {
 
   // Disabled is true to disable this job.
   bool disabled = 3;
+
+  // List of access control rules for the Job.
+  // The order does not matter.
+	// There can be at most 32 different acls for a Job, including those from
+	// acl_sets.
+  repeated Acl acls = 4;
+  // A list of ACL set names. Each ACL in each referenced ACL set will be
+  // included in this Job.
+  // The order does not matter.
+  repeated string acl_sets = 5;
 
   // One and only one field below must be set. It defines what this job does.
 
@@ -171,6 +222,9 @@ message ProjectConfig {
 
   // Trigger is a set of triggering jobs defined in the project.
   repeated Trigger trigger = 2;
+
+  // A list of ACL sets. Names must be unique.
+  repeated AclSet acl_sets = 3;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
