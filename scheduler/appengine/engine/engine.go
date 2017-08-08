@@ -352,6 +352,16 @@ func (e *Job) matches(def catalog.Definition) bool {
 		bytes.Equal(e.Task, def.Task)
 }
 
+// isVisible checks if current identity has READER access to this job.
+func (e *Job) isVisible(c context.Context) (bool, error) {
+	return e.Acls.IsReader(logging.SetField(c, "JobID", e.JobID))
+}
+
+// isOwned checks if current identity has OWNER access to this job.
+func (e *Job) isOwned(c context.Context) (bool, error) {
+	return e.Acls.IsOwner(logging.SetField(c, "JobID", e.JobID))
+}
+
 // Invocation entity stores single attempt to run a job. Its parent entity
 // is corresponding Job, its ID is generated based on time.
 type Invocation struct {
@@ -664,7 +674,7 @@ func (e *engineImpl) queryEnabledVisibleJobs(c context.Context, q *ds.Query) ([]
 		}
 		// TODO(tandrii): improve batch ACLs check here to take advantage of likely
 		// shared ACLs between most jobs of the same project.
-		if ok, err := job.Acls.IsReader(c); err != nil {
+		if ok, err := job.isVisible(c); err != nil {
 			return nil, transient.Tag.Apply(err)
 		} else if ok {
 			filtered = append(filtered, job)
@@ -680,7 +690,7 @@ func (e *engineImpl) GetVisibleJob(c context.Context, jobID string) (*Job, error
 	} else if job == nil {
 		return nil, ErrNoSuchJob
 	}
-	if ok, err := job.Acls.IsReader(c); err != nil {
+	if ok, err := job.isVisible(c); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, ErrNoSuchJob
@@ -696,7 +706,7 @@ func (e *engineImpl) getOwnedJob(c context.Context, jobID string) (*Job, error) 
 		return nil, ErrNoSuchJob
 	}
 
-	switch owner, err := job.Acls.IsOwner(c); {
+	switch owner, err := job.isOwned(c); {
 	case err != nil:
 		return nil, err
 	case owner:
@@ -704,7 +714,7 @@ func (e *engineImpl) getOwnedJob(c context.Context, jobID string) (*Job, error) 
 	}
 
 	// Not owner, but maybe reader? Give nicer error in such case.
-	switch reader, err := job.Acls.IsReader(c); {
+	switch reader, err := job.isVisible(c); {
 	case err != nil:
 		return nil, err
 	case reader:
