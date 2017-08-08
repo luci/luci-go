@@ -2,7 +2,7 @@ proto-gae
 =========
 
 proto-gae is a simple `go generate`-compatible tool for generating
-"github.com/luci/gae/service/datastore".PropertyConverter implementation for
+"go.chromium.org/gae/service/datastore".PropertyConverter implementation for
 `protoc`-generated message types. This allows you to embed `proto.Message`
 implementations into your datastore models.
 
@@ -27,7 +27,7 @@ message MyProtoThing {
 #### path/to/mything/protos/gen.go
 ```go
 package protos
-// assume github.com/luci/luci-go/tools/cmd/cproto is in $PATH. Try it, it's
+// assume go.chromium.org/luci/tools/cmd/cproto is in $PATH. Try it, it's
 // awesome :).
 
 //go:generate cproto

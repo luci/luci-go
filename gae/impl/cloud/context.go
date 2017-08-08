@@ -17,14 +17,14 @@ package cloud
 import (
 	"fmt"
 
-	"github.com/luci/gae/impl/dummy"
-	"github.com/luci/gae/impl/memory"
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/mail"
-	mc "github.com/luci/gae/service/memcache"
-	"github.com/luci/gae/service/module"
-	"github.com/luci/gae/service/taskqueue"
-	"github.com/luci/gae/service/user"
+	"go.chromium.org/gae/impl/dummy"
+	"go.chromium.org/gae/impl/memory"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/mail"
+	mc "go.chromium.org/gae/service/memcache"
+	"go.chromium.org/gae/service/module"
+	"go.chromium.org/gae/service/taskqueue"
+	"go.chromium.org/gae/service/user"
 
 	"cloud.google.com/go/compute/metadata"
 	"cloud.google.com/go/datastore"

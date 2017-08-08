@@ -20,12 +20,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/gae/service/blobstore"
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
-	mc "github.com/luci/gae/service/memcache"
+	"go.chromium.org/gae/service/blobstore"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
+	mc "go.chromium.org/gae/service/memcache"
 
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/logging"
 
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/aetest"

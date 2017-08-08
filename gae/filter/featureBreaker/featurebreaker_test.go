@@ -17,9 +17,9 @@ package featureBreaker
 import (
 	"testing"
 
-	"github.com/luci/gae/impl/memory"
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/gae/impl/memory"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/errors"
 
 	"golang.org/x/net/context"
 

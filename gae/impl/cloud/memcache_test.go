@@ -22,10 +22,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/errors"
 
-	"github.com/luci/gae/service/info"
-	mc "github.com/luci/gae/service/memcache"
+	"go.chromium.org/gae/service/info"
+	mc "go.chromium.org/gae/service/memcache"
 
 	"github.com/bradfitz/gomemcache/memcache"
 	"golang.org/x/net/context"

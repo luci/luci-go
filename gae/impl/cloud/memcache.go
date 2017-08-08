@@ -20,8 +20,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/luci/gae/service/info"
-	mc "github.com/luci/gae/service/memcache"
+	"go.chromium.org/gae/service/info"
+	mc "go.chromium.org/gae/service/memcache"
 
 	"github.com/bradfitz/gomemcache/memcache"
 	"golang.org/x/net/context"
@@ -31,7 +31,7 @@ const (
 	// memcacheKeyPrefix is the common prefix prepended to memcached keys created
 	// by this package. It is intended to ensure that keys do not conflict with
 	// other users of the service.
-	memcacheKeyPrefix = "github.com/luci/gae/impl/cloud:"
+	memcacheKeyPrefix = "go.chromium.org/gae/impl/cloud:"
 
 	// keyHashSizeThreshold is a threshold for key hashing. If the key's length
 	// exceeds this threshold, the key will be hashed and the hash used in its

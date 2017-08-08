@@ -17,10 +17,10 @@ package cloud
 import (
 	"time"
 
-	infoS "github.com/luci/gae/service/info"
-	"github.com/luci/gae/service/info/support"
+	infoS "go.chromium.org/gae/service/info"
+	"go.chromium.org/gae/service/info/support"
 
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/errors"
 
 	"golang.org/x/net/context"
 )

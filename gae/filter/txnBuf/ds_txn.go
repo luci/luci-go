@@ -15,8 +15,8 @@
 package txnBuf
 
 import (
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/errors"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/errors"
 	"golang.org/x/net/context"
 )
 

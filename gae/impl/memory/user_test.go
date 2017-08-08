@@ -17,12 +17,12 @@ package memory
 import (
 	"testing"
 
-	"github.com/luci/gae/service/user"
+	"go.chromium.org/gae/service/user"
 
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestUser(t *testing.T) {

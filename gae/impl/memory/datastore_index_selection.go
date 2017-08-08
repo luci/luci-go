@@ -20,9 +20,9 @@ import (
 	"sort"
 	"strings"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/datastore/serialize"
-	"github.com/luci/luci-go/common/data/stringset"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/datastore/serialize"
+	"go.chromium.org/luci/common/data/stringset"
 )
 
 // ErrMissingIndex is returned when the current indexes are not sufficient

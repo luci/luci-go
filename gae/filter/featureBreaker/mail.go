@@ -15,7 +15,7 @@
 package featureBreaker
 
 import (
-	"github.com/luci/gae/service/mail"
+	"go.chromium.org/gae/service/mail"
 	"golang.org/x/net/context"
 )
 

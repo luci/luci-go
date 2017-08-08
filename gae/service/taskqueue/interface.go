@@ -17,7 +17,7 @@ package taskqueue
 import (
 	"time"
 
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/errors"
 
 	"golang.org/x/net/context"
 )

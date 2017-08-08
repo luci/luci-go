@@ -12,7 +12,7 @@ gae: A Google AppEngine SDK wrapper
 Installing
 ----------
 
-    go get -u github.com/luci/gae/...
+    go get -u go.chromium.org/gae/...
 
 Why/What/How
 ------------

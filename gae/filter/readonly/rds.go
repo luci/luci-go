@@ -25,9 +25,9 @@ package readonly
 import (
 	"golang.org/x/net/context"
 
-	ds "github.com/luci/gae/service/datastore"
+	ds "go.chromium.org/gae/service/datastore"
 
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/errors"
 )
 
 // ErrReadOnly is an error returned in response to mutating datastore

@@ -17,7 +17,7 @@ package prod
 import (
 	"time"
 
-	"github.com/luci/gae/service/info"
+	"go.chromium.org/gae/service/info"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"

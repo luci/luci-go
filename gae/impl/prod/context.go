@@ -21,7 +21,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/luci/gae/service/urlfetch"
+	"go.chromium.org/gae/service/urlfetch"
 	"golang.org/x/net/context"
 	gOAuth "golang.org/x/oauth2/google"
 	"google.golang.org/appengine"
@@ -67,14 +67,14 @@ func setupAECtx(c, aeCtx context.Context) context.Context {
 //
 // The services added are:
 //   - github.com/luci-go/common/logging
-//   - github.com/luci/gae/service/datastore
-//   - github.com/luci/gae/service/info
-//   - github.com/luci/gae/service/mail
-//   - github.com/luci/gae/service/memcache
-//   - github.com/luci/gae/service/module
-//   - github.com/luci/gae/service/taskqueue
-//   - github.com/luci/gae/service/urlfetch
-//   - github.com/luci/gae/service/user
+//   - go.chromium.org/gae/service/datastore
+//   - go.chromium.org/gae/service/info
+//   - go.chromium.org/gae/service/mail
+//   - go.chromium.org/gae/service/memcache
+//   - go.chromium.org/gae/service/module
+//   - go.chromium.org/gae/service/taskqueue
+//   - go.chromium.org/gae/service/urlfetch
+//   - go.chromium.org/gae/service/user
 //
 // These can be retrieved with the <service>.Get functions.
 //
@@ -193,7 +193,7 @@ func withProdState(c context.Context, ps prodState) context.Context {
 // cancellation from "c".
 //
 // Tracking at:
-// https://github.com/luci/gae/issues/59
+// https://go.chromium.org/gae/issues/59
 func (ps *prodState) context(c context.Context) context.Context {
 	aeCtx := ps.ctx
 	if aeCtx == nil {

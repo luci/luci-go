@@ -20,13 +20,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/gae/service/blobstore"
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
+	"go.chromium.org/gae/service/blobstore"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func mkKey(appID, namespace string, elems ...interface{}) *ds.Key {

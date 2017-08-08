@@ -20,8 +20,8 @@ to manage state for the data. The schema for these tables is enumerated below
 to make the code a bit easier to reason about.
 
 All datastore user objects (Keys, Properties, PropertyMaps, etc.) are serialized
-using `github.com/luci/gae/service/datastore/serialize`, which in turn uses the
-primitives available in `github.com/luci/luci-go/common/cmpbin`. The encodings
+using `go.chromium.org/gae/service/datastore/serialize`, which in turn uses the
+primitives available in `go.chromium.org/luci/common/cmpbin`. The encodings
 are important to understanding why the schemas below sort correctly when
 compared only using `bytes.Compare` (aka `memcmp`). This doc will assume that
 you're familiar with those encodings, but will point out where we diverge from

@@ -20,18 +20,18 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/luci/gae/filter/count"
-	"github.com/luci/gae/impl/memory"
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
+	"go.chromium.org/gae/filter/count"
+	"go.chromium.org/gae/impl/memory"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
 
-	"github.com/luci/luci-go/common/data/cmpbin"
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/data/cmpbin"
+	"go.chromium.org/luci/common/errors"
 
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type Foo struct {

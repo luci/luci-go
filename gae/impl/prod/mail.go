@@ -15,13 +15,13 @@
 package prod
 
 import (
-	gae_mail "github.com/luci/gae/service/mail"
+	gae_mail "go.chromium.org/gae/service/mail"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/mail"
 )
 
 // useMail adds a mail service implementation to context, accessible
-// by "github.com/luci/gae/service/mail".Raw(c) or the exported mail service
+// by "go.chromium.org/gae/service/mail".Raw(c) or the exported mail service
 // methods.
 func useMail(c context.Context) context.Context {
 	return gae_mail.SetFactory(c, func(ci context.Context) gae_mail.RawInterface {

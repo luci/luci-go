@@ -26,11 +26,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	prodConstraints "github.com/luci/gae/impl/prod/constraints"
-	ds "github.com/luci/gae/service/datastore"
-	tq "github.com/luci/gae/service/taskqueue"
+	prodConstraints "go.chromium.org/gae/impl/prod/constraints"
+	ds "go.chromium.org/gae/service/datastore"
+	tq "go.chromium.org/gae/service/taskqueue"
 
-	"github.com/luci/luci-go/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 )
 
 var (

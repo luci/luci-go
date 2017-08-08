@@ -15,7 +15,7 @@
 package memory
 
 import (
-	"github.com/luci/luci-go/common/data/stringset"
+	"go.chromium.org/luci/common/data/stringset"
 )
 
 // all of these constants were imported on Mon Dec 14 18:18:00 PST 2015 from

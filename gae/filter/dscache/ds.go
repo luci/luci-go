@@ -17,11 +17,11 @@ package dscache
 import (
 	"time"
 
-	ds "github.com/luci/gae/service/datastore"
-	mc "github.com/luci/gae/service/memcache"
+	ds "go.chromium.org/gae/service/datastore"
+	mc "go.chromium.org/gae/service/memcache"
 
-	"github.com/luci/luci-go/common/errors"
-	log "github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/errors"
+	log "go.chromium.org/luci/common/logging"
 
 	"golang.org/x/net/context"
 )

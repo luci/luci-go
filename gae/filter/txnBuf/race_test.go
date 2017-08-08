@@ -18,8 +18,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/luci/gae/impl/memory"
-	ds "github.com/luci/gae/service/datastore"
+	"go.chromium.org/gae/impl/memory"
+	ds "go.chromium.org/gae/service/datastore"
 	"golang.org/x/net/context"
 )
 

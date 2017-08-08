@@ -25,13 +25,13 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/errors"
 
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var (

@@ -24,8 +24,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/flag/stringsetflag"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/flag/stringsetflag"
 )
 
 type app struct {
@@ -100,14 +100,14 @@ package {{index . "package"}}
 import (
 	"github.com/golang/protobuf/proto"
 
-	"github.com/luci/gae/service/datastore"
+	"go.chromium.org/gae/service/datastore"
 ){{range index . "types"}}
 
 var _ datastore.PropertyConverter = (*{{.}})(nil)
 
 // ToProperty implements datastore.PropertyConverter. It causes an embedded
 // '{{.}}' to serialize to an unindexed '[]byte' when used with the
-// "github.com/luci/gae" library.
+// "go.chromium.org/gae" library.
 func (p *{{.}}) ToProperty() (prop datastore.Property, err error) {
 	data, err := proto.Marshal(p)
 	if err == nil {
@@ -117,7 +117,7 @@ func (p *{{.}}) ToProperty() (prop datastore.Property, err error) {
 }
 
 // FromProperty implements datastore.PropertyConverter. It parses a '[]byte'
-// into an embedded '{{.}}' when used with the "github.com/luci/gae" library.
+// into an embedded '{{.}}' when used with the "go.chromium.org/gae" library.
 func (p *{{.}}) FromProperty(prop datastore.Property) error {
 	data, err := prop.Project(datastore.PTBytes)
 	if err != nil {

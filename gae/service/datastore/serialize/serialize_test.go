@@ -21,12 +21,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/gae/service/blobstore"
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/data/cmpbin"
+	"go.chromium.org/gae/service/blobstore"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/data/cmpbin"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func init() {

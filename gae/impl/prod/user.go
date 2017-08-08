@@ -15,13 +15,13 @@
 package prod
 
 import (
-	gae_user "github.com/luci/gae/service/user"
+	gae_user "go.chromium.org/gae/service/user"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/user"
 )
 
 // useUser adds a user service implementation to context, accessible
-// by "github.com/luci/gae/service/user".Raw(c) or the exported user service
+// by "go.chromium.org/gae/service/user".Raw(c) or the exported user service
 // methods.
 func useUser(c context.Context) context.Context {
 	return gae_user.SetFactory(c, func(ci context.Context) gae_user.RawInterface {

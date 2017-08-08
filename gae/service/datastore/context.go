@@ -15,7 +15,7 @@
 package datastore
 
 import (
-	"github.com/luci/gae/service/info"
+	"go.chromium.org/gae/service/info"
 
 	"golang.org/x/net/context"
 )

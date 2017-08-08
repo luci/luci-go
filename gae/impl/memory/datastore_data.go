@@ -20,10 +20,10 @@ import (
 	"strings"
 	"sync"
 
-	prodConstraints "github.com/luci/gae/impl/prod/constraints"
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/datastore/serialize"
-	"github.com/luci/luci-go/common/errors"
+	prodConstraints "go.chromium.org/gae/impl/prod/constraints"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/datastore/serialize"
+	"go.chromium.org/luci/common/errors"
 
 	"golang.org/x/net/context"
 )

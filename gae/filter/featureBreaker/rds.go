@@ -17,7 +17,7 @@ package featureBreaker
 import (
 	"golang.org/x/net/context"
 
-	ds "github.com/luci/gae/service/datastore"
+	ds "go.chromium.org/gae/service/datastore"
 )
 
 type dsState struct {

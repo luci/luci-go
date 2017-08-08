@@ -18,11 +18,11 @@ import (
 	"sync"
 	"time"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
-	mc "github.com/luci/gae/service/memcache"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
+	mc "go.chromium.org/gae/service/memcache"
 
-	"github.com/luci/luci-go/common/clock"
+	"go.chromium.org/luci/common/clock"
 
 	"golang.org/x/net/context"
 )

@@ -22,11 +22,11 @@ import (
 	"testing"
 	"time"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
 
 	"cloud.google.com/go/datastore"
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/errors"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"

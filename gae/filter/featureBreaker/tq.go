@@ -19,7 +19,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	tq "github.com/luci/gae/service/taskqueue"
+	tq "go.chromium.org/gae/service/taskqueue"
 )
 
 type tqState struct {
