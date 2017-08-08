@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luci/luci-go/common/clock/clockflag"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/flag/multiflag"
-	"github.com/luci/luci-go/logdog/client/butler/output"
-	out "github.com/luci/luci-go/logdog/client/butler/output/logdog"
+	"go.chromium.org/luci/common/clock/clockflag"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/flag/multiflag"
+	"go.chromium.org/luci/logdog/client/butler/output"
+	out "go.chromium.org/luci/logdog/client/butler/output/logdog"
 )
 
 func init() {

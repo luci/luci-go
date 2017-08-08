@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"time"
 
-	bucketApi "github.com/luci/luci-go/common/api/buildbucket/buildbucket/v1"
-	"github.com/luci/luci-go/milo/api/resp"
+	bucketApi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/milo/api/resp"
 )
 
 // buildEntry is a full buildbucket build along with its full resp rendering

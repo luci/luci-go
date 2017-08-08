@@ -18,17 +18,17 @@ import (
 	"math"
 	"time"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/data/rand/mathrand"
-	"github.com/luci/luci-go/common/errors"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry"
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/errors"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/router"
 
-	"github.com/luci/gae/impl/prod/constraints"
-	"github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
+	"go.chromium.org/gae/impl/prod/constraints"
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
 
 	"golang.org/x/net/context"
 )

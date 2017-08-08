@@ -5,7 +5,7 @@ syntax = "proto2";
 
 package ts_mon.proto;
 
-import "github.com/luci/luci-go/common/tsmon/ts_mon_proto/metrics.proto";
+import "go.chromium.org/luci/common/tsmon/ts_mon_proto/metrics.proto";
 
 message Request {
   optional MetricsPayload payload = 1;

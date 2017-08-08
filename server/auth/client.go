@@ -26,11 +26,11 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/server/auth/delegation"
-	"github.com/luci/luci-go/server/auth/identity"
-	"github.com/luci/luci-go/server/auth/internal"
+	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth/delegation"
+	"go.chromium.org/luci/server/auth/identity"
+	"go.chromium.org/luci/server/auth/internal"
 )
 
 // RPCAuthorityKind defines under whose authority RPCs are made.

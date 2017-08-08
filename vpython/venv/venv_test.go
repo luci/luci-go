@@ -23,20 +23,20 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/luci/luci-go/vpython/api/vpython"
-	"github.com/luci/luci-go/vpython/python"
+	"go.chromium.org/luci/vpython/api/vpython"
+	"go.chromium.org/luci/vpython/python"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/luci/luci-go/common/sync/parallel"
-	"github.com/luci/luci-go/common/system/filesystem"
-	"github.com/luci/luci-go/common/testing/testfs"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/common/system/filesystem"
+	"go.chromium.org/luci/common/testing/testfs"
 
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var verbose = flag.Bool("test.gologger", false, "Enable Go logging.")

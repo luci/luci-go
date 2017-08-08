@@ -19,9 +19,9 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry/transient"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"google.golang.org/api/googleapi"
 
 	"golang.org/x/net/context"

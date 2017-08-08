@@ -19,9 +19,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luci/luci-go/logdog/common/storage"
-	"github.com/luci/luci-go/logdog/common/types"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/logdog/common/storage"
+	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
 )
 
 type logStream struct {

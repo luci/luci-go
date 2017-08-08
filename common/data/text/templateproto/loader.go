@@ -17,7 +17,7 @@ package templateproto
 import (
 	"fmt"
 
-	"github.com/luci/luci-go/common/proto"
+	"go.chromium.org/luci/common/proto"
 )
 
 // LoadFile loads a File from a string containing the template text protobuf.

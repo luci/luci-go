@@ -21,11 +21,11 @@ import (
 	"net/http"
 	"time"
 
-	mc "github.com/luci/gae/service/memcache"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/scheduler/appengine/engine"
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/server/templates"
+	mc "go.chromium.org/gae/service/memcache"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/scheduler/appengine/engine"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/templates"
 )
 
 func jobPage(ctx *router.Context) {

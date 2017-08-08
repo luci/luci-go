@@ -24,9 +24,9 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/luci/luci-go/cipd/client/cipd/common"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/iotools"
+	"go.chromium.org/luci/cipd/client/cipd/common"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/iotools"
 )
 
 // File is an in-process representation of the 'ensure file' format.

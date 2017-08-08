@@ -34,20 +34,20 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/data/rand/mathrand"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/luci/luci-go/common/logging/memlogger"
-	"github.com/luci/luci-go/common/logging/teelogger"
-	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/common/retry"
-	"github.com/luci/luci-go/common/tsmon"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/common/logging/teelogger"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/tsmon"
 
-	"github.com/luci/luci-go/tokenserver/api"
-	"github.com/luci/luci-go/tokenserver/api/minter/v1"
+	"go.chromium.org/luci/tokenserver/api"
+	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
-	"github.com/luci/luci-go/tokenserver/client"
+	"go.chromium.org/luci/tokenserver/client"
 )
 
 // Version identifies the major revision of the tokend code.

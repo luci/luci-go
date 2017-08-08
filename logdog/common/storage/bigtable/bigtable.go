@@ -22,9 +22,9 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/grpc/grpcutil"
-	"github.com/luci/luci-go/logdog/common/storage"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/logdog/common/storage"
 )
 
 const (

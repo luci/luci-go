@@ -21,7 +21,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/tokenserver/api/admin/v1"
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
 )
 
 // IsRevokedCertRPC implements CertificateAuthorities.IsRevokedCert RPC method.

@@ -23,7 +23,7 @@ import (
 	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
 
-	"github.com/luci/luci-go/mmutex/lib"
+	"go.chromium.org/luci/mmutex/lib"
 )
 
 var cmdShared = &subcommands.Command{

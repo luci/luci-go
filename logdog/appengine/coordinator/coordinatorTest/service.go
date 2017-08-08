@@ -15,10 +15,10 @@
 package coordinatorTest
 
 import (
-	"github.com/luci/luci-go/logdog/api/config/svcconfig"
-	"github.com/luci/luci-go/logdog/appengine/coordinator"
-	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/logdog/api/config/svcconfig"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
+	"go.chromium.org/luci/logdog/appengine/coordinator/config"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
 )

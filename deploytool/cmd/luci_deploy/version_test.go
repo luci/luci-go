@@ -17,7 +17,7 @@ package main
 import (
 	"testing"
 
-	"github.com/luci/luci-go/deploytool/api/deploy"
+	"go.chromium.org/luci/deploytool/api/deploy"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

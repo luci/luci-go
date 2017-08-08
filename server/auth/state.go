@@ -20,8 +20,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/server/auth/authdb"
-	"github.com/luci/luci-go/server/auth/identity"
+	"go.chromium.org/luci/server/auth/authdb"
+	"go.chromium.org/luci/server/auth/identity"
 )
 
 // ErrNoAuthState is returned when a function requires State to be in the

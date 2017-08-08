@@ -17,10 +17,10 @@ package butler
 import (
 	"io"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/iotools"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/logdog/client/butler/bundler"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/iotools"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/logdog/client/butler/bundler"
 	"golang.org/x/net/context"
 )
 

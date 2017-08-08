@@ -17,12 +17,12 @@ package main
 import (
 	"os"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/flag/nestedflagset"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/logdog/client/butler"
-	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
-	"github.com/luci/luci-go/logdog/common/types"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/flag/nestedflagset"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/logdog/client/butler"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
+	"go.chromium.org/luci/logdog/common/types"
 
 	"github.com/maruel/subcommands"
 )

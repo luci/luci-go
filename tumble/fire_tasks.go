@@ -20,12 +20,12 @@ import (
 	"strings"
 	"time"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
-	tq "github.com/luci/gae/service/taskqueue"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
+	tq "go.chromium.org/gae/service/taskqueue"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 
 	"golang.org/x/net/context"
 )

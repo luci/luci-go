@@ -20,13 +20,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/common/sync/cancelcond"
-	"github.com/luci/luci-go/logdog/api/logpb"
-	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
-	"github.com/luci/luci-go/logdog/common/types"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/sync/cancelcond"
+	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
+	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
 )

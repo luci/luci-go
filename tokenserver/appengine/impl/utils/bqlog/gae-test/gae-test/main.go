@@ -25,12 +25,12 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/server/router"
 
-	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/bqlog"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bqlog"
 )
 
 var goatTeleportations = bqlog.Log{

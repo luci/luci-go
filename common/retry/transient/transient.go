@@ -25,8 +25,8 @@ package transient
 import (
 	"time"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/retry"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry"
 	"golang.org/x/net/context"
 )
 

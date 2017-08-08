@@ -16,9 +16,9 @@ package deps
 
 import (
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/luci/luci-go/common/logging"
-	dm "github.com/luci/luci-go/dm/api/service/v1"
-	"github.com/luci/luci-go/dm/appengine/mutate"
+	"go.chromium.org/luci/common/logging"
+	dm "go.chromium.org/luci/dm/api/service/v1"
+	"go.chromium.org/luci/dm/appengine/mutate"
 	"golang.org/x/net/context"
 )
 

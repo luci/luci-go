@@ -22,9 +22,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/appengine/gaetesting"
-	"github.com/luci/luci-go/server/auth/service"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/server/auth/service"
+	"go.chromium.org/luci/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

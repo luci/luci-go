@@ -19,7 +19,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/errors"
 )
 
 func writeTextProto(path string, msg proto.Message) error {

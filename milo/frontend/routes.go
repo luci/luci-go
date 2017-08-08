@@ -21,19 +21,19 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/grpc/discovery"
-	"github.com/luci/luci-go/grpc/grpcmon"
-	"github.com/luci/luci-go/grpc/prpc"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/grpc/discovery"
+	"go.chromium.org/luci/grpc/grpcmon"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/router"
 
-	milo "github.com/luci/luci-go/milo/api/proto"
-	"github.com/luci/luci-go/milo/buildsource"
-	"github.com/luci/luci-go/milo/buildsource/buildbot"
-	"github.com/luci/luci-go/milo/buildsource/buildbucket"
-	"github.com/luci/luci-go/milo/buildsource/rawpresentation"
-	"github.com/luci/luci-go/milo/buildsource/swarming"
-	"github.com/luci/luci-go/milo/rpc"
+	milo "go.chromium.org/luci/milo/api/proto"
+	"go.chromium.org/luci/milo/buildsource"
+	"go.chromium.org/luci/milo/buildsource/buildbot"
+	"go.chromium.org/luci/milo/buildsource/buildbucket"
+	"go.chromium.org/luci/milo/buildsource/rawpresentation"
+	"go.chromium.org/luci/milo/buildsource/swarming"
+	"go.chromium.org/luci/milo/rpc"
 )
 
 func emptyPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {

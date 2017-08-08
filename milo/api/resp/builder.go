@@ -19,7 +19,7 @@ package resp
 import (
 	"time"
 
-	"github.com/luci/luci-go/milo/common/model"
+	"go.chromium.org/luci/milo/common/model"
 )
 
 // Interval is a time interval which has a start, an end and a duration.

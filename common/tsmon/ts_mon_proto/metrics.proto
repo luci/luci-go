@@ -5,10 +5,10 @@ syntax = "proto2";
 
 package ts_mon.proto;
 
-import "github.com/luci/luci-go/common/tsmon/ts_mon_proto/any.proto";
-import "github.com/luci/luci-go/common/tsmon/ts_mon_proto/timestamp.proto";
-import "github.com/luci/luci-go/common/tsmon/ts_mon_proto/acquisition_network_device.proto";
-import "github.com/luci/luci-go/common/tsmon/ts_mon_proto/acquisition_task.proto";
+import "go.chromium.org/luci/common/tsmon/ts_mon_proto/any.proto";
+import "go.chromium.org/luci/common/tsmon/ts_mon_proto/timestamp.proto";
+import "go.chromium.org/luci/common/tsmon/ts_mon_proto/acquisition_network_device.proto";
+import "go.chromium.org/luci/common/tsmon/ts_mon_proto/acquisition_task.proto";
 
 message MetricsPayload {
   repeated MetricsCollection metrics_collection = 1;

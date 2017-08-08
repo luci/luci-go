@@ -24,7 +24,7 @@ import (
 	"fmt"
 	"hash/fnv"
 
-	"github.com/luci/luci-go/common/tsmon/types"
+	"go.chromium.org/luci/common/tsmon/types"
 )
 
 // A Task is a process or a service running on one or more machine.

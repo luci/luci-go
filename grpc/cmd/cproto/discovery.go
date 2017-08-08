@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	discoveryPackagePath = "github.com/luci/luci-go/grpc/discovery"
+	discoveryPackagePath = "go.chromium.org/luci/grpc/discovery"
 )
 
 // discoveryTmpl is template for generated Go discovery file.
@@ -41,7 +41,7 @@ var discoveryTmpl = template.Must(template.New("").Parse(strings.TrimSpace(`
 package {{.GoPkg}};
 
 {{if .ImportDiscovery}}
-import discovery "github.com/luci/luci-go/grpc/discovery"
+import discovery "go.chromium.org/luci/grpc/discovery"
 {{end}}
 import "github.com/golang/protobuf/protoc-gen-go/descriptor"
 

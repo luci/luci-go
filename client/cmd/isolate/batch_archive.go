@@ -29,13 +29,13 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
-	"github.com/luci/luci-go/client/archiver"
-	"github.com/luci/luci-go/client/isolate"
-	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/data/text/units"
-	logpb "github.com/luci/luci-go/common/eventlog/proto"
-	"github.com/luci/luci-go/common/isolated"
-	"github.com/luci/luci-go/common/isolatedclient"
+	"go.chromium.org/luci/client/archiver"
+	"go.chromium.org/luci/client/isolate"
+	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/data/text/units"
+	logpb "go.chromium.org/luci/common/eventlog/proto"
+	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/isolatedclient"
 )
 
 func cmdBatchArchive(defaultAuthOpts auth.Options) *subcommands.Command {

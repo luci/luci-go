@@ -32,7 +32,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/logging/gologger"
+	"go.chromium.org/luci/common/logging/gologger"
 )
 
 // Service contains the result of parsing the generated code for a pRPC service.

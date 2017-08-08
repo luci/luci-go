@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/scheduler/appengine/schedule"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/scheduler/appengine/schedule"
 )
 
 var epoch = time.Unix(1442270520, 0).UTC()

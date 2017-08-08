@@ -24,18 +24,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/iotools"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/milo/common"
-	"github.com/luci/luci-go/milo/common/model"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/iotools"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/server/router"
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/tsmon/field"
-	"github.com/luci/luci-go/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 )
 
 var (

@@ -28,12 +28,12 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry/transient"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/server/tokens"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/tokens"
 )
 
 // xsrfToken described how to generate tokens.

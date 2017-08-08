@@ -23,12 +23,12 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/data/bit_field"
-	google_pb "github.com/luci/luci-go/common/proto/google"
-	. "github.com/luci/luci-go/common/testing/assertions"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/bit_field"
+	google_pb "go.chromium.org/luci/common/proto/google"
+	. "go.chromium.org/luci/common/testing/assertions"
 
-	dm "github.com/luci/luci-go/dm/api/service/v1"
+	dm "go.chromium.org/luci/dm/api/service/v1"
 )
 
 func TestAttempt(t *testing.T) {

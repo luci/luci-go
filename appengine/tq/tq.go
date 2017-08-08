@@ -33,14 +33,14 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/taskqueue"
+	"go.chromium.org/gae/service/taskqueue"
 
-	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/common/data/stringset"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/router"
 )
 
 // Dispatcher submits and handles task queue tasks.

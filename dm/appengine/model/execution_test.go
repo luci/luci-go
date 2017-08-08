@@ -21,16 +21,16 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/luci/gae/filter/featureBreaker"
-	"github.com/luci/gae/impl/memory"
-	ds "github.com/luci/gae/service/datastore"
+	"go.chromium.org/gae/filter/featureBreaker"
+	"go.chromium.org/gae/impl/memory"
+	ds "go.chromium.org/gae/service/datastore"
 
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/logging/memlogger"
-	"github.com/luci/luci-go/common/proto/google"
-	. "github.com/luci/luci-go/common/testing/assertions"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/common/proto/google"
+	. "go.chromium.org/luci/common/testing/assertions"
 
-	"github.com/luci/luci-go/dm/api/service/v1"
+	"go.chromium.org/luci/dm/api/service/v1"
 )
 
 func TestExecutions(t *testing.T) {

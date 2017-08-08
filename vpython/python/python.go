@@ -18,7 +18,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/errors"
 )
 
 // Target describes a Python invocation target.

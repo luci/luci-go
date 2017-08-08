@@ -22,13 +22,13 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
 
-	"github.com/luci/gae/impl/memory"
-	"github.com/luci/luci-go/scheduler/appengine/messages"
-	"github.com/luci/luci-go/scheduler/appengine/task"
-	"github.com/luci/luci-go/scheduler/appengine/task/utils/tasktest"
+	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/scheduler/appengine/messages"
+	"go.chromium.org/luci/scheduler/appengine/task"
+	"go.chromium.org/luci/scheduler/appengine/task/utils/tasktest"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateProtoMessage(t *testing.T) {

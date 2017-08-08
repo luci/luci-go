@@ -18,18 +18,18 @@ import (
 	"fmt"
 	"testing"
 
-	configPB "github.com/luci/luci-go/common/proto/config"
-	"github.com/luci/luci-go/luci_config/server/cfgclient"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/authtest"
-	"github.com/luci/luci-go/server/auth/identity"
+	configPB "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/luci_config/server/cfgclient"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/identity"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type testingBackend struct {

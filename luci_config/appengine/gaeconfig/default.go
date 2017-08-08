@@ -21,24 +21,24 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/luci/luci-go/appengine/datastorecache"
-	"github.com/luci/luci-go/common/config/impl/filesystem"
-	"github.com/luci/luci-go/luci_config/appengine/backend/datastore"
-	"github.com/luci/luci-go/luci_config/appengine/backend/memcache"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/caching"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/client"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/erroring"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/format"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/appengine/datastorecache"
+	"go.chromium.org/luci/common/config/impl/filesystem"
+	"go.chromium.org/luci/luci_config/appengine/backend/datastore"
+	"go.chromium.org/luci/luci_config/appengine/backend/memcache"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/caching"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/client"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/erroring"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/format"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/server/router"
 
-	"github.com/luci/gae/service/info"
+	"go.chromium.org/gae/service/info"
 
 	"golang.org/x/net/context"
 
 	// Import to register the corresponding formatter.
-	_ "github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
+	_ "go.chromium.org/luci/luci_config/server/cfgclient/textproto"
 )
 
 // ErrNotConfigured is returned by cfgclient methods if the config service URL

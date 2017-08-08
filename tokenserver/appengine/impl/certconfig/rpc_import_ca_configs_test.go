@@ -19,16 +19,16 @@ import (
 
 	"golang.org/x/net/context"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/appengine/gaetesting"
-	"github.com/luci/luci-go/common/config/impl/memory"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
 
-	"github.com/luci/luci-go/tokenserver/api/admin/v1"
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestImportCAConfigsRPC(t *testing.T) {

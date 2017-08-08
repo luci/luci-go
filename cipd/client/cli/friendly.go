@@ -26,11 +26,11 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/client/authcli"
-	"github.com/luci/luci-go/common/cli"
+	"go.chromium.org/luci/client/authcli"
+	"go.chromium.org/luci/common/cli"
 
-	"github.com/luci/luci-go/cipd/client/cipd"
-	"github.com/luci/luci-go/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/client/cipd"
+	"go.chromium.org/luci/cipd/client/cipd/local"
 )
 
 ////////////////////////////////////////////////////////////////////////////////

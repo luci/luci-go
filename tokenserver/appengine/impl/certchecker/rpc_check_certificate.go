@@ -21,8 +21,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/tokenserver/api/admin/v1"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/utils"
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 )
 
 // CheckCertificateRPC implements CertificateAuthorities.CheckCertificate

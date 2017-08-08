@@ -27,7 +27,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/urlfetch"
+	"go.chromium.org/gae/service/urlfetch"
 )
 
 // GitTime is a date and time representation used by git log.

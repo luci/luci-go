@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/luci/luci-go/cipd/client/cipd/common"
+	"go.chromium.org/luci/cipd/client/cipd/common"
 )
 
 // an itemParser should parse the value from `val`, and update s or

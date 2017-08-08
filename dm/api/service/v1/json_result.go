@@ -17,7 +17,7 @@ package dm
 import (
 	"fmt"
 
-	template "github.com/luci/luci-go/common/data/text/templateproto"
+	template "go.chromium.org/luci/common/data/text/templateproto"
 )
 
 // JSONObjectMaxLength is the maximum number of bytes that may be present in the

@@ -20,8 +20,8 @@ import (
 	"net/http/httptest"
 	"os"
 
-	"github.com/luci/luci-go/common/isolatedclient/isolatedfake"
-	"github.com/luci/luci-go/common/lhttp"
+	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
+	"go.chromium.org/luci/common/lhttp"
 )
 
 // Flags contains values parsed from command line arguments.

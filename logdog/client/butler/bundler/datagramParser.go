@@ -17,8 +17,8 @@ package bundler
 import (
 	"io"
 
-	"github.com/luci/luci-go/common/data/recordio"
-	"github.com/luci/luci-go/logdog/api/logpb"
+	"go.chromium.org/luci/common/data/recordio"
+	"go.chromium.org/luci/logdog/api/logpb"
 )
 
 // datagramParser is a parser implementation for the LogDog datagram stream

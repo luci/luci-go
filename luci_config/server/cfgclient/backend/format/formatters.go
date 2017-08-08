@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/errors"
 )
 
 // registry is a registry of Resolver key mapped to the Formatter to use to

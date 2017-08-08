@@ -15,7 +15,7 @@
 package parallel
 
 import (
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/errors"
 )
 
 // WorkPool creates a fixed-size pool of worker goroutines. A supplied generator

@@ -6,7 +6,7 @@ syntax = "proto3";
 
 package milo;
 
-import "github.com/luci/luci-go/common/proto/milo/annotations.proto";
+import "go.chromium.org/luci/common/proto/milo/annotations.proto";
 
 // The BuildInfo service definition.
 //

@@ -19,9 +19,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/testclock"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	"golang.org/x/net/context"
 )
 

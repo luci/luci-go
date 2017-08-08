@@ -27,9 +27,9 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/api/googleapi"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/gcloud/iam"
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/gcloud/iam"
+	"go.chromium.org/luci/common/logging"
 )
 
 var (

@@ -7,7 +7,7 @@ package buildsource
 import (
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/milo/api/resp"
+	"go.chromium.org/luci/milo/api/resp"
 )
 
 // ID represents a universal 'build' ID. Each subpackage of buildsource

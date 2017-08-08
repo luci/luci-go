@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"time"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/logdog/appengine/coordinator"
-	"github.com/luci/luci-go/tumble"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
+	"go.chromium.org/luci/tumble"
 
 	"golang.org/x/net/context"
 )

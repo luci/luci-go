@@ -5,9 +5,9 @@
 package frontend
 
 import (
-	"github.com/luci/luci-go/milo/buildsource"
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/server/templates"
+	"go.chromium.org/luci/milo/buildsource"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/templates"
 )
 
 // BuildHandler is responsible for taking a universal build ID and rendering the

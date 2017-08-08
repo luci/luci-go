@@ -24,11 +24,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/data/caching/lru"
-	"github.com/luci/luci-go/common/data/rand/mathrand"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/sync/mutexpool"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/caching/lru"
+	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/mutexpool"
 )
 
 // Cache implements a strongly consistent cache.

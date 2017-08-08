@@ -20,11 +20,11 @@ import (
 	"cloud.google.com/go/datastore"
 	"google.golang.org/appengine"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/milo/common"
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/server/templates"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/templates"
 )
 
 // ConfigsHandler renders the page showing the currently loaded set of luci-configs.

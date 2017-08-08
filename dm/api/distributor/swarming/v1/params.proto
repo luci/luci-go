@@ -6,8 +6,8 @@ syntax = "proto3";
 
 import "google/protobuf/duration.proto";
 
-import "github.com/luci/luci-go/dm/api/distributor/swarming/v1/cipd.proto";
-import "github.com/luci/luci-go/dm/api/distributor/swarming/v1/isolate_ref.proto";
+import "go.chromium.org/luci/dm/api/distributor/swarming/v1/cipd.proto";
+import "go.chromium.org/luci/dm/api/distributor/swarming/v1/isolate_ref.proto";
 
 package swarmingV1;
 

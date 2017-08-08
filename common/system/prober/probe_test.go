@@ -25,14 +25,14 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/luci/luci-go/common/system/environ"
-	"github.com/luci/luci-go/common/testing/testfs"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/testing/testfs"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func baseTestContext() context.Context {

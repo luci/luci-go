@@ -22,7 +22,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/client/cipd/local"
 )
 
 func (client *clientImpl) installClient(ctx context.Context, fs local.FileSystem, h hash.Hash, fetchURL, destination, digest string) error {

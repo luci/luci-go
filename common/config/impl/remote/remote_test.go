@@ -25,8 +25,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/config"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/config"
 )
 
 func encodeToB(s string) string {

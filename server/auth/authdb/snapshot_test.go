@@ -22,11 +22,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/server/auth/identity"
-	"github.com/luci/luci-go/server/auth/internal"
-	"github.com/luci/luci-go/server/auth/service/protocol"
-	"github.com/luci/luci-go/server/auth/signing"
-	"github.com/luci/luci-go/server/auth/signing/signingtest"
+	"go.chromium.org/luci/server/auth/identity"
+	"go.chromium.org/luci/server/auth/internal"
+	"go.chromium.org/luci/server/auth/service/protocol"
+	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/auth/signing/signingtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

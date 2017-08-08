@@ -22,7 +22,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/luci/luci-go/common/isolatedclient"
+	"go.chromium.org/luci/common/isolatedclient"
 
 	"golang.org/x/net/context"
 )

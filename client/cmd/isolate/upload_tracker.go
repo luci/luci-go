@@ -25,8 +25,8 @@ import (
 	"strings"
 
 	humanize "github.com/dustin/go-humanize"
-	"github.com/luci/luci-go/common/isolated"
-	"github.com/luci/luci-go/common/isolatedclient"
+	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/isolatedclient"
 )
 
 // limitedOS contains a subset of the functions from the os package.

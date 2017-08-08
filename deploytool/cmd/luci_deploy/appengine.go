@@ -19,8 +19,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/deploytool/api/deploy"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/deploytool/api/deploy"
 	"gopkg.in/yaml.v2"
 )
 

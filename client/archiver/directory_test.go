@@ -24,11 +24,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/client/internal/common"
-	"github.com/luci/luci-go/common/data/text/units"
-	"github.com/luci/luci-go/common/isolated"
-	"github.com/luci/luci-go/common/isolatedclient"
-	"github.com/luci/luci-go/common/isolatedclient/isolatedfake"
+	"go.chromium.org/luci/client/internal/common"
+	"go.chromium.org/luci/common/data/text/units"
+	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

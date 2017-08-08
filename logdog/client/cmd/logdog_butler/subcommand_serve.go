@@ -15,8 +15,8 @@
 package main
 
 import (
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/logdog/client/butler"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/logdog/client/butler"
 
 	"github.com/maruel/subcommands"
 )

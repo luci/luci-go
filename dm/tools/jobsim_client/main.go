@@ -28,14 +28,14 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
-	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/common/data/rand/cryptorand"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/luci/luci-go/common/retry"
-	dm "github.com/luci/luci-go/dm/api/service/v1"
-	"github.com/luci/luci-go/grpc/prpc"
-	"github.com/luci/luci-go/lucictx"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/data/rand/cryptorand"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/retry"
+	dm "go.chromium.org/luci/dm/api/service/v1"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/lucictx"
 )
 
 type cmdRun struct {

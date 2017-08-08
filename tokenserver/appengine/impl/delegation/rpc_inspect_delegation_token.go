@@ -19,10 +19,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/server/auth/delegation/messages"
-	"github.com/luci/luci-go/server/auth/signing"
+	"go.chromium.org/luci/server/auth/delegation/messages"
+	"go.chromium.org/luci/server/auth/signing"
 
-	admin "github.com/luci/luci-go/tokenserver/api/admin/v1"
+	admin "go.chromium.org/luci/tokenserver/api/admin/v1"
 )
 
 // InspectDelegationTokenRPC implements Admin.InspectDelegationToken RPC method.

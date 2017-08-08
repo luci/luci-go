@@ -18,9 +18,9 @@ import (
 	"bytes"
 	"time"
 
-	"github.com/luci/gae/service/datastore"
+	"go.chromium.org/gae/service/datastore"
 
-	"github.com/luci/luci-go/common/data/cmpbin"
+	"go.chromium.org/luci/common/data/cmpbin"
 )
 
 // ManifestKey is an index entry for BuildSummary, which looks like

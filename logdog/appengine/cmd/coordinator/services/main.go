@@ -20,19 +20,19 @@ import (
 	// Importing pprof implicitly installs "/debug/*" profiling handlers.
 	_ "net/http/pprof"
 
-	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/grpc/prpc"
+	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/grpc/prpc"
 
-	registrationPb "github.com/luci/luci-go/logdog/api/endpoints/coordinator/registration/v1"
-	servicesPb "github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
-	"github.com/luci/luci-go/logdog/appengine/coordinator"
-	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints/registration"
-	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints/services"
-	"github.com/luci/luci-go/server/router"
+	registrationPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
+	servicesPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/registration"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/services"
+	"go.chromium.org/luci/server/router"
 
 	// Include mutations package so its Mutations will register with tumble via
 	// init().
-	_ "github.com/luci/luci-go/logdog/appengine/coordinator/mutations"
+	_ "go.chromium.org/luci/logdog/appengine/coordinator/mutations"
 )
 
 // Run installs and executes this site.

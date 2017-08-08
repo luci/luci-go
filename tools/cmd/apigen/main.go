@@ -18,9 +18,9 @@ import (
 	"flag"
 	"os"
 
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/luci/luci-go/tools/internal/apigen"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/tools/internal/apigen"
 	"golang.org/x/net/context"
 )
 

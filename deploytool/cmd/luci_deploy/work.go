@@ -26,11 +26,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/sync/parallel"
-	"github.com/luci/luci-go/common/system/exitcode"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/common/system/exitcode"
 
 	"golang.org/x/net/context"
 )

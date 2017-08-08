@@ -22,11 +22,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/impl/memory"
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/urlfetch"
-	"github.com/luci/luci-go/scheduler/appengine/messages"
-	"github.com/luci/luci-go/scheduler/appengine/task/utils/tasktest"
+	"go.chromium.org/gae/impl/memory"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/urlfetch"
+	"go.chromium.org/luci/scheduler/appengine/messages"
+	"go.chromium.org/luci/scheduler/appengine/task/utils/tasktest"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

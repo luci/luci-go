@@ -20,8 +20,8 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 
-	"github.com/luci/luci-go/dm/api/distributor/jobsim"
-	"github.com/luci/luci-go/dm/api/service/v1"
+	"go.chromium.org/luci/dm/api/distributor/jobsim"
+	"go.chromium.org/luci/dm/api/service/v1"
 )
 
 type jobsimStatus string

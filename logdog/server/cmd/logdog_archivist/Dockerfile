@@ -2,7 +2,7 @@
 # single application.
 FROM golang:1.7
 
-ENV mainpkg "github.com/luci/luci-go/logdog/server/cmd/logdog_archivist"
+ENV mainpkg "go.chromium.org/luci/logdog/server/cmd/logdog_archivist"
 
 # Copy the local package files to the container's workspace.
 ADD _gopath/src/ /go/src

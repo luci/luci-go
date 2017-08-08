@@ -20,8 +20,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/common"
+	"go.chromium.org/luci/milo/api/resp"
+	"go.chromium.org/luci/milo/common"
 )
 
 func GetAllBuilders(c context.Context) (*resp.CIService, error) {

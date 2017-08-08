@@ -4,7 +4,7 @@
 
 syntax = "proto3";
 
-import "github.com/luci/luci-go/dm/api/service/v1/graph_data.proto";
+import "go.chromium.org/luci/dm/api/service/v1/graph_data.proto";
 
 package dm;
 

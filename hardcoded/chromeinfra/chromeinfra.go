@@ -25,8 +25,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/luci/luci-go/common/auth"
 	homedir "github.com/mitchellh/go-homedir"
+	"go.chromium.org/luci/common/auth"
 )
 
 // TODO(vadimsh): Move the rest of hardcoded stuff here:

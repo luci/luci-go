@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/api/logpb"
 )
 
 var (

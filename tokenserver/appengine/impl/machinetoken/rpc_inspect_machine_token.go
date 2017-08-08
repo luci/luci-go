@@ -22,14 +22,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/server/auth/signing"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/auth/signing"
 
-	tokenserver "github.com/luci/luci-go/tokenserver/api"
-	admin "github.com/luci/luci-go/tokenserver/api/admin/v1"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
+	admin "go.chromium.org/luci/tokenserver/api/admin/v1"
 
-	"github.com/luci/luci-go/tokenserver/appengine/impl/certchecker"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/certconfig"
+	"go.chromium.org/luci/tokenserver/appengine/impl/certchecker"
+	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
 )
 
 // InspectMachineTokenRPC implements Admin.InspectMachineToken API method.

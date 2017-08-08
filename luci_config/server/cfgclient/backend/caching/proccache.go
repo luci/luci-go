@@ -18,8 +18,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luci/luci-go/common/data/caching/proccache"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/common/data/caching/proccache"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
 
 	"golang.org/x/net/context"
 )

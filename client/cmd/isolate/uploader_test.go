@@ -25,7 +25,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/isolatedclient"
+	"go.chromium.org/luci/common/isolatedclient"
 )
 
 type fakePushService struct {

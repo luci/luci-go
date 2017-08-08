@@ -19,12 +19,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luci/luci-go/common/data/recordio"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/logdog/common/storage"
-	"github.com/luci/luci-go/logdog/common/storage/caching"
-	"github.com/luci/luci-go/logdog/common/types"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/common/data/recordio"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/logdog/common/storage"
+	"go.chromium.org/luci/logdog/common/storage/caching"
+	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"cloud.google.com/go/bigtable"
 	"golang.org/x/net/context"

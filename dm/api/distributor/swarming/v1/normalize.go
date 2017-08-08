@@ -21,7 +21,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/luci/luci-go/common/proto/google"
+	"go.chromium.org/luci/common/proto/google"
 )
 
 // DefaultSwarmingPriority is the priority used if

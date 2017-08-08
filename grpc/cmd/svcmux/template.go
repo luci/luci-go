@@ -17,7 +17,7 @@ package main
 import (
 	"text/template"
 
-	"github.com/luci/luci-go/grpc/internal/svctool"
+	"go.chromium.org/luci/grpc/internal/svctool"
 )
 
 var (
@@ -27,7 +27,7 @@ var (
 package {{.PackageName}}
 
 import (
-	svcmux "github.com/luci/luci-go/server/svcmux"
+	svcmux "go.chromium.org/luci/server/svcmux"
 	context "golang.org/x/net/context"
 	{{range .ExtraImports}}
 	{{.Name}} "{{.Path}}"{{end}}

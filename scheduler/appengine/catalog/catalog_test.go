@@ -22,15 +22,15 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
 
-	memcfg "github.com/luci/luci-go/common/config/impl/memory"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
+	memcfg "go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
 
-	"github.com/luci/luci-go/scheduler/appengine/acl"
-	"github.com/luci/luci-go/scheduler/appengine/messages"
-	"github.com/luci/luci-go/scheduler/appengine/task"
+	"go.chromium.org/luci/scheduler/appengine/acl"
+	"go.chromium.org/luci/scheduler/appengine/messages"
+	"go.chromium.org/luci/scheduler/appengine/task"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRegisterTaskManagerAndFriends(t *testing.T) {

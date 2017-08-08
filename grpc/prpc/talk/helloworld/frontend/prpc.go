@@ -15,11 +15,11 @@
 package helloworld
 
 import (
-	"github.com/luci/luci-go/grpc/discovery"
-	"github.com/luci/luci-go/grpc/prpc"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/grpc/discovery"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/router"
 
-	"github.com/luci/luci-go/grpc/prpc/talk/helloworld/proto"
+	"go.chromium.org/luci/grpc/prpc/talk/helloworld/proto"
 )
 
 func InstallAPIRoutes(r *router.Router, base router.MiddlewareChain) {

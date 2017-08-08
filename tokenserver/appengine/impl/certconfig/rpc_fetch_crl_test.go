@@ -23,15 +23,15 @@ import (
 
 	"golang.org/x/net/context"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/gaetesting"
-	"github.com/luci/luci-go/server/auth"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/server/auth"
 
-	"github.com/luci/luci-go/tokenserver/api/admin/v1"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/utils"
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestFetchCRLRPC(t *testing.T) {

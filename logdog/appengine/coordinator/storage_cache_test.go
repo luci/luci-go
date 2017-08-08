@@ -18,13 +18,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/logdog/common/storage/caching"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/logdog/common/storage/caching"
 
-	"github.com/luci/gae/filter/featureBreaker"
-	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/memcache"
+	"go.chromium.org/gae/filter/featureBreaker"
+	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/gae/service/memcache"
 
 	"golang.org/x/net/context"
 

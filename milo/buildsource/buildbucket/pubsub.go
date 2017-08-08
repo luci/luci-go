@@ -12,19 +12,19 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
-	bucketApi "github.com/luci/luci-go/common/api/buildbucket/buildbucket/v1"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/common/tsmon/field"
-	"github.com/luci/luci-go/common/tsmon/metric"
-	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/buildsource/swarming"
-	"github.com/luci/luci-go/milo/common"
-	"github.com/luci/luci-go/milo/common/model"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/gae/service/datastore"
+	bucketApi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/milo/api/resp"
+	"go.chromium.org/luci/milo/buildsource/swarming"
+	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/server/router"
 )
 
 var (

@@ -20,9 +20,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/logging/memlogger"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

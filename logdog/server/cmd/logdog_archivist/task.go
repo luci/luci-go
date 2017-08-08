@@ -18,8 +18,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 
 	gcps "cloud.google.com/go/pubsub"
 	"github.com/golang/protobuf/proto"

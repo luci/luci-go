@@ -19,10 +19,10 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/luci/luci-go/common/errors"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/luci_config/server/cfgclient"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/common/errors"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/luci_config/server/cfgclient"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
 
 	"golang.org/x/net/context"
 )
@@ -108,9 +108,9 @@ func (k *Key) Params() backend.Params {
 // Content, which will hold the formatted value if it has been formatted.
 //
 // See Formatter in
-// github.com/luci/luci-go/luci_config/server/cfgclient
+// go.chromium.org/luci/luci_config/server/cfgclient
 // and Backend in
-// github.com/luci/luci-go/luci_config/server/cfgclient.backend/format
+// go.chromium.org/luci/luci_config/server/cfgclient.backend/format
 // for more information.
 type ValueItem struct {
 	ConfigSet string `json:"cs,omitempty"`

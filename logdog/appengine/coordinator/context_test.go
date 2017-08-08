@@ -19,19 +19,19 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/luci/gae/impl/memory"
-	"github.com/luci/luci-go/logdog/api/config/svcconfig"
-	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
-	"github.com/luci/luci-go/luci_config/server/cfgclient"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/authtest"
-	"github.com/luci/luci-go/server/auth/identity"
+	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/logdog/api/config/svcconfig"
+	"go.chromium.org/luci/logdog/appengine/coordinator/config"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/luci_config/server/cfgclient"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/identity"
 
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type testServices struct {

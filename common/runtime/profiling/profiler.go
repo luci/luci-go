@@ -28,9 +28,9 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 )
 
 // Profiler helps setup and manage profiling

@@ -30,15 +30,15 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/luci/luci-go/common/clock"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry"
-	"github.com/luci/luci-go/common/sync/parallel"
+	"go.chromium.org/luci/common/clock"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/sync/parallel"
 	"golang.org/x/net/context"
 )
 
 const (
-	defaultPackageBase = "github.com/luci/luci-go/common/api"
+	defaultPackageBase = "go.chromium.org/luci/common/api"
 
 	// chromiumLicence is the standard Chromium license header.
 	chromiumLicense = `` +

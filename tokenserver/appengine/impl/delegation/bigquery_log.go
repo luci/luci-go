@@ -21,13 +21,13 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/logging"
 
-	"github.com/luci/luci-go/tokenserver/api/admin/v1"
-	"github.com/luci/luci-go/tokenserver/api/minter/v1"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/utils"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/bqlog"
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
+	"go.chromium.org/luci/tokenserver/api/minter/v1"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bqlog"
 )
 
 var delegationTokensLog = bqlog.Log{

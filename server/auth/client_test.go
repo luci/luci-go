@@ -25,10 +25,10 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
-	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/server/auth/delegation"
-	"github.com/luci/luci-go/server/auth/identity"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/server/auth/delegation"
+	"go.chromium.org/luci/server/auth/identity"
 )
 
 func TestGetRPCTransport(t *testing.T) {

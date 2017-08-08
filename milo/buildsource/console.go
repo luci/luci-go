@@ -19,14 +19,14 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
+	"go.chromium.org/gae/service/datastore"
 
-	"github.com/luci/luci-go/common/data/stringset"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/sync/parallel"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/sync/parallel"
 
-	"github.com/luci/luci-go/milo/common"
-	"github.com/luci/luci-go/milo/common/model"
+	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/common/model"
 )
 
 // ConsoleRow is one row of a particular console.

@@ -17,7 +17,7 @@ package testsecrets
 import (
 	"testing"
 
-	"github.com/luci/luci-go/server/secrets"
+	"go.chromium.org/luci/server/secrets"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

@@ -21,14 +21,14 @@ import (
 	"testing"
 	"time"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/appengine/gaetesting"
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/luci/luci-go/common/tsmon"
-	"github.com/luci/luci-go/common/tsmon/monitor"
-	"github.com/luci/luci-go/server/router"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/monitor"
+	"go.chromium.org/luci/server/router"
 
 	"golang.org/x/net/context"
 

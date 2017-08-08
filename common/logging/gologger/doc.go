@@ -20,8 +20,8 @@
 // Default usage (logging to stderr):
 //
 //   import (
-//     "github.com/luci/luci-go/common/logging"
-//     "github.com/luci/luci-go/common/logging/gologger"
+//     "go.chromium.org/luci/common/logging"
+//     "go.chromium.org/luci/common/logging/gologger"
 //   )
 //
 //   ...

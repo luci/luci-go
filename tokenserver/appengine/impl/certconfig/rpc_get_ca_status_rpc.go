@@ -19,10 +19,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	ds "github.com/luci/gae/service/datastore"
+	ds "go.chromium.org/gae/service/datastore"
 
-	"github.com/luci/luci-go/tokenserver/api/admin/v1"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/utils"
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 )
 
 // GetCAStatusRPC implements CertificateAuthorities.GetCAStatus RPC method.

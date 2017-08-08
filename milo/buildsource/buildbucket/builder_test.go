@@ -23,11 +23,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/luci/gae/impl/memory"
-	"github.com/luci/luci-go/common/clock/testclock"
-	memcfg "github.com/luci/luci-go/common/config/impl/memory"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
-	"github.com/luci/luci-go/milo/common"
+	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/common/clock/testclock"
+	memcfg "go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/milo/common"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"

@@ -20,11 +20,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/gae/impl/memory"
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/clock/testclock"
-	milo "github.com/luci/luci-go/milo/api/proto"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/gae/impl/memory"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/clock/testclock"
+	milo "go.chromium.org/luci/milo/api/proto"
 	"golang.org/x/net/context"
 )
 

@@ -18,10 +18,10 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/client/authcli"
-	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/common/logging/gologger"
+	"go.chromium.org/luci/client/authcli"
+	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/logging/gologger"
 )
 
 // GetApplication returns cli.Application that implements 'authutil'.

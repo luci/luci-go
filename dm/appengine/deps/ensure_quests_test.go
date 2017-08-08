@@ -18,11 +18,11 @@ import (
 	"testing"
 	"time"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/dm/api/service/v1"
-	"github.com/luci/luci-go/dm/appengine/model"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/dm/api/service/v1"
+	"go.chromium.org/luci/dm/appengine/model"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

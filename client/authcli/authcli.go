@@ -55,8 +55,8 @@
 //
 //	import (
 //	  ...
-//	  "github.com/luci/luci-go/client/authcli"
-//	  "github.com/luci/luci-go/common/cli"
+//	  "go.chromium.org/luci/client/authcli"
+//	  "go.chromium.org/luci/common/cli"
 //	)
 //
 //	func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
@@ -98,13 +98,13 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/auth/localauth"
-	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/common/gcloud/googleoauth"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/system/exitcode"
-	"github.com/luci/luci-go/lucictx"
+	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/auth/localauth"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/gcloud/googleoauth"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/exitcode"
+	"go.chromium.org/luci/lucictx"
 )
 
 // CommandParams specifies various parameters for a subcommand.

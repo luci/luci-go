@@ -17,13 +17,13 @@ package common
 import (
 	"testing"
 
-	"github.com/luci/gae/impl/memory"
-	memcfg "github.com/luci/luci-go/common/config/impl/memory"
-	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/authtest"
-	"github.com/luci/luci-go/server/auth/identity"
+	"go.chromium.org/gae/impl/memory"
+	memcfg "go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/identity"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"

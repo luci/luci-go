@@ -17,11 +17,11 @@ package tumble
 import (
 	"testing"
 
-	ds "github.com/luci/gae/service/datastore"
+	ds "go.chromium.org/gae/service/datastore"
 
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/logging/memlogger"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 )
 
 func TestAddToJournal(t *testing.T) {

@@ -26,11 +26,11 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"github.com/luci/luci-go/client/internal/common"
-	"github.com/luci/luci-go/common/api/swarming/swarming/v1"
-	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/data/text/units"
-	"github.com/luci/luci-go/common/flag/stringmapflag"
+	"go.chromium.org/luci/client/internal/common"
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/data/text/units"
+	"go.chromium.org/luci/common/flag/stringmapflag"
 )
 
 func cmdTrigger(defaultAuthOpts auth.Options) *subcommands.Command {

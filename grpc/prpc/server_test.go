@@ -25,7 +25,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

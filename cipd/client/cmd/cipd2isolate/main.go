@@ -24,18 +24,18 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/cipd/client/cipd"
-	"github.com/luci/luci-go/cipd/client/cipd/ensure"
-	cipdcli "github.com/luci/luci-go/cipd/client/cli"
-	"github.com/luci/luci-go/cipd/version"
-	"github.com/luci/luci-go/client/authcli"
-	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/common/data/rand/mathrand"
-	"github.com/luci/luci-go/common/isolatedclient"
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/cipd/client/cipd"
+	"go.chromium.org/luci/cipd/client/cipd/ensure"
+	cipdcli "go.chromium.org/luci/cipd/client/cli"
+	"go.chromium.org/luci/cipd/version"
+	"go.chromium.org/luci/client/authcli"
+	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/logging"
 
-	"github.com/luci/luci-go/hardcoded/chromeinfra"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
 func main() {
@@ -87,7 +87,7 @@ func cmdIsolate(params cipdcli.Parameters) *subcommands.Command {
 				fmt.Sprintf("Directory for shared CIPD cache (can also be set by %s env var).", cipd.EnvCacheDir))
 			c.Flags.StringVar(&c.ensureFile, "cipd-ensure-file", "",
 				`An "ensure" file with packages to isolate. See syntax described here: `+
-					`https://godoc.org/github.com/luci/luci-go/cipd/client/cipd/ensure.`+
+					`https://godoc.org/go.chromium.org/luci/cipd/client/cipd/ensure.`+
 					` Providing '-' will read from stdin.`)
 			c.Flags.StringVar(&c.workDir, "work-dir", "./c2i_work", "A directory to keep temporary files in.")
 

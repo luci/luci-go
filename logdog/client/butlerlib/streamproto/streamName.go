@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 	"flag"
 
-	"github.com/luci/luci-go/logdog/common/types"
+	"go.chromium.org/luci/logdog/common/types"
 )
 
 // StreamNameFlag is a flag and JSON-compatible type that converts to/from a

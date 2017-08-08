@@ -17,7 +17,7 @@ package renderer
 import (
 	"io"
 
-	"github.com/luci/luci-go/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/api/logpb"
 )
 
 // Source returns successive LogEntry records for processing.

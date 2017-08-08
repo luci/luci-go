@@ -17,9 +17,9 @@ package gaemiddleware
 import (
 	"net/http"
 
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/router"
 )
 
 var devAppserverBypassFn = info.IsDevAppServer

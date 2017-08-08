@@ -15,11 +15,11 @@
 package coordinator
 
 import (
-	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/grpc/prpc"
-	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
-	"github.com/luci/luci-go/logdog/common/types"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
 )
 
 var (

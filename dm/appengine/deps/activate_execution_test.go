@@ -17,10 +17,10 @@ package deps
 import (
 	"testing"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
-	dm "github.com/luci/luci-go/dm/api/service/v1"
-	"github.com/luci/luci-go/dm/appengine/distributor/fake"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
+	dm "go.chromium.org/luci/dm/api/service/v1"
+	"go.chromium.org/luci/dm/appengine/distributor/fake"
 )
 
 func TestActivateExecution(t *testing.T) {

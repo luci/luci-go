@@ -26,21 +26,21 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/vpython"
-	vpythonAPI "github.com/luci/luci-go/vpython/api/vpython"
-	"github.com/luci/luci-go/vpython/python"
-	"github.com/luci/luci-go/vpython/spec"
-	"github.com/luci/luci-go/vpython/venv"
+	"go.chromium.org/luci/vpython"
+	vpythonAPI "go.chromium.org/luci/vpython/api/vpython"
+	"go.chromium.org/luci/vpython/python"
+	"go.chromium.org/luci/vpython/spec"
+	"go.chromium.org/luci/vpython/venv"
 
-	cipdVersion "github.com/luci/luci-go/cipd/version"
-	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/luci/luci-go/common/system/environ"
-	"github.com/luci/luci-go/common/system/exitcode"
-	"github.com/luci/luci-go/common/system/filesystem"
-	"github.com/luci/luci-go/common/system/prober"
+	cipdVersion "go.chromium.org/luci/cipd/version"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/system/exitcode"
+	"go.chromium.org/luci/common/system/filesystem"
+	"go.chromium.org/luci/common/system/prober"
 )
 
 const (
@@ -91,7 +91,7 @@ type Config struct {
 	// that include both the wrapper and a real implementation, to force the
 	// wrapper to use the bundled implementation if present.
 	//
-	// See "github.com/luci/luci-go/common/wrapper/prober.Probe"'s
+	// See "go.chromium.org/luci/common/wrapper/prober.Probe"'s
 	// RelativePathOverride member for more information.
 	RelativePathOverride []string
 

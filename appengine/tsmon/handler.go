@@ -19,13 +19,13 @@ import (
 
 	"golang.org/x/net/context"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/tsmon"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/server/router"
 )
 
 // InstallHandlers installs HTTP handlers for tsmon routes.

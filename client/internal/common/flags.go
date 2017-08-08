@@ -25,9 +25,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/luci/luci-go/common/runtime/tracer"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/runtime/tracer"
 )
 
 // Flags contains values parsed from command line arguments.

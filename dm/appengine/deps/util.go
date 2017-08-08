@@ -15,8 +15,8 @@
 package deps
 
 import (
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/grpc/grpcutil"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"google.golang.org/grpc/codes"
 )
 

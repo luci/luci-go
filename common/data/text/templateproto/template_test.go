@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func parse(template string) *File_Template {

@@ -26,12 +26,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/luci/luci-go/client/archiver"
-	"github.com/luci/luci-go/common/flag/stringlistflag"
-	"github.com/luci/luci-go/common/flag/stringmapflag"
-	"github.com/luci/luci-go/common/isolated"
-	"github.com/luci/luci-go/common/isolatedclient"
-	"github.com/luci/luci-go/common/runtime/tracer"
+	"go.chromium.org/luci/client/archiver"
+	"go.chromium.org/luci/common/flag/stringlistflag"
+	"go.chromium.org/luci/common/flag/stringmapflag"
+	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/runtime/tracer"
 )
 
 // IsolatedGenJSONVersion is used in the batcharchive json format.

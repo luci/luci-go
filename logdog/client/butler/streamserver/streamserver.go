@@ -17,7 +17,7 @@ package streamserver
 import (
 	"io"
 
-	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 )
 
 // StreamServer is an interface to a backgound service that allows external
@@ -30,7 +30,7 @@ type StreamServer interface {
 	// return a client for this StreamServer.
 	//
 	// Full package is:
-	// github.com/luci/luci-go/logdog/butlerlib/streamclient
+	// go.chromium.org/luci/logdog/butlerlib/streamclient
 	//
 	// Address may only be called while the StreamServer is actively listening.
 	Address() string

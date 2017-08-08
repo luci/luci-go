@@ -24,16 +24,16 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
 
-	"github.com/luci/luci-go/common/data/sortby"
-	"github.com/luci/luci-go/scheduler/appengine/catalog"
-	"github.com/luci/luci-go/scheduler/appengine/engine"
-	"github.com/luci/luci-go/scheduler/appengine/messages"
-	"github.com/luci/luci-go/scheduler/appengine/presentation"
-	"github.com/luci/luci-go/scheduler/appengine/schedule"
-	"github.com/luci/luci-go/scheduler/appengine/task"
+	"go.chromium.org/luci/common/data/sortby"
+	"go.chromium.org/luci/scheduler/appengine/catalog"
+	"go.chromium.org/luci/scheduler/appengine/engine"
+	"go.chromium.org/luci/scheduler/appengine/messages"
+	"go.chromium.org/luci/scheduler/appengine/presentation"
+	"go.chromium.org/luci/scheduler/appengine/schedule"
+	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
 // schedulerJob is UI representation of engine.Job entity.

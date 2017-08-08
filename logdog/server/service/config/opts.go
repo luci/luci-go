@@ -17,13 +17,13 @@ package config
 import (
 	"time"
 
-	"github.com/luci/luci-go/appengine/datastorecache"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/sync/mutexpool"
-	"github.com/luci/luci-go/luci_config/appengine/backend/datastore"
-	"github.com/luci/luci-go/luci_config/appengine/gaeconfig"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/caching"
+	"go.chromium.org/luci/appengine/datastorecache"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/mutexpool"
+	"go.chromium.org/luci/luci_config/appengine/backend/datastore"
+	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/caching"
 
 	"golang.org/x/net/context"
 )

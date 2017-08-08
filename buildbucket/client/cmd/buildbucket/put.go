@@ -20,9 +20,9 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"github.com/luci/luci-go/common/api/buildbucket/buildbucket/v1"
-	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/cli"
+	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/cli"
 )
 
 func cmdPutBatch(defaultAuthOpts auth.Options) *subcommands.Command {
@@ -30,7 +30,7 @@ func cmdPutBatch(defaultAuthOpts auth.Options) *subcommands.Command {
 		UsageLine: `put [flags] <JSON request>...`,
 		ShortDesc: "schedule builds",
 		LongDesc: "Schedule builds. \n" +
-			"See https://godoc.org/github.com/luci/luci-go/common/api/" +
+			"See https://godoc.org/go.chromium.org/luci/common/api/" +
 			"buildbucket/buildbucket/v1#ApiPutBatchRequestMessage " +
 			"for JSON request message schema.",
 		CommandRun: func() subcommands.CommandRun {

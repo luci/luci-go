@@ -27,7 +27,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/retry"
+	"go.chromium.org/luci/common/retry"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

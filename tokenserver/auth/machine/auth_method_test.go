@@ -25,16 +25,16 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/logging/memlogger"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/authtest"
-	"github.com/luci/luci-go/server/auth/signing"
-	"github.com/luci/luci-go/server/auth/signing/signingtest"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/auth/signing/signingtest"
 
-	"github.com/luci/luci-go/tokenserver/api"
+	"go.chromium.org/luci/tokenserver/api"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

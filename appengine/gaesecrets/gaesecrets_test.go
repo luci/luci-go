@@ -17,8 +17,8 @@ package gaesecrets
 import (
 	"testing"
 
-	"github.com/luci/gae/impl/memory"
-	"github.com/luci/luci-go/server/secrets"
+	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/server/secrets"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"

@@ -19,18 +19,18 @@ import (
 	"testing"
 	"time"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/testclock"
-	google_pb "github.com/luci/luci-go/common/proto/google"
-	dm "github.com/luci/luci-go/dm/api/service/v1"
-	"github.com/luci/luci-go/dm/appengine/distributor/fake"
-	"github.com/luci/luci-go/dm/appengine/model"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	google_pb "go.chromium.org/luci/common/proto/google"
+	dm "go.chromium.org/luci/dm/api/service/v1"
+	"go.chromium.org/luci/dm/appengine/distributor/fake"
+	"go.chromium.org/luci/dm/appengine/model"
 
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type breakFwdDepLoads struct {

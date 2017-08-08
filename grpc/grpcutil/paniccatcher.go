@@ -18,8 +18,8 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/runtime/paniccatcher"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/runtime/paniccatcher"
 )
 
 // NewUnaryServerPanicCatcher returns a unary interceptor that catches panics

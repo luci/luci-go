@@ -28,7 +28,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/server/auth/signing"
+	"go.chromium.org/luci/server/auth/signing"
 )
 
 // Signer holds private key and corresponding cert and can sign blobs with

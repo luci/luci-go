@@ -28,18 +28,18 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/api/googleapi"
 
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/api/buildbucket/buildbucket/v1"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry"
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/common/sync/parallel"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 
-	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/common"
-	"github.com/luci/luci-go/milo/common/model"
+	"go.chromium.org/luci/milo/api/resp"
+	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/common/model"
 )
 
 // search executes the search request with retries and exponential back-off.

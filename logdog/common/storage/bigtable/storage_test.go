@@ -19,16 +19,16 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/luci/luci-go/common/data/recordio"
-	"github.com/luci/luci-go/logdog/common/storage"
-	"github.com/luci/luci-go/logdog/common/storage/memory"
-	"github.com/luci/luci-go/logdog/common/types"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/common/data/recordio"
+	"go.chromium.org/luci/logdog/common/storage"
+	"go.chromium.org/luci/logdog/common/storage/memory"
+	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func mustGetIndex(e *storage.Entry) types.MessageIndex {

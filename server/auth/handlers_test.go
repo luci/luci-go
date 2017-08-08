@@ -22,11 +22,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/server/auth/signing"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/router"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var cfgWithTransport = Config{

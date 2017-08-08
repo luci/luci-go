@@ -35,7 +35,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/errors"
 )
 
 // EnvKey is the environment variable key for the LUCI_CONTEXT file.

@@ -27,8 +27,8 @@ import (
 	"strings"
 	"sync"
 
-	isolateservice "github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
-	"github.com/luci/luci-go/common/isolated"
+	isolateservice "go.chromium.org/luci/common/api/isolate/isolateservice/v1"
+	"go.chromium.org/luci/common/isolated"
 )
 
 const contentType = "application/json; charset=utf-8"

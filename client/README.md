@@ -1,13 +1,13 @@
 luci-go: LUCI in Go: client code
 ================================
 
-[![GoDoc](https://godoc.org/github.com/luci/luci-go/client?status.svg)](https://godoc.org/github.com/luci/luci-go/client)
+[![GoDoc](https://godoc.org/go.chromium.org/luci/client?status.svg)](https://godoc.org/go.chromium.org/luci/client)
 
 
 Installing clients
 ------------------
 
-    go get -u github.com/luci/luci-go/client/cmd/...
+    go get -u go.chromium.org/luci/client/cmd/...
 
 
 Code layout

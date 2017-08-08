@@ -45,14 +45,14 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/luci/luci-go/common/auth/internal"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/gcloud/iam"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry"
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/lucictx"
+	"go.chromium.org/luci/common/auth/internal"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/gcloud/iam"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/lucictx"
 )
 
 var (

@@ -22,15 +22,15 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/urlfetch"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/testclock"
+	"go.chromium.org/gae/service/urlfetch"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 
-	"github.com/luci/luci-go/scheduler/appengine/messages"
-	"github.com/luci/luci-go/scheduler/appengine/task/utils/tasktest"
+	"go.chromium.org/luci/scheduler/appengine/messages"
+	"go.chromium.org/luci/scheduler/appengine/task/utils/tasktest"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateProtoMessage(t *testing.T) {

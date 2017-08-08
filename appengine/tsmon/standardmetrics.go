@@ -17,12 +17,12 @@ package tsmon
 import (
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/module"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/tsmon"
-	"github.com/luci/luci-go/common/tsmon/metric"
-	"github.com/luci/luci-go/common/tsmon/runtimestats"
-	"github.com/luci/luci-go/common/tsmon/versions"
+	"go.chromium.org/gae/service/module"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/runtimestats"
+	"go.chromium.org/luci/common/tsmon/versions"
 )
 
 var (

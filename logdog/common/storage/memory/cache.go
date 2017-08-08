@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luci/luci-go/logdog/common/storage/caching"
+	"go.chromium.org/luci/logdog/common/storage/caching"
 
 	"golang.org/x/net/context"
 )

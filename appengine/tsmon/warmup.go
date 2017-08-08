@@ -17,8 +17,8 @@ package tsmon
 import (
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/server/warmup"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/warmup"
 )
 
 func init() {

@@ -19,7 +19,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/errors"
 )
 
 const idPattern = "[_a-z][_a-z0-9]*"

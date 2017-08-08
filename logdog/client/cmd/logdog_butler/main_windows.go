@@ -17,7 +17,7 @@ package main
 import (
 	"os"
 
-	"github.com/luci/luci-go/logdog/client/butler/streamserver"
+	"go.chromium.org/luci/logdog/client/butler/streamserver"
 	"golang.org/x/net/context"
 )
 

@@ -21,11 +21,11 @@ import (
 	"os/exec"
 
 	"github.com/golang/protobuf/proto"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/system/exitcode"
-	"github.com/luci/luci-go/logdog/client/annotee"
-	"github.com/luci/luci-go/logdog/client/annotee/annotation"
-	"github.com/luci/luci-go/logdog/common/types"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/exitcode"
+	"go.chromium.org/luci/logdog/client/annotee"
+	"go.chromium.org/luci/logdog/client/annotee/annotation"
+	"go.chromium.org/luci/logdog/common/types"
 	"golang.org/x/net/context"
 )
 

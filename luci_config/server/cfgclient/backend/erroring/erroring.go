@@ -22,9 +22,9 @@ import (
 	"errors"
 	"net/url"
 
-	"github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/config/impl/memory"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/common/config"
+	"go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
 
 	"golang.org/x/net/context"
 )

@@ -23,9 +23,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/router"
 )
 
 // Callback will be called during warmup.

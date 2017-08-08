@@ -24,7 +24,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	logpb "github.com/luci/luci-go/common/eventlog/proto"
+	logpb "go.chromium.org/luci/common/eventlog/proto"
 )
 
 // Logger sends event logs to the eventlog service.

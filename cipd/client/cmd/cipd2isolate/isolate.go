@@ -17,10 +17,10 @@ package main
 import (
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/cipd/client/cipd"
-	"github.com/luci/luci-go/cipd/client/cipd/ensure"
-	"github.com/luci/luci-go/common/isolatedclient"
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/cipd/client/cipd"
+	"go.chromium.org/luci/cipd/client/cipd/ensure"
+	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/logging"
 )
 
 // isolateCipdPackages is implementation of cipd2isolate logic.

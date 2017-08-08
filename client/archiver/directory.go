@@ -22,10 +22,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/luci/luci-go/client/internal/common"
-	"github.com/luci/luci-go/common/isolated"
-	"github.com/luci/luci-go/common/isolatedclient"
-	"github.com/luci/luci-go/common/runtime/tracer"
+	"go.chromium.org/luci/client/internal/common"
+	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/runtime/tracer"
 )
 
 type walkItem struct {

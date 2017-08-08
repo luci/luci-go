@@ -21,10 +21,10 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/logdog/api/logpb"
-	"github.com/luci/luci-go/logdog/common/types"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/common/types"
 
 	"golang.org/x/net/context"
 )

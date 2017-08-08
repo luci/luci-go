@@ -15,12 +15,12 @@
 package annotee
 
 import (
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/clockflag"
-	"github.com/luci/luci-go/common/proto/milo"
-	"github.com/luci/luci-go/logdog/api/logpb"
-	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
-	"github.com/luci/luci-go/logdog/common/types"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/clockflag"
+	"go.chromium.org/luci/common/proto/milo"
+	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
+	"go.chromium.org/luci/logdog/common/types"
 
 	"golang.org/x/net/context"
 )

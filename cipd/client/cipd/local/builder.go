@@ -28,9 +28,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/cipd/client/cipd/common"
-	"github.com/luci/luci-go/common/data/stringset"
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/cipd/client/cipd/common"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/logging"
 )
 
 // BuildInstanceOptions defines options for BuildInstance function.

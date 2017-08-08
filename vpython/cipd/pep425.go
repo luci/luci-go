@@ -17,7 +17,7 @@ package cipd
 import (
 	"strings"
 
-	"github.com/luci/luci-go/vpython/api/vpython"
+	"go.chromium.org/luci/vpython/api/vpython"
 )
 
 // PlatformForPEP425Tag returns the CIPD platform inferred from a given Python

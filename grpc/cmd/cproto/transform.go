@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	prpcPackagePath = `github.com/luci/luci-go/grpc/prpc`
+	prpcPackagePath = `go.chromium.org/luci/grpc/prpc`
 )
 
 var (

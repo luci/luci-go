@@ -18,9 +18,9 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/luci/luci-go/logdog/api/logpb"
-	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
-	"github.com/luci/luci-go/logdog/common/types"
+	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
+	"go.chromium.org/luci/logdog/common/types"
 )
 
 // Holds common command-line stream configuration parameters.

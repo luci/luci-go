@@ -27,11 +27,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/luci/luci-go/client/flagpb"
-	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/grpc/prpc"
+	"go.chromium.org/luci/client/flagpb"
+	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/prpc"
 )
 
 const (

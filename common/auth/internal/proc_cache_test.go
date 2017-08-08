@@ -23,8 +23,8 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
-	"github.com/luci/luci-go/common/clock"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/clock"
 )
 
 func TestMemoryTokenCache(t *testing.T) {

@@ -21,7 +21,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes/empty"
 
-	"github.com/luci/luci-go/tokenserver/api/admin/v1"
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
 )
 
 // ListCAsRPC implements CertificateAuthorities.ListCAs RPC method.

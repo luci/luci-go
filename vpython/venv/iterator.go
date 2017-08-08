@@ -21,9 +21,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/data/rand/mathrand"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 )
 
 // forEachReadDirSize is the number of entries to read in a directory at a time

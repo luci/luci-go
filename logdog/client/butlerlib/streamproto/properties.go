@@ -17,10 +17,10 @@ package streamproto
 import (
 	"time"
 
-	"github.com/luci/luci-go/common/clock/clockflag"
-	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/logdog/api/logpb"
-	"github.com/luci/luci-go/logdog/common/types"
+	"go.chromium.org/luci/common/clock/clockflag"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/common/types"
 
 	"github.com/golang/protobuf/proto"
 )

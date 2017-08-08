@@ -18,11 +18,11 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry"
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/grpc/grpcutil"
-	s "github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil"
+	s "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )

@@ -15,11 +15,11 @@
 package rpc
 
 import (
-	"github.com/luci/luci-go/grpc/grpcutil"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
-	milo "github.com/luci/luci-go/milo/api/proto"
-	"github.com/luci/luci-go/milo/buildsource/buildbot"
-	"github.com/luci/luci-go/milo/buildsource/swarming"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
+	milo "go.chromium.org/luci/milo/api/proto"
+	"go.chromium.org/luci/milo/buildsource/buildbot"
+	"go.chromium.org/luci/milo/buildsource/swarming"
 
 	"google.golang.org/grpc/codes"
 

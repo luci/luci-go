@@ -15,7 +15,7 @@
 package resp
 
 import (
-	"github.com/luci/luci-go/milo/common/model"
+	"go.chromium.org/luci/milo/common/model"
 )
 
 // This file contains the structures for defining a Console view.

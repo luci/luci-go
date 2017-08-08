@@ -22,13 +22,13 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/vpython/python"
+	"go.chromium.org/luci/vpython/python"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/system/environ"
-	"github.com/luci/luci-go/common/system/exitcode"
-	"github.com/luci/luci-go/common/system/prober"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/system/exitcode"
+	"go.chromium.org/luci/common/system/prober"
 )
 
 const (

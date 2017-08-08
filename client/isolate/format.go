@@ -34,8 +34,8 @@ import (
 	"go/parser"
 	"go/token"
 
-	"github.com/luci/luci-go/common/isolated"
 	"github.com/yosuke-furukawa/json5/encoding/json5"
+	"go.chromium.org/luci/common/isolated"
 )
 
 var osPathSeparator = string(os.PathSeparator)

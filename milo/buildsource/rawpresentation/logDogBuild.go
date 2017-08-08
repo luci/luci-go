@@ -21,11 +21,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/proto/google"
-	miloProto "github.com/luci/luci-go/common/proto/milo"
-	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/common/model"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/proto/google"
+	miloProto "go.chromium.org/luci/common/proto/milo"
+	"go.chromium.org/luci/milo/api/resp"
+	"go.chromium.org/luci/milo/common/model"
 )
 
 // URLBuilder constructs URLs for various link types.

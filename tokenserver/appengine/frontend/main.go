@@ -24,21 +24,21 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/grpc/discovery"
-	"github.com/luci/luci-go/grpc/grpcmon"
-	"github.com/luci/luci-go/grpc/grpcutil"
-	"github.com/luci/luci-go/grpc/prpc"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/discovery"
+	"go.chromium.org/luci/grpc/grpcmon"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/router"
 
-	"github.com/luci/luci-go/tokenserver/api/admin/v1"
-	"github.com/luci/luci-go/tokenserver/api/minter/v1"
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
+	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
-	"github.com/luci/luci-go/tokenserver/appengine/impl/services/admin/adminsrv"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/services/admin/certauthorities"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/services/minter/tokenminter"
+	"go.chromium.org/luci/tokenserver/appengine/impl/services/admin/adminsrv"
+	"go.chromium.org/luci/tokenserver/appengine/impl/services/admin/certauthorities"
+	"go.chromium.org/luci/tokenserver/appengine/impl/services/minter/tokenminter"
 )
 
 // adminPrelude returns a prelude that authorizes only administrators.

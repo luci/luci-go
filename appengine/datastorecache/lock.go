@@ -17,9 +17,9 @@ package datastorecache
 import (
 	"strings"
 
-	"github.com/luci/luci-go/appengine/memlock"
+	"go.chromium.org/luci/appengine/memlock"
 
-	"github.com/luci/gae/service/info"
+	"go.chromium.org/gae/service/info"
 
 	"golang.org/x/net/context"
 )

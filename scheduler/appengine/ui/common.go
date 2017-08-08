@@ -20,16 +20,16 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/info"
+	"go.chromium.org/gae/service/info"
 
-	"github.com/luci/luci-go/appengine/gaeauth/server"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/xsrf"
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/server/templates"
+	"go.chromium.org/luci/appengine/gaeauth/server"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/xsrf"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/templates"
 
-	"github.com/luci/luci-go/scheduler/appengine/catalog"
-	"github.com/luci/luci-go/scheduler/appengine/engine"
+	"go.chromium.org/luci/scheduler/appengine/catalog"
+	"go.chromium.org/luci/scheduler/appengine/engine"
 )
 
 // Config is global configuration of UI handlers.

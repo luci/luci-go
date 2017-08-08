@@ -46,7 +46,7 @@ import (
 	"net/http"
 	"time"
 
-	dm "github.com/luci/luci-go/dm/api/service/v1"
+	dm "go.chromium.org/luci/dm/api/service/v1"
 
 	"golang.org/x/net/context"
 )

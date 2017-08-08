@@ -18,11 +18,11 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/tsmon/distribution"
-	"github.com/luci/luci-go/common/tsmon/field"
-	"github.com/luci/luci-go/common/tsmon/types"
+	"go.chromium.org/luci/common/tsmon/distribution"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/types"
 
-	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
+	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
 )
 
 type dataSetKey struct {

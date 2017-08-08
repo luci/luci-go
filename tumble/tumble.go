@@ -17,13 +17,13 @@ package tumble
 import (
 	"fmt"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/data/stringset"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 
-	"github.com/luci/gae/filter/txnBuf"
-	ds "github.com/luci/gae/service/datastore"
+	"go.chromium.org/gae/filter/txnBuf"
+	ds "go.chromium.org/gae/service/datastore"
 
 	"golang.org/x/net/context"
 )

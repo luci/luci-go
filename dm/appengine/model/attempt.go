@@ -20,10 +20,10 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
-	bf "github.com/luci/luci-go/common/data/bit_field"
-	google_pb "github.com/luci/luci-go/common/proto/google"
-	dm "github.com/luci/luci-go/dm/api/service/v1"
+	"go.chromium.org/luci/common/clock"
+	bf "go.chromium.org/luci/common/data/bit_field"
+	google_pb "go.chromium.org/luci/common/proto/google"
+	dm "go.chromium.org/luci/dm/api/service/v1"
 )
 
 // AttemptRetryState indicates the current state of the Attempt's retry

@@ -37,7 +37,7 @@ func TestUtil(t *testing.T) {
 
 		So(desc.File, ShouldHaveLength, 1)
 		file := desc.File[0]
-		So(file.GetName(), ShouldEqual, "github.com/luci/luci-go/common/proto/google/descutil/util_test.proto")
+		So(file.GetName(), ShouldEqual, "go.chromium.org/luci/common/proto/google/descutil/util_test.proto")
 
 		Convey("Resolve works", func() {
 			names := []string{

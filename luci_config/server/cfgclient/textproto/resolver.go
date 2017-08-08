@@ -15,7 +15,7 @@
 // Package textproto implements a textproto config service Resolver.
 //
 // It uses the "luci-go" text protobuf multi-line extension. For more
-// information, see: github.com/luci/luci-go/common/proto
+// information, see: go.chromium.org/luci/common/proto
 //
 // The textproto protobuf Resolver internally formats its content as a binary
 // protobuf, rather than its raw text content. This has some advantages over raw
@@ -33,12 +33,12 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/luci/luci-go/common/data/cmpbin"
-	"github.com/luci/luci-go/common/errors"
-	luciProto "github.com/luci/luci-go/common/proto"
-	"github.com/luci/luci-go/luci_config/server/cfgclient"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/format"
+	"go.chromium.org/luci/common/data/cmpbin"
+	"go.chromium.org/luci/common/errors"
+	luciProto "go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/luci_config/server/cfgclient"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/format"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -46,7 +46,7 @@ import (
 var typeOfProtoMessage = reflect.TypeOf((*proto.Message)(nil)).Elem()
 
 // BinaryFormat is the resolver's binary protobuf format string.
-const BinaryFormat = "github.com/luci/luci-go/server/config/TextProto:binary"
+const BinaryFormat = "go.chromium.org/luci/server/config/TextProto:binary"
 
 // init registers this format in the registry of formats.
 func init() {

@@ -15,8 +15,8 @@
 package ui
 
 import (
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/server/templates"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/templates"
 )
 
 func indexPage(c *router.Context) {

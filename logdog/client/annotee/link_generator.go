@@ -15,9 +15,9 @@
 package annotee
 
 import (
-	"github.com/luci/luci-go/logdog/common/types"
-	"github.com/luci/luci-go/logdog/common/viewer"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/logdog/common/viewer"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
 )
 
 // LinkGenerator generates links for a given log stream.

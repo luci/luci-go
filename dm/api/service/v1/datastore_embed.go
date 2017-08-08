@@ -19,8 +19,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/data/sortby"
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/data/sortby"
 )
 
 const flipMask uint32 = 0xFFFFFFFF

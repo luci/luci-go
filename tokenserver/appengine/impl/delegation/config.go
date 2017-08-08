@@ -20,12 +20,12 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/config/validation"
-	"github.com/luci/luci-go/server/auth/identity"
+	"go.chromium.org/luci/common/config/validation"
+	"go.chromium.org/luci/server/auth/identity"
 
-	"github.com/luci/luci-go/tokenserver/api/admin/v1"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/identityset"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/policy"
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils/identityset"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils/policy"
 )
 
 // delegationCfg is name of the main config file with the policy.

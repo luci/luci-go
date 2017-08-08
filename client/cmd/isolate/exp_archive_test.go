@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/luci/luci-go/client/internal/common"
+	"go.chromium.org/luci/client/internal/common"
 )
 
 // basicFileInfo implements some of os.FileInfo, and panics if unexpected parts

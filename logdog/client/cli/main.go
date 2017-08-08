@@ -26,17 +26,17 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/client/authcli"
-	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/common/clock/clockflag"
-	"github.com/luci/luci-go/common/errors"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/luci/luci-go/grpc/prpc"
-	"github.com/luci/luci-go/logdog/client/coordinator"
-	"github.com/luci/luci-go/logdog/common/types"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/client/authcli"
+	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/clock/clockflag"
+	"go.chromium.org/luci/common/errors"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/logdog/client/coordinator"
+	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
 )
 
 func init() {

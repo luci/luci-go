@@ -22,16 +22,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/tsmon/distribution"
-	"github.com/luci/luci-go/common/tsmon/field"
-	"github.com/luci/luci-go/common/tsmon/monitor"
-	"github.com/luci/luci-go/common/tsmon/target"
-	"github.com/luci/luci-go/common/tsmon/types"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/tsmon/distribution"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/monitor"
+	"go.chromium.org/luci/common/tsmon/target"
+	"go.chromium.org/luci/common/tsmon/types"
 	"golang.org/x/net/context"
 
-	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
 	. "github.com/smartystreets/goconvey/convey"
+	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
 )
 
 // Store is a store under test.

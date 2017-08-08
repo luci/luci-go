@@ -15,8 +15,8 @@
 package cfgclient
 
 import (
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
 )
 
 // Resolver resolves configuration data into a native type.

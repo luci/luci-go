@@ -22,8 +22,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/identity"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/identity"
 )
 
 type identSet map[identity.Identity]struct{}

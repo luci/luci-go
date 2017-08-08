@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/luci/luci-go/grpc/prpc"
-	"github.com/luci/luci-go/grpc/prpc/talk/buildbot/proto"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/grpc/prpc/talk/buildbot/proto"
 	"golang.org/x/net/context"
 )
 

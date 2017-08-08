@@ -19,8 +19,8 @@ import (
 	"net"
 	"testing"
 
-	"github.com/luci/luci-go/server/auth"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/server/auth"
 )
 
 func TestFakeState(t *testing.T) {

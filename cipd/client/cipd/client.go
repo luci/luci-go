@@ -58,16 +58,16 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/data/stringset"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry/transient"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 
-	"github.com/luci/luci-go/cipd/client/cipd/common"
-	"github.com/luci/luci-go/cipd/client/cipd/internal"
-	"github.com/luci/luci-go/cipd/client/cipd/local"
-	"github.com/luci/luci-go/cipd/version"
+	"go.chromium.org/luci/cipd/client/cipd/common"
+	"go.chromium.org/luci/cipd/client/cipd/internal"
+	"go.chromium.org/luci/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/version"
 )
 
 // PackageACLChangeAction defines a flavor of PackageACLChange.

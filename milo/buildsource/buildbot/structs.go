@@ -22,9 +22,9 @@ import (
 	"io/ioutil"
 	"strconv"
 
-	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/common/model"
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/milo/api/resp"
+	"go.chromium.org/luci/milo/common/model"
 )
 
 // This file contains all of the structs that define buildbot json endpoints.

@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/luci/luci-go/vpython/api/vpython"
+	"go.chromium.org/luci/vpython/api/vpython"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

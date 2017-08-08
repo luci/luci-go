@@ -26,11 +26,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/data/stringset"
-	"github.com/luci/luci-go/common/data/text/indented"
-	"github.com/luci/luci-go/common/iotools"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/runtime/goroutine"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/data/text/indented"
+	"go.chromium.org/luci/common/iotools"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/runtime/goroutine"
 )
 
 type stack struct {

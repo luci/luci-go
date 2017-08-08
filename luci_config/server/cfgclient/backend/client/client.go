@@ -21,12 +21,12 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/config/impl/remote"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/luci_config/server/cfgclient"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
-	"github.com/luci/luci-go/server/auth"
+	"go.chromium.org/luci/common/config"
+	"go.chromium.org/luci/common/config/impl/remote"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/luci_config/server/cfgclient"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/server/auth"
 
 	"golang.org/x/net/context"
 )

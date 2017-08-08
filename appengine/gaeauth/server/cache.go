@@ -19,14 +19,14 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/info"
-	mc "github.com/luci/gae/service/memcache"
+	"go.chromium.org/gae/service/info"
+	mc "go.chromium.org/gae/service/memcache"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/data/caching/proccache"
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/common/sync/mutexpool"
-	"github.com/luci/luci-go/server/auth"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/caching/proccache"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/mutexpool"
+	"go.chromium.org/luci/server/auth"
 )
 
 // Memcache implements auth.Cache on top of GAE memcache and per-request state.

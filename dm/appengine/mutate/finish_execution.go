@@ -19,12 +19,12 @@ import (
 
 	"golang.org/x/net/context"
 
-	ds "github.com/luci/gae/service/datastore"
+	ds "go.chromium.org/gae/service/datastore"
 
-	"github.com/luci/luci-go/common/logging"
-	dm "github.com/luci/luci-go/dm/api/service/v1"
-	"github.com/luci/luci-go/dm/appengine/model"
-	"github.com/luci/luci-go/tumble"
+	"go.chromium.org/luci/common/logging"
+	dm "go.chromium.org/luci/dm/api/service/v1"
+	"go.chromium.org/luci/dm/appengine/model"
+	"go.chromium.org/luci/tumble"
 )
 
 // FinishExecution records the final state of the Execution, and advances the

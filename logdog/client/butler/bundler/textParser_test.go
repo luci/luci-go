@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/logdog/api/logpb"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/logdog/api/logpb"
 )
 
 type textTestCase struct {

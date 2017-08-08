@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	logpb "github.com/luci/luci-go/common/eventlog/proto"
+	logpb "go.chromium.org/luci/common/eventlog/proto"
 
 	"golang.org/x/net/context"
 )

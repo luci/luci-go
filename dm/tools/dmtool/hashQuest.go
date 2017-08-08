@@ -19,8 +19,8 @@ import (
 	"os"
 
 	"github.com/golang/protobuf/jsonpb"
-	dm "github.com/luci/luci-go/dm/api/service/v1"
 	"github.com/maruel/subcommands"
+	dm "go.chromium.org/luci/dm/api/service/v1"
 )
 
 var cmdHashQuest = &subcommands.Command{

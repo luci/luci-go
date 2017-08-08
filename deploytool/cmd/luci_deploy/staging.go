@@ -17,8 +17,8 @@ package main
 import (
 	"strings"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/deploytool/managedfs"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/deploytool/managedfs"
 )
 
 // stageGoPath creates a GOPATH-compatible directory consisting of all of the

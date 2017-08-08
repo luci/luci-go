@@ -20,10 +20,10 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/server/templates"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/templates"
 
-	"github.com/luci/luci-go/scheduler/appengine/engine"
+	"go.chromium.org/luci/scheduler/appengine/engine"
 )
 
 func invocationPage(c *router.Context) {

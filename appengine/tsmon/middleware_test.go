@@ -22,14 +22,14 @@ import (
 
 	"golang.org/x/net/context"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/tsmon"
-	"github.com/luci/luci-go/common/tsmon/field"
-	"github.com/luci/luci-go/common/tsmon/store"
-	"github.com/luci/luci-go/common/tsmon/store/storetest"
-	"github.com/luci/luci-go/common/tsmon/target"
-	"github.com/luci/luci-go/common/tsmon/types"
-	"github.com/luci/luci-go/server/router"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/store"
+	"go.chromium.org/luci/common/tsmon/store/storetest"
+	"go.chromium.org/luci/common/tsmon/target"
+	"go.chromium.org/luci/common/tsmon/types"
+	"go.chromium.org/luci/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

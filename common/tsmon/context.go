@@ -20,11 +20,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/tsmon/monitor"
-	"github.com/luci/luci-go/common/tsmon/store"
-	"github.com/luci/luci-go/common/tsmon/target"
-	"github.com/luci/luci-go/common/tsmon/types"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon/monitor"
+	"go.chromium.org/luci/common/tsmon/store"
+	"go.chromium.org/luci/common/tsmon/target"
+	"go.chromium.org/luci/common/tsmon/types"
 )
 
 // State holds the configuration of the tsmon library.  There is one global

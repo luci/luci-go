@@ -7,7 +7,7 @@ syntax = "proto3";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
-import "github.com/luci/luci-go/dm/api/service/v1/types.proto";
+import "go.chromium.org/luci/dm/api/service/v1/types.proto";
 
 package dm;
 

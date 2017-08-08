@@ -24,12 +24,12 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/router"
 )
 
 // These are installed into a HTTP router by AuthMethod.InstallHandlers(...).

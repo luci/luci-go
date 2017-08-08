@@ -23,8 +23,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/urlfetch"
+	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/gae/service/urlfetch"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

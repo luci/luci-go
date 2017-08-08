@@ -19,7 +19,7 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/errors"
 )
 
 // removeAllImpl removes path and any children it contains.

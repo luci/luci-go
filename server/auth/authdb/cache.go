@@ -19,9 +19,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/data/caching/lazyslot"
-	"github.com/luci/luci-go/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/caching/lazyslot"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 )
 
 // DBCacheUpdater knows how to update local in-memory copy of DB.

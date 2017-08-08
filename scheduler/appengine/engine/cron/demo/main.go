@@ -22,18 +22,18 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/gae/service/datastore"
+	"go.chromium.org/gae/service/datastore"
 
-	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/data/rand/mathrand"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/router"
 
-	"github.com/luci/luci-go/appengine/tq"
-	"github.com/luci/luci-go/scheduler/appengine/engine/cron"
-	"github.com/luci/luci-go/scheduler/appengine/engine/internal"
-	"github.com/luci/luci-go/scheduler/appengine/schedule"
+	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/scheduler/appengine/engine/cron"
+	"go.chromium.org/luci/scheduler/appengine/engine/internal"
+	"go.chromium.org/luci/scheduler/appengine/schedule"
 )
 
 var tasks = tq.Dispatcher{}

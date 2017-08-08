@@ -17,7 +17,7 @@ package backend
 import (
 	"bytes"
 
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/errors"
 )
 
 // GetAllTarget is the type of configuration to retrieve with GetAll.

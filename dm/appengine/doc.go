@@ -24,5 +24,5 @@
 //   distributor - Definition of the Distributor interface, and implementations
 //     (such as swarming_v1).
 //
-// For more information on DM itself, check out https://github.com/luci/luci-go/wiki/Design-Documents
+// For more information on DM itself, check out https://go.chromium.org/luci/wiki/Design-Documents
 package appengine

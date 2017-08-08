@@ -27,8 +27,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/cipd/client/cipd/common"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/cipd/client/cipd/common"
 )
 
 func normalizeJSON(s string) (string, error) {

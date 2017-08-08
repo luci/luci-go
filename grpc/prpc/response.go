@@ -23,7 +23,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/logging"
 )
 
 // response is a pRPC server response.

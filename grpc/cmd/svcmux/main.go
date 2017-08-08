@@ -25,8 +25,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/luci/luci-go/grpc/internal/svctool"
-	"github.com/luci/luci-go/grpc/svcmux"
+	"go.chromium.org/luci/grpc/internal/svctool"
+	"go.chromium.org/luci/grpc/svcmux"
 
 	"golang.org/x/net/context"
 )

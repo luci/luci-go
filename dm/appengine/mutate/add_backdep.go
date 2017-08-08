@@ -15,9 +15,9 @@
 package mutate
 
 import (
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/dm/appengine/model"
-	"github.com/luci/luci-go/tumble"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/dm/appengine/model"
+	"go.chromium.org/luci/tumble"
 	"golang.org/x/net/context"
 )
 

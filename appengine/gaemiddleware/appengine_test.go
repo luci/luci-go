@@ -19,9 +19,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/luci/luci-go/appengine/gaetesting"
-	"github.com/luci/luci-go/server/router"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/server/router"
 	"golang.org/x/net/context"
 )
 

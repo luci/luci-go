@@ -24,9 +24,9 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/api/buildbucket/buildbucket/v1"
-	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/cli"
+	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/cli"
 )
 
 func cmdInconsistency(authOptions auth.Options) *subcommands.Command {

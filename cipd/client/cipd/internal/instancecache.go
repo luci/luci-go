@@ -26,14 +26,14 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/data/stringset"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/proto/google"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
 
-	"github.com/luci/luci-go/cipd/client/cipd/common"
-	"github.com/luci/luci-go/cipd/client/cipd/internal/messages"
-	"github.com/luci/luci-go/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/client/cipd/common"
+	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
+	"go.chromium.org/luci/cipd/client/cipd/local"
 )
 
 const (

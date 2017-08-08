@@ -23,13 +23,13 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/common/logging/memlogger"
-	"github.com/luci/luci-go/common/tsmon"
-	"github.com/luci/luci-go/common/tsmon/metric"
-	"github.com/luci/luci-go/common/tsmon/types"
+	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/types"
 
-	"github.com/luci/luci-go/tokenserver/api"
-	"github.com/luci/luci-go/tokenserver/client"
+	"go.chromium.org/luci/tokenserver/api"
+	"go.chromium.org/luci/tokenserver/client"
 )
 
 // UpdateOutcome describes overall status of tokend token update process.

@@ -20,11 +20,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/deploytool/api/deploy"
-	"github.com/luci/luci-go/deploytool/managedfs"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/deploytool/api/deploy"
+	"go.chromium.org/luci/deploytool/managedfs"
 )
 
 // kubeDepoyedByMe is the "luci:managedBy" Kubernetes Deployment annotation

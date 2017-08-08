@@ -17,7 +17,7 @@ package venv
 import (
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/vpython/api/vpython"
+	"go.chromium.org/luci/vpython/api/vpython"
 )
 
 // PackageLoader loads package information from a specification file's Package

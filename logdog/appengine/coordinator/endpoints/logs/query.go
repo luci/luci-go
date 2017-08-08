@@ -15,14 +15,14 @@
 package logs
 
 import (
-	ds "github.com/luci/gae/service/datastore"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/grpc/grpcutil"
-	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
-	"github.com/luci/luci-go/logdog/api/logpb"
-	"github.com/luci/luci-go/logdog/appengine/coordinator"
-	"github.com/luci/luci-go/logdog/common/types"
+	ds "go.chromium.org/gae/service/datastore"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
+	"go.chromium.org/luci/logdog/common/types"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )

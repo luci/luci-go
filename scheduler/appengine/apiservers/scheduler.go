@@ -15,10 +15,10 @@
 package apiservers
 
 import (
-	"github.com/luci/luci-go/scheduler/api/scheduler/v1"
-	"github.com/luci/luci-go/scheduler/appengine/catalog"
-	"github.com/luci/luci-go/scheduler/appengine/engine"
-	"github.com/luci/luci-go/scheduler/appengine/presentation"
+	"go.chromium.org/luci/scheduler/api/scheduler/v1"
+	"go.chromium.org/luci/scheduler/appengine/catalog"
+	"go.chromium.org/luci/scheduler/appengine/engine"
+	"go.chromium.org/luci/scheduler/appengine/presentation"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

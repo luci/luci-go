@@ -19,8 +19,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/dm/api/service/v1"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/dm/api/service/v1"
 )
 
 // FwdDep describes a 'depends-on' relation between two Attempts. It has a

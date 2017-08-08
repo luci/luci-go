@@ -20,9 +20,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/luci/gae/impl/cloud"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/gae/impl/cloud"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/router"
 )
 
 // flexBase returns the basic middleware for use on appengine flex.  Flex does not

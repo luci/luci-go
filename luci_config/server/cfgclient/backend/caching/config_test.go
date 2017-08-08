@@ -20,12 +20,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/common/config/impl/memory"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
-	"github.com/luci/luci-go/luci_config/server/cfgclient"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/client"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/luci_config/server/cfgclient"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/client"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
 
 	"golang.org/x/net/context"
 

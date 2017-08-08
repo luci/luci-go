@@ -17,8 +17,8 @@ package buildbot
 import (
 	"net/http"
 
-	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/server/router"
 )
 
 func init() {

@@ -18,7 +18,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/errors"
 )
 
 // paramRE is the regular expression for deployment parameter substitution.

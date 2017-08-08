@@ -17,16 +17,16 @@ package textproto
 import (
 	"testing"
 
-	configPB "github.com/luci/luci-go/common/proto/config"
-	"github.com/luci/luci-go/luci_config/server/cfgclient"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/format"
+	configPB "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/luci_config/server/cfgclient"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/format"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func tpb(msg proto.Message) string { return proto.MarshalTextString(msg) }

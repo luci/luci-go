@@ -6,7 +6,7 @@ syntax = "proto3";
 
 package internal;
 
-import "github.com/luci/luci-go/common/proto/milo/annotations.proto";
+import "go.chromium.org/luci/common/proto/milo/annotations.proto";
 
 // Item is a full annotation protobuf state item. It is used to serialize and
 // deserialize Step and associated fetch data into memcache.

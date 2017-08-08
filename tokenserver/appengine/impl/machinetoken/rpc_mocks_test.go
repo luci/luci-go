@@ -28,19 +28,19 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/appengine/gaetesting"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/server/auth/signing"
-	"github.com/luci/luci-go/server/auth/signing/signingtest"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/auth/signing/signingtest"
 
-	tokenserver "github.com/luci/luci-go/tokenserver/api"
-	admin "github.com/luci/luci-go/tokenserver/api/admin/v1"
-	minter "github.com/luci/luci-go/tokenserver/api/minter/v1"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/certconfig"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
+	admin "go.chromium.org/luci/tokenserver/api/admin/v1"
+	minter "go.chromium.org/luci/tokenserver/api/minter/v1"
+	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
 )
 
 const pkey = `-----BEGIN RSA PRIVATE KEY-----

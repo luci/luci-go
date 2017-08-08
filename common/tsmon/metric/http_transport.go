@@ -20,11 +20,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/iotools"
-	"github.com/luci/luci-go/common/tsmon"
-	"github.com/luci/luci-go/common/tsmon/store"
+	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/iotools"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/store"
 )
 
 // instrumentedHTTPRoundTripper reports tsmon metrics about the requests that

@@ -20,10 +20,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/impl/memory"
-	ds "github.com/luci/gae/service/datastore"
+	"go.chromium.org/gae/impl/memory"
+	ds "go.chromium.org/gae/service/datastore"
 
-	"github.com/luci/luci-go/dm/api/service/v1"
+	"go.chromium.org/luci/dm/api/service/v1"
 )
 
 func TestBackdepEdge(t *testing.T) {

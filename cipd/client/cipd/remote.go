@@ -29,10 +29,10 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
 
-	"github.com/luci/luci-go/cipd/client/cipd/common"
+	"go.chromium.org/luci/cipd/client/cipd/common"
 )
 
 // remoteMaxRetries is how many times to retry transient HTTP errors.

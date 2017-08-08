@@ -21,11 +21,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/dm/api/service/v1"
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/server/tokens"
-	"github.com/luci/luci-go/tumble"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/dm/api/service/v1"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/tokens"
+	"go.chromium.org/luci/tumble"
 	"golang.org/x/net/context"
 )
 

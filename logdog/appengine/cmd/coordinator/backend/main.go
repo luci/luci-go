@@ -20,15 +20,15 @@ import (
 	// Importing pprof implicitly installs "/debug/*" profiling handlers.
 	_ "net/http/pprof"
 
-	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/logdog/appengine/coordinator"
-	"github.com/luci/luci-go/logdog/appengine/coordinator/tasks"
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/tumble"
+	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
+	"go.chromium.org/luci/logdog/appengine/coordinator/tasks"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/tumble"
 
 	// Include mutations package so its Mutations will register with tumble via
 	// init().
-	_ "github.com/luci/luci-go/logdog/appengine/coordinator/mutations"
+	_ "go.chromium.org/luci/logdog/appengine/coordinator/mutations"
 )
 
 func init() {

@@ -22,16 +22,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/authtest"
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/server/secrets/testsecrets"
-	"github.com/luci/luci-go/server/settings"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/secrets/testsecrets"
+	"go.chromium.org/luci/server/settings"
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestFullFlow(t *testing.T) {

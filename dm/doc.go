@@ -15,5 +15,5 @@
 // Package dm is the service and tooling for the Dungeon Master (DM) distributed
 // dependency scheduling service.
 //
-// For more information on DM itself, check out https://github.com/luci/luci-go/wiki/Design-Documents
+// For more information on DM itself, check out https://go.chromium.org/luci/wiki/Design-Documents
 package dm

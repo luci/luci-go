@@ -19,7 +19,7 @@
 package tasktemplate
 
 import (
-	"github.com/luci/luci-go/common/data/text/stringtemplate"
+	"go.chromium.org/luci/common/data/text/stringtemplate"
 )
 
 // Params contains supported Swarming task string substitution parameters.

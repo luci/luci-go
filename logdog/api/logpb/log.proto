@@ -27,7 +27,7 @@ message LogStreamDescriptor {
    * Logs originating from the same Butler instance will share a Prefix.
    *
    * A valid prefix value is a StreamName described in:
-   * https://github.com/luci/luci-go/common/logdog/types
+   * https://go.chromium.org/luci/common/logdog/types
    */
   string prefix = 1;
   /*
@@ -37,7 +37,7 @@ message LogStreamDescriptor {
    * prefix.
    *
    * A valid name value is a StreamName described in:
-   * https://github.com/luci/luci-go/common/logdog/types
+   * https://go.chromium.org/luci/common/logdog/types
    */
   string name = 2;
 

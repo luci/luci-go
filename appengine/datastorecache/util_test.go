@@ -20,15 +20,15 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/server/router"
 
-	"github.com/luci/gae/filter/featureBreaker"
-	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/datastore"
+	"go.chromium.org/gae/filter/featureBreaker"
+	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/gae/service/datastore"
 
 	"golang.org/x/net/context"
 )

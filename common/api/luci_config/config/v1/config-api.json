@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/cssXUoUPW-b7ncM9P-u7FbBV2u8\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/3uOIHOZyeUbgyzfETbew0P2iiHI\"",
  "discoveryVersion": "v1",
  "id": "config:v1",
  "name": "config",
@@ -106,6 +106,13 @@
     "config_set": {
      "type": "string"
     },
+    "files": {
+     "type": "array",
+     "description": "Describes a file.",
+     "items": {
+      "$ref": "LuciConfigFile"
+     }
+    },
     "last_import_attempt": {
      "$ref": "LuciConfigConfigSetImportAttempt"
     },
@@ -139,6 +146,16 @@
      "items": {
       "$ref": "ComponentsConfigEndpointValidationMessage"
      }
+    }
+   }
+  },
+  "LuciConfigFile": {
+   "id": "LuciConfigFile",
+   "type": "object",
+   "description": "Describes a file.",
+   "properties": {
+    "path": {
+     "type": "string"
     }
    }
   },
@@ -383,6 +400,10 @@
    "parameters": {
     "config_set": {
      "type": "string",
+     "location": "query"
+    },
+    "include_files": {
+     "type": "boolean",
      "location": "query"
     },
     "include_last_import_attempt": {

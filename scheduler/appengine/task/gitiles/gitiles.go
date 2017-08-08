@@ -24,12 +24,12 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
 
-	ds "github.com/luci/gae/service/datastore"
+	ds "go.chromium.org/gae/service/datastore"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/scheduler/appengine/messages"
-	"github.com/luci/luci-go/scheduler/appengine/task"
-	"github.com/luci/luci-go/scheduler/appengine/task/gitiles/gerrit"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/scheduler/appengine/messages"
+	"go.chromium.org/luci/scheduler/appengine/task"
+	"go.chromium.org/luci/scheduler/appengine/task/gitiles/gerrit"
 )
 
 // TaskManager implements task.Manager interface for tasks defined with

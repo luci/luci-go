@@ -19,8 +19,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/server/auth/identity"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/server/auth/identity"
 )
 
 func TestState(t *testing.T) {

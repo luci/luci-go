@@ -4,7 +4,7 @@ luci-go: LUCI in Go: server code
 Installing servers
 ------------------
 
-    go get -u github.com/luci/luci-go/server/cmd/...
+    go get -u go.chromium.org/luci/server/cmd/...
 
 
 Code layout

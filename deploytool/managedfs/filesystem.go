@@ -34,8 +34,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"

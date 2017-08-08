@@ -20,13 +20,13 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/appengine/gaeauth/server/internal/authdbimpl"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/server/auth/authdb"
-	"github.com/luci/luci-go/server/auth/identity"
-	"github.com/luci/luci-go/server/auth/signing"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/appengine/gaeauth/server/internal/authdbimpl"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth/authdb"
+	"go.chromium.org/luci/server/auth/identity"
+	"go.chromium.org/luci/server/auth/signing"
 )
 
 // errNotConfigured is returned on real GAE if auth service URL is not set.

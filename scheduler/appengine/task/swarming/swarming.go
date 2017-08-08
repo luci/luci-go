@@ -26,13 +26,13 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
 
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/api/swarming/swarming/v1"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/scheduler/appengine/messages"
-	"github.com/luci/luci-go/scheduler/appengine/task"
-	"github.com/luci/luci-go/scheduler/appengine/task/utils"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/scheduler/appengine/messages"
+	"go.chromium.org/luci/scheduler/appengine/task"
+	"go.chromium.org/luci/scheduler/appengine/task/utils"
 )
 
 const (

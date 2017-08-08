@@ -21,13 +21,13 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/luci/luci-go/vpython/api/vpython"
-	"github.com/luci/luci-go/vpython/python"
-	"github.com/luci/luci-go/vpython/spec"
+	"go.chromium.org/luci/vpython/api/vpython"
+	"go.chromium.org/luci/vpython/python"
+	"go.chromium.org/luci/vpython/spec"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/system/filesystem"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/filesystem"
 
 	"golang.org/x/net/context"
 )

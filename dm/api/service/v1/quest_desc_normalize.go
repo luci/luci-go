@@ -20,8 +20,8 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/data/text/templateproto"
-	"github.com/luci/luci-go/common/proto/google"
+	"go.chromium.org/luci/common/data/text/templateproto"
+	"go.chromium.org/luci/common/proto/google"
 )
 
 // IsEmpty returns true if this metadata retry message only contains

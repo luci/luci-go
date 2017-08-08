@@ -16,7 +16,7 @@
 //
 // It hardcodes chrome-infra specific defaults.
 //
-// Use "github.com/luci/luci-go/client/authcli/authutil" package to implement
+// Use "go.chromium.org/luci/client/authcli/authutil" package to implement
 // a binary with different defaults.
 package main
 
@@ -25,10 +25,10 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"github.com/luci/luci-go/client/authcli/authutil"
-	"github.com/luci/luci-go/common/data/rand/mathrand"
+	"go.chromium.org/luci/client/authcli/authutil"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 
-	"github.com/luci/luci-go/hardcoded/chromeinfra"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
 func main() {

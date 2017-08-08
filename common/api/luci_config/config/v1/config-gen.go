@@ -1,25 +1,15 @@
-// Copyright 2017 The LUCI Authors.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
 
 // Package config provides access to the Configuration Service.
 //
 // Usage example:
 //
-//   import "github.com/luci/luci-go/common/api/luci_config/config/v1"
+//   import "go.chromium.org/luci/common/api/luci_config/config/v1"
 //   ...
 //   configService, err := config.New(oauthHttpClient)
-package config // import "github.com/luci/luci-go/common/api/luci_config/config/v1"
+package config // import "go.chromium.org/luci/common/api/luci_config/config/v1"
 
 import (
 	"bytes"
@@ -122,6 +112,9 @@ func (s *ComponentsConfigEndpointValidationMessage) MarshalJSON() ([]byte, error
 type LuciConfigConfigSet struct {
 	ConfigSet string `json:"config_set,omitempty"`
 
+	// Files: Describes a file.
+	Files []*LuciConfigFile `json:"files,omitempty"`
+
 	LastImportAttempt *LuciConfigConfigSetImportAttempt `json:"last_import_attempt,omitempty"`
 
 	Location string `json:"location,omitempty"`
@@ -181,6 +174,33 @@ type LuciConfigConfigSetImportAttempt struct {
 
 func (s *LuciConfigConfigSetImportAttempt) MarshalJSON() ([]byte, error) {
 	type noMethod LuciConfigConfigSetImportAttempt
+	raw := noMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+// LuciConfigFile: Describes a file.
+type LuciConfigFile struct {
+	Path string `json:"path,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "Path") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "Path") to include in API
+	// requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *LuciConfigFile) MarshalJSON() ([]byte, error) {
+	type noMethod LuciConfigFile
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
@@ -881,6 +901,12 @@ func (c *GetConfigSetsCall) ConfigSet(configSet string) *GetConfigSetsCall {
 	return c
 }
 
+// IncludeFiles sets the optional parameter "include_files":
+func (c *GetConfigSetsCall) IncludeFiles(includeFiles bool) *GetConfigSetsCall {
+	c.urlParams_.Set("include_files", fmt.Sprint(includeFiles))
+	return c
+}
+
 // IncludeLastImportAttempt sets the optional parameter
 // "include_last_import_attempt":
 func (c *GetConfigSetsCall) IncludeLastImportAttempt(includeLastImportAttempt bool) *GetConfigSetsCall {
@@ -987,6 +1013,10 @@ func (c *GetConfigSetsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetConf
 	//     "config_set": {
 	//       "location": "query",
 	//       "type": "string"
+	//     },
+	//     "include_files": {
+	//       "location": "query",
+	//       "type": "boolean"
 	//     },
 	//     "include_last_import_attempt": {
 	//       "location": "query",

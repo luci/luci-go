@@ -18,12 +18,12 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/openid"
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/server/warmup"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/openid"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/warmup"
 
-	"github.com/luci/luci-go/appengine/gaeauth/server/internal/authdbimpl"
+	"go.chromium.org/luci/appengine/gaeauth/server/internal/authdbimpl"
 )
 
 // CookieAuth is default cookie-based auth method to use on GAE.

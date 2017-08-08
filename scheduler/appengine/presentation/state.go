@@ -19,10 +19,10 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/scheduler/appengine/catalog"
-	"github.com/luci/luci-go/scheduler/appengine/engine"
-	"github.com/luci/luci-go/scheduler/appengine/task"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/scheduler/appengine/catalog"
+	"go.chromium.org/luci/scheduler/appengine/engine"
+	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
 // PublicStateKind defines state of the job which is exposed in UI and API

@@ -17,15 +17,15 @@ package datastore
 import (
 	"time"
 
-	"github.com/luci/luci-go/appengine/datastorecache"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
-	"github.com/luci/luci-go/luci_config/server/cfgclient"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/access"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/caching"
+	"go.chromium.org/luci/appengine/datastorecache"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/luci_config/server/cfgclient"
+	"go.chromium.org/luci/luci_config/server/cfgclient/access"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/caching"
 
 	"golang.org/x/net/context"
 )
@@ -37,7 +37,7 @@ const (
 	RPCDeadline = 10 * time.Minute
 )
 
-var dsHandlerKey = "github.com/luci/luci-go/appengine/gaeconfig.dsHandlerKey"
+var dsHandlerKey = "go.chromium.org/luci/appengine/gaeconfig.dsHandlerKey"
 
 func getCacheHandler(c context.Context) datastorecache.Handler {
 	v, _ := c.Value(&dsHandlerKey).(datastorecache.Handler)
@@ -48,7 +48,7 @@ func getCacheHandler(c context.Context) datastorecache.Handler {
 // generator function is used by the cache manager task to get a Handler
 // instance during refresh.
 var Cache = datastorecache.Cache{
-	Name:                 "github.com/luci/luci-go/appengine/gaeconfig",
+	Name:                 "go.chromium.org/luci/appengine/gaeconfig",
 	AccessUpdateInterval: 24 * time.Hour,
 	PruneFactor:          4,
 	Parallel:             16,

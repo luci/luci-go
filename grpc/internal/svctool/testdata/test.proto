@@ -6,7 +6,7 @@ syntax = "proto3";
 
 package test;
 
-import "github.com/luci/luci-go/grpc/internal/svctool/testdata/sub/sub.proto";
+import "go.chromium.org/luci/grpc/internal/svctool/testdata/sub/sub.proto";
 import "google/protobuf/empty.proto";
 
 service S1 {

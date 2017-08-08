@@ -20,10 +20,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/iotools"
-	"github.com/luci/luci-go/logdog/client/butler/bundler"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/iotools"
+	"go.chromium.org/luci/logdog/client/butler/bundler"
 	"golang.org/x/net/context"
 )
 

@@ -25,7 +25,7 @@ import (
 	"testing/iotest"
 
 	"github.com/kr/pretty"
-	"github.com/luci/luci-go/common/isolated"
+	"go.chromium.org/luci/common/isolated"
 )
 
 func fakeOsOpen(name string) (io.ReadCloser, error) {

@@ -15,7 +15,7 @@
 package buildbot
 
 import (
-	"github.com/luci/gae/service/datastore"
+	"go.chromium.org/gae/service/datastore"
 
 	"golang.org/x/net/context"
 )

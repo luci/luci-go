@@ -27,8 +27,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/luci/go-render/render"
-	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/logdog/api/config/svcconfig"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/logdog/api/config/svcconfig"
 )
 
 var (

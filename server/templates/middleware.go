@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/server/router"
 )
 
 // WithTemplates is middleware that lazily loads template bundle and injects it

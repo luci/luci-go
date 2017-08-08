@@ -29,12 +29,12 @@ import (
 
 	"golang.org/x/net/context"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/data/caching/proccache"
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/server/secrets"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/caching/proccache"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/secrets"
 )
 
 // TODO(vadimsh): Add secrets rotation.

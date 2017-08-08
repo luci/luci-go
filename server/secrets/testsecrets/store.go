@@ -22,7 +22,7 @@ import (
 	"math/rand"
 	"sync"
 
-	"github.com/luci/luci-go/server/secrets"
+	"go.chromium.org/luci/server/secrets"
 	"golang.org/x/net/context"
 )
 

@@ -17,8 +17,8 @@ package authdbimpl
 import (
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/server/auth/service"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/server/auth/service"
 )
 
 // authService is interface for service.AuthService.

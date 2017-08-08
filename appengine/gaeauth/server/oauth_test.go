@@ -20,14 +20,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/urlfetch"
-	"github.com/luci/luci-go/server/auth"
+	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/gae/service/urlfetch"
+	"go.chromium.org/luci/server/auth"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/gcloud/googleoauth"
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/gcloud/googleoauth"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type tokenInfo struct {

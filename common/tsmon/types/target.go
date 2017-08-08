@@ -15,7 +15,7 @@
 package types
 
 import (
-	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
+	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
 )
 
 // A Target knows how to put information about itself in a MetricsData message.

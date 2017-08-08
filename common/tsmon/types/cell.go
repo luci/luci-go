@@ -17,7 +17,7 @@ package types
 import (
 	"time"
 
-	"github.com/luci/luci-go/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/field"
 )
 
 // Cell is the smallest unit of data recorded by tsmon.  Metrics can be

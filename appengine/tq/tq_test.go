@@ -27,13 +27,13 @@ import (
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/empty"
 
-	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/taskqueue"
+	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/gae/service/taskqueue"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

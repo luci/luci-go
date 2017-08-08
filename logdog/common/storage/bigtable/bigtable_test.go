@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/logdog/common/storage"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/logdog/common/storage"
 
 	"cloud.google.com/go/bigtable"
 	"golang.org/x/net/context"

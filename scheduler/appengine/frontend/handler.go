@@ -34,32 +34,32 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
-	"github.com/luci/gae/service/info"
-	tq "github.com/luci/gae/service/taskqueue"
+	"go.chromium.org/gae/service/info"
+	tq "go.chromium.org/gae/service/taskqueue"
 
-	"github.com/luci/luci-go/grpc/discovery"
-	"github.com/luci/luci-go/grpc/grpcmon"
-	"github.com/luci/luci-go/grpc/prpc"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/grpc/discovery"
+	"go.chromium.org/luci/grpc/grpcmon"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/router"
 
-	"github.com/luci/luci-go/appengine/gaemiddleware"
+	"go.chromium.org/luci/appengine/gaemiddleware"
 
-	"github.com/luci/luci-go/common/data/rand/mathrand"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry/transient"
+	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 
-	"github.com/luci/luci-go/scheduler/api/scheduler/v1"
+	"go.chromium.org/luci/scheduler/api/scheduler/v1"
 
-	"github.com/luci/luci-go/scheduler/appengine/apiservers"
-	"github.com/luci/luci-go/scheduler/appengine/catalog"
-	"github.com/luci/luci-go/scheduler/appengine/engine"
-	"github.com/luci/luci-go/scheduler/appengine/task"
-	"github.com/luci/luci-go/scheduler/appengine/task/buildbucket"
-	"github.com/luci/luci-go/scheduler/appengine/task/gitiles"
-	"github.com/luci/luci-go/scheduler/appengine/task/noop"
-	"github.com/luci/luci-go/scheduler/appengine/task/swarming"
-	"github.com/luci/luci-go/scheduler/appengine/task/urlfetch"
-	"github.com/luci/luci-go/scheduler/appengine/ui"
+	"go.chromium.org/luci/scheduler/appengine/apiservers"
+	"go.chromium.org/luci/scheduler/appengine/catalog"
+	"go.chromium.org/luci/scheduler/appengine/engine"
+	"go.chromium.org/luci/scheduler/appengine/task"
+	"go.chromium.org/luci/scheduler/appengine/task/buildbucket"
+	"go.chromium.org/luci/scheduler/appengine/task/gitiles"
+	"go.chromium.org/luci/scheduler/appengine/task/noop"
+	"go.chromium.org/luci/scheduler/appengine/task/swarming"
+	"go.chromium.org/luci/scheduler/appengine/task/urlfetch"
+	"go.chromium.org/luci/scheduler/appengine/ui"
 )
 
 //// Global state. See init().

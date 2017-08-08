@@ -20,12 +20,12 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"github.com/luci/luci-go/client/authcli"
-	"github.com/luci/luci-go/client/versioncli"
-	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/data/rand/mathrand"
+	"go.chromium.org/luci/client/authcli"
+	"go.chromium.org/luci/client/versioncli"
+	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 
-	"github.com/luci/luci-go/hardcoded/chromeinfra"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
 // version must be updated whenever functional change (behavior, arguments,

@@ -23,7 +23,7 @@
 //
 //   import (
 //		 ...
-//     "github.com/luci/luci-go/server/analytics"
+//     "go.chromium.org/luci/server/analytics"
 //     ...
 //   )
 //

@@ -17,8 +17,8 @@ package store
 import (
 	"testing"
 
-	"github.com/luci/luci-go/common/tsmon/store/storetest"
-	"github.com/luci/luci-go/common/tsmon/target"
+	"go.chromium.org/luci/common/tsmon/store/storetest"
+	"go.chromium.org/luci/common/tsmon/target"
 	"golang.org/x/net/context"
 )
 

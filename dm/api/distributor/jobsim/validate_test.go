@@ -19,8 +19,8 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/jsonpb"
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestNormalization(t *testing.T) {

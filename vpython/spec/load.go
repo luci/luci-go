@@ -21,12 +21,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/luci/luci-go/vpython/api/vpython"
+	"go.chromium.org/luci/vpython/api/vpython"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	cproto "github.com/luci/luci-go/common/proto"
-	"github.com/luci/luci-go/common/system/filesystem"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	cproto "go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/common/system/filesystem"
 
 	"golang.org/x/net/context"
 )

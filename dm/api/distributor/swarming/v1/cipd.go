@@ -17,7 +17,7 @@ package swarmingV1
 import (
 	"sort"
 
-	swarm "github.com/luci/luci-go/common/api/swarming/swarming/v1"
+	swarm "go.chromium.org/luci/common/api/swarming/swarming/v1"
 )
 
 // ToCipdPackage converts this to a swarming api SwarmingRpcsCipdPackage.

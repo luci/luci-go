@@ -24,15 +24,15 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/gaetesting"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/data/rand/cryptorand"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/certconfig"
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/rand/cryptorand"
+	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCertChecker(t *testing.T) {

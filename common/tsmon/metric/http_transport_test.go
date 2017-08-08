@@ -25,8 +25,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/tsmon"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/tsmon"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

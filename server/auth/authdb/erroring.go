@@ -19,9 +19,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/server/auth/identity"
-	"github.com/luci/luci-go/server/auth/signing"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth/identity"
+	"go.chromium.org/luci/server/auth/signing"
 )
 
 // ErroringDB implements DB by forbidding all access and returning errors.

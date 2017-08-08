@@ -15,8 +15,8 @@
 package cfgclient
 
 import (
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
 )

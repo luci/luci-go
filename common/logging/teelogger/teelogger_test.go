@@ -19,9 +19,9 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/logging/memlogger"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 	"golang.org/x/net/context"
 )
 

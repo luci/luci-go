@@ -17,8 +17,8 @@ package cli
 import (
 	"flag"
 
-	"github.com/luci/luci-go/common/flag/flagenum"
-	"github.com/luci/luci-go/logdog/client/coordinator"
+	"go.chromium.org/luci/common/flag/flagenum"
+	"go.chromium.org/luci/logdog/client/coordinator"
 )
 
 type trinaryValue coordinator.QueryTrinary

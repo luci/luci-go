@@ -22,7 +22,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/grpcutil"
 )
 
 type method struct {

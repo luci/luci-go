@@ -19,10 +19,10 @@ import (
 	"io"
 	"testing"
 
-	"github.com/luci/luci-go/common/data/recordio"
-	"github.com/luci/luci-go/logdog/api/logpb"
-	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/data/recordio"
+	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 )
 
 func TestStreamImpl(t *testing.T) {

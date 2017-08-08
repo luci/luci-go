@@ -26,13 +26,13 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/grpc/prpc"
-	"github.com/luci/luci-go/logdog/api/logpb"
-	"github.com/luci/luci-go/logdog/client/coordinator"
-	"github.com/luci/luci-go/logdog/common/fetcher"
-	"github.com/luci/luci-go/logdog/common/types"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/client/coordinator"
+	"go.chromium.org/luci/logdog/common/fetcher"
+	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
 )
 
 var errNoAuth = errors.New("no access")

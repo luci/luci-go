@@ -23,7 +23,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/server/router"
 )
 
 func Logger(c *router.Context, next router.Handler) {

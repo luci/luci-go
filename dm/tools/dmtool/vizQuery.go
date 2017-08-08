@@ -28,15 +28,15 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/client/flagpb"
-	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/lhttp"
-	"github.com/luci/luci-go/common/logging"
-	dm "github.com/luci/luci-go/dm/api/service/v1"
-	"github.com/luci/luci-go/grpc/prpc"
 	"github.com/maruel/subcommands"
+	"go.chromium.org/luci/client/flagpb"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/lhttp"
+	"go.chromium.org/luci/common/logging"
+	dm "go.chromium.org/luci/dm/api/service/v1"
+	"go.chromium.org/luci/grpc/prpc"
 )
 
 var cmdVisQuery = &subcommands.Command{

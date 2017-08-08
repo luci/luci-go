@@ -27,14 +27,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/data/stringset"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/luci_config/server/cfgclient"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/luci_config/server/cfgclient"
 
-	"github.com/luci/luci-go/tokenserver/api/admin/v1"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/utils"
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 )
 
 // ImportCAConfigsRPC implements Admin.ImportCAConfigs RPC method.

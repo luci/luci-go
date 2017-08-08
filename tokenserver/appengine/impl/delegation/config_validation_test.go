@@ -19,12 +19,12 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	admin "github.com/luci/luci-go/tokenserver/api/admin/v1"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/policy"
+	admin "go.chromium.org/luci/tokenserver/api/admin/v1"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils/policy"
 
-	"github.com/luci/luci-go/common/config/validation"
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/config/validation"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidation(t *testing.T) {

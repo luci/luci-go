@@ -19,14 +19,14 @@
 package adminsrv
 
 import (
-	"github.com/luci/luci-go/appengine/gaeauth/server/gaesigner"
+	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
 
-	"github.com/luci/luci-go/tokenserver/appengine/impl/certconfig"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/delegation"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/machinetoken"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/serviceaccounts"
+	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
+	"go.chromium.org/luci/tokenserver/appengine/impl/delegation"
+	"go.chromium.org/luci/tokenserver/appengine/impl/machinetoken"
+	"go.chromium.org/luci/tokenserver/appengine/impl/serviceaccounts"
 
-	"github.com/luci/luci-go/tokenserver/api/admin/v1"
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
 )
 
 // serverImpl implements admin.AdminServer RPC interface.

@@ -17,7 +17,7 @@ package certconfig
 import (
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/server/warmup"
+	"go.chromium.org/luci/server/warmup"
 )
 
 func init() {

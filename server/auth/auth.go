@@ -20,14 +20,14 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry/transient"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 
-	"github.com/luci/luci-go/server/auth/delegation"
-	"github.com/luci/luci-go/server/auth/identity"
-	"github.com/luci/luci-go/server/auth/signing"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/server/auth/delegation"
+	"go.chromium.org/luci/server/auth/identity"
+	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/router"
 )
 
 var (

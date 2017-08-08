@@ -18,13 +18,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/luci/luci-go/common/proto/google/descutil"
+	"go.chromium.org/luci/common/proto/google/descutil"
 
 	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	"github.com/luci/luci-go/grpc/discovery"
-	"github.com/luci/luci-go/grpc/prpc"
+	"go.chromium.org/luci/grpc/discovery"
+	"go.chromium.org/luci/grpc/prpc"
 )
 
 type serverDescription struct {

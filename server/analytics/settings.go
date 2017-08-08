@@ -21,11 +21,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/server/settings"
+	"go.chromium.org/luci/server/settings"
 )
 
 // settingsKey is key for global GAE settings (described by analyticsSettings struct)
-// in the settings store. See github.com/luci/luci-go/server/settings.
+// in the settings store. See go.chromium.org/luci/server/settings.
 const settingsKey = "analytics"
 
 // analyticsSettings contain settings to enable Google Analytics.

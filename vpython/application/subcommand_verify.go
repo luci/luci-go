@@ -20,12 +20,12 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/vpython/api/vpython"
-	"github.com/luci/luci-go/vpython/spec"
+	"go.chromium.org/luci/vpython/api/vpython"
+	"go.chromium.org/luci/vpython/spec"
 
-	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 )
 
 var subcommandVerify = &subcommands.Command{

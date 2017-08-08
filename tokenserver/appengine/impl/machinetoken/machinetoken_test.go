@@ -22,14 +22,14 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/server/auth/signing"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/server/auth/signing"
 
-	"github.com/luci/luci-go/tokenserver/api"
-	"github.com/luci/luci-go/tokenserver/api/admin/v1"
+	"go.chromium.org/luci/tokenserver/api"
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMintParamsValidation(t *testing.T) {

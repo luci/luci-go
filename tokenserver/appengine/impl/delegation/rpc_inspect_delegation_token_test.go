@@ -22,13 +22,13 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/server/auth/delegation/messages"
-	"github.com/luci/luci-go/server/auth/signing"
-	"github.com/luci/luci-go/server/auth/signing/signingtest"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/server/auth/delegation/messages"
+	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/auth/signing/signingtest"
 
-	admin "github.com/luci/luci-go/tokenserver/api/admin/v1"
+	admin "go.chromium.org/luci/tokenserver/api/admin/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

@@ -18,9 +18,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/luci/gae/impl/memory"
-	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/clock/testclock"
+	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

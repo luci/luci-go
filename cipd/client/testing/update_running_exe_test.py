@@ -53,7 +53,7 @@ def build_cipd(out):
   subprocess.check_call([
     'go', 'build',
     '-o', out,
-    'github.com/luci/luci-go/cipd/client/cmd/cipd',
+    'go.chromium.org/luci/cipd/client/cmd/cipd',
   ])
 
 

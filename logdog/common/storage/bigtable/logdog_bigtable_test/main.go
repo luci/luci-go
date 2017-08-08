@@ -22,25 +22,25 @@ import (
 	"os"
 	"strings"
 
-	"github.com/luci/luci-go/client/authcli"
-	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/common/data/rand/mathrand"
-	"github.com/luci/luci-go/common/errors"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/luci/luci-go/logdog/common/storage"
-	"github.com/luci/luci-go/logdog/common/storage/bigtable"
-	"github.com/luci/luci-go/logdog/common/storage/memory"
-	"github.com/luci/luci-go/logdog/common/types"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/client/authcli"
+	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/errors"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/logdog/common/storage"
+	"go.chromium.org/luci/logdog/common/storage/bigtable"
+	"go.chromium.org/luci/logdog/common/storage/memory"
+	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 	"google.golang.org/api/option"
 
-	"github.com/luci/luci-go/hardcoded/chromeinfra"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
 ////////////////////////////////////////////////////////////////////////////////

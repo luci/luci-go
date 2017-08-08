@@ -17,8 +17,8 @@ package metric
 import (
 	"testing"
 
-	"github.com/luci/luci-go/common/tsmon"
-	"github.com/luci/luci-go/common/tsmon/distribution"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/distribution"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"

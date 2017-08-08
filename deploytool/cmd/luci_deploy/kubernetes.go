@@ -19,9 +19,9 @@ import (
 	"sort"
 
 	"github.com/golang/protobuf/ptypes/duration"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/deploytool/api/deploy"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/deploytool/api/deploy"
 
 	"golang.org/x/net/context"
 	"gopkg.in/yaml.v2"

@@ -17,7 +17,7 @@ package tsmon
 import (
 	"flag"
 
-	"github.com/luci/luci-go/common/flag/flagenum"
+	"go.chromium.org/luci/common/flag/flagenum"
 )
 
 // FlushType is a flush type enumeration.

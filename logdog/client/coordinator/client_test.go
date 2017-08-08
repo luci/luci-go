@@ -17,7 +17,7 @@ package coordinator
 import (
 	"net/http"
 
-	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"golang.org/x/net/context"
 )
 

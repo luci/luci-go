@@ -17,8 +17,8 @@ package ensure
 import (
 	"fmt"
 
-	"github.com/luci/luci-go/cipd/client/cipd/common"
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/cipd/client/cipd/common"
+	"go.chromium.org/luci/common/errors"
 )
 
 // PackageDef defines a package line parsed out of an ensure file.

@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/tokenserver/api/minter/v1"
+	"go.chromium.org/luci/tokenserver/api/minter/v1"
 )
 
 // MintOAuthTokenViaGrantRPC implements TokenMinter.MintOAuthTokenViaGrant

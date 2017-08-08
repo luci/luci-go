@@ -25,7 +25,7 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 	"google.golang.org/api/googleapi"
 
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/logging"
 )
 
 const (

@@ -20,10 +20,10 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/filter/count"
-	"github.com/luci/gae/impl/memory"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/testclock"
+	"go.chromium.org/gae/filter/count"
+	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

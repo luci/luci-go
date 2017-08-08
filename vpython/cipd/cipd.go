@@ -17,15 +17,15 @@ package cipd
 import (
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/vpython/api/vpython"
-	"github.com/luci/luci-go/vpython/venv"
+	"go.chromium.org/luci/vpython/api/vpython"
+	"go.chromium.org/luci/vpython/venv"
 
-	"github.com/luci/luci-go/cipd/client/cipd"
-	"github.com/luci/luci-go/cipd/client/cipd/common"
-	"github.com/luci/luci-go/cipd/client/cipd/ensure"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/system/filesystem"
+	"go.chromium.org/luci/cipd/client/cipd"
+	"go.chromium.org/luci/cipd/client/cipd/common"
+	"go.chromium.org/luci/cipd/client/cipd/ensure"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/filesystem"
 )
 
 // TemplateFunc builds a set of template parameters to augment the default CIPD

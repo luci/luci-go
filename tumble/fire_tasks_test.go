@@ -20,12 +20,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/logging/memlogger"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 
-	"github.com/luci/gae/service/info"
-	tq "github.com/luci/gae/service/taskqueue"
+	"go.chromium.org/gae/service/info"
+	tq "go.chromium.org/gae/service/taskqueue"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

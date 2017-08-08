@@ -23,14 +23,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/common/clock/testclock"
-	memcfg "github.com/luci/luci-go/common/config/impl/memory"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/authtest"
-	"github.com/luci/luci-go/server/auth/identity"
+	"go.chromium.org/luci/common/clock/testclock"
+	memcfg "go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/identity"
 
-	"github.com/luci/gae/impl/memory"
+	"go.chromium.org/gae/impl/memory"
 
 	"golang.org/x/net/context"
 

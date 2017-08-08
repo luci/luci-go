@@ -17,11 +17,11 @@ package main
 import (
 	"sort"
 
-	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/flag/flagenum"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/deploytool/managedfs"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/flag/flagenum"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/deploytool/managedfs"
 
 	"github.com/maruel/subcommands"
 )

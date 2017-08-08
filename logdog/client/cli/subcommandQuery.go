@@ -20,12 +20,12 @@ import (
 	"io"
 	"os"
 
-	"github.com/luci/luci-go/common/clock/clockflag"
-	"github.com/luci/luci-go/common/errors"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/logdog/api/logpb"
-	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
-	"github.com/luci/luci-go/logdog/client/coordinator"
+	"go.chromium.org/luci/common/clock/clockflag"
+	"go.chromium.org/luci/common/errors"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
+	"go.chromium.org/luci/logdog/client/coordinator"
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"

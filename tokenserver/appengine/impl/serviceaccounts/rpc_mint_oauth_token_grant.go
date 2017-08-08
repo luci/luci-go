@@ -13,17 +13,17 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/identity"
-	"github.com/luci/luci-go/server/auth/signing"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/identity"
+	"go.chromium.org/luci/server/auth/signing"
 
-	"github.com/luci/luci-go/tokenserver/api"
-	"github.com/luci/luci-go/tokenserver/api/minter/v1"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/utils"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/utils/revocation"
+	"go.chromium.org/luci/tokenserver/api"
+	"go.chromium.org/luci/tokenserver/api/minter/v1"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils/revocation"
 )
 
 // tokenIDSequenceKind defines the namespace of int64 IDs for grant tokens.

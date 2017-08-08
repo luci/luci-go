@@ -18,17 +18,17 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
-	"github.com/luci/luci-go/logdog/appengine/coordinator"
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
 
-	"github.com/luci/luci-go/appengine/tq"
-	"github.com/luci/luci-go/common/errors"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/common/retry/transient"
+	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/common/errors"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/retry/transient"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"

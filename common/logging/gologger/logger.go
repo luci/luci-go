@@ -20,8 +20,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/luci/luci-go/common/logging"
 	gol "github.com/op/go-logging"
+	"go.chromium.org/luci/common/logging"
 	"golang.org/x/net/context"
 )
 

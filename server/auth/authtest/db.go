@@ -19,10 +19,10 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/authdb"
-	"github.com/luci/luci-go/server/auth/identity"
-	"github.com/luci/luci-go/server/auth/signing"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authdb"
+	"go.chromium.org/luci/server/auth/identity"
+	"go.chromium.org/luci/server/auth/signing"
 )
 
 // FakeDB implements user group checking part of db.DB (IsMember).

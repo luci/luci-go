@@ -22,9 +22,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/errors"
 
-	"github.com/luci/gae/service/datastore"
+	"go.chromium.org/gae/service/datastore"
 
 	"golang.org/x/net/context"
 

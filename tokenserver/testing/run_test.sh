@@ -11,8 +11,8 @@ cd $(dirname $0)
 . ./include.sh
 
 echo "Building go code..."
-go install -v github.com/luci/luci-go/grpc/cmd/rpc
-go install -v github.com/luci/luci-go/tokenserver/cmd/luci_machine_tokend
+go install -v go.chromium.org/luci/grpc/cmd/rpc
+go install -v go.chromium.org/luci/tokenserver/cmd/luci_machine_tokend
 
 function clean_tokens {
   local cert_name=$1

@@ -27,15 +27,15 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"github.com/luci/gae/service/memcache"
+	"go.chromium.org/gae/service/memcache"
 
-	"github.com/luci/luci-go/common/api/gitiles"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/server/auth"
+	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/server/auth"
 
-	milo "github.com/luci/luci-go/milo/api/proto"
+	milo "go.chromium.org/luci/milo/api/proto"
 )
 
 var gitHash = regexp.MustCompile("[0-9a-fA-F]{40}")

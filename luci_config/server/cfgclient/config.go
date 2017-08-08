@@ -17,10 +17,10 @@ package cfgclient
 import (
 	"net/url"
 
-	"github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/common/config"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
 
 	"golang.org/x/net/context"
 )
@@ -28,7 +28,7 @@ import (
 // ErrNoConfig is a sentinel error returned by Get when the requested
 // configuration is not found.
 //
-// This is an alias of github.com/luci/luci-go/common/config.ErrNoConfig for
+// This is an alias of go.chromium.org/luci/common/config.ErrNoConfig for
 // backward compatibility.
 var ErrNoConfig = config.ErrNoConfig
 

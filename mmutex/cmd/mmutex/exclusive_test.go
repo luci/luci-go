@@ -25,7 +25,7 @@ import (
 	"github.com/danjacques/gofslock/fslock"
 	. "github.com/smartystreets/goconvey/convey"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestExclusive(t *testing.T) {

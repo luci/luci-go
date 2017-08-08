@@ -23,8 +23,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/luci/luci-go/client/internal/common"
-	"github.com/luci/luci-go/common/data/text/units"
+	"go.chromium.org/luci/client/internal/common"
+	"go.chromium.org/luci/common/data/text/units"
 )
 
 // Group identifies a column group to keep progress for.

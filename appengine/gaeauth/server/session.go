@@ -22,13 +22,13 @@ import (
 
 	"golang.org/x/net/context"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/identity"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/identity"
 )
 
 // SessionStore stores auth sessions in the datastore (always in the default

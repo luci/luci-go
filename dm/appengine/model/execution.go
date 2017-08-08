@@ -26,13 +26,13 @@ import (
 
 	"golang.org/x/net/context"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/data/rand/cryptorand"
-	"github.com/luci/luci-go/common/logging"
-	google_pb "github.com/luci/luci-go/common/proto/google"
-	dm "github.com/luci/luci-go/dm/api/service/v1"
-	"github.com/luci/luci-go/grpc/grpcutil"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/cryptorand"
+	"go.chromium.org/luci/common/logging"
+	google_pb "go.chromium.org/luci/common/proto/google"
+	dm "go.chromium.org/luci/dm/api/service/v1"
+	"go.chromium.org/luci/grpc/grpcutil"
 )
 
 const ek = logging.ErrorKey

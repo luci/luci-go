@@ -20,14 +20,14 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/gae/filter/featureBreaker"
-	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
-	"github.com/luci/luci-go/logdog/appengine/coordinator"
-	ct "github.com/luci/luci-go/logdog/appengine/coordinator/coordinatorTest"
+	"go.chromium.org/gae/filter/featureBreaker"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
+	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestLoadStream(t *testing.T) {

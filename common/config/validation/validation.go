@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 )
 
 // Error is an error with details of failed validation.

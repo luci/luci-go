@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luci/luci-go/common/clock/clockflag"
-	"github.com/luci/luci-go/server/settings"
+	"go.chromium.org/luci/common/clock/clockflag"
+	"go.chromium.org/luci/server/settings"
 	"golang.org/x/net/context"
 )
 

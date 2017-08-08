@@ -19,8 +19,8 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/luci/luci-go/common/clock"
-	log "github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/clock"
+	log "go.chromium.org/luci/common/logging"
 	"golang.org/x/net/context"
 )
 

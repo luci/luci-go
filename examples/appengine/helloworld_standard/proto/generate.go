@@ -14,7 +14,7 @@
 
 package helloworld
 
-//go:generate go install github.com/luci/luci-go/grpc/cmd/cproto
-//go:generate go install github.com/luci/luci-go/grpc/cmd/svcdec
+//go:generate go install go.chromium.org/luci/grpc/cmd/cproto
+//go:generate go install go.chromium.org/luci/grpc/cmd/svcdec
 //go:generate cproto
 //go:generate svcdec -type GreeterServer

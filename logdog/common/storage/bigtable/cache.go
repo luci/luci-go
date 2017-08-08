@@ -19,10 +19,10 @@ import (
 	"encoding/binary"
 	"time"
 
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/logdog/common/storage/caching"
-	"github.com/luci/luci-go/logdog/common/types"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/logdog/common/storage/caching"
+	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
 )

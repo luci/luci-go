@@ -20,7 +20,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/errors"
 )
 
 // TODO(tandrii): Remove this hacky stuff.

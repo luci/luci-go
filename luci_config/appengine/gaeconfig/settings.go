@@ -24,7 +24,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/server/settings"
+	"go.chromium.org/luci/server/settings"
 )
 
 // DefaultExpire is a reasonable default expiration value.
@@ -174,7 +174,7 @@ service outages, the local datastore can be used as a backing cache. When
 enabled, all configuration requests will be made against a cached configuration
 in the datastore. This configuration will be updated periodically by an
 independent cron job out of band with any user requests. See
-<a href="https://godoc.org/github.com/luci/luci-go/appengine/gaemiddleware/#hdr-Cron_setup">gaemiddleware</a>
+<a href="https://godoc.org/go.chromium.org/luci/appengine/gaemiddleware/#hdr-Cron_setup">gaemiddleware</a>
 package doc for instructions how to setup this cron job.</p>`,
 		},
 	}, nil

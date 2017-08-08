@@ -22,9 +22,9 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/cli"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/logging/gologger"
+	"go.chromium.org/luci/common/cli"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
 )
 
 type application struct {

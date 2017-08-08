@@ -22,11 +22,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/api/buildbucket/buildbucket/v1"
-	"github.com/luci/luci-go/common/api/buildbucket/swarmbucket/v1"
-	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/common/model"
-	"github.com/luci/luci-go/server/auth"
+	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
+	"go.chromium.org/luci/milo/api/resp"
+	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/server/auth"
 )
 
 const (

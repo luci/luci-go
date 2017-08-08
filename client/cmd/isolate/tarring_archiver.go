@@ -21,9 +21,9 @@ import (
 	"path/filepath"
 
 	humanize "github.com/dustin/go-humanize"
-	"github.com/luci/luci-go/client/internal/common"
-	"github.com/luci/luci-go/client/isolate"
-	"github.com/luci/luci-go/common/isolated"
+	"go.chromium.org/luci/client/internal/common"
+	"go.chromium.org/luci/client/isolate"
+	"go.chromium.org/luci/common/isolated"
 )
 
 // TarringArchiver archives the files specified by an isolate file to the server,

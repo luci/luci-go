@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/luci/luci-go/logdog/common/types"
+	"go.chromium.org/luci/logdog/common/types"
 )
 
 var (

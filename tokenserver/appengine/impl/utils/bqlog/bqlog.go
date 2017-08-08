@@ -47,21 +47,21 @@ import (
 	bigquery "google.golang.org/api/bigquery/v2"
 	"google.golang.org/api/googleapi"
 
-	"github.com/luci/gae/service/info"
-	"github.com/luci/gae/service/taskqueue"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/gae/service/taskqueue"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry"
-	"github.com/luci/luci-go/common/retry/transient"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 
-	"github.com/luci/luci-go/common/tsmon/distribution"
-	"github.com/luci/luci-go/common/tsmon/field"
-	"github.com/luci/luci-go/common/tsmon/metric"
-	"github.com/luci/luci-go/common/tsmon/types"
+	"go.chromium.org/luci/common/tsmon/distribution"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/types"
 
-	"github.com/luci/luci-go/server/auth"
+	"go.chromium.org/luci/server/auth"
 )
 
 const (

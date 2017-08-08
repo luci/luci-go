@@ -24,18 +24,18 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/server/templates"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/templates"
 
-	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/buildsource"
-	"github.com/luci/luci-go/milo/common"
-	"github.com/luci/luci-go/milo/common/model"
-	"github.com/luci/luci-go/milo/git"
+	"go.chromium.org/luci/milo/api/resp"
+	"go.chromium.org/luci/milo/buildsource"
+	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/git"
 )
 
 // getConsoleDef finds the console definition as defined by any project.

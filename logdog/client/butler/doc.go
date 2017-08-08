@@ -14,5 +14,5 @@
 
 // Package butler is the main engine for the Butler executable. It is an
 // internal package to support
-// github.com/luci/luci-go/logdog/client/cmd/logdog_butler.
+// go.chromium.org/luci/logdog/client/cmd/logdog_butler.
 package butler

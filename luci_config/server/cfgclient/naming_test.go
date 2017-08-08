@@ -17,7 +17,7 @@ package cfgclient
 import (
 	"testing"
 
-	"github.com/luci/gae/impl/memory"
+	"go.chromium.org/gae/impl/memory"
 
 	"golang.org/x/net/context"
 

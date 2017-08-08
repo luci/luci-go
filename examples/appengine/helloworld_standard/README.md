@@ -22,8 +22,8 @@ Since we still want to run on Standard GAE, we must obey some rules.
 In particular, Standard GAE Golang SDK enforces that all subpackages imported
 from GAE module package (e.g. package that contains `app.yaml`) are using
 relative import paths. For example, if `app.yaml` is located in the package
-`github.com/luci/luci-go/luci-go/appengine/cmd/helloworld` then an attempt to
-import `github.com/luci/luci-go/luci-go/appengine/cmd/helloworld/subpackage`
+`go.chromium.org/luci/luci-go/appengine/cmd/helloworld` then an attempt to
+import `go.chromium.org/luci/luci-go/appengine/cmd/helloworld/subpackage`
 from `.../helloworld/source.go` will fail with GAE SDK complaining that imports
 should be relative (i.e. `import "subpackage"`). It is a precaution against
 importing instances of same package via two different import paths (absolute and
@@ -61,7 +61,7 @@ as `gae.py` in GAE application directory (i.e. a directory that contains
 If you are using infra.git gclient solution, run:
 
 ```shell
-cd github.com/luci/luci-go/luci-go/appengine/cmd/helloworld
+cd go.chromium.org/luci/luci-go/appengine/cmd/helloworld
 ln -s ../../../../../../../../luci/appengine/components/tools/gae.py gae.py
 ./gae.py devserver
 ```

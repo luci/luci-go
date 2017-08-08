@@ -17,7 +17,7 @@ package backend
 import (
 	"net/url"
 
-	"github.com/luci/luci-go/common/config"
+	"go.chromium.org/luci/common/config"
 
 	"golang.org/x/net/context"
 )
@@ -84,7 +84,7 @@ type B interface {
 type Factory func(context.Context) B
 
 // configBackendKey is the Context key for the configuration backend.
-var configBackendKey = "github.com/luci/luci-go/server/config:backend"
+var configBackendKey = "go.chromium.org/luci/server/config:backend"
 
 // WithBackend returns a derivative Context with the supplied Backend installed.
 func WithBackend(c context.Context, b B) context.Context {

@@ -30,13 +30,13 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/logging/gologger"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging/gologger"
 
-	. "github.com/luci/luci-go/cipd/client/cipd/common"
-	"github.com/luci/luci-go/cipd/client/cipd/internal"
-	"github.com/luci/luci-go/cipd/client/cipd/local"
+	. "go.chromium.org/luci/cipd/client/cipd/common"
+	"go.chromium.org/luci/cipd/client/cipd/internal"
+	"go.chromium.org/luci/cipd/client/cipd/local"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

@@ -23,7 +23,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/logging"
 )
 
 // ID returns the Google Analytics ID if it's set, and "" otherwise.

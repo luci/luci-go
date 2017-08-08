@@ -27,11 +27,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	isolateservice "github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
-	"github.com/luci/luci-go/common/isolated"
-	"github.com/luci/luci-go/common/lhttp"
-	"github.com/luci/luci-go/common/retry"
-	"github.com/luci/luci-go/common/runtime/tracer"
+	isolateservice "go.chromium.org/luci/common/api/isolate/isolateservice/v1"
+	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/lhttp"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/runtime/tracer"
 )
 
 // DefaultNamespace is the namespace that should be used with the New function.

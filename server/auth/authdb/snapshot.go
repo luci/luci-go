@@ -22,12 +22,12 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/data/caching/lazyslot"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/server/auth/identity"
-	"github.com/luci/luci-go/server/auth/service/protocol"
-	"github.com/luci/luci-go/server/auth/signing"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/caching/lazyslot"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth/identity"
+	"go.chromium.org/luci/server/auth/service/protocol"
+	"go.chromium.org/luci/server/auth/signing"
 )
 
 // OAuth client_id of https://apis-explorer.appspot.com/.

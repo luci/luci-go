@@ -17,10 +17,10 @@ package tsmon
 import (
 	"testing"
 
-	"github.com/luci/luci-go/common/tsmon"
-	"github.com/luci/luci-go/common/tsmon/monitor"
-	"github.com/luci/luci-go/common/tsmon/store"
-	"github.com/luci/luci-go/common/tsmon/target"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/monitor"
+	"go.chromium.org/luci/common/tsmon/store"
+	"go.chromium.org/luci/common/tsmon/target"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

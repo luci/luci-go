@@ -23,7 +23,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/logging"
 )
 
 // LogEntry is a single entry in a MemLogger, containing a message and a

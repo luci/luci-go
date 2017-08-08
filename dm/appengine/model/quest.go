@@ -19,11 +19,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/clock"
-	google_pb "github.com/luci/luci-go/common/proto/google"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/clock"
+	google_pb "go.chromium.org/luci/common/proto/google"
 
-	dm "github.com/luci/luci-go/dm/api/service/v1"
+	dm "go.chromium.org/luci/dm/api/service/v1"
 )
 
 // NewQuest builds a new Quest object with a correct ID given the current

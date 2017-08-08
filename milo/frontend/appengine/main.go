@@ -15,7 +15,7 @@
 package appengine
 
 import (
-	"github.com/luci/luci-go/milo/frontend"
+	"go.chromium.org/luci/milo/frontend"
 )
 
 func init() {

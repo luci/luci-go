@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/common/clock"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/clock"
 	"golang.org/x/net/context"
 )
 

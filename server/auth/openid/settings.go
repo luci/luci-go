@@ -20,11 +20,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/server/settings"
+	"go.chromium.org/luci/server/settings"
 )
 
 // SettingsKey is key for OpenID settings (described by Settings struct) in
-// settings store. See github.com/luci/luci-go/server/settings.
+// settings store. See go.chromium.org/luci/server/settings.
 const SettingsKey = "openid_auth"
 
 var (

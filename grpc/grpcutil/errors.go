@@ -18,8 +18,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/retry/transient"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 )
 
 var (

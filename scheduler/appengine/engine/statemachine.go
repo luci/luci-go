@@ -21,8 +21,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/scheduler/appengine/schedule"
-	"github.com/luci/luci-go/server/auth/identity"
+	"go.chromium.org/luci/scheduler/appengine/schedule"
+	"go.chromium.org/luci/server/auth/identity"
 )
 
 // StateKind defines high-level state of the job. See JobState for full state

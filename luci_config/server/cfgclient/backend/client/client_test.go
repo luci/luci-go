@@ -23,12 +23,12 @@ import (
 	"net/url"
 	"testing"
 
-	configApi "github.com/luci/luci-go/common/api/luci_config/config/v1"
-	"github.com/luci/luci-go/luci_config/server/cfgclient"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/authtest"
-	"github.com/luci/luci-go/server/auth/delegation"
+	configApi "go.chromium.org/luci/common/api/luci_config/config/v1"
+	"go.chromium.org/luci/luci_config/server/cfgclient"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/delegation"
 
 	"golang.org/x/net/context"
 

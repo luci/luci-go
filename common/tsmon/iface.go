@@ -21,15 +21,15 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/tsmon/monitor"
-	"github.com/luci/luci-go/common/tsmon/store"
-	"github.com/luci/luci-go/common/tsmon/target"
-	"github.com/luci/luci-go/common/tsmon/types"
+	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon/monitor"
+	"go.chromium.org/luci/common/tsmon/store"
+	"go.chromium.org/luci/common/tsmon/target"
+	"go.chromium.org/luci/common/tsmon/types"
 
-	"github.com/luci/luci-go/hardcoded/chromeinfra"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
 // Store returns the global metric store that contains all the metric values for

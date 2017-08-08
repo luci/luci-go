@@ -26,7 +26,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/luci/luci-go/common/data/stringset"
+	"go.chromium.org/luci/common/data/stringset"
 )
 
 // packageNameRe is a regular expression for a package name: <word>/<word/<word>

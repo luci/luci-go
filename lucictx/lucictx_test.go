@@ -26,7 +26,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/luci/luci-go/common/system/environ"
+	"go.chromium.org/luci/common/system/environ"
 )
 
 func rawctx(content string) func() {

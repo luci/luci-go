@@ -20,29 +20,29 @@ import (
 	// Importing pprof implicitly installs "/debug/*" profiling handlers.
 	_ "net/http/pprof"
 
-	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/common/data/rand/mathrand"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/grpc/discovery"
-	"github.com/luci/luci-go/grpc/prpc"
-	adminPb "github.com/luci/luci-go/logdog/api/endpoints/coordinator/admin/v1"
-	logsPb "github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
-	registrationPb "github.com/luci/luci-go/logdog/api/endpoints/coordinator/registration/v1"
-	servicesPb "github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
-	"github.com/luci/luci-go/logdog/appengine/coordinator"
-	"github.com/luci/luci-go/logdog/appengine/coordinator/config"
-	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints/admin"
-	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints/logs"
-	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints/registration"
-	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints/services"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/common/data/rand/mathrand"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/discovery"
+	"go.chromium.org/luci/grpc/prpc"
+	adminPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/admin/v1"
+	logsPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	registrationPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
+	servicesPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
+	"go.chromium.org/luci/logdog/appengine/coordinator/config"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/admin"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/logs"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/registration"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/services"
+	"go.chromium.org/luci/server/router"
 
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
 	// Include mutations package so its Mutations will register with tumble via
 	// init().
-	_ "github.com/luci/luci-go/logdog/appengine/coordinator/mutations"
+	_ "go.chromium.org/luci/logdog/appengine/coordinator/mutations"
 )
 
 // Run installs and executes this site.

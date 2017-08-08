@@ -21,7 +21,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/server/auth"
+	"go.chromium.org/luci/server/auth"
 )
 
 // ErrAuthenticationError is returned by FakeAuth.Authenticate.

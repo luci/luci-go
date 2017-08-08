@@ -24,8 +24,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/system/filesystem"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/system/filesystem"
 
 	"golang.org/x/net/context"
 )

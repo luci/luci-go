@@ -28,17 +28,17 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/ptypes/duration"
-	"github.com/luci/gae/service/info"
-	swarm "github.com/luci/luci-go/common/api/swarming/swarming/v1"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	googlepb "github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/common/retry"
-	sv1 "github.com/luci/luci-go/dm/api/distributor/swarming/v1"
-	dm "github.com/luci/luci-go/dm/api/service/v1"
-	"github.com/luci/luci-go/dm/appengine/distributor"
-	"github.com/luci/luci-go/server/auth"
+	"go.chromium.org/gae/service/info"
+	swarm "go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	googlepb "go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/retry"
+	sv1 "go.chromium.org/luci/dm/api/distributor/swarming/v1"
+	dm "go.chromium.org/luci/dm/api/service/v1"
+	"go.chromium.org/luci/dm/appengine/distributor"
+	"go.chromium.org/luci/server/auth"
 )
 
 type swarmingDist struct {

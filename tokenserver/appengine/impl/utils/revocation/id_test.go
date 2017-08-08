@@ -19,7 +19,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/impl/memory"
+	"go.chromium.org/gae/impl/memory"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

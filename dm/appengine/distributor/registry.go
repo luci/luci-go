@@ -19,13 +19,13 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/dm/api/distributor"
-	"github.com/luci/luci-go/dm/api/service/v1"
-	"github.com/luci/luci-go/luci_config/server/cfgclient"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
-	"github.com/luci/luci-go/tumble"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/dm/api/distributor"
+	"go.chromium.org/luci/dm/api/service/v1"
+	"go.chromium.org/luci/luci_config/server/cfgclient"
+	"go.chromium.org/luci/luci_config/server/cfgclient/textproto"
+	"go.chromium.org/luci/tumble"
 
 	"github.com/golang/protobuf/proto"
 

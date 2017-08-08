@@ -19,10 +19,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/tokenserver/api"
-	"github.com/luci/luci-go/tokenserver/api/minter/v1"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/tokenserver/api"
+	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

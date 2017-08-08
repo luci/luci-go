@@ -15,14 +15,14 @@
 package frontend
 
 import (
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/server/templates"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/templates"
 
-	"github.com/luci/luci-go/common/sync/parallel"
-	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/buildsource/buildbot"
-	"github.com/luci/luci-go/milo/buildsource/buildbucket"
-	"github.com/luci/luci-go/milo/common"
+	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/milo/api/resp"
+	"go.chromium.org/luci/milo/buildsource/buildbot"
+	"go.chromium.org/luci/milo/buildsource/buildbucket"
+	"go.chromium.org/luci/milo/common"
 )
 
 func frontpageHandler(c *router.Context) {

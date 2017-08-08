@@ -23,7 +23,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/scheduler/appengine/task"
+	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
 // TimerSpec correspond to single AddTimer call.

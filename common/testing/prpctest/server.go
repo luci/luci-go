@@ -24,8 +24,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/grpc/prpc"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/router"
 )
 
 // Server is a pRPC test server.

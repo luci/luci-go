@@ -17,14 +17,14 @@ package gaetesting
 import (
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/impl/memory"
-	"github.com/luci/luci-go/common/data/caching/proccache"
-	"github.com/luci/luci-go/server/secrets/testsecrets"
+	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/common/data/caching/proccache"
+	"go.chromium.org/luci/server/secrets/testsecrets"
 )
 
 // TestingContext returns context with base services installed:
-//   * github.com/luci/gae/impl/memory (in-memory appengine services)
-//   * github.com/luci/luci-go/server/secrets/testsecrets (access to fake secret keys)
+//   * go.chromium.org/gae/impl/memory (in-memory appengine services)
+//   * go.chromium.org/luci/server/secrets/testsecrets (access to fake secret keys)
 func TestingContext() context.Context {
 	c := context.Background()
 	c = memory.Use(c)

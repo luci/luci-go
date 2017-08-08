@@ -15,10 +15,10 @@
 package tasks
 
 import (
-	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 
-	"github.com/luci/luci-go/appengine/tq"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/server/router"
 )
 
 const (

@@ -18,7 +18,7 @@ import (
 	"io"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/api/logpb"
 )
 
 // indexBuilder is a stateful engine that constructs an archival index.

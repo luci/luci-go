@@ -17,10 +17,10 @@ package coordinator
 import (
 	"fmt"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
-	"github.com/luci/luci-go/logdog/common/types"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
 )

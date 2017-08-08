@@ -8,8 +8,8 @@ luci-go: LUCI services and tools in Go
 Installing
 ----------
 
-    go get -u github.com/luci/luci-go/client/cmd/...
-    go get -u github.com/luci/luci-go/server/cmd/...
+    go get -u go.chromium.org/luci/client/cmd/...
+    go get -u go.chromium.org/luci/server/cmd/...
 
 
 Code layout
@@ -48,7 +48,7 @@ Contributing
   * Sign the [Google CLA](https://cla.developers.google.com/clas).
   * Make sure your `user.email` and `user.name` are configured in `git config`.
   * Install test-only packages:
-    `go get -u -t github.com/luci/luci-go/client/...`
+    `go get -u -t go.chromium.org/luci/client/...`
   * Install the [pcg](https://github.com/maruel/pre-commit-go) git hook:
     `go get -u github.com/maruel/pre-commit-go/cmd/... && pcg`
 

@@ -22,14 +22,14 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"github.com/luci/gae/filter/count"
-	"github.com/luci/luci-go/appengine/gaetesting"
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/config/validation"
-	"github.com/luci/luci-go/common/data/rand/mathrand"
+	"go.chromium.org/gae/filter/count"
+	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/config/validation"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 // queryableForm implements Queryable.

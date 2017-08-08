@@ -15,7 +15,7 @@
 package flagpb
 
 import (
-	"github.com/luci/luci-go/common/proto/google/descutil"
+	"go.chromium.org/luci/common/proto/google/descutil"
 
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 )

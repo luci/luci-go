@@ -30,7 +30,7 @@ def compile_pkg(pkg_dir, os_name, arch_name):
     GOARCH = arch_name,
   )
   subprocess.check_call(
-      ['go', 'build', 'github.com/luci/luci-go/dm/tools/jobsim_client'],
+      ['go', 'build', 'go.chromium.org/luci/dm/tools/jobsim_client'],
       cwd=pkg_dir, env=env)
 
 def upload_pkg(pkg_dir, pkg_name_prefix, os_name, arch_name):

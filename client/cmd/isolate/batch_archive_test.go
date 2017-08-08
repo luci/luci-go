@@ -19,8 +19,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/luci/luci-go/client/internal/common"
-	"github.com/luci/luci-go/common/flag/stringmapflag"
+	"go.chromium.org/luci/client/internal/common"
+	"go.chromium.org/luci/common/flag/stringmapflag"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

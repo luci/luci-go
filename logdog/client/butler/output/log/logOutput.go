@@ -20,11 +20,11 @@ import (
 	"sync"
 
 	"github.com/golang/protobuf/proto"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/logdog/api/logpb"
-	"github.com/luci/luci-go/logdog/client/butler/output"
-	"github.com/luci/luci-go/logdog/common/types"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/client/butler/output"
+	"go.chromium.org/luci/logdog/common/types"
 	"golang.org/x/net/context"
 )
 

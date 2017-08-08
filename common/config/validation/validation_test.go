@@ -17,7 +17,7 @@ package validation
 import (
 	"testing"
 
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/logging"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

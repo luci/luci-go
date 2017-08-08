@@ -22,17 +22,17 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/info"
-	"github.com/luci/gae/service/urlfetch"
-	"github.com/luci/gae/service/user"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/gae/service/urlfetch"
+	"go.chromium.org/gae/service/user"
 
-	"github.com/luci/luci-go/common/data/caching/proccache"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/gcloud/googleoauth"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/identity"
+	"go.chromium.org/luci/common/data/caching/proccache"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/gcloud/googleoauth"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/identity"
 )
 
 // EmailScope is a scope used to identifies user's email. Present in most tokens

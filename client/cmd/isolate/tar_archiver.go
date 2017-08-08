@@ -20,8 +20,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/luci/luci-go/common/iotools"
-	"github.com/luci/luci-go/common/isolated"
+	"go.chromium.org/luci/common/iotools"
+	"go.chromium.org/luci/common/isolated"
 )
 
 // osOpen wraps os.Open to allow faking out during tests.

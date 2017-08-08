@@ -20,8 +20,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/luci/luci-go/common/sync/parallel"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/sync/parallel"
 )
 
 func TestSizeLimit(t *testing.T) {

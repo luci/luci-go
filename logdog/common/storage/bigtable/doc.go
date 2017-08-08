@@ -42,7 +42,7 @@
 // character is always greater than any HEX(cmpbin(*)) value, this will
 // effectively upper-bound the row.
 //
-// "cmpbin" (github.com/luci/luci-go/common/cmpbin) will be used to format the
+// "cmpbin" (go.chromium.org/luci/common/cmpbin) will be used to format the
 // stream index. It is a variable-width number encoding scheme that offers the
 // guarantee that byte-sorted encoded numbers will maintain the same order as
 // the numbers themselves.

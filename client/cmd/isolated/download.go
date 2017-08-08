@@ -18,8 +18,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luci/luci-go/common/auth"
 	"github.com/maruel/subcommands"
+	"go.chromium.org/luci/common/auth"
 )
 
 func cmdDownload(authOpts auth.Options) *subcommands.Command {

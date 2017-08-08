@@ -17,9 +17,9 @@ package coordinator
 import (
 	"strings"
 
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/logdog/api/config/svcconfig"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/logdog/api/config/svcconfig"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
 )

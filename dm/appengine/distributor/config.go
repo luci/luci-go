@@ -20,10 +20,10 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/gae/service/info"
-	tq "github.com/luci/gae/service/taskqueue"
-	"github.com/luci/luci-go/common/gcloud/pubsub"
-	dm "github.com/luci/luci-go/dm/api/service/v1"
+	"go.chromium.org/gae/service/info"
+	tq "go.chromium.org/gae/service/taskqueue"
+	"go.chromium.org/luci/common/gcloud/pubsub"
+	dm "go.chromium.org/luci/dm/api/service/v1"
 )
 
 // Config represents the configuration for a single instance of a given

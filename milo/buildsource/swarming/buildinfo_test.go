@@ -18,19 +18,19 @@ import (
 	"fmt"
 	"testing"
 
-	swarming "github.com/luci/luci-go/common/api/swarming/swarming/v1"
-	miloProto "github.com/luci/luci-go/common/proto/milo"
-	"github.com/luci/luci-go/grpc/grpcutil"
-	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
-	"github.com/luci/luci-go/logdog/client/coordinator"
-	milo "github.com/luci/luci-go/milo/api/proto"
+	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
+	miloProto "go.chromium.org/luci/common/proto/milo"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	"go.chromium.org/luci/logdog/client/coordinator"
+	milo "go.chromium.org/luci/milo/api/proto"
 
-	"github.com/luci/gae/impl/memory"
+	"go.chromium.org/gae/impl/memory"
 
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type testSwarmingService struct {

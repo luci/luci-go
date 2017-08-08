@@ -25,9 +25,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/milo/common"
-	"github.com/luci/luci-go/milo/common/model"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/common/model"
 )
 
 // MiloBuild denotes a full renderable Milo build page.

@@ -17,16 +17,16 @@ package frontend
 import (
 	"net/http"
 
-	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/dm/appengine/deps"
-	"github.com/luci/luci-go/dm/appengine/distributor"
-	"github.com/luci/luci-go/dm/appengine/distributor/jobsim"
-	"github.com/luci/luci-go/dm/appengine/distributor/swarming/v1"
-	"github.com/luci/luci-go/dm/appengine/mutate"
-	"github.com/luci/luci-go/grpc/discovery"
-	"github.com/luci/luci-go/grpc/prpc"
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/tumble"
+	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/dm/appengine/deps"
+	"go.chromium.org/luci/dm/appengine/distributor"
+	"go.chromium.org/luci/dm/appengine/distributor/jobsim"
+	"go.chromium.org/luci/dm/appengine/distributor/swarming/v1"
+	"go.chromium.org/luci/dm/appengine/mutate"
+	"go.chromium.org/luci/grpc/discovery"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/tumble"
 )
 
 func init() {

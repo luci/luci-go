@@ -16,12 +16,12 @@ package admin
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/gae/service/info"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/grpc/grpcutil"
-	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/admin/v1"
-	"github.com/luci/luci-go/logdog/appengine/coordinator"
-	"github.com/luci/luci-go/server/auth"
+	"go.chromium.org/gae/service/info"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/admin/v1"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
+	"go.chromium.org/luci/server/auth"
 	"golang.org/x/net/context"
 )
 

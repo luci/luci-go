@@ -24,12 +24,12 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/iotools"
-	"github.com/luci/luci-go/common/logging"
-	milo "github.com/luci/luci-go/milo/api/proto"
-	"github.com/luci/luci-go/milo/common"
-	"github.com/luci/luci-go/server/auth"
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/iotools"
+	"go.chromium.org/luci/common/logging"
+	milo "go.chromium.org/luci/milo/api/proto"
+	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/server/auth"
 )
 
 // Service is a service implementation that displays BuildBot builds.

@@ -19,9 +19,9 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/tumble"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/tumble"
 )
 
 const handlerPattern = "/tq/distributor/:cfgName"

@@ -22,11 +22,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luci/luci-go/common/errors"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/logdog/common/storage/caching"
+	"go.chromium.org/luci/common/errors"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/logdog/common/storage/caching"
 
-	"github.com/luci/gae/service/memcache"
+	"go.chromium.org/gae/service/memcache"
 
 	"golang.org/x/net/context"
 )

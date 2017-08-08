@@ -29,10 +29,10 @@ import (
 
 	"golang.org/x/net/context"
 
-	isolateservice "github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
-	"github.com/luci/luci-go/common/isolated"
-	"github.com/luci/luci-go/common/isolatedclient/isolatedfake"
-	"github.com/luci/luci-go/common/retry"
+	isolateservice "go.chromium.org/luci/common/api/isolate/isolateservice/v1"
+	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
+	"go.chromium.org/luci/common/retry"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

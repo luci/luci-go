@@ -17,10 +17,10 @@ package rawpresentation
 import (
 	"net/http"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/grpc/prpc"
-	"github.com/luci/luci-go/logdog/client/coordinator"
-	"github.com/luci/luci-go/server/auth"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/logdog/client/coordinator"
+	"go.chromium.org/luci/server/auth"
 
 	"golang.org/x/net/context"
 )

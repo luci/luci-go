@@ -6,8 +6,8 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	context "golang.org/x/net/context"
 
-	google_protobuf "github.com/luci/luci-go/common/proto/google"
-	sub "github.com/luci/luci-go/grpc/internal/svctool/testdata/sub"
+	google_protobuf "go.chromium.org/luci/common/proto/google"
+	sub "go.chromium.org/luci/grpc/internal/svctool/testdata/sub"
 )
 
 type DecoratedS1 struct {

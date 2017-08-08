@@ -17,7 +17,7 @@ package target
 import (
 	"flag"
 
-	"github.com/luci/luci-go/common/flag/flagenum"
+	"go.chromium.org/luci/common/flag/flagenum"
 )
 
 // Type is a target type enumeration.

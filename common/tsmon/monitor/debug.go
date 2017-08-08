@@ -20,10 +20,10 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/logging"
-	pb "github.com/luci/luci-go/common/tsmon/ts_mon_proto"
-	"github.com/luci/luci-go/common/tsmon/types"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
+	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
+	"go.chromium.org/luci/common/tsmon/types"
 )
 
 type debugMonitor struct {

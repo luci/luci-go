@@ -19,7 +19,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/luci/luci-go/common/system/terminal"
+	"go.chromium.org/luci/common/system/terminal"
 )
 
 // IsWindows returns True when running on the best OS there is.

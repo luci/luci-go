@@ -20,10 +20,10 @@ import (
 	"os/signal"
 	"strings"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/system/environ"
-	"github.com/luci/luci-go/vpython/venv"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/vpython/venv"
 
 	"golang.org/x/net/context"
 )

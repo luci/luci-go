@@ -22,11 +22,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/data/caching/proccache"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/identity"
-	"github.com/luci/luci-go/server/auth/internal"
-	"github.com/luci/luci-go/server/tokens"
+	"go.chromium.org/luci/common/data/caching/proccache"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/identity"
+	"go.chromium.org/luci/server/auth/internal"
+	"go.chromium.org/luci/server/tokens"
 )
 
 // openIDStateToken is used to generate `state` parameter used in OpenID flow to

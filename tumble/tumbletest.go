@@ -21,19 +21,19 @@ import (
 	"os"
 	"time"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/data/rand/cryptorand"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/logging/memlogger"
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/server/settings"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/rand/cryptorand"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/settings"
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/impl/memory"
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
-	tq "github.com/luci/gae/service/taskqueue"
+	"go.chromium.org/gae/impl/memory"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
+	tq "go.chromium.org/gae/service/taskqueue"
 )
 
 // Testing is a high-level testing object for testing applications that use

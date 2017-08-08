@@ -15,8 +15,8 @@
 package server
 
 import (
-	"github.com/luci/luci-go/grpc/prpc"
-	"github.com/luci/luci-go/server/auth"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
 )
 
 func init() {

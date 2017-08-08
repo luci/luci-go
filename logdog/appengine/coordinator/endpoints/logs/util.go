@@ -15,11 +15,11 @@
 package logs
 
 import (
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
-	"github.com/luci/luci-go/logdog/appengine/coordinator"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
 )
 
 func buildLogStreamState(ls *coordinator.LogStream, lst *coordinator.LogStreamState) *logdog.LogStreamState {

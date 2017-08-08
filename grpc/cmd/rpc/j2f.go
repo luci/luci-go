@@ -24,8 +24,8 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"github.com/luci/luci-go/client/flagpb"
-	"github.com/luci/luci-go/common/auth"
+	"go.chromium.org/luci/client/flagpb"
+	"go.chromium.org/luci/common/auth"
 )
 
 const (

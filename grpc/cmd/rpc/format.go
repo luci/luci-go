@@ -17,8 +17,8 @@ package main
 import (
 	"flag"
 
-	"github.com/luci/luci-go/common/flag/flagenum"
-	"github.com/luci/luci-go/grpc/prpc"
+	"go.chromium.org/luci/common/flag/flagenum"
+	"go.chromium.org/luci/grpc/prpc"
 )
 
 type formatFlag prpc.Format

@@ -20,11 +20,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/appengine/gaetesting"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/server/auth/service"
-	"github.com/luci/luci-go/server/auth/service/protocol"
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/server/auth/service"
+	"go.chromium.org/luci/server/auth/service/protocol"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

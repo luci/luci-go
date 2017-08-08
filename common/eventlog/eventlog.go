@@ -22,8 +22,8 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/eventlog/internal/logservice"
-	logpb "github.com/luci/luci-go/common/eventlog/proto"
+	"go.chromium.org/luci/common/eventlog/internal/logservice"
+	logpb "go.chromium.org/luci/common/eventlog/proto"
 )
 
 // TestEndpoint is the server address for test logs.

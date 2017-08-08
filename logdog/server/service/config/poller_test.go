@@ -20,11 +20,11 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/config/impl/memory"
-	"github.com/luci/luci-go/logdog/api/config/svcconfig"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/logdog/api/config/svcconfig"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
 
 	"golang.org/x/net/context"
 

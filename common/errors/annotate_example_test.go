@@ -86,35 +86,35 @@ func ExampleAnnotate() {
 	//
 	// full error:
 	// GOROUTINE LINE
-	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:24 - errors.someProcessingFunction()
+	// #? go.chromium.org/luci/common/errors/annotate_example_test.go:24 - errors.someProcessingFunction()
 	//   reason: bad number: 1
 	//
-	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:26 - errors.someProcessingFunction()
+	// #? go.chromium.org/luci/common/errors/annotate_example_test.go:26 - errors.someProcessingFunction()
 	//   internal reason: val(2)
 	//
-	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:26 - errors.someProcessingFunction()
+	// #? go.chromium.org/luci/common/errors/annotate_example_test.go:26 - errors.someProcessingFunction()
 	//   internal reason: val(3)
 	//
 	// From frame 2 to 3, the following wrappers were found:
 	//   unknown wrapper *errors.MiscWrappedError
 	//
-	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:35 - errors.someLibFunc()
+	// #? go.chromium.org/luci/common/errors/annotate_example_test.go:35 - errors.someLibFunc()
 	//   reason: processing 3
 	//   internal reason: secret(value)/i(0)
 	//
 	// From frame 3 to 4, the following wrappers were found:
 	//   internal reason: MultiError 1/1: following first non-nil error.
 	//
-	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:59 - errors.someIntermediateFunc.func1()
+	// #? go.chromium.org/luci/common/errors/annotate_example_test.go:59 - errors.someIntermediateFunc.func1()
 	//   reason: could not process
 	//
 	// ... skipped SOME frames in pkg "runtime"...
 	//
 	// GOROUTINE LINE
-	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:68 - errors.someIntermediateFunc()
+	// #? go.chromium.org/luci/common/errors/annotate_example_test.go:68 - errors.someIntermediateFunc()
 	//   reason: while processing [3]
 	//
-	// #? github.com/luci/luci-go/common/errors/annotate_example_test.go:74 - errors.ExampleAnnotate()
+	// #? go.chromium.org/luci/common/errors/annotate_example_test.go:74 - errors.ExampleAnnotate()
 	//   reason: top level
 	//
 	// #? testing/example.go:XXX - testing.runExample()

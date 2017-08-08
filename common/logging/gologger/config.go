@@ -22,8 +22,8 @@ import (
 	gol "github.com/op/go-logging"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/system/terminal"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/terminal"
 )
 
 // StdFormat is a preferred logging format to use.

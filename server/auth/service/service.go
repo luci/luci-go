@@ -28,11 +28,11 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/logging"
 
-	"github.com/luci/luci-go/server/auth/internal"
-	"github.com/luci/luci-go/server/auth/service/protocol"
-	"github.com/luci/luci-go/server/auth/signing"
+	"go.chromium.org/luci/server/auth/internal"
+	"go.chromium.org/luci/server/auth/service/protocol"
+	"go.chromium.org/luci/server/auth/signing"
 )
 
 // oauthScopes is OAuth scopes required for using AuthService API (including

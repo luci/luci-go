@@ -19,22 +19,22 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/gae/filter/featureBreaker"
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/data/rand/cryptorand"
-	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/logdog/api/config/svcconfig"
-	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/registration/v1"
-	"github.com/luci/luci-go/logdog/appengine/coordinator"
-	ct "github.com/luci/luci-go/logdog/appengine/coordinator/coordinatorTest"
-	"github.com/luci/luci-go/logdog/common/types"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"go.chromium.org/gae/filter/featureBreaker"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/cryptorand"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/logdog/api/config/svcconfig"
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
+	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
+	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRegisterPrefix(t *testing.T) {

@@ -22,14 +22,14 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/tsmon/monitor"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/settings"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/tsmon/monitor"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/settings"
 )
 
 // settingsKey is key for tsmon settings (described by tsmonSettings struct)
-// in the settings store. See github.com/luci/luci-go/server/settings.
+// in the settings store. See go.chromium.org/luci/server/settings.
 const settingsKey = "tsmon"
 
 // tsmonSettings contain global tsmon settings for the GAE app.
@@ -110,7 +110,7 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 				`values in memory and will periodically flush them to tsmon backends (if the flush method ` +
 				`is configured, see below) or GAE log (if not configured). Note that enabling ` +
 				`this field requires an active housekeeping cron task to be installed. See ` +
-				`<a href="https://godoc.org/github.com/luci/luci-go/appengine/tsmon">the tsmon doc</a> for more information.`,
+				`<a href="https://godoc.org/go.chromium.org/luci/appengine/tsmon">the tsmon doc</a> for more information.`,
 		}),
 		{
 			ID:    "ProdXAccount",

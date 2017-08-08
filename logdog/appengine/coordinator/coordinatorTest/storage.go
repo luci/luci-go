@@ -20,13 +20,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/gcloud/gs"
-	"github.com/luci/luci-go/logdog/appengine/coordinator"
-	"github.com/luci/luci-go/logdog/common/storage"
-	"github.com/luci/luci-go/logdog/common/storage/archive"
-	"github.com/luci/luci-go/logdog/common/storage/bigtable"
-	"github.com/luci/luci-go/logdog/common/storage/caching"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/gcloud/gs"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
+	"go.chromium.org/luci/logdog/common/storage"
+	"go.chromium.org/luci/logdog/common/storage/archive"
+	"go.chromium.org/luci/logdog/common/storage/bigtable"
+	"go.chromium.org/luci/logdog/common/storage/caching"
 
 	"golang.org/x/net/context"
 )

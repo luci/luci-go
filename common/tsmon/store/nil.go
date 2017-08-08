@@ -18,7 +18,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/luci/luci-go/common/tsmon/types"
+	"go.chromium.org/luci/common/tsmon/types"
 	"golang.org/x/net/context"
 )
 

@@ -15,7 +15,7 @@
 package auth
 
 import (
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/server/router"
 )
 
 // Authenticate returns a middleware that performs authentication.

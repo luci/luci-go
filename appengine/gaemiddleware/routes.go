@@ -15,13 +15,13 @@
 package gaemiddleware
 
 import (
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/server/settings/admin"
-	"github.com/luci/luci-go/server/warmup"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/settings/admin"
+	"go.chromium.org/luci/server/warmup"
 
-	gaeauth "github.com/luci/luci-go/appengine/gaeauth/server"
-	"github.com/luci/luci-go/appengine/tsmon"
-	"github.com/luci/luci-go/luci_config/appengine/gaeconfig"
+	gaeauth "go.chromium.org/luci/appengine/gaeauth/server"
+	"go.chromium.org/luci/appengine/tsmon"
+	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 )
 
 // InstallHandlers installs handlers for framework routes.

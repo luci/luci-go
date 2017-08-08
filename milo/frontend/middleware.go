@@ -15,18 +15,18 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/info"
+	"go.chromium.org/gae/service/info"
 
-	"github.com/luci/luci-go/appengine/gaeauth/server"
-	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/server/analytics"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/identity"
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/server/templates"
+	"go.chromium.org/luci/appengine/gaeauth/server"
+	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/server/analytics"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/identity"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/templates"
 
-	"github.com/luci/luci-go/milo/api/resp"
+	"go.chromium.org/luci/milo/api/resp"
 )
 
 // A collection of useful templating functions

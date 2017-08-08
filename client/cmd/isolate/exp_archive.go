@@ -27,11 +27,11 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/client/isolate"
-	"github.com/luci/luci-go/common/auth"
-	logpb "github.com/luci/luci-go/common/eventlog/proto"
-	"github.com/luci/luci-go/common/isolated"
-	"github.com/luci/luci-go/common/isolatedclient"
+	"go.chromium.org/luci/client/isolate"
+	"go.chromium.org/luci/common/auth"
+	logpb "go.chromium.org/luci/common/eventlog/proto"
+	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/isolatedclient"
 )
 
 const (

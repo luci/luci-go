@@ -23,7 +23,7 @@ import (
 
 // ContextDeadlineTag is the tag that will be applied to timers used for Context
 // deadine timeout.
-const ContextDeadlineTag = "github.com/luci/luci-go/common/clock.ContextDeadlineTag"
+const ContextDeadlineTag = "go.chromium.org/luci/common/clock.ContextDeadlineTag"
 
 // clockContext is a context.Context implementation that uses Clock library
 // constructs.

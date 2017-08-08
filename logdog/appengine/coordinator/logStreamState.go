@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"time"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/logdog/common/types"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/logdog/common/types"
 
 	"golang.org/x/net/context"
 )

@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/luci/luci-go/common/errors"
-	log "github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/errors"
+	log "go.chromium.org/luci/common/logging"
 
 	"golang.org/x/net/context"
 )

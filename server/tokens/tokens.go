@@ -30,8 +30,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/server/secrets"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/server/secrets"
 )
 
 // allowedClockDrift is clock drift between machines we can tolerate.

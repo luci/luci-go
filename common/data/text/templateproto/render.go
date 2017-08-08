@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/luci/luci-go/common/data/stringset"
+	"go.chromium.org/luci/common/data/stringset"
 )
 
 // MustNewValue creates a new *Value wrapping v, and panics if v is a bad type

@@ -23,13 +23,13 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/data/caching/lazyslot"
-	"github.com/luci/luci-go/common/data/caching/proccache"
-	"github.com/luci/luci-go/common/retry/transient"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/caching/lazyslot"
+	"go.chromium.org/luci/common/data/caching/proccache"
+	"go.chromium.org/luci/common/retry/transient"
 
-	"github.com/luci/luci-go/tokenserver/api/admin/v1"
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
 )
 
 // CA defines one trusted Certificate Authority (imported from config).

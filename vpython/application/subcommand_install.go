@@ -18,11 +18,11 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 
-	"github.com/luci/luci-go/vpython/venv"
+	"go.chromium.org/luci/vpython/venv"
 )
 
 var subcommandInstall = &subcommands.Command{

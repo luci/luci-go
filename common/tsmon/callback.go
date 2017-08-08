@@ -17,7 +17,7 @@ package tsmon
 import (
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/tsmon/types"
+	"go.chromium.org/luci/common/tsmon/types"
 )
 
 // Callback is a function that is run at metric collection time to set the

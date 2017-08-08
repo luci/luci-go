@@ -23,10 +23,10 @@ import (
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/common/proto/milo"
-	"github.com/luci/luci-go/logdog/common/types"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/proto/milo"
+	"go.chromium.org/luci/logdog/common/types"
 )
 
 // UpdateType is information sent to the Updated callback to indicate the nature

@@ -27,17 +27,17 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
-	"github.com/luci/luci-go/luci_config/server/cfgclient"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/luci_config/server/cfgclient"
+	"go.chromium.org/luci/luci_config/server/cfgclient/textproto"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/scheduler/appengine/acl"
-	"github.com/luci/luci-go/scheduler/appengine/messages"
-	"github.com/luci/luci-go/scheduler/appengine/schedule"
-	"github.com/luci/luci-go/scheduler/appengine/task"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/scheduler/appengine/acl"
+	"go.chromium.org/luci/scheduler/appengine/messages"
+	"go.chromium.org/luci/scheduler/appengine/schedule"
+	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
 var (
@@ -242,7 +242,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	if revisionURL != "" {
 		logging.Infof(c, "Importing %s", revisionURL)
 	}
-	// TODO(tandrii): make use of https://godoc.org/github.com/luci/luci-go/common/config/validation
+	// TODO(tandrii): make use of https://godoc.org/go.chromium.org/luci/common/config/validation
 	knownAclSets, err := acl.ValidateAclSets(cfg.GetAclSets())
 	if err != nil {
 		logging.Errorf(c, "Invalid aclsets definition %s: %s", projectID, err)

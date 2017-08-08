@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/logdog/api/logpb"
-	"github.com/luci/luci-go/logdog/common/renderer"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/common/renderer"
 )
 
 // safeLogEntrySource wraps a renderer.Source and guarantees that all emitted

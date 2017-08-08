@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/errors"
 )
 
 // AppYAMLString returns the GAE app.yaml string for this Duration.

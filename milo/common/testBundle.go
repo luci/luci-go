@@ -17,7 +17,7 @@
 package common
 
 import (
-	"github.com/luci/luci-go/server/templates"
+	"go.chromium.org/luci/server/templates"
 )
 
 // TestBundle is a template arg associated with a description used for testing.

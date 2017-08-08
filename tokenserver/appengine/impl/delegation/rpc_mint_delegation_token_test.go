@@ -23,21 +23,21 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/appengine/gaetesting"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/authdb"
-	"github.com/luci/luci-go/server/auth/authtest"
-	"github.com/luci/luci-go/server/auth/identity"
-	"github.com/luci/luci-go/server/auth/signing"
-	"github.com/luci/luci-go/server/auth/signing/signingtest"
-	"github.com/luci/luci-go/tokenserver/api/admin/v1"
-	"github.com/luci/luci-go/tokenserver/api/minter/v1"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authdb"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/identity"
+	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/auth/signing/signingtest"
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
+	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
-	"github.com/luci/luci-go/common/clock/testclock"
+	"go.chromium.org/luci/common/clock/testclock"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func mockedFetchLUCIServiceIdentity(c context.Context, u string) (identity.Identity, error) {

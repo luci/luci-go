@@ -15,7 +15,7 @@
 package spec
 
 import (
-	"github.com/luci/luci-go/vpython/api/vpython"
+	"go.chromium.org/luci/vpython/api/vpython"
 )
 
 // PackageMatches returns true if any of the match qualifiers in the supplied

@@ -23,13 +23,13 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
-	"github.com/luci/gae/service/info"
+	"go.chromium.org/gae/service/info"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/server/auth/service"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/auth/service"
+	"go.chromium.org/luci/server/router"
 )
 
 const (

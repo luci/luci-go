@@ -20,8 +20,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	ds "github.com/luci/gae/service/datastore"
-	dm "github.com/luci/luci-go/dm/api/service/v1"
+	ds "go.chromium.org/gae/service/datastore"
+	dm "go.chromium.org/luci/dm/api/service/v1"
 )
 
 // QuestKeyFromID makes a datastore.Key given the QuestID.

@@ -23,8 +23,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/cipd/client/cipd/common"
-	"github.com/luci/luci-go/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/client/cipd/common"
+	"go.chromium.org/luci/cipd/client/cipd/local"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

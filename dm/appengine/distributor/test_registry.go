@@ -17,8 +17,8 @@ package distributor
 import (
 	"fmt"
 
-	"github.com/luci/luci-go/dm/api/service/v1"
-	"github.com/luci/luci-go/tumble"
+	"go.chromium.org/luci/dm/api/service/v1"
+	"go.chromium.org/luci/tumble"
 	"golang.org/x/net/context"
 )
 

@@ -15,8 +15,8 @@
 package archive
 
 import (
-	"github.com/luci/luci-go/common/gcloud/gs"
-	"github.com/luci/luci-go/logdog/common/storage/caching"
+	"go.chromium.org/luci/common/gcloud/gs"
+	"go.chromium.org/luci/logdog/common/storage/caching"
 
 	"golang.org/x/net/context"
 )

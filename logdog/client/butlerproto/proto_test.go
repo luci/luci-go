@@ -20,10 +20,10 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/data/recordio"
-	"github.com/luci/luci-go/common/testing/assertions"
-	"github.com/luci/luci-go/logdog/api/logpb"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/data/recordio"
+	"go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/logdog/api/logpb"
 )
 
 func read(ir io.Reader) (*Reader, error) {

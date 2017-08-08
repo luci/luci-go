@@ -8,10 +8,10 @@ package tokenserver.admin;
 
 import "google/protobuf/empty.proto";
 
-import "github.com/luci/luci-go/server/auth/delegation/messages/delegation.proto";
-import "github.com/luci/luci-go/tokenserver/api/admin/v1/config.proto";
-import "github.com/luci/luci-go/tokenserver/api/machine_token.proto";
-import "github.com/luci/luci-go/tokenserver/api/oauth_token_grant.proto";
+import "go.chromium.org/luci/server/auth/delegation/messages/delegation.proto";
+import "go.chromium.org/luci/tokenserver/api/admin/v1/config.proto";
+import "go.chromium.org/luci/tokenserver/api/machine_token.proto";
+import "go.chromium.org/luci/tokenserver/api/oauth_token_grant.proto";
 
 
 // Admin service is used by service administrators to manage the server.

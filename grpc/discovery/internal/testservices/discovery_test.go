@@ -26,8 +26,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/proto/google/descutil"
-	"github.com/luci/luci-go/grpc/discovery"
+	"go.chromium.org/luci/common/proto/google/descutil"
+	"go.chromium.org/luci/grpc/discovery"
 
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 

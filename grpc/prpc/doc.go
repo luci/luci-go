@@ -37,7 +37,7 @@
 //  //go:generate cproto
 //
 // Install cproto:
-//  go install github.com/luci/luci-go/grpc/cmd/cproto
+//  go install go.chromium.org/luci/grpc/cmd/cproto
 //
 // Protocol
 //

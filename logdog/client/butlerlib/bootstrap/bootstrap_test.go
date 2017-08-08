@@ -18,14 +18,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/luci/luci-go/client/environ"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/logdog/client/butlerlib/streamclient"
-	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
-	"github.com/luci/luci-go/logdog/common/types"
+	"go.chromium.org/luci/client/environ"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
+	"go.chromium.org/luci/logdog/common/types"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type sentinelClient struct{}

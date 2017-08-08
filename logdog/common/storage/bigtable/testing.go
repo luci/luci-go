@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luci/luci-go/common/data/recordio"
-	"github.com/luci/luci-go/common/data/treapstore"
-	"github.com/luci/luci-go/logdog/common/storage"
+	"go.chromium.org/luci/common/data/recordio"
+	"go.chromium.org/luci/common/data/treapstore"
+	"go.chromium.org/luci/logdog/common/storage"
 
 	"golang.org/x/net/context"
 )

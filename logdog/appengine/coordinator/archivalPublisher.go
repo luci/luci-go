@@ -17,10 +17,10 @@ package coordinator
 import (
 	"time"
 
-	"github.com/luci/luci-go/common/gcloud/pubsub"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry"
-	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
+	"go.chromium.org/luci/common/gcloud/pubsub"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 
 	gcps "cloud.google.com/go/pubsub"
 	"github.com/golang/protobuf/proto"

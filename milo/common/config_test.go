@@ -18,10 +18,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/luci/gae/impl/memory"
-	memcfg "github.com/luci/luci-go/common/config/impl/memory"
-	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/gae/impl/memory"
+	memcfg "go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
 
 	"golang.org/x/net/context"
 

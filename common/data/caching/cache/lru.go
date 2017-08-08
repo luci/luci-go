@@ -20,8 +20,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/luci/luci-go/common/data/text/units"
-	"github.com/luci/luci-go/common/isolated"
+	"go.chromium.org/luci/common/data/text/units"
+	"go.chromium.org/luci/common/isolated"
 )
 
 // entry is an entry in the orderedDict.

@@ -20,7 +20,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
+	"go.chromium.org/luci/common/api/isolate/isolateservice/v1"
 )
 
 // Sum is a shortcut to get a HexDigest from a hash.Hash.

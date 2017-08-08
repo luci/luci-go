@@ -26,8 +26,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
 )
 
 // Value is what's stored in a Slot. It is treated as immutable value.

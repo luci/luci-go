@@ -23,11 +23,11 @@ import (
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/pubsub/v1"
 
-	"github.com/luci/luci-go/common/data/stringset"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/server/auth"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/auth"
 )
 
 // createPubSubService returns configured instance of pubsub.Service.

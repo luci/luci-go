@@ -17,9 +17,9 @@ package main
 import (
 	"path/filepath"
 
-	"github.com/luci/luci-go/common/errors"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/deploytool/api/deploy"
+	"go.chromium.org/luci/common/errors"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/deploytool/api/deploy"
 
 	"github.com/mitchellh/go-homedir"
 	"golang.org/x/net/context"

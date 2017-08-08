@@ -19,7 +19,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/luci-go/grpc/prpc/talk/buildbot/proto"
+	"go.chromium.org/luci/grpc/prpc/talk/buildbot/proto"
 )
 
 type buildbotService struct{}

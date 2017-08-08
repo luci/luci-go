@@ -29,10 +29,10 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 	"golang.org/x/oauth2"
 
-	"github.com/luci/luci-go/common/auth/localauth/rpcs"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/lucictx"
+	"go.chromium.org/luci/common/auth/localauth/rpcs"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/lucictx"
 )
 
 type luciContextTokenProvider struct {

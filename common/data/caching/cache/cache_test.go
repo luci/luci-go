@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/luci/luci-go/common/isolated"
+	"go.chromium.org/luci/common/isolated"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

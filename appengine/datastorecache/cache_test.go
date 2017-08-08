@@ -19,17 +19,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
 
-	"github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
 
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCache(t *testing.T) {

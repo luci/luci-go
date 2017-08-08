@@ -17,11 +17,11 @@ package config
 import (
 	"sort"
 
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/logdog/api/config/svcconfig"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
-	"github.com/luci/luci-go/luci_config/server/cfgclient"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/logdog/api/config/svcconfig"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/luci_config/server/cfgclient"
+	"go.chromium.org/luci/luci_config/server/cfgclient/textproto"
 
 	"golang.org/x/net/context"
 )

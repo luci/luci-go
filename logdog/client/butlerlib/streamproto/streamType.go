@@ -18,9 +18,9 @@ import (
 	"encoding/json"
 	"flag"
 
-	"github.com/luci/luci-go/common/flag/flagenum"
-	"github.com/luci/luci-go/logdog/api/logpb"
-	"github.com/luci/luci-go/logdog/common/types"
+	"go.chromium.org/luci/common/flag/flagenum"
+	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/common/types"
 )
 
 // StreamType is a flag- and JSON-compatible wrapper around the StreamType

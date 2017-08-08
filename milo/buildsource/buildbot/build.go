@@ -28,13 +28,13 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/data/stringset"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/common"
-	"github.com/luci/luci-go/milo/common/model"
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/milo/api/resp"
+	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/common/model"
 )
 
 // getBuild fetches a buildbot build from the datastore and checks ACLs.

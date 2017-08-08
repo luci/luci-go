@@ -17,7 +17,7 @@ package internal
 import (
 	"testing"
 
-	"github.com/luci/luci-go/cipd/client/cipd/internal/messages"
+	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

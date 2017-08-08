@@ -23,11 +23,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/info"
+	"go.chromium.org/gae/service/info"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/data/caching/proccache"
-	"github.com/luci/luci-go/server/auth/signing"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/caching/proccache"
+	"go.chromium.org/luci/server/auth/signing"
 )
 
 // Signer implements signing.Signer using GAE App Identity API.

@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/luci/luci-go/vpython/api/vpython"
+	"go.chromium.org/luci/vpython/api/vpython"
 
-	"github.com/luci/luci-go/common/data/sortby"
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/data/sortby"
+	"go.chromium.org/luci/common/errors"
 
 	"github.com/golang/protobuf/proto"
 )

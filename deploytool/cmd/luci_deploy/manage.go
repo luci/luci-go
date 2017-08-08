@@ -19,10 +19,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/common/errors"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/deploytool/api/deploy"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/errors"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/deploytool/api/deploy"
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"

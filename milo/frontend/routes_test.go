@@ -28,17 +28,17 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/impl/memory"
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/buildsource/buildbot"
-	"github.com/luci/luci-go/milo/buildsource/swarming"
-	"github.com/luci/luci-go/milo/common"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/authtest"
-	"github.com/luci/luci-go/server/auth/identity"
-	"github.com/luci/luci-go/server/settings"
-	"github.com/luci/luci-go/server/templates"
+	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/milo/api/resp"
+	"go.chromium.org/luci/milo/buildsource/buildbot"
+	"go.chromium.org/luci/milo/buildsource/swarming"
+	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/identity"
+	"go.chromium.org/luci/server/settings"
+	"go.chromium.org/luci/server/templates"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

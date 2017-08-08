@@ -22,8 +22,8 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/api/support/bundler"
 
-	service "github.com/luci/luci-go/common/api/isolate/isolateservice/v1"
-	"github.com/luci/luci-go/common/isolatedclient"
+	service "go.chromium.org/luci/common/api/isolate/isolateservice/v1"
+	"go.chromium.org/luci/common/isolatedclient"
 )
 
 // isolateService is an internal interface to allow mocking of the

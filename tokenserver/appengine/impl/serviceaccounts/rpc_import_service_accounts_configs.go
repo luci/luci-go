@@ -11,8 +11,8 @@ import (
 
 	"github.com/golang/protobuf/ptypes/empty"
 
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/tokenserver/api/admin/v1"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
 )
 
 // ImportServiceAccountsConfigsRPC implements admin.ImportServiceAccountsConfigs

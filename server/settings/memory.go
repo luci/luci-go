@@ -21,7 +21,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/clock"
+	"go.chromium.org/luci/common/clock"
 )
 
 // MemoryStorage implements Storage interface, using memory as a backend. Useful

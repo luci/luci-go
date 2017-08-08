@@ -111,7 +111,7 @@ nodir@
 
 - slides, buildbot: [[https://github.com/luci/luci-go/tree/master/grpc/prpc/talk][luci-go/grpc/prpc/talk]]
 - demo: [[https://prpc-talk.appspot.com]]
-- docs: [[https://godoc.org/github.com/luci/luci-go/grpc/prpc]]
+- docs: [[https://godoc.org/go.chromium.org/luci/grpc/prpc]]
 - rpc explorer: [[https://github.com/luci/luci-go/tree/master/server/static/rpcexplorer][luci-go/server/static/rpcexplorer]]
 - polymer element: [[https://github.com/luci/luci-go/tree/master/server/static/rpc/][luci-go/server/static/rpc/]]
 - cproto, svxmux, svcdec: [[https://github.com/luci/luci-go/tree/master/tools/cmd][luci-go/tools/cmd]]

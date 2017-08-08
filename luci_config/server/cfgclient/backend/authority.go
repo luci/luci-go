@@ -17,7 +17,7 @@ package backend
 import (
 	"bytes"
 
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/errors"
 )
 
 // Authority is the authority that is requesting configurations. It can be

@@ -20,27 +20,27 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
-	"github.com/luci/gae/filter/dscache"
-	"github.com/luci/gae/impl/prod"
-	"github.com/luci/gae/service/urlfetch"
+	"go.chromium.org/gae/filter/dscache"
+	"go.chromium.org/gae/impl/prod"
+	"go.chromium.org/gae/service/urlfetch"
 
-	"github.com/luci/luci-go/common/data/caching/cacheContext"
-	"github.com/luci/luci-go/common/data/caching/proccache"
-	"github.com/luci/luci-go/common/logging"
+	"go.chromium.org/luci/common/data/caching/cacheContext"
+	"go.chromium.org/luci/common/data/caching/proccache"
+	"go.chromium.org/luci/common/logging"
 
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/authdb"
-	"github.com/luci/luci-go/server/middleware"
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/server/settings"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authdb"
+	"go.chromium.org/luci/server/middleware"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/settings"
 
-	"github.com/luci/luci-go/appengine/gaeauth/client"
-	"github.com/luci/luci-go/appengine/gaeauth/server"
-	"github.com/luci/luci-go/appengine/gaeauth/server/gaesigner"
-	"github.com/luci/luci-go/appengine/gaesecrets"
-	"github.com/luci/luci-go/appengine/gaesettings"
-	"github.com/luci/luci-go/appengine/tsmon"
-	"github.com/luci/luci-go/luci_config/appengine/gaeconfig"
+	"go.chromium.org/luci/appengine/gaeauth/client"
+	"go.chromium.org/luci/appengine/gaeauth/server"
+	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
+	"go.chromium.org/luci/appengine/gaesecrets"
+	"go.chromium.org/luci/appengine/gaesettings"
+	"go.chromium.org/luci/appengine/tsmon"
+	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 )
 
 var (
@@ -81,7 +81,7 @@ var (
 // Basically, it installs GAE-specific backends and caches for various
 // subsystems to make them work in GAE environment.
 //
-// One example is a backend for Logging: github.com/luci/luci-go/common/logging.
+// One example is a backend for Logging: go.chromium.org/luci/common/logging.
 // Logs emitted through a WithProd() context go to GAE logs.
 //
 // 'Production' here means the services will use real GAE APIs (not mocks or

@@ -18,7 +18,7 @@ import (
 	"io"
 	"net"
 
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/errors"
 )
 
 func tcpProtocolClientFactory(netType string) ClientFactory {

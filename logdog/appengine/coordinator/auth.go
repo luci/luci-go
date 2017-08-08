@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/luci/gae/service/info"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/logdog/api/config/svcconfig"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/identity"
+	"go.chromium.org/gae/service/info"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/logdog/api/config/svcconfig"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/identity"
 	"golang.org/x/net/context"
 )
 

@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"os/user"
 
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/logdog/common/types"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/logdog/common/types"
 	"golang.org/x/net/context"
 )
 

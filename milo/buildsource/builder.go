@@ -9,13 +9,13 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
+	"go.chromium.org/gae/service/datastore"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/buildsource/buildbot"
-	"github.com/luci/luci-go/milo/buildsource/buildbucket"
-	"github.com/luci/luci-go/milo/common"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/milo/api/resp"
+	"go.chromium.org/luci/milo/buildsource/buildbot"
+	"go.chromium.org/luci/milo/buildsource/buildbucket"
+	"go.chromium.org/luci/milo/common"
 )
 
 // BuilderID is the universal ID of a builder, and has the form:

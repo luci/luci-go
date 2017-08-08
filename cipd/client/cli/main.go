@@ -33,19 +33,19 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/logging/gologger"
-	"github.com/luci/luci-go/common/retry/transient"
+	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/retry/transient"
 
-	"github.com/luci/luci-go/client/authcli"
+	"go.chromium.org/luci/client/authcli"
 
-	"github.com/luci/luci-go/cipd/client/cipd"
-	"github.com/luci/luci-go/cipd/client/cipd/common"
-	"github.com/luci/luci-go/cipd/client/cipd/ensure"
-	"github.com/luci/luci-go/cipd/client/cipd/local"
-	"github.com/luci/luci-go/cipd/version"
+	"go.chromium.org/luci/cipd/client/cipd"
+	"go.chromium.org/luci/cipd/client/cipd/common"
+	"go.chromium.org/luci/cipd/client/cipd/ensure"
+	"go.chromium.org/luci/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/version"
 )
 
 // TODO(vadimsh): Add some tests.
@@ -747,7 +747,7 @@ func cmdEnsure(params Parameters) *subcommands.Command {
 			c.Flags.StringVar(&c.ensureFile, "list", "<path>", "(DEPRECATED) A synonym for -ensure-file.")
 			c.Flags.StringVar(&c.ensureFile, "ensure-file", "<path>",
 				(`An "ensure" file. See syntax described here: ` +
-					`https://godoc.org/github.com/luci/luci-go/cipd/client/cipd/ensure.` +
+					`https://godoc.org/go.chromium.org/luci/cipd/client/cipd/ensure.` +
 					` Providing '-' will read from stdin.`))
 			return c
 		},
@@ -844,7 +844,7 @@ func cmdPuppetCheckUpdates(params Parameters) *subcommands.Command {
 			c.Flags.StringVar(&c.ensureFile, "list", "<path>", "(DEPRECATED) A synonym for -ensure-file.")
 			c.Flags.StringVar(&c.ensureFile, "ensure-file", "<path>",
 				(`An "ensure" file. See syntax described here: ` +
-					`https://godoc.org/github.com/luci/luci-go/cipd/client/cipd/ensure`))
+					`https://godoc.org/go.chromium.org/luci/cipd/client/cipd/ensure`))
 			return c
 		},
 	}

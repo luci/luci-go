@@ -17,8 +17,8 @@ package archive
 import (
 	"io"
 
-	"github.com/luci/luci-go/logdog/api/logpb"
-	"github.com/luci/luci-go/logdog/common/renderer"
+	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/common/renderer"
 )
 
 // channelRendererSource is a renderer.Source implementation that reads LogEntry

@@ -17,11 +17,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/luci/luci-go/appengine/gaetesting"
-	"github.com/luci/luci-go/scheduler/appengine/messages"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/authtest"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/scheduler/appengine/messages"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 )
 
 func TestAclsValidation(t *testing.T) {

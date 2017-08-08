@@ -18,9 +18,9 @@ import (
 	"net"
 	"testing"
 
-	"github.com/luci/luci-go/server/auth/delegation/messages"
-	"github.com/luci/luci-go/tokenserver/api/admin/v1"
-	"github.com/luci/luci-go/tokenserver/api/minter/v1"
+	"go.chromium.org/luci/server/auth/delegation/messages"
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
+	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

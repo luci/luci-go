@@ -25,17 +25,17 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/iotools"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/tsmon"
-	"github.com/luci/luci-go/common/tsmon/metric"
-	"github.com/luci/luci-go/common/tsmon/monitor"
-	"github.com/luci/luci-go/common/tsmon/store"
-	"github.com/luci/luci-go/common/tsmon/target"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/iotools"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/monitor"
+	"go.chromium.org/luci/common/tsmon/store"
+	"go.chromium.org/luci/common/tsmon/target"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/router"
 )
 
 // State holds the configuration of the tsmon library for GAE.

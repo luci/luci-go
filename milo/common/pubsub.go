@@ -10,10 +10,10 @@ import (
 	"cloud.google.com/go/pubsub"
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/milo/api/config"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/milo/api/config"
 )
 
 var pubsubClientFactoryKey = "stores a pubsubClientFactory"

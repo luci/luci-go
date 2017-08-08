@@ -19,14 +19,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/luci/luci-go/common/testing/testfs"
-	"github.com/luci/luci-go/vpython/api/vpython"
+	"go.chromium.org/luci/common/testing/testfs"
+	"go.chromium.org/luci/vpython/api/vpython"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestLoadForScript(t *testing.T) {

@@ -20,11 +20,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/gae/filter/featureBreaker"
-	"github.com/luci/gae/impl/memory"
-	mc "github.com/luci/gae/service/memcache"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/testclock"
+	"go.chromium.org/gae/filter/featureBreaker"
+	"go.chromium.org/gae/impl/memory"
+	mc "go.chromium.org/gae/service/memcache"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 
 	"golang.org/x/net/context"
 

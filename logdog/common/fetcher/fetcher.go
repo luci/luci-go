@@ -20,10 +20,10 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/luci/luci-go/common/clock"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/logdog/api/logpb"
-	"github.com/luci/luci-go/logdog/common/types"
+	"go.chromium.org/luci/common/clock"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/common/types"
 	"golang.org/x/net/context"
 )
 

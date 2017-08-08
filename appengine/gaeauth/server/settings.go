@@ -22,9 +22,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/appengine/gaeauth/server/internal/authdbimpl"
-	"github.com/luci/luci-go/server/settings"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/appengine/gaeauth/server/internal/authdbimpl"
+	"go.chromium.org/luci/server/settings"
 )
 
 type settingsUIPage struct {

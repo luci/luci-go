@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/luci/luci-go/logdog/common/types"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

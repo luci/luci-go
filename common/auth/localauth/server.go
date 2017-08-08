@@ -30,13 +30,13 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
-	"github.com/luci/luci-go/common/auth/localauth/rpcs"
-	"github.com/luci/luci-go/common/data/rand/cryptorand"
-	"github.com/luci/luci-go/common/data/stringset"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/common/runtime/paniccatcher"
-	"github.com/luci/luci-go/lucictx"
+	"go.chromium.org/luci/common/auth/localauth/rpcs"
+	"go.chromium.org/luci/common/data/rand/cryptorand"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/runtime/paniccatcher"
+	"go.chromium.org/luci/lucictx"
 )
 
 // TokenGenerator produces access tokens.

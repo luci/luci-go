@@ -21,7 +21,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/tsmon/target"
+	"go.chromium.org/luci/common/tsmon/target"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

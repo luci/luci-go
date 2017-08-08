@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/deploytool/api/deploy"
-	"github.com/luci/luci-go/deploytool/managedfs"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/deploytool/api/deploy"
+	"go.chromium.org/luci/deploytool/managedfs"
 )
 
 func flattenVarToDir(v string) string {

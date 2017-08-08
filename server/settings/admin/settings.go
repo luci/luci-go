@@ -20,11 +20,11 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/xsrf"
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/server/settings"
-	"github.com/luci/luci-go/server/templates"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/xsrf"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/settings"
+	"go.chromium.org/luci/server/templates"
 )
 
 type fieldWithValue struct {

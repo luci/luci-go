@@ -21,14 +21,14 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/filter/count"
-	"github.com/luci/gae/filter/dscache"
-	"github.com/luci/gae/filter/txnBuf"
-	"github.com/luci/gae/impl/memory"
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/clock/testclock"
+	"go.chromium.org/gae/filter/count"
+	"go.chromium.org/gae/filter/dscache"
+	"go.chromium.org/gae/filter/txnBuf"
+	"go.chromium.org/gae/impl/memory"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

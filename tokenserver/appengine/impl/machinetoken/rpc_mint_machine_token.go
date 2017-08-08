@@ -25,21 +25,21 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/auth/signing"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/signing"
 
-	tokenserver "github.com/luci/luci-go/tokenserver/api"
-	"github.com/luci/luci-go/tokenserver/api/admin/v1"
-	"github.com/luci/luci-go/tokenserver/api/minter/v1"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
+	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
-	"github.com/luci/luci-go/tokenserver/appengine/impl/certchecker"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/certconfig"
-	"github.com/luci/luci-go/tokenserver/appengine/impl/utils"
+	"go.chromium.org/luci/tokenserver/appengine/impl/certchecker"
+	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
+	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 )
 
 // MintMachineTokenRPC implements TokenMinter.MintMachineToken RPC method.

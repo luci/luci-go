@@ -27,8 +27,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/data/caching/proccache"
-	"github.com/luci/luci-go/server/auth/internal"
+	"go.chromium.org/luci/common/data/caching/proccache"
+	"go.chromium.org/luci/server/auth/internal"
 )
 
 // CertsCacheExpiration defines how long to cache fetched certificates in local

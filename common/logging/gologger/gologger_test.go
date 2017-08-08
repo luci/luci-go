@@ -20,8 +20,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/luci/luci-go/common/logging"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/logging"
 	"golang.org/x/net/context"
 )
 

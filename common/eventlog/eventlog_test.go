@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	logpb "github.com/luci/luci-go/common/eventlog/proto"
+	logpb "go.chromium.org/luci/common/eventlog/proto"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"

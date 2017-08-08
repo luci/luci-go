@@ -23,8 +23,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/luci/luci-go/common/data/stringset"
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 )
 
 // Normalize will normalize all of the Templates in this message, returning an

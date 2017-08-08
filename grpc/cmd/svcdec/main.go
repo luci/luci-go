@@ -33,7 +33,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/grpc/internal/svctool"
+	"go.chromium.org/luci/grpc/internal/svctool"
 )
 
 func generate(c context.Context, a *svctool.GeneratorArgs) error {

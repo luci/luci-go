@@ -29,8 +29,8 @@ package versions
 import (
 	"sync"
 
-	"github.com/luci/luci-go/common/tsmon/field"
-	"github.com/luci/luci-go/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 
 	"golang.org/x/net/context"
 )

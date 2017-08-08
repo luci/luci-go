@@ -25,12 +25,12 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"github.com/luci/luci-go/common/auth/localauth/rpcs"
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/lucictx"
+	"go.chromium.org/luci/common/auth/localauth/rpcs"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/lucictx"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestLUCIContextProvider(t *testing.T) {

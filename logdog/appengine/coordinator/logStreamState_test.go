@@ -19,15 +19,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/gae/impl/memory"
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/logdog/common/types"
+	"go.chromium.org/gae/impl/memory"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/logdog/common/types"
 
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestLogStreamState(t *testing.T) {

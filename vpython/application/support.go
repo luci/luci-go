@@ -17,10 +17,10 @@ package application
 import (
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/errors"
 )
 
-var appKey = "github.com/luci/luci-go/vpython/application.A"
+var appKey = "go.chromium.org/luci/vpython/application.A"
 
 func withApplication(c context.Context, a *application) context.Context {
 	return context.WithValue(c, &appKey, a)

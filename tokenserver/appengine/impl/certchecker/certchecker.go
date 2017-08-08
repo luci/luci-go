@@ -26,14 +26,14 @@ import (
 
 	"golang.org/x/net/context"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/data/caching/lazyslot"
-	"github.com/luci/luci-go/common/data/caching/proccache"
-	"github.com/luci/luci-go/common/retry/transient"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/caching/lazyslot"
+	"go.chromium.org/luci/common/data/caching/proccache"
+	"go.chromium.org/luci/common/retry/transient"
 
-	"github.com/luci/luci-go/tokenserver/appengine/impl/certconfig"
+	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
 )
 
 const (

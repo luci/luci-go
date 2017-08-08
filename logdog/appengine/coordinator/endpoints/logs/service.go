@@ -15,12 +15,12 @@
 package logs
 
 import (
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/grpc/grpcutil"
-	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
-	"github.com/luci/luci-go/logdog/appengine/coordinator"
-	"github.com/luci/luci-go/logdog/appengine/coordinator/endpoints"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"

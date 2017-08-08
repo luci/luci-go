@@ -17,21 +17,21 @@ package buildbot
 import (
 	"testing"
 
-	miloProto "github.com/luci/luci-go/common/proto/milo"
-	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1"
-	"github.com/luci/luci-go/logdog/api/logpb"
-	"github.com/luci/luci-go/logdog/client/coordinator"
-	milo "github.com/luci/luci-go/milo/api/proto"
+	miloProto "go.chromium.org/luci/common/proto/milo"
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/client/coordinator"
+	milo "go.chromium.org/luci/milo/api/proto"
 
-	"github.com/luci/gae/impl/memory"
-	ds "github.com/luci/gae/service/datastore"
+	"go.chromium.org/gae/impl/memory"
+	ds "go.chromium.org/gae/service/datastore"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 // testLogDogClient is a minimal functional LogsClient implementation.

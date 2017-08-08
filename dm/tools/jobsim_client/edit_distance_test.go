@@ -25,7 +25,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
-	dm "github.com/luci/luci-go/dm/api/service/v1"
+	dm "go.chromium.org/luci/dm/api/service/v1"
 )
 
 type event struct {

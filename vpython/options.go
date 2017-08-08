@@ -19,15 +19,15 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/vpython/api/vpython"
-	"github.com/luci/luci-go/vpython/python"
-	"github.com/luci/luci-go/vpython/spec"
-	"github.com/luci/luci-go/vpython/venv"
+	"go.chromium.org/luci/vpython/api/vpython"
+	"go.chromium.org/luci/vpython/python"
+	"go.chromium.org/luci/vpython/spec"
+	"go.chromium.org/luci/vpython/venv"
 
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/system/environ"
-	"github.com/luci/luci-go/common/system/filesystem"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/system/filesystem"
 )
 
 // Options is the set of options to use to construct and execute a VirtualEnv

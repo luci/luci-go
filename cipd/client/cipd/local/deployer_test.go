@@ -28,9 +28,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	. "github.com/luci/luci-go/cipd/client/cipd/common"
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/cipd/client/cipd/common"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func mkTempDir() string {

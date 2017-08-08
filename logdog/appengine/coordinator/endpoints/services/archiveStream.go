@@ -16,12 +16,12 @@ package services
 
 import (
 	"github.com/golang/protobuf/ptypes/empty"
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/clock"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/grpc/grpcutil"
-	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
-	"github.com/luci/luci-go/logdog/appengine/coordinator"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/clock"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )

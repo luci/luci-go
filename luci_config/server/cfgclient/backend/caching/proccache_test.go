@@ -18,17 +18,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/luci/luci-go/common/clock/testclock"
-	"github.com/luci/luci-go/common/config/impl/memory"
-	"github.com/luci/luci-go/common/data/caching/proccache"
-	"github.com/luci/luci-go/luci_config/server/cfgclient"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/client"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/common/data/caching/proccache"
+	"go.chromium.org/luci/luci_config/server/cfgclient"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/client"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
 
 	"golang.org/x/net/context"
 
-	//. "github.com/luci/luci-go/common/testing/assertions"
+	//. "go.chromium.org/luci/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

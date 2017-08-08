@@ -17,10 +17,10 @@ package coordinator
 import (
 	"testing"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/errors"
-	. "github.com/luci/luci-go/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/errors"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTagMap(t *testing.T) {

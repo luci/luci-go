@@ -4,8 +4,8 @@
 
 syntax = "proto3";
 
-import "github.com/luci/luci-go/common/data/text/templateproto/template.proto";
-import "github.com/luci/luci-go/dm/api/service/v1/graph_data.proto";
+import "go.chromium.org/luci/common/data/text/templateproto/template.proto";
+import "go.chromium.org/luci/dm/api/service/v1/graph_data.proto";
 
 package dmTemplate;
 

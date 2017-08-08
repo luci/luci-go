@@ -21,8 +21,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/eventlog"
-	logpb "github.com/luci/luci-go/common/eventlog/proto"
+	"go.chromium.org/luci/common/eventlog"
+	logpb "go.chromium.org/luci/common/eventlog/proto"
 )
 
 func main() {

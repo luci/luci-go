@@ -17,8 +17,8 @@ package assertions
 import (
 	"fmt"
 
-	"github.com/luci/luci-go/grpc/grpcutil"
 	"github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )

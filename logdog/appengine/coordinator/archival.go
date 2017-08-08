@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/proto/google"
-	"github.com/luci/luci-go/logdog/api/endpoints/coordinator/services/v1"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"golang.org/x/net/context"
 )
 

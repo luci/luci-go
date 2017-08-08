@@ -20,12 +20,12 @@ import (
 	"encoding/hex"
 	"time"
 
-	"github.com/luci/luci-go/common/errors"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend/caching"
+	"go.chromium.org/luci/common/errors"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend/caching"
 
-	mc "github.com/luci/gae/service/memcache"
+	mc "go.chromium.org/gae/service/memcache"
 
 	"golang.org/x/net/context"
 )

@@ -22,15 +22,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luci/luci-go/appengine/gaemiddleware"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry/transient"
-	"github.com/luci/luci-go/common/sync/parallel"
-	"github.com/luci/luci-go/server/router"
+	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/server/router"
 
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
 
 	"golang.org/x/net/context"
 )

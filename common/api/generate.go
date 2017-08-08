@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate go install github.com/luci/luci-go/tools/cmd/apigen
+//go:generate go install go.chromium.org/luci/tools/cmd/apigen
 //go:generate apigen -api-subproject "luci_config" -service "https://luci-config.appspot.com" -api "config:v1"
 //go:generate apigen -api-subproject "swarming" -service "https://chromium-swarm.appspot.com" -api "swarming:v1"
 //go:generate apigen -api-subproject "isolate" -service "https://isolateserver.appspot.com" -api "isolateservice:v1"

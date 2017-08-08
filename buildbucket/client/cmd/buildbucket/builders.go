@@ -18,9 +18,9 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
-	"github.com/luci/luci-go/buildbucket/client/cmd/buildbucket/proto"
-	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/common/data/text/indented"
+	"go.chromium.org/luci/buildbucket/client/cmd/buildbucket/proto"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/data/text/indented"
 )
 
 var cmdConvertBuilders = &subcommands.Command{

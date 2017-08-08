@@ -21,10 +21,10 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/luci/luci-go/common/iotools"
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/runtime/paniccatcher"
-	"github.com/luci/luci-go/logdog/client/butlerlib/streamproto"
+	"go.chromium.org/luci/common/iotools"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/runtime/paniccatcher"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"golang.org/x/net/context"
 )
 

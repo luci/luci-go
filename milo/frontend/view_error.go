@@ -5,11 +5,11 @@
 package frontend
 
 import (
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/server/router"
-	"github.com/luci/luci-go/server/templates"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/templates"
 
-	"github.com/luci/luci-go/milo/common"
+	"go.chromium.org/luci/milo/common"
 )
 
 // ErrorHandler renders an error page for the user.

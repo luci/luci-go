@@ -19,8 +19,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/errors"
+	"go.chromium.org/luci/common/config"
+	"go.chromium.org/luci/common/errors"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

@@ -16,7 +16,7 @@
 // built on top a treap (tree + heap) implementation.
 //
 // treapstore is specifically focused on supporting the in-memory datastore
-// implementation at "github.com/luci/gae/impl/memory".
+// implementation at "go.chromium.org/gae/impl/memory".
 package treapstore
 
 import (

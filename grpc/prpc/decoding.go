@@ -27,7 +27,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/luci/luci-go/common/clock"
+	"go.chromium.org/luci/common/clock"
 )
 
 // This file implements decoding of HTTP requests to RPC parameters.

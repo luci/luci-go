@@ -22,17 +22,17 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/info"
-	configInterface "github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/data/caching/proccache"
-	"github.com/luci/luci-go/common/data/stringset"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/luci_config/server/cfgclient"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/backend"
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/info"
+	configInterface "go.chromium.org/luci/common/config"
+	"go.chromium.org/luci/common/data/caching/proccache"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/luci_config/server/cfgclient"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
 
-	"github.com/luci/luci-go/milo/api/config"
+	"go.chromium.org/luci/milo/api/config"
 )
 
 // Console is a datastore entity representing a single console.

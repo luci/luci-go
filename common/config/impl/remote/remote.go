@@ -23,10 +23,10 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/api/googleapi"
 
-	configApi "github.com/luci/luci-go/common/api/luci_config/config/v1"
-	"github.com/luci/luci-go/common/config"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/common/retry/transient"
+	configApi "go.chromium.org/luci/common/api/luci_config/config/v1"
+	"go.chromium.org/luci/common/config"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 )
 
 // ClientFactory returns HTTP client to use (given a context).

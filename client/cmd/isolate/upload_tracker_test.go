@@ -24,9 +24,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/luci/luci-go/common/isolated"
-	"github.com/luci/luci-go/common/isolatedclient"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/isolatedclient"
 )
 
 // Fake OS imitiates a filesystem by storing file contents in a map.

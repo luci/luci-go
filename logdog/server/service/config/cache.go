@@ -17,11 +17,11 @@ package config
 import (
 	"time"
 
-	"github.com/luci/luci-go/common/data/caching/proccache"
-	"github.com/luci/luci-go/common/sync/mutexpool"
-	"github.com/luci/luci-go/luci_config/common/cfgtypes"
-	"github.com/luci/luci-go/luci_config/server/cfgclient"
-	"github.com/luci/luci-go/luci_config/server/cfgclient/textproto"
+	"go.chromium.org/luci/common/data/caching/proccache"
+	"go.chromium.org/luci/common/sync/mutexpool"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/luci_config/server/cfgclient"
+	"go.chromium.org/luci/luci_config/server/cfgclient/textproto"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"

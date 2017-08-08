@@ -6,8 +6,8 @@ syntax = "proto3";
 
 package logdog;
 
-import "github.com/luci/luci-go/logdog/api/endpoints/coordinator/logs/v1/state.proto";
-import "github.com/luci/luci-go/logdog/api/logpb/log.proto";
+import "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1/state.proto";
+import "go.chromium.org/luci/logdog/api/logpb/log.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 

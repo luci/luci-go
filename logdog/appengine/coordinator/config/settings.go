@@ -15,9 +15,9 @@
 package config
 
 import (
-	log "github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/server/auth"
-	"github.com/luci/luci-go/server/settings"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/settings"
 	"golang.org/x/net/context"
 )
 

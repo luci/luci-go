@@ -15,9 +15,9 @@
 package mutate
 
 import (
-	ds "github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/dm/appengine/model"
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/dm/appengine/model"
 
 	"golang.org/x/net/context"
 )

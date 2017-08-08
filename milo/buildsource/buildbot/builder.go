@@ -22,14 +22,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/luci/gae/service/datastore"
-	"github.com/luci/gae/service/memcache"
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/memcache"
 
-	"github.com/luci/luci-go/common/clock"
-	"github.com/luci/luci-go/common/errors"
-	"github.com/luci/luci-go/common/logging"
-	"github.com/luci/luci-go/milo/api/resp"
-	"github.com/luci/luci-go/milo/common"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/milo/api/resp"
+	"go.chromium.org/luci/milo/common"
 	"golang.org/x/net/context"
 )
 

@@ -19,8 +19,8 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"github.com/luci/luci-go/common/auth"
-	"github.com/luci/luci-go/common/cli"
+	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/cli"
 )
 
 func cmdGet(defaultAuthOpts auth.Options) *subcommands.Command {

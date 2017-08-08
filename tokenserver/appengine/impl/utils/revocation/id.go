@@ -17,8 +17,8 @@ package revocation
 import (
 	"golang.org/x/net/context"
 
-	"github.com/luci/gae/service/datastore"
-	"github.com/luci/luci-go/common/retry/transient"
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/retry/transient"
 )
 
 // GenerateTokenID produces an int64 that can be used as a token identifier.

@@ -21,8 +21,8 @@ import (
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
-	"github.com/luci/luci-go/common/cli"
-	"github.com/luci/luci-go/common/logging/gologger"
+	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/logging/gologger"
 )
 
 // cmdRun is a base of all rpc subcommands.
