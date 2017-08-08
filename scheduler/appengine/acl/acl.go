@@ -24,6 +24,7 @@ import (
 
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
+	"github.com/luci/luci-go/common/logging"
 	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/scheduler/appengine/messages"
 	"github.com/luci/luci-go/server/auth"
@@ -45,6 +46,7 @@ func (g *GrantsByRole) IsReader(c context.Context) (bool, error) {
 		// This is here for backwards compatiblity before ACLs were introduced.
 		// If Job doesn't specify READERs nor OWNERS explicitely, everybody can read.
 		// TODO(tAndrii): remove once every Job/Trigger has ACLs specified.
+		logging.Warningf(c, "Granting READ rights to all because no ACLs specified")
 		return true, nil
 	}
 	return hasGrant(c, g.Owners, g.Readers, groupsAdministrators)
@@ -183,6 +185,7 @@ func hasGrant(c context.Context, grantsList ...[]string) (bool, error) {
 				grantedIdentity = identity.Identity("user:" + grant)
 			}
 			if grantedIdentity == currentIdentity {
+				logging.Debugf(c, "Found grant %s for %s", currentIdentity)
 				return true, nil
 			}
 		}
@@ -190,6 +193,7 @@ func hasGrant(c context.Context, grantsList ...[]string) (bool, error) {
 	if isMember, err := auth.IsMember(c, groups...); err != nil {
 		return false, transient.Tag.Apply(err)
 	} else {
+		logging.Debugf(c, "Result of group membership of %s in %s: %t", currentIdentity, groups, isMember)
 		return isMember, nil
 	}
 }
