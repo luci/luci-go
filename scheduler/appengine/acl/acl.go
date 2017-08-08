@@ -15,7 +15,6 @@
 package acl
 
 import (
-	"context"
 	"fmt"
 	"regexp"
 	"sort"
@@ -27,6 +26,7 @@ import (
 	"github.com/luci/luci-go/scheduler/appengine/messages"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
+	"golang.org/x/net/context"
 )
 
 // GrantsByRole can answer questions who can READ and who OWNS the task.
