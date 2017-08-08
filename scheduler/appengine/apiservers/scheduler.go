@@ -74,21 +74,16 @@ func (s SchedulerServer) GetJobs(ctx context.Context, in *scheduler.JobsRequest)
 }
 
 func (s SchedulerServer) GetInvocations(ctx context.Context, in *scheduler.InvocationsRequest) (*scheduler.InvocationsReply, error) {
-	ejob, err := s.Engine.GetVisibleJob(ctx, getJobId(in.GetJobRef()))
-	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "internal error: %s", err)
-	}
-	if ejob == nil {
-		return nil, grpc.Errorf(codes.NotFound, "Job does not exist or you have no access")
-	}
-
 	pageSize := 50
 	if in.PageSize > 0 && int(in.PageSize) < pageSize {
 		pageSize = int(in.PageSize)
 	}
 
-	einvs, cursor, err := s.Engine.ListVisibleInvocations(ctx, ejob.JobID, pageSize, in.GetCursor())
-	if err != nil {
+	einvs, cursor, err := s.Engine.ListVisibleInvocations(ctx, getJobId(in.GetJobRef()), pageSize, in.GetCursor())
+	switch {
+	case err == engine.ErrNoSuchJob:
+		return nil, grpc.Errorf(codes.NotFound, "Job does not exist or no access")
+	case err != nil:
 		return nil, grpc.Errorf(codes.Internal, "internal error: %s", err)
 	}
 	invs := make([]*scheduler.Invocation, len(einvs))
@@ -96,8 +91,8 @@ func (s SchedulerServer) GetInvocations(ctx context.Context, in *scheduler.Invoc
 		invs[i] = &scheduler.Invocation{
 			InvocationRef: &scheduler.InvocationRef{
 				JobRef: &scheduler.JobRef{
-					Project: ejob.ProjectID,
-					Job:     ejob.GetJobName(),
+					Project: in.GetJobRef().GetProject(),
+					Job:     in.GetJobRef().GetJob(),
 				},
 				InvocationId: einv.ID,
 			},

@@ -159,7 +159,9 @@ func TestGetInvocationsApi(t *testing.T) {
 		ss := SchedulerServer{fakeEng, catalog}
 
 		Convey("Job not found", func() {
-			fakeEng.getVisibleJob = func(JobID string) (*engine.Job, error) { return nil, nil }
+			fakeEng.listVisibleInvocations = func(int, string) ([]*engine.Invocation, string, error) {
+				return nil, "", engine.ErrNoSuchJob
+			}
 			_, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{
 				JobRef: &scheduler.JobRef{Project: "not", Job: "exists"},
 			})
@@ -169,7 +171,9 @@ func TestGetInvocationsApi(t *testing.T) {
 		})
 
 		Convey("DS error", func() {
-			fakeEng.getVisibleJob = func(JobID string) (*engine.Job, error) { return nil, fmt.Errorf("ds error") }
+			fakeEng.listVisibleInvocations = func(int, string) ([]*engine.Invocation, string, error) {
+				return nil, "", fmt.Errorf("ds error")
+			}
 			_, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{
 				JobRef: &scheduler.JobRef{Project: "proj", Job: "job"},
 			})

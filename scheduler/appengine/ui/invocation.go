@@ -56,16 +56,16 @@ func invocationPage(c *router.Context) {
 
 	// panic on internal datastore errors to trigger HTTP 500.
 	switch {
+	case err2 == engine.ErrNoSuchJob:
+		http.Error(c.Writer, "No such job or no permission", http.StatusNotFound)
+		return
+	case err1 == engine.ErrNoSuchInvocation:
+		http.Error(c.Writer, "No such invocation", http.StatusNotFound)
+		return
 	case err1 != nil:
 		panic(err1)
 	case err2 != nil:
 		panic(err2)
-	case inv == nil:
-		http.Error(c.Writer, "No such invocation", http.StatusNotFound)
-		return
-	case job == nil:
-		http.Error(c.Writer, "No such job", http.StatusNotFound)
-		return
 	}
 
 	jobUI := makeJob(c.Context, job)

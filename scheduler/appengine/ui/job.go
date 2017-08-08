@@ -37,12 +37,12 @@ func jobPage(ctx *router.Context) {
 
 	// Grab the job from the datastore.
 	job, err := config(c).Engine.GetVisibleJob(c, projectID+"/"+jobName)
-	if err != nil {
-		panic(err)
-	}
-	if job == nil {
+	switch {
+	case err == engine.ErrNoSuchJob:
 		http.Error(w, "No such job or no access to it", http.StatusNotFound)
 		return
+	case err != nil:
+		panic(err)
 	}
 
 	// Grab latest invocations from the datastore.

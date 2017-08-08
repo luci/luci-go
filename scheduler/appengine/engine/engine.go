@@ -78,15 +78,18 @@ type Engine interface {
 	// project in no particular order.
 	GetVisibleProjectJobs(c context.Context, projectID string) ([]*Job, error)
 
-	// GetVisibleJob returns single scheduler job given its full ID or nil if no such
-	// job or if not visible.
+	// GetVisibleJob returns single scheduler job given its full ID.
+	// ErrNoSuchJob error is returned if job doesn't exist OR isn't visible.
 	GetVisibleJob(c context.Context, jobID string) (*Job, error)
 
 	// ListVisibleInvocations returns invocations of a visible job, most recent first.
 	// Returns fetched invocations and cursor string if there's more.
+	// error is ErrNoSuchJob if job doesn't exist or isn't visible.
 	ListVisibleInvocations(c context.Context, jobID string, pageSize int, cursor string) ([]*Invocation, string, error)
 
 	// GetVisibleInvocation returns single invocation of some job given its ID.
+	// ErrNoSuchInvocation is returned if either job or invocation doesn't exist
+	// or job and hence invocation isn't visible.
 	GetVisibleInvocation(c context.Context, jobID string, invID int64) (*Invocation, error)
 
 	// GetVisibleInvocationsByNonce returns a list of Invocations with given nonce.
@@ -728,11 +731,8 @@ func (e *engineImpl) PublicAPI() Engine {
 }
 
 func (e *engineImpl) ListVisibleInvocations(c context.Context, jobID string, pageSize int, cursor string) ([]*Invocation, string, error) {
-	if job, err := e.GetVisibleJob(c, jobID); err != nil {
+	if _, err := e.GetVisibleJob(c, jobID); err != nil {
 		return nil, "", err
-	} else if job == nil {
-		// Either no Job or no access, both imply returning no invocations.
-		return nil, "", ErrNoSuchInvocation
 	}
 
 	if pageSize == 0 || pageSize > 500 {
