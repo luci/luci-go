@@ -1,6 +1,6 @@
 name: "steps"
 status: FAILURE
-deployment_manifests: <
+source_manifests: <
   key: "cool_name"
   value: <
     url: "logdog://example.com/some/prefix/+/some/path"

@@ -379,28 +379,28 @@ func (s *State) Append(annotation string) error {
 		break
 
 	// This is ONLY supported by annotee, not by buildbot.
-	// @@@DEPLOYMENT_MANIFEST@<name>@<sha256>@<url>@@@
-	case "DEPLOYMENT_MANIFEST":
+	// @@@SOURCE_MANIFEST@<name>@<sha256>@<url>@@@
+	case "SOURCE_MANIFEST":
 		parts := strings.SplitN(params, "@", 3)
 		if len(parts) != 3 {
-			return fmt.Errorf("DEPLOYMENT_MANIFEST expected 3 params, got %q", params)
+			return fmt.Errorf("SOURCE_MANIFEST expected 3 params, got %q", params)
 		}
 
 		step := s.RootStep()
-		if step.DeploymentManifests == nil {
-			step.DeploymentManifests = map[string]*milo.Step_ManifestLink{}
+		if step.SourceManifests == nil {
+			step.SourceManifests = map[string]*milo.Step_ManifestLink{}
 		}
 
 		name, hashHex, url := parts[0], parts[1], parts[2]
 		hash, err := hex.DecodeString(hashHex)
 		if err != nil {
-			return fmt.Errorf("DEPLOYMENT_MANIFEST has bad hash: %s", err)
+			return fmt.Errorf("SOURCE_MANIFEST has bad hash: %s", err)
 		}
-		if _, ok := step.DeploymentManifests[name]; ok {
-			return fmt.Errorf("repeated DEPLOYMENT_MANIFEST name %q", name)
+		if _, ok := step.SourceManifests[name]; ok {
+			return fmt.Errorf("repeated SOURCE_MANIFEST name %q", name)
 		}
 
-		step.DeploymentManifests[name] = &milo.Step_ManifestLink{
+		step.SourceManifests[name] = &milo.Step_ManifestLink{
 			Sha256: hash,
 			Url:    url,
 		}

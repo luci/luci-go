@@ -159,7 +159,7 @@ message Step {
   // Maps the name of the Manifest, e.g. UNPATCHED, INFRA, etc. to the
   // ManifestLink. This name will be used in the milo console definition to
   // indicate which manifest data to sort the console view by.
-  map<string, ManifestLink> deployment_manifests = 25;
+  map<string, ManifestLink> source_manifests = 25;
 }
 
 // A Link is an optional label followed by a typed link to an external
