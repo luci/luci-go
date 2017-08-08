@@ -104,6 +104,32 @@ func TestUpdateProjectJobs(t *testing.T) {
 				},
 			},
 		})
+
+		// TODO(tandrii): delete and update above definition after no-ACL -> ACL transition.
+		// Simulate ACL version roll without change of project config.
+		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{
+			{
+				JobID:    "abc/1",
+				Revision: "rev1",
+				Schedule: "*/5 * * * * * *",
+				Acls:     acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
+			}}), ShouldBeNil)
+		So(allJobs(c), ShouldResemble, []Job{
+			{
+				JobID:     "abc/1",
+				ProjectID: "abc",
+				Revision:  "rev1",
+				Enabled:   true,
+				Acls:      acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
+				Schedule:  "*/5 * * * * * *",
+				State: JobState{
+					State:     "SCHEDULED",
+					TickNonce: 6278013164014963328,
+					TickTime:  epoch.Add(5 * time.Second),
+				},
+			},
+		})
+
 		// Enqueued timer task to launch it.
 		task := ensureOneTask(c, "timers-q")
 		So(task.Path, ShouldEqual, "/timers")

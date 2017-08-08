@@ -333,6 +333,7 @@ func (e *Job) isEqual(other *Job) bool {
 		e.Revision == other.Revision &&
 		e.RevisionURL == other.RevisionURL &&
 		e.Schedule == other.Schedule &&
+		e.Acls.Equal(&other.Acls) &&
 		bytes.Equal(e.Task, other.Task) &&
 		e.State == other.State)
 }
@@ -1301,7 +1302,7 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 			return errSkipPut
 		}
 		if isNew {
-			// JobID is <projectID>/<name>, it's ensure by Catalog.
+			// JobID is <projectID>/<name>, it's ensured by Catalog.
 			chunks := strings.Split(def.JobID, "/")
 			if len(chunks) != 2 {
 				return fmt.Errorf("unexpected jobID format: %s", def.JobID)
@@ -1323,6 +1324,7 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 		job.Flavor = def.Flavor
 		job.Revision = def.Revision
 		job.RevisionURL = def.RevisionURL
+		job.Acls = def.Acls
 		job.Enabled = true
 		job.Schedule = def.Schedule
 		job.Task = def.Task

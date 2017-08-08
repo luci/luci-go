@@ -20,13 +20,14 @@ import (
 	"sort"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"github.com/luci/luci-go/common/data/stringset"
 	"github.com/luci/luci-go/common/errors"
 	"github.com/luci/luci-go/common/retry/transient"
 	"github.com/luci/luci-go/scheduler/appengine/messages"
 	"github.com/luci/luci-go/server/auth"
 	"github.com/luci/luci-go/server/auth/identity"
-	"golang.org/x/net/context"
 )
 
 // GrantsByRole can answer questions who can READ and who OWNS the task.
