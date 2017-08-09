@@ -326,7 +326,7 @@ func (cmd *cmdRunGet) Run(baseApp subcommands.Application, args []string, _ subc
 	}
 	defer client.Close()
 
-	stClient, err := archive.New(c, archive.Options{
+	stClient, err := archive.New(archive.Options{
 		Index:  gs.Path(cmd.indexPath),
 		Stream: gs.Path(cmd.streamPath),
 		Client: client,
@@ -338,7 +338,7 @@ func (cmd *cmdRunGet) Run(baseApp subcommands.Application, args []string, _ subc
 	defer stClient.Close()
 
 	var innerErr error
-	err = stClient.Get(storage.GetRequest{
+	err = stClient.Get(c, storage.GetRequest{
 		Index: types.MessageIndex(cmd.index),
 		Limit: cmd.limit,
 	}, func(e *storage.Entry) bool {
@@ -414,7 +414,7 @@ func (cmd *cmdRunTail) Run(baseApp subcommands.Application, args []string, _ sub
 	}
 	defer client.Close()
 
-	stClient, err := archive.New(c, archive.Options{
+	stClient, err := archive.New(archive.Options{
 		Index:  gs.Path(cmd.indexPath),
 		Stream: gs.Path(cmd.streamPath),
 		Client: client,
@@ -425,7 +425,7 @@ func (cmd *cmdRunTail) Run(baseApp subcommands.Application, args []string, _ sub
 	}
 	defer stClient.Close()
 
-	e, err := stClient.Tail("", "")
+	e, err := stClient.Tail(c, "", "")
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to Tail log entries.")
 		return 1

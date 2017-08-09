@@ -25,6 +25,8 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
+	"golang.org/x/net/context"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -59,6 +61,8 @@ func TestBigTable(t *testing.T) {
 	t.Parallel()
 
 	Convey(`A memory Storage instance.`, t, func() {
+		c := context.TODO()
+
 		st := Storage{}
 		defer st.Close()
 
@@ -79,7 +83,7 @@ func TestBigTable(t *testing.T) {
 					req.Values = append(req.Values, numRec(index).data)
 					indices = append(indices, index)
 				}
-				return st.Put(req)
+				return st.Put(c, req)
 			}
 
 			So(putRange(0, 6), ShouldBeNil)
@@ -110,14 +114,14 @@ func TestBigTable(t *testing.T) {
 				Convey(`Will return ErrExists when putting an existing entry.`, func() {
 					req.Values = [][]byte{[]byte("ohai")}
 
-					So(st.Put(req), ShouldEqual, storage.ErrExists)
+					So(st.Put(c, req), ShouldEqual, storage.ErrExists)
 				})
 
 				Convey(`Will return an error if one is set.`, func() {
 					st.SetErr(errors.New("test error"))
 
 					req.Index = 1337
-					So(st.Put(req), ShouldErrLike, "test error")
+					So(st.Put(c, req), ShouldErrLike, "test error")
 				})
 			})
 
@@ -128,14 +132,14 @@ func TestBigTable(t *testing.T) {
 				}
 
 				Convey(`Can retrieve all of the records correctly.`, func() {
-					So(st.Get(req, getAllCB), ShouldBeNil)
+					So(st.Get(c, req, getAllCB), ShouldBeNil)
 					So(getRecs, ShouldResemble, recs)
 				})
 
 				Convey(`Will adhere to GetRequest limit.`, func() {
 					req.Limit = 4
 
-					So(st.Get(req, getAllCB), ShouldBeNil)
+					So(st.Get(c, req, getAllCB), ShouldBeNil)
 					So(getRecs, ShouldResemble, recs[:4])
 				})
 
@@ -143,13 +147,13 @@ func TestBigTable(t *testing.T) {
 					st.MaxGetCount = 3
 					req.Limit = 4
 
-					So(st.Get(req, getAllCB), ShouldBeNil)
+					So(st.Get(c, req, getAllCB), ShouldBeNil)
 					So(getRecs, ShouldResemble, recs[:3])
 				})
 
 				Convey(`Will stop iterating if callback returns false.`, func() {
 					count := 0
-					err := st.Get(req, func(*storage.Entry) bool {
+					err := st.Get(c, req, func(*storage.Entry) bool {
 						count++
 						return false
 					})
@@ -160,43 +164,43 @@ func TestBigTable(t *testing.T) {
 				Convey(`Will fail to retrieve records if the project doesn't exist.`, func() {
 					req.Project = "project-does-not-exist"
 
-					So(st.Get(req, getAllCB), ShouldEqual, storage.ErrDoesNotExist)
+					So(st.Get(c, req, getAllCB), ShouldEqual, storage.ErrDoesNotExist)
 				})
 
 				Convey(`Will fail to retrieve records if the path doesn't exist.`, func() {
 					req.Path = "testing/+/does/not/exist"
 
-					So(st.Get(req, getAllCB), ShouldEqual, storage.ErrDoesNotExist)
+					So(st.Get(c, req, getAllCB), ShouldEqual, storage.ErrDoesNotExist)
 				})
 
 				Convey(`Will return an error if one is set.`, func() {
 					st.SetErr(errors.New("test error"))
 
-					So(st.Get(req, nil), ShouldErrLike, "test error")
+					So(st.Get(c, req, nil), ShouldErrLike, "test error")
 				})
 			})
 
 			Convey(`Tail()`, func() {
 				Convey(`Can retrieve the tail record, 10.`, func() {
-					e, err := st.Tail(project, path)
+					e, err := st.Tail(c, project, path)
 					So(err, ShouldBeNil)
 					So(e.D, ShouldResemble, numRec(10).data)
 					So(mustGetIndex(e), ShouldEqual, 10)
 				})
 
 				Convey(`Will fail to retrieve records if the project doesn't exist.`, func() {
-					_, err := st.Tail("project-does-not-exist", path)
+					_, err := st.Tail(c, "project-does-not-exist", path)
 					So(err, ShouldEqual, storage.ErrDoesNotExist)
 				})
 
 				Convey(`Will fail to retrieve records if the path doesn't exist.`, func() {
-					_, err := st.Tail(project, "testing/+/does/not/exist")
+					_, err := st.Tail(c, project, "testing/+/does/not/exist")
 					So(err, ShouldEqual, storage.ErrDoesNotExist)
 				})
 
 				Convey(`Will return an error if one is set.`, func() {
 					st.SetErr(errors.New("test error"))
-					_, err := st.Tail("", "")
+					_, err := st.Tail(c, "", "")
 					So(err, ShouldErrLike, "test error")
 				})
 			})
@@ -207,27 +211,27 @@ func TestBigTable(t *testing.T) {
 				}
 
 				Convey(`Can update the configuration.`, func() {
-					So(st.Config(cfg), ShouldBeNil)
+					So(st.Config(c, cfg), ShouldBeNil)
 					So(st.MaxLogAge, ShouldEqual, cfg.MaxLogAge)
 				})
 
 				Convey(`Will return an error if one is set.`, func() {
 					st.SetErr(errors.New("test error"))
-					So(st.Config(storage.Config{}), ShouldErrLike, "test error")
+					So(st.Config(c, storage.Config{}), ShouldErrLike, "test error")
 				})
 			})
 
 			Convey(`Errors can be set, cleared, and set again.`, func() {
-				So(st.Config(storage.Config{}), ShouldBeNil)
+				So(st.Config(c, storage.Config{}), ShouldBeNil)
 
 				st.SetErr(errors.New("test error"))
-				So(st.Config(storage.Config{}), ShouldErrLike, "test error")
+				So(st.Config(c, storage.Config{}), ShouldErrLike, "test error")
 
 				st.SetErr(nil)
-				So(st.Config(storage.Config{}), ShouldBeNil)
+				So(st.Config(c, storage.Config{}), ShouldBeNil)
 
 				st.SetErr(errors.New("test error"))
-				So(st.Config(storage.Config{}), ShouldErrLike, "test error")
+				So(st.Config(c, storage.Config{}), ShouldErrLike, "test error")
 			})
 		})
 	})

@@ -27,8 +27,9 @@ import (
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"cloud.google.com/go/bigtable"
+	"google.golang.org/grpc/metadata"
+
 	"golang.org/x/net/context"
-	"google.golang.org/api/option"
 )
 
 var (
@@ -66,118 +67,55 @@ var (
 	errStop = errors.New("bigtable: stop iteration")
 )
 
-// Options is a set of configuration options for BigTable storage.
-type Options struct {
-	// Project is the name of the project to connect to.
-	Project string
-	// Instance is the name of the instance to connect to.
-	Instance string
-	// ClientOptions are additional client options to use when instantiating the
-	// client instance.
-	ClientOptions []option.ClientOption
+// Storage is a BigTable storage configuration client.
+type Storage struct {
+	// Client, if not nil, is the BigTable client to use for BigTable accesses.
+	Client *bigtable.Client
 
-	// Table is the name of the BigTable table to use for logs.
+	// AdminClient, if not nil, is the BigTable admin client to use for BigTable
+	// administrator operations.
+	AdminClient *bigtable.AdminClient
+
+	// LogTable is the name of the BigTable table to use for logs.
 	LogTable string
 
 	// Cache, if not nil, will be used to cache data.
 	Cache caching.Cache
+
+	// testBTInterface, if not nil, is the BigTable interface to use. This is
+	// useful for testing. If nil, this will default to the production isntance.
+	testBTInterface btIface
 }
 
-func (o *Options) client(ctx context.Context) (*bigtable.Client, error) {
-	return bigtable.NewClient(ctx, o.Project, o.Instance, o.ClientOptions...)
+func (s *Storage) getIface() btIface {
+	if s.testBTInterface != nil {
+		return s.testBTInterface
+	}
+	return prodBTIface{s}
 }
 
-func (o *Options) adminClient(ctx context.Context) (*bigtable.AdminClient, error) {
-	return bigtable.NewAdminClient(ctx, o.Project, o.Instance, o.ClientOptions...)
-}
+// Close implements storage.Storage.
+func (s *Storage) Close() {}
 
-// btStorage is a storage.Storage implementation that uses Google Cloud BigTable
-// as a backend.
-type btStorage struct {
-	*Options
-
-	// Context is the bound supplied with New. It is retained (rather than
-	// supplied on a per-call basis) because a special Storage Context devoid of
-	// gRPC metadata is needed for Storage calls.
-	context.Context
-
-	client      *bigtable.Client
-	logTable    *bigtable.Table
-	adminClient *bigtable.AdminClient
-
-	// raw, if not nil, is the raw BigTable interface to use. This is useful for
-	// testing. If nil, this will default to the production isntance.
-	raw btTable
-
-	// maxRowSize is the maxmium number of bytes that can be stored in a single
-	// BigTable row. This is a function of BigTable, and constant in production
-	// (bigTableRowMaxBytes), but variable here to allow for testing to control.
-	maxRowSize int
-}
-
-// New instantiates a new Storage instance connected to a BigTable instance.
-//
-// The returned Storage instance will close the Client when its Close() method
-// is called.
-func New(ctx context.Context, o Options) (storage.Storage, error) {
-	client, err := o.client(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	admin, err := o.adminClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return newBTStorage(ctx, o, client, admin, nil), nil
-}
-
-func newBTStorage(ctx context.Context, o Options, client *bigtable.Client, adminClient *bigtable.AdminClient, raw btTable) *btStorage {
-	s := &btStorage{
-		Options: &o,
-		Context: ctx,
-
-		client:      client,
-		adminClient: adminClient,
-		raw:         raw,
-		maxRowSize:  bigTableRowMaxBytes,
-	}
-	if s.client != nil {
-		s.logTable = s.client.Open(o.LogTable)
-	}
-	if s.raw == nil {
-		s.raw = &btTableProd{s}
-	}
-	return s
-}
-
-func (s *btStorage) Close() {
-	if s.client != nil {
-		s.client.Close()
-		s.client = nil
-	}
-
-	if s.adminClient != nil {
-		s.adminClient.Close()
-		s.adminClient = nil
-	}
-}
-
-func (s *btStorage) Config(cfg storage.Config) error {
-	if err := s.raw.setMaxLogAge(s, cfg.MaxLogAge); err != nil {
-		log.WithError(err).Errorf(s, "Failed to set 'log' GC policy.")
+// Config implements storage.Storage.
+func (s *Storage) Config(c context.Context, cfg storage.Config) error {
+	if err := s.getIface().setMaxLogAge(c, cfg.MaxLogAge); err != nil {
+		log.WithError(err).Errorf(c, "Failed to set 'log' GC policy.")
 		return err
 	}
 	log.Fields{
 		"maxLogAge": cfg.MaxLogAge,
-	}.Infof(s, "Set maximum log age.")
+	}.Infof(c, "Set maximum log age.")
 	return nil
 }
 
-func (s *btStorage) Put(r storage.PutRequest) error {
+// Put implements storage.Storage.
+func (s *Storage) Put(c context.Context, r storage.PutRequest) error {
+	c = prepareContext(c)
+
+	iface := s.getIface()
 	rw := rowWriter{
-		threshold: s.maxRowSize,
+		threshold: iface.getMaxRowSize(),
 	}
 
 	for len(r.Values) > 0 {
@@ -185,7 +123,7 @@ func (s *btStorage) Put(r storage.PutRequest) error {
 		if appended := rw.append(r.Values[0]); !appended {
 			// We have failed to append our maximum BigTable row size. Flush any
 			// currently-buffered row data and try again with an empty buffer.
-			count, err := rw.flush(s, s.raw, r.Index, r.Project, r.Path)
+			count, err := rw.flush(c, iface, r.Index, r.Project, r.Path)
 			if err != nil {
 				return err
 			}
@@ -193,7 +131,7 @@ func (s *btStorage) Put(r storage.PutRequest) error {
 			if count == 0 {
 				// Nothing was buffered, but we still couldn't append an entry. The
 				// current entry is too large by itself, so we must fail.
-				return fmt.Errorf("single row entry exceeds maximum size (%d > %d)", len(r.Values[0]), bigTableRowMaxBytes)
+				return fmt.Errorf("single row entry exceeds maximum size (%d > %d)", len(r.Values[0]), rw.threshold)
 			}
 
 			r.Index += types.MessageIndex(count)
@@ -205,15 +143,18 @@ func (s *btStorage) Put(r storage.PutRequest) error {
 	}
 
 	// Flush any buffered rows.
-	if _, err := rw.flush(s, s.raw, r.Index, r.Project, r.Path); err != nil {
+	if _, err := rw.flush(c, iface, r.Index, r.Project, r.Path); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *btStorage) Get(r storage.GetRequest, cb storage.GetCallback) error {
+// Get implements storage.Storage.
+func (s *Storage) Get(c context.Context, r storage.GetRequest, cb storage.GetCallback) error {
+	c = prepareContext(c)
+
 	startKey := newRowKey(string(r.Project), string(r.Path), int64(r.Index), 0)
-	ctx := log.SetFields(s, log.Fields{
+	c = log.SetFields(c, log.Fields{
 		"project":     r.Project,
 		"path":        r.Path,
 		"index":       r.Index,
@@ -226,7 +167,7 @@ func (s *btStorage) Get(r storage.GetRequest, cb storage.GetCallback) error {
 	// associated with it. We will fast-exit
 
 	limit := r.Limit
-	err := s.raw.getLogData(ctx, startKey, r.Limit, r.KeysOnly, func(rk *rowKey, data []byte) error {
+	err := s.getIface().getLogData(c, startKey, r.Limit, r.KeysOnly, func(rk *rowKey, data []byte) error {
 		// Does this key match our requested log stream? If not, we've moved past
 		// this stream's records and must stop iteration.
 		if !rk.sharesPathWith(startKey) {
@@ -254,7 +195,7 @@ func (s *btStorage) Get(r storage.GetRequest, cb storage.GetCallback) error {
 				log.Fields{
 					"count":       rk.count,
 					"recordCount": len(records),
-				}.Errorf(ctx, "Record count doesn't match declared count.")
+				}.Errorf(c, "Record count doesn't match declared count.")
 				return storage.ErrBadData
 			}
 		}
@@ -277,7 +218,7 @@ func (s *btStorage) Get(r storage.GetRequest, cb storage.GetCallback) error {
 			"rkIndex":    rk.index,
 			"rkCount":    rk.count,
 			"startIndex": startIndex,
-		}.Debugf(ctx, "Punting row key range [%d - %d]...", startIndex, rk.index)
+		}.Debugf(c, "Punting row key range [%d - %d]...", startIndex, rk.index)
 
 		for index := startIndex; index <= rk.index; index++ {
 			// If we're not doing keys-only, consume the row.
@@ -307,21 +248,24 @@ func (s *btStorage) Get(r storage.GetRequest, cb storage.GetCallback) error {
 		return nil
 
 	default:
-		log.WithError(err).Errorf(ctx, "Failed to retrieve row range.")
+		log.WithError(err).Errorf(c, "Failed to retrieve row range.")
 		return err
 	}
 }
 
-func (s *btStorage) Tail(project cfgtypes.ProjectName, path types.StreamPath) (*storage.Entry, error) {
-	ctx := log.SetFields(s, log.Fields{
+// Tail implements storage.Storage.
+func (s *Storage) Tail(c context.Context, project cfgtypes.ProjectName, path types.StreamPath) (*storage.Entry, error) {
+	c = prepareContext(c)
+	c = log.SetFields(c, log.Fields{
 		"project": project,
 		"path":    path,
 	})
+	iface := s.getIface()
 
 	// Load the "last tail index" from cache. If we have no cache, start at 0.
 	var startIdx int64
 	if s.Cache != nil {
-		startIdx = getLastTailIndex(s, s.Cache, project, path)
+		startIdx = getLastTailIndex(c, s.Cache, project, path)
 	}
 
 	// Iterate through all log keys in the stream. Record the latest contiguous
@@ -331,7 +275,7 @@ func (s *btStorage) Tail(project cfgtypes.ProjectName, path types.StreamPath) (*
 		latest    *rowKey
 		nextIndex = startIdx
 	)
-	err := s.raw.getLogData(ctx, rk, 0, true, func(rk *rowKey, data []byte) error {
+	err := iface.getLogData(c, rk, 0, true, func(rk *rowKey, data []byte) error {
 		// If this record is non-contiguous, we're done iterating.
 		if rk.firstIndex() != nextIndex {
 			return errStop
@@ -343,10 +287,8 @@ func (s *btStorage) Tail(project cfgtypes.ProjectName, path types.StreamPath) (*
 	if err != nil && err != errStop {
 		log.Fields{
 			log.ErrorKey: err,
-			"project":    s.Project,
-			"instance":   s.Instance,
 			"table":      s.LogTable,
-		}.Errorf(ctx, "Failed to scan for tail.")
+		}.Errorf(c, "Failed to scan for tail.")
 	}
 
 	if latest == nil {
@@ -358,12 +300,12 @@ func (s *btStorage) Tail(project cfgtypes.ProjectName, path types.StreamPath) (*
 	if s.Cache != nil && startIdx != latest.index {
 		// We cache the first index in the row so that subsequent cached fetches
 		// have the correct "startIdx" expectations.
-		putLastTailIndex(s, s.Cache, project, path, latest.firstIndex())
+		putLastTailIndex(c, s.Cache, project, path, latest.firstIndex())
 	}
 
 	// Fetch the latest row's data.
 	var d []byte
-	err = s.raw.getLogData(ctx, latest, 1, false, func(rk *rowKey, data []byte) error {
+	err = iface.getLogData(c, latest, 1, false, func(rk *rowKey, data []byte) error {
 		records, err := recordio.Split(data)
 		if err != nil || len(records) == 0 {
 			return storage.ErrBadData
@@ -374,10 +316,8 @@ func (s *btStorage) Tail(project cfgtypes.ProjectName, path types.StreamPath) (*
 	if err != nil && err != errStop {
 		log.Fields{
 			log.ErrorKey: err,
-			"project":    s.Project,
-			"instance":   s.Instance,
 			"table":      s.LogTable,
-		}.Errorf(ctx, "Failed to retrieve tail row.")
+		}.Errorf(c, "Failed to retrieve tail row.")
 	}
 
 	return storage.MakeEntry(d, types.MessageIndex(latest.index)), nil
@@ -419,7 +359,7 @@ func (w *rowWriter) append(d []byte) (appended bool) {
 	return
 }
 
-func (w *rowWriter) flush(ctx context.Context, raw btTable, index types.MessageIndex,
+func (w *rowWriter) flush(c context.Context, iface btIface, index types.MessageIndex,
 	project cfgtypes.ProjectName, path types.StreamPath) (int, error) {
 
 	flushCount := w.count
@@ -440,8 +380,8 @@ func (w *rowWriter) flush(ctx context.Context, raw btTable, index types.MessageI
 		"lastIndex": lastIndex,
 		"count":     w.count,
 		"size":      w.buf.Len(),
-	}.Debugf(ctx, "Adding entries to BigTable.")
-	if err := raw.putLogData(ctx, rk, w.buf.Bytes()); err != nil {
+	}.Debugf(c, "Adding entries to BigTable.")
+	if err := iface.putLogData(c, rk, w.buf.Bytes()); err != nil {
 		return 0, err
 	}
 
@@ -449,4 +389,11 @@ func (w *rowWriter) flush(ctx context.Context, raw btTable, index types.MessageI
 	w.buf.Reset()
 	w.count = 0
 	return flushCount, nil
+}
+
+func prepareContext(c context.Context) context.Context {
+	// Explicitly clear gRPC metadata from the Context. It is forwarded to
+	// delegate calls by default, and standard request metadata can break BigTable
+	// calls.
+	return metadata.NewContext(c, nil)
 }

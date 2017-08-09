@@ -31,7 +31,8 @@ func TestBigTable(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Testing BigTable internal functions`, t, func() {
-		s := NewMemoryInstance(context.Background(), Options{})
+		c := context.Background()
+		s := NewMemoryInstance(nil)
 		defer s.Close()
 
 		Convey(`Given a fake BigTable row`, func() {
@@ -73,7 +74,7 @@ func TestBigTable(t *testing.T) {
 			}
 
 			Convey(`Can successfully apply configuration.`, func() {
-				So(s.Config(cfg), ShouldBeNil)
+				So(s.Config(c, cfg), ShouldBeNil)
 				So(s.MaxLogAge(), ShouldEqual, cfg.MaxLogAge)
 			})
 
@@ -81,7 +82,7 @@ func TestBigTable(t *testing.T) {
 				testErr := errors.New("test error")
 				s.SetErr(testErr)
 
-				So(s.Config(cfg), ShouldEqual, testErr)
+				So(s.Config(c, cfg), ShouldEqual, testErr)
 			})
 		})
 	})
