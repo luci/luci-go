@@ -16,6 +16,24 @@
       "revId": "57dc55a568f53179536fe1942a0caa9e17d31c77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50b515c3_3609c0be",
+        "filename": "cipd/client/cipd/ensure/item_parsers.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-08-09T02:24:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bc499f41_0b6f5d71",
+      "revId": "57dc55a568f53179536fe1942a0caa9e17d31c77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
