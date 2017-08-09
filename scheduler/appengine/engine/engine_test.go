@@ -680,11 +680,11 @@ func TestQueries(t *testing.T) {
 			_, err = e.GetVisibleJob(ctxAnon, "abc/1") // no READER permission.
 			So(err, ShouldEqual, ErrNoSuchJob)
 
-			job, err := e.GetVisibleJob(ctxAnon, "def/1") // OK.
+			_, err = e.GetVisibleJob(ctxAnon, "def/2") // not enabled, hence not visible.
 			So(job, ShouldNotBeNil)
 			So(err, ShouldBeNil)
 
-			job, err = e.GetVisibleJob(ctxAnon, "def/2") // OK, even though not enabled.
+			job, err := e.GetVisibleJob(ctxAnon, "def/1") // OK.
 			So(job, ShouldNotBeNil)
 			So(err, ShouldBeNil)
 		})
