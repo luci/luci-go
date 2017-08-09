@@ -20,7 +20,7 @@ import (
 	// Importing pprof implicitly installs "/debug/*" profiling handlers.
 	_ "net/http/pprof"
 
-	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/appengine/gaemiddleware/classic"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/tasks"
 	"go.chromium.org/luci/server/router"
@@ -35,9 +35,10 @@ func init() {
 	tmb := tumble.Service{}
 
 	r := router.New()
-	base := gaemiddleware.BaseProd().Extend(coordinator.ProdCoordinatorService)
+	classic.InstallHandlers(r)
+
+	base := classic.Base().Extend(coordinator.ProdCoordinatorService)
 	tmb.InstallHandlers(r, base)
-	gaemiddleware.InstallHandlersWithMiddleware(r, base)
 	tasks.InstallHandlers(r, base)
 
 	http.Handle("/", r)

@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 )
 
-// InstallHandlers installs handlers for framework routes.
+// InstallHandlersWithMiddleware installs handlers for framework routes.
 //
 // These routes are needed for various services provided in BaseProd context to
 // work:
@@ -36,16 +36,6 @@ import (
 // They must be installed into a default module, but it is also safe to install
 // them into a non-default module. This may be handy if you want to move cron
 // handlers into a non-default module.
-func InstallHandlers(r *router.Router) {
-	InstallHandlersWithMiddleware(r, BaseProd())
-}
-
-// InstallHandlersWithMiddleware installs handlers for framework routes.
-//
-// It is same as 'InstallHandlers', but allows caller to customize the
-// middleware chain used for the routes. This may be needed if application
-// callbacks invoked through the default routes (settings pages, monitoring
-// callbacks) need some additional state in the context.
 //
 // 'base' is expected to be BaseProd() or its derivative. It must NOT do any
 // interception of requests (e.g. checking and rejecting unauthenticated

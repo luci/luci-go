@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/appengine/gaemiddleware/classic"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/router"
 
@@ -45,9 +46,9 @@ var (
 
 func init() {
 	r := router.New()
-	basemw := gaemiddleware.BaseProd()
+	basemw := classic.Base()
 
-	gaemiddleware.InstallHandlers(r)
+	classic.InstallHandlers(r)
 
 	r.GET("/internal/cron/read-config", basemw.Extend(gaemiddleware.RequireCron), readConfigCron)
 	r.GET("/internal/cron/fetch-crl", basemw.Extend(gaemiddleware.RequireCron), fetchCRLCron)

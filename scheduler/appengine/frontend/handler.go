@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/appengine/gaemiddleware/classic"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
@@ -150,7 +151,7 @@ func init() {
 	})
 
 	// Do global init before handling requests.
-	base := gaemiddleware.BaseProd().Extend(
+	base := classic.Base().Extend(
 		func(c *router.Context, next router.Handler) {
 			globalInit.Do(func() { initializeGlobalState(c.Context) })
 			next(c)
