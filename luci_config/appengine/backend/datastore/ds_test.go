@@ -54,7 +54,6 @@ type testCache interface {
 	addConfig(configSet cfgtypes.ConfigSet, path, content string) *backend.Item
 	addProjectConfig(name cfgtypes.ProjectName, access string)
 	addConfigSets(path string, configSets ...cfgtypes.ConfigSet) []string
-	addConfigSetURL(configSet cfgtypes.ConfigSet) string
 }
 
 func projectConfigWithAccess(name cfgtypes.ProjectName, access ...string) *configPB.ProjectCfg {
@@ -143,6 +142,7 @@ func (fc *fakeCache) addConfigImpl(cs cfgtypes.ConfigSet, path, formatter, forma
 				ConfigSet:   string(cs),
 				Path:        path,
 				ContentHash: "hash",
+				ViewURL:     "fake_config.cfg",
 			},
 			Content:    content,
 			FormatSpec: backend.FormatSpec{formatter, formatData},
@@ -196,6 +196,7 @@ func (fc *fakeCache) addConfigSets(path string, configSets ...cfgtypes.ConfigSet
 				ConfigSet:   string(cs),
 				Path:        path,
 				ContentHash: "hash",
+				ViewURL:     "fake_config.cfg",
 			},
 			Content: contents[i],
 		}
@@ -216,20 +217,6 @@ func (fc *fakeCache) addConfigSets(path string, configSets ...cfgtypes.ConfigSet
 		}, &cv)
 	}
 	return contents
-}
-
-func (fc *fakeCache) addConfigSetURL(configSet cfgtypes.ConfigSet) string {
-	u := fmt.Sprintf("https://exmaple.com/config-sets/%s", configSet)
-	fc.set(caching.Key{
-		Schema:     caching.Schema,
-		ServiceURL: fc.serviceURL,
-		Authority:  backend.AsService,
-		Op:         caching.OpConfigSetURL,
-		ConfigSet:  string(configSet),
-	}, &caching.Value{
-		URL: u,
-	})
-	return u
 }
 
 // fullStackCache is a testCache implementation built on top of an in-memory
@@ -308,27 +295,12 @@ func (fsc *fullStackCache) addConfigSets(path string, configSets ...cfgtypes.Con
 	return cstr
 }
 
-func (fsc *fullStackCache) addConfigSetURL(configSet cfgtypes.ConfigSet) string {
-	if _, ok := fsc.data[string(configSet)]; !ok {
-		fsc.data[string(configSet)] = memConfig.ConfigSet{}
-	}
-
-	// We're pretty rigid here. Whatever our backend returns is all we can
-	// return. We will just assert that anything more flexible has to conform to
-	// this.
-	v, err := fsc.backend.ConfigSetURL(context.Background(), string(configSet),
-		backend.Params{Authority: backend.AsService})
-	if err != nil {
-		panic(err)
-	}
-	return v.String()
-}
-
 // stripMeta strips cache-specific identifying information from a set of Metas.
 func stripMeta(metas []*cfgclient.Meta) []*cfgclient.Meta {
 	for _, meta := range metas {
 		meta.ContentHash = ""
 		meta.Revision = ""
+		meta.ViewURL = ""
 	}
 	return metas
 }
@@ -520,43 +492,6 @@ func testDatastoreCacheImpl(c context.Context, be backend.B, cache testCache) {
 					})
 				})
 			})
-		})
-	})
-
-	Convey(`Test ConfigSetURL`, func() {
-		cache.addProjectConfig("foo", "group:someone")
-		csURL := cache.addConfigSetURL("projects/foo")
-
-		Convey(`AsService`, func() {
-			u, err := cfgclient.GetConfigSetURL(c, cfgclient.AsService, "projects/foo")
-			So(err, ShouldBeNil)
-			So(u.String(), ShouldEqual, csURL)
-		})
-
-		Convey(`AsUser`, func() {
-
-			Convey(`When not a member of the group.`, func() {
-				_, err := cfgclient.GetConfigSetURL(c, cfgclient.AsUser, "projects/foo")
-				So(err, ShouldEqual, cfgclient.ErrNoConfig)
-			})
-
-			Convey(`When a member of the group.`, func() {
-				authState.IdentityGroups = append(authState.IdentityGroups, "someone")
-
-				u, err := cfgclient.GetConfigSetURL(c, cfgclient.AsUser, "projects/foo")
-				So(err, ShouldBeNil)
-				So(u.String(), ShouldEqual, csURL)
-			})
-		})
-
-		Convey(`AsAnonymous`, func() {
-			_, err := cfgclient.GetConfigSetURL(c, cfgclient.AsAnonymous, "projects/foo")
-			So(err, ShouldEqual, cfgclient.ErrNoConfig)
-
-			// With credentials, can access.
-			authState.IdentityGroups = append(authState.IdentityGroups, "someone")
-			_, err = cfgclient.GetConfigSetURL(c, cfgclient.AsAnonymous, "projects/foo")
-			So(err, ShouldBeNil)
 		})
 	})
 }

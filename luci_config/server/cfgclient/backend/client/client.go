@@ -51,15 +51,6 @@ var _ backend.B = (*Backend)(nil)
 // ServiceURL implements backend.B.
 func (be *Backend) ServiceURL(c context.Context) url.URL { return be.Provider.GetServiceURL() }
 
-// ConfigSetURL implements backend.B.
-func (be *Backend) ConfigSetURL(c context.Context, configSet string, p backend.Params) (url.URL, error) {
-	u, err := be.GetConfigInterface(c, p.Authority).GetConfigSetLocation(c, configSet)
-	if err != nil || u == nil {
-		return url.URL{}, err
-	}
-	return *u, nil
-}
-
 // Get implements backend.B.
 func (be *Backend) Get(c context.Context, configSet, path string, p backend.Params) (*backend.Item, error) {
 	svc := be.GetConfigInterface(c, p.Authority)
@@ -100,6 +91,7 @@ func (be *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string
 	return items, nil
 }
 
+// GetConfigInterface implements backend.B.
 func (be *Backend) GetConfigInterface(c context.Context, a backend.Authority) config.Interface {
 	return be.Provider.GetConfigClient(c, a)
 }
@@ -188,6 +180,7 @@ func makeItem(cfg *config.Config) *backend.Item {
 			Path:        cfg.Path,
 			ContentHash: cfg.ContentHash,
 			Revision:    cfg.Revision,
+			ViewURL:     cfg.ViewURL,
 		},
 		Content: cfg.Content,
 	}

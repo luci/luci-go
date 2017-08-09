@@ -60,11 +60,6 @@ func (tb *testingBackend) GetAll(c context.Context, t backend.GetAllTarget, path
 	return tb.cloneItems(), nil
 }
 
-func (tb *testingBackend) ConfigSetURL(c context.Context, configSet string, p backend.Params) (url.URL, error) {
-	tb.lastParams = p
-	return tb.url, tb.err
-}
-
 func (tb *testingBackend) GetConfigInterface(c context.Context, a backend.Authority) config.Interface {
 	panic("not supported")
 }
@@ -104,8 +99,8 @@ func TestConfig(t *testing.T) {
 		var err error
 		tb := testingBackend{
 			items: []*backend.Item{
-				{Meta: backend.Meta{"projects/foo", "path", "####", "v1"}, Content: "foo"},
-				{Meta: backend.Meta{"projects/bar", "path", "####", "v1"}, Content: "bar"},
+				{Meta: backend.Meta{"projects/foo", "path", "####", "v1", "config_url"}, Content: "foo"},
+				{Meta: backend.Meta{"projects/bar", "path", "####", "v1", "config_url"}, Content: "bar"},
 			},
 		}
 		transformItems := func(fn func(int, *backend.Item)) {
@@ -143,8 +138,8 @@ func TestConfig(t *testing.T) {
 				So(Projects(c, AsService, "", BytesSlice(&val), &meta), ShouldBeNil)
 				So(val, ShouldResemble, [][]byte{{0}, {1}})
 				So(meta, ShouldResemble, []*Meta{
-					{"projects/foo", "path", "####", "v1"},
-					{"projects/bar", "path", "####", "v1"},
+					{"projects/foo", "path", "####", "v1", "config_url"},
+					{"projects/bar", "path", "####", "v1", "config_url"},
 				})
 			})
 		})
@@ -168,8 +163,8 @@ func TestConfig(t *testing.T) {
 				So(Projects(c, AsService, "", StringSlice(&val), &meta), ShouldBeNil)
 				So(val, ShouldResemble, []string{"[0]", "[1]"})
 				So(meta, ShouldResemble, []*Meta{
-					{"projects/foo", "path", "####", "v1"},
-					{"projects/bar", "path", "####", "v1"},
+					{"projects/foo", "path", "####", "v1", "config_url"},
+					{"projects/bar", "path", "####", "v1", "config_url"},
 				})
 			})
 		})
@@ -182,7 +177,7 @@ func TestConfig(t *testing.T) {
 			Convey(`Single`, func() {
 				var meta Meta
 				So(Get(c, AsService, "", "", nil, &meta), ShouldBeNil)
-				So(meta, ShouldResemble, Meta{"projects/foo", "path", "####", "v1"})
+				So(meta, ShouldResemble, Meta{"projects/foo", "path", "####", "v1", "config_url"})
 				So(tb.lastParams.Content, ShouldBeFalse)
 			})
 
@@ -190,8 +185,8 @@ func TestConfig(t *testing.T) {
 				var meta []*Meta
 				So(Projects(c, AsService, "", nil, &meta), ShouldBeNil)
 				So(meta, ShouldResemble, []*Meta{
-					{"projects/foo", "path", "####", "v1"},
-					{"projects/bar", "path", "####", "v1"},
+					{"projects/foo", "path", "####", "v1", "config_url"},
+					{"projects/bar", "path", "####", "v1", "config_url"},
 				})
 				So(tb.lastParams.Content, ShouldBeFalse)
 			})
@@ -223,21 +218,9 @@ func TestConfig(t *testing.T) {
 
 			// Meta still works.
 			So(meta, ShouldResemble, []*Meta{
-				{"projects/foo", "path", "####", "v1"},
-				{"projects/bar", "path", "####", "v1"},
+				{"projects/foo", "path", "####", "v1", "config_url"},
+				{"projects/bar", "path", "####", "v1", "config_url"},
 			})
-		})
-
-		Convey(`Test ConfigSetURL`, func() {
-			u, err := url.Parse("https://example.com/foo/bar")
-			if err != nil {
-				panic(err)
-			}
-
-			tb.url = *u
-			uv, err := GetConfigSetURL(c, AsService, "")
-			So(err, ShouldBeNil)
-			So(uv, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/foo/bar"})
 		})
 	})
 }

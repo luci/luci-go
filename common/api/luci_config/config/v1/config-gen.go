@@ -276,6 +276,8 @@ type LuciConfigGetConfigMultiResponseMessageConfigEntry struct {
 
 	Url string `json:"url,omitempty"`
 
+	ViewURL string `json:"view_url,omitempty"`
+
 	// ForceSendFields is a list of field names (e.g. "ConfigSet") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
@@ -305,6 +307,8 @@ type LuciConfigGetConfigResponseMessage struct {
 	ContentHash string `json:"content_hash,omitempty"`
 
 	Revision string `json:"revision,omitempty"`
+
+	ViewURL string `json:"view_url,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
 	// server.

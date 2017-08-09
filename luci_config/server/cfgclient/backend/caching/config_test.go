@@ -16,7 +16,6 @@ package caching
 
 import (
 	"encoding/hex"
-	"net/url"
 	"testing"
 	"time"
 
@@ -95,15 +94,6 @@ func (b *testingBackend) GetAll(c context.Context, t backend.GetAllTarget, path 
 	return b.B.GetAll(c, t, path, p)
 }
 
-func (b *testingBackend) ConfigSetURL(c context.Context, configSet string, p backend.Params) (url.URL, error) {
-	b.getContentCalls++
-
-	if b.err != nil {
-		return url.URL{}, b.err
-	}
-	return b.B.ConfigSetURL(c, configSet, p)
-}
-
 func (b *testingBackend) reset() {
 	b.getContentCalls = 0
 	b.getNoContentCalls = 0
@@ -163,6 +153,7 @@ func TestConfig(t *testing.T) {
 				Path:        cfg.Path,
 				ContentHash: cfg.ContentHash,
 				Revision:    cfg.Revision,
+				ViewURL:     cfg.ViewURL,
 			}
 		}
 
@@ -389,33 +380,6 @@ func TestConfig(t *testing.T) {
 				So(tb.getNoContentCalls, ShouldEqual, 0)
 				So(tb.getContentCalls, ShouldEqual, 1)
 			})
-		})
-
-		Convey(`GetConfigSetURL`, func() {
-			u, err := cfgclient.GetConfigSetURL(c, cfgclient.AsService, "projects/goesaway")
-			So(err, ShouldBeNil)
-			So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/projects/goesaway"})
-			So(tb.getContentCalls, ShouldEqual, 1)
-
-			// Delete project, entries still cached.
-			advance()
-
-			u, err = cfgclient.GetConfigSetURL(c, cfgclient.AsService, "projects/goesaway")
-			So(err, ShouldBeNil)
-			So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/projects/goesaway"})
-			So(tb.getContentCalls, ShouldEqual, 1) // (Unchanged)
-
-			// Expire the cache, ErrNoConfig.
-			expired = true
-			_, err = cfgclient.GetConfigSetURL(c, cfgclient.AsService, "projects/goesaway")
-			So(err, ShouldEqual, cfgclient.ErrNoConfig)
-			So(tb.getContentCalls, ShouldEqual, 2) // Reload on expire.
-
-			// Retains "missing" cache entry.
-			expired = false
-			_, err = cfgclient.GetConfigSetURL(c, cfgclient.AsService, "projects/goesaway")
-			So(err, ShouldEqual, cfgclient.ErrNoConfig)
-			So(tb.getContentCalls, ShouldEqual, 2) // (Unchanged)
 		})
 	})
 }
