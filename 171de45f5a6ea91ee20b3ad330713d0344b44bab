@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "675b5f61_adc231ab",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-09T19:21:24Z",
+      "side": 1,
+      "message": "Note: size 0 here is OK b/c the caching only lasts the lifespan of the request.",
+      "range": {
+        "startLine": 153,
+        "startChar": 0,
+        "endLine": 153,
+        "endChar": 37
+      },
+      "revId": "171de45f5a6ea91ee20b3ad330713d0344b44bab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
