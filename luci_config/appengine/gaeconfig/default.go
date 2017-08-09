@@ -150,7 +150,7 @@ func installConfigBackend(c context.Context, s *Settings, be backend.B, dsCron b
 		}
 
 		// Install in-memory cache (proccache).
-		be = caching.ProcCache(be, exp)
+		be = caching.LRUBackend(be, 0, exp)
 	}
 
 	c = backend.WithBackend(c, be)

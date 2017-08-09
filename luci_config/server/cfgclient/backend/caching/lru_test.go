@@ -20,7 +20,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/config/impl/memory"
-	"go.chromium.org/luci/common/data/caching/proccache"
+
 	"go.chromium.org/luci/luci_config/server/cfgclient"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/client"
@@ -28,11 +28,10 @@ import (
 
 	"golang.org/x/net/context"
 
-	//. "go.chromium.org/luci/common/testing/assertions"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestProcCache(t *testing.T) {
+func TestLRUCache(t *testing.T) {
 	t.Parallel()
 
 	Convey(`A testing setup`, t, func() {
@@ -45,9 +44,6 @@ func TestProcCache(t *testing.T) {
 			},
 		}
 
-		var pc proccache.Cache
-		c = proccache.Use(c, &pc)
-
 		// Install our backend: memory backed by cache backed by force error.
 		var be backend.B
 		lcp := testconfig.Provider{
@@ -56,7 +52,8 @@ func TestProcCache(t *testing.T) {
 		be = &client.Backend{
 			Provider: &lcp,
 		}
-		be = ProcCache(be, time.Hour)
+
+		be = LRUBackend(be, 1024, time.Hour)
 		c = backend.WithBackend(c, be)
 
 		Convey(`Will store and cache a value.`, func() {
