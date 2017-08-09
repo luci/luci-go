@@ -25,6 +25,22 @@ import (
 	"go.chromium.org/luci/server/auth/signing"
 )
 
+// DBProvider is a callback that returns most recent DB instance.
+//
+// DB represents a snapshot of user groups used for authorization checks.
+type DBProvider func(c context.Context) (authdb.DB, error)
+
+// AccessTokenProvider knows how to generate OAuth2 access token for the
+// service account belonging to the server itself.
+type AccessTokenProvider func(c context.Context, scopes []string) (*oauth2.Token, error)
+
+// AnonymousTransportProvider returns http.RoundTriper that can make
+// unauthenticated HTTP requests.
+//
+// The returned round tripper is assumed to be bound to the context and won't
+// outlive it.
+type AnonymousTransportProvider func(c context.Context) http.RoundTripper
+
 // Config contains global configuration of the auth library.
 //
 // This configuration adjusts the library to the particular execution
@@ -35,9 +51,7 @@ import (
 // (via ModifyConfig call).
 type Config struct {
 	// DBProvider is a callback that returns most recent DB instance.
-	//
-	// DB represents a snapshot of user groups used for authorization checks.
-	DBProvider func(c context.Context) (authdb.DB, error)
+	DBProvider DBProvider
 
 	// Signer possesses the service's private key and can sign blobs with it.
 	//
@@ -49,17 +63,14 @@ type Config struct {
 
 	// AccessTokenProvider knows how to generate OAuth2 access token for the
 	// service account belonging to the server itself.
-	//
-	// Should implement caching itself, if appropriate. Returned tokens are
-	// expected to live for at least 1 min.
-	AccessTokenProvider func(c context.Context, scopes []string) (*oauth2.Token, error)
+	AccessTokenProvider AccessTokenProvider
 
 	// AnonymousTransport returns http.RoundTriper that can make unauthenticated
 	// HTTP requests.
 	//
 	// The returned round tripper is assumed to be bound to the context and won't
 	// outlive it.
-	AnonymousTransport func(c context.Context) http.RoundTripper
+	AnonymousTransport AnonymousTransportProvider
 
 	// Cache implements a strongly consistent cache.
 	//
