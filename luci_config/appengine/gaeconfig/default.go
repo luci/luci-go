@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/luci/appengine/datastorecache"
 	"go.chromium.org/luci/common/config/impl/filesystem"
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/luci_config/appengine/backend/datastore"
 	"go.chromium.org/luci/luci_config/appengine/backend/memcache"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
@@ -31,6 +30,7 @@ import (
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/erroring"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/format"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
+	serverCaching "go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/gae/service/info"
@@ -167,15 +167,16 @@ func useImpl(c context.Context, be backend.B) context.Context {
 //
 // UseFlex may optionally supply an LRUcache to use for process-wide
 // configuration caching. If nil, no process-wide caching will be performed.
-func UseFlex(c context.Context, cache *lru.Cache) context.Context {
+func UseFlex(c context.Context) context.Context {
 	// TODO: Install a path to load configurations from datastore cache. ATM,
 	// it can't be done because using datastore cache requires the ability to
 	// write to datastore.
 	var ccfg cacheConfig
-	if cache != nil {
+	pc := serverCaching.ProcessCache(c)
+	if pc != nil {
 		ccfg.GlobalCache = func(c context.Context, be backend.B, s *Settings) backend.B {
 			lruBE := caching.LRU{
-				Cache:      cache,
+				Cache:      pc,
 				Expiration: s.CacheExpiration(),
 			}
 			return lruBE.Wrap(be)
