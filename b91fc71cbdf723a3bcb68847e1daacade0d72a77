@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f2658b00_ac019802",
+        "filename": "common/data/caching/lru/locker.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-09T22:42:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4797fffe_f687deee",
+      "range": {
+        "startLine": 25,
+        "startChar": 5,
+        "endLine": 25,
+        "endChar": 12
+      },
+      "revId": "b91fc71cbdf723a3bcb68847e1daacade0d72a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6a2a4006_59689024",
         "filename": "common/data/caching/lru/lru.go",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2017-08-09T22:22:19Z",
       "side": 1,
       "message": "is it? It seems \u0027it\u0027 will be nil.",
+      "range": {
+        "startLine": 55,
+        "startChar": 20,
+        "endLine": 56,
+        "endChar": 11
+      },
+      "revId": "b91fc71cbdf723a3bcb68847e1daacade0d72a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c8f20df_fe1ae378",
+        "filename": "common/data/caching/lru/lru.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-09T22:42:05Z",
+      "side": 1,
+      "message": "True, fixed.",
+      "parentUuid": "6a2a4006_59689024",
       "range": {
         "startLine": 55,
         "startChar": 20,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "6b91cff6_c668f15e",
+        "filename": "common/data/caching/lru/lru.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-09T22:42:05Z",
+      "side": 1,
+      "message": "Since Cache has public members, I thought it best to allow both forms of construction. This used to be a little more useful, since Cache had other members (e.g., Locker).\n\nI\u0027ll make it have only private members and update its comment to say that it must be constructed using New.",
+      "parentUuid": "a0f70aef_f7375c24",
+      "range": {
+        "startLine": 84,
+        "startChar": 1,
+        "endLine": 84,
+        "endChar": 19
+      },
+      "revId": "b91fc71cbdf723a3bcb68847e1daacade0d72a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f4b8b883_852d2244",
         "filename": "common/data/caching/lru/lru.go",
         "patchSetId": 2
@@ -82,6 +154,30 @@
       "writtenOn": "2017-08-09T22:22:19Z",
       "side": 1,
       "message": "IMHO, this is surprising. If users want to remove, they should just use Remove(...).",
+      "range": {
+        "startLine": 167,
+        "startChar": 3,
+        "endLine": 168,
+        "endChar": 13
+      },
+      "revId": "b91fc71cbdf723a3bcb68847e1daacade0d72a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35193998_de3ca2e3",
+        "filename": "common/data/caching/lru/lru.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-09T22:42:05Z",
+      "side": 1,
+      "message": "Ugh this is an old comment from a previous state. \u003c\u003d0 is \"forever now\", will update.",
+      "parentUuid": "f4b8b883_852d2244",
       "range": {
         "startLine": 167,
         "startChar": 3,
@@ -138,6 +234,30 @@
       "revId": "b91fc71cbdf723a3bcb68847e1daacade0d72a77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7a391a27_1f9aa1cc",
+        "filename": "logdog/server/collector/coordinator/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-09T22:42:05Z",
+      "side": 1,
+      "message": "I suppose the question is: what would I do? If I peek and it\u0027s not there, I have to Mutate to put it there. If I peek and it is there, I would want it to bump in the LRU, so I\u0027d want to use Get, which has equivalent cost.",
+      "parentUuid": "3f48f401_6d7146a2",
+      "range": {
+        "startLine": 91,
+        "startChar": 2,
+        "endLine": 92,
+        "endChar": 12
+      },
+      "revId": "b91fc71cbdf723a3bcb68847e1daacade0d72a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
