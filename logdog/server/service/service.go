@@ -59,6 +59,7 @@ import (
 
 	"go.chromium.org/gae/impl/cloud"
 
+	cloudBT "cloud.google.com/go/bigtable"
 	"cloud.google.com/go/compute/metadata"
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
@@ -556,19 +557,15 @@ func (s *Service) IntermediateStorage(c context.Context, rw bool) (storage.Stora
 	if err != nil {
 		return nil, err
 	}
-	bt, err := bigtable.New(c, bigtable.Options{
-		Project:  btcfg.Project,
-		Instance: btcfg.Instance,
-		LogTable: btcfg.LogTableName,
-		ClientOptions: []option.ClientOption{
-			option.WithUserAgent(s.getUserAgent()),
-			option.WithTokenSource(ts),
-		},
-	})
+	client, err := cloudBT.NewClient(c, btcfg.Project, btcfg.Instance,
+		option.WithUserAgent(s.getUserAgent()), option.WithTokenSource(ts))
 	if err != nil {
 		return nil, err
 	}
-	return bt, nil
+	return &bigtable.Storage{
+		Client:   client,
+		LogTable: btcfg.LogTableName,
+	}, nil
 }
 
 // GSClient returns an authenticated Google Storage client instance.

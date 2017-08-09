@@ -143,13 +143,13 @@ type testStorage struct {
 	err func() error
 }
 
-func (s *testStorage) Put(r storage.PutRequest) error {
+func (s *testStorage) Put(c context.Context, r storage.PutRequest) error {
 	if s.err != nil {
 		if err := s.err(); err != nil {
 			return err
 		}
 	}
-	return s.Storage.Put(r)
+	return s.Storage.Put(c, r)
 }
 
 // bundleBuilder is a set of utility functions to help test cases construct
@@ -311,7 +311,7 @@ func shouldHaveStoredStream(actual interface{}, expected ...interface{}) string 
 
 	entries := make(map[int]*logpb.LogEntry)
 	var ierr error
-	err := st.Get(req, func(e *storage.Entry) bool {
+	err := st.Get(context.Background(), req, func(e *storage.Entry) bool {
 		var le *logpb.LogEntry
 		if le, ierr = e.GetLogEntry(); ierr != nil {
 			return false
