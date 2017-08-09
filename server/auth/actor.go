@@ -56,7 +56,7 @@ type MintAccessTokenParams struct {
 // The underlying token type is cachedOAuth2Token.
 var actorTokenCache = tokenCache{
 	Kind:                "as_actor_tokens",
-	Version:             1,
+	Version:             2,
 	ExpRandPercent:      10,
 	MinAcceptedLifetime: 5 * time.Minute,
 }

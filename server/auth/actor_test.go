@@ -89,7 +89,7 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 
 		// Cached now.
 		So(tokenCache.(*memoryCache).cache.Len(), ShouldEqual, 1)
-		v, _ := tokenCache.Get(ctx, "as_actor_tokens/1/b16kofTATGlqFdw3fKVf2-pyMEs")
+		v, _ := tokenCache.Get(ctx, "as_actor_tokens/2/b16kofTATGlqFdw3fKVf2-pyMEs")
 		So(v, ShouldNotBeNil)
 
 		// On subsequence request the cached token is used.

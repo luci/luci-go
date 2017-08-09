@@ -120,7 +120,7 @@ type tokenMinterClient interface {
 // The underlying token type is delegation.Token.
 var delegationTokenCache = tokenCache{
 	Kind:                "delegation",
-	Version:             3,
+	Version:             4,
 	ExpRandPercent:      10,
 	MinAcceptedLifetime: 5 * time.Minute,
 }
