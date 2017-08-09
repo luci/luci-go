@@ -114,6 +114,30 @@
       "revId": "b91fc71cbdf723a3bcb68847e1daacade0d72a77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "921d0dc7_42e2d4dc",
+        "filename": "logdog/server/collector/coordinator/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-09T22:39:35Z",
+      "side": 1,
+      "message": "Oh, nvm, Peek won\u0027t update LRU position.",
+      "parentUuid": "3f48f401_6d7146a2",
+      "range": {
+        "startLine": 91,
+        "startChar": 2,
+        "endLine": 92,
+        "endChar": 12
+      },
+      "revId": "b91fc71cbdf723a3bcb68847e1daacade0d72a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
