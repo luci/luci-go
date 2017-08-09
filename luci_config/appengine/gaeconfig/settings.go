@@ -69,6 +69,16 @@ func (s *Settings) SetIfChanged(c context.Context, who, why string) error {
 	return settings.SetIfChanged(c, settingsKey, s, who, why)
 }
 
+// CacheExpiration returns a Duration representing the configured cache
+// expiration. If the cache expiration is not configured, CacheExpiration
+// will return 0.
+func (s *Settings) CacheExpiration() time.Duration {
+	if s.CacheExpirationSec > 0 {
+		return time.Second * time.Duration(s.CacheExpirationSec)
+	}
+	return 0
+}
+
 // FetchCachedSettings fetches Settings from the settings store.
 //
 // Uses in-process global cache to avoid hitting datastore often. The cache

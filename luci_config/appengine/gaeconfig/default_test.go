@@ -15,7 +15,6 @@
 package gaeconfig
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -189,14 +188,13 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 				So(cnt.GetMulti.Total(), ShouldEqual, 1)
 				So(cnt.PutMulti.Total(), ShouldEqual, 1)
 
-				// Break our backing store. This forces lookups to load from cache.
-				memConfig.SetError(base, errors.New("config is broken"))
-
+				// Reload from cache. Should not touch datastore b/c local caches are
+				// retaining the results.
 				projs, _, err = loadProjectConfigs(c, cfgclient.AsService)
 				So(err, ShouldBeNil)
 				So(projs, ShouldResemble, allProjs)
 
-				So(cnt.GetMulti.Total(), ShouldEqual, 2)
+				So(cnt.GetMulti.Total(), ShouldEqual, 1)
 				So(cnt.PutMulti.Total(), ShouldEqual, 1)
 
 				// Expire the cache. Now that the entries are expired, we will
@@ -206,7 +204,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 				projs, _, err = loadProjectConfigs(c, cfgclient.AsService)
 				So(err, ShouldBeNil)
 
-				So(cnt.GetMulti.Total(), ShouldEqual, 3)
+				So(cnt.GetMulti.Total(), ShouldEqual, 2)
 				So(cnt.PutMulti.Total(), ShouldEqual, 1)
 			})
 		})
@@ -433,7 +431,11 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 
 			// User joins group, immediately gets access b/c the cached entry is the
 			// service response, and so was soft-forbidden before.
+			//
+			// We must expire the cache after adding the user, since it cached the
+			// fail response.
 			authState.IdentityGroups = append(authState.IdentityGroups, "exclusive")
+			clk.Add(time.Hour)
 
 			_, err = cfgclient.GetConfigSetURL(c, cfgclient.AsUser, "projects/urltest")
 			So(err, ShouldBeNil)
