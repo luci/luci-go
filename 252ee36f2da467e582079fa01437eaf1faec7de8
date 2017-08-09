@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "47ee5134_7a59b5f3",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-09T17:24:54Z",
+      "side": 1,
+      "message": "do this at beginning of GetProjectJobs",
+      "range": {
+        "startLine": 264,
+        "startChar": 38,
+        "endLine": 264,
+        "endChar": 79
+      },
+      "revId": "252ee36f2da467e582079fa01437eaf1faec7de8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
