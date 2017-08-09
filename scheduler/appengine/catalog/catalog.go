@@ -261,7 +261,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			id = job.Id
 		}
 		var task proto.Message
-		if task, err = cat.validateJobProto(job); err != nil {
+		if task, err = cat.validateJobProto(logging.SetField(c, "project", projectID), job); err != nil {
 			logging.Errorf(c, "Invalid job definition %s/%s: %s", projectID, id, err)
 			continue
 		}
@@ -375,7 +375,7 @@ func getRevisionURL(configSetURL *url.URL, rev, path string) string {
 // validateJobProto validates messages.Job protobuf message.
 //
 // It also extracts a task definition from it (e.g. SwarmingTask proto).
-func (cat *catalog) validateJobProto(j *messages.Job) (proto.Message, error) {
+func (cat *catalog) validateJobProto(c context.Context, j *messages.Job) (proto.Message, error) {
 	if j.Id == "" {
 		return nil, fmt.Errorf("missing 'id' field'")
 	}
@@ -394,6 +394,7 @@ func (cat *catalog) validateJobProto(j *messages.Job) (proto.Message, error) {
 	// TODO(vadimsh): Remove this branch when all configs are updated to not use
 	// TaskDefWrapper anymore.
 	if j.Task != nil {
+		logging.Warningf(c, "Job %s uses old taskWrapper", j.Id)
 		return cat.extractTaskProto(j.Task)
 	}
 	return cat.extractTaskProto(j)
