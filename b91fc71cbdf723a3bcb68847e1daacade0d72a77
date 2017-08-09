@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4797fffe_f687deee",
+        "filename": "common/data/caching/lru/locker.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-09T22:22:19Z",
+      "side": 1,
+      "message": "let\u0027s remove this if no one ever uses non-RWMutex implementation",
+      "range": {
+        "startLine": 25,
+        "startChar": 5,
+        "endLine": 25,
+        "endChar": 12
+      },
+      "revId": "b91fc71cbdf723a3bcb68847e1daacade0d72a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a2a4006_59689024",
+        "filename": "common/data/caching/lru/lru.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-09T22:22:19Z",
+      "side": 1,
+      "message": "is it? It seems \u0027it\u0027 will be nil.",
+      "range": {
+        "startLine": 55,
+        "startChar": 20,
+        "endLine": 56,
+        "endChar": 11
+      },
+      "revId": "b91fc71cbdf723a3bcb68847e1daacade0d72a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0f70aef_f7375c24",
+        "filename": "common/data/caching/lru/lru.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-09T22:22:19Z",
+      "side": 1,
+      "message": "This is not needed since we have a constructor function (New) that can do initialization. sync.Once is useful if we allow cache :\u003d Cache{} (which we shouldn\u0027t, since we have New).\n\nIf you prefer to keep sync.Once, then remove New(). Having two ways to construct object is frustrating for the users (how do they know which one to use?)",
+      "range": {
+        "startLine": 84,
+        "startChar": 1,
+        "endLine": 84,
+        "endChar": 19
+      },
+      "revId": "b91fc71cbdf723a3bcb68847e1daacade0d72a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4b8b883_852d2244",
+        "filename": "common/data/caching/lru/lru.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-09T22:22:19Z",
+      "side": 1,
+      "message": "IMHO, this is surprising. If users want to remove, they should just use Remove(...).",
+      "range": {
+        "startLine": 167,
+        "startChar": 3,
+        "endLine": 168,
+        "endChar": 13
+      },
+      "revId": "b91fc71cbdf723a3bcb68847e1daacade0d72a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f48f401_6d7146a2",
+        "filename": "logdog/server/collector/coordinator/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-09T22:22:19Z",
+      "side": 1,
+      "message": "if you can probably also do this check with Peek, before Mutate, as an optimization. (Peek is much cheaper).",
+      "range": {
+        "startLine": 91,
+        "startChar": 2,
+        "endLine": 92,
+        "endChar": 12
+      },
+      "revId": "b91fc71cbdf723a3bcb68847e1daacade0d72a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
