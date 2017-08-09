@@ -19,6 +19,7 @@ import (
 	"net/url"
 
 	"go.chromium.org/luci/cipd/client/cipd/common"
+	"go.chromium.org/luci/common/errors"
 )
 
 // an itemParser should parse the value from `val`, and update s or
@@ -31,11 +32,23 @@ type itemParserState struct {
 	curSubdir string
 }
 
-func subdirParser(s *itemParserState, _ *File, val string) error {
-	if err := common.ValidateSubdir(val); err != nil {
+func subdirParser(s *itemParserState, _ *File, val string) (err error) {
+	subdir := templateParm.ReplaceAllStringFunc(val, func(parm string) string {
+		contents := parm[2 : len(parm)-1]
+		// ${varName}
+		if value, ok := common.TemplateArgs()[contents]; ok {
+			return value
+		}
+		err = errors.Reason("unknown variable in ${%s}", contents).Err()
+		return parm
+	})
+	if err != nil {
 		return err
 	}
-	s.curSubdir = val
+	if err := common.ValidateSubdir(subdir); err != nil {
+		return err
+	}
+	s.curSubdir = subdir
 	return nil
 }
 

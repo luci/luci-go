@@ -103,6 +103,10 @@ var goodEnsureFiles = []struct {
 			"",
 			"@Subdir", // reset back to empty
 			"cool/package beef",
+			"@Subdir ${platform}", // template expansion
+			"some/package latest",
+			"@Subdir ${platform}/subdir",
+			"some/package canary",
 		),
 		&ResolvedFile{"", common.PinSliceBySubdir{
 			"": {
@@ -112,6 +116,12 @@ var goodEnsureFiles = []struct {
 			"a/subdir with spaces": {
 				p("some/package", "canary"),
 				p("some/other/package", "tag:value"),
+			},
+			common.CurrentOS() + "-" + common.CurrentArchitecture(): {
+				p("some/package", "latest"),
+			},
+			common.CurrentOS() + "-" + common.CurrentArchitecture() + "/subdir": {
+				p("some/package", "canary"),
 			},
 		}},
 	},
