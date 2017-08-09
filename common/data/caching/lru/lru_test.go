@@ -16,6 +16,11 @@ package lru
 
 import (
 	"testing"
+	"time"
+
+	"go.chromium.org/luci/common/clock/testclock"
+
+	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -26,56 +31,64 @@ func TestCache(t *testing.T) {
 	t.Parallel()
 
 	Convey(`An locking LRU cache with size heuristic 3`, t, func() {
+		ctx := context.Background()
 		cache := New(3)
 
 		Convey(`A Get() returns nil.`, func() {
-			So(cache.Get("test"), ShouldBeNil)
+			_, has := cache.Get(ctx, "test")
+			So(has, ShouldBeFalse)
 		})
 
 		// Adds values to the cache sequentially, blocking on the values being
 		// processed.
 		addCacheValues := func(values ...string) {
 			for _, v := range values {
-				isPresent := (cache.Peek(v) != nil)
-				So(cache.Put(v, v+"v"), ShouldEqual, isPresent)
+				_, isPresent := cache.Peek(ctx, v)
+				_, has := cache.Put(ctx, v, v+"v", 0)
+				So(has, ShouldEqual, isPresent)
 			}
 		}
 
-		shouldHaveValues := func(actual interface{}, expected ...interface{}) string {
-			cache := actual.(*Cache)
-
-			actualSnapshot := cache.snapshot()
-
-			expectedSnapshot := snapshot{}
-			for _, k := range expected {
-				expectedSnapshot[k] = k.(string) + "v"
-			}
-			return ShouldResemble(actualSnapshot, expectedSnapshot)
+		get := func(key interface{}) (val interface{}) {
+			val, _ = cache.Get(ctx, key)
+			return
 		}
 
 		Convey(`With three values, {a, b, c}`, func() {
 			addCacheValues("a", "b", "c")
 			So(cache.Len(), ShouldEqual, 3)
 
-			Convey(`Is empty after a purge.`, func() {
-				cache.Purge()
+			Convey(`Prune does nothing.`, func() {
+				cache.Prune(ctx)
+				So(cache.Len(), ShouldEqual, 3)
+			})
+
+			Convey(`Is empty after a reset.`, func() {
+				cache.Reset()
 				So(cache.Len(), ShouldEqual, 0)
 			})
 
 			Convey(`Can retrieve each of those values.`, func() {
-				So(cache.Get("a"), ShouldEqual, "av")
-				So(cache.Get("b"), ShouldEqual, "bv")
-				So(cache.Get("c"), ShouldEqual, "cv")
+				So(get("a"), ShouldEqual, "av")
+				So(get("b"), ShouldEqual, "bv")
+				So(get("c"), ShouldEqual, "cv")
 			})
 
 			Convey(`Get()ting "a", then adding "d" will cause "b" to be evicted.`, func() {
-				So(cache.Get("a"), ShouldEqual, "av")
+				So(get("a"), ShouldEqual, "av")
 				addCacheValues("d")
 				So(cache, shouldHaveValues, "a", "c", "d")
 			})
 
 			Convey(`Peek()ing "a", then adding "d" will cause "a" to be evicted.`, func() {
-				So(cache.Peek("a"), ShouldEqual, "av")
+				v, has := cache.Peek(ctx, "a")
+				So(has, ShouldBeTrue)
+				So(v, ShouldEqual, "av")
+
+				v, has = cache.Peek(ctx, "nonexist")
+				So(has, ShouldBeFalse)
+				So(v, ShouldBeNil)
+
 				addCacheValues("d")
 				So(cache, shouldHaveValues, "b", "c", "d")
 			})
@@ -88,7 +101,7 @@ func TestCache(t *testing.T) {
 			So(cache, shouldHaveValues, "b", "c", "d")
 
 			Convey(`Requests for "a" will be nil.`, func() {
-				So(cache.Get("a"), ShouldBeNil)
+				So(get("a"), ShouldBeNil)
 			})
 		})
 
@@ -99,7 +112,9 @@ func TestCache(t *testing.T) {
 			So(cache, shouldHaveValues, "a", "c", "d")
 
 			Convey(`When removing "c", will contain {a, d}.`, func() {
-				So(cache.Remove("c"), ShouldEqual, "cv")
+				v, had := cache.Remove("c")
+				So(had, ShouldBeTrue)
+				So(v, ShouldEqual, "cv")
 				So(cache, shouldHaveValues, "a", "d")
 
 				Convey(`When adding {e, f}, "a" will be evicted.`, func() {
@@ -110,7 +125,175 @@ func TestCache(t *testing.T) {
 		})
 
 		Convey(`When removing a value that isn't there, returns nil.`, func() {
-			So(cache.Remove("foo"), ShouldBeNil)
+			v, has := cache.Remove("foo")
+			So(has, ShouldBeFalse)
+			So(v, ShouldBeNil)
 		})
 	})
+}
+
+func TestCacheWithExpiry(t *testing.T) {
+	t.Parallel()
+
+	Convey(`A cache of size 3 with a Clock`, t, func() {
+		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
+		cache := New(3)
+
+		cache.Put(ctx, "a", "av", 1*time.Second)
+		cache.Put(ctx, "b", "bv", 2*time.Second)
+		cache.Put(ctx, "forever", "foreverv", 0)
+
+		Convey(`When "a" is expired`, func() {
+			tc.Add(time.Second)
+
+			Convey(`Get doesn't yield "a", but yields "b".`, func() {
+				_, has := cache.Get(ctx, "a")
+				So(has, ShouldBeFalse)
+
+				_, has = cache.Get(ctx, "b")
+				So(has, ShouldBeTrue)
+			})
+
+			Convey(`Mutate treats "a" as missing.`, func() {
+				v, ok := cache.Mutate(ctx, "a", func(it *Item) *Item {
+					So(it, ShouldBeNil)
+					return nil
+				})
+				So(ok, ShouldBeFalse)
+				So(v, ShouldBeNil)
+				So(cache.Len(), ShouldEqual, 2)
+
+				_, has := cache.Get(ctx, "a")
+				So(has, ShouldBeFalse)
+			})
+
+			Convey(`Mutate replaces "a" if a value is supplied.`, func() {
+				v, ok := cache.Mutate(ctx, "a", func(it *Item) *Item {
+					So(it, ShouldBeNil)
+					return &Item{"av", 0}
+				})
+				So(ok, ShouldBeTrue)
+				So(v, ShouldEqual, "av")
+				So(cache, shouldHaveValues, "a", "b", "forever")
+
+				v, has := cache.Get(ctx, "a")
+				So(has, ShouldBeTrue)
+				So(v, ShouldEqual, "av")
+			})
+
+			Convey(`Mutateing "b" yields the remaining time.`, func() {
+				v, ok := cache.Mutate(ctx, "b", func(it *Item) *Item {
+					So(it, ShouldResemble, &Item{"bv", 1 * time.Second})
+					return it
+				})
+				So(ok, ShouldBeTrue)
+				So(v, ShouldEqual, "bv")
+
+				v, has := cache.Get(ctx, "b")
+				So(has, ShouldBeTrue)
+				So(v, ShouldEqual, "bv")
+
+				tc.Add(time.Second)
+
+				_, has = cache.Get(ctx, "b")
+				So(has, ShouldBeFalse)
+			})
+		})
+
+		Convey(`Prune prunes all expired entries.`, func() {
+			tc.Add(1 * time.Hour)
+			cache.Prune(ctx)
+			So(cache, shouldHaveValues, "forever")
+		})
+	})
+}
+
+func TestUnboundedCache(t *testing.T) {
+	t.Parallel()
+
+	Convey(`An unbounded cache with no clock`, t, func() {
+		ctx := context.Background()
+		cache := New(0)
+
+		Convey(`Grows indefinitely`, func() {
+			for i := 0; i < 1000; i++ {
+				cache.Put(ctx, i, "hey", 0)
+			}
+			So(cache.Len(), ShouldEqual, 1000)
+		})
+
+		Convey(`Grows indefinitely even if elements have an (ignored) expiry`, func() {
+			for i := 0; i < 1000; i++ {
+				cache.Put(ctx, i, "hey", time.Second)
+			}
+			So(cache.Len(), ShouldEqual, 1000)
+
+			cache.Prune(ctx)
+			So(cache.Len(), ShouldEqual, 1000)
+		})
+	})
+}
+
+func TestUnboundedCacheWithExpiry(t *testing.T) {
+	t.Parallel()
+
+	Convey(`An unbounded cache with a clock`, t, func() {
+		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
+		cache := New(0)
+
+		Convey(`Grows indefinitely`, func() {
+			for i := 0; i < 1000; i++ {
+				cache.Put(ctx, i, "hey", 0)
+			}
+			So(cache.Len(), ShouldEqual, 1000)
+
+			cache.Prune(ctx)
+			So(cache.Len(), ShouldEqual, 1000)
+		})
+
+		Convey(`Grows indefinitely even if elements have an (ignored) expiry`, func() {
+			for i := 1; i <= 1000; i++ {
+				cache.Put(ctx, i, "hey", time.Duration(i)*time.Second)
+			}
+			So(cache.Len(), ShouldEqual, 1000)
+
+			// Expire the first half of entries.
+			tc.Add(500 * time.Second)
+
+			Convey(`Get works`, func() {
+				v, has := cache.Get(ctx, 1)
+				So(has, ShouldBeFalse)
+				So(v, ShouldBeNil)
+
+				v, has = cache.Get(ctx, 500)
+				So(has, ShouldBeFalse)
+				So(v, ShouldBeNil)
+
+				v, has = cache.Get(ctx, 501)
+				So(has, ShouldBeTrue)
+				So(v, ShouldEqual, "hey")
+			})
+
+			Convey(`Len works`, func() {
+				// Without explicit pruning, Len includes expired elements.
+				So(cache.Len(), ShouldEqual, 1000)
+
+				// After pruning, Len is accurate again.
+				cache.Prune(ctx)
+				So(cache.Len(), ShouldEqual, 500)
+			})
+		})
+	})
+}
+
+func shouldHaveValues(actual interface{}, expected ...interface{}) string {
+	cache := actual.(*Cache)
+
+	actualSnapshot := cache.snapshot()
+
+	expectedSnapshot := snapshot{}
+	for _, k := range expected {
+		expectedSnapshot[k] = k.(string) + "v"
+	}
+	return ShouldResemble(actualSnapshot, expectedSnapshot)
 }
