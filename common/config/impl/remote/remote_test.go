@@ -84,24 +84,36 @@ func TestRemoteCalls(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(res, ShouldResemble, "content")
 		})
-		Convey("GetConfigSetLocation", func() {
+		Convey("GetConfigSetInfo", func() {
 			URL, err := url.Parse("http://example.com")
+			if err != nil {
+				panic(err)
+			}
+			revisionURL, err := url.Parse("http://example.com/f00df00d")
 			if err != nil {
 				panic(err)
 			}
 
 			server, remoteImpl := testTools(200, map[string]interface{}{
-				"config_sets": [...]interface{}{map[string]string{
+				"config_sets": [...]interface{}{map[string]interface{}{
 					"config_set": "a",
 					"location":   URL.String(),
+					"revision": map[string]string{
+						"url":             revisionURL.String(),
+						"committer_email": "author@email.com",
+						"id":              "f00df00d",
+					},
 				}},
 			})
 			defer server.Close()
 
-			res, err := remoteImpl.GetConfigSetLocation(ctx, "a")
-
+			info, err := remoteImpl.GetConfigSetInfo(ctx, "a")
 			So(err, ShouldBeNil)
-			So(*res, ShouldResemble, *URL)
+
+			So(*info.Location, ShouldResemble, *URL)
+			So(info.Revision, ShouldResemble, "f00df00d")
+			So(*info.RevisionURL, ShouldResemble, *revisionURL)
+			So(info.AuthorEmail, ShouldResemble, "author@email.com")
 		})
 		Convey("GetProjectConfigs", func() {
 			server, remoteImpl := testTools(200, map[string]interface{}{
@@ -245,10 +257,10 @@ func TestRemoteCalls(t *testing.T) {
 	})
 
 	Convey("Should handle errors well", t, func() {
-		Convey("Should enforce GetConfigSetLocation argument is not the empty string.", func() {
+		Convey("Should enforce GetConfigSetInfo argument is not the empty string.", func() {
 			remoteImpl := New("example.com", true, nil)
 
-			_, err := remoteImpl.GetConfigSetLocation(ctx, "")
+			_, err := remoteImpl.GetConfigSetInfo(ctx, "")
 			So(err, ShouldNotBeNil)
 		})
 
@@ -263,7 +275,7 @@ func TestRemoteCalls(t *testing.T) {
 			So(err, ShouldNotBeNil)
 			_, err = remoteImpl.GetConfigByHash(ctx, "a")
 			So(err, ShouldNotBeNil)
-			_, err = remoteImpl.GetConfigSetLocation(ctx, "a")
+			_, err = remoteImpl.GetConfigSetInfo(ctx, "a")
 			So(err, ShouldNotBeNil)
 			_, err = remoteImpl.GetProjectConfigs(ctx, "a", false)
 			So(err, ShouldNotBeNil)
@@ -280,5 +292,5 @@ func TestRemoteCalls(t *testing.T) {
 type failingRoundTripper struct{}
 
 func (t failingRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	return nil, fmt.Errorf("IM AM ERRAR\n")
+	return nil, fmt.Errorf("IM AM ERRAR")
 }

@@ -428,7 +428,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 			// Service can access.
 			u, err := cfgclient.GetConfigSetURL(c, cfgclient.AsService, "projects/urltest")
 			So(err, ShouldBeNil)
-			So(u.String(), ShouldEqual, "https://example.com/fake-config/projects/urltest")
+			So(u.String(), ShouldEqual, "https://example.com/fake-config/f00df00d/projects/urltest")
 
 			// User joins group, immediately gets access b/c the cached entry is the
 			// service response, and so was soft-forbidden before.
@@ -436,7 +436,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 
 			_, err = cfgclient.GetConfigSetURL(c, cfgclient.AsUser, "projects/urltest")
 			So(err, ShouldBeNil)
-			So(u.String(), ShouldEqual, "https://example.com/fake-config/projects/urltest")
+			So(u.String(), ShouldEqual, "https://example.com/fake-config/f00df00d/projects/urltest")
 		})
 	})
 }

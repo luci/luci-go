@@ -135,7 +135,7 @@ func (r *remoteImpl) GetConfigByHash(ctx context.Context, configSet string) (str
 	return string(decoded), nil
 }
 
-func (r *remoteImpl) GetConfigSetLocation(ctx context.Context, configSet string) (*url.URL, error) {
+func (r *remoteImpl) GetConfigSetInfo(ctx context.Context, configSet string) (*config.SetInfo, error) {
 	if configSet == "" {
 		return nil, fmt.Errorf("configSet must be a non-empty string")
 	}
@@ -150,16 +150,29 @@ func (r *remoteImpl) GetConfigSetLocation(ctx context.Context, configSet string)
 		return nil, apiErr(err)
 	}
 
-	urlString, has := "", false
+	info, has := config.SetInfo{}, false
 	for _, cset := range resp.ConfigSets {
 		if cset.ConfigSet == configSet {
 			if has {
 				return nil, fmt.Errorf(
-					"duplicate entries %q and %q for location of config set %s",
-					urlString, cset.Location, configSet)
+					"duplicate entries for info of config set %s", configSet)
 			}
 
-			urlString, has = cset.Location, true
+			has = true
+
+			location, err := url.Parse(cset.Location)
+			if err != nil {
+				return nil, err
+			}
+			revisionURL, err := url.Parse(cset.Revision.Url)
+			if err != nil {
+				return nil, err
+			}
+
+			info.Location = location
+			info.Revision = cset.Revision.Id
+			info.RevisionURL = revisionURL
+			info.AuthorEmail = cset.Revision.CommitterEmail
 		}
 	}
 
@@ -167,12 +180,7 @@ func (r *remoteImpl) GetConfigSetLocation(ctx context.Context, configSet string)
 		return nil, config.ErrNoConfig
 	}
 
-	url, err := url.Parse(urlString)
-	if err != nil {
-		return nil, err
-	}
-
-	return url, nil
+	return &info, nil
 }
 
 func (r *remoteImpl) GetProjects(ctx context.Context) ([]config.Project, error) {

@@ -104,11 +104,11 @@ func (bli *boundLocalInterface) GetRefConfigs(ctx context.Context, path string, 
 	return bli.pruneConfigList(cfgs), nil
 }
 
-func (bli *boundLocalInterface) GetConfigSetLocation(ctx context.Context, configSet string) (*url.URL, error) {
+func (bli *boundLocalInterface) GetConfigSetInfo(ctx context.Context, configSet string) (*ccfg.SetInfo, error) {
 	if err := access.Check(ctx, bli.a, cfgtypes.ConfigSet(configSet)); err != nil {
 		return nil, cfgclient.ErrNoConfig
 	}
-	return bli.Interface.GetConfigSetLocation(ctx, configSet)
+	return bli.Interface.GetConfigSetInfo(ctx, configSet)
 }
 
 func (bli *boundLocalInterface) pruneConfigList(cl []ccfg.Config) []ccfg.Config {

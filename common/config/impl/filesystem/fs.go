@@ -443,7 +443,7 @@ func (fs *filesystemImpl) GetConfigByHash(ctx context.Context, contentHash strin
 	return "", config.ErrNoConfig
 }
 
-func (fs *filesystemImpl) GetConfigSetLocation(ctx context.Context, cfgSet string) (*url.URL, error) {
+func (fs *filesystemImpl) GetConfigSetInfo(ctx context.Context, cfgSet string) (*config.SetInfo, error) {
 	configSet := configSet{luciPath(cfgSet)}
 
 	if err := configSet.validate(); err != nil {
@@ -453,9 +453,20 @@ func (fs *filesystemImpl) GetConfigSetLocation(ctx context.Context, cfgSet strin
 	if err != nil {
 		return nil, err
 	}
-	return &url.URL{
-		Scheme: "file",
-		Path:   realPath.toLUCI().s() + "/" + configSet.s(),
+
+	rev := "f00df00d"
+
+	return &config.SetInfo{
+		Location: &url.URL{
+			Scheme: "file",
+			Path:   realPath.toLUCI().s() + "/" + configSet.s(),
+		},
+		Revision: rev,
+		RevisionURL: &url.URL{
+			Scheme: "file",
+			Path:   realPath.toLUCI().s() + "/" + rev + "/" + configSet.s(),
+		},
+		AuthorEmail: "author@email.com",
 	}, nil
 }
 

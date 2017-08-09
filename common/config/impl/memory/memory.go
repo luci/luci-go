@@ -83,12 +83,28 @@ func (m *memoryImpl) GetConfigByHash(ctx context.Context, contentHash string) (s
 	return "", config.ErrNoConfig
 }
 
-func (m *memoryImpl) GetConfigSetLocation(ctx context.Context, configSet string) (*url.URL, error) {
+func (m *memoryImpl) GetConfigSetInfo(ctx context.Context, configSet string) (*config.SetInfo, error) {
 	if err := m.err; err != nil {
 		return nil, err
 	}
 	if _, ok := m.sets[configSet]; ok {
-		return url.Parse("https://example.com/fake-config/" + configSet)
+		location, err := url.Parse("https://example.com/fake-config/" + configSet)
+		if err != nil {
+			return nil, err
+		}
+
+		rev := "f00df00d"
+		revisionURL, err := url.Parse("https://example.com/fake-config/" + rev + "/" + configSet)
+		if err != nil {
+			return nil, err
+		}
+
+		return &config.SetInfo{
+			Location:    location,
+			Revision:    rev,
+			RevisionURL: revisionURL,
+			AuthorEmail: "author@email.com",
+		}, nil
 	}
 	return nil, config.ErrNoConfig
 }

@@ -132,12 +132,20 @@ func TestFSImpl(t *testing.T) {
 				So(cont, ShouldEqual, "projects/foobar/something/file.cfg")
 			})
 
-			Convey("GetConfigSetLocation", func() {
-				csurl, err := client.GetConfigSetLocation(ctx, "projects/foobar")
+			Convey("GetConfigSetInfo", func() {
+				csinfo, err := client.GetConfigSetInfo(ctx, "projects/foobar")
 				So(err, ShouldBeNil)
-				So(csurl, ShouldResemble, &url.URL{
-					Scheme: "file",
-					Path:   filepath.ToSlash(folder) + "/projects/foobar",
+				So(csinfo, ShouldResemble, &config.SetInfo{
+					Location: &url.URL{
+						Scheme: "file",
+						Path:   filepath.ToSlash(folder) + "/projects/foobar",
+					},
+					Revision: "f00df00d",
+					RevisionURL: &url.URL{
+						Scheme: "file",
+						Path:   filepath.ToSlash(folder) + "/f00df00d/projects/foobar",
+					},
+					AuthorEmail: "author@email.com",
 				})
 			})
 

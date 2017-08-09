@@ -113,14 +113,17 @@ func TestMemoryImpl(t *testing.T) {
 			So(body, ShouldEqual, "")
 		})
 
-		Convey("GetConfigSetLocation works", func() {
-			loc, err := impl.GetConfigSetLocation(ctx, "services/abc")
+		Convey("GetConfigSetInfo works", func() {
+			info, err := impl.GetConfigSetInfo(ctx, "services/abc")
 			So(err, ShouldBeNil)
-			So(loc, ShouldNotBeNil)
+			So(info.Location, ShouldNotBeNil)
+			So(info.Revision, ShouldNotBeNil)
+			So(info.RevisionURL, ShouldNotBeNil)
+			So(info.AuthorEmail, ShouldNotBeNil)
 		})
 
-		Convey("GetConfigSetLocation returns ErrNoConfig for invalid config set", func() {
-			_, err := impl.GetConfigSetLocation(ctx, "services/invalid")
+		Convey("GetConfigSetInfo returns ErrNoConfig for invalid config set", func() {
+			_, err := impl.GetConfigSetInfo(ctx, "services/invalid")
 			So(err, ShouldEqual, config.ErrNoConfig)
 		})
 

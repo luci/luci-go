@@ -201,25 +201,25 @@ func TestLocalService(t *testing.T) {
 			Convey(`AsService`, func() {
 				u, err := cfgclient.GetConfigSetURL(c, cfgclient.AsService, "projects/foo")
 				So(err, ShouldBeNil)
-				So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/projects/foo"})
+				So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/f00df00d/projects/foo"})
 
 				u, err = cfgclient.GetConfigSetURL(c, cfgclient.AsService, "projects/exclusive")
 				So(err, ShouldBeNil)
-				So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/projects/exclusive"})
+				So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/f00df00d/projects/exclusive"})
 
 				u, err = cfgclient.GetConfigSetURL(c, cfgclient.AsService, "projects/nouser")
 				So(err, ShouldBeNil)
-				So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/projects/nouser"})
+				So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/f00df00d/projects/nouser"})
 			})
 
 			Convey(`AsUser`, func() {
 				u, err := cfgclient.GetConfigSetURL(c, cfgclient.AsUser, "projects/foo")
 				So(err, ShouldBeNil)
-				So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/projects/foo"})
+				So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/f00df00d/projects/foo"})
 
 				u, err = cfgclient.GetConfigSetURL(c, cfgclient.AsUser, "projects/exclusive")
 				So(err, ShouldBeNil)
-				So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/projects/exclusive"})
+				So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/f00df00d/projects/exclusive"})
 
 				u, err = cfgclient.GetConfigSetURL(c, cfgclient.AsUser, "projects/nouser")
 				So(err, ShouldEqual, cfgclient.ErrNoConfig)
@@ -230,7 +230,7 @@ func TestLocalService(t *testing.T) {
 
 				u, err := cfgclient.GetConfigSetURL(c, cfgclient.AsAnonymous, "projects/foo")
 				So(err, ShouldBeNil)
-				So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/projects/foo"})
+				So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/f00df00d/projects/foo"})
 
 				_, err = cfgclient.GetConfigSetURL(c, cfgclient.AsAnonymous, "projects/exclusive")
 				So(err, ShouldEqual, cfgclient.ErrNoConfig)

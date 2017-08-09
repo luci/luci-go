@@ -394,7 +394,7 @@ func TestConfig(t *testing.T) {
 		Convey(`GetConfigSetURL`, func() {
 			u, err := cfgclient.GetConfigSetURL(c, cfgclient.AsService, "projects/goesaway")
 			So(err, ShouldBeNil)
-			So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/projects/goesaway"})
+			So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/f00df00d/projects/goesaway"})
 			So(tb.getContentCalls, ShouldEqual, 1)
 
 			// Delete project, entries still cached.
@@ -402,7 +402,7 @@ func TestConfig(t *testing.T) {
 
 			u, err = cfgclient.GetConfigSetURL(c, cfgclient.AsService, "projects/goesaway")
 			So(err, ShouldBeNil)
-			So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/projects/goesaway"})
+			So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/f00df00d/projects/goesaway"})
 			So(tb.getContentCalls, ShouldEqual, 1) // (Unchanged)
 
 			// Expire the cache, ErrNoConfig.

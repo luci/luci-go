@@ -53,11 +53,11 @@ func (be *Backend) ServiceURL(c context.Context) url.URL { return be.Provider.Ge
 
 // ConfigSetURL implements backend.B.
 func (be *Backend) ConfigSetURL(c context.Context, configSet string, p backend.Params) (url.URL, error) {
-	u, err := be.GetConfigInterface(c, p.Authority).GetConfigSetLocation(c, configSet)
-	if err != nil || u == nil {
+	info, err := be.GetConfigInterface(c, p.Authority).GetConfigSetInfo(c, configSet)
+	if err != nil || info == nil {
 		return url.URL{}, err
 	}
-	return *u, nil
+	return *info.RevisionURL, nil
 }
 
 // Get implements backend.B.
@@ -100,6 +100,7 @@ func (be *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string
 	return items, nil
 }
 
+// GetConfigInterface implements backend.B.
 func (be *Backend) GetConfigInterface(c context.Context, a backend.Authority) config.Interface {
 	return be.Provider.GetConfigClient(c, a)
 }

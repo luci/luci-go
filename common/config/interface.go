@@ -51,6 +51,15 @@ type Config struct {
 	Revision string `json:"revision,omitempty"`
 }
 
+// SetInfo is the struct holding information extracted from the
+// get_config_sets API call.
+type SetInfo struct {
+	Location    *url.URL
+	Revision    string
+	RevisionURL *url.URL
+	AuthorEmail string
+}
+
 // RepoType is the type of the repo the Project is stored in.
 type RepoType string
 
@@ -102,8 +111,8 @@ type Interface interface {
 	// content hash, or ErrNoConfig if missing.
 	GetConfigByHash(ctx context.Context, contentHash string) (string, error)
 
-	// GetConfigSetLocation returns the URL location of a config set.
-	GetConfigSetLocation(ctx context.Context, configSet string) (*url.URL, error)
+	// GetConfigSetInfo returns information about a given config set.
+	GetConfigSetInfo(ctx context.Context, configSet string) (*SetInfo, error)
 
 	// GetProjectConfigs returns all the configs at the given path in all
 	// projects that have such config. If hashesOnly is true, returned Config
