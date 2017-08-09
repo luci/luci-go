@@ -79,7 +79,10 @@ type Engine interface {
 	GetVisibleProjectJobs(c context.Context, projectID string) ([]*Job, error)
 
 	// GetVisibleJob returns single scheduler job given its full ID.
-	// ErrNoSuchJob error is returned if job doesn't exist OR isn't visible.
+	// ErrNoSuchJob error is returned if either:
+	//	 * job doesn't exist,
+	//   * job is disabled (ie was removed from its project config),
+	//	 * job isn't visible due to lack READER access.
 	GetVisibleJob(c context.Context, jobID string) (*Job, error)
 
 	// ListVisibleInvocations returns invocations of a visible job, most recent first.
@@ -687,7 +690,7 @@ func (e *engineImpl) GetVisibleJob(c context.Context, jobID string) (*Job, error
 	job, err := e.getJob(c, jobID)
 	if err != nil {
 		return nil, err
-	} else if job == nil {
+	} else if job == nil || !job.Enabled {
 		return nil, ErrNoSuchJob
 	}
 	if ok, err := job.isVisible(c); err != nil {
