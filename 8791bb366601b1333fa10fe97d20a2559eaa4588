@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "20cc7c33_a1ce3209",
+        "filename": "common/config/interface.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-08-09T19:59:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a94e40f_2d25dd1e",
+      "range": {
+        "startLine": 57,
+        "startChar": 1,
+        "endLine": 57,
+        "endChar": 21
+      },
+      "revId": "8791bb366601b1333fa10fe97d20a2559eaa4588",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8c6842ce_97a2b704",
         "filename": "luci_config/server/cfgclient/backend/client/client.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "01b374ca_fc30ad14",
+        "filename": "luci_config/server/cfgclient/backend/client/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-08-09T19:59:21Z",
+      "side": 1,
+      "message": "[see below]",
+      "parentUuid": "8c6842ce_97a2b704",
+      "range": {
+        "startLine": 55,
+        "startChar": 19,
+        "endLine": 55,
+        "endChar": 31
+      },
+      "revId": "8791bb366601b1333fa10fe97d20a2559eaa4588",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d15deda4_1a14b03f",
         "filename": "scheduler/appengine/catalog/catalog.go",
         "patchSetId": 1
@@ -59,6 +107,30 @@
       "writtenOn": "2017-08-09T19:08:03Z",
       "side": 1,
       "message": "GetConfigSetInfo?",
+      "range": {
+        "startLine": 233,
+        "startChar": 32,
+        "endLine": 233,
+        "endChar": 47
+      },
+      "revId": "8791bb366601b1333fa10fe97d20a2559eaa4588",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b15576e_d6bcfba9",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-08-09T19:59:21Z",
+      "side": 1,
+      "message": "GetConfigSetURL is implemented in luci_config/server/cfgclient/backend/client/client.go to call an interface\u0027s GetConfigSetInfo, and extract the RevisionURL from the returned struct.\n\nWe can change this to GetConfigSetInfo, if the above comment (on updating the backend interface) is addressed at the same time. Two questions:\n1) opinions on this CL vs. https://chromium-review.googlesource.com/c/608753, and\n2) relatedly, change to GetConfigSetInfo in this CL or a followup?\n\nThoughts/preferences?",
+      "parentUuid": "d15deda4_1a14b03f",
       "range": {
         "startLine": 233,
         "startChar": 32,
