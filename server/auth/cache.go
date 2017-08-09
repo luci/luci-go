@@ -283,40 +283,17 @@ func MemoryCache(size int) Cache {
 }
 
 func (mc *memoryCache) Get(c context.Context, key string) ([]byte, error) {
-	var item *memoryCacheItem
-	now := clock.Now(c)
-	_ = mc.cache.Mutate(key, func(cur interface{}) interface{} {
-		if cur == nil {
-			return nil
-		}
-
-		item = cur.(*memoryCacheItem)
-		if now.After(item.exp) {
-			// Cache item is too old, so expire it.
-			item = nil
-		}
-		return item
-	})
-	if item == nil {
-		// Cache miss (or expired).
-		return nil, nil
+	if v, ok := mc.cache.Get(c, key); ok {
+		return v.([]byte), nil
 	}
-	return item.value, nil
+	return nil, nil
 }
 
 func (mc *memoryCache) Set(c context.Context, key string, value []byte, exp time.Duration) error {
-	mc.cache.Put(key, &memoryCacheItem{
-		value: value,
-		exp:   clock.Now(c).Add(exp),
-	})
+	mc.cache.Put(c, key, value, exp)
 	return nil
 }
 
 func (mc *memoryCache) WithLocalMutex(c context.Context, key string, f func()) {
 	mc.locks.WithMutex(key, f)
-}
-
-type memoryCacheItem struct {
-	value []byte
-	exp   time.Time
 }

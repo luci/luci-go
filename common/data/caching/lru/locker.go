@@ -30,11 +30,3 @@ type Locker interface {
 	// RLock unlocks the Locker for reading.
 	RUnlock()
 }
-
-// nopLocker is a Locker implementation that performs no locking.
-type nopLocker struct{}
-
-func (nopLocker) Lock()    {}
-func (nopLocker) Unlock()  {}
-func (nopLocker) RLock()   {}
-func (nopLocker) RUnlock() {}
