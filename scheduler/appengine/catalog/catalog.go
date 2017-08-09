@@ -199,6 +199,8 @@ func (cat *catalog) GetAllProjects(c context.Context) ([]string, error) {
 }
 
 func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Definition, error) {
+	c = logging.SetField(c, "project", projectID)
+
 	// TODO(vadimsh): This is a workaround for http://crbug.com/710619. Remove it
 	// once the bug is fixed.
 	projects, err := cat.GetAllProjects(c)
@@ -245,7 +247,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	// TODO(tandrii): make use of https://godoc.org/go.chromium.org/luci/common/config/validation
 	knownAclSets, err := acl.ValidateAclSets(cfg.GetAclSets())
 	if err != nil {
-		logging.Errorf(c, "Invalid aclsets definition %s: %s", projectID, err)
+		logging.Errorf(c, "Invalid aclsets definition %s", err)
 		return nil, errors.Annotate(err, "invalid aclsets in a project %s", projectID).Err()
 	}
 
@@ -261,13 +263,13 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			id = job.Id
 		}
 		var task proto.Message
-		if task, err = cat.validateJobProto(job); err != nil {
-			logging.Errorf(c, "Invalid job definition %s/%s: %s", projectID, id, err)
+		if task, err = cat.validateJobProto(c, job); err != nil {
+			logging.Errorf(c, "Invalid job definition %s: %s", id, err)
 			continue
 		}
 		packed, err := cat.marshalTask(task)
 		if err != nil {
-			logging.Errorf(c, "Failed to marshal the task: %s/%s: %s", projectID, id, err)
+			logging.Errorf(c, "Failed to marshal the task: %s: %s", id, err)
 			continue
 		}
 		schedule := job.Schedule
@@ -280,12 +282,12 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		}
 		acls, err := acl.ValidateTaskAcls(knownAclSets, job.GetAclSets(), job.GetAcls())
 		if err != nil {
-			logging.Errorf(c, "Failed to compute task ACLs: %s/%s: %s", projectID, id, err)
+			logging.Errorf(c, "Failed to compute task ACLs: %s: %s", id, err)
 			continue
 		}
 		// TODO(tandrii): remove this once this warning stops firing.
 		if len(acls.Owners) == 0 || len(acls.Readers) == 0 {
-			logging.Warningf(c, "Missing some ACLs on %s/%s: R=%d O=%d", projectID, id, len(acls.Owners), len(acls.Readers))
+			logging.Warningf(c, "Missing some ACLs on %s: R=%d O=%d", id, len(acls.Owners), len(acls.Readers))
 		}
 		out = append(out, Definition{
 			JobID:       fmt.Sprintf("%s/%s", projectID, job.Id),
@@ -309,12 +311,12 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		}
 		var task proto.Message
 		if task, err = cat.validateTriggerProto(trigger); err != nil {
-			logging.Errorf(c, "Invalid trigger definition %s/%s: %s", projectID, id, err)
+			logging.Errorf(c, "Invalid trigger definition %s: %s", id, err)
 			continue
 		}
 		packed, err := cat.marshalTask(task)
 		if err != nil {
-			logging.Errorf(c, "Failed to marshal the task: %s/%s: %s", projectID, id, err)
+			logging.Errorf(c, "Failed to marshal the task: %s: %s", id, err)
 			continue
 		}
 		schedule := trigger.Schedule
@@ -323,12 +325,12 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		}
 		acls, err := acl.ValidateTaskAcls(knownAclSets, trigger.GetAclSets(), trigger.GetAcls())
 		if err != nil {
-			logging.Errorf(c, "Failed to compute task ACLs: %s/%s: %s", projectID, id, err)
+			logging.Errorf(c, "Failed to compute task ACLs: %s: %s", id, err)
 			continue
 		}
 		// TODO(tandrii): remove this once this warning stops firing.
 		if len(acls.Owners) == 0 || len(acls.Readers) == 0 {
-			logging.Warningf(c, "Missing some ACLs on %s/%s: R=%d O=%d", projectID, id, len(acls.Owners), len(acls.Readers))
+			logging.Warningf(c, "Missing some ACLs on %s: R=%d O=%d", id, len(acls.Owners), len(acls.Readers))
 		}
 		out = append(out, Definition{
 			JobID:       fmt.Sprintf("%s/%s", projectID, trigger.Id),
@@ -375,7 +377,7 @@ func getRevisionURL(configSetURL *url.URL, rev, path string) string {
 // validateJobProto validates messages.Job protobuf message.
 //
 // It also extracts a task definition from it (e.g. SwarmingTask proto).
-func (cat *catalog) validateJobProto(j *messages.Job) (proto.Message, error) {
+func (cat *catalog) validateJobProto(c context.Context, j *messages.Job) (proto.Message, error) {
 	if j.Id == "" {
 		return nil, fmt.Errorf("missing 'id' field'")
 	}
@@ -394,6 +396,7 @@ func (cat *catalog) validateJobProto(j *messages.Job) (proto.Message, error) {
 	// TODO(vadimsh): Remove this branch when all configs are updated to not use
 	// TaskDefWrapper anymore.
 	if j.Task != nil {
+		logging.Warningf(c, "Job %s uses old taskWrapper", j.Id)
 		return cat.extractTaskProto(j.Task)
 	}
 	return cat.extractTaskProto(j)

@@ -59,7 +59,7 @@ func TestProtoValidation(t *testing.T) {
 		c := New("scheduler.cfg").(*catalog)
 
 		call := func(j *messages.Job) error {
-			_, err := c.validateJobProto(j)
+			_, err := c.validateJobProto(context.Background(), j)
 			return err
 		}
 
