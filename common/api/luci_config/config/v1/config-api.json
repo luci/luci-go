@@ -200,6 +200,9 @@
     },
     "url": {
      "type": "string"
+    },
+    "view_url": {
+     "type:": "string"
     }
    }
   },
@@ -216,6 +219,9 @@
     },
     "revision": {
      "type": "string"
+    },
+    "view_url": {
+     "type:": "string"
     }
    }
   },

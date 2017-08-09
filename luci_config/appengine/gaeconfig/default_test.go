@@ -58,6 +58,7 @@ func stripMeta(metas []*cfgclient.Meta) []*cfgclient.Meta {
 	for _, meta := range metas {
 		meta.ContentHash = ""
 		meta.Revision = ""
+		meta.ViewURL = ""
 	}
 	return metas
 }
