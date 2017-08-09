@@ -140,6 +140,30 @@
       "revId": "8791bb366601b1333fa10fe97d20a2559eaa4588",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "08bd5ea0_c8449550",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-09T21:13:51Z",
+      "side": 1,
+      "message": "RE 1, I saw the two as complementary?\n2) I\u0027d do it in this CL just so everything stays consistent.",
+      "parentUuid": "6b15576e_d6bcfba9",
+      "range": {
+        "startLine": 233,
+        "startChar": 32,
+        "endLine": 233,
+        "endChar": 47
+      },
+      "revId": "8791bb366601b1333fa10fe97d20a2559eaa4588",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
