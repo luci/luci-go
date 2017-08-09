@@ -43,6 +43,8 @@
 //		 to. The subdir value is relative to the root of the cipd installation
 //		 (the directory containing the .cipd folder). The value of Subdir before
 //		 any @Subdir directives is "", or the root of the cipd installation.
+//		 @Subdir directives also support expansion parameters `${os}`, `${arch}`
+//		 and `${platform}`.
 //
 // Package Definitions
 //
