@@ -18,7 +18,6 @@ import (
 	"sync"
 	"time"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/caching/lru"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -84,28 +83,25 @@ func NewCache(c Coordinator, size int, expiration time.Duration) Coordinator {
 }
 
 func (c *cache) getCacheEntry(ctx context.Context, k cacheEntryKey) (*cacheEntry, bool) {
-	now := clock.Now(ctx)
-
 	// Get the cacheEntry from our cache. If it is expired or doesn't exist,
 	// generate a new cache entry for this key.
 	created := false
-	entry := c.lru.Mutate(k, func(current interface{}) interface{} {
+	entry, _ := c.lru.Mutate(ctx, k, func(it *lru.Item) *lru.Item {
 		// Don't replace an existing entry, unless it has an error or has expired.
-		if current != nil {
-			curEntry := current.(*cacheEntry)
-			if now.Before(curEntry.expiresAt) {
-				return current
-			}
+		if it != nil {
+			return it
 		}
 
 		created = true
-		return &cacheEntry{
-			cacheEntryKey: k,
-			terminalIndex: -1,
-			expiresAt:     now.Add(c.expiration),
+		return &lru.Item{
+			Value: &cacheEntry{
+				cacheEntryKey: k,
+				terminalIndex: -1,
+			},
+			Exp: c.expiration,
 		}
-	}).(*cacheEntry)
-	return entry, created
+	})
+	return entry.(*cacheEntry), created
 }
 
 // RegisterStream invokes the wrapped Coordinator's RegisterStream method and
@@ -158,10 +154,6 @@ type cacheEntryKey struct {
 type cacheEntry struct {
 	sync.Mutex
 	cacheEntryKey
-
-	// expiresAt is the time when this cache entry expires. If this is in the
-	// past, this entry can be discarded.
-	expiresAt time.Time
 
 	// terminalIndex is the cached terminal index. Valid if >= 0.
 	//
