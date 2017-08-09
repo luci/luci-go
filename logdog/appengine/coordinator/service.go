@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/archive"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
-	"go.chromium.org/luci/logdog/common/storage/caching"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
@@ -419,7 +418,7 @@ func (s *prodServicesInst) nextArchiveIndex() uint64 {
 
 var storageCacheSingleton StorageCache
 
-func (s *prodServicesInst) getStorageCache() caching.Cache { return &storageCacheSingleton }
+func (s *prodServicesInst) getStorageCache() storage.Cache { return &storageCacheSingleton }
 
 // Storage is an interface to storage used by the Coordinator.
 type Storage interface {

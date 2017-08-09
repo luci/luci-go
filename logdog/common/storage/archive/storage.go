@@ -37,7 +37,6 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/storage"
-	"go.chromium.org/luci/logdog/common/storage/caching"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
@@ -72,7 +71,7 @@ type Options struct {
 	Client gs.Client
 
 	// Cache, if not nil, will be used to cache data.
-	Cache caching.Cache
+	Cache storage.Cache
 }
 
 type storageImpl struct {
@@ -312,7 +311,7 @@ func (s *storageImpl) getIndex(c context.Context) (*logpb.LogIndex, error) {
 	return index, nil
 }
 
-func loadIndex(c context.Context, client gs.Client, path gs.Path, cache caching.Cache) (*logpb.LogIndex, error) {
+func loadIndex(c context.Context, client gs.Client, path gs.Path, cache storage.Cache) (*logpb.LogIndex, error) {
 	// If there is no path, then return an empty index.
 	if path == "" {
 		log.Infof(c, "No index path, using empty index.")
@@ -325,8 +324,9 @@ func loadIndex(c context.Context, client gs.Client, path gs.Path, cache caching.
 		cached    bool
 	)
 	if cache != nil {
-		indexData = getCachedLogIndexData(c, cache, path)
-		if indexData != nil {
+		var ok bool
+		indexData, ok = getCachedLogIndexData(c, cache, path)
+		if ok {
 			cached = true
 		}
 	}

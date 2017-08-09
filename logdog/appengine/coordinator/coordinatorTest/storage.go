@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/archive"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
-	"go.chromium.org/luci/logdog/common/storage/caching"
 
 	"golang.org/x/net/context"
 )
@@ -41,7 +40,9 @@ type BigTableStorage struct {
 }
 
 // GetSignedURLs implements coordinator.Storage.
-func (st *BigTableStorage) GetSignedURLs(context.Context, *coordinator.URLSigningRequest) (*coordinator.URLSigningResponse, error) {
+func (st *BigTableStorage) GetSignedURLs(context.Context, *coordinator.URLSigningRequest) (
+	*coordinator.URLSigningResponse, error) {
+
 	return nil, nil
 }
 
@@ -76,7 +77,7 @@ func (st *ArchivalStorage) Close() {
 	st.Storage.Close()
 }
 
-// GetSignedURLs implements coordinator.Storage.
+// GetSignedURLs implements coordinator.SigningStorage.
 func (st *ArchivalStorage) GetSignedURLs(c context.Context, req *coordinator.URLSigningRequest) (
 	*coordinator.URLSigningResponse, error) {
 
@@ -101,7 +102,7 @@ func (st *ArchivalStorage) GetSignedURLs(c context.Context, req *coordinator.URL
 // StorageCache wraps the default storage cache instance, adding tracking
 // information that is useful for testing.
 type StorageCache struct {
-	Base caching.Cache
+	Base storage.Cache
 
 	statsMu sync.Mutex
 	stats   StorageCacheStats
@@ -128,28 +129,27 @@ func (sc *StorageCache) Stats() StorageCacheStats {
 	return sc.stats
 }
 
-// Get implements caching.Cache.
-func (sc *StorageCache) Get(c context.Context, items ...*caching.Item) {
-	sc.Base.Get(c, items...)
+// Get implements storage.Cache.
+func (sc *StorageCache) Get(c context.Context, key storage.CacheKey) ([]byte, bool) {
+	v, ok := sc.Base.Get(c, key)
 
 	// Calculate our hit/misses from the result.
 	sc.statsMu.Lock()
 	defer sc.statsMu.Unlock()
-	for _, it := range items {
-		if it.Data != nil {
-			sc.stats.Hits++
-		} else {
-			sc.stats.Misses++
-		}
+	if ok {
+		sc.stats.Hits++
+	} else {
+		sc.stats.Misses++
 	}
 
+	return v, ok
 }
 
-// Put implements caching.Cache.
-func (sc *StorageCache) Put(c context.Context, exp time.Duration, items ...*caching.Item) {
-	sc.Base.Put(c, exp, items...)
+// Put implements storage.Cache.
+func (sc *StorageCache) Put(c context.Context, key storage.CacheKey, v []byte, exp time.Duration) {
+	sc.Base.Put(c, key, v, exp)
 
 	sc.statsMu.Lock()
 	defer sc.statsMu.Unlock()
-	sc.stats.Puts += len(items)
+	sc.stats.Puts++
 }
