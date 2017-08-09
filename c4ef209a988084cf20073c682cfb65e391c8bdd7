@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5971607d_b5e49a38",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-09T23:57:12Z",
+      "side": 1,
+      "message": "nit: Expose MemoryCache to be used from appengine/flex\n\n(or whatever the package name will be)",
+      "range": {
+        "startLine": 7,
+        "startChar": 14,
+        "endLine": 7,
+        "endChar": 41
+      },
+      "revId": "c4ef209a988084cf20073c682cfb65e391c8bdd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
