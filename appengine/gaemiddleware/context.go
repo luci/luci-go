@@ -30,6 +30,7 @@ import (
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/settings"
@@ -89,6 +90,7 @@ var (
 func WithProd(c context.Context, req *http.Request) context.Context {
 	// These are needed to use fetchCachedSettings.
 	c = logging.SetLevel(c, logging.Debug)
+	c = caching.WithRequestCache(c)
 	c = prod.Use(c, req)
 	c = settings.Use(c, globalSettings)
 
@@ -103,7 +105,6 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 	c = proccache.Use(c, globalProcessCache)
 	c = gaeconfig.Use(c)
 	c = gaesecrets.Use(c, nil)
-	c = globalAuthCache.UseRequestCache(c)
 	c = auth.ModifyConfig(c, func(auth.Config) auth.Config { return globalAuthConfig })
 
 	// Wrap this in a cache context so that lookups for any of the aforementioned
