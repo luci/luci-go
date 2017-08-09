@@ -78,7 +78,7 @@ func (o *CacheOptions) WrapBackend(c context.Context, base backend.B) context.Co
 
 		// Add a proccache-based config cache.
 		if o.CacheExpiration > 0 {
-			be = caching.ProcCache(be, o.CacheExpiration)
+			be = caching.LRUBackend(be, 1024, o.CacheExpiration)
 		}
 
 		return be
