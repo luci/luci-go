@@ -89,29 +89,6 @@ func TestUpdateProjectJobs(t *testing.T) {
 				JobID:    "abc/1",
 				Revision: "rev1",
 				Schedule: "*/5 * * * * * *",
-			}}), ShouldBeNil)
-		So(allJobs(c), ShouldResemble, []Job{
-			{
-				JobID:     "abc/1",
-				ProjectID: "abc",
-				Revision:  "rev1",
-				Enabled:   true,
-				Schedule:  "*/5 * * * * * *",
-				State: JobState{
-					State:     "SCHEDULED",
-					TickNonce: 6278013164014963328,
-					TickTime:  epoch.Add(5 * time.Second),
-				},
-			},
-		})
-
-		// TODO(tandrii): delete and update above definition after no-ACL -> ACL transition.
-		// Simulate ACL version roll without change of project config.
-		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{
-			{
-				JobID:    "abc/1",
-				Revision: "rev1",
-				Schedule: "*/5 * * * * * *",
 				Acls:     acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
 			}}), ShouldBeNil)
 		So(allJobs(c), ShouldResemble, []Job{
@@ -572,14 +549,14 @@ func TestQueries(t *testing.T) {
 	Convey("with mock data", t, func() {
 		c := newTestContext(epoch)
 		e, _ := newTestEngine()
-		// TODO(tandrii): remove aclDefault once all Jobs have ACLs.
-		aclDefault := acl.GrantsByRole{}
+		aclPublic := acl.GrantsByRole{Readers: []string{"group:all"}, Owners: []string{"group:administrators"}}
 		aclSome := acl.GrantsByRole{Readers: []string{"group:some"}}
 		aclOne := acl.GrantsByRole{Owners: []string{"one@example.com"}}
 		aclAdmin := acl.GrantsByRole{Readers: []string{"group:administrators"}, Owners: []string{"group:administrators"}}
 
 		ctxAnon := auth.WithState(c, &authtest.FakeState{
-			Identity: "anonymous:anonymous",
+			Identity:       "anonymous:anonymous",
+			IdentityGroups: []string{"all"},
 		})
 		ctxOne := auth.WithState(c, &authtest.FakeState{
 			Identity:       "user:one@example.com",
@@ -587,19 +564,19 @@ func TestQueries(t *testing.T) {
 		})
 		ctxSome := auth.WithState(c, &authtest.FakeState{
 			Identity:       "user:some@example.com",
-			IdentityGroups: []string{"some"},
+			IdentityGroups: []string{"all", "some"},
 		})
 		ctxAdmin := auth.WithState(c, &authtest.FakeState{
 			Identity:       "user:admin@example.com",
-			IdentityGroups: []string{"administrators"},
+			IdentityGroups: []string{"administrators", "all"},
 		})
 
 		So(ds.Put(c,
 			&Job{JobID: "abc/1", ProjectID: "abc", Enabled: true, Acls: aclOne},
 			&Job{JobID: "abc/2", ProjectID: "abc", Enabled: true, Acls: aclSome},
-			&Job{JobID: "abc/3", ProjectID: "abc", Enabled: true, Acls: aclDefault},
-			&Job{JobID: "def/1", ProjectID: "def", Enabled: true, Acls: aclDefault},
-			&Job{JobID: "def/2", ProjectID: "def", Enabled: false, Acls: aclDefault},
+			&Job{JobID: "abc/3", ProjectID: "abc", Enabled: true, Acls: aclPublic},
+			&Job{JobID: "def/1", ProjectID: "def", Enabled: true, Acls: aclPublic},
+			&Job{JobID: "def/2", ProjectID: "def", Enabled: false, Acls: aclPublic},
 			&Job{JobID: "secret/1", ProjectID: "secret", Enabled: true, Acls: aclAdmin},
 		), ShouldBeNil)
 
