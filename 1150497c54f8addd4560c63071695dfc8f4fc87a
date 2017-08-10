@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "120f274c_b4981098",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_via_grant.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-08-10T22:25:39Z",
+      "side": 1,
+      "message": "This comment is redundant now, but it doesn\u0027t matter too much to me.",
+      "revId": "1150497c54f8addd4560c63071695dfc8f4fc87a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
