@@ -68,12 +68,13 @@ func (r *MintOAuthTokenGrantRPC) MintOAuthTokenGrant(c context.Context, req *min
 		return nil, grpc.Errorf(codes.PermissionDenied, "delegation is forbidden for this API call")
 	}
 
-	// Dump the whole request and relevant auth state to the debug log.
-	if logging.IsLogging(c, logging.Debug) {
-		m := jsonpb.Marshaler{Indent: "  "}
-		dump, _ := m.MarshalToString(req)
-		logging.Debugf(c, "Identity: %s", callerID)
-		logging.Debugf(c, "MintOAuthTokenGrantRequest:\n%s", dump)
+	// Check that the request is allowed by the rules, fill in defaults.
+	rule, err := r.validateRequest(c, req, callerID)
+	if err != nil {
+		return nil, err // the error is already logged
+	}
+	if req.ValidityDuration == 0 {
+		req.ValidityDuration = 3600
 	}
 
 	// Grab a string that identifies token server version. This almost always
@@ -83,7 +84,62 @@ func (r *MintOAuthTokenGrantRPC) MintOAuthTokenGrant(c context.Context, req *min
 		return nil, grpc.Errorf(codes.Internal, "can't grab service version - %s", err)
 	}
 
+	// Note that AllowedScopes is checked later during MintOAuthTokenViaGrant.
+	// Here we don't even know what OAuth scopes will be requested.
+	var resp *minter.MintOAuthTokenGrantResponse
+	var body *tokenserver.OAuthTokenGrantBody
+	p := mintParams{
+		serviceAccount:   req.ServiceAccount,
+		proxyID:          callerID,
+		endUserID:        identity.Identity(req.EndUser), // already validated
+		validityDuration: req.ValidityDuration,
+		serviceVer:       serviceVer,
+	}
+	if r.mintMock != nil {
+		resp, body, err = r.mintMock(c, &p)
+	} else {
+		resp, body, err = r.mint(c, &p)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	if r.LogGrant != nil {
+		// Errors during logging are considered not fatal. bqlog library has
+		// a monitoring counter that tracks number of errors, so they are not
+		// totally invisible.
+		info := MintedGrantInfo{
+			Request:   req,
+			Response:  resp,
+			GrantBody: body,
+			ConfigRev: rule.Revision,
+			Rule:      rule.Rule,
+			PeerIP:    state.PeerIP(),
+			RequestID: info.RequestID(c),
+			AuthDB:    state.DB(),
+		}
+		if logErr := r.LogGrant(c, &info); logErr != nil {
+			logging.WithError(logErr).Errorf(c, "Failed to insert the grant token into the BigQuery log")
+		}
+	}
+
+	return resp, nil
+}
+
+// validateRequest checks that the request is allowed.
+//
+// Returns corresponding config rule on success or a grpc error on error.
+func (r *MintOAuthTokenGrantRPC) validateRequest(c context.Context, req *minter.MintOAuthTokenGrantRequest, caller identity.Identity) (*Rule, error) {
+	// Dump the whole request and relevant auth state to the debug log.
+	if logging.IsLogging(c, logging.Debug) {
+		m := jsonpb.Marshaler{Indent: "  "}
+		dump, _ := m.MarshalToString(req)
+		logging.Debugf(c, "Identity: %s", caller)
+		logging.Debugf(c, "MintOAuthTokenGrantRequest:\n%s", dump)
+	}
+
 	// Reject obviously bad requests (and parse end_user along the way).
+	var err error
 	switch {
 	case req.ServiceAccount == "":
 		err = fmt.Errorf("service_account is required")
@@ -119,7 +175,7 @@ func (r *MintOAuthTokenGrantRPC) MintOAuthTokenGrant(c context.Context, req *min
 	// Check that requested usage is allowed and grab the corresponding rule.
 	rule, err := rules.Check(c, &RulesQuery{
 		ServiceAccount: req.ServiceAccount,
-		Proxy:          callerID,
+		Proxy:          caller,
 		EndUser:        endUserID,
 	})
 	if err != nil {
@@ -127,55 +183,12 @@ func (r *MintOAuthTokenGrantRPC) MintOAuthTokenGrant(c context.Context, req *min
 	}
 
 	// ValidityDuration check is specific to this RPC, it's not done by 'Check'.
-	if req.ValidityDuration == 0 {
-		req.ValidityDuration = 3600
-	}
 	if req.ValidityDuration > rule.Rule.MaxGrantValidityDuration {
 		logging.Errorf(c, "Requested validity is larger than max allowed: %d > %d", req.ValidityDuration, rule.Rule.MaxGrantValidityDuration)
 		return nil, grpc.Errorf(codes.InvalidArgument, "per rule %q the validity duration should be <= %d", rule.Rule.Name, rule.Rule.MaxGrantValidityDuration)
 	}
 
-	// All checks are done! Note that AllowedScopes is checked later during
-	// MintOAuthTokenViaGrant. Here we don't even know what OAuth scopes will be
-	// requested.
-	var resp *minter.MintOAuthTokenGrantResponse
-	var body *tokenserver.OAuthTokenGrantBody
-	p := mintParams{
-		serviceAccount:   req.ServiceAccount,
-		proxyID:          callerID,
-		endUserID:        endUserID,
-		validityDuration: req.ValidityDuration,
-		serviceVer:       serviceVer,
-	}
-	if r.mintMock != nil {
-		resp, body, err = r.mintMock(c, &p)
-	} else {
-		resp, body, err = r.mint(c, &p)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	if r.LogGrant != nil {
-		// Errors during logging are considered not fatal. bqlog library has
-		// a monitoring counter that tracks number of errors, so they are not
-		// totally invisible.
-		info := MintedGrantInfo{
-			Request:   req,
-			Response:  resp,
-			GrantBody: body,
-			ConfigRev: rules.ConfigRevision(),
-			Rule:      rule.Rule,
-			PeerIP:    state.PeerIP(),
-			RequestID: info.RequestID(c),
-			AuthDB:    state.DB(),
-		}
-		if logErr := r.LogGrant(c, &info); logErr != nil {
-			logging.WithError(logErr).Errorf(c, "Failed to insert the grant token into the BigQuery log")
-		}
-	}
-
-	return resp, nil
+	return rule, nil
 }
 
 type mintParams struct {

@@ -60,6 +60,7 @@ type Rules struct {
 // requests.
 type Rule struct {
 	Rule          *admin.ServiceAccountRule // original proto with the rule
+	Revision      string                    // revision of the file with the rule
 	AllowedScopes stringset.Set             // parsed 'allowed_scope'
 	EndUsers      *identityset.Set          // parsed 'end_user'
 	Proxies       *identityset.Set          // parsed 'proxy'
@@ -145,7 +146,7 @@ func prepareRules(cfg policy.ConfigBundle, revision string) (policy.Queryable, e
 	// certainly never happens.
 	rules := map[string]*Rule{}
 	for _, ruleProto := range parsed.Rules {
-		r, err := makeRule(ruleProto)
+		r, err := makeRule(ruleProto, revision)
 		if err != nil {
 			return nil, err
 		}
@@ -222,7 +223,7 @@ func (r *Rules) Check(c context.Context, query *RulesQuery) (*Rule, error) {
 // makeRule converts ServiceAccountRule into queriable Rule.
 //
 // Mutates 'ruleProto' in-place filling in defaults.
-func makeRule(ruleProto *admin.ServiceAccountRule) (*Rule, error) {
+func makeRule(ruleProto *admin.ServiceAccountRule, rev string) (*Rule, error) {
 	v := validation.Context{}
 	validateRule(ruleProto.Name, ruleProto, &v)
 	if err := v.Finalize(); err != nil {
@@ -250,6 +251,7 @@ func makeRule(ruleProto *admin.ServiceAccountRule) (*Rule, error) {
 
 	return &Rule{
 		Rule:          ruleProto,
+		Revision:      rev,
 		AllowedScopes: allowedScopes,
 		EndUsers:      endUsers,
 		Proxies:       proxies,
