@@ -67,8 +67,18 @@ type MintOAuthTokenViaGrantRPC struct {
 
 // MintOAuthTokenViaGrant produces new OAuth token given a grant.
 func (r *MintOAuthTokenViaGrantRPC) MintOAuthTokenViaGrant(c context.Context, req *minter.MintOAuthTokenViaGrantRequest) (*minter.MintOAuthTokenViaGrantResponse, error) {
+	state := auth.GetState(c)
+
+	// Don't allow delegation tokens here to reduce total number of possible
+	// scenarios. Proxies aren't expected to use delegation for these tokens.
+	callerID := state.User().Identity
+	if callerID != state.PeerIdentity() {
+		logging.Errorf(c, "Trying to use delegation, it's forbidden")
+		return nil, grpc.Errorf(codes.PermissionDenied, "delegation is forbidden for this API call")
+	}
+
 	// Log everything but the token. It'll be logged later after base64 decoding.
-	r.logRequest(c, req)
+	r.logRequest(c, req, callerID)
 
 	// Reject obviously bad requests.
 	if err := r.checkRequestFormat(req); err != nil {
@@ -83,7 +93,7 @@ func (r *MintOAuthTokenViaGrantRPC) MintOAuthTokenViaGrant(c context.Context, re
 	}
 
 	// The token is usable only by whoever requested it in the first place.
-	if grantBody.Proxy != string(auth.CurrentIdentity(c)) {
+	if grantBody.Proxy != string(callerID) {
 		// Note: grantBody.Proxy is part of the token already, caller knows it, so
 		// we aren't exposing any new information by returning it in the message.
 		logging.Errorf(c, "Unauthorized caller (expecting %q)", grantBody.Proxy)
@@ -143,7 +153,7 @@ func (r *MintOAuthTokenViaGrantRPC) MintOAuthTokenViaGrant(c context.Context, re
 // logRequest logs the body of the request, omitting the grant token.
 //
 // The token is logged later after base64 decoding.
-func (r *MintOAuthTokenViaGrantRPC) logRequest(c context.Context, req *minter.MintOAuthTokenViaGrantRequest) {
+func (r *MintOAuthTokenViaGrantRPC) logRequest(c context.Context, req *minter.MintOAuthTokenViaGrantRequest, caller identity.Identity) {
 	if !logging.IsLogging(c, logging.Debug) {
 		return
 	}
@@ -153,7 +163,7 @@ func (r *MintOAuthTokenViaGrantRPC) logRequest(c context.Context, req *minter.Mi
 	}
 	m := jsonpb.Marshaler{Indent: "  "}
 	dump, _ := m.MarshalToString(&cpy)
-	logging.Debugf(c, "Identity: %s", auth.CurrentIdentity(c))
+	logging.Debugf(c, "Identity: %s", caller)
 	logging.Debugf(c, "MintOAuthTokenViaGrant:\n%s", dump)
 }
 
