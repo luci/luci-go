@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8e05ec6a_19aff8ab",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_via_grant.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-08-10T21:51:20Z",
+      "side": 1,
+      "message": "Still pretty long. Offered some suggestions on how to break the function up below.",
+      "revId": "e3bc5c40bd97a75db37915fcf6af29405a48e0f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01076fde_5fbc2bab",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_via_grant.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-08-10T21:51:20Z",
+      "side": 1,
+      "message": "Scope checking could be its own function. In addition, everything from line 73 to 110 is attempting to validate the request, so it could all be separate. Something like:\n\ngrantBody, err :\u003d r.validateRequest(req)\nif err !\u003d nil {\n  return nil, err\n}",
+      "revId": "e3bc5c40bd97a75db37915fcf6af29405a48e0f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
