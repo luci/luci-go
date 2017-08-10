@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9fbc79c1_561af4d4",
+        "filename": "scheduler/appengine/messages/cron.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-10T21:46:41Z",
+      "side": 1,
+      "message": "nit: move this to top of the message, I think it\u0027s where \u0027reserved\u0027 fields are by convention.\n\nAlso no need to reserve \u0027task\u0027, nothing will break if we use it for something else. Only tag matters, since we serialize everything to binary.",
+      "range": {
+        "startLine": 94,
+        "startChar": 2,
+        "endLine": 95,
+        "endChar": 18
+      },
+      "revId": "874327cea78cc35f3f14e9a26ba091e10e441bf8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
