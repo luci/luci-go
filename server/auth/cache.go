@@ -200,14 +200,14 @@ type fetchOrMintTokenOp struct {
 //
 // It's basis or MintAccessTokenForServiceAccount and MintDelegationToken
 // implementations.
-func fetchOrMintToken(ctx context.Context, op *fetchOrMintTokenOp) (*cachedToken, error, string) {
+func fetchOrMintToken(ctx context.Context, op *fetchOrMintTokenOp) (*cachedToken, string, error) {
 	// Attempt to grab a cached token before entering the critical section.
 	switch cached, err := op.Cache.Fetch(ctx, op.Config.Cache, op.CacheKey, op.MinTTL); {
 	case err != nil:
 		logging.WithError(err).Errorf(ctx, "Failed to fetch the token from cache")
-		return nil, err, "ERROR_CACHE"
+		return nil, "ERROR_CACHE", err
 	case cached != nil:
-		return cached, nil, "SUCCESS_CACHE_HIT"
+		return cached, "SUCCESS_CACHE_HIT", nil
 	}
 
 	logging.Debugf(ctx, "The requested token is not in the cache")
@@ -264,36 +264,55 @@ func fetchOrMintToken(ctx context.Context, op *fetchOrMintTokenOp) (*cachedToken
 		res.label = "SUCCESS_CACHE_MISS"
 	})
 
-	return res.tok, res.err, res.label
+	return res.tok, res.label, res.err
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type memoryCache struct {
-	cache *lru.Cache
+type memoryCacheKey string
+
+// MemoryCache is a Cache implementation built on top of an in-process LRU cache.
+//
+// The LRU must be safe for concurrent access.
+type MemoryCache struct {
+	// LRU is the instantiated, underlying LRU cache.
+	LRU *lru.Cache
+
 	locks mutexpool.P
 }
 
-// MemoryCache creates a new in-memory Cache instance that is built on
-// top of an LRU cache of the specified size.
-func MemoryCache(size int) Cache {
-	return &memoryCache{
-		cache: lru.New(size),
+// NewMemoryCache returns a new LRU-based Cache instance with the supplied
+// LRU size. If size is <= 0, the LRU will never prune.
+func NewMemoryCache(size int) Cache {
+	return &MemoryCache{
+		LRU: lru.New(size),
 	}
 }
 
-func (mc *memoryCache) Get(c context.Context, key string) ([]byte, error) {
-	if v, ok := mc.cache.Get(c, key); ok {
+// Get returns a cached item or (nil, nil) if it's not in the cache.
+//
+// Any returned error is transient error.
+func (mc *MemoryCache) Get(c context.Context, key string) ([]byte, error) {
+	if v, ok := mc.LRU.Get(c, memoryCacheKey(key)); ok {
 		return v.([]byte), nil
 	}
 	return nil, nil
 }
 
-func (mc *memoryCache) Set(c context.Context, key string, value []byte, exp time.Duration) error {
-	mc.cache.Put(c, key, value, exp)
+// Set unconditionally overwrites an item in the cache.
+//
+// If 'exp' is zero, the item will have no expiration time.
+//
+// Any returned error is transient error.
+func (mc *MemoryCache) Set(c context.Context, key string, value []byte, exp time.Duration) error {
+	mc.LRU.Put(c, memoryCacheKey(key), value, exp)
 	return nil
 }
 
-func (mc *memoryCache) WithLocalMutex(c context.Context, key string, f func()) {
-	mc.locks.WithMutex(key, f)
+// WithLocalMutex calls 'f' under a process-local mutex assigned to the 'key'.
+//
+// It is used to ensure only one goroutine is updating the item matching the
+// given key.
+func (mc *MemoryCache) WithLocalMutex(c context.Context, key string, f func()) {
+	mc.locks.WithMutex(memoryCacheKey(key), f)
 }
