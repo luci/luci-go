@@ -22,12 +22,14 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
+
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
+	"go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	"go.chromium.org/luci/common/clock"
@@ -39,6 +41,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+var fakeAuthDB = &authdb.SnapshotDB{Rev: 1234}
+
 func testingContext() context.Context {
 	ctx := gaetesting.TestingContext()
 	ctx = logging.SetLevel(ctx, logging.Debug)
@@ -47,7 +51,7 @@ func testingContext() context.Context {
 	return auth.WithState(ctx, &authtest.FakeState{
 		Identity:       "user:requestor@example.com",
 		PeerIPOverride: net.ParseIP("127.10.10.10"),
-		FakeDB:         &authdb.SnapshotDB{Rev: 1234},
+		FakeDB:         fakeAuthDB,
 	})
 }
 
@@ -75,27 +79,43 @@ func TestMintOAuthTokenGrant(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		var lastParams *mintParams
-		mintMock := func(c context.Context, p *mintParams) (*minter.MintOAuthTokenGrantResponse, error) {
+		var lastBody *tokenserver.OAuthTokenGrantBody
+		mintMock := func(c context.Context, p *mintParams) (*minter.MintOAuthTokenGrantResponse, *tokenserver.OAuthTokenGrantBody, error) {
 			lastParams = p
-			expiry := clock.Now(c).Add(time.Duration(p.validityDuration) * time.Second)
+			now := clock.Now(c)
+			expiry := now.Add(time.Duration(p.validityDuration) * time.Second)
+			lastBody = &tokenserver.OAuthTokenGrantBody{
+				TokenId:          12345,
+				ServiceAccount:   p.serviceAccount,
+				Proxy:            string(p.proxyID),
+				EndUser:          string(p.endUserID),
+				IssuedAt:         google.NewTimestamp(now),
+				ValidityDuration: p.validityDuration,
+			}
 			return &minter.MintOAuthTokenGrantResponse{
 				GrantToken:     "valid_token",
 				Expiry:         google.NewTimestamp(expiry),
 				ServiceVersion: p.serviceVer,
-			}, nil
+			}, lastBody, nil
 		}
 
+		var loggedInfo *MintedGrantInfo
 		rpc := MintOAuthTokenGrantRPC{
-			Signer:   testingSigner(),
-			Rules:    func(context.Context) (*Rules, error) { return cfg, nil },
+			Signer: testingSigner(),
+			Rules:  func(context.Context) (*Rules, error) { return cfg, nil },
+			LogGrant: func(c context.Context, i *MintedGrantInfo) error {
+				loggedInfo = i
+				return nil
+			},
 			mintMock: mintMock,
 		}
 
 		Convey("Happy path", func() {
-			resp, err := rpc.MintOAuthTokenGrant(ctx, &minter.MintOAuthTokenGrantRequest{
+			req := &minter.MintOAuthTokenGrantRequest{
 				ServiceAccount: "account@robots.com",
 				EndUser:        "user:enduser@example.com",
-			})
+			}
+			resp, err := rpc.MintOAuthTokenGrant(ctx, req)
 			So(err, ShouldBeNil)
 			So(resp.GrantToken, ShouldEqual, "valid_token")
 			So(resp.ServiceVersion, ShouldEqual, "unit-tests/mocked-ver")
@@ -105,6 +125,18 @@ func TestMintOAuthTokenGrant(t *testing.T) {
 				endUserID:        "user:enduser@example.com",
 				validityDuration: 3600, // default
 				serviceVer:       "unit-tests/mocked-ver",
+			})
+
+			// LogGrant called.
+			So(loggedInfo, ShouldResemble, &MintedGrantInfo{
+				Request:   req,
+				Response:  resp,
+				GrantBody: lastBody,
+				ConfigRev: cfg.revision,
+				Rule:      cfg.rules["account@robots.com"].Rule,
+				PeerIP:    net.ParseIP("127.10.10.10"),
+				RequestID: "gae-request-id",
+				AuthDB:    fakeAuthDB,
 			})
 		})
 

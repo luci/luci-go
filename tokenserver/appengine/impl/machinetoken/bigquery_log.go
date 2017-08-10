@@ -52,7 +52,7 @@ type MintedTokenInfo struct {
 
 // toBigQueryRow returns a JSON-ish map to upload to BigQuery.
 //
-// It's schema must match 'bq/tables/machine_tokens.schema'.
+// Its schema must match 'bq/tables/machine_tokens.schema'.
 func (i *MintedTokenInfo) toBigQueryRow() map[string]interface{} {
 	// LUCI_MACHINE_TOKEN is the only supported type currently.
 	if i.Request.TokenType != tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN {
