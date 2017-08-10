@@ -211,7 +211,7 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 		"userID": userID,
 	})
 
-	cached, err, label := fetchOrMintToken(ctx, &fetchOrMintTokenOp{
+	cached, label, err := fetchOrMintToken(ctx, &fetchOrMintTokenOp{
 		Config:   cfg,
 		Cache:    &delegationTokenCache,
 		CacheKey: string(userID) + "\n" + tokenServiceHost + "\n" + target,
