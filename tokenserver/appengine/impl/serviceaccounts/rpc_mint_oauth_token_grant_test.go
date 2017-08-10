@@ -32,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -40,6 +41,7 @@ import (
 
 func testingContext() context.Context {
 	ctx := gaetesting.TestingContext()
+	ctx = logging.SetLevel(ctx, logging.Debug)
 	ctx = info.GetTestable(ctx).SetRequestID("gae-request-id")
 	ctx, _ = testclock.UseTime(ctx, time.Date(2015, time.February, 3, 4, 5, 6, 0, time.UTC))
 	return auth.WithState(ctx, &authtest.FakeState{

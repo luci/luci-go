@@ -67,6 +67,13 @@ func TestRules(t *testing.T) {
 			"https://www.googleapis.com/scope2",
 		})
 
+		So(rule.CheckScopes([]string{"https://www.googleapis.com/scope1"}), ShouldBeNil)
+		So(
+			rule.CheckScopes([]string{"https://www.googleapis.com/scope1", "unknown_scope"}),
+			ShouldErrLike,
+			`following scopes are not allowed by the rule "rule 1" - ["unknown_scope"]`,
+		)
+
 		So(rule.EndUsers.ToStrings(), ShouldResemble, []string{
 			"group:enduser-group",
 			"user:enduser@example.com",
