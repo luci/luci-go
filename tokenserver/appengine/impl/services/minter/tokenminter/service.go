@@ -56,8 +56,9 @@ func NewServer() minter.TokenMinterServer {
 			LogToken: delegation.LogToken,
 		},
 		MintOAuthTokenGrantRPC: serviceaccounts.MintOAuthTokenGrantRPC{
-			Signer: gaesigner.Signer{},
-			Rules:  serviceaccounts.GlobalRulesCache.Rules,
+			Signer:   gaesigner.Signer{},
+			Rules:    serviceaccounts.GlobalRulesCache.Rules,
+			LogGrant: serviceaccounts.LogGrant,
 		},
 		MintOAuthTokenViaGrantRPC: serviceaccounts.MintOAuthTokenViaGrantRPC{
 			Signer:          gaesigner.Signer{},
