@@ -53,8 +53,15 @@ type MintOAuthTokenGrantRPC struct {
 func (r *MintOAuthTokenGrantRPC) MintOAuthTokenGrant(c context.Context, req *minter.MintOAuthTokenGrantRequest) (*minter.MintOAuthTokenGrantResponse, error) {
 	state := auth.GetState(c)
 
-	// Dump the whole request and relevant auth state to the debug log.
+	// Don't allow delegation tokens here to reduce total number of possible
+	// scenarios. Proxies aren't expected to use delegation for these tokens.
 	callerID := state.User().Identity
+	if callerID != state.PeerIdentity() {
+		logging.Errorf(c, "Trying to use delegation, it's forbidden")
+		return nil, grpc.Errorf(codes.PermissionDenied, "delegation is forbidden for this API call")
+	}
+
+	// Dump the whole request and relevant auth state to the debug log.
 	if logging.IsLogging(c, logging.Debug) {
 		m := jsonpb.Marshaler{Indent: "  "}
 		dump, _ := m.MarshalToString(req)
