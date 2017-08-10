@@ -70,12 +70,6 @@ message Job {
   // Disabled is true to disable this job.
   bool disabled = 3;
 
-  // Task defines what exactly to execute.
-  //
-  // TODO(vadimsh): Remove this field once all configs are updated not to
-  // use it.
-  TaskDefWrapper task = 4;
-
   // List of access control rules for the Job.
   // The order does not matter.
 	// There can be at most 32 different acls for a Job, including those from
@@ -96,6 +90,9 @@ message Job {
   SwarmingTask swarming = 102;
   // BuildbucketTask can be used to schedule buildbucket job.
   BuildbucketTask buildbucket = 103;
+
+  reserved 4;
+  reserved "task";
 }
 
 // Trigger specifies a job that triggers other jobs.
@@ -233,13 +230,10 @@ message ProjectConfig {
 // TaskDefWrapper is a union type of all possible tasks known to the scheduler.
 //
 // It is used internally when storing jobs in the datastore.
-//
-// TODO(vadimsh): Remove '_task' suffixes once TaskDefWrapper is no longer
-// a part of 'Job' proto.
 message TaskDefWrapper {
   NoopTask noop = 1;
   UrlFetchTask url_fetch = 2;
-  SwarmingTask swarming_task = 3;
-  BuildbucketTask buildbucket_task = 4;
-  GitilesTask gitiles_task = 5;
+  SwarmingTask swarming = 3;
+  BuildbucketTask buildbucket = 4;
+  GitilesTask gitiles = 5;
 }
