@@ -255,3 +255,17 @@ func makeRule(ruleProto *admin.ServiceAccountRule) (*Rule, error) {
 		Proxies:       proxies,
 	}, nil
 }
+
+// CheckScopes returns no errors if all passed scopes are allowed.
+func (r *Rule) CheckScopes(scopes []string) error {
+	var notAllowed []string
+	for _, scope := range scopes {
+		if !r.AllowedScopes.Has(scope) {
+			notAllowed = append(notAllowed, scope)
+		}
+	}
+	if len(notAllowed) != 0 {
+		return fmt.Errorf("following scopes are not allowed by the rule %q - %q", r.Rule.Name, notAllowed)
+	}
+	return nil
+}
