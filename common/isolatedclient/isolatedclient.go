@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 
 	"golang.org/x/net/context"
 
@@ -329,19 +330,58 @@ func (gcs defaultGCSHandler) Push(c context.Context, i *Client, status isolatese
 	return err
 }
 
+// safeBuffer is a goroutine safe bytes.Buffer that also implements io.ReaderCloser.
+type safeBuffer struct {
+	*bytes.Buffer
+	lock sync.Mutex
+	err  error
+}
+
+func (b safeBuffer) Read(p []byte) (n int, err error) {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+	if b.err != nil {
+		return 0, b.err
+	}
+	return b.Read(p)
+}
+
+func (b safeBuffer) Write(p []byte) (n int, err error) {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+	if b.err != nil {
+		return 0, b.err
+	}
+	return b.Write(p)
+}
+
+func (b safeBuffer) Close() error {
+	return b.CloseWithError(errors.New("closed"))
+}
+
+func (b safeBuffer) CloseWithError(err error) error {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+	if b.err != nil {
+		return b.err
+	}
+	b.err = err
+	return nil
+}
+
 // compressed is an io.ReadCloser that transparently compresses source data in
 // a separate goroutine.
 type compressed struct {
-	pr  *io.PipeReader
-	src io.ReadCloser
+	src  io.ReadCloser
+	dest io.ReadCloser
 }
 
 func (c *compressed) Read(data []byte) (int, error) {
-	return c.pr.Read(data)
+	return c.dest.Read(data)
 }
 
 func (c *compressed) Close() error {
-	err := c.pr.Close()
+	err := c.dest.Close()
 	if err1 := c.src.Close(); err == nil {
 		err = err1
 	}
@@ -349,22 +389,25 @@ func (c *compressed) Close() error {
 }
 
 func newCompressed(src io.ReadCloser) io.ReadCloser {
-	pr, pw := io.Pipe()
+	outBuf := safeBuffer{
+		Buffer: bytes.NewBuffer(make([]byte, 4096)),
+		lock:   sync.Mutex{},
+	}
 	go func() {
 		// The compressor itself is not thread safe.
-		compressor, err := isolated.GetCompressor(pw)
+		compressor, err := isolated.GetCompressor(outBuf)
 		if err != nil {
-			pw.CloseWithError(err)
+			outBuf.CloseWithError(err)
 			return
 		}
+
 		buf := make([]byte, 4096)
 		if _, err := io.CopyBuffer(compressor, src, buf); err != nil {
-			compressor.Close()
-			pw.CloseWithError(err)
+			outBuf.CloseWithError(err)
 			return
 		}
-		pw.CloseWithError(compressor.Close())
+		outBuf.CloseWithError(compressor.Close())
 	}()
 
-	return &compressed{pr, src}
+	return &compressed{outBuf, src}
 }
