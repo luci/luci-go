@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "ef043950_2c7be462",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_via_grant.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-10T22:19:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e05ec6a_19aff8ab",
+      "revId": "e3bc5c40bd97a75db37915fcf6af29405a48e0f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "01076fde_5fbc2bab",
         "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_via_grant.go",
         "patchSetId": 1
@@ -33,6 +51,24 @@
       "revId": "e3bc5c40bd97a75db37915fcf6af29405a48e0f9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5142dafa_bb8022da",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_via_grant.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-10T22:19:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "01076fde_5fbc2bab",
+      "revId": "e3bc5c40bd97a75db37915fcf6af29405a48e0f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
