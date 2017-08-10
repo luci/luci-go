@@ -34,6 +34,7 @@ import (
 
 	"go.chromium.org/luci/tokenserver/appengine/impl/delegation"
 	"go.chromium.org/luci/tokenserver/appengine/impl/machinetoken"
+	"go.chromium.org/luci/tokenserver/appengine/impl/serviceaccounts"
 	"go.chromium.org/luci/tokenserver/appengine/impl/services/admin/adminsrv"
 	"go.chromium.org/luci/tokenserver/appengine/impl/services/admin/certauthorities"
 )
@@ -53,6 +54,7 @@ func init() {
 	r.GET("/internal/cron/fetch-crl", basemw.Extend(gaemiddleware.RequireCron), fetchCRLCron)
 	r.GET("/internal/cron/bqlog/machine-tokens-flush", basemw.Extend(gaemiddleware.RequireCron), flushMachineTokensLogCron)
 	r.GET("/internal/cron/bqlog/delegation-tokens-flush", basemw.Extend(gaemiddleware.RequireCron), flushDelegationTokensLogCron)
+	r.GET("/internal/cron/bqlog/oauth-token-grants-flush", basemw.Extend(gaemiddleware.RequireCron), flushOAuthTokenGrantsLogCron)
 
 	http.DefaultServeMux.Handle("/", r)
 }
@@ -144,6 +146,14 @@ func flushDelegationTokensLogCron(c *router.Context) {
 	// FlushTokenLog logs errors inside. We also do not retry on errors. It's fine
 	// to wait and flush on the next iteration.
 	delegation.FlushTokenLog(c.Context)
+	c.Writer.WriteHeader(http.StatusOK)
+}
+
+// flushOAuthTokenGrantsLogCron is handler for /internal/cron/bqlog/oauth-token-grants-flush.
+func flushOAuthTokenGrantsLogCron(c *router.Context) {
+	// FlushGrantsLog logs errors inside. We also do not retry on errors. It's
+	// fine to wait and flush on the next iteration.
+	serviceaccounts.FlushGrantsLog(c.Context)
 	c.Writer.WriteHeader(http.StatusOK)
 }
 

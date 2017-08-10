@@ -19,6 +19,11 @@ cron:
   schedule: every 1 minutes
   target: backend
 
+- description: Uploads OAuth token grants logs to BigQuery
+  url: /internal/cron/bqlog/oauth-token-grants-flush
+  schedule: every 1 minutes
+  target: backend
+
 - description: tsmon house keeping
   url: /internal/cron/ts_mon/housekeeping
   schedule: every 1 minutes

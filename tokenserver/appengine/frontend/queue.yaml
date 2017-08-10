@@ -4,3 +4,6 @@ queue:
 
 - name: bqlog-delegation-tokens
   mode: pull
+
+- name: bqlog-oauth-token-grants
+  mode: pull

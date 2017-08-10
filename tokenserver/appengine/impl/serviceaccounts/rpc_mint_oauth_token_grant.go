@@ -13,6 +13,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/gae/service/info"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
@@ -43,10 +45,15 @@ type MintOAuthTokenGrantRPC struct {
 	// In prod it is GlobalRulesCache.Rules.
 	Rules func(context.Context) (*Rules, error)
 
+	// LogGrant is mocked in tests.
+	//
+	// In prod it is LogGrant from grant_bigquery_log.go.
+	LogGrant func(context.Context, *MintedGrantInfo) error
+
 	// mintMock call is used in tests.
 	//
 	// In prod it is 'mint'
-	mintMock func(context.Context, *mintParams) (*minter.MintOAuthTokenGrantResponse, error)
+	mintMock func(context.Context, *mintParams) (*minter.MintOAuthTokenGrantResponse, *tokenserver.OAuthTokenGrantBody, error)
 }
 
 // MintOAuthTokenGrant produces new OAuth token grant.
@@ -132,6 +139,7 @@ func (r *MintOAuthTokenGrantRPC) MintOAuthTokenGrant(c context.Context, req *min
 	// MintOAuthTokenViaGrant. Here we don't even know what OAuth scopes will be
 	// requested.
 	var resp *minter.MintOAuthTokenGrantResponse
+	var body *tokenserver.OAuthTokenGrantBody
 	p := mintParams{
 		serviceAccount:   req.ServiceAccount,
 		proxyID:          callerID,
@@ -140,15 +148,32 @@ func (r *MintOAuthTokenGrantRPC) MintOAuthTokenGrant(c context.Context, req *min
 		serviceVer:       serviceVer,
 	}
 	if r.mintMock != nil {
-		resp, err = r.mintMock(c, &p)
+		resp, body, err = r.mintMock(c, &p)
 	} else {
-		resp, err = r.mint(c, &p)
+		resp, body, err = r.mint(c, &p)
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO(vadimsh): Log the generated token to BigQuery.
+	if r.LogGrant != nil {
+		// Errors during logging are considered not fatal. bqlog library has
+		// a monitoring counter that tracks number of errors, so they are not
+		// totally invisible.
+		info := MintedGrantInfo{
+			Request:   req,
+			Response:  resp,
+			GrantBody: body,
+			ConfigRev: rules.ConfigRevision(),
+			Rule:      rule.Rule,
+			PeerIP:    state.PeerIP(),
+			RequestID: info.RequestID(c),
+			AuthDB:    state.DB(),
+		}
+		if logErr := r.LogGrant(c, &info); logErr != nil {
+			logging.WithError(logErr).Errorf(c, "Failed to insert the grant token into the BigQuery log")
+		}
+	}
 
 	return resp, nil
 }
@@ -162,33 +187,34 @@ type mintParams struct {
 }
 
 // mint is called to make the token after the request has been authorized.
-func (r *MintOAuthTokenGrantRPC) mint(c context.Context, p *mintParams) (*minter.MintOAuthTokenGrantResponse, error) {
+func (r *MintOAuthTokenGrantRPC) mint(c context.Context, p *mintParams) (*minter.MintOAuthTokenGrantResponse, *tokenserver.OAuthTokenGrantBody, error) {
 	id, err := revocation.GenerateTokenID(c, tokenIDSequenceKind)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Error when generating token ID")
-		return nil, grpc.Errorf(codes.Internal, "error when generating token ID - %s", err)
+		return nil, nil, grpc.Errorf(codes.Internal, "error when generating token ID - %s", err)
 	}
 
 	now := clock.Now(c).UTC()
 	expiry := now.Add(time.Duration(p.validityDuration) * time.Second)
 
 	// All the stuff here has already been validated in 'MintOAuthTokenGrant'.
-	signed, err := SignGrant(c, r.Signer, &tokenserver.OAuthTokenGrantBody{
+	body := &tokenserver.OAuthTokenGrantBody{
 		TokenId:          id,
 		ServiceAccount:   p.serviceAccount,
 		Proxy:            string(p.proxyID),
 		EndUser:          string(p.endUserID),
 		IssuedAt:         google.NewTimestamp(now),
 		ValidityDuration: p.validityDuration,
-	})
+	}
+	signed, err := SignGrant(c, r.Signer, body)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Error when signing the token")
-		return nil, grpc.Errorf(codes.Internal, "error when signing the token - %s", err)
+		return nil, nil, grpc.Errorf(codes.Internal, "error when signing the token - %s", err)
 	}
 
 	return &minter.MintOAuthTokenGrantResponse{
 		GrantToken:     signed,
 		Expiry:         google.NewTimestamp(expiry),
 		ServiceVersion: p.serviceVer,
-	}, nil
+	}, body, nil
 }
