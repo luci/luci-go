@@ -41,7 +41,7 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
 
 		// Create an LRU large enough that it will never cycle during test.
-		tokenCache := MemoryCache(1024)
+		tokenCache := NewMemoryCache(1024)
 
 		returnedToken := "token1"
 		transport := &clientRPCTransportMock{
@@ -88,7 +88,7 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 		})
 
 		// Cached now.
-		So(tokenCache.(*memoryCache).cache.Len(), ShouldEqual, 1)
+		So(tokenCache.(*MemoryCache).LRU.Len(), ShouldEqual, 1)
 		v, _ := tokenCache.Get(ctx, "as_actor_tokens/2/b16kofTATGlqFdw3fKVf2-pyMEs")
 		So(v, ShouldNotBeNil)
 

@@ -644,7 +644,7 @@ func (s *Service) withAuthService(c context.Context) context.Context {
 			AnonymousTransport: func(ic context.Context) http.RoundTripper {
 				return s.unauthenticatedTransport()
 			},
-			Cache: serverAuth.MemoryCache(authCacheSize),
+			Cache: serverAuth.NewMemoryCache(authCacheSize),
 		}
 	})
 }

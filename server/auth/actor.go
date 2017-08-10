@@ -140,7 +140,7 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 		"scopes":  strings.Join(sortedScopes, " "),
 	})
 
-	cached, err, label := fetchOrMintToken(ctx, &fetchOrMintTokenOp{
+	cached, label, err := fetchOrMintToken(ctx, &fetchOrMintTokenOp{
 		Config:   cfg,
 		Cache:    &actorTokenCache,
 		CacheKey: strings.Join(parts, "\n"),

@@ -33,7 +33,7 @@ func TestTokenCache(t *testing.T) {
 
 	Convey("with in-process cache", t, func() {
 		// Create a cache large enough that the LRU doesn't cycle.
-		cache := MemoryCache(1024)
+		cache := NewMemoryCache(1024)
 
 		ctx := context.Background()
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
@@ -69,8 +69,8 @@ func TestTokenCache(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(itm, ShouldBeNil)
 
-			pgc := cache.(*memoryCache)
-			So(pgc.cache.Len(), ShouldEqual, 1)
+			mc := cache.(*MemoryCache)
+			So(mc.LRU.Len(), ShouldEqual, 1)
 		})
 
 		Convey("check expiration randomization", func() {
