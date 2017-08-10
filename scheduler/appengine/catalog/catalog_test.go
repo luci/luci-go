@@ -68,7 +68,7 @@ func TestProtoValidation(t *testing.T) {
 		So(call(&messages.Job{Id: "bad id"}), ShouldErrLike, "not valid value for 'id' field")
 		So(call(&messages.Job{
 			Id:   "good",
-			Task: &messages.TaskDefWrapper{Noop: &messages.NoopTask{}},
+			Noop: &messages.NoopTask{},
 		}), ShouldBeNil)
 		So(call(&messages.Job{
 			Id:       "good",
@@ -208,42 +208,23 @@ func TestConfigReading(t *testing.T) {
 				{
 					JobID:    "project1/noop-job-1",
 					Acls:     acl.GrantsByRole{Readers: []string{"group:all"}, Owners: []string{"group:some-admins"}},
-					Revision: "847cf9c217f7bad214805f3bea7a30799383940b",
+					Revision: "44e8e469baa6de5036bbd2709e74a890712b51bb",
 					Schedule: "*/10 * * * * * *",
 					Task:     []uint8{0xa, 0x0},
 				},
 				{
 					JobID:    "project1/noop-job-2",
 					Acls:     acl.GrantsByRole{Readers: []string{"group:all"}, Owners: []string{"group:some-admins"}},
-					Revision: "847cf9c217f7bad214805f3bea7a30799383940b",
+					Revision: "44e8e469baa6de5036bbd2709e74a890712b51bb",
 					Schedule: "*/10 * * * * * *",
 					Task:     []uint8{0xa, 0x0},
 				},
 				{
 					JobID:    "project1/urlfetch-job-1",
 					Acls:     acl.GrantsByRole{Readers: []string{"group:all"}, Owners: []string{"group:debuggers", "group:some-admins"}},
-					Revision: "847cf9c217f7bad214805f3bea7a30799383940b",
+					Revision: "44e8e469baa6de5036bbd2709e74a890712b51bb",
 					Schedule: "*/10 * * * * * *",
 					Task:     []uint8{18, 21, 18, 19, 104, 116, 116, 112, 115, 58, 47, 47, 101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109},
-				},
-				{
-					JobID:    "project1/urlfetch-job-2",
-					Acls:     acl.GrantsByRole{Readers: []string{"group:all"}, Owners: []string{"group:some-admins"}},
-					Revision: "847cf9c217f7bad214805f3bea7a30799383940b",
-					Schedule: "*/10 * * * * * *",
-					Task:     []uint8{18, 21, 18, 19, 104, 116, 116, 112, 115, 58, 47, 47, 101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109},
-				},
-			})
-
-			// Make sure URL fetch jobs are parsed correctly and identically.
-			newStyleDef := defs[2].Task
-			oldStyleDef := defs[3].Task
-			So(newStyleDef, ShouldResemble, oldStyleDef)
-			msg := messages.TaskDefWrapper{}
-			proto.Unmarshal(newStyleDef, &msg)
-			So(msg, ShouldResemble, messages.TaskDefWrapper{
-				UrlFetch: &messages.UrlFetchTask{
-					Url: "https://example.com",
 				},
 			})
 		})
@@ -383,19 +364,6 @@ job {
 
   url_fetch: {
     url: "https://example.com"
-  }
-}
-
-# Old-style URL fetch job definition.
-job {
-  id: "urlfetch-job-2"
-  schedule: "*/10 * * * * * *"
-	acl_sets: "public"
-
-  task: {
-    url_fetch: {
-      url: "https://example.com"
-    }
   }
 }
 

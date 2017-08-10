@@ -42,6 +42,8 @@ message AclSet {
 //
 // Such jobs runs on a schedule or can be triggered by some trigger.
 message Job {
+  reserved 4;
+
   // Id is a name of the job (unique for the project).
   //
   // Must match '^[0-9A-Za-z_\-\.]{1,100}$'.
@@ -69,12 +71,6 @@ message Job {
 
   // Disabled is true to disable this job.
   bool disabled = 3;
-
-  // Task defines what exactly to execute.
-  //
-  // TODO(vadimsh): Remove this field once all configs are updated not to
-  // use it.
-  TaskDefWrapper task = 4;
 
   // List of access control rules for the Job.
   // The order does not matter.
@@ -233,13 +229,10 @@ message ProjectConfig {
 // TaskDefWrapper is a union type of all possible tasks known to the scheduler.
 //
 // It is used internally when storing jobs in the datastore.
-//
-// TODO(vadimsh): Remove '_task' suffixes once TaskDefWrapper is no longer
-// a part of 'Job' proto.
 message TaskDefWrapper {
   NoopTask noop = 1;
   UrlFetchTask url_fetch = 2;
-  SwarmingTask swarming_task = 3;
-  BuildbucketTask buildbucket_task = 4;
-  GitilesTask gitiles_task = 5;
+  SwarmingTask swarming = 3;
+  BuildbucketTask buildbucket = 4;
+  GitilesTask gitiles = 5;
 }
