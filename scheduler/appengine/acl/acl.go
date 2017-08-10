@@ -42,13 +42,6 @@ func (g *GrantsByRole) IsOwner(c context.Context) (bool, error) {
 }
 
 func (g *GrantsByRole) IsReader(c context.Context) (bool, error) {
-	if len(g.Readers) == 0 && len(g.Owners) == 0 {
-		// This is here for backwards compatiblity before ACLs were introduced.
-		// If Job doesn't specify READERs nor OWNERS explicitely, everybody can read.
-		// TODO(tAndrii): remove once every Job/Trigger has ACLs specified.
-		logging.Warningf(c, "Granting READ rights to all because no ACLs specified")
-		return true, nil
-	}
 	return hasGrant(c, g.Owners, g.Readers, groupsAdministrators)
 }
 
@@ -108,6 +101,12 @@ func ValidateTaskAcls(pSets AclSets, tSets []string, tAcls []*messages.Acl) (*Gr
 	mg := mergeGrants(grantsLists...)
 	if n := len(mg.Owners) + len(mg.Readers); n > maxGrantsPerJob {
 		return nil, fmt.Errorf("Job or Trigger can have at most %d acls, but %d given", maxGrantsPerJob, n)
+	}
+	if len(mg.Owners) == 0 {
+		return nil, fmt.Errorf("Job or Trigger must have OWNER acl set")
+	}
+	if len(mg.Readers) == 0 {
+		return nil, fmt.Errorf("Job or Trigger must have READER acl set")
 	}
 	return mg, nil
 }
