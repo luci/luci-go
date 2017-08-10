@@ -61,10 +61,14 @@ func Run(templatePath string) {
 	r.GET(swarming.URLBase+"/:id/steps/*logname", basemw, func(c *router.Context) {
 		LogHandler(c, &swarming.BuildID{
 			TaskID: c.Params.ByName("id"),
+			Host:   c.Request.FormValue("server"),
 		}, c.Params.ByName("logname"))
 	})
 	r.GET(swarming.URLBase+"/:id", basemw, func(c *router.Context) {
-		BuildHandler(c, &swarming.BuildID{TaskID: c.Params.ByName("id")})
+		BuildHandler(c, &swarming.BuildID{
+			TaskID: c.Params.ByName("id"),
+			Host:   c.Request.FormValue("server"),
+		})
 	})
 	// Backward-compatible URLs for Swarming:
 	r.GET("/swarming/prod/:id/steps/*logname", basemw, func(c *router.Context) {
