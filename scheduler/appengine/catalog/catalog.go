@@ -389,16 +389,6 @@ func (cat *catalog) validateJobProto(c context.Context, j *messages.Job) (proto.
 			return nil, fmt.Errorf("%s is not valid value for 'schedule' field - %s", j.Schedule, err)
 		}
 	}
-
-	// Old-style config uses embedded TaskDefWrapper field. New configs have task
-	// definitions right in the Job message.
-	//
-	// TODO(vadimsh): Remove this branch when all configs are updated to not use
-	// TaskDefWrapper anymore.
-	if j.Task != nil {
-		logging.Warningf(c, "Job %s uses old taskWrapper", j.Id)
-		return cat.extractTaskProto(j.Task)
-	}
 	return cat.extractTaskProto(j)
 }
 
