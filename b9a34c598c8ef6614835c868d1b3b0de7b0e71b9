@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "ea8ee214_dbeab17c",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_grant.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-11T00:53:01Z",
+      "side": 1,
+      "message": "Did min(...), won\u0027t hurt.",
+      "parentUuid": "ff585dc8_40a6f5c2",
+      "revId": "b9a34c598c8ef6614835c868d1b3b0de7b0e71b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9d72768a_44fa3106",
         "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_grant.go",
         "patchSetId": 1
@@ -66,6 +84,30 @@
     },
     {
       "key": {
+        "uuid": "10d517dc_0245264f",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_grant.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-11T00:53:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3592decc_10f5573e",
+      "range": {
+        "startLine": 87,
+        "startChar": 1,
+        "endLine": 88,
+        "endChar": 64
+      },
+      "revId": "b9a34c598c8ef6614835c868d1b3b0de7b0e71b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cbc32b31_3f3dc418",
         "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_grant.go",
         "patchSetId": 1
@@ -83,6 +125,24 @@
     },
     {
       "key": {
+        "uuid": "0c44b34e_3b6fc887",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_grant.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-11T00:53:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cbc32b31_3f3dc418",
+      "revId": "b9a34c598c8ef6614835c868d1b3b0de7b0e71b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c1441bba_91c5f56b",
         "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_grant.go",
         "patchSetId": 1
@@ -97,6 +157,24 @@
       "revId": "b9a34c598c8ef6614835c868d1b3b0de7b0e71b9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa10f690_2a8d56e4",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_grant.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-11T00:53:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c1441bba_91c5f56b",
+      "revId": "b9a34c598c8ef6614835c868d1b3b0de7b0e71b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
