@@ -113,6 +113,7 @@ func (r *remoteImpl) GetConfig(ctx context.Context, configSet, path string, hash
 		Content:     string(decoded),
 		ContentHash: resp.ContentHash,
 		Revision:    resp.Revision,
+		ViewURL:     resp.Url,
 	}, nil
 }
 
@@ -277,6 +278,7 @@ func convertMultiWireConfigs(ctx context.Context, path string, wireConfigs *conf
 			Content:     string(decoded),
 			ContentHash: c.ContentHash,
 			Revision:    c.Revision,
+			ViewURL:     c.Url,
 		}
 	}
 

@@ -25,4 +25,6 @@ type Meta struct {
 	ContentHash string
 	// Revision is the revision string.
 	Revision string
+	// ViewURL is the URL surfaced for viewing the config.
+	ViewURL string
 }

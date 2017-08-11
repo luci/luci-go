@@ -59,6 +59,7 @@ func TestRemoteCalls(t *testing.T) {
 				"content":      encodeToB("hi"),
 				"content_hash": "bar",
 				"revision":     "3",
+				"url":          "config_url",
 			})
 			defer server.Close()
 
@@ -71,6 +72,7 @@ func TestRemoteCalls(t *testing.T) {
 				Content:     "hi",
 				ContentHash: "bar",
 				Revision:    "3",
+				ViewURL:     "config_url",
 			})
 		})
 		Convey("GetConfigByHash", func() {
@@ -280,5 +282,5 @@ func TestRemoteCalls(t *testing.T) {
 type failingRoundTripper struct{}
 
 func (t failingRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	return nil, fmt.Errorf("IM AM ERRAR\n")
+	return nil, fmt.Errorf("IM AM ERRAR")
 }

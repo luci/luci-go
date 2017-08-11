@@ -306,6 +306,8 @@ type LuciConfigGetConfigResponseMessage struct {
 
 	Revision string `json:"revision,omitempty"`
 
+	Url string `json:"url,omitempty"`
+
 	// ServerResponse contains the HTTP response code and headers from the
 	// server.
 	googleapi.ServerResponse `json:"-"`
