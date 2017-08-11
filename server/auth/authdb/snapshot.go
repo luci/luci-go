@@ -67,6 +67,17 @@ type group struct {
 // certMap is used in GetCertificate and fetchTrustedCerts.
 type certMap map[identity.Identity]*signing.PublicCertificates
 
+// Revision returns a revision of an auth DB or 0 if it can't be determined.
+//
+// It's just a small helper that casts db to *SnapshotDB and extracts the
+// revision from there.
+func Revision(db DB) int64 {
+	if snap, _ := db.(*SnapshotDB); snap != nil {
+		return snap.Rev
+	}
+	return 0
+}
+
 // NewSnapshotDB creates new instance of SnapshotDB.
 //
 // It does some preprocessing to speed up subsequent checks. Return errors if

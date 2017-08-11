@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/server/auth/authdb"
 
 	"go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
@@ -58,7 +57,7 @@ func TestMintedGrantInfo(t *testing.T) {
 			},
 			PeerIP:    net.ParseIP("127.10.10.10"),
 			RequestID: "gae-request-id",
-			AuthDB:    &authdb.SnapshotDB{Rev: 123},
+			AuthDBRev: 123,
 		}
 
 		So(info.toBigQueryRow(), ShouldResemble, map[string]interface{}{

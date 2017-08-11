@@ -25,7 +25,6 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/server/auth/authdb"
 
 	"go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
@@ -52,17 +51,13 @@ type MintedGrantInfo struct {
 	Rule      *admin.ServiceAccountRule           // the particular rule used to authorize the request
 	PeerIP    net.IP                              // caller IP address
 	RequestID string                              // GAE request ID that handled the RPC
-	AuthDB    authdb.DB                           // groups database used to check ACLs for this call
+	AuthDBRev int64                               // revision of groups database (or 0 if unknown)
 }
 
 // toBigQueryRow returns a JSON-ish map to upload to BigQuery.
 //
 // Its schema must match 'bq/tables/oauth_token_grants.schema'.
 func (i *MintedGrantInfo) toBigQueryRow() map[string]interface{} {
-	var authDBRev int64
-	if snap, _ := i.AuthDB.(*authdb.SnapshotDB); snap != nil {
-		authDBRev = snap.Rev
-	}
 	issuedAt := google.TimeFromProto(i.GrantBody.IssuedAt)
 	return map[string]interface{}{
 		// Information about the produced token.
@@ -85,7 +80,7 @@ func (i *MintedGrantInfo) toBigQueryRow() map[string]interface{} {
 		"peer_ip":         i.PeerIP.String(),
 		"service_version": i.Response.ServiceVersion,
 		"gae_request_id":  i.RequestID,
-		"auth_db_rev":     authDBRev,
+		"auth_db_rev":     i.AuthDBRev,
 	}
 }
 
