@@ -64,6 +64,7 @@ func NewServer() minter.TokenMinterServer {
 			Signer:          gaesigner.Signer{},
 			Rules:           serviceaccounts.GlobalRulesCache.Rules,
 			MintAccessToken: auth.MintAccessTokenForServiceAccount,
+			LogOAuthToken:   serviceaccounts.LogOAuthToken,
 		},
 	}
 }

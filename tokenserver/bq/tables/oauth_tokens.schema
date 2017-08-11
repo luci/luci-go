@@ -1,0 +1,82 @@
+{
+  'table_id': 'oauth_tokens',
+  'description': 'List of generated OAuth tokens',
+
+  # Keep 1 year worth of generated tokens.
+  'time_partitioning': True,
+  'time_partitioning_exp_days': 365,
+
+  'fields': [
+    {
+      'name': 'fingerprint',
+      'type': 'STRING',
+      'description': 'First 16 bytes of SHA256 of the token body, hex-encoded',
+    },
+    {
+      'name': 'grant_fingerprint',
+      'type': 'STRING',
+      'description': 'First 16 bytes of SHA256 of the oauth grant, hex-encoded',
+    },
+    {
+      'name': 'service_account',
+      'type': 'STRING',
+      'description': 'Service account email the end user wants to act as',
+    },
+    {
+      'name': 'oauth_scopes',
+      'type': 'STRING',
+      'mode': 'REPEATED',
+      'description': 'Requested OAuth scopes',
+    },
+    {
+      'name': 'proxy_identity',
+      'type': 'STRING',
+      'description': 'Who requested this token',
+    },
+    {
+      'name': 'end_user_identity',
+      'type': 'STRING',
+      'description': 'On whose behalf the token is generated',
+    },
+    {
+      'name': 'requested_at',
+      'type': 'TIMESTAMP',
+      'description': 'When this request happened',
+    },
+    {
+      'name': 'expiration',
+      'type': 'TIMESTAMP',
+      'description': 'When the returned token expires',
+    },
+    {
+      'name': 'config_rev',
+      'type': 'STRING',
+      'description': 'Revision of the luci-config repo with the rules',
+    },
+    {
+      'name': 'config_rule',
+      'type': 'STRING',
+      'description': 'Name of the rule used to authorize this call',
+    },
+    {
+      'name': 'peer_ip',
+      'type': 'STRING',
+      'description': 'IP address of the caller',
+    },
+    {
+      'name': 'service_version',
+      'type': 'STRING',
+      'description': 'Identifier of the token server GAE app and version',
+    },
+    {
+      'name': 'gae_request_id',
+      'type': 'STRING',
+      'description': 'ID of the GAE request that handled the call',
+    },
+    {
+      'name': 'auth_db_rev',
+      'type': 'INTEGER',
+      'description': 'Revision of groups database used to authorize this call',
+    },
+  ],
+}
