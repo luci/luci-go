@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2ca23260_0f68238d",
+        "filename": "common/api/luci_config/config/v1/config-api.json",
+        "patchSetId": 1
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-08-11T01:41:23Z",
+      "side": 1,
+      "message": "https://chromium-review.googlesource.com/c/611210",
+      "parentUuid": "1cb59bbe_48987ac6",
+      "range": {
+        "startLine": 204,
+        "startChar": 4,
+        "endLine": 206,
+        "endChar": 5
+      },
+      "revId": "d970b615478e39e3f8e6983adc07753b81e62a61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f3ca8fac_ae4195e4",
         "filename": "common/config/impl/filesystem/fs.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "dd2eebbf_19d47500",
+        "filename": "common/config/impl/filesystem/fs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-08-11T01:41:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f3ca8fac_ae4195e4",
+      "range": {
+        "startLine": 308,
+        "startChar": 18,
+        "endLine": 308,
+        "endChar": 33
+      },
+      "revId": "d970b615478e39e3f8e6983adc07753b81e62a61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c6382832_176e8cd2",
         "filename": "common/config/impl/memory/memory.go",
         "patchSetId": 1
@@ -68,6 +116,30 @@
       "revId": "d970b615478e39e3f8e6983adc07753b81e62a61",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "80a36f4c_bfdadb95",
+        "filename": "common/config/impl/memory/memory.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-08-11T01:41:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c6382832_176e8cd2",
+      "range": {
+        "startLine": 191,
+        "startChar": 18,
+        "endLine": 191,
+        "endChar": 33
+      },
+      "revId": "d970b615478e39e3f8e6983adc07753b81e62a61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
