@@ -202,6 +202,12 @@ func TestSnapshotDB(t *testing.T) {
 		So(call("9.255.255.255", "whitelist"), ShouldBeFalse)
 		So(call("1.2.3.4", "empty"), ShouldBeFalse)
 	})
+
+	Convey("Revision works", t, func() {
+		So(Revision(&SnapshotDB{Rev: 123}), ShouldEqual, 123)
+		So(Revision(ErroringDB{}), ShouldEqual, 0)
+		So(Revision(nil), ShouldEqual, 0)
+	})
 }
 
 func strPtr(s string) *string { return &s }

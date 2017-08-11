@@ -136,7 +136,7 @@ func TestMintOAuthTokenGrant(t *testing.T) {
 				Rule:      cfg.rules["account@robots.com"].Rule,
 				PeerIP:    net.ParseIP("127.10.10.10"),
 				RequestID: "gae-request-id",
-				AuthDB:    fakeAuthDB,
+				AuthDBRev: 1234,
 			})
 		})
 

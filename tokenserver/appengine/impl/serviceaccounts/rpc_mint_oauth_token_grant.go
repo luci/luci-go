@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/identity"
 	"go.chromium.org/luci/server/auth/signing"
 
@@ -121,7 +122,7 @@ func (r *MintOAuthTokenGrantRPC) MintOAuthTokenGrant(c context.Context, req *min
 			Rule:      rule.Rule,
 			PeerIP:    state.PeerIP(),
 			RequestID: info.RequestID(c),
-			AuthDB:    state.DB(),
+			AuthDBRev: authdb.Revision(state.DB()),
 		}
 		if logErr := r.LogGrant(c, &info); logErr != nil {
 			logging.WithError(logErr).Errorf(c, "Failed to insert the grant token into the BigQuery log")
