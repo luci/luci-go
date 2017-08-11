@@ -15,6 +15,7 @@
 package isolatedclient
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/base64"
 	"errors"
@@ -348,11 +349,15 @@ func (c *compressed) Close() error {
 	return err
 }
 
+// newCompressed creates a pipeline to compress a file into a ReadCloser via:
+// src (file as ReadCloser) -> gzip compressor (via io.CopyBuffer) -> bufio.Writer
+// -> io.Pipe Writer side -> io.Pipe Reader side
 func newCompressed(src io.ReadCloser) io.ReadCloser {
 	pr, pw := io.Pipe()
 	go func() {
+		bufWriter := bufio.NewWriter(pw)
 		// The compressor itself is not thread safe.
-		compressor, err := isolated.GetCompressor(pw)
+		compressor, err := isolated.GetCompressor(bufWriter)
 		if err != nil {
 			pw.CloseWithError(err)
 			return
@@ -363,7 +368,13 @@ func newCompressed(src io.ReadCloser) io.ReadCloser {
 			pw.CloseWithError(err)
 			return
 		}
-		pw.CloseWithError(compressor.Close())
+		// compressor needs to be closed first to flush the rest of the data
+		// into the bufio.Writer
+		if err := compressor.Close(); err != nil {
+			pw.CloseWithError(err)
+			return
+		}
+		pw.CloseWithError(bufWriter.Flush())
 	}()
 
 	return &compressed{pr, src}
