@@ -190,14 +190,6 @@ func getAll(c context.Context, a Authority, t backend.GetAllTarget, path string,
 	return lme.Get()
 }
 
-// GetConfigSetURL returns the URL where the specified ConfigSet is
-// configured. If the config set doesn't exist, ErrNoConfig will be returned.
-func GetConfigSetURL(c context.Context, a Authority, cs cfgtypes.ConfigSet) (url.URL, error) {
-	return backend.Get(c).ConfigSetURL(c, string(cs), backend.Params{
-		Authority: backend.Authority(a),
-	})
-}
-
 func makeMeta(b *backend.Meta) *Meta {
 	return &Meta{
 		ConfigSet:   cfgtypes.ConfigSet(b.ConfigSet),

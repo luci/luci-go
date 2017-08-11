@@ -16,7 +16,6 @@ package caching
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
@@ -40,8 +39,6 @@ const (
 	OpGet = Operation("Get")
 	// OpGetAll is the GetAll operation.
 	OpGetAll = Operation("GetAll")
-	// OpConfigSetURL is the ConfigSetURL operation.
-	OpConfigSetURL = Operation("ConfigSetURL")
 )
 
 // Key is a cache key.
@@ -168,11 +165,6 @@ type Value struct {
 	// For Get, this will either be empty (cached miss) or have a single Item
 	// in it (cache hit).
 	Items []ValueItem `json:"i,omitempty"`
-
-	// URL is a URL string.
-	//
-	// Used with GetConfigSetURL.
-	URL string `json:"u,omitempty"`
 }
 
 // LoadItems loads a set of backend.Item into v's Items field. If items is nil,
@@ -234,10 +226,6 @@ func (v *Value) Description() string {
 	parts := make([]string, 0, len(v.Items))
 	for _, it := range v.Items {
 		parts = append(parts, it.descriptionToken())
-	}
-
-	if v.URL != "" {
-		parts = append(parts, fmt.Sprintf("[URL=%s]", v.URL))
 	}
 
 	return strings.Join(parts, ", ")
@@ -359,52 +347,6 @@ func (b *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string,
 	return value.ConfigItems(), nil
 }
 
-// ConfigSetURL implements backend.B.
-func (b *Backend) ConfigSetURL(c context.Context, configSet string, p backend.Params) (u url.URL, err error) {
-	key := Key{
-		Schema:     Schema,
-		ServiceURL: b.keyServiceURL(c),
-		Authority:  p.Authority,
-		Op:         OpConfigSetURL,
-		ConfigSet:  configSet,
-	}
-
-	var value *Value
-	if value, err = b.CacheGet(c, key, b.loader); err != nil {
-		if b.FailOnError {
-			log.Fields{
-				log.ErrorKey: err,
-				"authority":  p.Authority,
-				"configSet":  configSet,
-			}.Errorf(c, "(Hard Failure) failed to load cache value.")
-			err = errors.Annotate(err, "").Err()
-			return
-		}
-
-		log.Fields{
-			log.ErrorKey: err,
-			"authority":  p.Authority,
-			"configSet":  configSet,
-		}.Warningf(c, "Failed to load cache value.")
-		return b.B.ConfigSetURL(c, configSet, p)
-	}
-
-	if value.URL == "" {
-		// Sentinel for no config.
-		err = cfgclient.ErrNoConfig
-		return
-	}
-
-	up, err := url.Parse(value.URL)
-	if err != nil {
-		err = errors.Annotate(err, "failed to parse cached URL: %q", value.URL).Err()
-		return
-	}
-
-	u = *up
-	return
-}
-
 // loader runs a cache get against the configured Base backend.
 //
 // This should be used by caches that do not have the cached value.
@@ -425,8 +367,6 @@ func CacheLoad(c context.Context, b backend.B, k Key, v *Value) (rv *Value, err 
 		rv, err = doGet(c, b, k.ConfigSet, k.Path, v, k.Params())
 	case OpGetAll:
 		rv, err = doGetAll(c, b, k.GetAllTarget, k.Path, v, k.Params())
-	case OpConfigSetURL:
-		rv, err = doConfigSetURL(c, b, k.ConfigSet, k.Params())
 	default:
 		return nil, errors.Reason("unknown operation: %v", k.Op).Err()
 	}
@@ -544,20 +484,4 @@ func doGetAll(c context.Context, b backend.B, t backend.GetAllTarget, path strin
 	var retV Value
 	retV.LoadItems(items...)
 	return &retV, nil
-}
-
-func doConfigSetURL(c context.Context, b backend.B, configSet string, p backend.Params) (*Value, error) {
-	u, err := b.ConfigSetURL(c, configSet, p)
-	switch err {
-	case nil:
-		return &Value{
-			URL: u.String(),
-		}, nil
-
-	case cfgclient.ErrNoConfig:
-		return &Value{}, nil
-
-	default:
-		return nil, err
-	}
 }

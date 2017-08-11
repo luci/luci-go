@@ -60,11 +60,6 @@ func (tb *testingBackend) GetAll(c context.Context, t backend.GetAllTarget, path
 	return tb.cloneItems(), nil
 }
 
-func (tb *testingBackend) ConfigSetURL(c context.Context, configSet string, p backend.Params) (url.URL, error) {
-	tb.lastParams = p
-	return tb.url, tb.err
-}
-
 func (tb *testingBackend) GetConfigInterface(c context.Context, a backend.Authority) config.Interface {
 	panic("not supported")
 }
@@ -226,18 +221,6 @@ func TestConfig(t *testing.T) {
 				{"projects/foo", "path", "####", "v1", "config_url"},
 				{"projects/bar", "path", "####", "v1", "config_url"},
 			})
-		})
-
-		Convey(`Test ConfigSetURL`, func() {
-			u, err := url.Parse("https://example.com/foo/bar")
-			if err != nil {
-				panic(err)
-			}
-
-			tb.url = *u
-			uv, err := GetConfigSetURL(c, AsService, "")
-			So(err, ShouldBeNil)
-			So(uv, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/foo/bar"})
 		})
 	})
 }
