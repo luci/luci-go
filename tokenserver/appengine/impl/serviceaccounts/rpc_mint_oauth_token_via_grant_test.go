@@ -16,6 +16,7 @@ package serviceaccounts
 
 import (
 	"encoding/base64"
+	"net"
 	"testing"
 	"time"
 
@@ -25,7 +26,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -38,26 +38,24 @@ import (
 )
 
 func TestMintOAuthTokenViaGrant(t *testing.T) {
-	ctx := context.Background()
-	ctx = logging.SetLevel(ctx, logging.Debug)
-	ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC)
-	ctx = auth.WithState(ctx, &authtest.FakeState{
-		Identity: "user:proxy@example.com",
-	})
+	ctx := testingContext("user:proxy@example.com")
 
+	rules, _ := loadConfig(`rules {
+		name: "rule 1"
+		service_account: "serviceaccount@robots.com"
+		proxy: "user:proxy@example.com"
+		end_user: "user:enduser@example.com"
+		allowed_scope: "https://www.googleapis.com/scope1"
+		allowed_scope: "https://www.googleapis.com/scope2"
+		max_grant_validity_duration: 7200
+	}`)
+
+	var loggedInfo *MintedOAuthTokenInfo
 	var lastMintParams auth.MintAccessTokenParams
 	rpc := MintOAuthTokenViaGrantRPC{
 		Signer: testingSigner(),
 		Rules: func(context.Context) (*Rules, error) {
-			return loadConfig(`rules {
-				name: "rule 1"
-				service_account: "serviceaccount@robots.com"
-				proxy: "user:proxy@example.com"
-				end_user: "user:enduser@example.com"
-				allowed_scope: "https://www.googleapis.com/scope1"
-				allowed_scope: "https://www.googleapis.com/scope2"
-				max_grant_validity_duration: 7200
-			}`)
+			return rules, nil
 		},
 		MintAccessToken: func(ctx context.Context, params auth.MintAccessTokenParams) (*oauth2.Token, error) {
 			lastMintParams = params
@@ -66,22 +64,28 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 				Expiry:      clock.Now(ctx).Add(time.Hour),
 			}, nil
 		},
+		LogOAuthToken: func(c context.Context, i *MintedOAuthTokenInfo) error {
+			loggedInfo = i
+			return nil
+		},
 	}
 
-	grant, _ := SignGrant(ctx, rpc.Signer, &tokenserver.OAuthTokenGrantBody{
+	grantBody := &tokenserver.OAuthTokenGrantBody{
 		TokenId:          123,
 		ServiceAccount:   "serviceaccount@robots.com",
 		Proxy:            "user:proxy@example.com",
 		EndUser:          "user:enduser@example.com",
 		IssuedAt:         google.NewTimestamp(clock.Now(ctx)),
 		ValidityDuration: 3600,
-	})
+	}
+	grant, _ := SignGrant(ctx, rpc.Signer, grantBody)
 
 	Convey("Happy path", t, func() {
-		resp, err := rpc.MintOAuthTokenViaGrant(ctx, &minter.MintOAuthTokenViaGrantRequest{
+		req := &minter.MintOAuthTokenViaGrantRequest{
 			GrantToken: grant,
 			OauthScope: []string{"https://www.googleapis.com/scope1"},
-		})
+		}
+		resp, err := rpc.MintOAuthTokenViaGrant(ctx, req)
 		So(err, ShouldBeNil)
 		So(resp, ShouldResemble, &minter.MintOAuthTokenViaGrantResponse{
 			AccessToken:    "access-token-for-serviceaccount@robots.com",
@@ -92,6 +96,19 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 			ServiceAccount: "serviceaccount@robots.com",
 			Scopes:         []string{"https://www.googleapis.com/scope1"},
 			MinTTL:         defaultMinValidityDuration,
+		})
+
+		// LogOAuthToken called.
+		So(loggedInfo, ShouldResemble, &MintedOAuthTokenInfo{
+			RequestedAt: testclock.TestTimeUTC,
+			Request:     req,
+			Response:    resp,
+			GrantBody:   grantBody,
+			ConfigRev:   "fake-revision",
+			Rule:        rules.rules["serviceaccount@robots.com"].Rule,
+			PeerIP:      net.ParseIP("127.10.10.10"),
+			RequestID:   "gae-request-id",
+			AuthDBRev:   1234,
 		})
 	})
 

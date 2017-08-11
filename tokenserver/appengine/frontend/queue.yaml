@@ -7,3 +7,6 @@ queue:
 
 - name: bqlog-oauth-token-grants
   mode: pull
+
+- name: bqlog-oauth-tokens
+  mode: pull
