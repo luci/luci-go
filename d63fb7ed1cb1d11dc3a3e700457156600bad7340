@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "98492967_fbcb206c",
+        "filename": "common/data/caching/lru/lru.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-11T02:52:40Z",
+      "side": 1,
+      "message": "v?",
+      "range": {
+        "startLine": 67,
+        "startChar": 16,
+        "endLine": 67,
+        "endChar": 20
+      },
+      "revId": "d63fb7ed1cb1d11dc3a3e700457156600bad7340",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db968dd7_0f7a5a6f",
+        "filename": "common/data/caching/lru/lru.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 293,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-11T02:52:40Z",
+      "side": 1,
+      "message": "a nil error",
+      "range": {
+        "startLine": 293,
+        "startChar": 64,
+        "endLine": 293,
+        "endChar": 67
+      },
+      "revId": "d63fb7ed1cb1d11dc3a3e700457156600bad7340",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
