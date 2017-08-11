@@ -15,10 +15,12 @@
 package lru
 
 import (
+	"sync"
 	"testing"
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
 
 	"golang.org/x/net/context"
 
@@ -211,7 +213,7 @@ func TestCacheWithExpiry(t *testing.T) {
 func TestUnboundedCache(t *testing.T) {
 	t.Parallel()
 
-	Convey(`An unbounded cache with no clock`, t, func() {
+	Convey(`An unbounded cache`, t, func() {
 		ctx := context.Background()
 		cache := New(0)
 
@@ -282,6 +284,71 @@ func TestUnboundedCacheWithExpiry(t *testing.T) {
 				cache.Prune(ctx)
 				So(cache.Len(), ShouldEqual, 500)
 			})
+		})
+	})
+}
+
+func TestGetOrCreate(t *testing.T) {
+	t.Parallel()
+
+	Convey(`An unbounded cache`, t, func() {
+		ctx := context.Background()
+		cache := New(0)
+
+		Convey(`Can create a new value, and will synchronize around that creation`, func() {
+			v, err := cache.GetOrCreate(ctx, "foo", func() (interface{}, time.Duration, error) {
+				return "bar", 0, nil
+			})
+			So(err, ShouldBeNil)
+			So(v, ShouldEqual, "bar")
+
+			v, ok := cache.Get(ctx, "foo")
+			So(ok, ShouldBeTrue)
+			So(v, ShouldEqual, "bar")
+		})
+
+		Convey(`Will not retain a value if an error is returned.`, func() {
+			errWat := errors.New("wat")
+			v, err := cache.GetOrCreate(ctx, "foo", func() (interface{}, time.Duration, error) {
+				return nil, 0, errWat
+			})
+			So(err, ShouldEqual, errWat)
+			So(v, ShouldBeNil)
+
+			_, ok := cache.Get(ctx, "foo")
+			So(ok, ShouldBeFalse)
+		})
+
+		Convey(`Will call Maker in series, even with multiple callers, and lock individually.`, func(cc C) {
+			const count = 16
+			const contention = 16
+
+			var wg sync.WaitGroup
+			vals := make([]int, count)
+			for i := 0; i < count; i++ {
+				for j := 0; j < contention; j++ {
+					i := i
+					wg.Add(1)
+					go func(cctx C) {
+						defer wg.Done()
+						v, err := cache.GetOrCreate(ctx, i, func() (interface{}, time.Duration, error) {
+							val := vals[i]
+							vals[i]++
+							return val, 0, nil
+						})
+						cc.So(v, ShouldEqual, 0)
+						cc.So(err, ShouldBeNil)
+					}(cc)
+				}
+			}
+
+			wg.Wait()
+			for i := 0; i < count; i++ {
+				v, ok := cache.Get(ctx, i)
+				So(ok, ShouldBeTrue)
+				So(v, ShouldEqual, 0)
+				So(vals[i], ShouldEqual, 1)
+			}
 		})
 	})
 }
