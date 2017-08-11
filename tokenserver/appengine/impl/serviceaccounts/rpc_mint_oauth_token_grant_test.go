@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/identity"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 	"go.chromium.org/luci/tokenserver/api"
@@ -41,17 +42,15 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-var fakeAuthDB = &authdb.SnapshotDB{Rev: 1234}
-
-func testingContext() context.Context {
+func testingContext(caller identity.Identity) context.Context {
 	ctx := gaetesting.TestingContext()
 	ctx = logging.SetLevel(ctx, logging.Debug)
 	ctx = info.GetTestable(ctx).SetRequestID("gae-request-id")
-	ctx, _ = testclock.UseTime(ctx, time.Date(2015, time.February, 3, 4, 5, 6, 0, time.UTC))
+	ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC)
 	return auth.WithState(ctx, &authtest.FakeState{
-		Identity:       "user:requestor@example.com",
+		Identity:       caller,
 		PeerIPOverride: net.ParseIP("127.10.10.10"),
-		FakeDB:         fakeAuthDB,
+		FakeDB:         &authdb.SnapshotDB{Rev: 1234},
 	})
 }
 
@@ -66,7 +65,7 @@ func testingSigner() signing.Signer {
 func TestMintOAuthTokenGrant(t *testing.T) {
 	t.Parallel()
 
-	ctx := testingContext()
+	ctx := testingContext("user:requestor@example.com")
 
 	Convey("with mocked config and state", t, func() {
 		cfg, err := loadConfig(`rules {

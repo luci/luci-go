@@ -55,6 +55,7 @@ func init() {
 	r.GET("/internal/cron/bqlog/machine-tokens-flush", basemw.Extend(gaemiddleware.RequireCron), flushMachineTokensLogCron)
 	r.GET("/internal/cron/bqlog/delegation-tokens-flush", basemw.Extend(gaemiddleware.RequireCron), flushDelegationTokensLogCron)
 	r.GET("/internal/cron/bqlog/oauth-token-grants-flush", basemw.Extend(gaemiddleware.RequireCron), flushOAuthTokenGrantsLogCron)
+	r.GET("/internal/cron/bqlog/oauth-tokens-flush", basemw.Extend(gaemiddleware.RequireCron), flushOAuthTokensLogCron)
 
 	http.DefaultServeMux.Handle("/", r)
 }
@@ -154,6 +155,14 @@ func flushOAuthTokenGrantsLogCron(c *router.Context) {
 	// FlushGrantsLog logs errors inside. We also do not retry on errors. It's
 	// fine to wait and flush on the next iteration.
 	serviceaccounts.FlushGrantsLog(c.Context)
+	c.Writer.WriteHeader(http.StatusOK)
+}
+
+// flushOAuthTokensLogCron is handler for /internal/cron/bqlog/oauth-tokens-flush.
+func flushOAuthTokensLogCron(c *router.Context) {
+	// FlushOAuthTokensLog logs errors inside. We also do not retry on errors.
+	// It's fine to wait and flush on the next iteration.
+	serviceaccounts.FlushOAuthTokensLog(c.Context)
 	c.Writer.WriteHeader(http.StatusOK)
 }
 

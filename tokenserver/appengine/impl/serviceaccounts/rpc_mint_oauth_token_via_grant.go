@@ -14,9 +14,13 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/gae/service/info"
+
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/identity"
 	"go.chromium.org/luci/server/auth/signing"
 
@@ -63,6 +67,11 @@ type MintOAuthTokenViaGrantRPC struct {
 	//
 	// In prod it is auth.MintAccessTokenForServiceAccount.
 	MintAccessToken func(context.Context, auth.MintAccessTokenParams) (*oauth2.Token, error)
+
+	// LogOAuthToken is mocked in tests.
+	//
+	// In prod it is LogOAuthToken from oauth_token_bigquery_log.go.
+	LogOAuthToken func(context.Context, *MintedOAuthTokenInfo) error
 }
 
 // MintOAuthTokenViaGrant produces new OAuth token given a grant.
@@ -77,7 +86,7 @@ func (r *MintOAuthTokenViaGrantRPC) MintOAuthTokenViaGrant(c context.Context, re
 		return nil, grpc.Errorf(codes.PermissionDenied, "delegation is forbidden for this API call")
 	}
 
-	grantBody, err := r.validateRequest(c, req, callerID)
+	grantBody, rule, err := r.validateRequest(c, req, callerID)
 	if err != nil {
 		return nil, err // the error is already logged
 	}
@@ -105,33 +114,55 @@ func (r *MintOAuthTokenViaGrantRPC) MintOAuthTokenViaGrant(c context.Context, re
 		return nil, grpc.Errorf(codes.Internal, "can't grab service version - %s", err)
 	}
 
-	// TODO(vadimsh): Log the generated token to BigQuery.
-
-	return &minter.MintOAuthTokenViaGrantResponse{
+	// The RPC response.
+	resp := &minter.MintOAuthTokenViaGrantResponse{
 		AccessToken:    accessTok.AccessToken,
 		Expiry:         google.NewTimestamp(accessTok.Expiry),
 		ServiceVersion: serviceVer,
-	}, nil
+	}
+
+	// Log it to BigQuery.
+	if r.LogOAuthToken != nil {
+		// Errors during logging are considered not fatal. bqlog library has
+		// a monitoring counter that tracks number of errors, so they are not
+		// totally invisible.
+		info := MintedOAuthTokenInfo{
+			RequestedAt: clock.Now(c),
+			Request:     req,
+			Response:    resp,
+			GrantBody:   grantBody,
+			ConfigRev:   rule.Revision,
+			Rule:        rule.Rule,
+			PeerIP:      state.PeerIP(),
+			RequestID:   info.RequestID(c),
+			AuthDBRev:   authdb.Revision(state.DB()),
+		}
+		if logErr := r.LogOAuthToken(c, &info); logErr != nil {
+			logging.WithError(logErr).Errorf(c, "Failed to insert the oauth token into the BigQuery log")
+		}
+	}
+
+	return resp, nil
 }
 
 // validateRequest decodes the request and checks that it is allowed.
 //
-// Logs and returns verified deserialized token body on success or a grpc error
-// on error.
-func (r *MintOAuthTokenViaGrantRPC) validateRequest(c context.Context, req *minter.MintOAuthTokenViaGrantRequest, caller identity.Identity) (*tokenserver.OAuthTokenGrantBody, error) {
+// Logs and returns verified deserialized token body and corresponding rule on
+// success or a grpc error on error.
+func (r *MintOAuthTokenViaGrantRPC) validateRequest(c context.Context, req *minter.MintOAuthTokenViaGrantRequest, caller identity.Identity) (*tokenserver.OAuthTokenGrantBody, *Rule, error) {
 	// Log everything but the token. It'll be logged later after base64 decoding.
 	r.logRequest(c, req, caller)
 
 	// Reject obviously bad requests.
 	if err := r.checkRequestFormat(req); err != nil {
 		logging.WithError(err).Errorf(c, "Bad request")
-		return nil, grpc.Errorf(codes.InvalidArgument, "bad request - %s", err)
+		return nil, nil, grpc.Errorf(codes.InvalidArgument, "bad request - %s", err)
 	}
 
 	// Grab the token body, if it is valid.
 	grantBody, err := r.decodeAndValidateToken(c, req.GrantToken)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// The token is usable only by whoever requested it in the first place.
@@ -139,23 +170,23 @@ func (r *MintOAuthTokenViaGrantRPC) validateRequest(c context.Context, req *mint
 		// Note: grantBody.Proxy is part of the token already, caller knows it, so
 		// we aren't exposing any new information by returning it in the message.
 		logging.Errorf(c, "Unauthorized caller (expecting %q)", grantBody.Proxy)
-		return nil, grpc.Errorf(codes.PermissionDenied, "unauthorized caller (expecting %s)", grantBody.Proxy)
+		return nil, nil, grpc.Errorf(codes.PermissionDenied, "unauthorized caller (expecting %s)", grantBody.Proxy)
 	}
 
 	// Check that rules still allow this token (rules could have changed since
 	// the grant was generated).
 	rule, err := r.recheckRules(c, grantBody)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// OAuth scopes check is specific to this RPC, it's not done by recheckRules.
 	if err := rule.CheckScopes(req.OauthScope); err != nil {
 		logging.WithError(err).Errorf(c, "Bad scopes")
-		return nil, grpc.Errorf(codes.PermissionDenied, "bad scopes - %s", err)
+		return nil, nil, grpc.Errorf(codes.PermissionDenied, "bad scopes - %s", err)
 	}
 
-	return grantBody, nil
+	return grantBody, rule, nil
 }
 
 // logRequest logs the body of the request, omitting the grant token.
