@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "ff585dc8_40a6f5c2",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_grant.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-08-11T00:12:40Z",
+      "side": 1,
+      "message": "Is it possible for this default to exceed the configured max validity duration? Not sure if you need min(3600, rule.Rule.MaxGrantValidityDuration).",
+      "revId": "b9a34c598c8ef6614835c868d1b3b0de7b0e71b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9d72768a_44fa3106",
         "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_grant.go",
         "patchSetId": 1
@@ -19,6 +36,64 @@
         "endLine": 88,
         "endChar": 64
       },
+      "revId": "b9a34c598c8ef6614835c868d1b3b0de7b0e71b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3592decc_10f5573e",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_grant.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-08-11T00:12:40Z",
+      "side": 1,
+      "message": "Move this comment into validateRequests, because it explains why the validation code doesn\u0027t validate AllowedScopes.",
+      "parentUuid": "9d72768a_44fa3106",
+      "range": {
+        "startLine": 87,
+        "startChar": 1,
+        "endLine": 88,
+        "endChar": 64
+      },
+      "revId": "b9a34c598c8ef6614835c868d1b3b0de7b0e71b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cbc32b31_3f3dc418",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_grant.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-08-11T00:12:40Z",
+      "side": 1,
+      "message": "Maybe create separate logRequest method like with MintOAuthTokenViaGrantRPC.",
+      "revId": "b9a34c598c8ef6614835c868d1b3b0de7b0e71b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1441bba_91c5f56b",
+        "filename": "tokenserver/appengine/impl/serviceaccounts/rpc_mint_oauth_token_grant.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-08-11T00:12:40Z",
+      "side": 1,
+      "message": "Move entire rules check into separate checkRules like MintOAuthTokenViaGrantRPC.",
       "revId": "b9a34c598c8ef6614835c868d1b3b0de7b0e71b9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
