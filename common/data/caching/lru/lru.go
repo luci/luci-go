@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/sync/mutexpool"
 
 	"golang.org/x/net/context"
 )
@@ -59,6 +60,16 @@ type Item struct {
 // future.
 type Generator func(it *Item) *Item
 
+// Maker generates a new value. It is used by GetOrCreate, and is run while a
+// lock on that value's key is held, but not while the larger Cache is locked,
+// so it is safe for this to take some time.
+//
+// The returned value, v, will be stored in the cache after Maker exits.
+//
+// If the Maker returns an error, the returned value will not be cached, and
+// the error will be returned by GetOrCreate.
+type Maker func() (v interface{}, exp time.Duration, err error)
+
 // Cache is a least-recently-used (LRU) cache implementation. The cache stores
 // key-value mapping entries up to a size limit. If more items are added past
 // that limit, the entries that have have been referenced least recently will be
@@ -89,6 +100,9 @@ type Cache struct {
 	//
 	// Accesses to lru require the write lock to be held.
 	lru list.List
+
+	// mp is a Mutex pool used in GetOrCreate to lock around individual keys.
+	mp mutexpool.P
 }
 
 // New creates a new, locking LRU cache with the specified size.
@@ -262,6 +276,45 @@ func (c *Cache) Remove(key interface{}) (val interface{}, has bool) {
 		val, has = e.Value.(*cacheEntry).v, true
 		c.evictEntryLocked(e)
 	}
+	return
+}
+
+// GetOrCreate retrieves the current value of key. If no value exists for key,
+// GetOrCreate will lock around key and invoke the supplied Maker to generate
+// a new value.
+//
+// If multiple concurrent operations invoke GetOrCreate at the same time, they
+// will serialize, and at most one Maker will be invoked at a time. If the Maker
+// succeeds, it is more likely that the first operation will generate and
+// install a value, and the other operations will all quickly retrieve that
+// value once unblocked.
+//
+// If the Maker returns an error, the error will be returned by GetOrCreate and
+// no modifications will be made to the Cache. If Maker returns a nil error, the
+// value that it returns will be added into the Cache and returned to the
+// caller.
+//
+// Note that the Cache's lock will not be held while the Maker is running.
+// Operations on to the Cache using other methods will not lock around
+// key. This will not interfere with GetOrCreate.
+func (c *Cache) GetOrCreate(ctx context.Context, key interface{}, fn Maker) (v interface{}, err error) {
+	c.mp.WithMutex(key, func() {
+		// Is the value already in the cache?
+		var ok bool
+		if v, ok = c.Get(ctx, key); ok {
+			return
+		}
+
+		// Generate a new value.
+		var exp time.Duration
+		if v, exp, err = fn(); err != nil {
+			// The Maker returned an error, so do not add the value to the cache.
+			return
+		}
+
+		// Add the generated value to the cache.
+		c.Put(ctx, key, v, exp)
+	})
 	return
 }
 
