@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bf1e92e2_e50cba06",
+        "filename": "common/isolatedclient/isolatedclient.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-11T01:00:44Z",
+      "side": 1,
+      "message": "nit: document why this is here.",
+      "range": {
+        "startLine": 358,
+        "startChar": 2,
+        "endLine": 358,
+        "endChar": 34
+      },
+      "revId": "5124e6d5d5d2d638513480f7532cb530b9317c65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f097f829_f069a7b1",
+        "filename": "common/isolatedclient/isolatedclient.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 365,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-11T01:00:44Z",
+      "side": 1,
+      "message": "I would define:\n\nconst outBufferSize \u003d 4096\n\n... use this with NewWriter (NewWriterSize())\n\n.. and make this \"outBufferSize * 3\" or something.",
+      "range": {
+        "startLine": 365,
+        "startChar": 22,
+        "endLine": 365,
+        "endChar": 26
+      },
+      "revId": "5124e6d5d5d2d638513480f7532cb530b9317c65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
