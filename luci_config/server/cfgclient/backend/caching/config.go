@@ -118,6 +118,7 @@ type ValueItem struct {
 
 	ContentHash string `json:"ch,omitempty"`
 	Revision    string `json:"r,omitempty"`
+	ViewURL     string `json:"v,omitempty"`
 
 	Content []byte `json:"c,omitempty"`
 
@@ -132,6 +133,7 @@ func MakeValueItem(it *backend.Item) ValueItem {
 		Path:        it.Path,
 		ContentHash: it.ContentHash,
 		Revision:    it.Revision,
+		ViewURL:     it.Meta.ViewURL,
 		Content:     []byte(it.Content),
 		Formatter:   it.FormatSpec.Formatter,
 		FormatData:  []byte(it.FormatSpec.Data),
@@ -146,6 +148,7 @@ func (vi *ValueItem) ConfigItem() *backend.Item {
 			Path:        vi.Path,
 			ContentHash: vi.ContentHash,
 			Revision:    vi.Revision,
+			ViewURL:     vi.ViewURL,
 		},
 		Content:    string(vi.Content),
 		FormatSpec: backend.FormatSpec{vi.Formatter, string(vi.FormatData)},

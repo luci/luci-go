@@ -100,6 +100,7 @@ func (be *Backend) GetAll(c context.Context, t backend.GetAllTarget, path string
 	return items, nil
 }
 
+// GetConfigInterface implements backend.B.
 func (be *Backend) GetConfigInterface(c context.Context, a backend.Authority) config.Interface {
 	return be.Provider.GetConfigClient(c, a)
 }
@@ -188,6 +189,7 @@ func makeItem(cfg *config.Config) *backend.Item {
 			Path:        cfg.Path,
 			ContentHash: cfg.ContentHash,
 			Revision:    cfg.Revision,
+			ViewURL:     cfg.ViewURL,
 		},
 		Content: cfg.Content,
 	}

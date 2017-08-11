@@ -136,8 +136,8 @@ func TestRemoteService(t *testing.T) {
 		Convey(`Can resolve multiple configs`, func() {
 			ris.res = configApi.LuciConfigGetConfigMultiResponseMessage{
 				Configs: []*configApi.LuciConfigGetConfigMultiResponseMessageConfigEntry{
-					{ConfigSet: "projects/foo", Content: b64("foo"), ContentHash: "####", Revision: "v1"},
-					{ConfigSet: "projects/bar", Content: b64("bar"), ContentHash: "####", Revision: "v1"},
+					{ConfigSet: "projects/foo", Content: b64("foo"), ContentHash: "####", Revision: "v1", Url: "config_url"},
+					{ConfigSet: "projects/bar", Content: b64("bar"), ContentHash: "####", Revision: "v1", Url: "config_url"},
 				},
 			}
 
@@ -157,8 +157,8 @@ func TestRemoteService(t *testing.T) {
 					So(tc.fn(c, cfgclient.AsService, "baz", cfgclient.StringSlice(&val), &meta), ShouldBeNil)
 					So(val, ShouldResemble, []string{"foo", "bar"})
 					So(meta, ShouldResemble, []*cfgclient.Meta{
-						{"projects/foo", "baz", "####", "v1"},
-						{"projects/bar", "baz", "####", "v1"},
+						{"projects/foo", "baz", "####", "v1", "config_url"},
+						{"projects/bar", "baz", "####", "v1", "config_url"},
 					})
 
 					So(ris.lastReq.URL.Path, ShouldEqual, tc.path)

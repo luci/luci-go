@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/3uOIHOZyeUbgyzfETbew0P2iiHI\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/v3xpNnvzmCQfMURY_sb_FxAPTVM\"",
  "discoveryVersion": "v1",
  "id": "config:v1",
  "name": "config",
@@ -215,6 +215,9 @@
      "type": "string"
     },
     "revision": {
+     "type": "string"
+    },
+    "url": {
      "type": "string"
     }
    }

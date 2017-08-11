@@ -46,6 +46,8 @@ type Meta struct {
 	ContentHash string
 	// Revision is the revision string.
 	Revision string
+	// ViewURL is the URL surfaced for viewing the config.
+	ViewURL string
 }
 
 // Authority is the authority on whose behalf a request is operating.
@@ -202,5 +204,6 @@ func makeMeta(b *backend.Meta) *Meta {
 		Path:        b.Path,
 		ContentHash: b.ContentHash,
 		Revision:    b.Revision,
+		ViewURL:     b.ViewURL,
 	}
 }

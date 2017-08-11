@@ -163,6 +163,7 @@ func TestConfig(t *testing.T) {
 				Path:        cfg.Path,
 				ContentHash: cfg.ContentHash,
 				Revision:    cfg.Revision,
+				ViewURL:     cfg.ViewURL,
 			}
 		}
 

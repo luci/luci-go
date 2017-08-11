@@ -49,6 +49,9 @@ type Config struct {
 
 	// Revision is git SHA1 of a repository the config was fetched from.
 	Revision string `json:"revision,omitempty"`
+
+	// ViewURL is the URL surfaced for viewing the config.
+	ViewURL string `json:"view_url,omitempty"`
 }
 
 // RepoType is the type of the repo the Project is stored in.

@@ -69,9 +69,9 @@ func TestResolver(t *testing.T) {
 		var be backend.B
 		be = &testingBackend{
 			items: []*backend.Item{
-				{Meta: backend.Meta{"projects/foo", "path", "####", "v1"},
+				{Meta: backend.Meta{"projects/foo", "path", "####", "v1", "config_url"},
 					Content: tpb(&configPB.Project{Id: proto.String("foo")})},
-				{Meta: backend.Meta{"projects/bar", "path", "####", "v1"},
+				{Meta: backend.Meta{"projects/bar", "path", "####", "v1", "config_url"},
 					Content: tpb(&configPB.Project{Id: proto.String("bar")})},
 			},
 		}
@@ -96,8 +96,8 @@ func TestResolver(t *testing.T) {
 					{Id: proto.String("bar")},
 				})
 				So(meta, ShouldResemble, []*cfgclient.Meta{
-					{"projects/foo", "path", "####", "v1"},
-					{"projects/bar", "path", "####", "v1"},
+					{"projects/foo", "path", "####", "v1", "config_url"},
+					{"projects/bar", "path", "####", "v1", "config_url"},
 				})
 			})
 		})
@@ -142,8 +142,8 @@ func TestResolver(t *testing.T) {
 						{Id: proto.String("bar")},
 					})
 					So(meta, ShouldResemble, []*cfgclient.Meta{
-						{"projects/foo", "path", "####", "v1"},
-						{"projects/bar", "path", "####", "v1"},
+						{"projects/foo", "path", "####", "v1", "config_url"},
+						{"projects/bar", "path", "####", "v1", "config_url"},
 					})
 				})
 			})

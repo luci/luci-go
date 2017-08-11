@@ -19,10 +19,8 @@ package catalog
 
 import (
 	"fmt"
-	"net/url"
 	"reflect"
 	"regexp"
-	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
@@ -218,14 +216,6 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	}
 
 	configSet := cfgtypes.ProjectConfigSet(cfgtypes.ProjectName(projectID))
-	configSetURL, err := cfgclient.GetConfigSetURL(c, cfgclient.AsService, configSet)
-	switch err {
-	case nil: // Continue
-	case cfgclient.ErrNoConfig:
-		return nil, nil
-	default:
-		return nil, err
-	}
 
 	var (
 		cfg  messages.ProjectConfig
@@ -240,12 +230,12 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		return nil, err
 	}
 
-	revisionURL := getRevisionURL(&configSetURL, meta.Revision, meta.Path)
+	revisionURL := meta.ViewURL
 	if revisionURL != "" {
 		logging.Infof(c, "Importing %s", revisionURL)
 	}
 	// TODO(tandrii): make use of https://godoc.org/go.chromium.org/luci/common/config/validation
-	knownAclSets, err := acl.ValidateAclSets(cfg.GetAclSets())
+	knownACLSets, err := acl.ValidateAclSets(cfg.GetAclSets())
 	if err != nil {
 		logging.Errorf(c, "Invalid aclsets definition %s", err)
 		return nil, errors.Annotate(err, "invalid aclsets in a project %s", projectID).Err()
@@ -280,7 +270,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		if schedule != "triggered" {
 			flavor = JobFlavorPeriodic
 		}
-		acls, err := acl.ValidateTaskAcls(knownAclSets, job.GetAclSets(), job.GetAcls())
+		acls, err := acl.ValidateTaskAcls(knownACLSets, job.GetAclSets(), job.GetAcls())
 		if err != nil {
 			logging.Errorf(c, "Failed to compute task ACLs: %s: %s", id, err)
 			continue
@@ -323,7 +313,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		if schedule == "" {
 			schedule = defaultTriggerSchedule
 		}
-		acls, err := acl.ValidateTaskAcls(knownAclSets, trigger.GetAclSets(), trigger.GetAcls())
+		acls, err := acl.ValidateTaskAcls(knownACLSets, trigger.GetAclSets(), trigger.GetAcls())
 		if err != nil {
 			logging.Errorf(c, "Failed to compute task ACLs: %s: %s", id, err)
 			continue
@@ -354,24 +344,6 @@ func (cat *catalog) configFile(c context.Context) string {
 		return cat.configFileName
 	}
 	return info.AppID(c) + ".cfg"
-}
-
-// getRevisionURL derives URL to a config file revision, given URL of a config
-// set (e.g. "https://host/repo/+/ref").
-func getRevisionURL(configSetURL *url.URL, rev, path string) string {
-	if path == "" || configSetURL == nil {
-		return ""
-	}
-	// repoAndRef is something like /infra/experimental/+/refs/heads/infra/config
-	repoAndRef := configSetURL.Path
-	plus := strings.Index(repoAndRef, "/+/")
-	if plus == -1 {
-		return ""
-	}
-	// Replace ref in path with revision, add path.
-	urlCpy := *configSetURL
-	urlCpy.Path = fmt.Sprintf("%s/+/%s/%s", repoAndRef[:plus], rev, path)
-	return urlCpy.String()
 }
 
 // validateJobProto validates messages.Job protobuf message.

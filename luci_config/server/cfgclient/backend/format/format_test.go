@@ -113,8 +113,8 @@ func TestFormatBackend(t *testing.T) {
 	Convey(`A testing environment`, t, func() {
 		tb := testingBackend{
 			items: []*backend.Item{
-				{Meta: backend.Meta{"projects/foo", "path", "####", "v1"}, Content: "foo"},
-				{Meta: backend.Meta{"projects/bar", "path", "####", "v1"}, Content: "bar"},
+				{Meta: backend.Meta{"projects/foo", "path", "####", "v1", "config_url"}, Content: "foo"},
+				{Meta: backend.Meta{"projects/bar", "path", "####", "v1", "config_url"}, Content: "bar"},
 			},
 		}
 
