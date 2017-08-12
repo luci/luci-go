@@ -18,7 +18,13 @@ import (
 	"fmt"
 
 	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/common/errors"
 )
+
+// ErrNoLocalAuthAccount is returned by SwitchLocalAccount if requested account
+// is not avilable in the LUCI_CONTEXT.
+var ErrNoLocalAuthAccount = errors.New("the requested logical account is not present in LUCI_CONTEXT")
 
 // LocalAuth is a struct that may be used with the "local_auth" section of
 // LUCI_CONTEXT.
@@ -54,8 +60,9 @@ func (la *LocalAuth) CanUseByDefault() bool {
 	return la.DefaultAccountID != ""
 }
 
-// GetLocalAuth calls Lookup and returns the current LocalAuth from LUCI_CONTEXT
-// if it was present. If no LocalAuth is in the context, this returns nil.
+// GetLocalAuth calls Lookup and returns a copy of the current LocalAuth from
+// LUCI_CONTEXT if it was present. If no LocalAuth is in the context, this
+// returns nil.
 func GetLocalAuth(ctx context.Context) *LocalAuth {
 	ret := LocalAuth{}
 	ok, err := Lookup(ctx, "local_auth", &ret)
@@ -68,11 +75,37 @@ func GetLocalAuth(ctx context.Context) *LocalAuth {
 	return &ret
 }
 
-// SetLocalAuth Sets the LocalAuth in the LUCI_CONTEXT.
+// SetLocalAuth sets the LocalAuth in the LUCI_CONTEXT.
 func SetLocalAuth(ctx context.Context, la *LocalAuth) context.Context {
 	ctx, err := Set(ctx, "local_auth", la)
 	if err != nil {
 		panic(fmt.Errorf("impossible: %s", err))
 	}
 	return ctx
+}
+
+// SwitchLocalAccount changes default logical account selected in the context.
+//
+// For example, it can be used to switch the context into using "system" account
+// by default. The default account is transparently used by LUCI-aware tools.
+//
+// If the requested account is available, modifies LUCI_CONTEXT["local_auth"]
+// in the context and returns the new modified context.
+//
+// If the given account is already default, returns the context unchanged.
+//
+// If the given account is not available, returns (nil, ErrNoLocalAuthAccount).
+func SwitchLocalAccount(ctx context.Context, accountID string) (context.Context, error) {
+	if la := GetLocalAuth(ctx); la != nil {
+		if la.DefaultAccountID == accountID {
+			return ctx, nil
+		}
+		for _, acc := range la.Accounts {
+			if acc.ID == accountID {
+				la.DefaultAccountID = accountID
+				return SetLocalAuth(ctx, la), nil
+			}
+		}
+	}
+	return nil, ErrNoLocalAuthAccount
 }
