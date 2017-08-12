@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9d849243_346aa1fd",
+        "filename": "tokenserver/api/minter/v1/token_minter.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 349,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-12T02:03:21Z",
+      "side": 1,
+      "message": "strictly speaking I shouldn\u0027t be reusing the tag, but this API is not \"released\" yet (no one is using it), so whatever",
+      "range": {
+        "startLine": 349,
+        "startChar": 31,
+        "endLine": 349,
+        "endChar": 32
+      },
+      "revId": "5e324151a56c76d139635485960e1a0c29552d5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7727f01f_17d880b3",
+        "filename": "tokenserver/bq/tables/oauth_token_grants.schema",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-12T02:03:21Z",
+      "side": 1,
+      "message": "same here.. there\u0027s actually no way to remove or rename a column in BigQuery. I\u0027ll nuke the entire table and create a new one. It\u0027s fine to do because it has no real data yet.",
+      "range": {
+        "startLine": 46,
+        "startChar": 14,
+        "endLine": 46,
+        "endChar": 27
+      },
+      "revId": "5e324151a56c76d139635485960e1a0c29552d5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e128469e_9910b024",
+        "filename": "tokenserver/bq/tables/oauth_token_grants.schema",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-12T02:03:21Z",
+      "side": 1,
+      "message": "Forgot to change that...\n\nI\u0027m actually not sure whether to allow any string (like the code currently does), or only k:v pairs (like this comment implies). I was lazy to add validation for k:v pairs... I guess I should do that...",
+      "range": {
+        "startLine": 49,
+        "startChar": 32,
+        "endLine": 49,
+        "endChar": 47
+      },
+      "revId": "5e324151a56c76d139635485960e1a0c29552d5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
