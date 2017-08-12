@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f7c3d23a_edd3fb0f",
+        "filename": "common/tsmon/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-12T06:14:37Z",
+      "side": 1,
+      "message": "nit: LUCI is an acronym, should probably be capitalized.",
+      "range": {
+        "startLine": 30,
+        "startChar": 5,
+        "endLine": 30,
+        "endChar": 8
+      },
+      "revId": "14862e4843520fc06cfa6f5424e64974a8610360",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4dd0d55_a09e133a",
+        "filename": "common/tsmon/flags.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-12T06:14:37Z",
+      "side": 1,
+      "message": "(nit: same capitalization)",
+      "range": {
+        "startLine": 31,
+        "startChar": 4,
+        "endLine": 31,
+        "endChar": 8
+      },
+      "revId": "14862e4843520fc06cfa6f5424e64974a8610360",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6056d30e_1b3c2d35",
+        "filename": "common/tsmon/iface.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-12T06:14:37Z",
+      "side": 1,
+      "message": "nit: I think you can remove the \"if\" here.",
+      "range": {
+        "startLine": 110,
+        "startChar": 1,
+        "endLine": 112,
+        "endChar": 2
+      },
+      "revId": "14862e4843520fc06cfa6f5424e64974a8610360",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d56f86f6_f0b1ede1",
+        "filename": "examples/tsmon/goat_teleporter/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-12T06:14:37Z",
+      "side": 1,
+      "message": "nit: \"is a\"",
+      "range": {
+        "startLine": 15,
+        "startChar": 19,
+        "endLine": 15,
+        "endChar": 24
+      },
+      "revId": "14862e4843520fc06cfa6f5424e64974a8610360",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
