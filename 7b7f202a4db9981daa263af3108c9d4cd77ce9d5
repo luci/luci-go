@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9816659c_d24636de",
+        "filename": "tokenserver/appengine/impl/utils/audit_tags.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-12T02:40:30Z",
+      "side": 1,
+      "message": "it\u0027s in \u0027utils\u0027 because I plan to start using from MintDelegationToken too at some point",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 13
+      },
+      "revId": "7b7f202a4db9981daa263af3108c9d4cd77ce9d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
