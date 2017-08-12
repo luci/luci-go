@@ -27,6 +27,8 @@ type config struct {
 	Endpoint        string `json:"endpoint"`
 	Credentials     string `json:"credentials"`
 	ActAs           string `json:"act_as"`
+	UseLuciAuth     bool   `json:"use_luci_auth"`
+	LuciAccount     string `json:"luci_account"`
 	AutoGenHostname bool   `json:"autogen_hostname"`
 	Hostname        string `json:"hostname"`
 	Region          string `json:"region"`

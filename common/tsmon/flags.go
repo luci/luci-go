@@ -28,6 +28,8 @@ type Flags struct {
 	Endpoint      string
 	Credentials   string
 	ActAs         string
+	UseLuciAuth   bool
+	LuciAccount   string
 	Flush         FlushType
 	FlushInterval time.Duration
 
@@ -41,6 +43,8 @@ func NewFlags() Flags {
 		Endpoint:      "",
 		Credentials:   "",
 		ActAs:         "",
+		UseLuciAuth:   false,
+		LuciAccount:   "",
 		Flush:         FlushAuto,
 		FlushInterval: time.Minute,
 
@@ -59,19 +63,25 @@ func (fl *Flags) Register(f *flag.FlagSet) {
 	f.StringVar(&fl.Endpoint, "ts-mon-endpoint", fl.Endpoint,
 		"url (including file://, https://, pubsub://project/topic) to post "+
 			"monitoring metrics to. If set, overrides the value in "+
-			"--ts-mon-config-file")
+			"-ts-mon-config-file")
 	f.StringVar(&fl.Credentials, "ts-mon-credentials", fl.Credentials,
 		"path to a pkcs8 json credential file. If set, overrides the value in "+
-			"--ts-mon-config-file")
+			"-ts-mon-config-file")
 	f.StringVar(&fl.ActAs, "ts-mon-act-as", fl.ActAs,
 		"(advanced) a service account email to impersonate when authenticating to "+
 			"tsmon backends. Uses 'iam' scope and serviceAccountActor role. If set, "+
-			"overrides the value in --ts-mon-config-file")
+			"overrides the value in -ts-mon-config-file")
+	f.BoolVar(&fl.UseLuciAuth, "ts-mon-use-luci-auth", fl.UseLuciAuth,
+		"(advanced) instructs tsmon to use LUCI context authentication, ignoring "+
+			"the credential file specified in -ts-mon-config-file")
+	f.StringVar(&fl.LuciAccount, "ts-mon-luci-account", fl.LuciAccount,
+		"(advanced) instructs tsmon to switch into specified LUCI logical account "+
+			"(such as 'system'). Presence of this flag implies -ts-mon-use-luci-auth")
 	f.Var(&fl.Flush, "ts-mon-flush",
 		"metric push behavior: manual (only send when Flush() is called), or auto "+
-			"(send automatically every --ts-mon-flush-interval)")
+			"(send automatically every -ts-mon-flush-interval)")
 	f.DurationVar(&fl.FlushInterval, "ts-mon-flush-interval", fl.FlushInterval,
-		"automatically push metrics on this interval if --ts-mon-flush=auto")
+		"automatically push metrics on this interval if -ts-mon-flush=auto")
 
 	fl.Target.Register(f)
 }

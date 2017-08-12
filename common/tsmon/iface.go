@@ -16,6 +16,7 @@ package tsmon
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 
@@ -28,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/types"
+	"go.chromium.org/luci/lucictx"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
@@ -102,8 +104,19 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 	if fl.ActAs != "" {
 		config.ActAs = fl.ActAs
 	}
+	if fl.UseLuciAuth {
+		config.UseLuciAuth = true
+	}
+	if fl.LuciAccount != "" {
+		config.LuciAccount = fl.LuciAccount
+	}
 
-	mon, err := initMonitor(c, config)
+	// LuciAccount implies UseLuciAuth.
+	if config.LuciAccount != "" {
+		config.UseLuciAuth = true
+	}
+
+	mon, err := initMonitor(c, &config)
 	switch {
 	case err != nil:
 		return errors.Annotate(err, "failed to initialize monitor").Err()
@@ -195,7 +208,7 @@ func ResetCumulativeMetrics(c context.Context) {
 // initMonitor examines flags and config and initializes a monitor.
 //
 // It returns (nil, nil) if tsmon should be disabled.
-func initMonitor(c context.Context, config config) (monitor.Monitor, error) {
+func initMonitor(c context.Context, config *config) (monitor.Monitor, error) {
 	if config.Endpoint == "" {
 		logging.Infof(c, "tsmon is disabled because no endpoint is configured")
 		return nil, nil
@@ -214,24 +227,38 @@ func initMonitor(c context.Context, config config) (monitor.Monitor, error) {
 	case "file":
 		return monitor.NewDebugMonitor(endpointURL.Path), nil
 	case "http", "https":
-		client, err := newAuthenticator(c, config.Credentials, config.ActAs, monitor.ProdxmonScopes).Client()
+		client, err := newAuthHttpClient(c, config)
 		if err != nil {
 			return nil, err
 		}
-
 		return monitor.NewHTTPMonitor(c, client, endpointURL)
 	default:
 		return nil, fmt.Errorf("unknown tsmon endpoint url: %s", config.Endpoint)
 	}
 }
 
-// newAuthenticator returns a new authenticator for HTTP requests.
-func newAuthenticator(ctx context.Context, credentials, actAs string, scopes []string) *auth.Authenticator {
+// newAuthHttpClient returns an HTTP client that can send authenticated requests.
+func newAuthHttpClient(ctx context.Context, config *config) (*http.Client, error) {
 	// TODO(vadimsh): Don't hardcode auth options here, pass them from outside
 	// somehow.
 	authOpts := chromeinfra.DefaultAuthOptions()
-	authOpts.ServiceAccountJSONPath = credentials
-	authOpts.Scopes = scopes
-	authOpts.ActAsServiceAccount = actAs
-	return auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts)
+	authOpts.Scopes = monitor.ProdxmonScopes
+	authOpts.ActAsServiceAccount = config.ActAs
+
+	if !config.UseLuciAuth {
+		authOpts.ServiceAccountJSONPath = config.Credentials
+	} else {
+		// Note: .Client() below will return an error if we aren't in fact running
+		// under LUCI_CONTEXT.
+		authOpts.Method = auth.LUCIContextMethod
+		if config.LuciAccount != "" {
+			newCtx, err := lucictx.SwitchLocalAccount(ctx, config.LuciAccount)
+			if err != nil {
+				return nil, err
+			}
+			ctx = newCtx
+		}
+	}
+
+	return auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
 }
