@@ -22,6 +22,30 @@
       "revId": "6195e764361b6a1ca273ec9e763f60fcf12f8a04",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95f3516f_08f718be",
+        "filename": "milo/api/proto/manifest/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-08-14T23:19:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "db07fb2f_c2653159",
+      "range": {
+        "startLine": 2,
+        "startChar": 60,
+        "endLine": 2,
+        "endChar": 66
+      },
+      "revId": "6195e764361b6a1ca273ec9e763f60fcf12f8a04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
