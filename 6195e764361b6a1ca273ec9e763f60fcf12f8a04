@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "db07fb2f_c2653159",
+        "filename": "milo/api/proto/manifest/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-08-14T23:17:59Z",
+      "side": 1,
+      "message": "please make it absolute by using a commit hash",
+      "range": {
+        "startLine": 2,
+        "startChar": 60,
+        "endLine": 2,
+        "endChar": 66
+      },
+      "revId": "6195e764361b6a1ca273ec9e763f60fcf12f8a04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
