@@ -1,0 +1,128 @@
+// Copyright 2016 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+// Recompile with protoc 3.1.0+:
+// cd recipe_engine && protoc deployment_manifest.proto --python_out=.
+
+syntax = "proto3";
+
+// A Manifest attempts to make an accurate accounting of source/data directories
+// during the execution of a LUCI task.
+//
+// These directories are primarially in the form of e.g. git checkouts of
+// source, but also include things like isolated hashes and CIPD package
+// deployments. In the future, other deployment forms may be supported (like
+// other SCMs).
+//
+// The purpose of this manifest is so that other parts of the LUCI stack (e.g.
+// Milo) can work with the descripitons of this deployed data as a first-class
+// citizen. Initially this Manifest will be used to allow Milo to display diffs
+// between jobs, but it will also be useful for tools and humans to get a
+// record of exactly what data went into this LUCI task.
+//
+// Source Manifests can be emitted from recipes using the
+// 'recipe_engine/manifest' module.
+message Manifest {
+  // Version will increment on backwards-incompatible changes only. Backwards
+  // compatible changes will not alter this version number.
+  //
+  // Currently, the only valid version number is 0.
+  int32 version = 1;
+
+  message GitCheckout {
+    // The canonicalized URL of the original repo that is considered the “source
+    // of truth” for the source code. Ex.
+    //   https://chromium.googlesource.com/chromium/tools/build.git
+    //   https://chromium.googlesource.com/infra/luci/recipes-py
+    string repo_url = 1;
+
+    // If different from repo_url, this can be the URL of the repo that the source
+    // was actually fetched from (i.e. a mirror). Ex.
+    //   https://github.com/luci/recipes-py
+    //
+    // If this is empty, it's presumed to be equal to repo_url.
+    string fetch_url = 2;
+
+    // The fully resolved revision (commit hash) of the source. Ex.
+    //   3617b0eea7ec74b8e731a23fed2f4070cbc284c4
+    //
+    // Note that this is the raw revision bytes, not their hex-encoded form.
+    bytes revision = 3;
+
+    // The ref that the task used to resolve the revision of the source (if any). Ex.
+    //   refs/heads/master
+    //   refs/changes/04/511804/4
+    //
+    // This should always be a ref on the hosted repo (not any local alias
+    // like 'refs/remotes/...').
+    //
+    // This should always be an absolute ref (i.e. starts with 'refs/'). An
+    // example of a non-absolute ref would be 'master'.
+    string tracking_ref = 4;
+  }
+
+  message CIPDPackage {
+    // The canonicalized URL of the CIPD server which provided the package. Ex.
+    //   https://chrome-infra-packages.appspot.com
+    string cipd_server_url = 1;
+
+    // The fully resolved CIPD package name that was deployed. Ex.
+    //   infra/tools/luci/led/linux-amd64
+    string cipd_package_name = 2;
+
+    // The package pattern that was given to the CIPD client (if known). Ex.
+    //   infra/tools/luci/led/${platform}
+    string cipd_package_pattern = 3;
+
+    // The fully resolved instance ID of the deployed package. Ex.
+    //   0cfafb3a705bd8f05f86c6444ff500397fbb711c
+    //
+    // Note that this is the raw instance_id bytes, not their hex-encoded form.
+    bytes cipd_instance_id = 4;
+
+    // The unresolved version ID of the deployed package (if known). Ex.
+    //   git_revision:aaf3a2cfccc227b5141caa1b6b3502c9907d7420
+    //   latest
+    string cipd_version = 5;
+  }
+
+  message Isolated {
+    // The canonicalized URL of the isolated server which hosts the isolated.
+    // Ex.
+    //   https://isolateserver.appspot.com
+    string isolated_server_url = 1;
+
+    // The namespace of the isolated document. Ex.
+    //   default-gzip
+    string namespace = 2;
+
+    // The hash of the isolated document. Ex.
+    //   62a7df62ea122380afb306bb4d9cdac1bc7e9a96
+    //
+    // Note that this is the raw hash bytes, not their hex-encoded form.
+    bytes hash = 3;
+  }
+
+  // A Directory contains one or more descriptions of deployed artifacts. Note
+  // that due to the practical nature of jobs on bots, it may be the case that
+  // a given directory contains e.g. a git checkout and multiple cipd packages.
+  message Directory {
+    GitCheckout git_checkout = 1;
+
+    repeated CIPDPackage cipd_package = 2;
+    repeated Isolated isolated = 3;
+  }
+
+  // Map of local file system directory path (with forward slashes) to
+  // a Directory message containing one or more deployments.
+  //
+  // The local path is relative to some job-specific root. This should be used
+  // for informational/display/organization purposes, and should not be used as
+  // a global primary key. i.e. if you depend on chromium/src.git being in
+  // a folder called “src”, I will find you and make really angry faces at you
+  // until you change it...（╬ಠ益ಠ). Instead, implementations should consider
+  // indexing by e.g. git repository URL or cipd package name as more better
+  // primary keys.
+  map<string, Directory> directories = 2;
+}
