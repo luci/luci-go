@@ -22,6 +22,47 @@
       "revId": "7b7f202a4db9981daa263af3108c9d4cd77ce9d5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "83785851_60a790cb",
+        "filename": "tokenserver/appengine/impl/utils/audit_tags.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-08-15T22:26:19Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "9816659c_d24636de",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 13
+      },
+      "revId": "7b7f202a4db9981daa263af3108c9d4cd77ce9d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "41510430_668bd380",
+        "filename": "tokenserver/appengine/impl/utils/audit_tags.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-08-15T22:26:19Z",
+      "side": 1,
+      "message": "Do you want a maximum number of tags too?",
+      "revId": "7b7f202a4db9981daa263af3108c9d4cd77ce9d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
