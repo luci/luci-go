@@ -39,6 +39,7 @@ func TestMintedOAuthTokenInfo(t *testing.T) {
 			Request: &minter.MintOAuthTokenViaGrantRequest{
 				GrantToken: "grant-token",
 				OauthScope: []string{"https://scope1", "https://scope2"},
+				AuditTags:  []string{"k1:v1", "k2:v2"},
 			},
 			Response: &minter.MintOAuthTokenViaGrantResponse{
 				AccessToken:    "access-token",
@@ -63,6 +64,7 @@ func TestMintedOAuthTokenInfo(t *testing.T) {
 		}
 
 		So(info.toBigQueryRow(), ShouldResemble, map[string]interface{}{
+			"audit_tags":        []string{"k1:v1", "k2:v2"},
 			"auth_db_rev":       int64(123),
 			"config_rev":        "config-rev",
 			"config_rule":       "rule-name",

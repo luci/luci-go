@@ -177,6 +177,9 @@ func (r *MintOAuthTokenGrantRPC) checkRequestFormat(req *minter.MintOAuthTokenGr
 	if _, err := identity.MakeIdentity(req.EndUser); err != nil {
 		return fmt.Errorf("bad end_user - %s", err)
 	}
+	if err := utils.ValidateAuditTags(req.AuditTags); err != nil {
+		return fmt.Errorf("bad audit_tags - %s", err)
+	}
 	return nil
 }
 

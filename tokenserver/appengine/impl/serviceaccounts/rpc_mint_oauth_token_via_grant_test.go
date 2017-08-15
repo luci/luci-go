@@ -84,6 +84,7 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 		req := &minter.MintOAuthTokenViaGrantRequest{
 			GrantToken: grant,
 			OauthScope: []string{"https://www.googleapis.com/scope1"},
+			AuditTags:  []string{"k1:v1", "k2:v2"},
 		}
 		resp, err := rpc.MintOAuthTokenViaGrant(ctx, req)
 		So(err, ShouldBeNil)
@@ -135,6 +136,15 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 			GrantToken: grant,
 		})
 		So(err, ShouldBeRPCInvalidArgument, "oauth_scope is required")
+	})
+
+	Convey("Bad audit tags", t, func() {
+		_, err := rpc.MintOAuthTokenViaGrant(ctx, &minter.MintOAuthTokenViaGrantRequest{
+			GrantToken: grant,
+			OauthScope: []string{"https://www.googleapis.com/scope1"},
+			AuditTags:  []string{"not-kv-pair"},
+		})
+		So(err, ShouldBeRPCInvalidArgument, "bad audit_tags - audit tag #1")
 	})
 
 	Convey("Broken body", t, func() {

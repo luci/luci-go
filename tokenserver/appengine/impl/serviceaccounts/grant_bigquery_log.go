@@ -69,8 +69,8 @@ func (i *MintedGrantInfo) toBigQueryRow() map[string]interface{} {
 		"issued_at":         float64(issuedAt.Unix()),
 		"expiration":        float64(issuedAt.Unix() + i.GrantBody.ValidityDuration),
 
-		// Information about the request.
-		"requested_intent": i.Request.Intent,
+		// Information supplied by the caller.
+		"audit_tags": i.Request.AuditTags,
 
 		// Information about the service account rule used.
 		"config_rev":  i.ConfigRev,

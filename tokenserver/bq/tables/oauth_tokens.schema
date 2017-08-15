@@ -49,6 +49,12 @@
       'description': 'When the returned token expires',
     },
     {
+      'name': 'audit_tags',
+      'type': 'STRING',
+      'mode': 'REPEATED',
+      'description': 'Arbitrary key:value pairs provided by the caller',
+    },
+    {
       'name': 'config_rev',
       'type': 'STRING',
       'description': 'Revision of the luci-config repo with the rules',

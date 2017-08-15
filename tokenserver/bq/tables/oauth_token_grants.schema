@@ -43,9 +43,10 @@
       'description': 'When the token expires (issued_at + validity_duration)',
     },
     {
-      'name': 'requested_intent',
+      'name': 'audit_tags',
       'type': 'STRING',
-      'description': 'An intent string provided by the caller',
+      'mode': 'REPEATED',
+      'description': 'Arbitrary key:value pairs provided by the caller',
     },
     {
       'name': 'config_rev',
