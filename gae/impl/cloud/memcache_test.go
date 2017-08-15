@@ -66,7 +66,7 @@ func TestMemcache(t *testing.T) {
 		}
 
 		cfg := Config{MC: client}
-		c := cfg.Use(context.Background())
+		c := cfg.Use(context.Background(), nil)
 
 		get := func(c context.Context, keys ...string) []string {
 			bmc := bindMemcacheClient(nil, info.GetNamespace(c))

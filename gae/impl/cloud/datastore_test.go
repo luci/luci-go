@@ -93,7 +93,7 @@ func TestDatastore(t *testing.T) {
 		_ = testTime
 
 		cfg := Config{DS: client}
-		c = cfg.Use(c)
+		c = cfg.Use(c, nil)
 
 		Convey(`Supports namespaces`, func() {
 			namespaces := []string{"foo", "bar", "baz"}

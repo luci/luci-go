@@ -20,18 +20,24 @@ import (
 	infoS "go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/info/support"
 
-	"go.chromium.org/luci/common/errors"
-
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 )
 
-var errNotImplemented = errors.New("not implemented")
+// serviceInstanceGlobalInfo is the set of base, immutable info service values.
+// These are initialized when the service instance is instantiated.
+type serviceInstanceGlobalInfo struct {
+	*Config
+	*Request
+}
 
-// cloudInfo is a reconstruction of the info service for the cloud API.
-//
-// It will return information sufficent for datastore operation.
+// infoState is the state of the "service/info" service in the current Context.
+// As mutable fields change, new infoState instances pointing to the same base
+// data will be installed into the Context.
 type infoState struct {
-	// namespace is the current namesapce, or the empty string for no namespace.
+	*serviceInstanceGlobalInfo
+
+	// namespace is the current namespace, or the empty string for no namespace.
 	namespace string
 }
 
@@ -54,14 +60,20 @@ func (ci *infoState) derive(mutate func(*infoState)) *infoState {
 	return &dci
 }
 
+// infoService is an implementation of the "service/info" Interface that runs
+// in a cloud enviornment.
 type infoService struct {
 	context.Context
 	*infoState
 }
 
-func useInfo(c context.Context) context.Context {
-	var baseInfoState infoState
-	c = baseInfoState.use(c)
+func useInfo(c context.Context, base *serviceInstanceGlobalInfo) context.Context {
+	// Install our initial info state into the Context.
+	baseState := &infoState{
+		serviceInstanceGlobalInfo: base,
+		namespace:                 "",
+	}
+	c = baseState.use(c)
 
 	return infoS.SetFactory(c, func(ic context.Context) infoS.RawInterface {
 		return &infoService{
@@ -71,24 +83,30 @@ func useInfo(c context.Context) context.Context {
 	})
 }
 
-func (*infoService) AppID() string               { panic(errNotImplemented) }
-func (*infoService) FullyQualifiedAppID() string { return "" }
-func (i *infoService) GetNamespace() string      { return i.namespace }
-func (*infoService) IsDevAppServer() bool        { return false }
+func (i *infoService) AppID() string               { return maybe(i.ProjectID) }
+func (i *infoService) FullyQualifiedAppID() string { return maybe(i.ProjectID) }
+func (i *infoService) GetNamespace() string        { return i.namespace }
+func (i *infoService) IsDevAppServer() bool        { return i.IsDev }
 
-func (*infoService) Datacenter() string             { panic(errNotImplemented) }
-func (*infoService) DefaultVersionHostname() string { panic(errNotImplemented) }
-func (*infoService) InstanceID() string             { panic(errNotImplemented) }
-func (*infoService) IsOverQuota(err error) bool     { panic(errNotImplemented) }
-func (*infoService) IsTimeoutError(err error) bool  { panic(errNotImplemented) }
+func (*infoService) Datacenter() string             { panic(ErrNotImplemented) }
+func (*infoService) DefaultVersionHostname() string { panic(ErrNotImplemented) }
+func (i *infoService) InstanceID() string           { return maybe(i.Config.InstanceID) }
+func (*infoService) IsOverQuota(err error) bool     { return false }
+func (*infoService) IsTimeoutError(err error) bool  { return false }
 func (*infoService) ModuleHostname(module, version, instance string) (string, error) {
-	return "", errNotImplemented
+	return "", ErrNotImplemented
 }
-func (*infoService) ModuleName() string              { panic(errNotImplemented) }
-func (*infoService) RequestID() string               { panic(errNotImplemented) }
-func (*infoService) ServerSoftware() string          { panic(errNotImplemented) }
-func (*infoService) ServiceAccount() (string, error) { return "", errNotImplemented }
-func (*infoService) VersionID() string               { panic(errNotImplemented) }
+func (i *infoService) ModuleName() string   { return maybe(i.ServiceName) }
+func (i *infoService) RequestID() string    { return maybe(i.TraceID) }
+func (*infoService) ServerSoftware() string { panic(ErrNotImplemented) }
+func (i *infoService) VersionID() string    { return maybe(i.VersionName) }
+
+func (i *infoService) ServiceAccount() (string, error) {
+	if i.ServiceAccountName != "" {
+		return i.ServiceAccountName, nil
+	}
+	return "", ErrNotImplemented
+}
 
 func (i *infoService) Namespace(namespace string) (context.Context, error) {
 	if err := support.ValidNamespace(namespace); err != nil {
@@ -100,16 +118,60 @@ func (i *infoService) Namespace(namespace string) (context.Context, error) {
 	}).use(i), nil
 }
 
-func (*infoService) AccessToken(scopes ...string) (token string, expiry time.Time, err error) {
-	return "", time.Time{}, errNotImplemented
+// PublicCertificates returns the set of public certicates bound to the current
+// service account. This is done by accessing Google's public certificate
+// HTTP endpoint and requesting certificastes for the current service account
+// name.
+//
+// PublicCertificates performs no caching on the result, so multiple requests
+// will result in multiple HTTP API calls.
+func (i *infoService) PublicCertificates() (certs []infoS.Certificate, err error) {
+	if i.ServiceProvider == nil {
+		return nil, ErrNotImplemented
+	}
+	return i.ServiceProvider.PublicCertificates(i)
 }
 
-func (*infoService) PublicCertificates() ([]infoS.Certificate, error) {
-	return nil, errNotImplemented
+// AccessToken returns an access token for the given set of scopes.
+func (i *infoService) AccessToken(scopes ...string) (token string, expiry time.Time, err error) {
+	if i.ServiceProvider == nil {
+		err = ErrNotImplemented
+		return
+	}
+
+	var ts oauth2.TokenSource
+	if ts, err = i.ServiceProvider.TokenSource(i, scopes...); err != nil {
+		return
+	}
+
+	var tok *oauth2.Token
+	if tok, err = ts.Token(); err != nil {
+		return
+	}
+
+	token, expiry = tok.AccessToken, tok.Expiry
+	return
 }
 
-func (*infoService) SignBytes(bytes []byte) (keyName string, signature []byte, err error) {
-	return "", nil, errNotImplemented
+// SignBytes is implemented using a call to Google Cloud IAM's "signBlob"
+// endpoint.
+//
+// This must be an authenticated call.
+//
+// https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts/signBlob
+func (i *infoService) SignBytes(bytes []byte) (keyName string, signature []byte, err error) {
+	if i.ServiceProvider == nil {
+		err = ErrNotImplemented
+		return
+	}
+	return i.ServiceProvider.SignBytes(i, bytes)
 }
 
 func (*infoService) GetTestable() infoS.Testable { return nil }
+
+func maybe(v string) string {
+	if v != "" {
+		return v
+	}
+	panic(ErrNotImplemented)
+}

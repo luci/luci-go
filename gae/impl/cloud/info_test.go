@@ -33,7 +33,21 @@ func TestInfo(t *testing.T) {
 	Convey(`A testing Info service`, t, func() {
 		const maxNamespaceLen = 100
 
-		c := useInfo(context.Background())
+		gi := serviceInstanceGlobalInfo{
+			Config: &Config{
+				IsDev:              false,
+				ProjectID:          "project-id",
+				ServiceName:        "service-name",
+				VersionName:        "version-name",
+				InstanceID:         "instance-id",
+				ServiceAccountName: "service-account@example.com",
+				ServiceProvider:    nil,
+			},
+			Request: &Request{
+				TraceID: "trace",
+			},
+		}
+		c := useInfo(context.Background(), &gi)
 
 		Convey(`Can set valid namespaces.`, func() {
 			for _, v := range []string{

@@ -15,10 +15,7 @@
 package cloud
 
 import (
-	"fmt"
-
 	"go.chromium.org/gae/impl/dummy"
-	"go.chromium.org/gae/impl/memory"
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/mail"
 	mc "go.chromium.org/gae/service/memcache"
@@ -26,9 +23,12 @@ import (
 	"go.chromium.org/gae/service/taskqueue"
 	"go.chromium.org/gae/service/user"
 
-	"cloud.google.com/go/compute/metadata"
+	"go.chromium.org/luci/common/logging/gologger"
+
 	"cloud.google.com/go/datastore"
+	cloudLogging "cloud.google.com/go/logging"
 	"github.com/bradfitz/gomemcache/memcache"
+	mrpb "google.golang.org/genproto/googleapis/api/monitoredres"
 
 	"golang.org/x/net/context"
 )
@@ -39,7 +39,53 @@ import (
 //
 // Because the "impl/cloud" service collection is a composite set of cloud
 // services, the user can choose services based on their configuration.
+//
+// The parameters of Config are mostly consumed by the "service/info" service
+// implementation, which describes the environment in which the service is run.
 type Config struct {
+	// IsDev is true if this is a development execution.
+	IsDev bool
+
+	// ProjectID, if not empty, is the project ID returned by the "info" service.
+	//
+	// If empty, the service will treat requests for this field as not
+	// implemented.
+	ProjectID string
+
+	// ServiceName, if not empty, is the service (module) name returned by the
+	// "info" service.
+	//
+	// If empty, the service will treat requests for this field as not
+	// implemented.
+	ServiceName string
+
+	// VersionName, if not empty, is the version name returned by the "info"
+	// service.
+	//
+	// If empty, the service will treat requests for this field as not
+	// implemented.
+	VersionName string
+
+	// InstanceID, if not empty, is the instance ID returned by the "info"
+	// service.
+	//
+	// If empty, the service will treat requests for this field as not
+	// implemented.
+	InstanceID string
+
+	// ServiceAccountName, if not empty, is the service account name returned by
+	// the "info" service.
+	//
+	// If empty, the service will treat requests for this field as not
+	// implemented.
+	ServiceAccountName string
+
+	// ServiceProvider, if not nil, is the system service provider to use for
+	// non-cloud external resources and services.
+	//
+	// If nil, the service will treat requests for services as not implemented.
+	ServiceProvider ServiceProvider
+
 	// DS is the cloud datastore client. If populated, the datastore service will
 	// be installed.
 	DS *datastore.Client
@@ -47,21 +93,84 @@ type Config struct {
 	// MC is the memcache service client. If populated, the memcache service will
 	// be installed.
 	MC *memcache.Client
+
+	// L is the cloud logging service client. If populated, the logging service
+	// will be installed.
+	L *cloudLogging.Client
+}
+
+// Request is the set of request-specific parameters.
+type Request struct {
+	// TraceID, if not empty, is the request's trace ID returned by the "info"
+	// service.
+	//
+	// If empty, the service will treat requests for this field as not
+	// implemented.
+	TraceID string
 }
 
 // Use installs the Config into the supplied Context. Services will be installed
 // based on the fields that are populated in Config.
 //
+// req is optional. If not nil, its fields will be used to initialize the
+// services installed into the Context.
+//
 // Any services that are missing will have "impl/dummy" stubs installed. These
 // stubs will panic if called.
-func (cfg Config) Use(c context.Context) context.Context {
+func (cfg *Config) Use(c context.Context, req *Request) context.Context {
+	if req == nil {
+		req = &Request{}
+	}
+
 	// Dummy services that we don't support.
 	c = mail.Set(c, dummy.Mail())
 	c = module.Set(c, dummy.Module())
 	c = taskqueue.SetRaw(c, dummy.TaskQueue())
 	c = user.Set(c, dummy.User())
 
-	c = useInfo(c)
+	// Install the logging service, if fields are sufficiently configured.
+	// If no logging service is available, fall back onto a console (STDERR)
+	// logger.
+	//
+	// The combination of CommonLabels and CommonResource magically enable the
+	// Flex environment to associate its logs with the Flex request logs. See:
+	//
+	//	https://github.com/GoogleCloudPlatform/google-cloud-go/issues/720
+	if cfg.L != nil {
+		clOpts := make([]cloudLogging.LoggerOption, 0, 2)
+
+		// If we have a TraceID, add it to our logger's common labels.
+		if req.TraceID != "" {
+			clOpts = append(clOpts, cloudLogging.CommonLabels(map[string]string{
+				"appengine.googleapis.com/trace_id": req.TraceID,
+			}))
+		}
+
+		// If we have service information populated, add those as a monitored
+		// logging resource.
+		if cfg.ProjectID != "" && cfg.ServiceName != "" && cfg.VersionName != "" {
+			clOpts = append(clOpts, cloudLogging.CommonResource(&mrpb.MonitoredResource{
+				Labels: map[string]string{
+					"module_id":  cfg.ServiceName,
+					"project_id": cfg.ProjectID,
+					"version_id": cfg.VersionName,
+				},
+				Type: "gae_app",
+			}))
+		}
+
+		c = WithLogger(c, cfg.L.Logger("request", clOpts...))
+	} else {
+		// No logging service configured. Use a console logger.
+		c = gologger.StdConfig.Use(c)
+	}
+
+	// Setup and install the "info" service.
+	gi := serviceInstanceGlobalInfo{
+		Config:  cfg,
+		Request: req,
+	}
+	c = useInfo(c, &gi)
 
 	// datastore service
 	if cfg.DS != nil {
@@ -84,27 +193,4 @@ func (cfg Config) Use(c context.Context) context.Context {
 	}
 
 	return c
-}
-
-// UseFlex installs a set of cloud services into the context with services
-// supported by AppEngine Flex, including:
-// * Info
-// * Datastore
-func UseFlex(c context.Context) context.Context {
-	// Flex is on GCE, so we can get the project ID from the metadata server.
-	project, err := metadata.Get("project/project-id")
-	if err != nil {
-		panic(fmt.Errorf("could not get project ID, not on GCE? %s", err.Error()))
-	}
-	// Use the memory implementation of Info.
-	c = memory.UseInfo(c, project)
-	// Create a datastore client.
-	client, err := datastore.NewClient(c, project)
-	if err != nil {
-		panic(err)
-	}
-	cds := cloudDatastore{
-		client: client,
-	}
-	return cds.use(c)
 }
