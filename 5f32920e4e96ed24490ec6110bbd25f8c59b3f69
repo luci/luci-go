@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "24e96814_b31b465b",
+        "filename": "lucictx/local_auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-15T04:30:50Z",
+      "side": 1,
+      "message": "Just thinking: returning \"nil\" from a Context-modifier can be problematic. If an error occurs, someone may accidentally assign/reuse \"c\" to log that error and cause a problem.\n\ne.g.,\n\nvar err error\nif c, err \u003d lucictx.SwitchLocalAccount(c, \"whatever\"); err !\u003d nil {\n  logging.Errorf(c, \"failed to do something: %s\", err)\n  return...\n}\n\nThe \"c\" in the logging statement will be nil/invalid and panic.\n\nElsewhere, we\u0027ve done by-reference passing of pointers to error methods:\n\nif err :\u003d lucictx.SwitchLocalAccount(\u0026c, \"whatever\"); err !\u003d nil { ... }\n\nAlternatively, you could return original \"ctx\" here. I\u0027d just not return \"nil\".",
+      "range": {
+        "startLine": 110,
+        "startChar": 8,
+        "endLine": 110,
+        "endChar": 12
+      },
+      "revId": "5f32920e4e96ed24490ec6110bbd25f8c59b3f69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
