@@ -802,7 +802,7 @@ func TestProcessPubSubPush(t *testing.T) {
 			return nil
 		}
 
-		ctl, err := e.controllerForInvocation(c, &inv)
+		ctl, err := controllerForInvocation(c, e, &inv)
 		So(err, ShouldBeNil)
 
 		// Grab the working auth token.

@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
-	"net/http"
 	"net/url"
 	"sort"
 	"strconv"
@@ -28,7 +27,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
 
@@ -66,7 +64,7 @@ var (
 // later. Any other error means that retry won't help.
 // ACLs are enforced unlike EngineInternal with the following implications:
 //  * if caller lacks READER access to Jobs, methods behave as if Jobs do not
-//		exist.
+//    exist.
 //  * if caller lacks OWNER access, calling mutating methods will result in
 //    ErrNoOwnerPermission (assuming caller has READER access, else see above).
 type Engine interface {
@@ -80,9 +78,9 @@ type Engine interface {
 
 	// GetVisibleJob returns single scheduler job given its full ID.
 	// ErrNoSuchJob error is returned if either:
-	//	 * job doesn't exist,
+	//   * job doesn't exist,
 	//   * job is disabled (ie was removed from its project config),
-	//	 * job isn't visible due to lack READER access.
+	//   * job isn't visible due to lack READER access.
 	GetVisibleJob(c context.Context, jobID string) (*Job, error)
 
 	// ListVisibleInvocations returns invocations of a visible job, most recent first.
@@ -202,14 +200,6 @@ const (
 	// maxInvocationRetryBackoff is how long to wait before retrying a failed
 	// invocation.
 	maxInvocationRetryBackoff = 10 * time.Second
-
-	// debugLogSizeLimit is how many bytes the invocation debug log can be before
-	// it gets trimmed. See 'trimDebugLog'. The debug log isn't supposed to be
-	// huge.
-	debugLogSizeLimit = 200000
-
-	// debugLogTailLines is how many last log lines to keep when trimming the log.
-	debugLogTailLines = 100
 )
 
 // actionTaskPayload is payload for task queue jobs emitted by the engine.
@@ -363,213 +353,6 @@ func (e *Job) isVisible(c context.Context) (bool, error) {
 // isOwned checks if current identity has OWNER access to this job.
 func (e *Job) isOwned(c context.Context) (bool, error) {
 	return e.Acls.IsOwner(logging.SetField(c, "JobID", e.JobID))
-}
-
-// Invocation entity stores single attempt to run a job. Its parent entity
-// is corresponding Job, its ID is generated based on time.
-type Invocation struct {
-	_kind  string         `gae:"$kind,Invocation"`
-	_extra ds.PropertyMap `gae:"-,extra"`
-
-	// ID is identifier of this particular attempt to run a job. Multiple attempts
-	// to start an invocation result in multiple entities with different IDs, but
-	// with same InvocationNonce.
-	ID int64 `gae:"$id"`
-
-	// JobKey is the key of parent Job entity.
-	JobKey *ds.Key `gae:"$parent"`
-
-	// Started is time when this invocation was created.
-	Started time.Time `gae:",noindex"`
-
-	// Finished is time when this invocation transitioned to a terminal state.
-	Finished time.Time `gae:",noindex"`
-
-	// InvocationNonce identifies a request to start a job, produced by
-	// StateMachine.
-	InvocationNonce int64
-
-	// TriggeredBy is identity of whoever triggered the invocation, if it was
-	// triggered via TriggerInvocation ("Run now" button).
-	//
-	// Empty identity string if it was triggered by the service itself.
-	TriggeredBy identity.Identity
-
-	// Revision is revision number of config.cfg when this invocation was created.
-	// For informational purpose.
-	Revision string `gae:",noindex"`
-
-	// RevisionURL is URL to human readable page with config file at
-	// an appropriate revision. For informational purpose.
-	RevisionURL string `gae:",noindex"`
-
-	// Task is the job payload for this invocation in binary serialized form.
-	// For informational purpose. See Catalog.UnmarshalTask().
-	Task []byte `gae:",noindex"`
-
-	// DebugLog is short free form text log with debug messages.
-	DebugLog string `gae:",noindex"`
-
-	// RetryCount is 0 on a first attempt to launch the task. Increased with each
-	// retry. For informational purposes.
-	RetryCount int64 `gae:",noindex"`
-
-	// Status is current status of the invocation (e.g. "RUNNING"), see the enum.
-	Status task.Status
-
-	// ViewURL is optional URL to a human readable page with task status, e.g.
-	// Swarming task page. Populated by corresponding TaskManager.
-	ViewURL string `gae:",noindex"`
-
-	// TaskData is a storage where TaskManager can keep task-specific state
-	// between calls.
-	TaskData []byte `gae:",noindex"`
-
-	// MutationsCount is used for simple compare-and-swap transaction control.
-	// It is incremented on each change to the entity. See 'saveImpl' below.
-	MutationsCount int64 `gae:",noindex"`
-}
-
-// isEqual returns true iff 'e' is equal to 'other'.
-func (e *Invocation) isEqual(other *Invocation) bool {
-	return e == other || (e.ID == other.ID &&
-		(e.JobKey == other.JobKey || e.JobKey.Equal(other.JobKey)) &&
-		e.Started == other.Started &&
-		e.Finished == other.Finished &&
-		e.InvocationNonce == other.InvocationNonce &&
-		e.Revision == other.Revision &&
-		e.RevisionURL == other.RevisionURL &&
-		bytes.Equal(e.Task, other.Task) &&
-		e.DebugLog == other.DebugLog &&
-		e.RetryCount == other.RetryCount &&
-		e.Status == other.Status &&
-		e.ViewURL == other.ViewURL &&
-		bytes.Equal(e.TaskData, other.TaskData) &&
-		e.MutationsCount == other.MutationsCount)
-}
-
-// debugLog appends a line to DebugLog field.
-func (e *Invocation) debugLog(c context.Context, format string, args ...interface{}) {
-	debugLog(c, &e.DebugLog, format, args...)
-}
-
-// trimDebugLog makes sure DebugLog field doesn't exceed limits.
-//
-// It cuts the middle of the log. We need to do this to keep the entity small
-// enough to fit the datastore limits.
-func (e *Invocation) trimDebugLog() {
-	if len(e.DebugLog) <= debugLogSizeLimit {
-		return
-	}
-
-	const cutMsg = "--- the log has been cut here ---"
-	giveUp := func() {
-		e.DebugLog = e.DebugLog[:debugLogSizeLimit-len(cutMsg)-2] + "\n" + cutMsg + "\n"
-	}
-
-	// We take last debugLogTailLines lines of log and move them "up", so that
-	// the total log size is less than debugLogSizeLimit. We then put a line with
-	// the message that some log lines have been cut. If these operations are not
-	// possible (e.g. we have some giant lines or something), we give up and just
-	// cut the end of the log.
-
-	// Find debugLogTailLines-th "\n" from the end, e.DebugLog[tailStart:] is the
-	// log tail.
-	tailStart := len(e.DebugLog)
-	for i := 0; i < debugLogTailLines; i++ {
-		tailStart = strings.LastIndex(e.DebugLog[:tailStart-1], "\n")
-		if tailStart <= 0 {
-			giveUp()
-			return
-		}
-	}
-	tailStart++
-
-	// Figure out how many bytes of head we can keep to make trimmed log small
-	// enough.
-	tailLen := len(e.DebugLog) - tailStart + len(cutMsg) + 1
-	headSize := debugLogSizeLimit - tailLen
-	if headSize <= 0 {
-		giveUp()
-		return
-	}
-
-	// Find last "\n" in the head.
-	headEnd := strings.LastIndex(e.DebugLog[:headSize], "\n")
-	if headEnd <= 0 {
-		giveUp()
-		return
-	}
-
-	// We want to keep 50 lines of the head no matter what.
-	headLines := strings.Count(e.DebugLog[:headEnd], "\n")
-	if headLines < 50 {
-		giveUp()
-		return
-	}
-
-	// Remove duplicated 'cutMsg' lines. They may appear if 'debugLog' (followed
-	// by 'trimDebugLog') is called on already trimmed log multiple times.
-	lines := strings.Split(e.DebugLog[:headEnd], "\n")
-	lines = append(lines, cutMsg)
-	lines = append(lines, strings.Split(e.DebugLog[tailStart:], "\n")...)
-	trimmed := make([]byte, 0, debugLogSizeLimit)
-	trimmed = append(trimmed, lines[0]...)
-	for i := 1; i < len(lines); i++ {
-		if !(lines[i-1] == cutMsg && lines[i] == cutMsg) {
-			trimmed = append(trimmed, '\n')
-			trimmed = append(trimmed, lines[i]...)
-		}
-	}
-	e.DebugLog = string(trimmed)
-}
-
-// Jan 1 2015, in UTC.
-var invocationIDEpoch time.Time
-
-func init() {
-	var err error
-	invocationIDEpoch, err = time.Parse(time.RFC822, "01 Jan 15 00:00 UTC")
-	if err != nil {
-		panic(err)
-	}
-}
-
-// generateInvocationID is called within a transaction to pick a new Invocation
-// ID and ensure it isn't taken yet.
-//
-// Format of the invocation ID:
-//   - highest order bit set to 0 to keep the value positive.
-//   - next 43 bits set to negated time since some predefined epoch, in ms.
-//   - next 16 bits are generated by math.Rand
-//   - next 4 bits set to 0. They indicate ID format.
-func generateInvocationID(c context.Context, parent *ds.Key) (int64, error) {
-	rnd := mathrand.Get(c)
-
-	// See http://play.golang.org/p/POpQzpT4Up.
-	invTs := int64(clock.Now(c).UTC().Sub(invocationIDEpoch) / time.Millisecond)
-	invTs = ^invTs & 8796093022207 // 0b111....1, 42 bits (clear highest bit)
-	invTs = invTs << 20
-
-	for i := 0; i < 10; i++ {
-		randSuffix := rnd.Int63n(65536)
-		invID := invTs | (randSuffix << 4)
-		exists, err := ds.Exists(c, ds.NewKey(c, "Invocation", "", invID, parent))
-		if err != nil {
-			return 0, err
-		}
-		if !exists.All() {
-			return invID, nil
-		}
-	}
-
-	return 0, errors.New("could not find available invocationID after 10 attempts")
-}
-
-// debugLog mutates a string by appending a line to it.
-func debugLog(c context.Context, str *string, format string, args ...interface{}) {
-	prefix := clock.Now(c).UTC().Format("[15:04:05.000] ")
-	*str += prefix + fmt.Sprintf(format+"\n", args...)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1252,7 +1035,7 @@ func (e *engineImpl) abortInvocation(c context.Context, jobID string, invID int6
 		return nil
 	}
 
-	ctl, err := e.controllerForInvocation(c, inv)
+	ctl, err := controllerForInvocation(c, e, inv)
 	if err != nil {
 		logging.Errorf(c, "Cannot get controller - %s", err)
 		return err
@@ -1466,7 +1249,7 @@ func (e *engineImpl) invocationTimerTick(c context.Context, jobID string, invID 
 	}
 
 	// Build corresponding controller.
-	ctl, err := e.controllerForInvocation(c, inv)
+	ctl, err := controllerForInvocation(c, e, inv)
 	if err != nil {
 		logging.Errorf(c, "Cannot get controller - %s", err)
 		return err
@@ -1621,7 +1404,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	// Now we have a new Invocation entity in the datastore in StatusStarting
 	// state. Grab corresponding TaskManager and launch task through it, keeping
 	// track of the progress in created Invocation entity.
-	ctl, err := e.controllerForInvocation(c, &inv)
+	ctl, err := controllerForInvocation(c, e, &inv)
 	if err != nil {
 		// Note: controllerForInvocation returns both ctl and err on errors, with
 		// ctl not fully initialized (but good enough for what's done below).
@@ -1662,29 +1445,6 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 		logging.WithError(err).Errorf(c, "Invocation failed to start")
 	}
 	return err
-}
-
-// controllerForInvocation returns new instance of taskController configured
-// to work with given invocation.
-//
-// If task definition can't be deserialized, returns both controller and error.
-func (e *engineImpl) controllerForInvocation(c context.Context, inv *Invocation) (*taskController, error) {
-	ctl := &taskController{
-		ctx:   c, // for DebugLog
-		eng:   e,
-		saved: *inv,
-	}
-	ctl.populateState()
-	var err error
-	ctl.task, err = e.Catalog.UnmarshalTask(inv.Task)
-	if err != nil {
-		return ctl, fmt.Errorf("failed to unmarshal the task - %s", err)
-	}
-	ctl.manager = e.Catalog.GetTaskManager(ctl.task)
-	if ctl.manager == nil {
-		return ctl, fmt.Errorf("TaskManager is unexpectedly missing")
-	}
-	return ctl, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1851,7 +1611,7 @@ func (e *engineImpl) handlePubSubMessage(c context.Context, msg *pubsub.PubsubMe
 	}
 
 	// Build corresponding controller.
-	ctl, err := e.controllerForInvocation(c, inv)
+	ctl, err := controllerForInvocation(c, e, inv)
 	if err != nil {
 		logging.Errorf(c, "Cannot get controller - %s", err)
 		return err
@@ -1883,212 +1643,4 @@ func (e *engineImpl) handlePubSubMessage(c context.Context, msg *pubsub.PubsubMe
 	default:
 		return err // transient or fatal
 	}
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// TaskController.
-
-type taskController struct {
-	ctx     context.Context
-	eng     *engineImpl
-	manager task.Manager
-	task    proto.Message // extracted from saved.Task blob
-
-	saved    Invocation        // what have been given initially or saved in Save()
-	state    task.State        // state mutated by TaskManager
-	debugLog string            // mutated by DebugLog
-	timers   []invocationTimer // mutated by AddTimer
-}
-
-// populateState populates 'state' using data in 'saved'.
-func (ctl *taskController) populateState() {
-	ctl.state = task.State{
-		Status:   ctl.saved.Status,
-		ViewURL:  ctl.saved.ViewURL,
-		TaskData: append([]byte(nil), ctl.saved.TaskData...), // copy
-	}
-}
-
-// JobID is part of task.Controller interface.
-func (ctl *taskController) JobID() string {
-	return ctl.saved.JobKey.StringID()
-}
-
-// InvocationID is part of task.Controller interface.
-func (ctl *taskController) InvocationID() int64 {
-	return ctl.saved.ID
-}
-
-// InvocationNonce is part of task.Controller interface.
-func (ctl *taskController) InvocationNonce() int64 {
-	return ctl.saved.InvocationNonce
-}
-
-// Task is part of task.Controller interface.
-func (ctl *taskController) Task() proto.Message {
-	return ctl.task
-}
-
-// State is part of task.Controller interface.
-func (ctl *taskController) State() *task.State {
-	return &ctl.state
-}
-
-// DebugLog is part of task.Controller interface.
-func (ctl *taskController) DebugLog(format string, args ...interface{}) {
-	logging.Infof(ctl.ctx, format, args...)
-	debugLog(ctl.ctx, &ctl.debugLog, format, args...)
-}
-
-// AddTimer is part of Controller interface.
-func (ctl *taskController) AddTimer(ctx context.Context, delay time.Duration, name string, payload []byte) {
-	ctl.DebugLog("Scheduling timer %q after %s", name, delay)
-	ctl.timers = append(ctl.timers, invocationTimer{
-		Delay:   delay,
-		Name:    name,
-		Payload: payload,
-	})
-}
-
-// PrepareTopic is part of task.Controller interface.
-func (ctl *taskController) PrepareTopic(ctx context.Context, publisher string) (topic string, token string, err error) {
-	return ctl.eng.prepareTopic(ctx, topicParams{
-		inv:       &ctl.saved,
-		manager:   ctl.manager,
-		publisher: publisher,
-	})
-}
-
-// GetClient is part of task.Controller interface
-func (ctl *taskController) GetClient(ctx context.Context, timeout time.Duration) (*http.Client, error) {
-	// TODO(vadimsh): Use per-project service accounts, not a global service
-	// account.
-	ctx, _ = clock.WithTimeout(ctx, timeout)
-	t, err := auth.GetRPCTransport(ctx, auth.AsSelf)
-	if err != nil {
-		return nil, err
-	}
-	return &http.Client{Transport: t}, nil
-}
-
-// Save is part of task.Controller interface.
-func (ctl *taskController) Save(ctx context.Context) error {
-	return ctl.saveImpl(ctx, true)
-}
-
-// errUpdateConflict means Invocation is being modified by two TaskController's
-// concurrently. It should not be happening often. If it happens, task queue
-// call is retried to rerun the two-part transaction from scratch.
-var errUpdateConflict = errors.New("concurrent modifications of single Invocation", transient.Tag)
-
-// saveImpl uploads updated Invocation to the datastore. If updateJob is true,
-// it will also roll corresponding state machine forward.
-func (ctl *taskController) saveImpl(ctx context.Context, updateJob bool) (err error) {
-	// Mutate copy in case transaction below fails. Also unpacks ctl.state back
-	// into the entity (reverse of 'populateState').
-	saving := ctl.saved
-	saving.Status = ctl.state.Status
-	saving.TaskData = append([]byte(nil), ctl.state.TaskData...)
-	saving.ViewURL = ctl.state.ViewURL
-	saving.DebugLog += ctl.debugLog
-	if saving.isEqual(&ctl.saved) && len(ctl.timers) == 0 { // no changes at all?
-		return nil
-	}
-	saving.MutationsCount++
-
-	// Update local copy of Invocation with what's in the datastore on success.
-	defer func() {
-		if err == nil {
-			ctl.saved = saving
-			ctl.debugLog = "" // debug log was successfully flushed
-			ctl.timers = nil  // timers were successfully scheduled
-		}
-	}()
-
-	hasStartedOrFailed := ctl.saved.Status == task.StatusStarting && saving.Status != task.StatusStarting
-	hasFinished := !ctl.saved.Status.Final() && saving.Status.Final()
-	if hasFinished {
-		saving.Finished = clock.Now(ctx)
-		saving.debugLog(
-			ctx, "Invocation finished in %s with status %s",
-			saving.Finished.Sub(saving.Started), saving.Status)
-		if !updateJob {
-			saving.debugLog(ctx, "It will probably be retried")
-		}
-		// Finished invocations can't schedule timers.
-		for _, t := range ctl.timers {
-			saving.debugLog(ctx, "Ignoring timer %s...", t.Name)
-		}
-	}
-
-	// Store the invocation entity, mutate Job state accordingly, schedule all
-	// timer ticks.
-	return ctl.eng.txn(ctx, saving.JobKey.StringID(), func(c context.Context, job *Job, isNew bool) error {
-		// Grab what's currently in the store to compare MutationsCount to what we
-		// expect it to be.
-		mostRecent := Invocation{
-			ID:     saving.ID,
-			JobKey: saving.JobKey,
-		}
-		switch err := ds.Get(c, &mostRecent); {
-		case err == ds.ErrNoSuchEntity: // should not happen
-			logging.Errorf(c, "Invocation is suddenly gone")
-			return errors.New("invocation is suddenly gone")
-		case err != nil:
-			return transient.Tag.Apply(err)
-		}
-
-		// Make sure no one touched it while we were handling the invocation.
-		if saving.MutationsCount != mostRecent.MutationsCount+1 {
-			logging.Errorf(c, "Invocation was modified by someone else while we were handling it")
-			return errUpdateConflict
-		}
-
-		// Store the invocation entity and schedule invocation timers regardless of
-		// the current state of the Job entity. The table of all invocations is
-		// useful on its own (e.g. for debugging) even if Job entity state has
-		// desynchronized for some reason.
-		saving.trimDebugLog()
-		if err := ds.Put(c, &saving); err != nil {
-			return err
-		}
-
-		// Finished invocations can't schedule timers.
-		if !hasFinished && len(ctl.timers) > 0 {
-			if err := ctl.eng.enqueueInvTimers(c, &saving, ctl.timers); err != nil {
-				return err
-			}
-		}
-
-		// Is Job entity still have this invocation as a current one?
-		switch {
-		case !updateJob:
-			logging.Warningf(c, "Asked not to touch Job entity")
-			return errSkipPut
-		case isNew:
-			logging.Errorf(c, "Active job is unexpectedly gone")
-			return errSkipPut
-		case job.State.InvocationID != saving.ID:
-			logging.Warningf(c, "The invocation is no longer current, the current is %d", job.State.InvocationID)
-			return errSkipPut
-		}
-
-		// Make the state machine transitions.
-		if hasStartedOrFailed {
-			err := ctl.eng.rollSM(c, job, func(sm *StateMachine) error {
-				sm.OnInvocationStarted(saving.ID)
-				return nil
-			})
-			if err != nil {
-				return err
-			}
-		}
-		if hasFinished {
-			return ctl.eng.rollSM(c, job, func(sm *StateMachine) error {
-				sm.OnInvocationDone(saving.ID)
-				return nil
-			})
-		}
-		return nil
-	})
 }
