@@ -113,6 +113,7 @@ func TestMintOAuthTokenGrant(t *testing.T) {
 			req := &minter.MintOAuthTokenGrantRequest{
 				ServiceAccount: "account@robots.com",
 				EndUser:        "user:enduser@example.com",
+				AuditTags:      []string{"k1:v1", "k2:v2"},
 			}
 			resp, err := rpc.MintOAuthTokenGrant(ctx, req)
 			So(err, ShouldBeNil)
@@ -168,6 +169,15 @@ func TestMintOAuthTokenGrant(t *testing.T) {
 				EndUser:        "blah",
 			})
 			So(err, ShouldBeRPCInvalidArgument, "bad identity string")
+		})
+
+		Convey("Bad audit tags", func() {
+			_, err := rpc.MintOAuthTokenGrant(ctx, &minter.MintOAuthTokenGrantRequest{
+				ServiceAccount: "account@robots.com",
+				EndUser:        "user:enduser@example.com",
+				AuditTags:      []string{"not-kv-pair"},
+			})
+			So(err, ShouldBeRPCInvalidArgument, "bad audit_tags - audit tag #1")
 		})
 
 		Convey("Unknown rule", func() {

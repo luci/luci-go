@@ -73,6 +73,9 @@ func (i *MintedOAuthTokenInfo) toBigQueryRow() map[string]interface{} {
 		"requested_at": float64(i.RequestedAt.Unix()),
 		"expiration":   float64(google.TimeFromProto(i.Response.Expiry).Unix()),
 
+		// Information supplied by the caller.
+		"audit_tags": i.Request.AuditTags,
+
 		// Information about the service account rule used.
 		"config_rev":  i.ConfigRev,
 		"config_rule": i.Rule.Name,

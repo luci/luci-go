@@ -37,7 +37,7 @@ func TestMintedGrantInfo(t *testing.T) {
 				ServiceAccount:   "service-account@robots.com",
 				ValidityDuration: 3600,
 				EndUser:          "user:end-user@example.com",
-				Intent:           "intent string",
+				AuditTags:        []string{"k1:v1", "k2:v2"},
 			},
 			Response: &minter.MintOAuthTokenGrantResponse{
 				GrantToken:     "blah",
@@ -61,6 +61,7 @@ func TestMintedGrantInfo(t *testing.T) {
 		}
 
 		So(info.toBigQueryRow(), ShouldResemble, map[string]interface{}{
+			"audit_tags":        []string{"k1:v1", "k2:v2"},
 			"auth_db_rev":       int64(123),
 			"config_rev":        "config-rev",
 			"config_rule":       "rule-name",
@@ -71,7 +72,6 @@ func TestMintedGrantInfo(t *testing.T) {
 			"issued_at":         1.422936306e+09,
 			"peer_ip":           "127.10.10.10",
 			"proxy_identity":    "user:proxy@example.com",
-			"requested_intent":  "intent string",
 			"service_account":   "service-account@robots.com",
 			"service_version":   "unit-tests/mocked-ver",
 			"token_id":          "1234",

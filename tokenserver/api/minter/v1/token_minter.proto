@@ -342,11 +342,11 @@ message MintOAuthTokenGrantRequest {
   // Required.
   string end_user = 3;
 
-  // Optional reason why the grant is created.
+  // Arbitrary key:value pairs describing circumstances of this call.
   //
-  // Used only for logging and auditing purposes. Doesn't become part of the
-  // grant.
-  string intent = 4;
+  // Used only for logging and auditing purposes. Not involved in authorization
+  // and don't become part of the grant.
+  repeated string audit_tags = 4;
 }
 
 
@@ -388,6 +388,11 @@ message MintOAuthTokenViaGrantRequest {
   //
   // Default is 300 sec.
   int64 min_validity_duration = 3;
+
+  // Arbitrary key:value pairs describing circumstances of this call.
+  //
+  // Used only for logging and auditing purposes. Not involved in authorization.
+  repeated string audit_tags = 4;
 }
 
 

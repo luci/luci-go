@@ -216,6 +216,9 @@ func (r *MintOAuthTokenViaGrantRPC) checkRequestFormat(req *minter.MintOAuthToke
 	case len(req.OauthScope) == 0:
 		return fmt.Errorf("oauth_scope is required")
 	}
+	if err := utils.ValidateAuditTags(req.AuditTags); err != nil {
+		return fmt.Errorf("bad audit_tags - %s", err)
+	}
 	return nil
 }
 
