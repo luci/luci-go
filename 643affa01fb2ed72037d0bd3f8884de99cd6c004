@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d4bbbfc0_7bf70484",
+        "filename": "logdog/common/storage/memory/cache.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-16T21:54:38Z",
+      "side": 1,
+      "message": "If this code is being hit a lot, this can totally be RWMutex.\n\nAlso, \u0027exp\u0027 is ignored, which looks odd...\n\nI have suspicion this class is used only in tests? If so, please note in comments that it is for unit tests only.",
+      "range": {
+        "startLine": 28,
+        "startChar": 10,
+        "endLine": 28,
+        "endChar": 20
+      },
+      "revId": "643affa01fb2ed72037d0bd3f8884de99cd6c004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
