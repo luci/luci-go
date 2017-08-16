@@ -72,7 +72,7 @@ uHXl2FV53+kI2rF188v3jbuUhK0FrsUEXpN8C+dotMMLCLakbNXP
 -----END RSA PRIVATE KEY-----`
 
 // Cert for luci-token-server-test-1.fake.domain. Signed by 'Fake CA: fake.ca'.
-const cert = `-----BEGIN CERTIFICATE-----
+const certWithCN = `-----BEGIN CERTIFICATE-----
 MIIEFjCCAv6gAwIBAgICEAAwDQYJKoZIhvcNAQELBQAwYDELMAkGA1UEBhMCVVMx
 EzARBgNVBAgMCkNhbGlmb3JuaWExDTALBgNVBAcMBEJsYWgxEjAQBgNVBAoMCVN0
 dWZmIEluYzEZMBcGA1UEAwwQRmFrZSBDQTogZmFrZS5jYTAeFw0xNjA0MDkwNDIx
@@ -95,6 +95,44 @@ jQMwgUDmlnicMqENd0pswccS/mci215addFq6Wknti+To+TST0Ci5zmIt2fbBjmI
 VRAWsPfLInwtW94S54UF38n2gp3iXizQLG2urSqotPsWIiyO+f2M3Q2ki3fDzimj
 EyA+GFsGD6l0nQUySNyk2xE4S5CHOyLG0qWOsaJsEkTMnN+lrUh1bLUcI3bvVpVP
 uwi+mmV6pbwEPKYNHpxHXSbEFnWwnZm1OtM28sP9O0D94XzRq2OfWiiD
+-----END CERTIFICATE-----`
+
+// Cert for CN=fuchsia-debian-dev-141242e1-us-central1-f-0psd with SAN
+// DNS:fuchsia-debian-dev-141242e1-us-central1-f-0psd.c.fuchsia-infra.internal
+// Signed by 'Fuchsia Infra CA'.
+const certWithSAN = `
+-----BEGIN CERTIFICATE-----
+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
 -----END CERTIFICATE-----`
 
 const expectedLuciMachineToken = `CkkKJGx1Y2ktdG9rZW4tc2VydmVyLXRlc3QtMS5mYWtlLmRvbW` +
@@ -146,7 +184,7 @@ func testingSigner() signing.Signer {
 // and signed.
 func testingRawRequest(ctx context.Context) *minter.MachineTokenRequest {
 	return &minter.MachineTokenRequest{
-		Certificate:        getTestCertDER(),
+		Certificate:        getTestCertDER(certWithCN),
 		SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
 		IssuedAt:           google.NewTimestamp(clock.Now(ctx)),
 		TokenType:          tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN,
@@ -181,15 +219,15 @@ func getTestPrivateKey() *rsa.PrivateKey {
 	return key
 }
 
-func getTestCert() *x509.Certificate {
-	crt, err := x509.ParseCertificate(getTestCertDER())
+func getTestCert(cert string) *x509.Certificate {
+	crt, err := x509.ParseCertificate(getTestCertDER(cert))
 	if err != nil {
 		panic(err)
 	}
 	return crt
 }
 
-func getTestCertDER() []byte {
+func getTestCertDER(cert string) []byte {
 	block, _ := pem.Decode([]byte(cert))
 	return block.Bytes
 }

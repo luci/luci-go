@@ -16,6 +16,7 @@ package machinetoken
 
 import (
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"math/big"
 	"testing"
 	"time"
@@ -32,11 +33,66 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func TestMachineFQDN(t *testing.T) {
+	// See rpc_mocks_test.go for getTestCert, certWithCN and certWithSAN.
+
+	// Test parsing of the real certs.
+
+	Convey("MachineFQDN works for cert without SAN", t, func() {
+		params := MintParams{Cert: getTestCert(certWithCN)}
+		fqdn, err := params.MachineFQDN()
+		So(err, ShouldBeNil)
+		So(fqdn, ShouldEqual, "luci-token-server-test-1.fake.domain")
+	})
+
+	Convey("MachineFQDN works for cert with SAN", t, func() {
+		params := MintParams{Cert: getTestCert(certWithSAN)}
+		fqdn, err := params.MachineFQDN()
+		So(err, ShouldBeNil)
+		So(fqdn, ShouldEqual, "fuchsia-debian-dev-141242e1-us-central1-f-0psd.c.fuchsia-infra.internal")
+	})
+
+	// Test some synthetic cases.
+
+	Convey("MachineFQDN with empty CN", t, func() {
+		params := MintParams{
+			Cert: &x509.Certificate{
+				DNSNames: []string{"name1.example.com"},
+			},
+		}
+		_, err := params.MachineFQDN()
+		So(err, ShouldErrLike, "unsupported cert, Subject CN field is required")
+	})
+
+	Convey("MachineFQDN with more than one SAN", t, func() {
+		params := MintParams{
+			Cert: &x509.Certificate{
+				Subject:  pkix.Name{CommonName: "name1"},
+				DNSNames: []string{"name1.example.com", "name2.example.com"},
+			},
+		}
+		_, err := params.MachineFQDN()
+		So(err, ShouldErrLike, "unsupported cert, more than one SAN DNS field")
+	})
+
+	Convey("MachineFQDN with SAN and CN not matching", t, func() {
+		params := MintParams{
+			Cert: &x509.Certificate{
+				Subject:  pkix.Name{CommonName: "name1"},
+				DNSNames: []string{"name2.example.com"},
+			},
+		}
+		_, err := params.MachineFQDN()
+		So(err, ShouldErrLike,
+			`unsupported cert, the CN ("name1") should match hostname portion of the SAN DNS ("name2.example.com")`)
+	})
+}
+
 func TestMintParamsValidation(t *testing.T) {
 	Convey("with token params", t, func() {
 		params := MintParams{
-			FQDN: "host.domain",
 			Cert: &x509.Certificate{
+				Subject:      pkix.Name{CommonName: "host.domain"},
 				SerialNumber: big.NewInt(12345),
 			},
 			Config: &admin.CertificateAuthorityConfig{
@@ -51,25 +107,34 @@ func TestMintParamsValidation(t *testing.T) {
 
 		Convey("good params", func() {
 			So(params.Validate(), ShouldBeNil)
+			fqdn, err := params.MachineFQDN()
+			So(err, ShouldBeNil)
+			So(fqdn, ShouldEqual, "host.domain")
 		})
 
 		Convey("good params with subdomain", func() {
-			params.FQDN = "host.subdomain.domain"
+			params.Cert.Subject.CommonName = "host.subdomain.domain"
 			So(params.Validate(), ShouldBeNil)
+			fqdn, err := params.MachineFQDN()
+			So(err, ShouldBeNil)
+			So(fqdn, ShouldEqual, "host.subdomain.domain")
 		})
 
-		Convey("bad FQDN case", func() {
-			params.FQDN = "HOST.domain"
-			So(params.Validate(), ShouldErrLike, "expecting FQDN in lowercase")
+		Convey("bad FQDN case is converted to lowercase", func() {
+			params.Cert.Subject.CommonName = "HOST.domain"
+			So(params.Validate(), ShouldBeNil)
+			fqdn, err := params.MachineFQDN()
+			So(err, ShouldBeNil)
+			So(fqdn, ShouldEqual, "host.domain")
 		})
 
 		Convey("bad FQDN", func() {
-			params.FQDN = "host"
+			params.Cert.Subject.CommonName = "host"
 			So(params.Validate(), ShouldErrLike, "not a valid FQDN")
 		})
 
 		Convey("not whitelisted", func() {
-			params.FQDN = "host.blah"
+			params.Cert.Subject.CommonName = "host.blah"
 			So(params.Validate(), ShouldErrLike, "not whitelisted in the config")
 		})
 
@@ -92,8 +157,8 @@ func TestMint(t *testing.T) {
 
 		Convey("works", func() {
 			params := MintParams{
-				FQDN: "host.domain",
 				Cert: &x509.Certificate{
+					Subject:      pkix.Name{CommonName: "host.domain"},
 					SerialNumber: big.NewInt(12345),
 				},
 				Config: &admin.CertificateAuthorityConfig{
