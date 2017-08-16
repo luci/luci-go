@@ -16,7 +16,7 @@ package archive
 
 import (
 	"go.chromium.org/luci/common/gcloud/gs"
-	"go.chromium.org/luci/logdog/common/storage/caching"
+	"go.chromium.org/luci/logdog/common/storage"
 
 	"golang.org/x/net/context"
 )
@@ -26,22 +26,18 @@ import (
 // updated.
 const cacheSchema = "v1"
 
-func getCachedLogIndexData(c context.Context, cache caching.Cache, path gs.Path) []byte {
-	itm := mkCachedLogIndexDataItem(path)
-	cache.Get(c, itm)
-	return itm.Data
+func getCachedLogIndexData(c context.Context, cache storage.Cache, path gs.Path) ([]byte, bool) {
+	return cache.Get(c, mkCachedLogIndexDataKey(path))
 }
 
-func putCachedLogIndexData(c context.Context, cache caching.Cache, path gs.Path, indexData []byte) {
-	itm := mkCachedLogIndexDataItem(path)
-	itm.Data = indexData
-	cache.Put(c, 0, itm)
+func putCachedLogIndexData(c context.Context, cache storage.Cache, path gs.Path, indexData []byte) {
+	cache.Put(c, mkCachedLogIndexDataKey(path), indexData, 0)
 }
 
-func mkCachedLogIndexDataItem(path gs.Path) *caching.Item {
-	return &caching.Item{
+func mkCachedLogIndexDataKey(path gs.Path) storage.CacheKey {
+	return storage.CacheKey{
 		Schema: cacheSchema,
 		Type:   "archive_log_index",
-		Key:    caching.HashKey(string(path)),
+		Key:    storage.HashKey(string(path)),
 	}
 }
