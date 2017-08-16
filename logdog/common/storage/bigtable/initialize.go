@@ -37,8 +37,8 @@ var InitializeScopes = []string{
 	bigtable.AdminScope,
 }
 
-func tableExists(ctx context.Context, c *bigtable.AdminClient, name string) (bool, error) {
-	tables, err := c.Tables(ctx)
+func tableExists(c context.Context, ac *bigtable.AdminClient, name string) (bool, error) {
+	tables, err := ac.Tables(c)
 	if err != nil {
 		return false, err
 	}
@@ -51,9 +51,9 @@ func tableExists(ctx context.Context, c *bigtable.AdminClient, name string) (boo
 	return false, nil
 }
 
-func waitForTable(ctx context.Context, c *bigtable.AdminClient, name string) error {
-	return retry.Retry(ctx, transient.Only(retry.Default), func() error {
-		exists, err := tableExists(ctx, c, name)
+func waitForTable(c context.Context, ac *bigtable.AdminClient, name string) error {
+	return retry.Retry(c, transient.Only(retry.Default), func() error {
+		exists, err := tableExists(c, ac, name)
 		if err != nil {
 			return err
 		}
@@ -65,7 +65,7 @@ func waitForTable(ctx context.Context, c *bigtable.AdminClient, name string) err
 		log.Fields{
 			log.ErrorKey: err,
 			"delay":      delay,
-		}.Warningf(ctx, "Table does not exist yet; retrying.")
+		}.Warningf(c, "Table does not exist yet; retrying.")
 	})
 }
 
@@ -76,41 +76,37 @@ func waitForTable(ctx context.Context, c *bigtable.AdminClient, name string) err
 // create and configure it.
 //
 // If nil is returned, the table is ready for use as a Storage via New.
-func Initialize(ctx context.Context, o Options) error {
-	adminClient, err := o.adminClient(ctx)
-	if err != nil {
-		return err
+func (s *Storage) Initialize(c context.Context) error {
+	if s.AdminClient == nil {
+		return errors.New("no admin client configured")
 	}
 
-	st := newBTStorage(ctx, o, nil, adminClient, nil)
-	defer st.Close()
-
-	exists, err := tableExists(ctx, st.adminClient, o.LogTable)
+	exists, err := tableExists(c, s.AdminClient, s.LogTable)
 	if err != nil {
 		return fmt.Errorf("failed to test for table: %s", err)
 	}
 	if !exists {
 		log.Fields{
-			"table": o.LogTable,
-		}.Infof(ctx, "Storage table does not exist. Creating...")
+			"table": s.LogTable,
+		}.Infof(c, "Storage table does not exist. Creating...")
 
-		if err := st.adminClient.CreateTable(ctx, o.LogTable); err != nil {
+		if err := s.AdminClient.CreateTable(c, s.LogTable); err != nil {
 			return fmt.Errorf("failed to create table: %s", err)
 		}
 
 		// Wait for the table to exist. BigTable API says this can be delayed from
 		// creation.
-		if err := waitForTable(ctx, st.adminClient, o.LogTable); err != nil {
+		if err := waitForTable(c, s.AdminClient, s.LogTable); err != nil {
 			return fmt.Errorf("failed to wait for table to exist: %s", err)
 		}
 
 		log.Fields{
-			"table": o.LogTable,
-		}.Infof(ctx, "Successfully created storage table.")
+			"table": s.LogTable,
+		}.Infof(c, "Successfully created storage table.")
 	}
 
 	// Get table info.
-	ti, err := st.adminClient.TableInfo(ctx, o.LogTable)
+	ti, err := s.AdminClient.TableInfo(c, s.LogTable)
 	if err != nil {
 		return fmt.Errorf("failed to get table info: %s", err)
 	}
@@ -119,26 +115,26 @@ func Initialize(ctx context.Context, o Options) error {
 	families := stringset.NewFromSlice(ti.Families...)
 	if !families.Has(logColumnFamily) {
 		log.Fields{
-			"table":  o.LogTable,
+			"table":  s.LogTable,
 			"family": logColumnFamily,
-		}.Infof(ctx, "Column family 'log' does not exist. Creating...")
+		}.Infof(c, "Column family 'log' does not exist. Creating...")
 
 		// Create the logColumnFamily column family.
-		if err := st.adminClient.CreateColumnFamily(ctx, o.LogTable, logColumnFamily); err != nil {
+		if err := s.AdminClient.CreateColumnFamily(c, s.LogTable, logColumnFamily); err != nil {
 			return fmt.Errorf("Failed to create 'log' column family: %s", err)
 		}
 
 		log.Fields{
-			"table":  o.LogTable,
+			"table":  s.LogTable,
 			"family": "log",
-		}.Infof(ctx, "Successfully created 'log' column family.")
+		}.Infof(c, "Successfully created 'log' column family.")
 	}
 
 	cfg := storage.Config{
 		MaxLogAge: DefaultMaxLogAge,
 	}
-	if err := st.Config(cfg); err != nil {
-		log.WithError(err).Errorf(ctx, "Failed to push default configuration.")
+	if err := s.Config(c, cfg); err != nil {
+		log.WithError(err).Errorf(c, "Failed to push default configuration.")
 		return err
 	}
 

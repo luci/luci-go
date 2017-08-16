@@ -303,7 +303,7 @@ func testGetImpl(t *testing.T, archived bool) {
 				if !archived {
 					// Add the logs to the in-memory temporary storage.
 					for _, le := range entries {
-						err := env.BigTable.Put(storage.PutRequest{
+						err := env.BigTable.Put(c, storage.PutRequest{
 							Project: project,
 							Path:    tls.Path,
 							Index:   types.MessageIndex(le.StreamIndex),
@@ -523,7 +523,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					} else {
 						// Add corrupted entry to Storage. Create a new entry here, since
 						// the storage will reject a duplicate/overwrite.
-						err := env.BigTable.Put(storage.PutRequest{
+						err := env.BigTable.Put(c, storage.PutRequest{
 							Project: project,
 							Path:    types.StreamPath(req.Path),
 							Index:   666,

@@ -237,18 +237,18 @@ func testArchiveStorage(t *testing.T, limit int64) {
 			}
 		}
 
-		st, err := New(c, opts)
+		st, err := New(opts)
 		So(err, ShouldBeNil)
 		defer st.Close()
 
 		stImpl := st.(*storageImpl)
 
 		Convey(`Will fail to configure with ErrReadOnly`, func() {
-			So(st.Config(storage.Config{}), ShouldEqual, storage.ErrReadOnly)
+			So(st.Config(c, storage.Config{}), ShouldEqual, storage.ErrReadOnly)
 		})
 
 		Convey(`Will fail to Put with ErrReadOnly`, func() {
-			So(st.Put(storage.PutRequest{}), ShouldEqual, storage.ErrReadOnly)
+			So(st.Put(c, storage.PutRequest{}), ShouldEqual, storage.ErrReadOnly)
 		})
 
 		Convey(`Given a stream with 5 log entries`, func() {
@@ -289,32 +289,32 @@ func testArchiveStorage(t *testing.T, limit int64) {
 							}
 
 							Convey(`Can Get [0..]`, func() {
-								So(st.Get(storage.GetRequest{}, collect), ShouldBeNil)
+								So(st.Get(c, storage.GetRequest{}, collect), ShouldBeNil)
 								So(entries, ShouldResemble, gen.lines)
 							})
 
 							Convey(`Can Get [1..].`, func() {
-								So(st.Get(storage.GetRequest{Index: 1}, collect), ShouldBeNil)
+								So(st.Get(c, storage.GetRequest{Index: 1}, collect), ShouldBeNil)
 								So(entries, ShouldResemble, gen.lines[1:])
 							})
 
 							Convey(`Can Get [1..2].`, func() {
-								So(st.Get(storage.GetRequest{Index: 1, Limit: 2}, collect), ShouldBeNil)
+								So(st.Get(c, storage.GetRequest{Index: 1, Limit: 2}, collect), ShouldBeNil)
 								So(entries, ShouldResemble, gen.lines[1:3])
 							})
 
 							Convey(`Can Get [5..].`, func() {
-								So(st.Get(storage.GetRequest{Index: 5}, collect), ShouldBeNil)
+								So(st.Get(c, storage.GetRequest{Index: 5}, collect), ShouldBeNil)
 								So(entries, ShouldHaveLength, 0)
 							})
 
 							Convey(`Can Get [4].`, func() {
-								So(st.Get(storage.GetRequest{Index: 4, Limit: 1}, collect), ShouldBeNil)
+								So(st.Get(c, storage.GetRequest{Index: 4, Limit: 1}, collect), ShouldBeNil)
 								So(entries, ShouldResemble, gen.lines[4:])
 							})
 
 							Convey(`Can tail.`, func() {
-								e, err := st.Tail("", "")
+								e, err := st.Tail(c, "", "")
 								So(err, ShouldBeNil)
 								So(gen.lineFromEntry(e), ShouldEqual, gen.lines[len(gen.lines)-1])
 							})
@@ -329,9 +329,9 @@ func testArchiveStorage(t *testing.T, limit int64) {
 			title string
 			fn    func() error
 		}{
-			{"Get", func() error { return st.Get(storage.GetRequest{}, func(*storage.Entry) bool { return true }) }},
+			{"Get", func() error { return st.Get(c, storage.GetRequest{}, func(*storage.Entry) bool { return true }) }},
 			{"Tail", func() (err error) {
-				_, err = st.Tail("", "")
+				_, err = st.Tail(c, "", "")
 				return
 			}},
 		} {
@@ -339,7 +339,7 @@ func testArchiveStorage(t *testing.T, limit int64) {
 				Convey(`With missing log stream returns ErrDoesNotExist.`, func() {
 					stImpl.Stream = "does-not-exist"
 
-					So(st.Get(storage.GetRequest{}, nil), ShouldEqual, storage.ErrDoesNotExist)
+					So(st.Get(c, storage.GetRequest{}, nil), ShouldEqual, storage.ErrDoesNotExist)
 				})
 
 				Convey(`With a client error returns that error.`, func() {
@@ -405,7 +405,7 @@ func testArchiveStorage(t *testing.T, limit int64) {
 		Convey(`Tail with no log entries returns ErrDoesNotExist.`, func() {
 			client.load(&gen)
 
-			_, err := st.Tail("", "")
+			_, err := st.Tail(c, "", "")
 			So(err, ShouldEqual, storage.ErrDoesNotExist)
 		})
 	})

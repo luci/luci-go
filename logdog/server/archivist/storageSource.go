@@ -49,7 +49,7 @@ func (s *storageSource) bufferEntries(start types.MessageIndex) error {
 		Path:    s.path,
 		Index:   start,
 	}
-	return s.st.Get(req, func(e *storage.Entry) bool {
+	return s.st.Get(s, req, func(e *storage.Entry) bool {
 		le, err := e.GetLogEntry()
 		if err != nil {
 			log.WithError(err).Errorf(s, "Failed to unmarshal LogEntry.")
