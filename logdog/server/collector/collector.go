@@ -410,7 +410,7 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 		if len(logData) > 0 {
 			taskC <- func() error {
 				// Post the log to storage.
-				err = c.Storage.Put(storage.PutRequest{
+				err = c.Storage.Put(ctx, storage.PutRequest{
 					Project: h.project,
 					Path:    h.path,
 					Index:   types.MessageIndex(blockIndex),
