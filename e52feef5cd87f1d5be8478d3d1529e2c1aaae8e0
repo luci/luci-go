@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4eba810a_a821835d",
+        "filename": "logdog/common/storage/bigtable/storage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-16T21:36:58Z",
+      "side": 1,
+      "message": "consider also setting up some common logging fields there (like \u0027project\u0027 and \u0027instance\u0027).",
+      "range": {
+        "startLine": 114,
+        "startChar": 5,
+        "endLine": 114,
+        "endChar": 22
+      },
+      "revId": "e52feef5cd87f1d5be8478d3d1529e2c1aaae8e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "667c0adf_6e183e7d",
+        "filename": "logdog/server/collector/collector.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 368,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-16T21:36:58Z",
+      "side": 1,
+      "message": "(unrelated) I think it should be https://golang.org/pkg/crypto/subtle/#ConstantTimeCompare\n\n(and in all other places, if any, that compare secrets)",
+      "range": {
+        "startLine": 368,
+        "startChar": 4,
+        "endLine": 368,
+        "endChar": 54
+      },
+      "revId": "e52feef5cd87f1d5be8478d3d1529e2c1aaae8e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
