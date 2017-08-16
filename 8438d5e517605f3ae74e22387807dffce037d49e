@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5565a54e_62a2f8cb",
+        "filename": "tokenserver/appengine/impl/machinetoken/rpc_mint_machine_token.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-16T02:51:43Z",
+      "side": 0,
+      "message": "basically, this line has moved into its own MachineFQDN() function, which also now able to produce an error",
+      "range": {
+        "startLine": 198,
+        "startChar": 2,
+        "endLine": 198,
+        "endChar": 55
+      },
+      "revId": "8438d5e517605f3ae74e22387807dffce037d49e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
