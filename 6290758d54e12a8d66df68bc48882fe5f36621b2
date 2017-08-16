@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "561908ac_343d6563",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-16T23:47:26Z",
+      "side": 1,
+      "message": "Probably not. I think this was part of the general setup, but can probably be removed. OTOH if it *did* visit twice, I wouldn\u0027t mind it being cached.",
+      "parentUuid": "1daa6c5c_bc67743a",
+      "range": {
+        "startLine": 111,
+        "startChar": 4,
+        "endLine": 111,
+        "endChar": 49
+      },
+      "revId": "6290758d54e12a8d66df68bc48882fe5f36621b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b572bcfa_7b47eada",
         "filename": "luci_config/appengine/gaeconfig/default.go",
         "patchSetId": 3
@@ -36,6 +60,30 @@
       "writtenOn": "2017-08-16T21:20:04Z",
       "side": 1,
       "message": "am I correct in understanding that we replaced (in a previous CL perhaps) a process-global proccache-based cache with per-request LRU cache? So individual requests now hit datastore/dscache more frequently?",
+      "range": {
+        "startLine": 155,
+        "startChar": 3,
+        "endLine": 155,
+        "endChar": 48
+      },
+      "revId": "6290758d54e12a8d66df68bc48882fe5f36621b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44f7ad34_68ff462b",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-16T23:47:26Z",
+      "side": 1,
+      "message": "I think that before we were using a per-request cache, too. I tagged where.",
+      "parentUuid": "b572bcfa_7b47eada",
       "range": {
         "startLine": 155,
         "startChar": 3,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "fdfa5cb0_563fa2ea",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-16T23:47:26Z",
+      "side": 1,
+      "message": "I was feeling fancy :) Done.",
+      "parentUuid": "3a96f918_34d3e63e",
+      "range": {
+        "startLine": 210,
+        "startChar": 2,
+        "endLine": 212,
+        "endChar": 3
+      },
+      "revId": "6290758d54e12a8d66df68bc48882fe5f36621b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ca275dec_b9a2e20d",
         "filename": "luci_config/appengine/gaeconfig/default.go",
         "patchSetId": 3
@@ -91,6 +163,30 @@
       "revId": "6290758d54e12a8d66df68bc48882fe5f36621b2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02e61c0c_42fb7348",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-16T23:47:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ca275dec_b9a2e20d",
+      "range": {
+        "startLine": 219,
+        "startChar": 1,
+        "endLine": 225,
+        "endChar": 3
+      },
+      "revId": "6290758d54e12a8d66df68bc48882fe5f36621b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
