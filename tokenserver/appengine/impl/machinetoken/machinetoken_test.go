@@ -16,6 +16,7 @@ package machinetoken
 
 import (
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"math/big"
 	"testing"
 	"time"
@@ -35,8 +36,8 @@ import (
 func TestMintParamsValidation(t *testing.T) {
 	Convey("with token params", t, func() {
 		params := MintParams{
-			FQDN: "host.domain",
 			Cert: &x509.Certificate{
+				Subject:      pkix.Name{CommonName: "host.domain"},
 				SerialNumber: big.NewInt(12345),
 			},
 			Config: &admin.CertificateAuthorityConfig{
@@ -51,25 +52,34 @@ func TestMintParamsValidation(t *testing.T) {
 
 		Convey("good params", func() {
 			So(params.Validate(), ShouldBeNil)
+			fqdn, err := params.MachineFQDN()
+			So(err, ShouldBeNil)
+			So(fqdn, ShouldEqual, "host.domain")
 		})
 
 		Convey("good params with subdomain", func() {
-			params.FQDN = "host.subdomain.domain"
+			params.Cert.Subject.CommonName = "host.subdomain.domain"
 			So(params.Validate(), ShouldBeNil)
+			fqdn, err := params.MachineFQDN()
+			So(err, ShouldBeNil)
+			So(fqdn, ShouldEqual, "host.subdomain.domain")
 		})
 
-		Convey("bad FQDN case", func() {
-			params.FQDN = "HOST.domain"
-			So(params.Validate(), ShouldErrLike, "expecting FQDN in lowercase")
+		Convey("bad FQDN case is converted to lowercase", func() {
+			params.Cert.Subject.CommonName = "HOST.domain"
+			So(params.Validate(), ShouldBeNil)
+			fqdn, err := params.MachineFQDN()
+			So(err, ShouldBeNil)
+			So(fqdn, ShouldEqual, "host.domain")
 		})
 
 		Convey("bad FQDN", func() {
-			params.FQDN = "host"
+			params.Cert.Subject.CommonName = "host"
 			So(params.Validate(), ShouldErrLike, "not a valid FQDN")
 		})
 
 		Convey("not whitelisted", func() {
-			params.FQDN = "host.blah"
+			params.Cert.Subject.CommonName = "host.blah"
 			So(params.Validate(), ShouldErrLike, "not whitelisted in the config")
 		})
 
@@ -92,8 +102,8 @@ func TestMint(t *testing.T) {
 
 		Convey("works", func() {
 			params := MintParams{
-				FQDN: "host.domain",
 				Cert: &x509.Certificate{
+					Subject:      pkix.Name{CommonName: "host.domain"},
 					SerialNumber: big.NewInt(12345),
 				},
 				Config: &admin.CertificateAuthorityConfig{
