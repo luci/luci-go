@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ec5457b8_fb3c7feb",
+        "filename": "server/caching/context.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-16T22:02:23Z",
+      "side": 1,
+      "message": "nit: it doesn\u0027t, already initialized *lru.Cache is passed from outside",
+      "range": {
+        "startLine": 35,
+        "startChar": 20,
+        "endLine": 35,
+        "endChar": 59
+      },
+      "revId": "5813467ffaf24b656fb077da5738e209f938bd28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27aad989_0ff56e86",
+        "filename": "server/caching/context.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-16T22:02:23Z",
+      "side": 1,
+      "message": "\"returns an in-memory cache installed in the context\"?",
+      "range": {
+        "startLine": 49,
+        "startChar": 16,
+        "endLine": 49,
+        "endChar": 53
+      },
+      "revId": "5813467ffaf24b656fb077da5738e209f938bd28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38aa5805_959c9d0a",
+        "filename": "server/caching/context.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-16T22:02:23Z",
+      "side": 1,
+      "message": "I have a feeling we are paying overhead for LRU-ness of the cache (maintaining its linked list structure) for no benefit here :( Though no big deal, it should be smallish.",
+      "range": {
+        "startLine": 64,
+        "startChar": 47,
+        "endLine": 64,
+        "endChar": 57
+      },
+      "revId": "5813467ffaf24b656fb077da5738e209f938bd28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
