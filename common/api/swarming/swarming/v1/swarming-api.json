@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/Nc8POgqbQEo7X3zuuNn_vtzb3ik\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/qcelMlA90v3Ca25J_y3AKL1Tz8M\"",
  "discoveryVersion": "v1",
  "id": "swarming:v1",
  "name": "swarming",
@@ -490,6 +490,9 @@
     "pubsub_userdata": {
      "type": "string"
     },
+    "service_account": {
+     "type": "string"
+    },
     "service_account_token": {
      "type": "string"
     },
@@ -527,6 +530,22 @@
     "items_hot": {
      "type": "string",
      "format": "byte"
+    },
+    "num_items_cold": {
+     "type": "string",
+     "format": "int64"
+    },
+    "num_items_hot": {
+     "type": "string",
+     "format": "int64"
+    },
+    "total_bytes_items_cold": {
+     "type": "string",
+     "format": "int64"
+    },
+    "total_bytes_items_hot": {
+     "type": "string",
+     "format": "int64"
     }
    }
   },

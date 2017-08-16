@@ -820,6 +820,8 @@ type SwarmingRpcsNewTaskRequest struct {
 
 	PubsubUserdata string `json:"pubsub_userdata,omitempty"`
 
+	ServiceAccount string `json:"service_account,omitempty"`
+
 	ServiceAccountToken string `json:"service_account_token,omitempty"`
 
 	Tags []string `json:"tags,omitempty"`
@@ -860,6 +862,14 @@ type SwarmingRpcsOperationStats struct {
 	ItemsCold string `json:"items_cold,omitempty"`
 
 	ItemsHot string `json:"items_hot,omitempty"`
+
+	NumItemsCold int64 `json:"num_items_cold,omitempty,string"`
+
+	NumItemsHot int64 `json:"num_items_hot,omitempty,string"`
+
+	TotalBytesItemsCold int64 `json:"total_bytes_items_cold,omitempty,string"`
+
+	TotalBytesItemsHot int64 `json:"total_bytes_items_hot,omitempty,string"`
 
 	// ForceSendFields is a list of field names (e.g. "Duration") to
 	// unconditionally include in API requests. By default, fields with
