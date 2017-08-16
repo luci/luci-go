@@ -17,7 +17,6 @@ package machinetoken
 import (
 	"crypto/x509"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -193,9 +192,9 @@ type mintTokenArgs struct {
 }
 
 func (r *MintMachineTokenRPC) mintLuciMachineToken(c context.Context, args mintTokenArgs) (*minter.MintMachineTokenResponse, *tokenserver.MachineTokenBody, error) {
-	// Validate FQDN and whether it is allowed by config.
+	// Validate FQDN and whether it is allowed by config. The FQDN is extracted
+	// from the cert.
 	params := MintParams{
-		FQDN:   strings.ToLower(args.Cert.Subject.CommonName),
 		Cert:   args.Cert,
 		Config: args.Config,
 		Signer: r.Signer,

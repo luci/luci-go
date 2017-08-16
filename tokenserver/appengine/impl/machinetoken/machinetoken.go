@@ -48,12 +48,10 @@ const tokenSigningContext = ""
 var maxUint64 = big.NewInt(0).SetUint64(math.MaxUint64)
 
 // MintParams is passed to Mint.
+//
+// The name of the machine (to put into the machine token) is extracted from
+// the certificate.
 type MintParams struct {
-	// FQDN is a full name of a host to mint a token for.
-	//
-	// Must be in lowercase.
-	FQDN string
-
 	// Cert is the certificate used when authenticating the token requester.
 	//
 	// It's serial number will be put in the token.
@@ -71,15 +69,49 @@ type MintParams struct {
 	Signer signing.Signer
 }
 
+// MachineFQDN extracts the machine's FQDN from the certificate.
+//
+// It uses either Common Name or X509v3 Subject Alternative Name DNS field
+// (depending on the presence of the later). If SAN DNS field is present, it
+// should be singular, it should contain machine's FQDN, and Common Name should
+// match the hostname part of the FQDN.
+//
+// The extracted FQDN is convert to lower case.
+//
+// Returns an error if values of CN and SAN DNS fields are not consistent.
+func (p *MintParams) MachineFQDN() (string, error) {
+	cn := strings.ToLower(p.Cert.Subject.CommonName)
+	if cn == "" {
+		return "", fmt.Errorf("unsupported cert, Subject CN field is required")
+	}
+
+	dns := ""
+	if len(p.Cert.DNSNames) != 0 {
+		if len(p.Cert.DNSNames) > 1 {
+			return "", fmt.Errorf("unsupported cert, more than one SAN DNS field")
+		}
+		dns = strings.ToLower(p.Cert.DNSNames[0])
+	}
+
+	switch {
+	case dns == "":
+		return cn, nil
+	case !strings.HasPrefix(dns, cn+"."):
+		return "", fmt.Errorf("unsupported cert, the CN (%q) should match hostname portion of the SAN DNS (%q)", cn, dns)
+	}
+	return dns, nil
+}
+
 // Validate checks that token minting parameters are allowed.
 func (p *MintParams) Validate() error {
 	// Check FDQN.
-	if p.FQDN != strings.ToLower(p.FQDN) {
-		return fmt.Errorf("expecting FQDN in lowercase, got %q", p.FQDN)
+	fqdn, err := p.MachineFQDN()
+	if err != nil {
+		return err
 	}
-	chunks := strings.SplitN(p.FQDN, ".", 2)
+	chunks := strings.SplitN(fqdn, ".", 2)
 	if len(chunks) != 2 {
-		return fmt.Errorf("not a valid FQDN %q", p.FQDN)
+		return fmt.Errorf("not a valid FQDN %q", fqdn)
 	}
 	domain := chunks[1] // e.g. "us-central1-a.c.project-id.internal"
 
@@ -125,7 +157,11 @@ func Mint(c context.Context, params *MintParams) (*tokenserver.MachineTokenBody,
 	if err := params.Validate(); err != nil {
 		return nil, "", err
 	}
-	chunks := strings.SplitN(params.FQDN, ".", 2)
+	fqdn, err := params.MachineFQDN()
+	if err != nil {
+		panic("impossible") // checked in Validate already
+	}
+	chunks := strings.SplitN(fqdn, ".", 2)
 	if len(chunks) != 2 {
 		panic("impossible") // checked in Validate already
 	}
@@ -140,7 +176,7 @@ func Mint(c context.Context, params *MintParams) (*tokenserver.MachineTokenBody,
 	}
 
 	body := &tokenserver.MachineTokenBody{
-		MachineFqdn: params.FQDN,
+		MachineFqdn: fqdn,
 		IssuedBy:    srvInfo.ServiceAccountName,
 		IssuedAt:    uint64(clock.Now(c).Unix()),
 		Lifetime:    uint64(cfg.MachineTokenLifetime),
