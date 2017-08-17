@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package server
+package auth
 
 import (
 	"encoding/json"
@@ -20,15 +20,16 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"go.chromium.org/gae/impl/memory"
-	"go.chromium.org/gae/service/urlfetch"
-	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/common/data/caching/lru"
+	"go.chromium.org/luci/common/gcloud/googleoauth"
+
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/gcloud/googleoauth"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+const testScope = "https://example.com/scopes/user.email"
 
 type tokenInfo struct {
 	Audience      string `json:"aud"`
@@ -39,17 +40,18 @@ type tokenInfo struct {
 	Scope         string `json:"scope"`
 }
 
-func TestOAuth2MethodDevServer(t *testing.T) {
+func TestGoogleOAuth2Method(t *testing.T) {
+	t.Parallel()
+
 	Convey("with mock backend", t, func(c C) {
-		ctx := memory.Use(context.Background())
-		ctx = urlfetch.Set(ctx, http.DefaultTransport)
+		ctx := context.Background()
 
 		info := tokenInfo{
 			Audience:      "client_id",
 			Email:         "abc@example.com",
 			EmailVerified: "true",
 			ExpiresIn:     "3600",
-			Scope:         EmailScope + " other stuff",
+			Scope:         testScope + " other stuff",
 		}
 		status := http.StatusOK
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -57,9 +59,17 @@ func TestOAuth2MethodDevServer(t *testing.T) {
 			c.So(json.NewEncoder(w).Encode(&info), ShouldBeNil)
 		}))
 
-		call := func(header string) (*auth.User, error) {
-			m := OAuth2Method{
-				Scopes:            []string{EmailScope},
+		ctx = ModifyConfig(ctx, func(cfg Config) Config {
+			cfg.Cache = &MemoryCache{LRU: lru.New(0)}
+			cfg.AnonymousTransport = func(context.Context) http.RoundTripper {
+				return http.DefaultTransport
+			}
+			return cfg
+		})
+
+		call := func(header string) (*User, error) {
+			m := GoogleOAuth2Method{
+				Scopes:            []string{testScope},
 				tokenInfoEndpoint: ts.URL,
 			}
 			req, err := http.NewRequest("GET", "http://fake", nil)
@@ -71,7 +81,7 @@ func TestOAuth2MethodDevServer(t *testing.T) {
 		Convey("Works", func() {
 			u, err := call("Bearer access_token")
 			So(err, ShouldBeNil)
-			So(u, ShouldResemble, &auth.User{
+			So(u, ShouldResemble, &User{
 				Identity: "user:abc@example.com",
 				Email:    "abc@example.com",
 				ClientID: "client_id",

@@ -22,7 +22,7 @@ import (
 func init() {
 	prpc.RegisterDefaultAuth(&auth.Authenticator{
 		Methods: []auth.Method{
-			&OAuth2Method{Scopes: []string{EmailScope}},
+			&UserOAuth2Method{Scopes: []string{EmailScope}},
 		},
 	})
 }
