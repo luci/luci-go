@@ -24,7 +24,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/appengine/gaemiddleware/classic"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
@@ -59,7 +59,7 @@ func init() {
 	r := router.New()
 
 	// Install auth, config and tsmon handlers.
-	gaemiddleware.InstallHandlers(r)
+	classic.InstallHandlers(r)
 
 	// The service has no UI, so just redirect to stock RPC explorer.
 	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
@@ -81,7 +81,7 @@ func init() {
 	})
 	minter.RegisterTokenMinterServer(&api, tokenminter.NewServer()) // auth inside
 	discovery.Enable(&api)
-	api.InstallHandlers(r, gaemiddleware.BaseProd())
+	api.InstallHandlers(r, classic.Base())
 
 	// Expose all this stuff.
 	http.DefaultServeMux.Handle("/", r)
