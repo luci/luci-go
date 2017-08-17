@@ -15,6 +15,8 @@
 package auth
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"net/http"
 
@@ -103,6 +105,20 @@ type User struct {
 	// be verified. Used only by authentication methods based on OAuth2.
 	// See https://developers.google.com/console/help/#generatingoauth2 for more.
 	ClientID string
+}
+
+func (u *User) marshal() ([]byte, error) {
+	buf := bytes.Buffer{}
+	enc := gob.NewEncoder(&buf)
+	if err := enc.Encode(u); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+func (u *User) unmarshal(v []byte) error {
+	dec := gob.NewDecoder(bytes.NewReader(v))
+	return dec.Decode(u)
 }
 
 // Authenticator performs authentication of incoming requests.

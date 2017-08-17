@@ -31,7 +31,8 @@ import (
 	"go.chromium.org/luci/common/sync/mutexpool"
 )
 
-// Cache implements a strongly consistent cache.
+// Cache implements a strongly consistent cache. Cache may optionally be
+// consistent across multiple processes.
 type Cache interface {
 	// Get returns a cached item or (nil, nil) if it's not in the cache.
 	//

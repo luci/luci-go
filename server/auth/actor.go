@@ -162,7 +162,7 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 					Client: &http.Client{Transport: asSelf},
 				},
 				Scopes: sortedScopes,
-				Client: &http.Client{Transport: cfg.AnonymousTransport(ctx)},
+				Client: cfg.anonymousClient(ctx),
 			})
 
 			// Both iam.Signer and googleoauth.GetAccessToken return googleapi.Error
