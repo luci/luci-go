@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7c03cf90_b3224448",
+        "filename": "cipd/client/cipd/common/common_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-17T02:44:25Z",
+      "side": 1,
+      "message": "mind blown",
+      "range": {
+        "startLine": 320,
+        "startChar": 3,
+        "endLine": 320,
+        "endChar": 32
+      },
+      "revId": "c0ba07ac96efb847e17ea4d9be2fc64e3d78f53e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
