@@ -33,23 +33,18 @@ type itemParserState struct {
 }
 
 func subdirParser(s *itemParserState, _ *File, val string) (err error) {
-	subdir := templateParm.ReplaceAllStringFunc(val, func(parm string) string {
-		contents := parm[2 : len(parm)-1]
-		// ${varName}
-		if value, ok := common.TemplateArgs()[contents]; ok {
-			return value
+	subdir := ""
+	switch subdir, err = common.DefaultTemplateExpander().Expand(val); err {
+	case nil:
+		if err = common.ValidateSubdir(subdir); err == nil {
+			s.curSubdir = subdir
 		}
-		err = errors.Reason("unknown variable in ${%s}", contents).Err()
-		return parm
-	})
-	if err != nil {
-		return err
+	case common.ErrSkipTemplate:
+		err = errors.Reason("bad variable in subdir %q", val).Err()
+	default:
+		err = errors.Annotate(err, "bad subdir %q", val).Err()
 	}
-	if err := common.ValidateSubdir(subdir); err != nil {
-		return err
-	}
-	s.curSubdir = subdir
-	return nil
+	return
 }
 
 func serviceURLParser(_ *itemParserState, f *File, val string) error {

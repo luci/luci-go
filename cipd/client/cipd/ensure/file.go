@@ -105,8 +105,8 @@ func ParseFile(r io.Reader) (*File, error) {
 					PackageName: pkg,
 					InstanceID:  vers,
 				}, common.ValidateInstanceVersion(vers)
-			}, common.TemplateArgs())
-			if err != nil && err != errSkipTemplate {
+			}, common.DefaultTemplateExpander())
+			if err != nil && err != common.ErrSkipTemplate {
 				return nil, err
 			}
 
@@ -129,19 +129,16 @@ type ResolvedFile struct {
 }
 
 // Resolve takes the current unresolved File and expands all package templates
-// using common.TemplateArgs(), and also resolves all versions with the provided
-// VersionResolver.
+// using common.DefaultPackageNameExpander(), and also resolves all versions
+// with the provided VersionResolver.
 func (f *File) Resolve(rslv VersionResolver) (*ResolvedFile, error) {
-	return f.ResolveWith(rslv, common.TemplateArgs())
+	return f.ResolveWith(rslv, common.DefaultTemplateExpander())
 }
 
 // ResolveWith takes the current unresolved File and expands all package
 // templates using the provided values of arch and os, and also resolves
 // all versions with the provided VersionResolver.
-//
-// templateArgs is a mapping of expansion parameter to value. Usually you'll
-// want to pass common.TemplateArgs().
-func (f *File) ResolveWith(rslv VersionResolver, templateArgs map[string]string) (*ResolvedFile, error) {
+func (f *File) ResolveWith(rslv VersionResolver, expander common.TemplateExpander) (*ResolvedFile, error) {
 	ret := &ResolvedFile{}
 
 	if f.ServiceURL != "" {
@@ -166,8 +163,8 @@ func (f *File) ResolveWith(rslv VersionResolver, templateArgs map[string]string)
 			return nil, errors.Annotate(err, "normalizing %q", subdir).Err()
 		}
 		for _, pkg := range pkgs {
-			pin, err := pkg.Resolve(rslv, templateArgs)
-			if err == errSkipTemplate {
+			pin, err := pkg.Resolve(rslv, expander)
+			if err == common.ErrSkipTemplate {
 				continue
 			}
 			if err != nil {

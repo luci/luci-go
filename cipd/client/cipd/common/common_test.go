@@ -280,3 +280,9 @@ func TestCurrentResolution(t *testing.T) {
 		})
 	})
 }
+
+func TestTemplateExpansion(t *testing.T) {
+	t.Parallel()
+
+	Convey(``)
+}
