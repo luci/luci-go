@@ -19,10 +19,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
 	"go.chromium.org/luci/appengine/datastorecache"
 	"go.chromium.org/luci/common/config/impl/filesystem"
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/luci_config/appengine/backend/datastore"
 	"go.chromium.org/luci/luci_config/appengine/backend/memcache"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
@@ -45,9 +45,32 @@ import (
 // is not set. Usually happens for new apps.
 var ErrNotConfigured = errors.New("config service URL is not set in settings")
 
-// devCfgDir is a name of the directory with config files when running in
-// local dev appserver model. See New for details.
-const devCfgDir = "devcfg"
+const (
+	// processCacheLRUSize is the number of entries to store in the process cache
+	// LRU.
+	processCacheLRUSize = 2048
+
+	// devCfgDir is a name of the directory with config files when running in
+	// local dev appserver model. See New for details.
+	devCfgDir = "devcfg"
+)
+
+// cacheConfig defines how a LUCI Config backend handles caching.
+type cacheConfig struct {
+	// GlobalCache, if not nil, installs a cache layer immediately after the
+	// remote configuration service and caches its responses.
+	GlobalCache func(c context.Context, b backend.B, s *Settings) backend.B
+
+	// With, if not nil, is called immediately after service caching has been
+	// configured, with the service backend. It can be used to augment the
+	// Context.
+	With func(c context.Context, be backend.B, s *Settings) context.Context
+
+	// DataCache, if not nil, installs a cache layer immediately after a
+	// formatting cache layer has been installed. This can be used to buffer
+	// accesses to the underlying remote service.
+	DataCache func(c context.Context, b backend.B, s *Settings) backend.B
+}
 
 // InstallCacheCronHandler installs the configuration service datastore caching
 // cron handler. This must be installed, and an associated cron must be set up,
@@ -66,7 +89,29 @@ func InstallCacheCronHandler(r *router.Router, base router.MiddlewareChain) {
 func installCacheCronHandlerImpl(r *router.Router, base router.MiddlewareChain, be backend.B) {
 	base = base.Extend(func(c *router.Context, next router.Handler) {
 		// Install our Backend into our Context.
-		c.Context = installConfigBackend(c.Context, mustFetchCachedSettings(c.Context), be, true)
+		c.Context = installConfigBackend(c.Context, mustFetchCachedSettings(c.Context), be, cacheConfig{
+			// Use memcache to buffer raw service requests.
+			GlobalCache: func(c context.Context, be backend.B, s *Settings) backend.B {
+				return memcache.Backend(be, s.CacheExpiration())
+			},
+
+			// For cron, do not install the datastore cache Backend. Instead,
+			// install a lasting Handler into the Context to be used for cache
+			// resolution. This is necessary since resolution calls will not be
+			// the result of an actual resolution command (e.g., cache.Get).
+			With: func(c context.Context, be backend.B, s *Settings) context.Context {
+				dsc := datastoreCacheConfig(s)
+				if dsc != nil {
+					c = dsc.WithHandler(c, datastore.CronLoader(be), datastore.RPCDeadline)
+				}
+				return c
+			},
+
+			DataCache: func(c context.Context, be backend.B, s *Settings) backend.B {
+				// Install per-request in-memory cache (LRU).
+				return caching.LRUBackend(be, processCacheLRUSize, s.CacheExpiration())
+			},
+		})
 		next(c)
 	})
 
@@ -95,7 +140,51 @@ func installCacheCronHandlerImpl(r *router.Router, base router.MiddlewareChain, 
 func Use(c context.Context) context.Context { return useImpl(c, nil) }
 
 func useImpl(c context.Context, be backend.B) context.Context {
-	return installConfigBackend(c, mustFetchCachedSettings(c), be, false)
+	return installConfigBackend(c, mustFetchCachedSettings(c), be, cacheConfig{
+		// Use memcache to buffer raw service requests.
+		GlobalCache: func(c context.Context, be backend.B, s *Settings) backend.B {
+			return memcache.Backend(be, s.CacheExpiration())
+		},
+
+		// Install datastore caching layer.
+		DataCache: func(c context.Context, be backend.B, s *Settings) backend.B {
+			if dsc := datastoreCacheConfig(s); dsc != nil {
+				be = dsc.Backend(be)
+			}
+
+			// Install per-request in-memory cache (LRU).
+			// TODO: Replace this with process-global cache once CL adding that to
+			// Context lands:
+			// https://chromium-review.googlesource.com/c/609369/
+			be = caching.LRUBackend(be, processCacheLRUSize, s.CacheExpiration())
+			return be
+		},
+	})
+}
+
+// UseFlex installs the default luci-config client for an AppEngine Flex
+// environment.
+//
+// UseFlex has the same effect as Use, except that the backing cache is
+// a process-local cache instead of the AppEngine memcache service.
+//
+// UseFlex may optionally supply an LRUcache to use for process-wide
+// configuration caching. If nil, no process-wide caching will be performed.
+func UseFlex(c context.Context, cache *lru.Cache) context.Context {
+	// TODO: Install a path to load configurations from datastore cache. ATM,
+	// it can't be done because using datastore cache requires the ability to
+	// write to datastore.
+	var ccfg cacheConfig
+	if cache != nil {
+		ccfg.GlobalCache = func(c context.Context, be backend.B, s *Settings) backend.B {
+			lruBE := caching.LRU{
+				Cache:      cache,
+				Expiration: s.CacheExpiration(),
+			}
+			return lruBE.Wrap(be)
+		}
+	}
+	return installConfigBackend(c, mustFetchCachedSettings(c), nil, ccfg)
 }
 
 // installConfigBackend chooses a primary backend, then reenforces it with
@@ -108,53 +197,50 @@ func useImpl(c context.Context, be backend.B) context.Context {
 // If caching is enabled, this is re-enforced with the following caches:
 // - A memcache-backed cache.
 // - A datastore-backed cache (if enabled).
-// - A per-process in-memory cache (proccache).
+// - A per-process in-memory cache (LRU).
 //
 // Lookups move from the bottom of the list up through the top, then to the
 // primary backend service.
-func installConfigBackend(c context.Context, s *Settings, be backend.B, dsCron bool) context.Context {
+func installConfigBackend(c context.Context, s *Settings, be backend.B, ccfg cacheConfig) context.Context {
 	if be == nil {
 		// Non-testing, build a Backend.
 		be = getPrimaryBackend(c, s)
 	}
 
 	// Apply caching configuration.
-	exp := time.Duration(s.CacheExpirationSec) * time.Second
-	if exp > 0 {
-		// Back the raw service with memcache.
-		be = memcache.Backend(be, exp)
+	if exp := s.CacheExpiration(); exp > 0 {
+		// Back the raw service with a global cache.
+		if ccfg.GlobalCache != nil {
+			be = ccfg.GlobalCache(c, be, s)
+		}
 
 		// Add a formatting Backend. All Backends after this will use the formatted
 		// version of the entry.
 		be = &format.Backend{B: be}
 
-		// If our datastore cache is enabled, install a handler for refresh. This
-		// will be loaded by dsCache's "HandlerFunc".
-		if s.DatastoreCacheMode != DSCacheDisabled {
-			dsc := datastore.Config{
-				RefreshInterval: exp,
-				FailOpen:        s.DatastoreCacheMode == DSCacheEnabled,
-				LockerFunc:      datastorecache.MemLocker,
-			}
-
-			if !dsCron {
-				// For non-cron, install the datastore cache Backend.
-				be = dsc.Backend(be)
-			} else {
-				// For cron, do not install the datastore cache Backend. Instead,
-				// install a lasting Handler into the Context to be used for cache
-				// resolution. This is necessary since resolution calls will not be
-				// the result of an actual resolution command (e.g., cache.Get).
-				c = dsc.WithHandler(c, datastore.CronLoader(be), datastore.RPCDeadline)
-			}
+		// After raw service, install data-level caching.
+		if ccfg.With != nil {
+			c = ccfg.With(c, be, s)
 		}
 
-		// Install in-memory cache (proccache).
-		be = caching.LRUBackend(be, 0, exp)
+		if ccfg.DataCache != nil {
+			be = ccfg.DataCache(c, be, s)
+		}
 	}
 
 	c = backend.WithBackend(c, be)
 	return c
+}
+
+func datastoreCacheConfig(s *Settings) *datastore.Config {
+	if s.DatastoreCacheMode == DSCacheDisabled {
+		return nil
+	}
+	return &datastore.Config{
+		RefreshInterval: s.CacheExpiration(),
+		FailOpen:        true,
+		LockerFunc:      datastorecache.MemLocker,
+	}
 }
 
 func getPrimaryBackend(c context.Context, settings *Settings) backend.B {
