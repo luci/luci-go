@@ -22,6 +22,30 @@
       "revId": "c0ba07ac96efb847e17ea4d9be2fc64e3d78f53e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c69d782b_6355dbc4",
+        "filename": "cipd/client/cipd/common/common_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-17T03:19:42Z",
+      "side": 1,
+      "message": "actually I can do better:\n\n    \"Something/${platform}\" -\u003e \"Something/SOME_OS-SOME_ARCH\" ✔\n    \"Something/${os\u003dwut,SOME_OS}\" -\u003e \"Something/SOME_OS\" ✔\n    \"Something/${os\u003dwut,SOME_OS}-${arch}\" -\u003e \"Something/SOME_OS-SOME_ARCH\" ✔\n    \"Something/${var}\" -\u003e err(\"unknown variable\") ✔\n    \"Something/${os}-${arch\u003ddeez}\" -\u003e err(\"package template does not apply to the current system\") ✔\n    \"Something/${platform\u003ddeez}\" -\u003e err(\"package template does not apply to the current system\") ✔\n    \"Something/${platform}$\" -\u003e err(\"unable to process some variables\") ✔\n    \"Something/${platform${os}}\" -\u003e err(\"unknown variable\") ✔\n    \"Something/${platform\" -\u003e err(\"unable to process some variables\") ✔\n    \"Something/$platform\" -\u003e err(\"unable to process some variables\") ✔",
+      "parentUuid": "7c03cf90_b3224448",
+      "range": {
+        "startLine": 320,
+        "startChar": 3,
+        "endLine": 320,
+        "endChar": 32
+      },
+      "revId": "c0ba07ac96efb847e17ea4d9be2fc64e3d78f53e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
