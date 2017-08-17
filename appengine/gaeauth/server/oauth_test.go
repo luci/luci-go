@@ -58,7 +58,7 @@ func TestOAuth2MethodDevServer(t *testing.T) {
 		}))
 
 		call := func(header string) (*auth.User, error) {
-			m := OAuth2Method{
+			m := GoogleOAuth2Method{
 				Scopes:            []string{EmailScope},
 				tokenInfoEndpoint: ts.URL,
 			}
