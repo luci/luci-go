@@ -19,10 +19,8 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/logdog/common/storage/caching"
+	"go.chromium.org/luci/logdog/common/storage"
 
-	"go.chromium.org/gae/filter/featureBreaker"
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/memcache"
 
@@ -34,96 +32,77 @@ import (
 func testStorageCache(t *testing.T, compress bool) {
 	t.Parallel()
 
-	cloneItemsWithData := func(src []*caching.Item, data []byte) []*caching.Item {
-		dst := make([]*caching.Item, len(src))
-		for i, itm := range src {
-			clone := *itm
-			clone.Data = data
-			dst[i] = &clone
-		}
-		return dst
-	}
-
 	Convey(`Testing storage cache in a testing envrionment`, t, func() {
-		c := memory.Use(context.Background())
-		c, tc := testclock.UseTime(c, testclock.TestTimeLocal)
-		c, fb := featureBreaker.FilterMC(c, nil)
+		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
+		c = memory.Use(c)
 
 		var cache StorageCache
 		if compress {
 			cache.compressionThreshold = 1
 		}
 
-		items := []*caching.Item{
-			{Schema: "test", Type: "type", Key: "foo", Data: []byte("foo")},
-			{Schema: "test", Type: "type", Key: "bar", Data: []byte("bar")},
-			{Schema: "test", Type: "othertype", Key: "foo", Data: []byte("foo2")},
-			{Schema: "otherschema", Type: "othertype", Key: "foo", Data: []byte("foo3")},
+		items := []struct {
+			k storage.CacheKey
+			v []byte
+		}{
+			{storage.CacheKey{"test", "type", "foo"}, []byte("foo")},
+			{storage.CacheKey{"test", "type", "bar"}, []byte("bar")},
+			{storage.CacheKey{"test", "othertype", "foo"}, []byte("foo2")},
+			{storage.CacheKey{"otherschema", "othertype", "foo"}, []byte("foo3")},
 		}
 
 		Convey(`Can load those items into cache`, func() {
-			cache.Put(c, time.Minute, items...)
-
-			stats, err := memcache.Stats(c)
+			for _, it := range items {
+				cache.Put(c, it.k, it.v, time.Minute)
+			}
+			st, err := memcache.Raw(c).Stats()
 			So(err, ShouldBeNil)
-			So(stats.Items, ShouldEqual, 4)
+			So(st.Items, ShouldEqual, 4)
 
-			Convey(`And retrieve those items from cache.`, func() {
-				oit := cloneItemsWithData(items, []byte("junk"))
-				cache.Get(c, oit...)
-				So(oit, ShouldResemble, items)
-			})
-
-			Convey(`Returns nil data if memcache.GetMulti is broken.`, func() {
-				fb.BreakFeatures(errors.New("test error"), "GetMulti")
-
-				cache.Get(c, items...)
-				So(items, ShouldResemble, cloneItemsWithData(items, nil))
-			})
+			for _, it := range items {
+				v, ok := cache.Get(c, it.k)
+				So(ok, ShouldBeTrue)
+				So(v, ShouldResemble, it.v)
+			}
 		})
 
-		Convey(`Does not load items into cache if memcache.SetMulti is broken.`, func() {
-			fb.BreakFeatures(errors.New("test error"), "SetMulti")
-
-			cache.Put(c, time.Minute, items...)
-			cache.Get(c, items...)
-			So(items, ShouldResemble, cloneItemsWithData(items, nil))
-		})
-
-		Convey(`Get on missing item returns nil data.`, func() {
-			cache.Get(c, items...)
-			So(items, ShouldResemble, cloneItemsWithData(items, nil))
+		Convey(`Get on missing item returns false.`, func() {
+			_, ok := cache.Get(c, items[0].k)
+			So(ok, ShouldBeFalse)
 		})
 
 		Convey(`Will replace existing item value.`, func() {
-			cache.Put(c, time.Minute, items...)
+			cache.Put(c, items[0].k, items[0].v, time.Minute)
+			v, ok := cache.Get(c, items[0].k)
+			So(ok, ShouldBeTrue)
+			So(v, ShouldResemble, items[0].v)
 
-			other := cloneItemsWithData(items, []byte("ohaithere"))
-			cache.Put(c, time.Minute, other...)
-
-			cache.Get(c, items...)
-			So(items, ShouldResemble, other)
+			cache.Put(c, items[0].k, []byte("ohai"), time.Minute)
+			v, ok = cache.Get(c, items[0].k)
+			So(ok, ShouldBeTrue)
+			So(v, ShouldResemble, []byte("ohai"))
 		})
 
 		Convey(`Applies expiration (or lack thereof).`, func() {
-			cache.Put(c, time.Minute, items[0])
-			cache.Put(c, 0, items[1])
+			cache.Put(c, items[0].k, items[0].v, time.Minute)
+			cache.Put(c, items[1].k, items[1].v, -1)
 
-			// items[0]
-			itm, err := memcache.GetKey(c, cache.mkCacheKey(items[0]))
-			So(err, ShouldBeNil)
-			So(itm.Key(), ShouldEqual, cache.mkCacheKey(items[0]))
-			So(len(itm.Value()), ShouldNotEqual, 0)
+			v, has := cache.Get(c, items[0].k)
+			So(has, ShouldBeTrue)
+			So(v, ShouldResemble, items[0].v)
+
+			v, has = cache.Get(c, items[1].k)
+			So(has, ShouldBeTrue)
+			So(v, ShouldResemble, items[1].v)
 
 			tc.Add(time.Minute + 1) // Expires items[0].
-			_, err = memcache.GetKey(c, cache.mkCacheKey(items[0]))
-			So(err, ShouldEqual, memcache.ErrCacheMiss)
 
-			// items[1]
-			itm, err = memcache.GetKey(c, cache.mkCacheKey(items[1]))
-			So(err, ShouldBeNil)
-			So(itm.Key(), ShouldEqual, cache.mkCacheKey(items[1]))
-			So(len(itm.Value()), ShouldNotEqual, 0)
+			v, has = cache.Get(c, items[0].k)
+			So(has, ShouldBeFalse)
+
+			v, has = cache.Get(c, items[1].k)
+			So(has, ShouldBeTrue)
+			So(v, ShouldResemble, items[1].v)
 		})
 	})
 }

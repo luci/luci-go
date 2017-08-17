@@ -17,14 +17,12 @@ package coordinator
 import (
 	"bytes"
 	"compress/zlib"
-	"fmt"
 	"io/ioutil"
 	"strings"
 	"time"
 
-	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/logdog/common/storage/caching"
+	"go.chromium.org/luci/logdog/common/storage"
 
 	"go.chromium.org/gae/service/memcache"
 
@@ -46,175 +44,116 @@ type StorageCache struct {
 }
 
 // Get implements caching.Cache.
-func (sc *StorageCache) Get(c context.Context, items ...*caching.Item) {
-	mcItems := make([]memcache.Item, len(items))
-	for i, itm := range items {
-		mcItems[i] = memcache.NewItem(c, sc.mkCacheKey(itm))
-	}
+func (sc *StorageCache) Get(c context.Context, key storage.CacheKey) ([]byte, bool) {
+	mcItem := memcache.NewItem(c, sc.mkCacheKey(key))
 
-	err := memcache.Get(c, mcItems...)
-	sc.memcacheErrCB(err, len(mcItems), func(err error, i int) {
-		// By default, no data.
-		items[i].Data = nil
-
-		switch err {
-		case nil:
-			itemData := mcItems[i].Value()
-			if len(itemData) == 0 {
-				log.Warningf(c, "Cached storage missing compression byte.")
-				return
-			}
-			isCompressed, itemData := itemData[0], itemData[1:]
-
-			if isCompressed != 0x00 {
-				// This entry is compressed.
-				zr, err := zlib.NewReader(bytes.NewReader(itemData))
-				if err != nil {
-					log.Fields{
-						log.ErrorKey: err,
-						"key":        mcItems[i].Key(),
-					}.Warningf(c, "Failed to create ZLIB reader.")
-					return
-				}
-				defer zr.Close()
-
-				if itemData, err = ioutil.ReadAll(zr); err != nil {
-					log.Fields{
-						log.ErrorKey: err,
-						"key":        mcItems[i].Key(),
-					}.Warningf(c, "Failed to decompress cached item.")
-					return
-				}
-			}
-			items[i].Data = itemData
-
-		case memcache.ErrCacheMiss:
-			break
-
-		default:
-			log.Fields{
-				log.ErrorKey: err,
-				"key":        mcItems[i].Key(),
-			}.Warningf(c, "Error retrieving cached entry.")
+	switch err := memcache.Get(c, mcItem); err {
+	case nil:
+		itemData := mcItem.Value()
+		if len(itemData) == 0 {
+			log.Warningf(c, "Cached storage missing compression byte.")
+			return nil, false
 		}
-	})
+
+		isCompressed, itemData := itemData[0], itemData[1:]
+
+		if isCompressed != 0x00 {
+			// This entry is compressed.
+			zr, err := zlib.NewReader(bytes.NewReader(itemData))
+			if err != nil {
+				log.Fields{
+					log.ErrorKey: err,
+					"key":        mcItem.Key(),
+				}.Warningf(c, "Failed to create ZLIB reader.")
+				return nil, false
+			}
+			defer zr.Close()
+
+			if itemData, err = ioutil.ReadAll(zr); err != nil {
+				log.Fields{
+					log.ErrorKey: err,
+					"key":        mcItem.Key(),
+				}.Warningf(c, "Failed to decompress cached item.")
+				return nil, false
+			}
+		}
+		return itemData, true
+
+	case memcache.ErrCacheMiss:
+		return nil, false
+
+	default:
+		log.Fields{
+			log.ErrorKey: err,
+			"key":        mcItem.Key(),
+		}.Warningf(c, "Error retrieving cached entry.")
+		return nil, false
+	}
 }
 
 // Put implements caching.Cache.
-func (sc *StorageCache) Put(c context.Context, exp time.Duration, items ...*caching.Item) {
+func (sc *StorageCache) Put(c context.Context, key storage.CacheKey, val []byte, exp time.Duration) {
 	threshold := sc.compressionThreshold
 	if threshold == 0 {
 		threshold = defaultCompressionThreshold
 	}
 
-	var (
-		buf    bytes.Buffer
-		zw     zlib.Writer
-		usedZW bool
-	)
-	defer func() {
-		if usedZW {
+	// Compress the data in the cache item.
+	var buf bytes.Buffer
+	buf.Grow(len(val) + 1)
+
+	if len(val) < threshold {
+		// Do not compress the item. Write a "0x00" to indicate that it is
+		// not compressed.
+		if err := buf.WriteByte(0x00); err != nil {
+			log.WithError(err).Warningf(c, "Failed to write compression byte.")
+			return
+		}
+		if _, err := buf.Write(val); err != nil {
+			log.WithError(err).Warningf(c, "Failed to write storage cache data.")
+			return
+		}
+	} else {
+		// Compress the item. Write a "0x01" to indicate that it is compressed.
+		zw := zlib.NewWriter(&buf)
+		if err := buf.WriteByte(0x01); err != nil {
+			log.WithError(err).Warningf(c, "Failed to write compression byte.")
+			return
+		}
+
+		if _, err := zw.Write(val); err != nil {
 			zw.Close()
+			log.WithError(err).Warningf(c, "Failed to compress storage cache data.")
+			return
 		}
-	}()
-
-	mcItems := make([]memcache.Item, 0, len(items))
-	for _, itm := range items {
-		if itm.Data == nil {
-			continue
+		if err := zw.Close(); err != nil {
+			log.WithError(err).Warningf(c, "Failed to flush compressed storage cache data.")
+			return
 		}
-
-		// Compress the data in the cache item.
-		writeItemData := func(d []byte) bool {
-			buf.Reset()
-			buf.Grow(len(d) + 1)
-
-			if len(d) < threshold {
-				// Do not compress the item. Write a "0x00" to indicate that it is
-				// not compressed.
-				if err := buf.WriteByte(0x00); err != nil {
-					log.WithError(err).Warningf(c, "Failed to write compression byte.")
-					return false
-				}
-				if _, err := buf.Write(d); err != nil {
-					log.WithError(err).Warningf(c, "Failed to write storage cache data.")
-					return false
-				}
-				return true
-			}
-
-			// Compress the item. Write a "0x01" to indicate that it is compressed.
-			zw := zlib.NewWriter(&buf)
-			if err := buf.WriteByte(0x01); err != nil {
-				log.WithError(err).Warningf(c, "Failed to write compression byte.")
-				return false
-			}
-			defer zw.Close()
-
-			if _, err := zw.Write(d); err != nil {
-				log.WithError(err).Warningf(c, "Failed to compress storage cache data.")
-				return false
-			}
-			if err := zw.Flush(); err != nil {
-				log.WithError(err).Warningf(c, "Failed to flush compressed storage cache data.")
-				return false
-			}
-			return true
-		}
-
-		if !writeItemData(itm.Data) {
-			continue
-		}
-
-		mcItem := memcache.NewItem(c, sc.mkCacheKey(itm))
-		mcItem.SetValue(append([]byte(nil), buf.Bytes()...))
-		if exp > 0 {
-			mcItem.SetExpiration(exp)
-		}
-		mcItems = append(mcItems, mcItem)
 	}
 
-	err := memcache.Set(c, mcItems...)
-	sc.memcacheErrCB(err, len(mcItems), func(err error, i int) {
-		switch err {
-		case nil, memcache.ErrNotStored:
-			break
-
-		default:
-			log.Fields{
-				log.ErrorKey: err,
-				"key":        mcItems[i].Key(),
-			}.Warningf(c, "Error storing cached entry.")
-		}
-	})
-}
-
-func (*StorageCache) memcacheErrCB(err error, count int, cb func(error, int)) {
-	merr, _ := err.(errors.MultiError)
-	if merr != nil && len(merr) != count {
-		panic(fmt.Errorf("MultiError count mismatch (%d != %d)", len(merr), count))
+	mcItem := memcache.NewItem(c, sc.mkCacheKey(key))
+	mcItem.SetValue(buf.Bytes())
+	if exp > 0 {
+		mcItem.SetExpiration(exp)
 	}
 
-	for i := 0; i < count; i++ {
-		switch {
-		case err == nil:
-			cb(nil, i)
-
-		case merr == nil:
-			cb(err, i)
-
-		default:
-			cb(merr[i], i)
-		}
+	switch err := memcache.Set(c, mcItem); err {
+	case nil, memcache.ErrNotStored:
+	default:
+		log.Fields{
+			log.ErrorKey: err,
+			"key":        mcItem.Key(),
+		}.Warningf(c, "Error storing cached entry.")
 	}
 }
 
-func (*StorageCache) mkCacheKey(itm *caching.Item) string {
+func (*StorageCache) mkCacheKey(key storage.CacheKey) string {
 	return strings.Join([]string{
 		"storage_cache",
 		schemaVersion,
-		itm.Schema,
-		itm.Type,
-		itm.Key,
+		key.Schema,
+		key.Type,
+		key.Key,
 	}, "_")
 }

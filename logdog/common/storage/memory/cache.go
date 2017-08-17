@@ -18,61 +18,36 @@ import (
 	"sync"
 	"time"
 
-	"go.chromium.org/luci/logdog/common/storage/caching"
+	"go.chromium.org/luci/logdog/common/storage"
 
 	"golang.org/x/net/context"
 )
 
-// Cache is an in-memory caching.Cache implementation.
+// Cache is an in-memory storage.Cache implementation.
 type Cache struct {
 	mu       sync.Mutex
-	cacheMap map[cacheKey]caching.Item
+	cacheMap map[storage.CacheKey][]byte
 }
 
-var _ caching.Cache = (*Cache)(nil)
+var _ storage.Cache = (*Cache)(nil)
 
-type cacheKey struct {
-	schema string
-	typ    string
-	key    string
-}
-
-// Put implements caching.Cache.
-func (c *Cache) Put(ctx context.Context, exp time.Duration, items ...*caching.Item) {
+// Put implements storage.Cache.
+func (c *Cache) Put(ctx context.Context, key storage.CacheKey, val []byte, exp time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	if c.cacheMap == nil {
-		c.cacheMap = make(map[cacheKey]caching.Item)
+		c.cacheMap = make(map[storage.CacheKey][]byte)
 	}
 
-	for _, itm := range items {
-		c.cacheMap[c.keyForItem(itm)] = *itm
-	}
+	c.cacheMap[key] = val
 }
 
-// Get implements caching.Cache.
-func (c *Cache) Get(ctx context.Context, items ...*caching.Item) {
+// Get implements storage.Cache.
+func (c *Cache) Get(ctx context.Context, key storage.CacheKey) ([]byte, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	for _, itm := range items {
-		if cacheItem, ok := c.cacheMap[c.keyForItem(itm)]; ok {
-			itm.Data = append([]byte{}, cacheItem.Data...)
-		} else {
-			itm.Data = nil
-		}
-	}
+	v, ok := c.cacheMap[key]
+	return v, ok
 }
-
-// Delete deletes a set of keys from the cache.
-func (c *Cache) Delete(schema, typ string, key ...string) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	for _, k := range key {
-		delete(c.cacheMap, cacheKey{schema, typ, k})
-	}
-}
-
-func (*Cache) keyForItem(itm *caching.Item) cacheKey { return cacheKey{itm.Schema, itm.Type, itm.Key} }

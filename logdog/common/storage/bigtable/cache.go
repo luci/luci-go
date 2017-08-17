@@ -19,9 +19,10 @@ import (
 	"encoding/binary"
 	"time"
 
-	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/logdog/common/storage/caching"
+	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
+
+	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
@@ -40,14 +41,13 @@ const lastTailIndexCacheDuration = 1 * time.Hour
 //
 // If there was an error, or if the item was not cached, 0 (first index) will be
 // returned.
-func getLastTailIndex(c context.Context, cache caching.Cache, project cfgtypes.ProjectName, path types.StreamPath) int64 {
-	itm := mkLastTailItem(project, path)
-	cache.Get(c, itm)
-	if itm.Data == nil {
+func getLastTailIndex(c context.Context, cache storage.Cache, project cfgtypes.ProjectName, path types.StreamPath) int64 {
+	data, ok := cache.Get(c, mkLastTailKey(project, path))
+	if !ok {
 		return 0
 	}
 
-	v, err := binary.ReadVarint(bytes.NewReader(itm.Data))
+	v, err := binary.ReadVarint(bytes.NewReader(data))
 	if err != nil {
 		log.Fields{
 			log.ErrorKey: err,
@@ -63,19 +63,17 @@ func getLastTailIndex(c context.Context, cache caching.Cache, project cfgtypes.P
 	return v
 }
 
-func putLastTailIndex(c context.Context, cache caching.Cache, project cfgtypes.ProjectName, path types.StreamPath, v int64) {
+func putLastTailIndex(c context.Context, cache storage.Cache, project cfgtypes.ProjectName, path types.StreamPath, v int64) {
 	buf := make([]byte, binary.MaxVarintLen64)
 	buf = buf[:binary.PutVarint(buf, v)]
 
-	itm := mkLastTailItem(project, path)
-	itm.Data = buf
-	cache.Put(c, lastTailIndexCacheDuration, itm)
+	cache.Put(c, mkLastTailKey(project, path), buf, lastTailIndexCacheDuration)
 }
 
-func mkLastTailItem(project cfgtypes.ProjectName, path types.StreamPath) *caching.Item {
-	return &caching.Item{
+func mkLastTailKey(project cfgtypes.ProjectName, path types.StreamPath) storage.CacheKey {
+	return storage.CacheKey{
 		Schema: cacheSchema,
 		Type:   "bt_tail_idx",
-		Key:    caching.HashKey(string(project), string(path)),
+		Key:    storage.HashKey(string(project), string(path)),
 	}
 }

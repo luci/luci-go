@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package Memory implements in-memory Storage structures.
+//
+// It is designed for testing, and hasn't been optimized for any productio use.
 package memory
 
 import (

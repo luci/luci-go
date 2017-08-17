@@ -22,7 +22,6 @@ import (
 	"go.chromium.org/luci/common/data/recordio"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/common/storage"
-	"go.chromium.org/luci/logdog/common/storage/caching"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
@@ -80,7 +79,7 @@ type Storage struct {
 	LogTable string
 
 	// Cache, if not nil, will be used to cache data.
-	Cache caching.Cache
+	Cache storage.Cache
 
 	// testBTInterface, if not nil, is the BigTable interface to use. This is
 	// useful for testing. If nil, this will default to the production isntance.
