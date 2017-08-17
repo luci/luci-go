@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "093ebc01_8847b049",
+        "filename": "appengine/gaeauth/server/oauth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-17T03:40:05Z",
+      "side": 1,
+      "message": "this change will likely cause compilation failures once DEPS are rolled",
+      "range": {
+        "startLine": 45,
+        "startChar": 5,
+        "endLine": 45,
+        "endChar": 21
+      },
+      "revId": "60d3467ba9c33f47e6f3ec35ba42f00ac0922f4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3aac8c45_643927f3",
+        "filename": "appengine/gaeauth/server/oauth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-17T03:40:05Z",
+      "side": 1,
+      "message": "I think this should reside somewhere in server/auth/, since it has no dependency on GAE anymore.\n\nI think it\u0027s fine to put it directly into server/auth: server/auth.GoogleOAuth2Method (since it\u0027s where Method is defined). Or maybe server/auth/google.OAuth2Method (but this will be odder, since we have dependency on google OAuth details elsewhere already).",
+      "range": {
+        "startLine": 104,
+        "startChar": 5,
+        "endLine": 104,
+        "endChar": 23
+      },
+      "revId": "60d3467ba9c33f47e6f3ec35ba42f00ac0922f4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c3d8efc_fbc02cf6",
+        "filename": "appengine/gaeauth/server/oauth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-17T03:40:05Z",
+      "side": 1,
+      "message": "if you move GoogleOAuth2Method to server/auth, you can use getConfig(ctx).AnonymousTransport(c). It will allow to get rid of initDevOnce in UserOAuth2Method.",
+      "range": {
+        "startLine": 110,
+        "startChar": 1,
+        "endLine": 110,
+        "endChar": 11
+      },
+      "revId": "60d3467ba9c33f47e6f3ec35ba42f00ac0922f4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8db7e377_d48ea0f8",
+        "filename": "appengine/gaeauth/server/oauth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-17T03:40:05Z",
+      "side": 1,
+      "message": "Since we are now going to use this in production, it will be prudent to use hashes of the tokens as keys here, not the tokens themselves, so if process core-dumps, we don\u0027t leak tokens of all our users :)\n\nThis is not a super big concern, but the fix is also very trivial, so why not.",
+      "range": {
+        "startLine": 138,
+        "startChar": 1,
+        "endLine": 138,
+        "endChar": 41
+      },
+      "revId": "60d3467ba9c33f47e6f3ec35ba42f00ac0922f4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b990e6d4_07c9e0d6",
+        "filename": "appengine/gaeauth/server/oauth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-17T03:40:05Z",
+      "side": 1,
+      "message": "it is actually relatively snappy on Flex :) It is slow as hell on local devserver because it goes through slow URLFetch mock and then hits \"far away\" internet.\n\nOn Flex there\u0027s no mocks and the network between GCE and googleapis.com is very fast.",
+      "range": {
+        "startLine": 151,
+        "startChar": 30,
+        "endLine": 151,
+        "endChar": 46
+      },
+      "revId": "60d3467ba9c33f47e6f3ec35ba42f00ac0922f4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
