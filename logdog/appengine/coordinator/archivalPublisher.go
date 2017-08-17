@@ -41,18 +41,22 @@ type ArchivalPublisher interface {
 	NewPublishIndex() uint64
 }
 
-type pubsubArchivalPublisher struct {
-	// publisher is the client used to publish messages.
-	publisher pubsub.Publisher
+// PubsubArchivalPublisher is an ArchivalPublisher that uses Cloud Pub/Sub
+// to task archival.
+type PubsubArchivalPublisher struct {
+	// Publisher is the client used to publish messages.
+	Publisher pubsub.Publisher
 
-	// publishIndexFunc is a function that will return a unique publish index
+	// PublishIndexFunc is a function that will return a unique publish index
 	// for this request.
-	publishIndexFunc func() uint64
+	PublishIndexFunc func() uint64
 }
 
-func (p *pubsubArchivalPublisher) Close() error { return nil }
+// Close implements ArchivalPublisher.
+func (p *PubsubArchivalPublisher) Close() error { return nil }
 
-func (p *pubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTask) error {
+// Publish implements ArchivalPublisher.
+func (p *PubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTask) error {
 	d, err := proto.Marshal(t)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to marshal task.")
@@ -72,7 +76,7 @@ func (p *pubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTa
 			"key":     t.Key,
 		}.Infof(c, "Publishing archival message for stream.")
 
-		_, err := p.publisher.Publish(c, &msg)
+		_, err := p.Publisher.Publish(c, &msg)
 		return err
 	}, func(err error, d time.Duration) {
 		log.Fields{
@@ -82,6 +86,7 @@ func (p *pubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTa
 	})
 }
 
-func (p *pubsubArchivalPublisher) NewPublishIndex() uint64 {
-	return p.publishIndexFunc()
+// NewPublishIndex implements ArchivalPublisher.
+func (p *PubsubArchivalPublisher) NewPublishIndex() uint64 {
+	return p.PublishIndexFunc()
 }

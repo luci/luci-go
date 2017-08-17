@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/errors"
@@ -130,7 +131,7 @@ func handleArchiveDispatchTask(c context.Context, payload proto.Message, execCou
 	}
 
 	// Get our archival publisher.
-	svc := coordinator.GetServices(c)
+	svc := endpoints.GetServices(c)
 	ap, err := svc.ArchivalPublisher(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to get archival publisher.")

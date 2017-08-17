@@ -25,7 +25,7 @@ import (
 
 	registrationPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	servicesPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
-	"go.chromium.org/luci/logdog/appengine/coordinator"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/registration"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/services"
 	"go.chromium.org/luci/server/router"
@@ -45,7 +45,7 @@ func init() {
 	registrationPb.RegisterRegistrationServer(&svr, registration.New())
 
 	// Standard HTTP endpoints.
-	base := classic.Base().Extend(coordinator.ProdCoordinatorService)
+	base := classic.Base().Extend(endpoints.ProdServices)
 	svr.InstallHandlers(r, base)
 
 	http.Handle("/", r)

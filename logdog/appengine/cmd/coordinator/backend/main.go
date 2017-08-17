@@ -21,7 +21,7 @@ import (
 	_ "net/http/pprof"
 
 	"go.chromium.org/luci/appengine/gaemiddleware/classic"
-	"go.chromium.org/luci/logdog/appengine/coordinator"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/appengine/coordinator/tasks"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/tumble"
@@ -37,7 +37,7 @@ func init() {
 	r := router.New()
 	classic.InstallHandlers(r)
 
-	base := classic.Base().Extend(coordinator.ProdCoordinatorService)
+	base := classic.Base().Extend(endpoints.ProdServices)
 	tmb.InstallHandlers(r, base)
 	tasks.InstallHandlers(r, base)
 

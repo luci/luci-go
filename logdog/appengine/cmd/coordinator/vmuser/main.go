@@ -29,8 +29,8 @@ import (
 	logsPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	registrationPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	servicesPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
-	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/admin"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/logs"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/registration"
@@ -62,7 +62,7 @@ func main() {
 	discovery.Enable(&svr)
 
 	// Standard HTTP endpoints.
-	base := classic.Base().Extend(coordinator.ProdCoordinatorService)
+	base := classic.Base().Extend(endpoints.ProdServices)
 	classic.InstallHandlers(r)
 	svr.InstallHandlers(r, base)
 
