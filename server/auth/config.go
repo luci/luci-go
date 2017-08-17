@@ -99,6 +99,10 @@ func ModifyConfig(c context.Context, cb func(Config) Config) context.Context {
 	return setConfig(c, &cfg)
 }
 
+func (cfg *Config) anonymousClient(ctx context.Context) *http.Client {
+	return &http.Client{Transport: cfg.AnonymousTransport(ctx)}
+}
+
 // adjustedTimeout returns `t` if IsDevMode is false or >=1 min if true.
 func (cfg *Config) adjustedTimeout(t time.Duration) time.Duration {
 	if !cfg.IsDevMode {
