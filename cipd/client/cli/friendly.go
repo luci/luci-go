@@ -456,7 +456,11 @@ func (c *installRun) Run(a subcommands.Application, args []string, env subcomman
 	}
 
 	// Pkg and version to install.
-	pkgName := args[0]
+	pkgName, err := expandTemplate(args[0])
+	if err != nil {
+		return c.done(nil, err)
+	}
+
 	version := ""
 	if len(args) == 2 {
 		version = args[1]
