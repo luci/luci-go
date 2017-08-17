@@ -117,6 +117,30 @@
     },
     {
       "key": {
+        "uuid": "9f4c2bcc_fec5cb8a",
+        "filename": "scheduler/appengine/engine/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-17T00:33:55Z",
+      "side": 1,
+      "message": "ignore this blablbalblah...\nactual expert khr@ said https://groups.google.com/d/msg/golang-nuts/cIfEOkdQFiw/taY2datfol4J \nso apparently this is OK.",
+      "parentUuid": "0e187457_25ea7483",
+      "range": {
+        "startLine": 236,
+        "startChar": 42,
+        "endLine": 236,
+        "endChar": 53
+      },
+      "revId": "1bf5fe4bf0b658bcf18001261a4790daaea0f3a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "29b5150b_7711f994",
         "filename": "scheduler/appengine/engine/dsset/dsset.go",
         "patchSetId": 3
