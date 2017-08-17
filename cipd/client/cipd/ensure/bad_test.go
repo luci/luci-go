@@ -90,7 +90,7 @@ var badEnsureFiles = []struct {
 	{
 		"invald expansion",
 		"@subdir ${os=linux}",
-		`unknown variable in ${os=linux}`,
+		`bad variable in subdir "${os=linux}"`,
 	},
 
 	{

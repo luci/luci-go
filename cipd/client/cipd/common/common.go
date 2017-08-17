@@ -27,6 +27,7 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 )
 
 // packageNameRe is a regular expression for a package name: <word>/<word/<word>
@@ -311,10 +312,87 @@ func (p PinMapBySubdir) ToSlice() PinSliceBySubdir {
 	return ret
 }
 
-// TemplateArgs returns the default template args which can be used with the
-// ensure.PackageDef.Resolve() method.
-func TemplateArgs() map[string]string {
-	return map[string]string{
+// PackageNameExpander is a mapping of simple string substitutions which is used to
+// expand cipd package name templates. For example:
+//
+//   ex, err := PackageNameExpander{
+//     "platform": "mac-amd64"
+//   }.Expand("foo/${platform}")
+//
+// `ex` would be "foo/mac-amd64".
+//
+// Use DefaultPackageNameExpander() to obtain the default mapping for CIPD
+// applications.
+type PackageNameExpander map[string]string
+
+// ErrSkipTemplate may be returned from PackageNameExpander.Expand to indicate that
+// a given expansion doesn't apply to the current template parameters. For
+// example, expanding `"foo/${os=linux,mac}"` with a template parameter of "os"
+// == "win", would return ErrSkipTemplate.
+var ErrSkipTemplate = errors.New("package template does not apply to the current system")
+
+var templateParm = regexp.MustCompile(`\${[^}]*}`)
+
+// Expand applies package template expansion rules to the package template,
+//
+// If err == ErrSkipTemplate, that means that this template does not apply to
+// this os/arch combination and should be skipped.
+//
+// The expansion rules are as follows:
+//   - "some text" will pass through unchanged
+//   - "${variable}" will directly substitute the given variable
+//   - "${variable=val1,val2}" will substitute the given variable, if its value
+//     matches one of the values in the list of values. If the current value
+//     does not match, this returns ErrSkipTemplate.
+//
+// Attempting to expand an unknown variable is an error.
+// After expansion, any lingering '$' in the template is an error.
+func (t PackageNameExpander) Expand(template string) (pkg string, err error) {
+	skip := false
+
+	pkg = templateParm.ReplaceAllStringFunc(template, func(parm string) string {
+		// ${...}
+		contents := parm[2 : len(parm)-1]
+
+		varNameValues := strings.SplitN(contents, "=", 2)
+		if len(varNameValues) == 1 {
+			// ${varName}
+			if value, ok := t[varNameValues[0]]; ok {
+				return value
+			}
+
+			err = errors.Reason("unknown variable in ${%s}", contents).Err()
+		}
+
+		// ${varName=value,value}
+		ourValue, ok := t[varNameValues[0]]
+		if !ok {
+			err = errors.Reason("unknown variable %q", parm).Err()
+			return parm
+		}
+
+		for _, val := range strings.Split(varNameValues[1], ",") {
+			if val == ourValue {
+				return ourValue
+			}
+		}
+		skip = true
+		return parm
+	})
+	if skip {
+		err = ErrSkipTemplate
+	}
+	if err == nil && strings.ContainsRune(pkg, '$') {
+		err = errors.Reason("unable to process some variables in %q", template).Err()
+	}
+	return
+}
+
+// DefaultPackageNameExpander returns the default template expander.
+//
+// This has values populated for ${os}, ${arch} and ${platform}.
+func DefaultPackageNameExpander() PackageNameExpander {
+	return PackageNameExpander{
 		"os":       currentOS,
 		"arch":     currentArchitecture,
 		"platform": fmt.Sprintf("%s-%s", currentOS, currentArchitecture),
