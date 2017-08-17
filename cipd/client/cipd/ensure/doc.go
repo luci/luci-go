@@ -24,37 +24,31 @@
 //
 // The file is line-oriented. All statements fit on a single line.
 //
-// A line can be blank, a comment, a setting, a directive, or a package.
+// A line can be blank, a comment, a setting, a package, or a directive.
+//
+//
+// Comments
 //
 // A comment begins with a # and goes to the end of the line. It is ignored.
+// Example:
+//   # This is a comment. It has no effect.
+//
 //
 // Settings
 //
 // A setting looks like `$name value`. Settings are global and can only be set
 // once per file. The following settings are allowed:
-//   - ServiceURL is the url for the cipd service. It can be used in lieu of
+//   - `$ServiceURL` is the url for the cipd service. It can be used in lieu of
 //     the -service-url command line parameter.
 //
-// Directives
-//
-// A directive looks like `@name value`. Directives are 'sticky' and apply until
-// the next same-name directive. The following directives are allowed:
-//   - Subdir allows you to change the subdirectory that packages are installed
-//		 to. The subdir value is relative to the root of the cipd installation
-//		 (the directory containing the .cipd folder). The value of Subdir before
-//		 any @Subdir directives is "", or the root of the cipd installation.
-//		 @Subdir directives also support expansion parameters `${os}`, `${arch}`
-//		 and `${platform}`. Using a subdir expansion like `${param=val}` will
-//		 cause that subdirectory, and any packages in it, to only exist if the
-//		 param matches the value.
 //
 // Package Definitions
 //
 // A package line looks like `<package_template> <version>`. Package templates
-// are cipd package names, with optional expansion parameters `${os}` and
-// `${arch}`. These placeholders can appear anywhere in the package template
-// except for the first letter.  All other characters in the template are taken
-// verbatim.
+// are cipd package names, with optional expansion parameters `${os}`,
+// `${arch}`, and `${platform}`. These placeholders can appear anywhere in the
+// package template except for the first letter.  All other characters in the
+// template are taken verbatim.
 //
 // ${os} will expand to one of the following, based on the value of this
 // client's runtime.GOOS value:
@@ -68,10 +62,10 @@
 //   * amd64
 //   * armv6l
 //
-// Since these two often appear together, a convenience placeholder
+// Since these two often appear together, the convenience placeholder
 // `${platform}` expands to the equivalent of `${os}-${arch}`.
 //
-// Both of these paramters also support the syntax ${var=possible,values}.
+// All of these paramters also support the syntax ${var=possible,values}.
 // What this means is that the package line will be expanded if, and only if,
 // var equals one of the possible values. If that var does not match
 // a possible value, the line is ignored. This allows you to do, e.g.:
@@ -80,8 +74,26 @@
 //   # no version for mac
 //
 //   path/to/posix/tool/${os=mac,linux}  some_tag:value
+//   # no version for windows
 //
-// That's all there is to it.
+//
+// Directives
+//
+// A directive looks like `@name value`. Directives are 'sticky' and apply until
+// the next same-name directive. The following directive names are allowed:
+//   - `@Subdir` allows you to change the subdirectory that subsequent packages
+//     are installed to.
+//     * The subdir value is always relative to the root of the cipd
+//       installation (the directory containing the .cipd folder).
+//     * The value of Subdir before any @Subdir directives is "", or the root
+//       of the cipd installation.
+//     * You can reset the directory back to root by doing `@Subdir` by itself,
+//       without a value.
+//     * @Subdir directives also support expansion parameters `${os}`, `${arch}`
+//       and `${platform}`. Using a subdir expansion like `${param=val}` will
+//       cause that subdirectory, and any packages in it, to only exist if the
+//       param matches one of the values.
+//
 //
 // Example
 //
@@ -100,4 +112,13 @@
 //
 //   @Subdir infra/support
 //   infra/some/other/package deadbeefdeadbeefdeadbeefdeadbeefdeadbeef
+//
+//   # only exists on windows machines
+//   @Subdir support/${os=windows}-${arch}
+//   some/support/package  latest
+//   some/other/support/package  latest
+//
+//   # Always exists, but the directory changes based on the os
+//   @Subdir platform/${os}
+//   a/platform/package latest
 package ensure
