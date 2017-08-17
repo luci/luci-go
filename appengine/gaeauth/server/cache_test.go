@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -46,7 +47,7 @@ func TestMemcache(t *testing.T) {
 
 		Convey("Memcache works (with per-request cache)", func() {
 			cache := &Memcache{Namespace: "blah"}
-			ctx = cache.UseRequestCache(ctx)
+			ctx = caching.WithRequestCache(ctx)
 			doTest(ctx, cache)
 			So(counter.GetMulti.Total(), ShouldEqual, 2)
 			So(counter.SetMulti.Total(), ShouldEqual, 2)

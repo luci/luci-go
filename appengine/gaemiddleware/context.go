@@ -25,11 +25,13 @@ import (
 	"go.chromium.org/gae/service/urlfetch"
 
 	"go.chromium.org/luci/common/data/caching/cacheContext"
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/data/caching/proccache"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/settings"
@@ -46,6 +48,14 @@ import (
 var (
 	// globalProcessCache holds state cached between requests.
 	globalProcessCache = &proccache.Cache{}
+
+	// globalLRUCache holds state cached between requests.
+	//
+	// TODO: We should choose a maximum LRU size here to stop this from growing
+	//   indefinitely. However, it's replacing an indefinitely-growing cache, so
+	//   for now this is acceptable.
+	// TODO: This should replace uses of globalProcessCache.
+	globalLRUCache = lru.New(0)
 
 	// globalSettings holds global app settings lazily updated from the datastore.
 	globalSettings = settings.New(gaesettings.Storage{})
@@ -89,6 +99,8 @@ var (
 func WithProd(c context.Context, req *http.Request) context.Context {
 	// These are needed to use fetchCachedSettings.
 	c = logging.SetLevel(c, logging.Debug)
+	c = caching.WithProcessCache(c, globalLRUCache)
+	c = caching.WithRequestCache(c)
 	c = prod.Use(c, req)
 	c = settings.Use(c, globalSettings)
 
@@ -103,7 +115,6 @@ func WithProd(c context.Context, req *http.Request) context.Context {
 	c = proccache.Use(c, globalProcessCache)
 	c = gaeconfig.Use(c)
 	c = gaesecrets.Use(c, nil)
-	c = globalAuthCache.UseRequestCache(c)
 	c = auth.ModifyConfig(c, func(auth.Config) auth.Config { return globalAuthConfig })
 
 	// Wrap this in a cache context so that lookups for any of the aforementioned
