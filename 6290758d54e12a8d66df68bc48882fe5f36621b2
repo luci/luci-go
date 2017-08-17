@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "a66ab539_afd547bf",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-17T00:00:11Z",
+      "side": 1,
+      "message": "*shrug*",
+      "parentUuid": "561908ac_343d6563",
+      "range": {
+        "startLine": 111,
+        "startChar": 4,
+        "endLine": 111,
+        "endChar": 49
+      },
+      "revId": "6290758d54e12a8d66df68bc48882fe5f36621b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b572bcfa_7b47eada",
         "filename": "luci_config/appengine/gaeconfig/default.go",
         "patchSetId": 3
@@ -84,6 +108,30 @@
       "side": 1,
       "message": "I think that before we were using a per-request cache, too. I tagged where.",
       "parentUuid": "b572bcfa_7b47eada",
+      "range": {
+        "startLine": 155,
+        "startChar": 3,
+        "endLine": 155,
+        "endChar": 48
+      },
+      "revId": "6290758d54e12a8d66df68bc48882fe5f36621b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc84edd7_c97aab0d",
+        "filename": "luci_config/appengine/gaeconfig/default.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-17T00:00:11Z",
+      "side": 1,
+      "message": "That\u0027s why I said \"in a previous CL perhaps\". I think we \u0027regressed\u0027 to per-request cache here: https://chromium.googlesource.com/infra/luci/luci-go/+/5139ec72ee137a8524901ebd624bdb57bc7a5c38%5E%21/#F1\n\nI haven\u0027t looked too deep, but caching.ProcCache was likely using global proccache (which ultimately lives in global variable here https://chromium.googlesource.com/infra/luci/luci-go/+/master/appengine/gaemiddleware/context.go#48), and caching.LRUBackend is using per-request LRU cache.\n\nI guess we can keep \"TODO: Switch to global LRU cache\" for now and switch to global LRU cache later, when https://chromium-review.googlesource.com/c/609369 (and a CL that injects it into default context) land.",
+      "parentUuid": "44f7ad34_68ff462b",
       "range": {
         "startLine": 155,
         "startChar": 3,
