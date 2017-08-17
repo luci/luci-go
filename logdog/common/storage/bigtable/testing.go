@@ -22,7 +22,6 @@ import (
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/data/treapstore"
 	"go.chromium.org/luci/logdog/common/storage"
-	"go.chromium.org/luci/logdog/common/storage/caching"
 
 	"golang.org/x/net/context"
 )
@@ -71,7 +70,7 @@ func (bts *btTestingStorage) MaxLogAge() time.Duration   { return bts.maxLogAge 
 //
 // Close should be called on the resulting value after the user is finished in
 // order to free resources.
-func NewMemoryInstance(cache caching.Cache) Testing {
+func NewMemoryInstance(cache storage.Cache) Testing {
 	s := Storage{
 		LogTable: "test-log-table",
 		Cache:    cache,

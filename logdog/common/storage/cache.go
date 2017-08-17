@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package caching
+package storage
 
 import (
 	"bufio"
@@ -23,9 +23,8 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Item is a single cache item. An item is uniquely identified by its Schema and
-// Key sequence.
-type Item struct {
+// CacheKey is a single cache item's key.
+type CacheKey struct {
 	// Schema is the item's schema value. If empty, the item is schemaless.
 	Schema string
 
@@ -35,32 +34,31 @@ type Item struct {
 	// Key is the item's individual key. It uniquely identifies the Item within
 	// the scope of the Schema and Type.
 	Key string
-
-	// Data is the Item's data. For Put, the contents of this Data will be used to
-	// populate the cache. For Get, this value will be non-nil and populated with
-	// the retrieved data, or nil if the item was not present in the cache.
-	Data []byte
 }
 
 // Cache is a simple cache interface. It is capable of storage and retrieval.
 type Cache interface {
-	// Put caches the supplied Items into the cache. If an Item already exists in
-	// the cache, it will be overridden.
+	// Put caches an Items into the cache. If an item already exists in the cache,
+	// it will be overridden.
+	//
+	// The data in val may be directly retained by the cache, and the caller
+	// promises not to mutate it after being passed to Put.
 	//
 	// If exp, the supplied expiration Duration, is >0, the cache should only
 	// store the data if it can expire it after this period of time.
 	//
 	// This method does not return whether or not the caching storage was
 	// successful.
-	Put(c context.Context, exp time.Duration, items ...*Item)
+	Put(c context.Context, key CacheKey, val []byte, exp time.Duration)
 
-	// Get retrieves a cached entry. If the entry was present, a non-nil value
-	// will be returned, even if the data length is zero. If the entry was not
-	// present, nil will be returned.
+	// Get retrieves a cached entry. If the entry was present, the returned
+	// boolean will be true.
+	//
+	// The returned byte slice may not be modified by the caller.
 	//
 	// This method does not distinguish between an error and missing data. Either
 	// valid data is returned, or it is not.
-	Get(c context.Context, items ...*Item)
+	Get(c context.Context, key CacheKey) ([]byte, bool)
 }
 
 // HashKey composes a hex-encoded SHA256 string from the supplied parts. The
