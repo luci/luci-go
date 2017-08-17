@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "47acd76a_7999689c",
+        "filename": "appengine/gaeauth/server/oauth.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-17T17:06:31Z",
+      "side": 1,
+      "message": "can we rename it back to OAuth2Method? It is already in GAE-specific package, so it will be understood as \"OAuth2 method for GAE\".\n\n(UserOAuth2Method collides a bit in naming with existing UsersAPIAuthMethod that uses GAE Users API, and now that GoogleOAuth2Method is elsewhere we don\u0027t need a clarifying prefix for OAuth2Method).",
+      "range": {
+        "startLine": 38,
+        "startChar": 5,
+        "endLine": 38,
+        "endChar": 21
+      },
+      "revId": "a8391b6cd91a56592d4461224f6b2672cbce28e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aade95c0_c9645c10",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-17T17:06:31Z",
+      "side": 1,
+      "message": "processes",
+      "range": {
+        "startLine": 35,
+        "startChar": 30,
+        "endLine": 35,
+        "endChar": 37
+      },
+      "revId": "a8391b6cd91a56592d4461224f6b2672cbce28e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
