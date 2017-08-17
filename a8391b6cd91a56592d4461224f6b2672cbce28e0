@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6aa6675d_5520cae7",
+        "filename": "appengine/gaeauth/server/oauth.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-17T17:12:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "47acd76a_7999689c",
+      "range": {
+        "startLine": 38,
+        "startChar": 5,
+        "endLine": 38,
+        "endChar": 21
+      },
+      "revId": "a8391b6cd91a56592d4461224f6b2672cbce28e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "aade95c0_c9645c10",
         "filename": "server/auth/cache.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "a8391b6cd91a56592d4461224f6b2672cbce28e0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea2856ab_0f41ccd7",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-17T17:12:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aade95c0_c9645c10",
+      "range": {
+        "startLine": 35,
+        "startChar": 30,
+        "endLine": 35,
+        "endChar": 37
+      },
+      "revId": "a8391b6cd91a56592d4461224f6b2672cbce28e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
