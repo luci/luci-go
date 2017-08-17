@@ -2257,18 +2257,14 @@ func GetApplication(params Parameters) *cli.Application {
 			subcommands.CmdHelp,
 			version.SubcommandVersion,
 
-			// User friendly subcommands that operates within a site root. Implemented
-			// in friendly.go.
-			cmdInit(params),
-			cmdInstall(params),
-			cmdInstalled(params),
-
 			// Authentication related commands.
+			{}, // These are spacers so that the commands appear in groups.
 			authcli.SubcommandInfo(params.DefaultAuthOptions, "auth-info", true),
 			authcli.SubcommandLogin(params.DefaultAuthOptions, "auth-login", false),
 			authcli.SubcommandLogout(params.DefaultAuthOptions, "auth-logout", false),
 
 			// High level commands.
+			{},
 			cmdListPackages(params),
 			cmdSearch(params),
 			cmdCreate(params),
@@ -2279,15 +2275,25 @@ func GetApplication(params Parameters) *cli.Application {
 			cmdSetTag(params),
 			cmdSelfUpdate(params),
 
+			// User friendly subcommands that operates within a site root. Implemented
+			// in friendly.go. These are advanced because they're half-baked.
+			{Advanced: true},
+			cmdInit(params),
+			cmdInstall(params),
+			cmdInstalled(params),
+
 			// ACLs.
+			{Advanced: true},
 			cmdListACL(params),
 			cmdEditACL(params),
 
 			// Counters.
+			{Advanced: true},
 			cmdCounterWrite(params),
 			cmdCounterRead(params),
 
 			// Low level pkg-* commands.
+			{Advanced: true},
 			cmdBuild(),
 			cmdDeploy(),
 			cmdFetch(params),
@@ -2296,6 +2302,7 @@ func GetApplication(params Parameters) *cli.Application {
 			cmdDelete(params),
 
 			// Low level misc commands.
+			{Advanced: true},
 			cmdPuppetCheckUpdates(params),
 		},
 	}
