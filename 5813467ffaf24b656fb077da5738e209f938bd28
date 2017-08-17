@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ee494093_bd181392",
+        "filename": "server/caching/context.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-17T00:11:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ec5457b8_fb3c7feb",
+      "range": {
+        "startLine": 35,
+        "startChar": 20,
+        "endLine": 35,
+        "endChar": 59
+      },
+      "revId": "5813467ffaf24b656fb077da5738e209f938bd28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "27aad989_0ff56e86",
         "filename": "server/caching/context.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "0783949f_ec7c39d0",
+        "filename": "server/caching/context.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-17T00:11:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "27aad989_0ff56e86",
+      "range": {
+        "startLine": 49,
+        "startChar": 16,
+        "endLine": 49,
+        "endChar": 53
+      },
+      "revId": "5813467ffaf24b656fb077da5738e209f938bd28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "38aa5805_959c9d0a",
         "filename": "server/caching/context.go",
         "patchSetId": 1
@@ -59,6 +107,30 @@
       "writtenOn": "2017-08-16T22:02:23Z",
       "side": 1,
       "message": "I have a feeling we are paying overhead for LRU-ness of the cache (maintaining its linked list structure) for no benefit here :( Though no big deal, it should be smallish.",
+      "range": {
+        "startLine": 64,
+        "startChar": 47,
+        "endLine": 64,
+        "endChar": 57
+      },
+      "revId": "5813467ffaf24b656fb077da5738e209f938bd28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce4b6abf_7b6e44dc",
+        "filename": "server/caching/context.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-17T00:11:55Z",
+      "side": 1,
+      "message": "Yeah that\u0027s sort of my reasoning. We could optimize the LRU struct to not do linked-list manipulation if we ever care, but I opted not to increase the code complexity yet. It\u0027d effectively be a different code path: if exp \u003d\u003d 0, do this differently-locking thing.",
+      "parentUuid": "38aa5805_959c9d0a",
       "range": {
         "startLine": 64,
         "startChar": 47,
