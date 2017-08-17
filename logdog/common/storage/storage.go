@@ -20,6 +20,8 @@ import (
 
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
+
+	"golang.org/x/net/context"
 )
 
 var (
@@ -104,7 +106,7 @@ type Storage interface {
 	// Writes log record data to storage.
 	//
 	// If the data already exists, ErrExists will be returned.
-	Put(PutRequest) error
+	Put(context.Context, PutRequest) error
 
 	// Get invokes a callback over a range of sequential LogEntry records.
 	//
@@ -119,7 +121,7 @@ type Storage interface {
 	// Returns nil if retrieval executed successfully, ErrDoesNotExist if
 	// the requested stream does not exist, and an error if an error occurred
 	// during retrieval.
-	Get(GetRequest, GetCallback) error
+	Get(context.Context, GetRequest, GetCallback) error
 
 	// Tail retrieves the latest log in the stream. If the stream has no logs, it
 	// will fail with ErrDoesNotExist.
@@ -127,9 +129,9 @@ type Storage interface {
 	// The MessageIndex may be -1 if the message index isn't known. In this case,
 	// the caller will have to unmarshal the log entry data to determine its
 	// index.
-	Tail(cfgtypes.ProjectName, types.StreamPath) (*Entry, error)
+	Tail(context.Context, cfgtypes.ProjectName, types.StreamPath) (*Entry, error)
 
 	// Config installs the supplied configuration parameters into the storage
 	// instance.
-	Config(Config) error
+	Config(context.Context, Config) error
 }

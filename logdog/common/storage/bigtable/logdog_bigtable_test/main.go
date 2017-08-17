@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
+	cloudBT "cloud.google.com/go/bigtable"
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
@@ -68,22 +69,28 @@ func (app *application) addFlags(fs *flag.FlagSet) {
 	fs.StringVar(&app.btLogTable, "bt-log-table", "", "BigTable log table name (required)")
 }
 
-func (app *application) getBigTableClient(c context.Context) (storage.Storage, error) {
+func (app *application) getBigTableClient(c context.Context) (*cloudBT.Client, error) {
 	a := auth.NewAuthenticator(c, auth.SilentLogin, app.authOpts)
 	tsrc, err := a.TokenSource()
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get token source").Err()
 	}
 
-	return bigtable.New(c, bigtable.Options{
-		Project:  app.btProject,
-		Instance: app.btInstance,
+	client, err := cloudBT.NewClient(c, app.btProject, app.btInstance, option.WithTokenSource(tsrc))
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get BigTable client").Err()
+	}
+
+	return client, nil
+}
+
+func (app *application) getStorage(btc *cloudBT.Client) storage.Storage {
+	return &bigtable.Storage{
+		Client: btc,
+
 		LogTable: app.btLogTable,
-		ClientOptions: []option.ClientOption{
-			option.WithTokenSource(tsrc),
-		},
-		Cache: &memory.Cache{},
-	})
+		Cache:    &memory.Cache{},
+	}
 }
 
 func mainImpl(c context.Context, defaultAuthOpts auth.Options, args []string) int {
@@ -219,18 +226,20 @@ func (cmd *cmdRunGet) Run(baseApp subcommands.Application, args []string, _ subc
 		return 1
 	}
 
-	stClient, err := app.getBigTableClient(c)
+	btClient, err := app.getBigTableClient(c)
 	if err != nil {
 		renderErr(c, errors.Annotate(err, "failed to create storage client").Err())
 		return 1
 	}
-	defer stClient.Close()
+	defer btClient.Close()
+
+	stClient := app.getStorage(btClient)
 
 	for round := 0; round < cmd.rounds; round++ {
 		log.Infof(c, "Get round %d.", round+1)
 
 		var innerErr error
-		err = stClient.Get(storage.GetRequest{
+		err = stClient.Get(c, storage.GetRequest{
 			Project: cfgtypes.ProjectName(cmd.project),
 			Path:    types.StreamPath(cmd.path),
 			Index:   types.MessageIndex(cmd.index),
@@ -303,16 +312,18 @@ func (cmd *cmdRunTail) Run(baseApp subcommands.Application, args []string, _ sub
 		return 1
 	}
 
-	stClient, err := app.getBigTableClient(c)
+	btClient, err := app.getBigTableClient(c)
 	if err != nil {
 		renderErr(c, errors.Annotate(err, "failed to create storage client").Err())
 		return 1
 	}
-	defer stClient.Close()
+	defer btClient.Close()
+
+	stClient := app.getStorage(btClient)
 
 	for round := 0; round < cmd.rounds; round++ {
 		log.Infof(c, "Tail round %d.", round+1)
-		e, err := stClient.Tail(cfgtypes.ProjectName(cmd.project), types.StreamPath(cmd.path))
+		e, err := stClient.Tail(c, cfgtypes.ProjectName(cmd.project), types.StreamPath(cmd.path))
 		if err != nil {
 			renderErr(c, errors.Annotate(err, "failed to tail log entries").Err())
 			return 1

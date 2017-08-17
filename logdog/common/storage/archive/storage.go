@@ -77,16 +77,14 @@ type Options struct {
 
 type storageImpl struct {
 	*Options
-	context.Context
 
 	index atomic.Value
 }
 
 // New instantiates a new Storage instance, bound to the supplied Options.
-func New(ctx context.Context, o Options) (storage.Storage, error) {
+func New(o Options) (storage.Storage, error) {
 	s := storageImpl{
 		Options: &o,
-		Context: ctx,
 	}
 
 	if !s.Stream.IsFullPath() {
@@ -101,11 +99,11 @@ func New(ctx context.Context, o Options) (storage.Storage, error) {
 
 func (s *storageImpl) Close() {}
 
-func (s *storageImpl) Config(storage.Config) error  { return storage.ErrReadOnly }
-func (s *storageImpl) Put(storage.PutRequest) error { return storage.ErrReadOnly }
+func (s *storageImpl) Config(context.Context, storage.Config) error  { return storage.ErrReadOnly }
+func (s *storageImpl) Put(context.Context, storage.PutRequest) error { return storage.ErrReadOnly }
 
-func (s *storageImpl) Get(req storage.GetRequest, cb storage.GetCallback) error {
-	idx, err := s.getIndex()
+func (s *storageImpl) Get(c context.Context, req storage.GetRequest, cb storage.GetCallback) error {
+	idx, err := s.getIndex(c)
 	if err != nil {
 		return err
 	}
@@ -117,7 +115,7 @@ func (s *storageImpl) Get(req storage.GetRequest, cb storage.GetCallback) error 
 		return nil
 	}
 
-	switch err := s.getLogEntriesIter(st, cb); errors.Unwrap(err) {
+	switch err := s.getLogEntriesIter(c, st, cb); errors.Unwrap(err) {
 	case nil, io.EOF:
 		// We hit the end of our log stream.
 		return nil
@@ -131,7 +129,7 @@ func (s *storageImpl) Get(req storage.GetRequest, cb storage.GetCallback) error 
 }
 
 // getLogEntriesImpl retrieves log entries from archive until complete.
-func (s *storageImpl) getLogEntriesIter(st *getStrategy, cb storage.GetCallback) error {
+func (s *storageImpl) getLogEntriesIter(c context.Context, st *getStrategy, cb storage.GetCallback) error {
 	// Get our maximum byte limit. If we are externally constrained via MaxBytes,
 	// apply that limit too.
 	// Get an archive reader.
@@ -144,16 +142,16 @@ func (s *storageImpl) getLogEntriesIter(st *getStrategy, cb storage.GetCallback)
 		"offset": offset,
 		"length": length,
 		"path":   s.Stream,
-	}.Debugf(s, "Creating stream reader for range.")
+	}.Debugf(c, "Creating stream reader for range.")
 	storageReader, err := s.Client.NewReader(s.Stream, int64(offset), length)
 	if err != nil {
-		log.WithError(err).Errorf(s, "Failed to create stream Reader.")
+		log.WithError(err).Errorf(c, "Failed to create stream Reader.")
 		return errors.Annotate(err, "failed to create stream Reader").Err()
 	}
 	defer func() {
 		if tmpErr := storageReader.Close(); tmpErr != nil {
 			// (Non-fatal)
-			log.WithError(tmpErr).Warningf(s, "Error closing stream Reader.")
+			log.WithError(tmpErr).Warningf(c, "Error closing stream Reader.")
 		}
 	}()
 
@@ -185,7 +183,7 @@ func (s *storageImpl) getLogEntriesIter(st *getStrategy, cb storage.GetCallback)
 				log.ErrorKey:  err,
 				"frameOffset": offset,
 				"frameSize":   sz,
-			}.Errorf(s, "Failed to read frame data.")
+			}.Errorf(c, "Failed to read frame data.")
 			return errors.Annotate(err, "failed to read frame data").Err()
 
 		case amt != sz:
@@ -209,7 +207,7 @@ func (s *storageImpl) getLogEntriesIter(st *getStrategy, cb storage.GetCallback)
 				log.ErrorKey:  err,
 				"frameOffset": offset,
 				"frameSize":   sz,
-			}.Errorf(s, "Failed to get log entry index.")
+			}.Errorf(c, "Failed to get log entry index.")
 			return errors.Annotate(err, "failed to get log entry index").Err()
 
 		case idx < st.startIndex:
@@ -235,8 +233,8 @@ func (s *storageImpl) getLogEntriesIter(st *getStrategy, cb storage.GetCallback)
 	}
 }
 
-func (s *storageImpl) Tail(project cfgtypes.ProjectName, path types.StreamPath) (*storage.Entry, error) {
-	idx, err := s.getIndex()
+func (s *storageImpl) Tail(c context.Context, project cfgtypes.ProjectName, path types.StreamPath) (*storage.Entry, error) {
+	idx, err := s.getIndex(c)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +260,7 @@ func (s *storageImpl) Tail(project cfgtypes.ProjectName, path types.StreamPath) 
 
 	// Read forwards to EOF. Retain the last entry that we read.
 	var lastEntry *storage.Entry
-	err = s.Get(req, func(e *storage.Entry) bool {
+	err = s.Get(c, req, func(e *storage.Entry) bool {
 		lastEntry = e
 
 		// We can stop if we have the last stream index and this is that index.
@@ -290,20 +288,20 @@ func (s *storageImpl) Tail(project cfgtypes.ProjectName, path types.StreamPath) 
 }
 
 // getIndex returns the cached log stream index, fetching it if necessary.
-func (s *storageImpl) getIndex() (*logpb.LogIndex, error) {
+func (s *storageImpl) getIndex(c context.Context) (*logpb.LogIndex, error) {
 	idx := s.index.Load()
 	if idx != nil {
 		return idx.(*logpb.LogIndex), nil
 	}
 
-	index, err := loadIndex(s, s.Client, s.Index, s.Cache)
+	index, err := loadIndex(c, s.Client, s.Index, s.Cache)
 	switch errors.Unwrap(err) {
 	case nil:
 		break
 
 	case cloudStorage.ErrBucketNotExist, cloudStorage.ErrObjectNotExist:
 		// Treat a missing index the same as an empty index.
-		log.WithError(err).Warningf(s, "Index is invalid, using empty index.")
+		log.WithError(err).Warningf(c, "Index is invalid, using empty index.")
 		index = &logpb.LogIndex{}
 
 	default:

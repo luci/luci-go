@@ -22,6 +22,8 @@ import (
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
+
+	"golang.org/x/net/context"
 )
 
 type logStream struct {
@@ -77,7 +79,7 @@ func (s *Storage) ResetClose() {
 }
 
 // Config implements storage.Storage.
-func (s *Storage) Config(cfg storage.Config) error {
+func (s *Storage) Config(c context.Context, cfg storage.Config) error {
 	return s.run(func() error {
 		s.MaxLogAge = cfg.MaxLogAge
 		return nil
@@ -85,7 +87,7 @@ func (s *Storage) Config(cfg storage.Config) error {
 }
 
 // Put implements storage.Storage.
-func (s *Storage) Put(req storage.PutRequest) error {
+func (s *Storage) Put(c context.Context, req storage.PutRequest) error {
 	return s.run(func() error {
 		ls := s.getLogStreamLocked(req.Project, req.Path, true)
 
@@ -107,7 +109,7 @@ func (s *Storage) Put(req storage.PutRequest) error {
 }
 
 // Get implements storage.Storage.
-func (s *Storage) Get(req storage.GetRequest, cb storage.GetCallback) error {
+func (s *Storage) Get(c context.Context, req storage.GetRequest, cb storage.GetCallback) error {
 	recs := []*rec(nil)
 	err := s.run(func() error {
 		ls := s.getLogStreamLocked(req.Project, req.Path, false)
@@ -160,7 +162,7 @@ func (s *Storage) Get(req storage.GetRequest, cb storage.GetCallback) error {
 }
 
 // Tail implements storage.Storage.
-func (s *Storage) Tail(project cfgtypes.ProjectName, path types.StreamPath) (*storage.Entry, error) {
+func (s *Storage) Tail(c context.Context, project cfgtypes.ProjectName, path types.StreamPath) (*storage.Entry, error) {
 	var r *rec
 
 	// Find the latest log, then return it.

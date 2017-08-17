@@ -224,7 +224,7 @@ func getHead(c context.Context, req *logdog.GetRequest, st coordinator.Storage, 
 	err := retry.Retry(c, transient.Only(retry.Default), func() error {
 		// Issue the Get request. This may return a transient error, in which case
 		// we will retry.
-		return st.Get(sreq, func(e *storage.Entry) bool {
+		return st.Get(c, sreq, func(e *storage.Entry) bool {
 			var le *logpb.LogEntry
 			if le, ierr = e.GetLogEntry(); ierr != nil {
 				return false
@@ -286,7 +286,7 @@ func getTail(c context.Context, st coordinator.Storage, project cfgtypes.Project
 
 	var e *storage.Entry
 	err := retry.Retry(c, transient.Only(retry.Default), func() (err error) {
-		e, err = st.Tail(project, path)
+		e, err = st.Tail(c, project, path)
 		return
 	}, func(err error, delay time.Duration) {
 		log.Fields{

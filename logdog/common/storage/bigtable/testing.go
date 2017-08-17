@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/data/treapstore"
 	"go.chromium.org/luci/logdog/common/storage"
+	"go.chromium.org/luci/logdog/common/storage/caching"
 
 	"golang.org/x/net/context"
 )
@@ -29,20 +30,6 @@ import (
 type storageItem struct {
 	key   []byte
 	value []byte
-}
-
-// btTableTest is an in-memory implementation of btTable interface for testing.
-//
-// This is a simple implementation; not an efficient one.
-type btTableTest struct {
-	s *treapstore.Store
-	c *treapstore.Collection
-
-	// err, if true, is the error immediately returned by functions.
-	err error
-
-	// maxLogAge is the currently-configured maximum log age.
-	maxLogAge time.Duration
 }
 
 // Testing is an extension of storage.Storage with additional testing
@@ -57,48 +44,62 @@ type Testing interface {
 }
 
 type btTestingStorage struct {
-	*btStorage
-	mem *btTableTest
+	*Storage
+
+	maxRowSize int
+
+	s *treapstore.Store
+	c *treapstore.Collection
+
+	// err, if true, is the error immediately returned by functions.
+	err error
+
+	// maxLogAge is the currently-configured maximum log age.
+	maxLogAge time.Duration
 }
 
-func (st *btTestingStorage) DataMap() map[string][]byte { return st.mem.dataMap() }
-func (st *btTestingStorage) SetMaxRowSize(v int)        { st.maxRowSize = v }
-func (st *btTestingStorage) SetErr(err error)           { st.mem.err = err }
-func (st *btTestingStorage) MaxLogAge() time.Duration   { return st.mem.maxLogAge }
+func (bts *btTestingStorage) DataMap() map[string][]byte { return bts.dataMap() }
+func (bts *btTestingStorage) SetMaxRowSize(v int)        { bts.maxRowSize = v }
+func (bts *btTestingStorage) SetErr(err error)           { bts.err = err }
+func (bts *btTestingStorage) MaxLogAge() time.Duration   { return bts.maxLogAge }
 
 // NewMemoryInstance returns an in-memory BigTable Storage implementation.
 // This can be supplied in the Raw field in Options to simulate a BigTable
 // connection.
 //
+// An optional cache can be supplied to test caching logic.
+//
 // Close should be called on the resulting value after the user is finished in
 // order to free resources.
-func NewMemoryInstance(c context.Context, opts Options) Testing {
-	mem := &btTableTest{}
-	base := newBTStorage(c, opts, nil, nil, mem)
-	return &btTestingStorage{
-		btStorage: base,
-		mem:       mem,
+func NewMemoryInstance(cache caching.Cache) Testing {
+	s := Storage{
+		LogTable: "test-log-table",
+		Cache:    cache,
 	}
-}
 
-func (t *btTableTest) close() {
-	t.s = nil
-	t.c = nil
-}
-
-func (t *btTableTest) collection() *treapstore.Collection {
-	if t.s == nil {
-		t.s = treapstore.New()
-		t.c = t.s.CreateCollection("", func(a, b interface{}) int {
+	ts := treapstore.New()
+	bts := btTestingStorage{
+		Storage:    &s,
+		maxRowSize: bigTableRowMaxBytes,
+		s:          ts,
+		c: ts.CreateCollection("", func(a, b interface{}) int {
 			return bytes.Compare(a.(*storageItem).key, b.(*storageItem).key)
-		})
+		}),
 	}
-	return t.c
+
+	// Set our BigTable interface to the in-memory testing instance.
+	s.testBTInterface = &bts
+	return &bts
 }
 
-func (t *btTableTest) putLogData(c context.Context, rk *rowKey, d []byte) error {
-	if t.err != nil {
-		return t.err
+func (bts *btTestingStorage) close() {
+	bts.s = nil
+	bts.c = nil
+}
+
+func (bts *btTestingStorage) putLogData(c context.Context, rk *rowKey, d []byte) error {
+	if bts.err != nil {
+		return bts.err
 	}
 
 	// Record/count sanity check.
@@ -111,20 +112,19 @@ func (t *btTableTest) putLogData(c context.Context, rk *rowKey, d []byte) error 
 	}
 
 	enc := []byte(rk.encode())
-	coll := t.collection()
-	if item := coll.Get(&storageItem{enc, nil}); item != nil {
+	if item := bts.c.Get(&storageItem{enc, nil}); item != nil {
 		return storage.ErrExists
 	}
 
 	clone := make([]byte, len(d))
 	copy(clone, d)
-	coll.Put(&storageItem{enc, clone})
+	bts.c.Put(&storageItem{enc, clone})
 
 	return nil
 }
 
-func (t *btTableTest) forEachItem(start []byte, cb func(k, v []byte) bool) {
-	it := t.collection().Iterator(&storageItem{start, nil})
+func (bts *btTestingStorage) forEachItem(start []byte, cb func(k, v []byte) bool) {
+	it := bts.c.Iterator(&storageItem{start, nil})
 	for {
 		itm, ok := it.Next()
 		if !ok {
@@ -137,16 +137,16 @@ func (t *btTableTest) forEachItem(start []byte, cb func(k, v []byte) bool) {
 	}
 }
 
-func (t *btTableTest) getLogData(c context.Context, rk *rowKey, limit int, keysOnly bool, cb btGetCallback) error {
-	if t.err != nil {
-		return t.err
+func (bts *btTestingStorage) getLogData(c context.Context, rk *rowKey, limit int, keysOnly bool, cb btGetCallback) error {
+	if bts.err != nil {
+		return bts.err
 	}
 
 	enc := []byte(rk.encode())
 	prefix := rk.pathPrefix()
 	var ierr error
 
-	t.forEachItem(enc, func(k, v []byte) bool {
+	bts.forEachItem(enc, func(k, v []byte) bool {
 		var drk *rowKey
 		drk, ierr = decodeRowKey(string(k))
 		if ierr != nil {
@@ -180,20 +180,22 @@ func (t *btTableTest) getLogData(c context.Context, rk *rowKey, limit int, keysO
 	return ierr
 }
 
-func (t *btTableTest) setMaxLogAge(c context.Context, d time.Duration) error {
-	if t.err != nil {
-		return t.err
+func (bts *btTestingStorage) setMaxLogAge(c context.Context, d time.Duration) error {
+	if bts.err != nil {
+		return bts.err
 	}
-	t.maxLogAge = d
+	bts.maxLogAge = d
 	return nil
 }
 
-func (t *btTableTest) dataMap() map[string][]byte {
+func (bts *btTestingStorage) dataMap() map[string][]byte {
 	result := map[string][]byte{}
 
-	t.forEachItem(nil, func(k, v []byte) bool {
+	bts.forEachItem(nil, func(k, v []byte) bool {
 		result[string(k)] = v
 		return true
 	})
 	return result
 }
+
+func (bts *btTestingStorage) getMaxRowSize() int { return bts.maxRowSize }

@@ -53,7 +53,7 @@ func (st *BigTableStorage) Close() {
 }
 
 // Config implements storage.Storage.
-func (st *BigTableStorage) Config(storage.Config) error {
+func (st *BigTableStorage) Config(context.Context, storage.Config) error {
 	return errors.New("not implemented")
 }
 

@@ -194,9 +194,7 @@ func Install() (context.Context, *Environment) {
 	}
 
 	// Create/install our BigTable memory instance.
-	e.BigTable = bigtable.NewMemoryInstance(c, bigtable.Options{
-		Cache: &e.StorageCache,
-	})
+	e.BigTable = bigtable.NewMemoryInstance(&e.StorageCache)
 
 	// Register our task queues.
 	tq.GetTestable(c).CreateQueue(tasks.ArchivalTaskQueue)
@@ -310,7 +308,7 @@ func Install() (context.Context, *Environment) {
 				Cache:  &e.StorageCache,
 			}
 
-			base, err := archive.New(c, opts)
+			base, err := archive.New(opts)
 			if err != nil {
 				return nil, err
 			}
