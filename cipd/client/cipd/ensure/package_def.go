@@ -48,13 +48,12 @@ type VersionResolver func(pkg, vers string) (common.Pin, error)
 // Resolve takes a Package definition containing a possibly templated package
 // name, and a possibly unresolved version string and attempts to resolve them
 // into a Pin.
-//
-// templateArgs is a mapping of expansion parameter to value. Usually you'll
-// want to pass common.TemplateArgs().
-func (p *PackageDef) Resolve(rslv VersionResolver, templateArgs map[string]string) (pin common.Pin, err error) {
-	pin.PackageName, err = expandTemplate(p.PackageTemplate, templateArgs)
-	if err == errSkipTemplate {
+func (p *PackageDef) Resolve(rslv VersionResolver, expander common.TemplateExpander) (pin common.Pin, err error) {
+	switch pin.PackageName, err = expander.Expand(p.PackageTemplate); err {
+	case common.ErrSkipTemplate:
 		return
+	case nil:
+		err = common.ValidatePackageName(pin.PackageName)
 	}
 	if err != nil {
 		err = errors.Annotate(err, "failed to resolve package template (line %d)", p.LineNo).Err()
