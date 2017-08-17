@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fef63a59_b2641850",
+        "filename": "scheduler/appengine/engine/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-17T00:28:15Z",
+      "side": 1,
+      "message": "IMO, it\u0027s weird that Empty() returning false is list(Items) \u003d\u003d 0 but with Garbage. I think it\u0027s better to check for empty litsing.Items explicitely before RunInTransaction and then perhaps no need for Empty().",
+      "range": {
+        "startLine": 84,
+        "startChar": 30,
+        "endLine": 84,
+        "endChar": 35
+      },
+      "revId": "1bf5fe4bf0b658bcf18001261a4790daaea0f3a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58feae71_1394ef59",
+        "filename": "scheduler/appengine/engine/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-17T00:28:15Z",
+      "side": 1,
+      "message": "thanks (per my Rietveld comment).",
+      "range": {
+        "startLine": 127,
+        "startChar": 0,
+        "endLine": 128,
+        "endChar": 25
+      },
+      "revId": "1bf5fe4bf0b658bcf18001261a4790daaea0f3a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bc488adf_de7300bf",
+        "filename": "scheduler/appengine/engine/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-17T00:28:15Z",
+      "side": 1,
+      "message": "as I argued above in the doc of Set, IMO Empty() isn\u0027t necessary.",
+      "range": {
+        "startLine": 149,
+        "startChar": 18,
+        "endLine": 149,
+        "endChar": 23
+      },
+      "revId": "1bf5fe4bf0b658bcf18001261a4790daaea0f3a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0ca39e7_7a47991a",
+        "filename": "scheduler/appengine/engine/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-17T00:28:15Z",
+      "side": 1,
+      "message": "since tombstone itself is now private, there is no need for this comment.",
+      "range": {
+        "startLine": 158,
+        "startChar": 3,
+        "endLine": 158,
+        "endChar": 80
+      },
+      "revId": "1bf5fe4bf0b658bcf18001261a4790daaea0f3a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e187457_25ea7483",
+        "filename": "scheduler/appengine/engine/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-17T00:28:15Z",
+      "side": 1,
+      "message": "Are you sure that concurrent writes to varying indices of slice are actually race free?\nApparently it works anyway, but is Go memory model actually guaranteeing that this is safe? Of course, easiest way to implement a slice would imply boundaries only every X bytes, so x86 should have no problem apart from penalties due to cache line contention, but it\u0027s inevitable with locks anyway.\n\nAlso, while re-reading Go memory model, where locks are discussed, I\u0027m surprised wg.Done() wasn\u0027t. wg.Done()\u0027s own doc doesn\u0027t even mention memory barriers instead talking about \"goroutine ends\", although implementation used to insert them at least in Go1.4. All this makes me sad :( \n\nI guess where I\u0027m coming from is:\na) most Go official examples I read use channels to send results, though this means one more goroutine to close the channel after wg.Wait() + one loop over the channel to collect results and add them to a list.\nb) in C++, concurrent modification of vector\u003cbool\u003e elements is totally racy.",
+      "range": {
+        "startLine": 236,
+        "startChar": 42,
+        "endLine": 236,
+        "endChar": 53
+      },
+      "revId": "1bf5fe4bf0b658bcf18001261a4790daaea0f3a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29b5150b_7711f994",
+        "filename": "scheduler/appengine/engine/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 408,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-17T00:28:15Z",
+      "side": 1,
+      "message": "i don\u0027t understand how this can happen. Pop() should be called after BeginPop, or am I missing smth?",
+      "range": {
+        "startLine": 408,
+        "startChar": 30,
+        "endLine": 408,
+        "endChar": 62
+      },
+      "revId": "1bf5fe4bf0b658bcf18001261a4790daaea0f3a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c82ae504_6fa05a90",
+        "filename": "scheduler/appengine/engine/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 408,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-17T00:28:15Z",
+      "side": 1,
+      "message": "BeginPop",
+      "range": {
+        "startLine": 408,
+        "startChar": 21,
+        "endLine": 408,
+        "endChar": 29
+      },
+      "revId": "1bf5fe4bf0b658bcf18001261a4790daaea0f3a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5086a6f7_8c56967f",
+        "filename": "scheduler/appengine/engine/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 458,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-17T00:28:15Z",
+      "side": 1,
+      "message": "can we hit ds limit with too many tombstones? It seems to be that if we split garbage cleanup into batches, this might need splitting too...",
+      "range": {
+        "startLine": 458,
+        "startChar": 30,
+        "endLine": 458,
+        "endChar": 38
+      },
+      "revId": "1bf5fe4bf0b658bcf18001261a4790daaea0f3a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
