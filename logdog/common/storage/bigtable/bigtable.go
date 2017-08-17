@@ -18,13 +18,16 @@ import (
 	"fmt"
 	"time"
 
-	"cloud.google.com/go/bigtable"
-	"golang.org/x/net/context"
-	"google.golang.org/grpc/codes"
+	"go.chromium.org/luci/logdog/common/storage"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/logdog/common/storage"
+
+	"cloud.google.com/go/bigtable"
+	"google.golang.org/grpc/codes"
+
+	"golang.org/x/net/context"
 )
 
 const (
@@ -50,9 +53,9 @@ const (
 // be propagated to the getLogData call.
 type btGetCallback func(*rowKey, []byte) error
 
-// btTable is a general interface for BigTable operations intended to enable
+// btIface is a general interface for BigTable operations intended to enable
 // unit tests to stub out BigTable without adding runtime inefficiency.
-type btTable interface {
+type btIface interface {
 	// putLogData adds new log data to BigTable.
 	//
 	// If data already exists for the named row, it will return storage.ErrExists
@@ -73,21 +76,36 @@ type btTable interface {
 
 	// setMaxLogAge updates the maximum log age policy for the log family.
 	setMaxLogAge(context.Context, time.Duration) error
+
+	// getMaxRowSize returns the maximum row size that this implementation
+	// supports.
+	getMaxRowSize() int
 }
 
-// btTableProd is an implementation of the btTable interface that uses a real
-// production BigTable connection.
-type btTableProd struct {
-	base *btStorage
+// prodBTIface is a production implementation of a "btIface".
+type prodBTIface struct {
+	*Storage
 }
 
-func (t *btTableProd) putLogData(c context.Context, rk *rowKey, data []byte) error {
+func (bti prodBTIface) getLogTable() (*bigtable.Table, error) {
+	if bti.Client == nil {
+		return nil, errors.New("no client configured")
+	}
+	return bti.Client.Open(bti.LogTable), nil
+}
+
+func (bti prodBTIface) putLogData(c context.Context, rk *rowKey, data []byte) error {
+	logTable, err := bti.getLogTable()
+	if err != nil {
+		return err
+	}
+
 	m := bigtable.NewMutation()
 	m.Set(logColumnFamily, logColumn, bigtable.ServerTime, data)
 	cm := bigtable.NewCondMutation(bigtable.RowKeyFilter(rk.encode()), nil, m)
 
 	rowExists := false
-	if err := t.base.logTable.Apply(c, rk.encode(), cm, bigtable.GetCondMutationResult(&rowExists)); err != nil {
+	if err := logTable.Apply(c, rk.encode(), cm, bigtable.GetCondMutationResult(&rowExists)); err != nil {
 		return wrapIfTransientForApply(err)
 	}
 	if rowExists {
@@ -96,7 +114,12 @@ func (t *btTableProd) putLogData(c context.Context, rk *rowKey, data []byte) err
 	return nil
 }
 
-func (t *btTableProd) getLogData(c context.Context, rk *rowKey, limit int, keysOnly bool, cb btGetCallback) error {
+func (bti prodBTIface) getLogData(c context.Context, rk *rowKey, limit int, keysOnly bool, cb btGetCallback) error {
+	logTable, err := bti.getLogTable()
+	if err != nil {
+		return err
+	}
+
 	// Construct read options based on Get request.
 	ropts := []bigtable.ReadOption{
 		bigtable.RowFilter(bigtable.FamilyFilter(logColumnFamily)),
@@ -115,7 +138,7 @@ func (t *btTableProd) getLogData(c context.Context, rk *rowKey, limit int, keysO
 	rng := bigtable.NewRange(rk.encode(), rk.pathPrefixUpperBound())
 
 	var innerErr error
-	err := t.base.logTable.ReadRows(c, rng, func(row bigtable.Row) bool {
+	err = logTable.ReadRows(c, rng, func(row bigtable.Row) bool {
 		data, err := getLogRowData(row)
 		if err != nil {
 			innerErr = storage.ErrBadData
@@ -143,16 +166,22 @@ func (t *btTableProd) getLogData(c context.Context, rk *rowKey, limit int, keysO
 	return nil
 }
 
-func (t *btTableProd) setMaxLogAge(c context.Context, d time.Duration) error {
+func (bti prodBTIface) setMaxLogAge(c context.Context, d time.Duration) error {
+	if bti.AdminClient == nil {
+		return errors.New("no admin client configured")
+	}
+
 	var logGCPolicy bigtable.GCPolicy
 	if d > 0 {
 		logGCPolicy = bigtable.MaxAgePolicy(d)
 	}
-	if err := t.base.adminClient.SetGCPolicy(c, t.base.LogTable, logColumnFamily, logGCPolicy); err != nil {
+	if err := bti.AdminClient.SetGCPolicy(c, bti.LogTable, logColumnFamily, logGCPolicy); err != nil {
 		return grpcutil.WrapIfTransient(err)
 	}
 	return nil
 }
+
+func (bti prodBTIface) getMaxRowSize() int { return bigTableRowMaxBytes }
 
 // getLogRowData loads the []byte contents of the supplied log row.
 //

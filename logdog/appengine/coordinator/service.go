@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 
+	gcbt "cloud.google.com/go/bigtable"
 	vkit "cloud.google.com/go/pubsub/apiv1"
 	gcst "cloud.google.com/go/storage"
 	"google.golang.org/api/option"
@@ -267,22 +268,20 @@ func (s *prodServicesInst) newBigTableStorage(c context.Context) (Storage, error
 	// calls.
 	c = metadata.NewContext(c, nil)
 
-	st, err := bigtable.New(c, bigtable.Options{
-		Project:  bt.Project,
-		Instance: bt.Instance,
-		LogTable: bt.LogTableName,
-		ClientOptions: []option.ClientOption{
-			option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
-		},
-		Cache: s.getStorageCache(),
-	})
+	client, err := gcbt.NewClient(c, bt.Project, bt.Instance,
+		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
 	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create BigTable instance.")
+		log.WithError(err).Errorf(c, "Failed to create BigTable client.")
 		return nil, err
 	}
 
 	return &bigTableStorage{
-		Storage: st,
+		Storage: &bigtable.Storage{
+			Client:   client,
+			Cache:    s.getStorageCache(),
+			LogTable: bt.LogTableName,
+		},
+		client: client,
 	}, nil
 }
 
@@ -300,7 +299,7 @@ func (s *prodServicesInst) newGoogleStorage(c context.Context, index, stream gs.
 		}
 	}()
 
-	st, err := archive.New(c, archive.Options{
+	st, err := archive.New(archive.Options{
 		Index:  index,
 		Stream: stream,
 		Client: gs,
@@ -469,6 +468,13 @@ type URLSigningResponse struct {
 type bigTableStorage struct {
 	// Storage is the base storage.Storage instance.
 	storage.Storage
+
+	client *gcbt.Client
+}
+
+func (st *bigTableStorage) Close() {
+	st.Storage.Close()
+	st.client.Close()
 }
 
 func (*bigTableStorage) GetSignedURLs(context.Context, *URLSigningRequest) (*URLSigningResponse, error) {

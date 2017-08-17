@@ -248,7 +248,7 @@ func TestHandleArchive(t *testing.T) {
 					panic(err)
 				}
 
-				err = st.Put(storage.PutRequest{
+				err = st.Put(c, storage.PutRequest{
 					Project: cfgtypes.ProjectName(p),
 					Path:    desc.Path(),
 					Index:   types.MessageIndex(v),

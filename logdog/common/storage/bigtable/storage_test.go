@@ -43,10 +43,10 @@ func TestStorage(t *testing.T) {
 	t.Parallel()
 
 	Convey(`A BigTable storage instance bound to a testing BigTable instance`, t, func() {
+		c := context.Background()
+
 		var cache memory.Cache
-		s := NewMemoryInstance(context.Background(), Options{
-			Cache: &cache,
-		})
+		s := NewMemoryInstance(&cache)
 		defer s.Close()
 
 		project := cfgtypes.ProjectName("test-project")
@@ -59,7 +59,7 @@ func TestStorage(t *testing.T) {
 				KeysOnly: keysOnly,
 			}
 			got := []string{}
-			err := s.Get(req, func(e *storage.Entry) bool {
+			err := s.Get(c, req, func(e *storage.Entry) bool {
 				if keysOnly {
 					got = append(got, strconv.Itoa(int(mustGetIndex(e))))
 				} else {
@@ -76,7 +76,7 @@ func TestStorage(t *testing.T) {
 				data[i] = []byte(v)
 			}
 
-			return s.Put(storage.PutRequest{
+			return s.Put(c, storage.PutRequest{
 				Project: project,
 				Path:    types.StreamPath(path),
 				Index:   types.MessageIndex(index),
@@ -215,7 +215,7 @@ func TestStorage(t *testing.T) {
 
 			Convey(`Testing "Tail"...`, func() {
 				tail := func(path string) (string, error) {
-					e, err := s.Tail(project, types.StreamPath(path))
+					e, err := s.Tail(c, project, types.StreamPath(path))
 					if err != nil {
 						return "", err
 					}

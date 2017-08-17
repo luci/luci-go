@@ -545,7 +545,7 @@ func (sa *stagedArchival) checkComplete(c context.Context) error {
 
 	nextIndex := types.MessageIndex(0)
 	var ierr error
-	err := sa.Storage.Get(sreq, func(e *storage.Entry) bool {
+	err := sa.Storage.Get(c, sreq, func(e *storage.Entry) bool {
 		idx, err := e.GetStreamIndex()
 		if err != nil {
 			ierr = errors.Annotate(err, "could not get stream index").Err()

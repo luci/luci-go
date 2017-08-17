@@ -365,6 +365,11 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 	}
 
 	// Does the log stream's secret match the expected secret?
+	//
+	// Note that this check does NOT use the "subtle" package to do time-constant
+	// byte comparison, and may leak inforamtion about the secret. This is OK,
+	// since users cannot interact with this service directly; however, if this
+	// code is ever used elsewhere, this should be a consideration.
 	if !bytes.Equal([]byte(secret), []byte(state.Secret)) {
 		log.Errorf(log.SetFields(ctx, log.Fields{
 			"secret":         secret,
@@ -410,7 +415,7 @@ func (c *Collector) processLogStream(ctx context.Context, h *bundleEntryHandler)
 		if len(logData) > 0 {
 			taskC <- func() error {
 				// Post the log to storage.
-				err = c.Storage.Put(storage.PutRequest{
+				err = c.Storage.Put(ctx, storage.PutRequest{
 					Project: h.project,
 					Path:    h.path,
 					Index:   types.MessageIndex(blockIndex),
