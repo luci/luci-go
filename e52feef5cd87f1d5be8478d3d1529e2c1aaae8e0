@@ -93,6 +93,30 @@
       "revId": "e52feef5cd87f1d5be8478d3d1529e2c1aaae8e0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "131cd1f2_b09d2597",
+        "filename": "logdog/server/collector/collector.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 368,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-17T00:24:21Z",
+      "side": 1,
+      "message": "OK (until someone copy-pastes it or refactors it into a place where we need to be concerned).",
+      "parentUuid": "9af8f86b_748236c5",
+      "range": {
+        "startLine": 368,
+        "startChar": 4,
+        "endLine": 368,
+        "endChar": 54
+      },
+      "revId": "e52feef5cd87f1d5be8478d3d1529e2c1aaae8e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
