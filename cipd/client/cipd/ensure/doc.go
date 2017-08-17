@@ -44,7 +44,9 @@
 //		 (the directory containing the .cipd folder). The value of Subdir before
 //		 any @Subdir directives is "", or the root of the cipd installation.
 //		 @Subdir directives also support expansion parameters `${os}`, `${arch}`
-//		 and `${platform}`.
+//		 and `${platform}`. Using a subdir expansion like `${param=val}` will
+//		 cause that subdirectory, and any packages in it, to only exist if the
+//		 param matches the value.
 //
 // Package Definitions
 //

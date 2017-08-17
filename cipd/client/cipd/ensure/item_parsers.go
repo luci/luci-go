@@ -33,23 +33,18 @@ type itemParserState struct {
 }
 
 func subdirParser(s *itemParserState, _ *File, val string) (err error) {
-	subdir := templateParm.ReplaceAllStringFunc(val, func(parm string) string {
-		contents := parm[2 : len(parm)-1]
-		// ${varName}
-		if value, ok := common.TemplateArgs()[contents]; ok {
-			return value
+	// We expand with the default expander here just to see if this is a plausible
+	// template. When the user uses File.ResolveWith, this will actually use the
+	// user-supplied expander.
+	tempExpanded := ""
+	if tempExpanded, err = common.DefaultTemplateExpander().Validate(val); err == nil {
+		if err = common.ValidateSubdir(tempExpanded); err == nil {
+			s.curSubdir = val
 		}
-		err = errors.Reason("unknown variable in ${%s}", contents).Err()
-		return parm
-	})
-	if err != nil {
-		return err
+	} else {
+		err = errors.Annotate(err, "bad subdir %q", val).Err()
 	}
-	if err := common.ValidateSubdir(subdir); err != nil {
-		return err
-	}
-	s.curSubdir = subdir
-	return nil
+	return
 }
 
 func serviceURLParser(_ *itemParserState, f *File, val string) error {

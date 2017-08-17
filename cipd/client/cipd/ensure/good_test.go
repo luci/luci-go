@@ -107,6 +107,12 @@ var goodEnsureFiles = []struct {
 			"some/package latest",
 			"@Subdir ${platform}/subdir",
 			"some/package canary",
+			"",
+			"@Subdir something/${os=not_matching}",
+			"some/os_specific/package latest",
+			"",
+			"@Subdir something/${os=test_os,other}",
+			"some/os_specific/package canary",
 		),
 		&ResolvedFile{"", common.PinSliceBySubdir{
 			"": {
@@ -117,11 +123,14 @@ var goodEnsureFiles = []struct {
 				p("some/package", "canary"),
 				p("some/other/package", "tag:value"),
 			},
-			common.CurrentOS() + "-" + common.CurrentArchitecture(): {
+			"test_os-test_arch": {
 				p("some/package", "latest"),
 			},
-			common.CurrentOS() + "-" + common.CurrentArchitecture() + "/subdir": {
+			"test_os-test_arch/subdir": {
 				p("some/package", "canary"),
+			},
+			"something/test_os": {
+				p("some/os_specific/package", "canary"),
 			},
 		}},
 	},
