@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "29c758e3_fb25cc9b",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-17T17:18:58Z",
+      "side": 1,
+      "message": ":\u0027(",
+      "range": {
+        "startLine": 51,
+        "startChar": 3,
+        "endLine": 51,
+        "endChar": 33
+      },
+      "revId": "e8059bbdf7ce069c5988ea4d7d4cc9d8e3ea6d03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "434f0d32_58f547c5",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 402,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-17T17:18:58Z",
+      "side": 1,
+      "message": "hm.. this concept collides a bit with templates.\n\n-pkg-var is used to expand variables in *.yaml files with template definitions when building packages. I think it currently uses different expander. If you have a chance, please verify they are no inconsistencies between two flavors of templates.",
+      "range": {
+        "startLine": 402,
+        "startChar": 31,
+        "endLine": 402,
+        "endChar": 39
+      },
+      "revId": "e8059bbdf7ce069c5988ea4d7d4cc9d8e3ea6d03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
