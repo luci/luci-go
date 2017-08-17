@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package coordinator
+package flex
 
 import (
 	"testing"
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/logdog/common/storage"
-
-	"go.chromium.org/gae/impl/memory"
-	"go.chromium.org/gae/service/memcache"
 
 	"golang.org/x/net/context"
 
@@ -34,9 +32,10 @@ func testStorageCache(t *testing.T, compress bool) {
 
 	Convey(`Testing storage cache in a testing envrionment`, t, func() {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
-		c = memory.Use(c)
 
-		var cache StorageCache
+		cache := StorageCache{
+			Cache: lru.New(0),
+		}
 		if compress {
 			cache.compressionThreshold = 1
 		}
@@ -55,9 +54,7 @@ func testStorageCache(t *testing.T, compress bool) {
 			for _, it := range items {
 				cache.Put(c, it.k, it.v, time.Minute)
 			}
-			st, err := memcache.Raw(c).Stats()
-			So(err, ShouldBeNil)
-			So(st.Items, ShouldEqual, 4)
+			So(cache.Cache.Len(), ShouldEqual, 4)
 
 			for _, it := range items {
 				v, ok := cache.Get(c, it.k)

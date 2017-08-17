@@ -42,7 +42,7 @@ handlers:
   secure: always
 
 - url: "/rpcexplorer/services/.*"
-  static_files: dist/rpcexplorer
+  static_files: dist/rpcexplorer/index.html
   upload: dist/rpcexplorer/index.html
   secure: always
 

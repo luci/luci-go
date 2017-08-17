@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-service: default
+## XXX FOR TESTING
+#service: default
+service: flextest
 runtime: go
-vm: true
 api_version: 1
-
-beta_settings:
-  service_account_scopes: "https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/devstorage.full_control,https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/bigtable.data"
+env: flex
 
 handlers:
 - url: "/debug/*"

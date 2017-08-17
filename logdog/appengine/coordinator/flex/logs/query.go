@@ -15,14 +15,17 @@
 package logs
 
 import (
-	ds "go.chromium.org/gae/service/datastore"
-	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
+
+	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/clock"
+	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/grpc/grpcutil"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )
@@ -88,6 +91,8 @@ func (s *server) Query(c context.Context, req *logdog.QueryRequest) (*logdog.Que
 		canSeePurged: canSeePurged,
 		limit:        limit,
 	}
+
+	startTime := clock.Now(c)
 	if err := e.runQuery(&resp); err != nil {
 		// Transient errors would be handled at the "execute" level, so these are
 		// specific failure errors. We must escalate individual errors to the user.
@@ -95,6 +100,7 @@ func (s *server) Query(c context.Context, req *logdog.QueryRequest) (*logdog.Que
 		log.WithError(err).Errorf(c, "Failed to execute query.")
 		return nil, err
 	}
+	log.Infof(c, "Query took: %s", clock.Now(c).Sub(startTime))
 	return &resp, nil
 }
 
