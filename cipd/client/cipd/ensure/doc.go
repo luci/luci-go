@@ -39,14 +39,18 @@
 //
 // A directive looks like `@name value`. Directives are 'sticky' and apply until
 // the next same-name directive. The following directives are allowed:
-//   - Subdir allows you to change the subdirectory that packages are installed
-//		 to. The subdir value is relative to the root of the cipd installation
-//		 (the directory containing the .cipd folder). The value of Subdir before
-//		 any @Subdir directives is "", or the root of the cipd installation.
-//		 @Subdir directives also support expansion parameters `${os}`, `${arch}`
-//		 and `${platform}`. Using a subdir expansion like `${param=val}` will
-//		 cause that subdirectory, and any packages in it, to only exist if the
-//		 param matches the value.
+//   - `@Subdir` allows you to change the subdirectory that subsequent packages
+//     are installed to.
+//     * The subdir value is always relative to the root of the cipd
+//       installation (the directory containing the .cipd folder).
+//     * The value of Subdir before any @Subdir directives is "", or the root
+//       of the cipd installation.
+//     * You can reset the directory back to root by doing `@Subdir` by itself,
+//       without a value.
+//     * @Subdir directives also support expansion parameters `${os}`, `${arch}`
+//       and `${platform}`. Using a subdir expansion like `${param=val}` will
+//       cause that subdirectory, and any packages in it, to only exist if the
+//       param matches one of the values.
 //
 // Package Definitions
 //
@@ -100,4 +104,13 @@
 //
 //   @Subdir infra/support
 //   infra/some/other/package deadbeefdeadbeefdeadbeefdeadbeefdeadbeef
+//
+//   # only exists on windows machines
+//   @Subdir support/${os=windows}-${arch}
+//   some/support/package  latest
+//   some/other/support/package  latest
+//
+//   # Always exists, but the directory changes based on the os
+//   @Subdir platform/${os}
+//   a/platform/package latest
 package ensure

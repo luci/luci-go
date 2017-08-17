@@ -50,6 +50,14 @@ import (
 
 // TODO(vadimsh): Add some tests.
 
+func expandTemplate(template string) (pkg string, err error) {
+	pkg, err = common.DefaultTemplateExpander().Expand(template)
+	if err != nil {
+		err = commandLineError{err}
+	}
+	return
+}
+
 // Parameters carry default configuration values for a CIPD CLI client.
 type Parameters struct {
 	// DefaultAuthOptions provide default values for authentication related
@@ -394,15 +402,19 @@ func (opts *inputOptions) prepareInput() (local.BuildInstanceOptions, error) {
 			return empty, makeCLIError("-pkg-var and -in can not be used together")
 		}
 
+		packageName, err := expandTemplate(opts.packageName)
+		if err != nil {
+			return empty, err
+		}
+
 		// Simply enumerate files in the directory.
-		var files []local.File
 		files, err := local.ScanFileSystem(opts.inputDir, opts.inputDir, nil)
 		if err != nil {
 			return empty, err
 		}
 		return local.BuildInstanceOptions{
 			Input:            files,
-			PackageName:      opts.packageName,
+			PackageName:      packageName,
 			InstallMode:      opts.installMode,
 			CompressionLevel: opts.compressionLevel,
 		}, nil
@@ -912,6 +924,11 @@ func (c *resolveRun) Run(a subcommands.Application, args []string, env subcomman
 }
 
 func resolveVersion(ctx context.Context, packagePrefix, version string, clientOpts clientOptions) ([]pinInfo, error) {
+	packagePrefix, err := expandTemplate(packagePrefix)
+	if err != nil {
+		return nil, err
+	}
+
 	client, err := clientOpts.makeCipdClient(ctx, "")
 	if err != nil {
 		return nil, err
@@ -960,6 +977,11 @@ func (c *describeRun) Run(a subcommands.Application, args []string, env subcomma
 }
 
 func describeInstance(ctx context.Context, pkg, version string, clientOpts clientOptions) (*describeOutput, error) {
+	pkg, err := expandTemplate(pkg)
+	if err != nil {
+		return nil, err
+	}
+
 	client, err := clientOpts.makeCipdClient(ctx, "")
 	if err != nil {
 		return nil, err
@@ -1070,10 +1092,15 @@ func (c *setRefRun) Run(a subcommands.Application, args []string, env subcommand
 	if len(c.refs) == 0 {
 		return c.done(nil, makeCLIError("at least one -ref must be provided"))
 	}
+	pkgPrefix, err := expandTemplate(args[0])
+	if err != nil {
+		return c.done(nil, err)
+	}
+
 	ctx := cli.GetContext(a, c, env)
 	return c.doneWithPins(setRefOrTag(ctx, &setRefOrTagArgs{
 		clientOptions: c.clientOptions,
-		packagePrefix: args[0],
+		packagePrefix: pkgPrefix,
 		version:       c.version,
 		updatePin: func(client cipd.Client, pin common.Pin) error {
 			for _, ref := range c.refs {
@@ -1175,10 +1202,15 @@ func (c *setTagRun) Run(a subcommands.Application, args []string, env subcommand
 	if len(c.tags) == 0 {
 		return c.done(nil, makeCLIError("at least one -tag must be provided"))
 	}
+	pkgPrefix, err := expandTemplate(args[0])
+	if err != nil {
+		return c.done(nil, err)
+	}
+
 	ctx := cli.GetContext(a, c, env)
 	return c.done(setRefOrTag(ctx, &setRefOrTagArgs{
 		clientOptions: c.clientOptions,
-		packagePrefix: args[0],
+		packagePrefix: pkgPrefix,
 		version:       c.version,
 		updatePin: func(client cipd.Client, pin common.Pin) error {
 			return client.AttachTagsWhenReady(ctx, pin, c.tags)
@@ -1218,9 +1250,12 @@ func (c *listPackagesRun) Run(a subcommands.Application, args []string, env subc
 	if !c.checkArgs(args, 0, 1) {
 		return 1
 	}
-	path := ""
+	path, err := "", error(nil)
 	if len(args) == 1 {
-		path = args[0]
+		path, err = expandTemplate(args[0])
+		if err != nil {
+			return c.done(nil, err)
+		}
 	}
 	ctx := cli.GetContext(a, c, env)
 	return c.done(listPackages(ctx, path, c.recursive, c.showHidden, c.clientOptions))
@@ -1278,7 +1313,11 @@ func (c *searchRun) Run(a subcommands.Application, args []string, env subcommand
 	}
 	packageName := ""
 	if len(args) == 1 {
-		packageName = args[0]
+		var err error
+		packageName, err = expandTemplate(args[0])
+		if err != nil {
+			return c.done(nil, err)
+		}
 	}
 	ctx := cli.GetContext(a, c, env)
 	return c.done(searchInstances(ctx, packageName, c.tags[0], c.clientOptions))
@@ -1331,8 +1370,13 @@ func (c *listACLRun) Run(a subcommands.Application, args []string, env subcomman
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
+	pkg, err := expandTemplate(args[0])
+	if err != nil {
+		return c.done(nil, err)
+	}
+
 	ctx := cli.GetContext(a, c, env)
-	return c.done(listACL(ctx, args[0], c.clientOptions))
+	return c.done(listACL(ctx, pkg, c.clientOptions))
 }
 
 func listACL(ctx context.Context, packagePath string, clientOpts clientOptions) (map[string][]cipd.PackageACL, error) {
@@ -1430,8 +1474,13 @@ func (c *editACLRun) Run(a subcommands.Application, args []string, env subcomman
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
+	pkg, err := expandTemplate(args[0])
+	if err != nil {
+		return c.done(nil, err)
+	}
+
 	ctx := cli.GetContext(a, c, env)
-	return c.done(nil, editACL(ctx, args[0], c.owner, c.writer, c.reader, c.counterWriter, c.revoke, c.clientOptions))
+	return c.done(nil, editACL(ctx, pkg, c.owner, c.writer, c.reader, c.counterWriter, c.revoke, c.clientOptions))
 }
 
 func editACL(ctx context.Context, packagePath string, owners, writers, readers, counterWriters, revoke principalsList, clientOpts clientOptions) error {
@@ -1615,8 +1664,13 @@ func (c *fetchRun) Run(a subcommands.Application, args []string, env subcommands
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
+	pkg, err := expandTemplate(args[0])
+	if err != nil {
+		return c.done(nil, err)
+	}
+
 	ctx := cli.GetContext(a, c, env)
-	return c.done(fetchInstanceFile(ctx, args[0], c.version, c.outputPath, c.clientOptions))
+	return c.done(fetchInstanceFile(ctx, pkg, c.version, c.outputPath, c.clientOptions))
 }
 
 func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile string, clientOpts clientOptions) (common.Pin, error) {
@@ -1830,8 +1884,13 @@ func (c *deleteRun) Run(a subcommands.Application, args []string, env subcommand
 	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
+	pkg, err := expandTemplate(args[0])
+	if err != nil {
+		return c.done(nil, err)
+	}
+
 	ctx := cli.GetContext(a, c, env)
-	return c.done(nil, deletePackage(ctx, args[0], &c.clientOptions))
+	return c.done(nil, deletePackage(ctx, pkg, &c.clientOptions))
 }
 
 func deletePackage(ctx context.Context, packageName string, opts *clientOptions) error {
@@ -1905,9 +1964,13 @@ func (c *counterWriteRun) Run(a subcommands.Application, args []string, env subc
 		delta = 0
 		counter = c.touch
 	}
+	pkg, err := expandTemplate(args[0])
+	if err != nil {
+		return c.done(nil, err)
+	}
 
 	ctx := cli.GetContext(a, c, env)
-	return c.done(nil, writeCounter(ctx, args[0], c.version, counter, delta, &c.clientOptions))
+	return c.done(nil, writeCounter(ctx, pkg, c.version, counter, delta, &c.clientOptions))
 }
 
 func writeCounter(ctx context.Context, pkg, version, counter string, delta int, opts *clientOptions) error {
@@ -1955,9 +2018,13 @@ func (c *counterReadRun) Run(a subcommands.Application, args []string, env subco
 	if !c.checkArgs(args, 2, -1) {
 		return 1
 	}
+	pkg, err := expandTemplate(args[0])
+	if err != nil {
+		return c.done(nil, err)
+	}
 
 	ctx := cli.GetContext(a, c, env)
-	ret, err := readCounters(ctx, args[0], c.version, args[1:], &c.clientOptions)
+	ret, err := readCounters(ctx, pkg, c.version, args[1:], &c.clientOptions)
 	return c.done(ret, err)
 }
 
