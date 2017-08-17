@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/cipd/client/cipd/common"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -88,9 +89,9 @@ var badEnsureFiles = []struct {
 	},
 
 	{
-		"invald expansion",
-		"@subdir ${os=linux}",
-		`unknown variable in ${os=linux}`,
+		"invalid expansion",
+		"@subdir $${os=linux}",
+		`bad subdir "$${os=linux}"`,
 	},
 
 	{
@@ -193,7 +194,7 @@ func TestBadEnsureFiles(t *testing.T) {
 					So(err, ShouldErrLike, tc.err)
 				} else {
 					So(f, ShouldNotBeNil)
-					rf, err := f.ResolveWith(testResolver, map[string]string{
+					rf, err := f.ResolveWith(testResolver, common.TemplateExpander{
 						"os":       "test_os",
 						"arch":     "test_arch",
 						"platform": "test_os-test_arch",

@@ -67,14 +67,14 @@ func (pl *PackageLoader) Resolve(c context.Context, e *vpython.Environment) erro
 	// over the local system parameters. This allows us to override CIPD template
 	// parameters elsewhere, and in the production case we will not override
 	// any CIPD template parameters.
-	template := common.TemplateArgs()
+	expander := common.DefaultTemplateExpander()
 	if pl.Template != nil {
 		loaderTemplate, err := pl.Template(c, e)
 		if err != nil {
 			return errors.Annotate(err, "failed to get CIPD template arguments").Err()
 		}
 		for k, v := range loaderTemplate {
-			template[k] = v
+			expander[k] = v
 		}
 	}
 
@@ -88,7 +88,7 @@ func (pl *PackageLoader) Resolve(c context.Context, e *vpython.Environment) erro
 
 	// Generate CIPD client options. If no root is provided, use a temporary root.
 	if pl.Options.Root != "" {
-		return pl.resolveWithOpts(c, pl.Options, template, packages)
+		return pl.resolveWithOpts(c, pl.Options, expander, packages)
 	}
 
 	td := filesystem.TempDir{
@@ -101,12 +101,12 @@ func (pl *PackageLoader) Resolve(c context.Context, e *vpython.Environment) erro
 		opts := pl.Options
 		opts.Root = tdir
 
-		return pl.resolveWithOpts(c, opts, template, packages)
+		return pl.resolveWithOpts(c, opts, expander, packages)
 	})
 }
 
 // resolveWithOpts resolves the specified packages.
-func (pl *PackageLoader) resolveWithOpts(c context.Context, opts cipd.ClientOptions, template map[string]string,
+func (pl *PackageLoader) resolveWithOpts(c context.Context, opts cipd.ClientOptions, expander common.TemplateExpander,
 	packages []*vpython.Spec_Package) error {
 
 	logging.Debugf(c, "Resolving CIPD packages in root [%s]:", opts.Root)
@@ -144,7 +144,7 @@ func (pl *PackageLoader) resolveWithOpts(c context.Context, opts cipd.ClientOpti
 			"version": vers,
 		}.Debugf(c, "Resolved package to: %s", pin)
 		return pin, nil
-	}, template)
+	}, expander)
 	if err != nil {
 		return err
 	}
