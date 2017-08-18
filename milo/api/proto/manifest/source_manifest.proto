@@ -10,19 +10,19 @@ syntax = "proto3";
 // A Manifest attempts to make an accurate accounting of source/data directories
 // during the execution of a LUCI task.
 //
-// These directories are primarially in the form of e.g. git checkouts of
+// These directories are primarily in the form of e.g. git checkouts of
 // source, but also include things like isolated hashes and CIPD package
 // deployments. In the future, other deployment forms may be supported (like
 // other SCMs).
 //
 // The purpose of this manifest is so that other parts of the LUCI stack (e.g.
-// Milo) can work with the descripitons of this deployed data as a first-class
+// Milo) can work with the descriptions of this deployed data as a first-class
 // citizen. Initially this Manifest will be used to allow Milo to display diffs
 // between jobs, but it will also be useful for tools and humans to get a
 // record of exactly what data went into this LUCI task.
 //
 // Source Manifests can be emitted from recipes using the
-// 'recipe_engine/manifest' module.
+// 'recipe_engine/source_manifest' module.
 message Manifest {
   // Version will increment on backwards-incompatible changes only. Backwards
   // compatible changes will not alter this version number.
@@ -34,7 +34,7 @@ message Manifest {
     // The canonicalized URL of the original repo that is considered the “source
     // of truth” for the source code. Ex.
     //   https://chromium.googlesource.com/chromium/tools/build.git
-    //   https://chromium.googlesource.com/infra/luci/recipes-py
+    //   https://chromium.googlesource.com/infra/luci/recipes-py.git
     string repo_url = 1;
 
     // If different from repo_url, this can be the URL of the repo that the source
@@ -46,11 +46,10 @@ message Manifest {
 
     // The fully resolved revision (commit hash) of the source. Ex.
     //   3617b0eea7ec74b8e731a23fed2f4070cbc284c4
-    //
-    // Note that this is the raw revision bytes, not their hex-encoded form.
-    bytes revision = 3;
+    string revision = 3;
 
-    // The ref that the task used to resolve the revision of the source (if any). Ex.
+    // The ref that the task used to resolve/fetch the revision of the source
+    // (if any). Ex.
     //   refs/heads/master
     //   refs/changes/04/511804/4
     //
@@ -59,7 +58,7 @@ message Manifest {
     //
     // This should always be an absolute ref (i.e. starts with 'refs/'). An
     // example of a non-absolute ref would be 'master'.
-    string tracking_ref = 4;
+    string fetch_ref = 4;
   }
 
   message CIPDPackage {
@@ -77,9 +76,7 @@ message Manifest {
 
     // The fully resolved instance ID of the deployed package. Ex.
     //   0cfafb3a705bd8f05f86c6444ff500397fbb711c
-    //
-    // Note that this is the raw instance_id bytes, not their hex-encoded form.
-    bytes cipd_instance_id = 4;
+    string cipd_instance_id = 4;
 
     // The unresolved version ID of the deployed package (if known). Ex.
     //   git_revision:aaf3a2cfccc227b5141caa1b6b3502c9907d7420
@@ -99,9 +96,7 @@ message Manifest {
 
     // The hash of the isolated document. Ex.
     //   62a7df62ea122380afb306bb4d9cdac1bc7e9a96
-    //
-    // Note that this is the raw hash bytes, not their hex-encoded form.
-    bytes hash = 3;
+    string hash = 3;
   }
 
   // A Directory contains one or more descriptions of deployed artifacts. Note
@@ -122,7 +117,7 @@ message Manifest {
   // a global primary key. i.e. if you depend on chromium/src.git being in
   // a folder called “src”, I will find you and make really angry faces at you
   // until you change it...（╬ಠ益ಠ). Instead, implementations should consider
-  // indexing by e.g. git repository URL or cipd package name as more better
-  // primary keys.
+  // indexing by e.g. git repository URL or cipd package name as better primary
+  // keys.
   map<string, Directory> directories = 2;
 }
