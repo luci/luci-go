@@ -17,14 +17,14 @@ package helloworld
 import (
 	"net/http"
 
-	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/server/router"
 )
 
 func init() {
 	r := router.New()
 
-	gaemiddleware.InstallHandlers(r)
-	InstallAPIRoutes(r, gaemiddleware.BaseProd())
+	standard.InstallHandlers(r)
+	InstallAPIRoutes(r, standard.Base())
 	http.DefaultServeMux.Handle("/", r)
 }

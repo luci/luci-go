@@ -24,12 +24,12 @@ import (
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/gae/service/datastore"
 
-	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/router"
 
+	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/scheduler/appengine/engine/cron"
 	"go.chromium.org/luci/scheduler/appengine/engine/internal"
@@ -38,6 +38,7 @@ import (
 
 var tasks = tq.Dispatcher{}
 
+// CronState represents the state of a cron task.
 type CronState struct {
 	_extra datastore.PropertyMap `gae:"-,extra"`
 
@@ -132,11 +133,11 @@ func handleInvocation(c context.Context, task proto.Message, execCount int) erro
 
 func init() {
 	r := router.New()
-	gaemiddleware.InstallHandlers(r)
+	standard.InstallHandlers(r)
 
 	tasks.RegisterTask(&internal.TickLaterTask{}, handleTick, "default", nil)
 	tasks.RegisterTask(&internal.StartInvocationTask{}, handleInvocation, "default", nil)
-	tasks.InstallRoutes(r, gaemiddleware.BaseProd())
+	tasks.InstallRoutes(r, standard.Base())
 
 	// Kick-start a bunch of jobs by visiting:
 	//
@@ -146,7 +147,7 @@ func init() {
 	//
 	// And the look at the logs.
 
-	r.GET("/start/:JobID", gaemiddleware.BaseProd(), func(c *router.Context) {
+	r.GET("/start/:JobID", standard.Base(), func(c *router.Context) {
 		jobID := c.Params.ByName("JobID")
 		if err := startJob(c.Context, jobID); err != nil {
 			panic(err)

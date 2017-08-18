@@ -20,7 +20,7 @@ import (
 	// Importing pprof implicitly installs "/debug/*" profiling handlers.
 	_ "net/http/pprof"
 
-	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/grpc/prpc"
 
 	registrationPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
@@ -45,7 +45,7 @@ func init() {
 	registrationPb.RegisterRegistrationServer(&svr, registration.New())
 
 	// Standard HTTP endpoints.
-	base := gaemiddleware.BaseProd().Extend(coordinator.ProdCoordinatorService)
+	base := standard.Base().Extend(coordinator.ProdCoordinatorService)
 	svr.InstallHandlers(r, base)
 
 	http.Handle("/", r)

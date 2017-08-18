@@ -25,7 +25,7 @@ import (
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaeauth/server"
-	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/examples/appengine/helloworld_standard/proto"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/prpc"
@@ -65,7 +65,7 @@ var templateBundle = &templates.Bundle{
 
 // pageBase returns the middleware chain for page handlers.
 func pageBase() router.MiddlewareChain {
-	return gaemiddleware.BaseProd().Extend(
+	return standard.Base().Extend(
 		templates.WithTemplates(templateBundle),
 		auth.Authenticate(server.UsersAPIAuthMethod{}),
 	)
@@ -79,7 +79,7 @@ func prpcBase() router.MiddlewareChain {
 	//
 	// For authorization checks, we use per-service decorators; see
 	// service registration code.
-	return gaemiddleware.BaseProd()
+	return standard.Base()
 }
 
 //// Routes.
@@ -104,7 +104,7 @@ func checkAPIAccess(c context.Context, methodName string, req proto.Message) (co
 
 func init() {
 	r := router.New()
-	gaemiddleware.InstallHandlers(r)
+	standard.InstallHandlers(r)
 	r.GET("/", pageBase(), indexPage)
 
 	var api prpc.Server
