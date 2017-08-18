@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package gaemiddleware provides a standard middleware for Appengine apps.
+// Package gaemiddleware provides a standard middleware for Appengine apps. The
+// gaemiddleware package itself provides a generic Environment class and
+// common implementations of methods. An Environment matching your AppEngine
+// environment configuration (e.g., standard, flex) should be chosen from a
+// sub-package.
 //
 // This middleware configures the request environment to use GAE-based services
 // (like datastore via luci/gae package, logging and many more).
@@ -21,16 +25,16 @@
 //  import (
 //    ...
 //
-//    "go.chromium.org/luci/appengine/gaemiddleware"
+//    "go.chromium.org/luci/appengine/gaemiddleware/standard"
 //    "go.chromium.org/luci/common/logging"
 //    "go.chromium.org/luci/server/router"
 //  )
 //
 //  func init() {
 //    r := router.New()
-//    gaemiddleware.InstallHandlers(r)
+//    standard.InstallHandlers(r)
 //
-//    r.GET("/", gaemiddleware.BaseProd(), indexPage)
+//    r.GET("/", standard.Base(), indexPage)
 //
 //    http.DefaultServeMux.Handle("/", r)
 //  }

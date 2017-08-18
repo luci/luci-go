@@ -17,7 +17,7 @@ package frontend
 import (
 	"net/http"
 
-	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/dm/appengine/deps"
 	"go.chromium.org/luci/dm/appengine/distributor"
 	"go.chromium.org/luci/dm/appengine/distributor/jobsim"
@@ -38,7 +38,7 @@ func init() {
 
 	reg := distributor.NewRegistry(distributors, mutate.FinishExecutionFn)
 
-	basemw := gaemiddleware.BaseProd().Extend(func(c *router.Context, next router.Handler) {
+	basemw := standard.Base().Extend(func(c *router.Context, next router.Handler) {
 		c.Context = distributor.WithRegistry(c.Context, reg)
 		next(c)
 	})
@@ -52,11 +52,7 @@ func init() {
 	distributor.InstallHandlers(r, basemw)
 	svr.InstallHandlers(r, basemw)
 	tmb.InstallHandlers(r, basemw)
-
-	// TODO(iannucci): We can probably use gaemiddleware.InstallHandlers here,
-	// since various framework-level hooks (settings pages, tsmon callbacks), do
-	// not need a distributor registry.
-	gaemiddleware.InstallHandlersWithMiddleware(r, basemw)
+	standard.InstallHandlers(r)
 
 	http.Handle("/", r)
 }
