@@ -21,7 +21,33 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-var epoch = time.Unix(1442270520, 0).UTC()
+var (
+	epoch           = parseTime("2015-09-14 22:42:00 +0000 UTC")
+	closestMidnight = parseTime("2015-09-15 00:00:00 +0000 UTC")
+)
+
+func parseTime(t string) time.Time {
+	tm, err := time.Parse("2006-01-02 15:04:05.999 -0700 MST", t)
+	if err != nil {
+		panic(err)
+	}
+	return tm
+}
+
+func timeTable(cron string, now time.Time, count int) (out []time.Time) {
+	s, err := Parse(cron, 0)
+	if err != nil {
+		panic(err)
+	}
+	prev := time.Time{}
+	for ; count > 0; count-- {
+		next := s.Next(now, prev)
+		out = append(out, next)
+		prev = next
+		now = next.Add(time.Millisecond)
+	}
+	return
+}
 
 func TestAbsoluteSchedule(t *testing.T) {
 	Convey("Parsing success", t, func() {
@@ -41,6 +67,38 @@ func TestAbsoluteSchedule(t *testing.T) {
 		So(sched.IsAbsolute(), ShouldBeTrue)
 		So(sched.Next(epoch, time.Time{}), ShouldResemble, epoch.Add(15*time.Second))
 		So(sched.Next(epoch.Add(15*time.Second), epoch), ShouldResemble, epoch.Add(30*time.Second))
+	})
+
+	Convey("Each 3 hours time table", t, func() {
+		So(timeTable("0 */3 * * * *", epoch, 4), ShouldResemble, []time.Time{
+			closestMidnight,
+			closestMidnight.Add(3 * time.Hour),
+			closestMidnight.Add(6 * time.Hour),
+			closestMidnight.Add(9 * time.Hour),
+		})
+	})
+
+	Convey("Trailing stars are optional", t, func() {
+		// Exact same time tables.
+		So(timeTable("0 */3 * * *", epoch, 4), ShouldResemble, timeTable("0 */3 * * * *", epoch, 4))
+	})
+
+	Convey("List of hours", t, func() {
+		So(timeTable("0 2,10,18 * * *", epoch, 4), ShouldResemble, []time.Time{
+			closestMidnight.Add(2 * time.Hour),
+			closestMidnight.Add(10 * time.Hour),
+			closestMidnight.Add(18 * time.Hour),
+			closestMidnight.Add(26 * time.Hour),
+		})
+	})
+
+	Convey("Once a day", t, func() {
+		So(timeTable("0 7 * * *", epoch, 4), ShouldResemble, []time.Time{
+			closestMidnight.Add(7 * time.Hour),
+			closestMidnight.Add(31 * time.Hour),
+			closestMidnight.Add(55 * time.Hour),
+			closestMidnight.Add(79 * time.Hour),
+		})
 	})
 }
 

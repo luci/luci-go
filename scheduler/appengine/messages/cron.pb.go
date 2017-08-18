@@ -135,15 +135,20 @@ type Job struct {
 	// Schedule describes when to run the job.
 	//
 	// Supported kinds of schedules (illustrated by examples):
-	//   - "* 0 * * * *": standard cron-like expression. Cron engine will attempt
-	//     to start a job at specified moments in time (based on UTC clock). If
-	//     when triggering a job, previous invocation is still running, an overrun
-	//     will be recorded (and next attempt to start a job happens based on the
-	//     schedule, not when the previous invocation finishes). This is absolute
-	//     schedule (i.e. doesn't depend on job state).
+	//   - "* 0 * * * *": cron-like expression, in a syntax supported by
+	//     https://github.com/gorhill/cronexpr (see its docs for full reference).
+	//     The cron engine will attempt to start a job at specified moments in
+	//     time (based on UTC clock). If when triggering a job, previous
+	//     invocation is still running, an overrun will be recorded (and next
+	//     attempt to start a job happens based on the schedule, not when the
+	//     previous invocation finishes). Some examples:
+	//       "0 */3 * * * *" - each 3 hours: at 12:00 AM UTC, 3:00 AM UTC, ...
+	//       "0 */3 * * *" - exact same thing (last field is optional)
+	//       "0 2,10,18 * * *" - at 2 AM UTC, 10 AM UTC, 6 PM UTC
+	//       "0 7 * * *" - at 7 AM UTC, once a day.
 	//   - "with 10s interval": runs invocations in a loop, waiting 10s after
-	//     finishing invocation before starting a new one. This is relative
-	//     schedule. Overruns are not possible.
+	//     finishing invocation before starting a new one. Overruns are not
+	//     possible.
 	//   - "continuously" is alias for "with 0s interval", meaning the job will
 	//     run in a loop without any pauses.
 	//   - "triggered" schedule indicates that job is only started via "Run now"
