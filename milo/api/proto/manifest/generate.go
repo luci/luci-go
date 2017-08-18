@@ -15,4 +15,6 @@
 package source_manifest
 
 //go:generate go install go.chromium.org/luci/grpc/cmd/cproto
+//go:generate go install go.chromium.org/gae/tools/proto-gae
 //go:generate cproto
+//go:generate proto-gae -type Manifest
