@@ -22,6 +22,30 @@
       "revId": "11077fab81720cd7e16b615e7fa696f564563d47",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b24bda8e_6dbfcdfc",
+        "filename": "scheduler/appengine/schedule/schedule_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-18T12:15:25Z",
+      "side": 1,
+      "message": "nvm, tabulation will not necessarily align timeTables to the same column.",
+      "parentUuid": "631e560a_665a87d1",
+      "range": {
+        "startLine": 83,
+        "startChar": 57,
+        "endLine": 83,
+        "endChar": 66
+      },
+      "revId": "11077fab81720cd7e16b615e7fa696f564563d47",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
