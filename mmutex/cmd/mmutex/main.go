@@ -16,13 +16,29 @@ package main
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/maruel/subcommands"
 )
 
-// TODO(charliea): Compute this path from $MMUTEX_LOCK_DIR rather than making it fixed.
-var LockFilePath = path.Join(os.TempDir(), "mmutex.lock")
+var lockFileName = "mmutex.lock"
+var lockFileEnvVariable = "MMUTEX_LOCK_DIR"
+
+// Returns the lock file path based on the environment variable, or an empty string if no
+// lock file should be used.
+func computeLockFilePath(env subcommands.Env) string {
+	envVar := env[lockFileEnvVariable]
+	if !envVar.Exists {
+		return ""
+	}
+
+	lockFileDir := envVar.Value
+	if _, err := os.Stat(lockFileDir); os.IsNotExist(err) {
+		return ""
+	}
+
+	return filepath.Join(lockFileDir, lockFileName)
+}
 
 var application = &subcommands.DefaultApplication{
 	Name: "mmutex",
@@ -49,6 +65,12 @@ The source for mmutex lives at:
 		cmdExclusive,
 		cmdShared,
 		subcommands.CmdHelp,
+	},
+	EnvVars: map[string]subcommands.EnvVarDefinition{
+		"MMUTEX_LOCK_DIR": {
+			ShortDesc: "The directory containing the lock and drain files.",
+			Default:   "",
+		},
 	},
 }
 
