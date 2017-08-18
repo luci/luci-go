@@ -20,7 +20,7 @@ import (
 	// Importing pprof implicitly installs "/debug/*" profiling handlers.
 	_ "net/http/pprof"
 
-	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/discovery"
@@ -62,8 +62,8 @@ func main() {
 	discovery.Enable(&svr)
 
 	// Standard HTTP endpoints.
-	base := gaemiddleware.BaseProd().Extend(coordinator.ProdCoordinatorService)
-	gaemiddleware.InstallHandlersWithMiddleware(r, base)
+	base := standard.Base().Extend(coordinator.ProdCoordinatorService)
+	standard.InstallHandlers(r)
 	svr.InstallHandlers(r, base)
 
 	// Redirect "/" to "/app/".

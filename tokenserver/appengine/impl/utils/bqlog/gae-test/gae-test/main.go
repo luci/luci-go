@@ -26,7 +26,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
-	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/server/router"
 
@@ -63,9 +63,9 @@ func getNextID() int {
 
 func init() {
 	r := router.New()
-	basemw := gaemiddleware.BaseProd()
+	basemw := standard.Base()
 
-	gaemiddleware.InstallHandlers(r)
+	standard.InstallHandlers(r)
 
 	r.GET("/generate/:Count", basemw, func(c *router.Context) {
 		count, err := strconv.Atoi(c.Params.ByName("Count"))
