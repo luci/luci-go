@@ -22,6 +22,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/prpc"
@@ -44,7 +45,7 @@ func emptyPrelude(c context.Context, methodName string, req proto.Message) (cont
 func Run(templatePath string) {
 	// Register plain ol' http handlers.
 	r := router.New()
-	gaemiddleware.InstallHandlers(r)
+	standard.InstallHandlers(r)
 
 	basemw := base(templatePath)
 	r.GET("/", basemw, frontpageHandler)
@@ -127,7 +128,7 @@ func Run(templatePath string) {
 		Prelude: emptyPrelude,
 	})
 	discovery.Enable(&api)
-	api.InstallHandlers(r, gaemiddleware.BaseProd())
+	api.InstallHandlers(r, standard.Base())
 
 	http.DefaultServeMux.Handle("/", r)
 }
