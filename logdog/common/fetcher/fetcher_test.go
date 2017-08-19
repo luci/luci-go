@@ -80,6 +80,8 @@ func newTestSource() *testSource {
 	}
 }
 
+func (ts *testSource) Descriptor() *logpb.LogStreamDescriptor { return nil }
+
 func (ts *testSource) LogEntries(c context.Context, req *LogRequest) ([]*logpb.LogEntry, types.MessageIndex, error) {
 	ts.Lock()
 	defer ts.Unlock()
