@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "39f6da1b_5e47103e",
+        "filename": "milo/logs/logs.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-19T01:14:08Z",
+      "side": 1,
+      "message": "ROFL :x\n\nWeren\u0027t we going to delete this? Doubly so now that I\u0027m moving Coordinator frontend into Flex?",
+      "range": {
+        "startLine": 68,
+        "startChar": 6,
+        "endLine": 68,
+        "endChar": 19
+      },
+      "revId": "ea7e2e3b2971156f50d99f1af798212f9d00bae9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
