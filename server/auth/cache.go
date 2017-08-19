@@ -31,6 +31,12 @@ import (
 	"go.chromium.org/luci/common/sync/mutexpool"
 )
 
+// cacheKeyVersion is a version constant that is appended to cache keys. It
+// should be modified anytime any incompatible changes are made to the cache,
+// such as the cache value format changing or package name change (breaks
+// "gob" encoding).
+const cacheKeyVersion = "v2"
+
 // Cache implements a strongly consistent cache. Cache may optionally be
 // consistent across multiple processes.
 type Cache interface {
@@ -164,7 +170,7 @@ func (tc *tokenCache) WithLocalMutex(c context.Context, cache Cache, key string,
 func (tc *tokenCache) itemKey(key string) string {
 	digest := sha1.Sum([]byte(key))
 	asStr := base64.RawURLEncoding.EncodeToString(digest[:])
-	return fmt.Sprintf("%s/%d/%s", tc.Kind, tc.Version, asStr)
+	return fmt.Sprintf("%s/%s/%d/%s", tc.Kind, tc.Version, asStr, cacheKeyVersion)
 }
 
 // marshal converts cachedToken struct to byte blob.

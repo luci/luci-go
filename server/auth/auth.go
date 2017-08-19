@@ -121,6 +121,10 @@ func (u *User) unmarshal(v []byte) error {
 	return dec.Decode(u)
 }
 
+func init() {
+	gob.Register(&User{})
+}
+
 // Authenticator performs authentication of incoming requests.
 //
 // It is a stateless object configured with a list of methods to try when
