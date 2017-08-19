@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6aff8416_0db26879",
+        "filename": "logdog/client/coordinator/fetcher.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-19T00:53:11Z",
+      "side": 1,
+      "message": "Since we modify \"o\", let\u0027s pass this by value.",
+      "range": {
+        "startLine": 107,
+        "startChar": 44,
+        "endLine": 107,
+        "endChar": 47
+      },
+      "revId": "f7b283b92918968072512ecdb94d75c88b8670c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
