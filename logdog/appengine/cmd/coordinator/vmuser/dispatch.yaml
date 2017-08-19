@@ -19,6 +19,8 @@ dispatch:
   - url: "*/v/*"
     service: static
 
+  - url: "*/rpcexplorer"
+    service: static
   - url: "*/rpcexplorer/*"
     service: static
 
