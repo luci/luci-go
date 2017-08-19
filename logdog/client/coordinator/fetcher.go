@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2017 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cli
+package coordinator
 
 import (
-	"errors"
 	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/fetcher"
 	"go.chromium.org/luci/logdog/common/types"
 	"golang.org/x/net/context"
@@ -32,8 +30,6 @@ const (
 	// defaultBytes is the default maximum number of bytes to request per fetch
 	// round.
 	defaultBytes = 1024 * 1024 * 1 // 1 MB
-
-	noStreamDelay = 5 * time.Second
 )
 
 // coordinatorSource is a fetcher.Source implementation that uses the
@@ -41,11 +37,11 @@ const (
 type coordinatorSource struct {
 	sync.Mutex
 
-	stream    *coordinator.Stream
+	stream    *Stream
 	tidx      types.MessageIndex
 	tailFirst bool
 
-	streamState *coordinator.LogStream
+	streamState *LogStream
 }
 
 func (s *coordinatorSource) LogEntries(c context.Context, req *fetcher.LogRequest) (
@@ -53,22 +49,27 @@ func (s *coordinatorSource) LogEntries(c context.Context, req *fetcher.LogReques
 	s.Lock()
 	defer s.Unlock()
 
-	params := append(make([]coordinator.GetParam, 0, 4),
-		coordinator.LimitBytes(int(req.Bytes)),
-		coordinator.LimitCount(req.Count),
-		coordinator.Index(req.Index),
+	params := append(make([]GetParam, 0, 4),
+		LimitBytes(int(req.Bytes)),
+		LimitCount(req.Count),
+		Index(req.Index),
 	)
 
 	// If we haven't terminated, use this opportunity to fetch/update our stream
 	// state.
-	var streamState coordinator.LogStream
+	var streamState LogStream
 	reqStream := (s.streamState == nil || s.streamState.State.TerminalIndex < 0)
 	if reqStream {
-		params = append(params, coordinator.WithState(&streamState))
+		params = append(params, WithState(&streamState))
 	}
 
+	delayTimer := clock.NewTimer(c)
+	defer delayTimer.Stop()
 	for {
 		logs, err := s.stream.Get(c, params...)
+
+		// TODO(iannucci,dnj): use retry module + transient tags instead
+		delayTimer.Reset(5 * time.Second)
 		switch err {
 		case nil:
 			if reqStream {
@@ -77,11 +78,11 @@ func (s *coordinatorSource) LogEntries(c context.Context, req *fetcher.LogReques
 			}
 			return logs, s.tidx, nil
 
-		case coordinator.ErrNoSuchStream:
+		case ErrNoSuchStream:
 			log.WithError(err).Warningf(c, "Stream does not exist. Sleeping pending registration.")
 
 			// Delay, interrupting if our Context is interrupted.
-			if tr := <-clock.After(c, noStreamDelay); tr.Incomplete() {
+			if tr := <-delayTimer.GetC(); tr.Incomplete() {
 				return nil, 0, tr.Err
 			}
 
@@ -93,9 +94,25 @@ func (s *coordinatorSource) LogEntries(c context.Context, req *fetcher.LogReques
 	}
 }
 
-func (s *coordinatorSource) descriptor() (*logpb.LogStreamDescriptor, error) {
+// Descriptor returns the LogStreamDescriptor for this stream, if known,
+// or returns nil.
+func (s *coordinatorSource) Descriptor() *logpb.LogStreamDescriptor {
 	if s.streamState != nil {
-		return &s.streamState.Desc, nil
+		return &s.streamState.Desc
 	}
-	return nil, errors.New("no stream state loaded")
+	return nil
+}
+
+// Fetcher returns a Fetcher implementation for this Stream.
+//
+// If you pass a nil fetcher.Options, a default option set will be used. The
+// o.Source field will always be overwritten to be based off this stream.
+func (s *Stream) Fetcher(c context.Context, o *fetcher.Options) *fetcher.Fetcher {
+	if o == nil {
+		o = &fetcher.Options{}
+	} else {
+		o = &(*o)
+	}
+	o.Source = &coordinatorSource{stream: s, tidx: -1}
+	return fetcher.New(c, *o)
 }

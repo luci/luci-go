@@ -18,17 +18,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/fetcher"
 	"go.chromium.org/luci/logdog/common/types"
@@ -46,63 +42,6 @@ type streamInfo struct {
 }
 
 const noStreamDelay = 5 * time.Second
-
-// coordinatorSource is a fetcher.Source implementation that uses the
-// Coordiantor API.
-type coordinatorSource struct {
-	sync.Mutex
-
-	stream    *coordinator.Stream
-	tidx      types.MessageIndex
-	tailFirst bool
-
-	streamState *coordinator.LogStream
-}
-
-func (s *coordinatorSource) LogEntries(c context.Context, req *fetcher.LogRequest) (
-	[]*logpb.LogEntry, types.MessageIndex, error) {
-	s.Lock()
-	// TODO(hinoka): If fetching multiple streams, this would cause requests
-	// to be serialized. We may not want this.
-	defer s.Unlock()
-
-	params := append(make([]coordinator.GetParam, 0, 4),
-		coordinator.LimitBytes(int(req.Bytes)),
-		coordinator.LimitCount(req.Count),
-		coordinator.Index(req.Index),
-	)
-
-	// If we haven't terminated, use this opportunity to fetch/update our stream
-	// state.
-	var streamState coordinator.LogStream
-	reqState := s.streamState == nil || s.streamState.State.TerminalIndex < 0
-	if reqState {
-		params = append(params, coordinator.WithState(&streamState))
-	}
-
-	for {
-		logs, err := s.stream.Get(c, params...)
-		switch err {
-		case nil:
-			if reqState {
-				s.streamState = &streamState
-				s.tidx = streamState.State.TerminalIndex
-			}
-			return logs, s.tidx, nil
-
-		case coordinator.ErrNoSuchStream:
-			log.Print("Stream does not exist. Sleeping pending registration.")
-
-			// Delay, interrupting if our Context is interrupted.
-			if tr := <-clock.After(c, noStreamDelay); tr.Incomplete() {
-				return nil, 0, tr.Err
-			}
-
-		default:
-			return nil, 0, err
-		}
-	}
-}
 
 func logHandler(c context.Context, w http.ResponseWriter, host, path string) error {
 	// TODO(hinoka): Move this to luci-config.
@@ -126,13 +65,7 @@ func logHandler(c context.Context, w http.ResponseWriter, host, path string) err
 	stream := client.Stream(project, streamPath)
 
 	// Pull stream information.
-	f := fetcher.New(c, fetcher.Options{
-		Source: &coordinatorSource{
-			stream: stream,
-			tidx:   -1, // Must be set to probe for state.
-		},
-		Index: types.MessageIndex(0),
-		Count: 0,
+	f := stream.Fetcher(c, &fetcher.Options{
 		// Try to buffer as much as possible, with a large window, since this is
 		// basically a cloud-to-cloud connection.
 		BufferCount:    200,

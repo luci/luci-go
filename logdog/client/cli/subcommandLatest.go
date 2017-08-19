@@ -17,6 +17,7 @@ package cli
 import (
 	"io"
 	"os"
+	"time"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -124,8 +125,14 @@ func (cmd *latestCommandRun) getTailEntry(c context.Context, s *coordinator.Stre
 
 	// Loop until we either hard fail or succeed.
 	var st coordinator.LogStream
+
+	delayTimer := clock.NewTimer(c)
+	defer delayTimer.Stop()
 	for {
 		ls, err := s.Tail(c, coordinator.Complete(), coordinator.WithState(&st))
+
+		// TODO(iannucci,dnj): use retry module + transient tags instead
+		delayTimer.Reset(5 * time.Second)
 		switch {
 		case err == nil:
 			return ls, &st, nil
@@ -133,7 +140,7 @@ func (cmd *latestCommandRun) getTailEntry(c context.Context, s *coordinator.Stre
 		case err == coordinator.ErrNoSuchStream, ls == nil:
 			log.WithError(err).Warningf(c, "No log entries, sleeping and retry.")
 
-			if ar := <-clock.After(c, noStreamDelay); ar.Incomplete() {
+			if ar := <-delayTimer.GetC(); ar.Incomplete() {
 				// Timer stopped prematurely.
 				return nil, nil, ar.Err
 			}

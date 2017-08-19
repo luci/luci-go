@@ -68,7 +68,7 @@ func genDG(idx int64, content ...string) []*logpb.LogEntry {
 
 		logs[i] = &logpb.LogEntry{
 			StreamIndex: uint64(idx + int64(i)),
-			Content:     &logpb.LogEntry_Datagram{&dg},
+			Content:     &logpb.LogEntry_Datagram{Datagram: &dg},
 		}
 	}
 	return logs

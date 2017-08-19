@@ -181,13 +181,7 @@ func (cmd *catCommandRun) Run(scApp subcommands.Application, args []string, _ su
 
 func (cmd *catCommandRun) catPath(c context.Context, coord *coordinator.Client, addr *types.StreamAddr) error {
 	// Pull stream information.
-	src := coordinatorSource{
-		stream: coord.Stream(addr.Project, addr.Path),
-	}
-	src.tidx = -1 // Must be set to probe for state.
-
-	f := fetcher.New(c, fetcher.Options{
-		Source:      &src,
+	f := coord.Stream(addr.Project, addr.Path).Fetcher(c, &fetcher.Options{
 		Index:       types.MessageIndex(cmd.index),
 		Count:       cmd.count,
 		BufferCount: cmd.fetchSize,
@@ -198,17 +192,17 @@ func (cmd *catCommandRun) catPath(c context.Context, coord *coordinator.Client, 
 		Source: f,
 		Raw:    cmd.raw,
 		TextPrefix: func(le *logpb.LogEntry, line *logpb.Text_Line) string {
-			desc, err := src.descriptor()
-			if err != nil {
-				log.WithError(err).Errorf(c, "Failed to get text prefix descriptor.")
+			desc := f.Descriptor()
+			if desc == nil {
+				log.Errorf(c, "Failed to get text prefix descriptor.")
 				return ""
 			}
 			return cmd.getTextPrefix(desc, le)
 		},
 		DatagramWriter: func(w io.Writer, dg []byte) bool {
-			desc, err := src.descriptor()
-			if err != nil {
-				log.WithError(err).Errorf(c, "Failed to get stream descriptor.")
+			desc := f.Descriptor()
+			if desc == nil {
+				log.Errorf(c, "Failed to get stream descriptor.")
 				return false
 			}
 			return getDatagramWriter(c, desc)(w, dg)

@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/common/renderer"
 	"go.chromium.org/luci/logdog/common/types"
 	"golang.org/x/net/context"
 )
@@ -61,6 +62,11 @@ type Source interface {
 	// Upon success, the requested logs and terminal message index is returned. If
 	// no terminal index is known, a value <0 will be returned.
 	LogEntries(context.Context, *LogRequest) ([]*logpb.LogEntry, types.MessageIndex, error)
+
+	// Descriptor returns the stream's descriptor, if the source knows it.
+	//
+	// If the source doesn't have this information, this should return nil.
+	Descriptor() *logpb.LogStreamDescriptor
 }
 
 // Options is the set of configuration parameters for a Fetcher.
@@ -406,4 +412,20 @@ func (f *Fetcher) applyConstraint(want, have int64) int64 {
 		// We're within our constraint. Do not fetch logs.
 		return -1
 	}
+}
+
+// Reader returns an io.Reader (a *renderer.Renderer) for this Fetcher.
+func (f *Fetcher) Reader() io.Reader {
+	return &renderer.Renderer{
+		Source: f,
+		Raw:    true,
+	}
+}
+
+// Descriptor returns the last-known Descriptor from the underlying Stream, if
+// known.
+//
+// If the underlying stream doesn't have this information, this returns nil.
+func (f *Fetcher) Descriptor() *logpb.LogStreamDescriptor {
+	return f.o.Source.Descriptor()
 }
