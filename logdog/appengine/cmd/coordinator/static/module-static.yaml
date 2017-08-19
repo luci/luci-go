@@ -17,35 +17,41 @@ runtime: go
 api_version: go1
 
 handlers:
-- url: "/app/?"
+- url: /app/?
   static_files: dist/logdog-app/index.html
   upload: dist/logdog-app/index.html
   secure: always
 
-- url: "/app"
+- url: /app
   static_dir: dist/logdog-app
   secure: always
 
   # Handlers for LogDog View App.
-- url: "/v/?"
+- url: /v/?
   static_files: dist/logdog-view/index.html
   upload: dist/logdog-app/index.html
   secure: always
 
-- url: "/v"
+- url: /v
   static_dir: dist/logdog-view
   secure: always
 
-- url: "/rpcexplorer/?"
+##
+# RPC Explorer
+##
+
+- url: /rpcexplorer/?
   static_files: dist/rpcexplorer/index.html
   upload: dist/rpcexplorer/index.html
   secure: always
 
-- url: "/rpcexplorer/services/.*"
-  static_files: dist/rpcexplorer
+# The entire subpath is globbed because RPC Explorer uses native URL redirecting
+# for sub-pages, and we want all of them to map to the same HTML file.
+- url: /rpcexplorer/services/.*
+  static_files: dist/rpcexplorer/index.html
   upload: dist/rpcexplorer/index.html
   secure: always
 
-- url: "/rpcexplorer"
+- url: /rpcexplorer
   static_dir: dist/rpcexplorer
   secure: always
