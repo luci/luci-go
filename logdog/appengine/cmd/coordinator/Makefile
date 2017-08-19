@@ -49,6 +49,12 @@ GAE_PY_EXTRA_ARGS := $(GAE_PY_EXTRA_ARGS) -t $(TAG)
 endif
 
 ALL_SERVICES = default services backend static
+YAMLS = dispatch queue cron index
+
+# Define a literal space and comma, for substitution.
+space :=
+space +=
+comma := ,
 
 define HELP_BODY
 Manage LogDog distributions.
@@ -61,6 +67,8 @@ Service Targets for: $(ALL_SERVICES)
   switch: Switches all services over to the uploaded version.
 
 Special Service Targets:
+  update-{$(subst $(space),$(comma),$(YAMLS))}
+    Explicitly update one of the configuration YAML files.
   upload-static-dev: special command to upload an instance of the static
     module named "dev". This can be whitelisted for OAuth for authenticated
     testing.
@@ -71,7 +79,6 @@ endef
 help:
 	$(info $(HELP_BODY))
 
-YAMLS = dispatch queue cron index
 YAML_PATHS = $(addprefix vmuser/,$(addsuffix .yaml,$(YAMLS)))
 
 .PHONY: yamls
