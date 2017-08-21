@@ -395,51 +395,5 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 				So(hashes2, ShouldNotResemble, hashes)
 			})
 		})
-
-		Convey(`Test GetConfigSetURL user fetch`, func() {
-			c = installConfig(c)
-
-			// Project does not exist, missing for user and service.
-			_, err := cfgclient.GetConfigSetURL(c, cfgclient.AsUser, "projects/urltest")
-			So(err, ShouldEqual, cfgclient.ErrNoConfig)
-			_, err = cfgclient.GetConfigSetURL(c, cfgclient.AsService, "projects/urltest")
-			So(err, ShouldEqual, cfgclient.ErrNoConfig)
-
-			// Add the project, still missing b/c of cache.
-			baseMap["projects/urltest"] = memConfig.ConfigSet{
-				"project.cfg": proto.MarshalTextString(projectConfigWithAccess("foo", "group:exclusive")),
-			}
-
-			_, err = cfgclient.GetConfigSetURL(c, cfgclient.AsUser, "projects/urltest")
-			So(err, ShouldEqual, cfgclient.ErrNoConfig)
-			_, err = cfgclient.GetConfigSetURL(c, cfgclient.AsService, "projects/urltest")
-			So(err, ShouldEqual, cfgclient.ErrNoConfig)
-
-			// Expire the cache entry and refresh. Next project load will pick up
-			// the new project.
-			clk.Add(time.Hour)
-			So(runCron(), ShouldEqual, http.StatusOK)
-
-			// User still cannot access (not member of group).
-			_, err = cfgclient.GetConfigSetURL(c, cfgclient.AsUser, "projects/urltest")
-			So(err, ShouldEqual, cfgclient.ErrNoConfig)
-
-			// Service can access.
-			u, err := cfgclient.GetConfigSetURL(c, cfgclient.AsService, "projects/urltest")
-			So(err, ShouldBeNil)
-			So(u.String(), ShouldEqual, "https://example.com/fake-config/projects/urltest")
-
-			// User joins group, immediately gets access b/c the cached entry is the
-			// service response, and so was soft-forbidden before.
-			//
-			// We must expire the cache after adding the user, since it cached the
-			// fail response.
-			authState.IdentityGroups = append(authState.IdentityGroups, "exclusive")
-			clk.Add(time.Hour)
-
-			_, err = cfgclient.GetConfigSetURL(c, cfgclient.AsUser, "projects/urltest")
-			So(err, ShouldBeNil)
-			So(u.String(), ShouldEqual, "https://example.com/fake-config/projects/urltest")
-		})
 	})
 }
