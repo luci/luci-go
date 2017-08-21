@@ -27,8 +27,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// If put is true, test the Put command; if false, test the PutIfMissing
-// command.
 func TestCache(t *testing.T) {
 	t.Parallel()
 
@@ -349,6 +347,58 @@ func TestGetOrCreate(t *testing.T) {
 				So(v, ShouldEqual, 0)
 				So(vals[i], ShouldEqual, 1)
 			}
+		})
+
+		Convey(`Can retreive values while a Maker is in-progress.`, func() {
+			cache.Put(ctx, "foo", "bar", 0)
+
+			// Value already exists, so retrieves current value.
+			v, err := cache.GetOrCreate(ctx, "foo", func() (interface{}, time.Duration, error) {
+				return "baz", 0, nil
+			})
+			So(err, ShouldBeNil)
+			So(v, ShouldEqual, "bar")
+
+			// Create a new value.
+			changingC := make(chan struct{})
+			waitC := make(chan struct{})
+			doneC := make(chan struct{})
+
+			var setV interface{}
+			var setErr error
+			go func() {
+				setV, setErr = cache.Create(ctx, "foo", func() (interface{}, time.Duration, error) {
+					close(changingC)
+					<-waitC
+					return "qux", 0, nil
+				})
+
+				close(doneC)
+			}()
+
+			// The goroutine's Create is in-progress, but the value is still present,
+			// so we should be able to get the old value.
+			<-changingC
+			v, err = cache.GetOrCreate(ctx, "foo", func() (interface{}, time.Duration, error) {
+				return "never", 0, nil
+			})
+			So(err, ShouldBeNil)
+			So(v, ShouldEqual, "bar")
+
+			// Our goroutine has finished setting. Validate its output.
+			close(waitC)
+			<-doneC
+
+			So(setErr, ShouldBeNil)
+			So(setV, ShouldEqual, "qux")
+
+			// Run GetOrCreate. The value should be present, and should hold the new
+			// value added by the goroutine.
+			v, err = cache.GetOrCreate(ctx, "foo", func() (interface{}, time.Duration, error) {
+				return "never", 0, nil
+			})
+			So(err, ShouldBeNil)
+			So(v, ShouldEqual, "qux")
 		})
 	})
 }

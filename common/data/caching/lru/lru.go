@@ -298,13 +298,52 @@ func (c *Cache) Remove(key interface{}) (val interface{}, has bool) {
 // Operations on to the Cache using other methods will not lock around
 // key. This will not interfere with GetOrCreate.
 func (c *Cache) GetOrCreate(ctx context.Context, key interface{}, fn Maker) (v interface{}, err error) {
+	// First, check if the value is the cache. We don't need to hold the item's
+	// Mutex for this.
+	var ok bool
+	if v, ok = c.Get(ctx, key); ok {
+		return v, nil
+	}
+
+	// The value is currently not cached, so we will generate it.
 	c.mp.WithMutex(key, func() {
-		// Is the value already in the cache?
-		var ok bool
+		// Has the value been cached since we obtained the key's lock?
 		if v, ok = c.Get(ctx, key); ok {
 			return
 		}
 
+		// Generate a new value.
+		var exp time.Duration
+		if v, exp, err = fn(); err != nil {
+			// The Maker returned an error, so do not add the value to the cache.
+			return
+		}
+
+		// Add the generated value to the cache.
+		c.Put(ctx, key, v, exp)
+	})
+	return
+}
+
+// Create write-locks around key and invokes the supplied Maker to generate a
+// new value.
+//
+// If multiple concurrent operations invoke GetOrCreate or Create at the same
+// time, they will serialize, and at most one Maker will be invoked at a time.
+// If the Maker succeeds, it is more likely that the first operation will
+// generate and install a value, and the other operations will all quickly
+// retrieve that value once unblocked.
+//
+// If the Maker returns an error, the error will be returned by Create and
+// no modifications will be made to the Cache. If Maker returns a nil error, the
+// value that it returns will be added into the Cache and returned to the
+// caller.
+//
+// Note that the Cache's lock will not be held while the Maker is running.
+// Operations on to the Cache using other methods will not lock around
+// key. This will not interfere with Create.
+func (c *Cache) Create(ctx context.Context, key interface{}, fn Maker) (v interface{}, err error) {
+	c.mp.WithMutex(key, func() {
 		// Generate a new value.
 		var exp time.Duration
 		if v, exp, err = fn(); err != nil {
