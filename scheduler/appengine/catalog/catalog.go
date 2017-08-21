@@ -232,6 +232,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 
 	revisionURL := meta.ViewURL
 	if revisionURL != "" {
+		revisionURL = fmt.Sprintf("%s/%s", revisionURL, meta.Path)
 		logging.Infof(c, "Importing %s", revisionURL)
 	}
 	// TODO(tandrii): make use of https://godoc.org/go.chromium.org/luci/common/config/validation
