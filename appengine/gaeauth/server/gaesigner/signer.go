@@ -26,8 +26,9 @@ import (
 	"go.chromium.org/gae/service/info"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/caching/proccache"
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/caching"
 )
 
 // Signer implements signing.Signer using GAE App Identity API.
@@ -66,7 +67,7 @@ func (Signer) ServiceInfo(c context.Context) (*signing.ServiceInfo, error) {
 type cacheKey int
 
 // cachedCerts caches this app certs in local memory for 1 hour.
-var cachedCerts = proccache.Cached(cacheKey(0), func(c context.Context, key interface{}) (interface{}, time.Duration, error) {
+var cachedCerts = lru.Cached(caching.ProcessCache, cacheKey(0), func(c context.Context) (interface{}, time.Duration, error) {
 	aeCerts, err := info.PublicCertificates(c)
 	if err != nil {
 		return nil, 0, err
@@ -94,7 +95,7 @@ var cachedCerts = proccache.Cached(cacheKey(0), func(c context.Context, key inte
 // cachedInfo caches this app service info in local memory forever.
 //
 // This info is static during lifetime of the process.
-var cachedInfo = proccache.Cached(cacheKey(1), func(c context.Context, key interface{}) (interface{}, time.Duration, error) {
+var cachedInfo = lru.Cached(caching.ProcessCache, cacheKey(1), func(c context.Context) (interface{}, time.Duration, error) {
 	account, err := info.ServiceAccount(c)
 	if err != nil {
 		return nil, 0, err

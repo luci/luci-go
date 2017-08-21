@@ -15,18 +15,17 @@
 package buildbot
 
 import (
-	"context"
 	"testing"
 
-	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMaster(t *testing.T) {
-	c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
+	c := gaetesting.TestingContextWithAppID("dev~luci-milo")
 	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
 	datastore.GetTestable(c).Consistent(true)
 	datastore.GetTestable(c).AutoIndex(true)
