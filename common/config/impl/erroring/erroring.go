@@ -1,0 +1,68 @@
+// Copyright 2015 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Package erroring implements a backend that always returns an error for all
+// of its calls.
+package erroring
+
+import (
+	"net/url"
+
+	"go.chromium.org/luci/common/config"
+
+	"golang.org/x/net/context"
+)
+
+// New creates a new erroring interface. This interface will always return an
+// error for every API call.
+//
+// The supplied error must not be nil. If it is, New will panic.
+func New(err error) config.Interface {
+	if err == nil {
+		panic("error cannot be nil")
+	}
+	return erroringInterface{err}
+}
+
+type erroringInterface struct {
+	err error
+}
+
+func (i erroringInterface) GetConfig(ctx context.Context, configSet, path string, hashOnly bool) (*config.Config, error) {
+	return nil, i.err
+}
+
+func (i erroringInterface) GetConfigByHash(ctx context.Context, contentHash string) (string, error) {
+	return "", i.err
+}
+
+func (i erroringInterface) GetConfigSetLocation(ctx context.Context, configSet string) (*url.URL, error) {
+	return nil, i.err
+}
+
+func (i erroringInterface) GetProjectConfigs(ctx context.Context, path string, hashesOnly bool) ([]config.Config, error) {
+	return nil, i.err
+}
+
+func (i erroringInterface) GetProjects(ctx context.Context) ([]config.Project, error) {
+	return nil, i.err
+}
+
+func (i erroringInterface) GetRefConfigs(ctx context.Context, path string, hashesOnly bool) ([]config.Config, error) {
+	return nil, i.err
+}
+
+func (i erroringInterface) GetRefs(ctx context.Context, projectID string) ([]string, error) {
+	return nil, i.err
+}

@@ -19,11 +19,10 @@
 package erroring
 
 import (
-	"errors"
 	"net/url"
 
 	"go.chromium.org/luci/common/config"
-	"go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/common/config/impl/erroring"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
 
 	"golang.org/x/net/context"
@@ -60,8 +59,5 @@ func (e erroringImpl) GetAll(c context.Context, t backend.GetAllTarget, path str
 }
 
 func (e erroringImpl) GetConfigInterface(c context.Context, a backend.Authority) config.Interface {
-	emptySet := map[string]memory.ConfigSet{}
-	i := memory.New(emptySet)
-	memory.SetError(i, errors.New("error"))
-	return i
+	return erroring.New(e.err)
 }
