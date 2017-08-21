@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth/identity"
+	"go.chromium.org/luci/server/caching"
 
 	"golang.org/x/net/context"
 )
@@ -44,9 +45,9 @@ type GoogleOAuth2Method struct {
 }
 
 // Authenticate implements Method.
-func (m *GoogleOAuth2Method) Authenticate(c context.Context, r *http.Request) (user *User, err error) {
+func (m *GoogleOAuth2Method) Authenticate(c context.Context, r *http.Request) (*User, error) {
 	cfg := getConfig(c)
-	if cfg == nil || cfg.AnonymousTransport == nil || cfg.Cache == nil {
+	if cfg == nil || cfg.AnonymousTransport == nil {
 		return nil, ErrNotConfigured
 	}
 
@@ -62,40 +63,16 @@ func (m *GoogleOAuth2Method) Authenticate(c context.Context, r *http.Request) (u
 	}
 	accessToken := chunks[1]
 
-	// Check cache (without lock).
-	cacheKey := makeAccessTokenCacheKey(accessToken)
-	if cv, err := cfg.Cache.Get(c, cacheKey); err == nil && cv != nil {
-		user = &User{}
-		err := user.unmarshal(cv)
-		if err == nil {
-			return user, nil
-		}
-		logging.WithError(err).Warningf(c, "oauth: Failed to unmarshal cached User.")
-	} else if err != nil {
-		logging.WithError(err).Warningf(c, "oauth: Failed to fetch User from cache.")
-	}
-
-	// Not cached, or invalid cache. Regenerate and add to cache under lock.
-	var exp time.Duration
-	cfg.Cache.WithLocalMutex(c, string(cacheKey), func() {
-		if user, exp, err = m.authenticateAgainstGoogle(c, cfg, accessToken); err != nil {
-			return
-		}
-
-		// Add the resolved User to cache.
-		if blob, err := user.marshal(); err == nil {
-			if err := cfg.Cache.Set(c, cacheKey, blob, exp); err != nil {
-				logging.WithError(err).Warningf(c, "oauth: Failed to add User to cache.")
-			}
-		} else {
-			logging.WithError(err).Warningf(c, "oauth: Failed to marshal User for cache.")
-		}
-	})
+	// Check cache.
+	user, err := caching.ProcessCache(c).GetOrCreate(c, makeAccessTokenCacheKey(accessToken),
+		func() (interface{}, time.Duration, error) {
+			// Not cached, or invalid cache. Regenerate and add to cache under lock.
+			return m.authenticateAgainstGoogle(c, cfg, accessToken)
+		})
 	if err != nil {
 		return nil, err
 	}
-
-	return
+	return user.(*User), nil
 }
 
 // authenticateAgainstGoogle uses OAuth2 tokeninfo endpoint via URL fetch.
@@ -158,11 +135,13 @@ func (m *GoogleOAuth2Method) authenticateAgainstGoogle(c context.Context, cfg *C
 	return u, exp, nil
 }
 
+type accessTokenCacheKey string
+
 // makeAccessTokenCacheKey creates a cache key for the specified access
 // token. To generate this key, we hash the actual access token so that if a
 // memory or cache dump ever occurs, the tokens themselves aren't included in
 // it.
-func makeAccessTokenCacheKey(token string) string {
+func makeAccessTokenCacheKey(token string) accessTokenCacheKey {
 	h := sha256.Sum256([]byte(token))
-	return "authorization/" + hex.EncodeToString(h[:])
+	return accessTokenCacheKey(hex.EncodeToString(h[:]))
 }

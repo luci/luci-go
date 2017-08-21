@@ -24,9 +24,11 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/server/auth/delegation"
 	"go.chromium.org/luci/server/auth/delegation/messages"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -54,6 +56,9 @@ func TestMintDelegationToken(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
 
+		cache := lru.New(0)
+		ctx = caching.WithProcessCache(ctx, cache)
+
 		mockedClient := &tokenMinterMock{
 			response: minter.MintDelegationTokenResponse{
 				Token: "tok",
@@ -64,13 +69,7 @@ func TestMintDelegationToken(t *testing.T) {
 			},
 		}
 
-		// Create an LRU large enough that it will never cycle during test.
-		tokenCache := NewMemoryCache(1024)
-
-		ctx = ModifyConfig(ctx, func(cfg Config) Config {
-			cfg.Cache = tokenCache
-			return cfg
-		})
+		ctx = ModifyConfig(ctx, func(cfg Config) Config { return cfg })
 
 		ctx = WithState(ctx, &state{
 			user: &User{Identity: "user:abc@example.com"},
@@ -98,8 +97,8 @@ func TestMintDelegationToken(t *testing.T) {
 			})
 
 			// Cached now.
-			So(tokenCache.(*MemoryCache).LRU.Len(), ShouldEqual, 1)
-			v, _ := tokenCache.Get(ctx, "delegation/4/dL9oZrnNLCIxyUBBaX3eGKAwTbA")
+			So(cache.Len(), ShouldEqual, 1)
+			v, _ := cache.Get(ctx, tokenCacheKey("delegation/dL9oZrnNLCIxyUBBaX3eGKAwTbA"))
 			So(v, ShouldNotBeNil)
 
 			// On subsequence request the cached token is used.
