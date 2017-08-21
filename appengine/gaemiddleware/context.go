@@ -116,7 +116,7 @@ func (e *Environment) With(c context.Context, req *http.Request) context.Context
 	// later once we can load settings.
 	c = logging.SetLevel(c, logging.Debug)
 	c = caching.WithProcessCache(c, globalLRUCache)
-	c = caching.WithRequestCache(c)
+	c = caching.WithRequestCache(c, nil)
 
 	c = e.WithInitialRequest(c, req)
 

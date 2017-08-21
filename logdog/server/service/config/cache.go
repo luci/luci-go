@@ -17,11 +17,10 @@ package config
 import (
 	"time"
 
-	"go.chromium.org/luci/common/data/caching/proccache"
-	"go.chromium.org/luci/common/sync/mutexpool"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 	"go.chromium.org/luci/luci_config/server/cfgclient"
 	"go.chromium.org/luci/luci_config/server/cfgclient/textproto"
+	"go.chromium.org/luci/server/caching"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
@@ -38,20 +37,18 @@ type MessageCache struct {
 	// Lifetime is the lifetime applied to an individual cache entry. If Lifetime
 	// is <= 0, no caching will occur.
 	Lifetime time.Duration
-
-	mutexes mutexpool.P
 }
 
 // Get returns an unmarshalled configuration service text protobuf message.
 //
 // If the message is not currently in the process cache, it will be fetched from
 // the config service and cached prior to being returned.
-func (pc *MessageCache) Get(c context.Context, cset cfgtypes.ConfigSet, path string, msg proto.Message) (
+func (mc *MessageCache) Get(c context.Context, cset cfgtypes.ConfigSet, path string, msg proto.Message) (
 	proto.Message, error) {
 
 	// If no Lifetime is configured, bypass the cache layer.
-	if pc.Lifetime <= 0 {
-		err := pc.GetUncached(c, cset, path, msg)
+	if mc.Lifetime <= 0 {
+		err := mc.GetUncached(c, cset, path, msg)
 		return msg, err
 	}
 
@@ -62,14 +59,13 @@ func (pc *MessageCache) Get(c context.Context, cset cfgtypes.ConfigSet, path str
 	// slamming the config service, particularly at startup.
 	var v interface{}
 	var err error
-	pc.mutexes.WithMutex(key, func() {
-		v, err = proccache.GetOrMake(c, key, func() (interface{}, time.Duration, error) {
-			// Not in cache or expired. Reload...
-			if err := pc.GetUncached(c, cset, path, msg); err != nil {
-				return nil, 0, err
-			}
-			return msg, pc.Lifetime, nil
-		})
+	pc := caching.ProcessCache(c)
+	pc.GetOrCreate(c, key, func() (interface{}, time.Duration, error) {
+		// Not in cache or expired. Reload...
+		if err := mc.GetUncached(c, cset, path, msg); err != nil {
+			return nil, 0, err
+		}
+		return msg, mc.Lifetime, nil
 	})
 
 	if err != nil {
@@ -81,7 +77,7 @@ func (pc *MessageCache) Get(c context.Context, cset cfgtypes.ConfigSet, path str
 // GetUncached returns an unmarshalled configuration service text protobuf
 // message. This bypasses the cache, and, on success, does not cache the
 // resulting value.
-func (pc *MessageCache) GetUncached(c context.Context, cset cfgtypes.ConfigSet, path string,
+func (mc *MessageCache) GetUncached(c context.Context, cset cfgtypes.ConfigSet, path string,
 	msg proto.Message) error {
 
 	return cfgclient.Get(c, cfgclient.AsService, cset, path, textproto.Message(msg), nil)
