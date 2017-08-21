@@ -59,10 +59,6 @@ func (e erroringImpl) GetAll(c context.Context, t backend.GetAllTarget, path str
 	return nil, e.err
 }
 
-func (e erroringImpl) ConfigSetURL(c context.Context, configSet string, p backend.Params) (url.URL, error) {
-	return url.URL{}, e.err
-}
-
 func (e erroringImpl) GetConfigInterface(c context.Context, a backend.Authority) config.Interface {
 	emptySet := map[string]memory.ConfigSet{}
 	i := memory.New(emptySet)

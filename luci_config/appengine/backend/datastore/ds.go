@@ -128,14 +128,13 @@ func (dc *Config) cacheGet(c context.Context, key caching.Key, l caching.Loader)
 	// If we can assert access based on the operation's target ConfigSet, do that
 	// before actually performing the action.
 	switch key.Op {
-	case caching.OpGet, caching.OpConfigSetURL:
+	case caching.OpGet:
 		// We can deny access to this operation based solely on the requested
 		// ConfigSet.
 		if err := access.Check(c, origAuthority, cfgtypes.ConfigSet(key.ConfigSet)); err != nil {
 			// Access check failed, simulate ErrNoSuchConfig.
 			//
 			// OpGet: Indicate no content via empty Items.
-			// OpConfigSetURL: Indicate no content via empty "URL" field in value.
 			return &caching.Value{}, nil
 		}
 	}

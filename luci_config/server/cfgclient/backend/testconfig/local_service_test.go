@@ -197,48 +197,5 @@ func TestLocalService(t *testing.T) {
 				So(meta, ShouldHaveLength, 0)
 			})
 		})
-
-		Convey(`Can get config set URLs`, func() {
-			Convey(`AsService`, func() {
-				u, err := cfgclient.GetConfigSetURL(c, cfgclient.AsService, "projects/foo")
-				So(err, ShouldBeNil)
-				So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/projects/foo"})
-
-				u, err = cfgclient.GetConfigSetURL(c, cfgclient.AsService, "projects/exclusive")
-				So(err, ShouldBeNil)
-				So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/projects/exclusive"})
-
-				u, err = cfgclient.GetConfigSetURL(c, cfgclient.AsService, "projects/nouser")
-				So(err, ShouldBeNil)
-				So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/projects/nouser"})
-			})
-
-			Convey(`AsUser`, func() {
-				u, err := cfgclient.GetConfigSetURL(c, cfgclient.AsUser, "projects/foo")
-				So(err, ShouldBeNil)
-				So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/projects/foo"})
-
-				u, err = cfgclient.GetConfigSetURL(c, cfgclient.AsUser, "projects/exclusive")
-				So(err, ShouldBeNil)
-				So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/projects/exclusive"})
-
-				u, err = cfgclient.GetConfigSetURL(c, cfgclient.AsUser, "projects/nouser")
-				So(err, ShouldEqual, cfgclient.ErrNoConfig)
-			})
-
-			Convey(`AsAnonymous`, func() {
-				fs.IdentityGroups = []string{"all"}
-
-				u, err := cfgclient.GetConfigSetURL(c, cfgclient.AsAnonymous, "projects/foo")
-				So(err, ShouldBeNil)
-				So(u, ShouldResemble, url.URL{Scheme: "https", Host: "example.com", Path: "/fake-config/projects/foo"})
-
-				_, err = cfgclient.GetConfigSetURL(c, cfgclient.AsAnonymous, "projects/exclusive")
-				So(err, ShouldEqual, cfgclient.ErrNoConfig)
-
-				_, err = cfgclient.GetConfigSetURL(c, cfgclient.AsAnonymous, "projects/nouser")
-				So(err, ShouldEqual, cfgclient.ErrNoConfig)
-			})
-		})
 	})
 }
