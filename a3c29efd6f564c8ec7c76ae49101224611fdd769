@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "06ec17e4_3d94f3bf",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-22T19:23:41Z",
+      "side": 1,
+      "message": "IMO, \"start\" and \"end\" commits are confusing. See https://git-scm.com/docs/gitrevisions#_specifying_ranges for how Git  is trying to avoid confusion.",
+      "range": {
+        "startLine": 168,
+        "startChar": 3,
+        "endLine": 168,
+        "endChar": 53
+      },
+      "revId": "a3c29efd6f564c8ec7c76ae49101224611fdd769",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1adcc9f_65bd506d",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-22T19:23:41Z",
+      "side": 1,
+      "message": "there is no limit argument here.",
+      "range": {
+        "startLine": 169,
+        "startChar": 26,
+        "endLine": 169,
+        "endChar": 31
+      },
+      "revId": "a3c29efd6f564c8ec7c76ae49101224611fdd769",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "853f0319_94558fff",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-22T19:23:41Z",
+      "side": 1,
+      "message": "this seems arbitrary; IMO, it should be a parameter s.t. callers aren\u0027t surprised when they request a range of 20k commits but get back just 10k.",
+      "range": {
+        "startLine": 171,
+        "startChar": 16,
+        "endLine": 171,
+        "endChar": 22
+      },
+      "revId": "a3c29efd6f564c8ec7c76ae49101224611fdd769",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ae8f53b7_c623aa14",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 1
@@ -59,6 +128,29 @@
       "writtenOn": "2017-08-22T19:00:45Z",
       "side": 1,
       "message": "This is a bit dangerous, since it\u0027s effectively recursive around an unknown remote resource, and could potentially lead to stack/memory being exceeded or, more likely, an ugly stack trace.\n\nCan you reformulate this as a \"for\" loop?\n\nAlso, won\u0027t using \"s[len(s)-1].Commit\" as a starting point result in duplicate commits? I think you should use the \"Next\" cursor directly here.",
+      "revId": "a3c29efd6f564c8ec7c76ae49101224611fdd769",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "041f4b04_6ae67047",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-22T19:23:41Z",
+      "side": 1,
+      "message": "on a repo like Chromium/src with 500k+ commits, this will take long time and worse - lots of RAM.\nThus, `s` must be freed before tail recursion call.\nHowever, how about this algo:\n\nn :\u003d c.estimateLogLength(start, end)\nreturn reverse(c.Log(start, end~(n-max(n, LIMIT))))\n\nwhere:\n * reverse and max is what Golang2 should have :)\n * estimateLogLength does estimate through binary search with some tweaks s.t.\n     len(c.Log(start, end~n)) \u003d\u003d 0\n     len(c.Log(start, end~(n-1))) \u003e 0  [*caveat]\n\n\n* The caveat is that git history isn\u0027t necessarily linear, thus \nc.Log(stat, end~1) is not necessary 1 commit smaller than c.Log(stat, end)\nand hence both estimateLogLenght gets complex and c.Log(start, end~(n-max(n, LIMIT)) may actually return \u003eLIMIT commits :(",
+      "range": {
+        "startLine": 189,
+        "startChar": 1,
+        "endLine": 189,
+        "endChar": 61
+      },
       "revId": "a3c29efd6f564c8ec7c76ae49101224611fdd769",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
