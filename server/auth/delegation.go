@@ -120,7 +120,6 @@ type tokenMinterClient interface {
 // The underlying token type is delegation.Token.
 var delegationTokenCache = tokenCache{
 	Kind:                "delegation",
-	Version:             4,
 	ExpRandPercent:      10,
 	MinAcceptedLifetime: 5 * time.Minute,
 }
@@ -166,7 +165,7 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 
 	// Config contains the cache implementation.
 	cfg := getConfig(ctx)
-	if cfg == nil || cfg.Cache == nil {
+	if cfg == nil {
 		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
 		return nil, ErrNotConfigured
 	}
@@ -211,20 +210,28 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 		"userID": userID,
 	})
 
-	cached, label, err := fetchOrMintToken(ctx, &fetchOrMintTokenOp{
-		Config:   cfg,
-		Cache:    &delegationTokenCache,
+	op := &tokenCacheOp{
 		CacheKey: string(userID) + "\n" + tokenServiceHost + "\n" + target,
 		MinTTL:   p.MinTTL,
 
 		// Mint is called on cache miss, under the lock.
-		Mint: func(ctx context.Context) (*cachedToken, error, string) {
+		Mint: func(ctx context.Context) (res mintTokenResult, err error) {
+			// Minting a new token involves RPCs to remote services that should be
+			// fast. Abort the attempt if it gets stuck for longer than 10 sec, it's
+			// unlikely it'll succeed. Note that we setup the new context only on slow
+			// code path (on cache miss), since it involves some overhead we don't
+			// want to pay on the fast path. We assume memcache RPCs don't get stuck
+			// for a long time (unlike URL Fetch calls to GAE).
+			ctx, cancel := clock.WithTimeout(ctx, cfg.adjustedTimeout(10*time.Second))
+			defer cancel()
+
 			// Grab a token server client (or its mock).
 			rpcClient := p.rpcClient
 			if rpcClient == nil {
-				transport, err := GetRPCTransport(ctx, AsSelf)
-				if err != nil {
-					return nil, err, "ERROR_NO_TRANSPORT"
+				var transport http.RoundTripper
+				if transport, err = GetRPCTransport(ctx, AsSelf); err != nil {
+					res.label = "ERROR_NO_TRANSPORT"
+					return
 				}
 				rpcClient = minter.NewTokenMinterPRPCClient(&prpc.Client{
 					C:    &http.Client{Transport: transport},
@@ -243,7 +250,8 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 			}
 
 			// The actual RPC call.
-			resp, err := rpcClient.MintDelegationToken(ctx, &minter.MintDelegationTokenRequest{
+			var resp *minter.MintDelegationTokenResponse
+			resp, err = rpcClient.MintDelegationToken(ctx, &minter.MintDelegationTokenRequest{
 				DelegatedIdentity: string(userID),
 				ValidityDuration:  int64(MaxDelegationTokenTTL.Seconds()),
 				Audience:          []string{"REQUESTOR"}, // make the token usable only by the calling service
@@ -253,12 +261,15 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 			if err != nil {
 				err = grpcutil.WrapIfTransient(err)
 				if transient.Tag.In(err) {
-					return nil, err, "ERROR_TRANSIENT_IN_MINTING"
+					res.label = "ERROR_TRANSIENT_IN_MINTING"
+				} else {
+					res.label = "ERROR_MINTING"
 				}
-				return nil, err, "ERROR_MINTING"
+				return
 			}
 
-			// Sanity checks. A correctly working token server should not trigger them.
+			// Sanity checks. A correctly working token server should not trigger
+			// them.
 			subtoken := resp.DelegationSubtoken
 			good := false
 			switch {
@@ -272,7 +283,9 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 				good = true
 			}
 			if !good {
-				return nil, ErrBrokenTokenService, "ERROR_BROKEN_TOKEN_SERVICE"
+				res.label = "ERROR_BROKEN_TOKEN_SERVICE"
+				err = ErrBrokenTokenService
+				return
 			}
 
 			// Log details about the new token.
@@ -284,23 +297,26 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 
 			now := clock.Now(ctx).UTC()
 			exp := now.Add(time.Duration(subtoken.ValidityDuration) * time.Second)
-			return &cachedToken{
+
+			res.tok = &cachedToken{
 				Token: delegation.Token{
 					Token:  resp.Token,
 					Expiry: exp,
 				},
 				Created: now,
 				Expiry:  exp,
-			}, nil, "SUCCESS_CACHE_MISS"
+			}
+			res.label = "SUCCESS_CACHE_MISS"
+			return
 		},
-	})
-
+	}
+	cached, err := delegationTokenCache.FetchOrMint(ctx, op)
 	if err != nil {
-		report(err, label)
+		report(err, op.Label)
 		return nil, err
 	}
 
 	t := cached.Token.(delegation.Token) // let it panic on type mismatch
-	report(nil, label)
+	report(nil, op.Label)
 	return &t, nil
 }

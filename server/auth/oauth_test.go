@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/gcloud/googleoauth"
+	"go.chromium.org/luci/server/caching"
 
 	"golang.org/x/net/context"
 
@@ -46,6 +47,9 @@ func TestGoogleOAuth2Method(t *testing.T) {
 	Convey("with mock backend", t, func(c C) {
 		ctx := context.Background()
 
+		cache := lru.New(0)
+		ctx = caching.WithProcessCache(ctx, cache)
+
 		info := tokenInfo{
 			Audience:      "client_id",
 			Email:         "abc@example.com",
@@ -60,7 +64,6 @@ func TestGoogleOAuth2Method(t *testing.T) {
 		}))
 
 		ctx = ModifyConfig(ctx, func(cfg Config) Config {
-			cfg.Cache = &MemoryCache{LRU: lru.New(0)}
 			cfg.AnonymousTransport = func(context.Context) http.RoundTripper {
 				return http.DefaultTransport
 			}

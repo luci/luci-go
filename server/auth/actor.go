@@ -15,7 +15,6 @@
 package auth
 
 import (
-	"encoding/gob"
 	"fmt"
 	"net/http"
 	"sort"
@@ -56,12 +55,11 @@ type MintAccessTokenParams struct {
 // The underlying token type is cachedOAuth2Token.
 var actorTokenCache = tokenCache{
 	Kind:                "as_actor_tokens",
-	Version:             2,
 	ExpRandPercent:      10,
 	MinAcceptedLifetime: 5 * time.Minute,
 }
 
-// cachedOAuth2Token is gob-serializable representation of the oauth2.Token.
+// cachedOAuth2Token is JSON-serializable representation of the oauth2.Token.
 //
 // It explicitly contains only stuff we want to be in the cache. Storing
 // oauth2.Token directly is dangerous because we don't control what oauth2 lib
@@ -88,10 +86,6 @@ func (c *cachedOAuth2Token) toToken() *oauth2.Token {
 	}
 }
 
-func init() {
-	gob.Register(cachedOAuth2Token{})
-}
-
 // MintAccessTokenForServiceAccount produces an access token for some service
 // account that the current service has "iam.serviceAccountActor" role in.
 //
@@ -105,7 +99,7 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 	report := durationReporter(ctx, mintAccessTokenDuration)
 
 	cfg := getConfig(ctx)
-	if cfg == nil || cfg.AccessTokenProvider == nil || cfg.Cache == nil {
+	if cfg == nil || cfg.AccessTokenProvider == nil {
 		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
 		return nil, ErrNotConfigured
 	}
@@ -140,23 +134,32 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 		"scopes":  strings.Join(sortedScopes, " "),
 	})
 
-	cached, label, err := fetchOrMintToken(ctx, &fetchOrMintTokenOp{
-		Config:   cfg,
-		Cache:    &actorTokenCache,
+	op := &tokenCacheOp{
 		CacheKey: strings.Join(parts, "\n"),
 		MinTTL:   params.MinTTL,
 
 		// Mint is called on cache miss, under the lock.
-		Mint: func(ctx context.Context) (*cachedToken, error, string) {
+		Mint: func(ctx context.Context) (res mintTokenResult, err error) {
+			// Minting a new token involves RPCs to remote services that should be
+			// fast. Abort the attempt if it gets stuck for longer than 10 sec, it's
+			// unlikely it'll succeed. Note that we setup the new context only on slow
+			// code path (on cache miss), since it involves some overhead we don't
+			// want to pay on the fast path. We assume memcache RPCs don't get stuck
+			// for a long time (unlike URL Fetch calls to GAE).
+			ctx, cancel := clock.WithTimeout(ctx, cfg.adjustedTimeout(10*time.Second))
+			defer cancel()
+
 			// Need an authenticating transport to talk to IAM.
-			asSelf, err := GetRPCTransport(ctx, AsSelf, WithScopes(iam.OAuthScope))
-			if err != nil {
-				return nil, err, "ERROR_NO_TRANSPORT"
+			var asSelf http.RoundTripper
+			if asSelf, err = GetRPCTransport(ctx, AsSelf, WithScopes(iam.OAuthScope)); err != nil {
+				res.label = "ERROR_NO_TRANSPORT"
+				return
 			}
 
 			// This will do two HTTP calls: one to 'signBytes' IAM API, another to the
 			// token exchange endpoint.
-			tok, err := googleoauth.GetAccessToken(ctx, googleoauth.JwtFlowParams{
+			var tok *oauth2.Token
+			tok, err = googleoauth.GetAccessToken(ctx, googleoauth.JwtFlowParams{
 				ServiceAccount: params.ServiceAccount,
 				Signer: &iam.Client{
 					Client: &http.Client{Transport: asSelf},
@@ -164,15 +167,17 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 				Scopes: sortedScopes,
 				Client: cfg.anonymousClient(ctx),
 			})
-
-			// Both iam.Signer and googleoauth.GetAccessToken return googleapi.Error
-			// on HTTP-level responses. Recognize fatal HTTP errors. Everything else
-			// (stuff like connection timeouts, deadlines, etc) are transient errors.
 			if err != nil {
+				// Both iam.Signer and googleoauth.GetAccessToken return googleapi.Error
+				// on HTTP-level responses. Recognize fatal HTTP errors. Everything else
+				// (stuff like connection timeouts, deadlines, etc) are transient errors.
 				if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code < 500 {
-					return nil, err, fmt.Sprintf("ERROR_MINTING_HTTP_%d", apiErr.Code)
+					res.label = fmt.Sprintf("ERROR_MINTING_HTTP_%d", apiErr.Code)
+					return
 				}
-				return nil, transient.Tag.Apply(err), "ERROR_TRANSIENT_IN_MINTING"
+				res.label = "ERROR_TRANSIENT_IN_MINTING"
+				err = transient.Tag.Apply(err)
+				return
 			}
 
 			// Log details about the new token.
@@ -182,20 +187,22 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 				"validity":    tok.Expiry.Sub(now),
 			}.Debugf(ctx, "Minted new actor OAuth token")
 
-			return &cachedToken{
+			res.label = "SUCCESS_CACHE_MISS"
+			res.tok = &cachedToken{
 				Token:   makeCachedOAuth2Token(tok),
 				Created: now,
 				Expiry:  tok.Expiry,
-			}, nil, "SUCCESS_CACHE_MISS"
+			}
+			return
 		},
-	})
-
+	}
+	cached, err := actorTokenCache.FetchOrMint(ctx, op)
 	if err != nil {
-		report(err, label)
+		report(err, op.Label)
 		return nil, err
 	}
 
 	t := cached.Token.(cachedOAuth2Token) // let it panic on type mismatch
-	report(nil, label)
+	report(nil, op.Label)
 	return t.toToken(), nil
 }

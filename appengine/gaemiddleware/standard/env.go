@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package classic exposes a gaemiddleware Environment for Classic AppEngine.
+// Package standard exposes a gaemiddleware Environment for Standard AppEngine.
 package standard
 
 import (
@@ -38,9 +38,6 @@ import (
 )
 
 var (
-	// globalAuthCache is used to cache various auth token.
-	globalAuthCache = &server.Memcache{Namespace: "__luciauth__"}
-
 	// globalAuthConfig is configuration of the server/auth library.
 	//
 	// It specifies concrete GAE-based implementations for various interfaces
@@ -56,7 +53,6 @@ var (
 		Signer:              gaesigner.Signer{},
 		AccessTokenProvider: client.GetAccessToken,
 		AnonymousTransport:  urlfetch.Get,
-		Cache:               globalAuthCache,
 		IsDevMode:           appengine.IsDevAppServer(),
 	}
 
@@ -64,9 +60,9 @@ var (
 	globalTsMonState = &tsmon.State{}
 )
 
-// classicEnv is an AppEngine Classic GAE environment configuration. This is the
-// default AppEngine environment for simple (all-classic) layouts.
-var classicEnv = gaemiddleware.Environment{
+// standardEnv is an AppEngine Standard GAE environment configuration. This is
+// the default AppEngine environment for simple (all-standard) layouts.
+var standardEnv = gaemiddleware.Environment{
 	PassthroughPanics: appengine.IsDevAppServer(),
 	WithInitialRequest: func(c context.Context, req *http.Request) context.Context {
 		// Install our production services.
@@ -91,7 +87,7 @@ var classicEnv = gaemiddleware.Environment{
 // 'Production' here means the services will use real GAE APIs (not mocks or
 // stubs), so With should never be used from unit tests.
 func With(c context.Context, req *http.Request) context.Context {
-	return classicEnv.With(c, req)
+	return standardEnv.With(c, req)
 }
 
 // Base returns a middleware chain to use for all GAE requests.
@@ -99,12 +95,12 @@ func With(c context.Context, req *http.Request) context.Context {
 // This middleware chain installs prod GAE services into the request context
 // (via With), and wraps the request with a panic catcher and monitoring
 // hooks.
-func Base() router.MiddlewareChain { return classicEnv.Base() }
+func Base() router.MiddlewareChain { return standardEnv.Base() }
 
-// InstallHandlers installs handlers for framework routes using classic
+// InstallHandlers installs handlers for framework routes using standard
 // production services.
 //
 // See gaemiddleware.InstallHandlersWithMiddleware for details.
 func InstallHandlers(r *router.Router) {
-	gaemiddleware.InstallHandlersWithMiddleware(r, classicEnv.Base())
+	gaemiddleware.InstallHandlersWithMiddleware(r, standardEnv.Base())
 }

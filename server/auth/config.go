@@ -72,12 +72,6 @@ type Config struct {
 	// outlive it.
 	AnonymousTransport AnonymousTransportProvider
 
-	// Cache implements a strongly consistent cache.
-	//
-	// Usually backed by memcache. Should do namespacing itself (i.e. the auth
-	// library assumes full ownership of the keyspace).
-	Cache Cache
-
 	// IsDevMode is true when running the server locally during development.
 	//
 	// Setting this to true changes default deadlines. For instance, GAE dev

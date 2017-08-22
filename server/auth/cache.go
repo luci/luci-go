@@ -15,43 +15,18 @@
 package auth
 
 import (
-	"bytes"
 	"crypto/sha1"
 	"encoding/base64"
-	"encoding/gob"
 	"fmt"
 	"time"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/sync/mutexpool"
+	"go.chromium.org/luci/server/caching"
 )
-
-// Cache implements a strongly consistent cache. Cache may optionally be
-// consistent across multiple processes.
-type Cache interface {
-	// Get returns a cached item or (nil, nil) if it's not in the cache.
-	//
-	// Any returned error is transient error.
-	Get(c context.Context, key string) ([]byte, error)
-
-	// Set unconditionally overwrites an item in the cache.
-	//
-	// If 'exp' is zero, the item will have no expiration time.
-	//
-	// Any returned error is transient error.
-	Set(c context.Context, key string, value []byte, exp time.Duration) error
-
-	// WithLocalMutex calls 'f' under a process-local mutex assigned to the 'key'.
-	//
-	// It is used to ensure only one goroutine is updating the item matching the
-	// given key.
-	WithLocalMutex(c context.Context, key string, f func())
-}
 
 // tokenCache knows how to keep tokens in a cache represented by Cache.
 //
@@ -60,13 +35,6 @@ type Cache interface {
 type tokenCache struct {
 	// Kind defines the token kind. Will be used as part of the cache key.
 	Kind string
-
-	// Version defines format of the data. Will be used as part of the cache key.
-	//
-	// If you change a type behind interface{} in Token field, you MUST bump the
-	// version. It will also "invalidate" all existing cached entries (they will
-	// just become inaccessible and eventually will be evicted from the cache).
-	Version int
 
 	// ExpRandPercent defines when expiration randomizations kicks in.
 	//
@@ -80,6 +48,23 @@ type tokenCache struct {
 	MinAcceptedLifetime time.Duration
 }
 
+// mintTokenResult is the result of a token operation.
+type mintTokenResult struct {
+	// tok is the retrieved token. It will be nil if no token was retrieved.
+	tok *cachedToken
+	// label is a string representing the status of the cache operation.
+	label string
+}
+
+type tokenCacheOp struct {
+	CacheKey string
+	MinTTL   time.Duration
+	Mint     func(context.Context) (mintTokenResult, error)
+
+	// Label will be set by FetchOrMint to describe the context of its result.
+	Label string
+}
+
 // cachedToken is stored in a tokenCache.
 type cachedToken struct {
 	Key     string      // cache key, must be unique (no other restrictions)
@@ -88,24 +73,7 @@ type cachedToken struct {
 	Expiry  time.Time   // its expiration time, required, UTC
 }
 
-// Store unconditionally puts the token in the cache.
-func (tc *tokenCache) Store(c context.Context, cache Cache, tok *cachedToken) error {
-	switch {
-	case tok.Created.IsZero() || tok.Created.Location() != time.UTC:
-		panic(fmt.Errorf("tok.Created is not a valid UTC time - %v", tok.Created))
-	case tok.Expiry.IsZero() || tok.Expiry.Location() != time.UTC:
-		panic(fmt.Errorf("tok.Expiry is not a valid UTC time - %v", tok.Expiry))
-	}
-	ttl := tok.Expiry.Sub(tok.Created)
-	if ttl < tc.MinAcceptedLifetime {
-		return fmt.Errorf("refusing to store a token that expires in %s", ttl)
-	}
-	blob, err := tc.marshal(tok)
-	if err != nil {
-		return err
-	}
-	return cache.Set(c, tc.itemKey(tok.Key), blob, ttl)
-}
+type tokenCacheKey string
 
 // Fetch grabs cached token if it hasn't expired yet.
 //
@@ -116,204 +84,91 @@ func (tc *tokenCache) Store(c context.Context, cache Cache, tok *cachedToken) er
 // function will randomly return a cache miss. That way if multiple concurrent
 // processes all constantly use the same token, only the most unlucky one will
 // refresh it.
-func (tc *tokenCache) Fetch(c context.Context, cache Cache, key string, minTTL time.Duration) (*cachedToken, error) {
-	blob, err := cache.Get(c, tc.itemKey(key))
-	switch {
-	case err != nil:
-		return nil, err
-	case blob == nil:
-		return nil, nil
+func (tc *tokenCache) FetchOrMint(ctx context.Context, op *tokenCacheOp) (*cachedToken, error) {
+	pc := caching.ProcessCache(ctx)
+	cacheKey := tc.itemKey(op.CacheKey)
+
+	// Try and get the token while it's not under lock.
+	tokIface, ok := pc.Get(ctx, cacheKey)
+	if ok {
+		tok := tokIface.(*cachedToken)
+		if tok.Key != op.CacheKey {
+			op.Label = "ERROR_CACHE"
+			return nil, fmt.Errorf("SHA1 collision in the token cache: %q vs %q", op.CacheKey, tok.Key)
+		}
+
+		// Shift time by minTTL to simplify the math below.
+		if !tc.shouldRefreshToken(ctx, tok, op.MinTTL) {
+			op.Label = "SUCCESS_CACHE_HIT"
+			return tok, nil // far from requested minTTL
+		}
 	}
 
-	tok, err := tc.unmarshal(blob)
+	// Either the token has expired, or we were randomly chosen to refresh it.
+	tokIface, err := caching.ProcessCache(ctx).Create(ctx, cacheKey, func() (interface{}, time.Duration, error) {
+		logging.Debugf(ctx, "Minting the new token")
+		mintResult, err := op.Mint(ctx)
+		op.Label = mintResult.label
+		if err != nil {
+			return nil, 0, err
+		}
+		tok := mintResult.tok
+
+		tok.Key = op.CacheKey
+		op.Label = "SUCCESS_CACHE_MISS"
+
+		switch {
+		case tok.Created.IsZero() || tok.Created.Location() != time.UTC:
+			panic(fmt.Errorf("tok.Created is not a valid UTC time - %v", tok.Created))
+		case tok.Expiry.IsZero() || tok.Expiry.Location() != time.UTC:
+			panic(fmt.Errorf("tok.Expiry is not a valid UTC time - %v", tok.Expiry))
+		}
+		ttl := tok.Expiry.Sub(tok.Created)
+		if ttl < tc.MinAcceptedLifetime {
+			return nil, 0, fmt.Errorf("refusing to store a token that expires in %s", ttl)
+		}
+
+		return tok, ttl, nil
+	})
 	if err != nil {
+		if op.Label == "" {
+			op.Label = "ERROR_UNSPECIFIED"
+		}
+
+		logging.WithError(err).Errorf(ctx, "Failed to mint new token")
 		return nil, err
 	}
-	if tok.Key != key {
-		return nil, fmt.Errorf("SHA1 collision in the token cache: %q vs %q", key, tok.Key)
-	}
+	return tokIface.(*cachedToken), err
+}
 
-	// Shift time by minTTL to simplify the math below.
-	now := clock.Now(c).Add(minTTL).UTC()
+func (tc *tokenCache) shouldRefreshToken(ctx context.Context, tok *cachedToken, minTTL time.Duration) bool {
+	now := clock.Now(ctx).Add(minTTL).UTC()
+
+	// If the token is expired, then refresh.
+	if now.After(tok.Expiry) {
+		return true
+	}
 
 	// Don't use expiration randomization if the item is far from expiration.
 	exp := tok.Expiry.Sub(tok.Created) * time.Duration(tc.ExpRandPercent) / 100
-	switch {
-	case now.After(tok.Expiry):
-		return nil, nil // already passed requested minTTL
-	case now.Add(exp).Before(tok.Expiry):
-		return tok, nil // far from requested minTTL
+	if now.Add(exp).Before(tok.Expiry) {
+		return false
 	}
 
 	// The expiration is close enough. Do the randomization.
 	// TODO(vadimsh): The distribution was picked randomly. Maybe use exponential
 	// one, as some literature suggests?
-	rnd := time.Duration(mathrand.Int63n(c, int64(exp)))
-	if now.Add(rnd).After(tok.Expiry) {
-		return nil, nil
+	rnd := time.Duration(mathrand.Int63n(ctx, int64(exp)))
+	if !now.Add(rnd).After(tok.Expiry) {
+		return false
 	}
-	return tok, nil
-}
 
-// WithLocalMutex calls Cache.WithLocalMutex with correct cache key.
-func (tc *tokenCache) WithLocalMutex(c context.Context, cache Cache, key string, f func()) {
-	cache.WithLocalMutex(c, tc.itemKey(key), f)
+	return true
 }
 
 // itemKey derives the short key to use in the underlying cache.
-func (tc *tokenCache) itemKey(key string) string {
+func (tc *tokenCache) itemKey(key string) tokenCacheKey {
 	digest := sha1.Sum([]byte(key))
 	asStr := base64.RawURLEncoding.EncodeToString(digest[:])
-	return fmt.Sprintf("%s/%d/%s", tc.Kind, tc.Version, asStr)
-}
-
-// marshal converts cachedToken struct to byte blob.
-func (tc *tokenCache) marshal(t *cachedToken) ([]byte, error) {
-	buf := bytes.Buffer{}
-	enc := gob.NewEncoder(&buf)
-	if err := enc.Encode(t); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
-// unmarshal is reverse of marshal.
-func (tc *tokenCache) unmarshal(blob []byte) (*cachedToken, error) {
-	dec := gob.NewDecoder(bytes.NewReader(blob))
-	out := &cachedToken{}
-	if err := dec.Decode(out); err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-type fetchOrMintTokenOp struct {
-	Config   *Config
-	Cache    *tokenCache
-	CacheKey string
-	MinTTL   time.Duration
-	Mint     func(context.Context) (tok *cachedToken, err error, label string)
-}
-
-// fetchOrMintToken implements high level logic of using token cache.
-//
-// It's basis or MintAccessTokenForServiceAccount and MintDelegationToken
-// implementations.
-func fetchOrMintToken(ctx context.Context, op *fetchOrMintTokenOp) (*cachedToken, string, error) {
-	// Attempt to grab a cached token before entering the critical section.
-	switch cached, err := op.Cache.Fetch(ctx, op.Config.Cache, op.CacheKey, op.MinTTL); {
-	case err != nil:
-		logging.WithError(err).Errorf(ctx, "Failed to fetch the token from cache")
-		return nil, "ERROR_CACHE", err
-	case cached != nil:
-		return cached, "SUCCESS_CACHE_HIT", nil
-	}
-
-	logging.Debugf(ctx, "The requested token is not in the cache")
-
-	var res struct {
-		tok   *cachedToken
-		err   error
-		label string
-	}
-	op.Cache.WithLocalMutex(ctx, op.Config.Cache, op.CacheKey, func() {
-		// Recheck the cache now that we have the lock, maybe someone updated the
-		// cache while we were waiting.
-		switch cached, err := op.Cache.Fetch(ctx, op.Config.Cache, op.CacheKey, op.MinTTL); {
-		case err != nil:
-			logging.WithError(err).Errorf(ctx, "Failed to fetch the token from cache (under the lock)")
-			res.err = err
-			res.label = "ERROR_CACHE"
-			return
-		case cached != nil:
-			logging.Debugf(ctx, "Someone put the token in the cache already")
-			res.tok = cached
-			res.label = "SUCCESS_CACHE_HIT"
-			return
-		}
-
-		// Minting a new token involves RPCs to remote services that should be fast.
-		// Abort the attempt if it gets stuck for longer than 10 sec, it's unlikely
-		// it'll succeed. Note that we setup the new context only on slow code path
-		// (on cache miss), since it involves some overhead we don't want to pay on
-		// the fast path. We assume memcache RPCs don't get stuck for a long time
-		// (unlike URL Fetch calls to GAE).
-		logging.Debugf(ctx, "Minting the new token")
-		ctx, cancel := clock.WithTimeout(ctx, op.Config.adjustedTimeout(10*time.Second))
-		defer func() {
-			if res.err != nil {
-				logging.WithError(res.err).Errorf(ctx, "Failed to mint new token")
-			}
-			cancel()
-		}()
-		if res.tok, res.err, res.label = op.Mint(ctx); res.err != nil {
-			res.tok = nil
-			if res.label == "" {
-				res.label = "ERROR_UNSPECIFIED"
-			}
-			return
-		}
-		res.tok.Key = op.CacheKey
-
-		// Cache the token. Ignore errors, it's not big deal, we have the token.
-		if err := op.Cache.Store(ctx, op.Config.Cache, res.tok); err != nil {
-			logging.WithError(err).Warningf(ctx, "Failed to store the token in the cache")
-		}
-
-		res.label = "SUCCESS_CACHE_MISS"
-	})
-
-	return res.tok, res.label, res.err
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-type memoryCacheKey string
-
-// MemoryCache is a Cache implementation built on top of an in-process LRU cache.
-//
-// The LRU must be safe for concurrent access.
-type MemoryCache struct {
-	// LRU is the instantiated, underlying LRU cache.
-	LRU *lru.Cache
-
-	locks mutexpool.P
-}
-
-// NewMemoryCache returns a new LRU-based Cache instance with the supplied
-// LRU size. If size is <= 0, the LRU will never prune.
-func NewMemoryCache(size int) Cache {
-	return &MemoryCache{
-		LRU: lru.New(size),
-	}
-}
-
-// Get returns a cached item or (nil, nil) if it's not in the cache.
-//
-// Any returned error is transient error.
-func (mc *MemoryCache) Get(c context.Context, key string) ([]byte, error) {
-	if v, ok := mc.LRU.Get(c, memoryCacheKey(key)); ok {
-		return v.([]byte), nil
-	}
-	return nil, nil
-}
-
-// Set unconditionally overwrites an item in the cache.
-//
-// If 'exp' is zero, the item will have no expiration time.
-//
-// Any returned error is transient error.
-func (mc *MemoryCache) Set(c context.Context, key string, value []byte, exp time.Duration) error {
-	mc.LRU.Put(c, memoryCacheKey(key), value, exp)
-	return nil
-}
-
-// WithLocalMutex calls 'f' under a process-local mutex assigned to the 'key'.
-//
-// It is used to ensure only one goroutine is updating the item matching the
-// given key.
-func (mc *MemoryCache) WithLocalMutex(c context.Context, key string, f func()) {
-	mc.locks.WithMutex(memoryCacheKey(key), f)
+	return tokenCacheKey(fmt.Sprintf("%s/%s", tc.Kind, asStr))
 }

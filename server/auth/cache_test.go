@@ -23,7 +23,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -32,81 +34,93 @@ func TestTokenCache(t *testing.T) {
 	t.Parallel()
 
 	Convey("with in-process cache", t, func() {
-		// Create a cache large enough that the LRU doesn't cycle.
-		cache := NewMemoryCache(1024)
-
 		ctx := context.Background()
-		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+		ctx, clk := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
+
+		cache := lru.New(0)
+		ctx = caching.WithProcessCache(ctx, cache)
 
 		tc := tokenCache{
 			Kind:           "testing",
-			Version:        1,
 			ExpRandPercent: 10,
 		}
 
+		mintCalls := 0
+		example := &cachedToken{
+			Key:     "some\nkey",
+			Token:   "blah",
+			Created: clock.Now(ctx).UTC(),
+			Expiry:  clock.Now(ctx).Add(100 * time.Minute).UTC(),
+		}
+
+		op := tokenCacheOp{
+			CacheKey: "some\nkey",
+			MinTTL:   21 * time.Minute,
+			Mint: func(context.Context) (mintTokenResult, error) {
+				mintCalls++
+				return mintTokenResult{example, "MINTED"}, nil
+			},
+		}
+
 		Convey("check basic usage", func() {
-			itm, err := tc.Fetch(ctx, cache, "some\nkey", 0)
+			tok, err := tc.FetchOrMint(ctx, &op)
 			So(err, ShouldBeNil)
-			So(itm, ShouldBeNil)
+			So(tok, ShouldResemble, example)
+			So(mintCalls, ShouldEqual, 1)
 
-			tok := cachedToken{
-				Key:     "some\nkey",
-				Token:   "blah",
-				Created: clock.Now(ctx).UTC(),
-				Expiry:  clock.Now(ctx).Add(100 * time.Minute).UTC(),
-			}
-			So(tc.Store(ctx, cache, &tok), ShouldBeNil)
-
-			itm, err = tc.Fetch(ctx, cache, "some\nkey", 0)
+			tok, err = tc.FetchOrMint(ctx, &op)
 			So(err, ShouldBeNil)
-			So(itm, ShouldResemble, &tok)
+			So(tok, ShouldResemble, example)
+			So(mintCalls, ShouldEqual, 1)
 
 			// minTTL works. After 80 min the tokens TTL is 20 min, but we request it
 			// to be at least 21 min.
-			clock.Get(ctx).(testclock.TestClock).Add(80 * time.Minute)
-			itm, err = tc.Fetch(ctx, cache, "some\nkey", 21*time.Minute)
+			clk.Add(80 * time.Minute)
+			tok, err = tc.FetchOrMint(ctx, &op)
 			So(err, ShouldBeNil)
-			So(itm, ShouldBeNil)
+			So(tok, ShouldNotBeNil)
+			So(mintCalls, ShouldEqual, 2)
 
-			mc := cache.(*MemoryCache)
-			So(mc.LRU.Len(), ShouldEqual, 1)
+			So(cache.Len(), ShouldEqual, 1)
 		})
 
 		Convey("check expiration randomization", func() {
-			tok := cachedToken{
-				Key:     "some\nkey",
-				Token:   "blah",
-				Created: clock.Now(ctx).UTC(),
-				Expiry:  clock.Now(ctx).Add(100 * time.Minute).UTC(),
-			}
-			So(tc.Store(ctx, cache, &tok), ShouldBeNil)
+			op.MinTTL = 0
+
+			tok, err := tc.FetchOrMint(ctx, &op)
+			So(err, ShouldBeNil)
+			So(tok, ShouldResemble, example)
+			So(mintCalls, ShouldEqual, 1)
 
 			// 89% of token's life has passed. The token is still alive
 			// (no randomization).
-			clock.Get(ctx).(testclock.TestClock).Add(89 * time.Minute)
+			clk.Add(89 * time.Minute)
 			for i := 0; i < 50; i++ {
-				itm, _ := tc.Fetch(ctx, cache, "some\nkey", 0)
-				So(itm, ShouldNotBeNil)
+				tok, err := tc.FetchOrMint(ctx, &op)
+				So(err, ShouldBeNil)
+				So(tok, ShouldResemble, example)
+				So(mintCalls, ShouldEqual, 1)
 			}
 
 			// 91% of token's life has passed. 'Fetch' pretends the token is not
 			// there with ~=10% chance.
-			clock.Get(ctx).(testclock.TestClock).Add(2 * time.Minute)
-			missing := 0
+			clk.Add(2 * time.Minute)
+			mintCalls = 0
 			for i := 0; i < 100; i++ {
-				if itm, _ := tc.Fetch(ctx, cache, "some\nkey", 0); itm == nil {
-					missing++
-				}
+				_, err := tc.FetchOrMint(ctx, &op)
+				So(err, ShouldBeNil)
 			}
-			So(missing, ShouldEqual, 10)
+			So(mintCalls, ShouldEqual, 10)
 
 			// Token has expired. 0% chance of seeing it.
-			clock.Get(ctx).(testclock.TestClock).Add(9 * time.Minute)
+			clk.Add(9 * time.Minute)
+			mintCalls = 0
 			for i := 0; i < 50; i++ {
-				itm, _ := tc.Fetch(ctx, cache, "some\nkey", 0)
-				So(itm, ShouldBeNil)
+				_, err := tc.FetchOrMint(ctx, &op)
+				So(err, ShouldBeNil)
 			}
+			So(mintCalls, ShouldEqual, 50)
 		})
 	})
 }
