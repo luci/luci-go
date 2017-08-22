@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e351e694_ede6c572",
+        "filename": "server/auth/actor.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-22T19:07:51Z",
+      "side": 1,
+      "message": "comment needs tweakage, this is going in the process",
+      "range": {
+        "startLine": 62,
+        "startChar": 24,
+        "endLine": 62,
+        "endChar": 41
+      },
+      "revId": "0e1fd1cd0871a8403ee1d8fe9d983bea7fdcdb12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e31ed17_d3821d1b",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-22T19:07:51Z",
+      "side": 1,
+      "message": "golint will holler about this",
+      "range": {
+        "startLine": 78,
+        "startChar": 3,
+        "endLine": 78,
+        "endChar": 8
+      },
+      "revId": "0e1fd1cd0871a8403ee1d8fe9d983bea7fdcdb12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8dffa21f_0559359d",
+        "filename": "server/auth/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-22T19:07:51Z",
+      "side": 1,
+      "message": "do we still need to do this now that we are caching this in-process? It seems like we should just cache by tok.Key now, since any memory dump of the process is going to (by necessity) have all the raw values too anyway.",
+      "range": {
+        "startLine": 97,
+        "startChar": 15,
+        "endLine": 97,
+        "endChar": 94
+      },
+      "revId": "0e1fd1cd0871a8403ee1d8fe9d983bea7fdcdb12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
