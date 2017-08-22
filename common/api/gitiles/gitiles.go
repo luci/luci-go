@@ -161,6 +161,34 @@ func (c *Client) Log(ctx context.Context, repoURL, treeish string, limit int) ([
 	}
 }
 
+// LogForward is a hacky wrapper over Log to get a list of commits that goes
+// forward instead of backwards.
+//
+// Unlike Log, whose response for a range of commits will always include the
+// end commit but may not include the starting commit in the range (if the
+// start is further than `limit` commits back, this method will page back
+// as far a needed to return the requested range. If the starting commit is
+// further than 10,000 commits in the past, it will try to return the 10,000
+// commits that start at `start`.
+func (c *Client) LogForward(ctx context.Context, repoURL, start, end string) ([]Commit, error) {
+	limit := 10000
+	treeish := fmt.Sprintf("%s..%s", start, end)
+	s, err := c.Log(ctx, repoURL, treeish, limit)
+	if err != nil {
+		return nil, err
+	}
+	// If got less than 10000 records from Log, it means it reached a point
+	// where resp.Next was empty.
+	if len(s) < limit {
+		// Reverse in place because golang has no builtins for this.
+		for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+			s[i], s[j] = s[j], s[i]
+		}
+		return s, nil
+	}
+	return c.LogForward(ctx, repoURL, start, s[len(s)-1].Commit)
+}
+
 // Refs returns a map resolving each ref in a repo to git revision.
 //
 // refsPath limits which refs to resolve to only those matching {refsPath}/*.
