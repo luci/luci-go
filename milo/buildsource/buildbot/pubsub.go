@@ -59,6 +59,12 @@ var (
 		field.String("master"),
 		// Status can be one of 2 options.  "success", "failure".
 		field.String("status"))
+
+	allMasterTimer = metric.NewFloat(
+		"luci/milo/buildbot_pubsub/last_updated",
+		"When this master was last updated in seconds",
+		nil,
+		field.String("master"))
 )
 
 type buildMasterMsg struct {
@@ -317,6 +323,26 @@ func doMaster(c context.Context, master *buildbotMaster, internal bool) int {
 func PubSubHandler(ctx *router.Context) {
 	statusCode := pubSubHandlerImpl(ctx.Context, ctx.Request)
 	ctx.Writer.WriteHeader(statusCode)
+}
+
+func StatsHandler(c context.Context) error {
+	q := datastore.NewQuery("buildbotMasterEntry")
+	entries := []*buildbotMasterEntry{}
+	err := (&datastore.Batcher{}).GetAll(c, q, &entries)
+	if err != nil {
+		logging.WithError(err).Errorf(c, "failed to fetch masters")
+		return err
+	}
+	now := clock.Now(c)
+	for _, entry := range entries {
+		t := now.Sub(entry.Modified).Seconds()
+		err := allMasterTimer.Set(c, t, entry.Name)
+		if err != nil {
+			logging.WithError(err).Errorf(c, "failed to send metric for %s", entry.Name)
+			// Try the next one anyways.
+		}
+	}
+	return nil
 }
 
 // This is the actual implementation of the pubsub handler.  Returns
