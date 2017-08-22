@@ -17,7 +17,8 @@
 # imported by an implementation-specific Makefile. The implementation-specific
 # Makefile must supply the following variables:
 #
-# - CLOUD_PROJECT
+# - CLOUD_PROJECT: Name of the Google Cloud Project.
+# - GKE_SERVICES_YAML: Path to the YAML file used by "gke.py" services.
 #
 # The Makefile may supply the following optional variables:
 # - TAG: The AppEngine tag. If not specified, let "gae.py" choose a
@@ -25,11 +26,6 @@
 
 .PHONY: default
 default: help
-
-# Assert that all required variables are provided.
-ifndef CLOUD_PROJECT
-$(error Missing required variable: CLOUD_PROJECT)
-endif
 
 # Determine "luci-go" repository paths.
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
@@ -48,8 +44,19 @@ ifdef TAG
 GAE_PY_EXTRA_ARGS := $(GAE_PY_EXTRA_ARGS) -t $(TAG)
 endif
 
+# Assert that all required variables are provided.
+ifndef CLOUD_PROJECT
+$(error Missing required variable: CLOUD_PROJECT)
+endif
+
+ifndef GKE_SERVICES_YAML
+$(error Missing required variable: GKE_SERVICES_YAML)
+endif
+
+# Define services.
 ALL_SERVICES = default services backend static
 YAMLS = dispatch queue cron index
+ALL_GKE_CLUSTERS = collector archivist
 
 # Define a literal space and comma, for substitution.
 space :=
@@ -62,9 +69,17 @@ Manage LogDog distributions.
 Management targets:
   web: Builds static web content into the 'static' module.
 
-Service Targets for: $(ALL_SERVICES)
+Service Targets for: $(subst $(space),$(comma),$(ALL_SERVICES))
   upload-SERVICE: uploads an instance of the service, but doesn't migrate.
   switch: Switches all services over to the uploaded version.
+
+Cluster Targets for: $(subst $(space),$(comma),$(ALL_GKE_CLUSTERS))
+  upload-CLUSTER: deploys an instance of the cluster to Kubernetes. Note that
+    additional "kubectl" commands will be required to verify correctness,
+    migrate traffic, and remove old instances.
+  switch-CLUSTER: switch active image over to the last uploaded image.
+  promote-CLUSTER: promote last uploaded image to "stable".
+  status-CLUSTER: show status for the specified cluster.
 
 Special Service Targets:
   update-{$(subst $(space),$(comma),$(YAMLS))}
@@ -104,7 +119,6 @@ static-resources:: web
 # Per-module Build Rules
 #
 # upload-<module>: Uploads the module, but doesn't set it to be default.
-# deploy-<module>: Uploads the module and sets it to be default.
 ##
 
 .PHONY: $(addprefix upload-,$(ALL_SERVICES))
@@ -153,3 +167,45 @@ $(addprefix update-,$(YAMLS)): update-%:
 			--project $(CLOUD_PROJECT) \
 			--quiet \
 			vmuser/$*.yaml
+
+##
+# Per-GKE Cluster Build Rules
+#
+# upload-<cluster>: Uploads the GKE cluster.
+##
+
+.PHONY: $(addprefix upload-,$(ALL_GKE_CLUSTERS))
+$(addprefix upload-,$(ALL_GKE_CLUSTERS)): upload-%:
+	cd $(APP_DIR) && \
+		gke.py \
+			-v \
+			-C $(GKE_SERVICES_YAML) \
+			upload \
+				-K $*
+
+.PHONY: $(addprefix switch-,$(ALL_GKE_CLUSTERS))
+$(addprefix switch-,$(ALL_GKE_CLUSTERS)): switch-%:
+	cd $(APP_DIR) && \
+		gke.py \
+			-v \
+			-C $(GKE_SERVICES_YAML) \
+			switch \
+				-K $*
+
+.PHONY: $(addprefix promote-,$(ALL_GKE_CLUSTERS))
+$(addprefix promote-,$(ALL_GKE_CLUSTERS)): promote-%:
+	cd $(APP_DIR) && \
+		gke.py \
+			-v \
+			-C $(GKE_SERVICES_YAML) \
+			promote \
+				-K $*
+
+.PHONY: $(addprefix status-,$(ALL_GKE_CLUSTERS))
+$(addprefix status-,$(ALL_GKE_CLUSTERS)): status-%:
+	cd $(APP_DIR) && \
+		gke.py \
+			-v \
+			-C $(GKE_SERVICES_YAML) \
+			status \
+				-K $*
