@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ae8f53b7_c623aa14",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-22T19:00:45Z",
+      "side": 1,
+      "message": "nit: make this \"const\".",
+      "range": {
+        "startLine": 174,
+        "startChar": 1,
+        "endLine": 174,
+        "endChar": 15
+      },
+      "revId": "a3c29efd6f564c8ec7c76ae49101224611fdd769",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "712f1615_57657c61",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-22T19:00:45Z",
+      "side": 1,
+      "message": "nit: \"fewer\"\n\nIs this true? In a lot of APIs, you can request resources from the server, but it may opt to send you fewer than those that you requested. I would explicitly check the \"Next\" pointer here to see what it offers rather than expecting the server to behave. You could replace \"Log\" with \"logImpl\" and have it return a \"next\" string, and rewrite \"Log\" as a thin wrapper around it that discards that return value.",
+      "range": {
+        "startLine": 180,
+        "startChar": 11,
+        "endLine": 180,
+        "endChar": 15
+      },
+      "revId": "a3c29efd6f564c8ec7c76ae49101224611fdd769",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ac30221_0b807979",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-22T19:00:45Z",
+      "side": 1,
+      "message": "This is a bit dangerous, since it\u0027s effectively recursive around an unknown remote resource, and could potentially lead to stack/memory being exceeded or, more likely, an ugly stack trace.\n\nCan you reformulate this as a \"for\" loop?\n\nAlso, won\u0027t using \"s[len(s)-1].Commit\" as a starting point result in duplicate commits? I think you should use the \"Next\" cursor directly here.",
+      "revId": "a3c29efd6f564c8ec7c76ae49101224611fdd769",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
