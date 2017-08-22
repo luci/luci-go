@@ -106,6 +106,7 @@ type triggerRun struct {
 	ioTimeout   int64
 	rawCmd      bool
 	dumpJSON    string
+	cipdPackage stringmapflag.Value
 }
 
 func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
@@ -130,6 +131,9 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	c.Flags.Int64Var(&c.ioTimeout, "io-timeout", 20*60, "Seconds to allow the task to be silent.")
 	c.Flags.BoolVar(&c.rawCmd, "raw-cmd", false, "When set, the command after -- is used as-is without run_isolated. In this case, no isolated hash is expected.")
 	c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Dump details about the triggered task(s) to this file as json.")
+	c.Flags.Var(&c.cipdPackage, "cipd-package",
+		"(repeatable) CIPD packages to install on the swarming bot. This takes a parameter of `[subdir:]pkgname=version`. "+
+			"Using an empty version will remove the package. The subdir is optional and defaults to '.'.")
 }
 
 func (c *triggerRun) Parse(args []string) error {
@@ -294,9 +298,23 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		commands = nil
 	}
 
+	pkgs := []*swarming.SwarmingRpcsCipdPackage{}
+	for k, v := range c.cipdPackage {
+		s := strings.SplitN(k, ":", 2)
+		pkg := swarming.SwarmingRpcsCipdPackage{
+			PackageName: s[len(s)-1],
+			Version:     v,
+		}
+		if len(s) > 1 {
+			pkg.Path = s[0]
+		}
+		pkgs = append(pkgs, &pkg)
+	}
+
 	properties := swarming.SwarmingRpcsTaskProperties{
 		Command:              commands,
 		Dimensions:           mapToArray(c.dimensions),
+		CipdInput:            &swarming.SwarmingRpcsCipdInput{Packages: pkgs},
 		Env:                  mapToArray(c.env),
 		ExecutionTimeoutSecs: c.hardTimeout,
 		ExtraArgs:            extraArgs,
