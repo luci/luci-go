@@ -117,6 +117,30 @@
     },
     {
       "key": {
+        "uuid": "e334d1fa_4a959d00",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-22T19:24:54Z",
+      "side": 1,
+      "message": "c.Log above does paging for you until either your specified limit OR paging is finished.",
+      "parentUuid": "712f1615_57657c61",
+      "range": {
+        "startLine": 180,
+        "startChar": 11,
+        "endLine": 180,
+        "endChar": 15
+      },
+      "revId": "a3c29efd6f564c8ec7c76ae49101224611fdd769",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8ac30221_0b807979",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 1
