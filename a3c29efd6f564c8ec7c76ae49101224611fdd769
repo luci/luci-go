@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "381a0e02_9909629a",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-22T21:58:59Z",
+      "side": 1,
+      "message": "Rewrote the comment and renamed the params.",
+      "parentUuid": "06ec17e4_3d94f3bf",
+      "range": {
+        "startLine": 168,
+        "startChar": 3,
+        "endLine": 168,
+        "endChar": 53
+      },
+      "revId": "a3c29efd6f564c8ec7c76ae49101224611fdd769",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b1adcc9f_65bd506d",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "a3c29efd6f564c8ec7c76ae49101224611fdd769",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01c37c9f_85286447",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-22T21:58:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1adcc9f_65bd506d",
+      "range": {
+        "startLine": 169,
+        "startChar": 26,
+        "endLine": 169,
+        "endChar": 31
+      },
+      "revId": "a3c29efd6f564c8ec7c76ae49101224611fdd769",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "fb18dcdc_78ca1505",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-22T21:58:59Z",
+      "side": 1,
+      "message": "Still default to 10k if limit is not set to \u003e 0.",
+      "parentUuid": "853f0319_94558fff",
+      "range": {
+        "startLine": 171,
+        "startChar": 16,
+        "endLine": 171,
+        "endChar": 22
+      },
+      "revId": "a3c29efd6f564c8ec7c76ae49101224611fdd769",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ae8f53b7_c623aa14",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 1
@@ -91,6 +163,30 @@
       "revId": "a3c29efd6f564c8ec7c76ae49101224611fdd769",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30c5470f_40323f3f",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-22T21:58:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ae8f53b7_c623aa14",
+      "range": {
+        "startLine": 174,
+        "startChar": 1,
+        "endLine": 174,
+        "endChar": 15
+      },
+      "revId": "a3c29efd6f564c8ec7c76ae49101224611fdd769",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -141,6 +237,30 @@
     },
     {
       "key": {
+        "uuid": "e7a25f56_6cb4c426",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-22T21:58:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e334d1fa_4a959d00",
+      "range": {
+        "startLine": 180,
+        "startChar": 11,
+        "endLine": 180,
+        "endChar": 15
+      },
+      "revId": "a3c29efd6f564c8ec7c76ae49101224611fdd769",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8ac30221_0b807979",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 1
@@ -178,6 +298,48 @@
       "revId": "a3c29efd6f564c8ec7c76ae49101224611fdd769",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c3885da_37bad90a",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-22T21:58:59Z",
+      "side": 1,
+      "message": "TAL at the new for approach. The for loop should take care of the memory usage problem (assuming GC works well)",
+      "parentUuid": "041f4b04_6ae67047",
+      "range": {
+        "startLine": 189,
+        "startChar": 1,
+        "endLine": 189,
+        "endChar": 61
+      },
+      "revId": "a3c29efd6f564c8ec7c76ae49101224611fdd769",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "598fb021_76c3311e",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-22T21:58:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8ac30221_0b807979",
+      "revId": "a3c29efd6f564c8ec7c76ae49101224611fdd769",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
