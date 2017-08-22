@@ -82,59 +82,83 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
 	client := isolatedclient.New(nil, authCl, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
 
-	eventlogger := NewLogger(ctx, c.loggingFlags.EventlogEndpoint)
+	al := archiveLogger{
+		logger:    NewLogger(ctx, c.loggingFlags.EventlogEndpoint),
+		operation: logpb.IsolateClientEvent_LEGACY_ARCHIVE.Enum(),
+		start:     start,
+		quiet:     c.defaultFlags.Quiet,
+	}
 
-	archiveDetails, err := doArchive(ctx, client, &c.ArchiveOptions, c.defaultFlags.Quiet, start)
-	if err != nil {
-		return err
+	return doArchive(ctx, client, &c.ArchiveOptions, al)
+}
+
+// archiveLogger reports stats to eventlog and stderr.
+type archiveLogger struct {
+	logger    *IsolateEventLogger
+	operation *logpb.IsolateClientEvent_Operation
+	start     time.Time
+	quiet     bool
+}
+
+// LogSummary logs (to eventlog and stderr) a high-level summary of archive operations(s).
+func (al *archiveLogger) LogSummary(ctx context.Context, hits, misses int64, bytesHit, bytesPushed units.Size, digests []string) {
+	archiveDetails := &logpb.IsolateClientEvent_ArchiveDetails{
+		HitCount:    proto.Int64(hits),
+		MissCount:   proto.Int64(misses),
+		HitBytes:    proto.Int64(int64(bytesHit)),
+		MissBytes:   proto.Int64(int64(bytesPushed)),
+		IsolateHash: digests,
 	}
 
 	end := time.Now()
-	op := logpb.IsolateClientEvent_LEGACY_ARCHIVE.Enum()
-	if err := eventlogger.logStats(ctx, op, start, end, archiveDetails); err != nil {
+	if err := al.logger.logStats(ctx, al.operation, al.start, end, archiveDetails); err != nil {
 		log.Printf("Failed to log to eventlog: %v", err)
 	}
-	return nil
+
+	if !al.quiet {
+		duration := end.Sub(al.start)
+		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", hits, bytesHit)
+		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", misses, bytesPushed)
+		fmt.Fprintf(os.Stderr, "Duration: %s\n", units.Round(duration, time.Millisecond))
+	}
+}
+
+// Print acts like fmt.Printf, but may prepend a prefix to format, depending on the value of al.quiet.
+func (al *archiveLogger) Printf(format string, a ...interface{}) (n int, err error) {
+	prefix := "\n"
+	if al.quiet {
+		prefix = ""
+	}
+	args := []interface{}{prefix}
+	args = append(args, a...)
+	return fmt.Printf("%s"+format, args...)
 }
 
 // doArchive performs the archive operation for an isolate specified by archiveOpts.
-func doArchive(ctx context.Context, client *isolatedclient.Client, archiveOpts *isolate.ArchiveOptions, quiet bool, start time.Time) (*logpb.IsolateClientEvent_ArchiveDetails, error) {
-	prefix := "\n"
-	if quiet {
-		prefix = ""
-	}
-
+func doArchive(ctx context.Context, client *isolatedclient.Client, archiveOpts *isolate.ArchiveOptions, al archiveLogger) error {
 	arch := archiver.New(ctx, client, os.Stdout)
 	CancelOnCtrlC(arch)
 	item := isolate.Archive(arch, archiveOpts)
 	item.WaitForHashed()
 	var err error
 	if err = item.Error(); err != nil {
-		fmt.Printf("%s%s  %s\n", prefix, filepath.Base(archiveOpts.Isolate), err)
+		al.Printf("%s  %s\n", filepath.Base(archiveOpts.Isolate), err)
 	} else {
-		fmt.Printf("%s%s  %s\n", prefix, item.Digest(), filepath.Base(archiveOpts.Isolate))
+		al.Printf("%s  %s\n", item.Digest(), filepath.Base(archiveOpts.Isolate))
 	}
 	if err2 := arch.Close(); err == nil {
 		err = err2
 	}
+
 	stats := arch.Stats()
-	if !quiet {
-		duration := time.Since(start)
-		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", stats.TotalHits(), stats.TotalBytesHits())
-		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", stats.TotalMisses(), stats.TotalBytesPushed())
-		fmt.Fprintf(os.Stderr, "Duration: %s\n", units.Round(duration, time.Millisecond))
+
+	var digests []string
+	if item.Error() != nil {
+		digests = []string{string(item.Digest())}
 	}
 
-	archiveDetails := &logpb.IsolateClientEvent_ArchiveDetails{
-		HitCount:  proto.Int64(int64(stats.TotalHits())),
-		MissCount: proto.Int64(int64(stats.TotalMisses())),
-		HitBytes:  proto.Int64(int64(stats.TotalBytesHits())),
-		MissBytes: proto.Int64(int64(stats.TotalBytesPushed())),
-	}
-	if item.Error() != nil {
-		archiveDetails.IsolateHash = []string{string(item.Digest())}
-	}
-	return archiveDetails, nil
+	al.LogSummary(ctx, int64(stats.TotalHits()), int64(stats.TotalMisses()), stats.TotalBytesHits(), stats.TotalBytesPushed(), digests)
+	return err
 }
 
 func (c *archiveRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
