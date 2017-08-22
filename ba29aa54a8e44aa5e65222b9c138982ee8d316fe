@@ -22,6 +22,30 @@
       "revId": "ba29aa54a8e44aa5e65222b9c138982ee8d316fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58cb9d54_a5b6cca5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-08-22T17:58:55Z",
+      "side": 1,
+      "message": "True, the command name is identical, but the syntax for packages is slightly different (but matches other Go tools).",
+      "parentUuid": "1ecbd103_4d9df12b",
+      "range": {
+        "startLine": 9,
+        "startChar": 5,
+        "endLine": 9,
+        "endChar": 12
+      },
+      "revId": "ba29aa54a8e44aa5e65222b9c138982ee8d316fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
