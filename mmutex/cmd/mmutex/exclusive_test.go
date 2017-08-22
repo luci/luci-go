@@ -29,79 +29,86 @@ import (
 )
 
 func TestExclusive(t *testing.T) {
-	Convey("RunExclusive executes the command", t, func() {
-		var tempDir string
+	Convey("RunExclusive", t, func() {
+		var lockFileDir string
 		var err error
-
-		if tempDir, err = ioutil.TempDir("", ""); err != nil {
+		if lockFileDir, err = ioutil.TempDir("", ""); err != nil {
 			panic(err)
 		}
-		defer os.Remove(tempDir)
+		lockFilePath := filepath.Join(lockFileDir, "mmutex.lock")
+		defer func() {
+			os.Remove(lockFileDir)
+		}()
 
-		testFilePath := filepath.Join(tempDir, "test")
-		var command []string
-		if runtime.GOOS == "windows" {
-			command = createCommand([]string{"copy", "NUL", testFilePath})
-		} else {
-			command = createCommand([]string{"touch", testFilePath})
-		}
+		Convey("executes the command", func() {
+			var tempDir string
+			var err error
 
-		So(RunExclusive(command, 0, 0), ShouldBeNil)
+			if tempDir, err = ioutil.TempDir("", ""); err != nil {
+				panic(err)
+			}
+			defer os.Remove(tempDir)
 
-		_, err = os.Stat(testFilePath)
-		So(err, ShouldBeNil)
+			testFilePath := filepath.Join(tempDir, "test")
+			var command []string
+			if runtime.GOOS == "windows" {
+				command = createCommand([]string{"copy", "NUL", testFilePath})
+			} else {
+				command = createCommand([]string{"touch", testFilePath})
+			}
+
+			So(RunExclusive(command, lockFilePath, 0, 0), ShouldBeNil)
+
+			_, err = os.Stat(testFilePath)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("returns error from the command", func() {
+			So(RunExclusive([]string{"nonexistent_command"}, lockFilePath, 0, 0), ShouldErrLike, "executable file not found")
+		})
+
+		Convey("times out if exclusive lock isn't released", func() {
+			var handle fslock.Handle
+			var err error
+
+			if handle, err = fslock.Lock(lockFilePath); err != nil {
+				panic(err)
+			}
+			defer handle.Unlock()
+
+			So(RunExclusive([]string{"echo", "should_fail"}, lockFilePath, 0, 0), ShouldErrLike, "fslock: lock is held")
+		})
+
+		Convey("times out if shared lock isn't released", func() {
+			var handle fslock.Handle
+			var err error
+
+			if handle, err = fslock.LockShared(lockFilePath); err != nil {
+				panic(err)
+			}
+			defer handle.Unlock()
+
+			So(RunExclusive(createCommand([]string{"echo", "should_fail"}), lockFilePath, 0, 0), ShouldErrLike, "fslock: lock is held")
+		})
+
+		Convey("respects timeout", func() {
+			var handle fslock.Handle
+			var err error
+
+			if handle, err = fslock.Lock(lockFilePath); err != nil {
+				panic(err)
+			}
+			defer handle.Unlock()
+
+			start := time.Now()
+			RunExclusive(createCommand([]string{"echo", "should_succeed"}), lockFilePath, 5*time.Millisecond, 0)
+			So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
+		})
+
+		// TODO(charliea): Add a test to ensure that a drain file is created when RunExclusive() is called.
 	})
 
-	Convey("RunExclusive returns error from the command", t, func() {
-		So(RunExclusive([]string{"nonexistent_command"}, 0, 0), ShouldErrLike, "executable file not found")
+	Convey("RunExclusive acts as a passthrough if lockFilePath is empty", t, func() {
+		So(RunExclusive(createCommand([]string{"echo", "should_succeed"}), "", 0, 0), ShouldBeNil)
 	})
-
-	Convey("RunExclusive times out if exclusive lock isn't released", t, func() {
-		var handle fslock.Handle
-		var err error
-
-		if handle, err = fslock.Lock(LockFilePath); err != nil {
-			panic(err)
-		}
-		defer handle.Unlock()
-
-		So(RunExclusive([]string{"echo", "should_fail"}, 0, 0), ShouldErrLike, "fslock: lock is held")
-	})
-
-	Convey("RunExclusive times out if shared lock isn't released", t, func() {
-		var handle fslock.Handle
-		var err error
-
-		if handle, err = fslock.LockShared(LockFilePath); err != nil {
-			panic(err)
-		}
-		defer handle.Unlock()
-
-		So(RunExclusive(createCommand([]string{"echo", "should_fail"}), 0, 0), ShouldErrLike, "fslock: lock is held")
-	})
-
-	Convey("RunExclusive respects timeout", t, func() {
-		var handle fslock.Handle
-		var err error
-
-		if handle, err = fslock.Lock(LockFilePath); err != nil {
-			panic(err)
-		}
-		defer handle.Unlock()
-
-		start := time.Now()
-		RunExclusive(createCommand([]string{"echo", "should_succeed"}), 5*time.Millisecond, 0)
-		So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
-	})
-
-	// TODO(charliea): Add a test to ensure that a drain file is created when RunExclusive() is called.
-
-	// TODO(charliea): Add a test to ensure that RunExclusive() uses the $CHOPS_SERVICE_LOCK environment
-	// variable to determine the directory for the lock and drain files.
-
-	// TODO(charliea): Add a test to ensure that RunExclusive() just acts as a passthrough if
-	// the $CHOPS_SERVICE_LOCK directory isn't set.
-
-	// TODO(charliea): Add a test to ensure that RunExclusive() just acts as a passthrough if
-	// the $CHOPS_SERVICE_LOCK directory doesn't exist.
 }
