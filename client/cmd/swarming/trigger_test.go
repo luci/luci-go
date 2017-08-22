@@ -268,3 +268,22 @@ func TestProcessTriggerOptions_EatDashDash(t *testing.T) {
 		})
 	})
 }
+
+func TestProcessTriggerOptions_CipdPackages(t *testing.T) {
+	Convey(`Make sure that processing trigger options handles cipd packagess.`, t, func() {
+		c := triggerRun{}
+		c.Init(auth.Options{})
+		c.cipdPackage = map[string]string{
+			"path:name": "version",
+		}
+		result, err := c.processTriggerOptions([]string{}, nil)
+		So(err, ShouldBeNil)
+		So(result.Properties.CipdInput, ShouldResemble, &swarming.SwarmingRpcsCipdInput{
+			Packages: []*swarming.SwarmingRpcsCipdPackage{{
+				PackageName: "name",
+				Path:        "path",
+				Version:     "version",
+			}},
+		})
+	})
+}
