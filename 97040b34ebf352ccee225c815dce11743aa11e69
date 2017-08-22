@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "21f8e6c9_3fb917b6",
+        "filename": "mmutex/cmd/mmutex/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-22T16:41:34Z",
+      "side": 1,
+      "message": "TODO: print a warning here",
+      "revId": "97040b34ebf352ccee225c815dce11743aa11e69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81498f08_6f6c6458",
+        "filename": "mmutex/cmd/mmutex/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-22T16:41:34Z",
+      "side": 1,
+      "message": "Note that the directory must exist beforehand. I would also note that having an empty value here means that the lock is disabled (e.g. this envvar is required).\n\nWe should also assert that this is an absolute path up above.",
+      "revId": "97040b34ebf352ccee225c815dce11743aa11e69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
