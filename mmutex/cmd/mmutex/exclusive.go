@@ -44,7 +44,13 @@ type cmdExclusiveRun struct {
 }
 
 func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if err := RunExclusive(args, c.fslockTimeout, c.fslockPollingInterval); err != nil {
+	lockFilePath, err := computeLockFilePath(env)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+
+	if err = RunExclusive(args, lockFilePath, c.fslockTimeout, c.fslockPollingInterval); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			return lib.GetExitCode(exitErr)
 		}
@@ -57,12 +63,13 @@ func (c *cmdExclusiveRun) Run(a subcommands.Application, args []string, env subc
 	}
 }
 
-func RunExclusive(command []string, timeout time.Duration, pollingInterval time.Duration) error {
+func RunExclusive(command []string, lockFilePath string, timeout time.Duration, pollingInterval time.Duration) error {
+	if len(lockFilePath) == 0 {
+		return runCommand(command)
+	}
+
 	blocker := lib.CreateBlockerUntil(time.Now().Add(timeout), pollingInterval)
-	return fslock.WithBlocking(LockFilePath, blocker, func() error {
-		cmd := exec.Command(command[0], command[1:]...)
-		cmd.Stderr = os.Stderr
-		cmd.Stdout = os.Stdout
-		return cmd.Run()
+	return fslock.WithBlocking(lockFilePath, blocker, func() error {
+		return runCommand(command)
 	})
 }
