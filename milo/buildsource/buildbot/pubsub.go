@@ -125,6 +125,11 @@ func putDSMasterJSON(
 	entry.Data = gzbs.Bytes()
 	logging.Debugf(c, "Length of json data: %d", cw.Count)
 	logging.Debugf(c, "Length of gzipped data: %d", len(entry.Data))
+	// Limit for datastore_v3 is 1572864 bytes for the total datastore entry.
+	if len(entry.Data) > 1024*1024 {
+		logging.Warningf(c, "Size of master data too large, dropping")
+		return nil
+	}
 	return datastore.Put(c, toPut)
 }
 
