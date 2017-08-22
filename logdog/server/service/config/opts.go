@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/caching"
+	serverCaching "go.chromium.org/luci/server/caching"
 
 	"golang.org/x/net/context"
 )
@@ -44,7 +45,7 @@ type CacheOptions struct {
 }
 
 // WrapBackend wraps the supplied base backend in caching layers and returns a
-// Conext with the resulting backend installed.
+// Context with the resulting backend installed.
 func (o *CacheOptions) WrapBackend(c context.Context, base backend.B) context.Context {
 	return backend.WithFactory(c, func(c context.Context) backend.B {
 		// Start with our base Backend.
@@ -78,7 +79,7 @@ func (o *CacheOptions) WrapBackend(c context.Context, base backend.B) context.Co
 
 		// Add a proccache-based config cache.
 		if o.CacheExpiration > 0 {
-			be = caching.LRUBackend(be, 1024, o.CacheExpiration)
+			be = caching.LRUBackend(be, serverCaching.ProcessCache(c), o.CacheExpiration)
 		}
 
 		return be

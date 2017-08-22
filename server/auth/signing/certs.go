@@ -27,8 +27,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/data/caching/proccache"
 	"go.chromium.org/luci/server/auth/internal"
+	"go.chromium.org/luci/server/caching"
 )
 
 // CertsCacheExpiration defines how long to cache fetched certificates in local
@@ -89,12 +89,12 @@ type proccacheKey string
 // FetchCertificates fetches certificates from the given URL.
 //
 // The server is expected to reply with JSON described by PublicCertificates
-// struct (like LUCI services do). Uses proccache to cache them for
+// struct (like LUCI services do). Uses process cache to cache them for
 // CertsCacheExpiration minutes.
 //
 // LUCI services serve certificates at /auth/api/v1/server/certificates.
 func FetchCertificates(c context.Context, url string) (*PublicCertificates, error) {
-	certs, err := proccache.GetOrMake(c, proccacheKey("url:"+url), func() (interface{}, time.Duration, error) {
+	certs, err := caching.ProcessCache(c).GetOrCreate(c, proccacheKey("url:"+url), func() (interface{}, time.Duration, error) {
 		certs := &PublicCertificates{}
 		req := internal.Request{
 			Method: "GET",
@@ -134,7 +134,7 @@ func robotCertURL(c context.Context) string {
 // service account.
 //
 // Works only with Google service accounts (@*.gserviceaccount.com). Uses
-// proccache to cache them for CertsCacheExpiration minutes.
+// process cache to cache them for CertsCacheExpiration minutes.
 //
 // Usage (roughly):
 //
@@ -148,7 +148,7 @@ func FetchCertificatesForServiceAccount(c context.Context, email string) (*Publi
 		return nil, fmt.Errorf("signature: not a google service account %q", email)
 	}
 
-	certs, err := proccache.GetOrMake(c, proccacheKey("email:"+email), func() (interface{}, time.Duration, error) {
+	certs, err := caching.ProcessCache(c).GetOrCreate(c, proccacheKey("email:"+email), func() (interface{}, time.Duration, error) {
 		// Ask Google backend for a dict "key id => x509 PEM encoded cert".
 		keysAndCerts := map[string]string{}
 		req := internal.Request{

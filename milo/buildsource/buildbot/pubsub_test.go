@@ -27,11 +27,10 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/gae/impl/memory"
 	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
 	memcfg "go.chromium.org/luci/common/config/impl/memory"
-	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
@@ -40,7 +39,6 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	"github.com/julienschmidt/httprouter"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -93,8 +91,7 @@ func newCombinedPsBody(bs []*buildbotBuild, m *buildbotMaster, internal bool) io
 
 func TestPubSub(t *testing.T) {
 	Convey(`A test Environment`, t, func() {
-		c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
-		c = gologger.StdConfig.Use(c)
+		c := gaetesting.TestingContextWithAppID("dev~luci-milo")
 		c, _ = testclock.UseTime(c, fakeTime)
 		c = testconfig.WithCommonClient(c, memcfg.New(bbAclConfigs))
 		c = auth.WithState(c, &authtest.FakeState{

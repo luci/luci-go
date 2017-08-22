@@ -30,8 +30,8 @@ import (
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/caching/lazyslot"
-	"go.chromium.org/luci/common/data/caching/proccache"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
 )
@@ -144,7 +144,7 @@ func CheckCertificate(c context.Context, cert *x509.Certificate) (*certconfig.CA
 // It caches CertChecker objects in local memory and reuses them between
 // requests.
 func GetCertChecker(c context.Context, cn string) (*CertChecker, error) {
-	checker, err := proccache.GetOrMake(c, proccacheKey(cn), func() (interface{}, time.Duration, error) {
+	checker, err := caching.ProcessCache(c).GetOrCreate(c, proccacheKey(cn), func() (interface{}, time.Duration, error) {
 		// To avoid storing CertChecker for non-existent CAs in local memory forever,
 		// we do a datastore check when creating the checker. It happens once during
 		// the process lifetime.
