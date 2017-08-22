@@ -28,12 +28,13 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
+
 	"go.chromium.org/luci/appengine/gaesettings"
 	"go.chromium.org/luci/client/authcli"
 	commonAuth "go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/common/config/impl/filesystem"
-	"go.chromium.org/luci/common/data/caching/proccache"
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	gcps "go.chromium.org/luci/common/gcloud/pubsub"
@@ -55,6 +56,7 @@ import (
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/luci_config/server/cfgclient/textproto"
 	serverAuth "go.chromium.org/luci/server/auth"
+	serverCaching "go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/settings"
 
 	"go.chromium.org/gae/impl/cloud"
@@ -78,6 +80,9 @@ var (
 	CoordinatorScopes = []string{
 		commonAuth.OAuthScopeEmail,
 	}
+
+	// ProcessCache is the global process LRU cache.
+	ProcessCache = lru.New(65535)
 )
 
 // projectConfigCacheDuration is the amount of time to cache a project's
@@ -227,8 +232,8 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 		log.WithError(err).Warningf(c, "Failed to create cloud datastore client.")
 	}
 
-	// Install a process-wide cache.
-	c = proccache.Use(c, &proccache.Cache{})
+	// Install process-wide cache.
+	c = serverCaching.WithProcessCache(c, ProcessCache)
 
 	// Configure our signal handler. It will listen for terminating signals and
 	// issue a shutdown signal if one is received.
