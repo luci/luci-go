@@ -1,12 +1,15 @@
 # Dockerfile extending the generic Go image with application files for a
 # single application.
-FROM golang:1.7
+FROM golang:1.8-alpine
 
 ENV mainpkg "go.chromium.org/luci/logdog/server/cmd/logdog_archivist"
 
+# Install additional system packages.
+RUN apk add --update curl bash && \
+    rm -rf /var/cache/apk/*
+
 # Copy the local package files to the container's workspace.
 ADD _gopath/src/ /go/src
-ADD . "/go/src/${mainpkg}"
 COPY run.sh /opt/logdog/archivist/run.sh
 
 # Build the command inside the container.
