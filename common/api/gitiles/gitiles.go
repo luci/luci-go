@@ -30,6 +30,12 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 )
 
+const (
+	// MaxCommitsPerRequest is a large but reasonable number of commits to
+	// get in a single request.
+	MaxCommitsPerRequest = 10000
+)
+
 // User is the author or the committer returned from gitiles.
 type User struct {
 	Name  string `json:"name"`
@@ -131,6 +137,14 @@ type Client struct {
 //  Log(C) = [C, A, B, base, common...]
 //
 func (c *Client) Log(ctx context.Context, repoURL, treeish string, limit int) ([]Commit, error) {
+	r, err := c.rawLog(ctx, repoURL, treeish, limit)
+	if err == nil {
+		return r.Log, nil
+	}
+	return nil, err
+}
+
+func (c *Client) rawLog(ctx context.Context, repoURL, treeish string, limit int) (*logResponse, error) {
 	repoURL, err := NormalizeRepoURL(repoURL)
 	if err != nil {
 		return nil, err
@@ -150,7 +164,9 @@ func (c *Client) Log(ctx context.Context, repoURL, treeish string, limit int) ([
 			if len(result) > limit {
 				result = result[:limit]
 			}
-			return result, nil
+			// Leave .Next in place
+			resp.Log = result
+			return resp, nil
 		}
 		nextPath := subPath + "&s=" + resp.Next
 		resp = &logResponse{}
@@ -158,6 +174,51 @@ func (c *Client) Log(ctx context.Context, repoURL, treeish string, limit int) ([
 			return nil, err
 		}
 		result = append(result, resp.Log...)
+	}
+}
+
+// LogForward is a hacky wrapper over rawLog to get a list of commits that goes
+// forward instead of backwards.
+//
+// The response for the func this wraps will always include (for r1..rx)
+// the immediate ancestors of rx (rx-1, rx-2, ..., rx-n) but may not reach r1
+// necessarily if the delta between the commits reachable from rx and the
+// commits reachable from r1 is larger than the a given limit; LogForward will
+// keep paging back until it reaches r1 and will return the last page in reverse
+// order (r1, r2, r3, ...., rlimit).
+//
+// Note that the length of the response is not guaranteed to be equal to limit
+// even if there are `limit` or more commits between r1 and rx due to paging
+// i.e. We don't want to keep around more than one page's worth of results at a
+// time.
+//
+// If limit > 0, the list of commits will be truncated at that length
+func (c *Client) LogForward(ctx context.Context, repoURL, r1, rx string, limit int) ([]Commit, error) {
+	for {
+		treeish := fmt.Sprintf("%s..%s", r1, rx)
+		// Make pageSize the greater of (limit, MaxCommitsPerRequest)
+		// so that we make as few requests as possible to gitiles.
+		pageSize := MaxCommitsPerRequest
+		if limit > pageSize {
+			pageSize = limit
+		}
+		r, err := c.rawLog(ctx, repoURL, treeish, pageSize)
+		if err != nil {
+			return nil, err
+		}
+		if r.Next == "" {
+			// Reverse in place because golang has no builtins for this.
+			for i, j := 0, len(r.Log)-1; i < j; i, j = i+1, j-1 {
+				r.Log[i], r.Log[j] = r.Log[j], r.Log[i]
+			}
+			// Truncate response to limit.
+			if limit > 0 && len(r.Log) > limit {
+				return r.Log[:limit], nil
+			}
+			return r.Log, nil
+		}
+		// Keep paging back until r.Next is empty string.
+		rx = r.Next
 	}
 }
 
