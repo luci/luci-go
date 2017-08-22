@@ -37,35 +37,44 @@ var (
 // It can be used as a fast layer of caching for information whose value extends
 // past the lifespan of a single request.
 //
-// For information whose value is limited to a single request, use
+// For information whose cached value is limited to a single request, use
 // RequestCache.
-//
-// This is optional.
 func WithProcessCache(c context.Context, cache *lru.Cache) context.Context {
 	return context.WithValue(c, &processCacheKey, cache)
 }
 
 // ProcessCache returns process-global cache that is installed into the Context.
-// If no process-global cache is installed, this will return nil.
+//
+// If no process-global cache is installed, this will return panic.
 func ProcessCache(c context.Context) *lru.Cache {
 	pc, _ := c.Value(&processCacheKey).(*lru.Cache)
+	if pc == nil {
+		panic("server/caching: no process cache installed in Context")
+	}
 	return pc
 }
 
 // WithRequestCache initializes context-bound local cache and adds it to the
 // Context.
 //
+// If the supplied cache is nil, a cache with unbounded size will be used. This
+// is not necessarily bad, since the lifetime of the cache is still scoped to
+// a single request.
+//
 // It can be used as a second fast layer of caching in front of memcache.
 // It is never trimmed, only released at once upon the request completion.
-//
-// This is optional.
-func WithRequestCache(c context.Context) context.Context {
-	return context.WithValue(c, &requestCacheKey, lru.New(0))
+func WithRequestCache(c context.Context, cache *lru.Cache) context.Context {
+	if cache == nil {
+		cache = lru.New(0)
+	}
+	return context.WithValue(c, &requestCacheKey, cache)
 }
 
 // RequestCache retrieves a per-request in-memory cache to the Context. If no
-// request cache is installed, this may return nil.
+// request cache is installed, this will return nil.
+//
+// Note that while ProcessCache is required, RequestCache is optional.
 func RequestCache(c context.Context) *lru.Cache {
-	pc, _ := c.Value(&requestCacheKey).(*lru.Cache)
-	return pc
+	rc, _ := c.Value(&requestCacheKey).(*lru.Cache)
+	return rc
 }
