@@ -210,6 +210,24 @@
       "revId": "db10932ae8ac9ba8fe59e1e6a2a30729c29f88dc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "93e0130a_e5f30c4a",
+        "filename": "milo/frontend/appengine/cron.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-08-23T19:15:22Z",
+      "side": 1,
+      "message": "housekeeping may be not the best word. In Python gae_ts_mon the same cron job sends both metrics collected from appengine instances and global metrics (like this one). Buildbucket also sends the \"state of the world\":\nhttps://cs.chromium.org/chromium/infra/appengine/cr-buildbucket/metrics.py?q\u003dcr-buildbucket/metrics\u0026sq\u003dpackage:chromium\u0026l\u003d256\n\nthis function registered in\n\nhttps://cs.chromium.org/chromium/infra/appengine/cr-buildbucket/main.py?type\u003dcs\u0026q\u003dupdate_global_metrics\u0026sq\u003dpackage:chromium\u0026l\u003d39\n\nThere might be a technical reason for that, I remember sergeyberezin gave a long explanation involving implementation details of gae_ts_mon. Anyway, he is on 4w vacation. I hope this will work, we may want to check with him when he is back.",
+      "parentUuid": "77282204_647231c1",
+      "revId": "db10932ae8ac9ba8fe59e1e6a2a30729c29f88dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
