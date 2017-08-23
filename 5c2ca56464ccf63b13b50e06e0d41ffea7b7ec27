@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2819d0be_c4c16656",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/fakelogs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-23T02:43:13Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "27c719b8_308334c7",
+      "range": {
+        "startLine": 39,
+        "startChar": 53,
+        "endLine": 39,
+        "endChar": 61
+      },
+      "revId": "5c2ca56464ccf63b13b50e06e0d41ffea7b7ec27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "63234909_a864dc35",
         "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/fakelogs.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "5c2ca56464ccf63b13b50e06e0d41ffea7b7ec27",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40bdf940_1943ec26",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/fakelogs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-23T02:43:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "63234909_a864dc35",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 66,
+        "endChar": 1
+      },
+      "revId": "5c2ca56464ccf63b13b50e06e0d41ffea7b7ec27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
