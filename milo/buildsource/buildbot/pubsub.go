@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/milo/common"
@@ -59,6 +60,12 @@ var (
 		field.String("master"),
 		// Status can be one of 2 options.  "success", "failure".
 		field.String("status"))
+
+	allMasterTimer = metric.NewFloat(
+		"luci/milo/buildbot_pubsub/last_updated",
+		"Seconds since the master was last updated.",
+		nil,
+		field.String("master"))
 )
 
 type buildMasterMsg struct {
@@ -78,6 +85,8 @@ type buildbotMasterEntry struct {
 	// Modified is when this entry was last modified.
 	Modified time.Time
 }
+
+var buildbotMasterEntryKind = "buildbotMasterEntry"
 
 // buildbotMasterPublic is a struct that exists for public builtbot masters, and
 // not for internal masters. It's used for ACL checks.
@@ -317,6 +326,25 @@ func doMaster(c context.Context, master *buildbotMaster, internal bool) int {
 func PubSubHandler(ctx *router.Context) {
 	statusCode := pubSubHandlerImpl(ctx.Context, ctx.Request)
 	ctx.Writer.WriteHeader(statusCode)
+}
+
+func StatsHandler(c context.Context) error {
+	q := datastore.NewQuery(buildbotMasterEntryKind)
+	entries := []*buildbotMasterEntry{}
+	err := (&datastore.Batcher{}).GetAll(c, q, &entries)
+	if err != nil {
+		return errors.Annotate(err, "failed to fetch masters").Err()
+	}
+	now := clock.Now(c)
+	for _, entry := range entries {
+		t := now.Sub(entry.Modified).Seconds()
+		err := allMasterTimer.Set(c, t, entry.Name)
+		if err != nil {
+			logging.WithError(err).Errorf(c, "failed to send last_updated metric for %s", entry.Name)
+			// Try the next one anyways.
+		}
+	}
+	return nil
 }
 
 // This is the actual implementation of the pubsub handler.  Returns
