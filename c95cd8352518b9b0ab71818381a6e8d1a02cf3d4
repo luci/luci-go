@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "93f7409d_75039d04",
+        "filename": "logdog/client/coordinator/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-23T02:51:22Z",
+      "side": 1,
+      "message": "(FYI) this was b/c package name is used by pRPC discovery, and I wanted the APIs to be \"logdog.Logs\" instead of \"logs.Logs\".",
+      "range": {
+        "startLine": 20,
+        "startChar": 2,
+        "endLine": 20,
+        "endChar": 7
+      },
+      "revId": "c95cd8352518b9b0ab71818381a6e8d1a02cf3d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
