@@ -96,6 +96,10 @@ type Client struct {
 
 	// Used for testing only.
 	mockRepoURL string
+
+	// MaxCommitsPerRequest should be a large but reasonable number of
+	// commits to get in a single request.
+	MaxCommitsPerRequest int
 }
 
 // Log returns a list of commits based on a repo and treeish.
@@ -131,6 +135,14 @@ type Client struct {
 //  Log(C) = [C, A, B, base, common...]
 //
 func (c *Client) Log(ctx context.Context, repoURL, treeish string, limit int) ([]Commit, error) {
+	r, err := c.rawLog(ctx, repoURL, treeish, limit, "")
+	if err == nil {
+		return r.Log, nil
+	}
+	return nil, err
+}
+
+func (c *Client) rawLog(ctx context.Context, repoURL, treeish string, limit int, nextCursor string) (*logResponse, error) {
 	repoURL, err := NormalizeRepoURL(repoURL)
 	if err != nil {
 		return nil, err
@@ -140,24 +152,74 @@ func (c *Client) Log(ctx context.Context, repoURL, treeish string, limit int) ([
 	}
 	// TODO(tandrii): s/QueryEscape/PathEscape once AE deployments are Go1.8+.
 	subPath := fmt.Sprintf("+log/%s?format=JSON", url.QueryEscape(treeish))
-	resp := &logResponse{}
-	if err := c.get(ctx, repoURL, subPath, resp); err != nil {
-		return nil, err
-	}
-	result := resp.Log
+	combinedLog := []Commit{}
+	nextPath := subPath
 	for {
-		if resp.Next == "" || len(result) >= limit {
-			if len(result) > limit {
-				result = result[:limit]
-			}
-			return result, nil
+		// Allocate a new log response each time because c.get will not clear resp.Next.
+		resp := &logResponse{}
+		if nextCursor != "" {
+			nextPath = subPath + "&s=" + nextCursor
 		}
-		nextPath := subPath + "&s=" + resp.Next
-		resp = &logResponse{}
 		if err := c.get(ctx, repoURL, nextPath, resp); err != nil {
 			return nil, err
 		}
-		result = append(result, resp.Log...)
+		combinedLog = append(combinedLog, resp.Log...)
+		if resp.Next == "" || len(combinedLog) >= limit {
+			resp.Log = combinedLog
+			if len(resp.Log) > limit {
+				resp.Log = resp.Log[:limit]
+			}
+			// Leave .Next in place
+			return resp, nil
+		}
+		nextCursor = resp.Next
+	}
+}
+
+// LogForward is a hacky wrapper over rawLog to get a list of commits that goes
+// forward instead of backwards.
+//
+// The response for rawLog will always include (for r1..rx) the immediate
+// ancestors of rx (rx-1, rx-2, ..., rx-n) but may not reach r1's child
+// necessarily if the delta between the commits reachable from rx and those
+// reachablefrom r1 is larger than the a given limit; LogForward will keep
+// paging back until it reaches r1's child and will return the last page in
+// reverse order (r2, r3, r4, ..., rlimit).
+//
+// If limit > 0, the list of commits will be truncated at that length.
+func (c *Client) LogForward(ctx context.Context, repoURL, r1, rx string, limit int) ([]Commit, error) {
+	nextCursor := ""
+	treeish := fmt.Sprintf("%s..%s", r1, rx)
+	pageSize := c.MaxCommitsPerRequest
+	if pageSize == 0 {
+		// Sane default.
+		pageSize = 10000
+	}
+	if limit > pageSize {
+		pageSize = limit
+	}
+	pp := []Commit{}
+	for {
+		r, err := c.rawLog(ctx, repoURL, treeish, pageSize, nextCursor)
+		if err != nil {
+			return nil, err
+		}
+		if r.Next == "" {
+			r.Log = append(pp, r.Log...)
+			// Reverse in place because golang has no builtins for this.
+			for i, j := 0, len(r.Log)-1; i < j; i, j = i+1, j-1 {
+				r.Log[i], r.Log[j] = r.Log[j], r.Log[i]
+			}
+			// Truncate response to limit.
+			if limit > 0 && len(r.Log) > limit {
+				return r.Log[:limit], nil
+			}
+			return r.Log, nil
+		}
+		// Keep the previous page.
+		pp = r.Log
+		// Keep paging back until r.Next is empty string.
+		nextCursor = r.Next
 	}
 }
 
