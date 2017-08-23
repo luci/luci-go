@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a7440333_ed69f138",
+        "filename": "luci_config/server/cfgclient/backend/erroring/erroring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-23T19:15:30Z",
+      "side": 0,
+      "message": "can we get rid of this method now?",
+      "range": {
+        "startLine": 69,
+        "startChar": 8,
+        "endLine": 69,
+        "endChar": 16
+      },
+      "revId": "8c346853714ef39439382aff2e417a6eea36c917",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
