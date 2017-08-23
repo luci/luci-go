@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8883e18d_d2a0accd",
+        "filename": "milo/buildsource/buildbot/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-08-23T18:30:57Z",
+      "side": 1,
+      "message": "from reading this description I am not sure whether it is an absolute Unix timestamp in seconds  (\"When\" suggests that) or it is a duration since last update in seconds (\"in seconds\" suggests that)",
+      "range": {
+        "startLine": 65,
+        "startChar": 3,
+        "endLine": 65,
+        "endChar": 47
+      },
+      "revId": "db10932ae8ac9ba8fe59e1e6a2a30729c29f88dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ea62088_146bdcb4",
+        "filename": "milo/buildsource/buildbot/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 329,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-08-23T18:30:57Z",
+      "side": 1,
+      "message": "nit: I think should be using constants for entity kind names",
+      "range": {
+        "startLine": 329,
+        "startChar": 25,
+        "endLine": 329,
+        "endChar": 46
+      },
+      "revId": "db10932ae8ac9ba8fe59e1e6a2a30729c29f88dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "deacb919_2408e852",
+        "filename": "milo/buildsource/buildbot/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-08-23T18:30:57Z",
+      "side": 1,
+      "message": "we are handling the error twice: log and return. Consider returning an annotated error without logging, and then log the error at the callsite",
+      "revId": "db10932ae8ac9ba8fe59e1e6a2a30729c29f88dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa8e8bf9_e1aae42f",
+        "filename": "milo/buildsource/buildbot/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-08-23T18:30:57Z",
+      "side": 1,
+      "message": "a reader of the log may be wondering \"which metric?\"",
+      "range": {
+        "startLine": 341,
+        "startChar": 52,
+        "endLine": 341,
+        "endChar": 58
+      },
+      "revId": "db10932ae8ac9ba8fe59e1e6a2a30729c29f88dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db9ddb4c_b25bb311",
+        "filename": "milo/frontend/appengine/cron.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-08-23T18:30:57Z",
+      "side": 1,
+      "message": "does it work?\n\nIn Python gae_ts_mon, we have to register global metrics and a callback function which is called from the existing cron (/internal/cron/ts_mon/housekeeping)\n\nhttps://cs.chromium.org/chromium/infra/packages/infra_libs/infra_libs/ts_mon/common/interface.py?type\u003dcs\u0026q\u003dregister_global_metrics\u0026l\u003d223",
+      "revId": "db10932ae8ac9ba8fe59e1e6a2a30729c29f88dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
