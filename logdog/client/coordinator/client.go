@@ -17,7 +17,7 @@ package coordinator
 import (
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 )
