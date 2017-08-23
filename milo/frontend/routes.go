@@ -53,6 +53,7 @@ func Run(templatePath string) {
 	// Admin and cron endpoints.
 	r.GET("/admin/update", basemw.Extend(gaemiddleware.RequireCron), UpdateConfigHandler)
 	r.GET("/admin/configs", basemw, ConfigsHandler)
+	r.GET("/admin/stats", basemw, StatsHandler)
 
 	// Console
 	r.GET("/console/:project/:name", basemw, ConsoleHandler)
