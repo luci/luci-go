@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "764b2474_1e5a4f7b",
+        "filename": "milo/frontend/cron_stats.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-08-23T18:47:31Z",
+      "side": 1,
+      "message": "the error details are lost. Please log it.",
+      "revId": "7d8a48cb513b69a6ca47822c930cb0215d48c46d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
