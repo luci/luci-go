@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4fc47e98_c39f9308",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-23T22:28:16Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "1283cfb3_8a872cd0",
+      "range": {
+        "startLine": 36,
+        "startChar": 1,
+        "endLine": 36,
+        "endChar": 21
+      },
+      "revId": "b3ae12dc3e8b30d7e9257fdee9dc26192c9d65cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e39a25b8_cd2a4e9a",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 3
@@ -36,6 +60,30 @@
       "writtenOn": "2017-08-23T18:56:14Z",
       "side": 1,
       "message": "why is r1 important to return? From my PoV, if caller wants r1, caller can always specify r1~1.",
+      "range": {
+        "startLine": 187,
+        "startChar": 71,
+        "endLine": 187,
+        "endChar": 75
+      },
+      "revId": "b3ae12dc3e8b30d7e9257fdee9dc26192c9d65cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dffac28f_b80bb2b6",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-23T22:28:16Z",
+      "side": 1,
+      "message": "Right. Corrected docco.",
+      "parentUuid": "e39a25b8_cd2a4e9a",
       "range": {
         "startLine": 187,
         "startChar": 71,
@@ -65,6 +113,24 @@
     },
     {
       "key": {
+        "uuid": "155cb168_1c286331",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-23T22:28:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "19db6c82_61af4956",
+      "revId": "b3ae12dc3e8b30d7e9257fdee9dc26192c9d65cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a4885d0f_b9f697c3",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 3
@@ -85,6 +151,30 @@
       "revId": "b3ae12dc3e8b30d7e9257fdee9dc26192c9d65cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40e5ed4e_c25f7d62",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-23T22:28:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a4885d0f_b9f697c3",
+      "range": {
+        "startLine": 195,
+        "startChar": 68,
+        "endLine": 195,
+        "endChar": 69
+      },
+      "revId": "b3ae12dc3e8b30d7e9257fdee9dc26192c9d65cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "705451ab_843612da",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-23T22:28:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7fa248be_cd4e9690",
+      "range": {
+        "startLine": 202,
+        "startChar": 2,
+        "endLine": 204,
+        "endChar": 3
+      },
+      "revId": "b3ae12dc3e8b30d7e9257fdee9dc26192c9d65cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "64c848cf_83cd8efd",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 3
@@ -131,6 +245,30 @@
       "revId": "b3ae12dc3e8b30d7e9257fdee9dc26192c9d65cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9db1076_29062ac1",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-23T22:28:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "64c848cf_83cd8efd",
+      "range": {
+        "startLine": 221,
+        "startChar": 2,
+        "endLine": 221,
+        "endChar": 13
+      },
+      "revId": "b3ae12dc3e8b30d7e9257fdee9dc26192c9d65cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
