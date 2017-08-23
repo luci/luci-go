@@ -116,7 +116,7 @@ func getMasterJSON(c context.Context, name string) (
 func GetAllBuilders(c context.Context) (*resp.CIService, error) {
 	result := &resp.CIService{Name: "Buildbot"}
 	// Fetch all Master entries from datastore
-	q := ds.NewQuery("buildbotMasterEntry")
+	q := ds.NewQuery(buildbotMasterEntryKind)
 	// TODO(hinoka): Maybe don't look past like a month or so?
 	entries := []*buildbotMasterEntry{}
 	err := (&ds.Batcher{}).GetAll(c, q, &entries)
