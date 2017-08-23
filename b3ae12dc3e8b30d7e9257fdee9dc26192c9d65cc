@@ -1,0 +1,159 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1283cfb3_8a872cd0",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-23T18:56:14Z",
+      "side": 1,
+      "message": "how about putting it into Client\u0027s struct? This way some users may increase or decrease this at will; testing should also be simpler.",
+      "range": {
+        "startLine": 36,
+        "startChar": 1,
+        "endLine": 36,
+        "endChar": 21
+      },
+      "revId": "b3ae12dc3e8b30d7e9257fdee9dc26192c9d65cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e39a25b8_cd2a4e9a",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-23T18:56:14Z",
+      "side": 1,
+      "message": "why is r1 important to return? From my PoV, if caller wants r1, caller can always specify r1~1.",
+      "range": {
+        "startLine": 187,
+        "startChar": 71,
+        "endLine": 187,
+        "endChar": 75
+      },
+      "revId": "b3ae12dc3e8b30d7e9257fdee9dc26192c9d65cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19db6c82_61af4956",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-23T18:56:14Z",
+      "side": 1,
+      "message": "add that at least 2 commits are returned, i.e. r1 \u0026 r2 s.t. one could \"page\" forward at a later time starting from r2 if necessary.\n\nOR, why not keep 2 pages at all times and always return exactly `limit` commits unless delta is smaller, simplifying usage and docs.",
+      "revId": "b3ae12dc3e8b30d7e9257fdee9dc26192c9d65cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4885d0f_b9f697c3",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-23T18:56:14Z",
+      "side": 1,
+      "message": "nit: period",
+      "range": {
+        "startLine": 195,
+        "startChar": 68,
+        "endLine": 195,
+        "endChar": 69
+      },
+      "revId": "b3ae12dc3e8b30d7e9257fdee9dc26192c9d65cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7fa248be_cd4e9690",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-23T18:56:14Z",
+      "side": 1,
+      "message": "this is fine, but based on what I wrote above it\u0027d be much better to just keep latest `limit` commits at all times, though that\u0027d need efficient deque, which Golang slice isn\u0027t.",
+      "range": {
+        "startLine": 202,
+        "startChar": 2,
+        "endLine": 204,
+        "endChar": 3
+      },
+      "revId": "b3ae12dc3e8b30d7e9257fdee9dc26192c9d65cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64c848cf_83cd8efd",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-23T18:56:14Z",
+      "side": 1,
+      "message": "rx is a commit hash, r.Next is cursor, which isn\u0027t necessarily a commit hash.\n\nin practice, gitiles currently uses a commit hash as a cursor, however if there are merge commits, next call would be missing commits. For example, consider this history:\n\nr0 -\u003e r1 -----\u003e r3 --\u003e r4 --\u003e r6\n         \\                  /\n          r2 -----------\u003e r5 \n\n# note, I assigned i for each r_i based on topological sort and for (r2, r3) and (r4, r5) based on their timestamps.\n\nNow, suppose page size is 2, and we want LogForward(r0, r6, limit\u003d3).\nThen first rawLog(r0..r6) will return [r6, r5], next\u003dr4,\n\u003d\u003e rawLog(r0..r4) which returns [r4, r3], next\u003dr1   # And we lost r2!\n\u003d\u003e rawLog(r0..r1) which returns [r1]   # AFAIU, r0 won\u0027t be returend at all, and I think LogForward right now won\u0027t return r0 either.\n\nTo conclude, I think the only consistently right way to do this is to use gitiles paging cursor directly here as a cursor, not assuming it to be a commit, which means LogForward can\u0027t piggy back on rawLog as is.",
+      "range": {
+        "startLine": 221,
+        "startChar": 2,
+        "endLine": 221,
+        "endChar": 13
+      },
+      "revId": "b3ae12dc3e8b30d7e9257fdee9dc26192c9d65cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6fe2cbbd_151cf9d2",
+        "filename": "common/api/gitiles/gitiles_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-23T18:56:14Z",
+      "side": 1,
+      "message": "thanks",
+      "range": {
+        "startLine": 104,
+        "startChar": 2,
+        "endLine": 104,
+        "endChar": 12
+      },
+      "revId": "b3ae12dc3e8b30d7e9257fdee9dc26192c9d65cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
