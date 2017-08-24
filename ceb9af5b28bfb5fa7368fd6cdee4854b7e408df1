@@ -117,6 +117,30 @@
     },
     {
       "key": {
+        "uuid": "9949e102_31e1613d",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-24T17:37:23Z",
+      "side": 1,
+      "message": "ah, i now understand why you need pageSize here and why it must be at least as big as `limit` \u003d\u003e to ensure that at the end you get at least `limit` commits. Please, add a doc here.\n\nAs for MaxCommitsPerRequest -\u003e either:\n * make use of it inside rawLog for default page size there (I prefer this one)\n * OR rename it to be specific to LogForward.",
+      "parentUuid": "5d97aab8_3d88f8c0",
+      "range": {
+        "startLine": 193,
+        "startChar": 1,
+        "endLine": 193,
+        "endChar": 35
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d4cdc064_3216672a",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 6
