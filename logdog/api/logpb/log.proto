@@ -95,8 +95,9 @@ message Text {
 
 /* Binary stream content. */
 message Binary {
-  /* The byte offset in the stream of the first byte of data. */
-  uint64 offset = 1;
+  // Formerly the LogEntry.Sequence value was duplicated here.
+  reserved 1;
+
   /* The binary stream's data. */
   bytes data = 2;
 }
