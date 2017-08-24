@@ -1,0 +1,280 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aef283b2_503c2306",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T01:26:28Z",
+      "side": 1,
+      "message": "Please include a bug.",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 14,
+        "endChar": 3
+      },
+      "revId": "c6492f9ff83a6253eb6743aa952ccc11b0337024",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b30f56d_16b6760f",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T01:26:28Z",
+      "side": 1,
+      "message": "has*h*tags?",
+      "range": {
+        "startLine": 36,
+        "startChar": 40,
+        "endLine": 36,
+        "endChar": 47
+      },
+      "revId": "c6492f9ff83a6253eb6743aa952ccc11b0337024",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d475c7d7_73c1c96b",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T01:26:28Z",
+      "side": 1,
+      "message": "Instead of this, recommend having an \"insecure\" boolean. If true, you allow \"http://\" instead of just \"https://\". This will let you use your local httptest server directly via \"gerritURL\" instead of having alternative URL logic.",
+      "range": {
+        "startLine": 96,
+        "startChar": 1,
+        "endLine": 96,
+        "endChar": 14
+      },
+      "revId": "c6492f9ff83a6253eb6743aa952ccc11b0337024",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81219b99_f0ffb2a7",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T01:26:28Z",
+      "side": 1,
+      "message": "nit: put URL after \"see\" on its own line.",
+      "range": {
+        "startLine": 101,
+        "startChar": 25,
+        "endLine": 101,
+        "endChar": 29
+      },
+      "revId": "c6492f9ff83a6253eb6743aa952ccc11b0337024",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a251019f_5a88e0f5",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T01:26:28Z",
+      "side": 1,
+      "message": "nit: \"this\"",
+      "range": {
+        "startLine": 105,
+        "startChar": 9,
+        "endLine": 105,
+        "endChar": 14
+      },
+      "revId": "c6492f9ff83a6253eb6743aa952ccc11b0337024",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c392046_7a69ea5e",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T01:26:28Z",
+      "side": 1,
+      "message": "I think that we should have a \"NewClient\" method which is given a \"gerritURL\" base, validates it, and retains it, rather than pass a \"gerritURL\" to each call. This will simplify the API.\n\nYou could then retain it as a \"url.URL\" and populate \"Query\" field directly, using Go APIs instead of manually generating URLs.",
+      "range": {
+        "startLine": 130,
+        "startChar": 1,
+        "endLine": 133,
+        "endChar": 2
+      },
+      "revId": "c6492f9ff83a6253eb6743aa952ccc11b0337024",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb39afec_ad42e7ba",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T01:26:28Z",
+      "side": 1,
+      "message": "nit: \"\u003d\u003d 0\", it\u0027ll never be \u003c0.",
+      "range": {
+        "startLine": 140,
+        "startChar": 16,
+        "endLine": 140,
+        "endChar": 19
+      },
+      "revId": "c6492f9ff83a6253eb6743aa952ccc11b0337024",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b5a541e_4554294c",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T01:26:28Z",
+      "side": 1,
+      "message": "nit: Recommend returning \"nil\" here instead of \"result\".",
+      "range": {
+        "startLine": 141,
+        "startChar": 9,
+        "endLine": 141,
+        "endChar": 15
+      },
+      "revId": "c6492f9ff83a6253eb6743aa952ccc11b0337024",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e546f08c_c35b42bd",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T01:26:28Z",
+      "side": 1,
+      "message": "nit: Declare this in \"Query\" function body, since it\u0027s only used there.",
+      "range": {
+        "startLine": 147,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 27
+      },
+      "revId": "c6492f9ff83a6253eb6743aa952ccc11b0337024",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a635bf30_548ab2d1",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T01:26:28Z",
+      "side": 1,
+      "message": "Make this a \"[]*Change\". Has more natural usage behavior:\n\ne.g,.\nfor _, c :\u003d range m.Collection {\n  c.Author \u003d \"foo\"\n}\n\nIf you use values, this will modify a value clone created for the \"range\" loop. If you use pointers, it will modify the value in \"m.Collection\".",
+      "range": {
+        "startLine": 148,
+        "startChar": 14,
+        "endLine": 148,
+        "endChar": 20
+      },
+      "revId": "c6492f9ff83a6253eb6743aa952ccc11b0337024",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec5c134f_f6e6c9b3",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T01:26:28Z",
+      "side": 1,
+      "message": "Use \"errors.Reason(...).Err()\", offers more utility.",
+      "range": {
+        "startLine": 162,
+        "startChar": 8,
+        "endLine": 162,
+        "endChar": 18
+      },
+      "revId": "c6492f9ff83a6253eb6743aa952ccc11b0337024",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "39e20b68_f0202a54",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T01:26:28Z",
+      "side": 1,
+      "message": "Isn\u0027t there a newline in there too?\n\nI think you should declare (inline):\nconst gerritPrefix \u003d \")]}\u0027\\n\"\n\nThen you can use len(gerritPrefix) instead of \"4\":\ntrash :\u003d make([]byte, len(gerritPrefix))\n\nif cnt !\u003d len(gerritPrefix) || gerritPrefix !\u003d string(trash) { ... }",
+      "range": {
+        "startLine": 170,
+        "startChar": 1,
+        "endLine": 170,
+        "endChar": 6
+      },
+      "revId": "c6492f9ff83a6253eb6743aa952ccc11b0337024",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
