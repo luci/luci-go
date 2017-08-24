@@ -25,6 +25,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/jsontime"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
@@ -120,7 +121,7 @@ type tokenMinterClient interface {
 // The underlying token type is delegation.Token.
 var delegationTokenCache = tokenCache{
 	Kind:                "delegation",
-	Version:             4,
+	Version:             5,
 	ExpRandPercent:      10,
 	MinAcceptedLifetime: 5 * time.Minute,
 }
@@ -285,12 +286,12 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 			now := clock.Now(ctx).UTC()
 			exp := now.Add(time.Duration(subtoken.ValidityDuration) * time.Second)
 			return &cachedToken{
-				Token: delegation.Token{
+				DelegationToken: &delegation.Token{
 					Token:  resp.Token,
-					Expiry: exp,
+					Expiry: jsontime.Time{exp},
 				},
-				Created: now,
-				Expiry:  exp,
+				Created: jsontime.Time{now},
+				Expiry:  jsontime.Time{exp},
 			}, nil, "SUCCESS_CACHE_MISS"
 		},
 	})
@@ -300,7 +301,6 @@ func MintDelegationToken(ctx context.Context, p DelegationTokenParams) (*delegat
 		return nil, err
 	}
 
-	t := cached.Token.(delegation.Token) // let it panic on type mismatch
 	report(nil, label)
-	return &t, nil
+	return cached.DelegationToken, nil
 }

@@ -19,8 +19,7 @@
 package delegation
 
 import (
-	"encoding/gob"
-	"time"
+	"go.chromium.org/luci/common/data/jsontime"
 )
 
 const (
@@ -30,11 +29,8 @@ const (
 
 // Token represents serialized and signed delegation token.
 type Token struct {
-	Token  string    // base64-encoded URL-safe blob with the token
-	Expiry time.Time // UTC time when it expires
-}
-
-func init() {
-	// For the token cache.
-	gob.Register(Token{})
+	// base64-encoded URL-safe blob with the token
+	Token string `json:"token,omitempty"`
+	// UTC time when it expires
+	Expiry jsontime.Time `json:"expiry,omitempty"`
 }

@@ -17,6 +17,7 @@ package auth
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -30,6 +31,11 @@ import (
 
 	"golang.org/x/net/context"
 )
+
+// accessTokenUserCacheKeyVersion is the current cache format version of an
+// access token User lookup. This must be incremented any time an incompatible
+// change is made to User or how User is cached.
+const accessTokenUserCacheKeyVersion = "1"
 
 // GoogleOAuth2Method implements Method on top of Google's OAuth2 endpoint.
 //
@@ -63,10 +69,10 @@ func (m *GoogleOAuth2Method) Authenticate(c context.Context, r *http.Request) (u
 	accessToken := chunks[1]
 
 	// Check cache (without lock).
-	cacheKey := makeAccessTokenCacheKey(accessToken)
+	cacheKey := makeAccessTokenUserCacheKey(accessToken)
 	if cv, err := cfg.Cache.Get(c, cacheKey); err == nil && cv != nil {
 		user = &User{}
-		err := user.unmarshal(cv)
+		err := json.Unmarshal(cv, user)
 		if err == nil {
 			return user, nil
 		}
@@ -83,7 +89,7 @@ func (m *GoogleOAuth2Method) Authenticate(c context.Context, r *http.Request) (u
 		}
 
 		// Add the resolved User to cache.
-		if blob, err := user.marshal(); err == nil {
+		if blob, err := json.Marshal(user); err == nil {
 			if err := cfg.Cache.Set(c, cacheKey, blob, exp); err != nil {
 				logging.WithError(err).Warningf(c, "oauth: Failed to add User to cache.")
 			}
@@ -158,11 +164,11 @@ func (m *GoogleOAuth2Method) authenticateAgainstGoogle(c context.Context, cfg *C
 	return u, exp, nil
 }
 
-// makeAccessTokenCacheKey creates a cache key for the specified access
-// token. To generate this key, we hash the actual access token so that if a
-// memory or cache dump ever occurs, the tokens themselves aren't included in
-// it.
-func makeAccessTokenCacheKey(token string) string {
+// makeAccessTokenUserCacheKey creates a cache key for the specified access
+// token's associated User. To generate this key, we hash the actual access
+// token so that if a memory or cache dump ever occurs, the tokens themselves
+// aren't included in it.
+func makeAccessTokenUserCacheKey(token string) string {
 	h := sha256.Sum256([]byte(token))
-	return "authorization/" + hex.EncodeToString(h[:])
+	return fmt.Sprintf("authorization/%d/%s", accessTokenUserCacheKeyVersion, hex.EncodeToString(h[:]))
 }
