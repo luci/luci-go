@@ -86,8 +86,10 @@ func (t *taskqueueImpl) DeleteMulti(tasks []*tq.Task, queueName string, cb tq.Ra
 		return err
 	}
 
-	for _, task := range tasks {
-		cb(q.deleteTask(task))
+	for i, task := range tasks {
+		if err := q.deleteTask(task); err != nil {
+			cb(i, err)
+		}
 	}
 	return nil
 }

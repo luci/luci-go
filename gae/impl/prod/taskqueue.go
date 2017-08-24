@@ -131,8 +131,10 @@ func (t tqImpl) AddMulti(tasks []*tq.Task, queueName string, cb tq.RawTaskCB) er
 func (t tqImpl) DeleteMulti(tasks []*tq.Task, queueName string, cb tq.RawCB) error {
 	err := taskqueue.DeleteMulti(t.aeCtx, tqMF2R(tasks), queueName)
 	if me, ok := err.(appengine.MultiError); ok {
-		for _, err := range me {
-			cb(err)
+		for i, err := range me {
+			if err != nil {
+				cb(i, err)
+			}
 		}
 		err = nil
 	}

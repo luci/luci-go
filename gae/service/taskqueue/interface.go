@@ -58,10 +58,8 @@ func addRaw(raw RawInterface, queueName string, tasks []*Task) error {
 // encountered when processing the task at that index.
 func Delete(c context.Context, queueName string, tasks ...*Task) error {
 	lme := errors.NewLazyMultiError(len(tasks))
-	i := 0
-	err := Raw(c).DeleteMulti(tasks, queueName, func(err error) {
+	err := Raw(c).DeleteMulti(tasks, queueName, func(i int, err error) {
 		lme.Assign(i, err)
-		i++
 	})
 	if err == nil {
 		err = lme.Get()

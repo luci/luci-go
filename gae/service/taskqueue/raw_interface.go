@@ -18,7 +18,7 @@ import "time"
 
 // RawCB is a simple callback for RawInterface.DeleteMulti, getting the error
 // for the attempted deletion.
-type RawCB func(error)
+type RawCB func(index int, err error)
 
 // RawTaskCB is the callback for RawInterface.AddMulti, getting the added task
 // and an error.
