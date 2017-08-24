@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "233ec05e_00978e1f",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-24T20:32:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "602edbdf_a001e849",
+      "range": {
+        "startLine": 161,
+        "startChar": 32,
+        "endLine": 161,
+        "endChar": 42
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "96ff5e27_74f3113a",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 6
@@ -71,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "ef2c012a_29ae47e5",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-24T20:32:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "96ff5e27_74f3113a",
+      "range": {
+        "startLine": 169,
+        "startChar": 3,
+        "endLine": 172,
+        "endChar": 26
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "01f94b82_e51e7eae",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 6
@@ -91,6 +139,30 @@
       "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aef91504_eed96b91",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-24T20:32:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "01f94b82_e51e7eae",
+      "range": {
+        "startLine": 187,
+        "startChar": 18,
+        "endLine": 187,
+        "endChar": 41
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -141,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "0f7b26a7_fef0db93",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-24T20:32:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9949e102_31e1613d",
+      "range": {
+        "startLine": 193,
+        "startChar": 1,
+        "endLine": 193,
+        "endChar": 35
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d4cdc064_3216672a",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 6
@@ -161,6 +257,30 @@
       "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d298661_71f9ad11",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-24T20:32:08Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "d4cdc064_3216672a",
+      "range": {
+        "startLine": 194,
+        "startChar": 13,
+        "endLine": 194,
+        "endChar": 14
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -282,6 +402,54 @@
     },
     {
       "key": {
+        "uuid": "a6f703f3_7acf9e2f",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-24T20:32:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e950d290_2571c603",
+      "range": {
+        "startLine": 203,
+        "startChar": 14,
+        "endLine": 203,
+        "endChar": 20
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fb30380a_2914c341",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-24T20:32:08Z",
+      "side": 1,
+      "message": "I decided that LogForward will not take a limit. It will return at least one full page of results (one full page plus one possibly partial)\n\nPage size is tweaked by changing the MaxCommitsPerRequest property of the client.",
+      "parentUuid": "fa84e171_3067effe",
+      "range": {
+        "startLine": 203,
+        "startChar": 44,
+        "endLine": 203,
+        "endChar": 52
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1e0cfcf1_135ffca5",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 6
@@ -329,6 +497,30 @@
     },
     {
       "key": {
+        "uuid": "3574cd3f_0911072a",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-24T20:32:08Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "23c57001_7ffe5154",
+      "range": {
+        "startLine": 207,
+        "startChar": 0,
+        "endLine": 207,
+        "endChar": 19
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "846d1d0e_05c5b674",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 6
@@ -340,6 +532,30 @@
       "writtenOn": "2017-08-24T17:29:40Z",
       "side": 1,
       "message": "this is good, but isn\u0027t allocating new slice and just copying commits into it in the right order more efficient *in general* case?",
+      "range": {
+        "startLine": 208,
+        "startChar": 3,
+        "endLine": 216,
+        "endChar": 4
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad5e59d7_a27b77f0",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-24T20:32:08Z",
+      "side": 1,
+      "message": "I thought reversing in place was wise because the page could potentially be huge.",
+      "parentUuid": "846d1d0e_05c5b674",
       "range": {
         "startLine": 208,
         "startChar": 3,
