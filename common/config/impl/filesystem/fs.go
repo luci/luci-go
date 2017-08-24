@@ -305,7 +305,7 @@ func scanDirectory(realPath nativePath) (*scannedConfigs, error) {
 				ConfigSet: configSet.s(), Path: cfgPath.s(),
 				Content:     content,
 				ContentHash: hexHsh,
-				ViewURL:     "file://fake_config.cfg",
+				ViewURL:     "file://./" + filepath.ToSlash(cfgPath.s()),
 			}
 		}
 
