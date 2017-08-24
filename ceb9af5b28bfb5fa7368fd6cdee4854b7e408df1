@@ -258,6 +258,30 @@
     },
     {
       "key": {
+        "uuid": "fa84e171_3067effe",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-24T17:53:12Z",
+      "side": 1,
+      "message": "I\u0027d say there is no point in LogForward with limit if limit applies from the back, it\u0027s just reverse(Log(limit)).\nEventually, I may contribute new API to gitiles to make LogForward more efficient, but even in current implementation limit makes sense as a memory conservation tool as this code buffers at most O(2*page_size) commits in RAM, even though total runtime is still O(len(r0..rx)).\n\n\n$0.02: see my earlier comment - i was recommending to avoid downloading all of them by estimating their total number first.",
+      "parentUuid": "1e1bf513_86475916",
+      "range": {
+        "startLine": 203,
+        "startChar": 44,
+        "endLine": 203,
+        "endChar": 52
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1e0cfcf1_135ffca5",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 6
