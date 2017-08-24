@@ -142,7 +142,7 @@ func (fc *fakeCache) addConfigImpl(cs cfgtypes.ConfigSet, path, formatter, forma
 				ConfigSet:   string(cs),
 				Path:        path,
 				ContentHash: "hash",
-				ViewURL:     "fake_config.cfg",
+				ViewURL:     "https://x.com/view/here",
 			},
 			Content:    content,
 			FormatSpec: backend.FormatSpec{formatter, formatData},
@@ -196,7 +196,7 @@ func (fc *fakeCache) addConfigSets(path string, configSets ...cfgtypes.ConfigSet
 				ConfigSet:   string(cs),
 				Path:        path,
 				ContentHash: "hash",
-				ViewURL:     "fake_config.cfg",
+				ViewURL:     "https://x.com/view/here",
 			},
 			Content: contents[i],
 		}
