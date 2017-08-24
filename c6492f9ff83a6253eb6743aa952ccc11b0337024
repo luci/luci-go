@@ -167,6 +167,30 @@
     },
     {
       "key": {
+        "uuid": "cd6eedac_97b243ac",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-24T21:28:09Z",
+      "side": 1,
+      "message": "I am not sure I follow. Does it mean that instead of binding Query (and all other apis) to a Client receiver, it should be bound to a ClientInterface i.e. anything that implements .get(context, path, qyery, result) error?\n\nAnd then the test would mock the client by declaring its own struct with its own .get method (which doesn\u0027t care about https and host domain)?",
+      "parentUuid": "542485cc_c8480432",
+      "range": {
+        "startLine": 96,
+        "startChar": 1,
+        "endLine": 96,
+        "endChar": 14
+      },
+      "revId": "c6492f9ff83a6253eb6743aa952ccc11b0337024",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "81219b99_f0ffb2a7",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 2

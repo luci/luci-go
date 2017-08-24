@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "911ec278_762a1b5e",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-24T21:28:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "32f5ca28_944c7b03",
+      "range": {
+        "startLine": 158,
+        "startChar": 5,
+        "endLine": 158,
+        "endChar": 14
+      },
+      "revId": "2b3ea8de14839f367f120cc4a541234d0420b3e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "04746aa9_601a94c1",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "2b3ea8de14839f367f120cc4a541234d0420b3e2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed25cac7_22cfb5dc",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-24T21:28:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "04746aa9_601a94c1",
+      "range": {
+        "startLine": 170,
+        "startChar": 0,
+        "endLine": 170,
+        "endChar": 14
+      },
+      "revId": "2b3ea8de14839f367f120cc4a541234d0420b3e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "03b53799_521d31c3",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-24T21:28:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3aa5cdf2_7390ad79",
+      "range": {
+        "startLine": 181,
+        "startChar": 60,
+        "endLine": 181,
+        "endChar": 70
+      },
+      "revId": "2b3ea8de14839f367f120cc4a541234d0420b3e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "18e6d7aa_f501bb7b",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 4
@@ -91,6 +163,30 @@
       "revId": "2b3ea8de14839f367f120cc4a541234d0420b3e2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "afb79c4c_6fc39349",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-24T21:28:09Z",
+      "side": 1,
+      "message": "There is contradictory evidence. Codesearch shows it in some places but not in others. My guess is that since leading whitespace is ignored by most json decoders, not stripping the newline doesn\u0027t break stuff.\n\nIn any case, I tried a few different requests to gerrit with postman and all had the newline, so stripping it.",
+      "parentUuid": "18e6d7aa_f501bb7b",
+      "range": {
+        "startLine": 189,
+        "startChar": 22,
+        "endLine": 189,
+        "endChar": 30
+      },
+      "revId": "2b3ea8de14839f367f120cc4a541234d0420b3e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
