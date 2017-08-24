@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "32f5ca28_944c7b03",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T06:50:52Z",
+      "side": 1,
+      "message": "nit: move this up underneath of struct declaration.",
+      "range": {
+        "startLine": 158,
+        "startChar": 5,
+        "endLine": 158,
+        "endChar": 14
+      },
+      "revId": "2b3ea8de14839f367f120cc4a541234d0420b3e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04746aa9_601a94c1",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T06:50:52Z",
+      "side": 1,
+      "message": "nit: I don\u0027t think this divider is particularly useful.",
+      "range": {
+        "startLine": 170,
+        "startChar": 0,
+        "endLine": 170,
+        "endChar": 14
+      },
+      "revId": "2b3ea8de14839f367f120cc4a541234d0420b3e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3aa5cdf2_7390ad79",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T06:50:52Z",
+      "side": 1,
+      "message": "nit: don\u0027t need \"String()\" here, \"%s\" will automatically do this. Recommend using \"%q\" though b/c not only does it quote the string, but it\u0027ll escape any weirdness. If this is failing b/c something bizarre is in the URL (e.g., \"\\x00\"), you won\u0027t see that with \"%s\", but you will with \"%q\".",
+      "range": {
+        "startLine": 181,
+        "startChar": 60,
+        "endLine": 181,
+        "endChar": 70
+      },
+      "revId": "2b3ea8de14839f367f120cc4a541234d0420b3e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18e6d7aa_f501bb7b",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T06:50:52Z",
+      "side": 1,
+      "message": "(Please verify that I was correct in my assertion that \"\\n\" is part of the prefix, if you haven\u0027t; I was just remembering vaguely) :)",
+      "range": {
+        "startLine": 189,
+        "startChar": 22,
+        "endLine": 189,
+        "endChar": 30
+      },
+      "revId": "2b3ea8de14839f367f120cc4a541234d0420b3e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
