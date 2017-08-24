@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0799ecc4_fefa51aa",
+        "filename": "common/config/impl/filesystem/fs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T16:44:59Z",
+      "side": 1,
+      "message": "We actually have a real filesystem path here, so I think we should use it:\n\nfunc toFileURL(relpath string) string {\n  return \"file://./\" + filepath.ToSlash(relpath)\n}\n\nShould be good enough?",
+      "range": {
+        "startLine": 308,
+        "startChar": 17,
+        "endLine": 308,
+        "endChar": 36
+      },
+      "revId": "d6888dee2c879ccb990e66da729f839d743ed507",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "164fce47_efe4e207",
+        "filename": "common/config/impl/memory/memory.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T16:44:59Z",
+      "side": 1,
+      "message": "Let\u0027s use \"example.com\" instead of \"x.com\", since it\u0027s explicitly reserved for examples and testing:\n\nhttps://en.wikipedia.org/wiki/Example.com",
+      "range": {
+        "startLine": 191,
+        "startChar": 26,
+        "endLine": 191,
+        "endChar": 27
+      },
+      "revId": "d6888dee2c879ccb990e66da729f839d743ed507",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c031e759_273d5183",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T16:44:59Z",
+      "side": 1,
+      "message": "This will only work on Gitiles configs, I think? e.g., on GitHub, you need \"/tree/blob\" and junk. This was one of the reasons that I liked the idea of each Config exporting its own view URL, so the actual construction was not left up to the client app.\n\nIs this accurate, or am I misunderstanding these fields?",
+      "range": {
+        "startLine": 234,
+        "startChar": 23,
+        "endLine": 235,
+        "endChar": 60
+      },
+      "revId": "d6888dee2c879ccb990e66da729f839d743ed507",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
