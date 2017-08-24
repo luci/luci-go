@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b0ee4f41_de251bd2",
+        "filename": "common/config/impl/filesystem/fs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-08-24T18:44:42Z",
+      "side": 1,
+      "message": "I don\u0027t think this would be used elsewhere so I just inlined it --- let me know if you meant a helper function specifically.",
+      "parentUuid": "0799ecc4_fefa51aa",
+      "range": {
+        "startLine": 308,
+        "startChar": 17,
+        "endLine": 308,
+        "endChar": 36
+      },
+      "revId": "d6888dee2c879ccb990e66da729f839d743ed507",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "164fce47_efe4e207",
         "filename": "common/config/impl/memory/memory.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "adc00e0d_bdfbc437",
+        "filename": "common/config/impl/memory/memory.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-08-24T18:44:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "164fce47_efe4e207",
+      "range": {
+        "startLine": 191,
+        "startChar": 26,
+        "endLine": 191,
+        "endChar": 27
+      },
+      "revId": "d6888dee2c879ccb990e66da729f839d743ed507",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c031e759_273d5183",
         "filename": "scheduler/appengine/catalog/catalog.go",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "d6888dee2c879ccb990e66da729f839d743ed507",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "784a0899_f5dd14dc",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-08-24T18:44:42Z",
+      "side": 1,
+      "message": "Yes, and as discussed offline, https://chromium-review.googlesource.com/633908 addresses this point.",
+      "parentUuid": "c031e759_273d5183",
+      "range": {
+        "startLine": 234,
+        "startChar": 23,
+        "endLine": 235,
+        "endChar": 60
+      },
+      "revId": "d6888dee2c879ccb990e66da729f839d743ed507",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
