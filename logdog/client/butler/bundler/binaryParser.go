@@ -59,8 +59,7 @@ func (p *binaryParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 	ts, _ := p.firstChunkTime()
 	e := p.baseLogEntry(ts)
 	e.Content = &logpb.LogEntry_Binary{Binary: &logpb.Binary{
-		Offset: uint64(p.offset),
-		Data:   data[:size],
+		Data: data[:size],
 	}}
 	e.Sequence = uint64(p.offset)
 

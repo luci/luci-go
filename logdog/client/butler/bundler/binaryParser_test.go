@@ -84,8 +84,7 @@ func TestBinaryParser(t *testing.T) {
 				le, err = p.nextEntry(c)
 				So(err, ShouldBeNil)
 				So(le, shouldMatchLogEntry, s.le(6, logpb.Binary{
-					Offset: 6,
-					Data:   []byte{6, 7, 8, 9},
+					Data: []byte{6, 7, 8, 9},
 				}))
 
 				le, err = p.nextEntry(c)
