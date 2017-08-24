@@ -17,6 +17,7 @@ package auth
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -66,7 +67,7 @@ func (m *GoogleOAuth2Method) Authenticate(c context.Context, r *http.Request) (u
 	cacheKey := makeAccessTokenCacheKey(accessToken)
 	if cv, err := cfg.Cache.Get(c, cacheKey); err == nil && cv != nil {
 		user = &User{}
-		err := user.unmarshal(cv)
+		err := json.Unmarshal(cv, user)
 		if err == nil {
 			return user, nil
 		}
@@ -83,7 +84,7 @@ func (m *GoogleOAuth2Method) Authenticate(c context.Context, r *http.Request) (u
 		}
 
 		// Add the resolved User to cache.
-		if blob, err := user.marshal(); err == nil {
+		if blob, err := json.Marshal(user); err == nil {
 			if err := cfg.Cache.Set(c, cacheKey, blob, exp); err != nil {
 				logging.WithError(err).Warningf(c, "oauth: Failed to add User to cache.")
 			}

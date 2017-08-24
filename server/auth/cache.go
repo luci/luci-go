@@ -15,10 +15,9 @@
 package auth
 
 import (
-	"bytes"
 	"crypto/sha1"
 	"encoding/base64"
-	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -26,9 +25,11 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/caching/lru"
+	"go.chromium.org/luci/common/data/jsontime"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/mutexpool"
+	"go.chromium.org/luci/server/auth/delegation"
 )
 
 // Cache implements a strongly consistent cache. Cache may optionally be
@@ -82,10 +83,17 @@ type tokenCache struct {
 
 // cachedToken is stored in a tokenCache.
 type cachedToken struct {
-	Key     string      // cache key, must be unique (no other restrictions)
-	Token   interface{} // the actual token, must be Gob-serializable
-	Created time.Time   // when it was created, required, UTC
-	Expiry  time.Time   // its expiration time, required, UTC
+	// cache key, must be unique (no other restrictions)
+	Key string `json:"key,omitempty"`
+	// when it was created, required, UTC
+	Created jsontime.Time `json:"created,omitempty"`
+	// its expiration time, required, UTC
+	Expiry jsontime.Time `json:"expiry,omitempty"`
+
+	// When caching an OAuth2 token, otherwise nil.
+	OAuth2Token *cachedOAuth2Token `json:"oauth2_token,omitempty"`
+	// When caching a delegation token, otherwise nil.
+	DelegationToken *delegation.Token `json:"delegation_token,omitempty"`
 }
 
 // Store unconditionally puts the token in the cache.
@@ -96,7 +104,7 @@ func (tc *tokenCache) Store(c context.Context, cache Cache, tok *cachedToken) er
 	case tok.Expiry.IsZero() || tok.Expiry.Location() != time.UTC:
 		panic(fmt.Errorf("tok.Expiry is not a valid UTC time - %v", tok.Expiry))
 	}
-	ttl := tok.Expiry.Sub(tok.Created)
+	ttl := tok.Expiry.Sub(tok.Created.Time)
 	if ttl < tc.MinAcceptedLifetime {
 		return fmt.Errorf("refusing to store a token that expires in %s", ttl)
 	}
@@ -137,11 +145,11 @@ func (tc *tokenCache) Fetch(c context.Context, cache Cache, key string, minTTL t
 	now := clock.Now(c).Add(minTTL).UTC()
 
 	// Don't use expiration randomization if the item is far from expiration.
-	exp := tok.Expiry.Sub(tok.Created) * time.Duration(tc.ExpRandPercent) / 100
+	exp := tok.Expiry.Sub(tok.Created.Time) * time.Duration(tc.ExpRandPercent) / 100
 	switch {
-	case now.After(tok.Expiry):
+	case now.After(tok.Expiry.Time):
 		return nil, nil // already passed requested minTTL
-	case now.Add(exp).Before(tok.Expiry):
+	case now.Add(exp).Before(tok.Expiry.Time):
 		return tok, nil // far from requested minTTL
 	}
 
@@ -149,7 +157,7 @@ func (tc *tokenCache) Fetch(c context.Context, cache Cache, key string, minTTL t
 	// TODO(vadimsh): The distribution was picked randomly. Maybe use exponential
 	// one, as some literature suggests?
 	rnd := time.Duration(mathrand.Int63n(c, int64(exp)))
-	if now.Add(rnd).After(tok.Expiry) {
+	if now.Add(rnd).After(tok.Expiry.Time) {
 		return nil, nil
 	}
 	return tok, nil
@@ -169,22 +177,14 @@ func (tc *tokenCache) itemKey(key string) string {
 
 // marshal converts cachedToken struct to byte blob.
 func (tc *tokenCache) marshal(t *cachedToken) ([]byte, error) {
-	buf := bytes.Buffer{}
-	enc := gob.NewEncoder(&buf)
-	if err := enc.Encode(t); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+	return json.Marshal(t)
 }
 
 // unmarshal is reverse of marshal.
 func (tc *tokenCache) unmarshal(blob []byte) (*cachedToken, error) {
-	dec := gob.NewDecoder(bytes.NewReader(blob))
 	out := &cachedToken{}
-	if err := dec.Decode(out); err != nil {
-		return nil, err
-	}
-	return out, nil
+	err := json.Unmarshal(blob, out)
+	return out, err
 }
 
 ////////////////////////////////////////////////////////////////////////////////

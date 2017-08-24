@@ -15,7 +15,6 @@
 package auth
 
 import (
-	"encoding/gob"
 	"fmt"
 	"net/http"
 	"sort"
@@ -27,6 +26,7 @@ import (
 	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/jsontime"
 	"go.chromium.org/luci/common/gcloud/googleoauth"
 	"go.chromium.org/luci/common/gcloud/iam"
 	"go.chromium.org/luci/common/logging"
@@ -56,27 +56,27 @@ type MintAccessTokenParams struct {
 // The underlying token type is cachedOAuth2Token.
 var actorTokenCache = tokenCache{
 	Kind:                "as_actor_tokens",
-	Version:             2,
+	Version:             3,
 	ExpRandPercent:      10,
 	MinAcceptedLifetime: 5 * time.Minute,
 }
 
-// cachedOAuth2Token is gob-serializable representation of the oauth2.Token.
+// cachedOAuth2Token is JSON-serializable representation of the oauth2.Token.
 //
 // It explicitly contains only stuff we want to be in the cache. Storing
 // oauth2.Token directly is dangerous because we don't control what oauth2 lib
 // has in the Token struct (it may be non-serializable).
 type cachedOAuth2Token struct {
-	AccessToken string
-	TokenType   string
-	Expiry      time.Time
+	AccessToken string        `json:"access_token,omitempty"`
+	TokenType   string        `json:"token_type,omitempty"`
+	Expiry      jsontime.Time `json:"expiry,omitempty"`
 }
 
-func makeCachedOAuth2Token(tok *oauth2.Token) cachedOAuth2Token {
-	return cachedOAuth2Token{
+func makeCachedOAuth2Token(tok *oauth2.Token) *cachedOAuth2Token {
+	return &cachedOAuth2Token{
 		AccessToken: tok.AccessToken,
 		TokenType:   tok.TokenType,
-		Expiry:      tok.Expiry,
+		Expiry:      jsontime.Time{tok.Expiry},
 	}
 }
 
@@ -84,12 +84,8 @@ func (c *cachedOAuth2Token) toToken() *oauth2.Token {
 	return &oauth2.Token{
 		AccessToken: c.AccessToken,
 		TokenType:   c.TokenType,
-		Expiry:      c.Expiry,
+		Expiry:      c.Expiry.Time,
 	}
-}
-
-func init() {
-	gob.Register(cachedOAuth2Token{})
 }
 
 // MintAccessTokenForServiceAccount produces an access token for some service
@@ -183,9 +179,9 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 			}.Debugf(ctx, "Minted new actor OAuth token")
 
 			return &cachedToken{
-				Token:   makeCachedOAuth2Token(tok),
-				Created: now,
-				Expiry:  tok.Expiry,
+				OAuth2Token: makeCachedOAuth2Token(tok),
+				Created:     jsontime.Time{now},
+				Expiry:      jsontime.Time{tok.Expiry},
 			}, nil, "SUCCESS_CACHE_MISS"
 		},
 	})
@@ -195,7 +191,6 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 		return nil, err
 	}
 
-	t := cached.Token.(cachedOAuth2Token) // let it panic on type mismatch
 	report(nil, label)
-	return t.toToken(), nil
+	return cached.OAuth2Token.toToken(), nil
 }

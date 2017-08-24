@@ -15,6 +15,7 @@
 package auth
 
 import (
+	"fmt"
 	"math/rand"
 	"testing"
 	"time"
@@ -24,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/jsontime"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/server/auth/delegation"
 	"go.chromium.org/luci/server/auth/delegation/messages"
@@ -87,7 +89,7 @@ func TestMintDelegationToken(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(tok, ShouldResemble, &delegation.Token{
 				Token:  "tok",
-				Expiry: testclock.TestRecentTimeUTC.Add(MaxDelegationTokenTTL),
+				Expiry: jsontime.Time{testclock.TestRecentTimeUTC.Add(MaxDelegationTokenTTL)},
 			})
 			So(mockedClient.request, ShouldResemble, minter.MintDelegationTokenRequest{
 				DelegatedIdentity: "user:abc@example.com",
@@ -99,7 +101,7 @@ func TestMintDelegationToken(t *testing.T) {
 
 			// Cached now.
 			So(tokenCache.(*MemoryCache).LRU.Len(), ShouldEqual, 1)
-			v, _ := tokenCache.Get(ctx, "delegation/4/dL9oZrnNLCIxyUBBaX3eGKAwTbA")
+			v, _ := tokenCache.Get(ctx, fmt.Sprintf("delegation/%d/dL9oZrnNLCIxyUBBaX3eGKAwTbA", delegationTokenCache.Version))
 			So(v, ShouldNotBeNil)
 
 			// On subsequence request the cached token is used.
@@ -135,7 +137,7 @@ func TestMintDelegationToken(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(tok, ShouldResemble, &delegation.Token{
 				Token:  "tok",
-				Expiry: testclock.TestRecentTimeUTC.Add(MaxDelegationTokenTTL),
+				Expiry: jsontime.Time{testclock.TestRecentTimeUTC.Add(MaxDelegationTokenTTL)},
 			})
 			So(mockedClient.request, ShouldResemble, minter.MintDelegationTokenRequest{
 				DelegatedIdentity: "user:abc@example.com",

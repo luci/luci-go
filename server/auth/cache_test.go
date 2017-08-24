@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/jsontime"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -45,16 +46,18 @@ func TestTokenCache(t *testing.T) {
 			ExpRandPercent: 10,
 		}
 
+		someToken := &cachedOAuth2Token{AccessToken: "blah"}
+
 		Convey("check basic usage", func() {
 			itm, err := tc.Fetch(ctx, cache, "some\nkey", 0)
 			So(err, ShouldBeNil)
 			So(itm, ShouldBeNil)
 
 			tok := cachedToken{
-				Key:     "some\nkey",
-				Token:   "blah",
-				Created: clock.Now(ctx).UTC(),
-				Expiry:  clock.Now(ctx).Add(100 * time.Minute).UTC(),
+				Key:         "some\nkey",
+				OAuth2Token: someToken,
+				Created:     jsontime.Time{clock.Now(ctx).UTC()},
+				Expiry:      jsontime.Time{clock.Now(ctx).Add(100 * time.Minute).UTC()},
 			}
 			So(tc.Store(ctx, cache, &tok), ShouldBeNil)
 
@@ -75,10 +78,10 @@ func TestTokenCache(t *testing.T) {
 
 		Convey("check expiration randomization", func() {
 			tok := cachedToken{
-				Key:     "some\nkey",
-				Token:   "blah",
-				Created: clock.Now(ctx).UTC(),
-				Expiry:  clock.Now(ctx).Add(100 * time.Minute).UTC(),
+				Key:         "some\nkey",
+				OAuth2Token: someToken,
+				Created:     jsontime.Time{clock.Now(ctx).UTC()},
+				Expiry:      jsontime.Time{clock.Now(ctx).Add(100 * time.Minute).UTC()},
 			}
 			So(tc.Store(ctx, cache, &tok), ShouldBeNil)
 

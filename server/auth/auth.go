@@ -15,8 +15,6 @@
 package auth
 
 import (
-	"bytes"
-	"encoding/gob"
 	"fmt"
 	"net/http"
 
@@ -84,41 +82,27 @@ type User struct {
 	// Identity is identity string of the user (may be AnonymousIdentity).
 	// If User is returned by Authenticate(...), Identity string is always present
 	// and valid.
-	Identity identity.Identity
+	Identity identity.Identity `json:"identity,omitempty"`
 
 	// Superuser is true if the user is site-level administrator. For example, on
 	// GAE this bit is set for GAE-level administrators. Optional, default false.
-	Superuser bool
+	Superuser bool `json:"superuser,omitempty"`
 
 	// Email is email of the user. Optional, default "". Don't use it as a key
 	// in various structures. Prefer to use Identity() instead (it is always
 	// available).
-	Email string
+	Email string `json:"email,omitempty"`
 
 	// Name is full name of the user. Optional, default "".
-	Name string
+	Name string `json:"name,omitempty"`
 
 	// Picture is URL of the user avatar. Optional, default "".
-	Picture string
+	Picture string `json:"picture,omitempty"`
 
 	// ClientID is the ID of the pre-registered OAuth2 client so its identity can
 	// be verified. Used only by authentication methods based on OAuth2.
 	// See https://developers.google.com/console/help/#generatingoauth2 for more.
-	ClientID string
-}
-
-func (u *User) marshal() ([]byte, error) {
-	buf := bytes.Buffer{}
-	enc := gob.NewEncoder(&buf)
-	if err := enc.Encode(u); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
-func (u *User) unmarshal(v []byte) error {
-	dec := gob.NewDecoder(bytes.NewReader(v))
-	return dec.Decode(u)
+	ClientID string `json:"client_id,omitempty"`
 }
 
 // Authenticator performs authentication of incoming requests.
