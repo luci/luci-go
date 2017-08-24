@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3449a8cf_8ea106cc",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-24T14:21:54Z",
+      "side": 1,
+      "message": "thanks :) I was procrastinating whether to use Gerrit API of say golang\u0027s lib OR roll our own, so thanks for resolving this :)",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 65
+      },
+      "revId": "cb318cff210ec530f05ed4dfb8b9c492f4b70c1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "89254120_48761720",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-24T14:21:54Z",
+      "side": 1,
+      "message": "please add a link to Gerrit\u0027s doc of what each field means\n\n  https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-info\n\nand also this:\n\n  Note that not all fields will necessarily be populated in objects returned by the gerrit API.",
+      "range": {
+        "startLine": 31,
+        "startChar": 23,
+        "endLine": 31,
+        "endChar": 29
+      },
+      "revId": "cb318cff210ec530f05ed4dfb8b9c492f4b70c1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ffba12b5_e7628ec2",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-24T14:21:54Z",
+      "side": 1,
+      "message": "this is ugly bit of Gerrit\u0027s API; I wish we could avoid exposing it as field of Change, but I don\u0027t know how without writing our own unmarshaller. Can you add a doc line here like \n\nused internally, has no relation to this Gerrit Change itself.",
+      "range": {
+        "startLine": 51,
+        "startChar": 1,
+        "endLine": 51,
+        "endChar": 12
+      },
+      "revId": "cb318cff210ec530f05ed4dfb8b9c492f4b70c1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d9e004f_fa52de74",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-24T14:21:54Z",
+      "side": 1,
+      "message": "please also check that it actually ends with \u0027-review.googlesource.com\u0027.",
+      "range": {
+        "startLine": 83,
+        "startChar": 2,
+        "endLine": 83,
+        "endChar": 3
+      },
+      "revId": "cb318cff210ec530f05ed4dfb8b9c492f4b70c1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f575c98e_c5ea218f",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-24T14:21:54Z",
+      "side": 1,
+      "message": "imo, shouldn\u0027t be part of API.\n\nFor testing, one can create Client directly and set necessary flag.",
+      "range": {
+        "startLine": 113,
+        "startChar": 49,
+        "endLine": 113,
+        "endChar": 62
+      },
+      "revId": "cb318cff210ec530f05ed4dfb8b9c492f4b70c1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f686a8fa_a83c37f2",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-24T14:21:54Z",
+      "side": 1,
+      "message": "i don\u0027t think this needs to be public, does it?",
+      "range": {
+        "startLine": 137,
+        "startChar": 24,
+        "endLine": 137,
+        "endChar": 26
+      },
+      "revId": "cb318cff210ec530f05ed4dfb8b9c492f4b70c1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f3c8fee_439af031",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-24T14:21:54Z",
+      "side": 1,
+      "message": "can you erase it to default (False) before returning?\nThis is to ensure API users don\u0027t rely on .MoreChanges attribute.",
+      "range": {
+        "startLine": 167,
+        "startChar": 38,
+        "endLine": 167,
+        "endChar": 49
+      },
+      "revId": "cb318cff210ec530f05ed4dfb8b9c492f4b70c1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f34f61e8_da69cb4a",
+        "filename": "common/api/gerrit/gerrit_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-24T14:21:54Z",
+      "side": 1,
+      "message": "and these are bad examples, should \u0027a-review\u0027 instead.",
+      "range": {
+        "startLine": 52,
+        "startChar": 13,
+        "endLine": 52,
+        "endChar": 14
+      },
+      "revId": "cb318cff210ec530f05ed4dfb8b9c492f4b70c1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
