@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "be556add_31a43370",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-24T17:29:40Z",
+      "side": 1,
+      "message": "i like this constant, but I think it\u0027s misused right now. The way I read the doc (and this is why I suggested to put it into here) is that this is maximum number of commits requested in a single gitiles API call. That means, rawLog() pagesize should be set to this amount unless `limit` parameter is smaller (also, see suggestion to change limit to lowerLimit).\n\nSee https://github.com/google/gitiles/blob/master/gitiles-servlet/src/main/java/com/google/gitiles/LogServlet.java#L73",
+      "range": {
+        "startLine": 102,
+        "startChar": 1,
+        "endLine": 102,
+        "endChar": 21
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "602edbdf_a001e849",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 6
@@ -18,6 +41,75 @@
         "startChar": 32,
         "endLine": 161,
         "endChar": 42
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96ff5e27_74f3113a",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-24T17:29:40Z",
+      "side": 1,
+      "message": "truncating .Log while keeping .Next seems counter to each other and makes reasoning about this log usage harder.\n\nWDYT about s/limit/lowerLimit in this method s.t. \n * this method pages until at least lowerLimit is reached or log is exhausted\n * Log method would truncate to limit and completely ignore .Next.\n * ForwardLog continues as is.",
+      "range": {
+        "startLine": 169,
+        "startChar": 3,
+        "endLine": 172,
+        "endChar": 26
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01f94b82_e51e7eae",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-24T17:29:40Z",
+      "side": 1,
+      "message": "nit: len(...) \u003d\u003d limit-1, contradicting line 189 comment.\nhow about do s/r1/r0 in docs?",
+      "range": {
+        "startLine": 187,
+        "startChar": 18,
+        "endLine": 187,
+        "endChar": 41
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d97aab8_3d88f8c0",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-24T17:29:40Z",
+      "side": 1,
+      "message": "see my comment about maxCommitsPerRequest. I think LogForward shouldn\u0027t care about pageSize at all, at least given its current implementation of looping through *all* commits between rx and r1.",
+      "range": {
+        "startLine": 193,
+        "startChar": 1,
+        "endLine": 193,
+        "endChar": 35
       },
       "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
@@ -71,6 +163,53 @@
     },
     {
       "key": {
+        "uuid": "58c8544f_6c7fe7bc",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-24T17:29:40Z",
+      "side": 1,
+      "message": "Dan, the limit it from the back, so you have to page towards the end no matter what.",
+      "parentUuid": "3b18f403_73caab58",
+      "range": {
+        "startLine": 203,
+        "startChar": 44,
+        "endLine": 203,
+        "endChar": 52
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e950d290_2571c603",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-24T17:29:40Z",
+      "side": 1,
+      "message": "unless you remove truncation inside rawLog as I recommend, this method won\u0027t work correctly because second to last rawLog calls might truncate a few earlier (towards r1) commits.",
+      "range": {
+        "startLine": 203,
+        "startChar": 14,
+        "endLine": 203,
+        "endChar": 20
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1e0cfcf1_135ffca5",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 6
@@ -87,6 +226,53 @@
         "startChar": 0,
         "endLine": 207,
         "endChar": 19
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23c57001_7ffe5154",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-24T17:29:40Z",
+      "side": 1,
+      "message": "hm, i think code is correct in this respect. It must page till r.next is empty, which means we\u0027ve reached the end of Log[Backward] and now can count up to limit[] commits.",
+      "parentUuid": "1e0cfcf1_135ffca5",
+      "range": {
+        "startLine": 207,
+        "startChar": 0,
+        "endLine": 207,
+        "endChar": 19
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "846d1d0e_05c5b674",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-24T17:29:40Z",
+      "side": 1,
+      "message": "this is good, but isn\u0027t allocating new slice and just copying commits into it in the right order more efficient *in general* case?",
+      "range": {
+        "startLine": 208,
+        "startChar": 3,
+        "endLine": 216,
+        "endChar": 4
       },
       "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
