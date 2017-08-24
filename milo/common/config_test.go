@@ -18,12 +18,9 @@ import (
 	"errors"
 	"testing"
 
-	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/appengine/gaetesting"
 	memcfg "go.chromium.org/luci/common/config/impl/memory"
-	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -32,8 +29,7 @@ func TestConfig(t *testing.T) {
 	t.Parallel()
 
 	Convey("Test Environment", t, func() {
-		c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
-		c = gologger.StdConfig.Use(c)
+		c := gaetesting.TestingContextWithAppID("dev~luci-milo")
 
 		Convey("Tests about global configs", func() {
 			Convey("Read a config before anything is set", func() {

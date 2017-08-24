@@ -26,8 +26,8 @@ import (
 	"go.chromium.org/gae/service/info"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/caching/proccache"
 	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/caching"
 )
 
 // Signer implements signing.Signer using GAE App Identity API.
@@ -42,68 +42,70 @@ func (Signer) SignBytes(c context.Context, blob []byte) (keyName string, signatu
 
 // Certificates returns a bundle with public certificates for all active keys.
 func (Signer) Certificates(c context.Context) (*signing.PublicCertificates, error) {
-	certs, err := cachedCerts(c)
-	if err != nil {
-		return nil, err
-	}
-	return certs.(*signing.PublicCertificates), nil
+	return getCachedCerts(c)
 }
 
 // ServiceInfo returns information about the current service.
 //
 // It includes app ID and the service account name (that ultimately owns the
 // signing private key).
-func (Signer) ServiceInfo(c context.Context) (*signing.ServiceInfo, error) {
-	inf, err := cachedInfo(c)
-	if err != nil {
-		return nil, err
-	}
-	return inf.(*signing.ServiceInfo), nil
-}
+func (Signer) ServiceInfo(c context.Context) (*signing.ServiceInfo, error) { return getCachedInfo(c) }
 
 ////
 
 type cacheKey int
 
 // cachedCerts caches this app certs in local memory for 1 hour.
-var cachedCerts = proccache.Cached(cacheKey(0), func(c context.Context, key interface{}) (interface{}, time.Duration, error) {
-	aeCerts, err := info.PublicCertificates(c)
-	if err != nil {
-		return nil, 0, err
-	}
-	certs := make([]signing.Certificate, len(aeCerts))
-	for i, ac := range aeCerts {
-		certs[i] = signing.Certificate{
-			KeyName:            ac.KeyName,
-			X509CertificatePEM: string(ac.Data),
+func getCachedCerts(c context.Context) (*signing.PublicCertificates, error) {
+	v, err := caching.ProcessCache(c).GetOrCreate(c, cacheKey(0), func() (interface{}, time.Duration, error) {
+		aeCerts, err := info.PublicCertificates(c)
+		if err != nil {
+			return nil, 0, err
 		}
-	}
-	cached, err := cachedInfo(c)
-	if err != nil {
-		return nil, 0, err
-	}
-	inf := cached.(*signing.ServiceInfo)
-	return &signing.PublicCertificates{
-		AppID:              inf.AppID,
-		ServiceAccountName: inf.ServiceAccountName,
-		Certificates:       certs,
-		Timestamp:          signing.JSONTime(clock.Now(c)),
-	}, time.Hour, nil
-})
+		certs := make([]signing.Certificate, len(aeCerts))
+		for i, ac := range aeCerts {
+			certs[i] = signing.Certificate{
+				KeyName:            ac.KeyName,
+				X509CertificatePEM: string(ac.Data),
+			}
+		}
+		inf, err := getCachedInfo(c)
+		if err != nil {
+			return nil, 0, err
+		}
 
-// cachedInfo caches this app service info in local memory forever.
+		return &signing.PublicCertificates{
+			AppID:              inf.AppID,
+			ServiceAccountName: inf.ServiceAccountName,
+			Certificates:       certs,
+			Timestamp:          signing.JSONTime(clock.Now(c)),
+		}, time.Hour, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return v.(*signing.PublicCertificates), nil
+}
+
+// getCachedINfo caches this app service info in local memory forever.
 //
 // This info is static during lifetime of the process.
-var cachedInfo = proccache.Cached(cacheKey(1), func(c context.Context, key interface{}) (interface{}, time.Duration, error) {
-	account, err := info.ServiceAccount(c)
+func getCachedInfo(c context.Context) (*signing.ServiceInfo, error) {
+	v, err := caching.ProcessCache(c).GetOrCreate(c, cacheKey(1), func() (interface{}, time.Duration, error) {
+		account, err := info.ServiceAccount(c)
+		if err != nil {
+			return nil, 0, err
+		}
+		return &signing.ServiceInfo{
+			AppID:              info.AppID(c),
+			AppRuntime:         "go",
+			AppRuntimeVersion:  runtime.Version(),
+			AppVersion:         strings.Split(info.VersionID(c), ".")[0],
+			ServiceAccountName: account,
+		}, 0, nil
+	})
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
-	return &signing.ServiceInfo{
-		AppID:              info.AppID(c),
-		AppRuntime:         "go",
-		AppRuntimeVersion:  runtime.Version(),
-		AppVersion:         strings.Split(info.VersionID(c), ".")[0],
-		ServiceAccountName: account,
-	}, 0, nil
-})
+	return v.(*signing.ServiceInfo), nil
+}
