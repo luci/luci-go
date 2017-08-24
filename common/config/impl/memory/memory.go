@@ -188,6 +188,7 @@ func (b ConfigSet) configMaybe(configSet, path string, hashesOnly bool) *config.
 		}
 		if !hashesOnly {
 			cfg.Content = body
+			cfg.ViewURL = fmt.Sprintf("https://example.com/view/here/%s", path)
 		}
 		return cfg
 	}
