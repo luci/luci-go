@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "602edbdf_a001e849",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T15:55:52Z",
+      "side": 1,
+      "message": "nit: QueryEscape this too?",
+      "range": {
+        "startLine": 161,
+        "startChar": 32,
+        "endLine": 161,
+        "endChar": 42
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4cdc064_3216672a",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T15:55:52Z",
+      "side": 1,
+      "message": "nit: \u003c\u003d 0",
+      "range": {
+        "startLine": 194,
+        "startChar": 13,
+        "endLine": 194,
+        "endChar": 14
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b18f403_73caab58",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T15:55:52Z",
+      "side": 1,
+      "message": "You should adjust this as you accumulate records so that you never request more than you actually want.\n\nFor example, if your limit is 1000, you request 1000, get back 500. Next request, you\u0027ll still ask for 1000, even though you only need 500!",
+      "range": {
+        "startLine": 203,
+        "startChar": 44,
+        "endLine": 203,
+        "endChar": 52
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e0cfcf1_135ffca5",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-24T15:55:52Z",
+      "side": 1,
+      "message": "As things stand, if \"r.Next\" is never empty string, you will never stop paging, even if you hit your limit.",
+      "range": {
+        "startLine": 207,
+        "startChar": 0,
+        "endLine": 207,
+        "endChar": 19
+      },
+      "revId": "ceb9af5b28bfb5fa7368fd6cdee4854b7e408df1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
