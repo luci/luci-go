@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a935ba2_a134a828",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/clientImpl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-25T14:52:07Z",
+      "side": 1,
+      "message": "nit: is this a thing now, indenting continued lines? If not, remove spaces.",
+      "revId": "9df6389d21568627f650c52e2b6daba2551796a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31bb0f48_c60c49a4",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/clientImpl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-25T14:52:07Z",
+      "side": 1,
+      "message": "TBH I\u0027d panic here (and elsewhere).",
+      "range": {
+        "startLine": 141,
+        "startChar": 14,
+        "endLine": 141,
+        "endChar": 97
+      },
+      "revId": "9df6389d21568627f650c52e2b6daba2551796a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6f541fd_bbfb6db4",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/clientImpl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-25T14:52:07Z",
+      "side": 1,
+      "message": "nit: document that you\u0027re executing the \"Register Stream/Prefix\" workflow against the in-memory Coordinator instance.",
+      "range": {
+        "startLine": 169,
+        "startChar": 2,
+        "endLine": 169,
+        "endChar": 73
+      },
+      "revId": "9df6389d21568627f650c52e2b6daba2551796a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48acb4f7_da639b95",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/clientImpl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-25T14:52:07Z",
+      "side": 1,
+      "message": "You may want to actually return this error and remove the \"prefix.Validate\" check at the top, letting Coordinator handle this part too. It\u0027d be more realistic to a client.",
+      "range": {
+        "startLine": 174,
+        "startChar": 3,
+        "endLine": 174,
+        "endChar": 73
+      },
+      "revId": "9df6389d21568627f650c52e2b6daba2551796a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e7138cd_871b6654",
+        "filename": "logdog/appengine/coordinator/coordinatorTest/context.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-25T14:52:07Z",
+      "side": 1,
+      "message": "nit: let\u0027s name this \"useRealIndex\" or something.",
+      "range": {
+        "startLine": 189,
+        "startChar": 13,
+        "endLine": 189,
+        "endChar": 22
+      },
+      "revId": "9df6389d21568627f650c52e2b6daba2551796a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9bfc7c6_9b838873",
+        "filename": "logdog/common/storage/memory/memory.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-25T14:52:07Z",
+      "side": 1,
+      "message": "Let\u0027s implement this part in the \"fakeclient\" code. It\u0027s Coordinator-specific, and it\u0027s weird to see it in common code. Plus when editing Coordinator interface, it\u0027s nice to have the effects of said edit be localized.",
+      "range": {
+        "startLine": 265,
+        "startChar": 0,
+        "endLine": 268,
+        "endChar": 1
+      },
+      "revId": "9df6389d21568627f650c52e2b6daba2551796a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
