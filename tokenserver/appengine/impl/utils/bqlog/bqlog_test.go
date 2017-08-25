@@ -41,10 +41,11 @@ import (
 )
 
 var testingLog = Log{
-	QueueName: "pull-queue",
-	ProjectID: "projectID",
-	DatasetID: "datasetID",
-	TableID:   "tableID",
+	QueueName:           "pull-queue",
+	ProjectID:           "projectID",
+	DatasetID:           "datasetID",
+	TableID:             "tableID",
+	DumpEntriesToLogger: true,
 }
 
 func TestInsert(t *testing.T) {

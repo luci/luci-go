@@ -15,15 +15,12 @@
 package serviceaccounts
 
 import (
-	"encoding/json"
 	"net"
 	"time"
 
 	"golang.org/x/net/context"
+	"google.golang.org/appengine"
 
-	"go.chromium.org/gae/service/info"
-
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 
 	"go.chromium.org/luci/tokenserver/api"
@@ -34,9 +31,11 @@ import (
 )
 
 var oauthTokensLog = bqlog.Log{
-	QueueName: "bqlog-oauth-tokens", // see queues.yaml
-	DatasetID: "tokens",             // see bq/README.md
-	TableID:   "oauth_tokens",       // see bq/tables/oauth_tokens.schema
+	QueueName:           "bqlog-oauth-tokens", // see queues.yaml
+	DatasetID:           "tokens",             // see bq/README.md
+	TableID:             "oauth_tokens",       // see bq/tables/oauth_tokens.schema
+	DumpEntriesToLogger: true,
+	DryRun:              appengine.IsDevAppServer(),
 }
 
 // MintedOAuthTokenInfo is passed to LogOAuthToken.
@@ -97,16 +96,7 @@ func (i *MintedOAuthTokenInfo) toBigQueryRow() map[string]interface{} {
 // On dev server, logs to the GAE log only, not to BigQuery (to avoid
 // accidentally pushing fake data to real BigQuery dataset).
 func LogOAuthToken(c context.Context, i *MintedOAuthTokenInfo) error {
-	row := i.toBigQueryRow()
-	if info.IsDevAppServer(c) {
-		blob, err := json.MarshalIndent(row, "", "  ")
-		if err != nil {
-			return err
-		}
-		logging.Debugf(c, "BigQuery log row:\n%s", blob)
-		return nil
-	}
-	return oauthTokensLog.Insert(c, bqlog.Entry{Data: row})
+	return oauthTokensLog.Insert(c, bqlog.Entry{Data: i.toBigQueryRow()})
 }
 
 // FlushOAuthTokensLog sends all buffered logged tokens to BigQuery.

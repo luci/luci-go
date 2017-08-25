@@ -184,6 +184,12 @@ type Log struct {
 	// Default is 1 min.
 	FlushTimeout time.Duration
 
+	// DumpEntriesToLogger makes 'Insert' log all entries (at debug level).
+	DumpEntriesToLogger bool
+
+	// DryRun disables the actual uploads (keeps the local logging though).
+	DryRun bool
+
 	// insertMock is used to mock BigQuery insertAll call in tests.
 	insertMock func(context.Context, *bigquery.TableDataInsertAllRequest) (*bigquery.TableDataInsertAllResponse, error)
 	// beforeSendChunk is used in tests to signal that 'sendChunk' is called.
@@ -211,6 +217,21 @@ type Entry struct {
 // Malformed entries are silently skipped during the flush.
 func (l *Log) Insert(ctx context.Context, entries ...Entry) (err error) {
 	if len(entries) == 0 {
+		return nil
+	}
+
+	if l.DumpEntriesToLogger && logging.IsLogging(ctx, logging.Debug) {
+		for idx, entry := range entries {
+			blob, err := json.MarshalIndent(entry.Data, "", "  ")
+			if err != nil {
+				logging.WithError(err).Errorf(ctx, "Failed to serialize the row #%d", idx)
+			} else {
+				logging.Debugf(ctx, "BigQuery row #%d for %s/%s:\n%s", idx, l.DatasetID, l.TableID, blob)
+			}
+		}
+	}
+
+	if l.DryRun {
 		return nil
 	}
 
