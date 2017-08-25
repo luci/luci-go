@@ -155,7 +155,7 @@ func (ts *TestStream) LogEntry(c context.Context, i int) *logpb.LogEntry {
 	switch ts.Desc.StreamType {
 	case logpb.StreamType_TEXT:
 		le.Content = &logpb.LogEntry_Text{
-			&logpb.Text{
+			Text: &logpb.Text{
 				Lines: []*logpb.Text_Line{
 					{
 						Value:     message,
@@ -167,14 +167,14 @@ func (ts *TestStream) LogEntry(c context.Context, i int) *logpb.LogEntry {
 
 	case logpb.StreamType_BINARY:
 		le.Content = &logpb.LogEntry_Binary{
-			&logpb.Binary{
+			Binary: &logpb.Binary{
 				Data: []byte(message),
 			},
 		}
 
 	case logpb.StreamType_DATAGRAM:
 		le.Content = &logpb.LogEntry_Datagram{
-			&logpb.Datagram{
+			Datagram: &logpb.Datagram{
 				Data: []byte(message),
 			},
 		}

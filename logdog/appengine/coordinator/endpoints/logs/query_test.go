@@ -68,7 +68,7 @@ func TestQuery(t *testing.T) {
 	t.Parallel()
 
 	Convey(`With a testing configuration, a Query request`, t, func() {
-		c, env := ct.Install()
+		c, env := ct.Install(true)
 		c, fb := featureBreaker.FilterRDS(c, nil)
 
 		ds.GetTestable(c).Consistent(true)
