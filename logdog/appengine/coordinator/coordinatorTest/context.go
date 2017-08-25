@@ -54,6 +54,10 @@ import (
 	"golang.org/x/net/context"
 )
 
+// AllAccessProject is the project name that can be used to get a full-access
+// project (i.e. unauthenticated users have both R and W permissions).
+const AllAccessProject = "proj-foo"
+
 // Environment contains all of the testing facilities that are installed into
 // the Context.
 type Environment struct {
@@ -177,7 +181,12 @@ func (e *Environment) RunTaskQueues(c context.Context, tls *TestStream) {
 
 // Install creates a testing Context and installs common test facilities into
 // it, returning the Environment to which they're bound.
-func Install() (context.Context, *Environment) {
+//
+// If automatic is true, this will turn on datastore's automatic indexing
+// functionality as well as full consistency. Otherwise, this will attempt to
+// load the 'index.yaml' file for logdog (but this is loaded from a relative
+// path, so is only really good for the 'coordinator' package).
+func Install(automatic bool) (context.Context, *Environment) {
 	e := Environment{
 		Config:   make(map[string]memory.ConfigSet),
 		GSClient: GSClient{},
@@ -199,13 +208,18 @@ func Install() (context.Context, *Environment) {
 	// Register our task queues.
 	tq.GetTestable(c).CreateQueue(tasks.ArchivalTaskQueue)
 
-	// Load indexes from "index.yaml".
-	mainServicePath := filepath.Join("..", "..", "..", "cmd", "coordinator", "vmuser")
-	indexDefs, err := ds.FindAndParseIndexYAML(mainServicePath)
-	if err != nil {
-		panic(fmt.Errorf("failed to load 'index.yaml': %s", err))
+	if automatic {
+		ds.GetTestable(c).Consistent(true)
+		ds.GetTestable(c).AutoIndex(true)
+	} else {
+		// Load indexes from "index.yaml".
+		mainServicePath := filepath.Join("..", "..", "..", "cmd", "coordinator", "vmuser")
+		indexDefs, err := ds.FindAndParseIndexYAML(mainServicePath)
+		if err != nil {
+			panic(fmt.Errorf("failed to load 'index.yaml': %s", err))
+		}
+		ds.GetTestable(c).AddIndexes(indexDefs...)
 	}
-	ds.GetTestable(c).AddIndexes(indexDefs...)
 
 	// Setup clock.
 	e.Clock = clock.Get(c).(testclock.TestClock)
@@ -249,7 +263,7 @@ func Install() (context.Context, *Environment) {
 			}
 		})
 	}
-	addProjectConfig("proj-foo", "all:R", "all:W")
+	addProjectConfig(AllAccessProject, "all:R", "all:W")
 	addProjectConfig("proj-bar", "all:R", "auth:W")
 	addProjectConfig("proj-exclusive", "auth:R", "auth:W")
 
