@@ -29,68 +29,75 @@ import (
 )
 
 func TestShared(t *testing.T) {
-	Convey("RunShared executes the command", t, func() {
-		var tempDir string
+	Convey("RunShared", t, func() {
+		var lockFileDir string
 		var err error
-
-		if tempDir, err = ioutil.TempDir("", ""); err != nil {
+		if lockFileDir, err = ioutil.TempDir("", ""); err != nil {
 			panic(err)
 		}
-		defer os.Remove(tempDir)
+		lockFilePath := filepath.Join(lockFileDir, "mmutex.lock")
+		defer func() {
+			os.Remove(lockFileDir)
+		}()
 
-		testFilePath := filepath.Join(tempDir, "test")
-		var command []string
-		if runtime.GOOS == "windows" {
-			command = createCommand([]string{"copy", "NUL", testFilePath})
-		} else {
-			command = createCommand([]string{"touch", testFilePath})
-		}
+		Convey("executes the command", func() {
+			var tempDir string
+			var err error
 
-		So(RunShared(command, 0, 0), ShouldBeNil)
+			if tempDir, err = ioutil.TempDir("", ""); err != nil {
+				panic(err)
+			}
+			defer os.Remove(tempDir)
 
-		_, err = os.Stat(testFilePath)
-		So(err, ShouldBeNil)
+			testFilePath := filepath.Join(tempDir, "test")
+			var command []string
+			if runtime.GOOS == "windows" {
+				command = createCommand([]string{"copy", "NUL", testFilePath})
+			} else {
+				command = createCommand([]string{"touch", testFilePath})
+			}
+
+			So(RunShared(command, lockFilePath, 0, 0), ShouldBeNil)
+
+			_, err = os.Stat(testFilePath)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("returns error from the command", func() {
+			So(RunShared([]string{"nonexistent_command"}, lockFilePath, 0, 0), ShouldErrLike, "executable file not found")
+		})
+
+		Convey("times out if an exclusive lock isn't released", func() {
+			var handle fslock.Handle
+			var err error
+
+			if handle, err = fslock.Lock(lockFilePath); err != nil {
+				panic(err)
+			}
+			defer handle.Unlock()
+
+			start := time.Now()
+			So(RunShared([]string{"echo", "should_fail"}, lockFilePath, 5*time.Millisecond, 0), ShouldErrLike, "fslock: lock is held")
+			So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
+		})
+
+		Convey("executes the command if shared lock already held", func() {
+			var handle fslock.Handle
+			var err error
+
+			if handle, err = fslock.LockShared(lockFilePath); err != nil {
+				panic(err)
+			}
+			defer handle.Unlock()
+
+			So(RunShared(createCommand([]string{"echo", "should_succeed"}), lockFilePath, 0, 0), ShouldBeNil)
+		})
+
+		// TODO(charliea): Add a test to ensure that RunShared() treats the presence of a drain file the
+		// same as a held lock.
 	})
 
-	Convey("RunShared returns error from the command", t, func() {
-		So(RunShared([]string{"nonexistent_command"}, 0, 0), ShouldErrLike, "executable file not found")
+	Convey("RunExclusive acts as a passthrough if lockFilePath is empty", t, func() {
+		So(RunShared(createCommand([]string{"echo", "should_succeed"}), "", 0, 0), ShouldBeNil)
 	})
-
-	Convey("RunShared times out if an exclusive lock isn't released", t, func() {
-		var handle fslock.Handle
-		var err error
-
-		if handle, err = fslock.Lock(LockFilePath); err != nil {
-			panic(err)
-		}
-		defer handle.Unlock()
-
-		start := time.Now()
-		So(RunShared([]string{"echo", "should_fail"}, 5*time.Millisecond, 0), ShouldErrLike, "fslock: lock is held")
-		So(time.Now(), ShouldHappenOnOrAfter, start.Add(5*time.Millisecond))
-	})
-
-	Convey("RunShared executes the command if shared lock already held", t, func() {
-		var handle fslock.Handle
-		var err error
-
-		if handle, err = fslock.LockShared(LockFilePath); err != nil {
-			panic(err)
-		}
-		defer handle.Unlock()
-
-		So(RunShared(createCommand([]string{"echo", "should_succeed"}), 0, 0), ShouldBeNil)
-	})
-
-	// TODO(charliea): Add a test to ensure that RunShared() treats the presence of a drain file the
-	// same as a held lock.
-
-	// TODO(charliea): Add a test to ensure that RunShared() uses the $CHOPS_SERVICE_LOCK environment
-	// variable to determine the directory for the lock and drain files.
-
-	// TODO(charliea): Add a test to ensure that RunShared() just acts as a passthrough if
-	// the $CHOPS_SERVICE_LOCK directory isn't set.
-
-	// TODO(charliea): Add a test to ensure that RunShared() just acts as a passthrough if
-	// the $CHOPS_SERVICE_LOCK directory doesn't exist.
 }
