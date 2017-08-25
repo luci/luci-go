@@ -96,12 +96,7 @@ func (c *expArchiveRun) main() error {
 		quiet:     c.commonServerFlags.commonFlags.defaultFlags.Quiet,
 	}
 
-	err = doExpArchive(ctx, client, archiveOpts, c.dumpJSON, al)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return doExpArchive(ctx, client, archiveOpts, c.dumpJSON, al)
 }
 
 // doExparchive performs the exparchive operation for an isolate specified by archiveOpts.
