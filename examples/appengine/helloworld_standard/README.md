@@ -66,6 +66,22 @@ ln -s ../../../../../../../../luci/appengine/components/tools/gae.py gae.py
 ./gae.py devserver
 ```
 
+## Using the RPC Explorer.
+
+First make sure the explorer is built.
+
+If it has not been, and you are using infra.git gclient solution and already
+have node and npm, run:
+
+```shell
+cd go.chromium.org/luci/web
+./web.py build rpcexplorer
+```
+
+For full instructions, see [here](https://chromium.googlesource.com/infra/luci/luci-go/+/master/web/README.md).
+
+Once the devserver is running (e.g. at `localhost:8080`), visit `localhost:8080/rpcexplorer/`.
+
 ## Deploying and configuring
 
 Use `gae.py` to deploy:
