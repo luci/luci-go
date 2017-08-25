@@ -45,6 +45,7 @@ func cmdArchive(defaultAuthOpts auth.Options) *subcommands.Command {
 			c.commonServerFlags.Init(defaultAuthOpts)
 			c.isolateFlags.Init(&c.Flags)
 			c.loggingFlags.Init(&c.Flags)
+			c.Flags.BoolVar(&c.expArchive, "exparchive", false, "Whether to use the new exparchive implementation, which tars small files before uploading them.")
 			return &c
 		},
 	}
@@ -54,6 +55,7 @@ type archiveRun struct {
 	commonServerFlags
 	isolateFlags
 	loggingFlags loggingFlags
+	expArchive   bool
 }
 
 func (c *archiveRun) Parse(a subcommands.Application, args []string) error {
@@ -83,12 +85,16 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 	client := isolatedclient.New(nil, authCl, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
 
 	al := archiveLogger{
-		logger:    NewLogger(ctx, c.loggingFlags.EventlogEndpoint),
-		operation: logpb.IsolateClientEvent_LEGACY_ARCHIVE.Enum(),
-		start:     start,
-		quiet:     c.defaultFlags.Quiet,
+		logger: NewLogger(ctx, c.loggingFlags.EventlogEndpoint),
+		start:  start,
+		quiet:  c.defaultFlags.Quiet,
 	}
 
+	if c.expArchive {
+		al.operation = logpb.IsolateClientEvent_ARCHIVE.Enum()
+		return doExpArchive(ctx, client, &c.ArchiveOptions, "", al)
+	}
+	al.operation = logpb.IsolateClientEvent_LEGACY_ARCHIVE.Enum()
 	return doArchive(ctx, client, &c.ArchiveOptions, al)
 }
 
