@@ -4,6 +4,10 @@ runtime: go
 api_version: go1
 
 handlers:
+- url: /static
+  static_dir: .
+  secure: always
+
 - url: /static/bootstrap
   static_dir: bootstrap
   secure: always
