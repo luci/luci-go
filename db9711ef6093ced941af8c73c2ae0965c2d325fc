@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1a160c88_2b1b3414",
+        "filename": "examples/appengine/helloworld_standard/README.md",
+        "patchSetId": 3
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-08-25T23:22:01Z",
+      "side": 1,
+      "message": "nit: I think these two paragraphs can be joined, otherwise a reader may not know how they should make sure that the explorer is built",
+      "revId": "db9711ef6093ced941af8c73c2ae0965c2d325fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
