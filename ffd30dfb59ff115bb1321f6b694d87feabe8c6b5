@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a769ac97_9328c1b7",
+        "filename": "appengine/gaemiddleware/flex/env.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-25T00:27:00Z",
+      "side": 1,
+      "message": "is this still correct?",
+      "range": {
+        "startLine": 78,
+        "startChar": 23,
+        "endLine": 78,
+        "endChar": 59
+      },
+      "revId": "ffd30dfb59ff115bb1321f6b694d87feabe8c6b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c4eb776_69308260",
+        "filename": "appengine/gaemiddleware/flex/env.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-25T00:27:00Z",
+      "side": 1,
+      "message": "maybe \n\n IsDevMode: !metadata.OnGCE()\n\n?\n\n(https://godoc.org/cloud.google.com/go/compute/metadata#OnGCE)",
+      "range": {
+        "startLine": 79,
+        "startChar": 23,
+        "endLine": 79,
+        "endChar": 28
+      },
+      "revId": "ffd30dfb59ff115bb1321f6b694d87feabe8c6b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd242c4b_ea382da6",
+        "filename": "appengine/gaemiddleware/flex/prpc.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-25T00:27:00Z",
+      "side": 1,
+      "message": "I think we might need to move https://chromium.googlesource.com/infra/luci/luci-go/+/master/appengine/gaeauth/server/prpc.go into standard/* and add similar thing to flex/*, so importing either standard or flex is sufficient to make pRPC work. Can be a separate CL though.",
+      "range": {
+        "startLine": 26,
+        "startChar": 5,
+        "endLine": 26,
+        "endChar": 29
+      },
+      "revId": "ffd30dfb59ff115bb1321f6b694d87feabe8c6b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
