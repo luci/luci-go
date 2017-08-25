@@ -54,6 +54,10 @@ import (
 	"golang.org/x/net/context"
 )
 
+// AllAccessProject is the project name that can be used to get a full-access
+// project (i.e. unauthenticated users have both R and W permissions).
+const AllAccessProject = "proj-foo"
+
 // Environment contains all of the testing facilities that are installed into
 // the Context.
 type Environment struct {
@@ -249,7 +253,7 @@ func Install() (context.Context, *Environment) {
 			}
 		})
 	}
-	addProjectConfig("proj-foo", "all:R", "all:W")
+	addProjectConfig(AllAccessProject, "all:R", "all:W")
 	addProjectConfig("proj-bar", "all:R", "auth:W")
 	addProjectConfig("proj-exclusive", "auth:R", "auth:W")
 
