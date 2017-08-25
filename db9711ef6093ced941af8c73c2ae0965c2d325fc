@@ -16,6 +16,24 @@
       "revId": "db9711ef6093ced941af8c73c2ae0965c2d325fc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc4134d6_af7ece98",
+        "filename": "examples/appengine/helloworld_standard/README.md",
+        "patchSetId": 3
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-08-25T23:31:17Z",
+      "side": 1,
+      "message": "Sure, rephrased at https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/636475",
+      "parentUuid": "1a160c88_2b1b3414",
+      "revId": "db9711ef6093ced941af8c73c2ae0965c2d325fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
