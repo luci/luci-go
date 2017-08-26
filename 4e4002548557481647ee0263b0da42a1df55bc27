@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d9337673_32ea355c",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1002882
+      },
+      "writtenOn": "2017-08-26T00:31:31Z",
+      "side": 1,
+      "message": "Could we clear it ourselves?",
+      "range": {
+        "startLine": 176,
+        "startChar": 2,
+        "endLine": 177,
+        "endChar": 24
+      },
+      "revId": "4e4002548557481647ee0263b0da42a1df55bc27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43710c79_fbe52ca2",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1002882
+      },
+      "writtenOn": "2017-08-26T00:31:31Z",
+      "side": 1,
+      "message": "Why it is just the last page? IIUC, the code below will merge all pages and return them all together in reverse order.",
+      "range": {
+        "startLine": 201,
+        "startChar": 55,
+        "endLine": 201,
+        "endChar": 64
+      },
+      "revId": "4e4002548557481647ee0263b0da42a1df55bc27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
