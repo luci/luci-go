@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "82d2b7c1_14d99203",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-26T00:12:33Z",
+      "side": 1,
+      "message": "go fmt likes it like this. (I think the comments break the automatic alignment)",
+      "parentUuid": "f1dc10d1_71ac417e",
+      "range": {
+        "startLine": 59,
+        "startChar": 13,
+        "endLine": 59,
+        "endChar": 40
+      },
+      "revId": "fcae87f7d7bda1b43ca0bbd98aec3eb217dbc033",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9113327b_0f901abc",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 6
@@ -45,6 +69,30 @@
       "revId": "fcae87f7d7bda1b43ca0bbd98aec3eb217dbc033",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81308339_af5d2bec",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-26T00:12:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9113327b_0f901abc",
+      "range": {
+        "startLine": 154,
+        "startChar": 54,
+        "endLine": 154,
+        "endChar": 60
+      },
+      "revId": "fcae87f7d7bda1b43ca0bbd98aec3eb217dbc033",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
