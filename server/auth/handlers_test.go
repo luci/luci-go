@@ -22,7 +22,9 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -50,7 +52,8 @@ func TestCertificatesHandler(t *testing.T) {
 		// Note: there are two contexts. One for outter /certificates call
 		// (this one), and another for /certificates request handler (it is setup
 		// in the middleware chain above).
-		ctx := setConfig(context.Background(), &cfgWithTransport)
+		ctx := caching.WithProcessCache(context.Background(), lru.New(0))
+		ctx = setConfig(ctx, &cfgWithTransport)
 		return signing.FetchCertificates(ctx, ts.URL+"/auth/api/v1/server/certificates")
 	}
 

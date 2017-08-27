@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/common/data/caching/lru"
 
 	"go.chromium.org/luci/luci_config/server/cfgclient"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
@@ -53,8 +54,7 @@ func TestLRUCache(t *testing.T) {
 			Provider: &lcp,
 		}
 
-		be = LRUBackend(be, 1024, time.Hour)
-		c = backend.WithBackend(c, be)
+		c = backend.WithBackend(c, LRUBackend(be, lru.New(0), time.Hour))
 
 		Convey(`Will store and cache a value.`, func() {
 			var s string
