@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9e241f88_5702a2af",
+        "filename": "appengine/gaemiddleware/flex/env.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-28T22:10:44Z",
+      "side": 1,
+      "message": "Ugh this is what I get for chatting with Robbie while I modify code. Thanks :(",
+      "parentUuid": "f3f65dc3_4f3e9a97",
+      "range": {
+        "startLine": 79,
+        "startChar": 23,
+        "endLine": 79,
+        "endChar": 39
+      },
+      "revId": "08c881275370bdf8709af6f6a7d14c4e3a74d54b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "27d5d5d6_0b068d10",
         "filename": "appengine/gaemiddleware/flex/prpc.go",
         "patchSetId": 7
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "6fa123d5_d470e780",
+        "filename": "appengine/gaemiddleware/flex/prpc.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-28T22:10:44Z",
+      "side": 1,
+      "message": "Yeah I think that might actually be a good thing.",
+      "parentUuid": "27d5d5d6_0b068d10",
+      "range": {
+        "startLine": 24,
+        "startChar": 5,
+        "endLine": 24,
+        "endChar": 11
+      },
+      "revId": "08c881275370bdf8709af6f6a7d14c4e3a74d54b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bcd6c64b_506aa669",
         "filename": "appengine/gaemiddleware/flex/prpc.go",
         "patchSetId": 7
@@ -59,6 +107,30 @@
       "writtenOn": "2017-08-28T21:45:21Z",
       "side": 1,
       "message": "auth.GoogleOAuth2Method (from server/auth package)",
+      "range": {
+        "startLine": 27,
+        "startChar": 4,
+        "endLine": 27,
+        "endChar": 23
+      },
+      "revId": "08c881275370bdf8709af6f6a7d14c4e3a74d54b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af4851b6_7422cad5",
+        "filename": "appengine/gaemiddleware/flex/prpc.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-28T22:10:44Z",
+      "side": 1,
+      "message": "ah yes, done.",
+      "parentUuid": "bcd6c64b_506aa669",
       "range": {
         "startLine": 27,
         "startChar": 4,
