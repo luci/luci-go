@@ -22,10 +22,10 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/data/caching/proccache"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/identity"
 	"go.chromium.org/luci/server/auth/internal"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/tokens"
 )
 
@@ -69,7 +69,7 @@ func fetchDiscoveryDoc(c context.Context, url string) (*discoveryDoc, error) {
 	}
 
 	// Cache the document in the process cache.
-	cached, err := proccache.GetOrMake(c, discoveryDocCacheKey(url), fetcher)
+	cached, err := caching.ProcessCache(c).GetOrCreate(c, discoveryDocCacheKey(url), fetcher)
 	if err != nil {
 		return nil, err
 	}

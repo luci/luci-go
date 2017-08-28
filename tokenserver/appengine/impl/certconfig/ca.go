@@ -26,8 +26,8 @@ import (
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/caching/lazyslot"
-	"go.chromium.org/luci/common/data/caching/proccache"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 )
@@ -142,7 +142,7 @@ func LoadCAUniqueIDToCNMap(c context.Context) (map[int64]string, error) {
 // It uses cached CAUniqueIDToCNMap for lookups. Returns empty string if there's
 // no such CA.
 func GetCAByUniqueID(c context.Context, id int64) (string, error) {
-	mapper, err := proccache.GetOrMake(c, mapperCacheKey(0), func() (interface{}, time.Duration, error) {
+	mapper, err := caching.ProcessCache(c).GetOrCreate(c, mapperCacheKey(0), func() (interface{}, time.Duration, error) {
 		return makeIDToCNmapper(), 0, nil
 	})
 	if err != nil {
@@ -153,7 +153,8 @@ func GetCAByUniqueID(c context.Context, id int64) (string, error) {
 
 type mapperCacheKey int
 
-// idToCNmapper is stored in proccache, it does "unique ID -> CN name" mapping.
+// idToCNmapper is stored in process cache, it does "unique ID -> CN name"
+// mapping.
 //
 // It holds cached copy of CAUniqueIDToCNMap, periodically refreshing it.
 type idToCNmapper struct {

@@ -28,8 +28,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/data/caching/proccache"
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -105,7 +106,7 @@ func testContext() context.Context {
 	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 	ctx = memory.Use(ctx)
 	ctx = mathrand.Set(ctx, rand.New(rand.NewSource(2)))
-	ctx = proccache.Use(ctx, &proccache.Cache{})
+	ctx = caching.WithProcessCache(ctx, lru.New(0))
 	return ctx
 }
 

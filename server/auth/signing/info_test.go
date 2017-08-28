@@ -21,8 +21,10 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/auth/identity"
 	"go.chromium.org/luci/server/auth/internal"
+	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -30,6 +32,8 @@ import (
 
 func TestFetchServiceInfo(t *testing.T) {
 	Convey("Works", t, func() {
+		ctx := caching.WithProcessCache(context.Background(), lru.New(0))
+
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`{
 				"app_id": "some-app-id",
@@ -39,7 +43,7 @@ func TestFetchServiceInfo(t *testing.T) {
 				"service_account_name": "some-app-id@appspot.gserviceaccount.com"
 			}`))
 		}))
-		info, err := FetchServiceInfo(context.Background(), ts.URL)
+		info, err := FetchServiceInfo(ctx, ts.URL)
 		So(err, ShouldBeNil)
 		So(info, ShouldResemble, &ServiceInfo{
 			AppID:              "some-app-id",
@@ -51,10 +55,12 @@ func TestFetchServiceInfo(t *testing.T) {
 	})
 
 	Convey("Error", t, func() {
+		ctx := caching.WithProcessCache(context.Background(), lru.New(0))
+
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "fail", http.StatusInternalServerError)
 		}))
-		info, err := FetchServiceInfo(context.Background(), ts.URL)
+		info, err := FetchServiceInfo(ctx, ts.URL)
 		So(info, ShouldBeNil)
 		So(err, ShouldNotBeNil)
 	})
@@ -62,7 +68,7 @@ func TestFetchServiceInfo(t *testing.T) {
 
 func TestFetchLUCIServiceIdentity(t *testing.T) {
 	Convey("Works", t, func() {
-		ctx := context.Background()
+		ctx := caching.WithProcessCache(context.Background(), lru.New(0))
 		ctx = internal.WithTestTransport(ctx, func(r *http.Request, body string) (code int, response string) {
 			if r.URL.String() != "https://blah/auth/api/v1/server/info" {
 				return 400, "Wrong URL"

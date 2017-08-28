@@ -60,14 +60,13 @@ func (mc *MessageCache) Get(c context.Context, cset cfgtypes.ConfigSet, path str
 	var v interface{}
 	var err error
 	pc := caching.ProcessCache(c)
-	pc.GetOrCreate(c, key, func() (interface{}, time.Duration, error) {
+	v, err = pc.GetOrCreate(c, key, func() (interface{}, time.Duration, error) {
 		// Not in cache or expired. Reload...
 		if err := mc.GetUncached(c, cset, path, msg); err != nil {
 			return nil, 0, err
 		}
-		return msg, mc.Lifetime, nil
+		return proto.Clone(msg), mc.Lifetime, nil
 	})
-
 	if err != nil {
 		return nil, err
 	}

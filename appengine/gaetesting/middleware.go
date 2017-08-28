@@ -15,20 +15,47 @@
 package gaetesting
 
 import (
+	"flag"
+
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
-	"go.chromium.org/luci/common/data/caching/proccache"
+	"go.chromium.org/luci/common/data/caching/lru"
+	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/secrets/testsecrets"
 )
 
+var goLogger = flag.Bool("test.gologger", false, "Enable console logging during test.")
+
 // TestingContext returns context with base services installed:
 //   * go.chromium.org/gae/impl/memory (in-memory appengine services)
+//   * go.chromium.org/luci/server/caching (access to process cache)
 //   * go.chromium.org/luci/server/secrets/testsecrets (access to fake secret keys)
 func TestingContext() context.Context {
 	c := context.Background()
 	c = memory.Use(c)
+	return commonTestingContext(c)
+}
+
+// TestingContextWithAppID returns context with the specified App ID and base
+// services installed:
+//   * go.chromium.org/gae/impl/memory (in-memory appengine services)
+//   * go.chromium.org/luci/server/caching (access to process cache)
+//   * go.chromium.org/luci/server/secrets/testsecrets (access to fake secret keys)
+func TestingContextWithAppID(appID string) context.Context {
+	c := context.Background()
+	c = memory.UseWithAppID(c, appID)
+	return commonTestingContext(c)
+}
+
+func commonTestingContext(c context.Context) context.Context {
 	c = testsecrets.Use(c)
-	c = proccache.Use(c, &proccache.Cache{})
+	c = caching.WithProcessCache(c, lru.New(0))
+
+	if *goLogger {
+		c = gologger.StdConfig.Use(c)
+	}
+
 	return c
 }

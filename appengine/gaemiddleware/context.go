@@ -23,7 +23,6 @@ import (
 
 	"go.chromium.org/luci/common/data/caching/cacheContext"
 	"go.chromium.org/luci/common/data/caching/lru"
-	"go.chromium.org/luci/common/data/caching/proccache"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/server/caching"
@@ -81,9 +80,6 @@ type Environment struct {
 }
 
 var (
-	// globalProcessCache holds state cached between requests.
-	globalProcessCache = &proccache.Cache{}
-
 	// globalLRUCache holds state cached between requests.
 	//
 	// TODO: We should choose a maximum LRU size here to stop this from growing
@@ -115,6 +111,8 @@ func (e *Environment) With(c context.Context, req *http.Request) context.Context
 	// Set an initial logging level. We'll configure this to be more specific
 	// later once we can load settings.
 	c = logging.SetLevel(c, logging.Debug)
+
+	// Install global process and request LRU caches.
 	c = caching.WithProcessCache(c, globalLRUCache)
 	c = caching.WithRequestCache(c, nil)
 
@@ -139,7 +137,6 @@ func (e *Environment) With(c context.Context, req *http.Request) context.Context
 	}
 
 	// The rest of the service may use applied configuration.
-	c = proccache.Use(c, globalProcessCache)
 	if e.WithConfig != nil {
 		c = e.WithConfig(c)
 	}

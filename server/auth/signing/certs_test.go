@@ -23,6 +23,9 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/data/caching/lru"
+	"go.chromium.org/luci/server/caching"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -39,6 +42,8 @@ I69yAHZUpJ9lzcwmHcaCJ76m/jDINZrYoL/4aSlDEGgHmw==
 
 func TestFetchCertificates(t *testing.T) {
 	Convey("Works", t, func() {
+		ctx := caching.WithProcessCache(context.Background(), lru.New(0))
+
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(fmt.Sprintf(`{
 				"service_account_name": "blah@blah.com",
@@ -49,21 +54,25 @@ func TestFetchCertificates(t *testing.T) {
 				"timestamp": 1446166229439210
 			}`, certBlob)))
 		}))
-		certs, err := FetchCertificates(context.Background(), ts.URL)
+		certs, err := FetchCertificates(ctx, ts.URL)
 		So(err, ShouldBeNil)
 		So(certs.ServiceAccountName, ShouldEqual, "blah@blah.com")
 		So(len(certs.Certificates), ShouldEqual, 1)
 	})
 
 	Convey("Errors", t, func() {
+		ctx := caching.WithProcessCache(context.Background(), lru.New(0))
+
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "fail", 401)
 		}))
-		_, err := FetchCertificates(context.Background(), ts.URL)
+		_, err := FetchCertificates(ctx, ts.URL)
 		So(err, ShouldNotBeNil)
 	})
 
 	Convey("Bad JSON", t, func() {
+		ctx := caching.WithProcessCache(context.Background(), lru.New(0))
+
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(fmt.Sprintf(`{
 				"certificates": [{
@@ -73,7 +82,7 @@ func TestFetchCertificates(t *testing.T) {
 				"timestamp": "not an int"
 			}`, certBlob)))
 		}))
-		_, err := FetchCertificates(context.Background(), ts.URL)
+		_, err := FetchCertificates(ctx, ts.URL)
 		So(err, ShouldNotBeNil)
 	})
 }
@@ -90,7 +99,9 @@ func TestFetchCertificatesForServiceAccount(t *testing.T) {
 					"f5db308971078d1496c262cc06b6e7f87652af55": "-----BEGIN CERTIFICATE-----\nblah 2\n-----END CERTIFICATE-----\n"
 			}`))
 		}))
-		c := context.WithValue(context.Background(), robotCertURLKey(0), ts.URL+"/")
+
+		c := caching.WithProcessCache(context.Background(), lru.New(0))
+		c = context.WithValue(c, robotCertURLKey(0), ts.URL+"/")
 		certs, err := FetchCertificatesForServiceAccount(c, "robot@robots.gserviceaccount.com")
 		So(err, ShouldBeNil)
 		So(certs.ServiceAccountName, ShouldEqual, "robot@robots.gserviceaccount.com")

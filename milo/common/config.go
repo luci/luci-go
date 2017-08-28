@@ -25,12 +25,12 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 	configInterface "go.chromium.org/luci/common/config"
-	"go.chromium.org/luci/common/data/caching/proccache"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/luci_config/server/cfgclient"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
+	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/milo/api/config"
 )
@@ -124,7 +124,7 @@ func LuciConfigURL(c context.Context, configSet, path, revision string) string {
 	return fmt.Sprintf("https://luci-config.appspot.com/newui#/%s", configSet)
 }
 
-// The key for the service config entity in datastore.
+// ServiceConfigID is the key for the service config entity in datastore.
 const ServiceConfigID = "service_config"
 
 // ServiceConfig is a container for the instance's service config.
@@ -143,7 +143,7 @@ type ServiceConfig struct {
 	LastUpdated time.Time
 }
 
-// GetServiceConfig returns the service (aka global) config for the current
+// GetSettings returns the service (aka global) config for the current
 // instance of Milo from the datastore.  Returns an empty config and warn heavily
 // if none is found.
 // TODO(hinoka): Use process cache to cache configs.
@@ -179,7 +179,7 @@ func GetSettings(c context.Context) *config.Settings {
 func GetCurrentServiceConfig(c context.Context) (*ServiceConfig, error) {
 	// This maker function is used to do the actual fetch of the ServiceConfig
 	// from datastore.  It is called if the ServiceConfig is not in proc cache.
-	maker := func() (interface{}, time.Duration, error) {
+	item, err := caching.ProcessCache(c).GetOrCreate(c, ServiceConfigID, func() (interface{}, time.Duration, error) {
 		msg := ServiceConfig{ID: ServiceConfigID}
 		err := datastore.Get(c, &msg)
 		if err != nil {
@@ -187,8 +187,7 @@ func GetCurrentServiceConfig(c context.Context) (*ServiceConfig, error) {
 		}
 		logging.Infof(c, "loaded service config from datastore")
 		return msg, time.Minute, nil
-	}
-	item, err := proccache.GetOrMake(c, ServiceConfigID, maker)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get service config: %s", err.Error())
 	}
@@ -252,7 +251,7 @@ func UpdateServiceConfig(c context.Context) (*config.Settings, error) {
 	}, nil)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to update config entry in transaction", err)
+		return nil, errors.Annotate(err, "failed to update config entry in transaction").Err()
 	}
 	logging.Infof(c, "successfully updated to new config")
 
@@ -290,9 +289,8 @@ func updateProjectConsoles(c context.Context, projectName string, cfg *configInt
 		con = NewConsole(parentKey, URL, cfg.Revision, pc)
 		if err = datastore.Put(c, con); err != nil {
 			return nil, errors.Annotate(err, "saving %s", pc.ID).Err()
-		} else {
-			logging.Infof(c, "saved a new %s / %s (revision %s)", projectName, con.ID, cfg.Revision)
 		}
+		logging.Infof(c, "saved a new %s / %s (revision %s)", projectName, con.ID, cfg.Revision)
 	}
 	return knownConsoles, nil
 }

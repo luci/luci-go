@@ -32,15 +32,15 @@ import (
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/caching/proccache"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/secrets"
 )
 
 // TODO(vadimsh): Add secrets rotation.
 
-// procCacheExp is how long to cache secrets in the process memory.
-const procCacheExp = time.Minute * 5
+// cacheExp is how long to cache secrets in the process memory.
+const cacheExp = time.Minute * 5
 
 // Config can be used to tweak parameters of the store. It is fine to use
 // default values.
@@ -81,12 +81,12 @@ type storeImpl struct {
 // GetSecret returns a secret by its key.
 func (s *storeImpl) GetSecret(k secrets.Key) (secrets.Secret, error) {
 	cacheKey := secrets.Key(s.cfg.Prefix + ":" + string(k))
-	secret, err := proccache.GetOrMake(s.ctx, cacheKey, func() (interface{}, time.Duration, error) {
+	secret, err := caching.ProcessCache(s.ctx).GetOrCreate(s.ctx, cacheKey, func() (interface{}, time.Duration, error) {
 		secret, err := s.getSecretFromDatastore(k)
 		if err != nil {
 			return nil, 0, err
 		}
-		return secret, procCacheExp, nil
+		return secret, cacheExp, nil
 	})
 	if err != nil {
 		return secrets.Secret{}, err

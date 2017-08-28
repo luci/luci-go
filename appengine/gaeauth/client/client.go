@@ -29,11 +29,11 @@ import (
 
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/caching/proccache"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/caching"
 )
 
 // GetAccessToken returns an OAuth access token representing app's service
@@ -50,31 +50,38 @@ func GetAccessToken(c context.Context, scopes []string) (*oauth2.Token, error) {
 	// refresh it earlier with some probability. That avoids a situation when
 	// parallel requests that use access tokens suddenly see the cache expired
 	// and rush to refresh the token all at once.
-	pcache := proccache.GetCache(c)
-	if entry := pcache.Get(cacheKey); entry != nil && !closeToExpRandomized(c, entry.Exp) {
-		return entry.Value.(*oauth2.Token), nil
+	pc := caching.ProcessCache(c)
+	if tokIface, ok := pc.Get(c, cacheKey); ok {
+		tok := tokIface.(*oauth2.Token)
+		if !closeToExpRandomized(c, tok.Expiry) {
+			return tok, nil
+		}
 	}
 
-	// The token needs to be refreshed.
-	logging.Debugf(c, "Getting an access token for scopes %q", strings.Join(scopes, ", "))
-	accessToken, exp, err := info.AccessToken(c, scopes...)
+	tokIface, err := pc.Create(c, cacheKey, func() (interface{}, time.Duration, error) {
+		// The token needs to be refreshed.
+		logging.Debugf(c, "Getting an access token for scopes %q", strings.Join(scopes, ", "))
+		accessToken, exp, err := info.AccessToken(c, scopes...)
+		if err != nil {
+			return nil, 0, transient.Tag.Apply(err)
+		}
+		now := clock.Now(c)
+		logging.Debugf(c, "The token expires in %s", exp.Sub(now))
+
+		// Prematurely expire it to guarantee all returned token live for at least
+		// 'expirationMinLifetime'.
+		tok := &oauth2.Token{
+			AccessToken: accessToken,
+			Expiry:      exp.Add(-expirationMinLifetime),
+			TokenType:   "Bearer",
+		}
+
+		return tok, now.Sub(tok.Expiry), nil
+	})
 	if err != nil {
-		return nil, transient.Tag.Apply(err)
+		return nil, err
 	}
-	logging.Debugf(c, "The token expires in %s", exp.Sub(clock.Now(c)))
-
-	// Prematurely expire it to guarantee all returned token live for at least
-	// 'expirationMinLifetime'.
-	tok := &oauth2.Token{
-		AccessToken: accessToken,
-		Expiry:      exp.Add(-expirationMinLifetime),
-		TokenType:   "Bearer",
-	}
-
-	// Store the new token in the cache (overriding what's already there).
-	pcache.Put(cacheKey, tok, tok.Expiry)
-
-	return tok, nil
+	return tokIface.(*oauth2.Token), nil
 }
 
 // NewTokenSource makes oauth2.TokenSource implemented on top of GetAccessToken.

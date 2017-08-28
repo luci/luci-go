@@ -21,9 +21,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/data/caching/proccache"
 	"go.chromium.org/luci/server/auth/identity"
 	"go.chromium.org/luci/server/auth/internal"
+	"go.chromium.org/luci/server/caching"
 )
 
 // ServiceInfo describes identity of some service.
@@ -42,11 +42,11 @@ type serviceInfoKey string
 // FetchServiceInfo fetches information about the service from the given URL.
 //
 // The server is expected to reply with JSON described by ServiceInfo struct
-// (like LUCI services do). Uses proccache to cache the response for 1h.
+// (like LUCI services do). Uses process cache to cache the response for 1h.
 //
 // LUCI services serve the service info at /auth/api/v1/server/info.
 func FetchServiceInfo(c context.Context, url string) (*ServiceInfo, error) {
-	info, err := proccache.GetOrMake(c, serviceInfoKey(url), func() (interface{}, time.Duration, error) {
+	info, err := caching.ProcessCache(c).GetOrCreate(c, serviceInfoKey(url), func() (interface{}, time.Duration, error) {
 		info := &ServiceInfo{}
 		req := internal.Request{
 			Method: "GET",

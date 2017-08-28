@@ -20,7 +20,7 @@
 // implementation by implementing its CacheGet method.
 //
 // Some example caches include:
-//	- Process in-memory cache (proccache).
+//	- Process in-memory cache.
 //	- memcache, or AppEngine's memcache service.
 //	- A local storage cache (e.g., on-disk)
 //	- A datastore cache.

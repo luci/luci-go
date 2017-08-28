@@ -22,11 +22,13 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/auth/identity"
 	"go.chromium.org/luci/server/auth/internal"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
+	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -128,6 +130,8 @@ func TestSnapshotDB(t *testing.T) {
 		calls := 0
 
 		ctx := context.Background()
+		ctx = caching.WithProcessCache(ctx, lru.New(0))
+
 		ctx = internal.WithTestTransport(ctx, func(r *http.Request, body string) (int, string) {
 			calls++
 			if r.URL.String() != "http://token-server/auth/api/v1/server/certificates" {

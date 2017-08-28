@@ -23,12 +23,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
 	memcfg "go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/milo/common"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -44,7 +43,7 @@ func TestBuilder(t *testing.T) {
 	}
 
 	Convey("Builder", t, func() {
-		c := memory.UseWithAppID(context.Background(), "luci-milo-dev")
+		c := gaetesting.TestingContextWithAppID("luci-milo-dev")
 		c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC)
 		c = testconfig.WithCommonClient(c, memcfg.New(bktConfigFull))
 		// Update the service config so that the settings are loaded.
