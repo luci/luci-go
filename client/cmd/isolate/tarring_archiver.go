@@ -43,22 +43,26 @@ func (ta *TarringArchiver) Archive(archiveOpts *isolate.ArchiveOptions) (Isolate
 	// Parse the incoming isolate file.
 	deps, rootDir, isol, err := isolate.ProcessIsolate(archiveOpts)
 	if err != nil {
-		return IsolatedSummary{}, fmt.Errorf("failed to process isolate: %v", err)
+		return IsolatedSummary{}, fmt.Errorf("isolate %s: failed to process:%v", archiveOpts.Isolate, err)
 	}
 	log.Printf("Isolate %s referenced %d deps", archiveOpts.Isolate, len(deps))
 
 	parts, err := partitionDeps(deps, rootDir, archiveOpts.Blacklist)
 	if err != nil {
-		return IsolatedSummary{}, fmt.Errorf("partitioning deps: %v", err)
+		return IsolatedSummary{}, fmt.Errorf("isolate %s: partitioning deps: %v", archiveOpts.Isolate, err)
 	}
 
 	log.Printf("Isolate %s expanded to the following items to be isolated:\n%s", archiveOpts.Isolate, parts)
 
 	tracker := NewUploadTracker(ta.checker, ta.uploader, isol)
 	if err := tracker.UploadDeps(parts); err != nil {
-		return IsolatedSummary{}, err
+		return IsolatedSummary{}, fmt.Errorf("isolate %s: %v", archiveOpts.Isolate, err)
 	}
-	return tracker.Finalize(archiveOpts.Isolated)
+	isolSummary, err := tracker.Finalize(archiveOpts.Isolated)
+	if err != nil {
+		return IsolatedSummary{}, fmt.Errorf("isolate %s: %v", archiveOpts.Isolate, err)
+	}
+	return isolSummary, nil
 }
 
 // Item represents a file or symlink referenced by an isolate file.
