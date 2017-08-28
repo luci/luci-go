@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ceace7f8_b0b7c11e",
+        "filename": "appengine/gaeauth/client/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-28T21:26:27Z",
+      "side": 1,
+      "message": "nit: reuse value of \u0027now\u0027 from line 68",
+      "range": {
+        "startLine": 78,
+        "startChar": 2,
+        "endLine": 78,
+        "endChar": 21
+      },
+      "revId": "12cfdac4620c5e574a83ec998e64b9efdffd3d37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ca70fa2_ca3fd601",
+        "filename": "appengine/gaeauth/server/gaesigner/signer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-28T21:26:27Z",
+      "side": 1,
+      "message": "Can you please verify there won\u0027t be a deadlock here? (One GetOrCreate calls another GetOrCreate).",
+      "range": {
+        "startLine": 72,
+        "startChar": 14,
+        "endLine": 72,
+        "endChar": 30
+      },
+      "revId": "12cfdac4620c5e574a83ec998e64b9efdffd3d37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
