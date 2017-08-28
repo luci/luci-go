@@ -26,6 +26,8 @@ import (
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"cloud.google.com/go/bigtable"
+	"google.golang.org/api/option"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
 	"golang.org/x/net/context"
@@ -65,6 +67,17 @@ var (
 	// to btTable.getLogData iterator.
 	errStop = errors.New("bigtable: stop iteration")
 )
+
+// DefaultCallOptions returns a function set of ClientOptions to apply to a
+// BigTable client.
+func DefaultClientOptions() []option.ClientOption {
+	return []option.ClientOption{
+		option.WithGRPCDialOption(grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(1024*1024*16),
+			grpc.MaxCallSendMsgSize(1024*1024*16),
+		)),
+	}
+}
 
 // Storage is a BigTable storage configuration client.
 type Storage struct {

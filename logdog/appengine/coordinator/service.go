@@ -267,8 +267,9 @@ func (s *prodServicesInst) newBigTableStorage(c context.Context) (Storage, error
 	// calls.
 	c = metadata.NewContext(c, nil)
 
-	client, err := gcbt.NewClient(c, bt.Project, bt.Instance,
-		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
+	opts := bigtable.DefaultClientOptions()
+	opts = append(opts, option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
+	client, err := gcbt.NewClient(c, bt.Project, bt.Instance, opts...)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create BigTable client.")
 		return nil, err

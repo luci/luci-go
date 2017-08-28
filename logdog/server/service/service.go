@@ -223,7 +223,7 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 		ccfg := cloud.Config{
 			DS: dsClient,
 		}
-		c = ccfg.Use(c)
+		c = ccfg.Use(c, nil)
 		c = settings.Use(c, settings.New(gaesettings.Storage{}))
 
 		s.hasDatastore = true
