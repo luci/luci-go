@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/client/archiver"
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/data/text/units"
 	logpb "go.chromium.org/luci/common/eventlog/proto"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
@@ -206,6 +207,66 @@ func doBatchArchive(ctx context.Context, client *isolatedclient.Client, al archi
 	al.LogSummary(ctx, int64(stats.TotalHits()), int64(stats.TotalMisses()), stats.TotalBytesHits(), stats.TotalBytesPushed(), digests)
 
 	return err
+}
+
+// doBatchExpArchive archives a series of isolates specified by genJSONPaths, using the new exparchive codepath.
+func doBatchExpArchive(ctx context.Context, client *isolatedclient.Client, al archiveLogger, dumpJSONPath string, genJSONPaths []string) error {
+	// Set up a checker and uploader. We limit the uploader to one concurrent
+	// upload, since the uploads are all coming from disk (with the exception of
+	// the isolated JSON itself) and we only want a single goroutine reading from
+	// disk at once.
+	checker := NewChecker(ctx, client)
+	uploader := NewUploader(ctx, client, 1)
+	archiver := NewTarringArchiver(checker, uploader)
+
+	var errArchive error
+	var isolSummaries []IsolatedSummary
+	for _, genJSONPath := range genJSONPaths {
+		opts, err := processGenJSON(genJSONPath)
+		if err != nil {
+			return err
+		}
+		isolSummary, err := archiver.Archive(opts)
+		if err != nil && errArchive == nil {
+			errArchive = err
+		} else {
+			printSummary(al, isolSummary)
+			isolSummaries = append(isolSummaries, isolSummary)
+		}
+	}
+	if errArchive != nil {
+		return errArchive
+	}
+	// Make sure that all pending items have been checked.
+	if err := checker.Close(); err != nil {
+		return err
+	}
+
+	// Make sure that all the uploads have completed successfully.
+	if err := uploader.Close(); err != nil {
+		return err
+	}
+
+	if dumpJSONPath != "" {
+		f, err := os.OpenFile(dumpJSONPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+		if err != nil {
+			return err
+		}
+		writeSummaryJSON(f, isolSummaries...)
+		f.Close()
+	}
+
+	al.LogSummary(ctx, int64(checker.Hit.Count), int64(checker.Miss.Count), units.Size(checker.Hit.Bytes), units.Size(checker.Miss.Bytes), digests(isolSummaries))
+	return nil
+}
+
+// digests extracts the digests from the supplied IsolatedSummarys.
+func digests(summaries []IsolatedSummary) []string {
+	var result []string
+	for _, summary := range summaries {
+		result = append(result, string(summary.Digest))
+	}
+	return result
 }
 
 // processGenJSON validates a genJSON file and returns the contents.
