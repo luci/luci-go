@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f3f65dc3_4f3e9a97",
+        "filename": "appengine/gaemiddleware/flex/env.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-28T21:45:21Z",
+      "side": 1,
+      "message": "!metadata.OnGCE()\n\nwe want dev mode when running locally on workstation",
+      "range": {
+        "startLine": 79,
+        "startChar": 23,
+        "endLine": 79,
+        "endChar": 39
+      },
+      "revId": "08c881275370bdf8709af6f6a7d14c4e3a74d54b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27d5d5d6_0b068d10",
+        "filename": "appengine/gaemiddleware/flex/prpc.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-28T21:45:21Z",
+      "side": 1,
+      "message": "beware that it will be panicing if single module imports both /standard and /flex (due to https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/grpc/prpc/auth.go?q\u003dRegisterDefaultAuth\u0026sq\u003dpackage:chromium\u0026l\u003d70). \n\nIn theory this should never happen, but in practice I can imagine some code breaking...",
+      "range": {
+        "startLine": 24,
+        "startChar": 5,
+        "endLine": 24,
+        "endChar": 11
+      },
+      "revId": "08c881275370bdf8709af6f6a7d14c4e3a74d54b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bcd6c64b_506aa669",
+        "filename": "appengine/gaemiddleware/flex/prpc.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-28T21:45:21Z",
+      "side": 1,
+      "message": "auth.GoogleOAuth2Method (from server/auth package)",
+      "range": {
+        "startLine": 27,
+        "startChar": 4,
+        "endLine": 27,
+        "endChar": 23
+      },
+      "revId": "08c881275370bdf8709af6f6a7d14c4e3a74d54b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
