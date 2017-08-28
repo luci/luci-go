@@ -15,24 +15,22 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/client/archiver"
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/auth"
-	"go.chromium.org/luci/common/data/text/units"
 	logpb "go.chromium.org/luci/common/eventlog/proto"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
@@ -137,27 +135,36 @@ func convertPyToGoArchiveCMDArgs(args []string) []string {
 }
 
 func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
-	out := os.Stdout
-	prefix := "\n"
-	if c.defaultFlags.Quiet {
-		prefix = ""
-	}
 	start := time.Now()
-	client, err := c.createAuthClient()
+	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
+
+	authClient, err := c.createAuthClient()
 	if err != nil {
 		return err
 	}
-	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
-	arch := archiver.New(ctx, isolatedclient.New(nil, client, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil), out)
+	client := isolatedclient.New(nil, authClient, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
+
+	al := archiveLogger{
+		logger:    NewLogger(ctx, c.loggingFlags.EventlogEndpoint),
+		start:     start,
+		quiet:     c.defaultFlags.Quiet,
+		operation: logpb.IsolateClientEvent_BATCH_ARCHIVE.Enum(),
+	}
+	return doBatchArchive(ctx, client, al, c.dumpJSON, args)
+}
+
+// doBatchArchive archives a series of isolates specified by genJSONPaths, using an archiver.Archiver.
+func doBatchArchive(ctx context.Context, client *isolatedclient.Client, al archiveLogger, dumpJSONPath string, genJSONPaths []string) error {
+	arch := archiver.New(ctx, client, os.Stdout)
 	CancelOnCtrlC(arch)
 
 	type namedItem struct {
 		*archiver.Item
 		name string
 	}
-	items := make(chan *namedItem, len(args))
+	items := make(chan *namedItem, len(genJSONPaths))
 	var wg sync.WaitGroup
-	for _, arg := range args {
+	for _, genJSONPath := range genJSONPaths {
 		wg.Add(1)
 		go func(genJSONPath string) {
 			defer wg.Done()
@@ -169,7 +176,7 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 					strippedIsolatedName(opts.Isolated),
 				}
 			}
-		}(arg)
+		}(genJSONPath)
 	}
 	go func() {
 		wg.Wait()
@@ -184,39 +191,19 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 			d := item.Digest()
 			data[item.name] = d
 			digests = append(digests, string(d))
-			fmt.Printf("%s%s  %s\n", prefix, d, item.name)
+			al.Printf("%s  %s\n", d, item.name)
 		} else {
-			fmt.Fprintf(os.Stderr, "%s%s  %s\n", prefix, item.name, item.Error())
+			al.Fprintf(os.Stderr, "%s  %s\n", item.name, item.Error())
 		}
 	}
-	err = arch.Close()
-	duration := time.Since(start)
+	err := arch.Close()
 	// Only write the file once upload is confirmed.
-	if err == nil && c.dumpJSON != "" {
-		err = writeJSONDigestFile(c.dumpJSON, data)
+	if err == nil && dumpJSONPath != "" {
+		err = writeJSONDigestFile(dumpJSONPath, data)
 	}
 
 	stats := arch.Stats()
-	if !c.defaultFlags.Quiet {
-		fmt.Fprintf(os.Stderr, "Hits    : %5d (%s)\n", stats.TotalHits(), stats.TotalBytesHits())
-		fmt.Fprintf(os.Stderr, "Misses  : %5d (%s)\n", stats.TotalMisses(), stats.TotalBytesPushed())
-		fmt.Fprintf(os.Stderr, "Duration: %s\n", units.Round(duration, time.Millisecond))
-	}
-
-	end := time.Now()
-	archiveDetails := &logpb.IsolateClientEvent_ArchiveDetails{
-		HitCount:    proto.Int64(int64(stats.TotalHits())),
-		MissCount:   proto.Int64(int64(stats.TotalMisses())),
-		HitBytes:    proto.Int64(int64(stats.TotalBytesHits())),
-		MissBytes:   proto.Int64(int64(stats.TotalBytesPushed())),
-		IsolateHash: digests,
-	}
-
-	eventlogger := NewLogger(ctx, c.loggingFlags.EventlogEndpoint)
-	op := logpb.IsolateClientEvent_BATCH_ARCHIVE.Enum()
-	if err := eventlogger.logStats(ctx, op, start, end, archiveDetails); err != nil {
-		log.Printf("Failed to log to eventlog: %v", err)
-	}
+	al.LogSummary(ctx, int64(stats.TotalHits()), int64(stats.TotalMisses()), stats.TotalBytesHits(), stats.TotalBytesPushed(), digests)
 
 	return err
 }
