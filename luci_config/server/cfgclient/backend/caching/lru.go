@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/data/caching/lru"
-	"go.chromium.org/luci/common/sync/mutexpool"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/identity"
 
@@ -28,43 +27,20 @@ import (
 	"golang.org/x/net/context"
 )
 
-// LRUBackend wraps b, applying the LRU's caching to its results.
+// LRUBackend wraps b, applying the additional cache to its results.
 //
-// If the LRU isn't fully configured, Backend will return b directly and not
-// apply any caching.
-func LRUBackend(b backend.B, size int, exp time.Duration) backend.B {
+// Do NOT chain multiple LRUBackend in the same backend chain. An LRUBackend
+// holds a LRU-wide lock on its cache key when it looks up its value, and if
+// a second entity attempts to lock that same key during its lookup chain, the
+// lookup will deadlock.
+//
+// If the supplied expiration is <= 0, no additional caching will be performed.
+func LRUBackend(b backend.B, cache *lru.Cache, exp time.Duration) backend.B {
 	// If our parameters are disabled, just return the underlying Backend.
-	if size <= 0 || exp <= 0 {
+	if exp <= 0 {
 		return b
 	}
 
-	lb := LRU{
-		Cache:      lru.New(size),
-		Expiration: exp,
-	}
-	return lb.Wrap(b)
-}
-
-// LRU manages configuration caching in an LRU cache.
-//
-// All configurations are stored side-by-side in the same LRU cache. Results
-// bound to user accounts are cached alongside their current user IDs for
-// consistent and safe storage and retrieval.
-//
-// Concurrent accesses to the same configuration will block pending a single
-// resolution, reducing configuration burst traffic.
-type LRU struct {
-	// Cache is the LRU cache to store configurations in.
-	Cache *lru.Cache
-	// Expiration is the maximum age of a configuration before it expires from
-	// the LRU cache.
-	Expiration time.Duration
-
-	mp mutexpool.P
-}
-
-// Wrap wraps b, applying the LRU's caching to its results.
-func (lb *LRU) Wrap(b backend.B) backend.B {
 	// mp is used to block concurrent accesses to the same cache key.
 	return &Backend{
 		B: b,
@@ -82,23 +58,18 @@ func (lb *LRU) Wrap(b backend.B) backend.B {
 
 			// Lock around this key. This will ensure that concurrent accesses to the
 			// same key will not result in multiple redundant fetches.
-			lb.mp.WithMutex(cacheKey, func() {
-				// First, see if the value is already in the cache.
-				v, _ := lb.Cache.Get(c, cacheKey)
-				if v != nil {
-					ret = v.(*Value)
-					return
-				}
-
+			v, err := cache.GetOrCreate(c, cacheKey, func() (interface{}, time.Duration, error) {
 				// The value wasn't in the cache. Resolve and cache it.
-				if ret, err = l(c, key, nil); err != nil {
-					return
+				ret, err := l(c, key, nil)
+				if err != nil {
+					return nil, 0, err
 				}
-
-				lb.Cache.Put(c, cacheKey, ret, lb.Expiration)
-				return
+				return ret, exp, nil
 			})
-			return
+			if err != nil {
+				return nil, err
+			}
+			return v.(*Value), nil
 		},
 	}
 }

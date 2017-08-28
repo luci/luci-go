@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	commonConfig "go.chromium.org/luci/common/config"
 	memConfig "go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/common/data/caching/lru"
 	configPB "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 	"go.chromium.org/luci/luci_config/server/cfgclient"
@@ -32,6 +33,7 @@ import (
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/settings"
 
@@ -69,6 +71,7 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 		c, clk := testclock.UseTime(context.Background(), ds.RoundTime(testclock.TestTimeUTC))
 
 		c = memory.Use(c)
+		c = caching.WithProcessCache(c, lru.New(0))
 
 		// Install fake auth state.
 		var authState authtest.FakeState
@@ -237,7 +240,9 @@ func TestDatastoreCacheIntegration(t *testing.T) {
 			// Update our cache entries.
 			So(runCron(), ShouldEqual, http.StatusOK)
 
-			// Granted access!
+			// Our datastore is refreshed, but our in-memory cache still holds the
+			// value from the previous lookup. Let that expire.
+			clk.Add(10 * time.Second)
 			c = installConfig(c)
 			_, metas, err = loadProjectConfigs(c, cfgclient.AsUser)
 			So(err, ShouldBeNil)
