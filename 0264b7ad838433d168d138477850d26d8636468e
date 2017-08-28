@@ -1,0 +1,239 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5613d0b4_561e86d2",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-08-28T22:53:23Z",
+      "side": 1,
+      "message": "still true?",
+      "range": {
+        "startLine": 27,
+        "startChar": 15,
+        "endLine": 27,
+        "endChar": 18
+      },
+      "revId": "0264b7ad838433d168d138477850d26d8636468e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05acbd27_defa5295",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-08-28T22:53:23Z",
+      "side": 1,
+      "message": "describe what an element is here",
+      "range": {
+        "startLine": 31,
+        "startChar": 51,
+        "endLine": 31,
+        "endChar": 58
+      },
+      "revId": "0264b7ad838433d168d138477850d26d8636468e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "879baf36_b2f97637",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-08-28T22:53:23Z",
+      "side": 1,
+      "message": "Nit: New sentence on next line",
+      "range": {
+        "startLine": 34,
+        "startChar": 83,
+        "endLine": 34,
+        "endChar": 86
+      },
+      "revId": "0264b7ad838433d168d138477850d26d8636468e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f65413c1_bc411da8",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-08-28T22:53:23Z",
+      "side": 1,
+      "message": "for adding empty rows.",
+      "range": {
+        "startLine": 36,
+        "startChar": 54,
+        "endLine": 36,
+        "endChar": 63
+      },
+      "revId": "0264b7ad838433d168d138477850d26d8636468e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3257d1a_964e384f",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-08-28T22:53:23Z",
+      "side": 1,
+      "message": "Docstring format is // \u003cName\u003e \u003cDescription\u003e\nSo this would be\n// Commit is a list of commits....\n\nSource:\nhttps://blog.golang.org/godoc-documenting-go-code\n\"Notice this comment is a complete sentence that begins with the name of the element it describes\"",
+      "range": {
+        "startLine": 40,
+        "startChar": 4,
+        "endLine": 40,
+        "endChar": 10
+      },
+      "revId": "0264b7ad838433d168d138477850d26d8636468e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9786c077_e329e098",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-08-28T22:53:23Z",
+      "side": 1,
+      "message": "nit: iota on L141-144 is redundant",
+      "range": {
+        "startLine": 141,
+        "startChar": 10,
+        "endLine": 141,
+        "endChar": 14
+      },
+      "revId": "0264b7ad838433d168d138477850d26d8636468e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2943bab_0e96abd8",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-08-28T22:53:23Z",
+      "side": 1,
+      "message": "and if the next 2 builds exist",
+      "range": {
+        "startLine": 171,
+        "startChar": 4,
+        "endLine": 171,
+        "endChar": 27
+      },
+      "revId": "0264b7ad838433d168d138477850d26d8636468e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89df3b42_5aa1de71",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-08-28T22:53:23Z",
+      "side": 1,
+      "message": "The if/else seems extra, could just be\n\nswitch {\ncase len(br.Build) \u003d\u003d 1: ...\n  state \u003d cell\ncase len(br.Build) \u003d\u003d 0:\n   // pass\ncase br.Build[0] !\u003d nil \u0026\u0026 br.Build[1] !\u003d nil:\n   ...\n   ...",
+      "revId": "0264b7ad838433d168d138477850d26d8636468e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a091dd32_44e3545f",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-08-28T22:53:23Z",
+      "side": 1,
+      "message": "these should be bools",
+      "revId": "0264b7ad838433d168d138477850d26d8636468e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8dc9890_65d0d155",
+        "filename": "milo/api/resp/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-08-28T22:53:23Z",
+      "side": 1,
+      "message": "nit: I think assigning to a variable called \"nextState\", and then setting state \u003d nextState at the end, would make it more obvious what\u0027s going on.",
+      "range": {
+        "startLine": 212,
+        "startChar": 4,
+        "endLine": 212,
+        "endChar": 9
+      },
+      "revId": "0264b7ad838433d168d138477850d26d8636468e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c58a5573_b489acb4",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-08-28T22:53:23Z",
+      "side": 1,
+      "message": "We\u0027ll still be getting data by row from datastore, because:\n1. We want number of revisions to query to be adjustable\n2. We have to index based on builders in console\n\nContext: https://docs.google.com/document/d/1BRCKFDYtIKq9JqZKGYCK2zBwnm0iyIYY7eaf7omQ2m0/edit",
+      "revId": "0264b7ad838433d168d138477850d26d8636468e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
