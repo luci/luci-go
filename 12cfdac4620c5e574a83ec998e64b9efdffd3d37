@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c3576031_cbb43a23",
+        "filename": "appengine/gaeauth/client/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-28T21:39:04Z",
+      "side": 1,
+      "message": "Oh nice catch, done.",
+      "parentUuid": "ceace7f8_b0b7c11e",
+      "range": {
+        "startLine": 78,
+        "startChar": 2,
+        "endLine": 78,
+        "endChar": 21
+      },
+      "revId": "12cfdac4620c5e574a83ec998e64b9efdffd3d37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4ca70fa2_ca3fd601",
         "filename": "appengine/gaeauth/server/gaesigner/signer.go",
         "patchSetId": 4
@@ -36,6 +60,30 @@
       "writtenOn": "2017-08-28T21:26:27Z",
       "side": 1,
       "message": "Can you please verify there won\u0027t be a deadlock here? (One GetOrCreate calls another GetOrCreate).",
+      "range": {
+        "startLine": 72,
+        "startChar": 14,
+        "endLine": 72,
+        "endChar": 30
+      },
+      "revId": "12cfdac4620c5e574a83ec998e64b9efdffd3d37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "585c311e_ecc0299d",
+        "filename": "appengine/gaeauth/server/gaesigner/signer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-28T21:39:04Z",
+      "side": 1,
+      "message": "Good thought. Since they each use different keys, the per-key locking will not deadlock. Both will hit a critical section that touches the shared LRU cache data, but that operation happens *after* the Maker. So in that situation, we should see:\n\ngetCachedCerts \u003d\u003e Lock(Key_0) \u003d\u003e Maker_certs \u003d\u003e getCachedInfo \u003d\u003e Lock(Key_1) \u003d\u003e Maker_info \u003d\u003e Get Info \u003d\u003e LRUPut(0, info) \u003d\u003e Unlock(Key_1) \u003d\u003e LRUPut(1, certs) \u003d\u003e Unlock(Key_0).\n\nSo as long as we\u0027re not reentrant on the same key, we should not be deadlocking.",
+      "parentUuid": "4ca70fa2_ca3fd601",
       "range": {
         "startLine": 72,
         "startChar": 14,
