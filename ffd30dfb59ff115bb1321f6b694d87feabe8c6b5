@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6957bc4b_fe799157",
+        "filename": "appengine/gaemiddleware/flex/env.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-28T21:32:26Z",
+      "side": 1,
+      "message": "Yeah, we still need a Cache for auth, and in this case memory is the best we\u0027re going to get.",
+      "parentUuid": "a769ac97_9328c1b7",
+      "range": {
+        "startLine": 78,
+        "startChar": 23,
+        "endLine": 78,
+        "endChar": 59
+      },
+      "revId": "ffd30dfb59ff115bb1321f6b694d87feabe8c6b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0c4eb776_69308260",
         "filename": "appengine/gaemiddleware/flex/env.go",
         "patchSetId": 5
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "75c99528_d20be52f",
+        "filename": "appengine/gaemiddleware/flex/env.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-28T21:32:26Z",
+      "side": 1,
+      "message": "Good idea, done.",
+      "parentUuid": "0c4eb776_69308260",
+      "range": {
+        "startLine": 79,
+        "startChar": 23,
+        "endLine": 79,
+        "endChar": 28
+      },
+      "revId": "ffd30dfb59ff115bb1321f6b694d87feabe8c6b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bd242c4b_ea382da6",
         "filename": "appengine/gaemiddleware/flex/prpc.go",
         "patchSetId": 5
@@ -59,6 +107,30 @@
       "writtenOn": "2017-08-25T00:27:00Z",
       "side": 1,
       "message": "I think we might need to move https://chromium.googlesource.com/infra/luci/luci-go/+/master/appengine/gaeauth/server/prpc.go into standard/* and add similar thing to flex/*, so importing either standard or flex is sufficient to make pRPC work. Can be a separate CL though.",
+      "range": {
+        "startLine": 26,
+        "startChar": 5,
+        "endLine": 26,
+        "endChar": 29
+      },
+      "revId": "ffd30dfb59ff115bb1321f6b694d87feabe8c6b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db0e1d4d_698e2f7a",
+        "filename": "appengine/gaemiddleware/flex/prpc.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-28T21:32:26Z",
+      "side": 1,
+      "message": "Yeah that\u0027s a good idea. Done.",
+      "parentUuid": "bd242c4b_ea382da6",
       "range": {
         "startLine": 26,
         "startChar": 5,
