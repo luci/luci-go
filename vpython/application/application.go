@@ -77,6 +77,12 @@ type Config struct {
 	// PackageLoader is the package loader to use.
 	PackageLoader venv.PackageLoader
 
+	// SpecLoader is a spec.Loader to use when loading "vpython" specifications.
+	//
+	// The zero value is a valid default loader. Users may specialize it by
+	// populating some or all of its fields.
+	SpecLoader spec.Loader
+
 	// VENVPackage is the VirtualEnv package to use for bootstrap generation.
 	VENVPackage vpythonAPI.Spec_Package
 
@@ -319,6 +325,7 @@ func (cfg *Config) Main(c context.Context) int {
 			},
 			BaseWheels: cfg.BaseWheels,
 			WaitForEnv: true,
+			SpecLoader: cfg.SpecLoader,
 			Environ:    env,
 		},
 		logConfig: logging.Config{
