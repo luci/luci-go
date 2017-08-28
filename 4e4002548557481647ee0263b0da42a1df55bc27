@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "44e506bb_fa368ae6",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1115956
+      },
+      "writtenOn": "2017-08-28T13:18:01Z",
+      "side": 1,
+      "message": "nit: Maybe document what the code assumes about the default. Looks like the code assumes if MaxCommitsPerRequest \u003d\u003d 0 to use an internal default value of 10000.",
+      "range": {
+        "startLine": 100,
+        "startChar": 1,
+        "endLine": 101,
+        "endChar": 39
+      },
+      "revId": "4e4002548557481647ee0263b0da42a1df55bc27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "285a30f6_e58806d8",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1115956
+      },
+      "writtenOn": "2017-08-28T13:18:01Z",
+      "side": 1,
+      "message": "Shouldn\u0027t this be passed to all calls, not only the first?",
+      "range": {
+        "startLine": 174,
+        "startChar": 23,
+        "endLine": 174,
+        "endChar": 53
+      },
+      "revId": "4e4002548557481647ee0263b0da42a1df55bc27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d9337673_32ea355c",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 7
@@ -41,6 +87,29 @@
         "startChar": 55,
         "endLine": 201,
         "endChar": 64
+      },
+      "revId": "4e4002548557481647ee0263b0da42a1df55bc27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba3ab415_59d7315c",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1115956
+      },
+      "writtenOn": "2017-08-28T13:18:01Z",
+      "side": 1,
+      "message": "Isn\u0027t this getting larger than uberPageSize? It can get as large as 2*uberPageSize",
+      "range": {
+        "startLine": 225,
+        "startChar": 18,
+        "endLine": 225,
+        "endChar": 27
       },
       "revId": "4e4002548557481647ee0263b0da42a1df55bc27",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
