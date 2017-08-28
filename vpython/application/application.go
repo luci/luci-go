@@ -127,7 +127,7 @@ type application struct {
 	opts vpython.Options
 
 	help      bool
-	devMode   bool
+	toolMode  bool
 	specPath  string
 	logConfig logging.Config
 }
@@ -159,17 +159,16 @@ func (a *application) addToFlagSet(fs *flag.FlagSet) {
 		"Display help for 'vpython' top-level arguments.")
 	fs.BoolVar(&a.help, "h", a.help,
 		"Display help for 'vpython' top-level arguments (same as -help).")
-	fs.BoolVar(&a.devMode, "dev", a.devMode,
-		"Enter development / subcommand mode (use 'help' for more options).")
-	fs.StringVar(&a.opts.EnvConfig.Python, "python", a.opts.EnvConfig.Python,
+
+	fs.BoolVar(&a.toolMode, "vpython-tool", a.toolMode,
+		"Enter tooling subcommand mode (use 'help' subcommand for details).")
+	fs.StringVar(&a.opts.EnvConfig.Python, "vpython-interpreter", a.opts.EnvConfig.Python,
 		"Path to system Python interpreter to use. Default is found on PATH.")
-	fs.StringVar(&a.opts.WorkDir, "workdir", a.opts.WorkDir,
-		"Working directory to run the Python interpreter in. Default is current working directory.")
-	fs.StringVar(&a.opts.EnvConfig.BaseDir, "root", a.opts.EnvConfig.BaseDir,
+	fs.StringVar(&a.opts.EnvConfig.BaseDir, "vpython-root", a.opts.EnvConfig.BaseDir,
 		"Path to virtual environment root directory. Default is the working directory. "+
 			"If explicitly set to empty string, a temporary directory will be used and cleaned up "+
 			"on completion.")
-	fs.StringVar(&a.specPath, "spec", a.specPath,
+	fs.StringVar(&a.specPath, "vpython-spec", a.specPath,
 		"Path to environment specification file to load. Default probes for one.")
 
 	a.logConfig.AddFlags(fs)
@@ -247,7 +246,7 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 	}
 
 	// Development mode (subcommands).
-	if a.devMode {
+	if a.toolMode {
 		return a.mainDev(c, args)
 	}
 

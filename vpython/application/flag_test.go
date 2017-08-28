@@ -42,8 +42,8 @@ func TestExtractFlagsForSet(t *testing.T) {
 			{[]string{"-log-level", "--", "-foo", "-bar"}, []string{"-log-level"}, []string{"--", "-foo", "-bar"}},
 
 			{
-				[]string{"-log-level", "debug", "--pants", "-spec=/foo", "-i", "-W"},
-				[]string{"-log-level", "debug", "--pants", "-spec=/foo"},
+				[]string{"-log-level", "debug", "--pants", "-vpython-spec=/foo", "-i", "-W"},
+				[]string{"-log-level", "debug", "--pants", "-vpython-spec=/foo"},
 				[]string{"-i", "-W"},
 			},
 
