@@ -36,13 +36,15 @@ import (
 // See LoadForScript for more information.
 const Suffix = ".vpython"
 
-// CommonName is the name of the "common" specification file.
+// DefaultCommonSpecNames is the name of the "common" specification file.
 //
 // If a script doesn't explicitly specific a specification file, "vpython" will
 // automatically walk up from the script's directory towards filesystem root
 // and will use the first file named CommonName that it finds. This enables
 // repository-wide and shared environment specifications.
-const CommonName = "common" + Suffix
+var DefaultCommonSpecNames = []string{
+	"common" + Suffix,
+}
 
 const (
 	// DefaultInlineBeginGuard is the default loader InlineBeginGuard value.
@@ -83,6 +85,12 @@ type Loader struct {
 	// directory is observed to contain a file in CommonFilesystemBarriers, the
 	// walk will terminate after processing that directory.
 	CommonFilesystemBarriers []string
+
+	// CommonSpecNames, if not empty, is the list of common "vpython" spec files
+	// to use. If empty, DefaultCommonSpecNames will be used.
+	//
+	// Names will be considered in the order that they appear.
+	CommonSpecNames []string
 }
 
 // LoadForScript attempts to load a spec file for the specified script. If
@@ -159,9 +167,9 @@ type Loader struct {
 // ======
 //
 // LoadForScript will examine successive parent directories starting from the
-// script's location, looking for a file named CommonName. If it finds one, it
-// will use that as the specification file. This enables scripts to implicitly
-// share an specification.
+// script's location, looking for a file named in CommonSpecNames. If it finds
+// one, it will use that as the specification file. This enables scripts to
+// implicitly share an specification.
 func (l *Loader) LoadForScript(c context.Context, path string, isModule bool) (*vpython.Spec, error) {
 	// Partner File: Try loading the spec from an adjacent file.
 	specPath, err := l.findForScript(path, isModule)
@@ -338,30 +346,36 @@ func (l *Loader) parseFrom(path string) (*vpython.Spec, error) {
 }
 
 func (l *Loader) findCommonWalkingFrom(startDir string) (string, error) {
+	names := l.CommonSpecNames
+	if len(names) == 0 {
+		names = DefaultCommonSpecNames
+	}
+
 	// Walk until we hit root.
 	prevDir := ""
 	for prevDir != startDir {
-		checkPath := filepath.Join(startDir, CommonName)
-
-		switch _, err := os.Stat(checkPath); {
-		case err == nil:
-			return checkPath, nil
-
-		case filesystem.IsNotExist(err):
-			// Not in this directory.
-
-		default:
-			// Failed to load specification from this file.
-			return "", errors.Annotate(err, "failed to stat common spec file at: %s", checkPath).Err()
-		}
-
 		// If we have any barrier files, check to see if they are present in this
-		// directory.
+		// directory. Note that this preempts any common filename in this directory.
 		for _, name := range l.CommonFilesystemBarriers {
 			barrierName := filepath.Join(startDir, name)
 			if _, err := os.Stat(barrierName); err == nil {
 				// Identified a barrier file in this directory.
 				return "", nil
+			}
+		}
+
+		for _, name := range names {
+			checkPath := filepath.Join(startDir, name)
+			switch _, err := os.Stat(checkPath); {
+			case err == nil:
+				return checkPath, nil
+
+			case filesystem.IsNotExist(err):
+				// Not in this directory.
+
+			default:
+				// Failed to load specification from this file.
+				return "", errors.Annotate(err, "failed to stat common spec file at: %s", checkPath).Err()
 			}
 		}
 

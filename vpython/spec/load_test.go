@@ -241,6 +241,21 @@ func TestLoadForScript(t *testing.T) {
 			So(spec, ShouldResemble, goodSpec)
 		})
 
+		Convey(`Layout: individual file with a custom common spec`, func() {
+			l.CommonSpecNames = []string{"ohaithere.friend", "common.vpython"}
+
+			mustBuild(map[string]string{
+				"foo/bar/baz.py":      "main",
+				"foo/bar/__init__.py": "",
+				"common.vpython":      badSpecData,
+				"ohaithere.friend":    goodSpecData,
+			})
+
+			spec, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
+			So(err, ShouldBeNil)
+			So(spec, ShouldResemble, goodSpec)
+		})
+
 		Convey(`Layout: individual file with a common spec behind a barrier`, func() {
 			mustBuild(map[string]string{
 				"foo/bar/baz.py":      "main",
