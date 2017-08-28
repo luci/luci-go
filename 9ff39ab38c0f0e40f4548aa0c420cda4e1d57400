@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ef1f6147_d98902b4",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-28T22:13:41Z",
+      "side": 1,
+      "message": "baleete",
+      "range": {
+        "startLine": 165,
+        "startChar": 71,
+        "endLine": 165,
+        "endChar": 81
+      },
+      "revId": "9ff39ab38c0f0e40f4548aa0c420cda4e1d57400",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf62664e_f63c976e",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-28T22:13:41Z",
+      "side": 1,
+      "message": "tool",
+      "range": {
+        "startLine": 178,
+        "startChar": 34,
+        "endLine": 178,
+        "endChar": 39
+      },
+      "revId": "9ff39ab38c0f0e40f4548aa0c420cda4e1d57400",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8bce884_bc34816d",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-28T22:13:41Z",
+      "side": 1,
+      "message": "delete",
+      "range": {
+        "startLine": 182,
+        "startChar": 4,
+        "endLine": 182,
+        "endChar": 29
+      },
+      "revId": "9ff39ab38c0f0e40f4548aa0c420cda4e1d57400",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
