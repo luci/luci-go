@@ -47,11 +47,11 @@ const (
 	// VirtualEnvRootENV is an environment variable that, if set, will be used
 	// as the default VirtualEnv root.
 	//
-	// This value overrides the default (~/.vpython), but can be overridden by the
-	// "-root" flag.
+	// This value overrides the default (~/.vpython-root), but can be overridden
+	// by the "-vpython-root" flag.
 	//
-	// Like "-root", if this value is present but empty, a tempdir will be used
-	// for the VirtualEnv root.
+	// Like "-vpython-root", if this value is present but empty, a tempdir will be
+	// used for the VirtualEnv root.
 	VirtualEnvRootENV = "VPYTHON_VIRTUALENV_ROOT"
 
 	// DefaultSpecENV is an enviornment variable that, if set, will be used as the
@@ -189,7 +189,7 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 		if err != nil {
 			return errors.Annotate(err, "failed to get user home directory").Err()
 		}
-		a.opts.EnvConfig.BaseDir = filepath.Join(hdir, ".vpython")
+		a.opts.EnvConfig.BaseDir = filepath.Join(hdir, ".vpython-root")
 	}
 
 	// Extract "vpython" arguments and parse them.
