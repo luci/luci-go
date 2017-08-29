@@ -1066,7 +1066,7 @@ namespace LogDog {
      * buffered data, even if it is partial or incomplete.
      */
     implicitNext?: (prev: LogDog.LogEntry, buffers: BufferedLogs[]) =>
-                       LogDog.LogEntry | null;
+                    LogDog.LogEntry | null;
   };
 
   const prefixIndexLogSorter: LogSorter = {
@@ -1074,16 +1074,17 @@ namespace LogDog {
       return (a.prefixIndex - b.prefixIndex);
     },
 
-    implicitNext: (prev: LogDog.LogEntry, buffers: BufferedLogs[]) => {
-      let nextPrefixIndex = (prev.prefixIndex + 1);
-      for (let buf of buffers) {
-        let le = buf.peek();
-        if (le && le.prefixIndex === nextPrefixIndex) {
-          return buf.next();
-        }
-      }
-      return null;
-    },
+    implicitNext:
+        (prev: LogDog.LogEntry, buffers: BufferedLogs[]) => {
+          let nextPrefixIndex = (prev.prefixIndex + 1);
+          for (let buf of buffers) {
+            let le = buf.peek();
+            if (le && le.prefixIndex === nextPrefixIndex) {
+              return buf.next();
+            }
+          }
+          return null;
+        },
   };
 
   const timestampLogSorter: LogSorter = {
