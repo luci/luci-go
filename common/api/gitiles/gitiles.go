@@ -39,7 +39,12 @@ type User struct {
 
 // GetTime returns the Time field as real data!
 func (u *User) GetTime() (time.Time, error) {
-	return time.Parse(time.ANSIC, u.Time)
+	t, err := time.Parse(time.ANSIC, u.Time)
+	if err != nil {
+		// Try it with the appended timezone version.
+		t, err = time.Parse(time.ANSIC+" -0700", u.Time)
+	}
+	return t, err
 }
 
 // Commit is the information of a commit returned from gitiles.
