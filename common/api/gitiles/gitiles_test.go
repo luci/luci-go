@@ -90,7 +90,7 @@ func TestLog(t *testing.T) {
 			So(commits[1].Commit, ShouldEqual, "dc1dbf1aa56e4dd4cbfaab61c4d30a35adce5f40")
 		})
 
-		Convey("DO not exceed limit", func() {
+		Convey("Do not exceed limit", func() {
 			commits, err := c.Log(ctx, "https://c.googlesource.com/repo",
 				"master..8de6836858c99e48f3c58164ab717bda728e95dd", 1)
 			So(err, ShouldBeNil)
@@ -204,12 +204,12 @@ var (
 		"author": {
 			"name": "Author 1",
 			"email": "author1@example.com",
-			"time": "Mon Jul 17 15:02:43 2017"
+			"time": "Mon Jul 17 15:02:43 2017 -0800"
 		},
 		"committer": {
 			"name": "Commit Bot",
 			"email": "commit-bot@chromium.org",
-			"time": "Mon Jul 17 15:02:43 2017"
+			"time": "Mon Jul 17 15:02:43 2017 +0000"
 		},
 		"message": "Import wpt@d96d68ed964f9bfc2bb248c2d2fab7a8870dc685\\n\\nCr-Commit-Position: refs/heads/master@{#487078}"
 	}`
