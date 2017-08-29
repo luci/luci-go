@@ -139,8 +139,7 @@ namespace LogDog {
           this.onScroll();
         }
 
-        private scrollTimeoutId: number |
-        null = null;
+    private scrollTimeoutId: number|null = null;
     private model: Model|null = null;
     private renderedLogs = false;
 
