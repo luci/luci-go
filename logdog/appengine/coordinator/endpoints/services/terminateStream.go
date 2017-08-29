@@ -129,12 +129,6 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 				return grpcutil.Internal
 			}
 
-			if err := tasks.DeleteArchiveStreamExpiredTask(c, id); err != nil {
-				// If we can't delete this task, it will just run, notice that the
-				// stream is archived, and quit. No big deal.
-				log.WithError(err).Warningf(c, "(Non-fatal) Failed to delete expired archival task.")
-			}
-
 			// In case the stream was *registered* with Tumble, but is now being
 			// processed with task queue code, clear the Tumble archival mutation.
 			//
@@ -157,6 +151,14 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 			log.ErrorKey: err,
 		}.Errorf(c, "Failed to update LogStream.")
 		return nil, err
+	}
+
+	// Try and delete the archive expired task. We must do this outside of a
+	// transaction.
+	if err := tasks.DeleteArchiveStreamExpiredTask(c, id); err != nil {
+		// If we can't delete this task, it will just run, notice that the
+		// stream is archived, and quit. No big deal.
+		log.WithError(err).Warningf(c, "(Non-fatal) Failed to delete expired archival task.")
 	}
 
 	return &empty.Empty{}, nil
