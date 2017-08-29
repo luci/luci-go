@@ -94,8 +94,7 @@ func fireTasks(c context.Context, cfg *Config, shards map[taskShard]struct{}, lo
 		logging.Infof(c, "added task %q %s %s", tsk.Name, tsk.Path, tsk.ETA)
 	}
 
-	b := tq.Batcher{}
-	if err := errors.Filter(b.Add(ds.WithoutTransaction(c), baseName, tasks...), tq.ErrTaskAlreadyAdded); err != nil {
+	if err := errors.Filter(tq.Add(ds.WithoutTransaction(c), baseName, tasks...), tq.ErrTaskAlreadyAdded); err != nil {
 		logging.Warningf(c, "attempted to fire tasks %v, but failed: %s", shards, err)
 		return false
 	}
