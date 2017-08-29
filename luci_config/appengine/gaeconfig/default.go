@@ -164,10 +164,16 @@ func UseFlex(c context.Context) context.Context {
 	// TODO: Install a path to load configurations from datastore cache. ATM,
 	// it can't be done because using datastore cache requires the ability to
 	// write to datastore.
-	ccfg := cacheConfig{
-		GlobalCache: func(c context.Context, be backend.B, s *Settings) backend.B {
-			return caching.LRUBackend(be, serverCaching.ProcessCache(c), s.CacheExpiration())
-		},
+	var ccfg cacheConfig
+	pc := serverCaching.ProcessCache(c)
+	if pc != nil {
+		ccfg.GlobalCache = func(c context.Context, be backend.B, s *Settings) backend.B {
+			lruBE := caching.LRU{
+				Cache:      pc,
+				Expiration: s.CacheExpiration(),
+			}
+			return lruBE.Wrap(be)
+		}
 	}
 	return installConfigBackend(c, mustFetchCachedSettings(c), nil, ccfg)
 }

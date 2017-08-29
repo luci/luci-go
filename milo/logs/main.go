@@ -20,37 +20,16 @@ import (
 	"net/http"
 	"strings"
 
-	"go.chromium.org/gae/impl/cloud"
-	"go.chromium.org/luci/common/data/caching/lru"
+	"go.chromium.org/luci/appengine/gaemiddleware/flex"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
-
-	"golang.org/x/net/context"
 )
-
-// flexBase returns the basic middleware for use on appengine flex.  Flex does not
-// allow the use of appengine APIs.
-func flexBase() router.MiddlewareChain {
-	flex := cloud.Flex{
-		Cache: lru.New(1024 * 1024),
-	}
-	cfg, err := flex.Configure(context.Background())
-	if err != nil {
-		panic(err)
-	}
-
-	// Installs the Info and Datastore services.
-	return router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
-		c.Context = cfg.Use(c.Context, flex.Request(c.Request))
-		next(c)
-	})
-}
 
 // Where it all begins!!!
 func main() {
 	r := router.New()
 
-	base := flexBase()
+	base := flex.ReadOnlyFlex.Base()
 	r.GET("/log/raw/*path", base, rawLog)
 
 	// Health check, for the appengine flex environment.
