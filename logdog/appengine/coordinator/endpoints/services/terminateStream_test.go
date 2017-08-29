@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/gae/filter/featureBreaker"
 	ds "go.chromium.org/gae/service/datastore"
+
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
@@ -28,6 +29,7 @@ import (
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 	"go.chromium.org/luci/logdog/appengine/coordinator/mutations"
 	"go.chromium.org/luci/tumble"
+
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -109,19 +111,19 @@ func TestTerminateStream(t *testing.T) {
 						// optimistic one. Assert that this happened by advancing time by
 						// the optimistic period and confirming the published archival
 						// request.
-						env.RunTaskQueues(c, tls)
+						env.IterateTumbleAll(c)
 						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{})
 
 						// Add our settle delay, confirm that archival is scheduled.
 						env.Clock.Add(10 * time.Second)
-						env.RunTaskQueues(c, tls)
+						env.IterateTumbleAll(c)
 						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
 
 						// Add our pessimistic delay, confirm that no additional tasks
 						// are scheduled (because pessimistic was replaced).
 						env.ArchivalPublisher.Clear()
 						env.Clock.Add(time.Hour)
-						env.RunTaskQueues(c, tls)
+						env.IterateTumbleAll(c)
 						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{})
 					})
 

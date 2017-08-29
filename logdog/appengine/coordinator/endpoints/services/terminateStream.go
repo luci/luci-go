@@ -17,8 +17,6 @@ package services
 import (
 	"crypto/subtle"
 
-	"github.com/golang/protobuf/ptypes/empty"
-
 	ds "go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/common/clock"
@@ -31,11 +29,12 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/appengine/coordinator/mutations"
-	"go.chromium.org/luci/logdog/appengine/coordinator/tasks"
 	"go.chromium.org/luci/tumble"
 
-	"golang.org/x/net/context"
+	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
+
+	"golang.org/x/net/context"
 )
 
 // TerminateStream is an idempotent stream state terminate operation.
@@ -120,29 +119,31 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 				return grpcutil.Internal
 			}
 
-			// Replace the pessimistic archive expiration task scheduled in
-			// RegisterStream with an optimistic archival task.
-			if err := tasks.CreateArchivalTask(c, id, logdog.ArchiveDispatchTask_TERMINATED,
-				params.SettleDelay, params); err != nil {
+			// Replace the pessimistic archive expiration mutation scheduled in
+			// RegisterStream with an optimistic archival mutation.
+			cat := mutations.CreateArchiveTask{
+				ID: id,
 
-				log.WithError(err).Errorf(c, "Failed to create terminated archival task.")
-				return grpcutil.Internal
+				// Optimistic parameters.
+				SettleDelay:    params.SettleDelay,
+				CompletePeriod: params.CompletePeriod,
+
+				// Schedule this mutation to execute after our settle delay.
+				Expiration: now.Add(params.SettleDelay),
 			}
 
-			// In case the stream was *registered* with Tumble, but is now being
-			// processed with task queue code, clear the Tumble archival mutation.
-			//
-			// TODO(dnj): Remove this once Tumble is drained.
-			archiveMutation := mutations.CreateArchiveTask{ID: id}
-			if err := tumble.CancelNamedMutations(c, archiveMutation.Root(c), archiveMutation.TaskName(c)); err != nil {
-				log.WithError(err).Warningf(c, "(Non-fatal) Failed to cancel archive mutation.")
+			aeParent, aeName := ds.KeyForObj(c, lst), cat.TaskName(c)
+			if err := tumble.PutNamedMutations(c, aeParent, map[string]tumble.Mutation{aeName: &cat}); err != nil {
+				log.WithError(err).Errorf(c, "Failed to replace archive expiration mutation.")
+				return grpcutil.Internal
 			}
 
 			log.Fields{
 				"terminalIndex":  lst.TerminalIndex,
-				"settleDelay":    params.SettleDelay,
-				"completePeriod": params.CompletePeriod,
-			}.Debugf(c, "Terminal index was set, and archival task was scheduled.")
+				"settleDelay":    cat.SettleDelay,
+				"completePeriod": cat.CompletePeriod,
+				"scheduledAt":    cat.Expiration,
+			}.Debugf(c, "Terminal index was set, and archival mutation was scheduled.")
 			return nil
 		}
 	}, nil)
@@ -151,14 +152,6 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 			log.ErrorKey: err,
 		}.Errorf(c, "Failed to update LogStream.")
 		return nil, err
-	}
-
-	// Try and delete the archive expired task. We must do this outside of a
-	// transaction.
-	if err := tasks.DeleteArchiveStreamExpiredTask(c, id); err != nil {
-		// If we can't delete this task, it will just run, notice that the
-		// stream is archived, and quit. No big deal.
-		log.WithError(err).Warningf(c, "(Non-fatal) Failed to delete expired archival task.")
 	}
 
 	return &empty.Empty{}, nil
