@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7e9f3d0c_3f759b92",
+        "filename": "milo/buildsource/rawpresentation/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-29T00:42:15Z",
+      "side": 1,
+      "message": "docstring",
+      "revId": "f8ab49d9c0d3f1a1e0c8074c5aa1229a3359e13f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
