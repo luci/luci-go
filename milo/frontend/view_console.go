@@ -102,11 +102,10 @@ func console(c context.Context, project, name string, limit int) (*resp.Console,
 		return nil, err
 	}
 
-	ccb := make([]resp.CommitBuild, len(commitInfo.Commits))
-	builderRefs := make([]resp.BuilderRef, len(def.Builders))
+	// Build list of commits.
+	commits := make([]resp.Commit, len(commitInfo.Commits))
 	for row, commit := range commitInfo.Commits {
-		ccb[row].Build = make([]*model.BuildSummary, len(def.Builders))
-		ccb[row].Commit = resp.Commit{
+		commits[row] = resp.Commit{
 			AuthorName:  commit.AuthorName,
 			AuthorEmail: commit.AuthorEmail,
 			CommitTime:  google.TimeFromProto(commit.CommitTime),
@@ -115,29 +114,43 @@ func console(c context.Context, project, name string, limit int) (*resp.Console,
 			Description: commit.Msg,
 			Revision:    resp.NewLink(commitNames[row], def.RepoURL+"/+/"+commitNames[row]),
 		}
+	}
 
-		for col, b := range def.Builders {
-			meta := def.BuilderMetas[col]
-			short := meta.ShortName
-			if short == "" {
-				short = shortname(b)
-			}
-			builderRefs[col] = resp.BuilderRef{
-				Name:      b,
-				Category:  strings.Split(meta.Category, "|"),
-				ShortName: short,
-			}
-			name := buildsource.BuilderID(b)
+	// Build console table tree from builders.
+	categoryTree := resp.NewCategory("")
+	depth := 0
+	for col, b := range def.Builders {
+		meta := def.BuilderMetas[col]
+		short := meta.ShortName
+		if short == "" {
+			short = shortname(b)
+		}
+		name := buildsource.BuilderID(b)
+
+		// Group together all builds for this builder.
+		builds := make([]*model.BuildSummary, len(commits))
+		for row := 0; row < len(commits); row++ {
 			if summaries := rows[row].Builds[name]; len(summaries) > 0 {
-				ccb[row].Build[col] = summaries[0]
+				builds[row] = summaries[0]
 			}
 		}
+		builderRef := &resp.BuilderRef{
+			Name:      b,
+			ShortName: short,
+			Build:     builds,
+		}
+		categories := strings.Split(meta.Category, "|")
+		if len(categories) > depth {
+			depth = len(categories)
+		}
+		categoryTree.AddBuilder(categories, builderRef)
 	}
 
 	return &resp.Console{
-		Name:       def.ID,
-		Commit:     ccb,
-		BuilderRef: builderRefs,
+		Name:     def.ID,
+		Commit:   commits,
+		Table:    *categoryTree,
+		MaxDepth: depth + 1,
 	}, nil
 }
 
@@ -146,67 +159,17 @@ type consoleRenderer struct {
 	*resp.Console
 }
 
-// Header generates the console header html.
-func (c consoleRenderer) Header() template.HTML {
-	// First, split things into nice rows and find the max depth.
-	cat := make([][]string, len(c.BuilderRef))
-	depth := 0
-	for i, b := range c.BuilderRef {
-		cat[i] = b.Category
-		if len(cat[i]) > depth {
-			depth = len(cat[i])
-		}
+// ConsoleTable generates the main console table html.
+//
+// This cannot be generated with templates due to the 'recursive' nature of
+// this layout.
+func (c consoleRenderer) ConsoleTable() template.HTML {
+	var buffer bytes.Buffer
+	// The first node is a dummy node
+	for _, column := range c.Table.Children {
+		column.RenderHTML(&buffer, 1, c.MaxDepth)
 	}
-
-	var buf bytes.Buffer
-	must := func(_ int, err error) {
-		if err != nil {
-			panic(err)
-		}
-	}
-	for row := 0; row < depth; row++ {
-		must(buf.WriteString("<tr><th></th><th></th>"))
-		// "" is the first two nodes, " " is an empty node.
-		current := ""
-		colspan := 0
-		for _, br := range cat {
-			colspan++
-			var s string
-			if row >= len(br) {
-				s = " "
-			} else {
-				s = br[row]
-			}
-			if s != current || current == " " {
-				if current != "" || current == " " {
-					must(fmt.Fprintf(&buf, `<th colspan="%d">%s</th>`, colspan, current))
-					colspan = 0
-				}
-				current = s
-			}
-		}
-		if colspan != 0 {
-			must(fmt.Fprintf(&buf, `<th colspan="%d">%s</th>`, colspan, current))
-		}
-		must(buf.WriteString("</tr>"))
-	}
-
-	// Last row: The actual builder shortnames.
-	must(buf.WriteString("<tr><th></th><th></th>"))
-	for _, br := range c.BuilderRef {
-		_, _, builderName, err := buildsource.BuilderID(br.Name).Split()
-		if err != nil {
-			must(fmt.Fprintf(&buf, "<th><a title=\"%s\">ERR</a></th>", template.HTMLEscapeString(err.Error())))
-		} else {
-			must(fmt.Fprintf(
-				&buf, "<th><a href=\"/%s\" title=\"%s\">%s</a></th>",
-				template.HTMLEscapeString(br.Name),
-				template.HTMLEscapeString(builderName),
-				template.HTMLEscapeString(br.ShortName)))
-		}
-	}
-	must(buf.WriteString("</tr>"))
-	return template.HTML(buf.String())
+	return template.HTML(buffer.String())
 }
 
 func (c consoleRenderer) BuilderLink(bs *model.BuildSummary) (*resp.Link, error) {
