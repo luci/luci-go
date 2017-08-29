@@ -1,0 +1,98 @@
+// Copyright (c) 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+// This file defines a common protocol to check whether a user has access
+// to a resource.
+// For example, it can be used by one appengien app against another app.
+
+syntax = "proto3";
+
+package luci;
+
+import "google/protobuf/empty.proto";
+
+// Access service can be used to check what actions a given user can perform
+// on a given resource.
+service Access {
+  // PermittedActions returns a list of actions a given user can perform
+  // on a given resource.
+  rpc PermittedActions(PermittedActionsRequest) returns (PermittedActionsResponse) {};
+  // Description returns types of resources and actions that this service
+  // supports.
+  // It is intended to be used as self-documentation, for humans that play
+  // with the API.
+  rpc Description(google.protobuf.Empty) returns (DescriptionResponse) {};
+}
+
+// DescriptionResponse is the response message from Access.Description.
+message DescriptionResponse {
+
+  // ResourceDescription is one resource type, e.g. "buildbucket bucket"
+  // or "swarming pool".
+  message ResourceDescription {
+
+    // Action describes what a user can do with a resource.
+    message Action {
+      // ActionID identifies the action within the resource.
+      // It is referenced from Role.allowed_actions.
+      // Examples: "READ", "WRITE".
+      string action_id = 1;
+      // Comment provides more info about the action.
+      string comment = 2;
+    }
+
+    // Role is a named set of allowed actions.
+    message Role {
+      // AllowedActions is a set of action IDs.
+      // It defines what a role bearer can do with the resource.
+      repeated string allowed_actions = 1;
+    }
+
+    // Pattern is a name format for this resource type.
+    // Example: "buckets/{bucket-id}".
+    // Access.PermittedActions method uses resource name patterns to determine
+    // the type of resource.
+    //
+    // For implementers:
+    // recommended format for patterns: "<kind>/{<param-name>}".
+    // In general, a slash-separated list of slash-separated (kind, {param})
+    // tuples.
+    string pattern = 1;
+    // Comment provides more info about the resource.
+    string comment = 2;
+    // Actions defines all possible actions that can performed on this type of
+    // resource. See also roles.
+    repeated Action actions = 3;
+    // Roles maps role ids to lists of actions.
+    // Access configurations are typically expressed with roles, not actions.
+    map<string, Role> roles = 4;
+  }
+
+  // Resources is a list of resource types presented on the given service.
+  repeated ResourceDescription resources = 1;
+}
+
+// PermittedActionsRequest is a request message to Access.PermittedActions
+// method.
+//
+// Besides explicit fields in the message, there is an implicit parameter: the
+// current identity. Access.PermittedActions method returns a list of actions
+// for the current identity.
+message PermittedActionsRequest {
+  // Resource is the name of the resource we are checking.
+  //
+  // It must match one of the resource patterns returned by Access.Description
+  // method. For example, if a service provides a resource with pattern
+  // "buckets/{bucket-id}, the resource can be "buckets/luci.chromium.try".
+  string resource = 1;
+}
+
+
+// PermittedActionsResponse is the response message of the
+// Accses.PermittedActions method.
+message PermittedActionsResponse {
+  // Actions is a list of action ids
+  // for resources that do not exist, this list must be empty
+  repeated string actions = 1;
+}
