@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ecd00ea1_20fc3437",
+        "filename": "milo/api/resp/console_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-08-29T20:09:53Z",
+      "side": 1,
+      "message": "lol",
+      "range": {
+        "startLine": 84,
+        "startChar": 28,
+        "endLine": 84,
+        "endChar": 31
+      },
+      "revId": "c2cbfe92f1b39876ebee0f2835ffde89442d33a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
