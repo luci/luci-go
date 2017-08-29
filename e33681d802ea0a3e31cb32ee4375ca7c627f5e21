@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8562d6e0_16376b11",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-29T21:07:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3561052e_c3c2e898",
+      "range": {
+        "startLine": 217,
+        "startChar": 62,
+        "endLine": 218,
+        "endChar": 12
+      },
+      "revId": "e33681d802ea0a3e31cb32ee4375ca7c627f5e21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0fb6970a_32e55e38",
         "filename": "common/api/gitiles/gitiles_test.go",
         "patchSetId": 8
@@ -45,6 +69,30 @@
       "revId": "e33681d802ea0a3e31cb32ee4375ca7c627f5e21",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "667e311e_e4e1b176",
+        "filename": "common/api/gitiles/gitiles_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-29T21:07:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0fb6970a_32e55e38",
+      "range": {
+        "startLine": 172,
+        "startChar": 33,
+        "endLine": 172,
+        "endChar": 38
+      },
+      "revId": "e33681d802ea0a3e31cb32ee4375ca7c627f5e21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
