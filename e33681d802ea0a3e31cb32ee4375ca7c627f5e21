@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3561052e_c3c2e898",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1002882
+      },
+      "writtenOn": "2017-08-29T20:17:50Z",
+      "side": 1,
+      "message": "Maybe say \"Recommend to use a large page size, otherwise ...\"",
+      "range": {
+        "startLine": 217,
+        "startChar": 62,
+        "endLine": 218,
+        "endChar": 12
+      },
+      "revId": "e33681d802ea0a3e31cb32ee4375ca7c627f5e21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0fb6970a_32e55e38",
+        "filename": "common/api/gitiles/gitiles_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1002882
+      },
+      "writtenOn": "2017-08-29T20:17:50Z",
+      "side": 1,
+      "message": "I guess no need to do this large. Maybe set it to 201, and set the page_size to 100?",
+      "range": {
+        "startLine": 172,
+        "startChar": 33,
+        "endLine": 172,
+        "endChar": 38
+      },
+      "revId": "e33681d802ea0a3e31cb32ee4375ca7c627f5e21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
