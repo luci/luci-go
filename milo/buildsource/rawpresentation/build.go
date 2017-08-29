@@ -197,6 +197,17 @@ type ViewerURLBuilder struct {
 	Project cfgtypes.ProjectName
 }
 
+// NewURLBuilder creates a new URLBuilder that can generate links to LogDog
+// pages given a LogDog StreamAddr.
+func NewURLBuilder(addr *types.StreamAddr) *ViewerURLBuilder {
+	prefix, _ := addr.Path.Split()
+	return &ViewerURLBuilder{
+		Host:    addr.Host,
+		Prefix:  prefix,
+		Project: addr.Project,
+	}
+}
+
 // BuildLink implements URLBuilder.
 func (b *ViewerURLBuilder) BuildLink(l *miloProto.Link) *resp.Link {
 	switch t := l.Value.(type) {
