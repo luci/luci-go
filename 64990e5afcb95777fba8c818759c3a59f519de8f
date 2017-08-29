@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8c8cca4d_9cb17e10",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-29T23:55:30Z",
+      "side": 1,
+      "message": "do we want to have a standard set of basic recommendations so we don\u0027t end up with one service having GET/PUT and another one having READ/WRITE, and another one OBSERVE/INPUT? Maybe even an enumeration of \u0027basic\u0027 actions with detailed \"use this when ___\" descriptions, and then a \u0027special_action\u0027 field which is freeform text? Then we can (via codereview) recommend the use of common actions when appropriate.\n\nAt the very least I think we should have some basic list of spellings:\n  * READ\n  * WRITE\n  * ALTER\n  * DELETE\n  * INFO\n\netc.",
+      "range": {
+        "startLine": 39,
+        "startChar": 20,
+        "endLine": 39,
+        "endChar": 33
+      },
+      "revId": "64990e5afcb95777fba8c818759c3a59f519de8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41d393b1_2cca2494",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-29T23:55:30Z",
+      "side": 1,
+      "message": "comment? e.g. \"Role ADMIN should only be used by mdb/eng members because it lets you turn off the data hose\" or something.",
+      "revId": "64990e5afcb95777fba8c818759c3a59f519de8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "358932e1_5fea96a6",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-29T23:55:30Z",
+      "side": 1,
+      "message": "can we make this formatting formal (e.g. have a client library with a consistent interface for formatting these strings, and also have a checker to make sure that config file patterns make sense?)\n\nI\u0027d also really like if the format parameters were explicitly described too in a map, e.g.:\n  // Mapping of resource parameter to description of what that parameter is for.\n  map\u003cstring, string\u003e parameters \u003d ?;\n\ne.g.\n  {\n    \"bucket-id\": \"The BuildBucket bucket ID. This is fully qualified (`luci.chromium.try`), and is defined in your repo\u0027s buildbucket.cfg file.\",\n  }\n\nOr something.",
+      "range": {
+        "startLine": 58,
+        "startChar": 7,
+        "endLine": 58,
+        "endChar": 25
+      },
+      "revId": "64990e5afcb95777fba8c818759c3a59f519de8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b3512e0_21ccab28",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-29T23:55:30Z",
+      "side": 1,
+      "message": "two \u0027slash-separated\u0027ds? I don\u0027t think the example shows this clearly (unless it\u0027s a typo?)",
+      "range": {
+        "startLine": 59,
+        "startChar": 22,
+        "endLine": 60,
+        "endChar": 13
+      },
+      "revId": "64990e5afcb95777fba8c818759c3a59f519de8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4da4ce1f_8909b72a",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-29T23:55:30Z",
+      "side": 1,
+      "message": "does this capture the current project namespace that the user is operating within? Should it? Do we want projects to be explicitly supported in this protocol, or is the expectation that every resource will look like `{project}/buckets/{bucket-id}`?",
+      "range": {
+        "startLine": 79,
+        "startChar": 3,
+        "endLine": 79,
+        "endChar": 19
+      },
+      "revId": "64990e5afcb95777fba8c818759c3a59f519de8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2120127e_57a66b18",
+        "filename": "common/proto/access/access_check.pb.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-29T23:55:30Z",
+      "side": 1,
+      "message": "what\u0027s this file from?",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 48
+      },
+      "revId": "64990e5afcb95777fba8c818759c3a59f519de8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
