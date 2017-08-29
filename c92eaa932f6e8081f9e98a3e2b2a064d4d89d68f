@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ff55e594_3163ea87",
+        "filename": "milo/api/resp/console_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-08-29T18:27:30Z",
+      "side": 1,
+      "message": "Common code can be moved out of the inner scopes",
+      "revId": "c92eaa932f6e8081f9e98a3e2b2a064d4d89d68f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
