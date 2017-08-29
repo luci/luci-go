@@ -85,7 +85,7 @@ func getSwarmingClient(c context.Context, host string) (*swarming.Service, error
 
 // swarmingService is an interface that fetches data from Swarming.
 //
-// In production, this is fetched from a Swarming server. For testing, this can
+// In production, this is fetched from a Swarming host. For testing, this can
 // be replaced with a mock.
 type swarmingService interface {
 	getHost() string
@@ -315,11 +315,11 @@ func addBanner(build *resp.MiloBuild, tags map[string]string) {
 
 // addTaskToMiloStep augments a Milo Annotation Protobuf with state from the
 // Swarming task.
-func addTaskToMiloStep(c context.Context, server string, sr *swarming.SwarmingRpcsTaskResult, step *miloProto.Step) error {
+func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcsTaskResult, step *miloProto.Step) error {
 	step.Link = &miloProto.Link{
 		Label: "Task " + sr.TaskId,
 		Value: &miloProto.Link_Url{
-			Url: taskPageURL(server, sr.TaskId),
+			Url: taskPageURL(host, sr.TaskId).String(),
 		},
 	}
 
@@ -446,10 +446,10 @@ func addRecipeLink(build *resp.MiloBuild, tags map[string]string) {
 	}
 }
 
-func addTaskToBuild(c context.Context, server string, sr *swarming.SwarmingRpcsTaskResult, build *resp.MiloBuild) error {
+func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTaskResult, build *resp.MiloBuild) error {
 	build.Summary.Label = sr.TaskId
 	build.Summary.Type = resp.Recipe
-	build.Summary.Source = resp.NewLink("Task "+sr.TaskId, taskPageURL(server, sr.TaskId))
+	build.Summary.Source = resp.NewLink("Task "+sr.TaskId, taskPageURL(host, sr.TaskId).String())
 
 	// Extract more swarming specific information into the properties.
 	if props := taskProperties(sr); len(props.Property) > 0 {
@@ -464,7 +464,7 @@ func addTaskToBuild(c context.Context, server string, sr *swarming.SwarmingRpcsT
 
 	// Add a link to the bot.
 	if sr.BotId != "" {
-		build.Summary.Bot = resp.NewLink(sr.BotId, botPageURL(server, sr.BotId))
+		build.Summary.Bot = resp.NewLink(sr.BotId, botPageURL(host, sr.BotId))
 	}
 
 	return nil
@@ -556,7 +556,10 @@ func failedToStart(c context.Context, build *resp.MiloBuild, res *swarming.Swarm
 	return addTaskToBuild(c, host, res, build)
 }
 
-func (bl *BuildLoader) SwarmingBuildImpl(c context.Context, svc swarmingService, taskID string) (*resp.MiloBuild, error) {
+// swarmingFetchMaybeLogs fetches the swarming task result.  It also fetches
+// the log iff the task is not a logdog enabled task.
+func swarmingFetchMaybeLogs(c context.Context, svc swarmingService, taskID string) (
+	*swarmingFetchResult, *types.StreamAddr, error) {
 	// Fetch the data from Swarming
 	var logDogStreamAddr *types.StreamAddr
 
@@ -591,103 +594,139 @@ func (bl *BuildLoader) SwarmingBuildImpl(c context.Context, svc swarmingService,
 		},
 	}
 	fr, err := swarmingFetch(c, svc, taskID, fetchParams)
+	return fr, logDogStreamAddr, err
+}
+
+func (bl *BuildLoader) streamFromLogDog(c context.Context, addr *types.StreamAddr) (*miloProto.Step, error) {
+	logging.Infof(c, "Loading build from LogDog stream at: %s", addr)
+
+	// If the LogDog stream is available, load the step from that.
+	as, err := bl.newEmptyAnnotationStream(c, addr)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "failed to create LogDog annotation stream").Err()
 	}
 
+	return as.Fetch(c)
+}
+
+// buildFromLogs returns a milo build from just the swarming log and result data.
+// TODO(hinoka): Remove this once skia moves logging to logdog/kitchen.
+func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult) (*resp.MiloBuild, error) {
 	var build resp.MiloBuild
-	var s *miloProto.Step
+	var step *miloProto.Step
 	var lds *rawpresentation.Streams
-	var ub rawpresentation.URLBuilder
+	// Log links are built relative to swarming URLs
+	id := taskURL.Query().Get("id")
+	ub := swarmingURLBuilder(id)
 
-	// Load the build from the available data.
-	//
-	// If the Swarming task explicitly specifies its log location, we prefer that.
-	// As a fallback, we will try and parse the Swarming task's output for
-	// annotations.
-	switch {
-	case logDogStreamAddr != nil:
-		logging.Infof(c, "Loading build from LogDog stream at: %s", logDogStreamAddr)
-
-		// If the LogDog stream is available, load the step from that.
-		as, err := bl.newEmptyAnnotationStream(c, logDogStreamAddr)
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to create LogDog annotation stream").Err()
-		}
-
-		prefix, _ := logDogStreamAddr.Path.Split()
-		ub = &rawpresentation.ViewerURLBuilder{
-			Host:    logDogStreamAddr.Host,
-			Prefix:  prefix,
-			Project: logDogStreamAddr.Project,
-		}
-
-		if s, err = as.Fetch(c); err != nil {
-			switch errors.Unwrap(err) {
-			case coordinator.ErrNoSuchStream:
-				// The stream was not found.  This could be due to one of two things:
-				// 1. The step just started and we're just waiting for the logs
-				// to propogage to logdog.
-				// 2. The bootsrap on the client failed, and never sent data to logdog.
-				// This would be evident because the swarming result would be a failure.
-				if fr.res.State == TaskCompleted {
-					err = failedToStart(c, &build, fr.res, svc.getHost())
-					return &build, err
-				}
-				logging.WithError(err).Errorf(c, "User cannot access stream.")
-				build.Components = append(build.Components, infoComponent(model.Running,
-					"Waiting...", "waiting for annotation stream"))
-
-			case coordinator.ErrNoAccess:
-				logging.WithError(err).Errorf(c, "User cannot access stream.")
-				build.Components = append(build.Components, infoComponent(model.Failure,
-					"No Access", "no access to annotation stream"))
-
-			default:
-				logging.WithError(err).Errorf(c, "Failed to load LogDog annotation stream.")
-				build.Components = append(build.Components, infoComponent(model.InfraFailure,
-					"Error", "failed to load annotation stream"))
-			}
-		}
-
-	case fr.log != "":
-		// Decode the data using annotee. The logdog stream returned here is assumed
-		// to be consistent, which is why the following block of code are not
-		// expected to ever err out.
+	// Decode the data using annotee. The logdog stream returned here is assumed
+	// to be consistent, which is why the following block of code are not
+	// expected to ever err out.
+	if fr.log != "" {
 		var err error
 		lds, err = streamsFromAnnotatedLog(c, fr.log)
 		if err != nil {
 			comp := infoComponent(model.InfraFailure, "Milo annotation parser", err.Error())
 			comp.SubLink = append(comp.SubLink, resp.LinkSet{
-				resp.NewLink("swarming task", taskPageURL(svc.getHost(), taskID)),
+				resp.NewLink("swarming task", taskURL.String()),
 			})
 			build.Components = append(build.Components, comp)
+		} else if lds.MainStream != nil {
+			step = lds.MainStream.Data
 		}
-
-		if lds != nil && lds.MainStream != nil && lds.MainStream.Data != nil {
-			s = lds.MainStream.Data
-		}
-		ub = swarmingURLBuilder(taskID)
-
-	default:
-		s = &miloProto.Step{}
-		ub = swarmingURLBuilder(taskID)
+	} else {
+		// We don't have any annotated log, just create an empty step so that
+		// swarming task results can be filled in.
+		step = &miloProto.Step{}
 	}
 
-	if s != nil {
-		if err := addTaskToMiloStep(c, svc.getHost(), fr.res, s); err != nil {
-			return nil, err
-		}
-		rawpresentation.AddLogDogToBuild(c, ub, s, &build)
-	}
-
-	if err := addTaskToBuild(c, svc.getHost(), fr.res, &build); err != nil {
+	if err := addTaskToMiloStep(c, taskURL.Host, fr.res, step); err != nil {
 		return nil, err
 	}
+	rawpresentation.AddLogDogToBuild(c, ub, step, &build)
 
-	return &build, nil
+	err := addTaskToBuild(c, taskURL.Host, fr.res, &build)
+	return &build, err
 }
 
+// SwarmingBuildImpl fetches data from Swarming and LogDog and produces a resp.MiloBuild
+// representation of a build state given a Swarming TaskID.
+func (bl *BuildLoader) SwarmingBuildImpl(c context.Context, svc swarmingService, taskID string) (*resp.MiloBuild, error) {
+	// First, get the task result from swarming, and maybe the logs.
+	fr, logDogStreamAddr, err := swarmingFetchMaybeLogs(c, svc, taskID)
+	if err != nil {
+		return nil, err
+	}
+	swarmingResult := fr.res
+
+	// Legacy codepath - Annotations are encoded in the swarming log instead of LogDog.
+	// TODO(hinoka): Remove this once skia moves logging to logdog/kitchen.
+	if logDogStreamAddr == nil {
+		taskURL := taskPageURL(svc.getHost(), taskID)
+		return buildFromLogs(c, taskURL, fr)
+	}
+
+	// Create an empty build here first because we might want to add some
+	// system-level messages.
+	var build resp.MiloBuild
+
+	// Load the build from the LogDog service.  For known classes of errors, add
+	// steps in the build presentation to explain what may be going on.
+	step, err := bl.streamFromLogDog(c, logDogStreamAddr)
+	switch errors.Unwrap(err) {
+	case coordinator.ErrNoSuchStream:
+		// The stream was not found.  This could be due to one of two things:
+		// 1. The step just started and we're just waiting for the logs
+		// to propogage to logdog.
+		// 2. The bootsrap on the client failed, and never sent data to logdog.
+		// This would be evident because the swarming result would be a failure.
+		if swarmingResult.State == TaskCompleted {
+			err = failedToStart(c, &build, swarmingResult, svc.getHost())
+			return &build, err
+		}
+		logging.WithError(err).Errorf(c, "User cannot access stream.")
+		build.Components = append(build.Components, infoComponent(model.Running,
+			"Waiting...", "waiting for annotation stream"))
+
+	case coordinator.ErrNoAccess:
+		logging.WithError(err).Errorf(c, "User cannot access stream.")
+		build.Components = append(build.Components, infoComponent(model.Failure,
+			"No Access", "no access to annotation stream"))
+	case nil:
+		// continue
+
+	default:
+		logging.WithError(err).Errorf(c, "Failed to load LogDog annotation stream.")
+		build.Components = append(build.Components, infoComponent(model.InfraFailure,
+			"Error", "failed to load annotation stream"))
+	}
+
+	// Log links are linked directly to the logdog service.  This is used when
+	// converting proto step data to resp build structs
+	ub := rawpresentation.NewURLBuilder(logDogStreamAddr)
+
+	// Skip these steps if the LogDog stream doesn't exist.
+	// i.e. when the stream isn't ready yet, or errored out.
+	if step != nil {
+		// Milo Step Proto += Swarming Result Data
+		if err := addTaskToMiloStep(c, svc.getHost(), swarmingResult, step); err != nil {
+			return nil, err
+		}
+		// Milo Resp Build += Milo Step Proto.
+		if step != nil {
+			rawpresentation.AddLogDogToBuild(c, ub, step, &build)
+		}
+	}
+
+	// Milo Resp Build += Swarming Result Data
+	// This is done for things in resp but not in step like the banner, buildset,
+	// recipe link, bot info, title, etc.
+	err = addTaskToBuild(c, svc.getHost(), swarmingResult, &build)
+	return &build, err
+}
+
+// infoComponent is a helper function to return a resp build step with the
+// given status, label, and step text.
 func infoComponent(st model.Status, label, text string) *resp.BuildComponent {
 	return &resp.BuildComponent{
 		Type:   resp.Summary,
@@ -726,13 +765,22 @@ func isAllowed(c context.Context, tags []string) bool {
 }
 
 // taskPageURL returns a URL to a human-consumable page of a swarming task.
-// Supports server aliases.
-func taskPageURL(swarmingHostname, taskID string) string {
-	return fmt.Sprintf("https://%s/task?id=%s&show_raw=1&wide_logs=true", swarmingHostname, taskID)
+// Supports host aliases.
+func taskPageURL(swarmingHostname, taskID string) *url.URL {
+	val := url.Values{}
+	val.Set("id", taskID)
+	val.Set("show_raw", "1")
+	val.Set("wide_logs", "true")
+	return &url.URL{
+		Scheme:   "https",
+		Host:     swarmingHostname,
+		Path:     "task",
+		RawQuery: val.Encode(),
+	}
 }
 
 // botPageURL returns a URL to a human-consumable page of a swarming bot.
-// Supports server aliases.
+// Supports host aliases.
 func botPageURL(swarmingHostname, botID string) string {
 	return fmt.Sprintf("https://%s/restricted/bot/%s", swarmingHostname, botID)
 }
@@ -792,21 +840,21 @@ type BuildID struct {
 // getSwarmingHost parses the swarming hostname out of the context.  If
 // none is specified, get the default swarming host out of the global
 // configs.
-func (b *BuildID) getSwarmingHost(c context.Context) (server string, err error) {
-	server = b.Host
+func (b *BuildID) getSwarmingHost(c context.Context) (host string, err error) {
+	host = b.Host
 	settings := common.GetSettings(c)
 	if settings.Swarming == nil {
 		err := errors.New("swarming not in settings")
 		logging.WithError(err).Errorf(c, "Go configure swarming in the settings page.")
 		return "", err
 	}
-	if server == "" || server == settings.Swarming.DefaultHost {
+	if host == "" || host == settings.Swarming.DefaultHost {
 		return settings.Swarming.DefaultHost, nil
 	}
 	// If it is specified, validate the hostname.
 	for _, hostname := range settings.Swarming.AllowedHosts {
-		if server == hostname {
-			return server, nil
+		if host == hostname {
+			return host, nil
 		}
 	}
 	return "", errors.New("unknown swarming host", common.CodeParameterError)
