@@ -36,6 +36,7 @@ func DS() datastore.Constraints {
 // service.
 func TQ() taskqueue.Constraints {
 	return taskqueue.Constraints{
-		MaxAddSize: 100,
+		MaxAddSize:    100,
+		MaxDeleteSize: 1000,
 	}
 }

@@ -33,6 +33,9 @@ type Constraints struct {
 	// MaxAddSize is the maximum number of tasks that can be added to a queue in
 	// a single Add call.
 	MaxAddSize int
+	// MaxDeleteSize is the maximum number of tasks that can be deleted from
+	// a queue in a single Delete call.
+	MaxDeleteSize int
 }
 
 // RawInterface is the full interface to the Task Queue service.

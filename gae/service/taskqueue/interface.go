@@ -17,9 +17,10 @@ package taskqueue
 import (
 	"time"
 
-	"go.chromium.org/luci/common/errors"
-
 	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/sync/parallel"
 )
 
 // Add adds the specified task(s) to the specified task queue.
@@ -28,24 +29,53 @@ import (
 // than one task is provided, an errors.MultiError will be returned in the
 // event of an error, with a given error index corresponding to the error
 // encountered when processing the task at that index.
+//
+// If the number of tasks is beyond the limits of the underlying implementation,
+// splits the batch into multiple ones.
 func Add(c context.Context, queueName string, tasks ...*Task) error {
 	return addRaw(Raw(c), queueName, tasks)
 }
 
+func makeBatches(tasks []*Task, limit int) [][]*Task {
+	if limit <= 0 {
+		return [][]*Task{tasks}
+	}
+	batches := make([][]*Task, 0, len(tasks)/limit+1)
+	for len(tasks) > 0 {
+		batch := tasks
+		if len(batch) > limit {
+			batch = batch[:limit]
+		}
+		batches = append(batches, batch)
+		tasks = tasks[len(batch):]
+	}
+	return batches
+}
+
 func addRaw(raw RawInterface, queueName string, tasks []*Task) error {
 	lme := errors.NewLazyMultiError(len(tasks))
-	i := 0
-	err := raw.AddMulti(tasks, queueName, func(t *Task, err error) {
-		if !lme.Assign(i, err) {
-			*tasks[i] = *t
+	err := parallel.FanOutIn(func(work chan<- func() error) {
+		offset := 0
+		for _, batch := range makeBatches(tasks, raw.Constraints().MaxAddSize) {
+			batch := batch
+			i := offset
+			offset += len(batch)
+			work <- func() error {
+				return raw.AddMulti(batch, queueName, func(t *Task, err error) {
+					if !lme.Assign(i, err) {
+						*tasks[i] = *t
+					}
+					i++
+				})
+			}
 		}
-		i++
 	})
-	if err == nil {
-		err = lme.Get()
-		if len(tasks) == 1 {
-			err = errors.SingleError(err)
-		}
+	if err != nil {
+		return err
+	}
+	err = lme.Get()
+	if len(tasks) == 1 {
+		err = errors.SingleError(err)
 	}
 	return err
 }
@@ -56,16 +86,31 @@ func addRaw(raw RawInterface, queueName string, tasks []*Task) error {
 // than one task is provided, an errors.MultiError will be returned in the
 // event of an error, with a given error index corresponding to the error
 // encountered when processing the task at that index.
+//
+// If the number of tasks is beyond the limits of the underlying implementation,
+// splits the batch into multiple ones.
 func Delete(c context.Context, queueName string, tasks ...*Task) error {
+	raw := Raw(c)
 	lme := errors.NewLazyMultiError(len(tasks))
-	err := Raw(c).DeleteMulti(tasks, queueName, func(i int, err error) {
-		lme.Assign(i, err)
-	})
-	if err == nil {
-		err = lme.Get()
-		if len(tasks) == 1 {
-			err = errors.SingleError(err)
+	err := parallel.FanOutIn(func(work chan<- func() error) {
+		offset := 0
+		for _, batch := range makeBatches(tasks, raw.Constraints().MaxDeleteSize) {
+			batch := batch
+			localOffset := offset
+			offset += len(batch)
+			work <- func() error {
+				return raw.DeleteMulti(batch, queueName, func(i int, err error) {
+					lme.Assign(localOffset+i, err)
+				})
+			}
 		}
+	})
+	if err != nil {
+		return err
+	}
+	err = lme.Get()
+	if len(tasks) == 1 {
+		err = errors.SingleError(err)
 	}
 	return err
 }

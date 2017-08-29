@@ -132,15 +132,6 @@ func TestTaskQueue(t *testing.T) {
 					So(tq.Add(c, "", t), ShouldEqual, tq.ErrTaskAlreadyAdded)
 				})
 
-				Convey("cannot set ETA+Delay", func() {
-					t.ETA = clock.Now(c).Add(time.Hour)
-					tc.Add(time.Second)
-					t.Delay = time.Hour
-					So(func() {
-						So(tq.Add(c, "", t), ShouldBeNil)
-					}, ShouldPanic)
-				})
-
 				Convey("must use a reasonable method", func() {
 					t.Method = "Crystal"
 					So(tq.Add(c, "", t).Error(), ShouldContainSubstring, "bad method")
