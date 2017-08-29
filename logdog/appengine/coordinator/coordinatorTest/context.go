@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
-	"go.chromium.org/luci/logdog/appengine/coordinator/tasks"
 	"go.chromium.org/luci/logdog/common/storage/archive"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
@@ -42,13 +41,11 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/identity"
-	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/settings"
 	"go.chromium.org/luci/tumble"
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
-	tq "go.chromium.org/gae/service/taskqueue"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
@@ -161,20 +158,6 @@ func (e *Environment) addConfigEntry(configSet cfgtypes.ConfigSet, path, content
 	cset[path] = content
 }
 
-// RunTaskQueues processes all tasks in all task queues if they are available.
-func (e *Environment) RunTaskQueues(c context.Context, tls *TestStream) {
-	r := router.New()
-
-	tls.WithProjectNamespace(c, func(c context.Context) {
-		tasks.InstallHandlers(r, router.NewMiddlewareChain(func(ctx *router.Context, next router.Handler) {
-			ctx.Context = c
-			next(ctx)
-		}))
-
-		drainTaskQueues(c, r)
-	})
-}
-
 // Install creates a testing Context and installs common test facilities into
 // it, returning the Environment to which they're bound.
 func Install() (context.Context, *Environment) {
@@ -195,9 +178,6 @@ func Install() (context.Context, *Environment) {
 
 	// Create/install our BigTable memory instance.
 	e.BigTable = bigtable.NewMemoryInstance(&e.StorageCache)
-
-	// Register our task queues.
-	tq.GetTestable(c).CreateQueue(tasks.ArchivalTaskQueue)
 
 	// Load indexes from "index.yaml".
 	mainServicePath := filepath.Join("..", "..", "..", "cmd", "coordinator", "vmuser")
