@@ -131,6 +131,30 @@
     },
     {
       "key": {
+        "uuid": "3faefd7d_15a0d2f3",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-08-30T23:52:04Z",
+      "side": 1,
+      "message": "in case you didn\u0027t see this message\n\n\"\"\"now that I wrote all that code, I regret it\n\nit does not provide much valid and makes patterns look bad. E.g. for cipd, package name contain slashes, so resources will look bad.\n\nI am thinking of deleting it and let protocol implementers do the (trivial) parsing, most of which will be based on the first segment\n\nswitch firstSegment {\n  case \"bucket\":\n    // extract bucket name\n  case \"whatever\": \n}\n\"\"\"",
+      "parentUuid": "5ce0e0a4_f2ad378c",
+      "range": {
+        "startLine": 58,
+        "startChar": 7,
+        "endLine": 58,
+        "endChar": 25
+      },
+      "revId": "64990e5afcb95777fba8c818759c3a59f519de8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4b3512e0_21ccab28",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 4
