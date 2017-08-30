@@ -40,9 +40,9 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// errNotMiloJob is returned if a Swarming task is fetched that does not self-
+// ErrNotMiloJob is returned if a Swarming task is fetched that does not self-
 // identify as a Milo job.
-var errNotMiloJob = errors.New("Not a Milo Job or access denied", common.CodeNoAccess)
+var ErrNotMiloJob = errors.New("Not a Milo Job or access denied", common.CodeNoAccess)
 
 // SwarmingTimeLayout is time layout used by swarming.
 const SwarmingTimeLayout = "2006-01-02T15:04:05.999999999"
@@ -210,17 +210,17 @@ func swarmingFetch(c context.Context, svc swarmingService, taskID string, req sw
 	switch {
 	case req.fetchReq:
 		if !isAllowed(c, fr.req.Tags) {
-			return nil, errNotMiloJob
+			return nil, ErrNotMiloJob
 		}
 
 	case req.fetchRes:
 		if !isAllowed(c, fr.res.Tags) {
-			return nil, errNotMiloJob
+			return nil, ErrNotMiloJob
 		}
 
 	default:
 		// No metadata to decide if this is a Milo job, so assume that it is not.
-		return nil, errNotMiloJob
+		return nil, ErrNotMiloJob
 	}
 
 	if req.fetchRes && logErr != nil {
