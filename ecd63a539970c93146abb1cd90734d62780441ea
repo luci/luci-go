@@ -22,6 +22,29 @@
       "revId": "ecd63a539970c93146abb1cd90734d62780441ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d92cd155_74b2d1b9",
+        "filename": "logdog/appengine/coordinator/service.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-30T05:03:05Z",
+      "side": 1,
+      "message": "Since this doesn\u0027t do anything, I\u0027m going to remove the call and have users instantiate an empty ProdCoordinatorService next PS. Same goes for panic in the \"main.go\", so you can ignore both of those.",
+      "range": {
+        "startLine": 114,
+        "startChar": 5,
+        "endLine": 114,
+        "endChar": 18
+      },
+      "revId": "ecd63a539970c93146abb1cd90734d62780441ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
