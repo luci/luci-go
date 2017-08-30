@@ -118,6 +118,30 @@
     },
     {
       "key": {
+        "uuid": "6e6bb87f_06e098ff",
+        "filename": "logdog/appengine/coordinator/service.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-30T06:17:43Z",
+      "side": 1,
+      "message": "If it fails, I want to generate it again.",
+      "parentUuid": "2efb866e_3ef5c443",
+      "range": {
+        "startLine": 120,
+        "startChar": 1,
+        "endLine": 120,
+        "endChar": 20
+      },
+      "revId": "ecd63a539970c93146abb1cd90734d62780441ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6c009e1d_4ef57ad0",
         "filename": "logdog/appengine/coordinator/service.go",
         "patchSetId": 2
@@ -129,6 +153,30 @@
       "writtenOn": "2017-08-30T06:10:20Z",
       "side": 1,
       "message": "hmm... why not keep a map of them?",
+      "range": {
+        "startLine": 156,
+        "startChar": 12,
+        "endLine": 156,
+        "endChar": 38
+      },
+      "revId": "ecd63a539970c93146abb1cd90734d62780441ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e4c9116_514230e7",
+        "filename": "logdog/appengine/coordinator/service.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-30T06:17:43Z",
+      "side": 1,
+      "message": "At most one is needed at any time. This happens when the luci-config changes BigTable settings which is basically never, but we should still accommodate.",
+      "parentUuid": "6c009e1d_4ef57ad0",
       "range": {
         "startLine": 156,
         "startChar": 12,
