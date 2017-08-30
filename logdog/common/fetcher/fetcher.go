@@ -15,6 +15,7 @@
 package fetcher
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -101,12 +102,23 @@ type Options struct {
 	// Delay is the amount of time to wait in between unsuccessful log requests.
 	Delay time.Duration
 
+	// Set this to immediately bail out with ErrIncompleteStream if the stream
+	// isn't complete yet. This can be useful when you believe the stream to
+	// already be terminal, but haven't done an RPC with LogDog yet to actually
+	// confirm this.
+	RequireCompleteStream bool
+
 	// sizeFunc is a function that calculates the byte size of a LogEntry
 	// protobuf.
 	//
 	// If nil, proto.Size will be used. This is used for testing.
 	sizeFunc func(proto.Message) int
 }
+
+// ErrIncompleteStream is returned by Fetcher if Options.RequireCompleteStream
+// was true and the underlying Stream is still incomplete (i.e. has not yet
+// been terminated by the client, or archived).
+var ErrIncompleteStream = errors.New("stream has not yet terminated")
 
 // A Fetcher buffers LogEntry records by querying the Source for log data.
 // It attmepts to maintain a steady stream of records by prefetching available
@@ -296,6 +308,11 @@ func (f *Fetcher) fetch(c context.Context) {
 			if resp.err != nil {
 				log.WithError(resp.err).Errorf(c, "Error fetching logs.")
 				errOut(resp.err)
+				return
+			}
+
+			if f.o.RequireCompleteStream && resp.tidx == -1 {
+				errOut(ErrIncompleteStream)
 				return
 			}
 
