@@ -29,7 +29,7 @@ func TestServiceAuth(t *testing.T) {
 	t.Parallel()
 
 	Convey(`With a testing configuration`, t, func() {
-		c, env := ct.Install()
+		c, env := ct.Install(true)
 
 		svr := New().(*logdog.DecoratedServices)
 
