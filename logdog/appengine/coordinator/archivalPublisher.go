@@ -88,7 +88,7 @@ func (p *pubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTa
 
 	// Create a new AppEngine context. Don't pass gRPC metadata to PubSub, since
 	// we don't want any caller RPC to be forwarded to the backend service.
-	aeCtx = metadata.NewContext(aeCtx, nil)
+	aeCtx = metadata.NewOutgoingContext(aeCtx, nil)
 
 	return retry.Retry(c, retry.Default, func() error {
 		log.Fields{
