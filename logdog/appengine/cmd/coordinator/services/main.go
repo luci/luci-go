@@ -37,6 +37,8 @@ import (
 
 // Run installs and executes this site.
 func init() {
+	ps := coordinator.ProdService{}
+
 	r := router.New()
 
 	// Setup Cloud Endpoints.
@@ -45,7 +47,7 @@ func init() {
 	registrationPb.RegisterRegistrationServer(&svr, registration.New())
 
 	// Standard HTTP endpoints.
-	base := standard.Base().Extend(coordinator.ProdCoordinatorService)
+	base := standard.Base().Extend(ps.Base)
 	svr.InstallHandlers(r, base)
 
 	http.Handle("/", r)
