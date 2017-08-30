@@ -33,10 +33,18 @@ import (
 	// Include mutations package so its Mutations will register with tumble via
 	// init().
 	_ "go.chromium.org/luci/logdog/appengine/coordinator/mutations"
+
+	"golang.org/x/net/context"
 )
 
 // Run installs and executes this site.
 func init() {
+	c := context.Background()
+	svcs, err := coordinator.NewProdService(c)
+	if err != nil {
+		panic(err)
+	}
+
 	r := router.New()
 
 	// Setup Cloud Endpoints.
@@ -45,7 +53,7 @@ func init() {
 	registrationPb.RegisterRegistrationServer(&svr, registration.New())
 
 	// Standard HTTP endpoints.
-	base := standard.Base().Extend(coordinator.ProdCoordinatorService)
+	base := standard.Base().Extend(svcs.Base)
 	svr.InstallHandlers(r, base)
 
 	http.Handle("/", r)
