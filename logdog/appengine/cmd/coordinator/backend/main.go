@@ -29,15 +29,23 @@ import (
 	// Include mutations package so its Mutations will register with tumble via
 	// init().
 	_ "go.chromium.org/luci/logdog/appengine/coordinator/mutations"
+
+	"golang.org/x/net/context"
 )
 
 func init() {
 	tmb := tumble.Service{}
 
+	c := context.Background()
+	svcs, err := coordinator.NewProdService(c)
+	if err != nil {
+		panic(err)
+	}
+
 	r := router.New()
 	standard.InstallHandlers(r)
 
-	base := standard.Base().Extend(coordinator.ProdCoordinatorService)
+	base := standard.Base().Extend(svcs.Base)
 	tmb.InstallHandlers(r, base)
 	tasks.InstallHandlers(r, base)
 
