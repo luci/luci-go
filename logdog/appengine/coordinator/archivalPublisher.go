@@ -24,6 +24,7 @@ import (
 
 	gcps "cloud.google.com/go/pubsub"
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc/metadata"
 
 	"golang.org/x/net/context"
 )
@@ -45,6 +46,9 @@ type pubsubArchivalPublisher struct {
 	// publisher is the client used to publish messages.
 	publisher pubsub.Publisher
 
+	// aeCtx is the AppEngine Context to use for publish operations.
+	aeCtx context.Context
+
 	// publishIndexFunc is a function that will return a unique publish index
 	// for this request.
 	publishIndexFunc func() uint64
@@ -64,6 +68,27 @@ func (p *pubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTa
 	msg := gcps.Message{
 		Data: d,
 	}
+
+	// We want to bind our cancellation to "c", but need to use our AppEngine
+	// Context for the actual Publish call. Handle this with a goroutine that will
+	// cancel our AppEngine Context if "c" is cancelled.
+	//
+	// The goroutine will naturally exit at the end of this function when "aeCtx"
+	// is cancelled via defer.
+	aeCtx, cancelFunc := context.WithCancel(p.aeCtx)
+	defer cancelFunc()
+
+	go func(aeCtx context.Context) {
+		select {
+		case <-aeCtx.Done():
+		case <-c.Done():
+			cancelFunc()
+		}
+	}(aeCtx)
+
+	// Create a new AppEngine context. Don't pass gRPC metadata to PubSub, since
+	// we don't want any caller RPC to be forwarded to the backend service.
+	aeCtx = metadata.NewContext(aeCtx, nil)
 
 	return retry.Retry(c, retry.Default, func() error {
 		log.Fields{

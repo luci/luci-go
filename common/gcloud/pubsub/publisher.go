@@ -17,6 +17,7 @@ package pubsub
 import (
 	"cloud.google.com/go/pubsub"
 	vkit "cloud.google.com/go/pubsub/apiv1"
+	gax "github.com/googleapis/gax-go"
 	pb "google.golang.org/genproto/googleapis/pubsub/v1"
 
 	"golang.org/x/net/context"
@@ -46,6 +47,10 @@ type UnbufferedPublisher struct {
 	// Client is the Pub/Sub publisher client to use. Client will be closed when
 	// this UnbufferedPublisher is closed.
 	Client *vkit.PublisherClient
+
+	// CallOpts are arbitrary call options that will be passed to the Publish
+	// call.
+	CallOpts []gax.CallOption
 }
 
 var _ Publisher = (*UnbufferedPublisher)(nil)
@@ -69,7 +74,7 @@ func (up *UnbufferedPublisher) Publish(c context.Context, msgs ...*pubsub.Messag
 	resp, err := up.Client.Publish(c, &pb.PublishRequest{
 		Topic:    string(up.Topic),
 		Messages: messages,
-	})
+	}, up.CallOpts...)
 	if err != nil {
 		return nil, err
 	}
