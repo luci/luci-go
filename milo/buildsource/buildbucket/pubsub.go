@@ -197,9 +197,14 @@ func handlePubSubBuild(c context.Context, data *psMsg) error {
 
 	buildEntry, err := processBuild(c, host, build)
 	if err != nil {
-		logging.WithError(err).Errorf(c, "failed to update build")
 		buildCounter.Add(c, 1, build.Bucket, isLUCI(build), build.Status, "Rejected")
+		// TODO(hinoka): Remove this once we build proper ACL checks.
+		if err == swarming.ErrNotMiloJob {
+			logging.Warningf(c, "probably internal build, dropping")
+			return nil
+		}
 		// Probably a datastore or network flake, make this into a transient error
+		logging.WithError(err).Errorf(c, "failed to update build")
 		return transient.Tag.Apply(err)
 	}
 	action := "Created"
