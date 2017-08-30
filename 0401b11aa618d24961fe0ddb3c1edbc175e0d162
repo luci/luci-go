@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ea4f86be_121df474",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/clientImpl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-30T17:08:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3d21eac8_0388e489",
+      "range": {
+        "startLine": 118,
+        "startChar": 74,
+        "endLine": 118,
+        "endChar": 101
+      },
+      "revId": "0401b11aa618d24961fe0ddb3c1edbc175e0d162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7954a29d_49f4d100",
         "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/clientImpl.go",
         "patchSetId": 7
@@ -36,6 +60,30 @@
       "writtenOn": "2017-08-30T14:35:20Z",
       "side": 1,
       "message": "TBH I\u0027d just let the user pass \"nil\" in the API and do away with the 0, 1, more/panic stuff.",
+      "range": {
+        "startLine": 164,
+        "startChar": 90,
+        "endLine": 164,
+        "endChar": 116
+      },
+      "revId": "0401b11aa618d24961fe0ddb3c1edbc175e0d162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fecb78ae_f556d681",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/clientImpl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-30T17:08:41Z",
+      "side": 1,
+      "message": "It turns out to be very convenient; this is a testing library after all. In the vast majority of cases, I don\u0027t expect users to pass any flags, and so I\u0027m optimizing for that API.",
+      "parentUuid": "7954a29d_49f4d100",
       "range": {
         "startLine": 164,
         "startChar": 90,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "b6d857d5_0ca96583",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/clientImpl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-30T17:08:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9da81e82_b862d283",
+      "range": {
+        "startLine": 200,
+        "startChar": 2,
+        "endLine": 202,
+        "endChar": 25
+      },
+      "revId": "0401b11aa618d24961fe0ddb3c1edbc175e0d162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8adc2fb5_c98c1d1d",
         "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/fakelogs.go",
         "patchSetId": 7
@@ -91,6 +163,30 @@
       "revId": "0401b11aa618d24961fe0ddb3c1edbc175e0d162",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eaac7b3d_637d8e59",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/fakelogs.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-30T17:08:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8adc2fb5_c98c1d1d",
+      "range": {
+        "startLine": 55,
+        "startChar": 0,
+        "endLine": 55,
+        "endChar": 26
+      },
+      "revId": "0401b11aa618d24961fe0ddb3c1edbc175e0d162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "b7519008_efd63db6",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/streamImpl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-30T17:08:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "80971c11_f5a6e963",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 1
+      },
+      "revId": "0401b11aa618d24961fe0ddb3c1edbc175e0d162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f716a1c9_2d56e77e",
         "filename": "logdog/appengine/coordinator/coordinatorTest/context.go",
         "patchSetId": 7
@@ -137,6 +257,30 @@
       "revId": "0401b11aa618d24961fe0ddb3c1edbc175e0d162",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd2d501a_99ee1e8f",
+        "filename": "logdog/appengine/coordinator/coordinatorTest/context.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-08-30T17:08:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f716a1c9_2d56e77e",
+      "range": {
+        "startLine": 200,
+        "startChar": 2,
+        "endLine": 200,
+        "endChar": 36
+      },
+      "revId": "0401b11aa618d24961fe0ddb3c1edbc175e0d162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
