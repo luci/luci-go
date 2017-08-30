@@ -22,6 +22,30 @@
       "revId": "3a23f9943645e908ce1a033fa5decb681ac8fc38",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "03c7b274_91b20cbf",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-08-30T21:55:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e7ab4045_54e1a862",
+      "range": {
+        "startLine": 203,
+        "startChar": 11,
+        "endLine": 203,
+        "endChar": 16
+      },
+      "revId": "3a23f9943645e908ce1a033fa5decb681ac8fc38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
