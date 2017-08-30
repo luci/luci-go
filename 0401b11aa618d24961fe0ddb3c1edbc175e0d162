@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3d21eac8_0388e489",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/clientImpl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-30T14:35:20Z",
+      "side": 1,
+      "message": "Since this is internal, let\u0027s just pass \"flags\" as a []*streamproto.Flags?",
+      "range": {
+        "startLine": 118,
+        "startChar": 74,
+        "endLine": 118,
+        "endChar": 101
+      },
+      "revId": "0401b11aa618d24961fe0ddb3c1edbc175e0d162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7954a29d_49f4d100",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/clientImpl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-30T14:35:20Z",
+      "side": 1,
+      "message": "TBH I\u0027d just let the user pass \"nil\" in the API and do away with the 0, 1, more/panic stuff.",
+      "range": {
+        "startLine": 164,
+        "startChar": 90,
+        "endLine": 164,
+        "endChar": 116
+      },
+      "revId": "0401b11aa618d24961fe0ddb3c1edbc175e0d162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9da81e82_b862d283",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/clientImpl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-30T14:35:20Z",
+      "side": 1,
+      "message": "WDYT about just having \"Stream\" include a \"*Client\" member?",
+      "range": {
+        "startLine": 200,
+        "startChar": 2,
+        "endLine": 202,
+        "endChar": 25
+      },
+      "revId": "0401b11aa618d24961fe0ddb3c1edbc175e0d162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8adc2fb5_c98c1d1d",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/fakelogs.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-30T14:35:20Z",
+      "side": 1,
+      "message": "Put this in \"clientImpl.go\"? Maybe rename \"client.go\"?",
+      "range": {
+        "startLine": 55,
+        "startChar": 0,
+        "endLine": 55,
+        "endChar": 26
+      },
+      "revId": "0401b11aa618d24961fe0ddb3c1edbc175e0d162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "80971c11_f5a6e963",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/streamImpl.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-30T14:35:20Z",
+      "side": 1,
+      "message": "Maybe just \"stream.go\"?",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 1
+      },
+      "revId": "0401b11aa618d24961fe0ddb3c1edbc175e0d162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f716a1c9_2d56e77e",
+        "filename": "logdog/appengine/coordinator/coordinatorTest/context.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-30T14:35:20Z",
+      "side": 1,
+      "message": "Let\u0027s have this get set in \"NewClient\". It doesn\u0027t seem appropriate here.",
+      "range": {
+        "startLine": 200,
+        "startChar": 2,
+        "endLine": 200,
+        "endChar": 36
+      },
+      "revId": "0401b11aa618d24961fe0ddb3c1edbc175e0d162",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
