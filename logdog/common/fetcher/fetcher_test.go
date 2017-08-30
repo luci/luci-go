@@ -214,6 +214,19 @@ func TestFetcher(t *testing.T) {
 				So(logs, ShouldResemble, []types.MessageIndex{0, 1, 2, 3, 4, 5})
 			})
 
+			Convey(`Will immediately bail out if RequireCompleteStream is set`, func() {
+				var cmd testSourceCommand
+				ts.send(cmd.logs(0, 1, 2, 3, 4, 5).terminalIndex(-1))
+
+				o.RequireCompleteStream = true
+				f := newFetcher()
+				defer reap(f)
+
+				logs, err := loadLogs(f, 0)
+				So(err, ShouldEqual, ErrIncompleteStream)
+				So(logs, ShouldBeNil)
+			})
+
 			Convey(`Can read two log records and be cancelled.`, func() {
 				var cmd testSourceCommand
 				ts.send(cmd.logs(0, 1, 2, 3, 4, 5))
