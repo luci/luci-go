@@ -33,11 +33,12 @@ import (
 
 func init() {
 	tmb := tumble.Service{}
+	ps := coordinator.ProdService{}
 
 	r := router.New()
 	standard.InstallHandlers(r)
 
-	base := standard.Base().Extend(coordinator.ProdCoordinatorService)
+	base := standard.Base().Extend(ps.Base)
 	tmb.InstallHandlers(r, base)
 	tasks.InstallHandlers(r, base)
 

@@ -49,6 +49,8 @@ import (
 func main() {
 	mathrand.SeedRandomly()
 
+	ps := coordinator.ProdService{}
+
 	r := router.New()
 
 	// Setup Cloud Endpoints.
@@ -62,7 +64,7 @@ func main() {
 	discovery.Enable(&svr)
 
 	// Standard HTTP endpoints.
-	base := standard.Base().Extend(coordinator.ProdCoordinatorService)
+	base := standard.Base().Extend(ps.Base)
 	standard.InstallHandlers(r)
 	svr.InstallHandlers(r, base)
 

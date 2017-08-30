@@ -96,14 +96,96 @@ type Services interface {
 	ArchivalPublisher(context.Context) (ArchivalPublisher, error)
 }
 
-// ProdCoordinatorService is Middleware used by Coordinator services.
+// ProdService is an instance-global configuration for production
+// Coordinator services. A zero-value struct should be used.
+//
+// It can be installed via middleware using its Base method.
+type ProdService struct {
+	pubSubLock   sync.Mutex
+	pubSubClient *vkit.PublisherClient
+
+	bigTableLock     sync.Mutex
+	bigTableClient   *gcbt.Client
+	bigTableProject  string
+	bigTableInstance string
+}
+
+func (svc *ProdService) getPubSubClient(c context.Context) (*vkit.PublisherClient, error) {
+	svc.pubSubLock.Lock()
+	defer svc.pubSubLock.Unlock()
+
+	if svc.pubSubClient != nil {
+		return svc.pubSubClient, nil
+	}
+
+	// Create a new AppEngine context. Don't pass gRPC metadata to PubSub, since
+	// we don't want any caller RPC to be forwarded to the backend service.
+	c = metadata.NewContext(c, nil)
+
+	// Create an authenticated global Pub/Sub client.
+	creds, err := auth.GetPerRPCCredentials(auth.AsSelf, auth.WithScopes(pubsub.PublisherScopes...))
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to create Pub/Sub credentials").Err()
+	}
+
+	client, err := vkit.NewPublisherClient(c,
+		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
+	if err != nil {
+		return nil, errors.Annotate(err, "Failed to create Pub/Sub client").Err()
+	}
+
+	svc.pubSubClient = client
+	return client, nil
+}
+
+func (svc *ProdService) getBigTableClient(c context.Context, project, instance string) (*gcbt.Client, error) {
+	svc.bigTableLock.Lock()
+	defer svc.bigTableLock.Unlock()
+
+	// Reuse the existing client if parameters haven't changed.
+	if svc.bigTableClient != nil {
+		if svc.bigTableProject == project && svc.bigTableInstance == instance {
+			return svc.bigTableClient, nil
+		}
+		if err := svc.bigTableClient.Close(); err != nil {
+			log.WithError(err).Warningf(c, "Failed to close current BigTable client.")
+		}
+		svc.bigTableClient = nil
+	}
+
+	// Create a new AppEngine context. Don't pass gRPC metadata to PubSub, since
+	// we don't want any caller RPC to be forwarded to the backend service.
+	c = metadata.NewContext(c, nil)
+
+	// Get an Authenticator bound to the token scopes that we need for BigTable.
+	creds, err := auth.GetPerRPCCredentials(auth.AsSelf, auth.WithScopes(bigtable.StorageScopes...))
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to create BigTable credentials").Err()
+	}
+
+	// We either don't have a BigTable client, or we need to regenerate a new
+	// BigTable client with different parameters.
+	opts := bigtable.DefaultClientOptions()
+	opts = append(opts, option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
+	client, err := gcbt.NewClient(c, project, instance, opts...)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to create BigTable client").Err()
+	}
+
+	svc.bigTableClient = client
+	svc.bigTableProject = project
+	svc.bigTableInstance = instance
+	return client, nil
+}
+
+// Base is Middleware used by Coordinator services.
 //
 // It installs a production Services instance into the Context.
-func ProdCoordinatorService(c *router.Context, next router.Handler) {
+func (svc *ProdService) Base(c *router.Context, next router.Handler) {
 	services := prodServicesInst{
-		aeCtx: appengine.WithContext(c.Context, c.Request),
+		ProdService: svc,
+		aeCtx:       appengine.WithContext(c.Context, c.Request),
 	}
-	defer services.close(c.Context)
 
 	c.Context = WithServices(c.Context, &services)
 	next(c)
@@ -112,6 +194,7 @@ func ProdCoordinatorService(c *router.Context, next router.Handler) {
 // prodServicesInst is a Service exposing production faciliites. A unique
 // instance is bound to each each request.
 type prodServicesInst struct {
+	*ProdService
 	sync.Mutex
 
 	// aeCtx is an AppEngine Context initialized for the current request.
@@ -126,25 +209,10 @@ type prodServicesInst struct {
 	// from this service.
 	archivalIndex int32
 
-	// pubSubClient is a Pub/Sub client generated during this request.
-	//
-	// It will be closed on "close".
-	pubSubClient *vkit.PublisherClient
 	// signer is the signer instance to use.
 	signer gaesigner.Signer
 }
 
-func (s *prodServicesInst) close(c context.Context) {
-	s.Lock()
-	defer s.Unlock()
-
-	if client := s.pubSubClient; client != nil {
-		if err := client.Close(); err != nil {
-			log.WithError(err).Errorf(c, "Failed to close Pub/Sub client singleton.")
-		}
-		s.pubSubClient = nil
-	}
-}
 func (s *prodServicesInst) Config(c context.Context) (*config.Config, error) {
 	s.Lock()
 	defer s.Unlock()
@@ -255,23 +323,9 @@ func (s *prodServicesInst) newBigTableStorage(c context.Context) (Storage, error
 		return nil, merr
 	}
 
-	// Get an Authenticator bound to the token scopes that we need for BigTable.
-	creds, err := auth.GetPerRPCCredentials(auth.AsSelf, auth.WithScopes(bigtable.StorageScopes...))
+	client, err := s.getBigTableClient(c, bt.Project, bt.Instance)
 	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create BigTable credentials.")
-		return nil, errors.New("failed to create BigTable credentials")
-	}
-
-	// Explicitly clear gRPC metadata from the Context. It is forwarded to
-	// delegate calls by default, and standard request metadata can break BigTable
-	// calls.
-	c = metadata.NewContext(c, nil)
-
-	opts := bigtable.DefaultClientOptions()
-	opts = append(opts, option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
-	client, err := gcbt.NewClient(c, bt.Project, bt.Instance, opts...)
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create BigTable client.")
+		log.WithError(err).Errorf(c, "Failed to create a new BigTable client.")
 		return nil, err
 	}
 
@@ -358,8 +412,11 @@ func (s *prodServicesInst) ArchivalPublisher(c context.Context) (ArchivalPublish
 		return nil, errors.New("invalid archival topic")
 	}
 
-	psClient, err := s.getPubSubClient()
+	// Create a new Pub/Sub client. Use our AppEngine Context, since we need to
+	// execute a socket API call.
+	client, err := s.getPubSubClient(s.aeCtx)
 	if err != nil {
+		log.WithError(err).Errorf(c, "Failed to create Pub/Sub client.")
 		return nil, err
 	}
 
@@ -367,40 +424,11 @@ func (s *prodServicesInst) ArchivalPublisher(c context.Context) (ArchivalPublish
 	return &pubsubArchivalPublisher{
 		publisher: &pubsub.UnbufferedPublisher{
 			Topic:  fullTopic,
-			Client: psClient,
+			Client: client,
 		},
+		aeCtx:            s.aeCtx,
 		publishIndexFunc: s.nextArchiveIndex,
 	}, nil
-}
-
-func (s *prodServicesInst) getPubSubClient() (*vkit.PublisherClient, error) {
-	s.Lock()
-	defer s.Unlock()
-
-	if s.pubSubClient != nil {
-		return s.pubSubClient, nil
-	}
-
-	// Create a new AppEngine context. Don't pass gRPC metadata to PubSub, since
-	// we don't want any caller RPC to be forwarded to the backend service.
-	c := metadata.NewContext(s.aeCtx, nil)
-
-	// Create an authenticated unbuffered Pub/Sub Publisher.
-	creds, err := auth.GetPerRPCCredentials(auth.AsSelf, auth.WithScopes(pubsub.PublisherScopes...))
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create Pub/Sub credentials.")
-		return nil, errors.New("failed to create Pub/Sub credentials")
-	}
-
-	psClient, err := vkit.NewPublisherClient(c,
-		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)))
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create Pub/Sub client.")
-		return nil, errors.New("failed to create Pub/Sub client")
-	}
-
-	s.pubSubClient = psClient
-	return psClient, nil
 }
 
 func (s *prodServicesInst) nextArchiveIndex() uint64 {
@@ -474,7 +502,6 @@ type bigTableStorage struct {
 
 func (st *bigTableStorage) Close() {
 	st.Storage.Close()
-	st.client.Close()
 }
 
 func (*bigTableStorage) GetSignedURLs(context.Context, *URLSigningRequest) (*URLSigningResponse, error) {
