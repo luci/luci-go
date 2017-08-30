@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package Memory implements in-memory Storage structures.
+// Package memory implements in-memory Storage structures.
 //
 // It is designed for testing, and hasn't been optimized for any productio use.
 package memory
@@ -22,6 +22,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+
+	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
@@ -239,4 +242,21 @@ func (s *Storage) getLogStreamLocked(project cfgtypes.ProjectName, path types.St
 	}
 
 	return ls
+}
+
+// PutEntries is a convenience method for ingesting logpb.Entry's into this
+// Storage object.
+func (s *Storage) PutEntries(ctx context.Context, project cfgtypes.ProjectName, path types.StreamPath, entries ...*logpb.LogEntry) {
+	for _, ent := range entries {
+		value, err := proto.Marshal(ent)
+		if err != nil {
+			panic(err)
+		}
+		s.Put(ctx, storage.PutRequest{
+			Project: project,
+			Path:    path,
+			Index:   types.MessageIndex(ent.StreamIndex),
+			Values:  [][]byte{value},
+		})
+	}
 }
