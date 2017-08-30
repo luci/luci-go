@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "a1a9cac9_1c4d0b1c",
+        "filename": "logdog/appengine/coordinator/archivalPublisher.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-08-30T18:24:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "17d8d026_d58d7ca7",
+      "range": {
+        "startLine": 91,
+        "startChar": 1,
+        "endLine": 91,
+        "endChar": 6
+      },
+      "revId": "ecd63a539970c93146abb1cd90734d62780441ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d92cd155_74b2d1b9",
         "filename": "logdog/appengine/coordinator/service.go",
         "patchSetId": 2
