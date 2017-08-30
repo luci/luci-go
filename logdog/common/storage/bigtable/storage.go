@@ -407,5 +407,5 @@ func prepareContext(c context.Context) context.Context {
 	// Explicitly clear gRPC metadata from the Context. It is forwarded to
 	// delegate calls by default, and standard request metadata can break BigTable
 	// calls.
-	return metadata.NewContext(c, nil)
+	return metadata.NewOutgoingContext(c, nil)
 }

@@ -120,7 +120,7 @@ func (svc *ProdService) getPubSubClient(c context.Context) (*vkit.PublisherClien
 
 	// Create a new AppEngine context. Don't pass gRPC metadata to PubSub, since
 	// we don't want any caller RPC to be forwarded to the backend service.
-	c = metadata.NewContext(c, nil)
+	c = metadata.NewOutgoingContext(c, nil)
 
 	// Create an authenticated global Pub/Sub client.
 	creds, err := auth.GetPerRPCCredentials(auth.AsSelf, auth.WithScopes(pubsub.PublisherScopes...))
@@ -155,7 +155,7 @@ func (svc *ProdService) getBigTableClient(c context.Context, project, instance s
 
 	// Create a new AppEngine context. Don't pass gRPC metadata to PubSub, since
 	// we don't want any caller RPC to be forwarded to the backend service.
-	c = metadata.NewContext(c, nil)
+	c = metadata.NewOutgoingContext(c, nil)
 
 	// Get an Authenticator bound to the token scopes that we need for BigTable.
 	creds, err := auth.GetPerRPCCredentials(auth.AsSelf, auth.WithScopes(bigtable.StorageScopes...))
