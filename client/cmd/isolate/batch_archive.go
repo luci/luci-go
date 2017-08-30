@@ -59,8 +59,8 @@ isolate. Format of files is:
 			c := batchArchiveRun{}
 			c.commonServerFlags.Init(defaultAuthOpts)
 			c.loggingFlags.Init(&c.Flags)
-			c.Flags.StringVar(&c.dumpJSON, "dump-json", "",
-				"Write isolated digests of archived trees to this file as JSON")
+			c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Write isolated digests of archived trees to this file as JSON")
+			c.Flags.BoolVar(&c.expArchive, "exparchive", false, "Whether to use the new exparchive implementation, which tars small files before uploading them.")
 			return &c
 		},
 	}
@@ -70,6 +70,7 @@ type batchArchiveRun struct {
 	commonServerFlags
 	loggingFlags loggingFlags
 	dumpJSON     string
+	expArchive   bool
 }
 
 func (c *batchArchiveRun) Parse(a subcommands.Application, args []string) error {
@@ -150,6 +151,9 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 		start:     start,
 		quiet:     c.defaultFlags.Quiet,
 		operation: logpb.IsolateClientEvent_BATCH_ARCHIVE.Enum(),
+	}
+	if c.expArchive {
+		return doBatchExpArchive(ctx, client, al, c.dumpJSON, args)
 	}
 	return doBatchArchive(ctx, client, al, c.dumpJSON, args)
 }
