@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1b6c1020_bbbcfd0c",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-08-30T23:31:26Z",
+      "side": 1,
+      "message": "buildbucket uses very concrete actions https://chromium.googlesource.com/infra/infra/+/3133699fe9c21e9b1b2ea9a3f1412ca80075a756/appengine/cr-buildbucket/acl.py#24\nbut abstract roles \nhttps://chromium.googlesource.com/infra/infra/+/3133699fe9c21e9b1b2ea9a3f1412ca80075a756/appengine/cr-buildbucket/proto/project_config.proto#13\nand there is a mapping from an abstract role to a set of concrete actions\n\nScheduling a build requires at least SCHEDULER role, leasing a build - WRITER, purging a bucket - OWNER. A single \"WRITER\" action would be too abstract. The suggested basic list probably wouldn\u0027t work for buildbucket. \n\nIf both actions and roles are abstract, there is not much value in separating them. If actions are concrete, the mapping from a concrete method to an abstract role is one place, as opposed to spread across the service (each concrete method checks an abstract action). \n\nWDYT about the following recommendation:\n1) A basic list of role spellings (READER, WRITER, OWNER, etc)\n2) A suggestion to use concrete actions internally in the app codebase. Note that that actions are easy to change because other services never use actions (actions in the Description() response are for humans).",
+      "parentUuid": "8c8cca4d_9cb17e10",
+      "range": {
+        "startLine": 39,
+        "startChar": 20,
+        "endLine": 39,
+        "endChar": 33
+      },
+      "revId": "64990e5afcb95777fba8c818759c3a59f519de8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "41d393b1_2cca2494",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 4
@@ -36,6 +60,24 @@
       "writtenOn": "2017-08-29T23:55:30Z",
       "side": 1,
       "message": "comment? e.g. \"Role ADMIN should only be used by mdb/eng members because it lets you turn off the data hose\" or something.",
+      "revId": "64990e5afcb95777fba8c818759c3a59f519de8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da716c09_9bbbf5a2",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-08-30T23:31:26Z",
+      "side": 1,
+      "message": "sorry, I didn\u0027t understand this\n\nIs this a recommendation who can be an admin? If yes, this proto may be not the best place for such recommendation (e.g. it is not read by users-users of a service, but by implementers)",
+      "parentUuid": "41d393b1_2cca2494",
       "revId": "64990e5afcb95777fba8c818759c3a59f519de8f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "5ce0e0a4_f2ad378c",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-08-30T23:31:26Z",
+      "side": 1,
+      "message": "added a framework that enforces correctness",
+      "parentUuid": "358932e1_5fea96a6",
+      "range": {
+        "startLine": 58,
+        "startChar": 7,
+        "endLine": 58,
+        "endChar": 25
+      },
+      "revId": "64990e5afcb95777fba8c818759c3a59f519de8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4b3512e0_21ccab28",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 4
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "2b03a903_80329288",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-08-30T23:31:26Z",
+      "side": 1,
+      "message": "added an example",
+      "parentUuid": "4b3512e0_21ccab28",
+      "range": {
+        "startLine": 59,
+        "startChar": 22,
+        "endLine": 60,
+        "endChar": 13
+      },
+      "revId": "64990e5afcb95777fba8c818759c3a59f519de8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4da4ce1f_8909b72a",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 4
@@ -108,6 +198,30 @@
       "revId": "64990e5afcb95777fba8c818759c3a59f519de8f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d94c5d59_f77d3854",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-08-30T23:31:26Z",
+      "side": 1,
+      "message": "no. I think it shouldn\u0027t. I prefer this protocol not to know about projects.\n\nBuildbucket wouldn\u0027t use projects because its access boundaries are defined by buckets, not projects.",
+      "parentUuid": "4da4ce1f_8909b72a",
+      "range": {
+        "startLine": 79,
+        "startChar": 3,
+        "endLine": 79,
+        "endChar": 19
+      },
+      "revId": "64990e5afcb95777fba8c818759c3a59f519de8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
