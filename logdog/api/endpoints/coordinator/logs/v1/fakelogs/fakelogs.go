@@ -16,39 +16,28 @@
 package fakelogs
 
 import (
-	"io"
+	"golang.org/x/net/context"
 
-	logs "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
-	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
-	logdog_types "go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
+	"go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
+	logs_service "go.chromium.org/luci/logdog/appengine/coordinator/endpoints/logs"
+	reg_service "go.chromium.org/luci/logdog/appengine/coordinator/endpoints/registration"
+	srv_service "go.chromium.org/luci/logdog/appengine/coordinator/endpoints/services"
+	mem_storage "go.chromium.org/luci/logdog/common/storage/memory"
 )
 
-// Stream represents a single logdog stream.
-//
-// Each invocation of Write() will append a new LogEntry to the stream
-// internally. For datagram streams, this means that each Write is a single
-// datagram.
-//
-// Once the Stream is Close()'d it will be marked as complete.
-type Stream io.WriteCloser
+type storageclient struct {
+	*mem_storage.Storage
+}
 
-// Client implements the logs.LogsClient API, and also has some 'reach-around'
-// APIs to insert stream data into the backend.
-//
-// The reach-around APIs are very primitive; they don't simulate butler-side
-// constraints (i.e. no prefix secrets, no multi-stream bundling, etc.), however
-// from the server-side they should present a sufficient surface to write
-// testable server code.
-//
-// The Open*Stream methods take a singular optional flags object. If provided,
-// a copy of this Flags object will be populated with the given logdog path and
-// stream type. You can use this to give your streams a content type, tags, etc.
-type Client interface {
-	logs.LogsClient
+// Close is implemented here so that we can return this coordinator.Storage
+// client multiple times without worrying about the coordinator closing it.
+func (s storageclient) Close() {}
 
-	OpenTextStream(prefix, path logdog_types.StreamName, flags ...*streamproto.Flags) (Stream, error)
-	OpenDatagramStream(prefix, path logdog_types.StreamName, flags ...*streamproto.Flags) (Stream, error)
-	OpenBinaryStream(prefix, path logdog_types.StreamName, flags ...*streamproto.Flags) (Stream, error)
+// GetSignedURLs is implemented to fill out the coordinator.Storage interface.
+func (s storageclient) GetSignedURLs(context.Context, *coordinator.URLSigningRequest) (*coordinator.URLSigningResponse, error) {
+	return nil, errors.New("NOT IMPLEMENTED")
 }
 
 // NewClient generates a new fake Client which can be used as a logs.LogsClient,
@@ -56,6 +45,31 @@ type Client interface {
 //
 // Functions taking context.Context will ignore it (i.e. they don't expect
 // anything in the context).
-func NewClient() Client {
-	panic("not implemented")
+//
+// This client is attached to an in-memory datastore of its own and the real
+// coordinator services are attached to that in-memory datastore. That means
+// that the Client API SHOULD actually behave identically to the real
+// coordinator (since it's the same code). Additionally, the 'Open' methods on
+// the Client do the full Prefix/Stream registration process, and so should also
+// behave like the real thing.
+func NewClient() *Client {
+	ctx, env := coordinatorTest.Install(false)
+	env.LogIn()
+	env.AuthState.IdentityGroups = []string{"admin", "all", "auth", "services"}
+
+	storage := &mem_storage.Storage{}
+	env.Services.ST = func(*coordinator.LogStreamState) (coordinator.Storage, error) {
+		return storageclient{storage}, nil
+	}
+	return &Client{
+		ctx: ctx, env: env,
+
+		logsServ: logs_service.New(),
+		regServ:  reg_service.New(),
+		srvServ:  srv_service.New(),
+
+		storage: storage,
+
+		prefixes: map[string]*prefixState{},
+	}
 }
