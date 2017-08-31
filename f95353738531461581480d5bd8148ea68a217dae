@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "afbad0e9_964f41ae",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-31T00:16:28Z",
+      "side": 1,
+      "message": "fields",
+      "range": {
+        "startLine": 31,
+        "startChar": 63,
+        "endLine": 31,
+        "endChar": 64
+      },
+      "revId": "f95353738531461581480d5bd8148ea68a217dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6cd60a83_f7b89b55",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-31T00:16:28Z",
+      "side": 1,
+      "message": "s/CLs/CLs and queries depending on query options\n\nthis is technically more correct, because some queries won\u0027t be returning all these fields even if they are generally known for a given CL.",
+      "range": {
+        "startLine": 34,
+        "startChar": 51,
+        "endLine": 34,
+        "endChar": 54
+      },
+      "revId": "f95353738531461581480d5bd8148ea68a217dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19d988b3_80ce14c9",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-31T00:16:28Z",
+      "side": 1,
+      "message": "pedantic: very strictly speaking, that\u0027s not required, you code will still work\nbut these extra fields would be useless, so I guess keep this :)",
+      "range": {
+        "startLine": 36,
+        "startChar": 25,
+        "endLine": 36,
+        "endChar": 51
+      },
+      "revId": "f95353738531461581480d5bd8148ea68a217dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d1ffc6b2_9b32cb7e",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-31T00:16:28Z",
+      "side": 1,
+      "message": "same as in NewClient before, this is not a good interface: nobody should specify in prod code allowInsecure\u003dfalse.\n\nSo, either:\n* make this method private, though I prefer to have it public s.t. code can validate configs before actually using them.\n* revert to original implementation which relied on mockUrl for tests, just like gitiles.\n\nI prefer the latter in order to keep code consistent with gitiles interface.",
+      "range": {
+        "startLine": 76,
+        "startChar": 42,
+        "endLine": 76,
+        "endChar": 60
+      },
+      "revId": "f95353738531461581480d5bd8148ea68a217dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e504e20_dab0169b",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-31T00:16:28Z",
+      "side": 1,
+      "message": "so I actually also at first embedded host (url) into client, but changed my mind during review. I am not strongly in favor of either, but regardless of which one we choose, IMO we must be consistent between gitiles and gerrit clients.",
+      "range": {
+        "startLine": 119,
+        "startChar": 1,
+        "endLine": 119,
+        "endChar": 47
+      },
+      "revId": "f95353738531461581480d5bd8148ea68a217dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d4d9436_78f428e2",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-31T00:16:28Z",
+      "side": 1,
+      "message": "Unfortunately, this is misleading, even though technically true. `S` can be used for paging, but you probably don\u0027t want to. Instead, \"after\" and \"before\" (or \"age\") should be used for reliable paging.\n\ntl;dr possible races between sequential reads for different \"pages\" \u0026\u0026 writers\n -\u003e paging which will get some duplicate CLs \u0026\u0026 will completely miss others\n\nIf you actually need paging, lmk, we can discuss how to do it properly.",
+      "range": {
+        "startLine": 137,
+        "startChar": 44,
+        "endLine": 137,
+        "endChar": 63
+      },
+      "revId": "f95353738531461581480d5bd8148ea68a217dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

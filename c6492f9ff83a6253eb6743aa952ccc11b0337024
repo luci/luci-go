@@ -191,6 +191,30 @@
     },
     {
       "key": {
+        "uuid": "6a388534_8f9749a2",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-31T00:16:28Z",
+      "side": 1,
+      "message": "Yes, but it depends on which test:\nTest of the gerrit client itself (ie gerrit_test.go in this CL) would set the private mockGerritURL var, and that\u0027s what gitiles_test.go does that I wrote.\nNow, tests of code that rely on Gerrit Client would do what you wrote. Specifically,\n * for small unittests, the right thing to do is make that code accept an interface which implements those methods that are used from gerrit.Client, which is likely not all of them. This brings a number of upsides primarily thanks to encapsulation.\n * the only downside is for end2end tests, because they would need to create a fake Gerrit https server + bind fake.googlesource.com to that server\u0027s localhost:port. However, there should be few such tests.",
+      "parentUuid": "cd6eedac_97b243ac",
+      "range": {
+        "startLine": 96,
+        "startChar": 1,
+        "endLine": 96,
+        "endChar": 14
+      },
+      "revId": "c6492f9ff83a6253eb6743aa952ccc11b0337024",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "81219b99_f0ffb2a7",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 2

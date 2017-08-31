@@ -187,6 +187,30 @@
       "revId": "2b3ea8de14839f367f120cc4a541234d0420b3e2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "78da5ffc_4bf505c9",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-31T00:16:28Z",
+      "side": 1,
+      "message": "well, if there is contradictory evidence \u0026\u0026 json decoder is fine with extra \\n, then this code shouldn\u0027t needlessly require \\n to be here.",
+      "parentUuid": "afb79c4c_6fc39349",
+      "range": {
+        "startLine": 189,
+        "startChar": 22,
+        "endLine": 189,
+        "endChar": 30
+      },
+      "revId": "2b3ea8de14839f367f120cc4a541234d0420b3e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

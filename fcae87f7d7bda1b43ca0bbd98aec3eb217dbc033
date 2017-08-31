@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "d27253cf_c6681931",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-31T00:16:28Z",
+      "side": 1,
+      "message": "exactly.",
+      "parentUuid": "82d2b7c1_14d99203",
+      "range": {
+        "startLine": 59,
+        "startChar": 13,
+        "endLine": 59,
+        "endChar": 40
+      },
+      "revId": "fcae87f7d7bda1b43ca0bbd98aec3eb217dbc033",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9113327b_0f901abc",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 6
