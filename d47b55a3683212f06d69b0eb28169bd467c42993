@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2fcbbe93_aca50d64",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2017-08-31T22:02:57Z",
+      "side": 1,
+      "message": "Should we need submitter as well? And possibly also reviewers?",
+      "range": {
+        "startLine": 56,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 6
+      },
+      "revId": "d47b55a3683212f06d69b0eb28169bd467c42993",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "61e3f47f_498882ed",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2017-08-31T22:02:57Z",
+      "side": 1,
+      "message": "If we also need submitter and reviewers, this struct may need to be shared. \n\nAnd do we need email and username in the struct?",
+      "range": {
+        "startLine": 64,
+        "startChar": 5,
+        "endLine": 64,
+        "endChar": 10
+      },
+      "revId": "d47b55a3683212f06d69b0eb28169bd467c42993",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5073491c_a27892d4",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2017-08-31T22:02:57Z",
+      "side": 1,
+      "message": "Gerrit?",
+      "range": {
+        "startLine": 86,
+        "startChar": 56,
+        "endLine": 86,
+        "endChar": 63
+      },
+      "revId": "d47b55a3683212f06d69b0eb28169bd467c42993",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
