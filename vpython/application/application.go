@@ -177,6 +177,12 @@ func (a *application) addToFlagSet(fs *flag.FlagSet) {
 	fs.StringVar(&a.specPath, "vpython-spec", a.specPath,
 		"Path to environment specification file to load. Default probes for one.")
 
+	// TODO: These flags are deprecated, and are left in for transition. They will
+	// go away in the future.
+	fs.StringVar(&a.specPath, "spec", a.specPath,
+		"Path to environment specification file to load. Default probes for one. (DEPRECATED, use '-vpython-spec').")
+	// XXX: END deprecated flags.
+
 	a.logConfig.AddFlags(fs)
 }
 
