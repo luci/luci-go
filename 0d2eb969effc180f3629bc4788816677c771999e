@@ -281,6 +281,30 @@
     },
     {
       "key": {
+        "uuid": "2599cc89_5e4a94aa",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-31T23:01:54Z",
+      "side": 1,
+      "message": "Then we can probably rename \u0027resource_name\u0027 to \u0027resource_path\u0027 and say that \"it is always of length 1 currently\". AFAIK, we have no hierarchical resources currently.\n\nEven so, we won\u0027t be able to get away from string parsing. Most of our APIs are REST APIs. If we have a resource with name [\u0027A\u0027, \u0027B\u0027, \u0027C\u0027] we will need a way to target it in REST call. So we\u0027ll HAVE to use string parsing...",
+      "parentUuid": "368d7cb1_35b6cdc0",
+      "range": {
+        "startLine": 102,
+        "startChar": 23,
+        "endLine": 102,
+        "endChar": 55
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "599255fb_146ec0f0",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 11
