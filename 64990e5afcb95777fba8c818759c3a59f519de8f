@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "2ceed27f_795be4a3",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-08-31T18:31:53Z",
+      "side": 1,
+      "message": "talked offline, agreed to keep actions concrete, but still recommend common actions",
+      "parentUuid": "1b6c1020_bbbcfd0c",
+      "range": {
+        "startLine": 39,
+        "startChar": 20,
+        "endLine": 39,
+        "endChar": 33
+      },
+      "revId": "64990e5afcb95777fba8c818759c3a59f519de8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "41d393b1_2cca2494",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 4
@@ -81,6 +105,24 @@
       "revId": "64990e5afcb95777fba8c818759c3a59f519de8f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7785b9e3_e3a83091",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-08-31T18:31:53Z",
+      "side": 1,
+      "message": "added comment field",
+      "parentUuid": "da716c09_9bbbf5a2",
+      "revId": "64990e5afcb95777fba8c818759c3a59f519de8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
