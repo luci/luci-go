@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e9da8d15_21f98625",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-31T00:27:02Z",
+      "side": 1,
+      "message": "cool! I didn\u0027t know it existed!",
+      "range": {
+        "startLine": 56,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 51
+      },
+      "revId": "22517c6ff8e916ad2f2066e3bb7f942339bdea08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a98f70c6_d61f6181",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-31T00:27:02Z",
+      "side": 1,
+      "message": "returnS",
+      "range": {
+        "startLine": 181,
+        "startChar": 21,
+        "endLine": 181,
+        "endChar": 22
+      },
+      "revId": "22517c6ff8e916ad2f2066e3bb7f942339bdea08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d127d104_cc82f2b5",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-31T00:27:02Z",
+      "side": 1,
+      "message": "for consistency, this should also be present in QueryRequest.",
+      "range": {
+        "startLine": 193,
+        "startChar": 66,
+        "endLine": 193,
+        "endChar": 82
+      },
+      "revId": "22517c6ff8e916ad2f2066e3bb7f942339bdea08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff693b11_dfb98739",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-31T00:27:02Z",
+      "side": 1,
+      "message": "this needs to be urlencoded, as it may contain slashes and maybe other stuff.",
+      "range": {
+        "startLine": 202,
+        "startChar": 42,
+        "endLine": 202,
+        "endChar": 50
+      },
+      "revId": "22517c6ff8e916ad2f2066e3bb7f942339bdea08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
