@@ -71,6 +71,52 @@
     },
     {
       "key": {
+        "uuid": "d3895e22_6f0f33ad",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-31T00:19:49Z",
+      "side": 1,
+      "message": "nit: please move right below ID.",
+      "range": {
+        "startLine": 42,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 51
+      },
+      "revId": "f95353738531461581480d5bd8148ea68a217dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a895e0e7_edc31fa5",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-08-31T00:19:49Z",
+      "side": 1,
+      "message": "nit: please move this one up to the first position. This is because ChangeNumber is actually unique, while ChangeID isn\u0027t, and ID while probably unique is awkward to read.",
+      "range": {
+        "startLine": 54,
+        "startChar": 1,
+        "endLine": 54,
+        "endChar": 49
+      },
+      "revId": "f95353738531461581480d5bd8148ea68a217dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d1ffc6b2_9b32cb7e",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 7
