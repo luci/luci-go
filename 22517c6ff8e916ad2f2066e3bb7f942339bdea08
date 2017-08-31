@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "452ed669_c64bb475",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002882
+      },
+      "writtenOn": "2017-08-31T03:55:37Z",
+      "side": 1,
+      "message": "It\u0027s new for auto-revert by Findit :)",
+      "parentUuid": "e9da8d15_21f98625",
+      "range": {
+        "startLine": 56,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 51
+      },
+      "revId": "22517c6ff8e916ad2f2066e3bb7f942339bdea08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a98f70c6_d61f6181",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 1
