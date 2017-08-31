@@ -283,6 +283,9 @@ type Job struct {
 
 	// State is the job's state machine state, see StateMachine.
 	State JobState
+
+	// PendingTriggers stores serialized job-specific PendingTriggers.
+	PendingTriggers []byte `gae:",noindex"`
 }
 
 // GetJobName returns name of this Job as defined its project's config.
@@ -731,7 +734,7 @@ var defaultTransactionOptions = ds.TransactionOptions{
 
 // txn reads Job, calls callback, then dumps the modified entity back into
 // datastore (unless callback returns errSkipPut).
-func (e *engineImpl) txn(c context.Context, jobID string, txn txnCallback) error {
+func (e *engineImpl) txn(c context.Context, jobID string, txnClbk txnCallback) error {
 	c = logging.SetField(c, "JobID", jobID)
 	fatal := false
 	attempt := 0
@@ -746,7 +749,7 @@ func (e *engineImpl) txn(c context.Context, jobID string, txn txnCallback) error
 			return err
 		}
 		modified := stored
-		err = txn(c, &modified, err == ds.ErrNoSuchEntity)
+		err = txnClbk(c, &modified, err == ds.ErrNoSuchEntity)
 		if err != nil && err != errSkipPut {
 			fatal = !transient.Tag.In(err)
 			return err
