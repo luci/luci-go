@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "dbfc9c93_1d65f73f",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-31T20:17:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "afbad0e9_964f41ae",
+      "range": {
+        "startLine": 31,
+        "startChar": 63,
+        "endLine": 31,
+        "endChar": 64
+      },
+      "revId": "f95353738531461581480d5bd8148ea68a217dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6cd60a83_f7b89b55",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 7
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "49e2744f_1c6ed33f",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-31T20:17:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6cd60a83_f7b89b55",
+      "range": {
+        "startLine": 34,
+        "startChar": 51,
+        "endLine": 34,
+        "endChar": 54
+      },
+      "revId": "f95353738531461581480d5bd8148ea68a217dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "19d988b3_80ce14c9",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 7
@@ -59,6 +107,30 @@
       "writtenOn": "2017-08-31T00:16:28Z",
       "side": 1,
       "message": "pedantic: very strictly speaking, that\u0027s not required, you code will still work\nbut these extra fields would be useless, so I guess keep this :)",
+      "range": {
+        "startLine": 36,
+        "startChar": 25,
+        "endLine": 36,
+        "endChar": 51
+      },
+      "revId": "f95353738531461581480d5bd8148ea68a217dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dca13c91_e4d7c28a",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-31T20:17:32Z",
+      "side": 1,
+      "message": "rephrased.",
+      "parentUuid": "19d988b3_80ce14c9",
       "range": {
         "startLine": 36,
         "startChar": 25,
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "808393fc_f9ea32f5",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-31T20:17:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d3895e22_6f0f33ad",
+      "range": {
+        "startLine": 42,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 51
+      },
+      "revId": "f95353738531461581480d5bd8148ea68a217dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a895e0e7_edc31fa5",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 7
@@ -114,6 +210,30 @@
       "revId": "f95353738531461581480d5bd8148ea68a217dae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1616c087_c1b3d9c8",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-31T20:17:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a895e0e7_edc31fa5",
+      "range": {
+        "startLine": 54,
+        "startChar": 1,
+        "endLine": 54,
+        "endChar": 49
+      },
+      "revId": "f95353738531461581480d5bd8148ea68a217dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "fef9b99f_c7471de4",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-31T20:17:32Z",
+      "side": 1,
+      "message": "So I decided that what I liked best was to:\n\n- Provide an interface that a third party user can implement (.get in this case) for their own tests.\n- Make NewClient (now NewProdClient) always validate and assume secure host.\n- Make internal tests use the private attribute of the struct to set the url\n  and bypass validation.\n\nPTAL at the latest patch.",
+      "parentUuid": "d1ffc6b2_9b32cb7e",
+      "range": {
+        "startLine": 76,
+        "startChar": 42,
+        "endLine": 76,
+        "endChar": 60
+      },
+      "revId": "f95353738531461581480d5bd8148ea68a217dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8e504e20_dab0169b",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 7
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "febdeb47_103ce4c8",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-31T20:17:32Z",
+      "side": 1,
+      "message": "I don\u0027t foresee a use case where the same client has to be used with multiple hosts, and as a user, having the url validated in the process of creating a client is rather convenient, also reduces the param list for the apis.\n\nI\u0027d vote for changing gitiles client to work this way.",
+      "parentUuid": "8e504e20_dab0169b",
+      "range": {
+        "startLine": 119,
+        "startChar": 1,
+        "endLine": 119,
+        "endChar": 47
+      },
+      "revId": "f95353738531461581480d5bd8148ea68a217dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6d4d9436_78f428e2",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 7
@@ -183,6 +351,30 @@
       "revId": "f95353738531461581480d5bd8148ea68a217dae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37590cf3_36a968e3",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-31T20:17:32Z",
+      "side": 1,
+      "message": "Changed comment to (unreliable for paging)",
+      "parentUuid": "6d4d9436_78f428e2",
+      "range": {
+        "startLine": 137,
+        "startChar": 44,
+        "endLine": 137,
+        "endChar": 63
+      },
+      "revId": "f95353738531461581480d5bd8148ea68a217dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

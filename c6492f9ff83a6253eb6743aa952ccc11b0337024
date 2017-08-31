@@ -215,6 +215,30 @@
     },
     {
       "key": {
+        "uuid": "4c4a19e4_f813fd54",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-08-31T20:17:32Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "6a388534_8f9749a2",
+      "range": {
+        "startLine": 96,
+        "startChar": 1,
+        "endLine": 96,
+        "endChar": 14
+      },
+      "revId": "c6492f9ff83a6253eb6743aa952ccc11b0337024",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "81219b99_f0ffb2a7",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 2
