@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "af887109_dcf25b00",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1002882
+      },
+      "writtenOn": "2017-08-31T22:36:22Z",
+      "side": 1,
+      "message": "Could this be folded into the QueryRequest above?",
+      "range": {
+        "startLine": 213,
+        "startChar": 1,
+        "endLine": 217,
+        "endChar": 2
+      },
+      "revId": "c01ab68e694f8018d8c2c84aa07299f8ae0eb0c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
