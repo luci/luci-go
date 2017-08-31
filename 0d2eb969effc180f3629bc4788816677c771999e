@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9d5bbbb8_5779b62f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 11
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-08-31T23:00:09Z",
+      "side": 1,
+      "message": "it was removed. Updated comment.",
+      "parentUuid": "39e01d35_9d22a378",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 13,
+        "endChar": 37
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8d776849_3207169f",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 11
@@ -221,6 +245,30 @@
       "side": 1,
       "message": "We went back and forth on this.\n\n  * I claim that we don\u0027t want to do string parsing when we don\u0027t need to, and I don\u0027t like the idea of having all services needing to implement some weird parser for the resource rules. Don\u0027t do string formatting and parsing when you don\u0027t need to.\n  * Unfortunately, `single -\u003e repeated` is only a backwards compatible change in the binary proto, not in JSON, and not in any of the generated code (especially in python where str and list are both iterable).\n\nSo the conclusion was what\u0027s here; We have a single kind (static string), which names the resource type, and then the arguments are individual strings. This way neither the caller nor the service need to do any formatting/parsing operations, and it gets us out of dumb stuff where some resources have slashes in their names.",
       "parentUuid": "62515885_c5424087",
+      "range": {
+        "startLine": 102,
+        "startChar": 23,
+        "endLine": 102,
+        "endChar": 55
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b8b3468_31555420",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-08-31T23:00:09Z",
+      "side": 1,
+      "message": "I believe some string manipulation in cases we don\u0027t have as of now is a better evil than this confusion. I agree to make the batching version of this API by accepting names of distinct resources in this field.",
+      "parentUuid": "368d7cb1_35b6cdc0",
       "range": {
         "startLine": 102,
         "startChar": 23,
