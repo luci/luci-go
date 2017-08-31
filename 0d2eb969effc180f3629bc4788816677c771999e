@@ -2,6 +2,144 @@
   "comments": [
     {
       "key": {
+        "uuid": "39e01d35_9d22a378",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 11
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-31T22:38:46Z",
+      "side": 1,
+      "message": "hm? Where?..",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 13,
+        "endChar": 37
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d776849_3207169f",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-31T22:38:46Z",
+      "side": 1,
+      "message": "Where is it given?",
+      "range": {
+        "startLine": 18,
+        "startChar": 48,
+        "endLine": 18,
+        "endChar": 60
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90017c44_951b7219",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-31T22:38:46Z",
+      "side": 1,
+      "message": "It is always publicly available?\nWhat about internal services? Will they have to return this information to all too? If not, how access to this information is going to be authorized?",
+      "range": {
+        "startLine": 23,
+        "startChar": 4,
+        "endLine": 24,
+        "endChar": 18
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f19c61a5_791508e5",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-31T22:38:46Z",
+      "side": 1,
+      "message": "I find it strange that Actions set is stored as a list, but roles are stored as a map. I generally believe storing listings as lists are better, since it makes each individual element of the set to be fully described (it has a name and properties). Thus I suggest:\n\n message Role {\n   string role_id \u003d 1;\n   ...\n }\n\n repeated Role roles \u003d 4;\n\nIf you insist on using maps, then make \u0027actions\u0027 a map too... I just don\u0027t understand why actions and roles are stored differently.",
+      "range": {
+        "startLine": 53,
+        "startChar": 4,
+        "endLine": 53,
+        "endChar": 16
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bca0fef1_338570f0",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-31T22:38:46Z",
+      "side": 1,
+      "message": "I think we may need a batch version...",
+      "range": {
+        "startLine": 87,
+        "startChar": 3,
+        "endLine": 87,
+        "endChar": 26
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "363de89b_661cd3f6",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-31T22:38:46Z",
+      "side": 1,
+      "message": "Please expand on this, assume readers of this doc are not luci-eng@ (e.g findit people). How FindIt is going to implicitly pass \"the current identity\"?",
+      "range": {
+        "startLine": 89,
+        "startChar": 75,
+        "endLine": 90,
+        "endChar": 19
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a7d0b5af_5884765c",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 11
@@ -25,6 +163,52 @@
     },
     {
       "key": {
+        "uuid": "4a76073c_019f0fe2",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-31T22:38:46Z",
+      "side": 1,
+      "message": "This sounds odd... I assumed it is repeated to allow to check a bunch of resources at once.",
+      "range": {
+        "startLine": 99,
+        "startChar": 56,
+        "endLine": 99,
+        "endChar": 74
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62515885_c5424087",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-31T22:38:46Z",
+      "side": 1,
+      "message": "IMHO, using repeated fields for this is very confusing. It should be \"luci.chromium.try/linux_rel\" instead. Even better, just drop this notion of hierarchies for now, we don\u0027t need it. Let\u0027s keep things simple. A unit of ACLs in Buildbucket is a bucket, not a builder. A unit of ACLs in CIPD is a package (not a package instance), etc.",
+      "range": {
+        "startLine": 102,
+        "startChar": 23,
+        "endLine": 102,
+        "endChar": 55
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "599255fb_146ec0f0",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 11
@@ -41,6 +225,52 @@
         "startChar": 18,
         "endLine": 104,
         "endChar": 31
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67424099_cd3736bc",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-31T22:38:46Z",
+      "side": 1,
+      "message": "Consider adding a field \"validity_duration\" which says for how long clients are allowed to cache this information.",
+      "range": {
+        "startLine": 110,
+        "startChar": 8,
+        "endLine": 110,
+        "endChar": 32
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d1a3117_fff4e38c",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-08-31T22:38:46Z",
+      "side": 1,
+      "message": "there\u0027re redundancies here. \u0027actions\u0027 can be derived from \u0027roles\u0027. Please document how clients are supposed to treat this. I assume \"always use \u0027actions\u0027 for decisions; \u0027roles\u0027 are given as FYI only, do not use them in any authorization checks\".",
+      "range": {
+        "startLine": 113,
+        "startChar": 2,
+        "endLine": 116,
+        "endChar": 28
       },
       "revId": "0d2eb969effc180f3629bc4788816677c771999e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
