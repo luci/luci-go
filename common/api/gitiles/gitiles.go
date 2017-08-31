@@ -101,6 +101,12 @@ type Client struct {
 
 	// Used for testing only.
 	mockRepoURL string
+
+	// MaxCommitsPerRequest should be a large but reasonable number of
+	// commits to get in a single request.
+	//
+	// If not set, i.e. set to 0, a default value of 10000 will be assumed.
+	MaxCommitsPerRequest int
 }
 
 // Log returns a list of commits based on a repo and treeish.
@@ -136,33 +142,122 @@ type Client struct {
 //  Log(C) = [C, A, B, base, common...]
 //
 func (c *Client) Log(ctx context.Context, repoURL, treeish string, limit int) ([]Commit, error) {
+	r, err := c.rawLog(ctx, repoURL, treeish, limit, "")
+	if err == nil {
+		if len(r.Log) > limit {
+			return r.Log[:limit], nil
+		}
+		return r.Log, nil
+	}
+	return nil, err
+}
+
+func (c *Client) rawLog(ctx context.Context, repoURL, treeish string, lowerLimit int, nextCursor string) (*logResponse, error) {
+	// lowerLimit means: give me at least `lowerLimit` commits, unless
+	// the log contains fewer than this, in which case, give me all.
+	if lowerLimit < 1 {
+		return nil, fmt.Errorf("internal gitiles package bug: lowerLimit must be at least 1, but %d provided", lowerLimit)
+	}
+
+	// Sane default.
+	pageSize := 10000
+
+	// But client can override this.
+	if c.MaxCommitsPerRequest > 0 {
+		pageSize = c.MaxCommitsPerRequest
+	}
+	// There's no need for a large page if we only want a few commits.
+	if lowerLimit < pageSize {
+		pageSize = lowerLimit
+	}
+
 	repoURL, err := NormalizeRepoURL(repoURL)
 	if err != nil {
 		return nil, err
 	}
-	if limit < 1 {
-		return nil, fmt.Errorf("limit must be at least 1, but %d provided", limit)
-	}
 	// TODO(tandrii): s/QueryEscape/PathEscape once AE deployments are Go1.8+.
-	subPath := fmt.Sprintf("+log/%s?format=JSON", url.QueryEscape(treeish))
-	resp := &logResponse{}
-	if err := c.get(ctx, repoURL, subPath, resp); err != nil {
-		return nil, err
-	}
-	result := resp.Log
+	subPath := fmt.Sprintf("+log/%s?format=JSON&n=%d", url.QueryEscape(treeish), pageSize)
+	combinedLog := []Commit{}
+	nextPath := subPath
 	for {
-		if resp.Next == "" || len(result) >= limit {
-			if len(result) > limit {
-				result = result[:limit]
-			}
-			return result, nil
+		resp := logResponse{}
+		if nextCursor != "" {
+			nextPath = subPath + "&s=" + url.QueryEscape(nextCursor)
 		}
-		nextPath := subPath + "&s=" + resp.Next
-		resp = &logResponse{}
-		if err := c.get(ctx, repoURL, nextPath, resp); err != nil {
+		if err := c.get(ctx, repoURL, nextPath, &resp); err != nil {
 			return nil, err
 		}
-		result = append(result, resp.Log...)
+		combinedLog = append(combinedLog, resp.Log...)
+		if resp.Next == "" || len(combinedLog) >= lowerLimit {
+			return &logResponse{Log: combinedLog, Next: resp.Next}, nil
+		}
+		nextCursor = resp.Next
+	}
+}
+
+// LogForward is a hacky wrapper over rawLog to get a list of commits that goes
+// forward instead of backwards.
+//
+// The response for Log will always include (for r0..rx) rx and its immediate
+// ancestors (rx-1, rx-2, ..., rx-n) but may not reach r1 necessarily  if the
+// delta between the commits reachable from rx and those reachable from r0 is
+// larger than the a given limit; LogForward will keep paging back until it
+// reaches r1 and will return the last page or two in reverse order (r1, r2, r3,
+// r4, ..., r~PageSize).
+//
+// To customize the approximate size of the
+// page, modify the .MaxCommitsPerRequest property of the Client receiver.
+//
+// Note that this function is designed to return at least
+// c.MaxCommitsPerRequest commits if they are available, and not to exceed twice
+// that amount. This variability is caused because there is no way to know in
+// advance how big the last page will be, and there is no significant memory
+// savings in truncating the result, thus any truncation is left to the caller
+//
+// WARNING: This api pages back from rx until r0 (or any commit reachable
+// from r0), and it makes a request to gitiles for each page. It is strongly
+// recommended a large page size is used, or else, this api will generate an
+// *excessive* amount of requests.
+//
+// WARNING: Beware of paging using sequence of LogForward calls. Not only is it
+// inefficient, but it may also miss commits if range r0..rx contains merge
+// commits (with 2+ parents).
+//
+// In pseudocode:
+//   if
+//     all := reverse(Log(r0, rX))
+//     oldest := LogForward(r0, rX)
+//     newest := LogForward(oldest[len(oldest)-1].commit, rX)
+//   then
+//     all **may have more commits than** (oldest + newest)
+func (c *Client) LogForward(ctx context.Context, repoURL, r0, rx string) ([]Commit, error) {
+	nextCursor := ""
+	treeish := fmt.Sprintf("%s..%s", r0, rx)
+	// We want at least one full page of results.
+	uberPageSize := c.MaxCommitsPerRequest
+	if uberPageSize <= 0 {
+		// If the caller doesn't care, get largish pages to do fewer
+		// calls.
+		uberPageSize = 10000
+	}
+	pp := []Commit{}
+	for {
+		r, err := c.rawLog(ctx, repoURL, treeish, uberPageSize, nextCursor)
+		if err != nil {
+			return nil, err
+		}
+		if r.Next == "" {
+			pp = append(pp, r.Log...)
+			// Reverse in place because golang has no builtins for this.
+			for i, j := 0, len(pp)-1; i < j; i, j = i+1, j-1 {
+				pp[i], pp[j] = pp[j], pp[i]
+			}
+			return pp, nil
+		}
+		// Keep the previous page.
+		pp = r.Log
+		// Keep paging back until r.Next is empty string.
+		nextCursor = r.Next
 	}
 }
 

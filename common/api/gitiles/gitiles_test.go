@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -77,7 +78,7 @@ func TestLog(t *testing.T) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintf(w, ")]}'\n{\"log\": [%s, %s]}\n", fake_commit1_str, fake_commit2_str)
+			fmt.Fprintf(w, ")]}'\n{\"log\": [%s, %s]}\n", fakeCommit1Str, fakeCommit2Str)
 		})
 		defer srv.Close()
 
@@ -100,15 +101,15 @@ func TestLog(t *testing.T) {
 	})
 
 	Convey("Log Paging", t, func() {
-		cursor_sent := ""
+		cursorSent := ""
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
 			if next := r.URL.Query().Get("s"); next == "" {
-				fmt.Fprintf(w, ")]}'\n{\"log\": [%s], \"next\": \"next_cursor_value\"}\n", fake_commit1_str)
+				fmt.Fprintf(w, ")]}'\n{\"log\": [%s], \"next\": \"next_cursor_value\"}\n", fakeCommit1Str)
 			} else {
-				cursor_sent = next
-				fmt.Fprintf(w, ")]}'\n{\"log\": [%s]}\n", fake_commit2_str)
+				cursorSent = next
+				fmt.Fprintf(w, ")]}'\n{\"log\": [%s]}\n", fakeCommit2Str)
 			}
 		})
 		defer srv.Close()
@@ -117,7 +118,7 @@ func TestLog(t *testing.T) {
 			commits, err := c.Log(ctx, "https://c.googlesource.com/repo",
 				"master..8de6836858c99e48f3c58164ab717bda728e95dd", 10)
 			So(err, ShouldBeNil)
-			So(cursor_sent, ShouldEqual, "next_cursor_value")
+			So(cursorSent, ShouldEqual, "next_cursor_value")
 			So(len(commits), ShouldEqual, 2)
 			So(commits[0].Author.Name, ShouldEqual, "Author 1")
 			So(commits[1].Commit, ShouldEqual, "dc1dbf1aa56e4dd4cbfaab61c4d30a35adce5f40")
@@ -127,10 +128,72 @@ func TestLog(t *testing.T) {
 			commits, err := c.Log(ctx, "https://c.googlesource.com/repo",
 				"master", 1)
 			So(err, ShouldBeNil)
-			So(cursor_sent, ShouldEqual, "")
+			So(cursorSent, ShouldEqual, "")
 			So(len(commits), ShouldEqual, 1)
 			So(commits[0].Author.Name, ShouldEqual, "Author 1")
 		})
+	})
+}
+
+func TestLogForward(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("LogForward with bad URL", t, func() {
+		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {})
+		defer srv.Close()
+		_, err := c.LogForward(ctx, "bad://repo.git/", "8de6836858c99e48f3c58164ab717bda728e95dd", "master")
+		So(err, ShouldNotBeNil)
+	})
+
+	Convey("LogForward w/o pages", t, func() {
+		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, ")]}'\n{\"log\": [%s, %s]}\n", fakeCommit1Str, fakeCommit2Str)
+		})
+		defer srv.Close()
+
+		Convey("Return All", func() {
+			commits, err := c.LogForward(ctx, "https://c.googlesource.com/repo",
+				"8de6836858c99e48f3c58164ab717bda728e95dd", "master")
+			So(err, ShouldBeNil)
+			So(len(commits), ShouldEqual, 2)
+			So(commits[0].Author.Name, ShouldEqual, "Author 2")
+			So(commits[1].Commit, ShouldEqual, "0b2c5409e58a71c691b05454b55cc5580cc822d1")
+		})
+	})
+
+	Convey("LogForward Paging", t, func() {
+		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			next := r.URL.Query().Get("s")
+			logEntries := make([]string, 100)
+			for i := 0; i < 100; i++ {
+				logEntries[i] = fakeCommit1Str
+			}
+			logStr := strings.Join(logEntries, ", ")
+			switch next {
+			case "":
+				fmt.Fprintf(w, ")]}'\n{\"log\": [%s], \"next\": \"next_cursor_value\"}\n", logStr)
+			case "next_cursor_value":
+				fmt.Fprintf(w, ")]}'\n{\"log\": [%s], \"next\": \"last_cursor_value\"}\n", logStr)
+			case "last_cursor_value":
+				fmt.Fprintf(w, ")]}'\n{\"log\": [%s]}\n", fakeCommit2Str)
+			}
+		})
+		defer srv.Close()
+
+		Convey("Page past limit", func() {
+			commits, err := c.LogForward(ctx, "https://c.googlesource.com/repo",
+				"8de6836858c99e48f3c58164ab717bda728e95dd", "master")
+			So(err, ShouldBeNil)
+			So(len(commits), ShouldEqual, 201)
+			So(commits[0].Author.Name, ShouldEqual, "Author 2")
+			So(commits[0].Commit, ShouldEqual, "dc1dbf1aa56e4dd4cbfaab61c4d30a35adce5f40")
+		})
+
 	})
 }
 
@@ -140,7 +203,7 @@ func TestRefs(t *testing.T) {
 
 	Convey("Refs Bad RefsPath", t, func() {
 
-		c := Client{nil, "https://a.googlesource.com/a/repo"}
+		c := Client{nil, "https://a.googlesource.com/a/repo", 0}
 		_, err := c.Refs(context.Background(), "https://c.googlesource.com/repo", "bad")
 		So(err, ShouldNotBeNil)
 	})
@@ -197,7 +260,7 @@ func TestRefs(t *testing.T) {
 ////////////////////////////////////////////////////////////////////////////////
 
 var (
-	fake_commit1_str = `{
+	fakeCommit1Str = `{
 		"commit": "0b2c5409e58a71c691b05454b55cc5580cc822d1",
 		"tree": "3c6f95bc757698cd6aca3c49f88f640fd145ea69",
 		"parents": [ "dc1dbf1aa56e4dd4cbfaab61c4d30a35adce5f40" ],
@@ -213,7 +276,7 @@ var (
 		},
 		"message": "Import wpt@d96d68ed964f9bfc2bb248c2d2fab7a8870dc685\\n\\nCr-Commit-Position: refs/heads/master@{#487078}"
 	}`
-	fake_commit2_str = `{
+	fakeCommit2Str = `{
 		"commit": "dc1dbf1aa56e4dd4cbfaab61c4d30a35adce5f40",
 		"tree": "1ba2335c07915c31597b97a8d824aecc85a996f6",
 		"parents": ["8de6836858c99e48f3c58164ab717bda728e95dd"],
