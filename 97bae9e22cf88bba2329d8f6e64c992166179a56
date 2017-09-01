@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "68e19b9e_1f803853",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-01T18:12:06Z",
+      "side": 1,
+      "message": "please provide a link to the description of the protocol between git and a credential helper. I could not find it :(",
+      "range": {
+        "startLine": 15,
+        "startChar": 36,
+        "endLine": 15,
+        "endChar": 58
+      },
+      "revId": "97bae9e22cf88bba2329d8f6e64c992166179a56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e4bfa32a_85b3ee7a",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-01T18:12:06Z",
+      "side": 1,
+      "message": "1. No need to hardcode Method. LUCI context method will be picked up on its own if the binary runs in a context. I can also imagine a situation when we want to use \"user method\" (manual login), e.g when we standardize depot_tools to use luci token cache for everything (this will allow us to drop redundant .gitcookies).\n2. Please expose all auth options as flags by using https://chromium.googlesource.com/infra/luci/luci-go/+/master/client/authcli/authcli.go#124. See https://chromium.googlesource.com/infra/luci/luci-go/+/master/client/authcli/authcli.go#320 as full end-to-end example of almost exactly of what we want to do in the credentials helper.\n\nI assume there\u0027ll be a way to configure command line flags of the credential helper?",
+      "range": {
+        "startLine": 46,
+        "startChar": 54,
+        "endLine": 49,
+        "endChar": 2
+      },
+      "revId": "97bae9e22cf88bba2329d8f6e64c992166179a56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ef7053f4_7911145f",
         "filename": "client/cmd/git-credential-luci/main.go",
         "patchSetId": 1
@@ -13,6 +59,75 @@
       "writtenOn": "2017-09-01T07:25:57Z",
       "side": 1,
       "message": "I\u0027m not sure what\u0027s the appropriate lifetime for the token, suggestions are welcome.",
+      "revId": "97bae9e22cf88bba2329d8f6e64c992166179a56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c93ae6c6_6bb7989a",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-01T18:12:06Z",
+      "side": 1,
+      "message": "Let\u0027s keep it 1 min for now, but make it configurable via \u0027-token-lifetime\u0027",
+      "range": {
+        "startLine": 50,
+        "startChar": 31,
+        "endLine": 50,
+        "endChar": 47
+      },
+      "revId": "97bae9e22cf88bba2329d8f6e64c992166179a56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4921a8c5_17bcad84",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-01T18:12:06Z",
+      "side": 1,
+      "message": "did you mean fmt.Sprintf(os.Stderr, \"....\")?\n\nAlso need \"return 1\" or something",
+      "range": {
+        "startLine": 52,
+        "startChar": 2,
+        "endLine": 52,
+        "endChar": 48
+      },
+      "revId": "97bae9e22cf88bba2329d8f6e64c992166179a56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bff3c03d_369f5ea0",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-01T18:12:06Z",
+      "side": 1,
+      "message": "strictly speaking we can implement that via https://chromium.googlesource.com/infra/luci/luci-go/+/master/common/auth/auth.go#684 but I\u0027m not sure its worth doing",
+      "range": {
+        "startLine": 73,
+        "startChar": 9,
+        "endLine": 73,
+        "endChar": 21
+      },
       "revId": "97bae9e22cf88bba2329d8f6e64c992166179a56",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
