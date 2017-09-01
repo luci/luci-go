@@ -284,6 +284,30 @@
     },
     {
       "key": {
+        "uuid": "5f21d844_f5ddef5b",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-01T17:30:57Z",
+      "side": 1,
+      "message": "I\u0027ll respond to the rest on newest patchset, but let me try to persuade you against\n\n\u003e Provide an interface that a third party user can implement (.get in this case) for their own tests.\n\nImagine I add later another method to Gerrit\u0027s Client which I need for say scheduler, but nobody else does. This new method will need to be added to this interface you\u0027ve created to east testing. Unfortunately, adding a new method to interface now requires every user of this interface to implement this new method even though they never use it.\n\nInstead, each third party user should define their own interface of things they actually depend on. Then, if library gains a new method, no third party user code needs to be updated.",
+      "parentUuid": "fef9b99f_c7471de4",
+      "range": {
+        "startLine": 76,
+        "startChar": 42,
+        "endLine": 76,
+        "endChar": 60
+      },
+      "revId": "f95353738531461581480d5bd8148ea68a217dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8e504e20_dab0169b",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 7
@@ -319,6 +343,30 @@
       "side": 1,
       "message": "I don\u0027t foresee a use case where the same client has to be used with multiple hosts, and as a user, having the url validated in the process of creating a client is rather convenient, also reduces the param list for the apis.\n\nI\u0027d vote for changing gitiles client to work this way.",
       "parentUuid": "8e504e20_dab0169b",
+      "range": {
+        "startLine": 119,
+        "startChar": 1,
+        "endLine": 119,
+        "endChar": 47
+      },
+      "revId": "f95353738531461581480d5bd8148ea68a217dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2089a4f9_3f3287a1",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-01T17:30:57Z",
+      "side": 1,
+      "message": "ok, let\u0027s go with embedding URL into client here and in gitiles, but let\u0027s not change gitiles one in the same CL.",
+      "parentUuid": "febdeb47_103ce4c8",
       "range": {
         "startLine": 119,
         "startChar": 1,

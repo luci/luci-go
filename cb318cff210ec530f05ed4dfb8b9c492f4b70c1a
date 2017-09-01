@@ -327,6 +327,30 @@
       "revId": "cb318cff210ec530f05ed4dfb8b9c492f4b70c1a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad765b5a_fde7b933",
+        "filename": "common/api/gerrit/gerrit_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-01T17:30:57Z",
+      "side": 1,
+      "message": "fixed",
+      "parentUuid": "f34f61e8_da69cb4a",
+      "range": {
+        "startLine": 52,
+        "startChar": 13,
+        "endLine": 52,
+        "endChar": 14
+      },
+      "revId": "cb318cff210ec530f05ed4dfb8b9c492f4b70c1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
