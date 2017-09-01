@@ -89,6 +89,9 @@
       <h2>SourceStamp:</h2>
 
       <table class="info" width="100%">
+      {{ if .Project }}
+        <tr><td class="left">Project</td><td>{{ .Project }}</td></tr>
+      {{ end }}
 
       {{ if .Commit.Repo }}
         <tr><td class="left">Repository</td><td>{{ .Commit.Repo }}</td></tr>
