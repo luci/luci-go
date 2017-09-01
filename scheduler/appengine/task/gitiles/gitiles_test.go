@@ -26,10 +26,13 @@ import (
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/urlfetch"
 	"go.chromium.org/luci/scheduler/appengine/messages"
+	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/utils/tasktest"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+var _ task.Manager = (*TaskManager)(nil)
 
 func TestTriggerBuild(t *testing.T) {
 	Convey("LaunchTask triggers builds for new commits", t, func(ctx C) {
@@ -94,7 +97,7 @@ func TestTriggerBuild(t *testing.T) {
 		}
 
 		// Launch.
-		So(m.LaunchTask(c, ctl), ShouldBeNil)
+		So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
 		So(ctl.Log[0], ShouldEqual, "Trigger build for commit baddcafe")
 		r := Repository{ID: "proj/job:" + ts.URL}
 		So(ds.Get(c, &r), ShouldBeNil)
@@ -153,7 +156,7 @@ func TestTriggerBuild(t *testing.T) {
 			},
 		), ShouldBeNil)
 
-		So(m.LaunchTask(c, ctl), ShouldBeNil)
+		So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
 		So(len(ctl.Log), ShouldEqual, 0)
 	})
 }

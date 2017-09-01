@@ -84,6 +84,21 @@ type Traits struct {
 	Multistage bool
 }
 
+// Trigger is passed from a triggering job to a triggered job.
+type Trigger struct {
+	// ID must unique identify a Trigger in time. It is used to deduplicate and
+	// hence provide idempotency for adding a trigger.
+	ID string `gae:",noindex"`
+
+	// Payload stores data passed from a triggering Job to a triggered Job.
+	// It is opaque to the engine and could be empty. It is up to respective
+	// TaskManager instances to interprete it.
+	//
+	// Payload should be fairly small in order for all outstanding triggers to fit
+	// into 1 datastore entry.
+	Payload []byte `gae:",noindex",json:",omitempty"`
+}
+
 // Manager knows how to work with a particular kind of tasks (e.g URL fetch
 // tasks, Swarming tasks, etc): how to deserialize, validate and execute them.
 //
@@ -129,7 +144,12 @@ type Manager interface {
 	// TaskManager may optionally use ctl.Save() to checkpoint progress and save
 	// debug log. ctl.Save() is also implicitly called by the engine when
 	// `LaunchTask` returns.
-	LaunchTask(c context.Context, ctl Controller) error
+	//
+	// triggers if not empty contains a list of emitted messages from triggering
+	// jobs. All of these triggers must be completely consumed with this
+	// InvocationNonce (see above).
+	// TODO(tandrii): remove this restriction in v2 of the engine.
+	LaunchTask(c context.Context, ctl Controller, triggers []Trigger) error
 
 	// AbortTask is called to opportunistically abort launched task.
 	//
@@ -244,6 +264,9 @@ type Controller interface {
 	// All requests made by the client must finish before given deadline time
 	// (or they will be forcefully aborted).
 	GetClient(c context.Context, timeout time.Duration) (*http.Client, error)
+
+	// EmitTrigger triggers another job with an optional payload.
+	EmitTrigger(ctx context.Context, jobID string, trigger Trigger)
 
 	// Save updates the state of the task in the persistent store.
 	//

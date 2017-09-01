@@ -31,6 +31,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+var _ task.Manager = (*TaskManager)(nil)
+
 func TestValidateProtoMessage(t *testing.T) {
 	tm := TaskManager{}
 
@@ -180,7 +182,7 @@ func TestFullFlow(t *testing.T) {
 		}
 
 		// Launch.
-		So(mgr.LaunchTask(c, ctl), ShouldBeNil)
+		So(mgr.LaunchTask(c, ctl, nil), ShouldBeNil)
 		So(ctl.TaskState, ShouldResemble, task.State{
 			Status:   task.StatusRunning,
 			TaskData: []byte(`{"swarming_task_id":"task_id"}`),

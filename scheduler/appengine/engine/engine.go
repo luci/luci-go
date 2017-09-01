@@ -204,8 +204,8 @@ const (
 
 // actionTaskPayload is payload for task queue jobs emitted by the engine.
 //
-// Serialized as JSON, produced by enqueueJobActions and enqueueInvTimers, used
-// as inputs in ExecuteSerializedAction.
+// Serialized as JSON, produced by enqueueJobActions, enqueueInvTimers, and
+// enqueueTriggers, used as inputs in ExecuteSerializedAction.
 //
 // Union of all possible payloads for simplicity.
 type actionTaskPayload struct {
@@ -213,12 +213,13 @@ type actionTaskPayload struct {
 	InvID int64  `json:",omitempty"` // ID of relevant Invocation
 
 	// For Job actions and timers (InvID == 0).
-	Kind                string `json:",omitempty"` // defines what fields below to examine
-	TickNonce           int64  `json:",omitempty"` // valid for "TickLaterAction" kind
-	InvocationNonce     int64  `json:",omitempty"` // valid for "StartInvocationAction" kind
-	TriggeredBy         string `json:",omitempty"` // valid for "StartInvocationAction" kind
-	Overruns            int    `json:",omitempty"` // valid for "RecordOverrunAction" kind
-	RunningInvocationID int64  `json:",omitempty"` // valid for "RecordOverrunAction" kind
+	Kind                string         `json:",omitempty"` // defines what fields below to examine
+	TickNonce           int64          `json:",omitempty"` // valid for "TickLaterAction" kind
+	InvocationNonce     int64          `json:",omitempty"` // valid for "StartInvocationAction" kind
+	TriggeredBy         string         `json:",omitempty"` // valid for "StartInvocationAction" kind
+	Triggers            []task.Trigger `json:",omitempty"` // valid for "StartInvocationAction" and "EnqueueTriggersAction" kind
+	Overruns            int            `json:",omitempty"` // valid for "RecordOverrunAction" kind
+	RunningInvocationID int64          `json:",omitempty"` // valid for "RecordOverrunAction" kind
 
 	// For Invocation actions and timers (InvID != 0).
 	InvTimer *invocationTimer `json:",omitempty"` // used for AddTimer calls
@@ -331,7 +332,7 @@ func (e *Job) isEqual(other *Job) bool {
 		e.Schedule == other.Schedule &&
 		e.Acls.Equal(&other.Acls) &&
 		bytes.Equal(e.Task, other.Task) &&
-		e.State == other.State)
+		e.State.Equal(&other.State))
 }
 
 // matches returns true if job definition in the entity matches the one
@@ -731,7 +732,7 @@ var defaultTransactionOptions = ds.TransactionOptions{
 
 // txn reads Job, calls callback, then dumps the modified entity back into
 // datastore (unless callback returns errSkipPut).
-func (e *engineImpl) txn(c context.Context, jobID string, txn txnCallback) error {
+func (e *engineImpl) txn(c context.Context, jobID string, txnClbk txnCallback) error {
 	c = logging.SetField(c, "JobID", jobID)
 	fatal := false
 	attempt := 0
@@ -746,7 +747,7 @@ func (e *engineImpl) txn(c context.Context, jobID string, txn txnCallback) error
 			return err
 		}
 		modified := stored
-		err = txn(c, &modified, err == ds.ErrNoSuchEntity)
+		err = txnClbk(c, &modified, err == ds.ErrNoSuchEntity)
 		if err != nil && err != errSkipPut {
 			fatal = !transient.Tag.In(err)
 			return err
@@ -837,6 +838,7 @@ func (e *engineImpl) enqueueJobActions(c context.Context, jobID string, actions 
 				Kind:            "StartInvocationAction",
 				InvocationNonce: a.InvocationNonce,
 				TriggeredBy:     string(a.TriggeredBy),
+				Triggers:        a.Triggers,
 			})
 			if err != nil {
 				return err
@@ -928,7 +930,7 @@ func (e *engineImpl) executeJobAction(c context.Context, payload *actionTaskPayl
 	case "StartInvocationAction":
 		return e.startInvocation(
 			c, payload.JobID, payload.InvocationNonce,
-			identity.Identity(payload.TriggeredBy), retryCount)
+			identity.Identity(payload.TriggeredBy), payload.Triggers, retryCount)
 	case "RecordOverrunAction":
 		return e.recordOverrun(c, payload.JobID, payload.Overruns, payload.RunningInvocationID)
 	default:
@@ -1286,7 +1288,7 @@ func (e *engineImpl) invocationTimerTick(c context.Context, jobID string, invID 
 // startInvocation is called via task queue to start running a job. This call
 // may be retried by task queue service.
 func (e *engineImpl) startInvocation(c context.Context, jobID string, invocationNonce int64,
-	triggeredBy identity.Identity, retryCount int) error {
+	triggeredBy identity.Identity, triggers []task.Trigger, retryCount int) error {
 
 	c = logging.SetField(c, "JobID", jobID)
 	c = logging.SetField(c, "InvNonce", invocationNonce)
@@ -1417,7 +1419,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	// invocation out of StatusStarting state (a failure to do so is an error). If
 	// it returns an error, invocation is forcefully moved to StatusFailed state.
 	// In either case, invocation never ends up in StatusStarting state.
-	err = ctl.manager.LaunchTask(c, ctl)
+	err = ctl.manager.LaunchTask(c, ctl, triggers)
 	if ctl.State().Status == task.StatusStarting {
 		ctl.State().Status = task.StatusFailed
 		if err == nil {
