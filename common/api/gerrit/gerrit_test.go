@@ -124,6 +124,28 @@ func TestQuery(t *testing.T) {
 	})
 
 }
+func TestGetChangeDetails(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("Details", t, func() {
+		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, ")]}'\n%s\n", fakeCL3Str)
+		})
+		defer srv.Close()
+
+		Convey("WithOptions", func() {
+			cl, err := c.GetChangeDetails(ctx, "629279", []string{"CURRENT_REVISION"})
+			So(err, ShouldBeNil)
+			So(cl.RevertOf, ShouldEqual, 629277)
+			So(cl.CurrentRevision, ShouldEqual, "1ee75012c0de")
+		})
+
+	})
+
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -169,6 +191,28 @@ var (
 		"_account_id": 1178184
 	    },
 	    "_has_more_changes": true
+	}`
+	fakeCL3Str = `{
+	    "id": "infra%2Finfra~master~Ia292f77ae6bd94a000046da0b08500f738904d15",
+	    "project": "infra/infra",
+	    "branch": "master",
+	    "hashtags": [],
+	    "change_id": "Ia292f77ae6bd94a000046da0b08500f738904d15",
+	    "subject": "Revert of [Findit] Add flake analyzer forced rerun instructions to makefile.",
+	    "status": "MERGED",
+	    "current_revision" : "1ee75012c0de",
+	    "revert_of": 629277,
+	    "created": "2017-08-23 18:25:40.000000000",
+	    "updated": "2017-08-23 23:51:03.000000000",
+	    "submitted": "2017-08-23 23:51:03.000000000",
+	    "insertions": 1,
+	    "deletions": 4,
+	    "unresolved_comment_count": 0,
+	    "has_review_started": true,
+	    "_number": 629279,
+	    "owner": {
+		"_account_id": 1178184
+	    }
 	}`
 )
 
