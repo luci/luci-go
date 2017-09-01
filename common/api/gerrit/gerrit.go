@@ -56,7 +56,9 @@ type Change struct {
 	Owner                  AccountInfo   `json:"owner"`
 	Submitter              AccountInfo   `json:"submitter"`
 	Reviewers              []AccountInfo `json:"reviewers"`
-	// MoreChanges is not part of a Change, but Gerrit piggy-backs on the
+	RevertOf               int           `json:"revert_of"`
+	CurrentRevision        string        `json:"current_revision"`
+	// MoreChanges is not part of a Change, but gerrit piggy-backs on the
 	// last Change in a page to set this flag if there are more changes
 	// in the results of a query.
 	MoreChanges bool `json:"_more_changes"`
@@ -139,6 +141,14 @@ type ChangeQueryRequest struct {
 	N int
 	// Skip this many from the list of results (unreliable for paging).
 	S int
+	// Include these options in the queries. Certain options will make
+	// Gerrit fill in additional fields of the response. These require
+	// additional database searches and may delay the response.
+	//
+	// The supported strings for options are listed in Gerrit's api
+	// documentation at the link below:
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes
+	Options []string
 }
 
 // qs renders the ChangeQueryRequest as a url.Values.
@@ -150,6 +160,9 @@ func (qr *ChangeQueryRequest) qs() url.Values {
 	}
 	if qr.S > 0 {
 		qs.Add("S", strconv.Itoa(qr.S))
+	}
+	for _, o := range qr.Options {
+		qs.Add("o", o)
 	}
 	return qs
 }
@@ -175,6 +188,36 @@ func (c *Client) ChangeQuery(ctx context.Context, qr ChangeQueryRequest) ([]*Cha
 	moreChanges := result[len(result)-1].MoreChanges
 	result[len(result)-1].MoreChanges = false
 	return result, moreChanges, nil
+}
+
+// GetChangeDetails gets details about a single change with optional fields.
+//
+// This method returns a single *Change and an error.
+//
+// The changeID parameter may be in any of the forms supported by Gerrit:
+//   - "4247"
+//   - "I8473b95934b5732ac55d26311a706c9c2bde9940"
+//   - etc. See the link below.
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+//
+// options is a list of strings like {"CURRENT_REVISION"} which tells Gerrit
+// to return non-default properties for Change. The supported strings for
+// options are listed in Gerrit's api documentation at the link below:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-changes
+func (c *Client) GetChangeDetails(ctx context.Context, changeID string, options []string) (*Change, error) {
+	resp := &Change{}
+	qs := url.Values{}
+	if len(options) > 0 {
+		for _, o := range options {
+			qs.Add("o", o)
+		}
+	}
+
+	path := fmt.Sprintf("changes/%s/detail", url.PathEscape(changeID))
+	if err := c.get(ctx, path, qs, resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
 
 func (c *Client) get(ctx context.Context, path string, query url.Values, result interface{}) error {
