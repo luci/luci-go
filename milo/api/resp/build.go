@@ -58,12 +58,16 @@ type MiloBuild struct {
 }
 
 // SourceStamp is the combination of pointing to a single commit, with information
-// about where that commit came from (eg. the repository).
+// about where that commit came from (eg. the repository), and the project
+// that triggered it.
 type SourceStamp struct {
 	Commit
 	// Source is the trigger source.  In buildbot, this would be the "Reason".
 	// This has no meaning in SwarmBucket and DM yet.
 	Source string
+	// Project is the name of the luci-config project responsible for
+	// triggering the build.
+	Project string
 }
 
 // Property specifies k/v pair representing some
