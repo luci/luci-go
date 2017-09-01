@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "66c9fc4f_dc436d98",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-09-01T09:17:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2fcbbe93_aca50d64",
+      "range": {
+        "startLine": 56,
+        "startChar": 1,
+        "endLine": 56,
+        "endChar": 6
+      },
+      "revId": "d47b55a3683212f06d69b0eb28169bd467c42993",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "61e3f47f_498882ed",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 8
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "bf41c0aa_75c57be6",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-09-01T09:17:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "61e3f47f_498882ed",
+      "range": {
+        "startLine": 64,
+        "startChar": 5,
+        "endLine": 64,
+        "endChar": 10
+      },
+      "revId": "d47b55a3683212f06d69b0eb28169bd467c42993",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5073491c_a27892d4",
         "filename": "common/api/gerrit/gerrit.go",
         "patchSetId": 8
@@ -68,6 +116,30 @@
       "revId": "d47b55a3683212f06d69b0eb28169bd467c42993",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14cf51e1_3a2858a9",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-09-01T09:17:53Z",
+      "side": 1,
+      "message": "There are multiple Gerrit instances that this app could support. chromium-review.googlesource.com go-review.googlesource.com, etc. Hence \"Gerrits\"",
+      "parentUuid": "5073491c_a27892d4",
+      "range": {
+        "startLine": 86,
+        "startChar": 56,
+        "endLine": 86,
+        "endChar": 63
+      },
+      "revId": "d47b55a3683212f06d69b0eb28169bd467c42993",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
