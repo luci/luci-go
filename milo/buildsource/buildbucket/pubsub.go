@@ -74,31 +74,33 @@ func PubSubHandler(ctx *router.Context) {
 		// them.
 		ctx.Writer.WriteHeader(http.StatusOK)
 	}
-
 }
 
 func maybeGetBuild(
 	c context.Context, build *bucketApi.ApiCommonBuildMessage) (*resp.MiloBuild, error) {
 
-	// Hasn't started yet, so definitely no buildinfo ready yet.
+	// Hasn't started yet, so definitely no build ready yet, return a pending
+	// build.
 	if build.Status == "SCHEDULED" {
-		return nil, nil
+		b := &resp.MiloBuild{
+			Summary: resp.BuildComponent{
+				Status: model.NotRun,
+			},
+		}
+		return b, nil
 	}
-	tags := ParseTags(build.Tags)
-	var host, task string
-	var ok bool
-	if host, ok = tags["swarming_hostname"]; !ok {
-		return nil, errors.New("no swarming hostname tag")
+
+	sID, err := swarmingRefFromTags(build.Tags)
+	if err != nil {
+		return nil, err
 	}
-	if task, ok = tags["swarming_task_id"]; !ok {
-		return nil, errors.New("no swarming task id")
-	}
-	swarmingSvc, err := swarming.NewProdService(c, host)
+
+	swarmingSvc, err := swarming.NewProdService(c, sID.Host)
 	if err != nil {
 		return nil, err
 	}
 	bl := swarming.BuildLoader{}
-	return bl.SwarmingBuildImpl(c, swarmingSvc, task)
+	return bl.SwarmingBuildImpl(c, swarmingSvc, sID.TaskID)
 }
 
 // processBuild queries swarming and logdog for annotation data, then adds or
@@ -108,13 +110,13 @@ func processBuild(
 	*buildEntry, error) {
 
 	now := clock.Now(c).UTC()
-	entry := buildEntry{key: buildEntryKey(host, build.Id)}
+	entry := buildEntry{Key: buildEntryKey(host, build.Id)}
 
 	err := datastore.Get(c)
 	switch err {
 	case datastore.ErrNoSuchEntity:
-		logging.Infof(c, "%s does not exist, will create", entry.key)
-		entry.created = now
+		logging.Infof(c, "%s does not exist, will create", entry.Key)
+		entry.Created = now
 	case nil:
 		// continue
 	default:
@@ -126,10 +128,12 @@ func processBuild(
 	if err != nil {
 		return nil, err
 	}
+	// This is not stored in datastore, it's just used to be passed to create
+	// a build summary.
 	entry.respBuild = respBuild
 
-	entry.modified = now
-	entry.buildbucketData, err = json.Marshal(build)
+	entry.Modified = now
+	entry.BuildbucketData, err = json.Marshal(build)
 	if err != nil {
 		return nil, err
 	}
@@ -176,16 +180,25 @@ func saveBuildSummary(
 
 func handlePubSubBuild(c context.Context, data *psMsg) error {
 	host := data.Hostname
+	realHost, err := getHost(c)
+	if err != nil {
+		return err
+	}
 	build := &data.Build
 	// We only care about the "builder_name" key from the parameter.
 	p := parameters{}
-	err := json.Unmarshal([]byte(build.ParametersJson), &p)
+	err = json.Unmarshal([]byte(build.ParametersJson), &p)
 	if err != nil {
 		err = errors.Annotate(
 			err, "could not unmarshal build parameters %s", build.ParametersJson).Err()
 		buildCounter.Add(c, 1, build.Bucket, isLUCI(build), build.Status, "Rejected")
 		// Permanent error, since this is probably a type of build we do not recognize.
 		return err
+	}
+	// Verify that this is the host we care about.
+	if host != realHost {
+		buildCounter.Add(c, 1, build.Bucket, isLUCI(build), build.Status, "Rejected")
+		return fmt.Errorf("invalid host %s, expected %s", host, realHost)
 	}
 	logging.Debugf(c, "Received from %s: build %s/%s (%s)\n%s",
 		host, build.Bucket, p.BuilderName, build.Status, build)
@@ -208,13 +221,13 @@ func handlePubSubBuild(c context.Context, data *psMsg) error {
 		return transient.Tag.Apply(err)
 	}
 	action := "Created"
-	if buildEntry.created != buildEntry.modified {
+	if buildEntry.Created != buildEntry.Modified {
 		action = "Modified"
 	}
 	buildCounter.Add(c, 1, build.Bucket, isLUCI(build), build.Status, action)
 
 	return saveBuildSummary(
-		c, datastore.MakeKey(c, "buildEntry", buildEntry.key), p.BuilderName, buildEntry)
+		c, datastore.MakeKey(c, "buildEntry", buildEntry.Key), p.BuilderName, buildEntry)
 }
 
 // This returns 500 (Internal Server Error) if it encounters a transient error,

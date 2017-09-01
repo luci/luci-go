@@ -446,6 +446,11 @@ func addRecipeLink(build *resp.MiloBuild, tags map[string]string) {
 	}
 }
 
+// addProjectInfo adds the luci_project swarming tag to the build.
+func addProjectInfo(build *resp.MiloBuild, tags map[string]string) {
+	build.SourceStamp.Project = tags["luci_project"]
+}
+
 func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTaskResult, build *resp.MiloBuild) error {
 	build.Summary.Label = sr.TaskId
 	build.Summary.Type = resp.Recipe
@@ -461,6 +466,7 @@ func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTas
 	addBanner(build, tags)
 	addBuilderLink(c, build, tags)
 	addRecipeLink(build, tags)
+	addProjectInfo(build, tags)
 
 	// Add a link to the bot.
 	if sr.BotId != "" {
