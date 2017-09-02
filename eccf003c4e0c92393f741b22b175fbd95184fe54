@@ -140,6 +140,30 @@
       "revId": "eccf003c4e0c92393f741b22b175fbd95184fe54",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e10ecb95_f778367d",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-02T00:46:05Z",
+      "side": 1,
+      "message": "Yes, but please add a short comment explaining this.",
+      "parentUuid": "ebc9d791_b27e41ac",
+      "range": {
+        "startLine": 94,
+        "startChar": 1,
+        "endLine": 94,
+        "endChar": 2
+      },
+      "revId": "eccf003c4e0c92393f741b22b175fbd95184fe54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
