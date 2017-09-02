@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "32986dbc_f3b1c94a",
+        "filename": "client/authcli/authcli.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-09-02T00:41:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8481a86d_182ac1e3",
+      "range": {
+        "startLine": 128,
+        "startChar": 1,
+        "endLine": 128,
+        "endChar": 24
+      },
+      "revId": "eccf003c4e0c92393f741b22b175fbd95184fe54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "73ab20a7_fd61a87d",
         "filename": "client/cmd/git-credential-luci/main.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "89a162d7_d2c6ce0d",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-09-02T00:41:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "73ab20a7_fd61a87d",
+      "range": {
+        "startLine": 77,
+        "startChar": 1,
+        "endLine": 77,
+        "endChar": 28
+      },
+      "revId": "eccf003c4e0c92393f741b22b175fbd95184fe54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "03a9cd71_ead0fa14",
         "filename": "client/cmd/git-credential-luci/main.go",
         "patchSetId": 2
@@ -59,6 +107,30 @@
       "writtenOn": "2017-09-02T00:30:55Z",
       "side": 1,
       "message": "add \"default\" that complains about unknown command?",
+      "range": {
+        "startLine": 94,
+        "startChar": 1,
+        "endLine": 94,
+        "endChar": 2
+      },
+      "revId": "eccf003c4e0c92393f741b22b175fbd95184fe54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ebc9d791_b27e41ac",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-09-02T00:41:05Z",
+      "side": 1,
+      "message": "The spec says \"If a helper receives any other operation, it should silently ignore the request. This leaves room for future operations to be added (older helpers will just ignore the new requests).\" which is why I omitted that. Is that fine with you?",
+      "parentUuid": "03a9cd71_ead0fa14",
       "range": {
         "startLine": 94,
         "startChar": 1,
