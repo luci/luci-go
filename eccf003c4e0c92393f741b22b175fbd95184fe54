@@ -164,6 +164,30 @@
       "revId": "eccf003c4e0c92393f741b22b175fbd95184fe54",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b8ad982_1ffa2d1a",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-09-02T01:02:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e10ecb95_f778367d",
+      "range": {
+        "startLine": 94,
+        "startChar": 1,
+        "endLine": 94,
+        "endChar": 2
+      },
+      "revId": "eccf003c4e0c92393f741b22b175fbd95184fe54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
