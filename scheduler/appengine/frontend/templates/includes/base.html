@@ -117,7 +117,7 @@ var postJobAction = function(btn, action) {
   <input type="hidden" id="xsrf_token" name="xsrf_token" value="">
   <input type="hidden" id="projectID" value="{{.ProjectID}}">
   <input type="hidden" id="jobName" value="{{.JobName}}">
-  <div class="btn-group btn-group-xs" role="group">
+  <div class="btn-group btn-group-xs" style="width: 160px" role="group">
     {{if .Paused}}
       <button type="button" class="btn btn-primary" onclick="postJobAction(this, 'resumeJob')">
         Resume
