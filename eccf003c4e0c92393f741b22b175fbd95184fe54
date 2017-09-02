@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8481a86d_182ac1e3",
+        "filename": "client/authcli/authcli.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-02T00:30:55Z",
+      "side": 1,
+      "message": "nit: please move this field to top and add \n\n\"RegisterScopesFlag tells Register to add -scopes flag.\" or something",
+      "range": {
+        "startLine": 128,
+        "startChar": 1,
+        "endLine": 128,
+        "endChar": 24
+      },
+      "revId": "eccf003c4e0c92393f741b22b175fbd95184fe54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73ab20a7_fd61a87d",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-02T00:30:55Z",
+      "side": 1,
+      "message": "I think we still want logging from luci-go guts:\nctx :\u003d gologger.StdConfig.Use(context.Background())",
+      "range": {
+        "startLine": 77,
+        "startChar": 1,
+        "endLine": 77,
+        "endChar": 28
+      },
+      "revId": "eccf003c4e0c92393f741b22b175fbd95184fe54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "03a9cd71_ead0fa14",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-02T00:30:55Z",
+      "side": 1,
+      "message": "add \"default\" that complains about unknown command?",
+      "range": {
+        "startLine": 94,
+        "startChar": 1,
+        "endLine": 94,
+        "endChar": 2
+      },
+      "revId": "eccf003c4e0c92393f741b22b175fbd95184fe54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
