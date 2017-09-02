@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d60f2f48_6c5106d2",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-09-02T00:22:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "68e19b9e_1f803853",
+      "range": {
+        "startLine": 15,
+        "startChar": 36,
+        "endLine": 15,
+        "endChar": 58
+      },
+      "revId": "97bae9e22cf88bba2329d8f6e64c992166179a56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e4bfa32a_85b3ee7a",
         "filename": "client/cmd/git-credential-luci/main.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "97bae9e22cf88bba2329d8f6e64c992166179a56",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c65fc2a8_17ff9839",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-09-02T00:22:44Z",
+      "side": 1,
+      "message": "Yes, through .gitconfig you can specify exactly what command shall be invoked.",
+      "parentUuid": "e4bfa32a_85b3ee7a",
+      "range": {
+        "startLine": 46,
+        "startChar": 54,
+        "endLine": 49,
+        "endChar": 2
+      },
+      "revId": "97bae9e22cf88bba2329d8f6e64c992166179a56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +136,48 @@
     },
     {
       "key": {
+        "uuid": "6b8d04c0_a2e63393",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-09-02T00:22:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c93ae6c6_6bb7989a",
+      "range": {
+        "startLine": 50,
+        "startChar": 31,
+        "endLine": 50,
+        "endChar": 47
+      },
+      "revId": "97bae9e22cf88bba2329d8f6e64c992166179a56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "970a13ee_66dc61fa",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-09-02T00:22:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ef7053f4_7911145f",
+      "revId": "97bae9e22cf88bba2329d8f6e64c992166179a56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4921a8c5_17bcad84",
         "filename": "client/cmd/git-credential-luci/main.go",
         "patchSetId": 1
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "5abdd37d_071d9d5c",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-09-02T00:22:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4921a8c5_17bcad84",
+      "range": {
+        "startLine": 52,
+        "startChar": 2,
+        "endLine": 52,
+        "endChar": 48
+      },
+      "revId": "97bae9e22cf88bba2329d8f6e64c992166179a56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bff3c03d_369f5ea0",
         "filename": "client/cmd/git-credential-luci/main.go",
         "patchSetId": 1
@@ -122,6 +236,30 @@
       "writtenOn": "2017-09-01T18:12:06Z",
       "side": 1,
       "message": "strictly speaking we can implement that via https://chromium.googlesource.com/infra/luci/luci-go/+/master/common/auth/auth.go#684 but I\u0027m not sure its worth doing",
+      "range": {
+        "startLine": 73,
+        "startChar": 9,
+        "endLine": 73,
+        "endChar": 21
+      },
+      "revId": "97bae9e22cf88bba2329d8f6e64c992166179a56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "00243cf9_37a4db57",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-09-02T00:22:44Z",
+      "side": 1,
+      "message": "Up to you..., I don\u0027t know when exactly is this invoked by Git.",
+      "parentUuid": "bff3c03d_369f5ea0",
       "range": {
         "startLine": 73,
         "startChar": 9,
