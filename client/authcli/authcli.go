@@ -122,17 +122,18 @@ type CommandParams struct {
 
 // Flags defines command line flags related to authentication.
 type Flags struct {
+	// RegisterScopesFlag tells Register to add -scopes flag.
+	RegisterScopesFlag bool
 	defaults           auth.Options
 	serviceAccountJSON string
 	scopes             string
-	registerScopesFlag bool
 }
 
 // Register adds auth related flags to a FlagSet.
 func (fl *Flags) Register(f *flag.FlagSet, defaults auth.Options) {
 	fl.defaults = defaults
 	f.StringVar(&fl.serviceAccountJSON, "service-account-json", fl.defaults.ServiceAccountJSONPath, "Path to JSON file with service account credentials to use.")
-	if fl.registerScopesFlag {
+	if fl.RegisterScopesFlag {
 		defaultScopes := strings.Join(defaults.Scopes, " ")
 		if defaultScopes == "" {
 			defaultScopes = auth.OAuthScopeEmail
@@ -146,7 +147,7 @@ func (fl *Flags) Register(f *flag.FlagSet, defaults auth.Options) {
 func (fl *Flags) Options() (auth.Options, error) {
 	opts := fl.defaults
 	opts.ServiceAccountJSONPath = fl.serviceAccountJSON
-	if fl.registerScopesFlag {
+	if fl.RegisterScopesFlag {
 		opts.Scopes = strings.Split(fl.scopes, " ")
 		sort.Strings(opts.Scopes)
 	}
@@ -169,7 +170,7 @@ type commandRunBase struct {
 }
 
 func (c *commandRunBase) registerBaseFlags() {
-	c.flags.registerScopesFlag = c.params.ScopesFlag
+	c.flags.RegisterScopesFlag = c.params.ScopesFlag
 	c.flags.Register(&c.Flags, c.params.AuthOptions)
 }
 
