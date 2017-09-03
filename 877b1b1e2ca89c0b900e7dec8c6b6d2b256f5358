@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "72f9ad30_8f25caf8",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-09-03T22:05:55Z",
+      "side": 1,
+      "message": "I\u0027m thinking that this could maybe be a flag and take a file as argument, i.e. -user-config \u003cfile\u003e? The only problem is that .gitconfig file already contains the credential helper configuration which you don\u0027t want to overwrite, so it\u0027d have to append unless the file already contains user configuration section.",
+      "revId": "877b1b1e2ca89c0b900e7dec8c6b6d2b256f5358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a62fa90f_c0ac2258",
         "filename": "client/cmd/git-credential-luci/main.go",
         "patchSetId": 1
