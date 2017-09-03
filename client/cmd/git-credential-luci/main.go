@@ -24,10 +24,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
 	"golang.org/x/net/context"
+	"google.golang.org/api/oauth2/v2"
 
 	"go.chromium.org/luci/client/authcli"
 	"go.chromium.org/luci/common/auth"
@@ -43,7 +45,11 @@ var (
 
 func init() {
 	defaults := chromeinfra.DefaultAuthOptions()
-	defaults.Scopes = []string{"https://www.googleapis.com/auth/gerritcodereview"}
+	defaults.Scopes = []string{
+		"https://www.googleapis.com/auth/gerritcodereview",
+		"https://www.googleapis.com/auth/userinfo.email",
+		"https://www.googleapis.com/auth/userinfo.profile",
+	}
 	flags.RegisterScopesFlag = true
 	flags.Register(flag.CommandLine, defaults)
 	flag.DurationVar(
@@ -79,22 +85,76 @@ func main() {
 	auth := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 
 	switch flag.Args()[0] {
+	case "login":
+		// "login" can be invoked as "git credential-luci login" to setup a refresh
+		// token with required scopes. This is useful when using git-credential-luci
+		// with regular accounts (not service accounts), when manually testing auth.
+		err := auth.Login()
+		if err != nil {
+			printErr("cannot login", err)
+			os.Exit(1)
+		}
+	case "user-config":
+		// "user-config" spits out '[user]' section of git config with values set
+		// based on the auth token used. Such config may be needed to satisfy Gerrit
+		// that verifies git commit emails match the push credentials.
+		client, err := auth.Client()
+		if err != nil {
+			printErr("cannot get authenticated client", err)
+			os.Exit(1)
+		}
+		email, name, err := getProfile(ctx, client)
+		if err != nil {
+			printErr("cannot get user profile", err)
+			os.Exit(1)
+		}
+		fmt.Printf("[user]\n")
+		fmt.Printf("\temail = %s\n", email)
+		fmt.Printf("\tname = %s\n", name)
 	case "get":
 		t, err := auth.GetAccessToken(lifetime)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "cannot get access token: %v\n", err)
+			printErr("cannot get access token", err)
 			os.Exit(1)
 		}
-		fmt.Printf("username=o\n")
+		fmt.Printf("username=git-luci\n")
 		fmt.Printf("password=%s\n", t.AccessToken)
 	case "erase":
 		if err := auth.PurgeCredentialsCache(); err != nil {
-			fmt.Fprintf(os.Stderr, "cannot erase cache: %v\n", err)
+			printErr("cannot erase cache", err)
 			os.Exit(1)
 		}
 	default:
 		// The specification for Git credential helper says: "If a helper
 		// receives any other operation, it should silently ignore the
 		// request."
+	}
+}
+
+func getProfile(ctx context.Context, client *http.Client) (email string, name string, err error) {
+	srv, err := oauth2.New(client)
+	if err != nil {
+		return
+	}
+	resp, err := srv.Userinfo.Get().Context(ctx).Do()
+	if err != nil {
+		return
+	}
+	email = resp.Email
+	name = resp.Name
+	if name == "" { // happens for service accounts
+		name = email
+	}
+	return
+}
+
+func printErr(prefix string, err error) {
+	switch {
+	case err == auth.ErrLoginRequired:
+		fmt.Fprintf(os.Stderr,
+			"not running with a service account and not logged it, run "+
+				"'git credential-luci login' to login\n")
+	case err != nil:
+		fmt.Fprintf(os.Stderr, "%s: %v\n", prefix, err)
 	}
 }
