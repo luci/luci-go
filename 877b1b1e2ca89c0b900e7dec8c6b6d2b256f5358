@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a62fa90f_c0ac2258",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-09-03T21:17:25Z",
+      "side": 1,
+      "message": "It\u0027s actually possible to set a default one in the configuration, e.g.\n\n[credential \"https://chromium.googlesoure.com\"]\n\thelper \u003d luci\n\tusername \u003d git-luci\n\nThen Git will pass username\u003dgit-luci on the stdin, so maybe we should try to use that?",
+      "revId": "877b1b1e2ca89c0b900e7dec8c6b6d2b256f5358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
