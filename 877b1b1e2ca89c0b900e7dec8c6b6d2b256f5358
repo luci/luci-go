@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "f4d5ded4_fc0885d2",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-09-03T21:31:53Z",
+      "side": 1,
+      "message": "Wouldn\u0027t this be the same as running `authutil login`? I\u0027m just little hesitant to add additional commands that are not defined in the existing protocol, unless they\u0027re absolutely necessary (even worse, if Git decides to add these commands but with a different semantics in the future, we\u0027ll have a problem).",
+      "revId": "877b1b1e2ca89c0b900e7dec8c6b6d2b256f5358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a62fa90f_c0ac2258",
         "filename": "client/cmd/git-credential-luci/main.go",
         "patchSetId": 1
