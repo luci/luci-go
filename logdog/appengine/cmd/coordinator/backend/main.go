@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
-	"go.chromium.org/luci/logdog/appengine/coordinator/tasks"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/tumble"
 
@@ -40,7 +39,6 @@ func init() {
 
 	base := standard.Base().Extend(ps.Base)
 	tmb.InstallHandlers(r, base)
-	tasks.InstallHandlers(r, base)
 
 	http.Handle("/", r)
 }
