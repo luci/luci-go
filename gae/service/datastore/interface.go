@@ -125,19 +125,20 @@ func AllocateIDs(c context.Context, ent ...interface{}) error {
 		keys[i] = key.Incomplete()
 	}
 
-	var et errorTracker
-	it := mma.iterator(et.init(mma))
-	err = filterStop(Raw(c).AllocateIDs(keys, func(_ int, key *Key, err error) error {
-		it.next(func(mat *multiArgType, v reflect.Value) error {
-			if err != nil {
-				return err
-			}
+	et := newErrorTracker(mma)
+	err = filterStop(Raw(c).AllocateIDs(keys, func(idx int, key *Key, err error) error {
+		index := mma.index(idx)
 
-			if !mat.setKey(v, key) {
-				return MakeErrInvalidKey("failed to export key [%s]", key).Err()
-			}
+		if err != nil {
+			et.trackError(index, err)
 			return nil
-		})
+		}
+
+		mat, v := mma.get(index)
+		if !mat.setKey(v, key) {
+			et.trackError(index, MakeErrInvalidKey("failed to export key [%s]", key).Err())
+			return nil
+		}
 
 		return nil
 	}))
@@ -490,12 +491,9 @@ func Exists(c context.Context, ent ...interface{}) (*ExistsResult, error) {
 		return nil, nil
 	}
 
-	var bt boolTracker
-	it := mma.iterator(bt.init(mma))
-	err = filterStop(Raw(c).GetMulti(keys, nil, func(_ int, _ PropertyMap, err error) error {
-		it.next(func(*multiArgType, reflect.Value) error {
-			return err
-		})
+	bt := newBoolTracker(mma)
+	err = filterStop(Raw(c).GetMulti(keys, nil, func(idx int, _ PropertyMap, err error) error {
+		bt.trackExistsResult(mma.index(idx), err)
 		return nil
 	}))
 	if err == nil {
@@ -541,16 +539,22 @@ func Get(c context.Context, dst ...interface{}) error {
 		return nil
 	}
 
-	var et errorTracker
-	it := mma.iterator(et.init(mma))
+	et := newErrorTracker(mma)
 	meta := NewMultiMetaGetter(pms)
-	err = filterStop(Raw(c).GetMulti(keys, meta, func(_ int, pm PropertyMap, err error) error {
-		it.next(func(mat *multiArgType, slot reflect.Value) error {
-			if err != nil {
-				return err
-			}
-			return mat.setPM(slot, pm)
-		})
+	err = filterStop(Raw(c).GetMulti(keys, meta, func(idx int, pm PropertyMap, err error) error {
+		index := mma.index(idx)
+
+		if err != nil {
+			et.trackError(index, err)
+			return nil
+		}
+
+		mat, v := mma.get(index)
+		if err := mat.setPM(v, pm); err != nil {
+			et.trackError(index, err)
+			return nil
+		}
+
 		return nil
 	}))
 
@@ -610,21 +614,23 @@ func putRaw(raw RawInterface, kctx KeyContext, src []interface{}) error {
 		return nil
 	}
 
-	i := 0
-	var et errorTracker
-	it := mma.iterator(et.init(mma))
-	err = filterStop(raw.PutMulti(keys, vals, func(_ int, key *Key, err error) error {
-		it.next(func(mat *multiArgType, slot reflect.Value) error {
-			if err != nil {
-				return err
-			}
-			if key != keys[i] {
-				mat.setKey(slot, key)
-			}
-			return nil
-		})
+	et := newErrorTracker(mma)
+	err = filterStop(raw.PutMulti(keys, vals, func(idx int, key *Key, err error) error {
+		index := mma.index(idx)
 
-		i++
+		if err != nil {
+			et.trackError(index, err)
+			return nil
+		}
+
+		if key != keys[idx] {
+			mat, v := mma.get(index)
+			if !mat.setKey(v, key) {
+				et.trackError(index, MakeErrInvalidKey("failed to export key [%s]", key).Err())
+				return nil
+			}
+		}
+
 		return nil
 	}))
 
@@ -673,13 +679,12 @@ func Delete(c context.Context, ent ...interface{}) error {
 		return nil
 	}
 
-	var et errorTracker
-	it := mma.iterator(et.init(mma))
-	err = filterStop(Raw(c).DeleteMulti(keys, func(_ int, err error) error {
-		it.next(func(*multiArgType, reflect.Value) error {
-			return err
-		})
-
+	et := newErrorTracker(mma)
+	err = filterStop(Raw(c).DeleteMulti(keys, func(idx int, err error) error {
+		if err != nil {
+			index := mma.index(idx)
+			et.trackError(index, err)
+		}
 		return nil
 	}))
 	if err == nil {
