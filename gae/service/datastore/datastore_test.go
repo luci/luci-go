@@ -46,6 +46,7 @@ type fakeDatastore struct {
 	keyForResult func(int32, KeyContext) *Key
 	entities     int32
 	constraints  Constraints
+	convey       C
 }
 
 func (f *fakeDatastore) factory() RawFactory {
@@ -62,9 +63,9 @@ func (f *fakeDatastore) AllocateIDs(keys []*Key, cb NewKeyCB) error {
 	}
 	for i, k := range keys {
 		if k.Kind() == "Fail" {
-			cb(nil, errFail)
+			cb(i, nil, errFail)
 		} else {
-			cb(f.kctx.NewKey(k.Kind(), "", int64(i+1), k.Parent()), nil)
+			cb(i, f.kctx.NewKey(k.Kind(), "", int64(i+1), k.Parent()), nil)
 		}
 	}
 	return nil
@@ -122,6 +123,11 @@ func (f *fakeDatastore) Run(fq *FinalizedQuery, cb RawRunCB) error {
 }
 
 func (f *fakeDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) error {
+	so := So
+	if f.convey != nil {
+		so = f.convey.So
+	}
+
 	if keys[0].Kind() == "FailAll" {
 		return errFailAll
 	}
@@ -131,15 +137,15 @@ func (f *fakeDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) e
 		if k.Kind() == "Fail" {
 			err = errFail
 		} else {
-			So(vals[i].Slice("Value"), ShouldResemble, PropertySlice{MkProperty(i)})
+			so(vals[i].Slice("Value"), ShouldResemble, PropertySlice{MkProperty(i)})
 			if assertExtra {
-				So(vals[i].Slice("Extra"), ShouldResemble, PropertySlice{MkProperty("whoa")})
+				so(vals[i].Slice("Extra"), ShouldResemble, PropertySlice{MkProperty("whoa")})
 			}
 			if k.IsIncomplete() {
 				k = k.KeyContext().NewKey(k.Kind(), "", int64(i+1), k.Parent())
 			}
 		}
-		cb(k, err)
+		cb(i, k, err)
 	}
 	return nil
 }
@@ -152,11 +158,11 @@ func (f *fakeDatastore) GetMulti(keys []*Key, _meta MultiMetaGetter, cb GetMulti
 	}
 	for i, k := range keys {
 		if k.Kind() == "Fail" {
-			cb(nil, errFail)
+			cb(i, nil, errFail)
 		} else if k.Kind() == "DNE" || k.IntID() == noSuchEntityID {
-			cb(nil, ErrNoSuchEntity)
+			cb(i, nil, ErrNoSuchEntity)
 		} else {
-			cb(PropertyMap{"Value": MkProperty(i + 1)}, nil)
+			cb(i, PropertyMap{"Value": MkProperty(i + 1)}, nil)
 		}
 	}
 	return nil
@@ -166,13 +172,13 @@ func (f *fakeDatastore) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
 	if keys[0].Kind() == "FailAll" {
 		return errFailAll
 	}
-	for _, k := range keys {
+	for i, k := range keys {
 		if k.Kind() == "Fail" {
-			cb(errFail)
+			cb(i, errFail)
 		} else if k.Kind() == "DNE" || k.IntID() == noSuchEntityID {
-			cb(ErrNoSuchEntity)
+			cb(i, ErrNoSuchEntity)
 		} else {
-			cb(nil)
+			cb(i, nil)
 		}
 	}
 	return nil
@@ -1006,7 +1012,7 @@ func TestGet(t *testing.T) {
 				Convey("Raw access too", func() {
 					rds := Raw(c)
 					keys := []*Key{MakeKey(c, "Kind", 1)}
-					So(rds.GetMulti(keys, nil, func(pm PropertyMap, err error) error {
+					So(rds.GetMulti(keys, nil, func(_ int, pm PropertyMap, err error) error {
 						So(err, ShouldBeNil)
 						So(pm.Slice("Value")[0].Value(), ShouldEqual, 1)
 						return nil
@@ -1374,12 +1380,12 @@ type fixedDataDatastore struct {
 }
 
 func (d *fixedDataDatastore) GetMulti(keys []*Key, _ MultiMetaGetter, cb GetMultiCB) error {
-	for _, k := range keys {
+	for i, k := range keys {
 		data, ok := d.data[k.String()]
 		if ok {
-			cb(data, nil)
+			cb(i, data, nil)
 		} else {
-			cb(nil, ErrNoSuchEntity)
+			cb(i, nil, ErrNoSuchEntity)
 		}
 	}
 	return nil
@@ -1394,10 +1400,12 @@ func (d *fixedDataDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb NewKey
 			panic("key is incomplete, don't do that.")
 		}
 		d.data[k.String()], _ = vals[i].Save(false)
-		cb(k, nil)
+		cb(i, k, nil)
 	}
 	return nil
 }
+
+func (d *fixedDataDatastore) Constraints() Constraints { return Constraints{} }
 
 func TestSchemaChange(t *testing.T) {
 	t.Parallel()

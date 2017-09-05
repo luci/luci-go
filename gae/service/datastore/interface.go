@@ -127,7 +127,7 @@ func AllocateIDs(c context.Context, ent ...interface{}) error {
 
 	var et errorTracker
 	it := mma.iterator(et.init(mma))
-	err = filterStop(Raw(c).AllocateIDs(keys, func(key *Key, err error) error {
+	err = filterStop(Raw(c).AllocateIDs(keys, func(_ int, key *Key, err error) error {
 		it.next(func(mat *multiArgType, v reflect.Value) error {
 			if err != nil {
 				return err
@@ -492,7 +492,7 @@ func Exists(c context.Context, ent ...interface{}) (*ExistsResult, error) {
 
 	var bt boolTracker
 	it := mma.iterator(bt.init(mma))
-	err = filterStop(Raw(c).GetMulti(keys, nil, func(_ PropertyMap, err error) error {
+	err = filterStop(Raw(c).GetMulti(keys, nil, func(_ int, _ PropertyMap, err error) error {
 		it.next(func(*multiArgType, reflect.Value) error {
 			return err
 		})
@@ -544,7 +544,7 @@ func Get(c context.Context, dst ...interface{}) error {
 	var et errorTracker
 	it := mma.iterator(et.init(mma))
 	meta := NewMultiMetaGetter(pms)
-	err = filterStop(Raw(c).GetMulti(keys, meta, func(pm PropertyMap, err error) error {
+	err = filterStop(Raw(c).GetMulti(keys, meta, func(_ int, pm PropertyMap, err error) error {
 		it.next(func(mat *multiArgType, slot reflect.Value) error {
 			if err != nil {
 				return err
@@ -613,7 +613,7 @@ func putRaw(raw RawInterface, kctx KeyContext, src []interface{}) error {
 	i := 0
 	var et errorTracker
 	it := mma.iterator(et.init(mma))
-	err = filterStop(raw.PutMulti(keys, vals, func(key *Key, err error) error {
+	err = filterStop(raw.PutMulti(keys, vals, func(_ int, key *Key, err error) error {
 		it.next(func(mat *multiArgType, slot reflect.Value) error {
 			if err != nil {
 				return err
@@ -675,7 +675,7 @@ func Delete(c context.Context, ent ...interface{}) error {
 
 	var et errorTracker
 	it := mma.iterator(et.init(mma))
-	err = filterStop(Raw(c).DeleteMulti(keys, func(err error) error {
+	err = filterStop(Raw(c).DeleteMulti(keys, func(_ int, err error) error {
 		it.next(func(*multiArgType, reflect.Value) error {
 			return err
 		})

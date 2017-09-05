@@ -66,8 +66,8 @@ func (tcf *checkFilter) GetMulti(keys []*Key, meta MultiMetaGetter, cb GetMultiC
 		}
 	}
 	if me := lme.Get(); me != nil {
-		for _, err := range me.(errors.MultiError) {
-			cb(nil, err)
+		for idx, err := range me.(errors.MultiError) {
+			cb(idx, nil, err)
 		}
 		return nil
 	}
@@ -96,8 +96,8 @@ func (tcf *checkFilter) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) e
 		}
 	}
 	if me := lme.Get(); me != nil {
-		for _, err := range me.(errors.MultiError) {
-			cb(nil, err)
+		for idx, err := range me.(errors.MultiError) {
+			cb(idx, nil, err)
 		}
 		return nil
 	}
@@ -126,8 +126,8 @@ func (tcf *checkFilter) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
 		}
 	}
 	if me := lme.Get(); me != nil {
-		for _, err := range me.(errors.MultiError) {
-			cb(err)
+		for idx, err := range me.(errors.MultiError) {
+			cb(idx, err)
 		}
 		return nil
 	}

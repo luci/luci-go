@@ -122,9 +122,9 @@ func (d *rdsImpl) AllocateIDs(keys []*ds.Key, cb ds.NewKeyCB) error {
 
 	for i, key := range keys {
 		if err := errors.GetOne(i); err != nil {
-			cb(nil, err)
+			cb(i, nil, err)
 		} else {
-			cb(key, nil)
+			cb(i, key, nil)
 		}
 	}
 	return nil
@@ -135,8 +135,8 @@ func (d *rdsImpl) DeleteMulti(ks []*ds.Key, cb ds.DeleteMultiCB) error {
 	if err == nil {
 		err = datastore.DeleteMulti(d.aeCtx, keys)
 	}
-	return idxCallbacker(err, len(ks), func(_ int, err error) error {
-		return cb(err)
+	return idxCallbacker(err, len(ks), func(idx int, err error) error {
+		return cb(idx, err)
 	})
 }
 
@@ -151,9 +151,9 @@ func (d *rdsImpl) GetMulti(keys []*ds.Key, _meta ds.MultiMetaGetter, cb ds.GetMu
 	}
 	return idxCallbacker(err, len(keys), func(idx int, err error) error {
 		if pls := vals[idx]; pls != nil {
-			return cb(pls.(*typeFilter).pm, err)
+			return cb(idx, pls.(*typeFilter).pm, err)
 		}
-		return cb(nil, err)
+		return cb(idx, nil, err)
 	})
 }
 
@@ -171,7 +171,7 @@ func (d *rdsImpl) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB
 		if err == nil {
 			k = dsR2F(rkeys[idx])
 		}
-		return cb(k, err)
+		return cb(idx, k, err)
 	})
 }
 

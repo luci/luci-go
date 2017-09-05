@@ -120,7 +120,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 				So(ds.Delete(c, ds.NewKey(c, "Foo", "wat", 0, nil)), ShouldBeNil)
 			})
 
-			Convey("Deleting entities from a nonexistant namespace works", func() {
+			Convey("Deleting entities from a nonexistant namespace works", func(gctx C) {
 				c := infoS.MustNamespace(c, "noexist")
 				keys := make([]*ds.Key, 10)
 				for i := range keys {
@@ -128,9 +128,11 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 				}
 				So(ds.Delete(c, keys), ShouldBeNil)
 				count := 0
-				So(ds.Raw(c).DeleteMulti(keys, func(err error) error {
+				So(ds.Raw(c).DeleteMulti(keys, func(idx int, err error) error {
+					gctx.So(idx, ShouldEqual, count)
+					gctx.So(err, ShouldBeNil)
+
 					count++
-					So(err, ShouldBeNil)
 					return nil
 				}), ShouldBeNil)
 				So(count, ShouldEqual, len(keys))

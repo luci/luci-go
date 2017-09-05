@@ -281,8 +281,8 @@ func (d *dataStoreData) allocateIDs(keys []*ds.Key, cb ds.NewKeyCB) error {
 	}
 
 	// Execute Callbacks.
-	for _, key := range keys {
-		cb(key, nil)
+	for i, key := range keys {
+		cb(i, key, nil)
 	}
 	return nil
 }
@@ -345,7 +345,7 @@ func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.Ne
 			return
 		}()
 		if cb != nil {
-			if err := cb(k, err); err != nil {
+			if err := cb(i, k, err); err != nil {
 				return err
 			}
 		}
@@ -359,19 +359,21 @@ func getMultiInner(keys []*ds.Key, cb ds.GetMultiCB, getColl func() (memCollecti
 		return err
 	}
 	if ents == nil {
-		for range keys {
-			cb(nil, ds.ErrNoSuchEntity)
+		for i := range keys {
+			cb(i, nil, ds.ErrNoSuchEntity)
 		}
 		return nil
 	}
 
-	for _, k := range keys {
+	for i, k := range keys {
 		pdata := ents.Get(keyBytes(k))
 		if pdata == nil {
-			cb(nil, ds.ErrNoSuchEntity)
+			cb(i, nil, ds.ErrNoSuchEntity)
 			continue
 		}
-		cb(rpm(pdata))
+
+		pm, err := rpm(pdata)
+		cb(i, pm, err)
 	}
 	return nil
 }
@@ -394,7 +396,7 @@ func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 	}()
 
 	if hasEntsInNS {
-		for _, k := range keys {
+		for i, k := range keys {
 			err := func() error {
 				kb := keyBytes(k)
 
@@ -417,14 +419,14 @@ func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 				return nil
 			}()
 			if cb != nil {
-				if err := cb(err); err != nil {
+				if err := cb(i, err); err != nil {
 					return err
 				}
 			}
 		}
 	} else if cb != nil {
-		for range keys {
-			if err := cb(nil); err != nil {
+		for i := range keys {
+			if err := cb(i, nil); err != nil {
 				return err
 			}
 		}
@@ -469,10 +471,10 @@ func (d *dataStoreData) applyTxn(c context.Context, obj memContextObj) {
 			k := m.key
 			if m.data == nil {
 				impossible(d.delMulti([]*ds.Key{k},
-					func(e error) error { return e }))
+					func(_ int, e error) error { return e }))
 			} else {
 				impossible(d.putMulti([]*ds.Key{m.key}, []ds.PropertyMap{m.data},
-					func(_ *ds.Key, e error) error { return e }))
+					func(_ int, _ *ds.Key, e error) error { return e }))
 			}
 		}
 	}
@@ -597,7 +599,7 @@ func (td *txnDataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb d
 			err = td.writeMutation(false, k, vals[i])
 		}
 		if cb != nil {
-			cb(k, err)
+			cb(i, k, err)
 		}
 	}
 }
@@ -616,10 +618,10 @@ func (td *txnDataStoreData) getMulti(keys []*ds.Key, cb ds.GetMultiCB) error {
 }
 
 func (td *txnDataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
-	for _, k := range keys {
+	for i, k := range keys {
 		err := td.writeMutation(false, k, nil)
 		if cb != nil {
-			cb(err)
+			cb(i, err)
 		}
 	}
 	return nil

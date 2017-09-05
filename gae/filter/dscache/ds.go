@@ -69,11 +69,9 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 		// to save stuff back to memcache.
 
 		toCas := []mc.Item{}
-		j := 0
-		err := d.RawInterface.GetMulti(p.toGet, p.toGetMeta, func(pm ds.PropertyMap, err error) error {
+		err := d.RawInterface.GetMulti(p.toGet, p.toGetMeta, func(j int, pm ds.PropertyMap, err error) error {
 			i := p.idxMap[j]
 			toSave := p.toSave[j]
-			j++
 
 			data := []byte(nil)
 
@@ -131,7 +129,7 @@ func (d *dsCache) GetMulti(keys []*ds.Key, metas ds.MultiMetaGetter, cb ds.GetMu
 	// finally, run the callback for all of the decoded items and the errors,
 	// if any.
 	for i, dec := range p.decoded {
-		if err := cb(dec, p.lme.GetOne(i)); err != nil {
+		if err := cb(i, dec, p.lme.GetOne(i)); err != nil {
 			return err
 		}
 	}
