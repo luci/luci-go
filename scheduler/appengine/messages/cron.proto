@@ -7,10 +7,6 @@ syntax = "proto3";
 package messages;
 
 // A single access control rule.
-//
-// WARNING: until ACLs are fully deployed, DO NOT rely on READER Role
-// limiting access to your project. Follow crbug/736770 if in doubt.
-// TODO(tandrii): REMOVE THIS WARNING once deployment is complete.
 message Acl {
   enum Role {
     // Can do read-only operations, such as listing invocations of a Job.
