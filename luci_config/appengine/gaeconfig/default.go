@@ -168,11 +168,7 @@ func UseFlex(c context.Context) context.Context {
 	pc := serverCaching.ProcessCache(c)
 	if pc != nil {
 		ccfg.GlobalCache = func(c context.Context, be backend.B, s *Settings) backend.B {
-			lruBE := caching.LRU{
-				Cache:      pc,
-				Expiration: s.CacheExpiration(),
-			}
-			return lruBE.Wrap(be)
+			return caching.LRUBackend(be, serverCaching.ProcessCache(c), s.CacheExpiration())
 		}
 	}
 	return installConfigBackend(c, mustFetchCachedSettings(c), nil, ccfg)

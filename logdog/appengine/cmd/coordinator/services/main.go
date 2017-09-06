@@ -25,7 +25,7 @@ import (
 
 	registrationPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	servicesPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
-	"go.chromium.org/luci/logdog/appengine/coordinator"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/registration"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/services"
 	"go.chromium.org/luci/server/router"
