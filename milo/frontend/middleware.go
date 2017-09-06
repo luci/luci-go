@@ -205,6 +205,20 @@ func GetLimit(r *http.Request, def int) int {
 	return limit
 }
 
+// GetReload extracts the "reload" http param from the request,
+// or returns def implying no limit was specified.
+func GetReload(r *http.Request, def int) int {
+	sReload := r.FormValue("reload")
+	if sReload == "" {
+		return def
+	}
+	refresh, err := strconv.Atoi(sReload)
+	if err != nil || refresh < 0 {
+		return def
+	}
+	return refresh
+}
+
 // pagedURL returns a self URL with the given cursor and limit paging options.
 // if limit is set to 0, then inherit whatever limit is set in request.  If
 // both are unspecified, then limit is omitted.

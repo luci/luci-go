@@ -204,8 +204,14 @@ func ConsoleHandler(c *router.Context) {
 		return
 	}
 
+	var reload *int
+	if tReload := GetReload(c.Request, -1); tReload >= 0 {
+		reload = &tReload
+	}
+
 	templates.MustRender(c.Context, c.Writer, "pages/console.html", templates.Args{
 		"Console": consoleRenderer{result},
+		"Reload":  reload,
 	})
 }
 
