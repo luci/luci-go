@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6552d748_f6d15199",
+        "filename": "logdog/appengine/coordinator/archivalPublisher.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-06T22:24:20Z",
+      "side": 1,
+      "message": "nit: \"for\"?",
+      "range": {
+        "startLine": 46,
+        "startChar": 3,
+        "endLine": 46,
+        "endChar": 5
+      },
+      "revId": "f956f8f2a34ad76acc8401ff22db86f79c736a1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee0e3683_00eab318",
+        "filename": "logdog/appengine/coordinator/storage.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-06T22:24:20Z",
+      "side": 1,
+      "message": "Lifetime",
+      "range": {
+        "startLine": 41,
+        "startChar": 4,
+        "endLine": 41,
+        "endChar": 14
+      },
+      "revId": "f956f8f2a34ad76acc8401ff22db86f79c736a1e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
