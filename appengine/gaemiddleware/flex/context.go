@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2017 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package server
+package flex
 
 import (
-	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/server/auth"
+	"net/http"
+
+	"golang.org/x/net/context"
 )
 
-func init() {
-	prpc.RegisterDefaultAuth(&auth.Authenticator{
-		Methods: []auth.Method{
-			&OAuth2Method{Scopes: []string{EmailScope}},
-		},
-	})
+var httpRequestKey = "flex/Inbound HTTP Request"
+
+func withHTTPRequest(c context.Context, req *http.Request) context.Context {
+	return context.WithValue(c, &httpRequestKey, req)
+}
+
+// HTTPRequest returns the inbound HTTP request associated with the current
+// Context. This value will always be available.
+func HTTPRequest(c context.Context) *http.Request {
+	return c.Value(&httpRequestKey).(*http.Request)
 }
