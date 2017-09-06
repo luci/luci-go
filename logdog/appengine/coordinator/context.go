@@ -56,22 +56,22 @@ const (
 	NamespaceAccessWRITE
 )
 
-type servicesKeyType int
+var (
+	configProviderKey = "LogDog ConfigProvider"
+)
 
-// WithServices installs the supplied Services instance into a Context.
-func WithServices(c context.Context, s Services) context.Context {
-	return context.WithValue(c, servicesKeyType(0), s)
+// WithConfigProvider installs the supplied ConfigProvider instance into a
+// Context.
+func WithConfigProvider(c context.Context, s ConfigProvider) context.Context {
+	return context.WithValue(c, &configProviderKey, s)
 }
 
-// GetServices gets the Services instance installed in the supplied Context.
+// GetConfigProvider gets the ConfigProvider instance installed in the supplied
+// Context.
 //
 // If no Services has been installed, it will panic.
-func GetServices(c context.Context) Services {
-	s, ok := c.Value(servicesKeyType(0)).(Services)
-	if !ok {
-		panic("no Services instance is installed")
-	}
-	return s
+func GetConfigProvider(c context.Context) ConfigProvider {
+	return c.Value(&configProviderKey).(ConfigProvider)
 }
 
 // WithProjectNamespace sets the current namespace to the project name.
@@ -110,7 +110,7 @@ func WithProjectNamespace(c *context.Context, project cfgtypes.ProjectName, at N
 	// Returns the project config, or "read denied" error if the project does not
 	// exist.
 	getProjectConfig := func() (*svcconfig.ProjectConfig, error) {
-		pcfg, err := GetServices(ctx).ProjectConfig(ctx, project)
+		pcfg, err := GetConfigProvider(ctx).ProjectConfig(ctx, project)
 		switch err {
 		case nil:
 			// Successfully loaded project config.

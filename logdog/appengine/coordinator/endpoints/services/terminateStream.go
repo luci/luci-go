@@ -55,7 +55,7 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 	}
 
 	// Load our service and project configs.
-	svc := coordinator.GetServices(c)
+	svc := endpoints.GetServices(c)
 	cfg, err := svc.Config(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load configuration.")

@@ -19,7 +19,7 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
-	"go.chromium.org/luci/logdog/appengine/coordinator"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 
 	"golang.org/x/net/context"
@@ -28,7 +28,7 @@ import (
 // GetConfig allows a service to retrieve the current service configuration
 // parameters.
 func (s *server) GetConfig(c context.Context, req *empty.Empty) (*logdog.GetConfigResponse, error) {
-	gcfg, err := coordinator.GetServices(c).Config(c)
+	gcfg, err := endpoints.GetServices(c).Config(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load configuration.")
 		return nil, grpcutil.Internal
