@@ -27,11 +27,14 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 
 	"go.chromium.org/luci/scheduler/appengine/messages"
+	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/utils/tasktest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+var _ task.Manager = (*TaskManager)(nil)
 
 func TestValidateProtoMessage(t *testing.T) {
 	tm := TaskManager{}
