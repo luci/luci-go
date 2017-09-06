@@ -331,7 +331,7 @@ func (e *Job) isEqual(other *Job) bool {
 		e.Schedule == other.Schedule &&
 		e.Acls.Equal(&other.Acls) &&
 		bytes.Equal(e.Task, other.Task) &&
-		e.State == other.State)
+		e.State.Equal(&other.State))
 }
 
 // matches returns true if job definition in the entity matches the one
