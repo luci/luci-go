@@ -1,6 +1,10 @@
 {{define "title"}}Milo{{end}}
 
 {{define "head"}}
+{{ if .Reload }}
+<meta http-equiv="refresh" content="{{ .Reload }}">
+{{ end }}
+
 <style>
 
 /* Generic */
