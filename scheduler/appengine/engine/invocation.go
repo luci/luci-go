@@ -108,7 +108,7 @@ type Invocation struct {
 	InvocationNonce int64
 
 	// TriggeredBy is identity of whoever triggered the invocation, if it was
-	// triggered via TriggerInvocation ("Run now" button).
+	// triggered via ManualInvocation ("Run now" button).
 	//
 	// Empty identity string if it was triggered by the service itself.
 	TriggeredBy identity.Identity

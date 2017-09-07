@@ -127,13 +127,13 @@ type Engine interface {
 	// Does nothing if invocation is already in some final state.
 	AbortInvocation(c context.Context, jobID string, invID int64) error
 
-	// TriggerInvocation launches job invocation right now if job isn't running
+	// ManualInvocation launches job invocation right now if job isn't running
 	// now. Used by "Run now" UI button.
 	//
 	// Returns new invocation nonce (a random number that identifies an intent to
 	// start an invocation). Normally one nonce corresponds to one Invocation
 	// entity, but there can be more if job fails to start with a transient error.
-	TriggerInvocation(c context.Context, jobID string) (int64, error)
+	ManualInvocation(c context.Context, jobID string) (int64, error)
 }
 
 // EngineInternal is to be used by frontend initialization code only.
@@ -945,7 +945,7 @@ func (e *engineImpl) executeInvAction(c context.Context, payload *actionTaskPayl
 	}
 }
 
-func (e *engineImpl) TriggerInvocation(c context.Context, jobID string) (int64, error) {
+func (e *engineImpl) ManualInvocation(c context.Context, jobID string) (int64, error) {
 	// First, we check ACLs.
 	if _, err := e.getOwnedJob(c, jobID); err != nil {
 		return 0, err
