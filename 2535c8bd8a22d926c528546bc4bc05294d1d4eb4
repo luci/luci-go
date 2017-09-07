@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c61f1b92_0da45993",
+        "filename": "scheduler/appengine/engine/statemachine.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 436,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-07T16:21:04Z",
+      "side": 1,
+      "message": "changes state to Queued?",
+      "range": {
+        "startLine": 436,
+        "startChar": 33,
+        "endLine": 436,
+        "endChar": 53
+      },
+      "revId": "2535c8bd8a22d926c528546bc4bc05294d1d4eb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d535b63_c5f9eb6c",
+        "filename": "scheduler/appengine/task/task.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-07T16:21:04Z",
+      "side": 1,
+      "message": "what \"in time\" means?",
+      "range": {
+        "startLine": 89,
+        "startChar": 37,
+        "endLine": 89,
+        "endChar": 45
+      },
+      "revId": "2535c8bd8a22d926c528546bc4bc05294d1d4eb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b16dbfe8_8d46309c",
+        "filename": "scheduler/appengine/task/task.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-07T16:21:04Z",
+      "side": 1,
+      "message": "nit: uniquely?",
+      "range": {
+        "startLine": 89,
+        "startChar": 12,
+        "endLine": 89,
+        "endChar": 18
+      },
+      "revId": "2535c8bd8a22d926c528546bc4bc05294d1d4eb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
