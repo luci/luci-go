@@ -62,7 +62,7 @@ func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixReq
 	}
 
 	// Load our service and project configurations.
-	svcs := coordinator.GetServices(c)
+	svcs := endpoints.GetServices(c)
 	cfg, err := svcs.Config(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load service configuration.")

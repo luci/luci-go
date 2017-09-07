@@ -42,21 +42,25 @@ type ArchivalPublisher interface {
 	NewPublishIndex() uint64
 }
 
-type pubsubArchivalPublisher struct {
-	// publisher is the client used to publish messages.
-	publisher pubsub.Publisher
+// PubsubArchivalPublisher is an ArchivalPublisher that uses Cloud Pub/Sub
+// for task archival.
+type PubsubArchivalPublisher struct {
+	// Publisher is the client used to publish messages.
+	Publisher pubsub.Publisher
 
-	// aeCtx is the AppEngine Context to use for publish operations.
-	aeCtx context.Context
+	// AECtx is the AppEngine Context to use for publish operations.
+	AECtx context.Context
 
-	// publishIndexFunc is a function that will return a unique publish index
+	// PublishIndexFunc is a function that will return a unique publish index
 	// for this request.
-	publishIndexFunc func() uint64
+	PublishIndexFunc func() uint64
 }
 
-func (p *pubsubArchivalPublisher) Close() error { return nil }
+// Close implements ArchivalPublisher.
+func (p *PubsubArchivalPublisher) Close() error { return nil }
 
-func (p *pubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTask) error {
+// Publish implements ArchivalPublisher.
+func (p *PubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTask) error {
 	d, err := proto.Marshal(t)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to marshal task.")
@@ -73,9 +77,9 @@ func (p *pubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTa
 	// Context for the actual Publish call. Handle this with a goroutine that will
 	// cancel our AppEngine Context if "c" is cancelled.
 	//
-	// The goroutine will naturally exit at the end of this function when "aeCtx"
+	// The goroutine will naturally exit at the end of this function when "AECtx"
 	// is cancelled via defer.
-	aeCtx, cancelFunc := context.WithCancel(p.aeCtx)
+	aeCtx, cancelFunc := context.WithCancel(p.AECtx)
 	defer cancelFunc()
 
 	go func(aeCtx context.Context) {
@@ -97,7 +101,7 @@ func (p *pubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTa
 			"key":     t.Key,
 		}.Infof(c, "Publishing archival message for stream.")
 
-		_, err := p.publisher.Publish(c, &msg)
+		_, err := p.Publisher.Publish(c, &msg)
 		return err
 	}, func(err error, d time.Duration) {
 		log.Fields{
@@ -107,6 +111,7 @@ func (p *pubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTa
 	})
 }
 
-func (p *pubsubArchivalPublisher) NewPublishIndex() uint64 {
-	return p.publishIndexFunc()
+// NewPublishIndex implements ArchivalPublisher.
+func (p *PubsubArchivalPublisher) NewPublishIndex() uint64 {
+	return p.PublishIndexFunc()
 }
