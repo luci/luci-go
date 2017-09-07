@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5ada2433_b9280d28",
+        "filename": "scheduler/appengine/task/noop/noop_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-07T23:49:51Z",
+      "side": 1,
+      "message": "nit: why not Nanosecond?",
+      "range": {
+        "startLine": 35,
+        "startChar": 36,
+        "endLine": 35,
+        "endChar": 52
+      },
+      "revId": "7a0f8a2cde527c41d8b20a3c17c550681f5f9548",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40d2b7e4_b523fd3e",
+        "filename": "scheduler/appengine/task/noop/noop_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-07T23:49:51Z",
+      "side": 1,
+      "message": "nit: this line is noop",
+      "revId": "7a0f8a2cde527c41d8b20a3c17c550681f5f9548",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
