@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "635bccbb_fe3788d7",
+        "filename": "scheduler/appengine/task/task.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-07T16:41:55Z",
+      "side": 1,
+      "message": "please clarify: implementations of this method just ignore triggers, do not necessarily consume anything. Is this intentional or you also meant to return an error if len(triggers)\u003e0",
+      "range": {
+        "startLine": 149,
+        "startChar": 40,
+        "endLine": 149,
+        "endChar": 59
+      },
+      "revId": "5392f2a9068a35274daa7ecc7c25d232d7673818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
