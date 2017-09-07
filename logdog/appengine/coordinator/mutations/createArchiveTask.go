@@ -18,10 +18,12 @@ import (
 	"fmt"
 	"time"
 
+	"go.chromium.org/luci/logdog/appengine/coordinator"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
+
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/tumble"
 
 	"golang.org/x/net/context"
@@ -52,7 +54,7 @@ var _ tumble.DelayedMutation = (*CreateArchiveTask)(nil)
 func (m *CreateArchiveTask) RollForward(c context.Context) ([]tumble.Mutation, error) {
 	c = log.SetField(c, "id", m.ID)
 
-	svc := coordinator.GetServices(c)
+	svc := endpoints.GetServices(c)
 	ap, err := svc.ArchivalPublisher(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to get archival publisher.")

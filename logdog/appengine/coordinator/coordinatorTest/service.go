@@ -18,6 +18,7 @@ import (
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
@@ -42,13 +43,13 @@ type Services struct {
 	// Environment's BigTable instance if the stream is not archived, and an
 	// *ArchivalStorage instance bound to this Environment's GSClient instance
 	// if the stream is archived.
-	ST func(*coordinator.LogStreamState) (coordinator.Storage, error)
+	ST func(*coordinator.LogStreamState) (coordinator.SigningStorage, error)
 
 	// ArchivalPublisher returns an ArchivalPublisher instance.
 	AP func() (coordinator.ArchivalPublisher, error)
 }
 
-var _ coordinator.Services = (*Services)(nil)
+var _ endpoints.Services = (*Services)(nil)
 
 // Config implements coordinator.Services.
 func (s *Services) Config(c context.Context) (*config.Config, error) {
@@ -67,7 +68,7 @@ func (s *Services) ProjectConfig(c context.Context, project cfgtypes.ProjectName
 }
 
 // StorageForStream implements coordinator.Services.
-func (s *Services) StorageForStream(c context.Context, lst *coordinator.LogStreamState) (coordinator.Storage, error) {
+func (s *Services) StorageForStream(c context.Context, lst *coordinator.LogStreamState) (coordinator.SigningStorage, error) {
 	if s.ST != nil {
 		return s.ST(lst)
 	}

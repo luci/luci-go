@@ -22,12 +22,14 @@ import (
 	"go.chromium.org/gae/filter/featureBreaker"
 	ds "go.chromium.org/gae/service/datastore"
 
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/appengine/coordinator/mutations"
+
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/tumble"
 
 	"golang.org/x/net/context"
@@ -201,7 +203,7 @@ func TestTerminateStream(t *testing.T) {
 
 		Convey(`Will choose the correct archival delay`, func() {
 			getParams := func() *coordinator.ArchivalParams {
-				svc := coordinator.GetServices(c)
+				svc := endpoints.GetServices(c)
 				cfg, err := svc.Config(c)
 				if err != nil {
 					panic(err)

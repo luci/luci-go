@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/common/storage/archive"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
@@ -286,7 +287,7 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 
 	// Setup our default Coordinator services.
 	e.Services = Services{
-		ST: func(lst *coordinator.LogStreamState) (coordinator.Storage, error) {
+		ST: func(lst *coordinator.LogStreamState) (coordinator.SigningStorage, error) {
 			// If we're not archived, return our BigTable storage instance.
 			if !lst.ArchivalState().Archived() {
 				return &BigTableStorage{
@@ -314,7 +315,8 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 			return &e.ArchivalPublisher, nil
 		},
 	}
-	c = coordinator.WithServices(c, &e.Services)
+	c = coordinator.WithConfigProvider(c, &e.Services)
+	c = endpoints.WithServices(c, &e.Services)
 
 	return cacheContext.Wrap(c), &e
 }

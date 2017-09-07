@@ -21,7 +21,7 @@ import (
 	_ "net/http/pprof"
 
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
-	"go.chromium.org/luci/logdog/appengine/coordinator"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/tumble"
 
@@ -32,7 +32,7 @@ import (
 
 func init() {
 	tmb := tumble.Service{}
-	ps := coordinator.ProdService{}
+	ps := endpoints.ProdService{}
 
 	r := router.New()
 	standard.InstallHandlers(r)

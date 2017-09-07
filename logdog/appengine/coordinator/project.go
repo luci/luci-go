@@ -66,5 +66,5 @@ func CurrentProject(c context.Context) cfgtypes.ProjectName {
 // If there is no current project namespace, or if the current project has no
 // configuration, config.ErrInvalidConfig will be returned.
 func CurrentProjectConfig(c context.Context) (*svcconfig.ProjectConfig, error) {
-	return GetServices(c).ProjectConfig(c, CurrentProject(c))
+	return GetConfigProvider(c).ProjectConfig(c, CurrentProject(c))
 }

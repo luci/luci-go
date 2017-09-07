@@ -34,14 +34,16 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-type testServices struct {
-	Services
-
+type testConfigProvider struct {
 	configErr error
 	configs   map[cfgtypes.ProjectName]*svcconfig.ProjectConfig
 }
 
-func (s *testServices) ProjectConfig(c context.Context, project cfgtypes.ProjectName) (*svcconfig.ProjectConfig, error) {
+func (s *testConfigProvider) Config(c context.Context) (*config.Config, error) {
+	panic("not implemented")
+}
+
+func (s *testConfigProvider) ProjectConfig(c context.Context, project cfgtypes.ProjectName) (*svcconfig.ProjectConfig, error) {
 	if err := s.configErr; err != nil {
 		return nil, err
 	}
@@ -73,7 +75,7 @@ func TestWithProjectNamespace(t *testing.T) {
 		c = auth.WithState(c, &as)
 
 		// Fake service with fake project configs.
-		svc := testServices{
+		cp := testConfigProvider{
 			configs: map[cfgtypes.ProjectName]*svcconfig.ProjectConfig{
 				"all-access": {
 					ReaderAuthGroups: []string{"all"},
@@ -85,7 +87,7 @@ func TestWithProjectNamespace(t *testing.T) {
 				},
 			},
 		}
-		c = WithServices(c, &svc)
+		c = WithConfigProvider(c, &cp)
 
 		Convey(`When using NamespaceAccessNoAuth with anonymous identity`, func() {
 			So(auth.CurrentIdentity(c).Kind(), ShouldEqual, identity.Anonymous)
@@ -169,7 +171,7 @@ func TestWithProjectNamespace(t *testing.T) {
 				})
 
 				Convey(`When config service returns an unexpected error`, func() {
-					svc.configErr = errors.New("misc")
+					cp.configErr = errors.New("misc")
 
 					for _, proj := range []cfgtypes.ProjectName{"all-access", "exclusive-access", "does-not-exist"} {
 						Convey(fmt.Sprintf(`Will fail to access %q with Internal.`, proj), func() {

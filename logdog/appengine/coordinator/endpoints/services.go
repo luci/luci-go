@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package coordinator
+package endpoints
 
 import (
 	"sync"
@@ -25,12 +25,10 @@ import (
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/gcloud/pubsub"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/logdog/api/config/svcconfig"
-	"go.chromium.org/luci/logdog/appengine/coordinator/config"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/archive"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
-	"go.chromium.org/luci/luci_config/common/cfgtypes"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 
@@ -61,39 +59,24 @@ const (
 	maxGSFetchSize = int64(8 * 1024 * 1024)
 )
 
-// Services is a set of support services used by Coordinator.
+// Services is a set of support services used by AppEngine Classic Coordinator
+// endpoints.
 //
-// Each Services instance is valid for a singel request, but can be re-used
-// throughout that request. This is advised, as the Services instance may
-// optionally cache values.
+// Each instance is valid for a single request, but can be re-used throughout
+// that request. This is advised, as the Services instance may optionally cache
+// values.
 //
 // Services methods are goroutine-safe.
-//
-// By default, a production set of services will be used. However, this can be
-// overridden for testing to mock the service layer.
 type Services interface {
-	// Config returns the current instance and application configuration
-	// instances.
-	//
-	// The production instance will cache the results for the duration of the
-	// request.
-	Config(context.Context) (*config.Config, error)
-
-	// ProjectConfig returns the project configuration for the named project.
-	//
-	// The production instance will cache the results for the duration of the
-	// request.
-	//
-	// Returns the same error codes as config.ProjectConfig.
-	ProjectConfig(context.Context, cfgtypes.ProjectName) (*svcconfig.ProjectConfig, error)
+	coordinator.ConfigProvider
 
 	// Storage returns a Storage instance for the supplied log stream.
 	//
 	// The caller must close the returned instance if successful.
-	StorageForStream(context.Context, *LogStreamState) (Storage, error)
+	StorageForStream(context.Context, *coordinator.LogStreamState) (coordinator.SigningStorage, error)
 
 	// ArchivalPublisher returns an ArchivalPublisher instance.
-	ArchivalPublisher(context.Context) (ArchivalPublisher, error)
+	ArchivalPublisher(context.Context) (coordinator.ArchivalPublisher, error)
 }
 
 // ProdService is an instance-global configuration for production
@@ -187,6 +170,7 @@ func (svc *ProdService) Base(c *router.Context, next router.Handler) {
 		aeCtx:       appengine.WithContext(c.Context, c.Request),
 	}
 
+	c.Context = coordinator.WithConfigProvider(c.Context, &services)
 	c.Context = WithServices(c.Context, &services)
 	next(c)
 }
@@ -197,83 +181,30 @@ type prodServicesInst struct {
 	*ProdService
 	sync.Mutex
 
+	// LUCIConfigProvider satisfies the ConfigProvider interface requirement.
+	coordinator.LUCIConfigProvider
+
 	// aeCtx is an AppEngine Context initialized for the current request.
 	aeCtx context.Context
-
-	// gcfg is the cached global configuration.
-	gcfg           *config.Config
-	projectConfigs map[cfgtypes.ProjectName]*cachedProjectConfig
 
 	// archivalIndex is the atomically-manipulated archival index for the
 	// ArchivalPublisher. This is shared between all ArchivalPublisher instances
 	// from this service.
 	archivalIndex int32
 
+	// pubSubLock protects pubSubClient member.
+	pubSubLock sync.Mutex
+	// pubSubClient is a Pub/Sub client generated during this request.
+	//
+	// It will be closed on "close".
+	pubSubClient *vkit.PublisherClient
 	// signer is the signer instance to use.
 	signer gaesigner.Signer
 }
 
-func (s *prodServicesInst) Config(c context.Context) (*config.Config, error) {
-	s.Lock()
-	defer s.Unlock()
+func (s *prodServicesInst) StorageForStream(c context.Context, lst *coordinator.LogStreamState) (
+	coordinator.SigningStorage, error) {
 
-	// Load/cache the global config.
-	if s.gcfg == nil {
-		var err error
-		s.gcfg, err = config.Load(c)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return s.gcfg, nil
-}
-
-// cachedProjectConfig is a singleton instance that holds a project config
-// state. It is populated when resolve is called, and is goroutine-safe for
-// read-only operations.
-type cachedProjectConfig struct {
-	sync.Once
-
-	project cfgtypes.ProjectName
-	pcfg    *svcconfig.ProjectConfig
-	err     error
-}
-
-func (cp *cachedProjectConfig) resolve(c context.Context) (*svcconfig.ProjectConfig, error) {
-	// Load the project config exactly once. This will be cached for the remainder
-	// of this request.
-	//
-	// If multiple goroutines attempt to load it, exactly one will, and the rest
-	// will block. All operations after this Once must be read-only.
-	cp.Do(func() {
-		cp.pcfg, cp.err = config.ProjectConfig(c, cp.project)
-	})
-	return cp.pcfg, cp.err
-}
-
-func (s *prodServicesInst) getOrCreateCachedProjectConfig(project cfgtypes.ProjectName) *cachedProjectConfig {
-	s.Lock()
-	defer s.Unlock()
-
-	if s.projectConfigs == nil {
-		s.projectConfigs = make(map[cfgtypes.ProjectName]*cachedProjectConfig)
-	}
-	cp := s.projectConfigs[project]
-	if cp == nil {
-		cp = &cachedProjectConfig{
-			project: project,
-		}
-		s.projectConfigs[project] = cp
-	}
-	return cp
-}
-
-func (s *prodServicesInst) ProjectConfig(c context.Context, project cfgtypes.ProjectName) (*svcconfig.ProjectConfig, error) {
-	return s.getOrCreateCachedProjectConfig(project).resolve(c)
-}
-
-func (s *prodServicesInst) StorageForStream(c context.Context, lst *LogStreamState) (Storage, error) {
 	if !lst.ArchivalState().Archived() {
 		log.Debugf(c, "Log is not archived. Fetching from intermediate storage.")
 		return s.newBigTableStorage(c)
@@ -287,7 +218,7 @@ func (s *prodServicesInst) StorageForStream(c context.Context, lst *LogStreamSta
 	return s.newGoogleStorage(c, gs.Path(lst.ArchiveIndexURL), gs.Path(lst.ArchiveStreamURL))
 }
 
-func (s *prodServicesInst) newBigTableStorage(c context.Context) (Storage, error) {
+func (s *prodServicesInst) newBigTableStorage(c context.Context) (coordinator.SigningStorage, error) {
 	cfg, err := s.Config(c)
 	if err != nil {
 		return nil, err
@@ -339,7 +270,7 @@ func (s *prodServicesInst) newBigTableStorage(c context.Context) (Storage, error
 	}, nil
 }
 
-func (s *prodServicesInst) newGoogleStorage(c context.Context, index, stream gs.Path) (Storage, error) {
+func (s *prodServicesInst) newGoogleStorage(c context.Context, index, stream gs.Path) (coordinator.SigningStorage, error) {
 	gs, err := s.newGSClient(c)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to create Google Storage client.")
@@ -397,7 +328,7 @@ func (s *prodServicesInst) newGSClient(c context.Context) (gs.Client, error) {
 	}, nil
 }
 
-func (s *prodServicesInst) ArchivalPublisher(c context.Context) (ArchivalPublisher, error) {
+func (s *prodServicesInst) ArchivalPublisher(c context.Context) (coordinator.ArchivalPublisher, error) {
 	cfg, err := s.Config(c)
 	if err != nil {
 		return nil, err
@@ -421,13 +352,13 @@ func (s *prodServicesInst) ArchivalPublisher(c context.Context) (ArchivalPublish
 	}
 
 	// Create a Topic, and configure it to not bundle messages.
-	return &pubsubArchivalPublisher{
-		publisher: &pubsub.UnbufferedPublisher{
+	return &coordinator.PubsubArchivalPublisher{
+		Publisher: &pubsub.UnbufferedPublisher{
 			Topic:  fullTopic,
 			Client: client,
 		},
-		aeCtx:            s.aeCtx,
-		publishIndexFunc: s.nextArchiveIndex,
+		AECtx:            s.aeCtx,
+		PublishIndexFunc: s.nextArchiveIndex,
 	}, nil
 }
 
@@ -445,54 +376,11 @@ func (s *prodServicesInst) nextArchiveIndex() uint64 {
 	return uint64(v)
 }
 
-var storageCacheSingleton StorageCache
+var storageCacheSingleton coordinator.StorageCache
 
 func (s *prodServicesInst) getStorageCache() storage.Cache { return &storageCacheSingleton }
 
-// Storage is an interface to storage used by the Coordinator.
-type Storage interface {
-	// Storage is the base Storage instance.
-	storage.Storage
-
-	// GetSignedURLs attempts to sign the storage's stream's RecordIO archive
-	// stream storage URL.
-	//
-	// If signing is not supported by this Storage instance, this will return
-	// a nil signing response and no error.
-	GetSignedURLs(context.Context, *URLSigningRequest) (*URLSigningResponse, error)
-}
-
-// URLSigningRequest is the set of URL signing parameters passed to a
-// Storage.GetSignedURLs call.
-type URLSigningRequest struct {
-	// Expriation is the signed URL expiration time.
-	Lifetime time.Duration
-
-	// Stream, if true, requests a signed log stream URL.
-	Stream bool
-	// Index, if true, requests a signed log stream index URL.
-	Index bool
-}
-
-// HasWork returns true if this signing request actually has work that is
-// requested.
-func (r *URLSigningRequest) HasWork() bool {
-	return (r.Stream || r.Index) && (r.Lifetime > 0)
-}
-
-// URLSigningResponse is the resulting signed URLs from a Storage.GetSignedURLs
-// call.
-type URLSigningResponse struct {
-	// Expriation is the signed URL expiration time.
-	Expiration time.Time
-
-	// Stream is the signed URL for the log stream, if requested.
-	Stream string
-	// Index is the signed URL for the log stream index, if requested.
-	Index string
-}
-
-// intermediateStorage is a Storage instance bound to BigTable.
+// bigTableStorage is a Storage instance bound to BigTable.
 type bigTableStorage struct {
 	// Storage is the base storage.Storage instance.
 	storage.Storage
@@ -504,7 +392,9 @@ func (st *bigTableStorage) Close() {
 	st.Storage.Close()
 }
 
-func (*bigTableStorage) GetSignedURLs(context.Context, *URLSigningRequest) (*URLSigningResponse, error) {
+func (*bigTableStorage) GetSignedURLs(context.Context, *coordinator.URLSigningRequest) (
+	*coordinator.URLSigningResponse, error) {
+
 	return nil, nil
 }
 
@@ -534,7 +424,9 @@ func (si *googleStorage) Close() {
 	si.Storage.Close()
 }
 
-func (si *googleStorage) GetSignedURLs(c context.Context, req *URLSigningRequest) (*URLSigningResponse, error) {
+func (si *googleStorage) GetSignedURLs(c context.Context, req *coordinator.URLSigningRequest) (
+	*coordinator.URLSigningResponse, error) {
+
 	info, err := si.svc.signer.ServiceInfo(c)
 	if err != nil {
 		return nil, errors.Annotate(err, "").InternalReason("failed to get service info").Err()
@@ -550,7 +442,7 @@ func (si *googleStorage) GetSignedURLs(c context.Context, req *URLSigningRequest
 	}
 
 	// Get our signing options.
-	resp := URLSigningResponse{
+	resp := coordinator.URLSigningResponse{
 		Expiration: clock.Now(c).Add(lifetime),
 	}
 	opts := gcst.SignedURLOptions{

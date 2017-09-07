@@ -246,7 +246,7 @@ func NewClient() *Client {
 	env.AuthState.IdentityGroups = []string{"admin", "all", "auth", "services"}
 
 	storage := &mem_storage.Storage{}
-	env.Services.ST = func(*coordinator.LogStreamState) (coordinator.Storage, error) {
+	env.Services.ST = func(*coordinator.LogStreamState) (coordinator.SigningStorage, error) {
 		return storageclient{storage}, nil
 	}
 	return &Client{

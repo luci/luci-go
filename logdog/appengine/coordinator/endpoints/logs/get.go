@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
+	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
@@ -147,7 +148,7 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog
 		return nil
 	}
 
-	svc := coordinator.GetServices(c)
+	svc := endpoints.GetServices(c)
 	st, err := svc.StorageForStream(c, lst)
 	if err != nil {
 		return errors.Annotate(err, "").InternalReason("failed to create storage instance").Err()
@@ -193,8 +194,9 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog
 	return nil
 }
 
-func getHead(c context.Context, req *logdog.GetRequest, st coordinator.Storage, project cfgtypes.ProjectName,
-	path types.StreamPath, byteLimit int) ([]*logpb.LogEntry, error) {
+func getHead(c context.Context, req *logdog.GetRequest, st coordinator.SigningStorage,
+	project cfgtypes.ProjectName, path types.StreamPath, byteLimit int) ([]*logpb.LogEntry, error) {
+
 	log.Fields{
 		"project":       project,
 		"path":          path,
@@ -277,8 +279,9 @@ func getHead(c context.Context, req *logdog.GetRequest, st coordinator.Storage, 
 	}
 }
 
-func getTail(c context.Context, st coordinator.Storage, project cfgtypes.ProjectName, path types.StreamPath) (
-	[]*logpb.LogEntry, error) {
+func getTail(c context.Context, st coordinator.SigningStorage, project cfgtypes.ProjectName,
+	path types.StreamPath) ([]*logpb.LogEntry, error) {
+
 	log.Fields{
 		"project": project,
 		"path":    path,

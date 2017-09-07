@@ -31,7 +31,7 @@ import (
 //
 // If the user is not, a MembershipError will be returned.
 func IsAdminUser(c context.Context) error {
-	cfg, err := GetServices(c).Config(c)
+	cfg, err := GetConfigProvider(c).Config(c)
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func IsAdminUser(c context.Context) error {
 //
 // If the user is not, a MembershipError will be returned.
 func IsServiceUser(c context.Context) error {
-	cfg, err := GetServices(c).Config(c)
+	cfg, err := GetConfigProvider(c).Config(c)
 	if err != nil {
 		return err
 	}
