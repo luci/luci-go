@@ -68,6 +68,30 @@
       "revId": "2535c8bd8a22d926c528546bc4bc05294d1d4eb4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c599f59e_dc39a313",
+        "filename": "scheduler/appengine/task/task.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-07T16:41:03Z",
+      "side": 1,
+      "message": "\"in time\" is scheduler codebase jargon for \"period during which a retry for what should be idempotent call to add \u003cKind\u003e to the set should deduplicated\". I couldn\u0027t find a better yet concise alternative, suggestions welcome.",
+      "parentUuid": "2d535b63_c5f9eb6c",
+      "range": {
+        "startLine": 89,
+        "startChar": 37,
+        "endLine": 89,
+        "endChar": 45
+      },
+      "revId": "2535c8bd8a22d926c528546bc4bc05294d1d4eb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
