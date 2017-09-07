@@ -92,6 +92,30 @@
       "revId": "2535c8bd8a22d926c528546bc4bc05294d1d4eb4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06b7cac5_0c13f49a",
+        "filename": "scheduler/appengine/task/task.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-07T16:42:51Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "c599f59e_dc39a313",
+      "range": {
+        "startLine": 89,
+        "startChar": 37,
+        "endLine": 89,
+        "endChar": 45
+      },
+      "revId": "2535c8bd8a22d926c528546bc4bc05294d1d4eb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
