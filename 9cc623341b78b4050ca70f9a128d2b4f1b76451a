@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8ad4b71f_afab9286",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-07T16:37:13Z",
+      "side": 1,
+      "message": "is this a beginning of a new sentence?",
+      "range": {
+        "startLine": 11,
+        "startChar": 34,
+        "endLine": 11,
+        "endChar": 39
+      },
+      "revId": "9cc623341b78b4050ca70f9a128d2b4f1b76451a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "676f4b23_9ecf6c00",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 735,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-07T16:37:13Z",
+      "side": 1,
+      "message": "nit: maybe just \"callback\"? docstring also says \"callback\"?",
+      "range": {
+        "startLine": 735,
+        "startChar": 58,
+        "endLine": 735,
+        "endChar": 65
+      },
+      "revId": "9cc623341b78b4050ca70f9a128d2b4f1b76451a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0ca9976_ab73724f",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 932,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-07T16:37:13Z",
+      "side": 1,
+      "message": "i is never incremeneted",
+      "revId": "9cc623341b78b4050ca70f9a128d2b4f1b76451a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0913c9d3_ca46c99a",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 937,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-07T16:37:13Z",
+      "side": 1,
+      "message": "consider adding support for multiple job ids to enqueueJobActions, to minimize number of taskqueue RPCs",
+      "revId": "9cc623341b78b4050ca70f9a128d2b4f1b76451a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
