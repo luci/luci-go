@@ -65,10 +65,6 @@ func (x Acl_Role) String() string {
 func (Acl_Role) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 0} }
 
 // A single access control rule.
-//
-// WARNING: until ACLs are fully deployed, DO NOT rely on READER Role
-// limiting access to your project. Follow crbug/736770 if in doubt.
-// TODO(tandrii): REMOVE THIS WARNING once deployment is complete.
 type Acl struct {
 	// Role denotes a list of actions that an identity can perform.
 	Role Acl_Role `protobuf:"varint,1,opt,name=role,enum=messages.Acl_Role" json:"role,omitempty"`
