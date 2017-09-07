@@ -291,7 +291,7 @@ func (m fakeTaskManager) ValidateProtoMessage(msg proto.Message) error {
 	return m.validationErr
 }
 
-func (m fakeTaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
+func (m fakeTaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []task.Trigger) error {
 	So(ctl.Task(), ShouldNotBeNil)
 	return nil
 }

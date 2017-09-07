@@ -144,7 +144,12 @@ type Manager interface {
 	// TaskManager may optionally use ctl.Save() to checkpoint progress and save
 	// debug log. ctl.Save() is also implicitly called by the engine when
 	// `LaunchTask` returns.
-	LaunchTask(c context.Context, ctl Controller) error
+	//
+	// triggers if not empty contains a list of emitted messages from triggering
+	// jobs. All of these triggers must be completely consumed with this
+	// InvocationNonce (see above).
+	// TODO(tandrii): remove this restriction in v2 of the engine.
+	LaunchTask(c context.Context, ctl Controller, triggers []Trigger) error
 
 	// AbortTask is called to opportunistically abort launched task.
 	//
