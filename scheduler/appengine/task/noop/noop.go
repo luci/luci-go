@@ -56,8 +56,8 @@ func (m TaskManager) Traits() task.Traits {
 }
 
 // LaunchTask is part of Manager interface.
-func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
-	ctl.DebugLog("Running noop task")
+func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []task.Trigger) error {
+	ctl.DebugLog("Running noop task with %d triggers", len(triggers))
 	time.Sleep(20 * time.Second)
 	ctl.State().Status = task.StatusSucceeded
 	return nil

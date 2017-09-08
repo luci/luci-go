@@ -102,7 +102,10 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 }
 
 // LaunchTask is part of Manager interface.
-func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
+func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []task.Trigger) error {
+	if len(triggers) > 0 {
+		logging.Debugf(c, "UrlFetchTask task doesn't accept triggers, but %d provided (first: %s)", len(triggers), triggers[0].ID)
+	}
 	cfg := ctl.Task().(*messages.UrlFetchTask)
 	started := clock.Now(c)
 

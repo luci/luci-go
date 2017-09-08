@@ -94,7 +94,7 @@ func TestTriggerBuild(t *testing.T) {
 		}
 
 		// Launch.
-		So(m.LaunchTask(c, ctl), ShouldBeNil)
+		So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
 		So(ctl.Log[0], ShouldEqual, "Trigger build for commit baddcafe")
 		r := Repository{ID: "proj/job:" + ts.URL}
 		So(ds.Get(c, &r), ShouldBeNil)
@@ -153,7 +153,7 @@ func TestTriggerBuild(t *testing.T) {
 			},
 		), ShouldBeNil)
 
-		So(m.LaunchTask(c, ctl), ShouldBeNil)
+		So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
 		So(len(ctl.Log), ShouldEqual, 0)
 	})
 }

@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -147,7 +148,11 @@ type taskData struct {
 }
 
 // LaunchTask is part of Manager interface.
-func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
+func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []task.Trigger) error {
+	if len(triggers) > 0 {
+		logging.Debugf(c, "Buildbucket task doesn't accept triggers, but %d provided (first: %s)", len(triggers), triggers[0].ID)
+		// TODO(tandrii): act on triggers.
+	}
 	// At this point config is already validated by ValidateProtoMessage.
 	cfg := ctl.Task().(*messages.BuildbucketTask)
 

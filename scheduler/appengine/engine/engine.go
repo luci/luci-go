@@ -1469,9 +1469,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	// invocation out of StatusStarting state (a failure to do so is an error). If
 	// it returns an error, invocation is forcefully moved to StatusFailed state.
 	// In either case, invocation never ends up in StatusStarting state.
-	// TODO(tAndrii): pass triggers to LaunchTask for task-specific trigger
-	// handling.
-	err = ctl.manager.LaunchTask(c, ctl)
+	err = ctl.manager.LaunchTask(c, ctl, triggers)
 	if ctl.State().Status == task.StatusStarting {
 		ctl.State().Status = task.StatusFailed
 		if err == nil {
