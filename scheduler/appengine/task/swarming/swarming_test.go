@@ -31,6 +31,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+var _ task.Manager = (*TaskManager)(nil)
+
 func TestValidateProtoMessage(t *testing.T) {
 	tm := TaskManager{}
 
