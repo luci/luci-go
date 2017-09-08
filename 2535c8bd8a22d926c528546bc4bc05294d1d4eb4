@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8c06f6ba_6e3d8782",
+        "filename": "scheduler/appengine/engine/statemachine.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 436,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-08T19:38:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c61f1b92_0da45993",
+      "range": {
+        "startLine": 436,
+        "startChar": 33,
+        "endLine": 436,
+        "endChar": 53
+      },
+      "revId": "2535c8bd8a22d926c528546bc4bc05294d1d4eb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2d535b63_c5f9eb6c",
         "filename": "scheduler/appengine/task/task.go",
         "patchSetId": 4
@@ -112,6 +136,30 @@
         "startChar": 37,
         "endLine": 89,
         "endChar": 45
+      },
+      "revId": "2535c8bd8a22d926c528546bc4bc05294d1d4eb4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "77835256_fc75a27c",
+        "filename": "scheduler/appengine/task/task.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-08T19:38:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b16dbfe8_8d46309c",
+      "range": {
+        "startLine": 89,
+        "startChar": 12,
+        "endLine": 89,
+        "endChar": 18
       },
       "revId": "2535c8bd8a22d926c528546bc4bc05294d1d4eb4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
