@@ -31,6 +31,7 @@ import (
 // TaskManager implements task.Manager interface for tasks defined with
 // NoopTask proto message.
 type TaskManager struct {
+	sleepDuration time.Duration
 }
 
 // Name is part of Manager interface.
@@ -57,8 +58,12 @@ func (m TaskManager) Traits() task.Traits {
 
 // LaunchTask is part of Manager interface.
 func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
-	ctl.DebugLog("Running noop task")
-	time.Sleep(20 * time.Second)
+	sleepFor := m.sleepDuration
+	if sleepFor == 0 {
+		sleepFor = 20 * time.Second
+	}
+	ctl.DebugLog("Running noop task for %s", sleepFor)
+	time.Sleep(sleepFor)
 	ctl.State().Status = task.StatusSucceeded
 	return nil
 }
