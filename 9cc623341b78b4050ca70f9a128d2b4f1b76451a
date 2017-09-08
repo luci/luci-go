@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "807185c6_ba465326",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-08T23:31:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8ad4b71f_afab9286",
+      "range": {
+        "startLine": 11,
+        "startChar": 34,
+        "endLine": 11,
+        "endChar": 39
+      },
+      "revId": "9cc623341b78b4050ca70f9a128d2b4f1b76451a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "676f4b23_9ecf6c00",
         "filename": "scheduler/appengine/engine/engine.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "47e703d8_79e7b817",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 735,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-08T23:31:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "676f4b23_9ecf6c00",
+      "range": {
+        "startLine": 735,
+        "startChar": 58,
+        "endLine": 735,
+        "endChar": 65
+      },
+      "revId": "9cc623341b78b4050ca70f9a128d2b4f1b76451a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d0ca9976_ab73724f",
         "filename": "scheduler/appengine/engine/engine.go",
         "patchSetId": 2
@@ -65,6 +113,24 @@
     },
     {
       "key": {
+        "uuid": "3b278e54_f911ace8",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 932,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-08T23:31:54Z",
+      "side": 1,
+      "message": "nice catch! Fixed.",
+      "parentUuid": "d0ca9976_ab73724f",
+      "revId": "9cc623341b78b4050ca70f9a128d2b4f1b76451a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0913c9d3_ca46c99a",
         "filename": "scheduler/appengine/engine/engine.go",
         "patchSetId": 2
@@ -79,6 +145,24 @@
       "revId": "9cc623341b78b4050ca70f9a128d2b4f1b76451a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c19ad830_bbe9d917",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 937,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-08T23:31:54Z",
+      "side": 1,
+      "message": "indeed, i considered. I didn\u0027t do it because we\u0027d be doing refactoring engine and statemachine anyway, and constraints and trade offs will change.",
+      "parentUuid": "0913c9d3_ca46c99a",
+      "revId": "9cc623341b78b4050ca70f9a128d2b4f1b76451a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
