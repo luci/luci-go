@@ -19,6 +19,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"strings"
+	"syscall"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -104,6 +105,7 @@ func Run(c context.Context, opts Options) error {
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+		cmd.SysProcAttr = getSysProcAttr()
 
 		logging.Debugf(c, "Running Python command: %s\nWorkDir: %s\nEnv: %s", cmd.Args, cmd.Dir, cmd.Env)
 

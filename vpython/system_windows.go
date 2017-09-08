@@ -26,3 +26,7 @@ var forwardedSignals = []os.Signal{
 	syscall.SIGINT,
 	syscall.SIGQUIT,
 }
+
+func getSysProcAttr() *syscall.SysProcAttr {
+	return nil
+}
