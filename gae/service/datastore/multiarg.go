@@ -17,8 +17,6 @@ package datastore
 import (
 	"fmt"
 	"reflect"
-	"sort"
-	"sync"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -319,64 +317,17 @@ func (mgs *keyMGS) SetMeta(key string, value interface{}) bool {
 	return true
 }
 
-// metaMultiArgIndex is a two-dimensional index into a metaMultiArg.
-type metaMultiArgIndex struct {
-	// elem is the index of the element in a metaMultiArg.
-	elem int
-	// slot is the index within the specified element. If the element is not a
-	// slice, slot will always be 0.
-	slot int
-}
-
 type metaMultiArgElement struct {
-	arg reflect.Value
-	mat *multiArgType
-
-	// size is -1 if this element is not a slice.
-	size int
-	// offset is the offset of the first element in the flattened space.
-	offset int
-}
-
-// slot returns the element at the specified slot. If idx is invalid, slot will
-// panic.
-//
-// If arg is a single value, the only valid index is 0. if arg is a slice, idx
-// will be the offset within that slice.
-func (e *metaMultiArgElement) slot(idx int) reflect.Value {
-	if e.size >= 0 {
-		return e.arg.Index(idx)
-	}
-
-	if idx != 0 {
-		panic(fmt.Errorf("invalid slot index %d for single element", idx))
-	}
-	return e.arg
-}
-
-// length returns the number of elements in this metaMultiArgElement.
-//
-// If it represents a slice, the number of elements will be the length of that
-// slice. If it represents a single value, the length will be 1.
-func (e *metaMultiArgElement) length() int {
-	if e.size >= 0 {
-		return e.size
-	}
-	return 1
+	arg  reflect.Value
+	mat  *multiArgType
+	size int // size is -1 if this element is not a slice.
 }
 
 type metaMultiArg struct {
-	// elems is the set of metaMultiArgElement entries, each of which represents
-	// either a single value or a slice of single values.
 	elems    []metaMultiArgElement
 	keysOnly bool
 
-	// count is the total number of elements, flattening slices.
-	count int
-	// flat, if true, means that this metaMultiArg consists entirely of single
-	// elements (no slices). This is used as a lookup optimization to avoid binary
-	// index search.
-	flat bool
+	count int // total number of elements, flattening slices
 }
 
 // makeMetaMultiArg returns a metaMultiArg for the supplied args.
@@ -391,7 +342,6 @@ func makeMetaMultiArg(args []interface{}, c metaMultiArgConstraints) (*metaMulti
 	mma := metaMultiArg{
 		elems:    make([]metaMultiArgElement, len(args)),
 		keysOnly: c.keyOperationsOnly(),
-		flat:     true,
 	}
 
 	lme := errors.NewLazyMultiError(len(args))
@@ -403,6 +353,7 @@ func makeMetaMultiArg(args []interface{}, c metaMultiArgConstraints) (*metaMulti
 
 		v := reflect.ValueOf(arg)
 		vt := v.Type()
+		mma.elems[i].arg = v
 
 		// Try and treat the argument as a single-value first. This allows slices
 		// that implement PropertyLoadSaver to be properly treated as a single
@@ -419,7 +370,6 @@ func makeMetaMultiArg(args []interface{}, c metaMultiArgConstraints) (*metaMulti
 			// here, since slices are addressable (write).
 			if v.Kind() == reflect.Slice {
 				isSlice = true
-				mma.flat = false
 				mat = parseArg(vt.Elem(), c.keyOperationsOnly())
 			}
 		} else {
@@ -437,19 +387,14 @@ func makeMetaMultiArg(args []interface{}, c metaMultiArgConstraints) (*metaMulti
 			continue
 		}
 
-		elem := &mma.elems[i]
-		*elem = metaMultiArgElement{
-			arg:    v,
-			mat:    mat,
-			offset: mma.count,
-		}
+		mma.elems[i].mat = mat
 		if isSlice {
 			l := v.Len()
 			mma.count += l
-			elem.size = l
+			mma.elems[i].size = l
 		} else {
 			mma.count++
-			elem.size = -1
+			mma.elems[i].size = -1
 		}
 	}
 	if err := lme.Get(); err != nil {
@@ -459,35 +404,17 @@ func makeMetaMultiArg(args []interface{}, c metaMultiArgConstraints) (*metaMulti
 	return &mma, nil
 }
 
-// get returns the element type and value at flattened index idx.
-func (mma *metaMultiArg) index(idx int) (mmaIdx metaMultiArgIndex) {
-	if mma.flat {
-		mmaIdx.elem = idx
-		return
+func (mma *metaMultiArg) iterator(cb metaMultiArgIteratorCallback) *metaMultiArgIterator {
+	return &metaMultiArgIterator{
+		metaMultiArg: mma,
+		cb:           cb,
 	}
-
-	mmaIdx.elem = sort.Search(len(mma.elems), func(i int) bool { return mma.elems[i].offset > idx }) - 1
-
-	// Get the current slot value.
-	mmaIdx.slot = idx - mma.elems[mmaIdx.elem].offset
-	return
-}
-
-func (mma *metaMultiArg) get(idx metaMultiArgIndex) (*multiArgType, reflect.Value) {
-	// Get the current slot value.
-	elem := &mma.elems[idx.elem]
-	slot := elem.arg
-	if elem.size >= 0 {
-		// slot is a slice type, get its member.
-		slot = slot.Index(idx.slot)
-	}
-
-	return elem.mat, slot
 }
 
 // getKeysPMs returns the keys and PropertyMap for the supplied argument items.
 func (mma *metaMultiArg) getKeysPMs(kc KeyContext, meta bool) ([]*Key, []PropertyMap, error) {
-	et := newErrorTracker(mma)
+	var et errorTracker
+	it := mma.iterator(et.init(mma))
 
 	// Determine our flattened keys and property maps.
 	retKey := make([]*Key, mma.count)
@@ -496,106 +423,133 @@ func (mma *metaMultiArg) getKeysPMs(kc KeyContext, meta bool) ([]*Key, []Propert
 		retPM = make([]PropertyMap, mma.count)
 	}
 
-	var index metaMultiArgIndex
 	for i := 0; i < mma.count; i++ {
-		// If we're past the end of the element, move onto the next.
-		for index.slot >= mma.elems[index.elem].length() {
-			index.elem++
-			index.slot = 0
-		}
-
-		mat, slot := mma.get(index)
-		key, err := mat.getKey(kc, slot)
-		if err != nil {
-			et.trackError(index, err)
-			continue
-		}
-		retKey[i] = key
-
-		if !mma.keysOnly {
-			var pm PropertyMap
-			if meta {
-				pm = mat.getMetaPM(slot)
-			} else {
-				var err error
-				if pm, err = mat.getPM(slot); err != nil {
-					et.trackError(index, err)
-					continue
-				}
+		it.next(func(mat *multiArgType, slot reflect.Value) error {
+			key, err := mat.getKey(kc, slot)
+			if err != nil {
+				return err
 			}
-			retPM[i] = pm
-		}
+			retKey[i] = key
 
-		index.slot++
+			if !mma.keysOnly {
+				var pm PropertyMap
+				if meta {
+					pm = mat.getMetaPM(slot)
+				} else {
+					var err error
+					if pm, err = mat.getPM(slot); err != nil {
+						return err
+					}
+				}
+				retPM[i] = pm
+			}
+			return nil
+		})
 	}
 	return retKey, retPM, et.error()
 }
 
+type metaMultiArgIterator struct {
+	*metaMultiArg
+
+	cb metaMultiArgIteratorCallback
+
+	index   int // flattened index
+	elemIdx int // current index in slice
+	slotIdx int // current index within elemIdx element (0 if single)
+}
+
+func (it *metaMultiArgIterator) next(fn func(*multiArgType, reflect.Value) error) {
+	if it.remaining() <= 0 {
+		panic("out of bounds")
+	}
+
+	// Advance to the next populated element/slot.
+	elem := &it.elems[it.elemIdx]
+	if it.index > 0 {
+		for {
+			it.slotIdx++
+			if it.slotIdx >= elem.size {
+				it.elemIdx++
+				it.slotIdx = 0
+				elem = &it.elems[it.elemIdx]
+			}
+
+			// We're done iterating, unless we're on a zero-sized slice element.
+			if elem.size != 0 {
+				break
+			}
+		}
+	}
+
+	// Get the current slot value.
+	slot := elem.arg
+	if elem.size >= 0 {
+		// slot is a slice type, get its member.
+		slot = slot.Index(it.slotIdx)
+	}
+
+	// Execute our callback.
+	it.cb(it, fn(elem.mat, slot))
+
+	// Advance our flattened index.
+	it.index++
+}
+
+func (it *metaMultiArgIterator) remaining() int {
+	return it.count - it.index
+}
+
+type metaMultiArgIteratorCallback func(*metaMultiArgIterator, error)
+
 type errorTracker struct {
-	sync.Mutex
-
 	elemErrors errors.MultiError
-	mma        *metaMultiArg
 }
 
-func newErrorTracker(mma *metaMultiArg) *errorTracker {
-	return &errorTracker{
-		mma: mma,
-	}
+func (et *errorTracker) init(mma *metaMultiArg) metaMultiArgIteratorCallback {
+	return et.trackError
 }
 
-func (et *errorTracker) trackError(index metaMultiArgIndex, err error) {
-	if err == nil {
-		return
-	}
-
-	et.Lock()
-	defer et.Unlock()
-	et.trackErrorLocked(index, err)
-}
-
-func (et *errorTracker) trackErrorLocked(index metaMultiArgIndex, err error) {
+func (et *errorTracker) trackError(it *metaMultiArgIterator, err error) {
 	if err == nil {
 		return
 	}
 
 	if et.elemErrors == nil {
-		et.elemErrors = make(errors.MultiError, len(et.mma.elems))
+		et.elemErrors = make(errors.MultiError, len(it.elems))
 	}
 
 	// If this is a single element, assign the error directly.
-	elem := &et.mma.elems[index.elem]
+	elem := it.elems[it.elemIdx]
 	if elem.size < 0 {
-		et.elemErrors[index.elem] = err
+		et.elemErrors[it.elemIdx] = err
 	} else {
 		// This is a slice element. Use a slice-sized MultiError for its element
 		// error slot, then add this error to the inner MultiError's slot index.
-		serr, ok := et.elemErrors[index.elem].(errors.MultiError)
+		serr, ok := et.elemErrors[it.elemIdx].(errors.MultiError)
 		if !ok {
 			serr = make(errors.MultiError, elem.size)
-			et.elemErrors[index.elem] = serr
+			et.elemErrors[it.elemIdx] = serr
 		}
-		serr[index.slot] = err
+		serr[it.slotIdx] = err
 	}
 }
 
 func (et *errorTracker) error() error {
-	if et.elemErrors != nil {
-		return et.elemErrors
+	if err := et.elemErrors; err != nil {
+		return err
 	}
 	return nil
 }
 
 type boolTracker struct {
-	*errorTracker
+	errorTracker
 
 	res ExistsResult
 }
 
-func newBoolTracker(mma *metaMultiArg) *boolTracker {
-	bt := boolTracker{
-		errorTracker: newErrorTracker(mma),
-	}
+func (bt *boolTracker) init(mma *metaMultiArg) metaMultiArgIteratorCallback {
+	bt.errorTracker.init(mma)
 
 	sizes := make([]int, len(mma.elems))
 	for i, e := range mma.elems {
@@ -605,24 +559,22 @@ func newBoolTracker(mma *metaMultiArg) *boolTracker {
 			sizes[i] = e.size
 		}
 	}
+
 	bt.res.init(sizes...)
-	return &bt
+	return bt.trackExistsResult
 }
 
-func (bt *boolTracker) trackExistsResult(index metaMultiArgIndex, err error) {
-	bt.Lock()
-	defer bt.Unlock()
-
+func (bt *boolTracker) trackExistsResult(it *metaMultiArgIterator, err error) {
 	switch err {
 	case nil:
-		bt.res.set(index.elem, index.slot)
+		bt.res.set(it.elemIdx, it.slotIdx)
 
 	case ErrNoSuchEntity:
 		break
 
 	default:
 		// Pass through to track as MultiError.
-		bt.trackErrorLocked(index, err)
+		bt.errorTracker.trackError(it, err)
 	}
 }
 
