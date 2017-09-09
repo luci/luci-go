@@ -27,6 +27,7 @@ import (
 	ds "go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/gitiles/gerrit"
@@ -77,7 +78,10 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 }
 
 // LaunchTask is part of Manager interface.
-func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
+func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []task.Trigger) error {
+	if len(triggers) > 0 {
+		logging.Debugf(c, "GitilesTask doesn't accept triggers, but %d provided (first: %s)", len(triggers), triggers[0].ID)
+	}
 	cfg := ctl.Task().(*messages.GitilesTask)
 
 	u, err := url.Parse(cfg.Repo)
