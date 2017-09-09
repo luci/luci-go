@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build darwin freebsd netbsd openbsd android
-
 package vpython
 
 import (
@@ -38,5 +36,12 @@ func getSysProcAttr() *syscall.SysProcAttr {
 		// process group from reaching the child AND being forwarded to the child
 		// by the parent (e.g., "Ctrl+C").
 		Setpgid: true,
+
+		// Ensure that if "vpython" is killed, the Python process is also killed.
+		// This should never be hit unless something drastic happens to "vpython",
+		// since the standard path is graceful shutdown.
+		//
+		// This is Linux-specific.
+		Pdeathsig: syscall.SIGKILL,
 	}
 }
