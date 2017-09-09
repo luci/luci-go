@@ -21,14 +21,11 @@ import (
 )
 
 // DS returns a datastore.Constraints object for the production datastore.
-//
-// Rationale:
-//	- QueryBatchSize was chosen to be a functional batch query size based on
-//	  operational observation.
 func DS() datastore.Constraints {
 	return datastore.Constraints{
-		QueryBatchSize: 200,
-		MaxPutSize:     500,
+		MaxGetSize:    1000,
+		MaxPutSize:    500,
+		MaxDeleteSize: 500,
 	}
 }
 

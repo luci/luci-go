@@ -44,6 +44,7 @@ type fakeDatastore struct {
 
 	kctx         KeyContext
 	keyForResult func(int32, KeyContext) *Key
+	onDelete     func(*Key)
 	entities     int32
 	constraints  Constraints
 	convey       C
@@ -137,12 +138,19 @@ func (f *fakeDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) e
 		if k.Kind() == "Fail" {
 			err = errFail
 		} else {
-			so(vals[i].Slice("Value"), ShouldResemble, PropertySlice{MkProperty(i)})
 			if assertExtra {
 				so(vals[i].Slice("Extra"), ShouldResemble, PropertySlice{MkProperty("whoa")})
 			}
-			if k.IsIncomplete() {
-				k = k.KeyContext().NewKey(k.Kind(), "", int64(i+1), k.Parent())
+
+			if k.Kind() == "Index" {
+				// Index types have a Value field. Generate a Key whose IntID equals
+				// that Value field.
+				k = k.KeyContext().NewKey(k.Kind(), "", vals[i]["Value"].Slice()[0].Value().(int64), k.Parent())
+			} else {
+				so(vals[i].Slice("Value"), ShouldResemble, PropertySlice{MkProperty(i)})
+				if k.IsIncomplete() {
+					k = k.KeyContext().NewKey(k.Kind(), "", int64(i+1), k.Parent())
+				}
 			}
 		}
 		cb(i, k, err)
@@ -161,6 +169,8 @@ func (f *fakeDatastore) GetMulti(keys []*Key, _meta MultiMetaGetter, cb GetMulti
 			cb(i, nil, errFail)
 		} else if k.Kind() == "DNE" || k.IntID() == noSuchEntityID {
 			cb(i, nil, ErrNoSuchEntity)
+		} else if k.Kind() == "Index" {
+			cb(i, PropertyMap{"Value": MkProperty(k.IntID())}, nil)
 		} else {
 			cb(i, PropertyMap{"Value": MkProperty(i + 1)}, nil)
 		}
@@ -179,6 +189,9 @@ func (f *fakeDatastore) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
 			cb(i, ErrNoSuchEntity)
 		} else {
 			cb(i, nil)
+			if f.onDelete != nil {
+				f.onDelete(k)
+			}
 		}
 	}
 	return nil

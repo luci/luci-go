@@ -22,9 +22,10 @@ import (
 
 type key int
 
-var (
-	rawDatastoreKey       key
-	rawDatastoreFilterKey key = 1
+const (
+	rawDatastoreKey key = iota
+	rawDatastoreFilterKey
+	rawDatastoreBatchKey
 )
 
 // RawFactory is the function signature for factory methods compatible with
@@ -61,7 +62,10 @@ func rawWithFilters(c context.Context, filter ...RawFilter) RawInterface {
 	for _, f := range filter {
 		ret = f(c, ret)
 	}
-	return applyCheckFilter(c, ret)
+
+	ret = applyBatchFilter(c, ret)
+	ret = applyCheckFilter(c, ret)
+	return ret
 }
 
 // Raw gets the RawInterface implementation from context.
@@ -107,4 +111,29 @@ func AddRawFilters(c context.Context, filts ...RawFilter) context.Context {
 func GetKeyContext(c context.Context) KeyContext {
 	ri := info.Raw(c)
 	return MkKeyContext(ri.FullyQualifiedAppID(), ri.GetNamespace())
+}
+
+// WithBatching enables or disables automatic operation batching. Batching is
+// enabled by default, and batch sizes are defined by the datastore's
+// Constraints.
+//
+// Datastore has built-in constraints that it applies to some operations:
+//
+//	- For Get, there is a maximum number of elements that can be processed in a
+//	  single RPC (see Constriants.MaxGetSize).
+//	- For Put, there is a maximum number of elements that can be processed in a
+//	  single RPC (see Constriants.MaxPutSize).
+//	- For Delete, there is a maximum number of elements that can be processed in
+//	  a single RPC (see Constriants.MaxDeleteSize).
+//
+// Batching masks these limitations, providing an interface that meets user
+// expectations. Behind the scenes, it splits large operations into a series of
+// parallel smaller operations that fit within the datastore's constraints.
+func WithBatching(c context.Context, enabled bool) context.Context {
+	return context.WithValue(c, rawDatastoreBatchKey, enabled)
+}
+
+func getBatching(c context.Context) (is, ok bool) {
+	is, ok = c.Value(rawDatastoreBatchKey).(bool)
+	return
 }

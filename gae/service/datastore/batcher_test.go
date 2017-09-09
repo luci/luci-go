@@ -15,8 +15,8 @@
 package datastore
 
 import (
-	"errors"
 	"fmt"
+	"sync"
 	"sync/atomic"
 	"testing"
 
@@ -28,8 +28,10 @@ import (
 )
 
 type counterFilter struct {
-	run int32
-	put int32
+	run    int32
+	put    int32
+	get    int32
+	delete int32
 }
 
 func (cf *counterFilter) filter() RawFilter {
@@ -51,9 +53,19 @@ func (rc *counterFilterInst) Run(fq *FinalizedQuery, cb RawRunCB) error {
 	return rc.RawInterface.Run(fq, cb)
 }
 
-func (rc *counterFilterInst) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) error {
+func (rc *counterFilterInst) PutMulti(keys []*Key, pmap []PropertyMap, cb NewKeyCB) error {
 	atomic.AddInt32(&rc.put, 1)
-	return rc.RawInterface.PutMulti(keys, vals, cb)
+	return rc.RawInterface.PutMulti(keys, pmap, cb)
+}
+
+func (rc *counterFilterInst) GetMulti(keys []*Key, meta MultiMetaGetter, cb GetMultiCB) error {
+	atomic.AddInt32(&rc.get, 1)
+	return rc.RawInterface.GetMulti(keys, meta, cb)
+}
+
+func (rc *counterFilterInst) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
+	atomic.AddInt32(&rc.delete, 1)
+	return rc.RawInterface.DeleteMulti(keys, cb)
 }
 
 func TestQueryBatch(t *testing.T) {
@@ -70,16 +82,14 @@ func TestQueryBatch(t *testing.T) {
 		cf := counterFilter{}
 		c = AddRawFilters(c, cf.filter())
 
-		b := Batcher{}
-
-		// Given "b"'s Size, how many Run calls will be executed to pull "total"
-		// results?
-		expectedBatchRunCalls := func(total int32) int32 {
-			if b.Size <= 0 {
+		// Given query batch size, how many Run calls will be executed to pull
+		// "total" results?
+		expectedBatchRunCalls := func(batchSize, total int32) int32 {
+			if batchSize <= 0 {
 				return 1
 			}
-			exp := total / int32(b.Size)
-			if total%int32(b.Size) != 0 {
+			exp := total / batchSize
+			if total%batchSize != 0 {
 				exp++
 			}
 			return exp
@@ -92,29 +102,37 @@ func TestQueryBatch(t *testing.T) {
 		}
 		cf.run = 0
 
-		for _, sizeBase := range []int{
+		for _, sizeBase := range []int32{
 			1,
 			16,
 			1024,
 			2048,
 		} {
 			// Adjust to hit edge cases.
-			for _, delta := range []int{-1, 0, 1} {
-				b.Size = sizeBase + delta
-				if b.Size <= 0 {
+			for _, delta := range []int32{-1, 0, 1} {
+				batchSize := sizeBase + delta
+				if batchSize <= 0 {
 					continue
 				}
 
-				Convey(fmt.Sprintf(`With a batch filter size %d installed`, b.Size), func() {
+				getAllBatch := func(c context.Context, batchSize int32, query *Query) ([]*CommonStruct, error) {
+					var out []*CommonStruct
+					err := RunBatch(c, batchSize, query, func(cs *CommonStruct) {
+						out = append(out, cs)
+					})
+					return out, err
+				}
+
+				Convey(fmt.Sprintf(`Batching with size %d installed`, batchSize), func() {
 					q := NewQuery("")
 
 					Convey(`Can retrieve all of the items.`, func() {
-						var got []*CommonStruct
-						So(b.GetAll(c, q, &got), ShouldBeNil)
+						got, err := getAllBatch(c, batchSize, q)
+						So(err, ShouldBeNil)
 						So(got, ShouldResemble, all)
 
 						// One call for every sub-query, plus one to hit Stop.
-						runCalls := (len(all) / b.Size) + 1
+						runCalls := (int32(len(all)) / batchSize) + 1
 						So(cf.run, ShouldEqual, runCalls)
 					})
 
@@ -122,11 +140,11 @@ func TestQueryBatch(t *testing.T) {
 						const limit = 128
 						q = q.Limit(int32(limit))
 
-						var got []*CommonStruct
-						So(b.GetAll(c, q, &got), ShouldBeNil)
+						got, err := getAllBatch(c, batchSize, q)
+						So(err, ShouldBeNil)
 						So(got, ShouldResemble, all[:limit])
 
-						So(cf.run, ShouldEqual, expectedBatchRunCalls(limit))
+						So(cf.run, ShouldEqual, expectedBatchRunCalls(batchSize, limit))
 					})
 				})
 			}
@@ -140,7 +158,6 @@ func TestQueryBatch(t *testing.T) {
 				// Clear state and configure.
 				cf.run = 0
 				fds.entities = rounds * outerFetchSize
-				b.Size = int(batchSize)
 
 				var (
 					outerCount int32
@@ -153,7 +170,7 @@ func TestQueryBatch(t *testing.T) {
 						q = q.Start(cursor)
 					}
 
-					err := b.Run(c, q, func(v CommonStruct, getCursor CursorCB) (err error) {
+					err := RunBatch(c, batchSize, q, func(v CommonStruct, getCursor CursorCB) (err error) {
 						if v.Value != int64(outerCount) {
 							return fmt.Errorf("query value doesn't match count (%d != %d)", v.Value, outerCount)
 						}
@@ -174,7 +191,7 @@ func TestQueryBatch(t *testing.T) {
 				}
 
 				// Make sure the appropriate number of real queries was executed.
-				expectedRunCount := expectedBatchRunCalls(outerFetchSize) * rounds
+				expectedRunCount := expectedBatchRunCalls(batchSize, outerFetchSize) * rounds
 				if cf.run != expectedRunCount {
 					return fmt.Errorf("unexpected number of raw Run calls (%d != %d)", cf.run, expectedRunCount)
 				}
@@ -189,46 +206,18 @@ func TestQueryBatch(t *testing.T) {
 			// so we can test some incongruent boundaries.
 			So(testIterativeRun(3, 900, 250), ShouldBeNil)
 		})
-
-		Convey(`With callbacks`, func() {
-			const batchSize = 16
-			var countA int
-			var errA error
-
-			b.Size = batchSize
-			b.Callback = func(context.Context) error {
-				countA++
-				return errA
-			}
-
-			q := NewQuery("")
-
-			Convey(`Executes the callbacks during batching.`, func() {
-				// Get 250% of the batch size. This will result in several full batches
-				// and one partial batch, each of which should get a callback.
-				limit := 2.5 * batchSize
-				cbCount := int(limit / batchSize)
-
-				q = q.Limit(int32(limit))
-				var items []*CommonStruct
-				So(b.GetAll(c, q, &items), ShouldBeNil)
-				So(len(items), ShouldEqual, limit)
-				So(countA, ShouldEqual, cbCount)
-			})
-
-			Convey(`Will stop querying if a callback errors.`, func() {
-				errA = errors.New("test error")
-
-				var items []*CommonStruct
-				So(b.GetAll(c, q, &items), ShouldEqual, errA)
-				So(countA, ShouldEqual, 1)
-			})
-		})
 	})
 }
 
-func TestPutBatch(t *testing.T) {
+func TestBatchFilter(t *testing.T) {
 	t.Parallel()
+
+	type IndexEntity struct {
+		_kind string `gae:"$kind,Index"`
+
+		Key   *Key `gae:"$key"`
+		Value int64
+	}
 
 	Convey("A testing datastore", t, func() {
 		c := info.Set(context.Background(), fakeInfo{})
@@ -239,51 +228,69 @@ func TestPutBatch(t *testing.T) {
 		cf := counterFilter{}
 		c = AddRawFilters(c, cf.filter())
 
-		cbCount := 0
-		var cbErr error
-		b := Batcher{
-			Callback: func(context.Context) error {
-				cbCount++
-				return cbErr
-			},
+		expectedRounds := func(constraint, size int) int {
+			v := size / constraint
+			if size%constraint != 0 {
+				v++
+			}
+			return v
 		}
 
-		Convey(`Can put a single round with no callbacks.`, func() {
-			b.Size = 10
-			css := make([]*CommonStruct, 10)
-			for i := range css {
-				css[i] = &CommonStruct{Value: int64(i)}
-			}
+		for _, sz := range []int32{11, 10, 7, 5, 2} {
+			Convey(fmt.Sprintf("With maximunm Put size %d", sz), func(convey C) {
+				fds.convey = convey
+				fds.constraints.MaxGetSize = 10
+				fds.constraints.MaxPutSize = 10
+				fds.constraints.MaxDeleteSize = 10
 
-			So(b.Put(c, css), ShouldBeNil)
-			So(cf.put, ShouldEqual, 1)
-			So(cbCount, ShouldEqual, 0)
-		})
+				css := make([]*IndexEntity, 10)
+				for i := range css {
+					css[i] = &IndexEntity{Value: int64(i + 1)}
+				}
 
-		Convey(`Can put in batch.`, func() {
-			b.Size = 2
-			css := make([]*CommonStruct, 10)
-			for i := range css {
-				// 0, 1, 0, 1 since PutMulti asserts per batch numbering from 0..N.
-				css[i] = &CommonStruct{Value: int64(i % 2)}
-			}
+				So(Put(c, css), ShouldBeNil)
+				So(cf.put, ShouldEqual, expectedRounds(fds.constraints.MaxPutSize, len(css)))
 
-			So(b.Put(c, css), ShouldBeNil)
-			So(cf.put, ShouldEqual, 5)
-			So(cbCount, ShouldEqual, 4)
-		})
+				for i, ent := range css {
+					So(ent.Key, ShouldNotBeNil)
+					So(ent.Key.IntID(), ShouldEqual, i+1)
+				}
 
-		Convey(`Stops and returns callback errors.`, func() {
-			b.Size = 1
-			css := make([]*CommonStruct, 2)
-			for i := range css {
-				css[i] = &CommonStruct{Value: int64(i)}
-			}
+				Convey(`Get`, func() {
+					// Clear Value and Get, populating Value from Key.IntID.
+					for _, ent := range css {
+						ent.Value = 0
+					}
 
-			cbErr = errors.New("test error")
-			So(b.Put(c, css), ShouldEqual, cbErr)
-			So(cf.put, ShouldEqual, 1)  // 1 put, then callback on next batch.
-			So(cbCount, ShouldEqual, 1) // 1 callback, which returned error.
-		})
+					So(Get(c, css), ShouldBeNil)
+					So(cf.get, ShouldEqual, expectedRounds(fds.constraints.MaxGetSize, len(css)))
+
+					for i, ent := range css {
+						So(ent.Value, ShouldEqual, i+1)
+					}
+				})
+
+				Convey(`Delete`, func() {
+					// Record which entities get deleted.
+					var lock sync.Mutex
+					deleted := make(map[int64]struct{}, len(css))
+					fds.onDelete = func(k *Key) {
+						lock.Lock()
+						defer lock.Unlock()
+						deleted[k.IntID()] = struct{}{}
+					}
+
+					So(Delete(c, css), ShouldBeNil)
+					So(cf.delete, ShouldEqual, expectedRounds(fds.constraints.MaxDeleteSize, len(css)))
+
+					// Confirm that all entities have been deleted.
+					So(len(deleted), ShouldEqual, len(css))
+					for i := range css {
+						_, ok := deleted[int64(i+1)]
+						So(ok, ShouldBeTrue)
+					}
+				})
+			})
+		}
 	})
 }

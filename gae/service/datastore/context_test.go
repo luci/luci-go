@@ -40,6 +40,8 @@ func (f fakeService) DecodeCursor(s string) (Cursor, error) {
 	return fakeCursor(v), err
 }
 
+func (f fakeService) Constraints() Constraints { return Constraints{} }
+
 type fakeCursor int
 
 func (f fakeCursor) String() string {
@@ -59,10 +61,7 @@ func TestServices(t *testing.T) {
 			c = SetRaw(info.Set(c, fakeInfo{}), fakeService{})
 
 			Convey("lets you pull them back out", func() {
-				So(Raw(c), ShouldResemble, &checkFilter{
-					RawInterface: fakeService{},
-					kc:           MkKeyContext("s~aid", "ns"),
-				})
+				So(Raw(c), ShouldHaveSameTypeAs, &checkFilter{})
 			})
 
 			Convey("and lets you add filters", func() {

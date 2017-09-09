@@ -96,16 +96,15 @@ type DeleteMultiCB func(idx int, err error) error
 // A zero-value Constraints is valid, and indicates that no constraints are
 // present.
 type Constraints struct {
-	// QueryBatchSize is the number of query elements to use when batching
-	// queries. This should be chosen such that any given query batch of this
-	// size will (probably) not cause a timeout.
-	//
-	// If <= 0, there is no default batch size.
-	QueryBatchSize int
-
-	// MaxPutSize is the maximum number of entities that can be written in a
-	// single PutMulti call.
+	// MaxGetSize is the maximum number of entities that can be referenced in a
+	// single GetMulti call. If <= 0, no constraint is applied.
+	MaxGetSize int
+	// MaxPutSize is the maximum number of entities that can be referenced in a
+	// single PutMulti call. If <= 0, no constraint is applied.
 	MaxPutSize int
+	// MaxDeleteSize is the maximum number of entities that can be referenced in a
+	// single DeleteMulti call. If <= 0, no constraint is applied.
+	MaxDeleteSize int
 }
 
 type nullMetaGetterType struct{}

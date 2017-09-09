@@ -22,7 +22,9 @@ import (
 	"golang.org/x/net/context"
 )
 
-func runParseCallback(cbIface interface{}) (isKey, hasErr, hasCursorCB bool, mat *multiArgType) {
+type resolvedRunCallback func(reflect.Value, CursorCB) error
+
+func parseRunCallback(cbIface interface{}) (rcb resolvedRunCallback, isKey bool, mat *multiArgType) {
 	badSig := func() {
 		panic(fmt.Errorf(
 			"cb does not match the required callback signature: `%T` != `func(TYPE, [CursorCB]) [error]`",
@@ -35,7 +37,8 @@ func runParseCallback(cbIface interface{}) (isKey, hasErr, hasCursorCB bool, mat
 
 	// TODO(riannucci): Profile and determine if any of this is causing a real
 	// slowdown. Could potentially cache reflection stuff by cbTyp?
-	cbTyp := reflect.TypeOf(cbIface)
+	cbVal := reflect.ValueOf(cbIface)
+	cbTyp := cbVal.Type()
 
 	if cbTyp.Kind() != reflect.Func {
 		badSig()
@@ -56,7 +59,7 @@ func runParseCallback(cbIface interface{}) (isKey, hasErr, hasCursorCB bool, mat
 		}
 	}
 
-	hasCursorCB = numIn == 2
+	hasCursorCB := numIn == 2
 	if hasCursorCB && cbTyp.In(1) != typeOfCursorCB {
 		badSig()
 	}
@@ -66,7 +69,47 @@ func runParseCallback(cbIface interface{}) (isKey, hasErr, hasCursorCB bool, mat
 	} else if cbTyp.NumOut() == 1 && cbTyp.Out(0) != typeOfError {
 		badSig()
 	}
-	hasErr = cbTyp.NumOut() == 1
+	hasErr := cbTyp.NumOut() == 1
+
+	// Resolve to generic function.
+	switch {
+	case hasErr && hasCursorCB:
+		// func(reflect.Value, CursorCB) error
+		rcb = func(v reflect.Value, cb CursorCB) error {
+			err := cbVal.Call([]reflect.Value{v, reflect.ValueOf(cb)})[0].Interface()
+			if err != nil {
+				return err.(error)
+			}
+			return nil
+		}
+
+	case hasErr && !hasCursorCB:
+		// func(reflect.Value) error
+		rcb = func(v reflect.Value, _ CursorCB) error {
+			err := cbVal.Call([]reflect.Value{v})[0].Interface()
+			if err != nil {
+				return err.(error)
+			}
+			return nil
+		}
+
+	case !hasErr && hasCursorCB:
+		// func(reflect.Value, CursorCB)
+		rcb = func(v reflect.Value, cb CursorCB) error {
+			cbVal.Call([]reflect.Value{v, reflect.ValueOf(cb)})
+			return nil
+		}
+
+	case !hasErr && !hasCursorCB:
+		// func(reflect.Value)
+		rcb = func(v reflect.Value, _ CursorCB) error {
+			cbVal.Call([]reflect.Value{v})
+			return nil
+		}
+
+	default:
+		badSig()
+	}
 
 	return
 }
@@ -282,6 +325,10 @@ func RunInTransaction(c context.Context, f func(c context.Context) error, opts *
 // Run executes the given query, and calls `cb` for each successfully
 // retrieved item.
 //
+// By default, datastore applies a short (~5s) timeout to queries. This can be
+// increased, usually to around several minutes, by explicitly setting a
+// deadline on the supplied Context.
+//
 // cb is a callback function whose signature is
 //   func(obj TYPE[, getCursor CursorCB]) [error]
 //
@@ -302,11 +349,7 @@ func RunInTransaction(c context.Context, f func(c context.Context) error, opts *
 // due to flakiness, timeout, etc. If it encounters such an error, it will
 // be returned.
 func Run(c context.Context, q *Query, cb interface{}) error {
-	return runRaw(rawWithFilters(c), q, cb)
-}
-
-func runRaw(raw RawInterface, q *Query, cb interface{}) error {
-	isKey, hasErr, hasCursorCB, mat := runParseCallback(cb)
+	rcb, isKey, mat := parseRunCallback(cb)
 
 	if isKey {
 		q = q.KeysOnly(true)
@@ -316,43 +359,11 @@ func runRaw(raw RawInterface, q *Query, cb interface{}) error {
 		return err
 	}
 
-	cbVal := reflect.ValueOf(cb)
-	var cbFunc func(reflect.Value, CursorCB) error
-	switch {
-	case hasErr && hasCursorCB:
-		cbFunc = func(v reflect.Value, cb CursorCB) error {
-			err := cbVal.Call([]reflect.Value{v, reflect.ValueOf(cb)})[0].Interface()
-			if err != nil {
-				return err.(error)
-			}
-			return nil
-		}
-
-	case hasErr && !hasCursorCB:
-		cbFunc = func(v reflect.Value, _ CursorCB) error {
-			err := cbVal.Call([]reflect.Value{v})[0].Interface()
-			if err != nil {
-				return err.(error)
-			}
-			return nil
-		}
-
-	case !hasErr && hasCursorCB:
-		cbFunc = func(v reflect.Value, cb CursorCB) error {
-			cbVal.Call([]reflect.Value{v, reflect.ValueOf(cb)})
-			return nil
-		}
-
-	case !hasErr && !hasCursorCB:
-		cbFunc = func(v reflect.Value, _ CursorCB) error {
-			cbVal.Call([]reflect.Value{v})
-			return nil
-		}
-	}
+	raw := Raw(c)
 
 	if isKey {
 		err = raw.Run(fq, func(k *Key, _ PropertyMap, gc CursorCB) error {
-			return cbFunc(reflect.ValueOf(k), gc)
+			return rcb(reflect.ValueOf(k), gc)
 		})
 	} else {
 		err = raw.Run(fq, func(k *Key, pm PropertyMap, gc CursorCB) error {
@@ -361,7 +372,7 @@ func runRaw(raw RawInterface, q *Query, cb interface{}) error {
 				return err
 			}
 			mat.setKey(itm, k)
-			return cbFunc(itm, gc)
+			return rcb(itm, gc)
 		})
 	}
 	return filterStop(err)
@@ -369,6 +380,10 @@ func runRaw(raw RawInterface, q *Query, cb interface{}) error {
 
 // Count executes the given query and returns the number of entries which
 // match it.
+//
+// By default, datastore applies a short (~5s) timeout to queries. This can be
+// increased, usually to around several minutes, by explicitly setting a
+// deadline on the supplied Context.
 func Count(c context.Context, q *Query) (int64, error) {
 	fq, err := q.Finalize()
 	if err != nil {
@@ -386,6 +401,10 @@ func DecodeCursor(c context.Context, s string) (Cursor, error) {
 }
 
 // GetAll retrieves all of the Query results into dst.
+//
+// By default, datastore applies a short (~5s) timeout to queries. This can be
+// increased, usually to around several minutes, by explicitly setting a
+// deadline on the supplied Context.
 //
 // dst must be one of:
 //   - *[]S or *[]*S, where S is a struct
