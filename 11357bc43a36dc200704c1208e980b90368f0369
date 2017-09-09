@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bd4dddda_c0b388bc",
+        "filename": "vpython/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-09T04:11:52Z",
+      "side": 1,
+      "message": "hm... is this going to be an issue? or on windows it\u0027ll just be the \u0027if I die, the child dies too\u0027?",
+      "range": {
+        "startLine": 127,
+        "startChar": 30,
+        "endLine": 127,
+        "endChar": 57
+      },
+      "revId": "11357bc43a36dc200704c1208e980b90368f0369",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
