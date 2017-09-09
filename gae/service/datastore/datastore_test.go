@@ -200,6 +200,12 @@ type CommonStruct struct {
 	Value int64
 }
 
+type PrivateStruct struct {
+	Value int64
+
+	_id int64 `gae:"$id"`
+}
+
 type permaBad struct {
 	PropertyLoadSaver
 	MetaGetterSetter
@@ -792,6 +798,28 @@ func TestPut(t *testing.T) {
 							So(KeyForObj(c, *ifs[i].(*PropertyMap)).String(), ShouldEqual, "s~aid:ns:/Pmap,4")
 						}
 					}
+				})
+
+				Convey("vararg (flat)", func() {
+					sa := CommonStruct{
+						Parent: MakeKey(c, "Foo", "foo"),
+						Value:  0,
+					}
+					sb := PrivateStruct{
+						Value: 1,
+						_id:   1,
+					}
+					sc := PrivateStruct{
+						Value: 2,
+						_id:   0, // Invalid, but cannot assign.
+					}
+
+					err := Put(c, &sa, &sb, &sc)
+					So(err, ShouldResemble, nil)
+
+					So(sa.ID, ShouldEqual, 1)
+					So(sb._id, ShouldEqual, 1)
+					So(sc._id, ShouldEqual, 0) // Could not be set, private.
 				})
 			})
 		})
