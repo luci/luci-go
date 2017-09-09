@@ -104,6 +104,7 @@ func Run(c context.Context, opts Options) error {
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+		cmd.SysProcAttr = getSysProcAttr()
 
 		logging.Debugf(c, "Running Python command: %s\nWorkDir: %s\nEnv: %s", cmd.Args, cmd.Dir, cmd.Env)
 
@@ -120,15 +121,22 @@ func Run(c context.Context, opts Options) error {
 }
 
 func runAndForwardSignals(c context.Context, cmd *exec.Cmd, cancelFunc context.CancelFunc) error {
+	// Begin listening to forwarded signals. We'll capture them in a goroutine
+	// once the process starts and forward them to our backing process.
+	//
+	// If our OS doesn't support signal forwarding (Windows), this will be a
+	// no-op.
 	signalC := make(chan os.Signal, 1)
 	signalDoneC := make(chan struct{})
-	signal.Notify(signalC, forwardedSignals...)
-	defer func() {
-		signal.Stop(signalC)
+	if len(forwardedSignals) > 0 {
+		signal.Notify(signalC, forwardedSignals...)
+		defer func() {
+			signal.Stop(signalC)
 
-		close(signalC)
-		<-signalDoneC
-	}()
+			close(signalC)
+			<-signalDoneC
+		}()
+	}
 
 	if err := cmd.Start(); err != nil {
 		return errors.Annotate(err, "failed to start process").Err()
@@ -139,22 +147,24 @@ func runAndForwardSignals(c context.Context, cmd *exec.Cmd, cancelFunc context.C
 	}.Debugf(c, "Python subprocess has started!")
 
 	// Start our signal forwarding goroutine, now that the process is running.
-	go func() {
-		defer func() {
-			close(signalDoneC)
-		}()
+	if len(forwardedSignals) > 0 {
+		go func() {
+			defer func() {
+				close(signalDoneC)
+			}()
 
-		for sig := range signalC {
-			logging.Debugf(c, "Forwarding signal: %v", sig)
-			if err := cmd.Process.Signal(sig); err != nil {
-				logging.Fields{
-					logging.ErrorKey: err,
-					"signal":         sig,
-				}.Errorf(c, "Failed to forward signal; terminating immediately.")
-				cancelFunc()
+			for sig := range signalC {
+				logging.Debugf(c, "Forwarding signal: %v", sig)
+				if err := cmd.Process.Signal(sig); err != nil {
+					logging.Fields{
+						logging.ErrorKey: err,
+						"signal":         sig,
+					}.Errorf(c, "Failed to forward signal; terminating immediately.")
+					cancelFunc()
+				}
 			}
-		}
-	}()
+		}()
+	}
 
 	err := cmd.Wait()
 	logging.Debugf(c, "Python subprocess has terminated: %v", err)

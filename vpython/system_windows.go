@@ -21,8 +21,8 @@ import (
 
 // forwardedSignals is the list of signals that should be forwarded to the
 // Python subproess.
-var forwardedSignals = []os.Signal{
-	syscall.SIGHUP,
-	syscall.SIGINT,
-	syscall.SIGQUIT,
-}
+//
+// On Windows, we cannot forward signals.
+var forwardedSignals = []os.Signal(nil)
+
+func getSysProcAttr() *syscall.SysProcAttr { return nil }
