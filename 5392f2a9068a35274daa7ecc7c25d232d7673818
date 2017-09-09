@@ -46,6 +46,30 @@
       "revId": "5392f2a9068a35274daa7ecc7c25d232d7673818",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a2e5c16_f19edec2",
+        "filename": "scheduler/appengine/task/task.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-09T07:31:06Z",
+      "side": 1,
+      "message": "makes more sense now",
+      "parentUuid": "29a172f0_a2d5d125",
+      "range": {
+        "startLine": 149,
+        "startChar": 40,
+        "endLine": 149,
+        "endChar": 59
+      },
+      "revId": "5392f2a9068a35274daa7ecc7c25d232d7673818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
