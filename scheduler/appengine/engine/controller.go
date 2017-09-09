@@ -17,6 +17,7 @@ package engine
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -42,10 +43,11 @@ type taskController struct {
 	manager task.Manager
 	task    proto.Message // extracted from saved.Task blob
 
-	saved    Invocation        // what have been given initially or saved in Save()
-	state    task.State        // state mutated by TaskManager
-	debugLog string            // mutated by DebugLog
-	timers   []invocationTimer // mutated by AddTimer
+	saved    Invocation                // what have been given initially or saved in Save()
+	state    task.State                // state mutated by TaskManager
+	debugLog string                    // mutated by DebugLog
+	timers   []invocationTimer         // mutated by AddTimer
+	triggers map[string][]task.Trigger // mutated by EmitTrigger
 }
 
 // controllerForInvocation returns new instance of taskController configured
@@ -142,6 +144,17 @@ func (ctl *taskController) GetClient(ctx context.Context, timeout time.Duration)
 	return &http.Client{Transport: t}, nil
 }
 
+// EmitTrigger is part of task.Controller interface.
+func (ctl *taskController) EmitTrigger(ctx context.Context, triggeredJobName string, trigger task.Trigger) {
+	ctl.DebugLog("Emitting a trigger %s for job %s", trigger.ID, triggeredJobName)
+	projectID := strings.Split(ctl.JobID(), "/")[0]
+	triggeredJobID := projectID + "/" + triggeredJobName
+	if ctl.triggers == nil {
+		ctl.triggers = map[string][]task.Trigger{}
+	}
+	ctl.triggers[triggeredJobID] = append(ctl.triggers[triggeredJobID], trigger)
+}
+
 // Save is part of task.Controller interface.
 func (ctl *taskController) Save(ctx context.Context) error {
 	return ctl.saveImpl(ctx, true)
@@ -162,7 +175,7 @@ func (ctl *taskController) saveImpl(ctx context.Context, updateJob bool) (err er
 	saving.TaskData = append([]byte(nil), ctl.state.TaskData...)
 	saving.ViewURL = ctl.state.ViewURL
 	saving.DebugLog += ctl.debugLog
-	if saving.isEqual(&ctl.saved) && len(ctl.timers) == 0 { // no changes at all?
+	if saving.isEqual(&ctl.saved) && len(ctl.timers) == 0 && len(ctl.triggers) == 0 { // no changes at all?
 		return nil
 	}
 	saving.MutationsCount++
@@ -171,8 +184,9 @@ func (ctl *taskController) saveImpl(ctx context.Context, updateJob bool) (err er
 	defer func() {
 		if err == nil {
 			ctl.saved = saving
-			ctl.debugLog = "" // debug log was successfully flushed
-			ctl.timers = nil  // timers were successfully scheduled
+			ctl.debugLog = ""  // debug log was successfully flushed
+			ctl.timers = nil   // timers were successfully scheduled
+			ctl.triggers = nil // triggers were successfully emitted
 		}
 	}()
 
@@ -227,6 +241,12 @@ func (ctl *taskController) saveImpl(ctx context.Context, updateJob bool) (err er
 		// Finished invocations can't schedule timers.
 		if !hasFinished && len(ctl.timers) > 0 {
 			if err := ctl.eng.enqueueInvTimers(c, &saving, ctl.timers); err != nil {
+				return err
+			}
+		}
+
+		if len(ctl.triggers) > 0 {
+			if err := ctl.eng.enqueueTriggers(c, ctl.triggers); err != nil {
 				return err
 			}
 		}

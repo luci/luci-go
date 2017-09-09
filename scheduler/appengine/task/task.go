@@ -260,6 +260,13 @@ type Controller interface {
 	// (or they will be forcefully aborted).
 	GetClient(c context.Context, timeout time.Duration) (*http.Client, error)
 
+	// EmitTrigger triggers a job in the same project with an optional payload.
+	//
+	// triggeredJobName is name of the job in the same project, as opposed to
+	// JobID. ProjectID is automatically added, thus ensuring that triggers are
+	// sandboxed by the project.
+	EmitTrigger(ctx context.Context, triggeredJobName string, trigger Trigger)
+
 	// Save updates the state of the task in the persistent store.
 	//
 	// It also schedules all pending timer ticks added via AddTimer.
