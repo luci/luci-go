@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6c358d55_4dfb9d13",
+        "filename": "scheduler/appengine/engine/controller.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-09T09:05:49Z",
+      "side": 1,
+      "message": "instead of doing string math here, consider making job id type safe by introducing a (project, jobName) tuple struct, like this\nhttps://cs.chromium.org/chromium/infra/go/src/infra/appengine/luci-migration/storage/builder.go?q\u003dbuilderid+lang:go\u0026sq\u003dpackage:chromium\u0026l\u003d46\n\nprobably in a CL before this one, or after",
+      "revId": "c1845717eb6c711241d96823da15abe888a281ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
