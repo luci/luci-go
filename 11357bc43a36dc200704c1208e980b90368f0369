@@ -22,6 +22,46 @@
       "revId": "11357bc43a36dc200704c1208e980b90368f0369",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9925d3fe_d9be8fe3",
+        "filename": "vpython/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-09T07:44:02Z",
+      "side": 1,
+      "message": "nit: defer close(signalDoneC)",
+      "revId": "11357bc43a36dc200704c1208e980b90368f0369",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49a9b369_9c6290ac",
+        "filename": "vpython/system_linux.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-09T07:44:02Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 23,
+        "startChar": 10,
+        "endLine": 23,
+        "endChar": 19
+      },
+      "revId": "11357bc43a36dc200704c1208e980b90368f0369",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
