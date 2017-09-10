@@ -44,7 +44,7 @@ func TestGetDatastoreNamespaces(t *testing.T) {
 				[]ds.PropertyMap{
 					make(ds.PropertyMap),
 				},
-				func(*ds.Key, error) error { return nil })
+				func(int, *ds.Key, error) error { return nil })
 			if err != nil {
 				panic(err)
 			}

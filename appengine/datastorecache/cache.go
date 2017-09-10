@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/router"
 
-	"go.chromium.org/gae/impl/prod/constraints"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 
@@ -180,7 +179,7 @@ func (cache *Cache) pruneInterval() time.Duration {
 func (cache *Cache) manager() *manager {
 	return &manager{
 		cache:          cache,
-		queryBatchSize: constraints.DS().QueryBatchSize,
+		queryBatchSize: 500,
 	}
 }
 

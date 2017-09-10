@@ -28,6 +28,8 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
+const taskQueryBatchSize = int32(500)
+
 // InstallHandlers installs HTTP handlers for tsmon routes.
 func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 	r.GET("/internal/cron/ts_mon/housekeeping", base, housekeepingHandler)
@@ -62,7 +64,7 @@ func assignTaskNumbers(c context.Context) error {
 	usedTaskNums := map[int]struct{}{}
 	totalExpired := 0
 
-	expiredKeys := make([]*ds.Key, 0, ds.Raw(c).Constraints().QueryBatchSize)
+	expiredKeys := make([]*ds.Key, 0, taskQueryBatchSize)
 	var unassigned []*instance
 
 	// expireInstanceBatch processes the set of instances in "expiredKeys",
@@ -90,11 +92,7 @@ func assignTaskNumbers(c context.Context) error {
 
 	// Query all instances from datastore.
 	q := ds.NewQuery("Instance")
-
-	b := ds.Batcher{
-		Callback: expireInstanceBatch,
-	}
-	if err := b.Run(c, q, func(i *instance) {
+	if err := ds.RunBatch(c, taskQueryBatchSize, q, func(i *instance) error {
 		if i.TaskNum >= 0 {
 			usedTaskNums[i.TaskNum] = struct{}{}
 		}
@@ -105,6 +103,14 @@ func assignTaskNumbers(c context.Context) error {
 		} else if i.TaskNum < 0 {
 			unassigned = append(unassigned, i)
 		}
+
+		if len(expiredKeys) >= int(taskQueryBatchSize) {
+			if err := expireInstanceBatch(c); err != nil {
+				logging.WithError(err).Debugf(c, "Failed to expire instance batch.")
+				return err
+			}
+		}
+		return nil
 	}); err != nil {
 		logging.WithError(err).Errorf(c, "Failed to get Instance entities from datastore")
 		return err
