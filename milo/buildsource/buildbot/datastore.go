@@ -15,51 +15,64 @@
 package buildbot
 
 import (
+	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/gae/service/datastore"
 
 	"golang.org/x/net/context"
 )
 
-// buildQueryBatchSize is the batch size to use when querying build. It is
-// employed as an upper bound by getBuildQueryBatcher.
+// buildQueryBatchSize is the batch size to use when querying build.
 //
 // This should be tuned to the observed query timeout for build loading. Since
 // loading is CPU-bound, this will probably be low. If build queries start
 // encountering datastore timeouts, reduce this value.
-const buildQueryBatchSize = 50
+const buildQueryBatchSize = int32(50)
 
-// getBuildQueryBatcher returns a datastore.Batcher tuned for executing queries on the
-// "buildbotBuild" entity.
-func getBuildQueryBatcher(c context.Context) *datastore.Batcher {
-	constraints := datastore.Raw(c).Constraints()
-	if constraints.QueryBatchSize > buildQueryBatchSize {
-		constraints.QueryBatchSize = buildQueryBatchSize
-	}
-	return &datastore.Batcher{
-		Size: constraints.QueryBatchSize,
-	}
-}
+// masterQueryBatchSize is the batch size to use when querying masters.
+const masterQueryBatchSize = int32(500)
 
 // runBuildsQuery takes a buildbotBuild query and returns a list of builds
-// along with a cursor.  We pass the limit here and apply it to the query as
+// along with a cursor. We pass the limit here and apply it to the query as
 // an optimization because then we can create a build container of that size.
-func runBuildsQuery(c context.Context, q *datastore.Query, limit int32) (
-	[]*buildbotBuild, datastore.Cursor, error) {
+func runBuildsQuery(c context.Context, q *datastore.Query) ([]*buildbotBuild, datastore.Cursor, error) {
 
-	if limit != 0 {
-		q = q.Limit(limit)
+	// Finalize the input query so we can pull its limit.
+	fq, err := q.Finalize()
+	if err != nil {
+		return nil, nil, errors.Annotate(err, "could not finalize query").Err()
 	}
-	builds := make([]*buildbotBuild, 0, limit)
+
+	limit, hasLimit := fq.Limit()
+
+	buildsAllocSize := buildQueryBatchSize
+	if hasLimit {
+		buildsAllocSize = limit
+	}
+	builds := make([]*buildbotBuild, 0, buildsAllocSize)
+
 	var nextCursor datastore.Cursor
-	err := getBuildQueryBatcher(c).Run(
-		c, q, func(build *buildbotBuild, getCursor datastore.CursorCB) error {
-			builds = append(builds, build)
-			tmpCursor, err := getCursor()
-			if err != nil {
+	err = datastore.RunBatch(c, buildQueryBatchSize, q, func(build *buildbotBuild, getCursor datastore.CursorCB) error {
+		builds = append(builds, build)
+
+		// Only capture the cursor if we actually hit our limit. Fetching the
+		// cursor is an expensive operation.
+		if hasLimit && len(builds) >= int(limit) {
+			var err error
+			if nextCursor, err = getCursor(); err != nil {
 				return err
 			}
-			nextCursor = tmpCursor
-			return nil
-		})
+		}
+		return nil
+	})
 	return builds, nextCursor, err
+}
+
+func queryAllMasters(c context.Context) ([]*buildbotMasterEntry, error) {
+	q := datastore.NewQuery(buildbotMasterEntryKind)
+	entries := make([]*buildbotMasterEntry, 0, masterQueryBatchSize)
+	err := datastore.RunBatch(c, masterQueryBatchSize, q, func(e *buildbotMasterEntry) {
+		entries = append(entries, e)
+	})
+	return entries, err
 }

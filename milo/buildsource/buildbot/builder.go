@@ -109,7 +109,8 @@ func getBuilds(
 	if cursor != nil {
 		q = q.Start(cursor)
 	}
-	buildbots, nextCursor, err := runBuildsQuery(c, q, int32(limit))
+	q = q.Limit(int32(limit))
+	buildbots, nextCursor, err := runBuildsQuery(c, q)
 	if err != nil {
 		return nil, nil, err
 	}

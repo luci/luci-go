@@ -72,7 +72,8 @@ func errHTTPHandler(fn func(c context.Context, req *http.Request, params httprou
 type manager struct {
 	cache *Cache
 
-	queryBatchSize int
+	// queryBatchSize is the size of the query batch to run. This must be >0.
+	queryBatchSize int32
 }
 
 // installCronRoute installs a handler for this manager's cron task into the
@@ -139,6 +140,12 @@ func (ms *managerShard) run(c context.Context) error {
 	// functions.
 	c = ms.cache.withNamespace(c)
 	c = log.SetField(c, "shard", ms.shard)
+
+	// Validate shard configuration.
+	switch {
+	case ms.queryBatchSize <= 0:
+		return errors.Reason("invalid query batch size %d", ms.queryBatchSize).Err()
+	}
 
 	// Take out a memlock on our cache shard.
 	return memlock.TryWithLock(c, ms.shardKey, ms.clientID, func(c context.Context) (rv error) {
@@ -326,14 +333,15 @@ func (ms *managerShard) runLocked(c context.Context) error {
 		return nil
 	}
 
-	b := datastore.Batcher{
-		Size:     ms.queryBatchSize,
-		Callback: handleEntries,
-	}
-	err := b.Run(c, q, func(e *entry) error {
+	err := datastore.RunBatch(c, ms.queryBatchSize, q, func(e *entry) error {
 		totalEntries++
 		ms.observeEntry()
 		entries = append(entries, e)
+
+		if len(entries) >= int(ms.queryBatchSize) {
+			// Hit the end of a query batch. Process entries.
+			handleEntries(c)
+		}
 		return nil
 	})
 	if err != nil {

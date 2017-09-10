@@ -150,7 +150,7 @@ func TestHousekeepingHandler(t *testing.T) {
 	Convey("Expires old instances", t, func() {
 		c, clock := buildGAETestContext()
 
-		for _, count := range []int{1, ds.Raw(c).Constraints().QueryBatchSize + 1} {
+		for _, count := range []int{1, int(taskQueryBatchSize) + 1} {
 			Convey(fmt.Sprintf("Count: %d", count), func() {
 				insts := make([]*instance, count)
 				keys := make([]*ds.Key, count)

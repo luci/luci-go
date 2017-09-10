@@ -273,7 +273,9 @@ func doMaster(c context.Context, master *buildbotMaster, internal bool) int {
 		Eq("finished", false).
 		Eq("master", master.Name)
 	builds := []*buildbotBuild{}
-	err = getBuildQueryBatcher(c).GetAll(c, q, &builds)
+	err = datastore.RunBatch(c, buildQueryBatchSize, q, func(b *buildbotBuild) {
+		builds = append(builds, b)
+	})
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Could not load current builds from master %s",
 			master.Name)
@@ -328,10 +330,9 @@ func PubSubHandler(ctx *router.Context) {
 	ctx.Writer.WriteHeader(statusCode)
 }
 
+// StatsHandler is a cron endpoint that sends stats periodically.
 func StatsHandler(c context.Context) error {
-	q := datastore.NewQuery(buildbotMasterEntryKind)
-	entries := []*buildbotMasterEntry{}
-	err := (&datastore.Batcher{}).GetAll(c, q, &entries)
+	entries, err := queryAllMasters(c)
 	if err != nil {
 		return errors.Annotate(err, "failed to fetch masters").Err()
 	}

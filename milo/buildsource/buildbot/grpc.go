@@ -121,7 +121,7 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 		}
 		q = q.Start(cursor)
 	}
-	builds, nextCursor, err := runBuildsQuery(c, q, int32(req.Limit))
+	builds, nextCursor, err := runBuildsQuery(c, q)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +215,9 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 			Order("-number").
 			KeysOnly(true)
 		var builds []*buildbotBuild
-		err := getBuildQueryBatcher(c).GetAll(c, q, &builds)
+		err := datastore.RunBatch(c, buildQueryBatchSize, q, func(b *buildbotBuild) {
+			builds = append(builds, b)
+		})
 		if err != nil {
 			return nil, err
 		}
