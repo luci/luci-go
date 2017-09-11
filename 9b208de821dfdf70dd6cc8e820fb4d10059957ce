@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b8c61611_61587691",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-11T23:57:12Z",
+      "side": 1,
+      "message": "you can deduplicate this a bit by introducing new trait \"IgnoresTriggers\" (or something) and make the engine check it before calling LaunchTask. See task.Traits, it isn\u0027t very difficult. As bonus, the trait can be used by UI, API or config validation layer too (unlike an adhoc check in LaunchTask).",
+      "range": {
+        "startLine": 82,
+        "startChar": 1,
+        "endLine": 84,
+        "endChar": 2
+      },
+      "revId": "9b208de821dfdf70dd6cc8e820fb4d10059957ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9056756c_64eecc96",
+        "filename": "scheduler/appengine/task/task.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-11T23:57:12Z",
+      "side": 1,
+      "message": "I believe we\u0027ll have same limitation in v2 too, but we\u0027ll have an opportunity to split pending trigger queue into a bunch of separate invocations (but once an invocation request is created, all triggers passed to this new invocation should be \"consumed\", LaunchTask won\u0027t be able to pick only subset of it). We\u0027ll see...",
+      "range": {
+        "startLine": 153,
+        "startChar": 4,
+        "endLine": 155,
+        "endChar": 44
+      },
+      "revId": "9b208de821dfdf70dd6cc8e820fb4d10059957ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
