@@ -200,7 +200,7 @@ func (ctl *taskController) saveImpl(ctx context.Context, updateJob bool) (err er
 
 	// Store the invocation entity, mutate Job state accordingly, schedule all
 	// timer ticks.
-	return ctl.eng.txn(ctx, saving.JobKey.StringID(), func(c context.Context, job *Job, isNew bool) error {
+	return ctl.eng.jobTxn(ctx, saving.JobKey.StringID(), func(c context.Context, job *Job, isNew bool) error {
 		// Grab what's currently in the store to compare MutationsCount to what we
 		// expect it to be.
 		mostRecent := Invocation{
