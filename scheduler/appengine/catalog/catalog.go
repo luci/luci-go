@@ -39,8 +39,8 @@ import (
 )
 
 var (
-	// jobIDRe is used to validate job ID field.
-	jobIDRe = regexp.MustCompile(`^[0-9A-Za-z_\-\.]{1,100}$`)
+	// JobIDRe is used to validate job ID field.
+	JobIDRe = regexp.MustCompile(`^[0-9A-Za-z_\-\.]{1,100}$`)
 )
 
 const (
@@ -353,7 +353,7 @@ func (cat *catalog) validateJobProto(c context.Context, j *messages.Job) (proto.
 	if j.Id == "" {
 		return nil, fmt.Errorf("missing 'id' field'")
 	}
-	if !jobIDRe.MatchString(j.Id) {
+	if !JobIDRe.MatchString(j.Id) {
 		return nil, fmt.Errorf("%q is not valid value for 'id' field", j.Id)
 	}
 	if j.Schedule != "" {
@@ -371,7 +371,7 @@ func (cat *catalog) validateTriggerProto(t *messages.Trigger) (proto.Message, er
 	if t.Id == "" {
 		return nil, fmt.Errorf("missing 'id' field'")
 	}
-	if !jobIDRe.MatchString(t.Id) {
+	if !JobIDRe.MatchString(t.Id) {
 		return nil, fmt.Errorf("%q is not valid value for 'id' field", t.Id)
 	}
 	if t.Schedule != "" {

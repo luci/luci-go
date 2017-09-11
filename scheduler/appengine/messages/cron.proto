@@ -138,13 +138,22 @@ message NoopTask {
 }
 
 
-// GitilesTask specifies parameters of Swarming-based jobs.
+// GitilesTask specifies parameters of which jobs to trigger on new commits.
 message GitilesTask {
   // Repo is the URL of the Gitiles repository.
   string repo = 1;
 
   // List of Git references to track.
   repeated string refs = 2;
+
+  // Names of other jobs which should be triggered upon changes in refs.
+  // Upon triggering, if job isn't running, it'll be scheduled for immediate
+  // execution. If job is already running, a new invocation will be scheduled
+  // immediately upon current one completion.
+  //
+  // The jobs to trigger can be of any kind, but only BuildbucketTask will
+  // make use of triggering info such as new ref's revision.
+  repeated string jobs_to_trigger = 3;
 }
 
 
@@ -205,6 +214,7 @@ message BuildbucketTask {
   // Builder defines what to run.
   string builder = 3;
   // Properties is arbitrary "key:value" pairs describing the task.
+  // TODO(tandrii): whcih properties will be overridden if triggered?
   repeated string properties = 4;
   // Tags is a list of tags (as "key:value" pairs) to assign to the task.
   repeated string tags = 5;
