@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "24f0dd19_4b2379c2",
+        "filename": "scheduler/appengine/engine/statemachine.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-11T23:32:18Z",
+      "side": 1,
+      "message": "nit: add a comment, to be consistent with the rest of the file",
+      "range": {
+        "startLine": 138,
+        "startChar": 19,
+        "endLine": 138,
+        "endChar": 24
+      },
+      "revId": "8bafdd0ccc392d49ed4cef2cdb5fcbe3c80b6258",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47ad8944_719d510f",
+        "filename": "scheduler/appengine/engine/statemachine.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-11T23:32:18Z",
+      "side": 1,
+      "message": "use https://golang.org/pkg/time/#Time.Equal (and in other places too)\n\nI think we had subtle but here before that could have manifested itself on go1.9 that introduces monotonic time readings, see https://golang.org/pkg/time/#Time",
+      "range": {
+        "startLine": 142,
+        "startChar": 2,
+        "endLine": 142,
+        "endChar": 38
+      },
+      "revId": "8bafdd0ccc392d49ed4cef2cdb5fcbe3c80b6258",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e692b062_f6c298c6",
+        "filename": "scheduler/appengine/engine/statemachine.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 330,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-11T23:32:18Z",
+      "side": 1,
+      "message": "nit: add a comment",
+      "range": {
+        "startLine": 330,
+        "startChar": 23,
+        "endLine": 330,
+        "endChar": 36
+      },
+      "revId": "8bafdd0ccc392d49ed4cef2cdb5fcbe3c80b6258",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ae80210_f80add63",
+        "filename": "scheduler/appengine/task/task.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-11T23:32:18Z",
+      "side": 1,
+      "message": "nit: no need for this, it is applied in JobState already",
+      "range": {
+        "startLine": 91,
+        "startChar": 11,
+        "endLine": 91,
+        "endChar": 27
+      },
+      "revId": "8bafdd0ccc392d49ed4cef2cdb5fcbe3c80b6258",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
