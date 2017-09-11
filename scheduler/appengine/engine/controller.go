@@ -150,7 +150,13 @@ func (ctl *taskController) Save(ctx context.Context) error {
 // errUpdateConflict means Invocation is being modified by two TaskController's
 // concurrently. It should not be happening often. If it happens, task queue
 // call is retried to rerun the two-part transaction from scratch.
-var errUpdateConflict = errors.New("concurrent modifications of single Invocation", transient.Tag)
+//
+// This error is marked as transient, since the should trigger a retry on task
+// queue error. At the same time we don't want the transaction itself to be
+// retried (it's useless to retry the second part of two-part transaction, the
+// result will be the same), so we tag the error with abortTransaction, see
+// runTxn for more info.
+var errUpdateConflict = errors.New("concurrent modifications of single Invocation", transient.Tag, abortTransaction)
 
 // saveImpl uploads updated Invocation to the datastore. If updateJob is true,
 // it will also roll corresponding state machine forward.
@@ -221,7 +227,7 @@ func (ctl *taskController) saveImpl(ctx context.Context, updateJob bool) (err er
 		// desynchronized for some reason.
 		saving.trimDebugLog()
 		if err := datastore.Put(c, &saving); err != nil {
-			return err
+			return transient.Tag.Apply(err)
 		}
 
 		// Finished invocations can't schedule timers.
