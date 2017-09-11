@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c781babc_612ac5d8",
+        "filename": "scheduler/appengine/engine/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-11T20:27:05Z",
+      "side": 1,
+      "message": "this is unrelated, but doing a separate CL just for this is overkill :-/",
+      "range": {
+        "startLine": 189,
+        "startChar": 34,
+        "endLine": 189,
+        "endChar": 40
+      },
+      "revId": "7413b2d5fec92479a355e58fba8d5f28bf4b1b0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
