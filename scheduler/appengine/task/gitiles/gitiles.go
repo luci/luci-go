@@ -19,6 +19,7 @@ import (
 	"net/url"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
@@ -26,16 +27,21 @@ import (
 
 	ds "go.chromium.org/gae/service/datastore"
 
+	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
-	"go.chromium.org/luci/scheduler/appengine/task/gitiles/gerrit"
+	"go.chromium.org/luci/scheduler/appengine/task/internal"
 )
 
 // TaskManager implements task.Manager interface for tasks defined with
-// SwarmingTask proto message.
+// GitilesTask proto message.
 type TaskManager struct {
+	// Used for testing only.
+	mockGitilesClient gitilesClient
 }
 
 // Name is part of Manager interface.
@@ -74,6 +80,17 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 		return fmt.Errorf("not an absolute url: %q", cfg.Repo)
 	}
 
+	if len(cfg.GetJobsToTrigger()) == 0 {
+		return fmt.Errorf("no jobs to trigger")
+	}
+	// TODO(tandrii): better way to validate Trigger -> triggers -> Jobs
+	// relationships. For now, validate the job names refer to potentially
+	// existing jobs.
+	for _, jobName := range cfg.GetJobsToTrigger() {
+		if !catalog.JobIDRe.MatchString(jobName) {
+			return fmt.Errorf("Invalid job_to_trigger: %q", jobName)
+		}
+	}
 	return nil
 }
 
@@ -82,14 +99,24 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 	if len(triggers) > 0 {
 		logging.Debugf(c, "GitilesTask doesn't accept triggers, but %d provided (first: %s)", len(triggers), triggers[0].ID)
 	}
+	// TODO(tandrii): not all returned errors here are transient and should be
+	// retried. Improve that.
 	cfg := ctl.Task().(*messages.GitilesTask)
 
+	ctl.DebugLog("Repo: %s, Refs: %s", cfg.Repo, cfg.Refs)
 	u, err := url.Parse(cfg.Repo)
 	if err != nil {
 		return err
 	}
+	watchedRefs := stringset.New(len(cfg.GetRefs()))
+	for _, ref := range cfg.GetRefs() {
+		watchedRefs.Add(ref)
+	}
 
-	g := gerrit.NewGerrit(u)
+	g, err := m.getGitilesClient(c, ctl)
+	if err != nil {
+		return err
+	}
 
 	var wg sync.WaitGroup
 
@@ -97,16 +124,16 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 	var headsErr error
 	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		heads, headsErr = m.load(c, ctl.JobID(), u)
-		wg.Done()
 	}()
 
 	var refs map[string]string
 	var refsErr error
 	wg.Add(1)
 	go func() {
-		refs, refsErr = g.GetRefs(c, cfg.Refs)
-		wg.Done()
+		defer wg.Done()
+		refs, refsErr = g.Refs(c, cfg.Repo, "")
 	}()
 
 	wg.Wait()
@@ -120,59 +147,70 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 		return fmt.Errorf("failed to fetch refs: %v", refsErr)
 	}
 
-	type result struct {
-		ref string
-		log gerrit.Log
-		err error
-	}
-	ch := make(chan result)
-
-	for ref, head := range refs {
-		if val, ok := heads[ref]; !ok {
-			wg.Add(1)
-			go func(ref string) {
-				l, err := g.GetLog(c, ref, fmt.Sprintf("%s~", ref))
-				ch <- result{ref, l, err}
-				wg.Done()
-			}(ref)
-		} else if val != head {
-			wg.Add(1)
-			go func(ref, since string) {
-				l, err := g.GetLog(c, ref, since)
-				ch <- result{ref, l, err}
-				wg.Done()
-			}(ref, val)
+	// Delete all previously known refs whcih are no longer watched.
+	toDelete := []string{}
+	for ref := range heads {
+		if !watchedRefs.Has(ref) {
+			ctl.DebugLog("Ref %s is no longer watched", ref)
+			toDelete = append(toDelete, ref)
 		}
 	}
-	go func() {
-		wg.Wait()
-		close(ch)
-	}()
-
-	var log gerrit.Log
-	for r := range ch {
-		if r.err != nil {
-			ctl.DebugLog("Failed to fetch log - %s", r.err)
-			if gerrit.IsNotFound(r.err) {
-				delete(heads, r.ref)
-			} else {
-				return r.err
-			}
-		}
-		if len(r.log) > 0 {
-			heads[r.ref] = r.log[len(r.log)-1].Commit
-		}
-		log = append(log, r.log...)
+	for _, ref := range toDelete {
+		delete(heads, ref)
 	}
 
-	sort.Sort(log)
-	for _, commit := range log {
-		// TODO(phosek): Trigger buildbucket job here.
-		ctl.DebugLog("Trigger build for commit %s", commit.Commit)
+	sortedWatchedRefs := watchedRefs.ToSlice()
+	sort.Strings(sortedWatchedRefs)
+	for _, ref := range sortedWatchedRefs {
+		oldHead, existed := heads[ref]
+		newHead, exists := refs[ref]
+		switch {
+		case !exists && !existed:
+			continue
+		case existed && !exists:
+			ctl.DebugLog("Ref %s deleted", ref)
+			delete(heads, ref)
+			continue
+		case !existed && exists:
+			ctl.DebugLog("Ref %s is new: %s", ref, newHead)
+		// Remaining must be (existed && exists).
+		case oldHead != newHead:
+			ctl.DebugLog("Ref %s updated: %s => %s", ref, oldHead, newHead)
+		default:
+			// No change.
+			continue
+		}
+		heads[ref] = newHead
+		// TODO(tandrii): actually look at commits between current and previously
+		// known tips of each ref.
+		// In current (v1) engine, all triggers emitted around the same time will
+		// result in just 1 invocation of each triggered job. Therefore,
+		// passing just HEAD's revision is good enough.
+		// For the same reason, only 1 of the refs will actually be processed if
+		// several refs changed at the same time.
+		payload, err := proto.Marshal(&internal.TriggerPayload{
+			Gitiles: &internal.GitilesTrigger{Repo: cfg.Repo, Ref: ref, Revision: newHead},
+		})
+		if err != nil {
+			// Something is terribly wrong, thus note this error to AE log.
+			msg := "Failed to marshal GitilesTrigger payload"
+			ctl.DebugLog("%s: %q", msg, err)
+			logging.Errorf(c, "%s: %q", msg, err)
+			return errors.Annotate(err, msg).Err()
+		}
+		trigger := task.Trigger{
+			ID:      fmt.Sprintf("%s/+/%s@%s", cfg.Repo, ref, newHead),
+			Payload: payload,
+		}
+		for _, jobName := range cfg.GetJobsToTrigger() {
+			ctl.EmitTrigger(c, jobName, trigger)
+		}
 	}
+
 	if err := m.save(c, ctl.JobID(), u, heads); err != nil {
 		return err
 	}
+	ctl.DebugLog("Saved %d known refs", len(heads))
 
 	ctl.State().Status = task.StatusSucceeded
 	return nil
@@ -232,15 +270,38 @@ func (m TaskManager) load(c context.Context, jobID string, u *url.URL) (map[stri
 }
 
 func (m TaskManager) save(c context.Context, jobID string, u *url.URL, heads map[string]string) error {
+	sortedRefs := make([]string, 0, len(heads))
+	for ref := range heads {
+		sortedRefs = append(sortedRefs, ref)
+	}
+	sort.Strings(sortedRefs)
+
 	refs := make([]Reference, 0, len(heads))
-	for n, r := range heads {
+	for _, n := range sortedRefs {
 		refs = append(refs, Reference{
 			Name:     n,
-			Revision: r,
+			Revision: heads[n],
 		})
 	}
 	return ds.Put(c, &Repository{
 		ID:         repositoryID(jobID, u),
 		References: refs,
 	})
+}
+
+type gitilesClient interface {
+	Refs(ctx context.Context, repoURL, refsPath string) (map[string]string, error)
+}
+
+func (m TaskManager) getGitilesClient(c context.Context, ctl task.Controller) (gitilesClient, error) {
+	httpClient, err := ctl.GetClient(c, time.Minute)
+	if err != nil {
+		return nil, err
+	}
+	if m.mockGitilesClient != nil {
+		// Used for testing only.
+		logging.Infof(c, "using mockGitilesClient")
+		return m.mockGitilesClient, nil
+	}
+	return &gitiles.Client{Client: httpClient}, nil
 }

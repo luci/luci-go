@@ -26,11 +26,17 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
-// TimerSpec correspond to single AddTimer call.
+// TimerSpec corresponds to single AddTimer call.
 type TimerSpec struct {
 	Delay   time.Duration
 	Name    string
 	Payload []byte
+}
+
+// TriggerSpec corresponds to single EmitTrigger call.
+type TriggerSpec struct {
+	TriggeredJobName string
+	Trigger          task.Trigger
 }
 
 // TestController implements task.Controller and can be used in unit tests.
@@ -47,7 +53,8 @@ type TestController struct {
 	SaveCallback         func() error                         // mock for Save()
 	PrepareTopicCallback func(string) (string, string, error) // mock for PrepareTopic()
 
-	Timers []TimerSpec
+	Timers   []TimerSpec
+	Triggers []TriggerSpec
 }
 
 // JobID is part of Controller interface.
@@ -123,7 +130,7 @@ func (c *TestController) GetClient(ctx context.Context, timeout time.Duration) (
 }
 
 func (c *TestController) EmitTrigger(ctx context.Context, triggeredJobName string, triggers task.Trigger) {
-	panic(errors.New("not imeplemented"))
+	c.Triggers = append(c.Triggers, TriggerSpec{triggeredJobName, triggers})
 }
 
 var _ task.Controller = (*TestController)(nil)
