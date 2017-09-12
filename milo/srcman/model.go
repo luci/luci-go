@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2017 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package source_manifest
+package srcman
 
-//go:generate go install go.chromium.org/luci/grpc/cmd/cproto
-//go:generate cproto
+import (
+	"github.com/golang/protobuf/proto"
+	source_manifest "go.chromium.org/luci/milo/api/proto/manifest"
+)
+
+type sourceManifest struct {
+	_  string `gae:"$kind,SrcManCacheEntry"`
+	ID string `gae:"$id"`
+
+	Data []byte `gae:",noindex"`
+}
+
+func (s *sourceManifest) Read() (*source_manifest.Manifest, error) {
+	ret := &source_manifest.Manifest{}
+	return ret, proto.Unmarshal(s.Data, ret)
+}
