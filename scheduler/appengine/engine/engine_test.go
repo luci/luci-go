@@ -275,6 +275,20 @@ func TestFullFlow(t *testing.T) {
 		e, mgr := newTestEngine()
 		taskBytes := noopTaskBytes()
 
+		expectedJobs := func(state JobState) []Job {
+			return []Job{
+				{
+					JobID:     "abc/1",
+					ProjectID: "abc",
+					Revision:  "rev1",
+					Enabled:   true,
+					Schedule:  "*/5 * * * * * *",
+					Task:      taskBytes,
+					State:     state,
+				},
+			}
+		}
+
 		// Adding a new job (ticks every 5 sec).
 		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{
 			{
@@ -283,21 +297,12 @@ func TestFullFlow(t *testing.T) {
 				Schedule: "*/5 * * * * * *",
 				Task:     taskBytes,
 			}}), ShouldBeNil)
-		So(allJobs(c), ShouldResemble, []Job{
-			{
-				JobID:     "abc/1",
-				ProjectID: "abc",
-				Revision:  "rev1",
-				Enabled:   true,
-				Schedule:  "*/5 * * * * * *",
-				Task:      taskBytes,
-				State: JobState{
-					State:     "SCHEDULED",
-					TickNonce: 6278013164014963328,
-					TickTime:  epoch.Add(5 * time.Second),
-				},
-			},
-		})
+		So(allJobs(c), ShouldResemble, expectedJobs(JobState{
+			State:     "SCHEDULED",
+			TickNonce: 6278013164014963328,
+			TickTime:  epoch.Add(5 * time.Second),
+		}))
+
 		// Enqueued timer task to launch it.
 		tsk := ensureOneTask(c, "timers-q")
 		So(tsk.Path, ShouldEqual, "/timers")
@@ -309,23 +314,13 @@ func TestFullFlow(t *testing.T) {
 		So(e.ExecuteSerializedAction(c, tsk.Payload, 0), ShouldBeNil)
 
 		// Job is in queued state now.
-		So(allJobs(c), ShouldResemble, []Job{
-			{
-				JobID:     "abc/1",
-				ProjectID: "abc",
-				Revision:  "rev1",
-				Enabled:   true,
-				Schedule:  "*/5 * * * * * *",
-				Task:      taskBytes,
-				State: JobState{
-					State:           "QUEUED",
-					TickNonce:       886585524575582446,
-					TickTime:        epoch.Add(10 * time.Second),
-					InvocationNonce: 928953616732700780,
-					InvocationTime:  epoch.Add(5 * time.Second),
-				},
-			},
-		})
+		So(allJobs(c), ShouldResemble, expectedJobs(JobState{
+			State:           "QUEUED",
+			TickNonce:       886585524575582446,
+			TickTime:        epoch.Add(10 * time.Second),
+			InvocationNonce: 928953616732700780,
+			InvocationTime:  epoch.Add(5 * time.Second),
+		}))
 
 		// Next tick task is added.
 		tickTask := ensureOneTask(c, "timers-q")
@@ -353,27 +348,18 @@ func TestFullFlow(t *testing.T) {
 
 		// Still in QUEUED state, but with InvocatioID assigned.
 		jobs := allJobs(c)
-		So(jobs, ShouldResemble, []Job{
-			{
-				JobID:     "abc/1",
-				ProjectID: "abc",
-				Revision:  "rev1",
-				Enabled:   true,
-				Schedule:  "*/5 * * * * * *",
-				Task:      taskBytes,
-				State: JobState{
-					State:           "QUEUED",
-					TickNonce:       886585524575582446,
-					TickTime:        epoch.Add(10 * time.Second),
-					InvocationNonce: 928953616732700780,
-					InvocationTime:  epoch.Add(5 * time.Second),
-					InvocationID:    9200093518582198800,
-				},
-			},
-		})
+		So(jobs, ShouldResemble, expectedJobs(JobState{
+			State:           "QUEUED",
+			TickNonce:       886585524575582446,
+			TickTime:        epoch.Add(10 * time.Second),
+			InvocationNonce: 928953616732700780,
+			InvocationTime:  epoch.Add(5 * time.Second),
+			InvocationID:    9200093518582198800,
+		}))
 		jobKey := ds.KeyForObj(c, &jobs[0])
 
-		// Check Invocation fields.
+		// Check Invocation fields. It indicates that the attempt has failed and
+		// will be retried.
 		inv := Invocation{ID: 9200093518582198800, JobKey: jobKey}
 		So(ds.Get(c, &inv), ShouldBeNil)
 		inv.JobKey = nil // for easier ShouldResemble below
@@ -384,16 +370,24 @@ func TestFullFlow(t *testing.T) {
 			InvocationNonce: 928953616732700780,
 			Revision:        "rev1",
 			Started:         epoch.Add(5 * time.Second),
-			Finished:        epoch.Add(5 * time.Second),
 			Task:            taskBytes,
 			DebugLog:        "",
-			Status:          task.StatusFailed,
+			Status:          task.StatusRetrying,
 			MutationsCount:  1,
 		})
 		So(debugLog, ShouldContainSubstring, "[22:42:05.000] Invocation initiated (attempt 1)")
 		So(debugLog, ShouldContainSubstring, "[22:42:05.000] oops, fail")
-		So(debugLog, ShouldContainSubstring, "with status FAILED")
-		So(debugLog, ShouldContainSubstring, "[22:42:05.000] It will probably be retried")
+		So(debugLog, ShouldContainSubstring, "[22:42:05.000] The invocation will be retried")
+
+		// The job is still in QUEUED state.
+		So(allJobs(c), ShouldResemble, expectedJobs(JobState{
+			State:           "QUEUED",
+			TickNonce:       886585524575582446,
+			TickTime:        epoch.Add(10 * time.Second),
+			InvocationNonce: 928953616732700780,
+			InvocationTime:  epoch.Add(5 * time.Second),
+			InvocationID:    9200093518582198800,
+		}))
 
 		// Second attempt. Now starts, hangs midway, they finishes.
 		mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
@@ -403,25 +397,15 @@ func TestFullFlow(t *testing.T) {
 			So(ctl.Save(ctx), ShouldBeNil)
 
 			// After first Save the job and the invocation are in running state.
-			So(allJobs(c), ShouldResemble, []Job{
-				{
-					JobID:     "abc/1",
-					ProjectID: "abc",
-					Revision:  "rev1",
-					Enabled:   true,
-					Schedule:  "*/5 * * * * * *",
-					Task:      taskBytes,
-					State: JobState{
-						State:                "RUNNING",
-						TickNonce:            886585524575582446,
-						TickTime:             epoch.Add(10 * time.Second),
-						InvocationNonce:      928953616732700780,
-						InvocationRetryCount: 1,
-						InvocationTime:       epoch.Add(5 * time.Second),
-						InvocationID:         9200093518582296192,
-					},
-				},
-			})
+			So(allJobs(c), ShouldResemble, expectedJobs(JobState{
+				State:                "RUNNING",
+				TickNonce:            886585524575582446,
+				TickTime:             epoch.Add(10 * time.Second),
+				InvocationNonce:      928953616732700780,
+				InvocationRetryCount: 1,
+				InvocationTime:       epoch.Add(5 * time.Second),
+				InvocationID:         9200093518582296192,
+			}))
 			inv := Invocation{ID: 9200093518582296192, JobKey: jobKey}
 			So(ds.Get(c, &inv), ShouldBeNil)
 			inv.JobKey = nil // for easier ShouldResemble below
@@ -472,7 +456,7 @@ func TestFullFlow(t *testing.T) {
 		So(debugLog, ShouldContainSubstring, "[22:42:05.000] Starting")
 		So(debugLog, ShouldContainSubstring, "with status SUCCEEDED")
 
-		// Previous invocation is canceled.
+		// Previous invocation is aborted now (in Failed state).
 		inv = Invocation{ID: 9200093518582198800, JobKey: jobKey}
 		So(ds.Get(c, &inv), ShouldBeNil)
 		inv.JobKey = nil // for easier ShouldResemble below
@@ -487,30 +471,18 @@ func TestFullFlow(t *testing.T) {
 			Task:            taskBytes,
 			DebugLog:        "",
 			Status:          task.StatusFailed,
-			MutationsCount:  1,
+			MutationsCount:  2,
 		})
-		So(debugLog, ShouldContainSubstring, "[22:42:05.000] Invocation initiated (attempt 1)")
-		So(debugLog, ShouldContainSubstring, "[22:42:05.000] oops, fail")
-		So(debugLog, ShouldContainSubstring, "with status FAILED")
-		So(debugLog, ShouldContainSubstring, "[22:42:05.000] It will probably be retried")
+		So(debugLog, ShouldContainSubstring,
+			"[22:42:05.000] New invocation is starting (9200093518582296192), marking this one as failed")
 
 		// Job is in scheduled state again.
-		So(allJobs(c), ShouldResemble, []Job{
-			{
-				JobID:     "abc/1",
-				ProjectID: "abc",
-				Revision:  "rev1",
-				Enabled:   true,
-				Schedule:  "*/5 * * * * * *",
-				Task:      taskBytes,
-				State: JobState{
-					State:     "SCHEDULED",
-					TickNonce: 886585524575582446,
-					TickTime:  epoch.Add(10 * time.Second),
-					PrevTime:  epoch.Add(5 * time.Second),
-				},
-			},
-		})
+		So(allJobs(c), ShouldResemble, expectedJobs(JobState{
+			State:     "SCHEDULED",
+			TickNonce: 886585524575582446,
+			TickTime:  epoch.Add(10 * time.Second),
+			PrevTime:  epoch.Add(5 * time.Second),
+		}))
 	})
 }
 

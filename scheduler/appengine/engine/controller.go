@@ -143,11 +143,6 @@ func (ctl *taskController) GetClient(ctx context.Context, timeout time.Duration)
 	return &http.Client{Transport: t}, nil
 }
 
-// Save is part of task.Controller interface.
-func (ctl *taskController) Save(ctx context.Context) error {
-	return ctl.saveImpl(ctx, true)
-}
-
 // errUpdateConflict means Invocation is being modified by two TaskController's
 // concurrently. It should not be happening often. If it happens, task queue
 // call is retried to rerun the two-part transaction from scratch.
@@ -159,9 +154,12 @@ func (ctl *taskController) Save(ctx context.Context) error {
 // runTxn for more info.
 var errUpdateConflict = errors.New("concurrent modifications of single Invocation", transient.Tag, abortTransaction)
 
-// saveImpl uploads updated Invocation to the datastore. If updateJob is true,
-// it will also roll corresponding state machine forward.
-func (ctl *taskController) saveImpl(ctx context.Context, updateJob bool) (err error) {
+// Save uploads updated Invocation to the datastore, updating the state of the
+// corresponding job, if necessary.
+//
+// May return transient errors. In particular returns errUpdateConflict if the
+// invocation was modified by some other task controller concurrently.
+func (ctl *taskController) Save(ctx context.Context) (err error) {
 	// Mutate copy in case transaction below fails. Also unpacks ctl.state back
 	// into the entity (reverse of 'populateState').
 	saving := ctl.saved
@@ -183,20 +181,21 @@ func (ctl *taskController) saveImpl(ctx context.Context, updateJob bool) (err er
 		}
 	}()
 
-	hasStartedOrFailed := ctl.saved.Status == task.StatusStarting && saving.Status != task.StatusStarting
+	hasStartedOrFailed := ctl.saved.Status.Initial() && !saving.Status.Initial()
 	hasFinished := !ctl.saved.Status.Final() && saving.Status.Final()
 	if hasFinished {
 		saving.Finished = clock.Now(ctx).UTC()
 		saving.debugLog(
 			ctx, "Invocation finished in %s with status %s",
 			saving.Finished.Sub(saving.Started), saving.Status)
-		if !updateJob {
-			saving.debugLog(ctx, "It will probably be retried")
-		}
 		// Finished invocations can't schedule timers.
 		for _, t := range ctl.timers {
 			saving.debugLog(ctx, "Ignoring timer %s...", t.Name)
 		}
+	}
+
+	if saving.Status == task.StatusRetrying {
+		saving.debugLog(ctx, "The invocation will be retried")
 	}
 
 	// Store the invocation entity, mutate Job state accordingly, schedule all
@@ -238,11 +237,12 @@ func (ctl *taskController) saveImpl(ctx context.Context, updateJob bool) (err er
 			}
 		}
 
-		// Is Job entity still have this invocation as a current one?
+		// Should we bother updating the Job state machine? We do it only when the
+		// invocation moves from/to its edge states and when it is still associated
+		// with the job. We also abort early if the job is gone for some reason.
 		switch {
-		case !updateJob:
-			logging.Warningf(c, "Asked not to touch Job entity")
-			return errSkipPut
+		case !hasStartedOrFailed && !hasFinished:
+			return errSkipPut // nothing that could affect Job happened
 		case isNew:
 			logging.Errorf(c, "Active job is unexpectedly gone")
 			return errSkipPut
