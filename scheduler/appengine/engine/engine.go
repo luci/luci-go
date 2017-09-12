@@ -722,9 +722,9 @@ type txnCallback func(c context.Context, job *Job, isNew bool) error
 // errSkipPut can be returned by txnCallback to cancel ds.Put call.
 var errSkipPut = errors.New("errSkipPut")
 
-// txn reads Job, calls callback, then dumps the modified entity back into
-// datastore (unless callback returns errSkipPut).
-func (e *engineImpl) txn(c context.Context, jobID string, callback txnCallback) error {
+// jobTxn reads Job entity, calls the callback, then dumps the modified entity
+// back into datastore (unless the callback returns errSkipPut).
+func (e *engineImpl) jobTxn(c context.Context, jobID string, callback txnCallback) error {
 	c = logging.SetField(c, "JobID", jobID)
 	return runTxn(c, func(c context.Context) error {
 		stored := Job{JobID: jobID}
@@ -926,7 +926,7 @@ func (e *engineImpl) ManualInvocation(c context.Context, jobID string) (int64, e
 
 	var err error
 	var invNonce int64
-	err2 := e.txn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
+	err2 := e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
 		if isNew {
 			err = ErrNoSuchJob
 			return errSkipPut
@@ -964,7 +964,7 @@ func (e *engineImpl) setPausedFlag(c context.Context, jobID string, paused bool,
 	if _, err := e.getOwnedJob(c, jobID); err != nil {
 		return err
 	}
-	return e.txn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
+	return e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
 		if isNew || !job.Enabled {
 			return ErrNoSuchJob
 		}
@@ -1040,7 +1040,7 @@ func (e *engineImpl) AbortJob(c context.Context, jobID string) error {
 	// Second, we switch the job to the default state and disassociate the running
 	// invocation (if any) from the job entity.
 	var invID int64
-	err := e.txn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
+	err := e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
 		if isNew {
 			return errSkipPut // the job was removed, nothing to abort
 		}
@@ -1066,7 +1066,7 @@ func (e *engineImpl) AbortJob(c context.Context, jobID string) error {
 // updateJob updates an existing job if its definition has changed, adds
 // a completely new job or enables a previously disabled job.
 func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error {
-	return e.txn(c, def.JobID, func(c context.Context, job *Job, isNew bool) error {
+	return e.jobTxn(c, def.JobID, func(c context.Context, job *Job, isNew bool) error {
 		if !isNew && job.Enabled && job.matches(def) {
 			return errSkipPut
 		}
@@ -1121,7 +1121,7 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 
 // disableJob moves a job to disabled state.
 func (e *engineImpl) disableJob(c context.Context, jobID string) error {
-	return e.txn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
+	return e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
 		if isNew || !job.Enabled {
 			return errSkipPut
 		}
@@ -1138,7 +1138,7 @@ func (e *engineImpl) disableJob(c context.Context, jobID string) error {
 // It effectively cancels any pending actions and schedules new ones. Used only
 // on dev server.
 func (e *engineImpl) resetJobOnDevServer(c context.Context, jobID string) error {
-	return e.txn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
+	return e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
 		if isNew || !job.Enabled {
 			return errSkipPut
 		}
@@ -1160,7 +1160,7 @@ func (e *engineImpl) resetJobOnDevServer(c context.Context, jobID string) error 
 // jobTimerTick is invoked via task queue in a task with some ETA. It what makes
 // cron tick.
 func (e *engineImpl) jobTimerTick(c context.Context, jobID string, tickNonce int64) error {
-	return e.txn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
+	return e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
 		if isNew {
 			logging.Errorf(c, "Scheduled job is unexpectedly gone")
 			return errSkipPut
@@ -1285,7 +1285,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	//    handler crashed).
 	inv := Invocation{}
 	skipRunning := false
-	err := e.txn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
+	err := e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
 		if isNew {
 			logging.Errorf(c, "Queued job is unexpectedly gone")
 			skipRunning = true
