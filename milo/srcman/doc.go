@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2017 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package source_manifest
-
-//go:generate go install go.chromium.org/luci/grpc/cmd/cproto
-//go:generate cproto
+// Package srcman contains all functions pertaining to the storage, retrieveal
+// and aggregation of Source Manifest protos in Milo.
+//
+// (See go.chromium.org/luci/milo/api/source_manifest for the proto)
+package srcman
