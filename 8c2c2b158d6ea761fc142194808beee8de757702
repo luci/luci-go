@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "93c21166_14791407",
+        "filename": "scheduler/appengine/engine/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-12T06:40:50Z",
+      "side": 0,
+      "message": "ignore my question why this is True (i can\u0027t remove it), i see why now!",
+      "range": {
+        "startLine": 148,
+        "startChar": 25,
+        "endLine": 148,
+        "endChar": 31
+      },
+      "revId": "8c2c2b158d6ea761fc142194808beee8de757702",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
