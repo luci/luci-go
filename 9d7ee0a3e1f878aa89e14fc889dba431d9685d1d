@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "19abde3c_be55794c",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-12T22:22:02Z",
+      "side": 1,
+      "message": "why not IDs?",
+      "range": {
+        "startLine": 139,
+        "startChar": 45,
+        "endLine": 139,
+        "endChar": 54
+      },
+      "revId": "9d7ee0a3e1f878aa89e14fc889dba431d9685d1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "105b684e_624401b9",
+        "filename": "scheduler/appengine/engine/controller.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-12T22:22:02Z",
+      "side": 1,
+      "message": "Eventually we\u0027ll also need to pass invocation ID to establish a link between a trigger and triggered job (for UI\\API etc). This is for v2 probably.",
+      "range": {
+        "startLine": 249,
+        "startChar": 40,
+        "endLine": 249,
+        "endChar": 51
+      },
+      "revId": "9d7ee0a3e1f878aa89e14fc889dba431d9685d1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a3d933d6_a33aa004",
+        "filename": "scheduler/appengine/engine/controller.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-12T22:22:02Z",
+      "side": 1,
+      "message": "remove this comment, it\u0027s a leftover after the merge",
+      "range": {
+        "startLine": 258,
+        "startChar": 2,
+        "endLine": 258,
+        "endChar": 63
+      },
+      "revId": "9d7ee0a3e1f878aa89e14fc889dba431d9685d1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53bb333d_398961af",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 848,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-12T22:22:02Z",
+      "side": 1,
+      "message": "I think you forgot to remove this",
+      "range": {
+        "startLine": 848,
+        "startChar": 4,
+        "endLine": 848,
+        "endChar": 62
+      },
+      "revId": "9d7ee0a3e1f878aa89e14fc889dba431d9685d1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "815809df_adc4f2c4",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 909,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-12T22:22:02Z",
+      "side": 1,
+      "message": "if the catalog provides full job IDs you won\u0027t have to do this string math here",
+      "range": {
+        "startLine": 909,
+        "startChar": 1,
+        "endLine": 909,
+        "endChar": 55
+      },
+      "revId": "9d7ee0a3e1f878aa89e14fc889dba431d9685d1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
