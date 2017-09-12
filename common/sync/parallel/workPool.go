@@ -19,7 +19,7 @@ import (
 )
 
 // WorkPool creates a fixed-size pool of worker goroutines. A supplied generator
-// method creates task functions and passes them through to the work pool.
+// function creates task functions and passes them through to the work pool.
 //
 // WorkPool will use at most workers goroutines to execute the supplied tasks.
 // If workers is <= 0, WorkPool will be unbounded and behave like FanOutIn.
