@@ -167,13 +167,15 @@ func CompareAndSwap(c context.Context, items ...Item) error {
 //
 // Underflow caps at 0, overflow wraps back to 0.
 //
-// If key contains a value which is not exactly 8 bytes, it's assumed to
-// contain non-number data and this method will return an error.
+// The value is stored as little-endian uint64, see
+// "encoding/binary".LittleEndian. If the value is not exactly 8 bytes,
+// it's assumed to contain non-number data and this method will return an
+// error.
 func Increment(c context.Context, key string, delta int64, initialValue uint64) (uint64, error) {
 	return Raw(c).Increment(key, delta, &initialValue)
 }
 
-// IncrementExisting is like Increment, except that the valu must exist
+// IncrementExisting is like Increment, except that the value must exist
 // already.
 func IncrementExisting(c context.Context, key string, delta int64) (uint64, error) {
 	return Raw(c).Increment(key, delta, nil)
