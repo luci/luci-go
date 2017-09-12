@@ -130,6 +130,9 @@ message Trigger {
   NoopTask noop = 100;
   // Gitiles is used to trigger jobs for new commits on Gitiles.
   GitilesTask gitiles = 101;
+
+  // Triggers are IDs of jobs triggered by this trigger.
+  repeated string triggers = 200;
 }
 
 
