@@ -863,12 +863,12 @@ func (e *engineImpl) enqueueJobActions(c context.Context, jobID string, actions 
 // enqueueInvTimers submits all timers emitted by an invocation manager by
 // adding corresponding tasks to the task queue. See ExecuteSerializedAction for
 // place where these actions are interpreted.
-func (e *engineImpl) enqueueInvTimers(c context.Context, inv *Invocation, timers []invocationTimer) error {
+func (e *engineImpl) enqueueInvTimers(c context.Context, jobID string, invID int64, timers []invocationTimer) error {
 	tasks := make([]*tq.Task, len(timers))
 	for i, timer := range timers {
 		payload, err := json.Marshal(actionTaskPayload{
-			JobID:    inv.JobKey.StringID(),
-			InvID:    inv.ID,
+			JobID:    jobID,
+			InvID:    invID,
 			InvTimer: &timer,
 		})
 		if err != nil {
@@ -1425,7 +1425,8 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 
 // topicParams is passed to prepareTopic by task.Controller.
 type topicParams struct {
-	inv       *Invocation  // invocation being handled by Controller
+	jobID     string       // the job invocation belongs to
+	invID     int64        // ID of the invocation itself
 	manager   task.Manager // task manager for the invocation
 	publisher string       // name of publisher to add to PubSub topic.
 }
@@ -1470,7 +1471,7 @@ func (e *engineImpl) genTopicAndSubNames(c context.Context, manager, publisher s
 // It returns full topic name, as well as a token that securely identifies the
 // task. It should be put into 'auth_token' attribute of PubSub messages by
 // whoever publishes them.
-func (e *engineImpl) prepareTopic(c context.Context, params topicParams) (topic string, tok string, err error) {
+func (e *engineImpl) prepareTopic(c context.Context, params *topicParams) (topic string, tok string, err error) {
 	// If given URL, ask the service for name of its default service account.
 	// FetchServiceInfo implements efficient cache internally, so it's fine to
 	// call it often.
@@ -1512,8 +1513,8 @@ func (e *engineImpl) prepareTopic(c context.Context, params topicParams) (topic 
 	// Encode full invocation identifier (job key + invocation ID) into HMAC
 	// protected token.
 	tok, err = pubsubAuthToken.Generate(c, nil, map[string]string{
-		"job": params.inv.JobKey.StringID(),
-		"inv": fmt.Sprintf("%d", params.inv.ID),
+		"job": params.jobID,
+		"inv": fmt.Sprintf("%d", params.invID),
 	}, 0)
 	if err != nil {
 		return "", "", err

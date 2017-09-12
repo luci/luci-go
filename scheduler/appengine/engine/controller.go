@@ -123,8 +123,9 @@ func (ctl *taskController) AddTimer(ctx context.Context, delay time.Duration, na
 
 // PrepareTopic is part of task.Controller interface.
 func (ctl *taskController) PrepareTopic(ctx context.Context, publisher string) (topic string, token string, err error) {
-	return ctl.eng.prepareTopic(ctx, topicParams{
-		inv:       &ctl.saved,
+	return ctl.eng.prepareTopic(ctx, &topicParams{
+		jobID:     ctl.JobID(),
+		invID:     ctl.InvocationID(),
 		manager:   ctl.manager,
 		publisher: publisher,
 	})
@@ -185,7 +186,7 @@ func (ctl *taskController) saveImpl(ctx context.Context, updateJob bool) (err er
 	hasStartedOrFailed := ctl.saved.Status == task.StatusStarting && saving.Status != task.StatusStarting
 	hasFinished := !ctl.saved.Status.Final() && saving.Status.Final()
 	if hasFinished {
-		saving.Finished = clock.Now(ctx)
+		saving.Finished = clock.Now(ctx).UTC()
 		saving.debugLog(
 			ctx, "Invocation finished in %s with status %s",
 			saving.Finished.Sub(saving.Started), saving.Status)
@@ -200,7 +201,7 @@ func (ctl *taskController) saveImpl(ctx context.Context, updateJob bool) (err er
 
 	// Store the invocation entity, mutate Job state accordingly, schedule all
 	// timer ticks.
-	return ctl.eng.jobTxn(ctx, saving.JobKey.StringID(), func(c context.Context, job *Job, isNew bool) error {
+	return ctl.eng.jobTxn(ctx, ctl.JobID(), func(c context.Context, job *Job, isNew bool) error {
 		// Grab what's currently in the store to compare MutationsCount to what we
 		// expect it to be.
 		mostRecent := Invocation{
@@ -232,7 +233,7 @@ func (ctl *taskController) saveImpl(ctx context.Context, updateJob bool) (err er
 
 		// Finished invocations can't schedule timers.
 		if !hasFinished && len(ctl.timers) > 0 {
-			if err := ctl.eng.enqueueInvTimers(c, &saving, ctl.timers); err != nil {
+			if err := ctl.eng.enqueueInvTimers(c, ctl.JobID(), ctl.InvocationID(), ctl.timers); err != nil {
 				return err
 			}
 		}
