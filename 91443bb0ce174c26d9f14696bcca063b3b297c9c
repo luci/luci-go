@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d6841f7d_11fe3c74",
+        "filename": "scheduler/appengine/messages/cron.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-12T00:03:49Z",
+      "side": 1,
+      "message": "as I said in another CL, this field should be in Trigger message, so we don\u0027t reimplement it a bunch of times. I also propose to name it \u0027triggers\u0027, so we\u0027ll have:\n\n trigger {\n   id: \"luci-go-trigger\"\n   acl_sets: \"default\"\n   gitiles: {\n     repo: \"https://chromium.googlesource.com/infra/luci/luci-go.git\"\n     refs: \"refs/heads/master\"\n   }\n   triggers: \"noop-kick-me\"\n   triggers: \"some-other-crap\"\n }\n\nLooks like your luci-scheduler-dev.cfg CL put jobs_to_trigger into Trigger message too :)",
+      "range": {
+        "startLine": 156,
+        "startChar": 18,
+        "endLine": 156,
+        "endChar": 33
+      },
+      "revId": "91443bb0ce174c26d9f14696bcca063b3b297c9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff25a37f_450f0b62",
+        "filename": "scheduler/appengine/task/internal/triggers.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-12T00:03:49Z",
+      "side": 1,
+      "message": "we\u0027ll need a bunch of fields common for all triggers (for the UI):\n1. Unique ID.\n2. Time when it was created.\n3. User friendly title (e.g. revision for gitiles trigger).",
+      "range": {
+        "startLine": 19,
+        "startChar": 8,
+        "endLine": 19,
+        "endChar": 22
+      },
+      "revId": "91443bb0ce174c26d9f14696bcca063b3b297c9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a570adeb_0c59fe5a",
+        "filename": "scheduler/appengine/task/internal/triggers.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-12T00:03:49Z",
+      "side": 1,
+      "message": "nit: space :)",
+      "range": {
+        "startLine": 19,
+        "startChar": 22,
+        "endLine": 19,
+        "endChar": 23
+      },
+      "revId": "91443bb0ce174c26d9f14696bcca063b3b297c9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
