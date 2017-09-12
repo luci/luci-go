@@ -37,7 +37,7 @@ func TestFullFlow(t *testing.T) {
 			TaskMessage:  &messages.NoopTask{},
 			SaveCallback: func() error { return nil },
 		}
-		So(mgr.LaunchTask(c, ctl), ShouldBeNil)
+		So(mgr.LaunchTask(c, ctl, nil), ShouldBeNil)
 		So(ctl.TaskState, ShouldResemble, task.State{
 			Status: task.StatusSucceeded,
 		})

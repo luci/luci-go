@@ -180,7 +180,7 @@ func TestFullFlow(t *testing.T) {
 		}
 
 		// Launch.
-		So(mgr.LaunchTask(c, ctl), ShouldBeNil)
+		So(mgr.LaunchTask(c, ctl, nil), ShouldBeNil)
 		So(ctl.TaskState, ShouldResemble, task.State{
 			Status:   task.StatusRunning,
 			TaskData: []byte(`{"build_id":"9025781602559305888"}`),

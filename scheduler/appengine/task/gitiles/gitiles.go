@@ -77,7 +77,7 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 }
 
 // LaunchTask is part of Manager interface.
-func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
+func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []task.Trigger) error {
 	cfg := ctl.Task().(*messages.GitilesTask)
 
 	u, err := url.Parse(cfg.Repo)

@@ -335,7 +335,7 @@ func TestFullFlow(t *testing.T) {
 		tq.GetTestable(c).ResetTasks()
 
 		// Time to run the job and it fails to launch with a transient error.
-		mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
+		mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []task.Trigger) error {
 			// Check data provided via the controller.
 			So(ctl.JobID(), ShouldEqual, "abc/1")
 			So(ctl.InvocationID(), ShouldEqual, int64(9200093518582198800))
@@ -391,7 +391,7 @@ func TestFullFlow(t *testing.T) {
 		}))
 
 		// Second attempt. Now starts, hangs midway, they finishes.
-		mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
+		mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []task.Trigger) error {
 			// Make sure Save() checkpoints the progress.
 			ctl.DebugLog("Starting")
 			ctl.State().Status = task.StatusRunning
@@ -544,7 +544,7 @@ func TestFullTriggeredFlow(t *testing.T) {
 
 		var invID int64 // set inside launchTask once invocation is known.
 
-		mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
+		mgr.launchTask = func(ctx context.Context, ctl task.Controller, _ []task.Trigger) error {
 			// Make sure Save() checkpoints the progress.
 			ctl.DebugLog("Starting")
 			ctl.State().Status = task.StatusRunning
@@ -561,14 +561,9 @@ func TestFullTriggeredFlow(t *testing.T) {
 			So(inv.Status, ShouldEqual, task.StatusRunning)
 			So(inv.MutationsCount, ShouldEqual, 1)
 
-			ctl.EmitTrigger(ctx, task.Trigger{ID: "trg-id1", Payload: []byte("note the trigger id")})
-			So(ctl.Save(ctx), ShouldBeNil)
+			ctl.EmitTrigger(ctx, task.Trigger{ID: "trg", Payload: []byte("note the trigger id")})
+			ctl.EmitTrigger(ctx, task.Trigger{ID: "trg", Payload: []byte("different payload")})
 
-			ctl.EmitTrigger(ctx, task.Trigger{ID: "trg-id1", Payload: []byte("content could be different")})
-			ctl.EmitTrigger(ctx, task.Trigger{ID: "trg-id2", Payload: []byte("msg")})
-			ctl.EmitTrigger(ctx, task.Trigger{ID: "trg-id2", Payload: []byte("msg")})
-			So(ctl.Save(ctx), ShouldBeNil)
-			ctl.EmitTrigger(ctx, task.Trigger{ID: "trg-id3", Payload: []byte("msg")})
 			// Change state to the final one.
 			ctl.State().Status = task.StatusSucceeded
 			ctl.State().ViewURL = "http://view_url"
@@ -581,19 +576,36 @@ func TestFullTriggeredFlow(t *testing.T) {
 		inv, err := e.getInvocation(c, "abc/1", invID)
 		So(err, ShouldBeNil)
 		So(inv.Status, ShouldEqual, task.StatusSucceeded)
-		So(inv.MutationsCount, ShouldEqual, 4)
-		So(inv.DebugLog, ShouldContainSubstring, "[22:42:05.000] Emitting a trigger trg-id1") // twice.
-		So(inv.DebugLog, ShouldContainSubstring, "[22:42:05.000] Emitting a trigger trg-id2") // twice.
-		So(inv.DebugLog, ShouldContainSubstring, "[22:42:05.000] Emitting a trigger trg-id3") // once.
+		So(inv.MutationsCount, ShouldEqual, 2)
+		So(inv.DebugLog, ShouldContainSubstring, "[22:42:05.000] Emitting a trigger trg") // twice.
 
 		for _, triggerTask := range popAllTasks(c, "invs-q") {
 			So(e.ExecuteSerializedAction(c, triggerTask.Payload, 0), ShouldBeNil)
 		}
+		// Triggers should result in new invocations for previously suspended jobs.
 		So(getJob(c, "abc/2-triggered").State.State, ShouldEqual, JobStateQueued)
 		So(getJob(c, "abc/3-triggered").State.State, ShouldEqual, JobStateQueued)
 
-		// TODO(tandrii): test that launchTask got correct list of triggers for each
-		// job.
+		// Prepare to track triggers passed to task launchers.
+		deliveredTriggers := map[string][]string{}
+		mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []task.Trigger) error {
+			So(deliveredTriggers, ShouldNotContainKey, ctl.JobID())
+			ids := make([]string, 0, len(triggers))
+			for _, t := range triggers {
+				ids = append(ids, t.ID)
+			}
+			sort.Strings(ids) // For deterministic tests.
+			deliveredTriggers[ctl.JobID()] = ids
+			ctl.State().Status = task.StatusSucceeded
+			return nil
+		}
+		// Actually execute task launching.
+		for _, t := range popAllTasks(c, "invs-q") {
+			So(e.ExecuteSerializedAction(c, t.Payload, 0), ShouldBeNil)
+		}
+		So(deliveredTriggers, ShouldResemble, map[string][]string{
+			"abc/2-triggered": {"trg"}, "abc/3-triggered": {"trg"},
+		})
 	})
 }
 func TestGenerateInvocationID(t *testing.T) {
@@ -963,7 +975,7 @@ func TestAborts(t *testing.T) {
 
 		launchInv := func() int64 {
 			var invID int64
-			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []task.Trigger) error {
 				invID = ctl.InvocationID()
 				ctl.State().Status = task.StatusRunning
 				So(ctl.Save(ctx), ShouldBeNil)
@@ -1057,7 +1069,7 @@ func TestAddTimer(t *testing.T) {
 
 		Convey("AddTimer works", func() {
 			// Start an invocation that adds a timer.
-			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []task.Trigger) error {
 				ctl.AddTimer(ctx, time.Minute, "timer-name", []byte{1, 2, 3})
 				ctl.State().Status = task.StatusRunning
 				return nil
@@ -1209,7 +1221,7 @@ func newTestEngine() (*engineImpl, *fakeTaskManager) {
 
 // fakeTaskManager implement task.Manager interface.
 type fakeTaskManager struct {
-	launchTask         func(ctx context.Context, ctl task.Controller) error
+	launchTask         func(ctx context.Context, ctl task.Controller, triggers []task.Trigger) error
 	handleNotification func(ctx context.Context, msg *pubsub.PubsubMessage) error
 	handleTimer        func(ctx context.Context, ctl task.Controller, name string, payload []byte) error
 }
@@ -1230,8 +1242,8 @@ func (m *fakeTaskManager) ValidateProtoMessage(msg proto.Message) error {
 	return nil
 }
 
-func (m *fakeTaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
-	return m.launchTask(c, ctl)
+func (m *fakeTaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []task.Trigger) error {
+	return m.launchTask(c, ctl, triggers)
 }
 
 func (m *fakeTaskManager) AbortTask(c context.Context, ctl task.Controller) error {
