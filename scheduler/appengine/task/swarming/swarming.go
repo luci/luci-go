@@ -183,7 +183,7 @@ type taskData struct {
 }
 
 // LaunchTask is part of Manager interface.
-func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
+func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []task.Trigger) error {
 	// At this point config is already validated by ValidateProtoMessage.
 	cfg := ctl.Task().(*messages.SwarmingTask)
 
