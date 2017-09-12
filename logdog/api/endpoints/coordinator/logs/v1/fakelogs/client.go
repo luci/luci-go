@@ -51,6 +51,10 @@ type prefixState struct {
 	streams   stringset.Set
 }
 
+// Project is the logdog project namespace that you should use with your
+// fakelogs clients.
+var Project = coordinatorTest.AllAccessProject
+
 // Client implements the logs.LogsClient API, and also has some 'reach-around'
 // APIs to insert stream data into the backend.
 //
