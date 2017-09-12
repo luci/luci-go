@@ -21,11 +21,13 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"sort"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 	"go.chromium.org/luci/luci_config/server/cfgclient"
@@ -133,6 +135,10 @@ type Definition struct {
 	// Internally it is TaskDefWrapper proto message, but callers must treat it as
 	// an opaque byte blob.
 	Task []byte
+
+	// TriggeredJobIDs is a list of jobIDs which this job triggers.
+	// It's set only for triggering jobs.
+	TriggeredJobIDs []string
 }
 
 // New returns implementation of Catalog.
@@ -322,14 +328,16 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		if len(acls.Owners) == 0 || len(acls.Readers) == 0 {
 			logging.Warningf(c, "Missing some ACLs on %s: R=%d O=%d", id, len(acls.Owners), len(acls.Readers))
 		}
+		// TODO(tandrii): validate triggered job names after collecting all valid job names.
 		out = append(out, Definition{
-			JobID:       fmt.Sprintf("%s/%s", projectID, trigger.Id),
-			Acls:        *acls,
-			Flavor:      JobFlavorTrigger,
-			Revision:    meta.Revision,
-			RevisionURL: revisionURL,
-			Schedule:    schedule,
-			Task:        packed,
+			JobID:           fmt.Sprintf("%s/%s", projectID, trigger.Id),
+			Acls:            *acls,
+			Flavor:          JobFlavorTrigger,
+			Revision:        meta.Revision,
+			RevisionURL:     revisionURL,
+			Schedule:        schedule,
+			Task:            packed,
+			TriggeredJobIDs: cat.normalizeTriggeredJobIDs(projectID, trigger),
 		})
 	}
 
@@ -380,6 +388,17 @@ func (cat *catalog) validateTriggerProto(t *messages.Trigger) (proto.Message, er
 		}
 	}
 	return cat.extractTaskProto(t)
+}
+
+// normalizeTriggeredJobIDs returns sorted list without duplicates.
+func (cat *catalog) normalizeTriggeredJobIDs(projectID string, t *messages.Trigger) []string {
+	set := stringset.New(len(t.Triggers))
+	for _, j := range t.Triggers {
+		set.Add(projectID + "/" + j)
+	}
+	out := set.ToSlice()
+	sort.Strings(out)
+	return out
 }
 
 // extractTaskProto visits all fields of a proto and sniffs ones that correspond

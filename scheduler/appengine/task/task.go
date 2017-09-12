@@ -274,6 +274,10 @@ type Controller interface {
 	// (or they will be forcefully aborted).
 	GetClient(c context.Context, timeout time.Duration) (*http.Client, error)
 
+	// EmitTrigger delivers a given trigger to all jobs which are triggered by
+	// current one.
+	EmitTrigger(ctx context.Context, trigger Trigger)
+
 	// Save updates the state of the task in the persistent store.
 	//
 	// It also schedules all pending timer ticks added via AddTimer.

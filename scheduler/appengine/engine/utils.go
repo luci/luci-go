@@ -86,3 +86,16 @@ func runTxn(c context.Context, cb func(context.Context) error) error {
 
 	return nil
 }
+
+// equalSortedLists returns true if lists contain the same sequence of strings.
+func equalSortedLists(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, s := range a {
+		if s != b[i] {
+			return false
+		}
+	}
+	return true
+}

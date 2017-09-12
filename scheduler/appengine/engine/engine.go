@@ -204,8 +204,8 @@ const (
 
 // actionTaskPayload is payload for task queue jobs emitted by the engine.
 //
-// Serialized as JSON, produced by enqueueJobActions and enqueueInvTimers, used
-// as inputs in ExecuteSerializedAction.
+// Serialized as JSON, produced by enqueueJobActions, enqueueInvTimers, and
+// enqueueTriggers, used as inputs in ExecuteSerializedAction.
 //
 // Union of all possible payloads for simplicity.
 type actionTaskPayload struct {
@@ -213,12 +213,13 @@ type actionTaskPayload struct {
 	InvID int64  `json:",omitempty"` // ID of relevant Invocation
 
 	// For Job actions and timers (InvID == 0).
-	Kind                string `json:",omitempty"` // defines what fields below to examine
-	TickNonce           int64  `json:",omitempty"` // valid for "TickLaterAction" kind
-	InvocationNonce     int64  `json:",omitempty"` // valid for "StartInvocationAction" kind
-	TriggeredBy         string `json:",omitempty"` // valid for "StartInvocationAction" kind
-	Overruns            int    `json:",omitempty"` // valid for "RecordOverrunAction" kind
-	RunningInvocationID int64  `json:",omitempty"` // valid for "RecordOverrunAction" kind
+	Kind                string         `json:",omitempty"` // defines what fields below to examine
+	TickNonce           int64          `json:",omitempty"` // valid for "TickLaterAction" kind
+	InvocationNonce     int64          `json:",omitempty"` // valid for "StartInvocationAction" kind
+	TriggeredBy         string         `json:",omitempty"` // valid for "StartInvocationAction" kind
+	Triggers            []task.Trigger `json:",omitempty"` // valid for "StartInvocationAction" and "EnqueueTriggersAction" kind
+	Overruns            int            `json:",omitempty"` // valid for "RecordOverrunAction" kind
+	RunningInvocationID int64          `json:",omitempty"` // valid for "RecordOverrunAction" kind
 
 	// For Invocation actions and timers (InvID != 0).
 	InvTimer *invocationTimer `json:",omitempty"` // used for AddTimer calls
@@ -278,6 +279,10 @@ type Job struct {
 	// of the engine. See Catalog.UnmarshalTask().
 	Task []byte `gae:",noindex"`
 
+	// TriggeredJobIDs is a list of jobIDs of jobs which this job triggers.
+	// The list is sorted and without duplicates.
+	TriggeredJobIDs []string `gae:",noindex"`
+
 	// ACLs are the latest ACLs applied to Job and all its invocations.
 	Acls acl.GrantsByRole `gae:",noindex"`
 
@@ -331,6 +336,7 @@ func (e *Job) isEqual(other *Job) bool {
 		e.Schedule == other.Schedule &&
 		e.Acls.Equal(&other.Acls) &&
 		bytes.Equal(e.Task, other.Task) &&
+		equalSortedLists(e.TriggeredJobIDs, other.TriggeredJobIDs) &&
 		e.State.Equal(&other.State))
 }
 
@@ -342,7 +348,8 @@ func (e *Job) matches(def catalog.Definition) bool {
 		e.Flavor == def.Flavor &&
 		e.Schedule == def.Schedule &&
 		e.Acls.Equal(&def.Acls) &&
-		bytes.Equal(e.Task, def.Task)
+		bytes.Equal(e.Task, def.Task) &&
+		equalSortedLists(e.TriggeredJobIDs, def.TriggeredJobIDs)
 }
 
 // isVisible checks if current identity has READER access to this job.
@@ -810,6 +817,7 @@ func (e *engineImpl) enqueueJobActions(c context.Context, jobID string, actions 
 				Kind:            "StartInvocationAction",
 				InvocationNonce: a.InvocationNonce,
 				TriggeredBy:     string(a.TriggeredBy),
+				Triggers:        a.Triggers,
 			})
 			if err != nil {
 				return err
@@ -825,6 +833,19 @@ func (e *engineImpl) enqueueJobActions(c context.Context, jobID string, actions 
 					MaxBackoff: maxInvocationRetryBackoff,
 					AgeLimit:   time.Duration(invocationRetryLimit+5) * maxInvocationRetryBackoff,
 				},
+			})
+		case EnqueueTriggersAction:
+			payload, err := json.Marshal(actionTaskPayload{
+				JobID:    jobID,
+				Kind:     "EnqueueTriggersAction",
+				Triggers: a.Triggers,
+			})
+			if err != nil {
+				return err
+			}
+			qs[e.InvocationsQueueName] = append(qs[e.InvocationsQueueName], &tq.Task{
+				Path:    e.InvocationsQueuePath,
+				Payload: payload,
 			})
 		case RecordOverrunAction:
 			payload, err := json.Marshal(actionTaskPayload{
@@ -883,6 +904,22 @@ func (e *engineImpl) enqueueInvTimers(c context.Context, jobID string, invID int
 	return transient.Tag.Apply(tq.Add(c, e.TimersQueueName, tasks...))
 }
 
+func (e *engineImpl) enqueueTriggers(c context.Context, triggeredJobIDs []string, triggers []task.Trigger) error {
+	wg := sync.WaitGroup{}
+	errs := errors.NewLazyMultiError(len(triggeredJobIDs))
+	i := 0
+	for _, jobID := range triggeredJobIDs {
+		i++
+		wg.Add(1)
+		go func(i int, jobID string) {
+			defer wg.Done()
+			errs.Assign(i, e.enqueueJobActions(c, jobID, []Action{EnqueueTriggersAction{Triggers: triggers}}))
+		}(i, jobID)
+	}
+	wg.Wait()
+	return transient.Tag.Apply(errs.Get())
+}
+
 func (e *engineImpl) ExecuteSerializedAction(c context.Context, action []byte, retryCount int) error {
 	payload := actionTaskPayload{}
 	if err := json.Unmarshal(action, &payload); err != nil {
@@ -901,9 +938,11 @@ func (e *engineImpl) executeJobAction(c context.Context, payload *actionTaskPayl
 	case "StartInvocationAction":
 		return e.startInvocation(
 			c, payload.JobID, payload.InvocationNonce,
-			identity.Identity(payload.TriggeredBy), retryCount)
+			identity.Identity(payload.TriggeredBy), payload.Triggers, retryCount)
 	case "RecordOverrunAction":
 		return e.recordOverrun(c, payload.JobID, payload.Overruns, payload.RunningInvocationID)
+	case "EnqueueTriggersAction":
+		return e.newTriggers(c, payload.JobID, payload.Triggers)
 	default:
 		return fmt.Errorf("unexpected job action kind %q", payload.Kind)
 	}
@@ -1077,13 +1116,14 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 				return fmt.Errorf("unexpected jobID format: %s", def.JobID)
 			}
 			*job = Job{
-				JobID:     def.JobID,
-				ProjectID: chunks[0],
-				Flavor:    def.Flavor,
-				Enabled:   false, // to trigger 'if !oldEnabled' below
-				Schedule:  def.Schedule,
-				Task:      def.Task,
-				State:     JobState{State: JobStateDisabled},
+				JobID:           def.JobID,
+				ProjectID:       chunks[0],
+				Flavor:          def.Flavor,
+				Enabled:         false, // to trigger 'if !oldEnabled' below
+				Schedule:        def.Schedule,
+				Task:            def.Task,
+				State:           JobState{State: JobStateDisabled},
+				TriggeredJobIDs: def.TriggeredJobIDs,
 			}
 		}
 		oldEnabled := job.Enabled
@@ -1097,6 +1137,7 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 		job.Enabled = true
 		job.Schedule = def.Schedule
 		job.Task = def.Task
+		job.TriggeredJobIDs = def.TriggeredJobIDs
 
 		// Do state machine transitions.
 		if !oldEnabled {
@@ -1167,6 +1208,24 @@ func (e *engineImpl) jobTimerTick(c context.Context, jobID string, tickNonce int
 		}
 		logging.Infof(c, "Tick %d has arrived", tickNonce)
 		return e.rollSM(c, job, func(sm *StateMachine) error { return sm.OnTimerTick(tickNonce) })
+	})
+}
+
+// newTriggers is invoked via task queue when a job receives new Triggers.
+//
+// It adds these triggers to job's state. If job isn't yet running, this may
+// result in StartInvocationAction being emitted.
+func (e *engineImpl) newTriggers(c context.Context, jobID string, triggers []task.Trigger) error {
+	return e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
+		if isNew {
+			logging.Errorf(c, "Triggered job is unexpectedly gone")
+			return errSkipPut
+		}
+		logging.Infof(c, "Triggered %d times", len(triggers))
+		return e.rollSM(c, job, func(sm *StateMachine) error {
+			sm.OnNewTriggers(triggers)
+			return nil
+		})
 	})
 }
 
@@ -1259,7 +1318,7 @@ func (e *engineImpl) invocationTimerTick(c context.Context, jobID string, invID 
 // startInvocation is called via task queue to start running a job. This call
 // may be retried by task queue service.
 func (e *engineImpl) startInvocation(c context.Context, jobID string, invocationNonce int64,
-	triggeredBy identity.Identity, retryCount int) error {
+	triggeredBy identity.Identity, triggers []task.Trigger, retryCount int) error {
 
 	c = logging.SetField(c, "JobID", jobID)
 	c = logging.SetField(c, "InvNonce", invocationNonce)
@@ -1311,6 +1370,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 			Revision:        job.Revision,
 			RevisionURL:     job.RevisionURL,
 			Task:            job.Task,
+			TriggeredJobIDs: job.TriggeredJobIDs,
 			RetryCount:      int64(retryCount),
 			Status:          task.StatusStarting,
 		}
@@ -1392,6 +1452,8 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	// StatusRetrying or StatusFailed state (depending on whether the error is
 	// transient or not and how many retries are left). In either case, invocation
 	// never ends up in StatusStarting state.
+	// TODO(tAndrii): pass triggers to LaunchTask for task-specific trigger
+	// handling.
 	err = ctl.manager.LaunchTask(c, ctl)
 	if ctl.State().Status == task.StatusStarting && err == nil {
 		err = fmt.Errorf("LaunchTask didn't move invocation out of StatusStarting")

@@ -16,6 +16,7 @@ package engine
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/rand"
 	"sort"
 	"strings"
@@ -486,6 +487,115 @@ func TestFullFlow(t *testing.T) {
 	})
 }
 
+func TestFullTriggeredFlow(t *testing.T) {
+	Convey("full triggered flow", t, func() {
+		c := newTestContext(epoch)
+		e, mgr := newTestEngine()
+		taskBytes := noopTaskBytes()
+
+		// Create a new triggering noop job (ticks every 5 sec).
+		jobsDefinitions := []catalog.Definition{
+			{
+				JobID:           "abc/1",
+				Revision:        "rev1",
+				Schedule:        "*/5 * * * * * *",
+				Task:            taskBytes,
+				Flavor:          catalog.JobFlavorTrigger,
+				TriggeredJobIDs: []string{"abc/2-triggered", "abc/3-triggered"},
+			},
+		}
+		// And also jobs 2, 3 to be triggered by job 1.
+		for i := 2; i <= 3; i++ {
+			jobsDefinitions = append(jobsDefinitions, catalog.Definition{
+				JobID:    fmt.Sprintf("abc/%d-triggered", i),
+				Revision: "rev1",
+				Schedule: "triggered",
+				Task:     taskBytes,
+				Flavor:   catalog.JobFlavorTriggered,
+			})
+		}
+		So(e.UpdateProjectJobs(c, "abc", jobsDefinitions), ShouldBeNil)
+		// Enqueued timer task to launch it.
+		tsk := ensureOneTask(c, "timers-q")
+		So(tsk.Path, ShouldEqual, "/timers")
+		So(tsk.ETA, ShouldResemble, epoch.Add(5*time.Second))
+		tq.GetTestable(c).ResetTasks()
+
+		// Tick time comes, the tick task is executed, job is added to queue.
+		clock.Get(c).(testclock.TestClock).Add(5 * time.Second)
+		So(e.ExecuteSerializedAction(c, tsk.Payload, 0), ShouldBeNil)
+
+		// Job1 is in queued state now.
+		job1 := getJob(c, "abc/1")
+		So(job1.Flavor, ShouldEqual, catalog.JobFlavorTrigger)
+		So(job1.TriggeredJobIDs, ShouldResemble, []string{"abc/2-triggered", "abc/3-triggered"})
+		So(job1.State.State, ShouldEqual, JobStateQueued)
+
+		// Next tick task is added.
+		tickTask := ensureOneTask(c, "timers-q")
+		So(tickTask.Path, ShouldEqual, "/timers")
+		So(tickTask.ETA, ShouldResemble, epoch.Add(10*time.Second))
+
+		// Invocation task (ETA is 1 sec in the future).
+		invTask := ensureOneTask(c, "invs-q")
+		So(invTask.Path, ShouldEqual, "/invs")
+		So(invTask.ETA, ShouldResemble, epoch.Add(6*time.Second))
+		tq.GetTestable(c).ResetTasks()
+
+		var invID int64 // set inside launchTask once invocation is known.
+
+		mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
+			// Make sure Save() checkpoints the progress.
+			ctl.DebugLog("Starting")
+			ctl.State().Status = task.StatusRunning
+			So(ctl.Save(ctx), ShouldBeNil)
+
+			// After first Save the job and the invocation are in running state.
+			j1 := getJob(c, "abc/1")
+			So(j1.State.State, ShouldEqual, JobStateRunning)
+			invID = j1.State.InvocationID
+			inv, err := e.getInvocation(c, "abc/1", invID)
+			So(err, ShouldBeNil)
+			So(inv.TriggeredJobIDs, ShouldResemble, []string{"abc/2-triggered", "abc/3-triggered"})
+			So(inv.DebugLog, ShouldEqual, "[22:42:05.000] Invocation initiated (attempt 1)\n[22:42:05.000] Starting\n")
+			So(inv.Status, ShouldEqual, task.StatusRunning)
+			So(inv.MutationsCount, ShouldEqual, 1)
+
+			ctl.EmitTrigger(ctx, task.Trigger{ID: "trg-id1", Payload: []byte("note the trigger id")})
+			So(ctl.Save(ctx), ShouldBeNil)
+
+			ctl.EmitTrigger(ctx, task.Trigger{ID: "trg-id1", Payload: []byte("content could be different")})
+			ctl.EmitTrigger(ctx, task.Trigger{ID: "trg-id2", Payload: []byte("msg")})
+			ctl.EmitTrigger(ctx, task.Trigger{ID: "trg-id2", Payload: []byte("msg")})
+			So(ctl.Save(ctx), ShouldBeNil)
+			ctl.EmitTrigger(ctx, task.Trigger{ID: "trg-id3", Payload: []byte("msg")})
+			// Change state to the final one.
+			ctl.State().Status = task.StatusSucceeded
+			ctl.State().ViewURL = "http://view_url"
+			ctl.State().TaskData = []byte("blah")
+			return nil
+		}
+		So(e.ExecuteSerializedAction(c, invTask.Payload, 0), ShouldBeNil)
+
+		// After final save.
+		inv, err := e.getInvocation(c, "abc/1", invID)
+		So(err, ShouldBeNil)
+		So(inv.Status, ShouldEqual, task.StatusSucceeded)
+		So(inv.MutationsCount, ShouldEqual, 4)
+		So(inv.DebugLog, ShouldContainSubstring, "[22:42:05.000] Emitting a trigger trg-id1") // twice.
+		So(inv.DebugLog, ShouldContainSubstring, "[22:42:05.000] Emitting a trigger trg-id2") // twice.
+		So(inv.DebugLog, ShouldContainSubstring, "[22:42:05.000] Emitting a trigger trg-id3") // once.
+
+		for _, triggerTask := range popAllTasks(c, "invs-q") {
+			So(e.ExecuteSerializedAction(c, triggerTask.Payload, 0), ShouldBeNil)
+		}
+		So(getJob(c, "abc/2-triggered").State.State, ShouldEqual, JobStateQueued)
+		So(getJob(c, "abc/3-triggered").State.State, ShouldEqual, JobStateQueued)
+
+		// TODO(tandrii): test that launchTask got correct list of triggers for each
+		// job.
+	})
+}
 func TestGenerateInvocationID(t *testing.T) {
 	Convey("generateInvocationID does not collide", t, func() {
 		c := newTestContext(epoch)
@@ -859,7 +969,7 @@ func TestAborts(t *testing.T) {
 				So(ctl.Save(ctx), ShouldBeNil)
 				return nil
 			}
-			So(e.startInvocation(c, jobID, invNonce, "", 0), ShouldBeNil)
+			So(e.startInvocation(c, jobID, invNonce, "", nil, 0), ShouldBeNil)
 
 			// It is alive and the job entity tracks it.
 			inv, err := e.getInvocation(c, jobID, invID)
@@ -952,7 +1062,7 @@ func TestAddTimer(t *testing.T) {
 				ctl.State().Status = task.StatusRunning
 				return nil
 			}
-			So(e.startInvocation(c, jobID, invNonce, "", 0), ShouldBeNil)
+			So(e.startInvocation(c, jobID, invNonce, "", nil, 0), ShouldBeNil)
 
 			// The job is running.
 			job, err := e.getJob(c, jobID)
@@ -1199,6 +1309,15 @@ func allJobs(c context.Context) []Job {
 	return entities
 }
 
+func getJob(c context.Context, jobID string) Job {
+	for _, job := range allJobs(c) {
+		if job.JobID == jobID {
+			return job
+		}
+	}
+	panic(fmt.Errorf("no such jobs %s", jobID))
+}
+
 func ensureZeroTasks(c context.Context, q string) {
 	tqt := tq.GetTestable(c)
 	tasks := tqt.GetScheduledTasks()[q]
@@ -1213,4 +1332,14 @@ func ensureOneTask(c context.Context, q string) *tq.Task {
 		return t
 	}
 	return nil
+}
+
+func popAllTasks(c context.Context, q string) []*tq.Task {
+	tqt := tq.GetTestable(c)
+	tasks := make([]*tq.Task, 0, len(tqt.GetScheduledTasks()[q]))
+	for _, t := range tqt.GetScheduledTasks()[q] {
+		tasks = append(tasks, t)
+	}
+	tqt.ResetTasks()
+	return tasks
 }
