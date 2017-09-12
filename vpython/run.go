@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/vpython/python"
 	"go.chromium.org/luci/vpython/venv"
 
 	"golang.org/x/net/context"
@@ -35,6 +36,15 @@ const (
 	// This is added to the bootstrap environment used by Run to allow subprocess
 	// "vpython" invocations to automatically inherit the same environment.
 	EnvironmentStampPathENV = "VPYTHON_VENV_ENV_STAMP_PATH"
+
+	// BypassEnv is an environment variable that is used to detect if we shouldn't
+	// do any vpython stuff at all, but should instead directly invoke the next
+	// `python` on PATH.
+	BypassEnv = "VPYTHON_BYPASS"
+
+	// BypassEnvValue is the value that BypassEnv must be set to in order to
+	// bypass vpython.
+	BypassEnvValue = "manually managed python dependencies"
 )
 
 // Run sets up a Python VirtualEnv and executes the supplied Options.
@@ -61,6 +71,37 @@ func Run(c context.Context, opts Options) error {
 	// Resolve our Options.
 	if err := opts.resolve(c); err != nil {
 		return errors.Annotate(err, "could not resolve options").Err()
+	}
+
+	prepCmd := func(cmd *exec.Cmd, env []string) {
+		cmd.Dir = opts.WorkDir
+		cmd.Env = env
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
+
+	// Check to see if we're supposed to bypass entirely.
+	switch x := opts.Environ.GetEmpty(BypassEnv); x {
+	case "":
+	case BypassEnvValue:
+		i, err := python.Find(c, python.Version{}, opts.EnvConfig.LookPathFunc)
+		if err != nil {
+			return errors.Annotate(err, "could not find Python interpreter for bypass").Err()
+		}
+
+		// Create a local cancellation option (signal handling).
+		c, cancelFunc := context.WithCancel(c)
+		defer cancelFunc()
+
+		cmd := exec.CommandContext(c, i.Python, opts.Args...)
+		prepCmd(cmd, opts.Environ.Sorted())
+
+		return errors.Annotate(
+			runAndForwardSignals(c, cmd, cancelFunc),
+			"failed to execute bootstrapped Python").Err()
+	default:
+		logging.Warningf(c, "ignoring bad %q value: %q", BypassEnv, x)
 	}
 
 	// Create a local cancellation option (signal handling).
@@ -99,19 +140,14 @@ func Run(c context.Context, opts Options) error {
 
 		// Run our bootstrapped Python command.
 		cmd := ve.Interpreter().IsolatedCommand(c, opts.Args...)
-		cmd.Dir = opts.WorkDir
-		cmd.Env = e.Sorted()
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
+		prepCmd(cmd, e.Sorted())
 
 		logging.Debugf(c, "Running Python command: %s\nWorkDir: %s\nEnv: %s", cmd.Args, cmd.Dir, cmd.Env)
 
 		// Output the Python command being executed.
-		if err := runAndForwardSignals(c, cmd, cancelFunc); err != nil {
-			return errors.Annotate(err, "failed to execute bootstrapped Python").Err()
-		}
-		return nil
+		return errors.Annotate(
+			runAndForwardSignals(c, cmd, cancelFunc),
+			"failed to execute bootstrapped Python").Err()
 	})
 	if err != nil {
 		return errors.Annotate(err, "").Err()
