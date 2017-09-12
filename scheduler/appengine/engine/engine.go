@@ -1386,38 +1386,51 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 		return ctl.Save(c)
 	}
 
-	// Ask manager to start the task. If it returns no errors, it should also move
-	// invocation out of StatusStarting state (a failure to do so is an error). If
-	// it returns an error, invocation is forcefully moved to StatusFailed state.
-	// In either case, invocation never ends up in StatusStarting state.
+	// Ask the manager to start the task. If it returns no errors, it should also
+	// move the invocation out of StatusStarting state (a failure to do so is a
+	// fatal error). If it returns an error, the invocation is forcefully moved to
+	// StatusRetrying or StatusFailed state (depending on whether the error is
+	// transient or not and how many retries are left). In either case, invocation
+	// never ends up in StatusStarting state.
 	err = ctl.manager.LaunchTask(c, ctl)
-	if ctl.State().Status == task.StatusStarting {
-		ctl.State().Status = task.StatusFailed
-		if err == nil {
-			err = fmt.Errorf("LaunchTask didn't move invocation out of StatusStarting")
-		}
+	if ctl.State().Status == task.StatusStarting && err == nil {
+		err = fmt.Errorf("LaunchTask didn't move invocation out of StatusStarting")
 	}
-
-	// Give up retrying on transient errors after some number of attempts.
 	if transient.Tag.In(err) && retryCount+1 >= invocationRetryLimit {
 		err = fmt.Errorf("Too many retries, giving up (original error - %s)", err)
 	}
 
-	// If asked to retry the invocation (by returning a transient error), do not
-	// touch Job entity when saving the current (failed) invocation. That way Job
-	// stays in "QUEUED" state (indicating it's queued for a new invocation).
-	if saveErr := ctl.saveImpl(c, !transient.Tag.In(err)); saveErr != nil {
-		logging.Errorf(c, "Failed to save invocation state - %s", saveErr)
-		if err == nil {
-			err = saveErr
+	// The task must always end up in a non-starting state. Do it on behalf of the
+	// controller if necessary.
+	if ctl.State().Status == task.StatusStarting {
+		if transient.Tag.In(err) {
+			// Note: in v1 version of the engine this status is changed into
+			// StatusFailed when new invocation attempt starts (see the transaction
+			// above, in particular "New invocation is starting" part). In v2 this
+			// will be handled differently (v2 will reuse same Invocation object for
+			// retries).
+			ctl.State().Status = task.StatusRetrying
+		} else {
+			ctl.State().Status = task.StatusFailed
 		}
 	}
 
-	// Returning transient error here causes the task queue to retry the task.
-	if err != nil {
-		logging.WithError(err).Errorf(c, "Invocation failed to start")
+	// We MUST commit the state of the invocation. A failure to save the state
+	// may cause the job state machine to get stuck. If we can't save it, we need
+	// to retry the whole launch attempt from scratch (redoing all the work,
+	// a properly implemented LaunchTask should be idempotent).
+	if err := ctl.Save(c); err != nil {
+		logging.WithError(err).Errorf(c, "Failed to save invocation state")
+		return err
 	}
-	return err
+
+	// Task retries happen via the task queue, need to explicitly trigger a retry
+	// by returning a transient error.
+	if ctl.State().Status == task.StatusRetrying {
+		return errors.New("task failed to start, retrying", transient.Tag)
+	}
+
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

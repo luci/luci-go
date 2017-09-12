@@ -33,6 +33,12 @@ type Status string
 const (
 	// StatusStarting means the task is about to start.
 	StatusStarting Status = "STARTING"
+	// StatusRetrying means the task was starting, but the launch failed in some
+	// transient way. The start attempt is retried in this case a bunch of times,
+	// until eventually the task moves into either StatusRunning or one of the
+	// final states. The only possible transition into StatusRetrying is from
+	// StatusStarting. A running task can only succeed or fail.
+	StatusRetrying Status = "RETRYING"
 	// StatusRunning means the task has started and is running now.
 	StatusRunning Status = "RUNNING"
 	// StatusSucceeded means the task finished with success.
@@ -46,6 +52,14 @@ const (
 	// hard deadline).
 	StatusAborted Status = "ABORTED"
 )
+
+// Initial returns true if Status is Starting or Retrying.
+//
+// These statuses indicate an invocation before LaunchTask (perhaps, a retry of
+// it) is finished with the invocation.
+func (s Status) Initial() bool {
+	return s == StatusStarting || s == StatusRetrying
+}
 
 // Final returns true if Status represents some final status.
 func (s Status) Final() bool {

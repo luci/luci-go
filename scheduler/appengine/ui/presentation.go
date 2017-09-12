@@ -192,6 +192,7 @@ type invocation struct {
 
 var statusToRowClass = map[task.Status]string{
 	task.StatusStarting:  "active",
+	task.StatusRetrying:  "warning",
 	task.StatusRunning:   "info",
 	task.StatusSucceeded: "success",
 	task.StatusFailed:    "danger",
@@ -201,6 +202,7 @@ var statusToRowClass = map[task.Status]string{
 
 var statusToLabelClass = map[task.Status]string{
 	task.StatusStarting:  "label-default",
+	task.StatusRetrying:  "label-warning",
 	task.StatusRunning:   "label-info",
 	task.StatusSucceeded: "label-success",
 	task.StatusFailed:    "label-danger",
