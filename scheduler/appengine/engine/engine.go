@@ -722,54 +722,27 @@ type txnCallback func(c context.Context, job *Job, isNew bool) error
 // errSkipPut can be returned by txnCallback to cancel ds.Put call.
 var errSkipPut = errors.New("errSkipPut")
 
-// defaultTransactionOptions is used for all transactions. The scheduler service
-// has no user facing API, all activity is in background task queues. So tune it
-// to do more retries.
-var defaultTransactionOptions = ds.TransactionOptions{
-	Attempts: 10,
-}
-
 // txn reads Job, calls callback, then dumps the modified entity back into
 // datastore (unless callback returns errSkipPut).
-func (e *engineImpl) txn(c context.Context, jobID string, txn txnCallback) error {
+func (e *engineImpl) txn(c context.Context, jobID string, callback txnCallback) error {
 	c = logging.SetField(c, "JobID", jobID)
-	fatal := false
-	attempt := 0
-	err := ds.RunInTransaction(c, func(c context.Context) error {
-		attempt++
-		if attempt != 1 {
-			logging.Warningf(c, "Retrying transaction...")
-		}
+	return runTxn(c, func(c context.Context) error {
 		stored := Job{JobID: jobID}
 		err := ds.Get(c, &stored)
 		if err != nil && err != ds.ErrNoSuchEntity {
-			return err
+			return transient.Tag.Apply(err)
 		}
-		modified := stored
-		err = txn(c, &modified, err == ds.ErrNoSuchEntity)
-		if err != nil && err != errSkipPut {
-			fatal = !transient.Tag.In(err)
-			return err
-		}
-		if err != errSkipPut && !modified.isEqual(&stored) {
-			return ds.Put(c, &modified)
+		modified := stored // make a copy of Job struct
+		switch err = callback(c, &modified, err == ds.ErrNoSuchEntity); {
+		case err == errSkipPut:
+			return nil // asked to skip the update
+		case err != nil:
+			return err // a real error (transient or fatal)
+		case !modified.isEqual(&stored):
+			return transient.Tag.Apply(ds.Put(c, &modified))
 		}
 		return nil
-	}, &defaultTransactionOptions)
-	if err != nil {
-		logging.Errorf(c, "Job transaction failed: %s", err)
-		if fatal {
-			return err
-		}
-		// By now err is already transient (since 'fatal' is false) or it is commit
-		// error (i.e. produced by RunInTransaction itself, not by its callback).
-		// Need to wrap commit errors too.
-		return transient.Tag.Apply(err)
-	}
-	if attempt > 1 {
-		logging.Infof(c, "Committed on %d attempt", attempt)
-	}
-	return nil
+	})
 }
 
 // rollSM is called under transaction to perform a single state machine
@@ -1353,7 +1326,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 			skipRunning = true
 		}
 		if err := ds.Put(c, &inv); err != nil {
-			return err
+			return transient.Tag.Apply(err)
 		}
 		// Move previous invocation (if any) to failed state. It has failed to
 		// start.
@@ -1364,7 +1337,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 			}
 			err := ds.Get(c, &prev)
 			if err != nil && err != ds.ErrNoSuchEntity {
-				return err
+				return transient.Tag.Apply(err)
 			}
 			if err == nil && !prev.Status.Final() {
 				prev.debugLog(c, "New invocation is starting (%d), marking this one as failed.", inv.ID)
@@ -1373,7 +1346,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 				prev.MutationsCount++
 				prev.trimDebugLog()
 				if err := ds.Put(c, &prev); err != nil {
-					return err
+					return transient.Tag.Apply(err)
 				}
 			}
 		}

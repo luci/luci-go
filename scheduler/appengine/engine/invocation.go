@@ -26,10 +26,14 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth/identity"
 
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
+
+// errInvocationIDConflict is returned by generateInvocationID.
+var errInvocationIDConflict = errors.New("could not find available invocationID", transient.Tag)
 
 const (
 	// debugLogSizeLimit is how many bytes the invocation debug log can be before
@@ -73,14 +77,14 @@ func generateInvocationID(c context.Context, parent *datastore.Key) (int64, erro
 		invID := invTs | (randSuffix << 4)
 		exists, err := datastore.Exists(c, datastore.NewKey(c, "Invocation", "", invID, parent))
 		if err != nil {
-			return 0, err
+			return 0, transient.Tag.Apply(err)
 		}
 		if !exists.All() {
 			return invID, nil
 		}
 	}
 
-	return 0, errors.New("could not find available invocationID after 10 attempts")
+	return 0, errInvocationIDConflict
 }
 
 // Invocation entity stores single attempt to run a job. Its parent entity
