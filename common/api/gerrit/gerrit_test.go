@@ -169,6 +169,23 @@ var (
 	    "_number": 627036,
 	    "owner": {
 		"_account_id": 1118104
+	    },
+	    "reviewers": {
+		    "CC": [
+			    {"_account_id": 1118110},
+			    {"_account_id": 1118111},
+			    {"_account_id": 1118112}
+		    ],
+		    "REVIEWER": [
+			    {"_account_id": 1118120},
+			    {"_account_id": 1118121},
+			    {"_account_id": 1118122}
+		    ],
+		    "REMOVED": [
+			    {"_account_id": 1118130},
+			    {"_account_id": 1118131},
+			    {"_account_id": 1118132}
+		    ]
 	    }
 	}`
 	fakeCL2Str = `{

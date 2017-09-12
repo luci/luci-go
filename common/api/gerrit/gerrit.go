@@ -36,32 +36,39 @@ import (
 // struct. Adding more fields to this struct should be okay (but only
 // Gerrit-supported keys will be populated).
 type Change struct {
-	ChangeNumber           int           `json:"_number"`
-	ID                     string        `json:"id"`
-	ChangeID               string        `json:"change_id"`
-	Project                string        `json:"project"`
-	Branch                 string        `json:"branch"`
-	Hashtags               []string      `json:"hashtags"`
-	Subject                string        `json:"subject"`
-	Status                 string        `json:"status"`
-	Created                string        `json:"created"`
-	Updated                string        `json:"updated"`
-	Mergeable              bool          `json:"mergeable"`
-	Submitted              string        `json:"submitted"`
-	SubmitType             string        `json:"submit_type"`
-	Insertions             int           `json:"insertions"`
-	Deletions              int           `json:"deletions"`
-	UnresolvedCommentCount int           `json:"unresolved_comment_count"`
-	HasReviewStarted       bool          `json:"has_review_started"`
-	Owner                  AccountInfo   `json:"owner"`
-	Submitter              AccountInfo   `json:"submitter"`
-	Reviewers              []AccountInfo `json:"reviewers"`
-	RevertOf               int           `json:"revert_of"`
-	CurrentRevision        string        `json:"current_revision"`
+	ChangeNumber           int         `json:"_number"`
+	ID                     string      `json:"id"`
+	ChangeID               string      `json:"change_id"`
+	Project                string      `json:"project"`
+	Branch                 string      `json:"branch"`
+	Hashtags               []string    `json:"hashtags"`
+	Subject                string      `json:"subject"`
+	Status                 string      `json:"status"`
+	Created                string      `json:"created"`
+	Updated                string      `json:"updated"`
+	Mergeable              bool        `json:"mergeable"`
+	Submitted              string      `json:"submitted"`
+	SubmitType             string      `json:"submit_type"`
+	Insertions             int         `json:"insertions"`
+	Deletions              int         `json:"deletions"`
+	UnresolvedCommentCount int         `json:"unresolved_comment_count"`
+	HasReviewStarted       bool        `json:"has_review_started"`
+	Owner                  AccountInfo `json:"owner"`
+	Submitter              AccountInfo `json:"submitter"`
+	Reviewers              Reviewers   `json:"reviewers"`
+	RevertOf               int         `json:"revert_of"`
+	CurrentRevision        string      `json:"current_revision"`
 	// MoreChanges is not part of a Change, but gerrit piggy-backs on the
 	// last Change in a page to set this flag if there are more changes
 	// in the results of a query.
 	MoreChanges bool `json:"_more_changes"`
+}
+
+// Reviewers is a map that maps a type of reviewer to its account info.
+type Reviewers struct {
+	CC       []AccountInfo `json:"CC"`
+	Reviewer []AccountInfo `json:"REVIEWER"`
+	Removed  []AccountInfo `json:"REMOVED"`
 }
 
 // AccountInfo contains fields associated with a Gerrit account.
