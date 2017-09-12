@@ -41,9 +41,9 @@ const (
 	// indefinitely.
 	intermediateCacheLifetime = 10 * time.Second
 
-	// defaultLogDogHost is the default LogDog host, if one isn't specified via
+	// DefaultLogDogHost is the default LogDog host, if one isn't specified via
 	// query string.
-	defaultLogDogHost = "luci-logdog.appspot.com"
+	DefaultLogDogHost = "luci-logdog.appspot.com"
 )
 
 // AnnotationStream represents a LogDog annotation protobuf stream.
