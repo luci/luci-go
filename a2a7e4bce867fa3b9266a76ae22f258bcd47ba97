@@ -22,6 +22,30 @@
       "revId": "a2a7e4bce867fa3b9266a76ae22f258bcd47ba97",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a97560e1_aac5cc1a",
+        "filename": "scheduler/appengine/engine/statemachine.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-12T18:10:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "07163471_c251bd4d",
+      "range": {
+        "startLine": 151,
+        "startChar": 2,
+        "endLine": 151,
+        "endChar": 3
+      },
+      "revId": "a2a7e4bce867fa3b9266a76ae22f258bcd47ba97",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
