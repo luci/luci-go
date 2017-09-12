@@ -98,6 +98,21 @@ type Traits struct {
 	Multistage bool
 }
 
+// Trigger is passed from a triggering job to a triggered job.
+type Trigger struct {
+	// ID must uniquely identify a Trigger in time. It is used to deduplicate and
+	// hence provide idempotency for adding a trigger.
+	ID string
+
+	// Payload stores data passed from a triggering Job to a triggered Job.
+	// It is opaque to the engine and could be empty. It is up to respective
+	// TaskManager instances to interprete it.
+	//
+	// Payload should be fairly small in order for all outstanding triggers to fit
+	// into 1 datastore entry.
+	Payload []byte `json:",omitempty"`
+}
+
 // Manager knows how to work with a particular kind of tasks (e.g URL fetch
 // tasks, Swarming tasks, etc): how to deserialize, validate and execute them.
 //
