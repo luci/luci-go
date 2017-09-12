@@ -24,10 +24,11 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/server/settings"
 )
 
-// DefaultExpire is a reasonable default expiration value.
+// DefaultExpire is a reasonable default expiration value to use on prod GAE.
 const DefaultExpire = 10 * time.Minute
 
 // DSCacheMode is the datastore cache mode.
@@ -96,7 +97,7 @@ func FetchCachedSettings(c context.Context) (Settings, error) {
 		s.ConfigServiceHost = translateConfigURLToHost(s.ConfigServiceHost)
 		return s, nil
 	case settings.ErrNoSettings:
-		return DefaultSettings(), nil
+		return DefaultSettings(c), nil
 	default:
 		return Settings{}, err
 	}
@@ -111,9 +112,16 @@ func mustFetchCachedSettings(c context.Context) *Settings {
 }
 
 // DefaultSettings returns Settings to use if setting store is empty.
-func DefaultSettings() Settings {
+func DefaultSettings(c context.Context) Settings {
+	// Disable local cache on devserver by default to allows changes to local
+	// configs to propagate instantly. This is usually preferred when developing
+	// locally.
+	exp := 0
+	if !info.IsDevAppServer(c) {
+		exp = int(DefaultExpire.Seconds())
+	}
 	return Settings{
-		CacheExpirationSec: int(DefaultExpire.Seconds()),
+		CacheExpirationSec: exp,
 		DatastoreCacheMode: DSCacheDisabled,
 	}
 }
@@ -140,19 +148,13 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 			Title: `Config service host`,
 			Type:  settings.UIFieldText,
 			Validator: func(v string) error {
-				// Validate that the host has a length, and has no forward slashes
-				// in it.
-				switch {
-				case len(v) == 0:
-					return fmt.Errorf("host cannot be empty")
-				case strings.IndexRune(v, '/') >= 0:
+				if strings.ContainsRune(v, '/') {
 					return fmt.Errorf("host must be a host name, not a URL")
-				default:
-					return nil
 				}
+				return nil
 			},
 			Help: `<p>The application may fetch configuration files stored centrally ` +
-				`in an instance of <a href="https://github.com/luci/luci-py/tree/master/appengine/config_service">luci-config</a> ` +
+				`in an instance of <a href="https://chromium.googlesource.com/infra/luci/luci-py/+/master/appengine/config_service">luci-config</a> ` +
 				`service. This is the host name (e.g., "example.com") of such service. For legacy purposes, this may be an ` +
 				`URL, in which case the host component will be used. If you don't know what this is, you probably don't ` +
 				`use it and can keep this setting blank.</p>`,
@@ -191,7 +193,7 @@ package doc for instructions how to setup this cron job.</p>`,
 }
 
 func (settingsUIPage) ReadSettings(c context.Context) (map[string]string, error) {
-	s := DefaultSettings()
+	s := DefaultSettings(c)
 	err := settings.GetUncached(c, settingsKey, &s)
 	if err != nil && err != settings.ErrNoSettings {
 		return nil, err
