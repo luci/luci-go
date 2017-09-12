@@ -1454,9 +1454,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	// StatusRetrying or StatusFailed state (depending on whether the error is
 	// transient or not and how many retries are left). In either case, invocation
 	// never ends up in StatusStarting state.
-	// TODO(tAndrii): pass triggers to LaunchTask for task-specific trigger
-	// handling.
-	err = ctl.manager.LaunchTask(c, ctl)
+	err = ctl.manager.LaunchTask(c, ctl, triggers)
 	if ctl.State().Status == task.StatusStarting && err == nil {
 		err = fmt.Errorf("LaunchTask didn't move invocation out of StatusStarting")
 	}
