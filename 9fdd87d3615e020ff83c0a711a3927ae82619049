@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8dee356a_a0bdea6a",
+        "filename": "scheduler/appengine/engine/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-12T01:06:23Z",
+      "side": 1,
+      "message": "the whole point of this CL is to concentrate interaction with Job entity within a transaction in a single place (this one), so it can later be swapped with something else. \u0027updateJob bool\u0027 made it difficult.",
+      "range": {
+        "startLine": 240,
+        "startChar": 1,
+        "endLine": 270,
+        "endChar": 12
+      },
+      "revId": "9fdd87d3615e020ff83c0a711a3927ae82619049",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
