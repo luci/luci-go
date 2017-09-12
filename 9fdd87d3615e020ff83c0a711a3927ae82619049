@@ -69,6 +69,30 @@
       "revId": "9fdd87d3615e020ff83c0a711a3927ae82619049",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cfae9b5a_04b99dca",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1423,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-12T17:11:33Z",
+      "side": 1,
+      "message": "It puts the error into a logger field called \"error\". It currently isn\u0027t much better than just logging it in-line but I imagine we can extend it later to do something else with errors, since it has direct access to them.",
+      "parentUuid": "00c32b6b_23ec319c",
+      "range": {
+        "startLine": 1423,
+        "startChar": 2,
+        "endLine": 1423,
+        "endChar": 19
+      },
+      "revId": "9fdd87d3615e020ff83c0a711a3927ae82619049",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
