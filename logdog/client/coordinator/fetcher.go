@@ -41,6 +41,8 @@ type coordinatorSource struct {
 	tidx      types.MessageIndex
 	tailFirst bool
 
+	requireCompleteStream bool
+
 	streamState *LogStream
 }
 
@@ -79,6 +81,10 @@ func (s *coordinatorSource) LogEntries(c context.Context, req *fetcher.LogReques
 			return logs, s.tidx, nil
 
 		case ErrNoSuchStream:
+			if s.requireCompleteStream {
+				return nil, 0, err
+			}
+
 			log.WithError(err).Warningf(c, "Stream does not exist. Sleeping pending registration.")
 
 			// Delay, interrupting if our Context is interrupted.
@@ -113,6 +119,7 @@ func (s *Stream) Fetcher(c context.Context, o *fetcher.Options) *fetcher.Fetcher
 	} else {
 		o = &(*o)
 	}
-	o.Source = &coordinatorSource{stream: s, tidx: -1}
+	o.Source = &coordinatorSource{
+		stream: s, tidx: -1, requireCompleteStream: o.RequireCompleteStream}
 	return fetcher.New(c, *o)
 }
