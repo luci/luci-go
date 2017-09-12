@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "926b6e1c_4306f8f5",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-12T23:15:13Z",
+      "side": 1,
+      "message": "Vadim convinced me to changed to JobIDs for consistency.",
+      "parentUuid": "26b96217_413d9302",
+      "range": {
+        "startLine": 139,
+        "startChar": 45,
+        "endLine": 139,
+        "endChar": 54
+      },
+      "revId": "9d7ee0a3e1f878aa89e14fc889dba431d9685d1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "105b684e_624401b9",
         "filename": "scheduler/appengine/engine/controller.go",
         "patchSetId": 7
@@ -234,6 +258,30 @@
       "revId": "9d7ee0a3e1f878aa89e14fc889dba431d9685d1d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9fe3260e_d37710f6",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 909,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-12T23:15:13Z",
+      "side": 1,
+      "message": "Vadim convinced me to changed to JobIDs for consistency.",
+      "parentUuid": "87376253_c23054a8",
+      "range": {
+        "startLine": 909,
+        "startChar": 1,
+        "endLine": 909,
+        "endChar": 55
+      },
+      "revId": "9d7ee0a3e1f878aa89e14fc889dba431d9685d1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
