@@ -122,4 +122,8 @@ func (c *TestController) GetClient(ctx context.Context, timeout time.Duration) (
 	return nil, errors.New("GetClient must not be called (not mocked)")
 }
 
+func (c *TestController) EmitTrigger(ctx context.Context, triggers task.Trigger) {
+	panic(errors.New("not imeplemented"))
+}
+
 var _ task.Controller = (*TestController)(nil)

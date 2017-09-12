@@ -46,6 +46,7 @@ type taskController struct {
 	state    task.State        // state mutated by TaskManager
 	debugLog string            // mutated by DebugLog
 	timers   []invocationTimer // mutated by AddTimer
+	triggers []task.Trigger    // mutated by EmitTrigger
 }
 
 // controllerForInvocation returns new instance of taskController configured
@@ -143,6 +144,12 @@ func (ctl *taskController) GetClient(ctx context.Context, timeout time.Duration)
 	return &http.Client{Transport: t}, nil
 }
 
+// EmitTrigger is part of task.Controller interface.
+func (ctl *taskController) EmitTrigger(ctx context.Context, trigger task.Trigger) {
+	ctl.DebugLog("Emitting a trigger %s", trigger.ID)
+	ctl.triggers = append(ctl.triggers, trigger)
+}
+
 // errUpdateConflict means Invocation is being modified by two TaskController's
 // concurrently. It should not be happening often. If it happens, task queue
 // call is retried to rerun the two-part transaction from scratch.
@@ -167,7 +174,7 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 	saving.TaskData = append([]byte(nil), ctl.state.TaskData...)
 	saving.ViewURL = ctl.state.ViewURL
 	saving.DebugLog += ctl.debugLog
-	if saving.isEqual(&ctl.saved) && len(ctl.timers) == 0 { // no changes at all?
+	if saving.isEqual(&ctl.saved) && len(ctl.timers) == 0 && len(ctl.triggers) == 0 { // no changes at all?
 		return nil
 	}
 	saving.MutationsCount++
@@ -176,8 +183,9 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 	defer func() {
 		if err == nil {
 			ctl.saved = saving
-			ctl.debugLog = "" // debug log was successfully flushed
-			ctl.timers = nil  // timers were successfully scheduled
+			ctl.debugLog = ""  // debug log was successfully flushed
+			ctl.timers = nil   // timers were successfully scheduled
+			ctl.triggers = nil // triggers were successfully emitted
 		}
 	}()
 
@@ -233,6 +241,12 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 		// Finished invocations can't schedule timers.
 		if !hasFinished && len(ctl.timers) > 0 {
 			if err := ctl.eng.enqueueInvTimers(c, ctl.JobID(), ctl.InvocationID(), ctl.timers); err != nil {
+				return err
+			}
+		}
+
+		if len(ctl.triggers) > 0 {
+			if err := ctl.eng.enqueueTriggers(c, ctl.saved.TriggeredJobIDs, ctl.triggers); err != nil {
 				return err
 			}
 		}

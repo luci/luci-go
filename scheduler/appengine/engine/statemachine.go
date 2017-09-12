@@ -191,6 +191,15 @@ type RecordOverrunAction struct {
 // IsAction makes RecordOverrunAction implement Action interface.
 func (a RecordOverrunAction) IsAction() bool { return true }
 
+// EnqueueTriggersAction enqueues triggers of a job.
+// OnNewTriggers(triggers) will be called sometime later.
+type EnqueueTriggersAction struct {
+	Triggers []task.Trigger
+}
+
+// IsAction makes EnqueueTriggersAction implement Action interface.
+func (a EnqueueTriggersAction) IsAction() bool { return true }
+
 // StateMachine advances state of some single scheduler job. It performs
 // a single step only (one On* call). As input it takes the state of the job and
 // state of the world (the schedule is considered to be a part of the world

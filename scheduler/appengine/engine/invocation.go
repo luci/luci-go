@@ -129,6 +129,10 @@ type Invocation struct {
 	// For informational purpose. See Catalog.UnmarshalTask().
 	Task []byte `gae:",noindex"`
 
+	// TriggeredJobIDs is a list of jobIDs of jobs which this job triggers.
+	// The list is sorted and without duplicates.
+	TriggeredJobIDs []string `gae:",noindex"`
+
 	// DebugLog is short free form text log with debug messages.
 	DebugLog string `gae:",noindex"`
 
@@ -152,7 +156,7 @@ type Invocation struct {
 	MutationsCount int64 `gae:",noindex"`
 }
 
-// isEqual returns true iff 'e' is equal to 'other'.
+// isEqual returns true iff 'e' is equal to 'other'
 func (e *Invocation) isEqual(other *Invocation) bool {
 	return e == other || (e.ID == other.ID &&
 		(e.JobKey == other.JobKey || e.JobKey.Equal(other.JobKey)) &&
@@ -162,6 +166,7 @@ func (e *Invocation) isEqual(other *Invocation) bool {
 		e.Revision == other.Revision &&
 		e.RevisionURL == other.RevisionURL &&
 		bytes.Equal(e.Task, other.Task) &&
+		equalSortedLists(e.TriggeredJobIDs, other.TriggeredJobIDs) &&
 		e.DebugLog == other.DebugLog &&
 		e.RetryCount == other.RetryCount &&
 		e.Status == other.Status &&
