@@ -15,7 +15,7 @@
 package coordinator
 
 import (
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/common/types"
 )
 
