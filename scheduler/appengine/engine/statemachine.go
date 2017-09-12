@@ -21,7 +21,9 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/scheduler/appengine/schedule"
+	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/server/auth/identity"
 )
 
@@ -113,6 +115,9 @@ type JobState struct {
 
 	// InvocationID is ID of currently running invocation or 0 if none is running.
 	InvocationID int64 `gae:",noindex"`
+
+	// PendingTriggers stores outstanding triggers of a job.
+	PendingTriggers []task.Trigger `gae:",noindex"`
 }
 
 // IsExpectingInvocation returns true if the state machine accepts
@@ -128,6 +133,22 @@ func (s *JobState) IsExpectingInvocation(invocationNonce int64) bool {
 // (e.g. crashes before switching to RUNNING or any of the final states).
 func (s *JobState) IsRetrying() bool {
 	return (s.State == JobStateQueued || s.State == JobStateSlowQueue) && s.InvocationRetryCount != 0
+}
+
+// Equal reports whether two job states are equilent.
+//
+// Equivalent is weaker than byte-equal.
+func (s *JobState) Equal(o *JobState) bool {
+	return (s.InvocationID == o.InvocationID &&
+		s.InvocationNonce == o.InvocationNonce &&
+		s.InvocationRetryCount == o.InvocationRetryCount &&
+		s.InvocationTime.Equal(o.InvocationTime) &&
+		s.Overruns == o.Overruns &&
+		equalTriggerLists(s.PendingTriggers, o.PendingTriggers) &&
+		s.PrevTime.Equal(o.PrevTime) &&
+		s.State == o.State &&
+		s.TickNonce == o.TickNonce &&
+		s.TickTime.Equal(o.TickTime))
 }
 
 // Action is a particular action to perform when switching the state. Can be
@@ -152,6 +173,7 @@ func (a TickLaterAction) IsAction() bool { return true }
 type StartInvocationAction struct {
 	InvocationNonce int64
 	TriggeredBy     identity.Identity
+	Triggers        []task.Trigger
 }
 
 // IsAction makes StartInvocationAction implement Action interface.
@@ -245,7 +267,7 @@ func (m *StateMachine) OnTimerTick(tickNonce int64) error {
 	// Was waiting for a tick to start a job? Add invocation to the queue.
 	if m.State.State == JobStateScheduled {
 		m.State.State = JobStateQueued
-		m.queueInvocation("")
+		m.queueInvocation("", nil)
 		return nil
 	}
 
@@ -308,6 +330,21 @@ func (m *StateMachine) OnInvocationDone(invocationID int64) {
 	m.invocationFinished()
 }
 
+// OnNewTriggers happens when some other job sends triggers to this one.
+// Thus, when this happens is uncorrelated to specific states of this job.
+func (m *StateMachine) OnNewTriggers(newTriggers []task.Trigger) {
+	known := stringset.New(len(m.State.PendingTriggers))
+	for _, t := range m.State.PendingTriggers {
+		known.Add(t.ID)
+	}
+	for _, nt := range newTriggers {
+		if known.Add(nt.ID) {
+			m.State.PendingTriggers = append(m.State.PendingTriggers, nt)
+		}
+	}
+	m.maybeSuspendOrResume()
+}
+
 // OnScheduleChange happens when job's schedule changes (and the job potentially
 // needs to be rescheduled).
 func (m *StateMachine) OnScheduleChange() {
@@ -354,7 +391,7 @@ func (m *StateMachine) OnManualInvocation(triggeredBy identity.Identity) error {
 		return errors.New("the job is already running or about to start")
 	}
 	m.State.State = JobStateQueued
-	m.queueInvocation(triggeredBy)
+	m.queueInvocation(triggeredBy, nil)
 	if !m.Schedule.IsAbsolute() {
 		m.resetTick() // will be set again when invocation ends
 	}
@@ -401,12 +438,23 @@ func (m *StateMachine) invocationFinished() {
 // maybeSuspendOrResume switches SCHEDULED state to SUSPENDED state in case
 // current tick is scheduled for DistantFuture, or switches SUSPENDED to
 // SCHEDULED if current tick is not scheduled for DistantFuture.
+// If there are PendingTriggers, changes state to QUEUED with given triggers.
+// TODO(Tandrii): new name for this method.
 func (m *StateMachine) maybeSuspendOrResume() {
 	switch {
 	case m.State.State == JobStateScheduled && m.State.TickTime == schedule.DistantFuture:
 		m.State.State = JobStateSuspended
 	case m.State.State == JobStateSuspended && m.State.TickTime != schedule.DistantFuture:
 		m.State.State = JobStateScheduled
+	}
+
+	if len(m.State.PendingTriggers) > 0 && (m.State.State == JobStateScheduled || m.State.State == JobStateSuspended) {
+		if !m.Schedule.IsAbsolute() {
+			m.resetTick() // will be set again when invocation ends
+		}
+		m.State.State = JobStateQueued
+		m.queueInvocation("", m.State.PendingTriggers)
+		m.State.PendingTriggers = nil
 	}
 }
 
@@ -418,7 +466,7 @@ func (m *StateMachine) resetTick() {
 
 // queueInvocation generates a new invocation nonce and asks engine to start
 // a new invocation.
-func (m *StateMachine) queueInvocation(triggeredBy identity.Identity) {
+func (m *StateMachine) queueInvocation(triggeredBy identity.Identity, triggers []task.Trigger) {
 	m.State.InvocationTime = m.Now
 	m.State.InvocationNonce = m.Nonce()
 	m.State.InvocationRetryCount = 0
@@ -427,6 +475,7 @@ func (m *StateMachine) queueInvocation(triggeredBy identity.Identity) {
 	m.emitAction(StartInvocationAction{
 		InvocationNonce: m.State.InvocationNonce,
 		TriggeredBy:     triggeredBy,
+		Triggers:        triggers,
 	})
 }
 
@@ -447,4 +496,19 @@ func (m *StateMachine) emitAction(a Action) {
 // impossible is never actually called.
 func impossible(msg string, args ...interface{}) {
 	panic(fmt.Errorf(msg, args...))
+}
+
+// equalTriggerLists returns true if two sequences of triggers are equal based
+// on IDs only.
+func equalTriggerLists(s, o []task.Trigger) bool {
+	if len(s) != len(o) {
+		return false
+	}
+	for i, st := range s {
+		ot := o[i]
+		if st.ID != ot.ID {
+			return false
+		}
+	}
+	return true
 }
