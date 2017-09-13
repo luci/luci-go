@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "84f905d6_1417070f",
+        "filename": "scheduler/appengine/engine/utils.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-13T22:35:20Z",
+      "side": 1,
+      "message": "perhaps move test to utils_test as well?",
+      "range": {
+        "startLine": 119,
+        "startChar": 5,
+        "endLine": 119,
+        "endChar": 13
+      },
+      "revId": "e63d4573ade68e5ae79c5cc1838b85492e12ed94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
