@@ -281,10 +281,6 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			logging.Errorf(c, "Failed to compute task ACLs: %s: %s", id, err)
 			continue
 		}
-		// TODO(tandrii): remove this once this warning stops firing.
-		if len(acls.Owners) == 0 || len(acls.Readers) == 0 {
-			logging.Warningf(c, "Missing some ACLs on %s: R=%d O=%d", id, len(acls.Owners), len(acls.Readers))
-		}
 		out = append(out, Definition{
 			JobID:       fmt.Sprintf("%s/%s", projectID, job.Id),
 			Acls:        *acls,
@@ -323,10 +319,6 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		if err != nil {
 			logging.Errorf(c, "Failed to compute task ACLs: %s: %s", id, err)
 			continue
-		}
-		// TODO(tandrii): remove this once this warning stops firing.
-		if len(acls.Owners) == 0 || len(acls.Readers) == 0 {
-			logging.Warningf(c, "Missing some ACLs on %s: R=%d O=%d", id, len(acls.Owners), len(acls.Readers))
 		}
 		// TODO(tandrii): validate triggered job names after collecting all valid job names.
 		out = append(out, Definition{
