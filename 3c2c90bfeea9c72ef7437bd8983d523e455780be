@@ -22,6 +22,30 @@
       "revId": "3c2c90bfeea9c72ef7437bd8983d523e455780be",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba13912c_a588803b",
+        "filename": "scheduler/appengine/engine/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-13T19:41:14Z",
+      "side": 1,
+      "message": "It complicated unit tests for this method a bit :) They are not transactional now.",
+      "parentUuid": "0623b299_10702678",
+      "range": {
+        "startLine": 77,
+        "startChar": 5,
+        "endLine": 77,
+        "endChar": 25
+      },
+      "revId": "3c2c90bfeea9c72ef7437bd8983d523e455780be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
