@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
+	"go.chromium.org/luci/server/auth"
 )
 
 // TaskManager implements task.Manager interface for tasks defined with
@@ -278,7 +279,9 @@ type gitilesClient interface {
 }
 
 func (m TaskManager) getGitilesClient(c context.Context, ctl task.Controller) (gitilesClient, error) {
-	httpClient, err := ctl.GetClient(c, time.Minute)
+	httpClient, err := ctl.GetClient(c, time.Minute, auth.WithScopes(
+		"https://www.googleapis.com/auth/gerritcodereview",
+	))
 	if err != nil {
 		return nil, err
 	}
