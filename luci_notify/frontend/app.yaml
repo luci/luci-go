@@ -1,0 +1,35 @@
+runtime: go
+api_version: go1
+service: default
+
+instance_class: F4_1G
+
+handlers:
+# Pubsub Handler.  This is strictly necessary because the default module
+# contains a /.* routing rule, so if it was targetted directly, we still want
+# login:admin to apply.
+- url: /_ah/push-handlers/.*
+  script: _go_app
+  secure: always
+  login: admin
+
+# Admin (for update and config)
+- url: /admin/.*
+  script: _go_app
+  secure: always
+  login: admin
+
+- url: /auth/.*
+  script: _go_app
+  secure: always
+
+# For static resources such as the google site verification file.
+- url: /
+  secure: always
+  static_dir: static
+
+# Everything goes here
+- url: /.*
+  script: _go_app
+  secure: always
+
