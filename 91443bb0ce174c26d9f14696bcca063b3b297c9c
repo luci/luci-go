@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "df1e43f9_a9d20cc4",
+        "filename": "scheduler/appengine/messages/cron.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-13T00:38:41Z",
+      "side": 1,
+      "message": "done in prior CL.",
+      "parentUuid": "d6841f7d_11fe3c74",
+      "range": {
+        "startLine": 156,
+        "startChar": 18,
+        "endLine": 156,
+        "endChar": 33
+      },
+      "revId": "91443bb0ce174c26d9f14696bcca063b3b297c9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ff25a37f_450f0b62",
         "filename": "scheduler/appengine/task/internal/triggers.proto",
         "patchSetId": 3
@@ -68,6 +92,54 @@
       "revId": "91443bb0ce174c26d9f14696bcca063b3b297c9c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cba6b17a_7505a79a",
+        "filename": "scheduler/appengine/task/internal/triggers.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-13T00:38:41Z",
+      "side": 1,
+      "message": "why do you want to have these stored serialized in payload instead of exposed alongside existing unique ID in Trigger struct?",
+      "parentUuid": "ff25a37f_450f0b62",
+      "range": {
+        "startLine": 19,
+        "startChar": 8,
+        "endLine": 19,
+        "endChar": 22
+      },
+      "revId": "91443bb0ce174c26d9f14696bcca063b3b297c9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6cd5125a_ec8a443f",
+        "filename": "scheduler/appengine/task/internal/triggers.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-13T00:38:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a570adeb_0c59fe5a",
+      "range": {
+        "startLine": 19,
+        "startChar": 22,
+        "endLine": 19,
+        "endChar": 23
+      },
+      "revId": "91443bb0ce174c26d9f14696bcca063b3b297c9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
