@@ -317,6 +317,11 @@ func (cfg *Config) Main(c context.Context) int {
 	c = gologger.StdConfig.Use(c)
 	c = logging.SetLevel(c, logging.Error)
 
+	// Check whether this is an application command.
+	if v, ok := env.Get(vpython.ApplicationCommandENV); ok {
+		return vpython.RunCommand(c, v, env)
+	}
+
 	a := application{
 		Config: cfg,
 		opts: vpython.Options{
