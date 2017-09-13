@@ -36,6 +36,8 @@ import (
 //
 // It is short-lived object spawned to handle some single event in the lifecycle
 // of the invocation.
+//
+// Support both v1 and v2 invocations.
 type taskController struct {
 	ctx     context.Context
 	eng     *engineImpl
@@ -83,7 +85,7 @@ func (ctl *taskController) populateState() {
 
 // JobID is part of task.Controller interface.
 func (ctl *taskController) JobID() string {
-	return ctl.saved.JobKey.StringID()
+	return ctl.saved.jobID()
 }
 
 // InvocationID is part of task.Controller interface.
@@ -211,7 +213,7 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 		// expect it to be.
 		mostRecent := Invocation{
 			ID:     saving.ID,
-			JobKey: saving.JobKey,
+			JobKey: saving.JobKey, // may be nil for v2 invocations, this is OK
 		}
 		switch err := datastore.Get(c, &mostRecent); {
 		case err == datastore.ErrNoSuchEntity: // should not happen

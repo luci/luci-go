@@ -85,8 +85,15 @@ type Engine interface {
 
 	// ListVisibleInvocations returns invocations of a visible job, most recent
 	// first.
+	//
 	// Returns fetched invocations and cursor string if there's more.
 	// error is ErrNoSuchJob if job doesn't exist or isn't visible.
+	//
+	// For v2 jobs, the listing is only eventually consistent currently.
+	//
+	// TODO(vadimsh): Expose an endpoint for fetching currently running
+	// invocations in perfectly consistent way. Keep ListVisibleInvocations for
+	// historical invocations.
 	ListVisibleInvocations(c context.Context, jobID string, pageSize int, cursor string) ([]*Invocation, string, error)
 
 	// GetVisibleInvocation returns single invocation of some job given its ID.
@@ -531,12 +538,29 @@ func (e *engineImpl) getJob(c context.Context, jobID string) (*Job, error) {
 	}
 }
 
+// isV2Job returns true if the given job is using v2 scheduler engine.
+//
+// Should be considered fast. Ignores transactions. Returns only transient
+// errors.
+func (e *engineImpl) isV2Job(c context.Context, jobID string) (bool, error) {
+	// TODO(vadimsh): Implement.
+	return false, nil
+}
+
 func (e *engineImpl) PublicAPI() Engine {
 	return e
 }
 
+// ListVisibleInvocations lists the invocations.
+//
+// Supports both v1 and v2 invocations.
 func (e *engineImpl) ListVisibleInvocations(c context.Context, jobID string, pageSize int, cursor string) ([]*Invocation, string, error) {
 	if _, err := e.GetVisibleJob(c, jobID); err != nil {
+		return nil, "", err
+	}
+
+	isV2, err := e.isV2Job(c, jobID)
+	if err != nil {
 		return nil, "", err
 	}
 
@@ -555,10 +579,13 @@ func (e *engineImpl) ListVisibleInvocations(c context.Context, jobID string, pag
 	}
 
 	// Prepare the query. Fetch 'pageSize' worth of entities as a single batch.
-	q := ds.NewQuery("Invocation").
-		Ancestor(ds.NewKey(c, "Job", jobID, 0, nil)).
-		Order("__key__")
-	q.Limit(int32(pageSize))
+	q := ds.NewQuery("Invocation")
+	if isV2 {
+		q = q.Eq("JobID", jobID)
+	} else {
+		q = q.Ancestor(ds.NewKey(c, "Job", jobID, 0, nil))
+	}
+	q = q.Order("__key__").Limit(int32(pageSize))
 	if cursorObj != nil {
 		q = q.Start(cursorObj)
 	}
@@ -566,7 +593,7 @@ func (e *engineImpl) ListVisibleInvocations(c context.Context, jobID string, pag
 	// Fetch pageSize worth of invocations, then grab the cursor.
 	out := make([]*Invocation, 0, pageSize)
 	var newCursor string
-	err := ds.Run(c, q, func(obj *Invocation, getCursor ds.CursorCB) error {
+	err = ds.Run(c, q, func(obj *Invocation, getCursor ds.CursorCB) error {
 		out = append(out, obj)
 		if len(out) < pageSize {
 			return nil
@@ -584,6 +611,9 @@ func (e *engineImpl) ListVisibleInvocations(c context.Context, jobID string, pag
 	return out, newCursor, nil
 }
 
+// GetVisibleInvocation returns one invocation by its ID.
+//
+// Supports both v1 and v2 invocations.
 func (e *engineImpl) GetVisibleInvocation(c context.Context, jobID string, invID int64) (*Invocation, error) {
 	switch _, err := e.GetVisibleJob(c, jobID); {
 	case err == ErrNoSuchJob:
@@ -595,13 +625,26 @@ func (e *engineImpl) GetVisibleInvocation(c context.Context, jobID string, invID
 	}
 }
 
+// getInvocation returns an existing invocation or nil.
+//
+// Supports both v1 and v2 invocations.
 func (e *engineImpl) getInvocation(c context.Context, jobID string, invID int64) (*Invocation, error) {
-	inv := &Invocation{
-		ID:     invID,
-		JobKey: ds.NewKey(c, "Job", jobID, 0, nil),
+	isV2, err := e.isV2Job(c, jobID)
+	if err != nil {
+		return nil, err
+	}
+	inv := &Invocation{ID: invID}
+	if !isV2 {
+		inv.JobKey = ds.NewKey(c, "Job", jobID, 0, nil)
 	}
 	switch err := ds.Get(c, inv); {
 	case err == nil:
+		if isV2 && inv.JobID != jobID {
+			logging.Errorf(c,
+				"Invocation %d is associated with job %q, not %q. Treating it as missing.",
+				invID, inv.JobID, jobID)
+			return nil, nil
+		}
 		return inv, nil
 	case err == ds.ErrNoSuchEntity:
 		return nil, nil
@@ -610,6 +653,41 @@ func (e *engineImpl) getInvocation(c context.Context, jobID string, invID int64)
 	}
 }
 
+// newInvocation allocates invocation ID and populates related fields of the
+// Invocation struct: ID, JobKey, JobID. It doesn't store the invocation in
+// the datastore.
+//
+// On success returns exact same 'inv' for convenience.
+//
+// Must be called within a transaction, since it verifies an allocated ID is
+// not used yet.
+//
+// Supports both v1 and v2 invocations.
+func (e *engineImpl) newInvocation(c context.Context, jobID string, inv *Invocation) (*Invocation, error) {
+	isV2, err := e.isV2Job(c, jobID)
+	if err != nil {
+		return nil, err
+	}
+	var jobKey *ds.Key
+	if !isV2 {
+		jobKey = ds.NewKey(c, "Job", jobID, 0, nil)
+	}
+	invID, err := generateInvocationID(c, jobKey)
+	if err != nil {
+		return nil, err
+	}
+	inv.ID = invID
+	if isV2 {
+		inv.JobID = jobID
+	} else {
+		inv.JobKey = jobKey
+	}
+	return inv, nil
+}
+
+// GetVisibleInvocationsByNonce returns invocations with a given nonce.
+//
+// Supports both v1 and v2 invocations.
 func (e *engineImpl) GetVisibleInvocationsByNonce(c context.Context, jobID string, invNonce int64) ([]*Invocation, error) {
 	switch _, err := e.GetVisibleJob(c, jobID); {
 	case err == ErrNoSuchJob:
@@ -628,7 +706,7 @@ func (e *engineImpl) GetVisibleInvocationsByNonce(c context.Context, jobID strin
 	// than adding a composite datastore index. Almost always 'entities' is small.
 	filtered := make([]*Invocation, 0, len(entities))
 	for _, inv := range entities {
-		if inv.JobKey.StringID() == jobID {
+		if inv.jobID() == jobID {
 			filtered = append(filtered, inv)
 		}
 	}
@@ -1221,26 +1299,24 @@ func (e *engineImpl) newTriggers(c context.Context, jobID string, triggers []tas
 // It creates new Invocation entity (in 'FAILED' state) in the datastore,
 // to keep record of all overruns. Doesn't modify Job entity.
 func (e *engineImpl) recordOverrun(c context.Context, jobID string, overruns int, runningInvID int64) error {
-	now := clock.Now(c).UTC()
-	jobKey := ds.NewKey(c, "Job", jobID, 0, nil)
-	invID, err := generateInvocationID(c, jobKey)
-	if err != nil {
-		return err
-	}
-	inv := Invocation{
-		ID:       invID,
-		JobKey:   jobKey,
-		Started:  now,
-		Finished: now,
-		Status:   task.StatusOverrun,
-	}
-	if runningInvID == 0 {
-		inv.debugLog(c, "New invocation should be starting now, but previous one is still starting")
-	} else {
-		inv.debugLog(c, "New invocation should be starting now, but previous one is still running: %d", runningInvID)
-	}
-	inv.debugLog(c, "Total overruns thus far: %d", overruns)
-	return transient.Tag.Apply(ds.Put(c, &inv))
+	return runTxn(c, func(c context.Context) error {
+		now := clock.Now(c).UTC()
+		inv, err := e.newInvocation(c, jobID, &Invocation{
+			Started:  now,
+			Finished: now,
+			Status:   task.StatusOverrun,
+		})
+		if err != nil {
+			return err
+		}
+		if runningInvID == 0 {
+			inv.debugLog(c, "New invocation should be starting now, but previous one is still starting")
+		} else {
+			inv.debugLog(c, "New invocation should be starting now, but previous one is still running: %d", runningInvID)
+		}
+		inv.debugLog(c, "Total overruns thus far: %d", overruns)
+		return transient.Tag.Apply(ds.Put(c, &inv))
+	})
 }
 
 // withController fetches the invocation, instantiates the task controller,
@@ -1323,6 +1399,15 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	c = logging.SetField(c, "InvNonce", invocationNonce)
 	c = logging.SetField(c, "Attempt", retryCount)
 
+	// TODO(vadimsh): This works only for v1 jobs currently.
+	isV2, err := e.isV2Job(c, jobID)
+	if err != nil {
+		return err
+	}
+	if isV2 {
+		panic("must be v1 job")
+	}
+
 	// Create new Invocation entity in StatusStarting state and associated it with
 	// Job entity.
 	//
@@ -1343,7 +1428,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	//    handler crashed).
 	inv := Invocation{}
 	skipRunning := false
-	err := e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
+	err = e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
 		if isNew {
 			logging.Errorf(c, "Queued job is unexpectedly gone")
 			skipRunning = true
@@ -1354,15 +1439,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 			skipRunning = true
 			return errSkipPut
 		}
-		jobKey := ds.KeyForObj(c, job)
-		invID, err := generateInvocationID(c, jobKey)
-		if err != nil {
-			return err
-		}
-		// Put new invocation entity, generate its ID.
 		inv = Invocation{
-			ID:              invID,
-			JobKey:          jobKey,
 			Started:         clock.Now(c).UTC(),
 			InvocationNonce: invocationNonce,
 			TriggeredBy:     triggeredBy,
@@ -1372,6 +1449,9 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 			TriggeredJobIDs: job.TriggeredJobIDs,
 			RetryCount:      int64(retryCount),
 			Status:          task.StatusStarting,
+		}
+		if _, err := e.newInvocation(c, job.JobID, &inv); err != nil {
+			return err
 		}
 		inv.debugLog(c, "Invocation initiated (attempt %d)", retryCount+1)
 		if triggeredBy != "" {
@@ -1392,7 +1472,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 		if job.State.InvocationID != 0 {
 			prev := Invocation{
 				ID:     job.State.InvocationID,
-				JobKey: jobKey,
+				JobKey: inv.JobKey, // works only for v1!
 			}
 			err := ds.Get(c, &prev)
 			if err != nil && err != ds.ErrNoSuchEntity {
@@ -1494,6 +1574,8 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 
 // invocationUpdating is called by the controller from inside an Invocation
 // transaction when it changes from 'old' to 'fresh'.
+//
+// Supports only v1 jobs currently.
 func (e *engineImpl) invocationUpdating(c context.Context, jobID string, old, fresh *Invocation) error {
 	hasStartedOrFailed := old.Status.Initial() && !fresh.Status.Initial()
 	hasFinished := !old.Status.Final() && fresh.Status.Final()
