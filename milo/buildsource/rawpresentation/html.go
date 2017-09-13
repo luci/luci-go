@@ -17,24 +17,47 @@ package rawpresentation
 import (
 	"net/http"
 
+	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/server/auth"
+)
 
-	"golang.org/x/net/context"
+// AcceptableLogdogHosts is the (hard-coded) list of accepted logdog hosts.
+//
+// It's exported so that tests may add additional hosts to it.
+var AcceptableLogdogHosts = stringset.NewFromSlice(
+	DefaultLogDogHost,
+	"luci-logdog-dev.appspot.com",
 )
 
 func resolveHost(host string) (string, error) {
-	// Resolveour our Host, and validate it against a host whitelist.
-	switch host {
-	case "":
-		return defaultLogDogHost, nil
-	case defaultLogDogHost, "luci-logdog-dev.appspot.com":
-		return host, nil
-	default:
-		return "", errors.Reason("host %q is not whitelisted", host).Err()
+	if host == "" {
+		host = DefaultLogDogHost
 	}
+	if AcceptableLogdogHosts.Has(host) {
+		return host, nil
+	}
+	return "", errors.Reason("host %q is not whitelisted", host).Err()
+}
+
+var fakeLogKey = "holds a logdog.LogsClient"
+
+// InjectFakeLogdogClient adds the given logdog.LogsClient to the context.
+//
+// You can obtain a fake logs client from
+//   go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1/fakelogs
+//
+// Injecting a nil logs client will panic.
+func InjectFakeLogdogClient(c context.Context, client logdog.LogsClient) context.Context {
+	if client == nil {
+		panic("injecting nil logs client")
+	}
+	return context.WithValue(c, &fakeLogKey, client)
 }
 
 // NewClient generates a new LogDog client that issues requests on behalf of the
@@ -43,6 +66,13 @@ func NewClient(c context.Context, host string) (*coordinator.Client, error) {
 	var err error
 	if host, err = resolveHost(host); err != nil {
 		return nil, err
+	}
+
+	if client, _ := c.Value(&fakeLogKey).(logdog.LogsClient); client != nil {
+		return &coordinator.Client{
+			C:    client,
+			Host: "example.com",
+		}, nil
 	}
 
 	// Initialize the LogDog client authentication.
