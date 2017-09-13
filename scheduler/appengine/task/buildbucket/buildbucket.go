@@ -29,7 +29,9 @@ import (
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/utils"
@@ -148,7 +150,6 @@ type taskData struct {
 
 // LaunchTask is part of Manager interface.
 func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []task.Trigger) error {
-	// TODO(tandrii): act on triggers.
 	// At this point config is already validated by ValidateProtoMessage.
 	cfg := ctl.Task().(*messages.BuildbucketTask)
 
@@ -165,6 +166,11 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 	params.Properties = make(map[string]string, len(cfg.Properties))
 	for _, kv := range utils.UnpackKVList(cfg.Properties, ':') {
 		params.Properties[kv.Key] = kv.Value
+	}
+	if gitilesTrigger := maybeGetTrigger(c, ctl, triggers); gitilesTrigger != nil {
+		// TODO(tandrii): maybe set repo as well.
+		params.Properties["revision"] = gitilesTrigger.Revision
+		params.Properties["branch"] = gitilesTrigger.Ref
 	}
 	paramsJSON, err := json.Marshal(&params)
 	if err != nil {
@@ -386,4 +392,29 @@ func (m TaskManager) handleBuildResult(c context.Context, ctl task.Controller, r
 	default:
 		ctl.State().Status = task.StatusFailed
 	}
+}
+
+func maybeGetTrigger(c context.Context, ctl task.Controller, triggers []task.Trigger) *internal.GitilesTrigger {
+	var prevTriggerID string
+	var prevDecoded *internal.GitilesTrigger
+	for _, t := range triggers {
+		p := &internal.TriggerPayload{}
+		if err := proto.Unmarshal(t.Payload, p); err != nil {
+			ctl.DebugLog("failed to decode payload of trigger %s", t.ID)
+			logging.Warningf(c, "failed to decode payloda of trigger %s", t.ID)
+			continue
+		}
+		if p.Gitiles == nil {
+			ctl.DebugLog("ignoring non-gitiles trigger %s", t.ID)
+			continue
+		}
+		// Latest trigger wins until engine v2 is available, because v1 requires
+		// coalescing all pending triggers into just 1 invocation.
+		if prevDecoded != nil {
+			ctl.DebugLog("ignoring gitiles trigger %s", prevTriggerID)
+		}
+		prevDecoded = p.Gitiles
+		prevTriggerID = t.ID
+	}
+	return prevDecoded
 }
