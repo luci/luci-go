@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d98d6ddc_a83b57ec",
+        "filename": "milo/srcman/get.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-13T00:49:33Z",
+      "side": 1,
+      "message": "srcman_proto, maybe?",
+      "range": {
+        "startLine": 36,
+        "startChar": 1,
+        "endLine": 36,
+        "endChar": 16
+      },
+      "revId": "365f782d7da6f5fb56db8a34f2d40d1006e491ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1d62b81_fa858f59",
+        "filename": "milo/srcman/get.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-13T00:49:33Z",
+      "side": 1,
+      "message": "I think this is okay",
+      "revId": "365f782d7da6f5fb56db8a34f2d40d1006e491ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fcb1ff67_e2a5c18e",
+        "filename": "milo/srcman/model.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-13T00:49:33Z",
+      "side": 1,
+      "message": "Having a NewSrcManEntry() function and SHA256() method would be convenient.",
+      "revId": "365f782d7da6f5fb56db8a34f2d40d1006e491ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
