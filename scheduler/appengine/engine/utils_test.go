@@ -107,3 +107,28 @@ func TestRunTxn(t *testing.T) {
 		})
 	})
 }
+
+func TestOpsCache(t *testing.T) {
+	Convey("Works", t, func(C) {
+		c := memory.Use(context.Background())
+
+		calls := 0
+		cb := func() error {
+			calls++
+			return nil
+		}
+
+		ops := opsCache{}
+		So(ops.Do(c, "key", cb), ShouldBeNil)
+		So(calls, ShouldEqual, 1)
+
+		// Second call is skipped.
+		So(ops.Do(c, "key", cb), ShouldBeNil)
+		So(calls, ShouldEqual, 1)
+
+		// Make sure memcache-based deduplication also works.
+		ops.doneFlags = nil
+		So(ops.Do(c, "key", cb), ShouldBeNil)
+		So(calls, ShouldEqual, 1)
+	})
+}
