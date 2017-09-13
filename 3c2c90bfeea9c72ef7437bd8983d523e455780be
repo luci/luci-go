@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0623b299_10702678",
+        "filename": "scheduler/appengine/engine/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-13T19:29:19Z",
+      "side": 1,
+      "message": "why not assert here too? I realize that this method isn\u0027t called just from one place *now*, but a dummy like myself might screw up in the future...",
+      "range": {
+        "startLine": 77,
+        "startChar": 5,
+        "endLine": 77,
+        "endChar": 25
+      },
+      "revId": "3c2c90bfeea9c72ef7437bd8983d523e455780be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
