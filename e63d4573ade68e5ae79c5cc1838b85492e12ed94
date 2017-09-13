@@ -22,6 +22,30 @@
       "revId": "e63d4573ade68e5ae79c5cc1838b85492e12ed94",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f206bc23_84c5ac64",
+        "filename": "scheduler/appengine/engine/utils.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-13T22:42:57Z",
+      "side": 1,
+      "message": "There was no dedicated unit test for this. Added.",
+      "parentUuid": "84f905d6_1417070f",
+      "range": {
+        "startLine": 119,
+        "startChar": 5,
+        "endLine": 119,
+        "endChar": 13
+      },
+      "revId": "e63d4573ade68e5ae79c5cc1838b85492e12ed94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
