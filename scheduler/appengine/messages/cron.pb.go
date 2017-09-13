@@ -344,7 +344,7 @@ func (m *NoopTask) String() string            { return proto.CompactTextString(m
 func (*NoopTask) ProtoMessage()               {}
 func (*NoopTask) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
 
-// GitilesTask specifies parameters of Swarming-based jobs.
+// GitilesTask specifies parameters of which jobs to trigger on new commits.
 type GitilesTask struct {
 	// Repo is the URL of the Gitiles repository.
 	Repo string `protobuf:"bytes,1,opt,name=repo" json:"repo,omitempty"`
@@ -555,6 +555,7 @@ type BuildbucketTask struct {
 	// Builder defines what to run.
 	Builder string `protobuf:"bytes,3,opt,name=builder" json:"builder,omitempty"`
 	// Properties is arbitrary "key:value" pairs describing the task.
+	// TODO(tandrii): whcih properties will be overridden if triggered?
 	Properties []string `protobuf:"bytes,4,rep,name=properties" json:"properties,omitempty"`
 	// Tags is a list of tags (as "key:value" pairs) to assign to the task.
 	Tags []string `protobuf:"bytes,5,rep,name=tags" json:"tags,omitempty"`
