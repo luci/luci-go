@@ -1,0 +1,438 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c67f9ad1_e2f307be",
+        "filename": "milo/api/resp/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "nit: e.g.",
+      "range": {
+        "startLine": 61,
+        "startChar": 38,
+        "endLine": 61,
+        "endChar": 41
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2eb28e64_9b50af45",
+        "filename": "milo/api/resp/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "nit: LUCI project",
+      "range": {
+        "startLine": 68,
+        "startChar": 31,
+        "endLine": 68,
+        "endChar": 50
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5beca116_c663a887",
+        "filename": "milo/api/resp/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "why Project is a part of SourceStamp? I think it should be in Build, because it has nothing to do with Source/commits",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "949b8483_bb3ab547",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "please document that it implements buildsource.ID, otherwise it is not obvious why this type is needed",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97475e44_a7be788c",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "if response is 404, we should return something here that will later result in Milo\u0027s HTTP 404.\nSame for 403\n----\nmaybe this func is not needed, see below",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10655c5c_bff92ecb",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "GetSwarmingID",
+      "range": {
+        "startLine": 56,
+        "startChar": 3,
+        "endLine": 56,
+        "endChar": 17
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3cd45de_041e072c",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "\"common\" is there because of endpoints\u0027 way of naming types, based on the the filename where the type is defined. Better not to incorporate it here.",
+      "range": {
+        "startLine": 65,
+        "startChar": 40,
+        "endLine": 65,
+        "endChar": 47
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17d4f379_f1f3f794",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "why do we have both getBuild and getBucketBuild? It is not obvious which one should be used.\nIf there difference is that getBucketBuild also checks cache, then maybe rename it to getBuildCached, so that the diff is obvious\n--\nhowever, see a comment below. Perhaps we don\u0027t need getBuild",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5150f1e9_88475a29",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "please clarify why. FWIU the build that we would fetch from buildbucket would be identical",
+      "range": {
+        "startLine": 90,
+        "startChar": 17,
+        "endLine": 90,
+        "endChar": 55
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a956612_31181c35",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "why do we need this code path? it seems to me that milo ingests all builds it may need. If a build is not in the datastore, perhaps Milo should act like the build does not exist.",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29e03a9c_214e526c",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "should b.ID be an int64 in the first place? otherwise this will cause http 500\n\nthe http handler that does the parsing should return 400 if this is a string",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a08fc09c_a5647988",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "if buildbucket settings are there, but host is not, this error message may be misleading\nconsider \"missing buildbucket host in settings\"",
+      "range": {
+        "startLine": 253,
+        "startChar": 24,
+        "endLine": 253,
+        "endChar": 54
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f451488_43ac95bd",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "even if the status is SCHEDULED, the swarming hostname and task id must be in the tags. Is this an optimization?",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8dc1637b_a5e32158",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "i wish this was in a separate CL. This CL is quite large",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ecb4b18a_c0660f19",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "i don\u0027t see a reason doing it after parsing ParametersJSON. It seems that none of this if statement (including body) using it.\n\nplease move it up to the top.",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "efdd2b0c_e9c65718",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "will this cause HTTP 500? if so, pubsub will try to re-deliver. We don\u0027t want that.\n\nlog the error and return nil?",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1171c3d3_22c340fd",
+        "filename": "milo/buildsource/buildbucket/struct.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "why do we need to store this (forever)? this seems like a lot of data",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14ff7457_675352c3",
+        "filename": "milo/buildsource/buildbucket/struct.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "nit: LUCI",
+      "range": {
+        "startLine": 26,
+        "startChar": 19,
+        "endLine": 26,
+        "endChar": 23
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1645efd_ac959b0b",
+        "filename": "milo/buildsource/buildbucket/struct.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "nit: unnecessary. A build can be created only once",
+      "range": {
+        "startLine": 29,
+        "startChar": 50,
+        "endLine": 29,
+        "endChar": 56
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a41f907_03005ca9",
+        "filename": "milo/buildsource/buildbucket/struct.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "supernit: inline",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 4
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6a37332_ea4468a0",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 451,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "we loose project info if SourceStamp happened to be uninitialized?",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff3f8f3f_12ce8526",
+        "filename": "milo/common/model/status.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:03:19Z",
+      "side": 1,
+      "message": "nit: E.g.",
+      "range": {
+        "startLine": 26,
+        "startChar": 51,
+        "endLine": 26,
+        "endChar": 54
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
