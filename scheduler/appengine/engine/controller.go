@@ -63,11 +63,11 @@ func controllerForInvocation(c context.Context, e *engineImpl, inv *Invocation) 
 	}
 	ctl.populateState()
 	var err error
-	ctl.task, err = e.Catalog.UnmarshalTask(inv.Task)
+	ctl.task, err = e.cfg.Catalog.UnmarshalTask(inv.Task)
 	if err != nil {
 		return ctl, fmt.Errorf("failed to unmarshal the task - %s", err)
 	}
-	ctl.manager = e.Catalog.GetTaskManager(ctl.task)
+	ctl.manager = e.cfg.Catalog.GetTaskManager(ctl.task)
 	if ctl.manager == nil {
 		return ctl, fmt.Errorf("TaskManager is unexpectedly missing")
 	}
