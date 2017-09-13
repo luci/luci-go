@@ -43,7 +43,9 @@ func TestTriggerBuild(t *testing.T) {
 		}
 		loadSavedRepo := func() *Repository {
 			r := &Repository{ID: "proj/gitiles:https://a.googlesource.com/b.git"}
-			So(ds.Get(c, r), ShouldBeNil)
+			if err := ds.Get(c, r); err != nil {
+				panic(err) // Stack is useful.
+			}
 			return r
 		}
 		ctl := &tasktest.TestController{
@@ -82,7 +84,7 @@ func TestTriggerBuild(t *testing.T) {
 			})
 		})
 
-		Convey("do nothing if there are no new commits", func() {
+		Convey("do not trigger if there are no new commits", func() {
 			ds.Put(c, &Repository{
 				ID: "proj/gitiles:https://a.googlesource.com/b.git",
 				References: []Reference{
@@ -131,6 +133,30 @@ func TestTriggerBuild(t *testing.T) {
 			So(ctl.Triggers, ShouldHaveLength, 2)
 			So(ctl.Triggers[0].ID, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/1.2.3@baadcafe0")
 			So(ctl.Triggers[1].ID, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef1")
+		})
+
+		Convey("do nothing at all if there are no changes", func() {
+			ds.Put(c, &Repository{
+				ID: "proj/gitiles:https://a.googlesource.com/b.git",
+				References: []Reference{
+					{Name: "refs/heads/master", Revision: "deadbeef0"},
+				},
+			})
+			gitilesMock.refs = func(ctx context.Context, repo string, path string) (map[string]string, error) {
+				return map[string]string{
+					"refs/heads/master": "deadbeef0",
+				}, nil
+			}
+			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
+			So(ctl.Triggers, ShouldBeNil)
+			So(ctl.Log, ShouldNotContain, "Saved 1 known refs")
+			So(ctl.Log, ShouldContain, "No changes detected")
+			So(loadSavedRepo(), ShouldResemble, &Repository{
+				ID: "proj/gitiles:https://a.googlesource.com/b.git",
+				References: []Reference{
+					{Name: "refs/heads/master", Revision: "deadbeef0"},
+				},
+			})
 		})
 	})
 }
