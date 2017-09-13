@@ -32,7 +32,6 @@ import (
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
-	mc "go.chromium.org/gae/service/memcache"
 	tq "go.chromium.org/gae/service/taskqueue"
 
 	"go.chromium.org/luci/common/clock"
@@ -194,8 +193,7 @@ type Config struct {
 // NewEngine returns default implementation of EngineInternal.
 func NewEngine(conf Config) EngineInternal {
 	return &engineImpl{
-		Config:    conf,
-		doneFlags: make(map[string]bool),
+		Config: conf,
 	}
 }
 
@@ -376,62 +374,10 @@ func (e *Job) isOwned(c context.Context) (bool, error) {
 
 type engineImpl struct {
 	Config
-
-	lock      sync.Mutex
-	doneFlags map[string]bool // see doIfNotDone
+	opsCache opsCache
 
 	// configureTopic is used by prepareTopic, mocked in tests.
 	configureTopic func(c context.Context, topic, sub, pushURL, publisher string) error
-}
-
-// doIfNotDone calls callback only if it wasn't called before.
-//
-// Works on best effort basis: callback can and will be called multiple times
-// (just not the every time 'doIfNotDone' is called).
-//
-// Keeps "done" flag in local memory and in memcache (using 'key' as
-// identifier). The callback should be idempotent, since it still may be called
-// multiple times if multiple processes attempt to execute the action at once.
-func (e *engineImpl) doIfNotDone(c context.Context, key string, cb func() error) error {
-	// Check the local cache.
-	e.lock.Lock()
-	if e.doneFlags[key] {
-		e.lock.Unlock()
-		return nil
-	}
-	e.lock.Unlock()
-
-	// Check the global cache.
-	switch _, err := mc.GetKey(c, key); {
-	case err == nil:
-		e.lock.Lock()
-		defer e.lock.Unlock()
-		e.doneFlags[key] = true
-		return nil
-	case err == mc.ErrCacheMiss:
-		break
-	default:
-		return transient.Tag.Apply(err)
-	}
-
-	// Do it.
-	if err := cb(); err != nil {
-		return err
-	}
-
-	// Store in the global cache. Ignore errors, it's not a big deal.
-	item := mc.NewItem(c, key)
-	item.SetValue([]byte("ok"))
-	item.SetExpiration(24 * time.Hour)
-	if err := mc.Set(c, item); err != nil {
-		logging.Warningf(c, "Failed to write item to memcache - %s", err)
-	}
-
-	// Store in the local cache.
-	e.lock.Lock()
-	defer e.lock.Unlock()
-	e.doneFlags[key] = true
-	return nil
 }
 
 func (e *engineImpl) GetAllProjects(c context.Context) ([]string, error) {
@@ -1716,7 +1662,7 @@ func (e *engineImpl) prepareTopic(c context.Context, params *topicParams) (topic
 	}
 
 	// Create and configure the topic. Do it only once.
-	err = e.doIfNotDone(c, fmt.Sprintf("prepareTopic:v1:%s", topic), func() error {
+	err = e.opsCache.Do(c, fmt.Sprintf("prepareTopic:v1:%s", topic), func() error {
 		if e.configureTopic != nil {
 			return e.configureTopic(c, topic, sub, pushURL, params.publisher)
 		}

@@ -865,12 +865,6 @@ func TestPrepareTopic(t *testing.T) {
 		_, _, err = ctl.PrepareTopic(c, "some@publisher.com")
 		So(err, ShouldBeNil)
 		So(pubSubCalls, ShouldEqual, 1)
-
-		// Make sure memcache-based deduplication also works.
-		e.doneFlags = make(map[string]bool)
-		_, _, err = ctl.PrepareTopic(c, "some@publisher.com")
-		So(err, ShouldBeNil)
-		So(pubSubCalls, ShouldEqual, 1)
 	})
 }
 
