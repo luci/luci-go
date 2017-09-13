@@ -116,7 +116,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		refs, refsErr = g.Refs(c, cfg.Repo, "")
+		refs, refsErr = g.Refs(c, cfg.Repo, "refs")
 	}()
 
 	wg.Wait()
