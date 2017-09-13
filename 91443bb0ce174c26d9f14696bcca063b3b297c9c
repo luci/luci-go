@@ -164,6 +164,30 @@
       "revId": "91443bb0ce174c26d9f14696bcca063b3b297c9c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e1c10d65_163cd792",
+        "filename": "scheduler/appengine/task/internal/triggers.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-13T01:41:29Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "02eeb9f5_f29aa22e",
+      "range": {
+        "startLine": 19,
+        "startChar": 8,
+        "endLine": 19,
+        "endChar": 22
+      },
+      "revId": "91443bb0ce174c26d9f14696bcca063b3b297c9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
