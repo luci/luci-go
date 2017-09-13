@@ -916,6 +916,9 @@ func (e *engineImpl) enqueueInvTimers(c context.Context, jobID string, invID int
 }
 
 func (e *engineImpl) enqueueTriggers(c context.Context, triggeredJobIDs []string, triggers []task.Trigger) error {
+	// TODO(tandrii): batch all enqueing into 1 TQ task because AE allows up to 5
+	// tasks to be inserted transactionally. The batched TQ task will then
+	// non-transactionally fan out into more TQ tasks.
 	wg := sync.WaitGroup{}
 	errs := errors.NewLazyMultiError(len(triggeredJobIDs))
 	i := 0
