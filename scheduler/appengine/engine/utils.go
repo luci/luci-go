@@ -16,10 +16,14 @@ package engine
 
 import (
 	"fmt"
+	"sync"
+	"time"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/memcache"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -105,4 +109,73 @@ func equalSortedLists(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+// opsCache "remembers" recently executed operations, and skips executing them
+// if they already were done.
+//
+// Expected cardinality of a set of all possible actions should be small (we
+// store the cache in memory).
+type opsCache struct {
+	lock      sync.RWMutex
+	doneFlags map[string]bool
+}
+
+// Do calls callback only if it wasn't called before.
+//
+// Works on best effort basis: callback can and will be called multiple times
+// (just not the every time 'Do' is called).
+//
+// Keeps "done" flag in local memory and in memcache (using 'key' as
+// identifier). The callback should be idempotent, since it still may be called
+// multiple times if multiple processes attempt to execute the action at once.
+func (o *opsCache) Do(c context.Context, key string, cb func() error) error {
+	// Check the local cache.
+	if o.getFlag(key) {
+		return nil
+	}
+
+	// Check the global cache.
+	switch _, err := memcache.GetKey(c, key); {
+	case err == nil:
+		o.setFlag(key)
+		return nil
+	case err == memcache.ErrCacheMiss:
+		break
+	default:
+		return transient.Tag.Apply(err)
+	}
+
+	// Do it.
+	if err := cb(); err != nil {
+		return err
+	}
+
+	// Store in the local cache.
+	o.setFlag(key)
+
+	// Store in the global cache. Ignore errors, it's not a big deal.
+	item := memcache.NewItem(c, key)
+	item.SetValue([]byte("ok"))
+	item.SetExpiration(24 * time.Hour)
+	if err := memcache.Set(c, item); err != nil {
+		logging.WithError(err).Warningf(c, "Failed to write item to memcache")
+	}
+
+	return nil
+}
+
+func (o *opsCache) getFlag(key string) bool {
+	o.lock.RLock()
+	defer o.lock.RUnlock()
+	return o.doneFlags[key]
+}
+
+func (o *opsCache) setFlag(key string) {
+	o.lock.Lock()
+	defer o.lock.Unlock()
+	if o.doneFlags == nil {
+		o.doneFlags = map[string]bool{}
+	}
+	o.doneFlags[key] = true
 }
