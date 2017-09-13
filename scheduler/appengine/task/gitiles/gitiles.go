@@ -133,11 +133,14 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 		return fmt.Errorf("failed to fetch refs: %v", refsErr)
 	}
 
+	refsChanged := 0
+
 	// Delete all previously known refs whcih are no longer watched.
 	for ref := range heads {
 		if !watchedRefs.Has(ref) {
 			ctl.DebugLog("Ref %s is no longer watched", ref)
 			delete(heads, ref)
+			refsChanged++
 		}
 	}
 
@@ -152,6 +155,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 		case existed && !exists:
 			ctl.DebugLog("Ref %s deleted", ref)
 			delete(heads, ref)
+			refsChanged++
 			continue
 		case !existed && exists:
 			ctl.DebugLog("Ref %s is new: %s", ref, newHead)
@@ -163,6 +167,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 			continue
 		}
 		heads[ref] = newHead
+		refsChanged++
 		// TODO(tandrii): actually look at commits between current and previously
 		// known tips of each ref.
 		// In current (v1) engine, all triggers emitted around the same time will
@@ -185,17 +190,22 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 			Payload: payload,
 		})
 	}
-	// Force save to ensure triggesr are actually emitted.
-	if err := ctl.Save(c); err != nil {
-		// At this point, triggers have not been sent, so bail now and don't save
-		// the refs' heads newest values.
-		return err
-	}
 
-	if err := m.save(c, ctl.JobID(), u, heads); err != nil {
-		return err
+	if refsChanged == 0 {
+		ctl.DebugLog("No changes detected")
+	} else {
+		ctl.DebugLog("%d refs changed", refsChanged)
+		// Force save to ensure triggesr are actually emitted.
+		if err := ctl.Save(c); err != nil {
+			// At this point, triggers have not been sent, so bail now and don't save
+			// the refs' heads newest values.
+			return err
+		}
+		if err := m.save(c, ctl.JobID(), u, heads); err != nil {
+			return err
+		}
+		ctl.DebugLog("Saved %d known refs", len(heads))
 	}
-	ctl.DebugLog("Saved %d known refs", len(heads))
 
 	ctl.State().Status = task.StatusSucceeded
 	return nil
