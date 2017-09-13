@@ -46,6 +46,7 @@ func TestPlatformForPEP425Tag(t *testing.T) {
 		{mkTag("linux_x86_64"), "linux-amd64"},
 		{mkTag("manylinux1_x86_64"), "linux-amd64"},
 		{mkTag("linux_arm64"), "linux-arm64"},
+		{mkTag("linux_aarch64"), "linux-arm64"},
 		{mkTag("linux_armv6"), "linux-armv6l"},
 		{mkTag("linux_armv7"), "linux-armv6l"},
 		{mkTag("linux_mips"), "linux-mips32"},

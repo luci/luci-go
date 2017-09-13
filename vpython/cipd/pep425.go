@@ -42,7 +42,7 @@ func PlatformForPEP425Tag(t *vpython.PEP425Tag) string {
 			return "linux-386"
 		case "x86_64":
 			return "linux-amd64"
-		case "arm64":
+		case "arm64", "aarch64":
 			return "linux-arm64"
 		case "mipsel", "mips":
 			return "linux-mips32"
