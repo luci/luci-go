@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "74aeb31f_c9142410",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1302,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-13T02:15:13Z",
+      "side": 1,
+      "message": "this should have been a transaction before, since generateInvocationID requires a transaction (otherwise it can give same ID to two separate callers)",
+      "range": {
+        "startLine": 1302,
+        "startChar": 8,
+        "endLine": 1302,
+        "endChar": 14
+      },
+      "revId": "99f17f6800f688c93a8683e07c0519e9dda52748",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
