@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "a602c65e_448a858d",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-13T21:37:26Z",
+      "side": 1,
+      "message": "Ping",
+      "parentUuid": "8d776849_3207169f",
+      "range": {
+        "startLine": 18,
+        "startChar": 48,
+        "endLine": 18,
+        "endChar": 60
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "90017c44_951b7219",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 11
@@ -95,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "61c8be70_68cecf1d",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-13T21:37:26Z",
+      "side": 1,
+      "message": "Ping",
+      "parentUuid": "90017c44_951b7219",
+      "range": {
+        "startLine": 23,
+        "startChar": 4,
+        "endLine": 24,
+        "endChar": 18
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f19c61a5_791508e5",
         "filename": "common/proto/access/access.proto",
         "patchSetId": 11
@@ -106,6 +154,30 @@
       "writtenOn": "2017-08-31T22:38:46Z",
       "side": 1,
       "message": "I find it strange that Actions set is stored as a list, but roles are stored as a map. I generally believe storing listings as lists are better, since it makes each individual element of the set to be fully described (it has a name and properties). Thus I suggest:\n\n message Role {\n   string role_id \u003d 1;\n   ...\n }\n\n repeated Role roles \u003d 4;\n\nIf you insist on using maps, then make \u0027actions\u0027 a map too... I just don\u0027t understand why actions and roles are stored differently.",
+      "range": {
+        "startLine": 53,
+        "startChar": 4,
+        "endLine": 53,
+        "endChar": 16
+      },
+      "revId": "0d2eb969effc180f3629bc4788816677c771999e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a97cb47f_d33d6607",
+        "filename": "common/proto/access/access.proto",
+        "patchSetId": 11
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-13T21:37:26Z",
+      "side": 1,
+      "message": "Ping\n\nAnd so on...",
+      "parentUuid": "f19c61a5_791508e5",
       "range": {
         "startLine": 53,
         "startChar": 4,
