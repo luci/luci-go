@@ -882,8 +882,10 @@ func (e *engineImpl) enqueueJobActions(c context.Context, jobID string, actions 
 }
 
 // enqueueInvTimers submits all timers emitted by an invocation manager by
-// adding corresponding tasks to the task queue. See ExecuteSerializedAction for
-// place where these actions are interpreted.
+// adding corresponding tasks to the task queue. Called from a transaction
+// around corresponding Invocation entity.
+//
+// See ExecuteSerializedAction for place where these actions are interpreted.
 func (e *engineImpl) enqueueInvTimers(c context.Context, jobID string, invID int64, timers []invocationTimer) error {
 	tasks := make([]*tq.Task, len(timers))
 	for i, timer := range timers {
@@ -1492,6 +1494,59 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 		return errors.New("task failed to start, retrying", transient.Tag)
 	}
 
+	return nil
+}
+
+// invocationUpdating is called by the controller from inside an Invocation
+// transaction when it changes from 'old' to 'fresh'.
+func (e *engineImpl) invocationUpdating(c context.Context, jobID string, old, fresh *Invocation) error {
+	hasStartedOrFailed := old.Status.Initial() && !fresh.Status.Initial()
+	hasFinished := !old.Status.Final() && fresh.Status.Final()
+	if !hasStartedOrFailed && !hasFinished {
+		return nil // nothing that could affect the Job happened
+	}
+
+	// Fetch the up-to-date state of the job. Not a fatal error if not there.
+	job := Job{JobID: jobID}
+	switch err := ds.Get(c, &job); {
+	case err == ds.ErrNoSuchEntity:
+		logging.Errorf(c, "Active job is unexpectedly gone")
+		return nil
+	case err != nil:
+		return transient.Tag.Apply(err)
+	}
+
+	// Still have this invocation associate with the job? Not big deal if not.
+	if job.State.InvocationID != fresh.ID {
+		logging.Warningf(c, "The invocation is no longer current, the current is %d", job.State.InvocationID)
+		return nil
+	}
+
+	// Make the state machine transitions, mutating a copy of 'job'.
+	modified := job
+	if hasStartedOrFailed {
+		err := e.rollSM(c, &modified, func(sm *StateMachine) error {
+			sm.OnInvocationStarted(fresh.ID)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	if hasFinished {
+		err := e.rollSM(c, &modified, func(sm *StateMachine) error {
+			sm.OnInvocationDone(fresh.ID)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// Don't bother doing an RPC if nothing has changed.
+	if !modified.isEqual(&job) {
+		return transient.Tag.Apply(ds.Put(c, &modified))
+	}
 	return nil
 }
 
