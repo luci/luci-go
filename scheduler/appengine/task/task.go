@@ -22,6 +22,8 @@ import (
 	"net/http"
 	"time"
 
+	"go.chromium.org/luci/server/auth"
+
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
@@ -282,7 +284,7 @@ type Controller interface {
 	//
 	// All requests made by the client must finish before given deadline time
 	// (or they will be forcefully aborted).
-	GetClient(c context.Context, timeout time.Duration) (*http.Client, error)
+	GetClient(c context.Context, timeout time.Duration, opts ...auth.RPCOption) (*http.Client, error)
 
 	// EmitTrigger delivers a given trigger to all jobs which are triggered by
 	// current one.
