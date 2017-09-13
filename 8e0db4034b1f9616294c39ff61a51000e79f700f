@@ -22,6 +22,30 @@
       "revId": "8e0db4034b1f9616294c39ff61a51000e79f700f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44b129bd_16bafad6",
+        "filename": "milo/api/proto/manifest/proto_gae.gen.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-13T21:24:04Z",
+      "side": 1,
+      "message": "My gae checkout was out of date. It should be fixed now.",
+      "parentUuid": "61bfca4f_eb87678d",
+      "range": {
+        "startLine": 2,
+        "startChar": 15,
+        "endLine": 2,
+        "endChar": 21
+      },
+      "revId": "8e0db4034b1f9616294c39ff61a51000e79f700f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
