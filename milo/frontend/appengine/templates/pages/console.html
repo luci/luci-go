@@ -19,6 +19,13 @@
   flex-direction: row;
 }
 
+.console-row-item-base {
+  display: flex;
+  min-width: 2em;
+  min-height: 3.75em;
+  max-height: 3.75em;
+}
+
 /* Commits */
 
 .console-commit-column {
@@ -27,29 +34,63 @@
   justify-content: flex-end;
 }
 
-.console-commit-column div:nth-child(even) {
+.console-commit-column div.console-commit-item:nth-of-type(even) {
   background-color: #eeeeee;
 }
 
-.console-commit-column div:nth-child(odd) {
+.console-commit-column div.console-commit-item:nth-of-type(odd) {
   background-color: #f2f2f2;
 }
 
 .console-commit-item {
-  display: flex;
-  min-width: 2em;
-  min-height: 2em;
+  border-top-left-radius: 0.5em;
+  border-bottom-left-radius: 0.5em;
   align-items: center;
-  justify-content: left;
+  justify-content: flex-start;
   white-space: nowrap;
   padding: 1px 1em 1px 1em;
   margin-right: -0.2em;
 }
 
-.commit {
-  font-weight: bold;
+.console-commit-info-column {
+  display: flex;
+  flex-direction: column;
+  min-height: 3em;
+  max-height: 3em;
+  justify-content: space-between;
 }
 
+.console-commit-message {
+  display: block;
+  width: 28em;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.console-commit-author {
+  display: block;
+  max-width: 13em;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+/*
+.console-commit-icon {
+  display: flex;
+  width: 2em;
+  height: 2em;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.2em;
+  background-color: #555;
+  color: #FFF;
+  font-size: 1.5em;
+  margin-right: 0.5em;
+}
+*/
 /* Header */
 
 .console-top-row {
@@ -63,12 +104,12 @@
 
 .console-top-item {
   display: flex;
+  min-width: 2em;
+  min-height: 2em;
   border-top: 1px solid silver;
   border-left: 1px solid silver;
   border-right: 1px solid silver;
   border-bottom: 1px solid transparent;
-  min-width: 2em;
-  min-height: 2em;
   align-items: center;
   justify-content: center;
   border-top-left-radius: 0.5em;
@@ -80,9 +121,9 @@
 
 .console-space {
   display: flex;
-  border: 1px solid transparent;
   min-width: 2em;
   min-height: 2em;
+  border: 1px solid transparent;
 }
 
 /* Builders */
@@ -98,9 +139,9 @@
 
 .console-builder-item {
   display: flex;
-  border: 1px solid silver;
   min-width: 2em;
   min-height: 2em;
+  border: 1px solid silver;
   align-items: center;
   justify-content: center;
   background-color: #fff;
@@ -128,18 +169,12 @@
 /* Table Cells */
 
 .console-cell {
-  display: flex;
-  min-width: 2em;
-  min-height: 2em;
   border-radius: 0.5em;
   border-width: 1px;
   border-style: solid;
 }
 
 .console-cell-top {
-  display: flex;
-  min-width: 2em;
-  min-height: 2em;
   border-top-left-radius: 0.5em;
   border-top-right-radius: 0.5em;
   border-width: 1px;
@@ -149,9 +184,6 @@
 }
 
 .console-cell-middle {
-  display: flex;
-  min-width: 2em;
-  min-height: 2em;
   border-width: 1px;
   border-style: solid;
   border-top: none;
@@ -161,9 +193,6 @@
 }
 
 .console-cell-bottom {
-  display: flex;
-  min-width: 2em;
-  min-height: 2em;
   border-bottom-left-radius: 0.5em;
   border-bottom-right-radius: 0.5em;
   border-width: 1px;
@@ -173,10 +202,7 @@
 }
 
 .console-empty-cell {
-  display: flex;
   border: 1px solid transparent;
-  min-width: 2em;
-  min-height: 2em;
 }
 
 .console-empty-cell:hover {
@@ -195,21 +221,23 @@
 
   <!-- Commits -->
   <div class="console-column" style="justify-content: flex-end">
-    
     <div class="console-row">
       <div class="console-commit-column">
       {{ range $console.Commit }}
-        <div class="console-commit-item">{{ .CommitTime | localTime "N/A" }}</div>
-      {{ end }}
-      </div>
-      <div class="console-commit-column">
-      {{ range $console.Commit }}
-        <div class="console-commit-item">
-          <a href="{{.Revision.URL}}">
-            <span class="commit" title="{{ .Description }}">
-              {{ .AuthorEmail }}
-            </span>
-          </a>
+        <div class="console-row-item-base console-commit-item">
+          <div class="console-commit-info-column">
+            <a href="{{ .Revision.URL }}" class="console-commit-message" title="{{ .Description }}">
+              {{ .Title }}
+            </a>
+            <div class="console-row" style="justify-content: space-between">
+              <a href="mailto:{{ .AuthorEmail }}" class="console-commit-author" title="{{ .AuthorEmail }}">
+                {{ .AuthorUserName }}
+              </a>
+              <span>
+                {{ .CommitTime | localTime "N/A" "relative" }}
+              </span>
+            </div>
+          </div>
         </div>
       {{ end }}
       </div>
