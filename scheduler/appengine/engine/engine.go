@@ -1033,40 +1033,15 @@ func (e *engineImpl) AbortInvocation(c context.Context, jobID string, invID int6
 }
 
 func (e *engineImpl) abortInvocation(c context.Context, jobID string, invID int64) error {
-	c = logging.SetField(c, "JobID", jobID)
-	c = logging.SetField(c, "InvID", invID)
-
-	var inv *Invocation
-	var err error
-	switch inv, err = e.getInvocation(c, jobID, invID); {
-	case err != nil:
-		logging.Errorf(c, "Failed to fetch the invocation - %s", err)
-		return err
-	case inv == nil:
-		logging.Errorf(c, "The invocation doesn't exist")
-		return ErrNoSuchInvocation
-	case inv.Status.Final():
+	return e.withController(c, jobID, invID, "manual abort", func(c context.Context, ctl *taskController) error {
+		ctl.DebugLog("Invocation is manually aborted by %q", auth.CurrentUser(c))
+		if err := ctl.manager.AbortTask(c, ctl); err != nil {
+			logging.WithError(err).Errorf(c, "Failed to abort the task")
+			return err
+		}
+		ctl.State().Status = task.StatusAborted
 		return nil
-	}
-
-	ctl, err := controllerForInvocation(c, e, inv)
-	if err != nil {
-		logging.Errorf(c, "Cannot get controller - %s", err)
-		return err
-	}
-
-	ctl.DebugLog("Invocation is manually aborted by %q", auth.CurrentUser(c))
-	if err = ctl.manager.AbortTask(c, ctl); err != nil {
-		logging.Errorf(c, "Failed to abort the task - %s", err)
-		return err
-	}
-
-	ctl.State().Status = task.StatusAborted
-	if err = ctl.Save(c); err != nil {
-		logging.Errorf(c, "Failed to save the invocation - %s", err)
-		return err
-	}
-	return nil
+	})
 }
 
 // AbortJob resets the job to scheduled state, aborting a currently pending or
@@ -1259,62 +1234,75 @@ func (e *engineImpl) recordOverrun(c context.Context, jobID string, overruns int
 	return transient.Tag.Apply(ds.Put(c, &inv))
 }
 
+// withController fetches the invocation, instantiates the task controller,
+// calls the callback, and saves back the modified invocation state, initiating
+// all necessary engine transitions along the way.
+//
+// Does nothing and returns nil if the invocation is already in a final state.
+// The callback is not called in this case at all.
+//
+// Skips saving the invocation if the callback returns non-nil.
+//
+// 'action' is used exclusively for logging. It's a human readable cause of why
+// the controller is instantiated.
+func (e *engineImpl) withController(c context.Context, jobID string, invID int64, action string, cb func(context.Context, *taskController) error) error {
+	c = logging.SetField(c, "JobID", jobID)
+	c = logging.SetField(c, "InvID", invID)
+
+	logging.Infof(c, "Handling %s", action)
+
+	inv, err := e.getInvocation(c, jobID, invID)
+	switch {
+	case err != nil:
+		logging.WithError(err).Errorf(c, "Failed to fetch the invocation")
+		return err
+	case inv == nil:
+		logging.WithError(ErrNoSuchInvocation).Errorf(c, "No such invocation")
+		return ErrNoSuchInvocation
+	case inv.Status.Final():
+		logging.Infof(c, "Skipping %s, the invocation is in final state %q", action, inv.Status)
+		return nil
+	}
+
+	ctl, err := controllerForInvocation(c, e, inv)
+	if err != nil {
+		logging.WithError(err).Errorf(c, "Cannot get the controller")
+		return err
+	}
+
+	if err := cb(c, ctl); err != nil {
+		logging.WithError(err).Errorf(c, "Failed to perform %s, skipping saving the invocation", action)
+		return err
+	}
+
+	if err := ctl.Save(c); err != nil {
+		logging.WithError(err).Errorf(c, "Error when saving the invocation")
+		return err
+	}
+
+	return nil
+}
+
 // invocationTimerTick is called via Task Queue to handle AddTimer callbacks.
 //
 // See also handlePubSubMessage, it is quite similar.
 func (e *engineImpl) invocationTimerTick(c context.Context, jobID string, invID int64, timer *invocationTimer) error {
-	c = logging.SetField(c, "JobID", jobID)
-	c = logging.SetField(c, "InvID", invID)
-
-	logging.Infof(c, "Handling invocation timer %q", timer.Name)
-	inv, err := e.getInvocation(c, jobID, invID)
-	if err != nil {
-		logging.Errorf(c, "Failed to fetch the invocation - %s", err)
-		return err
-	}
-	if inv == nil {
-		return ErrNoSuchInvocation
-	}
-
-	// Finished invocations are immutable, skip the message.
-	if inv.Status.Final() {
-		logging.Infof(c, "Skipping the timer, the invocation is in final state %q", inv.Status)
-		return nil
-	}
-
-	// Build corresponding controller.
-	ctl, err := controllerForInvocation(c, e, inv)
-	if err != nil {
-		logging.Errorf(c, "Cannot get controller - %s", err)
-		return err
-	}
-
-	// Hand the message to the TaskManager.
-	err = ctl.manager.HandleTimer(c, ctl, timer.Name, timer.Payload)
-	if err != nil {
-		logging.Errorf(c, "Error when handling the timer - %s", err)
-		if !transient.Tag.In(err) && ctl.State().Status != task.StatusFailed {
+	action := fmt.Sprintf("timer %q tick", timer.Name)
+	return e.withController(c, jobID, invID, action, func(c context.Context, ctl *taskController) error {
+		err := ctl.manager.HandleTimer(c, ctl, timer.Name, timer.Payload)
+		switch {
+		case err == nil:
+			return nil // success! save the invocation
+		case transient.Tag.In(err):
+			return err // ask for redelivery on transient errors, don't touch the invocation
+		}
+		// On fatal errors, move the invocation to failed state (if not already).
+		if ctl.State().Status != task.StatusFailed {
 			ctl.DebugLog("Fatal error when handling timer, aborting invocation - %s", err)
 			ctl.State().Status = task.StatusFailed
 		}
-	}
-
-	// Save anyway, to preserve the invocation log.
-	saveErr := ctl.Save(c)
-	if saveErr != nil {
-		logging.Errorf(c, "Error when saving the invocation - %s", saveErr)
-	}
-
-	// Retry the delivery if at least one error is transient. HandleTimer must be
-	// idempotent.
-	switch {
-	case err == nil && saveErr == nil:
-		return nil
-	case transient.Tag.In(err):
-		return saveErr
-	default:
-		return err // transient or fatal
-	}
+		return nil // need to save the invocation, even on fatal errors
+	})
 }
 
 // startInvocation is called via task queue to start running a job. This call
@@ -1678,6 +1666,9 @@ func (e *engineImpl) PullPubSubOnDevServer(c context.Context, taskManagerName, p
 	return err
 }
 
+// handlePubSubMessage routes the pubsub message to the invocation.
+//
+// See also invocationTimerTick, it is quite similar.
 func (e *engineImpl) handlePubSubMessage(c context.Context, msg *pubsub.PubsubMessage) error {
 	logging.Infof(c, "Received PubSub message %q", msg.MessageId)
 
@@ -1686,63 +1677,30 @@ func (e *engineImpl) handlePubSubMessage(c context.Context, msg *pubsub.PubsubMe
 	var invID int64
 	data, err := pubsubAuthToken.Validate(c, msg.Attributes["auth_token"], nil)
 	if err != nil {
-		logging.Errorf(c, "Bad auth_token attribute - %s", err)
+		logging.WithError(err).Errorf(c, "Bad auth_token attribute")
 		return err
 	}
 	jobID = data["job"]
 	if invID, err = strconv.ParseInt(data["inv"], 10, 64); err != nil {
-		logging.Errorf(c, "Could not parse 'inv' %q - %s", data["inv"], err)
+		logging.WithError(err).Errorf(c, "Could not parse 'inv' %q", data["inv"])
 		return err
 	}
 
-	c = logging.SetField(c, "JobID", jobID)
-	c = logging.SetField(c, "InvID", invID)
-	inv, err := e.getInvocation(c, jobID, invID)
-	if err != nil {
-		logging.Errorf(c, "Failed to fetch the invocation - %s", err)
-		return err
-	}
-	if inv == nil {
-		return ErrNoSuchInvocation
-	}
-
-	// Finished invocations are immutable, skip the message.
-	if inv.Status.Final() {
-		logging.Infof(c, "Skipping the notification, the invocation is in final state %q", inv.Status)
-		return nil
-	}
-
-	// Build corresponding controller.
-	ctl, err := controllerForInvocation(c, e, inv)
-	if err != nil {
-		logging.Errorf(c, "Cannot get controller - %s", err)
-		return err
-	}
-
-	// Hand the message to the TaskManager.
-	err = ctl.manager.HandleNotification(c, ctl, msg)
-	if err != nil {
-		logging.Errorf(c, "Error when handling the message - %s", err)
-		if !transient.Tag.In(err) && ctl.State().Status != task.StatusFailed {
+	// Hand the message to the controller.
+	action := fmt.Sprintf("pubsub message %q", msg.MessageId)
+	return e.withController(c, jobID, invID, action, func(c context.Context, ctl *taskController) error {
+		err := ctl.manager.HandleNotification(c, ctl, msg)
+		switch {
+		case err == nil:
+			return nil // success! save the invocation
+		case transient.Tag.In(err):
+			return err // ask for redelivery on transient errors, don't touch the invocation
+		}
+		// On fatal errors, move the invocation to failed state (if not already).
+		if ctl.State().Status != task.StatusFailed {
 			ctl.DebugLog("Fatal error when handling PubSub notification, aborting invocation - %s", err)
 			ctl.State().Status = task.StatusFailed
 		}
-	}
-
-	// Save anyway, to preserve the invocation log.
-	saveErr := ctl.Save(c)
-	if saveErr != nil {
-		logging.Errorf(c, "Error when saving the invocation - %s", saveErr)
-	}
-
-	// Retry the delivery if at least one error is transient. HandleNotification
-	// must be idempotent.
-	switch {
-	case err == nil && saveErr == nil:
-		return nil
-	case transient.Tag.In(saveErr):
-		return saveErr
-	default:
-		return err // transient or fatal
-	}
+		return nil // need to save the invocation, even on fatal errors
+	})
 }
