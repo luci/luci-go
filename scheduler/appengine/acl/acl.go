@@ -24,7 +24,6 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/server/auth"
@@ -184,7 +183,6 @@ func hasGrant(c context.Context, grantsList ...[]string) (bool, error) {
 				grantedIdentity = identity.Identity("user:" + grant)
 			}
 			if grantedIdentity == currentIdentity {
-				logging.Debugf(c, "Found grant %s for %s", currentIdentity)
 				return true, nil
 			}
 		}
@@ -192,7 +190,6 @@ func hasGrant(c context.Context, grantsList ...[]string) (bool, error) {
 	if isMember, err := auth.IsMember(c, groups...); err != nil {
 		return false, transient.Tag.Apply(err)
 	} else {
-		logging.Debugf(c, "Result of group membership of %s in %s: %t", currentIdentity, groups, isMember)
 		return isMember, nil
 	}
 }
