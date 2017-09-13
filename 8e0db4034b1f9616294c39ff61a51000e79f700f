@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "61bfca4f_eb87678d",
+        "filename": "milo/api/proto/manifest/proto_gae.gen.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-13T01:08:40Z",
+      "side": 1,
+      "message": "hm.. this looks wrong. I\u0027m not sure why this happened, but you\u0027ll want to revert it",
+      "range": {
+        "startLine": 2,
+        "startChar": 15,
+        "endLine": 2,
+        "endChar": 21
+      },
+      "revId": "8e0db4034b1f9616294c39ff61a51000e79f700f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
