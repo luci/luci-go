@@ -189,7 +189,6 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 		}
 	}()
 
-	hasStartedOrFailed := ctl.saved.Status.Initial() && !saving.Status.Initial()
 	hasFinished := !ctl.saved.Status.Final() && saving.Status.Final()
 	if hasFinished {
 		saving.Finished = clock.Now(ctx).UTC()
@@ -206,9 +205,8 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 		saving.debugLog(ctx, "The invocation will be retried")
 	}
 
-	// Store the invocation entity, mutate Job state accordingly, schedule all
-	// timer ticks.
-	return ctl.eng.jobTxn(ctx, ctl.JobID(), func(c context.Context, job *Job, isNew bool) error {
+	// Update the invocation entity, notifying the engine about all changes.
+	return runTxn(ctx, func(c context.Context) error {
 		// Grab what's currently in the store to compare MutationsCount to what we
 		// expect it to be.
 		mostRecent := Invocation{
@@ -251,36 +249,8 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 			}
 		}
 
-		// Should we bother updating the Job state machine? We do it only when the
-		// invocation moves from/to its edge states and when it is still associated
-		// with the job. We also abort early if the job is gone for some reason.
-		switch {
-		case !hasStartedOrFailed && !hasFinished:
-			return errSkipPut // nothing that could affect Job happened
-		case isNew:
-			logging.Errorf(c, "Active job is unexpectedly gone")
-			return errSkipPut
-		case job.State.InvocationID != saving.ID:
-			logging.Warningf(c, "The invocation is no longer current, the current is %d", job.State.InvocationID)
-			return errSkipPut
-		}
-
-		// Make the state machine transitions.
-		if hasStartedOrFailed {
-			err := ctl.eng.rollSM(c, job, func(sm *StateMachine) error {
-				sm.OnInvocationStarted(saving.ID)
-				return nil
-			})
-			if err != nil {
-				return err
-			}
-		}
-		if hasFinished {
-			return ctl.eng.rollSM(c, job, func(sm *StateMachine) error {
-				sm.OnInvocationDone(saving.ID)
-				return nil
-			})
-		}
-		return nil
+		// Notify the engine about the invocation state change. The engine may
+		// decide to update the corresponding job.
+		return ctl.eng.invocationUpdating(c, ctl.JobID(), &ctl.saved, &saving)
 	})
 }
