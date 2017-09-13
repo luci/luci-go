@@ -114,7 +114,7 @@ func makeJob(c context.Context, j *engine.Job) *schedulerJob {
 
 	return &schedulerJob{
 		ProjectID:      j.ProjectID,
-		JobName:        j.GetJobName(),
+		JobName:        j.JobName(),
 		Schedule:       j.Schedule,
 		Definition:     taskToText(j.Task),
 		Revision:       j.Revision,

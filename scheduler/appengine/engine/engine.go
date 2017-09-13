@@ -16,10 +16,8 @@
 package engine
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"hash/fnv"
 	"net/url"
 	"sort"
 	"strconv"
@@ -45,9 +43,7 @@ import (
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/tokens"
 
-	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
-	"go.chromium.org/luci/scheduler/appengine/schedule"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
@@ -240,133 +236,6 @@ type invocationTimer struct {
 	Payload []byte
 }
 
-// Job stores the last known definition of a scheduler job, as well as its
-// current state. Root entity, its kind is "Job".
-type Job struct {
-	_kind  string         `gae:"$kind,Job"`
-	_extra ds.PropertyMap `gae:"-,extra"`
-
-	// cachedSchedule and cachedScheduleErr are used by parseSchedule().
-	cachedSchedule    *schedule.Schedule `gae:"-"`
-	cachedScheduleErr error              `gae:"-"`
-
-	// JobID is '<ProjectID>/<JobName>' string. JobName is unique with a project,
-	// but not globally. JobID is unique globally.
-	JobID string `gae:"$id"`
-
-	// ProjectID exists for indexing. It matches <projectID> portion of JobID.
-	ProjectID string
-
-	// Flavor describes what category of jobs this is, see the enum.
-	Flavor catalog.JobFlavor `gae:",noindex"`
-
-	// Enabled is false if the job was disabled or removed from config.
-	//
-	// Disabled jobs do not show up in UI at all (they are still kept in the
-	// datastore though, for audit purposes).
-	Enabled bool
-
-	// Paused is true if job's schedule is ignored and job can only be started
-	// manually via "Run now" button.
-	Paused bool `gae:",noindex"`
-
-	// Revision is last seen job definition revision.
-	Revision string `gae:",noindex"`
-
-	// RevisionURL is URL to human readable page with config file at
-	// an appropriate revision.
-	RevisionURL string `gae:",noindex"`
-
-	// Schedule is the job's schedule in regular cron expression format.
-	Schedule string `gae:",noindex"`
-
-	// Task is the job's payload in serialized form. Opaque from the point of view
-	// of the engine. See Catalog.UnmarshalTask().
-	Task []byte `gae:",noindex"`
-
-	// TriggeredJobIDs is a list of jobIDs of jobs which this job triggers.
-	// The list is sorted and without duplicates.
-	TriggeredJobIDs []string `gae:",noindex"`
-
-	// ACLs are the latest ACLs applied to Job and all its invocations.
-	Acls acl.GrantsByRole `gae:",noindex"`
-
-	// State is the job's state machine state, see StateMachine.
-	State JobState
-}
-
-// GetJobName returns name of this Job as defined its project's config.
-func (e *Job) GetJobName() string {
-	// JobID has form <project>/<id>. Split it into components.
-	chunks := strings.Split(e.JobID, "/")
-	return chunks[1]
-}
-
-// effectiveSchedule returns schedule string to use for the job, considering its
-// Paused field.
-//
-// Paused jobs always use "triggered" schedule.
-func (e *Job) effectiveSchedule() string {
-	if e.Paused {
-		return "triggered"
-	}
-	return e.Schedule
-}
-
-// parseSchedule returns *Schedule object, parsing e.Schedule field.
-// If job is paused e.Schedule field is ignored and triggered schedule is
-// returned instead.
-func (e *Job) parseSchedule() (*schedule.Schedule, error) {
-	if e.cachedSchedule == nil && e.cachedScheduleErr == nil {
-		hash := fnv.New64()
-		hash.Write([]byte(e.JobID))
-		seed := hash.Sum64()
-		e.cachedSchedule, e.cachedScheduleErr = schedule.Parse(e.effectiveSchedule(), seed)
-		if e.cachedSchedule == nil && e.cachedScheduleErr == nil {
-			panic("no schedule and no error")
-		}
-	}
-	return e.cachedSchedule, e.cachedScheduleErr
-}
-
-// isEqual returns true iff 'e' is equal to 'other'.
-func (e *Job) isEqual(other *Job) bool {
-	return e == other || (e.JobID == other.JobID &&
-		e.ProjectID == other.ProjectID &&
-		e.Flavor == other.Flavor &&
-		e.Enabled == other.Enabled &&
-		e.Paused == other.Paused &&
-		e.Revision == other.Revision &&
-		e.RevisionURL == other.RevisionURL &&
-		e.Schedule == other.Schedule &&
-		e.Acls.Equal(&other.Acls) &&
-		bytes.Equal(e.Task, other.Task) &&
-		equalSortedLists(e.TriggeredJobIDs, other.TriggeredJobIDs) &&
-		e.State.Equal(&other.State))
-}
-
-// matches returns true if job definition in the entity matches the one
-// specified by catalog.Definition struct. UpdateProjectJobs skips updates for
-// such jobs (assuming they are up-to-date).
-func (e *Job) matches(def catalog.Definition) bool {
-	return e.JobID == def.JobID &&
-		e.Flavor == def.Flavor &&
-		e.Schedule == def.Schedule &&
-		e.Acls.Equal(&def.Acls) &&
-		bytes.Equal(e.Task, def.Task) &&
-		equalSortedLists(e.TriggeredJobIDs, def.TriggeredJobIDs)
-}
-
-// isVisible checks if current identity has READER access to this job.
-func (e *Job) isVisible(c context.Context) (bool, error) {
-	return e.Acls.IsReader(logging.SetField(c, "JobID", e.JobID))
-}
-
-// isOwned checks if current identity has OWNER access to this job.
-func (e *Job) isOwned(c context.Context) (bool, error) {
-	return e.Acls.IsOwner(logging.SetField(c, "JobID", e.JobID))
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // engineImpl.
 
@@ -420,8 +289,8 @@ func (e *engineImpl) queryEnabledVisibleJobs(c context.Context, q *ds.Query) ([]
 		}
 		// TODO(tandrii): improve batch ACLs check here to take advantage of likely
 		// shared ACLs between most jobs of the same project.
-		if ok, err := job.isVisible(c); err != nil {
-			return nil, transient.Tag.Apply(err)
+		if ok, err := job.IsVisible(c); err != nil {
+			return nil, err
 		} else if ok {
 			filtered = append(filtered, job)
 		}
@@ -436,7 +305,7 @@ func (e *engineImpl) GetVisibleJob(c context.Context, jobID string) (*Job, error
 	} else if job == nil || !job.Enabled {
 		return nil, ErrNoSuchJob
 	}
-	if ok, err := job.isVisible(c); err != nil {
+	if ok, err := job.IsVisible(c); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, ErrNoSuchJob
@@ -452,7 +321,7 @@ func (e *engineImpl) getOwnedJob(c context.Context, jobID string) (*Job, error) 
 		return nil, ErrNoSuchJob
 	}
 
-	switch owner, err := job.isOwned(c); {
+	switch owner, err := job.IsOwned(c); {
 	case err != nil:
 		return nil, err
 	case owner:
@@ -460,7 +329,7 @@ func (e *engineImpl) getOwnedJob(c context.Context, jobID string) (*Job, error) 
 	}
 
 	// Not owner, but maybe reader? Give nicer error in such case.
-	switch reader, err := job.isVisible(c); {
+	switch reader, err := job.IsVisible(c); {
 	case err != nil:
 		return nil, err
 	case reader:
@@ -683,7 +552,7 @@ func (e *engineImpl) UpdateProjectJobs(c context.Context, projectID string, defs
 	updateErrs := errors.NewLazyMultiError(len(defs))
 	for i, def := range defs {
 		if ent := existing[def.JobID]; ent != nil {
-			if ent.Enabled && ent.matches(def) {
+			if ent.Enabled && ent.MatchesDefinition(def) {
 				continue
 			}
 		}
@@ -777,7 +646,7 @@ func (e *engineImpl) jobTxn(c context.Context, jobID string, callback txnCallbac
 			return nil // asked to skip the update
 		case err != nil:
 			return err // a real error (transient or fatal)
-		case !modified.isEqual(&stored):
+		case !modified.IsEqual(&stored):
 			return transient.Tag.Apply(ds.Put(c, &modified))
 		}
 		return nil
@@ -790,9 +659,9 @@ func (e *engineImpl) jobTxn(c context.Context, jobID string, callback txnCallbac
 // task queues.
 func (e *engineImpl) rollSM(c context.Context, job *Job, cb func(*StateMachine) error) error {
 	assertInTransaction(c)
-	sched, err := job.parseSchedule()
+	sched, err := job.ParseSchedule()
 	if err != nil {
-		return fmt.Errorf("bad schedule %q - %s", job.effectiveSchedule(), err)
+		return fmt.Errorf("bad schedule %q - %s", job.EffectiveSchedule(), err)
 	}
 	now := clock.Now(c).UTC()
 	rnd := mathrand.Get(c)
@@ -1121,7 +990,7 @@ func (e *engineImpl) AbortJob(c context.Context, jobID string) error {
 // a completely new job or enables a previously disabled job.
 func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error {
 	return e.jobTxn(c, def.JobID, func(c context.Context, job *Job, isNew bool) error {
-		if !isNew && job.Enabled && job.matches(def) {
+		if !isNew && job.Enabled && job.MatchesDefinition(def) {
 			return errSkipPut
 		}
 		if isNew {
@@ -1142,7 +1011,7 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 			}
 		}
 		oldEnabled := job.Enabled
-		oldEffectiveSchedule := job.effectiveSchedule()
+		oldEffectiveSchedule := job.EffectiveSchedule()
 
 		// Update the job in full before running any state changes.
 		job.Flavor = def.Flavor
@@ -1164,7 +1033,7 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 				return err
 			}
 		}
-		if job.effectiveSchedule() != oldEffectiveSchedule {
+		if job.EffectiveSchedule() != oldEffectiveSchedule {
 			logging.Infof(c, "Job's schedule changed")
 			return e.rollSM(c, job, func(sm *StateMachine) error {
 				sm.OnScheduleChange()
@@ -1574,7 +1443,7 @@ func (e *engineImpl) invocationUpdating(c context.Context, jobID string, old, fr
 	}
 
 	// Don't bother doing an RPC if nothing has changed.
-	if !modified.isEqual(&job) {
+	if !modified.IsEqual(&job) {
 		return transient.Tag.Apply(ds.Put(c, &modified))
 	}
 	return nil

@@ -61,7 +61,7 @@ func (s SchedulerServer) GetJobs(ctx context.Context, in *scheduler.JobsRequest)
 		jobs[i] = &scheduler.Job{
 			JobRef: &scheduler.JobRef{
 				Project: ej.ProjectID,
-				Job:     ej.GetJobName(),
+				Job:     ej.JobName(),
 			},
 			Schedule: ej.Schedule,
 			State: &scheduler.JobState{
