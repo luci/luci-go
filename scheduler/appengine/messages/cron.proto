@@ -141,7 +141,8 @@ message NoopTask {
 }
 
 
-// GitilesTask specifies parameters of Swarming-based jobs.
+// GitilesTask specifies parameters of what repo and which refs to watch for new
+// commits.
 message GitilesTask {
   // Repo is the URL of the Gitiles repository.
   string repo = 1;
@@ -208,6 +209,7 @@ message BuildbucketTask {
   // Builder defines what to run.
   string builder = 3;
   // Properties is arbitrary "key:value" pairs describing the task.
+  // TODO(tandrii): which properties will be overridden if triggered?
   repeated string properties = 4;
   // Tags is a list of tags (as "key:value" pairs) to assign to the task.
   repeated string tags = 5;

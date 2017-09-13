@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
-// TimerSpec correspond to single AddTimer call.
+// TimerSpec corresponds to single AddTimer call.
 type TimerSpec struct {
 	Delay   time.Duration
 	Name    string
@@ -47,7 +47,8 @@ type TestController struct {
 	SaveCallback         func() error                         // mock for Save()
 	PrepareTopicCallback func(string) (string, string, error) // mock for PrepareTopic()
 
-	Timers []TimerSpec
+	Timers   []TimerSpec
+	Triggers []task.Trigger
 }
 
 // JobID is part of Controller interface.
@@ -122,8 +123,8 @@ func (c *TestController) GetClient(ctx context.Context, timeout time.Duration) (
 	return nil, errors.New("GetClient must not be called (not mocked)")
 }
 
-func (c *TestController) EmitTrigger(ctx context.Context, triggers task.Trigger) {
-	panic(errors.New("not imeplemented"))
+func (c *TestController) EmitTrigger(ctx context.Context, trigger task.Trigger) {
+	c.Triggers = append(c.Triggers, trigger)
 }
 
 var _ task.Controller = (*TestController)(nil)
