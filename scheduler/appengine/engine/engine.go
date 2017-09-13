@@ -191,10 +191,8 @@ type Config struct {
 }
 
 // NewEngine returns default implementation of EngineInternal.
-func NewEngine(conf Config) EngineInternal {
-	return &engineImpl{
-		Config: conf,
-	}
+func NewEngine(cfg Config) EngineInternal {
+	return &engineImpl{cfg: cfg}
 }
 
 //// Implementation.
@@ -373,7 +371,7 @@ func (e *Job) isOwned(c context.Context) (bool, error) {
 // engineImpl.
 
 type engineImpl struct {
-	Config
+	cfg      Config
 	opsCache opsCache
 
 	// configureTopic is used by prepareTopic, mocked in tests.
@@ -841,8 +839,8 @@ func (e *engineImpl) enqueueJobActions(c context.Context, jobID string, actions 
 				return err
 			}
 			logging.Infof(c, "Scheduling tick %d after %.1f sec", a.TickNonce, a.When.Sub(time.Now()).Seconds())
-			qs[e.TimersQueueName] = append(qs[e.TimersQueueName], &tq.Task{
-				Path:    e.TimersQueuePath,
+			qs[e.cfg.TimersQueueName] = append(qs[e.cfg.TimersQueueName], &tq.Task{
+				Path:    e.cfg.TimersQueuePath,
 				ETA:     a.When,
 				Payload: payload,
 			})
@@ -857,8 +855,8 @@ func (e *engineImpl) enqueueJobActions(c context.Context, jobID string, actions 
 			if err != nil {
 				return err
 			}
-			qs[e.InvocationsQueueName] = append(qs[e.InvocationsQueueName], &tq.Task{
-				Path:    e.InvocationsQueuePath,
+			qs[e.cfg.InvocationsQueueName] = append(qs[e.cfg.InvocationsQueueName], &tq.Task{
+				Path:    e.cfg.InvocationsQueuePath,
 				Delay:   time.Second, // give the transaction time to land
 				Payload: payload,
 				RetryOptions: &tq.RetryOptions{
@@ -878,8 +876,8 @@ func (e *engineImpl) enqueueJobActions(c context.Context, jobID string, actions 
 			if err != nil {
 				return err
 			}
-			qs[e.InvocationsQueueName] = append(qs[e.InvocationsQueueName], &tq.Task{
-				Path:    e.InvocationsQueuePath,
+			qs[e.cfg.InvocationsQueueName] = append(qs[e.cfg.InvocationsQueueName], &tq.Task{
+				Path:    e.cfg.InvocationsQueuePath,
 				Payload: payload,
 			})
 		case RecordOverrunAction:
@@ -892,8 +890,8 @@ func (e *engineImpl) enqueueJobActions(c context.Context, jobID string, actions 
 			if err != nil {
 				return err
 			}
-			qs[e.InvocationsQueueName] = append(qs[e.InvocationsQueueName], &tq.Task{
-				Path:    e.InvocationsQueuePath,
+			qs[e.cfg.InvocationsQueueName] = append(qs[e.cfg.InvocationsQueueName], &tq.Task{
+				Path:    e.cfg.InvocationsQueuePath,
 				Delay:   time.Second, // give the transaction time to land
 				Payload: payload,
 			})
@@ -934,12 +932,12 @@ func (e *engineImpl) enqueueInvTimers(c context.Context, jobID string, invID int
 			return err
 		}
 		tasks[i] = &tq.Task{
-			Path:    e.TimersQueuePath,
+			Path:    e.cfg.TimersQueuePath,
 			ETA:     clock.Now(c).Add(timer.Delay),
 			Payload: payload,
 		}
 	}
-	return transient.Tag.Apply(tq.Add(c, e.TimersQueueName, tasks...))
+	return transient.Tag.Apply(tq.Add(c, e.cfg.TimersQueueName, tasks...))
 }
 
 func (e *engineImpl) enqueueTriggers(c context.Context, triggeredJobIDs []string, triggers []task.Trigger) error {
@@ -1658,7 +1656,7 @@ func (e *engineImpl) prepareTopic(c context.Context, params *topicParams) (topic
 		urlParams.Add("kind", params.manager.Name())
 		urlParams.Add("publisher", params.publisher)
 		pushURL = fmt.Sprintf(
-			"https://%s%s?%s", info.DefaultVersionHostname(c), e.PubSubPushPath, urlParams.Encode())
+			"https://%s%s?%s", info.DefaultVersionHostname(c), e.cfg.PubSubPushPath, urlParams.Encode())
 	}
 
 	// Create and configure the topic. Do it only once.
