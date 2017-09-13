@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "03547da1_87cbae33",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/fakelogs/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-13T17:40:14Z",
+      "side": 1,
+      "message": "oh, right, duh",
+      "parentUuid": "96288270_ab88847b",
+      "range": {
+        "startLine": 56,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 3
+      },
+      "revId": "d8b4c4a688799c8764150d2cfc66a94126a8a851",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "38b5873e_6f0da1fd",
         "filename": "logdog/client/coordinator/stream_params.go",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2017-09-13T15:06:42Z",
       "side": 1,
       "message": "Just being clear?",
+      "range": {
+        "startLine": 18,
+        "startChar": 1,
+        "endLine": 18,
+        "endChar": 7
+      },
+      "revId": "d8b4c4a688799c8764150d2cfc66a94126a8a851",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a497b577_6c044a28",
+        "filename": "logdog/client/coordinator/stream_params.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-13T17:40:14Z",
+      "side": 1,
+      "message": "autocomplete doesn\u0027t work if the imported name doesn\u0027t match the last token of the import string (would be too slow to evaluate)",
+      "parentUuid": "38b5873e_6f0da1fd",
       "range": {
         "startLine": 18,
         "startChar": 1,
