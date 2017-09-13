@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "300da1af_2dfd54ce",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-13T19:24:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4eb5d295_90939db3",
+      "range": {
+        "startLine": 13,
+        "startChar": 37,
+        "endLine": 13,
+        "endChar": 40
+      },
+      "revId": "99f17f6800f688c93a8683e07c0519e9dda52748",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "74aeb31f_c9142410",
         "filename": "scheduler/appengine/engine/engine.go",
         "patchSetId": 1
@@ -69,6 +93,30 @@
       "revId": "99f17f6800f688c93a8683e07c0519e9dda52748",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5034b0b_1fa9400d",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1302,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-13T19:24:00Z",
+      "side": 1,
+      "message": "Done. Added similar asserts to a bunch of other places.",
+      "parentUuid": "579c5399_373fa8f2",
+      "range": {
+        "startLine": 1302,
+        "startChar": 8,
+        "endLine": 1302,
+        "endChar": 14
+      },
+      "revId": "99f17f6800f688c93a8683e07c0519e9dda52748",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
