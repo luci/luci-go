@@ -83,7 +83,8 @@ type Engine interface {
 	//   * job isn't visible due to lack READER access.
 	GetVisibleJob(c context.Context, jobID string) (*Job, error)
 
-	// ListVisibleInvocations returns invocations of a visible job, most recent first.
+	// ListVisibleInvocations returns invocations of a visible job, most recent
+	// first.
 	// Returns fetched invocations and cursor string if there's more.
 	// error is ErrNoSuchJob if job doesn't exist or isn't visible.
 	ListVisibleInvocations(c context.Context, jobID string, pageSize int, cursor string) ([]*Invocation, string, error)
@@ -93,12 +94,13 @@ type Engine interface {
 	// or job and hence invocation isn't visible.
 	GetVisibleInvocation(c context.Context, jobID string, invID int64) (*Invocation, error)
 
-	// GetVisibleInvocationsByNonce returns a list of Invocations with given nonce.
+	// GetVisibleInvocationsByNonce returns a list of Invocations with given
+	// nonce.
 	//
 	// Invocation nonce is a random number that identifies an intent to start
 	// an invocation. Normally one nonce corresponds to one Invocation entity,
 	// but there can be more if job fails to start with a transient error.
-	GetVisibleInvocationsByNonce(c context.Context, invNonce int64) ([]*Invocation, error)
+	GetVisibleInvocationsByNonce(c context.Context, jobID string, invNonce int64) ([]*Invocation, error)
 
 	// PauseJob replaces job's schedule with "triggered", effectively preventing
 	// it from running automatically (until it is resumed). Manual invocations are
@@ -608,22 +610,29 @@ func (e *engineImpl) getInvocation(c context.Context, jobID string, invID int64)
 	}
 }
 
-func (e *engineImpl) GetVisibleInvocationsByNonce(c context.Context, invNonce int64) ([]*Invocation, error) {
+func (e *engineImpl) GetVisibleInvocationsByNonce(c context.Context, jobID string, invNonce int64) ([]*Invocation, error) {
+	switch _, err := e.GetVisibleJob(c, jobID); {
+	case err == ErrNoSuchJob:
+		return []*Invocation{}, nil
+	case err != nil:
+		return nil, err
+	}
+
 	q := ds.NewQuery("Invocation").Eq("InvocationNonce", invNonce)
 	entities := []*Invocation{}
 	if err := ds.GetAll(c, q, &entities); err != nil {
 		return nil, transient.Tag.Apply(err)
 	}
-	if len(entities) > 0 {
-		// All Invocations with the same nonce must belong to the same Job.
-		switch _, err := e.GetVisibleJob(c, entities[0].JobKey.StringID()); {
-		case err == ErrNoSuchJob:
-			return []*Invocation{}, nil
-		case err != nil:
-			return nil, err
+
+	// Keep only ones that match the job. Filtering in the code here is cheaper
+	// than adding a composite datastore index. Almost always 'entities' is small.
+	filtered := make([]*Invocation, 0, len(entities))
+	for _, inv := range entities {
+		if inv.JobKey.StringID() == jobID {
+			filtered = append(filtered, inv)
 		}
 	}
-	return entities, nil
+	return filtered, nil
 }
 
 func (e *engineImpl) UpdateProjectJobs(c context.Context, projectID string, defs []catalog.Definition) error {
