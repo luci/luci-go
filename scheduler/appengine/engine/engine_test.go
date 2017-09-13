@@ -801,19 +801,25 @@ func TestQueries(t *testing.T) {
 
 		Convey("GetInvocationsByNonce works", func() {
 			Convey("Anonymous can't see non-public job invocations", func() {
-				invs, err := e.GetVisibleInvocationsByNonce(ctxAnon, 123)
+				invs, err := e.GetVisibleInvocationsByNonce(ctxAnon, "abc/1", 123)
 				So(len(invs), ShouldEqual, 0)
 				So(err, ShouldBeNil)
 			})
 
 			Convey("NoSuchInvocation", func() {
-				invs, err := e.GetVisibleInvocationsByNonce(ctxAdmin, 11111) // unknown
+				invs, err := e.GetVisibleInvocationsByNonce(ctxAdmin, "abc/1", 11111) // unknown
+				So(len(invs), ShouldEqual, 0)
+				So(err, ShouldBeNil)
+			})
+
+			Convey("Wrong job ID", func() {
+				invs, err := e.GetVisibleInvocationsByNonce(ctxAdmin, "abc/2", 123) // it is actually "abc/1"
 				So(len(invs), ShouldEqual, 0)
 				So(err, ShouldBeNil)
 			})
 
 			Convey("Reader sees", func() {
-				invs, err := e.GetVisibleInvocationsByNonce(ctxOne, 123)
+				invs, err := e.GetVisibleInvocationsByNonce(ctxOne, "abc/1", 123)
 				So(len(invs), ShouldEqual, 2)
 				So(err, ShouldBeNil)
 			})

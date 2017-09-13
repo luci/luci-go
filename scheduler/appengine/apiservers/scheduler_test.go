@@ -433,7 +433,7 @@ func (f *fakeEngine) GetVisibleInvocation(c context.Context, jobID string, invID
 	panic("not implemented")
 }
 
-func (f *fakeEngine) GetVisibleInvocationsByNonce(c context.Context, invNonce int64) ([]*engine.Invocation, error) {
+func (f *fakeEngine) GetVisibleInvocationsByNonce(c context.Context, jobID string, invNonce int64) ([]*engine.Invocation, error) {
 	panic("not implemented")
 }
 

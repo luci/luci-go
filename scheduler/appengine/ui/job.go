@@ -138,10 +138,10 @@ func runJobAction(ctx *router.Context) {
 		}
 		// Find most recent invocation with requested nonce. Ignore errors here,
 		// since GetInvocationsByNonce can return only transient ones.
-		invs, _ := e.GetVisibleInvocationsByNonce(c, invNonce)
+		invs, _ := e.GetVisibleInvocationsByNonce(c, jobID, invNonce)
 		bestTS := time.Time{}
 		for _, inv := range invs {
-			if inv.JobKey.StringID() == jobID && inv.Started.Sub(bestTS) > 0 {
+			if inv.Started.Sub(bestTS) > 0 {
 				invID = inv.ID
 				bestTS = inv.Started
 			}
