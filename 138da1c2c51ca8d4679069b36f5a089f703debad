@@ -433,6 +433,63 @@
       "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35b10d72_8abff463",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:10:13Z",
+      "side": 1,
+      "message": "please parse the id from string here and respond with HTTP 400 if it is not a number",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25e52993_d68edcc4",
+        "filename": "milo/rpc/buildinfo.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:10:13Z",
+      "side": 1,
+      "message": "I don\u0027t think this is possible",
+      "range": {
+        "startLine": 58,
+        "startChar": 64,
+        "endLine": 59,
+        "endChar": 25
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "527b5f69_ae42463a",
+        "filename": "milo/rpc/buildinfo.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-13T20:10:13Z",
+      "side": 1,
+      "message": "currently we have two implementations for conversion of a buildbucket build to a swarming build: one is buildbucket.BuildID.Get and another is here. Please add a TODO to unify it.\n\nIgnore this if there is already a more general TODO to unify GetBuildInfo and GetBuild implementations",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
