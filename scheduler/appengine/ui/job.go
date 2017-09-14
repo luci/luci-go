@@ -117,7 +117,7 @@ func runJobAction(ctx *router.Context) {
 	// appear. Give up if task queue or datastore indexes are lagging too much.
 	e := config(c).Engine
 	jobID := projectID + "/" + jobName
-	invNonce, err := e.ManualInvocation(c, jobID)
+	invNonce, err := e.ForceInvocation(c, jobID)
 	if err == engine.ErrNoOwnerPermission {
 		http.Error(w, "Forbidden", 403)
 		return
