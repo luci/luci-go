@@ -24,7 +24,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -146,16 +145,16 @@ func (task *Task) Name() string {
 // Handler is called to handle one enqueued task.
 //
 // The passed context is produced by a middleware chain installed with
-// InstallHandlers.
-//
-// execCount corresponds to X-AppEngine-TaskExecutionCount header value: it is
-// 1 on first execution attempt, 2 on a retry, and so on.
+// InstallHandlers. In addition it carries task queue request headers,
+// accessible through RequestHeaders(ctx) function. They are passed implicitly
+// via the context to avoid complicating Handler signature for a feature that
+// most callers aren't going to use.
 //
 // May return transient errors. In this case, task queue may attempt to
 // redeliver the task (depending on RetryOptions).
 //
 // A fatal error (or success) mark the task as "done", it won't be retried.
-type Handler func(c context.Context, payload proto.Message, execCount int) error
+type Handler func(c context.Context, payload proto.Message) error
 
 // RegisterTask tells the dispatcher that tasks of given proto type should be
 // handled by the given handler and routed through the given task queue.
@@ -196,10 +195,10 @@ func (d *Dispatcher) RegisterTask(prototype proto.Message, cb Handler, queue str
 
 // runBatchesPerQueue is a generic parallel task distributor. It solves the
 // problems that:
-//	- "tasks" may be assigned to different queues, and tasks assigned to the
+//  - "tasks" may be assigned to different queues, and tasks assigned to the
 //    same queue should be batched together.
-//	- Any given batch may exceed queue operation limits, and thus needs to be
-//	  broken into multiple operations on sub-batches.
+//  - Any given batch may exceed queue operation limits, and thus needs to be
+//    broken into multiple operations on sub-batches.
 //
 // fn is called for each sub-batch assigned to each queue. All resulting errors
 // are then flattened. If no fn invocation returns any errors, nil will be
@@ -335,6 +334,26 @@ func (d *Dispatcher) InstallRoutes(r *router.Router, mw router.MiddlewareChain) 
 	}
 }
 
+var (
+	requestHeadersKey = "taskqueue.RequestHeaders"
+	errOutsideHandler = errors.New("request headers are only available inside a task handler")
+)
+
+func withRequestHeaders(c context.Context, hdr *taskqueue.RequestHeaders) context.Context {
+	return context.WithValue(c, &requestHeadersKey, hdr)
+}
+
+// RequestHeaders returns the special task-queue HTTP request headers for
+// the current task handler.
+//
+// Returns an error if called from outside of a task handler.
+func RequestHeaders(c context.Context) (*taskqueue.RequestHeaders, error) {
+	if hdr, ok := c.Value(&requestHeadersKey).(*taskqueue.RequestHeaders); ok {
+		return hdr, nil
+	}
+	return nil, errOutsideHandler
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 type handler struct {
@@ -429,8 +448,8 @@ func (d *Dispatcher) processHTTPRequest(c *router.Context) {
 		return
 	}
 
-	execCount, _ := strconv.Atoi(c.Request.Header.Get("X-AppEngine-TaskExecutionCount"))
-	switch err = h.cb(c.Context, payload, execCount); {
+	ctx := withRequestHeaders(c.Context, taskqueue.ParseRequestHeaders(c.Request.Header))
+	switch err = h.cb(ctx, payload); {
 	case err == nil:
 		httpReply(c, true, 200, "OK")
 	case transient.Tag.In(err):
