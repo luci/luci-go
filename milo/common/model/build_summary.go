@@ -16,11 +16,15 @@ package model
 
 import (
 	"bytes"
+	"context"
+	"encoding/hex"
 	"time"
 
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/common/data/cmpbin"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/milo/common"
 )
 
 // ManifestKey is an index entry for BuildSummary, which looks like
@@ -90,12 +94,41 @@ type BuildSummary struct {
 // AddManifestKey adds a new entry to ManifestKey.
 //
 // `revision` should be the hex-decoded git revision.
-//
-// It's up to the caller to ensure that entries in ManifestKey aren't
-// duplicated.
 func (bs *BuildSummary) AddManifestKey(project, console, manifest, repoURL string, revision []byte) {
-	bs.ManifestKeys = append(bs.ManifestKeys,
-		NewPartialManifestKey(project, console, manifest, repoURL).AddRevision(revision))
+	newKey := NewPartialManifestKey(project, console, manifest, repoURL).AddRevision(revision)
+	// Check for dupes.
+	for _, key := range bs.ManifestKeys {
+		// TODO: can't compare?
+		if key == newKey {
+			return
+		}
+	}
+	bs.ManifestKeys = append(bs.ManifestKeys, newKey)
+}
+
+// AddRevisionKey adds a "REVISION" ManifestKey.
+// This is a special type of manifest key that does not encode repo info.
+// bs.BuilderID must be set correctly prior to calling this.
+// revision is expected to be a hex string.
+func (bs *BuildSummary) AddRevisionKey(c context.Context, revision string) error {
+	revisionBytes, err := hex.DecodeString(revision)
+	if err != nil {
+		logging.WithError(err).Warningf(c, "bad revision (not hex-decodable)")
+	} else {
+		bs.Manifests = append(bs.Manifests, ManifestLink{
+			Name: "REVISION",
+			ID:   []byte(revision),
+		})
+		consoles, err := common.GetAllConsoles(c, bs.BuilderID)
+		if err != nil {
+			return err
+		}
+		for _, con := range consoles {
+			bs.AddManifestKey(
+				con.GetProjectName(), con.ID, "REVISION", "", revisionBytes)
+		}
+	}
+	return nil
 }
 
 // PartialManifestKey is an incomplete ManifestKey key which can be made

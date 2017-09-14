@@ -317,28 +317,9 @@ func (rb *MiloBuild) SummarizeTo(c context.Context, bs *model.BuildSummary) erro
 		}
 	}
 	if rb.SourceStamp != nil {
-		// TODO(hinoka, iannucci): This should be full manifests, but lets just use
-		// single revisions for now. HACKS!
 		if rb.SourceStamp.Revision != nil {
-			revisionBytes, err := hex.DecodeString(rb.SourceStamp.Revision.Label)
-			if err != nil {
-				logging.WithError(err).Warningf(c, "bad revision (not hex-decodable)")
-			} else {
-				bs.Manifests = append(bs.Manifests, model.ManifestLink{
-					Name: "REVISION",
-					ID:   []byte(rb.SourceStamp.Revision.Label),
-				})
-				consoles, err := common.GetAllConsoles(c, bs.BuilderID)
-				if err != nil {
-					return err
-				}
-				for _, con := range consoles {
-					// HACK(iannucci): Until we have real manifest support, console
-					// definitions will specify their manifest as "REVISION", and we'll do
-					// lookups with null URL fields.
-					bs.AddManifestKey(
-						con.GetProjectName(), con.ID, "REVISION", "", revisionBytes)
-				}
+			if err := bs.AddRevisionKey(c, rb.SourceStamp.Revision); err != nil {
+				logging.WithError(err).Errorf(c, "could not add revision manifest key")
 			}
 		}
 		if rb.SourceStamp.Changelist != nil {
