@@ -55,6 +55,14 @@ func Run(templatePath string) {
 	r.GET("/admin/configs", basemw, ConfigsHandler)
 	r.GET("/admin/stats", basemw, StatsHandler)
 
+	// New Style URLs go here
+	r.GET("/p/:project/build/:id", basemw, func(c *router.Context) {
+		BuildHandler(c, &buildbucket.BuildID{
+			Project: c.Params.ByName("project"),
+			ID:      c.Params.ByName("id"),
+		})
+	})
+
 	// Console
 	r.GET("/console/:project/:name", basemw, ConsoleHandler)
 	r.GET("/console/:project", basemw, ConsoleMainHandler)

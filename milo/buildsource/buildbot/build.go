@@ -406,8 +406,8 @@ func blame(b *buildbotBuild) (result []*resp.Commit) {
 
 // sourcestamp extracts the source stamp from various parts of a buildbot build,
 // including the properties.
-func sourcestamp(c context.Context, b *buildbotBuild) *resp.SourceStamp {
-	ss := &resp.SourceStamp{}
+func sourcestamp(c context.Context, b *buildbotBuild) *resp.Trigger {
+	ss := &resp.Trigger{}
 	rietveld := ""
 	gerrit := ""
 	got_revision := ""
@@ -492,7 +492,7 @@ func renderBuild(c context.Context, b *buildbotBuild) *resp.MiloBuild {
 
 	// TODO(hinoka): Do all fields concurrently.
 	return &resp.MiloBuild{
-		SourceStamp:   sourcestamp(c, b),
+		Trigger:       sourcestamp(c, b),
 		Summary:       summary(c, b),
 		Components:    components(b),
 		PropertyGroup: properties(b),

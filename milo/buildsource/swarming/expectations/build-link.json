@@ -30,7 +30,7 @@
       "Running recipe bootstrap"
     ]
   },
-  "SourceStamp": null,
+  "Trigger": null,
   "Components": [
     {
       "Label": "recipe bootstrap",
