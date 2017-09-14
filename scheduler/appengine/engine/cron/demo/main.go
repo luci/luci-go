@@ -115,14 +115,14 @@ func startJob(c context.Context, id string) error {
 	})
 }
 
-func handleTick(c context.Context, task proto.Message, execCount int) error {
+func handleTick(c context.Context, task proto.Message) error {
 	msg := task.(*internal.TickLaterTask)
 	return evolve(c, msg.JobId, func(c context.Context, m *cron.Machine) error {
 		return m.OnTimerTick(msg.TickNonce)
 	})
 }
 
-func handleInvocation(c context.Context, task proto.Message, execCount int) error {
+func handleInvocation(c context.Context, task proto.Message) error {
 	msg := task.(*internal.StartInvocationTask)
 	logging.Infof(c, "INVOCATION of job %q has finished!", msg.JobId)
 	return evolve(c, msg.JobId, func(c context.Context, m *cron.Machine) error {
