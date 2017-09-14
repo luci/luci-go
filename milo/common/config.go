@@ -379,6 +379,11 @@ func UpdateConsoles(c context.Context) error {
 
 // GetAllConsoles returns all registered projects with the builder name.
 // If builderName is empty, then this retrieves all Consoles.
+//
+// TODO-perf(iannucci,hinoka): This gets called in a LOT of places; we should
+// profile this to see if we can rework it into something cached, ESPECIALLY
+// since this data changes infrequently, and we actually get an 'update' event
+// in the form of the UpdateConsoles function.
 func GetAllConsoles(c context.Context, builderName string) ([]*Console, error) {
 	q := datastore.NewQuery("Console")
 	if builderName != "" {
@@ -390,8 +395,9 @@ func GetAllConsoles(c context.Context, builderName string) ([]*Console, error) {
 }
 
 // GetConsole returns the requested console.
+//
+// TODO-perf(iannucci,hinoka): Memcache this.
 func GetConsole(c context.Context, proj, id string) (*Console, error) {
-	// TODO(hinoka): Memcache this.
 	con := Console{
 		Parent: datastore.MakeKey(c, "Project", proj),
 		ID:     id,
