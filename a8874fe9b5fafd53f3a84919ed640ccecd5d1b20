@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "def6e827_efa09d5c",
+        "filename": "vpython/run.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-09-14T19:03:06Z",
+      "side": 1,
+      "message": "Other variables have all caps ENV. Maybe not the best decision but should prolly be consistent.",
+      "revId": "a8874fe9b5fafd53f3a84919ed640ccecd5d1b20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d436aea3_02d7ba4e",
+        "filename": "vpython/run.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-09-14T19:03:06Z",
+      "side": 1,
+      "message": "Might as well do this once earlier.",
+      "revId": "a8874fe9b5fafd53f3a84919ed640ccecd5d1b20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
