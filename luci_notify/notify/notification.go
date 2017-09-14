@@ -1,0 +1,119 @@
+// Copyright 2017 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package notify
+
+import (
+	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/luci_notify/buildbucket"
+	"go.chromium.org/luci/luci_notify/config"
+)
+
+// Notification represents a notification ready to be sent.
+//
+// The purpose of Notification is to abstract away the details of sending
+// notifications, detecting triggers, and of consolidating recipients to
+// minimize the number of notifications sent.
+//
+// TODO(mknyszek): Support IRC and Webhooks.
+type Notification struct {
+	// EmailRecipients is a list of email addresses to notify.
+	EmailRecipients []string
+
+	// Build is the current build we are notifying about.
+	//
+	// This is used primarily for constructing the content of the
+	// final notification for each communication channel.
+	Build *buildbucket.BuildInfo
+
+	// State is the BuilderState of the previous build.
+	//
+	// This is used primarily for constructing the content of the
+	// final notification for each communication channel.
+	State *BuilderState
+}
+
+// Email constructs a new Email from the Notification's data.
+func (n *Notification) Email() *Email {
+	id := n.Build.GetBuilderID()
+	newStatus := n.Build.Build.Result
+	oldStatus := n.State.LastBuildResult
+	return BaseEmail().
+		To(n.EmailRecipients).
+		Subject("[%s] %s status update: %s -> %s",
+			newStatus,
+			id,
+			oldStatus,
+			newStatus,
+		).
+		HTMLBody(`<a href="%s">Results</a>`, n.Build.Build.Url)
+}
+
+// shouldNotify is the predicate function for whether a trigger's conditions have been met.
+func shouldNotify(n *config.NotificationConfig, build *buildbucket.BuildInfo, state *BuilderState) bool {
+	return (n.OnSuccess && build.Build.Result == "SUCCESS") ||
+		(n.OnFailure && build.Build.Result == "FAILURE") ||
+		(n.OnChange && build.Build.Result != state.LastBuildResult)
+}
+
+// CreateNotification consolidates recipients from a list of Notifiers and produces a Notification.
+//
+// This function also checks whether the triggers specified in the Notifiers have been met, and
+// filters out recipients from the list of Notifiers appropriately. If there are no recipients to
+// send to, then no Notification is created.
+func CreateNotification(c context.Context, notifiers []*config.Notifier, build *buildbucket.BuildInfo) *Notification {
+	state := LookupBuilderState(c, build)
+	if build.Build.CreatedTs <= state.LastBuildTime {
+		// TODO(mknyszek): There must be something better than just ignoring it.
+		return nil
+	}
+	// Update BuilderState in the datastore.
+	NewBuilderState(
+		state.ID,
+		build.Build.CreatedTs,
+		build.Build.Result,
+	).UpdateDatastore(c)
+	// Filter out and consolidate recipients.
+	recipientSet := stringset.New(0)
+	for _, n := range notifiers {
+		for _, nc := range n.Notifications {
+			if shouldNotify(&nc, build, state) {
+				for _, r := range nc.EmailRecipients {
+					recipientSet.Add(r)
+				}
+			}
+		}
+
+	}
+	if recipientSet.Len() == 0 {
+		return nil
+	}
+	return &Notification{
+		EmailRecipients: recipientSet.ToSlice(),
+		Build:           build,
+		State:           state,
+	}
+}
+
+// Dispatch tells a Notification to send a notification to all recipients.
+func Dispatch(c context.Context, n *Notification) error {
+	if err := n.Email().Send(c); err != nil {
+		logging.WithError(err).Errorf(c, "failed to send email")
+		return err
+	}
+	return nil
+}

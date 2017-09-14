@@ -1,0 +1,41 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+syntax = "proto3";
+
+package config;
+
+message ProjectConfig {
+  repeated Notifier notifiers = 1;
+}
+
+message Notifier {
+  string name = 1;
+  repeated Notification notifications = 2;
+  repeated Builder builders = 3;
+}
+
+message Notification {
+  bool on_success = 1;
+  bool on_failure = 2;
+  bool on_change = 3;
+  message Email {
+    repeated string recipients = 1;
+    bool blamelist = 2;
+  }
+  message IRC {
+    repeated string channels = 1;
+  }
+  message Webhook {
+    repeated string urls = 1;
+  }
+  Email email = 4;
+  IRC irc = 5;
+  Webhook webhook = 6;
+}
+
+message Builder {
+  string name = 1;
+  string category = 2;
+}
+
