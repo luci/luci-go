@@ -244,9 +244,14 @@ func AddLogDogToBuild(
 	}
 	build.PropertyGroup = append(build.PropertyGroup, propGroup)
 
-	// HACK(hinoka,iannucci): Extract revision out of properties.
-	if jrev, ok := propMap["got_revision"]; ok {
-		// got_revision is a json string, so it looks like "aaaaaabbcc123..."
+	// HACK(hinoka,iannucci): Extract revision out of properties. This should use
+	// source manifests instead.
+	jrev, ok := propMap["got_revision"]
+	if !ok {
+		jrev, ok = propMap["revision"]
+	}
+	if ok {
+		// got_revision/revision are json strings, so it looks like "aaaaaabbcc123..."
 		var rev string
 		err := json.Unmarshal([]byte(jrev), &rev)
 		if err == nil {
