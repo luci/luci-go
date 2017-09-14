@@ -52,7 +52,8 @@ var (
 )
 
 type parameters struct {
-	BuilderName string `json:"builder_name"`
+	BuilderName string            `json:"builder_name"`
+	Properties  map[string]string `json:"properties"`
 }
 
 func isLUCI(build *bucketApi.ApiCommonBuildMessage) bool {
@@ -141,8 +142,7 @@ func processBuild(
 // saveBuildSummary creates or updates a build summary based off a buildbucket
 // build entry.
 func saveBuildSummary(
-	c context.Context, key *datastore.Key, builderName string,
-	entry *buildEntry) error {
+	c context.Context, key *datastore.Key, p *parameters, entry *buildEntry) error {
 
 	build, err := entry.getBuild()
 	if err != nil {
@@ -156,7 +156,7 @@ func saveBuildSummary(
 	bs := model.BuildSummary{
 		BuildKey:  key,
 		SelfLink:  build.Url,
-		BuilderID: fmt.Sprintf("buildbucket/%s/%s", build.Bucket, builderName),
+		BuilderID: fmt.Sprintf("buildbucket/%s/%s", build.Bucket, p.BuilderName),
 		Created:   parseTimestamp(build.CreatedTs),
 		Summary: model.Summary{
 			Status: status,
@@ -167,6 +167,14 @@ func saveBuildSummary(
 		// Add info from the respBuild into the build summary if we have the data.
 		if err := entry.respBuild.SummarizeTo(c, &bs); err != nil {
 			return err
+		}
+	}
+	if !hasRevisionManifestKey(bs.ManifestKeys) {
+		// If we have no REVISION manifest key, extract it from buildbucket properties.
+		// Detect for revision key here.
+		if rev, ok := p.Properties["revision"]; ok {
+			// Add it here
+			bs.AddManifestKey(foo, bar, baz, waz)
 		}
 	}
 	logging.Debugf(c, "Created build summary: %#v", bs)
@@ -195,7 +203,7 @@ func handlePubSubBuild(c context.Context, data *psMsg) error {
 		return nil
 	}
 
-	buildEntry, err := processBuild(c, host, build)
+	buildEntry, err := processBuild(c, host, build, p)
 	if err != nil {
 		buildCounter.Add(c, 1, build.Bucket, isLUCI(build), build.Status, "Rejected")
 		// TODO(hinoka): Remove this once we build proper ACL checks.
@@ -214,7 +222,7 @@ func handlePubSubBuild(c context.Context, data *psMsg) error {
 	buildCounter.Add(c, 1, build.Bucket, isLUCI(build), build.Status, action)
 
 	return saveBuildSummary(
-		c, datastore.MakeKey(c, "buildEntry", buildEntry.key), p.BuilderName, buildEntry)
+		c, datastore.MakeKey(c, "buildEntry", buildEntry.key), &p, buildEntry)
 }
 
 // This returns 500 (Internal Server Error) if it encounters a transient error,
