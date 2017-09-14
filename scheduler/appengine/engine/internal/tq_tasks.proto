@@ -24,6 +24,24 @@ message TickLaterTask {
 }
 
 
-message StartInvocationTask {
+message TriggerInvocationTask {
   string job_id = 1;
+  int64 trigger_id = 2;
+}
+
+
+message TriageTriggersTask {
+  string job_id = 1;
+}
+
+
+message LaunchInvocationsBatchTask {
+  string job_id = 1;
+  repeated int64 inv_id = 2;
+}
+
+
+message LaunchInvocationTask {
+  string job_id = 1;
+  int64 inv_id = 2;
 }
