@@ -5,6 +5,7 @@
 package buildbucket
 
 import (
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -51,8 +52,13 @@ var (
 	errNoProject     = errors.New("project tag not found")
 )
 
+type inputProperties struct {
+	Revision string `json:"revision"`
+}
+
 type parameters struct {
-	BuilderName string `json:"builder_name"`
+	BuilderName     string          `json:"builder_name"`
+	InputProperties inputProperties `json:"properties"`
 }
 
 func isLUCI(build *bucketApi.ApiCommonBuildMessage) bool {
@@ -77,35 +83,48 @@ func PubSubHandler(ctx *router.Context) {
 
 }
 
-func maybeGetBuild(
-	c context.Context, build *bucketApi.ApiCommonBuildMessage) (*resp.MiloBuild, error) {
+func maybeGetBuild(c context.Context, build *bucketApi.ApiCommonBuildMessage,
+	props inputProperties) (*resp.MiloBuild, error) {
 
-	// Hasn't started yet, so definitely no buildinfo ready yet.
-	if build.Status == "SCHEDULED" {
-		return nil, nil
+	ret := &resp.MiloBuild{}
+	err := error(nil)
+
+	// Hasn't started yet, so fill in some basic info from properties_json
+	if build.Status != "SCHEDULED" {
+		tags := ParseTags(build.Tags)
+		var host, task string
+		var ok bool
+		if host, ok = tags["swarming_hostname"]; !ok {
+			return nil, errors.New("no swarming hostname tag")
+		}
+		if task, ok = tags["swarming_task_id"]; !ok {
+			return nil, errors.New("no swarming task id")
+		}
+		swarmingSvc, err := swarming.NewProdService(c, host)
+		if err != nil {
+			return nil, err
+		}
+		bl := swarming.BuildLoader{}
+		ret, err = bl.SwarmingBuildImpl(c, swarmingSvc, task)
 	}
-	tags := ParseTags(build.Tags)
-	var host, task string
-	var ok bool
-	if host, ok = tags["swarming_hostname"]; !ok {
-		return nil, errors.New("no swarming hostname tag")
+	if ret == nil || ret.SourceStamp == nil {
+		// try to populate SourceStamp from build.properties_json
+		if len(props.Revision) == sha1.Size*2 {
+			if ret.SourceStamp == nil {
+				ret.SourceStamp = &resp.SourceStamp{}
+			}
+			ret.SourceStamp.Revision = resp.NewLink(
+				props.Revision, "https://crrev.com/"+props.Revision)
+		}
 	}
-	if task, ok = tags["swarming_task_id"]; !ok {
-		return nil, errors.New("no swarming task id")
-	}
-	swarmingSvc, err := swarming.NewProdService(c, host)
-	if err != nil {
-		return nil, err
-	}
-	bl := swarming.BuildLoader{}
-	return bl.SwarmingBuildImpl(c, swarmingSvc, task)
+
+	return ret, err
 }
 
 // processBuild queries swarming and logdog for annotation data, then adds or
 // updates a buildEntry in datastore.
-func processBuild(
-	c context.Context, host string, build *bucketApi.ApiCommonBuildMessage) (
-	*buildEntry, error) {
+func processBuild(c context.Context, host string, build *bucketApi.ApiCommonBuildMessage,
+	props inputProperties) (*buildEntry, error) {
 
 	now := clock.Now(c).UTC()
 	entry := buildEntry{key: buildEntryKey(host, build.Id)}
@@ -122,7 +141,7 @@ func processBuild(
 	}
 
 	// If the build is running, try to get the annotation data.
-	respBuild, err := maybeGetBuild(c, build)
+	respBuild, err := maybeGetBuild(c, build, props)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +214,7 @@ func handlePubSubBuild(c context.Context, data *psMsg) error {
 		return nil
 	}
 
-	buildEntry, err := processBuild(c, host, build)
+	buildEntry, err := processBuild(c, host, build, p.InputProperties)
 	if err != nil {
 		buildCounter.Add(c, 1, build.Bucket, isLUCI(build), build.Status, "Rejected")
 		// TODO(hinoka): Remove this once we build proper ACL checks.
