@@ -15,6 +15,8 @@
 package engine
 
 import (
+	"errors"
+
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -41,8 +43,8 @@ func (ctl *jobControllerV2) onJobAbort(c context.Context, job *Job) (invs []int6
 	return nil, nil
 }
 
-func (ctl *jobControllerV2) onJobForceInvocation(c context.Context, job *Job) (nonce int64, err error) {
-	return 0, nil
+func (ctl *jobControllerV2) onJobForceInvocation(c context.Context, job *Job) (FutureInvocation, error) {
+	return nil, errors.New("not implemented")
 }
 
 func (ctl *jobControllerV2) onInvUpdating(c context.Context, old, fresh *Invocation, timers []invocationTimer, triggers []task.Trigger) error {
