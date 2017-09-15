@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a484e754_a71cf30d",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-15T00:12:27Z",
+      "side": 1,
+      "message": "hindsight 20/20: looking above, propMap is actually computed based on annotation info, not based on buildbucket properties[\u0027parameters_json\u0027]. So, I think that\u0027s why it didn\u0027t work.",
+      "range": {
+        "startLine": 251,
+        "startChar": 13,
+        "endLine": 251,
+        "endChar": 30
+      },
+      "revId": "b8b4ceb01f78ddb696b93c0412a656420c265782",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
