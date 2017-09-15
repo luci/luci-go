@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d41cb9e9_daea0d8a",
+        "filename": "scheduler/appengine/engine/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-15T00:16:26Z",
+      "side": 1,
+      "message": "Ok, removed Empty. But there\u0027s was reason I added it: BeginPop/EndPop MUST be called even if listing.Items is empty if listing.Garbage is non-empty. It\u0027s how we clean up old tombstones. So Empty \u003d\u003d true iff BegingPop/EndPop can be skipped. But whatever, it is also separately documented in BeginPop comments.",
+      "parentUuid": "fef63a59_b2641850",
+      "range": {
+        "startLine": 84,
+        "startChar": 30,
+        "endLine": 84,
+        "endChar": 35
+      },
+      "revId": "1bf5fe4bf0b658bcf18001261a4790daaea0f3a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "58feae71_1394ef59",
         "filename": "scheduler/appengine/engine/dsset/dsset.go",
         "patchSetId": 3
@@ -71,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "6d74907b_6fdb7817",
+        "filename": "scheduler/appengine/engine/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-15T00:16:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bc488adf_de7300bf",
+      "range": {
+        "startLine": 149,
+        "startChar": 18,
+        "endLine": 149,
+        "endChar": 23
+      },
+      "revId": "1bf5fe4bf0b658bcf18001261a4790daaea0f3a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f0ca39e7_7a47991a",
         "filename": "scheduler/appengine/engine/dsset/dsset.go",
         "patchSetId": 3
@@ -91,6 +139,30 @@
       "revId": "1bf5fe4bf0b658bcf18001261a4790daaea0f3a5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92b8fb73_8ab3f75b",
+        "filename": "scheduler/appengine/engine/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-15T00:16:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f0ca39e7_7a47991a",
+      "range": {
+        "startLine": 158,
+        "startChar": 3,
+        "endLine": 158,
+        "endChar": 80
+      },
+      "revId": "1bf5fe4bf0b658bcf18001261a4790daaea0f3a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -187,6 +259,54 @@
     },
     {
       "key": {
+        "uuid": "556eb405_20e4fa73",
+        "filename": "scheduler/appengine/engine/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 408,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-15T00:16:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c82ae504_6fa05a90",
+      "range": {
+        "startLine": 408,
+        "startChar": 21,
+        "endLine": 408,
+        "endChar": 29
+      },
+      "revId": "1bf5fe4bf0b658bcf18001261a4790daaea0f3a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "87d54bab_8d6c2b2a",
+        "filename": "scheduler/appengine/engine/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 408,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-15T00:16:26Z",
+      "side": 1,
+      "message": "Strictly speaking API doesn\u0027t prevent tombstones returned from FinishPop to be immediately passed to new BeginPop. This line makes sure we don\u0027t delete them, since they are presumably too fresh. Only \u0027List\u0027 can decide whether tombstone is old enough to be deleted.\n\nRemoved this line since it is indeed confusing.",
+      "parentUuid": "29b5150b_7711f994",
+      "range": {
+        "startLine": 408,
+        "startChar": 30,
+        "endLine": 408,
+        "endChar": 62
+      },
+      "revId": "1bf5fe4bf0b658bcf18001261a4790daaea0f3a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5086a6f7_8c56967f",
         "filename": "scheduler/appengine/engine/dsset/dsset.go",
         "patchSetId": 3
@@ -207,6 +327,30 @@
       "revId": "1bf5fe4bf0b658bcf18001261a4790daaea0f3a5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8a72b51_a8b7a2aa",
+        "filename": "scheduler/appengine/engine/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 458,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-15T00:16:26Z",
+      "side": 1,
+      "message": "No, len(entities) here is \u003d\u003d len(ops), which is usually very small (one or two). It\u0027s number of different _sets_ we are modifying, not number of items.",
+      "parentUuid": "5086a6f7_8c56967f",
+      "range": {
+        "startLine": 458,
+        "startChar": 30,
+        "endLine": 458,
+        "endChar": 38
+      },
+      "revId": "1bf5fe4bf0b658bcf18001261a4790daaea0f3a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
