@@ -26,16 +26,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
 	"go.chromium.org/gae/service/info"
-	tq "go.chromium.org/gae/service/taskqueue"
 
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
@@ -44,6 +43,7 @@ import (
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
+	"go.chromium.org/luci/appengine/tq"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
@@ -54,6 +54,7 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/apiservers"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine"
+	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/buildbucket"
 	"go.chromium.org/luci/scheduler/appengine/task/gitiles"
@@ -66,6 +67,11 @@ import (
 //// Global state. See init().
 
 var (
+	globalDispatcher = tq.Dispatcher{
+		// Default "/internal/tasks/" is already used by the old-style task queue
+		// router, so pick some other prefix to avoid collisions.
+		BaseURL: "/internal/tq/",
+	}
 	globalCatalog catalog.Catalog
 	globalEngine  engine.EngineInternal
 
@@ -134,6 +140,9 @@ func init() {
 	// very random. Seed it with real randomness.
 	mathrand.SeedRandomly()
 
+	// Register tasks handled here. 'NewEngine' call below will register more.
+	globalDispatcher.RegisterTask(&internal.ReadProjectConfigTask{}, readProjectConfig, "read-project-config", nil)
+
 	// Setup global singletons.
 	globalCatalog = catalog.New("")
 	for _, m := range managers {
@@ -143,6 +152,7 @@ func init() {
 	}
 	globalEngine = engine.NewEngine(engine.Config{
 		Catalog:              globalCatalog,
+		Dispatcher:           &globalDispatcher,
 		TimersQueuePath:      "/internal/tasks/timers",
 		TimersQueueName:      "timers",
 		InvocationsQueuePath: "/internal/tasks/invocations",
@@ -162,6 +172,7 @@ func init() {
 	r := router.New()
 
 	gaemiddleware.InstallHandlersWithMiddleware(r, base)
+	globalDispatcher.InstallRoutes(r, base)
 
 	ui.InstallHandlers(r, base, ui.Config{
 		Engine:        globalEngine.PublicAPI(),
@@ -171,7 +182,6 @@ func init() {
 
 	r.POST("/pubsub", base, pubsubPushHandler) // auth is via custom tokens
 	r.GET("/internal/cron/read-config", base.Extend(gaemiddleware.RequireCron), readConfigCron)
-	r.POST("/internal/tasks/read-project-config", base.Extend(gaemiddleware.RequireTaskQueue("read-project-config")), readProjectConfigTask)
 	r.POST("/internal/tasks/timers", base.Extend(gaemiddleware.RequireTaskQueue("timers")), actionTask)
 	r.POST("/internal/tasks/invocations", base.Extend(gaemiddleware.RequireTaskQueue("invocations")), actionTask)
 
@@ -260,37 +270,36 @@ func readConfigCron(c *router.Context) {
 	tasks := make([]*tq.Task, 0, len(projectsToVisit))
 	for projectID := range projectsToVisit {
 		tasks = append(tasks, &tq.Task{
-			Path: "/internal/tasks/read-project-config?projectID=" + url.QueryEscape(projectID),
+			Payload: &internal.ReadProjectConfigTask{ProjectID: projectID},
 		})
 	}
-	if err = tq.Add(rc.Context, "read-project-config", tasks...); err != nil {
-		rc.err(transient.Tag.Apply(err), "Failed to add tasks to task queue")
+	if err = globalDispatcher.AddTask(rc.Context, tasks...); err != nil {
+		rc.err(err, "Failed to add tasks to task queue")
 	} else {
 		rc.ok()
 	}
 }
 
-// readProjectConfigTask grabs a list of jobs in a project from catalog, updates
+// readProjectConfig grabs a list of jobs in a project from catalog, updates
 // all changed jobs, adds new ones, disables old ones.
-func readProjectConfigTask(c *router.Context) {
-	rc := requestContext(*c)
-	projectID := rc.Request.URL.Query().Get("projectID")
-	if projectID == "" {
-		// Return 202 to avoid retry, it is fatal error.
-		rc.fail(202, "Missing projectID query attribute")
-		return
-	}
-	ctx, _ := context.WithTimeout(rc.Context, 150*time.Second)
+func readProjectConfig(c context.Context, task proto.Message) error {
+	projectID := task.(*internal.ReadProjectConfigTask).ProjectID
+
+	ctx, cancel := context.WithTimeout(c, 150*time.Second)
+	defer cancel()
+
 	jobs, err := globalCatalog.GetProjectJobs(ctx, projectID)
 	if err != nil {
-		rc.err(err, "Failed to query for a list of jobs")
-		return
+		logging.WithError(err).Errorf(c, "Failed to query for a list of jobs")
+		return err
 	}
-	if err = globalEngine.UpdateProjectJobs(rc.Context, projectID, jobs); err != nil {
-		rc.err(err, "Failed to update some jobs")
-		return
+
+	if err := globalEngine.UpdateProjectJobs(ctx, projectID, jobs); err != nil {
+		logging.WithError(err).Errorf(c, "Failed to update some jobs")
+		return err
 	}
-	rc.ok()
+
+	return nil
 }
 
 // actionTask is used to route actions emitted by job state transitions back

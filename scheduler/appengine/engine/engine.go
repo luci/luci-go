@@ -30,8 +30,9 @@ import (
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
-	tq "go.chromium.org/gae/service/taskqueue"
+	"go.chromium.org/gae/service/taskqueue"
 
+	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
@@ -200,6 +201,7 @@ type EngineInternal interface {
 // Config contains parameters for the engine.
 type Config struct {
 	Catalog              catalog.Catalog // provides task.Manager's to run tasks
+	Dispatcher           *tq.Dispatcher  // dispatcher for task queue tasks
 	TimersQueuePath      string          // URL of a task queue handler for timer ticks
 	TimersQueueName      string          // queue name for timer ticks
 	InvocationsQueuePath string          // URL of a task queue handler that starts jobs
@@ -1032,7 +1034,7 @@ type invocationTimer struct {
 // See executeJobAction for a place where these actions are interpreted.
 func (e *engineImpl) enqueueJobActions(c context.Context, jobID string, actions []Action) error {
 	// AddMulti can't put tasks into multiple queues at once, split by queue name.
-	qs := map[string][]*tq.Task{}
+	qs := map[string][]*taskqueue.Task{}
 	for _, a := range actions {
 		switch a := a.(type) {
 		case TickLaterAction:
@@ -1045,7 +1047,7 @@ func (e *engineImpl) enqueueJobActions(c context.Context, jobID string, actions 
 				return err
 			}
 			logging.Infof(c, "Scheduling tick %d after %.1f sec", a.TickNonce, a.When.Sub(time.Now()).Seconds())
-			qs[e.cfg.TimersQueueName] = append(qs[e.cfg.TimersQueueName], &tq.Task{
+			qs[e.cfg.TimersQueueName] = append(qs[e.cfg.TimersQueueName], &taskqueue.Task{
 				Path:    e.cfg.TimersQueuePath,
 				ETA:     a.When,
 				Payload: payload,
@@ -1061,11 +1063,11 @@ func (e *engineImpl) enqueueJobActions(c context.Context, jobID string, actions 
 			if err != nil {
 				return err
 			}
-			qs[e.cfg.InvocationsQueueName] = append(qs[e.cfg.InvocationsQueueName], &tq.Task{
+			qs[e.cfg.InvocationsQueueName] = append(qs[e.cfg.InvocationsQueueName], &taskqueue.Task{
 				Path:    e.cfg.InvocationsQueuePath,
 				Delay:   time.Second, // give the transaction time to land
 				Payload: payload,
-				RetryOptions: &tq.RetryOptions{
+				RetryOptions: &taskqueue.RetryOptions{
 					// Give 5 attempts to mark the job as failed. See 'startInvocation'.
 					RetryLimit: invocationRetryLimit + 5,
 					MinBackoff: time.Second,
@@ -1082,7 +1084,7 @@ func (e *engineImpl) enqueueJobActions(c context.Context, jobID string, actions 
 			if err != nil {
 				return err
 			}
-			qs[e.cfg.InvocationsQueueName] = append(qs[e.cfg.InvocationsQueueName], &tq.Task{
+			qs[e.cfg.InvocationsQueueName] = append(qs[e.cfg.InvocationsQueueName], &taskqueue.Task{
 				Path:    e.cfg.InvocationsQueuePath,
 				Payload: payload,
 			})
@@ -1096,7 +1098,7 @@ func (e *engineImpl) enqueueJobActions(c context.Context, jobID string, actions 
 			if err != nil {
 				return err
 			}
-			qs[e.cfg.InvocationsQueueName] = append(qs[e.cfg.InvocationsQueueName], &tq.Task{
+			qs[e.cfg.InvocationsQueueName] = append(qs[e.cfg.InvocationsQueueName], &taskqueue.Task{
 				Path:    e.cfg.InvocationsQueuePath,
 				Delay:   time.Second, // give the transaction time to land
 				Payload: payload,
@@ -1110,8 +1112,8 @@ func (e *engineImpl) enqueueJobActions(c context.Context, jobID string, actions 
 	i := 0
 	for queueName, tasks := range qs {
 		wg.Add(1)
-		go func(i int, queueName string, tasks []*tq.Task) {
-			errs.Assign(i, tq.Add(c, queueName, tasks...))
+		go func(i int, queueName string, tasks []*taskqueue.Task) {
+			errs.Assign(i, taskqueue.Add(c, queueName, tasks...))
 			wg.Done()
 		}(i, queueName, tasks)
 		i++
@@ -1483,7 +1485,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 // See executeInvAction for a place where these actions are interpreted.
 func (e *engineImpl) enqueueInvTimers(c context.Context, jobID string, invID int64, timers []invocationTimer) error {
 	assertInTransaction(c)
-	tasks := make([]*tq.Task, len(timers))
+	tasks := make([]*taskqueue.Task, len(timers))
 	for i, timer := range timers {
 		payload, err := json.Marshal(actionTaskPayload{
 			JobID:    jobID,
@@ -1493,13 +1495,13 @@ func (e *engineImpl) enqueueInvTimers(c context.Context, jobID string, invID int
 		if err != nil {
 			return err
 		}
-		tasks[i] = &tq.Task{
+		tasks[i] = &taskqueue.Task{
 			Path:    e.cfg.TimersQueuePath,
 			ETA:     clock.Now(c).Add(timer.Delay),
 			Payload: payload,
 		}
 	}
-	return transient.Tag.Apply(tq.Add(c, e.cfg.TimersQueueName, tasks...))
+	return transient.Tag.Apply(taskqueue.Add(c, e.cfg.TimersQueueName, tasks...))
 }
 
 // enqueueTriggers submits all triggers emitted by an invocation manager by

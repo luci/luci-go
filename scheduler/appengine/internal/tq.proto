@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto -import-path=internal
+syntax = "proto3";
 
-// Package internal contains internal structs used by the tasks and the engine.
-package internal
+package internal.tq;
+
+// ReadProjectConfigTask is used to import jobs of some project.
+message ReadProjectConfigTask {
+  string projectID = 1;
+}
