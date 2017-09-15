@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "01520c8b_5a8eb587",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-15T22:54:08Z",
+      "side": 1,
+      "message": "nit: based on [1], it\u0027s unmarshal(properties_json[\u0027parameters_json\u0027])[\u0027revision\u0027]\n\n[1] https://apis-explorer.appspot.com/apis-explorer/?base\u003dhttps://cr-buildbucket-dev.appspot.com/_ah/api#p/buildbucket/v1/buildbucket.get?id\u003d8968348734619629136\u0026_h\u003d1\u0026",
+      "range": {
+        "startLine": 115,
+        "startChar": 16,
+        "endLine": 115,
+        "endChar": 57
+      },
+      "revId": "699579c8202a95ff63aaf634605542266444cc39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "36157820_17ecb7b0",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 3
@@ -18,6 +41,52 @@
         "startChar": 12,
         "endLine": 119,
         "endChar": 66
+      },
+      "revId": "699579c8202a95ff63aaf634605542266444cc39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6a01a7c_828bc848",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-15T22:54:08Z",
+      "side": 1,
+      "message": "40\notherwise explain .Size is bytes, ...\n\n\u003d\u003d\nit was fun exercise for me, but my brain is stupid: i knew about 160 bit and 40 chars, and so I was looking for /4, not *2.",
+      "range": {
+        "startLine": 120,
+        "startChar": 53,
+        "endLine": 120,
+        "endChar": 65
+      },
+      "revId": "699579c8202a95ff63aaf634605542266444cc39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "effd06e2_15023c43",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-15T22:54:08Z",
+      "side": 1,
+      "message": "omg, does this mean actual revision is parsed back from this URL?",
+      "range": {
+        "startLine": 122,
+        "startChar": 29,
+        "endLine": 123,
+        "endChar": 39
       },
       "revId": "699579c8202a95ff63aaf634605542266444cc39",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
