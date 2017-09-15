@@ -122,6 +122,24 @@
       "revId": "877b1b1e2ca89c0b900e7dec8c6b6d2b256f5358",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb4ccce6_35186eb3",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-09-15T23:39:34Z",
+      "side": 1,
+      "message": "OK, in this case it doesn\u0027t matter.",
+      "parentUuid": "569a6845_f3a6b1f9",
+      "revId": "877b1b1e2ca89c0b900e7dec8c6b6d2b256f5358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
