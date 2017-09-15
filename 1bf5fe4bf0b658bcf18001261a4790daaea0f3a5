@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "0ab90504_73882520",
+        "filename": "scheduler/appengine/engine/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-15T00:43:01Z",
+      "side": 1,
+      "message": "Yeah, i knew that was the reason. I guess I\u0027m objecting more to name than to the way you used it.",
+      "parentUuid": "d41cb9e9_daea0d8a",
+      "range": {
+        "startLine": 84,
+        "startChar": 30,
+        "endLine": 84,
+        "endChar": 35
+      },
+      "revId": "1bf5fe4bf0b658bcf18001261a4790daaea0f3a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "58feae71_1394ef59",
         "filename": "scheduler/appengine/engine/dsset/dsset.go",
         "patchSetId": 3
@@ -307,6 +331,30 @@
     },
     {
       "key": {
+        "uuid": "369be2d1_46df4019",
+        "filename": "scheduler/appengine/engine/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 408,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-15T00:43:01Z",
+      "side": 1,
+      "message": "ah, i see what you meant.",
+      "parentUuid": "87d54bab_8d6c2b2a",
+      "range": {
+        "startLine": 408,
+        "startChar": 30,
+        "endLine": 408,
+        "endChar": 62
+      },
+      "revId": "1bf5fe4bf0b658bcf18001261a4790daaea0f3a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5086a6f7_8c56967f",
         "filename": "scheduler/appengine/engine/dsset/dsset.go",
         "patchSetId": 3
@@ -342,6 +390,30 @@
       "side": 1,
       "message": "No, len(entities) here is \u003d\u003d len(ops), which is usually very small (one or two). It\u0027s number of different _sets_ we are modifying, not number of items.",
       "parentUuid": "5086a6f7_8c56967f",
+      "range": {
+        "startLine": 458,
+        "startChar": 30,
+        "endLine": 458,
+        "endChar": 38
+      },
+      "revId": "1bf5fe4bf0b658bcf18001261a4790daaea0f3a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0da9e786_361dbdde",
+        "filename": "scheduler/appengine/engine/dsset/dsset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 458,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-15T00:43:01Z",
+      "side": 1,
+      "message": "Agree.",
+      "parentUuid": "b8a72b51_a8b7a2aa",
       "range": {
         "startLine": 458,
         "startChar": 30,
