@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f204918b_ae09e441",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-15T19:46:09Z",
+      "side": 1,
+      "message": "I noticed there are a number of builds which provide an empty \"properties\" field in parameters_json (for example, fuchsia builds). Is that something we should be populating?",
+      "range": {
+        "startLine": 111,
+        "startChar": 38,
+        "endLine": 111,
+        "endChar": 59
+      },
+      "revId": "dea499589825f290cb980798cb2d08bbc9f8a044",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
