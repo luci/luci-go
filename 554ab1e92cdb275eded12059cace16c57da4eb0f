@@ -46,6 +46,30 @@
       "revId": "554ab1e92cdb275eded12059cace16c57da4eb0f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c9ece937_39a69123",
+        "filename": "scheduler/appengine/engine/job.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-15T17:23:57Z",
+      "side": 0,
+      "message": "i wonder if we can somehow ensure in CQ that this doesn\u0027t happen.",
+      "parentUuid": "7cda9668_77035dc1",
+      "range": {
+        "startLine": 19,
+        "startChar": 1,
+        "endLine": 19,
+        "endChar": 10
+      },
+      "revId": "554ab1e92cdb275eded12059cace16c57da4eb0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
