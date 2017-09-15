@@ -22,6 +22,30 @@
       "revId": "9d8f026ac525a4576d01e564a15321a7568c5ea3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bfd85598_e31f5b84",
+        "filename": "scheduler/appengine/internal/triggers.pb.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-15T18:57:54Z",
+      "side": 0,
+      "message": "it happened because \u0027internal\u0027 now has two .pb.go files. protoc puts per-package stuff (like doc string and consts) into first .pg.go file alphabetically. So it moved to tq.pb.go. It also renamed fileDescriptorsN accordingly.",
+      "parentUuid": "611da487_ae555069",
+      "range": {
+        "startLine": 4,
+        "startChar": 1,
+        "endLine": 13,
+        "endChar": 2
+      },
+      "revId": "9d8f026ac525a4576d01e564a15321a7568c5ea3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
