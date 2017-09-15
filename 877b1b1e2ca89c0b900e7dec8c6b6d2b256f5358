@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5f81726e_9fa3e1d3",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-15T22:03:35Z",
+      "side": 1,
+      "message": "This is equivalent to \n authutil login -scopes \"https://www.googleapis.com/auth/gerritcodereview https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile\"\n\neh, removed. No big deal, it isn\u0027t used by bots anyway.",
+      "parentUuid": "f4d5ded4_fc0885d2",
+      "revId": "877b1b1e2ca89c0b900e7dec8c6b6d2b256f5358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "72f9ad30_8f25caf8",
         "filename": "client/cmd/git-credential-luci/main.go",
         "patchSetId": 1
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "e3425cdf_56363f39",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-15T22:03:35Z",
+      "side": 1,
+      "message": "I\u0027ve figured we\u0027ll have to deal with .gitconfig in kitchen anyway, so let\u0027s make kitchen write user config too. Now the subcommand just emits two lines of easily parsable text to be consumed by kitchen. I still feel the actual retrieval of the email and name should happen here.",
+      "parentUuid": "72f9ad30_8f25caf8",
+      "revId": "877b1b1e2ca89c0b900e7dec8c6b6d2b256f5358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a62fa90f_c0ac2258",
         "filename": "client/cmd/git-credential-luci/main.go",
         "patchSetId": 1
@@ -47,6 +83,24 @@
       "writtenOn": "2017-09-03T21:17:25Z",
       "side": 1,
       "message": "It\u0027s actually possible to set a default one in the configuration, e.g.\n\n[credential \"https://chromium.googlesoure.com\"]\n\thelper \u003d luci\n\tusername \u003d git-luci\n\nThen Git will pass username\u003dgit-luci on the stdin, so maybe we should try to use that?",
+      "revId": "877b1b1e2ca89c0b900e7dec8c6b6d2b256f5358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "569a6845_f3a6b1f9",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-15T22:03:35Z",
+      "side": 1,
+      "message": "How is this better than just hardcoding it here once and for all? Gerrit ignores this as long as it starts with \u0027git-\u0027. The actual user name comes from the token itself.",
+      "parentUuid": "a62fa90f_c0ac2258",
       "revId": "877b1b1e2ca89c0b900e7dec8c6b6d2b256f5358",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
