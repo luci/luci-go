@@ -22,12 +22,16 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
+	"google.golang.org/api/oauth2/v2"
 
 	"go.chromium.org/luci/client/authcli"
 	"go.chromium.org/luci/common/auth"
@@ -43,7 +47,11 @@ var (
 
 func init() {
 	defaults := chromeinfra.DefaultAuthOptions()
-	defaults.Scopes = []string{"https://www.googleapis.com/auth/gerritcodereview"}
+	defaults.Scopes = []string{
+		"https://www.googleapis.com/auth/gerritcodereview",
+		"https://www.googleapis.com/auth/userinfo.email",
+		"https://www.googleapis.com/auth/userinfo.profile",
+	}
 	flags.RegisterScopesFlag = true
 	flags.Register(flag.CommandLine, defaults)
 	flag.DurationVar(
@@ -79,22 +87,83 @@ func main() {
 	auth := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 
 	switch flag.Args()[0] {
+	case "luci-git-user":
+		// "luci-git-user" spits out a JSON to stdout with two keys:
+		//    email: <email associated with the credentials>
+		//    name: <user name or the same email if not known>
+		// Callers can put them into corresponding git.user.* fields to make the
+		// user info in git commits match the credentials used (this may be needed
+		// when pushing changes to Gerrit).
+		client, err := auth.Client()
+		if err != nil {
+			printErr("cannot get authenticated client", err)
+			os.Exit(1)
+		}
+		profile, err := getProfile(ctx, client)
+		if err != nil {
+			printErr("cannot get user profile", err)
+			os.Exit(1)
+		}
+		blob, err := json.MarshalIndent(profile, "", "  ")
+		if err != nil {
+			printErr("failed to serialize to JSON", err)
+			os.Exit(1)
+		}
+		fmt.Printf("%s\n", blob)
 	case "get":
 		t, err := auth.GetAccessToken(lifetime)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "cannot get access token: %v\n", err)
+			printErr("cannot get access token", err)
 			os.Exit(1)
 		}
-		fmt.Printf("username=o\n")
+		fmt.Printf("username=git-luci\n")
 		fmt.Printf("password=%s\n", t.AccessToken)
 	case "erase":
 		if err := auth.PurgeCredentialsCache(); err != nil {
-			fmt.Fprintf(os.Stderr, "cannot erase cache: %v\n", err)
+			printErr("cannot erase cache", err)
 			os.Exit(1)
 		}
 	default:
 		// The specification for Git credential helper says: "If a helper
 		// receives any other operation, it should silently ignore the
 		// request."
+	}
+}
+
+type profile struct {
+	Email string `json:"email"`
+	Name  string `json:"name"`
+}
+
+func getProfile(ctx context.Context, client *http.Client) (*profile, error) {
+	srv, err := oauth2.New(client)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := srv.Userinfo.Get().Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+	email := resp.Email
+	name := resp.Name
+	if name == "" { // happens for service accounts
+		name = email
+	}
+	// We use \n as separator in stdout, make sure there are no rouge newlines.
+	switch {
+	case strings.IndexRune(email, '\n') != -1:
+		return nil, fmt.Errorf("invalid character in the email %q", email)
+	case strings.IndexRune(name, '\n') != -1:
+		return nil, fmt.Errorf("invalid character in the name %q", name)
+	}
+	return &profile{Email: email, Name: name}, nil
+}
+
+func printErr(prefix string, err error) {
+	switch {
+	case err == auth.ErrLoginRequired:
+		fmt.Fprintln(os.Stderr, "not running with a service account and not logged it")
+	case err != nil:
+		fmt.Fprintf(os.Stderr, "%s: %v\n", prefix, err)
 	}
 }
