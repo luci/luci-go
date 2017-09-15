@@ -1,0 +1,21 @@
+# TODO(vadimsh): Configure retry parameters.
+queue:
+- name: timers
+  rate: 500/s
+  bucket_size: 500
+
+- name: triggers
+  rate: 500/s
+  bucket_size: 500
+
+- name: triages
+  rate: 500/s
+  bucket_size: 500
+
+- name: launches
+  rate: 500/s
+  bucket_size: 500
+
+- name: invocations
+  rate: 500/s
+  bucket_size: 500
