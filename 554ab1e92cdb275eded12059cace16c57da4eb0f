@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dacacad2_daa14e89",
+        "filename": "scheduler/appengine/engine/job.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-15T02:51:16Z",
+      "side": 0,
+      "message": "oops :)",
+      "range": {
+        "startLine": 19,
+        "startChar": 1,
+        "endLine": 19,
+        "endChar": 10
+      },
+      "revId": "554ab1e92cdb275eded12059cace16c57da4eb0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
