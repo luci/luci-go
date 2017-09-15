@@ -227,6 +227,8 @@ type Controller interface {
 	// engine will create new invocation (with new InvocationID), that has same
 	// InvocationNonce. TaskManager implementation thus can use it to add
 	// idempotency to LaunchTask calls.
+	//
+	// TODO(vadimsh): Remove in v2, use InvocationID instead.
 	InvocationNonce() int64
 
 	// Task is proto message with task definition.
