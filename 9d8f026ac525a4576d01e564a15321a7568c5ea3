@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "611da487_ae555069",
+        "filename": "scheduler/appengine/internal/triggers.pb.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-15T17:31:10Z",
+      "side": 0,
+      "message": "how did this change if you haven\u0027t touched triggers.proto?\nIs my protoc differing from yours despite infra go env?",
+      "range": {
+        "startLine": 4,
+        "startChar": 1,
+        "endLine": 13,
+        "endChar": 2
+      },
+      "revId": "9d8f026ac525a4576d01e564a15321a7568c5ea3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
