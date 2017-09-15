@@ -450,6 +450,26 @@ func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTas
 	build.Summary.Label = sr.TaskId
 	build.Summary.Type = resp.Recipe
 	build.Summary.Source = resp.NewLink("Task "+sr.TaskId, taskPageURL(host, sr.TaskId).String())
+	if sr.StartedTs != "" {
+		ts, err := time.Parse(SwarmingTimeLayout, sr.StartedTs)
+		if err != nil {
+			return fmt.Errorf("invalid task StartedTs: %s", err)
+		}
+		build.Summary.Started = ts
+	}
+	switch sr.State {
+	case TaskBotDied, TaskExpired:
+		build.Summary.Status = model.InfraFailure
+	case TaskPending, TaskCanceled:
+		build.Summary.Status = model.NotRun
+	case TaskRunning:
+		build.Summary.Status = model.Running
+	case TaskCompleted:
+		// empty: success/failure can't be assigned here, since a 'completed' task
+		// in swarming may be either red or green.
+	case TaskTimedOut:
+		build.Summary.Status = model.Failure
+	}
 
 	// Extract more swarming specific information into the properties.
 	if props := taskProperties(sr); len(props.Property) > 0 {

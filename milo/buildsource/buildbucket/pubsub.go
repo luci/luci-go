@@ -5,6 +5,7 @@
 package buildbucket
 
 import (
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -51,8 +52,13 @@ var (
 	errNoProject     = errors.New("project tag not found")
 )
 
+type inputProperties struct {
+	Revision string `json:"revision"`
+}
+
 type parameters struct {
-	BuilderName string `json:"builder_name"`
+	BuilderName     string          `json:"builder_name"`
+	InputProperties inputProperties `json:"properties"`
 }
 
 func isLUCI(build *bucketApi.ApiCommonBuildMessage) bool {
@@ -77,35 +83,53 @@ func PubSubHandler(ctx *router.Context) {
 
 }
 
-func maybeGetBuild(
-	c context.Context, build *bucketApi.ApiCommonBuildMessage) (*resp.MiloBuild, error) {
+func maybeGetBuild(c context.Context, build *bucketApi.ApiCommonBuildMessage,
+	props inputProperties) (*resp.MiloBuild, error) {
 
-	// Hasn't started yet, so definitely no buildinfo ready yet.
-	if build.Status == "SCHEDULED" {
-		return nil, nil
+	var ret *resp.MiloBuild
+	var err error
+
+	// If this has gotten out of the scheduled phase, try to read some details
+	// from swarming.
+	if build.Status != "SCHEDULED" {
+		tags := ParseTags(build.Tags)
+		var host, task string
+		var ok bool
+		if host, ok = tags["swarming_hostname"]; !ok {
+			return nil, errors.New("no swarming hostname tag")
+		}
+		if task, ok = tags["swarming_task_id"]; !ok {
+			return nil, errors.New("no swarming task id")
+		}
+		swarmingSvc, err := swarming.NewProdService(c, host)
+		if err != nil {
+			return nil, err
+		}
+		bl := swarming.BuildLoader{}
+		ret, err = bl.SwarmingBuildImpl(c, swarmingSvc, task)
 	}
-	tags := ParseTags(build.Tags)
-	var host, task string
-	var ok bool
-	if host, ok = tags["swarming_hostname"]; !ok {
-		return nil, errors.New("no swarming hostname tag")
+	if ret == nil {
+		ret = &resp.MiloBuild{}
 	}
-	if task, ok = tags["swarming_task_id"]; !ok {
-		return nil, errors.New("no swarming task id")
+	// If we couldn't get a SourceStamp from swarming, fill one in from the
+	// buildbucket properties_json["properties"]["revision"] field (if present).
+	//
+	// HACK(iannucci,hinoka): This 'revision' protocol should be formalized
+	// better. Ideally (I think), we could have the luci scheduler pass a source
+	// manifest as input, and then we get source manifests as output.
+	if ret.SourceStamp == nil && len(props.Revision) == sha1.Size*2 {
+		ret.SourceStamp = &resp.SourceStamp{}
+		ret.SourceStamp.Revision = resp.NewLink(props.Revision,
+			"https://crrev.com/"+props.Revision)
 	}
-	swarmingSvc, err := swarming.NewProdService(c, host)
-	if err != nil {
-		return nil, err
-	}
-	bl := swarming.BuildLoader{}
-	return bl.SwarmingBuildImpl(c, swarmingSvc, task)
+
+	return ret, err
 }
 
 // processBuild queries swarming and logdog for annotation data, then adds or
 // updates a buildEntry in datastore.
-func processBuild(
-	c context.Context, host string, build *bucketApi.ApiCommonBuildMessage) (
-	*buildEntry, error) {
+func processBuild(c context.Context, host string, build *bucketApi.ApiCommonBuildMessage,
+	props inputProperties) (*buildEntry, error) {
 
 	now := clock.Now(c).UTC()
 	entry := buildEntry{key: buildEntryKey(host, build.Id)}
@@ -122,7 +146,7 @@ func processBuild(
 	}
 
 	// If the build is running, try to get the annotation data.
-	respBuild, err := maybeGetBuild(c, build)
+	respBuild, err := maybeGetBuild(c, build, props)
 	if err != nil {
 		return nil, err
 	}
@@ -148,11 +172,14 @@ func saveBuildSummary(
 	if err != nil {
 		return err
 	}
+	// This status is derived from buildbucket; if there's a swarming task
+	// already then we'll actually re-fill this in respBuild.SummarizeTo down
+	// below. However, this gives us a good default summary status if swarming is
+	// still pending.
 	status, err := parseStatus(build)
 	if err != nil {
 		return err
 	}
-	// TODO(hinoka): Console related items.
 	bs := model.BuildSummary{
 		BuildKey:  key,
 		SelfLink:  build.Url,
@@ -187,7 +214,7 @@ func handlePubSubBuild(c context.Context, data *psMsg) error {
 		// Permanent error, since this is probably a type of build we do not recognize.
 		return err
 	}
-	logging.Debugf(c, "Received from %s: build %s/%s (%s)\n%s",
+	logging.Debugf(c, "Received from %s: build %s/%s (%s)\n%v",
 		host, build.Bucket, p.BuilderName, build.Status, build)
 	if !isLUCI(build) {
 		logging.Infof(c, "This is not a luci build, ignoring")
@@ -195,7 +222,7 @@ func handlePubSubBuild(c context.Context, data *psMsg) error {
 		return nil
 	}
 
-	buildEntry, err := processBuild(c, host, build)
+	buildEntry, err := processBuild(c, host, build, p.InputProperties)
 	if err != nil {
 		buildCounter.Add(c, 1, build.Bucket, isLUCI(build), build.Status, "Rejected")
 		// TODO(hinoka): Remove this once we build proper ACL checks.
