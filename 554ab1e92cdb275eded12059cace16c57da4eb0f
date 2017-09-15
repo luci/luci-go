@@ -70,6 +70,30 @@
       "revId": "554ab1e92cdb275eded12059cace16c57da4eb0f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c49ab81e_290341d1",
+        "filename": "scheduler/appengine/engine/job.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-15T19:25:27Z",
+      "side": 0,
+      "message": "We\u0027ll have to build and test go code twice (with go 1.9 and 1.6). IMHO, not worth it. The \"context\" thing is the only hicup I\u0027ve seen so far and it is trivial to fix when discovered. *shrug*\n\nWe also can in theory migrate all our GAE apps to 1.8 where this is not an issue. Except a lot of third party code is still using net/context and it doesn\u0027t always work with \u0027context\u0027. We\u0027ll have to wait for 1.9\u0027s type aliases to become available on GAE for a comfortable migration.",
+      "parentUuid": "c9ece937_39a69123",
+      "range": {
+        "startLine": 19,
+        "startChar": 1,
+        "endLine": 19,
+        "endChar": 10
+      },
+      "revId": "554ab1e92cdb275eded12059cace16c57da4eb0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
