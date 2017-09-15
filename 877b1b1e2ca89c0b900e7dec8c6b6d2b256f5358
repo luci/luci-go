@@ -72,6 +72,24 @@
     },
     {
       "key": {
+        "uuid": "9196f93b_0703b2c4",
+        "filename": "client/cmd/git-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-15T22:04:41Z",
+      "side": 1,
+      "message": "Err... Not two lines, but JSON (I had it emit two lines before switching to JSON for better interop).",
+      "parentUuid": "e3425cdf_56363f39",
+      "revId": "877b1b1e2ca89c0b900e7dec8c6b6d2b256f5358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a62fa90f_c0ac2258",
         "filename": "client/cmd/git-credential-luci/main.go",
         "patchSetId": 1
