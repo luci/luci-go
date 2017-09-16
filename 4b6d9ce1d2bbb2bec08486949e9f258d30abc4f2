@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8aa6c3c7_2701de67",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-16T02:39:12Z",
+      "side": 1,
+      "message": "the commit timestamp should go inside payload, and then we can still expand payload in UI if necessary.",
+      "range": {
+        "startLine": 191,
+        "startChar": 32,
+        "endLine": 191,
+        "endChar": 65
+      },
+      "revId": "4b6d9ce1d2bbb2bec08486949e9f258d30abc4f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d68d255_30cee060",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-16T02:39:12Z",
+      "side": 1,
+      "message": "I think this should be auto-set by engine, that is inside ctl.EmitTrigger itself.",
+      "range": {
+        "startLine": 191,
+        "startChar": 3,
+        "endLine": 191,
+        "endChar": 65
+      },
+      "revId": "4b6d9ce1d2bbb2bec08486949e9f258d30abc4f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ace2f44e_07ae2adc",
+        "filename": "scheduler/appengine/task/task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-16T02:39:12Z",
+      "side": 1,
+      "message": "right now yes, but I think it\u0027d be used by some triggering polices deciding which invocations to start.\nupdate: actually, not please keep as is. I think this field should be auto-set by the engine itself, and if some trigger policies want to keep take advantage of time stamps, they should rely in Payload data.",
+      "range": {
+        "startLine": 111,
+        "startChar": 44,
+        "endLine": 111,
+        "endChar": 62
+      },
+      "revId": "4b6d9ce1d2bbb2bec08486949e9f258d30abc4f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
