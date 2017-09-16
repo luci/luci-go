@@ -138,13 +138,21 @@ type Invocation struct {
 
 	// InvocationNonce identifies a request to start a job, produced by
 	// StateMachine.
+	//
+	// TODO(vadimsh): Remove in v2.
 	InvocationNonce int64
 
 	// TriggeredBy is identity of whoever triggered the invocation, if it was
-	// triggered via ManualInvocation ("Run now" button).
+	// triggered via ForceInvocation ("Run now" button).
 	//
 	// Empty identity string if it was triggered by the service itself.
 	TriggeredBy identity.Identity
+
+	// IncomingTriggers is a list of triggers that the invocation consumed.
+	//
+	// They are popped from job's pending triggers set when the invocation
+	// starts.
+	IncomingTriggers []task.Trigger `gae:",noindex"`
 
 	// Revision is revision number of config.cfg when this invocation was created.
 	// For informational purpose.
@@ -181,7 +189,8 @@ type Invocation struct {
 	TaskData []byte `gae:",noindex"`
 
 	// MutationsCount is used for simple compare-and-swap transaction control.
-	// It is incremented on each change to the entity. See 'saveImpl' below.
+	//
+	// It is incremented on each change to the entity.
 	MutationsCount int64 `gae:",noindex"`
 }
 
@@ -198,12 +207,15 @@ func (e *Invocation) jobID() string {
 // isEqual returns true iff 'e' is equal to 'other'
 func (e *Invocation) isEqual(other *Invocation) bool {
 	return e == other || (e.ID == other.ID &&
+		e.MutationsCount == other.MutationsCount && // compare it first, it changes most often
 		(e.JobKey == other.JobKey || e.JobKey.Equal(other.JobKey)) &&
 		e.JobID == other.JobID &&
 		e.IndexedJobID == other.IndexedJobID &&
-		e.Started == other.Started &&
-		e.Finished == other.Finished &&
+		e.Started.Equal(other.Started) &&
+		e.Finished.Equal(other.Finished) &&
 		e.InvocationNonce == other.InvocationNonce &&
+		e.TriggeredBy == other.TriggeredBy &&
+		equalTriggerLists(e.IncomingTriggers, other.IncomingTriggers) &&
 		e.Revision == other.Revision &&
 		e.RevisionURL == other.RevisionURL &&
 		bytes.Equal(e.Task, other.Task) &&
@@ -212,8 +224,7 @@ func (e *Invocation) isEqual(other *Invocation) bool {
 		e.RetryCount == other.RetryCount &&
 		e.Status == other.Status &&
 		e.ViewURL == other.ViewURL &&
-		bytes.Equal(e.TaskData, other.TaskData) &&
-		e.MutationsCount == other.MutationsCount)
+		bytes.Equal(e.TaskData, other.TaskData))
 }
 
 // debugLog appends a line to DebugLog field.

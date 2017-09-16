@@ -102,13 +102,40 @@ type Traits struct {
 
 // Trigger is passed from a triggering job to a triggered job.
 type Trigger struct {
-	// ID must uniquely identify a Trigger in time. It is used to deduplicate and
-	// hence provide idempotency for adding a trigger.
+	// ID must uniquely identify a Trigger in time.
+	//
+	// It is used to deduplicate and hence provide idempotency for adding
+	// a trigger.
 	ID string
+
+	// JobID is ID of a job that emitted this trigger.
+	//
+	// Set by EmitTrigger, can't be overridden.
+	JobID string
+
+	// InvocationID is ID of an invocation that emitted this trigger.
+	//
+	// Set by EmitTrigger, can't be overridden.
+	InvocationID int64
+
+	// Created is when this trigger was created, used in UI only.
+	//
+	// Set by EmitTrigger, can't be overridden.
+	Created time.Time
+
+	// Title is a user friendly name for this trigger that shows up in UI.
+	//
+	// Can be set by the emitting task manager. Doesn't have to be unique.
+	Title string
+
+	// URL is optional HTTP link to display in UI.
+	//
+	// Can be set by the emitting task manager.
+	URL string
 
 	// Payload stores data passed from a triggering Job to a triggered Job.
 	// It is opaque to the engine and could be empty. It is up to respective
-	// TaskManager instances to interprete it.
+	// TaskManager instances to interpret it.
 	//
 	// Payload should be fairly small in order for all outstanding triggers to fit
 	// into 1 datastore entry.

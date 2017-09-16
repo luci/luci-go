@@ -506,18 +506,3 @@ func (m *StateMachine) emitAction(a Action) {
 func impossible(msg string, args ...interface{}) {
 	panic(fmt.Errorf(msg, args...))
 }
-
-// equalTriggerLists returns true if two sequences of triggers are equal based
-// on IDs only.
-func equalTriggerLists(s, o []task.Trigger) bool {
-	if len(s) != len(o) {
-		return false
-	}
-	for i, st := range s {
-		ot := o[i]
-		if st.ID != ot.ID {
-			return false
-		}
-	}
-	return true
-}
