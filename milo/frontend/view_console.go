@@ -17,9 +17,7 @@ package frontend
 import (
 	"bytes"
 	"encoding/hex"
-	"fmt"
 	"html/template"
-	"net/http"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -215,11 +213,16 @@ func ConsoleHandler(c *router.Context) {
 	})
 }
 
-// ConsoleMainHandler is a redirect handler that redirects the user to the main
-// console for a particular project.
-func ConsoleMainHandler(ctx *router.Context) {
-	w, r, p := ctx.Writer, ctx.Request, ctx.Params
-	proj := p.ByName("project")
-	http.Redirect(w, r, fmt.Sprintf("/console/%s/main", proj), http.StatusMovedPermanently)
-	return
+// ConsoleListHandler is responsible for taking a project name and rendering the
+// console list page (defined in ./appengine/templates/pages/console_list.html).
+func ConsoleListHandler(c *router.Context, projectName string) {
+	cons, err := common.GetProjectConsoles(c.Context, projectName)
+	if err != nil {
+		ErrorHandler(c, err)
+	} else {
+		templates.MustRender(c.Context, c.Writer, "pages/console_list.html", templates.Args{
+			"ProjectName": projectName,
+			"Consoles":    cons,
+		})
+	}
 }

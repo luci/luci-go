@@ -394,6 +394,16 @@ func GetAllConsoles(c context.Context, builderName string) ([]*Console, error) {
 	return con, err
 }
 
+// GetProjectConsoles returns all consoles for the given project.
+func GetProjectConsoles(c context.Context, projectName string) ([]*Console, error) {
+	q := datastore.NewQuery("Console")
+	parentKey := datastore.MakeKey(c, "Project", projectName)
+	q = q.Ancestor(parentKey)
+	con := []*Console{}
+	err := datastore.GetAll(c, q, &con)
+	return con, err
+}
+
 // GetConsole returns the requested console.
 //
 // TODO-perf(iannucci,hinoka): Memcache this.

@@ -1,0 +1,15 @@
+{{define "title"}}Milo {{.ProjectName}} Consoles{{end}}
+
+{{define "head"}}{{end}}
+
+{{define "body"}}
+<h1>{{ .ProjectName }} consoles</h1>
+
+<ul>
+{{ $top := . }}
+{{ range .Consoles }}
+  <li><a href="/console/{{ $top.ProjectName }}/{{ .ID }}">{{ .ID }}</a></li>
+{{ end }}
+</ul>
+
+{{end}} <!-- Body -->
