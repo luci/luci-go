@@ -15,6 +15,8 @@
 package engine
 
 import (
+	"time"
+
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
@@ -63,15 +65,19 @@ func (ctl *jobControllerV1) onJobAbort(c context.Context, job *Job) (invs []int6
 	return
 }
 
-func (ctl *jobControllerV1) onJobForceInvocation(c context.Context, job *Job) (nonce int64, err error) {
-	err = ctl.eng.rollSM(c, job, func(sm *StateMachine) error {
+func (ctl *jobControllerV1) onJobForceInvocation(c context.Context, job *Job) (FutureInvocation, error) {
+	var nonce int64
+	err := ctl.eng.rollSM(c, job, func(sm *StateMachine) error {
 		if err := sm.OnManualInvocation(auth.CurrentIdentity(c)); err != nil {
 			return err
 		}
 		nonce = sm.State.InvocationNonce
 		return nil
 	})
-	return
+	if err != nil {
+		return nil, err
+	}
+	return &nonceFutureInvocation{jobID: job.JobID, nonce: nonce}, nil
 }
 
 func (ctl *jobControllerV1) onInvUpdating(c context.Context, old, fresh *Invocation, timers []invocationTimer, triggers []task.Trigger) error {
@@ -141,4 +147,40 @@ func (ctl *jobControllerV1) onInvUpdating(c context.Context, old, fresh *Invocat
 		return transient.Tag.Apply(datastore.Put(c, &modified))
 	}
 	return nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// nonceFutureInvocation implements FutureInvocation by polling invocations
+// based on nonce.
+type nonceFutureInvocation struct {
+	jobID string
+	nonce int64
+}
+
+// InvocationID returns an ID of the invocation or 0 if not started yet.
+func (f *nonceFutureInvocation) InvocationID(c context.Context) (int64, error) {
+	q := datastore.NewQuery("Invocation").Eq("InvocationNonce", f.nonce)
+	entities := []*Invocation{}
+	if err := datastore.GetAll(c, q, &entities); err != nil {
+		return 0, transient.Tag.Apply(err)
+	}
+
+	// Keep only ones that match the job, pick the most recent one. Filtering in
+	// the code here is cheaper than adding a composite datastore index. Almost
+	// always 'entities' is small.
+	bestTS := time.Time{}
+	invID := int64(0)
+	for _, inv := range entities {
+		// Note: this code is supposed to work only with v1 entities that have
+		// JobKey set.
+		if inv.JobKey.StringID() == f.jobID {
+			if inv.Started.After(bestTS) {
+				invID = inv.ID
+				bestTS = inv.Started
+			}
+		}
+	}
+
+	return invID, nil
 }
