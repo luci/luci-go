@@ -40,6 +40,7 @@ var recognizedAssets = []string{
 	"*.css",
 	"*.html",
 	"*.js",
+	"*.tmpl",
 }
 
 // funcMap contains functions used when rendering assets.gen.go template.

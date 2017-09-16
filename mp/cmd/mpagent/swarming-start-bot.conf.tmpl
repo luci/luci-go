@@ -1,0 +1,14 @@
+# swarming-start-bot - swarming bot startup
+#
+# Used for starting a Swarming bot process.
+
+description "swarming bot startup"
+
+start on net-device-up IFACE!=lo
+stop on shutdown
+
+script
+	/usr/bin/sudo -H -u {{.User}} \
+		SWARMING_EXTERNAL_BOT_SETUP=1 \
+		/usr/bin/python {{.Path}} start_bot
+end script

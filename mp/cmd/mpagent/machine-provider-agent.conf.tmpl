@@ -1,0 +1,17 @@
+# machine-provider-agent
+#
+# Runs the Machine Provider agent process.
+
+description "machine provider agent"
+
+start on net-device-up IFACE!=lo
+stop on shutdown
+
+script
+	{{.Agent}} --user {{.User}}
+end script
+
+respawn
+respawn limit unlimited
+
+post-stop exec sleep 5
