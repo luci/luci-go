@@ -39,10 +39,11 @@ import (
 //
 // Support both v1 and v2 invocations.
 type taskController struct {
-	ctx     context.Context
-	eng     *engineImpl
-	manager task.Manager
+	ctx context.Context // for DebugLog logging only
+	eng *engineImpl     // for prepareTopic and jobController
+
 	task    proto.Message // extracted from saved.Task blob
+	manager task.Manager
 
 	saved    Invocation        // what have been given initially or saved in Save()
 	state    task.State        // state mutated by TaskManager
@@ -57,7 +58,7 @@ type taskController struct {
 // If task definition can't be deserialized, returns both controller and error.
 func controllerForInvocation(c context.Context, e *engineImpl, inv *Invocation) (*taskController, error) {
 	ctl := &taskController{
-		ctx:   c, // for DebugLog
+		ctx:   c,
 		eng:   e,
 		saved: *inv,
 	}
@@ -201,6 +202,7 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 		for _, t := range ctl.timers {
 			saving.debugLog(ctx, "Ignoring timer %s...", t.Name)
 		}
+		ctl.timers = nil
 	}
 
 	if saving.Status == task.StatusRetrying {
@@ -229,30 +231,15 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 			return errUpdateConflict
 		}
 
-		// Store the invocation entity and schedule invocation timers regardless of
-		// the current state of the Job entity. The table of all invocations is
-		// useful on its own (e.g. for debugging) even if Job entity state has
-		// desynchronized for some reason.
+		// Notify the engine about the invocation state change and all timers and
+		// triggers. The engine may decide to update the corresponding job.
+		jobCtl := ctl.eng.jobController(ctl.JobID())
+		if err := jobCtl.onInvUpdating(c, &ctl.saved, &saving, ctl.timers, ctl.triggers); err != nil {
+			return err
+		}
+
+		// Persist all changes to the invocation.
 		saving.trimDebugLog()
-		if err := datastore.Put(c, &saving); err != nil {
-			return transient.Tag.Apply(err)
-		}
-
-		// Finished invocations can't schedule timers.
-		if !hasFinished && len(ctl.timers) > 0 {
-			if err := ctl.eng.enqueueInvTimers(c, ctl.JobID(), ctl.InvocationID(), ctl.timers); err != nil {
-				return err
-			}
-		}
-
-		if len(ctl.triggers) > 0 {
-			if err := ctl.eng.enqueueTriggers(c, ctl.saved.TriggeredJobIDs, ctl.triggers); err != nil {
-				return err
-			}
-		}
-
-		// Notify the engine about the invocation state change. The engine may
-		// decide to update the corresponding job.
-		return ctl.eng.invocationUpdating(c, ctl.JobID(), &ctl.saved, &saving)
+		return transient.Tag.Apply(datastore.Put(c, &saving))
 	})
 }

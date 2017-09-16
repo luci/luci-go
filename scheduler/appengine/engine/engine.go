@@ -222,6 +222,26 @@ type engineImpl struct {
 	configureTopic func(c context.Context, topic, sub, pushURL, publisher string) error
 }
 
+// jobController is a part of engine that directly deals with state transitions
+// of a single job and its invocations.
+//
+// It is short-lived. It is instantiated, used and discarded. Never retained.
+//
+// All onJob* methods are called from within a Job transaction.
+// All onInv* methods are called from within an Invocation transaction.
+//
+// There are two implementations of the controller (jobControllerV1 and
+// jobControllerV2).
+type jobController interface {
+	onJobScheduleChange(c context.Context, job *Job) error
+	onJobEnabled(c context.Context, job *Job) error
+	onJobDisabled(c context.Context, job *Job) error
+	onJobAbort(c context.Context, job *Job) (invs []int64, err error)
+	onJobForceInvocation(c context.Context, job *Job) (nonce int64, err error)
+
+	onInvUpdating(c context.Context, old, fresh *Invocation, timers []invocationTimer, triggers []task.Trigger) error
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Engine interface implementation.
 
@@ -270,11 +290,6 @@ func (e *engineImpl) ListVisibleInvocations(c context.Context, jobID string, pag
 		return nil, "", err
 	}
 
-	isV2, err := e.isV2Job(c, jobID)
-	if err != nil {
-		return nil, "", err
-	}
-
 	if pageSize == 0 || pageSize > 500 {
 		pageSize = 500
 	}
@@ -291,7 +306,7 @@ func (e *engineImpl) ListVisibleInvocations(c context.Context, jobID string, pag
 
 	// Prepare the query. Fetch 'pageSize' worth of entities as a single batch.
 	q := ds.NewQuery("Invocation")
-	if isV2 {
+	if e.isV2Job(jobID) {
 		q = q.Eq("JobID", jobID)
 	} else {
 		q = q.Ancestor(ds.NewKey(c, "Job", jobID, 0, nil))
@@ -304,7 +319,7 @@ func (e *engineImpl) ListVisibleInvocations(c context.Context, jobID string, pag
 	// Fetch pageSize worth of invocations, then grab the cursor.
 	out := make([]*Invocation, 0, pageSize)
 	var newCursor string
-	err = ds.Run(c, q, func(obj *Invocation, getCursor ds.CursorCB) error {
+	err := ds.Run(c, q, func(obj *Invocation, getCursor ds.CursorCB) error {
 		out = append(out, obj)
 		if len(out) < pageSize {
 			return nil
@@ -392,28 +407,36 @@ func (e *engineImpl) AbortJob(c context.Context, jobID string) error {
 	if _, err := e.getOwnedJob(c, jobID); err != nil {
 		return err
 	}
+
 	// Second, we switch the job to the default state and disassociate the running
-	// invocation (if any) from the job entity.
-	var invID int64
-	err := e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
+	// invocations (if any) from the job entity.
+	var invs []int64
+	err := e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) (err error) {
 		if isNew {
 			return errSkipPut // the job was removed, nothing to abort
 		}
-		invID = job.State.InvocationID
-		return e.rollSM(c, job, func(sm *StateMachine) error {
-			sm.OnManualAbort()
-			return nil
-		})
+		invs, err = e.jobController(jobID).onJobAbort(c, job)
+		return err
 	})
 	if err != nil {
 		return err
 	}
 
-	// Now we kill the invocation. We do it separately because it may involve
+	// Now we kill the invocations. We do it separately because it may involve
 	// an RPC to remote service (e.g. to cancel a task) that can't be done from
 	// the transaction.
-	if invID != 0 {
-		return e.abortInvocation(c, jobID, invID)
+	wg := sync.WaitGroup{}
+	wg.Add(len(invs))
+	errs := errors.NewLazyMultiError(len(invs))
+	for i, invID := range invs {
+		go func(i int, invID int64) {
+			defer wg.Done()
+			errs.Assign(i, e.abortInvocation(c, jobID, invID))
+		}(i, invID)
+	}
+	wg.Wait()
+	if err := errs.Get(); err != nil {
+		return transient.Tag.Apply(err)
 	}
 	return nil
 }
@@ -432,35 +455,29 @@ func (e *engineImpl) AbortInvocation(c context.Context, jobID string, invID int6
 //
 // Part of the public interface, checks ACLs.
 func (e *engineImpl) ForceInvocation(c context.Context, jobID string) (int64, error) {
-	// First, we check ACLs.
 	if _, err := e.getOwnedJob(c, jobID); err != nil {
 		return 0, err
 	}
 
-	var err error
+	var noSuchJob bool
 	var invNonce int64
-	err2 := e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
-		if isNew {
-			err = ErrNoSuchJob
+	err := e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) (err error) {
+		if isNew || !job.Enabled {
+			noSuchJob = true
 			return errSkipPut
 		}
-		if !job.Enabled {
-			err = errors.New("the job is disabled")
-			return errSkipPut
-		}
-		invNonce = 0
-		return e.rollSM(c, job, func(sm *StateMachine) error {
-			if err := sm.OnManualInvocation(auth.CurrentIdentity(c)); err != nil {
-				return err
-			}
-			invNonce = sm.State.InvocationNonce
-			return nil
-		})
+		invNonce, err = e.jobController(jobID).onJobForceInvocation(c, job)
+		return err
 	})
-	if err == nil {
-		err = err2
+
+	switch {
+	case noSuchJob:
+		return 0, ErrNoSuchJob
+	case err != nil:
+		return 0, err
 	}
-	return invNonce, err
+
+	return invNonce, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -696,12 +713,17 @@ func (e *engineImpl) rollSM(c context.Context, job *Job, cb func(*StateMachine) 
 }
 
 // isV2Job returns true if the given job is using v2 scheduler engine.
-//
-// Should be considered fast. Ignores transactions. Returns only transient
-// errors.
-func (e *engineImpl) isV2Job(c context.Context, jobID string) (bool, error) {
-	// TODO(vadimsh): Implement.
-	return false, nil
+func (e *engineImpl) isV2Job(jobID string) bool {
+	return false
+}
+
+// jobController returns an appropriate implementation of the jobController
+// depending of a version of the engine the job is using (v1 or v2).
+func (e *engineImpl) jobController(jobID string) jobController {
+	if e.isV2Job(jobID) {
+		return &jobControllerV2{eng: e}
+	}
+	return &jobControllerV1{eng: e}
 }
 
 // getJob returns a job if it exists or nil if not.
@@ -799,10 +821,10 @@ func (e *engineImpl) setJobPausedFlag(c context.Context, jobID string, paused bo
 		return err
 	}
 	return e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
-		if isNew || !job.Enabled {
+		switch {
+		case isNew || !job.Enabled:
 			return ErrNoSuchJob
-		}
-		if job.Paused == paused {
+		case job.Paused == paused:
 			return errSkipPut
 		}
 		if paused {
@@ -811,10 +833,7 @@ func (e *engineImpl) setJobPausedFlag(c context.Context, jobID string, paused bo
 			logging.Warningf(c, "Job is resumed by %s", who)
 		}
 		job.Paused = paused
-		return e.rollSM(c, job, func(sm *StateMachine) error {
-			sm.OnScheduleChange()
-			return nil
-		})
+		return e.jobController(jobID).onJobScheduleChange(c, job)
 	})
 }
 
@@ -855,22 +874,19 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 		job.Task = def.Task
 		job.TriggeredJobIDs = def.TriggeredJobIDs
 
-		// Do state machine transitions.
+		// Kick off task queue tasks.
+		ctl := e.jobController(job.JobID)
 		if !oldEnabled {
-			err := e.rollSM(c, job, func(sm *StateMachine) error {
-				sm.OnJobEnabled()
-				return nil
-			})
-			if err != nil {
+			if err := ctl.onJobEnabled(c, job); err != nil {
 				return err
 			}
 		}
 		if job.EffectiveSchedule() != oldEffectiveSchedule {
-			logging.Infof(c, "Job's schedule changed")
-			return e.rollSM(c, job, func(sm *StateMachine) error {
-				sm.OnScheduleChange()
-				return nil
-			})
+			logging.Infof(c, "Job's schedule changed: %q -> %q",
+				job.EffectiveSchedule(), oldEffectiveSchedule)
+			if err := ctl.onJobScheduleChange(c, job); err != nil {
+				return err
+			}
 		}
 		return nil
 	})
@@ -883,10 +899,7 @@ func (e *engineImpl) disableJob(c context.Context, jobID string) error {
 			return errSkipPut
 		}
 		job.Enabled = false
-		return e.rollSM(c, job, func(sm *StateMachine) error {
-			sm.OnJobDisabled()
-			return nil
-		})
+		return e.jobController(jobID).onJobDisabled(c, job)
 	})
 }
 
@@ -900,17 +913,14 @@ func (e *engineImpl) resetJobOnDevServer(c context.Context, jobID string) error 
 			return errSkipPut
 		}
 		logging.Infof(c, "Resetting job")
-		err := e.rollSM(c, job, func(sm *StateMachine) error {
-			sm.OnJobDisabled()
-			return nil
-		})
-		if err != nil {
+		ctl := e.jobController(jobID)
+		if err := ctl.onJobDisabled(c, job); err != nil {
 			return err
 		}
-		return e.rollSM(c, job, func(sm *StateMachine) error {
-			sm.OnJobEnabled()
-			return nil
-		})
+		if err := ctl.onJobEnabled(c, job); err != nil {
+			return err
+		}
+		return nil
 	})
 }
 
@@ -923,10 +933,7 @@ func (e *engineImpl) resetJobOnDevServer(c context.Context, jobID string) error 
 //
 // Supports both v1 and v2 invocations.
 func (e *engineImpl) getInvocation(c context.Context, jobID string, invID int64) (*Invocation, error) {
-	isV2, err := e.isV2Job(c, jobID)
-	if err != nil {
-		return nil, err
-	}
+	isV2 := e.isV2Job(jobID)
 	inv := &Invocation{ID: invID}
 	if !isV2 {
 		inv.JobKey = ds.NewKey(c, "Job", jobID, 0, nil)
@@ -959,10 +966,7 @@ func (e *engineImpl) getInvocation(c context.Context, jobID string, invID int64)
 // Supports both v1 and v2 invocations.
 func (e *engineImpl) newInvocation(c context.Context, jobID string, inv *Invocation) (*Invocation, error) {
 	assertInTransaction(c)
-	isV2, err := e.isV2Job(c, jobID)
-	if err != nil {
-		return nil, err
-	}
+	isV2 := e.isV2Job(jobID)
 	var jobKey *ds.Key
 	if !isV2 {
 		jobKey = ds.NewKey(c, "Job", jobID, 0, nil)
@@ -980,6 +984,9 @@ func (e *engineImpl) newInvocation(c context.Context, jobID string, inv *Invocat
 	return inv, nil
 }
 
+// abortInvocation marks some invocation as aborted.
+//
+// Supports both v1 and v2 invocations.
 func (e *engineImpl) abortInvocation(c context.Context, jobID string, invID int64) error {
 	return e.withController(c, jobID, invID, "manual abort", func(c context.Context, ctl *taskController) error {
 		ctl.DebugLog("Invocation is manually aborted by %q", auth.CurrentUser(c))
@@ -1142,6 +1149,8 @@ func (e *engineImpl) executeJobAction(c context.Context, payload *actionTaskPayl
 
 // jobTimerTick is invoked via task queue in a task with some ETA. It what makes
 // cron tick.
+//
+// Used by v1 engine only!
 func (e *engineImpl) jobTimerTick(c context.Context, jobID string, tickNonce int64) error {
 	return e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
 		if isNew {
@@ -1156,8 +1165,10 @@ func (e *engineImpl) jobTimerTick(c context.Context, jobID string, tickNonce int
 // recordOverrun is invoked via task queue when a job should have been started,
 // but previous invocation was still running.
 //
-// It creates new Invocation entity (in 'FAILED' state) in the datastore,
+// It creates new phony Invocation entity (in 'FAILED' state) in the datastore,
 // to keep record of all overruns. Doesn't modify Job entity.
+//
+// Supports both v1 and v2 invocations.
 func (e *engineImpl) recordOverrun(c context.Context, jobID string, overruns int, runningInvID int64) error {
 	return runTxn(c, func(c context.Context) error {
 		now := clock.Now(c).UTC()
@@ -1183,6 +1194,8 @@ func (e *engineImpl) recordOverrun(c context.Context, jobID string, overruns int
 //
 // It adds these triggers to job's state. If job isn't yet running, this may
 // result in StartInvocationAction being emitted.
+//
+// Used by v1 engine only!
 func (e *engineImpl) newTriggers(c context.Context, jobID string, triggers []task.Trigger) error {
 	return e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
 		if isNew {
@@ -1297,6 +1310,8 @@ func (e *engineImpl) withController(c context.Context, jobID string, invID int64
 // startInvocation is called via task queue to start running a job.
 //
 // This call may be retried by task queue service.
+//
+// Used by v1 engine only!
 func (e *engineImpl) startInvocation(c context.Context, jobID string, invocationNonce int64,
 	triggeredBy identity.Identity, triggers []task.Trigger, retryCount int) error {
 
@@ -1305,11 +1320,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	c = logging.SetField(c, "Attempt", retryCount)
 
 	// TODO(vadimsh): This works only for v1 jobs currently.
-	isV2, err := e.isV2Job(c, jobID)
-	if err != nil {
-		return err
-	}
-	if isV2 {
+	if e.isV2Job(jobID) {
 		panic("must be v1 job")
 	}
 
@@ -1333,7 +1344,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	//    handler crashed).
 	inv := Invocation{}
 	skipRunning := false
-	err = e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
+	err := e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
 		if isNew {
 			logging.Errorf(c, "Queued job is unexpectedly gone")
 			skipRunning = true
@@ -1417,11 +1428,20 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	}
 
 	c = logging.SetField(c, "InvID", inv.ID)
+	return e.launchTask(c, &inv, triggers)
+}
 
+// launchTask instantiates an invocation controller and calls its LaunchTask
+// method, saving the invocation state when its done.
+//
+// It returns a transient error if the launch attempt should be retried.
+//
+// Supports both v1 and v2 invocations.
+func (e *engineImpl) launchTask(c context.Context, inv *Invocation, triggers []task.Trigger) error {
 	// Now we have a new Invocation entity in the datastore in StatusStarting
 	// state. Grab corresponding TaskManager and launch task through it, keeping
 	// track of the progress in created Invocation entity.
-	ctl, err := controllerForInvocation(c, e, &inv)
+	ctl, err := controllerForInvocation(c, e, inv)
 	if err != nil {
 		// Note: controllerForInvocation returns both ctl and err on errors, with
 		// ctl not fully initialized (but good enough for what's done below).
@@ -1440,7 +1460,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	if ctl.State().Status == task.StatusStarting && err == nil {
 		err = fmt.Errorf("LaunchTask didn't move invocation out of StatusStarting")
 	}
-	if transient.Tag.In(err) && retryCount+1 >= invocationRetryLimit {
+	if transient.Tag.In(err) && inv.RetryCount+1 >= invocationRetryLimit {
 		err = fmt.Errorf("Too many retries, giving up (original error - %s)", err)
 	}
 
@@ -1483,6 +1503,8 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 // Called from a transaction around corresponding Invocation entity.
 //
 // See executeInvAction for a place where these actions are interpreted.
+//
+// Used by v1 engine only!
 func (e *engineImpl) enqueueInvTimers(c context.Context, jobID string, invID int64, timers []invocationTimer) error {
 	assertInTransaction(c)
 	tasks := make([]*taskqueue.Task, len(timers))
@@ -1510,6 +1532,8 @@ func (e *engineImpl) enqueueInvTimers(c context.Context, jobID string, invID int
 // Called from a transaction around corresponding Invocation entity.
 //
 // See executeJobAction for a place where these actions are interpreted.
+//
+// Used by v1 engine only!
 func (e *engineImpl) enqueueTriggers(c context.Context, triggeredJobIDs []string, triggers []task.Trigger) error {
 	// TODO(tandrii): batch all enqueing into 1 TQ task because AE allows up to 5
 	// tasks to be inserted transactionally. The batched TQ task will then
@@ -1528,63 +1552,6 @@ func (e *engineImpl) enqueueTriggers(c context.Context, triggeredJobIDs []string
 	}
 	wg.Wait()
 	return transient.Tag.Apply(errs.Get())
-}
-
-// invocationUpdating is called by the controller from inside an Invocation
-// transaction when it changes from 'old' to 'fresh'.
-//
-// Supports only v1 jobs currently.
-func (e *engineImpl) invocationUpdating(c context.Context, jobID string, old, fresh *Invocation) error {
-	assertInTransaction(c)
-
-	hasStartedOrFailed := old.Status.Initial() && !fresh.Status.Initial()
-	hasFinished := !old.Status.Final() && fresh.Status.Final()
-	if !hasStartedOrFailed && !hasFinished {
-		return nil // nothing that could affect the Job happened
-	}
-
-	// Fetch the up-to-date state of the job. Not a fatal error if not there.
-	job := Job{JobID: jobID}
-	switch err := ds.Get(c, &job); {
-	case err == ds.ErrNoSuchEntity:
-		logging.Errorf(c, "Active job is unexpectedly gone")
-		return nil
-	case err != nil:
-		return transient.Tag.Apply(err)
-	}
-
-	// Still have this invocation associate with the job? Not big deal if not.
-	if job.State.InvocationID != fresh.ID {
-		logging.Warningf(c, "The invocation is no longer current, the current is %d", job.State.InvocationID)
-		return nil
-	}
-
-	// Make the state machine transitions, mutating a copy of 'job'.
-	modified := job
-	if hasStartedOrFailed {
-		err := e.rollSM(c, &modified, func(sm *StateMachine) error {
-			sm.OnInvocationStarted(fresh.ID)
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-	}
-	if hasFinished {
-		err := e.rollSM(c, &modified, func(sm *StateMachine) error {
-			sm.OnInvocationDone(fresh.ID)
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	// Don't bother doing an RPC if nothing has changed.
-	if !modified.IsEqual(&job) {
-		return transient.Tag.Apply(ds.Put(c, &modified))
-	}
-	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
