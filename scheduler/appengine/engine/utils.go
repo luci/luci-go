@@ -28,6 +28,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+
+	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
 // assertInTransaction panics if the context is not transactional.
@@ -105,6 +107,23 @@ func equalSortedLists(a, b []string) bool {
 	}
 	for i, s := range a {
 		if s != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// equalTriggerLists returns true if two sequences of triggers are equal based
+// on IDs only.
+//
+// Order is important.
+func equalTriggerLists(s, o []task.Trigger) bool {
+	if len(s) != len(o) {
+		return false
+	}
+	for i, st := range s {
+		ot := o[i]
+		if st.ID != ot.ID {
 			return false
 		}
 	}

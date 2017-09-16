@@ -181,6 +181,7 @@ type invocation struct {
 	RevisionURL string
 	Definition  string
 	TriggeredBy string
+	Triggers    []trigger
 	Started     string
 	Duration    string
 	Status      string
@@ -238,6 +239,11 @@ func makeInvocation(j *schedulerJob, i *engine.Invocation) *invocation {
 		duration = "1 second" // "now" looks weird for durations
 	}
 
+	triggers := make([]trigger, 0, len(i.Triggers))
+	for _, t := range i.Triggers {
+		triggers = append(triggers, makeTrigger(t, j.now))
+	}
+
 	return &invocation{
 		ProjectID:   j.ProjectID,
 		JobName:     j.JobName,
@@ -247,6 +253,7 @@ func makeInvocation(j *schedulerJob, i *engine.Invocation) *invocation {
 		RevisionURL: i.RevisionURL,
 		Definition:  taskToText(i.Task),
 		TriggeredBy: triggeredBy,
+		Triggers:    triggers,
 		Started:     humanize.RelTime(i.Started, j.now, "ago", "from now"),
 		Duration:    duration,
 		Status:      string(status),
@@ -255,4 +262,24 @@ func makeInvocation(j *schedulerJob, i *engine.Invocation) *invocation {
 		LabelClass:  statusToLabelClass[status],
 		ViewURL:     i.ViewURL,
 	}
+}
+
+type trigger struct {
+	Title   string
+	URL     string
+	RelTime string
+}
+
+func makeTrigger(t task.Trigger, now time.Time) trigger {
+	out := trigger{
+		Title: t.Title,
+		URL:   t.URL,
+	}
+	if out.Title == "" {
+		out.Title = t.ID
+	}
+	if !t.Created.IsZero() {
+		out.RelTime = humanize.RelTime(t.Created, now, "ago", "from now")
+	}
+	return out
 }
