@@ -1,0 +1,12 @@
+[Unit]
+Description=Machine Provider agent
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5
+ExecStart={{.Agent}} --user {{.User}}
+
+[Install]
+WantedBy=multi-user.target
