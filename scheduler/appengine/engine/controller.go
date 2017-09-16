@@ -150,6 +150,9 @@ func (ctl *taskController) GetClient(ctx context.Context, timeout time.Duration,
 // EmitTrigger is part of task.Controller interface.
 func (ctl *taskController) EmitTrigger(ctx context.Context, trigger task.Trigger) {
 	ctl.DebugLog("Emitting a trigger %s", trigger.ID)
+	trigger.JobID = ctl.JobID()
+	trigger.InvocationID = ctl.InvocationID()
+	trigger.Created = clock.Now(ctx).UTC()
 	ctl.triggers = append(ctl.triggers, trigger)
 }
 

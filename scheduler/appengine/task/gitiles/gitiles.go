@@ -187,6 +187,8 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 		}
 		ctl.EmitTrigger(c, task.Trigger{
 			ID:      fmt.Sprintf("%s/+/%s@%s", cfg.Repo, ref, newHead),
+			Title:   newHead,
+			URL:     fmt.Sprintf("%s/+/%s", cfg.Repo, newHead),
 			Payload: payload,
 		})
 	}

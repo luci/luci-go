@@ -173,21 +173,22 @@ func sortJobs(c context.Context, jobs []*engine.Job) sortedJobs {
 
 // invocation is UI representation of engine.Invocation entity.
 type invocation struct {
-	ProjectID   string
-	JobName     string
-	InvID       int64
-	Attempt     int64
-	Revision    string
-	RevisionURL string
-	Definition  string
-	TriggeredBy string
-	Started     string
-	Duration    string
-	Status      string
-	DebugLog    string
-	RowClass    string
-	LabelClass  string
-	ViewURL     string
+	ProjectID        string
+	JobName          string
+	InvID            int64
+	Attempt          int64
+	Revision         string
+	RevisionURL      string
+	Definition       string
+	TriggeredBy      string
+	IncomingTriggers []trigger
+	Started          string
+	Duration         string
+	Status           string
+	DebugLog         string
+	RowClass         string
+	LabelClass       string
+	ViewURL          string
 }
 
 var statusToRowClass = map[task.Status]string{
@@ -238,21 +239,49 @@ func makeInvocation(j *schedulerJob, i *engine.Invocation) *invocation {
 		duration = "1 second" // "now" looks weird for durations
 	}
 
-	return &invocation{
-		ProjectID:   j.ProjectID,
-		JobName:     j.JobName,
-		InvID:       i.ID,
-		Attempt:     i.RetryCount + 1,
-		Revision:    i.Revision,
-		RevisionURL: i.RevisionURL,
-		Definition:  taskToText(i.Task),
-		TriggeredBy: triggeredBy,
-		Started:     humanize.RelTime(i.Started, j.now, "ago", "from now"),
-		Duration:    duration,
-		Status:      string(status),
-		DebugLog:    i.DebugLog,
-		RowClass:    statusToRowClass[status],
-		LabelClass:  statusToLabelClass[status],
-		ViewURL:     i.ViewURL,
+	incomingTriggers := make([]trigger, 0, len(i.IncomingTriggers))
+	for _, t := range i.IncomingTriggers {
+		incomingTriggers = append(incomingTriggers, makeTrigger(t, j.now))
 	}
+
+	return &invocation{
+		ProjectID:        j.ProjectID,
+		JobName:          j.JobName,
+		InvID:            i.ID,
+		Attempt:          i.RetryCount + 1,
+		Revision:         i.Revision,
+		RevisionURL:      i.RevisionURL,
+		Definition:       taskToText(i.Task),
+		TriggeredBy:      triggeredBy,
+		IncomingTriggers: incomingTriggers,
+		Started:          humanize.RelTime(i.Started, j.now, "ago", "from now"),
+		Duration:         duration,
+		Status:           string(status),
+		DebugLog:         i.DebugLog,
+		RowClass:         statusToRowClass[status],
+		LabelClass:       statusToLabelClass[status],
+		ViewURL:          i.ViewURL,
+	}
+}
+
+// trigger is UI representation of task.Trigger struct.
+type trigger struct {
+	Title   string
+	URL     string
+	RelTime string
+}
+
+// makeTrigger builds UI presentation of some task.Trigger.
+func makeTrigger(t task.Trigger, now time.Time) trigger {
+	out := trigger{
+		Title: t.Title,
+		URL:   t.URL,
+	}
+	if out.Title == "" {
+		out.Title = t.ID
+	}
+	if !t.Created.IsZero() {
+		out.RelTime = humanize.RelTime(t.Created, now, "ago", "from now")
+	}
+	return out
 }

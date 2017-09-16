@@ -51,6 +51,28 @@
   </div>
   {{end}}
 
+  {{if .Inv.IncomingTriggers}}
+  <h4>Incoming triggers</h4>
+  <div class="row">
+    <div class="col-sm-12">
+      <ul>
+      {{range .Inv.IncomingTriggers}}
+        <li>
+          <span style="font-family:monospace;">
+          {{if .URL}}
+            <a href="{{.URL}}" target="_blank">{{.Title}}</a>
+          {{else}}
+            {{.Title}}
+          {{end}}
+          </span>
+          {{if .RelTime}}({{.RelTime}}){{end}}
+        </li>
+      {{end}}
+      </ul>
+    </div>
+  </div>
+  {{end}}
+
   <h4>Debug log (UTC)</h4>
   <div class="row">
     <div class="col-sm-12">
