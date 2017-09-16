@@ -117,7 +117,7 @@ func runJobAction(ctx *router.Context) {
 	// appear. Give up if task queue or datastore indexes are lagging too much.
 	e := config(c).Engine
 	jobID := projectID + "/" + jobName
-	invNonce, err := e.ForceInvocation(c, jobID)
+	future, err := e.ForceInvocation(c, jobID)
 	if err == engine.ErrNoOwnerPermission {
 		http.Error(w, "Forbidden", 403)
 		return
@@ -136,16 +136,10 @@ func runJobAction(ctx *router.Context) {
 			// loop.
 			break
 		}
-		// Find most recent invocation with requested nonce. Ignore errors here,
-		// since GetInvocationsByNonce can return only transient ones.
-		invs, _ := e.GetVisibleInvocationsByNonce(c, jobID, invNonce)
-		bestTS := time.Time{}
-		for _, inv := range invs {
-			if inv.Started.Sub(bestTS) > 0 {
-				invID = inv.ID
-				bestTS = inv.Started
-			}
-		}
+		// Grab the ID of the launched invocation (if any). Ignore errors here,
+		// since InvocationID can return only transient ones, which we treat as if
+		// the invocation is not available yet.
+		invID, _ = future.InvocationID(c)
 	}
 
 	if invID != 0 {

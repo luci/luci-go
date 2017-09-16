@@ -108,14 +108,6 @@ type Engine interface {
 	// or job and hence invocation isn't visible.
 	GetVisibleInvocation(c context.Context, jobID string, invID int64) (*Invocation, error)
 
-	// GetVisibleInvocationsByNonce returns a list of Invocations with a given
-	// nonce.
-	//
-	// Invocation nonce is a random number that identifies an intent to start
-	// an invocation. Normally one nonce corresponds to one Invocation entity,
-	// but there can be more if job fails to start with a transient error.
-	GetVisibleInvocationsByNonce(c context.Context, jobID string, invNonce int64) ([]*Invocation, error)
-
 	// PauseJob prevents new automatic invocations of a job.
 	//
 	// It replaces job's schedule with "triggered", effectively preventing it from
@@ -149,10 +141,9 @@ type Engine interface {
 	//
 	// Used by "Run now" UI button.
 	//
-	// Returns new invocation nonce (a random number that identifies an intent to
-	// start an invocation). Normally one nonce corresponds to one Invocation
-	// entity, but there can be more if job fails to start with a transient error.
-	ForceInvocation(c context.Context, jobID string) (int64, error)
+	// Returns an object that can be waited on to grab a corresponding Invocation
+	// when it appears (if ever).
+	ForceInvocation(c context.Context, jobID string) (FutureInvocation, error)
 }
 
 // EngineInternal is a variant of engine API that skips ACL checks.
@@ -198,6 +189,16 @@ type EngineInternal interface {
 	PullPubSubOnDevServer(c context.Context, taskManagerName, publisher string) error
 }
 
+// FutureInvocation is returned by ForceInvocation.
+//
+// It can be used to wait for a triggered invocation to appear.
+type FutureInvocation interface {
+	// InvocationID returns an ID of the invocation or 0 if not started yet.
+	//
+	// Returns only transient errors.
+	InvocationID(context.Context) (int64, error)
+}
+
 // Config contains parameters for the engine.
 type Config struct {
 	Catalog              catalog.Catalog // provides task.Manager's to run tasks
@@ -237,7 +238,7 @@ type jobController interface {
 	onJobEnabled(c context.Context, job *Job) error
 	onJobDisabled(c context.Context, job *Job) error
 	onJobAbort(c context.Context, job *Job) (invs []int64, err error)
-	onJobForceInvocation(c context.Context, job *Job) (nonce int64, err error)
+	onJobForceInvocation(c context.Context, job *Job) (FutureInvocation, error)
 
 	onInvUpdating(c context.Context, old, fresh *Invocation, timers []invocationTimer, triggers []task.Trigger) error
 }
@@ -353,37 +354,6 @@ func (e *engineImpl) GetVisibleInvocation(c context.Context, jobID string, invID
 	}
 }
 
-// GetVisibleInvocationsByNonce returns a list of Invocations with a given
-// nonce.
-//
-// Part of the public interface, checks ACLs.
-//
-// Supports both v1 and v2 invocations.
-func (e *engineImpl) GetVisibleInvocationsByNonce(c context.Context, jobID string, invNonce int64) ([]*Invocation, error) {
-	switch _, err := e.GetVisibleJob(c, jobID); {
-	case err == ErrNoSuchJob:
-		return []*Invocation{}, nil
-	case err != nil:
-		return nil, err
-	}
-
-	q := ds.NewQuery("Invocation").Eq("InvocationNonce", invNonce)
-	entities := []*Invocation{}
-	if err := ds.GetAll(c, q, &entities); err != nil {
-		return nil, transient.Tag.Apply(err)
-	}
-
-	// Keep only ones that match the job. Filtering in the code here is cheaper
-	// than adding a composite datastore index. Almost always 'entities' is small.
-	filtered := make([]*Invocation, 0, len(entities))
-	for _, inv := range entities {
-		if inv.jobID() == jobID {
-			filtered = append(filtered, inv)
-		}
-	}
-	return filtered, nil
-}
-
 // PauseJob prevents new automatic invocations of a job.
 //
 // Part of the public interface, checks ACLs.
@@ -454,30 +424,30 @@ func (e *engineImpl) AbortInvocation(c context.Context, jobID string, invID int6
 // ForceInvocation launches job invocation right now if job isn't running now.
 //
 // Part of the public interface, checks ACLs.
-func (e *engineImpl) ForceInvocation(c context.Context, jobID string) (int64, error) {
+func (e *engineImpl) ForceInvocation(c context.Context, jobID string) (FutureInvocation, error) {
 	if _, err := e.getOwnedJob(c, jobID); err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	var noSuchJob bool
-	var invNonce int64
+	var future FutureInvocation
 	err := e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) (err error) {
 		if isNew || !job.Enabled {
 			noSuchJob = true
 			return errSkipPut
 		}
-		invNonce, err = e.jobController(jobID).onJobForceInvocation(c, job)
+		future, err = e.jobController(jobID).onJobForceInvocation(c, job)
 		return err
 	})
 
 	switch {
 	case noSuchJob:
-		return 0, ErrNoSuchJob
+		return nil, ErrNoSuchJob
 	case err != nil:
-		return 0, err
+		return nil, err
 	}
 
-	return invNonce, nil
+	return future, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

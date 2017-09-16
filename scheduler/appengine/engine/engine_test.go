@@ -487,6 +487,61 @@ func TestFullFlow(t *testing.T) {
 	})
 }
 
+func TestForceInvocation(t *testing.T) {
+	Convey("full flow", t, func() {
+		c := newTestContext(epoch)
+		e, mgr := newTestEngine()
+
+		So(ds.Put(c, &Job{
+			JobID:     "abc/1",
+			ProjectID: "abc",
+			Enabled:   true,
+			Schedule:  "triggered",
+			Task:      noopTaskBytes(),
+			State:     JobState{State: JobStateSuspended},
+			Acls:      acl.GrantsByRole{Owners: []string{"one@example.com"}},
+		}), ShouldBeNil)
+
+		ctxOne := auth.WithState(c, &authtest.FakeState{Identity: "user:one@example.com"})
+		ctxTwo := auth.WithState(c, &authtest.FakeState{Identity: "user:two@example.com"})
+
+		// Only owner can trigger.
+		fut, err := e.ForceInvocation(ctxTwo, "abc/1")
+		So(err, ShouldEqual, ErrNoSuchJob)
+
+		// Triggers something.
+		fut, err = e.ForceInvocation(ctxOne, "abc/1")
+		So(err, ShouldBeNil)
+		So(fut, ShouldNotBeNil)
+
+		// No invocation yet.
+		invID, err := fut.InvocationID(ctxOne)
+		So(err, ShouldBeNil)
+		So(invID, ShouldEqual, 0)
+
+		// But the launch is queued.
+		invTask := ensureOneTask(c, "invs-q")
+		So(invTask.Path, ShouldEqual, "/invs")
+		tq.GetTestable(c).ResetTasks()
+
+		// Launch it.
+		var startedInvID int64
+		mgr.launchTask = func(ctx context.Context, ctl task.Controller, _ []task.Trigger) error {
+			startedInvID = ctl.InvocationID()
+			ctl.State().Status = task.StatusRunning
+			return nil
+		}
+		So(e.ExecuteSerializedAction(c, invTask.Payload, 0), ShouldBeNil)
+
+		ds.GetTestable(c).CatchupIndexes()
+
+		// The invocation ID is now available.
+		invID, err = fut.InvocationID(ctxOne)
+		So(err, ShouldBeNil)
+		So(invID, ShouldEqual, startedInvID)
+	})
+}
+
 func TestFullTriggeredFlow(t *testing.T) {
 	Convey("full triggered flow", t, func() {
 		c := newTestContext(epoch)
@@ -608,6 +663,7 @@ func TestFullTriggeredFlow(t *testing.T) {
 		})
 	})
 }
+
 func TestGenerateInvocationID(t *testing.T) {
 	Convey("generateInvocationID does not collide", t, func() {
 		c := newTestContext(epoch)
@@ -795,32 +851,6 @@ func TestQueries(t *testing.T) {
 			Convey("Reader sees", func() {
 				inv, err := e.GetVisibleInvocation(ctxOne, "abc/1", 1)
 				So(inv, ShouldNotBeNil)
-				So(err, ShouldBeNil)
-			})
-		})
-
-		Convey("GetInvocationsByNonce works", func() {
-			Convey("Anonymous can't see non-public job invocations", func() {
-				invs, err := e.GetVisibleInvocationsByNonce(ctxAnon, "abc/1", 123)
-				So(len(invs), ShouldEqual, 0)
-				So(err, ShouldBeNil)
-			})
-
-			Convey("NoSuchInvocation", func() {
-				invs, err := e.GetVisibleInvocationsByNonce(ctxAdmin, "abc/1", 11111) // unknown
-				So(len(invs), ShouldEqual, 0)
-				So(err, ShouldBeNil)
-			})
-
-			Convey("Wrong job ID", func() {
-				invs, err := e.GetVisibleInvocationsByNonce(ctxAdmin, "abc/2", 123) // it is actually "abc/1"
-				So(len(invs), ShouldEqual, 0)
-				So(err, ShouldBeNil)
-			})
-
-			Convey("Reader sees", func() {
-				invs, err := e.GetVisibleInvocationsByNonce(ctxOne, "abc/1", 123)
-				So(len(invs), ShouldEqual, 2)
 				So(err, ShouldBeNil)
 			})
 		})
