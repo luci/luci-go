@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b4c7abaf_df206f67",
+        "filename": "scheduler/appengine/engine/controller.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-16T00:39:57Z",
+      "side": 1,
+      "message": "No, this is no different than before, see line 242 in the previous version. enqueueInvTimers is not called if hasFinished is true.",
+      "parentUuid": "09536bba_b8f8e076",
+      "range": {
+        "startLine": 207,
+        "startChar": 2,
+        "endLine": 207,
+        "endChar": 18
+      },
+      "revId": "ca28a0256faabee8ebefa38facb61c5935b6384b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "86d445db_cefde9ce",
         "filename": "scheduler/appengine/engine/engine.go",
         "patchSetId": 3
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "3c295c21_2997ed3a",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-16T00:39:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "86d445db_cefde9ce",
+      "range": {
+        "startLine": 231,
+        "startChar": 44,
+        "endLine": 231,
+        "endChar": 45
+      },
+      "revId": "ca28a0256faabee8ebefa38facb61c5935b6384b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "33c15c65_ed69b825",
         "filename": "scheduler/appengine/engine/engine.go",
         "patchSetId": 3
@@ -68,6 +116,30 @@
       "revId": "ca28a0256faabee8ebefa38facb61c5935b6384b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0e285d0_415080c4",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 412,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-16T00:39:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "33c15c65_ed69b825",
+      "range": {
+        "startLine": 412,
+        "startChar": 14,
+        "endLine": 412,
+        "endChar": 15
+      },
+      "revId": "ca28a0256faabee8ebefa38facb61c5935b6384b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
