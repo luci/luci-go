@@ -92,14 +92,15 @@ type Engine interface {
 	// ListVisibleInvocations returns invocations of a visible job, most recent
 	// first.
 	//
-	// Returns fetched invocations and cursor string if there's more.
+	// Returns invocations and a cursor string if there's more.
 	// Returns ErrNoSuchJob if job doesn't exist or isn't visible.
 	//
-	// For v2 jobs, the listing is only eventually consistent currently.
+	// For v2 jobs, the listing includes only finished invocations and it is
+	// eventually consistent (i.e. very recently finished invocations may no be
+	// listed there yet).
 	//
 	// TODO(vadimsh): Expose an endpoint for fetching currently running
-	// invocations in perfectly consistent way. Keep ListVisibleInvocations for
-	// historical invocations.
+	// invocations in a perfectly consistent way.
 	ListVisibleInvocations(c context.Context, jobID string, pageSize int, cursor string) ([]*Invocation, string, error)
 
 	// GetVisibleInvocation returns single invocation of some job given its ID.
@@ -308,7 +309,7 @@ func (e *engineImpl) ListVisibleInvocations(c context.Context, jobID string, pag
 	// Prepare the query. Fetch 'pageSize' worth of entities as a single batch.
 	q := ds.NewQuery("Invocation")
 	if e.isV2Job(jobID) {
-		q = q.Eq("JobID", jobID)
+		q = q.Eq("IndexedJobID", jobID)
 	} else {
 		q = q.Ancestor(ds.NewKey(c, "Job", jobID, 0, nil))
 	}
