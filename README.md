@@ -56,16 +56,20 @@ Run the following to setup the code review tool and create your first review:
 
     git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git $HOME/src/depot_tools
     export PATH="$PATH:$HOME/src/depot_tools"
-    cd $GOROOT/github.com/luci/luci-go
+    cd $GOROOT/go.chromium.org/luci
     git checkout -b work origin/master
 
     # hack hack
+    git commit -a -m "This is awesome"
 
-    git commit -a -m "This is awesome\nR=joe@example.com"
-    # This will ask for your Google Account credentials.
-    git cl upload -s
-    # Wait for LGTM over email.
-    # Check the commit queue box in codereview website.
-    # Wait for the change to be tested and landed automatically.
+    # We use Gerrit for code review. Visit
+    # https://chromium-review.googlesource.com/new-password
+    # and follow instructions.
+
+    git cl upload -s -r john.doe@example.com
+    # This will upload your change to Gerrit and ask john.doe for review.
+    # Wait for approval and submit your code through Commit Queue.
+    # Commit queue will test your change on multiple platforms and land it
+    # automatically.
 
 Use `git cl help` and `git cl help <cmd>` for more details.
