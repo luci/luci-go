@@ -114,7 +114,21 @@ type Invocation struct {
 	//
 	// For v1 Invocation entities it is "". For v2 entities it is set when the
 	// invocation is created and never changes.
-	JobID string
+	JobID string `gae:",noindex"`
+
+	// IndexedJobID is '<ProjectID>/<JobName>' string of a parent job, but it is
+	// set only for finished invocations.
+	//
+	// It is used to make the invocations appear in the listings of finished
+	// invocations.
+	//
+	// We can't use JobID field for this since the invocation launch procedure can
+	// potentially generate orphaned "garbage" invocations in some edge cases (if
+	// Invocation transaction lands, but separate Job transaction doesn't). They
+	// are harmless, but we don't want them to show up in listings.
+	//
+	// Used only for v2 entities.
+	IndexedJobID string
 
 	// Started is time when this invocation was created.
 	Started time.Time `gae:",noindex"`
@@ -186,6 +200,7 @@ func (e *Invocation) isEqual(other *Invocation) bool {
 	return e == other || (e.ID == other.ID &&
 		(e.JobKey == other.JobKey || e.JobKey.Equal(other.JobKey)) &&
 		e.JobID == other.JobID &&
+		e.IndexedJobID == other.IndexedJobID &&
 		e.Started == other.Started &&
 		e.Finished == other.Finished &&
 		e.InvocationNonce == other.InvocationNonce &&
