@@ -1,0 +1,7 @@
+:: swarming-start-bot - swarming bot startup
+::
+:: Used for starting a Swarming bot process.
+
+:: Prevent Swarming from configuring its own autostart.
+SET SWARMING_EXTERNAL_BOT_SETUP=1
+@C:\tools\python\bin\python.exe {{.Path}} start_bot
