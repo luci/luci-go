@@ -1327,15 +1327,16 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 			return errSkipPut
 		}
 		inv = Invocation{
-			Started:         clock.Now(c).UTC(),
-			InvocationNonce: invocationNonce,
-			TriggeredBy:     triggeredBy,
-			Revision:        job.Revision,
-			RevisionURL:     job.RevisionURL,
-			Task:            job.Task,
-			TriggeredJobIDs: job.TriggeredJobIDs,
-			RetryCount:      int64(retryCount),
-			Status:          task.StatusStarting,
+			Started:          clock.Now(c).UTC(),
+			InvocationNonce:  invocationNonce,
+			TriggeredBy:      triggeredBy,
+			IncomingTriggers: triggers,
+			Revision:         job.Revision,
+			RevisionURL:      job.RevisionURL,
+			Task:             job.Task,
+			TriggeredJobIDs:  job.TriggeredJobIDs,
+			RetryCount:       int64(retryCount),
+			Status:           task.StatusStarting,
 		}
 		if _, err := e.newInvocation(c, job.JobID, &inv); err != nil {
 			return err
@@ -1399,7 +1400,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	}
 
 	c = logging.SetField(c, "InvID", inv.ID)
-	return e.launchTask(c, &inv, triggers)
+	return e.launchTask(c, &inv)
 }
 
 // launchTask instantiates an invocation controller and calls its LaunchTask
@@ -1408,7 +1409,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 // It returns a transient error if the launch attempt should be retried.
 //
 // Supports both v1 and v2 invocations.
-func (e *engineImpl) launchTask(c context.Context, inv *Invocation, triggers []task.Trigger) error {
+func (e *engineImpl) launchTask(c context.Context, inv *Invocation) error {
 	// Now we have a new Invocation entity in the datastore in StatusStarting
 	// state. Grab corresponding TaskManager and launch task through it, keeping
 	// track of the progress in created Invocation entity.
@@ -1427,7 +1428,7 @@ func (e *engineImpl) launchTask(c context.Context, inv *Invocation, triggers []t
 	// StatusRetrying or StatusFailed state (depending on whether the error is
 	// transient or not and how many retries are left). In either case, invocation
 	// never ends up in StatusStarting state.
-	err = ctl.manager.LaunchTask(c, ctl, triggers)
+	err = ctl.manager.LaunchTask(c, ctl, inv.IncomingTriggers)
 	if ctl.State().Status == task.StatusStarting && err == nil {
 		err = fmt.Errorf("LaunchTask didn't move invocation out of StatusStarting")
 	}

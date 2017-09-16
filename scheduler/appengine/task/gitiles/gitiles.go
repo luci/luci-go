@@ -28,6 +28,7 @@ import (
 	ds "go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -187,6 +188,9 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 		}
 		ctl.EmitTrigger(c, task.Trigger{
 			ID:      fmt.Sprintf("%s/+/%s@%s", cfg.Repo, ref, newHead),
+			Created: clock.Now(c).UTC(), // TODO: use commit time instead?
+			Title:   newHead,
+			URL:     fmt.Sprintf("%s/+/%s", cfg.Repo, newHead),
 			Payload: payload,
 		})
 	}
