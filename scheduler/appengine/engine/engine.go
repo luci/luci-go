@@ -1157,7 +1157,7 @@ func (e *engineImpl) recordOverrun(c context.Context, jobID string, overruns int
 			inv.debugLog(c, "New invocation should be starting now, but previous one is still running: %d", runningInvID)
 		}
 		inv.debugLog(c, "Total overruns thus far: %d", overruns)
-		return transient.Tag.Apply(ds.Put(c, &inv))
+		return transient.Tag.Apply(ds.Put(c, inv))
 	})
 }
 

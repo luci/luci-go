@@ -857,6 +857,33 @@ func TestQueries(t *testing.T) {
 	})
 }
 
+func TestRecordOverrun(t *testing.T) {
+	Convey("RecordOverrun works", t, func(ctx C) {
+		c := newTestContext(epoch)
+		e, _ := newTestEngine()
+
+		job := &Job{JobID: "abc/1"}
+		So(ds.Put(c, job), ShouldBeNil)
+		So(e.recordOverrun(c, "abc/1", 1, 0), ShouldBeNil)
+
+		ds.GetTestable(c).CatchupIndexes()
+
+		q := ds.NewQuery("Invocation").Ancestor(ds.KeyForObj(c, job))
+		var all []Invocation
+		So(ds.GetAll(c, q, &all), ShouldEqual, nil)
+		So(all, ShouldResemble, []Invocation{
+			{
+				ID:       9200093523825174512,
+				JobKey:   ds.KeyForObj(c, job),
+				Started:  epoch,
+				Finished: epoch,
+				Status:   task.StatusOverrun,
+				DebugLog: "[22:42:00.000] New invocation should be starting now, but previous one is still starting\n" +
+					"[22:42:00.000] Total overruns thus far: 1\n",
+			}})
+	})
+}
+
 func TestPrepareTopic(t *testing.T) {
 	Convey("PrepareTopic works", t, func(ctx C) {
 		c := newTestContext(epoch)
