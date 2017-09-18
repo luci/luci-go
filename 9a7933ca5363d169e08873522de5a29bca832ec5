@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2676908f_5f69340a",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1002740
+      },
+      "writtenOn": "2017-09-18T13:46:33Z",
+      "side": 1,
+      "message": "Could you add comments to effectively provide help for users?\n\nSee the following examples:\n\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/common/proto/config/project_config.proto?sq\u003dpackage:chromium\n\nhttps://cs.chromium.org/chromium/infra/appengine/cr-buildbucket/proto/project_config.proto",
+      "range": {
+        "startLine": 8,
+        "startChar": 0,
+        "endLine": 8,
+        "endChar": 7
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce318237_feba829e",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002740
+      },
+      "writtenOn": "2017-09-18T13:46:33Z",
+      "side": 1,
+      "message": "Why is blamelist part of Email? These concepts seem orthogonal.",
+      "range": {
+        "startLine": 24,
+        "startChar": 9,
+        "endLine": 24,
+        "endChar": 18
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8398ec28_9ca3db1d",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002740
+      },
+      "writtenOn": "2017-09-18T13:46:33Z",
+      "side": 1,
+      "message": "I posted a comment on the doc about native support for IRC adding complexity.\n\nHow about at least postponing this addition to the proto?",
+      "range": {
+        "startLine": 26,
+        "startChar": 10,
+        "endLine": 26,
+        "endChar": 13
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
