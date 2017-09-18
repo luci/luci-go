@@ -394,6 +394,25 @@ func GetAllConsoles(c context.Context, builderName string) ([]*Console, error) {
 	return con, err
 }
 
+// GetProjectConsoles returns all consoles for the given project.
+func GetProjectConsoles(c context.Context, projectName string) ([]*Console, error) {
+	// Check ACLs if user is allowed to access this project.
+	ok, err := IsAllowed(c, projectName)
+	switch {
+	case err != nil:
+		return nil, err
+	case !ok:
+		return nil, errors.New("no access to project", CodeNoAccess)
+	}
+	// Query datastore for consoles related to the project.
+	q := datastore.NewQuery("Console")
+	parentKey := datastore.MakeKey(c, "Project", projectName)
+	q = q.Ancestor(parentKey)
+	con := []*Console{}
+	err = datastore.GetAll(c, q, &con)
+	return con, err
+}
+
 // GetConsole returns the requested console.
 //
 // TODO-perf(iannucci,hinoka): Memcache this.
