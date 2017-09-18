@@ -827,7 +827,6 @@ func TestAddIndexes(t *testing.T) {
 
 func TestConcurrentTxn(t *testing.T) {
 	t.Parallel()
-	t.Skip("known to be broken")
 
 	// Stress test for concurrent transactions. It transactionally increments a
 	// counter in an entity and counts how many transactions succeeded. The final
@@ -838,7 +837,7 @@ func TestConcurrentTxn(t *testing.T) {
 
 		var successes int64
 
-		for round := 0; round < 10000; round++ {
+		for round := 0; round < 1000; round++ {
 			barrier := make(chan struct{})
 			wg := sync.WaitGroup{}
 

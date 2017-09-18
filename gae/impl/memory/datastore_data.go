@@ -31,6 +31,16 @@ import (
 //////////////////////////////// dataStoreData /////////////////////////////////
 
 type dataStoreData struct {
+	// Protects internal guts of this object, including overall consistency of the
+	// memStore.
+	//
+	// While memStore is consistent by itself, each individual datastore mutation
+	// (puts and deletes) actually translate into multiple memStore modifications
+	// (for example, putting an entity updates this entity's data as well as
+	// entity group version metadata entity). Thus we need additional lock around
+	// such "batch" head modifications to ensure their consistency. In particular,
+	// it is very important that any snapshots are taken under the reader lock, to
+	// make sure we are not snapshotting some intermediary inconsistent state.
 	rwlock sync.RWMutex
 
 	// the 'appid' of this datastore
@@ -500,7 +510,7 @@ func (d *dataStoreData) mkTxn(o *ds.TransactionOptions) memContextObj {
 		txn: &transactionImpl{
 			isXG: o != nil && o.XG,
 		},
-		snap: d.head.Snapshot(),
+		snap: d.takeSnapshot(),
 		muts: map[string][]txnMutation{},
 	}
 }
