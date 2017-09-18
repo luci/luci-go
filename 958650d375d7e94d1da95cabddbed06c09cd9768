@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "a642248a_bc6fe25b",
+        "filename": "milo/common/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 398,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-18T20:29:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "005d3d73_88012cda",
+      "revId": "958650d375d7e94d1da95cabddbed06c09cd9768",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "45b25f5f_fa7a8e6e",
         "filename": "milo/frontend/appengine/templates/pages/console_list.html",
         "patchSetId": 1
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "e96ce248_dce4ccf8",
+        "filename": "milo/frontend/appengine/templates/pages/console_list.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-18T20:29:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "45b25f5f_fa7a8e6e",
+      "revId": "958650d375d7e94d1da95cabddbed06c09cd9768",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "32fe403b_eb0ac15b",
         "filename": "milo/frontend/view_console.go",
         "patchSetId": 1
@@ -47,6 +83,30 @@
       "writtenOn": "2017-09-18T03:28:40Z",
       "side": 1,
       "message": "I\u0027m in slight favor of using the BuildBot convention of making the list plural, and the singular non-plural.\n\nSo this would be ConsolesHandler\n\nAnd the template name would be consoles.html\n\niannucci@ what do you think?",
+      "range": {
+        "startLine": 218,
+        "startChar": 5,
+        "endLine": 218,
+        "endChar": 23
+      },
+      "revId": "958650d375d7e94d1da95cabddbed06c09cd9768",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1b382c5_7bb20bcb",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-18T20:29:19Z",
+      "side": 1,
+      "message": "I think this makes sense. I\u0027ll make this change.",
+      "parentUuid": "32fe403b_eb0ac15b",
       "range": {
         "startLine": 218,
         "startChar": 5,
