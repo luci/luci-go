@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "cbb68b56_f6a21fde",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-18T03:48:13Z",
+      "side": 1,
+      "message": "nit: Probably could just make these named return values.",
+      "revId": "699579c8202a95ff63aaf634605542266444cc39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "01520c8b_5a8eb587",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 3
@@ -87,6 +104,70 @@
         "startChar": 29,
         "endLine": 123,
         "endChar": 39
+      },
+      "revId": "699579c8202a95ff63aaf634605542266444cc39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dde98b94_70decdef",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-18T03:48:13Z",
+      "side": 1,
+      "message": "It\u0027s basically a hack, since we don\u0027t actually know the repo info.",
+      "parentUuid": "effd06e2_15023c43",
+      "range": {
+        "startLine": 122,
+        "startChar": 29,
+        "endLine": 123,
+        "endChar": 39
+      },
+      "revId": "699579c8202a95ff63aaf634605542266444cc39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cfff6253_9e4c6d9b",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 456,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-18T03:48:13Z",
+      "side": 1,
+      "message": "errors.Annotate()?",
+      "revId": "699579c8202a95ff63aaf634605542266444cc39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67b817b5_55e5e25b",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 470,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-18T03:48:13Z",
+      "side": 1,
+      "message": "Currently this ends up being purple, tho yeah I think i\u0027m on the train of saying it\u0027s red too...",
+      "range": {
+        "startLine": 470,
+        "startChar": 6,
+        "endLine": 470,
+        "endChar": 18
       },
       "revId": "699579c8202a95ff63aaf634605542266444cc39",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
