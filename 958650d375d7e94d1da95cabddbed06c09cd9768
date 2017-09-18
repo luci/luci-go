@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "005d3d73_88012cda",
+        "filename": "milo/common/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 398,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-18T03:28:40Z",
+      "side": 1,
+      "message": "First, check ACLs via:\nswitch ok, err :\u003d IsAllowed(c, projectName) {\n  case err !\u003d nil:\n    return nil, err\n  case !ok:\n    return nil, errors.New(\"no access\", CodeNoAccess)\n}",
+      "revId": "958650d375d7e94d1da95cabddbed06c09cd9768",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45b25f5f_fa7a8e6e",
+        "filename": "milo/frontend/appengine/templates/pages/console_list.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-18T03:28:40Z",
+      "side": 1,
+      "message": "We can probably dump all the info here, including repo, all the builders, etc:\n\nSee: https://luci-milo-dev.appspot.com/admin/configs\n\nIt probably won\u0027t get too hectic",
+      "revId": "958650d375d7e94d1da95cabddbed06c09cd9768",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32fe403b_eb0ac15b",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-18T03:28:40Z",
+      "side": 1,
+      "message": "I\u0027m in slight favor of using the BuildBot convention of making the list plural, and the singular non-plural.\n\nSo this would be ConsolesHandler\n\nAnd the template name would be consoles.html\n\niannucci@ what do you think?",
+      "range": {
+        "startLine": 218,
+        "startChar": 5,
+        "endLine": 218,
+        "endChar": 23
+      },
+      "revId": "958650d375d7e94d1da95cabddbed06c09cd9768",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
