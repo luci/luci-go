@@ -25,6 +25,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
 
@@ -45,6 +47,7 @@ import (
 	"go.chromium.org/luci/server/tokens"
 
 	"go.chromium.org/luci/scheduler/appengine/catalog"
+	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
@@ -213,7 +216,20 @@ type Config struct {
 
 // NewEngine returns default implementation of EngineInternal.
 func NewEngine(cfg Config) EngineInternal {
-	return &engineImpl{cfg: cfg}
+	e := &engineImpl{cfg: cfg}
+	// TODO
+	cfg.Dispatcher.RegisterTask(&internal.TickLaterTask{}, e.handleTickLater, cfg.TimersQueueName, nil)
+	cfg.Dispatcher.RegisterTask(&internal.StartInvocationTask{}, e.handleStartInvocation, cfg.InvocationsQueueName,
+		&taskqueue.RetryOptions{
+			// Give 5 attempts to mark the job as failed. See 'startInvocation'.
+			RetryLimit: invocationRetryLimit + 5,
+			MinBackoff: time.Second,
+			MaxBackoff: maxInvocationRetryBackoff,
+			AgeLimit:   time.Duration(invocationRetryLimit+5) * maxInvocationRetryBackoff,
+		})
+	cfg.Dispatcher.RegisterTask(&internal.EnqueueTriggersTask{}, e.handleEnqueueTriggers, cfg.InvocationsQueueName, nil)
+	cfg.Dispatcher.RegisterTask(&internal.RecordOverrunTask{}, e.handleRecordOverrun, cfg.InvocationsQueueName, nil)
+	return e
 }
 
 type engineImpl struct {
@@ -1006,98 +1022,79 @@ type invocationTimer struct {
 	Payload []byte
 }
 
+func (e *engineImpl) handleTickLater(c context.Context, tsk proto.Message) error {
+	msg := tsk.(*internal.TickLaterTask)
+	return e.jobTimerTick(c, msg.JobId, msg.TickNonce)
+}
+
+func (e *engineImpl) handleStartInvocation(c context.Context, tsk proto.Message) error {
+	headers, err := tq.RequestHeaders(c)
+	if err != nil {
+		return err
+	}
+	msg := tsk.(*internal.StartInvocationTask)
+	return e.startInvocation(c, msg.JobId, msg.InvocationNonce, identity.Identity(msg.TriggeredBy),
+		task.TriggersFromProto(msg.Triggers), int(headers.TaskExecutionCount))
+}
+
+func (e *engineImpl) handleEnqueueTriggers(c context.Context, tsk proto.Message) error {
+	msg := tsk.(*internal.EnqueueTriggersTask)
+	return e.newTriggers(c, msg.JobId, task.TriggersFromProto(msg.Triggers))
+}
+
+func (e *engineImpl) handleRecordOverrun(c context.Context, tsk proto.Message) error {
+	msg := tsk.(*internal.RecordOverrunTask)
+	return e.recordOverrun(c, msg.JobId, int(msg.Overruns), msg.RunningInvocationId)
+}
+
 // enqueueJobActions submits all actions emitted by a job state transition by
 // adding corresponding tasks to task queues.
 //
 // See executeJobAction for a place where these actions are interpreted.
 func (e *engineImpl) enqueueJobActions(c context.Context, jobID string, actions []Action) error {
-	// AddMulti can't put tasks into multiple queues at once, split by queue name.
-	qs := map[string][]*taskqueue.Task{}
+	tasks := make([]*tq.Task, 0, len(actions))
 	for _, a := range actions {
 		switch a := a.(type) {
 		case TickLaterAction:
-			payload, err := json.Marshal(actionTaskPayload{
-				JobID:     jobID,
-				Kind:      "TickLaterAction",
-				TickNonce: a.TickNonce,
-			})
-			if err != nil {
-				return err
-			}
 			logging.Infof(c, "Scheduling tick %d after %.1f sec", a.TickNonce, a.When.Sub(time.Now()).Seconds())
-			qs[e.cfg.TimersQueueName] = append(qs[e.cfg.TimersQueueName], &taskqueue.Task{
-				Path:    e.cfg.TimersQueuePath,
-				ETA:     a.When,
-				Payload: payload,
+			tasks = append(tasks, &tq.Task{
+				Payload: &internal.TickLaterTask{
+					JobId:     jobID,
+					TickNonce: a.TickNonce,
+				},
+				ETA: a.When,
 			})
 		case StartInvocationAction:
-			payload, err := json.Marshal(actionTaskPayload{
-				JobID:           jobID,
-				Kind:            "StartInvocationAction",
-				InvocationNonce: a.InvocationNonce,
-				TriggeredBy:     string(a.TriggeredBy),
-				Triggers:        a.Triggers,
-			})
-			if err != nil {
-				return err
-			}
-			qs[e.cfg.InvocationsQueueName] = append(qs[e.cfg.InvocationsQueueName], &taskqueue.Task{
-				Path:    e.cfg.InvocationsQueuePath,
-				Delay:   time.Second, // give the transaction time to land
-				Payload: payload,
-				RetryOptions: &taskqueue.RetryOptions{
-					// Give 5 attempts to mark the job as failed. See 'startInvocation'.
-					RetryLimit: invocationRetryLimit + 5,
-					MinBackoff: time.Second,
-					MaxBackoff: maxInvocationRetryBackoff,
-					AgeLimit:   time.Duration(invocationRetryLimit+5) * maxInvocationRetryBackoff,
+			tasks = append(tasks, &tq.Task{
+				Payload: &internal.StartInvocationTask{
+					JobId:           jobID,
+					InvocationNonce: a.InvocationNonce,
+					TriggeredBy:     string(a.TriggeredBy),
+					Triggers:        task.TriggersToProto(a.Triggers),
 				},
+				Delay: time.Second, // give the transaction time to land
 			})
 		case EnqueueTriggersAction:
-			payload, err := json.Marshal(actionTaskPayload{
-				JobID:    jobID,
-				Kind:     "EnqueueTriggersAction",
-				Triggers: a.Triggers,
-			})
-			if err != nil {
-				return err
-			}
-			qs[e.cfg.InvocationsQueueName] = append(qs[e.cfg.InvocationsQueueName], &taskqueue.Task{
-				Path:    e.cfg.InvocationsQueuePath,
-				Payload: payload,
+			tasks = append(tasks, &tq.Task{
+				Payload: &internal.EnqueueTriggersTask{
+					JobId:    jobID,
+					Triggers: task.TriggersToProto(a.Triggers),
+				},
 			})
 		case RecordOverrunAction:
-			payload, err := json.Marshal(actionTaskPayload{
-				JobID:               jobID,
-				Kind:                "RecordOverrunAction",
-				Overruns:            a.Overruns,
-				RunningInvocationID: a.RunningInvocationID,
-			})
-			if err != nil {
-				return err
-			}
-			qs[e.cfg.InvocationsQueueName] = append(qs[e.cfg.InvocationsQueueName], &taskqueue.Task{
-				Path:    e.cfg.InvocationsQueuePath,
-				Delay:   time.Second, // give the transaction time to land
-				Payload: payload,
+			tasks = append(tasks, &tq.Task{
+				Payload: &internal.RecordOverrunTask{
+					JobId:               jobID,
+					Overruns:            int64(a.Overruns),
+					RunningInvocationId: a.RunningInvocationID,
+				},
+				Delay: time.Second, // give the transaction time to land
 			})
 		default:
 			logging.Errorf(c, "Unexpected action type %T, skipping", a)
 		}
 	}
-	wg := sync.WaitGroup{}
-	errs := errors.NewLazyMultiError(len(qs))
-	i := 0
-	for queueName, tasks := range qs {
-		wg.Add(1)
-		go func(i int, queueName string, tasks []*taskqueue.Task) {
-			errs.Assign(i, taskqueue.Add(c, queueName, tasks...))
-			wg.Done()
-		}(i, queueName, tasks)
-		i++
-	}
-	wg.Wait()
-	return transient.Tag.Apply(errs.Get())
+	return transient.Tag.Apply(e.cfg.Dispatcher.AddTask(c, tasks...))
 }
 
 // executeJobAction routes an action that targets a job.

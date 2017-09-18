@@ -20,3 +20,36 @@ package internal.tq;
 message ReadProjectConfigTask {
   string projectID = 1;
 }
+
+message TickLaterTask {
+  string job_id = 1;
+  int64 tick_nonce = 2;
+}
+
+message StartInvocationTask {
+  string job_id = 1;
+  int64 invocation_nonce = 2;
+  string triggered_by = 3;
+  repeated EngineTrigger triggers = 4;
+}
+
+message EnqueueTriggersTask {
+  string job_id = 1;
+  repeated EngineTrigger triggers = 2;
+}
+
+message RecordOverrunTask{
+  string job_id = 1;
+  int64 overruns = 2;
+  int64 running_invocation_id = 3;
+}
+
+message EngineTrigger {
+  string id = 1;
+  string job_id = 2;
+  int64 invocation_id = 3;
+  int64 created = 4;
+  string title = 5;
+  string url = 6;
+  bytes payload = 7;
+}
