@@ -336,8 +336,7 @@ func (d *taskIndexData) Pop() interface{} {
 //////////////////////////////// taskQueueData /////////////////////////////////
 
 type taskQueueData struct {
-	sync.Mutex
-
+	lock        sync.Mutex
 	queues      map[string]*sortedQueue
 	constraints tq.Constraints
 }
@@ -351,24 +350,37 @@ func newTaskQueueData() memContextObj {
 	}
 }
 
-func (t *taskQueueData) canApplyTxn(obj memContextObj) bool { return true }
-func (t *taskQueueData) endTxn()                            {}
-func (t *taskQueueData) applyTxn(c context.Context, obj memContextObj) {
-	txn := obj.(*txnTaskQueueData)
-	for qn, tasks := range txn.anony {
-		q := t.queues[qn]
-		for _, tsk := range tasks {
-			// Regenerate names to make sure we don't collide with anything already
-			// committed. Note that transactional tasks can't have user-defined name.
-			tsk.Name = q.genTaskName(c)
-			err := q.addTask(tsk) // prepped in txnTaskQueueData.AddMulti, must be good
-			if err != nil {
-				panic(err)
+func (t *taskQueueData) endTxn() {}
+
+func (t *taskQueueData) beginCommit(c context.Context, txnCtxObj memContextObj) txnCommitOp {
+	txn := txnCtxObj.(*txnTaskQueueData)
+
+	txn.lock.Lock()
+	t.lock.Lock()
+
+	return &txnCommitCallback{
+		unlock: func() {
+			t.lock.Unlock()
+			txn.lock.Unlock()
+		},
+		apply: func() {
+			for qn, tasks := range txn.anony {
+				q := t.queues[qn]
+				for _, tsk := range tasks {
+					// Regenerate names to make sure we don't collide with anything already
+					// committed. Note that transactional tasks can't have user-defined name.
+					tsk.Name = q.genTaskName(c)
+					err := q.addTask(tsk) // prepped in txnTaskQueueData.AddMulti, must be good
+					if err != nil {
+						panic(err)
+					}
+				}
 			}
-		}
+			txn.anony = nil
+		},
 	}
-	txn.anony = nil
 }
+
 func (t *taskQueueData) mkTxn(*ds.TransactionOptions) memContextObj {
 	return &txnTaskQueueData{
 		parent: t,
@@ -387,8 +399,8 @@ func (t *taskQueueData) createPullQueue(queueName string) {
 }
 
 func (t *taskQueueData) createQueueInternal(queueName string, isPullQueue bool) {
-	t.Lock()
-	defer t.Unlock()
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
 	if _, ok := t.queues[queueName]; ok {
 		panic(fmt.Errorf("memory/taskqueue: cannot add the same queue twice! %q", queueName))
@@ -397,8 +409,8 @@ func (t *taskQueueData) createQueueInternal(queueName string, isPullQueue bool) 
 }
 
 func (t *taskQueueData) getScheduledTasks(ns string) tq.QueueData {
-	t.Lock()
-	defer t.Unlock()
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
 	r := make(tq.QueueData, len(t.queues))
 	for qn, q := range t.queues {
@@ -413,8 +425,8 @@ func (t *taskQueueData) getScheduledTasks(ns string) tq.QueueData {
 }
 
 func (t *taskQueueData) getTombstonedTasks(ns string) tq.QueueData {
-	t.Lock()
-	defer t.Unlock()
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
 	r := make(tq.QueueData, len(t.queues))
 	for qn, q := range t.queues {
@@ -428,17 +440,13 @@ func (t *taskQueueData) getTombstonedTasks(ns string) tq.QueueData {
 	return r
 }
 
-func (t *taskQueueData) resetTasksWithLock() {
+func (t *taskQueueData) resetTasks() {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
 	for _, q := range t.queues {
 		q.purge()
 	}
-}
-
-func (t *taskQueueData) resetTasks() {
-	t.Lock()
-	defer t.Unlock()
-
-	t.resetTasksWithLock()
 }
 
 func (t *taskQueueData) getQueueLocked(queueName string) (*sortedQueue, error) {
@@ -461,14 +469,20 @@ func (t *taskQueueData) purgeLocked(queueName string) error {
 	return nil
 }
 
-func (t *taskQueueData) getConstraints() tq.Constraints {
-	t.Lock()
-	defer t.Unlock()
-	return t.constraints
+func (t *taskQueueData) setConstraints(c *tq.Constraints) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+	if c == nil {
+		t.constraints = tq.Constraints{}
+	} else {
+		t.constraints = *c
+	}
 }
 
-func (t *taskQueueData) setConstraintsLocked(c tq.Constraints) {
-	t.constraints = c
+func (t *taskQueueData) getConstraints() tq.Constraints {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+	return t.constraints
 }
 
 /////////////////////////////// txnTaskQueueData ///////////////////////////////
@@ -484,12 +498,13 @@ type txnTaskQueueData struct {
 
 var _ memContextObj = (*txnTaskQueueData)(nil)
 
-func (t *txnTaskQueueData) canApplyTxn(obj memContextObj) bool { return false }
-func (t *txnTaskQueueData) applyTxn(context.Context, memContextObj) {
-	impossible(fmt.Errorf("cannot apply nested transaction"))
-}
 func (t *txnTaskQueueData) mkTxn(*ds.TransactionOptions) memContextObj {
 	impossible(fmt.Errorf("cannot start nested transaction"))
+	return nil
+}
+
+func (*txnTaskQueueData) beginCommit(c context.Context, txnCtxObj memContextObj) txnCommitOp {
+	impossible(fmt.Errorf("cannot commit a nested transaction"))
 	return nil
 }
 
@@ -501,28 +516,18 @@ func (t *txnTaskQueueData) endTxn() {
 }
 
 func (t *txnTaskQueueData) resetTasks() {
-	t.Lock()
-	defer t.Unlock()
-
+	t.lock.Lock()
 	for queuename := range t.anony {
 		t.anony[queuename] = nil
 	}
-	t.parent.resetTasksWithLock()
-}
-
-func (t *txnTaskQueueData) Lock() {
-	t.lock.Lock()
-	t.parent.Lock()
-}
-
-func (t *txnTaskQueueData) Unlock() {
-	t.parent.Unlock()
 	t.lock.Unlock()
+
+	t.parent.resetTasks()
 }
 
 func (t *txnTaskQueueData) getTransactionTasks(ns string) tq.AnonymousQueueData {
-	t.Lock()
-	defer t.Unlock()
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
 	ret := make(tq.AnonymousQueueData, len(t.anony))
 	for k, vs := range t.anony {

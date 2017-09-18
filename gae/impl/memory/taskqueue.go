@@ -55,8 +55,8 @@ type taskqueueImpl struct {
 var _ tq.RawInterface = (*taskqueueImpl)(nil)
 
 func (t *taskqueueImpl) AddMulti(tasks []*tq.Task, queueName string, cb tq.RawTaskCB) error {
-	t.Lock()
-	defer t.Unlock()
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
 	q, err := t.getQueueLocked(queueName)
 	if err != nil {
@@ -64,7 +64,7 @@ func (t *taskqueueImpl) AddMulti(tasks []*tq.Task, queueName string, cb tq.RawTa
 	}
 
 	for _, task := range tasks {
-		task, err := prepTask(t.ctx, task, q, t.ns, false)
+		task, err := prepTask(t.ctx, task, q, t.ns)
 		if err == nil {
 			err = q.addTask(task)
 		}
@@ -78,8 +78,8 @@ func (t *taskqueueImpl) AddMulti(tasks []*tq.Task, queueName string, cb tq.RawTa
 }
 
 func (t *taskqueueImpl) DeleteMulti(tasks []*tq.Task, queueName string, cb tq.RawCB) error {
-	t.Lock()
-	defer t.Unlock()
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
 	q, err := t.getQueueLocked(queueName)
 	if err != nil {
@@ -95,8 +95,8 @@ func (t *taskqueueImpl) DeleteMulti(tasks []*tq.Task, queueName string, cb tq.Ra
 }
 
 func (t *taskqueueImpl) Lease(maxTasks int, queueName string, leaseTime time.Duration) ([]*tq.Task, error) {
-	t.Lock()
-	defer t.Unlock()
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
 	q, err := t.getQueueLocked(queueName)
 	if err != nil {
@@ -107,8 +107,8 @@ func (t *taskqueueImpl) Lease(maxTasks int, queueName string, leaseTime time.Dur
 }
 
 func (t *taskqueueImpl) LeaseByTag(maxTasks int, queueName string, leaseTime time.Duration, tag string) ([]*tq.Task, error) {
-	t.Lock()
-	defer t.Unlock()
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
 	q, err := t.getQueueLocked(queueName)
 	if err != nil {
@@ -119,8 +119,8 @@ func (t *taskqueueImpl) LeaseByTag(maxTasks int, queueName string, leaseTime tim
 }
 
 func (t *taskqueueImpl) ModifyLease(task *tq.Task, queueName string, leaseTime time.Duration) error {
-	t.Lock()
-	defer t.Unlock()
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
 	q, err := t.getQueueLocked(queueName)
 	if err != nil {
@@ -131,15 +131,15 @@ func (t *taskqueueImpl) ModifyLease(task *tq.Task, queueName string, leaseTime t
 }
 
 func (t *taskqueueImpl) Purge(queueName string) error {
-	t.Lock()
-	defer t.Unlock()
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
 	return t.purgeLocked(queueName)
 }
 
 func (t *taskqueueImpl) Stats(queueNames []string, cb tq.RawStatsCB) error {
-	t.Lock()
-	defer t.Unlock()
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
 	for _, qn := range queueNames {
 		q, err := t.getQueueLocked(qn)
@@ -153,8 +153,13 @@ func (t *taskqueueImpl) Stats(queueNames []string, cb tq.RawStatsCB) error {
 	return nil
 }
 
+func (t *taskqueueImpl) SetConstraints(c *tq.Constraints) error {
+	t.setConstraints(c)
+	return nil
+}
+
 func (t *taskqueueImpl) Constraints() tq.Constraints {
-	return t.taskQueueData.getConstraints()
+	return t.getConstraints()
 }
 
 func (t *taskqueueImpl) GetTestable() tq.Testable { return &taskQueueTestable{t.ns, t} }
@@ -171,7 +176,11 @@ type taskqueueTxnImpl struct {
 var _ tq.RawInterface = (*taskqueueTxnImpl)(nil)
 
 func (t *taskqueueTxnImpl) addLocked(task *tq.Task, q *sortedQueue) (*tq.Task, error) {
-	toSched, err := prepTask(t.ctx, task, q, t.ns, true)
+	if task.Name != "" {
+		return nil, fmt.Errorf("taskqueue: INVALID_TASK_NAME: cannot add named task %q in transaction", task.Name)
+	}
+
+	toSched, err := prepTask(t.ctx, task, q, t.ns)
 	if err != nil {
 		return nil, err
 	}
@@ -208,8 +217,14 @@ func (t *taskqueueTxnImpl) AddMulti(tasks []*tq.Task, queueName string, cb tq.Ra
 		return err
 	}
 
-	t.Lock()
-	defer t.Unlock()
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	// TODO(vadimsh): This lock can be taken for less amount of time if we move
+	// sortedQueue.genTaskName call out of prepTask (called from addLocked). No
+	// need to hold the global lock for the entire duration of AddMulti.
+	t.parent.lock.Lock()
+	defer t.parent.lock.Unlock()
 
 	q, err := t.parent.getQueueLocked(queueName)
 	if err != nil {
@@ -250,27 +265,15 @@ func (t *taskqueueTxnImpl) Stats([]string, tq.RawStatsCB) error {
 	return errors.New("taskqueue: cannot Stats from a transaction")
 }
 
-func (t *taskqueueImpl) SetConstraints(c *tq.Constraints) error {
-	if c == nil {
-		c = &tq.Constraints{}
-	}
-
-	t.Lock()
-	defer t.Unlock()
-	t.setConstraintsLocked(*c)
-	return nil
-}
-
 func (t *taskqueueTxnImpl) GetTestable() tq.Testable { return &taskQueueTestable{t.ns, t} }
 
 ////////////////////////// private functions ///////////////////////////////////
 
-func prepTask(c context.Context, task *tq.Task, q *sortedQueue, ns string, inTxn bool) (*tq.Task, error) {
+// prepTask clones 'task' and fills in its properties.
+//
+// Assumes it is called under a lock that guards q's data.
+func prepTask(c context.Context, task *tq.Task, q *sortedQueue, ns string) (*tq.Task, error) {
 	toSched := task.Duplicate()
-
-	if inTxn && task.Name != "" {
-		return nil, fmt.Errorf("taskqueue: INVALID_TASK_NAME: cannot add named task %q in transaction", task.Name)
-	}
 
 	if toSched.ETA.IsZero() {
 		toSched.ETA = clock.Now(c).Add(toSched.Delay)

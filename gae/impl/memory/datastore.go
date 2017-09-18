@@ -83,7 +83,7 @@ func (d *dsImpl) AllocateIDs(keys []*ds.Key, cb ds.NewKeyCB) error {
 }
 
 func (d *dsImpl) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB) error {
-	d.data.putMulti(keys, vals, cb)
+	d.data.putMulti(keys, vals, cb, false)
 	return nil
 }
 
@@ -92,7 +92,7 @@ func (d *dsImpl) GetMulti(keys []*ds.Key, _meta ds.MultiMetaGetter, cb ds.GetMul
 }
 
 func (d *dsImpl) DeleteMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
-	d.data.delMulti(keys, cb)
+	d.data.delMulti(keys, cb, false)
 	return nil
 }
 

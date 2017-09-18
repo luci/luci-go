@@ -58,7 +58,6 @@ type dataStoreData struct {
 
 var (
 	_ = memContextObj((*dataStoreData)(nil))
-	_ = sync.Locker((*dataStoreData)(nil))
 )
 
 func newDataStoreData(aid string) *dataStoreData {
@@ -71,23 +70,15 @@ func newDataStoreData(aid string) *dataStoreData {
 	}
 }
 
-func (d *dataStoreData) Lock() {
-	d.rwlock.Lock()
-}
-
-func (d *dataStoreData) Unlock() {
-	d.rwlock.Unlock()
-}
-
 func (d *dataStoreData) setTxnRetry(count int) {
-	d.Lock()
-	defer d.Unlock()
+	d.rwlock.Lock()
+	defer d.rwlock.Unlock()
 	d.txnFakeRetry = count
 }
 
 func (d *dataStoreData) setConsistent(always bool) {
-	d.Lock()
-	defer d.Unlock()
+	d.rwlock.Lock()
+	defer d.rwlock.Unlock()
 
 	if always {
 		d.snap = nil
@@ -97,14 +88,14 @@ func (d *dataStoreData) setConsistent(always bool) {
 }
 
 func (d *dataStoreData) addIndexes(idxs []*ds.IndexDefinition) {
-	d.Lock()
-	defer d.Unlock()
+	d.rwlock.Lock()
+	defer d.rwlock.Unlock()
 	addIndexes(d.head, d.aid, idxs)
 }
 
 func (d *dataStoreData) setAutoIndex(enable bool) {
-	d.Lock()
-	defer d.Unlock()
+	d.rwlock.Lock()
+	defer d.rwlock.Unlock()
 	d.autoIndex = enable
 }
 
@@ -127,8 +118,8 @@ func (d *dataStoreData) maybeAutoIndex(err error) bool {
 }
 
 func (d *dataStoreData) setDisableSpecialEntities(enabled bool) {
-	d.Lock()
-	defer d.Unlock()
+	d.rwlock.Lock()
+	defer d.rwlock.Unlock()
 	d.disableSpecialEntities = true
 }
 
@@ -254,8 +245,8 @@ func (d *dataStoreData) allocateIDs(keys []*ds.Key, cb ds.NewKeyCB) error {
 	// Allocate IDs for our keys. We use an inline function so we can ensure that
 	// the lock is released.
 	err := func() error {
-		d.Lock()
-		defer d.Unlock()
+		d.rwlock.Lock()
+		defer d.rwlock.Unlock()
 
 		for _, idxs := range entityMap {
 			baseKey := keys[idxs[0]]
@@ -312,7 +303,17 @@ func (d *dataStoreData) fixKeyLocked(ents memCollection, key *ds.Key) (*ds.Key, 
 	return key, nil
 }
 
-func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB) error {
+func (d *dataStoreData) fixKey(key *ds.Key) (*ds.Key, error) {
+	if key.IsIncomplete() {
+		d.rwlock.Lock()
+		defer d.rwlock.Unlock()
+		ents := d.head.GetOrCreateCollection("ents:" + key.Namespace())
+		return d.fixKeyLocked(ents, key)
+	}
+	return key, nil
+}
+
+func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB, lockedAlready bool) error {
 	ns := keys[0].Namespace()
 
 	for i, k := range keys {
@@ -320,8 +321,10 @@ func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.Ne
 		dataBytes := serialize.ToBytesWithContext(pmap)
 
 		k, err := func() (ret *ds.Key, err error) {
-			d.Lock()
-			defer d.Unlock()
+			if !lockedAlready {
+				d.rwlock.Lock()
+				defer d.rwlock.Unlock()
+			}
 
 			ents := d.head.GetOrCreateCollection("ents:" + ns)
 
@@ -353,45 +356,39 @@ func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.Ne
 	return nil
 }
 
-func getMultiInner(keys []*ds.Key, cb ds.GetMultiCB, getColl func() (memCollection, error)) error {
-	ents, err := getColl()
-	if err != nil {
-		return err
-	}
+func getMultiInner(keys []*ds.Key, cb ds.GetMultiCB, ents memCollection) {
 	if ents == nil {
 		for i := range keys {
 			cb(i, nil, ds.ErrNoSuchEntity)
 		}
-		return nil
+		return
 	}
 
 	for i, k := range keys {
 		pdata := ents.Get(keyBytes(k))
 		if pdata == nil {
 			cb(i, nil, ds.ErrNoSuchEntity)
-			continue
+		} else {
+			pm, err := rpm(pdata)
+			cb(i, pm, err)
 		}
-
-		pm, err := rpm(pdata)
-		cb(i, pm, err)
 	}
-	return nil
 }
 
 func (d *dataStoreData) getMulti(keys []*ds.Key, cb ds.GetMultiCB) error {
-	return getMultiInner(keys, cb, func() (memCollection, error) {
-		s := d.takeSnapshot()
-
-		return s.GetCollection("ents:" + keys[0].Namespace()), nil
-	})
+	ents := d.takeSnapshot().GetCollection("ents:" + keys[0].Namespace())
+	getMultiInner(keys, cb, ents)
+	return nil
 }
 
-func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
+func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB, lockedAlready bool) error {
 	ns := keys[0].Namespace()
 
 	hasEntsInNS := func() bool {
-		d.Lock()
-		defer d.Unlock()
+		if !lockedAlready {
+			d.rwlock.Lock()
+			defer d.rwlock.Unlock()
+		}
 		return d.head.GetOrCreateCollection("ents:"+ns) != nil
 	}()
 
@@ -400,8 +397,10 @@ func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 			err := func() error {
 				kb := keyBytes(k)
 
-				d.Lock()
-				defer d.Unlock()
+				if !lockedAlready {
+					d.rwlock.Lock()
+					defer d.rwlock.Unlock()
+				}
 
 				ents := d.head.GetOrCreateCollection("ents:" + ns)
 
@@ -434,49 +433,62 @@ func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {
 	return nil
 }
 
-func (d *dataStoreData) canApplyTxn(obj memContextObj) bool {
-	// TODO(riannucci): implement with Flush/FlushRevert for persistance.
+func (d *dataStoreData) beginCommit(c context.Context, obj memContextObj) txnCommitOp {
+	// TODO(riannucci): implement with Flush/FlushRevert for persistence.
 
 	txn := obj.(*txnDataStoreData)
-	for rk, muts := range txn.muts {
-		if len(muts) == 0 { // read-only
-			continue
-		}
-		prop, err := serialize.ReadProperty(bytes.NewBufferString(rk), serialize.WithContext, ds.MkKeyContext("", ""))
-		memoryCorruption(err)
 
-		k := prop.Value().(*ds.Key)
+	txn.lock.Lock()
+	d.rwlock.Lock()
 
-		entKey := "ents:" + k.Namespace()
-		mkey := groupMetaKey(k)
-		entsHead := d.head.GetCollection(entKey)
-		entsSnap := txn.snap.GetCollection(entKey)
-		vHead := curVersion(entsHead, mkey)
-		vSnap := curVersion(entsSnap, mkey)
-		if vHead != vSnap {
-			return false
-		}
+	unlock := func() {
+		d.rwlock.Unlock()
+		txn.lock.Unlock()
 	}
-	return true
-}
 
-func (d *dataStoreData) applyTxn(c context.Context, obj memContextObj) {
-	txn := obj.(*txnDataStoreData)
+	// Check for collisions.
 	for _, muts := range txn.muts {
 		if len(muts) == 0 { // read-only
 			continue
 		}
-		// TODO(riannucci): refactor to do just 1 putMulti, and 1 delMulti
-		for _, m := range muts {
-			k := m.key
-			if m.data == nil {
-				impossible(d.delMulti([]*ds.Key{k},
-					func(_ int, e error) error { return e }))
-			} else {
-				impossible(d.putMulti([]*ds.Key{m.key}, []ds.PropertyMap{m.data},
-					func(_ int, _ *ds.Key, e error) error { return e }))
-			}
+
+		// All muts keys belong to same entity group. Grab its root. Note that we
+		// can try to deserialize txn.muts key instead, by taking it through .Root()
+		// is simpler.
+		root := muts[0].key.Root()
+
+		entKey := "ents:" + root.Namespace()
+		mkey := groupMetaKey(root)
+		entsHead := d.head.GetCollection(entKey)
+		entsSnap := txn.snap.GetCollection(entKey)
+		vHead := curVersion(entsHead, mkey)
+		vSnap := curVersion(entsSnap, mkey)
+
+		if vHead != vSnap {
+			unlock()
+			return nil // a collision, the commit is not possible
 		}
+	}
+
+	return &txnCommitCallback{
+		unlock: unlock,
+		apply: func() {
+			for _, muts := range txn.muts {
+				if len(muts) == 0 { // read-only
+					continue
+				}
+				// TODO(riannucci): refactor to do just 1 putMulti, and 1 delMulti
+				for _, m := range muts {
+					if m.data == nil {
+						impossible(d.delMulti([]*ds.Key{m.key},
+							func(_ int, e error) error { return e }, true))
+					} else {
+						impossible(d.putMulti([]*ds.Key{m.key}, []ds.PropertyMap{m.data},
+							func(_ int, _ *ds.Key, e error) error { return e }, true))
+					}
+				}
+			}
+		},
 	}
 }
 
@@ -503,11 +515,9 @@ type txnMutation struct {
 }
 
 type txnDataStoreData struct {
-	sync.Mutex
-
+	lock   sync.Mutex
 	parent *dataStoreData
-
-	txn *transactionImpl
+	txn    *transactionImpl
 
 	snap memStore
 
@@ -521,18 +531,19 @@ var _ memContextObj = (*txnDataStoreData)(nil)
 
 const xgEGLimit = 25
 
-func (*txnDataStoreData) canApplyTxn(memContextObj) bool { return false }
-
 func (td *txnDataStoreData) endTxn() {
 	if err := td.txn.close(); err != nil {
 		panic(err)
 	}
 }
-func (*txnDataStoreData) applyTxn(context.Context, memContextObj) {
-	impossible(fmt.Errorf("cannot create a recursive transaction"))
-}
+
 func (*txnDataStoreData) mkTxn(*ds.TransactionOptions) memContextObj {
 	impossible(fmt.Errorf("cannot create a recursive transaction"))
+	return nil
+}
+
+func (*txnDataStoreData) beginCommit(c context.Context, txnCtxObj memContextObj) txnCommitOp {
+	impossible(fmt.Errorf("cannot commit a recursive transaction"))
 	return nil
 }
 
@@ -548,19 +559,19 @@ func (td *txnDataStoreData) run(f func() error) error {
 // writeMutation ensures that this transaction can support the given key/value
 // mutation.
 //
-//   if getOnly is true, don't record the actual mutation data, just ensure that
-//	   the key is in an included entity group (or add an empty entry for that
-//	   group).
+// If getOnly is true, don't record the actual mutation data, just ensure that
+// the key is in an included entity group (or add an empty entry for that
+// group).
 //
-//   if !getOnly && data == nil, this counts as a deletion instead of a Put.
+// If !getOnly && data == nil, this counts as a deletion instead of a Put.
 //
 // Returns an error if this key causes the transaction to cross too many entity
 // groups.
 func (td *txnDataStoreData) writeMutation(getOnly bool, key *ds.Key, data ds.PropertyMap) error {
 	rk := string(keyBytes(key.Root()))
 
-	td.Lock()
-	defer td.Unlock()
+	td.lock.Lock()
+	defer td.lock.Unlock()
 
 	if _, ok := td.muts[rk]; !ok {
 		limit := 1
@@ -584,17 +595,8 @@ func (td *txnDataStoreData) writeMutation(getOnly bool, key *ds.Key, data ds.Pro
 }
 
 func (td *txnDataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.NewKeyCB) {
-	ns := keys[0].Namespace()
-
 	for i, k := range keys {
-		err := func() (err error) {
-			td.parent.Lock()
-			defer td.parent.Unlock()
-			ents := td.parent.head.GetOrCreateCollection("ents:" + ns)
-
-			k, err = td.parent.fixKeyLocked(ents, k)
-			return
-		}()
+		k, err := td.parent.fixKey(k)
 		if err == nil {
 			err = td.writeMutation(false, k, vals[i])
 		}
@@ -605,16 +607,15 @@ func (td *txnDataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb d
 }
 
 func (td *txnDataStoreData) getMulti(keys []*ds.Key, cb ds.GetMultiCB) error {
-	return getMultiInner(keys, cb, func() (memCollection, error) {
-		err := error(nil)
-		for _, key := range keys {
-			err = td.writeMutation(true, key, nil)
-			if err != nil {
-				return nil, err
-			}
+	for _, key := range keys {
+		err := td.writeMutation(true, key, nil)
+		if err != nil {
+			return err
 		}
-		return td.snap.GetCollection("ents:" + keys[0].Namespace()), nil
-	})
+	}
+	ents := td.snap.GetCollection("ents:" + keys[0].Namespace())
+	getMultiInner(keys, cb, ents)
+	return nil
 }
 
 func (td *txnDataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB) error {

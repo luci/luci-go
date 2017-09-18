@@ -17,7 +17,6 @@ package memory
 import (
 	"errors"
 	"strings"
-	"sync"
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/logging/memlogger"
@@ -28,12 +27,55 @@ import (
 var serializationDeterministic = false
 
 type memContextObj interface {
-	sync.Locker
-	canApplyTxn(m memContextObj) bool
-	applyTxn(c context.Context, m memContextObj)
+	// beginCommit locks both m and self in preparation for the committing pending
+	// data represented by 'm' into self.
+	//
+	// Must be called with both m and self unlocked. There can be only one commit
+	// operation at a time.
+	//
+	// Returns nil if the commit can't be applied (e.g due to a collision).
+	//
+	// Call either txnCommitOp.submit or txnCommitOp.discard to finish the commit.
+	beginCommit(c context.Context, m memContextObj) txnCommitOp
 
-	endTxn()
+	// mkTxn creates an object that holds temporary transaction data.
 	mkTxn(*ds.TransactionOptions) memContextObj
+
+	// endTxn is used to mark the transaction represented by self as closed.
+	endTxn()
+}
+
+type txnCommitOp interface {
+	submit()
+	discard()
+}
+
+type txnCommitCallback struct {
+	apply  func() // called only on 'submit'
+	unlock func() // called on both 'submit' and 'discard'
+}
+
+func (b *txnCommitCallback) submit() {
+	b.apply()
+	b.unlock()
+}
+
+func (b *txnCommitCallback) discard() {
+	b.unlock()
+}
+
+type txnBatchCommitOp []txnCommitOp
+
+func (b txnBatchCommitOp) submit() {
+	for i := len(b) - 1; i >= 0; i-- {
+		b[i].submit()
+	}
+}
+
+func (b txnBatchCommitOp) discard() {
+	for i := len(b) - 1; i >= 0; i-- {
+		b[i].discard()
+	}
 }
 
 type memContext []memContextObj
@@ -58,18 +100,6 @@ func (m *memContext) Get(itm memContextIdx) memContextObj {
 	return (*m)[itm]
 }
 
-func (m *memContext) Lock() {
-	for _, itm := range *m {
-		itm.Lock()
-	}
-}
-
-func (m *memContext) Unlock() {
-	for i := len(*m) - 1; i >= 0; i-- {
-		(*m)[i].Unlock()
-	}
-}
-
 func (m *memContext) endTxn() {
 	for _, itm := range *m {
 		itm.endTxn()
@@ -84,21 +114,18 @@ func (m *memContext) mkTxn(o *ds.TransactionOptions) memContextObj {
 	return &ret
 }
 
-func (m *memContext) canApplyTxn(txnCtxObj memContextObj) bool {
+func (m *memContext) beginCommit(c context.Context, txnCtxObj memContextObj) txnCommitOp {
+	batch := make(txnBatchCommitOp, 0, len(*m))
 	txnCtx := *txnCtxObj.(*memContext)
 	for i := range *m {
-		if !(*m)[i].canApplyTxn(txnCtx[i]) {
-			return false
+		op := (*m)[i].beginCommit(c, txnCtx[i])
+		if op == nil {
+			batch.discard()
+			return nil
 		}
+		batch = append(batch, op)
 	}
-	return true
-}
-
-func (m *memContext) applyTxn(c context.Context, txnCtxObj memContextObj) {
-	txnCtx := *txnCtxObj.(*memContext)
-	for i := range *m {
-		(*m)[i].applyTxn(c, txnCtx[i])
-	}
+	return batch
 }
 
 // Use calls UseWithAppID with the appid of "app"
@@ -196,26 +223,21 @@ func (d *dsImpl) RunInTransaction(f func(context.Context) error, o *ds.Transacti
 		}
 
 		txnMC := curMC.mkTxn(o)
-
-		defer func() {
-			txnMC.Lock()
-			defer txnMC.Unlock()
-
-			txnMC.endTxn()
-		}()
+		defer txnMC.endTxn()
 
 		if err := f(context.WithValue(d, &currentTxnKey, txnMC)); err != nil {
 			return err
 		}
 
-		txnMC.Lock()
-		defer txnMC.Unlock()
-
-		if applyForReal && curMC.canApplyTxn(txnMC) {
-			curMC.applyTxn(d, txnMC)
-		} else {
+		if !applyForReal {
 			return ds.ErrConcurrentTransaction
 		}
+
+		commitOp := curMC.beginCommit(d, txnMC)
+		if commitOp == nil {
+			return ds.ErrConcurrentTransaction
+		}
+		commitOp.submit()
 		return nil
 	}
 

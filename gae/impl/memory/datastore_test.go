@@ -17,6 +17,8 @@ package memory
 import (
 	"errors"
 	"fmt"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -820,5 +822,61 @@ func TestAddIndexes(t *testing.T) {
 			So(ds.GetAll(infoS.MustNamespace(ctx, "qux"), q, &results), ShouldBeNil)
 			So(len(results), ShouldEqual, 2)
 		})
+	})
+}
+
+func TestConcurrentTxn(t *testing.T) {
+	t.Parallel()
+	t.Skip("known to be broken")
+
+	// Stress test for concurrent transactions. It transactionally increments a
+	// counter in an entity and counts how many transactions succeeded. The final
+	// counter value and the number of committed transactions should match.
+
+	Convey("Concurrent transactions work", t, func() {
+		c := Use(context.Background())
+
+		var successes int64
+
+		for round := 0; round < 10000; round++ {
+			barrier := make(chan struct{})
+			wg := sync.WaitGroup{}
+
+			for track := 0; track < 5; track++ {
+				wg.Add(1)
+				go func(round, track int) {
+					defer wg.Done()
+					<-barrier
+
+					err := ds.RunInTransaction(c, func(c context.Context) error {
+						ent := Foo{ID: 1}
+						switch err := ds.Get(c, &ent); {
+						case err == ds.ErrNoSuchEntity:
+							// new entity
+						case err != nil:
+							return err
+						}
+						ent.Val++
+						return ds.Put(c, &ent)
+					}, nil)
+					if err == nil {
+						atomic.AddInt64(&successes, 1)
+					}
+
+				}(round, track)
+			}
+
+			// Run one round of the test.
+			close(barrier)
+			wg.Wait()
+
+			// Verify that everything is still ok.
+			ent := Foo{ID: 1}
+			ds.Get(c, &ent)
+			counter := atomic.LoadInt64(&successes)
+			if int64(ent.Val) != counter { // don't spam convey assertions
+				So(ent.Val, ShouldEqual, counter)
+			}
+		}
 	})
 }
