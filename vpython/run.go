@@ -16,14 +16,13 @@ package vpython
 
 import (
 	"os"
-	"os/exec"
-	"os/signal"
 	"strings"
+
+	"go.chromium.org/luci/vpython/venv"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
-	"go.chromium.org/luci/vpython/venv"
 
 	"golang.org/x/net/context"
 )
@@ -36,6 +35,12 @@ const (
 	// "vpython" invocations to automatically inherit the same environment.
 	EnvironmentStampPathENV = "VPYTHON_VENV_ENV_STAMP_PATH"
 )
+
+type runCommand struct {
+	args    []string
+	env     environ.Env
+	workDir string
+}
 
 // Run sets up a Python VirtualEnv and executes the supplied Options.
 //
@@ -62,10 +67,6 @@ func Run(c context.Context, opts Options) error {
 	if err := opts.resolve(c); err != nil {
 		return errors.Annotate(err, "could not resolve options").Err()
 	}
-
-	// Create a local cancellation option (signal handling).
-	c, cancelFunc := context.WithCancel(c)
-	defer cancelFunc()
 
 	// Create our virtual environment root directory.
 	err := venv.With(c, opts.EnvConfig, opts.WaitForEnv, func(c context.Context, ve *venv.Env) error {
@@ -98,66 +99,15 @@ func Run(c context.Context, opts Options) error {
 		prefixPATH(e, ve.BinDir)
 
 		// Run our bootstrapped Python command.
-		cmd := ve.Interpreter().IsolatedCommand(c, opts.Args...)
-		cmd.Dir = opts.WorkDir
-		cmd.Env = e.Sorted()
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-
-		logging.Debugf(c, "Running Python command: %s\nWorkDir: %s\nEnv: %s", cmd.Args, cmd.Dir, cmd.Env)
 
 		// Output the Python command being executed.
-		if err := runAndForwardSignals(c, cmd, cancelFunc); err != nil {
+		argv := ve.Interpreter().IsolatedCommandParams(opts.Args...)
+		logging.Debugf(c, "Running Python command: %s\nWorkDir: %s\nEnv: %s", argv, opts.WorkDir, e)
+		if err := systemSpecificLaunch(c, ve, argv, e, opts.WorkDir); err != nil {
 			return errors.Annotate(err, "failed to execute bootstrapped Python").Err()
 		}
 		return nil
 	})
-	if err != nil {
-		return errors.Annotate(err, "").Err()
-	}
-	return nil
-}
-
-func runAndForwardSignals(c context.Context, cmd *exec.Cmd, cancelFunc context.CancelFunc) error {
-	signalC := make(chan os.Signal, 1)
-	signalDoneC := make(chan struct{})
-	signal.Notify(signalC, forwardedSignals...)
-	defer func() {
-		signal.Stop(signalC)
-
-		close(signalC)
-		<-signalDoneC
-	}()
-
-	if err := cmd.Start(); err != nil {
-		return errors.Annotate(err, "failed to start process").Err()
-	}
-
-	logging.Fields{
-		"pid": cmd.Process.Pid,
-	}.Debugf(c, "Python subprocess has started!")
-
-	// Start our signal forwarding goroutine, now that the process is running.
-	go func() {
-		defer func() {
-			close(signalDoneC)
-		}()
-
-		for sig := range signalC {
-			logging.Debugf(c, "Forwarding signal: %v", sig)
-			if err := cmd.Process.Signal(sig); err != nil {
-				logging.Fields{
-					logging.ErrorKey: err,
-					"signal":         sig,
-				}.Errorf(c, "Failed to forward signal; terminating immediately.")
-				cancelFunc()
-			}
-		}
-	}()
-
-	err := cmd.Wait()
-	logging.Debugf(c, "Python subprocess has terminated: %v", err)
 	if err != nil {
 		return errors.Annotate(err, "").Err()
 	}

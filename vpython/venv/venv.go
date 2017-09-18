@@ -190,9 +190,10 @@ type Env struct {
 	// therefore, suitable for input to other "vpython" invocations.
 	EnvironmentStampPath string
 
-	// lockPath is the path to this Env-specific lock file. It will be at:
+	// LockPath is the path to this Env-specific lock file. It will be at:
 	// "<baseDir>/.<name>.lock".
-	lockPath string
+	LockPath string
+
 	// completeFlagPath is the path to this Env's complete flag.
 	// It will be at "<Root>/complete.flag".
 	completeFlagPath string
@@ -363,12 +364,12 @@ func (e *Env) Interpreter() *python.Interpreter {
 	return e.interpreter
 }
 
-func (e *Env) acquireExclusiveLock() (fslock.Handle, error) { return fslock.Lock(e.lockPath) }
+func (e *Env) acquireExclusiveLock() (fslock.Handle, error) { return fslock.Lock(e.LockPath) }
 
-func (e *Env) acquireSharedLock() (fslock.Handle, error) { return fslock.LockShared(e.lockPath) }
+func (e *Env) acquireSharedLock() (fslock.Handle, error) { return fslock.LockShared(e.LockPath) }
 
 func (e *Env) withExclusiveLockNonBlocking(fn func() error) error {
-	return fslock.With(e.lockPath, fn)
+	return fslock.With(e.LockPath, fn)
 }
 
 // WriteEnvironmentStamp writes a text protobuf form of spec to path.
@@ -705,10 +706,10 @@ func (e *Env) Delete(c context.Context) error {
 		// In this case, we'll try again to delete it after we release the lock.
 		// If someone else takes out the lock in between, the delete will similarly
 		// fail.
-		if err := os.Remove(e.lockPath); err == nil {
+		if err := os.Remove(e.LockPath); err == nil {
 			removedLock = true
 		} else {
-			logging.WithError(err).Debugf(c, "failed to delete lock file while holding lock: %s", e.lockPath)
+			logging.WithError(err).Debugf(c, "failed to delete lock file while holding lock: %s", e.LockPath)
 		}
 		return nil
 	})
@@ -720,7 +721,7 @@ func (e *Env) Delete(c context.Context) error {
 
 	// Try and remove the lock now that we don't hold it.
 	if !removedLock {
-		if err := os.Remove(e.lockPath); err != nil {
+		if err := os.Remove(e.LockPath); err != nil {
 			return errors.Annotate(err, "failed to remove lock").Err()
 		}
 	}
@@ -778,3 +779,10 @@ func mustReleaseLock(c context.Context, lock fslock.Handle, fn func() error) err
 	}()
 	return fn()
 }
+
+// WithSharedLock executes the supplied function while holding a shared lock
+// compatible with the shared lock used for a VirtualEnv by With.
+//
+// If the lock could not be obtained because an exclusive lock is held on that
+// environment, an error will be returned.
+func WithSharedLock(path string, fn func() error) error { return fslock.WithShared(path, fn) }

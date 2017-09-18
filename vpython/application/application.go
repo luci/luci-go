@@ -306,7 +306,11 @@ func (a *application) showPythonHelp(c context.Context, fs *flag.FlagSet, lp *lo
 }
 
 // Main is the main application entry point.
-func (cfg *Config) Main(c context.Context) int {
+func (cfg *Config) Main(c context.Context, args []string) int {
+	if len(args) == 0 {
+		panic("zero-length argument slice")
+	}
+
 	// Implementation of "checkWrapper": if CheckWrapperENV is set, we immediately
 	// exit with a non-zero value.
 	env := environ.System()
@@ -316,6 +320,11 @@ func (cfg *Config) Main(c context.Context) int {
 
 	c = gologger.StdConfig.Use(c)
 	c = logging.SetLevel(c, logging.Error)
+
+	// Check whether this is an application command.
+	if v, ok := env.Get(vpython.ApplicationCommandENV); ok {
+		return vpython.RunCommand(c, v, env)
+	}
 
 	a := application{
 		Config: cfg,
@@ -340,6 +349,6 @@ func (cfg *Config) Main(c context.Context) int {
 	}
 
 	return run(c, func(c context.Context) error {
-		return a.mainImpl(c, os.Args[0], os.Args[1:])
+		return a.mainImpl(c, args[0], args[1:])
 	})
 }
