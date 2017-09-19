@@ -25,6 +25,47 @@
     },
     {
       "key": {
+        "uuid": "5cb5a1d1_8f0f2cd6",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "+1. proto comments are our primary source of protocol/config language documentation\nplease add comments to all fields and messages",
+      "parentUuid": "2676908f_5f69340a",
+      "range": {
+        "startLine": 8,
+        "startChar": 0,
+        "endLine": 8,
+        "endChar": 7
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53164e0a_e7eb6ca2",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "nit: consider declaring fields after submessages",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ce318237_feba829e",
         "filename": "luci_notify/api/config/notify.proto",
         "patchSetId": 1
@@ -36,6 +77,30 @@
       "writtenOn": "2017-09-18T13:46:33Z",
       "side": 1,
       "message": "Why is blamelist part of Email? These concepts seem orthogonal.",
+      "range": {
+        "startLine": 24,
+        "startChar": 9,
+        "endLine": 24,
+        "endChar": 18
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf469986_33ed38ab",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "(perhaps a comment would be a best place to put the answer)\nconsider removing, it is not used",
+      "parentUuid": "ce318237_feba829e",
       "range": {
         "startLine": 24,
         "startChar": 9,
@@ -65,6 +130,503 @@
         "endLine": 26,
         "endChar": 13
       },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a239adb0_a1e75b5d",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "+1\nat the very least, it can be done in a separate CL",
+      "parentUuid": "8398ec28_9ca3db1d",
+      "range": {
+        "startLine": 26,
+        "startChar": 10,
+        "endLine": 26,
+        "endChar": 13
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f19da5f2_0ce9e707",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "consider moving webhooks to separate CLs\nanother output we might want to add is Google Cloud PubSub, and I think that\u0027s we will prefer to webhooks in practice. Let\u0027s delay this discussion until the rest of the app is implemented and deployed",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f67c8ce6_12046164",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "why do we need category here?\n\nbucket is missing. Builder names are not globally unique, but (bucket, build) combinations are",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca3db0b7_9ffed5a9",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "var p struct { ... }",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56eeaf20_9120569e",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "https://cs.chromium.org/chromium/infra/go/src/infra/appengine/luci-migration/bbutil/bbutil.go?q\u003dbbutil\u0026sq\u003dpackage:chromium\u0026l\u003d66\nwould more correct\n\nalso see https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/668110/5/milo/buildsource/buildbucket/pubsub.go#126\nwhere Robbie adds identical code\n\nPerhaps we actually should move common code to go.chromium.org/luci/buildbucket",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aec50e08_bd1fb0a5",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "inline type, like for p above",
+      "range": {
+        "startLine": 120,
+        "startChar": 8,
+        "endLine": 120,
+        "endChar": 26
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d10ab3e5_95db708d",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "I think this is unnecessary. It is done by the calling code.\n\nOtherwise I think this should be the first line of this function",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb3c042b_69a06de0",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "nit: inline dec?",
+      "range": {
+        "startLine": 122,
+        "startChar": 1,
+        "endLine": 122,
+        "endChar": 4
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e5906af_ebff4ceb",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "what is %s of r.Body?",
+      "range": {
+        "startLine": 126,
+        "startChar": 62,
+        "endLine": 126,
+        "endChar": 68
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3584fb9_963316dc",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "supernit: consider excluding this info. It is known from the function signature",
+      "range": {
+        "startLine": 42,
+        "startChar": 17,
+        "endLine": 42,
+        "endChar": 30
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed5aed05_2269b719",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "this function is responsible for updating notifiers in the datastore, but also currently it is responsible for parsing text proto. I\u0027d prefer this function to accept a parsed proto",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fbd5a3a7_2a783e82",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "not sure why we need this",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b561fe2_bf65e0e1",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "instead of having two fields, consider implementing datastore.PropertyLoadSaver in NotificationConfig",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5e8cf43_987918d3",
+        "filename": "luci_notify/frontend/app.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "doesn\u0027t the last rule already do this?",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef44e0fd_56d8d86f",
+        "filename": "luci_notify/frontend/app.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "FWIU google site verification is the only reason why we have this rule. Is this right? \nif so, please make the url \"/\u003cfilename\u003e\"",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f44b88dd_47ceaab5",
+        "filename": "luci_notify/frontend/app.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "do last two rules work together?",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f54b01c_66be16aa",
+        "filename": "luci_notify/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "why is this needed?",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2f2ea15_dc225f7e",
+        "filename": "luci_notify/notify/builder_state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "saving %s state\n\nthere is a lot of things identified by builder id",
+      "range": {
+        "startLine": 59,
+        "startChar": 30,
+        "endLine": 59,
+        "endChar": 40
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76046396_149af225",
+        "filename": "luci_notify/notify/builder_state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "What\u0027s bad gonna happen if we do not search in buildbucket? I don\u0027t see a justification for this complexity\n\nI think if datastore does not have the state, we can just return UNKNOWN.",
+      "range": {
+        "startLine": 105,
+        "startChar": 17,
+        "endLine": 105,
+        "endChar": 34
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9bda4e0c_4ce18391",
+        "filename": "luci_notify/notify/email.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "consider using ...",
+      "range": {
+        "startLine": 44,
+        "startChar": 30,
+        "endLine": 44,
+        "endChar": 32
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e6a8ab1_51a348f8",
+        "filename": "luci_notify/notify/notification.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "at least log it for now",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d920bb3d_db36e5b2",
+        "filename": "luci_notify/notify/notification.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "CreateNotification function should not be responsible for updating builder states",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3f8c705_c45e11fe",
+        "filename": "luci_notify/notify/notification.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "LookupBuilderState and UpdateDatastore must happen in the same datastore transaction",
+      "range": {
+        "startLine": 121,
+        "startChar": 3,
+        "endLine": 121,
+        "endChar": 21
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "237ec9a8_d276c978",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "move line after the checking status",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6347731_79519ef7",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "CreateNotification assumes Notifier configs are decoded, but LookupNotifiers does not do that",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc6db6c5_98111326",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T16:43:10Z",
+      "side": 1,
+      "message": "why we are doing this?",
       "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
