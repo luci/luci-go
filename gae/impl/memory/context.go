@@ -80,10 +80,10 @@ func (b txnBatchCommitOp) discard() {
 
 type memContext []memContextObj
 
-var _ memContextObj = (*memContext)(nil)
+var _ memContextObj = (memContext)(nil)
 
-func newMemContext(aid string) *memContext {
-	return &memContext{
+func newMemContext(aid string) memContext {
+	return memContext{
 		newTaskQueueData(),
 		newDataStoreData(aid),
 	}
@@ -96,29 +96,29 @@ const (
 	memContextDSIdx
 )
 
-func (m *memContext) Get(itm memContextIdx) memContextObj {
-	return (*m)[itm]
+func (m memContext) Get(itm memContextIdx) memContextObj {
+	return m[itm]
 }
 
-func (m *memContext) endTxn() {
-	for _, itm := range *m {
+func (m memContext) endTxn() {
+	for _, itm := range m {
 		itm.endTxn()
 	}
 }
 
-func (m *memContext) mkTxn(o *ds.TransactionOptions) memContextObj {
-	ret := make(memContext, len(*m))
-	for i, itm := range *m {
+func (m memContext) mkTxn(o *ds.TransactionOptions) memContextObj {
+	ret := make(memContext, len(m))
+	for i, itm := range m {
 		ret[i] = itm.mkTxn(o)
 	}
-	return &ret
+	return ret
 }
 
-func (m *memContext) beginCommit(c context.Context, txnCtxObj memContextObj) txnCommitOp {
-	batch := make(txnBatchCommitOp, 0, len(*m))
-	txnCtx := *txnCtxObj.(*memContext)
-	for i := range *m {
-		op := (*m)[i].beginCommit(c, txnCtx[i])
+func (m memContext) beginCommit(c context.Context, txnCtxObj memContextObj) txnCommitOp {
+	batch := make(txnBatchCommitOp, 0, len(m))
+	txnCtx := txnCtxObj.(memContext)
+	for i := range m {
+		op := m[i].beginCommit(c, txnCtx[i])
 		if op == nil {
 			batch.discard()
 			return nil
@@ -183,12 +183,12 @@ func UseWithAppID(c context.Context, aid string) context.Context {
 	return useMod(useMail(useUser(useTQ(useRDS(useMC(c))))))
 }
 
-func cur(c context.Context) (*memContext, bool) {
+func cur(c context.Context) (memContext, bool) {
 	if txn := c.Value(&currentTxnKey); txn != nil {
 		// We are in a Transaction.
-		return txn.(*memContext), true
+		return txn.(memContext), true
 	}
-	return c.Value(&memContextKey).(*memContext), false
+	return c.Value(&memContextKey).(memContext), false
 }
 
 var (
