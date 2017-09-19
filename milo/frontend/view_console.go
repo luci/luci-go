@@ -17,9 +17,7 @@ package frontend
 import (
 	"bytes"
 	"encoding/hex"
-	"fmt"
 	"html/template"
-	"net/http"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -78,11 +76,15 @@ func shortname(name string) string {
 }
 
 func console(c context.Context, project, name string, limit int) (*resp.Console, error) {
-	tStart := clock.Now(c)
 	def, err := getConsoleDef(c, project, name)
 	if err != nil {
 		return nil, err
 	}
+	return consoleFromDef(c, def, project, limit)
+}
+
+func consoleFromDef(c context.Context, def *common.Console, project string, limit int) (*resp.Console, error) {
+	tStart := clock.Now(c)
 	commitInfo, err := git.GetHistory(c, def.RepoURL, def.Ref, limit)
 	if err != nil {
 		return nil, err
@@ -215,11 +217,33 @@ func ConsoleHandler(c *router.Context) {
 	})
 }
 
-// ConsoleMainHandler is a redirect handler that redirects the user to the main
-// console for a particular project.
-func ConsoleMainHandler(ctx *router.Context) {
-	w, r, p := ctx.Writer, ctx.Request, ctx.Params
-	proj := p.ByName("project")
-	http.Redirect(w, r, fmt.Sprintf("/console/%s/main", proj), http.StatusMovedPermanently)
-	return
+// ConsolesHandler is responsible for taking a project name and rendering the
+// console list page (defined in ./appengine/templates/pages/consoles.html).
+func ConsolesHandler(c *router.Context, projectName string) {
+	cons, err := common.GetProjectConsoles(c.Context, projectName)
+	if err != nil {
+		ErrorHandler(c, err)
+		return
+	}
+	type fullConsole struct {
+		Def    *common.Console
+		Render consoleRenderer
+	}
+	var consoles []fullConsole
+	for _, def := range cons {
+		respConsole, err := consoleFromDef(c.Context, def, projectName, 1)
+		if err != nil {
+			logging.WithError(err).Errorf(c.Context, "failed to generate resp console")
+			continue
+		}
+		full := fullConsole{
+			Def:    def,
+			Render: consoleRenderer{respConsole},
+		}
+		consoles = append(consoles, full)
+	}
+	templates.MustRender(c.Context, c.Writer, "pages/consoles.html", templates.Args{
+		"ProjectName": projectName,
+		"Consoles":    consoles,
+	})
 }
