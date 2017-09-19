@@ -634,6 +634,11 @@ func TestFullTriggeredFlow(t *testing.T) {
 		So(inv.MutationsCount, ShouldEqual, 2)
 		So(inv.DebugLog, ShouldContainSubstring, "[22:42:05.000] Emitting a trigger trg") // twice.
 
+		// All triggers will be batched into just 1 tq task.
+		batchTask := ensureOneTask(c, "invs-q")
+		taskqueue.GetTestable(c).ResetTasks()
+		So(e.ExecuteSerializedAction(c, batchTask.Payload, 0), ShouldBeNil)
+		// Now execute each of trigger tasks.
 		for _, triggerTask := range popAllTasks(c, "invs-q") {
 			So(e.ExecuteSerializedAction(c, triggerTask.Payload, 0), ShouldBeNil)
 		}

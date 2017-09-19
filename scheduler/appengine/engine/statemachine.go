@@ -200,6 +200,16 @@ type EnqueueTriggersAction struct {
 // IsAction makes EnqueueTriggersAction implement Action interface.
 func (a EnqueueTriggersAction) IsAction() bool { return true }
 
+// EnqueueBatchOfTriggersAction enqueues triggers of many jobs.
+// OnNewTriggers(triggers) will be called sometime later for each job.
+type EnqueueBatchOfTriggersAction struct {
+	Triggers        []task.Trigger
+	TriggeredJobIDs []string
+}
+
+// IsAction makes EnqueueBatchOfTriggersAction implement Action interface.
+func (a EnqueueBatchOfTriggersAction) IsAction() bool { return true }
+
 // StateMachine advances state of some single scheduler job. It performs
 // a single step only (one On* call). As input it takes the state of the job and
 // state of the world (the schedule is considered to be a part of the world
