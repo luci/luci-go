@@ -77,6 +77,38 @@ func TestBrokenFeatures(t *testing.T) {
 					errToReturn = nil
 					So(errors.SingleError(ds.Get(ctx, vals)), ShouldEqual, ds.ErrNoSuchEntity)
 				})
+
+				Convey("Transaction hooks work", func() {
+					// A sequence of errors emulating a bunch of failing RPCs that cause
+					// the transaction body to be retried once.
+					errs := []struct {
+						name string
+						err  error
+					}{
+						{"BeginTransaction", nil},
+						{"CommitTransaction", ds.ErrConcurrentTransaction},
+						{"BeginTransaction", ds.ErrConcurrentTransaction},
+						{"BeginTransaction", nil},
+						{"CommitTransaction", nil},
+					}
+
+					bf.BreakFeaturesWithCallback(func(c context.Context, feature string) error {
+						So(len(errs), ShouldBeGreaterThan, 0)
+						So(errs[0].name, ShouldEqual, feature)
+						err := errs[0].err
+						errs = errs[1:]
+						return err
+					}, "BeginTransaction", "CommitTransaction")
+
+					calls := 0
+					So(ds.RunInTransaction(c, func(c context.Context) error {
+						calls++
+						return nil
+					}, nil), ShouldBeNil)
+
+					So(calls, ShouldEqual, 2)
+					So(errs, ShouldBeEmpty)
+				})
 			})
 
 			Convey("with a default", func() {

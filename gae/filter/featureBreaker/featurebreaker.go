@@ -64,6 +64,18 @@ type FeatureBreaker interface {
 	//
 	// would make memcache.Add return memcache.ErrServerError. You can reverse
 	// this by calling UnbreakFeatures("Add").
+	//
+	// The only exception to this rule is two "fake" functions that can be used
+	// to simulate breaking "RunInTransaction" in a more detailed way:
+	//   * Use "BeginTransaction" as a feature name to simulate breaking of a new
+	//     transaction attempt. It is called before each individual retry.
+	//   * Use "CommitTransaction" as a feature name to simulate breaking the
+	//     transaction commit RPC. It is called after the transaction body
+	//     completes. Returning datastore.ErrConcurrentTransaction here will cause
+	//     a retry.
+	//
+	// "RunInTransaction" itself is not breakable. Break "BeginTransaction" or
+	// "CommitTransaction" instead.
 	BreakFeatures(err error, feature ...string)
 
 	// BreakFeaturesWithCallback is like BreakFeatures, except it allows you to
@@ -112,6 +124,11 @@ func (s *state) BreakFeatures(err error, feature ...string) {
 }
 
 func (s *state) BreakFeaturesWithCallback(cb BreakFeatureCallback, feature ...string) {
+	for _, f := range feature {
+		if f == "RunInTransaction" {
+			panic("break BeginTransaction or CommitTransaction instead of RunInTransaction")
+		}
+	}
 	s.l.Lock()
 	defer s.l.Unlock()
 	for _, f := range feature {

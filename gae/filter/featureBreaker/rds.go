@@ -58,9 +58,36 @@ func (r *dsState) Count(q *ds.FinalizedQuery) (int64, error) {
 }
 
 func (r *dsState) RunInTransaction(f func(c context.Context) error, opts *ds.TransactionOptions) error {
-	return r.run(r.c, func() error {
-		return r.rds.RunInTransaction(f, opts)
-	})
+	return r.rds.RunInTransaction(func(txnc context.Context) error {
+		if err := r.BeginTransaction(txnc); err != nil {
+			return err
+		}
+		if err := f(txnc); err != nil {
+			return err
+		}
+		return r.CommitTransaction(txnc)
+	}, opts)
+}
+
+// BeginTransaction is exposed as a "breakable" hook to simulate bad transaction
+// initiation.
+//
+// It not a part of RawDatastore interface, but can nevertheless be overridden
+// with BreakFeature to simulate "BeginTransaction" RPC errors.
+//
+// Unlike RunInTransaction (which is called once), BeginTransaction is called at
+// the beginning of each individual transaction retry.
+func (r *dsState) BeginTransaction(c context.Context) error {
+	return r.run(c, func() error { return nil })
+}
+
+// CommitTransaction is exposed as a "breakable" hook to simulate bad
+// transaction commits.
+//
+// It not a part of RawDatastore interface, but can nevertheless be overridden
+// with BreakFeature to simulate transaction commit errors.
+func (r *dsState) CommitTransaction(c context.Context) error {
+	return r.run(c, func() error { return nil })
 }
 
 // TODO(iannucci): Allow the user to specify a multierror which will propagate
