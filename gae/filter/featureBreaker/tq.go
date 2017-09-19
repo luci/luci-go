@@ -25,21 +25,22 @@ import (
 type tqState struct {
 	*state
 
+	c  context.Context
 	tq tq.RawInterface
 }
 
 var _ tq.RawInterface = (*tqState)(nil)
 
 func (t *tqState) AddMulti(tasks []*tq.Task, queueName string, cb tq.RawTaskCB) error {
-	return t.run(func() (err error) { return t.tq.AddMulti(tasks, queueName, cb) })
+	return t.run(t.c, func() (err error) { return t.tq.AddMulti(tasks, queueName, cb) })
 }
 
 func (t *tqState) DeleteMulti(tasks []*tq.Task, queueName string, cb tq.RawCB) error {
-	return t.run(func() error { return t.tq.DeleteMulti(tasks, queueName, cb) })
+	return t.run(t.c, func() error { return t.tq.DeleteMulti(tasks, queueName, cb) })
 }
 
 func (t *tqState) Lease(maxTasks int, queueName string, leaseTime time.Duration) (tasks []*tq.Task, err error) {
-	err = t.run(func() (err error) {
+	err = t.run(t.c, func() (err error) {
 		tasks, err = t.tq.Lease(maxTasks, queueName, leaseTime)
 		return
 	})
@@ -50,7 +51,7 @@ func (t *tqState) Lease(maxTasks int, queueName string, leaseTime time.Duration)
 }
 
 func (t *tqState) LeaseByTag(maxTasks int, queueName string, leaseTime time.Duration, tag string) (tasks []*tq.Task, err error) {
-	err = t.run(func() (err error) {
+	err = t.run(t.c, func() (err error) {
 		tasks, err = t.tq.LeaseByTag(maxTasks, queueName, leaseTime, tag)
 		return
 	})
@@ -61,15 +62,15 @@ func (t *tqState) LeaseByTag(maxTasks int, queueName string, leaseTime time.Dura
 }
 
 func (t *tqState) ModifyLease(task *tq.Task, queueName string, leaseTime time.Duration) error {
-	return t.run(func() error { return t.tq.ModifyLease(task, queueName, leaseTime) })
+	return t.run(t.c, func() error { return t.tq.ModifyLease(task, queueName, leaseTime) })
 }
 
 func (t *tqState) Purge(queueName string) error {
-	return t.run(func() error { return t.tq.Purge(queueName) })
+	return t.run(t.c, func() error { return t.tq.Purge(queueName) })
 }
 
 func (t *tqState) Stats(queueNames []string, cb tq.RawStatsCB) error {
-	return t.run(func() error { return t.tq.Stats(queueNames, cb) })
+	return t.run(t.c, func() error { return t.tq.Stats(queueNames, cb) })
 }
 
 func (t *tqState) Constraints() tq.Constraints {
@@ -84,6 +85,6 @@ func (t *tqState) GetTestable() tq.Testable {
 func FilterTQ(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)
 	return tq.AddRawFilters(c, func(ic context.Context, tq tq.RawInterface) tq.RawInterface {
-		return &tqState{state, tq}
+		return &tqState{state, ic, tq}
 	}), state
 }

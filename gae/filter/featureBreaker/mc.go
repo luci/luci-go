@@ -23,35 +23,36 @@ import (
 type mcState struct {
 	*state
 
+	c context.Context
 	mc.RawInterface
 }
 
 func (m *mcState) GetMulti(keys []string, cb mc.RawItemCB) error {
-	return m.run(func() error { return m.RawInterface.GetMulti(keys, cb) })
+	return m.run(m.c, func() error { return m.RawInterface.GetMulti(keys, cb) })
 }
 
 func (m *mcState) AddMulti(items []mc.Item, cb mc.RawCB) error {
-	return m.run(func() error { return m.RawInterface.AddMulti(items, cb) })
+	return m.run(m.c, func() error { return m.RawInterface.AddMulti(items, cb) })
 }
 
 func (m *mcState) SetMulti(items []mc.Item, cb mc.RawCB) error {
-	return m.run(func() error { return m.RawInterface.SetMulti(items, cb) })
+	return m.run(m.c, func() error { return m.RawInterface.SetMulti(items, cb) })
 }
 
 func (m *mcState) DeleteMulti(keys []string, cb mc.RawCB) error {
-	return m.run(func() error { return m.RawInterface.DeleteMulti(keys, cb) })
+	return m.run(m.c, func() error { return m.RawInterface.DeleteMulti(keys, cb) })
 }
 
 func (m *mcState) CompareAndSwapMulti(items []mc.Item, cb mc.RawCB) error {
-	return m.run(func() error { return m.RawInterface.CompareAndSwapMulti(items, cb) })
+	return m.run(m.c, func() error { return m.RawInterface.CompareAndSwapMulti(items, cb) })
 }
 
 func (m *mcState) Flush() error {
-	return m.run(m.RawInterface.Flush)
+	return m.run(m.c, m.RawInterface.Flush)
 }
 
 func (m *mcState) Stats() (ret *mc.Statistics, err error) {
-	err = m.run(func() (err error) {
+	err = m.run(m.c, func() (err error) {
 		ret, err = m.RawInterface.Stats()
 		return
 	})
@@ -62,6 +63,6 @@ func (m *mcState) Stats() (ret *mc.Statistics, err error) {
 func FilterMC(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)
 	return mc.AddRawFilters(c, func(ic context.Context, rds mc.RawInterface) mc.RawInterface {
-		return &mcState{state, rds}
+		return &mcState{state, ic, rds}
 	}), state
 }

@@ -25,11 +25,12 @@ import (
 type infoState struct {
 	*state
 
+	c context.Context
 	info.RawInterface
 }
 
 func (g *infoState) ModuleHostname(module, version, instance string) (ret string, err error) {
-	err = g.run(func() (err error) {
+	err = g.run(g.c, func() (err error) {
 		ret, err = g.RawInterface.ModuleHostname(module, version, instance)
 		return
 	})
@@ -37,7 +38,7 @@ func (g *infoState) ModuleHostname(module, version, instance string) (ret string
 }
 
 func (g *infoState) ServiceAccount() (ret string, err error) {
-	err = g.run(func() (err error) {
+	err = g.run(g.c, func() (err error) {
 		ret, err = g.RawInterface.ServiceAccount()
 		return
 	})
@@ -45,7 +46,7 @@ func (g *infoState) ServiceAccount() (ret string, err error) {
 }
 
 func (g *infoState) Namespace(namespace string) (c context.Context, err error) {
-	err = g.run(func() (err error) {
+	err = g.run(g.c, func() (err error) {
 		c, err = g.RawInterface.Namespace(namespace)
 		return
 	})
@@ -53,7 +54,7 @@ func (g *infoState) Namespace(namespace string) (c context.Context, err error) {
 }
 
 func (g *infoState) AccessToken(scopes ...string) (token string, expiry time.Time, err error) {
-	err = g.run(func() (err error) {
+	err = g.run(g.c, func() (err error) {
 		token, expiry, err = g.RawInterface.AccessToken(scopes...)
 		return
 	})
@@ -61,7 +62,7 @@ func (g *infoState) AccessToken(scopes ...string) (token string, expiry time.Tim
 }
 
 func (g *infoState) PublicCertificates() (ret []info.Certificate, err error) {
-	err = g.run(func() (err error) {
+	err = g.run(g.c, func() (err error) {
 		ret, err = g.RawInterface.PublicCertificates()
 		return
 	})
@@ -69,7 +70,7 @@ func (g *infoState) PublicCertificates() (ret []info.Certificate, err error) {
 }
 
 func (g *infoState) SignBytes(bytes []byte) (keyName string, signature []byte, err error) {
-	err = g.run(func() (err error) {
+	err = g.run(g.c, func() (err error) {
 		keyName, signature, err = g.RawInterface.SignBytes(bytes)
 		return
 	})
@@ -80,6 +81,6 @@ func (g *infoState) SignBytes(bytes []byte) (keyName string, signature []byte, e
 func FilterGI(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)
 	return info.AddFilters(c, func(ic context.Context, i info.RawInterface) info.RawInterface {
-		return &infoState{state, i}
+		return &infoState{state, ic, i}
 	}), state
 }

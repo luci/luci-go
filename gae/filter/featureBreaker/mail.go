@@ -22,23 +22,24 @@ import (
 type mailState struct {
 	*state
 
+	c context.Context
 	mail.RawInterface
 }
 
 var _ mail.RawInterface = (*mailState)(nil)
 
 func (m *mailState) Send(msg *mail.Message) error {
-	return m.run(func() error { return m.RawInterface.Send(msg) })
+	return m.run(m.c, func() error { return m.RawInterface.Send(msg) })
 }
 
 func (m *mailState) SendToAdmins(msg *mail.Message) error {
-	return m.run(func() error { return m.RawInterface.SendToAdmins(msg) })
+	return m.run(m.c, func() error { return m.RawInterface.SendToAdmins(msg) })
 }
 
 // FilterMail installs a featureBreaker mail filter in the context.
 func FilterMail(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)
 	return mail.AddFilters(c, func(ic context.Context, i mail.RawInterface) mail.RawInterface {
-		return &mailState{state, i}
+		return &mailState{state, ic, i}
 	}), state
 }

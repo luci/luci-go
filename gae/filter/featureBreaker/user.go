@@ -22,13 +22,14 @@ import (
 type userState struct {
 	*state
 
+	c context.Context
 	user.RawInterface
 }
 
 var _ user.RawInterface = (*userState)(nil)
 
 func (u *userState) CurrentOAuth(scopes ...string) (ret *user.User, err error) {
-	err = u.run(func() (err error) {
+	err = u.run(u.c, func() (err error) {
 		ret, err = u.RawInterface.CurrentOAuth(scopes...)
 		return
 	})
@@ -36,7 +37,7 @@ func (u *userState) CurrentOAuth(scopes ...string) (ret *user.User, err error) {
 }
 
 func (u *userState) LoginURL(dest string) (ret string, err error) {
-	err = u.run(func() (err error) {
+	err = u.run(u.c, func() (err error) {
 		ret, err = u.RawInterface.LoginURL(dest)
 		return
 	})
@@ -44,7 +45,7 @@ func (u *userState) LoginURL(dest string) (ret string, err error) {
 }
 
 func (u *userState) LoginURLFederated(dest, identity string) (ret string, err error) {
-	err = u.run(func() (err error) {
+	err = u.run(u.c, func() (err error) {
 		ret, err = u.RawInterface.LoginURLFederated(dest, identity)
 		return
 	})
@@ -52,7 +53,7 @@ func (u *userState) LoginURLFederated(dest, identity string) (ret string, err er
 }
 
 func (u *userState) LogoutURL(dest string) (ret string, err error) {
-	err = u.run(func() (err error) {
+	err = u.run(u.c, func() (err error) {
 		ret, err = u.RawInterface.LogoutURL(dest)
 		return
 	})
@@ -60,7 +61,7 @@ func (u *userState) LogoutURL(dest string) (ret string, err error) {
 }
 
 func (u *userState) OAuthConsumerKey() (ret string, err error) {
-	err = u.run(func() (err error) {
+	err = u.run(u.c, func() (err error) {
 		ret, err = u.RawInterface.OAuthConsumerKey()
 		return
 	})
@@ -71,6 +72,6 @@ func (u *userState) OAuthConsumerKey() (ret string, err error) {
 func FilterUser(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)
 	return user.AddFilters(c, func(ic context.Context, i user.RawInterface) user.RawInterface {
-		return &userState{state, i}
+		return &userState{state, ic, i}
 	}), state
 }

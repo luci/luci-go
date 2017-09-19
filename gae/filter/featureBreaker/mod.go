@@ -23,11 +23,12 @@ import (
 type modState struct {
 	*state
 
+	c context.Context
 	module.RawInterface
 }
 
 func (m *modState) List() (ret []string, err error) {
-	err = m.run(func() (err error) {
+	err = m.run(m.c, func() (err error) {
 		ret, err = m.RawInterface.List()
 		return
 	})
@@ -35,7 +36,7 @@ func (m *modState) List() (ret []string, err error) {
 }
 
 func (m *modState) NumInstances(mod, ver string) (ret int, err error) {
-	err = m.run(func() (err error) {
+	err = m.run(m.c, func() (err error) {
 		ret, err = m.RawInterface.NumInstances(mod, ver)
 		return
 	})
@@ -43,13 +44,13 @@ func (m *modState) NumInstances(mod, ver string) (ret int, err error) {
 }
 
 func (m *modState) SetNumInstances(mod, ver string, instances int) error {
-	return m.run(func() (err error) {
+	return m.run(m.c, func() (err error) {
 		return m.RawInterface.SetNumInstances(mod, ver, instances)
 	})
 }
 
 func (m *modState) Versions(mod string) (ret []string, err error) {
-	err = m.run(func() (err error) {
+	err = m.run(m.c, func() (err error) {
 		ret, err = m.RawInterface.Versions(mod)
 		return
 	})
@@ -57,7 +58,7 @@ func (m *modState) Versions(mod string) (ret []string, err error) {
 }
 
 func (m *modState) DefaultVersion(mod string) (ret string, err error) {
-	err = m.run(func() (err error) {
+	err = m.run(m.c, func() (err error) {
 		ret, err = m.RawInterface.DefaultVersion(mod)
 		return
 	})
@@ -65,13 +66,13 @@ func (m *modState) DefaultVersion(mod string) (ret string, err error) {
 }
 
 func (m *modState) Start(mod, ver string) error {
-	return m.run(func() (err error) {
+	return m.run(m.c, func() (err error) {
 		return m.RawInterface.Start(mod, ver)
 	})
 }
 
 func (m *modState) Stop(mod, ver string) error {
-	return m.run(func() (err error) {
+	return m.run(m.c, func() (err error) {
 		return m.RawInterface.Stop(mod, ver)
 	})
 }
@@ -80,6 +81,6 @@ func (m *modState) Stop(mod, ver string) error {
 func FilterModule(c context.Context, defaultError error) (context.Context, FeatureBreaker) {
 	state := newState(defaultError)
 	return module.AddFilters(c, func(ic context.Context, i module.RawInterface) module.RawInterface {
-		return &modState{state, i}
+		return &modState{state, ic, i}
 	}), state
 }
