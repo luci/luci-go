@@ -988,7 +988,8 @@ type actionTaskPayload struct {
 	TickNonce           int64          `json:",omitempty"` // valid for "TickLaterAction" kind
 	InvocationNonce     int64          `json:",omitempty"` // valid for "StartInvocationAction" kind
 	TriggeredBy         string         `json:",omitempty"` // valid for "StartInvocationAction" kind
-	Triggers            []task.Trigger `json:",omitempty"` // valid for "StartInvocationAction" and "EnqueueTriggersAction" kind
+	Triggers            []task.Trigger `json:",omitempty"` // valid for "StartInvocationAction", "EnqueueTriggersAction", and "EnqueueBatchOfTriggersAction"
+	TriggeredJobIDs     []string       `json:",omitempty"` // Valid for "EnqueueBatchOfTriggersAction" kind only.
 	Overruns            int            `json:",omitempty"` // valid for "RecordOverrunAction" kind
 	RunningInvocationID int64          `json:",omitempty"` // valid for "RecordOverrunAction" kind
 
@@ -1053,6 +1054,20 @@ func (e *engineImpl) enqueueJobActions(c context.Context, jobID string, actions 
 					AgeLimit:   time.Duration(invocationRetryLimit+5) * maxInvocationRetryBackoff,
 				},
 			})
+		case EnqueueBatchOfTriggersAction:
+			payload, err := json.Marshal(actionTaskPayload{
+				JobID:           jobID,
+				Kind:            "EnqueueBatchOfTriggersAction",
+				Triggers:        a.Triggers,
+				TriggeredJobIDs: a.TriggeredJobIDs,
+			})
+			if err != nil {
+				return err
+			}
+			qs[e.cfg.InvocationsQueueName] = append(qs[e.cfg.InvocationsQueueName], &taskqueue.Task{
+				Path:    e.cfg.InvocationsQueuePath,
+				Payload: payload,
+			})
 		case EnqueueTriggersAction:
 			payload, err := json.Marshal(actionTaskPayload{
 				JobID:    jobID,
@@ -1111,6 +1126,8 @@ func (e *engineImpl) executeJobAction(c context.Context, payload *actionTaskPayl
 			identity.Identity(payload.TriggeredBy), payload.Triggers, retryCount)
 	case "RecordOverrunAction":
 		return e.recordOverrun(c, payload.JobID, payload.Overruns, payload.RunningInvocationID)
+	case "EnqueueBatchOfTriggersAction":
+		return e.newBatchOfTriggers(c, payload.TriggeredJobIDs, payload.Triggers)
 	case "EnqueueTriggersAction":
 		return e.newTriggers(c, payload.JobID, payload.Triggers)
 	default:
@@ -1159,6 +1176,27 @@ func (e *engineImpl) recordOverrun(c context.Context, jobID string, overruns int
 		inv.debugLog(c, "Total overruns thus far: %d", overruns)
 		return transient.Tag.Apply(ds.Put(c, inv))
 	})
+}
+
+// newBatchOfTriggers splits a batch of triggers into individual per-job async tasks by means
+// of EnqueueTriggersAction.
+//
+// It should run outside of a transaction, since transaction limits
+// us to just 5 task queue items hereby limiting len(triggeredJobID) to 5.
+//
+// Used by v1 engine only!
+func (e *engineImpl) newBatchOfTriggers(c context.Context, triggeredJobIDs []string, triggers []task.Trigger) error {
+	wg := sync.WaitGroup{}
+	errs := errors.NewLazyMultiError(len(triggeredJobIDs))
+	for i, jobID := range triggeredJobIDs {
+		wg.Add(1)
+		go func(i int, jobID string) {
+			defer wg.Done()
+			errs.Assign(i, e.enqueueJobActions(c, jobID, []Action{EnqueueTriggersAction{Triggers: triggers}}))
+		}(i, jobID)
+	}
+	wg.Wait()
+	return transient.Tag.Apply(errs.Get())
 }
 
 // newTriggers is invoked via task queue when a job receives new Triggers.
@@ -1507,23 +1545,11 @@ func (e *engineImpl) enqueueInvTimers(c context.Context, jobID string, invID int
 //
 // Used by v1 engine only!
 func (e *engineImpl) enqueueTriggers(c context.Context, triggeredJobIDs []string, triggers []task.Trigger) error {
-	// TODO(tandrii): batch all enqueing into 1 TQ task because AE allows up to 5
-	// tasks to be inserted transactionally. The batched TQ task will then
-	// non-transactionally fan out into more TQ tasks.
 	assertInTransaction(c)
-	wg := sync.WaitGroup{}
-	errs := errors.NewLazyMultiError(len(triggeredJobIDs))
-	i := 0
-	for _, jobID := range triggeredJobIDs {
-		i++
-		wg.Add(1)
-		go func(i int, jobID string) {
-			defer wg.Done()
-			errs.Assign(i, e.enqueueJobActions(c, jobID, []Action{EnqueueTriggersAction{Triggers: triggers}}))
-		}(i, jobID)
-	}
-	wg.Wait()
-	return transient.Tag.Apply(errs.Get())
+	return transient.Tag.Apply(e.enqueueJobActions(c, "", []Action{EnqueueBatchOfTriggersAction{
+		Triggers:        triggers,
+		TriggeredJobIDs: triggeredJobIDs,
+	}}))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
