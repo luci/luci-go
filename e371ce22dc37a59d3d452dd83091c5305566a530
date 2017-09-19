@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f2ed98d5_4a0aed8d",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1013,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-19T02:09:45Z",
+      "side": 1,
+      "message": "garbage from prior attempt. Deleted.",
+      "parentUuid": "39c7f866_16fe405a",
+      "range": {
+        "startLine": 1013,
+        "startChar": 6,
+        "endLine": 1013,
+        "endChar": 19
+      },
+      "revId": "e371ce22dc37a59d3d452dd83091c5305566a530",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "34c2332e_75861c56",
         "filename": "scheduler/appengine/engine/engine.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "e371ce22dc37a59d3d452dd83091c5305566a530",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "57383f18_747c8ca1",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1194,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-19T02:09:45Z",
+      "side": 1,
+      "message": "done. Now I wonder why I had a map there to begin with...",
+      "parentUuid": "34c2332e_75861c56",
+      "range": {
+        "startLine": 1194,
+        "startChar": 5,
+        "endLine": 1194,
+        "endChar": 6
+      },
+      "revId": "e371ce22dc37a59d3d452dd83091c5305566a530",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
