@@ -1,0 +1,80 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+// Schema for project-level configuration in luci-notify.
+
+syntax = "proto3";
+
+package config;
+
+// Configuration for a particular project.
+message ProjectConfig {
+  // A configuration can have any amount of Notifiers.
+  //
+  // Optional.
+  repeated Notifier notifiers = 1;
+}
+
+// A Notifier contains a set of notification configurations and a set of
+// builders to use as triggers for those notifications.
+message Notifier {
+  // An ID for the notifier which must be unique within a project.
+  //
+  // Required.
+  string name = 1;
+
+  // A list of notification configurations.
+  //
+  // Optional.
+  repeated Notification notifications = 2;
+
+  // A list of builders to watch.
+  //
+  // Optional.
+  repeated Builder builders = 3;
+}
+
+// A notification configuration.
+//
+// Notification specifies triggers to watch for and send notifications on. It
+// also specifies the recipients, which may be email addresses or webhook URLs.
+message Notification {
+  // A set of email recipients (email addresses).
+  message Email {
+    // A list of email addresses to notify.
+    //
+    // Optional.
+    repeated string recipients = 1;
+  }
+
+  // If true, notifies recipients on each build success.
+  //
+  // Optional (default is false).
+  bool on_success = 1;
+
+  // If true, notifies recipients on each build failure.
+  //
+  // Optional (default is false).
+  bool on_failure = 2;
+
+  // If true, notifies recipients only if the builder's previous build had a
+  // different result than the most recent build.
+  //
+  // Optional (default is false).
+  bool on_change = 3;
+
+  // The set of recipients to email.
+  //
+  // Optional.
+  Email email = 4;
+}
+
+// Refers to a builder by ID.
+message Builder {
+  // The full builder ID (e.g. buildbucket/<bucket>/<builder name>).
+  //
+  // Required.
+  string name = 1;
+}
+
