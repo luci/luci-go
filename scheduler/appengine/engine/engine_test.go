@@ -29,7 +29,7 @@ import (
 
 	"go.chromium.org/gae/impl/memory"
 	ds "go.chromium.org/gae/service/datastore"
-	tq "go.chromium.org/gae/service/taskqueue"
+	"go.chromium.org/gae/service/taskqueue"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -112,7 +112,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 		task := ensureOneTask(c, "timers-q")
 		So(task.Path, ShouldEqual, "/timers")
 		So(task.ETA, ShouldResemble, epoch.Add(5*time.Second))
-		tq.GetTestable(c).ResetTasks()
+		taskqueue.GetTestable(c).ResetTasks()
 
 		// Readding same job in with exact same config revision -> noop.
 		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{
@@ -149,7 +149,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 		task = ensureOneTask(c, "timers-q")
 		So(task.Path, ShouldEqual, "/timers")
 		So(task.ETA, ShouldResemble, epoch.Add(1*time.Second))
-		tq.GetTestable(c).ResetTasks()
+		taskqueue.GetTestable(c).ResetTasks()
 
 		// Removed -> goes to disabled state.
 		So(e.UpdateProjectJobs(c, "abc", []catalog.Definition{}), ShouldBeNil)
@@ -201,7 +201,7 @@ func TestTransactionRetries(t *testing.T) {
 		task := ensureOneTask(c, "timers-q")
 		So(task.Path, ShouldEqual, "/timers")
 		So(task.ETA, ShouldResemble, epoch.Add(5*time.Second))
-		tq.GetTestable(c).ResetTasks()
+		taskqueue.GetTestable(c).ResetTasks()
 	})
 
 	Convey("collision is handled", t, func() {
@@ -308,7 +308,7 @@ func TestFullFlow(t *testing.T) {
 		tsk := ensureOneTask(c, "timers-q")
 		So(tsk.Path, ShouldEqual, "/timers")
 		So(tsk.ETA, ShouldResemble, epoch.Add(5*time.Second))
-		tq.GetTestable(c).ResetTasks()
+		taskqueue.GetTestable(c).ResetTasks()
 
 		// Tick time comes, the tick task is executed, job is added to queue.
 		clock.Get(c).(testclock.TestClock).Add(5 * time.Second)
@@ -332,7 +332,7 @@ func TestFullFlow(t *testing.T) {
 		invTask := ensureOneTask(c, "invs-q")
 		So(invTask.Path, ShouldEqual, "/invs")
 		So(invTask.ETA, ShouldResemble, epoch.Add(6*time.Second))
-		tq.GetTestable(c).ResetTasks()
+		taskqueue.GetTestable(c).ResetTasks()
 
 		// Time to run the job and it fails to launch with a transient error.
 		mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []task.Trigger) error {
@@ -522,7 +522,7 @@ func TestForceInvocation(t *testing.T) {
 		// But the launch is queued.
 		invTask := ensureOneTask(c, "invs-q")
 		So(invTask.Path, ShouldEqual, "/invs")
-		tq.GetTestable(c).ResetTasks()
+		taskqueue.GetTestable(c).ResetTasks()
 
 		// Launch it.
 		var startedInvID int64
@@ -574,7 +574,7 @@ func TestFullTriggeredFlow(t *testing.T) {
 		tsk := ensureOneTask(c, "timers-q")
 		So(tsk.Path, ShouldEqual, "/timers")
 		So(tsk.ETA, ShouldResemble, epoch.Add(5*time.Second))
-		tq.GetTestable(c).ResetTasks()
+		taskqueue.GetTestable(c).ResetTasks()
 
 		// Tick time comes, the tick task is executed, job is added to queue.
 		clock.Get(c).(testclock.TestClock).Add(5 * time.Second)
@@ -595,7 +595,7 @@ func TestFullTriggeredFlow(t *testing.T) {
 		invTask := ensureOneTask(c, "invs-q")
 		So(invTask.Path, ShouldEqual, "/invs")
 		So(invTask.ETA, ShouldResemble, epoch.Add(6*time.Second))
-		tq.GetTestable(c).ResetTasks()
+		taskqueue.GetTestable(c).ResetTasks()
 
 		var invID int64 // set inside launchTask once invocation is known.
 
@@ -1139,9 +1139,9 @@ func TestAddTimer(t *testing.T) {
 			So(job.State.State, ShouldEqual, JobStateRunning)
 
 			// Added a task to the timers task queue.
-			tasks := tq.GetTestable(c).GetScheduledTasks()["timers-q"]
+			tasks := taskqueue.GetTestable(c).GetScheduledTasks()["timers-q"]
 			So(len(tasks), ShouldEqual, 1)
-			var tqt *tq.Task
+			var tqt *taskqueue.Task
 			for _, tqt = range tasks {
 			}
 			So(tqt.ETA, ShouldResemble, clock.Now(c).Add(time.Minute))
@@ -1160,7 +1160,7 @@ func TestAddTimer(t *testing.T) {
 			})
 
 			// Clear the queue.
-			tq.GetTestable(c).ResetTasks()
+			taskqueue.GetTestable(c).ResetTasks()
 
 			// Time comes to execute the task.
 			mgr.handleTimer = func(ctx context.Context, ctl task.Controller, name string, payload []byte) error {
@@ -1179,7 +1179,7 @@ func TestAddTimer(t *testing.T) {
 			So(job.State.State, ShouldEqual, JobStateSuspended)
 
 			// No new timers added for finished job.
-			tasks = tq.GetTestable(c).GetScheduledTasks()["timers-q"]
+			tasks = taskqueue.GetTestable(c).GetScheduledTasks()["timers-q"]
 			So(len(tasks), ShouldEqual, 0)
 		})
 	})
@@ -1255,8 +1255,8 @@ func newTestContext(now time.Time) context.Context {
 	})
 	ds.GetTestable(c).CatchupIndexes()
 
-	tq.GetTestable(c).CreateQueue("timers-q")
-	tq.GetTestable(c).CreateQueue("invs-q")
+	taskqueue.GetTestable(c).CreateQueue("timers-q")
+	taskqueue.GetTestable(c).CreateQueue("invs-q")
 	return c
 }
 
@@ -1388,13 +1388,13 @@ func getJob(c context.Context, jobID string) Job {
 }
 
 func ensureZeroTasks(c context.Context, q string) {
-	tqt := tq.GetTestable(c)
+	tqt := taskqueue.GetTestable(c)
 	tasks := tqt.GetScheduledTasks()[q]
 	So(tasks == nil || len(tasks) == 0, ShouldBeTrue)
 }
 
-func ensureOneTask(c context.Context, q string) *tq.Task {
-	tqt := tq.GetTestable(c)
+func ensureOneTask(c context.Context, q string) *taskqueue.Task {
+	tqt := taskqueue.GetTestable(c)
 	tasks := tqt.GetScheduledTasks()[q]
 	So(len(tasks), ShouldEqual, 1)
 	for _, t := range tasks {
@@ -1403,9 +1403,9 @@ func ensureOneTask(c context.Context, q string) *tq.Task {
 	return nil
 }
 
-func popAllTasks(c context.Context, q string) []*tq.Task {
-	tqt := tq.GetTestable(c)
-	tasks := make([]*tq.Task, 0, len(tqt.GetScheduledTasks()[q]))
+func popAllTasks(c context.Context, q string) []*taskqueue.Task {
+	tqt := taskqueue.GetTestable(c)
+	tasks := make([]*taskqueue.Task, 0, len(tqt.GetScheduledTasks()[q]))
 	for _, t := range tqt.GetScheduledTasks()[q] {
 		tasks = append(tasks, t)
 	}
