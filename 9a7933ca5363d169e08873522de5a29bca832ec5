@@ -49,6 +49,54 @@
     },
     {
       "key": {
+        "uuid": "98e97f12_60672b2b",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5cb5a1d1_8f0f2cd6",
+      "range": {
+        "startLine": 8,
+        "startChar": 0,
+        "endLine": 8,
+        "endChar": 7
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7c9d6213_c5d64343",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2676908f_5f69340a",
+      "range": {
+        "startLine": 8,
+        "startChar": 0,
+        "endLine": 8,
+        "endChar": 7
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "53164e0a_e7eb6ca2",
         "filename": "luci_notify/api/config/notify.proto",
         "patchSetId": 1
@@ -63,6 +111,24 @@
       "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bcc6b1a8_6d1e101a",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "53164e0a_e7eb6ca2",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -101,6 +167,30 @@
       "side": 1,
       "message": "(perhaps a comment would be a best place to put the answer)\nconsider removing, it is not used",
       "parentUuid": "ce318237_feba829e",
+      "range": {
+        "startLine": 24,
+        "startChar": 9,
+        "endLine": 24,
+        "endChar": 18
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a365d4a_de48a38b",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "I\u0027ll remove it for now since it\u0027s unused. I don\u0027t think there\u0027s currently any way to notify the blamelist other than via email addresses, but perhaps its best to future-proof that. Anyway, this can be discussed later.",
+      "parentUuid": "bf469986_33ed38ab",
       "range": {
         "startLine": 24,
         "startChar": 9,
@@ -160,6 +250,30 @@
     },
     {
       "key": {
+        "uuid": "b0838daa_d89229d9",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a239adb0_a1e75b5d",
+      "range": {
+        "startLine": 26,
+        "startChar": 10,
+        "endLine": 26,
+        "endChar": 13
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f19da5f2_0ce9e707",
         "filename": "luci_notify/api/config/notify.proto",
         "patchSetId": 1
@@ -177,6 +291,24 @@
     },
     {
       "key": {
+        "uuid": "19961fdb_be4230f3",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f19da5f2_0ce9e707",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f67c8ce6_12046164",
         "filename": "luci_notify/api/config/notify.proto",
         "patchSetId": 1
@@ -188,6 +320,24 @@
       "writtenOn": "2017-09-19T16:43:10Z",
       "side": 1,
       "message": "why do we need category here?\n\nbucket is missing. Builder names are not globally unique, but (bucket, build) combinations are",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "79ea074e_d41878af",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "At the moment \"name\" should be \"buildbucket/\u003cbucket\u003e/\u003cbuilder name\u003e\" which is unique (I\u0027m going by the example in the doc). I think other configurations do it this way. Maybe it makes sense to drop \"Builder\" in that case? It\u0027s somewhat more general this way.",
+      "parentUuid": "f67c8ce6_12046164",
       "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -211,6 +361,24 @@
     },
     {
       "key": {
+        "uuid": "da03a671_8b367adc",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "I\u0027ve replaced this with a more general mechanism which I\u0027ll extend to support input properties, like Milo does.",
+      "parentUuid": "ca3db0b7_9ffed5a9",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "56eeaf20_9120569e",
         "filename": "luci_notify/buildbucket/buildinfo.go",
         "patchSetId": 1
@@ -222,6 +390,24 @@
       "writtenOn": "2017-09-19T16:43:10Z",
       "side": 1,
       "message": "https://cs.chromium.org/chromium/infra/go/src/infra/appengine/luci-migration/bbutil/bbutil.go?q\u003dbbutil\u0026sq\u003dpackage:chromium\u0026l\u003d66\nwould more correct\n\nalso see https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/668110/5/milo/buildsource/buildbucket/pubsub.go#126\nwhere Robbie adds identical code\n\nPerhaps we actually should move common code to go.chromium.org/luci/buildbucket",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "627b5d99_c7ed27dc",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Would it be reasonable to move the entire bbutil directory as go.chromium.org/luci/buildbucket/util?\n\nBecause there isn\u0027t a place to put common code yet I just copied the code for now.",
+      "parentUuid": "56eeaf20_9120569e",
       "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -251,6 +437,30 @@
     },
     {
       "key": {
+        "uuid": "b7a0c6ea_9f89967d",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aec50e08_bd1fb0a5",
+      "range": {
+        "startLine": 120,
+        "startChar": 8,
+        "endLine": 120,
+        "endChar": 26
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d10ab3e5_95db708d",
         "filename": "luci_notify/buildbucket/buildinfo.go",
         "patchSetId": 1
@@ -265,6 +475,24 @@
       "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dca21d2c_1e166756",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d10ab3e5_95db708d",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -291,6 +519,30 @@
     },
     {
       "key": {
+        "uuid": "3f1aff4d_9e721715",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bb3c042b_69a06de0",
+      "range": {
+        "startLine": 122,
+        "startChar": 1,
+        "endLine": 122,
+        "endChar": 4
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1e5906af_ebff4ceb",
         "filename": "luci_notify/buildbucket/buildinfo.go",
         "patchSetId": 1
@@ -302,6 +554,30 @@
       "writtenOn": "2017-09-19T16:43:10Z",
       "side": 1,
       "message": "what is %s of r.Body?",
+      "range": {
+        "startLine": 126,
+        "startChar": 62,
+        "endLine": 126,
+        "endChar": 68
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c9066b1_4997b2ec",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "I believe its just the JSON string of the request.",
+      "parentUuid": "1e5906af_ebff4ceb",
       "range": {
         "startLine": 126,
         "startChar": 62,
@@ -337,6 +613,30 @@
     },
     {
       "key": {
+        "uuid": "d5a5fa30_5c07f438",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b3584fb9_963316dc",
+      "range": {
+        "startLine": 42,
+        "startChar": 17,
+        "endLine": 42,
+        "endChar": 30
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ed5aed05_2269b719",
         "filename": "luci_notify/config/config.go",
         "patchSetId": 1
@@ -354,6 +654,24 @@
     },
     {
       "key": {
+        "uuid": "4c0ba183_1efdd10d",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ed5aed05_2269b719",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fbd5a3a7_2a783e82",
         "filename": "luci_notify/config/notifier.go",
         "patchSetId": 1
@@ -365,6 +683,24 @@
       "writtenOn": "2017-09-19T16:43:10Z",
       "side": 1,
       "message": "not sure why we need this",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "745cca00_f87283c0",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "You\u0027re right. I\u0027ll remove it.",
+      "parentUuid": "fbd5a3a7_2a783e82",
       "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -388,6 +724,24 @@
     },
     {
       "key": {
+        "uuid": "3352268a_32f9252f",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Acknowledged, it won\u0027t be addressed in the next PS but I\u0027ll fix this in the one after.",
+      "parentUuid": "3b561fe2_bf65e0e1",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c5e8cf43_987918d3",
         "filename": "luci_notify/frontend/app.yaml",
         "patchSetId": 1
@@ -399,6 +753,24 @@
       "writtenOn": "2017-09-19T16:43:10Z",
       "side": 1,
       "message": "doesn\u0027t the last rule already do this?",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f8a5f13e_2cc1f241",
+        "filename": "luci_notify/frontend/app.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "The reason I had to do this was because the next rule (url: /) cause /auth to be redirected to /static/auth, but this will be solved by doing \"url: /filename\"",
+      "parentUuid": "c5e8cf43_987918d3",
       "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -422,6 +794,24 @@
     },
     {
       "key": {
+        "uuid": "7cf40658_6704b50f",
+        "filename": "luci_notify/frontend/app.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ef44e0fd_56d8d86f",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f44b88dd_47ceaab5",
         "filename": "luci_notify/frontend/app.yaml",
         "patchSetId": 1
@@ -433,6 +823,24 @@
       "writtenOn": "2017-09-19T16:43:10Z",
       "side": 1,
       "message": "do last two rules work together?",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9e9c71f_4f93594a",
+        "filename": "luci_notify/frontend/app.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Yeah they didn\u0027t really make sense. I didn\u0027t realize you could specify full paths, haha.",
+      "parentUuid": "f44b88dd_47ceaab5",
       "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -453,6 +861,24 @@
       "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "663f62a5_2419f26b",
+        "filename": "luci_notify/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "It\u0027s not, old copypasta thing that I removed already. It\u0027ll be gone in the next PS.",
+      "parentUuid": "9f54b01c_66be16aa",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -479,6 +905,30 @@
     },
     {
       "key": {
+        "uuid": "de4d0f4c_8cb64f3d",
+        "filename": "luci_notify/notify/builder_state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a2f2ea15_dc225f7e",
+      "range": {
+        "startLine": 59,
+        "startChar": 30,
+        "endLine": 59,
+        "endChar": 40
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "76046396_149af225",
         "filename": "luci_notify/notify/builder_state.go",
         "patchSetId": 1
@@ -490,6 +940,30 @@
       "writtenOn": "2017-09-19T16:43:10Z",
       "side": 1,
       "message": "What\u0027s bad gonna happen if we do not search in buildbucket? I don\u0027t see a justification for this complexity\n\nI think if datastore does not have the state, we can just return UNKNOWN.",
+      "range": {
+        "startLine": 105,
+        "startChar": 17,
+        "endLine": 105,
+        "endChar": 34
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c145b3d_b21d53c0",
+        "filename": "luci_notify/notify/builder_state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "My thought was that we can cover the edge case of having a new build. So, for example, if somebody just puts up a configuration for \"on_change\" (which I suspect will be the most popular option...) and immediately get notified about a UNKNOWN -\u003e SUCCESS transition, it might feel a bit broken, especially if the builder already has a long history. It\u0027s very minor, but I feel like it would be noticeable enough that users might say something.\n\nI\u0027ll remove it though if you still feel like it will be too much extra complexity to manage, or that it won\u0027t really be a big deal.",
+      "parentUuid": "76046396_149af225",
       "range": {
         "startLine": 105,
         "startChar": 17,
@@ -525,6 +999,30 @@
     },
     {
       "key": {
+        "uuid": "e6eb1d74_87b04ffe",
+        "filename": "luci_notify/notify/email.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9bda4e0c_4ce18391",
+      "range": {
+        "startLine": 44,
+        "startChar": 30,
+        "endLine": 44,
+        "endChar": 32
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8e6a8ab1_51a348f8",
         "filename": "luci_notify/notify/notification.go",
         "patchSetId": 1
@@ -542,6 +1040,24 @@
     },
     {
       "key": {
+        "uuid": "23865909_41ec83fd",
+        "filename": "luci_notify/notify/notification.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e6a8ab1_51a348f8",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d920bb3d_db36e5b2",
         "filename": "luci_notify/notify/notification.go",
         "patchSetId": 1
@@ -556,6 +1072,24 @@
       "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f48b98f_57137622",
+        "filename": "luci_notify/notify/notification.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Done, already moved LookupBuilderState and UpdateDatastore out.",
+      "parentUuid": "d920bb3d_db36e5b2",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -582,6 +1116,30 @@
     },
     {
       "key": {
+        "uuid": "3e2b3fc0_f1f6e003",
+        "filename": "luci_notify/notify/notification.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c3f8c705_c45e11fe",
+      "range": {
+        "startLine": 121,
+        "startChar": 3,
+        "endLine": 121,
+        "endChar": 21
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "237ec9a8_d276c978",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 1
@@ -596,6 +1154,24 @@
       "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6471a3c8_6820ba7b",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "237ec9a8_d276c978",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -616,6 +1192,24 @@
     },
     {
       "key": {
+        "uuid": "50dd9e32_1d189819",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "What do you mean? The notifier configs should always be decoded in the custom PropertyLoadSaver, right?",
+      "parentUuid": "a6347731_79519ef7",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fc6db6c5_98111326",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 1
@@ -630,6 +1224,24 @@
       "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63fd18b7_472613e3",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T22:13:12Z",
+      "side": 1,
+      "message": "Copypasta extras, removing...",
+      "parentUuid": "fc6db6c5_98111326",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
