@@ -22,6 +22,30 @@
       "revId": "f6e5bd9856fb1cfe0969d8a368fbba451e2c9521",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81680d69_aa1229be",
+        "filename": "milo/frontend/appengine/templates/pages/consoles.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-19T00:41:39Z",
+      "side": 1,
+      "message": "sgtm dropping most of the info if you don\u0027t think it\u0027s useful.  I think builder is useful, but I agree about dropping the buildbucket/\u003cbucket\u003e prefix.\n\nlarger title/link sgtm\n\nAnd console preview also sounds interesting, if you build it we\u0027ll probably end up wanting to utilize it for the \"boxes\" on top of the console ie:\nhttps://build.chromium.org/",
+      "parentUuid": "d0a87759_87def909",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 27
+      },
+      "revId": "f6e5bd9856fb1cfe0969d8a368fbba451e2c9521",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
