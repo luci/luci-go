@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "65e66887_157e4eb7",
+        "filename": "milo/srcman/diff.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-19T00:13:04Z",
+      "side": 1,
+      "message": "// EQL means the item being compared is equal\n\nsame for add/rem/mod\n\nOr better, just name them EQUAL, ADDED, REMOVED, MODIFIED",
+      "revId": "39c764c57ceb1b7b339eb8901aebb1d91766d1f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
