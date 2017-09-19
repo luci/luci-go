@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "39c7f866_16fe405a",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1013,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-19T02:06:26Z",
+      "side": 1,
+      "message": "what is \u0027batch\u0027?",
+      "range": {
+        "startLine": 1013,
+        "startChar": 6,
+        "endLine": 1013,
+        "endChar": 19
+      },
+      "revId": "e371ce22dc37a59d3d452dd83091c5305566a530",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34c2332e_75861c56",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1194,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-19T02:06:26Z",
+      "side": 1,
+      "message": "just put \u0027i\u0027 here and skip ++ing it manually",
+      "range": {
+        "startLine": 1194,
+        "startChar": 5,
+        "endLine": 1194,
+        "endChar": 6
+      },
+      "revId": "e371ce22dc37a59d3d452dd83091c5305566a530",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
