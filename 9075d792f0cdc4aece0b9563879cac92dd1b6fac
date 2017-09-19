@@ -1,0 +1,379 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7c0c1bf4_3344746d",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "nit: bbPSEvent, because Go",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8fc19add_fcbbb4ab",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "i think this logging should be in the calling code, not a function that is responsible for generating a summary",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "acf84113_305d71b8",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "this code handles 3 cases when the build should be ignored. Consider using switch",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "739d3ae0_e5aba0e6",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "spec doc says this should be \"b%d\". Did we decide against it?",
+      "range": {
+        "startLine": 125,
+        "startChar": 40,
+        "endLine": 125,
+        "endChar": 42
+      },
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a3609aa_5628c5fc",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "this is incorrect, see https://cs.chromium.org/chromium/infra/go/src/infra/appengine/luci-migration/bbutil/bbutil.go?q\u003dbbutil\u0026sq\u003dpackage:chromium\u0026l\u003d66\nperhaps we should move this code to a common place. I\u0027ve seen this a few times",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3e43d6b_3b11701e",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "it is \"CANCELED\"\nalso see https://cs.chromium.org/chromium/infra/go/src/infra/appengine/luci-migration/bbutil/bbutil.go?q\u003dbbutil\u0026sq\u003dpackage:chromium\u0026l\u003d33\n\nyeah, we should move this code to go.chromium.org/gae/buildbucket",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b067b0d7_42305020",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "this would a server log error if revision \u003d\u003d \"\". I think all tryjobs have revision unset, so this would cause a lot of errors.\n\nShould we check revisionHex !\u003d \"\" before trying to decode it?",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d50c8b9_4091854d",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "should be 2 * sha1.Size",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b14269fb_3a70bc58",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "here too",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11e1d523_9204f570",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "handling error twice, see below",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ff61042_f0cbbf46",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "noun missing",
+      "range": {
+        "startLine": 190,
+        "startChar": 67,
+        "endLine": 190,
+        "endChar": 69
+      },
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "593cc171_d8233caf",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "defer buildCounter.Add(\n\tc, 1, event.Build.Bucket, event.isLUCI(),\n\tevent.Build.Status, event.Action)",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d0ee8fd_c4d07a86",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "i think this line should be the first line of this function",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "91232b67_5c715f50",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "nit: inline dec?",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66e39b03_cdc43dc1",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "what is %s of an io.Reader? if this was intentional, please answer in a comment",
+      "range": {
+        "startLine": 212,
+        "startChar": 68,
+        "endLine": 212,
+        "endChar": 74
+      },
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a35c1c1_164e67a9",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "this code handles error twice: logs and returns it. An error should be handled only once, otherwise it might be handled twice or more, and that\u0027s exactly what happens here (caller code logs it).\n\nI know it is not a part of the CL, but this function has changes substantially in this CL, so probably a good idea to fix Milo-common problem too.",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48616740_116eb273",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "here too",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96ce9759_d2cf9fb3",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "here too",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87037f51_83632e4b",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "here too",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18830b04_9b84e30f",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "here too",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0eeea5f0_eb201023",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 262,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T05:26:49Z",
+      "side": 1,
+      "message": "this may overwrite a newer build info if the pubsub message delivery order is wrong (which is normal).\n\nBuilds have update time which is monotonically increasing. Consider comparing update times in the pubsub message and in the datastore.",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
