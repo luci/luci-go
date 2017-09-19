@@ -1,0 +1,303 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6d10ae08_b872a6e3",
+        "filename": "client/cmd/devshell/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-19T19:06:10Z",
+      "side": 1,
+      "message": "we\u0027ll most likely will just use devshell.Server from kitchen. But separate command line client is still good thing to have :)",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 12
+      },
+      "revId": "285aaf8d26d988a5758c7ec4547b90bca3eed604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "031e3950_ce5e666a",
+        "filename": "client/cmd/devshell/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-19T19:06:10Z",
+      "side": 1,
+      "message": "move this const to devshell package, e.g. to make it devshell.EnvKey or something (kitchen will need to know it too)",
+      "range": {
+        "startLine": 38,
+        "startChar": 0,
+        "endLine": 38,
+        "endChar": 42
+      },
+      "revId": "285aaf8d26d988a5758c7ec4547b90bca3eed604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f83a63a_c296f52a",
+        "filename": "client/cmd/devshell/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-19T19:06:10Z",
+      "side": 1,
+      "message": "Let\u0027s make this:\n\"https://www.googleapis.com/auth/cloud-platform\",\n\"https://www.googleapis.com/auth/userinfo.email\"\n\nIt should be enough cover Google Storage and other Google APIs. Devshell protocol can (in theory) be used with gcloud that needs more scopes (\u0027cloud-platform\u0027 covers them all).",
+      "range": {
+        "startLine": 48,
+        "startChar": 2,
+        "endLine": 52,
+        "endChar": 53
+      },
+      "revId": "285aaf8d26d988a5758c7ec4547b90bca3eed604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97f4bcf1_877c1dea",
+        "filename": "client/cmd/devshell/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-19T19:06:10Z",
+      "side": 1,
+      "message": "I think this comment is stale/wrong.",
+      "range": {
+        "startLine": 58,
+        "startChar": 27,
+        "endLine": 58,
+        "endChar": 122
+      },
+      "revId": "285aaf8d26d988a5758c7ec4547b90bca3eed604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b1d383e_6c45f98f",
+        "filename": "client/cmd/devshell/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-19T19:06:10Z",
+      "side": 1,
+      "message": "this too :)",
+      "range": {
+        "startLine": 62,
+        "startChar": 32,
+        "endLine": 62,
+        "endChar": 52
+      },
+      "revId": "285aaf8d26d988a5758c7ec4547b90bca3eed604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52598b51_9233cb51",
+        "filename": "common/devshell/ctx.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-19T19:06:10Z",
+      "side": 1,
+      "message": "this is excessive, it\u0027ll be simpler to just pass the port number to the callback directly as an argument.",
+      "range": {
+        "startLine": 38,
+        "startChar": 38,
+        "endLine": 38,
+        "endChar": 84
+      },
+      "revId": "285aaf8d26d988a5758c7ec4547b90bca3eed604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1f6d2f9_12b3c399",
+        "filename": "common/devshell/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-19T19:06:10Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 18,
+        "startChar": 1,
+        "endLine": 18,
+        "endChar": 10
+      },
+      "revId": "285aaf8d26d988a5758c7ec4547b90bca3eed604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "606dfcbd_e1f572c8",
+        "filename": "common/devshell/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-19T19:06:10Z",
+      "side": 1,
+      "message": "nit: Lifetime is ...",
+      "range": {
+        "startLine": 39,
+        "startChar": 4,
+        "endLine": 39,
+        "endChar": 27
+      },
+      "revId": "285aaf8d26d988a5758c7ec4547b90bca3eed604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca67dd5f_e9fdc448",
+        "filename": "common/devshell/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-19T19:06:10Z",
+      "side": 1,
+      "message": "unless you really anticipate to have something else there, let\u0027s drop the struct and just return the port from Initialize directly.",
+      "range": {
+        "startLine": 56,
+        "startChar": 0,
+        "endLine": 59,
+        "endChar": 1
+      },
+      "revId": "285aaf8d26d988a5758c7ec4547b90bca3eed604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ebe4ce00_7b84f046",
+        "filename": "common/devshell/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-19T19:06:10Z",
+      "side": 1,
+      "message": "strictly speaking we need to validate this to be smallish to avoid DOS on malformed requests, but since its localhost protocol, it doesn\u0027t mater...",
+      "range": {
+        "startLine": 193,
+        "startChar": 22,
+        "endLine": 193,
+        "endChar": 23
+      },
+      "revId": "285aaf8d26d988a5758c7ec4547b90bca3eed604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e20ae987_6e3db21b",
+        "filename": "common/devshell/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-19T19:06:10Z",
+      "side": 1,
+      "message": "is there absolutely nothing interesting here? Maybe we can log something of interest?",
+      "range": {
+        "startLine": 204,
+        "startChar": 5,
+        "endLine": 204,
+        "endChar": 12
+      },
+      "revId": "285aaf8d26d988a5758c7ec4547b90bca3eed604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a7a5137_d3bb7367",
+        "filename": "common/devshell/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-19T19:06:10Z",
+      "side": 1,
+      "message": "This actually makes RPC to google. Better to do it only once on a first request, under a lock, then cache the value.\n\nAlso, please use https://chromium.googlesource.com/infra/luci/luci-go/+/master/common/gcloud/googleoauth/info.go#74 instead, it is more friendly to luci-go environment (logging and stuff). The email is part of TokenInfo response.",
+      "range": {
+        "startLine": 210,
+        "startChar": 1,
+        "endLine": 221,
+        "endChar": 2
+      },
+      "revId": "285aaf8d26d988a5758c7ec4547b90bca3eed604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "973cf175_23878296",
+        "filename": "common/devshell/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-19T19:06:10Z",
+      "side": 1,
+      "message": "clock.Now(c.ctx) (where clock is https://chromium.googlesource.com/infra/luci/luci-go/+/master/common/clock/)",
+      "range": {
+        "startLine": 230,
+        "startChar": 28,
+        "endLine": 230,
+        "endChar": 38
+      },
+      "revId": "285aaf8d26d988a5758c7ec4547b90bca3eed604",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
