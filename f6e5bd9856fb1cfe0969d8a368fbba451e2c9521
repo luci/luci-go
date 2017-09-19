@@ -70,6 +70,30 @@
       "revId": "f6e5bd9856fb1cfe0969d8a368fbba451e2c9521",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5e09d67_b361a1e4",
+        "filename": "milo/frontend/appengine/templates/pages/consoles.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T02:52:23Z",
+      "side": 1,
+      "message": "Here are the links again:\n\nhttps://2056-d9b77bd-tainted-mknyszek-dot-luci-milo-dev.appspot.com/console/infra-experimental\nhttps://2056-d9b77bd-tainted-mknyszek-dot-luci-milo-dev.appspot.com/console/fuchsia\n\nLet me know what you think! (I\u0027m sorry to extend this CL, but it wasn\u0027t much extra code to do this... everything you +1\u0027d should be the same, there\u0027s just a few extra lines and the new CSS file)",
+      "parentUuid": "f973f463_94f0f0f9",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 27
+      },
+      "revId": "f6e5bd9856fb1cfe0969d8a368fbba451e2c9521",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
