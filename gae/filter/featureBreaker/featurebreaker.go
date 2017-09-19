@@ -85,6 +85,9 @@ type FeatureBreaker interface {
 	// The callback will be called often and concurrently. Provide your own
 	// synchronization if necessary.
 	//
+	// You may use a callback returned by flaky.Errors(...) to emulate randomly
+	// occurring errors.
+	//
 	// Note that the default error passed to Filter* functions are ignored when
 	// using callbacks.
 	BreakFeaturesWithCallback(cb BreakFeatureCallback, feature ...string)

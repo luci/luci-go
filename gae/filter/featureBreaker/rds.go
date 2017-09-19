@@ -20,6 +20,19 @@ import (
 	ds "go.chromium.org/gae/service/datastore"
 )
 
+// DatastoreFeatures is a list of datastore features that can be "broken".
+var DatastoreFeatures = []string{
+	"AllocateIDs",
+	"DecodeCursor",
+	"Run",
+	"Count",
+	"BeginTransaction",
+	"CommitTransaction",
+	"DeleteMulti",
+	"GetMulti",
+	"PutMulti",
+}
+
 type dsState struct {
 	*state
 
@@ -58,6 +71,8 @@ func (r *dsState) Count(q *ds.FinalizedQuery) (int64, error) {
 }
 
 func (r *dsState) RunInTransaction(f func(c context.Context) error, opts *ds.TransactionOptions) error {
+	// Note: we intentionally don't break RunInTransaction itself, but break
+	// BeginTransaction/CommitTransaction separately instead.
 	return r.rds.RunInTransaction(func(txnc context.Context) error {
 		if err := r.BeginTransaction(txnc); err != nil {
 			return err
