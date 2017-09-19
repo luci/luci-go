@@ -1,0 +1,158 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d504d72b_0896f5fd",
+        "filename": "docs/luci_beta.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T15:32:01Z",
+      "side": 1,
+      "message": "nit: blank lines around headers, here and below",
+      "revId": "65565d612312bceac005ef9468e7231318c1cd53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "91ed148f_c4e5f779",
+        "filename": "docs/luci_beta.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T15:32:01Z",
+      "side": 1,
+      "message": "this may people think that we do not support Golo",
+      "range": {
+        "startLine": 3,
+        "startChar": 10,
+        "endLine": 3,
+        "endChar": 27
+      },
+      "revId": "65565d612312bceac005ef9468e7231318c1cd53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14c06af5_2f57dc03",
+        "filename": "docs/luci_beta.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T15:32:01Z",
+      "side": 1,
+      "message": "nit: blank lines around lists",
+      "revId": "65565d612312bceac005ef9468e7231318c1cd53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b33cd120_6378d19e",
+        "filename": "docs/luci_beta.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T15:32:01Z",
+      "side": 1,
+      "message": "I think a relative link would work too, and would make https://chromium.googlesource.com/infra/luci/luci-go/+/refs/changes/04/671004/4/docs/luci_beta.md work",
+      "revId": "65565d612312bceac005ef9468e7231318c1cd53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce51c83d_3ea89222",
+        "filename": "docs/luci_beta.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T15:32:01Z",
+      "side": 1,
+      "message": "nit: trailing spaces, here and below",
+      "revId": "65565d612312bceac005ef9468e7231318c1cd53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88277916_6465a412",
+        "filename": "docs/luci_beta.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T15:32:01Z",
+      "side": 1,
+      "message": "ci.chromium.org",
+      "range": {
+        "startLine": 15,
+        "startChar": 18,
+        "endLine": 15,
+        "endChar": 39
+      },
+      "revId": "65565d612312bceac005ef9468e7231318c1cd53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b99d4ee_b6cccd53",
+        "filename": "docs/luci_beta.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T15:32:01Z",
+      "side": 1,
+      "message": "Use informative titles https://github.com/google/styleguide/blob/gh-pages/docguide/style.md#use-informative-markdown-link-titles\nconsider \"the dogfood group\" or \"luci-chromium-cq-dogfood\" group",
+      "range": {
+        "startLine": 19,
+        "startChar": 24,
+        "endLine": 19,
+        "endChar": 34
+      },
+      "revId": "65565d612312bceac005ef9468e7231318c1cd53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3bfb5ab1_6865cefd",
+        "filename": "docs/luci_beta.md",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-19T15:32:01Z",
+      "side": 1,
+      "message": "nit: blank line around code blocks",
+      "revId": "65565d612312bceac005ef9468e7231318c1cd53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
