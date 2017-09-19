@@ -46,6 +46,30 @@
       "revId": "f6e5bd9856fb1cfe0969d8a368fbba451e2c9521",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f973f463_94f0f0f9",
+        "filename": "milo/frontend/appengine/templates/pages/consoles.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-19T02:49:30Z",
+      "side": 1,
+      "message": "Cool! I made the changes I described and additionally added a \"console preview\" which just generates the console table with a size of 1. For this, I had to separate out the CSS for consoles as well.",
+      "parentUuid": "81680d69_aa1229be",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 27
+      },
+      "revId": "f6e5bd9856fb1cfe0969d8a368fbba451e2c9521",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
