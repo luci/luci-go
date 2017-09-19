@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4ec79f19_b0d166dc",
+        "filename": "scheduler/appengine/internal/types.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-19T01:54:36Z",
+      "side": 1,
+      "message": "nit: drop Engine, it gives no additional information",
+      "range": {
+        "startLine": 21,
+        "startChar": 3,
+        "endLine": 21,
+        "endChar": 9
+      },
+      "revId": "23d27238804af3a174f725f1ce78e58eb159718b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
