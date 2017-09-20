@@ -12,25 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-dispatch:
-  - url: "*/app/*"
-    service: static
+## XXX FOR TESTING
+#service: default
+service: flextest
+runtime: go
+api_version: 1
+env: flex
 
-  - url: "*/v/*"
-    service: static
+handlers:
+- url: "/debug/*"
+  script: _go_app
+  secure: always
+  login: admin
 
-  - url: "*/rpcexplorer"
-    service: static
-  - url: "*/rpcexplorer/*"
-    service: static
+- url: "/internal/*"
+  script: _go_app
+  secure: always
+  login: admin
 
-  ##
-  # Always route logdog.Services and logdog.Registration RPCs to the "services"
-  # module.
-  ##
-
-  - url: "*/prpc/logdog.Services/*"
-    service: services
-
-  - url: "*/prpc/logdog.Registration/*"
-    service: services
+- url: "/.*"
+  script: _go_app
+  secure: always
