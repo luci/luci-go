@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "80ea9355_d98b5d9f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-20T19:05:23Z",
+      "side": 1,
+      "message": "We should note that if the process daemonizes then we could lose track of it; The result of this would be that the venv could become available to prune in 7 days.",
+      "range": {
+        "startLine": 18,
+        "startChar": 11,
+        "endLine": 18,
+        "endChar": 57
+      },
+      "revId": "ff45a9d9bfe0d0a2b48a62498e09055d38e48149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca8b8cc2_8c568b3e",
+        "filename": "vpython/command.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-20T19:05:23Z",
+      "side": 1,
+      "message": "unclear; maybe \"direct python invocation\"?",
+      "range": {
+        "startLine": 34,
+        "startChar": 32,
+        "endLine": 34,
+        "endChar": 47
+      },
+      "revId": "ff45a9d9bfe0d0a2b48a62498e09055d38e48149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
