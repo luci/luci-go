@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b4115971_f1e37e84",
+        "filename": "vpython/system_posix.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-09-20T20:37:13Z",
+      "side": 1,
+      "message": "Yeah, after some discussion, neither is perfect, but this is definitely simpler and more perfect.",
+      "parentUuid": "9794e4f6_bd55cc5c",
+      "range": {
+        "startLine": 85,
+        "startChar": 3,
+        "endLine": 85,
+        "endChar": 64
+      },
+      "revId": "f02b900e4ab2a338ee1207cdd0a424f8c7788a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ade7b6ce_cca45f21",
         "filename": "vpython/venv/venv.go",
         "patchSetId": 5
@@ -36,6 +60,30 @@
       "writtenOn": "2017-09-20T19:20:14Z",
       "side": 1,
       "message": "??? is this correct?\n\nIf so, can you add a comment?",
+      "range": {
+        "startLine": 762,
+        "startChar": 19,
+        "endLine": 762,
+        "endChar": 25
+      },
+      "revId": "f02b900e4ab2a338ee1207cdd0a424f8c7788a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b36c35bb_199273f0",
+        "filename": "vpython/venv/venv.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 762,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-09-20T20:37:13Z",
+      "side": 1,
+      "message": "Yep, and done.",
+      "parentUuid": "ade7b6ce_cca45f21",
       "range": {
         "startLine": 762,
         "startChar": 19,
