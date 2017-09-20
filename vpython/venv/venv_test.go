@@ -216,7 +216,7 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 
 			So(v.Delete(c), ShouldBeNil)
 			So(v.Root, shouldNotExist)
-			So(v.lockPath, shouldNotExist)
+			So(v.LockPath, shouldNotExist)
 		})
 
 		Convey(`Testing new environment setup race`, func() {
