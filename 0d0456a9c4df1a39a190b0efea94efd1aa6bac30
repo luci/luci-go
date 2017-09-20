@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c5e86abf_c39ac424",
+        "filename": "milo/srcman/diff.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T01:29:41Z",
+      "side": 1,
+      "message": "dirs need to be normalized, e.g. https://chromium.googlesource.com/infra/luci/luci-go/+/refs/changes/07/671807/3/milo/api/proto/manifest/source_manifest.proto#44",
+      "revId": "0d0456a9c4df1a39a190b0efea94efd1aa6bac30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
