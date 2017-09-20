@@ -1,0 +1,1084 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f11d056b_22b6cde4",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "nit: since we mostly write in Go and this proto is compiled to Go, we start proto comments with Go symbol so that comments in the generated Go code are idiomatic",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f847fe2_b68b1abf",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "i feel like \"Optional\" for repeated fields is unnecessary. In proto2, there was optional, required and repeated. in proto3 there is no required, so some optional fields are actually required, and that\u0027s why an annotation Optional or Required for non-repeated fields is warranted. But it is not warranted for repeated fields.",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5fa6fd48_5618e270",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "please define a restricted alphabet for this field, e.g. ^[a-z\\-]+$ or something like that\nthis applies to all identifiers we define in protos",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94f680a6_d68f9ea3",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "please remove this for now and re-add when we actually implement them",
+      "range": {
+        "startLine": 41,
+        "startChar": 62,
+        "endLine": 41,
+        "endChar": 78
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d008786_ec28916f",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "this is defined in the language (proto3), so it is unnecessary to specify it here\nsame below",
+      "range": {
+        "startLine": 53,
+        "startChar": 13,
+        "endLine": 53,
+        "endChar": 32
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cedbd4e3_cec2ce50",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "do we plan to support regexes or any other kind of string patterns? our customers don\u0027t want to keep lists of builders in two places.\n\nif we use prefixes, then would be still easy to find find notifications for a given builder using datastore filters",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a63858f6_c211948b",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "build. There is no message in this func",
+      "range": {
+        "startLine": 55,
+        "startChar": 61,
+        "endLine": 55,
+        "endChar": 68
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81aec976_694a6774",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "pointer of a pointer?\ni think `params` would work",
+      "range": {
+        "startLine": 62,
+        "startChar": 53,
+        "endLine": 62,
+        "endChar": 60
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56665a0f_5200ba17",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "\"it\u0027s neither idiomatic nor necessary to put Get into the getter\u0027s name\" https://golang.org/doc/effective_go.html#Getters",
+      "range": {
+        "startLine": 82,
+        "startChar": 20,
+        "endLine": 82,
+        "endChar": 23
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ac3da6a_bb475ee6",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "inline",
+      "range": {
+        "startLine": 118,
+        "startChar": 6,
+        "endLine": 118,
+        "endChar": 19
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c06cf01b_0726ac9b",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "unused, remove",
+      "range": {
+        "startLine": 119,
+        "startChar": 2,
+        "endLine": 119,
+        "endChar": 12
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d67b72d6_b62b356b",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 120,
+        "startChar": 31,
+        "endLine": 120,
+        "endChar": 44
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "91e6f732_b230d424",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "use []byte here\njson package will decode base64 for you",
+      "range": {
+        "startLine": 120,
+        "startChar": 13,
+        "endLine": 120,
+        "endChar": 19
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10cbe208_960ba421",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "unused, remove",
+      "range": {
+        "startLine": 121,
+        "startChar": 2,
+        "endLine": 121,
+        "endChar": 11
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da7b9335_2a07dca7",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "inline",
+      "range": {
+        "startLine": 124,
+        "startChar": 6,
+        "endLine": 124,
+        "endChar": 24
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b4fd3fd_147d63ec",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "unused, remove",
+      "range": {
+        "startLine": 126,
+        "startChar": 2,
+        "endLine": 126,
+        "endChar": 14
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a6b8067_c7dff20d",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "please move the variable declaration closer to the usage",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aea63c69_44a6befb",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "var msg struct { ... }",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecee92ce_a005a6f3",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "looks like copy-pasta. I don\u0027t think this is correct.",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3dc26a0b_29b5a033",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "I don\u0027t think this will work the way you expect\nhttps://golang.org/src/net/http/server.go#L1776",
+      "range": {
+        "startLine": 136,
+        "startChar": 62,
+        "endLine": 136,
+        "endChar": 68
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7241707_69cd7158",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "this will cause a datastore RPC per notifier. \n\nI suggest to inline updateProjectNotifiers and make one datastore.Put call with project and notifiers, so it is one datastore RPC.\n\nIn general, it is better to have such API calls in functions that have most context, rather than helper functions like UpdateDatastore",
+      "range": {
+        "startLine": 44,
+        "startChar": 45,
+        "endLine": 44,
+        "endChar": 63
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9292ac0f_3545b2d0",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "UpdateDatastore already (unnecessarily) annotates err with the same reason.",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e26dd7f8_9b7c60c3",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "I don\u0027t think converting a list of notifier names to a stringset.Set should be a responsibility of this function. Calling code could do that",
+      "range": {
+        "startLine": 57,
+        "startChar": 124,
+        "endLine": 57,
+        "endChar": 137
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04af6783_4f59f2d3",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "FWIW, it would be a little cheaper if you first check this condition without a transaction, and then start the transaction only if revision is different",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e34326fd_db55eee9",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "i don\u0027t think it matters what we update first, since it is happening in a transaction.",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1194b9e1_9daa2aac",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 77,
+        "startChar": 44,
+        "endLine": 77,
+        "endChar": 62
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "103bb4de_bdd12657",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "i think deleting dead notifiers should be in the same transaction as other notifiers of the same project, so that at any point of time our datastore state is consistent.\n\nMoreover, ancestor queries are strongly-consistent.\n\nAlso, it means you won\u0027t have to propagate knownNotifiers from updateProject to updateNotifiers to this func\n\n--\n\nclearDeadProjects would have to care of notifiers of dead projects though",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b7eca1d0_67dddde4",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "entities",
+      "range": {
+        "startLine": 121,
+        "startChar": 41,
+        "endLine": 121,
+        "endChar": 51
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bfdd6948_72d1f4ed",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "unnecessary",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93664ed6_36f03d2f",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "usually this is a slow RPC. Make sure the timeout here is sufficient. Consider setting context timeout to 10min in UpdateHandler",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a30329a7_42507fbc",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "unnecessary allocation of empty slice. consider\n\nvar merr errors.MultiError",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5a82e7c_a81d143e",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "if project is invalid, we may corrupt datastore state. Please validate project.",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72cb468e_6a8f5246",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "this will look like \"processing project projects/chromium\", so \"project \" is unnecessary",
+      "range": {
+        "startLine": 172,
+        "startChar": 42,
+        "endLine": 172,
+        "endChar": 50
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b965c4d_11cca64a",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "copy-pasta?\nafter removing this, \"r\" will become unused. I think both lines can be removed",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d0a5a21_4d9cb750",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "you don\u0027t really need this, see below",
+      "range": {
+        "startLine": 76,
+        "startChar": 1,
+        "endLine": 78,
+        "endChar": 45
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "465f966d_366c3f6f",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "this would be gone too",
+      "range": {
+        "startLine": 82,
+        "startChar": 1,
+        "endLine": 86,
+        "endChar": 18
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3274accf_bdd6ff9f",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "I recommend not to abstract datastore out and let the caller code talk to datastore API directly. Often there is a value in that because calling code can do RPCs more efficiently (e.g. get multiple notifiers in a single datastore RPC)",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "900e57d5_31c2e872",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "why we are ignoring the error?",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e64c92f_61e4bc5b",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "i think this method is unnecessary because it provides low value, does not have enough context to log something highly valuable and can be easily inlined without loosing anything",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2744227_8120f3ea",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "it would be simpler to implement notification-encoding by following the example in https://godoc.org/go.chromium.org/gae/service/datastore#GetPLS\n\nfunc (s *Special) Load(props PropertyMap) error {\n  if foo, ok :\u003d props[\"foo\"]; ok \u0026\u0026 len(foo) \u003d\u003d 1 {\n    s.foo \u003d foo\n    delete(props, \"foo\")\n  }\n  return GetPLS(s).Load(props)\n}\n\nfunc (s *Special) Save(withMeta bool) (PropertyMap, error) {\n  props, err :\u003d GetPLS(s).Save(withMeta)\n  if err !\u003d nil {\n    return nil, err\n  }\n  props[\"foo\"] \u003d []Property{MkProperty(s.foo)}\n  return props, nil\n}",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d9af1ac_25242406",
+        "filename": "luci_notify/config/project.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "please use cfg.ViewURL. That\u0027s what all other apps are using",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8b20833_6d53a4f0",
+        "filename": "luci_notify/frontend/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "since this is a new app, let\u0027s do it right\n\na cron is not an admin handler. Please use path \"/internal/cron/update-config\" and change app.yaml accordingly",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "288baad2_cc137de6",
+        "filename": "luci_notify/notify/builder_state.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "i see little value in this method",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d1c77120_e4933235",
+        "filename": "luci_notify/notify/builder_state.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "we should record new builder state if err \u003d\u003d ErrNoSuchEntity, otherwise we will never actually put a BuilderState entity",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c50a67b6_d20b43ad",
+        "filename": "luci_notify/notify/builder_state.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "i think logging.Debugf(c, \"Got state: %v\", state) would do the same thing, but simpler\n\nalso I feel like this belongs to the calling code",
+      "range": {
+        "startLine": 131,
+        "startChar": 1,
+        "endLine": 131,
+        "endChar": 99
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e2e1376_6520add4",
+        "filename": "luci_notify/notify/email.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "there is literally one usage of this struct and its methods, so I find low value in this file. If all these methods are inlined, overall the amount of the code would be less without increasing complexity of the calling code\n\nif you really like this API, consider changing go.chromium.org/gae/service/mail",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31fb9d57_2ecda99d",
+        "filename": "luci_notify/notify/notification.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "this is a state of a builder, not a build.\ni\u0027d rephrase this as \"before the Build\".",
+      "range": {
+        "startLine": 79,
+        "startChar": 30,
+        "endLine": 79,
+        "endChar": 51
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f85c05ad_be191453",
+        "filename": "luci_notify/notify/notification.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "I think we should also check that none of them is unknown",
+      "range": {
+        "startLine": 102,
+        "startChar": 17,
+        "endLine": 102,
+        "endChar": 60
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "249f3e2d_1fa6b508",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 34,
+        "startChar": 24,
+        "endLine": 34,
+        "endChar": 27
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09f1949e_df6dca47",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "stop",
+      "range": {
+        "startLine": 36,
+        "startChar": 3,
+        "endLine": 36,
+        "endChar": 11
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "307b94b9_efe0dc5c",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "here we have 4 cases in which we return. switch is perfect for that",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2495b531_61245ed9",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "Received",
+      "range": {
+        "startLine": 53,
+        "startChar": 20,
+        "endLine": 53,
+        "endChar": 28
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "821ab59e_f0d00d3a",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "did you mean result? status \u003d\u003d\u003d \"COMPLETED\"",
+      "range": {
+        "startLine": 56,
+        "startChar": 69,
+        "endLine": 56,
+        "endChar": 87
+      },
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8105a7a8_3f4c0d83",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "maybe add a comment that we intentionally lookup builder state after looking up notifiers to avoid tracking builder state for builder we don\u0027t notify for",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

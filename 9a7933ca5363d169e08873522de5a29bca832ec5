@@ -203,6 +203,30 @@
     },
     {
       "key": {
+        "uuid": "46d9f9ea_45d56f98",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0a365d4a_de48a38b",
+      "range": {
+        "startLine": 24,
+        "startChar": 9,
+        "endLine": 24,
+        "endChar": 18
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8398ec28_9ca3db1d",
         "filename": "luci_notify/api/config/notify.proto",
         "patchSetId": 1
@@ -344,6 +368,24 @@
     },
     {
       "key": {
+        "uuid": "00393f1e_a9ca3e5f",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "here is how luci-scheduler does it: https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/scheduler/appengine/messages/cron.proto?sq\u003dpackage:chromium\u0026q\u003dproto+file:%5Einfra/go/src/go%5C.chromium%5C.org/luci/scheduler/+package:%5Echromium$\u0026l\u003d208\n\nhere is how cq does it: \nhttps://cs.chromium.org/chromium/tools/depot_tools/third_party/cq_client/v1/cq.proto?q\u003dcq.proto\u0026sq\u003dpackage:chromium\u0026l\u003d194\n\nit does not mean that you have to use this notation internally. I am fine with \"buildbucket/a/b\" in the datastore and code org. Configs are more humans-oriented",
+      "parentUuid": "79ea074e_d41878af",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ca3db0b7_9ffed5a9",
         "filename": "luci_notify/buildbucket/buildinfo.go",
         "patchSetId": 1
@@ -411,6 +453,24 @@
       "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a941e76_117c28ff",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "I\u0027d move the code to https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/\nit\u0027s ok to copy-paste for now. I think will move the code later and update various buildbucket clients",
+      "parentUuid": "627b5d99_c7ed27dc",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -707,6 +767,24 @@
     },
     {
       "key": {
+        "uuid": "e925609c_0a451257",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "745cca00_f87283c0",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3b561fe2_bf65e0e1",
         "filename": "luci_notify/config/notifier.go",
         "patchSetId": 1
@@ -739,6 +817,24 @@
       "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04cafd20_c39e9415",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "actually I just noticed that you use Save/Load. There is another comment on that, so I will mark this as resolved",
+      "parentUuid": "3352268a_32f9252f",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -964,6 +1060,30 @@
       "side": 1,
       "message": "My thought was that we can cover the edge case of having a new build. So, for example, if somebody just puts up a configuration for \"on_change\" (which I suspect will be the most popular option...) and immediately get notified about a UNKNOWN -\u003e SUCCESS transition, it might feel a bit broken, especially if the builder already has a long history. It\u0027s very minor, but I feel like it would be noticeable enough that users might say something.\n\nI\u0027ll remove it though if you still feel like it will be too much extra complexity to manage, or that it won\u0027t really be a big deal.",
       "parentUuid": "76046396_149af225",
+      "range": {
+        "startLine": 105,
+        "startChar": 17,
+        "endLine": 105,
+        "endChar": 34
+      },
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f7fb9fe_466896c7",
+        "filename": "luci_notify/notify/builder_state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "I don\u0027t think we should be sending a state change notification if any of old/new states are UNKNOWN. In that case, we don\u0027t have a problem, so I don\u0027t see an important problem that findPreviousBuild solves",
+      "parentUuid": "9c145b3d_b21d53c0",
       "range": {
         "startLine": 105,
         "startChar": 17,
@@ -1207,6 +1327,24 @@
       "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d83dbe19_56fb81c7",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-20T06:45:06Z",
+      "side": 1,
+      "message": "ah right",
+      "parentUuid": "50dd9e32_1d189819",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
