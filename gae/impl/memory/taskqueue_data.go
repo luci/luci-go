@@ -18,6 +18,7 @@ import (
 	"container/heap"
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"net/http"
 	"regexp"
 	"sync"
@@ -29,8 +30,6 @@ import (
 	prodConstraints "go.chromium.org/gae/impl/prod/constraints"
 	ds "go.chromium.org/gae/service/datastore"
 	tq "go.chromium.org/gae/service/taskqueue"
-
-	"go.chromium.org/luci/common/data/rand/mathrand"
 )
 
 var (
@@ -51,8 +50,9 @@ var (
 //////////////////////////////// sortedQueue ///////////////////////////////////
 
 type sortedQueue struct {
-	name        string
-	isPullQueue bool
+	name          string
+	isPullQueue   bool
+	nextAutoGenID uint64
 
 	tasks    map[string]*tq.Task // added, but not deleted
 	archived map[string]*tq.Task // tombstones
@@ -62,27 +62,26 @@ type sortedQueue struct {
 }
 
 func newSortedQueue(name string, isPullQueue bool) *sortedQueue {
+	// Pick the initial value of the counter based on queue name, so it looks
+	// scary. To make sure users don't attempt to "guess" IDs or correlate them
+	// between different queues.
+	h := fnv.New64()
+	h.Write([]byte(name))
 	return &sortedQueue{
-		name:         name,
-		isPullQueue:  isPullQueue,
-		tasks:        map[string]*tq.Task{},
-		archived:     map[string]*tq.Task{},
-		sortedPerTag: map[string]*taskIndex{},
+		name:          name,
+		isPullQueue:   isPullQueue,
+		nextAutoGenID: h.Sum64(),
+		tasks:         map[string]*tq.Task{},
+		archived:      map[string]*tq.Task{},
+		sortedPerTag:  map[string]*taskIndex{},
 	}
 }
 
 // All sortedQueue methods are assumed to be called under taskQueueData lock.
 
-func (q *sortedQueue) genTaskName(c context.Context) string {
-	for {
-		// Real Task Queue service seems to be using random ints too.
-		name := fmt.Sprintf("%d", mathrand.Int63(c))
-		_, ok1 := q.tasks[name]
-		_, ok2 := q.archived[name]
-		if !ok1 && !ok2 {
-			return name
-		}
-	}
+func (q *sortedQueue) genTaskName() string {
+	q.nextAutoGenID++
+	return fmt.Sprintf("%d", q.nextAutoGenID)
 }
 
 func (q *sortedQueue) addTask(task *tq.Task) error {
@@ -355,21 +354,16 @@ func (t *taskQueueData) endTxn() {}
 func (t *taskQueueData) beginCommit(c context.Context, txnCtxObj memContextObj) txnCommitOp {
 	txn := txnCtxObj.(*txnTaskQueueData)
 
-	txn.lock.Lock()
-	t.lock.Lock()
+	txn.lock.Lock() // no need to hold t.lock, since no collisions are possible
 
 	return &txnCommitCallback{
-		unlock: func() {
-			t.lock.Unlock()
-			txn.lock.Unlock()
-		},
+		unlock: txn.lock.Unlock,
 		apply: func() {
+			t.lock.Lock()
+			defer t.lock.Unlock()
 			for qn, tasks := range txn.anony {
 				q := t.queues[qn]
 				for _, tsk := range tasks {
-					// Regenerate names to make sure we don't collide with anything already
-					// committed. Note that transactional tasks can't have user-defined name.
-					tsk.Name = q.genTaskName(c)
 					err := q.addTask(tsk) // prepped in txnTaskQueueData.AddMulti, must be good
 					if err != nil {
 						panic(err)
@@ -534,9 +528,7 @@ func (t *txnTaskQueueData) getTransactionTasks(ns string) tq.AnonymousQueueData 
 		ret[k] = make([]*tq.Task, len(vs))
 		for i, v := range vs {
 			if taskNamespace(v) == ns {
-				tsk := v.Duplicate()
-				tsk.Name = ""
-				ret[k][i] = tsk
+				ret[k][i] = v.Duplicate()
 			}
 		}
 	}

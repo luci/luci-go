@@ -55,6 +55,12 @@ type taskqueueImpl struct {
 var _ tq.RawInterface = (*taskqueueImpl)(nil)
 
 func (t *taskqueueImpl) AddMulti(tasks []*tq.Task, queueName string, cb tq.RawTaskCB) error {
+	// Reject the entire batch if at least one task is bad. That's how prod API
+	// behaves too.
+	if err := checkManyTasks(tasks, false); err != nil {
+		return err
+	}
+
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
@@ -64,10 +70,12 @@ func (t *taskqueueImpl) AddMulti(tasks []*tq.Task, queueName string, cb tq.RawTa
 	}
 
 	for _, task := range tasks {
-		task, err := prepTask(t.ctx, task, q, t.ns)
-		if err == nil {
-			err = q.addTask(task)
+		name := task.Name
+		if name == "" {
+			name = q.genTaskName()
 		}
+		task = prepTask(t.ctx, task, name, q.name, t.ns)
+		err := q.addTask(task)
 		if err != nil {
 			cb(nil, err)
 		} else {
@@ -175,16 +183,7 @@ type taskqueueTxnImpl struct {
 
 var _ tq.RawInterface = (*taskqueueTxnImpl)(nil)
 
-func (t *taskqueueTxnImpl) addLocked(task *tq.Task, q *sortedQueue) (*tq.Task, error) {
-	if task.Name != "" {
-		return nil, fmt.Errorf("taskqueue: INVALID_TASK_NAME: cannot add named task %q in transaction", task.Name)
-	}
-
-	toSched, err := prepTask(t.ctx, task, q, t.ns)
-	if err != nil {
-		return nil, err
-	}
-
+func (t *taskqueueTxnImpl) addLocked(task *tq.Task, taskName, queueName string) (*tq.Task, error) {
 	numTasks := 0
 	for _, vs := range t.anony {
 		numTasks += len(vs)
@@ -197,19 +196,9 @@ func (t *taskqueueTxnImpl) addLocked(task *tq.Task, q *sortedQueue) (*tq.Task, e
 		return nil, errBadRequest
 	}
 
-	t.anony[q.name] = append(t.anony[q.name], toSched)
-
-	// the fact that we have generated a unique name for this task queue item is
-	// an implementation detail. These names are regenerated when the transaction
-	// is committed.
-	// TODO(riannucci): now that I think about this... it may not actually be true.
-	//		We should verify that the .Name for a task added in a transaction is
-	//		meaningless. Maybe names generated in a transaction are somehow
-	//		guaranteed to be meaningful?
-	toRet := toSched.Duplicate()
-	toRet.Name = ""
-
-	return toRet, nil
+	toSched := prepTask(t.ctx, task, taskName, queueName, t.ns)
+	t.anony[queueName] = append(t.anony[queueName], toSched)
+	return toSched.Duplicate(), nil
 }
 
 func (t *taskqueueTxnImpl) AddMulti(tasks []*tq.Task, queueName string, cb tq.RawTaskCB) error {
@@ -217,23 +206,34 @@ func (t *taskqueueTxnImpl) AddMulti(tasks []*tq.Task, queueName string, cb tq.Ra
 		return err
 	}
 
-	t.lock.Lock()
-	defer t.lock.Unlock()
+	// Reject the entire batch if at least one task is bad. That's how prod API
+	// behaves too.
+	if err := checkManyTasks(tasks, true); err != nil {
+		return err
+	}
 
-	// TODO(vadimsh): This lock can be taken for less amount of time if we move
-	// sortedQueue.genTaskName call out of prepTask (called from addLocked). No
-	// need to hold the global lock for the entire duration of AddMulti.
+	// Generate names for all tasks.
+	names := make([]string, len(tasks))
 	t.parent.lock.Lock()
-	defer t.parent.lock.Unlock()
-
 	q, err := t.parent.getQueueLocked(queueName)
+	if err == nil {
+		queueName = q.name
+		for i := range tasks {
+			names[i] = q.genTaskName()
+		}
+	}
+	t.parent.lock.Unlock()
 	if err != nil {
 		return err
 	}
 
-	for _, task := range tasks {
-		cb(t.addLocked(task, q))
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	for i, task := range tasks {
+		cb(t.addLocked(task, names[i], queueName))
 	}
+
 	return nil
 }
 
@@ -269,11 +269,54 @@ func (t *taskqueueTxnImpl) GetTestable() tq.Testable { return &taskQueueTestable
 
 ////////////////////////// private functions ///////////////////////////////////
 
-// prepTask clones 'task' and fills in its properties.
+// checkTask ensures the task properties (in particular name and method, as
+// passed by the user) are acceptable.
 //
-// Assumes it is called under a lock that guards q's data.
-func prepTask(c context.Context, task *tq.Task, q *sortedQueue, ns string) (*tq.Task, error) {
+// Only empty name is allowed in transactions (the name will be auto generated
+// later).
+func checkTask(task *tq.Task, isTxn bool) error {
+	switch {
+	case task == nil:
+		return fmt.Errorf("taskqueue: the task can't be nil")
+	case isTxn && task.Name != "":
+		return fmt.Errorf("taskqueue: INVALID_TASK_NAME: cannot add named task %q in transaction", task.Name)
+	case task.Name != "" && !validTaskName.MatchString(task.Name):
+		return errInvalidTaskName
+	}
+
+	switch task.Method {
+	case "", "POST", "PUT", "PULL", "GET", "HEAD", "DELETE":
+		// good methods
+	default:
+		return fmt.Errorf("taskqueue: bad method %q", task.Method)
+	}
+
+	return nil
+}
+
+// checkManyTasks is a batch variant of checkTask that returns a multi error.
+func checkManyTasks(tasks []*tq.Task, isTxn bool) error {
+	lme := errors.NewLazyMultiError(len(tasks))
+	for i, t := range tasks {
+		lme.Assign(i, checkTask(t, isTxn))
+	}
+	return lme.Get()
+}
+
+// prepTask clones 'task' and fills in its properties (including name).
+//
+// We need to clone the task, since per Task Queues API AddMulti method returns
+// a modified copy of the task, without actually touching the original.
+//
+// Assumes the passed is already validated via checkTask. It overrides whatever
+// name is specified in task.Name with taskName.
+func prepTask(c context.Context, task *tq.Task, taskName, queueName, ns string) *tq.Task {
+	if taskName == "" {
+		panic("taskqueue: taskName should be auto-generated already, if necessary")
+	}
+
 	toSched := task.Duplicate()
+	toSched.Name = taskName
 
 	if toSched.ETA.IsZero() {
 		toSched.ETA = clock.Now(c).Add(toSched.Delay)
@@ -295,7 +338,7 @@ func prepTask(c context.Context, task *tq.Task, q *sortedQueue, ns string) (*tq.
 		toSched.Payload = nil
 
 	default:
-		return nil, fmt.Errorf("taskqueue: bad method %q", toSched.Method)
+		panic("taskqueue: task.Method should have been validated already")
 	}
 
 	// PULL tasks have no HTTP related stuff in them (Path and Header).
@@ -304,7 +347,7 @@ func prepTask(c context.Context, task *tq.Task, q *sortedQueue, ns string) (*tq.
 		toSched.Header = nil
 	} else {
 		if toSched.Path == "" {
-			toSched.Path = "/_ah/queue/" + q.name
+			toSched.Path = "/_ah/queue/" + queueName
 		}
 		if _, ok := toSched.Header[currentNamespace]; !ok {
 			if ns != "" {
@@ -317,15 +360,7 @@ func prepTask(c context.Context, task *tq.Task, q *sortedQueue, ns string) (*tq.
 		// TODO(riannucci): implement DefaultNamespace
 	}
 
-	if toSched.Name == "" {
-		toSched.Name = q.genTaskName(c)
-	} else {
-		if !validTaskName.MatchString(toSched.Name) {
-			return nil, errInvalidTaskName
-		}
-	}
-
-	return toSched, nil
+	return toSched
 }
 
 func taskNamespace(task *tq.Task) string { return task.Header.Get(currentNamespace) }

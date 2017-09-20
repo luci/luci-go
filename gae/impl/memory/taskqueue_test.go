@@ -70,7 +70,7 @@ func TestTaskQueue(t *testing.T) {
 						ETA:          now.Add(4 * time.Second),
 						Header:       http.Header{"Cat": []string{"tabby"}},
 						Method:       "POST",
-						Name:         "7569393727548727334",
+						Name:         "16045561405319332057",
 						Path:         "/hello/world",
 						Payload:      []byte("watwatwat"),
 						RetryOptions: &tq.RetryOptions{AgeLimit: 7 * time.Second},
@@ -96,7 +96,7 @@ func TestTaskQueue(t *testing.T) {
 				})
 
 				Convey("cannot add to bad queues", func() {
-					So(tq.Add(c, "waaat", nil).Error(), ShouldContainSubstring, "UNKNOWN_QUEUE")
+					So(tq.Add(c, "waaat", &tq.Task{}).Error(), ShouldContainSubstring, "UNKNOWN_QUEUE")
 
 					Convey("but you can add Queues when testing", func() {
 						tqt.CreateQueue("waaat")
@@ -159,11 +159,13 @@ func TestTaskQueue(t *testing.T) {
 					So(len(expect), ShouldEqual, 2)
 					So(len(tqt.GetScheduledTasks()["default"]), ShouldEqual, 2)
 
+					names := []string{"16045561405319332057", "16045561405319332058"}
+
 					for i := range expect {
 						Convey(fmt.Sprintf("task %d: %s", i, expect[i].Path), func() {
 							So(expect[i].Method, ShouldEqual, "POST")
 							So(expect[i].ETA, ShouldHappenOnOrBefore, now)
-							So(len(expect[i].Name), ShouldEqual, 19)
+							So(expect[i].Name, ShouldEqual, names[i])
 						})
 					}
 
@@ -277,7 +279,7 @@ func TestTaskQueue(t *testing.T) {
 					tqt := tq.GetTestable(c)
 
 					So(tq.Add(c, "", t3), ShouldBeNil)
-					So(t3.Name, ShouldEqual, "")
+					So(t3.Name, ShouldEqual, "16045561405319332059")
 
 					So(tqt.GetScheduledTasks()["default"][t.Name], ShouldResemble, t)
 					So(tqt.GetTombstonedTasks()["default"][t2.Name], ShouldResemble, t2)
@@ -290,7 +292,6 @@ func TestTaskQueue(t *testing.T) {
 					if tsk.Name == t.Name {
 						So(tsk, ShouldResemble, t)
 					} else {
-						tsk.Name = ""
 						So(tsk, ShouldResemble, t3)
 					}
 				}
