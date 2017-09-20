@@ -125,19 +125,19 @@ func TestFlush(t *testing.T) {
 			So(string(blob), ShouldEqual, `{
 	"rows": [
 		{
-			"insertId": "bqlog:7828158075477027098:0",
+			"insertId": "bqlog:5119905750835961307:0",
 			"json": {
 				"i": 0
 			}
 		},
 		{
-			"insertId": "bqlog:5950071357434416446:0",
+			"insertId": "bqlog:5119905750835961308:0",
 			"json": {
 				"i": 1
 			}
 		},
 		{
-			"insertId": "bqlog:6808766918387264829:0",
+			"insertId": "bqlog:5119905750835961309:0",
 			"json": {
 				"i": 2
 			}
