@@ -190,9 +190,14 @@ type Env struct {
 	// therefore, suitable for input to other "vpython" invocations.
 	EnvironmentStampPath string
 
-	// lockPath is the path to this Env-specific lock file. It will be at:
+	// LockHandle is the active lock handle for the current VirtualEnv lock.
+	// Only read-only operations should be performed on the handle.
+	LockHandle fslock.Handle
+
+	// LockPath is the path to this Env-specific lock file. It will be at:
 	// "<baseDir>/.<name>.lock".
 	lockPath string
+
 	// completeFlagPath is the path to this Env's complete flag.
 	// It will be at "<Root>/complete.flag".
 	completeFlagPath string
@@ -322,6 +327,10 @@ func (e *Env) withImpl(c context.Context, blocking bool, used stringset.Set,
 					logging.WithError(perr).Infof(c, "Failed to perform pruning round after initialization.")
 				}
 
+				e.LockHandle = lock
+				defer func() {
+					e.LockHandle = nil
+				}()
 				return fn(c, e)
 			})
 			if err != nil {
@@ -758,7 +767,7 @@ func attachOutputForLogging(c context.Context, l logging.Level, cmd *exec.Cmd) {
 
 	if logging.IsLogging(c, l) {
 		if cmd.Stdout == nil {
-			cmd.Stdout = os.Stdout
+			cmd.Stdout = os.Stderr
 		}
 		if cmd.Stderr == nil {
 			cmd.Stderr = os.Stderr

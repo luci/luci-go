@@ -19,14 +19,52 @@ package vpython
 import (
 	"os"
 	"syscall"
+
+	"go.chromium.org/luci/vpython/venv"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/system/environ"
+
+	"golang.org/x/net/context"
 )
 
-// forwardedSignals is the list of signals that should be forwarded to the
-// Python subproess.
-var forwardedSignals = []os.Signal{
-	syscall.SIGHUP,
-	syscall.SIGINT,
-	syscall.SIGQUIT,
-	syscall.SIGUSR1,
-	syscall.SIGUSR2,
+// systemSpecificLaunch launches the process described by "cmd" while ensuring
+// that the VirtualEnv lock is held throughout its duration (best effort).
+//
+// On Linux/Mac, we use "execve" to *become* the target process. We need to
+// continue to hold the lock for that process, though. We do this by passing it
+// as an open file handle to the subprocess.
+//
+// This can be error-prone, as it places the burden on the subprocess to
+// manage the file descriptor.
+func systemSpecificLaunch(c context.Context, ve *venv.Env, argv []string, env environ.Env, dir string) error {
+	// Change directory.
+	if dir != "" {
+		if err := os.Chdir(dir); err != nil {
+			return errors.Annotate(err, "failed to chdir to %q", dir).Err()
+		}
+	}
+
+	// Store our lock file descriptor as FD #3 (after #2, STDERR).
+	lockFD := ve.LockHandle.LockFile().Fd()
+	if lockFD == 3 {
+		// "dup2" doesn't change flags if the source and destination file
+		// descriptors are the same. Explicitly remove the close-on-exec flag, which
+		// Go enables by default.
+		if _, _, err := syscall.RawSyscall(syscall.SYS_FCNTL, lockFD, syscall.F_SETFD, 0); err != 0 {
+			return errors.Annotate(err, "could not remove close-on-exec for lock file").Err()
+		}
+	} else {
+		// Use "dup2" to copy the file descriptor to #3 slot. This will also clear
+		// its flags, including close-on-exec.
+		if _, _, err := syscall.RawSyscall(syscall.SYS_DUP2, lockFD, 3, 0); err != 0 {
+			return errors.Annotate(err, "could not dup2 lock file").Err()
+		}
+	}
+
+	// This is the original process. Become Python.
+	if err := syscall.Exec(argv[0], argv, env.Sorted()); err != nil {
+		return errors.Annotate(err, "failed to execve %q", argv[0]).Err()
+	}
+	return nil
 }
