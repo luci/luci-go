@@ -22,6 +22,53 @@
       "revId": "6fe0e0b1dbe0f13739446175f5aee7aa0afdace5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a62ab4d0_9aeba72f",
+        "filename": "scheduler/appengine/engine/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-21T20:10:35Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "202b0d46_82916bc8",
+      "range": {
+        "startLine": 179,
+        "startChar": 2,
+        "endLine": 181,
+        "endChar": 3
+      },
+      "revId": "6fe0e0b1dbe0f13739446175f5aee7aa0afdace5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2cf7250b_e5207e9b",
+        "filename": "scheduler/appengine/engine/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-21T20:10:35Z",
+      "side": 1,
+      "message": "fanned",
+      "range": {
+        "startLine": 159,
+        "startChar": 13,
+        "endLine": 159,
+        "endChar": 16
+      },
+      "revId": "6fe0e0b1dbe0f13739446175f5aee7aa0afdace5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
