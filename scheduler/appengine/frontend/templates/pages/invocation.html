@@ -55,20 +55,16 @@
   <h4>Incoming triggers</h4>
   <div class="row">
     <div class="col-sm-12">
-      <ul>
-      {{range .Inv.IncomingTriggers}}
-        <li>
-          <span style="font-family:monospace;">
-          {{if .URL}}
-            <a href="{{.URL}}" target="_blank">{{.Title}}</a>
-          {{else}}
-            {{.Title}}
-          {{end}}
-          </span>
-          {{if .RelTime}}({{.RelTime}}){{end}}
-        </li>
-      {{end}}
-      </ul>
+      {{template "triggers-list" .Inv.IncomingTriggers}}
+    </div>
+  </div>
+  {{end}}
+
+  {{if .Inv.OutgoingTriggers}}
+  <h4>Outgoing triggers</h4>
+  <div class="row">
+    <div class="col-sm-12">
+      {{template "triggers-list" .Inv.OutgoingTriggers}}
     </div>
   </div>
   {{end}}

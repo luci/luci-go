@@ -182,6 +182,7 @@ type invocation struct {
 	Definition       string
 	TriggeredBy      string
 	IncomingTriggers []trigger
+	OutgoingTriggers []trigger
 	Started          string
 	Duration         string
 	Status           string
@@ -244,6 +245,11 @@ func makeInvocation(j *schedulerJob, i *engine.Invocation) *invocation {
 		incomingTriggers = append(incomingTriggers, makeTrigger(t, j.now))
 	}
 
+	outgoingTriggers := make([]trigger, 0, len(i.OutgoingTriggers))
+	for _, t := range i.OutgoingTriggers {
+		outgoingTriggers = append(outgoingTriggers, makeTrigger(t, j.now))
+	}
+
 	return &invocation{
 		ProjectID:        j.ProjectID,
 		JobName:          j.JobName,
@@ -254,6 +260,7 @@ func makeInvocation(j *schedulerJob, i *engine.Invocation) *invocation {
 		Definition:       taskToText(i.Task),
 		TriggeredBy:      triggeredBy,
 		IncomingTriggers: incomingTriggers,
+		OutgoingTriggers: outgoingTriggers,
 		Started:          humanize.RelTime(i.Started, j.now, "ago", "from now"),
 		Duration:         duration,
 		Status:           string(status),

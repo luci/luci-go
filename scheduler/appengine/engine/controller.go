@@ -173,6 +173,14 @@ var errUpdateConflict = errors.New("concurrent modifications of single Invocatio
 // May return transient errors. In particular returns errUpdateConflict if the
 // invocation was modified by some other task controller concurrently.
 func (ctl *taskController) Save(ctx context.Context) (err error) {
+	// Log the intent to trigger jobs, if any.
+	if len(ctl.triggers) != 0 && len(ctl.saved.TriggeredJobIDs) != 0 {
+		ctl.DebugLog("Dispatching triggers (%d of them) to the following jobs:", len(ctl.triggers))
+		for _, jobID := range ctl.saved.TriggeredJobIDs {
+			ctl.DebugLog("  %s", jobID)
+		}
+	}
+
 	// Mutate copy in case transaction below fails. Also unpacks ctl.state back
 	// into the entity (reverse of 'populateState').
 	saving := ctl.saved

@@ -154,6 +154,12 @@ type Invocation struct {
 	// starts.
 	IncomingTriggers []task.Trigger `gae:",noindex"`
 
+	// OutgoingTriggers is a list of triggers that the invocation produced.
+	//
+	// They are fanned out into pending trigger sets of corresponding triggered
+	// jobs (specified by TriggeredJobIDs).
+	OutgoingTriggers []task.Trigger `gae:",noindex"`
+
 	// Revision is revision number of config.cfg when this invocation was created.
 	// For informational purpose.
 	Revision string `gae:",noindex"`
@@ -216,6 +222,7 @@ func (e *Invocation) isEqual(other *Invocation) bool {
 		e.InvocationNonce == other.InvocationNonce &&
 		e.TriggeredBy == other.TriggeredBy &&
 		equalTriggerLists(e.IncomingTriggers, other.IncomingTriggers) &&
+		equalTriggerLists(e.OutgoingTriggers, other.OutgoingTriggers) &&
 		e.Revision == other.Revision &&
 		e.RevisionURL == other.RevisionURL &&
 		bytes.Equal(e.Task, other.Task) &&
