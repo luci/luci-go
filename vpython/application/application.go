@@ -306,7 +306,11 @@ func (a *application) showPythonHelp(c context.Context, fs *flag.FlagSet, lp *lo
 }
 
 // Main is the main application entry point.
-func (cfg *Config) Main(c context.Context) int {
+func (cfg *Config) Main(c context.Context, argv []string) int {
+	if len(argv) == 0 {
+		panic("zero-length argument slice")
+	}
+
 	// Implementation of "checkWrapper": if CheckWrapperENV is set, we immediately
 	// exit with a non-zero value.
 	env := environ.System()
@@ -340,6 +344,6 @@ func (cfg *Config) Main(c context.Context) int {
 	}
 
 	return run(c, func(c context.Context) error {
-		return a.mainImpl(c, os.Args[0], os.Args[1:])
+		return a.mainImpl(c, argv[0], argv[1:])
 	})
 }

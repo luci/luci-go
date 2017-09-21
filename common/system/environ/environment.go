@@ -18,6 +18,7 @@
 package environ
 
 import (
+	"fmt"
 	"os"
 	"runtime"
 	"sort"
@@ -43,6 +44,8 @@ type Env struct {
 	// without reallocating all of its composite strings.
 	env map[string]string
 }
+
+func (e Env) String() string { return fmt.Sprintf("%v", e.Sorted()) }
 
 // normalizeKey normalizes the map key, ensuring that it is handled
 // case-insensitive.

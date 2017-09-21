@@ -16,13 +16,45 @@ package vpython
 
 import (
 	"os"
-	"syscall"
+
+	"go.chromium.org/luci/vpython/venv"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/environ"
+
+	"golang.org/x/net/context"
 )
 
-// forwardedSignals is the list of signals that should be forwarded to the
-// Python subproess.
-var forwardedSignals = []os.Signal{
-	syscall.SIGHUP,
-	syscall.SIGINT,
-	syscall.SIGQUIT,
+// systemSpecificLaunch launches the process described by "cmd" while ensuring
+// that the VirtualEnv lock is held throughout its duration (best effort).
+//
+// On Windows, we don't forward signals. Forwarding signals on Windows is
+// nuanced. For now, we won't, since sending them via Python is similarly
+// nuanced and not commonly done.
+//
+// For more discussion, see:
+// https://github.com/golang/go/issues/6720
+//
+// On Windows, we launch it as a child process and interpret any signal that we
+// receive as terminal, cancelling the child.
+func systemSpecificLaunch(c context.Context, ve *venv.Env, argv []string, env environ.Env, dir string) error {
+	c, cancelFunc := context.WithCancel(c)
+	defer cancelFunc()
+
+	cmd := ve.Interpreter().IsolatedCommand(c, argv[1:]...)
+	cmd.Dir = dir
+	cmd.Env = env.Sorted()
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err := cmd.Run()
+	logging.Debugf(c, "Python subprocess has terminated: %v", err)
+	if err != nil {
+		return errors.Annotate(err, "").Err()
+	}
+	return nil
 }
+
+func runSystemCommand(context.Context, string, string, environ.Env) (int, bool) { return 0, false }
