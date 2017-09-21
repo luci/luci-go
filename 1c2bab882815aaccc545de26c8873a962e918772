@@ -1642,6 +1642,24 @@
     },
     {
       "key": {
+        "uuid": "bdad2aca_83565102",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-21T02:01:09Z",
+      "side": 1,
+      "message": "Oh, I should say that the documentation is inaccurate. That example won\u0027t actually compile with the current codebase.",
+      "parentUuid": "de9f9e93_f4eed095",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0d9af1ac_25242406",
         "filename": "luci_notify/config/project.go",
         "patchSetId": 3
