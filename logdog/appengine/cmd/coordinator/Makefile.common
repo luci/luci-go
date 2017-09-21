@@ -94,10 +94,10 @@ endef
 help:
 	$(info $(HELP_BODY))
 
-YAML_PATHS = $(addprefix vmuser/,$(addsuffix .yaml,$(YAMLS)))
+YAML_PATHS = $(addprefix frontend/,$(addsuffix .yaml,$(YAMLS)))
 
 .PHONY: yamls
-yamls: vmuser/app.yaml $(YAML_PATHS)
+yamls: frontend/app.yaml $(YAML_PATHS)
 
 .PHONY: web
 web:
@@ -166,7 +166,7 @@ $(addprefix update-,$(YAMLS)): update-%:
 		gcloud app deploy \
 			--project $(CLOUD_PROJECT) \
 			--quiet \
-			vmuser/$*.yaml
+			frontend/$*.yaml
 
 ##
 # Per-GKE Cluster Build Rules

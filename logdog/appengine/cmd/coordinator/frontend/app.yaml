@@ -12,8 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# TODO(dnj): Delete this queue once the current Tumble backlog has drained.
-queue:
-- name: "tumble"
-  rate: 100/s
-  target: backend
+service: default
+runtime: go
+api_version: 1
+env: flex
+
+handlers:
+- url: "/debug/*"
+  script: _go_app
+  secure: always
+  login: admin
+
+- url: "/internal/*"
+  script: _go_app
+  secure: always
+  login: admin
+
+- url: "/.*"
+  script: _go_app
+  secure: always

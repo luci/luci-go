@@ -12,25 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-service: default
-runtime: go
-vm: true
-api_version: 1
+dispatch:
+  - url: "*/app/*"
+    service: static
 
-beta_settings:
-  service_account_scopes: "https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/devstorage.full_control,https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/bigtable.data"
+  - url: "*/v/*"
+    service: static
 
-handlers:
-- url: "/debug/*"
-  script: _go_app
-  secure: always
-  login: admin
+  - url: "*/rpcexplorer"
+    service: static
+  - url: "*/rpcexplorer/*"
+    service: static
+  - url: "*/rpcexplorer"
+    service: static
 
-- url: "/internal/*"
-  script: _go_app
-  secure: always
-  login: admin
+  # Direct all admin requests to "backend".
+  - url: "*/admin/*"
+    service: backend
 
-- url: "/.*"
-  script: _go_app
-  secure: always
+  ##
+  # Always route logdog.Services and logdog.Registration RPCs to the "services"
+  # module.
+  ##
+
+  - url: "*/prpc/logdog.Services/*"
+    service: services
+
+  - url: "*/prpc/logdog.Registration/*"
+    service: services

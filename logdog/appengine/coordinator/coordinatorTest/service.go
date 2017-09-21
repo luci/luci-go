@@ -19,6 +19,7 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
+	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	"golang.org/x/net/context"
@@ -50,6 +51,7 @@ type Services struct {
 }
 
 var _ endpoints.Services = (*Services)(nil)
+var _ flex.Services = (*Services)(nil)
 
 // Config implements coordinator.Services.
 func (s *Services) Config(c context.Context) (*config.Config, error) {

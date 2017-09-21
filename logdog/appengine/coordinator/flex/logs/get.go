@@ -17,18 +17,20 @@ package logs
 import (
 	"time"
 
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
+	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
+	"go.chromium.org/luci/logdog/common/storage"
+	"go.chromium.org/luci/logdog/common/types"
+
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
-	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/appengine/coordinator"
-	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
-	"go.chromium.org/luci/logdog/common/storage"
-	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
 	ds "go.chromium.org/gae/service/datastore"
@@ -121,12 +123,14 @@ func (s *server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 	}
 
 	// Retrieve requested logs from storage, if requested.
+	startTime := clock.Now(c)
 	if err := s.getLogs(c, req, &resp, tail, ls, lst); err != nil {
 		log.WithError(err).Errorf(c, "Failed to get logs.")
 		return nil, grpcutil.Internal
 	}
 
 	log.Fields{
+		"duration": clock.Now(c).Sub(startTime).String(),
 		"logCount": len(resp.Logs),
 	}.Debugf(c, "Get request completed successfully.")
 	return &resp, nil
@@ -148,7 +152,7 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog
 		return nil
 	}
 
-	svc := endpoints.GetServices(c)
+	svc := flex.GetServices(c)
 	st, err := svc.StorageForStream(c, lst)
 	if err != nil {
 		return errors.Annotate(err, "").InternalReason("failed to create storage instance").Err()
@@ -194,8 +198,8 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog
 	return nil
 }
 
-func getHead(c context.Context, req *logdog.GetRequest, st coordinator.SigningStorage,
-	project cfgtypes.ProjectName, path types.StreamPath, byteLimit int) ([]*logpb.LogEntry, error) {
+func getHead(c context.Context, req *logdog.GetRequest, st coordinator.SigningStorage, project cfgtypes.ProjectName,
+	path types.StreamPath, byteLimit int) ([]*logpb.LogEntry, error) {
 
 	log.Fields{
 		"project":       project,
@@ -279,8 +283,8 @@ func getHead(c context.Context, req *logdog.GetRequest, st coordinator.SigningSt
 	}
 }
 
-func getTail(c context.Context, st coordinator.SigningStorage, project cfgtypes.ProjectName,
-	path types.StreamPath) ([]*logpb.LogEntry, error) {
+func getTail(c context.Context, st coordinator.SigningStorage, project cfgtypes.ProjectName, path types.StreamPath) (
+	[]*logpb.LogEntry, error) {
 
 	log.Fields{
 		"project": project,
