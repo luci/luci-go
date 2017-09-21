@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4183dc3c_4a52a97d",
+        "filename": "vpython/system_posix.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-09-21T17:05:58Z",
+      "side": 1,
+      "message": "Not *necessary*, but I think that consistency is a good idea. This is really simple and ensures that any environment that we create will have the same starting parameters.",
+      "parentUuid": "0accf05d_5c87f458",
+      "range": {
+        "startLine": 58,
+        "startChar": 43,
+        "endLine": 58,
+        "endChar": 54
+      },
+      "revId": "e5ca18df5f6222cded692200bf8c88fb956b8a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5a9d9ca5_5e4e14b3",
         "filename": "vpython/system_windows.go",
         "patchSetId": 8
@@ -45,6 +69,30 @@
       "revId": "e5ca18df5f6222cded692200bf8c88fb956b8a50",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7265a408_44f3fc85",
+        "filename": "vpython/system_windows.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-09-21T17:05:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a9d9ca5_5e4e14b3",
+      "range": {
+        "startLine": 34,
+        "startChar": 19,
+        "endLine": 34,
+        "endChar": 25
+      },
+      "revId": "e5ca18df5f6222cded692200bf8c88fb956b8a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
