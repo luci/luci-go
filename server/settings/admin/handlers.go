@@ -26,9 +26,9 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
-	"go.chromium.org/luci/server/auth/identity"
 	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"

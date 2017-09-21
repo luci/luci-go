@@ -17,9 +17,9 @@ package authtest
 import (
 	"net"
 
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
-	"go.chromium.org/luci/server/auth/identity"
 )
 
 // FakeState implements auth.State returning predefined values.

@@ -18,12 +18,12 @@ import (
 	"testing"
 
 	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/common/auth/identity"
 	memcfg "go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/auth/identity"
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"

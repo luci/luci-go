@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/server/auth/identity"
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/server/auth/signing"
 
 	"go.chromium.org/luci/tokenserver/api"

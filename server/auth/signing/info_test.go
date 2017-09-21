@@ -21,8 +21,8 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/data/caching/lru"
-	"go.chromium.org/luci/server/auth/identity"
 	"go.chromium.org/luci/server/auth/internal"
 	"go.chromium.org/luci/server/caching"
 

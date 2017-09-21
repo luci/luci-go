@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"net"
 
-	"go.chromium.org/luci/server/auth/identity"
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/server/auth/service/protocol"
 )
 

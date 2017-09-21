@@ -25,8 +25,8 @@ import (
 
 	"go.chromium.org/luci/server/router"
 
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/server/auth/authdb"
-	"go.chromium.org/luci/server/auth/identity"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 

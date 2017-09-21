@@ -25,13 +25,13 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/delegation/messages"
-	"go.chromium.org/luci/server/auth/identity"
 	"go.chromium.org/luci/server/auth/signing"
 
 	admin "go.chromium.org/luci/tokenserver/api/admin/v1"
