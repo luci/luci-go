@@ -16,6 +16,7 @@ package coordinatorTest
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -24,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/common/data/caching/cacheContext"
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -33,6 +35,7 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
+	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
 	"go.chromium.org/luci/logdog/common/storage/archive"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
@@ -55,6 +58,13 @@ import (
 // AllAccessProject is the project name that can be used to get a full-access
 // project (i.e. unauthenticated users have both R and W permissions).
 const AllAccessProject = "proj-foo"
+
+// mainServicePath is the path to the main service.
+var mainServicePath string
+
+func init() {
+	mainServicePath = findParentDirectory("logdog", "appengine", "cmd", "coordinator", "frontend")
+}
 
 // Environment contains all of the testing facilities that are installed into
 // the Context.
@@ -175,7 +185,9 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 		Config:   make(map[string]memory.ConfigSet),
 		GSClient: GSClient{},
 		StorageCache: StorageCache{
-			Base: &coordinator.StorageCache{},
+			Base: &flex.StorageCache{
+				Cache: lru.New(0),
+			},
 		},
 	}
 
@@ -191,7 +203,6 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 
 	if useRealIndex {
 		// Load indexes from "index.yaml".
-		mainServicePath := filepath.Join("..", "..", "..", "cmd", "coordinator", "vmuser")
 		indexDefs, err := ds.FindAndParseIndexYAML(mainServicePath)
 		if err != nil {
 			panic(fmt.Errorf("failed to load 'index.yaml': %s", err))
@@ -317,6 +328,7 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 	}
 	c = coordinator.WithConfigProvider(c, &e.Services)
 	c = endpoints.WithServices(c, &e.Services)
+	c = flex.WithServices(c, &e.Services)
 
 	return cacheContext.Wrap(c), &e
 }
@@ -328,4 +340,35 @@ func WithProjectNamespace(c context.Context, proj cfgtypes.ProjectName, f func(c
 		panic(err)
 	}
 	f(c)
+}
+
+// findParentDirectory is used to traverse up from the current working directory
+// to identify a target directory structure.
+func findParentDirectory(paths ...string) string {
+	base, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+
+	// Build our basic directory scanning slice template, which consists of a
+	// variable first element (root) and fixed set of remaining elements. We'll
+	// switch out the first element during traversal.
+	components := make([]string, 1, 1+len(paths))
+	components[0] = base
+	components = append(components, paths...)
+
+	prev := ""
+	for {
+		candidate := filepath.Join(components...)
+		if candidate == prev {
+			panic(fmt.Errorf("could not find: %q", filepath.Join(paths...)))
+		}
+
+		if st, err := os.Stat(candidate); err == nil && st.IsDir() {
+			return candidate
+		}
+
+		prev = candidate
+		components[0] = filepath.Dir(components[0])
+	}
 }

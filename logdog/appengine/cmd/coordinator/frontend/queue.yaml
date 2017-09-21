@@ -12,25 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-dispatch:
-  - url: "*/app/*"
-    service: static
-
-  - url: "*/v/*"
-    service: static
-
-  - url: "*/rpcexplorer"
-    service: static
-  - url: "*/rpcexplorer/*"
-    service: static
-
-  ##
-  # Always route logdog.Services and logdog.Registration RPCs to the "services"
-  # module.
-  ##
-
-  - url: "*/prpc/logdog.Services/*"
-    service: services
-
-  - url: "*/prpc/logdog.Registration/*"
-    service: services
+queue:
+- name: "tumble"
+  rate: 100/s
+  target: backend
