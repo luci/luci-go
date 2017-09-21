@@ -19,9 +19,9 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/auth/identity"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

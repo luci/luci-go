@@ -29,6 +29,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
@@ -36,7 +37,6 @@ import (
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/auth/identity"
 	"go.chromium.org/luci/server/settings"
 	"go.chromium.org/luci/server/templates"
 

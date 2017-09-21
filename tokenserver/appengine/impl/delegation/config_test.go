@@ -20,9 +20,9 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/auth/identity"
 	admin "go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/identityset"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/policy"

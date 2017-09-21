@@ -21,6 +21,7 @@ import (
 	"sync"
 	"time"
 
+	"go.chromium.org/luci/common/auth/identity"
 	config_mem "go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/common/gcloud/pubsub"
 	googlepb "go.chromium.org/luci/common/proto/google"
@@ -31,7 +32,6 @@ import (
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/auth/identity"
 	"go.chromium.org/luci/server/secrets/testsecrets"
 	"go.chromium.org/luci/tumble"
 

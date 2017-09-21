@@ -23,11 +23,11 @@ import (
 	"strings"
 	"time"
 
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/googleoauth"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/server/auth/identity"
 
 	"golang.org/x/net/context"
 )

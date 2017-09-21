@@ -18,12 +18,12 @@ import (
 	"fmt"
 	"testing"
 
+	"go.chromium.org/luci/common/auth/identity"
 	configPB "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/luci_config/server/cfgclient"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/auth/identity"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"

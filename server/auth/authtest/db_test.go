@@ -21,7 +21,7 @@ import (
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/server/auth/identity"
+	"go.chromium.org/luci/common/auth/identity"
 )
 
 func TestFakeDB(t *testing.T) {

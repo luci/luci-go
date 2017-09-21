@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/gae/service/taskqueue"
 
 	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
@@ -40,7 +41,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/identity"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/tokens"
 

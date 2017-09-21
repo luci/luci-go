@@ -19,10 +19,10 @@ import (
 	"strings"
 
 	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/auth/identity"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/identity"
 	"golang.org/x/net/context"
 )
 

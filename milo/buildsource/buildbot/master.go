@@ -23,12 +23,12 @@ import (
 	"time"
 
 	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/identity"
 
 	"golang.org/x/net/context"
 )

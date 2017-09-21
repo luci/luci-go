@@ -27,8 +27,8 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/auth"
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/server/auth/delegation"
-	"go.chromium.org/luci/server/auth/identity"
 )
 
 func TestGetRPCTransport(t *testing.T) {

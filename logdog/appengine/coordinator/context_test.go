@@ -20,13 +20,13 @@ import (
 	"testing"
 
 	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 	"go.chromium.org/luci/luci_config/server/cfgclient"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/auth/identity"
 
 	"golang.org/x/net/context"
 

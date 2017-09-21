@@ -23,11 +23,11 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/server/auth/identity"
 
 	"go.chromium.org/luci/scheduler/appengine/task"
 )

@@ -28,6 +28,7 @@ package access
 import (
 	"strings"
 
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	configPB "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
@@ -35,7 +36,6 @@ import (
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
 	"go.chromium.org/luci/luci_config/server/cfgclient/textproto"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/identity"
 
 	"golang.org/x/net/context"
 )
