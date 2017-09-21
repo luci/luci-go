@@ -22,6 +22,30 @@
       "revId": "ca82121e68e8b060d349eadd1a6c88d4014ce1f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e308c55_b92389f5",
+        "filename": "buildbucket/client/cmd/buildbucket/put.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-21T23:54:35Z",
+      "side": 1,
+      "message": "adding...\nhttps://chromium-review.googlesource.com/c/infra/infra/+/677636\nhttps://bugs.chromium.org/p/chromium/issues/detail?id\u003d767659",
+      "parentUuid": "a3157949_f27eea2a",
+      "range": {
+        "startLine": 60,
+        "startChar": 2,
+        "endLine": 60,
+        "endChar": 15
+      },
+      "revId": "ca82121e68e8b060d349eadd1a6c88d4014ce1f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
