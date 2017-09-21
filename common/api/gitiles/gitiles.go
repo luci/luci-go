@@ -14,8 +14,6 @@
 
 package gitiles
 
-// TODO(tandrii): add tests.
-
 import (
 	"encoding/json"
 	"fmt"
