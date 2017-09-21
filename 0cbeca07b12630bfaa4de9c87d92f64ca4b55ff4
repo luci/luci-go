@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3ccb649e_7b0a6479",
+        "filename": "logdog/appengine/cmd/coordinator/frontend/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-09-21T17:37:20Z",
+      "side": 1,
+      "message": "Elaborated in comment.",
+      "parentUuid": "a08ff1dc_e931e63e",
+      "range": {
+        "startLine": 62,
+        "startChar": 20,
+        "endLine": 62,
+        "endChar": 24
+      },
+      "revId": "0cbeca07b12630bfaa4de9c87d92f64ca4b55ff4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0533377b_aa95d96e",
         "filename": "logdog/appengine/cmd/coordinator/frontend/queue.yaml",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "0cbeca07b12630bfaa4de9c87d92f64ca4b55ff4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6797f439_3ee1acb3",
+        "filename": "logdog/appengine/cmd/coordinator/frontend/queue.yaml",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-09-21T17:37:20Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "0533377b_aa95d96e",
+      "range": {
+        "startLine": 15,
+        "startChar": 13,
+        "endLine": 15,
+        "endChar": 24
+      },
+      "revId": "0cbeca07b12630bfaa4de9c87d92f64ca4b55ff4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -99,6 +147,30 @@
       "writtenOn": "2017-09-21T17:23:04Z",
       "side": 1,
       "message": "do this after validation?",
+      "range": {
+        "startLine": 137,
+        "startChar": 14,
+        "endLine": 137,
+        "endChar": 36
+      },
+      "revId": "0cbeca07b12630bfaa4de9c87d92f64ca4b55ff4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3ef9533_b40d4374",
+        "filename": "logdog/appengine/coordinator/flex/services.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-09-21T17:37:20Z",
+      "side": 1,
+      "message": "I want to put this here so that the parameters are all visible in logs. It should help us debug things if something is every wrong with them.",
+      "parentUuid": "b7085240_7cf710c1",
       "range": {
         "startLine": 137,
         "startChar": 14,
