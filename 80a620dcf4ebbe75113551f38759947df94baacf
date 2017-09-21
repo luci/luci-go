@@ -46,6 +46,30 @@
       "revId": "80a620dcf4ebbe75113551f38759947df94baacf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58c161ec_86435433",
+        "filename": "buildbucket/tag.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-21T20:30:00Z",
+      "side": 1,
+      "message": "forgot to say that we don\u0027t know which tags are hierarchical. What if someone wants to have a tag \"x\" with value \"y.z\"",
+      "parentUuid": "28b209ab_ee10cfbe",
+      "range": {
+        "startLine": 48,
+        "startChar": 21,
+        "endLine": 48,
+        "endChar": 29
+      },
+      "revId": "80a620dcf4ebbe75113551f38759947df94baacf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
