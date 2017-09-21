@@ -20,6 +20,8 @@ import (
 	"os"
 	"syscall"
 
+	"golang.org/x/sys/unix"
+
 	"go.chromium.org/luci/vpython/venv"
 
 	"go.chromium.org/luci/common/errors"
@@ -51,13 +53,13 @@ func systemSpecificLaunch(c context.Context, ve *venv.Env, argv []string, env en
 		// "dup2" doesn't change flags if the source and destination file
 		// descriptors are the same. Explicitly remove the close-on-exec flag, which
 		// Go enables by default.
-		if _, _, err := syscall.RawSyscall(syscall.SYS_FCNTL, lockFD, syscall.F_SETFD, 0); err != 0 {
+		if _, _, err := unix.Syscall(unix.SYS_FCNTL, lockFD, unix.F_SETFD, 0); err != 0 {
 			return errors.Annotate(err, "could not remove close-on-exec for lock file").Err()
 		}
 	} else {
 		// Use "dup2" to copy the file descriptor to #3 slot. This will also clear
 		// its flags, including close-on-exec.
-		if _, _, err := syscall.RawSyscall(syscall.SYS_DUP2, lockFD, 3, 0); err != 0 {
+		if err := unix.Dup2(int(lockFD), 3); err != nil {
 			return errors.Annotate(err, "could not dup2 lock file").Err()
 		}
 	}
