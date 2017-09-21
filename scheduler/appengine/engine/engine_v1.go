@@ -97,6 +97,7 @@ func (ctl *jobControllerV1) onInvUpdating(c context.Context, old, fresh *Invocat
 		if err := eng.enqueueTriggers(c, fresh.TriggeredJobIDs, triggers); err != nil {
 			return err
 		}
+		fresh.OutgoingTriggers = append(fresh.OutgoingTriggers, triggers...)
 	}
 
 	hasStartedOrFailed := old.Status.Initial() && !fresh.Status.Initial()
