@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a3157949_f27eea2a",
+        "filename": "buildbucket/client/cmd/buildbucket/put.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-09-21T23:01:54Z",
+      "side": 1,
+      "message": "This looks like it would easily avoid collisions, but does seem arbitrary. Do we really need the information hostname and pid? If so, we should consider passing it as a tag or something. If not, why not use a uuid4 which is purpose made for things like this? https://github.com/google/uuid/blob/master/version4.go#L29",
+      "range": {
+        "startLine": 60,
+        "startChar": 2,
+        "endLine": 60,
+        "endChar": 15
+      },
+      "revId": "ca82121e68e8b060d349eadd1a6c88d4014ce1f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
