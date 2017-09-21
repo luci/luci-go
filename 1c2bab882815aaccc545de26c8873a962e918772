@@ -272,6 +272,24 @@
     },
     {
       "key": {
+        "uuid": "8ea971d3_5308b200",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-21T17:55:26Z",
+      "side": 1,
+      "message": "Oh... I see what you\u0027re suggesting now, I think. My worry was the more general case where you can have _any_ prefix (glob-style) which makes this not-so-simple (we\u0027d need something like a document index to be able to do real regex/glob matching, because, fwiu, filters alone can\u0027t do partial matching). If you just mean matching all builders in a particular bucket then yeah, that\u0027s straight-forward and I\u0027ll add that.\n\nIn that case I\u0027ll also update this comment to restrict what kind of prefix is ok (i.e. \"must be buildbucket/, buildbucket/\u003cbucket\u003e, or buildbucket/\u003cbucket\u003e/\u003cbuilder\u003e\").",
+      "parentUuid": "ead87c9d_4b0d1c9c",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a63858f6_c211948b",
         "filename": "luci_notify/buildbucket/buildinfo.go",
         "patchSetId": 3
