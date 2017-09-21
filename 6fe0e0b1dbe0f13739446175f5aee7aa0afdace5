@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "202b0d46_82916bc8",
+        "filename": "scheduler/appengine/engine/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-21T19:59:04Z",
+      "side": 1,
+      "message": "multiline because I expect some lists will be huge (e.g. chromium git poller will trigger a lot of jobs)",
+      "range": {
+        "startLine": 179,
+        "startChar": 2,
+        "endLine": 181,
+        "endChar": 3
+      },
+      "revId": "6fe0e0b1dbe0f13739446175f5aee7aa0afdace5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
