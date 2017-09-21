@@ -19,6 +19,29 @@
     },
     {
       "key": {
+        "uuid": "3b4324c2_770a97fd",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 429,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-21T22:57:08Z",
+      "side": 1,
+      "message": "general nit: IMHO this function, along with maybeGetTrigger should be moved to \"scheduler/appengine/task/gitiles\" or maybe some new separate package.\n\nImagine we want to add similar functionality to Swarming task implementation. Do we have to copy-paste the code?",
+      "range": {
+        "startLine": 429,
+        "startChar": 5,
+        "endLine": 429,
+        "endChar": 17
+      },
+      "revId": "11fc1e9770a8ebbfbdebe919f2726b27b1bf761d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "df22e123_68528fbc",
         "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
         "patchSetId": 2
