@@ -179,3 +179,20 @@ var postInvocationAction = function(btn, action) {
 </span>
 <a href="/jobs/{{.ProjectID}}/{{.JobName}}">{{.JobName}}</a>
 {{end}}
+
+{{define "triggers-list"}}
+<ul>
+  {{range .}}
+  <li>
+    <span style="font-family:monospace;">
+    {{if .URL}}
+      <a href="{{.URL}}" target="_blank">{{.Title}}</a>
+    {{else}}
+      {{.Title}}
+    {{end}}
+    </span>
+    {{if .RelTime}}({{.RelTime}}){{end}}
+  </li>
+  {{end}}
+</ul>
+{{end}}
