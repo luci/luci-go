@@ -290,6 +290,24 @@
     },
     {
       "key": {
+        "uuid": "11d96a5b_4f84b60a",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-21T18:00:02Z",
+      "side": 1,
+      "message": "wait, I\u0027ve confused this comment thread with another, sorry. My second comment was about having separate Bucket and Name fields here and using \"bucket/a/b\" internally. Let\u0027s punt on regexes/patterns.",
+      "parentUuid": "8ea971d3_5308b200",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a63858f6_c211948b",
         "filename": "luci_notify/buildbucket/buildinfo.go",
         "patchSetId": 3
