@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/config/impl/memory"
@@ -44,7 +45,6 @@ import (
 	"go.chromium.org/luci/luci_config/server/cfgclient/textproto"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/auth/identity"
 	"go.chromium.org/luci/server/settings"
 	"go.chromium.org/luci/tumble"
 

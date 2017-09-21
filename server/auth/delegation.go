@@ -24,6 +24,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/jsontime"
 	"go.chromium.org/luci/common/logging"
@@ -33,7 +34,6 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth/delegation"
 	"go.chromium.org/luci/server/auth/delegation/messages"
-	"go.chromium.org/luci/server/auth/identity"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 )
 

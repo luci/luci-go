@@ -19,8 +19,8 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/identity"
 )
 
 // InboundAppIDAuthMethod implements auth.Method by checking special HTTP

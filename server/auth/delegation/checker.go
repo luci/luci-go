@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 
-	"go.chromium.org/luci/server/auth/identity"
+	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/server/auth/signing"
 
 	"go.chromium.org/luci/server/auth/delegation/messages"
