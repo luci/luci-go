@@ -404,6 +404,24 @@
     },
     {
       "key": {
+        "uuid": "25b6ef4a_dc1632a0",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-21T23:58:44Z",
+      "side": 1,
+      "message": "Actually, in that case it probably makes sense to just have a separate message altogether. I went with your suggestion in the latest PS.",
+      "parentUuid": "85c93dd5_80143b8b",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ca3db0b7_9ffed5a9",
         "filename": "luci_notify/buildbucket/buildinfo.go",
         "patchSetId": 1
