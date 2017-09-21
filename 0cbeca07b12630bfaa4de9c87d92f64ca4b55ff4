@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ede7224f_be68ed23",
+        "filename": "logdog/appengine/coordinator/flex/services.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-09-21T17:08:38Z",
+      "side": 1,
+      "message": "Pretty much just cherry-picked storage parts from here: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/618351/3/logdog/appengine/coordinator/endpoints/services.go#b46",
+      "range": {
+        "startLine": 57,
+        "startChar": 5,
+        "endLine": 57,
+        "endChar": 13
+      },
+      "revId": "0cbeca07b12630bfaa4de9c87d92f64ca4b55ff4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e18f9c0_5e2e6699",
+        "filename": "logdog/appengine/coordinator/flex/services.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-09-21T17:08:38Z",
+      "side": 1,
+      "message": "This is new.",
+      "revId": "0cbeca07b12630bfaa4de9c87d92f64ca4b55ff4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a01c6448_7cd48717",
+        "filename": "logdog/appengine/coordinator/flex/services.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-09-21T17:08:38Z",
+      "side": 1,
+      "message": "This is also new.",
+      "range": {
+        "startLine": 173,
+        "startChar": 28,
+        "endLine": 173,
+        "endChar": 54
+      },
+      "revId": "0cbeca07b12630bfaa4de9c87d92f64ca4b55ff4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
