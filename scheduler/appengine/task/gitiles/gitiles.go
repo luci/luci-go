@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/url"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -80,6 +81,11 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 	if !u.IsAbs() {
 		return fmt.Errorf("not an absolute url: %q", cfg.Repo)
 	}
+	for _, ref := range cfg.Refs {
+		if !strings.HasPrefix(ref, "refs/") {
+			return fmt.Errorf("ref must start with 'refs/' not %q", ref)
+		}
+	}
 	return nil
 }
 
@@ -97,11 +103,6 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 		watchedRefs.Add(ref)
 	}
 
-	g, err := m.getGitilesClient(c, ctl)
-	if err != nil {
-		return err
-	}
-
 	var wg sync.WaitGroup
 
 	var heads map[string]string
@@ -117,9 +118,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		// TODO(tandrii): rework to make this scale with ever expanding
-		// refs/changes/*.
-		refs, refsErr = g.Refs(c, cfg.Repo, "refs")
+		refs, refsErr = m.getRefsTips(c, ctl, cfg.Repo, cfg.Refs)
 	}()
 
 	wg.Wait()
@@ -286,6 +285,48 @@ func (m TaskManager) save(c context.Context, jobID string, u *url.URL, heads map
 	}))
 }
 
+func (m TaskManager) getRefsTips(c context.Context, ctl task.Controller, repo string, refs []string) (map[string]string, error) {
+	g, err := m.getGitilesClient(c, ctl)
+	if err != nil {
+		return nil, err
+	}
+	// Group all refs by their namespace to reduce # of RPCs.
+	byNamespace := map[string][]string{}
+	for _, ref := range refs {
+		ns := refNamespace(ref)
+		byNamespace[ns] = append(byNamespace[ns], ref)
+	}
+	// Query gitiles for each namespace in parallel.
+	var wg sync.WaitGroup
+	var lock sync.Mutex
+	errs := []error{}
+	allTips := make(map[string]string, len(refs))
+	for ns, refNames := range byNamespace {
+		wg.Add(1)
+		go func(ns string, refNames []string) {
+			defer wg.Done()
+			tips, err := g.Refs(c, repo, ns)
+			lock.Lock()
+			defer lock.Unlock()
+			if err != nil {
+				ctl.DebugLog("failed to fetch %q namespace tips for %q: %q", ns, refNames, err)
+				errs = append(errs, err)
+				return
+			}
+			for _, ref := range refNames {
+				if tip, exists := tips[ref]; exists {
+					allTips[ref] = tip
+				}
+			}
+		}(ns, refNames)
+	}
+	wg.Wait()
+	if len(errs) > 0 {
+		return nil, errors.NewMultiError(errs...)
+	}
+	return allTips, nil
+}
+
 type gitilesClient interface {
 	Refs(ctx context.Context, repoURL, refsPath string) (map[string]string, error)
 }
@@ -303,4 +344,12 @@ func (m TaskManager) getGitilesClient(c context.Context, ctl task.Controller) (g
 		return m.mockGitilesClient, nil
 	}
 	return &gitiles.Client{Client: httpClient}, nil
+}
+
+func refNamespace(s string) string {
+	if i := strings.LastIndex(s, "/"); i <= 0 {
+		return s
+	} else {
+		return s[:i]
+	}
 }

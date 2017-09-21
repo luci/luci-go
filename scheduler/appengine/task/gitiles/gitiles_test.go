@@ -16,12 +16,14 @@ package gitiles
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
 	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -58,7 +60,7 @@ func TestTriggerBuild(t *testing.T) {
 		m := TaskManager{mockGitilesClient: gitilesMock}
 
 		Convey("new refs are discovered", func() {
-			gitilesMock.refs = func(ctx context.Context, repo string, path string) (map[string]string, error) {
+			gitilesMock.allRefs = func() (map[string]string, error) {
 				return map[string]string{
 					"refs/heads/master": "deadbeef0",
 					"refs/weird":        "123456789",
@@ -91,7 +93,7 @@ func TestTriggerBuild(t *testing.T) {
 					{Name: "refs/heads/master", Revision: "deadbeef0"},
 				},
 			})
-			gitilesMock.refs = func(ctx context.Context, repo string, path string) (map[string]string, error) {
+			gitilesMock.allRefs = func() (map[string]string, error) {
 				return map[string]string{
 					"refs/heads/master": "deadbeef0",
 					"refs/weird":        "123456789",
@@ -116,7 +118,7 @@ func TestTriggerBuild(t *testing.T) {
 					{Name: "refs/was/watched", Revision: "098765432"},
 				},
 			})
-			gitilesMock.refs = func(ctx context.Context, repo string, path string) (map[string]string, error) {
+			gitilesMock.allRefs = func() (map[string]string, error) {
 				return map[string]string{
 					"refs/heads/master":       "deadbeef1",
 					"refs/branch-heads/1.2.3": "baadcafe0",
@@ -142,7 +144,7 @@ func TestTriggerBuild(t *testing.T) {
 					{Name: "refs/heads/master", Revision: "deadbeef0"},
 				},
 			})
-			gitilesMock.refs = func(ctx context.Context, repo string, path string) (map[string]string, error) {
+			gitilesMock.allRefs = func() (map[string]string, error) {
 				return map[string]string{
 					"refs/heads/master": "deadbeef0",
 				}, nil
@@ -161,10 +163,97 @@ func TestTriggerBuild(t *testing.T) {
 	})
 }
 
+func TestValidateConfig(t *testing.T) {
+	Convey("refNamespace works", t, func() {
+		cfg := &messages.GitilesTask{
+			Repo: "https://a.googlesource.com/b.git",
+			Refs: []string{"refs/heads/master", "refs/heads/branch", "refs/branch-heads/1.2.3"},
+		}
+		m := TaskManager{}
+		So(m.ValidateProtoMessage(cfg), ShouldBeNil)
+
+		cfg.Refs = []string{"wtf/not/a/ref"}
+		So(m.ValidateProtoMessage(cfg), ShouldNotBeNil)
+	})
+}
+
+func TestRefNamespace(t *testing.T) {
+	Convey("refNamespace works", t, func() {
+		So(refNamespace("refs/heads/master"), ShouldEqual, "refs/heads")
+		So(refNamespace("refs/wo"), ShouldEqual, "refs")
+		So(refNamespace("refs/weird/"), ShouldEqual, "refs/weird")
+	})
+}
+
 type mockGitilesClient struct {
-	refs func(ctx context.Context, repoURL, refsPath string) (map[string]string, error)
+	allRefs func() (map[string]string, error)
 }
 
 func (m *mockGitilesClient) Refs(c context.Context, repo string, path string) (map[string]string, error) {
-	return m.refs(c, repo, path)
+	refs, err := m.allRefs()
+	if err != nil {
+		return nil, err
+	}
+	// Returns only those refs which reside in given path namespace.
+	for ref := range refs {
+		if ref == path || strings.HasPrefix(ref, path+"/") {
+			continue
+		}
+		delete(refs, ref)
+	}
+	return refs, err
+}
+
+func TestRefsMock(t *testing.T) {
+	Convey("Refs Mock works", t, func() {
+		c := context.Background()
+		repo := "https://repo/whatever.git"
+		m := mockGitilesClient{}
+		Convey("Error propagation", func() {
+			m.allRefs = func() (map[string]string, error) { return nil, errors.New("wtf") }
+			_, err := m.Refs(c, repo, "refs")
+			So(err, ShouldNotBeNil)
+		})
+		Convey("Correct namespacing", func() {
+			m.allRefs = func() (map[string]string, error) {
+				return map[string]string{
+					"refs/heads/master":       "1",
+					"refs/heads/infra/config": "2",
+					"refs/wtf/bar":            "3",
+					"refs/wtf/foo":            "4",
+					"refs/wtf2":               "5",
+				}, nil
+			}
+
+			refs, err := m.Refs(c, repo, "refs")
+			So(err, ShouldBeNil)
+			So(refs, ShouldResemble, map[string]string{
+				"refs/heads/master":       "1",
+				"refs/heads/infra/config": "2",
+				"refs/wtf/bar":            "3",
+				"refs/wtf/foo":            "4",
+				"refs/wtf2":               "5",
+			})
+
+			refs, err = m.Refs(c, repo, "refs/heads")
+			So(err, ShouldBeNil)
+			So(refs, ShouldResemble, map[string]string{
+				"refs/heads/master":       "1",
+				"refs/heads/infra/config": "2",
+			})
+
+			refs, err = m.Refs(c, repo, "refs/heads/infra")
+			So(err, ShouldBeNil)
+			So(refs, ShouldResemble, map[string]string{
+				"refs/heads/infra/config": "2",
+			})
+
+			refs, err = m.Refs(c, repo, "refs/wtf")
+			So(err, ShouldBeNil)
+			So(refs, ShouldResemble, map[string]string{
+				"refs/wtf/bar": "3",
+				"refs/wtf/foo": "4",
+			})
+		})
+	})
 }
