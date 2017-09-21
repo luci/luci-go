@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "d9aa4c7e_1e66d7fe",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-21T06:04:27Z",
+      "side": 1,
+      "message": "yes, thanks",
+      "parentUuid": "239980ef_e0b1df14",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4f847fe2_b68b1abf",
         "filename": "luci_notify/api/config/notify.proto",
         "patchSetId": 3
@@ -230,6 +248,24 @@
       "side": 1,
       "message": "I like the idea, but it\u0027s going to be a bit of work. I\u0027ll make a note of it in the design doc but I won\u0027t add this for now.",
       "parentUuid": "cedbd4e3_cec2ce50",
+      "revId": "1c2bab882815aaccc545de26c8873a962e918772",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ead87c9d_4b0d1c9c",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-21T06:04:27Z",
+      "side": 1,
+      "message": "what makes it a bit of work? see my comment in config/notifier.go@L84",
+      "parentUuid": "f9e16cdf_07eff425",
       "revId": "1c2bab882815aaccc545de26c8873a962e918772",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
