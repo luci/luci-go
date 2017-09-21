@@ -22,6 +22,30 @@
       "revId": "80a620dcf4ebbe75113551f38759947df94baacf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28b209ab_ee10cfbe",
+        "filename": "buildbucket/tag.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-21T19:31:03Z",
+      "side": 1,
+      "message": "hierarchical tags are more of an exception than a rule, so I am not sure I want to complicate this API for this rare case. \n\nHaving said that, I think it is sufficientish:\n\n  swarming_tags \u003d ParseTags(ParseTags(rawtags)[\"swarming_tag\"])\n\nWDYT?",
+      "parentUuid": "0caa72f2_70a7ef95",
+      "range": {
+        "startLine": 48,
+        "startChar": 21,
+        "endLine": 48,
+        "endChar": 29
+      },
+      "revId": "80a620dcf4ebbe75113551f38759947df94baacf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
