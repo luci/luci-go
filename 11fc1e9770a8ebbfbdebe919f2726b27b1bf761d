@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4025925a_11fb6589",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-21T22:33:10Z",
+      "side": 1,
+      "message": "i think we shouldn\u0027t be adding buildset if we failed to make it",
+      "revId": "11fc1e9770a8ebbfbdebe919f2726b27b1bf761d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df22e123_68528fbc",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 442,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-21T22:33:10Z",
+      "side": 1,
+      "message": "nit: the comment uses \u0027a/\u0027. The if condition uses \"/a/\". The actual removal uses \"/a\".\n\nHow about using \"/a/\" everywhere and put / between 2 %s",
+      "revId": "11fc1e9770a8ebbfbdebe919f2726b27b1bf761d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
