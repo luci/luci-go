@@ -94,6 +94,30 @@
       "revId": "80a620dcf4ebbe75113551f38759947df94baacf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb8a5b5e_9c2570f2",
+        "filename": "buildbucket/tag.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-21T22:08:17Z",
+      "side": 1,
+      "message": "Ahhh I see, yeah then I think this is reasonable. I didn\u0027t realize \":\" didn\u0027t explicitly denote \"subtag\".",
+      "parentUuid": "d8a95b7f_1f402cfc",
+      "range": {
+        "startLine": 48,
+        "startChar": 21,
+        "endLine": 48,
+        "endChar": 29
+      },
+      "revId": "80a620dcf4ebbe75113551f38759947df94baacf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
