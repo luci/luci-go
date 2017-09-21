@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4aefb741_06810fea",
+        "filename": "client/cmd/devshell/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-21T23:57:27Z",
+      "side": 1,
+      "message": "os.Exit(1) after that",
+      "range": {
+        "startLine": 115,
+        "startChar": 2,
+        "endLine": 115,
+        "endChar": 65
+      },
+      "revId": "9e38300952246a65fee2e718e0a77e229ba4a0d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c8ec154_d6b79169",
+        "filename": "common/devshell/server.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-21T23:57:27Z",
+      "side": 1,
+      "message": "nit:\nif s.info !\u003d nil {\n  return s.info.Email, nil\n}\n\n(to reduce nesting)",
+      "range": {
+        "startLine": 163,
+        "startChar": 1,
+        "endLine": 163,
+        "endChar": 19
+      },
+      "revId": "9e38300952246a65fee2e718e0a77e229ba4a0d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c736b37b_891491f9",
+        "filename": "common/devshell/server.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-21T23:57:27Z",
+      "side": 1,
+      "message": "I lied. Looks like Go requires some locking when making the first check too. See http://blog.launchdarkly.com/golang-pearl-thread-safe-writes-and-double-checked-locking-in-go/\n\nE.g convert l to RWMutex and use R locks when reading s.info, and W lock when attempting to initialize it.",
+      "range": {
+        "startLine": 166,
+        "startChar": 2,
+        "endLine": 166,
+        "endChar": 20
+      },
+      "revId": "9e38300952246a65fee2e718e0a77e229ba4a0d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
