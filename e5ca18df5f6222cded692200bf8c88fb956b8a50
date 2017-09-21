@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0accf05d_5c87f458",
+        "filename": "vpython/system_posix.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-21T16:47:40Z",
+      "side": 1,
+      "message": "Is this really necessary? I mean; how important is it that it be fd 3?",
+      "range": {
+        "startLine": 58,
+        "startChar": 43,
+        "endLine": 58,
+        "endChar": 54
+      },
+      "revId": "e5ca18df5f6222cded692200bf8c88fb956b8a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a9d9ca5_5e4e14b3",
+        "filename": "vpython/system_windows.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-21T16:47:40Z",
+      "side": 1,
+      "message": "maybe `not commonly done`?",
+      "range": {
+        "startLine": 34,
+        "startChar": 19,
+        "endLine": 34,
+        "endChar": 25
+      },
+      "revId": "e5ca18df5f6222cded692200bf8c88fb956b8a50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
