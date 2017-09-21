@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0caa72f2_70a7ef95",
+        "filename": "buildbucket/tag.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-21T19:21:47Z",
+      "side": 1,
+      "message": "Is this really sufficient? With stuff like swarming_tag one would need a yet another parser to yet another separate type to hold swarming_tag data. I don\u0027t know if swarming_tag is going to even stay, but if it is it might be worth making this map[string]map[string]string, or turning it into a tree.",
+      "range": {
+        "startLine": 48,
+        "startChar": 21,
+        "endLine": 48,
+        "endChar": 29
+      },
+      "revId": "80a620dcf4ebbe75113551f38759947df94baacf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
