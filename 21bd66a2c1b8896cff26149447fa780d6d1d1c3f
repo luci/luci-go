@@ -22,6 +22,30 @@
       "revId": "21bd66a2c1b8896cff26149447fa780d6d1d1c3f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ff87895_264b095d",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-21T19:12:54Z",
+      "side": 1,
+      "message": "great question! It\u0027s OK, but it will contribute to LOTS of unnecessary garbage in allTips. Fixed.",
+      "parentUuid": "216d7476_4f5b0b01",
+      "range": {
+        "startLine": 306,
+        "startChar": 21,
+        "endLine": 306,
+        "endChar": 29
+      },
+      "revId": "21bd66a2c1b8896cff26149447fa780d6d1d1c3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
