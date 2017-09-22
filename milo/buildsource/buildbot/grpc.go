@@ -64,6 +64,10 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 		}
 	}
 
+	if req.Restricted {
+		restrictBuild(b)
+	}
+
 	updatePostProcessBuild(b)
 	bs, err := json.Marshal(b)
 	if err != nil {
@@ -129,6 +133,9 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 	results := make([]*milo.BuildbotBuildJSON, len(builds))
 	for i, b := range builds {
 		updatePostProcessBuild(b)
+		if req.Restricted {
+			restrictBuild(b)
+		}
 
 		// In theory we could do this in parallel, but it doesn't actually go faster
 		// since AppEngine is single-cored.
@@ -176,6 +183,11 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 	if err = decodeMasterEntry(c, entry, master); err != nil {
 		return nil, err
 	}
+
+	if req.Restricted {
+		restrictMaster(master)
+	}
+
 	for _, slave := range master.Slaves {
 		numBuilds := 0
 		for _, builds := range slave.RunningbuildsMap {
@@ -216,6 +228,9 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 			KeysOnly(true)
 		var builds []*buildbotBuild
 		err := datastore.RunBatch(c, buildQueryBatchSize, q, func(b *buildbotBuild) {
+			if req.Restricted {
+				restrictBuild(b)
+			}
 			builds = append(builds, b)
 		})
 		if err != nil {
@@ -248,4 +263,22 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 		},
 		Data: gzbs.Bytes(),
 	}, nil
+}
+
+func restrictMaster(m *buildbotMaster) {
+	m.Slaves = nil
+	for _, builder := range m.Builders {
+		builder.Slaves = nil
+	}
+	for _, builder := range m.Buildstate.Builders {
+		builder.Slaves = nil
+	}
+	for _, builder := range m.Varz.Builders {
+		builder.ConnectedSlaves = 0
+		builder.TotalSlaves = 0
+	}
+}
+
+func restrictBuild(b *buildbotBuild) {
+	b.Slave = ""
 }
