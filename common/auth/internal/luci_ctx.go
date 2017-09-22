@@ -102,7 +102,7 @@ func (p *luciContextTokenProvider) CacheKey(ctx context.Context) (*CacheKey, err
 	return &p.cacheKey, nil
 }
 
-func (p *luciContextTokenProvider) MintToken(ctx context.Context, base *oauth2.Token) (*oauth2.Token, error) {
+func (p *luciContextTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, error) {
 	// Note: deadlines and retries are implemented by Authenticator. MintToken
 	// should just make a single attempt, and mark an error as transient to
 	// trigger a retry, if necessary.
@@ -157,14 +157,17 @@ func (p *luciContextTokenProvider) MintToken(ctx context.Context, base *oauth2.T
 		return nil, fmt.Errorf("local auth - RPC code %d: %s", response.ErrorCode, msg)
 	}
 
-	return &oauth2.Token{
-		AccessToken: response.AccessToken,
-		Expiry:      time.Unix(response.Expiry, 0).UTC(),
-		TokenType:   "Bearer",
+	return &Token{
+		Token: oauth2.Token{
+			AccessToken: response.AccessToken,
+			Expiry:      time.Unix(response.Expiry, 0).UTC(),
+			TokenType:   "Bearer",
+		},
+		Email: NoEmail, // TODO: grab from the context
 	}, nil
 }
 
-func (p *luciContextTokenProvider) RefreshToken(ctx context.Context, prev, base *oauth2.Token) (*oauth2.Token, error) {
+func (p *luciContextTokenProvider) RefreshToken(ctx context.Context, prev, base *Token) (*Token, error) {
 	// Minting and refreshing is the same thing: a call to local auth server.
 	return p.MintToken(ctx, base)
 }

@@ -19,7 +19,6 @@ import (
 
 	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -28,6 +27,7 @@ import (
 
 type gceTokenProvider struct {
 	account  string
+	email    string
 	cacheKey CacheKey
 }
 
@@ -45,10 +45,26 @@ func NewGCETokenProvider(ctx context.Context, account string, scopes []string) (
 			return nil, ErrInsufficientAccess
 		}
 	}
+
+	// Grab an email associated with the account.
+	email, err := metadata.Get("instance/service-accounts/" + account + "/email")
+	if err != nil {
+		logging.Warningf(ctx, "Failed to get GCE account email - %s", err)
+		email = NoEmail
+	}
+
+	// Use email as cache key if available and fallback to logical account name
+	// if not.
+	cacheKey := email
+	if cacheKey == NoEmail {
+		cacheKey = account
+	}
+
 	return &gceTokenProvider{
 		account: account,
+		email:   email,
 		cacheKey: CacheKey{
-			Key:    fmt.Sprintf("gce/%s", account),
+			Key:    fmt.Sprintf("gce/%s", cacheKey),
 			Scopes: scopes,
 		},
 	}, nil
@@ -66,12 +82,19 @@ func (p *gceTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {
 	return &p.cacheKey, nil
 }
 
-func (p *gceTokenProvider) MintToken(ctx context.Context, base *oauth2.Token) (*oauth2.Token, error) {
+func (p *gceTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, error) {
 	src := google.ComputeTokenSource(p.account)
-	return src.Token()
+	tok, err := src.Token()
+	if err != nil {
+		return nil, err
+	}
+	return &Token{
+		Token: *tok,
+		Email: p.email,
+	}, nil
 }
 
-func (p *gceTokenProvider) RefreshToken(ctx context.Context, prev, base *oauth2.Token) (*oauth2.Token, error) {
+func (p *gceTokenProvider) RefreshToken(ctx context.Context, prev, base *Token) (*Token, error) {
 	// Minting and refreshing on GCE is the same thing: a call to metadata server.
 	return p.MintToken(ctx, base)
 }
