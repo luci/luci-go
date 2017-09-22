@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2d75b90e_d62173f4",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-22T17:37:16Z",
+      "side": 1,
+      "message": "Oops, I thought you meant this because Milo does the same with its console definitions. Ok, I\u0027ll change it back.",
+      "parentUuid": "d2f9e5cb_e7ab0f9c",
+      "range": {
+        "startLine": 15,
+        "startChar": 20,
+        "endLine": 15,
+        "endChar": 29
+      },
+      "revId": "76e58baad091637546eb7c5e416510098f2a26b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1b6c3352_0ec76338",
         "filename": "luci_notify/config/config.go",
         "patchSetId": 5
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "ef01228e_3c8c6951",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-22T17:37:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1b6c3352_0ec76338",
+      "range": {
+        "startLine": 142,
+        "startChar": 28,
+        "endLine": 142,
+        "endChar": 32
+      },
+      "revId": "76e58baad091637546eb7c5e416510098f2a26b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cf7dd2a4_c2a4e8c5",
         "filename": "luci_notify/config/notifier.go",
         "patchSetId": 5
@@ -62,6 +110,24 @@
       "revId": "76e58baad091637546eb7c5e416510098f2a26b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3612a28c_df74a69d",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-22T17:37:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cf7dd2a4_c2a4e8c5",
+      "revId": "76e58baad091637546eb7c5e416510098f2a26b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -82,6 +148,24 @@
     },
     {
       "key": {
+        "uuid": "838b4bba_5595afa7",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-22T17:37:16Z",
+      "side": 1,
+      "message": "Does it need to be zeroed? n.Notifications is a slice, so if its nil (which it is by default) it\u0027ll still have all the same properties of a zero-length slice. Doesn\u0027t golang zero structs on initialization?",
+      "parentUuid": "a4fca611_e794a644",
+      "revId": "76e58baad091637546eb7c5e416510098f2a26b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "11bdcffe_41acbf05",
         "filename": "luci_notify/config/validate.go",
         "patchSetId": 5
@@ -96,6 +180,24 @@
       "revId": "76e58baad091637546eb7c5e416510098f2a26b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31b8bb18_59a529df",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-22T17:37:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "11bdcffe_41acbf05",
+      "revId": "76e58baad091637546eb7c5e416510098f2a26b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -122,6 +224,30 @@
     },
     {
       "key": {
+        "uuid": "4f4e5ece_7e08ae9b",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-22T17:37:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c4008e34_6fe70c92",
+      "range": {
+        "startLine": 67,
+        "startChar": 10,
+        "endLine": 67,
+        "endChar": 49
+      },
+      "revId": "76e58baad091637546eb7c5e416510098f2a26b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e3d3253b_e51cc82a",
         "filename": "luci_notify/config/validate.go",
         "patchSetId": 5
@@ -145,6 +271,30 @@
     },
     {
       "key": {
+        "uuid": "288f0f17_9e5555a7",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-22T17:37:16Z",
+      "side": 1,
+      "message": "Ah, oops. Yeah, I got the general idea but I missed some spots. I mainly just removed \"in notifier\" before, I forgot to remove the cfgNotifier.Name.",
+      "parentUuid": "e3d3253b_e51cc82a",
+      "range": {
+        "startLine": 84,
+        "startChar": 10,
+        "endLine": 84,
+        "endChar": 55
+      },
+      "revId": "76e58baad091637546eb7c5e416510098f2a26b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "48972204_dc20497a",
         "filename": "luci_notify/config/validate.go",
         "patchSetId": 5
@@ -159,6 +309,24 @@
       "revId": "76e58baad091637546eb7c5e416510098f2a26b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2cbf07e6_884cfb84",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-22T17:37:16Z",
+      "side": 1,
+      "message": "Done, and I actually changed all of them to follow this format, because a required field like \"name\" might be empty.",
+      "parentUuid": "48972204_dc20497a",
+      "revId": "76e58baad091637546eb7c5e416510098f2a26b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
