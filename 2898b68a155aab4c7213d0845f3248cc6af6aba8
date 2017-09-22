@@ -2,6 +2,138 @@
   "comments": [
     {
       "key": {
+        "uuid": "b41aee10_648e09c2",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-22T01:53:04Z",
+      "side": 1,
+      "message": "how about ↓ so that if somebody misconfigures dispatcher in prod, it\u0027s known asap:\n  logging.error(c, \"no dispatcher set, should happen unit tests only\")\neven better is to fix tests :)",
+      "range": {
+        "startLine": 236,
+        "startChar": 9,
+        "endLine": 236,
+        "endChar": 38
+      },
+      "revId": "2898b68a155aab4c7213d0845f3248cc6af6aba8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1e7fcd3_f9efd523",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 717,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-22T01:53:04Z",
+      "side": 1,
+      "message": "on",
+      "range": {
+        "startLine": 717,
+        "startChar": 13,
+        "endLine": 717,
+        "endChar": 15
+      },
+      "revId": "2898b68a155aab4c7213d0845f3248cc6af6aba8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35c6799f_acbf27b9",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1583,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-22T01:53:04Z",
+      "side": 1,
+      "message": "good idea!",
+      "range": {
+        "startLine": 1582,
+        "startChar": 0,
+        "endLine": 1583,
+        "endChar": 78
+      },
+      "revId": "2898b68a155aab4c7213d0845f3248cc6af6aba8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "345d6cc9_025258f7",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1759,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-22T01:53:04Z",
+      "side": 1,
+      "message": "at most\niirc, it may run less frequently than that.",
+      "range": {
+        "startLine": 1759,
+        "startChar": 39,
+        "endLine": 1759,
+        "endChar": 40
+      },
+      "revId": "2898b68a155aab4c7213d0845f3248cc6af6aba8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b61e9dd_00bd6c63",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1846,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-22T01:53:04Z",
+      "side": 1,
+      "message": "remove",
+      "revId": "2898b68a155aab4c7213d0845f3248cc6af6aba8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e74a5907_cd9afca9",
+        "filename": "scheduler/appengine/engine/engine_v2.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-22T01:53:04Z",
+      "side": 1,
+      "message": "creates",
+      "range": {
+        "startLine": 113,
+        "startChar": 27,
+        "endLine": 113,
+        "endChar": 28
+      },
+      "revId": "2898b68a155aab4c7213d0845f3248cc6af6aba8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a371f0c0_cac76313",
         "filename": "scheduler/appengine/internal/tq.proto",
         "patchSetId": 1
