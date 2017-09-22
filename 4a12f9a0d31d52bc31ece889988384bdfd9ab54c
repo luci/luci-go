@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c9fa2957_d7ffb7a5",
+        "filename": "cipd/client/cipd/local/fs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-09-22T17:29:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "260e13ea_75da0ed7",
+      "range": {
+        "startLine": 59,
+        "startChar": 4,
+        "endLine": 60,
+        "endChar": 25
+      },
+      "revId": "4a12f9a0d31d52bc31ece889988384bdfd9ab54c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e605ff1c_99e21f17",
         "filename": "cipd/client/cipd/local/fs_test.go",
         "patchSetId": 3
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "294d837d_a5e0959f",
+        "filename": "cipd/client/cipd/local/fs_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-09-22T17:29:44Z",
+      "side": 1,
+      "message": "Yes, I did assert that :)",
+      "parentUuid": "e605ff1c_99e21f17",
+      "range": {
+        "startLine": 174,
+        "startChar": 9,
+        "endLine": 174,
+        "endChar": 65
+      },
+      "revId": "4a12f9a0d31d52bc31ece889988384bdfd9ab54c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0e7b0fd3_c65de816",
         "filename": "cipd/client/cipd/local/fs_windows.go",
         "patchSetId": 3
@@ -59,6 +107,30 @@
       "writtenOn": "2017-09-22T17:25:22Z",
       "side": 1,
       "message": "FILE_SHARE_DELETE",
+      "range": {
+        "startLine": 37,
+        "startChar": 40,
+        "endLine": 37,
+        "endChar": 58
+      },
+      "revId": "4a12f9a0d31d52bc31ece889988384bdfd9ab54c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e0add8c_76c12a9d",
+        "filename": "cipd/client/cipd/local/fs_windows.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-09-22T17:29:44Z",
+      "side": 1,
+      "message": "oops, done.",
+      "parentUuid": "0e7b0fd3_c65de816",
       "range": {
         "startLine": 37,
         "startChar": 40,
