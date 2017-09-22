@@ -1,0 +1,164 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d2f9e5cb_e7ab0f9c",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-22T05:03:22Z",
+      "side": 1,
+      "message": "oh, I thought you meant use CamelCase for names in comments, not names of fields. The proto style guide recommends underscore_separated field names https://developers.google.com/protocol-buffers/docs/style",
+      "range": {
+        "startLine": 15,
+        "startChar": 20,
+        "endLine": 15,
+        "endChar": 29
+      },
+      "revId": "76e58baad091637546eb7c5e416510098f2a26b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b6c3352_0ec76338",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-22T05:03:22Z",
+      "side": 1,
+      "message": "supernit: fwiw, live is a verb, not adjective",
+      "range": {
+        "startLine": 142,
+        "startChar": 28,
+        "endLine": 142,
+        "endChar": 32
+      },
+      "revId": "76e58baad091637546eb7c5e416510098f2a26b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf7dd2a4_c2a4e8c5",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-22T05:03:22Z",
+      "side": 1,
+      "message": "nit: consider inverting the condition and get rid of \"else\" block / unindent it",
+      "revId": "76e58baad091637546eb7c5e416510098f2a26b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4fca611_e794a644",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-22T05:03:22Z",
+      "side": 1,
+      "message": "i think it is OK not have it, just make sure to zero n.Notifications. Actually we probably want to do it in the beginning of this func",
+      "revId": "76e58baad091637546eb7c5e416510098f2a26b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11bdcffe_41acbf05",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-22T05:03:22Z",
+      "side": 1,
+      "message": "it is the caller function that should do Enter/Exit because it has more context, e.g. it knows the name of the field that we are validating. This function does not.\nSee comment below too.\n\nIts ok not to use defer. If we panic, validation context will be lost anyway.",
+      "revId": "76e58baad091637546eb7c5e416510098f2a26b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c4008e34_6fe70c92",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-22T05:03:22Z",
+      "side": 1,
+      "message": "please omit the context and only report the error. It is Enter/Exit\u0027s job to specify the context. This string should be just \"Bucket is required\", but the calling code should call Enter(\"builder\") or Enter(\"builder #%d\", i)\n\nsame for other c.Error calls",
+      "range": {
+        "startLine": 67,
+        "startChar": 10,
+        "endLine": 67,
+        "endChar": 49
+      },
+      "revId": "76e58baad091637546eb7c5e416510098f2a26b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3d3253b_e51cc82a",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-22T05:03:22Z",
+      "side": 1,
+      "message": "same here. They way validation.Context was designed is that you do c.Enter(\"Name %q\", cfgNotifier.Name) before the switch, and then only provide error e.g. \"unspecified\", or \"invalid format\" or \"must be unique in project\"",
+      "range": {
+        "startLine": 84,
+        "startChar": 10,
+        "endLine": 84,
+        "endChar": 55
+      },
+      "revId": "76e58baad091637546eb7c5e416510098f2a26b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48972204_dc20497a",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-22T05:03:22Z",
+      "side": 1,
+      "message": "consider something like\n\nc.Enter(\"notification #%d\", i)\nvalidateNotification(c, cfgNotification)\nc.Exit()",
+      "revId": "76e58baad091637546eb7c5e416510098f2a26b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -422,6 +422,24 @@
     },
     {
       "key": {
+        "uuid": "0b2e53ac_861c0ac2",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-22T05:03:22Z",
+      "side": 1,
+      "message": "yeah, it would probably be a separate field in Notifier because it is not a builder anymore. We\u0027d probably use a different term for a different thing",
+      "parentUuid": "25b6ef4a_dc1632a0",
+      "revId": "9a7933ca5363d169e08873522de5a29bca832ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ca3db0b7_9ffed5a9",
         "filename": "luci_notify/buildbucket/buildinfo.go",
         "patchSetId": 1
