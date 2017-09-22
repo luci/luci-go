@@ -1315,6 +1315,30 @@
       "revId": "703ebf76dbe6d2e68b5993da0071d780e6d0cc48",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "888c5d2b_44e559ab",
+        "filename": "mpagent/utils_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-22T03:13:37Z",
+      "side": 1,
+      "message": "It worked for me:\n\n cd src/go.chromium.org/luci/common/api\n \u003cmodify generate.go\u003e\n go generate .\n\ngoogle-api-go-generator is installed by env.py in infra.git and should be in PATH if you use infra.git go environ: https://chromium.googlesource.com/infra/infra/+/master/go/deps.py#65\n\nAnyway, here\u0027s the CL: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/678242\n\nUnfortunately, you\u0027ll have to use names like ComponentsMachineProviderRpcMessagesAckRequest :D This is what happens with Python is used to describe an API...\n\nI like this gem of a code:\n c.componentsmachineproviderrpcmessagesackrequest \u003d componentsmachineproviderrpcmessagesackrequest\n\n:D",
+      "parentUuid": "d00b7e87_98550c80",
+      "range": {
+        "startLine": 68,
+        "startChar": 3,
+        "endLine": 73,
+        "endChar": 6
+      },
+      "revId": "703ebf76dbe6d2e68b5993da0071d780e6d0cc48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
