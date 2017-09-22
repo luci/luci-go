@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "260e13ea_75da0ed7",
+        "filename": "cipd/client/cipd/local/fs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-22T17:25:22Z",
+      "side": 1,
+      "message": "nit: I think it\u0027s worth to explicitly mention that files are open with FILE_SHARE_DELETE mode on Windows, since otherwise it\u0027s not clear how OpenFile is different from os.Open.",
+      "range": {
+        "startLine": 59,
+        "startChar": 4,
+        "endLine": 60,
+        "endChar": 25
+      },
+      "revId": "4a12f9a0d31d52bc31ece889988384bdfd9ab54c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e605ff1c_99e21f17",
+        "filename": "cipd/client/cipd/local/fs_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-22T17:25:22Z",
+      "side": 1,
+      "message": "I assume it was failing before and now it\u0027s not? :)",
+      "range": {
+        "startLine": 174,
+        "startChar": 9,
+        "endLine": 174,
+        "endChar": 65
+      },
+      "revId": "4a12f9a0d31d52bc31ece889988384bdfd9ab54c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e7b0fd3_c65de816",
+        "filename": "cipd/client/cipd/local/fs_windows.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-22T17:25:22Z",
+      "side": 1,
+      "message": "FILE_SHARE_DELETE",
+      "range": {
+        "startLine": 37,
+        "startChar": 40,
+        "endLine": 37,
+        "endChar": 58
+      },
+      "revId": "4a12f9a0d31d52bc31ece889988384bdfd9ab54c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
