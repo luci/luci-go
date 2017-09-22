@@ -1,0 +1,4 @@
+cron:
+ - description: Update luci-config configurations
+   url: /internal/cron/update-config
+   schedule: every 1 minutes

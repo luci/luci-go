@@ -1,0 +1,82 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+// Schema for project-level configuration in luci-notify.
+
+syntax = "proto3";
+
+package config;
+
+// ProjectConfig is a luci-notify configuration for a particular project.
+message ProjectConfig {
+  // Notifiers is a list of Notifiers which watch builders and send
+  // notifications for this project.
+  repeated Notifier notifiers = 1;
+}
+
+// Notifier contains a set of notification configurations (which specify
+// triggers to send notifications on) and a set of builders that will be
+// watched for these triggers.
+message Notifier {
+  // Name is an identifier for the notifier which must be unique within a
+  // project.
+  //
+  // Name must additionally match ^[a-z\-]+$, meaning it must only
+  // use an alphabet of lowercase characters and hyphens.
+  //
+  // Required.
+  string name = 1;
+
+  // Notifications is a list of notification configurations.
+  repeated Notification notifications = 2;
+
+  // Builders is a list of buildbucket builders this Notifier should watch.
+  repeated Builder builders = 3;
+}
+
+// Notification specifies the triggers to watch for and send
+// notifications on. It also specifies email recipients.
+message Notification {
+  // EmailConfig is a message representing a set of mail recipients (email
+  // addresses).
+  message Email {
+    // Recipients is a list of email addresses to notify.
+    repeated string recipients = 1;
+  }
+
+  // OnSuccess specifies a trigger to notify recipients on each build success.
+  //
+  // Optional.
+  bool on_success = 1;
+
+  // OnFailure specifies a trigger to notify recipients on each build failure.
+  //
+  // Optional.
+  bool on_failure = 2;
+
+  // OnChange specifies a trigger to notify recipients if the builder's
+  // previous build had a different result than the most recent build.
+  //
+  // Optional.
+  bool on_change = 3;
+
+  // Email is the set of email addresses to notify.
+  //
+  // Optional.
+  Email email = 4;
+}
+
+// Builder is a message that defines a buildbucket builder.
+message Builder {
+  // Bucket is the buildbucket bucket that the builder is a part of.
+  //
+  // Required.
+  string bucket = 1;
+
+  // Name is the name of the buildbucket builder.
+  //
+  // Required.
+  string name = 2;
+}
+
