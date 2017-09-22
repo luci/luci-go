@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/WYm6tFFOCNg0XFzHpdSsOWjlILo\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/KIhl3NPeROS_gZnF9WYPiKaN5G4\"",
  "discoveryVersion": "v1",
  "id": "buildbucket:v1",
  "name": "buildbucket",
@@ -1100,6 +1100,16 @@
     },
     "created_by": {
      "type": "string",
+     "location": "query"
+    },
+    "creation_ts_high": {
+     "type": "string",
+     "format": "int64",
+     "location": "query"
+    },
+    "creation_ts_low": {
+     "type": "string",
+     "format": "int64",
      "location": "query"
     },
     "failure_reason": {

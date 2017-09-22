@@ -1,0 +1,176 @@
+{
+ "kind": "discovery#restDescription",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/SQhysvZfHcBh4YL7YS5VlVtPafY\"",
+ "discoveryVersion": "v1",
+ "id": "machine:v1",
+ "name": "machine",
+ "version": "v1",
+ "description": "Implements cloud endpoints for Machine Provider's machines.",
+ "icons": {
+  "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
+  "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
+ },
+ "protocol": "rest",
+ "baseUrl": "https://machine-provider.appspot.com/_ah/api/machine/v1/",
+ "basePath": "/_ah/api/machine/v1/",
+ "rootUrl": "https://machine-provider.appspot.com/_ah/api/",
+ "servicePath": "machine/v1/",
+ "batchPath": "batch",
+ "parameters": {
+  "alt": {
+   "type": "string",
+   "description": "Data format for the response.",
+   "default": "json",
+   "enum": [
+    "json"
+   ],
+   "enumDescriptions": [
+    "Responses with Content-Type of application/json"
+   ],
+   "location": "query"
+  },
+  "fields": {
+   "type": "string",
+   "description": "Selector specifying which fields to include in a partial response.",
+   "location": "query"
+  },
+  "key": {
+   "type": "string",
+   "description": "API key. Your API key identifies your project and provides you with API access, quota, and reports. Required unless you provide an OAuth 2.0 token.",
+   "location": "query"
+  },
+  "oauth_token": {
+   "type": "string",
+   "description": "OAuth 2.0 token for the current user.",
+   "location": "query"
+  },
+  "prettyPrint": {
+   "type": "boolean",
+   "description": "Returns response with indentations and line breaks.",
+   "default": "true",
+   "location": "query"
+  },
+  "quotaUser": {
+   "type": "string",
+   "description": "Available to use for quota purposes for server-side applications. Can be any arbitrary string assigned to a user, but should not exceed 40 characters. Overrides userIp if both are provided.",
+   "location": "query"
+  },
+  "userIp": {
+   "type": "string",
+   "description": "IP address of the site where the request originates. Use this if you want to enforce per-user limits.",
+   "location": "query"
+  }
+ },
+ "auth": {
+  "oauth2": {
+   "scopes": {
+    "https://www.googleapis.com/auth/userinfo.email": {
+     "description": "View your email address"
+    }
+   }
+  }
+ },
+ "schemas": {
+  "ComponentsMachineProviderInstructionsInstruction": {
+   "id": "ComponentsMachineProviderInstructionsInstruction",
+   "type": "object",
+   "description": "Represents instructions for a machine.",
+   "properties": {
+    "swarming_server": {
+     "type": "string"
+    }
+   }
+  },
+  "ComponentsMachineProviderRpcMessagesAckRequest": {
+   "id": "ComponentsMachineProviderRpcMessagesAckRequest",
+   "type": "object",
+   "description": "Represents a request to ack an instruction received by a machine.",
+   "properties": {
+    "backend": {
+     "type": "string",
+     "enum": [
+      "DUMMY",
+      "GCE",
+      "VSPHERE"
+     ],
+     "enumDescriptions": [
+      "",
+      "",
+      ""
+     ]
+    },
+    "hostname": {
+     "type": "string"
+    }
+   }
+  },
+  "ComponentsMachineProviderRpcMessagesPollRequest": {
+   "id": "ComponentsMachineProviderRpcMessagesPollRequest",
+   "type": "object",
+   "description": "Represents a request to poll for instructions given to a machine.",
+   "properties": {
+    "backend": {
+     "type": "string",
+     "enum": [
+      "DUMMY",
+      "GCE",
+      "VSPHERE"
+     ],
+     "enumDescriptions": [
+      "",
+      "",
+      ""
+     ]
+    },
+    "hostname": {
+     "type": "string"
+    }
+   }
+  },
+  "ComponentsMachineProviderRpcMessagesPollResponse": {
+   "id": "ComponentsMachineProviderRpcMessagesPollResponse",
+   "type": "object",
+   "description": "Represents a response to a request for instructions given to a machine.",
+   "properties": {
+    "instruction": {
+     "$ref": "ComponentsMachineProviderInstructionsInstruction",
+     "description": "Represents instructions for a machine."
+    },
+    "state": {
+     "type": "string"
+    }
+   }
+  }
+ },
+ "methods": {
+  "ack": {
+   "id": "machine.ack",
+   "path": "ack",
+   "httpMethod": "POST",
+   "description": "Handles an incoming AckRequest.",
+   "request": {
+    "$ref": "ComponentsMachineProviderRpcMessagesAckRequest",
+    "parameterName": "resource"
+   },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  },
+  "poll": {
+   "id": "machine.poll",
+   "path": "poll",
+   "httpMethod": "POST",
+   "description": "Handles an incoming PollRequest.",
+   "request": {
+    "$ref": "ComponentsMachineProviderRpcMessagesPollRequest",
+    "parameterName": "resource"
+   },
+   "response": {
+    "$ref": "ComponentsMachineProviderRpcMessagesPollResponse"
+   },
+   "scopes": [
+    "https://www.googleapis.com/auth/userinfo.email"
+   ]
+  }
+ }
+}
