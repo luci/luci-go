@@ -17,12 +17,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/errors"
 )
 
 func cmdPutBatch(defaultAuthOpts auth.Options) *subcommands.Command {
@@ -45,23 +48,46 @@ type putBatchRun struct {
 	baseCommandRun
 }
 
+func parsePutRequest(args []string, prefixFunc func() (string, error)) ([]*buildbucket.ApiPutRequestMessage, error) {
+	if len(args) <= 0 {
+		return nil, fmt.Errorf("missing parameter: <JSON Request>")
+	}
+
+	var reqs []*buildbucket.ApiPutRequestMessage
+	opIDPrefix := ""
+	for i, a := range args {
+		// verify that args are valid here before sending the request.
+		putReq := &buildbucket.ApiPutRequestMessage{}
+		if err := json.Unmarshal([]byte(a), putReq); err != nil {
+			return nil, errors.Annotate(err, "invalid build request #%d", i).Err()
+		}
+		if putReq.ClientOperationId == "" {
+			if opIDPrefix == "" {
+				var err error
+				opIDPrefix, err = prefixFunc()
+				if err != nil {
+					return nil, err
+				}
+			}
+			putReq.ClientOperationId = opIDPrefix + "-" + strconv.Itoa(i)
+		}
+		reqs = append(reqs, putReq)
+	}
+
+	return reqs, nil
+}
+
 func (r *putBatchRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
-	if len(args) < 1 {
-		return r.done(ctx, fmt.Errorf("missing parameter: <JSON Request>"))
-	}
 
-	var reqBody struct {
-		Builds []json.RawMessage `json:"builds"`
+	builds, err := parsePutRequest(args, func() (string, error) {
+		id, err := uuid.NewRandom()
+		return id.String(), err
+	})
+	if err != nil {
+		return r.done(ctx, err)
 	}
-	for i, a := range args {
-		aBytes := []byte(a)
-		// verify that args are valid here before sending the request.
-		if err := json.Unmarshal(aBytes, &buildbucket.ApiPutRequestMessage{}); err != nil {
-			return r.done(ctx, fmt.Errorf("invalid build request #%d: %s", i, err))
-		}
-		reqBody.Builds = append(reqBody.Builds, json.RawMessage(aBytes))
-	}
-
-	return r.callAndDone(ctx, "PUT", "builds/batch", reqBody)
+	return r.callAndDone(ctx, "PUT", "builds/batch", map[string]interface{}{
+		"builds": builds,
+	})
 }
