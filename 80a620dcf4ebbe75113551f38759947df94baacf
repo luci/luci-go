@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "3a8ba52f_cf0d39bb",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-22T19:08:12Z",
+      "side": 1,
+      "message": "If there is an error, you want to return?",
+      "range": {
+        "startLine": 59,
+        "startChar": 100,
+        "endLine": 59,
+        "endChar": 110
+      },
+      "revId": "80a620dcf4ebbe75113551f38759947df94baacf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a1d90b51_e1fed06f",
         "filename": "buildbucket/status.go",
         "patchSetId": 5
