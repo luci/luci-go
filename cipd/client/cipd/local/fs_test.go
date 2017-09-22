@@ -171,6 +171,63 @@ func TestEnsureFile(t *testing.T) {
 		So(fs.read("path"), ShouldEqual, "blah")
 	})
 
+	Convey("EnsureFile replaces existing file while it is being read", t, func() {
+		fs := tempFileSystem()
+
+		// Create an initial file, then open it for reading.
+		So(EnsureFile(ctx, fs, fs.join("path"), strings.NewReader("huh")), ShouldBeNil)
+		fd, err := fs.OpenFile(fs.join("path"))
+		So(err, ShouldBeNil)
+		defer func() {
+			if fd != nil {
+				fd.Close()
+			}
+		}()
+
+		// Ensure a second file on top of it.
+		So(EnsureFile(ctx, fs, fs.join("path"), strings.NewReader("blah")), ShouldBeNil)
+
+		// Read and verify the content of the first file.
+		content, err := ioutil.ReadAll(fd)
+		So(err, ShouldBeNil)
+		So(content, ShouldResemble, []byte("huh"))
+
+		// Verify the content of the second ensured file.
+		So(fs.read("path"), ShouldEqual, "blah")
+
+		// The first file should successfully close.
+		So(fd.Close(), ShouldBeNil)
+		fd = nil // Don't double-close in defer.
+	})
+
+	Convey("EnsureFile replaces existing file while it is being written", t, func() {
+		fs := tempFileSystem()
+
+		// Start one EnsureFile, pausing in the middle so another can start
+		// alongside it.
+		firstEnsureStartedC := make(chan struct{})
+		finishFirstWriteC := make(chan struct{})
+		errC := make(chan error)
+		go func() {
+			errC <- fs.EnsureFile(ctx, fs.join("path"), func(fd *os.File) error {
+				close(firstEnsureStartedC)
+				<-finishFirstWriteC
+				_, err := fd.Write([]byte("foo"))
+				return err
+			})
+		}()
+
+		// Wait for the first to signal that it's begin, then perform a second
+		// overlapping EnsureFile.
+		<-firstEnsureStartedC
+		So(EnsureFile(ctx, fs, fs.join("path"), strings.NewReader("overwrite me")), ShouldBeNil)
+		close(finishFirstWriteC)
+		So(<-errC, ShouldBeNil)
+
+		// The first EnsureFile content should be the one that is present.
+		So(fs.read("path"), ShouldEqual, "foo")
+	})
+
 	Convey("EnsureFile replaces existing directory", t, func() {
 		fs := tempFileSystem()
 		fs.write("a/b/c", "something")
@@ -347,7 +404,11 @@ func (f *tempFileSystemImpl) write(rel string, data string) {
 
 // read reads an existing file at a given slash separated path relative to Root().
 func (f *tempFileSystemImpl) read(rel string) string {
-	data, err := ioutil.ReadFile(f.join(rel))
+	fd, err := f.OpenFile(f.join(rel))
+	So(err, ShouldBeNil)
+	defer fd.Close()
+
+	data, err := ioutil.ReadAll(fd)
 	So(err, ShouldBeNil)
 	return string(data)
 }

@@ -17,6 +17,7 @@
 package local
 
 import (
+	"os"
 	"syscall"
 	"unsafe"
 )
@@ -32,6 +33,29 @@ const (
 	moveFileReplaceExisting = 1
 	moveFileWriteThrough    = 8
 )
+
+// openFile on Windows ensures that the FILE_SHARE_DELETE sharing permission is
+// applied to the file when it is opened. This is required in order for
+// atomicRename to be able to rename a file while it is being read.
+func openFile(path string) (*os.File, error) {
+	lpFileName, err := syscall.UTF16PtrFromString(path)
+	if err != nil {
+		return nil, err
+	}
+	// Read-only, full shared access, no descriptor inheritance.
+	handle, err := syscall.CreateFile(
+		lpFileName,
+		uint32(syscall.GENERIC_READ),
+		uint32(syscall.FILE_SHARE_READ|syscall.FILE_SHARE_WRITE|syscall.FILE_SHARE_DELETE),
+		nil,
+		uint32(syscall.OPEN_EXISTING),
+		syscall.FILE_ATTRIBUTE_NORMAL,
+		0)
+	if err != nil {
+		return nil, err
+	}
+	return os.NewFile(uintptr(handle), path), nil
+}
 
 func moveFileEx(source, target *uint16, flags uint32) error {
 	ret, _, err := procMoveFileExW.Call(uintptr(unsafe.Pointer(source)), uintptr(unsafe.Pointer(target)), uintptr(flags))
