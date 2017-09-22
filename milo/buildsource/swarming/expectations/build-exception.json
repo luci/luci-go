@@ -31,7 +31,7 @@
       "InfraFailure Uncaught Exception"
     ]
   },
-  "SourceStamp": null,
+  "Trigger": null,
   "Components": [
     {
       "Label": "recipe bootstrap",

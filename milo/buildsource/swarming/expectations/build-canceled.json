@@ -53,7 +53,7 @@
       "Task cancelled by user"
     ]
   },
-  "SourceStamp": null,
+  "Trigger": null,
   "Components": [
     {
       "Label": "recipe bootstrap",
