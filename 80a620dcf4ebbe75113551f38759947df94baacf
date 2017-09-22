@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c7479690_c3bddfdc",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-22T19:19:42Z",
+      "side": 1,
+      "message": "oops, done, thanks",
+      "parentUuid": "3a8ba52f_cf0d39bb",
+      "range": {
+        "startLine": 59,
+        "startChar": 100,
+        "endLine": 59,
+        "endChar": 110
+      },
+      "revId": "80a620dcf4ebbe75113551f38759947df94baacf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a1d90b51_e1fed06f",
         "filename": "buildbucket/status.go",
         "patchSetId": 5
@@ -155,6 +179,30 @@
       "side": 1,
       "message": "Ahhh I see, yeah then I think this is reasonable. I didn\u0027t realize \":\" didn\u0027t explicitly denote \"subtag\".",
       "parentUuid": "d8a95b7f_1f402cfc",
+      "range": {
+        "startLine": 48,
+        "startChar": 21,
+        "endLine": 48,
+        "endChar": 29
+      },
+      "revId": "80a620dcf4ebbe75113551f38759947df94baacf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6a48e99e_fd50c583",
+        "filename": "buildbucket/tag.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-22T19:19:42Z",
+      "side": 1,
+      "message": "yeah, for example we have \"log_location:\u003curl\u003e\"\nurls contain \":\"",
+      "parentUuid": "fb8a5b5e_9c2570f2",
       "range": {
         "startLine": 48,
         "startChar": 21,
