@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "704b2f27_45a46495",
+        "filename": "buildbucket/client/cmd/buildbucket/put.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2017-09-22T17:36:06Z",
+      "side": 1,
+      "message": "Cool. Thanks.",
+      "revId": "beee5ad66eb56f53a4bccb3a66ab51fb3f08dcad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
