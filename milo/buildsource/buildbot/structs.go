@@ -306,6 +306,7 @@ type buildbotPending struct {
 
 // buildbotBuilder is a builder struct from the master json, _not_ the builder json.
 type buildbotBuilder struct {
+	Buildername   string `json:"builderName,omitempty"`
 	Basedir       string `json:"basedir"`
 	CachedBuilds  []int  `json:"cachedBuilds"`
 	PendingBuilds int    `json:"pendingBuilds"`
@@ -392,22 +393,10 @@ type buildbotMaster struct {
 	Builders map[string]*buildbotBuilder `json:"builders"`
 
 	Buildstate struct {
-		AcceptingBuilds bool `json:"accepting_builds"`
-		Builders        []struct {
-			Basedir       string   `json:"basedir"`
-			Buildername   string   `json:"builderName"`
-			Cachedbuilds  []int    `json:"cachedBuilds"`
-			Category      string   `json:"category"`
-			Currentbuilds []int    `json:"currentBuilds"`
-			Slaves        []string `json:"slaves"`
-			State         string   `json:"state"`
-		} `json:"builders"`
-		Project struct {
-			BuildbotURL string `json:"buildbotURL"`
-			Title       string `json:"title"`
-			Titleurl    string `json:"titleURL"`
-		} `json:"project"`
-		Timestamp float64 `json:"timestamp"`
+		AcceptingBuilds bool              `json:"accepting_builds"`
+		Builders        []buildbotBuilder `json:"builders"`
+		Project         buildbotProject   `json:"project"`
+		Timestamp       float64           `json:"timestamp"`
 	} `json:"buildstate"`
 
 	ChangeSources map[string]buildbotChangeSource `json:"change_sources"`
