@@ -133,7 +133,7 @@ func (c *InstanceCache) Get(ctx context.Context, pin common.Pin, now time.Time) 
 		return nil, fmt.Errorf("invalid instance ID %q", pin.InstanceID)
 	}
 
-	f, err := os.Open(path)
+	f, err := c.fs.OpenFile(path)
 	if err != nil {
 		return nil, err
 	}

@@ -54,6 +54,16 @@ type FileSystem interface {
 	// If passed path is already absolute, just checks that it's under the root.
 	RootRelToAbs(path string) (string, error)
 
+	// OpenFile opens a file and returns its file handle.
+	//
+	// Files opened with OpenFile can be safely manipulated by other
+	// FileSystem functions.
+	//
+	// This differs from os.Open notably on Windows, where OpenFile ensures that
+	// files are open with FILE_SHARE_DELETE permisson to enable them to be
+	// atomically renamed without contention.
+	OpenFile(path string) (*os.File, error)
+
 	// EnsureDirectory creates a directory at given native path.
 	//
 	// Does nothing it the path already exists. It takes an absolute path or
@@ -136,6 +146,7 @@ type fsImplErr struct {
 func (f *fsImplErr) Root() string                                                   { return "" }
 func (f *fsImplErr) CwdRelToAbs(string) (string, error)                             { return "", f.err }
 func (f *fsImplErr) RootRelToAbs(string) (string, error)                            { return "", f.err }
+func (f *fsImplErr) OpenFile(string) (*os.File, error)                              { return nil, f.err }
 func (f *fsImplErr) EnsureDirectory(context.Context, string) (string, error)        { return "", f.err }
 func (f *fsImplErr) EnsureSymlink(context.Context, string, string) error            { return f.err }
 func (f *fsImplErr) EnsureFile(context.Context, string, func(*os.File) error) error { return f.err }
@@ -176,6 +187,14 @@ func (f *fsImpl) RootRelToAbs(p string) (string, error) {
 		return f.CwdRelToAbs(p)
 	}
 	return f.CwdRelToAbs(filepath.Join(f.root, p))
+}
+
+func (f *fsImpl) OpenFile(p string) (*os.File, error) {
+	p, err := f.CwdRelToAbs(p)
+	if err != nil {
+		return nil, err
+	}
+	return openFile(p)
 }
 
 func (f *fsImpl) EnsureDirectory(ctx context.Context, path string) (string, error) {
