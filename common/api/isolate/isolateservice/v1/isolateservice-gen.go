@@ -789,10 +789,11 @@ func (c *RetrieveCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV1Ret
 // method id "isolateservice.server_details":
 
 type ServerDetailsCall struct {
-	s          *Service
-	urlParams_ gensupport.URLParams
-	ctx_       context.Context
-	header_    http.Header
+	s            *Service
+	urlParams_   gensupport.URLParams
+	ifNoneMatch_ string
+	ctx_         context.Context
+	header_      http.Header
 }
 
 // ServerDetails:
@@ -806,6 +807,16 @@ func (s *Service) ServerDetails() *ServerDetailsCall {
 // for more information.
 func (c *ServerDetailsCall) Fields(s ...googleapi.Field) *ServerDetailsCall {
 	c.urlParams_.Set("fields", googleapi.CombineFields(s))
+	return c
+}
+
+// IfNoneMatch sets the optional parameter which makes the operation
+// fail if the object's ETag matches the given value. This is useful for
+// getting updates only after the object has changed since the last
+// request. Use googleapi.IsNotModified to check whether the response
+// error from Do is the result of In-None-Match.
+func (c *ServerDetailsCall) IfNoneMatch(entityTag string) *ServerDetailsCall {
+	c.ifNoneMatch_ = entityTag
 	return c
 }
 
@@ -832,11 +843,14 @@ func (c *ServerDetailsCall) doRequest(alt string) (*http.Response, error) {
 		reqHeaders[k] = v
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
+	if c.ifNoneMatch_ != "" {
+		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
+	}
 	var body io.Reader = nil
 	c.urlParams_.Set("alt", alt)
 	urls := googleapi.ResolveRelative(c.s.BasePath, "server_details")
 	urls += "?" + c.urlParams_.Encode()
-	req, _ := http.NewRequest("POST", urls, body)
+	req, _ := http.NewRequest("GET", urls, body)
 	req.Header = reqHeaders
 	return gensupport.SendRequest(c.ctx_, c.s.client, req)
 }
@@ -879,7 +893,7 @@ func (c *ServerDetailsCall) Do(opts ...googleapi.CallOption) (*HandlersEndpoints
 	}
 	return ret, nil
 	// {
-	//   "httpMethod": "POST",
+	//   "httpMethod": "GET",
 	//   "id": "isolateservice.server_details",
 	//   "path": "server_details",
 	//   "response": {

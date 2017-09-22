@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/DXA-Qhlusmcc50FQ6S-yDb25t2Q\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/MYeWSQMjtWMUkNO01_D0i1W671o\"",
  "discoveryVersion": "v1",
  "id": "isolateservice:v1",
  "name": "isolateservice",
@@ -282,7 +282,7 @@
   "server_details": {
    "id": "isolateservice.server_details",
    "path": "server_details",
-   "httpMethod": "POST",
+   "httpMethod": "GET",
    "response": {
     "$ref": "HandlersEndpointsV1ServerDetails"
    },

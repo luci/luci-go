@@ -3234,6 +3234,18 @@ func (c *SearchCall) CreatedBy(createdBy string) *SearchCall {
 	return c
 }
 
+// CreationTsHigh sets the optional parameter "creation_ts_high":
+func (c *SearchCall) CreationTsHigh(creationTsHigh int64) *SearchCall {
+	c.urlParams_.Set("creation_ts_high", fmt.Sprint(creationTsHigh))
+	return c
+}
+
+// CreationTsLow sets the optional parameter "creation_ts_low":
+func (c *SearchCall) CreationTsLow(creationTsLow int64) *SearchCall {
+	c.urlParams_.Set("creation_ts_low", fmt.Sprint(creationTsLow))
+	return c
+}
+
 // FailureReason sets the optional parameter "failure_reason":
 //
 // Possible values:
@@ -3409,6 +3421,16 @@ func (c *SearchCall) Do(opts ...googleapi.CallOption) (*ApiSearchResponseMessage
 	//       "type": "string"
 	//     },
 	//     "created_by": {
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "creation_ts_high": {
+	//       "format": "int64",
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "creation_ts_low": {
+	//       "format": "int64",
 	//       "location": "query",
 	//       "type": "string"
 	//     },

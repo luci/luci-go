@@ -1,6 +1,6 @@
 {
  "kind": "discovery#restDescription",
- "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/f-xR0LzJLFiuiUvLsm0dIRRhVmg\"",
+ "etag": "\"RnkXbyw9us4_w3H-FU6An0C4oYs/-tpaQvqePUiNASyG1MDxZ9OlgAs\"",
  "discoveryVersion": "v1",
  "id": "swarmbucket:v1",
  "name": "swarmbucket",
