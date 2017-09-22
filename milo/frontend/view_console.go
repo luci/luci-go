@@ -17,9 +17,7 @@ package frontend
 import (
 	"bytes"
 	"encoding/hex"
-	"fmt"
 	"html/template"
-	"net/http"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -154,6 +152,41 @@ func console(c context.Context, project, name string, limit int) (*resp.Console,
 	}, nil
 }
 
+func consolePreview(c context.Context, def *common.Console) (*resp.Console, error) {
+	pv, err := buildsource.GetConsolePreview(c, def)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build console table tree from builders.
+	categoryTree := resp.NewCategory("")
+	depth := 0
+	for col, b := range def.Builders {
+		meta := def.BuilderMetas[col]
+		short := meta.ShortName
+		if short == "" {
+			short = shortname(b)
+		}
+		name := buildsource.BuilderID(b)
+		builderRef := &resp.BuilderRef{
+			Name:      b,
+			ShortName: short,
+			Build:     []*model.BuildSummary{pv[name]},
+		}
+		categories := strings.Split(meta.Category, "|")
+		if len(categories) > depth {
+			depth = len(categories)
+		}
+		categoryTree.AddBuilder(categories, builderRef)
+	}
+
+	return &resp.Console{
+		Name:     def.ID,
+		Table:    *categoryTree,
+		MaxDepth: depth + 1,
+	}, nil
+}
+
 // consoleRenderer is a wrapper around Console to provide additional methods.
 type consoleRenderer struct {
 	*resp.Console
@@ -215,11 +248,33 @@ func ConsoleHandler(c *router.Context) {
 	})
 }
 
-// ConsoleMainHandler is a redirect handler that redirects the user to the main
-// console for a particular project.
-func ConsoleMainHandler(ctx *router.Context) {
-	w, r, p := ctx.Writer, ctx.Request, ctx.Params
-	proj := p.ByName("project")
-	http.Redirect(w, r, fmt.Sprintf("/console/%s/main", proj), http.StatusMovedPermanently)
-	return
+// ConsolesHandler is responsible for taking a project name and rendering the
+// console list page (defined in ./appengine/templates/pages/consoles.html).
+func ConsolesHandler(c *router.Context, projectName string) {
+	cons, err := common.GetProjectConsoles(c.Context, projectName)
+	if err != nil {
+		ErrorHandler(c, err)
+		return
+	}
+	type fullConsole struct {
+		Def    *common.Console
+		Render consoleRenderer
+	}
+	var consoles []fullConsole
+	for _, def := range cons {
+		respConsole, err := consolePreview(c.Context, def)
+		if err != nil {
+			logging.WithError(err).Errorf(c.Context, "failed to generate resp console")
+			continue
+		}
+		full := fullConsole{
+			Def:    def,
+			Render: consoleRenderer{respConsole},
+		}
+		consoles = append(consoles, full)
+	}
+	templates.MustRender(c.Context, c.Writer, "pages/consoles.html", templates.Args{
+		"ProjectName": projectName,
+		"Consoles":    consoles,
+	})
 }
