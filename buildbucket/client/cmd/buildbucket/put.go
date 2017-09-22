@@ -17,12 +17,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/errors"
 )
 
 func cmdPutBatch(defaultAuthOpts auth.Options) *subcommands.Command {
@@ -52,15 +55,27 @@ func (r *putBatchRun) Run(a subcommands.Application, args []string, env subcomma
 	}
 
 	var reqBody struct {
-		Builds []json.RawMessage `json:"builds"`
+		Builds []*buildbucket.ApiPutRequestMessage `json:"builds"`
 	}
+
+	opIDPrefix := ""
 	for i, a := range args {
-		aBytes := []byte(a)
 		// verify that args are valid here before sending the request.
-		if err := json.Unmarshal(aBytes, &buildbucket.ApiPutRequestMessage{}); err != nil {
-			return r.done(ctx, fmt.Errorf("invalid build request #%d: %s", i, err))
+		putReq := &buildbucket.ApiPutRequestMessage{}
+		if err := json.Unmarshal([]byte(a), putReq); err != nil {
+			return r.done(ctx, errors.Annotate(err, "invalid build request #%d", i).Err())
 		}
-		reqBody.Builds = append(reqBody.Builds, json.RawMessage(aBytes))
+		if putReq.ClientOperationId == "" {
+			if opIDPrefix == "" {
+				id, err := uuid.NewRandom()
+				if err != nil {
+					return r.done(ctx, err)
+				}
+				opIDPrefix = id.String()
+			}
+			putReq.ClientOperationId = opIDPrefix + strconv.Itoa(i)
+		}
+		reqBody.Builds = append(reqBody.Builds, putReq)
 	}
 
 	return r.callAndDone(ctx, "PUT", "builds/batch", reqBody)
