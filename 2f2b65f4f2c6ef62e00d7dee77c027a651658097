@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8edba0bd_9fafd61e",
+        "filename": "luci_notify/notify/notification_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-22T19:15:13Z",
+      "side": 1,
+      "message": "dot imports must be in the last import block",
+      "revId": "2f2b65f4f2c6ef62e00d7dee77c027a651658097",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b82fe11f_aa0597e2",
+        "filename": "luci_notify/notify/notification_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-22T19:15:13Z",
+      "side": 1,
+      "message": "nit: please keep imports of this packages in this app (luci_notify) in a separate block",
+      "revId": "2f2b65f4f2c6ef62e00d7dee77c027a651658097",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33cfb1ff_00c87e91",
+        "filename": "luci_notify/testutil/time.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-22T19:15:13Z",
+      "side": 1,
+      "message": "time.UTC is the UTC Locale\nhttps://godoc.org/time#UTC",
+      "revId": "2f2b65f4f2c6ef62e00d7dee77c027a651658097",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
