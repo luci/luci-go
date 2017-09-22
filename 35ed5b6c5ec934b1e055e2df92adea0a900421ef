@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d6844887_540604f4",
+        "filename": "common/auth/auth.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 633,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-22T23:18:27Z",
+      "side": 1,
+      "message": "could this ever be rejected? or will it return a token with \u003c inf lifetime?",
+      "range": {
+        "startLine": 633,
+        "startChar": 11,
+        "endLine": 633,
+        "endChar": 44
+      },
+      "revId": "35ed5b6c5ec934b1e055e2df92adea0a900421ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1605d7c_984c5762",
+        "filename": "common/auth/internal/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-22T23:18:27Z",
+      "side": 1,
+      "message": "a bit cheesy, but I\u0027ll allow it 💩",
+      "range": {
+        "startLine": 42,
+        "startChar": 16,
+        "endLine": 42,
+        "endChar": 19
+      },
+      "revId": "35ed5b6c5ec934b1e055e2df92adea0a900421ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e8fd3d02_a22052cf",
+        "filename": "common/auth/internal/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-22T23:18:27Z",
+      "side": 1,
+      "message": "nit: hasn\u0027t",
+      "range": {
+        "startLine": 62,
+        "startChar": 67,
+        "endLine": 62,
+        "endChar": 74
+      },
+      "revId": "35ed5b6c5ec934b1e055e2df92adea0a900421ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c02fbd8_72ae49a6",
+        "filename": "common/auth/internal/gce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-22T23:18:27Z",
+      "side": 1,
+      "message": "this should basically never fail, right? Or will it fail in the case that there\u0027s no user.email scope?\n\nCan we distinguish these two cases?",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 52,
+        "endChar": 68
+      },
+      "revId": "35ed5b6c5ec934b1e055e2df92adea0a900421ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "492c9be5_993c3aae",
+        "filename": "common/auth/internal/gce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-22T23:18:27Z",
+      "side": 1,
+      "message": "will this immediately \"invalidate\" all cached credentials? Do we need the refresh with a 1-year duration, if this is true?",
+      "range": {
+        "startLine": 56,
+        "startChar": 2,
+        "endLine": 57,
+        "endChar": 11
+      },
+      "revId": "35ed5b6c5ec934b1e055e2df92adea0a900421ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4ab0066_d60f6f2e",
+        "filename": "common/auth/internal/luci_ctx.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-22T23:18:27Z",
+      "side": 1,
+      "message": "ah, is the LUCI_CONTEXT support in a subsequent CL then? Should this be \"\" instead then, since we can\u0027t tell for sure if the token has an email or not?",
+      "range": {
+        "startLine": 166,
+        "startChar": 18,
+        "endLine": 166,
+        "endChar": 48
+      },
+      "revId": "35ed5b6c5ec934b1e055e2df92adea0a900421ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7a0653b_7913d64c",
+        "filename": "common/auth/internal/user.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-22T23:18:27Z",
+      "side": 1,
+      "message": "Should we codify this as UnknownEmail? Then code will check against UnknownEmail and NoEmail, which may require less explanations in the comments.",
+      "range": {
+        "startLine": 120,
+        "startChar": 14,
+        "endLine": 120,
+        "endChar": 16
+      },
+      "revId": "35ed5b6c5ec934b1e055e2df92adea0a900421ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
