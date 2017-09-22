@@ -120,6 +120,21 @@ func TestValidateProtoMessage(t *testing.T) {
 	})
 }
 
+func TestMakeBuildSet(t *testing.T) {
+	Convey("makeBuildSet works", t, func() {
+		b, err := makeBuildSet(&internal.GitilesTrigger{Repo: "https://c.googlesource.com/a.git", Revision: "deadbeef"})
+		So(err, ShouldBeNil)
+		So(b, ShouldEqual, "commit/gitiles/c.googlesource.com/a/+/deadbeef")
+
+		b, err = makeBuildSet(&internal.GitilesTrigger{Repo: "https://c.googlesource.com/a/cd", Revision: "beefcafe"})
+		So(err, ShouldBeNil)
+		So(b, ShouldEqual, "commit/gitiles/c.googlesource.com/cd/+/beefcafe")
+
+		_, err = makeBuildSet(&internal.GitilesTrigger{Repo: "https:\\something/went/wrong", Revision: "beefcafe"})
+		So(err, ShouldNotBeNil)
+	})
+}
+
 func TestFullFlow(t *testing.T) {
 	Convey("LaunchTask and HandleNotification work", t, func(ctx C) {
 		mockRunning := true
@@ -267,8 +282,8 @@ func TestTriggeredFlow(t *testing.T) {
 
 		// Launch with triggers,
 		triggers := []task.Trigger{
-			{ID: "1", Payload: makePayload("https://repo.url", "refs/heads/master", "baadcafe")},
-			{ID: "2", Payload: makePayload("https://repo.url", "refs/heads/master", "deadbeef")},
+			{ID: "1", Payload: makePayload("https://r.googlesource.com/repo", "refs/heads/master", "baadcafe")},
+			{ID: "2", Payload: makePayload("https://r.googlesource.com/repo", "refs/heads/master", "deadbeef")},
 		}
 		So(mgr.LaunchTask(c, ctl, triggers), ShouldBeNil)
 		So(ctl.TaskState, ShouldResemble, task.State{
@@ -280,6 +295,8 @@ func TestTriggeredFlow(t *testing.T) {
 		// TODO(tandrii): refactor test and code s.t. we can test properties that were set.
 		So(ctl.Log[3], ShouldContainSubstring,
 			`\"properties\":{\"branch\":\"refs/heads/master\",\"revision\":\"deadbeef\"}}`)
+		So(ctl.Log[3], ShouldContainSubstring, "buildset:commit/gitiles/r.googlesource.com/repo/+/deadbeef")
+		So(ctl.Log[3], ShouldContainSubstring, "gitiles_ref:refs/heads/master")
 	})
 }
 
