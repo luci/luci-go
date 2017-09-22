@@ -1,0 +1,36 @@
+runtime: go
+api_version: go1
+service: default
+
+instance_class: F4_1G
+
+handlers:
+# Pubsub Handler.  This is strictly necessary because the default module
+# contains a /.* routing rule, so if it was targetted directly, we still want
+# login:admin to apply.
+- url: /_ah/push-handlers/.*
+  script: _go_app
+  secure: always
+  login: admin
+
+# Cron configuration update endpoint.
+- url: /internal/cron/update-config
+  script: _go_app
+  secure: always
+
+# Admin for service settings.
+- url: /admin/.*
+  script: _go_app
+  secure: always
+  login: admin
+
+# Google site verification file.
+- url: /googlea0e72f69fe7a802f.html
+  secure: always
+  static_dir: static
+
+# Everything else goes here.
+- url: /.*
+  script: _go_app
+  secure: always
+
