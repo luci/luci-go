@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "a1d90b51_e1fed06f",
+        "filename": "buildbucket/status.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-09-22T19:04:42Z",
+      "side": 1,
+      "message": "One useful thing to add to this type would be a string representation, through a String() method or something, since we\u0027re frequently going to want to display it somewhere.",
+      "range": {
+        "startLine": 26,
+        "startChar": 5,
+        "endLine": 26,
+        "endChar": 11
+      },
+      "revId": "80a620dcf4ebbe75113551f38759947df94baacf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0caa72f2_70a7ef95",
         "filename": "buildbucket/tag.go",
         "patchSetId": 5
