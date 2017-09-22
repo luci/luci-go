@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "fabbba7f_ed1ea342",
+        "filename": "milo/api/resp/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c67f9ad1_e2f307be",
+      "range": {
+        "startLine": 61,
+        "startChar": 38,
+        "endLine": 61,
+        "endChar": 41
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2eb28e64_9b50af45",
         "filename": "milo/api/resp/build.go",
         "patchSetId": 5
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "d3eb264e_d07f987a",
+        "filename": "milo/api/resp/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2eb28e64_9b50af45",
+      "range": {
+        "startLine": 68,
+        "startChar": 31,
+        "endLine": 68,
+        "endChar": 50
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5beca116_c663a887",
         "filename": "milo/api/resp/build.go",
         "patchSetId": 5
@@ -62,6 +110,24 @@
       "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8424bdf_ba46f42e",
+        "filename": "milo/api/resp/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "I\u0027ll rename this Trigger.  SourceStamp was a buildbot term that encapsulates trigger information, including but also in addition to source/commit.  I think it is often a source of confusion because of its name.  I think \"Trigger\" is a more apt name.\n\nAlternatives:\nTriggerInfo - More descriptive, but longer, and \"Info\" might be redundant, since everything is implicitly information",
+      "parentUuid": "5beca116_c663a887",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -82,6 +148,24 @@
     },
     {
       "key": {
+        "uuid": "8adaf6d8_bf21042a",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "949b8483_bb3ab547",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "97475e44_a7be788c",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 5
@@ -96,6 +180,24 @@
       "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3237e39e_4cc6f108",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "97475e44_a7be788c",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -122,6 +224,30 @@
     },
     {
       "key": {
+        "uuid": "62181523_5723bfc6",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "10655c5c_bff92ecb",
+      "range": {
+        "startLine": 56,
+        "startChar": 3,
+        "endLine": 56,
+        "endChar": 17
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f3cd45de_041e072c",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 5
@@ -145,6 +271,30 @@
     },
     {
       "key": {
+        "uuid": "05efa9ac_ab74fa7a",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f3cd45de_041e072c",
+      "range": {
+        "startLine": 65,
+        "startChar": 40,
+        "endLine": 65,
+        "endChar": 47
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "17d4f379_f1f3f794",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 5
@@ -159,6 +309,24 @@
       "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a4fa680_97b98c8d",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "renamed to getBuildCached, it\u0027s a much better name.",
+      "parentUuid": "17d4f379_f1f3f794",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -185,6 +353,30 @@
     },
     {
       "key": {
+        "uuid": "a359398c_da96e56e",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "It is possible that the cache is late.  Fixed comment.",
+      "parentUuid": "5150f1e9_88475a29",
+      "range": {
+        "startLine": 90,
+        "startChar": 17,
+        "endLine": 90,
+        "endChar": 55
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8a956612_31181c35",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 5
@@ -202,6 +394,24 @@
     },
     {
       "key": {
+        "uuid": "641c7cb9_e5d4c010",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "Two reasons:\n* We don\u0027t cache non-closed builds because they may still mutate\n* If a request is sent for a build after buildbucket knows about the build but before the pubsub pipeline has finished (e.g. this is possible if luci-notify receives a build event before milo), we still want milo to be able to respond correctly\n\nAdded comment to clarify.",
+      "parentUuid": "8a956612_31181c35",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "29e03a9c_214e526c",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 5
@@ -216,6 +426,24 @@
       "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "882c07dc_26d52c1c",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "For style reasons (ie to keep frontend/routes.go free from too much bloat), b.ID is made into a string and the validation is done here instead.\n\nTagged this with a 400 error.",
+      "parentUuid": "29e03a9c_214e526c",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -242,6 +470,30 @@
     },
     {
       "key": {
+        "uuid": "d1308cad_9ee0d9be",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a08fc09c_a5647988",
+      "range": {
+        "startLine": 253,
+        "startChar": 24,
+        "endLine": 253,
+        "endChar": 54
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6f451488_43ac95bd",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 5
@@ -253,6 +505,24 @@
       "writtenOn": "2017-09-13T20:03:19Z",
       "side": 1,
       "message": "even if the status is SCHEDULED, the swarming hostname and task id must be in the tags. Is this an optimization?",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5d621d7_7d5e94a9",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "I assumed that the swarming task ID doesn\u0027t appear until it is \"STARTED\", is that not the case?",
+      "parentUuid": "6f451488_43ac95bd",
       "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -293,6 +563,24 @@
     },
     {
       "key": {
+        "uuid": "54a3ca84_a50aaabe",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ecb4b18a_c0660f19",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "efdd2b0c_e9c65718",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 5
@@ -310,6 +598,24 @@
     },
     {
       "key": {
+        "uuid": "f16d6275_c89ddcf0",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "efdd2b0c_e9c65718",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1171c3d3_22c340fd",
         "filename": "milo/buildsource/buildbucket/struct.go",
         "patchSetId": 5
@@ -324,6 +630,24 @@
       "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee6f44a9_dd76d739",
+        "filename": "milo/buildsource/buildbucket/struct.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "I thought the data was relatively small (at least, relative to the other data we store permanently per build in other services).  It does help skip a roundtrip to BB when loading a BB build.",
+      "parentUuid": "1171c3d3_22c340fd",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -350,6 +674,30 @@
     },
     {
       "key": {
+        "uuid": "c1d2e63d_2c4b855d",
+        "filename": "milo/buildsource/buildbucket/struct.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "14ff7457_675352c3",
+      "range": {
+        "startLine": 26,
+        "startChar": 19,
+        "endLine": 26,
+        "endChar": 23
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b1645efd_ac959b0b",
         "filename": "milo/buildsource/buildbucket/struct.go",
         "patchSetId": 5
@@ -370,6 +718,30 @@
       "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e591ad6_740d95bc",
+        "filename": "milo/buildsource/buildbucket/struct.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1645efd_ac959b0b",
+      "range": {
+        "startLine": 29,
+        "startChar": 50,
+        "endLine": 29,
+        "endChar": 56
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -396,6 +768,30 @@
     },
     {
       "key": {
+        "uuid": "b1d65d54_cec6b1ea",
+        "filename": "milo/buildsource/buildbucket/struct.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "I don\u0027t think it\u0027s right to inline here.  Because json.Unmarshal() mutates msg, but msg is returned first in L48.  If it is inlined, even if it technically works, the order of evaluation is unnatural.",
+      "parentUuid": "5a41f907_03005ca9",
+      "range": {
+        "startLine": 47,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 4
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f6a37332_ea4468a0",
         "filename": "milo/buildsource/swarming/build.go",
         "patchSetId": 5
@@ -410,6 +806,24 @@
       "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1dd79dc6_a6c9cd58",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 451,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "Oops, fixed.",
+      "parentUuid": "f6a37332_ea4468a0",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -436,6 +850,30 @@
     },
     {
       "key": {
+        "uuid": "39e7a3da_61f5f725",
+        "filename": "milo/common/model/status.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ff3f8f3f_12ce8526",
+      "range": {
+        "startLine": 26,
+        "startChar": 51,
+        "endLine": 26,
+        "endChar": 54
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "35b10d72_8abff463",
         "filename": "milo/frontend/routes.go",
         "patchSetId": 5
@@ -447,6 +885,24 @@
       "writtenOn": "2017-09-13T20:10:13Z",
       "side": 1,
       "message": "please parse the id from string here and respond with HTTP 400 if it is not a number",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb384f46_319ab4ab",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "For readability reasons, I\u0027d rather keep routes.go as free of logic as possible.  The way things are currently structured, it\u0027s hard to make the ID field an int because of where the error handler lives (in the build handler).  Fixing this would require a refactor, and I\u0027m not convinced it would be a net benefit.",
+      "parentUuid": "35b10d72_8abff463",
       "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -476,6 +932,30 @@
     },
     {
       "key": {
+        "uuid": "c42392a4_3daa977a",
+        "filename": "milo/rpc/buildinfo.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "Is scheduling a build on buildbucket synchronous and atomic with scheduling a task on swarming?",
+      "parentUuid": "25e52993_d68edcc4",
+      "range": {
+        "startLine": 58,
+        "startChar": 64,
+        "endLine": 59,
+        "endChar": 25
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "527b5f69_ae42463a",
         "filename": "milo/rpc/buildinfo.go",
         "patchSetId": 5
@@ -490,6 +970,24 @@
       "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "39417259_d12c7b50",
+        "filename": "milo/rpc/buildinfo.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-09-22T01:58:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "527b5f69_ae42463a",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
