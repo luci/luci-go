@@ -221,6 +221,8 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 
 	// Also inject cached builds information.
 	for builderName, builder := range master.Builders {
+		builder.PendingBuildStates = nil // nothing uses it, prevent from using
+
 		// Get the most recent 50 buildNums on the builder to simulate what the
 		// cachedBuilds field looks like from the real buildbot master json.
 		q := datastore.NewQuery("buildbotBuild").
