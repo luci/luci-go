@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4398fedd_9111f2ae",
+        "filename": "scheduler/appengine/metrics/metrics.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-23T01:37:19Z",
+      "side": 1,
+      "message": "don\u0027t review yet. I will move them into respective packages where metric is sent, as this is how luci-go seems to be using it, and is in line with abstraction layers.",
+      "range": {
+        "startLine": 22,
+        "startChar": 8,
+        "endLine": 22,
+        "endChar": 15
+      },
+      "revId": "57825a12ad5fa0b5d0d1cb250590e90163e98385",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
