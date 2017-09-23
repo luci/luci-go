@@ -17,6 +17,7 @@ package tsmon
 import (
 	"errors"
 	"fmt"
+	"html"
 	"html/template"
 	"strconv"
 
@@ -121,7 +122,8 @@ func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
 					`Cloud Project to use for sending metrics. "Google Identity and Access `+
 					`Management (IAM) API" must be enabled for the GAE app, and app's `+
 					`account (<b>%s</b>) must have <i>Service Account Actor</i> role `+
-					`for the specified ProdX account. This works only for Google projects.`, serviceAcc)),
+					`for the specified ProdX account. This works only for Google projects.`,
+				html.EscapeString(serviceAcc))),
 		},
 		{
 			ID:    "FlushIntervalSec",
