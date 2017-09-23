@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "1175312a_4007a214",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-23T02:27:05Z",
+      "side": 1,
+      "message": "I didn\u0027t want to report projects w/o configs, so that\u0027s why I put it here. But you are right, so fixed.",
+      "parentUuid": "a0b41b6a_690915f6",
+      "range": {
+        "startLine": 242,
+        "startChar": 1,
+        "endLine": 242,
+        "endChar": 13
+      },
+      "revId": "57825a12ad5fa0b5d0d1cb250590e90163e98385",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3099d90c_93ef4c8b",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-23T02:27:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "67c43a0f_2ebc9ab1",
+      "range": {
+        "startLine": 242,
+        "startChar": 16,
+        "endLine": 242,
+        "endChar": 20
+      },
+      "revId": "57825a12ad5fa0b5d0d1cb250590e90163e98385",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f6c0bec1_9dee5df2",
         "filename": "scheduler/appengine/catalog/catalog.go",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "57825a12ad5fa0b5d0d1cb250590e90163e98385",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5fb7c12b_ab80ab7a",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 348,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-23T02:27:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f6c0bec1_9dee5df2",
+      "range": {
+        "startLine": 348,
+        "startChar": 1,
+        "endLine": 348,
+        "endChar": 75
+      },
+      "revId": "57825a12ad5fa0b5d0d1cb250590e90163e98385",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
