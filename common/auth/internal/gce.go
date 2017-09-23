@@ -19,7 +19,6 @@ import (
 
 	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -28,11 +27,23 @@ import (
 
 type gceTokenProvider struct {
 	account  string
+	email    string
 	cacheKey CacheKey
 }
 
 // NewGCETokenProvider returns TokenProvider that knows how to use GCE metadata server.
 func NewGCETokenProvider(ctx context.Context, account string, scopes []string) (TokenProvider, error) {
+	// Grab an email associated with the account. This must not be failing on
+	// a healthy VM if the account is present. If it does, the metadata server is
+	// broken.
+	email, err := metadata.Get("instance/service-accounts/" + account + "/email")
+	if err != nil {
+		if _, yep := err.(metadata.NotDefinedError); yep {
+			return nil, ErrInsufficientAccess
+		}
+		return nil, err
+	}
+
 	// Ensure account has requested scopes.
 	availableScopes, err := metadata.Scopes(account)
 	if err != nil {
@@ -45,8 +56,10 @@ func NewGCETokenProvider(ctx context.Context, account string, scopes []string) (
 			return nil, ErrInsufficientAccess
 		}
 	}
+
 	return &gceTokenProvider{
 		account: account,
+		email:   email,
 		cacheKey: CacheKey{
 			Key:    fmt.Sprintf("gce/%s", account),
 			Scopes: scopes,
@@ -66,12 +79,19 @@ func (p *gceTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {
 	return &p.cacheKey, nil
 }
 
-func (p *gceTokenProvider) MintToken(ctx context.Context, base *oauth2.Token) (*oauth2.Token, error) {
+func (p *gceTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, error) {
 	src := google.ComputeTokenSource(p.account)
-	return src.Token()
+	tok, err := src.Token()
+	if err != nil {
+		return nil, err
+	}
+	return &Token{
+		Token: *tok,
+		Email: p.email,
+	}, nil
 }
 
-func (p *gceTokenProvider) RefreshToken(ctx context.Context, prev, base *oauth2.Token) (*oauth2.Token, error) {
+func (p *gceTokenProvider) RefreshToken(ctx context.Context, prev, base *Token) (*Token, error) {
 	// Minting and refreshing on GCE is the same thing: a call to metadata server.
 	return p.MintToken(ctx, base)
 }

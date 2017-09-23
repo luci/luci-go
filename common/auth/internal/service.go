@@ -21,7 +21,6 @@ import (
 	"io/ioutil"
 
 	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
 
@@ -88,7 +87,7 @@ func (p *serviceAccountTokenProvider) CacheKey(ctx context.Context) (*CacheKey, 
 	}, nil
 }
 
-func (p *serviceAccountTokenProvider) MintToken(ctx context.Context, base *oauth2.Token) (*oauth2.Token, error) {
+func (p *serviceAccountTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, error) {
 	cfg, err := p.jwtConfig(ctx)
 	if err != nil {
 		logging.Errorf(ctx, "Failed to load private key JSON - %s", err)
@@ -96,7 +95,14 @@ func (p *serviceAccountTokenProvider) MintToken(ctx context.Context, base *oauth
 	}
 	switch newTok, err := grabToken(cfg.TokenSource(ctx)); {
 	case err == nil:
-		return newTok, nil
+		email := cfg.Email
+		if email == "" {
+			email = NoEmail
+		}
+		return &Token{
+			Token: *newTok,
+			Email: email,
+		}, nil
 	case transient.Tag.In(err):
 		logging.Warningf(ctx, "Error when creating access token - %s", err)
 		return nil, err
@@ -106,7 +112,7 @@ func (p *serviceAccountTokenProvider) MintToken(ctx context.Context, base *oauth
 	}
 }
 
-func (p *serviceAccountTokenProvider) RefreshToken(ctx context.Context, prev, base *oauth2.Token) (*oauth2.Token, error) {
+func (p *serviceAccountTokenProvider) RefreshToken(ctx context.Context, prev, base *Token) (*Token, error) {
 	// JWT tokens are self sufficient, there's no need for refresh_token. Minting
 	// a token and "refreshing" it is a same thing.
 	return p.MintToken(ctx, base)

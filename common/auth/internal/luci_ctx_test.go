@@ -105,10 +105,13 @@ func TestLUCIContextProvider(t *testing.T) {
 
 			tok, err := p.MintToken(ctx, nil)
 			So(err, ShouldBeNil)
-			So(tok, ShouldResemble, &oauth2.Token{
-				AccessToken: "zzz",
-				TokenType:   "Bearer",
-				Expiry:      time.Unix(1487456796, 0).UTC(),
+			So(tok, ShouldResemble, &Token{
+				Token: oauth2.Token{
+					AccessToken: "zzz",
+					TokenType:   "Bearer",
+					Expiry:      time.Unix(1487456796, 0).UTC(),
+				},
+				Email: NoEmail,
 			})
 
 			So(<-requests, ShouldResemble, rpcs.GetOAuthTokenRequest{

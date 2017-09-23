@@ -69,6 +69,11 @@ var (
 	// account key used to generate access tokens is revoked, malformed or can not
 	// be read from disk.
 	ErrBadCredentials = internal.ErrBadCredentials
+
+	// ErrNoEmail is returned by GetEmail() if the cached credentials are not
+	// associated with some particular email. This may happen, for example, when
+	// using a refresh token that doesn't have 'userinfo.email' scope.
+	ErrNoEmail = errors.New("the token is not associated with an email")
 )
 
 // Known Google API OAuth scopes.
@@ -578,6 +583,10 @@ func (a *Authenticator) GetAccessToken(lifetime time.Duration) (*oauth2.Token, e
 	if err != nil {
 		return nil, err
 	}
+	// Impose some arbitrary limit, since <= 0 lifetime won't work.
+	if lifetime < time.Second {
+		lifetime = time.Second
+	}
 	if tok == nil || internal.TokenExpiresInRnd(a.ctx, tok, lifetime) {
 		// Give 5 sec extra to make sure callers definitely receive a token that
 		// has at least 'lifetime' seconds of life left. Without this margin, we
@@ -595,7 +604,48 @@ func (a *Authenticator) GetAccessToken(lifetime time.Duration) (*oauth2.Token, e
 			return nil, fmt.Errorf("auth: failed to refresh the token")
 		}
 	}
-	return tok, nil
+	return &tok.Token, nil
+}
+
+// GetEmail returns an email associated with the credentials.
+//
+// In most cases this is a fast call that hits the cache. In some rare cases it
+// may do an RPC to the Token Info endpoint to grab an email associated with the
+// token.
+//
+// Returns ErrNoEmail if the email is not available. This may happen, for
+// example, when using a refresh token that doesn't have 'userinfo.email' scope.
+// Callers must expect this error to show up and should prepare a fallback.
+//
+// Returns an error if the email can't be fetched due to some other transient
+// or fatal error. In particular, returns ErrLoginRequired if interactive login
+// is required to get the token in the first place.
+func (a *Authenticator) GetEmail() (string, error) {
+	tok, err := a.currentToken()
+	switch {
+	case err != nil:
+		return "", err
+	case tok != nil && tok.Email == internal.NoEmail:
+		return "", ErrNoEmail
+	case tok != nil && tok.Email != internal.UnknownEmail:
+		return tok.Email, nil
+	}
+
+	// The token is either not loaded from the cache yet, or it may need a
+	// forceful refresh to initialize Email field (or discover it is NoEmail).
+	// This is rare. It happens only for cached tokens of old format that don't
+	// have email field. Pass -1 as lifetime to trigger the refresh right now.
+	tok, err = a.refreshToken(tok, -1)
+	switch {
+	case err != nil:
+		return "", err
+	case tok.Email == internal.NoEmail:
+		return "", ErrNoEmail
+	case tok.Email == internal.UnknownEmail: // this must not happen, but let's be cautious
+		return "", fmt.Errorf("internal error when fetching the email, see logs")
+	default:
+		return tok.Email, nil
+	}
 }
 
 // CheckLoginRequired decides whether an interactive login is required.
@@ -932,7 +982,7 @@ func (a *Authenticator) effectiveLoginMode() (lm LoginMode) {
 //
 // It lock a.lock inside. It MUST NOT be called when a.lock is held. It will
 // lazily call 'ensureInitialized' if necessary, returning its error.
-func (a *Authenticator) currentToken() (tok *oauth2.Token, err error) {
+func (a *Authenticator) currentToken() (tok *internal.Token, err error) {
 	a.lock.RLock()
 	initialized, err := a.checkInitialized()
 	if initialized && err == nil {
@@ -960,16 +1010,16 @@ func (a *Authenticator) currentToken() (tok *oauth2.Token, err error) {
 //
 // If the token can't be refreshed (e.g. the base token or the credentials were
 // revoked), sets the current auth token to nil and returns an error.
-func (a *Authenticator) refreshToken(prev *oauth2.Token, lifetime time.Duration) (*oauth2.Token, error) {
+func (a *Authenticator) refreshToken(prev *internal.Token, lifetime time.Duration) (*internal.Token, error) {
 	return a.authToken.compareAndRefresh(a.ctx, compareAndRefreshOp{
 		lock:     &a.lock,
 		prev:     prev,
 		lifetime: lifetime,
-		refreshCb: func(ctx context.Context, prev *oauth2.Token) (*oauth2.Token, error) {
+		refreshCb: func(ctx context.Context, prev *internal.Token) (*internal.Token, error) {
 			// In Actor mode, need to make sure we have a sufficiently fresh base
 			// token first, since it's needed to get the new auth token. 30 sec should
 			// be more than enough to make an IAM call.
-			var base *oauth2.Token
+			var base *internal.Token
 			if a.isActing() {
 				var err error
 				if base, err = a.getBaseTokenLocked(ctx, 30*time.Second); err != nil {
@@ -984,14 +1034,16 @@ func (a *Authenticator) refreshToken(prev *oauth2.Token, lifetime time.Duration)
 // getBaseTokenLocked is used to get an IAM-scoped token when running in
 // actor mode.
 //
+// Passing negative lifetime causes a forced refresh.
+//
 // It is called with a.lock locked.
-func (a *Authenticator) getBaseTokenLocked(ctx context.Context, lifetime time.Duration) (*oauth2.Token, error) {
+func (a *Authenticator) getBaseTokenLocked(ctx context.Context, lifetime time.Duration) (*internal.Token, error) {
 	if !a.isActing() {
 		panic("impossible")
 	}
 
 	// Already have a good token?
-	if !internal.TokenExpiresInRnd(ctx, a.baseToken.token, lifetime) {
+	if lifetime > 0 && !internal.TokenExpiresInRnd(ctx, a.baseToken.token, lifetime) {
 		return a.baseToken.token, nil
 	}
 
@@ -1000,7 +1052,7 @@ func (a *Authenticator) getBaseTokenLocked(ctx context.Context, lifetime time.Du
 		lock:     nil, // already holding the lock
 		prev:     a.baseToken.token,
 		lifetime: lifetime,
-		refreshCb: func(ctx context.Context, prev *oauth2.Token) (*oauth2.Token, error) {
+		refreshCb: func(ctx context.Context, prev *internal.Token) (*internal.Token, error) {
 			return a.baseToken.renewToken(ctx, prev, nil)
 		},
 	})
@@ -1030,7 +1082,7 @@ func (a *Authenticator) authTokenInjector(req *http.Request) error {
 // tokenWithProvider wraps a token with provider that can update it and a cache
 // that stores it.
 type tokenWithProvider struct {
-	token    *oauth2.Token          // in-memory cache of the token
+	token    *internal.Token        // in-memory cache of the token
 	provider internal.TokenProvider // knows how to generate 'token'
 	cache    internal.TokenCache    // persistent cache for the token
 }
@@ -1070,10 +1122,10 @@ func (t *tokenWithProvider) purgeToken(ctx context.Context) error {
 
 // compareAndRefreshOp is parameters for 'compareAndRefresh' call.
 type compareAndRefreshOp struct {
-	lock      sync.Locker   // optional lock to grab when comparing and refreshing
-	prev      *oauth2.Token // previously known token (the one we are refreshing)
-	lifetime  time.Duration // minimum acceptable token lifetime
-	refreshCb func(ctx context.Context, existing *oauth2.Token) (*oauth2.Token, error)
+	lock      sync.Locker     // optional lock to grab when comparing and refreshing
+	prev      *internal.Token // previously known token (the one we are refreshing)
+	lifetime  time.Duration   // minimum acceptable token lifetime or <0 to force a refresh
+	refreshCb func(ctx context.Context, existing *internal.Token) (*internal.Token, error)
 }
 
 // compareAndRefresh compares currently stored token to 'prev' and calls the
@@ -1086,7 +1138,7 @@ type compareAndRefreshOp struct {
 //
 // If the callback returns an error (meaning the token can't be refreshed), sets
 // the token to nil and returns the error.
-func (t *tokenWithProvider) compareAndRefresh(ctx context.Context, params compareAndRefreshOp) (*oauth2.Token, error) {
+func (t *tokenWithProvider) compareAndRefresh(ctx context.Context, params compareAndRefreshOp) (*internal.Token, error) {
 	cacheKey, err := t.provider.CacheKey(ctx)
 	if err != nil {
 		// An error here is truly fatal. It is something like "can't read service
@@ -1101,7 +1153,7 @@ func (t *tokenWithProvider) compareAndRefresh(ctx context.Context, params compar
 	})
 
 	// Check that the token still need a refresh and do it (under the lock).
-	tok, cacheIt, err := func() (*oauth2.Token, bool, error) {
+	tok, cacheIt, err := func() (*internal.Token, bool, error) {
 		if params.lock != nil {
 			params.lock.Lock()
 			defer params.lock.Unlock()
@@ -1117,7 +1169,7 @@ func (t *tokenWithProvider) compareAndRefresh(ctx context.Context, params compar
 		// non-interactive providers, see ensureInitialized().
 		if cached, _ := t.cache.GetToken(cacheKey); cached != nil {
 			t.token = cached
-			if !internal.EqualTokens(cached, params.prev) && !internal.TokenExpiresIn(ctx, cached, params.lifetime) {
+			if !internal.EqualTokens(cached, params.prev) && params.lifetime > 0 && !internal.TokenExpiresIn(ctx, cached, params.lifetime) {
 				return cached, false, nil
 			}
 		}
@@ -1167,7 +1219,7 @@ func (t *tokenWithProvider) compareAndRefresh(ctx context.Context, params compar
 //
 // It is called from non-interactive 'refreshToken' method, and thus it can't
 // use interactive login flow.
-func (t *tokenWithProvider) renewToken(ctx context.Context, prev, base *oauth2.Token) (*oauth2.Token, error) {
+func (t *tokenWithProvider) renewToken(ctx context.Context, prev, base *internal.Token) (*internal.Token, error) {
 	if prev == nil {
 		if t.provider.RequiresInteraction() {
 			return nil, ErrLoginRequired
@@ -1205,7 +1257,7 @@ func retryParams() retry.Iterator {
 
 // mintTokenWithRetries calls provider's MintToken() retrying on transient
 // errors a bunch of times. Called only for non-interactive providers.
-func (t *tokenWithProvider) mintTokenWithRetries(ctx context.Context, base *oauth2.Token) (tok *oauth2.Token, err error) {
+func (t *tokenWithProvider) mintTokenWithRetries(ctx context.Context, base *internal.Token) (tok *internal.Token, err error) {
 	err = retry.Retry(ctx, transient.Only(retryParams), func() error {
 		tok, err = t.provider.MintToken(ctx, base)
 		return err
@@ -1215,7 +1267,7 @@ func (t *tokenWithProvider) mintTokenWithRetries(ctx context.Context, base *oaut
 
 // refreshTokenWithRetries calls providers' RefreshToken(...) retrying on
 // transient errors a bunch of times.
-func (t *tokenWithProvider) refreshTokenWithRetries(ctx context.Context, prev, base *oauth2.Token) (tok *oauth2.Token, err error) {
+func (t *tokenWithProvider) refreshTokenWithRetries(ctx context.Context, prev, base *internal.Token) (tok *internal.Token, err error) {
 	err = retry.Retry(ctx, transient.Only(retryParams), func() error {
 		tok, err = t.provider.RefreshToken(ctx, prev, base)
 		return err

@@ -49,9 +49,12 @@ func testCacheSemantics(ctx context.Context, cache TokenCache) {
 	So(cache.DeleteToken(&CacheKey{Key: "missing"}), ShouldBeNil)
 
 	// Put -> Get.
-	tok1 := &oauth2.Token{
-		AccessToken: "abc",
-		Expiry:      clock.Now(ctx).Add(time.Hour).UTC(),
+	tok1 := &Token{
+		Token: oauth2.Token{
+			AccessToken: "abc",
+			Expiry:      clock.Now(ctx).Add(time.Hour).UTC(),
+		},
+		Email: "some@example.com",
 	}
 	So(cache.PutToken(&CacheKey{Key: "k"}, tok1), ShouldBeNil)
 	tok, err = cache.GetToken(&CacheKey{Key: "k"})
@@ -64,9 +67,12 @@ func testCacheSemantics(ctx context.Context, cache TokenCache) {
 	}
 
 	// Overwrite -> Get.
-	tok2 := &oauth2.Token{
-		AccessToken: "def",
-		Expiry:      clock.Now(ctx).Add(2 * time.Hour).UTC(),
+	tok2 := &Token{
+		Token: oauth2.Token{
+			AccessToken: "def",
+			Expiry:      clock.Now(ctx).Add(2 * time.Hour).UTC(),
+		},
+		Email: "another@example.com",
 	}
 	So(cache.PutToken(&CacheKey{Key: "k"}, tok2), ShouldBeNil)
 	tok, err = cache.GetToken(&CacheKey{Key: "k"})
@@ -90,9 +96,11 @@ func testCacheSemantics(ctx context.Context, cache TokenCache) {
 }
 
 func testCacheInParallel(ctx context.Context, cache TokenCache) {
-	tok := &oauth2.Token{
-		AccessToken: "zzz",
-		Expiry:      clock.Now(ctx).Add(365 * 24 * time.Hour),
+	tok := &Token{
+		Token: oauth2.Token{
+			AccessToken: "zzz",
+			Expiry:      clock.Now(ctx).Add(365 * 24 * time.Hour),
+		},
 	}
 
 	const (

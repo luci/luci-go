@@ -67,21 +67,27 @@ func TestDiskTokenCache(t *testing.T) {
 			SecretsDir: tmp,
 		}
 
-		cache.PutToken(&CacheKey{Key: "a"}, &oauth2.Token{
-			AccessToken: "abc",
-			Expiry:      clock.Now(ctx),
+		cache.PutToken(&CacheKey{Key: "a"}, &Token{
+			Token: oauth2.Token{
+				AccessToken: "abc",
+				Expiry:      clock.Now(ctx),
+			},
 		})
-		cache.PutToken(&CacheKey{Key: "b"}, &oauth2.Token{
-			AccessToken:  "abc",
-			RefreshToken: "def",
-			Expiry:       clock.Now(ctx),
+		cache.PutToken(&CacheKey{Key: "b"}, &Token{
+			Token: oauth2.Token{
+				AccessToken:  "abc",
+				RefreshToken: "def",
+				Expiry:       clock.Now(ctx),
+			},
 		})
 
 		// GCAccessTokenMaxAge later, "a" is gone while the cache is updated.
 		tc.Add(GCAccessTokenMaxAge)
-		unused := &oauth2.Token{
-			AccessToken: "zzz",
-			Expiry:      clock.Now(ctx).Add(365 * 24 * time.Hour),
+		unused := &Token{
+			Token: oauth2.Token{
+				AccessToken: "zzz",
+				Expiry:      clock.Now(ctx).Add(365 * 24 * time.Hour),
+			},
 		}
 		cache.PutToken(&CacheKey{Key: "unused"}, unused)
 

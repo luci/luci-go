@@ -63,7 +63,7 @@ func TestTransportFactory(t *testing.T) {
 		So(provider.mintTokenCalled, ShouldBeTrue)
 	})
 
-	Convey(" SilentLogin + interactive provider: ErrLoginRequired", t, func() {
+	Convey("SilentLogin + interactive provider: ErrLoginRequired", t, func() {
 		auth, _ := newAuth(SilentLogin, &fakeTokenProvider{
 			interactive: true,
 		}, nil, "")
@@ -98,7 +98,10 @@ func TestRefreshToken(t *testing.T) {
 	Convey("Test non-interactive auth (no cache)", t, func() {
 		tokenProvider := &fakeTokenProvider{
 			interactive: false,
-			tokenToMint: &oauth2.Token{AccessToken: "minted"},
+			tokenToMint: &internal.Token{
+				Token: oauth2.Token{AccessToken: "minted"},
+				Email: "freshly-minted@example.com",
+			},
 		}
 		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
 		So(auth.CheckLoginRequired(), ShouldBeNil)
@@ -109,9 +112,14 @@ func TestRefreshToken(t *testing.T) {
 		So(tok, ShouldBeNil)
 
 		// The token is minted on first request.
-		tok, err = auth.GetAccessToken(time.Minute)
+		oauthTok, err := auth.GetAccessToken(time.Minute)
 		So(err, ShouldBeNil)
-		So(tok.AccessToken, ShouldEqual, "minted")
+		So(oauthTok.AccessToken, ShouldEqual, "minted")
+
+		// And we also get an email straight from MintToken call.
+		email, err := auth.GetEmail()
+		So(err, ShouldBeNil)
+		So(email, ShouldEqual, "freshly-minted@example.com")
 	})
 
 	Convey("Test non-interactive auth (with non-expired cache)", t, func() {
@@ -119,9 +127,12 @@ func TestRefreshToken(t *testing.T) {
 			interactive: false,
 		}
 		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
-		cacheToken(auth, tokenProvider, &oauth2.Token{
-			AccessToken: "cached",
-			Expiry:      future,
+		cacheToken(auth, tokenProvider, &internal.Token{
+			Token: oauth2.Token{
+				AccessToken: "cached",
+				Expiry:      future,
+			},
+			Email: "cached-email@example.com",
 		})
 
 		So(auth.CheckLoginRequired(), ShouldBeNil)
@@ -132,20 +143,31 @@ func TestRefreshToken(t *testing.T) {
 		So(tok, ShouldBeNil)
 
 		// Cached token is used.
-		tok, err = auth.GetAccessToken(time.Minute)
+		oauthTok, err := auth.GetAccessToken(time.Minute)
 		So(err, ShouldBeNil)
-		So(tok.AccessToken, ShouldEqual, "cached")
+		So(oauthTok.AccessToken, ShouldEqual, "cached")
+
+		// Cached email is used.
+		email, err := auth.GetEmail()
+		So(err, ShouldBeNil)
+		So(email, ShouldEqual, "cached-email@example.com")
 	})
 
 	Convey("Test non-interactive auth (with expired cache)", t, func() {
 		tokenProvider := &fakeTokenProvider{
-			interactive:    false,
-			tokenToRefresh: &oauth2.Token{AccessToken: "refreshed"},
+			interactive: false,
+			tokenToRefresh: &internal.Token{
+				Token: oauth2.Token{AccessToken: "refreshed"},
+				Email: "new-email@example.com",
+			},
 		}
 		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
-		cacheToken(auth, tokenProvider, &oauth2.Token{
-			AccessToken: "cached",
-			Expiry:      past,
+		cacheToken(auth, tokenProvider, &internal.Token{
+			Token: oauth2.Token{
+				AccessToken: "cached",
+				Expiry:      past,
+			},
+			Email: "cached-email@example.com",
 		})
 
 		So(auth.CheckLoginRequired(), ShouldBeNil)
@@ -156,23 +178,42 @@ func TestRefreshToken(t *testing.T) {
 		So(tok, ShouldBeNil)
 
 		// The usage triggers refresh procedure.
-		tok, err = auth.GetAccessToken(time.Minute)
+		oauthTok, err := auth.GetAccessToken(time.Minute)
 		So(err, ShouldBeNil)
-		So(tok.AccessToken, ShouldEqual, "refreshed")
+		So(oauthTok.AccessToken, ShouldEqual, "refreshed")
+
+		// Using a newly fetched email.
+		email, err := auth.GetEmail()
+		So(err, ShouldBeNil)
+		So(email, ShouldEqual, "new-email@example.com")
 	})
 
 	Convey("Test interactive auth (no cache)", t, func() {
 		tokenProvider := &fakeTokenProvider{
 			interactive: true,
-			tokenToMint: &oauth2.Token{AccessToken: "minted"},
+			tokenToMint: &internal.Token{
+				Token: oauth2.Token{AccessToken: "minted"},
+				Email: "freshly-minted@example.com",
+			},
 		}
 
-		// No token cached, login is required.
 		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
-		So(auth.CheckLoginRequired(), ShouldEqual, ErrLoginRequired)
+
+		// No token cached.
 		tok, err := auth.currentToken()
 		So(err, ShouldBeNil)
 		So(tok, ShouldBeNil)
+
+		// Login is required, as reported by various methods.
+		So(auth.CheckLoginRequired(), ShouldEqual, ErrLoginRequired)
+
+		oauthTok, err := auth.GetAccessToken(time.Minute)
+		So(oauthTok, ShouldBeNil)
+		So(err, ShouldEqual, ErrLoginRequired)
+
+		email, err := auth.GetEmail()
+		So(email, ShouldEqual, "")
+		So(err, ShouldEqual, ErrLoginRequired)
 
 		// Do it.
 		err = auth.Login()
@@ -185,9 +226,14 @@ func TestRefreshToken(t *testing.T) {
 		So(tok.AccessToken, ShouldEqual, "minted")
 
 		// And it is actually used.
-		tok, err = auth.GetAccessToken(time.Minute)
+		oauthTok, err = auth.GetAccessToken(time.Minute)
 		So(err, ShouldBeNil)
-		So(tok.AccessToken, ShouldEqual, "minted")
+		So(oauthTok.AccessToken, ShouldEqual, "minted")
+
+		// Email works too now.
+		email, err = auth.GetEmail()
+		So(err, ShouldBeNil)
+		So(email, ShouldEqual, "freshly-minted@example.com")
 	})
 
 	Convey("Test interactive auth (with non-expired cache)", t, func() {
@@ -195,9 +241,12 @@ func TestRefreshToken(t *testing.T) {
 			interactive: true,
 		}
 		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
-		cacheToken(auth, tokenProvider, &oauth2.Token{
-			AccessToken: "cached",
-			Expiry:      future,
+		cacheToken(auth, tokenProvider, &internal.Token{
+			Token: oauth2.Token{
+				AccessToken: "cached",
+				Expiry:      future,
+			},
+			Email: "cached-email@example.com",
 		})
 
 		// No need to login, already have a token.
@@ -209,20 +258,31 @@ func TestRefreshToken(t *testing.T) {
 		So(tok.AccessToken, ShouldEqual, "cached")
 
 		// And it is actually used.
-		tok, err = auth.GetAccessToken(time.Minute)
+		oauthTok, err := auth.GetAccessToken(time.Minute)
 		So(err, ShouldBeNil)
-		So(tok.AccessToken, ShouldEqual, "cached")
+		So(oauthTok.AccessToken, ShouldEqual, "cached")
+
+		// Email works too now.
+		email, err := auth.GetEmail()
+		So(err, ShouldBeNil)
+		So(email, ShouldEqual, "cached-email@example.com")
 	})
 
 	Convey("Test interactive auth (with expired cache)", t, func() {
 		tokenProvider := &fakeTokenProvider{
-			interactive:    true,
-			tokenToRefresh: &oauth2.Token{AccessToken: "refreshed"},
+			interactive: true,
+			tokenToRefresh: &internal.Token{
+				Token: oauth2.Token{AccessToken: "refreshed"},
+				Email: "refreshed-email@example.com",
+			},
 		}
 		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
-		cacheToken(auth, tokenProvider, &oauth2.Token{
-			AccessToken: "cached",
-			Expiry:      past,
+		cacheToken(auth, tokenProvider, &internal.Token{
+			Token: oauth2.Token{
+				AccessToken: "cached",
+				Expiry:      past,
+			},
+			Email: "cached-email@example.com",
 		})
 
 		// No need to login, already have a token. Only its "access_token" part is
@@ -235,9 +295,14 @@ func TestRefreshToken(t *testing.T) {
 		So(tok.AccessToken, ShouldEqual, "cached")
 
 		// Attempting to use it triggers a refresh.
-		tok, err = auth.GetAccessToken(time.Minute)
+		oauthTok, err := auth.GetAccessToken(time.Minute)
 		So(err, ShouldBeNil)
-		So(tok.AccessToken, ShouldEqual, "refreshed")
+		So(oauthTok.AccessToken, ShouldEqual, "refreshed")
+
+		// Email is also refreshed.
+		email, err := auth.GetEmail()
+		So(err, ShouldBeNil)
+		So(email, ShouldEqual, "refreshed-email@example.com")
 	})
 
 	Convey("Test revoked refresh_token", t, func() {
@@ -246,9 +311,12 @@ func TestRefreshToken(t *testing.T) {
 			revokedToken: true,
 		}
 		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
-		cacheToken(auth, tokenProvider, &oauth2.Token{
-			AccessToken: "cached",
-			Expiry:      past,
+		cacheToken(auth, tokenProvider, &internal.Token{
+			Token: oauth2.Token{
+				AccessToken: "cached",
+				Expiry:      past,
+			},
+			Email: "cached@example.com",
 		})
 
 		// No need to login, already have a token. Only its "access_token" part is
@@ -264,6 +332,10 @@ func TestRefreshToken(t *testing.T) {
 		// Attempting to use it triggers a refresh that fails.
 		_, err = auth.GetAccessToken(time.Minute)
 		So(err, ShouldEqual, ErrLoginRequired)
+
+		// Same happens when trying to grab an email.
+		_, err = auth.GetEmail()
+		So(err, ShouldEqual, ErrLoginRequired)
 	})
 
 	Convey("Test revoked credentials", t, func() {
@@ -272,9 +344,12 @@ func TestRefreshToken(t *testing.T) {
 			revokedCreds: true,
 		}
 		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
-		cacheToken(auth, tokenProvider, &oauth2.Token{
-			AccessToken: "cached",
-			Expiry:      past,
+		cacheToken(auth, tokenProvider, &internal.Token{
+			Token: oauth2.Token{
+				AccessToken: "cached",
+				Expiry:      past,
+			},
+			Email: "cached@example.com",
 		})
 
 		So(auth.CheckLoginRequired(), ShouldBeNil)
@@ -282,18 +357,26 @@ func TestRefreshToken(t *testing.T) {
 		// Attempting to use expired cached token triggers a refresh that fails.
 		_, err := auth.GetAccessToken(time.Minute)
 		So(err, ShouldEqual, ErrBadCredentials)
+
+		// Same happens when trying to grab an email.
+		_, err = auth.GetEmail()
+		So(err, ShouldEqual, ErrBadCredentials)
 	})
 
 	Convey("Test transient errors when refreshing, success", t, func() {
 		tokenProvider := &fakeTokenProvider{
 			interactive:            false,
 			transientRefreshErrors: 5,
-			tokenToRefresh:         &oauth2.Token{AccessToken: "refreshed"},
+			tokenToRefresh: &internal.Token{
+				Token: oauth2.Token{AccessToken: "refreshed"},
+			},
 		}
 		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
-		cacheToken(auth, tokenProvider, &oauth2.Token{
-			AccessToken: "cached",
-			Expiry:      past,
+		cacheToken(auth, tokenProvider, &internal.Token{
+			Token: oauth2.Token{
+				AccessToken: "cached",
+				Expiry:      past,
+			},
 		})
 
 		So(auth.CheckLoginRequired(), ShouldBeNil)
@@ -314,9 +397,11 @@ func TestRefreshToken(t *testing.T) {
 			transientRefreshErrors: 5000, // never succeeds
 		}
 		auth, ctx := newAuth(SilentLogin, tokenProvider, nil, "")
-		cacheToken(auth, tokenProvider, &oauth2.Token{
-			AccessToken: "cached",
-			Expiry:      past,
+		cacheToken(auth, tokenProvider, &internal.Token{
+			Token: oauth2.Token{
+				AccessToken: "cached",
+				Expiry:      past,
+			},
 		})
 
 		So(auth.CheckLoginRequired(), ShouldBeNil)
@@ -340,24 +425,36 @@ func TestActorMode(t *testing.T) {
 	Convey("Test non-interactive auth (no cache)", t, func() {
 		baseProvider := &fakeTokenProvider{
 			interactive: false,
-			tokenToMint: &oauth2.Token{
-				AccessToken: "minted-base",
-				Expiry:      now.Add(time.Hour),
+			tokenToMint: &internal.Token{
+				Token: oauth2.Token{
+					AccessToken: "minted-base",
+					Expiry:      now.Add(time.Hour),
+				},
+				Email: "must-be-ignored@example.com",
 			},
-			tokenToRefresh: &oauth2.Token{
-				AccessToken: "refreshed-base",
-				Expiry:      now.Add(2 * time.Hour),
+			tokenToRefresh: &internal.Token{
+				Token: oauth2.Token{
+					AccessToken: "refreshed-base",
+					Expiry:      now.Add(2 * time.Hour),
+				},
+				Email: "must-be-ignored@example.com",
 			},
 		}
 		iamProvider := &fakeTokenProvider{
 			interactive: false,
-			tokenToMint: &oauth2.Token{
-				AccessToken: "minted-iam",
-				Expiry:      now.Add(30 * time.Minute),
+			tokenToMint: &internal.Token{
+				Token: oauth2.Token{
+					AccessToken: "minted-iam",
+					Expiry:      now.Add(30 * time.Minute),
+				},
+				Email: "minted-iam@example.com",
 			},
-			tokenToRefresh: &oauth2.Token{
-				AccessToken: "refreshed-iam",
-				Expiry:      now.Add(2 * time.Hour),
+			tokenToRefresh: &internal.Token{
+				Token: oauth2.Token{
+					AccessToken: "refreshed-iam",
+					Expiry:      now.Add(2 * time.Hour),
+				},
+				Email: "refreshed-iam@example.com",
 			},
 		}
 		auth, ctx := newAuth(SilentLogin, baseProvider, iamProvider, "as-actor")
@@ -369,9 +466,14 @@ func TestActorMode(t *testing.T) {
 		So(tok, ShouldBeNil)
 
 		// The token is minted on the first request. It is IAM-derived token.
-		tok, err = auth.GetAccessToken(time.Minute)
+		oauthTok, err := auth.GetAccessToken(time.Minute)
 		So(err, ShouldBeNil)
-		So(tok.AccessToken, ShouldEqual, "minted-iam")
+		So(oauthTok.AccessToken, ShouldEqual, "minted-iam")
+
+		// The email also matches the IAM token.
+		email, err := auth.GetEmail()
+		So(err, ShouldBeNil)
+		So(email, ShouldEqual, "minted-iam@example.com")
 
 		// The correct base token was minted as well and used by IAM call.
 		So(iamProvider.baseTokenInMint.AccessToken, ShouldEqual, "minted-base")
@@ -381,9 +483,14 @@ func TestActorMode(t *testing.T) {
 		clock.Get(ctx).(testclock.TestClock).Add(40 * time.Minute)
 
 		// Getting a refreshed IAM token.
-		tok, err = auth.GetAccessToken(time.Minute)
+		oauthTok, err = auth.GetAccessToken(time.Minute)
 		So(err, ShouldBeNil)
-		So(tok.AccessToken, ShouldEqual, "refreshed-iam")
+		So(oauthTok.AccessToken, ShouldEqual, "refreshed-iam")
+
+		// The email also matches the IAM token.
+		email, err = auth.GetEmail()
+		So(err, ShouldBeNil)
+		So(email, ShouldEqual, "refreshed-iam@example.com")
 
 		// Using existing base token (still valid).
 		So(iamProvider.baseTokenInRefresh.AccessToken, ShouldEqual, "minted-base")
@@ -413,9 +520,13 @@ func TestTransport(t *testing.T) {
 		defer ts.Close()
 
 		tokenProvider := &fakeTokenProvider{
-			interactive:    false,
-			tokenToMint:    &oauth2.Token{AccessToken: "minted", Expiry: now.Add(time.Hour)},
-			tokenToRefresh: &oauth2.Token{AccessToken: "refreshed", Expiry: now.Add(2 * time.Hour)},
+			interactive: false,
+			tokenToMint: &internal.Token{
+				Token: oauth2.Token{AccessToken: "minted", Expiry: now.Add(time.Hour)},
+			},
+			tokenToRefresh: &internal.Token{
+				Token: oauth2.Token{AccessToken: "refreshed", Expiry: now.Add(2 * time.Hour)},
+			},
 		}
 
 		auth, ctx := newAuth(SilentLogin, tokenProvider, nil, "")
@@ -491,9 +602,11 @@ func TestOptionalLogin(t *testing.T) {
 			revokedToken: true,
 		}
 		auth, ctx := newAuth(OptionalLogin, tokenProvider, nil, "")
-		cacheToken(auth, tokenProvider, &oauth2.Token{
-			AccessToken: "cached",
-			Expiry:      now.Add(time.Hour),
+		cacheToken(auth, tokenProvider, &internal.Token{
+			Token: oauth2.Token{
+				AccessToken: "cached",
+				Expiry:      now.Add(time.Hour),
+			},
 		})
 
 		client, err := auth.Client()
@@ -528,6 +641,65 @@ func TestOptionalLogin(t *testing.T) {
 	})
 }
 
+func TestGetEmail(t *testing.T) {
+	t.Parallel()
+
+	Convey("Non-expired cache without email is upgraded", t, func() {
+		tokenProvider := &fakeTokenProvider{
+			interactive: true,
+		}
+		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
+		cacheToken(auth, tokenProvider, &internal.Token{
+			Token: oauth2.Token{
+				AccessToken: "cached",
+				Expiry:      future,
+			},
+			Email: "", // "old style" cache without an email
+		})
+
+		// No need to login, already have a token.
+		So(auth.CheckLoginRequired(), ShouldBeNil)
+
+		// GetAccessToken returns the cached token.
+		oauthTok, err := auth.GetAccessToken(time.Minute)
+		So(err, ShouldBeNil)
+		So(oauthTok.AccessToken, ShouldEqual, "cached")
+
+		// But getting an email triggers a refresh, since the cached token doesn't
+		// have an email.
+		email, err := auth.GetEmail()
+		So(err, ShouldBeNil)
+		So(email, ShouldEqual, "some-email-refreshtoken@example.com")
+
+		// GetAccessToken picks up the refreshed token too.
+		oauthTok, err = auth.GetAccessToken(time.Minute)
+		So(err, ShouldBeNil)
+		So(oauthTok.AccessToken, ShouldEqual, "some refreshed token")
+	})
+
+	Convey("No email triggers ErrNoEmail", t, func() {
+		tokenProvider := &fakeTokenProvider{
+			interactive: false,
+			tokenToMint: &internal.Token{
+				Token: oauth2.Token{AccessToken: "minted"},
+				Email: internal.NoEmail,
+			},
+		}
+		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
+		So(auth.CheckLoginRequired(), ShouldBeNil)
+
+		// The token is minted on first request.
+		oauthTok, err := auth.GetAccessToken(time.Minute)
+		So(err, ShouldBeNil)
+		So(oauthTok.AccessToken, ShouldEqual, "minted")
+
+		// But getting an email fails with ErrNoEmail.
+		email, err := auth.GetEmail()
+		So(err, ShouldEqual, ErrNoEmail)
+		So(email, ShouldEqual, "")
+	})
+}
+
 func newAuth(loginMode LoginMode, base, iam internal.TokenProvider, actAs string) (*Authenticator, context.Context) {
 	// Use auto-advancing fake time.
 	ctx := mathrand.Set(context.Background(), rand.New(rand.NewSource(123)))
@@ -544,7 +716,7 @@ func newAuth(loginMode LoginMode, base, iam internal.TokenProvider, actAs string
 	return a, ctx
 }
 
-func cacheToken(a *Authenticator, p internal.TokenProvider, tok *oauth2.Token) {
+func cacheToken(a *Authenticator, p internal.TokenProvider, tok *internal.Token) {
 	cacheKey, err := p.CacheKey(a.ctx)
 	if err != nil {
 		panic(err)
@@ -562,14 +734,14 @@ type fakeTokenProvider struct {
 	revokedCreds           bool
 	revokedToken           bool
 	transientRefreshErrors int
-	tokenToMint            *oauth2.Token
-	tokenToRefresh         *oauth2.Token
+	tokenToMint            *internal.Token
+	tokenToRefresh         *internal.Token
 
 	mintTokenCalled    bool
 	refreshTokenCalled bool
 
-	baseTokenInMint    *oauth2.Token
-	baseTokenInRefresh *oauth2.Token
+	baseTokenInMint    *internal.Token
+	baseTokenInRefresh *internal.Token
 }
 
 func (p *fakeTokenProvider) RequiresInteraction() bool {
@@ -584,7 +756,7 @@ func (p *fakeTokenProvider) CacheKey(ctx context.Context) (*internal.CacheKey, e
 	return &internal.CacheKey{Key: "fake"}, nil
 }
 
-func (p *fakeTokenProvider) MintToken(ctx context.Context, base *oauth2.Token) (*oauth2.Token, error) {
+func (p *fakeTokenProvider) MintToken(ctx context.Context, base *internal.Token) (*internal.Token, error) {
 	p.mintTokenCalled = true
 	p.baseTokenInMint = base
 	if p.revokedCreds {
@@ -593,10 +765,13 @@ func (p *fakeTokenProvider) MintToken(ctx context.Context, base *oauth2.Token) (
 	if p.tokenToMint != nil {
 		return p.tokenToMint, nil
 	}
-	return &oauth2.Token{AccessToken: "some minted token"}, nil
+	return &internal.Token{
+		Token: oauth2.Token{AccessToken: "some minted token"},
+		Email: "some-email-minttoken@example.com",
+	}, nil
 }
 
-func (p *fakeTokenProvider) RefreshToken(ctx context.Context, prev, base *oauth2.Token) (*oauth2.Token, error) {
+func (p *fakeTokenProvider) RefreshToken(ctx context.Context, prev, base *internal.Token) (*internal.Token, error) {
 	p.refreshTokenCalled = true
 	p.baseTokenInRefresh = base
 	if p.transientRefreshErrors != 0 {
@@ -612,5 +787,8 @@ func (p *fakeTokenProvider) RefreshToken(ctx context.Context, prev, base *oauth2
 	if p.tokenToRefresh != nil {
 		return p.tokenToRefresh, nil
 	}
-	return &oauth2.Token{AccessToken: "some refreshed token"}, nil
+	return &internal.Token{
+		Token: oauth2.Token{AccessToken: "some refreshed token"},
+		Email: "some-email-refreshtoken@example.com",
+	}, nil
 }
