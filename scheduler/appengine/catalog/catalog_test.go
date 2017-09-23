@@ -17,12 +17,17 @@ package catalog
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	memcfg "go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/store"
+	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
 
 	"go.chromium.org/luci/scheduler/appengine/acl"
@@ -184,7 +189,8 @@ func TestTaskMarshaling(t *testing.T) {
 
 func TestConfigReading(t *testing.T) {
 	Convey("with mocked config", t, func() {
-		ctx := testconfig.WithCommonClient(context.Background(), memcfg.New(mockedConfigs))
+		ctx, tsmonMemStore := testContext()
+		ctx = testconfig.WithCommonClient(ctx, memcfg.New(mockedConfigs))
 		cat := New("scheduler.cfg")
 		cat.RegisterTaskManager(fakeTaskManager{
 			name: "noop",
@@ -230,6 +236,10 @@ func TestConfigReading(t *testing.T) {
 					Task:        []uint8{18, 21, 18, 19, 104, 116, 116, 112, 115, 58, 47, 47, 101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109},
 				},
 			})
+			So(getConfiguredProjectValue(ctx, tsmonMemStore, "project1"), ShouldBeTrue)
+			So(getConfiguredJobsValue(ctx, tsmonMemStore, "project1", "valid"), ShouldEqual, 3)
+			So(getConfiguredJobsValue(ctx, tsmonMemStore, "project1", "invalid"), ShouldEqual, 1)
+			So(getConfiguredJobsValue(ctx, tsmonMemStore, "project1", "disabled"), ShouldEqual, 1)
 		})
 
 		Convey("GetProjectJobs unknown project", func() {
@@ -242,6 +252,7 @@ func TestConfigReading(t *testing.T) {
 			defs, err := cat.GetProjectJobs(ctx, "broken")
 			So(defs, ShouldBeNil)
 			So(err, ShouldNotBeNil)
+			So(getConfiguredProjectValue(ctx, tsmonMemStore, "broken"), ShouldBeFalse)
 		})
 
 		Convey("UnmarshalTask works", func() {
@@ -314,6 +325,34 @@ type brokenTaskManager struct {
 
 func (b brokenTaskManager) ProtoMessageType() proto.Message {
 	return nil
+}
+
+////
+
+func testContext() (context.Context, store.Store) {
+	c := context.Background()
+	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
+	// c = gologger.StdConfig.Use(c)
+	c, _, _ = tsmon.WithFakes(c)
+	memStore := store.NewInMemory(&target.Task{})
+	tsmon.GetState(c).SetStore(memStore)
+	return c, memStore
+}
+
+func getConfiguredProjectValue(ctx context.Context, tsmonMemStore store.Store, project string) bool {
+	metricValue, err := tsmonMemStore.Get(ctx, metricConfigs, time.Time{}, []interface{}{project})
+	if err != nil {
+		panic(err)
+	}
+	return metricValue.(bool)
+}
+
+func getConfiguredJobsValue(ctx context.Context, tsmonMemStore store.Store, project, status string) int64 {
+	metricValue, err := tsmonMemStore.Get(ctx, metricConfiguredJobs, time.Time{}, []interface{}{project, status})
+	if err != nil {
+		panic(err)
+	}
+	return metricValue.(int64)
 }
 
 ////
