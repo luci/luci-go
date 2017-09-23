@@ -1,0 +1,326 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "10cf0c9c_46e5d561",
+        "filename": "mp/cmd/mpagent/agent_linux.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:23:50Z",
+      "side": 1,
+      "message": "this is not necessary for files that are named _linux.go already. _linux.go implies +build linux. (Same for other platform related build tags).",
+      "range": {
+        "startLine": 15,
+        "startChar": 3,
+        "endLine": 15,
+        "endChar": 15
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "267617b9_467c884a",
+        "filename": "mp/cmd/mpagent/agent_mac.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:23:50Z",
+      "side": 1,
+      "message": "rename this file to agent_darwin.go instead",
+      "range": {
+        "startLine": 15,
+        "startChar": 3,
+        "endLine": 15,
+        "endChar": 16
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "068d0f44_2d06fc9d",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:23:50Z",
+      "side": 1,
+      "message": "nit: \"Strategy is platform-specific bits of the agent implementation\"",
+      "range": {
+        "startLine": 44,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 52
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da3391e9_1fd1c36d",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:23:50Z",
+      "side": 1,
+      "message": "just fyi nit: if it was a public field, I\u0027d ask you to change the comment to\n\n\"AgentAuthoStartPath is a path to install this agent\u0027s auth-start config to.\"\n\nFor private fields it\u0027s not that important (they don\u0027t show up in godoc).",
+      "range": {
+        "startLine": 57,
+        "startChar": 1,
+        "endLine": 58,
+        "endChar": 26
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a23df277_6ba4e49a",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:23:50Z",
+      "side": 1,
+      "message": "same here. If it was a public method, it should have been documented\n\n\"ConfigureLogging opens a log file and adds the corresponding logger to the context.\" (or something like that)",
+      "range": {
+        "startLine": 75,
+        "startChar": 0,
+        "endLine": 75,
+        "endChar": 22
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d0f5cf61_74283caa",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:23:50Z",
+      "side": 1,
+      "message": "nit: you can move this into a separate function to reduce clutter\n\n func substituteInAsset(ctx context.Context, name string, subs interface{}) (string, error) {\n    ...\n }\n\n ...\n \n context, err :\u003d substituteInAsset(ctx, agent.swarmingAutoStartTemplate, substitutions)",
+      "range": {
+        "startLine": 115,
+        "startChar": 17,
+        "endLine": 115,
+        "endChar": 98
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9bc50cf8_6d98ee3d",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:23:50Z",
+      "side": 1,
+      "message": "this should actually be a switch:\n\nswitch {\n  case err \u003d\u003d nil:\n    // reinstalling\n  case os.IsNotExist(err):\n    // installing\n  default:\n    // some weird shit happened, log the error, and maybe attempt to reinstall\n}\n\nos.Stat never returns IsExist(...) error. IsExist, for example, may appear when trying to rename a directory and the target name already exists.\n\nos.Stat does return IsNotExist though, iff the file doesn\u0027t exist. It may return some other error, for example if file exists but is not readable by the current user. It\u0027s worth to log such errors.",
+      "range": {
+        "startLine": 124,
+        "startChar": 4,
+        "endLine": 124,
+        "endChar": 33
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c9e2607_ac533958",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:23:50Z",
+      "side": 1,
+      "message": "nit: \n serviceAccount, server, path string\n\n(if multiple consecutive args have same type it\u0027s better to use this shorter form)",
+      "range": {
+        "startLine": 133,
+        "startChar": 65,
+        "endLine": 133,
+        "endChar": 114
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e88ede1d_e9dc32d6",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:23:50Z",
+      "side": 1,
+      "message": "same here, it should be just \u0027err \u003d\u003d nil\u0027",
+      "range": {
+        "startLine": 135,
+        "startChar": 4,
+        "endLine": 135,
+        "endChar": 33
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d443d94c_4617bf8d",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:23:50Z",
+      "side": 1,
+      "message": "remove this?",
+      "range": {
+        "startLine": 199,
+        "startChar": 0,
+        "endLine": 200,
+        "endChar": 35
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad7ad0f3_ecc06412",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:23:50Z",
+      "side": 1,
+      "message": "I don\u0027t like duplication of this code (here and in downloadSwarmingBotCode).\n\nPlease rename \u0027configureLogging\u0027 into \u0027init\u0027 and move all initialization there.\n\nfunc (agent *Agent) init(ctx context.Context, serviceAccount string) (context.Context, error) {\n  ...\n\n  ctx \u003d teelogger.Use(ctx, config.NewLogger)\n\n  var err error\n  agent.hostname, err \u003d metadata.InstanceName()\n  if err !\u003d nil {\n    return ctx, err\n  }\n  agent.server, err \u003d metadata.Get(\"instance/attributes/machine_provider_server\")\n  if err !\u003d nil {\n    return ctx, err\n  }\n  agent.serviceAccount, err \u003d metadata.Get(\"instance/attributes/machine_service_account\")\n  if err !\u003d nil {\n    return ctx, err\n  }\n\n  options :\u003d auth.Options{\n    GCEAccountName:         agent.serviceAccount,\n    ServiceAccountJSONPath: auth.GCEServiceAccount,\n  }\n  agent.httpClient, err \u003d auth.NewAuthenticator(ctx, auth.SilentLogin, options).Client()\n  if err !\u003d nil {\n    return ctx, err\n  }\n  agent.mp, err \u003d getClient(...)\n  ...\n}\n\nThis will also allow to get rid of long argument lists in handle(...).\n\nAlso, strictly speaking, each new instance of auth.Authenticator does a bunch of calls to metadata server, so its better to share them if possible.",
+      "range": {
+        "startLine": 237,
+        "startChar": 1,
+        "endLine": 244,
+        "endChar": 2
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21ba9906_060dd1d8",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:23:50Z",
+      "side": 1,
+      "message": "nit: time.Minute",
+      "range": {
+        "startLine": 260,
+        "startChar": 13,
+        "endLine": 260,
+        "endChar": 29
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "03e0b7b3_8ecb1e14",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:23:50Z",
+      "side": 1,
+      "message": "solid comment :)",
+      "range": {
+        "startLine": 285,
+        "startChar": 3,
+        "endLine": 285,
+        "endChar": 9
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "701afe86_78bca4e0",
+        "filename": "mp/cmd/mpagent/utils.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:23:50Z",
+      "side": 1,
+      "message": "nit:\n\n .Context(ctx).Do()\n\nThis will enable cancelation of requests if context itself is canceled or deadlines. Not a big deal here, but a good habit to have to use context cancelation signals when available.",
+      "range": {
+        "startLine": 46,
+        "startChar": 3,
+        "endLine": 46,
+        "endChar": 8
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
