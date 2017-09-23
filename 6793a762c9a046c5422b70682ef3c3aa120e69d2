@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "de546a65_c87f2e14",
+        "filename": "milo/api/proto/buildbot.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-23T00:01:32Z",
+      "side": 1,
+      "message": "maybe `exclude_deprecated_fields` or `exclude_deprecated_data` ? Otherwise it sounds security related.",
+      "range": {
+        "startLine": 24,
+        "startChar": 7,
+        "endLine": 24,
+        "endChar": 17
+      },
+      "revId": "6793a762c9a046c5422b70682ef3c3aa120e69d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
