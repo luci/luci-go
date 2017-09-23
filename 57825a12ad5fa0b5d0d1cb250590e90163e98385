@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "67c43a0f_2ebc9ab1",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:43:37Z",
+      "side": 1,
+      "message": "just drop this, this is not helpful, just clutters the code. We all (are supposed) to know that metric setters just modify local memory and can not fail.",
+      "range": {
+        "startLine": 242,
+        "startChar": 16,
+        "endLine": 242,
+        "endChar": 20
+      },
+      "revId": "57825a12ad5fa0b5d0d1cb250590e90163e98385",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0b41b6a_690915f6",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:43:37Z",
+      "side": 1,
+      "message": "I think you need to do this before line 231 to catch broken proto files.",
+      "range": {
+        "startLine": 242,
+        "startChar": 1,
+        "endLine": 242,
+        "endChar": 13
+      },
+      "revId": "57825a12ad5fa0b5d0d1cb250590e90163e98385",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6c0bec1_9dee5df2",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 348,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:43:37Z",
+      "side": 1,
+      "message": "nit: move this after projectIsValid \u003d true to have metric setters be side-by-side",
+      "range": {
+        "startLine": 348,
+        "startChar": 1,
+        "endLine": 348,
+        "endChar": 75
+      },
+      "revId": "57825a12ad5fa0b5d0d1cb250590e90163e98385",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4398fedd_9111f2ae",
         "filename": "scheduler/appengine/metrics/metrics.go",
         "patchSetId": 2
@@ -22,6 +91,75 @@
       "revId": "57825a12ad5fa0b5d0d1cb250590e90163e98385",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1591a12d_1b640fb2",
+        "filename": "scheduler/appengine/metrics/metrics.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:43:37Z",
+      "side": 1,
+      "message": "ConfigValid",
+      "range": {
+        "startLine": 39,
+        "startChar": 1,
+        "endLine": 39,
+        "endChar": 8
+      },
+      "revId": "57825a12ad5fa0b5d0d1cb250590e90163e98385",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "720f053e_4eff45cf",
+        "filename": "scheduler/appengine/metrics/metrics.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:43:37Z",
+      "side": 1,
+      "message": "\"luci/scheduler/config/valid\"\n\nbecause \"luci/scheduler/configs\" \u003d\u003d true: wth does this mean?",
+      "range": {
+        "startLine": 40,
+        "startChar": 3,
+        "endLine": 40,
+        "endChar": 25
+      },
+      "revId": "57825a12ad5fa0b5d0d1cb250590e90163e98385",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1aa94bd_6e8ef3bd",
+        "filename": "scheduler/appengine/metrics/metrics.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:43:37Z",
+      "side": 1,
+      "message": "ConfigJobs\n\nIt\u0027s better to name the variable after the metric name instead of trying to come up with some synonymous names. If metric name doesn\u0027t match, then it sucks and should be changed instead.",
+      "range": {
+        "startLine": 46,
+        "startChar": 1,
+        "endLine": 46,
+        "endChar": 15
+      },
+      "revId": "57825a12ad5fa0b5d0d1cb250590e90163e98385",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
