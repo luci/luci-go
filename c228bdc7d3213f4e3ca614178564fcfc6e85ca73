@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e91bc9d5_2c4e4a94",
+        "filename": "appengine/gaeauth/server/settings.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T01:33:21Z",
+      "side": 0,
+      "message": "https://stackoverflow.com/a/39310788\n\n¯\\_(ツ)_/¯",
+      "range": {
+        "startLine": 72,
+        "startChar": 8,
+        "endLine": 72,
+        "endChar": 45
+      },
+      "revId": "c228bdc7d3213f4e3ca614178564fcfc6e85ca73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
