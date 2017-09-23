@@ -106,46 +106,60 @@ func TestTokenHelpers(t *testing.T) {
 	Convey("TokenExpiresIn works", t, func() {
 		// Invalid tokens.
 		So(TokenExpiresIn(ctx, nil, time.Minute), ShouldBeTrue)
-		So(TokenExpiresIn(ctx, &oauth2.Token{
-			AccessToken: "",
-			Expiry:      exp,
+		So(TokenExpiresIn(ctx, &Token{
+			Token: oauth2.Token{
+				AccessToken: "",
+				Expiry:      exp,
+			},
 		}, time.Minute), ShouldBeTrue)
 
 		// If expiry is not set, the token is non-expirable.
-		So(TokenExpiresIn(ctx, &oauth2.Token{AccessToken: "abc"}, 10*time.Hour), ShouldBeFalse)
+		So(TokenExpiresIn(ctx, &Token{
+			Token: oauth2.Token{AccessToken: "abc"},
+		}, 10*time.Hour), ShouldBeFalse)
 
-		So(TokenExpiresIn(ctx, &oauth2.Token{
-			AccessToken: "abc",
-			Expiry:      exp,
+		So(TokenExpiresIn(ctx, &Token{
+			Token: oauth2.Token{
+				AccessToken: "abc",
+				Expiry:      exp,
+			},
 		}, time.Minute), ShouldBeFalse)
 
 		tc.Add(59*time.Minute + 1*time.Second)
 
-		So(TokenExpiresIn(ctx, &oauth2.Token{
-			AccessToken: "abc",
-			Expiry:      exp,
+		So(TokenExpiresIn(ctx, &Token{
+			Token: oauth2.Token{
+				AccessToken: "abc",
+				Expiry:      exp,
+			},
 		}, time.Minute), ShouldBeTrue)
 	})
 
 	Convey("TokenExpiresInRnd works", t, func() {
 		// Invalid tokens.
 		So(TokenExpiresInRnd(ctx, nil, time.Minute), ShouldBeTrue)
-		So(TokenExpiresInRnd(ctx, &oauth2.Token{
-			AccessToken: "",
-			Expiry:      exp,
+		So(TokenExpiresInRnd(ctx, &Token{
+			Token: oauth2.Token{
+				AccessToken: "",
+				Expiry:      exp,
+			},
 		}, time.Minute), ShouldBeTrue)
 
 		// If expiry is not set, the token is non-expirable.
-		So(TokenExpiresInRnd(ctx, &oauth2.Token{AccessToken: "abc"}, 10*time.Hour), ShouldBeFalse)
+		So(TokenExpiresInRnd(ctx, &Token{
+			Token: oauth2.Token{AccessToken: "abc"},
+		}, 10*time.Hour), ShouldBeFalse)
 
 		// Generate a histogram of positive TokenExpiresInRnd responses per second,
 		// for the duration of 10 min, assuming each TokenExpiresInRnd is called
 		// 100 times per second.
 		tokenLifetime := 5 * time.Minute
 		requestedLifetime := time.Minute
-		tok := &oauth2.Token{
-			AccessToken: "abc",
-			Expiry:      clock.Now(ctx).Add(tokenLifetime),
+		tok := &Token{
+			Token: oauth2.Token{
+				AccessToken: "abc",
+				Expiry:      clock.Now(ctx).Add(tokenLifetime),
+			},
 		}
 		hist := make([]int, 600)
 		for s := 0; s < 600; s++ {

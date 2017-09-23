@@ -16,8 +16,6 @@ package internal
 
 import (
 	"sync"
-
-	"golang.org/x/oauth2"
 )
 
 var (
@@ -28,11 +26,11 @@ var (
 // MemoryTokenCache implements TokenCache on top of in-process memory.
 type MemoryTokenCache struct {
 	lock  sync.RWMutex
-	cache map[string]oauth2.Token
+	cache map[string]Token
 }
 
 // GetToken reads the token from cache.
-func (c *MemoryTokenCache) GetToken(key *CacheKey) (*oauth2.Token, error) {
+func (c *MemoryTokenCache) GetToken(key *CacheKey) (*Token, error) {
 	k := key.ToMapKey()
 	c.lock.RLock()
 	tok, ok := c.cache[k]
@@ -44,11 +42,11 @@ func (c *MemoryTokenCache) GetToken(key *CacheKey) (*oauth2.Token, error) {
 }
 
 // PutToken writes the token to cache.
-func (c *MemoryTokenCache) PutToken(key *CacheKey, tok *oauth2.Token) error {
+func (c *MemoryTokenCache) PutToken(key *CacheKey, tok *Token) error {
 	k := key.ToMapKey()
 	c.lock.Lock()
 	if c.cache == nil {
-		c.cache = make(map[string]oauth2.Token, 1)
+		c.cache = make(map[string]Token, 1)
 	}
 	c.cache[k] = *tok
 	c.lock.Unlock()

@@ -21,6 +21,7 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
+	"go.chromium.org/luci/common/gcloud/googleoauth"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 )
@@ -63,7 +64,7 @@ func (p *userAuthTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error)
 	return &p.cacheKey, nil
 }
 
-func (p *userAuthTokenProvider) MintToken(ctx context.Context, base *oauth2.Token) (*oauth2.Token, error) {
+func (p *userAuthTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, error) {
 	if p.config.ClientID == "" || p.config.ClientSecret == "" {
 		return nil, fmt.Errorf("OAuth client is not set, can't use 3-legged login flow")
 	}
@@ -87,17 +88,44 @@ func (p *userAuthTokenProvider) MintToken(ctx context.Context, base *oauth2.Toke
 	fmt.Println()
 
 	// Exchange it for a token.
-	return p.config.Exchange(ctx, code)
+	tok, err := p.config.Exchange(ctx, code)
+	if err != nil {
+		return nil, err
+	}
+
+	// Grab an email associated with the token, if possible. May return NoEmail.
+	email, err := p.grabEmail(ctx, tok)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Token{
+		Token: *tok,
+		Email: email,
+	}, nil
 }
 
-func (p *userAuthTokenProvider) RefreshToken(ctx context.Context, prev, base *oauth2.Token) (*oauth2.Token, error) {
+func (p *userAuthTokenProvider) RefreshToken(ctx context.Context, prev, base *Token) (*Token, error) {
 	// Clear expiration time to force token refresh. Do not use 0 since it means
 	// that token never expires.
-	t := *prev
+	t := prev.Token
 	t.Expiry = time.Unix(1, 0)
 	switch newTok, err := grabToken(p.config.TokenSource(ctx, &t)); {
 	case err == nil:
-		return newTok, nil
+		// If we didn't have an email before, grab it now. This is important to
+		// "upgrade" existing cached tokens to include email.
+		email := prev.Email
+		if email == UnknownEmail {
+			var err error
+			email, err = p.grabEmail(ctx, newTok)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return &Token{
+			Token: *newTok,
+			Email: email,
+		}, nil
 	case transient.Tag.In(err):
 		logging.Warningf(ctx, "Transient error when refreshing the token - %s", err)
 		return nil, err
@@ -105,4 +133,20 @@ func (p *userAuthTokenProvider) RefreshToken(ctx context.Context, prev, base *oa
 		logging.Warningf(ctx, "Bad refresh token - %s", err)
 		return nil, ErrBadRefreshToken
 	}
+}
+
+// grabEmail fetches an email associated with the given token.
+//
+// May return (NoEmail, nil) if the token can't be resolved into an email.
+func (p *userAuthTokenProvider) grabEmail(ctx context.Context, tok *oauth2.Token) (string, error) {
+	info, err := googleoauth.GetTokenInfo(ctx, googleoauth.TokenInfoParams{
+		AccessToken: tok.AccessToken,
+	})
+	if err != nil {
+		return "", err
+	}
+	if info.Email == "" {
+		return NoEmail, nil
+	}
+	return info.Email, nil
 }

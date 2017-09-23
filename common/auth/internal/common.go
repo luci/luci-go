@@ -34,11 +34,24 @@ import (
 // expiryRandInterval is used by TokenExpiresInRnd.
 const expiryRandInterval = 30 * time.Second
 
+const (
+	// NoEmail indicates an OAuth2 token is not associated with an email.
+	//
+	// See Token below. We need this special value to distinguish "an email can not
+	// possibly be fetched ever" from "the cached token doesn't have an email yet"
+	// cases.
+	NoEmail = "-"
+
+	// UnknownEmail indicates an OAuth2 token may potentially be associated with
+	// an email, but we haven't tried to fetch the email yet.
+	UnknownEmail = ""
+)
+
 var (
 	// ErrInsufficientAccess is returned by MintToken() if token can't be minted
 	// for given OAuth scopes. For example, if GCE instance wasn't granted access
 	// to requested scopes when it was created.
-	ErrInsufficientAccess = errors.New("can't get access token for given scopes")
+	ErrInsufficientAccess = errors.New("can't get access token for the given account and scopes")
 
 	// ErrBadRefreshToken is returned by RefreshToken if refresh token was revoked
 	// or otherwise invalid. It means MintToken must be used to get a new refresh
@@ -49,6 +62,18 @@ var (
 	// offline credentials (like service account key) are invalid.
 	ErrBadCredentials = errors.New("invalid service account credentials")
 )
+
+// Token is an oauth2.Token with an email that corresponds to it.
+//
+// Email may be an empty string, in which case we assume the email hasn't been
+// fetched yet. It can also be a special NoEmail string, which means the token
+// is not associated with an email (happens for tokens without 'userinfo.email'
+// scope).
+type Token struct {
+	oauth2.Token
+
+	Email string // an email or NoEmail or empty string (aka UnknownEmail)
+}
 
 // TokenProvider knows how to mint new tokens or refresh existing ones.
 type TokenProvider interface {
@@ -76,7 +101,7 @@ type TokenProvider interface {
 	//
 	// In actor mode 'base' is an IAM-scoped sufficiently fresh oauth token. It's
 	// nil otherwise. Used by IAM-based token provider.
-	MintToken(ctx context.Context, base *oauth2.Token) (*oauth2.Token, error)
+	MintToken(ctx context.Context, base *Token) (*Token, error)
 
 	// RefreshToken takes existing token (probably expired, but not necessarily)
 	// and returns a new refreshed token. It should never do any user interaction.
@@ -84,7 +109,7 @@ type TokenProvider interface {
 	//
 	// In actor mode 'base' is an IAM-scoped sufficiently fresh oauth token. It's
 	// nil otherwise. Used by IAM-based token provider.
-	RefreshToken(ctx context.Context, prev, base *oauth2.Token) (*oauth2.Token, error)
+	RefreshToken(ctx context.Context, prev, base *Token) (*Token, error)
 }
 
 // TokenCache stores access and refresh tokens to avoid requesting them all
@@ -93,10 +118,10 @@ type TokenCache interface {
 	// GetToken reads the token from cache.
 	//
 	// Returns (nil, nil) if requested token is not in the cache.
-	GetToken(key *CacheKey) (*oauth2.Token, error)
+	GetToken(key *CacheKey) (*Token, error)
 
 	// PutToken writes the token to cache.
-	PutToken(key *CacheKey, tok *oauth2.Token) error
+	PutToken(key *CacheKey, tok *Token) error
 
 	// DeleteToken removes the token from cache.
 	DeleteToken(key *CacheKey) error
@@ -157,7 +182,7 @@ func EqualCacheKeys(a, b *CacheKey) bool {
 //  * The token expires before now+lifetime.
 //
 // In all other cases it returns False.
-func TokenExpiresIn(ctx context.Context, t *oauth2.Token, lifetime time.Duration) bool {
+func TokenExpiresIn(ctx context.Context, t *Token, lifetime time.Duration) bool {
 	if t == nil || t.AccessToken == "" {
 		return true
 	}
@@ -187,7 +212,7 @@ func TokenExpiresIn(ctx context.Context, t *oauth2.Token, lifetime time.Duration
 // expire at the same time (strictly 1h after process startup, where 1h is
 // the default token lifetime). This causes unnecessary contention on the token
 // cache file.
-func TokenExpiresInRnd(ctx context.Context, t *oauth2.Token, lifetime time.Duration) bool {
+func TokenExpiresInRnd(ctx context.Context, t *Token, lifetime time.Duration) bool {
 	if t == nil || t.AccessToken == "" {
 		return true
 	}
@@ -211,17 +236,17 @@ func TokenExpiresInRnd(ctx context.Context, t *oauth2.Token, lifetime time.Durat
 // EqualTokens returns true if tokens are equal.
 //
 // 'nil' token corresponds to an empty access token.
-func EqualTokens(a, b *oauth2.Token) bool {
+func EqualTokens(a, b *Token) bool {
 	if a == b {
 		return true
 	}
 	if a == nil {
-		a = &oauth2.Token{}
+		a = &Token{}
 	}
 	if b == nil {
-		b = &oauth2.Token{}
+		b = &Token{}
 	}
-	return a.AccessToken == b.AccessToken && a.Expiry.Equal(b.Expiry)
+	return a.AccessToken == b.AccessToken && a.Expiry.Equal(b.Expiry) && a.Email == b.Email
 }
 
 // isBadTokenError sniffs out HTTP 400/401 from token source errors.
@@ -251,7 +276,7 @@ func isBadKeyError(err error) bool {
 	return strings.Contains(s, "private key should be a PEM or plain PKSC1 or PKCS8") || s == "private key is invalid"
 }
 
-// grabToken uses token source to create a new token.
+// grabToken uses token source to create a new *oauth2.Token.
 //
 // It recognizes transient errors.
 func grabToken(src oauth2.TokenSource) (*oauth2.Token, error) {

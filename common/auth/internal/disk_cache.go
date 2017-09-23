@@ -85,6 +85,7 @@ type cacheFile struct {
 type cacheFileEntry struct {
 	Key        CacheKey     `json:"key"`
 	Token      oauth2.Token `json:"token"`
+	Email      string       `json:"email"`
 	LastUpdate time.Time    `json:"last_update"`
 }
 
@@ -248,22 +249,25 @@ func (c *DiskTokenCache) updateCacheFile(cb func(*cacheFile, time.Time) bool) er
 }
 
 // GetToken reads the token from cache.
-func (c *DiskTokenCache) GetToken(key *CacheKey) (*oauth2.Token, error) {
+func (c *DiskTokenCache) GetToken(key *CacheKey) (*Token, error) {
 	cache, err := c.readCacheFile()
 	if err != nil {
 		return nil, err
 	}
 	for _, entry := range cache.Cache {
 		if EqualCacheKeys(&entry.Key, key) {
-			return &entry.Token, nil
+			return &Token{
+				Token: entry.Token,
+				Email: entry.Email,
+			}, nil
 		}
 	}
 	return nil, nil
 }
 
 // PutToken writes the token to cache.
-func (c *DiskTokenCache) PutToken(key *CacheKey, tok *oauth2.Token) error {
-	token := *tok
+func (c *DiskTokenCache) PutToken(key *CacheKey, tok *Token) error {
+	token := tok.Token
 	if !token.Expiry.IsZero() {
 		token.Expiry = token.Expiry.UTC()
 	}
@@ -271,6 +275,7 @@ func (c *DiskTokenCache) PutToken(key *CacheKey, tok *oauth2.Token) error {
 		for _, entry := range cache.Cache {
 			if EqualCacheKeys(&entry.Key, key) {
 				entry.Token = token
+				entry.Email = tok.Email
 				entry.LastUpdate = now
 				return true
 			}
@@ -278,6 +283,7 @@ func (c *DiskTokenCache) PutToken(key *CacheKey, tok *oauth2.Token) error {
 		cache.Cache = append(cache.Cache, &cacheFileEntry{
 			Key:        *key,
 			Token:      token,
+			Email:      tok.Email,
 			LastUpdate: now,
 		})
 		return true

@@ -60,7 +60,7 @@ func (p *iamTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {
 	return &p.cacheKey, nil
 }
 
-func (p *iamTokenProvider) MintToken(ctx context.Context, base *oauth2.Token) (*oauth2.Token, error) {
+func (p *iamTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, error) {
 	tok, err := googleoauth.GetAccessToken(ctx, googleoauth.JwtFlowParams{
 		ServiceAccount: p.actAs,
 		Scopes:         p.scopes,
@@ -68,13 +68,16 @@ func (p *iamTokenProvider) MintToken(ctx context.Context, base *oauth2.Token) (*
 			Client: &http.Client{
 				Transport: &tokenInjectingTransport{
 					transport: p.transport,
-					token:     base,
+					token:     &base.Token,
 				},
 			},
 		},
 	})
 	if err == nil {
-		return tok, nil
+		return &Token{
+			Token: *tok,
+			Email: p.actAs,
+		}, nil
 	}
 	// Any 4** HTTP response is a fatal error. Everything else is transient.
 	if apiErr, _ := err.(*googleapi.Error); apiErr != nil && apiErr.Code < 500 {
@@ -83,7 +86,7 @@ func (p *iamTokenProvider) MintToken(ctx context.Context, base *oauth2.Token) (*
 	return nil, transient.Tag.Apply(err)
 }
 
-func (p *iamTokenProvider) RefreshToken(ctx context.Context, prev, base *oauth2.Token) (*oauth2.Token, error) {
+func (p *iamTokenProvider) RefreshToken(ctx context.Context, prev, base *Token) (*Token, error) {
 	// Service account tokens are self sufficient, there's no need for refresh
 	// token. Minting a token and "refreshing" it is a same thing.
 	return p.MintToken(ctx, base)
