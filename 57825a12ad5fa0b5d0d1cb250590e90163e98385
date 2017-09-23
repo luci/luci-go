@@ -213,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "f37db04e_823f5cc3",
+        "filename": "scheduler/appengine/metrics/metrics.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-23T02:31:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1591a12d_1b640fb2",
+      "range": {
+        "startLine": 39,
+        "startChar": 1,
+        "endLine": 39,
+        "endChar": 8
+      },
+      "revId": "57825a12ad5fa0b5d0d1cb250590e90163e98385",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "720f053e_4eff45cf",
         "filename": "scheduler/appengine/metrics/metrics.go",
         "patchSetId": 2
@@ -236,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "b0a0aa26_32669b2d",
+        "filename": "scheduler/appengine/metrics/metrics.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-23T02:31:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "720f053e_4eff45cf",
+      "range": {
+        "startLine": 40,
+        "startChar": 3,
+        "endLine": 40,
+        "endChar": 25
+      },
+      "revId": "57825a12ad5fa0b5d0d1cb250590e90163e98385",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a1aa94bd_6e8ef3bd",
         "filename": "scheduler/appengine/metrics/metrics.go",
         "patchSetId": 2
@@ -256,6 +304,30 @@
       "revId": "57825a12ad5fa0b5d0d1cb250590e90163e98385",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "08607e62_a6eb8a2b",
+        "filename": "scheduler/appengine/metrics/metrics.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-23T02:31:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a1aa94bd_6e8ef3bd",
+      "range": {
+        "startLine": 46,
+        "startChar": 1,
+        "endLine": 46,
+        "endChar": 15
+      },
+      "revId": "57825a12ad5fa0b5d0d1cb250590e90163e98385",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
