@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/router"
 
+	"go.chromium.org/luci/common/logging"
 	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
@@ -36,10 +37,6 @@ import (
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/rpc"
 )
-
-func emptyPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
-	return c, nil
-}
 
 // Run sets up all the routes and runs the server.
 func Run(templatePath string) {
@@ -120,16 +117,24 @@ func Run(templatePath string) {
 	api := prpc.Server{
 		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil),
 	}
+
 	milo.RegisterBuildbotServer(&api, &milo.DecoratedBuildbot{
 		Service: &buildbot.Service{},
-		Prelude: emptyPrelude,
+		Prelude: checkUnrestrictedRequest,
 	})
-	milo.RegisterBuildInfoServer(&api, &milo.DecoratedBuildInfo{
-		Service: &rpc.BuildInfoService{},
-		Prelude: emptyPrelude,
-	})
+	milo.RegisterBuildInfoServer(&api, &rpc.BuildInfoService{})
 	discovery.Enable(&api)
-	api.InstallHandlers(r, standard.Base())
+	api.InstallHandlers(r, standard.Base().Extend(withRequestMiddleware))
 
 	http.DefaultServeMux.Handle("/", r)
+}
+
+func checkUnrestrictedRequest(c context.Context, methodName string, req proto.Message) (context.Context, error) {
+	deprecatable, ok := req.(interface {
+		GetExcludeDeprecated() bool
+	})
+	if ok && !deprecatable.GetExcludeDeprecated() {
+		logging.Warningf(c, "user agent %q might be using deprecated API!", getRequest(c).UserAgent())
+	}
+	return c, nil
 }
