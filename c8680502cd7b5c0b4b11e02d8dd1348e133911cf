@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "329081c7_9b067d40",
+        "filename": "mp/cmd/mpagent/agent_linux.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-09-23T02:12:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "10cf0c9c_46e5d561",
+      "range": {
+        "startLine": 15,
+        "startChar": 3,
+        "endLine": 15,
+        "endChar": 15
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "267617b9_467c884a",
         "filename": "mp/cmd/mpagent/agent_mac.go",
         "patchSetId": 8
@@ -45,6 +69,30 @@
       "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1ea5ac6_f86fdaee",
+        "filename": "mp/cmd/mpagent/agent_mac.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-09-23T02:12:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "267617b9_467c884a",
+      "range": {
+        "startLine": 15,
+        "startChar": 3,
+        "endLine": 15,
+        "endChar": 16
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "8f2baed3_bccd0b62",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-09-23T02:12:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "068d0f44_2d06fc9d",
+      "range": {
+        "startLine": 44,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 52
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da3391e9_1fd1c36d",
         "filename": "mp/cmd/mpagent/main.go",
         "patchSetId": 8
@@ -82,6 +154,30 @@
       "writtenOn": "2017-09-23T01:23:50Z",
       "side": 1,
       "message": "just fyi nit: if it was a public field, I\u0027d ask you to change the comment to\n\n\"AgentAuthoStartPath is a path to install this agent\u0027s auth-start config to.\"\n\nFor private fields it\u0027s not that important (they don\u0027t show up in godoc).",
+      "range": {
+        "startLine": 57,
+        "startChar": 1,
+        "endLine": 58,
+        "endChar": 26
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "47cbb91c_e120d314",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-09-23T02:12:30Z",
+      "side": 1,
+      "message": "Oh I thought you needed to be done in the interface declaration for some reason. That\u0027s unfortunate because it doubles the number of places to update on a rename.",
+      "parentUuid": "da3391e9_1fd1c36d",
       "range": {
         "startLine": 57,
         "startChar": 1,
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "2f11d1e4_03452589",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-09-23T02:12:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a23df277_6ba4e49a",
+      "range": {
+        "startLine": 75,
+        "startChar": 0,
+        "endLine": 75,
+        "endChar": 22
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d0f5cf61_74283caa",
         "filename": "mp/cmd/mpagent/main.go",
         "patchSetId": 8
@@ -137,6 +257,30 @@
       "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2dc4af11_8e0ed22e",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-09-23T02:12:30Z",
+      "side": 1,
+      "message": "The implementation of such a function is a one-liner which is why I inlined it, but done.",
+      "parentUuid": "d0f5cf61_74283caa",
+      "range": {
+        "startLine": 115,
+        "startChar": 17,
+        "endLine": 115,
+        "endChar": 98
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "1f02ffbd_b7496c6f",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-09-23T02:12:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9bc50cf8_6d98ee3d",
+      "range": {
+        "startLine": 124,
+        "startChar": 4,
+        "endLine": 124,
+        "endChar": 33
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6c9e2607_ac533958",
         "filename": "mp/cmd/mpagent/main.go",
         "patchSetId": 8
@@ -183,6 +351,30 @@
       "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23a2a4b9_c73dfcd9",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-09-23T02:12:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6c9e2607_ac533958",
+      "range": {
+        "startLine": 133,
+        "startChar": 65,
+        "endLine": 133,
+        "endChar": 114
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -209,6 +401,30 @@
     },
     {
       "key": {
+        "uuid": "3fa2d214_fca49650",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-09-23T02:12:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e88ede1d_e9dc32d6",
+      "range": {
+        "startLine": 135,
+        "startChar": 4,
+        "endLine": 135,
+        "endChar": 33
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d443d94c_4617bf8d",
         "filename": "mp/cmd/mpagent/main.go",
         "patchSetId": 8
@@ -229,6 +445,30 @@
       "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98e0cd44_422a18df",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-09-23T02:12:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d443d94c_4617bf8d",
+      "range": {
+        "startLine": 199,
+        "startChar": 0,
+        "endLine": 200,
+        "endChar": 35
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -255,6 +495,30 @@
     },
     {
       "key": {
+        "uuid": "b6d43fc1_160392e8",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-09-23T02:12:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ad7ad0f3_ecc06412",
+      "range": {
+        "startLine": 237,
+        "startChar": 1,
+        "endLine": 244,
+        "endChar": 2
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "21ba9906_060dd1d8",
         "filename": "mp/cmd/mpagent/main.go",
         "patchSetId": 8
@@ -275,6 +539,30 @@
       "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c4d5190_cf7c4874",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-09-23T02:12:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "21ba9906_060dd1d8",
+      "range": {
+        "startLine": 260,
+        "startChar": 13,
+        "endLine": 260,
+        "endChar": 29
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -301,6 +589,30 @@
     },
     {
       "key": {
+        "uuid": "618c2d0e_a376b8ea",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-09-23T02:12:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "03e0b7b3_8ecb1e14",
+      "range": {
+        "startLine": 285,
+        "startChar": 3,
+        "endLine": 285,
+        "endChar": 9
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "701afe86_78bca4e0",
         "filename": "mp/cmd/mpagent/utils.go",
         "patchSetId": 8
@@ -321,6 +633,30 @@
       "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f14c28c_a4179e64",
+        "filename": "mp/cmd/mpagent/utils.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-09-23T02:12:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "701afe86_78bca4e0",
+      "range": {
+        "startLine": 46,
+        "startChar": 3,
+        "endLine": 46,
+        "endChar": 8
+      },
+      "revId": "c8680502cd7b5c0b4b11e02d8dd1348e133911cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
