@@ -16,6 +16,7 @@ package server
 
 import (
 	"fmt"
+	"html"
 	"html/template"
 	"net/url"
 	"strings"
@@ -69,7 +70,7 @@ service per LUCI deployment.</p>
     "Save Settings". It will verify everything is properly configured (or return
     an error message with some clues if not).
   </li>
-</ul>`, template.HTMLEscapeString(serviceAcc))), nil
+</ul>`, html.EscapeString(serviceAcc))), nil
 }
 
 func (settingsUIPage) Fields(c context.Context) ([]settings.UIField, error) {
