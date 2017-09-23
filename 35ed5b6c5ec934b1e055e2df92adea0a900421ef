@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "39122256_6ecaa547",
+        "filename": "common/auth/auth.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 633,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T00:52:49Z",
+      "side": 1,
+      "message": "It is not rejected, since refreshToken doesn\u0027t recheck that the new token has the requested lifetime. (See GetAccessToken for this check). Though I agree this looks dirty... Changed to make negative time to be special: refreshToken(tok, -1) always triggers a refresh. This is also dirty, but less so :)",
+      "parentUuid": "d6844887_540604f4",
+      "range": {
+        "startLine": 633,
+        "startChar": 11,
+        "endLine": 633,
+        "endChar": 44
+      },
+      "revId": "35ed5b6c5ec934b1e055e2df92adea0a900421ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a1605d7c_984c5762",
         "filename": "common/auth/internal/common.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "35ed5b6c5ec934b1e055e2df92adea0a900421ef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc3eb7b2_8a7245a5",
+        "filename": "common/auth/internal/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T00:52:49Z",
+      "side": 1,
+      "message": "😠",
+      "parentUuid": "a1605d7c_984c5762",
+      "range": {
+        "startLine": 42,
+        "startChar": 16,
+        "endLine": 42,
+        "endChar": 19
+      },
+      "revId": "35ed5b6c5ec934b1e055e2df92adea0a900421ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "d4e5c356_b4afa5e3",
+        "filename": "common/auth/internal/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T00:52:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e8fd3d02_a22052cf",
+      "range": {
+        "startLine": 62,
+        "startChar": 67,
+        "endLine": 62,
+        "endChar": 74
+      },
+      "revId": "35ed5b6c5ec934b1e055e2df92adea0a900421ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7c02fbd8_72ae49a6",
         "filename": "common/auth/internal/gce.go",
         "patchSetId": 1
@@ -91,6 +163,30 @@
       "revId": "35ed5b6c5ec934b1e055e2df92adea0a900421ef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c260c7db_407c569e",
+        "filename": "common/auth/internal/gce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T00:52:49Z",
+      "side": 1,
+      "message": "I don\u0027t know, I need to check this. I believe it fails iff metadata server itself is having a bad day.\n\nYep, just checked. Metadata server returns the email regardless of token scopes.\n\nI changed this code to return an error if metadata.Get fails. This should not happen on normal VM.",
+      "parentUuid": "7c02fbd8_72ae49a6",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 52,
+        "endChar": 68
+      },
+      "revId": "35ed5b6c5ec934b1e055e2df92adea0a900421ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "c55b660c_e5f8a7c9",
+        "filename": "common/auth/internal/gce.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T00:52:49Z",
+      "side": 1,
+      "message": "I\u0027ve realized the cache key here actually doesn\u0027t matter since the provider is marked as \"Lightweight\" meaning we cache tokens only in process memory, so no need to make cache names very descriptive. Reverted this change.",
+      "parentUuid": "492c9be5_993c3aae",
+      "range": {
+        "startLine": 56,
+        "startChar": 2,
+        "endLine": 57,
+        "endChar": 11
+      },
+      "revId": "35ed5b6c5ec934b1e055e2df92adea0a900421ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d4ab0066_d60f6f2e",
         "filename": "common/auth/internal/luci_ctx.go",
         "patchSetId": 1
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "e4ca1fe4_054dd71c",
+        "filename": "common/auth/internal/luci_ctx.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T00:52:49Z",
+      "side": 1,
+      "message": "\"\" is for cases when we can potentially grab an email, but haven\u0027t tried yet. NoEmail is more correct here, since no matter how many times we call RefreshToken/MintToken, the email won\u0027t appear out of nothing.\n\nAlso, this provider is marked as \"Lightweight\" as well, which means we don\u0027t need to care about the on-disk token cache. All tokens will be cached in memory, \"-\" will not be dropped to disk. (Which means after we deploy binaries that understand emails in LUCI_CONTEXT, they\u0027ll correctly pick it up).",
+      "parentUuid": "d4ab0066_d60f6f2e",
+      "range": {
+        "startLine": 166,
+        "startChar": 18,
+        "endLine": 166,
+        "endChar": 48
+      },
+      "revId": "35ed5b6c5ec934b1e055e2df92adea0a900421ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d7a0653b_7913d64c",
         "filename": "common/auth/internal/user.go",
         "patchSetId": 1
@@ -160,6 +304,30 @@
       "revId": "35ed5b6c5ec934b1e055e2df92adea0a900421ef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "441d93e7_246ccd71",
+        "filename": "common/auth/internal/user.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-23T00:52:49Z",
+      "side": 1,
+      "message": "Fine...",
+      "parentUuid": "d7a0653b_7913d64c",
+      "range": {
+        "startLine": 120,
+        "startChar": 14,
+        "endLine": 120,
+        "endChar": 16
+      },
+      "revId": "35ed5b6c5ec934b1e055e2df92adea0a900421ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
