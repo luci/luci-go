@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/messages"
+	"go.chromium.org/luci/scheduler/appengine/metrics"
 	"go.chromium.org/luci/scheduler/appengine/schedule"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
@@ -236,6 +237,10 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		return nil, err
 	}
 
+	// TODO(tandrii): remove this after https://crbug.com/761488 is fixed.
+	projectIsValid := false
+	defer func() { _ = metrics.Configs.Set(c, projectIsValid, projectID) }()
+
 	revisionURL := meta.ViewURL
 	if revisionURL != "" {
 		logging.Infof(c, "Importing %s", revisionURL)
@@ -248,10 +253,12 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	}
 
 	out := make([]Definition, 0, len(cfg.Job)+len(cfg.Trigger))
+	disabledCount := 0
 
 	// Regular jobs, triggered jobs.
 	for _, job := range cfg.Job {
 		if job.Disabled {
+			disabledCount++
 			continue
 		}
 		id := "(empty)"
@@ -295,6 +302,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	// Triggering jobs.
 	for _, trigger := range cfg.Trigger {
 		if trigger.Disabled {
+			disabledCount++
 			continue
 		}
 		id := "(empty)"
@@ -333,6 +341,12 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		})
 	}
 
+	// Mark project as valid even if not all its jobs/triggers are.
+	projectIsValid = true
+	_ = metrics.ConfiguredJobs.Set(c, int64(len(out)), projectID, "valid")
+	_ = metrics.ConfiguredJobs.Set(c, int64(disabledCount), projectID, "disabled")
+	invalidCount := len(cfg.Job) + len(cfg.Trigger) - len(out) - disabledCount
+	_ = metrics.ConfiguredJobs.Set(c, int64(invalidCount), projectID, "invalid")
 	return out, nil
 }
 
