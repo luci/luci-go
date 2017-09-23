@@ -8,6 +8,8 @@ package milo;
 
 import "google/protobuf/timestamp.proto";
 
+// DEPRECATED. Do not start using this API.
+//
 // The buildbot service definition.
 service Buildbot {
   rpc GetCompressedMasterJSON(MasterRequest) returns (CompressedMasterJSON) {}
@@ -18,6 +20,10 @@ service Buildbot {
 // The request containing the name of the master.
 message MasterRequest {
   string name = 1;
+  // if true, exclude response data that the foundation team is actively trying
+  // to deprecate:
+  // - slave info
+  bool exclude_deprecated = 10;
 }
 
 // The response message containing master information.
@@ -37,6 +43,10 @@ message BuildbotBuildRequest {
   string master = 1;
   string builder = 2;
   int64 build_num = 3;
+  // if true, exclude response data that the foundation team is actively trying
+  // to deprecate:
+  // - slave info
+  bool exclude_deprecated = 10;
 }
 
 // The response message for a specific build.

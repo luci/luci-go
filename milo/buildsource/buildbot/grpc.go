@@ -64,6 +64,10 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 		}
 	}
 
+	if req.ExcludeDeprecated {
+		excludeDeprecatedFromBuild(b)
+	}
+
 	updatePostProcessBuild(b)
 	bs, err := json.Marshal(b)
 	if err != nil {
@@ -176,6 +180,11 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 	if err = decodeMasterEntry(c, entry, master); err != nil {
 		return nil, err
 	}
+
+	if req.ExcludeDeprecated {
+		excludeDeprecatedFromMaster(master)
+	}
+
 	for _, slave := range master.Slaves {
 		numBuilds := 0
 		for _, builds := range slave.RunningbuildsMap {
@@ -216,6 +225,9 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 			KeysOnly(true)
 		var builds []*buildbotBuild
 		err := datastore.RunBatch(c, buildQueryBatchSize, q, func(b *buildbotBuild) {
+			if req.ExcludeDeprecated {
+				excludeDeprecatedFromBuild(b)
+			}
 			builds = append(builds, b)
 		})
 		if err != nil {
@@ -248,4 +260,22 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 		},
 		Data: gzbs.Bytes(),
 	}, nil
+}
+
+func excludeDeprecatedFromMaster(m *buildbotMaster) {
+	m.Slaves = nil
+	for _, builder := range m.Builders {
+		builder.Slaves = nil
+	}
+	for _, builder := range m.Buildstate.Builders {
+		builder.Slaves = nil
+	}
+	for _, builder := range m.Varz.Builders {
+		builder.ConnectedSlaves = 0
+		builder.TotalSlaves = 0
+	}
+}
+
+func excludeDeprecatedFromBuild(b *buildbotBuild) {
+	b.Slave = ""
 }
