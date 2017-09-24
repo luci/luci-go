@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/milo/buildsource/buildbot/protocol"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -34,32 +35,32 @@ func TestBuilder(t *testing.T) {
 
 	// Seed a builder with 10 builds.
 	for i := 1; i < 10; i++ {
-		datastore.Put(c, &buildbotBuild{
+		datastore.Put(c, &protocol.Build{
 			Master:      "fake",
 			Buildername: "fake",
 			Number:      i,
 			Internal:    false,
 			Times:       []*float64{&fakeTime, &fakeTime},
-			Sourcestamp: &buildbotSourceStamp{},
+			Sourcestamp: &protocol.SourceStamp{},
 			Results:     &fakeResult,
 			Finished:    true,
 		})
 	}
 	// Failed build
-	datastore.Put(c, &buildbotBuild{
+	datastore.Put(c, &protocol.Build{
 		Master:      "fake",
 		Buildername: "fake",
 		Number:      10,
 		Internal:    false,
 		Times:       []*float64{&fakeTime, &fakeTime},
-		Sourcestamp: &buildbotSourceStamp{},
+		Sourcestamp: &protocol.SourceStamp{},
 		Results:     &fakeFailure,
 		Finished:    true,
 		Text:        []string{"failed", "stuff"},
 	})
-	putDSMasterJSON(c, &buildbotMaster{
+	putDSMasterJSON(c, &protocol.Master{
 		Name:     "fake",
-		Builders: map[string]*buildbotBuilder{"fake": {}},
+		Builders: map[string]*protocol.Builder{"fake": {}},
 	}, false)
 	datastore.GetTestable(c).Consistent(true)
 	datastore.GetTestable(c).AutoIndex(true)
