@@ -78,6 +78,13 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBuildsRequest) (
 	*milo.BuildbotBuildsJSON, error) {
 
+	if req.Cursor != "" {
+		logging.Warningf(
+			c,
+			"%q requested GetBuildbotBuildsJSON with cursor for builder %q:%q",
+			auth.CurrentIdentity(c), req.Master, req.Builder)
+	}
+
 	if req.Master == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "No master specified")
 	}
