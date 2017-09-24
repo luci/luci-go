@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/milo/buildsource/buildbot/protocol"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -32,13 +33,13 @@ func TestMaster(t *testing.T) {
 	datastore.GetTestable(c).CatchupIndexes()
 
 	Convey(`Tests for master`, t, func() {
-		So(putDSMasterJSON(c, &buildbotMaster{
+		So(putDSMasterJSON(c, &protocol.Master{
 			Name:     "fake",
-			Builders: map[string]*buildbotBuilder{"fake": {}},
+			Builders: map[string]*protocol.Builder{"fake": {}},
 		}, false), ShouldBeNil)
-		So(putDSMasterJSON(c, &buildbotMaster{
+		So(putDSMasterJSON(c, &protocol.Master{
 			Name:     "fake internal",
-			Builders: map[string]*buildbotBuilder{"fake": {}},
+			Builders: map[string]*protocol.Builder{"fake": {}},
 		}, true), ShouldBeNil)
 
 		Convey(`GetAllBuilders()`, func() {
