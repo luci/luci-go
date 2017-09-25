@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b341ac6f_e3218ea7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 11
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T23:17:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a5579ad9_bb38e74b",
+      "range": {
+        "startLine": 9,
+        "startChar": 52,
+        "endLine": 9,
+        "endChar": 53
+      },
+      "revId": "9af80975405289e355189ea7591877f082985b7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4c338d9b_a3044c5d",
         "filename": "/COMMIT_MSG",
         "patchSetId": 11
@@ -45,6 +69,30 @@
       "revId": "9af80975405289e355189ea7591877f082985b7b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d1161d5_dbb1745e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 11
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T23:17:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4c338d9b_a3044c5d",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 11,
+        "endChar": 4
+      },
+      "revId": "9af80975405289e355189ea7591877f082985b7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "45187045_661906b7",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T23:17:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a834127e_c8c192aa",
+      "range": {
+        "startLine": 83,
+        "startChar": 15,
+        "endLine": 83,
+        "endChar": 17
+      },
+      "revId": "9af80975405289e355189ea7591877f082985b7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "43137d3e_db76edb3",
         "filename": "buildbucket/build.go",
         "patchSetId": 11
@@ -91,6 +163,30 @@
       "revId": "9af80975405289e355189ea7591877f082985b7b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b80640b_1f65a703",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T23:17:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "43137d3e_db76edb3",
+      "range": {
+        "startLine": 85,
+        "startChar": 21,
+        "endLine": 85,
+        "endChar": 27
+      },
+      "revId": "9af80975405289e355189ea7591877f082985b7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "e389befe_13b58307",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T23:17:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "26209c7b_0b4c80df",
+      "range": {
+        "startLine": 138,
+        "startChar": 24,
+        "endLine": 138,
+        "endChar": 25
+      },
+      "revId": "9af80975405289e355189ea7591877f082985b7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ec017424_e1ecf738",
         "filename": "buildbucket/build.go",
         "patchSetId": 11
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "d5624c59_0fdf9875",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T23:17:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ec017424_e1ecf738",
+      "range": {
+        "startLine": 176,
+        "startChar": 0,
+        "endLine": 176,
+        "endChar": 5
+      },
+      "revId": "9af80975405289e355189ea7591877f082985b7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e7d5c52c_d0678cca",
         "filename": "buildbucket/build.go",
         "patchSetId": 11
@@ -160,6 +304,30 @@
       "revId": "9af80975405289e355189ea7591877f082985b7b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1d477e1_69829101",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T23:17:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e7d5c52c_d0678cca",
+      "range": {
+        "startLine": 200,
+        "startChar": 14,
+        "endLine": 200,
+        "endChar": 17
+      },
+      "revId": "9af80975405289e355189ea7591877f082985b7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -209,6 +377,30 @@
     },
     {
       "key": {
+        "uuid": "1a1923d2_a201d730",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T23:17:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b217c32d_9fc75223",
+      "range": {
+        "startLine": 78,
+        "startChar": 4,
+        "endLine": 78,
+        "endChar": 47
+      },
+      "revId": "9af80975405289e355189ea7591877f082985b7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dc986cac_a6bfeeaf",
         "filename": "buildbucket/buildset.go",
         "patchSetId": 11
@@ -232,6 +424,30 @@
     },
     {
       "key": {
+        "uuid": "f6ad04be_e6039681",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T23:17:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dc986cac_a6bfeeaf",
+      "range": {
+        "startLine": 80,
+        "startChar": 7,
+        "endLine": 80,
+        "endChar": 16
+      },
+      "revId": "9af80975405289e355189ea7591877f082985b7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d5e20c53_8910b283",
         "filename": "buildbucket/buildset.go",
         "patchSetId": 11
@@ -243,6 +459,30 @@
       "writtenOn": "2017-09-25T21:30:41Z",
       "side": 1,
       "message": "why not simpler to read\n\nif strings.HasPrefix(buildSet, \"patch/gerrit/\"){\n  return \u0026GerritChange{}.Parse(buildSet)\n}\nif strings.HasPrefix(buildSet, \"patch/rietveld/\"){\n  return \u0026RieveldChange{}.Parse(buildSet)\n}\nif strings.HasPrefix(buildSet, \"commit/gitiles/\"){\n  return \u0026GitilesCommit{}.Parse(buildSet)\n}\nreturn nil\n\nwhere each Parse() does a fmt.Sscanf?",
+      "range": {
+        "startLine": 88,
+        "startChar": 1,
+        "endLine": 88,
+        "endChar": 9
+      },
+      "revId": "9af80975405289e355189ea7591877f082985b7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1cdfb3f7_ae4f3fc4",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T23:17:52Z",
+      "side": 1,
+      "message": "sscanf won\u0027t work for reasons unrelated to whether we use if/switch or 1 or 4 functions.\n\nre switch vs if: i prefer switch in places where we handle distinct cases/scenarios, and this is a perfect example\n\nre 1 vs 4 functions: i think 1 public function is simpler than 4 functions and yet it is convenient-enough to use, even if we know exactly the type of buildset we are expecting to parse\n  c, _ :\u003d buildbucket.ParseBuildSet(s).(*buildbucket.GitilesCommit)\n  if c \u003d\u003d nil {\n    // handle error\n  }\nIf I make a function per type, in each of them I\u0027d have to do prefix checking (again), string splitting, checking of component number, checking for empty path components. I think it would be more complex. \n\nWDYT?",
+      "parentUuid": "d5e20c53_8910b283",
       "range": {
         "startLine": 88,
         "startChar": 1,
@@ -278,6 +518,30 @@
     },
     {
       "key": {
+        "uuid": "c6efc1fa_d200fd13",
+        "filename": "buildbucket/buildset_test.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T23:17:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ced316b9_2d5c1dd1",
+      "range": {
+        "startLine": 81,
+        "startChar": 13,
+        "endLine": 81,
+        "endChar": 14
+      },
+      "revId": "9af80975405289e355189ea7591877f082985b7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ffbdebbf_fa886ffe",
         "filename": "buildbucket/status.go",
         "patchSetId": 11
@@ -298,6 +562,30 @@
       "revId": "9af80975405289e355189ea7591877f082985b7b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dbcc0e4e_f0df0aea",
+        "filename": "buildbucket/status.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T23:17:52Z",
+      "side": 1,
+      "message": "oops, done",
+      "parentUuid": "ffbdebbf_fa886ffe",
+      "range": {
+        "startLine": 61,
+        "startChar": 2,
+        "endLine": 61,
+        "endChar": 3
+      },
+      "revId": "9af80975405289e355189ea7591877f082985b7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
