@@ -1,0 +1,262 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e9389bb2_ca22e4ab",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-25T05:38:01Z",
+      "side": 1,
+      "message": "delete",
+      "range": {
+        "startLine": 17,
+        "startChar": 3,
+        "endLine": 17,
+        "endChar": 6
+      },
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9604a653_fedf7335",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-25T05:38:01Z",
+      "side": 1,
+      "message": "why not string-based enum?\n\ntype CanaryPreference string\nProd CanaryPreference \u003d \"PROD\"\n...",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 1
+      },
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa7a437f_470fb418",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-25T05:38:01Z",
+      "side": 1,
+      "message": "is this actually needed, or just optimization?",
+      "range": {
+        "startLine": 181,
+        "startChar": 1,
+        "endLine": 183,
+        "endChar": 2
+      },
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35ef4bdb_23f05dce",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-25T05:38:01Z",
+      "side": 1,
+      "message": "nit: why not time.Unix(0, usec * 1000)?\nThe reverse func below is ensuring that this package won\u0027t work after 2250+ anyway, so i wouldn\u0027t bother with support for year 2250+ (int64 overflows)).",
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0515dcb_0b58100c",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-25T05:38:01Z",
+      "side": 1,
+      "message": "rietveld :)",
+      "range": {
+        "startLine": 33,
+        "startChar": 30,
+        "endLine": 33,
+        "endChar": 36
+      },
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "584146e4_1a97a055",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-25T05:38:01Z",
+      "side": 1,
+      "message": "gerrit :)",
+      "range": {
+        "startLine": 47,
+        "startChar": 28,
+        "endLine": 47,
+        "endChar": 36
+      },
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6356e696_b35c7548",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-25T05:38:01Z",
+      "side": 1,
+      "message": "gerritFormat",
+      "range": {
+        "startLine": 58,
+        "startChar": 35,
+        "endLine": 58,
+        "endChar": 49
+      },
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1e92c9c_60889ad7",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-25T05:38:01Z",
+      "side": 1,
+      "message": "rietveldFormat",
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9efec0f_ae5622c2",
+        "filename": "buildbucket/status.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-25T05:38:01Z",
+      "side": 1,
+      "message": "1. maybe \"final\" instead? then doc for Completed() makes more sense \"... if s is final\".\n2. since StatusTimeout is also terminal status (or final), perhaps \"did not reach OTHER terminal status in time\"?\n3. maybe add comment for each of terminal statuses that they are terminal.",
+      "range": {
+        "startLine": 48,
+        "startChar": 46,
+        "endLine": 48,
+        "endChar": 54
+      },
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e60e169d_324c9b28",
+        "filename": "buildbucket/tag.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-25T05:38:01Z",
+      "side": 1,
+      "message": "everything here except TagBuilder is really not buildbucket specific, and has been partially implemented at least in scheduler and perhaps in more apps. Does it deserve its own tags (or stringtags) package in common?",
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ac65c073_887bda0e",
+        "filename": "buildbucket/tag.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-25T05:38:01Z",
+      "side": 1,
+      "message": "nit: fits in 1 line for me",
+      "range": {
+        "startLine": 65,
+        "startChar": 0,
+        "endLine": 66,
+        "endChar": 10
+      },
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0fc9773_04a8a897",
+        "filename": "buildbucket/tag.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-25T05:38:01Z",
+      "side": 1,
+      "message": "nit: fits in 1 line for me",
+      "range": {
+        "startLine": 82,
+        "startChar": 0,
+        "endLine": 83,
+        "endChar": 18
+      },
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
