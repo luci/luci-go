@@ -27,18 +27,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/julienschmidt/httprouter"
+
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	memcfg "go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
-
-	"github.com/julienschmidt/httprouter"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -65,7 +66,7 @@ func buildbotTimesPending(start float64) []*float64 {
 	return []*float64{&start, nil}
 }
 
-func newCombinedPsBody(bs []*buildbotBuild, m *buildbotMaster, internal bool) io.ReadCloser {
+func newCombinedPsBody(bs []*buildbot.Build, m *buildbot.Master, internal bool) io.ReadCloser {
 	bmsg := buildMasterMsg{
 		Master: m,
 		Builds: bs,
@@ -105,14 +106,14 @@ func TestPubSub(t *testing.T) {
 		rand.Seed(5)
 
 		Convey("Remove source changes", func() {
-			m := &buildbotMaster{
+			m := &buildbot.Master{
 				Name: "fake",
-				Builders: map[string]*buildbotBuilder{
+				Builders: map[string]*buildbot.Builder{
 					"fake builder": {
-						PendingBuildStates: []*buildbotPending{
+						PendingBuildStates: []*buildbot.Pending{
 							{
-								Source: buildbotSourceStamp{
-									Changes: []buildbotChange{{Comments: "foo"}},
+								Source: buildbot.SourceStamp{
+									Changes: []buildbot.Change{{Comments: "foo"}},
 								},
 							},
 						},
@@ -126,7 +127,7 @@ func TestPubSub(t *testing.T) {
 		})
 
 		Convey("Save build entry", func() {
-			build := &buildbotBuild{
+			build := &buildbot.Build{
 				Master:      "Fake Master",
 				Buildername: "Fake buildername",
 				Number:      1234,
@@ -138,7 +139,7 @@ func TestPubSub(t *testing.T) {
 
 			So(err, ShouldBeNil)
 			Convey("Load build entry", func() {
-				loadB := &buildbotBuild{
+				loadB := &buildbot.Build{
 					Master:      "Fake Master",
 					Buildername: "Fake buildername",
 					Number:      1234,
@@ -153,7 +154,7 @@ func TestPubSub(t *testing.T) {
 
 			Convey("Query build entry", func() {
 				q := ds.NewQuery("buildbotBuild")
-				buildbots := []*buildbotBuild{}
+				buildbots := []*buildbot.Build{}
 				err = ds.GetAll(c, q, &buildbots)
 				So(err, ShouldBeNil)
 
@@ -161,14 +162,14 @@ func TestPubSub(t *testing.T) {
 				So(buildbots[0].Currentstep.(string), ShouldEqual, "this is a string")
 				Convey("Query for finished entries should be 1", func() {
 					q = q.Eq("finished", true)
-					buildbots = []*buildbotBuild{}
+					buildbots = []*buildbot.Build{}
 					err = ds.GetAll(c, q, &buildbots)
 					So(err, ShouldBeNil)
 					So(len(buildbots), ShouldEqual, 1)
 				})
 				Convey("Query for unfinished entries should be 0", func() {
 					q = q.Eq("finished", false)
-					buildbots = []*buildbotBuild{}
+					buildbots = []*buildbot.Build{}
 					err = ds.GetAll(c, q, &buildbots)
 					So(err, ShouldBeNil)
 					So(len(buildbots), ShouldEqual, 0)
@@ -179,7 +180,7 @@ func TestPubSub(t *testing.T) {
 				ds.GetTestable(c).Consistent(true)
 				ds.GetTestable(c).AutoIndex(true)
 				for i := 1235; i < 1240; i++ {
-					build := &buildbotBuild{
+					build := &buildbot.Build{
 						Master:      "Fake Master",
 						Buildername: "Fake buildername",
 						Number:      i,
@@ -194,7 +195,7 @@ func TestPubSub(t *testing.T) {
 				q = q.Eq("master", "Fake Master")
 				q = q.Eq("builder", "Fake buildername")
 				q = q.Order("-number")
-				buildbots := []*buildbotBuild{}
+				buildbots := []*buildbot.Build{}
 				err = ds.GetAll(c, q, &buildbots)
 				So(err, ShouldBeNil)
 				So(len(buildbots), ShouldEqual, 3) // 1235, 1237, 1239
@@ -202,14 +203,14 @@ func TestPubSub(t *testing.T) {
 		})
 
 		Convey("Build panics on invalid query", func() {
-			build := &buildbotBuild{
+			build := &buildbot.Build{
 				Master: "Fake Master",
 			}
 			So(func() { ds.Put(c, build) }, ShouldPanicLike, "No Master or Builder found")
 		})
 
 		ts := 555
-		b := &buildbotBuild{
+		b := &buildbot.Build{
 			Master:      "Fake Master",
 			Buildername: "Fake buildername",
 			Number:      1234,
@@ -220,12 +221,12 @@ func TestPubSub(t *testing.T) {
 
 		Convey("Basic master + build pusbsub subscription", func() {
 			h := httptest.NewRecorder()
-			slaves := map[string]*buildbotSlave{}
+			slaves := map[string]*buildbot.Slave{}
 			ft := 1234.0
-			slaves["testslave"] = &buildbotSlave{
+			slaves["testslave"] = &buildbot.Slave{
 				Name:      "testslave",
 				Connected: true,
-				Runningbuilds: []*buildbotBuild{
+				Runningbuilds: []*buildbot.Build{
 					{
 						Master:      "Fake Master",
 						Buildername: "Fake buildername",
@@ -234,18 +235,18 @@ func TestPubSub(t *testing.T) {
 					},
 				},
 			}
-			ms := buildbotMaster{
+			ms := buildbot.Master{
 				Name:     "Fake Master",
-				Project:  buildbotProject{Title: "some title"},
+				Project:  buildbot.Project{Title: "some title"},
 				Slaves:   slaves,
-				Builders: map[string]*buildbotBuilder{},
+				Builders: map[string]*buildbot.Builder{},
 			}
 
-			ms.Builders["Fake buildername"] = &buildbotBuilder{
+			ms.Builders["Fake buildername"] = &buildbot.Builder{
 				CurrentBuilds: []int{1234},
 			}
 			r := &http.Request{
-				Body: newCombinedPsBody([]*buildbotBuild{b}, &ms, false),
+				Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, false),
 			}
 			p := httprouter.Params{}
 			PubSubHandler(&router.Context{
@@ -256,7 +257,7 @@ func TestPubSub(t *testing.T) {
 			})
 			So(h.Code, ShouldEqual, 200)
 			Convey("And stores correctly", func() {
-				loadB := &buildbotBuild{
+				loadB := &buildbot.Build{
 					Master:      "Fake Master",
 					Buildername: "Fake buildername",
 					Number:      1234,
@@ -282,7 +283,7 @@ func TestPubSub(t *testing.T) {
 				ms.Project.Title = "some other title"
 				h = httptest.NewRecorder()
 				r := &http.Request{
-					Body: newCombinedPsBody([]*buildbotBuild{b}, &ms, false)}
+					Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, false)}
 				p = httprouter.Params{}
 				PubSubHandler(&router.Context{
 					Context: c,
@@ -301,7 +302,7 @@ func TestPubSub(t *testing.T) {
 				b.Times = buildbotTimesFinished(123.0, 124.0)
 				h = httptest.NewRecorder()
 				r = &http.Request{
-					Body: newCombinedPsBody([]*buildbotBuild{b}, &ms, false),
+					Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, false),
 				}
 				p = httprouter.Params{}
 				PubSubHandler(&router.Context{
@@ -311,7 +312,7 @@ func TestPubSub(t *testing.T) {
 					Params:  p,
 				})
 				So(h.Code, ShouldEqual, 200)
-				loadB := &buildbotBuild{
+				loadB := &buildbot.Build{
 					Master:      "Fake Master",
 					Buildername: "Fake buildername",
 					Number:      1234,
@@ -324,7 +325,7 @@ func TestPubSub(t *testing.T) {
 					b.Times = buildbotTimesPending(123.0)
 					h = httptest.NewRecorder()
 					r = &http.Request{
-						Body: newCombinedPsBody([]*buildbotBuild{b}, &ms, false),
+						Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, false),
 					}
 					p = httprouter.Params{}
 					PubSubHandler(&router.Context{
@@ -334,7 +335,7 @@ func TestPubSub(t *testing.T) {
 						Params:  p,
 					})
 					So(h.Code, ShouldEqual, 200)
-					loadB := &buildbotBuild{
+					loadB := &buildbot.Build{
 						Master:      "Fake Master",
 						Buildername: "Fake buildername",
 						Number:      1234,
@@ -351,7 +352,7 @@ func TestPubSub(t *testing.T) {
 				b.TimeStamp = &ts
 				h = httptest.NewRecorder()
 				r = &http.Request{
-					Body: newCombinedPsBody([]*buildbotBuild{b}, &ms, false),
+					Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, false),
 				}
 				p = httprouter.Params{}
 				ds.GetTestable(c).Consistent(true)
@@ -362,7 +363,7 @@ func TestPubSub(t *testing.T) {
 					Params:  p,
 				})
 				So(h.Code, ShouldEqual, 200)
-				loadB := &buildbotBuild{
+				loadB := &buildbot.Build{
 					Master:      "Fake Master",
 					Buildername: "Fake buildername",
 					Number:      1235,
@@ -379,7 +380,7 @@ func TestPubSub(t *testing.T) {
 				b.TimeStamp = &ts
 				h = httptest.NewRecorder()
 				r = &http.Request{
-					Body: newCombinedPsBody([]*buildbotBuild{b}, &ms, false),
+					Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, false),
 				}
 				p = httprouter.Params{}
 				ds.GetTestable(c).Consistent(true)
@@ -390,7 +391,7 @@ func TestPubSub(t *testing.T) {
 					Params:  p,
 				})
 				So(h.Code, ShouldEqual, 200)
-				loadB := &buildbotBuild{
+				loadB := &buildbot.Build{
 					Master:      "Fake Master",
 					Buildername: "Fake buildername",
 					Number:      1235,
@@ -409,7 +410,7 @@ func TestPubSub(t *testing.T) {
 				b.Text = append(b.Text, RandStringRunes(1500000))
 				h := httptest.NewRecorder()
 				r := &http.Request{
-					Body: newCombinedPsBody([]*buildbotBuild{b}, &ms, false),
+					Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, false),
 				}
 				p := httprouter.Params{}
 				PubSubHandler(&router.Context{
@@ -438,12 +439,12 @@ func TestPubSub(t *testing.T) {
 
 		Convey("Internal master + build pusbsub subscription", func() {
 			h := httptest.NewRecorder()
-			slaves := map[string]*buildbotSlave{}
+			slaves := map[string]*buildbot.Slave{}
 			ft := 1234.0
-			slaves["testslave"] = &buildbotSlave{
+			slaves["testslave"] = &buildbot.Slave{
 				Name:      "testslave",
 				Connected: true,
-				Runningbuilds: []*buildbotBuild{
+				Runningbuilds: []*buildbot.Build{
 					{
 						Master:      "Fake Master",
 						Buildername: "Fake buildername",
@@ -452,13 +453,13 @@ func TestPubSub(t *testing.T) {
 					},
 				},
 			}
-			ms := buildbotMaster{
+			ms := buildbot.Master{
 				Name:    "Fake Master",
-				Project: buildbotProject{Title: "some title"},
+				Project: buildbot.Project{Title: "some title"},
 				Slaves:  slaves,
 			}
 			r := &http.Request{
-				Body: newCombinedPsBody([]*buildbotBuild{b}, &ms, true),
+				Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, true),
 			}
 			p := httprouter.Params{}
 			PubSubHandler(&router.Context{
@@ -473,7 +474,7 @@ func TestPubSub(t *testing.T) {
 					Identity:       "user:alicebob@google.com",
 					IdentityGroups: []string{"googlers", "all"},
 				})
-				loadB := &buildbotBuild{
+				loadB := &buildbot.Build{
 					Master:      "Fake Master",
 					Buildername: "Fake buildername",
 					Number:      1234,
