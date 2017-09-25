@@ -411,13 +411,6 @@ func (h *protocolHandler) handleGetOAuthToken(req *rpcs.GetOAuthTokenRequest) (*
 			Message: fmt.Sprintf("Bad request: %s.", err.Error()),
 		}
 	}
-	// TODO(vadimsh): Remove this check once it is moved into Validate().
-	if req.AccountID == "" {
-		return nil, &protocolError{
-			Status:  400,
-			Message: `Bad request: field "account_id" is required.`,
-		}
-	}
 	if subtle.ConstantTimeCompare(h.secret, req.Secret) != 1 {
 		return nil, &protocolError{
 			Status:  403,
