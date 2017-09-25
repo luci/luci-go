@@ -22,6 +22,30 @@
       "revId": "01a2af810d507a4cd5a8e92675049da5ca2bc3d4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "846b2bf2_9cdae7dc",
+        "filename": "milo/buildsource/buildbot/grpc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T16:45:36Z",
+      "side": 1,
+      "message": "if this happens, I\u0027d need non-aggregated http request info that would be available in the log, not in a metric",
+      "parentUuid": "2fdbda3d_42067615",
+      "range": {
+        "startLine": 82,
+        "startChar": 1,
+        "endLine": 82,
+        "endChar": 2
+      },
+      "revId": "01a2af810d507a4cd5a8e92675049da5ca2bc3d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
