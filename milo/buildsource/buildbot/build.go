@@ -95,7 +95,7 @@ func summary(c context.Context, b *buildbot.Build) resp.BuildComponent {
 	if b.Currentstep != nil {
 		status = model.Running
 	} else {
-		status = buildbot.ResultToStatus(b.Results)
+		status = b.Results.Status()
 	}
 
 	// Link to bot and original build.
@@ -162,12 +162,7 @@ func components(b *buildbot.Build) (result []*resp.BuildComponent) {
 		} else if !step.IsFinished {
 			bc.Status = model.Running
 		} else {
-			if len(step.Results) > 0 {
-				status := int(step.Results[0].(float64))
-				bc.Status = buildbot.ResultToStatus(&status)
-			} else {
-				bc.Status = model.Success
-			}
+			bc.Status = step.Results.Status()
 		}
 
 		// Raise the interesting-ness if the step is not "Success".
