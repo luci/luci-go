@@ -29,7 +29,7 @@ import (
 func TestBuilder(t *testing.T) {
 	c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
 	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
-	fakeTime := float64(123)
+	fakeTime := unixTime(123)
 	fakeResult := int(0)
 	fakeFailure := int(2)
 
@@ -40,7 +40,7 @@ func TestBuilder(t *testing.T) {
 			Buildername: "fake",
 			Number:      i,
 			Internal:    false,
-			Times:       []*float64{&fakeTime, &fakeTime},
+			Times:       buildbot.TimeRange{fakeTime, fakeTime},
 			Sourcestamp: &buildbot.SourceStamp{},
 			Results:     &fakeResult,
 			Finished:    true,
@@ -52,7 +52,7 @@ func TestBuilder(t *testing.T) {
 		Buildername: "fake",
 		Number:      10,
 		Internal:    false,
-		Times:       []*float64{&fakeTime, &fakeTime},
+		Times:       buildbot.TimeRange{fakeTime, fakeTime},
 		Sourcestamp: &buildbot.SourceStamp{},
 		Results:     &fakeFailure,
 		Finished:    true,
