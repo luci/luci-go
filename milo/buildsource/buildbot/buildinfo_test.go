@@ -17,18 +17,18 @@ package buildbot
 import (
 	"testing"
 
+	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+
+	"go.chromium.org/gae/impl/memory"
+	ds "go.chromium.org/gae/service/datastore"
 	miloProto "go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/coordinator"
+	"go.chromium.org/luci/milo/api/buildbot"
 	milo "go.chromium.org/luci/milo/api/proto"
-
-	"go.chromium.org/gae/impl/memory"
-	ds "go.chromium.org/gae/service/datastore"
-
-	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -114,11 +114,11 @@ func TestBuildInfo(t *testing.T) {
 			},
 		}
 
-		build := buildbotBuild{
+		build := buildbot.Build{
 			Master:      "foo master",
 			Buildername: "bar builder",
 			Number:      1337,
-			Properties: []*buildbotProperty{
+			Properties: []*buildbot.Property{
 				{Name: "foo", Value: "build-foo"},
 				{Name: "bar", Value: "build-bar"},
 			},
@@ -159,7 +159,7 @@ func TestBuildInfo(t *testing.T) {
 		})
 
 		Convey("Can load a BuildBot build by log location.", func() {
-			build.Properties = append(build.Properties, []*buildbotProperty{
+			build.Properties = append(build.Properties, []*buildbot.Property{
 				{Name: "log_location", Value: "logdog://example.com/testproject/foo/bar/+/baz/annotations"},
 			}...)
 			So(ds.Put(c, &build), ShouldBeNil)
@@ -198,7 +198,7 @@ func TestBuildInfo(t *testing.T) {
 		})
 
 		Convey("Can load a BuildBot build by annotation URL.", func() {
-			build.Properties = append(build.Properties, []*buildbotProperty{
+			build.Properties = append(build.Properties, []*buildbot.Property{
 				{Name: "log_location", Value: "protocol://not/a/logdog/url"},
 				{Name: "logdog_annotation_url", Value: "logdog://example.com/testproject/foo/bar/+/baz/annotations"},
 			}...)
@@ -239,7 +239,7 @@ func TestBuildInfo(t *testing.T) {
 		})
 
 		Convey("Can load a BuildBot build by tag.", func() {
-			build.Properties = append(build.Properties, []*buildbotProperty{
+			build.Properties = append(build.Properties, []*buildbot.Property{
 				{Name: "logdog_prefix", Value: "foo/bar"},
 				{Name: "logdog_project", Value: "testproject"},
 			}...)

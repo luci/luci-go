@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
@@ -39,12 +40,12 @@ import (
 
 // getBuild fetches a buildbot build from the datastore and checks ACLs.
 // The return code matches the master responses.
-func getBuild(c context.Context, master, builder string, buildNum int) (*buildbotBuild, error) {
+func getBuild(c context.Context, master, builder string, buildNum int) (*buildbot.Build, error) {
 	if err := canAccessMaster(c, master); err != nil {
 		return nil, err
 	}
 
-	result := &buildbotBuild{
+	result := &buildbot.Build{
 		Master:      master,
 		Buildername: builder,
 		Number:      buildNum,
@@ -56,30 +57,6 @@ func getBuild(c context.Context, master, builder string, buildNum int) (*buildbo
 	}
 
 	return result, err
-}
-
-// result2Status translates a buildbot result integer into a model.Status.
-func result2Status(s *int) (status model.Status) {
-	if s == nil {
-		return model.Running
-	}
-	switch *s {
-	case 0:
-		status = model.Success
-	case 1:
-		status = model.Warning
-	case 2:
-		status = model.Failure
-	case 3:
-		status = model.NotRun // Skipped
-	case 4:
-		status = model.Exception
-	case 5:
-		status = model.WaitingDependency // Retry
-	default:
-		panic(fmt.Errorf("Unknown status %d", s))
-	}
-	return
 }
 
 // buildbotTimeToTime converts a buildbot time representation (pointer to float
@@ -118,7 +95,7 @@ func parseTimes(buildFinished *float64, times []*float64) (started, ended time.T
 }
 
 // getBanner parses the OS information from the build and maybe returns a banner.
-func getBanner(c context.Context, b *buildbotBuild) *resp.LogoBanner {
+func getBanner(c context.Context, b *buildbot.Build) *resp.LogoBanner {
 	logging.Infof(c, "OS: %s/%s", b.OSFamily, b.OSVersion)
 	osLogo := func() *resp.Logo {
 		result := &resp.Logo{}
@@ -146,14 +123,14 @@ func getBanner(c context.Context, b *buildbotBuild) *resp.LogoBanner {
 
 // summary extracts the top level summary from a buildbot build as a
 // BuildComponent
-func summary(c context.Context, b *buildbotBuild) resp.BuildComponent {
+func summary(c context.Context, b *buildbot.Build) resp.BuildComponent {
 	// TODO(hinoka): use b.toStatus()
 	// Status
 	var status model.Status
 	if b.Currentstep != nil {
 		status = model.Running
 	} else {
-		status = result2Status(b.Results)
+		status = buildbot.ResultToStatus(b.Results)
 	}
 
 	// Timing info
@@ -202,7 +179,7 @@ var rLineBreak = regexp.MustCompile("<br */?>")
 
 // components takes a full buildbot build struct and extract step info from all
 // of the steps and returns it as a list of milo Build Components.
-func components(b *buildbotBuild) (result []*resp.BuildComponent) {
+func components(b *buildbot.Build) (result []*resp.BuildComponent) {
 	endingTime := b.Times[1]
 	for _, step := range b.Steps {
 		if step.Hidden == true {
@@ -226,7 +203,7 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 		} else {
 			if len(step.Results) > 0 {
 				status := int(step.Results[0].(float64))
-				bc.Status = result2Status(&status)
+				bc.Status = buildbot.ResultToStatus(&status)
 			} else {
 				bc.Status = model.Success
 			}
@@ -249,7 +226,7 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 				stepAliases := step.Aliases[logLink.Label]
 				aliases = make(resp.LinkSet, len(stepAliases))
 				for i, alias := range stepAliases {
-					aliases[i] = alias.toLink()
+					aliases[i] = alias.Link()
 				}
 			}
 
@@ -296,7 +273,7 @@ func components(b *buildbotBuild) (result []*resp.BuildComponent) {
 			for _, label := range unusedAliases {
 				var baseLink resp.LinkSet
 				for _, alias := range step.Aliases[label] {
-					aliasLink := alias.toLink()
+					aliasLink := alias.Link()
 					if len(baseLink) == 0 {
 						aliasLink.Label = label
 					} else {
@@ -347,7 +324,7 @@ type Prop struct {
 
 // properties extracts all properties from buildbot builds and groups them into
 // property groups.
-func properties(b *buildbotBuild) (result []*resp.PropertyGroup) {
+func properties(b *buildbot.Build) (result []*resp.PropertyGroup) {
 	groups := map[string]*resp.PropertyGroup{}
 	allProps := map[string]Prop{}
 	for _, prop := range b.Properties {
@@ -387,7 +364,7 @@ func properties(b *buildbotBuild) (result []*resp.PropertyGroup) {
 
 // blame extracts the commit and blame information from a buildbot build and
 // returns it as a list of Commits.
-func blame(b *buildbotBuild) (result []*resp.Commit) {
+func blame(b *buildbot.Build) (result []*resp.Commit) {
 	if b.Sourcestamp != nil {
 		for _, c := range b.Sourcestamp.Changes {
 			files := c.GetFiles()
@@ -406,7 +383,7 @@ func blame(b *buildbotBuild) (result []*resp.Commit) {
 
 // sourcestamp extracts the source stamp from various parts of a buildbot build,
 // including the properties.
-func sourcestamp(c context.Context, b *buildbotBuild) *resp.SourceStamp {
+func sourcestamp(c context.Context, b *buildbot.Build) *resp.SourceStamp {
 	ss := &resp.SourceStamp{}
 	rietveld := ""
 	gerrit := ""
@@ -486,7 +463,7 @@ func sourcestamp(c context.Context, b *buildbotBuild) *resp.SourceStamp {
 	return ss
 }
 
-func renderBuild(c context.Context, b *buildbotBuild) *resp.MiloBuild {
+func renderBuild(c context.Context, b *buildbot.Build) *resp.MiloBuild {
 	// Modify the build for rendering.
 	updatePostProcessBuild(b)
 
@@ -511,7 +488,7 @@ func DebugBuild(c context.Context, relBuildbotDir string, builder string, buildN
 	if err != nil {
 		return nil, err
 	}
-	b := &buildbotBuild{}
+	b := &buildbot.Build{}
 	if err := json.Unmarshal(raw, b); err != nil {
 		return nil, err
 	}
@@ -533,9 +510,9 @@ func Build(c context.Context, master, builder string, buildNum int) (*resp.MiloB
 // Post-processing includes:
 //	- If the build is LogDog-only, promotes aliases (LogDog links) to
 //	  first-class links in the build.
-func updatePostProcessBuild(b *buildbotBuild) {
+func updatePostProcessBuild(b *buildbot.Build) {
 	// If this is a LogDog-only build, we want to promote the LogDog links.
-	if loc, ok := b.getPropertyValue("log_location").(string); ok && strings.HasPrefix(loc, "logdog://") {
+	if loc, ok := b.PropertyValue("log_location").(string); ok && strings.HasPrefix(loc, "logdog://") {
 		linkMap := map[string]string{}
 		for sidx := range b.Steps {
 			promoteLogDogLinks(&b.Steps[sidx], sidx == 0, linkMap)
@@ -576,7 +553,7 @@ func updatePostProcessBuild(b *buildbotBuild) {
 //
 // As URLs are re-mapped, the supplied "linkMap" will be updated to map the old
 // URLs to the new ones.
-func promoteLogDogLinks(s *buildbotStep, isInitialStep bool, linkMap map[string]string) {
+func promoteLogDogLinks(s *buildbot.Step, isInitialStep bool, linkMap map[string]string) {
 	type stepLog struct {
 		label string
 		url   string
@@ -662,9 +639,9 @@ func promoteLogDogLinks(s *buildbotStep, isInitialStep bool, linkMap map[string]
 	s.Urls = newURLs
 
 	// Preserve any aliases that haven't been promoted.
-	var newAliases map[string][]*buildbotLinkAlias
+	var newAliases map[string][]*buildbot.LinkAlias
 	if l := remainingAliases.Len(); l > 0 {
-		newAliases = make(map[string][]*buildbotLinkAlias, l)
+		newAliases = make(map[string][]*buildbot.LinkAlias, l)
 		remainingAliases.Iter(func(v string) bool {
 			newAliases[v] = s.Aliases[v]
 			return true

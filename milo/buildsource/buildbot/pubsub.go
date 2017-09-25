@@ -37,6 +37,7 @@ import (
 
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/milo/api/buildbot"
 )
 
 var (
@@ -69,8 +70,8 @@ var (
 )
 
 type buildMasterMsg struct {
-	Master *buildbotMaster  `json:"master"`
-	Builds []*buildbotBuild `json:"builds"`
+	Master *buildbot.Master  `json:"master"`
+	Builds []*buildbot.Build `json:"builds"`
 }
 
 // buildbotMasterEntry is a container for a marshaled and packed buildbot
@@ -95,7 +96,7 @@ type buildbotMasterPublic struct {
 }
 
 func putDSMasterJSON(
-	c context.Context, master *buildbotMaster, internal bool) error {
+	c context.Context, master *buildbot.Master, internal bool) error {
 	for _, builder := range master.Builders {
 		// Trim out extra info in the "Changes" portion of the pending build state,
 		// we don't actually need comments, files, and properties
@@ -144,7 +145,7 @@ func putDSMasterJSON(
 
 // unmarshal a gzipped byte stream into a list of buildbot builds and masters.
 func unmarshal(
-	c context.Context, msg []byte) ([]*buildbotBuild, *buildbotMaster, error) {
+	c context.Context, msg []byte) ([]*buildbot.Build, *buildbot.Master, error) {
 	bm := buildMasterMsg{}
 	if len(msg) == 0 {
 		return bm.Builds, bm.Master, nil
@@ -180,7 +181,7 @@ func unmarshal(
 
 // getOSInfo fetches the os family and version of the slave the build was
 // running on from the master json on a best-effort basis.
-func getOSInfo(c context.Context, b *buildbotBuild, m *buildbotMaster) (
+func getOSInfo(c context.Context, b *buildbot.Build, m *buildbot.Master) (
 	family, version string) {
 	// Fetch the master info from datastore if not provided.
 	if m.Name == "" {
@@ -226,7 +227,7 @@ func getOSInfo(c context.Context, b *buildbotBuild, m *buildbotMaster) (
 }
 
 // Marks a build as finished and expired.
-func expireBuild(c context.Context, b *buildbotBuild) error {
+func expireBuild(c context.Context, b *buildbot.Build) error {
 	finished := float64(clock.Now(c).Unix())
 	if b.TimeStamp != nil {
 		finished = float64(*b.TimeStamp)
@@ -241,7 +242,7 @@ func expireBuild(c context.Context, b *buildbotBuild) error {
 }
 
 // saveBuildSummary summerizes a build into a model.BuildSummary and then saves it.
-func saveBuildSummary(c context.Context, b *buildbotBuild) error {
+func saveBuildSummary(c context.Context, b *buildbot.Build) error {
 	resp := renderBuild(c, b)
 	bs := model.BuildSummary{
 		BuildKey:  datastore.KeyForObj(c, b),
@@ -254,7 +255,7 @@ func saveBuildSummary(c context.Context, b *buildbotBuild) error {
 	return datastore.Put(c, &bs)
 }
 
-func doMaster(c context.Context, master *buildbotMaster, internal bool) int {
+func doMaster(c context.Context, master *buildbot.Master, internal bool) int {
 	// Store the master json into the datastore.
 	err := putDSMasterJSON(c, master, internal)
 	fullname := fmt.Sprintf("master.%s", master.Name)
@@ -272,8 +273,8 @@ func doMaster(c context.Context, master *buildbotMaster, internal bool) int {
 	q := datastore.NewQuery("buildbotBuild").
 		Eq("finished", false).
 		Eq("master", master.Name)
-	builds := []*buildbotBuild{}
-	err = datastore.RunBatch(c, buildQueryBatchSize, q, func(b *buildbotBuild) {
+	builds := []*buildbot.Build{}
+	err = datastore.RunBatch(c, buildQueryBatchSize, q, func(b *buildbot.Build) {
 		builds = append(builds, b)
 	})
 	if err != nil {
@@ -398,14 +399,14 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 		logging.Infof(c, "No master in this message")
 	}
 	// This is used to cache the master used for extracting OS information.
-	cachedMaster := buildbotMaster{}
+	cachedMaster := buildbot.Master{}
 	// Do not use PutMulti because we might hit the 1MB limit.
 	for _, build := range builds {
 		if build.Master == "" {
 			logging.Errorf(c, "Invalid message, missing master name")
 			return http.StatusOK
 		}
-		existingBuild := &buildbotBuild{
+		existingBuild := &buildbot.Build{
 			Master:      build.Master,
 			Buildername: build.Buildername,
 			Number:      build.Number,
@@ -437,7 +438,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 		build.OSFamily, build.OSVersion = getOSInfo(c, build, &cachedMaster)
 		err = datastore.Put(c, build)
 		if err != nil {
-			if _, ok := err.(errTooBig); ok {
+			if _, ok := err.(buildbot.ErrTooBig); ok {
 				// This will never work, we don't want PubSub to retry.
 				logging.WithError(err).Errorf(
 					c, "Could not save build to datastore, failing permanently")

@@ -17,15 +17,17 @@ package buildbot
 import (
 	"testing"
 
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/gae/impl/memory"
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/milo/api/buildbot"
 	milo "go.chromium.org/luci/milo/api/proto"
-	"golang.org/x/net/context"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGRPC(t *testing.T) {
@@ -35,10 +37,10 @@ func TestGRPC(t *testing.T) {
 	Convey(`A test environment`, t, func() {
 		name := "testmaster"
 		bname := "testbuilder"
-		master := &buildbotMaster{
+		master := &buildbot.Master{
 			Name:     name,
-			Builders: map[string]*buildbotBuilder{"fake": {}},
-			Slaves: map[string]*buildbotSlave{
+			Builders: map[string]*buildbot.Builder{"fake": {}},
+			Slaves: map[string]*buildbot.Slave{
 				"foo": {
 					RunningbuildsMap: map[string][]int{
 						"fake": {1},
@@ -48,7 +50,7 @@ func TestGRPC(t *testing.T) {
 		}
 
 		So(putDSMasterJSON(c, master, false), ShouldBeNil)
-		So(ds.Put(c, &buildbotBuild{
+		So(ds.Put(c, &buildbot.Build{
 			Master:      name,
 			Buildername: "fake",
 			Number:      1,
@@ -60,14 +62,14 @@ func TestGRPC(t *testing.T) {
 		Convey(`Get finished builds`, func() {
 			// Add in some builds.
 			for i := 0; i < 5; i++ {
-				ds.Put(c, &buildbotBuild{
+				ds.Put(c, &buildbot.Build{
 					Master:      name,
 					Buildername: bname,
 					Number:      i,
 					Finished:    true,
 				})
 			}
-			ds.Put(c, &buildbotBuild{
+			ds.Put(c, &buildbot.Build{
 				Master:      name,
 				Buildername: bname,
 				Number:      6,
