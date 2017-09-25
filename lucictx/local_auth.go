@@ -43,6 +43,8 @@ type LocalAuth struct {
 type LocalAuthAccount struct {
 	// ID is logical identifier of the account, e.g. "system" or "task".
 	ID string `json:"id"`
+	// Email is an account email or "-" if not available.
+	Email string `json:"email"`
 }
 
 // CanUseByDefault returns true if the authentication context can be picked up
