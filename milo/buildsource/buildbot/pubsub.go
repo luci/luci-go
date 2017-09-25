@@ -228,12 +228,11 @@ func getOSInfo(c context.Context, b *buildbot.Build, m *buildbot.Master) (
 
 // Marks a build as finished and expired.
 func expireBuild(c context.Context, b *buildbot.Build) error {
-	finished := float64(clock.Now(c).Unix())
-	if b.TimeStamp != nil {
-		finished = float64(*b.TimeStamp)
+	b.Times.Finish = buildbot.Time{clock.Now(c)}
+	if !b.TimeStamp.IsZero() {
+		b.Times.Finish = b.TimeStamp
 	}
 	results := int(4) // Exception
-	b.Times[1] = &finished
 	b.Finished = true
 	b.Results = &results
 	b.Currentstep = nil
@@ -306,8 +305,8 @@ func doMaster(c context.Context, master *buildbot.Master, internal bool) int {
 			}
 		}
 		if !found {
-			now := int(clock.Now(c).Unix())
-			if b.TimeStamp == nil || ((*b.TimeStamp)+20*60 < now) {
+			now := clock.Now(c)
+			if b.TimeStamp.IsZero() || (b.TimeStamp.Time.Add(20 * time.Minute).Before(now)) {
 				// Expire builds after 20 minutes of not getting data.
 				// Mark this build due to build not current anymore.
 				buildCounter.Add(
@@ -354,7 +353,7 @@ func StatsHandler(c context.Context) error {
 // Anything else will signal to pubsub to retry.
 func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 	msg := common.PubSubSubscription{}
-	now := int(clock.Now(c).Unix())
+	now := clock.Now(c)
 	defer r.Body.Close()
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&msg); err != nil {
@@ -423,10 +422,10 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 		}
 		// Also set the finished, timestamp, and internal bit.
 		build.Finished = false
-		if build.TimeStamp == nil {
-			build.TimeStamp = &now
+		if build.TimeStamp.IsZero() {
+			build.TimeStamp.Time = now
 		}
-		if len(build.Times) == 2 && build.Times[1] != nil {
+		if !build.Times.Finish.IsZero() {
 			build.Finished = true
 			logging.Infof(
 				c, "Recording finished build %s/%s/%d", build.Master,

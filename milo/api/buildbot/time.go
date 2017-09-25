@@ -1,0 +1,89 @@
+// Copyright 2017 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package buildbot
+
+import (
+	"encoding/json"
+	"time"
+)
+
+type Time struct {
+	// if we do a type alias, non-pointer time.Time methods are not available
+
+	time.Time
+}
+
+func (t *Time) MarshalJSON() ([]byte, error) {
+	var buildbotFormat *float64
+	if !t.Time.IsZero() {
+		v := float64(t.Time.UnixNano()) / 1e9
+		buildbotFormat = &v
+	}
+	return json.Marshal(&buildbotFormat)
+}
+
+func (t *Time) UnmarshalJSON(data []byte) error {
+	var buildbotFormat *float64
+	err := json.Unmarshal(data, &buildbotFormat)
+	if err != nil {
+		return err
+	}
+	*t = Time{}
+	if buildbotFormat != nil {
+		sec := *buildbotFormat
+		// FIXME: sec*1e9 will overflow
+		t.Time = time.Unix(int64(sec), int64(sec*1e9)%1e9).UTC()
+	}
+	return nil
+}
+
+type TimeRange struct {
+	Start, Finish Time
+}
+
+func (t *TimeRange) MarshalJSON() ([]byte, error) {
+	buildbotFormat := []Time{t.Start, t.Finish}
+	return json.Marshal(buildbotFormat)
+}
+
+func (t *TimeRange) UnmarshalJSON(data []byte) error {
+	var buildbotFormat []Time
+	err := json.Unmarshal(data, &buildbotFormat)
+	if err != nil {
+		return err
+	}
+
+	*t = TimeRange{}
+	switch {
+	case len(buildbotFormat) > 1:
+		t.Finish = buildbotFormat[1]
+		fallthrough
+	case len(buildbotFormat) > 0:
+		t.Start = buildbotFormat[0]
+	}
+	return nil
+}
+
+func (t TimeRange) Duration() time.Duration {
+	switch {
+	case t.Start.IsZero():
+		return 0
+	case t.Finish.IsZero():
+		// FIXME: should not depend on current time.
+		return time.Since(t.Start.Time)
+	default:
+		return t.Finish.Sub(t.Start.Time)
+	}
+}

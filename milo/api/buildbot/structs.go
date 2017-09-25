@@ -48,7 +48,7 @@ type Step struct {
 	} `json:"statistics"`
 	StepNumber int               `json:"step_number"`
 	Text       []string          `json:"text"`
-	Times      []*float64        `json:"times"`
+	Times      TimeRange         `json:"times"`
 	Urls       map[string]string `json:"urls"`
 
 	// Log link aliases.  The key is a log name that is being aliases. It should,
@@ -136,9 +136,9 @@ type Build struct {
 	Sourcestamp *SourceStamp `json:"sourceStamp" gae:"-"`
 	Steps       []Step       `json:"steps" gae:"-"`
 	Text        []string     `json:"text" gae:"-"`
-	Times       []*float64   `json:"times" gae:"-"`
+	Times       TimeRange    `json:"times" gae:"-"`
 	// This one is injected by Milo.  Does not exist in a normal json query.
-	TimeStamp *int `json:"timeStamp" gae:"-"`
+	TimeStamp Time `json:"timeStamp" gae:"-"`
 	// This one is marked by Milo, denotes whether or not the build is internal.
 	Internal bool `json:"internal" gae:"-"`
 	// This one is computed by Milo for indexing purposes.  It does so by
@@ -419,7 +419,7 @@ type Master struct {
 		AcceptingBuilds bool      `json:"accepting_builds"`
 		Builders        []Builder `json:"builders"`
 		Project         Project   `json:"project"`
-		Timestamp       float64   `json:"timestamp"`
+		Timestamp       Time      `json:"timestamp"`
 	} `json:"buildstate"`
 
 	ChangeSources map[string]ChangeSource `json:"change_sources"`
@@ -428,16 +428,16 @@ type Master struct {
 
 	Clock struct {
 		Current struct {
-			Local string  `json:"local"`
-			Utc   string  `json:"utc"`
-			UtcTs float64 `json:"utc_ts"`
+			Local string `json:"local"`
+			Utc   string `json:"utc"`
+			UtcTs Time   `json:"utc_ts"`
 		} `json:"current"`
 		ServerStarted struct {
-			Local string  `json:"local"`
-			Utc   string  `json:"utc"`
-			UtcTs float64 `json:"utc_ts"`
+			Local string `json:"local"`
+			Utc   string `json:"utc"`
+			UtcTs Time   `json:"utc_ts"`
 		} `json:"server_started"`
-		ServerUptime float64 `json:"server_uptime"`
+		ServerUptime Time `json:"server_uptime"`
 	} `json:"clock"`
 
 	Project Project `json:"project"`
@@ -453,7 +453,7 @@ type Master struct {
 			State           string `json:"state"`
 			TotalSlaves     int    `json:"total_slaves"`
 		} `json:"builders"`
-		ServerUptime float64 `json:"server_uptime"`
+		ServerUptime Time `json:"server_uptime"`
 	} `json:"varz"`
 
 	// This is injected by the pubsub publisher on the buildbot side.
