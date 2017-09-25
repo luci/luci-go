@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3b8cb63e_93698e11",
+        "filename": "vpython/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T20:34:43Z",
+      "side": 1,
+      "message": "may not (windows, right?)",
+      "range": {
+        "startLine": 117,
+        "startChar": 51,
+        "endLine": 117,
+        "endChar": 59
+      },
+      "revId": "18f671033288b8e92aa9e05c29e475024d6fce9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59abd7ab_2a7fd3ca",
+        "filename": "vpython/system_windows.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T20:34:43Z",
+      "side": 1,
+      "message": "should remove this from both, I think",
+      "range": {
+        "startLine": 47,
+        "startChar": 99,
+        "endLine": 47,
+        "endChar": 104
+      },
+      "revId": "18f671033288b8e92aa9e05c29e475024d6fce9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
