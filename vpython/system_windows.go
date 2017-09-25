@@ -16,12 +16,13 @@ package vpython
 
 import (
 	"os"
+	"os/exec"
 
 	"go.chromium.org/luci/vpython/venv"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/system/exitcode"
 
 	"golang.org/x/net/context"
 )
@@ -38,23 +39,35 @@ import (
 //
 // On Windows, we launch it as a child process and interpret any signal that we
 // receive as terminal, cancelling the child.
-func systemSpecificLaunch(c context.Context, ve *venv.Env, argv []string, env environ.Env, dir string) error {
-	c, cancelFunc := context.WithCancel(c)
-	defer cancelFunc()
-
-	cmd := ve.Interpreter().IsolatedCommand(c, argv[1:]...)
-	cmd.Dir = dir
-	cmd.Env = env.Sorted()
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	err := cmd.Run()
-	logging.Debugf(c, "Python subprocess has terminated: %v", err)
-	if err != nil {
-		return errors.Annotate(err, "").Err()
-	}
-	return nil
+func systemSpecificLaunch(c context.Context, ve *venv.Env, args []string, env environ.Env, dir string) error {
+	return Exec(c, ve.Interpreter(), args, env, dir, nil)
 }
 
-func runSystemCommand(context.Context, string, string, environ.Env) (int, bool) { return 0, false }
+func execImpl(c context.Context, argv []string, env environ.Env, dir string, setupFn func() error) error {
+	cmd := exec.Cmd{
+		Path:   argv[0],
+		Args:   argv[1:],
+		Env:    env.Sorted(),
+		Dir:    dir,
+		Stdin:  os.Stdin,
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+	}
+
+	// At this point, ANY ERROR will be fatal (panic). We assume that each
+	// operation may permanently alter our runtime enviornment.
+	if setupFn != nil {
+		if err := setupFn(); err != nil {
+			panic(err)
+		}
+	}
+
+	err := cmd.Run()
+	if rc, has := exitcode.Get(err); has {
+		// The process had an exit code (includes err==nil, 0).
+		logging.Debugf(c, "Python subprocess has terminated: %v", err)
+		os.Exit(rc)
+		panic("must not return")
+	}
+	panic(err)
+}
