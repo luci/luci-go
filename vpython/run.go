@@ -18,6 +18,7 @@ import (
 	"os"
 	"strings"
 
+	"go.chromium.org/luci/vpython/python"
 	"go.chromium.org/luci/vpython/venv"
 
 	"go.chromium.org/luci/common/errors"
@@ -99,11 +100,8 @@ func Run(c context.Context, opts Options) error {
 		prefixPATH(e, ve.BinDir)
 
 		// Run our bootstrapped Python command.
-
-		// Output the Python command being executed.
-		argv := ve.Interpreter().IsolatedCommandParams(opts.Args...)
-		logging.Debugf(c, "Running Python command: %s\nWorkDir: %s\nEnv: %s", argv, opts.WorkDir, e)
-		if err := systemSpecificLaunch(c, ve, argv, e, opts.WorkDir); err != nil {
+		logging.Debugf(c, "Python environment:\nWorkDir: %s\nEnv: %s", opts.WorkDir, e)
+		if err := systemSpecificLaunch(c, ve, opts.Args, e, opts.WorkDir); err != nil {
 			return errors.Annotate(err, "failed to execute bootstrapped Python").Err()
 		}
 		return nil
@@ -112,6 +110,33 @@ func Run(c context.Context, opts Options) error {
 		return errors.Annotate(err, "").Err()
 	}
 	return nil
+}
+
+// Exec runs the specified Python command.
+//
+// Once the process launches, Context cancellation will not have an impact.
+//
+// interp is the Python interperer to run.
+//
+// args is the set of arguments to pass to the interpreter.
+//
+// env is the environment to install.
+//
+// dir, if not empty, is the working directory of the command.
+//
+// setupFn, if not nil, is a function that will be run immediately before
+// execution, after all operations that are permitted to fail have completed.
+// Any error returned here will result in a panic.
+//
+// If an error occurs during execution, it will be returned here. Otherwise,
+// Exec will not return, and this process will exit with the return code of the
+// executed process.
+//
+// The implementation of Exec is platform-specific.
+func Exec(c context.Context, interp *python.Interpreter, args []string, env environ.Env, dir string, setupFn func() error) error {
+	argv := interp.IsolatedCommandParams(args...)
+	logging.Debugf(c, "Exec Python command: %v", argv)
+	return execImpl(c, argv, env, dir, nil)
 }
 
 func prefixPATH(env environ.Env, components ...string) {

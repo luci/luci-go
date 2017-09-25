@@ -39,7 +39,29 @@ import (
 //
 // This can be error-prone, as it places the burden on the subprocess to
 // manage the file descriptor.
-func systemSpecificLaunch(c context.Context, ve *venv.Env, argv []string, env environ.Env, dir string) error {
+func systemSpecificLaunch(c context.Context, ve *venv.Env, args []string, env environ.Env, dir string) error {
+	return Exec(c, ve.Interpreter(), args, env, dir, func() error {
+		// Store our lock file descriptor as FD #3 (after #2, STDERR).
+		lockFD := ve.LockHandle.LockFile().Fd()
+		if lockFD == 3 {
+			// "dup2" doesn't change flags if the source and destination file
+			// descriptors are the same. Explicitly remove the close-on-exec flag, which
+			// Go enables by default.
+			if _, _, err := unix.Syscall(unix.SYS_FCNTL, lockFD, unix.F_SETFD, 0); err != 0 {
+				return errors.Annotate(err, "could not remove close-on-exec for lock file").Err()
+			}
+		} else {
+			// Use "dup2" to copy the file descriptor to #3 slot. This will also clear
+			// its flags, including close-on-exec.
+			if err := unix.Dup2(int(lockFD), 3); err != nil {
+				return errors.Annotate(err, "could not dup2 lock file").Err()
+			}
+		}
+		return nil
+	})
+}
+
+func execImpl(c context.Context, argv []string, env environ.Env, dir string, setupFn func() error) error {
 	// Change directory.
 	if dir != "" {
 		if err := os.Chdir(dir); err != nil {
@@ -47,26 +69,16 @@ func systemSpecificLaunch(c context.Context, ve *venv.Env, argv []string, env en
 		}
 	}
 
-	// Store our lock file descriptor as FD #3 (after #2, STDERR).
-	lockFD := ve.LockHandle.LockFile().Fd()
-	if lockFD == 3 {
-		// "dup2" doesn't change flags if the source and destination file
-		// descriptors are the same. Explicitly remove the close-on-exec flag, which
-		// Go enables by default.
-		if _, _, err := unix.Syscall(unix.SYS_FCNTL, lockFD, unix.F_SETFD, 0); err != 0 {
-			return errors.Annotate(err, "could not remove close-on-exec for lock file").Err()
-		}
-	} else {
-		// Use "dup2" to copy the file descriptor to #3 slot. This will also clear
-		// its flags, including close-on-exec.
-		if err := unix.Dup2(int(lockFD), 3); err != nil {
-			return errors.Annotate(err, "could not dup2 lock file").Err()
+	// At this point, ANY ERROR will be fatal (panic). We assume that each
+	// operation may permanently alter our runtime enviornment.
+	if setupFn != nil {
+		if err := setupFn(); err != nil {
+			panic(err)
 		}
 	}
 
-	// This is the original process. Become Python.
 	if err := syscall.Exec(argv[0], argv, env.Sorted()); err != nil {
-		return errors.Annotate(err, "failed to execve %q", argv[0]).Err()
+		panic(errors.Annotate(err, "failed to execve %q", argv[0]).Err())
 	}
-	return nil
+	panic("must not return")
 }
