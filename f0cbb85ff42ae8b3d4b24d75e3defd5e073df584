@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1da990e2_28fb878c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T19:40:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e9389bb2_ca22e4ab",
+      "range": {
+        "startLine": 17,
+        "startChar": 3,
+        "endLine": 17,
+        "endChar": 6
+      },
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9604a653_fedf7335",
         "filename": "buildbucket/build.go",
         "patchSetId": 6
@@ -45,6 +69,30 @@
       "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed5f1b02_a1a1680d",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T19:40:31Z",
+      "side": 1,
+      "message": "i guess in general i don\u0027t like string-based enums because it takes more CPU to compare them, but these start with different letters. Done",
+      "parentUuid": "9604a653_fedf7335",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 1
+      },
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "3bfc35ac_22c4b1f7",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T19:40:31Z",
+      "side": 1,
+      "message": "result_details_json is \"\" if build is not completed yet",
+      "parentUuid": "fa7a437f_470fb418",
+      "range": {
+        "startLine": 181,
+        "startChar": 1,
+        "endLine": 183,
+        "endChar": 2
+      },
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "35ef4bdb_23f05dce",
         "filename": "buildbucket/build.go",
         "patchSetId": 6
@@ -85,6 +157,24 @@
       "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3026eb2b_f8bfc7d5",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T19:40:31Z",
+      "side": 1,
+      "message": "cool, done",
+      "parentUuid": "35ef4bdb_23f05dce",
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "62aed74a_e8d70fd2",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T19:40:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a0515dcb_0b58100c",
+      "range": {
+        "startLine": 33,
+        "startChar": 30,
+        "endLine": 33,
+        "endChar": 36
+      },
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "584146e4_1a97a055",
         "filename": "buildbucket/buildset.go",
         "patchSetId": 6
@@ -131,6 +245,30 @@
       "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ebfadd7a_2b47f031",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T19:40:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "584146e4_1a97a055",
+      "range": {
+        "startLine": 47,
+        "startChar": 28,
+        "endLine": 47,
+        "endChar": 36
+      },
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "a864b32e_6346c61b",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T19:40:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6356e696_b35c7548",
+      "range": {
+        "startLine": 58,
+        "startChar": 35,
+        "endLine": 58,
+        "endChar": 49
+      },
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a1e92c9c_60889ad7",
         "filename": "buildbucket/buildset.go",
         "patchSetId": 6
@@ -171,6 +333,24 @@
       "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0223c8e1_c62183e4",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T19:40:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a1e92c9c_60889ad7",
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -197,6 +377,30 @@
     },
     {
       "key": {
+        "uuid": "5f6d528b_bc12ed5f",
+        "filename": "buildbucket/status.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T19:40:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a9efec0f_ae5622c2",
+      "range": {
+        "startLine": 48,
+        "startChar": 46,
+        "endLine": 48,
+        "endChar": 54
+      },
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e60e169d_324c9b28",
         "filename": "buildbucket/tag.go",
         "patchSetId": 6
@@ -211,6 +415,24 @@
       "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a58cd2bf_75f8a35d",
+        "filename": "buildbucket/tag.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T19:40:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e60e169d_324c9b28",
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -237,6 +459,30 @@
     },
     {
       "key": {
+        "uuid": "d259771e_e2d54707",
+        "filename": "buildbucket/tag.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T19:40:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ac65c073_887bda0e",
+      "range": {
+        "startLine": 65,
+        "startChar": 0,
+        "endLine": 66,
+        "endChar": 10
+      },
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b0fc9773_04a8a897",
         "filename": "buildbucket/tag.go",
         "patchSetId": 6
@@ -257,6 +503,30 @@
       "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aaa0d108_d1ace449",
+        "filename": "buildbucket/tag.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T19:40:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b0fc9773_04a8a897",
+      "range": {
+        "startLine": 82,
+        "startChar": 0,
+        "endLine": 83,
+        "endChar": 18
+      },
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
