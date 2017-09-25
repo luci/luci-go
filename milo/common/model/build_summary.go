@@ -85,6 +85,16 @@ type BuildSummary struct {
 
 	// ManifestKeys is the list of ManifestKey entries for this BuildSummary.
 	ManifestKeys []ManifestKey
+
+	// Version can be used by buildsource implementations to compare with an
+	// externally provided version number/timestamp to ensure that BuildSummary
+	// objects are only updated forwards in time.
+	//
+	// Known uses:
+	//   * Buildbucket populates this with Build.UpdatedTs, which is guaranteed to
+	//     be monotonically increasing. Used to ignore out-of-order pubsub
+	//     messages.
+	Version int64
 }
 
 // AddManifestKey adds a new entry to ManifestKey.
