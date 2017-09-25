@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "dfbfa85d_8479888f",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-25T21:30:41Z",
+      "side": 1,
+      "message": "In general, yeah, fair enough. As for this code, you code below was/is comparing them to strings anyway :)",
+      "parentUuid": "ed5f1b02_a1a1680d",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 1
+      },
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa7a437f_470fb418",
         "filename": "buildbucket/build.go",
         "patchSetId": 6
@@ -131,6 +155,30 @@
       "side": 1,
       "message": "result_details_json is \"\" if build is not completed yet",
       "parentUuid": "fa7a437f_470fb418",
+      "range": {
+        "startLine": 181,
+        "startChar": 1,
+        "endLine": 183,
+        "endChar": 2
+      },
+      "revId": "f0cbb85ff42ae8b3d4b24d75e3defd5e073df584",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2ec5fef4_684323f0",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-25T21:30:41Z",
+      "side": 1,
+      "message": "I meant to ask if \"\" isn\u0027t handled by json decoder as a no-op without errors, but turns out error EOF is returned https://play.golang.org/p/kR-RNDbYda",
+      "parentUuid": "3bfc35ac_22c4b1f7",
       "range": {
         "startLine": 181,
         "startChar": 1,
