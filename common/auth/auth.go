@@ -621,6 +621,8 @@ func (a *Authenticator) GetAccessToken(lifetime time.Duration) (*oauth2.Token, e
 // or fatal error. In particular, returns ErrLoginRequired if interactive login
 // is required to get the token in the first place.
 func (a *Authenticator) GetEmail() (string, error) {
+	// Grab last known token and its associated email. Note that this call also
+	// initializes the guts of the authenticator, including a.authToken.
 	tok, err := a.currentToken()
 	switch {
 	case err != nil:
@@ -631,10 +633,26 @@ func (a *Authenticator) GetEmail() (string, error) {
 		return tok.Email, nil
 	}
 
-	// The token is either not loaded from the cache yet, or it may need a
-	// forceful refresh to initialize Email field (or discover it is NoEmail).
-	// This is rare. It happens only for cached tokens of old format that don't
-	// have email field. Pass -1 as lifetime to trigger the refresh right now.
+	// There's no token cached yet (and thus email is not known). First try to ask
+	// the provider for email only. Most providers can return it without doing any
+	// RPCs or heavy calls. If this is not supported, resort to a heavier code
+	// paths that actually refreshes the token and grabs its email along the way.
+	a.lock.RLock()
+	email := a.authToken.provider.Email()
+	a.lock.RUnlock()
+	switch {
+	case email == internal.NoEmail:
+		return "", ErrNoEmail
+	case email != "":
+		return email, nil
+	}
+
+	// The provider doesn't know the email. We need a forceful token refresh to
+	// grab it (or discover it is NoEmail). This is relatively rare. It happens
+	// only when using UserAuth TokenProvider and there's no cached token at all
+	// or it is in old format that don't have email field.
+	//
+	// Pass -1 as lifetime to force trigger the refresh right now.
 	tok, err = a.refreshToken(tok, -1)
 	switch {
 	case err != nil:
@@ -978,7 +996,10 @@ func (a *Authenticator) effectiveLoginMode() (lm LoginMode) {
 	return
 }
 
-// currentToken returns currently loaded authentication token (or nil).
+// currentToken returns last known authentication token (or nil).
+//
+// If the token is not loaded yet, will attempt to load it from the on-disk
+// cache. Returns nil if it's not there.
 //
 // It lock a.lock inside. It MUST NOT be called when a.lock is held. It will
 // lazily call 'ensureInitialized' if necessary, returning its error.
@@ -989,11 +1010,27 @@ func (a *Authenticator) currentToken() (tok *internal.Token, err error) {
 		tok = a.authToken.token
 	}
 	a.lock.RUnlock()
+	if err != nil {
+		return
+	}
 
-	if !initialized {
+	if !initialized || tok == nil {
 		a.lock.Lock()
 		defer a.lock.Unlock()
-		if err = a.ensureInitialized(); err == nil {
+
+		if !initialized {
+			if err = a.ensureInitialized(); err != nil {
+				return
+			}
+			tok = a.authToken.token
+		}
+
+		if tok == nil {
+			// Reading the token from cache is best effort. A broken cache is treated
+			// like a cache miss.
+			if cacheErr := a.authToken.fetchFromCache(a.ctx); cacheErr != nil {
+				logging.Warningf(a.ctx, "Failed to read auth token from cache: %s", cacheErr)
+			}
 			tok = a.authToken.token
 		}
 	}

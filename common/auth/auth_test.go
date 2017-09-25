@@ -137,11 +137,6 @@ func TestRefreshToken(t *testing.T) {
 
 		So(auth.CheckLoginRequired(), ShouldBeNil)
 
-		// No token yet, it is is lazily loaded below.
-		tok, err := auth.currentToken()
-		So(err, ShouldBeNil)
-		So(tok, ShouldBeNil)
-
 		// Cached token is used.
 		oauthTok, err := auth.GetAccessToken(time.Minute)
 		So(err, ShouldBeNil)
@@ -171,11 +166,6 @@ func TestRefreshToken(t *testing.T) {
 		})
 
 		So(auth.CheckLoginRequired(), ShouldBeNil)
-
-		// No token yet, it is is lazily loaded below.
-		tok, err := auth.currentToken()
-		So(err, ShouldBeNil)
-		So(tok, ShouldBeNil)
 
 		// The usage triggers refresh procedure.
 		oauthTok, err := auth.GetAccessToken(time.Minute)
@@ -644,6 +634,31 @@ func TestOptionalLogin(t *testing.T) {
 func TestGetEmail(t *testing.T) {
 	t.Parallel()
 
+	Convey("Test non-interactive auth (no cache)", t, func() {
+		tokenProvider := &fakeTokenProvider{
+			interactive: false,
+			knownEmail:  "known-email@example.com",
+			tokenToMint: &internal.Token{
+				Token: oauth2.Token{AccessToken: "must-not-be-called"},
+				Email: "must-not-be-called@example.com",
+			},
+		}
+		auth, _ := newAuth(SilentLogin, tokenProvider, nil, "")
+
+		// No cached token.
+		tok, err := auth.currentToken()
+		So(err, ShouldBeNil)
+		So(tok, ShouldBeNil)
+
+		// We get the email directly from the provider.
+		email, err := auth.GetEmail()
+		So(err, ShouldBeNil)
+		So(email, ShouldEqual, "known-email@example.com")
+
+		// MintToken was NOT called.
+		So(tokenProvider.mintTokenCalled, ShouldBeFalse)
+	})
+
 	Convey("Non-expired cache without email is upgraded", t, func() {
 		tokenProvider := &fakeTokenProvider{
 			interactive: true,
@@ -742,6 +757,8 @@ type fakeTokenProvider struct {
 
 	baseTokenInMint    *internal.Token
 	baseTokenInRefresh *internal.Token
+
+	knownEmail string
 }
 
 func (p *fakeTokenProvider) RequiresInteraction() bool {
@@ -750,6 +767,10 @@ func (p *fakeTokenProvider) RequiresInteraction() bool {
 
 func (p *fakeTokenProvider) Lightweight() bool {
 	return true
+}
+
+func (p *fakeTokenProvider) Email() string {
+	return p.knownEmail
 }
 
 func (p *fakeTokenProvider) CacheKey(ctx context.Context) (*internal.CacheKey, error) {

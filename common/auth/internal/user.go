@@ -60,6 +60,11 @@ func (p *userAuthTokenProvider) Lightweight() bool {
 	return false
 }
 
+func (p *userAuthTokenProvider) Email() string {
+	// We don't know the email before user logs in.
+	return UnknownEmail
+}
+
 func (p *userAuthTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {
 	return &p.cacheKey, nil
 }

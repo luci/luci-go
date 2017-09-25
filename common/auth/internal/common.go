@@ -89,6 +89,17 @@ type TokenProvider interface {
 	// By avoiding the disk cache, we reduce the chance of a leak.
 	Lightweight() bool
 
+	// Email is email associated with tokens produced by the provider, if known.
+	//
+	// May return UnknownEmail, which means the provider doesn't know the email
+	// in advance and RefreshToken must be used to get the token and the email.
+	// This happens, for example, for interactive providers before user has
+	// logged in.
+	//
+	// It can also be NoEmail which means the email is not available, even if
+	// caller is using RefreshToken.
+	Email() string
+
 	// CacheKey identifies a slot in the token cache to store the token in.
 	//
 	// Note: CacheKey MAY change during lifetime of a TokenProvider. It happens,

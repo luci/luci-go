@@ -94,6 +94,10 @@ func (p *luciContextTokenProvider) Lightweight() bool {
 	return true
 }
 
+func (p *luciContextTokenProvider) Email() string {
+	return NoEmail // TODO(vadimsh): grab from the context
+}
+
 func (p *luciContextTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {
 	return &p.cacheKey, nil
 }
@@ -159,7 +163,7 @@ func (p *luciContextTokenProvider) MintToken(ctx context.Context, base *Token) (
 			Expiry:      time.Unix(response.Expiry, 0).UTC(),
 			TokenType:   "Bearer",
 		},
-		Email: NoEmail, // TODO: grab from the context
+		Email: p.Email(),
 	}, nil
 }
 
