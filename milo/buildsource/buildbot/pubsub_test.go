@@ -46,7 +46,7 @@ import (
 )
 
 var (
-	fakeTime    = time.Date(2001, time.February, 3, 4, 5, 6, 7, time.UTC)
+	fakeTime    = time.Date(2001, time.February, 3, 4, 5, 6, 0, time.UTC)
 	letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 )
 
@@ -56,14 +56,6 @@ func RandStringRunes(n int) string {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}
 	return string(b)
-}
-
-func buildbotTimesFinished(start, end float64) []*float64 {
-	return []*float64{&start, &end}
-}
-
-func buildbotTimesPending(start float64) []*float64 {
-	return []*float64{&start, nil}
 }
 
 func newCombinedPsBody(bs []*buildbot.Build, m *buildbot.Master, internal bool) io.ReadCloser {
@@ -209,20 +201,21 @@ func TestPubSub(t *testing.T) {
 			So(func() { ds.Put(c, build) }, ShouldPanicLike, "No Master or Builder found")
 		})
 
-		ts := 555
+		// FIXME: change random 123, 555, 1234 times
+		// to something that makes sense and not scary to change.
+		ts := unixTime(555)
 		b := &buildbot.Build{
 			Master:      "Fake Master",
 			Buildername: "Fake buildername",
 			Number:      1234,
 			Currentstep: "this is a string",
-			Times:       buildbotTimesPending(123.0),
-			TimeStamp:   &ts,
+			Times:       buildbot.TimeRange{Start: unixTime(123)},
+			TimeStamp:   ts,
 		}
 
 		Convey("Basic master + build pusbsub subscription", func() {
 			h := httptest.NewRecorder()
 			slaves := map[string]*buildbot.Slave{}
-			ft := 1234.0
 			slaves["testslave"] = &buildbot.Slave{
 				Name:      "testslave",
 				Connected: true,
@@ -231,7 +224,7 @@ func TestPubSub(t *testing.T) {
 						Master:      "Fake Master",
 						Buildername: "Fake buildername",
 						Number:      2222,
-						Times:       []*float64{&ft, nil},
+						Times:       buildbot.TimeRange{Start: unixTime(1234)},
 					},
 				},
 			}
@@ -299,7 +292,8 @@ func TestPubSub(t *testing.T) {
 				So(m.Name, ShouldEqual, "Fake Master")
 			})
 			Convey("And a new build overwrites", func() {
-				b.Times = buildbotTimesFinished(123.0, 124.0)
+				b.Times.Start = unixTime(123)
+				b.Times.Finish = unixTime(124)
 				h = httptest.NewRecorder()
 				r = &http.Request{
 					Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, false),
@@ -319,10 +313,10 @@ func TestPubSub(t *testing.T) {
 				}
 				err := ds.Get(c, loadB)
 				So(err, ShouldBeNil)
-				So(*loadB.Times[0], ShouldEqual, 123.0)
-				So(*loadB.Times[1], ShouldEqual, 124.0)
+				So(loadB.Times, ShouldResemble, b.Times)
 				Convey("And another pending build is rejected", func() {
-					b.Times = buildbotTimesPending(123.0)
+					b.Times.Start = unixTime(123)
+					b.Times.Finish = buildbot.Time{}
 					h = httptest.NewRecorder()
 					r = &http.Request{
 						Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, false),
@@ -342,14 +336,13 @@ func TestPubSub(t *testing.T) {
 					}
 					err := ds.Get(c, loadB)
 					So(err, ShouldBeNil)
-					So(*loadB.Times[0], ShouldEqual, 123.0)
-					So(*loadB.Times[1], ShouldEqual, 124.0)
+					So(loadB.Times.Start, ShouldResemble, unixTime(123))
+					So(loadB.Times.Finish, ShouldResemble, unixTime(124))
 				})
 			})
 			Convey("Don't Expire non-existant current build under 20 min", func() {
 				b.Number = 1235
-				ts := int(fakeTime.Unix()) - 1000
-				b.TimeStamp = &ts
+				b.TimeStamp.Time = fakeTime.Add(-1000 * time.Second)
 				h = httptest.NewRecorder()
 				r = &http.Request{
 					Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, false),
@@ -371,13 +364,12 @@ func TestPubSub(t *testing.T) {
 				err := ds.Get(c, loadB)
 				So(err, ShouldBeNil)
 				So(loadB.Finished, ShouldEqual, false)
-				So(*loadB.Times[0], ShouldEqual, 123.0)
-				So(loadB.Times[1], ShouldBeNil)
+				So(loadB.Times.Start, ShouldResemble, unixTime(123))
+				So(loadB.Times.Finish.IsZero(), ShouldBeTrue)
 			})
 			Convey("Expire non-existant current build", func() {
 				b.Number = 1235
-				ts := int(fakeTime.Unix()) - 1201
-				b.TimeStamp = &ts
+				b.TimeStamp.Time = fakeTime.Add(-1201 * time.Second)
 				h = httptest.NewRecorder()
 				r = &http.Request{
 					Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, false),
@@ -398,10 +390,9 @@ func TestPubSub(t *testing.T) {
 				}
 				err := ds.Get(c, loadB)
 				So(err, ShouldBeNil)
-				So(loadB.Finished, ShouldEqual, true)
-				So(*loadB.Times[0], ShouldEqual, 123.0)
-				So(loadB.Times[1], ShouldNotEqual, nil)
-				So(*loadB.Times[1], ShouldEqual, ts)
+				So(loadB.Finished, ShouldResemble, true)
+				So(loadB.Times.Start, ShouldResemble, unixTime(123))
+				So(loadB.Times.Finish, ShouldResemble, b.TimeStamp)
 				So(*loadB.Results, ShouldEqual, 4)
 			})
 			Convey("Large pubsub message", func() {
@@ -440,7 +431,6 @@ func TestPubSub(t *testing.T) {
 		Convey("Internal master + build pusbsub subscription", func() {
 			h := httptest.NewRecorder()
 			slaves := map[string]*buildbot.Slave{}
-			ft := 1234.0
 			slaves["testslave"] = &buildbot.Slave{
 				Name:      "testslave",
 				Connected: true,
@@ -449,7 +439,7 @@ func TestPubSub(t *testing.T) {
 						Master:      "Fake Master",
 						Buildername: "Fake buildername",
 						Number:      2222,
-						Times:       []*float64{&ft, nil},
+						Times:       buildbot.TimeRange{Start: unixTime(1234)},
 					},
 				},
 			}
@@ -497,4 +487,8 @@ func TestPubSub(t *testing.T) {
 			})
 		})
 	})
+}
+
+func unixTime(sec int64) buildbot.Time {
+	return buildbot.Time{time.Unix(sec, 0).UTC()}
 }

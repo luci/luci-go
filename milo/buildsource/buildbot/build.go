@@ -59,41 +59,6 @@ func getBuild(c context.Context, master, builder string, buildNum int) (*buildbo
 	return result, err
 }
 
-// buildbotTimeToTime converts a buildbot time representation (pointer to float
-// of seconds since epoch) to a native time.Time object.
-func buildbotTimeToTime(t *float64) (result time.Time) {
-	if t != nil {
-		result = time.Unix(int64(*t), int64(*t*1e9)%1e9).UTC()
-	}
-	return
-}
-
-// parseTimes translates a buildbot time tuple (start, end) into a triplet
-// of (Started time, Ending time, duration).
-// If times[1] is nil and buildFinished is not, ended will be set to buildFinished
-// time.
-func parseTimes(buildFinished *float64, times []*float64) (started, ended time.Time, duration time.Duration) {
-	if len(times) != 2 {
-		panic(fmt.Errorf("Expected 2 floats for times, got %v", times))
-	}
-	if times[0] == nil {
-		// Some steps don't have timing info.  In that case, just return nils.
-		return
-	}
-	started = buildbotTimeToTime(times[0])
-	switch {
-	case times[1] != nil:
-		ended = buildbotTimeToTime(times[1])
-		duration = ended.Sub(started)
-	case buildFinished != nil:
-		ended = buildbotTimeToTime(buildFinished)
-		duration = ended.Sub(started)
-	default:
-		duration = time.Since(started)
-	}
-	return
-}
-
 // getBanner parses the OS information from the build and maybe returns a banner.
 func getBanner(c context.Context, b *buildbot.Build) *resp.LogoBanner {
 	logging.Infof(c, "OS: %s/%s", b.OSFamily, b.OSVersion)
@@ -133,9 +98,6 @@ func summary(c context.Context, b *buildbot.Build) resp.BuildComponent {
 		status = buildbot.ResultToStatus(b.Results)
 	}
 
-	// Timing info
-	started, ended, duration := parseTimes(nil, b.Times)
-
 	// Link to bot and original build.
 	host := "build.chromium.org/p"
 	if b.Internal {
@@ -162,11 +124,11 @@ func summary(c context.Context, b *buildbot.Build) resp.BuildComponent {
 		Label:       fmt.Sprintf("#%d", b.Number),
 		Banner:      banner,
 		Status:      status,
-		Started:     started,
-		Finished:    ended,
+		Started:     b.Times.Start.Time,
+		Finished:    b.Times.Finish.Time,
 		Bot:         bot,
 		Source:      source,
-		Duration:    duration,
+		Duration:    b.Times.Duration(),
 		Type:        resp.Summary, // This is more or less ignored.
 		LevelsDeep:  1,
 		Text:        []string{}, // Status messages.  Eg "This build failed on..xyz"
@@ -180,7 +142,6 @@ var rLineBreak = regexp.MustCompile("<br */?>")
 // components takes a full buildbot build struct and extract step info from all
 // of the steps and returns it as a list of milo Build Components.
 func components(b *buildbot.Build) (result []*resp.BuildComponent) {
-	endingTime := b.Times[1]
 	for _, step := range b.Steps {
 		if step.Hidden == true {
 			continue
@@ -288,9 +249,14 @@ func components(b *buildbot.Build) (result []*resp.BuildComponent) {
 			}
 		}
 
-		// Figure out the times.
-		bc.Started, bc.Finished, bc.Duration = parseTimes(endingTime, step.Times)
-
+		// Copy times.
+		times := step.Times
+		if times.Finish.IsZero() {
+			times.Finish = b.Times.Finish
+		}
+		bc.Started = times.Start.Time
+		bc.Finished = times.Finish.Time
+		bc.Duration = times.Duration()
 		result = append(result, bc)
 	}
 	return
