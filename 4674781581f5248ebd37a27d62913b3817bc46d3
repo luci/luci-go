@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b2503730_2d11aa5c",
+        "filename": "milo/buildsource/buildbot/protocol/structs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T17:16:30Z",
+      "side": 1,
+      "message": "If these protocol structs are going to be served to external users, they should go in //milo/api somewhere (resp is the notable/confusing exception to this). //milo/buildsource/* should be code that pulls build data from external sources and ingests it into milo in common formats (i.e. BuildSummary).",
+      "range": {
+        "startLine": 5,
+        "startChar": 0,
+        "endLine": 5,
+        "endChar": 42
+      },
+      "revId": "4674781581f5248ebd37a27d62913b3817bc46d3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
