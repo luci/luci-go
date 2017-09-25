@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "f7d96d33_0c859717",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T20:43:23Z",
+      "side": 1,
+      "message": "it will; this means that the new URL should be up before this lands I think; Otherwise I could set it to the swarming task page for now.",
+      "parentUuid": "22d77b2f_e7bc59c5",
+      "revId": "bd68e53bda19e9ef831ca538294298f85540517b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a9aa57c2_47d975e0",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 7
@@ -33,6 +51,24 @@
       "revId": "bd68e53bda19e9ef831ca538294298f85540517b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "557d7ae6_3e11d715",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T20:43:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a9aa57c2_47d975e0",
+      "revId": "bd68e53bda19e9ef831ca538294298f85540517b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "bb2b63c1_3779b62d",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T20:43:23Z",
+      "side": 1,
+      "message": "oops!",
+      "parentUuid": "0f1a03b6_d08cd29f",
+      "range": {
+        "startLine": 239,
+        "startChar": 33,
+        "endLine": 239,
+        "endChar": 35
+      },
+      "revId": "bd68e53bda19e9ef831ca538294298f85540517b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cbcc8030_9973b55e",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 7
@@ -73,6 +133,24 @@
       "revId": "bd68e53bda19e9ef831ca538294298f85540517b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f46a3ea_7c47e1b6",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T20:43:23Z",
+      "side": 1,
+      "message": "ah you\u0027re right",
+      "parentUuid": "cbcc8030_9973b55e",
+      "revId": "bd68e53bda19e9ef831ca538294298f85540517b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
