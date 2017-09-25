@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "22d77b2f_e7bc59c5",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T20:08:28Z",
+      "side": 1,
+      "message": "this won\u0027t cause existing build pages to start showing this link, right?",
+      "revId": "bd68e53bda19e9ef831ca538294298f85540517b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9aa57c2_47d975e0",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T20:08:28Z",
+      "side": 1,
+      "message": "nit: i\u0027v recalled that net/http takes care of it, so this is unnecessary. It should be a job of the lower part of the stack",
+      "revId": "bd68e53bda19e9ef831ca538294298f85540517b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f1a03b6_d08cd29f",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T20:08:28Z",
+      "side": 1,
+      "message": "curBS",
+      "range": {
+        "startLine": 239,
+        "startChar": 33,
+        "endLine": 239,
+        "endChar": 35
+      },
+      "revId": "bd68e53bda19e9ef831ca538294298f85540517b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cbcc8030_9973b55e",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-25T20:08:28Z",
+      "side": 1,
+      "message": "I think setting this field is generateSummary\u0027s job",
+      "revId": "bd68e53bda19e9ef831ca538294298f85540517b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
