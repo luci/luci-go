@@ -371,7 +371,7 @@ func SelectBestMethod(ctx context.Context, opts Options) Method {
 
 	// Have a local auth server and an account we are allowed to pick by default.
 	// If no default account is given, don't automatically pick up this method.
-	if la := lucictx.GetLocalAuth(ctx); la != nil && la.CanUseByDefault() {
+	if la := lucictx.GetLocalAuth(ctx); la != nil && la.DefaultAccountID != "" {
 		return LUCIContextMethod
 	}
 
