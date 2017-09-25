@@ -13,9 +13,11 @@
 // limitations under the License.
 
 // Package tsmon contains global state and utility functions for configuring
-// and interacting with tsmon.  This has a similar API to the infra-python
+// and interacting with tsmon. This has a similar API to the infra-python
 // ts_mon module.
 //
-// Users of tsmon should call InitializeFromFlags from their application's main
-// function.
+// If your application accepts command line flags, then call InitializeFromFlags
+// from your main function.
+//
+// If you use tsmon on AppEngine, then see appengine/tsmon package doc.
 package tsmon

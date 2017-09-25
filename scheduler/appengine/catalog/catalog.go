@@ -29,6 +29,8 @@ import (
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 	"go.chromium.org/luci/luci_config/server/cfgclient"
 	"go.chromium.org/luci/luci_config/server/cfgclient/textproto"
@@ -43,6 +45,25 @@ import (
 var (
 	// jobIDRe is used to validate job ID field.
 	jobIDRe = regexp.MustCompile(`^[0-9A-Za-z_\-\.]{1,100}$`)
+
+	// TODO(tandrii): deprecate these metrics once scheduler implements validation
+	// endpoint which luci-config will use to pre-validate configs before giving
+	// them to scheduler. See https://crbug.com/761488.
+
+	metricConfigValid = metric.NewBool(
+		"luci/scheduler/config/valid",
+		"Whether project config is valid or invalid.",
+		nil,
+		field.String("project"),
+	)
+
+	metricConfigJobs = metric.NewInt(
+		"luci/scheduler/config/jobs",
+		"Number of job or trigger definitions in a project.",
+		nil,
+		field.String("project"),
+		field.String("status"), // one of "disabled", "invalid", "valid".
+	)
 )
 
 const (
@@ -221,8 +242,16 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		return nil, nil
 	}
 
-	configSet := cfgtypes.ProjectConfigSet(cfgtypes.ProjectName(projectID))
+	// TODO(tandrii): remove this after https://crbug.com/761488 is fixed.
+	projectHasConfig := true
+	projectIsValid := false
+	defer func() {
+		if projectHasConfig {
+			metricConfigValid.Set(c, projectIsValid, projectID)
+		}
+	}()
 
+	configSet := cfgtypes.ProjectConfigSet(cfgtypes.ProjectName(projectID))
 	var (
 		cfg  messages.ProjectConfig
 		meta cfgclient.Meta
@@ -231,6 +260,9 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	case nil:
 		break
 	case cfgclient.ErrNoConfig:
+		// Project is not using scheduler, so monitoring-wise pretend the project
+		// doesn't exist.
+		projectHasConfig = false
 		return nil, nil
 	default:
 		return nil, err
@@ -248,10 +280,12 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	}
 
 	out := make([]Definition, 0, len(cfg.Job)+len(cfg.Trigger))
+	disabledCount := 0
 
 	// Regular jobs, triggered jobs.
 	for _, job := range cfg.Job {
 		if job.Disabled {
+			disabledCount++
 			continue
 		}
 		id := "(empty)"
@@ -295,6 +329,7 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 	// Triggering jobs.
 	for _, trigger := range cfg.Trigger {
 		if trigger.Disabled {
+			disabledCount++
 			continue
 		}
 		id := "(empty)"
@@ -333,6 +368,12 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 		})
 	}
 
+	// Mark project as valid even if not all its jobs/triggers are.
+	projectIsValid = true
+	invalidCount := len(cfg.Job) + len(cfg.Trigger) - len(out) - disabledCount
+	metricConfigJobs.Set(c, int64(len(out)), projectID, "valid")
+	metricConfigJobs.Set(c, int64(disabledCount), projectID, "disabled")
+	metricConfigJobs.Set(c, int64(invalidCount), projectID, "invalid")
 	return out, nil
 }
 
