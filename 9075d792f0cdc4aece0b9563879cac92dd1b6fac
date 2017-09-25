@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "f7816438_a8042949",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7c0c1bf4_3344746d",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8fc19add_fcbbb4ab",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 5
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "8bbf2630_d0061014",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8fc19add_fcbbb4ab",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "acf84113_305d71b8",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 5
@@ -50,6 +86,24 @@
       "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6404293_6fdcbf81",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "done(ish)",
+      "parentUuid": "acf84113_305d71b8",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -76,6 +130,30 @@
     },
     {
       "key": {
+        "uuid": "68dd40d9_d1a89409",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "oops, fixed",
+      "parentUuid": "739d3ae0_e5aba0e6",
+      "range": {
+        "startLine": 125,
+        "startChar": 40,
+        "endLine": 125,
+        "endChar": 42
+      },
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2a3609aa_5628c5fc",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 5
@@ -90,6 +168,24 @@
       "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20a8a534_f57b5558",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2a3609aa_5628c5fc",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -110,6 +206,24 @@
     },
     {
       "key": {
+        "uuid": "6245b947_8b2df1f2",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a3e43d6b_3b11701e",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b067b0d7_42305020",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 5
@@ -124,6 +238,24 @@
       "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1750576e_fc839180",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "decoding \"\" is fine, it just returns an empty slice",
+      "parentUuid": "b067b0d7_42305020",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -144,6 +276,24 @@
     },
     {
       "key": {
+        "uuid": "17c14f7b_67dbb7b9",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "nope, this is the decoded size.",
+      "parentUuid": "1d50c8b9_4091854d",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b14269fb_3a70bc58",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 5
@@ -161,6 +311,24 @@
     },
     {
       "key": {
+        "uuid": "363a5161_3bb44c3a",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "b14269fb_3a70bc58",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "11e1d523_9204f570",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 5
@@ -175,6 +343,24 @@
       "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28db8aa3_fe620d77",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "11e1d523_9204f570",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -201,6 +387,30 @@
     },
     {
       "key": {
+        "uuid": "c90879ad_fc110ca3",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0ff61042_f0cbbf46",
+      "range": {
+        "startLine": 190,
+        "startChar": 67,
+        "endLine": 190,
+        "endChar": 69
+      },
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "593cc171_d8233caf",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 5
@@ -215,6 +425,24 @@
       "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f10f904f_0dda7ed0",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "593cc171_d8233caf",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -235,6 +463,24 @@
     },
     {
       "key": {
+        "uuid": "78f805fb_82298307",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9d0ee8fd_c4d07a86",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "91232b67_5c715f50",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 5
@@ -249,6 +495,24 @@
       "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f3d22fe_87d5552b",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "91232b67_5c715f50",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -275,6 +539,30 @@
     },
     {
       "key": {
+        "uuid": "e5bf7041_94fe046b",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "I assume this was a bug; there were a couple of other bad format strings too, but I missed this one.",
+      "parentUuid": "66e39b03_cdc43dc1",
+      "range": {
+        "startLine": 212,
+        "startChar": 68,
+        "endLine": 212,
+        "endChar": 74
+      },
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8a35c1c1_164e67a9",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 5
@@ -289,6 +577,24 @@
       "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59ad2ad3_990b7906",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "changed all error logs to errors.Annotate",
+      "parentUuid": "8a35c1c1_164e67a9",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -309,6 +615,24 @@
     },
     {
       "key": {
+        "uuid": "4125f434_ff6ee9ce",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "48616740_116eb273",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "96ce9759_d2cf9fb3",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 5
@@ -323,6 +647,24 @@
       "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75aedf92_b4bc9955",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "96ce9759_d2cf9fb3",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -343,6 +685,24 @@
     },
     {
       "key": {
+        "uuid": "3d02f03c_adf60153",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "87037f51_83632e4b",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "18830b04_9b84e30f",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 5
@@ -360,6 +720,24 @@
     },
     {
       "key": {
+        "uuid": "fa9fdb43_e237065c",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "18830b04_9b84e30f",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0eeea5f0_eb201023",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 5
@@ -374,6 +752,24 @@
       "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f7c8b4e_cfaee0f2",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 262,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T18:04:16Z",
+      "side": 1,
+      "message": "yep, just saw this was racy. Done.",
+      "parentUuid": "0eeea5f0_eb201023",
+      "revId": "9075d792f0cdc4aece0b9563879cac92dd1b6fac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
