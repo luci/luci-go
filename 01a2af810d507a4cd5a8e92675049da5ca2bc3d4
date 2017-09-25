@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2fdbda3d_42067615",
+        "filename": "milo/buildsource/buildbot/grpc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-25T16:42:00Z",
+      "side": 1,
+      "message": "why not metric?",
+      "range": {
+        "startLine": 82,
+        "startChar": 1,
+        "endLine": 82,
+        "endChar": 2
+      },
+      "revId": "01a2af810d507a4cd5a8e92675049da5ca2bc3d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
