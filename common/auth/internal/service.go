@@ -29,6 +29,7 @@ import (
 )
 
 type serviceAccountTokenProvider struct {
+	ctx     context.Context // only for logging
 	jsonKey []byte
 	path    string
 	scopes  []string
@@ -38,6 +39,7 @@ type serviceAccountTokenProvider struct {
 // account private key (on disk or in memory) to make access tokens.
 func NewServiceAccountTokenProvider(ctx context.Context, jsonKey []byte, path string, scopes []string) (TokenProvider, error) {
 	return &serviceAccountTokenProvider{
+		ctx:     ctx,
 		jsonKey: jsonKey,
 		path:    path,
 		scopes:  scopes,
@@ -63,6 +65,24 @@ func (p *serviceAccountTokenProvider) RequiresInteraction() bool {
 
 func (p *serviceAccountTokenProvider) Lightweight() bool {
 	return false
+}
+
+func (p *serviceAccountTokenProvider) Email() string {
+	switch cfg, err := p.jwtConfig(p.ctx); {
+	case err != nil:
+		// Return UnknownEmail since we couldn't load it. This will trigger a code
+		// path that attempts to refresh the token, where this error will be hit
+		// again and properly reported.
+		return UnknownEmail
+	case cfg.Email == "":
+		// Service account JSON file doesn't have 'email' field. Assume the email
+		// is not available in that case. Strictly speaking we may try to generate
+		// an OAuth token and then ask token info endpoint for an email, but this is
+		// too much work. We require 'email' field to be present instead.
+		return NoEmail
+	default:
+		return cfg.Email
+	}
 }
 
 func (p *serviceAccountTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {

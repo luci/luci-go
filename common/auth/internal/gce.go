@@ -75,6 +75,10 @@ func (p *gceTokenProvider) Lightweight() bool {
 	return true
 }
 
+func (p *gceTokenProvider) Email() string {
+	return p.email
+}
+
 func (p *gceTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {
 	return &p.cacheKey, nil
 }
@@ -87,7 +91,7 @@ func (p *gceTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, 
 	}
 	return &Token{
 		Token: *tok,
-		Email: p.email,
+		Email: p.Email(),
 	}, nil
 }
 

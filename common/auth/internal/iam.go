@@ -56,6 +56,10 @@ func (p *iamTokenProvider) Lightweight() bool {
 	return false
 }
 
+func (p *iamTokenProvider) Email() string {
+	return p.actAs
+}
+
 func (p *iamTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {
 	return &p.cacheKey, nil
 }
@@ -76,7 +80,7 @@ func (p *iamTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, 
 	if err == nil {
 		return &Token{
 			Token: *tok,
-			Email: p.actAs,
+			Email: p.Email(),
 		}, nil
 	}
 	// Any 4** HTTP response is a fatal error. Everything else is transient.
