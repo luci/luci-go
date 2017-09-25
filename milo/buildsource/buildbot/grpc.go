@@ -27,9 +27,20 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
+)
+
+var apiUsage = metric.NewCounter(
+	"luci/milo/api/buildbot/usage",
+	"The number of received buildbot API requests",
+	nil,
+	field.String("method"),
+	field.String("master"),
+	field.String("builder"),
 )
 
 // Service is a service implementation that displays BuildBot builds.
@@ -40,6 +51,8 @@ var errNotFoundGRPC = grpc.Errorf(codes.NotFound, "Master Not Found")
 // GetBuildbotBuildJSON implements milo.BuildbotServer.
 func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuildRequest) (
 	*milo.BuildbotBuildJSON, error) {
+
+	apiUsage.Add(c, 1, "GetBuildbotBuildJSON", req.Master, req.Builder)
 
 	if req.Master == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "No master specified")
@@ -78,6 +91,7 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBuildsRequest) (
 	*milo.BuildbotBuildsJSON, error) {
 
+	apiUsage.Add(c, 1, "GetBuildbotBuildsJSON", req.Master, req.Builder)
 	if req.Cursor != "" {
 		logging.Warningf(
 			c,
@@ -162,6 +176,8 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 	if req.Name == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "No master specified")
 	}
+
+	apiUsage.Add(c, 1, "GetCompressedMasterJSON", req.Name, "")
 
 	cu := auth.CurrentUser(c)
 	logging.Debugf(c, "%s is making a master request for %s", cu.Identity, req.Name)
