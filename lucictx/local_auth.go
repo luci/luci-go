@@ -45,21 +45,6 @@ type LocalAuthAccount struct {
 	ID string `json:"id"`
 }
 
-// CanUseByDefault returns true if the authentication context can be picked up
-// by default.
-//
-// TODO(vadimsh): Remove this method once all servers provide 'accounts'.
-func (la *LocalAuth) CanUseByDefault() bool {
-	// Old API servers don't provide list of accounts. Instead there's single
-	// account that is always used by default.
-	if len(la.Accounts) == 0 {
-		return true
-	}
-	// New API servers give a list of available account and an optional default
-	// account. Auth should be used only if default account is given.
-	return la.DefaultAccountID != ""
-}
-
 // GetLocalAuth calls Lookup and returns a copy of the current LocalAuth from
 // LUCI_CONTEXT if it was present. If no LocalAuth is in the context, this
 // returns nil.

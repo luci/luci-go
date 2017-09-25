@@ -32,11 +32,9 @@ func (r *GetOAuthTokenRequest) Validate() error {
 		return errors.New(`field "scopes" is required`)
 	case len(r.Secret) == 0:
 		return errors.New(`field "secret" is required`)
+	case r.AccountID == "":
+		return errors.New(`field "account_id" is required`)
 	}
-	// TODO(vadimsh): Uncomment when all old auth server are turned off.
-	//case r.AccountID == "":
-	//	return errors.New(`field "account_id" is required`)
-	//}
 	return nil
 }
 
