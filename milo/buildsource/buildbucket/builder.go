@@ -232,6 +232,8 @@ func getDebugBuilds(c context.Context, bucket, builder string, maxCompletedBuild
 }
 
 // parseTimestamp converts buildbucket timestamp in microseconds to time.Time
+//
+// TODO(nodir): This should be moved to a common location.
 func parseTimestamp(microseconds int64) time.Time {
 	if microseconds == 0 {
 		return time.Time{}
