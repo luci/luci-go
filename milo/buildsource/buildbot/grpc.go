@@ -19,16 +19,17 @@ import (
 	"compress/gzip"
 	"encoding/json"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/milo/api/buildbot"
 	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
@@ -199,7 +200,7 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 	}
 
 	// Decompress it so we can inject current build information.
-	master := &buildbotMaster{}
+	master := &buildbot.Master{}
 	if err = decodeMasterEntry(c, entry, master); err != nil {
 		return nil, err
 	}
@@ -213,10 +214,10 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 		for _, builds := range slave.RunningbuildsMap {
 			numBuilds += len(builds)
 		}
-		slave.Runningbuilds = make([]*buildbotBuild, 0, numBuilds)
+		slave.Runningbuilds = make([]*buildbot.Build, 0, numBuilds)
 		for builderName, builds := range slave.RunningbuildsMap {
 			for _, buildNum := range builds {
-				slave.Runningbuilds = append(slave.Runningbuilds, &buildbotBuild{
+				slave.Runningbuilds = append(slave.Runningbuilds, &buildbot.Build{
 					Master:      req.Name,
 					Buildername: builderName,
 					Number:      buildNum,
@@ -246,8 +247,8 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 			Limit(50).
 			Order("-number").
 			KeysOnly(true)
-		var builds []*buildbotBuild
-		err := datastore.RunBatch(c, buildQueryBatchSize, q, func(b *buildbotBuild) {
+		var builds []*buildbot.Build
+		err := datastore.RunBatch(c, buildQueryBatchSize, q, func(b *buildbot.Build) {
 			if req.ExcludeDeprecated {
 				excludeDeprecatedFromBuild(b)
 			}
@@ -285,7 +286,7 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 	}, nil
 }
 
-func excludeDeprecatedFromMaster(m *buildbotMaster) {
+func excludeDeprecatedFromMaster(m *buildbot.Master) {
 	m.Slaves = nil
 	for _, builder := range m.Builders {
 		builder.Slaves = nil
@@ -299,6 +300,6 @@ func excludeDeprecatedFromMaster(m *buildbotMaster) {
 	}
 }
 
-func excludeDeprecatedFromBuild(b *buildbotBuild) {
+func excludeDeprecatedFromBuild(b *buildbot.Build) {
 	b.Slave = ""
 }

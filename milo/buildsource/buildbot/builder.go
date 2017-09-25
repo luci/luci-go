@@ -22,15 +22,17 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/memcache"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/common"
-	"golang.org/x/net/context"
 )
 
 // builderRef is used for keying specific builds in a master json.
@@ -42,7 +44,7 @@ type builderRef struct {
 // buildMap contains all of the current build within a master json.  We use this
 // because buildbot returns all current builds as within the slaves portion, whereas
 // it's eaiser to map thenm by builders instead.
-type buildMap map[builderRef]*buildbotBuild
+type buildMap map[builderRef]*buildbot.Build
 
 // mergeText merges buildbot summary texts, which sometimes separates
 // words that should be merged together, this combines them into a single
@@ -77,11 +79,11 @@ func mergeText(text []string) []string {
 	return result
 }
 
-func getBuildSummary(b *buildbotBuild) *resp.BuildSummary {
+func getBuildSummary(b *buildbot.Build) *resp.BuildSummary {
 	started, finished, duration := parseTimes(nil, b.Times)
 	return &resp.BuildSummary{
 		Link:   resp.NewLink(fmt.Sprintf("#%d", b.Number), fmt.Sprintf("%d", b.Number)),
-		Status: b.toStatus(),
+		Status: b.Status(),
 		ExecutionTime: resp.Interval{
 			Started:  started,
 			Finished: finished,
@@ -158,7 +160,7 @@ func maybeSetGetCursor(c context.Context, thisCursor, nextCursor datastore.Curso
 }
 
 func summarizeSlavePool(
-	baseURL string, slaves []string, slaveMap map[string]*buildbotSlave) *resp.MachinePool {
+	baseURL string, slaves []string, slaveMap map[string]*buildbot.Slave) *resp.MachinePool {
 
 	mp := &resp.MachinePool{
 		Total: len(slaves),

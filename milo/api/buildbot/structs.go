@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package protocol defines types used in Buildbot build protocol,
+// e.g. build, step, log, etc.
+// The types can used together with encoding/json package.
 package buildbot
 
 import (
@@ -27,13 +30,8 @@ import (
 	"go.chromium.org/luci/milo/common/model"
 )
 
-// This file contains all of the structs that define buildbot json endpoints.
-// This is primarily used for unmarshalling buildbot master and build json.
-// json.UnmarshalJSON can directly unmarshal buildbot jsons into these structs.
-// Many of the structs were initially built using https://mholt.github.io/json-to-go/
-
-// buildbotStep represents a single step in a buildbot build.
-type buildbotStep struct {
+// Step represents a single step in a buildbot build.
+type Step struct {
 	// We actually don't care about ETA.  This is represented as a string if
 	// it's fetched from a build json, but a float if it's dug out of the
 	// slave portion of a master json.  We'll just set it to interface and
@@ -56,40 +54,40 @@ type buildbotStep struct {
 	// Log link aliases.  The key is a log name that is being aliases. It should,
 	// generally, exist within the Logs. The value is the set of aliases attached
 	// to that key.
-	Aliases map[string][]*buildbotLinkAlias `json:"aliases"`
+	Aliases map[string][]*LinkAlias `json:"aliases"`
 }
 
-// buildbotSourceStamp is a list of changes (commits) tagged with where the changes
+// SourceStamp is a list of changes (commits) tagged with where the changes
 // came from, ie. the project/repository.  Also includes a "main" revision."
-type buildbotSourceStamp struct {
-	Branch     *string          `json:"branch"`
-	Changes    []buildbotChange `json:"changes"`
-	Haspatch   bool             `json:"hasPatch"`
-	Project    string           `json:"project"`
-	Repository string           `json:"repository"`
-	Revision   string           `json:"revision"`
+type SourceStamp struct {
+	Branch     *string  `json:"branch"`
+	Changes    []Change `json:"changes"`
+	Haspatch   bool     `json:"hasPatch"`
+	Project    string   `json:"project"`
+	Repository string   `json:"repository"`
+	Revision   string   `json:"revision"`
 }
 
-type buildbotLinkAlias struct {
+type LinkAlias struct {
 	URL  string `json:"url"`
 	Text string `json:"text"`
 }
 
-func (a *buildbotLinkAlias) toLink() *resp.Link {
+func (a *LinkAlias) Link() *resp.Link {
 	return resp.NewLink(a.Text, a.URL)
 }
 
-type buildbotProperty struct {
+type Property struct {
 	Name   string
 	Value  interface{}
 	Source string
 }
 
-func (p *buildbotProperty) MarshalJSON() ([]byte, error) {
+func (p *Property) MarshalJSON() ([]byte, error) {
 	return json.Marshal([]interface{}{p.Name, p.Value, p.Source})
 }
 
-func (p *buildbotProperty) UnmarshalJSON(d []byte) error {
+func (p *Property) UnmarshalJSON(d []byte) error {
 	// The raw BuildBot representation is a slice of interfaces.
 	var raw []interface{}
 	if err := json.Unmarshal(d, &raw); err != nil {
@@ -115,12 +113,13 @@ func (p *buildbotProperty) UnmarshalJSON(d []byte) error {
 	return nil
 }
 
-// buildbotBuild is a single build json on buildbot.
-type buildbotBuild struct {
+// Build is a single build json on buildbot.
+type Build struct {
+	_kind       string   `gae:"$kind,buildbotBuild"`
 	Master      string   `gae:"$master"`
 	Blame       []string `json:"blame" gae:"-"`
 	Buildername string   `json:"builderName"`
-	// This needs to be reflected.  This can be either a String or a buildbotStep.
+	// This needs to be reflected.  This can be either a String or a Step.
 	Currentstep interface{} `json:"currentStep" gae:"-"`
 	// We don't care about this one.
 	Eta    interface{} `json:"eta" gae:"-"`
@@ -130,14 +129,14 @@ type buildbotBuild struct {
 	// property name is always a string
 	// value can be a string or float
 	// source is optional, but is always a string if present
-	Properties  []*buildbotProperty  `json:"properties" gae:"-"`
-	Reason      string               `json:"reason"`
-	Results     *int                 `json:"results" gae:"-"`
-	Slave       string               `json:"slave"`
-	Sourcestamp *buildbotSourceStamp `json:"sourceStamp" gae:"-"`
-	Steps       []buildbotStep       `json:"steps" gae:"-"`
-	Text        []string             `json:"text" gae:"-"`
-	Times       []*float64           `json:"times" gae:"-"`
+	Properties  []*Property  `json:"properties" gae:"-"`
+	Reason      string       `json:"reason"`
+	Results     *int         `json:"results" gae:"-"`
+	Slave       string       `json:"slave"`
+	Sourcestamp *SourceStamp `json:"sourceStamp" gae:"-"`
+	Steps       []Step       `json:"steps" gae:"-"`
+	Text        []string     `json:"text" gae:"-"`
+	Times       []*float64   `json:"times" gae:"-"`
 	// This one is injected by Milo.  Does not exist in a normal json query.
 	TimeStamp *int `json:"timeStamp" gae:"-"`
 	// This one is marked by Milo, denotes whether or not the build is internal.
@@ -154,22 +153,46 @@ type buildbotBuild struct {
 	OSVersion string `json:"osVersion"`
 }
 
-func (b *buildbotBuild) toStatus() model.Status {
+func (b *Build) Status() model.Status {
 	var result model.Status
 	if b.Currentstep != nil {
 		result = model.Running
 	} else {
-		result = result2Status(b.Results)
+		result = ResultToStatus(b.Results)
 	}
 	return result
 }
 
-var _ datastore.PropertyLoadSaver = (*buildbotBuild)(nil)
-var _ datastore.MetaGetterSetter = (*buildbotBuild)(nil)
+// ResultToStatus translates a buildbot result integer into a model.Status.
+func ResultToStatus(s *int) (status model.Status) {
+	if s == nil {
+		return model.Running
+	}
+	switch *s {
+	case 0:
+		status = model.Success
+	case 1:
+		status = model.Warning
+	case 2:
+		status = model.Failure
+	case 3:
+		status = model.NotRun // Skipped
+	case 4:
+		status = model.Exception
+	case 5:
+		status = model.WaitingDependency // Retry
+	default:
+		panic(fmt.Errorf("Unknown status %d", s))
+	}
+	return
+}
+
+var _ datastore.PropertyLoadSaver = (*Build)(nil)
+var _ datastore.MetaGetterSetter = (*Build)(nil)
 
 // getID is a helper function that returns the datastore key for a given
 // build.
-func (b *buildbotBuild) getID() string {
+func (b *Build) getID() string {
 	s := []string{b.Master, b.Buildername, strconv.Itoa(b.Number)}
 	id, err := json.Marshal(s)
 	if err != nil {
@@ -179,7 +202,7 @@ func (b *buildbotBuild) getID() string {
 }
 
 // setKeys is the inverse of getID().
-func (b *buildbotBuild) setKeys(id string) error {
+func (b *Build) setKeys(id string) error {
 	s := []string{}
 	err := json.Unmarshal([]byte(id), &s)
 	if err != nil {
@@ -196,7 +219,7 @@ func (b *buildbotBuild) setKeys(id string) error {
 
 // GetMeta is overridden so that a query for "id" calls getID() instead of
 // the superclass method.
-func (b *buildbotBuild) GetMeta(key string) (interface{}, bool) {
+func (b *Build) GetMeta(key string) (interface{}, bool) {
 	if key == "id" {
 		if b.Master == "" || b.Buildername == "" {
 			panic(fmt.Errorf("No Master or Builder found"))
@@ -207,14 +230,14 @@ func (b *buildbotBuild) GetMeta(key string) (interface{}, bool) {
 }
 
 // GetAllMeta is overridden for the same reason GetMeta() is.
-func (b *buildbotBuild) GetAllMeta() datastore.PropertyMap {
+func (b *Build) GetAllMeta() datastore.PropertyMap {
 	p := datastore.GetPLS(b).GetAllMeta()
 	p.SetMeta("id", b.getID())
 	return p
 }
 
 // SetMeta is the inverse of GetMeta().
-func (b *buildbotBuild) SetMeta(key string, val interface{}) bool {
+func (b *Build) SetMeta(key string, val interface{}) bool {
 	if key == "id" {
 		err := b.setKeys(val.(string))
 		if err != nil {
@@ -226,7 +249,7 @@ func (b *buildbotBuild) SetMeta(key string, val interface{}) bool {
 
 // Load translates a propertymap into the struct and loads the data into
 // the struct.
-func (b *buildbotBuild) Load(p datastore.PropertyMap) error {
+func (b *Build) Load(p datastore.PropertyMap) error {
 	if _, ok := p["data"]; !ok {
 		// This is probably from a keys-only query.  No need to load the rest.
 		return datastore.GetPLS(b).Load(p)
@@ -246,7 +269,7 @@ func (b *buildbotBuild) Load(p datastore.PropertyMap) error {
 	return json.Unmarshal(bs, b)
 }
 
-func (b *buildbotBuild) getPropertyValue(name string) interface{} {
+func (b *Build) PropertyValue(name string) interface{} {
 	for _, prop := range b.Properties {
 		if prop.Name == name {
 			return prop.Value
@@ -255,14 +278,14 @@ func (b *buildbotBuild) getPropertyValue(name string) interface{} {
 	return ""
 }
 
-type errTooBig struct {
+type ErrTooBig struct {
 	error
 }
 
 // Save returns a property map of the struct to save in the datastore.  It
 // contains two fields, the ID which is the key, and a data field which is a
 // serialized and gzipped representation of the entire struct.
-func (b *buildbotBuild) Save(withMeta bool) (datastore.PropertyMap, error) {
+func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
 	bs, err := json.Marshal(b)
 	if err != nil {
 		return nil, err
@@ -281,8 +304,8 @@ func (b *buildbotBuild) Save(withMeta bool) (datastore.PropertyMap, error) {
 	// Datastore has a max size of 1MB.  If the blob is over 9.5MB, it probably
 	// won't fit after accounting for overhead.
 	if len(blob) > 950000 {
-		return nil, errTooBig{
-			fmt.Errorf("buildbotBuild: Build too big to store (%d bytes)", len(blob))}
+		return nil, ErrTooBig{
+			fmt.Errorf("Build: Build too big to store (%d bytes)", len(blob))}
 	}
 	p := datastore.PropertyMap{
 		"data": datastore.MkPropertyNI(blob),
@@ -297,35 +320,35 @@ func (b *buildbotBuild) Save(withMeta bool) (datastore.PropertyMap, error) {
 	return p, nil
 }
 
-type buildbotPending struct {
-	Source      buildbotSourceStamp `json:"source"`
-	Reason      string              `json:"reason"`
-	SubmittedAt int                 `json:"submittedAt"`
-	BuilderName string              `json:"builderName"`
+type Pending struct {
+	Source      SourceStamp `json:"source"`
+	Reason      string      `json:"reason"`
+	SubmittedAt int         `json:"submittedAt"`
+	BuilderName string      `json:"builderName"`
 }
 
-// buildbotBuilder is a builder struct from the master json, _not_ the builder json.
-type buildbotBuilder struct {
+// Builder is a builder struct from the master json, _not_ the builder json.
+type Builder struct {
 	Buildername   string `json:"builderName,omitempty"`
 	Basedir       string `json:"basedir"`
 	CachedBuilds  []int  `json:"cachedBuilds"`
 	PendingBuilds int    `json:"pendingBuilds"`
 	// This one is specific to the pubsub interface.  This is limited to 75,
 	// so it could differ from PendingBuilds
-	PendingBuildStates []*buildbotPending `json:"pendingBuildStates"`
-	Category           string             `json:"category"`
-	CurrentBuilds      []int              `json:"currentBuilds"`
-	Slaves             []string           `json:"slaves"`
-	State              string             `json:"state"`
+	PendingBuildStates []*Pending `json:"pendingBuildStates"`
+	Category           string     `json:"category"`
+	CurrentBuilds      []int      `json:"currentBuilds"`
+	Slaves             []string   `json:"slaves"`
+	State              string     `json:"state"`
 }
 
-// buildbotChangeSource is a changesource (ie polling source) usually tied to a master's scheduler.
-type buildbotChangeSource struct {
+// ChangeSource is a changesource (ie polling source) usually tied to a master's scheduler.
+type ChangeSource struct {
 	Description string `json:"description"`
 }
 
-// buildbotChange describes a commit in a repository as part of a changesource of blamelist.
-type buildbotChange struct {
+// Change describes a commit in a repository as part of a changesource of blamelist.
+type Change struct {
 	At       string  `json:"at"`
 	Branch   *string `json:"branch"`
 	Category string  `json:"category"`
@@ -343,7 +366,7 @@ type buildbotChange struct {
 	Who        string          `json:"who"`
 }
 
-func (bc *buildbotChange) GetFiles() []string {
+func (bc *Change) GetFiles() []string {
 	files := make([]string, 0, len(bc.Files))
 	for _, f := range bc.Files {
 		// Buildbot stores files both as a string, or as a dict with a single entry
@@ -361,47 +384,47 @@ func (bc *buildbotChange) GetFiles() []string {
 	return files
 }
 
-// buildbotSlave describes a slave on a master from a master json, and also includes the
+// Slave describes a slave on a master from a master json, and also includes the
 // full builds of any currently running builds.
-type buildbotSlave struct {
+type Slave struct {
 	// RecentBuilds is a map of builder name to a list of recent finished build
 	// numbers on that builder.
 	RecentBuilds  map[string][]int `json:"builders"`
 	Connected     bool             `json:"connected"`
 	Host          string           `json:"host"`
 	Name          string           `json:"name"`
-	Runningbuilds []*buildbotBuild `json:"runningBuilds"`
+	Runningbuilds []*Build         `json:"runningBuilds"`
 	Version       string           `json:"version"`
 	// This is like runningbuilds, but instead of storing the full build,
 	// just reference the build by builder: build num.
 	RunningbuildsMap map[string][]int `json:"runningBuildsMap"`
 }
 
-type buildbotProject struct {
+type Project struct {
 	BuildbotURL string `json:"buildbotURL"`
 	Title       string `json:"title"`
 	Titleurl    string `json:"titleURL"`
 }
 
-// buildbotMaster This is json definition for https://build.chromium.org/p/<master>/json
+// Master This is json definition for https://build.chromium.org/p/<master>/json
 // endpoints.
-type buildbotMaster struct {
+type Master struct {
 	AcceptingBuilds struct {
 		AcceptingBuilds bool `json:"accepting_builds"`
 	} `json:"accepting_builds"`
 
-	Builders map[string]*buildbotBuilder `json:"builders"`
+	Builders map[string]*Builder `json:"builders"`
 
 	Buildstate struct {
-		AcceptingBuilds bool              `json:"accepting_builds"`
-		Builders        []buildbotBuilder `json:"builders"`
-		Project         buildbotProject   `json:"project"`
-		Timestamp       float64           `json:"timestamp"`
+		AcceptingBuilds bool      `json:"accepting_builds"`
+		Builders        []Builder `json:"builders"`
+		Project         Project   `json:"project"`
+		Timestamp       float64   `json:"timestamp"`
 	} `json:"buildstate"`
 
-	ChangeSources map[string]buildbotChangeSource `json:"change_sources"`
+	ChangeSources map[string]ChangeSource `json:"change_sources"`
 
-	Changes map[string]buildbotChange `json:"changes"`
+	Changes map[string]Change `json:"changes"`
 
 	Clock struct {
 		Current struct {
@@ -417,9 +440,9 @@ type buildbotMaster struct {
 		ServerUptime float64 `json:"server_uptime"`
 	} `json:"clock"`
 
-	Project buildbotProject `json:"project"`
+	Project Project `json:"project"`
 
-	Slaves map[string]*buildbotSlave `json:"slaves"`
+	Slaves map[string]*Slave `json:"slaves"`
 
 	Varz struct {
 		AcceptingBuilds bool `json:"accepting_builds"`

@@ -20,6 +20,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	miloProto "go.chromium.org/luci/common/proto/milo"
@@ -27,13 +30,10 @@ import (
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/milo/api/buildbot"
 	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/common"
-
-	"google.golang.org/grpc/codes"
-
-	"golang.org/x/net/context"
 )
 
 // BuildInfoProvider is a configuration that provides build information.
@@ -147,10 +147,10 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 // This function is messy and implementation-specific. That's the point of this
 // endpoint, though. All of the nastiness here should be replaced with something
 // more elegant once that becomes available. In the meantime...
-func getLogDogAnnotationAddr(c context.Context, client *coordinator.Client, build *buildbotBuild,
+func getLogDogAnnotationAddr(c context.Context, client *coordinator.Client, build *buildbot.Build,
 	projectHint cfgtypes.ProjectName) (*types.StreamAddr, error) {
 
-	if v, ok := build.getPropertyValue("log_location").(string); ok && v != "" {
+	if v, ok := build.PropertyValue("log_location").(string); ok && v != "" {
 		addr, err := types.ParseURL(v)
 		if err == nil {
 			return addr, nil
@@ -163,7 +163,7 @@ func getLogDogAnnotationAddr(c context.Context, client *coordinator.Client, buil
 	}
 
 	// logdog_annotation_url (if present, must be valid)
-	if v, ok := build.getPropertyValue("logdog_annotation_url").(string); ok && v != "" {
+	if v, ok := build.PropertyValue("logdog_annotation_url").(string); ok && v != "" {
 		addr, err := types.ParseURL(v)
 		if err != nil {
 			logging.Fields{
@@ -178,8 +178,8 @@ func getLogDogAnnotationAddr(c context.Context, client *coordinator.Client, buil
 
 	// Modern builds will have this information in their build properties.
 	var addr types.StreamAddr
-	prefix, _ := build.getPropertyValue("logdog_prefix").(string)
-	project, _ := build.getPropertyValue("logdog_project").(string)
+	prefix, _ := build.PropertyValue("logdog_prefix").(string)
+	project, _ := build.PropertyValue("logdog_project").(string)
 	if prefix != "" && project != "" {
 		// Construct the full annotation path.
 		addr.Project = cfgtypes.ProjectName(project)
@@ -264,7 +264,7 @@ func getLogDogAnnotationAddr(c context.Context, client *coordinator.Client, buil
 // This consists of augmenting the Step's properties with BuildBot's properties,
 // favoring the Step's version of the properties if there are two with the same
 // name.
-func mergeBuildIntoAnnotation(c context.Context, step *miloProto.Step, build *buildbotBuild) error {
+func mergeBuildIntoAnnotation(c context.Context, step *miloProto.Step, build *buildbot.Build) error {
 	allProps := stringset.New(len(step.Property) + len(build.Properties))
 	for _, prop := range step.Property {
 		allProps.Add(prop.Name)

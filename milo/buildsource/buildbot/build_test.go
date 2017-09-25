@@ -25,19 +25,18 @@ import (
 
 	"golang.org/x/net/context"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/gae/impl/memory"
 	ds "go.chromium.org/gae/service/datastore"
-
 	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	memcfg "go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/milo/api/buildbot"
+	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
-	"go.chromium.org/luci/milo/common"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var generate = flag.Bool("test.generate", false, "Generate expectations instead of running tests.")
@@ -90,7 +89,7 @@ func TestBuild(t *testing.T) {
 		})
 
 		for _, tc := range TestCases {
-			Convey(fmt.Sprintf("Test Case: %s/%s", tc.Builder, tc.Build), func() {
+			Convey(fmt.Sprintf("Test Case: %s/%d", tc.Builder, tc.Build), func() {
 				build, err := DebugBuild(c, ".", tc.Builder, tc.Build)
 				So(err, ShouldBeNil)
 				fname := fmt.Sprintf("%s.%d.build.json", tc.Builder, tc.Build)
@@ -99,7 +98,7 @@ func TestBuild(t *testing.T) {
 		}
 
 		Convey(`Disallow anonomyous users from accessing internal builds`, func() {
-			ds.Put(c, &buildbotBuild{
+			ds.Put(c, &buildbot.Build{
 				Master:      "fake",
 				Buildername: "fake",
 				Number:      1,

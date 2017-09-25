@@ -15,11 +15,12 @@
 package buildbot
 
 import (
-	"go.chromium.org/luci/common/errors"
+	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 
-	"golang.org/x/net/context"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/milo/api/buildbot"
 )
 
 // buildQueryBatchSize is the batch size to use when querying build.
@@ -32,10 +33,10 @@ const buildQueryBatchSize = int32(50)
 // masterQueryBatchSize is the batch size to use when querying masters.
 const masterQueryBatchSize = int32(500)
 
-// runBuildsQuery takes a buildbotBuild query and returns a list of builds
+// runBuildsQuery takes a protocol.Build query and returns a list of builds
 // along with a cursor. We pass the limit here and apply it to the query as
 // an optimization because then we can create a build container of that size.
-func runBuildsQuery(c context.Context, q *datastore.Query) ([]*buildbotBuild, datastore.Cursor, error) {
+func runBuildsQuery(c context.Context, q *datastore.Query) ([]*buildbot.Build, datastore.Cursor, error) {
 
 	// Finalize the input query so we can pull its limit.
 	fq, err := q.Finalize()
@@ -49,10 +50,10 @@ func runBuildsQuery(c context.Context, q *datastore.Query) ([]*buildbotBuild, da
 	if hasLimit {
 		buildsAllocSize = limit
 	}
-	builds := make([]*buildbotBuild, 0, buildsAllocSize)
+	builds := make([]*buildbot.Build, 0, buildsAllocSize)
 
 	var nextCursor datastore.Cursor
-	err = datastore.RunBatch(c, buildQueryBatchSize, q, func(build *buildbotBuild, getCursor datastore.CursorCB) error {
+	err = datastore.RunBatch(c, buildQueryBatchSize, q, func(build *buildbot.Build, getCursor datastore.CursorCB) error {
 		builds = append(builds, build)
 
 		// Only capture the cursor if we actually hit our limit. Fetching the

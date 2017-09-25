@@ -22,19 +22,20 @@ import (
 	"sort"
 	"time"
 
+	"golang.org/x/net/context"
+
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
-
-	"golang.org/x/net/context"
 )
 
 func decodeMasterEntry(
-	c context.Context, entry *buildbotMasterEntry, master *buildbotMaster) error {
+	c context.Context, entry *buildbotMasterEntry, master *buildbot.Master) error {
 
 	reader, err := gzip.NewReader(bytes.NewReader(entry.Data))
 	if err != nil {
@@ -96,11 +97,11 @@ func getMasterEntry(c context.Context, name string) (*buildbotMasterEntry, error
 }
 
 // getMasterJSON fetches the latest known buildbot master data and returns
-// the buildbotMaster struct (if found), whether or not it is internal,
+// the protocol.Master struct (if found), whether or not it is internal,
 // the last modified time, and an error if not found.
 func getMasterJSON(c context.Context, name string) (
-	master *buildbotMaster, internal bool, t time.Time, err error) {
-	master = &buildbotMaster{}
+	master *buildbot.Master, internal bool, t time.Time, err error) {
+	master = &buildbot.Master{}
 	entry, err := getMasterEntry(c, name)
 	if err != nil {
 		return
@@ -136,7 +137,7 @@ func GetAllBuilders(c context.Context) (*resp.CIService, error) {
 				continue
 			}
 		}
-		master := &buildbotMaster{}
+		master := &buildbot.Master{}
 		err = decodeMasterEntry(c, entry, master)
 		if err != nil {
 			logging.WithError(err).Errorf(c, "Could not decode %s", entry.Name)
