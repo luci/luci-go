@@ -174,7 +174,7 @@ namespace LogDog {
     /** Are we tailing? */
     private fetchFromTail = false;
     /** Are we in the middle of rendering logs? */
-    private rendering = true;
+    private rendering = false;
 
     private cachedLogStreamUrl: string|undefined = undefined;
 
@@ -356,7 +356,6 @@ namespace LogDog {
         this.currentOperation.cancel();
         this.currentOperation = this.currentFetchPromise = null;
       }
-      this.rendering = false;
     }
 
     private get loadingState(): LoadingState {
@@ -546,15 +545,13 @@ namespace LogDog {
 
       // Post-fetch cleanup.
       this.clearCurrentOperation(op);
+      this.updateControls();
     }
 
     private async fetchLocationRound(l: Location, op: luci.Operation) {
+      // Clear our loading state (updates controls automatically).
       let buf = await this.provider.fetch(op, l);
-
-      // Clear our fetching status.
-      this.rendering = true;
-      this.loadingState = LoadingState.RENDERING;
-      let hasLogs = !!(buf.peek());
+      let hadLogs = !!(buf.peek());
 
       // Resolve any previous rendering Promise that we have. This
       // makes sure our rendering and fetching don't get more than
@@ -563,23 +560,20 @@ namespace LogDog {
         await this.renderPromise;
       }
 
-      // Clear our loading state (updates controls automatically).
-      this.loadingState = LoadingState.RENDERING;
-
       // Initiate the next render. This will happen in the
       // background while we enqueue our next fetch.
       let doRender = async () => {
+        this.rendering = true;
         await this.renderLogs(buf, l);
-        if (this.loadingState === LoadingState.RENDERING) {
-          this.setIdleLoadingState();
-        }
+        this.rendering = false;
+        this.updateControls();
       };
       this.renderPromise = doRender();
 
       if (this.fetchedFullStream) {
         return false;
       }
-      return hasLogs;
+      return hadLogs;
     }
 
     private async renderLogs(buf: BufferedLogs, l: Location) {
