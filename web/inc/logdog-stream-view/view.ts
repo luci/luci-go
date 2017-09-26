@@ -22,12 +22,10 @@ namespace LogDog {
     NONE,
     /** Resolving a glob into the set of streams via query. */
     RESOLVING,
-    /** Loading stream content, alternates with RENDERING. */
+    /** Loading / rendering stream content */
     LOADING,
     /** Version of LOADING when the stream has been loading for a long time. */
     LOADING_BEEN_A_WHILE,
-    /** Rendering loaded stream content. */
-    RENDERING,
     /** No operations in progress, but the log isn't fully loaded.. */
     PAUSED,
     /** Error: Attempt to load failed w/ "Unauthenticated". */
@@ -111,9 +109,6 @@ namespace LogDog {
     _setShowSplitButton(v: boolean): void;
     _setShowSplitControls(v: boolean): void;
 
-    _setCanSplit(v: boolean): void;
-    _setIsSplit(v: boolean): void;
-    _setShowStreamingControls(v: boolean): void;
     _setStreamStatus(v: StreamStatusEntry[]): void;
 
     /** Update functions. */
@@ -539,9 +534,6 @@ namespace LogDog {
           break;
         case LogDog.LoadingState.LOADING_BEEN_A_WHILE:
           this.loadStatusBar('Loading streams (has the build crashed?)...');
-          break;
-        case LogDog.LoadingState.RENDERING:
-          this.loadStatusBar('Rendering logs.');
           break;
         case LogDog.LoadingState.PAUSED:
           this.loadStatusBar('Paused.');
