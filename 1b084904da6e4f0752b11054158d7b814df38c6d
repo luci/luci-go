@@ -45,6 +45,29 @@
       "revId": "1b084904da6e4f0752b11054158d7b814df38c6d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c721f8fe_4dd7e94b",
+        "filename": "common/api/buildbucket/buildbucket/v1/search.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-26T17:22:09Z",
+      "side": 1,
+      "message": "While technically true, I think the implication is more valuable to document:\n..., thus don\u0027t infer anything from the number of builds in channel if err is not nil.",
+      "range": {
+        "startLine": 68,
+        "startChar": 57,
+        "endLine": 68,
+        "endChar": 58
+      },
+      "revId": "1b084904da6e4f0752b11054158d7b814df38c6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
