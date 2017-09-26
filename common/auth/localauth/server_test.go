@@ -123,15 +123,18 @@ func TestProtocol(t *testing.T) {
 
 		s := Server{
 			TokenGenerators: map[string]TokenGenerator{
-				"acc_id":     testGen,
-				"another_id": testGen,
+				"acc_id":     makeGenerator("some@example.com", testGen),
+				"another_id": makeGenerator("another@example.com", testGen),
 			},
 			DefaultAccountID: "acc_id",
 		}
 		p, err := s.Initialize(ctx)
 		So(err, ShouldBeNil)
 
-		So(p.Accounts, ShouldResemble, []lucictx.LocalAuthAccount{{ID: "acc_id"}, {ID: "another_id"}})
+		So(p.Accounts, ShouldResemble, []lucictx.LocalAuthAccount{
+			{ID: "acc_id", Email: "some@example.com"},
+			{ID: "another_id", Email: "another@example.com"},
+		})
 		So(p.DefaultAccountID, ShouldEqual, "acc_id")
 
 		done := make(chan struct{})

@@ -35,7 +35,7 @@ func TestPredefinedTypes(t *testing.T) {
 				RPCPort: 100,
 				Secret:  []byte("foo"),
 				Accounts: []LocalAuthAccount{
-					{"test"},
+					{ID: "test", Email: "some@example.com"},
 				},
 				DefaultAccountID: "test",
 			}
@@ -44,7 +44,7 @@ func TestPredefinedTypes(t *testing.T) {
 			rawJSON := json.RawMessage{}
 			Get(c, "local_auth", &rawJSON)
 			So(string(rawJSON), ShouldEqual, `{"rpc_port":100,"secret":"Zm9v",`+
-				`"accounts":[{"id":"test"}],"default_account_id":"test"}`)
+				`"accounts":[{"id":"test","email":"some@example.com"}],"default_account_id":"test"}`)
 
 			So(GetLocalAuth(c), ShouldResemble, &localAuth)
 		})

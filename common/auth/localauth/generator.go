@@ -42,38 +42,64 @@ func NewFlexibleGenerator(ctx context.Context, opts auth.Options) (TokenGenerato
 	if !auth.AllowsArbitraryScopes(ctx, opts) {
 		return nil, fmt.Errorf("can't use given auth.Options to mint token with arbitrary scopes")
 	}
-
-	lock := sync.RWMutex{}
-	authenticators := map[string]*auth.Authenticator{}
-
-	return func(_ context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
-		// We use '\n' as separator. It should not appear in the scopes.
-		for _, s := range scopes {
-			if strings.ContainsRune(s, '\n') {
-				return nil, fmt.Errorf("bad scope: %q", s)
-			}
-		}
-		// Note: scopes are already sorted per Server{...} contract.
-		cacheKey := strings.Join(scopes, "\n")
-
-		// Grab an authenticator for the requested set of scopes or create new one.
-		lock.RLock()
-		authenticator := authenticators[cacheKey]
-		lock.RUnlock()
-		if authenticator == nil {
-			lock.Lock()
-			authenticator = authenticators[cacheKey]
-			if authenticator == nil {
-				opts := opts
-				opts.Scopes = scopes
-				authenticator = auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
-				authenticators[cacheKey] = authenticator
-			}
-			lock.Unlock()
-		}
-
-		return authenticator.GetAccessToken(lifetime)
+	return &flexibleGenerator{
+		ctx:            ctx,
+		opts:           opts,
+		authenticators: map[string]*auth.Authenticator{},
 	}, nil
+}
+
+type flexibleGenerator struct {
+	ctx  context.Context
+	opts auth.Options
+
+	lock           sync.RWMutex
+	authenticators map[string]*auth.Authenticator
+}
+
+func (g *flexibleGenerator) authenticator(scopes []string) (*auth.Authenticator, error) {
+	// We use '\n' as separator. It should not appear in the scopes.
+	for _, s := range scopes {
+		if strings.ContainsRune(s, '\n') {
+			return nil, fmt.Errorf("bad scope: %q", s)
+		}
+	}
+	// Note: scopes are already sorted per Server{...} contract.
+	cacheKey := strings.Join(scopes, "\n")
+
+	g.lock.RLock()
+	authenticator := g.authenticators[cacheKey]
+	g.lock.RUnlock()
+
+	if authenticator == nil {
+		g.lock.Lock()
+		defer g.lock.Unlock()
+		authenticator = g.authenticators[cacheKey]
+		if authenticator == nil {
+			opts := g.opts
+			opts.Scopes = scopes
+			authenticator = auth.NewAuthenticator(g.ctx, auth.SilentLogin, opts)
+			g.authenticators[cacheKey] = authenticator
+		}
+	}
+
+	return authenticator, nil
+}
+
+func (g *flexibleGenerator) GenerateToken(_ context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
+	a, err := g.authenticator(scopes)
+	if err != nil {
+		return nil, err
+	}
+	return a.GetAccessToken(lifetime)
+}
+
+func (g *flexibleGenerator) GetEmail() (string, error) {
+	a, err := g.authenticator([]string{auth.OAuthScopeEmail})
+	if err != nil {
+		return "", err
+	}
+	return a.GetEmail()
 }
 
 // NewRigidGenerator constructs TokenGenerator that always uses given
@@ -102,7 +128,17 @@ func NewRigidGenerator(ctx context.Context, authenticator *auth.Authenticator) (
 	if err := authenticator.CheckLoginRequired(); err != nil {
 		return nil, err
 	}
-	return func(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
-		return authenticator.GetAccessToken(lifetime)
-	}, nil
+	return rigidGenerator{authenticator}, nil
+}
+
+type rigidGenerator struct {
+	authenticator *auth.Authenticator
+}
+
+func (g rigidGenerator) GenerateToken(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
+	return g.authenticator.GetAccessToken(lifetime)
+}
+
+func (g rigidGenerator) GetEmail() (string, error) {
+	return g.authenticator.GetEmail()
 }

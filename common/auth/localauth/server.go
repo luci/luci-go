@@ -30,9 +30,11 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
+	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/auth/localauth/rpcs"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
@@ -40,30 +42,38 @@ import (
 )
 
 // TokenGenerator produces access tokens.
-//
-// It is called to return an access token for given combination of scopes (given
-// as a sorted list of strings without duplicates).
-//
-// It is called for each request to the local auth server. It may be called
-// concurrently from multiple goroutines and must implement its own caching and
-// synchronization if necessary.
-//
-// It is expected that the returned token lives for at least given 'lifetime'
-// duration (which is typically on order of minutes), but it may live longer.
-// Clients may cache the returned token for the duration of its lifetime.
-//
-// May return transient errors (in transient.Tag.In(err) returning true
-// sense). Such errors result in HTTP 500 responses. This is appropriate for
-// non-fatal errors. Clients may immediately retry requests on such errors.
-//
-// Any non-transient error is considered fatal and results in an RPC-level
-// error response ({"error": ...}). Clients must treat such responses as fatal
-// and don't retry requests.
-//
-// If the error implements ErrorWithCode interface, the error code returned to
-// clients will be grabbed from the error object, otherwise the error code is
-// set to -1.
-type TokenGenerator func(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error)
+type TokenGenerator interface {
+	// GenerateToken method called to return an access token for given
+	// combination of scopes (given as a sorted list of strings without
+	// duplicates).
+	//
+	// It is called for each request to the local auth server. It may be called
+	// concurrently from multiple goroutines and must implement its own caching
+	// and synchronization if necessary.
+	//
+	// It is expected that the returned token lives for at least given 'lifetime'
+	// duration (which is typically on order of minutes), but it may live longer.
+	// Clients may cache the returned token for the duration of its lifetime.
+	//
+	// May return transient errors (in transient.Tag.In(err) returning true
+	// sense). Such errors result in HTTP 500 responses. This is appropriate for
+	// non-fatal errors. Clients may immediately retry requests on such errors.
+	//
+	// Any non-transient error is considered fatal and results in an RPC-level
+	// error response ({"error": ...}). Clients must treat such responses as fatal
+	// and don't retry requests.
+	//
+	// If the error implements ErrorWithCode interface, the error code returned to
+	// clients will be grabbed from the error object, otherwise the error code is
+	// set to -1.
+	GenerateToken(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error)
+
+	// GetEmail returns an email associated with all tokens produced by this
+	// generator or auth.ErrNoEmail if it's not available.
+	//
+	// Any other error will bubble up through Server.Initialize.
+	GetEmail() (string, error)
+}
 
 // ErrorWithCode is a fatal error that also has a numeric code.
 //
@@ -120,6 +130,25 @@ func (s *Server) Initialize(ctx context.Context) (*lucictx.LocalAuth, error) {
 		return nil, fmt.Errorf("already initialized")
 	}
 
+	// Build a sorted list of LocalAuthAccount to put into the context, grab
+	// emails from the generators.
+	ids := make([]string, 0, len(s.TokenGenerators))
+	for id := range s.TokenGenerators {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	accounts := make([]lucictx.LocalAuthAccount, len(ids))
+	for i, id := range ids {
+		email, err := s.TokenGenerators[id].GetEmail()
+		switch {
+		case err == auth.ErrNoEmail:
+			email = "-"
+		case err != nil:
+			return nil, errors.Annotate(err, "could not grab email of account %q", id).Err()
+		}
+		accounts[i] = lucictx.LocalAuthAccount{ID: id, Email: email}
+	}
+
 	secret := make([]byte, 48)
 	if _, err := cryptorand.Read(ctx, secret); err != nil {
 		return nil, err
@@ -133,17 +162,6 @@ func (s *Server) Initialize(ctx context.Context) (*lucictx.LocalAuth, error) {
 	s.ctx, s.cancel = context.WithCancel(ctx)
 	s.listener = ln
 	s.secret = secret
-
-	// Build a sorted list of LocalAuthAccount to put into the context.
-	ids := make([]string, 0, len(s.TokenGenerators))
-	for id := range s.TokenGenerators {
-		ids = append(ids, id)
-	}
-	sort.Strings(ids)
-	accounts := make([]lucictx.LocalAuthAccount, len(ids))
-	for i, id := range ids {
-		accounts[i] = lucictx.LocalAuthAccount{ID: id}
-	}
 
 	return &lucictx.LocalAuth{
 		RPCPort:          uint32(ln.Addr().(*net.TCPAddr).Port),
@@ -434,7 +452,7 @@ func (h *protocolHandler) handleGetOAuthToken(req *rpcs.GetOAuthTokenRequest) (*
 	sort.Strings(sortedScopes)
 
 	// Ask the token provider for the token. This may produce ErrorWithCode.
-	tok, err := generator(h.ctx, sortedScopes, minTokenLifetime)
+	tok, err := generator.GenerateToken(h.ctx, sortedScopes, minTokenLifetime)
 	if err != nil {
 		return nil, err
 	}

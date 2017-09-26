@@ -37,6 +37,7 @@ import (
 
 type luciContextTokenProvider struct {
 	localAuth *lucictx.LocalAuth
+	email     string // an email or NoEmail
 	scopes    []string
 	transport http.RoundTripper
 	cacheKey  CacheKey // used only for in-memory cache
@@ -58,6 +59,19 @@ func NewLUCIContextTokenProvider(ctx context.Context, scopes []string, transport
 		return nil, fmt.Errorf(`no "default_account_id" in LUCI_CONTEXT["local_auth"]`)
 	}
 
+	// Grab an email associated with default account, if any.
+	email := NoEmail
+	for _, account := range localAuth.Accounts {
+		if account.ID == localAuth.DefaultAccountID {
+			// Previous protocol version didn't expose the email, so keep the value
+			// as NoEmail in this case. This should be rare.
+			if account.Email != "" {
+				email = account.Email
+			}
+			break
+		}
+	}
+
 	// All authenticators share singleton in-process token cache, see
 	// ProcTokenCache variable in proc_cache.go.
 	//
@@ -77,6 +91,7 @@ func NewLUCIContextTokenProvider(ctx context.Context, scopes []string, transport
 
 	return &luciContextTokenProvider{
 		localAuth: localAuth,
+		email:     email,
 		scopes:    scopes,
 		transport: transport,
 		cacheKey: CacheKey{
@@ -95,7 +110,7 @@ func (p *luciContextTokenProvider) Lightweight() bool {
 }
 
 func (p *luciContextTokenProvider) Email() string {
-	return NoEmail // TODO(vadimsh): grab from the context
+	return p.email
 }
 
 func (p *luciContextTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {

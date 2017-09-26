@@ -89,8 +89,11 @@ func TestLUCIContextProvider(t *testing.T) {
 		defer ts.Close()
 
 		ctx := lucictx.SetLocalAuth(baseCtx, &lucictx.LocalAuth{
-			RPCPort:          uint32(ts.Listener.Addr().(*net.TCPAddr).Port),
-			Secret:           []byte("zekret"),
+			RPCPort: uint32(ts.Listener.Addr().(*net.TCPAddr).Port),
+			Secret:  []byte("zekret"),
+			Accounts: []lucictx.LocalAuthAccount{
+				{ID: "acc_id", Email: "some-acc-email@example.com"},
+			},
 			DefaultAccountID: "acc_id",
 		})
 
@@ -111,7 +114,7 @@ func TestLUCIContextProvider(t *testing.T) {
 					TokenType:   "Bearer",
 					Expiry:      time.Unix(1487456796, 0).UTC(),
 				},
-				Email: NoEmail,
+				Email: "some-acc-email@example.com",
 			})
 
 			So(<-requests, ShouldResemble, rpcs.GetOAuthTokenRequest{
