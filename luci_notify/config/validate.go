@@ -37,15 +37,15 @@ const (
 	badEmailError      = "recipient %q is not a valid RFC 5322 email address"
 )
 
-// extractConfig attempts to unmarshal the configuration out of the
+// extractProjectConfig attempts to unmarshal the configuration out of the
 // luci-config message and then validate it.
-func extractConfig(cfg *configInterface.Config) (*notifyConfig.ProjectConfig, error) {
+func extractProjectConfig(cfg *configInterface.Config) (*notifyConfig.ProjectConfig, error) {
 	project := notifyConfig.ProjectConfig{}
 	if err := proto.UnmarshalText(cfg.Content, &project); err != nil {
 		err = errors.Annotate(err, "unmarshalling proto").Err()
 		return nil, err
 	}
-	if err := validateConfig(cfg.ConfigSet, &project); err != nil {
+	if err := validateProjectConfig(cfg.ConfigSet, &project); err != nil {
 		err = errors.Annotate(err, "validating config").Err()
 		return nil, err
 	}
@@ -98,9 +98,9 @@ func validateNotifier(c *validation.Context, cfgNotifier *notifyConfig.Notifier,
 	}
 }
 
-// validateConfig returns an error if the configuration violates any of the
+// validateProjectConfig returns an error if the configuration violates any of the
 // requirements in the proto definition.
-func validateConfig(configName string, projectCfg *notifyConfig.ProjectConfig) error {
+func validateProjectConfig(configName string, projectCfg *notifyConfig.ProjectConfig) error {
 	c := &validation.Context{}
 	c.SetFile(configName)
 	notifierNames := stringset.New(len(projectCfg.Notifiers))
@@ -108,6 +108,34 @@ func validateConfig(configName string, projectCfg *notifyConfig.ProjectConfig) e
 		c.Enter("notifier #%d", i+1)
 		validateNotifier(c, cfgNotifier, notifierNames)
 		c.Exit()
+	}
+	return c.Finalize()
+}
+
+// extractSettings attempts to unmarshal a service-level configuration into a
+// specified location, and then tries to validate it.
+func extractSettings(cfg *configInterface.Config) (*Settings, error) {
+	settings := Settings{Revision: cfg.Revision}
+	err := proto.UnmarshalText(cfg.Content, &settings.Settings)
+	if err != nil {
+		return nil, errors.Annotate(err, "unmarshalling proto").Err()
+	}
+	if err := validateSettings(&settings.Settings); err != nil {
+		return nil, errors.Annotate(err, "validating settings").Err()
+	}
+	return &settings, nil
+}
+
+// validateSettings returns an error if the service configuration violates any
+// of the requirements in the proto definition.
+func validateSettings(settings *notifyConfig.Settings) error {
+	c := &validation.Context{}
+	c.SetFile("settings.cfg")
+	switch {
+	case settings.MiloHost == "":
+		c.Error(requiredFieldError, "milo_host")
+	case validation.ValidateHostname(settings.MiloHost) != nil:
+		c.Error(invalidFieldError, "milo_host")
 	}
 	return c.Finalize()
 }
