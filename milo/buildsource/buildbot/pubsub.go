@@ -232,9 +232,8 @@ func expireBuild(c context.Context, b *buildbot.Build) error {
 	if !b.TimeStamp.IsZero() {
 		b.Times.Finish = b.TimeStamp
 	}
-	results := int(4) // Exception
 	b.Finished = true
-	b.Results = &results
+	b.Results = buildbot.Exception
 	b.Currentstep = nil
 	b.Text = append(b.Text, "Build expired on Milo")
 	return datastore.Put(c, b)

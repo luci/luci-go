@@ -393,7 +393,7 @@ func TestPubSub(t *testing.T) {
 				So(loadB.Finished, ShouldResemble, true)
 				So(loadB.Times.Start, ShouldResemble, unixTime(123))
 				So(loadB.Times.Finish, ShouldResemble, b.TimeStamp)
-				So(*loadB.Results, ShouldEqual, 4)
+				So(loadB.Results, ShouldEqual, buildbot.Exception)
 			})
 			Convey("Large pubsub message", func() {
 				// This has to be a random string, so that after gzip compresses it

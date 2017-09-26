@@ -43,7 +43,7 @@ type Step struct {
 	IsStarted    bool            `json:"isStarted"`
 	Logs         [][]string      `json:"logs"`
 	Name         string          `json:"name"`
-	Results      []interface{}   `json:"results"`
+	Results      StepResults     `json:"results"`
 	Statistics   struct {
 	} `json:"statistics"`
 	StepNumber int               `json:"step_number"`
@@ -131,7 +131,7 @@ type Build struct {
 	// source is optional, but is always a string if present
 	Properties  []*Property  `json:"properties" gae:"-"`
 	Reason      string       `json:"reason"`
-	Results     *int         `json:"results" gae:"-"`
+	Results     Result       `json:"results" gae:"-"`
 	Slave       string       `json:"slave"`
 	Sourcestamp *SourceStamp `json:"sourceStamp" gae:"-"`
 	Steps       []Step       `json:"steps" gae:"-"`
@@ -158,33 +158,9 @@ func (b *Build) Status() model.Status {
 	if b.Currentstep != nil {
 		result = model.Running
 	} else {
-		result = ResultToStatus(b.Results)
+		result = b.Results.Status()
 	}
 	return result
-}
-
-// ResultToStatus translates a buildbot result integer into a model.Status.
-func ResultToStatus(s *int) (status model.Status) {
-	if s == nil {
-		return model.Running
-	}
-	switch *s {
-	case 0:
-		status = model.Success
-	case 1:
-		status = model.Warning
-	case 2:
-		status = model.Failure
-	case 3:
-		status = model.NotRun // Skipped
-	case 4:
-		status = model.Exception
-	case 5:
-		status = model.WaitingDependency // Retry
-	default:
-		panic(fmt.Errorf("Unknown status %d", s))
-	}
-	return
 }
 
 var _ datastore.PropertyLoadSaver = (*Build)(nil)
