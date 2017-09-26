@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "637aae3e_57fe02df",
+        "filename": "web/inc/logdog-stream-view/view.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-09-26T13:38:27Z",
+      "side": 0,
+      "message": "These were unused and actually do not exist, so removing them is good.",
+      "range": {
+        "startLine": 114,
+        "startChar": 3,
+        "endLine": 116,
+        "endChar": 48
+      },
+      "revId": "57b025e75982190df81e2257e445d0e154ea9e99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
