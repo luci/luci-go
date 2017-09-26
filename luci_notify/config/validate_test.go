@@ -24,11 +24,11 @@ import (
 )
 
 func TestValidation(t *testing.T) {
-	Convey(`Test Environment for validateConfig`, t, func() {
+	Convey(`Test Environment for validateProjectConfig`, t, func() {
 		testValidation := func(config string, expectFormat string, expectArgs ...interface{}) {
-			cfg, err := testutil.ParseConfig(config)
+			cfg, err := testutil.ParseProjectConfig(config)
 			So(err, ShouldBeNil)
-			err = validateConfig("projects/test", cfg)
+			err = validateProjectConfig("projects/test", cfg)
 			if expectFormat == "" {
 				So(err, ShouldBeNil)
 				return
@@ -102,6 +102,32 @@ func TestValidation(t *testing.T) {
 				}
 			}
 			`, "(notifier #1 / notification #1): "+badEmailError, "@@@@@")
+		})
+	})
+
+	Convey(`Test Environment for validateSettings`, t, func() {
+		testValidation := func(config string, expectFormat string, expectArgs ...interface{}) {
+			cfg, err := testutil.ParseSettings(config)
+			So(err, ShouldBeNil)
+			err = validateSettings(cfg)
+			if expectFormat == "" {
+				So(err, ShouldBeNil)
+				return
+			}
+			expect := fmt.Sprintf(`in "settings.cfg": `+expectFormat, expectArgs...)
+			So(err.Error(), ShouldResemble, expect)
+		}
+
+		Convey(`empty`, func() {
+			testValidation(``, requiredFieldError, "milo_host")
+		})
+
+		Convey(`bad hostname`, func() {
+			testValidation(`milo_host: "9mNRn29%^^%#"`, invalidFieldError, "milo_host")
+		})
+
+		Convey(`good`, func() {
+			testValidation(`milo_host: "luci-milo.example.com"`, "")
 		})
 	})
 }

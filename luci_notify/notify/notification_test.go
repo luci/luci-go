@@ -48,7 +48,7 @@ func dummyBuildInfo(createTime int64, result string) *buildbucket.BuildInfo {
 func TestNotification(t *testing.T) {
 	Convey(`Test Environment for Notification`, t, func() {
 		cfgName := "basic"
-		cfg, err := testutil.LoadConfig(cfgName)
+		cfg, err := testutil.LoadProjectConfig(cfgName)
 		So(err, ShouldBeNil)
 		c := memory.UseWithAppID(context.Background(), "dev~luci-notify")
 		notifiers := extractNotifiers(c, cfgName, cfg)
