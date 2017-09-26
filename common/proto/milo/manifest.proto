@@ -61,41 +61,28 @@ message Manifest {
   }
 
   message CIPDPackage {
-    // The canonicalized URL of the CIPD server which provided the package. Ex.
-    //   https://chrome-infra-packages.appspot.com
-    string cipd_server_url = 1;
-
-    // The fully resolved CIPD package name that was deployed. Ex.
-    //   infra/tools/luci/led/linux-amd64
-    string cipd_package_name = 2;
-
     // The package pattern that was given to the CIPD client (if known). Ex.
     //   infra/tools/luci/led/${platform}
-    string cipd_package_pattern = 3;
+    string package_pattern = 1;
 
     // The fully resolved instance ID of the deployed package. Ex.
     //   0cfafb3a705bd8f05f86c6444ff500397fbb711c
-    string cipd_instance_id = 4;
+    string instance_id = 2;
 
     // The unresolved version ID of the deployed package (if known). Ex.
     //   git_revision:aaf3a2cfccc227b5141caa1b6b3502c9907d7420
     //   latest
-    string cipd_version = 5;
+    string version = 3;
   }
 
   message Isolated {
-    // The canonicalized URL of the isolated server which hosts the isolated.
-    // Ex.
-    //   https://isolateserver.appspot.com
-    string isolated_server_url = 1;
-
     // The namespace of the isolated document. Ex.
     //   default-gzip
-    string namespace = 2;
+    string namespace = 1;
 
     // The hash of the isolated document. Ex.
     //   62a7df62ea122380afb306bb4d9cdac1bc7e9a96
-    string hash = 3;
+    string hash = 2;
   }
 
   // A Directory contains one or more descriptions of deployed artifacts. Note
@@ -104,8 +91,24 @@ message Manifest {
   message Directory {
     GitCheckout git_checkout = 1;
 
-    repeated CIPDPackage cipd_package = 2;
-    repeated Isolated isolated = 3;
+    // The canonicalized URL of the CIPD server which hosts the CIPD packages
+    // (if any). If no CIPD packages are in this Directory, this should be
+    // blank.
+    // Ex.
+    //   https://chrome-infra-packages.appspot.com
+    string cipd_server_url = 2;
+
+    // Maps CIPD package name to CIPDPackage.
+    map<string, CIPDPackage> cipd_package = 4;
+
+    // The canonicalized URL of the isolated server which hosts the isolated.
+    // If no Isolated objects are in this Directory, this should be blank.
+    // Ex.
+    //   https://isolateserver.appspot.com
+    string isolated_server_url = 5;
+
+    // A list of all isolateds which have been installed in this directory.
+    repeated Isolated isolated = 6;
   }
 
   // Map of local file system directory path (with forward slashes) to
@@ -120,3 +123,22 @@ message Manifest {
   // keys.
   map<string, Directory> directories = 2;
 }
+
+// Links to an externally stored Manifest proto.
+message ManifestLink {
+  // The fully qualified (logdog://) url of the Manifest proto. It's expected
+  // that this is a binary logdog stream consisting of exactly one Manifest
+  // proto.
+  string url = 1;
+
+  // The hash of the Manifest's raw binary form (i.e. the bytes at the end of
+  // `url`, without any interpretation or decoding). Milo will use this as an
+  // optimization; Manifests will be interned once into Milo's datastore.
+  // Future hashes which match will not be loaded from the url, but will be
+  // assumed to be identical. If the sha256 doesn't match the data at the URL,
+  // Milo may render this build with the wrong manifest.
+  //
+  // This is the raw sha256, so it should be exactly 32 bytes.
+  bytes sha256 = 2;
+}
+

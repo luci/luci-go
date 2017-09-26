@@ -1,0 +1,100 @@
+// Copyright (c) 2015 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package milo;
+
+import "go.chromium.org/luci/common/proto/milo/manifest.proto";
+import "google/protobuf/timestamp.proto";
+
+// ManifestDiff holds basic difference information between two source manifests.
+message ManifestDiff {
+  // The older of the two manifests.
+  milo.Manifest old = 1;
+
+  // The newer of the two manifests.
+  milo.Manifest new = 2;
+
+  // Stat indicates how a given item has changed.
+  enum Stat {
+    EQUAL    = 0; // These two items are identical
+    ADDED    = 1; // The item was added in `new` compared to `old`
+    REMOVED  = 2; // The item was removed in `new` compared to `old`
+    MODIFIED = 4; // The item is in both, but is incomparable (e.g. repo_url
+                  //   changed from `old` to `new`).
+    DIFF     = 5; // The item is in both, and is directly comparable (e.g.
+                  //   different revisions of the same repo_url).
+  }
+
+  // This indicates if there is some overall difference between old and new.
+  // This will only be EQUAL or MODIFIED.
+  Stat overall = 3;
+
+  message GitCommit {
+    bytes commit = 1;
+    bytes tree = 2;
+    repeated bytes parents = 3;
+
+    message User {
+      string name = 1;
+      string email = 2;
+      google.protobuf.Timestamp time = 3;
+    }
+    User author = 4;
+    User committer = 5;
+
+    string message = 6;
+
+    message TreeDiff {
+      enum ChangeType {
+        ADD = 0;
+        COPY = 1;
+        DELETE = 2;
+        MODIFY = 3;
+        RENAME = 4;
+      }
+
+      ChangeType type = 1;
+
+      bytes old_id = 2;
+      uint32 old_mode = 3;
+      string old_path = 4;
+
+      bytes new_id = 5;
+      uint32 new_mode = 6;
+      string new_path = 7;
+    }
+    repeated TreeDiff tree_diff = 7;
+  }
+
+  message Directory {
+    // This is the overall status for this Directory.
+    Stat overall = 1;
+
+    // Note: if this is DIFF, it is sensible to compute
+    //   `git log repo_url old.revision new.revision`
+    Stat git_checkout = 2;
+
+    // If git_checkout==DIFF, and your request included history, this will be
+    // populated with GitCommits.
+    repeated GitCommit git_history = 3;
+
+    Stat cipd_server_url = 4;
+    // Note: this will only ever be MODIFIED, because we cannot (yet) determine
+    // if two versions of a cipd package are diffable. We may later implement
+    // DIFF detection (i.e. if both packages use `version:<sha1>` tags).
+    map<string, Stat> cipd_package = 5;
+
+    Stat isolated_server_url = 6;
+    // This merely indicates if the list of isolated hashes was the same or not;
+    // there's not a good way to register the two lists.
+    //
+    // Since order-of-application for isolateds matters, this will indicate
+    // MODIFIED if the order of isolated hashes changes.
+    Stat isolated = 7;
+  }
+
+  map<string, Directory> directories = 4;
+}
