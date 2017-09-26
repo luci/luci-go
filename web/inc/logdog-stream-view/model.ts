@@ -355,6 +355,7 @@ namespace LogDog {
         }
         this.currentOperation.cancel();
         this.currentOperation = this.currentFetchPromise = null;
+        this.setIdleLoadingState();
       }
     }
 
@@ -549,7 +550,6 @@ namespace LogDog {
 
       // Post-fetch cleanup.
       this.clearCurrentOperation(op);
-      this.setIdleLoadingState();
       this.updateControls();
     }
 
