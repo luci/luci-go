@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/logdog/common/fetcher"
 	logdog_types "go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
-	srcman_pb "go.chromium.org/luci/milo/api/proto/manifest"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 )
 
@@ -40,7 +39,7 @@ import (
 //
 // This will also cache the result into memcache if it does end up fetching it
 // from logdog.
-func Get(ctx context.Context, a *milo.Step_ManifestLink) (*srcman_pb.Manifest, []byte, error) {
+func Get(ctx context.Context, a *milo.Step_ManifestLink) (*milo.Manifest, []byte, error) {
 	if len(a.Sha256) == sha256.Size {
 		// cached, mebbeh?
 		entry := newSrcManCacheEntry(a.Sha256)

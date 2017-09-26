@@ -17,7 +17,7 @@ package srcman
 import (
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/data/base128"
-	source_manifest "go.chromium.org/luci/milo/api/proto/manifest"
+	"go.chromium.org/luci/common/proto/milo"
 )
 
 type srcManCacheEntry struct {
@@ -27,8 +27,8 @@ type srcManCacheEntry struct {
 	Data []byte `gae:",noindex"`
 }
 
-func (s *srcManCacheEntry) Read() (*source_manifest.Manifest, error) {
-	ret := &source_manifest.Manifest{}
+func (s *srcManCacheEntry) Read() (*milo.Manifest, error) {
+	ret := &milo.Manifest{}
 	return ret, proto.Unmarshal(s.Data, ret)
 }
 

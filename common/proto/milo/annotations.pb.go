@@ -6,6 +6,7 @@ Package milo is a generated protocol buffer package.
 
 It is generated from these files:
 	go.chromium.org/luci/common/proto/milo/annotations.proto
+	go.chromium.org/luci/common/proto/milo/manifest.proto
 
 It has these top-level messages:
 	FailureDetails
@@ -14,6 +15,7 @@ It has these top-level messages:
 	LogdogStream
 	IsolateObject
 	DMLink
+	Manifest
 */
 package milo
 
