@@ -20,74 +20,64 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
+	"go.chromium.org/luci/common/testing/assertions"
+
 	"go.chromium.org/luci/luci_notify/testutil"
 )
 
 func TestValidation(t *testing.T) {
-	Convey(`Test Environment for validateConfig`, t, func() {
-		testValidation := func(config string, expectFormat string, expectArgs ...interface{}) {
-			cfg, err := testutil.ParseConfig(config)
-			So(err, ShouldBeNil)
-			err = validateConfig("projects/test", cfg)
-			if expectFormat == "" {
+	Convey(`Test Environment for validateProjectConfig`, t, func() {
+		testValidation := func(env, config, expectFormat string, expectArgs ...interface{}) {
+			Convey(env, func() {
+				cfg, err := testutil.ParseProjectConfig(config)
 				So(err, ShouldBeNil)
-				return
-			}
-			expect := fmt.Sprintf(`in "projects/test" `+expectFormat, expectArgs...)
-			So(err.Error(), ShouldResemble, expect)
+				err = validateProjectConfig("projects/test", cfg)
+				if expectFormat == "" {
+					So(err, assertions.ShouldErrLike)
+					return
+				}
+				expect := fmt.Sprintf(expectFormat, expectArgs...)
+				So(err, assertions.ShouldErrLike, expect)
+			})
 		}
+		testValidation(`empty`, ``, "")
 
-		Convey(`empty`, func() {
-			testValidation(``, "")
-		})
+		testValidation(`notifier missing name`, `notifiers {}`, requiredFieldError, "name")
 
-		Convey(`notifier missing name`, func() {
-			testValidation(`notifiers {}`, "(notifier #1): "+requiredFieldError, "name")
-		})
-
-		Convey(`notifier bad name`, func() {
-			testValidation(`
+		testValidation(`notifier bad name`, `
 			notifiers {
 				name: "A_fnbA*G2n"
 			}`,
-				"(notifier #1): "+invalidFieldError, "name")
-		})
+			invalidFieldError, "name")
 
-		Convey(`notifier dup name`, func() {
-			testValidation(`
+		testValidation(`notifier dup name`, `
 			notifiers {
 				name: "good-name"
 			}
 			notifiers {
 				name: "good-name"
-			}
-			`, "(notifier #2): "+uniqueFieldError, "name", "project")
-		})
+			}`,
+			uniqueFieldError, "name", "project")
 
-		Convey(`builder missing name`, func() {
-			testValidation(`
+		testValidation(`builder missing name`, `
 			notifiers {
 				name: "good-name"
 				builders {
 					bucket: "test.bucket"
 				}
-			}
-			`, "(notifier #1 / builder #1): "+requiredFieldError, "name")
-		})
+			}`,
+			requiredFieldError, "name")
 
-		Convey(`builder missing bucket`, func() {
-			testValidation(`
+		testValidation(`builder missing bucket`, `
 			notifiers {
 				name: "good-name"
 				builders {
 					name: "i-am-a-builder"
 				}
-			}
-			`, "(notifier #1 / builder #1): "+requiredFieldError, "bucket")
-		})
+			}`,
+			requiredFieldError, "bucket")
 
-		Convey(`bad email address`, func() {
-			testValidation(`
+		testValidation(`bad email address`, `
 			notifiers {
 				name: "good-name"
 				notifications {
@@ -100,8 +90,26 @@ func TestValidation(t *testing.T) {
 					name: "i-am-a-builder"
 					bucket: "test.bucket"
 				}
-			}
-			`, "(notifier #1 / notification #1): "+badEmailError, "@@@@@")
-		})
+			}`,
+			badEmailError, "@@@@@")
+	})
+
+	Convey(`Test Environment for validateSettings`, t, func() {
+		testValidation := func(env, config, expectFormat string, expectArgs ...interface{}) {
+			Convey(env, func() {
+				cfg, err := testutil.ParseSettings(config)
+				So(err, ShouldBeNil)
+				err = validateSettings(cfg)
+				if expectFormat == "" {
+					So(err, assertions.ShouldErrLike)
+					return
+				}
+				expect := fmt.Sprintf(expectFormat, expectArgs...)
+				So(err, assertions.ShouldErrLike, expect)
+			})
+		}
+		testValidation(`empty`, ``, requiredFieldError, "milo_host")
+		testValidation(`bad hostname`, `milo_host: "9mNRn29%^^%#"`, invalidFieldError, "milo_host")
+		testValidation(`good`, `milo_host: "luci-milo.example.com"`, "")
 	})
 }

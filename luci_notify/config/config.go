@@ -112,9 +112,8 @@ func clearDeadProjects(c context.Context, liveProjects stringset.Set) error {
 	return datastore.Delete(c, toDelete)
 }
 
-// updateNotifiers updates all Notifiers in the datastore, which are grouped
-// by their respective projects.
-func updateNotifiers(c context.Context) error {
+// updateProjects updates all Projects and their Notifiers in the datastore.
+func updateProjects(c context.Context) error {
 	cfgName := info.AppID(c) + ".cfg"
 	logging.Debugf(c, "fetching configs for %s", cfgName)
 	lucicfg := backend.Get(c).GetConfigInterface(c, backend.AsService)
@@ -135,14 +134,14 @@ func updateNotifiers(c context.Context) error {
 		// This looks like "projects/<project name>"
 		splitPath := strings.SplitN(cfg.ConfigSet, "/", 2)
 		if len(splitPath) != 2 {
-			return fmt.Errorf("Invalid config set %s", cfg.ConfigSet)
+			return fmt.Errorf("invalid config set %s", cfg.ConfigSet)
 		}
 		projectName := splitPath[1]
 
 		// All found projects are considered 'alive'.
 		liveProjects.Add(projectName)
 
-		project, err := extractConfig(&cfg)
+		project, err := extractProjectConfig(&cfg)
 		if err != nil {
 			merr = append(merr, err)
 			continue
@@ -167,8 +166,13 @@ func updateNotifiers(c context.Context) error {
 func UpdateHandler(ctx *router.Context) {
 	c, h := ctx.Context, ctx.Writer
 	c, _ = context.WithTimeout(c, time.Minute)
-	if err := updateNotifiers(c); err != nil {
-		logging.WithError(err).Errorf(c, "error while updating config")
+	if err := updateProjects(c); err != nil {
+		logging.WithError(err).Errorf(c, "error while updating project configs")
+		h.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if err := updateSettings(c); err != nil {
+		logging.WithError(err).Errorf(c, "error while updating settings")
 		h.WriteHeader(http.StatusInternalServerError)
 		return
 	}
