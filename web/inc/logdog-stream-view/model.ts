@@ -543,8 +543,13 @@ namespace LogDog {
         }
       }
 
+      if (this.renderPromise) {
+        await this.renderPromise;
+      }
+
       // Post-fetch cleanup.
       this.clearCurrentOperation(op);
+      this.setIdleLoadingState();
       this.updateControls();
     }
 
