@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7467f699_e5a87d88",
+        "filename": "common/api/buildbucket/buildbucket/v1/search.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-26T17:18:42Z",
+      "side": 1,
+      "message": "imho-nit: \"as of Sep 2017\" is more valuable to reader than in \"in practice\".",
+      "range": {
+        "startLine": 65,
+        "startChar": 32,
+        "endLine": 65,
+        "endChar": 43
+      },
+      "revId": "1b084904da6e4f0752b11054158d7b814df38c6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d966d08_fec126dd",
+        "filename": "common/api/buildbucket/buildbucket/v1/search.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-26T17:18:42Z",
+      "side": 1,
+      "message": "wdym?",
+      "range": {
+        "startLine": 67,
+        "startChar": 3,
+        "endLine": 67,
+        "endChar": 21
+      },
+      "revId": "1b084904da6e4f0752b11054158d7b814df38c6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
