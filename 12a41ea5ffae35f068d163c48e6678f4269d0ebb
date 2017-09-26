@@ -1,0 +1,234 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2f437dd1_858901a5",
+        "filename": "common/config/validation/net_util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T17:28:38Z",
+      "side": 1,
+      "message": "this seems right\n\nplease simplify it a bit by extracting the `[a-z0-9]([a-z0-9-]*[a-z0-9])*` part to a const and then using fmt.Sprintf(`^%s(\\.%s)*$`, hostComponentPattern) here",
+      "range": {
+        "startLine": 24,
+        "startChar": 35,
+        "endLine": 24,
+        "endChar": 56
+      },
+      "revId": "12a41ea5ffae35f068d163c48e6678f4269d0ebb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7c8fbbd_e3a2eb9b",
+        "filename": "common/config/validation/net_util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T17:28:38Z",
+      "side": 1,
+      "message": "no need for this const, you can use hostnameRegexp here (it implements fmt.Stringer)",
+      "range": {
+        "startLine": 35,
+        "startChar": 56,
+        "endLine": 35,
+        "endChar": 71
+      },
+      "revId": "12a41ea5ffae35f068d163c48e6678f4269d0ebb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42247e68_6184040c",
+        "filename": "luci_notify/config/settings.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T17:28:38Z",
+      "side": 1,
+      "message": "`gae:\"-\"` to prevent datastore layer to making it a property",
+      "range": {
+        "startLine": 42,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 31
+      },
+      "revId": "12a41ea5ffae35f068d163c48e6678f4269d0ebb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3added18_ecba87fe",
+        "filename": "luci_notify/config/settings.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T17:28:38Z",
+      "side": 1,
+      "message": "binary\n\nthere are different ways of marshalling",
+      "range": {
+        "startLine": 48,
+        "startChar": 32,
+        "endLine": 48,
+        "endChar": 42
+      },
+      "revId": "12a41ea5ffae35f068d163c48e6678f4269d0ebb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92247fa6_52d32547",
+        "filename": "luci_notify/config/settings.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T17:28:38Z",
+      "side": 1,
+      "message": "nit: settings",
+      "range": {
+        "startLine": 51,
+        "startChar": 2,
+        "endLine": 51,
+        "endChar": 9
+      },
+      "revId": "12a41ea5ffae35f068d163c48e6678f4269d0ebb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37108126_c526d70d",
+        "filename": "luci_notify/config/settings.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T17:28:38Z",
+      "side": 1,
+      "message": "this will cause a panic if the value in the datastore happens to be non-bytes. Better to return an error.",
+      "range": {
+        "startLine": 55,
+        "startChar": 35,
+        "endLine": 55,
+        "endChar": 44
+      },
+      "revId": "12a41ea5ffae35f068d163c48e6678f4269d0ebb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55ca0b95_fe4fba57",
+        "filename": "luci_notify/config/settings.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T17:28:38Z",
+      "side": 1,
+      "message": "nit: settings",
+      "range": {
+        "startLine": 55,
+        "startChar": 2,
+        "endLine": 55,
+        "endChar": 8
+      },
+      "revId": "12a41ea5ffae35f068d163c48e6678f4269d0ebb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e4af073_803ef052",
+        "filename": "luci_notify/config/settings.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T17:28:38Z",
+      "side": 1,
+      "message": "binary proto",
+      "range": {
+        "startLine": 67,
+        "startChar": 14,
+        "endLine": 67,
+        "endChar": 26
+      },
+      "revId": "12a41ea5ffae35f068d163c48e6678f4269d0ebb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e2213c3_e00098eb",
+        "filename": "luci_notify/config/settings.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T17:28:38Z",
+      "side": 1,
+      "message": "nit: settingsBytes to be consistent with Load",
+      "range": {
+        "startLine": 73,
+        "startChar": 1,
+        "endLine": 73,
+        "endChar": 6
+      },
+      "revId": "12a41ea5ffae35f068d163c48e6678f4269d0ebb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "679479db_ba60faea",
+        "filename": "luci_notify/config/validate_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T17:28:38Z",
+      "side": 1,
+      "message": "env, config, expectFormat string",
+      "range": {
+        "startLine": 98,
+        "startChar": 25,
+        "endLine": 98,
+        "endChar": 71
+      },
+      "revId": "12a41ea5ffae35f068d163c48e6678f4269d0ebb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -331,6 +331,24 @@
     },
     {
       "key": {
+        "uuid": "f6334726_6c7c72a9",
+        "filename": "luci_notify/config/settings.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T17:28:38Z",
+      "side": 1,
+      "message": "by most of the work I meant extracting the config and starting an transaction. it is fine, this is not a performance-critical part of the code. Let\u0027s keep it simple as it is in patchset2",
+      "parentUuid": "000e4a8e_5f496153",
+      "revId": "543ea60dde846f062c3db5ea3a5e2abcd9ee5a75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6785afc1_f00fd975",
         "filename": "luci_notify/config/settings.go",
         "patchSetId": 1
