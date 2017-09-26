@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fe890e8d_3ccaa494",
+        "filename": "common/proto/milo/annotations.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-26T02:28:11Z",
+      "side": 0,
+      "message": "since Manifest is now in this namespace, there\u0027s no reason to nest this message inside of Step.",
+      "range": {
+        "startLine": 142,
+        "startChar": 10,
+        "endLine": 142,
+        "endChar": 22
+      },
+      "revId": "b969632afc8f0b60268cd0d44da1de2fca87377b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc7de6b9_f38beb3b",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-26T02:28:11Z",
+      "side": 0,
+      "message": "within a single directory, there\u0027s no way to have more than one server URL.",
+      "range": {
+        "startLine": 66,
+        "startChar": 11,
+        "endLine": 66,
+        "endChar": 26
+      },
+      "revId": "b969632afc8f0b60268cd0d44da1de2fca87377b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02a4675c_fe2f5db4",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-26T02:28:11Z",
+      "side": 0,
+      "message": "having the package name inside of the message here made processing it very awkward. There\u0027s also no way to have two versions of the same package installed in the same directory, so a map is much more natural.",
+      "range": {
+        "startLine": 70,
+        "startChar": 11,
+        "endLine": 70,
+        "endChar": 28
+      },
+      "revId": "b969632afc8f0b60268cd0d44da1de2fca87377b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1cc6c86_d25bbf3c",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-26T02:28:11Z",
+      "side": 0,
+      "message": "these prefixes were redundant.",
+      "range": {
+        "startLine": 74,
+        "startChar": 11,
+        "endLine": 74,
+        "endChar": 16
+      },
+      "revId": "b969632afc8f0b60268cd0d44da1de2fca87377b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "958b71d5_87987e61",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-26T02:28:11Z",
+      "side": 0,
+      "message": "same story with the isolate servers; doesn\u0027t make sense to pull isolates from multiple servers into the same directory; even if it did make sense, that sounds like a thing we want to (strongly) discourage.",
+      "range": {
+        "startLine": 90,
+        "startChar": 11,
+        "endLine": 90,
+        "endChar": 30
+      },
+      "revId": "b969632afc8f0b60268cd0d44da1de2fca87377b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4cde580a_89d6e2ab",
+        "filename": "milo/srcman/diff.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-26T02:28:11Z",
+      "side": 0,
+      "message": "all of this diff logic is no longer milo-specific, but moved to common/proto/milo as member methods directly on the diffable objects. Now `old.Diff(new) -\u003e ManifestDiff`. I anticipate that some applications (like findit), will find this local-diffing capability useful.",
+      "range": {
+        "startLine": 1,
+        "startChar": 18,
+        "endLine": 1,
+        "endChar": 21
+      },
+      "revId": "b969632afc8f0b60268cd0d44da1de2fca87377b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
