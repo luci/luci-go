@@ -83,7 +83,7 @@ func TestSearch(t *testing.T) {
 
 		Convey("Run until finished", func() {
 			builds := make(chan *ApiCommonBuildMessage, 5)
-			err := client.Search().Run(builds, nil)
+			err := client.Search().Run(builds, 0, nil)
 			So(err, ShouldBeNil)
 			for id := 1; id <= 5; id++ {
 				So((<-builds).Id, ShouldEqual, id)
@@ -98,11 +98,11 @@ func TestSearch(t *testing.T) {
 				<-builds
 				cancel()
 			}()
-			err := client.Search().Context(ctx).Run(builds, nil)
+			err := client.Search().Context(ctx).Run(builds, 0, nil)
 			So(err, ShouldEqual, context.Canceled)
 		})
 		Convey("Fetch until finished", func() {
-			builds, err := client.Search().Fetch(nil)
+			builds, err := client.Search().Fetch(0, nil)
 			So(err, ShouldBeNil)
 			for i, b := range builds {
 				So(b.Id, ShouldEqual, i+1)
@@ -110,11 +110,17 @@ func TestSearch(t *testing.T) {
 		})
 		Convey("Fetch until finished with transient errors", func() {
 			responses[0].transientErrors = 2
-			builds, err := client.Search().Fetch(nil)
+			builds, err := client.Search().Fetch(0, nil)
 			So(err, ShouldBeNil)
 			for i, b := range builds {
 				So(b.Id, ShouldEqual, i+1)
 			}
+		})
+
+		Convey("Fetch 3", func() {
+			builds, err := client.Search().Fetch(3, nil)
+			So(err, ShouldBeNil)
+			So(builds, ShouldHaveLength, 3)
 		})
 	})
 }
