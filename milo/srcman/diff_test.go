@@ -18,30 +18,29 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
+	"go.chromium.org/luci/common/proto/milo"
 
 	. "github.com/smartystreets/goconvey/convey"
-
-	srcman_pb "go.chromium.org/luci/milo/api/proto/manifest"
 )
 
 func TestDiff(t *testing.T) {
 	t.Parallel()
 
 	Convey(`test Diff`, t, func() {
-		a := &srcman_pb.Manifest{
-			Directories: map[string]*srcman_pb.Manifest_Directory{
+		a := &milo.Manifest{
+			Directories: map[string]*milo.Manifest_Directory{
 				"foo": {
-					GitCheckout: &srcman_pb.Manifest_GitCheckout{
+					GitCheckout: &milo.Manifest_GitCheckout{
 						RepoUrl:  "https://example.com",
 						Revision: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 					},
 				},
 			},
 		}
-		b := &srcman_pb.Manifest{
-			Directories: map[string]*srcman_pb.Manifest_Directory{
+		b := &milo.Manifest{
+			Directories: map[string]*milo.Manifest_Directory{
 				"foo": {
-					GitCheckout: &srcman_pb.Manifest_GitCheckout{
+					GitCheckout: &milo.Manifest_GitCheckout{
 						RepoUrl:  "https://example.com",
 						Revision: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 					},
@@ -72,8 +71,8 @@ func TestDiff(t *testing.T) {
 		})
 
 		Convey(`directory add`, func() {
-			b.Directories["bar"] = &srcman_pb.Manifest_Directory{
-				GitCheckout: &srcman_pb.Manifest_GitCheckout{
+			b.Directories["bar"] = &milo.Manifest_Directory{
+				GitCheckout: &milo.Manifest_GitCheckout{
 					RepoUrl:  "https://other.example.com",
 					Revision: "badc0ffeebadc0ffeebadc0ffeebadc0ffeebadc",
 				},
@@ -89,8 +88,8 @@ func TestDiff(t *testing.T) {
 		})
 
 		Convey(`directory rm`, func() {
-			b.Directories["bar"] = &srcman_pb.Manifest_Directory{
-				GitCheckout: &srcman_pb.Manifest_GitCheckout{
+			b.Directories["bar"] = &milo.Manifest_Directory{
+				GitCheckout: &milo.Manifest_GitCheckout{
 					RepoUrl:  "https://other.example.com",
 					Revision: "badc0ffeebadc0ffeebadc0ffeebadc0ffeebadc",
 				},
@@ -108,8 +107,8 @@ func TestDiff(t *testing.T) {
 		})
 
 		Convey(`directory mod`, func() {
-			b.Directories["foo"] = &srcman_pb.Manifest_Directory{
-				GitCheckout: &srcman_pb.Manifest_GitCheckout{
+			b.Directories["foo"] = &milo.Manifest_Directory{
+				GitCheckout: &milo.Manifest_GitCheckout{
 					RepoUrl:  "https://other.example.com",
 					Revision: "badc0ffeebadc0ffeebadc0ffeebadc0ffeebadc",
 				},

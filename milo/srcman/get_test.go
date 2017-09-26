@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/proto/milo"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1/fakelogs"
-	srcman_pb "go.chromium.org/luci/milo/api/proto/manifest"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 )
 
@@ -47,10 +46,10 @@ func TestGet(t *testing.T) {
 	Convey(`Test srcman.Get`, t, func() {
 		ctx := memory.Use(context.Background())
 
-		demoData := &srcman_pb.Manifest{
-			Directories: map[string]*srcman_pb.Manifest_Directory{
+		demoData := &milo.Manifest{
+			Directories: map[string]*milo.Manifest_Directory{
 				"something": {
-					GitCheckout: &srcman_pb.Manifest_GitCheckout{
+					GitCheckout: &milo.Manifest_GitCheckout{
 						RepoUrl:  "https://example.com/repo/path.git",
 						Revision: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 					},
