@@ -41,7 +41,7 @@ type Step struct {
 	Hidden       bool            `json:"hidden"`
 	IsFinished   bool            `json:"isFinished"`
 	IsStarted    bool            `json:"isStarted"`
-	Logs         [][]string      `json:"logs"`
+	Logs         []Log           `json:"logs"`
 	Name         string          `json:"name"`
 	Results      StepResults     `json:"results"`
 	Statistics   struct {
@@ -123,7 +123,7 @@ type Build struct {
 	Currentstep interface{} `json:"currentStep" gae:"-"`
 	// We don't care about this one.
 	Eta    interface{} `json:"eta" gae:"-"`
-	Logs   [][]string  `json:"logs" gae:"-"`
+	Logs   []Log       `json:"logs" gae:"-"`
 	Number int         `json:"number"`
 	// This is a slice of tri-tuples of [property name, value, source].
 	// property name is always a string

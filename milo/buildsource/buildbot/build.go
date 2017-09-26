@@ -195,7 +195,7 @@ func components(b *buildbot.Build) (result []*resp.BuildComponent) {
 		}
 
 		for _, l := range step.Logs {
-			logLink := resp.NewLink(l[0], l[1])
+			logLink := resp.NewLink(l.Name, l.URL)
 
 			links := getLinksWithAliases(logLink, true)
 			if logLink.Label == "stdio" {
@@ -482,14 +482,9 @@ func updatePostProcessBuild(b *buildbot.Build) {
 		// original step, we can't apply the promotion logic; instead, we will use
 		// the link map to map any old URLs that were matched in "promoteLogDogLnks"
 		// to their new URLs.
-		for _, link := range b.Logs {
-			// "link" is in the form: [NAME, URL]
-			if len(link) != 2 {
-				continue
-			}
-
-			if newURL, ok := linkMap[link[1]]; ok {
-				link[1] = newURL
+		for i, l := range b.Logs {
+			if newURL, ok := linkMap[l.URL]; ok {
+				b.Logs[i].URL = newURL
 			}
 		}
 	}
@@ -572,10 +567,10 @@ func promoteLogDogLinks(s *buildbot.Step, isInitialStep bool, linkMap map[string
 	}
 
 	// Update step logs.
-	newLogs := make([][]string, 0, len(s.Logs))
+	newLogs := make([]buildbot.Log, 0, len(s.Logs))
 	for _, l := range s.Logs {
-		for _, res := range maybePromoteAliases(&stepLog{l[0], l[1]}, true) {
-			newLogs = append(newLogs, []string{res.label, res.url})
+		for _, res := range maybePromoteAliases(&stepLog{l.Name, l.URL}, true) {
+			newLogs = append(newLogs, buildbot.Log{res.label, res.url})
 		}
 	}
 	s.Logs = newLogs
