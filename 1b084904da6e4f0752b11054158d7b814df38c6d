@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "094e107d_833235c0",
+        "filename": "common/api/buildbucket/buildbucket/v1/search.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T17:34:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7467f699_e5a87d88",
+      "range": {
+        "startLine": 65,
+        "startChar": 32,
+        "endLine": 65,
+        "endChar": 43
+      },
+      "revId": "1b084904da6e4f0752b11054158d7b814df38c6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8d966d08_fec126dd",
         "filename": "common/api/buildbucket/buildbucket/v1/search.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "25eb9a23_35768223",
+        "filename": "common/api/buildbucket/buildbucket/v1/search.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T17:34:48Z",
+      "side": 1,
+      "message": "fixed a typo",
+      "parentUuid": "8d966d08_fec126dd",
+      "range": {
+        "startLine": 67,
+        "startChar": 3,
+        "endLine": 67,
+        "endChar": 21
+      },
+      "revId": "1b084904da6e4f0752b11054158d7b814df38c6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c721f8fe_4dd7e94b",
         "filename": "common/api/buildbucket/buildbucket/v1/search.go",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "1b084904da6e4f0752b11054158d7b814df38c6d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4c21170_1ecb35de",
+        "filename": "common/api/buildbucket/buildbucket/v1/search.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T17:34:48Z",
+      "side": 1,
+      "message": "that\u0027s not what I meant. I meant that a user may stop Run by canceling the context while it receives a build from the channel.\n\nI\u0027ve removed this because what I meant is more-or-less obvious and the comment is just confusing.",
+      "parentUuid": "c721f8fe_4dd7e94b",
+      "range": {
+        "startLine": 68,
+        "startChar": 57,
+        "endLine": 68,
+        "endChar": 58
+      },
+      "revId": "1b084904da6e4f0752b11054158d7b814df38c6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
