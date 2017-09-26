@@ -28,18 +28,35 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+type callbackGen struct {
+	email string
+	cb    func(context.Context, []string, time.Duration) (*oauth2.Token, error)
+}
+
+func (g *callbackGen) GenerateToken(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
+	return g.cb(ctx, scopes, lifetime)
+}
+
+func (g *callbackGen) GetEmail() (string, error) {
+	return g.email, nil
+}
+
+func makeGenerator(email string, cb func(context.Context, []string, time.Duration) (*oauth2.Token, error)) TokenGenerator {
+	return &callbackGen{email, cb}
+}
+
 func TestWithLocalAuth(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
-	gen := func(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
+	gen := makeGenerator("email@example.com", func(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
 		return &oauth2.Token{
 			AccessToken: "tok",
 			Expiry:      clock.Now(ctx).Add(30 * time.Minute),
 		}, nil
-	}
+	})
 
 	srv := Server{
 		TokenGenerators: map[string]TokenGenerator{"acc_id": gen},
