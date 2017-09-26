@@ -6,12 +6,14 @@ Package config is a generated protocol buffer package.
 
 It is generated from these files:
 	api/config/notify.proto
+	api/config/settings.proto
 
 It has these top-level messages:
 	ProjectConfig
 	Notifier
 	Notification
 	Builder
+	Settings
 */
 package config
 

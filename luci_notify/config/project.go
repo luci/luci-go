@@ -25,10 +25,10 @@ type Project struct {
 	// This must be unique on this luci-notify instance.
 	Name string `gae:"$id"`
 
-	// The revision of this project's luci-notify configuration.
+	// Revision is the revision of this project's luci-notify configuration.
 	Revision string
 
-	// The luci-config URL to this project's luci-notify configuration.
+	// URL is the luci-config URL to this project's luci-notify configuration.
 	URL string
 }
 

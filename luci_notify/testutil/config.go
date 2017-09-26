@@ -24,9 +24,9 @@ import (
 	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
 )
 
-// LoadConfig returns a luci-notify configuration from api/config/testdata
+// LoadProjectConfig returns a luci-notify configuration from api/config/testdata
 // by filename (without extension). It does NOT validate the configuration.
-func LoadConfig(filename string) (*notifyConfig.ProjectConfig, error) {
+func LoadProjectConfig(filename string) (*notifyConfig.ProjectConfig, error) {
 	dir, err := os.Getwd()
 	if err != nil {
 		return nil, err
@@ -36,15 +36,25 @@ func LoadConfig(filename string) (*notifyConfig.ProjectConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ParseConfig(string(buf[:]))
+	return ParseProjectConfig(string(buf[:]))
 }
 
-// ParseConfig parses a luci-notify configuration from a string. It does
+// ParseProjectConfig parses a luci-notify configuration from a string. It does
 // NOT validate the configuration.
-func ParseConfig(config string) (*notifyConfig.ProjectConfig, error) {
+func ParseProjectConfig(config string) (*notifyConfig.ProjectConfig, error) {
 	project := notifyConfig.ProjectConfig{}
 	if err := proto.UnmarshalText(config, &project); err != nil {
 		return nil, err
 	}
 	return &project, nil
+}
+
+// ParseSettings parses a luci-notify service configuration from a string. It does
+// NOT validate the configuration.
+func ParseSettings(config string) (*notifyConfig.Settings, error) {
+	settings := notifyConfig.Settings{}
+	if err := proto.UnmarshalText(config, &settings); err != nil {
+		return nil, err
+	}
+	return &settings, nil
 }

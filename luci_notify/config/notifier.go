@@ -116,9 +116,12 @@ func (n *Notifier) Load(props datastore.PropertyMap) error {
 	if pdata, ok := props["Notifications"]; ok {
 		configs := pdata.Slice()
 		if len(configs) != 1 {
-			return fmt.Errorf("property `Notifications` for entity of kind `Notifier` is invalid")
+			return fmt.Errorf("property `Notifications` is a property slice")
 		}
-		configBytes := configs[0].Value().([]byte)
+		configBytes, ok := configs[0].Value().([]byte)
+		if !ok {
+			return fmt.Errorf("expected byte array for property `Notifications`")
+		}
 		if err := json.Unmarshal(configBytes, &n.Notifications); err != nil {
 			return err
 		}
