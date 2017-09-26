@@ -25,10 +25,7 @@ namespace LogDog {
 
   /** Configurable set of log stream query parameters. */
   export type QueryRequest = {
-    project: string;
-    getMeta?: boolean;
-    path?: string;
-    contentType?: string;
+    project: string; getMeta?: boolean; path?: string; contentType?: string;
     streamType?: LogDog.StreamType;
     purged?: boolean;
     newer?: Date;
@@ -39,8 +36,7 @@ namespace LogDog {
 
   /** The result of a log stream query. */
   export type QueryResult = {
-    stream: LogDog.StreamPath;
-    state?: LogDog.LogStreamState;
+    stream: LogDog.StreamPath; state?: LogDog.LogStreamState;
     desc?: LogDog.LogStreamDescriptor;
   };
 
