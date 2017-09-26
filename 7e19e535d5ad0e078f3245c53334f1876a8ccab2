@@ -22,6 +22,30 @@
       "revId": "7e19e535d5ad0e078f3245c53334f1876a8ccab2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb797b02_285730e3",
+        "filename": "common/auth/localauth/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-26T01:53:21Z",
+      "side": 1,
+      "message": "NoEmail is in auth.internal (and I prefer it to stay there... common/auth API users shouldn\u0027t care about it)",
+      "parentUuid": "73e90202_6ef69559",
+      "range": {
+        "startLine": 145,
+        "startChar": 11,
+        "endLine": 145,
+        "endChar": 14
+      },
+      "revId": "7e19e535d5ad0e078f3245c53334f1876a8ccab2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
