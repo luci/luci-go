@@ -851,6 +851,8 @@ func TestQueries(t *testing.T) {
 			Convey("NoSuchInvocation", func() {
 				_, err := e.GetVisibleInvocation(ctxAdmin, "missing/job", 1)
 				So(err, ShouldResemble, ErrNoSuchInvocation)
+				_, err = e.GetVisibleInvocation(ctxAdmin, "abc/1", 666) // Missing invocation.
+				So(err, ShouldResemble, ErrNoSuchInvocation)
 			})
 
 			Convey("Reader sees", func() {

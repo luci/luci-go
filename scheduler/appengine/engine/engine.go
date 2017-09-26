@@ -350,8 +350,14 @@ func (e *engineImpl) GetVisibleInvocation(c context.Context, jobID string, invID
 		return nil, ErrNoSuchInvocation
 	case err != nil:
 		return nil, err
+	}
+	switch inv, err := e.getInvocation(c, jobID, invID); {
+	case err != nil:
+		return nil, err
+	case inv == nil:
+		return nil, ErrNoSuchInvocation
 	default:
-		return e.getInvocation(c, jobID, invID)
+		return inv, nil
 	}
 }
 
