@@ -17,7 +17,7 @@ package srcman
 import (
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/data/stringset"
-	srcman_pb "go.chromium.org/luci/milo/api/proto/manifest"
+	"go.chromium.org/luci/common/proto/milo"
 )
 
 // Stat is a simple enumeration classifying the type of change present in a Diff
@@ -34,7 +34,7 @@ const (
 
 // Diff represents the difference between two Manifest protos.
 type Diff struct {
-	A, B *srcman_pb.Manifest
+	A, B *milo.Manifest
 
 	// OverallChange is true if A and B differ in some fashion.
 	OverallChange bool
@@ -49,7 +49,7 @@ type Diff struct {
 // manifest and the `b` manifest.
 //
 // The two manifests should be ordered so that `a` is the older of the two.
-func ComputeDiff(a, b *srcman_pb.Manifest) *Diff {
+func ComputeDiff(a, b *milo.Manifest) *Diff {
 	ret := &Diff{
 		A: a, B: b,
 		VersionChange: a.Version != b.Version,
