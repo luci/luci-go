@@ -2,6 +2,230 @@
   "comments": [
     {
       "key": {
+        "uuid": "254224b2_4b717661",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T16:33:42Z",
+      "side": 1,
+      "message": "nit: move the example here (e.g. ....)",
+      "range": {
+        "startLine": 94,
+        "startChar": 44,
+        "endLine": 94,
+        "endChar": 48
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df91a45d_24a70d52",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T16:33:42Z",
+      "side": 1,
+      "message": "we can have multiple isolates in the same dir?",
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "057af023_cd7d0379",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T16:33:42Z",
+      "side": 1,
+      "message": "please start this paragraph with something that catches the eye better, for example\nDO NOT USE AS PRIMARY KEY. The local path....",
+      "range": {
+        "startLine": 117,
+        "startChar": 4,
+        "endLine": 118,
+        "endChar": 7
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f6ca285_aaf924e6",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T16:33:42Z",
+      "side": 1,
+      "message": "i didn\u0027t review this proto before and you are making backward incompatible changes, so I think I\u0027d start a discussion here.\n\ni think i have two concerns with this:\n1) the schema invites the user to use this as a primary key. File system paths do not define the source. It is defined by hashes of isolate/commits/packages/etc.\n2) it might be that not everything can be represented as a file system path. Imagine that another input to the task is a config that it fetched every time, stored in memory (not file system), acted on and discarded. What should we use as they key then?\n\nI think I\u0027d rather move the concept of the file system to the types of sources that understand it instead of making this type centered around fs path. Then this message would contain\n\nrepeated GitCheckout git;\nrepeated CIPDDeployment cipd;\nrepeated IsolatedDeployment isolated;\nrepeated SomeOtherKindOfSource blah;\n\nor\n\n// key is repo URL\nrepeated map\u003cstring, GitCheckout\u003e git;\n// key is CIPD package name\nrepeated map\u003cstring, CIPDPackage\u003e cipd;\n\nand each of them may contain checkout/deployment path. Or maybe not? Does milo use the path? Does manifest hash depend on fs paths? Should it?",
+      "range": {
+        "startLine": 124,
+        "startChar": 6,
+        "endLine": 124,
+        "endChar": 12
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ad5ca6c_8feb2366",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T16:33:42Z",
+      "side": 1,
+      "message": "nit: i like that the example here appears in the the beginning of the comment, so a user can quickly have an idea what\u0027s in the field. I wish other fields did that too, as opposed to \"Ex\\n\u003cexample\"\u003e in the very end",
+      "range": {
+        "startLine": 129,
+        "startChar": 25,
+        "endLine": 129,
+        "endChar": 37
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8fe9673_2e22921b",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T16:33:42Z",
+      "side": 1,
+      "message": "nit: must",
+      "range": {
+        "startLine": 141,
+        "startChar": 35,
+        "endLine": 141,
+        "endChar": 41
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5dd09f9_eff3454a",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T16:33:42Z",
+      "side": 1,
+      "message": "looks like these comments did not propagate to the generate Go code. Please try placing them before a symbol",
+      "range": {
+        "startLine": 22,
+        "startChar": 18,
+        "endLine": 22,
+        "endChar": 50
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5b764c0_6a8b16ca",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T16:33:42Z",
+      "side": 1,
+      "message": "also this may become nicer",
+      "range": {
+        "startLine": 25,
+        "startChar": 18,
+        "endLine": 26,
+        "endChar": 52
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f5021410_feaa50bd",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T16:33:42Z",
+      "side": 1,
+      "message": "Why do we need to distinguish MODIFIED and DIFF in Stat? FWIU the difference between them is that if DIFF, then the delta is available. I think that ((state\u003d\u003dMODIFIED) \u003d\u003e (delta may be available)) is simpler than ((stat\u003d\u003dDIFF) \u003d\u003d (delta is available)). Users that don\u0027t care about delta and want to know if a thing changed, wouldn\u0027t have to check for both DIFF and MODIFIED. If we remove DIFF, that would be one state less.",
+      "range": {
+        "startLine": 27,
+        "startChar": 4,
+        "endLine": 27,
+        "endChar": 8
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58c67436_9a2f3b4e",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T16:33:42Z",
+      "side": 1,
+      "message": "looks like this field is binary. maybe use boolean?",
+      "range": {
+        "startLine": 32,
+        "startChar": 23,
+        "endLine": 32,
+        "endChar": 40
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5cbf4925_7a226b4c",
         "filename": "common/proto/milo/manifest_diff.proto",
         "patchSetId": 6
@@ -18,6 +242,98 @@
         "startChar": 10,
         "endLine": 35,
         "endChar": 19
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ceb4c5c_c14220fb",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T16:33:42Z",
+      "side": 1,
+      "message": "consider name hash or commit_id or id.",
+      "range": {
+        "startLine": 36,
+        "startChar": 4,
+        "endLine": 36,
+        "endChar": 21
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2079f0a9_9815e6fd",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T16:33:42Z",
+      "side": 1,
+      "message": "tree_id?",
+      "range": {
+        "startLine": 37,
+        "startChar": 4,
+        "endLine": 37,
+        "endChar": 18
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8d1a659_32728bac",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T16:33:42Z",
+      "side": 1,
+      "message": "note that if we do, we would have to change this field type to map\u003cstring, CIPDDiff\u003e",
+      "range": {
+        "startLine": 86,
+        "startChar": 55,
+        "endLine": 87,
+        "endChar": 21
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bbc6c1aa_994b3f75",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T16:33:42Z",
+      "side": 1,
+      "message": "if we change checkout path, it would make all new manifests different from the previous ones, even if they use the same hashes. Do we want that?",
+      "range": {
+        "startLine": 99,
+        "startChar": 6,
+        "endLine": 99,
+        "endChar": 12
       },
       "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
