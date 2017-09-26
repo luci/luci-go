@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6c320dc0_36a5db86",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 361,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-26T18:54:11Z",
+      "side": 1,
+      "message": "maybe we should move this into getInvocation instead?",
+      "range": {
+        "startLine": 355,
+        "startChar": 1,
+        "endLine": 361,
+        "endChar": 2
+      },
+      "revId": "48aab19a23603e21382deb7d3a4a11de69858490",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
