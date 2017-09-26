@@ -145,8 +145,7 @@ switch:
 		gcloud \
 			--project $(CLOUD_PROJECT) \
 			app versions migrate \
-				$$(gae.py version -A $(CLOUD_PROJECT) $(GAE_PY_EXTRA_ARGS)) \
-				$(addprefix --service=,$(ALL_SERVICES))
+				$$(gae.py version -A $(CLOUD_PROJECT) $(GAE_PY_EXTRA_ARGS))
 
 # This is a special make target to upload the static module named "dev". This
 # version can be specifically whitelisted by the service account to enable

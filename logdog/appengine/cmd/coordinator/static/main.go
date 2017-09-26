@@ -14,4 +14,23 @@
 
 // Package stub doesn't actually do anything. It exists to give GAE a deployable
 // target so that the static pages for this service can be available.
+//
+// We include a warmup handler because it is a prerequisite for application-wide
+// version switching.
 package stub
+
+import (
+	"net/http"
+
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/warmup"
+)
+
+func init() {
+	r := router.New()
+
+	base := router.NewMiddlewareChain()
+	warmup.InstallHandlers(r, base)
+
+	http.Handle("/", r)
+}

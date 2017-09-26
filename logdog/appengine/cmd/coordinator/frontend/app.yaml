@@ -17,6 +17,9 @@ runtime: go
 api_version: 1
 env: flex
 
+inbound_services:
+  - warmup
+
 handlers:
 - url: "/debug/*"
   script: _go_app

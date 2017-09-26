@@ -18,6 +18,9 @@ api_version: go1
 
 instance_class: F2
 
+inbound_services:
+  - warmup
+
 handlers:
 - url: "/debug/*"
   script: _go_app

@@ -16,6 +16,11 @@ service: static
 runtime: go
 api_version: go1
 
+# This is necessary for "switch" command. There is no corresponding support in
+# the static app.
+inbound_services:
+  - warmup
+
 handlers:
 - url: /app/?
   static_files: dist/logdog-app/index.html
