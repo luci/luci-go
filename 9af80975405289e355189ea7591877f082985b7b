@@ -495,6 +495,30 @@
     },
     {
       "key": {
+        "uuid": "1b94804e_74383e2d",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-26T00:53:27Z",
+      "side": 1,
+      "message": "yeah, since you have to roll essentially the same splitting in each, my approach won\u0027t be more readable, and certainly less efficient.",
+      "parentUuid": "1cdfb3f7_ae4f3fc4",
+      "range": {
+        "startLine": 88,
+        "startChar": 1,
+        "endLine": 88,
+        "endChar": 9
+      },
+      "revId": "9af80975405289e355189ea7591877f082985b7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ced316b9_2d5c1dd1",
         "filename": "buildbucket/buildset_test.go",
         "patchSetId": 11
