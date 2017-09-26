@@ -16,6 +16,9 @@ service: services
 runtime: go
 api_version: go1
 
+inbound_services:
+  - warmup
+
 handlers:
 - url: "/debug/*"
   script: _go_app
