@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9d4e4d2c_8e6c089e",
+        "filename": "buildbucket/search.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T15:18:03Z",
+      "side": 1,
+      "message": "you are totally right. Moreover, this file is quite specific to buildbucket v1 API. I\u0027ve moved it there.",
+      "parentUuid": "69704baf_1161b98c",
+      "revId": "b2ab7b8885d23cff9b8d9a177b9e91fdc9d14d3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6343439b_46fe50e4",
         "filename": "buildbucket/search.go",
         "patchSetId": 1
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "1bb1d41e_ddf27239",
+        "filename": "buildbucket/search.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T15:18:03Z",
+      "side": 1,
+      "message": "I\u0027ve moved this package, PTAL again",
+      "parentUuid": "6343439b_46fe50e4",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 136
+      },
+      "revId": "b2ab7b8885d23cff9b8d9a177b9e91fdc9d14d3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "790f8982_d507fc22",
         "filename": "buildbucket/search.go",
         "patchSetId": 1
@@ -62,6 +104,30 @@
       "revId": "b2ab7b8885d23cff9b8d9a177b9e91fdc9d14d3b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d1fafae_b7aa9835",
+        "filename": "buildbucket/search.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T15:18:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "790f8982_d507fc22",
+      "range": {
+        "startLine": 87,
+        "startChar": 3,
+        "endLine": 87,
+        "endChar": 12
+      },
+      "revId": "b2ab7b8885d23cff9b8d9a177b9e91fdc9d14d3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
