@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c29b7dbd_5f2243d4",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-26T23:02:57Z",
+      "side": 1,
+      "message": "So I have this comment format for ~all the fields in this proto already. I think changing them makes it a bit awkward for some, since they have long URLs and sometimes multiple examples.",
+      "parentUuid": "254224b2_4b717661",
+      "range": {
+        "startLine": 94,
+        "startChar": 44,
+        "endLine": 94,
+        "endChar": 48
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "df91a45d_24a70d52",
         "filename": "common/proto/milo/manifest.proto",
         "patchSetId": 6
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "a8b8a4bd_ead1d8a7",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-26T23:02:57Z",
+      "side": 1,
+      "message": "discussed offline; this is repeated so that if/when we get parity between swarming\u0027s CIPD and Isolated input APIs, this will be backwards compatible. Making it non-repeated is unfortunately not backwards-compatible in JSONPB.",
+      "parentUuid": "df91a45d_24a70d52",
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "057af023_cd7d0379",
         "filename": "common/proto/milo/manifest.proto",
         "patchSetId": 6
@@ -53,6 +95,30 @@
       "writtenOn": "2017-09-26T16:33:42Z",
       "side": 1,
       "message": "please start this paragraph with something that catches the eye better, for example\nDO NOT USE AS PRIMARY KEY. The local path....",
+      "range": {
+        "startLine": 117,
+        "startChar": 4,
+        "endLine": 118,
+        "endChar": 7
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6a90a11_c8ac87ef",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-26T23:02:57Z",
+      "side": 1,
+      "message": "changed, ptal",
+      "parentUuid": "057af023_cd7d0379",
       "range": {
         "startLine": 117,
         "startChar": 4,
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "f859da22_38596412",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-26T23:02:57Z",
+      "side": 1,
+      "message": "discussed offline, going to keep basic structure, but changing the comment.\n\nSummary: Bots and users deal with the checkouts in terms of filesystem layout. Working with either of these other proposed formats (e.g. for calculating Diff, displaying in HTML) is very awkward, and almost always requires an intermediate format like what this proto has now.",
+      "parentUuid": "0f6ca285_aaf924e6",
+      "range": {
+        "startLine": 124,
+        "startChar": 6,
+        "endLine": 124,
+        "endChar": 12
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9ad5ca6c_8feb2366",
         "filename": "common/proto/milo/manifest.proto",
         "patchSetId": 6
@@ -99,6 +189,30 @@
       "writtenOn": "2017-09-26T16:33:42Z",
       "side": 1,
       "message": "nit: i like that the example here appears in the the beginning of the comment, so a user can quickly have an idea what\u0027s in the field. I wish other fields did that too, as opposed to \"Ex\\n\u003cexample\"\u003e in the very end",
+      "range": {
+        "startLine": 129,
+        "startChar": 25,
+        "endLine": 129,
+        "endChar": 37
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b52f73b0_e54cf30f",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-26T23:02:57Z",
+      "side": 1,
+      "message": "It makes most of the comments very awkward to put long urls in the middle of them.",
+      "parentUuid": "9ad5ca6c_8feb2366",
       "range": {
         "startLine": 129,
         "startChar": 25,
@@ -134,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "9abdbd87_9099e163",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-26T23:02:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a8fe9673_2e22921b",
+      "range": {
+        "startLine": 141,
+        "startChar": 35,
+        "endLine": 141,
+        "endChar": 41
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f5dd09f9_eff3454a",
         "filename": "common/proto/milo/manifest_diff.proto",
         "patchSetId": 6
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "938cf0a4_905e7103",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-26T23:02:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f5dd09f9_eff3454a",
+      "range": {
+        "startLine": 22,
+        "startChar": 18,
+        "endLine": 22,
+        "endChar": 50
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d5b764c0_6a8b16ca",
         "filename": "common/proto/milo/manifest_diff.proto",
         "patchSetId": 6
@@ -168,6 +330,30 @@
       "writtenOn": "2017-09-26T16:33:42Z",
       "side": 1,
       "message": "also this may become nicer",
+      "range": {
+        "startLine": 25,
+        "startChar": 18,
+        "endLine": 26,
+        "endChar": 52
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7e99dda9_640ca514",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-26T23:02:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d5b764c0_6a8b16ca",
       "range": {
         "startLine": 25,
         "startChar": 18,
@@ -203,6 +389,30 @@
     },
     {
       "key": {
+        "uuid": "fb2e36af_5f0fb452",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-26T23:02:57Z",
+      "side": 1,
+      "message": "However, most users do actually care about this distinction, so it\u0027s easier to have the differentiated states. I changed these to a bit mask however so that DIFF is 8|MODIFIED, so users who don\u0027t care about the distinction can always mask off the MODIFIED bit.",
+      "parentUuid": "f5021410_feaa50bd",
+      "range": {
+        "startLine": 27,
+        "startChar": 4,
+        "endLine": 27,
+        "endChar": 8
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "58c67436_9a2f3b4e",
         "filename": "common/proto/milo/manifest_diff.proto",
         "patchSetId": 6
@@ -214,6 +424,30 @@
       "writtenOn": "2017-09-26T16:33:42Z",
       "side": 1,
       "message": "looks like this field is binary. maybe use boolean?",
+      "range": {
+        "startLine": 32,
+        "startChar": 23,
+        "endLine": 32,
+        "endChar": 40
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b042521_dbd91c29",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-26T23:02:57Z",
+      "side": 1,
+      "message": "Comment was wrong, it can be any of the 4 basic types.",
+      "parentUuid": "58c67436_9a2f3b4e",
       "range": {
         "startLine": 32,
         "startChar": 23,
@@ -272,6 +506,30 @@
     },
     {
       "key": {
+        "uuid": "37f5d7e6_421f6c39",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-26T23:02:57Z",
+      "side": 1,
+      "message": "This message is a 1:1 map with what gitiles returns.",
+      "parentUuid": "3ceb4c5c_c14220fb",
+      "range": {
+        "startLine": 36,
+        "startChar": 4,
+        "endLine": 36,
+        "endChar": 21
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2079f0a9_9815e6fd",
         "filename": "common/proto/milo/manifest_diff.proto",
         "patchSetId": 6
@@ -292,6 +550,30 @@
       "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5275f91_e2f76bfd",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-26T23:02:57Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "2079f0a9_9815e6fd",
+      "range": {
+        "startLine": 37,
+        "startChar": 4,
+        "endLine": 37,
+        "endChar": 18
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -318,6 +600,30 @@
     },
     {
       "key": {
+        "uuid": "9251ca07_9df510e4",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-26T23:02:57Z",
+      "side": 1,
+      "message": "I don\u0027t think we would need to change it, we\u0027d just add a cipd_history field which maps from package name to optional history.",
+      "parentUuid": "c8d1a659_32728bac",
+      "range": {
+        "startLine": 86,
+        "startChar": 55,
+        "endLine": 87,
+        "endChar": 21
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bbc6c1aa_994b3f75",
         "filename": "common/proto/milo/manifest_diff.proto",
         "patchSetId": 6
@@ -329,6 +635,30 @@
       "writtenOn": "2017-09-26T16:33:42Z",
       "side": 1,
       "message": "if we change checkout path, it would make all new manifests different from the previous ones, even if they use the same hashes. Do we want that?",
+      "range": {
+        "startLine": 99,
+        "startChar": 6,
+        "endLine": 99,
+        "endChar": 12
+      },
+      "revId": "bdd3005e4bd1ef2b18817e2052f9ca2c99b3c392",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a87a6a3_2b0d66b9",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-26T23:02:57Z",
+      "side": 1,
+      "message": "yep",
+      "parentUuid": "bbc6c1aa_994b3f75",
       "range": {
         "startLine": 99,
         "startChar": 6,
