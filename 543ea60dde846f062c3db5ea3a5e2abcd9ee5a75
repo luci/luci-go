@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "d0c1c2af_5b3a1a80",
+        "filename": "common/config/validation/net_util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T01:06:13Z",
+      "side": 1,
+      "message": "does RFC1123 allow hostnames ending with a dot?",
+      "range": {
+        "startLine": 24,
+        "startChar": 58,
+        "endLine": 24,
+        "endChar": 59
+      },
+      "revId": "543ea60dde846f062c3db5ea3a5e2abcd9ee5a75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2e388531_8fa22b7f",
         "filename": "common/config/validation/net_util.go",
         "patchSetId": 1
@@ -19,6 +42,242 @@
         "endLine": 33,
         "endChar": 64
       },
+      "revId": "543ea60dde846f062c3db5ea3a5e2abcd9ee5a75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d60aaa04_911841af",
+        "filename": "common/config/validation/net_util.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T01:06:13Z",
+      "side": 1,
+      "message": "definitely no need for a manual parser\n\ni think \"hostname does not match %q regex\" would be enough",
+      "parentUuid": "2e388531_8fa22b7f",
+      "range": {
+        "startLine": 33,
+        "startChar": 9,
+        "endLine": 33,
+        "endChar": 64
+      },
+      "revId": "543ea60dde846f062c3db5ea3a5e2abcd9ee5a75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5af850c0_7ba183db",
+        "filename": "luci_notify/config/settings.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T01:06:13Z",
+      "side": 1,
+      "message": "remove, see below",
+      "revId": "543ea60dde846f062c3db5ea3a5e2abcd9ee5a75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d75b64f2_daa32cb8",
+        "filename": "luci_notify/config/settings.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T01:06:13Z",
+      "side": 1,
+      "message": "$id,service_config\nsee https://godoc.org/go.chromium.org/gae/service/datastore#GetPLS",
+      "range": {
+        "startLine": 37,
+        "startChar": 17,
+        "endLine": 37,
+        "endChar": 20
+      },
+      "revId": "543ea60dde846f062c3db5ea3a5e2abcd9ee5a75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e71eaa9c_9e25e55b",
+        "filename": "luci_notify/config/settings.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T01:06:13Z",
+      "side": 1,
+      "message": "i recommend not duping the proto here, but define a field of type config.Settings (so, embedded).\nThen either implement PropertyConverter in the config.Settings or datastore.PropertySaver here. Both would marshal/unmarshal the proto to/from binary",
+      "range": {
+        "startLine": 42,
+        "startChar": 1,
+        "endLine": 44,
+        "endChar": 16
+      },
+      "revId": "543ea60dde846f062c3db5ea3a5e2abcd9ee5a75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "649e6b3c_85c94ca3",
+        "filename": "luci_notify/config/settings.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T01:06:13Z",
+      "side": 1,
+      "message": "inline?",
+      "range": {
+        "startLine": 64,
+        "startChar": 2,
+        "endLine": 64,
+        "endChar": 6
+      },
+      "revId": "543ea60dde846f062c3db5ea3a5e2abcd9ee5a75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db3ac9bd_78b8a2b0",
+        "filename": "luci_notify/config/settings.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T01:06:13Z",
+      "side": 1,
+      "message": "ideally this is the point when we should compare versions, as opposed to do most of the work and then change our mind",
+      "revId": "543ea60dde846f062c3db5ea3a5e2abcd9ee5a75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6785afc1_f00fd975",
+        "filename": "luci_notify/config/settings.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T01:06:13Z",
+      "side": 1,
+      "message": "return",
+      "range": {
+        "startLine": 75,
+        "startChar": 1,
+        "endLine": 75,
+        "endChar": 7
+      },
+      "revId": "543ea60dde846f062c3db5ea3a5e2abcd9ee5a75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82e1dfd3_7b000173",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T01:06:13Z",
+      "side": 1,
+      "message": "nit: inline?",
+      "range": {
+        "startLine": 119,
+        "startChar": 2,
+        "endLine": 119,
+        "endChar": 5
+      },
+      "revId": "543ea60dde846f062c3db5ea3a5e2abcd9ee5a75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c9fd441_6fa08969",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T01:06:13Z",
+      "side": 1,
+      "message": "nit: inline?",
+      "range": {
+        "startLine": 123,
+        "startChar": 2,
+        "endLine": 123,
+        "endChar": 6
+      },
+      "revId": "543ea60dde846f062c3db5ea3a5e2abcd9ee5a75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "374234bf_91e51ce4",
+        "filename": "luci_notify/config/validate_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T01:06:13Z",
+      "side": 1,
+      "message": "optional: consider using ShouldErrLike\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/common/testing/assertions/error_tests.go?q\u003dShouldErrLike\u0026sq\u003dpackage:chromium\u0026l\u003d41\nit is less strict, so you don\u0027t have to test file names or exact values. It would simplify your tests, make them test less, but still test the important parts.",
+      "range": {
+        "startLine": 118,
+        "startChar": 19,
+        "endLine": 118,
+        "endChar": 42
+      },
+      "revId": "543ea60dde846f062c3db5ea3a5e2abcd9ee5a75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d0b476b_b891ed53",
+        "filename": "luci_notify/config/validate_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-26T01:06:13Z",
+      "side": 1,
+      "message": "it might be a little shorter to pass convey name as a testValidation parameter and call Convey inside testValidation. Then your 3 test cases would become 3 lines",
       "revId": "543ea60dde846f062c3db5ea3a5e2abcd9ee5a75",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
