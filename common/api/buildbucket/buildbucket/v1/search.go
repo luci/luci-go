@@ -28,20 +28,30 @@ import (
 
 // Fetch fetches builds matching the search criteria.
 // It stops when all builds are found or when context is cancelled.
-//
 // The order of returned builds is from most-recently-created to least-recently-created.
+//
+// c.MaxBuilds value is used as a result page size, defaults to 100.
+// limit, if >0, specifies the maximum number of builds to return.
 //
 // If ret is nil, retries transient errors with exponential back-off.
 // Logs errors on retries.
 //
 // Returns nil only if the search results are exhausted.
 // May return context.Canceled.
-func (c *SearchCall) Fetch(ret retry.Factory) ([]*ApiCommonBuildMessage, error) {
+func (c *SearchCall) Fetch(limit int, ret retry.Factory) ([]*ApiCommonBuildMessage, error) {
+	// Default page size to 100 because we are fetching everything.
+	maxBuildsKey := "max_builds"
+	origMaxBuilds := c.urlParams_.Get(maxBuildsKey)
+	if origMaxBuilds == "" {
+		c.MaxBuilds(100)
+		defer c.urlParams_.Set(maxBuildsKey, origMaxBuilds)
+	}
+
 	ch := make(chan *ApiCommonBuildMessage)
 	var err error
 	go func() {
 		defer close(ch)
-		err = c.Run(ch, ret)
+		err = c.Run(ch, limit, ret)
 	}()
 
 	var builds []*ApiCommonBuildMessage
@@ -51,11 +61,11 @@ func (c *SearchCall) Fetch(ret retry.Factory) ([]*ApiCommonBuildMessage, error) 
 	return builds, err
 }
 
-// Run is like Fetch, but sends results to the builds channel and
-// blocks no sending.
-// The context may be canceled between sending two builds of the same result
-// page.
-func (c *SearchCall) Run(builds chan<- *ApiCommonBuildMessage, ret retry.Factory) error {
+// Run is like Fetch, but sends results to a channel and the default page size
+// is defined by the server (10 as of Sep 2017).
+//
+// Run blocks on sending.
+func (c *SearchCall) Run(builds chan<- *ApiCommonBuildMessage, limit int, ret retry.Factory) error {
 	if ret == nil {
 		ret = transient.Only(retry.Default)
 	}
@@ -80,6 +90,8 @@ func (c *SearchCall) Run(builds chan<- *ApiCommonBuildMessage, ret retry.Factory
 		ctx = context.Background()
 	}
 
+	sent := 0
+outer:
 	for {
 		var res *ApiSearchResponseMessage
 		err := retry.Retry(ctx, ret,
@@ -115,6 +127,10 @@ func (c *SearchCall) Run(builds chan<- *ApiCommonBuildMessage, ret retry.Factory
 			case <-ctx.Done():
 				return ctx.Err()
 			case builds <- b:
+				sent++
+				if sent == limit {
+					break outer
+				}
 			}
 		}
 
