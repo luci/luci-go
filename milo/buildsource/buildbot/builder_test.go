@@ -30,8 +30,6 @@ func TestBuilder(t *testing.T) {
 	c := memory.UseWithAppID(context.Background(), "dev~luci-milo")
 	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
 	fakeTime := unixTime(123)
-	fakeResult := int(0)
-	fakeFailure := int(2)
 
 	// Seed a builder with 10 builds.
 	for i := 1; i < 10; i++ {
@@ -42,7 +40,7 @@ func TestBuilder(t *testing.T) {
 			Internal:    false,
 			Times:       buildbot.TimeRange{fakeTime, fakeTime},
 			Sourcestamp: &buildbot.SourceStamp{},
-			Results:     &fakeResult,
+			Results:     buildbot.Success,
 			Finished:    true,
 		})
 	}
@@ -54,7 +52,7 @@ func TestBuilder(t *testing.T) {
 		Internal:    false,
 		Times:       buildbot.TimeRange{fakeTime, fakeTime},
 		Sourcestamp: &buildbot.SourceStamp{},
-		Results:     &fakeFailure,
+		Results:     buildbot.Failure,
 		Finished:    true,
 		Text:        []string{"failed", "stuff"},
 	})
