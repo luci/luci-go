@@ -1,0 +1,99 @@
+// Copyright 2016 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package recipe_engine;
+
+// Arguments is a protobuf that can be supplied to the recipe engine through its
+// "--operational-args-path" command-line parameter in JSONPB format.
+message Arguments {
+  // A single recipe engine Property value.
+  message Property {
+    // The property value.
+    oneof value {
+      // A string value.
+      string s = 1;
+
+      // An int64 value.
+      int64 int = 2;
+
+      // A uint64 value.
+      uint64 uint = 3;
+
+      // A double value.
+      double d = 4;
+
+      // A boolean value.
+      bool b = 5;
+
+      // Byte value.
+      bytes data = 6;
+
+      // Nested property map.
+      PropertyMap map = 7;
+
+      // An ordered list of Properties.
+      PropertyList list = 8;
+    }
+  }
+
+  // An ordered list of Properties.
+  message PropertyList {
+    repeated Property property = 1;
+  }
+
+  // A map of properties bound to string name keys.
+  message PropertyMap {
+    // A map of property key to value.
+    map<string, Property> property = 1;
+  }
+
+  // Input Properties.
+  PropertyMap properties = 1;
+
+  // Message containing the set of supported annotation control flags.
+  message AnnotationFlags {
+    // If true, emit CURRENT_TIMESTAMP annotations.
+    bool emit_timestamp = 1;
+
+    // If true, emit all input properties as annotations at the beginning of
+    // recipe engine execution.
+    bool emit_initial_properties = 2;
+  }
+  // Annotation control flags.
+  AnnotationFlags annotation_flags = 2;
+
+  // LogDog flags.
+  //
+  // If the "streamserver_uri" is provided, recipe output will be forwarded
+  // through LogDog streams using Milo's Annotation Protobuf instead of
+  // STDOUT/STDERR and classic @@@annotations@@@.
+  message LogDogFlags {
+    // The LogDog streamserver URI.
+    string streamserver_uri = 1;
+
+    // The log stream base name. If provided, generated stream names will be
+    // prefixed with "<name_base>/". This must be a valid LogDog stream name.
+    string name_base = 2;
+
+    // If true, tee output through STDOUT/STDERR using inline @@@annotation@@@
+    // markers in addition to LogDog streaming.
+    bool tee = 3;
+
+    // If not empty, this is a path where the final annotation protobuf should
+    // be dumped on completion.
+    string final_annotation_dump_path = 4;
+  }
+  LogDogFlags logdog = 3;
+
+  // Any flags to pass to the recipe engine. Used to toggle on new behavior,
+  // like sending logs through logdog.
+  message EngineFlags {
+    // If true, emit recipe execution results using a result.proto
+    bool use_result_proto = 1;
+  }
+  EngineFlags engine_flags = 4;
+
+}

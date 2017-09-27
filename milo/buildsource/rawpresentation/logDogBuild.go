@@ -74,6 +74,9 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, isMain bool, buildComple
 			}
 
 			if fd.Text != "" {
+				// TODO: this is inconsistent with builder view which uses
+				// recipe engine's result.proto's failure human reason
+				// Fix the inconsistency there or here.
 				comp.Text = append(comp.Text, fd.Text)
 			}
 		} else {

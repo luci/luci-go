@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package recipe_engine;
+
+// The result of a recipe execution.
+message Result {
+  oneof oneof_result {
+    // The json result of a recipe. Guaranteed to be a JSON 'object' (e.g.
+    // "{...}") or omitted.
+    string json_result = 1;
+
+    // The cause of the failure of a recipe.
+    Failure failure = 2;
+  }
+}
+
+message Failure {
+  // A reason readable by humans. Printed to the UI, and will be seen by users.
+  string human_reason = 1;
+
+  // The cause of this failure.
+  oneof failure_type {
+    // Step timed out.
+    Timeout timeout = 2;
+
+    // Step threw an exception.
+    Exception exception = 3;
+
+    // Step accessed invalid step data.
+    StepData step_data = 4;
+
+    // Step failed (return code not ok).
+    StepFailure failure = 5;
+  }
+}
+
+// An unexpected exception occured during execution. Caused by the builtin
+// Exception class.
+message Exception {
+  // Traceback of an exception which occured.
+  repeated string traceback = 1;
+}
+
+// A step timed out during its execution. Caused by StepTimeout in
+// recipe_api.py
+message Timeout {
+  // The timeout set for the step.
+  float timeout_s = 1;
+}
+
+// A step attempted to access data which did not exist. Caused by
+// StepDataAttributeError in types.py.
+message StepData {
+  // The step which attempted to access invalid data.
+  string step = 1;
+}
+
+// A step failed to execute "correctly". Correct generally is indicated by a
+// return code of 0, but the step can allow for other return codes as well.
+message StepFailure {
+  // The step which failed.
+  string step = 1;
+}
+
