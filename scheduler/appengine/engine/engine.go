@@ -25,11 +25,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
+	"go.chromium.org/gae/service/memcache"
 	"go.chromium.org/gae/service/taskqueue"
 
 	"go.chromium.org/luci/appengine/tq"
@@ -45,6 +47,8 @@ import (
 	"go.chromium.org/luci/server/tokens"
 
 	"go.chromium.org/luci/scheduler/appengine/catalog"
+	"go.chromium.org/luci/scheduler/appengine/engine/dsset"
+	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
@@ -213,7 +217,9 @@ type Config struct {
 
 // NewEngine returns default implementation of EngineInternal.
 func NewEngine(cfg Config) EngineInternal {
-	return &engineImpl{cfg: cfg}
+	eng := &engineImpl{cfg: cfg}
+	eng.init()
+	return eng
 }
 
 type engineImpl struct {
@@ -222,6 +228,25 @@ type engineImpl struct {
 
 	// configureTopic is used by prepareTopic, mocked in tests.
 	configureTopic func(c context.Context, topic, sub, pushURL, publisher string) error
+}
+
+// init registers task queue handlers.
+func (e *engineImpl) init() {
+	if e.cfg.Dispatcher == nil {
+		return // happens in some unit tests
+	}
+	// TODO(vadimsh): We probably need some non-default retry policies for all
+	// tasks, not just launchInvocationTask.
+	e.cfg.Dispatcher.RegisterTask(&internal.LaunchInvocationsBatchTask{}, e.launchInvocationsBatchTask, "batches", nil)
+	e.cfg.Dispatcher.RegisterTask(&internal.LaunchInvocationTask{}, e.launchInvocationTask, "launches", &taskqueue.RetryOptions{
+		// Give 5 attempts to mark the job as failed. See 'launchInvocationTask'.
+		RetryLimit: invocationRetryLimit + 5,
+		MinBackoff: time.Second,
+		MaxBackoff: maxInvocationRetryBackoff,
+		AgeLimit:   time.Duration(invocationRetryLimit+5) * maxInvocationRetryBackoff,
+	})
+	e.cfg.Dispatcher.RegisterTask(&internal.TriageJobStateTask{}, e.triageJobStateTask, "triages", nil)
+	e.cfg.Dispatcher.RegisterTask(&internal.InvocationFinishedTask{}, e.invocationFinishedTask, "completions", nil)
 }
 
 // jobController is a part of engine that directly deals with state transitions
@@ -691,7 +716,7 @@ func (e *engineImpl) rollSM(c context.Context, job *Job, cb func(*StateMachine) 
 
 // isV2Job returns true if the given job is using v2 scheduler engine.
 func (e *engineImpl) isV2Job(jobID string) bool {
-	return false
+	return strings.HasSuffix(jobID, "-v2")
 }
 
 // jobController returns an appropriate implementation of the jobController
@@ -1556,6 +1581,319 @@ func (e *engineImpl) enqueueTriggers(c context.Context, triggeredJobIDs []string
 		Triggers:        triggers,
 		TriggeredJobIDs: triggeredJobIDs,
 	}}))
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Task queue handlers for v2 engine.
+
+// kickLaunchInvocationsBatchTask posts LaunchInvocationsBatchTask task.
+//
+// This eventually calls engine's launchInvocationTask method for each added
+// invocation.
+func (e *engineImpl) kickLaunchInvocationsBatchTask(c context.Context, jobID string, invIDs []int64) error {
+	msg := &internal.LaunchInvocationsBatchTask{
+		Tasks: make([]*internal.LaunchInvocationTask, 0, len(invIDs)),
+	}
+	for _, invID := range invIDs {
+		msg.Tasks = append(msg.Tasks, &internal.LaunchInvocationTask{
+			JobID: jobID,
+			InvID: invID,
+		})
+	}
+	return e.cfg.Dispatcher.AddTask(c, &tq.Task{
+		Payload: msg,
+		Delay:   time.Second, // give some time to land Invocation transactions
+	})
+}
+
+// launchInvocationsBatchTask handles LaunchInvocationsBatchTask by fanning out
+// the tasks.
+//
+// It is the entry point into starting new invocations. Even if the batch
+// contains only one task, it still MUST come through LaunchInvocationsBatchTask
+// since this is where we "gate" all launches (for example, we can pause the
+// corresponding GAE task queue to shutdown new launches during an emergency).
+func (e *engineImpl) launchInvocationsBatchTask(c context.Context, tqTask proto.Message) error {
+	batch := tqTask.(*internal.LaunchInvocationsBatchTask)
+
+	tasks := []*tq.Task{}
+	for _, subtask := range batch.Tasks {
+		tasks = append(tasks, &tq.Task{
+			DeduplicationKey: fmt.Sprintf("inv:%s:%d", subtask.JobID, subtask.InvID),
+			Payload:          subtask,
+		})
+	}
+
+	return e.cfg.Dispatcher.AddTask(c, tasks...)
+}
+
+// launchInvocationTask handles LaunchInvocationTask.
+//
+// It can be redelivered a bunch of times in case the invocation fails to start.
+func (e *engineImpl) launchInvocationTask(c context.Context, tqTask proto.Message) error {
+	msg := tqTask.(*internal.LaunchInvocationTask)
+
+	c = logging.SetField(c, "JobID", msg.JobID)
+	c = logging.SetField(c, "InvID", msg.InvID)
+
+	hdrs, err := tq.RequestHeaders(c)
+	if err != nil {
+		return err
+	}
+	retryCount := hdrs.TaskExecutionCount // 0 for the first attempt
+	if retryCount != 0 {
+		logging.Warningf(c, "This is a retry (attempt %d)!", retryCount+1)
+	}
+
+	// Fetch up-to-date state of the invocation, verify we still need to start it.
+	// Log that we are about to do it. We MUST write something to the datastore
+	// before attempting the launch to make sure that if the datastore is in read
+	// only mode (that happens), we don't spam LaunchTask retries when failing to
+	// Save() the state in the end (better to fail now, before LaunchTask call).
+	var skipLaunch bool
+	var lastInvState Invocation
+	logging.Infof(c, "Opening the invocation transaction")
+	err = runTxn(c, func(c context.Context) error {
+		skipLaunch = false // reset in case the transaction is retried
+
+		// Grab up-to-date invocation state.
+		inv := Invocation{ID: msg.InvID}
+		switch err := ds.Get(c, &inv); {
+		case err == ds.ErrNoSuchEntity:
+			// This generally should not happen.
+			logging.Warningf(c, "The invocation is unexpectedly gone")
+			skipLaunch = true
+			return nil
+		case err != nil:
+			return transient.Tag.Apply(err)
+		case !inv.Status.Initial():
+			logging.Warningf(c, "The invocation is already running or finished: %s", inv.Status)
+			skipLaunch = true
+			return nil
+		}
+
+		// The invocation is still starting or being retried now. Update its state
+		// to indicate we are about to work with it. 'lastInvState' is later passed
+		// to the task controller.
+		lastInvState = inv
+		lastInvState.RetryCount = retryCount
+		lastInvState.MutationsCount++
+		if retryCount >= invocationRetryLimit {
+			logging.Errorf(c, "Too many attempts, giving up")
+			lastInvState.debugLog(c, "Too many attempts, giving up")
+			lastInvState.Status = task.StatusFailed
+			lastInvState.Finished = clock.Now(c).UTC()
+			skipLaunch = true
+		} else {
+			lastInvState.debugLog(c, "Starting the invocation (attempt %d)", retryCount+1)
+		}
+
+		// Notify the job controller about the invocation state change. It may
+		// decide to update the corresponding job, e.g. if the invocation moves to
+		// StatusFailed state.
+		if err := e.jobController(msg.JobID).onInvUpdating(c, &inv, &lastInvState, nil, nil); err != nil {
+			return err
+		}
+
+		// Store the updated invocation.
+		lastInvState.trimDebugLog()
+		return transient.Tag.Apply(ds.Put(c, &lastInvState))
+	})
+
+	switch {
+	case err != nil:
+		logging.WithError(err).Errorf(c, "Failed to update the invocation")
+		return err
+	case skipLaunch:
+		logging.Warningf(c, "No need to start the invocation anymore")
+		return nil
+	}
+
+	logging.Infof(c, "Actually launching the task")
+	return e.launchTask(c, &lastInvState)
+}
+
+// invocationFinishedTask handles invocation completion notification.
+//
+// It is emitted by jobControllerV2.onInvUpdating when invocation switches into
+// a final state.
+//
+// It adds the invocation ID to the set of recently finished invocations and
+// kicks off a job triage task that eventually updates Job.ActiveInvocations set
+// and moves the cron state machine.
+//
+// Note that we can't just open a Job transaction right here, since the rate
+// of invocation finish events is not controllable and can easily be over 1 QPS
+// limit, overwhelming the Job entity group.
+func (e *engineImpl) invocationFinishedTask(c context.Context, tqTask proto.Message) error {
+	msg := tqTask.(*internal.InvocationFinishedTask)
+
+	c = logging.SetField(c, "JobID", msg.JobID)
+	c = logging.SetField(c, "InvID", msg.InvID)
+
+	err := recentlyFinishedSet(c, msg.JobID).Add(c, []dsset.Item{
+		{
+			ID: fmt.Sprintf("%d", msg.InvID),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	return e.kickTriageJobStateTask(c, msg.JobID)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Triage procedure (v2 engine).
+
+// kickTriageJobStateTask enqueues a task to perform a triage for some job, if
+// no such task was enqueued recently.
+//
+// Does it even if the job no longer exists or has been disabled. Such triage
+// will just be skipped later.
+func (e *engineImpl) kickTriageJobStateTask(c context.Context, jobID string) error {
+	c = logging.SetField(c, "JobID", jobID)
+
+	// Throttle to once per 2 sec (and make sure it is always in the future).
+	eta := clock.Now(c).Unix()
+	eta = (eta/2 + 1) * 2
+	dedupKey := fmt.Sprintf("triage:%s:%d", jobID, eta)
+
+	// Use cheaper but crappier memcache as a first dedup check.
+	itm := memcache.NewItem(c, dedupKey).SetExpiration(time.Minute)
+	if memcache.Get(c, itm) == nil {
+		logging.Infof(c, "The triage task has already been scheduled")
+		return nil
+	}
+
+	// Enqueue the triage task, if not already there. This is rock solid, but slow
+	// second dedup check.
+	err := e.cfg.Dispatcher.AddTask(c, &tq.Task{
+		DeduplicationKey: dedupKey,
+		ETA:              time.Unix(eta, 0),
+		Payload:          &internal.TriageJobStateTask{JobID: jobID},
+	})
+	if err != nil {
+		return err
+	}
+	logging.Infof(c, "Scheduled the triage task")
+
+	// Best effort in setting dedup memcache flag. No big deal if it fails.
+	if err := memcache.Set(c, itm); err != nil {
+		logging.WithError(err).Warningf(c, "Failed to set memcache triage flag")
+	}
+
+	return nil
+}
+
+// triageJobStateTask performs the triage of a job.
+//
+// It is throttled to run approximately once per second.
+//
+// It looks at pending triggers and recently finished invocations and launches
+// new invocations (or schedules timers to do it later).
+func (e *engineImpl) triageJobStateTask(c context.Context, tqTask proto.Message) error {
+	msg := tqTask.(*internal.TriageJobStateTask)
+	jobID := msg.JobID
+
+	c = logging.SetField(c, "JobID", jobID)
+
+	startedTs := clock.Now(c)
+	defer func() {
+		logging.Infof(c, "Triage took %s", clock.Now(c).Sub(startedTs))
+	}()
+
+	// Grab a list of recently finished invocations to remove them from
+	// ActiveInvocations list.
+	finishedSet := recentlyFinishedSet(c, jobID)
+	finishedList, err := finishedSet.List(c)
+	if err != nil {
+		logging.WithError(err).Errorf(c, "Failed to grab a set of recently finished invocations")
+		return err
+	}
+	logging.Infof(c, "Recently finished set: %d items, %d garbage", len(finishedList.Items), len(finishedList.Garbage))
+
+	// Remove old tombstones to keep the set tidy.
+	if err := dsset.CleanupGarbage(c, finishedList.Garbage); err != nil {
+		logging.WithError(err).Errorf(c, "Failed to cleanup dsset garbage")
+		return err
+	}
+
+	// Transactionally modify the job and the set.
+	var cleanup dsset.Garbage
+	err = e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
+		cleanup = nil // reset it in case of a transaction retry
+
+		if isNew {
+			logging.Warningf(c, "The job is unexpectedly gone")
+			// TODO(vadimsh): Pop everything from finishedSet.
+			return errSkipPut
+		}
+
+		// List of dsset ops to submit at the end.
+		popOps := []*dsset.PopOp{}
+
+		// Tidy ActiveInvocations list by removing all recently finished
+		// invocations. Note that per dsset API we need to do BeginPop if there's
+		// some garbage, even if Items is empty. We can skip this if both lists are
+		// empty though.
+		if len(finishedList.Items) != 0 || len(finishedList.Garbage) != 0 {
+			op, err := finishedSet.BeginPop(c, finishedList)
+			if err != nil {
+				return err
+			}
+			popOps = append(popOps, op)
+
+			// Items can have IDs popped by some other transaction already. Collect
+			// only ones consumed by us here.
+			reallyFinished := map[int64]struct{}{}
+			for _, itm := range finishedList.Items {
+				if op.Pop(itm.ID) {
+					id, _ := strconv.ParseInt(itm.ID, 10, 64)
+					reallyFinished[id] = struct{}{}
+				}
+			}
+
+			// Remove IDs of all finished invocations from ActiveInvocations list,
+			// preserving the order.
+			if len(reallyFinished) != 0 {
+				filtered := []int64{}
+				for _, id := range job.ActiveInvocations {
+					if _, yep := reallyFinished[id]; yep {
+						logging.Infof(c, "Invocation %d is acknowledged as finished", id)
+					} else {
+						filtered = append(filtered, id) // still running
+					}
+				}
+				job.ActiveInvocations = filtered
+			}
+		}
+
+		// Submit set modifications. This may produce more garbage that we need to
+		// cleanup later (outside the transaction).
+		if cleanup, err = dsset.FinishPop(c, popOps...); err != nil {
+			return err
+		}
+
+		// Success! Log some state and let jobTxn to save the Job by returning nil.
+		logging.Infof(c, "Active invocations: %v", job.ActiveInvocations)
+		return nil
+	})
+	if err != nil {
+		logging.WithError(err).Errorf(c, "Failed to perform triage transaction")
+		return err
+	}
+
+	// Best effort cleanup of storage of consumed dsset items. No big deal if it
+	// fails. The garbage will be discovered and cleaned up later anyway.
+	if len(cleanup) != 0 {
+		logging.Infof(c, "Cleaning up storage of %d dsset items", len(cleanup))
+		if err := dsset.CleanupGarbage(c, cleanup); err != nil {
+			logging.WithError(err).Warningf(c, "Best effort cleanup failed")
+		}
+	}
+
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
