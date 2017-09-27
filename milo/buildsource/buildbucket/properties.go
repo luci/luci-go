@@ -17,6 +17,8 @@ package buildbucket
 import (
 	"bytes"
 	"strconv"
+
+	"go.chromium.org/luci/common/proto/build"
 )
 
 // This file is about buildbucket build params in the format supported by
@@ -78,5 +80,6 @@ type buildParameters struct {
 // resultDetails is contents of "result_details_json" buildbucket build field
 // in the format supported by Buildbot.
 type resultDetails struct {
-	Properties properties
+	Properties     properties
+	BuildRunResult build.BuildRunResult `json:"build_run_result"`
 }

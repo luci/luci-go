@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package luci.kitchen;
+option go_package = "build";
+
+import "infra/tools/kitchen/third_party/recipe_engine/result.proto";
+import "go.chromium.org/luci/common/proto/milo/annotations.proto";
+
+
+// Result of a build run from the perspective of a build bootstrapper.
+message BuildRunResult {
+  // A failure of the build infrastructure.
+  // A build with an infra failure cannot be used to judge the build input
+  // (e.g. a CL).
+  InfraFailure infra_failure = 1;
+  // recipes.py's exit code.
+  OptionalInt32 recipe_exit_code = 2;
+  // Results returned by recipe engine.
+  recipe_engine.Result recipe_result = 3;
+  // Final state of the annotation proto.
+  milo.Step annotations = 4;
+  // URL where the annotations (above) can be fetched from.
+  // In practice, a LogDog URL.
+  string annotation_url = 5;
+
+  // Information about the recipe checkout that was used. If the recipes
+  // weren't checked out (e.g., isolated bundle, local), this will be empty.
+  message Recipe {
+    // The name of the recipe that was executed.
+    string name = 1;
+    // Repository is the recipe repository that was checked out.
+    // will not have a revision field.
+    string repository = 2;
+    // The revision of the recipe repository.
+    string revision = 3;
+  }
+  Recipe recipe = 6;
+}
+
+// An int32 that can be distinguished from absence of the value.
+message OptionalInt32 {
+  int32 value = 1;
+}
+
+message InfraFailure {
+  enum Type {
+    // An unexpected internal error happened inside build bootstrapper.
+    BOOTSTRAPPER_ERROR = 0;
+    // Build bootstrapper input was invalid, for example flags.
+    INVALID_INPUT = 1;
+    // Build run was cancelled.
+    CANCELED = 2;
+    // Recipe has infra-failed.
+    RECIPE_INFRA_FAILURE = 3;
+  }
+
+  Type type = 1;
+  string text = 2;
+  // Build bootstrapper call stack is populated on bootstrapper errors.
+  repeated string bootstrapper_call_stack = 3;
+}
