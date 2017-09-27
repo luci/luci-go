@@ -1,0 +1,234 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c31899d6_3a8f74fd",
+        "filename": "common/proto/build/result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T21:31:01Z",
+      "side": 1,
+      "message": "copyright",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 6
+      },
+      "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87681e65_291905f1",
+        "filename": "common/proto/build/result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T21:31:01Z",
+      "side": 1,
+      "message": "can we rename this to e.g. luci.build?",
+      "range": {
+        "startLine": 3,
+        "startChar": 13,
+        "endLine": 3,
+        "endChar": 20
+      },
+      "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d79050b_c5a6e205",
+        "filename": "common/proto/build/result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T21:31:01Z",
+      "side": 1,
+      "message": "this will break; we\u0027ll need to move/copy the recipe engine result too. Another way to do it would be to embed the recipe engine result as a google.protobuf.Struct instead.",
+      "range": {
+        "startLine": 6,
+        "startChar": 8,
+        "endLine": 6,
+        "endChar": 19
+      },
+      "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7b7fd5f_625fb55f",
+        "filename": "common/proto/build/result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T21:31:01Z",
+      "side": 1,
+      "message": "job_exit_code? Or is this passed via JSON?",
+      "range": {
+        "startLine": 17,
+        "startChar": 16,
+        "endLine": 17,
+        "endChar": 32
+      },
+      "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e8318541_efef86ed",
+        "filename": "common/proto/build/result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T21:31:01Z",
+      "side": 1,
+      "message": "oof, gross. What is this used for (or planned to be used for?) I would really like to separate the UI from the data, if possible, before people depend on this.",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 21,
+        "endChar": 28
+      },
+      "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22de8542_ab95a46d",
+        "filename": "common/proto/build/result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T21:31:01Z",
+      "side": 1,
+      "message": "can we note that this is in the form of `logdog://\u003chost\u003e/\u003cproject\u003e/\u003cprefix\u003e/+/\u003cstream\u003e`, and must be a datagram stream containing annotation.Step proto messages?",
+      "range": {
+        "startLine": 23,
+        "startChar": 18,
+        "endLine": 23,
+        "endChar": 30
+      },
+      "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de86868e_69402457",
+        "filename": "common/proto/build/result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T21:31:01Z",
+      "side": 1,
+      "message": "what uses this? can we replace this with a source manifest instead?",
+      "range": {
+        "startLine": 26,
+        "startChar": 5,
+        "endLine": 26,
+        "endChar": 56
+      },
+      "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "875deebd_bfe56d10",
+        "filename": "common/proto/build/result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T21:31:01Z",
+      "side": 1,
+      "message": "this seems either too much information for this proto, or not enough (input properties?)",
+      "range": {
+        "startLine": 29,
+        "startChar": 4,
+        "endLine": 30,
+        "endChar": 20
+      },
+      "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6ad8fdf_417fa0f4",
+        "filename": "common/proto/build/result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T21:31:01Z",
+      "side": 1,
+      "message": "this is kitchen?",
+      "range": {
+        "startLine": 47,
+        "startChar": 58,
+        "endLine": 47,
+        "endChar": 70
+      },
+      "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "65be6027_4e91809b",
+        "filename": "common/proto/build/result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T21:31:01Z",
+      "side": 1,
+      "message": ":(",
+      "range": {
+        "startLine": 54,
+        "startChar": 4,
+        "endLine": 54,
+        "endChar": 10
+      },
+      "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
