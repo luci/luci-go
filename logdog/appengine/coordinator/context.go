@@ -158,7 +158,7 @@ func WithProjectNamespace(c *context.Context, project cfgtypes.ProjectName, at N
 		}
 
 		if err := IsProjectReader(*c, pcfg); err != nil {
-			log.WithError(err).Errorf(*c, "User denied READ access to requested project.")
+			log.WithError(err).Warningf(*c, "User denied READ access to requested project.")
 			return getAccessDeniedError()
 		}
 
