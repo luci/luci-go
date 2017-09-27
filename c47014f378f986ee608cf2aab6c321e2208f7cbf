@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0835286f_c304fede",
+        "filename": "common/proto/build/result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T21:54:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c31899d6_3a8f74fd",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 6
+      },
+      "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "87681e65_291905f1",
         "filename": "common/proto/build/result.proto",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3179e41a_c5988c97",
+        "filename": "common/proto/build/result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T21:54:55Z",
+      "side": 1,
+      "message": "oops, yes, i intended that",
+      "parentUuid": "87681e65_291905f1",
+      "range": {
+        "startLine": 3,
+        "startChar": 13,
+        "endLine": 3,
+        "endChar": 20
+      },
+      "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "42566273_84164db6",
+        "filename": "common/proto/build/result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T21:54:55Z",
+      "side": 1,
+      "message": "oops, that was sloppy. moved recipe engine proto too.",
+      "parentUuid": "9d79050b_c5a6e205",
+      "range": {
+        "startLine": 6,
+        "startChar": 8,
+        "endLine": 6,
+        "endChar": 19
+      },
+      "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d7b7fd5f_625fb55f",
         "filename": "common/proto/build/result.proto",
         "patchSetId": 2
@@ -91,6 +163,30 @@
       "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d89ea62_261ac3cd",
+        "filename": "common/proto/build/result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T21:54:55Z",
+      "side": 1,
+      "message": "this is passed via JSON. Ideally recipe exit code must be non-zero only in case of a recipe engine error, in which case we will remove this field and recipe engine error will propagate as infra_failure\n\nThis CL just moves the proto mostly as is. If we want to make changes to this proto, i\u0027d rather do it in a separate CL.\nAlso you LGTMed this https://chromium-review.googlesource.com/c/infra/infra/+/520734",
+      "parentUuid": "d7b7fd5f_625fb55f",
+      "range": {
+        "startLine": 17,
+        "startChar": 16,
+        "endLine": 17,
+        "endChar": 32
+      },
+      "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "dc05f076_7f073f19",
+        "filename": "common/proto/build/result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T21:54:55Z",
+      "side": 1,
+      "message": "nothing reads this field ATM. I can do it in a separate CL. This CL is not about this.",
+      "parentUuid": "e8318541_efef86ed",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 21,
+        "endChar": 28
+      },
+      "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "22de8542_ab95a46d",
         "filename": "common/proto/build/result.proto",
         "patchSetId": 2
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "218791f2_db15fb22",
+        "filename": "common/proto/build/result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T21:54:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "22de8542_ab95a46d",
+      "range": {
+        "startLine": 23,
+        "startChar": 18,
+        "endLine": 23,
+        "endChar": 30
+      },
+      "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "de86868e_69402457",
         "filename": "common/proto/build/result.proto",
         "patchSetId": 2
@@ -151,6 +295,30 @@
       "writtenOn": "2017-09-27T21:31:01Z",
       "side": 1,
       "message": "what uses this? can we replace this with a source manifest instead?",
+      "range": {
+        "startLine": 26,
+        "startChar": 5,
+        "endLine": 26,
+        "endChar": 56
+      },
+      "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85b2df0f_0107ff50",
+        "filename": "common/proto/build/result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T21:54:55Z",
+      "side": 1,
+      "message": "this needs design. This is a concrete message. It has recipe name (source manifest does not have it) and it does not specify where the recipe was checked out (I\u0027d like to avoid that, this is kitchen\u0027s implementation detail).\nNothing prevents us from having a function that converts this proto to a SourceManifest though.",
+      "parentUuid": "de86868e_69402457",
       "range": {
         "startLine": 26,
         "startChar": 5,
@@ -186,6 +354,30 @@
     },
     {
       "key": {
+        "uuid": "0b14a089_b2d3036f",
+        "filename": "common/proto/build/result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T21:54:55Z",
+      "side": 1,
+      "message": "it is enough for purposes it is currently used for:\n- kitchen includes this info in bq events. They don\u0027t have properties\n- users of buildbucket may use this info for their needs. Builds contain input properties outside of this message.",
+      "parentUuid": "875deebd_bfe56d10",
+      "range": {
+        "startLine": 29,
+        "startChar": 4,
+        "endLine": 30,
+        "endChar": 20
+      },
+      "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d6ad8fdf_417fa0f4",
         "filename": "common/proto/build/result.proto",
         "patchSetId": 2
@@ -209,6 +401,30 @@
     },
     {
       "key": {
+        "uuid": "0e577e29_e43bd42f",
+        "filename": "common/proto/build/result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T21:54:55Z",
+      "side": 1,
+      "message": "yes. I am still trying to keep kitchen an implementation detail. This message is currently a part of swarmbucket API.",
+      "parentUuid": "d6ad8fdf_417fa0f4",
+      "range": {
+        "startLine": 47,
+        "startChar": 58,
+        "endLine": 47,
+        "endChar": 70
+      },
+      "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "65be6027_4e91809b",
         "filename": "common/proto/build/result.proto",
         "patchSetId": 2
@@ -220,6 +436,30 @@
       "writtenOn": "2017-09-27T21:31:01Z",
       "side": 1,
       "message": ":(",
+      "range": {
+        "startLine": 54,
+        "startChar": 4,
+        "endLine": 54,
+        "endChar": 10
+      },
+      "revId": "c47014f378f986ee608cf2aab6c321e2208f7cbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e9318e0_87414292",
+        "filename": "common/proto/build/result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T21:54:55Z",
+      "side": 1,
+      "message": "I am not sure what you mean",
+      "parentUuid": "65be6027_4e91809b",
       "range": {
         "startLine": 54,
         "startChar": 4,
