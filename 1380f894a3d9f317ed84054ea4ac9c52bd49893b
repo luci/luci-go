@@ -117,6 +117,30 @@
     },
     {
       "key": {
+        "uuid": "7e4c8f4f_5f17878c",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T04:12:32Z",
+      "side": 1,
+      "message": "let me correct myself: git-diff is not more generic than git-log, or vice versa. None of them is a special case of another. They are just different. FWIU our end goal is a path from one commit to another.",
+      "parentUuid": "cdba2cd4_42b9f265",
+      "range": {
+        "startLine": 117,
+        "startChar": 29,
+        "endLine": 117,
+        "endChar": 39
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "692b0edf_ee232b36",
         "filename": "common/proto/milo/diff.go",
         "patchSetId": 7
