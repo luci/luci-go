@@ -1,0 +1,291 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "50af2a9a_498d7048",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T03:25:53Z",
+      "side": 1,
+      "message": "zero",
+      "range": {
+        "startLine": 25,
+        "startChar": 33,
+        "endLine": 25,
+        "endChar": 38
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c7a04481_d28dc381",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T03:25:53Z",
+      "side": 1,
+      "message": "nit: inline bt",
+      "range": {
+        "startLine": 40,
+        "startChar": 9,
+        "endLine": 40,
+        "endChar": 11
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe53a951_3cc23acf",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T03:25:53Z",
+      "side": 1,
+      "message": "maybe compute it once",
+      "range": {
+        "startLine": 47,
+        "startChar": 17,
+        "endLine": 47,
+        "endChar": 32
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2caad79b_607c06f9",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T03:25:53Z",
+      "side": 1,
+      "message": "nit: status returns",
+      "range": {
+        "startLine": 92,
+        "startChar": 3,
+        "endLine": 92,
+        "endChar": 10
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cdba2cd4_42b9f265",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T03:25:53Z",
+      "side": 1,
+      "message": "do we want the generic (\u003dless useful) git-diff or a more concrete (\u003dmore useful) git-log that would give us a blamelist?\nnote that strictly speaking git-diff would work even for different repos and for two commits where neither of commits is a ancestor of another, b/c git-diff just diffs two trees.",
+      "range": {
+        "startLine": 117,
+        "startChar": 29,
+        "endLine": 117,
+        "endChar": 39
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "692b0edf_ee232b36",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T03:25:53Z",
+      "side": 1,
+      "message": "is this the only case when we use DIFF?\nI feel like DIFF is a premature abstraction. IMO we should design abstractions when \n1) we have at least two clear cases\n2) we need to write code that must work for both but at the same time does not have to understand specifics of each case\nHere we have \n1) one case: git\n2) the code that would use DIFF (git log/diff) has to understand git concepts anyway. It can just check that repo url is the same",
+      "range": {
+        "startLine": 118,
+        "startChar": 10,
+        "endLine": 118,
+        "endChar": 27
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e027ac57_5c2c96e3",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T03:25:53Z",
+      "side": 1,
+      "message": "1) why do we require this?\n2) how can we guarantee this? what if build B2 happened after build B1, but B2 used an older version V1 than B1 which used V2, because V2 turned out to be faulty and we had to revert it.",
+      "range": {
+        "startLine": 127,
+        "startChar": 45,
+        "endLine": 127,
+        "endChar": 75
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5bb02584_5df278ff",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T03:25:53Z",
+      "side": 1,
+      "message": "we may be diffing same packages second time here\nWDYT about\n\n  if _, ok :\u003d old.CipdPackage[name]; !ok {\n    cipdPackages[name] \u003d ADDED\n  }",
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "512e7fa4_24dda903",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T03:25:53Z",
+      "side": 1,
+      "message": "what defines a manifest older than another one? I am not sure there is total chronologic order for manifests.\nAlso the diffing algorithm does not seem to assume/require the order to be the time order.\nWDYT about calling all the \"new\" parameters \"other\"?\n\nIf we need that for computing git history\n1) looks like this is not Diff\u0027s job to do that\n2) different repos may have different \"order\", e.g. given manifests M1 and M2 and repos R1 and R2, commit(M1, R1) may be before commit(M2, R1) and commit(M1, R2) may be after (M2, R2)",
+      "range": {
+        "startLine": 192,
+        "startChar": 5,
+        "endLine": 192,
+        "endChar": 29
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "265bae56_e41c7137",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T03:25:53Z",
+      "side": 1,
+      "message": "golint and friends do not complain that this is a keyword?",
+      "range": {
+        "startLine": 192,
+        "startChar": 26,
+        "endLine": 192,
+        "endChar": 29
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dfb381a9_005aeb67",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T03:25:53Z",
+      "side": 1,
+      "message": "we may have diffing same pair of dirs for the second time. This one is computationally heavier",
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3de9c19_7083bde5",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T03:25:53Z",
+      "side": 1,
+      "message": "this does not look like a good example. A package name cannot be empty?",
+      "range": {
+        "startLine": 124,
+        "startChar": 9,
+        "endLine": 124,
+        "endChar": 18
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b73852f2_81a33eae",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-27T03:25:53Z",
+      "side": 1,
+      "message": "nit: other parts of the file use a single space between sentences",
+      "range": {
+        "startLine": 129,
+        "startChar": 17,
+        "endLine": 129,
+        "endChar": 18
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
