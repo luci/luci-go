@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "40e35bbb_5d52c7aa",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1189,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-27T21:43:40Z",
+      "side": 1,
+      "message": "not sure its worth reporting in the same metric stream. It will screwup duration distribution, since it\u0027s always 0. I think we need a separate (cumulative counter) metric stream just for reporting overruns.",
+      "range": {
+        "startLine": 1187,
+        "startChar": 1,
+        "endLine": 1189,
+        "endChar": 2
+      },
+      "revId": "f9c060033e290385d7d9bd73b5c43b2609a9b283",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31786fb2_77fc8ef2",
+        "filename": "scheduler/appengine/engine/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-27T21:43:40Z",
+      "side": 1,
+      "message": "are you sure about that?\n\nI believe it should be cumulative distribution. This will also allow to get rid of metricInvocationsCompleted, since the same data will be encoded in the distribution too.",
+      "range": {
+        "startLine": 73,
+        "startChar": 40,
+        "endLine": 73,
+        "endChar": 43
+      },
+      "revId": "f9c060033e290385d7d9bd73b5c43b2609a9b283",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe9de2e5_2f901ac8",
+        "filename": "scheduler/appengine/engine/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-27T21:43:40Z",
+      "side": 1,
+      "message": "ms",
+      "range": {
+        "startLine": 75,
+        "startChar": 39,
+        "endLine": 75,
+        "endChar": 41
+      },
+      "revId": "f9c060033e290385d7d9bd73b5c43b2609a9b283",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "553bf35b_dcd5318d",
+        "filename": "scheduler/appengine/engine/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-27T21:43:40Z",
+      "side": 1,
+      "message": "I think we need a better one. Default one is mostly targeted for RPCs and stuff like that. It has too many buckets in subsecond range, which makes no sense for scheduler jobs that runs on order of ~10 min or so. What bucketer does CQ use?",
+      "range": {
+        "startLine": 77,
+        "startChar": 2,
+        "endLine": 77,
+        "endChar": 30
+      },
+      "revId": "f9c060033e290385d7d9bd73b5c43b2609a9b283",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32574b33_8888f5e6",
+        "filename": "scheduler/appengine/engine/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 339,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-27T21:43:40Z",
+      "side": 1,
+      "message": "reportCompletionMetrics (or something) to be more descriptive.",
+      "range": {
+        "startLine": 339,
+        "startChar": 21,
+        "endLine": 339,
+        "endChar": 38
+      },
+      "revId": "f9c060033e290385d7d9bd73b5c43b2609a9b283",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1488c51e_1c7e91c4",
+        "filename": "scheduler/appengine/engine/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 340,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-27T21:43:40Z",
+      "side": 1,
+      "message": "e.Finished.IsZero()\n\nAlso no need for () around conditions, it is not C++.",
+      "range": {
+        "startLine": 340,
+        "startChar": 26,
+        "endLine": 340,
+        "endChar": 51
+      },
+      "revId": "f9c060033e290385d7d9bd73b5c43b2609a9b283",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5bfc64a_60b9987b",
+        "filename": "scheduler/appengine/engine/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-27T21:43:40Z",
+      "side": 1,
+      "message": "no, it is not. It is in milliseconds.",
+      "range": {
+        "startLine": 345,
+        "startChar": 48,
+        "endLine": 345,
+        "endChar": 66
+      },
+      "revId": "f9c060033e290385d7d9bd73b5c43b2609a9b283",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c99dbaa_2cae41bb",
+        "filename": "scheduler/appengine/engine/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 346,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-27T21:43:40Z",
+      "side": 1,
+      "message": "1e3",
+      "range": {
+        "startLine": 346,
+        "startChar": 28,
+        "endLine": 346,
+        "endChar": 31
+      },
+      "revId": "f9c060033e290385d7d9bd73b5c43b2609a9b283",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
