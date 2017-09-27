@@ -118,9 +118,12 @@ func toMiloBuild(c context.Context, build *buildbucket.ApiCommonBuildMessage) *r
 	}
 
 	result := &resp.BuildSummary{
-		Text:     []string{fmt.Sprintf("buildbucket id %d", build.Id)},
 		Revision: resultDetails.Properties.GotRevision,
 	}
+	if f := resultDetails.BuildRunResult.GetRecipeResult().GetFailure(); f != nil {
+		result.Text = []string{f.HumanReason}
+	}
+
 	if result.Revision == "" {
 		result.Revision = params.Properties.Revision
 	}
@@ -220,7 +223,7 @@ func getDebugBuilds(c context.Context, bucket, builder string, maxCompletedBuild
 			target.CurrentBuilds = append(target.CurrentBuilds, mb)
 
 		case model.Success, model.Failure, model.InfraFailure, model.Warning:
-			if len(target.FinishedBuilds) < maxCompletedBuilds {
+			if maxCompletedBuilds < 0 || len(target.FinishedBuilds) < maxCompletedBuilds {
 				target.FinishedBuilds = append(target.FinishedBuilds, mb)
 			}
 
