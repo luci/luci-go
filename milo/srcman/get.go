@@ -39,7 +39,7 @@ import (
 //
 // This will also cache the result into memcache if it does end up fetching it
 // from logdog.
-func Get(ctx context.Context, a *milo.Step_ManifestLink) (*milo.Manifest, []byte, error) {
+func Get(ctx context.Context, a *milo.ManifestLink) (*milo.Manifest, []byte, error) {
 	if len(a.Sha256) == sha256.Size {
 		// cached, mebbeh?
 		entry := newSrcManCacheEntry(a.Sha256)
