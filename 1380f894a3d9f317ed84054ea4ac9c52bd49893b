@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2751d91a_5aec0595",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T20:19:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "50af2a9a_498d7048",
+      "range": {
+        "startLine": 25,
+        "startChar": 33,
+        "endLine": 25,
+        "endChar": 38
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c7a04481_d28dc381",
         "filename": "common/proto/milo/diff.go",
         "patchSetId": 7
@@ -45,6 +69,30 @@
       "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f711e111_6cc6eacf",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T20:19:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c7a04481_d28dc381",
+      "range": {
+        "startLine": 40,
+        "startChar": 9,
+        "endLine": 40,
+        "endChar": 11
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "970c7900_549eb880",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T20:19:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fe53a951_3cc23acf",
+      "range": {
+        "startLine": 47,
+        "startChar": 17,
+        "endLine": 47,
+        "endChar": 32
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2caad79b_607c06f9",
         "filename": "common/proto/milo/diff.go",
         "patchSetId": 7
@@ -91,6 +163,30 @@
       "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1cc5dfd_b60b5e60",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T20:19:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2caad79b_607c06f9",
+      "range": {
+        "startLine": 92,
+        "startChar": 3,
+        "endLine": 92,
+        "endChar": 10
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -141,6 +237,30 @@
     },
     {
       "key": {
+        "uuid": "9ff76d74_89580145",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T20:19:00Z",
+      "side": 1,
+      "message": "There are two stages to diff computation. One is pure-data and calculates these status values. The second stage actually fetches history from gitiles. The second stage is optional.\n\n`git diff` and `git log` are functionally the same under the hood. I use \u0027git diff\u0027 here as a shorthand for both, since if you can do one, you can do the other.",
+      "parentUuid": "7e4c8f4f_5f17878c",
+      "range": {
+        "startLine": 117,
+        "startChar": 29,
+        "endLine": 117,
+        "endChar": 39
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "692b0edf_ee232b36",
         "filename": "common/proto/milo/diff.go",
         "patchSetId": 7
@@ -161,6 +281,30 @@
       "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3bd3782_2eeacad5",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T20:19:00Z",
+      "side": 1,
+      "message": "discussed offline:\n  * git is the primary (by orders of magnitude) use-case.\n  * yes, but the computation for \u0027DIFF v MODIFIED\u0027 could become more complex with e.g. commit position and/or fetch_ref consideration.",
+      "parentUuid": "692b0edf_ee232b36",
+      "range": {
+        "startLine": 118,
+        "startChar": 10,
+        "endLine": 118,
+        "endChar": 27
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -187,6 +331,30 @@
     },
     {
       "key": {
+        "uuid": "0b83f1b7_3714da11",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T20:19:00Z",
+      "side": 1,
+      "message": "discussed offline:\n  * this is up to the caller to orient them correctly. I think most of the time this will be ordering them in console-order (so; sorted by some repo, probably src.git).",
+      "parentUuid": "e027ac57_5c2c96e3",
+      "range": {
+        "startLine": 127,
+        "startChar": 45,
+        "endLine": 127,
+        "endChar": 75
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5bb02584_5df278ff",
         "filename": "common/proto/milo/diff.go",
         "patchSetId": 7
@@ -201,6 +369,24 @@
       "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "563dd728_08da8b8b",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T20:19:00Z",
+      "side": 1,
+      "message": "Needed some tweaks, but done here and below.",
+      "parentUuid": "5bb02584_5df278ff",
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -250,6 +436,54 @@
     },
     {
       "key": {
+        "uuid": "7506471f_fdcc5ead",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T20:19:00Z",
+      "side": 1,
+      "message": "discussed offline\n  * correct, Diff\u0027s job is to extract the maximum amount of useful information given just the two Manifest\u0027s themselves. Other layers will supply history/compute diffs.\n  * yes, this isn\u0027t generally solvable, but I think that we\u0027ll have a \u0027good enough\u0027 solution in the form of order-by-console-order.\n  * since all of the raw data is available in the manifests themselves, exotic use cases can compute the diff in some other manner if needed.\n  * it may be worth adding a REVERSE_DIFF status and commit positions, then trying to order individual checkouts based on commit positions. This gets hard though.",
+      "parentUuid": "512e7fa4_24dda903",
+      "range": {
+        "startLine": 192,
+        "startChar": 5,
+        "endLine": 192,
+        "endChar": 29
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "78dffd72_a4cbf1f8",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T20:19:00Z",
+      "side": 1,
+      "message": "I thought they would too, but apparently they\u0027re happy with it.",
+      "parentUuid": "265bae56_e41c7137",
+      "range": {
+        "startLine": 192,
+        "startChar": 26,
+        "endLine": 192,
+        "endChar": 29
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dfb381a9_005aeb67",
         "filename": "common/proto/milo/diff.go",
         "patchSetId": 7
@@ -264,6 +498,24 @@
       "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30c3bb94_c4fc1a23",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T20:19:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dfb381a9_005aeb67",
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -290,6 +542,30 @@
     },
     {
       "key": {
+        "uuid": "8f963a61_15b3662d",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T20:19:00Z",
+      "side": 1,
+      "message": "Done... I somehow thought this was the directories map below.",
+      "parentUuid": "d3de9c19_7083bde5",
+      "range": {
+        "startLine": 124,
+        "startChar": 9,
+        "endLine": 124,
+        "endChar": 18
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b73852f2_81a33eae",
         "filename": "common/proto/milo/manifest.proto",
         "patchSetId": 7
@@ -310,6 +586,30 @@
       "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d0b61fa_94ca0859",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-27T20:19:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b73852f2_81a33eae",
+      "range": {
+        "startLine": 129,
+        "startChar": 17,
+        "endLine": 129,
+        "endChar": 18
+      },
+      "revId": "1380f894a3d9f317ed84054ea4ac9c52bd49893b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
