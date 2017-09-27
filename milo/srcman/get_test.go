@@ -68,7 +68,7 @@ func TestGet(t *testing.T) {
 		Convey(`cache`, func() {
 			Convey(`read OK`, func() {
 				putDemo()
-				m, hsh, err := Get(ctx, &milo.Step_ManifestLink{Sha256: demoID})
+				m, hsh, err := Get(ctx, &milo.ManifestLink{Sha256: demoID})
 				So(err, ShouldErrLike, nil)
 				So(m, ShouldResemble, demoData)
 				So(bytes.Equal(demoID, hsh), ShouldBeTrue)
@@ -82,7 +82,7 @@ func TestGet(t *testing.T) {
 				demo.Data = []byte("I am a banana, and not a proto")
 				So(datastore.Put(ctx, demo), ShouldErrLike, nil)
 
-				_, _, err := Get(ctx, &milo.Step_ManifestLink{Sha256: demoID, Url: "banana://fweep"})
+				_, _, err := Get(ctx, &milo.ManifestLink{Sha256: demoID, Url: "banana://fweep"})
 				So(err, ShouldErrLike, `unsupported URL scheme`)
 
 				// However, bad data gets deleted as a side effect
@@ -104,14 +104,14 @@ func TestGet(t *testing.T) {
 			s.Write(data)
 			s.Close()
 
-			manifest, hsh, err := Get(ctx, &milo.Step_ManifestLink{
+			manifest, hsh, err := Get(ctx, &milo.ManifestLink{
 				Url: fmt.Sprintf("logdog://example.com/%s/something/+/whatever", fakelogs.Project),
 			})
 			So(err, ShouldErrLike)
 			So(manifest, ShouldResemble, demoData)
 
 			Convey(`cached after logdog read`, func() {
-				manifest2, hsh2, err := Get(ctx, &milo.Step_ManifestLink{
+				manifest2, hsh2, err := Get(ctx, &milo.ManifestLink{
 					Sha256: hsh,
 					Url:    "monkeyspit",
 				})
