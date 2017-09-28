@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "24b402eb_d036c1ba",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-28T06:29:21Z",
+      "side": 1,
+      "message": "does nameStatus make sense to you? It doesn\u0027t for me, I\u0027d much rather prefer withTreeDiff or smth like that.",
+      "range": {
+        "startLine": 160,
+        "startChar": 6,
+        "endLine": 160,
+        "endChar": 16
+      },
+      "revId": "195cd00512080813e2d6599fb1299bf63e4f4664",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f3cab3c_03164189",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-28T06:29:21Z",
+      "side": 1,
+      "message": "how about a named bool type for better readability: \n Log(..., gitiles.NameStatus)\nor even better (see above)\n Log(..., gitiles.WithTreeDiff)",
+      "range": {
+        "startLine": 162,
+        "startChar": 89,
+        "endLine": 162,
+        "endChar": 93
+      },
+      "revId": "195cd00512080813e2d6599fb1299bf63e4f4664",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d68eccdb_6ab753cd",
+        "filename": "common/api/gitiles/gitiles_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-28T06:29:21Z",
+      "side": 1,
+      "message": "hard to guess what \"false\" is, Left suggestion above.",
+      "range": {
+        "startLine": 87,
+        "startChar": 59,
+        "endLine": 87,
+        "endChar": 65
+      },
+      "revId": "195cd00512080813e2d6599fb1299bf63e4f4664",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "af9faaa0_93616cf4",
+        "filename": "common/api/gitiles/proto.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-28T06:29:21Z",
+      "side": 1,
+      "message": "I think this is worth testing, perhaps right next to newly added test with tree diff mock data.",
+      "range": {
+        "startLine": 40,
+        "startChar": 0,
+        "endLine": 67,
+        "endChar": 1
+      },
+      "revId": "195cd00512080813e2d6599fb1299bf63e4f4664",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
