@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "849621b7_eb3710b2",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 717,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-28T18:45:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a1e7fcd3_f9efd523",
+      "range": {
+        "startLine": 717,
+        "startChar": 13,
+        "endLine": 717,
+        "endChar": 15
+      },
+      "revId": "2898b68a155aab4c7213d0845f3248cc6af6aba8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "35c6799f_acbf27b9",
         "filename": "scheduler/appengine/engine/engine.go",
         "patchSetId": 1
@@ -94,6 +118,30 @@
     },
     {
       "key": {
+        "uuid": "3371e5ab_0867e58e",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1759,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-28T18:45:27Z",
+      "side": 1,
+      "message": "Done, though I\u0027m not 100% positive the rate if guaranteed by the task queue. It may get stuck and then rush \"late\" tasks as fast as it can.",
+      "parentUuid": "345d6cc9_025258f7",
+      "range": {
+        "startLine": 1759,
+        "startChar": 39,
+        "endLine": 1759,
+        "endChar": 40
+      },
+      "revId": "2898b68a155aab4c7213d0845f3248cc6af6aba8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7b61e9dd_00bd6c63",
         "filename": "scheduler/appengine/engine/engine.go",
         "patchSetId": 1
@@ -108,6 +156,24 @@
       "revId": "2898b68a155aab4c7213d0845f3248cc6af6aba8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90baeade_f6828392",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1846,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-28T18:45:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7b61e9dd_00bd6c63",
+      "revId": "2898b68a155aab4c7213d0845f3248cc6af6aba8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -131,6 +197,30 @@
       "revId": "2898b68a155aab4c7213d0845f3248cc6af6aba8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ffd4e4d_a57412a6",
+        "filename": "scheduler/appengine/engine/engine_v2.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-28T18:45:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e74a5907_cd9afca9",
+      "range": {
+        "startLine": 113,
+        "startChar": 27,
+        "endLine": 113,
+        "endChar": 28
+      },
+      "revId": "2898b68a155aab4c7213d0845f3248cc6af6aba8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
