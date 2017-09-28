@@ -57,20 +57,18 @@ message BuildbotBuildJSON {
 
 // The request for multiple build on a builder.
 message BuildbotBuildsRequest {
+  reserved 5; // was used for "cursor" field
   string master = 1;
   string builder = 2;
   // Limit to the number of builds to return (default: 20).
   int32 limit = 3;
   // Include ongoing builds (default: false).
   bool include_current = 4;
-  // Return builds starting from this cursor.
-  string cursor = 5;
 }
 
 // The response message for multiple builds in a builder.
 message BuildbotBuildsJSON {
+  reserved 2; // was used for "cursor" field
   // builds is the list of builds resulting from the builds request.
   repeated BuildbotBuildJSON builds = 1;
-  // The cursor to the next request from, if the exact same query was given.
-  string cursor = 2;
 }

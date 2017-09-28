@@ -96,18 +96,6 @@ func TestGRPC(t *testing.T) {
 				So(len(result.Builds), ShouldEqual, 6)
 			})
 
-			Convey(`Good cursor`, func() {
-				r.Cursor = result.GetCursor()
-				_, err := svc.GetBuildbotBuildsJSON(c, r)
-				So(err, ShouldBeNil)
-			})
-			Convey(`Bad cursor`, func() {
-				r.Cursor = "foobar"
-				_, err := svc.GetBuildbotBuildsJSON(c, r)
-				So(err, ShouldResemble,
-					grpc.Errorf(codes.InvalidArgument,
-						"Invalid cursor: Failed to Base64-decode cursor: illegal base64 data at input byte 4"))
-			})
 			Convey(`Bad request`, func() {
 				_, err := svc.GetBuildbotBuildsJSON(c, &milo.BuildbotBuildsRequest{})
 				So(err, ShouldResemble, grpc.Errorf(codes.InvalidArgument, "No master specified"))
