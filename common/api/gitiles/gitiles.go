@@ -45,14 +45,32 @@ func (u *User) GetTime() (time.Time, error) {
 	return t, err
 }
 
+// KnownTreeDiffTypes is the list of known values that TreeDiff.Type may have.
+var KnownTreeDiffTypes = []string{
+	"ADD", "COPY", "DELETE", "MODIFY", "RENAME",
+}
+
+// TreeDiff shows the pertinent 'diff' information between two Commit objects.
+type TreeDiff struct {
+	// Type is one of the KnownTreeDiffTypes.
+	Type    string `json:"type"`
+	OldID   string `json:"old_id"`
+	OldMode uint32 `json:"old_mode"`
+	OldPath string `json:"old_path"`
+	NewID   string `json:"new_id"`
+	NewMode uint32 `json:"new_mode"`
+	NewPath string `json:"new_path"`
+}
+
 // Commit is the information of a commit returned from gitiles.
 type Commit struct {
-	Commit    string   `json:"commit"`
-	Tree      string   `json:"tree"`
-	Parents   []string `json:"parents"`
-	Author    User     `json:"author"`
-	Committer User     `json:"committer"`
-	Message   string   `json:"message"`
+	Commit    string     `json:"commit"`
+	Tree      string     `json:"tree"`
+	Parents   []string   `json:"parents"`
+	Author    User       `json:"author"`
+	Committer User       `json:"committer"`
+	Message   string     `json:"message"`
+	TreeDiff  []TreeDiff `json:"tree_diff"`
 }
 
 // ValidateRepoURL validates gitiles repository URL for use in this package.
@@ -139,8 +157,10 @@ type Client struct {
 //  Log(B) = [B, base, common...]
 //  Log(C) = [C, A, B, base, common...]
 //
-func (c *Client) Log(ctx context.Context, repoURL, treeish string, limit int) ([]Commit, error) {
-	r, err := c.rawLog(ctx, repoURL, treeish, limit, "")
+// If nameStatus is true, this will fill the tree-diff sections of the Commit.
+// This is equivalent to using the `name-status=1` GET parameter.
+func (c *Client) Log(ctx context.Context, repoURL, treeish string, limit int, nameStatus bool) ([]Commit, error) {
+	r, err := c.rawLog(ctx, repoURL, treeish, limit, "", nameStatus)
 	if err == nil {
 		if len(r.Log) > limit {
 			return r.Log[:limit], nil
@@ -150,7 +170,7 @@ func (c *Client) Log(ctx context.Context, repoURL, treeish string, limit int) ([
 	return nil, err
 }
 
-func (c *Client) rawLog(ctx context.Context, repoURL, treeish string, lowerLimit int, nextCursor string) (*logResponse, error) {
+func (c *Client) rawLog(ctx context.Context, repoURL, treeish string, lowerLimit int, nextCursor string, nameStatus bool) (*logResponse, error) {
 	// lowerLimit means: give me at least `lowerLimit` commits, unless
 	// the log contains fewer than this, in which case, give me all.
 	if lowerLimit < 1 {
@@ -175,6 +195,9 @@ func (c *Client) rawLog(ctx context.Context, repoURL, treeish string, lowerLimit
 	}
 	// TODO(tandrii): s/QueryEscape/PathEscape once AE deployments are Go1.8+.
 	subPath := fmt.Sprintf("+log/%s?format=JSON&n=%d", url.QueryEscape(treeish), pageSize)
+	if nameStatus {
+		subPath += "&name-status=1"
+	}
 	combinedLog := []Commit{}
 	nextPath := subPath
 	for {
@@ -228,7 +251,7 @@ func (c *Client) rawLog(ctx context.Context, repoURL, treeish string, lowerLimit
 //     newest := LogForward(oldest[len(oldest)-1].commit, rX)
 //   then
 //     all **may have more commits than** (oldest + newest)
-func (c *Client) LogForward(ctx context.Context, repoURL, r0, rx string) ([]Commit, error) {
+func (c *Client) LogForward(ctx context.Context, repoURL, r0, rx string, nameStatus bool) ([]Commit, error) {
 	nextCursor := ""
 	treeish := fmt.Sprintf("%s..%s", r0, rx)
 	// We want at least one full page of results.
@@ -240,7 +263,7 @@ func (c *Client) LogForward(ctx context.Context, repoURL, r0, rx string) ([]Comm
 	}
 	pp := []Commit{}
 	for {
-		r, err := c.rawLog(ctx, repoURL, treeish, uberPageSize, nextCursor)
+		r, err := c.rawLog(ctx, repoURL, treeish, uberPageSize, nextCursor, nameStatus)
 		if err != nil {
 			return nil, err
 		}

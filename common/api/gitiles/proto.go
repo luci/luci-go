@@ -37,6 +37,35 @@ func (u *User) ToProto() (ret *gitiles.User, err error) {
 	return
 }
 
+// ToProto converts this gitiles.TreeDiff to its protobuf equivalent.
+func (t *TreeDiff) ToProto() (ret *gitiles.LogCommit_TreeDiff, err error) {
+	ret = &gitiles.LogCommit_TreeDiff{
+		OldPath: t.OldPath,
+		OldMode: t.OldMode,
+		NewPath: t.NewPath,
+		NewMode: t.NewMode,
+	}
+
+	if val, ok := gitiles.LogCommit_TreeDiff_ChangeType_value[t.Type]; ok {
+		ret.Type = gitiles.LogCommit_TreeDiff_ChangeType(val)
+	} else {
+		err = errors.New("bad change type")
+		return
+	}
+
+	if ret.OldId, err = hex.DecodeString(t.OldID); err != nil {
+		err = errors.Annotate(err, "decoding OldID").Err()
+		return
+	}
+
+	if ret.NewId, err = hex.DecodeString(t.NewID); err != nil {
+		err = errors.Annotate(err, "decoding NewID").Err()
+		return
+	}
+
+	return
+}
+
 // ToProto converts this gitiles.Commit to its protobuf equivalent.
 func (c *Commit) ToProto() (ret *gitiles.LogCommit, err error) {
 	ret = &gitiles.LogCommit{}
@@ -68,7 +97,15 @@ func (c *Commit) ToProto() (ret *gitiles.LogCommit, err error) {
 	}
 	ret.Message = c.Message
 
-	// TODO(iannucci): treediff
+	if len(c.TreeDiff) > 0 {
+		ret.TreeDiff = make([]*gitiles.LogCommit_TreeDiff, len(c.TreeDiff))
+		for i, d := range c.TreeDiff {
+			if ret.TreeDiff[i], err = d.ToProto(); err != nil {
+				err = errors.Annotate(err, "decoding treediff %d", i).Err()
+				return
+			}
+		}
+	}
 
 	return
 }
