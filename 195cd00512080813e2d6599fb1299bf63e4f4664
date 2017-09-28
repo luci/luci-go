@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "cab49917_5673c1c7",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-28T15:36:42Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "24b402eb_d036c1ba",
+      "range": {
+        "startLine": 160,
+        "startChar": 6,
+        "endLine": 160,
+        "endChar": 16
+      },
+      "revId": "195cd00512080813e2d6599fb1299bf63e4f4664",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3f3cab3c_03164189",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2017-09-28T06:29:21Z",
       "side": 1,
       "message": "how about a named bool type for better readability: \n Log(..., gitiles.NameStatus)\nor even better (see above)\n Log(..., gitiles.WithTreeDiff)",
+      "range": {
+        "startLine": 162,
+        "startChar": 89,
+        "endLine": 162,
+        "endChar": 93
+      },
+      "revId": "195cd00512080813e2d6599fb1299bf63e4f4664",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5e0a728_0bf5ad68",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-28T15:36:42Z",
+      "side": 1,
+      "message": "so, like an option?\nhttps://godoc.org/google.golang.org/api/bigquery/v2#DatasetsGetCall.Do\noptions are nice when there are common options used by many different functions. Is this the case?\n\nif we want to reduce the number of parameters here, I\u0027d use plain-old\n\ntype LogOptions struct {\n  Limit int\n  TreeDiff bool\n}\n\nfunc (c *Client) Log(ctx context.Context, repoURL, treeish string, opt *LogOptions)",
+      "parentUuid": "3f3cab3c_03164189",
       "range": {
         "startLine": 162,
         "startChar": 89,
@@ -68,6 +116,29 @@
       "revId": "195cd00512080813e2d6599fb1299bf63e4f4664",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b08697db_91003c95",
+        "filename": "common/api/gitiles/proto.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-28T15:36:42Z",
+      "side": 1,
+      "message": "nit: Proto\ni think Go generally avoid verbs, e.g. getters do not have Get\nalso see https://godoc.org/github.com/golang/protobuf/ptypes",
+      "range": {
+        "startLine": 41,
+        "startChar": 19,
+        "endLine": 41,
+        "endChar": 26
+      },
+      "revId": "195cd00512080813e2d6599fb1299bf63e4f4664",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
