@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a400b6cf_9b8c89ff",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-28T01:27:53Z",
+      "side": 1,
+      "message": "? I this still correct?",
+      "range": {
+        "startLine": 327,
+        "startChar": 69,
+        "endLine": 327,
+        "endChar": 73
+      },
+      "revId": "a87065f77ab2cf3983d32748f064248b8579ee87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
