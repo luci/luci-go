@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "04857168_7e23395a",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-28T15:40:27Z",
+      "side": 1,
+      "message": "I had in mind \n  type TreeDiff bool\n  WithTreeDiff \u003d TreeDiff(true)\nbut what you propose is even better.",
+      "parentUuid": "c5e0a728_0bf5ad68",
+      "range": {
+        "startLine": 162,
+        "startChar": 89,
+        "endLine": 162,
+        "endChar": 93
+      },
+      "revId": "195cd00512080813e2d6599fb1299bf63e4f4664",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d68eccdb_6ab753cd",
         "filename": "common/api/gitiles/gitiles_test.go",
         "patchSetId": 1
