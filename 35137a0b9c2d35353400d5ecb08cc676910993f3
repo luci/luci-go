@@ -2,6 +2,46 @@
   "comments": [
     {
       "key": {
+        "uuid": "2f1f8caf_b7b3dcf1",
+        "filename": "common/api/gitiles/proto.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-28T15:21:08Z",
+      "side": 1,
+      "message": "nit: just Proto",
+      "range": {
+        "startLine": 26,
+        "startChar": 15,
+        "endLine": 26,
+        "endChar": 17
+      },
+      "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd3ee032_7c752090",
+        "filename": "common/api/gitiles/proto.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-28T15:21:08Z",
+      "side": 1,
+      "message": "we should be using https://godoc.org/github.com/golang/protobuf/ptypes, not our custom functions",
+      "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2f5c3c93_4b00fdc6",
         "filename": "common/api/gitiles/proto.go",
         "patchSetId": 1
@@ -25,6 +65,29 @@
     },
     {
       "key": {
+        "uuid": "a7d2245c_2a54e67d",
+        "filename": "common/api/gitiles/proto.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-28T15:21:08Z",
+      "side": 1,
+      "message": "nit: https://godoc.org/github.com/golang/protobuf/ptypes uses \"\u003ctype\u003e[Proto]\" names, let\u0027s be consistent with them",
+      "range": {
+        "startLine": 83,
+        "startChar": 5,
+        "endLine": 83,
+        "endChar": 16
+      },
+      "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "97b428f8_a323ed5d",
         "filename": "common/proto/gitiles/common.proto",
         "patchSetId": 1
@@ -36,6 +99,30 @@
       "writtenOn": "2017-09-28T06:06:00Z",
       "side": 1,
       "message": "nit: doc",
+      "range": {
+        "startLine": 21,
+        "startChar": 8,
+        "endLine": 21,
+        "endChar": 12
+      },
+      "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ef77c4c_dcc624f8",
+        "filename": "common/proto/gitiles/common.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-28T15:21:08Z",
+      "side": 1,
+      "message": "+1, please add comments for all symbols",
+      "parentUuid": "97b428f8_a323ed5d",
       "range": {
         "startLine": 21,
         "startChar": 8,
@@ -87,6 +174,29 @@
         "startChar": 8,
         "endLine": 21,
         "endChar": 17
+      },
+      "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93290fee_d07a36c0",
+        "filename": "common/proto/gitiles/log.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-28T15:21:08Z",
+      "side": 1,
+      "message": "is this required? it is the same package",
+      "range": {
+        "startLine": 26,
+        "startChar": 2,
+        "endLine": 26,
+        "endChar": 10
       },
       "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
