@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/filesystem"
 
 	"golang.org/x/net/context"
 )
@@ -71,6 +72,11 @@ func Find(c context.Context, vers Version, lookPath LookPathFunc) (*Interpreter,
 	for i, s := range searches {
 		interp, err := findInterpreter(c, s, vers, lookPath)
 		if err == nil {
+			// Resolve to absolute path.
+			if err := filesystem.AbsPath(&interp.Python); err != nil {
+				return nil, errors.Annotate(err, "could not get absolute path for: %q", interp.Python).Err()
+			}
+
 			return interp, nil
 		}
 
