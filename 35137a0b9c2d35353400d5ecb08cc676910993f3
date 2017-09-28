@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "2f5c3c93_4b00fdc6",
+        "filename": "common/api/gitiles/proto.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-28T06:29:14Z",
+      "side": 1,
+      "message": "please test its output through ShouldResemble",
+      "range": {
+        "startLine": 83,
+        "startChar": 5,
+        "endLine": 83,
+        "endChar": 16
+      },
+      "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "97b428f8_a323ed5d",
         "filename": "common/proto/gitiles/common.proto",
         "patchSetId": 1
