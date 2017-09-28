@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "59aa3f7d_867ef41c",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-09-28T15:43:36Z",
+      "side": 1,
+      "message": "i think offline you said that this sentence will be removed. IsolatedDiff, (*Manifest_Directory).Diff and others do not stress this and there is nothing in CIPD that would make it necessary to stress out that old should be older. Besides, this is confusing, because \"older\" can be interpreted as \"later version of the package\".",
+      "revId": "4cbd1edbc6c19009a715408369e4bd199da12aa8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
