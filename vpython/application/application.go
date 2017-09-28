@@ -112,6 +112,10 @@ type Config struct {
 	// See venv.Config's MaxPrunesPerSweep.
 	MaxPrunesPerSweep int
 
+	// Bypass, if true, instructs vpython to completely bypass VirtualEnv
+	// bootstrapping and execute with the local system interpreter.
+	Bypass bool
+
 	// MaxScriptPathLen, if > 0, is the maximum generated script path lengt. If
 	// a generated script is expected to exist longer than this, we will error.
 	//
@@ -187,6 +191,19 @@ func (a *application) addToFlagSet(fs *flag.FlagSet) {
 }
 
 func (a *application) mainImpl(c context.Context, argv0 string, args []string) error {
+	// Identify the "self" executable. Use this to construct a "lookPath", which
+	// will be used to locate the base Python interpreter.
+	lp := lookPath{
+		probeBase: prober.Probe{
+			RelativePathOverride: a.RelativePathOverride,
+		},
+		env: a.opts.Environ,
+	}
+	if err := lp.probeBase.ResolveSelf(argv0); err != nil {
+		logging.WithError(err).Warningf(c, "Failed to resolve 'self'")
+	}
+	a.opts.EnvConfig.LookPathFunc = lp.look
+
 	// Determine our VirtualEnv base directory.
 	if v, ok := a.opts.Environ.Get(VirtualEnvRootENV); ok {
 		a.opts.EnvConfig.BaseDir = v
@@ -208,19 +225,6 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 		return errors.Annotate(err, "failed to parse flags").Err()
 	}
 
-	// Identify the "self" executable. Use this to construct a "lookPath", which
-	// will be used to locate the base Python interpreter.
-	lp := lookPath{
-		probeBase: prober.Probe{
-			RelativePathOverride: a.RelativePathOverride,
-		},
-		env: a.opts.Environ,
-	}
-	if err := lp.probeBase.ResolveSelf(argv0); err != nil {
-		logging.WithError(err).Warningf(c, "Failed to resolve 'self'")
-	}
-	a.opts.EnvConfig.LookPathFunc = lp.look
-
 	if a.help {
 		return a.showPythonHelp(c, fs, &lp)
 	}
@@ -239,6 +243,11 @@ func (a *application) mainImpl(c context.Context, argv0 string, args []string) e
 			return errors.Annotate(err, "failed to load default specification file (%s) from %s",
 				DefaultSpecENV, specPath).Err()
 		}
+	}
+
+	// If we're bypassing "vpython", run Python directly.
+	if a.Bypass {
+		return a.runDirect(c, args, &lp)
 	}
 
 	// If an empty BaseDir was specified, use a temporary directory and clean it
@@ -291,7 +300,7 @@ func (a *application) showPythonHelp(c context.Context, fs *flag.FlagSet, lp *lo
 
 	i, err := python.Find(c, python.Version{}, lp.look)
 	if err != nil {
-		return errors.Annotate(err, "could not find Python interpreter for help").Err()
+		return errors.Annotate(err, "could not find Python interpreter").Err()
 	}
 
 	// Redirect all "--help" to Stdout for consistency.
@@ -305,15 +314,31 @@ func (a *application) showPythonHelp(c context.Context, fs *flag.FlagSet, lp *lo
 	return nil
 }
 
+func (a *application) runDirect(c context.Context, args []string, lp *lookPath) error {
+	var version python.Version
+	if s := a.opts.EnvConfig.Spec; s != nil {
+		var err error
+		if version, err = python.ParseVersion(s.PythonVersion); err != nil {
+			return errors.Annotate(err, "could not parse Python version from: %q", s.PythonVersion).Err()
+		}
+	}
+	i, err := python.Find(c, version, lp.look)
+	if err != nil {
+		return errors.Annotate(err, "could not find Python interpreter").Err()
+	}
+
+	logging.Infof(c, "Directly executing Python command with %v: %v", i.Python, args)
+	return vpython.Exec(c, i, args, a.opts.Environ, "", nil)
+}
+
 // Main is the main application entry point.
-func (cfg *Config) Main(c context.Context, argv []string) int {
+func (cfg *Config) Main(c context.Context, argv []string, env environ.Env) int {
 	if len(argv) == 0 {
 		panic("zero-length argument slice")
 	}
 
 	// Implementation of "checkWrapper": if CheckWrapperENV is set, we immediately
 	// exit with a non-zero value.
-	env := environ.System()
 	if wrapperCheck(env) {
 		return 1
 	}

@@ -286,11 +286,6 @@ func (cfg *Config) resolvePythonInterpreter(c context.Context, s *vpython.Spec) 
 		return errors.Reason("supplied Python version (%s) doesn't match specification (%s)", interpreterVers, specVers).Err()
 	}
 	s.PythonVersion = interpreterVers.String()
-
-	// Resolve to absolute path.
-	if err := filesystem.AbsPath(&cfg.Python); err != nil {
-		return errors.Annotate(err, "could not get absolute path for: %s", cfg.Python).Err()
-	}
 	return nil
 }
 
