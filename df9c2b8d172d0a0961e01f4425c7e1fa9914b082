@@ -88,6 +88,30 @@
     },
     {
       "key": {
+        "uuid": "1c59063a_0b8cb1b8",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-28T08:10:17Z",
+      "side": 1,
+      "message": "I think memcache keys are supposed to be valid utf8; this encoding is smaller than hex, so more room for data.",
+      "parentUuid": "f4f14d86_eb45cbc9",
+      "range": {
+        "startLine": 94,
+        "startChar": 3,
+        "endLine": 94,
+        "endChar": 32
+      },
+      "revId": "df9c2b8d172d0a0961e01f4425c7e1fa9914b082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "20ec7b30_8c7224f5",
         "filename": "milo/srcman/blamelist.go",
         "patchSetId": 1
@@ -111,6 +135,30 @@
     },
     {
       "key": {
+        "uuid": "b5a2f2e6_4961af1c",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-28T08:10:17Z",
+      "side": 1,
+      "message": "ugh right... another reason I want to move milo to a SPA; then we could ship the raw diff (without history) to the user and have the user\u0027s browser retrieve all the history. I\u0027ll have to think about this.",
+      "parentUuid": "20ec7b30_8c7224f5",
+      "range": {
+        "startLine": 126,
+        "startChar": 35,
+        "endLine": 126,
+        "endChar": 48
+      },
+      "revId": "df9c2b8d172d0a0961e01f4425c7e1fa9914b082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b237bc82_fc26ed03",
         "filename": "milo/srcman/blamelist.go",
         "patchSetId": 1
@@ -122,6 +170,30 @@
       "writtenOn": "2017-09-28T07:13:37Z",
       "side": 1,
       "message": "why not https://godoc.org/go.chromium.org/luci/common/sync/parallel#Run? you have no subtasks, so no deadlocks or starving, afais",
+      "range": {
+        "startLine": 132,
+        "startChar": 2,
+        "endLine": 133,
+        "endChar": 52
+      },
+      "revId": "df9c2b8d172d0a0961e01f4425c7e1fa9914b082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "846aabdf_8b75206b",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-28T08:10:17Z",
+      "side": 1,
+      "message": "I did it because RunMulti allows cancellation via context. I should probably add that to Run instead.",
+      "parentUuid": "b237bc82_fc26ed03",
       "range": {
         "startLine": 132,
         "startChar": 2,
@@ -168,6 +240,30 @@
       "writtenOn": "2017-09-28T07:13:37Z",
       "side": 1,
       "message": "very nice of you to sync, I used to to, until I realized that even go stdlib assumes that you don\u0027t need sync so long as indexes are exclusive. (ie, there is no vector\u003cbool\u003e optimization in Golang)",
+      "range": {
+        "startLine": 61,
+        "startChar": 0,
+        "endLine": 64,
+        "endChar": 21
+      },
+      "revId": "df9c2b8d172d0a0961e01f4425c7e1fa9914b082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5dbf000_fac272bd",
+        "filename": "milo/srcman/get.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-28T08:10:17Z",
+      "side": 1,
+      "message": "ah, ok.",
+      "parentUuid": "6abcc8cf_7a2b9ff8",
       "range": {
         "startLine": 61,
         "startChar": 0,
