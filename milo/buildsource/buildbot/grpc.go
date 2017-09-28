@@ -97,12 +97,6 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 	*milo.BuildbotBuildsJSON, error) {
 
 	apiUsage.Add(c, 1, "GetBuildbotBuildsJSON", req.Master, req.Builder)
-	if req.Cursor != "" {
-		logging.Warningf(
-			c,
-			"%q requested GetBuildbotBuildsJSON with cursor for builder %q:%q",
-			auth.CurrentIdentity(c), req.Master, req.Builder)
-	}
 
 	if req.Master == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "No master specified")
@@ -117,8 +111,8 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 	}
 
 	cu := auth.CurrentUser(c)
-	logging.Debugf(c, "%s is requesting %s/%s (limit %d, cursor %s)",
-		cu.Identity, req.Master, req.Builder, limit, req.Cursor)
+	logging.Debugf(c, "%s is requesting %s/%s (limit %d)",
+		cu.Identity, req.Master, req.Builder, limit)
 
 	if err := canAccessMaster(c, req.Master); err != nil {
 		switch common.ErrorTag.In(err) {
@@ -139,15 +133,7 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 	if req.IncludeCurrent == false {
 		q = q.Eq("finished", true)
 	}
-	// Insert the cursor or offset.
-	if req.Cursor != "" {
-		cursor, err := datastore.DecodeCursor(c, req.Cursor)
-		if err != nil {
-			return nil, grpc.Errorf(codes.InvalidArgument, "Invalid cursor: %s", err.Error())
-		}
-		q = q.Start(cursor)
-	}
-	builds, nextCursor, err := runBuildsQuery(c, q)
+	builds, _, err := runBuildsQuery(c, q)
 	if err != nil {
 		return nil, err
 	}
@@ -166,9 +152,6 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 	}
 	buildsJSON := &milo.BuildbotBuildsJSON{
 		Builds: results,
-	}
-	if nextCursor != nil {
-		buildsJSON.Cursor = nextCursor.String()
 	}
 	return buildsJSON, nil
 }
