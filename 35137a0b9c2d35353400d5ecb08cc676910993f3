@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "97b428f8_a323ed5d",
+        "filename": "common/proto/gitiles/common.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-28T06:06:00Z",
+      "side": 1,
+      "message": "nit: doc",
+      "range": {
+        "startLine": 21,
+        "startChar": 8,
+        "endLine": 21,
+        "endChar": 12
+      },
+      "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26a0227e_eab7bbba",
+        "filename": "common/proto/gitiles/generate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-28T06:06:00Z",
+      "side": 1,
+      "message": "shouldn\u0027t this be git? There is nothing (afais) in these protos which is gitiles specific.",
+      "range": {
+        "startLine": 18,
+        "startChar": 8,
+        "endLine": 18,
+        "endChar": 15
+      },
+      "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0d424af_53cb4911",
+        "filename": "common/proto/gitiles/log.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-28T06:06:00Z",
+      "side": 1,
+      "message": "this definitely needs a doc.",
+      "range": {
+        "startLine": 21,
+        "startChar": 8,
+        "endLine": 21,
+        "endChar": 17
+      },
+      "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
