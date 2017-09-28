@@ -1,0 +1,182 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "66fcd2db_22272c5e",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-28T07:13:37Z",
+      "side": 1,
+      "message": "i was surprised proto doesn\u0027t support unmarshalling from a Reader interface. https://godoc.org/github.com/golang/protobuf/proto#Unmarshal",
+      "revId": "df9c2b8d172d0a0961e01f4425c7e1fa9914b082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7bb2d174_7bbfca3a",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-28T07:13:37Z",
+      "side": 1,
+      "message": "imo, can be omitted; nil can be used instead.",
+      "range": {
+        "startLine": 90,
+        "startChar": 102,
+        "endLine": 90,
+        "endChar": 106
+      },
+      "revId": "df9c2b8d172d0a0961e01f4425c7e1fa9914b082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9754a5d7_11b2864f",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-28T07:13:37Z",
+      "side": 1,
+      "message": "mdMemcacheitem or mdCacheitem\nI think it\u0027s better to abbreviate MD, since that\u0027s you do in this file anyway, but spell out memcache.",
+      "range": {
+        "startLine": 90,
+        "startChar": 5,
+        "endLine": 90,
+        "endChar": 23
+      },
+      "revId": "df9c2b8d172d0a0961e01f4425c7e1fa9914b082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4f14d86_eb45cbc9",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-28T07:13:37Z",
+      "side": 1,
+      "message": "for myself: is this **only** for the sake of human readability of memcache keys?",
+      "range": {
+        "startLine": 94,
+        "startChar": 3,
+        "endLine": 94,
+        "endChar": 32
+      },
+      "revId": "df9c2b8d172d0a0961e01f4425c7e1fa9914b082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "20ec7b30_8c7224f5",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-28T07:13:37Z",
+      "side": 1,
+      "message": "this effectively enforces ACLs, however if you get a cache hit above, no ACLs are enforced.\nI think either ACLs should be enforced in both cases or in neither case. WDYT?\n\nI can see why MILO\u0027d want to query AsUser, so perhaps the cache key should take into account current user for correctness, but cache is much less useful :(",
+      "range": {
+        "startLine": 126,
+        "startChar": 35,
+        "endLine": 126,
+        "endChar": 48
+      },
+      "revId": "df9c2b8d172d0a0961e01f4425c7e1fa9914b082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b237bc82_fc26ed03",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-28T07:13:37Z",
+      "side": 1,
+      "message": "why not https://godoc.org/go.chromium.org/luci/common/sync/parallel#Run? you have no subtasks, so no deadlocks or starving, afais",
+      "range": {
+        "startLine": 132,
+        "startChar": 2,
+        "endLine": 133,
+        "endChar": 52
+      },
+      "revId": "df9c2b8d172d0a0961e01f4425c7e1fa9914b082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf85b85a_a8244a0d",
+        "filename": "milo/srcman/get.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-28T07:13:37Z",
+      "side": 1,
+      "message": "why not https://godoc.org/go.chromium.org/luci/common/sync/parallel#Run? you have no subtasks, so no deadlocks or starving, afais.",
+      "range": {
+        "startLine": 54,
+        "startChar": 1,
+        "endLine": 55,
+        "endChar": 51
+      },
+      "revId": "df9c2b8d172d0a0961e01f4425c7e1fa9914b082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6abcc8cf_7a2b9ff8",
+        "filename": "milo/srcman/get.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-28T07:13:37Z",
+      "side": 1,
+      "message": "very nice of you to sync, I used to to, until I realized that even go stdlib assumes that you don\u0027t need sync so long as indexes are exclusive. (ie, there is no vector\u003cbool\u003e optimization in Golang)",
+      "range": {
+        "startLine": 61,
+        "startChar": 0,
+        "endLine": 64,
+        "endChar": 21
+      },
+      "revId": "df9c2b8d172d0a0961e01f4425c7e1fa9914b082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
