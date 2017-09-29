@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aaa398fd_d157d25d",
+        "filename": "appengine/tq/tq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 339,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-29T23:24:00Z",
+      "side": 1,
+      "message": "is this the usual way to leave such manholes in Golang or luci-go?\n\nin any case, maybe move this whole stuff to another .go file alongside tq.go? :)",
+      "range": {
+        "startLine": 339,
+        "startChar": 3,
+        "endLine": 339,
+        "endChar": 72
+      },
+      "revId": "38f75d5ed81656bfb05c149bd4518d29e7f51f1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b21179a8_7213d915",
+        "filename": "appengine/tq/tq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-29T23:24:00Z",
+      "side": 1,
+      "message": "this is cruel!",
+      "range": {
+        "startLine": 341,
+        "startChar": 53,
+        "endLine": 341,
+        "endChar": 74
+      },
+      "revId": "38f75d5ed81656bfb05c149bd4518d29e7f51f1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9d003652_057b1160",
+        "filename": "appengine/tq/tq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 356,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-29T23:24:00Z",
+      "side": 1,
+      "message": "stringset fits perfectly here",
+      "range": {
+        "startLine": 356,
+        "startChar": 1,
+        "endLine": 356,
+        "endChar": 28
+      },
+      "revId": "38f75d5ed81656bfb05c149bd4518d29e7f51f1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "376da5eb_202a900a",
+        "filename": "appengine/tq/tqtesting/testable.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-29T23:24:00Z",
+      "side": 1,
+      "message": "add doc",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 17
+      },
+      "revId": "38f75d5ed81656bfb05c149bd4518d29e7f51f1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dda3fb18_66312b68",
+        "filename": "appengine/tq/tqtesting/testable.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-29T23:24:00Z",
+      "side": 1,
+      "message": "earliest (since it\u0027s about ETA)",
+      "range": {
+        "startLine": 56,
+        "startChar": 38,
+        "endLine": 56,
+        "endChar": 44
+      },
+      "revId": "38f75d5ed81656bfb05c149bd4518d29e7f51f1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2e1615f_ed796c28",
+        "filename": "appengine/tq/tqtesting/testable.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-29T23:24:00Z",
+      "side": 1,
+      "message": "deadline of what? context?\n\nah, i see, it\u0027s part of params. Please mention that.",
+      "range": {
+        "startLine": 76,
+        "startChar": 8,
+        "endLine": 76,
+        "endChar": 46
+      },
+      "revId": "38f75d5ed81656bfb05c149bd4518d29e7f51f1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
