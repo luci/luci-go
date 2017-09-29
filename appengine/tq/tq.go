@@ -334,6 +334,65 @@ func (d *Dispatcher) InstallRoutes(r *router.Router, mw router.MiddlewareChain) 
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+// Internals is used by tqtesting package and must not be used directly.
+//
+// For that reason it returns opaque interface type, to curb the curiosity.
+//
+// We do this to avoid linking testing implementation into production binaries.
+// We make testing live in a different package and use this secret back door API
+// to talk to Dispatcher.
+func (d *Dispatcher) Internals() interface{} {
+	return internalsImpl{d}
+}
+
+// internalsImpl secretly conforms to tqtesting.dispatcherInternals interface.
+type internalsImpl struct {
+	*Dispatcher
+}
+
+func (d internalsImpl) GetAllQueues() []string {
+	qs := map[string]struct{}{}
+
+	d.mu.RLock()
+	for _, h := range d.handlers {
+		qs[h.queue] = struct{}{}
+	}
+	d.mu.RUnlock()
+
+	out := make([]string, 0, len(qs))
+	for q := range qs {
+		out = append(out, q)
+	}
+	return out
+}
+
+func (d internalsImpl) GetPayload(blob []byte) (proto.Message, error) {
+	payload, err := deserializePayload(blob)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := d.handler(payload); err != nil {
+		return nil, err
+	}
+	return payload, nil
+}
+
+func (d internalsImpl) GetHandler(payload proto.Message) (cb Handler, q string, err error) {
+	h, err := d.handler(payload)
+	if err != nil {
+		return nil, "", err
+	}
+	return h.cb, h.queue, nil
+}
+
+func (d internalsImpl) WithRequestHeaders(c context.Context, hdr *taskqueue.RequestHeaders) context.Context {
+	return withRequestHeaders(c, hdr)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 var (
 	requestHeadersKey = "taskqueue.RequestHeaders"
 	errOutsideHandler = errors.New("request headers are only available inside a task handler")
