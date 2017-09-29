@@ -19,9 +19,7 @@
         "Duration": -12856706899829993
       },
       "Revision": "HEAD",
-      "Text": [
-        "buildbucket id 9008387734773878544"
-      ],
+      "Text": null,
       "Blame": [
         {
           "AuthorName": "",
@@ -66,9 +64,7 @@
         "Duration": 0
       },
       "Revision": "HEAD",
-      "Text": [
-        "buildbucket id 9008388977193267696"
-      ],
+      "Text": null,
       "Blame": [
         {
           "AuthorName": "",
@@ -109,9 +105,7 @@
         "Duration": 0
       },
       "Revision": "HEAD",
-      "Text": [
-        "buildbucket id 9008389603994697024"
-      ],
+      "Text": null,
       "Blame": null,
       "Build": null
     },
@@ -132,9 +126,7 @@
         "Duration": 0
       },
       "Revision": "HEAD",
-      "Text": [
-        "buildbucket id 9008389897760959312"
-      ],
+      "Text": null,
       "Blame": [
         {
           "AuthorName": "",
@@ -175,9 +167,7 @@
         "Duration": 0
       },
       "Revision": "HEAD",
-      "Text": [
-        "buildbucket id 9008390402599544976"
-      ],
+      "Text": null,
       "Blame": [
         {
           "AuthorName": "",
@@ -218,9 +208,7 @@
         "Duration": 0
       },
       "Revision": "HEAD",
-      "Text": [
-        "buildbucket id 9008390696678515152"
-      ],
+      "Text": null,
       "Blame": null,
       "Build": null
     },
@@ -241,9 +229,7 @@
         "Duration": 0
       },
       "Revision": "HEAD",
-      "Text": [
-        "buildbucket id 9008392239939482928"
-      ],
+      "Text": null,
       "Blame": [
         {
           "AuthorName": "",
@@ -284,9 +270,7 @@
         "Duration": 0
       },
       "Revision": "HEAD",
-      "Text": [
-        "buildbucket id 9008396151020764416"
-      ],
+      "Text": null,
       "Blame": null,
       "Build": null
     },
@@ -307,9 +291,7 @@
         "Duration": 0
       },
       "Revision": "HEAD",
-      "Text": [
-        "buildbucket id 9008396170541231968"
-      ],
+      "Text": null,
       "Blame": null,
       "Build": null
     },
@@ -331,7 +313,7 @@
       },
       "Revision": "HEAD",
       "Text": [
-        "buildbucket id 9008396239702215808"
+        "good build"
       ],
       "Blame": [
         {
