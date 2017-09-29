@@ -1,0 +1,389 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5f74b0cc_39149552",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-29T05:10:32Z",
+      "side": 1,
+      "message": "maybe \"CanaryPreference controls if the canary infrastructure template is allowed, required, or forbidden for a build.\"",
+      "range": {
+        "startLine": 31,
+        "startChar": 57,
+        "endLine": 31,
+        "endChar": 63
+      },
+      "revId": "4130112ca94d5c7751b2e483ccaefb2d334ab5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60535f9c_3c69d8b7",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-29T05:10:32Z",
+      "side": 1,
+      "message": "WDYT about this enum being AUTO/REQUIRE/FORBID\n\nCanaryPreference(FORBID) makes more sense to me than CanaryPreference(PROD), for example.\n\nOr UseCanary(NO/YES/AUTO) ?",
+      "range": {
+        "startLine": 41,
+        "startChar": 1,
+        "endLine": 41,
+        "endChar": 14
+      },
+      "revId": "4130112ca94d5c7751b2e483ccaefb2d334ab5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67c94951_18c662fd",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-29T05:10:32Z",
+      "side": 1,
+      "message": "extra line?",
+      "revId": "4130112ca94d5c7751b2e483ccaefb2d334ab5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6398e3f8_a830e6fc",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-29T05:10:32Z",
+      "side": 1,
+      "message": "maybe explicitly note that these are immutable?",
+      "range": {
+        "startLine": 51,
+        "startChar": 11,
+        "endLine": 51,
+        "endChar": 41
+      },
+      "revId": "4130112ca94d5c7751b2e483ccaefb2d334ab5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a833692a_7fe3dfbb",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-29T05:10:32Z",
+      "side": 1,
+      "message": "nit: \"not recognized\"",
+      "range": {
+        "startLine": 60,
+        "startChar": 42,
+        "endLine": 60,
+        "endChar": 62
+      },
+      "revId": "4130112ca94d5c7751b2e483ccaefb2d334ab5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12149239_109f59bb",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-29T05:10:32Z",
+      "side": 1,
+      "message": "how does UpdateTime differ from SatusChangeTime? Do we need both?",
+      "range": {
+        "startLine": 72,
+        "startChar": 1,
+        "endLine": 72,
+        "endChar": 11
+      },
+      "revId": "4130112ca94d5c7751b2e483ccaefb2d334ab5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc3295da_85be797a",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-29T05:10:32Z",
+      "side": 1,
+      "message": "oh, weird... what about just always decoding as map[string]interface{} and then have the caller use something like https://github.com/mitchellh/mapstructure to map it into a struct instead?",
+      "range": {
+        "startLine": 88,
+        "startChar": 0,
+        "endLine": 90,
+        "endChar": 35
+      },
+      "revId": "4130112ca94d5c7751b2e483ccaefb2d334ab5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab882e37_f2b5b5af",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-29T05:10:32Z",
+      "side": 1,
+      "message": "do we really want this?",
+      "range": {
+        "startLine": 93,
+        "startChar": 17,
+        "endLine": 93,
+        "endChar": 40
+      },
+      "revId": "4130112ca94d5c7751b2e483ccaefb2d334ab5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93bf81d4_461db5e3",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-29T05:10:32Z",
+      "side": 1,
+      "message": "I\u0027m not sure this is true; we just don\u0027t have a good API to export them from recipes, right? At this level of the protocol, properties/state/etc. would be fine.",
+      "range": {
+        "startLine": 100,
+        "startChar": 51,
+        "endLine": 100,
+        "endChar": 68
+      },
+      "revId": "4130112ca94d5c7751b2e483ccaefb2d334ab5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba1bccca_b65d2058",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-29T05:10:32Z",
+      "side": 1,
+      "message": "can we elaborate what \u0027failed\u0027 is? Is this meant to be the end-user failure, or an intermediate failure? i.e. should I set this if my job determined that the code failed the tests, or should I only set this if the job crashed/etc.?",
+      "range": {
+        "startLine": 104,
+        "startChar": 36,
+        "endLine": 104,
+        "endChar": 42
+      },
+      "revId": "4130112ca94d5c7751b2e483ccaefb2d334ab5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fff39f1d_e1808413",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-29T05:10:32Z",
+      "side": 1,
+      "message": "I think if you do what I suggest with mapstructure above, then this could be\n\n  ParseMessage(msg) (*Build, error)\n\nWhich would be cleaner, I think?",
+      "range": {
+        "startLine": 115,
+        "startChar": 16,
+        "endLine": 115,
+        "endChar": 28
+      },
+      "revId": "4130112ca94d5c7751b2e483ccaefb2d334ab5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21d5d0d5_d1697cf9",
+        "filename": "buildbucket/build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-29T05:10:32Z",
+      "side": 1,
+      "message": "literally unusable :(\n\n/me quits LUCI",
+      "range": {
+        "startLine": 221,
+        "startChar": 2,
+        "endLine": 221,
+        "endChar": 31
+      },
+      "revId": "4130112ca94d5c7751b2e483ccaefb2d334ab5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c200eece_76f59804",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-29T05:10:32Z",
+      "side": 1,
+      "message": "wdyt about splitting this parsing method into pieces:\n  * parse first chunk, dispatch to parsePatchBuildSet or parseCommitBuildSet\n  * those parse second chunk, and dispatch to gerrit/rietveld/gitiles methods.",
+      "range": {
+        "startLine": 83,
+        "startChar": 14,
+        "endLine": 83,
+        "endChar": 19
+      },
+      "revId": "4130112ca94d5c7751b2e483ccaefb2d334ab5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9c58c0e_ffd85af2",
+        "filename": "buildbucket/status.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-29T05:10:32Z",
+      "side": 1,
+      "message": "what are these private symbols?",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 15
+      },
+      "revId": "4130112ca94d5c7751b2e483ccaefb2d334ab5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5604f97e_bc343498",
+        "filename": "buildbucket/status.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-29T05:10:32Z",
+      "side": 1,
+      "message": "maybe just group all final states together and document this once?",
+      "range": {
+        "startLine": 36,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 18
+      },
+      "revId": "4130112ca94d5c7751b2e483ccaefb2d334ab5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e929b83_4a95c75b",
+        "filename": "buildbucket/status.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-29T05:10:32Z",
+      "side": 1,
+      "message": "if you make a subpackage \u0027status\u0027, then you can use stringer for this. status.Scheduled would look nice.",
+      "range": {
+        "startLine": 64,
+        "startChar": 6,
+        "endLine": 64,
+        "endChar": 21
+      },
+      "revId": "4130112ca94d5c7751b2e483ccaefb2d334ab5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9610e4e3_12413259",
+        "filename": "common/data/strtag/tag.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-29T05:10:32Z",
+      "side": 1,
+      "message": "is the idea that this package will be useful in other contexts?",
+      "range": {
+        "startLine": 22,
+        "startChar": 8,
+        "endLine": 22,
+        "endChar": 14
+      },
+      "revId": "4130112ca94d5c7751b2e483ccaefb2d334ab5cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
