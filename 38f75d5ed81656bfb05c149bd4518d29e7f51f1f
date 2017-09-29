@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f53310b2_cb506c84",
+        "filename": "appengine/tq/tq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 339,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-29T23:38:16Z",
+      "side": 1,
+      "message": "\u003e is this the usual way to leave such manholes in Golang or luci-go?\n\nNot sure. I\u0027ve seen alternatives (involving \u0027internal\u0027 package and callback registered during init() time).\n\nAnother alternative is to make Dispatcher an interface and return completely different implementation for tests. I decided its too heavy.\n\n\u003e in any case, maybe move this whole stuff to another .go file alongside tq.go? :)\n\nDone.",
+      "parentUuid": "aaa398fd_d157d25d",
+      "range": {
+        "startLine": 339,
+        "startChar": 3,
+        "endLine": 339,
+        "endChar": 72
+      },
+      "revId": "38f75d5ed81656bfb05c149bd4518d29e7f51f1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b21179a8_7213d915",
         "filename": "appengine/tq/tq.go",
         "patchSetId": 1
@@ -71,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "d7746321_ddf56c86",
+        "filename": "appengine/tq/tq.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 356,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-29T23:38:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9d003652_057b1160",
+      "range": {
+        "startLine": 356,
+        "startChar": 1,
+        "endLine": 356,
+        "endChar": 28
+      },
+      "revId": "38f75d5ed81656bfb05c149bd4518d29e7f51f1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "376da5eb_202a900a",
         "filename": "appengine/tq/tqtesting/testable.go",
         "patchSetId": 1
@@ -91,6 +139,30 @@
       "revId": "38f75d5ed81656bfb05c149bd4518d29e7f51f1f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "965dea64_f702b13b",
+        "filename": "appengine/tq/tqtesting/testable.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-29T23:38:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "376da5eb_202a900a",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 17
+      },
+      "revId": "38f75d5ed81656bfb05c149bd4518d29e7f51f1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "51deb656_104f6fa2",
+        "filename": "appengine/tq/tqtesting/testable.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-29T23:38:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dda3fb18_66312b68",
+      "range": {
+        "startLine": 56,
+        "startChar": 38,
+        "endLine": 56,
+        "endChar": 44
+      },
+      "revId": "38f75d5ed81656bfb05c149bd4518d29e7f51f1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a2e1615f_ed796c28",
         "filename": "appengine/tq/tqtesting/testable.go",
         "patchSetId": 1
@@ -137,6 +233,30 @@
       "revId": "38f75d5ed81656bfb05c149bd4518d29e7f51f1f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "429013ed_043ee756",
+        "filename": "appengine/tq/tqtesting/testable.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-29T23:38:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a2e1615f_ed796c28",
+      "range": {
+        "startLine": 76,
+        "startChar": 8,
+        "endLine": 76,
+        "endChar": 46
+      },
+      "revId": "38f75d5ed81656bfb05c149bd4518d29e7f51f1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
