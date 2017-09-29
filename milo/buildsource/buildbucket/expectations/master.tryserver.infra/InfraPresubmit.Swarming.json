@@ -48,6 +48,314 @@
   ],
   "PendingBuilds": null,
   "PendingBuildNum": 0,
-  "FinishedBuilds": null,
+  "FinishedBuilds": [
+    {
+      "Link": {
+        "Label": "2fbc5f57c3a4b910",
+        "URL": "/swarming/prod/2fbc5f57c3a4b910"
+      },
+      "Status": "Success",
+      "PendingTime": {
+        "Started": "2016-06-30T23:03:49.30446Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "2016-06-30T23:05:24.93059Z",
+        "Duration": 0
+      },
+      "Revision": "HEAD",
+      "Text": [
+        "buildbucket id 9008388977193267696"
+      ],
+      "Blame": [
+        {
+          "AuthorName": "",
+          "AuthorEmail": "recipe-roller@chromium.org",
+          "CommitTime": "0001-01-01T00:00:00Z",
+          "Repo": "",
+          "Branch": "",
+          "RequestRevision": {
+            "Label": "HEAD",
+            "URL": ""
+          },
+          "Revision": null,
+          "Description": "",
+          "Changelist": {
+            "Label": "Rietveld CL 2112113002",
+            "URL": "https://codereview.chromium.org/2112113002/#ps1"
+          },
+          "CommitURL": "",
+          "File": null
+        }
+      ],
+      "Build": null
+    },
+    {
+      "Link": {
+        "Label": "2fbc5631ca590610",
+        "URL": "/swarming/prod/2fbc5631ca590610"
+      },
+      "Status": "Success",
+      "PendingTime": {
+        "Started": "2016-06-30T22:53:49.69818Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "2016-06-30T22:55:17.10807Z",
+        "Duration": 0
+      },
+      "Revision": "HEAD",
+      "Text": [
+        "buildbucket id 9008389603994697024"
+      ],
+      "Blame": null,
+      "Build": null
+    },
+    {
+      "Link": {
+        "Label": "2fbc51ed5550a710",
+        "URL": "/swarming/prod/2fbc51ed5550a710"
+      },
+      "Status": "Success",
+      "PendingTime": {
+        "Started": "2016-06-30T22:49:09.13043Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "2016-06-30T22:51:26.06329Z",
+        "Duration": 0
+      },
+      "Revision": "HEAD",
+      "Text": [
+        "buildbucket id 9008389897760959312"
+      ],
+      "Blame": [
+        {
+          "AuthorName": "",
+          "AuthorEmail": "stgao@chromium.org",
+          "CommitTime": "0001-01-01T00:00:00Z",
+          "Repo": "",
+          "Branch": "",
+          "RequestRevision": {
+            "Label": "HEAD",
+            "URL": ""
+          },
+          "Revision": null,
+          "Description": "",
+          "Changelist": {
+            "Label": "Rietveld CL 2104113002",
+            "URL": "https://codereview.chromium.org/2104113002/#ps40001"
+          },
+          "CommitURL": "",
+          "File": null
+        }
+      ],
+      "Build": null
+    },
+    {
+      "Link": {
+        "Label": "2fbc4a9ec6fc9e10",
+        "URL": "/swarming/prod/2fbc4a9ec6fc9e10"
+      },
+      "Status": "Success",
+      "PendingTime": {
+        "Started": "2016-06-30T22:41:10.06231Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "2016-06-30T22:44:05.54826Z",
+        "Duration": 0
+      },
+      "Revision": "HEAD",
+      "Text": [
+        "buildbucket id 9008390402599544976"
+      ],
+      "Blame": [
+        {
+          "AuthorName": "",
+          "AuthorEmail": "lukasperaza@google.com",
+          "CommitTime": "0001-01-01T00:00:00Z",
+          "Repo": "",
+          "Branch": "",
+          "RequestRevision": {
+            "Label": "HEAD",
+            "URL": ""
+          },
+          "Revision": null,
+          "Description": "",
+          "Changelist": {
+            "Label": "Rietveld CL 2103043008",
+            "URL": "https://codereview.chromium.org/2103043008/#ps1"
+          },
+          "CommitURL": "",
+          "File": null
+        }
+      ],
+      "Build": null
+    },
+    {
+      "Link": {
+        "Label": "2fbc4651159f1e10",
+        "URL": "/swarming/prod/2fbc4651159f1e10"
+      },
+      "Status": "Success",
+      "PendingTime": {
+        "Started": "2016-06-30T22:36:28.66114Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "2016-06-30T22:38:03.04856Z",
+        "Duration": 0
+      },
+      "Revision": "HEAD",
+      "Text": [
+        "buildbucket id 9008390696678515152"
+      ],
+      "Blame": null,
+      "Build": null
+    },
+    {
+      "Link": {
+        "Label": "2fbc2fcf6ce9f310",
+        "URL": "/swarming/prod/2fbc2fcf6ce9f310"
+      },
+      "Status": "Success",
+      "PendingTime": {
+        "Started": "2016-06-30T22:11:53.55106Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "2016-06-30T22:15:34.75129Z",
+        "Duration": 0
+      },
+      "Revision": "HEAD",
+      "Text": [
+        "buildbucket id 9008392239939482928"
+      ],
+      "Blame": [
+        {
+          "AuthorName": "",
+          "AuthorEmail": "jrobbins@chromium.org",
+          "CommitTime": "0001-01-01T00:00:00Z",
+          "Repo": "",
+          "Branch": "",
+          "RequestRevision": {
+            "Label": "HEAD",
+            "URL": ""
+          },
+          "Revision": null,
+          "Description": "",
+          "Changelist": {
+            "Label": "Rietveld CL 2042873005",
+            "URL": "https://codereview.chromium.org/2042873005/#ps20001"
+          },
+          "CommitURL": "",
+          "File": null
+        }
+      ],
+      "Build": null
+    },
+    {
+      "Link": {
+        "Label": "2fbbf6ed3ce91010",
+        "URL": "/swarming/prod/2fbbf6ed3ce91010"
+      },
+      "Status": "Success",
+      "PendingTime": {
+        "Started": "2016-06-30T21:09:46.16954Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "2016-06-30T21:11:20.83505Z",
+        "Duration": 0
+      },
+      "Revision": "HEAD",
+      "Text": [
+        "buildbucket id 9008396151020764416"
+      ],
+      "Blame": null,
+      "Build": null
+    },
+    {
+      "Link": {
+        "Label": "2fbbf699558d6110",
+        "URL": "/swarming/prod/2fbbf699558d6110"
+      },
+      "Status": "Success",
+      "PendingTime": {
+        "Started": "2016-06-30T21:09:24.08786Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "2016-06-30T21:14:13.54119Z",
+        "Duration": 0
+      },
+      "Revision": "HEAD",
+      "Text": [
+        "buildbucket id 9008396170541231968"
+      ],
+      "Blame": null,
+      "Build": null
+    },
+    {
+      "Link": {
+        "Label": "2fbbf5a88ee2b910",
+        "URL": "/swarming/prod/2fbbf5a88ee2b910"
+      },
+      "Status": "Success",
+      "PendingTime": {
+        "Started": "2016-06-30T21:08:22.60832Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "2016-06-30T21:10:11.63828Z",
+        "Duration": 0
+      },
+      "Revision": "HEAD",
+      "Text": [
+        "buildbucket id 9008396239702215808"
+      ],
+      "Blame": [
+        {
+          "AuthorName": "",
+          "AuthorEmail": "sheyang@chromium.org",
+          "CommitTime": "0001-01-01T00:00:00Z",
+          "Repo": "",
+          "Branch": "",
+          "RequestRevision": {
+            "Label": "HEAD",
+            "URL": ""
+          },
+          "Revision": null,
+          "Description": "",
+          "Changelist": {
+            "Label": "Rietveld CL 2118503003",
+            "URL": "https://codereview.chromium.org/2118503003/#ps20001"
+          },
+          "CommitURL": "",
+          "File": null
+        }
+      ],
+      "Build": null
+    }
+  ],
   "MachinePool": null
 }
