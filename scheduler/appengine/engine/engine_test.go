@@ -31,6 +31,7 @@ import (
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/taskqueue"
 
+	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -49,6 +50,18 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+)
+
+var (
+	aclPublic = acl.GrantsByRole{Readers: []string{"group:all"}, Owners: []string{"group:administrators"}}
+	aclSome   = acl.GrantsByRole{Readers: []string{"group:some"}}
+	aclOne    = acl.GrantsByRole{Owners: []string{"one@example.com"}}
+	aclAdmin  = acl.GrantsByRole{Readers: []string{"group:administrators"}, Owners: []string{"group:administrators"}}
+
+	asUserOne = &authtest.FakeState{
+		Identity:       "user:one@example.com",
+		IdentityGroups: []string{"all"},
+	}
 )
 
 func TestGetAllProjects(t *testing.T) {
@@ -704,10 +717,6 @@ func TestQueries(t *testing.T) {
 	Convey("with mock data", t, func() {
 		c := newTestContext(epoch)
 		e, _ := newTestEngine()
-		aclPublic := acl.GrantsByRole{Readers: []string{"group:all"}, Owners: []string{"group:administrators"}}
-		aclSome := acl.GrantsByRole{Readers: []string{"group:some"}}
-		aclOne := acl.GrantsByRole{Owners: []string{"one@example.com"}}
-		aclAdmin := acl.GrantsByRole{Readers: []string{"group:administrators"}, Owners: []string{"group:administrators"}}
 
 		ctxAnon := auth.WithState(c, &authtest.FakeState{
 			Identity:       "anonymous:anonymous",
@@ -1273,6 +1282,7 @@ func newTestEngine() (*engineImpl, *fakeTaskManager) {
 	cat.RegisterTaskManager(mgr)
 	return NewEngine(Config{
 		Catalog:              cat,
+		Dispatcher:           &tq.Dispatcher{},
 		TimersQueuePath:      "/timers",
 		TimersQueueName:      "timers-q",
 		InvocationsQueuePath: "/invs",
