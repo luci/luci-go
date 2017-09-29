@@ -57,7 +57,7 @@ func TestBuilder(t *testing.T) {
 				err := os.MkdirAll(filepath.Dir(expectationFilePath), 0777)
 				So(err, ShouldBeNil)
 
-				actual, err := GetBuilder(c, tc.bucket, tc.builder, 0)
+				actual, err := GetBuilder(c, tc.bucket, tc.builder, 20)
 				So(err, ShouldBeNil)
 				actualJSON, err := json.MarshalIndent(actual, "", "  ")
 				So(err, ShouldBeNil)
