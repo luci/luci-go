@@ -16,7 +16,57 @@ syntax = "proto3";
 
 package internal.tq;
 
+
 // ReadProjectConfigTask is used to import jobs of some project.
+//
+// Queue: "read-project-config".
 message ReadProjectConfigTask {
   string projectID = 1;
+}
+
+
+// LaunchInvocationTask is used to start running (or retry a lunch of) a single
+// invocation.
+//
+// It is enqueued non-transactionally, but with the deduplication key.
+//
+// Queue: "launches".
+message LaunchInvocationTask {
+  string jobID = 1;
+  int64 invID = 2;
+}
+
+
+// LaunchInvocationsBatchTask is used to kick off several invocations at once.
+//
+// It is enqueued transactionally. It fans out into many LaunchInvocationTask.
+//
+// Queue: "batches".
+message LaunchInvocationsBatchTask {
+  repeated LaunchInvocationTask tasks = 1;
+}
+
+
+// TriageJobStateTask looks at the state of the job and decided what to do next.
+//
+// Enqueued non-transactionally. It is throttled to run approximately once per
+// second. It looks at pending triggers and recently finished invocations and
+// launches new invocations (or schedules timers to do it later).
+//
+// Queue: "triages".
+message TriageJobStateTask {
+  string jobID = 1;
+}
+
+
+// InvocationFinishedTask is emitted by the invocation when it finishes.
+//
+// It is enqueued transactionally.
+//
+// Queue: "completions".
+message InvocationFinishedTask {
+  string jobID = 1;
+  int64 invID = 2;
+
+  // TODO(vadimsh): Add triggers.
 }
