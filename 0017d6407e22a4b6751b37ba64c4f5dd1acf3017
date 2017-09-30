@@ -1,0 +1,280 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa168363_4c1def40",
+        "filename": "appengine/tq/internals.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-30T01:51:34Z",
+      "side": 1,
+      "message": "len(d.handlers)",
+      "range": {
+        "startLine": 42,
+        "startChar": 21,
+        "endLine": 42,
+        "endChar": 22
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc820eb4_7236f34e",
+        "filename": "appengine/tq/tqtesting/testable.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-30T01:51:34Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 103,
+        "startChar": 16,
+        "endLine": 103,
+        "endChar": 18
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9df3386c_b121be23",
+        "filename": "appengine/tq/tqtesting/testable.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-30T01:51:34Z",
+      "side": 1,
+      "message": "on the contrary, with concurrency it\u0027s quite possible :)",
+      "range": {
+        "startLine": 197,
+        "startChar": 10,
+        "endLine": 197,
+        "endChar": 20
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c7834a54_5b3847c4",
+        "filename": "appengine/tq/tqtesting/testable.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-30T01:51:34Z",
+      "side": 1,
+      "message": "can this be in defer block? if yes, then you can s/break/return and avoid the need for `loop` label.",
+      "range": {
+        "startLine": 207,
+        "startChar": 1,
+        "endLine": 207,
+        "endChar": 32
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d1f7af81_effe69d5",
+        "filename": "appengine/tq/tqtesting/testable.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-30T01:51:34Z",
+      "side": 1,
+      "message": "omg, the best of go :( seriously though, func (left * Task).Less(right * Task) bool{...} called from here and from Less(i,j) for sorting will make it easier to read this code.",
+      "range": {
+        "startLine": 223,
+        "startChar": 25,
+        "endLine": 223,
+        "endChar": 62
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1409f8c1_7a2de071",
+        "filename": "appengine/tq/tqtesting/testable_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-30T01:51:34Z",
+      "side": 1,
+      "message": "why is default here? I expected q1, q2, q2.",
+      "range": {
+        "startLine": 74,
+        "startChar": 39,
+        "endLine": 74,
+        "endChar": 46
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "564f27db_9da5bc77",
+        "filename": "appengine/tq/tqtesting/testable_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-30T01:51:34Z",
+      "side": 1,
+      "message": "they are still in queue, merely peeked at, not popped.",
+      "range": {
+        "startLine": 100,
+        "startChar": 3,
+        "endLine": 100,
+        "endChar": 9
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "358f067f_d95d369f",
+        "filename": "appengine/tq/tqtesting/testable_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-30T01:51:34Z",
+      "side": 1,
+      "message": "// |---\u003e ETA time grows to the right.\n// 1 ------\u003e 2 -----\u003e 3 \n//            \\       | \n//             \\      v\n//              \\     5  --------\u003e 6\n//               \\    ^\n//                \\   | \n//                 -\u003e 4",
+      "range": {
+        "startLine": 153,
+        "startChar": 2,
+        "endLine": 153,
+        "endChar": 40
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f59a4ec_d09bbe38",
+        "filename": "appengine/tq/tqtesting/testable_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-30T01:51:34Z",
+      "side": 1,
+      "message": "since ETA matters in this test, duration as arbitrary payload is confusing. If there is another builtin but not time-related, that\u0027d be great :)",
+      "range": {
+        "startLine": 179,
+        "startChar": 18,
+        "endLine": 179,
+        "endChar": 35
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e321e542_a5f9940d",
+        "filename": "appengine/tq/tqtesting/testable_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-30T01:51:34Z",
+      "side": 1,
+      "message": "Tasks",
+      "range": {
+        "startLine": 188,
+        "startChar": 6,
+        "endLine": 188,
+        "endChar": 10
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2487e497_183039de",
+        "filename": "appengine/tq/tqtesting/testable_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-30T01:51:34Z",
+      "side": 1,
+      "message": "**duplicated** task is skipped\ndeduplicated task (#5) is in fact not skipped.",
+      "range": {
+        "startLine": 188,
+        "startChar": 44,
+        "endLine": 188,
+        "endChar": 73
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7096fe7_000e061e",
+        "filename": "appengine/tq/tqtesting/testable_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-30T01:51:34Z",
+      "side": 1,
+      "message": "ditto, but for errorOnIdx\u003d3 will be more interesting, because you\u0027d get pending task #4.",
+      "range": {
+        "startLine": 210,
+        "startChar": 10,
+        "endLine": 210,
+        "endChar": 15
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
