@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "28953122_d6f53e03",
+        "filename": "common/api/gitiles/proto.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-30T00:04:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2f1f8caf_b7b3dcf1",
+      "range": {
+        "startLine": 26,
+        "startChar": 15,
+        "endLine": 26,
+        "endChar": 17
+      },
+      "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cd3ee032_7c752090",
         "filename": "common/api/gitiles/proto.go",
         "patchSetId": 1
@@ -39,6 +63,24 @@
       "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6d40078_4ef0a8d5",
+        "filename": "common/api/gitiles/proto.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-30T00:04:15Z",
+      "side": 1,
+      "message": "I wasn\u0027t aware of this. I\u0027ll prepare a CL to remove our package.",
+      "parentUuid": "cd3ee032_7c752090",
+      "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -85,6 +127,30 @@
       "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2b0d03f_d6a31fc6",
+        "filename": "common/api/gitiles/proto.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-30T00:04:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a7d2245c_2a54e67d",
+      "range": {
+        "startLine": 83,
+        "startChar": 5,
+        "endLine": 83,
+        "endChar": 16
+      },
+      "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -135,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "8ad87378_c236cd6a",
+        "filename": "common/proto/gitiles/common.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-30T00:04:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0ef77c4c_dcc624f8",
+      "range": {
+        "startLine": 21,
+        "startChar": 8,
+        "endLine": 21,
+        "endChar": 12
+      },
+      "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "26a0227e_eab7bbba",
         "filename": "common/proto/gitiles/generate.go",
         "patchSetId": 1
@@ -155,6 +245,30 @@
       "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e4ffe33c_373d5de2",
+        "filename": "common/proto/gitiles/generate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-30T00:04:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "26a0227e_eab7bbba",
+      "range": {
+        "startLine": 18,
+        "startChar": 8,
+        "endLine": 18,
+        "endChar": 15
+      },
+      "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -181,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "43b3289f_e87a1719",
+        "filename": "common/proto/gitiles/log.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-30T00:04:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b0d424af_53cb4911",
+      "range": {
+        "startLine": 21,
+        "startChar": 8,
+        "endLine": 21,
+        "endChar": 17
+      },
+      "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "93290fee_d07a36c0",
         "filename": "common/proto/gitiles/log.proto",
         "patchSetId": 1
@@ -201,6 +339,30 @@
       "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12e4dcf1_c6048523",
+        "filename": "common/proto/gitiles/log.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-09-30T00:04:15Z",
+      "side": 1,
+      "message": "Ah, it\u0027s not. For some reason I thought it was.",
+      "parentUuid": "93290fee_d07a36c0",
+      "range": {
+        "startLine": 26,
+        "startChar": 2,
+        "endLine": 26,
+        "endChar": 10
+      },
+      "revId": "35137a0b9c2d35353400d5ecb08cc676910993f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
