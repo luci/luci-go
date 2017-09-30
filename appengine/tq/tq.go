@@ -334,6 +334,8 @@ func (d *Dispatcher) InstallRoutes(r *router.Router, mw router.MiddlewareChain) 
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
 var (
 	requestHeadersKey = "taskqueue.RequestHeaders"
 	errOutsideHandler = errors.New("request headers are only available inside a task handler")
