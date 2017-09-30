@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "32b66f5d_37c97a20",
+        "filename": "appengine/tq/internals.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-30T02:42:34Z",
+      "side": 1,
+      "message": "ah, true. Fair enough.",
+      "parentUuid": "1989d252_c19c00c0",
+      "range": {
+        "startLine": 42,
+        "startChar": 21,
+        "endLine": 42,
+        "endChar": 22
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bc820eb4_7236f34e",
         "filename": "appengine/tq/tqtesting/testable.go",
         "patchSetId": 2
@@ -190,6 +214,30 @@
     },
     {
       "key": {
+        "uuid": "bbcbb8fe_1d0b61c6",
+        "filename": "appengine/tq/tqtesting/testable.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-30T02:42:34Z",
+      "side": 1,
+      "message": "mkay.",
+      "parentUuid": "704fa0f3_d78f14a2",
+      "range": {
+        "startLine": 207,
+        "startChar": 1,
+        "endLine": 207,
+        "endChar": 32
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d1f7af81_effe69d5",
         "filename": "appengine/tq/tqtesting/testable.go",
         "patchSetId": 2
@@ -237,6 +285,30 @@
     },
     {
       "key": {
+        "uuid": "94056ef8_39c0c62a",
+        "filename": "appengine/tq/tqtesting/testable.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-30T02:42:34Z",
+      "side": 1,
+      "message": "That thingy is quite cool, verbose, but still cool.",
+      "parentUuid": "bb3b0bb6_b3815c5a",
+      "range": {
+        "startLine": 223,
+        "startChar": 25,
+        "endLine": 223,
+        "endChar": 62
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1409f8c1_7a2de071",
         "filename": "appengine/tq/tqtesting/testable_test.go",
         "patchSetId": 2
@@ -272,6 +344,30 @@
       "side": 1,
       "message": "\"default\" queues are always present on GAE (even if not declared in queue.yaml). Task queue memory implementation always creates them too.",
       "parentUuid": "1409f8c1_7a2de071",
+      "range": {
+        "startLine": 74,
+        "startChar": 39,
+        "endLine": 74,
+        "endChar": 46
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2667118e_b641067b",
+        "filename": "appengine/tq/tqtesting/testable_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-30T02:42:34Z",
+      "side": 1,
+      "message": "Oh, nvm. I confused tst with tqt, and so I thought that if you Add 3 tasks to q1, q2, q2, then when you fetch tasks there should be only 2 queues and not a default one.",
+      "parentUuid": "45d9f848_02ecaf6d",
       "range": {
         "startLine": 74,
         "startChar": 39,
@@ -516,6 +612,30 @@
       "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "22e0decf_d0d72af2",
+        "filename": "appengine/tq/tqtesting/testable_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-09-30T02:42:34Z",
+      "side": 1,
+      "message": "done below (where I didn\u0027t notice it :) ), but not here.",
+      "parentUuid": "8fdf9229_da51fd8a",
+      "range": {
+        "startLine": 188,
+        "startChar": 44,
+        "endLine": 188,
+        "endChar": 73
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
