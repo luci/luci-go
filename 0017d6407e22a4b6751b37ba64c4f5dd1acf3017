@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1989d252_c19c00c0",
+        "filename": "appengine/tq/internals.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-30T02:27:52Z",
+      "side": 1,
+      "message": "No, handlers can share queues (and often do).",
+      "parentUuid": "fa168363_4c1def40",
+      "range": {
+        "startLine": 42,
+        "startChar": 21,
+        "endLine": 42,
+        "endChar": 22
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bc820eb4_7236f34e",
         "filename": "appengine/tq/tqtesting/testable.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "0768c243_41e4658e",
+        "filename": "appengine/tq/tqtesting/testable.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-30T02:27:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bc820eb4_7236f34e",
+      "range": {
+        "startLine": 103,
+        "startChar": 16,
+        "endLine": 103,
+        "endChar": 18
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9df3386c_b121be23",
         "filename": "appengine/tq/tqtesting/testable.go",
         "patchSetId": 2
@@ -59,6 +107,30 @@
       "writtenOn": "2017-09-30T01:51:34Z",
       "side": 1,
       "message": "on the contrary, with concurrency it\u0027s quite possible :)",
+      "range": {
+        "startLine": 197,
+        "startChar": 10,
+        "endLine": 197,
+        "endChar": 20
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9f77b496_97da10b4",
+        "filename": "appengine/tq/tqtesting/testable.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-30T02:27:52Z",
+      "side": 1,
+      "message": "Modified doc to mention that Testable assumes complete control of the task queues.",
+      "parentUuid": "9df3386c_b121be23",
       "range": {
         "startLine": 197,
         "startChar": 10,
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "704fa0f3_d78f14a2",
+        "filename": "appengine/tq/tqtesting/testable.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-30T02:27:52Z",
+      "side": 1,
+      "message": "I\u0027m not a fan of modifying return values in defers to save 2 lines of code. Defers are for cleanup. Modifying return values there obscures code.",
+      "parentUuid": "c7834a54_5b3847c4",
+      "range": {
+        "startLine": 207,
+        "startChar": 1,
+        "endLine": 207,
+        "endChar": 32
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d1f7af81_effe69d5",
         "filename": "appengine/tq/tqtesting/testable.go",
         "patchSetId": 2
@@ -114,6 +210,30 @@
       "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb3b0bb6_b3815c5a",
+        "filename": "appengine/tq/tqtesting/testable.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-30T02:27:52Z",
+      "side": 1,
+      "message": "Fine. I wanted to reuse sortby.Chain thingy :(",
+      "parentUuid": "d1f7af81_effe69d5",
+      "range": {
+        "startLine": 223,
+        "startChar": 25,
+        "endLine": 223,
+        "endChar": 62
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "45d9f848_02ecaf6d",
+        "filename": "appengine/tq/tqtesting/testable_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-30T02:27:52Z",
+      "side": 1,
+      "message": "\"default\" queues are always present on GAE (even if not declared in queue.yaml). Task queue memory implementation always creates them too.",
+      "parentUuid": "1409f8c1_7a2de071",
+      "range": {
+        "startLine": 74,
+        "startChar": 39,
+        "endLine": 74,
+        "endChar": 46
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "564f27db_9da5bc77",
         "filename": "appengine/tq/tqtesting/testable_test.go",
         "patchSetId": 2
@@ -160,6 +304,30 @@
       "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e8918bc8_f5b239e4",
+        "filename": "appengine/tq/tqtesting/testable_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-30T02:27:52Z",
+      "side": 1,
+      "message": "Right. Previous implementation was popping them, forgot to rename the variable.",
+      "parentUuid": "564f27db_9da5bc77",
+      "range": {
+        "startLine": 100,
+        "startChar": 3,
+        "endLine": 100,
+        "endChar": 9
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -186,6 +354,30 @@
     },
     {
       "key": {
+        "uuid": "84fed2d9_f3cc0d5b",
+        "filename": "appengine/tq/tqtesting/testable_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-30T02:27:52Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "358f067f_d95d369f",
+      "range": {
+        "startLine": 153,
+        "startChar": 2,
+        "endLine": 153,
+        "endChar": 40
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9f59a4ec_d09bbe38",
         "filename": "appengine/tq/tqtesting/testable_test.go",
         "patchSetId": 2
@@ -206,6 +398,30 @@
       "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53df7493_a48c3b82",
+        "filename": "appengine/tq/tqtesting/testable_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-30T02:27:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9f59a4ec_d09bbe38",
+      "range": {
+        "startLine": 179,
+        "startChar": 18,
+        "endLine": 179,
+        "endChar": 35
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -255,6 +471,54 @@
     },
     {
       "key": {
+        "uuid": "8fdf9229_da51fd8a",
+        "filename": "appengine/tq/tqtesting/testable_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-30T02:27:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2487e497_183039de",
+      "range": {
+        "startLine": 188,
+        "startChar": 44,
+        "endLine": 188,
+        "endChar": 73
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9b7b0c35_679c94b5",
+        "filename": "appengine/tq/tqtesting/testable_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-30T02:27:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e321e542_a5f9940d",
+      "range": {
+        "startLine": 188,
+        "startChar": 6,
+        "endLine": 188,
+        "endChar": 10
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d7096fe7_000e061e",
         "filename": "appengine/tq/tqtesting/testable_test.go",
         "patchSetId": 2
@@ -275,6 +539,30 @@
       "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7050a21_e856eac9",
+        "filename": "appengine/tq/tqtesting/testable_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-09-30T02:27:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d7096fe7_000e061e",
+      "range": {
+        "startLine": 210,
+        "startChar": 10,
+        "endLine": 210,
+        "endChar": 15
+      },
+      "revId": "0017d6407e22a4b6751b37ba64c4f5dd1acf3017",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
