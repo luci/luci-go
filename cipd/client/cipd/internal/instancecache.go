@@ -26,10 +26,12 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/golang/protobuf/ptypes"
+	tspb "github.com/golang/protobuf/ptypes/timestamp"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 
 	"go.chromium.org/luci/cipd/client/cipd/common"
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
@@ -197,6 +199,22 @@ func (h *garbageHeap) Pop() interface{} {
 	return x
 }
 
+func mustTimestamp(ts *tspb.Timestamp) time.Time {
+	ret, err := ptypes.Timestamp(ts)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+func mustTimestampProto(ts time.Time) *tspb.Timestamp {
+	ret, err := ptypes.TimestampProto(ts)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 // gc cleans up the old instances.
 //
 // There are two cleanup polices acting at the same time:
@@ -207,7 +225,7 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, n
 	// Kick out entries older than some threshold first.
 	garbage := stringset.New(0)
 	for instanceID, e := range state.Entries {
-		age := now.Sub(google.TimeFromProto(e.LastAccess))
+		age := now.Sub(mustTimestamp(e.LastAccess))
 		if age > c.maxAge {
 			garbage.Add(instanceID)
 			logging.Infof(ctx, "cipd: purging cached instance %s (age %s)", instanceID, age)
@@ -224,7 +242,7 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, n
 			if !garbage.Has(instanceID) {
 				garbageHeap = append(garbageHeap, &garbageCandidate{
 					instanceID:     instanceID,
-					lastAccessTime: google.TimeFromProto(e.LastAccess),
+					lastAccessTime: mustTimestamp(e.LastAccess),
 				})
 			}
 		}
@@ -283,7 +301,7 @@ func (c *InstanceCache) readState(ctx context.Context, state *messages.InstanceC
 			cutOff := now.
 				Add(-instanceCacheSyncInterval).
 				Add(time.Duration(rand.Int63n(int64(5 * time.Minute))))
-			sync = google.TimeFromProto(state.LastSynced).Before(cutOff)
+			sync = mustTimestamp(state.LastSynced).Before(cutOff)
 		}
 	}
 
@@ -327,7 +345,7 @@ func (c *InstanceCache) syncState(ctx context.Context, state *messages.InstanceC
 					state.Entries = map[string]*messages.InstanceCache_Entry{}
 				}
 				state.Entries[id] = &messages.InstanceCache_Entry{
-					LastAccess: google.NewTimestamp(now),
+					LastAccess: mustTimestampProto(now),
 				}
 			}
 		}
@@ -339,7 +357,7 @@ func (c *InstanceCache) syncState(ctx context.Context, state *messages.InstanceC
 		}
 	}
 
-	state.LastSynced = google.NewTimestamp(now)
+	state.LastSynced = mustTimestampProto(now)
 	logging.Infof(ctx, "cipd: synchronized instance cache with instance files")
 	return nil
 }
@@ -390,7 +408,7 @@ func (c *InstanceCache) getAccessTime(ctx context.Context, now time.Time, pin co
 	c.withState(ctx, now, func(s *messages.InstanceCache) {
 		var entry *messages.InstanceCache_Entry
 		if entry, ok = s.Entries[pin.InstanceID]; ok {
-			lastAccess = google.TimeFromProto(entry.LastAccess)
+			lastAccess = mustTimestamp(entry.LastAccess)
 		}
 	})
 	return
@@ -406,5 +424,5 @@ func touch(state *messages.InstanceCache, instanceID string, now time.Time) {
 		}
 		state.Entries[instanceID] = entry
 	}
-	entry.LastAccess = google.NewTimestamp(now)
+	entry.LastAccess = mustTimestampProto(now)
 }

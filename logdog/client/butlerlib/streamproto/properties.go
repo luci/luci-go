@@ -18,11 +18,11 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/clockflag"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 )
 
 // Properties is the set of properties needed to define a LogDog Butler Stream.
@@ -93,12 +93,17 @@ func (f *Flags) Properties() *Properties {
 		contentType = f.Type.DefaultContentType()
 	}
 
+	ts, err := ptypes.TimestampProto(time.Time(f.Timestamp))
+	if err != nil {
+		panic(err)
+	}
+
 	p := &Properties{
 		LogStreamDescriptor: &logpb.LogStreamDescriptor{
 			Name:          string(f.Name),
 			ContentType:   string(contentType),
 			StreamType:    logpb.StreamType(f.Type),
-			Timestamp:     google.NewTimestamp(time.Time(f.Timestamp)),
+			Timestamp:     ts,
 			BinaryFileExt: f.BinaryFileExtension,
 			Tags:          f.Tags,
 		},

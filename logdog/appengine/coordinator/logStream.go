@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
 
@@ -296,7 +296,11 @@ func (s *LogStream) LoadDescriptor(desc *logpb.LogStreamDescriptor) error {
 
 	// We know that the timestamp is valid b/c it's checked in ValidateDescriptor.
 	if ts := desc.Timestamp; ts != nil {
-		s.Timestamp = ds.RoundTime(google.TimeFromProto(ts).UTC())
+		stamp, err := ptypes.Timestamp(ts)
+		if err != nil {
+			return err
+		}
+		s.Timestamp = ds.RoundTime(stamp.UTC())
 	}
 
 	// Note: tag content was validated via ValidateDescriptor.

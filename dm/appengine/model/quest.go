@@ -17,11 +17,11 @@ package model
 import (
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
-	google_pb "go.chromium.org/luci/common/proto/google"
 
 	dm "go.chromium.org/luci/dm/api/service/v1"
 )
@@ -67,9 +67,13 @@ func (q *Quest) DataProto() *dm.Quest_Data {
 	for i := range q.BuiltBy {
 		spec[i] = &q.BuiltBy[i]
 	}
+	created, err := ptypes.TimestampProto(q.Created)
+	if err != nil {
+		panic(err)
+	}
 
 	return &dm.Quest_Data{
-		Created: google_pb.NewTimestamp(q.Created),
+		Created: created,
 		Desc:    &q.Desc,
 		BuiltBy: spec,
 	}

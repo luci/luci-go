@@ -22,12 +22,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	miloProto "go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/logdog/client/annotee"
@@ -385,14 +385,18 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcs
 		if err != nil {
 			return fmt.Errorf("invalid task StartedTs: %s", err)
 		}
-		step.Started = google.NewTimestamp(ts)
+		if step.Started, err = ptypes.TimestampProto(ts); err != nil {
+			panic(err) // impossible
+		}
 	}
 	if sr.CompletedTs != "" {
 		ts, err := time.Parse(SwarmingTimeLayout, sr.CompletedTs)
 		if err != nil {
 			return fmt.Errorf("invalid task CompletedTs: %s", err)
 		}
-		step.Ended = google.NewTimestamp(ts)
+		if step.Ended, err = ptypes.TimestampProto(ts); err != nil {
+			panic(err) // impossible
+		}
 	}
 
 	return nil

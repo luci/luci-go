@@ -20,8 +20,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/sync/cancelcond"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
@@ -219,10 +219,15 @@ func (b *Bundler) makeBundles() {
 	}()
 
 	for {
+		ts, err := ptypes.TimestampProto(b.getClock().Now())
+		if err != nil {
+			panic(err)
+		}
+
 		bb = &builder{
 			size: b.c.MaxBundleSize,
 			template: logpb.ButlerLogBundle{
-				Timestamp: google.NewTimestamp(b.getClock().Now()),
+				Timestamp: ts,
 				Project:   string(b.c.Project),
 				Prefix:    string(b.c.Prefix),
 			},

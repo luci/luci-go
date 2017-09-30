@@ -18,10 +18,9 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
-
-	"go.chromium.org/luci/common/proto/google"
 
 	"go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
@@ -56,8 +55,11 @@ type MintedGrantInfo struct {
 // toBigQueryRow returns a JSON-ish map to upload to BigQuery.
 //
 // Its schema must match 'bq/tables/oauth_token_grants.schema'.
-func (i *MintedGrantInfo) toBigQueryRow() map[string]interface{} {
-	issuedAt := google.TimeFromProto(i.GrantBody.IssuedAt)
+func (i *MintedGrantInfo) toBigQueryRow() (map[string]interface{}, error) {
+	issuedAt, err := ptypes.Timestamp(i.GrantBody.IssuedAt)
+	if err != nil {
+		return nil, err
+	}
 	return map[string]interface{}{
 		// Information about the produced token.
 		"fingerprint":       utils.TokenFingerprint(i.Response.GrantToken),
@@ -80,7 +82,7 @@ func (i *MintedGrantInfo) toBigQueryRow() map[string]interface{} {
 		"service_version": i.Response.ServiceVersion,
 		"gae_request_id":  i.RequestID,
 		"auth_db_rev":     i.AuthDBRev,
-	}
+	}, nil
 }
 
 // LogGrant records information about the OAuth token grant in the BigQuery.
@@ -92,7 +94,11 @@ func (i *MintedGrantInfo) toBigQueryRow() map[string]interface{} {
 // On dev server, logs to the GAE log only, not to BigQuery (to avoid
 // accidentally pushing fake data to real BigQuery dataset).
 func LogGrant(c context.Context, i *MintedGrantInfo) error {
-	return oauthTokenGrantsLog.Insert(c, bqlog.Entry{Data: i.toBigQueryRow()})
+	data, err := i.toBigQueryRow()
+	if err != nil {
+		return err
+	}
+	return oauthTokenGrantsLog.Insert(c, bqlog.Entry{Data: data})
 }
 
 // FlushGrantsLog sends all buffered logged grants to BigQuery.

@@ -20,8 +20,8 @@ import (
 	"sync"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	"go.chromium.org/luci/logdog/common/types"
@@ -74,8 +74,12 @@ func (o *logOutput) SendBundle(bundle *logpb.ButlerLogBundle) error {
 		}.Infof(ctx, "Received stream logs.")
 
 		for _, le := range e.Logs {
+			dur, err := ptypes.Duration(le.TimeOffset)
+			if err != nil {
+				return err
+			}
 			log.Fields{
-				"timeOffset":  google.DurationFromProto(le.TimeOffset),
+				"timeOffset":  dur,
 				"prefixIndex": le.PrefixIndex,
 				"streamIndex": le.StreamIndex,
 				"sequence":    le.Sequence,

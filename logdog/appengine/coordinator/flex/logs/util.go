@@ -1,4 +1,5 @@
 // Copyright 2015 The LUCI Authors.
+
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,17 +16,22 @@
 package logs
 
 import (
+	"github.com/golang/protobuf/ptypes"
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 )
 
 func buildLogStreamState(ls *coordinator.LogStream, lst *coordinator.LogStreamState) *logdog.LogStreamState {
+	created, err := ptypes.TimestampProto(ls.Created)
+	if err != nil {
+		panic(err)
+	}
+
 	lss := logdog.LogStreamState{
 		ProtoVersion:  ls.ProtoVersion,
-		Created:       google.NewTimestamp(ls.Created),
+		Created:       created,
 		TerminalIndex: lst.TerminalIndex,
 		Purged:        ls.Purged,
 	}

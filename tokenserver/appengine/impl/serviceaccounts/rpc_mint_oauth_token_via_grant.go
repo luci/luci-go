@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
@@ -19,7 +20,6 @@ import (
 	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/signing"
@@ -114,10 +114,15 @@ func (r *MintOAuthTokenViaGrantRPC) MintOAuthTokenViaGrant(c context.Context, re
 		return nil, grpc.Errorf(codes.Internal, "can't grab service version - %s", err)
 	}
 
+	exp, err := ptypes.TimestampProto(accessTok.Expiry)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "can't set expiry - %s", err)
+	}
+
 	// The RPC response.
 	resp := &minter.MintOAuthTokenViaGrantResponse{
 		AccessToken:    accessTok.AccessToken,
-		Expiry:         google.NewTimestamp(accessTok.Expiry),
+		Expiry:         exp,
 		ServiceVersion: serviceVer,
 	}
 

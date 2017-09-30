@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"time"
 
-	"go.chromium.org/luci/common/proto/google"
+	"github.com/golang/protobuf/ptypes"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
@@ -87,9 +87,13 @@ func loadLogStream(proj string, path types.StreamPath, s *logdog.LogStreamState,
 	}
 	if s != nil {
 		ls.State = StreamState{
-			Created:       google.TimeFromProto(s.Created),
 			TerminalIndex: types.MessageIndex(s.TerminalIndex),
 			Purged:        s.Purged,
+		}
+
+		var err error
+		if ls.State.Created, err = ptypes.Timestamp(s.Created); err != nil {
+			panic(err)
 		}
 
 		if a := s.Archive; a != nil {

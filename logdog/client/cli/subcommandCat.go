@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/flagenum"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/coordinator"
@@ -33,6 +32,7 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 )
@@ -217,8 +217,16 @@ func (cmd *catCommandRun) catPath(c context.Context, coord *coordinator.Client, 
 func (cmd *catCommandRun) getTextPrefix(desc *logpb.LogStreamDescriptor, le *logpb.LogEntry) string {
 	var parts []string
 	if cmd.timestamps != timestampsOff {
-		ts := google.TimeFromProto(desc.Timestamp)
-		ts = ts.Add(google.DurationFromProto(le.TimeOffset))
+		ts, err := ptypes.Timestamp(desc.Timestamp)
+		if err != nil {
+			return ""
+		}
+		off, err := ptypes.Duration(le.TimeOffset)
+		if err != nil {
+			return ""
+		}
+
+		ts = ts.Add(off)
 		switch cmd.timestamps {
 		case timestampsLocal:
 			parts = append(parts, ts.Local().Format(time.StampMilli))

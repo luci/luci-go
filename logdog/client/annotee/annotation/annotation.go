@@ -21,10 +21,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/logdog/common/types"
 )
@@ -187,9 +187,13 @@ func (s *State) Append(annotation string) error {
 		if err != nil {
 			return fmt.Errorf("CURRENT_TIMESTAMP parameter %q is not a number: %s", params, err)
 		}
-		s.currentTimestamp = google.NewTimestamp(time.Unix(
+		ts, err := ptypes.TimestampProto(time.Unix(
 			int64(timestamp),
 			int64(timestamp*1000000000)%1000000000))
+		if err != nil {
+			return fmt.Errorf("CURRENT_TIMESTAMP parameter %q is bad timestamp: %s", params, err)
+		}
+		s.currentTimestamp = ts
 		if firstAnnotation {
 			s.rootStep.Started = s.currentTimestamp
 		}
@@ -549,7 +553,11 @@ func (s *State) now() *timestamp.Timestamp {
 	if c == nil {
 		c = clock.GetSystemClock()
 	}
-	return google.NewTimestamp(c.Now())
+	ret, err := ptypes.TimestampProto(c.Now())
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }
 
 // Step represents a single step.

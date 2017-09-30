@@ -19,10 +19,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/proto/google"
 	miloProto "go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/common/model"
@@ -154,9 +154,9 @@ func miloBuildStep(ub URLBuilder, anno *miloProto.Step, isMain bool, buildComple
 	// This should always be 0
 	comp.LevelsDeep = 0
 
-	// Timestamps
-	comp.Started = google.TimeFromProto(anno.Started)
-	comp.Finished = google.TimeFromProto(anno.Ended)
+	// Timestamps (best effort conversion).
+	comp.Started, _ = ptypes.Timestamp(anno.Started)
+	comp.Finished, _ = ptypes.Timestamp(anno.Ended)
 
 	var till time.Time
 	switch {
@@ -204,7 +204,7 @@ func AddLogDogToBuild(
 
 	// Now fill in each of the step components.
 	// TODO(hinoka): This is totes cachable.
-	buildCompletedTime := google.TimeFromProto(mainAnno.Ended)
+	buildCompletedTime, _ := ptypes.Timestamp(mainAnno.Ended)
 	build.Summary = *(miloBuildStep(ub, mainAnno, true, buildCompletedTime, now)[0])
 	propMap := map[string]string{}
 	for _, substepContainer := range mainAnno.Substep {

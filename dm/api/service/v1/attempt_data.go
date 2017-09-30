@@ -17,7 +17,7 @@ package dm
 import (
 	"time"
 
-	google_pb "go.chromium.org/luci/common/proto/google"
+	"github.com/golang/protobuf/ptypes"
 )
 
 // NewJsonResult creates a new JsonResult object with optional expiration time.
@@ -29,7 +29,11 @@ func NewJsonResult(data string, exps ...time.Time) *JsonResult {
 	case l > 1:
 		panic("too many exps")
 	}
-	return &JsonResult{data, uint32(len(data)), google_pb.NewTimestamp(exp)}
+	ts, err := ptypes.TimestampProto(exp)
+	if err != nil {
+		panic("bad exp: " + err.Error())
+	}
+	return &JsonResult{data, uint32(len(data)), ts}
 }
 
 // NewDatalessJsonResult creates a new JsonResult object without data and with
@@ -42,7 +46,11 @@ func NewDatalessJsonResult(size uint32, exps ...time.Time) *JsonResult {
 	case l > 1:
 		panic("too many exps")
 	}
-	return &JsonResult{"", size, google_pb.NewTimestamp(exp)}
+	ts, err := ptypes.TimestampProto(exp)
+	if err != nil {
+		panic("bad exp: " + err.Error())
+	}
+	return &JsonResult{"", size, ts}
 }
 
 // NewAttemptScheduling creates an Attempt in the SCHEDULING state.

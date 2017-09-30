@@ -15,13 +15,14 @@
 package swarmingV1
 
 import (
-	"errors"
 	"fmt"
 	"net/url"
 	"strings"
 	"unicode"
 
-	"go.chromium.org/luci/common/proto/google"
+	"github.com/golang/protobuf/ptypes"
+
+	"go.chromium.org/luci/common/errors"
 )
 
 // DefaultSwarmingPriority is the priority used if
@@ -45,7 +46,7 @@ func (p *Parameters) Normalize() (err error) {
 // Normalize normalizes and checks for input violations.
 func (s *Parameters_Scheduling) Normalize() (err error) {
 	if s.Priority > 255 {
-		return errors.New("scheduling.priority > 256")
+		return errors.Reason("scheduling.priority(%d) > 256", s.Priority).Err()
 	}
 	// Priority == 0 means default.
 	if s.Priority == 0 {
@@ -56,10 +57,14 @@ func (s *Parameters_Scheduling) Normalize() (err error) {
 			return errors.New("scheduling.dimensions: empty dimension key")
 		}
 		if v == "" {
-			return fmt.Errorf("scheduling.dimensions: dimension key %q with empty value", k)
+			return errors.Reason("scheduling.dimensions: dimension key %q with empty value", k).Err()
 		}
 	}
-	if google.DurationFromProto(s.IoTimeout) < 0 {
+	val, err := ptypes.Duration(s.IoTimeout)
+	if err != nil {
+		return errors.Annotate(err, "scheduling.io_timeout").Err()
+	}
+	if val < 0 {
 		return errors.New("scheduling.io_timeout: negative timeout not allowed")
 	}
 	return

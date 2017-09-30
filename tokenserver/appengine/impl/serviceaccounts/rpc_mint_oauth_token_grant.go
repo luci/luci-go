@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/ptypes"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -19,7 +20,6 @@ import (
 	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/signing"
@@ -235,13 +235,22 @@ func (r *MintOAuthTokenGrantRPC) mint(c context.Context, p *mintParams) (*minter
 	now := clock.Now(c).UTC()
 	expiry := now.Add(time.Duration(p.validityDuration) * time.Second)
 
+	issuedAt, err := ptypes.TimestampProto(now)
+	if err != nil {
+		return nil, nil, grpc.Errorf(codes.Internal, "error setting issuedAt - %s", err)
+	}
+	exp, err := ptypes.TimestampProto(expiry)
+	if err != nil {
+		return nil, nil, grpc.Errorf(codes.Internal, "error setting expiry - %s", err)
+	}
+
 	// All the stuff here has already been validated in 'MintOAuthTokenGrant'.
 	body := &tokenserver.OAuthTokenGrantBody{
 		TokenId:          id,
 		ServiceAccount:   p.serviceAccount,
 		Proxy:            string(p.proxyID),
 		EndUser:          string(p.endUserID),
-		IssuedAt:         google.NewTimestamp(now),
+		IssuedAt:         issuedAt,
 		ValidityDuration: p.validityDuration,
 	}
 	signed, err := SignGrant(c, r.Signer, body)
@@ -252,7 +261,7 @@ func (r *MintOAuthTokenGrantRPC) mint(c context.Context, p *mintParams) (*minter
 
 	return &minter.MintOAuthTokenGrantResponse{
 		GrantToken:     signed,
-		Expiry:         google.NewTimestamp(expiry),
+		Expiry:         exp,
 		ServiceVersion: p.serviceVer,
 	}, body, nil
 }

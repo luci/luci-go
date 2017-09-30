@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	configPB "go.chromium.org/luci/common/proto/config"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
@@ -52,6 +51,7 @@ import (
 	"go.chromium.org/gae/service/info"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 )
 
@@ -277,7 +277,7 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 		cfg.Coordinator = &svcconfig.Coordinator{
 			AdminAuthGroup:   "admin",
 			ServiceAuthGroup: "services",
-			PrefixExpiration: google.NewDuration(24 * time.Hour),
+			PrefixExpiration: ptypes.DurationProto(24 * time.Hour),
 		}
 	})
 

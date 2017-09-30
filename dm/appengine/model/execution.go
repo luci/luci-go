@@ -22,6 +22,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 
 	"golang.org/x/net/context"
@@ -30,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/logging"
-	google_pb "go.chromium.org/luci/common/proto/google"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/grpc/grpcutil"
 )
@@ -355,8 +355,13 @@ func (e *Execution) DataProto() (ret *dm.Execution_Data) {
 	default:
 		panic(fmt.Errorf("unknown Execution_State: %s", e.State))
 	}
-	ret.Created = google_pb.NewTimestamp(e.Created)
-	ret.Modified = google_pb.NewTimestamp(e.Modified)
+	var err error
+	if ret.Created, err = ptypes.TimestampProto(e.Created); err != nil {
+		panic(err)
+	}
+	if ret.Modified, err = ptypes.TimestampProto(e.Modified); err != nil {
+		panic(err)
+	}
 	ret.DistributorInfo = &dm.Execution_Data_DistributorInfo{
 		ConfigName:    e.DistributorConfigName,
 		ConfigVersion: e.DistributorConfigVersion,

@@ -18,10 +18,9 @@ import (
 	"net"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
-
-	"go.chromium.org/luci/common/proto/google"
 
 	"go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
@@ -56,7 +55,12 @@ type MintedOAuthTokenInfo struct {
 // toBigQueryRow returns a JSON-ish map to upload to BigQuery.
 //
 // Its schema must match 'bq/tables/oauth_tokens.schema'.
-func (i *MintedOAuthTokenInfo) toBigQueryRow() map[string]interface{} {
+func (i *MintedOAuthTokenInfo) toBigQueryRow() (map[string]interface{}, error) {
+	exp, err := ptypes.Timestamp(i.Response.Expiry)
+	if err != nil {
+		return nil, err
+	}
+
 	return map[string]interface{}{
 		"fingerprint":       utils.TokenFingerprint(i.Response.AccessToken),
 		"grant_fingerprint": utils.TokenFingerprint(i.Request.GrantToken),
@@ -70,7 +74,7 @@ func (i *MintedOAuthTokenInfo) toBigQueryRow() map[string]interface{} {
 		// timestamp is not preserved in the cache, since it can be calculated from
 		// 'expiration' if necessary.
 		"requested_at": float64(i.RequestedAt.Unix()),
-		"expiration":   float64(google.TimeFromProto(i.Response.Expiry).Unix()),
+		"expiration":   float64(exp.Unix()),
 
 		// Information supplied by the caller.
 		"audit_tags": i.Request.AuditTags,
@@ -84,7 +88,7 @@ func (i *MintedOAuthTokenInfo) toBigQueryRow() map[string]interface{} {
 		"service_version": i.Response.ServiceVersion,
 		"gae_request_id":  i.RequestID,
 		"auth_db_rev":     i.AuthDBRev,
-	}
+	}, nil
 }
 
 // LogOAuthToken records information about the OAuth token in the BigQuery.
@@ -96,7 +100,11 @@ func (i *MintedOAuthTokenInfo) toBigQueryRow() map[string]interface{} {
 // On dev server, logs to the GAE log only, not to BigQuery (to avoid
 // accidentally pushing fake data to real BigQuery dataset).
 func LogOAuthToken(c context.Context, i *MintedOAuthTokenInfo) error {
-	return oauthTokensLog.Insert(c, bqlog.Entry{Data: i.toBigQueryRow()})
+	data, err := i.toBigQueryRow()
+	if err != nil {
+		return err
+	}
+	return oauthTokensLog.Insert(c, bqlog.Entry{Data: data})
 }
 
 // FlushOAuthTokensLog sends all buffered logged tokens to BigQuery.

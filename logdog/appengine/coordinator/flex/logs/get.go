@@ -17,6 +17,7 @@ package logs
 import (
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
@@ -27,7 +28,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -142,7 +142,10 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog
 	// Identify our URL signing parameters.
 	var signingRequest coordinator.URLSigningRequest
 	if sr := req.GetSignedUrls; sr != nil {
-		signingRequest.Lifetime = google.DurationFromProto(sr.Lifetime)
+		var err error
+		if signingRequest.Lifetime, err = ptypes.Duration(sr.Lifetime); err != nil {
+			return err
+		}
 		signingRequest.Stream = sr.Stream
 		signingRequest.Index = sr.Index
 	}
@@ -187,8 +190,13 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog
 			log.Debugf(c, "Signed URL was requested, but is not supported by storage.")
 
 		default:
+			exp, err := ptypes.TimestampProto(signedURLs.Expiration)
+			if err != nil {
+				return err
+			}
+
 			resp.SignedUrls = &logdog.GetResponse_SignedUrls{
-				Expiration: google.NewTimestamp(signedURLs.Expiration),
+				Expiration: exp,
 				Stream:     signedURLs.Stream,
 				Index:      signedURLs.Index,
 			}

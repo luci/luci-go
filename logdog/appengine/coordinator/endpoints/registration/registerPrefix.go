@@ -15,13 +15,13 @@
 package registration
 
 import (
+	"github.com/golang/protobuf/ptypes"
 	ds "go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/gcloud/pubsub"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
@@ -33,11 +33,16 @@ import (
 )
 
 func (s *server) RegisterPrefix(c context.Context, req *logdog.RegisterPrefixRequest) (*logdog.RegisterPrefixResponse, error) {
+	exp, err := ptypes.Duration(req.Expiration)
+	if err != nil {
+		return nil, err
+	}
+
 	log.Fields{
 		"project":    req.Project,
 		"prefix":     req.Prefix,
 		"source":     req.SourceInfo,
-		"expiration": google.DurationFromProto(req.Expiration),
+		"expiration": exp,
 	}.Debugf(c, "Registering log prefix.")
 
 	// Confirm that the Prefix is a valid stream name.

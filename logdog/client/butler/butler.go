@@ -22,11 +22,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/iotools"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
@@ -411,8 +411,12 @@ func (b *Butler) AddStreamServer(streamServer streamserver.StreamServer) {
 // is responsible for closing it.
 func (b *Butler) AddStream(rc io.ReadCloser, p *streamproto.Properties) error {
 	p = p.Clone()
-	if p.Timestamp == nil || google.TimeFromProto(p.Timestamp).IsZero() {
-		p.Timestamp = google.NewTimestamp(clock.Now(b.ctx))
+
+	if p.Timestamp == nil || (p.Timestamp.Seconds == 0 && p.Timestamp.Nanos == 0) {
+		var err error
+		if p.Timestamp, err = ptypes.TimestampProto(clock.Now(b.ctx)); err != nil {
+			panic(err)
+		}
 	}
 	if err := p.Validate(); err != nil {
 		return err

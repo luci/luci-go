@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -27,7 +28,6 @@ import (
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/signing"
@@ -81,7 +81,10 @@ func (r *MintMachineTokenRPC) MintMachineToken(c context.Context, req *minter.Mi
 	}
 
 	// Timestamp is required.
-	issuedAt := google.TimeFromProto(tokenReq.IssuedAt)
+	issuedAt, err := ptypes.Timestamp(tokenReq.IssuedAt)
+	if err != nil {
+		return r.mintingErrorResponse(c, minter.ErrorCode_BAD_TIMESTAMP, "issued_at is invalid: %s", err)
+	}
 	if issuedAt.IsZero() {
 		return r.mintingErrorResponse(c, minter.ErrorCode_BAD_TIMESTAMP, "issued_at is required")
 	}
@@ -213,6 +216,10 @@ func (r *MintMachineTokenRPC) mintLuciMachineToken(c context.Context, args mintT
 	switch body, signedToken, err := Mint(c, &params); {
 	case err == nil:
 		expiry := time.Unix(int64(body.IssuedAt), 0).Add(time.Duration(body.Lifetime) * time.Second)
+		expPB, err := ptypes.TimestampProto(expiry)
+		if err != nil {
+			return nil, nil, err
+		}
 		return &minter.MintMachineTokenResponse{
 			ServiceVersion: serviceVer,
 			TokenResponse: &minter.MachineTokenResponse{
@@ -220,7 +227,7 @@ func (r *MintMachineTokenRPC) mintLuciMachineToken(c context.Context, args mintT
 				TokenType: &minter.MachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &minter.LuciMachineToken{
 						MachineToken: signedToken,
-						Expiry:       google.NewTimestamp(expiry),
+						Expiry:       expPB,
 					},
 				},
 			},

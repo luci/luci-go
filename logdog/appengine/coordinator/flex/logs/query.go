@@ -15,6 +15,7 @@
 package logs
 
 import (
+	"github.com/golang/protobuf/ptypes"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
@@ -23,7 +24,6 @@ import (
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"golang.org/x/net/context"
@@ -171,10 +171,18 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 	}
 
 	if r.Newer != nil {
-		q = coordinator.AddNewerFilter(q, google.TimeFromProto(r.Newer))
+		ts, err := ptypes.Timestamp(r.Newer)
+		if err != nil {
+			return err
+		}
+		q = coordinator.AddNewerFilter(q, ts)
 	}
 	if r.Older != nil {
-		q = coordinator.AddOlderFilter(q, google.TimeFromProto(r.Older))
+		ts, err := ptypes.Timestamp(r.Older)
+		if err != nil {
+			return err
+		}
+		q = coordinator.AddOlderFilter(q, ts)
 	}
 
 	if r.ProtoVersion != "" {

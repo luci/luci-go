@@ -15,11 +15,11 @@
 package services
 
 import (
+	"github.com/golang/protobuf/ptypes"
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
@@ -63,14 +63,15 @@ func (s *server) LoadStream(c context.Context, req *logdog.LoadStreamRequest) (*
 		resp.Desc = ls.Descriptor
 	}
 	resp.ArchivalKey = lst.ArchivalKey
-	resp.Age = google.NewDuration(ds.RoundTime(clock.Now(c)).Sub(lst.Updated))
+	age := ds.RoundTime(clock.Now(c)).Sub(lst.Updated)
+	resp.Age = ptypes.DurationProto(age)
 
 	log.Fields{
 		"id":              lst.ID(),
 		"terminalIndex":   resp.State.TerminalIndex,
 		"archived":        resp.State.Archived,
 		"purged":          resp.State.Purged,
-		"age":             google.DurationFromProto(resp.Age),
+		"age":             age,
 		"archivalKeySize": len(resp.ArchivalKey),
 	}.Infof(c, "Successfully loaded log stream state.")
 	return &resp, nil

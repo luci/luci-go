@@ -22,12 +22,12 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
@@ -103,12 +103,18 @@ func console(c context.Context, project, name string, limit int) (*resp.Console,
 	}
 
 	// Build list of commits.
+
 	commits := make([]resp.Commit, len(commitInfo.Commits))
 	for row, commit := range commitInfo.Commits {
+		commitTime, err := ptypes.Timestamp(commit.CommitTime)
+		if err != nil {
+			return nil, err
+		}
+
 		commits[row] = resp.Commit{
 			AuthorName:  commit.AuthorName,
 			AuthorEmail: commit.AuthorEmail,
-			CommitTime:  google.TimeFromProto(commit.CommitTime),
+			CommitTime:  commitTime,
 			Repo:        def.RepoURL,
 			Branch:      def.Ref, // TODO(hinoka): Actually this doesn't match, change branch to ref.
 			Description: commit.Msg,

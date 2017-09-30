@@ -22,13 +22,13 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon/distribution"
@@ -226,7 +226,12 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 
 	// Get the local time. If we are within the dispatchThreshold, retry this
 	// archival later.
-	if ad := google.TimeFromProto(at.DispatchedAt); !ad.IsZero() {
+	ad, err := ptypes.Timestamp(at.DispatchedAt)
+	if err != nil {
+		return err
+	}
+
+	if !ad.IsZero() {
 		now := clock.Now(c)
 		delta := now.Sub(ad)
 		if delta < 0 {
@@ -306,8 +311,19 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 
 	// If the archival request is younger than the settle delay, kick it back to
 	// retry later.
-	age := google.DurationFromProto(ls.Age)
-	if settle := google.DurationFromProto(at.SettleDelay); age < settle {
+	age, err := ptypes.Duration(ls.Age)
+	if err != nil {
+		log.WithError(err).Errorf(c, "Bad duration.")
+		return err
+	}
+
+	settle, err := ptypes.Duration(at.SettleDelay)
+	if err != nil {
+		log.WithError(err).Errorf(c, "Bad settle delay.")
+		return err
+	}
+
+	if age < settle {
 		log.Fields{
 			"age":         age,
 			"settleDelay": settle,
@@ -338,7 +354,12 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 	}
 
 	// Are we required to archive a complete log stream?
-	if age <= google.DurationFromProto(at.CompletePeriod) {
+	complete, err := ptypes.Duration(at.CompletePeriod)
+	if err != nil {
+		log.WithError(err).Errorf(c, "Bad CompletePeriod.")
+		return err
+	}
+	if age <= complete {
 		// If we're requiring completeness, perform a keys-only scan of intermediate
 		// storage to ensure that we have all of the records before we bother
 		// streaming to storage only to find that we are missing data.

@@ -18,9 +18,9 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/auth/signing"
 
 	"go.chromium.org/luci/tokenserver/api"
@@ -58,6 +58,7 @@ func SignGrant(c context.Context, signer signing.Signer, tok *tokenserver.OAuthT
 // Inspection.Envelope is either nil or *tokenserver.OAuthTokenGrantEnvelope.
 // Inspection.Body is either nil or *tokenserver.OAuthTokenGrantBody.
 func InspectGrant(c context.Context, certs tokensigning.CertificatesSupplier, tok string) (*tokensigning.Inspection, error) {
+	var err error
 	i := tokensigning.Inspector{
 		Certificates:   certs,
 		SigningContext: tokenSigningContext,
@@ -73,12 +74,18 @@ func InspectGrant(c context.Context, certs tokensigning.CertificatesSupplier, to
 		},
 		Lifespan: func(b proto.Message) tokensigning.Lifespan {
 			body := b.(*tokenserver.OAuthTokenGrantBody)
-			issuedAt := google.TimeFromProto(body.IssuedAt)
+
+			var issuedAt time.Time
+			issuedAt, err = ptypes.Timestamp(body.IssuedAt)
+
 			return tokensigning.Lifespan{
 				NotBefore: issuedAt,
 				NotAfter:  issuedAt.Add(time.Duration(body.ValidityDuration) * time.Second),
 			}
 		},
+	}
+	if err != nil {
+		return nil, err
 	}
 	return i.InspectToken(c, tok)
 }

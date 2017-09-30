@@ -17,9 +17,9 @@ package mutate
 import (
 	"fmt"
 
+	"github.com/golang/protobuf/ptypes"
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/distributor"
@@ -84,15 +84,24 @@ func (s *ScheduleExecution) RollForward(c context.Context) (muts []tumble.Mutati
 
 	eid := dm.NewExecutionID(s.For.Quest, s.For.Id, a.CurExecution)
 	e := model.MakeExecution(c, eid, q.Desc.DistributorConfigName, ver)
-	e.TimeToStart = google.DurationFromProto(q.Desc.Meta.Timeouts.Start)
-	e.TimeToRun = google.DurationFromProto(q.Desc.Meta.Timeouts.Run)
+	if e.TimeToStart, err = ptypes.Duration(q.Desc.Meta.Timeouts.Start); err != nil {
+		logging.WithError(err).Errorf(c, "finding start time")
+		return
+	}
+	if e.TimeToRun, err = ptypes.Duration(q.Desc.Meta.Timeouts.Run); err != nil {
+		logging.WithError(err).Errorf(c, "finding run time")
+		return
+	}
 
 	exAuth := &dm.Execution_Auth{Id: eid, Token: e.Token}
 
 	var distTok distributor.Token
 	distTok, e.TimeToStop, err = dist.Run(&q.Desc, exAuth, prevResult)
 	if e.TimeToStop <= 0 {
-		e.TimeToStop = google.DurationFromProto(q.Desc.Meta.Timeouts.Stop)
+		if e.TimeToStop, err = ptypes.Duration(q.Desc.Meta.Timeouts.Stop); err != nil {
+			logging.WithError(err).Errorf(c, "finding stop time")
+			return
+		}
 	}
 	e.DistributorToken = string(distTok)
 	if err != nil {

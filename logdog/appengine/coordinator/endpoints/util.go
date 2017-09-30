@@ -17,8 +17,8 @@ package endpoints
 import (
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/duration"
-	"go.chromium.org/luci/common/proto/google"
 )
 
 // MinDuration selects the smallest duration that is > 0 from a set of
@@ -27,7 +27,11 @@ import (
 // If none of the supplied Durations are > 0, 0 will be returned.
 func MinDuration(candidates ...*duration.Duration) (exp time.Duration) {
 	for _, c := range candidates {
-		if cd := google.DurationFromProto(c); cd > 0 && (exp <= 0 || cd < exp) {
+		cd, err := ptypes.Duration(c)
+		if err != nil {
+			panic(err)
+		}
+		if cd > 0 && (exp <= 0 || cd < exp) {
 			exp = cd
 		}
 	}

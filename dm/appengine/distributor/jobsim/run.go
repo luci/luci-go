@@ -22,13 +22,13 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/dm/api/distributor/jobsim"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -149,9 +149,15 @@ func (r *runner) doReturnStage(stg *jobsim.ReturnStage) error {
 		retval += r.state.Sum
 	}
 
-	_, err := r.dmc.FinishAttempt(r.c, &dm.FinishAttemptReq{
+	ts, err := ptypes.Timestamp(stg.GetExpiration())
+	if err != nil {
+		logging.WithError(err).Warningf(r.c, "got error parsing expiration")
+		return err
+	}
+
+	_, err = r.dmc.FinishAttempt(r.c, &dm.FinishAttemptReq{
 		Auth: r.auth,
-		Data: executionResult(true, retval, google.TimeFromProto(stg.GetExpiration())),
+		Data: executionResult(true, retval, ts),
 	})
 	if err != nil {
 		logging.WithError(err).Warningf(r.c, "got error on FinishAttempt")
@@ -284,7 +290,11 @@ func (r *runner) doDeps(seed int64, stg *jobsim.DepsStage, cfgName string) (stop
 }
 
 func (r *runner) doStall(stg *jobsim.StallStage) {
-	dur := google.DurationFromProto(stg.Delay)
+	dur, err := ptypes.Duration(stg.Delay)
+	if err != nil {
+		logging.WithError(err).Infof(r.c, "error parsing delay")
+		panic(err)
+	}
 	logging.Fields{"duration": dur}.Infof(r.c, "stalling")
 	clock.Sleep(r.c, dur)
 }

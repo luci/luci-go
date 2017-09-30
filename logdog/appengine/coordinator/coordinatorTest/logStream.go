@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
@@ -29,6 +28,7 @@ import (
 	ds "go.chromium.org/gae/service/datastore"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 )
 
@@ -62,6 +62,11 @@ func MakeStream(c context.Context, project cfgtypes.ProjectName, path types.Stre
 	now := clock.Now(c).UTC()
 	secret := TestSecret()
 
+	timePB, err := ptypes.TimestampProto(now)
+	if err != nil {
+		panic(err)
+	}
+
 	ts := TestStream{
 		Project: project,
 		Prefix: &coordinator.LogPrefix{
@@ -77,7 +82,7 @@ func MakeStream(c context.Context, project cfgtypes.ProjectName, path types.Stre
 			Name:        string(name),
 			StreamType:  logpb.StreamType_TEXT,
 			ContentType: "application/text",
-			Timestamp:   google.NewTimestamp(now),
+			Timestamp:   timePB,
 		},
 		State: &coordinator.LogStreamState{
 			Parent:        nil, // Filled in by Reload.
@@ -147,7 +152,7 @@ func (ts *TestStream) Get(c context.Context) (err error) {
 // specific log stream index.
 func (ts *TestStream) LogEntry(c context.Context, i int) *logpb.LogEntry {
 	le := logpb.LogEntry{
-		TimeOffset:  google.NewDuration(clock.Now(c).Sub(ts.Stream.Created)),
+		TimeOffset:  ptypes.DurationProto(clock.Now(c).Sub(ts.Stream.Created)),
 		StreamIndex: uint64(i),
 	}
 

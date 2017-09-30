@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"go.chromium.org/luci/common/data/chunkstream"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
@@ -66,9 +66,14 @@ type parser interface {
 }
 
 func newParser(p *streamproto.Properties, c *counter) (parser, error) {
+	tb, err := ptypes.Timestamp(p.Timestamp)
+	if err != nil {
+		return nil, err
+	}
+
 	base := baseParser{
 		counter:  c,
-		timeBase: google.TimeFromProto(p.Timestamp),
+		timeBase: tb,
 	}
 
 	switch p.StreamType {
@@ -105,7 +110,7 @@ type baseParser struct {
 
 func (p *baseParser) baseLogEntry(ts time.Time) *logpb.LogEntry {
 	e := logpb.LogEntry{
-		TimeOffset:  google.NewDuration(ts.Sub(p.timeBase)),
+		TimeOffset:  ptypes.DurationProto(ts.Sub(p.timeBase)),
 		PrefixIndex: uint64(p.counter.next()),
 		StreamIndex: p.nextIndex,
 	}

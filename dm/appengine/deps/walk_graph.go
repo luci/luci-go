@@ -21,6 +21,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
@@ -28,7 +29,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/sync/parallel"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/distributor"
@@ -433,8 +433,13 @@ func (g *graphWalker) excludedAttempt(aid *dm.Attempt_ID) bool {
 func doGraphWalk(c context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, err error) {
 	cncl := (func())(nil)
 	timeoutProto := req.Limit.MaxTime
-	timeout := google.DurationFromProto(timeoutProto)
-	if timeoutProto == nil || timeout > maxTimeout {
+	var timeout time.Duration
+	if timeoutProto == nil {
+		timeout = maxTimeout
+	} else if timeout, err = ptypes.Duration(timeoutProto); err != nil {
+		return nil, err
+	}
+	if timeout > maxTimeout {
 		timeout = maxTimeout
 	}
 	c, cncl = clock.WithTimeout(c, timeout)

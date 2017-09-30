@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/common/auth/identity"
 	config_mem "go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/common/gcloud/pubsub"
-	googlepb "go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/testing/assertions"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/distributor"
@@ -36,6 +35,7 @@ import (
 	"go.chromium.org/luci/tumble"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/smartystreets/goconvey/convey"
 	"golang.org/x/net/context"
 )
@@ -204,7 +204,11 @@ func (t *ActivatedTask) Finish(resultJSON string, expire ...time.Time) {
 	switch len(expire) {
 	case 0:
 	case 1:
-		req.Data.Expiration = googlepb.NewTimestamp(expire[0])
+		exp, err := ptypes.TimestampProto(expire[0])
+		if err != nil {
+			panic(err)
+		}
+		req.Data.Expiration = exp
 	default:
 		panic("may only specify 0 or 1 expire values")
 	}

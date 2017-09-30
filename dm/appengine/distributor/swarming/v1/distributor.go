@@ -27,13 +27,13 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/duration"
 	"go.chromium.org/gae/service/info"
 	swarm "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	googlepb "go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry"
 	sv1 "go.chromium.org/luci/dm/api/distributor/swarming/v1"
 	dm "go.chromium.org/luci/dm/api/service/v1"
@@ -88,7 +88,11 @@ func toSwarmMap(m map[string]string) []*swarm.SwarmingRpcsStringPair {
 }
 
 func toIntSeconds(p *duration.Duration) int64 {
-	return int64(googlepb.DurationFromProto(p).Seconds())
+	dur, err := ptypes.Duration(p)
+	if err != nil {
+		panic(err)
+	}
+	return int64(dur.Seconds())
 }
 
 func httpClients(c context.Context) (anonC, authC *http.Client) {
@@ -322,11 +326,20 @@ func (d *swarmingDist) GetStatus(q *dm.Quest_Desc, tok distributor.Token) (*dm.R
 			panic(err)
 		}
 
+		dur, err := ptypes.Duration(d.sCfg.Isolate.Expiration)
+		if err != nil {
+			return nil, err
+		}
+
+		exp, err := ptypes.TimestampProto(clock.Now(d).Add(dur))
+		if err != nil {
+			return nil, err
+		}
+
 		ret.Data = &dm.JsonResult{
-			Object: data,
-			Size:   uint32(len(data)),
-			Expiration: googlepb.NewTimestamp(
-				clock.Now(d).Add(googlepb.DurationFromProto(d.sCfg.Isolate.Expiration))),
+			Object:     data,
+			Size:       uint32(len(data)),
+			Expiration: exp,
 		}
 
 	default:

@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 
 	ds "go.chromium.org/gae/service/datastore"
@@ -30,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/data/caching/lazyslot"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
@@ -82,13 +82,22 @@ type CRL struct {
 }
 
 // GetStatusProto returns populated CRLStatus proto message.
-func (crl *CRL) GetStatusProto() *admin.CRLStatus {
+func (crl *CRL) GetStatusProto() (*admin.CRLStatus, error) {
+	lut, err := ptypes.TimestampProto(crl.LastUpdateTime)
+	if err != nil {
+		return nil, err
+	}
+	lft, err := ptypes.TimestampProto(crl.LastFetchTime)
+	if err != nil {
+		return nil, err
+	}
+
 	return &admin.CRLStatus{
-		LastUpdateTime:    google.NewTimestamp(crl.LastUpdateTime),
-		LastFetchTime:     google.NewTimestamp(crl.LastFetchTime),
+		LastUpdateTime:    lut,
+		LastFetchTime:     lft,
 		LastFetchEtag:     crl.LastFetchETag,
 		RevokedCertsCount: int64(crl.RevokedCertsCount),
-	}
+	}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

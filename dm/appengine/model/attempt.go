@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	bf "go.chromium.org/luci/common/data/bit_field"
-	google_pb "go.chromium.org/luci/common/proto/google"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 )
 
@@ -157,8 +157,13 @@ func (a *Attempt) DataProto() (ret *dm.Attempt_Data) {
 	default:
 		panic(fmt.Errorf("unknown Attempt_State: %s", a.State))
 	}
-	ret.Created = google_pb.NewTimestamp(a.Created)
-	ret.Modified = google_pb.NewTimestamp(a.Modified)
+	var err error
+	if ret.Created, err = ptypes.TimestampProto(a.Created); err != nil {
+		panic(err)
+	}
+	if ret.Modified, err = ptypes.TimestampProto(a.Modified); err != nil {
+		panic(err)
+	}
 	ret.NumExecutions = a.CurExecution
 	return ret
 }

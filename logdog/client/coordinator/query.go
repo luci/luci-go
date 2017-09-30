@@ -17,7 +17,7 @@ package coordinator
 import (
 	"time"
 
-	"go.chromium.org/luci/common/proto/google"
+	"github.com/golang/protobuf/ptypes"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
@@ -141,11 +141,18 @@ func (c *Client) Query(ctx context.Context, project cfgtypes.ProjectName, path s
 		Project:     string(project),
 		Path:        path,
 		ContentType: o.ContentType,
-		Older:       google.NewTimestamp(o.Before),
-		Newer:       google.NewTimestamp(o.After),
 		Purged:      o.Purged.queryValue(),
 		State:       o.State,
 	}
+
+	var err error
+	if req.Older, err = ptypes.TimestampProto(o.Before); err != nil {
+		return err
+	}
+	if req.Newer, err = ptypes.TimestampProto(o.After); err != nil {
+		return err
+	}
+
 	if st := o.StreamType.queryValue(); st >= 0 {
 		req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: st}
 	}

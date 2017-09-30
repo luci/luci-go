@@ -26,13 +26,13 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 
 	"go.chromium.org/gae/service/memcache"
 
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/auth"
 
 	milo "go.chromium.org/luci/milo/api/proto"
@@ -181,7 +181,10 @@ func GetHistory(c context.Context, url, commitish string, limit int) (*milo.Cons
 				return errors.Annotate(err, "commit time unparsible (%q)", e.Committer.Time).Err()
 			}
 
-			commit.CommitTime = google.NewTimestamp(ts)
+			commit.CommitTime, err = ptypes.TimestampProto(ts)
+			if err != nil {
+				return errors.Annotate(err, "bad commit time").Err()
+			}
 			commit.Msg = e.Message
 
 			ret.Commits[i] = commit

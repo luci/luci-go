@@ -21,11 +21,11 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/golang/protobuf/ptypes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/iotools"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"golang.org/x/net/context"
@@ -76,7 +76,9 @@ func (p *handshakeProtocol) Handshake(ctx context.Context, r io.Reader) (*stream
 
 	props := flags.Properties()
 	if props.Timestamp == nil {
-		props.Timestamp = google.NewTimestamp(clock.Now(ctx))
+		if props.Timestamp, err = ptypes.TimestampProto(clock.Now(ctx)); err != nil {
+			panic(err)
+		}
 	}
 	if err := props.Validate(); err != nil {
 		return nil, err

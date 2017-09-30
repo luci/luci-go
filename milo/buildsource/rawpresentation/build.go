@@ -19,11 +19,11 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	miloProto "go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/coordinator"
@@ -144,15 +144,22 @@ func (as *AnnotationStream) Fetch(c context.Context) (*miloProto.Step, error) {
 			log.Warningf(c, "Annotation stream links LogDog substream [%+v], not supported!", t.AnnotationStream)
 
 		case *miloProto.Step_Substep_Step:
-			endedTime := google.TimeFromProto(t.Step.Ended)
-			if t.Step.Ended != nil && endedTime.After(latestEndedTime) {
+			endedTime, err := ptypes.Timestamp(t.Step.Ended)
+			if err != nil {
+				log.WithError(err).Warningf(c, "bad step.ended time")
+			} else if t.Step.Ended != nil && endedTime.After(latestEndedTime) {
 				latestEndedTime = endedTime
 			}
 		}
 	}
 	if latestEndedTime.IsZero() {
 		// No substep had an ended time :(
-		latestEndedTime = google.TimeFromProto(step.Started)
+		startTime, err := ptypes.Timestamp(step.Started)
+		if err != nil {
+			log.WithError(err).Warningf(c, "bad step.started time")
+		} else {
+			latestEndedTime = startTime
+		}
 	}
 
 	// Build our CachedStep.

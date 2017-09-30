@@ -20,8 +20,11 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/duration"
+
 	"go.chromium.org/luci/common/data/text/templateproto"
-	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/errors"
 )
 
 // IsEmpty returns true if this metadata retry message only contains
@@ -30,16 +33,27 @@ func (q *Quest_Desc_Meta_Retry) IsEmpty() bool {
 	return q.Crashed == 0 && q.Expired == 0 && q.Failed == 0 && q.TimedOut == 0
 }
 
+func checkPositiveDuration(d *duration.Duration) error {
+	dur, err := ptypes.Duration(d)
+	if err != nil {
+		return err
+	}
+	if dur < 0 {
+		return errors.Reason("duration(%d) < 0", dur).Err()
+	}
+	return nil
+}
+
 // Normalize ensures that all timeouts are >= 0
 func (t *Quest_Desc_Meta_Timeouts) Normalize() error {
-	if d := google.DurationFromProto(t.Start); d < 0 {
-		return fmt.Errorf("desc.meta.timeouts.start < 0: %s", d)
+	if err := checkPositiveDuration(t.Start); err != nil {
+		return errors.Annotate(err, "desc.meta.timeouts.start").Err()
 	}
-	if d := google.DurationFromProto(t.Run); d < 0 {
-		return fmt.Errorf("desc.meta.timeouts.run < 0: %s", d)
+	if err := checkPositiveDuration(t.Run); err != nil {
+		return errors.Annotate(err, "desc.meta.timeouts.run").Err()
 	}
-	if d := google.DurationFromProto(t.Stop); d < 0 {
-		return fmt.Errorf("desc.meta.timeouts.stop < 0: %s", d)
+	if err := checkPositiveDuration(t.Stop); err != nil {
+		return errors.Annotate(err, "desc.meta.timeouts.stop").Err()
 	}
 	return nil
 }

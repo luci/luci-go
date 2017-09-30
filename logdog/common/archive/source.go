@@ -21,7 +21,8 @@ import (
 	"fmt"
 	"time"
 
-	"go.chromium.org/luci/common/proto/google"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/duration"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/renderer"
 )
@@ -59,7 +60,10 @@ func (s *safeLogEntrySource) NextLogEntry() (*logpb.LogEntry, error) {
 
 func (s *safeLogEntrySource) normalizeLogEntry(le *logpb.LogEntry) error {
 	// Calculate the time offset Duration once.
-	timeOffset := google.DurationFromProto(le.TimeOffset)
+	timeOffset, err := ptypes.Duration(le.TimeOffset)
+	if err != nil {
+		return err
+	}
 
 	// Are any of our order constraints violated?
 	switch {
@@ -79,7 +83,11 @@ func (s *safeLogEntrySource) normalizeLogEntry(le *logpb.LogEntry) error {
 		s.logger().Warningf("Adjusting out-of-order timestamp (%s < %s) for log stream entry %d.",
 			timeOffset, s.lastTimeOffset, le.StreamIndex)
 
-		le.TimeOffset = google.LoadDuration(le.TimeOffset, s.lastTimeOffset)
+		if le.TimeOffset == nil && s.lastTimeOffset == 0 {
+			le.TimeOffset = &duration.Duration{}
+		} else if s.lastTimeOffset != 0 {
+			le.TimeOffset = ptypes.DurationProto(s.lastTimeOffset)
+		}
 	} else {
 		s.lastTimeOffset = timeOffset
 	}

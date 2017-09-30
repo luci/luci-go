@@ -19,13 +19,13 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	ps "go.chromium.org/luci/common/gcloud/pubsub"
 	"go.chromium.org/luci/common/lhttp"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/grpc/prpc"
 	api "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
@@ -147,7 +147,7 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 		Project:    string(cfg.Project),
 		Prefix:     string(cfg.Prefix),
 		SourceInfo: sourceInfo,
-		Expiration: google.NewDuration(cfg.PrefixExpiration),
+		Expiration: ptypes.DurationProto(cfg.PrefixExpiration),
 	})
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to register prefix with Coordinator service.")

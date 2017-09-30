@@ -58,6 +58,11 @@ func (r *GetCAStatusRPC) GetCAStatus(c context.Context, req *admin.GetCAStatusRe
 		return nil, grpc.Errorf(codes.Internal, "broken config in the datastore - %s", err)
 	}
 
+	crlStatus, err := crl.GetStatusProto()
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "cannot resolve StatusProto - %s", err)
+	}
+
 	return &admin.GetCAStatusResponse{
 		Config:     cfgMsg,
 		Cert:       utils.DumpPEM(ca.Cert, "CERTIFICATE"),
@@ -66,6 +71,6 @@ func (r *GetCAStatusRPC) GetCAStatus(c context.Context, req *admin.GetCAStatusRe
 		AddedRev:   ca.AddedRev,
 		UpdatedRev: ca.UpdatedRev,
 		RemovedRev: ca.RemovedRev,
-		CrlStatus:  crl.GetStatusProto(),
+		CrlStatus:  crlStatus,
 	}, nil
 }

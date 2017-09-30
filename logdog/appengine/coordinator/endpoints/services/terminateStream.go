@@ -21,7 +21,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
@@ -31,6 +30,7 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator/mutations"
 	"go.chromium.org/luci/tumble"
 
+	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
 
@@ -158,8 +158,13 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 }
 
 func standardArchivalParams(cfg *config.Config, pcfg *svcconfig.ProjectConfig) *coordinator.ArchivalParams {
+	delay, err := ptypes.Duration(cfg.Coordinator.ArchiveSettleDelay)
+	if err != nil {
+		panic(err)
+	}
+
 	return &coordinator.ArchivalParams{
-		SettleDelay:    google.DurationFromProto(cfg.Coordinator.ArchiveSettleDelay),
+		SettleDelay:    delay,
 		CompletePeriod: endpoints.MinDuration(cfg.Coordinator.ArchiveDelayMax, pcfg.MaxStreamAge),
 	}
 }

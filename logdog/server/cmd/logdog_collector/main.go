@@ -18,12 +18,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	gcps "go.chromium.org/luci/common/gcloud/pubsub"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/distribution"
@@ -131,8 +131,12 @@ func (a *application) runCollector(c context.Context) error {
 
 	// Initialize our Collector service object using a caching Coordinator
 	// interface.
+	stateExp, err := ptypes.Duration(ccfg.StateCacheExpiration)
+	if err != nil {
+		return err
+	}
 	coord := coordinator.NewCoordinator(a.Coordinator())
-	coord = coordinator.NewCache(coord, int(ccfg.StateCacheSize), google.DurationFromProto(ccfg.StateCacheExpiration))
+	coord = coordinator.NewCache(coord, int(ccfg.StateCacheSize), stateExp)
 
 	coll := collector.Collector{
 		Coordinator:       coord,

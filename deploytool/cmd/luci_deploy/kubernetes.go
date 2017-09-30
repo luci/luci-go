@@ -18,9 +18,10 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/duration"
+
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/deploytool/api/deploy"
 
 	"golang.org/x/net/context"
@@ -232,7 +233,11 @@ func (meta *kubeObjectMeta) addAnnotation(key string, value interface{}) {
 }
 
 func durationProtoToSec(p *duration.Duration) int {
-	return int(google.DurationFromProto(p).Seconds())
+	d, err := ptypes.Duration(p)
+	if err != nil {
+		panic(err)
+	}
+	return int(d.Seconds())
 }
 
 func kubeBuildDeploymentYAML(pb *layoutDeploymentGKEPodBinding, name string,

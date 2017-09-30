@@ -101,7 +101,12 @@ func (r *FetchCRLRPC) FetchCRL(c context.Context, req *admin.FetchCRLRequest) (*
 		}
 	}
 
-	return &admin.FetchCRLResponse{CrlStatus: crl.GetStatusProto()}, nil
+	crlStatus, err := crl.GetStatusProto()
+	if err != nil {
+		return nil, err
+	}
+
+	return &admin.FetchCRLResponse{CrlStatus: crlStatus}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

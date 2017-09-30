@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"golang.org/x/net/context"
 )
@@ -62,18 +62,23 @@ func (p *ArchivalParams) PublishTask(c context.Context, ap ArchivalPublisher, ls
 		return ErrArchiveTasked
 	}
 
+	dispatched, err := ptypes.TimestampProto(clock.Now(c))
+	if err != nil {
+		panic(err)
+	}
+
 	id := lst.ID()
 	msg := logdog.ArchiveTask{
 		Project:      string(Project(c)),
 		Id:           string(id),
 		Key:          p.createArchivalKey(id, ap.NewPublishIndex()),
-		DispatchedAt: google.NewTimestamp(clock.Now(c)),
+		DispatchedAt: dispatched,
 	}
 	if p.SettleDelay > 0 {
-		msg.SettleDelay = google.NewDuration(p.SettleDelay)
+		msg.SettleDelay = ptypes.DurationProto(p.SettleDelay)
 	}
 	if p.CompletePeriod > 0 {
-		msg.CompletePeriod = google.NewDuration(p.CompletePeriod)
+		msg.CompletePeriod = ptypes.DurationProto(p.CompletePeriod)
 	}
 
 	// Publish an archival request.
