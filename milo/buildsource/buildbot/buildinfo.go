@@ -61,7 +61,7 @@ func (p *BuildInfoProvider) newLogdogClient(c context.Context) (*coordinator.Cli
 //
 // This:
 //
-//	1) Fetches the BuildBot build JSON from datastore.
+//	1) Fetches the BuildBot build JSON from storage.
 //	2) Resolves the LogDog annotation stream path from the BuildBot state.
 //	3) Fetches the LogDog annotation stream and resolves it into a Step.
 //	4) Merges some operational BuildBot build information into the Step.

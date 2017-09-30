@@ -24,7 +24,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/memcache"
 
 	"go.chromium.org/luci/common/clock"
@@ -94,28 +93,15 @@ func getBuildSummary(b *buildbot.Build) *resp.BuildSummary {
 	}
 }
 
-// getBuilds fetches all of the recent builds from the .  Note that
-// getBuilds() does not perform ACL checks.
-func getBuilds(
-	c context.Context, masterName, builderName string, finished bool, limit int, cursor datastore.Cursor) (
-	[]*resp.BuildSummary, datastore.Cursor, error) {
-
-	// TODO(hinoka): Builder specific structs.
-	result := []*resp.BuildSummary{}
-	q := datastore.NewQuery("buildbotBuild")
-	q = q.Eq("finished", finished)
-	q = q.Eq("master", masterName)
-	q = q.Eq("builder", builderName)
-	q = q.Order("-number")
-	if cursor != nil {
-		q = q.Start(cursor)
-	}
-	q = q.Limit(int32(limit))
-	buildbots, nextCursor, err := runBuildsQuery(c, q)
+// getBuildSummaries fetches all of the recent builds from the .  Note that
+// getBuildSummaries() does not perform ACL checks.
+func getBuildSummaries(c context.Context, q query) ([]*resp.BuildSummary, string, error) {
+	builds, nextCursor, err := getBuilds(c, q)
 	if err != nil {
-		return nil, nil, err
+		return nil, "", err
 	}
-	for _, b := range buildbots {
+	result := []*resp.BuildSummary{}
+	for _, b := range builds {
 		result = append(result, getBuildSummary(b))
 	}
 	return result, nextCursor, nil
@@ -125,37 +111,26 @@ func getBuilds(
 // datastore cursor by creating a mapping of nextCursor -> thisCursor
 // in memcache.  maybeSetGetCursor stores the future mapping, then returns prevCursor
 // in the mapping for thisCursor -> prevCursor, if available.
-func maybeSetGetCursor(c context.Context, thisCursor, nextCursor datastore.Cursor, limit int) (datastore.Cursor, bool) {
-	key := func(c datastore.Cursor) string {
+func maybeSetGetCursor(c context.Context, thisCursor, nextCursor string, limit int) (string, bool) {
+	key := func(c string) string {
 		// Memcache key limit is 250 bytes, hash our cursor to get under this limit.
-		blob := sha1.Sum([]byte(c.String()))
-		return fmt.Sprintf("v2:cursors:buildbot_builders:%d:%s", limit, base64.StdEncoding.EncodeToString(blob[:]))
+		blob := sha1.Sum([]byte(c))
+		return fmt.Sprintf("v3:cursors:buildbot_builders:%d:%s", limit, base64.StdEncoding.EncodeToString(blob[:]))
 	}
 	// Set the next cursor to this cursor mapping, if available.
-	if nextCursor != nil {
+	if nextCursor != "" {
 		item := memcache.NewItem(c, key(nextCursor))
-		if thisCursor == nil {
-			// Make sure we know it exists, just empty
-			item.SetValue([]byte{})
-		} else {
-			item.SetValue([]byte(thisCursor.String()))
-		}
+		item.SetValue([]byte(thisCursor))
 		item.SetExpiration(24 * time.Hour)
 		memcache.Set(c, item)
 	}
-	// Try to get the last cursor, if valid and available.
-	if thisCursor == nil {
-		return nil, false
-	}
-	if item, err := memcache.GetKey(c, key(thisCursor)); err == nil {
-		if len(item.Value()) == 0 {
-			return nil, true
-		}
-		if prevCursor, err := datastore.DecodeCursor(c, string(item.Value())); err == nil {
-			return prevCursor, true
+	// Try to get the last cursor, if available.
+	if thisCursor != "" {
+		if item, err := memcache.GetKey(c, key(thisCursor)); err == nil {
+			return string(item.Value()), true
 		}
 	}
-	return nil, false
+	return "", false
 }
 
 func summarizeSlavePool(
@@ -193,11 +168,7 @@ func summarizeSlavePool(
 
 // GetBuilder is the implementation for getting a milo builder page from
 // buildbot.
-//
-// This gets:
-//   * Current Builds from querying the master json from the datastore.
-//   * Recent Builds from a cron job that backfills the recent builds.
-func GetBuilder(c context.Context, masterName, builderName string, limit int, cursor datastore.Cursor) (*resp.Builder, error) {
+func GetBuilder(c context.Context, masterName, builderName string, limit int, cursor string) (*resp.Builder, error) {
 	result := &resp.Builder{
 		Name: builderName,
 	}
@@ -257,23 +228,31 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 	result.MachinePool = summarizeSlavePool(baseURL+master.Name, p.Slaves, master.Slaves)
 
 	// This is CPU bound anyways, so there's no need to do this in parallel.
-	finishedBuilds, nextCursor, err := getBuilds(c, masterName, builderName, true, limit, cursor)
+	baseQ := query {
+		master:masterName,
+		builder: builderName,
+	}
+	finishedQ := baseQ
+	finishedQ.limit = limit
+	finishedQ.cursor = cursor
+	finishedQ.finished = yes
+	finishedBuilds, nextCursor, err := getBuildSummaries(c, finishedQ)
 	if err != nil {
 		return nil, err
 	}
+	result.NextCursor = nextCursor
 	if prevCursor, ok := maybeSetGetCursor(c, cursor, nextCursor, limit); ok {
-		if prevCursor == nil {
+		if prevCursor == "" {
 			// Magic string to signal display prev without cursor
 			result.PrevCursor = "EMPTY"
 		} else {
-			result.PrevCursor = prevCursor.String()
+			result.PrevCursor = prevCursor
 		}
 	}
-	if nextCursor != nil {
-		result.NextCursor = nextCursor.String()
-	}
-	// Cursor is not needed for current builds.
-	currentBuilds, _, err := getBuilds(c, masterName, builderName, false, 0, nil)
+
+	currentQ := baseQ
+	currentQ.finished = no
+	currentBuilds, _, err := getBuildSummaries(c, currentQ)
 	if err != nil {
 		return nil, err
 	}

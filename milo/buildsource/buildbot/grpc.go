@@ -105,7 +105,7 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 		return nil, grpc.Errorf(codes.InvalidArgument, "No builder specified")
 	}
 
-	limit := req.Limit
+	limit := int(req.Limit)
 	if limit == 0 {
 		limit = 20
 	}
@@ -125,15 +125,15 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 		}
 	}
 
-	q := datastore.NewQuery("buildbotBuild")
-	q = q.Eq("master", req.Master).
-		Eq("builder", req.Builder).
-		Limit(limit).
-		Order("-number")
-	if req.IncludeCurrent == false {
-		q = q.Eq("finished", true)
+	q := query{
+		master: req.Master,
+		builder: req.Builder,
+		limit: limit,
 	}
-	builds, _, err := runBuildsQuery(c, q)
+	if req.IncludeCurrent == false {
+		q.finished = yes
+	}
+	builds, _, err := getBuilds(c, q)
 	if err != nil {
 		return nil, err
 	}
