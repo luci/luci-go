@@ -28,7 +28,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -37,27 +36,6 @@ import (
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 )
-
-// getBuild fetches a buildbot build from the datastore and checks ACLs.
-// The return code matches the master responses.
-func getBuild(c context.Context, master, builder string, buildNum int) (*buildbot.Build, error) {
-	if err := canAccessMaster(c, master); err != nil {
-		return nil, err
-	}
-
-	result := &buildbot.Build{
-		Master:      master,
-		Buildername: builder,
-		Number:      buildNum,
-	}
-
-	err := datastore.Get(c, result)
-	if err == datastore.ErrNoSuchEntity {
-		err = errors.New("build not found", common.CodeNotFound)
-	}
-
-	return result, err
-}
 
 // getBanner parses the OS information from the build and maybe returns a banner.
 func getBanner(c context.Context, b *buildbot.Build) *resp.LogoBanner {
