@@ -101,8 +101,29 @@ func runTxn(c context.Context, cb func(context.Context) error) error {
 	return nil
 }
 
+// runIsolatedTxn is like runTxn, except it executes the callback in a new
+// isolated transaction (even if the original context is already transactional).
+func runIsolatedTxn(c context.Context, cb func(context.Context) error) error {
+	return runTxn(datastore.WithoutTransaction(c), cb)
+}
+
 // equalSortedLists returns true if lists contain the same sequence of strings.
 func equalSortedLists(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, s := range a {
+		if s != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// equalInt64Lists returns true if two lists of int64 are equal.
+//
+// Order is important.
+func equalInt64Lists(a, b []int64) bool {
 	if len(a) != len(b) {
 		return false
 	}
