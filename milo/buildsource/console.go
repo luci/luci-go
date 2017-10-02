@@ -84,3 +84,35 @@ func GetConsoleRows(c context.Context, project string, console *common.Console, 
 
 	return ret, err
 }
+
+// ConsolePreview is mapping of builder IDs to each builder's latest build.
+//
+// This reflects a console preview, which is a console table except rendered
+// with only the builder's latest build.
+type ConsolePreview map[BuilderID]*model.BuildSummary
+
+// GetConsolePreview returns a map of builders to their most recent build.
+func GetConsolePreview(c context.Context, def *common.Console) (ConsolePreview, error) {
+	builds := make([]*model.BuildSummary, len(def.Builders))
+	err := parallel.WorkPool(4, func(ch chan<- func() error) {
+		for i, b := range def.Builders {
+			i := i
+			b := b
+			ch <- func() error {
+				q := datastore.NewQuery("BuildSummary").Eq("BuilderID", b).Order("-Summary.End").Limit(1)
+				return datastore.Run(c, q, func(bs *model.BuildSummary) {
+					builds[i] = bs
+				})
+			}
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	preview := make(ConsolePreview, len(def.Builders))
+	for i := 0; i < len(builds); i++ {
+		preview[BuilderID(def.Builders[i])] = builds[i]
+	}
+	return preview, nil
+}

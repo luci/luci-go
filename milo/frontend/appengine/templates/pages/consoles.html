@@ -1,0 +1,26 @@
+{{define "title"}}Milo {{.ProjectName}} Consoles{{end}}
+
+{{define "head"}}
+{{ if .Reload }}
+<meta http-equiv="refresh" content="{{ .Reload }}">
+{{ end }}
+<link rel="stylesheet" href="/static/common/css/console.css" type="text/css">
+{{end}}
+
+{{define "body"}}
+<h1>{{ .ProjectName }} consoles</h1>
+
+{{ range .Consoles }}
+  <h2>
+    <a href="/console/{{ .Def.GetProjectName }}/{{ .Def.ID }}">{{ .Def.ID }}</a>
+  </h2>
+  <p> <b>Repo</b>: <a href="{{ .Def.RepoURL }}"> {{ .Def.RepoURL }} </a></p>
+  <p> <b>Ref</b>: {{ .Def.Ref }} </p>
+  <div class="console-row">
+    {{ .Render.ConsoleTable }}
+  </div>
+{{ else }}
+  <h4> No consoles defined </h4>
+{{ end }}
+
+{{end}} <!-- Body -->
