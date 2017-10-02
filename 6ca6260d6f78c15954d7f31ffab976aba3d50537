@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dad2ef12_4a4b6329",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-02T17:48:29Z",
+      "side": 1,
+      "message": "git? there are references to gitiles below too",
+      "range": {
+        "startLine": 7,
+        "startChar": 32,
+        "endLine": 7,
+        "endChar": 39
+      },
+      "revId": "6ca6260d6f78c15954d7f31ffab976aba3d50537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae19e006_64fe7a05",
+        "filename": "common/api/gitiles/proto.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-02T17:48:29Z",
+      "side": 1,
+      "message": "nit: unnecessary?",
+      "revId": "6ca6260d6f78c15954d7f31ffab976aba3d50537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2898aa7e_cb8a7301",
+        "filename": "common/proto/git/log.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-02T17:48:29Z",
+      "side": 1,
+      "message": "what in this message makes the commit specific to log?\ni.e. git show or rather\nhttps://chromium.googlesource.com/infra/infra/+/54d337b39d3102f46683bab8989fb2adb078014c?format\u003djson\nreturns same info\n\nI this message can be renamed to just \"Commit\". If there is function that determines the \"previous\" commit for treediff differently from git-log and returns commit info, it would still want to use this message, but it would need to clarify its logic for choosing \"previous\", also see below",
+      "range": {
+        "startLine": 22,
+        "startChar": 8,
+        "endLine": 22,
+        "endChar": 11
+      },
+      "revId": "6ca6260d6f78c15954d7f31ffab976aba3d50537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f708ec5f_81e34430",
+        "filename": "common/proto/git/log.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-02T17:48:29Z",
+      "side": 1,
+      "message": "nit: strictly speaking, the commit does not own the tree",
+      "range": {
+        "startLine": 26,
+        "startChar": 31,
+        "endLine": 26,
+        "endChar": 53
+      },
+      "revId": "6ca6260d6f78c15954d7f31ffab976aba3d50537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7755f0f8_0043d22c",
+        "filename": "common/proto/git/log.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-02T17:48:29Z",
+      "side": 1,
+      "message": "consider replacing the selected text with \", where previous is defined by the function that returns this message\".",
+      "range": {
+        "startLine": 39,
+        "startChar": 39,
+        "endLine": 42,
+        "endChar": 34
+      },
+      "revId": "6ca6260d6f78c15954d7f31ffab976aba3d50537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
