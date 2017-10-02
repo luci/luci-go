@@ -17,9 +17,7 @@ package frontend
 import (
 	"bytes"
 	"encoding/hex"
-	"fmt"
 	"html/template"
-	"net/http"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -77,6 +75,28 @@ func shortname(name string) string {
 	return strings.ToLower(short)
 }
 
+type builderRefFactory func(name, shortname string) *resp.BuilderRef
+
+func buildTreeFromDef(def *common.Console, factory builderRefFactory) (*resp.Category, int) {
+	// Build console table tree from builders.
+	categoryTree := resp.NewCategory("")
+	depth := 0
+	for col, b := range def.Builders {
+		meta := def.BuilderMetas[col]
+		short := meta.ShortName
+		if short == "" {
+			short = shortname(b)
+		}
+		builderRef := factory(b, short)
+		categories := meta.ParseCategory()
+		if len(categories) > depth {
+			depth = len(categories)
+		}
+		categoryTree.AddBuilder(categories, builderRef)
+	}
+	return categoryTree, depth
+}
+
 func console(c context.Context, project, name string, limit int) (*resp.Console, error) {
 	tStart := clock.Now(c)
 	def, err := getConsoleDef(c, project, name)
@@ -116,39 +136,44 @@ func console(c context.Context, project, name string, limit int) (*resp.Console,
 		}
 	}
 
-	// Build console table tree from builders.
-	categoryTree := resp.NewCategory("")
-	depth := 0
-	for col, b := range def.Builders {
-		meta := def.BuilderMetas[col]
-		short := meta.ShortName
-		if short == "" {
-			short = shortname(b)
-		}
-		name := buildsource.BuilderID(b)
-
+	categoryTree, depth := buildTreeFromDef(def, func(name, shortname string) *resp.BuilderRef {
 		// Group together all builds for this builder.
 		builds := make([]*model.BuildSummary, len(commits))
+		id := buildsource.BuilderID(name)
 		for row := 0; row < len(commits); row++ {
-			if summaries := rows[row].Builds[name]; len(summaries) > 0 {
+			if summaries := rows[row].Builds[id]; len(summaries) > 0 {
 				builds[row] = summaries[0]
 			}
 		}
-		builderRef := &resp.BuilderRef{
-			Name:      b,
-			ShortName: short,
+		return &resp.BuilderRef{
+			Name:      name,
+			ShortName: shortname,
 			Build:     builds,
 		}
-		categories := strings.Split(meta.Category, "|")
-		if len(categories) > depth {
-			depth = len(categories)
-		}
-		categoryTree.AddBuilder(categories, builderRef)
-	}
+	})
 
 	return &resp.Console{
 		Name:     def.ID,
 		Commit:   commits,
+		Table:    *categoryTree,
+		MaxDepth: depth + 1,
+	}, nil
+}
+
+func consolePreview(c context.Context, def *common.Console) (*resp.Console, error) {
+	pv, err := buildsource.GetConsolePreview(c, def)
+	if err != nil {
+		return nil, err
+	}
+	categoryTree, depth := buildTreeFromDef(def, func(name, shortname string) *resp.BuilderRef {
+		return &resp.BuilderRef{
+			Name:      name,
+			ShortName: shortname,
+			Build:     []*model.BuildSummary{pv[buildsource.BuilderID(name)]},
+		}
+	})
+	return &resp.Console{
+		Name:     def.ID,
 		Table:    *categoryTree,
 		MaxDepth: depth + 1,
 	}, nil
@@ -215,11 +240,40 @@ func ConsoleHandler(c *router.Context) {
 	})
 }
 
-// ConsoleMainHandler is a redirect handler that redirects the user to the main
-// console for a particular project.
-func ConsoleMainHandler(ctx *router.Context) {
-	w, r, p := ctx.Writer, ctx.Request, ctx.Params
-	proj := p.ByName("project")
-	http.Redirect(w, r, fmt.Sprintf("/console/%s/main", proj), http.StatusMovedPermanently)
-	return
+// ConsolesHandler is responsible for taking a project name and rendering the
+// console list page (defined in ./appengine/templates/pages/consoles.html).
+func ConsolesHandler(c *router.Context, projectName string) {
+	cons, err := common.GetProjectConsoles(c.Context, projectName)
+	if err != nil {
+		ErrorHandler(c, err)
+		return
+	}
+	type fullConsole struct {
+		Def    *common.Console
+		Render consoleRenderer
+	}
+	var consoles []fullConsole
+	for _, def := range cons {
+		respConsole, err := consolePreview(c.Context, def)
+		if err != nil {
+			logging.WithError(err).Errorf(c.Context, "failed to generate resp console")
+			continue
+		}
+		full := fullConsole{
+			Def:    def,
+			Render: consoleRenderer{respConsole},
+		}
+		consoles = append(consoles, full)
+	}
+
+	var reload *int
+	if tReload := GetReload(c.Request, -1); tReload >= 0 {
+		reload = &tReload
+	}
+
+	templates.MustRender(c.Context, c.Writer, "pages/consoles.html", templates.Args{
+		"ProjectName": projectName,
+		"Consoles":    consoles,
+		"Reload":      reload,
+	})
 }
