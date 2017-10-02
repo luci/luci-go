@@ -1,6 +1,10 @@
 {{define "title"}}Milo{{end}}
 
 {{define "head"}}
+{{ if .Console.FaviconURL }}
+<link rel="icon" type="{{ .Console.FaviconURL | faviconMIMEType }}" href="{{ .Console.FaviconURL }}" />
+{{ end }}
+
 {{ if .Reload }}
 <meta http-equiv="refresh" content="{{ .Reload }}">
 {{ end }}
