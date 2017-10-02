@@ -22,6 +22,30 @@
       "revId": "ec1d9c8b5df9b4016133beb1dd82e4df73da2951",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18d07e2a_1c15d5b8",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-02T20:34:11Z",
+      "side": 1,
+      "message": "depth on the other hand represents a maximum depth across all builders in the console, so I\u0027m not sure if I could factor that out into meta.Category. I could move the strings.Split() call there, but then method would just be a one-liner if it didn\u0027t include the depth tracking.\n\nLooking at this though, there is some code de-duplication I can do.",
+      "parentUuid": "8f283900_c38f4de8",
+      "range": {
+        "startLine": 176,
+        "startChar": 1,
+        "endLine": 179,
+        "endChar": 3
+      },
+      "revId": "ec1d9c8b5df9b4016133beb1dd82e4df73da2951",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
