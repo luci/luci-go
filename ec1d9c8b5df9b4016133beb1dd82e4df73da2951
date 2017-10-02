@@ -46,6 +46,30 @@
       "revId": "ec1d9c8b5df9b4016133beb1dd82e4df73da2951",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7548dfa_7bb9f1df",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-02T21:11:08Z",
+      "side": 1,
+      "message": "oops, nvm, I could certainly have the depth check be in meta.Category, but I don\u0027t think I want to obscure the fact that I\u0027m computing a maximum here.\n\nhowever, I did put the parsing in meta because this feels like an implementation detail that shouldn\u0027t matter here.",
+      "parentUuid": "18d07e2a_1c15d5b8",
+      "range": {
+        "startLine": 176,
+        "startChar": 1,
+        "endLine": 179,
+        "endChar": 3
+      },
+      "revId": "ec1d9c8b5df9b4016133beb1dd82e4df73da2951",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
