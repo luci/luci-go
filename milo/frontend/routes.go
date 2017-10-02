@@ -54,7 +54,9 @@ func Run(templatePath string) {
 
 	// Console
 	r.GET("/console/:project/:name", basemw, ConsoleHandler)
-	r.GET("/console/:project", basemw, ConsoleMainHandler)
+	r.GET("/console/:project", basemw, func(c *router.Context) {
+		ConsolesHandler(c, c.Params.ByName("project"))
+	})
 
 	// Swarming
 	r.GET(swarming.URLBase+"/:id/steps/*logname", basemw, func(c *router.Context) {
