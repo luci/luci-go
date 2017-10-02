@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8cf92d8d_de4255e0",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 980,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-02T23:49:21Z",
+      "side": 1,
+      "message": "It is mostly irrelevant, and it is difficult to log (it is a struct with stuff). Added logging of number of triggers, since it\u0027s the most relevant part of InvocationRequest.",
+      "parentUuid": "9703355c_1be131fc",
+      "range": {
+        "startLine": 980,
+        "startChar": 33,
+        "endLine": 980,
+        "endChar": 67
+      },
+      "revId": "96bc1683c0febf8a22eefbcb479b26c52ffae34b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4ed31aa1_a73d48be",
         "filename": "scheduler/appengine/engine/engine.go",
         "patchSetId": 10
@@ -45,6 +69,30 @@
       "revId": "96bc1683c0febf8a22eefbcb479b26c52ffae34b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8dfe68f8_d776696d",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 985,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-02T23:49:21Z",
+      "side": 1,
+      "message": "Done, but cleanup is still duplicated because I\u0027m not a fan of returning both non-nil error and some invocations list from allocateInvocations.",
+      "parentUuid": "4ed31aa1_a73d48be",
+      "range": {
+        "startLine": 965,
+        "startChar": 0,
+        "endLine": 985,
+        "endChar": 10
+      },
+      "revId": "96bc1683c0febf8a22eefbcb479b26c52ffae34b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "6c66e8a6_b3bcb6de",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 1030,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-02T23:49:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "345a550a_12b97ecc",
+      "range": {
+        "startLine": 1030,
+        "startChar": 0,
+        "endLine": 1030,
+        "endChar": 49
+      },
+      "revId": "96bc1683c0febf8a22eefbcb479b26c52ffae34b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6279dc39_efae9a52",
         "filename": "scheduler/appengine/engine/engine.go",
         "patchSetId": 10
@@ -91,6 +163,30 @@
       "revId": "96bc1683c0febf8a22eefbcb479b26c52ffae34b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba1e445c_105dfbe0",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 1759,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-02T23:49:21Z",
+      "side": 1,
+      "message": "I don\u0027t see a point. I\u0027ve already moved everything OTHER than prelaunch into e.launchTask.",
+      "parentUuid": "6279dc39_efae9a52",
+      "range": {
+        "startLine": 1759,
+        "startChar": 1,
+        "endLine": 1759,
+        "endChar": 48
+      },
+      "revId": "96bc1683c0febf8a22eefbcb479b26c52ffae34b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "1048f702_1f0584e3",
+        "filename": "scheduler/appengine/engine/invocation.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-02T23:49:21Z",
+      "side": 1,
+      "message": "It isn\u0027t yet. Removed.",
+      "parentUuid": "97eb2e74_da045253",
+      "range": {
+        "startLine": 211,
+        "startChar": 1,
+        "endLine": 211,
+        "endChar": 13
+      },
+      "revId": "96bc1683c0febf8a22eefbcb479b26c52ffae34b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "867670f8_2e686358",
         "filename": "scheduler/appengine/engine/triage.go",
         "patchSetId": 10
@@ -137,6 +257,30 @@
       "revId": "96bc1683c0febf8a22eefbcb479b26c52ffae34b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23482cfe_c86ef174",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-02T23:49:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "867670f8_2e686358",
+      "range": {
+        "startLine": 73,
+        "startChar": 6,
+        "endLine": 73,
+        "endChar": 7
+      },
+      "revId": "96bc1683c0febf8a22eefbcb479b26c52ffae34b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "3e4c7cd9_cae0437f",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-02T23:49:21Z",
+      "side": 1,
+      "message": ":-/",
+      "parentUuid": "3f1be190_65a95d70",
+      "range": {
+        "startLine": 77,
+        "startChar": 11,
+        "endLine": 77,
+        "endChar": 12
+      },
+      "revId": "96bc1683c0febf8a22eefbcb479b26c52ffae34b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f59e98f9_6343ea31",
         "filename": "scheduler/appengine/engine/triage.go",
         "patchSetId": 10
@@ -183,6 +351,30 @@
       "revId": "96bc1683c0febf8a22eefbcb479b26c52ffae34b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee326441_bdedc620",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-02T23:49:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f59e98f9_6343ea31",
+      "range": {
+        "startLine": 120,
+        "startChar": 16,
+        "endLine": 120,
+        "endChar": 17
+      },
+      "revId": "96bc1683c0febf8a22eefbcb479b26c52ffae34b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

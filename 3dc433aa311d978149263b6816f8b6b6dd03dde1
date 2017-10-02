@@ -22,6 +22,30 @@
       "revId": "3dc433aa311d978149263b6816f8b6b6dd03dde1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19335637_b2d24518",
+        "filename": "scheduler/appengine/engine/job.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-02T23:49:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "223996c7_2ab89c62",
+      "range": {
+        "startLine": 204,
+        "startChar": 12,
+        "endLine": 204,
+        "endChar": 28
+      },
+      "revId": "3dc433aa311d978149263b6816f8b6b6dd03dde1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
