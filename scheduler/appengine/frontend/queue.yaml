@@ -3,8 +3,22 @@ queue:
 - name: read-project-config
   rate: 10/m
 
+# TODO(vadimsh): Remove once switched to v2.
 - name: timers
   rate: 500/s
 
+- name: batches
+  rate: 500/s
+
+# TODO(vadimsh): Remove once switched to v2.
 - name: invocations
+  rate: 500/s
+
+- name: launches
+  rate: 500/s
+
+- name: completions
+  rate: 500/s
+
+- name: triages
   rate: 500/s
