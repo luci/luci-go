@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9703355c_1be131fc",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 980,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-02T22:55:49Z",
+      "side": 1,
+      "message": "maybe error req[i] too, or do you think req[i] is totally irrelevant to the failure?",
+      "range": {
+        "startLine": 980,
+        "startChar": 33,
+        "endLine": 980,
+        "endChar": 67
+      },
+      "revId": "96bc1683c0febf8a22eefbcb479b26c52ffae34b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ed31aa1_a73d48be",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 985,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-02T22:55:49Z",
+      "side": 1,
+      "message": "readability: if this block goes into its own function `allocateInvocations`, and below code is combined into `enqueuBatchOfInvocations` then this func gets easier to read and cleanup doesn\u0027t need to be copied.\n\nassertInTransaction(c)\ninvs, err :\u003d e.allocateInvocations(c, job, req)\nif err \u003d\u003d nil {\n   err \u003d e.enqueuBatchOfInvocations(c, job, invs)\n}\nif err !\u003d nil {\n  // Best effort cleanup.\n  e.cleanupInvocationsAfterFail(c, invs)\n  return nil, transient.Tag.Apply(err)\n}\nreturn invs, nil",
+      "range": {
+        "startLine": 965,
+        "startChar": 0,
+        "endLine": 985,
+        "endChar": 10
+      },
+      "revId": "96bc1683c0febf8a22eefbcb479b26c52ffae34b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "345a550a_12b97ecc",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 1030,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-02T22:55:49Z",
+      "side": 1,
+      "message": "IIreadC, it doesn\u0027t need to be part of engine, so can be a standalone func, perhaps inside invocation.go and named cleanupNewInvocationsAfterFailure (or Unused, or Unreferenced?)\n\nWhether you follow above or not, maybe just cleanupUnusedInvocations? It\u0027s clear from caller\u0027s context that this is on failure, but I think it\u0027s more important for the reader that cleanup is of not just **any** invocation, but of not yet used ones.",
+      "range": {
+        "startLine": 1030,
+        "startChar": 0,
+        "endLine": 1030,
+        "endChar": 49
+      },
+      "revId": "96bc1683c0febf8a22eefbcb479b26c52ffae34b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6279dc39_efae9a52",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 1759,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-02T22:55:49Z",
+      "side": 1,
+      "message": "readability: how about a dedicated method for this?\nswitch inv, skip, err :\u003d e.preLaunchInvocation(c, msg.InvID, retryCount); {\n  case err !\u003d nil: ..\n  case skip: ...\n  default:\n    logging.Infof(c, \"Actually launching the task\")\n    return e.launchTask(c, \u0026inv) \n}",
+      "range": {
+        "startLine": 1759,
+        "startChar": 1,
+        "endLine": 1759,
+        "endChar": 48
+      },
+      "revId": "96bc1683c0febf8a22eefbcb479b26c52ffae34b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97eb2e74_da045253",
+        "filename": "scheduler/appengine/engine/invocation.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-02T22:55:49Z",
+      "side": 1,
+      "message": "where is this actually used?",
+      "range": {
+        "startLine": 211,
+        "startChar": 1,
+        "endLine": 211,
+        "endChar": 13
+      },
+      "revId": "96bc1683c0febf8a22eefbcb479b26c52ffae34b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "867670f8_2e686358",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-02T22:55:49Z",
+      "side": 1,
+      "message": "either remove \"\" or explain why it\u0027s effectively atomic when dssets are used properly.",
+      "range": {
+        "startLine": 73,
+        "startChar": 6,
+        "endLine": 73,
+        "endChar": 7
+      },
+      "revId": "96bc1683c0febf8a22eefbcb479b26c52ffae34b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f1be190_65a95d70",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-02T22:55:49Z",
+      "side": 1,
+      "message": ".",
+      "range": {
+        "startLine": 77,
+        "startChar": 11,
+        "endLine": 77,
+        "endChar": 12
+      },
+      "revId": "96bc1683c0febf8a22eefbcb479b26c52ffae34b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f59e98f9_6343ea31",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-02T22:55:49Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 120,
+        "startChar": 16,
+        "endLine": 120,
+        "endChar": 17
+      },
+      "revId": "96bc1683c0febf8a22eefbcb479b26c52ffae34b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
