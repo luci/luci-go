@@ -153,10 +153,11 @@ func console(c context.Context, project, name string, limit int) (*resp.Console,
 	})
 
 	return &resp.Console{
-		Name:     def.ID,
-		Commit:   commits,
-		Table:    *categoryTree,
-		MaxDepth: depth + 1,
+		Name:       def.ID,
+		Commit:     commits,
+		Table:      *categoryTree,
+		MaxDepth:   depth + 1,
+		FaviconURL: def.FaviconURL,
 	}, nil
 }
 
