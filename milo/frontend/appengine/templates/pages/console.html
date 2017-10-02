@@ -1,6 +1,10 @@
 {{define "title"}}Milo{{end}}
 
 {{define "head"}}
+{{ if ne .Console.FaviconURL "" }}
+<link rel="icon" type="{{ .Console.FaviconURL | faviconMIMEType }}" href="{{ .Console.FaviconURL }}" />
+{{ end }}
+
 {{ if .Reload }}
 <meta http-equiv="refresh" content="{{ .Reload }}">
 {{ end }}
@@ -10,14 +14,18 @@
 {{define "body"}}
 {{ $console := .Console }}
 
-<h1>{{ $console.Name }}</h1>
+<h1>
+  {{ $console.Name }}
+  {{ if ne .Console.FaviconURL "" }}
+  <img src="{{ .Console.FaviconURL }}" width="48" height="48" />
+  {{ end }}
+</h1>
 
 <!-- Container -->
 <div class="console-row">
 
   <!-- Commits -->
   <div class="console-column" style="justify-content: flex-end">
-    
     <div class="console-row">
       <div class="console-commit-column">
       {{ range $console.Commit }}
@@ -43,7 +51,7 @@
 </div>
 
 <div class="epiloge" style="margin-top: 1em">
-  (Show: 
+  (Show:
   <a href="?numbuilds=">default</a>
   <a href="?numbuilds=25">25</a>
   <a href="?numbuilds=50">50</a>
