@@ -9,8 +9,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/gae/service/datastore"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
@@ -67,11 +65,7 @@ func (b BuilderID) Get(c context.Context, limit int, cursorStr string) (*resp.Bu
 
 	switch source {
 	case "buildbot":
-		cursor, err := datastore.DecodeCursor(c, cursorStr)
-		if err != nil {
-			return nil, errors.Annotate(err, "bad cursor").Err()
-		}
-		return buildbot.GetBuilder(c, group, builder, limit, cursor)
+		return buildbot.GetBuilder(c, group, builder, limit, cursorStr)
 
 	case "buildbucket":
 		return buildbucket.GetBuilder(c, group, builder, limit)
