@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
@@ -30,6 +31,7 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine/dsset"
+	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/schedule"
 )
 
@@ -215,4 +217,40 @@ func (s *invocationIDSet) Add(c context.Context, ids []int64) error {
 func (s *invocationIDSet) ItemToInvID(i *dsset.Item) int64 {
 	id, _ := strconv.ParseInt(i.ID, 10, 64)
 	return id
+}
+
+// pendingTriggersSet is a set of not yet consumed triggers for the job.
+//
+// This is incoming triggers. They are processed in the triage procedure,
+// resulting in new invocations.
+func pendingTriggersSet(c context.Context, jobID string) *triggersSet {
+	return &triggersSet{
+		Set: dsset.Set{
+			ID:              "triggers:" + jobID,
+			ShardCount:      8,
+			TombstonesRoot:  datastore.KeyForObj(c, &Job{JobID: jobID}),
+			TombstonesDelay: 30 * time.Minute,
+		},
+	}
+}
+
+// triggersSet is a dsset.Set that stores internal.Trigger protos.
+type triggersSet struct {
+	dsset.Set
+}
+
+// Add adds triggers to the set.
+func (s *triggersSet) Add(c context.Context, triggers []*internal.Trigger) error {
+	items := make([]dsset.Item, 0, len(triggers))
+	for _, t := range triggers {
+		blob, err := proto.Marshal(t)
+		if err != nil {
+			return fmt.Errorf("failed to marshal proto - %s", err)
+		}
+		items = append(items, dsset.Item{
+			ID:    t.Id,
+			Value: blob,
+		})
+	}
+	return s.Set.Add(c, items)
 }
