@@ -30,6 +30,10 @@ dispatch:
   - url: "*/admin/*"
     service: backend
 
+  # Auth groups DB changes are pushed through "backend".
+  - url: "*/auth/pubsub/*"
+    service: backend
+
   ##
   # Always route logdog.Services and logdog.Registration RPCs to the "services"
   # module.
