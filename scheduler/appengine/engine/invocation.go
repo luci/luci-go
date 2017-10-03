@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 
+	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
@@ -149,17 +150,23 @@ type Invocation struct {
 	// Empty identity string if it was triggered by the service itself.
 	TriggeredBy identity.Identity
 
-	// IncomingTriggers is a list of triggers that the invocation consumed.
+	// IncomingTriggersRaw is a serialized list of triggers that the invocation
+	// consumed.
 	//
 	// They are popped from job's pending triggers set when the invocation
 	// starts.
-	IncomingTriggers []task.Trigger `gae:",noindex"`
+	//
+	// Use IncomingTriggers() function to grab them in deserialized form.
+	IncomingTriggersRaw []byte `gae:",noindex"`
 
-	// OutgoingTriggers is a list of triggers that the invocation produced.
+	// OutgoingTriggersRaw is a serialized list of triggers that the invocation
+	// produced.
 	//
 	// They are fanned out into pending trigger sets of corresponding triggered
 	// jobs (specified by TriggeredJobIDs).
-	OutgoingTriggers []task.Trigger `gae:",noindex"`
+	//
+	// Use OutgoingTriggers() function to grab them in deserialized form.
+	OutgoingTriggersRaw []byte `gae:",noindex"`
 
 	// Revision is revision number of config.cfg when this invocation was created.
 	// For informational purpose.
@@ -208,7 +215,7 @@ type Invocation struct {
 // not something that comes from corresponding Job entity).
 type InvocationRequest struct {
 	TriggeredBy      identity.Identity
-	IncomingTriggers []task.Trigger
+	IncomingTriggers []*internal.Trigger
 }
 
 // jobID returns ID of the job the invocation belongs too.
@@ -232,8 +239,8 @@ func (e *Invocation) isEqual(other *Invocation) bool {
 		e.Finished.Equal(other.Finished) &&
 		e.InvocationNonce == other.InvocationNonce &&
 		e.TriggeredBy == other.TriggeredBy &&
-		equalTriggerLists(e.IncomingTriggers, other.IncomingTriggers) &&
-		equalTriggerLists(e.OutgoingTriggers, other.OutgoingTriggers) &&
+		bytes.Equal(e.IncomingTriggersRaw, other.IncomingTriggersRaw) &&
+		bytes.Equal(e.OutgoingTriggersRaw, other.OutgoingTriggersRaw) &&
 		e.Revision == other.Revision &&
 		e.RevisionURL == other.RevisionURL &&
 		bytes.Equal(e.Task, other.Task) &&
@@ -319,6 +326,20 @@ func (e *Invocation) trimDebugLog() {
 		}
 	}
 	e.DebugLog = string(trimmed)
+}
+
+// IncomingTriggers is a list of triggers that the invocation consumed.
+//
+// It is deserialized on the fly from IncomingTriggersRaw.
+func (e *Invocation) IncomingTriggers() ([]*internal.Trigger, error) {
+	return unmarshalTriggersList(e.IncomingTriggersRaw)
+}
+
+// OutgoingTriggers is a list of triggers that the invocation produced.
+//
+// It is deserialized on the fly from OutgoingTriggersRaw.
+func (e *Invocation) OutgoingTriggers() ([]*internal.Trigger, error) {
+	return unmarshalTriggersList(e.OutgoingTriggersRaw)
 }
 
 // cleanupUnreferencedInvocations tries to delete given invocations.
