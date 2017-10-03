@@ -60,6 +60,9 @@ type Console struct {
 	// BuilderMeta is an expanded set of builders containing additional metadata.
 	// This should always match the Builders field.
 	BuilderMetas []BuilderMeta
+	// _ is a "black hole" which absorbs any extra props found during a
+	// datastore Get. These props are not written back on a datastore Put.
+	_ datastore.PropertyMap `gae:"-,extra"`
 }
 
 // BuilderMeta is a struct containing metadata about a builder.
