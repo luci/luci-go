@@ -27,6 +27,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
+
+	"go.chromium.org/luci/scheduler/appengine/internal"
 )
 
 // Status is status of a single job invocation.
@@ -100,48 +102,6 @@ type Traits struct {
 	Multistage bool
 }
 
-// Trigger is passed from a triggering job to a triggered job.
-type Trigger struct {
-	// ID must uniquely identify a Trigger in time.
-	//
-	// It is used to deduplicate and hence provide idempotency for adding
-	// a trigger.
-	ID string
-
-	// JobID is ID of a job that emitted this trigger.
-	//
-	// Set by EmitTrigger, can't be overridden.
-	JobID string
-
-	// InvocationID is ID of an invocation that emitted this trigger.
-	//
-	// Set by EmitTrigger, can't be overridden.
-	InvocationID int64
-
-	// Created is when this trigger was created, used in UI only.
-	//
-	// Set by EmitTrigger, can't be overridden.
-	Created time.Time
-
-	// Title is a user friendly name for this trigger that shows up in UI.
-	//
-	// Can be set by the emitting task manager. Doesn't have to be unique.
-	Title string
-
-	// URL is optional HTTP link to display in UI.
-	//
-	// Can be set by the emitting task manager.
-	URL string
-
-	// Payload stores data passed from a triggering Job to a triggered Job.
-	// It is opaque to the engine and could be empty. It is up to respective
-	// TaskManager instances to interpret it.
-	//
-	// Payload should be fairly small in order for all outstanding triggers to fit
-	// into 1 datastore entry.
-	Payload []byte `json:",omitempty"`
-}
-
 // Manager knows how to work with a particular kind of tasks (e.g URL fetch
 // tasks, Swarming tasks, etc): how to deserialize, validate and execute them.
 //
@@ -197,7 +157,7 @@ type Manager interface {
 	// launching multiple tasks from a given set of triggers.
 	// Till then, implementations which care about triggers must act on all passed
 	// triggers in this single task invocation.
-	LaunchTask(c context.Context, ctl Controller, triggers []Trigger) error
+	LaunchTask(c context.Context, ctl Controller, triggers []*internal.Trigger) error
 
 	// AbortTask is called to opportunistically abort launched task.
 	//
@@ -317,7 +277,7 @@ type Controller interface {
 
 	// EmitTrigger delivers a given trigger to all jobs which are triggered by
 	// current one.
-	EmitTrigger(ctx context.Context, trigger Trigger)
+	EmitTrigger(ctx context.Context, trigger *internal.Trigger)
 
 	// Save updates the state of the task in the persistent store.
 	//

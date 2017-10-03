@@ -7,7 +7,6 @@ Package internal is a generated protocol buffer package.
 It is generated from these files:
 	go.chromium.org/luci/scheduler/appengine/internal/tq.proto
 	go.chromium.org/luci/scheduler/appengine/internal/triggers.proto
-	go.chromium.org/luci/scheduler/appengine/internal/types.proto
 
 It has these top-level messages:
 	ReadProjectConfigTask
@@ -15,9 +14,10 @@ It has these top-level messages:
 	LaunchInvocationsBatchTask
 	TriageJobStateTask
 	InvocationFinishedTask
-	TriggerPayload
-	GitilesTrigger
 	Trigger
+	NoopTriggerData
+	GitilesTriggerData
+	TriggerList
 */
 package internal
 

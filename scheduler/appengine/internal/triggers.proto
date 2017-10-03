@@ -16,13 +16,67 @@ syntax = "proto3";
 
 package internal.triggers;
 
-message TriggerPayload {
-  GitilesTrigger gitiles = 1;
+import "google/protobuf/timestamp.proto";
+
+
+// Trigger can be emitted by triggering tasks (such as Gitiles tasks) and
+// consumed by triggered tasks (such as Buildbucket tasks).
+message Trigger {
+  // Unique in time identifier of the trigger.
+  //
+  // It is used to deduplicate and hence provide idempotency for adding
+  // a trigger. Must be provided by whoever emits the trigger.
+  string id = 1;
+
+  // ID of a job that emitted this trigger.
+  //
+  // Set by the engine, can't be overridden.
+  string job_id = 2;
+
+  // ID of an invocation that emitted this trigger.
+  //
+  // Set by the engine, can't be overridden.
+  int64 invocation_id = 3;
+
+  // Timestamp when the trigger was created.
+  //
+  // Set by the engine, can't be overridden.
+  google.protobuf.Timestamp created = 4;
+
+  // User friendly name for this trigger that shows up in UI.
+  //
+  // Can be provided by whoever emits the trigger. Doesn't have to be unique.
+  string title = 5;
+
+  // Optional HTTP link to display in UI.
+  //
+  // Can be provided by whoever emits the trigger. Doesn't have to be unique.
+  string url = 6;
+
+  // Actual trigger data that depends on type of the trigger.
+  oneof payload {
+    NoopTriggerData noop = 50;
+    GitilesTriggerData gitiles = 51;
+  }
 }
 
-message GitilesTrigger {
+
+// NoopTriggerData is used by tests to represent test triggers.
+message NoopTriggerData {
+  string data = 1;
+}
+
+
+// GitilesTriggerData is payload of triggers emitted by Gitiles tasks.
+message GitilesTriggerData {
   string repo = 1;
   // ref is full ref name like refs/heads/master.
   string ref = 2;
   string revision = 3;
+}
+
+
+// TriggerList is what we store in datastore entities.
+message TriggerList {
+  repeated Trigger triggers = 1;
 }

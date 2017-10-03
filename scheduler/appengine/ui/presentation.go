@@ -25,11 +25,13 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/logging"
-
 	"go.chromium.org/luci/common/data/sortby"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
+
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine"
+	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/presentation"
 	"go.chromium.org/luci/scheduler/appengine/schedule"
@@ -240,16 +242,6 @@ func makeInvocation(j *schedulerJob, i *engine.Invocation) *invocation {
 		duration = "1 second" // "now" looks weird for durations
 	}
 
-	incomingTriggers := make([]trigger, 0, len(i.IncomingTriggers))
-	for _, t := range i.IncomingTriggers {
-		incomingTriggers = append(incomingTriggers, makeTrigger(t, j.now))
-	}
-
-	outgoingTriggers := make([]trigger, 0, len(i.OutgoingTriggers))
-	for _, t := range i.OutgoingTriggers {
-		outgoingTriggers = append(outgoingTriggers, makeTrigger(t, j.now))
-	}
-
 	return &invocation{
 		ProjectID:        j.ProjectID,
 		JobName:          j.JobName,
@@ -259,8 +251,8 @@ func makeInvocation(j *schedulerJob, i *engine.Invocation) *invocation {
 		RevisionURL:      i.RevisionURL,
 		Definition:       taskToText(i.Task),
 		TriggeredBy:      triggeredBy,
-		IncomingTriggers: incomingTriggers,
-		OutgoingTriggers: outgoingTriggers,
+		IncomingTriggers: makeTriggerList(j.now, i.IncomingTriggers),
+		OutgoingTriggers: makeTriggerList(j.now, i.OutgoingTriggers),
 		Started:          humanize.RelTime(i.Started, j.now, "ago", "from now"),
 		Duration:         duration,
 		Status:           string(status),
@@ -271,24 +263,37 @@ func makeInvocation(j *schedulerJob, i *engine.Invocation) *invocation {
 	}
 }
 
-// trigger is UI representation of task.Trigger struct.
+// trigger is UI representation of internal.Trigger struct.
 type trigger struct {
 	Title   string
 	URL     string
 	RelTime string
 }
 
-// makeTrigger builds UI presentation of some task.Trigger.
-func makeTrigger(t task.Trigger, now time.Time) trigger {
+// makeTrigger builds UI presentation of some internal.Trigger.
+func makeTrigger(t *internal.Trigger, now time.Time) trigger {
 	out := trigger{
 		Title: t.Title,
-		URL:   t.URL,
+		URL:   t.Url,
 	}
 	if out.Title == "" {
-		out.Title = t.ID
+		out.Title = t.Id
 	}
-	if !t.Created.IsZero() {
-		out.RelTime = humanize.RelTime(t.Created, now, "ago", "from now")
+	if t.Created != nil {
+		out.RelTime = humanize.RelTime(google.TimeFromProto(t.Created), now, "ago", "from now")
+	}
+	return out
+}
+
+// makeTriggerList builds UI presentation of a bunch of triggers.
+func makeTriggerList(now time.Time, getter func() ([]*internal.Trigger, error)) []trigger {
+	list, err := getter()
+	if err != nil {
+		return nil
+	}
+	out := make([]trigger, len(list))
+	for i, t := range list {
+		out[i] = makeTrigger(t, now)
 	}
 	return out
 }

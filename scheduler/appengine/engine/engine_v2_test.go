@@ -56,14 +56,8 @@ func TestEnqueueInvocations(t *testing.T) {
 		err := runTxn(c, func(c context.Context) error {
 			var err error
 			invs, err = e.enqueueInvocations(c, &job, []InvocationRequest{
-				{
-					TriggeredBy:      "user:a@example.com",
-					IncomingTriggers: []task.Trigger{{ID: "1"}},
-				},
-				{
-					TriggeredBy:      "user:b@example.com",
-					IncomingTriggers: []task.Trigger{{ID: "2"}},
-				},
+				{TriggeredBy: "user:a@example.com"},
+				{TriggeredBy: "user:b@example.com"},
 			})
 			datastore.Put(c, &job)
 			return err
@@ -84,20 +78,18 @@ func TestEnqueueInvocations(t *testing.T) {
 		}
 		So(invsByTrigger, ShouldResemble, map[identity.Identity]Invocation{
 			"user:a@example.com": {
-				JobID:            "project/job-v2",
-				Started:          epoch,
-				TriggeredBy:      "user:a@example.com",
-				IncomingTriggers: []task.Trigger{{ID: "1"}},
-				Status:           task.StatusStarting,
+				JobID:       "project/job-v2",
+				Started:     epoch,
+				TriggeredBy: "user:a@example.com",
+				Status:      task.StatusStarting,
 				DebugLog: "[22:42:00.000] New invocation initialized\n" +
 					"[22:42:00.000] Manually triggered by user:a@example.com\n",
 			},
 			"user:b@example.com": {
-				JobID:            "project/job-v2",
-				Started:          epoch,
-				TriggeredBy:      "user:b@example.com",
-				IncomingTriggers: []task.Trigger{{ID: "2"}},
-				Status:           task.StatusStarting,
+				JobID:       "project/job-v2",
+				Started:     epoch,
+				TriggeredBy: "user:b@example.com",
+				Status:      task.StatusStarting,
 				DebugLog: "[22:42:00.000] New invocation initialized\n" +
 					"[22:42:00.000] Manually triggered by user:b@example.com\n",
 			},
@@ -200,7 +192,7 @@ func TestLaunchInvocationTask(t *testing.T) {
 		job := Job{JobID: "project/job-v2"}
 		So(datastore.Get(c, &job), ShouldBeNil)
 		inv, err := e.allocateInvocation(c, &job, InvocationRequest{
-			IncomingTriggers: []task.Trigger{{ID: "a"}},
+			IncomingTriggers: []*internal.Trigger{{Id: "a"}},
 		})
 		So(err, ShouldBeNil)
 
@@ -221,7 +213,7 @@ func TestLaunchInvocationTask(t *testing.T) {
 		}
 
 		Convey("happy path", func() {
-			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []task.Trigger) error {
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
 				So(ctl.InvocationID(), ShouldEqual, inv.ID)
 				So(ctl.InvocationNonce(), ShouldEqual, inv.InvocationNonce)
 				ctl.DebugLog("Succeeded!")
@@ -229,18 +221,24 @@ func TestLaunchInvocationTask(t *testing.T) {
 				return nil
 			}
 			So(callLaunchInvocation(c, 0), ShouldBeNil)
-			So(fetchInvocation(c), ShouldResemble, &Invocation{
-				ID:               inv.ID,
-				InvocationNonce:  inv.ID,
-				JobID:            "project/job-v2",
-				IndexedJobID:     "project/job-v2",
-				Started:          epoch,
-				Finished:         epoch,
-				IncomingTriggers: []task.Trigger{{ID: "a"}},
-				Revision:         job.Revision,
-				Task:             job.Task,
-				Status:           task.StatusSucceeded,
-				MutationsCount:   2,
+
+			updated := fetchInvocation(c)
+			triggers, err := updated.IncomingTriggers()
+			updated.IncomingTriggersRaw = nil
+
+			So(err, ShouldBeNil)
+			So(triggers, ShouldResemble, []*internal.Trigger{{Id: "a"}})
+			So(updated, ShouldResemble, &Invocation{
+				ID:              inv.ID,
+				InvocationNonce: inv.ID,
+				JobID:           "project/job-v2",
+				IndexedJobID:    "project/job-v2",
+				Started:         epoch,
+				Finished:        epoch,
+				Revision:        job.Revision,
+				Task:            job.Task,
+				Status:          task.StatusSucceeded,
+				MutationsCount:  2,
 				DebugLog: "[22:42:00.000] New invocation initialized\n" +
 					"[22:42:00.000] Starting the invocation (attempt 1)\n" +
 					"[22:42:00.000] Succeeded!\n" +
@@ -251,7 +249,7 @@ func TestLaunchInvocationTask(t *testing.T) {
 		Convey("already aborted", func() {
 			inv.Status = task.StatusAborted
 			So(datastore.Put(c, inv), ShouldBeNil)
-			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []task.Trigger) error {
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
 				return fmt.Errorf("must not be called")
 			}
 			So(callLaunchInvocation(c, 0), ShouldBeNil)
@@ -260,39 +258,29 @@ func TestLaunchInvocationTask(t *testing.T) {
 
 		Convey("retying", func() {
 			// Attempt #1.
-			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []task.Trigger) error {
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
 				return transient.Tag.Apply(fmt.Errorf("oops, failed to start"))
 			}
 			So(callLaunchInvocation(c, 0), ShouldEqual, errRetryingLaunch)
 			So(fetchInvocation(c).Status, ShouldEqual, task.StatusRetrying)
 
 			// Attempt #2.
-			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []task.Trigger) error {
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
 				ctl.DebugLog("Succeeded!")
 				ctl.State().Status = task.StatusSucceeded
 				return nil
 			}
 			So(callLaunchInvocation(c, 1), ShouldBeNil)
-			So(fetchInvocation(c), ShouldResemble, &Invocation{
-				ID:               inv.ID,
-				InvocationNonce:  inv.ID,
-				JobID:            "project/job-v2",
-				IndexedJobID:     "project/job-v2",
-				Started:          epoch,
-				Finished:         epoch,
-				IncomingTriggers: []task.Trigger{{ID: "a"}},
-				Revision:         job.Revision,
-				Task:             job.Task,
-				Status:           task.StatusSucceeded,
-				MutationsCount:   4,
-				RetryCount:       1,
-				DebugLog: "[22:42:00.000] New invocation initialized\n" +
-					"[22:42:00.000] Starting the invocation (attempt 1)\n" +
-					"[22:42:00.000] The invocation will be retried\n" +
-					"[22:42:00.000] Starting the invocation (attempt 2)\n" +
-					"[22:42:00.000] Succeeded!\n" +
-					"[22:42:00.000] Invocation finished in 0s with status SUCCEEDED\n",
-			})
+
+			updated := fetchInvocation(c)
+			So(updated.Status, ShouldEqual, task.StatusSucceeded)
+			So(updated.RetryCount, ShouldEqual, 1)
+			So(updated.DebugLog, ShouldEqual, "[22:42:00.000] New invocation initialized\n"+
+				"[22:42:00.000] Starting the invocation (attempt 1)\n"+
+				"[22:42:00.000] The invocation will be retried\n"+
+				"[22:42:00.000] Starting the invocation (attempt 2)\n"+
+				"[22:42:00.000] Succeeded!\n"+
+				"[22:42:00.000] Invocation finished in 0s with status SUCCEEDED\n")
 		})
 	})
 }
@@ -350,7 +338,7 @@ func TestForceInvocationV2(t *testing.T) {
 			})
 
 			// Eventually it runs the task, which then cleans up job state.
-			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []task.Trigger) error {
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
 				ctl.DebugLog("Started!")
 				ctl.State().Status = task.StatusSucceeded
 				return nil

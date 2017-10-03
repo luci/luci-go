@@ -26,9 +26,11 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 
+	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
@@ -45,11 +47,11 @@ type taskController struct {
 	task    proto.Message // extracted from saved.Task blob
 	manager task.Manager
 
-	saved    Invocation        // what have been given initially or saved in Save()
-	state    task.State        // state mutated by TaskManager
-	debugLog string            // mutated by DebugLog
-	timers   []invocationTimer // mutated by AddTimer
-	triggers []task.Trigger    // mutated by EmitTrigger
+	saved    Invocation          // what have been given initially or saved in Save()
+	state    task.State          // state mutated by TaskManager
+	debugLog string              // mutated by DebugLog
+	timers   []invocationTimer   // mutated by AddTimer
+	triggers []*internal.Trigger // mutated by EmitTrigger
 }
 
 // controllerForInvocation returns new instance of taskController configured
@@ -148,11 +150,11 @@ func (ctl *taskController) GetClient(ctx context.Context, timeout time.Duration,
 }
 
 // EmitTrigger is part of task.Controller interface.
-func (ctl *taskController) EmitTrigger(ctx context.Context, trigger task.Trigger) {
-	ctl.DebugLog("Emitting a trigger %s", trigger.ID)
-	trigger.JobID = ctl.JobID()
-	trigger.InvocationID = ctl.InvocationID()
-	trigger.Created = clock.Now(ctx).UTC()
+func (ctl *taskController) EmitTrigger(ctx context.Context, trigger *internal.Trigger) {
+	ctl.DebugLog("Emitting a trigger %s", trigger.Id)
+	trigger.JobId = ctl.JobID()
+	trigger.InvocationId = ctl.InvocationID()
+	trigger.Created = google.NewTimestamp(clock.Now(ctx))
 	ctl.triggers = append(ctl.triggers, trigger)
 }
 

@@ -16,7 +16,6 @@ package engine
 
 import (
 	"testing"
-	"time"
 
 	"golang.org/x/net/context"
 
@@ -26,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/scheduler/appengine/task"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -132,29 +130,5 @@ func TestOpsCache(t *testing.T) {
 		ops.doneFlags = nil
 		So(ops.Do(c, "key", cb), ShouldBeNil)
 		So(calls, ShouldEqual, 1)
-	})
-}
-
-func TestTriggersToProtoAndBack(t *testing.T) {
-	Convey("Works", t, func(C) {
-		ts := []task.Trigger{
-			{
-				ID:           "full",
-				Created:      time.Now(),
-				JobID:        "j/ob",
-				InvocationID: 123,
-				Title:        "title",
-				URL:          "https://example.com",
-				Payload:      []byte("pay"),
-			},
-			{
-				ID:           "partial",
-				Created:      time.Now().Add(time.Second),
-				JobID:        "j/aaab",
-				InvocationID: 456,
-				Payload:      []byte("load"),
-			},
-		}
-		So(triggersFromProto(triggersToProto(ts)), ShouldResemble, ts)
 	})
 }

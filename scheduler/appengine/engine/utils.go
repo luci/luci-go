@@ -19,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
@@ -30,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/scheduler/appengine/internal"
-	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
 // assertInTransaction panics if the context is not transactional.
@@ -135,61 +135,42 @@ func equalInt64Lists(a, b []int64) bool {
 	return true
 }
 
-// equalTriggerLists returns true if two sequences of triggers are equal based
-// on IDs only.
+// marshalTriggersList serializes list of triggers.
 //
-// Order is important.
-func equalTriggerLists(s, o []task.Trigger) bool {
-	if len(s) != len(o) {
-		return false
+// Panics on errors.
+func marshalTriggersList(t []*internal.Trigger) []byte {
+	if len(t) == 0 {
+		return nil
 	}
-	for i, st := range s {
-		ot := o[i]
-		if st.ID != ot.ID {
-			return false
-		}
+	blob, err := proto.Marshal(&internal.TriggerList{Triggers: t})
+	if err != nil {
+		panic(err)
 	}
-	return true
+	return blob
 }
 
-func triggerToProto(t task.Trigger) *internal.Trigger {
-	return &internal.Trigger{
-		Id:           t.ID,
-		JobId:        t.JobID,
-		InvocationId: t.InvocationID,
-		Created:      t.Created.UnixNano(),
-		Title:        t.Title,
-		Url:          t.URL,
-		Payload:      t.Payload,
+// unmarshalTriggersList deserializes list of triggers.
+func unmarshalTriggersList(blob []byte) ([]*internal.Trigger, error) {
+	if len(blob) == 0 {
+		return nil, nil
 	}
+	list := internal.TriggerList{}
+	if err := proto.Unmarshal(blob, &list); err != nil {
+		return nil, err
+	}
+	return list.Triggers, nil
 }
 
-func triggerFromProto(t *internal.Trigger) *task.Trigger {
-	return &task.Trigger{
-		ID:           t.Id,
-		JobID:        t.JobId,
-		InvocationID: t.InvocationId,
-		Created:      time.Unix(0, t.Created),
-		Title:        t.Title,
-		URL:          t.Url,
-		Payload:      t.Payload,
+// mutateTriggersList deserializes the list, calls a callback, which modifies
+// the list and serializes it back.
+func mutateTriggersList(blob *[]byte, cb func(*[]*internal.Trigger)) error {
+	list, err := unmarshalTriggersList(*blob)
+	if err != nil {
+		return err
 	}
-}
-
-func triggersToProto(triggers []task.Trigger) []*internal.Trigger {
-	out := make([]*internal.Trigger, 0, len(triggers))
-	for _, t := range triggers {
-		out = append(out, triggerToProto(t))
-	}
-	return out
-}
-
-func triggersFromProto(triggers []*internal.Trigger) []task.Trigger {
-	out := make([]task.Trigger, 0, len(triggers))
-	for _, t := range triggers {
-		out = append(out, *triggerFromProto(t))
-	}
-	return out
+	cb(&list)
+	*blob = marshalTriggersList(list)
+	return nil
 }
 
 // opsCache "remembers" recently executed operations, and skips executing them
