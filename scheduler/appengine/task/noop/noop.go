@@ -18,12 +18,14 @@ package noop
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
@@ -31,7 +33,6 @@ import (
 // TaskManager implements task.Manager interface for tasks defined with
 // NoopTask proto message.
 type TaskManager struct {
-	sleepDuration time.Duration
 }
 
 // Name is part of Manager interface.
@@ -58,13 +59,21 @@ func (m TaskManager) Traits() task.Traits {
 
 // LaunchTask is part of Manager interface.
 func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []task.Trigger) error {
-	ctl.DebugLog("Noop task got %d triggers", triggers)
-	sleepFor := m.sleepDuration
+	cfg := ctl.Task().(*messages.NoopTask)
+
+	sleepFor := time.Duration(cfg.SleepMs) * time.Millisecond
 	if sleepFor == 0 {
 		sleepFor = 20 * time.Second
 	}
 	ctl.DebugLog("Running noop task for %s", sleepFor)
-	time.Sleep(sleepFor)
+	clock.Sleep(c, sleepFor)
+
+	for i := int64(0); i < cfg.TriggersCount; i++ {
+		ctl.EmitTrigger(c, task.Trigger{
+			ID: fmt.Sprintf("noop:%d:%d", ctl.InvocationNonce(), i),
+		})
+	}
+
 	ctl.State().Status = task.StatusSucceeded
 	return nil
 }
