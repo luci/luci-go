@@ -16,6 +16,24 @@
       "revId": "10659adcb1038c4bdb65bd253a329ac3f5cc7c49",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "474684e4_e2ffcccd",
+        "filename": "milo/frontend/appengine/templates/pages/consoles.html",
+        "patchSetId": 6
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-03T23:45:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b6dd4c98_d8eb8eaf",
+      "revId": "10659adcb1038c4bdb65bd253a329ac3f5cc7c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
