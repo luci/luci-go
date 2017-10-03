@@ -9,8 +9,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/gae/service/datastore"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
@@ -58,7 +56,7 @@ func (b BuilderID) Split() (backend, backendGroup, builderName string, err error
 
 // Get allows you to obtain the resp.Builder that corresponds with this
 // BuilderID.
-func (b BuilderID) Get(c context.Context, limit int, cursorStr string) (*resp.Builder, error) {
+func (b BuilderID) Get(c context.Context, limit int, cursor string) (*resp.Builder, error) {
 	// TODO(iannucci): replace these implementations with a BuildSummary query.
 	source, group, builder, err := b.Split()
 	if err != nil {
@@ -67,10 +65,6 @@ func (b BuilderID) Get(c context.Context, limit int, cursorStr string) (*resp.Bu
 
 	switch source {
 	case "buildbot":
-		cursor, err := datastore.DecodeCursor(c, cursorStr)
-		if err != nil {
-			return nil, errors.Annotate(err, "bad cursor").Err()
-		}
 		return buildbot.GetBuilder(c, group, builder, limit, cursor)
 
 	case "buildbucket":
