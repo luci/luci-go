@@ -270,7 +270,7 @@ func readConfigCron(c *router.Context) {
 	tasks := make([]*tq.Task, 0, len(projectsToVisit))
 	for projectID := range projectsToVisit {
 		tasks = append(tasks, &tq.Task{
-			Payload: &internal.ReadProjectConfigTask{ProjectID: projectID},
+			Payload: &internal.ReadProjectConfigTask{ProjectId: projectID},
 		})
 	}
 	if err = globalDispatcher.AddTask(rc.Context, tasks...); err != nil {
@@ -283,7 +283,7 @@ func readConfigCron(c *router.Context) {
 // readProjectConfig grabs a list of jobs in a project from catalog, updates
 // all changed jobs, adds new ones, disables old ones.
 func readProjectConfig(c context.Context, task proto.Message) error {
-	projectID := task.(*internal.ReadProjectConfigTask).ProjectID
+	projectID := task.(*internal.ReadProjectConfigTask).ProjectId
 
 	ctx, cancel := context.WithTimeout(c, 150*time.Second)
 	defer cancel()
