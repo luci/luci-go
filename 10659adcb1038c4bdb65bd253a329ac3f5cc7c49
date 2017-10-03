@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b6dd4c98_d8eb8eaf",
+        "filename": "milo/frontend/appengine/templates/pages/consoles.html",
+        "patchSetId": 6
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-03T23:03:01Z",
+      "side": 1,
+      "message": "{{ if .Render.FaviconURL }} should work.",
+      "revId": "10659adcb1038c4bdb65bd253a329ac3f5cc7c49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
