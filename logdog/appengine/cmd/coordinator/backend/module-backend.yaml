@@ -32,6 +32,11 @@ handlers:
   secure: always
   login: admin
 
+# PubSub can't hit 'login: admin' handlers. Open this one, it does auth inside.
+- url: "/auth/pubsub/.*"
+  script: _go_app
+  secure: always
+
 - url: "/.*"
   script: _go_app
   secure: always
