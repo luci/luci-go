@@ -45,14 +45,32 @@ func (u *User) GetTime() (time.Time, error) {
 	return t, err
 }
 
+// KnownTreeDiffTypes is the list of known values that TreeDiff.Type may have.
+var KnownTreeDiffTypes = []string{
+	"ADD", "COPY", "DELETE", "MODIFY", "RENAME",
+}
+
+// TreeDiff shows the pertinent 'diff' information between two Commit objects.
+type TreeDiff struct {
+	// Type is one of the KnownTreeDiffTypes.
+	Type    string `json:"type"`
+	OldID   string `json:"old_id"`
+	OldMode uint32 `json:"old_mode"`
+	OldPath string `json:"old_path"`
+	NewID   string `json:"new_id"`
+	NewMode uint32 `json:"new_mode"`
+	NewPath string `json:"new_path"`
+}
+
 // Commit is the information of a commit returned from gitiles.
 type Commit struct {
-	Commit    string   `json:"commit"`
-	Tree      string   `json:"tree"`
-	Parents   []string `json:"parents"`
-	Author    User     `json:"author"`
-	Committer User     `json:"committer"`
-	Message   string   `json:"message"`
+	Commit    string     `json:"commit"`
+	Tree      string     `json:"tree"`
+	Parents   []string   `json:"parents"`
+	Author    User       `json:"author"`
+	Committer User       `json:"committer"`
+	Message   string     `json:"message"`
+	TreeDiff  []TreeDiff `json:"tree_diff"`
 }
 
 // ValidateRepoURL validates gitiles repository URL for use in this package.
@@ -107,6 +125,39 @@ type Client struct {
 	MaxCommitsPerRequest int
 }
 
+type logOpts struct {
+	limit        int
+	withTreeDiff bool
+}
+
+func newLogOpts(opts ...LogOption) *logOpts {
+	ret := &logOpts{limit: 100}
+	for _, op := range opts {
+		op(ret)
+	}
+	return ret
+}
+
+// LogOption is a function that can modify the behavior of the Log client
+// functions.
+type LogOption func(*logOpts)
+
+// Limit allows you to limit the number of log entries returned by the Log
+// functions.
+func Limit(limit int) LogOption {
+	return func(lo *logOpts) {
+		lo.limit = limit
+	}
+}
+
+// WithTreeDiff allows your Log function calls to return 'TreeDiff' information
+// in the returned Commits.
+func WithTreeDiff(enabled bool) LogOption {
+	return func(lo *logOpts) {
+		lo.withTreeDiff = enabled
+	}
+}
+
 // Log returns a list of commits based on a repo and treeish.
 // This should be equivalent of a "git log <treeish>" call in that repository.
 //
@@ -138,23 +189,24 @@ type Client struct {
 //  Log(A) = [A, base, common...]
 //  Log(B) = [B, base, common...]
 //  Log(C) = [C, A, B, base, common...]
-//
-func (c *Client) Log(ctx context.Context, repoURL, treeish string, limit int) ([]Commit, error) {
-	r, err := c.rawLog(ctx, repoURL, treeish, limit, "")
+func (c *Client) Log(ctx context.Context, repoURL, treeish string, opts ...LogOption) ([]Commit, error) {
+	lo := newLogOpts(opts...)
+
+	r, err := c.rawLog(ctx, repoURL, treeish, "", lo)
 	if err == nil {
-		if len(r.Log) > limit {
-			return r.Log[:limit], nil
+		if len(r.Log) > lo.limit {
+			return r.Log[:lo.limit], nil
 		}
 		return r.Log, nil
 	}
 	return nil, err
 }
 
-func (c *Client) rawLog(ctx context.Context, repoURL, treeish string, lowerLimit int, nextCursor string) (*logResponse, error) {
+func (c *Client) rawLog(ctx context.Context, repoURL, treeish string, nextCursor string, lo *logOpts) (*logResponse, error) {
 	// lowerLimit means: give me at least `lowerLimit` commits, unless
 	// the log contains fewer than this, in which case, give me all.
-	if lowerLimit < 1 {
-		return nil, fmt.Errorf("internal gitiles package bug: lowerLimit must be at least 1, but %d provided", lowerLimit)
+	if lo.limit < 1 {
+		return nil, fmt.Errorf("internal gitiles package bug: lowerLimit must be at least 1, but %d provided", lo.limit)
 	}
 
 	// Sane default.
@@ -165,8 +217,8 @@ func (c *Client) rawLog(ctx context.Context, repoURL, treeish string, lowerLimit
 		pageSize = c.MaxCommitsPerRequest
 	}
 	// There's no need for a large page if we only want a few commits.
-	if lowerLimit < pageSize {
-		pageSize = lowerLimit
+	if lo.limit < pageSize {
+		pageSize = lo.limit
 	}
 
 	repoURL, err := NormalizeRepoURL(repoURL)
@@ -175,6 +227,9 @@ func (c *Client) rawLog(ctx context.Context, repoURL, treeish string, lowerLimit
 	}
 	// TODO(tandrii): s/QueryEscape/PathEscape once AE deployments are Go1.8+.
 	subPath := fmt.Sprintf("+log/%s?format=JSON&n=%d", url.QueryEscape(treeish), pageSize)
+	if lo.withTreeDiff {
+		subPath += "&name-status=1"
+	}
 	combinedLog := []Commit{}
 	nextPath := subPath
 	for {
@@ -186,7 +241,7 @@ func (c *Client) rawLog(ctx context.Context, repoURL, treeish string, lowerLimit
 			return nil, err
 		}
 		combinedLog = append(combinedLog, resp.Log...)
-		if resp.Next == "" || len(combinedLog) >= lowerLimit {
+		if resp.Next == "" || len(combinedLog) >= lo.limit {
 			return &logResponse{Log: combinedLog, Next: resp.Next}, nil
 		}
 		nextCursor = resp.Next
@@ -228,9 +283,10 @@ func (c *Client) rawLog(ctx context.Context, repoURL, treeish string, lowerLimit
 //     newest := LogForward(oldest[len(oldest)-1].commit, rX)
 //   then
 //     all **may have more commits than** (oldest + newest)
-func (c *Client) LogForward(ctx context.Context, repoURL, r0, rx string) ([]Commit, error) {
+func (c *Client) LogForward(ctx context.Context, repoURL, r0, rx string, nameStatus bool) ([]Commit, error) {
 	nextCursor := ""
 	treeish := fmt.Sprintf("%s..%s", r0, rx)
+
 	// We want at least one full page of results.
 	uberPageSize := c.MaxCommitsPerRequest
 	if uberPageSize <= 0 {
@@ -238,9 +294,11 @@ func (c *Client) LogForward(ctx context.Context, repoURL, r0, rx string) ([]Comm
 		// calls.
 		uberPageSize = 10000
 	}
+	lo := newLogOpts(Limit(uberPageSize))
+
 	pp := []Commit{}
 	for {
-		r, err := c.rawLog(ctx, repoURL, treeish, uberPageSize, nextCursor)
+		r, err := c.rawLog(ctx, repoURL, treeish, nextCursor, lo)
 		if err != nil {
 			return nil, err
 		}
