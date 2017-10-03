@@ -190,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "22b5687b_bbb2bad7",
+        "filename": "scheduler/appengine/engine/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-03T22:13:59Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "66002844_a5febaef",
+      "range": {
+        "startLine": 242,
+        "startChar": 2,
+        "endLine": 243,
+        "endChar": 66
+      },
+      "revId": "bf2cd0d9782f5997cc9b99d9885b1409965df5ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6a346c02_cba63a57",
         "filename": "scheduler/appengine/engine/utils.go",
         "patchSetId": 3
@@ -210,6 +234,30 @@
       "revId": "bf2cd0d9782f5997cc9b99d9885b1409965df5ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c858017_f8a28c51",
+        "filename": "scheduler/appengine/engine/utils.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-03T22:13:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6a346c02_cba63a57",
+      "range": {
+        "startLine": 164,
+        "startChar": 59,
+        "endLine": 164,
+        "endChar": 60
+      },
+      "revId": "bf2cd0d9782f5997cc9b99d9885b1409965df5ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -248,6 +296,30 @@
       "side": 1,
       "message": "Yes :-/ oneof API in go generated code is horribly verbose",
       "parentUuid": "3ad818f5_108d579a",
+      "range": {
+        "startLine": 181,
+        "startChar": 12,
+        "endLine": 181,
+        "endChar": 37
+      },
+      "revId": "bf2cd0d9782f5997cc9b99d9885b1409965df5ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "71614c06_09a41abe",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-03T22:13:59Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "6456aa67_6c65cbfb",
       "range": {
         "startLine": 181,
         "startChar": 12,
