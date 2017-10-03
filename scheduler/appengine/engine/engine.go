@@ -262,7 +262,7 @@ type jobController interface {
 	onJobAbort(c context.Context, job *Job) (invs []int64, err error)
 	onJobForceInvocation(c context.Context, job *Job) (FutureInvocation, error)
 
-	onInvUpdating(c context.Context, old, fresh *Invocation, timers []invocationTimer, triggers []task.Trigger) error
+	onInvUpdating(c context.Context, old, fresh *Invocation, timers []invocationTimer, triggers []*internal.Trigger) error
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -992,17 +992,22 @@ func (e *engineImpl) enqueueInvocations(c context.Context, job *Job, req []Invoc
 //
 // Supports only v2 invocations!
 func (e *engineImpl) allocateInvocation(c context.Context, job *Job, req InvocationRequest) (*Invocation, error) {
+	triggersRaw, err := marshalTriggersList(req.IncomingTriggers)
+	if err != nil {
+		return nil, err
+	}
+
 	var inv *Invocation
-	err := runIsolatedTxn(c, func(c context.Context) (err error) {
+	err = runIsolatedTxn(c, func(c context.Context) (err error) {
 		inv, err = e.initInvocationID(c, job.JobID, &Invocation{
-			Started:          clock.Now(c).UTC(),
-			TriggeredBy:      req.TriggeredBy,
-			IncomingTriggers: req.IncomingTriggers,
-			Revision:         job.Revision,
-			RevisionURL:      job.RevisionURL,
-			Task:             job.Task,
-			TriggeredJobIDs:  job.TriggeredJobIDs,
-			Status:           task.StatusStarting,
+			Started:             clock.Now(c).UTC(),
+			TriggeredBy:         req.TriggeredBy,
+			IncomingTriggersRaw: triggersRaw,
+			Revision:            job.Revision,
+			RevisionURL:         job.RevisionURL,
+			Task:                job.Task,
+			TriggeredJobIDs:     job.TriggeredJobIDs,
+			Status:              task.StatusStarting,
 		})
 		if err != nil {
 			return
@@ -1113,14 +1118,14 @@ type actionTaskPayload struct {
 	InvID int64  `json:",omitempty"` // ID of relevant Invocation
 
 	// For Job actions and timers (InvID == 0).
-	Kind                string         `json:",omitempty"` // defines what fields below to examine
-	TickNonce           int64          `json:",omitempty"` // valid for "TickLaterAction" kind
-	InvocationNonce     int64          `json:",omitempty"` // valid for "StartInvocationAction" kind
-	TriggeredBy         string         `json:",omitempty"` // valid for "StartInvocationAction" kind
-	Triggers            []task.Trigger `json:",omitempty"` // valid for "StartInvocationAction", "EnqueueTriggersAction", and "EnqueueBatchOfTriggersAction"
-	TriggeredJobIDs     []string       `json:",omitempty"` // Valid for "EnqueueBatchOfTriggersAction" kind only.
-	Overruns            int            `json:",omitempty"` // valid for "RecordOverrunAction" kind
-	RunningInvocationID int64          `json:",omitempty"` // valid for "RecordOverrunAction" kind
+	Kind                string              `json:",omitempty"` // defines what fields below to examine
+	TickNonce           int64               `json:",omitempty"` // valid for "TickLaterAction" kind
+	InvocationNonce     int64               `json:",omitempty"` // valid for "StartInvocationAction" kind
+	TriggeredBy         string              `json:",omitempty"` // valid for "StartInvocationAction" kind
+	Triggers            []*internal.Trigger `json:",omitempty"` // valid for "StartInvocationAction", "EnqueueTriggersAction", and "EnqueueBatchOfTriggersAction"
+	TriggeredJobIDs     []string            `json:",omitempty"` // Valid for "EnqueueBatchOfTriggersAction" kind only.
+	Overruns            int                 `json:",omitempty"` // valid for "RecordOverrunAction" kind
+	RunningInvocationID int64               `json:",omitempty"` // valid for "RecordOverrunAction" kind
 
 	// For Invocation actions and timers (InvID != 0).
 	InvTimer *invocationTimer `json:",omitempty"` // used for AddTimer calls
@@ -1314,7 +1319,7 @@ func (e *engineImpl) recordOverrun(c context.Context, jobID string, overruns int
 // us to just 5 task queue items hereby limiting len(triggeredJobID) to 5.
 //
 // Used by v1 engine only!
-func (e *engineImpl) newBatchOfTriggers(c context.Context, triggeredJobIDs []string, triggers []task.Trigger) error {
+func (e *engineImpl) newBatchOfTriggers(c context.Context, triggeredJobIDs []string, triggers []*internal.Trigger) error {
 	wg := sync.WaitGroup{}
 	errs := errors.NewLazyMultiError(len(triggeredJobIDs))
 	for i, jobID := range triggeredJobIDs {
@@ -1334,7 +1339,7 @@ func (e *engineImpl) newBatchOfTriggers(c context.Context, triggeredJobIDs []str
 // result in StartInvocationAction being emitted.
 //
 // Used by v1 engine only!
-func (e *engineImpl) newTriggers(c context.Context, jobID string, triggers []task.Trigger) error {
+func (e *engineImpl) newTriggers(c context.Context, jobID string, triggers []*internal.Trigger) error {
 	return e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
 		if isNew {
 			logging.Errorf(c, "Triggered job is unexpectedly gone")
@@ -1457,7 +1462,7 @@ func (e *engineImpl) withController(c context.Context, jobID string, invID int64
 //
 // Used by v1 engine only!
 func (e *engineImpl) startInvocation(c context.Context, jobID string, invocationNonce int64,
-	triggeredBy identity.Identity, triggers []task.Trigger, retryCount int) error {
+	triggeredBy identity.Identity, triggers []*internal.Trigger, retryCount int) error {
 
 	c = logging.SetField(c, "JobID", jobID)
 	c = logging.SetField(c, "InvNonce", invocationNonce)
@@ -1466,6 +1471,11 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	// TODO(vadimsh): This works only for v1 jobs currently.
 	if e.isV2Job(jobID) {
 		panic("must be v1 job")
+	}
+
+	triggersRaw, err := marshalTriggersList(triggers)
+	if err != nil {
+		return err
 	}
 
 	// Create new Invocation entity in StatusStarting state and associated it with
@@ -1488,7 +1498,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 	//    handler crashed).
 	inv := Invocation{}
 	skipRunning := false
-	err := e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
+	err = e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
 		if isNew {
 			logging.Errorf(c, "Queued job is unexpectedly gone")
 			skipRunning = true
@@ -1500,16 +1510,16 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 			return errSkipPut
 		}
 		inv = Invocation{
-			Started:          clock.Now(c).UTC(),
-			InvocationNonce:  invocationNonce,
-			TriggeredBy:      triggeredBy,
-			IncomingTriggers: triggers,
-			Revision:         job.Revision,
-			RevisionURL:      job.RevisionURL,
-			Task:             job.Task,
-			TriggeredJobIDs:  job.TriggeredJobIDs,
-			RetryCount:       int64(retryCount),
-			Status:           task.StatusStarting,
+			Started:             clock.Now(c).UTC(),
+			InvocationNonce:     invocationNonce,
+			TriggeredBy:         triggeredBy,
+			IncomingTriggersRaw: triggersRaw,
+			Revision:            job.Revision,
+			RevisionURL:         job.RevisionURL,
+			Task:                job.Task,
+			TriggeredJobIDs:     job.TriggeredJobIDs,
+			RetryCount:          int64(retryCount),
+			Status:              task.StatusStarting,
 		}
 		if _, err := e.initInvocationID(c, job.JobID, &inv); err != nil {
 			return err
@@ -1601,7 +1611,11 @@ func (e *engineImpl) launchTask(c context.Context, inv *Invocation) error {
 	// StatusRetrying or StatusFailed state (depending on whether the error is
 	// transient or not and how many retries are left). In either case, invocation
 	// never ends up in StatusStarting state.
-	err = ctl.manager.LaunchTask(c, ctl, inv.IncomingTriggers)
+	var triggers []*internal.Trigger
+	triggers, err = inv.IncomingTriggers()
+	if err == nil {
+		err = ctl.manager.LaunchTask(c, ctl, triggers)
+	}
 	if ctl.State().Status == task.StatusStarting && err == nil {
 		err = fmt.Errorf("LaunchTask didn't move invocation out of StatusStarting")
 	}
@@ -1679,7 +1693,7 @@ func (e *engineImpl) enqueueInvTimers(c context.Context, jobID string, invID int
 // See executeJobAction for a place where these actions are interpreted.
 //
 // Used by v1 engine only!
-func (e *engineImpl) enqueueTriggers(c context.Context, triggeredJobIDs []string, triggers []task.Trigger) error {
+func (e *engineImpl) enqueueTriggers(c context.Context, triggeredJobIDs []string, triggers []*internal.Trigger) error {
 	assertInTransaction(c)
 	return transient.Tag.Apply(e.enqueueJobActions(c, "", []Action{EnqueueBatchOfTriggersAction{
 		Triggers:        triggers,

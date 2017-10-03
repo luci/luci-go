@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/scheduler/appengine/internal"
-	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
 // assertInTransaction panics if the context is not transactional.
@@ -135,61 +134,8 @@ func equalInt64Lists(a, b []int64) bool {
 	return true
 }
 
-// equalTriggerLists returns true if two sequences of triggers are equal based
-// on IDs only.
-//
-// Order is important.
-func equalTriggerLists(s, o []task.Trigger) bool {
-	if len(s) != len(o) {
-		return false
-	}
-	for i, st := range s {
-		ot := o[i]
-		if st.ID != ot.ID {
-			return false
-		}
-	}
-	return true
-}
-
-func triggerToProto(t task.Trigger) *internal.Trigger {
-	return &internal.Trigger{
-		Id:           t.ID,
-		JobId:        t.JobID,
-		InvocationId: t.InvocationID,
-		Created:      t.Created.UnixNano(),
-		Title:        t.Title,
-		Url:          t.URL,
-		Payload:      t.Payload,
-	}
-}
-
-func triggerFromProto(t *internal.Trigger) *task.Trigger {
-	return &task.Trigger{
-		ID:           t.Id,
-		JobID:        t.JobId,
-		InvocationID: t.InvocationId,
-		Created:      time.Unix(0, t.Created),
-		Title:        t.Title,
-		URL:          t.Url,
-		Payload:      t.Payload,
-	}
-}
-
-func triggersToProto(triggers []task.Trigger) []*internal.Trigger {
-	out := make([]*internal.Trigger, 0, len(triggers))
-	for _, t := range triggers {
-		out = append(out, triggerToProto(t))
-	}
-	return out
-}
-
-func triggersFromProto(triggers []*internal.Trigger) []task.Trigger {
-	out := make([]task.Trigger, 0, len(triggers))
-	for _, t := range triggers {
-		out = append(out, *triggerFromProto(t))
-	}
-	return out
+func marshalTriggersList(t []*internal.Trigger) ([]byte, error) {
+	return nil, nil // TODO
 }
 
 // opsCache "remembers" recently executed operations, and skips executing them

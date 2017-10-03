@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 
-	"go.chromium.org/luci/scheduler/appengine/task"
+	"go.chromium.org/luci/scheduler/appengine/internal"
 )
 
 // jobControllerV1 implements jobController using v1 data structures.
@@ -80,7 +80,7 @@ func (ctl *jobControllerV1) onJobForceInvocation(c context.Context, job *Job) (F
 	return &nonceFutureInvocation{jobID: job.JobID, nonce: nonce}, nil
 }
 
-func (ctl *jobControllerV1) onInvUpdating(c context.Context, old, fresh *Invocation, timers []invocationTimer, triggers []task.Trigger) error {
+func (ctl *jobControllerV1) onInvUpdating(c context.Context, old, fresh *Invocation, timers []invocationTimer, triggers []*internal.Trigger) error {
 	assertInTransaction(c)
 
 	jobID := fresh.jobID()
@@ -97,7 +97,16 @@ func (ctl *jobControllerV1) onInvUpdating(c context.Context, old, fresh *Invocat
 		if err := eng.enqueueTriggers(c, fresh.TriggeredJobIDs, triggers); err != nil {
 			return err
 		}
-		fresh.OutgoingTriggers = append(fresh.OutgoingTriggers, triggers...)
+		out, err := fresh.OutgoingTriggers()
+		if err != nil {
+			return err
+		}
+		out = append(out, triggers...)
+		raw, err := marshalTriggersList(out)
+		if err != nil {
+			return err
+		}
+		fresh.OutgoingTriggersRaw = raw
 	}
 
 	hasStartedOrFailed := old.Status.Initial() && !fresh.Status.Initial()
