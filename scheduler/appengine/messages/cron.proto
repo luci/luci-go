@@ -6,6 +6,7 @@ syntax = "proto3";
 
 package messages;
 
+
 // A single access control rule.
 message Acl {
   enum Role {
@@ -23,6 +24,7 @@ message Acl {
   // Either email or "group:xyz" or auth service identity string "kind:name".
   string granted_to = 2;
 }
+
 
 // A set of Acl messages. Can be referenced in a Job or Trigger by name.
 message AclSet {
@@ -95,6 +97,7 @@ message Job {
   BuildbucketTask buildbucket = 103;
 }
 
+
 // Trigger specifies a job that triggers other jobs.
 //
 // It is a special kind of job that periodically checks the state of the world
@@ -136,8 +139,11 @@ message Trigger {
 }
 
 
-// NoopTask is used for testing. It is "do nothing" task.
+// NoopTask is used for testing. It is "do nothing" task that can emit fake
+// triggers.
 message NoopTask {
+  int64 sleep_ms = 1;
+  int64 triggers_count = 2;
 }
 
 
@@ -228,6 +234,7 @@ message ProjectConfig {
   // A list of ACL sets. Names must be unique.
   repeated AclSet acl_sets = 3;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Internal stuff.

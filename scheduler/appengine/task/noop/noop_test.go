@@ -18,11 +18,13 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/gae/impl/memory"
+	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/utils/tasktest"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -31,15 +33,27 @@ var _ task.Manager = (*TaskManager)(nil)
 
 func TestFullFlow(t *testing.T) {
 	Convey("Noop", t, func() {
-		c := memory.Use(context.Background())
-		mgr := TaskManager{sleepDuration: time.Nanosecond}
+		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
+		tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+			tc.Add(d)
+		})
+
+		mgr := TaskManager{}
 		ctl := &tasktest.TestController{
-			TaskMessage:  &messages.NoopTask{},
+			TaskMessage: &messages.NoopTask{
+				SleepMs:       100,
+				TriggersCount: 2,
+			},
 			SaveCallback: func() error { return nil },
 		}
+
 		So(mgr.LaunchTask(c, ctl, nil), ShouldBeNil)
 		So(ctl.TaskState, ShouldResemble, task.State{
 			Status: task.StatusSucceeded,
+		})
+		So(ctl.Triggers, ShouldResemble, []task.Trigger{
+			{ID: "noop:2:0"},
+			{ID: "noop:2:1"},
 		})
 	})
 }
