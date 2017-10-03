@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -200,6 +201,16 @@ type Invocation struct {
 	MutationsCount int64 `gae:",noindex"`
 }
 
+// InvocationRequest contains parameters for a new invocation of some particular
+// job.
+//
+// It is part of Invocation that contains externally supplied parameters (and
+// not something that comes from corresponding Job entity).
+type InvocationRequest struct {
+	TriggeredBy      identity.Identity
+	IncomingTriggers []task.Trigger
+}
+
 // jobID returns ID of the job the invocation belongs too.
 //
 // Supports both v1 and v2 invocations.
@@ -308,4 +319,24 @@ func (e *Invocation) trimDebugLog() {
 		}
 	}
 	e.DebugLog = string(trimmed)
+}
+
+// cleanupUnreferencedInvocations tries to delete given invocations.
+//
+// This is best effort cleanup after failures. It logs errors, but doesn't
+// return them, to indicate that there's nothing we can actually do.
+//
+// 'invs' is allowed to have nils, they are skipped. Allowed to be called
+// within a transaction, ignores it.
+func cleanupUnreferencedInvocations(c context.Context, invs []*Invocation) {
+	keysToKill := make([]*datastore.Key, 0, len(invs))
+	for _, inv := range invs {
+		if inv != nil {
+			logging.Warningf(c, "Cleaning up inv %d of job %q", inv.ID, inv.jobID())
+			keysToKill = append(keysToKill, datastore.KeyForObj(c, inv))
+		}
+	}
+	if err := datastore.Delete(datastore.WithoutTransaction(c), keysToKill); err != nil {
+		logging.WithError(err).Warningf(c, "Invocation cleanup failed")
+	}
 }
