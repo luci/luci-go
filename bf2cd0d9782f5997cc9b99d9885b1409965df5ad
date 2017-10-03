@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b94a0f62_8d0ec88f",
+        "filename": "scheduler/appengine/engine/controller.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-03T20:15:47Z",
+      "side": 1,
+      "message": "1. Should we prefer google proto\u0027s timestamp instead of int64?\n2. If so, then perhaps now is good time to change.",
+      "range": {
+        "startLine": 156,
+        "startChar": 1,
+        "endLine": 156,
+        "endChar": 44
+      },
+      "revId": "bf2cd0d9782f5997cc9b99d9885b1409965df5ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26955806_8af9faf9",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1636,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-03T20:15:47Z",
+      "side": 1,
+      "message": "nit: why not \ntriggers, err :\u003d ...\n?",
+      "range": {
+        "startLine": 1636,
+        "startChar": 1,
+        "endLine": 1636,
+        "endChar": 33
+      },
+      "revId": "bf2cd0d9782f5997cc9b99d9885b1409965df5ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a39eb221_273a297e",
+        "filename": "scheduler/appengine/engine/engine_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 635,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-03T20:15:47Z",
+      "side": 1,
+      "message": "wdyt about creating noop-payload for tests?",
+      "range": {
+        "startLine": 635,
+        "startChar": 13,
+        "endLine": 635,
+        "endChar": 39
+      },
+      "revId": "bf2cd0d9782f5997cc9b99d9885b1409965df5ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a636ada_c9b09234",
+        "filename": "scheduler/appengine/engine/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-03T20:15:47Z",
+      "side": 1,
+      "message": "so, is marshall(data) guaranteed to be \u003d\u003d to marshall(data.deep_copy()) ?",
+      "range": {
+        "startLine": 242,
+        "startChar": 2,
+        "endLine": 243,
+        "endChar": 66
+      },
+      "revId": "bf2cd0d9782f5997cc9b99d9885b1409965df5ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a346c02_cba63a57",
+        "filename": "scheduler/appengine/engine/utils.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-03T20:15:47Z",
+      "side": 1,
+      "message": ", which modifies the list,",
+      "range": {
+        "startLine": 164,
+        "startChar": 59,
+        "endLine": 164,
+        "endChar": 60
+      },
+      "revId": "bf2cd0d9782f5997cc9b99d9885b1409965df5ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ad818f5_108d579a",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-03T20:15:47Z",
+      "side": 1,
+      "message": "is this smth that go proto gen created in place of \"oneof\"?",
+      "range": {
+        "startLine": 181,
+        "startChar": 12,
+        "endLine": 181,
+        "endChar": 37
+      },
+      "revId": "bf2cd0d9782f5997cc9b99d9885b1409965df5ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
