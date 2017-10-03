@@ -128,18 +128,17 @@ func runJobAction(ctx *router.Context) {
 
 	invID := int64(0)
 	deadline := clock.Now(c).Add(10 * time.Second)
-	for invID == 0 && deadline.Sub(clock.Now(c)) > 0 {
-		// Asking for invocation immediately after triggering it never works,
-		// so sleep a bit first.
-		if tr := clock.Sleep(c, 600*time.Millisecond); tr.Incomplete() {
-			// The Context was canceled before the Sleep completed. Terminate the
-			// loop.
-			break
-		}
+	for deadline.Sub(clock.Now(c)) > 0 {
 		// Grab the ID of the launched invocation (if any). Ignore errors here,
 		// since InvocationID can return only transient ones, which we treat as if
 		// the invocation is not available yet.
 		invID, _ = future.InvocationID(c)
+		if invID != 0 {
+			break // found it
+		}
+		if tr := clock.Sleep(c, 500*time.Millisecond); tr.Incomplete() {
+			break // context deadline
+		}
 	}
 
 	if invID != 0 {

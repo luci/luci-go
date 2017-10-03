@@ -16,8 +16,11 @@ package engine
 
 import (
 	"bytes"
+	"fmt"
 	"hash/fnv"
+	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -26,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
+	"go.chromium.org/luci/scheduler/appengine/engine/dsset"
 	"go.chromium.org/luci/scheduler/appengine/schedule"
 )
 
@@ -81,7 +85,17 @@ type Job struct {
 	Acls acl.GrantsByRole `gae:",noindex"`
 
 	// State is the job's state machine state, see StateMachine.
+	//
+	// Used by v1 jobs only.
 	State JobState
+
+	// ActiveInvocations is ordered set of active invocation IDs.
+	//
+	// It contains IDs of pending, running or recently finished invocations,
+	// the most recent at the end.
+	//
+	// Used by v2 jobs only.
+	ActiveInvocations []int64 `gae:",noindex"`
 }
 
 // JobName returns name of this Job as defined its project's config.
@@ -133,7 +147,8 @@ func (e *Job) IsEqual(other *Job) bool {
 		e.Acls.Equal(&other.Acls) &&
 		bytes.Equal(e.Task, other.Task) &&
 		equalSortedLists(e.TriggeredJobIDs, other.TriggeredJobIDs) &&
-		e.State.Equal(&other.State))
+		e.State.Equal(&other.State) &&
+		equalInt64Lists(e.ActiveInvocations, other.ActiveInvocations))
 }
 
 // MatchesDefinition returns true if job definition in the entity matches the
@@ -159,4 +174,45 @@ func (e *Job) IsVisible(c context.Context) (bool, error) {
 // Returns only transient errors.
 func (e *Job) IsOwned(c context.Context) (bool, error) {
 	return e.Acls.IsOwner(logging.SetField(c, "JobID", e.JobID))
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// v2 stuff.
+
+// recentlyFinishedSet is a set with IDs of all recently finished invocations.
+//
+// This is an accumulator of IDs to remove from ActiveInvocations list next
+// time we run a triage for the corresponding Job.
+//
+// Invocation IDs are serialized with fmt.Sprintf("%d").
+func recentlyFinishedSet(c context.Context, jobID string) *invocationIDSet {
+	return &invocationIDSet{
+		Set: dsset.Set{
+			ID:              "finished:" + jobID,
+			ShardCount:      8,
+			TombstonesRoot:  datastore.KeyForObj(c, &Job{JobID: jobID}),
+			TombstonesDelay: 30 * time.Minute,
+		},
+	}
+}
+
+// invocationIDSet is a dsset.Set that stores invocation IDs.
+type invocationIDSet struct {
+	dsset.Set
+}
+
+// Add adds a bunch of invocation IDs to the set.
+func (s *invocationIDSet) Add(c context.Context, ids []int64) error {
+	items := make([]dsset.Item, len(ids))
+	for i, id := range ids {
+		items[i].ID = fmt.Sprintf("%d", id)
+	}
+	return s.Set.Add(c, items)
+}
+
+// ItemToInvID takes a dsset.Item and returns invocation ID stored there or 0 if
+// it's malformed.
+func (s *invocationIDSet) ItemToInvID(i *dsset.Item) int64 {
+	id, _ := strconv.ParseInt(i.ID, 10, 64)
+	return id
 }
