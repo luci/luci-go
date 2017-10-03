@@ -66,6 +66,54 @@ func TestUserProto(t *testing.T) {
 	})
 }
 
+func TestTreeDiffProto(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Test TreeDiff.Proto`, t, func() {
+		td := &TreeDiff{
+			Type:    "MODIFY",
+			OldID:   strings.Repeat("deadbeef", 5),
+			OldPath: "some/path",
+			OldMode: 0666,
+			NewID:   strings.Repeat("daff0d11", 5),
+			NewPath: "some/path",
+			NewMode: 0666,
+		}
+
+		Convey(`basic`, func() {
+			tdPD, err := td.Proto()
+			So(err, ShouldBeNil)
+			So(tdPD, ShouldResemble, &git.Commit_TreeDiff{
+				Type:    git.Commit_TreeDiff_MODIFY,
+				OldId:   bytes.Repeat([]byte{0xde, 0xad, 0xbe, 0xef}, 5),
+				OldPath: "some/path",
+				OldMode: 0666,
+				NewId:   bytes.Repeat([]byte{0xda, 0xff, 0x0d, 0x11}, 5),
+				NewPath: "some/path",
+				NewMode: 0666,
+			})
+		})
+
+		Convey(`bad type`, func() {
+			td.Type = "Meep"
+			_, err := td.Proto()
+			So(err, ShouldErrLike, "bad change type")
+		})
+
+		Convey(`bad OldID`, func() {
+			td.OldID = "Meep"
+			_, err := td.Proto()
+			So(err, ShouldErrLike, "decoding OldID")
+		})
+
+		Convey(`bad NewID`, func() {
+			td.NewID = "Meep"
+			_, err := td.Proto()
+			So(err, ShouldErrLike, "decoding NewID")
+		})
+	})
+}
+
 func TestCommitProto(t *testing.T) {
 	t.Parallel()
 
