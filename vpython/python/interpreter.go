@@ -20,7 +20,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"sync"
 
@@ -53,17 +52,9 @@ type Interpreter struct {
 }
 
 // Normalize normalizes the Interpreter configuration by resolving relative
-// paths into absolute paths and evaluating symlnks.
+// paths into absolute paths.
 func (i *Interpreter) Normalize() error {
-	if err := filesystem.AbsPath(&i.Python); err != nil {
-		return err
-	}
-	resolved, err := filepath.EvalSymlinks(i.Python)
-	if err != nil {
-		return errors.Annotate(err, "could not evaluate symlinks for: %q", i.Python).Err()
-	}
-	i.Python = resolved
-	return nil
+	return filesystem.AbsPath(&i.Python)
 }
 
 // IsolatedCommand returns a configurable exec.Cmd structure bound to this
