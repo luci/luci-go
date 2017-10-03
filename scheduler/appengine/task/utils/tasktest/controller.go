@@ -23,8 +23,10 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/server/auth"
+
+	"go.chromium.org/luci/scheduler/appengine/internal"
+	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
 // TimerSpec corresponds to single AddTimer call.
@@ -49,7 +51,7 @@ type TestController struct {
 	PrepareTopicCallback func(string) (string, string, error) // mock for PrepareTopic()
 
 	Timers   []TimerSpec
-	Triggers []task.Trigger
+	Triggers []*internal.Trigger
 }
 
 // JobID is part of Controller interface.
@@ -124,7 +126,7 @@ func (c *TestController) GetClient(ctx context.Context, timeout time.Duration, o
 	return nil, errors.New("GetClient must not be called (not mocked)")
 }
 
-func (c *TestController) EmitTrigger(ctx context.Context, trigger task.Trigger) {
+func (c *TestController) EmitTrigger(ctx context.Context, trigger *internal.Trigger) {
 	c.Triggers = append(c.Triggers, trigger)
 }
 

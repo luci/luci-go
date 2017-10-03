@@ -44,6 +44,7 @@ import (
 
 	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
+	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/noop"
@@ -348,7 +349,7 @@ func TestFullFlow(t *testing.T) {
 		taskqueue.GetTestable(c).ResetTasks()
 
 		// Time to run the job and it fails to launch with a transient error.
-		mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []task.Trigger) error {
+		mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
 			// Check data provided via the controller.
 			So(ctl.JobID(), ShouldEqual, "abc/1")
 			So(ctl.InvocationID(), ShouldEqual, int64(9200093518582484688))
@@ -404,7 +405,7 @@ func TestFullFlow(t *testing.T) {
 		}))
 
 		// Second attempt. Now starts, hangs midway, they finishes.
-		mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []task.Trigger) error {
+		mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
 			// Make sure Save() checkpoints the progress.
 			ctl.DebugLog("Starting")
 			ctl.State().Status = task.StatusRunning
@@ -539,7 +540,7 @@ func TestForceInvocation(t *testing.T) {
 
 		// Launch it.
 		var startedInvID int64
-		mgr.launchTask = func(ctx context.Context, ctl task.Controller, _ []task.Trigger) error {
+		mgr.launchTask = func(ctx context.Context, ctl task.Controller, _ []*internal.Trigger) error {
 			startedInvID = ctl.InvocationID()
 			ctl.State().Status = task.StatusRunning
 			return nil
@@ -612,7 +613,7 @@ func TestFullTriggeredFlow(t *testing.T) {
 
 		var invID int64 // set inside launchTask once invocation is known.
 
-		mgr.launchTask = func(ctx context.Context, ctl task.Controller, _ []task.Trigger) error {
+		mgr.launchTask = func(ctx context.Context, ctl task.Controller, _ []*internal.Trigger) error {
 			// Make sure Save() checkpoints the progress.
 			ctl.DebugLog("Starting")
 			ctl.State().Status = task.StatusRunning
@@ -629,8 +630,18 @@ func TestFullTriggeredFlow(t *testing.T) {
 			So(inv.Status, ShouldEqual, task.StatusRunning)
 			So(inv.MutationsCount, ShouldEqual, 1)
 
-			ctl.EmitTrigger(ctx, task.Trigger{ID: "trg", Payload: []byte("note the trigger id")})
-			ctl.EmitTrigger(ctx, task.Trigger{ID: "trg", Payload: []byte("different payload")})
+			ctl.EmitTrigger(ctx, &internal.Trigger{
+				Id: "trg",
+				Payload: &internal.Trigger_Noop{
+					Noop: &internal.NoopTriggerData{Data: "note the trigger id"},
+				},
+			})
+			ctl.EmitTrigger(ctx, &internal.Trigger{
+				Id: "trg",
+				Payload: &internal.Trigger_Noop{
+					Noop: &internal.NoopTriggerData{Data: "different payload"},
+				},
+			})
 
 			// Change state to the final one.
 			ctl.State().Status = task.StatusSucceeded
@@ -661,11 +672,11 @@ func TestFullTriggeredFlow(t *testing.T) {
 
 		// Prepare to track triggers passed to task launchers.
 		deliveredTriggers := map[string][]string{}
-		mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []task.Trigger) error {
+		mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
 			So(deliveredTriggers, ShouldNotContainKey, ctl.JobID())
 			ids := make([]string, 0, len(triggers))
 			for _, t := range triggers {
-				ids = append(ids, t.ID)
+				ids = append(ids, t.Id)
 			}
 			sort.Strings(ids) // For deterministic tests.
 			deliveredTriggers[ctl.JobID()] = ids
@@ -1048,7 +1059,7 @@ func TestAborts(t *testing.T) {
 
 		launchInv := func() int64 {
 			var invID int64
-			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []task.Trigger) error {
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
 				invID = ctl.InvocationID()
 				ctl.State().Status = task.StatusRunning
 				So(ctl.Save(ctx), ShouldBeNil)
@@ -1142,7 +1153,7 @@ func TestAddTimer(t *testing.T) {
 
 		Convey("AddTimer works", func() {
 			// Start an invocation that adds a timer.
-			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []task.Trigger) error {
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
 				ctl.AddTimer(ctx, time.Minute, "timer-name", []byte{1, 2, 3})
 				ctl.State().Status = task.StatusRunning
 				return nil
@@ -1295,7 +1306,7 @@ func newTestEngine() (*engineImpl, *fakeTaskManager) {
 
 // fakeTaskManager implement task.Manager interface.
 type fakeTaskManager struct {
-	launchTask         func(ctx context.Context, ctl task.Controller, triggers []task.Trigger) error
+	launchTask         func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error
 	handleNotification func(ctx context.Context, msg *pubsub.PubsubMessage) error
 	handleTimer        func(ctx context.Context, ctl task.Controller, name string, payload []byte) error
 }
@@ -1316,7 +1327,7 @@ func (m *fakeTaskManager) ValidateProtoMessage(msg proto.Message) error {
 	return nil
 }
 
-func (m *fakeTaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []task.Trigger) error {
+func (m *fakeTaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
 	return m.launchTask(c, ctl, triggers)
 }
 

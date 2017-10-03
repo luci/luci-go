@@ -18,9 +18,10 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/schedule"
-	"go.chromium.org/luci/scheduler/appengine/task"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var epoch = time.Unix(1442270520, 0).UTC()
@@ -407,62 +408,68 @@ func TestStateMachine(t *testing.T) {
 		Convey("No new triggers doesn't trigger suspended job", func() {
 			m.roll(func(sm *StateMachine) { sm.OnNewTriggers(nil) })
 			So(m.state.State, ShouldEqual, JobStateSuspended)
-			So(m.state.PendingTriggers, ShouldBeNil)
+			So(m.pendingTriggers(), ShouldBeNil)
 			So(m.actions, ShouldBeNil)
 		})
 
-		trg1 := task.Trigger{ID: "trg1", Payload: []byte("payload1")}
-		m.roll(func(sm *StateMachine) { sm.OnNewTriggers([]task.Trigger{trg1}) })
+		trg1 := &internal.Trigger{Id: "trg1"}
+		m.roll(func(sm *StateMachine) { sm.OnNewTriggers([]*internal.Trigger{trg1}) })
 		So(m.state.State, ShouldEqual, JobStateQueued)
-		So(m.state.PendingTriggers, ShouldBeNil)
+		So(m.pendingTriggers(), ShouldBeNil)
 		So(m.actions, ShouldResemble, []Action{
-			StartInvocationAction{InvocationNonce: 2, Triggers: []task.Trigger{trg1}},
+			StartInvocationAction{InvocationNonce: 2, Triggers: []*internal.Trigger{trg1}},
 		})
 		m.actions = nil
 
 		// Job is QUEUED, triggering it just updates PendingTriggers.
-		trg2 := task.Trigger{ID: "trg2", Payload: []byte("payload2")}
-		m.roll(func(sm *StateMachine) { sm.OnNewTriggers([]task.Trigger{trg2}) })
+		trg2 := &internal.Trigger{Id: "trg2"}
+		m.roll(func(sm *StateMachine) { sm.OnNewTriggers([]*internal.Trigger{trg2}) })
 		So(m.state.State, ShouldEqual, JobStateQueued)
-		So(m.state.PendingTriggers, ShouldResemble, []task.Trigger{trg2})
+		So(m.pendingTriggers(), ShouldResemble, []*internal.Trigger{trg2})
 		So(m.actions, ShouldBeNil)
 
 		// Triggering w/ the same triggers depends on whether these triggers are in
 		// PendingTriggers or already acted upon and thus forgotten.
-		trg3 := task.Trigger{ID: "trg3", Payload: []byte("payload3")}
-		m.roll(func(sm *StateMachine) { sm.OnNewTriggers([]task.Trigger{trg1, trg3}) })
+		trg3 := &internal.Trigger{Id: "trg3"}
+		m.roll(func(sm *StateMachine) { sm.OnNewTriggers([]*internal.Trigger{trg1, trg3}) })
 		So(m.state.State, ShouldEqual, JobStateQueued)
-		So(m.state.PendingTriggers, ShouldResemble, []task.Trigger{trg2, trg1, trg3})
+		So(m.pendingTriggers(), ShouldResemble, []*internal.Trigger{trg2, trg1, trg3})
 		So(m.actions, ShouldBeNil)
 
 		// Queued -> Running state changes keeps PendingTriggers.
 		m.roll(func(sm *StateMachine) { sm.OnInvocationStarting(2, 1, 0) })
 		m.roll(func(sm *StateMachine) { sm.OnInvocationStarted(1) })
 		So(m.state.State, ShouldEqual, JobStateRunning)
-		So(m.state.PendingTriggers, ShouldResemble, []task.Trigger{trg2, trg1, trg3})
+		So(m.pendingTriggers(), ShouldResemble, []*internal.Trigger{trg2, trg1, trg3})
 		m.actions = nil
 
-		trg4 := task.Trigger{ID: "trg4", Payload: []byte("payload4")}
-		m.roll(func(sm *StateMachine) { sm.OnNewTriggers([]task.Trigger{trg4}) })
+		trg4 := &internal.Trigger{Id: "trg4"}
+		m.roll(func(sm *StateMachine) { sm.OnNewTriggers([]*internal.Trigger{trg4}) })
 		So(m.state.State, ShouldEqual, JobStateRunning)
-		So(m.state.PendingTriggers, ShouldResemble, []task.Trigger{trg2, trg1, trg3, trg4})
+		So(m.pendingTriggers(), ShouldResemble, []*internal.Trigger{trg2, trg1, trg3, trg4})
 		So(m.actions, ShouldBeNil)
 
 		Convey("Upon abort of a job with PendingTriggers, it must be queued again", func() {
 			m.roll(func(sm *StateMachine) { sm.OnManualAbort() })
 			So(m.state.State, ShouldEqual, JobStateQueued)
-			So(m.state.PendingTriggers, ShouldBeNil)
+			So(m.pendingTriggers(), ShouldBeNil)
 			So(m.actions, ShouldResemble, []Action{
-				StartInvocationAction{InvocationNonce: 3, Triggers: []task.Trigger{trg2, trg1, trg3, trg4}},
+				StartInvocationAction{
+					InvocationNonce: 3,
+					Triggers:        []*internal.Trigger{trg2, trg1, trg3, trg4},
+				},
 			})
 		})
 
 		// Upon completion a job with PendingTriggers, it must be queued again
 		m.roll(func(sm *StateMachine) { sm.OnInvocationDone(1) })
 		So(m.state.State, ShouldEqual, JobStateQueued)
-		So(m.state.PendingTriggers, ShouldBeNil)
+		So(m.pendingTriggers(), ShouldBeNil)
 		So(m.actions, ShouldResemble, []Action{
-			StartInvocationAction{InvocationNonce: 3, Triggers: []task.Trigger{trg2, trg1, trg3, trg4}},
+			StartInvocationAction{
+				InvocationNonce: 3,
+				Triggers:        []*internal.Trigger{trg2, trg1, trg3, trg4},
+			},
 		})
 	})
 	Convey("Triggers processing on relative schedule", t, func() {
@@ -479,38 +486,38 @@ func TestStateMachine(t *testing.T) {
 
 		// Triggering should reset TickNonce to disengage previous TickLaterAction.
 		// It resets the tick (to be enabled again when job finishes).
-		trg1 := task.Trigger{ID: "trg1", Payload: []byte("payload1")}
-		m.roll(func(sm *StateMachine) { sm.OnNewTriggers([]task.Trigger{trg1}) })
+		trg1 := &internal.Trigger{Id: "trg1"}
+		m.roll(func(sm *StateMachine) { sm.OnNewTriggers([]*internal.Trigger{trg1}) })
 		So(m.state.State, ShouldEqual, JobStateQueued)
-		So(m.state.PendingTriggers, ShouldBeNil)
+		So(m.pendingTriggers(), ShouldBeNil)
 		So(m.actions, ShouldResemble, []Action{
-			StartInvocationAction{InvocationNonce: 2, Triggers: []task.Trigger{trg1}},
+			StartInvocationAction{InvocationNonce: 2, Triggers: []*internal.Trigger{trg1}},
 		})
 		m.actions = nil
 
 		// Job is QUEUED, triggering it just updates PendingTriggers.
-		trg2 := task.Trigger{ID: "trg2", Payload: []byte("payload2")}
-		m.roll(func(sm *StateMachine) { sm.OnNewTriggers([]task.Trigger{trg2}) })
+		trg2 := &internal.Trigger{Id: "trg2"}
+		m.roll(func(sm *StateMachine) { sm.OnNewTriggers([]*internal.Trigger{trg2}) })
 		So(m.state.State, ShouldEqual, JobStateQueued)
-		So(m.state.PendingTriggers, ShouldResemble, []task.Trigger{trg2})
+		So(m.pendingTriggers(), ShouldResemble, []*internal.Trigger{trg2})
 		So(m.actions, ShouldBeNil)
 
 		// Queued -> Running state changes keeps PendingTriggers.
 		m.roll(func(sm *StateMachine) { sm.OnInvocationStarting(2, 1, 0) })
 		m.roll(func(sm *StateMachine) { sm.OnInvocationStarted(1) })
 		So(m.state.State, ShouldEqual, JobStateRunning)
-		So(m.state.PendingTriggers, ShouldResemble, []task.Trigger{trg2})
+		So(m.pendingTriggers(), ShouldResemble, []*internal.Trigger{trg2})
 		m.actions = nil
 
 		// Upon completion a job with PendingTriggers, it must be queued again.
 		m.roll(func(sm *StateMachine) { sm.OnInvocationDone(1) })
 		So(m.state.State, ShouldEqual, JobStateQueued)
-		So(m.state.PendingTriggers, ShouldBeNil)
+		So(m.pendingTriggers(), ShouldBeNil)
 		So(m.actions, ShouldResemble, []Action{
 			// TODO(tandrii): extra tick is not actually useful, but for simplicity
 			// it's here.
 			TickLaterAction{epoch.Add(5 * time.Second), 3},
-			StartInvocationAction{InvocationNonce: 4, Triggers: []task.Trigger{trg2}},
+			StartInvocationAction{InvocationNonce: 4, Triggers: []*internal.Trigger{trg2}},
 		})
 		m.actions = nil
 		// Extra TickLaterAction is useless, but it doesn't hurt since it'd be
@@ -519,7 +526,7 @@ func TestStateMachine(t *testing.T) {
 		m.state.State = JobStateRunning
 		m.roll(func(sm *StateMachine) { sm.OnTimerTick(3) })
 		So(m.state.State, ShouldEqual, JobStateRunning)
-		So(m.state.PendingTriggers, ShouldBeNil)
+		So(m.pendingTriggers(), ShouldBeNil)
 		So(m.actions, ShouldBeNil)
 	})
 }
@@ -544,6 +551,14 @@ func newTestStateMachine(scheduleExpr string) *testStateMachine {
 	}
 }
 
+func (t *testStateMachine) pendingTriggers() []*internal.Trigger {
+	list, err := unmarshalTriggersList(t.state.PendingTriggersRaw)
+	if err != nil {
+		panic(err)
+	}
+	return list
+}
+
 func (t *testStateMachine) rollWithErr(cb func(sm *StateMachine) error) error {
 	nonce := t.nonce
 	sm := StateMachine{
@@ -555,9 +570,13 @@ func (t *testStateMachine) rollWithErr(cb func(sm *StateMachine) error) error {
 			return nonce
 		},
 	}
+	if err := sm.Pre(); err != nil {
+		return err
+	}
 	if err := cb(&sm); err != nil {
 		return err
 	}
+	sm.Post()
 	t.state = sm.State
 	t.nonce = nonce
 	t.actions = append(t.actions, sm.Actions...)

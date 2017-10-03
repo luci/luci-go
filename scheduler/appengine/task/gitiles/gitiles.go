@@ -90,7 +90,7 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 }
 
 // LaunchTask is part of Manager interface.
-func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []task.Trigger) error {
+func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
 	cfg := ctl.Task().(*messages.GitilesTask)
 
 	ctl.DebugLog("Repo: %s, Refs: %s", cfg.Repo, cfg.Refs)
@@ -174,21 +174,13 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 		// passing just HEAD's revision is good enough.
 		// For the same reason, only 1 of the refs will actually be processed if
 		// several refs changed at the same time.
-		payload, err := proto.Marshal(&internal.TriggerPayload{
-			Gitiles: &internal.GitilesTrigger{Repo: cfg.Repo, Ref: ref, Revision: newHead},
-		})
-		if err != nil {
-			// Something is terribly wrong, thus note this error to AE log.
-			msg := "Failed to marshal GitilesTrigger payload"
-			ctl.DebugLog("%s: %q", msg, err)
-			logging.Errorf(c, "%s: %q", msg, err)
-			return errors.Annotate(err, msg).Err()
-		}
-		ctl.EmitTrigger(c, task.Trigger{
-			ID:      fmt.Sprintf("%s/+/%s@%s", cfg.Repo, ref, newHead),
-			Title:   newHead,
-			URL:     fmt.Sprintf("%s/+/%s", cfg.Repo, newHead),
-			Payload: payload,
+		ctl.EmitTrigger(c, &internal.Trigger{
+			Id:    fmt.Sprintf("%s/+/%s@%s", cfg.Repo, ref, newHead),
+			Title: newHead,
+			Url:   fmt.Sprintf("%s/+/%s", cfg.Repo, newHead),
+			Payload: &internal.Trigger_Gitiles{
+				Gitiles: &internal.GitilesTriggerData{Repo: cfg.Repo, Ref: ref, Revision: newHead},
+			},
 		})
 	}
 

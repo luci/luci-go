@@ -22,6 +22,8 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+
+	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/utils/tasktest"
@@ -51,9 +53,9 @@ func TestFullFlow(t *testing.T) {
 		So(ctl.TaskState, ShouldResemble, task.State{
 			Status: task.StatusSucceeded,
 		})
-		So(ctl.Triggers, ShouldResemble, []task.Trigger{
-			{ID: "noop:2:0"},
-			{ID: "noop:2:1"},
+		So(ctl.Triggers, ShouldResemble, []*internal.Trigger{
+			{Id: "noop:2:0"},
+			{Id: "noop:2:1"},
 		})
 	})
 }

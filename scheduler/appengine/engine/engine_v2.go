@@ -21,7 +21,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/scheduler/appengine/internal"
-	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
 // jobControllerV2 implements jobController using v2 data structures.
@@ -55,7 +54,7 @@ func (ctl *jobControllerV2) onJobForceInvocation(c context.Context, job *Job) (F
 	return resolvedFutureInvocation{invID: invs[0].ID}, nil
 }
 
-func (ctl *jobControllerV2) onInvUpdating(c context.Context, old, fresh *Invocation, timers []invocationTimer, triggers []task.Trigger) error {
+func (ctl *jobControllerV2) onInvUpdating(c context.Context, old, fresh *Invocation, timers []invocationTimer, triggers []*internal.Trigger) error {
 	assertInTransaction(c)
 
 	tasks := []*tq.Task{}

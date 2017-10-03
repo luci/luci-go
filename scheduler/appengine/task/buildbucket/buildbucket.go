@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -150,7 +151,7 @@ type taskData struct {
 }
 
 // LaunchTask is part of Manager interface.
-func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []task.Trigger) error {
+func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
 	// At this point config is already validated by ValidateProtoMessage.
 	cfg := ctl.Task().(*messages.BuildbucketTask)
 
@@ -403,18 +404,13 @@ func (m TaskManager) handleBuildResult(c context.Context, ctl task.Controller, r
 	}
 }
 
-func maybeGetTrigger(c context.Context, ctl task.Controller, triggers []task.Trigger) *internal.GitilesTrigger {
+func maybeGetTrigger(c context.Context, ctl task.Controller, triggers []*internal.Trigger) *internal.GitilesTriggerData {
 	var prevTriggerID string
-	var prevDecoded *internal.GitilesTrigger
+	var prevDecoded *internal.GitilesTriggerData
 	for _, t := range triggers {
-		p := &internal.TriggerPayload{}
-		if err := proto.Unmarshal(t.Payload, p); err != nil {
-			ctl.DebugLog("failed to decode payload of trigger %s", t.ID)
-			logging.Warningf(c, "failed to decode payloda of trigger %s", t.ID)
-			continue
-		}
-		if p.Gitiles == nil {
-			ctl.DebugLog("ignoring non-gitiles trigger %s", t.ID)
+		g := t.GetGitiles()
+		if g == nil {
+			ctl.DebugLog("ignoring non-gitiles trigger %s", t.Id)
 			continue
 		}
 		// Latest trigger wins until engine v2 is available, because v1 requires
@@ -422,13 +418,13 @@ func maybeGetTrigger(c context.Context, ctl task.Controller, triggers []task.Tri
 		if prevDecoded != nil {
 			ctl.DebugLog("ignoring gitiles trigger %s", prevTriggerID)
 		}
-		prevDecoded = p.Gitiles
-		prevTriggerID = t.ID
+		prevDecoded = g
+		prevTriggerID = t.Id
 	}
 	return prevDecoded
 }
 
-func makeBuildSet(t *internal.GitilesTrigger) (string, error) {
+func makeBuildSet(t *internal.GitilesTriggerData) (string, error) {
 	// TODO(tandrii): consider moving this function to a standalone buildset
 	// package once
 	// https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/677052/

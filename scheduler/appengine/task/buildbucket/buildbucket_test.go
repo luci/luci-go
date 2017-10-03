@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/utils/tasktest"
 
-	"github.com/golang/protobuf/proto"
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -122,15 +121,15 @@ func TestValidateProtoMessage(t *testing.T) {
 
 func TestMakeBuildSet(t *testing.T) {
 	Convey("makeBuildSet works", t, func() {
-		b, err := makeBuildSet(&internal.GitilesTrigger{Repo: "https://c.googlesource.com/a.git", Revision: "deadbeef"})
+		b, err := makeBuildSet(&internal.GitilesTriggerData{Repo: "https://c.googlesource.com/a.git", Revision: "deadbeef"})
 		So(err, ShouldBeNil)
 		So(b, ShouldEqual, "commit/gitiles/c.googlesource.com/a/+/deadbeef")
 
-		b, err = makeBuildSet(&internal.GitilesTrigger{Repo: "https://c.googlesource.com/a/cd", Revision: "beefcafe"})
+		b, err = makeBuildSet(&internal.GitilesTriggerData{Repo: "https://c.googlesource.com/a/cd", Revision: "beefcafe"})
 		So(err, ShouldBeNil)
 		So(b, ShouldEqual, "commit/gitiles/c.googlesource.com/cd/+/beefcafe")
 
-		_, err = makeBuildSet(&internal.GitilesTrigger{Repo: "https:\\something/went/wrong", Revision: "beefcafe"})
+		_, err = makeBuildSet(&internal.GitilesTriggerData{Repo: "https:\\something/went/wrong", Revision: "beefcafe"})
 		So(err, ShouldNotBeNil)
 	})
 }
@@ -281,9 +280,9 @@ func TestTriggeredFlow(t *testing.T) {
 		}
 
 		// Launch with triggers,
-		triggers := []task.Trigger{
-			{ID: "1", Payload: makePayload("https://r.googlesource.com/repo", "refs/heads/master", "baadcafe")},
-			{ID: "2", Payload: makePayload("https://r.googlesource.com/repo", "refs/heads/master", "deadbeef")},
+		triggers := []*internal.Trigger{
+			{Id: "1", Payload: makePayload("https://r.googlesource.com/repo", "refs/heads/master", "baadcafe")},
+			{Id: "2", Payload: makePayload("https://r.googlesource.com/repo", "refs/heads/master", "deadbeef")},
 		}
 		So(mgr.LaunchTask(c, ctl, triggers), ShouldBeNil)
 		So(ctl.TaskState, ShouldResemble, task.State{
@@ -300,11 +299,8 @@ func TestTriggeredFlow(t *testing.T) {
 	})
 }
 
-func makePayload(repo, ref, rev string) []byte {
-	p := internal.TriggerPayload{&internal.GitilesTrigger{repo, ref, rev}}
-	s, err := proto.Marshal(&p)
-	if err != nil {
-		panic(err)
+func makePayload(repo, ref, rev string) *internal.Trigger_Gitiles {
+	return &internal.Trigger_Gitiles{
+		Gitiles: &internal.GitilesTriggerData{repo, ref, rev},
 	}
-	return s
 }
