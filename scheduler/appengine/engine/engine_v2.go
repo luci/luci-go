@@ -72,8 +72,8 @@ func (ctl *jobControllerV2) onInvUpdating(c context.Context, old, fresh *Invocat
 		fresh.IndexedJobID = fresh.JobID
 		tasks = append(tasks, &tq.Task{
 			Payload: &internal.InvocationFinishedTask{
-				JobID: fresh.JobID,
-				InvID: fresh.ID,
+				JobId: fresh.JobID,
+				InvId: fresh.ID,
 				// TODO(vadimsh): Add triggers here.
 			},
 		})

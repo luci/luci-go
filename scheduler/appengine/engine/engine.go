@@ -1698,8 +1698,8 @@ func (e *engineImpl) kickLaunchInvocationsBatchTask(c context.Context, jobID str
 	}
 	for _, invID := range invIDs {
 		payload.Tasks = append(payload.Tasks, &internal.LaunchInvocationTask{
-			JobID: jobID,
-			InvID: invID,
+			JobId: jobID,
+			InvId: invID,
 		})
 	}
 	return e.cfg.Dispatcher.AddTask(c, &tq.Task{
@@ -1721,7 +1721,7 @@ func (e *engineImpl) launchInvocationsBatchTask(c context.Context, tqTask proto.
 	tasks := []*tq.Task{}
 	for _, subtask := range batch.Tasks {
 		tasks = append(tasks, &tq.Task{
-			DeduplicationKey: fmt.Sprintf("inv:%s:%d", subtask.JobID, subtask.InvID),
+			DeduplicationKey: fmt.Sprintf("inv:%s:%d", subtask.JobId, subtask.InvId),
 			Payload:          subtask,
 		})
 	}
@@ -1735,8 +1735,8 @@ func (e *engineImpl) launchInvocationsBatchTask(c context.Context, tqTask proto.
 func (e *engineImpl) launchInvocationTask(c context.Context, tqTask proto.Message) error {
 	msg := tqTask.(*internal.LaunchInvocationTask)
 
-	c = logging.SetField(c, "JobID", msg.JobID)
-	c = logging.SetField(c, "InvID", msg.InvID)
+	c = logging.SetField(c, "JobID", msg.JobId)
+	c = logging.SetField(c, "InvID", msg.InvId)
 
 	hdrs, err := tq.RequestHeaders(c)
 	if err != nil {
@@ -1759,7 +1759,7 @@ func (e *engineImpl) launchInvocationTask(c context.Context, tqTask proto.Messag
 		skipLaunch = false // reset in case the transaction is retried
 
 		// Grab up-to-date invocation state.
-		inv := Invocation{ID: msg.InvID}
+		inv := Invocation{ID: msg.InvId}
 		switch err := ds.Get(c, &inv); {
 		case err == ds.ErrNoSuchEntity:
 			// This generally should not happen.
@@ -1793,7 +1793,7 @@ func (e *engineImpl) launchInvocationTask(c context.Context, tqTask proto.Messag
 		// Notify the job controller about the invocation state change. It may
 		// decide to update the corresponding job, e.g. if the invocation moves to
 		// StatusFailed state.
-		if err := e.jobController(msg.JobID).onInvUpdating(c, &inv, &lastInvState, nil, nil); err != nil {
+		if err := e.jobController(msg.JobId).onInvUpdating(c, &inv, &lastInvState, nil, nil); err != nil {
 			return err
 		}
 
@@ -1830,14 +1830,14 @@ func (e *engineImpl) launchInvocationTask(c context.Context, tqTask proto.Messag
 func (e *engineImpl) invocationFinishedTask(c context.Context, tqTask proto.Message) error {
 	msg := tqTask.(*internal.InvocationFinishedTask)
 
-	c = logging.SetField(c, "JobID", msg.JobID)
-	c = logging.SetField(c, "InvID", msg.InvID)
+	c = logging.SetField(c, "JobID", msg.JobId)
+	c = logging.SetField(c, "InvID", msg.InvId)
 
-	if err := recentlyFinishedSet(c, msg.JobID).Add(c, []int64{msg.InvID}); err != nil {
+	if err := recentlyFinishedSet(c, msg.JobId).Add(c, []int64{msg.InvId}); err != nil {
 		return err
 	}
 
-	return e.kickTriageJobStateTask(c, msg.JobID)
+	return e.kickTriageJobStateTask(c, msg.JobId)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1868,7 +1868,7 @@ func (e *engineImpl) kickTriageJobStateTask(c context.Context, jobID string) err
 	err := e.cfg.Dispatcher.AddTask(c, &tq.Task{
 		DeduplicationKey: dedupKey,
 		ETA:              time.Unix(eta, 0),
-		Payload:          &internal.TriageJobStateTask{JobID: jobID},
+		Payload:          &internal.TriageJobStateTask{JobId: jobID},
 	})
 	if err != nil {
 		return err
@@ -1890,7 +1890,7 @@ func (e *engineImpl) kickTriageJobStateTask(c context.Context, jobID string) err
 // It looks at pending triggers and recently finished invocations and launches
 // new invocations (or schedules timers to do it later).
 func (e *engineImpl) triageJobStateTask(c context.Context, tqTask proto.Message) error {
-	jobID := tqTask.(*internal.TriageJobStateTask).JobID
+	jobID := tqTask.(*internal.TriageJobStateTask).JobId
 
 	c = logging.SetField(c, "JobID", jobID)
 

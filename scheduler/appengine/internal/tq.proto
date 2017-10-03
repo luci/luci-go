@@ -21,7 +21,7 @@ package internal.tq;
 //
 // Queue: "read-project-config".
 message ReadProjectConfigTask {
-  string projectID = 1;
+  string project_id = 1;
 }
 
 
@@ -32,8 +32,8 @@ message ReadProjectConfigTask {
 //
 // Queue: "launches".
 message LaunchInvocationTask {
-  string jobID = 1;
-  int64 invID = 2;
+  string job_id = 1;
+  int64 inv_id = 2;
 }
 
 
@@ -55,7 +55,7 @@ message LaunchInvocationsBatchTask {
 //
 // Queue: "triages".
 message TriageJobStateTask {
-  string jobID = 1;
+  string job_id = 1;
 }
 
 
@@ -65,8 +65,8 @@ message TriageJobStateTask {
 //
 // Queue: "completions".
 message InvocationFinishedTask {
-  string jobID = 1;
-  int64 invID = 2;
+  string job_id = 1;
+  int64 inv_id = 2;
 
   // TODO(vadimsh): Add triggers.
 }

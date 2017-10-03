@@ -115,8 +115,8 @@ func TestEnqueueInvocations(t *testing.T) {
 		batch := tasks[0].Payload.(*internal.LaunchInvocationsBatchTask)
 		So(len(batch.Tasks), ShouldEqual, 2)
 		for _, subtask := range batch.Tasks {
-			So(subtask.JobID, ShouldEqual, "project/job-v2")
-			So(invIDs[subtask.InvID], ShouldBeTrue)
+			So(subtask.JobId, ShouldEqual, "project/job-v2")
+			So(invIDs[subtask.InvId], ShouldBeTrue)
 		}
 	})
 }
@@ -137,7 +137,7 @@ func TestTriageTaskDedup(t *testing.T) {
 			tasks := tq.GetScheduledTasks()
 			So(len(tasks), ShouldEqual, 1)
 			So(tasks[0].Task.ETA.Equal(epoch.Add(2*time.Second)), ShouldBeTrue)
-			So(tasks[0].Payload, ShouldResemble, &internal.TriageJobStateTask{JobID: "fake/job"})
+			So(tasks[0].Payload, ShouldResemble, &internal.TriageJobStateTask{JobId: "fake/job"})
 		})
 
 		Convey("a bunch of tasks, deduplicated by hitting memcache", func() {
@@ -152,7 +152,7 @@ func TestTriageTaskDedup(t *testing.T) {
 			tasks := tq.GetScheduledTasks()
 			So(len(tasks), ShouldEqual, 1)
 			So(tasks[0].Task.ETA.Equal(epoch.Add(2*time.Second)), ShouldBeTrue)
-			So(tasks[0].Payload, ShouldResemble, &internal.TriageJobStateTask{JobID: "fake/job"})
+			So(tasks[0].Payload, ShouldResemble, &internal.TriageJobStateTask{JobId: "fake/job"})
 		})
 
 		Convey("a bunch of tasks, deduplicated by hitting task queue", func() {
@@ -170,7 +170,7 @@ func TestTriageTaskDedup(t *testing.T) {
 			tasks := tq.GetScheduledTasks()
 			So(len(tasks), ShouldEqual, 1)
 			So(tasks[0].Task.ETA.Equal(epoch.Add(2*time.Second)), ShouldBeTrue)
-			So(tasks[0].Payload, ShouldResemble, &internal.TriageJobStateTask{JobID: "fake/job"})
+			So(tasks[0].Payload, ShouldResemble, &internal.TriageJobStateTask{JobId: "fake/job"})
 		})
 	})
 }
@@ -208,8 +208,8 @@ func TestLaunchInvocationTask(t *testing.T) {
 			return tq.ExecuteTask(c, tqtesting.Task{
 				Task: &taskqueue.Task{},
 				Payload: &internal.LaunchInvocationTask{
-					JobID: job.JobID,
-					InvID: inv.ID,
+					JobId: job.JobID,
+					InvId: inv.ID,
 				},
 			}, &taskqueue.RequestHeaders{TaskExecutionCount: execCount})
 		}
@@ -361,15 +361,15 @@ func TestForceInvocationV2(t *testing.T) {
 			// The sequence of tasks we've just performed.
 			So(len(tasks), ShouldEqual, 4)
 			So(tasks[0].Payload, ShouldResemble, &internal.LaunchInvocationsBatchTask{
-				Tasks: []*internal.LaunchInvocationTask{{JobID: "project/job-v2", InvID: expectedInvID}},
+				Tasks: []*internal.LaunchInvocationTask{{JobId: "project/job-v2", InvId: expectedInvID}},
 			})
 			So(tasks[1].Payload, ShouldResemble, &internal.LaunchInvocationTask{
-				JobID: "project/job-v2", InvID: expectedInvID,
+				JobId: "project/job-v2", InvId: expectedInvID,
 			})
 			So(tasks[2].Payload, ShouldResemble, &internal.InvocationFinishedTask{
-				JobID: "project/job-v2", InvID: expectedInvID,
+				JobId: "project/job-v2", InvId: expectedInvID,
 			})
-			So(tasks[3].Payload, ShouldResemble, &internal.TriageJobStateTask{JobID: "project/job-v2"})
+			So(tasks[3].Payload, ShouldResemble, &internal.TriageJobStateTask{JobId: "project/job-v2"})
 
 			// The invocation is in finished state.
 			inv, err = e.getInvocation(c, "project/job-v2", invID)
