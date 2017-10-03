@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/utils/tasktest"
 
-	"github.com/golang/protobuf/proto"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -74,15 +73,11 @@ func TestTriggerBuild(t *testing.T) {
 				},
 			})
 			So(ctl.Triggers, ShouldHaveLength, 1)
-			So(ctl.Triggers[0].ID, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef0")
-			p := internal.TriggerPayload{}
-			So(proto.Unmarshal(ctl.Triggers[0].Payload, &p), ShouldBeNil)
-			So(p, ShouldResemble, internal.TriggerPayload{
-				Gitiles: &internal.GitilesTrigger{
-					Repo:     "https://a.googlesource.com/b.git",
-					Ref:      "refs/heads/master",
-					Revision: "deadbeef0",
-				},
+			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef0")
+			So(ctl.Triggers[0].GetGitiles(), ShouldResemble, &internal.GitilesTriggerData{
+				Repo:     "https://a.googlesource.com/b.git",
+				Ref:      "refs/heads/master",
+				Revision: "deadbeef0",
 			})
 		})
 
@@ -133,8 +128,8 @@ func TestTriggerBuild(t *testing.T) {
 				},
 			})
 			So(ctl.Triggers, ShouldHaveLength, 2)
-			So(ctl.Triggers[0].ID, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/1.2.3@baadcafe0")
-			So(ctl.Triggers[1].ID, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef1")
+			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/1.2.3@baadcafe0")
+			So(ctl.Triggers[1].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef1")
 		})
 
 		Convey("do nothing at all if there are no changes", func() {

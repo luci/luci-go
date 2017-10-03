@@ -15,6 +15,7 @@
 package engine
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"time"
@@ -23,8 +24,9 @@ import (
 
 	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
+
+	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/schedule"
-	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
 // StateKind defines high-level state of the job. See JobState for full state
@@ -116,8 +118,8 @@ type JobState struct {
 	// InvocationID is ID of currently running invocation or 0 if none is running.
 	InvocationID int64 `gae:",noindex"`
 
-	// PendingTriggers stores outstanding triggers of a job.
-	PendingTriggers []task.Trigger `gae:",noindex"`
+	// PendingTriggersRaw stores serialized list of outstanding triggers of a job.
+	PendingTriggersRaw []byte `gae:",noindex"`
 }
 
 // IsExpectingInvocation returns true if the state machine accepts
@@ -135,7 +137,7 @@ func (s *JobState) IsRetrying() bool {
 	return (s.State == JobStateQueued || s.State == JobStateSlowQueue) && s.InvocationRetryCount != 0
 }
 
-// Equal reports whether two job states are equilent.
+// Equal reports whether two job states are equivalent.
 //
 // Equivalent is weaker than byte-equal.
 func (s *JobState) Equal(o *JobState) bool {
@@ -144,7 +146,7 @@ func (s *JobState) Equal(o *JobState) bool {
 		s.InvocationRetryCount == o.InvocationRetryCount &&
 		s.InvocationTime.Equal(o.InvocationTime) &&
 		s.Overruns == o.Overruns &&
-		equalTriggerLists(s.PendingTriggers, o.PendingTriggers) &&
+		bytes.Equal(s.PendingTriggersRaw, o.PendingTriggersRaw) &&
 		s.PrevTime.Equal(o.PrevTime) &&
 		s.State == o.State &&
 		s.TickNonce == o.TickNonce &&
@@ -173,7 +175,7 @@ func (a TickLaterAction) IsAction() bool { return true }
 type StartInvocationAction struct {
 	InvocationNonce int64
 	TriggeredBy     identity.Identity
-	Triggers        []task.Trigger
+	Triggers        []*internal.Trigger
 }
 
 // IsAction makes StartInvocationAction implement Action interface.
@@ -194,7 +196,7 @@ func (a RecordOverrunAction) IsAction() bool { return true }
 // EnqueueTriggersAction enqueues triggers of a job.
 // OnNewTriggers(triggers) will be called sometime later.
 type EnqueueTriggersAction struct {
-	Triggers []task.Trigger
+	Triggers []*internal.Trigger
 }
 
 // IsAction makes EnqueueTriggersAction implement Action interface.
@@ -203,7 +205,7 @@ func (a EnqueueTriggersAction) IsAction() bool { return true }
 // EnqueueBatchOfTriggersAction enqueues triggers of many jobs.
 // OnNewTriggers(triggers) will be called sometime later for each job.
 type EnqueueBatchOfTriggersAction struct {
-	Triggers        []task.Trigger
+	Triggers        []*internal.Trigger
 	TriggeredJobIDs []string
 }
 
@@ -231,11 +233,27 @@ type StateMachine struct {
 	Nonce    func() int64       // produces a series of nonces on demand
 
 	// Mutated.
-	State   JobState // state of the job, mutated in On* methods
-	Actions []Action // emitted actions
+	State           JobState            // state of the job, mutated in On* methods
+	PendingTriggers []*internal.Trigger // deserialized State.PendingTriggersRaw
+	Actions         []Action            // emitted actions
 
 	// For adhoc logging when debugging locally.
 	Context context.Context
+}
+
+// Pre must be called before a series of transitions.
+func (m *StateMachine) Pre() error {
+	list, err := unmarshalTriggersList(m.State.PendingTriggersRaw)
+	if err != nil {
+		return err
+	}
+	m.PendingTriggers = list
+	return nil
+}
+
+// Post must be called after a series of transition, but before reading State.
+func (m *StateMachine) Post() {
+	m.State.PendingTriggersRaw = marshalTriggersList(m.PendingTriggers)
 }
 
 // OnJobEnabled happens when a new job (never seen before) was discovered or
@@ -351,14 +369,14 @@ func (m *StateMachine) OnInvocationDone(invocationID int64) {
 
 // OnNewTriggers happens when some other job sends triggers to this one.
 // Thus, when this happens is uncorrelated to specific states of this job.
-func (m *StateMachine) OnNewTriggers(newTriggers []task.Trigger) {
-	known := stringset.New(len(m.State.PendingTriggers))
-	for _, t := range m.State.PendingTriggers {
-		known.Add(t.ID)
+func (m *StateMachine) OnNewTriggers(newTriggers []*internal.Trigger) {
+	known := stringset.New(len(m.PendingTriggers))
+	for _, t := range m.PendingTriggers {
+		known.Add(t.Id)
 	}
 	for _, nt := range newTriggers {
-		if known.Add(nt.ID) {
-			m.State.PendingTriggers = append(m.State.PendingTriggers, nt)
+		if known.Add(nt.Id) {
+			m.PendingTriggers = append(m.PendingTriggers, nt)
 		}
 	}
 	m.maybeSuspendOrResume()
@@ -467,13 +485,13 @@ func (m *StateMachine) maybeSuspendOrResume() {
 		m.State.State = JobStateScheduled
 	}
 
-	if len(m.State.PendingTriggers) > 0 && (m.State.State == JobStateScheduled || m.State.State == JobStateSuspended) {
+	if len(m.PendingTriggers) > 0 && (m.State.State == JobStateScheduled || m.State.State == JobStateSuspended) {
 		if !m.Schedule.IsAbsolute() {
 			m.resetTick() // will be set again when invocation ends
 		}
 		m.State.State = JobStateQueued
-		m.queueInvocation("", m.State.PendingTriggers)
-		m.State.PendingTriggers = nil
+		m.queueInvocation("", m.PendingTriggers)
+		m.PendingTriggers = nil
 	}
 }
 
@@ -485,7 +503,7 @@ func (m *StateMachine) resetTick() {
 
 // queueInvocation generates a new invocation nonce and asks engine to start
 // a new invocation.
-func (m *StateMachine) queueInvocation(triggeredBy identity.Identity, triggers []task.Trigger) {
+func (m *StateMachine) queueInvocation(triggeredBy identity.Identity, triggers []*internal.Trigger) {
 	m.State.InvocationTime = m.Now
 	m.State.InvocationNonce = m.Nonce()
 	m.State.InvocationRetryCount = 0

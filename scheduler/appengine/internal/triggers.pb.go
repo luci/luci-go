@@ -12,58 +12,222 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-type TriggerPayload struct {
-	Gitiles *GitilesTrigger `protobuf:"bytes,1,opt,name=gitiles" json:"gitiles,omitempty"`
+// Trigger can be emitted by triggering tasks (such as Gitiles tasks) and
+// consumed by triggered tasks (such as Buildbucket tasks).
+type Trigger struct {
+	// Unique in time identifier of the trigger.
+	//
+	// It is used to deduplicate and hence provide idempotency for adding
+	// a trigger. Must be provided by whoever emits the trigger.
+	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	// ID of a job that emitted this trigger.
+	//
+	// Set by the engine, can't be overridden.
+	JobId string `protobuf:"bytes,2,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
+	// ID of an invocation that emitted this trigger.
+	//
+	// Set by the engine, can't be overridden.
+	InvocationId int64 `protobuf:"varint,3,opt,name=invocation_id,json=invocationId" json:"invocation_id,omitempty"`
+	// Timestamp (in nanos since epoch) when the trigger was created.
+	//
+	// Set by the engine, can't be overridden.
+	Created int64 `protobuf:"varint,4,opt,name=created" json:"created,omitempty"`
+	// User friendly name for this trigger that shows up in UI.
+	//
+	// Can be provided by whoever emits the trigger. Doesn't have to be unique.
+	Title string `protobuf:"bytes,5,opt,name=title" json:"title,omitempty"`
+	// Optional HTTP link to display in UI.
+	//
+	// Can be provided by whoever emits the trigger. Doesn't have to be unique.
+	Url string `protobuf:"bytes,6,opt,name=url" json:"url,omitempty"`
+	// Actual trigger data that depends on type of the trigger.
+	//
+	// Types that are valid to be assigned to Payload:
+	//	*Trigger_Gitiles
+	Payload isTrigger_Payload `protobuf_oneof:"payload"`
 }
 
-func (m *TriggerPayload) Reset()                    { *m = TriggerPayload{} }
-func (m *TriggerPayload) String() string            { return proto.CompactTextString(m) }
-func (*TriggerPayload) ProtoMessage()               {}
-func (*TriggerPayload) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (m *Trigger) Reset()                    { *m = Trigger{} }
+func (m *Trigger) String() string            { return proto.CompactTextString(m) }
+func (*Trigger) ProtoMessage()               {}
+func (*Trigger) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
-func (m *TriggerPayload) GetGitiles() *GitilesTrigger {
+type isTrigger_Payload interface {
+	isTrigger_Payload()
+}
+
+type Trigger_Gitiles struct {
+	Gitiles *GitilesTriggerData `protobuf:"bytes,50,opt,name=gitiles,oneof"`
+}
+
+func (*Trigger_Gitiles) isTrigger_Payload() {}
+
+func (m *Trigger) GetPayload() isTrigger_Payload {
 	if m != nil {
-		return m.Gitiles
+		return m.Payload
 	}
 	return nil
 }
 
-type GitilesTrigger struct {
+func (m *Trigger) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *Trigger) GetJobId() string {
+	if m != nil {
+		return m.JobId
+	}
+	return ""
+}
+
+func (m *Trigger) GetInvocationId() int64 {
+	if m != nil {
+		return m.InvocationId
+	}
+	return 0
+}
+
+func (m *Trigger) GetCreated() int64 {
+	if m != nil {
+		return m.Created
+	}
+	return 0
+}
+
+func (m *Trigger) GetTitle() string {
+	if m != nil {
+		return m.Title
+	}
+	return ""
+}
+
+func (m *Trigger) GetUrl() string {
+	if m != nil {
+		return m.Url
+	}
+	return ""
+}
+
+func (m *Trigger) GetGitiles() *GitilesTriggerData {
+	if x, ok := m.GetPayload().(*Trigger_Gitiles); ok {
+		return x.Gitiles
+	}
+	return nil
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*Trigger) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _Trigger_OneofMarshaler, _Trigger_OneofUnmarshaler, _Trigger_OneofSizer, []interface{}{
+		(*Trigger_Gitiles)(nil),
+	}
+}
+
+func _Trigger_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*Trigger)
+	// payload
+	switch x := m.Payload.(type) {
+	case *Trigger_Gitiles:
+		b.EncodeVarint(50<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Gitiles); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("Trigger.Payload has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _Trigger_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*Trigger)
+	switch tag {
+	case 50: // payload.gitiles
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(GitilesTriggerData)
+		err := b.DecodeMessage(msg)
+		m.Payload = &Trigger_Gitiles{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _Trigger_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*Trigger)
+	// payload
+	switch x := m.Payload.(type) {
+	case *Trigger_Gitiles:
+		s := proto.Size(x.Gitiles)
+		n += proto.SizeVarint(50<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
+}
+
+// GitilesTriggerData is payload of triggers emitted by Gitiles tasks.
+type GitilesTriggerData struct {
 	Repo string `protobuf:"bytes,1,opt,name=repo" json:"repo,omitempty"`
 	// ref is full ref name like refs/heads/master.
 	Ref      string `protobuf:"bytes,2,opt,name=ref" json:"ref,omitempty"`
 	Revision string `protobuf:"bytes,3,opt,name=revision" json:"revision,omitempty"`
 }
 
-func (m *GitilesTrigger) Reset()                    { *m = GitilesTrigger{} }
-func (m *GitilesTrigger) String() string            { return proto.CompactTextString(m) }
-func (*GitilesTrigger) ProtoMessage()               {}
-func (*GitilesTrigger) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (m *GitilesTriggerData) Reset()                    { *m = GitilesTriggerData{} }
+func (m *GitilesTriggerData) String() string            { return proto.CompactTextString(m) }
+func (*GitilesTriggerData) ProtoMessage()               {}
+func (*GitilesTriggerData) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
 
-func (m *GitilesTrigger) GetRepo() string {
+func (m *GitilesTriggerData) GetRepo() string {
 	if m != nil {
 		return m.Repo
 	}
 	return ""
 }
 
-func (m *GitilesTrigger) GetRef() string {
+func (m *GitilesTriggerData) GetRef() string {
 	if m != nil {
 		return m.Ref
 	}
 	return ""
 }
 
-func (m *GitilesTrigger) GetRevision() string {
+func (m *GitilesTriggerData) GetRevision() string {
 	if m != nil {
 		return m.Revision
 	}
 	return ""
 }
 
+// TriggerList is what we store in datastore entities.
+type TriggerList struct {
+	Triggers []*Trigger `protobuf:"bytes,1,rep,name=triggers" json:"triggers,omitempty"`
+}
+
+func (m *TriggerList) Reset()                    { *m = TriggerList{} }
+func (m *TriggerList) String() string            { return proto.CompactTextString(m) }
+func (*TriggerList) ProtoMessage()               {}
+func (*TriggerList) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+
+func (m *TriggerList) GetTriggers() []*Trigger {
+	if m != nil {
+		return m.Triggers
+	}
+	return nil
+}
+
 func init() {
-	proto.RegisterType((*TriggerPayload)(nil), "internal.triggers.TriggerPayload")
-	proto.RegisterType((*GitilesTrigger)(nil), "internal.triggers.GitilesTrigger")
+	proto.RegisterType((*Trigger)(nil), "internal.triggers.Trigger")
+	proto.RegisterType((*GitilesTriggerData)(nil), "internal.triggers.GitilesTriggerData")
+	proto.RegisterType((*TriggerList)(nil), "internal.triggers.TriggerList")
 }
 
 func init() {
@@ -71,18 +235,25 @@ func init() {
 }
 
 var fileDescriptor1 = []byte{
-	// 195 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x64, 0x8e, 0x3d, 0x6b, 0xc3, 0x30,
-	0x10, 0x86, 0x71, 0x5d, 0xfa, 0xa1, 0x82, 0x69, 0x35, 0x99, 0x4e, 0xad, 0xa7, 0x4e, 0x12, 0xb4,
-	0x63, 0x97, 0x6e, 0x9d, 0x02, 0xc1, 0xe4, 0x0f, 0x28, 0xf6, 0x45, 0x3e, 0x90, 0x75, 0xe2, 0x24,
-	0x07, 0xf2, 0xef, 0x43, 0xe4, 0x38, 0x10, 0xb2, 0xbd, 0xf7, 0x3e, 0xf7, 0x1c, 0x27, 0xfe, 0x2c,
-	0xa9, 0x6e, 0x60, 0x1a, 0x71, 0x1a, 0x15, 0xb1, 0xd5, 0x6e, 0xea, 0x50, 0xc7, 0x6e, 0x80, 0x7e,
-	0x72, 0xc0, 0xda, 0x84, 0x00, 0xde, 0xa2, 0x07, 0x8d, 0x3e, 0x01, 0x7b, 0xe3, 0x74, 0x62, 0xb4,
-	0x16, 0x38, 0xaa, 0xc0, 0x94, 0x48, 0xbe, 0x2d, 0x40, 0x2d, 0xa0, 0x59, 0x89, 0x6a, 0x33, 0xe7,
-	0xb5, 0x39, 0x38, 0x32, 0xbd, 0xfc, 0x15, 0x8f, 0x16, 0x13, 0x3a, 0x88, 0x75, 0xf1, 0x51, 0x7c,
-	0xbd, 0x7c, 0x7f, 0xaa, 0x1b, 0x4d, 0xfd, 0xcf, 0x1b, 0x67, 0xb5, 0x5d, 0x8c, 0xa6, 0x15, 0xd5,
-	0x35, 0x92, 0x52, 0xdc, 0x33, 0x04, 0xca, 0xb7, 0x9e, 0xdb, 0x9c, 0xe5, 0xab, 0x28, 0x19, 0x76,
-	0xf5, 0x5d, 0xae, 0x4e, 0x51, 0xbe, 0x8b, 0x27, 0x86, 0x3d, 0x46, 0x24, 0x5f, 0x97, 0xb9, 0xbe,
-	0xcc, 0xdb, 0x87, 0xfc, 0xfc, 0xcf, 0x31, 0x00, 0x00, 0xff, 0xff, 0x79, 0x4e, 0x10, 0x87, 0x00,
-	0x01, 0x00, 0x00,
+	// 316 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x51, 0xcf, 0x4b, 0xe3, 0x40,
+	0x14, 0xde, 0x34, 0x6d, 0xd3, 0xbe, 0xee, 0x2e, 0xbb, 0x83, 0xc2, 0xd0, 0x53, 0xa8, 0x08, 0x39,
+	0x25, 0x50, 0xc1, 0xb3, 0x8a, 0xa2, 0x05, 0x4f, 0x41, 0xbc, 0xca, 0x34, 0xf3, 0x4c, 0x5f, 0x99,
+	0xce, 0x84, 0xc9, 0xa4, 0xe0, 0x1f, 0xec, 0xff, 0x21, 0x99, 0x26, 0xf5, 0x50, 0x6f, 0xdf, 0xaf,
+	0x79, 0x7c, 0x1f, 0x03, 0x37, 0xa5, 0x49, 0x8b, 0x8d, 0x35, 0x3b, 0x6a, 0x76, 0xa9, 0xb1, 0x65,
+	0xa6, 0x9a, 0x82, 0xb2, 0xba, 0xd8, 0xa0, 0x6c, 0x14, 0xda, 0x4c, 0x54, 0x15, 0xea, 0x92, 0x34,
+	0x66, 0xa4, 0x1d, 0x5a, 0x2d, 0x54, 0xe6, 0x2c, 0x95, 0x25, 0xda, 0x3a, 0xad, 0xac, 0x71, 0x86,
+	0xfd, 0xef, 0x8d, 0xb4, 0x37, 0x16, 0x9f, 0x01, 0x44, 0x2f, 0x07, 0xc2, 0xfe, 0xc2, 0x80, 0x24,
+	0x0f, 0xe2, 0x20, 0x99, 0xe6, 0x03, 0x92, 0xec, 0x1c, 0xc6, 0x5b, 0xb3, 0x7e, 0x23, 0xc9, 0x07,
+	0x5e, 0x1b, 0x6d, 0xcd, 0x7a, 0x25, 0xd9, 0x05, 0xfc, 0x21, 0xbd, 0x37, 0x85, 0x70, 0x64, 0x74,
+	0xeb, 0x86, 0x71, 0x90, 0x84, 0xf9, 0xef, 0x6f, 0x71, 0x25, 0x19, 0x87, 0xa8, 0xb0, 0x28, 0x1c,
+	0x4a, 0x3e, 0xf4, 0x76, 0x4f, 0xd9, 0x19, 0x8c, 0x1c, 0x39, 0x85, 0x7c, 0x74, 0x38, 0xea, 0x09,
+	0xfb, 0x07, 0x61, 0x63, 0x15, 0x1f, 0x7b, 0xad, 0x85, 0xec, 0x16, 0xa2, 0x92, 0x1c, 0x29, 0xac,
+	0xf9, 0x32, 0x0e, 0x92, 0xd9, 0xf2, 0x32, 0x3d, 0xa9, 0x9f, 0x3e, 0x1e, 0x12, 0xdd, 0x82, 0x7b,
+	0xe1, 0xc4, 0xd3, 0xaf, 0xbc, 0x7f, 0x77, 0x37, 0x85, 0xa8, 0x12, 0x1f, 0xca, 0x08, 0xb9, 0x78,
+	0x05, 0x76, 0x9a, 0x65, 0x0c, 0x86, 0x16, 0x2b, 0xd3, 0x6d, 0xf6, 0xb8, 0x6d, 0x62, 0xf1, 0xbd,
+	0x9b, 0xdc, 0x42, 0x36, 0x87, 0x89, 0xc5, 0x3d, 0xd5, 0x64, 0xb4, 0xdf, 0x3a, 0xcd, 0x8f, 0x7c,
+	0xf1, 0x00, 0xb3, 0xee, 0xe0, 0x33, 0xd5, 0x8e, 0x5d, 0xc3, 0xa4, 0xef, 0xc6, 0x83, 0x38, 0x4c,
+	0x66, 0xcb, 0xf9, 0x0f, 0xad, 0xbb, 0x17, 0xf9, 0x31, 0xbb, 0x1e, 0xfb, 0x0f, 0xba, 0xfa, 0x0a,
+	0x00, 0x00, 0xff, 0xff, 0x16, 0x02, 0xff, 0x05, 0xe4, 0x01, 0x00, 0x00,
 }
