@@ -16,6 +16,7 @@ package common
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -53,6 +54,8 @@ type Console struct {
 	ManifestName string
 	// URL is the URL to the luci-config definition of this console.
 	URL string
+	// FaviconURL is the URL to the favicon to be displayed on this console's page.
+	FaviconURL string
 	// Revision is the luci-config reivision from when this Console was retrieved.
 	Revision string
 	// Builders is a list of universal builder IDs.  This is indexed.
@@ -83,9 +86,24 @@ func (con *Console) GetProjectName() string {
 	return con.Parent.StringID()
 }
 
+// validateFaviconURL checks to see if the URL is well-formed and the host is in
+// the whitelist.
+func validateFaviconURL(faviconURL string) error {
+	parsedFaviconURL, err := url.Parse(faviconURL)
+	switch {
+	case err != nil:
+		return err
+	case parsedFaviconURL.Hostname() != "storage.googleapis.com":
+		return fmt.Errorf("%q is not a valid FaviconURL hostname",
+			parsedFaviconURL.Hostname())
+	default:
+		return nil
+	}
+}
+
 // NewConsole creates a fully populated console out of the luci-config proto
 // definition of a console.
-func NewConsole(project *datastore.Key, URL, revision string, con *config.Console) *Console {
+func NewConsole(project *datastore.Key, URL, revision, faviconURL string, con *config.Console) *Console {
 	return &Console{
 		Parent:       project,
 		ID:           con.ID,
@@ -94,6 +112,7 @@ func NewConsole(project *datastore.Key, URL, revision string, con *config.Consol
 		ManifestName: con.ManifestName,
 		Revision:     revision,
 		URL:          URL,
+		FaviconURL:   faviconURL,
 		Builders:     BuilderFromProto(con.Builders),
 		BuilderMetas: BuilderRefFromProto(con.Builders),
 	}
@@ -294,8 +313,13 @@ func updateProjectConsoles(c context.Context, projectName string, cfg *configInt
 		default:
 			return nil, errors.Annotate(err, "checking %s", pc.ID).Err()
 		}
+		faviconURL := con.FaviconURL
+		if err := validateFaviconURL(faviconURL); err != nil {
+			logging.WithError(err).Warningf(c, "FaviconURL is not a valid URL")
+			faviconURL = ""
+		}
 		URL := LuciConfigURL(c, cfg.ConfigSet, cfg.Path, cfg.Revision)
-		con = NewConsole(parentKey, URL, cfg.Revision, pc)
+		con = NewConsole(parentKey, URL, cfg.Revision, faviconURL, pc)
 		if err = datastore.Put(c, con); err != nil {
 			return nil, errors.Annotate(err, "saving %s", pc.ID).Err()
 		}
