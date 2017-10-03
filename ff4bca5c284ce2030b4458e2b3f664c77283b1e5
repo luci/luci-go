@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e1cf2acf_b78323e9",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-03T22:35:30Z",
+      "side": 1,
+      "message": "since you are going out of way to make nice, why not WithTreeDiff and WithoutTreeDiff constants instead of a function taking (bool enable) arg?",
+      "range": {
+        "startLine": 155,
+        "startChar": 18,
+        "endLine": 155,
+        "endChar": 30
+      },
+      "revId": "ff4bca5c284ce2030b4458e2b3f664c77283b1e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
