@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6835f801_aa88159d",
+        "filename": "scheduler/appengine/engine/controller.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-03T22:02:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b94a0f62_8d0ec88f",
+      "range": {
+        "startLine": 156,
+        "startChar": 1,
+        "endLine": 156,
+        "endChar": 44
+      },
+      "revId": "bf2cd0d9782f5997cc9b99d9885b1409965df5ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "26955806_8af9faf9",
         "filename": "scheduler/appengine/engine/engine.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "bf2cd0d9782f5997cc9b99d9885b1409965df5ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af6d7dc0_d568a7e0",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1636,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-03T22:02:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "26955806_8af9faf9",
+      "range": {
+        "startLine": 1636,
+        "startChar": 1,
+        "endLine": 1636,
+        "endChar": 33
+      },
+      "revId": "bf2cd0d9782f5997cc9b99d9885b1409965df5ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "e47b7ac7_978c85b2",
+        "filename": "scheduler/appengine/engine/engine_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 635,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-03T22:02:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a39eb221_273a297e",
+      "range": {
+        "startLine": 635,
+        "startChar": 13,
+        "endLine": 635,
+        "endChar": 39
+      },
+      "revId": "bf2cd0d9782f5997cc9b99d9885b1409965df5ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2a636ada_c9b09234",
         "filename": "scheduler/appengine/engine/invocation.go",
         "patchSetId": 3
@@ -91,6 +163,30 @@
       "revId": "bf2cd0d9782f5997cc9b99d9885b1409965df5ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66002844_a5febaef",
+        "filename": "scheduler/appengine/engine/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-03T22:02:59Z",
+      "side": 1,
+      "message": "I think so, unless we use map\u003c...\u003e fields.",
+      "parentUuid": "2a636ada_c9b09234",
+      "range": {
+        "startLine": 242,
+        "startChar": 2,
+        "endLine": 243,
+        "endChar": 66
+      },
+      "revId": "bf2cd0d9782f5997cc9b99d9885b1409965df5ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -137,6 +233,30 @@
       "revId": "bf2cd0d9782f5997cc9b99d9885b1409965df5ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6456aa67_6c65cbfb",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-03T22:02:59Z",
+      "side": 1,
+      "message": "Yes :-/ oneof API in go generated code is horribly verbose",
+      "parentUuid": "3ad818f5_108d579a",
+      "range": {
+        "startLine": 181,
+        "startChar": 12,
+        "endLine": 181,
+        "endChar": 37
+      },
+      "revId": "bf2cd0d9782f5997cc9b99d9885b1409965df5ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
