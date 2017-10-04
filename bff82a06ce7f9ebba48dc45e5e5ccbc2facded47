@@ -70,6 +70,30 @@
       "revId": "bff82a06ce7f9ebba48dc45e5e5ccbc2facded47",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a669ee9c_4423baf7",
+        "filename": "milo/frontend/appengine/static/common/css/console.css",
+        "patchSetId": 9
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-04T19:24:34Z",
+      "side": 1,
+      "message": "Ah ok, I see your point. I\u0027ll shrink it down to 1.6em by 1.6em (it\u0027s the same thing since font size is 10px, but maintains scalability, thoughts?).",
+      "parentUuid": "8aa59db7_a83a7ed7",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 43,
+        "endChar": 14
+      },
+      "revId": "bff82a06ce7f9ebba48dc45e5e5ccbc2facded47",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
