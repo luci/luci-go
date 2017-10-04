@@ -26,6 +26,8 @@ import (
 )
 
 func TestValidation(t *testing.T) {
+	t.Parallel()
+
 	Convey(`Test Environment for validateProjectConfig`, t, func() {
 		testValidation := func(env, config, expectFormat string, expectArgs ...interface{}) {
 			Convey(env, func() {

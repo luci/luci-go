@@ -17,15 +17,16 @@ package notify
 import (
 	"context"
 	"testing"
+	"time"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/mail"
 	"go.chromium.org/gae/service/user"
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/data/stringset"
 
 	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
-	"go.chromium.org/luci/luci_notify/buildbucket"
 	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/testutil"
 
@@ -41,30 +42,32 @@ func extractNotifiers(c context.Context, cfgName string, cfg *notifyConfig.Proje
 	return notifiers
 }
 
-func dummyBuildInfo(createTime int64, result string) *buildbucket.BuildInfo {
-	return testutil.CreateTestBuild(createTime, "test.bucket", "test-builder", result)
+func dummyBuildInfo(creationTime time.Time, status buildbucket.Status) *buildbucket.Build {
+	return testutil.TestBuild(creationTime, "test.bucket", "test-builder", status)
 }
 
 func TestNotification(t *testing.T) {
+	t.Parallel()
+
 	Convey(`Test Environment for Notification`, t, func() {
 		cfgName := "basic"
 		cfg, err := testutil.LoadProjectConfig(cfgName)
 		So(err, ShouldBeNil)
 		c := memory.UseWithAppID(context.Background(), "dev~luci-notify")
 		notifiers := extractNotifiers(c, cfgName, cfg)
-		goodBuild := dummyBuildInfo(testutil.Timestamp(2015, 2, 3, 12, 55, 2), "SUCCESS")
-		badBuild := dummyBuildInfo(testutil.Timestamp(2015, 2, 3, 12, 56, 2), "FAILURE")
-		oldBuild := dummyBuildInfo(testutil.Timestamp(2013, 5, 6, 4, 12, 55), "SUCCESS")
+		goodBuild := dummyBuildInfo(time.Date(2015, 2, 3, 12, 55, 2, 0, time.UTC), buildbucket.StatusSuccess)
+		badBuild := dummyBuildInfo(time.Date(2015, 2, 3, 12, 56, 2, 0, time.UTC), buildbucket.StatusFailure)
+		oldBuild := dummyBuildInfo(time.Date(2013, 5, 6, 4, 12, 55, 0, time.UTC), buildbucket.StatusSuccess)
 		goodBuilder := &Builder{
-			LastBuildTime:   testutil.Timestamp(2015, 2, 3, 12, 54, 3),
-			LastBuildResult: "SUCCESS",
+			StatusTime: time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC),
+			Status:     buildbucket.StatusSuccess,
 		}
 		badBuilder := &Builder{
-			LastBuildTime:   testutil.Timestamp(2015, 2, 3, 12, 54, 3),
-			LastBuildResult: "FAILURE",
+			StatusTime: time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC),
+			Status:     buildbucket.StatusFailure,
 		}
 
-		test := func(build *buildbucket.BuildInfo, builder *Builder, emailExpect ...string) {
+		test := func(build *buildbucket.Build, builder *Builder, emailExpect ...string) {
 			// Test creating the notification.
 			n := CreateNotification(c, notifiers, build, builder)
 			So(n, ShouldNotBeNil)
@@ -85,7 +88,7 @@ func TestNotification(t *testing.T) {
 		}
 
 		Convey(`empty`, func() {
-			creationNoneTest := func(build *buildbucket.BuildInfo, builder *Builder) {
+			creationNoneTest := func(build *buildbucket.Build, builder *Builder) {
 				n := CreateNotification(c, []*config.Notifier{}, build, builder)
 				So(n, ShouldBeNil)
 			}

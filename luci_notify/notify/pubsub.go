@@ -15,20 +15,37 @@
 package notify
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/buildbucket"
+	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/luci_notify/buildbucket"
 	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/server/router"
 )
 
 var errAccessDenied = fmt.Errorf("access to build denied")
+
+// IsBuildAllowed returns true if luci-notify is allowed to handle b.
+func isBuildAllowed(b *buildbucket.Build) bool {
+	// TODO(mknyszek): Do a real ACL check here on whether the service should
+	// be allowed to process the build. This is a conservative solution for now
+	// which ensures that the build is public.
+	tags := strpair.ParseMap(b.Tags["swarming_tag"])
+	return tags.Get("allow_milo") == "1"
+}
+
+func getBuilderID(b *buildbucket.Build) string {
+	return fmt.Sprintf("buildbucket/%s/%s", b.Bucket, b.Builder)
+}
 
 // handleBuild processes a build recieved via HTTP request (PubSub).
 //
@@ -39,22 +56,23 @@ var errAccessDenied = fmt.Errorf("access to build denied")
 // Errors should only be propagated if they prevent forward progress. If they do not,
 // simply log the error and continue.
 func handleBuild(c context.Context, r *http.Request) error {
-	build, err := buildbucket.ExtractBuildInfo(c, r)
+	build, err := ExtractBuild(c, r)
 	switch {
 	case err != nil:
 		return err
-	case !build.IsAllowed():
+	case !isBuildAllowed(build):
 		return errAccessDenied
-	case !build.IsLUCI():
+	case !strings.HasPrefix(build.Bucket, "luci."):
 		logging.Infof(c, "Received build that isn't part of LUCI, ignoring...")
 		return nil
-	case build.Build.Status != "COMPLETED":
+	case !build.Status.Completed():
 		logging.Infof(c, "Received build that hasn't completed yet, ignoring...")
 		return nil
 	}
 
-	logging.Infof(c, "Finding config for %q, %s", build.BuilderID(), build.Build.Result)
-	notifiers, err := config.LookupNotifiers(c, build)
+	builderID := getBuilderID(build)
+	logging.Infof(c, "Finding config for %q, %s", builderID, build.Status)
+	notifiers, err := config.LookupNotifiers(c, builderID)
 	if err != nil {
 		return errors.Annotate(err, "looking up notifiers").Err()
 	}
@@ -66,7 +84,7 @@ func handleBuild(c context.Context, r *http.Request) error {
 	// LookupBuilder updates the datastore, so don't do this until we've already
 	// looked up notifiers to avoid tracking state for a builder we don't have a
 	// notifier for.
-	builder, err := LookupBuilder(c, build)
+	builder, err := LookupBuilder(c, builderID, build)
 	if err != nil {
 		return errors.Annotate(err, "looking up builder").Err()
 	}
@@ -77,6 +95,12 @@ func handleBuild(c context.Context, r *http.Request) error {
 		logging.Infof(c, "Not notifying anybody...")
 		return nil
 	}
+	// FIXME(mknyszek): if email sending fails
+	// 1) a non-transient error is returned and a notification is not sent
+	// 2) even if retried, the builder status  is already updated
+	//    so next time this code runs, OnChanged notification won't be sent
+	// TODO: if a notification needs to be sent, create a push task for sending
+	// in the builder's transaction, instead of sending right away.
 	return notification.Dispatch(c)
 }
 
@@ -95,4 +119,30 @@ func BuildbucketPubSubHandler(ctx *router.Context) {
 		}
 	}
 	h.WriteHeader(http.StatusOK)
+}
+
+// ExtractBuild constructs a Build from the PubSub HTTP request.
+func ExtractBuild(c context.Context, r *http.Request) (*buildbucket.Build, error) {
+	// sent by pubsub.
+	// This struct is just convenient for unwrapping the json message
+	var msg struct {
+		Message struct {
+			Data []byte
+		}
+	}
+	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
+		return nil, errors.Annotate(err, "could not decode message").Err()
+	}
+
+	var message struct {
+		Build bbapi.ApiCommonBuildMessage
+	}
+	if err := json.Unmarshal(msg.Message.Data, &message); err != nil {
+		return nil, errors.Annotate(err, "could not parse pubsub message data").Err()
+	}
+	var build buildbucket.Build
+	if err := build.ParseMessage(&message.Build); err != nil {
+		return nil, errors.Annotate(err, "could not decode buildbucket build").Err()
+	}
+	return &build, nil
 }

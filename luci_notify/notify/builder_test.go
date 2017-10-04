@@ -17,37 +17,39 @@ package notify
 import (
 	"context"
 	"testing"
+	"time"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
 
-	"go.chromium.org/luci/luci_notify/buildbucket"
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/luci_notify/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestBuilderLookup(t *testing.T) {
+	t.Parallel()
+
 	Convey(`Test Environment for Builder Lookups`, t, func() {
 		c := memory.UseWithAppID(context.Background(), "dev~luci-notify")
 		bucket := "bucket.bucket"
-		oldestTime := testutil.Timestamp(2015, 1, 1, 1, 1, 1)
-		middleTime := testutil.Timestamp(2016, 6, 6, 6, 6, 6)
-		newestTime := testutil.Timestamp(2016, 12, 12, 12, 12, 12)
+		oldestTime := time.Date(2015, 1, 1, 1, 1, 1, 0, time.UTC)
+		middleTime := time.Date(2016, 6, 6, 6, 6, 6, 0, time.UTC)
+		newestTime := time.Date(2016, 12, 12, 12, 12, 12, 0, time.UTC)
 
-		checkLookup := func(build *buildbucket.BuildInfo, expectTime int64, expectResult string) {
-			builder, err := LookupBuilder(c, build)
+		checkLookup := func(build *buildbucket.Build, expectTime time.Time, expectStatus buildbucket.Status) {
+			builderID := getBuilderID(build)
+			builder, err := LookupBuilder(c, builderID, build)
 			So(err, ShouldBeNil)
-			So(builder.ID, ShouldResemble, build.BuilderID())
-			if expectTime != 0 {
-				So(builder.LastBuildTime, ShouldEqual, expectTime)
-			}
-			So(builder.LastBuildResult, ShouldResemble, expectResult)
+			So(builder.ID, ShouldResemble, builderID)
+			So(builder.Status, ShouldResemble, expectStatus)
+			So(builder.StatusTime, ShouldEqual, expectTime)
 		}
 
-		coldLookup := func(name string, time int64) *buildbucket.BuildInfo {
-			build := testutil.CreateTestBuild(time, bucket, name, "SUCCESS")
-			checkLookup(build, 0, "UNKNOWN")
+		coldLookup := func(builder string, buildTime time.Time) *buildbucket.Build {
+			build := testutil.TestBuild(buildTime, bucket, builder, buildbucket.StatusSuccess)
+			checkLookup(build, time.Time{}, StatusUnknown)
 			return build
 		}
 
@@ -56,23 +58,23 @@ func TestBuilderLookup(t *testing.T) {
 		})
 
 		Convey(`builder found`, func() {
-			build := testutil.CreateTestBuild(oldestTime, bucket, "there", "SUCCESS")
-			datastore.Put(c, NewBuilder(build.BuilderID(), build))
-			checkLookup(build, oldestTime, "SUCCESS")
+			build := testutil.TestBuild(oldestTime, bucket, "there", buildbucket.StatusSuccess)
+			datastore.Put(c, NewBuilder(getBuilderID(build), build))
+			checkLookup(build, oldestTime, buildbucket.StatusSuccess)
 		})
 
 		Convey(`repeated builder lookup`, func() {
 			build := coldLookup("maybe-there", oldestTime)
-			build.Build.CreatedTs = middleTime
-			checkLookup(build, oldestTime, "SUCCESS")
+			build.CreationTime = middleTime
+			checkLookup(build, oldestTime, buildbucket.StatusSuccess)
 		})
 
 		Convey(`out-of-order`, func() {
 			build := coldLookup("out-of-order", middleTime)
-			build.Build.CreatedTs = oldestTime
-			checkLookup(build, middleTime, "SUCCESS")
-			build.Build.CreatedTs = newestTime
-			checkLookup(build, middleTime, "SUCCESS")
+			build.CreationTime = oldestTime
+			checkLookup(build, middleTime, buildbucket.StatusSuccess)
+			build.CreationTime = newestTime
+			checkLookup(build, middleTime, buildbucket.StatusSuccess)
 		})
 	})
 }
