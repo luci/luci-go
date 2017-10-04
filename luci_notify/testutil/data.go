@@ -15,23 +15,18 @@
 package testutil
 
 import (
-	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"time"
 
-	"go.chromium.org/luci/luci_notify/buildbucket"
+	"go.chromium.org/luci/buildbucket"
 )
 
-// CreateTestBuild creates a minimal dummy buildbucket.BuildInfo struct for
+// TestBuild creates a minimal dummy buildbucket.Build struct for
 // use in testing.
-func CreateTestBuild(createTime int64, bucket, name, result string) *buildbucket.BuildInfo {
-	return &buildbucket.BuildInfo{
-		Build: bbapi.ApiCommonBuildMessage{
-			Bucket:    bucket,
-			CreatedTs: createTime,
-			Result:    result,
-		},
-		Hostname: "bb.example.com",
-		Parameters: buildbucket.BuildParameters{
-			BuilderName: name,
-		},
+func TestBuild(creationTime time.Time, bucket, builder string, status buildbucket.Status) *buildbucket.Build {
+	return &buildbucket.Build{
+		Bucket:       bucket,
+		Builder:      builder,
+		CreationTime: creationTime,
+		Status:       status,
 	}
 }
