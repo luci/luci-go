@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5b964187_1bec2c60",
+        "filename": "luci_notify/notify/notification.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-04T18:59:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fbbf137d_3b55ef31",
+      "range": {
+        "startLine": 118,
+        "startChar": 59,
+        "endLine": 118,
+        "endChar": 62
+      },
+      "revId": "8f4fd689e8620da00d0ed8864e615b05f716eb9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c5c0bda0_4b72b1e0",
         "filename": "luci_notify/notify/notification.go",
         "patchSetId": 3
@@ -39,6 +63,24 @@
       "revId": "8f4fd689e8620da00d0ed8864e615b05f716eb9e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd679f79_46a8f8ef",
+        "filename": "luci_notify/notify/notification.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-04T18:59:04Z",
+      "side": 1,
+      "message": "Done, I had the same thought. It was getting a bit ridiculous.",
+      "parentUuid": "c5c0bda0_4b72b1e0",
+      "revId": "8f4fd689e8620da00d0ed8864e615b05f716eb9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
