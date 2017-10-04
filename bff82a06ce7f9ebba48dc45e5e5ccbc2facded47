@@ -46,6 +46,30 @@
       "revId": "bff82a06ce7f9ebba48dc45e5e5ccbc2facded47",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8aa59db7_a83a7ed7",
+        "filename": "milo/frontend/appengine/static/common/css/console.css",
+        "patchSetId": 9
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-10-04T18:27:04Z",
+      "side": 1,
+      "message": "I prefer smaller icon, my concern is that if we have a lot of consoles (which we\u0027re likely going to have eventually), large icons are going to take more space and attract more attention (but what do I know about design :D).",
+      "parentUuid": "d751bfba_62b12a7d",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 43,
+        "endChar": 14
+      },
+      "revId": "bff82a06ce7f9ebba48dc45e5e5ccbc2facded47",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
