@@ -66,7 +66,7 @@ func TestNotification(t *testing.T) {
 
 		test := func(build *buildbucket.BuildInfo, builder *Builder, emailExpect ...string) {
 			// Test creating the notification.
-			n := CreateNotification(notifiers, build, builder)
+			n := CreateNotification(c, notifiers, build, builder)
 			So(n, ShouldNotBeNil)
 
 			// Put the recipients into sets so prevent flakiness.
@@ -86,7 +86,7 @@ func TestNotification(t *testing.T) {
 
 		Convey(`empty`, func() {
 			creationNoneTest := func(build *buildbucket.BuildInfo, builder *Builder) {
-				n := CreateNotification([]*config.Notifier{}, build, builder)
+				n := CreateNotification(c, []*config.Notifier{}, build, builder)
 				So(n, ShouldBeNil)
 			}
 			creationNoneTest(goodBuild, goodBuilder)
@@ -96,7 +96,7 @@ func TestNotification(t *testing.T) {
 		})
 
 		Convey(`out-of-order`, func() {
-			n := CreateNotification(notifiers, oldBuild, goodBuilder)
+			n := CreateNotification(c, notifiers, oldBuild, goodBuilder)
 			So(n, ShouldBeNil)
 		})
 
@@ -104,7 +104,7 @@ func TestNotification(t *testing.T) {
 			test(
 				goodBuild,
 				goodBuilder,
-				"test-success@example.com",
+				"test-example-success@google.com",
 			)
 		})
 
@@ -112,7 +112,7 @@ func TestNotification(t *testing.T) {
 			test(
 				badBuild,
 				badBuilder,
-				"test-failure@example.com",
+				"test-example-failure@google.com",
 			)
 		})
 
@@ -120,8 +120,8 @@ func TestNotification(t *testing.T) {
 			test(
 				badBuild,
 				goodBuilder,
-				"test-failure@example.com",
-				"test-change@example.com",
+				"test-example-failure@google.com",
+				"test-example-change@google.com",
 			)
 		})
 
@@ -129,8 +129,8 @@ func TestNotification(t *testing.T) {
 			test(
 				goodBuild,
 				badBuilder,
-				"test-success@example.com",
-				"test-change@example.com",
+				"test-example-success@google.com",
+				"test-example-change@google.com",
 			)
 		})
 	})
