@@ -208,7 +208,7 @@ message SwarmingTask {
 
 // BuildbucketTask specifies parameters of Buildbucket-based jobs.
 message BuildbucketTask {
-  // Server is URL of the bulildbucket service to use.
+  // Server is hostname of the buildbucket service to use.
   string server = 1;
   // Bucket defines what bucket to add the task to.
   string bucket = 2;

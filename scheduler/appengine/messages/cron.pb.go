@@ -566,7 +566,7 @@ func (m *SwarmingTask_IsolatedRef) GetNamespace() string {
 
 // BuildbucketTask specifies parameters of Buildbucket-based jobs.
 type BuildbucketTask struct {
-	// Server is URL of the bulildbucket service to use.
+	// Server is hostname of the buildbucket service to use.
 	Server string `protobuf:"bytes,1,opt,name=server" json:"server,omitempty"`
 	// Bucket defines what bucket to add the task to.
 	Bucket string `protobuf:"bytes,2,opt,name=bucket" json:"bucket,omitempty"`
