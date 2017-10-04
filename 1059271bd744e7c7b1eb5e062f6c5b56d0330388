@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ac93af75_f21d6133",
+        "filename": "appengine/gaemiddleware/standard/env.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-04T23:44:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a5c75e21_90146937",
+      "range": {
+        "startLine": 84,
+        "startChar": 1,
+        "endLine": 87,
+        "endChar": 78
+      },
+      "revId": "1059271bd744e7c7b1eb5e062f6c5b56d0330388",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "aff8c433_aa4d912e",
         "filename": "appengine/gaemiddleware/standard/env.go",
         "patchSetId": 5
@@ -45,6 +69,30 @@
       "revId": "1059271bd744e7c7b1eb5e062f6c5b56d0330388",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93367a6f_2a96e6c2",
+        "filename": "appengine/gaemiddleware/standard/env.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-04T23:44:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aff8c433_aa4d912e",
+      "range": {
+        "startLine": 123,
+        "startChar": 6,
+        "endLine": 123,
+        "endChar": 20
+      },
+      "revId": "1059271bd744e7c7b1eb5e062f6c5b56d0330388",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "29b1acc1_f9a7d9dc",
+        "filename": "logdog/appengine/cmd/coordinator/default/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-04T23:44:30Z",
+      "side": 1,
+      "message": "(See response below)",
+      "parentUuid": "e22a35f5_ea85ed83",
+      "range": {
+        "startLine": 25,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 70
+      },
+      "revId": "1059271bd744e7c7b1eb5e062f6c5b56d0330388",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5bd8d3c1_d5b3adb2",
         "filename": "logdog/appengine/cmd/coordinator/default/main.go",
         "patchSetId": 5
@@ -82,6 +154,30 @@
       "writtenOn": "2017-10-04T23:34:45Z",
       "side": 1,
       "message": "what\u0027s the point if this module basically does nothing? :)\n\nBut I don\u0027t mind, just looks odd.",
+      "range": {
+        "startLine": 26,
+        "startChar": 1,
+        "endLine": 26,
+        "endChar": 19
+      },
+      "revId": "1059271bd744e7c7b1eb5e062f6c5b56d0330388",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f29c6136_f4f73c1e",
+        "filename": "logdog/appengine/cmd/coordinator/default/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-04T23:44:30Z",
+      "side": 1,
+      "message": "My thought was:\n1) It does have handlers, and those do non-trivial work and can break/leak.\n2) It\u0027s pretty inexpensive, so why not?",
+      "parentUuid": "5bd8d3c1_d5b3adb2",
       "range": {
         "startLine": 26,
         "startChar": 1,
