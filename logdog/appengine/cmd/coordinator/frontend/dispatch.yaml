@@ -30,6 +30,11 @@ dispatch:
   - url: "*/admin/*"
     service: backend
 
+  # Direct all "_ah/..." links to "backend". Flex does not automatically capture
+  # these links.
+  - url: "*/_ah/*"
+    service: backend
+
   # Auth groups DB changes are pushed through "backend".
   - url: "*/auth/pubsub/*"
     service: backend
