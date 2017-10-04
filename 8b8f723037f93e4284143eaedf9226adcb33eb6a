@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d1033b8e_f207fe38",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-04T18:55:06Z",
+      "side": 1,
+      "message": "Ah hah, I hadn\u0027t considered this.",
+      "range": {
+        "startLine": 100,
+        "startChar": 7,
+        "endLine": 101,
+        "endChar": 72
+      },
+      "revId": "8b8f723037f93e4284143eaedf9226adcb33eb6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
