@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "f09b34d4_d5589095",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-04T00:34:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cab49917_5673c1c7",
+      "range": {
+        "startLine": 160,
+        "startChar": 6,
+        "endLine": 160,
+        "endChar": 16
+      },
+      "revId": "195cd00512080813e2d6599fb1299bf63e4f4664",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3f3cab3c_03164189",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 1
@@ -120,6 +144,30 @@
     },
     {
       "key": {
+        "uuid": "ff7675b1_d3954e98",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-04T00:34:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "04857168_7e23395a",
+      "range": {
+        "startLine": 162,
+        "startChar": 89,
+        "endLine": 162,
+        "endChar": 93
+      },
+      "revId": "195cd00512080813e2d6599fb1299bf63e4f4664",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d68eccdb_6ab753cd",
         "filename": "common/api/gitiles/gitiles_test.go",
         "patchSetId": 1
@@ -163,6 +211,30 @@
       "revId": "195cd00512080813e2d6599fb1299bf63e4f4664",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "796c6ce5_f1c6f8f9",
+        "filename": "common/api/gitiles/proto.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-04T00:34:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b08697db_91003c95",
+      "range": {
+        "startLine": 41,
+        "startChar": 19,
+        "endLine": 41,
+        "endChar": 26
+      },
+      "revId": "195cd00512080813e2d6599fb1299bf63e4f4664",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

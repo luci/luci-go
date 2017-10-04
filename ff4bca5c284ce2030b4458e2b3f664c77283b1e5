@@ -22,6 +22,30 @@
       "revId": "ff4bca5c284ce2030b4458e2b3f664c77283b1e5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d99bdb98_477505f2",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-04T00:34:01Z",
+      "side": 1,
+      "message": "Done, but I didn\u0027t do WithoutTreeDiff (as I don\u0027t think we have a use case; if you want that behavior then don\u0027t pass WithTreeDiff :))",
+      "parentUuid": "e1cf2acf_b78323e9",
+      "range": {
+        "startLine": 155,
+        "startChar": 18,
+        "endLine": 155,
+        "endChar": 30
+      },
+      "revId": "ff4bca5c284ce2030b4458e2b3f664c77283b1e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
