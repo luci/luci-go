@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fbbf137d_3b55ef31",
+        "filename": "luci_notify/notify/notification.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-04T18:39:55Z",
+      "side": 1,
+      "message": "to be",
+      "range": {
+        "startLine": 118,
+        "startChar": 59,
+        "endLine": 118,
+        "endChar": 62
+      },
+      "revId": "8f4fd689e8620da00d0ed8864e615b05f716eb9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5c0bda0_4b72b1e0",
+        "filename": "luci_notify/notify/notification.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-04T18:39:55Z",
+      "side": 1,
+      "message": "L143 is 6-times nested, let\u0027s try to reduce it. Please use invert this condition and use continue",
+      "revId": "8f4fd689e8620da00d0ed8864e615b05f716eb9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
