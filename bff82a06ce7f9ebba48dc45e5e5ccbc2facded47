@@ -94,6 +94,30 @@
       "revId": "bff82a06ce7f9ebba48dc45e5e5ccbc2facded47",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc70a9ff_e6d204cb",
+        "filename": "milo/frontend/appengine/static/common/css/console.css",
+        "patchSetId": 9
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-10-04T19:29:31Z",
+      "side": 1,
+      "message": "You shouldn\u0027t be using relative sizes for images unless the image is in vector format (i.e. SVG) because you cannot easily scale them otherwise.",
+      "parentUuid": "a669ee9c_4423baf7",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 43,
+        "endChar": 14
+      },
+      "revId": "bff82a06ce7f9ebba48dc45e5e5ccbc2facded47",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
