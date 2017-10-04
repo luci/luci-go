@@ -23,46 +23,41 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/mail"
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/luci_notify/buildbucket"
+
 	"go.chromium.org/luci/luci_notify/config"
 )
 
 var emailTemplate = template.Must(template.New("email").Parse(`
-luci-notify has detected a new {{ .Build.Build.Result }} on builder "{{ .Build.Parameters.BuilderName }}".
+luci-notify has detected a new {{ .Build.Status }} on builder "{{ .Build.Builder }}".
 
 <table>
   <tr>
     <td>Previous result:</td>
-    <td>{{ .Builder.LastBuildResult }}</td>
+    <td>{{ .Builder.Status }}</td>
   </tr>
   <tr>
     <td>Bucket:</td>
-    <td>{{ .Build.Build.Bucket }}</td>
+    <td>{{ .Build.Bucket }}</td>
   </tr>
   <tr>
     <td>Created by:</td>
-    <td>{{ .Build.Build.CreatedBy }}</td>
+    <td>{{ .Build.CreatedBy }}</td>
   </tr>
   <tr>
     <td>Created at:</td>
-    <td>{{ .Build.CreatedTime.String }}</td>
+    <td>{{ .Build.CreationTime }}</td>
   </tr>
   <tr>
     <td>Finished at:</td>
-    <td>{{ .Build.CompletedTime.String }}</td>
+    <td>{{ .Build.CompletionTime }}</td>
   </tr>
-  {{ if eq .Build.Build.Result "FAILURE" }}
-  <tr>
-    <td>Failure reason:</td>
-    <td>{{ .Build.Build.FailureReason }}</td>
-  </tr>
-  {{ end }}
 </table>
 
-<a href="{{ .Build.Build.Url }}">Full details are available here.</a>`))
+<a href="{{ .Build.URL }}">Full details are available here.</a>`))
 
 // Notification represents a notification ready to be sent.
 //
@@ -79,7 +74,7 @@ type Notification struct {
 	//
 	// This is used primarily for constructing the content of the
 	// final notification for each communication channel.
-	Build *buildbucket.BuildInfo
+	Build *buildbucket.Build
 
 	// Builder is the Builder before Build was seen.
 	//
@@ -95,9 +90,9 @@ func (n *Notification) sendEmail(c context.Context) error {
 		return errors.Annotate(err, "constructing email body").Err()
 	}
 	subject := fmt.Sprintf(`[Build %s] Builder %s on %s`,
-		n.Build.Build.Result,
-		n.Build.Parameters.BuilderName,
-		n.Build.Build.Bucket)
+		n.Build.Status,
+		n.Build.Builder,
+		n.Build.Bucket)
 
 	return mail.Send(c, &mail.Message{
 		Sender:   "luci-notify <noreply@luci-notify-dev.appspotmail.com>",
@@ -108,15 +103,19 @@ func (n *Notification) sendEmail(c context.Context) error {
 }
 
 // shouldNotify is the predicate function for whether a trigger's conditions have been met.
-func shouldNotify(n *config.NotificationConfig, build *buildbucket.BuildInfo, builder *Builder) bool {
-	return (n.OnSuccess && build.Build.Result == "SUCCESS") ||
-		(n.OnFailure && build.Build.Result == "FAILURE") ||
-		(n.OnChange && builder.LastBuildResult != "UNKNOWN" &&
-			builder.LastBuildResult != build.Build.Result)
+func shouldNotify(n *config.NotificationConfig, oldStatus, newStatus buildbucket.Status) bool {
+	switch {
+	case n.OnSuccess && newStatus == buildbucket.StatusSuccess:
+	case n.OnFailure && newStatus == buildbucket.StatusFailure:
+	case n.OnChange && oldStatus != StatusUnknown && newStatus != oldStatus:
+	default:
+		return false
+	}
+	return true
 }
 
-// isAllowed returns true if the given recipient is allowed to be notified about the given build.
-func isAllowed(recipient string, build *buildbucket.BuildInfo) bool {
+// isRecipientAllowed returns true if the given recipient is allowed to be notified about the given build.
+func isRecipientAllowed(recipient string, build *buildbucket.Build) bool {
 	// TODO(mknyszek): Do a real ACL check here.
 	return strings.HasSuffix(recipient, "@google.com")
 }
@@ -126,8 +125,8 @@ func isAllowed(recipient string, build *buildbucket.BuildInfo) bool {
 // This function also checks whether the triggers specified in the Notifiers have been met, and
 // filters out recipients from the list of Notifiers appropriately. If there are no recipients to
 // send to, then no Notification is created.
-func CreateNotification(c context.Context, notifiers []*config.Notifier, build *buildbucket.BuildInfo, builder *Builder) *Notification {
-	if build.Build.CreatedTs <= builder.LastBuildTime {
+func CreateNotification(c context.Context, notifiers []*config.Notifier, build *buildbucket.Build, builder *Builder) *Notification {
+	if builder.StatusTime.After(build.CreationTime) {
 		// TODO(mknyszek): There must be something better than just ignoring it.
 		//
 		// This case is logged when looking up/updating Builder.
@@ -137,14 +136,14 @@ func CreateNotification(c context.Context, notifiers []*config.Notifier, build *
 	recipientSet := stringset.New(0)
 	for _, n := range notifiers {
 		for _, nc := range n.Notifications {
-			if !shouldNotify(&nc, build, builder) {
+			if !shouldNotify(&nc, builder.Status, build.Status) {
 				continue
 			}
 			for _, r := range nc.EmailRecipients {
-				if !isAllowed(r, build) {
+				if !isRecipientAllowed(r, build) {
 					logging.Warningf(c,
 						"Address %q is not allowed to be notified of build from %q",
-						r, build.BuilderID())
+						r, builder.ID)
 					continue
 				}
 				recipientSet.Add(r)
