@@ -15,6 +15,10 @@
 // Package gaesettings implements settings.Storage interface on top of GAE
 // datastore.
 //
+// By defualt, gaesettings must have its handlers installed into the "default"
+// AppEngine module, and must be running on an instance with read/write
+// datastore access.
+//
 // See go.chromium.org/luci/server/settings for more details.
 package gaesettings
 

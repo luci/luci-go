@@ -171,7 +171,7 @@ func init() {
 	// Setup HTTP routes.
 	r := router.New()
 
-	gaemiddleware.InstallHandlersWithMiddleware(r, base)
+	standard.InstallHandlersWithMiddleware(r, base)
 	globalDispatcher.InstallRoutes(r, base)
 
 	ui.InstallHandlers(r, base, ui.Config{

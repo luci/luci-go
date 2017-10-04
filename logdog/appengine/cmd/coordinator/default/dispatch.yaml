@@ -26,13 +26,12 @@ dispatch:
   - url: "*/rpcexplorer"
     service: static
 
-  # Direct all admin requests to "backend".
-  - url: "*/admin/*"
-    service: backend
+  ##
+  # Always route logdog.Logs RPCs to the "logs" module.
+  ##
 
-  # Auth groups DB changes are pushed through "backend".
-  - url: "*/auth/pubsub/*"
-    service: backend
+  - url: "*/prpc/logdog.Logs/*"
+    service: logs
 
   ##
   # Always route logdog.Services and logdog.Registration RPCs to the "services"
