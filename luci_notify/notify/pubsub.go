@@ -15,7 +15,6 @@
 package notify
 
 import (
-	"fmt"
 	"net/http"
 
 	"golang.org/x/net/context"
@@ -23,12 +22,11 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/router"
+
 	"go.chromium.org/luci/luci_notify/buildbucket"
 	"go.chromium.org/luci/luci_notify/config"
-	"go.chromium.org/luci/server/router"
 )
-
-var errAccessDenied = fmt.Errorf("access to build denied")
 
 // handleBuild processes a build recieved via HTTP request (PubSub).
 //
@@ -43,14 +41,15 @@ func handleBuild(c context.Context, r *http.Request) error {
 	switch {
 	case err != nil:
 		return err
-	case !build.IsAllowed():
-		return errAccessDenied
 	case !build.IsLUCI():
 		logging.Infof(c, "Received build that isn't part of LUCI, ignoring...")
 		return nil
 	case build.Build.Status != "COMPLETED":
 		logging.Infof(c, "Received build that hasn't completed yet, ignoring...")
 		return nil
+	}
+	if err = build.VerifyAllowed(c); err != nil {
+		return err
 	}
 
 	logging.Infof(c, "Finding config for %q, %s", build.BuilderID(), build.Build.Result)

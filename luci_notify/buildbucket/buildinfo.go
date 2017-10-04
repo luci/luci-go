@@ -25,6 +25,9 @@ import (
 
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/luci_config/common/cfgtypes"
+	"go.chromium.org/luci/luci_config/server/cfgclient/access"
+	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
 )
 
 // BuildParameters reflects the field ParametersJson in ApiCommonBuildMessage in
@@ -97,17 +100,29 @@ func (b *BuildInfo) IsLUCI() bool {
 	return strings.HasPrefix(b.Build.Bucket, "luci.")
 }
 
-// IsAllowed returns true if luci-notify is allowed to handle this build.
-func (b *BuildInfo) IsAllowed() bool {
-	// TODO(mknyszek): Do a real ACL check here on whether the service should
-	// be allowed to process the build. This is a conservative solution for now
-	// which ensures that the build is public.
+// VerifyAllowed returns true if luci-notify is allowed to handle this build.
+func (b *BuildInfo) VerifyAllowed(c context.Context) error {
 	for _, tag := range b.Build.Tags {
 		if tag == "swarming_tag:allow_milo:1" {
-			return true
+			return nil
 		}
 	}
-	return false
+	for _, tag := range b.Build.Tags {
+		if strings.HasPrefix(tag, "luci_project:") {
+			splitTag := strings.SplitN(tag, ":", 2)
+			if len(splitTag) != 2 {
+				return nil
+			}
+			projectName := cfgtypes.ProjectName(splitTag[1])
+			err := access.Check(c, backend.AsUser,
+				cfgtypes.ProjectConfigSet(projectName))
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+	return access.ErrNoAccess
 }
 
 // ExtractBuildInfo constructs a BuildInfo from the PubSub http request.

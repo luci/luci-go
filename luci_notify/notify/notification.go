@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"strings"
 
 	"golang.org/x/net/context"
 
@@ -113,6 +114,14 @@ func shouldNotify(n *config.NotificationConfig, build *buildbucket.BuildInfo, bu
 			builder.LastBuildResult != build.Build.Result)
 }
 
+// isAllowed returns true if the given recipient is allowed be notified about the given build.
+func isAllowed(recipient string, build *buildbucket.BuildInfo) bool {
+	// TODO(mknyszek): Do a real ACL check here.
+	// example.com here is used for testing.
+	return strings.HasSuffix(recipient, "@google.com") ||
+		strings.HasSuffix(recipient, "@example.com")
+}
+
 // CreateNotification consolidates recipients from a list of Notifiers and produces a Notification.
 //
 // This function also checks whether the triggers specified in the Notifiers have been met, and
@@ -131,7 +140,9 @@ func CreateNotification(notifiers []*config.Notifier, build *buildbucket.BuildIn
 		for _, nc := range n.Notifications {
 			if shouldNotify(&nc, build, builder) {
 				for _, r := range nc.EmailRecipients {
-					recipientSet.Add(r)
+					if isAllowed(r, build) {
+						recipientSet.Add(r)
+					}
 				}
 			}
 		}
