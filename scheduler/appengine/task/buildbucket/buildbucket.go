@@ -27,6 +27,7 @@ import (
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/gae/service/info"
+	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
@@ -178,7 +179,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 		if err != nil {
 			logging.Errorf(c, "failed parsing trigger's repo: %s", err)
 		} else {
-			tags = append(tags, "buildset:"+buildset)
+			tags = append(tags, "buildset:"+buildset.String())
 		}
 		tags = append(tags, "gitiles_ref:"+gitilesTrigger.Ref)
 	}
@@ -424,23 +425,23 @@ func maybeGetTrigger(c context.Context, ctl task.Controller, triggers []*interna
 	return prevDecoded
 }
 
-func makeBuildSet(t *internal.GitilesTriggerData) (string, error) {
+func makeBuildSet(t *internal.GitilesTriggerData) (bb.BuildSet, error) {
 	// TODO(tandrii): consider moving this function to a standalone buildset
 	// package once
 	// https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/677052/
 	// lands.
 	u, err := gitiles.NormalizeRepoURL(t.Repo)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	p, err := url.Parse(u)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	// Remove '/a/' from path.
 	if !strings.HasPrefix(p.Path, "/a/") {
-		return "", errors.New("gitiles.NormalizeRepoURL doesn't add '/a' any more.")
+		return nil, errors.New("gitiles.NormalizeRepoURL doesn't add '/a' any more.")
 	}
 	p.Path = p.Path[len("/a/"):]
-	return fmt.Sprintf("commit/gitiles/%s/%s/+/%s", p.Host, p.Path, t.Revision), nil
+	return &bb.GitilesCommit{p.Host, p.Path, t.Revision}, nil
 }
