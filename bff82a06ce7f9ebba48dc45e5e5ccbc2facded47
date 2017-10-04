@@ -22,6 +22,30 @@
       "revId": "bff82a06ce7f9ebba48dc45e5e5ccbc2facded47",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d751bfba_62b12a7d",
+        "filename": "milo/frontend/appengine/static/common/css/console.css",
+        "patchSetId": 9
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-04T16:05:34Z",
+      "side": 1,
+      "message": "Right, I figured that rather than have a low-res favicon (because we can control what we put in GCS), we instead have a relatively high resolution favicon (128x128) and have it get scaled down by the browser for the actual 16x16 tab favicon at the top. I like the idea of displaying the favicon next to the console name at a larger size, especially for the console preview.",
+      "parentUuid": "1146a3a1_84f02ba6",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 43,
+        "endChar": 14
+      },
+      "revId": "bff82a06ce7f9ebba48dc45e5e5ccbc2facded47",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
