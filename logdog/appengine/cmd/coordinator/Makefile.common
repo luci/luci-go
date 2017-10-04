@@ -70,6 +70,7 @@ Management targets:
   web: Builds static web content into the 'static' module.
 
 Service Targets for: $(subst $(space),$(comma),$(ALL_SERVICES))
+  upload: uploads all AppEngie
   upload-SERVICE: uploads an instance of the service, but doesn't migrate.
   switch: Switches all services over to the uploaded version.
 
@@ -78,6 +79,7 @@ Cluster Targets for: $(subst $(space),$(comma),$(ALL_GKE_CLUSTERS))
     additional "kubectl" commands will be required to verify correctness,
     migrate traffic, and remove old instances.
   switch-CLUSTER: switch active image over to the last uploaded image.
+  rollback-CLUSTER: rollback cluster to the last "stable" image.
   promote-CLUSTER: promote last uploaded image to "stable".
   status-CLUSTER: show status for the specified cluster.
 
@@ -189,6 +191,15 @@ $(addprefix switch-,$(ALL_GKE_CLUSTERS)): switch-%:
 			-v \
 			-C $(GKE_SERVICES_YAML) \
 			switch \
+				-K $*
+
+.PHONY: $(addprefix rollback-,$(ALL_GKE_CLUSTERS))
+$(addprefix rollback-,$(ALL_GKE_CLUSTERS)): rollback-%:
+	cd $(APP_DIR) && \
+		gke.py \
+			-v \
+			-C $(GKE_SERVICES_YAML) \
+			rollback \
 				-K $*
 
 .PHONY: $(addprefix promote-,$(ALL_GKE_CLUSTERS))
