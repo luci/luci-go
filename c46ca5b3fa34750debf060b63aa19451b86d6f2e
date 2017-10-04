@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bbf8f96d_d7b3eed4",
+        "filename": "luci_notify/buildbucket/buildinfo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-04T06:07:49Z",
+      "side": 1,
+      "message": "this is one of those hacky parts of Milo codebase and I\u0027d prefer it not to proliferate. The @google.com check is good enough until access API is implemented.",
+      "range": {
+        "startLine": 111,
+        "startChar": 2,
+        "endLine": 118,
+        "endChar": 43
+      },
+      "revId": "c46ca5b3fa34750debf060b63aa19451b86d6f2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "99656f61_d5cc6d4e",
+        "filename": "luci_notify/notify/notification.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-04T06:07:49Z",
+      "side": 1,
+      "message": "strictly speaking, we don\u0027t control example.com and cannot trust that nobody will register an email address there.\n\ncan we use example@google.com instead?",
+      "range": {
+        "startLine": 122,
+        "startChar": 2,
+        "endLine": 122,
+        "endChar": 46
+      },
+      "revId": "c46ca5b3fa34750debf060b63aa19451b86d6f2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19f85755_725cf36d",
+        "filename": "luci_notify/notify/notification.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-04T06:07:49Z",
+      "side": 1,
+      "message": "please log a warning otherwise",
+      "revId": "c46ca5b3fa34750debf060b63aa19451b86d6f2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
