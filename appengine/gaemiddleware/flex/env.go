@@ -20,10 +20,6 @@ import (
 	"net/http"
 	"sync"
 
-	authClient "go.chromium.org/luci/appengine/gaeauth/client"
-	"go.chromium.org/luci/appengine/gaeauth/server"
-	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
-	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -31,6 +27,11 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/caching"
+
+	authClient "go.chromium.org/luci/appengine/gaeauth/client"
+	gaeauth "go.chromium.org/luci/appengine/gaeauth/server"
+	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
+	"go.chromium.org/luci/appengine/gaemiddleware"
 
 	"go.chromium.org/gae/impl/cloud"
 
@@ -71,7 +72,7 @@ var (
 	//
 	// Used in prod contexts only.
 	globalAuthConfig = auth.Config{
-		DBProvider:          authdb.NewDBCache(server.GetAuthDB),
+		DBProvider:          authdb.NewDBCache(gaeauth.GetAuthDB),
 		Signer:              gaesigner.Signer{},
 		AccessTokenProvider: authClient.GetAccessToken,
 		AnonymousTransport:  func(context.Context) http.RoundTripper { return http.DefaultTransport },

@@ -12,24 +12,29 @@ is responsible for:
 * Accepting stream registrations from **Collector** instances.
 * Dispatching archival tasks to **Archivist** instances.
 
-## Modules
+## Services
 
 A **Coordinator** occupies the AppEngine space of a given cloud project, and
 assumes ownership of that project's resources. It is composed of several
-cooperative AppEngine modules.
+cooperative AppEngine services.
 
 ### Default
 
-The [default](vmuser/) module exposes the
+The [default](default/) service handles basic LUCI services. Most other requests are
+redirected to other services by [dispatch.yaml](default/dispatch.yaml).
+
+### Logs
+
+The [logs](logs/) service exposes the
 [Logs API](../../../api/endpoints/coordinator/logs/v1/) for log stream querying
 and consumption.
 
-It is currently an AppEngine Managed VM, since Managed VMs are the only type of
+It is a AppEngine Flex instance, since Flex is the only supported type of
 AppEngine instance that can use gRPC, and gRPC is needed to read from BigTable.
 
 ### Services
 
-The [services](services/) module exposes management endpoints to the instance's
+The [services](services/) service exposes management endpoints to the instance's
 microservices, notably the [Collector](../../../server/cmd/logdog_collector) and
 [Archivist](../../../server/cmd/logdog_archivist) microservices. These endpoints
 are used to coordinate the microservice-managed aspects of the log stream
@@ -37,12 +42,12 @@ lifecycle.
 
 ### Backend
 
-The [backend](backend/) module hosts the [Tumble](/tumble) journaled processing
+The [backend](backend/) service hosts the [Tumble](/tumble) journaled processing
 service, which handles log stream lifecycle transitions and deadlines.
 
 ### Static
 
-The [static](static/) module hosts static content, including:
+The [static](static/) service hosts static content, including:
 * The LogDog Web Application
 * The LogDog Lightweight Stream Viewer
 * `rpcexplorer`
