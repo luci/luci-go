@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-service: backend
+service: default
 runtime: go
 api_version: go1
-
-instance_class: F2
 
 inbound_services:
   - warmup
@@ -32,7 +30,11 @@ handlers:
   secure: always
   login: admin
 
-- url: "/.*"
+- url: "/admin/*"
   script: _go_app
   secure: always
   login: admin
+
+- url: "/.*"
+  script: _go_app
+  secure: always

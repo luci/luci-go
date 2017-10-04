@@ -21,6 +21,10 @@
 // This middleware configures the request environment to use GAE-based services
 // (like datastore via luci/gae package, logging and many more).
 //
+// For full functionality, the "default" module of a GAE application must be
+// running on an AppEngine Standard instance, and must have handlers installed
+// (via "standard.InstallHandlers").
+//
 // The minimal usage example (from GAE standard):
 //  import (
 //    ...

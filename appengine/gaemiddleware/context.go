@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/settings"
+	"go.chromium.org/luci/server/warmup"
 
 	"go.chromium.org/luci/appengine/gaesecrets"
 	"go.chromium.org/luci/appengine/gaesettings"
@@ -77,6 +78,10 @@ type Environment struct {
 	// MonitoringMiddleware, if not nil, is additional middleware to append to the
 	// end of the Base middleware chain to perform per-request monitoring.
 	MonitoringMiddleware router.Middleware
+
+	// ExtraHandlers, if not nil, is used to install additional handlers when
+	// InstallHandlers is called.
+	ExtraHandlers func(r *router.Router, base router.MiddlewareChain)
 }
 
 var (
@@ -95,7 +100,23 @@ var (
 // InstallHandlers installs handlers for an Environment's framework routes.
 //
 // See InstallHandlersWithMiddleware for more information.
-func (e *Environment) InstallHandlers(r *router.Router) { InstallHandlersWithMiddleware(r, e.Base()) }
+func (e *Environment) InstallHandlers(r *router.Router) {
+	e.InstallHandlersWithMiddleware(r, e.Base())
+}
+
+// InstallHandlersWithMiddleware installs handlers for an Environment's
+// framework routes.
+//
+// In addition to Environment-specific handlers, InstallHandlersWithMiddleware
+// installs:
+//  * Warmup Handler (warmup)
+func (e *Environment) InstallHandlersWithMiddleware(r *router.Router, base router.MiddlewareChain) {
+	warmup.InstallHandlers(r, base)
+
+	if e.ExtraHandlers != nil {
+		e.ExtraHandlers(r, base)
+	}
+}
 
 // With adds various production GAE LUCI services to the context.
 //
