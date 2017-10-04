@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1146a3a1_84f02ba6",
+        "filename": "milo/frontend/appengine/static/common/css/console.css",
+        "patchSetId": 9
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2017-10-04T06:31:48Z",
+      "side": 1,
+      "message": "There are multiple different favicon sizes in use today, but browsers still use 16x16px, that\u0027s what we should use here as well, otherwise the icon might be stretched and is going to look ugly.",
+      "range": {
+        "startLine": 42,
+        "startChar": 0,
+        "endLine": 43,
+        "endChar": 14
+      },
+      "revId": "bff82a06ce7f9ebba48dc45e5e5ccbc2facded47",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
