@@ -18,12 +18,14 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"strings"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/mail"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/luci_notify/buildbucket"
 	"go.chromium.org/luci/luci_notify/config"
 )
@@ -113,12 +115,18 @@ func shouldNotify(n *config.NotificationConfig, build *buildbucket.BuildInfo, bu
 			builder.LastBuildResult != build.Build.Result)
 }
 
+// isAllowed returns true if the given recipient is allowed to be notified about the given build.
+func isAllowed(recipient string, build *buildbucket.BuildInfo) bool {
+	// TODO(mknyszek): Do a real ACL check here.
+	return strings.HasSuffix(recipient, "@google.com")
+}
+
 // CreateNotification consolidates recipients from a list of Notifiers and produces a Notification.
 //
 // This function also checks whether the triggers specified in the Notifiers have been met, and
 // filters out recipients from the list of Notifiers appropriately. If there are no recipients to
 // send to, then no Notification is created.
-func CreateNotification(notifiers []*config.Notifier, build *buildbucket.BuildInfo, builder *Builder) *Notification {
+func CreateNotification(c context.Context, notifiers []*config.Notifier, build *buildbucket.BuildInfo, builder *Builder) *Notification {
 	if build.Build.CreatedTs <= builder.LastBuildTime {
 		// TODO(mknyszek): There must be something better than just ignoring it.
 		//
@@ -129,10 +137,17 @@ func CreateNotification(notifiers []*config.Notifier, build *buildbucket.BuildIn
 	recipientSet := stringset.New(0)
 	for _, n := range notifiers {
 		for _, nc := range n.Notifications {
-			if shouldNotify(&nc, build, builder) {
-				for _, r := range nc.EmailRecipients {
-					recipientSet.Add(r)
+			if !shouldNotify(&nc, build, builder) {
+				continue
+			}
+			for _, r := range nc.EmailRecipients {
+				if !isAllowed(r, build) {
+					logging.Warningf(c,
+						"Address %q is not allowed to be notified of build from %q",
+						r, build.BuilderID())
+					continue
 				}
+				recipientSet.Add(r)
 			}
 		}
 

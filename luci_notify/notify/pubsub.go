@@ -72,7 +72,7 @@ func handleBuild(c context.Context, r *http.Request) error {
 	}
 	logging.Debugf(c, "Got state: %v", builder)
 
-	notification := CreateNotification(notifiers, build, builder)
+	notification := CreateNotification(c, notifiers, build, builder)
 	if notification == nil {
 		logging.Infof(c, "Not notifying anybody...")
 		return nil
