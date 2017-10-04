@@ -45,7 +45,6 @@ func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
 			cmdGet(defaultAuthOpts),
 			cmdCancel(defaultAuthOpts),
 			cmdConvertBuilders,
-			cmdInconsistency(defaultAuthOpts),
 			subcommands.CmdHelp,
 		},
 	}
