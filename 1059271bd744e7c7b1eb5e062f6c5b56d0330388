@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "a5c75e21_90146937",
+        "filename": "appengine/gaemiddleware/standard/env.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-04T23:34:45Z",
+      "side": 1,
+      "message": "Please update this doc to mention that cron handlers _must_ be installed into standard GAE module: https://godoc.org/github.com/luci/luci-go/appengine/gaemiddleware\n\n(Would be nice to mention auth and admin stuff too, if possible).",
+      "range": {
+        "startLine": 84,
+        "startChar": 1,
+        "endLine": 87,
+        "endChar": 78
+      },
+      "revId": "1059271bd744e7c7b1eb5e062f6c5b56d0330388",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "aff8c433_aa4d912e",
         "filename": "appengine/gaemiddleware/standard/env.go",
         "patchSetId": 5
@@ -41,6 +64,29 @@
         "startChar": 0,
         "endLine": 25,
         "endChar": 70
+      },
+      "revId": "1059271bd744e7c7b1eb5e062f6c5b56d0330388",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5bd8d3c1_d5b3adb2",
+        "filename": "logdog/appengine/cmd/coordinator/default/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-04T23:34:45Z",
+      "side": 1,
+      "message": "what\u0027s the point if this module basically does nothing? :)\n\nBut I don\u0027t mind, just looks odd.",
+      "range": {
+        "startLine": 26,
+        "startChar": 1,
+        "endLine": 26,
+        "endChar": 19
       },
       "revId": "1059271bd744e7c7b1eb5e062f6c5b56d0330388",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
