@@ -16,6 +16,7 @@ package engine
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"time"
 
@@ -29,6 +30,10 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/tsmon/distribution"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/types"
 
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -57,6 +62,25 @@ func init() {
 		panic(err)
 	}
 }
+
+var (
+	metricInvocationsCompleted = metric.NewCounter(
+		"luci/scheduler/invocations/completed",
+		"Number of invocations that were completed.",
+		nil,
+		field.String("jobID"),
+		field.String("status"), // one of final statuses of task.Status enum.
+	)
+
+	metricInvocationsDurations = metric.NewNonCumulativeDistribution(
+		"luci/scheduler/invocations/durations",
+		"Durations of completed invocations (us).",
+		&types.MetricMetadata{Units: types.Milliseconds},
+		distribution.DefaultBucketer,
+		field.String("jobID"),
+		field.String("status"), // one of final statuses of task.Status enum.
+	)
+)
 
 // generateInvocationID is called within a transaction to pick a new Invocation
 // ID and ensure it isn't taken yet.
@@ -360,4 +384,18 @@ func cleanupUnreferencedInvocations(c context.Context, invs []*Invocation) {
 	if err := datastore.Delete(datastore.WithoutTransaction(c), keysToKill); err != nil {
 		logging.WithError(err).Warningf(c, "Invocation cleanup failed")
 	}
+}
+
+// onSavedCompletion reports invocation stats to monitoring.
+// Should be called after transaction to save this invocation is completed.
+func (e *Invocation) onSavedCompletion(c context.Context) {
+	if (!e.Status.Final() || time.Time{} == e.Finished) {
+		panic(fmt.Errorf("onSavedCompletion on incomplete invocation: %q", e))
+	}
+	duration := e.Finished.Sub(e.Started)
+	d := distribution.New(metricInvocationsDurations.Bucketer())
+	// metricInvocationsDurations.Metadata().Units is in microseconds.
+	d.Add(duration.Seconds() * 1e6)
+	metricInvocationsDurations.Set(c, d, e.jobID(), string(e.Status))
+	metricInvocationsCompleted.Add(c, 1, e.jobID(), string(e.Status))
 }
