@@ -54,6 +54,9 @@ type Console struct {
 
 	// MaxDepth represents the maximum tree depth of Table.
 	MaxDepth int
+
+	// FaviconURL is the URL to the favicon for this console.
+	FaviconURL string
 }
 
 // ConsoleElement represents a single renderable console element.
