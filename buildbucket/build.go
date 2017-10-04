@@ -62,6 +62,22 @@ type Build struct {
 	Output         Output
 }
 
+// RunDuration returns duration between b has started and completed.
+func (b *Build) RunDuration() (duration time.Duration, ok bool) {
+	if b.StartTime.IsZero() || b.CompletionTime.IsZero() {
+		return 0, false
+	}
+	return b.CompletionTime.Sub(b.StartTime), true
+}
+
+// SchedulingDuration returns duration between b has been created and started.
+func (b *Build) SchedulingDuration() (duration time.Duration, ok bool) {
+	if b.CompletionTime.IsZero() || b.StartTime.IsZero() {
+		return 0, false
+	}
+	return b.StartTime.Sub(b.CompletionTime), true
+}
+
 // UserData is data provided by users, opaque to LUCI services.
 // The value must be JSON marshalable/unmarshalable. Typically it is
 // a JSON object.
