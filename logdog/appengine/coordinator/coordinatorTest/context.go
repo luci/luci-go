@@ -63,7 +63,7 @@ const AllAccessProject = "proj-foo"
 var mainServicePath string
 
 func init() {
-	mainServicePath = findParentDirectory("logdog", "appengine", "cmd", "coordinator", "frontend")
+	mainServicePath = findParentDirectory("logdog", "appengine", "cmd", "coordinator", "default")
 }
 
 // Environment contains all of the testing facilities that are installed into

@@ -12,22 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package classic exposes a gaemiddleware Environment for Classic AppEngine.
+// Package standard exposes a gaemiddleware Environment for Classic AppEngine.
 package standard
 
 import (
 	"net/http"
 
+	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/settings/admin"
 
 	"go.chromium.org/luci/appengine/gaeauth/client"
-	"go.chromium.org/luci/appengine/gaeauth/server"
+	gaeauth "go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/tsmon"
-	"go.chromium.org/luci/luci_config/appengine/gaeconfig"
 
 	"go.chromium.org/gae/impl/prod"
 	"go.chromium.org/gae/service/urlfetch"
@@ -39,7 +40,7 @@ import (
 
 var (
 	// globalAuthCache is used to cache various auth token.
-	globalAuthCache = &server.Memcache{Namespace: "__luciauth__"}
+	globalAuthCache = &gaeauth.Memcache{Namespace: "__luciauth__"}
 
 	// globalAuthConfig is configuration of the server/auth library.
 	//
@@ -52,7 +53,7 @@ var (
 	//
 	// Used in prod contexts only.
 	globalAuthConfig = auth.Config{
-		DBProvider:          authdb.NewDBCache(server.GetAuthDB),
+		DBProvider:          authdb.NewDBCache(gaeauth.GetAuthDB),
 		Signer:              gaesigner.Signer{},
 		AccessTokenProvider: client.GetAccessToken,
 		AnonymousTransport:  urlfetch.Get,
@@ -78,6 +79,13 @@ var classicEnv = gaemiddleware.Environment{
 		return c
 	},
 	MonitoringMiddleware: globalTsMonState.Middleware,
+
+	ExtraHandlers: func(r *router.Router, base router.MiddlewareChain) {
+		gaeauth.InstallHandlers(r, base)
+		tsmon.InstallHandlers(r, base)
+		admin.InstallHandlers(r, base, &gaeauth.UsersAPIAuthMethod{})
+		gaeconfig.InstallCacheCronHandler(r, base.Extend(gaemiddleware.RequireCron))
+	},
 }
 
 // With adds various production GAE LUCI services to the context.
@@ -102,9 +110,28 @@ func With(c context.Context, req *http.Request) context.Context {
 func Base() router.MiddlewareChain { return classicEnv.Base() }
 
 // InstallHandlers installs handlers for framework routes using classic
-// production services.
+// production services' default middleware.
 //
-// See gaemiddleware.InstallHandlersWithMiddleware for details.
-func InstallHandlers(r *router.Router) {
-	gaemiddleware.InstallHandlersWithMiddleware(r, classicEnv.Base())
+// See InstallHandlersWithMiddleware for more information.
+func InstallHandlers(r *router.Router) { classicEnv.InstallHandlers(r) }
+
+// InstallHandlersWithMiddleware installs handlers for framework routes using
+// classic production services.
+//
+// These routes are needed for various services provided in Base context to
+// work:
+//  * Authentication related routes (gaeauth)
+//  * Settings pages (gaesettings)
+//  * Various housekeeping crons (tsmon, gaeconfig)
+//  * Warmup (warmup)
+//
+// They must be installed into a default module, but it is also safe to
+// install them into a non-default module. This may be handy if you want to
+// move cron handlers into a non-default module.
+//
+// 'base' is expected to be an Environment's Base() or its derivative. It must
+// NOT do any interception of requests (e.g. checking and rejecting
+// unauthenticated requests).
+func InstallHandlersWithMiddleware(r *router.Router, base router.MiddlewareChain) {
+	classicEnv.InstallHandlersWithMiddleware(r, base)
 }
