@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
-	"go.chromium.org/luci/luci_notify/buildbucket"
 )
 
 // NotificationConfig represents a single notification to send, defined by
@@ -100,9 +99,9 @@ func NewNotifier(parent *datastore.Key, cfg *notifyConfig.Notifier) *Notifier {
 }
 
 // LookupNotifiers retrieves all notifiers from the datastore for a particular builder ID.
-func LookupNotifiers(c context.Context, build *buildbucket.BuildInfo) ([]*Notifier, error) {
+func LookupNotifiers(c context.Context, builderID string) ([]*Notifier, error) {
 	var notifiers []*Notifier
-	query := datastore.NewQuery("Notifier").Eq("BuilderIDs", build.BuilderID())
+	query := datastore.NewQuery("Notifier").Eq("BuilderIDs", builderID)
 	err := datastore.GetAll(c, query, &notifiers)
 	return notifiers, err
 }
