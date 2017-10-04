@@ -54,7 +54,7 @@ $(error Missing required variable: GKE_SERVICES_YAML)
 endif
 
 # Define services.
-ALL_SERVICES = default services backend static
+ALL_SERVICES = default logs services backend static
 YAMLS = dispatch queue cron index
 ALL_GKE_CLUSTERS = collector archivist
 
@@ -96,10 +96,10 @@ endef
 help:
 	$(info $(HELP_BODY))
 
-YAML_PATHS = $(addprefix frontend/,$(addsuffix .yaml,$(YAMLS)))
+YAML_PATHS = $(addprefix default/,$(addsuffix .yaml,$(YAMLS)))
 
 .PHONY: yamls
-yamls: frontend/app.yaml $(YAML_PATHS)
+yamls: default/app.yaml $(YAML_PATHS)
 
 .PHONY: web
 web:
@@ -167,7 +167,7 @@ $(addprefix update-,$(YAMLS)): update-%:
 		gcloud app deploy \
 			--project $(CLOUD_PROJECT) \
 			--quiet \
-			frontend/$*.yaml
+			default/$*.yaml
 
 ##
 # Per-GKE Cluster Build Rules
