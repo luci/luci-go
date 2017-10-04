@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aff8c433_aa4d912e",
+        "filename": "appengine/gaemiddleware/standard/env.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-04T23:33:15Z",
+      "side": 1,
+      "message": "please document the packages here too for easy grepping",
+      "range": {
+        "startLine": 123,
+        "startChar": 6,
+        "endLine": 123,
+        "endChar": 20
+      },
+      "revId": "1059271bd744e7c7b1eb5e062f6c5b56d0330388",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e22a35f5_ea85ed83",
+        "filename": "logdog/appengine/cmd/coordinator/default/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-04T23:33:15Z",
+      "side": 1,
+      "message": "!! do we want this?",
+      "range": {
+        "startLine": 25,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 70
+      },
+      "revId": "1059271bd744e7c7b1eb5e062f6c5b56d0330388",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
