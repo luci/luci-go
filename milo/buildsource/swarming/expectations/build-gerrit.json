@@ -30,7 +30,7 @@
       "Running recipe bootstrap"
     ]
   },
-  "SourceStamp": {
+  "Trigger": {
     "AuthorName": "",
     "AuthorEmail": "",
     "CommitTime": "0001-01-01T00:00:00Z",
@@ -45,7 +45,8 @@
     },
     "CommitURL": "",
     "File": null,
-    "Source": ""
+    "Source": "",
+    "Project": ""
   },
   "Components": [
     {
