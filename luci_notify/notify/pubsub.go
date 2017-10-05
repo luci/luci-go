@@ -22,17 +22,57 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/buildbucket"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/luci_notify/config"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 )
 
-var errAccessDenied = fmt.Errorf("access to build denied")
+var (
+	errAccessDenied   = fmt.Errorf("access to build denied")
+	errBuilderDeleted = fmt.Errorf("builder deleted between datastore.Get calls")
+)
+
+func getCommitBuildSet(sets []buildbucket.BuildSet) *buildbucket.GitilesCommit {
+	for _, set := range sets {
+		if commit, ok := set.(*buildbucket.GitilesCommit); ok {
+			return commit
+		}
+	}
+	return nil
+}
+
+// getCommitHistory gets a list of commits from Gitiles, the equivalent of the command
+// `git log oldRevision..newRevision`.
+func getCommitHistory(c context.Context, repoURL, newRevision, oldRevision string) ([]gitiles.Commit, error) {
+	transport, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(
+		"https://www.googleapis.com/auth/gerritcodereview",
+	))
+	if err != nil {
+		return nil, errors.Annotate(err, "getting RPC Transport").Err()
+	}
+
+	// With this range, if newCommit.Revision == oldRevision we'll get nothing, but
+	// this was checked earlier already.
+	treeish := fmt.Sprintf("%s..%s", oldRevision, newRevision)
+	client := &gitiles.Client{Client: &http.Client{Transport: transport}}
+	commits, err := client.Log(c, repoURL, treeish)
+	if err != nil {
+		return nil, errors.Annotate(err, "fetching commit from Gitiles").Err()
+	}
+	// Sanity check.
+	if len(commits) > 0 && commits[0].Commit != newRevision {
+		return nil, errors.Reason("gitiles returned inconsistent results").Err()
+	}
+	return commits, nil
+}
 
 // IsBuildAllowed returns true if luci-notify is allowed to handle b.
 func isBuildAllowed(b *buildbucket.Build) bool {
@@ -45,6 +85,52 @@ func isBuildAllowed(b *buildbucket.Build) bool {
 
 func getBuilderID(b *buildbucket.Build) string {
 	return fmt.Sprintf("buildbucket/%s/%s", b.Bucket, b.Builder)
+}
+
+func commitIndex(commits []gitiles.Commit, revision string) int {
+	for i, commit := range commits {
+		if commit.Commit == revision {
+			return i
+		}
+	}
+	return -1
+}
+
+// getOrInitBuilder attempts to get a Builder from the datastore, and if none exists, initializes one
+// using the current build.
+//
+// In the case that the Builder is updated, this function returns datastore.ErrNoSuchEntity as well
+// as a dummy Builder with a Status of StatusUnknown.
+func getOrInitBuilder(c context.Context, id, revision string, build *buildbucket.Build) (*Builder, error) {
+	updated := false
+	builder := &Builder{ID: id}
+	switch err := datastore.Get(c, builder); {
+	case err == datastore.ErrNoSuchEntity:
+		// If the Builder isn't found, start a transaction and try to store
+		// the builder for the first time.
+		err = datastore.RunInTransaction(c, func(c context.Context) error {
+			switch err := datastore.Get(c, builder); {
+			case err == datastore.ErrNoSuchEntity:
+				updated = true
+				return datastore.Put(c, NewBuilder(id, revision, build))
+			case err != nil:
+				return err
+			}
+			// If we actually managed to get a Builder, we should continue with the
+			// full code path.
+			return nil
+		}, nil)
+		if err != nil {
+			return nil, err
+		}
+	case err != nil:
+		return nil, err
+	}
+	if updated {
+		builder.Status = StatusUnknown
+		return builder, datastore.ErrNoSuchEntity
+	}
+	return builder, nil
 }
 
 // handleBuild processes a build recieved via HTTP request (PubSub).
@@ -81,27 +167,71 @@ func handleBuild(c context.Context, r *http.Request) error {
 		return nil
 	}
 
-	// LookupBuilder updates the datastore, so don't do this until we've already
-	// looked up notifiers to avoid tracking state for a builder we don't have a
-	// notifier for.
-	builder, err := LookupBuilder(c, builderID, build)
-	if err != nil {
-		return errors.Annotate(err, "looking up builder").Err()
-	}
-	logging.Debugf(c, "Got state: %v", builder)
-
-	notification := CreateNotification(c, notifiers, build, builder)
-	if notification == nil {
-		logging.Infof(c, "Not notifying anybody...")
+	gCommit := getCommitBuildSet(build.BuildSets)
+	if gCommit == nil {
+		logging.Infof(c, "No revision information found for this build, ignoring...")
 		return nil
 	}
-	// FIXME(mknyszek): if email sending fails
-	// 1) a non-transient error is returned and a notification is not sent
-	// 2) even if retried, the builder status  is already updated
-	//    so next time this code runs, OnChanged notification won't be sent
-	// TODO: if a notification needs to be sent, create a push task for sending
+
+	builder, err := getOrInitBuilder(c, builderID, gCommit.Revision, build)
+	switch {
+	case err == datastore.ErrNoSuchEntity:
+		return Notify(c, notifiers, build, builder)
+	case err != nil:
+		return err
+	}
+
+	// commits contains a list of commits from gCommit.Revision..builder.StatusRevision (newest..oldest).
+	commits, err := getCommitHistory(c, gCommit.ProjectURL(), gCommit.Revision, builder.StatusRevision)
+	if err != nil {
+		return err
+	}
+	if len(commits) == 0 {
+		logging.Debugf(c, "Found build with old commit, ignoring...")
+		return nil
+	}
+
+	// Get builder, determine order, and update state.
+	err = datastore.RunInTransaction(c, func(c context.Context) error {
+		switch err := datastore.Get(c, builder); {
+		case err == datastore.ErrNoSuchEntity:
+			return errBuilderDeleted
+		case err != nil:
+			return err
+		}
+
+		// If there's been no change in status, don't bother updating.
+		if build.Status != builder.Status {
+			return nil
+		}
+
+		index := commitIndex(commits, builder.StatusRevision)
+		switch {
+		// If the revision is not found, we can conclude that the Builder has
+		// advanced beyond gCommit.Revision. This is because:
+		//   1) builder.StatusRevision only ever moves forward.
+		//   2) commits contains the git history up to gCommit.Revision.
+		case index < 0:
+			logging.Debugf(c, "Found build with old commit, ignoring...")
+			return nil
+
+		// If the revision is current, check build creation time.
+		case index == 0 && builder.StatusBuildTime.After(build.CreationTime):
+			logging.Debugf(c, "Found build with the same commit but an old time, ignoring...")
+			return nil
+		}
+		return datastore.Put(c, NewBuilder(builderID, gCommit.Revision, build))
+	}, nil)
+	if err != nil {
+		return err
+	}
+
+	// FIXME(mknyszek): if email sending fails and if retried, the builder status
+	// is already updated so next time this code runs, OnChange notification won't
+	// be sent.
+	// TODO(mknyszek): if a notification needs to be sent, create a push task for sending
 	// in the builder's transaction, instead of sending right away.
-	return notification.Dispatch(c)
+	return Notify(c, notifiers, build, builder)
 }
 
 // BuildbucketPubSubHandler is the main entrypoint for a new update from buildbucket's pubsub.
