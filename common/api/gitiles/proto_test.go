@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 	. "github.com/smartystreets/goconvey/convey"
@@ -33,7 +34,7 @@ func TestUserProto(t *testing.T) {
 		u := &User{
 			Name:  "Some name",
 			Email: "some.name@example.com",
-			Time:  "Wed Mar 09 03:46:18 2016",
+			Time:  Time{time.Date(2016, 3, 9, 3, 46, 18, 0, time.UTC)},
 		}
 
 		Convey(`basic`, func() {
@@ -49,19 +50,13 @@ func TestUserProto(t *testing.T) {
 		})
 
 		Convey(`empty timestamp`, func() {
-			u.Time = ""
+			u.Time = Time{}
 			uPB, err := u.Proto()
 			So(err, ShouldBeNil)
 			So(uPB, ShouldResemble, &git.Commit_User{
 				Name:  "Some name",
 				Email: "some.name@example.com",
 			})
-		})
-
-		Convey(`bad timestamp`, func() {
-			u.Time = "nerdz"
-			_, err := u.Proto()
-			So(err, ShouldErrLike, `cannot parse "nerdz"`)
 		})
 	})
 }
@@ -125,8 +120,8 @@ func TestCommitProto(t *testing.T) {
 				strings.Repeat("d15c0bee", 5),
 				strings.Repeat("daff0d11", 5),
 			},
-			Author:    User{"author", "author@example.com", "Wed Mar 09 03:46:18 2016"},
-			Committer: User{"committer", "committer@example.com", "Wed Mar 09 03:46:18 2016"},
+			Author:    User{"author", "author@example.com", Time{time.Date(2016, 3, 9, 3, 46, 18, 0, time.UTC)}},
+			Committer: User{"committer", "committer@example.com", Time{time.Date(2016, 3, 9, 3, 46, 18, 0, time.UTC)}},
 			Message:   "I am\na\nbanana",
 		}
 
@@ -171,18 +166,5 @@ func TestCommitProto(t *testing.T) {
 			_, err := c.Proto()
 			So(err, ShouldErrLike, "decoding parent 0")
 		})
-
-		Convey(`bad author`, func() {
-			c.Author.Time = "nerp"
-			_, err := c.Proto()
-			So(err, ShouldErrLike, "decoding author")
-		})
-
-		Convey(`bad committer`, func() {
-			c.Committer.Time = "nerp"
-			_, err := c.Proto()
-			So(err, ShouldErrLike, "decoding committer")
-		})
-
 	})
 }

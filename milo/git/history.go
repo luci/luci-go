@@ -176,12 +176,7 @@ func GetHistory(c context.Context, url, commitish string, limit int) (*milo.Cons
 			commit.AuthorName = e.Author.Name
 			commit.AuthorEmail = e.Author.Email
 
-			ts, err := e.Committer.GetTime()
-			if err != nil {
-				return errors.Annotate(err, "commit time unparsible (%q)", e.Committer.Time).Err()
-			}
-
-			commit.CommitTime = google.NewTimestamp(ts)
+			commit.CommitTime = google.NewTimestamp(e.Committer.Time.Time)
 			commit.Msg = e.Message
 
 			ret.Commits[i] = commit
