@@ -19,19 +19,20 @@ import (
 	"fmt"
 	"html/template"
 	"strings"
-	"time"
+
+	"github.com/golang/protobuf/proto"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/mail"
+	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/buildbucket"
-	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/luci_notify/config"
+	"go.chromium.org/luci/luci_notify/internal"
 )
 
 var emailTemplate = template.Must(template.New("email").Parse(`
@@ -86,23 +87,14 @@ type Notification struct {
 	Builder *Builder
 }
 
-// sendEmail constructs and sends an email built from this notification.
-func (n *Notification) sendEmail(c context.Context) error {
-	var bodyBuffer bytes.Buffer
-	if err := emailTemplate.Execute(&bodyBuffer, n); err != nil {
-		return errors.Annotate(err, "constructing email body").Err()
+// isRecipientAllowed returns true if the given recipient is allowed to be notified about the given build.
+func isRecipientAllowed(c context.Context, recipient string, build *buildbucket.Build) bool {
+	// TODO(mknyszek): Do a real ACL check here.
+	if strings.HasSuffix(recipient, "@google.com") {
+		return true
 	}
-	subject := fmt.Sprintf(`[Build %s] Builder %s on %s`,
-		n.Build.Status,
-		n.Build.Builder,
-		n.Build.Bucket)
-
-	return mail.Send(c, &mail.Message{
-		Sender:   "luci-notify <noreply@luci-notify-dev.appspotmail.com>",
-		To:       n.EmailRecipients,
-		Subject:  subject,
-		HTMLBody: bodyBuffer.String(),
-	})
+	logging.Warningf(c, "Address %q is not allowed to be notified of build %d", build.ID)
+	return false
 }
 
 // shouldNotify is the predicate function for whether a trigger's conditions have been met.
@@ -117,25 +109,12 @@ func shouldNotify(n *config.NotificationConfig, oldStatus, newStatus buildbucket
 	return true
 }
 
-// isRecipientAllowed returns true if the given recipient is allowed to be notified about the given build.
-func isRecipientAllowed(recipient string, build *buildbucket.Build) bool {
-	// TODO(mknyszek): Do a real ACL check here.
-	return strings.HasSuffix(recipient, "@google.com")
-}
-
 // CreateNotification consolidates recipients from a list of Notifiers and produces a Notification.
 //
 // This function also checks whether the triggers specified in the Notifiers have been met, and
 // filters out recipients from the list of Notifiers appropriately. If there are no recipients to
 // send to, then no Notification is created.
-func CreateNotification(c context.Context, notifiers []*config.Notifier, build *buildbucket.Build, commit *gitiles.Commit, builder *Builder) *Notification {
-	if builder.StatusTime.After(time.Time(commit.Committer.Time)) {
-		// TODO(mknyszek): There must be something better than just ignoring it.
-		//
-		// This case is logged when looking up/updating Builder.
-		return nil
-	}
-	// Filter out and consolidate recipients.
+func CreateNotification(c context.Context, notifiers []*config.Notifier, build *buildbucket.Build, builder *Builder) *Notification {
 	recipientSet := stringset.New(0)
 	for _, n := range notifiers {
 		for _, nc := range n.Notifications {
@@ -143,31 +122,54 @@ func CreateNotification(c context.Context, notifiers []*config.Notifier, build *
 				continue
 			}
 			for _, r := range nc.EmailRecipients {
-				if !isRecipientAllowed(r, build) {
-					logging.Warningf(c,
-						"Address %q is not allowed to be notified of build from %q",
-						r, builder.ID)
-					continue
+				if isRecipientAllowed(c, r, build) {
+					recipientSet.Add(r)
 				}
-				recipientSet.Add(r)
 			}
 		}
 
 	}
-	if recipientSet.Len() == 0 {
-		return nil
-	}
 	return &Notification{
 		EmailRecipients: recipientSet.ToSlice(),
-		Build:           build,
-		Builder:         builder,
+		Build: build,
+		Builder: builder,
 	}
 }
 
-// Dispatch tells a Notification to send a notification to all its recipients.
-func (n *Notification) Dispatch(c context.Context) error {
-	if err := n.sendEmail(c); err != nil {
-		return errors.Annotate(err, "failed to send email").Tag(transient.Tag).Err()
+func (n *Notification) DispatchEmail(c context.Context, d *tq.Dispatcher) error {
+	if len(n.EmailRecipients) == 0 {
+		return nil
 	}
+	var bodyBuffer bytes.Buffer
+	if err := emailTemplate.Execute(&bodyBuffer, n); err != nil {
+		return errors.Annotate(err, "constructing email body").Err()
+	}
+	subject := fmt.Sprintf(`[Build %s] Builder %s on %s`,
+		n.Build.Status,
+		n.Build.Builder,
+		n.Build.Bucket)
+
+	d.AddTask(c, &tq.Task{
+		Payload: &internal.EmailTask{
+			Recipients: n.EmailRecipients,
+			Subject:    subject,
+			BuildInfo:  bodyBuffer.String(),
+			Milo: &internal.MiloInfo{
+				SwarmingTask: n.Build.Tags.Get("swarming_task_id"),
+			},
+		},
+	})
 	return nil
+}
+
+// SendEmail is a push queue handler that attempts to send an email.
+func SendEmail(c context.Context, task proto.Message) error {
+	// TODO(mknyszek): Query Milo for additional build information.
+	emailTask := task.(*internal.EmailTask)
+	return mail.Send(c, &mail.Message{
+		Sender:   "luci-notify <noreply@luci-notify-dev.appspotmail.com>",
+		To:       emailTask.Recipients,
+		Subject:  emailTask.Subject,
+		HTMLBody: emailTask.BuildInfo,
+	})
 }

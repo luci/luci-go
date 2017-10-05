@@ -19,9 +19,12 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/buildbucket"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gitiles"
@@ -29,9 +32,10 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
+
+	"go.chromium.org/luci/luci_notify/config"
 )
 
 func getCommitBuildSet(sets []buildbucket.BuildSet) *buildbucket.GitilesCommit {
@@ -85,7 +89,7 @@ func getBuilderID(b *buildbucket.Build) string {
 //
 // Errors should only be propagated if they prevent forward progress. If they do not,
 // simply log the error and continue.
-func handleBuild(c context.Context, r *http.Request) error {
+func handleBuild(c context.Context, r *http.Request, d *tq.Dispatcher) error {
 	build, err := ExtractBuild(c, r)
 	switch {
 	case err != nil:
@@ -124,32 +128,37 @@ func handleBuild(c context.Context, r *http.Request) error {
 	// LookupBuilder updates the datastore, so don't do this until we've already
 	// looked up notifiers to avoid tracking state for a builder we don't have a
 	// notifier for.
-	builder, err := LookupBuilder(c, builderID, build, commit)
-	if err != nil {
-		return errors.Annotate(err, "looking up builder").Err()
-	}
-	logging.Debugf(c, "Got state: %v", builder)
-
-	notification := CreateNotification(c, notifiers, build, commit, builder)
-	if notification == nil {
-		logging.Infof(c, "Not notifying anybody...")
-		return nil
-	}
-	// FIXME(mknyszek): if email sending fails and if retried, the builder status
-	// is already updated so next time this code runs, OnChange notification won't
-	// be sent.
-	// TODO(mknyszek): if a notification needs to be sent, create a push task for sending
-	// in the builder's transaction, instead of sending right away.
-	return notification.Dispatch(c)
+	return WithBuilder(c, builderID, func(builder *Builder) error {
+		merr := errors.MultiError{}
+		if builder.StatusTime.After(time.Time(commit.Committer.Time)) {
+			logging.Debugf(c, "build %d (%s) from commit at %s, is not new",
+				build.ID, build.Status, commit.Committer.Time)
+			return nil
+		}
+		err := CreateNotification(c, notifiers, build, builder).DispatchEmail(c, d)
+		if err != nil {
+			merr = append(merr, err)
+		}
+		if build.Status != builder.Status {
+			err := datastore.Put(c, NewBuilder(builderID, build.Status, commit))
+			if err != nil {
+				merr = append(merr, err)
+			}
+		}
+		if len(merr) == 0 {
+			return nil
+		}
+		return merr
+	})
 }
 
 // BuildbucketPubSubHandler is the main entrypoint for a new update from buildbucket's pubsub.
 //
 // This handler delegates the actual processing of the build to handleBuild.
 // Its primary purpose is to unwrap context boilerplate and deal with progress-stopping errors.
-func BuildbucketPubSubHandler(ctx *router.Context) {
+func BuildbucketPubSubHandler(ctx *router.Context, dispatcher *tq.Dispatcher) {
 	c, h, r := ctx.Context, ctx.Writer, ctx.Request
-	if err := handleBuild(c, r); err != nil {
+	if err := handleBuild(c, r, dispatcher); err != nil {
 		logging.WithError(err).Errorf(c, "error while notifying")
 		if transient.Tag.In(err) {
 			// Transient errors are 500 so that PubSub retries them.
