@@ -70,7 +70,7 @@ func TestLog(t *testing.T) {
 	Convey("Log with bad URL", t, func() {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {})
 		defer srv.Close()
-		_, err := c.Log(ctx, "bad://repo.git/", "master", 10)
+		_, err := c.Log(ctx, "bad://repo.git/", "master", Limit(10))
 		So(err, ShouldNotBeNil)
 	})
 
@@ -84,7 +84,7 @@ func TestLog(t *testing.T) {
 
 		Convey("Return All", func() {
 			commits, err := c.Log(ctx, "https://c.googlesource.com/repo",
-				"master..8de6836858c99e48f3c58164ab717bda728e95dd", 10)
+				"master..8de6836858c99e48f3c58164ab717bda728e95dd", Limit(10))
 			So(err, ShouldBeNil)
 			So(len(commits), ShouldEqual, 2)
 			So(commits[0].Author.Name, ShouldEqual, "Author 1")
@@ -93,7 +93,7 @@ func TestLog(t *testing.T) {
 
 		Convey("Do not exceed limit", func() {
 			commits, err := c.Log(ctx, "https://c.googlesource.com/repo",
-				"master..8de6836858c99e48f3c58164ab717bda728e95dd", 1)
+				"master..8de6836858c99e48f3c58164ab717bda728e95dd", Limit(1))
 			So(err, ShouldBeNil)
 			So(len(commits), ShouldEqual, 1)
 			So(commits[0].Author.Name, ShouldEqual, "Author 1")
@@ -116,7 +116,7 @@ func TestLog(t *testing.T) {
 
 		Convey("Page till no cursor", func() {
 			commits, err := c.Log(ctx, "https://c.googlesource.com/repo",
-				"master..8de6836858c99e48f3c58164ab717bda728e95dd", 10)
+				"master..8de6836858c99e48f3c58164ab717bda728e95dd", Limit(10))
 			So(err, ShouldBeNil)
 			So(cursorSent, ShouldEqual, "next_cursor_value")
 			So(len(commits), ShouldEqual, 2)
@@ -126,7 +126,7 @@ func TestLog(t *testing.T) {
 
 		Convey("Page till limit", func() {
 			commits, err := c.Log(ctx, "https://c.googlesource.com/repo",
-				"master", 1)
+				"master", Limit(1))
 			So(err, ShouldBeNil)
 			So(cursorSent, ShouldEqual, "")
 			So(len(commits), ShouldEqual, 1)

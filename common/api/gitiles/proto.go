@@ -42,6 +42,39 @@ func (u *User) Proto() (ret *git.Commit_User, err error) {
 	return
 }
 
+// Proto converts this TreeDiff to its protobuf equivalent.
+func (t *TreeDiff) Proto() (ret *git.Commit_TreeDiff, err error) {
+	ret = &git.Commit_TreeDiff{
+		OldPath: t.OldPath,
+		OldMode: t.OldMode,
+		NewPath: t.NewPath,
+		NewMode: t.NewMode,
+	}
+
+	if val, ok := git.Commit_TreeDiff_ChangeType_value[t.Type]; ok {
+		ret.Type = git.Commit_TreeDiff_ChangeType(val)
+	} else {
+		err = errors.Reason("bad change type: %q", t.Type).Err()
+		return
+	}
+
+	if t.OldID != "" {
+		if ret.OldId, err = hex.DecodeString(t.OldID); err != nil {
+			err = errors.Annotate(err, "decoding OldID").Err()
+			return
+		}
+	}
+
+	if t.NewID != "" {
+		if ret.NewId, err = hex.DecodeString(t.NewID); err != nil {
+			err = errors.Annotate(err, "decoding NewID").Err()
+			return
+		}
+	}
+
+	return
+}
+
 // Proto converts this git.Commit to its protobuf equivalent.
 func (c *Commit) Proto() (ret *git.Commit, err error) {
 	ret = &git.Commit{}
@@ -73,7 +106,15 @@ func (c *Commit) Proto() (ret *git.Commit, err error) {
 	}
 	ret.Message = c.Message
 
-	// TODO(iannucci): treediff
+	if len(c.TreeDiff) > 0 {
+		ret.TreeDiff = make([]*git.Commit_TreeDiff, len(c.TreeDiff))
+		for i, d := range c.TreeDiff {
+			if ret.TreeDiff[i], err = d.Proto(); err != nil {
+				err = errors.Annotate(err, "decoding treediff %d", i).Err()
+				return
+			}
+		}
+	}
 
 	return
 }
