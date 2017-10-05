@@ -15,11 +15,23 @@
 package engine
 
 import (
+	"sync"
+
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/retry/transient"
+
 	"go.chromium.org/luci/scheduler/appengine/engine/dsset"
+	"go.chromium.org/luci/scheduler/appengine/internal"
 )
+
+// errTriagePrepareFail is returned by 'prepare' on errors.
+var errTriagePrepareFail = errors.New("error while fetching sets, see logs", transient.Tag)
 
 // triageOp is a short lived struct that represents in-flight triage operation.
 //
@@ -32,12 +44,23 @@ import (
 //   * Transaction to "atomically" consume the events.
 //   * Post-transaction to cleanup garbage, update monitoring, etc.
 type triageOp struct {
-	jobID string // ID of the job, must be provided externally
+	// jobID is ID of the job being examined, must be provided externally.
+	jobID string
+
+	// triggeringPolicy decides how to convert a set of pending triggers into
+	// a bunch of new invocations.
+	triggeringPolicy func(c context.Context, job *Job, triggers []*internal.Trigger) ([]InvocationRequest, error)
+
+	// enqueueInvocations transactionally creates and starts new invocations.
+	enqueueInvocations func(c context.Context, job *Job, req []InvocationRequest) ([]*Invocation, error)
 
 	// The rest of fields are used internally.
 
 	finishedSet  *invocationIDSet
 	finishedList *dsset.Listing
+
+	triggersSet  *triggersSet
+	triggersList *dsset.Listing
 
 	garbage dsset.Garbage // collected inside the transaction, cleaned outside
 }
@@ -45,22 +68,45 @@ type triageOp struct {
 // prepare fetches all pending triggers and events from dsset structs.
 func (op *triageOp) prepare(c context.Context) error {
 	op.finishedSet = recentlyFinishedSet(c, op.jobID)
+	op.triggersSet = pendingTriggersSet(c, op.jobID)
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	// Grab all pending triggers to decided what to do with them.
+	var triggersErr error
+	go func() {
+		defer wg.Done()
+		op.triggersList, triggersErr = op.triggersSet.List(c)
+		if triggersErr != nil {
+			logging.WithError(triggersErr).Errorf(c, "Failed to grab a set of pending triggers")
+		}
+	}()
 
 	// Grab a list of recently finished invocations to remove them from
 	// ActiveInvocations list.
-	var err error
-	op.finishedList, err = op.finishedSet.List(c)
-	if err != nil {
-		logging.WithError(err).Errorf(c, "Failed to grab a set of recently finished invocations")
-		return err
+	var finishedErr error
+	go func() {
+		defer wg.Done()
+		op.finishedList, finishedErr = op.finishedSet.List(c)
+		if finishedErr != nil {
+			logging.WithError(finishedErr).Errorf(c, "Failed to grab a set of recently finished invocations")
+		}
+	}()
+
+	wg.Wait()
+	if triggersErr != nil || finishedErr != nil {
+		return errTriagePrepareFail // the original error is already logged
 	}
+
+	logging.Infof(c, "Pending triggers set:  %d items, %d garbage", len(op.triggersList.Items), len(op.triggersList.Garbage))
 	logging.Infof(c, "Recently finished set: %d items, %d garbage", len(op.finishedList.Items), len(op.finishedList.Garbage))
 
 	// Remove old tombstones to keep the set tidy. We fail hard here on errors to
 	// make sure progress stops if garbage can't be cleaned up for some reason.
 	// It is better to fail early rather than silently accumulate tons of garbage
 	// until everything grinds to a halt.
-	if err := dsset.CleanupGarbage(c, op.finishedList.Garbage); err != nil {
+	if err := dsset.CleanupGarbage(c, op.triggersList.Garbage, op.finishedList.Garbage); err != nil {
 		logging.WithError(err).Errorf(c, "Failed to cleanup dsset garbage")
 		return err
 	}
@@ -83,6 +129,13 @@ func (op *triageOp) transaction(c context.Context, job *Job) error {
 	if err != nil {
 		return err
 	}
+	logging.Infof(c, "Active invocations: %v", job.ActiveInvocations)
+
+	// Process pending triggers set by emitting new invocations.
+	triggersOp, err := op.processTriggers(c, job)
+	if err != nil {
+		return err
+	}
 
 	// Submit set modifications. This may produce more garbage that we need to
 	// cleanup later (outside the transaction).
@@ -90,11 +143,13 @@ func (op *triageOp) transaction(c context.Context, job *Job) error {
 	if tidyOp != nil {
 		popOps = append(popOps, tidyOp)
 	}
+	if triggersOp != nil {
+		popOps = append(popOps, triggersOp)
+	}
 	if op.garbage, err = dsset.FinishPop(c, popOps...); err != nil {
 		return err
 	}
 
-	logging.Infof(c, "Active invocations: %v", job.ActiveInvocations)
 	return nil
 }
 
@@ -151,6 +206,67 @@ func (op *triageOp) tidyActiveInvocations(c context.Context, job *Job) (*dsset.P
 			}
 		}
 		job.ActiveInvocations = filtered
+	}
+
+	return popOp, nil
+}
+
+// processTriggers pops pending triggers, converting them into invocations.
+func (op *triageOp) processTriggers(c context.Context, job *Job) (*dsset.PopOp, error) {
+	// Note that per dsset API we need to do BeginPop if there's some garbage,
+	// even if Items is empty. We can skip this if both lists are empty though.
+	if len(op.triggersList.Items) == 0 && len(op.triggersList.Garbage) == 0 {
+		return nil, nil
+	}
+
+	popOp, err := op.triggersSet.BeginPop(c, op.triggersList)
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter out all triggers already popped by some other transaction and
+	// deserialize what's left.
+	triggers := make([]*internal.Trigger, 0, len(op.triggersList.Items))
+	for _, item := range op.triggersList.Items {
+		if !popOp.CanPop(item.ID) {
+			continue
+		}
+		trigger := &internal.Trigger{}
+		if err := proto.Unmarshal(item.Value, trigger); err != nil {
+			logging.WithError(err).Errorf(c, "Failed to deserialize the trigger proto %q, skipping it (it is still pending)", item.ID)
+			continue
+		}
+		triggers = append(triggers, trigger)
+	}
+
+	if len(triggers) == 0 {
+		return popOp, nil
+	}
+
+	// Look at what's left and decide what invocations to start (if any) by
+	// getting a bunch of InvocationRequests from the triggering policy function.
+	now := clock.Now(c)
+	logging.Infof(c, "Pending triggers:")
+	for _, t := range triggers {
+		logging.Infof(c, "  %q submitted %s ago by %q inv %d",
+			t.Id, now.Sub(google.TimeFromProto(t.Created)), t.JobId, t.InvocationId)
+	}
+	requests, err := op.triggeringPolicy(c, job, triggers)
+	if err != nil {
+		return nil, err
+	}
+
+	// Actually pop all consumed triggers and start the corresponding invocations.
+	// Note that this modifies job.ActiveInvocations list.
+	if len(requests) != 0 {
+		for _, r := range requests {
+			for _, t := range r.IncomingTriggers {
+				popOp.Pop(t.Id)
+			}
+		}
+		if _, err := op.enqueueInvocations(c, job, requests); err != nil {
+			return nil, err
+		}
 	}
 
 	return popOp, nil
