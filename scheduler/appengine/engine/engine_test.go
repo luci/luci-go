@@ -38,6 +38,10 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/store"
+	"go.chromium.org/luci/common/tsmon/target"
+	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/secrets/testsecrets"
@@ -470,6 +474,7 @@ func TestFullFlow(t *testing.T) {
 		So(debugLog, ShouldContainSubstring, "[22:42:05.000] Invocation initiated (attempt 2)")
 		So(debugLog, ShouldContainSubstring, "[22:42:05.000] Starting")
 		So(debugLog, ShouldContainSubstring, "with status SUCCEEDED")
+		So(getSentMetric(c, metricInvocationsDurations, "abc/1", "SUCCEEDED"), ShouldNotBeNil)
 
 		// Previous invocation is aborted now (in Failed state).
 		inv = Invocation{ID: 9200093518582484688, JobKey: jobKey}
@@ -657,6 +662,7 @@ func TestFullTriggeredFlow(t *testing.T) {
 		So(inv.Status, ShouldEqual, task.StatusSucceeded)
 		So(inv.MutationsCount, ShouldEqual, 2)
 		So(inv.DebugLog, ShouldContainSubstring, "[22:42:05.000] Emitting a trigger trg") // twice.
+		So(getSentMetric(c, metricInvocationsDurations, "abc/1", "SUCCEEDED"), ShouldNotBeNil)
 
 		// All triggers will be batched into just 1 tq task.
 		batchTask := ensureOneTask(c, "invs-q")
@@ -908,6 +914,7 @@ func TestRecordOverrun(t *testing.T) {
 				DebugLog: "[22:42:00.000] New invocation should be starting now, but previous one is still starting\n" +
 					"[22:42:00.000] Total overruns thus far: 1\n",
 			}})
+		So(getSentMetric(c, metricInvocationsOverrun, "abc/1"), ShouldEqual, 1)
 	})
 }
 
@@ -1094,6 +1101,7 @@ func TestAborts(t *testing.T) {
 			inv, err := e.getInvocation(c, jobID, invID)
 			So(err, ShouldBeNil)
 			So(inv.Status, ShouldEqual, task.StatusAborted)
+			So(getSentMetric(c, metricInvocationsDurations, jobID, "ABORTED"), ShouldNotBeNil)
 
 			// The job moved on with its life.
 			job, err := e.getJob(c, jobID)
@@ -1117,6 +1125,7 @@ func TestAborts(t *testing.T) {
 			inv, err := e.getInvocation(c, jobID, invID)
 			So(err, ShouldBeNil)
 			So(inv.Status, ShouldEqual, task.StatusAborted)
+			So(getSentMetric(c, metricInvocationsDurations, jobID, "ABORTED"), ShouldNotBeNil)
 
 			// The job moved on with its life.
 			job, err := e.getJob(c, jobID)
@@ -1199,6 +1208,8 @@ func TestAddTimer(t *testing.T) {
 			}
 			clock.Get(c).(testclock.TestClock).Add(time.Minute)
 			So(e.ExecuteSerializedAction(c, tqt.Payload, 0), ShouldBeNil)
+			// Invocation is complete.
+			So(getSentMetric(c, metricInvocationsDurations, jobID, "SUCCEEDED"), ShouldNotBeNil)
 
 			// The job has finished (by timer handler). Moves back to SUSPENDED state.
 			job, err = e.getJob(c, jobID)
@@ -1273,6 +1284,10 @@ func newTestContext(now time.Time) context.Context {
 	c = mathrand.Set(c, rand.New(rand.NewSource(1000)))
 	c = testsecrets.Use(c)
 
+	c, _, _ = tsmon.WithFakes(c)
+	fake := store.NewInMemory(&target.Task{})
+	tsmon.GetState(c).SetStore(fake)
+
 	ds.GetTestable(c).AddIndexes(&ds.IndexDefinition{
 		Kind: "Job",
 		SortBy: []ds.IndexColumn{
@@ -1285,6 +1300,16 @@ func newTestContext(now time.Time) context.Context {
 	taskqueue.GetTestable(c).CreateQueue("timers-q")
 	taskqueue.GetTestable(c).CreateQueue("invs-q")
 	return c
+}
+
+// getSentMetric returns sent value or nil if value wasn't sent.
+func getSentMetric(c context.Context, m types.Metric, fieldVals ...interface{}) interface{} {
+	v, err := tsmon.GetState(c).S.Get(c, m, time.Time{}, fieldVals)
+	if err != nil {
+		panic(err)
+	}
+	// TODO(tandrii): find better way to test values which contain distribuitions.
+	return v
 }
 
 func newTestEngine() (*engineImpl, *fakeTaskManager) {
