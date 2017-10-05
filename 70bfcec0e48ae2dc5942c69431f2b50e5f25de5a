@@ -22,6 +22,53 @@
       "revId": "70bfcec0e48ae2dc5942c69431f2b50e5f25de5a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28292c7a_4a3c44a1",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-05T21:45:40Z",
+      "side": 1,
+      "message": "total sgtm.",
+      "parentUuid": "81084146_a2ed89ed",
+      "range": {
+        "startLine": 123,
+        "startChar": 2,
+        "endLine": 127,
+        "endChar": 3
+      },
+      "revId": "70bfcec0e48ae2dc5942c69431f2b50e5f25de5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3d541cdf_11294ada",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-05T21:45:40Z",
+      "side": 1,
+      "message": "why is this necessary?",
+      "range": {
+        "startLine": 138,
+        "startChar": 3,
+        "endLine": 138,
+        "endChar": 9
+      },
+      "revId": "70bfcec0e48ae2dc5942c69431f2b50e5f25de5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
