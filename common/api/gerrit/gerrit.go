@@ -82,6 +82,12 @@ type AccountInfo struct {
 	UserName string `json:"username"`
 }
 
+// PureRevertResponse contains the response fields for calls to get-pure-revert
+// api.
+type PureRevertResponse struct {
+	IsPureRevert bool `json:"is_pure_revert"`
+}
+
 // ValidateGerritURL validates Gerrit URL for use in this package.
 func ValidateGerritURL(gerritURL string) error {
 	_, err := NormalizeGerritURL(gerritURL)
@@ -225,6 +231,23 @@ func (c *Client) GetChangeDetails(ctx context.Context, changeID string, options 
 		return nil, err
 	}
 	return resp, nil
+}
+
+// IsChangePureRevert determines if a change is a pure revert of another commit.
+//
+// This method returns a bool and an error.
+//
+// This implementation assumes that the caller knows which commit the change is
+// purportedly reverting e.g. via the revert_of property of the change, and
+// does not provide this information.
+func (c *Client) IsChangePureRevert(ctx context.Context, changeID string) (bool, error) {
+	resp := &PureRevertResponse{}
+	path := fmt.Sprintf("changes/%s/pure_revert", url.PathEscape(changeID))
+	err := c.get(ctx, path, url.Values{}, resp)
+	if err != nil {
+		return false, err
+	}
+	return resp.IsPureRevert, nil
 }
 
 func (c *Client) get(ctx context.Context, path string, query url.Values, result interface{}) error {
