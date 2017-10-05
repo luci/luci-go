@@ -30,13 +30,8 @@ func (u *User) Proto() (ret *git.Commit_User, err error) {
 		Name:  u.Name,
 		Email: u.Email,
 	}
-	if u.Time != "" {
-		var ts time.Time
-		if ts, err = u.GetTime(); err != nil {
-			err = errors.Annotate(err, "decoding time").Err()
-			return
-		}
-		ret.Time, err = ptypes.TimestampProto(ts)
+	if !time.Time(u.Time).IsZero() {
+		ret.Time, err = ptypes.TimestampProto(time.Time(u.Time))
 		err = errors.Annotate(err, "encoding time").Err()
 	}
 	return

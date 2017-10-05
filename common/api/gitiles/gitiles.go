@@ -28,21 +28,39 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 )
 
+// Time is a wrapper around time.Time for clean JSON unmarshaling.
+type Time time.Time
+
+// MarshalJSON implements a custom json marshal method for
+// Time so that the time can be parsed at decode time, resulting
+// in a more idiomatic User struct.
+func (t Time) MarshalJSON() ([]byte, error) {
+	stringTime := time.Time(t).Format(time.ANSIC)
+	return json.Marshal(stringTime)
+}
+
+// UnmarshalJSON implements a custom json unmarshal method for
+// Time so that the time can be parsed at decode time, resulting
+// in a more idiomatic User struct.
+func (t *Time) UnmarshalJSON(b []byte) error {
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	parsedTime, err := time.Parse(time.ANSIC, s)
+	if err != nil {
+		// Try it with the appended timezone version.
+		parsedTime, err = time.Parse(time.ANSIC+" -0700", s)
+	}
+	*t = Time(parsedTime)
+	return err
+}
+
 // User is the author or the committer returned from gitiles.
 type User struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
-	Time  string `json:"time"`
-}
-
-// GetTime returns the Time field as real data!
-func (u *User) GetTime() (time.Time, error) {
-	t, err := time.Parse(time.ANSIC, u.Time)
-	if err != nil {
-		// Try it with the appended timezone version.
-		t, err = time.Parse(time.ANSIC+" -0700", u.Time)
-	}
-	return t, err
+	Time  Time   `json:"time"`
 }
 
 // KnownTreeDiffTypes is the list of known values that TreeDiff.Type may have.
