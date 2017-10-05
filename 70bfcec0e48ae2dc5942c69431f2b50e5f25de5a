@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "81084146_a2ed89ed",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-05T05:16:27Z",
+      "side": 1,
+      "message": "I want policy function to receive sorted set of triggers, since it will most likely sort it anyway (also it simplifies tests a bit by adding determinism).\n\nI\u0027ve also decided to do serialization and sorting before entering the transaction, since transactions shouldn\u0027t be open for long.",
+      "range": {
+        "startLine": 123,
+        "startChar": 2,
+        "endLine": 127,
+        "endChar": 3
+      },
+      "revId": "70bfcec0e48ae2dc5942c69431f2b50e5f25de5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
