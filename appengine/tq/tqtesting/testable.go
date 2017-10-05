@@ -77,6 +77,7 @@ type Testable interface {
 	// It stops whenever any of the following happens:
 	//   * The queue of pending tasks is empty.
 	//   * ETA of the next task is past deadline (set via SimulationParams).
+	//   * ShouldStopBefore(...) returns true for next to-be-executed task.
 	//   * A task returns an error. The bad task will be last in 'executed' list.
 	//
 	// Returns:
@@ -88,7 +89,8 @@ type Testable interface {
 
 // SimulationParams are passed to RunSimulation.
 type SimulationParams struct {
-	Deadline time.Time // default is "don't stop on deadline"
+	Deadline         time.Time         // default is "don't stop on deadline"
+	ShouldStopBefore func(t Task) bool // returns true if simulation should stop
 }
 
 // Task represents a scheduled tq Task.
@@ -185,8 +187,10 @@ func (t *testableImpl) RunSimulation(c context.Context, params *SimulationParams
 	tc := clock.Get(c).(testclock.TestClock)
 
 	var deadline time.Time
+	var shouldStopBefore func(t Task) bool
 	if params != nil {
 		deadline = params.Deadline
+		shouldStopBefore = params.ShouldStopBefore
 	}
 
 loop:
@@ -197,6 +201,8 @@ loop:
 			break loop // no more tasks
 		case !deadline.IsZero() && earliest.Task.ETA.After(deadline):
 			break loop // deadline reached
+		case shouldStopBefore != nil && shouldStopBefore(*earliest):
+			break loop // stop condition reached
 		}
 
 		if err = taskqueue.Delete(c, queue, earliest.Task); err != nil {
