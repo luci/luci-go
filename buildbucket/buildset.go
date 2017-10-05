@@ -82,6 +82,12 @@ func (c *GitilesCommit) String() string {
 	return fmt.Sprintf("commit/gitiles/%s/%s/+/%s", c.Host, c.Project, c.Revision)
 }
 
+// ProjectURL returns a URL for the repository based ont he host and project,
+// e.g. "https://chromium.googlesource.com/infra/luci/luci-go"
+func (c *GitilesCommit) ProjectURL() string {
+	return fmt.Sprintf("https://%s/%s", c.Host, c.Project)
+}
+
 // ParseBuildSet tries to parse buildset as one of the known formats.
 // If buildSet was not recognized, returns nil.
 func ParseBuildSet(buildSet string) BuildSet {
