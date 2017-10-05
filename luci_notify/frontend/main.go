@@ -20,10 +20,12 @@ import (
 	authServer "go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
-	"go.chromium.org/luci/luci_notify/config"
-	"go.chromium.org/luci/luci_notify/notify"
+	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
+
+	"go.chromium.org/luci/luci_notify/config"
+	"go.chromium.org/luci/luci_notify/notify"
 )
 
 func init() {
@@ -32,11 +34,17 @@ func init() {
 
 	basemw := standard.Base().Extend(auth.Authenticate(authServer.CookieAuth))
 
+	taskDispatcher := tq.Dispatcher{BaseURL: "/internal/tasks/"}
+	notify.InitDispatcher(&taskDispatcher)
+	taskDispatcher.InstallRoutes(r, basemw)
+
 	// Cron endpoint.
 	r.GET("/internal/cron/update-config", basemw.Extend(gaemiddleware.RequireCron), config.UpdateHandler)
 
 	// Pub/Sub endpoint.
-	r.POST("/_ah/push-handlers/buildbucket", basemw, notify.BuildbucketPubSubHandler)
+	r.POST("/_ah/push-handlers/buildbucket", basemw, func(c *router.Context) {
+		notify.BuildbucketPubSubHandler(c, &taskDispatcher)
+	})
 
 	http.Handle("/", r)
 }

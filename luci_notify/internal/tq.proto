@@ -1,0 +1,22 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+// Messages for the task queue.
+
+syntax = "proto3";
+
+package internal;
+
+// EmailTask represents a single email notification to be dispatched.
+message EmailTask {
+  // Recipients is a list of email addresses to send the email to.
+  repeated string recipients = 1;
+
+  // Subject is the subject line of the email to be sent.
+  string subject = 2;
+
+  // Body is an HTML-formatted string containing the body of the email
+  // to be sent.
+  string body = 3;
+}

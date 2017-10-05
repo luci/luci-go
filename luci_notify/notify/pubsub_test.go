@@ -24,11 +24,11 @@ import (
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/mail"
 	"go.chromium.org/gae/service/user"
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/api/gitiles"
-	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/memlogger"
 
 	"go.chromium.org/luci/luci_notify/testutil"
@@ -65,7 +65,9 @@ func TestHandleBuild(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		c := memory.UseWithAppID(context.Background(), "dev~luci-notify")
+		c = clock.Set(c, testclock.New(time.Now()))
 		c = memlogger.Use(c)
+		user.GetTestable(c).Login("noreply@luci-notify-dev.appspotmail.com", "", false)
 
 		// Add Notifiers to datastore and update indexes.
 		notifiers := extractNotifiers(c, "test", cfg)
@@ -79,28 +81,15 @@ func TestHandleBuild(t *testing.T) {
 
 		history := testutil.NewMockHistoryFunc(testCommits)
 
-		testSuccess := func(build *buildbucket.Build, emailExpect ...string) {
-			// Login so that mock emails may be sent.
-			user.GetTestable(c).Login("noreply@luci-notify-dev.appspotmail.com", "", false)
+		dispatcher, taskqueue := createMockTaskQueue(c)
 
+		testSuccess := func(build *buildbucket.Build, emailExpect ...string) {
 			// Test handleBuild.
-			err := handleBuild(c, build, history)
+			err := handleBuild(c, dispatcher, build, history)
 			So(err, ShouldBeNil)
 
-			// Check to see if any messages were sent.
-			messages := mail.GetTestable(c).SentMessages()
-			if len(emailExpect) == 0 {
-				So(len(messages), ShouldEqual, 0)
-				return
-			}
-			So(len(messages), ShouldEqual, 1)
-
-			// Put the recipients into sets so prevent flakiness.
-			actualRecipients := stringset.NewFromSlice(messages[0].To...)
-			expectRecipients := stringset.NewFromSlice(emailExpect...)
-			So(actualRecipients, ShouldResemble, expectRecipients)
-
-			mail.GetTestable(c).Reset()
+			// Verify sent messages.
+			verifyTasksAndMessages(c, taskqueue, emailExpect)
 		}
 
 		verifyBuilder := func(build *buildbucket.Build, revision string) {
