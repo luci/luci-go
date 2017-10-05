@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4deff9da_d27553e3",
+        "filename": "milo/api/resp/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-05T23:36:44Z",
+      "side": 1,
+      "message": "Doesn\u0027t gitiles provide the actual AuthorName? Or is that not available here?\n\n(e.g. https://chromium.googlesource.com/infra/luci/luci-go/+/master/common/api/gitiles/gitiles.go#33)",
+      "range": {
+        "startLine": 130,
+        "startChar": 29,
+        "endLine": 130,
+        "endChar": 40
+      },
+      "revId": "6b24acc12323b033b52df6b3a546e2e09374982a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
