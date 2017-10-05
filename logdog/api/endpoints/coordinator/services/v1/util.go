@@ -14,6 +14,14 @@
 
 package logdog
 
+import (
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil"
+
+	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+)
+
 // GetMessageProject implements ProjectBoundMessage.
 func (ar *RegisterStreamRequest) GetMessageProject() string { return ar.Project }
 
@@ -37,4 +45,34 @@ func (ar *ArchiveStreamRequest) Complete() bool {
 		tidx = -1
 	}
 	return (ar.LogEntryCount == (tidx + 1))
+}
+
+// MakeError returns an Error object for err. If err is a wrapped gRPC error,
+// its code will be extracted and embedded in the returned Error.
+//
+// The Msg field will not be populated.
+func MakeError(err error) *Error {
+	if err == nil {
+		return nil
+	}
+
+	return &Error{
+		GrpcCode:  int32(grpcutil.Code(err)),
+		Transient: transient.Tag.In(err),
+	}
+}
+
+// ToError converts an Error into a gRPC error. If e is nil, a nil error will
+// be returned.
+func (e *Error) ToError() error {
+	if e == nil {
+		return nil
+	}
+
+	code := codes.Code(e.GrpcCode)
+	err := grpc.Errorf(code, "%s", e.Msg)
+	if e.Transient || grpcutil.IsTransientCode(code) {
+		err = transient.Tag.Apply(err)
+	}
+	return err
 }
