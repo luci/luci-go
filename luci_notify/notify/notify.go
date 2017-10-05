@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/luci_notify/config"
 )
@@ -59,44 +60,24 @@ luci-notify has detected a new {{ .Build.Status }} on builder "{{ .Build.Builder
 
 <a href="{{ .Build.URL }}">Full details are available here.</a>`))
 
-// Notification represents a notification ready to be sent.
-//
-// The purpose of Notification is to abstract away the details of sending
-// notifications, detecting triggers, and of consolidating recipients to
-// minimize the number of notifications sent.
-//
-// TODO(mknyszek): Support IRC and Webhooks.
-type Notification struct {
-	// EmailRecipients is a list of email addresses to notify.
-	EmailRecipients []string
-
-	// Build is the current build we are notifying about.
-	//
-	// This is used primarily for constructing the content of the
-	// final notification for each communication channel.
-	Build *buildbucket.Build
-
-	// Builder is the Builder before Build was seen.
-	//
-	// This is used primarily for constructing the content of the
-	// final notification for each communication channel.
-	Builder *Builder
-}
-
 // sendEmail constructs and sends an email built from this notification.
-func (n *Notification) sendEmail(c context.Context) error {
+func sendEmail(c context.Context, recipients []string, build *buildbucket.Build, builder *Builder) error {
+	templateContext := map[string]interface{}{
+		"Build":   build,
+		"Builder": builder,
+	}
 	var bodyBuffer bytes.Buffer
-	if err := emailTemplate.Execute(&bodyBuffer, n); err != nil {
+	if err := emailTemplate.Execute(&bodyBuffer, &templateContext); err != nil {
 		return errors.Annotate(err, "constructing email body").Err()
 	}
 	subject := fmt.Sprintf(`[Build %s] Builder %s on %s`,
-		n.Build.Status,
-		n.Build.Builder,
-		n.Build.Bucket)
+		build.Status,
+		build.Builder,
+		build.Bucket)
 
 	return mail.Send(c, &mail.Message{
 		Sender:   "luci-notify <noreply@luci-notify-dev.appspotmail.com>",
-		To:       n.EmailRecipients,
+		To:       recipients,
 		Subject:  subject,
 		HTMLBody: bodyBuffer.String(),
 	})
@@ -115,24 +96,18 @@ func shouldNotify(n *config.NotificationConfig, oldStatus, newStatus buildbucket
 }
 
 // isRecipientAllowed returns true if the given recipient is allowed to be notified about the given build.
-func isRecipientAllowed(recipient string, build *buildbucket.Build) bool {
+func isRecipientAllowed(c context.Context, recipient string, build *buildbucket.Build) bool {
 	// TODO(mknyszek): Do a real ACL check here.
-	return strings.HasSuffix(recipient, "@google.com")
+	if strings.HasSuffix(recipient, "@google.com") {
+		return true
+	}
+	logging.Warningf(c, "Address %q is not allowed to be notified of build %d", build.ID)
+	return false
 }
 
-// CreateNotification consolidates recipients from a list of Notifiers and produces a Notification.
-//
-// This function also checks whether the triggers specified in the Notifiers have been met, and
-// filters out recipients from the list of Notifiers appropriately. If there are no recipients to
-// send to, then no Notification is created.
-func CreateNotification(c context.Context, notifiers []*config.Notifier, build *buildbucket.Build, builder *Builder) *Notification {
-	if builder.StatusTime.After(build.CreationTime) {
-		// TODO(mknyszek): There must be something better than just ignoring it.
-		//
-		// This case is logged when looking up/updating Builder.
-		return nil
-	}
-	// Filter out and consolidate recipients.
+// Notify consolidates and filters recipients from a list of Notifiers and dispatches
+// notifications if necessary.
+func Notify(c context.Context, notifiers []*config.Notifier, build *buildbucket.Build, builder *Builder) error {
 	recipientSet := stringset.New(0)
 	for _, n := range notifiers {
 		for _, nc := range n.Notifications {
@@ -140,31 +115,16 @@ func CreateNotification(c context.Context, notifiers []*config.Notifier, build *
 				continue
 			}
 			for _, r := range nc.EmailRecipients {
-				if !isRecipientAllowed(r, build) {
-					logging.Warningf(c,
-						"Address %q is not allowed to be notified of build from %q",
-						r, builder.ID)
-					continue
+				if isRecipientAllowed(c, r, build) {
+					recipientSet.Add(r)
 				}
-				recipientSet.Add(r)
 			}
 		}
 
 	}
 	if recipientSet.Len() == 0 {
+		logging.Infof(c, "Nobody to notify...")
 		return nil
 	}
-	return &Notification{
-		EmailRecipients: recipientSet.ToSlice(),
-		Build:           build,
-		Builder:         builder,
-	}
-}
-
-// Dispatch tells a Notification to send a notification to all its recipients.
-func (n *Notification) Dispatch(c context.Context) error {
-	if err := n.sendEmail(c); err != nil {
-		return errors.Annotate(err, "failed to send email").Err()
-	}
-	return nil
+	return errors.Annotate(sendEmail(c, recipientSet.ToSlice(), build, builder), "failed to send email").Tag(transient.Tag).Err()
 }
