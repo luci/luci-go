@@ -37,5 +37,10 @@ func init() {
 	// Standard HTTP endpoints.
 	standard.InstallHandlers(r)
 
+	// Redirect "/" to "/app/".
+	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
+		http.Redirect(c.Writer, c.Request, "/app/", http.StatusFound)
+	})
+
 	http.Handle("/", r)
 }
