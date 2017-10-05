@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dc31e877_7325de5e",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-05T21:35:57Z",
+      "side": 1,
+      "message": "does this need to be public? I think not, in which case please move it to the bottom next to other response structs.",
+      "range": {
+        "startLine": 87,
+        "startChar": 5,
+        "endLine": 87,
+        "endChar": 23
+      },
+      "revId": "bb50fe9614a77d16bf8d7a5e712231c913ac3050",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cbde530c_af9d24aa",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-05T21:35:57Z",
+      "side": 1,
+      "message": "please add URL to Gerrit doc in this method\u0027s doc.",
+      "range": {
+        "startLine": 237,
+        "startChar": 0,
+        "endLine": 237,
+        "endChar": 2
+      },
+      "revId": "bb50fe9614a77d16bf8d7a5e712231c913ac3050",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf877e05_b548b43c",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-05T21:35:57Z",
+      "side": 1,
+      "message": "I\u0027d just say \n   \"If you need to know which commit the change is purportedly reverting, use \"revert_of\" property of the change.\",\nsince this method really doesn\u0027t care whether caller knows this or not :)",
+      "range": {
+        "startLine": 240,
+        "startChar": 0,
+        "endLine": 242,
+        "endChar": 37
+      },
+      "revId": "bb50fe9614a77d16bf8d7a5e712231c913ac3050",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21f4b9e1_fba255bc",
+        "filename": "common/api/gerrit/gerrit_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-05T21:35:57Z",
+      "side": 1,
+      "message": "Even though Change-Id will likely also work in practice, please, use integer string in tests.\nChange-Id can be re-used across projects and branches, but Change Number is unique. So, we should encourage the use Change Number.\n\nSame for tests below.",
+      "range": {
+        "startLine": 163,
+        "startChar": 40,
+        "endLine": 163,
+        "endChar": 54
+      },
+      "revId": "bb50fe9614a77d16bf8d7a5e712231c913ac3050",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad6b8ea9_d5087a8a",
+        "filename": "common/api/gerrit/gerrit_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-05T21:35:57Z",
+      "side": 1,
+      "message": "imo, there is no point testing for this. If err!\u003dnil, callers shouldn\u0027t rely on the boolean value.\nSame thing for tests below.",
+      "range": {
+        "startLine": 165,
+        "startChar": 3,
+        "endLine": 165,
+        "endChar": 23
+      },
+      "revId": "bb50fe9614a77d16bf8d7a5e712231c913ac3050",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
