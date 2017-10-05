@@ -622,8 +622,8 @@ func (b *BuildID) Get(c context.Context) (*resp.MiloBuild, error) {
 			Tag(common.CodeParameterError).
 			Err()
 	}
-	if num <= 0 {
-		return nil, errors.New("BuildNumber must be > 0", common.CodeParameterError)
+	if num < 0 {
+		return nil, errors.New("BuildNumber must be >= 0", common.CodeParameterError)
 	}
 
 	if b.Master == "" {
