@@ -44,6 +44,11 @@ func (c *RietveldChange) String() string {
 	return fmt.Sprintf("patch/rietveld/%s/%d/%d", c.Host, c.Issue, c.PatchSet)
 }
 
+// URL returns URL of the change.
+func (c *RietveldChange) URL() string {
+	return fmt.Sprintf("https://%s/%d/#ps%d", c.Host, c.Issue, c.PatchSet)
+}
+
 // GerritChange is a patchset on gerrit.
 type GerritChange struct {
 	Host     string
@@ -55,6 +60,11 @@ type GerritChange struct {
 // e.g. "patch/gerrit/chromium-review.googlesource.com/677784/5".
 func (c *GerritChange) String() string {
 	return fmt.Sprintf("patch/gerrit/%s/%d/%d", c.Host, c.Change, c.PatchSet)
+}
+
+// URL returns URL of the change.
+func (c *GerritChange) URL() string {
+	return fmt.Sprintf("https://%s/c/%d/%d", c.Host, c.Change, c.PatchSet)
 }
 
 // GitilesCommit is a Git commit on a Gitiles server.
