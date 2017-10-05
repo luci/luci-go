@@ -19,10 +19,12 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/buildbucket"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gitiles"
@@ -30,9 +32,10 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
+
+	"go.chromium.org/luci/luci_notify/config"
 )
 
 var (
@@ -124,7 +127,7 @@ func getOrInitBuilder(c context.Context, id, revision string, build *buildbucket
 //
 // Errors should only be propagated if they prevent forward progress. If they do not,
 // simply log the error and continue.
-func handleBuild(c context.Context, r *http.Request) error {
+func handleBuild(c context.Context, r *http.Request, d *tq.Dispatcher) error {
 	build, err := ExtractBuild(c, r)
 	switch {
 	case err != nil:
@@ -205,7 +208,10 @@ func handleBuild(c context.Context, r *http.Request) error {
 			if commitOrder == SAME && builder.StatusTime.After(build.CreationTime) {
 				return errBuildOutOfOrder
 			}
-			return datastore.Put(c, NewBuilder(builderID, gCommit.Revision, build))
+			if err := datastore.Put(c, NewBuilder(builderID, gCommit.Revision, build)); err != nil {
+				return err
+			}
+			return Notify(c, d, notifiers, build, currentBuilder)
 		})
 		switch err {
 		case errPreempted:
@@ -214,12 +220,7 @@ func handleBuild(c context.Context, r *http.Request) error {
 			logging.Debugf(c, "Found build with the same commit but an old time, ignoring...")
 			return nil
 		case nil:
-			// FIXME(mknyszek): if email sending fails and if retried, the builder status
-			// is already updated so next time this code runs, OnChange notification won't
-			// be sent.
-			// TODO(mknyszek): if a notification needs to be sent, create a push task for sending
-			// in the builder's transaction, instead of sending right away.
-			return Notify(c, notifiers, build, currentBuilder)
+			// continue
 		default:
 			return err
 		}
@@ -230,9 +231,9 @@ func handleBuild(c context.Context, r *http.Request) error {
 //
 // This handler delegates the actual processing of the build to handleBuild.
 // Its primary purpose is to unwrap context boilerplate and deal with progress-stopping errors.
-func BuildbucketPubSubHandler(ctx *router.Context) {
+func BuildbucketPubSubHandler(ctx *router.Context, dispatcher *tq.Dispatcher) {
 	c, h, r := ctx.Context, ctx.Writer, ctx.Request
-	if err := handleBuild(c, r); err != nil {
+	if err := handleBuild(c, r, dispatcher); err != nil {
 		logging.WithError(err).Errorf(c, "error while notifying")
 		if transient.Tag.In(err) {
 			// Transient errors are 500 so that PubSub retries them.
