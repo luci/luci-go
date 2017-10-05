@@ -48,7 +48,7 @@ func (c CanaryPreference) endpointsString() (string, error) {
 
 func parseEndpointsCanaryPreference(s string) (CanaryPreference, error) {
 	switch s {
-	case "AUTO":
+	case "", "AUTO":
 		return CanaryAllowed, nil
 	case "PROD":
 		return CanaryForbidden, nil
