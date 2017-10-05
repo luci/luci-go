@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/gae/service/mail"
 	"go.chromium.org/gae/service/user"
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
 
 	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
@@ -42,8 +43,8 @@ func extractNotifiers(c context.Context, cfgName string, cfg *notifyConfig.Proje
 	return notifiers
 }
 
-func dummyBuildInfo(creationTime time.Time, status buildbucket.Status) *buildbucket.Build {
-	return testutil.TestBuild(creationTime, "test.bucket", "test-builder", status)
+func dummyBuildInfo(status buildbucket.Status) *buildbucket.Build {
+	return testutil.TestBuild("test.bucket", "test-builder", status)
 }
 
 func TestNotification(t *testing.T) {
@@ -55,9 +56,10 @@ func TestNotification(t *testing.T) {
 		So(err, ShouldBeNil)
 		c := memory.UseWithAppID(context.Background(), "dev~luci-notify")
 		notifiers := extractNotifiers(c, cfgName, cfg)
-		goodBuild := dummyBuildInfo(time.Date(2015, 2, 3, 12, 55, 2, 0, time.UTC), buildbucket.StatusSuccess)
-		badBuild := dummyBuildInfo(time.Date(2015, 2, 3, 12, 56, 2, 0, time.UTC), buildbucket.StatusFailure)
-		oldBuild := dummyBuildInfo(time.Date(2013, 5, 6, 4, 12, 55, 0, time.UTC), buildbucket.StatusSuccess)
+		goodBuild := dummyBuildInfo(buildbucket.StatusSuccess)
+		badBuild := dummyBuildInfo(buildbucket.StatusFailure)
+		goodCommit := testutil.TestCommit(time.Date(2015, 2, 3, 12, 55, 2, 0, time.UTC), testutil.TestRevision())
+		badCommit := testutil.TestCommit(time.Date(2015, 2, 3, 12, 56, 2, 0, time.UTC), testutil.TestRevision())
 		goodBuilder := &Builder{
 			StatusTime: time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC),
 			Status:     buildbucket.StatusSuccess,
@@ -67,9 +69,9 @@ func TestNotification(t *testing.T) {
 			Status:     buildbucket.StatusFailure,
 		}
 
-		test := func(build *buildbucket.Build, builder *Builder, emailExpect ...string) {
+		test := func(build *buildbucket.Build, commit *gitiles.Commit, builder *Builder, emailExpect ...string) {
 			// Test creating the notification.
-			n := CreateNotification(c, notifiers, build, builder)
+			n := CreateNotification(c, notifiers, build, commit, builder)
 			So(n, ShouldNotBeNil)
 
 			// Put the recipients into sets so prevent flakiness.
@@ -88,24 +90,27 @@ func TestNotification(t *testing.T) {
 		}
 
 		Convey(`empty`, func() {
-			creationNoneTest := func(build *buildbucket.Build, builder *Builder) {
-				n := CreateNotification(c, []*config.Notifier{}, build, builder)
+			creationNoneTest := func(build *buildbucket.Build, commit *gitiles.Commit, builder *Builder) {
+				n := CreateNotification(c, []*config.Notifier{}, build, commit, builder)
 				So(n, ShouldBeNil)
 			}
-			creationNoneTest(goodBuild, goodBuilder)
-			creationNoneTest(goodBuild, badBuilder)
-			creationNoneTest(badBuild, goodBuilder)
-			creationNoneTest(badBuild, badBuilder)
+			creationNoneTest(goodBuild, goodCommit, goodBuilder)
+			creationNoneTest(goodBuild, goodCommit, badBuilder)
+			creationNoneTest(badBuild, badCommit, goodBuilder)
+			creationNoneTest(badBuild, badCommit, badBuilder)
 		})
 
 		Convey(`out-of-order`, func() {
-			n := CreateNotification(c, notifiers, oldBuild, goodBuilder)
+			oldBuild := dummyBuildInfo(buildbucket.StatusSuccess)
+			oldCommit := testutil.TestCommit(time.Date(2013, 5, 6, 4, 12, 55, 0, time.UTC), testutil.TestRevision())
+			n := CreateNotification(c, notifiers, oldBuild, oldCommit, goodBuilder)
 			So(n, ShouldBeNil)
 		})
 
 		Convey(`on success`, func() {
 			test(
 				goodBuild,
+				goodCommit,
 				goodBuilder,
 				"test-example-success@google.com",
 			)
@@ -114,6 +119,7 @@ func TestNotification(t *testing.T) {
 		Convey(`on failure`, func() {
 			test(
 				badBuild,
+				badCommit,
 				badBuilder,
 				"test-example-failure@google.com",
 			)
@@ -122,6 +128,7 @@ func TestNotification(t *testing.T) {
 		Convey(`on change to failure`, func() {
 			test(
 				badBuild,
+				badCommit,
 				goodBuilder,
 				"test-example-failure@google.com",
 				"test-example-change@google.com",
@@ -131,6 +138,7 @@ func TestNotification(t *testing.T) {
 		Convey(`on change to success`, func() {
 			test(
 				goodBuild,
+				goodCommit,
 				badBuilder,
 				"test-example-success@google.com",
 				"test-example-change@google.com",

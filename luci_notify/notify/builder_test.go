@@ -23,6 +23,8 @@ import (
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/common/api/gitiles"
+
 	"go.chromium.org/luci/luci_notify/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -35,46 +37,53 @@ func TestBuilderLookup(t *testing.T) {
 		c := memory.UseWithAppID(context.Background(), "dev~luci-notify")
 		bucket := "bucket.bucket"
 		oldestTime := time.Date(2015, 1, 1, 1, 1, 1, 0, time.UTC)
-		middleTime := time.Date(2016, 6, 6, 6, 6, 6, 0, time.UTC)
 		newestTime := time.Date(2016, 12, 12, 12, 12, 12, 0, time.UTC)
+		noCommit := testutil.TestCommit(time.Time{}, "")
+		firstCommit := testutil.TestCommit(oldestTime, testutil.TestRevision())
+		lastCommit := testutil.TestCommit(newestTime, testutil.TestRevision())
 
-		checkLookup := func(build *buildbucket.Build, expectTime time.Time, expectStatus buildbucket.Status) {
+		checkLookup := func(build *buildbucket.Build, commit *gitiles.Commit, expectCommit *gitiles.Commit, expectStatus buildbucket.Status) {
 			builderID := getBuilderID(build)
-			builder, err := LookupBuilder(c, builderID, build)
+			builder, err := LookupBuilder(c, builderID, build, commit)
 			So(err, ShouldBeNil)
 			So(builder.ID, ShouldResemble, builderID)
 			So(builder.Status, ShouldResemble, expectStatus)
-			So(builder.StatusTime, ShouldEqual, expectTime)
+			So(builder.StatusTime, ShouldResemble, expectCommit.Committer.Time.Time)
+			So(builder.StatusRevision, ShouldEqual, expectCommit.Commit)
 		}
 
-		coldLookup := func(builder string, buildTime time.Time) *buildbucket.Build {
-			build := testutil.TestBuild(buildTime, bucket, builder, buildbucket.StatusSuccess)
-			checkLookup(build, time.Time{}, StatusUnknown)
+		coldLookup := func(builder string, commit *gitiles.Commit) *buildbucket.Build {
+			build := testutil.TestBuild(bucket, builder, buildbucket.StatusSuccess)
+			checkLookup(build, commit, noCommit, StatusUnknown)
 			return build
 		}
 
 		Convey(`no builder found`, func() {
-			coldLookup("not-there", oldestTime)
+			coldLookup("not-there", firstCommit)
 		})
 
 		Convey(`builder found`, func() {
-			build := testutil.TestBuild(oldestTime, bucket, "there", buildbucket.StatusSuccess)
-			datastore.Put(c, NewBuilder(getBuilderID(build), build))
-			checkLookup(build, oldestTime, buildbucket.StatusSuccess)
+			build := testutil.TestBuild(bucket, "there", buildbucket.StatusSuccess)
+			datastore.Put(c, NewBuilder(getBuilderID(build), build.Status, firstCommit))
+			checkLookup(build, firstCommit, firstCommit, buildbucket.StatusSuccess)
 		})
 
 		Convey(`repeated builder lookup`, func() {
-			build := coldLookup("maybe-there", oldestTime)
-			build.CreationTime = middleTime
-			checkLookup(build, oldestTime, buildbucket.StatusSuccess)
+			build := coldLookup("maybe-there", firstCommit)
+			build.Status = buildbucket.StatusFailure
+			checkLookup(build, lastCommit, firstCommit, buildbucket.StatusSuccess)
+			checkLookup(build, firstCommit, lastCommit, buildbucket.StatusFailure)
 		})
 
 		Convey(`out-of-order`, func() {
-			build := coldLookup("out-of-order", middleTime)
-			build.CreationTime = oldestTime
-			checkLookup(build, middleTime, buildbucket.StatusSuccess)
-			build.CreationTime = newestTime
-			checkLookup(build, middleTime, buildbucket.StatusSuccess)
+			build := coldLookup("out-of-order", lastCommit)
+			checkLookup(build, firstCommit, lastCommit, buildbucket.StatusSuccess)
+		})
+
+		Convey(`same status`, func() {
+			build := coldLookup("same", firstCommit)
+			checkLookup(build, lastCommit, firstCommit, buildbucket.StatusSuccess)
+			checkLookup(build, lastCommit, firstCommit, buildbucket.StatusSuccess)
 		})
 	})
 }

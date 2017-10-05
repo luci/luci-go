@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/logging"
 )
 
@@ -34,27 +35,30 @@ type Builder struct {
 	// It is updated every time a new build completes.
 	Status buildbucket.Status
 
-	// StatusTime can be used to decide whether Status should be updated.
-	// It is computed as the creation time of the build that caused
-	// a change of Status.
-	StatusTime time.Time
-}
+	// StatusRevision can be used to decide whether Status should be updated.
+	// It is the revision of the codebase that's associated with the build
+	// that caused a change of Status.
+	StatusRevision string
 
-// NewBuilder constructs a new Builder.
-//
-// This is intended to maintain a consistent interface to datastore models and
-// mimics the behavior of NewProject and NewNotifier.
-func NewBuilder(id string, build *buildbucket.Build) *Builder {
-	return &Builder{
-		ID:         id,
-		Status:     build.Status,
-		StatusTime: build.CreationTime,
-	}
+	// StatusTime can be used to decide whether Status should be updated.
+	// It is computed as the commit time of the revision associated
+	// with the build that caused a change of Status.
+	StatusTime time.Time
 }
 
 // StatusUnknown is used in the LookupBuilder return value
 // if builder status is unknown.
 var StatusUnknown buildbucket.Status = -1
+
+// NewBuilder creates a new builder from an ID, a build, and optionally a commit.
+func NewBuilder(id string, status buildbucket.Status, commit *gitiles.Commit) *Builder {
+	return &Builder{
+		ID:               id,
+		Status:           status,
+		StatusRevision:   commit.Commit,
+		StatusTime:       commit.Committer.Time.Time,
+	}
+}
 
 // LookupBuilder returns a "previous" builder state.
 //
@@ -63,7 +67,7 @@ var StatusUnknown buildbucket.Status = -1
 // have never recorded information about this builder before.
 //
 // It will also update the Builder in the datastore according to build.
-func LookupBuilder(c context.Context, id string, build *buildbucket.Build) (*Builder, error) {
+func LookupBuilder(c context.Context, id string, build *buildbucket.Build, commit *gitiles.Commit) (*Builder, error) {
 	prev := &Builder{ID: id}
 	err := datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, prev); {
@@ -75,13 +79,23 @@ func LookupBuilder(c context.Context, id string, build *buildbucket.Build) (*Bui
 		case err != nil:
 			return err
 
-		case prev.StatusTime.After(build.CreationTime):
-			// Don't update the datastore if the new build is not newer.
-			logging.Debugf(c, "build %d (%s) created at %s, is not new", build.ID, build.Status, build.CreationTime)
+		// If there's been no status change, don't bother updating.
+		case build.Status == prev.Status:
+			return nil
+
+		// If it's a status change and from a different revision, but
+		// the commit is older than what we've seen, don't bother.
+		case commit.Committer.Time.Before(prev.StatusTime):
+			logging.Debugf(c,
+				"build %d (%s) from commit at %s, is not new",
+				build.ID, build.Status, commit.Committer.Time)
 			return nil
 		}
 
-		return datastore.Put(c, NewBuilder(prev.ID, build))
+		// Note that we update even if the commit revision is the same. This
+		// is because we want to compute on_change against the latest status
+		// for this builder when we do actually see a revision change.
+		return datastore.Put(c, NewBuilder(id, build.Status, commit))
 	}, nil)
 	if err != nil {
 		return nil, err
