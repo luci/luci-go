@@ -1,0 +1,210 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "10004660_c2b6f8a4",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-05T23:31:17Z",
+      "side": 1,
+      "message": "on the",
+      "range": {
+        "startLine": 85,
+        "startChar": 53,
+        "endLine": 85,
+        "endChar": 59
+      },
+      "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f0a9582_dabbbcd8",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-05T23:31:17Z",
+      "side": 1,
+      "message": "please implement MarshalJSON too, b/c this is a general purpose lib. Someone may expect marshaling and unmarshaling to be symmetric.",
+      "range": {
+        "startLine": 41,
+        "startChar": 15,
+        "endLine": 41,
+        "endChar": 28
+      },
+      "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "702c8f6c_4a4ce54c",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-05T23:31:17Z",
+      "side": 1,
+      "message": "check that timeParal.Time is \"\". In that case, u.Time should be time.Time{}",
+      "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34808044_cc3da8ae",
+        "filename": "common/api/gitiles/proto.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-05T23:31:17Z",
+      "side": 1,
+      "message": "this change is breaking: ret.Time should be nil if u.Time.IsZero()",
+      "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0438f5e5_f3765a6b",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-05T23:31:17Z",
+      "side": 1,
+      "message": "i am not sure our use StatusTime will not break because of we have different ways of computing time. For a single builder, the method of StatusTime computation should be always the same. Consider\n\nBuild1: creation time\u003d1\nbuild2: commit time\u003d20\nbuild3: creation time \u003d 3\n\nbuild3 is ignored\n\nI will review the rest of this file when we resolve this comment",
+      "range": {
+        "startLine": 40,
+        "startChar": 22,
+        "endLine": 40,
+        "endChar": 27
+      },
+      "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb9ade12_d88f538e",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-05T23:31:17Z",
+      "side": 1,
+      "message": "decide",
+      "range": {
+        "startLine": 46,
+        "startChar": 34,
+        "endLine": 46,
+        "endChar": 41
+      },
+      "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a272926_b1446b87",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-05T23:31:17Z",
+      "side": 1,
+      "message": "luci-notify used only for continuous builds in practice, right?\nhow about dropping this case.\nThis way the status time comparison code will stay correct AND status time will be computed based on commit order (what we care about), as opposed to build creation order",
+      "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e969b16_e3e3bce3",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-05T23:31:17Z",
+      "side": 1,
+      "message": "nit: Gitiles",
+      "range": {
+        "startLine": 46,
+        "startChar": 64,
+        "endLine": 46,
+        "endChar": 71
+      },
+      "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6e93e31_216168a0",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-05T23:31:17Z",
+      "side": 1,
+      "message": "nit: why caps?",
+      "range": {
+        "startLine": 57,
+        "startChar": 57,
+        "endLine": 57,
+        "endChar": 64
+      },
+      "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f69eb8b3_b12292b0",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-05T23:31:17Z",
+      "side": 1,
+      "message": "why did we start processing incomplete builds?",
+      "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
