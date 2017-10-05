@@ -22,17 +22,72 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/buildbucket"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/luci_notify/config"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 )
 
-var errAccessDenied = fmt.Errorf("access to build denied")
+var (
+	errAccessDenied = fmt.Errorf("access to build denied")
+	errBuildOutOfOrder = fmt.Errorf("build out-of-order by creation time")
+	errPreempted = fmt.Errorf("preempted by another build")
+)
+
+type Ordering int
+
+const (
+	IN_ORDER = iota
+	SAME
+	OUT_OF_ORDER
+	UNKNOWN
+)
+
+func getCommitBuildSet(sets []buildbucket.BuildSet) *buildbucket.GitilesCommit {
+	for _, set := range sets {
+		if commit, ok := set.(*buildbucket.GitilesCommit); ok {
+			return commit
+		}
+	}
+	return nil
+}
+
+// getCommitOrder determines the relative ordering of the commit for a new build
+// vs. some older revision.
+func getCommitOrder(c context.Context, newCommit *buildbucket.GitilesCommit, oldRevision string) (Ordering, error) {
+	if newCommit.Revision == oldRevision {
+		return SAME, nil
+	}
+	transport, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(
+		"https://www.googleapis.com/auth/gerritcodereview",
+	))
+	if err != nil {
+		return UNKNOWN, errors.Annotate(err, "getting RPC Transport").Err()
+	}
+
+	// With this range, if newCommit.Revision == oldRevision we'll get nothing, but
+	// this was checked earlier already.
+	treeish := fmt.Sprintf("%s..%s", oldRevision, newCommit.Revision)
+	client := &gitiles.Client{Client: &http.Client{Transport: transport}}
+	commits, err := client.Log(c, newCommit.ProjectURL(), treeish)
+	if err != nil {
+		return UNKNOWN, errors.Annotate(err, "fetching commit from Gitiles").Err()
+	}
+
+	// Since they're not the same commit, we can be sure this implies that they're
+	// out-of-order.
+	if len(commits) == 0 {
+		return OUT_OF_ORDER, nil
+	}
+	return IN_ORDER, nil
+}
 
 // IsBuildAllowed returns true if luci-notify is allowed to handle b.
 func isBuildAllowed(b *buildbucket.Build) bool {
@@ -45,6 +100,20 @@ func isBuildAllowed(b *buildbucket.Build) bool {
 
 func getBuilderID(b *buildbucket.Build) string {
 	return fmt.Sprintf("buildbucket/%s/%s", b.Bucket, b.Builder)
+}
+
+// getOrInitBuilder attempts to Get a Builder from the datastore.
+// If the Builder is not found, then we Put it immediately within the same transaction.
+func getOrInitBuilder(c context.Context, id, revision string, build *buildbucket.Build) (*Builder, error) {
+	var gotBuilder *Builder
+	err := WithBuilder(c, id, func(c context.Context, builder *Builder) error {
+		gotBuilder = builder
+		if builder.Status == StatusUnknown {
+			return datastore.Put(c, NewBuilder(id, revision, build))
+		}
+		return nil
+	})
+	return gotBuilder, err
 }
 
 // handleBuild processes a build recieved via HTTP request (PubSub).
@@ -81,27 +150,80 @@ func handleBuild(c context.Context, r *http.Request) error {
 		return nil
 	}
 
-	// LookupBuilder updates the datastore, so don't do this until we've already
-	// looked up notifiers to avoid tracking state for a builder we don't have a
-	// notifier for.
-	builder, err := LookupBuilder(c, builderID, build)
-	if err != nil {
-		return errors.Annotate(err, "looking up builder").Err()
-	}
-	logging.Debugf(c, "Got state: %v", builder)
-
-	notification := CreateNotification(c, notifiers, build, builder)
-	if notification == nil {
-		logging.Infof(c, "Not notifying anybody...")
+	gCommit := getCommitBuildSet(build.BuildSets)
+	if gCommit == nil {
+		logging.Infof(c, "No revision information found for this build, ignoring...")
 		return nil
 	}
-	// FIXME(mknyszek): if email sending fails
-	// 1) a non-transient error is returned and a notification is not sent
-	// 2) even if retried, the builder status  is already updated
-	//    so next time this code runs, OnChanged notification won't be sent
-	// TODO: if a notification needs to be sent, create a push task for sending
-	// in the builder's transaction, instead of sending right away.
-	return notification.Dispatch(c)
+
+	currentBuilder, err := getOrInitBuilder(c, builderID, gCommit.Revision, build)
+	if err != nil {
+		return errors.Annotate(err, "failed in first builder transaction").Err()
+	}
+	// If this builder wasn't found, getBuilder updated it already so we're done.
+	if currentBuilder.Status == StatusUnknown {
+		logging.Infof(c, "Registered new builder: %s", builderID)
+		return nil
+	}
+
+	// Here we loop until we can manage to actually land a change without getting
+	// pre-empted by another instance trying to land a change for the same builder.
+	// This is necessary because between the last Get where currentBuilder was
+	// received and now, there could have been a change to the datastore state.
+	var prevBuilder *Builder
+	for {
+		var commitOrder Ordering
+		if prevBuilder == nil || prevBuilder.StatusRevision != currentBuilder.StatusRevision {
+			commitOrder, err = getCommitOrder(c, gCommit, currentBuilder.StatusRevision)
+			if err != nil {
+				return err
+			}
+			switch commitOrder {
+			case SAME:
+				// continue
+			case IN_ORDER:
+				// continue
+			case OUT_OF_ORDER:
+				logging.Debugf(c, "Found build with old commit, ignoring...")
+				return nil
+			default:
+				return fmt.Errorf("found invalid Ordering")
+			}
+		}
+
+		prevBuilder = currentBuilder
+		err = WithBuilder(c, builderID, func(c context.Context, builder *Builder) error {
+			currentBuilder = builder
+			if !prevBuilder.UpdateTime.Equal(builder.UpdateTime) {
+				return errPreempted
+			}
+			// Don't bother doing anything if the status hasn't changed.
+			if build.Status != builder.Status {
+				return nil
+			}
+			// If the revision is the same, check build creation time.
+			if commitOrder == SAME && builder.StatusTime.After(build.CreationTime) {
+				return errBuildOutOfOrder
+			}
+			return datastore.Put(c, NewBuilder(builderID, gCommit.Revision, build))
+		})
+		switch err {
+		case errPreempted:
+			continue
+		case errBuildOutOfOrder:
+			logging.Debugf(c, "Found build with the same commit but an old time, ignoring...")
+			return nil
+		case nil:
+			// FIXME(mknyszek): if email sending fails and if retried, the builder status
+			// is already updated so next time this code runs, OnChange notification won't
+			// be sent.
+			// TODO(mknyszek): if a notification needs to be sent, create a push task for sending
+			// in the builder's transaction, instead of sending right away.
+			return Notify(c, notifiers, build, currentBuilder)
+		default:
+			return err
+		}
+	}
 }
 
 // BuildbucketPubSubHandler is the main entrypoint for a new update from buildbucket's pubsub.
