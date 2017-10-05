@@ -47,20 +47,22 @@ func New() logdog.ServicesServer {
 				return nil, grpcutil.PermissionDenied
 			}
 
-			// Enter a datastore namespace based on the message type.
-			//
-			// We use a type switch here because this is a shared decorator.
-			if pbm, ok := req.(endpoints.ProjectBoundMessage); ok {
-				project := cfgtypes.ProjectName(pbm.GetMessageProject())
-				log.Fields{
-					"project": project,
-				}.Debugf(c, "Request is entering project namespace.")
-				if err := coordinator.WithProjectNamespace(&c, project, coordinator.NamespaceAccessNoAuth); err != nil {
-					return nil, err
-				}
-			}
-
-			return c, nil
+			return maybeEnterProjectNamespace(c, req)
 		},
 	}
+}
+
+// maybeEnterProjectNamespace enters a datastore namespace based on the request
+// message type.
+func maybeEnterProjectNamespace(c context.Context, req proto.Message) (context.Context, error) {
+	if pbm, ok := req.(endpoints.ProjectBoundMessage); ok {
+		project := cfgtypes.ProjectName(pbm.GetMessageProject())
+		log.Fields{
+			"project": project,
+		}.Debugf(c, "Request is entering project namespace.")
+		if err := coordinator.WithProjectNamespace(&c, project, coordinator.NamespaceAccessNoAuth); err != nil {
+			return c, err
+		}
+	}
+	return c, nil
 }
