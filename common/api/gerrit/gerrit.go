@@ -82,6 +82,12 @@ type AccountInfo struct {
 	UserName string `json:"username"`
 }
 
+// PureRevertResponse contains the response fields for calls to get-pure-revert
+// api.
+type PureRevertResponse struct {
+	IsPureRevert bool `json:"is_pure_revert"`
+}
+
 // ValidateGerritURL validates Gerrit URL for use in this package.
 func ValidateGerritURL(gerritURL string) error {
 	_, err := NormalizeGerritURL(gerritURL)
@@ -185,7 +191,7 @@ func (c *Client) ChangeQuery(ctx context.Context, qr ChangeQueryRequest) ([]*Cha
 	var resp struct {
 		Collection []*Change
 	}
-	if err := c.get(ctx, "changes/", qr.qs(), &resp.Collection); err != nil {
+	if _, err := c.get(ctx, "changes/", qr.qs(), &resp.Collection); err != nil {
 		return nil, false, err
 	}
 	result := resp.Collection
@@ -221,19 +227,42 @@ func (c *Client) GetChangeDetails(ctx context.Context, changeID string, options 
 	}
 
 	path := fmt.Sprintf("changes/%s/detail", url.PathEscape(changeID))
-	if err := c.get(ctx, path, qs, resp); err != nil {
+	if _, err := c.get(ctx, path, qs, resp); err != nil {
 		return nil, err
 	}
 	return resp, nil
 }
 
-func (c *Client) get(ctx context.Context, path string, query url.Values, result interface{}) error {
+// IsChangePureRevert determines if a change is a pure revert of another commit.
+//
+// This method returns a bool and an error.
+//
+// This implementation assumes that the caller knows which commit the change is
+// purportedly reverting e.g. via the revert_of property of the change, and
+// does not provide this information.
+func (c *Client) IsChangePureRevert(ctx context.Context, changeID string) (bool, error) {
+	resp := &PureRevertResponse{}
+	path := fmt.Sprintf("changes/%s/pure_revert", url.PathEscape(changeID))
+	sc, err := c.get(ctx, path, url.Values{}, resp)
+	if err != nil {
+		switch sc {
+		case 400:
+			return false, nil
+		default:
+			return false, err
+		}
+
+	}
+	return resp.IsPureRevert, nil
+}
+
+func (c *Client) get(ctx context.Context, path string, query url.Values, result interface{}) (int, error) {
 	u := c.gerritURL
 	u.Path = path
 	u.RawQuery = query.Encode()
 	r, err := ctxhttp.Get(ctx, c.httpClient, u.String())
 	if err != nil {
-		return transient.Tag.Apply(err)
+		return 0, transient.Tag.Apply(err)
 	}
 	defer r.Body.Close()
 	if r.StatusCode != 200 {
@@ -242,20 +271,20 @@ func (c *Client) get(ctx context.Context, path string, query url.Values, result 
 			// TODO(tandrii): consider retrying.
 			err = transient.Tag.Apply(err)
 		}
-		return err
+		return r.StatusCode, err
 	}
 	// Strip out the jsonp header, which is ")]}'"
 	const gerritPrefix = ")]}'"
 	trash := make([]byte, len(gerritPrefix))
 	cnt, err := r.Body.Read(trash)
 	if err != nil {
-		return errors.Annotate(err, "unexpected response from Gerrit").Err()
+		return 200, errors.Annotate(err, "unexpected response from Gerrit").Err()
 	}
 	if cnt != len(gerritPrefix) || gerritPrefix != string(trash) {
-		return errors.New("unexpected response from Gerrit")
+		return 200, errors.New("unexpected response from Gerrit")
 	}
 	if err = json.NewDecoder(r.Body).Decode(result); err != nil {
-		return errors.Annotate(err, "failed to decode Gerrit response into %T", result).Err()
+		return 200, errors.Annotate(err, "failed to decode Gerrit response into %T", result).Err()
 	}
-	return nil
+	return 200, nil
 }
