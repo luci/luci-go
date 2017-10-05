@@ -24,13 +24,43 @@ import (
 
 	"go.chromium.org/luci/buildbucket"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/luci_notify/config"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 )
+
+func getCommitBuildSet(sets []buildbucket.BuildSet) *buildbucket.GitilesCommit {
+	for _, set := range sets {
+		if commit, ok := set.(*buildbucket.GitilesCommit); ok {
+			return commit
+		}
+	}
+	return nil
+}
+
+// getCommit fetches the commit information for this build from GITILES.
+func getCommit(c context.Context, commit *buildbucket.GitilesCommit) (*gitiles.Commit, error) {
+	transport, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(
+		"https://www.googleapis.com/auth/gerritcodereview",
+	))
+	if err != nil {
+		return nil, errors.Annotate(err, "getting RPC Transport").Err()
+	}
+	client := &gitiles.Client{Client: &http.Client{Transport: transport}}
+	commits, err := client.Log(c, commit.ProjectURL(), commit.Revision, gitiles.Limit(1))
+	if err != nil {
+		return nil, errors.Annotate(err, "fetching commit from GITILES").Err()
+	}
+	if len(commits) < 1 {
+		return nil, fmt.Errorf("no commit found for repo %q rev %q", commit.Project, commit.Revision)
+	}
+	return &commits[0], nil
+}
 
 var errAccessDenied = fmt.Errorf("access to build denied")
 
@@ -67,7 +97,6 @@ func handleBuild(c context.Context, r *http.Request) error {
 		return nil
 	case !build.Status.Completed():
 		logging.Infof(c, "Received build that hasn't completed yet, ignoring...")
-		return nil
 	}
 
 	builderID := getBuilderID(build)
@@ -81,10 +110,19 @@ func handleBuild(c context.Context, r *http.Request) error {
 		return nil
 	}
 
+	var commit *gitiles.Commit
+	if buildset := getCommitBuildSet(build.BuildSets); buildset != nil {
+		if commit, err = getCommit(c, buildset); err != nil {
+			logging.WithError(err).Warningf(c, "failed to fetch commit")
+		}
+	} else {
+		logging.Infof(c, "No commit information found, falling back to time-based method...")
+	}
+
 	// LookupBuilder updates the datastore, so don't do this until we've already
 	// looked up notifiers to avoid tracking state for a builder we don't have a
 	// notifier for.
-	builder, err := LookupBuilder(c, builderID, build)
+	builder, err := LookupBuilder(c, builderID, build, commit)
 	if err != nil {
 		return errors.Annotate(err, "looking up builder").Err()
 	}
@@ -95,11 +133,10 @@ func handleBuild(c context.Context, r *http.Request) error {
 		logging.Infof(c, "Not notifying anybody...")
 		return nil
 	}
-	// FIXME(mknyszek): if email sending fails
-	// 1) a non-transient error is returned and a notification is not sent
-	// 2) even if retried, the builder status  is already updated
-	//    so next time this code runs, OnChanged notification won't be sent
-	// TODO: if a notification needs to be sent, create a push task for sending
+	// FIXME(mknyszek): if email sending fails and if retried, the builder status
+	// is already updated so next time this code runs, OnChange notification won't
+	// be sent.
+	// TODO(mknyszek): if a notification needs to be sent, create a push task for sending
 	// in the builder's transaction, instead of sending right away.
 	return notification.Dispatch(c)
 }

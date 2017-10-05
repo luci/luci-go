@@ -30,19 +30,31 @@ import (
 
 // User is the author or the committer returned from gitiles.
 type User struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Time  string `json:"time"`
+	Name  string    `json:"name"`
+	Email string    `json:"email"`
+	Time  time.Time `json:"-"`
 }
 
-// GetTime returns the Time field as real data!
-func (u *User) GetTime() (time.Time, error) {
-	t, err := time.Parse(time.ANSIC, u.Time)
+// UnmarshalJSON implements a custom json unmarshal method for
+// User so that the time can be parsed at decode time, resulting
+// in a more idiomatic data structure.
+func (u *User) UnmarshalJSON(b []byte) error {
+	if err := json.Unmarshal(b, u); err != nil {
+		return err
+	}
+	timeParam := struct {
+		Time string
+	}{}
+	if err := json.Unmarshal(b, &timeParam); err != nil {
+		return err
+	}
+	t, err := time.Parse(time.ANSIC, timeParam.Time)
 	if err != nil {
 		// Try it with the appended timezone version.
-		t, err = time.Parse(time.ANSIC+" -0700", u.Time)
+		t, err = time.Parse(time.ANSIC+" -0700", timeParam.Time)
 	}
-	return t, err
+	u.Time = t
+	return err
 }
 
 // KnownTreeDiffTypes is the list of known values that TreeDiff.Type may have.
