@@ -126,6 +126,7 @@ type Service struct {
 
 	coordinatorHost     string
 	coordinatorInsecure bool
+	useDatastoreConfig  bool
 
 	// onGCE is true if we're on GCE. We probe this once during Run.
 	onGCE        bool
@@ -170,6 +171,7 @@ func (s *Service) Run(c context.Context, f func(context.Context) error) {
 	if s.Name == "" {
 		s.Name = filepath.Base(os.Args[0])
 	}
+	s.useDatastoreConfig = true // If available, use datastore config.
 
 	rc := 0
 	if err := s.runImpl(c, f); err != nil {
@@ -221,12 +223,13 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 		defer dsClient.Close()
 
 		ccfg := cloud.Config{
-			DS: dsClient,
+			DS:        dsClient,
+			ProjectID: s.serviceID,
 		}
 		c = ccfg.Use(c, nil)
 		c = settings.Use(c, settings.New(gaesettings.Storage{}))
 
-		s.hasDatastore = true
+		s.hasDatastore = s.useDatastoreConfig
 		log.Debugf(c, "Enabled cloud datastore access.")
 	} else {
 		log.WithError(err).Warningf(c, "Failed to create cloud datastore client.")
@@ -319,6 +322,8 @@ func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
 		"If non-zero, poll for configuration changes and kill the application if one is detected.")
 	fs.StringVar(&s.testConfigFilePath, "test-config-file-path", s.testConfigFilePath,
 		"(Testing) If set, load configuration from a local filesystem rooted here.")
+	fs.BoolVar(&s.useDatastoreConfig, "use-datastore-config", s.useDatastoreConfig,
+		"Enable/Disable loading configuration directly from datastore cache.")
 }
 
 // probeGCEEnvironment fills in any parameters that can be probed from Google
