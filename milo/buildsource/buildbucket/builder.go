@@ -249,14 +249,20 @@ func (a newBuildsFirst) Less(i, j int) bool {
 	return a[i].PendingTime.Started.After(a[j].PendingTime.Started)
 }
 
-// GetBuilder is used by buildsource.BuilderID.Get to obtain the resp.Builder.
-func GetBuilder(c context.Context, bucket, builder string, limit int) (*resp.Builder, error) {
+func getHost(c context.Context) (string, error) {
 	settings := common.GetSettings(c)
 	if settings.Buildbucket == nil || settings.Buildbucket.Host == "" {
-		logging.Errorf(c, "missing buildbucket settings")
-		return nil, errors.New("missing buildbucket settings")
+		return "", errors.New("missing buildbucket host in settings")
 	}
-	host := settings.Buildbucket.Host
+	return settings.Buildbucket.Host, nil
+}
+
+// GetBuilder is used by buildsource.BuilderID.Get to obtain the resp.Builder.
+func GetBuilder(c context.Context, bucket, builder string, limit int) (*resp.Builder, error) {
+	host, err := getHost(c)
+	if err != nil {
+		return nil, err
+	}
 
 	if limit < 0 {
 		limit = 20

@@ -24,7 +24,7 @@
       "Failure build.build"
     ]
   },
-  "SourceStamp": null,
+  "Trigger": null,
   "Components": [
     {
       "Label": "recipe bootstrap",

@@ -30,7 +30,21 @@
       "Running recipe bootstrap"
     ]
   },
-  "SourceStamp": null,
+  "Trigger": {
+    "AuthorName": "",
+    "AuthorEmail": "",
+    "CommitTime": "0001-01-01T00:00:00Z",
+    "Repo": "",
+    "Branch": "",
+    "RequestRevision": null,
+    "Revision": null,
+    "Description": "",
+    "Changelist": null,
+    "CommitURL": "",
+    "File": null,
+    "Source": "",
+    "Project": "secret"
+  },
   "Components": [
     {
       "Label": "recipe bootstrap",
