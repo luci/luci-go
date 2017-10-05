@@ -19,14 +19,17 @@ import (
 	"fmt"
 	"html/template"
 	"strings"
+	"time"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/mail"
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/luci_notify/config"
 )
@@ -125,8 +128,8 @@ func isRecipientAllowed(recipient string, build *buildbucket.Build) bool {
 // This function also checks whether the triggers specified in the Notifiers have been met, and
 // filters out recipients from the list of Notifiers appropriately. If there are no recipients to
 // send to, then no Notification is created.
-func CreateNotification(c context.Context, notifiers []*config.Notifier, build *buildbucket.Build, builder *Builder) *Notification {
-	if builder.StatusTime.After(build.CreationTime) {
+func CreateNotification(c context.Context, notifiers []*config.Notifier, build *buildbucket.Build, commit *gitiles.Commit, builder *Builder) *Notification {
+	if commit.Commit != builder.StatusRevision && builder.StatusTime.After(time.Time(commit.Committer.Time)) {
 		// TODO(mknyszek): There must be something better than just ignoring it.
 		//
 		// This case is logged when looking up/updating Builder.
@@ -164,7 +167,7 @@ func CreateNotification(c context.Context, notifiers []*config.Notifier, build *
 // Dispatch tells a Notification to send a notification to all its recipients.
 func (n *Notification) Dispatch(c context.Context) error {
 	if err := n.sendEmail(c); err != nil {
-		return errors.Annotate(err, "failed to send email").Err()
+		return errors.Annotate(err, "failed to send email").Tag(transient.Tag).Err()
 	}
 	return nil
 }
