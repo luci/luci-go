@@ -143,10 +143,14 @@ func TestRunSimulation(t *testing.T) {
 			})
 		}
 
+		toIndex := func(t Task) int64 {
+			return t.Payload.(*wrappers.Int64Value).Value
+		}
+
 		toIndexes := func(arr []Task) []int64 {
 			out := []int64{}
 			for _, task := range arr {
-				out = append(out, task.Payload.(*wrappers.Int64Value).Value)
+				out = append(out, toIndex(task))
 			}
 			return out
 		}
@@ -211,6 +215,24 @@ func TestRunSimulation(t *testing.T) {
 			So(toIndexes(pending), ShouldResemble, []int64{6})
 			// Tasks executed in correct sequence and duplicated task is skipped.
 			So(toIndexes(executed), ShouldResemble, []int64{1, 2, 3, 4, 5})
+			// The clock matches last executed task.
+			So(clock.Now(ctx).Sub(epoch), ShouldEqual, 2*time.Second)
+		})
+
+		Convey("ShouldStopBefore", func() {
+			addTask(ctx, 1, 0, "")
+
+			executed, pending, err := tst.RunSimulation(ctx, &SimulationParams{
+				ShouldStopBefore: func(t Task) bool {
+					return toIndex(t) == 5
+				},
+			})
+			So(err, ShouldBeNil)
+
+			// The task we stopped before is still pending.
+			So(toIndexes(pending), ShouldResemble, []int64{5})
+			// Tasks executed in correct sequence.
+			So(toIndexes(executed), ShouldResemble, []int64{1, 2, 3, 4})
 			// The clock matches last executed task.
 			So(clock.Now(ctx).Sub(epoch), ShouldEqual, 2*time.Second)
 		})
