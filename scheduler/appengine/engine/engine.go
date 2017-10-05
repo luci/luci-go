@@ -245,6 +245,8 @@ func (e *engineImpl) init() {
 	})
 	e.cfg.Dispatcher.RegisterTask(&internal.TriageJobStateTask{}, e.triageJobStateTask, "triages", nil)
 	e.cfg.Dispatcher.RegisterTask(&internal.InvocationFinishedTask{}, e.invocationFinishedTask, "completions", nil)
+	e.cfg.Dispatcher.RegisterTask(&internal.FanOutTriggersTask{}, e.fanOutTriggersTask, "triggers", nil)
+	e.cfg.Dispatcher.RegisterTask(&internal.EnqueueTriggersTask{}, e.enqueueTriggersTask, "triggers", nil)
 }
 
 // jobController is a part of engine that directly deals with state transitions
@@ -1862,6 +1864,9 @@ func (e *engineImpl) launchInvocationTask(c context.Context, tqTask proto.Messag
 // Note that we can't just open a Job transaction right here, since the rate
 // of invocation finish events is not controllable and can easily be over 1 QPS
 // limit, overwhelming the Job entity group.
+//
+// If the invocation emitted some triggers when it was finishing, we route them
+// here as well.
 func (e *engineImpl) invocationFinishedTask(c context.Context, tqTask proto.Message) error {
 	msg := tqTask.(*internal.InvocationFinishedTask)
 
@@ -1869,6 +1874,82 @@ func (e *engineImpl) invocationFinishedTask(c context.Context, tqTask proto.Mess
 	c = logging.SetField(c, "InvID", msg.InvId)
 
 	if err := recentlyFinishedSet(c, msg.JobId).Add(c, []int64{msg.InvId}); err != nil {
+		logging.WithError(err).Errorf(c, "Failed to update recently finished invocations set")
+		return err
+	}
+
+	// Kick the triage task and fan out the emitted triggers in parallel. Retry
+	// the whole thing if any of these operations fail. Everything that happens in
+	// this handler is idempotent (including recentlyFinishedSet modification
+	// above).
+
+	wg := sync.WaitGroup{}
+	errs := errors.MultiError{nil, nil}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if errs[0] = e.kickTriageJobStateTask(c, msg.JobId); errs[0] != nil {
+			logging.WithError(errs[0]).Errorf(c, "Failed to kick job triage task")
+		}
+	}()
+
+	if msg.Triggers != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if errs[1] = e.fanOutTriggersTask(c, msg.Triggers); errs[1] != nil {
+				logging.WithError(errs[1]).Errorf(c, "Failed to fan out triggers")
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	if errs.First() != nil {
+		return transient.Tag.Apply(errs)
+	}
+
+	return nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Triggers handling (v2 engine).
+
+// fanOutTriggersTask handles a batch enqueue of triggers.
+//
+// It is enqueued transactionally by the invocation, and results in a bunch of
+// non-transactional EnqueueTriggersTask tasks.
+func (e *engineImpl) fanOutTriggersTask(c context.Context, tqTask proto.Message) error {
+	msg := tqTask.(*internal.FanOutTriggersTask)
+
+	tasks := make([]*tq.Task, len(msg.JobIds))
+	for i, jobID := range msg.JobIds {
+		tasks[i] = &tq.Task{
+			Payload: &internal.EnqueueTriggersTask{
+				JobId:    jobID,
+				Triggers: msg.Triggers,
+			},
+		}
+	}
+
+	return e.cfg.Dispatcher.AddTask(c, tasks...)
+}
+
+// enqueueTriggersTask adds a bunch of triggers to job's pending triggers set
+// and kicks the triage process to process them.
+func (e *engineImpl) enqueueTriggersTask(c context.Context, tqTask proto.Message) error {
+	msg := tqTask.(*internal.EnqueueTriggersTask)
+
+	c = logging.SetField(c, "JobID", msg.JobId)
+
+	logging.Infof(c, "Adding following triggers to pending triggers set")
+	for _, t := range msg.Triggers {
+		logging.Infof(c, "  %s (emitted by %q, inv %d)", t.Id, t.JobId, t.InvocationId)
+	}
+
+	if err := pendingTriggersSet(c, msg.JobId).Add(c, msg.Triggers); err != nil {
+		logging.WithError(err).Errorf(c, "Failed to update pending triggers set")
 		return err
 	}
 
@@ -1935,7 +2016,14 @@ func (e *engineImpl) triageJobStateTask(c context.Context, tqTask proto.Message)
 	}()
 
 	// There's error logging inside of triageOp already.
-	op := triageOp{jobID: jobID}
+	op := triageOp{
+		jobID:            jobID,
+		triggeringPolicy: e.triggeringPolicy,
+		enqueueInvocations: func(c context.Context, job *Job, req []InvocationRequest) error {
+			_, err := e.enqueueInvocations(c, job, req)
+			return err
+		},
+	}
 	if err := op.prepare(c); err != nil {
 		return err
 	}
@@ -1955,6 +2043,22 @@ func (e *engineImpl) triageJobStateTask(c context.Context, tqTask proto.Message)
 	// Best effort cleanup.
 	op.finalize(c)
 	return nil
+}
+
+// triggeringPolicy decides how to convert a set of pending triggers into
+// a bunch of new invocations.
+//
+// Called within a job transaction. Must not do any expensive calls.
+func (e *engineImpl) triggeringPolicy(c context.Context, job *Job, triggers []*internal.Trigger) ([]InvocationRequest, error) {
+	// TODO(vadimsh): This policy matches v1 behavior:
+	//  * Don't start anything new if some invocation is already running.
+	//  * Otherwise consume all pending triggers at once.
+	if len(job.ActiveInvocations) != 0 {
+		return nil, nil
+	}
+	return []InvocationRequest{
+		{IncomingTriggers: triggers},
+	}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
