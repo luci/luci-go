@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/filter/featureBreaker"
@@ -29,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 
@@ -347,17 +349,18 @@ func TestForceInvocationV2(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// The sequence of tasks we've just performed.
-			So(len(tasks), ShouldEqual, 4)
-			So(tasks[0].Payload, ShouldResemble, &internal.LaunchInvocationsBatchTask{
-				Tasks: []*internal.LaunchInvocationTask{{JobId: "project/job-v2", InvId: expectedInvID}},
+			So(tasks.Payloads(), ShouldResemble, []proto.Message{
+				&internal.LaunchInvocationsBatchTask{
+					Tasks: []*internal.LaunchInvocationTask{{JobId: "project/job-v2", InvId: expectedInvID}},
+				},
+				&internal.LaunchInvocationTask{
+					JobId: "project/job-v2", InvId: expectedInvID,
+				},
+				&internal.InvocationFinishedTask{
+					JobId: "project/job-v2", InvId: expectedInvID,
+				},
+				&internal.TriageJobStateTask{JobId: "project/job-v2"},
 			})
-			So(tasks[1].Payload, ShouldResemble, &internal.LaunchInvocationTask{
-				JobId: "project/job-v2", InvId: expectedInvID,
-			})
-			So(tasks[2].Payload, ShouldResemble, &internal.InvocationFinishedTask{
-				JobId: "project/job-v2", InvId: expectedInvID,
-			})
-			So(tasks[3].Payload, ShouldResemble, &internal.TriageJobStateTask{JobId: "project/job-v2"})
 
 			// The invocation is in finished state.
 			inv, err = e.getInvocation(c, "project/job-v2", invID)
@@ -390,6 +393,173 @@ func TestForceInvocationV2(t *testing.T) {
 			datastore.GetTestable(c).CatchupIndexes()
 			invs, _, _ := e.ListVisibleInvocations(auth.WithState(c, asUserOne), "project/job-v2", 100, "")
 			So(invs, ShouldResemble, []*Invocation{inv})
+		})
+	})
+}
+
+func TestOneJobTriggersAnother(t *testing.T) {
+	t.Parallel()
+
+	Convey("with fake env", t, func() {
+		c := newTestContext(epoch)
+		e, mgr := newTestEngine()
+
+		tq := tqtesting.GetTestable(c, e.cfg.Dispatcher)
+		tq.CreateQueues()
+
+		triggeringJob := "project/triggering-job-v2"
+		triggeredJob := "project/triggered-job-v2"
+
+		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
+			{
+				JobID:           triggeringJob,
+				TriggeredJobIDs: []string{triggeredJob},
+				Revision:        "rev1",
+				Schedule:        "triggered",
+				Task:            noopTaskBytes(),
+				Acls:            aclOne,
+			},
+			{
+				JobID:    triggeredJob,
+				Revision: "rev1",
+				Schedule: "triggered",
+				Task:     noopTaskBytes(),
+				Acls:     aclOne,
+			},
+		}), ShouldBeNil)
+
+		Convey("happy path", func() {
+			const triggeringInvID int64 = 9200093523825174512
+			const triggeredInvID int64 = 9200093521728243376
+
+			// Force launch triggering job.
+			_, err := e.ForceInvocation(auth.WithState(c, asUserOne), triggeringJob)
+			So(err, ShouldBeNil)
+
+			// Eventually it runs the task which emits a bunch of triggers, which
+			// cause triggered job triage, which eventually results in a new
+			// invocation launch. At this point we stop and examine what we see.
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
+				ctl.EmitTrigger(ctx, &internal.Trigger{Id: "t1"})
+				So(ctl.Save(ctx), ShouldBeNil)
+				ctl.EmitTrigger(ctx, &internal.Trigger{Id: "t2"})
+				ctl.State().Status = task.StatusSucceeded
+				return nil
+			}
+			tasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
+				ShouldStopBefore: func(t tqtesting.Task) bool {
+					task, ok := t.Payload.(*internal.LaunchInvocationsBatchTask)
+					return ok && task.Tasks[0].JobId == triggeredJob
+				},
+			})
+			So(err, ShouldBeNil)
+
+			// How these triggers are seen from outside the task.
+			expectedTrigger1 := &internal.Trigger{
+				Id:           "t1",
+				JobId:        triggeringJob,
+				InvocationId: triggeringInvID,
+				Created:      google.NewTimestamp(epoch.Add(1 * time.Second)),
+			}
+			expectedTrigger2 := &internal.Trigger{
+				Id:           "t2",
+				JobId:        triggeringJob,
+				InvocationId: triggeringInvID,
+				Created:      google.NewTimestamp(epoch.Add(1 * time.Second)),
+			}
+
+			// All the tasks we've just executed.
+			So(tasks.Payloads(), ShouldResemble, []proto.Message{
+				// Triggering job begins execution.
+				&internal.LaunchInvocationsBatchTask{
+					Tasks: []*internal.LaunchInvocationTask{{JobId: triggeringJob, InvId: triggeringInvID}},
+				},
+				&internal.LaunchInvocationTask{
+					JobId: triggeringJob, InvId: triggeringInvID,
+				},
+
+				// It emits a trigger in the middle.
+				&internal.FanOutTriggersTask{
+					JobIds:   []string{triggeredJob},
+					Triggers: []*internal.Trigger{expectedTrigger1},
+				},
+				&internal.EnqueueTriggersTask{
+					JobId:    triggeredJob,
+					Triggers: []*internal.Trigger{expectedTrigger1},
+				},
+
+				// Triggering job finishes execution, emitting another trigger.
+				&internal.InvocationFinishedTask{
+					JobId: triggeringJob,
+					InvId: triggeringInvID,
+					Triggers: &internal.FanOutTriggersTask{
+						JobIds:   []string{triggeredJob},
+						Triggers: []*internal.Trigger{expectedTrigger2},
+					},
+				},
+				&internal.EnqueueTriggersTask{
+					JobId:    triggeredJob,
+					Triggers: []*internal.Trigger{expectedTrigger2},
+				},
+
+				// Triggered job is getting triaged (because pending triggers).
+				&internal.TriageJobStateTask{
+					JobId: triggeredJob,
+				},
+
+				// Triggering job is getting triaged (because it has just finished).
+				&internal.TriageJobStateTask{
+					JobId: triggeringJob,
+				},
+			})
+
+			// At this point triggered job is just about to start.
+
+			// Triggering invocation has finished (with triggers recorded).
+			triggeringInv, err := e.getInvocation(c, triggeringJob, triggeringInvID)
+			So(err, ShouldBeNil)
+			So(triggeringInv.Status, ShouldEqual, task.StatusSucceeded)
+			outgoing, err := triggeringInv.OutgoingTriggers()
+			So(err, ShouldBeNil)
+			So(outgoing, ShouldResemble, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
+
+			// Now we resume the simulation. It will start the triggered invocation
+			// and run it.
+			var seen []*internal.Trigger
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller, triggers []*internal.Trigger) error {
+				seen = triggers
+				ctl.State().Status = task.StatusSucceeded
+				return nil
+			}
+			tasks, _, err = tq.RunSimulation(c, nil)
+			So(err, ShouldBeNil)
+
+			// All the tasks we've just executed.
+			So(tasks.Payloads(), ShouldResemble, []proto.Message{
+				// The triggered job begins execution.
+				&internal.LaunchInvocationsBatchTask{
+					Tasks: []*internal.LaunchInvocationTask{{JobId: triggeredJob, InvId: triggeredInvID}},
+				},
+				&internal.LaunchInvocationTask{
+					JobId: triggeredJob, InvId: triggeredInvID,
+				},
+				// ...and finishes. Note that the triage doesn't launch new invocation.
+				&internal.InvocationFinishedTask{
+					JobId: triggeredJob, InvId: triggeredInvID,
+				},
+				&internal.TriageJobStateTask{JobId: triggeredJob},
+			})
+
+			// Verify LaunchTask callback saw the triggers.
+			So(seen, ShouldResemble, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
+
+			// And they are recoded in IncomingTriggers set.
+			triggeredInv, err := e.getInvocation(c, triggeredJob, triggeredInvID)
+			So(err, ShouldBeNil)
+			So(triggeredInv.Status, ShouldEqual, task.StatusSucceeded)
+			incoming, err := triggeredInv.IncomingTriggers()
+			So(err, ShouldBeNil)
+			So(incoming, ShouldResemble, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
 		})
 	})
 }

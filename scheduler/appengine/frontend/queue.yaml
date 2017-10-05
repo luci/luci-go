@@ -22,3 +22,6 @@ queue:
 
 - name: triages
   rate: 500/s
+
+- name: triggers
+  rate: 500/s

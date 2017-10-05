@@ -16,10 +16,14 @@ package engine
 
 import (
 	"testing"
+	"time"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
+
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/scheduler/appengine/internal"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -29,13 +33,14 @@ func TestTriageOp(t *testing.T) {
 
 	Convey("with fake env", t, func() {
 		c := newTestContext(epoch)
+		tb := triageTestBed{}
 
 		Convey("noop triage", func() {
 			before := &Job{
 				JobID:             "job",
 				ActiveInvocations: []int64{1, 2, 3},
 			}
-			after, err := runTestTriage(c, before)
+			after, err := tb.runTestTriage(c, before)
 			So(err, ShouldBeNil)
 			So(after, ShouldResemble, before)
 		})
@@ -47,19 +52,88 @@ func TestTriageOp(t *testing.T) {
 			}
 			recentlyFinishedSet(c, before.JobID).Add(c, []int64{1, 2, 4})
 
-			after, err := runTestTriage(c, before)
+			after, err := tb.runTestTriage(c, before)
 			So(err, ShouldBeNil)
 			So(after.ActiveInvocations, ShouldResemble, []int64{3, 5})
+		})
+
+		Convey("processes triggers", func() {
+			triggers := []*internal.Trigger{
+				{
+					Id:      "t0",
+					Created: google.NewTimestamp(epoch.Add(20 * time.Second)),
+				},
+				{
+					Id:      "t1",
+					Created: google.NewTimestamp(epoch.Add(20 * time.Second)),
+				},
+				{
+					Id:      "t2",
+					Created: google.NewTimestamp(epoch.Add(10 * time.Second)),
+				},
+				{
+					Id:      "a_t3", // to make its ID be before t0 and t1
+					Created: google.NewTimestamp(epoch.Add(20 * time.Second)),
+				},
+			}
+
+			before := &Job{JobID: "job"}
+			pendingTriggersSet(c, before.JobID).Add(c, triggers)
+
+			// Cycle 1. Pops triggers, converts them into a bunch of invocations.
+			// Triggers are in sorted order!
+			after, err := tb.runTestTriage(c, before)
+			So(err, ShouldBeNil)
+			So(after.ActiveInvocations, ShouldResemble, []int64{1, 2, 3, 4})
+			So(tb.requests, ShouldResemble, []InvocationRequest{
+				{IncomingTriggers: []*internal.Trigger{triggers[2]}},
+				{IncomingTriggers: []*internal.Trigger{triggers[3]}},
+				{IncomingTriggers: []*internal.Trigger{triggers[0]}},
+				{IncomingTriggers: []*internal.Trigger{triggers[1]}},
+			})
+
+			tb.requests = nil
+
+			// Cycle 2. Nothing new.
+			after, err = tb.runTestTriage(c, after)
+			So(err, ShouldBeNil)
+			So(after.ActiveInvocations, ShouldResemble, []int64{1, 2, 3, 4})
+			So(tb.requests, ShouldBeNil)
 		})
 	})
 }
 
-func runTestTriage(c context.Context, before *Job) (after *Job, err error) {
+type triageTestBed struct {
+	// Inputs.
+	triggeringPolicy func(c context.Context, job *Job, triggers []*internal.Trigger) ([]InvocationRequest, error)
+
+	// Outputs.
+	nextInvID int64
+	requests  []InvocationRequest
+}
+
+func (t *triageTestBed) runTestTriage(c context.Context, before *Job) (after *Job, err error) {
 	if err := datastore.Put(c, before); err != nil {
 		return nil, err
 	}
 
-	op := triageOp{jobID: before.JobID}
+	policy := t.triggeringPolicy
+	if policy == nil {
+		policy = t.defaultTriggeringPolicy
+	}
+
+	op := triageOp{
+		jobID:            before.JobID,
+		triggeringPolicy: policy,
+		enqueueInvocations: func(c context.Context, job *Job, req []InvocationRequest) error {
+			t.requests = append(t.requests, req...)
+			for range req {
+				t.nextInvID++
+				job.ActiveInvocations = append(job.ActiveInvocations, t.nextInvID)
+			}
+			return nil
+		},
+	}
 	if err := op.prepare(c); err != nil {
 		return nil, err
 	}
@@ -85,4 +159,13 @@ func runTestTriage(c context.Context, before *Job) (after *Job, err error) {
 		return nil, err
 	}
 	return after, nil
+}
+
+func (t *triageTestBed) defaultTriggeringPolicy(c context.Context, job *Job, triggers []*internal.Trigger) (out []InvocationRequest, err error) {
+	for _, t := range triggers {
+		out = append(out, InvocationRequest{
+			IncomingTriggers: []*internal.Trigger{t},
+		})
+	}
+	return
 }

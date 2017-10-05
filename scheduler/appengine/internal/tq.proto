@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package internal.tq;
 
+import "go.chromium.org/luci/scheduler/appengine/internal/triggers.proto";
+
 
 // ReadProjectConfigTask is used to import jobs of some project.
 //
@@ -67,6 +69,28 @@ message TriageJobStateTask {
 message InvocationFinishedTask {
   string job_id = 1;
   int64 inv_id = 2;
+  FanOutTriggersTask triggers = 3;
+}
 
-  // TODO(vadimsh): Add triggers.
+
+// FanOutTriggersTask is a batch task that emits a bunch of triggers.
+//
+// It is enqueued transactionally. It fans out into many EnqueueTriggersTask,
+// one per job ID.
+//
+// Queue: "triggers".
+message FanOutTriggersTask {
+  repeated string job_ids = 1;
+  repeated triggers.Trigger triggers = 2;
+}
+
+
+// EnqueueTriggersTask adds given triggers to a job's pending triggers set.
+//
+// Enqueued non-transactionally.
+//
+// Queue: "triggers".
+message EnqueueTriggersTask {
+  string job_id = 1;
+  repeated triggers.Trigger triggers = 2;
 }
