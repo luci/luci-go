@@ -140,6 +140,30 @@
       "revId": "18a367e83892b3513051d512497112cc23417e7e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8292150c_56cbfae4",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-05T02:05:52Z",
+      "side": 1,
+      "message": "sgtm",
+      "parentUuid": "7b4bcb53_fe3f103b",
+      "range": {
+        "startLine": 258,
+        "startChar": 1,
+        "endLine": 258,
+        "endChar": 39
+      },
+      "revId": "18a367e83892b3513051d512497112cc23417e7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
