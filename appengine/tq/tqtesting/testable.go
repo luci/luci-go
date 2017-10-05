@@ -55,7 +55,7 @@ type Testable interface {
 	// GetScheduledTasks fetches all scheduled tasks.
 	//
 	// Returned tasks are sorted by ETA (earliest first) and Name.
-	GetScheduledTasks() []Task
+	GetScheduledTasks() TaskList
 
 	// ExecuteTask executes a handler for the given task in a derivative of a
 	// given context.
@@ -84,7 +84,7 @@ type Testable interface {
 	//   executed: executed tasks, in order of their execution.
 	//   pending: tasks to be executed (when hitting a deadline or an error).
 	//   err: an error produced by the failed task (when exiting on an error).
-	RunSimulation(c context.Context, params *SimulationParams) (executed, pending []Task, err error)
+	RunSimulation(c context.Context, params *SimulationParams) (executed, pending TaskList, err error)
 }
 
 // SimulationParams are passed to RunSimulation.
@@ -115,11 +115,12 @@ type dispatcherInternals interface {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-type tasksList []Task
+// TaskList is a sortable list of Task structs.
+type TaskList []Task
 
-func (l tasksList) Len() int           { return len(l) }
-func (l tasksList) Swap(i, j int)      { l[i], l[j] = l[j], l[i] }
-func (l tasksList) Less(i, j int) bool { return l[i].isLessThan(&l[j]) }
+func (l TaskList) Len() int           { return len(l) }
+func (l TaskList) Swap(i, j int)      { l[i], l[j] = l[j], l[i] }
+func (l TaskList) Less(i, j int) bool { return l[i].isLessThan(&l[j]) }
 
 func (t *Task) isLessThan(other *Task) bool {
 	switch {
@@ -129,6 +130,17 @@ func (t *Task) isLessThan(other *Task) bool {
 		return false
 	}
 	return t.Task.Name < other.Task.Name
+}
+
+// Payloads collects payloads of each task into a slice.
+//
+// Useful when writing asserts in tests.
+func (l TaskList) Payloads() (out []proto.Message) {
+	out = make([]proto.Message, len(l))
+	for i, t := range l {
+		out[i] = t.Payload
+	}
+	return
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -145,8 +157,7 @@ func (t *testableImpl) CreateQueues() {
 	}
 }
 
-func (t *testableImpl) GetScheduledTasks() []Task {
-	var out tasksList
+func (t *testableImpl) GetScheduledTasks() (out TaskList) {
 	for _, tasks := range t.tqt.GetScheduledTasks() {
 		for _, task := range tasks {
 			payload, _ := t.d.GetPayload(task.Payload)
@@ -157,7 +168,7 @@ func (t *testableImpl) GetScheduledTasks() []Task {
 		}
 	}
 	sort.Sort(out)
-	return out
+	return
 }
 
 func (t *testableImpl) ExecuteTask(c context.Context, task Task, hdr *taskqueue.RequestHeaders) error {
@@ -183,7 +194,7 @@ func (t *testableImpl) ExecuteTask(c context.Context, task Task, hdr *taskqueue.
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func (t *testableImpl) RunSimulation(c context.Context, params *SimulationParams) (executed, pending []Task, err error) {
+func (t *testableImpl) RunSimulation(c context.Context, params *SimulationParams) (executed, pending TaskList, err error) {
 	tc := clock.Get(c).(testclock.TestClock)
 
 	var deadline time.Time

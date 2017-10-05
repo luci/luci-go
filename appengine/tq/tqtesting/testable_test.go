@@ -147,12 +147,12 @@ func TestRunSimulation(t *testing.T) {
 			return t.Payload.(*wrappers.Int64Value).Value
 		}
 
-		toIndexes := func(arr []Task) []int64 {
-			out := []int64{}
-			for _, task := range arr {
-				out = append(out, toIndex(task))
+		toIndexes := func(arr TaskList) (out []int64) {
+			// Hit Payloads() to generate code coverage.
+			for _, p := range arr.Payloads() {
+				out = append(out, p.(*wrappers.Int64Value).Value)
 			}
-			return out
+			return
 		}
 
 		// |---> ETA time grows to the right.
