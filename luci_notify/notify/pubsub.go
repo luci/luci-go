@@ -22,17 +22,61 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/buildbucket"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/luci_notify/config"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 )
 
-var errAccessDenied = fmt.Errorf("access to build denied")
+var (
+	errAccessDenied = fmt.Errorf("access to build denied")
+	errCommitOutOfOrder = fmt.Errorf("build out-of-order by revision")
+	errBuildOutOfOrder = fmt.Errorf("build out-of-order by creation time")
+)
+
+func getCommitBuildSet(sets []buildbucket.BuildSet) *buildbucket.GitilesCommit {
+	for _, set := range sets {
+		if commit, ok := set.(*buildbucket.GitilesCommit); ok {
+			return commit
+		}
+	}
+	return nil
+}
+
+// getCommit fetches the commit information for this build from Gitiles.
+//
+// getCommit uses oldRevision in order to query Gitiles for a commit range
+// with oldRevision~1 as the bottom of this range, and the revision associated
+// with the build to be the top. If no commits are returned by Gitiles,
+// then we can conclude that the revision associated with the build and
+// oldRevision are out-of-order, since even if they're the same we would
+// still get at least one build from Gitiles.
+func getCommit(c context.Context, build *buildbucket.Build, oldRevision string) (*gitiles.Commit, error) {
+	commit := getCommitBuildSet(build.BuildSets)
+	transport, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(
+		"https://www.googleapis.com/auth/gerritcodereview",
+	))
+	if err != nil {
+		return nil, errors.Annotate(err, "getting RPC Transport").Err()
+	}
+	client := &gitiles.Client{Client: &http.Client{Transport: transport}}
+	treeish := fmt.Sprintf("%s~1..%s", oldRevision, commit.Revision)
+	commits, err := client.Log(c, commit.ProjectURL(), treeish)
+	if err != nil {
+		return nil, errors.Annotate(err, "fetching commit from Gitiles").Err()
+	}
+	if len(commits) < 1 {
+		return nil, errCommitOutOfOrder
+	}
+	return &commits[0], nil
+}
 
 // IsBuildAllowed returns true if luci-notify is allowed to handle b.
 func isBuildAllowed(b *buildbucket.Build) bool {
@@ -81,27 +125,40 @@ func handleBuild(c context.Context, r *http.Request) error {
 		return nil
 	}
 
-	// LookupBuilder updates the datastore, so don't do this until we've already
-	// looked up notifiers to avoid tracking state for a builder we don't have a
-	// notifier for.
-	builder, err := LookupBuilder(c, builderID, build)
-	if err != nil {
-		return errors.Annotate(err, "looking up builder").Err()
-	}
-	logging.Debugf(c, "Got state: %v", builder)
-
-	notification := CreateNotification(c, notifiers, build, builder)
-	if notification == nil {
-		logging.Infof(c, "Not notifying anybody...")
+	var escapedBuilder *Builder
+	err = WithBuilder(c, builderID, func(builder *Builder) error {
+		escapedBuilder = builder
+		// Don't bother doing anything if the status hasn't changed.
+		if build.Status != builder.Status {
+			return nil
+		}
+		// Attempt to get the commit. This can fail with an out-of-order error.
+		commit, err := getCommit(c, build, builder.StatusRevision)
+		if err != nil {
+			return err
+		}
+		// If the revision is the same, check build creation time.
+		if commit.Commit == builder.StatusRevision && builder.StatusTime.After(build.CreationTime) {
+			return errBuildOutOfOrder
+		}
+		return datastore.Put(c, NewBuilder(builderID, commit.Commit, build))
+	})
+	switch err {
+	case errCommitOutOfOrder:
+		fallthrough
+	case errBuildOutOfOrder:
+		logging.WithError(err).Debugf(c, "out-of-order")
 		return nil
+	case nil:
+		// FIXME(mknyszek): if email sending fails and if retried, the builder status
+		// is already updated so next time this code runs, OnChange notification won't
+		// be sent.
+		// TODO(mknyszek): if a notification needs to be sent, create a push task for sending
+		// in the builder's transaction, instead of sending right away.
+		return Notify(c, notifiers, build, escapedBuilder)
+	default:
+		return err
 	}
-	// FIXME(mknyszek): if email sending fails
-	// 1) a non-transient error is returned and a notification is not sent
-	// 2) even if retried, the builder status  is already updated
-	//    so next time this code runs, OnChanged notification won't be sent
-	// TODO: if a notification needs to be sent, create a push task for sending
-	// in the builder's transaction, instead of sending right away.
-	return notification.Dispatch(c)
 }
 
 // BuildbucketPubSubHandler is the main entrypoint for a new update from buildbucket's pubsub.
