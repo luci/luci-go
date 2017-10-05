@@ -147,6 +147,61 @@ func TestGetChangeDetails(t *testing.T) {
 
 }
 
+func TestIsPureRevert(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("IsPureRevert", t, func() {
+		Convey("Bad change id", func() {
+			srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(404)
+				w.Header().Set("Content-Type", "text/plain")
+				fmt.Fprintf(w, "Not found: 629277")
+			})
+			defer srv.Close()
+
+			_, err := c.IsChangePureRevert(ctx, "629277")
+			So(err, ShouldNotBeNil)
+		})
+		Convey("Not revert", func() {
+			srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(400)
+				w.Header().Set("Content-Type", "text/plain")
+				fmt.Fprintf(w, "No ID was provided and change isn't a revert")
+			})
+			defer srv.Close()
+
+			r, err := c.IsChangePureRevert(ctx, "629277")
+			So(err, ShouldBeNil)
+			So(r, ShouldBeFalse)
+		})
+		Convey("Not pure revert", func() {
+			srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(200)
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprintf(w, ")]}'\n%s\n", "{\"is_pure_revert\":false}")
+			})
+			defer srv.Close()
+
+			r, err := c.IsChangePureRevert(ctx, "629277")
+			So(err, ShouldBeNil)
+			So(r, ShouldBeFalse)
+		})
+		Convey("Pure revert", func() {
+			srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(200)
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprintf(w, ")]}'\n%s\n", "{\"is_pure_revert\":true}")
+			})
+			defer srv.Close()
+
+			r, err := c.IsChangePureRevert(ctx, "629277")
+			So(err, ShouldBeNil)
+			So(r, ShouldBeTrue)
+		})
+	})
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 var (
