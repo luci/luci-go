@@ -57,27 +57,47 @@ func (ctl *jobControllerV2) onJobForceInvocation(c context.Context, job *Job) (F
 func (ctl *jobControllerV2) onInvUpdating(c context.Context, old, fresh *Invocation, timers []invocationTimer, triggers []*internal.Trigger) error {
 	assertInTransaction(c)
 
-	tasks := []*tq.Task{}
-
 	// TODO(vadimsh): Implement timers.
-	// TODO(vadimsh): Implement triggers.
+
+	// Register emitted triggers in the Invocation entity. Used mostly for UI.
+	if len(triggers) != 0 {
+		err := mutateTriggersList(&fresh.OutgoingTriggersRaw, func(out *[]*internal.Trigger) {
+			*out = append(*out, triggers...)
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// Prepare FanOutTriggersTask if we are emitting triggers for real. Skip this
+	// if no job is going to get them.
+	var fanOutTriggersTask *internal.FanOutTriggersTask
+	if len(triggers) != 0 && len(fresh.TriggeredJobIDs) != 0 {
+		fanOutTriggersTask = &internal.FanOutTriggersTask{
+			JobIds:   fresh.TriggeredJobIDs,
+			Triggers: triggers,
+		}
+	}
+
+	var tasks []*tq.Task
 
 	if !old.Status.Final() && fresh.Status.Final() {
 		// When invocation finishes, make it appear in the list of finished
 		// invocations (by setting the indexed field), and notify the parent job
 		// about the completion, so it can kick off a new one or otherwise react.
 		// Note that we can't open Job transaction here and have to use a task queue
-		// task.
+		// task. Bundle fanOutTriggersTask with this task, since we can. No need to
+		// create two separate tasks.
 		fresh.IndexedJobID = fresh.JobID
 		tasks = append(tasks, &tq.Task{
 			Payload: &internal.InvocationFinishedTask{
-				JobId: fresh.JobID,
-				InvId: fresh.ID,
-				// TODO(vadimsh): Add triggers here.
+				JobId:    fresh.JobID,
+				InvId:    fresh.ID,
+				Triggers: fanOutTriggersTask,
 			},
 		})
-	} else if len(triggers) != 0 {
-		// TODO(vadimsh): Emit <add a bunch of triggers> task.
+	} else if fanOutTriggersTask != nil {
+		tasks = append(tasks, &tq.Task{Payload: fanOutTriggersTask})
 	}
 
 	if len(timers) != 0 {
