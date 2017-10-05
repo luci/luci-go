@@ -15,16 +15,34 @@
 package gitiles
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func TestTime(t *testing.T) {
+	Convey("Marshal and Unmarshal Identity", t, func() {
+		// Nanoseconds must be zero because the string format in between
+		// does not contain nanoseconds.
+		tBefore := Time{time.Date(12, 2, 5, 6, 1, 3, 0, time.UTC)}
+		bytes, err := json.Marshal(tBefore)
+		So(err, ShouldBeNil)
+
+		var tAfter Time
+		err = json.Unmarshal(bytes, &tAfter)
+		So(err, ShouldBeNil)
+
+		So(tBefore, ShouldResemble, tAfter)
+	})
+}
 
 func TestRepoURL(t *testing.T) {
 	t.Parallel()
