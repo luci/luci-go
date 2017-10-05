@@ -23,6 +23,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/buildbucket"
 	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gitiles"
@@ -119,7 +120,7 @@ func getOrInitBuilder(c context.Context, id, revision string, build *buildbucket
 // history is a function that contacts gitiles to obtain the git history for
 // revision ordering purposes. It's passed in as a parameter in order to mock it
 // for testing.
-func handleBuild(c context.Context, build *buildbucket.Build, history testutil.HistoryFunc) error {
+func handleBuild(c context.Context, d *tq.Dispatcher, build *buildbucket.Build, history testutil.HistoryFunc) error {
 	builderID := getBuilderID(build)
 	logging.Infof(c, "Finding config for %q, %s", builderID, build.Status)
 	notifiers, err := config.LookupNotifiers(c, builderID)
@@ -140,7 +141,7 @@ func handleBuild(c context.Context, build *buildbucket.Build, history testutil.H
 	builder, err := getOrInitBuilder(c, builderID, gCommit.Revision, build)
 	switch {
 	case err == datastore.ErrNoSuchEntity:
-		return Notify(c, notifiers, build, builder)
+		return Notify(c, d, notifiers, build, builder)
 	case err != nil:
 		return err
 	}
@@ -153,7 +154,7 @@ func handleBuild(c context.Context, build *buildbucket.Build, history testutil.H
 	if len(commits) == 0 {
 		logging.Debugf(c, "Found build with old commit, ignoring...")
 		// Notify about the build, but ignore on_change by creating a builder with an unknown status.
-		return Notify(c, notifiers, build, &Builder{Status: StatusUnknown})
+		return Notify(c, d, notifiers, build, &Builder{Status: StatusUnknown})
 	}
 
 	// Update `builder`, and check if we need to store a newer version, then store it.
@@ -197,20 +198,14 @@ func handleBuild(c context.Context, build *buildbucket.Build, history testutil.H
 	case err != nil:
 		return err
 	}
-
-	// FIXME(mknyszek): if email sending fails and if retried, the builder status
-	// is already updated so next time this code runs, OnChange notification won't
-	// be sent.
-	// TODO(mknyszek): if a notification needs to be sent, create a push task for sending
-	// in the builder's transaction, instead of sending right away.
-	return Notify(c, notifiers, build, builder)
+	return Notify(c, d, notifiers, build, builder)
 }
 
 // BuildbucketPubSubHandler is the main entrypoint for a new update from buildbucket's pubsub.
 //
 // This handler delegates the actual processing of the build to handleBuild.
 // Its primary purpose is to unwrap context boilerplate and deal with progress-stopping errors.
-func BuildbucketPubSubHandler(ctx *router.Context) {
+func BuildbucketPubSubHandler(ctx *router.Context, d *tq.Dispatcher) {
 	c, h := ctx.Context, ctx.Writer
 	build, err := extractBuild(c, ctx.Request)
 	switch {
@@ -223,7 +218,7 @@ func BuildbucketPubSubHandler(ctx *router.Context) {
 	case !build.Status.Completed():
 		logging.Infof(c, "Received build that hasn't completed yet, ignoring...")
 	default:
-		if err := handleBuild(c, build, gitilesHistory); err != nil {
+		if err := handleBuild(c, d, build, gitilesHistory); err != nil {
 			logging.WithError(err).Errorf(c, "error while notifying")
 			if transient.Tag.In(err) {
 				// Transient errors are 500 so that PubSub retries them.
