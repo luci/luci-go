@@ -23,11 +23,16 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/mail"
 	"go.chromium.org/gae/service/user"
+	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 
 	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/config"
+	"go.chromium.org/luci/luci_notify/internal"
 	"go.chromium.org/luci/luci_notify/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -46,6 +51,53 @@ func notifyDummyBuild(status buildbucket.Status) *buildbucket.Build {
 	return testutil.TestBuild("test", "hello", "test-builder", status)
 }
 
+func verifyStringSliceResembles(actual, expect []string) {
+	// Put the strings into sets so prevent flakiness.
+	actualSet := stringset.NewFromSlice(actual...)
+	expectSet := stringset.NewFromSlice(expect...)
+	So(actualSet, ShouldResemble, expectSet)
+}
+
+func createMockTaskQueue(c context.Context) (*tq.Dispatcher, tqtesting.Testable) {
+	dispatcher := &tq.Dispatcher{}
+	InitDispatcher(dispatcher)
+	taskqueue := tqtesting.GetTestable(c, dispatcher)
+	taskqueue.CreateQueues()
+	return dispatcher, taskqueue
+}
+
+func verifyTasksAndMessages(c context.Context, taskqueue tqtesting.Testable, emailExpect []string) {
+	// Make sure a task either was or wasn't scheduled.
+	tasks := taskqueue.GetScheduledTasks()
+	if len(emailExpect) == 0 {
+		So(len(tasks), ShouldEqual, 0)
+		return
+	}
+	So(len(tasks), ShouldEqual, 1)
+
+	// Extract and check the task.
+	task, ok := tasks[0].Payload.(*internal.EmailTask)
+	So(ok, ShouldEqual, true)
+	verifyStringSliceResembles(task.Recipients, emailExpect)
+
+	// Simulate running the tasks.
+	done, pending, err := taskqueue.RunSimulation(c, nil)
+	So(err, ShouldBeNil)
+
+	// Check to see if any messages were sent.
+	messages := mail.GetTestable(c).SentMessages()
+	if len(emailExpect) == 0 {
+		So(len(done), ShouldEqual, 1)
+		So(len(pending), ShouldEqual, 0)
+		So(len(messages), ShouldEqual, 0)
+	} else {
+		verifyStringSliceResembles(messages[0].To, emailExpect)
+	}
+
+	// Reset messages sent for other tasks.
+	mail.GetTestable(c).Reset()
+}
+
 func TestNotify(t *testing.T) {
 	t.Parallel()
 
@@ -53,8 +105,15 @@ func TestNotify(t *testing.T) {
 		cfgName := "basic"
 		cfg, err := testutil.LoadProjectConfig(cfgName)
 		So(err, ShouldBeNil)
+
 		c := memory.UseWithAppID(context.Background(), "dev~luci-notify")
+		c = clock.Set(c, testclock.New(time.Now()))
+		user.GetTestable(c).Login("noreply@luci-notify-dev.appspotmail.com", "", false)
+
+		// Get notifiers from test config.
 		notifiers := extractNotifiers(c, cfgName, cfg)
+
+		// Re-usable builds and builders for running Notify.
 		goodBuild := notifyDummyBuild(buildbucket.StatusSuccess)
 		badBuild := notifyDummyBuild(buildbucket.StatusFailure)
 		goodBuilder := &Builder{
@@ -66,35 +125,28 @@ func TestNotify(t *testing.T) {
 			Status:          buildbucket.StatusFailure,
 		}
 
-		test := func(build *buildbucket.Build, builder *Builder, emailExpect ...string) {
-			// Login and test notifying.
-			user.GetTestable(c).Login("noreply@luci-notify-dev.appspotmail.com", "", false)
-			err := Notify(c, notifiers, build, builder)
+		dispatcher, taskqueue := createMockTaskQueue(c)
+
+		test := func(notifiers []*config.Notifier, build *buildbucket.Build, builder *Builder, emailExpect ...string) {
+			// Test Notify.
+			err := Notify(c, dispatcher, notifiers, builder.Status, build)
 			So(err, ShouldBeNil)
 
-			messages := mail.GetTestable(c).SentMessages()
-			So(len(messages), ShouldEqual, 1)
-
-			// Put the recipients into sets so prevent flakiness.
-			actualRecipients := stringset.NewFromSlice(messages[0].To...)
-			expectRecipients := stringset.NewFromSlice(emailExpect...)
-			So(actualRecipients, ShouldResemble, expectRecipients)
+			// Verify sent messages.
+			verifyTasksAndMessages(c, taskqueue, emailExpect)
 		}
 
 		Convey(`empty`, func() {
-			testNone := func(build *buildbucket.Build, builder *Builder) {
-				err := Notify(c, []*config.Notifier{}, build, builder)
-				So(err, ShouldBeNil)
-				So(len(mail.GetTestable(c).SentMessages()), ShouldEqual, 0)
-			}
-			testNone(goodBuild, goodBuilder)
-			testNone(goodBuild, badBuilder)
-			testNone(badBuild, goodBuilder)
-			testNone(badBuild, badBuilder)
+			var noNotifiers []*config.Notifier
+			test(noNotifiers, goodBuild, goodBuilder)
+			test(noNotifiers, goodBuild, badBuilder)
+			test(noNotifiers, badBuild, goodBuilder)
+			test(noNotifiers, badBuild, badBuilder)
 		})
 
 		Convey(`on success`, func() {
 			test(
+				notifiers,
 				goodBuild,
 				goodBuilder,
 				"test-example-success@google.com",
@@ -103,6 +155,7 @@ func TestNotify(t *testing.T) {
 
 		Convey(`on failure`, func() {
 			test(
+				notifiers,
 				badBuild,
 				badBuilder,
 				"test-example-failure@google.com",
@@ -111,6 +164,7 @@ func TestNotify(t *testing.T) {
 
 		Convey(`on change to failure`, func() {
 			test(
+				notifiers,
 				badBuild,
 				goodBuilder,
 				"test-example-failure@google.com",
@@ -120,6 +174,7 @@ func TestNotify(t *testing.T) {
 
 		Convey(`on change to success`, func() {
 			test(
+				notifiers,
 				goodBuild,
 				badBuilder,
 				"test-example-success@google.com",
