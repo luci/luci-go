@@ -60,6 +60,8 @@ func NewBuilder(id string, status buildbucket.Status, commit *gitiles.Commit) *B
 	}
 }
 
+type WithBuilderFunc func(*Builder) error
+
 // LookupBuilder returns a "previous" builder state.
 //
 // If no "previous" build is found in the datastore, then returns a Builder
@@ -67,9 +69,9 @@ func NewBuilder(id string, status buildbucket.Status, commit *gitiles.Commit) *B
 // have never recorded information about this builder before.
 //
 // It will also update the Builder in the datastore according to build.
-func LookupBuilder(c context.Context, id string, build *buildbucket.Build, commit *gitiles.Commit) (*Builder, error) {
+func WithBuilder(c context.Context, id string, f WithBuilderFunc) error {
 	prev := &Builder{ID: id}
-	err := datastore.RunInTransaction(c, func(c context.Context) error {
+	return datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, prev); {
 		case err == datastore.ErrNoSuchEntity:
 			prev.Status = StatusUnknown
@@ -78,27 +80,8 @@ func LookupBuilder(c context.Context, id string, build *buildbucket.Build, commi
 
 		case err != nil:
 			return err
-
-		// If there's been no status change, don't bother updating.
-		case build.Status == prev.Status:
-			return nil
-
-		// If it's a status change and from a different revision, but
-		// the commit is older than what we've seen, don't bother.
-		case prev.StatusTime.After(time.Time(commit.Committer.Time)):
-			logging.Debugf(c,
-				"build %d (%s) from commit at %s, is not new",
-				build.ID, build.Status, commit.Committer.Time)
-			return nil
 		}
 
-		// Note that we update even if the commit revision is the same. This
-		// is because we want to compute on_change against the latest status
-		// for this builder when we do actually see a revision change.
-		return datastore.Put(c, NewBuilder(id, build.Status, commit))
+		return f(prev)
 	}, nil)
-	if err != nil {
-		return nil, err
-	}
-	return prev, nil
 }
