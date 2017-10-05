@@ -388,7 +388,7 @@ func (s *State) Append(annotation string) error {
 
 		step := s.RootStep()
 		if step.SourceManifests == nil {
-			step.SourceManifests = map[string]*milo.Step_ManifestLink{}
+			step.SourceManifests = map[string]*milo.ManifestLink{}
 		}
 
 		name, hashHex, url := parts[0], parts[1], parts[2]
@@ -400,7 +400,7 @@ func (s *State) Append(annotation string) error {
 			return fmt.Errorf("repeated SOURCE_MANIFEST name %q", name)
 		}
 
-		step.SourceManifests[name] = &milo.Step_ManifestLink{
+		step.SourceManifests[name] = &milo.ManifestLink{
 			Sha256: hash,
 			Url:    url,
 		}

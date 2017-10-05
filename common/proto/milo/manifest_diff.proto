@@ -1,0 +1,83 @@
+// Copyright (c) 2015 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package milo;
+
+import "go.chromium.org/luci/common/proto/git/commit.proto";
+import "go.chromium.org/luci/common/proto/milo/manifest.proto";
+
+// ManifestDiff holds basic difference information between two source manifests.
+message ManifestDiff {
+  // The older of the two manifests.
+  milo.Manifest old = 1;
+
+  // The newer of the two manifests.
+  milo.Manifest new = 2;
+
+  // Stat indicates how a given item has changed.
+  enum Stat {
+    // These two items are identical
+    EQUAL    = 0;
+
+    // The item was added in `new` compared to `old`
+    ADDED    = 1;
+
+    // The item was removed in `new` compared to `old`
+    REMOVED  = 2;
+
+    // The item is in both, but is incomparable (e.g. repo_url changed from
+    // `old` to `new`).
+    MODIFIED = 4;
+
+    // The item is in both, and is directly comparable (e.g. different
+    // revisions of the same repo_url). This only applies to SCM messages.
+    //
+    // This is 0x8 | MODIFIED, so that users who don't care about DIFF v.
+    // MODIFIED can check `Status & MODIFIED`.
+    DIFF     = 12;
+  }
+
+  // This indicates if there is some overall difference between old and new.
+  Stat overall = 3;
+
+  message GitCheckout {
+    // Note: if this is DIFF, it is sensible to compute
+    //   `git log git_canonical_url old.revision new.revision`
+    Stat overall = 1;
+
+    // This URL should be used for RPCs. It may differ from the url in old or
+    // new if the service computing this ManifestDiff knows of e.g. a repo URL
+    // migration.
+    string repo_url = 2;
+
+    // If git_checkout==DIFF, and your request included history, this will be
+    // populated with GitCommits.
+    repeated git.Commit history = 3;
+  }
+
+  message Directory {
+    // This is the overall status for this Directory.
+    Stat overall = 1;
+
+    GitCheckout git_checkout = 2;
+
+    Stat cipd_server_host = 3;
+    // Note: this will only ever be MODIFIED, because we cannot (yet) determine
+    // if two versions of a cipd package are diffable. We may later implement
+    // DIFF detection (i.e. if both packages use `version:<sha1>` tags).
+    map<string, Stat> cipd_package = 4;
+
+    Stat isolated_server_host = 5;
+    // This merely indicates if the list of isolated hashes was the same or not;
+    // there's not a good way to register the two lists.
+    //
+    // Since order-of-application for isolateds matters, this will indicate
+    // MODIFIED if the order of isolated hashes changes.
+    Stat isolated = 6;
+  }
+
+  map<string, Directory> directories = 4;
+}
