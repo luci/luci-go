@@ -35,56 +35,46 @@ type Builder struct {
 	Status buildbucket.Status
 
 	// StatusTime can be used to decide whether Status should be updated.
-	// It is computed as the creation time of the build that caused
-	// a change of Status.
+	// It is computed as the creation time of the build that caused a change
+	// of Status.
 	StatusTime time.Time
-}
 
-// NewBuilder constructs a new Builder.
-//
-// This is intended to maintain a consistent interface to datastore models and
-// mimics the behavior of NewProject and NewNotifier.
-func NewBuilder(id string, build *buildbucket.Build) *Builder {
-	return &Builder{
-		ID:         id,
-		Status:     build.Status,
-		StatusTime: build.CreationTime,
-	}
+	// StatusRevision can be used to decide whether Status should be updated.
+	// It is the revision of the codebase that's associated with the build
+	// that caused a change of Status.
+	StatusRevision string
 }
 
 // StatusUnknown is used in the LookupBuilder return value
 // if builder status is unknown.
 var StatusUnknown buildbucket.Status = -1
 
-// LookupBuilder returns a "previous" builder state.
+// NewBuilder creates a new builder from an ID, a build, and optionally a commit.
+func NewBuilder(id, revision string, build *buildbucket.Build) *Builder {
+	return &Builder{
+		ID:               id,
+		Status:           build.Status,
+		StatusTime:       build.CreationTime,
+		StatusRevision:   revision,
+	}
+}
+
+// WithBuilder Gets a Builder from the datastore and executes a function which
+// with that Builder as a parameter.
 //
-// If no "previous" build is found in the datastore, then returns a Builder
-// with Status==StatusUnknown in order to make explicit that we
-// have never recorded information about this builder before.
-//
-// It will also update the Builder in the datastore according to build.
-func LookupBuilder(c context.Context, id string, build *buildbucket.Build) (*Builder, error) {
+// The function executes within a datastore transaction, so it can perform
+// additional datastore operations with a transactional guarantee.
+func WithBuilder(c context.Context, id string, f func(*Builder) error) error {
 	prev := &Builder{ID: id}
-	err := datastore.RunInTransaction(c, func(c context.Context) error {
+	return datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, prev); {
 		case err == datastore.ErrNoSuchEntity:
 			prev.Status = StatusUnknown
 			prev.StatusTime = time.Time{}
 			logging.Debugf(c, "found no builder %q", prev.ID)
-
 		case err != nil:
 			return err
-
-		case prev.StatusTime.After(build.CreationTime):
-			// Don't update the datastore if the new build is not newer.
-			logging.Debugf(c, "build %d (%s) created at %s, is not new", build.ID, build.Status, build.CreationTime)
-			return nil
 		}
-
-		return datastore.Put(c, NewBuilder(prev.ID, build))
+		return f(prev)
 	}, nil)
-	if err != nil {
-		return nil, err
-	}
-	return prev, nil
 }
