@@ -33,3 +33,8 @@ const (
 	// ResultCanceled means a build was cancelled or timed out.
 	ResultCanceled = "CANCELED"
 )
+
+const (
+	// ReasonNotFound means the given build ID was not found on the BuildBucket service.
+	ReasonNotFound = "BUILD_NOT_FOUND"
+)
