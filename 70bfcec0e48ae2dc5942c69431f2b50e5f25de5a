@@ -69,6 +69,30 @@
       "revId": "70bfcec0e48ae2dc5942c69431f2b50e5f25de5a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59d455f7_84a22fea",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-05T21:48:25Z",
+      "side": 1,
+      "message": "to make this branch of code look similar to the one above :)",
+      "parentUuid": "3d541cdf_11294ada",
+      "range": {
+        "startLine": 138,
+        "startChar": 3,
+        "endLine": 138,
+        "endChar": 9
+      },
+      "revId": "70bfcec0e48ae2dc5942c69431f2b50e5f25de5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
