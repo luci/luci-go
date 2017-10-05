@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/luci_notify/config"
 )
@@ -164,7 +165,7 @@ func CreateNotification(c context.Context, notifiers []*config.Notifier, build *
 // Dispatch tells a Notification to send a notification to all its recipients.
 func (n *Notification) Dispatch(c context.Context) error {
 	if err := n.sendEmail(c); err != nil {
-		return errors.Annotate(err, "failed to send email").Err()
+		return errors.Annotate(err, "failed to send email").Tag(transient.Tag).Err()
 	}
 	return nil
 }
