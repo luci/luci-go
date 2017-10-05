@@ -78,11 +78,6 @@ func main() {
 	base := mw.Base().Extend(gsvc.Base)
 	svr.InstallHandlers(r, base)
 
-	// Redirect "/" to "/app/".
-	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
-		http.Redirect(c.Writer, c.Request, "/app/", http.StatusFound)
-	})
-
 	http.Handle("/", r)
 	logging.Infof(c, "Listening on port 8080...")
 	if err := http.ListenAndServe(":8080", r); err != nil {
