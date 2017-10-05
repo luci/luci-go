@@ -31,71 +31,76 @@ message Manifest {
 
   message GitCheckout {
     // The canonicalized URL of the original repo that is considered the “source
-    // of truth” for the source code. Ex.
+    // of truth” for the source code.
+    //
+    // Ex.
     //   https://chromium.googlesource.com/chromium/tools/build.git
     //   https://chromium.googlesource.com/infra/luci/recipes-py.git
     string repo_url = 1;
 
     // If different from repo_url, this can be the URL of the repo that the source
-    // was actually fetched from (i.e. a mirror). Ex.
-    //   https://github.com/luci/recipes-py
+    // was actually fetched from (i.e. a mirror).
     //
     // If this is empty, it's presumed to be equal to repo_url.
+    //
+    // Ex.
+    //   https://github.com/luci/recipes-py
     string fetch_url = 2;
 
-    // The fully resolved revision (commit hash) of the source. Ex.
+    // The fully resolved revision (commit hash) of the source.
+    //
+    // Ex.
     //   3617b0eea7ec74b8e731a23fed2f4070cbc284c4
     string revision = 3;
 
     // The ref that the task used to resolve/fetch the revision of the source
-    // (if any). Ex.
-    //   refs/heads/master
-    //   refs/changes/04/511804/4
+    // (if any).
     //
-    // This should always be a ref on the hosted repo (not any local alias
+    // This must always be a ref on the hosted repo (not any local alias
     // like 'refs/remotes/...').
     //
-    // This should always be an absolute ref (i.e. starts with 'refs/'). An
+    // This must always be an absolute ref (i.e. starts with 'refs/'). An
     // example of a non-absolute ref would be 'master'.
+    //
+    // Ex.
+    //   refs/heads/master
+    //   refs/changes/04/511804/4
     string fetch_ref = 4;
   }
 
   message CIPDPackage {
-    // The canonicalized URL of the CIPD server which provided the package. Ex.
-    //   https://chrome-infra-packages.appspot.com
-    string cipd_server_url = 1;
-
-    // The fully resolved CIPD package name that was deployed. Ex.
-    //   infra/tools/luci/led/linux-amd64
-    string cipd_package_name = 2;
-
-    // The package pattern that was given to the CIPD client (if known). Ex.
+    // The package pattern that was given to the CIPD client (if known).
+    //
+    // Ex.
     //   infra/tools/luci/led/${platform}
-    string cipd_package_pattern = 3;
+    string package_pattern = 1;
 
-    // The fully resolved instance ID of the deployed package. Ex.
+    // The fully resolved instance ID of the deployed package.
+    //
+    // Ex.
     //   0cfafb3a705bd8f05f86c6444ff500397fbb711c
-    string cipd_instance_id = 4;
+    string instance_id = 2;
 
-    // The unresolved version ID of the deployed package (if known). Ex.
+    // The unresolved version ID of the deployed package (if known).
+    //
+    // Ex.
     //   git_revision:aaf3a2cfccc227b5141caa1b6b3502c9907d7420
     //   latest
-    string cipd_version = 5;
+    string version = 3;
   }
 
   message Isolated {
-    // The canonicalized URL of the isolated server which hosts the isolated.
+    // The namespace of the isolated document.
+    //
     // Ex.
-    //   https://isolateserver.appspot.com
-    string isolated_server_url = 1;
-
-    // The namespace of the isolated document. Ex.
     //   default-gzip
-    string namespace = 2;
+    string namespace = 1;
 
-    // The hash of the isolated document. Ex.
+    // The hash of the isolated document.
+    //
+    // Ex.
     //   62a7df62ea122380afb306bb4d9cdac1bc7e9a96
-    string hash = 3;
+    string hash = 2;
   }
 
   // A Directory contains one or more descriptions of deployed artifacts. Note
@@ -104,19 +109,75 @@ message Manifest {
   message Directory {
     GitCheckout git_checkout = 1;
 
-    repeated CIPDPackage cipd_package = 2;
-    repeated Isolated isolated = 3;
+    // The canonicalized hostname of the CIPD server which hosts the CIPD
+    // packages (if any). If no CIPD packages are in this Directory, this must
+    // be blank.
+    //
+    // Ex.
+    //   chrome-infra-packages.appspot.com
+    string cipd_server_host = 2;
+
+    // Maps CIPD package name to CIPDPackage.
+    //
+    // Ex.
+    //   "some/package/name": {...}
+    //   "other/package": {...}
+    map<string, CIPDPackage> cipd_package = 4;
+
+    // The canonicalized hostname of the isolated server which hosts the
+    // isolated. If no Isolated objects are in this Directory, this must be
+    // blank.
+    //
+    // Ex.
+    //   isolateserver.appspot.com
+    string isolated_server_host = 5;
+
+    // A list of all isolateds which have been installed in this directory.
+    repeated Isolated isolated = 6;
   }
 
   // Map of local file system directory path (with forward slashes) to
   // a Directory message containing one or more deployments.
   //
   // The local path is relative to some job-specific root. This should be used
-  // for informational/display/organization purposes, and should not be used as
-  // a global primary key. i.e. if you depend on chromium/src.git being in
-  // a folder called “src”, I will find you and make really angry faces at you
-  // until you change it...（╬ಠ益ಠ). Instead, implementations should consider
-  // indexing by e.g. git repository URL or cipd package name as better primary
-  // keys.
+  // for informational/display/organization purposes. In particular, think VERY
+  // CAREFULLY before you configure remote services/recipes to look for
+  // particular filesystem layouts here. For example, if you want to look for
+  // "the version of chromium/src.git checked out by the job", prefer to look
+  // for a Directory which checks out "chromium/src.git", as opposed to assuming
+  // this checkout lives in a top-level folder called "src". The reason for this
+  // is that jobs SHOULD reserve the right to do their checkouts in any way they
+  // please.
+  //
+  // If you feel like you need to make some service configuration which uses one
+  // of these local filesystem paths as a key, please consult with the Chrome
+  // Infrastructure team to see if there's a better alternative.
+  //
+  // Ex.
+  //   "": {...}  // root directory
+  //   "src/third_party/something": {...}
   map<string, Directory> directories = 2;
 }
+
+// Links to an externally stored Manifest proto.
+message ManifestLink {
+  // The fully qualified url of the Manifest proto. It's expected that this is
+  // a binary logdog stream consisting of exactly one Manifest proto. For now
+  // this will always be the `logdog` uri scheme, though it's feasible to put
+  // other uri schemes here later.
+  //
+  // Ex.
+  //   logdog://luci-logdog.appspot.com/infra/build/12345/+/some/path
+  string url = 1;
+
+  // The hash of the Manifest's raw binary form (i.e. the bytes at the end of
+  // `url`, without any interpretation or decoding). Milo will use this as an
+  // optimization; Manifests will be interned once into Milo's datastore.
+  // Future hashes which match will not be loaded from the url, but will be
+  // assumed to be identical. If the sha256 doesn't match the data at the URL,
+  // Milo may render this build with the wrong manifest.
+  //
+  // This is the raw sha256, so it must be exactly 32 bytes.
+  bytes sha256 = 2;
+}
+
