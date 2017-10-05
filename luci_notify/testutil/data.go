@@ -15,18 +15,26 @@
 package testutil
 
 import (
-	"time"
+	"crypto/sha1"
+	"fmt"
+	"io"
 
 	"go.chromium.org/luci/buildbucket"
 )
 
-// TestBuild creates a minimal dummy buildbucket.Build struct for
-// use in testing.
-func TestBuild(creationTime time.Time, bucket, builder string, status buildbucket.Status) *buildbucket.Build {
+// TestBuild creates a minimal dummy buildbucket.Build struct for use in
+// testing.
+func TestBuild(bucket, builder string, status buildbucket.Status) *buildbucket.Build {
 	return &buildbucket.Build{
-		Bucket:       bucket,
-		Builder:      builder,
-		CreationTime: creationTime,
-		Status:       status,
+		Bucket:  bucket,
+		Builder: builder,
+		Status:  status,
 	}
+}
+
+// TestRevision creates a dummy revision by hashing a string.
+func TestRevision(seed string) string {
+	h := sha1.New()
+	io.WriteString(h, seed)
+	return fmt.Sprintf("%x", h.Sum(nil))
 }
