@@ -20,16 +20,19 @@ import (
 	"html/template"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
+
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/mail"
+	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/luci_notify/config"
+	"go.chromium.org/luci/luci_notify/internal"
 )
 
 var emailTemplate = template.Must(template.New("email").Parse(`
@@ -38,7 +41,7 @@ luci-notify has detected a new {{ .Build.Status }} on builder "{{ .Build.Builder
 <table>
   <tr>
     <td>Previous result:</td>
-    <td>{{ .Builder.Status }}</td>
+    <td>{{ .OldStatus }}</td>
   </tr>
   <tr>
     <td>Bucket:</td>
@@ -60,27 +63,28 @@ luci-notify has detected a new {{ .Build.Status }} on builder "{{ .Build.Builder
 
 <a href="{{ .Build.URL }}">Full details are available here.</a>`))
 
-// sendEmail constructs and sends an email built from this notification.
-func sendEmail(c context.Context, recipients []string, build *buildbucket.Build, builder *Builder) error {
+// createEmailTask constructs an EmailTask to be dispatched onto the task queue.
+func createEmailTask(c context.Context, recipients []string, oldStatus buildbucket.Status, build *buildbucket.Build) (*tq.Task, error) {
 	templateContext := map[string]interface{}{
-		"Build":   build,
-		"Builder": builder,
+		"OldStatus": oldStatus.String(),
+		"Build":     build,
 	}
 	var bodyBuffer bytes.Buffer
 	if err := emailTemplate.Execute(&bodyBuffer, &templateContext); err != nil {
-		return errors.Annotate(err, "constructing email body").Err()
+		return nil, errors.Annotate(err, "constructing email body").Err()
 	}
 	subject := fmt.Sprintf(`[Build %s] Builder %s on %s`,
 		build.Status,
 		build.Builder,
 		build.Bucket)
 
-	return mail.Send(c, &mail.Message{
-		Sender:   "luci-notify <noreply@luci-notify-dev.appspotmail.com>",
-		To:       recipients,
-		Subject:  subject,
-		HTMLBody: bodyBuffer.String(),
-	})
+	return &tq.Task{
+		Payload: &internal.EmailTask{
+			Recipients: recipients,
+			Subject:    subject,
+			Body:       bodyBuffer.String(),
+		},
+	}, nil
 }
 
 // shouldNotify is the predicate function for whether a trigger's conditions have been met.
@@ -107,11 +111,11 @@ func isRecipientAllowed(c context.Context, recipient string, build *buildbucket.
 
 // Notify consolidates and filters recipients from a list of Notifiers and dispatches
 // notifications if necessary.
-func Notify(c context.Context, notifiers []*config.Notifier, build *buildbucket.Build, builder *Builder) error {
+func Notify(c context.Context, d *tq.Dispatcher, notifiers []*config.Notifier, oldStatus buildbucket.Status, build *buildbucket.Build) error {
 	recipientSet := stringset.New(0)
 	for _, n := range notifiers {
 		for _, nc := range n.Notifications {
-			if !shouldNotify(&nc, builder.Status, build.Status) {
+			if !shouldNotify(&nc, oldStatus, build.Status) {
 				continue
 			}
 			for _, r := range nc.EmailRecipients {
@@ -126,5 +130,26 @@ func Notify(c context.Context, notifiers []*config.Notifier, build *buildbucket.
 		logging.Infof(c, "Nobody to notify...")
 		return nil
 	}
-	return errors.Annotate(sendEmail(c, recipientSet.ToSlice(), build, builder), "failed to send email").Tag(transient.Tag).Err()
+	task, err := createEmailTask(c, recipientSet.ToSlice(), oldStatus, build)
+	if err != nil {
+		return errors.Annotate(err, "failed to create email task").Err()
+	}
+	d.AddTask(c, task)
+	return nil
+}
+
+func InitDispatcher(d *tq.Dispatcher) {
+	d.RegisterTask(&internal.EmailTask{}, SendEmail, "email", nil)
+}
+
+// SendEmail is a push queue handler that attempts to send an email.
+func SendEmail(c context.Context, task proto.Message) error {
+	// TODO(mknyszek): Query Milo for additional build information.
+	emailTask := task.(*internal.EmailTask)
+	return mail.Send(c, &mail.Message{
+		Sender:   "luci-notify <noreply@luci-notify-dev.appspotmail.com>",
+		To:       emailTask.Recipients,
+		Subject:  emailTask.Subject,
+		HTMLBody: emailTask.Body,
+	})
 }
