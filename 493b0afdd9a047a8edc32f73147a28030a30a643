@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "734f5c3d_5da20ab3",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-05T21:17:08Z",
+      "side": 1,
+      "message": "I recognize that unmarshalling it a second time isn\u0027t ideal, but I\u0027d really like to avoid having two Time fields in the User struct. Suggestions with this are welcome, since I\u0027m not sure if I can pull the same trick as with datastore property maps for this.",
+      "range": {
+        "startLine": 48,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 2
+      },
+      "revId": "493b0afdd9a047a8edc32f73147a28030a30a643",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
