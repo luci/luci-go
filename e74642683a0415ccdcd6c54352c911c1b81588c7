@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f69000fc_9b1ccd7e",
+        "filename": "logdog/api/endpoints/coordinator/services/v1/service.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-05T20:03:07Z",
+      "side": 1,
+      "message": "hm, I feel like this should already exist in grpc somewhere. should this be added to //grpc somewhere in luci-go instead? Or maybe to //common/proto/grpc ?",
+      "range": {
+        "startLine": 14,
+        "startChar": 8,
+        "endLine": 14,
+        "endChar": 13
+      },
+      "revId": "e74642683a0415ccdcd6c54352c911c1b81588c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a38c57e1_a943ee0d",
+        "filename": "logdog/api/endpoints/coordinator/services/v1/service.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-05T20:03:07Z",
+      "side": 1,
+      "message": "this might be cleaner if this was just\n\n  repeated RegisterStreamRequest ...\n  repeated LoadStreamRequest ...\n  repeated TerminateStreamRequest ...\n  repeated ArchiveStreamRequest ...\n\n?",
+      "revId": "e74642683a0415ccdcd6c54352c911c1b81588c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2a8bd27_1f0de286",
+        "filename": "logdog/api/endpoints/coordinator/services/v1/service.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-05T20:03:07Z",
+      "side": 1,
+      "message": "I would make a StreamResponse for each of the Request types (even if it just had Error), then make this also do the quadruple repeated thing.",
+      "revId": "e74642683a0415ccdcd6c54352c911c1b81588c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
