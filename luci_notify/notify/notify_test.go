@@ -42,65 +42,55 @@ func extractNotifiers(c context.Context, cfgName string, cfg *notifyConfig.Proje
 	return notifiers
 }
 
-func dummyBuildInfo(creationTime time.Time, status buildbucket.Status) *buildbucket.Build {
-	return testutil.TestBuild(creationTime, "test.bucket", "test-builder", status)
+func notifyDummyBuild(status buildbucket.Status) *buildbucket.Build {
+	return testutil.TestBuild("hello", "test-builder", status)
 }
 
-func TestNotification(t *testing.T) {
+func TestNotify(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Test Environment for Notification`, t, func() {
+	Convey(`Test Environment for Notify`, t, func() {
 		cfgName := "basic"
 		cfg, err := testutil.LoadProjectConfig(cfgName)
 		So(err, ShouldBeNil)
 		c := memory.UseWithAppID(context.Background(), "dev~luci-notify")
 		notifiers := extractNotifiers(c, cfgName, cfg)
-		goodBuild := dummyBuildInfo(time.Date(2015, 2, 3, 12, 55, 2, 0, time.UTC), buildbucket.StatusSuccess)
-		badBuild := dummyBuildInfo(time.Date(2015, 2, 3, 12, 56, 2, 0, time.UTC), buildbucket.StatusFailure)
-		oldBuild := dummyBuildInfo(time.Date(2013, 5, 6, 4, 12, 55, 0, time.UTC), buildbucket.StatusSuccess)
+		goodBuild := notifyDummyBuild(buildbucket.StatusSuccess)
+		badBuild := notifyDummyBuild(buildbucket.StatusFailure)
 		goodBuilder := &Builder{
-			StatusTime: time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC),
-			Status:     buildbucket.StatusSuccess,
+			StatusBuildTime: time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC),
+			Status:          buildbucket.StatusSuccess,
 		}
 		badBuilder := &Builder{
-			StatusTime: time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC),
-			Status:     buildbucket.StatusFailure,
+			StatusBuildTime: time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC),
+			Status:          buildbucket.StatusFailure,
 		}
 
 		test := func(build *buildbucket.Build, builder *Builder, emailExpect ...string) {
-			// Test creating the notification.
-			n := CreateNotification(c, notifiers, build, builder)
-			So(n, ShouldNotBeNil)
+			// Login and test notifying.
+			user.GetTestable(c).Login("noreply@luci-notify-dev.appspotmail.com", "", false)
+			err := Notify(c, notifiers, build, builder)
+			So(err, ShouldBeNil)
+
+			messages := mail.GetTestable(c).SentMessages()
+			So(len(messages), ShouldEqual, 1)
 
 			// Put the recipients into sets so prevent flakiness.
-			actualRecipients := stringset.NewFromSlice(n.EmailRecipients...)
+			actualRecipients := stringset.NewFromSlice(messages[0].To...)
 			expectRecipients := stringset.NewFromSlice(emailExpect...)
 			So(actualRecipients, ShouldResemble, expectRecipients)
-			So(n.Build, ShouldEqual, build)
-			So(n.Builder, ShouldEqual, builder)
-
-			// Login and send email.
-			user.GetTestable(c).Login("noreply@luci-notify-dev.appspotmail.com", "", false)
-			So(n.Dispatch(c), ShouldBeNil)
-
-			// Make sure an email was sent, but don't test its exact contents.
-			So(len(mail.GetTestable(c).SentMessages()), ShouldEqual, 1)
 		}
 
 		Convey(`empty`, func() {
-			creationNoneTest := func(build *buildbucket.Build, builder *Builder) {
-				n := CreateNotification(c, []*config.Notifier{}, build, builder)
-				So(n, ShouldBeNil)
+			testNone := func(build *buildbucket.Build, builder *Builder) {
+				err := Notify(c, []*config.Notifier{}, build, builder)
+				So(err, ShouldBeNil)
+				So(len(mail.GetTestable(c).SentMessages()), ShouldEqual, 0)
 			}
-			creationNoneTest(goodBuild, goodBuilder)
-			creationNoneTest(goodBuild, badBuilder)
-			creationNoneTest(badBuild, goodBuilder)
-			creationNoneTest(badBuild, badBuilder)
-		})
-
-		Convey(`out-of-order`, func() {
-			n := CreateNotification(c, notifiers, oldBuild, goodBuilder)
-			So(n, ShouldBeNil)
+			testNone(goodBuild, goodBuilder)
+			testNone(goodBuild, badBuilder)
+			testNone(badBuild, goodBuilder)
+			testNone(badBuild, badBuilder)
 		})
 
 		Convey(`on success`, func() {
