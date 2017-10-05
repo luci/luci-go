@@ -131,6 +131,24 @@
     },
     {
       "key": {
+        "uuid": "77adc01b_36fcef91",
+        "filename": "milo/api/resp/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-05T20:23:22Z",
+      "side": 1,
+      "message": "i like trigger",
+      "parentUuid": "c8424bdf_ba46f42e",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "949b8483_bb3ab547",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 5
@@ -909,6 +927,24 @@
     },
     {
       "key": {
+        "uuid": "30fb2bab_1b93643c",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-05T20:23:22Z",
+      "side": 1,
+      "message": "i understand why you don\u0027t want this file to know buildbucket specifics. FWIU long term this will be only build handler. Then we can move the logic to the buildbucket package, so this file will remain unaware of buildbucket specifics.\n\nhowever, per the spec doc, the path for buildbucket builds must have \"/p/\u003cproject\u003e/build/b\u003cid\u003e\" format, note that b before the id. So we still need to do something here.",
+      "parentUuid": "fb384f46_319ab4ab",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "25e52993_d68edcc4",
         "filename": "milo/rpc/buildinfo.go",
         "patchSetId": 5
@@ -944,6 +980,30 @@
       "side": 1,
       "message": "Is scheduling a build on buildbucket synchronous and atomic with scheduling a task on swarming?",
       "parentUuid": "25e52993_d68edcc4",
+      "range": {
+        "startLine": 58,
+        "startChar": 64,
+        "endLine": 59,
+        "endChar": 25
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1607fb0e_250c8820",
+        "filename": "milo/rpc/buildinfo.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-05T20:23:22Z",
+      "side": 1,
+      "message": "it is not atomic, but a swarmbucket build is not created until a swarming task is successfully created\n(FWIU this code supports only swarmbucket builds)",
+      "parentUuid": "c42392a4_3daa977a",
       "range": {
         "startLine": 58,
         "startChar": 64,

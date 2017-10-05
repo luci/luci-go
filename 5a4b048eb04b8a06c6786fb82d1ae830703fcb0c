@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5732dea0_9e202ad6",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-05T20:23:22Z",
+      "side": 1,
+      "message": "please use https://godoc.org/go.chromium.org/luci/buildbucket#Build",
+      "range": {
+        "startLine": 30,
+        "startChar": 1,
+        "endLine": 30,
+        "endChar": 33
+      },
+      "revId": "5a4b048eb04b8a06c6786fb82d1ae830703fcb0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f07aac54_a8dc808e",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-05T20:23:22Z",
+      "side": 1,
+      "message": "nit: join with prev line? looks short enough",
+      "revId": "5a4b048eb04b8a06c6786fb82d1ae830703fcb0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c787a2b0_cf618582",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-05T20:23:22Z",
+      "side": 1,
+      "message": "consider adding it to https://chromium.googlesource.com/infra/luci/luci-go/+/master/common/api/buildbucket/buildbucket/v1/const.go",
+      "range": {
+        "startLine": 37,
+        "startChar": 30,
+        "endLine": 37,
+        "endChar": 47
+      },
+      "revId": "5a4b048eb04b8a06c6786fb82d1ae830703fcb0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55e80c0b_4effbb56",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-05T20:23:22Z",
+      "side": 1,
+      "message": "L32-L55 essentially handles 6 potential cases:\n\nerr !\u003d nil\nresponse.HTTPStatusCode \u003d\u003d http.StatusForbidden\nresponse.HTTPStatusCode \u003d\u003d http.StatusNotFound\nresponse.Error !\u003d nil \u0026\u0026 response.Error.Reason \u003d\u003d \"BUILD_NOT_FOUND\"\nresponse.Error !\u003d nil\notherwise\n\ni think a switch is perfect for this",
+      "range": {
+        "startLine": 36,
+        "startChar": 1,
+        "endLine": 37,
+        "endChar": 4
+      },
+      "revId": "5a4b048eb04b8a06c6786fb82d1ae830703fcb0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad185d87_ffd22b17",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-05T20:23:22Z",
+      "side": 1,
+      "message": "I think status code should be checked before body",
+      "range": {
+        "startLine": 45,
+        "startChar": 1,
+        "endLine": 45,
+        "endChar": 33
+      },
+      "revId": "5a4b048eb04b8a06c6786fb82d1ae830703fcb0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa5b4f45_7f8b4e41",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-05T20:23:22Z",
+      "side": 1,
+      "message": "not needed with https://godoc.org/go.chromium.org/luci/buildbucket#Build",
+      "revId": "5a4b048eb04b8a06c6786fb82d1ae830703fcb0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
