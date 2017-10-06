@@ -193,7 +193,7 @@ func walkCompIdxs(store memStore, endsWith *ds.IndexDefinition, cb func(*ds.Inde
 
 	it := itrDef.mkIter()
 	for ent := it.next(); ent != nil; ent = it.next() {
-		qi, err := serialize.ReadIndexDefinition(bytes.NewBuffer(ent.key))
+		qi, err := serialize.ReadIndexDefinition(bytes.NewReader(ent.key))
 		memoryCorruption(err)
 		if !cb(qi.Flip()) {
 			break

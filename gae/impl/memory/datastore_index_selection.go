@@ -212,9 +212,7 @@ func (idxs *indexDefinitionSortableSlice) maybeAddDefinition(q *reducedQuery, s 
 	//
 	// A perfect match contains ALL the equality filter columns (or more, since
 	// we can use residuals to fill in the extras).
-	toAdd := indexDefinitionSortable{coll: coll}
-	toAdd.eqFilts = eqFilts
-	for _, sb := range toAdd.eqFilts {
+	for _, sb := range eqFilts {
 		missingTerms.Del(sb.Property)
 	}
 
@@ -228,6 +226,7 @@ func (idxs *indexDefinitionSortableSlice) maybeAddDefinition(q *reducedQuery, s 
 			}
 		}
 	}
+	toAdd := indexDefinitionSortable{coll: coll, eqFilts: eqFilts}
 	if perfect {
 		*idxs = indexDefinitionSortableSlice{toAdd}
 	} else {
@@ -306,7 +305,7 @@ func getRelevantIndexes(q *reducedQuery, s memStore) (indexDefinitionSortableSli
 
 	// this query is impossible to fulfil with the current indexes. Not all the
 	// terms (equality + projection) are satisfied.
-	if missingTerms.Len() < 0 || len(idxs) == 0 {
+	if missingTerms.Len() > 0 || len(idxs) == 0 {
 		remains := &ds.IndexDefinition{
 			Kind:     q.kind,
 			Ancestor: q.eqFilters["__ancestor__"] != nil,
