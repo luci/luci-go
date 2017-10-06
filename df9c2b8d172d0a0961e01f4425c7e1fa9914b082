@@ -206,6 +206,30 @@
     },
     {
       "key": {
+        "uuid": "4312c791_0b7a5340",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T05:52:53Z",
+      "side": 1,
+      "message": "yeah. looks like we have two different APIs for two similar functionalities",
+      "parentUuid": "846aabdf_8b75206b",
+      "range": {
+        "startLine": 132,
+        "startChar": 2,
+        "endLine": 133,
+        "endChar": 52
+      },
+      "revId": "df9c2b8d172d0a0961e01f4425c7e1fa9914b082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cf85b85a_a8244a0d",
         "filename": "milo/srcman/get.go",
         "patchSetId": 1

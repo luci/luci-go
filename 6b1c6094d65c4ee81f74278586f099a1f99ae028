@@ -203,6 +203,30 @@
     },
     {
       "key": {
+        "uuid": "45f15c1a_8deb4f73",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T05:52:53Z",
+      "side": 1,
+      "message": "i saw your replies to tandrii\u0027s comments",
+      "parentUuid": "cc954740_3feb2250",
+      "range": {
+        "startLine": 237,
+        "startChar": 6,
+        "endLine": 238,
+        "endChar": 21
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2f40ebf6_e0131bd9",
         "filename": "milo/srcman/blamelist.go",
         "patchSetId": 2
@@ -292,6 +316,30 @@
       "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf5eaf00_ddc2ee0e",
+        "filename": "milo/srcman/get.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T05:52:53Z",
+      "side": 1,
+      "message": "i saw your replies to tandrii\u0027s comments",
+      "parentUuid": "15ad996e_821b2138",
+      "range": {
+        "startLine": 54,
+        "startChar": 8,
+        "endLine": 55,
+        "endChar": 51
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
