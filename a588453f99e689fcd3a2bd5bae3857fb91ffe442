@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c301c4eb_8cd95970",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T00:08:04Z",
+      "side": 1,
+      "message": "on the",
+      "range": {
+        "startLine": 85,
+        "startChar": 53,
+        "endLine": 85,
+        "endChar": 59
+      },
+      "revId": "a588453f99e689fcd3a2bd5bae3857fb91ffe442",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c552aeea_5bd7e7fa",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T00:08:04Z",
+      "side": 1,
+      "message": "Should have a MarshalJSON as well, to ensure this can round-trip correctly.",
+      "range": {
+        "startLine": 37,
+        "startChar": 15,
+        "endLine": 37,
+        "endChar": 28
+      },
+      "revId": "a588453f99e689fcd3a2bd5bae3857fb91ffe442",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
