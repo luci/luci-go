@@ -165,13 +165,20 @@ message BatchRequest {
 message BatchResponse {
   // The collection of batched requests.
   //
-  // Each index corresponds to that index of the source request.
+  // Each entry corresponds to the BatchRequest entry with the specified index.
+  //
+  // Entry objects may appear out of order with their request indexes. Some
+  // responses may also be missing, if the remote end could not provide them
+  // due to constraints (e.g., size, time).
   message Entry {
-    oneof value {
-      Error err = 1;
+    // The index in the BatchRequest for this entry.
+    int32 index = 1;
 
-      RegisterStreamResponse register_stream = 2;
-      LoadStreamResponse load_stream = 3;
+    oneof value {
+      Error err = 2;
+
+      RegisterStreamResponse register_stream = 3;
+      LoadStreamResponse load_stream = 4;
     };
   }
   repeated Entry resp = 1;
