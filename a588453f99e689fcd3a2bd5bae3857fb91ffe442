@@ -69,6 +69,30 @@
       "revId": "a588453f99e689fcd3a2bd5bae3857fb91ffe442",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b61ef65_22237c39",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T01:24:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c552aeea_5bd7e7fa",
+      "range": {
+        "startLine": 37,
+        "startChar": 15,
+        "endLine": 37,
+        "endChar": 28
+      },
+      "revId": "a588453f99e689fcd3a2bd5bae3857fb91ffe442",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "27680f02_371fb34e",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T01:24:10Z",
+      "side": 0,
+      "message": "That was an accident, something broke again... T_T",
+      "parentUuid": "5d2b220d_287ed429",
+      "range": {
+        "startLine": 47,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 1
+      },
+      "revId": "a1b25987c39e32141e3156bf8e8b80a12ff248f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "45aae6e9_2398a85f",
         "filename": "buildbucket/buildset.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "a1b25987c39e32141e3156bf8e8b80a12ff248f5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90e24c72_2793616c",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T01:24:10Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "45aae6e9_2398a85f",
+      "range": {
+        "startLine": 68,
+        "startChar": 0,
+        "endLine": 68,
+        "endChar": 1
+      },
+      "revId": "a1b25987c39e32141e3156bf8e8b80a12ff248f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
