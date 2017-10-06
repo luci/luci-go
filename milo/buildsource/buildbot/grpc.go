@@ -19,18 +19,18 @@ import (
 	"compress/gzip"
 	"encoding/json"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/milo/api/buildbot"
-	milo "go.chromium.org/luci/milo/api/proto"
+	"go.chromium.org/luci/milo/api/proto"
+	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
 )
@@ -47,7 +47,7 @@ var apiUsage = metric.NewCounter(
 // Service is a service implementation that displays BuildBot builds.
 type Service struct{}
 
-var errNotFoundGRPC = grpc.Errorf(codes.NotFound, "Master Not Found")
+var errNotFoundGRPC = grpc.Errorf(codes.NotFound, "Not found")
 
 // GetBuildbotBuildJSON implements milo.BuildbotServer.
 func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuildRequest) (
@@ -66,23 +66,22 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 	logging.Debugf(c, "%s is requesting %s/%s/%d",
 		cu.Identity, req.Master, req.Builder, req.BuildNum)
 
-	b, err := getBuild(c, req.Master, req.Builder, int(req.BuildNum))
-	if err != nil {
-		switch common.ErrorTag.In(err) {
-		case common.CodeNotFound:
-			return nil, grpc.Errorf(codes.NotFound, "Build not found")
-		case common.CodeUnauthorized:
-			return nil, grpc.Errorf(codes.Unauthenticated, "Unauthenticated request")
-		default:
-			return nil, err
-		}
+	if err := grpcCanAccessMaster(c, req.Master); err != nil {
+		return nil, err
+	}
+
+	b, err := buildstore.GetBuild(c, req.Master, req.Builder, int(req.BuildNum))
+	switch {
+	case common.ErrorTag.In(err) == common.CodeNotFound:
+		return nil, errNotFoundGRPC
+	case err != nil:
+		return nil, err
 	}
 
 	if req.ExcludeDeprecated {
 		excludeDeprecatedFromBuild(b)
 	}
 
-	updatePostProcessBuild(b)
 	bs, err := json.Marshal(b)
 	if err != nil {
 		return nil, err
@@ -105,7 +104,7 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 		return nil, grpc.Errorf(codes.InvalidArgument, "No builder specified")
 	}
 
-	limit := req.Limit
+	limit := int(req.Limit)
 	if limit == 0 {
 		limit = 20
 	}
@@ -114,44 +113,32 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 	logging.Debugf(c, "%s is requesting %s/%s (limit %d)",
 		cu.Identity, req.Master, req.Builder, limit)
 
-	if err := canAccessMaster(c, req.Master); err != nil {
-		switch common.ErrorTag.In(err) {
-		case common.CodeNotFound:
-			return nil, grpc.Errorf(codes.NotFound, "Master not found")
-		case common.CodeUnauthorized:
-			return nil, grpc.Errorf(codes.Unauthenticated, "Unauthenticated request")
-		default:
-			return nil, err
-		}
+	if err := grpcCanAccessMaster(c, req.Master); err != nil {
+		return nil, err
 	}
 
-	q := datastore.NewQuery("buildbotBuild")
-	q = q.Eq("master", req.Master).
-		Eq("builder", req.Builder).
-		Limit(limit).
-		Order("-number")
-	if req.IncludeCurrent == false {
-		q = q.Eq("finished", true)
+	q := buildstore.Query{
+		Master:  req.Master,
+		Builder: req.Builder,
+		Limit:   limit,
 	}
-	builds, _, err := runBuildsQuery(c, q)
+	if !req.IncludeCurrent {
+		q.Finished = buildstore.Yes
+	}
+	res, err := buildstore.GetBuilds(c, q)
 	if err != nil {
 		return nil, err
 	}
 
-	results := make([]*milo.BuildbotBuildJSON, len(builds))
-	for i, b := range builds {
-		updatePostProcessBuild(b)
-
-		// In theory we could do this in parallel, but it doesn't actually go faster
-		// since AppEngine is single-cored.
+	buildsJSON := &milo.BuildbotBuildsJSON{
+		Builds: make([]*milo.BuildbotBuildJSON, len(res.Builds)),
+	}
+	for i, b := range res.Builds {
 		bs, err := json.Marshal(b)
 		if err != nil {
 			return nil, err
 		}
-		results[i] = &milo.BuildbotBuildJSON{Data: bs}
-	}
-	buildsJSON := &milo.BuildbotBuildsJSON{
-		Builds: results,
+		buildsJSON.Builds[i] = &milo.BuildbotBuildJSON{Data: bs}
 	}
 	return buildsJSON, nil
 }
@@ -170,85 +157,23 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 	cu := auth.CurrentUser(c)
 	logging.Debugf(c, "%s is making a master request for %s", cu.Identity, req.Name)
 
-	entry, err := getMasterEntry(c, req.Name)
-	if err != nil {
-		switch common.ErrorTag.In(err) {
-		case common.CodeNotFound:
-			return nil, errNotFoundGRPC
-		case common.CodeUnauthorized:
-			return nil, grpc.Errorf(codes.Unauthenticated, "Unauthenticated request")
-		default:
-			return nil, err
-		}
+	if err := grpcCanAccessMaster(c, req.Name); err != nil {
+		return nil, err
 	}
 
-	// Decompress it so we can inject current build information.
-	master := &buildbot.Master{}
-	if err = decodeMasterEntry(c, entry, master); err != nil {
+	master, err := buildstore.GetMaster(c, req.Name, true)
+	switch {
+	case common.ErrorTag.In(err) == common.CodeNotFound:
+		return nil, errNotFoundGRPC
+	case err != nil:
 		return nil, err
 	}
 
 	if req.ExcludeDeprecated {
-		excludeDeprecatedFromMaster(master)
+		excludeDeprecatedFromMaster(&master.Master)
 	}
 
-	for _, slave := range master.Slaves {
-		numBuilds := 0
-		for _, builds := range slave.RunningbuildsMap {
-			numBuilds += len(builds)
-		}
-		slave.Runningbuilds = make([]*buildbot.Build, 0, numBuilds)
-		for builderName, builds := range slave.RunningbuildsMap {
-			for _, buildNum := range builds {
-				slave.Runningbuilds = append(slave.Runningbuilds, &buildbot.Build{
-					Master:      req.Name,
-					Buildername: builderName,
-					Number:      buildNum,
-				})
-			}
-		}
-		if err := datastore.Get(c, slave.Runningbuilds); err != nil {
-			logging.WithError(err).Errorf(c,
-				"Encountered error while trying to fetch running builds for %s: %v",
-				master.Name, slave.Runningbuilds)
-			return nil, err
-		}
-
-		for _, b := range slave.Runningbuilds {
-			updatePostProcessBuild(b)
-		}
-	}
-
-	// Also inject cached builds information.
-	for builderName, builder := range master.Builders {
-		builder.PendingBuildStates = nil // nothing uses it, prevent from using
-
-		// Get the most recent 50 buildNums on the builder to simulate what the
-		// cachedBuilds field looks like from the real buildbot master json.
-		q := datastore.NewQuery("buildbotBuild").
-			Eq("finished", true).
-			Eq("master", req.Name).
-			Eq("builder", builderName).
-			Limit(50).
-			Order("-number").
-			KeysOnly(true)
-		var builds []*buildbot.Build
-		err := datastore.RunBatch(c, buildQueryBatchSize, q, func(b *buildbot.Build) {
-			if req.ExcludeDeprecated {
-				excludeDeprecatedFromBuild(b)
-			}
-			builds = append(builds, b)
-		})
-		if err != nil {
-			return nil, err
-		}
-		builder.CachedBuilds = make([]int, len(builds))
-		for i, b := range builds {
-			builder.CachedBuilds[i] = b.Number
-		}
-	}
-
-	// And re-compress it.
+	// Compress it.
 	gzbs := bytes.Buffer{}
 	gsw := gzip.NewWriter(&gzbs)
 	cw := iotools.CountingWriter{Writer: gsw}
@@ -262,12 +187,9 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 	logging.Infof(c, "Returning %d bytes", cw.Count)
 
 	return &milo.CompressedMasterJSON{
-		Internal: entry.Internal,
-		Modified: &timestamp.Timestamp{
-			Seconds: entry.Modified.Unix(),
-			Nanos:   int32(entry.Modified.Nanosecond()),
-		},
-		Data: gzbs.Bytes(),
+		Internal: master.Internal,
+		Modified: google.NewTimestamp(master.Modified),
+		Data:     gzbs.Bytes(),
 	}, nil
 }
 
@@ -287,4 +209,16 @@ func excludeDeprecatedFromMaster(m *buildbot.Master) {
 
 func excludeDeprecatedFromBuild(b *buildbot.Build) {
 	b.Slave = ""
+}
+
+func grpcCanAccessMaster(c context.Context, master string) error {
+	err := buildstore.CanAccessMaster(c, master)
+	switch common.ErrorTag.In(err) {
+	case common.CodeNotFound:
+		return grpc.Errorf(codes.NotFound, "Not found")
+	case common.CodeUnauthorized:
+		return grpc.Errorf(codes.Unauthenticated, "Unauthenticated request")
+	default:
+		return err
+	}
 }

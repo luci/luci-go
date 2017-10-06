@@ -18,14 +18,9 @@
 package buildbot
 
 import (
-	"bytes"
-	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"strconv"
 
-	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/milo/api/resp"
 	"go.chromium.org/luci/milo/common/model"
 )
@@ -115,32 +110,31 @@ func (p *Property) UnmarshalJSON(d []byte) error {
 
 // Build is a single build json on buildbot.
 type Build struct {
-	_kind       string   `gae:"$kind,buildbotBuild"`
-	Master      string   `gae:"$master"`
-	Blame       []string `json:"blame" gae:"-"`
+	Master      string
+	Blame       []string `json:"blame"`
 	Buildername string   `json:"builderName"`
 	// This needs to be reflected.  This can be either a String or a Step.
-	Currentstep interface{} `json:"currentStep" gae:"-"`
+	Currentstep interface{} `json:"currentStep"`
 	// We don't care about this one.
-	Eta    interface{} `json:"eta" gae:"-"`
-	Logs   []Log       `json:"logs" gae:"-"`
+	Eta    interface{} `json:"eta"`
+	Logs   []Log       `json:"logs"`
 	Number int         `json:"number"`
 	// This is a slice of tri-tuples of [property name, value, source].
 	// property name is always a string
 	// value can be a string or float
 	// source is optional, but is always a string if present
-	Properties  []*Property  `json:"properties" gae:"-"`
+	Properties  []*Property  `json:"properties"`
 	Reason      string       `json:"reason"`
-	Results     Result       `json:"results" gae:"-"`
+	Results     Result       `json:"results"`
 	Slave       string       `json:"slave"`
-	Sourcestamp *SourceStamp `json:"sourceStamp" gae:"-"`
-	Steps       []Step       `json:"steps" gae:"-"`
-	Text        []string     `json:"text" gae:"-"`
-	Times       TimeRange    `json:"times" gae:"-"`
+	Sourcestamp *SourceStamp `json:"sourceStamp"`
+	Steps       []Step       `json:"steps"`
+	Text        []string     `json:"text"`
+	Times       TimeRange    `json:"times"`
 	// This one is injected by Milo.  Does not exist in a normal json query.
-	TimeStamp Time `json:"timeStamp" gae:"-"`
+	TimeStamp Time `json:"timeStamp"`
 	// This one is marked by Milo, denotes whether or not the build is internal.
-	Internal bool `json:"internal" gae:"-"`
+	Internal bool `json:"internal"`
 	// This one is computed by Milo for indexing purposes.  It does so by
 	// checking to see if times[1] is null or not.
 	Finished bool `json:"finished"`
@@ -163,88 +157,6 @@ func (b *Build) Status() model.Status {
 	return result
 }
 
-var _ datastore.PropertyLoadSaver = (*Build)(nil)
-var _ datastore.MetaGetterSetter = (*Build)(nil)
-
-// getID is a helper function that returns the datastore key for a given
-// build.
-func (b *Build) getID() string {
-	s := []string{b.Master, b.Buildername, strconv.Itoa(b.Number)}
-	id, err := json.Marshal(s)
-	if err != nil {
-		panic(err) // This really shouldn't fail.
-	}
-	return string(id)
-}
-
-// setKeys is the inverse of getID().
-func (b *Build) setKeys(id string) error {
-	s := []string{}
-	err := json.Unmarshal([]byte(id), &s)
-	if err != nil {
-		return err
-	}
-	if len(s) != 3 {
-		return fmt.Errorf("%s does not have 3 items", id)
-	}
-	b.Master = s[0]
-	b.Buildername = s[1]
-	b.Number, err = strconv.Atoi(s[2])
-	return err // or nil.
-}
-
-// GetMeta is overridden so that a query for "id" calls getID() instead of
-// the superclass method.
-func (b *Build) GetMeta(key string) (interface{}, bool) {
-	if key == "id" {
-		if b.Master == "" || b.Buildername == "" {
-			panic(fmt.Errorf("No Master or Builder found"))
-		}
-		return b.getID(), true
-	}
-	return datastore.GetPLS(b).GetMeta(key)
-}
-
-// GetAllMeta is overridden for the same reason GetMeta() is.
-func (b *Build) GetAllMeta() datastore.PropertyMap {
-	p := datastore.GetPLS(b).GetAllMeta()
-	p.SetMeta("id", b.getID())
-	return p
-}
-
-// SetMeta is the inverse of GetMeta().
-func (b *Build) SetMeta(key string, val interface{}) bool {
-	if key == "id" {
-		err := b.setKeys(val.(string))
-		if err != nil {
-			panic(err)
-		}
-	}
-	return datastore.GetPLS(b).SetMeta(key, val)
-}
-
-// Load translates a propertymap into the struct and loads the data into
-// the struct.
-func (b *Build) Load(p datastore.PropertyMap) error {
-	if _, ok := p["data"]; !ok {
-		// This is probably from a keys-only query.  No need to load the rest.
-		return datastore.GetPLS(b).Load(p)
-	}
-	gz, err := p.Slice("data")[0].Project(datastore.PTBytes)
-	if err != nil {
-		return err
-	}
-	reader, err := gzip.NewReader(bytes.NewReader(gz.([]byte)))
-	if err != nil {
-		return err
-	}
-	bs, err := ioutil.ReadAll(reader)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(bs, b)
-}
-
 func (b *Build) PropertyValue(name string) interface{} {
 	for _, prop := range b.Properties {
 		if prop.Name == name {
@@ -252,48 +164,6 @@ func (b *Build) PropertyValue(name string) interface{} {
 		}
 	}
 	return ""
-}
-
-type ErrTooBig struct {
-	error
-}
-
-// Save returns a property map of the struct to save in the datastore.  It
-// contains two fields, the ID which is the key, and a data field which is a
-// serialized and gzipped representation of the entire struct.
-func (b *Build) Save(withMeta bool) (datastore.PropertyMap, error) {
-	bs, err := json.Marshal(b)
-	if err != nil {
-		return nil, err
-	}
-	gzbs := bytes.Buffer{}
-	gsw := gzip.NewWriter(&gzbs)
-	_, err = gsw.Write(bs)
-	if err != nil {
-		return nil, err
-	}
-	err = gsw.Close()
-	if err != nil {
-		return nil, err
-	}
-	blob := gzbs.Bytes()
-	// Datastore has a max size of 1MB.  If the blob is over 9.5MB, it probably
-	// won't fit after accounting for overhead.
-	if len(blob) > 950000 {
-		return nil, ErrTooBig{
-			fmt.Errorf("Build: Build too big to store (%d bytes)", len(blob))}
-	}
-	p := datastore.PropertyMap{
-		"data": datastore.MkPropertyNI(blob),
-	}
-	if withMeta {
-		p["id"] = datastore.MkPropertyNI(b.getID())
-		p["master"] = datastore.MkProperty(b.Master)
-		p["builder"] = datastore.MkProperty(b.Buildername)
-		p["number"] = datastore.MkProperty(b.Number)
-		p["finished"] = datastore.MkProperty(b.Finished)
-	}
-	return p, nil
 }
 
 type Pending struct {

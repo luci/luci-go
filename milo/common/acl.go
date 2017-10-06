@@ -20,7 +20,6 @@ import (
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 	"go.chromium.org/luci/luci_config/server/cfgclient/access"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend"
-	"go.chromium.org/luci/server/auth"
 )
 
 // Helper functions for ACL checking.
@@ -40,14 +39,4 @@ func IsAllowed(c context.Context, project string) (bool, error) {
 	default:
 		return false, err
 	}
-}
-
-// IsAllowedInternal is a shorthand for checking to see if the user is a reader
-// of a magic project named "chrome".
-func IsAllowedInternal(c context.Context) (bool, error) {
-	settings := GetSettings(c)
-	if settings.Buildbot.InternalReader == "" {
-		return false, nil
-	}
-	return auth.IsMember(c, settings.Buildbot.InternalReader)
 }

@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 	"go.chromium.org/luci/milo/api/buildbot"
 	milo "go.chromium.org/luci/milo/api/proto"
+	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/common"
 )
@@ -61,7 +62,7 @@ func (p *BuildInfoProvider) newLogdogClient(c context.Context) (*coordinator.Cli
 //
 // This:
 //
-//	1) Fetches the BuildBot build JSON from datastore.
+//	1) Fetches the BuildBot build JSON from storage.
 //	2) Resolves the LogDog annotation stream path from the BuildBot state.
 //	3) Fetches the LogDog annotation stream and resolves it into a Step.
 //	4) Merges some operational BuildBot build information into the Step.
@@ -71,8 +72,8 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 	logging.Infof(c, "Loading build info for master %q, builder %q, build #%d",
 		req.MasterName, req.BuilderName, req.BuildNumber)
 
-	// Load the BuildBot build from datastore.
-	build, err := getBuild(c, req.MasterName, req.BuilderName, int(req.BuildNumber))
+	// Load the BuildBot build from storage.
+	build, err := buildstore.GetBuild(c, req.MasterName, req.BuilderName, int(req.BuildNumber))
 	if err != nil {
 		switch common.ErrorTag.In(err) {
 		case common.CodeNotFound:

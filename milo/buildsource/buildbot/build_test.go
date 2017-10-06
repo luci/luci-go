@@ -26,15 +26,16 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
-	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	memcfg "go.chromium.org/luci/common/config/impl/memory"
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -87,6 +88,7 @@ func TestBuild(t *testing.T) {
 			Identity:       identity.AnonymousIdentity,
 			IdentityGroups: []string{"all"},
 		})
+		c = caching.WithProcessCache(c, &lru.Cache{})
 
 		for _, tc := range TestCases {
 			Convey(fmt.Sprintf("Test Case: %s/%d", tc.Builder, tc.Build), func() {
@@ -98,13 +100,13 @@ func TestBuild(t *testing.T) {
 		}
 
 		Convey(`Disallow anonomyous users from accessing internal builds`, func() {
-			ds.Put(c, &buildbot.Build{
+			importBuild(c, &buildbot.Build{
 				Master:      "fake",
 				Buildername: "fake",
 				Number:      1,
 				Internal:    true,
 			})
-			_, err := getBuild(c, "fake", "fake", 1)
+			_, err := Build(c, "fake", "fake", 1)
 			So(common.ErrorTag.In(err), ShouldEqual, common.CodeUnauthorized)
 		})
 	})

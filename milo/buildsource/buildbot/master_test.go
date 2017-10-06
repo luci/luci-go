@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/milo/api/buildbot"
+	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -33,14 +34,14 @@ func TestMaster(t *testing.T) {
 	datastore.GetTestable(c).CatchupIndexes()
 
 	Convey(`Tests for master`, t, func() {
-		So(putDSMasterJSON(c, &buildbot.Master{
+		So(buildstore.SaveMaster(c, &buildbot.Master{
 			Name:     "fake",
 			Builders: map[string]*buildbot.Builder{"fake": {}},
-		}, false), ShouldBeNil)
-		So(putDSMasterJSON(c, &buildbot.Master{
+		}, false, nil), ShouldBeNil)
+		So(buildstore.SaveMaster(c, &buildbot.Master{
 			Name:     "fake internal",
 			Builders: map[string]*buildbot.Builder{"fake": {}},
-		}, true), ShouldBeNil)
+		}, true, nil), ShouldBeNil)
 
 		Convey(`GetAllBuilders()`, func() {
 			cs, err := GetAllBuilders(c)

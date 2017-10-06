@@ -27,22 +27,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
-
-	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	memcfg "go.chromium.org/luci/common/config/impl/memory"
 	"go.chromium.org/luci/luci_config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/milo/api/buildbot"
+	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var (
@@ -85,6 +83,8 @@ func newCombinedPsBody(bs []*buildbot.Build, m *buildbot.Master, internal bool) 
 func TestPubSub(t *testing.T) {
 	Convey(`A test Environment`, t, func() {
 		c := gaetesting.TestingContextWithAppID("dev~luci-milo")
+		datastore.GetTestable(c).AutoIndex(true)
+		datastore.GetTestable(c).Consistent(true)
 		c, _ = testclock.UseTime(c, fakeTime)
 		c = testconfig.WithCommonClient(c, memcfg.New(bbAclConfigs))
 		c = auth.WithState(c, &authtest.FakeState{
@@ -93,6 +93,9 @@ func TestPubSub(t *testing.T) {
 		})
 		// Update the service config so that the settings are loaded.
 		_, err := common.UpdateServiceConfig(c)
+		So(err, ShouldBeNil)
+
+		err = buildstore.SaveMaster(c, &buildbot.Master{Name: "Fake buildbotMasterEntry"}, false, nil)
 		So(err, ShouldBeNil)
 
 		rand.Seed(5)
@@ -112,100 +115,86 @@ func TestPubSub(t *testing.T) {
 					},
 				},
 			}
-			So(putDSMasterJSON(c, m, false), ShouldBeNil)
-			lm, _, _, err := getMasterJSON(c, "fake")
+			So(buildstore.SaveMaster(c, m, false, nil), ShouldBeNil)
+			lm, err := buildstore.GetMaster(c, "fake", false)
 			So(err, ShouldBeNil)
 			So(lm.Builders["fake builder"].PendingBuildStates[0].Source.Changes[0].Comments, ShouldResemble, "")
 		})
 
 		Convey("Save build entry", func() {
 			build := &buildbot.Build{
-				Master:      "Fake Master",
+				Master:      "Fake buildbotMasterEntry",
 				Buildername: "Fake buildername",
 				Number:      1234,
 				Currentstep: "this is a string",
 				Finished:    true,
 			}
-			err := ds.Put(c, build)
-			ds.GetTestable(c).CatchupIndexes()
+			importBuild(c, build)
 
 			So(err, ShouldBeNil)
 			Convey("Load build entry", func() {
-				loadB := &buildbot.Build{
-					Master:      "Fake Master",
-					Buildername: "Fake buildername",
-					Number:      1234,
-				}
-				err = ds.Get(c, loadB)
+				loadB, err := buildstore.GetBuild(c, "Fake buildbotMasterEntry", "Fake buildername", 1234)
 				So(err, ShouldBeNil)
-				So(loadB.Master, ShouldEqual, "Fake Master")
+				So(loadB.Master, ShouldEqual, "Fake buildbotMasterEntry")
 				So(loadB.Internal, ShouldEqual, false)
-				So(loadB.Currentstep.(string), ShouldEqual, "this is a string")
+				So(loadB.Currentstep, ShouldEqual, "this is a string")
 				So(loadB.Finished, ShouldEqual, true)
 			})
 
 			Convey("Query build entry", func() {
-				q := ds.NewQuery("buildbotBuild")
-				buildbots := []*buildbot.Build{}
-				err = ds.GetAll(c, q, &buildbots)
+				datastore.GetTestable(c).CatchupIndexes()
+				q := buildstore.Query{
+					Master:  build.Master,
+					Builder: build.Buildername,
+				}
+				res, err := buildstore.GetBuilds(c, q)
 				So(err, ShouldBeNil)
+				So(len(res.Builds), ShouldEqual, 1)
+				So(res.Builds[0].Currentstep, ShouldEqual, "this is a string")
 
-				So(len(buildbots), ShouldEqual, 1)
-				So(buildbots[0].Currentstep.(string), ShouldEqual, "this is a string")
 				Convey("Query for finished entries should be 1", func() {
-					q = q.Eq("finished", true)
-					buildbots = []*buildbot.Build{}
-					err = ds.GetAll(c, q, &buildbots)
+					q := q
+					q.Finished = buildstore.Yes
+					res, err := buildstore.GetBuilds(c, q)
 					So(err, ShouldBeNil)
-					So(len(buildbots), ShouldEqual, 1)
+					So(len(res.Builds), ShouldEqual, 1)
+					So(res.Builds[0].Currentstep, ShouldEqual, "this is a string")
 				})
 				Convey("Query for unfinished entries should be 0", func() {
-					q = q.Eq("finished", false)
-					buildbots = []*buildbot.Build{}
-					err = ds.GetAll(c, q, &buildbots)
+					q := q
+					q.Finished = buildstore.No
+					res, err := buildstore.GetBuilds(c, q)
 					So(err, ShouldBeNil)
-					So(len(buildbots), ShouldEqual, 0)
+					So(len(res.Builds), ShouldEqual, 0)
 				})
 			})
 
 			Convey("Save a few more entries", func() {
-				ds.GetTestable(c).Consistent(true)
-				ds.GetTestable(c).AutoIndex(true)
 				for i := 1235; i < 1240; i++ {
-					build := &buildbot.Build{
-						Master:      "Fake Master",
+					importBuild(c, &buildbot.Build{
+						Master:      "Fake buildbotMasterEntry",
 						Buildername: "Fake buildername",
 						Number:      i,
 						Currentstep: "this is a string",
 						Finished:    i%2 == 0,
-					}
-					err := ds.Put(c, build)
+					})
 					So(err, ShouldBeNil)
 				}
-				q := ds.NewQuery("buildbotBuild")
-				q = q.Eq("finished", true)
-				q = q.Eq("master", "Fake Master")
-				q = q.Eq("builder", "Fake buildername")
-				q = q.Order("-number")
-				buildbots := []*buildbot.Build{}
-				err = ds.GetAll(c, q, &buildbots)
+				res, err := buildstore.GetBuilds(c, buildstore.Query{
+					Master:   "Fake buildbotMasterEntry",
+					Builder:  "Fake buildername",
+					Finished: buildstore.Yes,
+				})
 				So(err, ShouldBeNil)
-				So(len(buildbots), ShouldEqual, 3) // 1235, 1237, 1239
+				So(len(res.Builds), ShouldEqual, 3) // 1235, 1237, 1239
 			})
-		})
-
-		Convey("Build panics on invalid query", func() {
-			build := &buildbot.Build{
-				Master: "Fake Master",
-			}
-			So(func() { ds.Put(c, build) }, ShouldPanicLike, "No Master or Builder found")
 		})
 
 		// FIXME: change random 123, 555, 1234 times
 		// to something that makes sense and not scary to change.
 		ts := unixTime(555)
 		b := &buildbot.Build{
-			Master:      "Fake Master",
+			Master:      "Fake buildbotMasterEntry",
 			Buildername: "Fake buildername",
 			Number:      1234,
 			Currentstep: "this is a string",
@@ -221,7 +210,7 @@ func TestPubSub(t *testing.T) {
 				Connected: true,
 				Runningbuilds: []*buildbot.Build{
 					{
-						Master:      "Fake Master",
+						Master:      "Fake buildbotMasterEntry",
 						Buildername: "Fake buildername",
 						Number:      2222,
 						Times:       buildbot.TimeRange{Start: unixTime(1234)},
@@ -229,7 +218,7 @@ func TestPubSub(t *testing.T) {
 				},
 			}
 			ms := buildbot.Master{
-				Name:     "Fake Master",
+				Name:     "Fake buildbotMasterEntry",
 				Project:  buildbot.Project{Title: "some title"},
 				Slaves:   slaves,
 				Builders: map[string]*buildbot.Builder{},
@@ -241,28 +230,21 @@ func TestPubSub(t *testing.T) {
 			r := &http.Request{
 				Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, false),
 			}
-			p := httprouter.Params{}
 			PubSubHandler(&router.Context{
 				Context: c,
 				Writer:  h,
 				Request: r,
-				Params:  p,
 			})
 			So(h.Code, ShouldEqual, 200)
 			Convey("And stores correctly", func() {
-				loadB := &buildbot.Build{
-					Master:      "Fake Master",
-					Buildername: "Fake buildername",
-					Number:      1234,
-				}
-				err := ds.Get(c, loadB)
+				loadB, err := buildstore.GetBuild(c, b.Master, b.Buildername, b.Number)
 				So(err, ShouldBeNil)
-				So(loadB.Master, ShouldEqual, "Fake Master")
-				So(loadB.Currentstep.(string), ShouldEqual, "this is a string")
-				m, _, t, err := getMasterJSON(c, "Fake Master")
+				So(loadB.Master, ShouldEqual, "Fake buildbotMasterEntry")
+				So(loadB.Currentstep, ShouldEqual, "this is a string")
+				m, err := buildstore.GetMaster(c, "Fake buildbotMasterEntry", false)
 				So(err, ShouldBeNil)
-				So(t.Unix(), ShouldEqual, 981173106)
-				So(m.Name, ShouldEqual, "Fake Master")
+				So(m.Modified.Unix(), ShouldEqual, 981173106)
+				So(m.Name, ShouldEqual, "Fake buildbotMasterEntry")
 				So(m.Project.Title, ShouldEqual, "some title")
 				So(m.Slaves["testslave"].Name, ShouldEqual, "testslave")
 				So(len(m.Slaves["testslave"].Runningbuilds), ShouldEqual, 0)
@@ -277,19 +259,17 @@ func TestPubSub(t *testing.T) {
 				h = httptest.NewRecorder()
 				r := &http.Request{
 					Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, false)}
-				p = httprouter.Params{}
 				PubSubHandler(&router.Context{
 					Context: c,
 					Writer:  h,
 					Request: r,
-					Params:  p,
 				})
 				So(h.Code, ShouldEqual, 200)
-				m, _, t, err := getMasterJSON(c, "Fake Master")
+				m, err := buildstore.GetMaster(c, "Fake buildbotMasterEntry", false)
 				So(err, ShouldBeNil)
 				So(m.Project.Title, ShouldEqual, "some other title")
-				So(t.Unix(), ShouldEqual, 981173107)
-				So(m.Name, ShouldEqual, "Fake Master")
+				So(m.Modified.Unix(), ShouldEqual, 981173107)
+				So(m.Name, ShouldEqual, "Fake buildbotMasterEntry")
 			})
 			Convey("And a new build overwrites", func() {
 				b.Times.Start = unixTime(123)
@@ -298,20 +278,13 @@ func TestPubSub(t *testing.T) {
 				r = &http.Request{
 					Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, false),
 				}
-				p = httprouter.Params{}
 				PubSubHandler(&router.Context{
 					Context: c,
 					Writer:  h,
 					Request: r,
-					Params:  p,
 				})
 				So(h.Code, ShouldEqual, 200)
-				loadB := &buildbot.Build{
-					Master:      "Fake Master",
-					Buildername: "Fake buildername",
-					Number:      1234,
-				}
-				err := ds.Get(c, loadB)
+				loadB, err := buildstore.GetBuild(c, "Fake buildbotMasterEntry", "Fake buildername", 1234)
 				So(err, ShouldBeNil)
 				So(loadB.Times, ShouldResemble, b.Times)
 				Convey("And another pending build is rejected", func() {
@@ -321,76 +294,53 @@ func TestPubSub(t *testing.T) {
 					r = &http.Request{
 						Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, false),
 					}
-					p = httprouter.Params{}
 					PubSubHandler(&router.Context{
 						Context: c,
 						Writer:  h,
 						Request: r,
-						Params:  p,
 					})
 					So(h.Code, ShouldEqual, 200)
-					loadB := &buildbot.Build{
-						Master:      "Fake Master",
-						Buildername: "Fake buildername",
-						Number:      1234,
-					}
-					err := ds.Get(c, loadB)
+					loadB, err := buildstore.GetBuild(c, "Fake buildbotMasterEntry", "Fake buildername", 1234)
 					So(err, ShouldBeNil)
 					So(loadB.Times.Start, ShouldResemble, unixTime(123))
 					So(loadB.Times.Finish, ShouldResemble, unixTime(124))
 				})
 			})
-			Convey("Don't Expire non-existant current build under 20 min", func() {
+			Convey("Don't Expire non-existent current build under 20 min", func() {
 				b.Number = 1235
 				b.TimeStamp.Time = fakeTime.Add(-1000 * time.Second)
 				h = httptest.NewRecorder()
 				r = &http.Request{
 					Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, false),
 				}
-				p = httprouter.Params{}
-				ds.GetTestable(c).Consistent(true)
+				datastore.GetTestable(c).Consistent(true)
 				PubSubHandler(&router.Context{
 					Context: c,
 					Writer:  h,
 					Request: r,
-					Params:  p,
 				})
 				So(h.Code, ShouldEqual, 200)
-				loadB := &buildbot.Build{
-					Master:      "Fake Master",
-					Buildername: "Fake buildername",
-					Number:      1235,
-				}
-				err := ds.Get(c, loadB)
+				loadB, err := buildstore.GetBuild(c, "Fake buildbotMasterEntry", "Fake buildername", 1235)
 				So(err, ShouldBeNil)
 				So(loadB.Finished, ShouldEqual, false)
 				So(loadB.Times.Start, ShouldResemble, unixTime(123))
 				So(loadB.Times.Finish.IsZero(), ShouldBeTrue)
 			})
-			Convey("Expire non-existant current build", func() {
+			Convey("Expire non-existent current build", func() {
 				b.Number = 1235
-				b.TimeStamp.Time = fakeTime.Add(-1201 * time.Second)
+				b.TimeStamp.Time = fakeTime.Add(-21 * time.Minute)
 				h = httptest.NewRecorder()
-				r = &http.Request{
-					Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, false),
-				}
-				p = httprouter.Params{}
-				ds.GetTestable(c).Consistent(true)
 				PubSubHandler(&router.Context{
 					Context: c,
 					Writer:  h,
-					Request: r,
-					Params:  p,
+					Request: &http.Request{
+						Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, false),
+					},
 				})
 				So(h.Code, ShouldEqual, 200)
-				loadB := &buildbot.Build{
-					Master:      "Fake Master",
-					Buildername: "Fake buildername",
-					Number:      1235,
-				}
-				err := ds.Get(c, loadB)
+				loadB, err := buildstore.GetBuild(c, "Fake buildbotMasterEntry", "Fake buildername", 1235)
 				So(err, ShouldBeNil)
-				So(loadB.Finished, ShouldResemble, true)
+				So(loadB.Finished, ShouldBeTrue)
 				So(loadB.Times.Start, ShouldResemble, unixTime(123))
 				So(loadB.Times.Finish, ShouldResemble, b.TimeStamp)
 				So(loadB.Results, ShouldEqual, buildbot.Exception)
@@ -403,12 +353,10 @@ func TestPubSub(t *testing.T) {
 				r := &http.Request{
 					Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, false),
 				}
-				p := httprouter.Params{}
 				PubSubHandler(&router.Context{
 					Context: c,
 					Writer:  h,
 					Request: r,
-					Params:  p,
 				})
 				So(h.Code, ShouldEqual, 200)
 			})
@@ -418,17 +366,15 @@ func TestPubSub(t *testing.T) {
 		Convey("Empty pubsub message", func() {
 			h := httptest.NewRecorder()
 			r := &http.Request{Body: ioutil.NopCloser(bytes.NewReader([]byte{}))}
-			p := httprouter.Params{}
 			PubSubHandler(&router.Context{
 				Context: c,
 				Writer:  h,
 				Request: r,
-				Params:  p,
 			})
 			So(h.Code, ShouldEqual, 200)
 		})
 
-		Convey("Internal master + build pusbsub subscription", func() {
+		Convey("Internal master + build pubsub subscription", func() {
 			h := httptest.NewRecorder()
 			slaves := map[string]*buildbot.Slave{}
 			slaves["testslave"] = &buildbot.Slave{
@@ -436,7 +382,7 @@ func TestPubSub(t *testing.T) {
 				Connected: true,
 				Runningbuilds: []*buildbot.Build{
 					{
-						Master:      "Fake Master",
+						Master:      "Fake buildbotMasterEntry",
 						Buildername: "Fake buildername",
 						Number:      2222,
 						Times:       buildbot.TimeRange{Start: unixTime(1234)},
@@ -444,40 +390,37 @@ func TestPubSub(t *testing.T) {
 				},
 			}
 			ms := buildbot.Master{
-				Name:    "Fake Master",
+				Name:    "Fake buildbotMasterEntry",
 				Project: buildbot.Project{Title: "some title"},
 				Slaves:  slaves,
+				Builders: map[string]*buildbot.Builder{
+					b.Buildername: {
+						CurrentBuilds: []int{b.Number},
+					},
+				},
 			}
-			r := &http.Request{
-				Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, true),
-			}
-			p := httprouter.Params{}
+			b.Internal = true
 			PubSubHandler(&router.Context{
 				Context: c,
 				Writer:  h,
-				Request: r,
-				Params:  p,
+				Request: &http.Request{
+					Body: newCombinedPsBody([]*buildbot.Build{b}, &ms, true),
+				},
 			})
-			So(h.Code, ShouldEqual, 200)
+			So(h.Code, ShouldEqual, http.StatusOK)
 			Convey("And stores correctly", func() {
 				c = auth.WithState(c, &authtest.FakeState{
 					Identity:       "user:alicebob@google.com",
 					IdentityGroups: []string{"googlers", "all"},
 				})
-				loadB := &buildbot.Build{
-					Master:      "Fake Master",
-					Buildername: "Fake buildername",
-					Number:      1234,
-				}
-				err = ds.Get(c, loadB)
+				loadB, err := buildstore.GetBuild(c, b.Master, b.Buildername, b.Number)
 				So(err, ShouldBeNil)
-				So(loadB.Master, ShouldEqual, "Fake Master")
-				So(loadB.Internal, ShouldEqual, true)
-				So(loadB.Currentstep.(string), ShouldEqual, "this is a string")
-				m, _, t, err := getMasterJSON(c, "Fake Master")
+				So(loadB, ShouldResemble, b)
+
+				m, err := buildstore.GetMaster(c, "Fake buildbotMasterEntry", false)
 				So(err, ShouldBeNil)
-				So(t.Unix(), ShouldEqual, 981173106)
-				So(m.Name, ShouldEqual, "Fake Master")
+				So(m.Modified.Unix(), ShouldEqual, 981173106)
+				So(m.Name, ShouldEqual, "Fake buildbotMasterEntry")
 				So(m.Project.Title, ShouldEqual, "some title")
 				So(m.Slaves["testslave"].Name, ShouldEqual, "testslave")
 				So(len(m.Slaves["testslave"].Runningbuilds), ShouldEqual, 0)
