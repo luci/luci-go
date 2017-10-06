@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5d8968b5_14f5be33",
+        "filename": "cipd/client/cipd/ensure/item_parsers.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-06T19:59:14Z",
+      "side": 1,
+      "message": "there seem to be no way to \"reset\" platforms to verify, e.g.\n\n  $Verify linux-amd64\n  $Verify win-amd64\n\n  some/package/${platform} version\n\n  # Now I know that win-amd64 version of this package doesn\u0027t exist.\n  # But it is still verified :(\n\n  some/other/package/${platform} version\n\nMaybe simply make it \n\n f.VerifyPlatforms \u003d plats\n\nand require full list to be passed",
+      "range": {
+        "startLine": 71,
+        "startChar": 1,
+        "endLine": 71,
+        "endChar": 56
+      },
+      "revId": "02a28754b5d13868dd267451fed700e885a49597",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89b356bd_d457ea17",
+        "filename": "cipd/client/cipd/ensure/item_parsers.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-06T19:59:14Z",
+      "side": 1,
+      "message": "document this in https://godoc.org/github.com/luci/luci-go/cipd/client/cipd/ensure",
+      "range": {
+        "startLine": 81,
+        "startChar": 2,
+        "endLine": 81,
+        "endChar": 10
+      },
+      "revId": "02a28754b5d13868dd267451fed700e885a49597",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20042da0_4c614b9b",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 823,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-06T19:59:14Z",
+      "side": 1,
+      "message": "Please rename it to \"ensure-file-verify\" and convert to advanced command:\n * I\u0027m pretty sure 99% of users don\u0027t need it.\n * \u0027verify\u0027 by itself is too ambiguous.\n * \u0027ensure-file-verify\u0027 (instead of \u0027verify-ensure-file\u0027) because advanced commands has structure \"\u003ccomponent\u003e-\u003cverb\u003e\".",
+      "range": {
+        "startLine": 823,
+        "startChar": 14,
+        "endLine": 823,
+        "endChar": 20
+      },
+      "revId": "02a28754b5d13868dd267451fed700e885a49597",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e88b9877_2a8cdb60",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 826,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-06T19:59:14Z",
+      "side": 1,
+      "message": "Returns",
+      "range": {
+        "startLine": 826,
+        "startChar": 54,
+        "endLine": 826,
+        "endChar": 61
+      },
+      "revId": "02a28754b5d13868dd267451fed700e885a49597",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a5e4519_ac880f47",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 942,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-06T19:59:14Z",
+      "side": 1,
+      "message": "please do this concurrently. It makes noticeable difference for big ensure files.",
+      "range": {
+        "startLine": 942,
+        "startChar": 15,
+        "endLine": 942,
+        "endChar": 39
+      },
+      "revId": "02a28754b5d13868dd267451fed700e885a49597",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
