@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6b50e28a_f61cda76",
+        "filename": "logdog/appengine/coordinator/endpoints/services/batch.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T03:20:00Z",
+      "side": 1,
+      "message": "memory leak\nc :\u003d",
+      "range": {
+        "startLine": 60,
+        "startChar": 4,
+        "endLine": 60,
+        "endChar": 9
+      },
+      "revId": "cdf1ab163d1c93a6aa02ef82b226e7de9a101330",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
