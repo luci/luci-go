@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6ad22a21_4bdde2b9",
+        "filename": "mp/cmd/mpagent/agent_linux.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-06T19:00:30Z",
+      "side": 1,
+      "message": "you\u0027ll also need to add empty Windows implementation: https://chromium.googlesource.com/infra/luci/luci-go/+/master/mp/cmd/mpagent/agent_windows.go",
+      "range": {
+        "startLine": 75,
+        "startChar": 0,
+        "endLine": 75,
+        "endChar": 66
+      },
+      "revId": "7b44cd821de6420794d669e2dbc88c45ea1176a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10fe548e_ad2e9527",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-06T19:00:30Z",
+      "side": 1,
+      "message": "nit: enableSwarming enables installed service.\n\n(and in other places)",
+      "range": {
+        "startLine": 55,
+        "startChar": 4,
+        "endLine": 55,
+        "endChar": 20
+      },
+      "revId": "7b44cd821de6420794d669e2dbc88c45ea1176a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
