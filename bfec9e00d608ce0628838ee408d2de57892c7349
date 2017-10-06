@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "39e3518f_47c70fc6",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T19:56:23Z",
+      "side": 1,
+      "message": "Oh, I didn\u0027t realize Go exposes the wrapped time.Time as a field. You\u0027re right, that is nicer.\n\nI\u0027ll switch everything to that, unless someone else feels differently?",
+      "parentUuid": "1da34b74_b886da12",
+      "range": {
+        "startLine": 32,
+        "startChar": 9,
+        "endLine": 32,
+        "endChar": 19
+      },
+      "revId": "bfec9e00d608ce0628838ee408d2de57892c7349",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f32d00a1_22838e24",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 6
