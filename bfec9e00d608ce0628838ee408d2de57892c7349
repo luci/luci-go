@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "1da34b74_b886da12",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T19:37:27Z",
+      "side": 1,
+      "message": "\u003e though unwrapping the struct when passing to a function that accepts a time.Time is also painful. Frankly, I\u0027m not sure which one is better.\n\nit is less painful with a struct I think\n\nf(t.Time) vs f((time.Time)(t))\n\n?\n\nthe only inconvenience of a struct is when you need to convert a time.Time to gitiles.Time:\n\ngt :\u003d gitiles.Time{t}",
+      "parentUuid": "3a4ceb41_efcf187b",
+      "range": {
+        "startLine": 32,
+        "startChar": 9,
+        "endLine": 32,
+        "endChar": 19
+      },
+      "revId": "bfec9e00d608ce0628838ee408d2de57892c7349",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f32d00a1_22838e24",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 6
