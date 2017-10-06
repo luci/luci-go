@@ -40,7 +40,7 @@ func TestTriggerBuild(t *testing.T) {
 		c := memory.Use(context.Background())
 		cfg := &messages.GitilesTask{
 			Repo: "https://a.googlesource.com/b.git",
-			Refs: []string{"refs/heads/master", "refs/heads/branch", "refs/branch-heads/1.2.3"},
+			Refs: []string{"refs/heads/master", "refs/heads/branch", "refs/branch-heads/*"},
 		}
 		loadSavedRepo := func() *Repository {
 			r := &Repository{ID: "proj/gitiles:https://a.googlesource.com/b.git"}
@@ -104,7 +104,7 @@ func TestTriggerBuild(t *testing.T) {
 			})
 		})
 
-		Convey("Updated, not changed and deleted refs", func() {
+		Convey("New, updated, and deleted refs", func() {
 			ds.Put(c, &Repository{
 				ID: "proj/gitiles:https://a.googlesource.com/b.git",
 				References: []Reference{
@@ -125,6 +125,36 @@ func TestTriggerBuild(t *testing.T) {
 				References: []Reference{
 					{Name: "refs/branch-heads/1.2.3", Revision: "baadcafe0"},
 					{Name: "refs/heads/master", Revision: "deadbeef1"},
+				},
+			})
+			So(ctl.Triggers, ShouldHaveLength, 2)
+			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/1.2.3@baadcafe0")
+			So(ctl.Triggers[1].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef1")
+		})
+
+		Convey("Refglobs: new, updated, and deleted refs", func() {
+			ds.Put(c, &Repository{
+				ID: "proj/gitiles:https://a.googlesource.com/b.git",
+				References: []Reference{
+					{Name: "refs/branch-heads/1.2.3", Revision: "deadbeef0"},
+					{Name: "refs/branch-heads/4.5", Revision: "beefcafe"},
+					{Name: "refs/branch-heads/6.7", Revision: "deadcafe"},
+				},
+			})
+			gitilesMock.allRefs = func() (map[string]string, error) {
+				return map[string]string{
+					"refs/branch-heads/1.2.3": "deadbeef1",
+					"refs/branch-heads/6.7":   "deadcafe",
+					"refs/branch-heads/8.9.0": "beef4dead",
+				}, nil
+			}
+			So(m.LaunchTask(c, ctl, nil), ShouldBeNil)
+			So(loadSavedRepo(), ShouldResemble, &Repository{
+				ID: "proj/gitiles:https://a.googlesource.com/b.git",
+				References: []Reference{
+					{Name: "refs/branch-heads/1.2.3", Revision: "deadbeef1"}, // updated.
+					{Name: "refs/branch-heads/6.7", Revision: "deadcafe"},    // same.
+					{Name: "refs/branch-heads/8.9.0", Revision: "beef4dead"}, // new.
 				},
 			})
 			So(ctl.Triggers, ShouldHaveLength, 2)
@@ -162,7 +192,7 @@ func TestValidateConfig(t *testing.T) {
 	Convey("refNamespace works", t, func() {
 		cfg := &messages.GitilesTask{
 			Repo: "https://a.googlesource.com/b.git",
-			Refs: []string{"refs/heads/master", "refs/heads/branch", "refs/branch-heads/1.2.3"},
+			Refs: []string{"refs/heads/master", "refs/heads/branch", "refs/branch-heads/*"},
 		}
 		m := TaskManager{}
 		So(m.ValidateProtoMessage(cfg), ShouldBeNil)
