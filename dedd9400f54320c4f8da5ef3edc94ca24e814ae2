@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9de339c3_f291a0ba",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T06:19:31Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 12,
+        "startChar": 29,
+        "endLine": 12,
+        "endChar": 39
+      },
+      "revId": "dedd9400f54320c4f8da5ef3edc94ca24e814ae2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec1d8f73_54f4ebaf",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T06:19:31Z",
+      "side": 1,
+      "message": "not a part of this CL anymore",
+      "range": {
+        "startLine": 15,
+        "startChar": 1,
+        "endLine": 15,
+        "endChar": 85
+      },
+      "revId": "dedd9400f54320c4f8da5ef3edc94ca24e814ae2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54d51056_41cd40ea",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T06:19:31Z",
+      "side": 1,
+      "message": "Trigger now",
+      "range": {
+        "startLine": 16,
+        "startChar": 27,
+        "endLine": 16,
+        "endChar": 38
+      },
+      "revId": "dedd9400f54320c4f8da5ef3edc94ca24e814ae2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5d47493_3a69c1ab",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T06:19:31Z",
+      "side": 1,
+      "message": "nit: or just comma",
+      "range": {
+        "startLine": 40,
+        "startChar": 52,
+        "endLine": 42,
+        "endChar": 6
+      },
+      "revId": "dedd9400f54320c4f8da5ef3edc94ca24e814ae2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "106c9056_bdc45263",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T06:19:31Z",
+      "side": 1,
+      "message": "why not just\n  return sID.Get(c)",
+      "range": {
+        "startLine": 103,
+        "startChar": 0,
+        "endLine": 109,
+        "endChar": 56
+      },
+      "revId": "dedd9400f54320c4f8da5ef3edc94ca24e814ae2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
