@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/server/archivist"
+	"go.chromium.org/luci/logdog/server/bundleServicesClient"
 	"go.chromium.org/luci/logdog/server/service"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 
@@ -124,8 +125,16 @@ func (a *application) runArchivist(c context.Context) error {
 	}
 	defer gsClient.Close()
 
+	// Initialize a Coordinator client that bundles requests together.
+	coordClient := &bundleServicesClient.Client{
+		ServicesClient:       a.Coordinator(),
+		DelayThreshold:       time.Second,
+		BundleCountThreshold: 100,
+	}
+	defer coordClient.Flush()
+
 	ar := archivist.Archivist{
-		Service:        a.Coordinator(),
+		Service:        coordClient,
 		SettingsLoader: a.GetSettingsLoader(acfg),
 		Storage:        st,
 		GSClient:       gsClient,
