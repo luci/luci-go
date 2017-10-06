@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "284199fa_710296e2",
+        "filename": "mp/cmd/mpagent/agent_linux.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-10-06T21:22:00Z",
+      "side": 1,
+      "message": "Sort alpha among the SystemdStrategy functions.",
+      "revId": "d3765d7d572bc393397ba8c69e8d8a5b68608d24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8afd9805_a8f5cd51",
+        "filename": "mp/cmd/mpagent/agent_linux.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-10-06T21:22:00Z",
+      "side": 1,
+      "message": "Sort alpha among the UpstartStrategy functions.",
+      "revId": "d3765d7d572bc393397ba8c69e8d8a5b68608d24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "753cde29_d670fdcf",
+        "filename": "mp/cmd/mpagent/agent_windows.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-10-06T21:22:00Z",
+      "side": 1,
+      "message": "Sort alpha among the WindowsStrategy functions.",
+      "revId": "d3765d7d572bc393397ba8c69e8d8a5b68608d24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e136a5c_ede87251",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2017-10-06T21:22:00Z",
+      "side": 1,
+      "message": "Sort alpha.",
+      "revId": "d3765d7d572bc393397ba8c69e8d8a5b68608d24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
