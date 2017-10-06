@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "abd9511f_213b9731",
+        "filename": "logdog/api/endpoints/coordinator/services/v1/service.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-06T00:43:52Z",
+      "side": 1,
+      "message": "I wouldn\u0027t mind propagating it there, but I\u0027m wary of trying to standardize it. I 100% support transplanting this and its helper functions there the moment a second use is identified.",
+      "parentUuid": "f69000fc_9b1ccd7e",
+      "range": {
+        "startLine": 14,
+        "startChar": 8,
+        "endLine": 14,
+        "endChar": 13
+      },
+      "revId": "e74642683a0415ccdcd6c54352c911c1b81588c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a38c57e1_a943ee0d",
         "filename": "logdog/api/endpoints/coordinator/services/v1/service.proto",
         "patchSetId": 3
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "b4c8cc57_7caad320",
+        "filename": "logdog/api/endpoints/coordinator/services/v1/service.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-06T00:43:52Z",
+      "side": 1,
+      "message": "I like \"oneof\" for a few reasons:\n- It avoids the need to build multiple independent for loops.\n- It reduces the number of position relationships between this and the response to a single slice.\n- It represents the intent to the user, which is that there is a list of requests and a set of responses.\n\nA \"repeated\" element would require a repeated response and multiple associations. It would also require independent iteration for each repeated element. Finally, if a new element is ever added, right now we\u0027d get an error b/c of no type match in switch, but in a \"repeated\" case nothing would exist to notice that there is a field being ignored.\n\nIf there isn\u0027t a major objection, I\u0027d like to keep this as-is in this respect.",
+      "parentUuid": "a38c57e1_a943ee0d",
+      "revId": "e74642683a0415ccdcd6c54352c911c1b81588c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e2a8bd27_1f0de286",
         "filename": "logdog/api/endpoints/coordinator/services/v1/service.proto",
         "patchSetId": 3
@@ -53,6 +95,24 @@
       "writtenOn": "2017-10-05T20:03:07Z",
       "side": 1,
       "message": "I would make a StreamResponse for each of the Request types (even if it just had Error), then make this also do the quadruple repeated thing.",
+      "revId": "e74642683a0415ccdcd6c54352c911c1b81588c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40e85f05_85b0b0b2",
+        "filename": "logdog/api/endpoints/coordinator/services/v1/service.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-06T00:43:52Z",
+      "side": 1,
+      "message": "(See previous comment, I think there is immense safety, clarity, and simplicity in the 1:1 single index association).",
+      "parentUuid": "e2a8bd27_1f0de286",
       "revId": "e74642683a0415ccdcd6c54352c911c1b81588c7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
