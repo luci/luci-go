@@ -46,6 +46,8 @@ import (
 type Strategy interface {
 	// chown changes ownership of a path.
 	chown(ctx context.Context, username, path string) error
+	// enableSwarming enables installed service.
+	enableSwarming(ctx context.Context) error
 	// start starts the agent.
 	start(ctx context.Context, path string) error
 	// stop stops all instances of the agent.
@@ -136,7 +138,10 @@ func (agent *Agent) configureSwarmingAutoStart(ctx context.Context, server strin
 	default:
 		return err
 	}
-	return ioutil.WriteFile(path, []byte(content), 0644)
+	if err := ioutil.WriteFile(path, []byte(content), 0644); err != nil {
+		return err
+	}
+	return agent.strategy.enableSwarming(ctx)
 }
 
 // downloadSwarminBotCode downloads the Swarming bot code from the given server.

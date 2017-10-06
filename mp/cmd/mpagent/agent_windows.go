@@ -32,6 +32,11 @@ func (WindowsStrategy) chown(ctx context.Context, username, path string) error {
 	return nil
 }
 
+// enableSwarming enables installed service.
+func (WindowsStrategy) enableSwarming(ctx context.Context) error {
+	return nil
+}
+
 // reboot reboots the machine.
 func (WindowsStrategy) reboot(ctx context.Context) error {
 	return exec.Command("shutdown", "/f", "/r", "/t", "0").Run()
