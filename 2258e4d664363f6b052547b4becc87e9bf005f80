@@ -1,0 +1,274 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "602a2207_ec3ad831",
+        "filename": "milo/buildsource/buildbot/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 339,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T00:02:43Z",
+      "side": 1,
+      "message": "maybe this should be a type switch?",
+      "range": {
+        "startLine": 339,
+        "startChar": 3,
+        "endLine": 339,
+        "endChar": 39
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6de51481_f7147f27",
+        "filename": "milo/buildsource/buildbot/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T00:02:43Z",
+      "side": 1,
+      "message": "what was this?",
+      "range": {
+        "startLine": 341,
+        "startChar": 51,
+        "endLine": 341,
+        "endChar": 52
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b10184d7_13e6b404",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T00:02:43Z",
+      "side": 1,
+      "message": "maybe SaveBuild? Save?",
+      "range": {
+        "startLine": 40,
+        "startChar": 5,
+        "endLine": 40,
+        "endChar": 16
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9fe2e5e_5e5b55d4",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T00:02:43Z",
+      "side": 1,
+      "message": "can this go running -\u003e pending?",
+      "range": {
+        "startLine": 51,
+        "startChar": 2,
+        "endLine": 51,
+        "endChar": 38
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2865621_d7a3199f",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T00:02:43Z",
+      "side": 1,
+      "message": "ugh, I can\u0027t believe this key format shipped T_T..",
+      "range": {
+        "startLine": 83,
+        "startChar": 12,
+        "endLine": 83,
+        "endChar": 27
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f7db097c_8b92d343",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T00:02:43Z",
+      "side": 1,
+      "message": "can\u0027t\n\nThe only errors that json can return are if the input types are unsupported. []string is definitely supported.",
+      "range": {
+        "startLine": 85,
+        "startChar": 21,
+        "endLine": 85,
+        "endChar": 37
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75b97706_d1335071",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T00:02:43Z",
+      "side": 1,
+      "message": "todo: use error tags for this?",
+      "range": {
+        "startLine": 138,
+        "startChar": 5,
+        "endLine": 138,
+        "endChar": 14
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6b102a0_0bee94d6",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T00:02:43Z",
+      "side": 1,
+      "message": "actually, this is the ONLY place where this is used... maybe just use a const error for this and log the size?",
+      "range": {
+        "startLine": 168,
+        "startChar": 14,
+        "endLine": 168,
+        "endChar": 23
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93f43c20_60e798f2",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T00:02:43Z",
+      "side": 1,
+      "message": "ugh, I guess so (I know we talked about this, but this is still super ugly). I guess that\u0027s why we\u0027re trying to burn this to the ground.",
+      "range": {
+        "startLine": 180,
+        "startChar": 3,
+        "endLine": 180,
+        "endChar": 29
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ac262f7_42bd67de",
+        "filename": "milo/buildsource/buildbot/buildstore/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T00:02:43Z",
+      "side": 1,
+      "message": "copyright on all files",
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aebf3d04_55d97033",
+        "filename": "milo/buildsource/buildbot/buildstore/master.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T00:02:43Z",
+      "side": 1,
+      "message": "this threshold is different than the 9.5MB threshold elsewhere?",
+      "range": {
+        "startLine": 151,
+        "startChar": 23,
+        "endLine": 151,
+        "endChar": 32
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21ad7e17_912cf307",
+        "filename": "milo/buildsource/buildbot/buildstore/master.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T00:02:43Z",
+      "side": 1,
+      "message": "why not just name the struct this? Did I write this? maybe I was drunk.... \u003e_\u003c",
+      "range": {
+        "startLine": 225,
+        "startChar": 26,
+        "endLine": 225,
+        "endChar": 46
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
