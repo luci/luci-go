@@ -89,6 +89,54 @@
     },
     {
       "key": {
+        "uuid": "459368ec_df509234",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T17:01:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6a1bea06_8971231d",
+      "range": {
+        "startLine": 90,
+        "startChar": 102,
+        "endLine": 90,
+        "endChar": 106
+      },
+      "revId": "df9c2b8d172d0a0961e01f4425c7e1fa9914b082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d9f85e10_1d0994d9",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T17:01:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9754a5d7_11b2864f",
+      "range": {
+        "startLine": 90,
+        "startChar": 5,
+        "endLine": 90,
+        "endChar": 23
+      },
+      "revId": "df9c2b8d172d0a0961e01f4425c7e1fa9914b082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f4f14d86_eb45cbc9",
         "filename": "milo/srcman/blamelist.go",
         "patchSetId": 1
@@ -441,6 +489,30 @@
       "revId": "df9c2b8d172d0a0961e01f4425c7e1fa9914b082",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e667a18a_6f320562",
+        "filename": "milo/srcman/get.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T17:01:52Z",
+      "side": 1,
+      "message": "yes, I think it\u0027s removed in the next patch (though I changed the design to not need it anyway).",
+      "parentUuid": "7c7615f1_bbe62971",
+      "range": {
+        "startLine": 61,
+        "startChar": 0,
+        "endLine": 64,
+        "endChar": 21
+      },
+      "revId": "df9c2b8d172d0a0961e01f4425c7e1fa9914b082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

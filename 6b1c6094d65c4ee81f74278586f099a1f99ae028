@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "e683cdfd_50602b59",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T17:01:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "68ddabb5_ea3d4f2f",
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6064178b_ff348fdd",
         "filename": "milo/srcman/blamelist.go",
         "patchSetId": 2
@@ -66,6 +84,30 @@
     },
     {
       "key": {
+        "uuid": "4026a2ce_cc011621",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T17:01:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ef2a8641_3221b6e8",
+      "range": {
+        "startLine": 91,
+        "startChar": 102,
+        "endLine": 91,
+        "endChar": 106
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4dff6fb3_b5da7dae",
         "filename": "milo/srcman/blamelist.go",
         "patchSetId": 2
@@ -89,6 +131,30 @@
     },
     {
       "key": {
+        "uuid": "cda649ca_09ba48ae",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T17:01:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4dff6fb3_b5da7dae",
+      "range": {
+        "startLine": 92,
+        "startChar": 1,
+        "endLine": 92,
+        "endChar": 60
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "35862f29_a78aff99",
         "filename": "milo/srcman/blamelist.go",
         "patchSetId": 2
@@ -100,6 +166,30 @@
       "writtenOn": "2017-10-06T05:48:53Z",
       "side": 1,
       "message": "heh, that\u0027s less nice than if opts was a plain old struct",
+      "range": {
+        "startLine": 128,
+        "startChar": 1,
+        "endLine": 131,
+        "endChar": 2
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e13412d0_5c00bd15",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T17:01:52Z",
+      "side": 1,
+      "message": "it\u0027s fine I think. I like the ...opts style anyway, especially when most of the uses is in-line. If we wanted, we could make the options struct a public type, and then have gitiles.FullOpts(struct) be a LogOption. I think we\u0027ll need more than 2 options though.",
+      "parentUuid": "35862f29_a78aff99",
       "range": {
         "startLine": 128,
         "startChar": 1,
@@ -135,6 +225,30 @@
     },
     {
       "key": {
+        "uuid": "f0905101_ae33ce11",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T17:01:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "718c5878_a28b6945",
+      "range": {
+        "startLine": 186,
+        "startChar": 17,
+        "endLine": 186,
+        "endChar": 24
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "71f64c35_bedfc72d",
         "filename": "milo/srcman/blamelist.go",
         "patchSetId": 2
@@ -155,6 +269,30 @@
       "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5739d3a_825d167b",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T17:01:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "71f64c35_bedfc72d",
+      "range": {
+        "startLine": 196,
+        "startChar": 32,
+        "endLine": 196,
+        "endChar": 34
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -181,6 +319,30 @@
     },
     {
       "key": {
+        "uuid": "da59dba4_0f53bdd7",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T17:01:52Z",
+      "side": 1,
+      "message": "I still need the historyWorkItem type (because I need to figure out the clients, and I want the log messages to be serialized as much as possible), but it would have less fields.\n\nThe vast majority (\u003e 99%) of the uses of this function will have \u003c 8 repos to look up. That said, I checked and RunMulti spawns the goroutines on demand, so the overhead is only #(repos) goroutine spawns, so I removed this.",
+      "parentUuid": "fb2f013e_a0604a9a",
+      "range": {
+        "startLine": 223,
+        "startChar": 1,
+        "endLine": 229,
+        "endChar": 9
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ad2ecfdc_cf1b8417",
         "filename": "milo/srcman/blamelist.go",
         "patchSetId": 2
@@ -201,6 +363,30 @@
       "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bca4ea83_67afaaab",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T17:01:52Z",
+      "side": 1,
+      "message": "checked and RunMulti spawns them on-demand.",
+      "parentUuid": "ad2ecfdc_cf1b8417",
+      "range": {
+        "startLine": 232,
+        "startChar": 2,
+        "endLine": 234,
+        "endChar": 3
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -274,6 +460,30 @@
     },
     {
       "key": {
+        "uuid": "e9f47b59_80b33d80",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T17:01:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2f40ebf6_e0131bd9",
+      "range": {
+        "startLine": 254,
+        "startChar": 67,
+        "endLine": 254,
+        "endChar": 68
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2537cc58_71fe1e7d",
         "filename": "milo/srcman/get.go",
         "patchSetId": 2
@@ -294,6 +504,30 @@
       "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6ba1688_9d7c34d4",
+        "filename": "milo/srcman/get.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T17:01:52Z",
+      "side": 1,
+      "message": "Just looked this up; you\u0027re correct. I misinterpreted the \u0027Sustained\u0027 field in parallel.Runner.",
+      "parentUuid": "2537cc58_71fe1e7d",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 52,
+        "endChar": 2
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -367,6 +601,30 @@
     },
     {
       "key": {
+        "uuid": "b6ce4aae_93a3f8db",
+        "filename": "milo/srcman/get.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T17:01:52Z",
+      "side": 1,
+      "message": "I\u0027m not sure what you mean in this one?",
+      "parentUuid": "210f4951_67f42da4",
+      "range": {
+        "startLine": 55,
+        "startChar": 26,
+        "endLine": 55,
+        "endChar": 28
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f40c60d1_787d8efe",
         "filename": "milo/srcman/get.go",
         "patchSetId": 2
@@ -387,6 +645,30 @@
       "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78b2d474_51270925",
+        "filename": "milo/srcman/get.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-06T17:01:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f40c60d1_787d8efe",
+      "range": {
+        "startLine": 59,
+        "startChar": 17,
+        "endLine": 59,
+        "endChar": 28
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
