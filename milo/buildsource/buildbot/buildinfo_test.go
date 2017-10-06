@@ -22,13 +22,13 @@ import (
 	"google.golang.org/grpc"
 
 	"go.chromium.org/gae/impl/memory"
-	ds "go.chromium.org/gae/service/datastore"
 	miloProto "go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/milo/api/buildbot"
 	milo "go.chromium.org/luci/milo/api/proto"
+	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -125,7 +125,8 @@ func TestBuildInfo(t *testing.T) {
 		}
 
 		// mark foo master as public
-		So(ds.Put(c, &buildbotMasterPublic{"foo master"}), ShouldBeNil)
+		err := buildstore.SaveMaster(c, &buildbot.Master{Name: "foo master"}, false, nil)
+		So(err, ShouldBeNil)
 
 		logdogStep := miloProto.Step{
 			Command: &miloProto.Step_Command{
@@ -162,7 +163,7 @@ func TestBuildInfo(t *testing.T) {
 			build.Properties = append(build.Properties, []*buildbot.Property{
 				{Name: "log_location", Value: "logdog://example.com/testproject/foo/bar/+/baz/annotations"},
 			}...)
-			So(ds.Put(c, &build), ShouldBeNil)
+			importBuild(c, &build)
 			testClient.resp = []interface{}{
 				datagramGetResponse("testproject", "foo/bar", &logdogStep),
 			}
@@ -202,7 +203,7 @@ func TestBuildInfo(t *testing.T) {
 				{Name: "log_location", Value: "protocol://not/a/logdog/url"},
 				{Name: "logdog_annotation_url", Value: "logdog://example.com/testproject/foo/bar/+/baz/annotations"},
 			}...)
-			So(ds.Put(c, &build), ShouldBeNil)
+			importBuild(c, &build)
 			testClient.resp = []interface{}{
 				datagramGetResponse("testproject", "foo/bar", &logdogStep),
 			}
@@ -243,7 +244,7 @@ func TestBuildInfo(t *testing.T) {
 				{Name: "logdog_prefix", Value: "foo/bar"},
 				{Name: "logdog_project", Value: "testproject"},
 			}...)
-			So(ds.Put(c, &build), ShouldBeNil)
+			importBuild(c, &build)
 			testClient.resp = []interface{}{
 				datagramGetResponse("testproject", "foo/bar", &logdogStep),
 			}
@@ -280,14 +281,14 @@ func TestBuildInfo(t *testing.T) {
 		})
 
 		Convey("Fails to load a BuildBot build by query if no project hint is provided.", func() {
-			So(ds.Put(c, &build), ShouldBeNil)
+			importBuild(c, &build)
 
-			_, err := bip.GetBuildInfo(c, biReq.GetBuildbot(), "")
+			_, err = bip.GetBuildInfo(c, biReq.GetBuildbot(), "")
 			So(err, ShouldErrLike, "annotation stream not found")
 		})
 
 		Convey("Can load a BuildBot build by query with a project hint.", func() {
-			So(ds.Put(c, &build), ShouldBeNil)
+			importBuild(c, &build)
 			testClient.resp = []interface{}{
 				&logdog.QueryResponse{
 					Streams: []*logdog.QueryResponse_Stream{
@@ -342,7 +343,7 @@ func TestBuildInfo(t *testing.T) {
 		})
 
 		Convey("Can load a BuildBot build by inferred name.", func() {
-			So(ds.Put(c, &build), ShouldBeNil)
+			importBuild(c, &build)
 			testClient.resp = []interface{}{
 				&logdog.QueryResponse{},
 				datagramGetResponse("testproject", "foo/bar/+/annotations", &logdogStep),
