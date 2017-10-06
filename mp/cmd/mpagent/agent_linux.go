@@ -55,6 +55,14 @@ type SystemdStrategy struct {
 	LinuxStrategy
 }
 
+// enableSwarming enables installed service.
+func (SystemdStrategy) enableSwarming(ctx context.Context) error {
+	if err := exec.Command("systemctl", "daemon-reload").Run(); err != nil {
+		return err
+	}
+	return exec.Command("systemctl", "enable", "swarming-start-bot").Run()
+}
+
 // start starts the agent.
 func (SystemdStrategy) start(ctx context.Context, _ string) error {
 	if err := exec.Command("systemctl", "daemon-reload").Run(); err != nil {
@@ -73,6 +81,11 @@ func (SystemdStrategy) stop(ctx context.Context) error {
 
 type UpstartStrategy struct {
 	LinuxStrategy
+}
+
+// enableSwarming enables installed service.
+func (UpstartStrategy) enableSwarming(ctx context.Context) error {
+	return nil
 }
 
 // start starts the agent.
