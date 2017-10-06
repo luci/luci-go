@@ -34,3 +34,10 @@ handlers:
 - url: "/.*"
   script: _go_app
   secure: always
+
+
+# Have some more liberal health check parameters, as we've observed "nginx"
+# timing out in production.
+health_check:
+  enable_health_check: True
+  timeout_sec: 30
