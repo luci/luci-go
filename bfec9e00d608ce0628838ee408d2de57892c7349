@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "fa93f5cc_06310d1c",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T19:19:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "13f2fd97_958c643e",
+      "range": {
+        "startLine": 31,
+        "startChar": 42,
+        "endLine": 31,
+        "endChar": 66
+      },
+      "revId": "bfec9e00d608ce0628838ee408d2de57892c7349",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "71e8ae9b_019e2dbd",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 6
@@ -36,6 +60,30 @@
       "writtenOn": "2017-10-06T04:26:47Z",
       "side": 1,
       "message": "this way none of time.Time methods are available to a user of gitiles.Time, most notably IsZero()\nto mitigate this, Milo embeds time.Time\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/milo/api/buildbot/time.go?q\u003dbuildbot/time.go\u0026sq\u003dpackage:chromium\u0026l\u003d23\n\ni don\u0027t know how others feel about this though, but iannucci approved that code",
+      "range": {
+        "startLine": 32,
+        "startChar": 9,
+        "endLine": 32,
+        "endChar": 19
+      },
+      "revId": "bfec9e00d608ce0628838ee408d2de57892c7349",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a4ceb41_efcf187b",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T19:19:55Z",
+      "side": 1,
+      "message": "Yeah this was actually kind of a pain to insert everywhere (i.e. need to time.Time() before using any methods), though unwrapping the struct when passing to a function that accepts a time.Time is also painful. Frankly, I\u0027m not sure which one is better.",
+      "parentUuid": "71e8ae9b_019e2dbd",
       "range": {
         "startLine": 32,
         "startChar": 9,
@@ -68,6 +116,30 @@
       "revId": "bfec9e00d608ce0628838ee408d2de57892c7349",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e792cabc_041b075c",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T19:19:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f32d00a1_22838e24",
+      "range": {
+        "startLine": 35,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 35
+      },
+      "revId": "bfec9e00d608ce0628838ee408d2de57892c7349",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
