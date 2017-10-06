@@ -22,19 +22,20 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/impl/memory"
-	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/milo/api/buildbot"
 	milo "go.chromium.org/luci/milo/api/proto"
+	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGRPC(t *testing.T) {
-	c := memory.Use(context.Background())
-	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
-
 	Convey(`A test environment`, t, func() {
+		c := memory.Use(context.Background())
+		c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
+
 		name := "testmaster"
 		bname := "testbuilder"
 		master := &buildbot.Master{
@@ -49,33 +50,33 @@ func TestGRPC(t *testing.T) {
 			},
 		}
 
-		So(putDSMasterJSON(c, master, false), ShouldBeNil)
-		So(ds.Put(c, &buildbot.Build{
+		So(buildstore.SaveMaster(c, master, false, nil), ShouldBeNil)
+		importBuild(c, &buildbot.Build{
 			Master:      name,
 			Buildername: "fake",
 			Number:      1,
-		}), ShouldBeNil)
-		ds.GetTestable(c).Consistent(true)
-		ds.GetTestable(c).AutoIndex(true)
+		})
+		datastore.GetTestable(c).Consistent(true)
+		datastore.GetTestable(c).AutoIndex(true)
 		svc := Service{}
 
 		Convey(`Get finished builds`, func() {
 			// Add in some builds.
 			for i := 0; i < 5; i++ {
-				ds.Put(c, &buildbot.Build{
+				importBuild(c, &buildbot.Build{
 					Master:      name,
 					Buildername: bname,
 					Number:      i,
 					Finished:    true,
 				})
 			}
-			ds.Put(c, &buildbot.Build{
+			importBuild(c, &buildbot.Build{
 				Master:      name,
 				Buildername: bname,
 				Number:      6,
 				Finished:    false,
 			})
-			ds.GetTestable(c).CatchupIndexes()
+			datastore.GetTestable(c).CatchupIndexes()
 
 			r := &milo.BuildbotBuildsRequest{
 				Master:  name,
@@ -104,7 +105,7 @@ func TestGRPC(t *testing.T) {
 			})
 		})
 
-		Convey(`Get Master`, func() {
+		Convey(`Get buildbotMasterEntry`, func() {
 			Convey(`Bad request`, func() {
 				_, err := svc.GetCompressedMasterJSON(c, &milo.MasterRequest{})
 				So(err, ShouldResemble, grpc.Errorf(codes.InvalidArgument, "No master specified"))
@@ -136,8 +137,13 @@ func TestGRPC(t *testing.T) {
 					Builder:  "fake",
 					BuildNum: 2,
 				})
-				So(err, ShouldResemble, grpc.Errorf(codes.NotFound, "Build not found"))
+				So(err, ShouldResemble, grpc.Errorf(codes.NotFound, "Not found"))
 			})
 		})
 	})
+}
+
+func importBuild(c context.Context, b *buildbot.Build) {
+	_, err := buildstore.SaveBuild(c, b)
+	So(err, ShouldBeNil)
 }

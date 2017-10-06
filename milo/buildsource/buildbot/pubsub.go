@@ -16,28 +16,25 @@ package buildbot
 
 import (
 	"bytes"
-	"compress/gzip"
 	"compress/zlib"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
+
+	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/milo/common"
-	"go.chromium.org/luci/milo/common/model"
-	"go.chromium.org/luci/server/router"
-
-	"golang.org/x/net/context"
-
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/milo/api/buildbot"
+	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
+	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/server/router"
 )
 
 var (
@@ -72,75 +69,6 @@ var (
 type buildMasterMsg struct {
 	Master *buildbot.Master  `json:"master"`
 	Builds []*buildbot.Build `json:"builds"`
-}
-
-// buildbotMasterEntry is a container for a marshaled and packed buildbot
-// master json.
-type buildbotMasterEntry struct {
-	// Name of the buildbot master.
-	Name string `gae:"$id"`
-	// Internal
-	Internal bool
-	// Data is the json serialzed and gzipped blob of the master data.
-	Data []byte `gae:",noindex"`
-	// Modified is when this entry was last modified.
-	Modified time.Time
-}
-
-var buildbotMasterEntryKind = "buildbotMasterEntry"
-
-// buildbotMasterPublic is a struct that exists for public builtbot masters, and
-// not for internal masters. It's used for ACL checks.
-type buildbotMasterPublic struct {
-	Name string `gae:"$id"`
-}
-
-func putDSMasterJSON(
-	c context.Context, master *buildbot.Master, internal bool) error {
-	for _, builder := range master.Builders {
-		// Trim out extra info in the "Changes" portion of the pending build state,
-		// we don't actually need comments, files, and properties
-		for _, pbs := range builder.PendingBuildStates {
-			for i := range pbs.Source.Changes {
-				pbs.Source.Changes[i].Comments = ""
-				pbs.Source.Changes[i].Files = nil
-				pbs.Source.Changes[i].Properties = nil
-			}
-		}
-	}
-	entry := buildbotMasterEntry{
-		Name:     master.Name,
-		Internal: internal,
-		Modified: clock.Now(c).UTC(),
-	}
-	toPut := []interface{}{&entry}
-	publicTag := &buildbotMasterPublic{master.Name}
-	if internal {
-		// do the deletion immediately so that the 'public' bit is removed from
-		// datastore before any internal details are actually written to datastore.
-		if err := datastore.Delete(c, publicTag); err != nil && err != datastore.ErrNoSuchEntity {
-			return err
-		}
-	} else {
-		toPut = append(toPut, publicTag)
-	}
-	gzbs := bytes.Buffer{}
-	gsw := gzip.NewWriter(&gzbs)
-	cw := iotools.CountingWriter{Writer: gsw}
-	e := json.NewEncoder(&cw)
-	if err := e.Encode(master); err != nil {
-		return err
-	}
-	gsw.Close()
-	entry.Data = gzbs.Bytes()
-	logging.Debugf(c, "Length of json data: %d", cw.Count)
-	logging.Debugf(c, "Length of gzipped data: %d", len(entry.Data))
-	// Limit for datastore_v3 is 1572864 bytes for the total datastore entry.
-	if len(entry.Data) > 1024*1024 {
-		logging.Warningf(c, "Size of master data too large, dropping")
-		return nil
-	}
-	return datastore.Put(c, toPut)
 }
 
 // unmarshal a gzipped byte stream into a list of buildbot builds and masters.
@@ -181,28 +109,21 @@ func unmarshal(
 
 // getOSInfo fetches the os family and version of the slave the build was
 // running on from the master json on a best-effort basis.
-func getOSInfo(c context.Context, b *buildbot.Build, m *buildbot.Master) (
+func getOSInfo(c context.Context, b *buildbot.Build, m *buildstore.Master) (
 	family, version string) {
 	// Fetch the master info from datastore if not provided.
 	if m.Name == "" {
 		logging.Infof(c, "Fetching info for master %s", b.Master)
-		entry := buildbotMasterEntry{Name: b.Master}
-		err := datastore.Get(c, &entry)
+		freshMaster, err := buildstore.GetMaster(c, b.Master, false)
 		if err != nil {
-			logging.WithError(err).Errorf(
-				c, "Encountered error while fetching entry for %s", b.Master)
+			logging.WithError(err).Errorf(c, "fetching master %q", b.Master)
 			return
 		}
-		err = decodeMasterEntry(c, &entry, m)
-		if err != nil {
-			logging.WithError(err).Warningf(
-				c, "Failed to decode master information for OS info on master %s", b.Master)
-			return
-		}
-		if entry.Internal && !b.Internal {
+		if freshMaster.Internal && !b.Internal {
 			logging.Errorf(c, "Build references an internal master, but build is not internal.")
 			return
 		}
+		*m = *freshMaster
 	}
 
 	s, ok := m.Slaves[b.Slave]
@@ -226,24 +147,11 @@ func getOSInfo(c context.Context, b *buildbot.Build, m *buildbot.Master) (
 	return
 }
 
-// Marks a build as finished and expired.
-func expireBuild(c context.Context, b *buildbot.Build) error {
-	b.Times.Finish = buildbot.Time{clock.Now(c)}
-	if !b.TimeStamp.IsZero() {
-		b.Times.Finish = b.TimeStamp
-	}
-	b.Finished = true
-	b.Results = buildbot.Exception
-	b.Currentstep = nil
-	b.Text = append(b.Text, "Build expired on Milo")
-	return datastore.Put(c, b)
-}
-
 // saveBuildSummary summerizes a build into a model.BuildSummary and then saves it.
 func saveBuildSummary(c context.Context, b *buildbot.Build) error {
 	resp := renderBuild(c, b)
 	bs := model.BuildSummary{
-		BuildKey:  datastore.KeyForObj(c, b),
+		BuildKey:  buildstore.BuildKey(c, b),
 		SelfLink:  fmt.Sprintf("/buildbot/%s/%s/%d", b.Master, b.Buildername, b.Number),
 		BuilderID: fmt.Sprintf("buildbot/%s/%s", b.Master, b.Buildername),
 	}
@@ -254,72 +162,26 @@ func saveBuildSummary(c context.Context, b *buildbot.Build) error {
 }
 
 func doMaster(c context.Context, master *buildbot.Master, internal bool) int {
-	// Store the master json into the datastore.
-	err := putDSMasterJSON(c, master, internal)
+	// Store the master in the storage.
+	expireCallback := func(b *buildbot.Build, reason string) {
+		logging.Infof(c, "Expiring %s/%s/%d due to %s",
+			master.Name, b.Buildername, b.Number, reason)
+		buildCounter.Add(
+			c, 1, internal, b.Master, b.Buildername, b.Finished, "Expired")
+	}
+	err := buildstore.SaveMaster(c, master, internal, expireCallback)
 	fullname := fmt.Sprintf("master.%s", master.Name)
 	if err != nil {
-		logging.WithError(err).Errorf(
-			c, "Could not save master in datastore %s", err)
+		logging.WithError(err).Errorf(c, "Could not import master")
 		masterCounter.Add(c, 1, internal, fullname, "failure")
+		if err == buildstore.ErrTooBig {
+			// FIXME: there should have been a metric and alert.
+			return 0
+		}
 		// This is transient, we do want PubSub to retry.
 		return http.StatusInternalServerError
 	}
 	masterCounter.Add(c, 1, internal, fullname, "success")
-
-	// Extract current builds data out of the master json, and use it to
-	// clean up expired builds.
-	q := datastore.NewQuery("buildbotBuild").
-		Eq("finished", false).
-		Eq("master", master.Name)
-	builds := []*buildbot.Build{}
-	err = datastore.RunBatch(c, buildQueryBatchSize, q, func(b *buildbot.Build) {
-		builds = append(builds, b)
-	})
-	if err != nil {
-		logging.WithError(err).Errorf(c, "Could not load current builds from master %s",
-			master.Name)
-		return http.StatusInternalServerError
-	}
-	for _, b := range builds {
-		builder, ok := master.Builders[b.Buildername]
-		if !ok {
-			// Mark this build due to builder being removed.
-			buildCounter.Add(
-				c, 1, internal, b.Master, b.Buildername, b.Finished, "Expired")
-			logging.Infof(c, "Expiring %s/%s/%d due to builder being removed",
-				master.Name, b.Buildername, b.Number)
-			err = expireBuild(c, b)
-			if err != nil {
-				logging.WithError(err).Errorf(c, "Could not expire build")
-				return http.StatusInternalServerError
-			}
-			continue
-		}
-
-		found := false
-		for _, bnum := range builder.CurrentBuilds {
-			if b.Number == bnum {
-				found = true
-				break
-			}
-		}
-		if !found {
-			now := clock.Now(c)
-			if b.TimeStamp.IsZero() || (b.TimeStamp.Time.Add(20 * time.Minute).Before(now)) {
-				// Expire builds after 20 minutes of not getting data.
-				// Mark this build due to build not current anymore.
-				buildCounter.Add(
-					c, 1, internal, b.Master, b.Buildername, b.Finished, "Expired")
-				logging.Infof(c, "Expiring %s/%s/%d due to build not current",
-					master.Name, b.Buildername, b.Number)
-				err = expireBuild(c, b)
-				if err != nil {
-					logging.WithError(err).Errorf(c, "Could not expire build")
-					return http.StatusInternalServerError
-				}
-			}
-		}
-	}
 	return 0
 }
 
@@ -331,16 +193,15 @@ func PubSubHandler(ctx *router.Context) {
 
 // StatsHandler is a cron endpoint that sends stats periodically.
 func StatsHandler(c context.Context) error {
-	entries, err := queryAllMasters(c)
+	masters, err := buildstore.AllMasters(c, false)
 	if err != nil {
 		return errors.Annotate(err, "failed to fetch masters").Err()
 	}
 	now := clock.Now(c)
-	for _, entry := range entries {
-		t := now.Sub(entry.Modified).Seconds()
-		err := allMasterTimer.Set(c, t, entry.Name)
+	for _, m := range masters {
+		err := allMasterTimer.Set(c, now.Sub(m.Modified).Seconds(), m.Name)
 		if err != nil {
-			logging.WithError(err).Errorf(c, "failed to send last_updated metric for %s", entry.Name)
+			logging.WithError(err).Errorf(c, "failed to send last_updated metric for %s", m.Name)
 			// Try the next one anyways.
 		}
 	}
@@ -353,13 +214,12 @@ func StatsHandler(c context.Context) error {
 func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 	msg := common.PubSubSubscription{}
 	now := clock.Now(c)
-	defer r.Body.Close()
-	dec := json.NewDecoder(r.Body)
-	if err := dec.Decode(&msg); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
 		logging.WithError(err).Errorf(
 			c, "Could not decode message.  %s", err)
 		return http.StatusOK // This is a hard failure, we don't want PubSub to retry.
 	}
+
 	internal := true
 	// Get the name of the subscription on luci-config
 	settings := common.GetSettings(c)
@@ -377,6 +237,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 		// configs.
 		return http.StatusInternalServerError
 	}
+
 	logging.Infof(
 		c, "Message ID \"%s\" from subscription %s is %d bytes long",
 		msg.Message.MessageID, msg.Subscription, r.ContentLength)
@@ -385,6 +246,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 		logging.WithError(err).Errorf(c, "Could not base64 decode message %s", err)
 		return http.StatusOK
 	}
+
 	builds, master, err := unmarshal(c, bbMsg)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Could not unmarshal message %s", err)
@@ -396,29 +258,15 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 	} else {
 		logging.Infof(c, "No master in this message")
 	}
+
 	// This is used to cache the master used for extracting OS information.
-	cachedMaster := buildbot.Master{}
-	// Do not use PutMulti because we might hit the 1MB limit.
+	var cachedMaster buildstore.Master
 	for _, build := range builds {
 		if build.Master == "" {
 			logging.Errorf(c, "Invalid message, missing master name")
 			return http.StatusOK
 		}
-		existingBuild := &buildbot.Build{
-			Master:      build.Master,
-			Buildername: build.Buildername,
-			Number:      build.Number,
-		}
-		buildExists := false
-		if err := datastore.Get(c, existingBuild); err == nil {
-			if existingBuild.Finished {
-				// Never replace a completed build.
-				buildCounter.Add(
-					c, 1, false, build.Master, build.Buildername, false, "Rejected")
-				continue
-			}
-			buildExists = true
-		}
+
 		// Also set the finished, timestamp, and internal bit.
 		build.Finished = false
 		if build.TimeStamp.IsZero() {
@@ -426,39 +274,41 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) int {
 		}
 		if !build.Times.Finish.IsZero() {
 			build.Finished = true
-			logging.Infof(
-				c, "Recording finished build %s/%s/%d", build.Master,
-				build.Buildername, build.Number)
 		}
 		build.Internal = internal
 		// Try to get the OS information on a best-effort basis.  This assumes that all
 		// builds come from one master.
 		build.OSFamily, build.OSVersion = getOSInfo(c, build, &cachedMaster)
-		err = datastore.Put(c, build)
-		if err != nil {
-			if _, ok := err.(buildbot.ErrTooBig); ok {
-				// This will never work, we don't want PubSub to retry.
-				logging.WithError(err).Errorf(
-					c, "Could not save build to datastore, failing permanently")
-				return http.StatusOK
-			}
+		replaced, err := buildstore.SaveBuild(c, build)
+		switch {
+		case err == buildstore.ErrImportRejected:
+			// Most probably, build has already completed.
+			buildCounter.Add(
+				c, 1, false, build.Master, build.Buildername, build.Finished, "Rejected")
+			logging.Warningf(c, "import of %s/%s/%d rejected", build.Master, build.Buildername, build.Number)
+			continue
+		case err == buildstore.ErrTooBig:
+			// This will never work, we don't want PubSub to retry.
+			logging.WithError(err).Errorf(
+				c, "Could not save build to datastore, failing permanently")
+			continue
+		case err != nil:
 			// This is transient, we do want PubSub to retry.
 			logging.WithError(err).Errorf(c, "Could not save build in datastore")
 			return http.StatusInternalServerError
 		}
-		err = saveBuildSummary(c, build)
-		if err != nil {
+
+		if err = saveBuildSummary(c, build); err != nil {
 			logging.WithError(err).Errorf(c, "could not save build summary into datastore")
 			return http.StatusInternalServerError
 		}
-		if buildExists {
-			buildCounter.Add(
-				c, 1, false, build.Master, build.Buildername, build.Finished, "Replaced")
-		} else {
-			buildCounter.Add(
-				c, 1, false, build.Master, build.Buildername, build.Finished, "New")
-		}
 
+		status := "New"
+		if replaced {
+			status = "Replaced"
+		}
+		buildCounter.Add(
+			c, 1, false, build.Master, build.Buildername, build.Finished, status)
 	}
 	if master != nil {
 		code := doMaster(c, master, internal)
