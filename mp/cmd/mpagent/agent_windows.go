@@ -55,6 +55,11 @@ func (WindowsStrategy) stop(ctx context.Context) error {
 	return nil
 }
 
+// enableSwarming enables installed service.
+func (WindowsStrategy) enableSwarming(ctx context.Context) error {
+	return nil
+}
+
 // getAgent returns an agent which runs on Windows.
 func getAgent(ctx context.Context) (*Agent, error) {
 	agent := Agent{
