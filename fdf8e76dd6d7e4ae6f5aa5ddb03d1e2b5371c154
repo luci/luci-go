@@ -1,0 +1,205 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4608ff88_82a8a30c",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T04:48:39Z",
+      "side": 1,
+      "message": "supernit: this was a reference to the symbol Status, that\u0027s why it didn\u0027t have \"a\".\ngo code often refers to symbols (e.g. params) like that",
+      "range": {
+        "startLine": 38,
+        "startChar": 49,
+        "endLine": 38,
+        "endChar": 57
+      },
+      "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "05867ac4_90b39371",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T04:48:39Z",
+      "side": 1,
+      "message": "nit: unnecessary",
+      "range": {
+        "startLine": 40,
+        "startChar": 9,
+        "endLine": 40,
+        "endChar": 14
+      },
+      "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ebd9ae57_c71e47a2",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T04:48:39Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 44,
+        "startChar": 22,
+        "endLine": 44,
+        "endChar": 29
+      },
+      "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c091fa95_e42cf66c",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T04:48:39Z",
+      "side": 1,
+      "message": "nit: which \"that\"?",
+      "range": {
+        "startLine": 45,
+        "startChar": 13,
+        "endLine": 45,
+        "endChar": 17
+      },
+      "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36192869_046559fb",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T04:48:39Z",
+      "side": 1,
+      "message": "nice",
+      "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "01c1856b_afb0414d",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T04:48:39Z",
+      "side": 1,
+      "message": "does this really matter? i think we should ignore this regardless of revision",
+      "range": {
+        "startLine": 88,
+        "startChar": 7,
+        "endLine": 88,
+        "endChar": 47
+      },
+      "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc2f7062_cdcf55da",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T04:48:39Z",
+      "side": 1,
+      "message": "i re-read this a couple of times and this sentence is still unclear to me.\n\nalso, with these changes, this code no longer handles out-of-order delivery of build messages for the same revision, e.g. a build for commit X failed. We retried the build on the same commit X (say because it was a flake and there were no new commits) and got a green build.\n\nFWIU we want the order of statuses to be 1) commit time, then 2) build time",
+      "range": {
+        "startLine": 96,
+        "startChar": 16,
+        "endLine": 97,
+        "endChar": 64
+      },
+      "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f98e550_47b4135b",
+        "filename": "luci_notify/notify/notification.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T04:48:39Z",
+      "side": 1,
+      "message": "i think revision cannot be same if time is different, so this is unnecessary?",
+      "range": {
+        "startLine": 132,
+        "startChar": 4,
+        "endLine": 132,
+        "endChar": 47
+      },
+      "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be75d0a2_4c02b2a3",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T04:48:39Z",
+      "side": 1,
+      "message": "not transient if it is a 403 though, or if there were no commits. I think getCommit or the code it calls should decide if an error is transient or not.\ne.g. client.Log might already return transient errors",
+      "range": {
+        "startLine": 117,
+        "startChar": 50,
+        "endLine": 117,
+        "endChar": 68
+      },
+      "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
