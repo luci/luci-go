@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "512f452b_023ca2b9",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T00:34:23Z",
+      "side": 1,
+      "message": "Oh woops, this should be in the other CL... but thanks! I\u0027ll fix this up.",
+      "parentUuid": "c301c4eb_8cd95970",
+      "range": {
+        "startLine": 85,
+        "startChar": 53,
+        "endLine": 85,
+        "endChar": 59
+      },
+      "revId": "a588453f99e689fcd3a2bd5bae3857fb91ffe442",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c552aeea_5bd7e7fa",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 2
