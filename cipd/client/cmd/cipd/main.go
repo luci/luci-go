@@ -33,8 +33,9 @@ import (
 func main() {
 	mathrand.SeedRandomly()
 	params := cli.Parameters{
-		DefaultAuthOptions: chromeinfra.DefaultAuthOptions(),
-		ServiceURL:         chromeinfra.CIPDServiceURL,
+		DefaultAuthOptions:    chromeinfra.DefaultAuthOptions(),
+		ServiceURL:            chromeinfra.CIPDServiceURL,
+		VerificationPlatforms: chromeinfra.SupportedCIPDPlatforms(),
 	}
 	os.Exit(cli.Main(params, os.Args[1:]))
 }

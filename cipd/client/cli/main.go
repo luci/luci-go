@@ -35,6 +35,7 @@ import (
 
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/retry/transient"
@@ -66,6 +67,10 @@ type Parameters struct {
 
 	// ServiceURL is a backend URL to use by default.
 	ServiceURL string
+
+	// VerificationPlatforms is the default list of verification platforms to use
+	// when verifying manifests.
+	VerificationPlatforms []string
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -784,30 +789,10 @@ func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommand
 }
 
 func ensurePackages(ctx context.Context, root string, desiredStateFile string, dryRun bool, clientOpts clientOptions) (common.PinSliceBySubdir, cipd.ActionMap, error) {
-	var err error
-	var f io.ReadCloser
-	if desiredStateFile == "-" {
-		f = os.Stdin
-	} else {
-		if f, err = os.Open(desiredStateFile); err != nil {
-			return nil, nil, err
-		}
-	}
-	defer f.Close()
 
-	ensureFile, err := ensure.ParseFile(f)
+	ensureFile, err := loadAndValidateEnsureFile(ctx, desiredStateFile, &clientOpts)
 	if err != nil {
 		return nil, nil, err
-	}
-
-	// Prefer the ServiceURL from the file (if set), and log a warning if the user
-	// provided one on the commandline that doesn't match the one in the file.
-	if ensureFile.ServiceURL != "" {
-		if clientOpts.serviceURL != "" && clientOpts.serviceURL != ensureFile.ServiceURL {
-			logging.Warningf(ctx, "serviceURL in ensure file != serviceURL on CLI (%q v %q). Using %q from file.",
-				ensureFile.ServiceURL, clientOpts.serviceURL, ensureFile.ServiceURL)
-		}
-		clientOpts.serviceURL = ensureFile.ServiceURL
 	}
 
 	client, err := clientOpts.makeCipdClient(ctx, root)
@@ -831,6 +816,170 @@ func ensurePackages(ctx context.Context, root string, desiredStateFile string, d
 	}
 
 	return resolved.PackagesBySubdir, actions, nil
+}
+
+func cmdVerify(params Parameters) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "verify [options]",
+		ShortDesc: "verifies packages in a manifest exist for all platforms",
+		LongDesc: "Collects a list of necessary platforms and verifies that the packages " +
+			"in the manifest exist for all of those platforms. Retruns non-zero if any are missing.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &verifyRun{
+				defaultPlatforms: params.VerificationPlatforms,
+			}
+
+			c.registerBaseFlags()
+			c.clientOptions.registerFlags(&c.Flags, params)
+			c.Flags.StringVar(&c.ensureFile, "ensure-file", "<path>",
+				(`The "ensure" file to verify. See syntax described here: ` +
+					`https://godoc.org/go.chromium.org/luci/cipd/client/cipd/ensure.` +
+					` Providing '-' will read from stdin.`))
+			return c
+		},
+	}
+}
+
+type verifyRun struct {
+	cipdSubcommand
+	clientOptions
+
+	defaultPlatforms []string
+	ensureFile       string
+}
+
+func (c *verifyRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if !c.checkArgs(args, 0, 0) {
+		return 1
+	}
+	ctx := cli.GetContext(a, c, env)
+	err := verifyPackages(ctx, c.ensureFile, c.defaultPlatforms, c.clientOptions)
+	return c.done(nil, err)
+}
+
+func verifyPackages(ctx context.Context, desiredStateFile string, defaultPlatforms []string, clientOpts clientOptions) error {
+	ensureFile, err := loadAndValidateEnsureFile(ctx, desiredStateFile, &clientOpts)
+	if err != nil {
+		return err
+	}
+
+	// Ignore any configured CIPD cache directory. This ensures that we are
+	// hitting the live service instead of using (potentially invalid) cache
+	// entries.
+	if clientOpts.cacheDir != "" {
+		logging.Warningf(ctx, "Ignoring cache directory %q for verification.", clientOpts.cacheDir)
+		clientOpts.cacheDir = ""
+	}
+
+	client, err := clientOpts.makeCipdClient(ctx, "")
+	if err != nil {
+		return err
+	}
+
+	if len(ensureFile.VerifyPlatforms) == 0 {
+		logging.Infof(ctx, "Using default verification parameters.")
+
+		plats := make([]common.TemplatePlatform, 0, len(defaultPlatforms))
+		for _, platStr := range defaultPlatforms {
+			plat, err := common.ParseTemplatePlatform(platStr)
+			if err != nil {
+				logging.Warningf(ctx, "Default platform %q is invalid: %v", platStr, err)
+				continue
+			}
+			plats = append(plats, plat)
+		}
+
+		ensureFile.VerifyPlatforms = plats
+	}
+
+	client.BeginBatch(ctx)
+	defer client.EndBatch(ctx)
+
+	// Verify the ensure file against all permutations.
+	//
+	// We cache verification results so we don't waste time resolving the same
+	// packages repeatedly.
+	type resolveParams struct {
+		pkg  string
+		vers string
+	}
+	type resolveResult struct {
+		pin common.Pin
+		err error
+	}
+
+	var pins []common.Pin
+	pinMap := make(map[common.Pin][]string)
+	resolvedCache := make(map[resolveParams]resolveResult)
+	numErrors := 0
+	for _, plat := range ensureFile.VerifyPlatforms {
+		// Resolve the file. We will always succeed outwardly, so there will be
+		// no returned error.
+		_, _ = ensureFile.ResolveWith(func(pkg, vers string) (common.Pin, error) {
+			key := resolveParams{pkg, vers}
+			name := fmt.Sprintf("%s@%s", pkg, vers)
+			if rr, ok := resolvedCache[key]; ok {
+				pinMap[rr.pin] = append(pinMap[rr.pin], name)
+				return rr.pin, rr.err
+			}
+
+			logging.Infof(ctx, "Resolving package: %s", name)
+			pin, err := client.ResolveVersion(ctx, pkg, vers)
+			resolvedCache[key] = resolveResult{pin, err}
+			if err != nil {
+				logging.Errorf(ctx, "Failed to resolve package: %s", name)
+				numErrors++
+			} else {
+				pinMap[pin] = append(pinMap[pin], name)
+				pins = append(pins, pin)
+			}
+			return pin, nil
+		}, plat.Expander())
+	}
+
+	// Ensure that all referenced pins are valid.
+	for _, pin := range pins {
+		if _, err := client.FetchInstanceInfo(ctx, pin); err != nil {
+			logging.Errorf(ctx, "Failed to resolve instance info for %s@%s (%s)",
+				pin.PackageName, pin.InstanceID, strings.Join(pinMap[pin], ", "))
+			numErrors++
+		}
+	}
+
+	if numErrors > 0 {
+		return errors.Reason("encountered %d error(s) verifying packages", numErrors).Err()
+	}
+	return nil
+}
+
+func loadAndValidateEnsureFile(ctx context.Context, path string, clientOpts *clientOptions) (*ensure.File, error) {
+	var err error
+	var f io.ReadCloser
+	if path == "-" {
+		f = os.Stdin
+	} else {
+		if f, err = os.Open(path); err != nil {
+			return nil, err
+		}
+	}
+	defer f.Close()
+
+	ensureFile, err := ensure.ParseFile(f)
+	if err != nil {
+		return nil, err
+	}
+
+	// Prefer the ServiceURL from the file (if set), and log a warning if the user
+	// provided one on the commandline that doesn't match the one in the file.
+	if ensureFile.ServiceURL != "" {
+		if clientOpts.serviceURL != "" && clientOpts.serviceURL != ensureFile.ServiceURL {
+			logging.Warningf(ctx, "serviceURL in ensure file != serviceURL on CLI (%q v %q). Using %q from file.",
+				ensureFile.ServiceURL, clientOpts.serviceURL, ensureFile.ServiceURL)
+		}
+		clientOpts.serviceURL = ensureFile.ServiceURL
+	}
+
+	return ensureFile, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2279,6 +2428,7 @@ func GetApplication(params Parameters) *cli.Application {
 			// High level local write commands.
 			{},
 			cmdEnsure(params),
+			cmdVerify(params),
 			cmdSelfUpdate(params),
 
 			// User friendly subcommands that operates within a site root. Implemented
