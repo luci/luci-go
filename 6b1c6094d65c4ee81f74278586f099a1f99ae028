@@ -343,6 +343,30 @@
     },
     {
       "key": {
+        "uuid": "5f2e0f1a_7f8e6bcd",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T20:25:10Z",
+      "side": 1,
+      "message": "\u003e I need to figure out the clients\n\nhow does this imply the need for the historyWorkItem?\n\n\nfor dirname, dir :\u003d range diff.Directories {\n  ...\n  client :\u003d noauthclient\n  if ... {\n    client \u003d selfClient\n  }\n  work \u003c- func() error {\n    // use client\n  }\n}\n\n\u003e I want the log messages to be serialized as much as possible\n\nthey would be as serialized as with the worker closures.",
+      "parentUuid": "da59dba4_0f53bdd7",
+      "range": {
+        "startLine": 223,
+        "startChar": 1,
+        "endLine": 229,
+        "endChar": 9
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ad2ecfdc_cf1b8417",
         "filename": "milo/srcman/blamelist.go",
         "patchSetId": 2
@@ -622,6 +646,30 @@
       "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f9c24af_83763eeb",
+        "filename": "milo/srcman/get.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T20:25:10Z",
+      "side": 1,
+      "message": "never mind, I was under impression that \"work\" is the standard name for this parameter (because it is work). Apparently it is not https://cs.chromium.org/search/?q\u003dparallel%5C.(Run%7CWorkPool)%5C(\u0026type\u003dcs",
+      "parentUuid": "b6ce4aae_93a3f8db",
+      "range": {
+        "startLine": 55,
+        "startChar": 26,
+        "endLine": 55,
+        "endChar": 28
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
