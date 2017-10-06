@@ -184,12 +184,9 @@ type Manager interface {
 	//
 	// Expect duplicated or delayed events here. HandleTimer must be idempotent.
 	//
-	// Returns transient error to trigger a redeliver of the event, no error to
-	// acknowledge the event and fatal error to move the invocation to failed
-	// state.
-	//
-	// Any modifications made to the invocation state will be saved regardless of
-	// the return value (to save the debug log).
+	// Returns a transient error to trigger a redelivery of the event (the
+	// invocation state won't be saved in this case), no error to acknowledge the
+	// event and a fatal error to move the invocation to failed state.
 	HandleTimer(c context.Context, ctl Controller, name string, payload []byte) error
 }
 
@@ -241,17 +238,14 @@ type Controller interface {
 	// states. There is no way to cancel a timer (ignore HandleTimer call
 	// instead).
 	//
-	// 'name' will be visible in logs, it should convey a purpose for this timer.
+	// 'title' will be visible in logs, it should convey a purpose for this timer.
 	// It doesn't have to be unique.
 	//
 	// 'payload' is any byte blob carried verbatim to Manager.HandleTimer.
 	//
 	// All timers are actually enabled in Save(), in the same transaction that
 	// updates the job state.
-	//
-	// TODO(vadimsh): Need a way to deduplicate/disable timers added when retrying
-	// on HandleTimer transient errors.
-	AddTimer(c context.Context, delay time.Duration, name string, payload []byte)
+	AddTimer(c context.Context, delay time.Duration, title string, payload []byte)
 
 	// PrepareTopic create PubSub topic for notifications related to the task and
 	// adds given publisher to its ACL.

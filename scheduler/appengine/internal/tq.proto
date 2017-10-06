@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package internal.tq;
 
+import "go.chromium.org/luci/scheduler/appengine/internal/timers.proto";
 import "go.chromium.org/luci/scheduler/appengine/internal/triggers.proto";
 
 
@@ -93,4 +94,29 @@ message FanOutTriggersTask {
 message EnqueueTriggersTask {
   string job_id = 1;
   repeated triggers.Trigger triggers = 2;
+}
+
+
+// ScheduleTimersTask adds a bunch of delayed invocation calls.
+//
+// It is enqueued transactionally. Results in a bunch of TimerTask calls.
+//
+// Queue: "timers".
+message ScheduleTimersTask {
+  string job_id = 1;
+  int64 inv_id = 2;
+  repeated timers.Timer timers = 3;
+}
+
+
+// TimerTask corresponds to delayed calls added through AddTimer controller API.
+//
+// Enqueued either transactionally or not. Deduplicated based on invocation's
+// PendingTimers set: any timers not in the set are silently skipped.
+//
+// Queue: "timers".
+message TimerTask {
+  string job_id = 1;
+  int64 inv_id = 2;
+  timers.Timer timer = 3;
 }
