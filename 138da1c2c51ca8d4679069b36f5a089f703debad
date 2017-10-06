@@ -945,6 +945,24 @@
     },
     {
       "key": {
+        "uuid": "b19940ed_17c3afa3",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-06T23:43:06Z",
+      "side": 1,
+      "message": "Forgot about the /b\u003cid\u003e, adding.  In another CL this can be moved to the buildsource package to do the final routing.",
+      "parentUuid": "30fb2bab_1b93643c",
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "25e52993_d68edcc4",
         "filename": "milo/rpc/buildinfo.go",
         "patchSetId": 5
@@ -1013,6 +1031,30 @@
       "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "99432b0d_29c4e259",
+        "filename": "milo/rpc/buildinfo.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-06T23:43:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1607fb0e_250c8820",
+      "range": {
+        "startLine": 58,
+        "startChar": 64,
+        "endLine": 59,
+        "endChar": 25
+      },
+      "revId": "138da1c2c51ca8d4679069b36f5a089f703debad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
