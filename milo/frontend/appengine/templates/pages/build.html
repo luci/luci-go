@@ -83,12 +83,15 @@
       {{ end }} <!-- with -->
 
 
-      {{ if .Build.SourceStamp }}
-      {{ with .Build.SourceStamp }}
+      {{ if .Build.Trigger }}
+      {{ with .Build.Trigger }}
 
-      <h2>SourceStamp:</h2>
+      <h2>Trigger Info:</h2>
 
       <table class="info" width="100%">
+      {{ if .Project }}
+        <tr><td class="left">Project</td><td>{{ .Project }}</td></tr>
+      {{ end }}
 
       {{ if .Commit.Repo }}
         <tr><td class="left">Repository</td><td>{{ .Commit.Repo }}</td></tr>
@@ -139,8 +142,8 @@
       </ul>
       {{ end }} <!-- if -->
 
-      {{ if .Build.SourceStamp }}
-        {{ if .Build.SourceStamp.Source }}
+      {{ if .Build.Trigger }}
+        {{ if .Build.Trigger.Source }}
           <h2>Reason:</h2>
           <p>{{ .Source }}</p>
         {{ end }}

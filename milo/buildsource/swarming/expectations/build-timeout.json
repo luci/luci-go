@@ -53,7 +53,7 @@
       "Task timed out"
     ]
   },
-  "SourceStamp": null,
+  "Trigger": null,
   "Components": [
     {
       "Label": "recipe bootstrap",
