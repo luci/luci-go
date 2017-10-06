@@ -10,6 +10,20 @@ import "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1/state.
 import "google/protobuf/duration.proto";
 import "google/protobuf/empty.proto";
 
+// Error is a projection of a gRPC error.
+//
+// NOTE: This and its helper functions may be useful more generally. Maybe
+// transplant this to a more general place such as "//grpc" if it ends up being
+// useful.
+message Error {
+  // The gRPC code for this error.
+  int32 grpc_code = 1;
+  // Transient is true if this is a transient error.
+  bool transient = 2;
+  // An optional associated message.
+  string msg = 3;
+}
+
 // GetConfigResponse is the response structure for the user
 // "GetConfig" endpoint.
 message GetConfigResponse {
@@ -52,6 +66,9 @@ message RegisterStreamResponse {
   string id = 1;
   // The state of the requested log stream.
   LogStreamState state = 2;
+
+  // Error is the error response.
+  Error error = 3;
 }
 
 // LoadStreamRequest loads the current state of a log stream.
@@ -130,6 +147,36 @@ message ArchiveStreamRequest {
   int64 data_size = 31;
 }
 
+// BatchRequest is a batch of individual requests to make to the Coordinator.
+message BatchRequest {
+  // The collection of batched requests.
+  message Entry {
+    oneof value {
+      RegisterStreamRequest register_stream = 1;
+      LoadStreamRequest load_stream = 2;
+      TerminateStreamRequest terminate_stream = 3;
+      ArchiveStreamRequest archive_stream = 4;
+    };
+  }
+  repeated Entry req = 1;
+}
+
+// BatchResponse is a response to a BatchRequest.
+message BatchResponse {
+  // The collection of batched requests.
+  //
+  // Each index corresponds to that index of the source request.
+  message Entry {
+    oneof value {
+      Error err = 1;
+
+      RegisterStreamResponse register_stream = 2;
+      LoadStreamResponse load_stream = 3;
+    };
+  }
+  repeated Entry resp = 1;
+}
+
 // Services service is a LogDog Coordinator endpoint that interfaces with
 // LogDog processing services.
 service Services {
@@ -151,4 +198,9 @@ service Services {
   // parameters. It is used by the Archivist service upon successful stream
   // archival.
   rpc ArchiveStream(ArchiveStreamRequest) returns (google.protobuf.Empty);
+
+  // Batch is a series of requests submitted in batch. It returns a
+  // BatchResponse containing the same number of entries, with each entry index
+  // corresponding to its request index.
+  rpc Batch(BatchRequest) returns (BatchResponse);
 }

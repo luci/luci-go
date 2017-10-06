@@ -17,14 +17,16 @@ package retryServicesClient
 import (
 	"time"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
 	s "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
-	"golang.org/x/net/context"
+
+	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
+
+	"golang.org/x/net/context"
 )
 
 // client wraps a services.ServicesClient, retrying transient errors.
@@ -59,6 +61,7 @@ func (c *client) GetConfig(ctx context.Context, in *empty.Empty, opts ...grpc.Ca
 
 func (c *client) RegisterStream(ctx context.Context, in *s.RegisterStreamRequest, opts ...grpc.CallOption) (
 	r *s.RegisterStreamResponse, err error) {
+
 	err = retry.Retry(ctx, c.f, func() (err error) {
 		r, err = c.c.RegisterStream(ctx, in, opts...)
 		err = grpcutil.WrapIfTransient(err)
@@ -69,6 +72,7 @@ func (c *client) RegisterStream(ctx context.Context, in *s.RegisterStreamRequest
 
 func (c *client) LoadStream(ctx context.Context, in *s.LoadStreamRequest, opts ...grpc.CallOption) (
 	r *s.LoadStreamResponse, err error) {
+
 	err = retry.Retry(ctx, c.f, func() (err error) {
 		r, err = c.c.LoadStream(ctx, in, opts...)
 		err = grpcutil.WrapIfTransient(err)
@@ -89,11 +93,23 @@ func (c *client) TerminateStream(ctx context.Context, in *s.TerminateStreamReque
 
 func (c *client) ArchiveStream(ctx context.Context, in *s.ArchiveStreamRequest, opts ...grpc.CallOption) (
 	r *empty.Empty, err error) {
+
 	err = retry.Retry(ctx, c.f, func() (err error) {
 		r, err = c.c.ArchiveStream(ctx, in, opts...)
 		err = grpcutil.WrapIfTransient(err)
 		return
 	}, callback(ctx, "archiving stream"))
+	return
+}
+
+func (c *client) Batch(ctx context.Context, in *s.BatchRequest, opts ...grpc.CallOption) (
+	r *s.BatchResponse, err error) {
+
+	err = retry.Retry(ctx, c.f, func() (err error) {
+		r, err = c.c.Batch(ctx, in, opts...)
+		err = grpcutil.WrapIfTransient(err)
+		return
+	}, callback(ctx, "sending batch"))
 	return
 }
 

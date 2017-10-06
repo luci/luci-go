@@ -98,3 +98,18 @@ func (s *DecoratedServices) ArchiveStream(c context.Context, req *ArchiveStreamR
 	}
 	return
 }
+
+func (s *DecoratedServices) Batch(c context.Context, req *BatchRequest) (rsp *BatchResponse, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "Batch", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.Batch(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "Batch", rsp, err)
+	}
+	return
+}

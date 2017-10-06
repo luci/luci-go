@@ -10,6 +10,7 @@ It is generated from these files:
 	go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1/tasks.proto
 
 It has these top-level messages:
+	Error
 	GetConfigResponse
 	RegisterStreamRequest
 	RegisterStreamResponse
@@ -17,6 +18,8 @@ It has these top-level messages:
 	LoadStreamResponse
 	TerminateStreamRequest
 	ArchiveStreamRequest
+	BatchRequest
+	BatchResponse
 	LogStreamState
 	ArchiveDispatchTask
 	ArchiveTask
@@ -47,6 +50,46 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
+// Error is a projection of a gRPC error.
+//
+// NOTE: This and its helper functions may be useful more generally. Maybe
+// transplant this to a more general place such as "//grpc" if it ends up being
+// useful.
+type Error struct {
+	// The gRPC code for this error.
+	GrpcCode int32 `protobuf:"varint,1,opt,name=grpc_code,json=grpcCode" json:"grpc_code,omitempty"`
+	// Transient is true if this is a transient error.
+	Transient bool `protobuf:"varint,2,opt,name=transient" json:"transient,omitempty"`
+	// An optional associated message.
+	Msg string `protobuf:"bytes,3,opt,name=msg" json:"msg,omitempty"`
+}
+
+func (m *Error) Reset()                    { *m = Error{} }
+func (m *Error) String() string            { return proto.CompactTextString(m) }
+func (*Error) ProtoMessage()               {}
+func (*Error) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+
+func (m *Error) GetGrpcCode() int32 {
+	if m != nil {
+		return m.GrpcCode
+	}
+	return 0
+}
+
+func (m *Error) GetTransient() bool {
+	if m != nil {
+		return m.Transient
+	}
+	return false
+}
+
+func (m *Error) GetMsg() string {
+	if m != nil {
+		return m.Msg
+	}
+	return ""
+}
+
 // GetConfigResponse is the response structure for the user
 // "GetConfig" endpoint.
 type GetConfigResponse struct {
@@ -65,7 +108,7 @@ type GetConfigResponse struct {
 func (m *GetConfigResponse) Reset()                    { *m = GetConfigResponse{} }
 func (m *GetConfigResponse) String() string            { return proto.CompactTextString(m) }
 func (*GetConfigResponse) ProtoMessage()               {}
-func (*GetConfigResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+func (*GetConfigResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
 func (m *GetConfigResponse) GetConfigServiceUrl() string {
 	if m != nil {
@@ -115,7 +158,7 @@ type RegisterStreamRequest struct {
 func (m *RegisterStreamRequest) Reset()                    { *m = RegisterStreamRequest{} }
 func (m *RegisterStreamRequest) String() string            { return proto.CompactTextString(m) }
 func (*RegisterStreamRequest) ProtoMessage()               {}
-func (*RegisterStreamRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+func (*RegisterStreamRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
 func (m *RegisterStreamRequest) GetProject() string {
 	if m != nil {
@@ -158,12 +201,14 @@ type RegisterStreamResponse struct {
 	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
 	// The state of the requested log stream.
 	State *LogStreamState `protobuf:"bytes,2,opt,name=state" json:"state,omitempty"`
+	// Error is the error response.
+	Error *Error `protobuf:"bytes,3,opt,name=error" json:"error,omitempty"`
 }
 
 func (m *RegisterStreamResponse) Reset()                    { *m = RegisterStreamResponse{} }
 func (m *RegisterStreamResponse) String() string            { return proto.CompactTextString(m) }
 func (*RegisterStreamResponse) ProtoMessage()               {}
-func (*RegisterStreamResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+func (*RegisterStreamResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
 func (m *RegisterStreamResponse) GetId() string {
 	if m != nil {
@@ -175,6 +220,13 @@ func (m *RegisterStreamResponse) GetId() string {
 func (m *RegisterStreamResponse) GetState() *LogStreamState {
 	if m != nil {
 		return m.State
+	}
+	return nil
+}
+
+func (m *RegisterStreamResponse) GetError() *Error {
+	if m != nil {
+		return m.Error
 	}
 	return nil
 }
@@ -192,7 +244,7 @@ type LoadStreamRequest struct {
 func (m *LoadStreamRequest) Reset()                    { *m = LoadStreamRequest{} }
 func (m *LoadStreamRequest) String() string            { return proto.CompactTextString(m) }
 func (*LoadStreamRequest) ProtoMessage()               {}
-func (*LoadStreamRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+func (*LoadStreamRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
 
 func (m *LoadStreamRequest) GetProject() string {
 	if m != nil {
@@ -232,7 +284,7 @@ type LoadStreamResponse struct {
 func (m *LoadStreamResponse) Reset()                    { *m = LoadStreamResponse{} }
 func (m *LoadStreamResponse) String() string            { return proto.CompactTextString(m) }
 func (*LoadStreamResponse) ProtoMessage()               {}
-func (*LoadStreamResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+func (*LoadStreamResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
 
 func (m *LoadStreamResponse) GetState() *LogStreamState {
 	if m != nil {
@@ -278,7 +330,7 @@ type TerminateStreamRequest struct {
 func (m *TerminateStreamRequest) Reset()                    { *m = TerminateStreamRequest{} }
 func (m *TerminateStreamRequest) String() string            { return proto.CompactTextString(m) }
 func (*TerminateStreamRequest) ProtoMessage()               {}
-func (*TerminateStreamRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+func (*TerminateStreamRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
 
 func (m *TerminateStreamRequest) GetProject() string {
 	if m != nil {
@@ -342,7 +394,7 @@ type ArchiveStreamRequest struct {
 func (m *ArchiveStreamRequest) Reset()                    { *m = ArchiveStreamRequest{} }
 func (m *ArchiveStreamRequest) String() string            { return proto.CompactTextString(m) }
 func (*ArchiveStreamRequest) ProtoMessage()               {}
-func (*ArchiveStreamRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
+func (*ArchiveStreamRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{7} }
 
 func (m *ArchiveStreamRequest) GetProject() string {
 	if m != nil {
@@ -421,7 +473,381 @@ func (m *ArchiveStreamRequest) GetDataSize() int64 {
 	return 0
 }
 
+// BatchRequest is a batch of individual requests to make to the Coordinator.
+type BatchRequest struct {
+	Req []*BatchRequest_Entry `protobuf:"bytes,1,rep,name=req" json:"req,omitempty"`
+}
+
+func (m *BatchRequest) Reset()                    { *m = BatchRequest{} }
+func (m *BatchRequest) String() string            { return proto.CompactTextString(m) }
+func (*BatchRequest) ProtoMessage()               {}
+func (*BatchRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{8} }
+
+func (m *BatchRequest) GetReq() []*BatchRequest_Entry {
+	if m != nil {
+		return m.Req
+	}
+	return nil
+}
+
+// The collection of batched requests.
+type BatchRequest_Entry struct {
+	// Types that are valid to be assigned to Value:
+	//	*BatchRequest_Entry_RegisterStream
+	//	*BatchRequest_Entry_LoadStream
+	//	*BatchRequest_Entry_TerminateStream
+	//	*BatchRequest_Entry_ArchiveStream
+	Value isBatchRequest_Entry_Value `protobuf_oneof:"value"`
+}
+
+func (m *BatchRequest_Entry) Reset()                    { *m = BatchRequest_Entry{} }
+func (m *BatchRequest_Entry) String() string            { return proto.CompactTextString(m) }
+func (*BatchRequest_Entry) ProtoMessage()               {}
+func (*BatchRequest_Entry) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{8, 0} }
+
+type isBatchRequest_Entry_Value interface {
+	isBatchRequest_Entry_Value()
+}
+
+type BatchRequest_Entry_RegisterStream struct {
+	RegisterStream *RegisterStreamRequest `protobuf:"bytes,1,opt,name=register_stream,json=registerStream,oneof"`
+}
+type BatchRequest_Entry_LoadStream struct {
+	LoadStream *LoadStreamRequest `protobuf:"bytes,2,opt,name=load_stream,json=loadStream,oneof"`
+}
+type BatchRequest_Entry_TerminateStream struct {
+	TerminateStream *TerminateStreamRequest `protobuf:"bytes,3,opt,name=terminate_stream,json=terminateStream,oneof"`
+}
+type BatchRequest_Entry_ArchiveStream struct {
+	ArchiveStream *ArchiveStreamRequest `protobuf:"bytes,4,opt,name=archive_stream,json=archiveStream,oneof"`
+}
+
+func (*BatchRequest_Entry_RegisterStream) isBatchRequest_Entry_Value()  {}
+func (*BatchRequest_Entry_LoadStream) isBatchRequest_Entry_Value()      {}
+func (*BatchRequest_Entry_TerminateStream) isBatchRequest_Entry_Value() {}
+func (*BatchRequest_Entry_ArchiveStream) isBatchRequest_Entry_Value()   {}
+
+func (m *BatchRequest_Entry) GetValue() isBatchRequest_Entry_Value {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+func (m *BatchRequest_Entry) GetRegisterStream() *RegisterStreamRequest {
+	if x, ok := m.GetValue().(*BatchRequest_Entry_RegisterStream); ok {
+		return x.RegisterStream
+	}
+	return nil
+}
+
+func (m *BatchRequest_Entry) GetLoadStream() *LoadStreamRequest {
+	if x, ok := m.GetValue().(*BatchRequest_Entry_LoadStream); ok {
+		return x.LoadStream
+	}
+	return nil
+}
+
+func (m *BatchRequest_Entry) GetTerminateStream() *TerminateStreamRequest {
+	if x, ok := m.GetValue().(*BatchRequest_Entry_TerminateStream); ok {
+		return x.TerminateStream
+	}
+	return nil
+}
+
+func (m *BatchRequest_Entry) GetArchiveStream() *ArchiveStreamRequest {
+	if x, ok := m.GetValue().(*BatchRequest_Entry_ArchiveStream); ok {
+		return x.ArchiveStream
+	}
+	return nil
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*BatchRequest_Entry) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _BatchRequest_Entry_OneofMarshaler, _BatchRequest_Entry_OneofUnmarshaler, _BatchRequest_Entry_OneofSizer, []interface{}{
+		(*BatchRequest_Entry_RegisterStream)(nil),
+		(*BatchRequest_Entry_LoadStream)(nil),
+		(*BatchRequest_Entry_TerminateStream)(nil),
+		(*BatchRequest_Entry_ArchiveStream)(nil),
+	}
+}
+
+func _BatchRequest_Entry_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*BatchRequest_Entry)
+	// value
+	switch x := m.Value.(type) {
+	case *BatchRequest_Entry_RegisterStream:
+		b.EncodeVarint(1<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.RegisterStream); err != nil {
+			return err
+		}
+	case *BatchRequest_Entry_LoadStream:
+		b.EncodeVarint(2<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.LoadStream); err != nil {
+			return err
+		}
+	case *BatchRequest_Entry_TerminateStream:
+		b.EncodeVarint(3<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.TerminateStream); err != nil {
+			return err
+		}
+	case *BatchRequest_Entry_ArchiveStream:
+		b.EncodeVarint(4<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.ArchiveStream); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("BatchRequest_Entry.Value has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _BatchRequest_Entry_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*BatchRequest_Entry)
+	switch tag {
+	case 1: // value.register_stream
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(RegisterStreamRequest)
+		err := b.DecodeMessage(msg)
+		m.Value = &BatchRequest_Entry_RegisterStream{msg}
+		return true, err
+	case 2: // value.load_stream
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(LoadStreamRequest)
+		err := b.DecodeMessage(msg)
+		m.Value = &BatchRequest_Entry_LoadStream{msg}
+		return true, err
+	case 3: // value.terminate_stream
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(TerminateStreamRequest)
+		err := b.DecodeMessage(msg)
+		m.Value = &BatchRequest_Entry_TerminateStream{msg}
+		return true, err
+	case 4: // value.archive_stream
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(ArchiveStreamRequest)
+		err := b.DecodeMessage(msg)
+		m.Value = &BatchRequest_Entry_ArchiveStream{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _BatchRequest_Entry_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*BatchRequest_Entry)
+	// value
+	switch x := m.Value.(type) {
+	case *BatchRequest_Entry_RegisterStream:
+		s := proto.Size(x.RegisterStream)
+		n += proto.SizeVarint(1<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *BatchRequest_Entry_LoadStream:
+		s := proto.Size(x.LoadStream)
+		n += proto.SizeVarint(2<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *BatchRequest_Entry_TerminateStream:
+		s := proto.Size(x.TerminateStream)
+		n += proto.SizeVarint(3<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *BatchRequest_Entry_ArchiveStream:
+		s := proto.Size(x.ArchiveStream)
+		n += proto.SizeVarint(4<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
+}
+
+// BatchResponse is a response to a BatchRequest.
+type BatchResponse struct {
+	Resp []*BatchResponse_Entry `protobuf:"bytes,1,rep,name=resp" json:"resp,omitempty"`
+}
+
+func (m *BatchResponse) Reset()                    { *m = BatchResponse{} }
+func (m *BatchResponse) String() string            { return proto.CompactTextString(m) }
+func (*BatchResponse) ProtoMessage()               {}
+func (*BatchResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{9} }
+
+func (m *BatchResponse) GetResp() []*BatchResponse_Entry {
+	if m != nil {
+		return m.Resp
+	}
+	return nil
+}
+
+// The collection of batched requests.
+//
+// Each index corresponds to that index of the source request.
+type BatchResponse_Entry struct {
+	// Types that are valid to be assigned to Value:
+	//	*BatchResponse_Entry_Err
+	//	*BatchResponse_Entry_RegisterStream
+	//	*BatchResponse_Entry_LoadStream
+	Value isBatchResponse_Entry_Value `protobuf_oneof:"value"`
+}
+
+func (m *BatchResponse_Entry) Reset()                    { *m = BatchResponse_Entry{} }
+func (m *BatchResponse_Entry) String() string            { return proto.CompactTextString(m) }
+func (*BatchResponse_Entry) ProtoMessage()               {}
+func (*BatchResponse_Entry) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{9, 0} }
+
+type isBatchResponse_Entry_Value interface {
+	isBatchResponse_Entry_Value()
+}
+
+type BatchResponse_Entry_Err struct {
+	Err *Error `protobuf:"bytes,1,opt,name=err,oneof"`
+}
+type BatchResponse_Entry_RegisterStream struct {
+	RegisterStream *RegisterStreamResponse `protobuf:"bytes,2,opt,name=register_stream,json=registerStream,oneof"`
+}
+type BatchResponse_Entry_LoadStream struct {
+	LoadStream *LoadStreamResponse `protobuf:"bytes,3,opt,name=load_stream,json=loadStream,oneof"`
+}
+
+func (*BatchResponse_Entry_Err) isBatchResponse_Entry_Value()            {}
+func (*BatchResponse_Entry_RegisterStream) isBatchResponse_Entry_Value() {}
+func (*BatchResponse_Entry_LoadStream) isBatchResponse_Entry_Value()     {}
+
+func (m *BatchResponse_Entry) GetValue() isBatchResponse_Entry_Value {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+func (m *BatchResponse_Entry) GetErr() *Error {
+	if x, ok := m.GetValue().(*BatchResponse_Entry_Err); ok {
+		return x.Err
+	}
+	return nil
+}
+
+func (m *BatchResponse_Entry) GetRegisterStream() *RegisterStreamResponse {
+	if x, ok := m.GetValue().(*BatchResponse_Entry_RegisterStream); ok {
+		return x.RegisterStream
+	}
+	return nil
+}
+
+func (m *BatchResponse_Entry) GetLoadStream() *LoadStreamResponse {
+	if x, ok := m.GetValue().(*BatchResponse_Entry_LoadStream); ok {
+		return x.LoadStream
+	}
+	return nil
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*BatchResponse_Entry) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _BatchResponse_Entry_OneofMarshaler, _BatchResponse_Entry_OneofUnmarshaler, _BatchResponse_Entry_OneofSizer, []interface{}{
+		(*BatchResponse_Entry_Err)(nil),
+		(*BatchResponse_Entry_RegisterStream)(nil),
+		(*BatchResponse_Entry_LoadStream)(nil),
+	}
+}
+
+func _BatchResponse_Entry_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*BatchResponse_Entry)
+	// value
+	switch x := m.Value.(type) {
+	case *BatchResponse_Entry_Err:
+		b.EncodeVarint(1<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Err); err != nil {
+			return err
+		}
+	case *BatchResponse_Entry_RegisterStream:
+		b.EncodeVarint(2<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.RegisterStream); err != nil {
+			return err
+		}
+	case *BatchResponse_Entry_LoadStream:
+		b.EncodeVarint(3<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.LoadStream); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("BatchResponse_Entry.Value has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _BatchResponse_Entry_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*BatchResponse_Entry)
+	switch tag {
+	case 1: // value.err
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(Error)
+		err := b.DecodeMessage(msg)
+		m.Value = &BatchResponse_Entry_Err{msg}
+		return true, err
+	case 2: // value.register_stream
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(RegisterStreamResponse)
+		err := b.DecodeMessage(msg)
+		m.Value = &BatchResponse_Entry_RegisterStream{msg}
+		return true, err
+	case 3: // value.load_stream
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(LoadStreamResponse)
+		err := b.DecodeMessage(msg)
+		m.Value = &BatchResponse_Entry_LoadStream{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _BatchResponse_Entry_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*BatchResponse_Entry)
+	// value
+	switch x := m.Value.(type) {
+	case *BatchResponse_Entry_Err:
+		s := proto.Size(x.Err)
+		n += proto.SizeVarint(1<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *BatchResponse_Entry_RegisterStream:
+		s := proto.Size(x.RegisterStream)
+		n += proto.SizeVarint(2<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *BatchResponse_Entry_LoadStream:
+		s := proto.Size(x.LoadStream)
+		n += proto.SizeVarint(3<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
+}
+
 func init() {
+	proto.RegisterType((*Error)(nil), "logdog.Error")
 	proto.RegisterType((*GetConfigResponse)(nil), "logdog.GetConfigResponse")
 	proto.RegisterType((*RegisterStreamRequest)(nil), "logdog.RegisterStreamRequest")
 	proto.RegisterType((*RegisterStreamResponse)(nil), "logdog.RegisterStreamResponse")
@@ -429,6 +855,10 @@ func init() {
 	proto.RegisterType((*LoadStreamResponse)(nil), "logdog.LoadStreamResponse")
 	proto.RegisterType((*TerminateStreamRequest)(nil), "logdog.TerminateStreamRequest")
 	proto.RegisterType((*ArchiveStreamRequest)(nil), "logdog.ArchiveStreamRequest")
+	proto.RegisterType((*BatchRequest)(nil), "logdog.BatchRequest")
+	proto.RegisterType((*BatchRequest_Entry)(nil), "logdog.BatchRequest.Entry")
+	proto.RegisterType((*BatchResponse)(nil), "logdog.BatchResponse")
+	proto.RegisterType((*BatchResponse_Entry)(nil), "logdog.BatchResponse.Entry")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -456,6 +886,10 @@ type ServicesClient interface {
 	// parameters. It is used by the Archivist service upon successful stream
 	// archival.
 	ArchiveStream(ctx context.Context, in *ArchiveStreamRequest, opts ...grpc.CallOption) (*google_protobuf1.Empty, error)
+	// Batch is a series of requests submitted in batch. It returns a
+	// BatchResponse containing the same number of entries, with each entry index
+	// corresponding to its request index.
+	Batch(ctx context.Context, in *BatchRequest, opts ...grpc.CallOption) (*BatchResponse, error)
 }
 type servicesPRPCClient struct {
 	client *prpc.Client
@@ -504,6 +938,15 @@ func (c *servicesPRPCClient) TerminateStream(ctx context.Context, in *TerminateS
 func (c *servicesPRPCClient) ArchiveStream(ctx context.Context, in *ArchiveStreamRequest, opts ...grpc.CallOption) (*google_protobuf1.Empty, error) {
 	out := new(google_protobuf1.Empty)
 	err := c.client.Call(ctx, "logdog.Services", "ArchiveStream", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *servicesPRPCClient) Batch(ctx context.Context, in *BatchRequest, opts ...grpc.CallOption) (*BatchResponse, error) {
+	out := new(BatchResponse)
+	err := c.client.Call(ctx, "logdog.Services", "Batch", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -563,6 +1006,15 @@ func (c *servicesClient) ArchiveStream(ctx context.Context, in *ArchiveStreamReq
 	return out, nil
 }
 
+func (c *servicesClient) Batch(ctx context.Context, in *BatchRequest, opts ...grpc.CallOption) (*BatchResponse, error) {
+	out := new(BatchResponse)
+	err := grpc.Invoke(ctx, "/logdog.Services/Batch", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Services service
 
 type ServicesServer interface {
@@ -580,6 +1032,10 @@ type ServicesServer interface {
 	// parameters. It is used by the Archivist service upon successful stream
 	// archival.
 	ArchiveStream(context.Context, *ArchiveStreamRequest) (*google_protobuf1.Empty, error)
+	// Batch is a series of requests submitted in batch. It returns a
+	// BatchResponse containing the same number of entries, with each entry index
+	// corresponding to its request index.
+	Batch(context.Context, *BatchRequest) (*BatchResponse, error)
 }
 
 func RegisterServicesServer(s prpc.Registrar, srv ServicesServer) {
@@ -676,6 +1132,24 @@ func _Services_ArchiveStream_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Services_Batch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ServicesServer).Batch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/logdog.Services/Batch",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ServicesServer).Batch(ctx, req.(*BatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Services_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "logdog.Services",
 	HandlerType: (*ServicesServer)(nil),
@@ -700,6 +1174,10 @@ var _Services_serviceDesc = grpc.ServiceDesc{
 			MethodName: "ArchiveStream",
 			Handler:    _Services_ArchiveStream_Handler,
 		},
+		{
+			MethodName: "Batch",
+			Handler:    _Services_Batch_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1/service.proto",
@@ -710,51 +1188,67 @@ func init() {
 }
 
 var fileDescriptor0 = []byte{
-	// 721 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x54, 0xdd, 0x4e, 0x13, 0x41,
-	0x14, 0xce, 0xb6, 0x80, 0xed, 0x69, 0x0b, 0x32, 0x42, 0xd3, 0x16, 0xf9, 0xb1, 0x46, 0x43, 0x22,
-	0xd9, 0x8d, 0x78, 0x6f, 0x62, 0x90, 0x28, 0x11, 0x83, 0x6e, 0x95, 0xdb, 0x66, 0xd8, 0x1d, 0xb6,
-	0xa3, 0xdb, 0x9d, 0x75, 0x66, 0xb6, 0xb1, 0xdc, 0xf9, 0x32, 0x26, 0xbe, 0x85, 0xaf, 0xe1, 0x6b,
-	0xf8, 0x04, 0x66, 0xcf, 0xcc, 0x16, 0x5a, 0x4a, 0x42, 0x88, 0x77, 0x3b, 0xe7, 0x7c, 0xdf, 0x39,
-	0xdf, 0x9c, 0xfd, 0xce, 0xc0, 0x49, 0x24, 0xdc, 0x60, 0x20, 0xc5, 0x90, 0x67, 0x43, 0x57, 0xc8,
-	0xc8, 0x8b, 0xb3, 0x80, 0x7b, 0xb1, 0x88, 0x42, 0x11, 0x79, 0x34, 0xe5, 0x1e, 0x4b, 0xc2, 0x54,
-	0xf0, 0x44, 0x2b, 0x2f, 0x10, 0x42, 0x86, 0x3c, 0xa1, 0x5a, 0x48, 0x4f, 0x31, 0x39, 0xe2, 0x01,
-	0x53, 0xde, 0xe8, 0x79, 0xf1, 0xed, 0xa6, 0x52, 0x68, 0x41, 0x96, 0x0c, 0xb7, 0xf3, 0xfe, 0x3f,
-	0x14, 0xd6, 0x54, 0xdb, 0xb2, 0x9d, 0xad, 0x48, 0x88, 0x28, 0x66, 0x1e, 0x9e, 0xce, 0xb2, 0x73,
-	0x2f, 0xcc, 0x24, 0xd5, 0x5c, 0x24, 0x36, 0xbf, 0x31, 0x9b, 0x67, 0xc3, 0x54, 0x8f, 0x4d, 0xb2,
-	0xfb, 0xdb, 0x81, 0xd5, 0x37, 0x4c, 0x1f, 0x88, 0xe4, 0x9c, 0x47, 0x3e, 0x53, 0xa9, 0x48, 0x14,
-	0x23, 0x7b, 0x40, 0x02, 0x8c, 0xf4, 0x6d, 0xd3, 0x7e, 0x26, 0xe3, 0x96, 0xb3, 0xe3, 0xec, 0x56,
-	0xfd, 0xfb, 0x26, 0xd3, 0x33, 0x89, 0xcf, 0x32, 0x26, 0x9b, 0x00, 0x13, 0xb4, 0x6e, 0x95, 0x10,
-	0x55, 0x2d, 0x50, 0x9a, 0xb8, 0xf0, 0xa0, 0xa8, 0x62, 0x61, 0x29, 0xd5, 0x83, 0x56, 0x19, 0x71,
-	0xab, 0x36, 0x65, 0x04, 0x7c, 0xa0, 0x7a, 0x90, 0xe3, 0x67, 0x9a, 0x0f, 0x84, 0xd2, 0xad, 0x05,
-	0x83, 0x9f, 0xea, 0xfe, 0x56, 0x28, 0xdd, 0xfd, 0xe5, 0xc0, 0xba, 0xcf, 0x22, 0xae, 0x34, 0x93,
-	0x3d, 0x2d, 0x19, 0x1d, 0xfa, 0xec, 0x5b, 0xc6, 0x94, 0x26, 0x2d, 0xb8, 0x97, 0x4a, 0xf1, 0x85,
-	0x05, 0xda, 0x6a, 0x2f, 0x8e, 0xa4, 0x09, 0x4b, 0x8a, 0x05, 0xd2, 0xca, 0xad, 0xfb, 0xf6, 0x44,
-	0x1e, 0x43, 0x03, 0xe7, 0xd2, 0x1f, 0x31, 0xa9, 0xb8, 0x48, 0xac, 0xca, 0x3a, 0x06, 0x4f, 0x4d,
-	0x8c, 0x10, 0x58, 0x08, 0x99, 0x0a, 0x50, 0x51, 0xdd, 0xc7, 0x6f, 0xf2, 0x04, 0x96, 0x35, 0x93,
-	0x43, 0x9e, 0xd0, 0xb8, 0xcf, 0x93, 0x90, 0x7d, 0x6f, 0x2d, 0xee, 0x38, 0xbb, 0x65, 0xbf, 0x51,
-	0x44, 0x8f, 0xf2, 0x60, 0xf7, 0x14, 0x9a, 0xb3, 0x52, 0xed, 0xc8, 0x97, 0xa1, 0xc4, 0x43, 0x2b,
-	0xb3, 0xc4, 0x43, 0xb2, 0x07, 0x8b, 0xf8, 0x93, 0x51, 0x60, 0x6d, 0xbf, 0xe9, 0x1a, 0x7f, 0xb8,
-	0xc7, 0x22, 0x32, 0xcc, 0x5e, 0x9e, 0xf5, 0x0d, 0xa8, 0xfb, 0x11, 0x56, 0x8f, 0x05, 0x0d, 0x6f,
-	0x7b, 0x7d, 0xd3, 0xac, 0x34, 0x69, 0x56, 0xdc, 0x28, 0xbf, 0x6d, 0xc5, 0xdc, 0xa8, 0xfb, 0xd3,
-	0x01, 0x72, 0xb5, 0xe6, 0xc4, 0x1a, 0x56, 0x97, 0x73, 0x0b, 0x5d, 0x93, 0xc2, 0xa5, 0x2b, 0xa3,
-	0x7a, 0x06, 0x65, 0x1a, 0x31, 0xec, 0x55, 0xdb, 0x6f, 0xbb, 0xc6, 0x9d, 0x6e, 0xe1, 0x4e, 0xf7,
-	0xb5, 0x75, 0xaf, 0x9f, 0xa3, 0xc8, 0x23, 0xa8, 0x53, 0x19, 0x0c, 0xf8, 0x88, 0xc6, 0xfd, 0xaf,
-	0x6c, 0x6c, 0x67, 0x5e, 0x2b, 0x62, 0xef, 0xd8, 0xb8, 0xfb, 0xc3, 0x81, 0xe6, 0x27, 0x33, 0x65,
-	0xcd, 0xee, 0x3a, 0x81, 0x4b, 0x43, 0x94, 0xa7, 0x0c, 0x71, 0xfd, 0xbf, 0x2e, 0xcc, 0xfb, 0xaf,
-	0x7f, 0x4a, 0xb0, 0xf6, 0x0a, 0x35, 0xdd, 0x59, 0xc1, 0x53, 0x58, 0x89, 0x45, 0xd4, 0x67, 0x89,
-	0x96, 0xe3, 0x7e, 0x20, 0xb2, 0xc4, 0x48, 0x29, 0xfb, 0x8d, 0x58, 0x44, 0x87, 0x79, 0xf4, 0x20,
-	0x0f, 0xde, 0x52, 0x11, 0x59, 0x83, 0x45, 0x26, 0xa5, 0x90, 0xe8, 0xc3, 0xaa, 0x6f, 0x0e, 0xf9,
-	0xaa, 0x2a, 0xd4, 0x87, 0x0b, 0x0d, 0x66, 0x55, 0x4d, 0x24, 0xdf, 0xe4, 0x6d, 0xa8, 0xd9, 0xb4,
-	0xe2, 0x17, 0xac, 0x55, 0xc3, 0xc2, 0x96, 0xd1, 0xe3, 0x17, 0x8c, 0x6c, 0x40, 0x15, 0x7b, 0x22,
-	0x7d, 0x0d, 0xe9, 0x15, 0x0c, 0xd8, 0x77, 0xc0, 0x24, 0x91, 0xbc, 0x8e, 0x64, 0x03, 0x47, 0x6e,
-	0x1b, 0x2a, 0x21, 0xd5, 0x14, 0xa9, 0x5b, 0x66, 0x16, 0xf9, 0x39, 0x67, 0x6e, 0x40, 0x15, 0x53,
-	0x48, 0xdc, 0x46, 0x22, 0x62, 0x73, 0xde, 0xfe, 0xdf, 0x12, 0x54, 0xec, 0xbe, 0x2b, 0xf2, 0x12,
-	0xaa, 0x93, 0xe7, 0x8a, 0x34, 0xaf, 0x99, 0xe7, 0x30, 0x7f, 0xda, 0x3a, 0xed, 0xc2, 0x94, 0xd7,
-	0x5f, 0xb6, 0x13, 0x58, 0x9e, 0x5e, 0x40, 0xb2, 0x59, 0x80, 0xe7, 0xbe, 0x21, 0x9d, 0xad, 0x9b,
-	0xd2, 0xb6, 0xe0, 0x01, 0xc0, 0xe5, 0x96, 0x90, 0xf6, 0xe5, 0x3a, 0xcc, 0x6c, 0x63, 0xa7, 0x33,
-	0x2f, 0x65, 0x8b, 0x1c, 0xc1, 0xca, 0x8c, 0x83, 0xc9, 0xa4, 0xef, 0x7c, 0x6b, 0x77, 0x6e, 0xb8,
-	0x3b, 0x39, 0x84, 0xc6, 0x94, 0x11, 0xc9, 0xc3, 0xa2, 0xd0, 0x3c, 0x7f, 0xde, 0x54, 0xe6, 0x6c,
-	0x09, 0xcf, 0x2f, 0xfe, 0x05, 0x00, 0x00, 0xff, 0xff, 0x56, 0xfb, 0x79, 0x89, 0x05, 0x07, 0x00,
-	0x00,
+	// 992 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x55, 0xdd, 0x6e, 0x1b, 0x45,
+	0x14, 0xf6, 0xee, 0xda, 0xa9, 0x7d, 0xfc, 0x93, 0x64, 0x48, 0x2c, 0x77, 0xd3, 0xa6, 0xae, 0x2b,
+	0x90, 0x25, 0xa2, 0x5d, 0x11, 0xb8, 0x04, 0x24, 0x1a, 0x2c, 0x5c, 0xb5, 0xa8, 0x30, 0x29, 0xdc,
+	0x5a, 0xd3, 0xdd, 0xe9, 0x7a, 0x61, 0xbd, 0xe3, 0xce, 0x8e, 0x2d, 0x52, 0x6e, 0xe0, 0x65, 0x10,
+	0x48, 0xbc, 0x02, 0x12, 0xaf, 0xc1, 0x33, 0xf0, 0x12, 0x68, 0xfe, 0x36, 0xb6, 0xe3, 0xa4, 0x51,
+	0xc5, 0xdd, 0xce, 0xf9, 0x9b, 0xef, 0x7c, 0xe7, 0x3b, 0xb3, 0xf0, 0x3c, 0x61, 0x41, 0x34, 0xe5,
+	0x6c, 0x96, 0x2e, 0x66, 0x01, 0xe3, 0x49, 0x98, 0x2d, 0xa2, 0x34, 0xcc, 0x58, 0x12, 0xb3, 0x24,
+	0x24, 0xf3, 0x34, 0xa4, 0x79, 0x3c, 0x67, 0x69, 0x2e, 0x8a, 0x30, 0x62, 0x8c, 0xc7, 0x69, 0x4e,
+	0x04, 0xe3, 0x61, 0x41, 0xf9, 0x32, 0x8d, 0x68, 0x11, 0x2e, 0x3f, 0xb2, 0xdf, 0xc1, 0x9c, 0x33,
+	0xc1, 0xd0, 0x8e, 0xce, 0xf5, 0xbf, 0xfe, 0x1f, 0x0a, 0x0b, 0x22, 0x4c, 0x59, 0xff, 0x38, 0x61,
+	0x2c, 0xc9, 0x68, 0xa8, 0x4e, 0x2f, 0x17, 0xaf, 0xc2, 0x78, 0xc1, 0x89, 0x48, 0x59, 0x6e, 0xfc,
+	0x47, 0x9b, 0x7e, 0x3a, 0x9b, 0x8b, 0x0b, 0xed, 0x1c, 0xbc, 0x80, 0xda, 0x88, 0x73, 0xc6, 0xd1,
+	0x11, 0x34, 0x12, 0x3e, 0x8f, 0x26, 0x11, 0x8b, 0x69, 0xcf, 0xe9, 0x3b, 0xc3, 0x1a, 0xae, 0x4b,
+	0xc3, 0x19, 0x8b, 0x29, 0xba, 0x07, 0x0d, 0xc1, 0x49, 0x5e, 0xa4, 0x34, 0x17, 0x3d, 0xb7, 0xef,
+	0x0c, 0xeb, 0xf8, 0xd2, 0x80, 0xf6, 0xc0, 0x9b, 0x15, 0x49, 0xcf, 0xeb, 0x3b, 0xc3, 0x06, 0x96,
+	0x9f, 0x83, 0xbf, 0x1d, 0xd8, 0xff, 0x8a, 0x8a, 0x33, 0x96, 0xbf, 0x4a, 0x13, 0x4c, 0x8b, 0x39,
+	0xcb, 0x0b, 0x8a, 0x4e, 0x00, 0x45, 0xca, 0x32, 0x31, 0xad, 0x4c, 0x16, 0x3c, 0x53, 0x77, 0x35,
+	0xf0, 0x9e, 0xf6, 0x9c, 0x6b, 0xc7, 0x77, 0x3c, 0x43, 0xf7, 0x01, 0xca, 0x68, 0x7d, 0x69, 0x03,
+	0x37, 0x6c, 0x94, 0x40, 0x01, 0xbc, 0x67, 0xab, 0x98, 0xb0, 0x39, 0x11, 0x53, 0x03, 0x62, 0xdf,
+	0xb8, 0x34, 0x80, 0x6f, 0x88, 0x98, 0xca, 0xf8, 0x8d, 0xcb, 0xa7, 0xac, 0x10, 0xbd, 0xaa, 0x8e,
+	0x5f, 0xbb, 0x7d, 0xcc, 0x0a, 0x31, 0xf8, 0xc3, 0x81, 0x43, 0x4c, 0x93, 0xb4, 0x10, 0x94, 0x9f,
+	0x0b, 0x4e, 0xc9, 0x0c, 0xd3, 0xd7, 0x0b, 0x5a, 0x08, 0xd4, 0x83, 0x3b, 0x73, 0xce, 0x7e, 0xa0,
+	0x91, 0x30, 0xd8, 0xed, 0x11, 0x75, 0x61, 0xa7, 0xa0, 0x11, 0x37, 0x70, 0x5b, 0xd8, 0x9c, 0xd0,
+	0x23, 0x68, 0x2b, 0xb6, 0x27, 0x4b, 0xca, 0x8b, 0x94, 0xe5, 0x06, 0x65, 0x4b, 0x19, 0xbf, 0xd7,
+	0x36, 0x84, 0xa0, 0x1a, 0xd3, 0x22, 0x52, 0x88, 0x5a, 0x58, 0x7d, 0xa3, 0xf7, 0xa1, 0x23, 0x28,
+	0x9f, 0xa5, 0x39, 0xc9, 0x26, 0x69, 0x1e, 0xd3, 0x9f, 0x7a, 0xb5, 0xbe, 0x33, 0xf4, 0x70, 0xdb,
+	0x5a, 0x9f, 0x48, 0xe3, 0xe0, 0x67, 0xe8, 0x6e, 0x42, 0x35, 0x94, 0x77, 0xc0, 0x4d, 0x63, 0x03,
+	0xd3, 0x4d, 0x63, 0x74, 0x02, 0x35, 0x25, 0x1d, 0x05, 0xb0, 0x79, 0xda, 0x0d, 0xb4, 0xea, 0x82,
+	0x67, 0x2c, 0xd1, 0x99, 0xe7, 0xd2, 0x8b, 0x75, 0x10, 0x7a, 0x04, 0x35, 0x2a, 0xc5, 0xa1, 0xf0,
+	0x36, 0x4f, 0xdb, 0x36, 0x5a, 0x29, 0x06, 0x6b, 0xdf, 0xe0, 0x5b, 0xd8, 0x7f, 0xc6, 0x48, 0x7c,
+	0x5b, 0x8e, 0x34, 0x22, 0xb7, 0x44, 0x64, 0xdb, 0xf6, 0x94, 0xaa, 0xd4, 0xf7, 0xe0, 0x37, 0x07,
+	0xd0, 0x6a, 0xcd, 0x52, 0x3f, 0x06, 0xbc, 0x73, 0x1b, 0xf0, 0xb6, 0xb0, 0xbb, 0xc2, 0xe7, 0x87,
+	0xe0, 0x91, 0x84, 0x9a, 0x76, 0xee, 0x06, 0x7a, 0x31, 0x02, 0xbb, 0x18, 0xc1, 0x97, 0x66, 0x71,
+	0xb0, 0x8c, 0x42, 0x0f, 0xa1, 0x45, 0x78, 0x34, 0x4d, 0x97, 0x24, 0x9b, 0xfc, 0x48, 0x2f, 0xcc,
+	0x60, 0x9a, 0xd6, 0xf6, 0x94, 0x5e, 0x0c, 0x7e, 0x75, 0xa0, 0xfb, 0x42, 0x8f, 0x42, 0xd0, 0x77,
+	0x65, 0xe0, 0x52, 0x35, 0xde, 0x9a, 0x6a, 0xae, 0x0e, 0xbf, 0xba, 0x6d, 0xf8, 0xff, 0xb8, 0x70,
+	0xf0, 0x85, 0xc2, 0xf4, 0xce, 0x08, 0x3e, 0x80, 0xdd, 0x8c, 0x25, 0x13, 0x9a, 0x0b, 0x7e, 0x31,
+	0x89, 0xd8, 0x22, 0xd7, 0x50, 0x3c, 0xdc, 0xce, 0x58, 0x32, 0x92, 0xd6, 0x33, 0x69, 0xbc, 0x25,
+	0x22, 0x74, 0x60, 0x65, 0x53, 0x53, 0x37, 0xe8, 0x83, 0xdc, 0xe7, 0x42, 0xe1, 0x53, 0x5b, 0x0f,
+	0x7a, 0x9f, 0xb5, 0x45, 0xae, 0xfb, 0x03, 0x68, 0x1a, 0x77, 0x91, 0xbe, 0xa1, 0xbd, 0xa6, 0x2a,
+	0x6c, 0x32, 0xce, 0xd3, 0x37, 0x54, 0x3e, 0x50, 0xea, 0x4e, 0x95, 0x7e, 0xa0, 0xd2, 0xeb, 0xca,
+	0x60, 0x1e, 0x0b, 0xed, 0x54, 0xc9, 0x87, 0x2a, 0x59, 0x87, 0xab, 0xdc, 0xbb, 0x50, 0x8f, 0x89,
+	0x20, 0x2a, 0xf5, 0x58, 0x73, 0x21, 0xcf, 0x32, 0xf3, 0x08, 0x1a, 0xca, 0xa5, 0x12, 0x1f, 0xa8,
+	0x44, 0x15, 0x2b, 0xf3, 0x06, 0xff, 0xba, 0xd0, 0x7a, 0x4c, 0x44, 0x34, 0xb5, 0x9c, 0x9e, 0x80,
+	0xc7, 0xe9, 0xeb, 0x9e, 0xd3, 0xf7, 0x86, 0xcd, 0x53, 0xdf, 0x0a, 0x70, 0x35, 0x24, 0x50, 0x7c,
+	0x61, 0x19, 0xe6, 0xff, 0xe9, 0x42, 0x4d, 0x1d, 0xd1, 0x18, 0x76, 0xb9, 0xd9, 0xd0, 0x89, 0xee,
+	0xc9, 0x88, 0xf8, 0xbe, 0xad, 0xb1, 0xf5, 0xad, 0x19, 0x57, 0x70, 0x87, 0xaf, 0x39, 0xd0, 0xa7,
+	0xd0, 0xcc, 0x18, 0x89, 0x6d, 0x15, 0xd7, 0x48, 0xb9, 0x5c, 0x85, 0x8d, 0x4d, 0x1c, 0x57, 0x30,
+	0x64, 0xa5, 0x11, 0x3d, 0x85, 0x3d, 0x61, 0xf5, 0x6a, 0x4b, 0xe8, 0x6d, 0x38, 0xb6, 0x25, 0xb6,
+	0xeb, 0x79, 0x5c, 0xc1, 0xbb, 0x62, 0xdd, 0x83, 0x46, 0xd0, 0xd1, 0xcb, 0x50, 0x96, 0xaa, 0xaa,
+	0x52, 0xf7, 0x6c, 0xa9, 0x6d, 0xb2, 0x1c, 0x57, 0x70, 0x9b, 0xac, 0xda, 0x1f, 0xdf, 0x81, 0xda,
+	0x92, 0x64, 0x0b, 0x3a, 0xf8, 0xc5, 0x85, 0xb6, 0xa1, 0xd2, 0x6c, 0x7c, 0x08, 0x55, 0x4e, 0x8b,
+	0xb9, 0xe1, 0xfb, 0x68, 0x83, 0x6f, 0x1d, 0x64, 0x08, 0x57, 0x81, 0xfe, 0x5f, 0x8e, 0x65, 0xfc,
+	0x21, 0x78, 0x94, 0x73, 0xc3, 0xf2, 0xfa, 0xcb, 0x35, 0xae, 0x60, 0xe9, 0x43, 0x4f, 0xae, 0x0e,
+	0xc5, 0x5d, 0xe7, 0x62, 0xfb, 0xab, 0xba, 0x65, 0x2a, 0x9f, 0xad, 0x4f, 0x45, 0x53, 0xea, 0x6f,
+	0x9b, 0x4a, 0x59, 0x62, 0x65, 0x2c, 0x25, 0x05, 0xa7, 0xbf, 0x7b, 0x50, 0x37, 0x7f, 0xa1, 0x02,
+	0x7d, 0x0e, 0x8d, 0xf2, 0x27, 0x8a, 0xba, 0x57, 0x5e, 0xab, 0x91, 0xfc, 0x8d, 0xfb, 0xe5, 0xe8,
+	0xaf, 0xfe, 0x6f, 0x9f, 0x43, 0x67, 0xbd, 0x01, 0x74, 0xb3, 0xda, 0xfc, 0xb7, 0xf4, 0x8d, 0xce,
+	0x00, 0x2e, 0x5b, 0x41, 0xd7, 0x8b, 0xce, 0xbf, 0xa1, 0x73, 0xc9, 0xfa, 0x86, 0xc4, 0xd0, 0x5b,
+	0xb4, 0xe7, 0x5f, 0xd3, 0x3b, 0x1a, 0x41, 0x7b, 0x4d, 0x62, 0xe8, 0x46, 0xe5, 0x5d, 0x5b, 0xe6,
+	0x13, 0xa8, 0x29, 0x45, 0xa1, 0x83, 0x6d, 0x0b, 0xed, 0x1f, 0x6e, 0x95, 0xdd, 0xcb, 0x1d, 0x55,
+	0xe5, 0xe3, 0xff, 0x02, 0x00, 0x00, 0xff, 0xff, 0x43, 0x54, 0x30, 0x08, 0x27, 0x0a, 0x00, 0x00,
 }
