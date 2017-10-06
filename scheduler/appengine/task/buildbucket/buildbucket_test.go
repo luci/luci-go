@@ -119,21 +119,6 @@ func TestValidateProtoMessage(t *testing.T) {
 	})
 }
 
-func TestMakeBuildSet(t *testing.T) {
-	Convey("makeBuildSet works", t, func() {
-		b, err := makeBuildSet(&internal.GitilesTriggerData{Repo: "https://c.googlesource.com/a.git", Revision: "deadbeef"})
-		So(err, ShouldBeNil)
-		So(b, ShouldEqual, "commit/gitiles/c.googlesource.com/a/+/deadbeef")
-
-		b, err = makeBuildSet(&internal.GitilesTriggerData{Repo: "https://c.googlesource.com/a/cd", Revision: "beefcafe"})
-		So(err, ShouldBeNil)
-		So(b, ShouldEqual, "commit/gitiles/c.googlesource.com/cd/+/beefcafe")
-
-		_, err = makeBuildSet(&internal.GitilesTriggerData{Repo: "https:\\something/went/wrong", Revision: "beefcafe"})
-		So(err, ShouldNotBeNil)
-	})
-}
-
 func TestFullFlow(t *testing.T) {
 	Convey("LaunchTask and HandleNotification work", t, func(ctx C) {
 		mockRunning := true

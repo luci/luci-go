@@ -27,7 +27,8 @@ import (
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/gae/service/info"
-	"go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/buildbucket"
+	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -169,18 +170,10 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 	for _, kv := range utils.UnpackKVList(cfg.Properties, ':') {
 		params.Properties[kv.Key] = kv.Value
 	}
-	if gitilesTrigger := maybeGetTrigger(c, ctl, triggers); gitilesTrigger != nil {
-		// TODO(tandrii): maybe set repo as well.
-		params.Properties["revision"] = gitilesTrigger.Revision
-		params.Properties["branch"] = gitilesTrigger.Ref
-		// Also set special buildset tag.
-		buildset, err := makeBuildSet(gitilesTrigger)
-		if err != nil {
-			logging.Errorf(c, "failed parsing trigger's repo: %s", err)
-		} else {
-			tags = append(tags, "buildset:"+buildset)
-		}
-		tags = append(tags, "gitiles_ref:"+gitilesTrigger.Ref)
+	if t := maybeGetTrigger(c, ctl, triggers); t != nil {
+		params.Properties["revision"] = t.revision
+		params.Properties["branch"] = t.ref
+		tags = append(tags, "buildset:"+t.buildset(), "gitiles_ref:"+t.ref)
 	}
 	paramsJSON, err := json.Marshal(&params)
 	if err != nil {
@@ -199,12 +192,12 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 	ctl.DebugLog("PubSub topic is %q", topic)
 
 	// Prepare the request.
-	request := buildbucket.ApiPutRequestMessage{
+	request := bbapi.ApiPutRequestMessage{
 		Bucket:            cfg.Bucket,
 		ClientOperationId: fmt.Sprintf("%d", ctl.InvocationNonce()),
 		ParametersJson:    string(paramsJSON),
 		Tags:              tags,
-		PubsubCallback: &buildbucket.ApiPubSubCallbackMessage{
+		PubsubCallback: &bbapi.ApiPubSubCallbackMessage{
 			AuthToken: "...", // set a bit later, after printing this struct
 			Topic:     topic,
 		},
@@ -274,7 +267,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 
 // AbortTask is part of Manager interface.
 func (m TaskManager) AbortTask(c context.Context, ctl task.Controller) error {
-	// TODO(vadimsh): Send the abort signal to Buildbucket.
+	// TODO(vadimsh): Send the abort signal to buildbucket.
 	return nil
 }
 
@@ -300,12 +293,12 @@ func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name st
 }
 
 // createBuildbucketService makes a configured Buildbucket API client.
-func (m TaskManager) createBuildbucketService(c context.Context, ctl task.Controller) (*buildbucket.Service, error) {
+func (m TaskManager) createBuildbucketService(c context.Context, ctl task.Controller) (*bbapi.Service, error) {
 	client, err := ctl.GetClient(c, time.Minute)
 	if err != nil {
 		return nil, err
 	}
-	service, err := buildbucket.New(client)
+	service, err := bbapi.New(client)
 	if err != nil {
 		return nil, err
 	}
@@ -345,7 +338,7 @@ func (m TaskManager) checkBuildStatus(c context.Context, ctl task.Controller) er
 		return fmt.Errorf("could not parse TaskData - %s", err)
 	}
 
-	// Fetch build result from Buildbucket.
+	// Fetch build result from buildbucket.
 	service, err := m.createBuildbucketService(c, ctl)
 	if err != nil {
 		return err
@@ -390,7 +383,7 @@ func (m TaskManager) checkBuildStatus(c context.Context, ctl task.Controller) er
 
 // handleBuildResult processes buildbucket results message updating the state
 // of the invocation.
-func (m TaskManager) handleBuildResult(c context.Context, ctl task.Controller, r *buildbucket.ApiCommonBuildMessage) {
+func (m TaskManager) handleBuildResult(c context.Context, ctl task.Controller, r *bbapi.ApiCommonBuildMessage) {
 	ctl.DebugLog(
 		"Build %d: status %q, result %q, failure_reason %q, cancelation_reason %q",
 		r.Id, r.Status, r.Result, r.FailureReason, r.CancelationReason)
@@ -404,43 +397,56 @@ func (m TaskManager) handleBuildResult(c context.Context, ctl task.Controller, r
 	}
 }
 
-func maybeGetTrigger(c context.Context, ctl task.Controller, triggers []*internal.Trigger) *internal.GitilesTriggerData {
+func maybeGetTrigger(c context.Context, ctl task.Controller, triggers []*internal.Trigger) *normalizedTrigger {
 	var prevTriggerID string
-	var prevDecoded *internal.GitilesTriggerData
+	var latest *normalizedTrigger
 	for _, t := range triggers {
 		g := t.GetGitiles()
 		if g == nil {
 			ctl.DebugLog("ignoring non-gitiles trigger %s", t.Id)
 			continue
 		}
+		n, err := normalizeGitilesTriggerData(g)
+		if err != nil {
+			logging.Errorf(c, "failed to normalize GitilesTriggerData id='%s': %s", t.Id, err)
+			ctl.DebugLog("failed to normalize GitilesTriggerData id='%s': %s", t.Id, err)
+			continue
+		}
 		// Latest trigger wins until engine v2 is available, because v1 requires
 		// coalescing all pending triggers into just 1 invocation.
-		if prevDecoded != nil {
+		if latest != nil {
 			ctl.DebugLog("ignoring gitiles trigger %s", prevTriggerID)
 		}
-		prevDecoded = g
+		latest = n
 		prevTriggerID = t.Id
 	}
-	return prevDecoded
+	return latest
 }
 
-func makeBuildSet(t *internal.GitilesTriggerData) (string, error) {
-	// TODO(tandrii): consider moving this function to a standalone buildset
-	// package once
-	// https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/677052/
-	// lands.
-	u, err := gitiles.NormalizeRepoURL(t.Repo)
+type normalizedTrigger struct {
+	repo     *url.URL
+	ref      string
+	revision string
+}
+
+func (n *normalizedTrigger) buildset() string {
+	c := buildbucket.GitilesCommit{Host: n.repo.Host, Project: n.repo.Path, Revision: n.revision}
+	return c.String()
+}
+
+func normalizeGitilesTriggerData(in *internal.GitilesTriggerData) (*normalizedTrigger, error) {
+	u, err := gitiles.NormalizeRepoURL(in.Repo)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	p, err := url.Parse(u)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	// Remove '/a/' from path.
 	if !strings.HasPrefix(p.Path, "/a/") {
-		return "", errors.New("gitiles.NormalizeRepoURL doesn't add '/a' any more.")
+		return nil, errors.New("gitiles.NormalizeRepoURL doesn't add '/a' any more.")
 	}
 	p.Path = p.Path[len("/a/"):]
-	return fmt.Sprintf("commit/gitiles/%s/%s/+/%s", p.Host, p.Path, t.Revision), nil
+	return &normalizedTrigger{repo: p, ref: in.Ref, revision: in.Revision}, nil
 }
