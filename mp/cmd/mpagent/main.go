@@ -52,6 +52,8 @@ type Strategy interface {
 	stop(ctx context.Context) error
 	// reboot reboots the machine.
 	reboot(ctx context.Context) error
+	// enable swarming.
+	enableSwarming(ctx context.Context) error
 }
 
 type Agent struct {
@@ -136,7 +138,10 @@ func (agent *Agent) configureSwarmingAutoStart(ctx context.Context, server strin
 	default:
 		return err
 	}
-	return ioutil.WriteFile(path, []byte(content), 0644)
+	if err := ioutil.WriteFile(path, []byte(content), 0644); err != nil {
+		return err
+	}
+	return agent.strategy.enableSwarming(ctx)
 }
 
 // downloadSwarminBotCode downloads the Swarming bot code from the given server.

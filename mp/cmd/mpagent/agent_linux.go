@@ -71,6 +71,14 @@ func (SystemdStrategy) stop(ctx context.Context) error {
 	return exec.Command("systemctl", "stop", "machine-provider-agent").Run()
 }
 
+// enable swarming.
+func (SystemdStrategy) enableSwarming(ctx context.Context) error {
+	if err := exec.Command("systemctl", "daemon-reload").Run(); err != nil {
+		return err
+	}
+	return exec.Command("systemctl", "enable", "swarming-start-bot").Run()
+}
+
 type UpstartStrategy struct {
 	LinuxStrategy
 }
@@ -86,6 +94,11 @@ func (UpstartStrategy) start(ctx context.Context, _ string) error {
 // stop stops all instances of the agent.
 func (UpstartStrategy) stop(ctx context.Context) error {
 	return exec.Command("stop", "machine-provider-agent").Run()
+}
+
+// enable swarming.
+func (UpstartStrategy) enableSwarming(ctx context.Context) error {
+	return exec.Command("initctl", "reload-configuration").Run()
 }
 
 // systemdFound returns true iff systemd is supported on this machine.
