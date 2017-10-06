@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+	"go.chromium.org/luci/logdog/server/bundleServicesClient"
 	"go.chromium.org/luci/logdog/server/collector"
 	"go.chromium.org/luci/logdog/server/collector/coordinator"
 	"go.chromium.org/luci/logdog/server/service"
@@ -60,7 +61,7 @@ var (
 	// message takes to process, in milliseconds.
 	tsTaskProcessingTime = metric.NewCumulativeDistribution("logdog/collector/subscription/processing_time_ms",
 		"Amount of time in milliseconds that a single Pub/Sub message takes to process.",
-		&types.MetricMetadata{types.Milliseconds},
+		&types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer)
 )
 
@@ -129,9 +130,17 @@ func (a *application) runCollector(c context.Context) error {
 	}
 	defer st.Close()
 
+	// Initialize a Coordinator client that bundles requests together.
+	coordClient := &bundleServicesClient.Client{
+		ServicesClient:       a.Coordinator(),
+		DelayThreshold:       time.Second,
+		BundleCountThreshold: 100,
+	}
+	defer coordClient.Flush()
+
 	// Initialize our Collector service object using a caching Coordinator
 	// interface.
-	coord := coordinator.NewCoordinator(a.Coordinator())
+	coord := coordinator.NewCoordinator(coordClient)
 	coord = coordinator.NewCache(coord, int(ccfg.StateCacheSize), google.DurationFromProto(ccfg.StateCacheExpiration))
 
 	coll := collector.Collector{
