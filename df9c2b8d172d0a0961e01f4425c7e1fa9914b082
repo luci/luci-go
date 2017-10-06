@@ -417,6 +417,30 @@
       "revId": "df9c2b8d172d0a0961e01f4425c7e1fa9914b082",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7c7615f1_bbe62971",
+        "filename": "milo/srcman/get.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T06:23:58Z",
+      "side": 1,
+      "message": "i didn\u0027t understand the conclusion here.\nthe lock is unnecessary here, right?",
+      "parentUuid": "dfd6678a_bf16d4f2",
+      "range": {
+        "startLine": 61,
+        "startChar": 0,
+        "endLine": 64,
+        "endChar": 21
+      },
+      "revId": "df9c2b8d172d0a0961e01f4425c7e1fa9914b082",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
