@@ -15,8 +15,11 @@
 package services
 
 import (
+	"sync"
+
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 
+	"go.chromium.org/luci/common/gcloud/gae"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -26,11 +29,14 @@ import (
 	"golang.org/x/net/context"
 )
 
+// The maximum, AppEngine response size, minus 1MB for overhead.
+const maxResponseSize = gae.MaxResponseSize - (1024 * 1024) // 1MB
+
 func (s *server) Batch(c context.Context, req *logdog.BatchRequest) (*logdog.BatchResponse, error) {
 	// Pre-allocate our response array so we can populate it by index in
 	// parallel.
 	resp := logdog.BatchResponse{
-		Resp: make([]*logdog.BatchResponse_Entry, len(req.Req)),
+		Resp: make([]*logdog.BatchResponse_Entry, 0, len(req.Req)),
 	}
 	if len(req.Req) == 0 {
 		return &resp, nil
@@ -39,13 +45,21 @@ func (s *server) Batch(c context.Context, req *logdog.BatchRequest) (*logdog.Bat
 	// Perform our batch operations in parallel. Each operation's error response
 	// will be encoded in the response's "Error" parameter, so this will never
 	// return an error.
+	//
+	// We will continue to populate the response buffer until it exceeds a size
+	// constraint. If it does, we will refrain from appending it.
+	var respMu sync.Mutex
+	var respSize int64
 	_ = parallel.FanOutIn(func(workC chan<- func() error) {
 		for i, e := range req.Req {
 			i, e := i, e
 			workC <- func() error {
-				c = logging.SetField(c, "batchIndex", i)
+				c := logging.SetField(c, "batchIndex", i)
 
-				var r logdog.BatchResponse_Entry
+				r := logdog.BatchResponse_Entry{
+					Index: int32(i),
+				}
+
 				s.processBatchEntry(c, e, &r)
 				if err := r.GetErr(); err != nil {
 					logging.Fields{
@@ -53,7 +67,20 @@ func (s *server) Batch(c context.Context, req *logdog.BatchRequest) (*logdog.Bat
 						"transient": err.Transient,
 					}.Errorf(c, "Failed batch entry.")
 				}
-				resp.Resp[i] = &r
+
+				// See if this fits into our response.
+				size := int64(proto.Size(&r))
+
+				respMu.Lock()
+				defer respMu.Unlock()
+
+				if respSize+size > maxResponseSize {
+					logging.Warningf(c, "Response would exceed request size (%d > %d); discarding.", respSize+size, maxResponseSize)
+					return nil
+				}
+
+				resp.Resp = append(resp.Resp, &r)
+				respSize += size
 				return nil
 			}
 		}

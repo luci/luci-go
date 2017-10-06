@@ -19,6 +19,8 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/gcloud/gae"
+	"go.chromium.org/luci/common/logging"
 	s "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 
 	"github.com/golang/protobuf/proto"
@@ -29,11 +31,8 @@ import (
 	"golang.org/x/net/context"
 )
 
-// The maximum, AppEngine request size, extracted from:
-// https://cloud.google.com/appengine/quotas#Requests
-//
-// We will remove 1MB for headers and overhead.
-const maxBundleSize = 31 * 1024 * 1024 // 31MiB
+// The maximum, AppEngine request size, minus 1MB for overhead.
+const maxBundleSize = gae.MaxRequestSize - (1024 * 1024) // 1MB
 
 // Client is a LogDog Coordinator Services endpoint client that intercepts
 // calls that can be batched and buffers them, sending them with the Batch
@@ -150,7 +149,7 @@ func (c *Client) bundleRPC(ctx context.Context, opts []grpc.CallOption, req *s.B
 		opts:     opts,
 		complete: make(chan *s.BatchResponse_Entry, 1),
 	}
-	if err := c.bundler.Add(be, proto.Size(be.req)); err != nil {
+	if err := c.addEntry(be); err != nil {
 		return nil, err
 	}
 
@@ -159,6 +158,10 @@ func (c *Client) bundleRPC(ctx context.Context, opts []grpc.CallOption, req *s.B
 		return nil, e.ToError()
 	}
 	return resp, nil
+}
+
+func (c *Client) addEntry(be *batchEntry) error {
+	return c.bundler.Add(be, proto.Size(be.req))
 }
 
 func (c *Client) bundlerHandler(iface interface{}) {
@@ -176,16 +179,6 @@ func (c *Client) bundlerHandler(iface interface{}) {
 	}
 
 	resp, err := c.ServicesClient.Batch(ctx, &req, opts...)
-	if err == nil {
-		// Determine other possible error values.
-		switch {
-		case resp == nil:
-			err = errors.New("empty batch response")
-		case len(resp.Resp) != len(entries):
-			err = errors.Reason("response count (%d) doesn't match request count (%d)",
-				len(resp.Resp), len(entries)).Err()
-		}
-	}
 
 	// Supply a response to each blocking request. Note that "complete" is a
 	// buffered channel, so this will not block.
@@ -197,12 +190,58 @@ func (c *Client) bundlerHandler(iface interface{}) {
 				Value: &s.BatchResponse_Entry_Err{Err: e},
 			}
 		}
-	} else {
-		// Pair each response with its request.
-		for i, ent := range entries {
-			ent.complete <- resp.Resp[i]
-		}
+		return
 	}
+
+	// We don't have a solution for a case where the Coordinator couldn't provide
+	// a single response. We would infinitely continue retrying our initial
+	// request set.
+	//
+	// This shouldn't happen, but if it does, make it visible.
+	if len(resp.Resp) == 0 {
+		panic(errors.New("batch response had zero entries"))
+	}
+
+	// Pair each response with its request.
+	count := 0
+	for _, r := range resp.Resp {
+		// Handle error conditions.
+		switch {
+		case r.Index < 0, int(r.Index) >= len(entries):
+			logging.Warningf(ctx, "Response included invalid index %d (%d entries).", r.Index, len(entries))
+			continue
+
+		case entries[r.Index] == nil:
+			logging.Warningf(ctx, "Response included duplicate entry for index %d.", r.Index)
+			continue
+		}
+
+		entries[r.Index].complete <- r
+		entries[r.Index] = nil
+		count++
+	}
+
+	// Fast path: if our count equals the number of entries, then we've processed
+	// them all.
+	if count == len(entries) {
+		return
+	}
+
+	// Figure out which entries we didn't process and resubmit.
+	count = 0
+	for _, be := range entries {
+		if be == nil {
+			// Already processed.
+			continue
+		}
+
+		if err := c.addEntry(be); err != nil {
+			// This was already added successfully, so it can't fail here.
+			panic(errors.Annotate(err, "failed to re-add entry").Err())
+		}
+		count++
+	}
+	logging.Debugf(ctx, "Resubmitting %d unprocessed entr[y|ies].", count)
 }
 
 type batchEntry struct {
