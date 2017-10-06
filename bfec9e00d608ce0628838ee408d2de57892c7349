@@ -25,6 +25,29 @@
     },
     {
       "key": {
+        "uuid": "71e8ae9b_019e2dbd",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T04:26:47Z",
+      "side": 1,
+      "message": "this way none of time.Time methods are available to a user of gitiles.Time, most notably IsZero()\nto mitigate this, Milo embeds time.Time\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/milo/api/buildbot/time.go?q\u003dbuildbot/time.go\u0026sq\u003dpackage:chromium\u0026l\u003d23\n\ni don\u0027t know how others feel about this though, but iannucci approved that code",
+      "range": {
+        "startLine": 32,
+        "startChar": 9,
+        "endLine": 32,
+        "endChar": 19
+      },
+      "revId": "bfec9e00d608ce0628838ee408d2de57892c7349",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f32d00a1_22838e24",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 6
