@@ -28,40 +28,18 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/api/resp"
+	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 )
 
-// getBuild fetches a buildbot build from the datastore and checks ACLs.
-// The return code matches the master responses.
-func getBuild(c context.Context, master, builder string, buildNum int) (*buildbot.Build, error) {
-	if err := canAccessMaster(c, master); err != nil {
-		return nil, err
-	}
-
-	result := &buildbot.Build{
-		Master:      master,
-		Buildername: builder,
-		Number:      buildNum,
-	}
-
-	err := datastore.Get(c, result)
-	if err == datastore.ErrNoSuchEntity {
-		err = errors.New("build not found", common.CodeNotFound)
-	}
-
-	return result, err
-}
-
 // getBanner parses the OS information from the build and maybe returns a banner.
 func getBanner(c context.Context, b *buildbot.Build) *resp.LogoBanner {
-	logging.Infof(c, "OS: %s/%s", b.OSFamily, b.OSVersion)
 	osLogo := func() *resp.Logo {
 		result := &resp.Logo{}
 		switch b.OSFamily {
@@ -82,7 +60,6 @@ func getBanner(c context.Context, b *buildbot.Build) *resp.LogoBanner {
 			OS: []resp.Logo{*osLogo},
 		}
 	}
-	logging.Warningf(c, "No OS info found.")
 	return nil
 }
 
@@ -346,7 +323,7 @@ func sourcestamp(c context.Context, b *buildbot.Build) *resp.SourceStamp {
 	ss := &resp.SourceStamp{}
 	rietveld := ""
 	gerrit := ""
-	got_revision := ""
+	gotRevision := ""
 	repository := ""
 	issue := int64(-1)
 	for _, prop := range b.Properties {
@@ -359,21 +336,24 @@ func sourcestamp(c context.Context, b *buildbot.Build) *resp.SourceStamp {
 			}
 		case "issue":
 			// Sometime this is a number (float), sometime it is a string.
-			if v, ok := prop.Value.(float64); ok {
+			switch v := prop.Value.(type) {
+			case float64:
 				issue = int64(v)
-			} else if v, ok := prop.Value.(string); ok {
-				if vi, err := strconv.ParseInt(v, 10, 64); err == nil {
-					issue = int64(vi)
-				} else {
-					logging.Warningf(c, "Could not decode field issue: %q - %s", prop.Value, err)
+			case string:
+				if v != "" {
+					if vi, err := strconv.ParseInt(v, 10, 64); err == nil {
+						issue = int64(vi)
+					} else {
+						logging.Warningf(c, "Could not decode field issue: %q - %s", prop.Value, err)
+					}
 				}
-			} else {
-				logging.Warningf(c, "Field issue is not a string or float: %#v", prop.Value)
+			default:
+				logging.Warningf(c, "Field issue is not a string or float64: %#v", prop.Value)
 			}
 
 		case "got_revision":
 			if v, ok := prop.Value.(string); ok {
-				got_revision = v
+				gotRevision = v
 			} else {
 				logging.Warningf(c, "Field got_revision is not a string: %#v", prop.Value)
 			}
@@ -413,19 +393,16 @@ func sourcestamp(c context.Context, b *buildbot.Build) *resp.SourceStamp {
 		}
 	}
 
-	if got_revision != "" {
-		ss.Revision = resp.NewLink(got_revision, "")
+	if gotRevision != "" {
+		ss.Revision = resp.NewLink(gotRevision, "")
 		if repository != "" {
-			ss.Revision.URL = repository + "/+/" + got_revision
+			ss.Revision.URL = repository + "/+/" + gotRevision
 		}
 	}
 	return ss
 }
 
 func renderBuild(c context.Context, b *buildbot.Build) *resp.MiloBuild {
-	// Modify the build for rendering.
-	updatePostProcessBuild(b)
-
 	// TODO(hinoka): Do all fields concurrently.
 	return &resp.MiloBuild{
 		SourceStamp:   sourcestamp(c, b),
@@ -456,152 +433,14 @@ func DebugBuild(c context.Context, relBuildbotDir string, builder string, buildN
 
 // Build fetches a buildbot build and translates it into a miloBuild.
 func Build(c context.Context, master, builder string, buildNum int) (*resp.MiloBuild, error) {
-	b, err := getBuild(c, master, builder, buildNum)
+	if err := buildstore.CanAccessMaster(c, master); err != nil {
+		return nil, err
+	}
+	b, err := buildstore.GetBuild(c, master, builder, buildNum)
 	if err != nil {
 		return nil, err
 	}
 	return renderBuild(c, b), nil
-}
-
-// updatePostProcessBuild transforms a build from its raw JSON format into the
-// format that should be presented to users.
-//
-// Post-processing includes:
-//	- If the build is LogDog-only, promotes aliases (LogDog links) to
-//	  first-class links in the build.
-func updatePostProcessBuild(b *buildbot.Build) {
-	// If this is a LogDog-only build, we want to promote the LogDog links.
-	if loc, ok := b.PropertyValue("log_location").(string); ok && strings.HasPrefix(loc, "logdog://") {
-		linkMap := map[string]string{}
-		for sidx := range b.Steps {
-			promoteLogDogLinks(&b.Steps[sidx], sidx == 0, linkMap)
-		}
-
-		// Update "Logs". This field is part of BuildBot, and is the amalgamation
-		// of all logs in the build's steps. Since each log is out of context of its
-		// original step, we can't apply the promotion logic; instead, we will use
-		// the link map to map any old URLs that were matched in "promoteLogDogLnks"
-		// to their new URLs.
-		for i, l := range b.Logs {
-			if newURL, ok := linkMap[l.URL]; ok {
-				b.Logs[i].URL = newURL
-			}
-		}
-	}
-}
-
-// promoteLogDogLinks updates the links in a BuildBot step to
-// promote LogDog links.
-//
-// A build's links come in one of three forms:
-//	- Log Links, which link directly to BuildBot build logs.
-//	- URL Links, which are named links to arbitrary URLs.
-//	- Aliases, which attach to the label in one of the other types of links and
-//	  augment it with additional named links.
-//
-// LogDog uses aliases exclusively to attach LogDog logs to other links. When
-// the build is LogDog-only, though, the original links are actually junk. What
-// we want to do is remove the original junk links and replace them with their
-// alias counterparts, so that the "natural" BuildBot links are actually LogDog
-// links.
-//
-// As URLs are re-mapped, the supplied "linkMap" will be updated to map the old
-// URLs to the new ones.
-func promoteLogDogLinks(s *buildbot.Step, isInitialStep bool, linkMap map[string]string) {
-	type stepLog struct {
-		label string
-		url   string
-	}
-
-	remainingAliases := stringset.New(len(s.Aliases))
-	for linkAnchor := range s.Aliases {
-		remainingAliases.Add(linkAnchor)
-	}
-
-	maybePromoteAliases := func(sl *stepLog, isLog bool) []*stepLog {
-		// As a special case, if this is the first step ("steps" in BuildBot), we
-		// will refrain from promoting aliases for "stdio", since "stdio" represents
-		// the raw BuildBot logs.
-		if isLog && isInitialStep && sl.label == "stdio" {
-			// No aliases, don't modify this log.
-			return []*stepLog{sl}
-		}
-
-		// If there are no aliases, we should obviously not promote them. This will
-		// be the case for pre-LogDog steps such as build setup.
-		aliases := s.Aliases[sl.label]
-		if len(aliases) == 0 {
-			return []*stepLog{sl}
-		}
-
-		// We have chosen to promote the aliases. Therefore, we will not include
-		// them as aliases in the modified step.
-		remainingAliases.Del(sl.label)
-
-		result := make([]*stepLog, len(aliases))
-		for i, alias := range aliases {
-			aliasStepLog := stepLog{alias.Text, alias.URL}
-
-			// Any link named "logdog" (Annotee cosmetic implementation detail) will
-			// inherit the name of the original log.
-			if isLog {
-				if aliasStepLog.label == "logdog" {
-					aliasStepLog.label = sl.label
-				}
-			}
-
-			result[i] = &aliasStepLog
-		}
-
-		// If we performed mapping, add the OLD -> NEW URL mapping to linkMap.
-		//
-		// Since multpiple aliases can apply to a single log, and we have to pick
-		// one, here, we'll arbitrarily pick the last one. This is maybe more
-		// consistent than the first one because linkMap, itself, will end up
-		// holding the last mapping for any given URL.
-		if len(result) > 0 {
-			linkMap[sl.url] = result[len(result)-1].url
-		}
-
-		return result
-	}
-
-	// Update step logs.
-	newLogs := make([]buildbot.Log, 0, len(s.Logs))
-	for _, l := range s.Logs {
-		for _, res := range maybePromoteAliases(&stepLog{l.Name, l.URL}, true) {
-			newLogs = append(newLogs, buildbot.Log{res.label, res.url})
-		}
-	}
-	s.Logs = newLogs
-
-	// Update step URLs.
-	newURLs := make(map[string]string, len(s.Urls))
-	for label, link := range s.Urls {
-		urlLinks := maybePromoteAliases(&stepLog{label, link}, false)
-		if len(urlLinks) > 0 {
-			// Use the last URL link, since our URL map can only tolerate one link.
-			// The expected case here is that len(urlLinks) == 1, though, but it's
-			// possible that multiple aliases can be included for a single URL, so
-			// we need to handle that.
-			newValue := urlLinks[len(urlLinks)-1]
-			newURLs[newValue.label] = newValue.url
-		} else {
-			newURLs[label] = link
-		}
-	}
-	s.Urls = newURLs
-
-	// Preserve any aliases that haven't been promoted.
-	var newAliases map[string][]*buildbot.LinkAlias
-	if l := remainingAliases.Len(); l > 0 {
-		newAliases = make(map[string][]*buildbot.LinkAlias, l)
-		remainingAliases.Iter(func(v string) bool {
-			newAliases[v] = s.Aliases[v]
-			return true
-		})
-	}
-	s.Aliases = newAliases
 }
 
 // BuildID is buildbots's notion of a Build. See buildsource.ID.
@@ -627,10 +466,10 @@ func (b *BuildID) Get(c context.Context) (*resp.MiloBuild, error) {
 	}
 
 	if b.Master == "" {
-		return nil, errors.New("Master name is required", common.CodeParameterError)
+		return nil, errors.New("Master is required", common.CodeParameterError)
 	}
 	if b.BuilderName == "" {
-		return nil, errors.New("BuilderName name is required", common.CodeParameterError)
+		return nil, errors.New("BuilderName is required", common.CodeParameterError)
 	}
 
 	return Build(c, b.Master, b.BuilderName, int(num))
