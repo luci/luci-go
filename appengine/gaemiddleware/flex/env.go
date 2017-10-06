@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/router"
 
 	authClient "go.chromium.org/luci/appengine/gaeauth/client"
 	gaeauth "go.chromium.org/luci/appengine/gaeauth/server"
@@ -121,6 +122,12 @@ var ReadOnlyFlex = gaemiddleware.Environment{
 		return c
 	},
 	MonitoringMiddleware: nil, // TODO: Add monitoring middleware.
+	ExtraHandlers: func(r *router.Router, base router.MiddlewareChain) {
+		// Install a handler for basic health checking. We respond with HTTP 200 to
+		// indicate that we're always healthy.
+		r.GET("/_ah/health", router.MiddlewareChain{},
+			func(c *router.Context) { c.Writer.WriteHeader(http.StatusOK) })
+	},
 }
 
 // WithGlobal returns a Context that is not attached to a specific request.
