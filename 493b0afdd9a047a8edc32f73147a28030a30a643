@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "88888c3b_a74894c7",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T02:38:48Z",
+      "side": 1,
+      "message": "Done in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/703927",
+      "parentUuid": "b9be4a52_599ed001",
+      "range": {
+        "startLine": 38,
+        "startChar": 3,
+        "endLine": 38,
+        "endChar": 16
+      },
+      "revId": "493b0afdd9a047a8edc32f73147a28030a30a643",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "734f5c3d_5da20ab3",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 1
@@ -117,6 +141,30 @@
       "revId": "493b0afdd9a047a8edc32f73147a28030a30a643",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1389e5ae_f0e9e8b3",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T02:38:48Z",
+      "side": 1,
+      "message": "Done in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/703927",
+      "parentUuid": "9e16b522_fd77bc37",
+      "range": {
+        "startLine": 48,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 2
+      },
+      "revId": "493b0afdd9a047a8edc32f73147a28030a30a643",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

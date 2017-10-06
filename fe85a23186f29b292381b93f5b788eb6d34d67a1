@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "90929780_2cdb5483",
+        "filename": "buildbucket/buildset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T02:38:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "10004660_c2b6f8a4",
+      "range": {
+        "startLine": 85,
+        "startChar": 53,
+        "endLine": 85,
+        "endChar": 59
+      },
+      "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6f0a9582_dabbbcd8",
         "filename": "common/api/gitiles/gitiles.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7bd90673_791ebfc6",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T02:38:48Z",
+      "side": 1,
+      "message": "Done in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/703927",
+      "parentUuid": "6f0a9582_dabbbcd8",
+      "range": {
+        "startLine": 41,
+        "startChar": 15,
+        "endLine": 41,
+        "endChar": 28
+      },
+      "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -82,6 +130,24 @@
     },
     {
       "key": {
+        "uuid": "9ed12bbe_d156e7df",
+        "filename": "common/api/gitiles/proto.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T02:38:48Z",
+      "side": 1,
+      "message": "Done in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/703927",
+      "parentUuid": "34808044_cc3da8ae",
+      "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0438f5e5_f3765a6b",
         "filename": "luci_notify/notify/builder.go",
         "patchSetId": 2
@@ -102,6 +168,30 @@
       "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5a47108_9323fa18",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T02:38:48Z",
+      "side": 1,
+      "message": "See my comment below. After talking to others I\u0027ll be dropping creation time entirely. I recognize that such issues exist, but in practice builders should\u0027ve stayed either on creation time or on commit time.",
+      "parentUuid": "0438f5e5_f3765a6b",
+      "range": {
+        "startLine": 40,
+        "startChar": 22,
+        "endLine": 40,
+        "endChar": 27
+      },
+      "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -128,6 +218,30 @@
     },
     {
       "key": {
+        "uuid": "2bcd613e_dd051587",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T02:38:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fb9ade12_d88f538e",
+      "range": {
+        "startLine": 46,
+        "startChar": 34,
+        "endLine": 46,
+        "endChar": 41
+      },
+      "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2a272926_b1446b87",
         "filename": "luci_notify/notify/builder.go",
         "patchSetId": 2
@@ -142,6 +256,24 @@
       "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5133f037_bd5ae9ef",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T02:38:48Z",
+      "side": 1,
+      "message": "OK so my decision to do this was based on the assumption that there would in-fact be builders that had no repository associated with them on the Fuchsia side. Notably, the fuchsia builders work this way. However, after talking with others, we\u0027ve determined that if we really need this case we\u0027ll make superprojects, so I\u0027m going to drop all this.",
+      "parentUuid": "2a272926_b1446b87",
+      "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -168,6 +300,30 @@
     },
     {
       "key": {
+        "uuid": "f7cefeab_37358aa7",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T02:38:48Z",
+      "side": 1,
+      "message": "I thought that was the \"official\" name. I guess not, haha.",
+      "parentUuid": "3e969b16_e3e3bce3",
+      "range": {
+        "startLine": 46,
+        "startChar": 64,
+        "endLine": 46,
+        "endChar": 71
+      },
+      "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d6e93e31_216168a0",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 2
@@ -191,6 +347,30 @@
     },
     {
       "key": {
+        "uuid": "da4b5f2e_7dfc3b7f",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T02:38:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d6e93e31_216168a0",
+      "range": {
+        "startLine": 57,
+        "startChar": 57,
+        "endLine": 57,
+        "endChar": 64
+      },
+      "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f69eb8b3_b12292b0",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 2
@@ -205,6 +385,24 @@
       "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fca2e6b5_59f305f0",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T02:38:48Z",
+      "side": 1,
+      "message": "Oh oops, thanks.",
+      "parentUuid": "f69eb8b3_b12292b0",
+      "revId": "fe85a23186f29b292381b93f5b788eb6d34d67a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
