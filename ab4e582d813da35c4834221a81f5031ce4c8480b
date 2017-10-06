@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c4ee140e_1ea3ce30",
+        "filename": "scheduler/appengine/engine/engine_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1334,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-06T02:59:28Z",
+      "side": 1,
+      "message": "i discovered .Count() and .Sum() (pre bucketization), which allows me to test precisely what I want.",
+      "range": {
+        "startLine": 1331,
+        "startChar": 1,
+        "endLine": 1334,
+        "endChar": 16
+      },
+      "revId": "ab4e582d813da35c4834221a81f5031ce4c8480b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
