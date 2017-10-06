@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5b04069c_d13570c2",
+        "filename": "cipd/client/cipd/ensure/item_parsers.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-06T23:01:51Z",
+      "side": 1,
+      "message": "Sorry, not sure what you mean. This should result in a list saying \"verify for {linux-amd64, win-amd64}\", and both platforms would be verified for both packages. This mirrors how the manifest would be treated on both of those respective platforms.\n\nVerification isn\u0027t interpreted relative to other packages; it\u0027s an independent accumulating directive that\u0027s applied to the entire manifest, just like manifest evaluation is.",
+      "parentUuid": "5d8968b5_14f5be33",
+      "range": {
+        "startLine": 71,
+        "startChar": 1,
+        "endLine": 71,
+        "endChar": 56
+      },
+      "revId": "02a28754b5d13868dd267451fed700e885a49597",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "89b356bd_d457ea17",
         "filename": "cipd/client/cipd/ensure/item_parsers.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "7777c3fa_f70ef5f2",
+        "filename": "cipd/client/cipd/ensure/item_parsers.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-06T23:01:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "89b356bd_d457ea17",
+      "range": {
+        "startLine": 81,
+        "startChar": 2,
+        "endLine": 81,
+        "endChar": 10
+      },
+      "revId": "02a28754b5d13868dd267451fed700e885a49597",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "20042da0_4c614b9b",
         "filename": "cipd/client/cli/main.go",
         "patchSetId": 2
@@ -59,6 +107,30 @@
       "writtenOn": "2017-10-06T19:59:14Z",
       "side": 1,
       "message": "Please rename it to \"ensure-file-verify\" and convert to advanced command:\n * I\u0027m pretty sure 99% of users don\u0027t need it.\n * \u0027verify\u0027 by itself is too ambiguous.\n * \u0027ensure-file-verify\u0027 (instead of \u0027verify-ensure-file\u0027) because advanced commands has structure \"\u003ccomponent\u003e-\u003cverb\u003e\".",
+      "range": {
+        "startLine": 823,
+        "startChar": 14,
+        "endLine": 823,
+        "endChar": 20
+      },
+      "revId": "02a28754b5d13868dd267451fed700e885a49597",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e85d5ce8_ccd7cb5e",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 823,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-06T23:01:51Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "20042da0_4c614b9b",
       "range": {
         "startLine": 823,
         "startChar": 14,
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "fd2fe651_6e4929fc",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 826,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-06T23:01:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e88b9877_2a8cdb60",
+      "range": {
+        "startLine": 826,
+        "startChar": 54,
+        "endLine": 826,
+        "endChar": 61
+      },
+      "revId": "02a28754b5d13868dd267451fed700e885a49597",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a5e4519_ac880f47",
         "filename": "cipd/client/cli/main.go",
         "patchSetId": 2
@@ -114,6 +210,30 @@
       "revId": "02a28754b5d13868dd267451fed700e885a49597",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4cdaee52_16475395",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 942,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-06T23:01:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0a5e4519_ac880f47",
+      "range": {
+        "startLine": 942,
+        "startChar": 15,
+        "endLine": 942,
+        "endChar": 39
+      },
+      "revId": "02a28754b5d13868dd267451fed700e885a49597",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
