@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "31b2f0c9_15382db0",
+        "filename": "milo/buildsource/buildbot/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 339,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T17:48:37Z",
+      "side": 1,
+      "message": "oh yeah, definitely",
+      "parentUuid": "602a2207_ec3ad831",
+      "range": {
+        "startLine": 339,
+        "startChar": 3,
+        "endLine": 339,
+        "endChar": 39
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6de51481_f7147f27",
         "filename": "milo/buildsource/buildbot/build.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "806436b3_933876cc",
+        "filename": "milo/buildsource/buildbot/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T17:48:37Z",
+      "side": 1,
+      "message": "prev version of code caused a lot of useless warning logs complaining that \"\" is not a number",
+      "parentUuid": "6de51481_f7147f27",
+      "range": {
+        "startLine": 341,
+        "startChar": 51,
+        "endLine": 341,
+        "endChar": 52
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "80843816_a0a4d540",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T17:48:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b10184d7_13e6b404",
+      "range": {
+        "startLine": 40,
+        "startChar": 5,
+        "endLine": 40,
+        "endChar": 16
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b9fe2e5e_5e5b55d4",
         "filename": "milo/buildsource/buildbot/buildstore/build.go",
         "patchSetId": 3
@@ -91,6 +163,30 @@
       "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ac2f7f7c_ae2a9400",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T17:48:37Z",
+      "side": 1,
+      "message": "no. this is buildbot",
+      "parentUuid": "b9fe2e5e_5e5b55d4",
+      "range": {
+        "startLine": 51,
+        "startChar": 2,
+        "endLine": 51,
+        "endChar": 38
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "c4adf748_a58c1481",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T17:48:37Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "e2865621_d7a3199f",
+      "range": {
+        "startLine": 83,
+        "startChar": 12,
+        "endLine": 83,
+        "endChar": 27
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f7db097c_8b92d343",
         "filename": "milo/buildsource/buildbot/buildstore/build.go",
         "patchSetId": 3
@@ -137,6 +257,30 @@
       "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de48e3c3_81ff3d51",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T17:48:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f7db097c_8b92d343",
+      "range": {
+        "startLine": 85,
+        "startChar": 21,
+        "endLine": 85,
+        "endChar": 37
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "64da45ab_0079e323",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T17:48:37Z",
+      "side": 1,
+      "message": "tags are so nice! but used a singleton",
+      "parentUuid": "75b97706_d1335071",
+      "range": {
+        "startLine": 138,
+        "startChar": 5,
+        "endLine": 138,
+        "endChar": 14
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b6b102a0_0bee94d6",
         "filename": "milo/buildsource/buildbot/buildstore/build.go",
         "patchSetId": 3
@@ -183,6 +351,30 @@
       "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7bc12394_b463547c",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T17:48:37Z",
+      "side": 1,
+      "message": "yeah, that\u0027s simpler",
+      "parentUuid": "b6b102a0_0bee94d6",
+      "range": {
+        "startLine": 168,
+        "startChar": 14,
+        "endLine": 168,
+        "endChar": 23
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -209,6 +401,30 @@
     },
     {
       "key": {
+        "uuid": "5c595b62_aae85725",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T17:48:37Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "93f43c20_60e798f2",
+      "range": {
+        "startLine": 180,
+        "startChar": 3,
+        "endLine": 180,
+        "endChar": 29
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4ac262f7_42bd67de",
         "filename": "milo/buildsource/buildbot/buildstore/doc.go",
         "patchSetId": 3
@@ -223,6 +439,24 @@
       "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d144b426_94a4dac0",
+        "filename": "milo/buildsource/buildbot/buildstore/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T17:48:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4ac262f7_42bd67de",
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -249,6 +483,30 @@
     },
     {
       "key": {
+        "uuid": "e99e830c_76a5986f",
+        "filename": "milo/buildsource/buildbot/buildstore/master.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T17:48:37Z",
+      "side": 1,
+      "message": "made a const",
+      "parentUuid": "aebf3d04_55d97033",
+      "range": {
+        "startLine": 151,
+        "startChar": 23,
+        "endLine": 151,
+        "endChar": 32
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "21ad7e17_912cf307",
         "filename": "milo/buildsource/buildbot/buildstore/master.go",
         "patchSetId": 3
@@ -269,6 +527,30 @@
       "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e19e56c_b4a7d489",
+        "filename": "milo/buildsource/buildbot/buildstore/master.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T17:48:37Z",
+      "side": 1,
+      "message": "for a type in a buildbot-specific pacakge, this name is too long\ncan\u0027t change the entity name anymore",
+      "parentUuid": "21ad7e17_912cf307",
+      "range": {
+        "startLine": 225,
+        "startChar": 26,
+        "endLine": 225,
+        "endChar": 46
+      },
+      "revId": "2258e4d664363f6b052547b4becc87e9bf005f80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
