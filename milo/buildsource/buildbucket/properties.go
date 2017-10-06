@@ -79,4 +79,12 @@ type buildParameters struct {
 // in the format supported by Buildbot.
 type resultDetails struct {
 	Properties properties
+	// BuildRunResult and its subfields are not protos
+	// because we want to minimize deps on these protos
+	// because we want to revise them anyway.
+	BuildRunResult struct {
+		Annotations struct {
+			Text []string
+		}
+	} `json:"build_run_result"`
 }

@@ -118,8 +118,8 @@ func toMiloBuild(c context.Context, build *buildbucket.ApiCommonBuildMessage) *r
 	}
 
 	result := &resp.BuildSummary{
-		Text:     []string{fmt.Sprintf("buildbucket id %d", build.Id)},
 		Revision: resultDetails.Properties.GotRevision,
+		Text:     resultDetails.BuildRunResult.Annotations.Text,
 	}
 	if result.Revision == "" {
 		result.Revision = params.Properties.Revision
