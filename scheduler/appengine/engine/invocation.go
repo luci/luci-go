@@ -16,6 +16,8 @@ package engine
 
 import (
 	"bytes"
+	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -29,6 +31,10 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/tsmon/distribution"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/types"
 
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -57,6 +63,30 @@ func init() {
 		panic(err)
 	}
 }
+
+var (
+	// distributionBucketerSecToDay 1s to 1 day.
+	//
+	// 0.05037 is math.log10(math.exp(math.log(24*60*60)/98)), which means
+	// the last bucket will contain overflow of everything >=1 day.
+	distributionBucketerSecToDay = distribution.GeometricBucketer(math.Pow(10.0, 0.05037), 100)
+
+	metricInvocationsDurations = metric.NewCumulativeDistribution(
+		"luci/scheduler/invocations/durations",
+		"Durations of completed invocations (sec).",
+		&types.MetricMetadata{Units: types.Seconds},
+		distributionBucketerSecToDay,
+		field.String("jobID"),
+		field.String("status"), // one of final statuses of task.Status enum.
+	)
+
+	metricInvocationsOverrun = metric.NewCounter(
+		"luci/scheduler/invocations/overrun",
+		"Number of invocations that were not run due to overrun of prior one.",
+		nil,
+		field.String("jobID"),
+	)
+)
 
 // generateInvocationID is called within a transaction to pick a new Invocation
 // ID and ensure it isn't taken yet.
@@ -360,4 +390,20 @@ func cleanupUnreferencedInvocations(c context.Context, invs []*Invocation) {
 	if err := datastore.Delete(datastore.WithoutTransaction(c), keysToKill); err != nil {
 		logging.WithError(err).Warningf(c, "Invocation cleanup failed")
 	}
+}
+
+// reportOverrunMetrics reports overrun to monitoring.
+// Should be called after transaction to save this invocation is completed.
+func (e *Invocation) reportOverrunMetrics(c context.Context) {
+	metricInvocationsOverrun.Add(c, 1, e.jobID())
+}
+
+// reportCompletionMetrics reports invocation stats to monitoring.
+// Should be called after transaction to save this invocation is completed.
+func (e *Invocation) reportCompletionMetrics(c context.Context) {
+	if !e.Status.Final() || e.Finished.IsZero() {
+		panic(fmt.Errorf("reportCompletionMetrics on incomplete invocation: %q", e))
+	}
+	duration := e.Finished.Sub(e.Started)
+	metricInvocationsDurations.Add(c, duration.Seconds(), e.jobID(), string(e.Status))
 }
