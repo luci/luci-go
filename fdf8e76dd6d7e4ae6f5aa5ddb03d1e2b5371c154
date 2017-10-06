@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c40169ae_b642d0aa",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T18:52:39Z",
+      "side": 1,
+      "message": "Oh woops, yeah I totally get that.",
+      "parentUuid": "4608ff88_82a8a30c",
+      "range": {
+        "startLine": 38,
+        "startChar": 49,
+        "endLine": 38,
+        "endChar": 57
+      },
+      "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "05867ac4_90b39371",
         "filename": "luci_notify/notify/builder.go",
         "patchSetId": 7
@@ -45,6 +69,30 @@
       "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c919ab2e_e6d05d40",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T18:52:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "05867ac4_90b39371",
+      "range": {
+        "startLine": 40,
+        "startChar": 9,
+        "endLine": 40,
+        "endChar": 14
+      },
+      "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "6fff848f_7aa1bb4d",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T18:52:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ebd9ae57_c71e47a2",
+      "range": {
+        "startLine": 44,
+        "startChar": 22,
+        "endLine": 44,
+        "endChar": 29
+      },
+      "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c091fa95_e42cf66c",
         "filename": "luci_notify/notify/builder.go",
         "patchSetId": 7
@@ -91,6 +163,30 @@
       "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e37314b_a024f07d",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T18:52:39Z",
+      "side": 1,
+      "message": "Clarified",
+      "parentUuid": "c091fa95_e42cf66c",
+      "range": {
+        "startLine": 45,
+        "startChar": 13,
+        "endLine": 45,
+        "endChar": 17
+      },
+      "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -134,6 +230,30 @@
     },
     {
       "key": {
+        "uuid": "69c708b0_9f6996f9",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T18:52:39Z",
+      "side": 1,
+      "message": "Oh, good point. If the revision is the same the time should also be the same (barring a SHA1 collision, haha).",
+      "parentUuid": "01c1856b_afb0414d",
+      "range": {
+        "startLine": 88,
+        "startChar": 7,
+        "endLine": 88,
+        "endChar": 47
+      },
+      "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fc2f7062_cdcf55da",
         "filename": "luci_notify/notify/builder.go",
         "patchSetId": 7
@@ -145,6 +265,30 @@
       "writtenOn": "2017-10-06T04:48:39Z",
       "side": 1,
       "message": "i re-read this a couple of times and this sentence is still unclear to me.\n\nalso, with these changes, this code no longer handles out-of-order delivery of build messages for the same revision, e.g. a build for commit X failed. We retried the build on the same commit X (say because it was a flake and there were no new commits) and got a green build.\n\nFWIU we want the order of statuses to be 1) commit time, then 2) build time",
+      "range": {
+        "startLine": 96,
+        "startChar": 16,
+        "endLine": 97,
+        "endChar": 64
+      },
+      "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f22a100_25fd3e49",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T18:52:39Z",
+      "side": 1,
+      "message": "Oops, this comment came out wrong. \n\nMy intent with this code is to have something that only notifies (assuming on_change is set) on the first status change for a given revision, however I wanted to define \"first status change\" against the previous revision\u0027s final status change (i.e. the last status change we see before we see a new revision). Thus in this file, we always update when we see the same revision but a new status (which is what this comment was trying to explain), but in notification.go we do not send a notification. The part about not sending the notification I actually got wrong, and I need to fix that.\n\nWith that being said, you get some weird edge cases with the current setup. Suppose if the builder was previously green, and then the situation you described occurs. Then, if the green retried build arrives before the original red flake build, the same number of notifications will get sent out, but now the recorded build will be red. That means on the next revision, if there\u0027s a red build no one will get notified, and if its a green build then someone WILL get notified, which is the opposite of what we want, really.\n\nAdding in ordering by build creation time doesn\u0027t really help too much, because deciding when to notify gets a little bit hazy. Even if you can detect out-of-order builds, if there\u0027s flake you should probably still notify, in my opinion. What do you think? I don\u0027t know enough about whether people actually want to get notified about flake to make a judgement call here. But, assuming that we do want to notify on flake, I\u0027m not totally convinced build creation time buys you much (though there may be a simple solution I\u0027m missing here...?).\n\nI\u0027m starting to wonder if maybe it would be a good idea to start labeling builders based on all the builds seen for a given revision. This would let us stop caring about out-of-order builds within a revision.\n\nIn this model, I\u0027d suggest a new status for a builder called \"Flake.\" Flake is defined as \"multiple builds occurred with some being Success and some being Failure.\" The model of notification for on_change would be something like this: for a given revision, a builder is either Success, Failure, or Flake. Let\u0027s ignore InfraFailure, Exception, and Cancelled for now, to simplify the argument. on_change will send at most one notification per revision. Transitioning from Success -\u003e Failure or Failure -\u003e Success warrants a notification and an update. Transitioning from Flake -\u003e Failure does as well, but so does Success -\u003e Flake. For the first two transitions, if all seen builds for a given revision have the same status of Success or Failure, the builder gets that status. It also initially gets that status based on the first build seen for a new revision.\n\nBut note that on seeing a build with a new revision, we don\u0027t know if its flaky yet. Rather than delaying the notification, when we see a failure for the first build for a new revision, we use the Flake -\u003e Failure case. We re-label as \"Flake\" later if we see a success on a retry. If we\u0027ve been a Success and we see another Success, but then a failure comes in for the same revision, we mark the builder as Flake and notify at that point.\n\nA similar setup could be extended to support a flaky InfraFailure too, I think.\n\nI\u0027ll have to get all this into the luci-notify doc soon, but WDYT?",
+      "parentUuid": "fc2f7062_cdcf55da",
       "range": {
         "startLine": 96,
         "startChar": 16,
@@ -180,6 +324,30 @@
     },
     {
       "key": {
+        "uuid": "59c0d400_37863b50",
+        "filename": "luci_notify/notify/notification.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T18:52:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3f98e550_47b4135b",
+      "range": {
+        "startLine": 132,
+        "startChar": 4,
+        "endLine": 132,
+        "endChar": 47
+      },
+      "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "be75d0a2_4c02b2a3",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 7
@@ -200,6 +368,30 @@
       "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f084848b_602a6e5e",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-06T18:52:39Z",
+      "side": 1,
+      "message": "Ah hah, good point. Then I\u0027ll just drop this and let the default errors come out of getCommit.",
+      "parentUuid": "be75d0a2_4c02b2a3",
+      "range": {
+        "startLine": 117,
+        "startChar": 50,
+        "endLine": 117,
+        "endChar": 68
+      },
+      "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
