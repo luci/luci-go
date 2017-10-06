@@ -16,15 +16,19 @@ package services
 
 import (
 	ds "go.chromium.org/gae/service/datastore"
+
+	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
-	"go.chromium.org/luci/logdog/appengine/coordinator"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc/codes"
+
+	"golang.org/x/net/context"
 )
 
 // LoadStream loads the log stream state.
