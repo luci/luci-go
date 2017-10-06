@@ -1,0 +1,320 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "68ddabb5_ea3d4f2f",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T05:48:53Z",
+      "side": 1,
+      "message": "please close r and check error in order to verify gzip checksum",
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6064178b_ff348fdd",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T05:48:53Z",
+      "side": 1,
+      "message": "we could use nil mc item for \"no\"",
+      "range": {
+        "startLine": 91,
+        "startChar": 102,
+        "endLine": 91,
+        "endChar": 106
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4dff6fb3_b5da7dae",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T05:48:53Z",
+      "side": 1,
+      "message": "i think it is not manifestDiffMCItem\u0027s job to validate hash sizes\nalso i think validating sizes is not important for the purposes of generating a cache key. A bad hash would not invalidate a good cache b/c a good cache cannot have a bad hash",
+      "range": {
+        "startLine": 92,
+        "startChar": 1,
+        "endLine": 92,
+        "endChar": 60
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35862f29_a78aff99",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T05:48:53Z",
+      "side": 1,
+      "message": "heh, that\u0027s less nice than if opts was a plain old struct",
+      "range": {
+        "startLine": 128,
+        "startChar": 1,
+        "endLine": 131,
+        "endChar": 2
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "718c5878_a28b6945",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T05:48:53Z",
+      "side": 1,
+      "message": "will panic on a nil gitCheckout\nuse GetOverall()",
+      "range": {
+        "startLine": 186,
+        "startChar": 17,
+        "endLine": 186,
+        "endChar": 24
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "71f64c35_bedfc72d",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T05:48:53Z",
+      "side": 1,
+      "message": "dot",
+      "range": {
+        "startLine": 196,
+        "startChar": 32,
+        "endLine": 196,
+        "endChar": 34
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb2f013e_a0604a9a",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T05:48:53Z",
+      "side": 1,
+      "message": "i feel like this is a premature optimization :(\nif not this, you could iterate over directories inside parallel.WorkPool work generator and for each work item you could just send a work function to the channel. Then you don\u0027t need historyWorkItem type, closures work for you, and you wouldn\u0027t have to check !wi.ok in the end because you could just check errReturnedByWorkPool \u003d\u003d nil",
+      "range": {
+        "startLine": 223,
+        "startChar": 1,
+        "endLine": 229,
+        "endChar": 9
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad2ecfdc_cf1b8417",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T05:48:53Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 232,
+        "startChar": 2,
+        "endLine": 234,
+        "endChar": 3
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc954740_3feb2250",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T05:48:53Z",
+      "side": 1,
+      "message": "is this same thing as parallel.WorkPool?",
+      "range": {
+        "startLine": 237,
+        "startChar": 6,
+        "endLine": 238,
+        "endChar": 21
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f40ebf6_e0131bd9",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T05:48:53Z",
+      "side": 1,
+      "message": "optionally",
+      "range": {
+        "startLine": 254,
+        "startChar": 67,
+        "endLine": 254,
+        "endChar": 68
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2537cc58_71fe1e7d",
+        "filename": "milo/srcman/get.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T05:48:53Z",
+      "side": 1,
+      "message": "i don\u0027t think RunMulti would create more goroutines than the number of ch sends, so i think this is unnecessary. Then you can inline workers",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 52,
+        "endChar": 2
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "210f4951_67f42da4",
+        "filename": "milo/srcman/get.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T05:48:53Z",
+      "side": 1,
+      "message": "nit: work",
+      "range": {
+        "startLine": 55,
+        "startChar": 26,
+        "endLine": 55,
+        "endChar": 28
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15ad996e_821b2138",
+        "filename": "milo/srcman/get.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T05:48:53Z",
+      "side": 1,
+      "message": "is this the same thing as parallel.WorkPool?",
+      "range": {
+        "startLine": 54,
+        "startChar": 8,
+        "endLine": 55,
+        "endChar": 51
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f40c60d1_787d8efe",
+        "filename": "milo/srcman/get.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-06T05:48:53Z",
+      "side": 1,
+      "message": "nit: just error, since we return value explicitly",
+      "range": {
+        "startLine": 59,
+        "startChar": 17,
+        "endLine": 59,
+        "endChar": 28
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
