@@ -38,6 +38,11 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/distribution"
+	"go.chromium.org/luci/common/tsmon/store"
+	"go.chromium.org/luci/common/tsmon/target"
+	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/secrets/testsecrets"
@@ -443,6 +448,8 @@ func TestFullFlow(t *testing.T) {
 			ctl.State().Status = task.StatusSucceeded
 			ctl.State().ViewURL = "http://view_url"
 			ctl.State().TaskData = []byte("blah")
+			// Pretend invocation actually took some time.
+			clock.Get(c).(testclock.TestClock).Add(1 * time.Second)
 			return nil
 		}
 		So(e.ExecuteSerializedAction(c, invTask.Payload, 1), ShouldBeNil)
@@ -458,7 +465,7 @@ func TestFullFlow(t *testing.T) {
 			InvocationNonce: 4941627882652650080,
 			Revision:        "rev1",
 			Started:         epoch.Add(5 * time.Second),
-			Finished:        epoch.Add(5 * time.Second),
+			Finished:        epoch.Add(6 * time.Second),
 			Task:            taskBytes,
 			DebugLog:        "",
 			RetryCount:      1,
@@ -470,6 +477,7 @@ func TestFullFlow(t *testing.T) {
 		So(debugLog, ShouldContainSubstring, "[22:42:05.000] Invocation initiated (attempt 2)")
 		So(debugLog, ShouldContainSubstring, "[22:42:05.000] Starting")
 		So(debugLog, ShouldContainSubstring, "with status SUCCEEDED")
+		So(getSentDistrValue(c, metricInvocationsDurations, "abc/1", "SUCCEEDED"), ShouldEqual, 1.0)
 
 		// Previous invocation is aborted now (in Failed state).
 		inv = Invocation{ID: 9200093518582484688, JobKey: jobKey}
@@ -496,7 +504,7 @@ func TestFullFlow(t *testing.T) {
 			State:     "SCHEDULED",
 			TickNonce: 2673062197574995716,
 			TickTime:  epoch.Add(10 * time.Second),
-			PrevTime:  epoch.Add(5 * time.Second),
+			PrevTime:  epoch.Add(6 * time.Second),
 		}))
 	})
 }
@@ -647,6 +655,8 @@ func TestFullTriggeredFlow(t *testing.T) {
 			ctl.State().Status = task.StatusSucceeded
 			ctl.State().ViewURL = "http://view_url"
 			ctl.State().TaskData = []byte("blah")
+			// Pretend invocation actually took some time.
+			clock.Get(c).(testclock.TestClock).Add(15625 * time.Microsecond)
 			return nil
 		}
 		So(e.ExecuteSerializedAction(c, invTask.Payload, 0), ShouldBeNil)
@@ -657,6 +667,7 @@ func TestFullTriggeredFlow(t *testing.T) {
 		So(inv.Status, ShouldEqual, task.StatusSucceeded)
 		So(inv.MutationsCount, ShouldEqual, 2)
 		So(inv.DebugLog, ShouldContainSubstring, "[22:42:05.000] Emitting a trigger trg") // twice.
+		So(getSentDistrValue(c, metricInvocationsDurations, "abc/1", "SUCCEEDED"), ShouldEqual, 0.015625)
 
 		// All triggers will be batched into just 1 tq task.
 		batchTask := ensureOneTask(c, "invs-q")
@@ -908,6 +919,7 @@ func TestRecordOverrun(t *testing.T) {
 				DebugLog: "[22:42:00.000] New invocation should be starting now, but previous one is still starting\n" +
 					"[22:42:00.000] Total overruns thus far: 1\n",
 			}})
+		So(getSentMetric(c, metricInvocationsOverrun, "abc/1"), ShouldEqual, 1)
 	})
 }
 
@@ -1082,6 +1094,7 @@ func TestAborts(t *testing.T) {
 		Convey("AbortInvocation works", func() {
 			// Actually launch the queued invocation.
 			invID := launchInv()
+			clock.Get(c).(testclock.TestClock).Add(1 * time.Hour)
 
 			// Try to kill it w/o permission.
 			So(e.AbortInvocation(c, jobID, invID), ShouldNotBeNil) // No current identity.
@@ -1094,6 +1107,7 @@ func TestAborts(t *testing.T) {
 			inv, err := e.getInvocation(c, jobID, invID)
 			So(err, ShouldBeNil)
 			So(inv.Status, ShouldEqual, task.StatusAborted)
+			So(getSentDistrValue(c, metricInvocationsDurations, jobID, "ABORTED"), ShouldEqual, 3600)
 
 			// The job moved on with its life.
 			job, err := e.getJob(c, jobID)
@@ -1105,6 +1119,7 @@ func TestAborts(t *testing.T) {
 		Convey("AbortJob kills running invocation", func() {
 			// Actually launch the queued invocation.
 			invID := launchInv()
+			clock.Get(c).(testclock.TestClock).Add(8250 * time.Millisecond)
 
 			// Try to kill it w/o permission.
 			So(e.AbortJob(c, jobID), ShouldNotBeNil) // No current identity.
@@ -1117,6 +1132,7 @@ func TestAborts(t *testing.T) {
 			inv, err := e.getInvocation(c, jobID, invID)
 			So(err, ShouldBeNil)
 			So(inv.Status, ShouldEqual, task.StatusAborted)
+			So(getSentDistrValue(c, metricInvocationsDurations, jobID, "ABORTED"), ShouldEqual, 8.25)
 
 			// The job moved on with its life.
 			job, err := e.getJob(c, jobID)
@@ -1199,6 +1215,8 @@ func TestAddTimer(t *testing.T) {
 			}
 			clock.Get(c).(testclock.TestClock).Add(time.Minute)
 			So(e.ExecuteSerializedAction(c, tqt.Payload, 0), ShouldBeNil)
+			// Invocation is complete.
+			So(getSentDistrValue(c, metricInvocationsDurations, jobID, "SUCCEEDED"), ShouldEqual, 60.0)
 
 			// The job has finished (by timer handler). Moves back to SUSPENDED state.
 			job, err = e.getJob(c, jobID)
@@ -1273,6 +1291,10 @@ func newTestContext(now time.Time) context.Context {
 	c = mathrand.Set(c, rand.New(rand.NewSource(1000)))
 	c = testsecrets.Use(c)
 
+	c, _, _ = tsmon.WithFakes(c)
+	fake := store.NewInMemory(&target.Task{})
+	tsmon.GetState(c).SetStore(fake)
+
 	ds.GetTestable(c).AddIndexes(&ds.IndexDefinition{
 		Kind: "Job",
 		SortBy: []ds.IndexColumn{
@@ -1285,6 +1307,32 @@ func newTestContext(now time.Time) context.Context {
 	taskqueue.GetTestable(c).CreateQueue("timers-q")
 	taskqueue.GetTestable(c).CreateQueue("invs-q")
 	return c
+}
+
+// getSentMetric returns sent value or nil if value wasn't sent.
+func getSentMetric(c context.Context, m types.Metric, fieldVals ...interface{}) interface{} {
+	v, err := tsmon.GetState(c).S.Get(c, m, time.Time{}, fieldVals)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+// getSentDistrValue returns the value that was added to distribuition after
+// ensuring there was exactly 1 value sent.
+func getSentDistrValue(c context.Context, m types.Metric, fieldVals ...interface{}) float64 {
+	v := getSentMetric(c, m, fieldVals...)
+	if v == nil {
+		panic(errors.New("nothing was sent"))
+	}
+	switch d, ok := v.(*distribution.Distribution); {
+	case !ok:
+		panic(errors.New("not a distribuition"))
+	case d.Count() != 1:
+		panic(fmt.Errorf("expected 1 value, but %d values were sent with sum of %f", d.Count(), d.Sum))
+	default:
+		return d.Sum()
+	}
 }
 
 func newTestEngine() (*engineImpl, *fakeTaskManager) {

@@ -1321,15 +1321,17 @@ func (e *engineImpl) jobTimerTick(c context.Context, jobID string, tickNonce int
 //
 // Supports both v1 and v2 invocations.
 func (e *engineImpl) recordOverrun(c context.Context, jobID string, overruns int, runningInvID int64) error {
-	return runTxn(c, func(c context.Context) error {
+	var inv *Invocation
+	err := runTxn(c, func(c context.Context) error {
 		now := clock.Now(c).UTC()
-		inv, err := e.initInvocationID(c, jobID, &Invocation{
+		var initError error
+		inv, initError = e.initInvocationID(c, jobID, &Invocation{
 			Started:  now,
 			Finished: now,
 			Status:   task.StatusOverrun,
 		})
-		if err != nil {
-			return err
+		if initError != nil {
+			return initError
 		}
 		if runningInvID == 0 {
 			inv.debugLog(c, "New invocation should be starting now, but previous one is still starting")
@@ -1339,6 +1341,10 @@ func (e *engineImpl) recordOverrun(c context.Context, jobID string, overruns int
 		inv.debugLog(c, "Total overruns thus far: %d", overruns)
 		return transient.Tag.Apply(ds.Put(c, inv))
 	})
+	if err == nil {
+		inv.reportOverrunMetrics(c)
+	}
+	return err
 }
 
 // newBatchOfTriggers splits a batch of triggers into individual per-job async tasks by means
@@ -1575,6 +1581,7 @@ func (e *engineImpl) startInvocation(c context.Context, jobID string, invocation
 			}
 			if err == nil && !prev.Status.Final() {
 				prev.debugLog(c, "New invocation is starting (%d), marking this one as failed.", inv.ID)
+				// TODO(tandrii): maybe report this special case to monitoring?
 				prev.Status = task.StatusFailed
 				prev.Finished = clock.Now(c).UTC()
 				prev.MutationsCount++

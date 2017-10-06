@@ -223,7 +223,7 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 	}
 
 	// Update the invocation entity, notifying the engine about all changes.
-	return runTxn(ctx, func(c context.Context) error {
+	err = runTxn(ctx, func(c context.Context) error {
 		// Grab what's currently in the store to compare MutationsCount to what we
 		// expect it to be.
 		mostRecent := Invocation{
@@ -255,4 +255,11 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 		saving.trimDebugLog()
 		return transient.Tag.Apply(datastore.Put(c, &saving))
 	})
+	switch {
+	case err != nil:
+		return err
+	case hasFinished:
+		saving.reportCompletionMetrics(ctx)
+	}
+	return nil
 }
