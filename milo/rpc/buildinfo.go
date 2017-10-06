@@ -19,6 +19,7 @@ import (
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
+	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 
 	"google.golang.org/grpc/codes"
@@ -47,18 +48,23 @@ func (svc *BuildInfoService) Get(c context.Context, req *milo.BuildInfoRequest) 
 
 	switch {
 	case req.GetBuildbot() != nil:
-		resp, err := svc.BuildBot.GetBuildInfo(c, req.GetBuildbot(), projectHint)
-		if err != nil {
-			return nil, err
-		}
-		return resp, nil
+		return svc.BuildBot.GetBuildInfo(c, req.GetBuildbot(), projectHint)
 
 	case req.GetSwarming() != nil:
-		resp, err := svc.Swarming.GetBuildInfo(c, req.GetSwarming(), projectHint)
+		return svc.Swarming.GetBuildInfo(c, req.GetSwarming(), projectHint)
+
+	case req.GetBuildbucket() != nil:
+		// Resolve the swarming host/task from buildbucket.
+		sID, err := buildbucket.GetSwarmingID(c, req.GetBuildbucket().GetId())
 		if err != nil {
 			return nil, err
 		}
-		return resp, nil
+		sReq := &milo.BuildInfoRequest_Swarming{
+			Host: sID.Host,
+			Task: sID.TaskID,
+		}
+		// TODO(hinoka): Unify buildbucket.BuildID.Get() and this. crbug.com/765061.
+		return svc.Swarming.GetBuildInfo(c, sReq, projectHint)
 
 	default:
 		return nil, grpcutil.Errf(codes.InvalidArgument, "must supply a build")

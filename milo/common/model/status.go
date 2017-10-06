@@ -23,7 +23,8 @@ import "encoding/json"
 type Status int
 
 const (
-	// NotRun if the component has not yet been run.
+	// NotRun if the component has not yet been run.  E.g. if the component has
+	// been scheduled, but is pending execution.
 	NotRun Status = iota // 100 Gray
 
 	// Running if the component is currently running.

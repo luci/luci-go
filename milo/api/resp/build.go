@@ -35,8 +35,9 @@ type MiloBuild struct {
 	// Summary is a top level summary of the page.
 	Summary BuildComponent
 
-	// SourceStamp gives information about how the build came about.
-	SourceStamp *SourceStamp
+	// Trigger gives information about how and with what information
+	// the build was triggered.
+	Trigger *Trigger
 
 	// Components is a detailed list of components and subcomponents of the page.
 	// This is most often used for steps (buildbot/luci) or deps (luci).
@@ -57,13 +58,17 @@ type MiloBuild struct {
 	Blame []*Commit
 }
 
-// SourceStamp is the combination of pointing to a single commit, with information
-// about where that commit came from (eg. the repository).
-type SourceStamp struct {
+// Trigger is the combination of pointing to a single commit, with information
+// about where that commit came from (e.g. the repository), and the project
+// that triggered it.
+type Trigger struct {
 	Commit
 	// Source is the trigger source.  In buildbot, this would be the "Reason".
 	// This has no meaning in SwarmBucket and DM yet.
 	Source string
+	// Project is the name of the LUCI project responsible for
+	// triggering the build.
+	Project string
 }
 
 // Property specifies k/v pair representing some
@@ -316,17 +321,17 @@ func (rb *MiloBuild) SummarizeTo(c context.Context, bs *model.BuildSummary) erro
 			bs.CurrentStep = cs.toModelSummary()
 		}
 	}
-	if rb.SourceStamp != nil {
+	if rb.Trigger != nil {
 		// TODO(hinoka, iannucci): This should be full manifests, but lets just use
 		// single revisions for now. HACKS!
-		if rb.SourceStamp.Revision != nil {
-			revisionBytes, err := hex.DecodeString(rb.SourceStamp.Revision.Label)
+		if rb.Trigger.Revision != nil {
+			revisionBytes, err := hex.DecodeString(rb.Trigger.Revision.Label)
 			if err != nil {
 				logging.WithError(err).Warningf(c, "bad revision (not hex-decodable)")
 			} else {
 				bs.Manifests = append(bs.Manifests, model.ManifestLink{
 					Name: "REVISION",
-					ID:   []byte(rb.SourceStamp.Revision.Label),
+					ID:   []byte(rb.Trigger.Revision.Label),
 				})
 				consoles, err := common.GetAllConsoles(c, bs.BuilderID)
 				if err != nil {
@@ -341,10 +346,10 @@ func (rb *MiloBuild) SummarizeTo(c context.Context, bs *model.BuildSummary) erro
 				}
 			}
 		}
-		if rb.SourceStamp.Changelist != nil {
+		if rb.Trigger.Changelist != nil {
 			bs.Patches = append(bs.Patches, model.PatchInfo{
-				Link:        rb.SourceStamp.Changelist.Link,
-				AuthorEmail: rb.SourceStamp.AuthorEmail,
+				Link:        rb.Trigger.Changelist.Link,
+				AuthorEmail: rb.Trigger.AuthorEmail,
 			})
 		}
 	}

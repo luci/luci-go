@@ -255,10 +255,10 @@ func AddLogDogToBuild(
 		var rev string
 		err := json.Unmarshal([]byte(jrev), &rev)
 		if err == nil {
-			if build.SourceStamp == nil {
-				build.SourceStamp = &resp.SourceStamp{}
+			if build.Trigger == nil {
+				build.Trigger = &resp.Trigger{}
 			}
-			build.SourceStamp.Revision = resp.NewLink(
+			build.Trigger.Revision = resp.NewLink(
 				rev, fmt.Sprintf("https://crrev.com/%s", rev))
 		}
 	}

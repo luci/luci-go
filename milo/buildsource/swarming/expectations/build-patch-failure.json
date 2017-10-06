@@ -30,7 +30,7 @@
       "Failure Patch failure"
     ]
   },
-  "SourceStamp": null,
+  "Trigger": null,
   "Components": [
     {
       "Label": "update_scripts",

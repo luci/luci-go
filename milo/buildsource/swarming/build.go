@@ -414,10 +414,10 @@ func addBuildsetInfo(build *resp.MiloBuild, tags map[string]string) {
 			// Not a well-formed gerrit patchset.
 			return
 		}
-		if build.SourceStamp == nil {
-			build.SourceStamp = &resp.SourceStamp{}
+		if build.Trigger == nil {
+			build.Trigger = &resp.Trigger{}
 		}
-		build.SourceStamp.Changelist = resp.NewLink(
+		build.Trigger.Changelist = resp.NewLink(
 			"Gerrit CL", fmt.Sprintf("https://%s/c/%s/%s", parts[0], parts[1], parts[2]))
 
 	}
@@ -446,6 +446,16 @@ func addRecipeLink(build *resp.MiloBuild, tags map[string]string) {
 	}
 }
 
+// addProjectInfo adds the luci_project swarming tag to the build.
+func addProjectInfo(build *resp.MiloBuild, tags map[string]string) {
+	if proj, ok := tags["luci_project"]; ok {
+		if build.Trigger == nil {
+			build.Trigger = &resp.Trigger{}
+		}
+		build.Trigger.Project = proj
+	}
+}
+
 func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTaskResult, build *resp.MiloBuild) error {
 	build.Summary.Label = sr.TaskId
 	build.Summary.Type = resp.Recipe
@@ -461,6 +471,7 @@ func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTas
 	addBanner(build, tags)
 	addBuilderLink(c, build, tags)
 	addRecipeLink(build, tags)
+	addProjectInfo(build, tags)
 
 	// Add a link to the bot.
 	if sr.BotId != "" {

@@ -42,11 +42,19 @@ message BuildInfoRequest {
     string task = 2;
   }
 
+  // The request containing a BuildBucket build.
+  message Buildbucket{
+    // The build ID of the buildbucket build.
+    int64 id = 1;
+  }
+
   oneof build {
     // Request a BuildBot build.
     BuildBot buildbot = 1;
     // Request a Swarming build.
     Swarming swarming = 2;
+    // Request a Buildbucket build.
+    Buildbucket buildbucket = 3;
   }
 
   // Project hint is a LUCI project suggestion for this build. Some builds,
