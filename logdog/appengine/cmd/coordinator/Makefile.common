@@ -58,6 +58,10 @@ ALL_SERVICES = default logs services backend static
 YAMLS = dispatch queue cron index
 ALL_GKE_CLUSTERS = collector archivist
 
+GAE_VERSION := $(shell \
+	cd $(APP_DIR) && \
+	gae.py version -A $(CLOUD_PROJECT) $(GAE_PY_EXTRA_ARGS))
+
 # Define a literal space and comma, for substitution.
 space :=
 space +=
@@ -141,13 +145,21 @@ upload: $(addsuffix -resources,$(ALL_SERVICES))
 			--force \
 			$(ALL_SERVICES)
 
+# "switch" switches all traffic over to the new set of instances.
+#
+# Ideally we'd "migrate', which is a gradual control flow. However, migration is
+# not supported in Flex environment at the moment, so we have to do a hard
+# "set-traffic".
+#
+# Ideal command is:
+# $ gcloud app versions migrate
 .PHONY: switch
 switch:
 	cd $(APP_DIR) && \
 		gcloud \
 			--project $(CLOUD_PROJECT) \
-			app versions migrate \
-				$$(gae.py version -A $(CLOUD_PROJECT) $(GAE_PY_EXTRA_ARGS))
+			app services set-traffic $(ALL_SERVICES) \
+				--splits=$(GAE_VERSION)=100
 
 # This is a special make target to upload the static module named "dev". This
 # version can be specifically whitelisted by the service account to enable
