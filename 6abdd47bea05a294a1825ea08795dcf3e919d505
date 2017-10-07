@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a2cf206e_6916a8d0",
+        "filename": "scheduler/appengine/engine/controller.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-07T00:16:50Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 98,
+        "startChar": 7,
+        "endLine": 98,
+        "endChar": 9
+      },
+      "revId": "6abdd47bea05a294a1825ea08795dcf3e919d505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9cd5867f_bc3443f2",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1989,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-07T00:16:50Z",
+      "side": 1,
+      "message": "off (I think that\u0027s what you meant)",
+      "range": {
+        "startLine": 1989,
+        "startChar": 34,
+        "endLine": 1989,
+        "endChar": 37
+      },
+      "revId": "6abdd47bea05a294a1825ea08795dcf3e919d505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9330fa92_0146db84",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1989,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-07T00:16:50Z",
+      "side": 1,
+      "message": "s",
+      "range": {
+        "startLine": 1989,
+        "startChar": 23,
+        "endLine": 1989,
+        "endChar": 24
+      },
+      "revId": "6abdd47bea05a294a1825ea08795dcf3e919d505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
