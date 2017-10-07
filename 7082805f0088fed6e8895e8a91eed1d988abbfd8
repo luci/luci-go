@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2aaa7911_f3f40e88",
+        "filename": "milo/api/proto/buildbot.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-07T00:25:31Z",
+      "side": 1,
+      "message": "why 10?",
+      "range": {
+        "startLine": 70,
+        "startChar": 28,
+        "endLine": 70,
+        "endChar": 30
+      },
+      "revId": "7082805f0088fed6e8895e8a91eed1d988abbfd8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
