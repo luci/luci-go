@@ -42,6 +42,7 @@ var apiUsage = metric.NewCounter(
 	field.String("method"),
 	field.String("master"),
 	field.String("builder"),
+	field.Bool("exclude_deprecated"),
 )
 
 // Service is a service implementation that displays BuildBot builds.
@@ -53,7 +54,7 @@ var errNotFoundGRPC = grpc.Errorf(codes.NotFound, "Not found")
 func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuildRequest) (
 	*milo.BuildbotBuildJSON, error) {
 
-	apiUsage.Add(c, 1, "GetBuildbotBuildJSON", req.Master, req.Builder)
+	apiUsage.Add(c, 1, "GetBuildbotBuildJSON", req.Master, req.Builder, req.ExcludeDeprecated)
 
 	if req.Master == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "No master specified")
@@ -95,7 +96,7 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBuildsRequest) (
 	*milo.BuildbotBuildsJSON, error) {
 
-	apiUsage.Add(c, 1, "GetBuildbotBuildsJSON", req.Master, req.Builder)
+	apiUsage.Add(c, 1, "GetBuildbotBuildsJSON", req.Master, req.Builder, req.ExcludeDeprecated)
 
 	if req.Master == "" {
 		return nil, grpc.Errorf(codes.InvalidArgument, "No master specified")
@@ -134,6 +135,9 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 		Builds: make([]*milo.BuildbotBuildJSON, len(res.Builds)),
 	}
 	for i, b := range res.Builds {
+		if req.ExcludeDeprecated {
+			excludeDeprecatedFromBuild(b)
+		}
 		bs, err := json.Marshal(b)
 		if err != nil {
 			return nil, err
@@ -152,7 +156,7 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 		return nil, grpc.Errorf(codes.InvalidArgument, "No master specified")
 	}
 
-	apiUsage.Add(c, 1, "GetCompressedMasterJSON", req.Name, "")
+	apiUsage.Add(c, 1, "GetCompressedMasterJSON", req.Name, "", req.ExcludeDeprecated)
 
 	cu := auth.CurrentUser(c)
 	logging.Debugf(c, "%s is making a master request for %s", cu.Identity, req.Name)
