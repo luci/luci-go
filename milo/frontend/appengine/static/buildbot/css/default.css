@@ -24,6 +24,11 @@ footer {
   clear: both;
 }
 
+.clear {
+  clear: both;
+  margin: 0;
+}
+
 .prelude {
   float: left;
 }
