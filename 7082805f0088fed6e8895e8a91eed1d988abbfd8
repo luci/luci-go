@@ -22,6 +22,30 @@
       "revId": "7082805f0088fed6e8895e8a91eed1d988abbfd8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e776733d_08f2c8d0",
+        "filename": "milo/api/proto/buildbot.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-07T00:32:07Z",
+      "side": 1,
+      "message": "exclude_deprecated is a standard field in all request messages in this file. The idea was, in case we add more fields, they will have \"normal\" tags, but exclude_deprecated will stay the last one. See other request messages too",
+      "parentUuid": "2aaa7911_f3f40e88",
+      "range": {
+        "startLine": 70,
+        "startChar": 28,
+        "endLine": 70,
+        "endChar": 30
+      },
+      "revId": "7082805f0088fed6e8895e8a91eed1d988abbfd8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
