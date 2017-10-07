@@ -12,7 +12,20 @@ indexes:
   - name: master
   - name: builder
   - name: number
+
+- kind: buildbotBuild
+  properties:
+  - name: finished
+  - name: master
+  - name: builder
+  - name: number
     direction: desc
+
+- kind: buildbotBuild
+  properties:
+  - name: master
+  - name: builder
+  - name: number
 
 - kind: buildbotBuild
   properties:
