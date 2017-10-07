@@ -22,6 +22,30 @@
       "revId": "4ea0f7a3a29dcbd57a3b436d87e28c4096a47062",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea66a175_08fee402",
+        "filename": "common/auth/authtest/fakectx.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-07T00:59:26Z",
+      "side": 1,
+      "message": "yeah, that\u0027s a mistake",
+      "parentUuid": "3f1a70ef_248a8165",
+      "range": {
+        "startLine": 125,
+        "startChar": 1,
+        "endLine": 125,
+        "endChar": 14
+      },
+      "revId": "4ea0f7a3a29dcbd57a3b436d87e28c4096a47062",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
