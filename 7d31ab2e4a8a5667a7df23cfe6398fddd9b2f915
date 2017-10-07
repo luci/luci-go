@@ -22,6 +22,30 @@
       "revId": "7d31ab2e4a8a5667a7df23cfe6398fddd9b2f915",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "338961c9_dd63bc5a",
+        "filename": "logdog/appengine/cmd/coordinator/logs/module-logs.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-07T00:17:26Z",
+      "side": 1,
+      "message": "Every instance seems different. Let\u0027s try uploading this and switching versions and see if they fix themselves?",
+      "parentUuid": "add821cc_786c4f05",
+      "range": {
+        "startLine": 43,
+        "startChar": 2,
+        "endLine": 43,
+        "endChar": 23
+      },
+      "revId": "7d31ab2e4a8a5667a7df23cfe6398fddd9b2f915",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
