@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3f1a70ef_248a8165",
+        "filename": "common/auth/authtest/fakectx.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2017-10-07T00:55:04Z",
+      "side": 1,
+      "message": "the same call was already made on line 110. Why repeat?",
+      "range": {
+        "startLine": 125,
+        "startChar": 1,
+        "endLine": 125,
+        "endChar": 14
+      },
+      "revId": "4ea0f7a3a29dcbd57a3b436d87e28c4096a47062",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
