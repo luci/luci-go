@@ -43,20 +43,21 @@ func TestLiveExported(t *testing.T) {
 		So(err, ShouldBeNil)
 		defer os.Remove(tfn)
 
-		le := &liveExport{path: tfn}
+		closed := false
+		le := &liveExport{
+			path:   tfn,
+			closer: func() { closed = true },
+		}
 
 		Convey("Can only be closed once", func() {
 			le.Close()
 			So(func() { le.Close() }, ShouldPanic)
 		})
 
-		Convey("Removes the file when it is closed", func() {
-			_, err := os.Stat(tfn)
-			So(err, ShouldBeNil)
-
+		Convey("Calls closer when it is closed", func() {
+			So(closed, ShouldBeFalse)
 			le.Close()
-			_, err = os.Stat(tfn)
-			So(os.IsNotExist(err), ShouldBeTrue)
+			So(closed, ShouldBeTrue)
 		})
 
 		Convey("Can add to command", func() {
