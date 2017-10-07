@@ -8,7 +8,7 @@ import prpc "go.chromium.org/luci/grpc/prpc"
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import milo1 "go.chromium.org/luci/common/proto/milo"
+import milo2 "go.chromium.org/luci/common/proto/milo"
 
 import (
 	context "golang.org/x/net/context"
@@ -275,10 +275,10 @@ type BuildInfoResponse struct {
 	// The LUCI project that this build belongs to.
 	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
 	// The main build step.
-	Step *milo1.Step `protobuf:"bytes,2,opt,name=step" json:"step,omitempty"`
+	Step *milo2.Step `protobuf:"bytes,2,opt,name=step" json:"step,omitempty"`
 	// The LogDog annotation stream for this build. The Prefix will be populated
 	// and can be used as the prefix for any un-prefixed LogdogStream in "step".
-	AnnotationStream *milo1.LogdogStream `protobuf:"bytes,3,opt,name=annotation_stream,json=annotationStream" json:"annotation_stream,omitempty"`
+	AnnotationStream *milo2.LogdogStream `protobuf:"bytes,3,opt,name=annotation_stream,json=annotationStream" json:"annotation_stream,omitempty"`
 }
 
 func (m *BuildInfoResponse) Reset()                    { *m = BuildInfoResponse{} }
@@ -293,14 +293,14 @@ func (m *BuildInfoResponse) GetProject() string {
 	return ""
 }
 
-func (m *BuildInfoResponse) GetStep() *milo1.Step {
+func (m *BuildInfoResponse) GetStep() *milo2.Step {
 	if m != nil {
 		return m.Step
 	}
 	return nil
 }
 
-func (m *BuildInfoResponse) GetAnnotationStream() *milo1.LogdogStream {
+func (m *BuildInfoResponse) GetAnnotationStream() *milo2.LogdogStream {
 	if m != nil {
 		return m.AnnotationStream
 	}
