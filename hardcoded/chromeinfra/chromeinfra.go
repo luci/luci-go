@@ -74,3 +74,19 @@ func SecretsDir() string {
 	})
 	return secrets.val
 }
+
+// SupportedCIPDPlatforms is the defualt set of CIPD platforms supported by
+// Chrome Operations.
+func SupportedCIPDPlatforms() []string {
+	return []string{
+		"linux-386",
+		"linux-amd64",
+		"linux-arm64",
+		"linux-armv6l",
+		"linux-mips64",
+		"mac-amd64",
+		"mac-amd64",
+		"windows-386",
+		"windows-amd64",
+	}
+}
