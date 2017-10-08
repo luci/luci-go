@@ -46,11 +46,12 @@ func (t Ternary) filter(q *datastore.Query, fieldName string) *datastore.Query {
 
 // Query is a build query.
 type Query struct {
-	Master   string
-	Builder  string
-	Limit    int
-	Finished Ternary
-	Cursor   string
+	Master      string
+	Builder     string
+	Limit       int
+	Finished    Ternary
+	Cursor      string
+	NumbersOnly bool
 }
 
 func (q *Query) dsQuery() *datastore.Query {
@@ -64,6 +65,9 @@ func (q *Query) dsQuery() *datastore.Query {
 	dsq = q.Finished.filter(dsq, "finished")
 	if q.Limit > 0 {
 		dsq = dsq.Limit(int32(q.Limit))
+	}
+	if q.NumbersOnly {
+		dsq = dsq.KeysOnly(true)
 	}
 	return dsq
 }

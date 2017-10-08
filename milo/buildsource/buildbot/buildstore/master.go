@@ -79,19 +79,19 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 			work <- func() error {
 				// Get the most recent 50 buildNums on the builder to simulate what the
 				// cachedBuilds field looks like from the real buildbot master json.
-				q := datastore.NewQuery(buildKind).
-					Eq("finished", true).
-					Eq("master", name).
-					Eq("builder", builderName).
-					Limit(50).
-					Order("-number").
-					KeysOnly(true)
-				var builds []*buildEntity
-				if err := datastore.GetAll(c, q, &builds); err != nil {
+				q := Query{
+					Master:      name,
+					Builder:     builderName,
+					Finished:    Yes,
+					Limit:       50,
+					NumbersOnly: true,
+				}
+				res, err := GetBuilds(c, q)
+				if err != nil {
 					return err
 				}
-				builder.CachedBuilds = make([]int, len(builds))
-				for i, b := range builds {
+				builder.CachedBuilds = make([]int, len(res.Builds))
+				for i, b := range res.Builds {
 					builder.CachedBuilds[i] = b.Number
 				}
 				return nil
