@@ -73,7 +73,7 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 		req.MasterName, req.BuilderName, req.BuildNumber)
 
 	// Load the BuildBot build from storage.
-	build, err := buildstore.GetBuild(c, req.MasterName, req.BuilderName, int(req.BuildNumber))
+	build, err := buildstore.GetBuild(c, req.MasterName, req.BuilderName, int(req.BuildNumber), nil)
 	if err != nil {
 		switch common.ErrorTag.In(err) {
 		case common.CodeNotFound:

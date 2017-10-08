@@ -71,7 +71,7 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 		return nil, err
 	}
 
-	b, err := buildstore.GetBuild(c, req.Master, req.Builder, int(req.BuildNum))
+	b, err := buildstore.GetBuild(c, req.Master, req.Builder, int(req.BuildNum), req.Emulation)
 	switch {
 	case common.ErrorTag.In(err) == common.CodeNotFound:
 		return nil, errNotFoundGRPC
@@ -126,7 +126,7 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 	if !req.IncludeCurrent {
 		q.Finished = buildstore.Yes
 	}
-	res, err := buildstore.GetBuilds(c, q)
+	res, err := buildstore.GetBuilds(c, q, req.Emulation)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +165,7 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 		return nil, err
 	}
 
-	master, err := buildstore.GetMaster(c, req.Name, true)
+	master, err := buildstore.GetMaster(c, req.Name, true, req.Emulation)
 	switch {
 	case common.ErrorTag.In(err) == common.CodeNotFound:
 		return nil, errNotFoundGRPC

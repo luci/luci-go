@@ -20,8 +20,13 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/buildbucket"
+	bbapi "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/milo/api/buildbot"
+	api "go.chromium.org/luci/milo/api/proto"
 )
 
 // Ternary has 3 defined values: either (zero), yes and no.
@@ -81,7 +86,81 @@ type QueryResult struct {
 
 // GetBuilds executes a build query and returns results.
 // Does not check access.
-func GetBuilds(c context.Context, q Query) (*QueryResult, error) {
+func GetBuilds(c context.Context, q Query, emOptions *api.EmulationOptions) (*QueryResult, error) {
+	if emOptions != nil {
+		return getEmulationBuilds(c, q, *emOptions)
+	}
+	return getDatastoreBuilds(c, q)
+}
+
+func getEmulationBuilds(c context.Context, q Query, emOptions api.EmulationOptions) (*QueryResult, error) {
+	if q.Cursor != "" {
+		// build query emulation does not support cursors
+		logging.Warningf(c, "ignoring cursor %q", q.Cursor)
+		q.Cursor = ""
+	}
+
+	bb, err := buildbucketClient(c)
+	if err != nil {
+		return nil, err
+	}
+
+	search := bb.Search().
+		Bucket(emOptions.Bucket).
+		Tag(strpair.Format(buildbucket.TagBuilder, q.Builder)).
+		Context(c)
+	switch q.Finished {
+	case Yes:
+		search.Status(bbapi.StatusCompleted)
+	case No:
+		search.Status(bbapi.StatusIncomplete)
+	}
+
+	msgs, err := search.Fetch(q.Limit, nil)
+	if err != nil {
+		return nil, errors.Annotate(err, "searching on buildbucket").Err()
+	}
+
+	var builds []*buildbot.Build
+	if q.Limit > 0 {
+		builds = make([]*buildbot.Build, 0, q.Limit)
+	}
+	for _, msg := range msgs {
+		b, err := buildFromBuildbucket(c, msg, q.NumbersOnly)
+		if err != nil {
+			return nil, err
+		}
+		if b.Number < int(emOptions.StartFrom) {
+			break
+		}
+		builds = append(builds, b)
+
+	}
+
+	// Still need to load builds from datastore?
+	if q.Limit <= 0 || len(builds) < q.Limit {
+		// get builds up to emOptions.StartFrom.
+		q.Cursor = strconv.Itoa(int(-emOptions.StartFrom))
+		if q.Limit > 0 {
+			// don't fetch more than we need
+			q.Limit -= len(builds)
+		}
+		dsRes, err := getDatastoreBuilds(c, q)
+		if err != nil {
+			return nil, errors.Annotate(err, "loading datastore builds").Err()
+		}
+		for _, b := range dsRes.Builds {
+			if b.Number >= int(emOptions.StartFrom) {
+				continue
+			}
+			builds = append(builds, b)
+		}
+	}
+
+	return &QueryResult{Builds: builds}, nil
+}
+
+func getDatastoreBuilds(c context.Context, q Query) (*QueryResult, error) {
 	switch {
 	case q.Master == "":
 		return nil, errors.New("master is required")

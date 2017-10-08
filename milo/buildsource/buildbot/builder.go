@@ -133,7 +133,7 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 	result := &resp.Builder{
 		Name: builderName,
 	}
-	master, err := buildstore.GetMaster(c, masterName, false)
+	master, err := buildstore.GetMaster(c, masterName, false, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +199,7 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 			q.Limit = limit
 			q.Cursor = cursor
 			q.Finished = buildstore.Yes
-			res, err := buildstore.GetBuilds(c, q)
+			res, err := buildstore.GetBuilds(c, q, nil)
 			if err != nil {
 				return err
 			}
@@ -214,7 +214,7 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 		work <- func() error {
 			q := q
 			q.Finished = buildstore.No
-			res, err := buildstore.GetBuilds(c, q)
+			res, err := buildstore.GetBuilds(c, q, nil)
 			if err != nil {
 				return err
 			}

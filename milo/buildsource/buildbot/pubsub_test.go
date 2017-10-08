@@ -116,7 +116,7 @@ func TestPubSub(t *testing.T) {
 				},
 			}
 			So(buildstore.SaveMaster(c, m, false, nil), ShouldBeNil)
-			lm, err := buildstore.GetMaster(c, "fake", false)
+			lm, err := buildstore.GetMaster(c, "fake", false, nil)
 			So(err, ShouldBeNil)
 			So(lm.Builders["fake builder"].PendingBuildStates[0].Source.Changes[0].Comments, ShouldResemble, "")
 		})
@@ -133,7 +133,7 @@ func TestPubSub(t *testing.T) {
 
 			So(err, ShouldBeNil)
 			Convey("Load build entry", func() {
-				loadB, err := buildstore.GetBuild(c, "Fake buildbotMasterEntry", "Fake buildername", 1234)
+				loadB, err := buildstore.GetBuild(c, "Fake buildbotMasterEntry", "Fake buildername", 1234, nil)
 				So(err, ShouldBeNil)
 				So(loadB.Master, ShouldEqual, "Fake buildbotMasterEntry")
 				So(loadB.Internal, ShouldEqual, false)
@@ -147,7 +147,7 @@ func TestPubSub(t *testing.T) {
 					Master:  build.Master,
 					Builder: build.Buildername,
 				}
-				res, err := buildstore.GetBuilds(c, q)
+				res, err := buildstore.GetBuilds(c, q, nil)
 				So(err, ShouldBeNil)
 				So(len(res.Builds), ShouldEqual, 1)
 				So(res.Builds[0].Currentstep, ShouldEqual, "this is a string")
@@ -155,7 +155,7 @@ func TestPubSub(t *testing.T) {
 				Convey("Query for finished entries should be 1", func() {
 					q := q
 					q.Finished = buildstore.Yes
-					res, err := buildstore.GetBuilds(c, q)
+					res, err := buildstore.GetBuilds(c, q, nil)
 					So(err, ShouldBeNil)
 					So(len(res.Builds), ShouldEqual, 1)
 					So(res.Builds[0].Currentstep, ShouldEqual, "this is a string")
@@ -163,7 +163,7 @@ func TestPubSub(t *testing.T) {
 				Convey("Query for unfinished entries should be 0", func() {
 					q := q
 					q.Finished = buildstore.No
-					res, err := buildstore.GetBuilds(c, q)
+					res, err := buildstore.GetBuilds(c, q, nil)
 					So(err, ShouldBeNil)
 					So(len(res.Builds), ShouldEqual, 0)
 				})
@@ -184,7 +184,7 @@ func TestPubSub(t *testing.T) {
 					Master:   "Fake buildbotMasterEntry",
 					Builder:  "Fake buildername",
 					Finished: buildstore.Yes,
-				})
+				}, nil)
 				So(err, ShouldBeNil)
 				So(len(res.Builds), ShouldEqual, 3) // 1235, 1237, 1239
 			})
@@ -237,11 +237,11 @@ func TestPubSub(t *testing.T) {
 			})
 			So(h.Code, ShouldEqual, 200)
 			Convey("And stores correctly", func() {
-				loadB, err := buildstore.GetBuild(c, b.Master, b.Buildername, b.Number)
+				loadB, err := buildstore.GetBuild(c, b.Master, b.Buildername, b.Number, nil)
 				So(err, ShouldBeNil)
 				So(loadB.Master, ShouldEqual, "Fake buildbotMasterEntry")
 				So(loadB.Currentstep, ShouldEqual, "this is a string")
-				m, err := buildstore.GetMaster(c, "Fake buildbotMasterEntry", false)
+				m, err := buildstore.GetMaster(c, "Fake buildbotMasterEntry", false, nil)
 				So(err, ShouldBeNil)
 				So(m.Modified.Unix(), ShouldEqual, 981173106)
 				So(m.Name, ShouldEqual, "Fake buildbotMasterEntry")
@@ -265,7 +265,7 @@ func TestPubSub(t *testing.T) {
 					Request: r,
 				})
 				So(h.Code, ShouldEqual, 200)
-				m, err := buildstore.GetMaster(c, "Fake buildbotMasterEntry", false)
+				m, err := buildstore.GetMaster(c, "Fake buildbotMasterEntry", false, nil)
 				So(err, ShouldBeNil)
 				So(m.Project.Title, ShouldEqual, "some other title")
 				So(m.Modified.Unix(), ShouldEqual, 981173107)
@@ -284,7 +284,7 @@ func TestPubSub(t *testing.T) {
 					Request: r,
 				})
 				So(h.Code, ShouldEqual, 200)
-				loadB, err := buildstore.GetBuild(c, "Fake buildbotMasterEntry", "Fake buildername", 1234)
+				loadB, err := buildstore.GetBuild(c, "Fake buildbotMasterEntry", "Fake buildername", 1234, nil)
 				So(err, ShouldBeNil)
 				So(loadB.Times, ShouldResemble, b.Times)
 				Convey("And another pending build is rejected", func() {
@@ -300,7 +300,7 @@ func TestPubSub(t *testing.T) {
 						Request: r,
 					})
 					So(h.Code, ShouldEqual, 200)
-					loadB, err := buildstore.GetBuild(c, "Fake buildbotMasterEntry", "Fake buildername", 1234)
+					loadB, err := buildstore.GetBuild(c, "Fake buildbotMasterEntry", "Fake buildername", 1234, nil)
 					So(err, ShouldBeNil)
 					So(loadB.Times.Start, ShouldResemble, unixTime(123))
 					So(loadB.Times.Finish, ShouldResemble, unixTime(124))
@@ -320,7 +320,7 @@ func TestPubSub(t *testing.T) {
 					Request: r,
 				})
 				So(h.Code, ShouldEqual, 200)
-				loadB, err := buildstore.GetBuild(c, "Fake buildbotMasterEntry", "Fake buildername", 1235)
+				loadB, err := buildstore.GetBuild(c, "Fake buildbotMasterEntry", "Fake buildername", 1235, nil)
 				So(err, ShouldBeNil)
 				So(loadB.Finished, ShouldEqual, false)
 				So(loadB.Times.Start, ShouldResemble, unixTime(123))
@@ -338,7 +338,7 @@ func TestPubSub(t *testing.T) {
 					},
 				})
 				So(h.Code, ShouldEqual, 200)
-				loadB, err := buildstore.GetBuild(c, "Fake buildbotMasterEntry", "Fake buildername", 1235)
+				loadB, err := buildstore.GetBuild(c, "Fake buildbotMasterEntry", "Fake buildername", 1235, nil)
 				So(err, ShouldBeNil)
 				So(loadB.Finished, ShouldBeTrue)
 				So(loadB.Times.Start, ShouldResemble, unixTime(123))
@@ -413,11 +413,11 @@ func TestPubSub(t *testing.T) {
 					Identity:       "user:alicebob@google.com",
 					IdentityGroups: []string{"googlers", "all"},
 				})
-				loadB, err := buildstore.GetBuild(c, b.Master, b.Buildername, b.Number)
+				loadB, err := buildstore.GetBuild(c, b.Master, b.Buildername, b.Number, nil)
 				So(err, ShouldBeNil)
 				So(loadB, ShouldResemble, b)
 
-				m, err := buildstore.GetMaster(c, "Fake buildbotMasterEntry", false)
+				m, err := buildstore.GetMaster(c, "Fake buildbotMasterEntry", false, nil)
 				So(err, ShouldBeNil)
 				So(m.Modified.Unix(), ShouldEqual, 981173106)
 				So(m.Name, ShouldEqual, "Fake buildbotMasterEntry")

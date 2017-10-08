@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/milo/api/buildbot"
+	"go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
 )
@@ -43,7 +44,7 @@ type Master struct {
 // and the list of Cached builds.
 //
 // Does not check access.
-func GetMaster(c context.Context, name string, refreshState bool) (*Master, error) {
+func GetMaster(c context.Context, name string, refreshState bool, emOptions map[string]*milo.EmulationOptions) (*Master, error) {
 	entity := masterEntity{Name: name}
 	err := datastore.Get(c, &entity)
 	if err == datastore.ErrNoSuchEntity {
@@ -77,6 +78,7 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 			builderName := builderName
 			builder := builder
 			work <- func() error {
+
 				// Get the most recent 50 buildNums on the builder to simulate what the
 				// cachedBuilds field looks like from the real buildbot master json.
 				q := Query{
@@ -86,7 +88,7 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 					Limit:       50,
 					NumbersOnly: true,
 				}
-				res, err := GetBuilds(c, q)
+				res, err := GetBuilds(c, q, emOptions[builderName])
 				if err != nil {
 					return err
 				}

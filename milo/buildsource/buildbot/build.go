@@ -436,7 +436,7 @@ func Build(c context.Context, master, builder string, buildNum int) (*resp.MiloB
 	if err := buildstore.CanAccessMaster(c, master); err != nil {
 		return nil, err
 	}
-	b, err := buildstore.GetBuild(c, master, builder, buildNum)
+	b, err := buildstore.GetBuild(c, master, builder, buildNum, nil)
 	if err != nil {
 		return nil, err
 	}

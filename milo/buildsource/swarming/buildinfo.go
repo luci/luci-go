@@ -233,7 +233,7 @@ func resolveLogDogStreamAddrFromTags(tags map[string]string, taskID string, tryN
 		return nil, errors.Annotate(err, "").Err()
 	}
 	p := tasktemplate.Params{
-		SwarmingRunID: runID,
+		SwarmingRunID: runID, // TODO: delete this, there is nothing to resolve
 	}
 	if logLocation, err = p.Resolve(logLocation); err != nil {
 		return nil, errors.Annotate(err, "failed to resolve swarming task templating in 'log_location'").Err()

@@ -114,7 +114,7 @@ func getOSInfo(c context.Context, b *buildbot.Build, m *buildstore.Master) (
 	// Fetch the master info from datastore if not provided.
 	if m.Name == "" {
 		logging.Infof(c, "Fetching info for master %s", b.Master)
-		freshMaster, err := buildstore.GetMaster(c, b.Master, false)
+		freshMaster, err := buildstore.GetMaster(c, b.Master, false, nil)
 		if err != nil {
 			logging.WithError(err).Errorf(c, "fetching master %q", b.Master)
 			return

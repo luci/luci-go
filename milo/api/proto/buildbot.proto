@@ -24,6 +24,10 @@ message MasterRequest {
   // to deprecate:
   // - slave info
   bool exclude_deprecated = 10;
+  // Emulation controls LUCI emulation.
+  // Map key is a builder name.
+  // If options is nil for a builder, the builder defaults apply.
+  map<string, EmulationOptions> emulation = 11;
 }
 
 // The response message containing master information.
@@ -47,6 +51,9 @@ message BuildbotBuildRequest {
   // to deprecate:
   // - slave info
   bool exclude_deprecated = 10;
+  // Emulation controls LUCI emulation.
+  // If nil, the default builder settings apply.
+  EmulationOptions emulation = 11;
 }
 
 // The response message for a specific build.
@@ -68,6 +75,9 @@ message BuildbotBuildsRequest {
   // to deprecate:
   // - slave info
   bool exclude_deprecated = 10;
+  // Emulation controls LUCI emulation.
+  // If nil, the default builder settings apply.
+  EmulationOptions emulation = 11;
 }
 
 // The response message for multiple builds in a builder.
@@ -75,4 +85,17 @@ message BuildbotBuildsJSON {
   reserved 2; // was used for "cursor" field
   // builds is the list of builds resulting from the builds request.
   repeated BuildbotBuildJSON builds = 1;
+}
+
+// EmulationOptions defines how to emulate LUCI
+// for a builder.
+message EmulationOptions {
+  // StartFrom is a build number that defines a boundary
+  // between Buildbot and LUCI builds for a given builder.
+  // Buildbot builds will be returned up to this number-1.
+  // LUCI builds will be returned starting from this number.
+  int32 start_from = 1;
+  // Bucket specifies the LUCI bucket corresponding to the master
+  // of the builder in question.
+  string bucket = 2;
 }

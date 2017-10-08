@@ -23,6 +23,10 @@ const (
 	StatusStarted = "STARTED"
 	// StatusCompleted means a build has completed. See its Result.
 	StatusCompleted = "COMPLETED"
+	// StatusIncomplete is a status filter that matches StatusScheduled
+	// or StatusStarted. It can be used only when searching.
+	// A build cannot have this status.
+	StatusIncomplete = "INCOMPLETE"
 )
 
 const (
