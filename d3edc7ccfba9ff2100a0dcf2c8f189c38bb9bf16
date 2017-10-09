@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e7c9aa7d_dcabf6c3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-09T18:24:26Z",
+      "side": 1,
+      "message": "probably need to tweak this CL message\n\nhttps://www.youtube.com/watch?v\u003d9oiEzmgA5Ek",
+      "range": {
+        "startLine": 12,
+        "startChar": 13,
+        "endLine": 12,
+        "endChar": 19
+      },
+      "revId": "d3edc7ccfba9ff2100a0dcf2c8f189c38bb9bf16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e53c892f_081d59f4",
+        "filename": "cipd/client/cipd/common/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 450,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-09T18:24:26Z",
+      "side": 1,
+      "message": "inline?",
+      "range": {
+        "startLine": 450,
+        "startChar": 8,
+        "endLine": 450,
+        "endChar": 12
+      },
+      "revId": "d3edc7ccfba9ff2100a0dcf2c8f189c38bb9bf16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67d3d5ab_3c3b62e8",
+        "filename": "cipd/client/cipd/ensure/doc.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-09T18:24:26Z",
+      "side": 1,
+      "message": "If this is going inside the ensure file, I think something more declarative would be better, like:\n\n  $WorksOn\n  $IndendedPlatform\n  $VerifiedPlatform\n  $MustWorkOn\n  \nOr something. \"Verify\" is imperative.",
+      "range": {
+        "startLine": 43,
+        "startChar": 9,
+        "endLine": 43,
+        "endChar": 15
+      },
+      "revId": "d3edc7ccfba9ff2100a0dcf2c8f189c38bb9bf16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b3ca4f7_a5c11b8a",
+        "filename": "cipd/client/cipd/ensure/doc.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-09T18:24:26Z",
+      "side": 1,
+      "message": "maybe also document what the ... means? i.e. \"multiple platforms can be specified in the same statement, separated by spaces\"",
+      "range": {
+        "startLine": 44,
+        "startChar": 55,
+        "endLine": 45,
+        "endChar": 34
+      },
+      "revId": "d3edc7ccfba9ff2100a0dcf2c8f189c38bb9bf16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b1fd439_4f2e1aa4",
+        "filename": "cipd/client/cipd/ensure/doc.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-09T18:24:26Z",
+      "side": 1,
+      "message": "maybe say where this default set is defined?",
+      "range": {
+        "startLine": 46,
+        "startChar": 36,
+        "endLine": 46,
+        "endChar": 47
+      },
+      "revId": "d3edc7ccfba9ff2100a0dcf2c8f189c38bb9bf16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "325f9b47_44e0bdf6",
+        "filename": "cipd/client/cipd/ensure/file.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-09T18:24:26Z",
+      "side": 1,
+      "message": "wooowwwww",
+      "range": {
+        "startLine": 161,
+        "startChar": 2,
+        "endLine": 161,
+        "endChar": 12
+      },
+      "revId": "d3edc7ccfba9ff2100a0dcf2c8f189c38bb9bf16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
