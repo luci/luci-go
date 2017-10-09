@@ -18,8 +18,9 @@ interpreter.
 `vpython` does its best not to use hacky mechanisms to achieve this. It uses
 an unmodified VirtualEnv package, standard setup methods, and local system
 resources. The result is transparent canonical VirtualEnv environment
-bootstrapping. `vpython` is also safe for concurrent invocation, using safe
-filesystem-level locking to perform any environment setup and management.
+bootstrapping that meets the expectations of standard Python packages. `vpython`
+is also safe for concurrent invocation, using safe filesystem-level locking to
+perform any environment setup and management.
 
 `vpython` itself is very fast. The wheel downloads and VirtualEnvs may also be
 cached and re-used, optimally limiting the runtime overhead of `vpython` to just
@@ -29,9 +30,13 @@ one initial setup per unique environment.
 
 For the standard case, employing `vpython` is as simple as:
 
-First, create and upload Python wheels for all of the packages that you will
-need. This is done in an implementation-specific way (e.g., upload wheels as
-packages to CIPD).
+1. Create a `vpython` VirtualEnv specification (or don't, if no additional
+   packages are needed.
+2. Invoke your script through `vpython` instead of `python`.
+
+If additional Python libraries are needed, you may create new packages for those
+libraries. This is done in an implementation-specific way (e.g., upload wheels
+as packages to CIPD).
 
 Once the packages are available:
 
@@ -42,7 +47,10 @@ Once the packages are available:
 Using `vpython` offers several benefits to direct Python invocation, especially
 when vendoring packages. Notably, with `vpython`:
 
-* It is trivially enables hermetic Python everywhere.
+* It trivially enables hermetic Python everywhere, greatly increasing control
+  and removing per-system differences in Python packages and environment.
+* It handles situations that system-level packages cannot accommodate, such as
+  different scripts with different versions of packages running in them.
 * No `sys.path` manipulation is needed to load vendored or imported packages.
 * Any tool can define which package(s) it needs without requiring coordination
   or cooperation from other tools. (Note that the package must be made available
@@ -51,39 +59,41 @@ when vendoring packages. Notably, with `vpython`:
 * Package downloading and deployment are baked into `vpython` and built on
   fast and secure Google Cloud Platform technologies.
 * No more custom bootstraps. Several projects and tools, including multiple
-  within the infra code base, have bootstrap scripts that vendor packages or
-  mimic a VirtualEnv. These are at best repetitive and, at worst, buggy and
-  insecure.
-* Depenencies are explicitly stated, not assumed.
+  places within Chrome's infra code base, have bootstrap scripts that vendor
+  packages or mimic a VirtualEnv. These are at best repetitive and, at worst,
+  buggy and insecure.
+* Depenencies are explicitly stated, not assumed, and consistent between
+  deployments.
 
 ### Why VirtualEnv?
 
 VirtualEnv offers several benefits over system Python. Primarily, it is the
+*de facto* encapsulated environment method used by the Python community and is
+generally used as the standard for a functional deployable package.
 
 By using the same environemnt everywhere, Python invocations become
 reproducible. A tool run on a developer's system will load the same versions
 of the same libraries as it will on a production system. A production system
-will no longer fail because it is missing a package, or because it has the
-wrong version.
+will no longer fail because it is missing a package, because it has the
+wrong version of that package, or because a package is incompatible with another
+installed package.
 
 A direct mechanism for vendoring, `sys.path` manipulation, is nuanced, buggy,
-and unsupported by the Python community. It is difficult to get right on all
+and unsupported by the Python community. It is difficult to do correctly on all
 platforms in all environments for all packages. A notorious example of this is
 `protobuf` and other domain-bound packages, which actively fight `sys.path`
-inclusion. Using VirtualEnv means that any compliant Python package can
-trivially be included into a project.
+inclusion and require special non-intuitive hacks to work. Using VirtualEnv
+means that any compliant Python package can trivially be included into a
+project.
 
 ### Why CIPD?
 
 [CIPD](https://github.com/luci/luci-go/tree/master/cipd) is a cross-platform
 service and associated tooling and packages used to securely fetch and deploy
-immutable "packages" (~= zip files) into the local file system. Unlike "package
-managers" it avoids platform-specific assumptions, executable "hooks", or the
+immutable "packages" (~= zip files) into the local file system. Unlike package
+managers, it avoids platform-specific assumptions, executable hooks, or the
 complexities of dependency resolution. `vpython` uses this as a mechanism for
 housing and deploying wheels.
-
-infrastructure package deployment system. It is simple, accessible, fast, and
-backed by resilient systems such as Google Storage and AppEngine.
 
 Unlike `pip`, a CIPD package is defined by its content, enabling precise package
 matching instead of fuzzy version matching (e.g., `numpy >= 1.2`, and
@@ -98,9 +108,10 @@ A Python [wheel](https://www.python.org/dev/peps/pep-0427/) is a simple binary
 distrubition of Python code. A wheel can be generic (pure Python) or system-
 and architecture-bound (e.g., 64-bit Mac OSX).
 
-Wheels are prefered over eggs because they come packaged with compiled binaries.
-This makes their deployment simple (unpack via `pip`) and reduces system
-requirements and variation, since local compilation is not needed.
+Wheels are prefered over Python eggs because they come packaged with compiled
+binaries. This makes their deployment fast and simple: unpack via `pip`. It also
+reduces system requirements and variation, since local compilation, headers,
+and build tools are not enlisted during installation.
 
 The increased management burden of maintaining separate wheels for the same
 package, one for each architecture, is handled naturally by CIPD, removing the
@@ -175,7 +186,7 @@ wheel {
 
 This specification can be supplied in one of three ways:
 
-* Explicitly, as a command-line option to `vpython` (`-spec`).
+* Explicitly, as a command-line option to `vpython` (`-vpython-spec`).
 * Implicitly, as a file alongside your entry point. For example, if you are
   running `test_runner.py`, `vpython` will look for `test_runner.py.vpython`
   next to it and load the environment from there.
@@ -221,7 +232,7 @@ The `vpython` tool accepts its own command-line arguments. In this case, use
 a `--` seprator to differentiate between `vpython` options and `python` options:
 
 ```sh
-vpython -spec /path/to/spec.vpython -- ./foo/bar/baz.py
+vpython -vpython-spec /path/to/spec.vpython -- ./foo/bar/baz.py
 ```
 
 #### Shebang (POSIX)
