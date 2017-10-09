@@ -528,7 +528,7 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 	// Enter the environment with the local auth server.
 	err = localauth.WithLocalAuth(ctx, srv, func(ctx context.Context) error {
 		// Put the new LUCI_CONTEXT file, prepare cmd environ.
-		exported, err := lucictx.Export(ctx, "")
+		exported, err := lucictx.Export(ctx)
 		if err != nil {
 			logging.WithError(err).Errorf(ctx, "Failed to prepare LUCI_CONTEXT file")
 			return err
