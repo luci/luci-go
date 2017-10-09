@@ -60,3 +60,16 @@ func (f *Flag) Set(val string) error {
 	}
 	return nil
 }
+
+// ToSlice returns a deterministic string slice containing the strings in
+// f.Data.
+//
+// This is useful over f.Data.ToSlice because it accommodates the case where
+// f.Data may be uninitialized, which can happen if the flag is optional and
+// never used.
+func (f *Flag) ToSlice() []string {
+	if f.Data == nil {
+		return []string(nil)
+	}
+	return f.Data.ToSlice()
+}

@@ -179,6 +179,14 @@ var badEnsureFiles = []struct {
 		),
 		`$setting found after non-$setting statements`,
 	},
+
+	{
+		"verify bad platform",
+		f(
+			"$VerifiedPlatform foo-bar baz",
+		),
+		`invalid platform entry #2, should be <os>-<arch>, not "baz"`,
+	},
 }
 
 func TestBadEnsureFiles(t *testing.T) {

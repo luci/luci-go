@@ -18,8 +18,18 @@ import (
 	"bytes"
 	"testing"
 
+	"go.chromium.org/luci/cipd/client/cipd/common"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func mustMakePlatform(v string) common.TemplatePlatform {
+	plat, err := common.ParseTemplatePlatform(v)
+	if err != nil {
+		panic(err)
+	}
+	return plat
+}
 
 var fileSerializationTests = []struct {
 	name   string
@@ -34,7 +44,7 @@ var fileSerializationTests = []struct {
 
 	{
 		"ServiceURL",
-		&File{"https://something.example.com", nil},
+		&File{"https://something.example.com", nil, nil},
 		f(
 			"$ServiceURL https://something.example.com",
 		),
@@ -47,7 +57,7 @@ var fileSerializationTests = []struct {
 				PackageDef{"some/thing", "version", 0},
 				PackageDef{"some/other_thing", "latest", 0},
 			},
-		}},
+		}, nil},
 		f(
 			"some/other_thing@latest",
 			"some/thing@version",
@@ -64,9 +74,15 @@ var fileSerializationTests = []struct {
 			"path/to dir/with/spaces": {
 				PackageDef{"different/package", "some_tag:thingy", 0},
 			},
+		}, []common.TemplatePlatform{
+			mustMakePlatform("zoops-ohai"),
+			mustMakePlatform("foos-barch"),
 		}},
 		f(
 			"$ServiceURL https://some.example.com",
+			"",
+			"$VerifiedPlatform zoops-ohai",
+			"$VerifiedPlatform foos-barch",
 			"",
 			"some/other_thing@latest",
 			"some/thing@version",

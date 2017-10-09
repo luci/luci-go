@@ -230,6 +230,11 @@ func CurrentOS() string {
 	return currentOS
 }
 
+// CurrentPlatform returns the current platform.
+func CurrentPlatform() TemplatePlatform {
+	return TemplatePlatform{currentOS, currentArchitecture}
+}
+
 // PinSlice is a simple list of Pins
 type PinSlice []Pin
 
@@ -405,13 +410,41 @@ func (t TemplateExpander) expandImpl(template string, alwaysFill bool) (pkg stri
 	return
 }
 
+// TemplatePlatform contains the parameters for a "${platform}" template.
+//
+// The string value can be obtained by calling String().
+// be parsed using ParseTemplatePlatform.
+type TemplatePlatform struct {
+	OS   string
+	Arch string
+}
+
+// ParseTemplatePlatform parses a TemplatePlatform from its string
+// representation.
+func ParseTemplatePlatform(v string) (TemplatePlatform, error) {
+	parts := strings.Split(v, "-")
+	if len(parts) != 2 {
+		return TemplatePlatform{}, errors.Reason("platform must be <os>-<arch>: %q", v).Err()
+	}
+	return TemplatePlatform{parts[0], parts[1]}, nil
+}
+
+func (tp TemplatePlatform) String() string {
+	return fmt.Sprintf("%s-%s", tp.OS, tp.Arch)
+}
+
+// Expander returns a TemplateExpander populated with tp's fields.
+func (tp TemplatePlatform) Expander() TemplateExpander {
+	return TemplateExpander{
+		"os":       tp.OS,
+		"arch":     tp.Arch,
+		"platform": tp.String(),
+	}
+}
+
 // DefaultTemplateExpander returns the default template expander.
 //
 // This has values populated for ${os}, ${arch} and ${platform}.
 func DefaultTemplateExpander() TemplateExpander {
-	return TemplateExpander{
-		"os":       currentOS,
-		"arch":     currentArchitecture,
-		"platform": fmt.Sprintf("%s-%s", currentOS, currentArchitecture),
-	}
+	return CurrentPlatform().Expander()
 }
