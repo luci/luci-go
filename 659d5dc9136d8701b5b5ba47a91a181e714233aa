@@ -16,6 +16,24 @@
       "revId": "659d5dc9136d8701b5b5ba47a91a181e714233aa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4066c666_a6bb22cb",
+        "filename": "milo/frontend/appengine/templates/pages/builder.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1128941
+      },
+      "writtenOn": "2017-10-09T22:46:36Z",
+      "side": 1,
+      "message": "Oh wow, that\u0027s not good! Thanks, done.",
+      "parentUuid": "a6b2aa58_44d5c037",
+      "revId": "659d5dc9136d8701b5b5ba47a91a181e714233aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
