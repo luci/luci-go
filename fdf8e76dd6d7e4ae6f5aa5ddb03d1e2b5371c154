@@ -301,6 +301,30 @@
     },
     {
       "key": {
+        "uuid": "60693a2f_34636b96",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-09T21:16:24Z",
+      "side": 1,
+      "message": "I think this proposal might be conflating notifications on status changes and flakes. If we separate them, individually they will be simpler to comprehend/implement.\n\nFor the status change notifications, I think it would be simple enough if we define status sequence order as (commit order, build creation order) and define on_change as change in this sequence, modulo out-of-order delivery in which case we reserve the right to omit a notification. In other words, on_change notifications always reflect the latest state.\n\nFor the flake detection, we could store revision, revision status and whether a flake was detected for the revision before. On a pubsub message, we\u0027d compare/update them. If a flake is detected for a revision (for the first time), we would then return true as a new return value in this function. Assuming we want this, I think this should be done in a separate CL anyway, because it implies changes to config.\n\nThis way both notifications are defined clearly.\n\nHaving said that, I\u0027ve just recalled that git commit time order does not necessarily match commit order, unfortunately. This is a hard problem. Robbie does not even tries to solve it, he always talks to gitiles API to determine the order given two commits.",
+      "parentUuid": "5f22a100_25fd3e49",
+      "range": {
+        "startLine": 96,
+        "startChar": 16,
+        "endLine": 97,
+        "endChar": 64
+      },
+      "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3f98e550_47b4135b",
         "filename": "luci_notify/notify/notification.go",
         "patchSetId": 7
