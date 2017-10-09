@@ -52,7 +52,7 @@ var goodEnsureFiles = []struct {
 				p("path/to/other_package", "some_tag:version"),
 				p("path/to/yet_another", "a_ref"),
 			},
-		}},
+		}, nil},
 	},
 
 	{
@@ -66,7 +66,7 @@ var goodEnsureFiles = []struct {
 				p("path/to/package/test_os-test_arch", "latest"),
 				p("path/to/other/test_os-test_arch", "latest"),
 			},
-		}},
+		}, nil},
 	},
 
 	{
@@ -80,7 +80,7 @@ var goodEnsureFiles = []struct {
 				p("path/to/package/test_os-test_arch", "latest"),
 				p("path/to/other/test_os-test_arch", "latest"),
 			},
-		}},
+		}, nil},
 	},
 
 	{
@@ -89,7 +89,7 @@ var goodEnsureFiles = []struct {
 			"path/to/package/${os=spaz}-${arch=neep,test_arch} latest",
 			"path/to/package/${platform=neep-foo} latest",
 		),
-		&ResolvedFile{"", common.PinSliceBySubdir{}},
+		&ResolvedFile{"", common.PinSliceBySubdir{}, nil},
 	},
 
 	{
@@ -132,7 +132,7 @@ var goodEnsureFiles = []struct {
 			"something/test_os": {
 				p("some/os_specific/package", "canary"),
 			},
-		}},
+		}, nil},
 	},
 
 	{
@@ -146,6 +146,26 @@ var goodEnsureFiles = []struct {
 			"": {
 				p("some/package", "version"),
 			},
+		}, nil},
+	},
+
+	{
+		"VerifiedPlatform setting",
+		f(
+			"$VerifiedPlatform foos-barch ohai-whatup",
+			"$VerifiedPlatform pants-shirt",
+			"$VerifiedPlatform foos-barch ohai-whatup",
+			"",
+			"some/package version",
+		),
+		&ResolvedFile{"", common.PinSliceBySubdir{
+			"": {
+				p("some/package", "version"),
+			},
+		}, []common.TemplatePlatform{
+			mustMakePlatform("foos-barch"),
+			mustMakePlatform("ohai-whatup"),
+			mustMakePlatform("pants-shirt"),
 		}},
 	},
 
@@ -168,7 +188,7 @@ var goodEnsureFiles = []struct {
 				p("tabs/to/package", "latest"),
 				p("tabs/and/spaces", "latest"),
 			},
-		}},
+		}, nil},
 	},
 }
 

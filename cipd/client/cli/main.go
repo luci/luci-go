@@ -35,9 +35,11 @@ import (
 
 	"go.chromium.org/luci/common/auth"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/client/authcli"
 
@@ -784,30 +786,10 @@ func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommand
 }
 
 func ensurePackages(ctx context.Context, root string, desiredStateFile string, dryRun bool, clientOpts clientOptions) (common.PinSliceBySubdir, cipd.ActionMap, error) {
-	var err error
-	var f io.ReadCloser
-	if desiredStateFile == "-" {
-		f = os.Stdin
-	} else {
-		if f, err = os.Open(desiredStateFile); err != nil {
-			return nil, nil, err
-		}
-	}
-	defer f.Close()
 
-	ensureFile, err := ensure.ParseFile(f)
+	ensureFile, err := loadAndValidateEnsureFile(ctx, desiredStateFile, &clientOpts)
 	if err != nil {
 		return nil, nil, err
-	}
-
-	// Prefer the ServiceURL from the file (if set), and log a warning if the user
-	// provided one on the commandline that doesn't match the one in the file.
-	if ensureFile.ServiceURL != "" {
-		if clientOpts.serviceURL != "" && clientOpts.serviceURL != ensureFile.ServiceURL {
-			logging.Warningf(ctx, "serviceURL in ensure file != serviceURL on CLI (%q v %q). Using %q from file.",
-				ensureFile.ServiceURL, clientOpts.serviceURL, ensureFile.ServiceURL)
-		}
-		clientOpts.serviceURL = ensureFile.ServiceURL
 	}
 
 	client, err := clientOpts.makeCipdClient(ctx, root)
@@ -831,6 +813,133 @@ func ensurePackages(ctx context.Context, root string, desiredStateFile string, d
 	}
 
 	return resolved.PackagesBySubdir, actions, nil
+}
+
+func cmdEnsureFileVerify(params Parameters) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "ensure-file-verify [options]",
+		ShortDesc: "verifies packages in a manifest exist for all platforms",
+		LongDesc: "Collects a list of necessary platforms and verifies that the packages " +
+			"in the manifest exist for all of those platforms. Returns non-zero if any are missing.",
+		Advanced: true,
+		CommandRun: func() subcommands.CommandRun {
+			c := &ensureFileVerifyRun{}
+
+			c.registerBaseFlags()
+			c.clientOptions.registerFlags(&c.Flags, params)
+			c.Flags.StringVar(&c.ensureFile, "ensure-file", "<path>",
+				(`The "ensure" file to verify. See syntax described here: ` +
+					`https://godoc.org/go.chromium.org/luci/cipd/client/cipd/ensure.` +
+					` Providing '-' will read from stdin.`))
+			return c
+		},
+	}
+}
+
+type ensureFileVerifyRun struct {
+	cipdSubcommand
+	clientOptions
+
+	ensureFile string
+}
+
+func (c *ensureFileVerifyRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if !c.checkArgs(args, 0, 0) {
+		return 1
+	}
+	ctx := cli.GetContext(a, c, env)
+	err := verifyEnsureFile(ctx, c.ensureFile, c.clientOptions)
+	return c.done(nil, err)
+}
+
+func verifyEnsureFile(ctx context.Context, desiredStateFile string, clientOpts clientOptions) error {
+
+	ensureFile, err := loadAndValidateEnsureFile(ctx, desiredStateFile, &clientOpts)
+	if err != nil {
+		return err
+	}
+
+	// Ignore any configured CIPD cache directory. This ensures that we are
+	// hitting the live service instead of using (potentially invalid) cache
+	// entries.
+	if clientOpts.cacheDir != "" {
+		logging.Warningf(ctx, "Ignoring cache directory %q for verification.", clientOpts.cacheDir)
+		clientOpts.cacheDir = ""
+	}
+
+	client, err := clientOpts.makeCipdClient(ctx, "")
+	if err != nil {
+		return err
+	}
+
+	if len(ensureFile.VerifyPlatforms) == 0 {
+		logging.Errorf(ctx,
+			"Verification platforms must be specified in the ensure file using one or more $VerifiedPlatform directives.")
+		return errors.New("no verification platforms configured")
+	}
+	logging.Debugf(ctx, "Verifying against %d platform(s) in the ensure file.", len(ensureFile.VerifyPlatforms))
+
+	// Verify all of our platforms in parallel.
+	verify := cipd.Verifier{
+		Client: client,
+	}
+	_ = parallel.FanOutIn(func(workC chan<- func() error) {
+		for _, plat := range ensureFile.VerifyPlatforms {
+			plat := plat
+
+			workC <- func() error {
+				return verify.VerifyEnsureFile(ctx, ensureFile, plat.Expander())
+			}
+		}
+	})
+
+	result := verify.Result()
+	if result.HasErrors() {
+		logging.Errorf(ctx, "Failed to resolve %d package(s) and %d pin(s):", len(result.InvalidPackages), len(result.InvalidPins))
+
+		for _, pkg := range result.InvalidPackages {
+			logging.Errorf(ctx, "Failed to resolve package %v.", pkg)
+		}
+
+		for _, pin := range result.InvalidPins {
+			logging.Errorf(ctx, "Failed to verify pin %s.", pin)
+		}
+
+		return errors.New("failed verification")
+	}
+
+	logging.Infof(ctx, "Successfully verified %d package(s) and %d pin(s)", result.NumPackages, result.NumPins)
+	return nil
+}
+
+func loadAndValidateEnsureFile(ctx context.Context, path string, clientOpts *clientOptions) (*ensure.File, error) {
+	var err error
+	var f io.ReadCloser
+	if path == "-" {
+		f = os.Stdin
+	} else {
+		if f, err = os.Open(path); err != nil {
+			return nil, err
+		}
+	}
+	defer f.Close()
+
+	ensureFile, err := ensure.ParseFile(f)
+	if err != nil {
+		return nil, err
+	}
+
+	// Prefer the ServiceURL from the file (if set), and log a warning if the user
+	// provided one on the commandline that doesn't match the one in the file.
+	if ensureFile.ServiceURL != "" {
+		if clientOpts.serviceURL != "" && clientOpts.serviceURL != ensureFile.ServiceURL {
+			logging.Warningf(ctx, "serviceURL in ensure file != serviceURL on CLI (%q v %q). Using %q from file.",
+				ensureFile.ServiceURL, clientOpts.serviceURL, ensureFile.ServiceURL)
+		}
+		clientOpts.serviceURL = ensureFile.ServiceURL
+	}
+
+	return ensureFile, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2280,6 +2389,9 @@ func GetApplication(params Parameters) *cli.Application {
 			{},
 			cmdEnsure(params),
 			cmdSelfUpdate(params),
+
+			// Advanced ensure file operations.
+			cmdEnsureFileVerify(params),
 
 			// User friendly subcommands that operates within a site root. Implemented
 			// in friendly.go. These are advanced because they're half-baked.

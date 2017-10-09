@@ -38,8 +38,12 @@
 //
 // A setting looks like `$name value`. Settings are global and can only be set
 // once per file. The following settings are allowed:
-//   - `$ServiceURL` is the url for the cipd service. It can be used in lieu of
-//     the -service-url command line parameter.
+//   - `$ServiceURL <url>` is the url for the cipd service. It can be used in
+//     lieu of the -service-url command line parameter.
+//   - `$VerifiedPlatform <platform> [ <platform>]*` allows the manifest to
+//     specify a list of ${platform} expansions to use for verification.
+//     Multiple $VerifiedPlatform directives can be specified, and will
+//     accumulate.
 //
 //
 // Package Definitions

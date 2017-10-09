@@ -17,6 +17,7 @@ package ensure
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	"go.chromium.org/luci/cipd/client/cipd/common"
 	"go.chromium.org/luci/common/errors"
@@ -58,10 +59,24 @@ func serviceURLParser(_ *itemParserState, f *File, val string) error {
 	return nil
 }
 
+func verifyParser(_ *itemParserState, f *File, val string) error {
+	fields := strings.Fields(val)
+	plats := make([]common.TemplatePlatform, len(fields))
+	for i, field := range fields {
+		var err error
+		if plats[i], err = common.ParseTemplatePlatform(field); err != nil {
+			return fmt.Errorf("invalid platform entry #%d, should be <os>-<arch>, not %q", i+1, field)
+		}
+	}
+	f.VerifyPlatforms = append(f.VerifyPlatforms, plats...)
+	return nil
+}
+
 // itemParsers is the main way that the ensure file format is extended. If you
 // need to add a new setting or directive, please add an appropriate function
 // above and then add it to this map.
 var itemParsers = map[string]itemParser{
-	"@subdir":     subdirParser,
-	"$serviceurl": serviceURLParser,
+	"@subdir":           subdirParser,
+	"$serviceurl":       serviceURLParser,
+	"$verifiedplatform": verifyParser,
 }

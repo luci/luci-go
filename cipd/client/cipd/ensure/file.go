@@ -34,6 +34,7 @@ type File struct {
 	ServiceURL string
 
 	PackagesBySubdir map[string]PackageSlice
+	VerifyPlatforms  []common.TemplatePlatform
 }
 
 // ParseFile parses an ensure file from the given reader. See the package docs
@@ -126,6 +127,7 @@ type ResolvedFile struct {
 	ServiceURL string
 
 	PackagesBySubdir common.PinSliceBySubdir
+	VerifyPlatforms  []common.TemplatePlatform
 }
 
 // Resolve takes the current unresolved File and expands all package templates
@@ -151,6 +153,24 @@ func (f *File) ResolveWith(rslv VersionResolver, expander common.TemplateExpande
 	ret.ServiceURL = f.ServiceURL
 	if len(f.PackagesBySubdir) == 0 {
 		return ret, nil
+	}
+
+	// Sort and deduplicate the platforms.
+	if len(f.VerifyPlatforms) > 0 {
+		plats := append([]common.TemplatePlatform(nil), f.VerifyPlatforms...)
+		sort.Slice(plats, func(i, j int) bool { return plats[i].String() < plats[j].String() })
+
+		if len(plats) > 1 {
+			pos := 0
+			for _, plat := range plats[1:] {
+				if plat != plats[pos] {
+					pos++
+					plats[pos] = plat
+				}
+			}
+			plats = plats[:pos+1]
+		}
+		ret.VerifyPlatforms = plats
 	}
 
 	// subdir -> pkg -> orig_lineno
@@ -211,6 +231,17 @@ func (f *File) Serialize(w io.Writer) (int, error) {
 		if f.ServiceURL != "" {
 			maybeAddNL()
 			fmt.Fprintf(w, "$ServiceURL %s", f.ServiceURL)
+			needsNLs = 2
+		}
+
+		if len(f.VerifyPlatforms) > 0 {
+			for _, plat := range f.VerifyPlatforms {
+				maybeAddNL()
+
+				fmt.Fprintf(w, "$VerifiedPlatform %s", plat.String())
+				needsNLs = 1
+			}
+
 			needsNLs = 2
 		}
 
