@@ -25,6 +25,24 @@
   flex-direction: row;
 }
 
+/* Header */
+
+.console-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.console-header * {
+  margin-right: 1em;
+}
+
+.console-header img {
+  width: 16px;
+  height: 16px;
+}
+
 /* Commits */
 
 .console-commit-column {
