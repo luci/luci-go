@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3b9a7b09_0f03f913",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-09T23:42:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "95213ce7_6580fb51",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 11
+      },
+      "revId": "a35486577de25568dca1fb13b1ffc76894273ea7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dac2b63a_029ab328",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 4
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "e88e4971_9e889ac2",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-09T23:42:08Z",
+      "side": 1,
+      "message": "Made it a string since maps don\u0027t like being keyed on datastore.Key.",
+      "parentUuid": "dac2b63a_029ab328",
+      "range": {
+        "startLine": 57,
+        "startChar": 42,
+        "endLine": 57,
+        "endChar": 56
+      },
+      "revId": "a35486577de25568dca1fb13b1ffc76894273ea7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a83394e2_53baae97",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 4
@@ -62,6 +110,24 @@
       "revId": "a35486577de25568dca1fb13b1ffc76894273ea7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8255535_1d1740eb",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-09T23:42:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a83394e2_53baae97",
+      "revId": "a35486577de25568dca1fb13b1ffc76894273ea7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -82,6 +148,24 @@
     },
     {
       "key": {
+        "uuid": "025aeb7b_b826f87f",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-09T23:42:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4689aaa4_285091f9",
+      "revId": "a35486577de25568dca1fb13b1ffc76894273ea7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "80a4de81_bb5de71d",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 4
@@ -96,6 +180,24 @@
       "revId": "a35486577de25568dca1fb13b1ffc76894273ea7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12602aad_799fcea4",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-09T23:42:08Z",
+      "side": 1,
+      "message": "Done\n\nNifty!",
+      "parentUuid": "80a4de81_bb5de71d",
+      "revId": "a35486577de25568dca1fb13b1ffc76894273ea7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
