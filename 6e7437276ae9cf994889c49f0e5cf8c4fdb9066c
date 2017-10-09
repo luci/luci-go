@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "809fc3d4_7575d8ed",
+        "filename": "cipd/client/cipd/verify.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-09T19:07:09Z",
+      "side": 1,
+      "message": "document the exact types that these Promise\u0027s will have",
+      "range": {
+        "startLine": 41,
+        "startChar": 1,
+        "endLine": 41,
+        "endChar": 12
+      },
+      "revId": "6e7437276ae9cf994889c49f0e5cf8c4fdb9066c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5279fbaf_442debb6",
+        "filename": "cipd/client/cipd/verify.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-09T19:07:09Z",
+      "side": 1,
+      "message": "this is broken; if `p.Name \u003e other.Name`, this should return false, not `p.Version \u003c other.Version`. Consider using the \u0027sortby\u0027 package in common.",
+      "revId": "6e7437276ae9cf994889c49f0e5cf8c4fdb9066c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b68e8d0a_805a4bf9",
+        "filename": "cipd/client/cipd/verify.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-09T19:07:09Z",
+      "side": 1,
+      "message": "I think this is unhelpful; it adds a function call and closure to every call for the cost of 2 lines; each usage of this (i.e. the two functions above) looks like the regular lock/unlock would work fine with the same number of lines and then this function doesn\u0027t exist?",
+      "range": {
+        "startLine": 241,
+        "startChar": 19,
+        "endLine": 241,
+        "endChar": 33
+      },
+      "revId": "6e7437276ae9cf994889c49f0e5cf8c4fdb9066c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a6ad33b_a53145da",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 882,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-09T19:07:09Z",
+      "side": 1,
+      "message": "I would drop this statement, and just rely on the failure messages. That way in the good case, we don\u0027t print excessive output.",
+      "range": {
+        "startLine": 882,
+        "startChar": 28,
+        "endLine": 882,
+        "endChar": 59
+      },
+      "revId": "6e7437276ae9cf994889c49f0e5cf8c4fdb9066c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
