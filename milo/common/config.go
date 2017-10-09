@@ -53,6 +53,8 @@ type Console struct {
 	ManifestName string
 	// URL is the URL to the luci-config definition of this console.
 	URL string
+	// FaviconURL is the URL to the favicon to be displayed on this console's page.
+	FaviconURL string
 	// Revision is the luci-config reivision from when this Console was retrieved.
 	Revision string
 	// Builders is a list of universal builder IDs.  This is indexed.
@@ -94,6 +96,7 @@ func NewConsole(project *datastore.Key, URL, revision string, con *config.Consol
 		ManifestName: con.ManifestName,
 		Revision:     revision,
 		URL:          URL,
+		FaviconURL:   con.FaviconURL,
 		Builders:     BuilderFromProto(con.Builders),
 		BuilderMetas: BuilderRefFromProto(con.Builders),
 	}

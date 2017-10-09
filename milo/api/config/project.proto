@@ -40,6 +40,11 @@ message Console {
 
   // Builders is a list of builder configurations to display as the columns of the console.
   repeated Builder Builders = 6;
+
+  // FaviconURL is the URL to the favicon for this console page.
+  // This field is optional. The favicon URL must have a host of
+  // storage.googleapis.com.
+  string FaviconURL = 7;
 }
 
 // A builder is a reference to a Milo builder.

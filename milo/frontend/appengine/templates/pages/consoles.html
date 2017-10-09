@@ -11,9 +11,14 @@
 <h1>{{ .ProjectName }} consoles</h1>
 
 {{ range .Consoles }}
-  <h2>
-    <a href="/console/{{ .Def.GetProjectName }}/{{ .Def.ID }}">{{ .Def.ID }}</a>
-  </h2>
+  <div style="margin-top: 3em" class="console-header">
+  {{ if .Render.FaviconURL }}
+    <img src="{{ .Render.FaviconURL }}" />
+  {{ end }}
+    <h2>
+      <a href="/console/{{ .Def.GetProjectName }}/{{ .Def.ID }}">{{ .Def.ID }}</a>
+    </h2>
+  </div>
   <p> <b>Repo</b>: <a href="{{ .Def.RepoURL }}"> {{ .Def.RepoURL }} </a></p>
   <p> <b>Ref</b>: {{ .Def.Ref }} </p>
   <div class="console-row">

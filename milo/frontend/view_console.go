@@ -17,7 +17,9 @@ package frontend
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
 	"html/template"
+	"net/url"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -73,6 +75,29 @@ func shortname(name string) string {
 		short += string(tokens[i][0])
 	}
 	return strings.ToLower(short)
+}
+
+// validateFaviconURL checks to see if the URL is well-formed and the host is in
+// the whitelist.
+func validateFaviconURL(faviconURL string) error {
+	parsedFaviconURL, err := url.Parse(faviconURL)
+	if err != nil {
+		return err
+	}
+	host := strings.SplitN(parsedFaviconURL.Host, ":", 2)[0]
+	if host != "storage.googleapis.com" {
+		return fmt.Errorf("%q is not a valid FaviconURL hostname", host)
+	}
+	return nil
+}
+
+func getFaviconURL(c context.Context, def *common.Console) string {
+	faviconURL := def.FaviconURL
+	if err := validateFaviconURL(faviconURL); err != nil {
+		logging.WithError(err).Warningf(c, "invalid favicon URL")
+		faviconURL = ""
+	}
+	return faviconURL
 }
 
 type builderRefFactory func(name, shortname string) *resp.BuilderRef
@@ -153,10 +178,11 @@ func console(c context.Context, project, name string, limit int) (*resp.Console,
 	})
 
 	return &resp.Console{
-		Name:     def.ID,
-		Commit:   commits,
-		Table:    *categoryTree,
-		MaxDepth: depth + 1,
+		Name:       def.ID,
+		Commit:     commits,
+		Table:      *categoryTree,
+		MaxDepth:   depth + 1,
+		FaviconURL: getFaviconURL(c, def),
 	}, nil
 }
 
@@ -173,9 +199,10 @@ func consolePreview(c context.Context, def *common.Console) (*resp.Console, erro
 		}
 	})
 	return &resp.Console{
-		Name:     def.ID,
-		Table:    *categoryTree,
-		MaxDepth: depth + 1,
+		Name:       def.ID,
+		Table:      *categoryTree,
+		MaxDepth:   depth + 1,
+		FaviconURL: getFaviconURL(c, def),
 	}, nil
 }
 

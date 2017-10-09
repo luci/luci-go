@@ -43,18 +43,19 @@ import (
 
 // funcMap is what gets fed into the template bundle.
 var funcMap = template.FuncMap{
-	"humanDuration":  humanDuration,
-	"parseRFC3339":   parseRFC3339,
-	"linkify":        linkify,
-	"linkifySet":     linkifySet,
-	"obfuscateEmail": obfuscateEmail,
-	"localTime":      localTime,
-	"shortHash":      shortHash,
-	"startswith":     strings.HasPrefix,
-	"sub":            sub,
-	"pagedURL":       pagedURL,
-	"formatTime":     formatTime,
-	"percent":        percent,
+	"humanDuration":   humanDuration,
+	"parseRFC3339":    parseRFC3339,
+	"linkify":         linkify,
+	"linkifySet":      linkifySet,
+	"obfuscateEmail":  obfuscateEmail,
+	"localTime":       localTime,
+	"shortHash":       shortHash,
+	"startswith":      strings.HasPrefix,
+	"sub":             sub,
+	"pagedURL":        pagedURL,
+	"formatTime":      formatTime,
+	"percent":         percent,
+	"faviconMIMEType": faviconMIMEType,
 }
 
 // localTime returns a <span> element with t in human format
@@ -253,6 +254,24 @@ func pagedURL(r *http.Request, limit int, cursor string) string {
 func percent(numerator, divisor int) string {
 	p := float64(numerator) * 100.0 / float64(divisor)
 	return fmt.Sprintf("%.1f", p)
+}
+
+// faviconMIMEType derives the MIME type from a URL's file extension. Only valid
+// favicon image formats are supported.
+func faviconMIMEType(fileURL string) string {
+	switch {
+	case strings.HasSuffix(fileURL, ".png"):
+		return "image/png"
+	case strings.HasSuffix(fileURL, ".ico"):
+		return "image/ico"
+	case strings.HasSuffix(fileURL, ".jpeg"):
+		fallthrough
+	case strings.HasSuffix(fileURL, ".jpg"):
+		return "image/jpeg"
+	case strings.HasSuffix(fileURL, ".gif"):
+		return "image/gif"
+	}
+	return ""
 }
 
 func init() {
