@@ -130,6 +130,15 @@ func (c *Commit) Title() string {
 	}
 }
 
+// AuthorUserName is the user handle part of the author's email.
+func (c *Commit) AuthorUserName() string {
+	sepIndex := strings.Index(c.AuthorEmail, "@")
+	if sepIndex != -1 {
+		return c.AuthorEmail[:sepIndex]
+	}
+	return c.AuthorEmail
+}
+
 // BuildProgress is a way to show progress.  Percent should always be specified.
 type BuildProgress struct {
 	// The total number of entries. Shows up as a tooltip.  Leave at 0 to

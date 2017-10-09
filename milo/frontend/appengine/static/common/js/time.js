@@ -1,6 +1,16 @@
-// Copyright 2016 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2016 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 // A Series of time based utilites for Milo.
 // Requires: moment.js, moment-timezone.js, jquery, jquery-ui
@@ -14,21 +24,36 @@
   milo.tz = moment.tz.guess();
 
   /**
-   * Given a Date, return a time string in the user's local timezone.
-   * Also return the time string in relative time from now, MTV time, and UTC
-   * time.
+   * Given a Date and a presentation style string, return a time string in the
+   * user's local timezone.
+   *
+   * Available presentation styles:
+   * * default: main: Current TZ time, hover: Relative time, MTV time, and UTC time.
+   * * relative: main: Relative time, hover: Current TZ time, MTV time, and UTC time.
    */
-  milo.formatDate = function(t) {
+  milo.formatDate = function(t, s) {
     var mt = moment.tz(t, milo.tz);
     if (!mt.isValid()) {
       return null;
     }
-    var hover = mt.fromNow();
+
+    var main = "";
+    var hover = "";
+    switch (s) {
+      case 'relative':
+        main = mt.fromNow();
+        hover = mt.format("YYYY-MM-DD LT (z)");
+        break;
+      default:
+        main = mt.format("YYYY-MM-DD LT (z)");
+        hover = mt.fromNow();
+        break;
+    }
     hover += "\n" + moment.tz(mt, "America/Los_Angeles").format("YYYY-MM-DD LT [(MTV)]");
     hover += "\n" + moment.tz(mt, "UTC").format("YYYY-MM-DD LT [(UTC)]");
 
     return {
-      main: mt.format("YYYY-MM-DD LT (z)"),
+      main: main,
       hover: hover
     }
   };
@@ -64,8 +89,9 @@
       try {
         var oldTimestamp = span.innerText;
         var timestamp = span.getAttribute('data-timestamp');
+        var presentation = span.getAttribute('data-presentation');
         var date = new Date(parseInt(timestamp, 10));
-        var newTimestamp = milo.formatDate(date);
+        var newTimestamp = milo.formatDate(date, presentation);
         if (newTimestamp != null) {
           span.innerText = newTimestamp.main;
           span.setAttribute("title", newTimestamp.hover);
