@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "41c92149_fd3ac142",
+        "filename": "vpython/cipd/cipd.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-09T23:51:31Z",
+      "side": 1,
+      "message": "this seems redundant with the logs below.\n\nWill this have an issue with \"package doesn\u0027t exist\" vs. \"network failure\"?",
+      "range": {
+        "startLine": 224,
+        "startChar": 10,
+        "endLine": 224,
+        "endChar": 16
+      },
+      "revId": "607465fa734e28a55d5c682a83b2f2379df6d378",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "662762b8_91c3f064",
+        "filename": "vpython/cipd/cipd.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-09T23:51:31Z",
+      "side": 1,
+      "message": "why not check this first?",
+      "range": {
+        "startLine": 238,
+        "startChar": 4,
+        "endLine": 238,
+        "endChar": 20
+      },
+      "revId": "607465fa734e28a55d5c682a83b2f2379df6d378",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
