@@ -24,9 +24,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/common/system/environ"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func rawctx(content string) func() {
@@ -52,7 +52,7 @@ func TestLUCIContextInitialization(t *testing.T) {
 		buf := &bytes.Buffer{}
 
 		Convey("works with missing envvar", func() {
-			So(extractFromEnv(buf), ShouldBeNil)
+			So(extractFromEnv(buf), ShouldResemble, &lctx{})
 			So(buf.String(), ShouldEqual, "")
 			_, ok := os.LookupEnv(EnvKey)
 			So(ok, ShouldBeFalse)
@@ -60,14 +60,14 @@ func TestLUCIContextInitialization(t *testing.T) {
 
 		Convey("works with bad envvar", func() {
 			os.Setenv(EnvKey, "sup")
-			So(extractFromEnv(buf), ShouldBeNil)
+			So(extractFromEnv(buf), ShouldResemble, &lctx{})
 			So(buf.String(), ShouldContainSubstring, "Could not open LUCI_CONTEXT file")
 		})
 
 		Convey("works with bad file", func() {
 			defer rawctx(`"not a map"`)()
 
-			So(extractFromEnv(buf), ShouldBeNil)
+			So(extractFromEnv(buf), ShouldResemble, &lctx{})
 			So(buf.String(), ShouldContainSubstring, "cannot unmarshal string into Go value")
 		})
 
@@ -75,7 +75,7 @@ func TestLUCIContextInitialization(t *testing.T) {
 			defer rawctx(`{"hi": {"there": 10}, "not": "good"}`)()
 
 			blob := json.RawMessage(`{"there":10}`)
-			So(extractFromEnv(buf), ShouldResemble, lctx{
+			So(extractFromEnv(buf).sections, ShouldResemble, map[string]*json.RawMessage{
 				"hi": &blob,
 			})
 			So(buf.String(), ShouldContainSubstring, `section "not": Not a map`)
@@ -142,13 +142,13 @@ func TestLUCIContextMethods(t *testing.T) {
 		Convey("Export", func() {
 			Convey("empty export is a noop", func() {
 				c, _ = Set(c, "hi", nil)
-				e, err := Export(c, "")
+				e, err := Export(c)
 				So(err, ShouldBeNil)
 				So(e, ShouldHaveSameTypeAs, &nullExport{})
 			})
 
-			Convey("Exporting with content gives a live export", func() {
-				e, err := Export(c, "")
+			Convey("exporting with content gives a live export", func() {
+				e, err := Export(c)
 				So(err, ShouldBeNil)
 				So(e, ShouldHaveSameTypeAs, &liveExport{})
 				defer e.Close()
@@ -160,7 +160,53 @@ func TestLUCIContextMethods(t *testing.T) {
 				// There's a valid JSON there.
 				blob, err := ioutil.ReadFile(path)
 				So(err, ShouldBeNil)
-				So(string(blob), ShouldEqual, `{"hi":{"there":10}}`)
+				So(string(blob), ShouldEqual, `{"hi": {"there": 10}}`)
+
+				// And it is in fact located in same file as was supplied externally.
+				So(path, ShouldEqual, externalContext.path)
+			})
+
+			Convey("export reuses files", func() {
+				c, err := Set(c, "blah", map[string]string{})
+				So(err, ShouldBeNil)
+
+				e1, err := Export(c)
+				So(err, ShouldBeNil)
+				So(e1, ShouldHaveSameTypeAs, &liveExport{})
+				defer func() {
+					if e1 != nil {
+						e1.Close()
+					}
+				}()
+
+				e2, err := Export(c)
+				So(err, ShouldBeNil)
+				So(e2, ShouldHaveSameTypeAs, &liveExport{})
+				defer func() {
+					if e2 != nil {
+						e2.Close()
+					}
+				}()
+
+				// Exact same backing file.
+				So(e1.(*liveExport).path, ShouldEqual, e2.(*liveExport).path)
+
+				// It really exists.
+				path := e1.(*liveExport).path
+				_, err = os.Stat(path)
+				So(err, ShouldBeNil)
+
+				// Closing one export keeps the file open.
+				e1.Close()
+				e1 = nil
+				_, err = os.Stat(path)
+				So(err, ShouldBeNil)
+
+				// Closing both exports removes the file from disk.
+				e2.Close()
+				e2 = nil
+				_, err = os.Stat(path)
+				So(os.IsNotExist(err), ShouldBeTrue)
 			})
 		})
 	})

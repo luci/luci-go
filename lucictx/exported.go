@@ -15,7 +15,6 @@
 package lucictx
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -55,9 +54,8 @@ func (e *baseExport) Close() error {
 
 type liveExport struct {
 	baseExport
-	path string
-
-	previousEnvValue *string
+	path   string
+	closer func()
 }
 
 func (e *liveExport) SetInCmd(c *exec.Cmd) {
@@ -83,9 +81,7 @@ func (e *liveExport) SetInEnviron(env environ.Env) {
 
 func (e *liveExport) Close() error {
 	e.baseExport.Close()
-	if err := os.Remove(e.path); err != nil {
-		fmt.Fprintf(os.Stderr, "Could not remove LUCI_CONTEXT file %q: %s", e.path, err)
-	}
+	e.closer()
 	return nil
 }
 
