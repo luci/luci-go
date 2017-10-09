@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ca3cdf33_f350194c",
+        "filename": "cipd/client/cipd/verify.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-09T19:19:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "809fc3d4_7575d8ed",
+      "range": {
+        "startLine": 41,
+        "startChar": 1,
+        "endLine": 41,
+        "endChar": 12
+      },
+      "revId": "6e7437276ae9cf994889c49f0e5cf8c4fdb9066c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5279fbaf_442debb6",
         "filename": "cipd/client/cipd/verify.go",
         "patchSetId": 6
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "797a2665_0b905207",
+        "filename": "cipd/client/cipd/verify.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-09T19:19:47Z",
+      "side": 1,
+      "message": "derp, you are correct. SortBy requires a slice type, though. Instead, I\u0027m just going to compare .String(), which has slight but sufficiently low impact performance implications.",
+      "parentUuid": "5279fbaf_442debb6",
+      "revId": "6e7437276ae9cf994889c49f0e5cf8c4fdb9066c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b68e8d0a_805a4bf9",
         "filename": "cipd/client/cipd/verify.go",
         "patchSetId": 6
@@ -53,6 +95,30 @@
       "writtenOn": "2017-10-09T19:07:09Z",
       "side": 1,
       "message": "I think this is unhelpful; it adds a function call and closure to every call for the cost of 2 lines; each usage of this (i.e. the two functions above) looks like the regular lock/unlock would work fine with the same number of lines and then this function doesn\u0027t exist?",
+      "range": {
+        "startLine": 241,
+        "startChar": 19,
+        "endLine": 241,
+        "endChar": 33
+      },
+      "revId": "6e7437276ae9cf994889c49f0e5cf8c4fdb9066c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df73a068_1ad0327a",
+        "filename": "cipd/client/cipd/verify.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-09T19:19:47Z",
+      "side": 1,
+      "message": "Yeah agreed. I originally had four users of this.",
+      "parentUuid": "b68e8d0a_805a4bf9",
       "range": {
         "startLine": 241,
         "startChar": 19,
