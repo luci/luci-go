@@ -1,15 +1,19 @@
 #!/usr/bin/env python
-# Copyright 2016 The LUCI Authors. All rights reserved.
-# Use of this source code is governed under the Apache License, Version 2.0
-# that can be found in the LICENSE file.
+# Copyright 2016 The LUCI Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Manages web/ resource checkout and building.
-
-This script can be run in one of three modes:
-  - As "initialize.py", it will perform resource dependency checkout for
-    "luci_deploy" and quit.
-  - As "build.py", it will build web apps to a "luci_deploy" directory.
-  - As "web.py", it is a user-facing tool to manually build web components.
 """
 
 import argparse
@@ -194,15 +198,13 @@ def _subcommand_gulp(tc, gulp_args, app=None):
   return 0
 
 
-def _main(argv):
+def main(args):
   parser = argparse.ArgumentParser()
   parser.add_argument('-v', '--verbose', action='count',
       help='Increase verbosity.')
   parser.add_argument('-i', '--force-install', action='store_true',
       help='Install NPM/Bower files even if they are considered up-to-date.')
 
-  # If we're running the deployment tool version of this script, these arguments
-  # are required and positional. Otherwise, they are optional.
   subparser = parser.add_subparsers()
 
   # Subcommand: install
@@ -243,7 +245,7 @@ def _main(argv):
   subcommand.add_argument('gulp_args', nargs='*',
       help='Arguments to pass to Gulp.js.')
 
-  args = parser.parse_args(argv)
+  args = parser.parse_args(args)
 
   # Set logging level.
   if args.verbose > 0:
@@ -254,45 +256,6 @@ def _main(argv):
   return args.func(tc, args)
 
 
-def _main_initialize(argv):
-  """Main entry point for "luci_deploy" initialization."""
-  # This argument signature is provided by "luci_deploy".
-  parser = argparse.ArgumentParser()
-  parser.add_argument('source_root',
-      help='Path to the source root.')
-  parser.add_argument('result_path',
-      help='(Unused) result path initialization script argument.')
-  args = parser.parse_args(argv)
-  Toolchain.initialize(args.source_root)
-  return 0
-
-
-def _main_deploy(argv):
-  """Main entry point for "luci_deploy" build."""
-  # This argument signature is provided by "luci_deploy".
-  parser = argparse.ArgumentParser()
-  parser.add_argument('source_root',
-      help='Path to the source root.')
-  parser.add_argument('build_dir',
-      help='Path to the output build directory. Apps will be written to a '
-           '"dist" folder under this path.')
-  parser.add_argument('apps', nargs='+',
-      help='Names of the web apps to build.')
-  args = parser.parse_args(argv)
-  tc = Toolchain.initialize(args.source_root)
-  return _subcommand_build(tc, args.build_dir, args.apps)
-
-
-def main(argv):
-  script_name, args = os.path.basename(argv[0]), argv[1:]
-  if script_name == 'initialize.py':
-    return _main_initialize(args)
-  elif script_name == 'build.py':
-    return _main_deploy(args)
-  else:
-    return _main(args)
-
-
 if __name__ == '__main__':
   logging.basicConfig(level=logging.INFO)
-  sys.exit(main(sys.argv))
+  sys.exit(main(sys.argv[1:]))
