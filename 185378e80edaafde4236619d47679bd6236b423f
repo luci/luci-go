@@ -1,0 +1,135 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8aeac127_c4252d1f",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-09T21:01:56Z",
+      "side": 1,
+      "message": "Just make this a map[datastore.Key]pendingBuild, that\u0027ll make the logic below easier to read.",
+      "revId": "185378e80edaafde4236619d47679bd6236b423f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb1a6ed6_1b037b05",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-09T21:01:56Z",
+      "side": 1,
+      "message": "I\u0027d make this an error instead.  panic() is usually reserved for things that are unusually drastic.  Like cosmic rays and bit flips.\n\nreturn fmt.Errorf(....",
+      "range": {
+        "startLine": 58,
+        "startChar": 2,
+        "endLine": 58,
+        "endChar": 7
+      },
+      "revId": "185378e80edaafde4236619d47679bd6236b423f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89677fcc_88da8600",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-09T21:01:56Z",
+      "side": 1,
+      "message": "b.updateInProgress()\nif !build.Status.Terminal() {\n  return nil\n}\n\nI think this is clearer to read.",
+      "revId": "185378e80edaafde4236619d47679bd6236b423f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44f13236_a41323e8",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-09T21:01:56Z",
+      "side": 1,
+      "message": "Add a TODO here, this won\u0027t work for backfilled builds, so we\u0027d need to build in revision comparison at some point.",
+      "revId": "185378e80edaafde4236619d47679bd6236b423f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2bab265_9af376d4",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-09T21:01:56Z",
+      "side": 1,
+      "message": "updateInProgress() is good enough, and put the status checking logic inline in Update().  Go tends to lean towards less verbose names over more (\"just verbose enough\").",
+      "range": {
+        "startLine": 86,
+        "startChar": 25,
+        "endLine": 86,
+        "endChar": 52
+      },
+      "revId": "185378e80edaafde4236619d47679bd6236b423f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1db0dfca_7e32b6b2",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-09T21:01:56Z",
+      "side": 1,
+      "message": "i :\u003d 0\n\nOr with maps, this wouldn\u0027t be needed.",
+      "revId": "185378e80edaafde4236619d47679bd6236b423f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3fc53bcd_94830fe1",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-09T21:01:56Z",
+      "side": 1,
+      "message": "PubSub might send things out of order, so this might happen.  In which case just drop the build.",
+      "revId": "185378e80edaafde4236619d47679bd6236b423f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
