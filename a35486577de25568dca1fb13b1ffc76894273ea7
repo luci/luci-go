@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "95213ce7_6580fb51",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-09T22:56:24Z",
+      "side": 1,
+      "message": "InProgress (otherwise it won\u0027t get saved in datastore)",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 11
+      },
+      "revId": "a35486577de25568dca1fb13b1ffc76894273ea7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dac2b63a_029ab328",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-09T22:56:24Z",
+      "side": 1,
+      "message": "should be datastore.Key, keying on a pointer probably won\u0027t do the thing we want.",
+      "range": {
+        "startLine": 57,
+        "startChar": 42,
+        "endLine": 57,
+        "endChar": 56
+      },
+      "revId": "a35486577de25568dca1fb13b1ffc76894273ea7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a83394e2_53baae97",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-09T22:56:24Z",
+      "side": 1,
+      "message": "bp :\u003d make(map[datastore.Key]Status, len(b.InProgress))",
+      "revId": "a35486577de25568dca1fb13b1ffc76894273ea7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4689aaa4_285091f9",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-09T22:56:24Z",
+      "side": 1,
+      "message": "make([]pendingBuild, 0, len(bp))",
+      "revId": "a35486577de25568dca1fb13b1ffc76894273ea7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "80a4de81_bb5de71d",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-09T22:56:24Z",
+      "side": 1,
+      "message": "b.InProgress \u003d append(b.InProgress, pendingBuild{...})\n\nWith setting the size to 0 but capacity to len(bp), append() will never re-allocate the slice, and then we don\u0027t need the i.",
+      "revId": "a35486577de25568dca1fb13b1ffc76894273ea7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
