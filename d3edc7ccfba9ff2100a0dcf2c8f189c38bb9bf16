@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a7bb1435_1a298a55",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-09T18:48:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e7c9aa7d_dcabf6c3",
+      "range": {
+        "startLine": 12,
+        "startChar": 13,
+        "endLine": 12,
+        "endChar": 19
+      },
+      "revId": "d3edc7ccfba9ff2100a0dcf2c8f189c38bb9bf16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e53c892f_081d59f4",
         "filename": "cipd/client/cipd/common/common.go",
         "patchSetId": 4
@@ -36,6 +60,30 @@
       "writtenOn": "2017-10-09T18:24:26Z",
       "side": 1,
       "message": "inline?",
+      "range": {
+        "startLine": 450,
+        "startChar": 8,
+        "endLine": 450,
+        "endChar": 12
+      },
+      "revId": "d3edc7ccfba9ff2100a0dcf2c8f189c38bb9bf16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cfc34416_9798dee6",
+        "filename": "cipd/client/cipd/common/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 450,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-09T18:48:05Z",
+      "side": 1,
+      "message": "Have to change from pointer receiver, but sure. Done.",
+      "parentUuid": "e53c892f_081d59f4",
       "range": {
         "startLine": 450,
         "startChar": 8,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "3bf20a1c_e1f54df9",
+        "filename": "cipd/client/cipd/ensure/doc.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-09T18:48:05Z",
+      "side": 1,
+      "message": "OK. Went with \"VerifiedPlatform\".",
+      "parentUuid": "67d3d5ab_3c3b62e8",
+      "range": {
+        "startLine": 43,
+        "startChar": 9,
+        "endLine": 43,
+        "endChar": 15
+      },
+      "revId": "d3edc7ccfba9ff2100a0dcf2c8f189c38bb9bf16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9b3ca4f7_a5c11b8a",
         "filename": "cipd/client/cipd/ensure/doc.go",
         "patchSetId": 4
@@ -91,6 +163,30 @@
       "revId": "d3edc7ccfba9ff2100a0dcf2c8f189c38bb9bf16",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75f1ba46_ce423cc1",
+        "filename": "cipd/client/cipd/ensure/doc.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-09T18:48:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9b3ca4f7_a5c11b8a",
+      "range": {
+        "startLine": 44,
+        "startChar": 55,
+        "endLine": 45,
+        "endChar": 34
+      },
+      "revId": "d3edc7ccfba9ff2100a0dcf2c8f189c38bb9bf16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "e115f6a3_7b97254f",
+        "filename": "cipd/client/cipd/ensure/doc.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-09T18:48:05Z",
+      "side": 1,
+      "message": "It\u0027s hard to do, b/c it\u0027s configurable at this level. I\u0027ll add \"determined by the implementation\".",
+      "parentUuid": "7b1fd439_4f2e1aa4",
+      "range": {
+        "startLine": 46,
+        "startChar": 36,
+        "endLine": 46,
+        "endChar": 47
+      },
+      "revId": "d3edc7ccfba9ff2100a0dcf2c8f189c38bb9bf16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "325f9b47_44e0bdf6",
         "filename": "cipd/client/cipd/ensure/file.go",
         "patchSetId": 4
@@ -128,6 +248,30 @@
       "writtenOn": "2017-10-09T18:24:26Z",
       "side": 1,
       "message": "wooowwwww",
+      "range": {
+        "startLine": 161,
+        "startChar": 2,
+        "endLine": 161,
+        "endChar": 12
+      },
+      "revId": "d3edc7ccfba9ff2100a0dcf2c8f189c38bb9bf16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc0fb428_4a279a91",
+        "filename": "cipd/client/cipd/ensure/file.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2017-10-09T18:48:05Z",
+      "side": 1,
+      "message": "Wow!",
+      "parentUuid": "325f9b47_44e0bdf6",
       "range": {
         "startLine": 161,
         "startChar": 2,
