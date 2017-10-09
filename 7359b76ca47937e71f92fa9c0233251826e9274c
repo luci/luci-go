@@ -22,6 +22,30 @@
       "revId": "7359b76ca47937e71f92fa9c0233251826e9274c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f8bdd90_7d733a39",
+        "filename": "common/api/gitiles/gitiles.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-09T19:10:58Z",
+      "side": 1,
+      "message": "Oh oops, I thought I got all of these. Thanks.",
+      "parentUuid": "e3d4db93_56b44289",
+      "range": {
+        "startLine": 41,
+        "startChar": 17,
+        "endLine": 41,
+        "endChar": 22
+      },
+      "revId": "7359b76ca47937e71f92fa9c0233251826e9274c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
