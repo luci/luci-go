@@ -22,6 +22,30 @@
       "revId": "6b24acc12323b033b52df6b3a546e2e09374982a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50707deb_19ee9c8a",
+        "filename": "milo/api/resp/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-09T23:02:29Z",
+      "side": 1,
+      "message": "Oh, I was specifically trying to get a username, but actually author name probably makes more sense.",
+      "parentUuid": "4deff9da_d27553e3",
+      "range": {
+        "startLine": 130,
+        "startChar": 29,
+        "endLine": 130,
+        "endChar": 40
+      },
+      "revId": "6b24acc12323b033b52df6b3a546e2e09374982a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
