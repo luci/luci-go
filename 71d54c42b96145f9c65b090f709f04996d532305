@@ -45,6 +45,30 @@
       "revId": "71d54c42b96145f9c65b090f709f04996d532305",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f7c9bc92_fc2d3488",
+        "filename": "lucictx/lucictx.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2017-10-09T19:21:17Z",
+      "side": 1,
+      "message": "It means the detached Exported object will have to travel down the stack to all consumers alongside context :(\n\nfunc callCmd(ctx context.Context, lc lucictx.Exported) {\n  ...\n  lc.SetInCmd(cmd)\n  ...\n}\n\nUnless you propose to continue storing it context.Context but give it some internal flag \"detached\"?",
+      "parentUuid": "1e3c1c7e_e43fc6d3",
+      "range": {
+        "startLine": 212,
+        "startChar": 5,
+        "endLine": 212,
+        "endChar": 9
+      },
+      "revId": "71d54c42b96145f9c65b090f709f04996d532305",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
