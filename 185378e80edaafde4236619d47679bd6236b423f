@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "2319f05d_66ff4387",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-09T22:41:37Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "8aeac127_c4252d1f",
+      "revId": "185378e80edaafde4236619d47679bd6236b423f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bb1a6ed6_1b037b05",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 2
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "ddac4e59_277b3a9b",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-09T22:41:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bb1a6ed6_1b037b05",
+      "range": {
+        "startLine": 58,
+        "startChar": 2,
+        "endLine": 58,
+        "endChar": 7
+      },
+      "revId": "185378e80edaafde4236619d47679bd6236b423f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "89677fcc_88da8600",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 2
@@ -59,6 +101,24 @@
     },
     {
       "key": {
+        "uuid": "4e7e0f28_46573f4c",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-09T22:41:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "89677fcc_88da8600",
+      "revId": "185378e80edaafde4236619d47679bd6236b423f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "44f13236_a41323e8",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 2
@@ -73,6 +133,24 @@
       "revId": "185378e80edaafde4236619d47679bd6236b423f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "07c0dd63_d4f4e688",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-09T22:41:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "44f13236_a41323e8",
+      "revId": "185378e80edaafde4236619d47679bd6236b423f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -99,6 +177,30 @@
     },
     {
       "key": {
+        "uuid": "edf35e6d_a0895eba",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-09T22:41:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a2bab265_9af376d4",
+      "range": {
+        "startLine": 86,
+        "startChar": 25,
+        "endLine": 86,
+        "endChar": 52
+      },
+      "revId": "185378e80edaafde4236619d47679bd6236b423f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1db0dfca_7e32b6b2",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 2
@@ -116,6 +218,24 @@
     },
     {
       "key": {
+        "uuid": "2bff7da3_ba9537a0",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-09T22:41:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1db0dfca_7e32b6b2",
+      "revId": "185378e80edaafde4236619d47679bd6236b423f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3fc53bcd_94830fe1",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 2
@@ -130,6 +250,24 @@
       "revId": "185378e80edaafde4236619d47679bd6236b423f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "365790b2_1b3751fe",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2017-10-09T22:41:37Z",
+      "side": 1,
+      "message": "As discussed offline, converting to error (ErrBuildMessageOutOfOrder).",
+      "parentUuid": "3fc53bcd_94830fe1",
+      "revId": "185378e80edaafde4236619d47679bd6236b423f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
