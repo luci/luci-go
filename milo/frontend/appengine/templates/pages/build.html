@@ -255,11 +255,11 @@
       <table class="info" width="100%">
         <tr class="alt"><td class="left">Start</td>
         <td>
-          {{ .Build.Summary.Started | localTime "N/A" }}
+          {{ .Build.Summary.Started | localTime "N/A" "" }}
         </td></tr>
         <tr><td class="left">End</td>
         <td>
-          {{ .Build.Summary.Finished | localTime "N/A" }}
+          {{ .Build.Summary.Finished | localTime "N/A" "" }}
         </td></tr>
         <tr class="alt"><td class="left">Elapsed</td>
         <td id="duration">
@@ -291,7 +291,7 @@
             </tr>
             <tr>
               <td class="left">Changed at</td>
-              <td class="value">{{ .CommitTime | localTime "N/A" }}</td>
+              <td class="value">{{ .CommitTime | localTime "N/A" "" }}</td>
             </tr>
             <tr>
               <td class="left">Repository</td>

@@ -25,6 +25,13 @@
   flex-direction: row;
 }
 
+.console-row-item-base {
+  display: flex;
+  min-width: 2em;
+  min-height: 3.75em;
+  max-height: 3.75em;
+}
+
 /* Header */
 
 .console-header {
@@ -51,30 +58,51 @@
   justify-content: flex-end;
 }
 
-.console-commit-column div:nth-child(even) {
+.console-commit-column div.console-commit-item:nth-of-type(even) {
   background-color: #eeeeee;
 }
 
-.console-commit-column div:nth-child(odd) {
+.console-commit-column div.console-commit-item:nth-of-type(odd) {
   background-color: #f2f2f2;
 }
 
 .console-commit-item {
-  display: flex;
-  min-width: 2em;
-  min-height: 2em;
+  border-top-left-radius: 0.5em;
+  border-bottom-left-radius: 0.5em;
   align-items: center;
-  justify-content: left;
+  justify-content: flex-start;
   white-space: nowrap;
   padding: 1px 1em 1px 1em;
   margin-right: -0.2em;
 }
 
-.commit {
-  font-weight: bold;
+.console-commit-info-column {
+  display: flex;
+  flex-direction: column;
+  min-height: 3em;
+  max-height: 3em;
+  justify-content: space-between;
 }
 
-/* Header */
+.console-commit-message {
+  display: block;
+  width: 28em;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.console-commit-author {
+  display: block;
+  max-width: 13em;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Table Header */
 
 .console-top-row {
   display: flex;
@@ -105,9 +133,9 @@
 
 .console-space {
   display: flex;
-  border: 1px solid transparent;
   min-width: 2em;
   min-height: 2em;
+  border: 1px solid transparent;
 }
 
 /* Builders */
@@ -123,9 +151,9 @@
 
 .console-builder-item {
   display: flex;
-  border: 1px solid silver;
   min-width: 2em;
   min-height: 2em;
+  border: 1px solid silver;
   align-items: center;
   justify-content: center;
   background-color: #fff;
@@ -154,18 +182,12 @@
 /* Table Cells */
 
 .console-cell {
-  display: flex;
-  min-width: 2em;
-  min-height: 2em;
   border-radius: 0.5em;
   border-width: 1px;
   border-style: solid;
 }
 
 .console-cell-top {
-  display: flex;
-  min-width: 2em;
-  min-height: 2em;
   border-top-left-radius: 0.5em;
   border-top-right-radius: 0.5em;
   border-width: 1px;
@@ -175,9 +197,6 @@
 }
 
 .console-cell-middle {
-  display: flex;
-  min-width: 2em;
-  min-height: 2em;
   border-width: 1px;
   border-style: solid;
   border-top: none;
@@ -187,9 +206,6 @@
 }
 
 .console-cell-bottom {
-  display: flex;
-  min-width: 2em;
-  min-height: 2em;
   border-bottom-left-radius: 0.5em;
   border-bottom-right-radius: 0.5em;
   border-width: 1px;
@@ -199,15 +215,9 @@
 }
 
 .console-empty-cell {
-  display: flex;
   border: 1px solid transparent;
-  min-width: 2em;
-  min-height: 2em;
 }
 
 .console-empty-cell:hover {
   cursor: default;
 }
-
-
-
