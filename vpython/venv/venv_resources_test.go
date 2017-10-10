@@ -76,6 +76,8 @@ var remoteFiles = []struct {
 // testingLoader is a map of a CIPD package name to the root directory
 // that it should be loaded from.
 type testingLoader struct {
+	PackageLoader
+
 	cacheDir string
 
 	virtualEnvZIP string

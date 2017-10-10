@@ -15,8 +15,6 @@
 package application
 
 import (
-	"strings"
-
 	"github.com/maruel/subcommands"
 	"golang.org/x/net/context"
 
@@ -68,51 +66,14 @@ func (cr *verifyCommandRun) Run(app subcommands.Application, args []string, env 
 		}
 
 		renderedSpec := spec.Render(s)
-		logging.Infof(c, "Successfully verified specification:\n%s", renderedSpec)
+		logging.Infof(c, "Successfully parsed specification:\n%s", renderedSpec)
 
-		// Run our Verification generator and verify each generated environment.
-		if a.WithVerificationConfig != nil {
-			err := a.WithVerificationConfig(c, func(cfg Config, verificationScenarios []*vpython.PEP425Tag) error {
-				if len(s.VerifyPep425Tag) > 0 {
-					verificationScenarios = s.VerifyPep425Tag
-				}
-				if len(verificationScenarios) == 0 {
-					return nil
-				}
-
-				var failures []string
-				for _, vs := range verificationScenarios {
-					// Create a verification environment to pass to our package loader.
-					e := vpython.Environment{
-						Spec:      s.Clone(),
-						Pep425Tag: []*vpython.PEP425Tag{vs},
-					}
-					if err := spec.NormalizeEnvironment(&e); err != nil {
-						logging.Errorf(c, "Failed to normalize environment against %q: %s", vs.TagString(), err)
-						failures = append(failures, vs.TagString())
-						continue
-					}
-
-					if err := cfg.PackageLoader.Resolve(c, &e); err != nil {
-						logging.Errorf(c, "Failed to resolve against %q: %s", vs.TagString(), err)
-						failures = append(failures, vs.TagString())
-					}
-				}
-
-				if len(failures) > 0 {
-					logging.Errorf(c, "Verification failed for %d scenario(s): %s\n%s",
-						len(failures), strings.Join(failures, ", "), renderedSpec)
-					return errors.New("verification failed")
-				}
-
-				logging.Infof(c, "Verified %d scenario(s).", len(verificationScenarios))
-				return nil
-			})
-			if err != nil {
-				return err
-			}
+		// Verify our packages for each verification scenario.
+		tags := a.DefaultVerificationTags
+		if len(s.VerifyPep425Tag) > 0 {
+			tags = s.VerifyPep425Tag
 		}
 
-		return nil
+		return a.PackageLoader.Verify(c, s.Clone(), tags)
 	})
 }

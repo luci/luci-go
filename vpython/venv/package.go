@@ -36,4 +36,10 @@ type PackageLoader interface {
 	//
 	// The packages will have been previously resolved via Resolve.
 	Ensure(c context.Context, root string, packages []*vpython.Spec_Package) error
+
+	// Verify verifies that all listed packages can be sufficiently resolved
+	// for each supplied PEP425 tag.
+	//
+	// "spec" may be mutated during verification.
+	Verify(c context.Context, spec *vpython.Spec, tags []*vpython.PEP425Tag) error
 }

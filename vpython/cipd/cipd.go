@@ -30,7 +30,7 @@ import (
 
 // TemplateFunc builds a set of template parameters to augment the default CIPD
 // parameter set with.
-type TemplateFunc func(context.Context, *vpython.Environment) (map[string]string, error)
+type TemplateFunc func(context.Context, []*vpython.PEP425Tag) (map[string]string, error)
 
 // PackageLoader is an implementation of venv.PackageLoader that uses the
 // CIPD service to fetch packages.
@@ -63,32 +63,14 @@ func (pl *PackageLoader) Resolve(c context.Context, e *vpython.Environment) erro
 		return nil
 	}
 
-	// Build our aggregate template parameters. We prefer our template parameters
-	// over the local system parameters. This allows us to override CIPD template
-	// parameters elsewhere, and in the production case we will not override
-	// any CIPD template parameters.
-	expander := common.DefaultTemplateExpander()
-	if pl.Template != nil {
-		loaderTemplate, err := pl.Template(c, e)
-		if err != nil {
-			return errors.Annotate(err, "failed to get CIPD template arguments").Err()
-		}
-		for k, v := range loaderTemplate {
-			expander[k] = v
-		}
+	expander, err := pl.expanderForTags(c, e.Pep425Tag)
+	if err != nil {
+		return err
 	}
-
-	// Create a single package list. Our VirtualEnv will be index 0 (need
-	// this so we can back-port it into its VirtualEnv property).
-	//
-	// These will be updated to their resolved values in-place.
-	packages := make([]*vpython.Spec_Package, 1, 1+len(spec.Wheel))
-	packages[0] = spec.Virtualenv
-	packages = append(packages, spec.Wheel...)
 
 	// Generate CIPD client options. If no root is provided, use a temporary root.
 	if pl.Options.Root != "" {
-		return pl.resolveWithOpts(c, pl.Options, expander, packages)
+		return pl.resolveWithOpts(c, pl.Options, expander, spec)
 	}
 
 	td := filesystem.TempDir{
@@ -101,26 +83,26 @@ func (pl *PackageLoader) Resolve(c context.Context, e *vpython.Environment) erro
 		opts := pl.Options
 		opts.Root = tdir
 
-		return pl.resolveWithOpts(c, opts, expander, packages)
+		return pl.resolveWithOpts(c, opts, expander, spec)
 	})
 }
 
 // resolveWithOpts resolves the specified packages.
-func (pl *PackageLoader) resolveWithOpts(c context.Context, opts cipd.ClientOptions, expander common.TemplateExpander,
-	packages []*vpython.Spec_Package) error {
+//
+// The supplied spec is updated with the resolved packages.
+func (pl *PackageLoader) resolveWithOpts(c context.Context, opts cipd.ClientOptions,
+	expander common.TemplateExpander, spec *vpython.Spec) error {
 
 	logging.Debugf(c, "Resolving CIPD packages in root [%s]:", opts.Root)
-	pslice := make(ensure.PackageSlice, len(packages))
-	for i, pkg := range packages {
-		pslice[i] = ensure.PackageDef{
-			PackageTemplate:   pkg.Name,
-			UnresolvedVersion: pkg.Version,
-		}
+	ef, packages := specToEnsureFile(spec)
 
-		logging.Debugf(c, "\tUnresolved package: %s", pkg)
-	}
-	ef := ensure.File{
-		PackagesBySubdir: map[string]ensure.PackageSlice{"": pslice},
+	// Log our unresolved packages. Note that "specToEnsureFile" only creates
+	// a subdir entry for the root (""), so we don't need to deterministically
+	// iterate over the full map.
+	if logging.IsLogging(c, logging.Debug) {
+		for _, pkg := range ef.PackagesBySubdir[""] {
+			logging.Debugf(c, "\tUnresolved package: %s", pkg)
+		}
 	}
 
 	client, err := cipd.NewClient(opts)
@@ -203,6 +185,117 @@ func (pl *PackageLoader) Ensure(c context.Context, root string, packages []*vpyt
 		}
 	}
 	return nil
+}
+
+// Verify implements venv.PackageLoader.
+func (pl *PackageLoader) Verify(c context.Context, spec *vpython.Spec, tags []*vpython.PEP425Tag) error {
+	client, err := cipd.NewClient(pl.Options)
+	if err != nil {
+		return errors.Annotate(err, "failed to generate CIPD client").Err()
+	}
+
+	verify := cipd.Verifier{
+		Client: client,
+	}
+
+	// Convert our spec into an ensure file.
+	ef, _ := specToEnsureFile(spec)
+
+	// Build an Ensure file for our specification under each tag and register it
+	// with our Verifier.
+	ensureFileErrors := 0
+	for _, tag := range tags {
+		expander, err := pl.expanderForTags(c, []*vpython.PEP425Tag{tag})
+		if err != nil {
+			logging.Errorf(c, "Failed to generate template expander for: %s", tag.TagString())
+			ensureFileErrors++
+			continue
+		}
+
+		if err := verify.VerifyEnsureFile(c, ef, expander); err != nil {
+			logging.Errorf(c, "Failed to verify package set for: %s", tag.TagString())
+			ensureFileErrors++
+		}
+	}
+
+	failed := false
+	if ensureFileErrors > 0 {
+		logging.Errorf(c, "Spec could not be resolved for %d tag(s).", ensureFileErrors)
+		failed = true
+	}
+
+	// Verify all registered package sets.
+	result := verify.Result()
+	if result.HasErrors() {
+		logging.Errorf(c, "Package verification failed to verify %d package(s) and %d pin(s).",
+			len(result.InvalidPackages), len(result.InvalidPins))
+
+		for _, pkg := range result.InvalidPackages {
+			logging.Errorf(c, "Could not verify package: %s", pkg)
+		}
+
+		for _, pin := range result.InvalidPins {
+			logging.Errorf(c, "Could not verify pin: %s", pin)
+		}
+
+		failed = true
+	}
+
+	if failed {
+		return errors.New("verification failed")
+	}
+
+	logging.Infof(c, "Successfully verified %d package(s) and %d pin(s).", result.NumPackages, result.NumPins)
+	return nil
+}
+
+// specToEnsureFile translates the packages named in spec into a CIPD ensure
+// file.
+//
+// It returns an ensure file, ef, containing a specification that loads the
+// contents of each package into the CIPD root (""). It also returns packages,
+// a slice of pointers to spec's "vpython.Spec_Package" entries. Each PackageDef
+// index in ef corresponds to the same index source vpython.Spec_Package from
+// spec.
+func specToEnsureFile(spec *vpython.Spec) (ef *ensure.File, packages []*vpython.Spec_Package) {
+	// Create a single package list. Our VirtualEnv will be index 0 (need
+	// this so we can back-port it into its VirtualEnv property).
+	//
+	// These will be updated to their resolved values in-place.
+	packages = make([]*vpython.Spec_Package, 1, 1+len(spec.Wheel))
+	packages[0] = spec.Virtualenv
+	packages = append(packages, spec.Wheel...)
+
+	pslice := make(ensure.PackageSlice, len(packages))
+	for i, pkg := range packages {
+		pslice[i] = ensure.PackageDef{
+			PackageTemplate:   pkg.Name,
+			UnresolvedVersion: pkg.Version,
+		}
+	}
+
+	ef = &ensure.File{
+		PackagesBySubdir: map[string]ensure.PackageSlice{"": pslice},
+	}
+	return
+}
+
+func (pl *PackageLoader) expanderForTags(c context.Context, tags []*vpython.PEP425Tag) (common.TemplateExpander, error) {
+	// Build our aggregate template parameters. We prefer our template parameters
+	// over the local system parameters. This allows us to override CIPD template
+	// parameters elsewhere, and in the production case we will not override
+	// any CIPD template parameters.
+	expander := common.DefaultTemplateExpander()
+	if pl.Template != nil {
+		loaderTemplate, err := pl.Template(c, tags)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to get CIPD template arguments").Err()
+		}
+		for k, v := range loaderTemplate {
+			expander[k] = v
+		}
+	}
+	return expander, nil
 }
 
 func packagesToPins(packages []*vpython.Spec_Package) ([]common.Pin, error) {

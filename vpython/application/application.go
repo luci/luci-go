@@ -122,12 +122,12 @@ type Config struct {
 	// See venv.Config's MaxScriptPathLen.
 	MaxScriptPathLen int
 
-	// WithVerificationConfig, if not nil, runs the supplied callback with
-	// a Config instance to use for verification and the set of default
-	// verification scenarios.
+	// DefaultVerificationTags is the default set of PEP425 tags to verify a
+	// specification against.
 	//
-	// If nil, verification will only include the validation of the spec protobuf.
-	WithVerificationConfig func(context.Context, func(Config, []*vpythonAPI.PEP425Tag) error) error
+	// An individual specification can override this by specifying its own
+	// verification tag set.
+	DefaultVerificationTags []*vpythonAPI.PEP425Tag
 }
 
 type application struct {
