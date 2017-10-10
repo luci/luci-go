@@ -158,7 +158,7 @@ func PopulateHistory(c context.Context, diff *milo.ManifestDiff, withFiles bool)
 				if gitCheckout == nil {
 					continue
 				}
-				if gitCheckout.Overall != milo.ManifestDiff_DIFF {
+				if gitCheckout.Revision != milo.ManifestDiff_DIFF {
 					continue
 				}
 
