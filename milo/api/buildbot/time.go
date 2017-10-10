@@ -25,15 +25,19 @@ type Time struct {
 	time.Time
 }
 
+// MarshalJSON marshals t to JSON at microsecond resolution.
 func (t *Time) MarshalJSON() ([]byte, error) {
 	var buildbotFormat *float64
 	if !t.Time.IsZero() {
-		v := float64(t.Time.UnixNano()) / 1e9
+		usec := t.Time.Nanosecond() / 1e3
+		// avoid dividing big floating numbers
+		v := float64(t.Time.Unix()) + float64(usec)/1e6
 		buildbotFormat = &v
 	}
 	return json.Marshal(&buildbotFormat)
 }
 
+// UnmarshalJSON unmarshals t from JSON at microsecond resolution.
 func (t *Time) UnmarshalJSON(data []byte) error {
 	var buildbotFormat *float64
 	err := json.Unmarshal(data, &buildbotFormat)
@@ -43,8 +47,8 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 	*t = Time{}
 	if buildbotFormat != nil {
 		sec := *buildbotFormat
-		// FIXME: sec*1e9 will overflow
-		t.Time = time.Unix(int64(sec), int64(sec*1e9)%1e9).UTC()
+		usec := int64(sec*1e6) % 1e6
+		t.Time = time.Unix(int64(sec), usec*1e3).UTC()
 	}
 	return nil
 }

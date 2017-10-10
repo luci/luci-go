@@ -25,9 +25,9 @@
       "Label": "tryserver.chromium.linux/chromium_presubmit/426944",
       "URL": "https://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944"
     },
-    "Started": "2017-05-03T23:34:23.961040896Z",
-    "Finished": "2017-05-03T23:37:53.351052032Z",
-    "Duration": 209390011136,
+    "Started": "2017-05-03T23:34:23.961041Z",
+    "Finished": "2017-05-03T23:37:53.351052Z",
+    "Duration": 209390011000,
     "Type": "Summary",
     "LevelsDeep": 1,
     "Verbosity": 0,
@@ -88,9 +88,9 @@
           }
         ]
       ],
-      "Started": "2017-05-03T23:34:23.97451904Z",
-      "Finished": "2017-05-03T23:37:53.342125824Z",
-      "Duration": 209367606784,
+      "Started": "2017-05-03T23:34:23.974519Z",
+      "Finished": "2017-05-03T23:37:53.342126Z",
+      "Duration": 209367607000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -115,9 +115,9 @@
           }
         ]
       ],
-      "Started": "2017-05-03T23:34:29.10623104Z",
-      "Finished": "2017-05-03T23:34:42.609715968Z",
-      "Duration": 13503484928,
+      "Started": "2017-05-03T23:34:29.106231Z",
+      "Finished": "2017-05-03T23:34:42.609716Z",
+      "Duration": 13503485000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -135,9 +135,9 @@
           "URL": "http://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944/steps/setup_properties/logs/stdio"
         }
       ],
-      "Started": "2017-05-03T23:34:42.626439936Z",
-      "Finished": "2017-05-03T23:34:42.630036224Z",
-      "Duration": 3596288,
+      "Started": "2017-05-03T23:34:42.62644Z",
+      "Finished": "2017-05-03T23:34:42.630036Z",
+      "Duration": 3596000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -154,9 +154,9 @@
           "URL": "http://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944/steps/LogDog%20Bootstrap/logs/stdio"
         }
       ],
-      "Started": "2017-05-03T23:34:50.166758912Z",
-      "Finished": "2017-05-03T23:34:50.168839936Z",
-      "Duration": 2081024,
+      "Started": "2017-05-03T23:34:50.166759Z",
+      "Finished": "2017-05-03T23:34:50.16884Z",
+      "Duration": 2081000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -181,9 +181,9 @@
           }
         ]
       ],
-      "Started": "2017-05-03T23:35:00.064763904Z",
-      "Finished": "2017-05-03T23:35:00.070290944Z",
-      "Duration": 5527040,
+      "Started": "2017-05-03T23:35:00.064764Z",
+      "Finished": "2017-05-03T23:35:00.070291Z",
+      "Duration": 5527000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -209,9 +209,9 @@
           }
         ]
       ],
-      "Started": "2017-05-03T23:35:00.071572992Z",
-      "Finished": "2017-05-03T23:37:39.927864064Z",
-      "Duration": 159856291072,
+      "Started": "2017-05-03T23:35:00.071573Z",
+      "Finished": "2017-05-03T23:37:39.927864Z",
+      "Duration": 159856291000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -231,9 +231,9 @@
           }
         ]
       ],
-      "Started": "2017-05-03T23:37:39.929380864Z",
-      "Finished": "2017-05-03T23:37:39.933238016Z",
-      "Duration": 3857152,
+      "Started": "2017-05-03T23:37:39.929381Z",
+      "Finished": "2017-05-03T23:37:39.933238Z",
+      "Duration": 3857000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -252,9 +252,9 @@
           }
         ]
       ],
-      "Started": "2017-05-03T23:37:39.93440512Z",
-      "Finished": "2017-05-03T23:37:52.025927168Z",
-      "Duration": 12091522048,
+      "Started": "2017-05-03T23:37:39.934405Z",
+      "Finished": "2017-05-03T23:37:52.025927Z",
+      "Duration": 12091522000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -273,9 +273,9 @@
           }
         ]
       ],
-      "Started": "2017-05-03T23:37:52.026443008Z",
-      "Finished": "2017-05-03T23:37:52.027892224Z",
-      "Duration": 1449216,
+      "Started": "2017-05-03T23:37:52.026443Z",
+      "Finished": "2017-05-03T23:37:52.027892Z",
+      "Duration": 1449000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -300,9 +300,9 @@
           }
         ]
       ],
-      "Started": "2017-05-03T23:37:52.028333824Z",
-      "Finished": "2017-05-03T23:37:52.030068992Z",
-      "Duration": 1735168,
+      "Started": "2017-05-03T23:37:52.028334Z",
+      "Finished": "2017-05-03T23:37:52.030069Z",
+      "Duration": 1735000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,

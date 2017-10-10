@@ -14,9 +14,9 @@
       "Label": "/win_chromium_rel_ng/246309",
       "URL": "https://build.chromium.org/p//builders/win_chromium_rel_ng/builds/246309"
     },
-    "Started": "2016-06-27T23:30:30.080228096Z",
-    "Finished": "2016-06-27T23:50:06.476459008Z",
-    "Duration": 1176396230912,
+    "Started": "2016-06-27T23:30:30.080228Z",
+    "Finished": "2016-06-27T23:50:06.476459Z",
+    "Duration": 1176396231000,
     "Type": "Summary",
     "LevelsDeep": 1,
     "Verbosity": 0,
@@ -61,9 +61,9 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:30:30.081103104Z",
-      "Finished": "2016-06-27T23:50:06.475020032Z",
-      "Duration": 1176393916928,
+      "Started": "2016-06-27T23:30:30.081103Z",
+      "Finished": "2016-06-27T23:50:06.47502Z",
+      "Duration": 1176393917000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 2,
@@ -94,9 +94,9 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:30:35.09594112Z",
-      "Finished": "2016-06-27T23:30:46.68953984Z",
-      "Duration": 11593598720,
+      "Started": "2016-06-27T23:30:35.095941Z",
+      "Finished": "2016-06-27T23:30:46.68954Z",
+      "Duration": 11593599000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -115,8 +115,8 @@
         }
       ],
       "Started": "2016-06-27T23:30:46.691456Z",
-      "Finished": "2016-06-27T23:30:52.447081216Z",
-      "Duration": 5755625216,
+      "Finished": "2016-06-27T23:30:52.447081Z",
+      "Duration": 5755625000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -141,9 +141,9 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:31:03.472230912Z",
-      "Finished": "2016-06-27T23:31:03.473319168Z",
-      "Duration": 1088256,
+      "Started": "2016-06-27T23:31:03.472231Z",
+      "Finished": "2016-06-27T23:31:03.473319Z",
+      "Duration": 1088000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -161,9 +161,9 @@
           "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/taskkill/logs/stdio"
         }
       ],
-      "Started": "2016-06-27T23:31:03.473850112Z",
-      "Finished": "2016-06-27T23:31:08.51218304Z",
-      "Duration": 5038332928,
+      "Started": "2016-06-27T23:31:03.47385Z",
+      "Finished": "2016-06-27T23:31:08.512183Z",
+      "Duration": 5038333000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -188,9 +188,9 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:31:08.514825216Z",
-      "Finished": "2016-06-27T23:33:25.91620992Z",
-      "Duration": 137401384704,
+      "Started": "2016-06-27T23:31:08.514825Z",
+      "Finished": "2016-06-27T23:33:25.91621Z",
+      "Duration": 137401385000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -208,9 +208,9 @@
           "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure_goma/logs/stdio"
         }
       ],
-      "Started": "2016-06-27T23:33:26.039238912Z",
-      "Finished": "2016-06-27T23:33:26.039799808Z",
-      "Duration": 560896,
+      "Started": "2016-06-27T23:33:26.039239Z",
+      "Finished": "2016-06-27T23:33:26.0398Z",
+      "Duration": 561000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -235,9 +235,9 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:33:25.917628928Z",
-      "Finished": "2016-06-27T23:33:25.922281984Z",
-      "Duration": 4653056,
+      "Started": "2016-06-27T23:33:25.917629Z",
+      "Finished": "2016-06-27T23:33:25.922282Z",
+      "Duration": 4653000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -264,8 +264,8 @@
         ]
       ],
       "Started": "2016-06-27T23:33:26.034848Z",
-      "Finished": "2016-06-27T23:33:26.036921856Z",
-      "Duration": 2073856,
+      "Finished": "2016-06-27T23:33:26.036922Z",
+      "Duration": 2074000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -282,9 +282,9 @@
           "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/swarming.py%20--version/logs/stdio"
         }
       ],
-      "Started": "2016-06-27T23:33:26.040410112Z",
-      "Finished": "2016-06-27T23:33:31.579828992Z",
-      "Duration": 5539418880,
+      "Started": "2016-06-27T23:33:26.04041Z",
+      "Finished": "2016-06-27T23:33:31.579829Z",
+      "Duration": 5539419000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -302,8 +302,8 @@
           "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/gclient%20runhooks%20%28with%20patch%29/logs/stdio"
         }
       ],
-      "Started": "2016-06-27T23:33:31.580763136Z",
-      "Finished": "2016-06-27T23:33:41.259195136Z",
+      "Started": "2016-06-27T23:33:31.580763Z",
+      "Finished": "2016-06-27T23:33:41.259195Z",
       "Duration": 9678432000,
       "Type": "Recipe",
       "LevelsDeep": 0,
@@ -329,9 +329,9 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:33:41.260574208Z",
-      "Finished": "2016-06-27T23:33:41.271374848Z",
-      "Duration": 10800640,
+      "Started": "2016-06-27T23:33:41.260574Z",
+      "Finished": "2016-06-27T23:33:41.271375Z",
+      "Duration": 10801000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -357,8 +357,8 @@
         ]
       ],
       "Started": "2016-06-27T23:33:41.272736Z",
-      "Finished": "2016-06-27T23:33:42.05425408Z",
-      "Duration": 781518080,
+      "Finished": "2016-06-27T23:33:42.054254Z",
+      "Duration": 781518000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -384,9 +384,9 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:33:42.05572096Z",
-      "Finished": "2016-06-27T23:33:47.072043008Z",
-      "Duration": 5016322048,
+      "Started": "2016-06-27T23:33:42.055721Z",
+      "Finished": "2016-06-27T23:33:47.072043Z",
+      "Duration": 5016322000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -404,9 +404,9 @@
           "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/ensure%20git%20tooling%20on%20windows/logs/stdio"
         }
       ],
-      "Started": "2016-06-27T23:33:47.073534976Z",
-      "Finished": "2016-06-27T23:33:47.098063872Z",
-      "Duration": 24528896,
+      "Started": "2016-06-27T23:33:47.073535Z",
+      "Finished": "2016-06-27T23:33:47.098064Z",
+      "Duration": 24529000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -431,9 +431,9 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:33:47.098714112Z",
-      "Finished": "2016-06-27T23:33:47.100142848Z",
-      "Duration": 1428736,
+      "Started": "2016-06-27T23:33:47.098714Z",
+      "Finished": "2016-06-27T23:33:47.100143Z",
+      "Duration": 1429000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -458,9 +458,9 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:33:47.100784896Z",
-      "Finished": "2016-06-27T23:33:47.105908992Z",
-      "Duration": 5124096,
+      "Started": "2016-06-27T23:33:47.100785Z",
+      "Finished": "2016-06-27T23:33:47.105909Z",
+      "Duration": 5124000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -492,9 +492,9 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:33:47.106699008Z",
-      "Finished": "2016-06-27T23:34:11.730665984Z",
-      "Duration": 24623966976,
+      "Started": "2016-06-27T23:33:47.106699Z",
+      "Finished": "2016-06-27T23:34:11.730666Z",
+      "Duration": 24623967000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -511,9 +511,9 @@
           "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/cleanup_temp/logs/stdio"
         }
       ],
-      "Started": "2016-06-27T23:34:11.731990016Z",
-      "Finished": "2016-06-27T23:34:11.738818048Z",
-      "Duration": 6828032,
+      "Started": "2016-06-27T23:34:11.73199Z",
+      "Finished": "2016-06-27T23:34:11.738818Z",
+      "Duration": 6828000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -530,9 +530,9 @@
           "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/clean%20isolated%20files/logs/stdio"
         }
       ],
-      "Started": "2016-06-27T23:34:11.739718912Z",
-      "Finished": "2016-06-27T23:34:11.742013952Z",
-      "Duration": 2295040,
+      "Started": "2016-06-27T23:34:11.739719Z",
+      "Finished": "2016-06-27T23:34:11.742014Z",
+      "Duration": 2295000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -557,9 +557,9 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:34:11.742561024Z",
-      "Finished": "2016-06-27T23:34:17.824329984Z",
-      "Duration": 6081768960,
+      "Started": "2016-06-27T23:34:11.742561Z",
+      "Finished": "2016-06-27T23:34:17.82433Z",
+      "Duration": 6081769000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -584,9 +584,9 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:34:17.825577984Z",
-      "Finished": "2016-06-27T23:36:30.258343936Z",
-      "Duration": 132432765952,
+      "Started": "2016-06-27T23:34:17.825578Z",
+      "Finished": "2016-06-27T23:36:30.258344Z",
+      "Duration": 132432766000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 2,
@@ -603,9 +603,9 @@
           "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/taskkill%20%282%29/logs/stdio"
         }
       ],
-      "Started": "2016-06-27T23:36:30.259512832Z",
-      "Finished": "2016-06-27T23:36:35.313368064Z",
-      "Duration": 5053855232,
+      "Started": "2016-06-27T23:36:30.259513Z",
+      "Finished": "2016-06-27T23:36:35.313368Z",
+      "Duration": 5053855000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -630,9 +630,9 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:36:35.31565696Z",
-      "Finished": "2016-06-27T23:37:40.311572992Z",
-      "Duration": 64995916032,
+      "Started": "2016-06-27T23:36:35.315657Z",
+      "Finished": "2016-06-27T23:37:40.311573Z",
+      "Duration": 64995916000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -650,9 +650,9 @@
           "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/gclient%20runhooks%20%28without%20patch%29/logs/stdio"
         }
       ],
-      "Started": "2016-06-27T23:37:40.314949888Z",
-      "Finished": "2016-06-27T23:37:51.91056896Z",
-      "Duration": 11595619072,
+      "Started": "2016-06-27T23:37:40.31495Z",
+      "Finished": "2016-06-27T23:37:51.910569Z",
+      "Duration": 11595619000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -677,9 +677,9 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:37:51.912841984Z",
-      "Finished": "2016-06-27T23:38:00.260381952Z",
-      "Duration": 8347539968,
+      "Started": "2016-06-27T23:37:51.912842Z",
+      "Finished": "2016-06-27T23:38:00.260382Z",
+      "Duration": 8347540000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -704,9 +704,9 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:38:00.263896832Z",
-      "Finished": "2016-06-27T23:50:06.384504064Z",
-      "Duration": 726120607232,
+      "Started": "2016-06-27T23:38:00.263897Z",
+      "Finished": "2016-06-27T23:50:06.384504Z",
+      "Duration": 726120607000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -723,9 +723,9 @@
           "URL": "http://build.chromium.org/p/tryserver.chromium.win/builders/win_chromium_rel_ng/builds/246309/steps/mark%3A%20before_tests/logs/stdio"
         }
       ],
-      "Started": "2016-06-27T23:50:06.385912832Z",
+      "Started": "2016-06-27T23:50:06.385913Z",
       "Finished": "2016-06-27T23:50:06.387008Z",
-      "Duration": 1095168,
+      "Duration": 1095000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,
@@ -750,9 +750,9 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:50:06.387504128Z",
-      "Finished": "2016-06-27T23:50:06.388197888Z",
-      "Duration": 693760,
+      "Started": "2016-06-27T23:50:06.387504Z",
+      "Finished": "2016-06-27T23:50:06.388198Z",
+      "Duration": 694000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 0,

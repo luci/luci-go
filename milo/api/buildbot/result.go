@@ -118,7 +118,11 @@ func (r *StepResults) UnmarshalJSON(data []byte) error {
 				return errors.Reason("invalid result %d", v).Err()
 			}
 		}
-		buf.rest = buildbotFormat[1:]
+		if len(buildbotFormat) > 1 {
+			buf.rest = buildbotFormat[1:]
+			// otherwise keep it nil, so we can compare StepResults structs
+			// in tests
+		}
 	}
 	*r = buf
 	return nil

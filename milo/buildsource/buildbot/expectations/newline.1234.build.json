@@ -14,9 +14,9 @@
       "Label": "//0",
       "URL": "https://build.chromium.org/p//builders//builds/0"
     },
-    "Started": "2016-06-27T23:30:30.080228096Z",
-    "Finished": "2016-06-27T23:50:06.476459008Z",
-    "Duration": 1176396230912,
+    "Started": "2016-06-27T23:30:30.080228Z",
+    "Finished": "2016-06-27T23:50:06.476459Z",
+    "Duration": 1176396231000,
     "Type": "Summary",
     "LevelsDeep": 1,
     "Verbosity": 0,
@@ -49,9 +49,9 @@
           }
         ]
       ],
-      "Started": "2016-06-27T23:30:30.081103104Z",
-      "Finished": "2016-06-27T23:50:06.475020032Z",
-      "Duration": 1176393916928,
+      "Started": "2016-06-27T23:30:30.081103Z",
+      "Finished": "2016-06-27T23:50:06.47502Z",
+      "Duration": 1176393917000,
       "Type": "Recipe",
       "LevelsDeep": 0,
       "Verbosity": 2,
