@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4b2dd24e_fa4b58fe",
+        "filename": "milo/buildsource/buildbot/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 361,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T18:52:51Z",
+      "side": 1,
+      "message": "looks equivalent to `case \"issue\". Can we merge them?\n\n  case \"issue\", \"patch_issue\":",
+      "range": {
+        "startLine": 361,
+        "startChar": 2,
+        "endLine": 361,
+        "endChar": 21
+      },
+      "revId": "c75d7668504734d13687e1e8af68c036b794615c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84ffa90a_27fc371a",
+        "filename": "milo/buildsource/buildbot/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 366,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T18:52:51Z",
+      "side": 1,
+      "message": "case above checks that v !\u003d \"\", otherwise application log is full of warnings that \"\" is not a valid number",
+      "range": {
+        "startLine": 366,
+        "startChar": 47,
+        "endLine": 366,
+        "endChar": 59
+      },
+      "revId": "c75d7668504734d13687e1e8af68c036b794615c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
