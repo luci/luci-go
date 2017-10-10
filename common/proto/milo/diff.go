@@ -16,6 +16,7 @@ package milo
 
 import (
 	"reflect"
+	"strings"
 )
 
 // zeroCmpTwo compares two objects of the same type where the objects could be
@@ -37,14 +38,14 @@ import (
 func zeroCmpTwo(a, b interface{}, modCb func() ManifestDiff_Stat) ManifestDiff_Stat {
 	av, bv := reflect.ValueOf(a), reflect.ValueOf(b)
 	t := av.Type()
-	z := reflect.Zero(t)
 	if t != bv.Type() {
 		panic("inconsistent types")
 	}
 	var az, bz bool
-	if t.Kind() == reflect.Slice {
+	if t.Kind() == reflect.Slice || t.Kind() == reflect.String {
 		az, bz = av.Len() == 0, bv.Len() == 0
 	} else {
+		z := reflect.Zero(t)
 		az, bz = av == z, bv == z
 	}
 
@@ -99,6 +100,18 @@ func (c modifiedTracker) status() ManifestDiff_Stat {
 	return ManifestDiff_EQUAL
 }
 
+func parseChangeRef(ref string) (cl string) {
+	if !strings.HasPrefix(ref, "refs/changes/") {
+		return ""
+	}
+	parts := strings.Split(ref, "/")[2:] // remove refs/changes
+	// should be NN/YYYYYNN/ZZ
+	if len(parts) != 3 {
+		return ""
+	}
+	return parts[1]
+}
+
 // Diff generates a Stat reflecting the difference between the `old`
 // GitCheckout and the `new` one.
 //
@@ -120,14 +133,29 @@ func (old *Manifest_GitCheckout) Diff(new *Manifest_GitCheckout) *ManifestDiff_G
 			// support for source-of-truth migrations, this could change.
 			ret.RepoUrl = new.RepoUrl
 
-			// FetchUrl and FetchRef don't matter for diff purposes for now.
-			if old.Revision == new.Revision {
+			// FetchRef doesn't matter for comparison purposes for now.
+			ret.Revision = zeroCmpTwo(old.Revision, new.Revision, nil)
+			if ret.Revision == ManifestDiff_MODIFIED {
+				ret.Revision = ManifestDiff_DIFF
+			}
+
+			// We calculate DIFF for PatchRevision iff the two checkouts both include
+			// patches from the same CL.
+			ret.PatchRevision = zeroCmpTwo(old.PatchRevision, new.PatchRevision, nil)
+			if ret.PatchRevision == ManifestDiff_MODIFIED {
+				oldCL, newCL := parseChangeRef(old.PatchFetchRef), parseChangeRef(new.PatchFetchRef)
+				if oldCL != "" && newCL != "" && oldCL == newCL {
+					ret.PatchRevision = ManifestDiff_DIFF
+				}
+			}
+
+			// If all the revisions are the same and the repo url is the same, that's
+			// good enough for the whole checkout to be equal.
+			if ret.Revision == ManifestDiff_EQUAL && ret.PatchRevision == ManifestDiff_EQUAL {
 				return ManifestDiff_EQUAL
 			}
-			// DIFF indicates to the caller that the revisions are not only MODIFIED,
-			// but they're able to be git diff'd.
-			return ManifestDiff_DIFF
 		}
+
 		return ManifestDiff_MODIFIED
 	})
 
