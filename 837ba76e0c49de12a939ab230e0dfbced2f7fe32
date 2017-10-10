@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6cbb1e9b_2a48b227",
+        "filename": "milo/api/buildbot/time.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-10T22:44:47Z",
+      "side": 1,
+      "message": "UnmarshalJSON",
+      "range": {
+        "startLine": 40,
+        "startChar": 3,
+        "endLine": 40,
+        "endChar": 14
+      },
+      "revId": "837ba76e0c49de12a939ab230e0dfbced2f7fe32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0787b756_f7aecf89",
+        "filename": "milo/api/buildbot/time_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-10T22:44:47Z",
+      "side": 1,
+      "message": "More descriptive name like \"Time truncates to microsecond\"?  If that\u0027s what it does.",
+      "range": {
+        "startLine": 28,
+        "startChar": 9,
+        "endLine": 28,
+        "endChar": 13
+      },
+      "revId": "837ba76e0c49de12a939ab230e0dfbced2f7fe32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c652db0_9f03cfe7",
+        "filename": "milo/api/buildbot/time_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-10T22:44:47Z",
+      "side": 1,
+      "message": "nit: variable reuse",
+      "range": {
+        "startLine": 29,
+        "startChar": 2,
+        "endLine": 29,
+        "endChar": 3
+      },
+      "revId": "837ba76e0c49de12a939ab230e0dfbced2f7fe32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
