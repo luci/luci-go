@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e5b1df22_8e561d90",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-10T17:20:01Z",
+      "side": 1,
+      "message": "Originally I thought I needed both, but I think you\u0027re right.",
+      "parentUuid": "a5b937a6_8bcf385f",
+      "range": {
+        "startLine": 103,
+        "startChar": 43,
+        "endLine": 103,
+        "endChar": 51
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1a49f6ba_d1df96f4",
         "filename": "common/proto/milo/diff.go",
         "patchSetId": 3
@@ -36,6 +60,30 @@
       "writtenOn": "2017-10-10T15:56:30Z",
       "side": 1,
       "message": "NN is last two digits of YYYYYYY.\nI think it is an optimization of git object storage.\nI think we should omit NN from the return value",
+      "range": {
+        "startLine": 108,
+        "startChar": 14,
+        "endLine": 108,
+        "endChar": 16
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4cf14b2_2447c0b8",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-10T17:20:01Z",
+      "side": 1,
+      "message": "I noticed that but didn\u0027t know if it was guaranteed. Done.",
+      "parentUuid": "1a49f6ba_d1df96f4",
       "range": {
         "startLine": 108,
         "startChar": 14,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "cba4e038_dc25792d",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-10T17:20:01Z",
+      "side": 1,
+      "message": "I want to OR them together; if either of them is something other than EQUAL, then their union will not be EQUAL.",
+      "parentUuid": "130b42fc_d6457f0e",
+      "range": {
+        "startLine": 157,
+        "startChar": 20,
+        "endLine": 157,
+        "endChar": 21
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6c340c25_9d13a85e",
         "filename": "common/proto/milo/manifest.proto",
         "patchSetId": 3
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "595b88c2_6d01515f",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-10T17:20:01Z",
+      "side": 1,
+      "message": "ah carp, I thought I got all these.",
+      "parentUuid": "6c340c25_9d13a85e",
+      "range": {
+        "startLine": 91,
+        "startChar": 71,
+        "endLine": 92,
+        "endChar": 55
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "538f163d_62e5c748",
         "filename": "common/proto/milo/manifest_diff.proto",
         "patchSetId": 3
@@ -105,6 +201,30 @@
       "writtenOn": "2017-10-10T15:56:30Z",
       "side": 1,
       "message": "nit: Overall",
+      "range": {
+        "startLine": 47,
+        "startChar": 7,
+        "endLine": 47,
+        "endChar": 11
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04e3fd01_9a2072f2",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-10T17:20:01Z",
+      "side": 1,
+      "message": "I thought that wasn\u0027t the style we commented protobufs in. I know it\u0027s golang style, but I don\u0027t think it\u0027s proto style.\n\nI should really just remove the This",
+      "parentUuid": "538f163d_62e5c748",
       "range": {
         "startLine": 47,
         "startChar": 7,
@@ -186,6 +306,30 @@
     },
     {
       "key": {
+        "uuid": "417ae491_cca912a8",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-10T17:20:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a5251129_3138a5ef",
+      "range": {
+        "startLine": 69,
+        "startChar": 4,
+        "endLine": 69,
+        "endChar": 61
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a06c84d_ee810407",
         "filename": "common/proto/milo/manifest_diff.proto",
         "patchSetId": 3
@@ -197,6 +341,30 @@
       "writtenOn": "2017-10-10T15:56:30Z",
       "side": 1,
       "message": "as a reader of this .proto, i don\u0027t understand what is in patch_history\n\nas a reader of this CL, I still don\u0027t understand because this field is not used. Can we move this hunk to a CL that populates the field?",
+      "range": {
+        "startLine": 72,
+        "startChar": 0,
+        "endLine": 73,
+        "endChar": 42
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "117ed4ec_98f804b2",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-10T17:20:01Z",
+      "side": 1,
+      "message": "I\u0027d like to put this field in now so that it\u0027s symmetrical with `history`. I can comment it out for now though.",
+      "parentUuid": "3a06c84d_ee810407",
       "range": {
         "startLine": 72,
         "startChar": 0,
