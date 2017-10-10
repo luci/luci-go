@@ -334,7 +334,7 @@ func sourcestamp(c context.Context, b *buildbot.Build) *resp.Trigger {
 			} else {
 				logging.Warningf(c, "Field rietveld is not a string: %#v", prop.Value)
 			}
-		case "issue":
+		case "issue", "patch_issue":
 			// Sometime this is a number (float), sometime it is a string.
 			switch v := prop.Value.(type) {
 			case float64:
@@ -344,11 +344,11 @@ func sourcestamp(c context.Context, b *buildbot.Build) *resp.Trigger {
 					if vi, err := strconv.ParseInt(v, 10, 64); err == nil {
 						issue = int64(vi)
 					} else {
-						logging.Warningf(c, "Could not decode field issue: %q - %s", prop.Value, err)
+						logging.Warningf(c, "Could not decode field %s: %q - %s", prop.Name, v, err)
 					}
 				}
 			default:
-				logging.Warningf(c, "Field issue is not a string or float64: %#v", prop.Value)
+				logging.Warningf(c, "Field %s is not a string or float64: %#v", prop.Name, v)
 			}
 
 		case "got_revision":
@@ -356,13 +356,6 @@ func sourcestamp(c context.Context, b *buildbot.Build) *resp.Trigger {
 				gotRevision = v
 			} else {
 				logging.Warningf(c, "Field got_revision is not a string: %#v", prop.Value)
-			}
-
-		case "patch_issue":
-			if v, ok := prop.Value.(float64); ok {
-				issue = int64(v)
-			} else {
-				logging.Warningf(c, "Field patch_issue is not a float: %#v", prop.Value)
 			}
 
 		case "patch_gerrit_url":
