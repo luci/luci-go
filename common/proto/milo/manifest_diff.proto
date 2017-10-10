@@ -33,29 +33,43 @@ message ManifestDiff {
     MODIFIED = 4;
 
     // The item is in both, and is directly comparable (e.g. different
-    // revisions of the same repo_url). This only applies to SCM messages.
+    // revisions of the same repo_url). This only applies to the revision fields
+    // of SCM messages.
     //
     // This is 0x8 | MODIFIED, so that users who don't care about DIFF v.
     // MODIFIED can check `Status & MODIFIED`.
     DIFF     = 12;
   }
 
-  // This indicates if there is some overall difference between old and new.
+  // Indicates if there is some overall difference between old and new.
   Stat overall = 3;
 
   message GitCheckout {
-    // Note: if this is DIFF, it is sensible to compute
-    //   `git log git_canonical_url old.revision new.revision`
+    // Indicates if there is some overall difference between old and new.
     Stat overall = 1;
 
-    // This URL should be used for RPCs. It may differ from the url in old or
-    // new if the service computing this ManifestDiff knows of e.g. a repo URL
-    // migration.
-    string repo_url = 2;
+    // Indicates the status for the `revision` field.
+    //
+    // If this is DIFF, it is sensible to compute
+    //   `git log repo_url old.revision new.revision`
+    Stat revision = 2;
 
-    // If git_checkout==DIFF, and your request included history, this will be
-    // populated with GitCommits.
-    repeated git.Commit history = 3;
+    // Indicates the status for the `patch_revision` field. It evaluates
+    // the patch_fetch_ref values to ensure that old and new are different
+    // patches from the same CL.
+    //
+    // If this is DIFF, it is sensible to compute
+    //   `git log repo_url old.patch_revision new.patch_revision`
+    Stat patch_revision = 3;
+
+    // The URL that should be used for RPCs. It may differ from the url in old
+    // or new if the service computing this ManifestDiff knows of e.g. a repo
+    // URL migration.
+    string repo_url = 4;
+
+    // If revision==DIFF, this may be populated with git history occuring
+    // between the two base revisions.
+    repeated git.Commit history = 5;
   }
 
   message Directory {

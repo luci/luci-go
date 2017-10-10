@@ -49,6 +49,9 @@ message Manifest {
 
     // The fully resolved revision (commit hash) of the source.
     //
+    // This must always be a revision on the hosted repo (not any locally
+    // generated commit).
+    //
     // Ex.
     //   3617b0eea7ec74b8e731a23fed2f4070cbc284c4
     string revision = 3;
@@ -64,8 +67,32 @@ message Manifest {
     //
     // Ex.
     //   refs/heads/master
-    //   refs/changes/04/511804/4
     string fetch_ref = 4;
+
+    // If the checkout had a CL associated with it (i.e. a gerrit commit), this
+    // is the fully resolved revision (commit hash) of the CL. If there was no
+    // CL, this is empty. Typically the checkout application (e.g. bot_update)
+    // rebases this revision on top of the `revision` fetched above.
+    //
+    // If specified, this must always be a revision on the hosted repo (not any
+    // locally generated commit).
+    //
+    // Ex.
+    //   6b0b5c12443cfb93305f8d9e21f8d762c8dad9f0
+    string patch_revision = 5;
+
+    // If the checkout had a CL associated with it, this is the ref that the
+    // task used to fetch patch_revision. If `patch_revision` is supplied, this
+    // field is required. If there was no CL, this is empty.
+    //
+    // If specified, this must always be a ref on the hosted repo (not any local
+    // alias like 'refs/remotes/...').
+    //
+    // This must always be an absolute ref (i.e. starts with 'refs/').
+    //
+    // Ex.
+    //   refs/changes/04/511804/4
+    string patch_fetch_ref = 6;
   }
 
   message CIPDPackage {
