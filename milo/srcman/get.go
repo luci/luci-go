@@ -20,6 +20,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"strings"
+	"sync"
 
 	"golang.org/x/net/context"
 
@@ -29,11 +30,40 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/logdog/common/fetcher"
 	logdog_types "go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luci_config/common/cfgtypes"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 )
+
+// GetMulti retrieves the (possibly cached-by-sha256) Manifest protos.
+//
+// This will also cache the results into memcache if it does end up fetching it
+// from logdog.
+func GetMulti(ctx context.Context, links ...*milo.ManifestLink) ([]*milo.Manifest, [][]byte, error) {
+	retLock := sync.Mutex{}
+	retManifests := make([]*milo.Manifest, len(links))
+	retHashes := make([][]byte, len(links))
+
+	err := parallel.RunMulti(ctx, 8, func(mr parallel.MultiRunner) error {
+		return mr.RunMulti(func(ch chan<- func() error) {
+			for i, link := range links {
+				i, link := i, link
+				ch <- func() error {
+					m, h, err := Get(ctx, link)
+					retLock.Lock()
+					defer retLock.Unlock()
+					retManifests[i] = m
+					retHashes[i] = h
+					return err
+				}
+			}
+		})
+	})
+
+	return retManifests, retHashes, err
+}
 
 // Get retrieves the (possibly cached-by-sha256) Manifest proto.
 //
