@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "8c7d39e9_df4bbbc2",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-10T22:26:06Z",
+      "side": 1,
+      "message": "Oh you\u0027re taking advantage of the fact that ManifestDiff_EQUAL is 0.  That\u0027s a bit of a stretch.  if ret.Revision \u003d\u003d ManifestDiff_EQUAL \u0026\u0026 ret.PatchRevision \u003d\u003d ManifestDiff_EQUAL would be less surprising IMO",
+      "parentUuid": "b0f1372d_0d5307a8",
+      "revId": "8a0621dc863685d157d514753be7955c1dd8e083",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "96497c26_93ee71f6",
         "filename": "common/proto/milo/manifest_diff.proto",
         "patchSetId": 5
