@@ -91,8 +91,10 @@ func TestDiff(t *testing.T) {
 				d := a.Diff(b)
 				So(d.Directories, ShouldResemble, map[string]*ManifestDiff_Directory{
 					"foo": {
-						Overall:     ManifestDiff_MODIFIED,
-						GitCheckout: &ManifestDiff_GitCheckout{Overall: ManifestDiff_MODIFIED},
+						Overall: ManifestDiff_MODIFIED,
+						GitCheckout: &ManifestDiff_GitCheckout{
+							Overall: ManifestDiff_MODIFIED,
+						},
 					},
 				})
 			})
@@ -104,12 +106,51 @@ func TestDiff(t *testing.T) {
 					"foo": {
 						Overall: ManifestDiff_MODIFIED,
 						GitCheckout: &ManifestDiff_GitCheckout{
-							Overall: ManifestDiff_DIFF,
-							RepoUrl: "https://example.com",
+							Overall:  ManifestDiff_MODIFIED,
+							Revision: ManifestDiff_DIFF,
+							RepoUrl:  "https://example.com",
 						},
 					},
 				})
 			})
+
+			Convey(`patch diffable change`, func() {
+				a.Directories["foo"].GitCheckout.PatchFetchRef = "refs/changes/12/12345612/2"
+				a.Directories["foo"].GitCheckout.PatchRevision = "badc0ffeebadc0ffeebadc0ffeebadc0ffeebadc"
+
+				b.Directories["foo"].GitCheckout.PatchFetchRef = "refs/changes/12/12345612/5"
+				b.Directories["foo"].GitCheckout.PatchRevision = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+
+				d := a.Diff(b)
+				So(d.Directories, ShouldResemble, map[string]*ManifestDiff_Directory{
+					"foo": {
+						Overall: ManifestDiff_MODIFIED,
+						GitCheckout: &ManifestDiff_GitCheckout{
+							Overall:       ManifestDiff_MODIFIED,
+							PatchRevision: ManifestDiff_DIFF,
+							RepoUrl:       "https://example.com",
+						},
+					},
+				})
+			})
+
+			Convey(`added patch`, func() {
+				b.Directories["foo"].GitCheckout.PatchFetchRef = "refs/changes/12/12345612/5"
+				b.Directories["foo"].GitCheckout.PatchRevision = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+
+				d := a.Diff(b)
+				So(d.Directories, ShouldResemble, map[string]*ManifestDiff_Directory{
+					"foo": {
+						Overall: ManifestDiff_MODIFIED,
+						GitCheckout: &ManifestDiff_GitCheckout{
+							Overall:       ManifestDiff_MODIFIED,
+							PatchRevision: ManifestDiff_ADDED,
+							RepoUrl:       "https://example.com",
+						},
+					},
+				})
+			})
+
 		})
 
 		Convey(`cipd packages`, func() {
