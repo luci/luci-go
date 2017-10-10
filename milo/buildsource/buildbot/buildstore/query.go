@@ -46,15 +46,11 @@ func (t Ternary) filter(q *datastore.Query, fieldName string) *datastore.Query {
 
 // Query is a build query.
 type Query struct {
-	Master   string
-	Builder  string
-	Limit    int
-	Finished Ternary
-	Cursor   string
-	// NumbersOnly, if true, reduces the query to populate
-	// only Build.Number field in the returned builds.
-	// Other Build fields are not guaranteed to be set.
-	// Makes the query faster.
+	Master      string
+	Builder     string
+	Limit       int
+	Finished    Ternary
+	Cursor      string
 	NumbersOnly bool
 }
 

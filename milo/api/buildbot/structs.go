@@ -31,41 +31,41 @@ type Step struct {
 	// it's fetched from a build json, but a float if it's dug out of the
 	// slave portion of a master json.  We'll just set it to interface and
 	// ignore it.
-	Eta          interface{}     `json:"eta"`
-	Expectations [][]interface{} `json:"expectations"`
-	Hidden       bool            `json:"hidden"`
-	IsFinished   bool            `json:"isFinished"`
-	IsStarted    bool            `json:"isStarted"`
-	Logs         []Log           `json:"logs"`
-	Name         string          `json:"name"`
-	Results      StepResults     `json:"results"`
-	Statistics   struct {
-	} `json:"statistics"`
-	StepNumber int               `json:"step_number"`
-	Text       []string          `json:"text"`
+	Eta          interface{}     `json:"eta,omitempty"`
+	Expectations [][]interface{} `json:"expectations,omitempty"`
+	Hidden       bool            `json:"hidden,omitempty"`
+	IsFinished   bool            `json:"isFinished,omitempty"`
+	IsStarted    bool            `json:"isStarted,omitempty"`
+	Logs         []Log           `json:"logs,omitempty"`
+	Name         string          `json:"name,omitempty"`
+	Results      StepResults     `json:"results,omitempty"`
+	Statistics   *struct {
+	} `json:"statistics,omitempty"`
+	StepNumber int               `json:"step_number,omitempty"`
+	Text       []string          `json:"text,omitempty"`
 	Times      TimeRange         `json:"times"`
-	Urls       map[string]string `json:"urls"`
+	Urls       map[string]string `json:"urls,omitempty"`
 
 	// Log link aliases.  The key is a log name that is being aliases. It should,
 	// generally, exist within the Logs. The value is the set of aliases attached
 	// to that key.
-	Aliases map[string][]*LinkAlias `json:"aliases"`
+	Aliases map[string][]*LinkAlias `json:"aliases,omitempty"`
 }
 
 // SourceStamp is a list of changes (commits) tagged with where the changes
 // came from, ie. the project/repository.  Also includes a "main" revision."
 type SourceStamp struct {
-	Branch     *string  `json:"branch"`
-	Changes    []Change `json:"changes"`
-	Haspatch   bool     `json:"hasPatch"`
-	Project    string   `json:"project"`
-	Repository string   `json:"repository"`
-	Revision   string   `json:"revision"`
+	Branch     *string  `json:"branch,omitempty"`
+	Changes    []Change `json:"changes,omitempty"`
+	Haspatch   bool     `json:"hasPatch,omitempty"`
+	Project    string   `json:"project,omitempty"`
+	Repository string   `json:"repository,omitempty"`
+	Revision   string   `json:"revision,omitempty"`
 }
 
 type LinkAlias struct {
-	URL  string `json:"url"`
-	Text string `json:"text"`
+	URL  string `json:"url,omitempty"`
+	Text string `json:"text,omitempty"`
 }
 
 func (a *LinkAlias) Link() *resp.Link {
@@ -111,40 +111,40 @@ func (p *Property) UnmarshalJSON(d []byte) error {
 // Build is a single build json on buildbot.
 type Build struct {
 	Master      string
-	Blame       []string `json:"blame"`
-	Buildername string   `json:"builderName"`
+	Blame       []string `json:"blame,omitempty"`
+	Buildername string   `json:"builderName,omitempty"`
 	// This needs to be reflected.  This can be either a String or a Step.
-	Currentstep interface{} `json:"currentStep"`
+	Currentstep interface{} `json:"currentStep,omitempty"`
 	// We don't care about this one.
-	Eta    interface{} `json:"eta"`
-	Logs   []Log       `json:"logs"`
-	Number int         `json:"number"`
+	Eta    interface{} `json:"eta,omitempty"`
+	Logs   []Log       `json:"logs,omitempty"`
+	Number int         `json:"number,omitempty"`
 	// This is a slice of tri-tuples of [property name, value, source].
 	// property name is always a string
 	// value can be a string or float
 	// source is optional, but is always a string if present
-	Properties  []*Property  `json:"properties"`
-	Reason      string       `json:"reason"`
-	Results     Result       `json:"results"`
-	Slave       string       `json:"slave"`
-	Sourcestamp *SourceStamp `json:"sourceStamp"`
-	Steps       []Step       `json:"steps"`
-	Text        []string     `json:"text"`
+	Properties  []*Property  `json:"properties,omitempty"`
+	Reason      string       `json:"reason,omitempty"`
+	Results     Result       `json:"results,omitempty"`
+	Slave       string       `json:"slave,omitempty"`
+	Sourcestamp *SourceStamp `json:"sourceStamp,omitempty"`
+	Steps       []Step       `json:"steps,omitempty"`
+	Text        []string     `json:"text,omitempty"`
 	Times       TimeRange    `json:"times"`
 	// This one is injected by Milo.  Does not exist in a normal json query.
-	TimeStamp Time `json:"timeStamp"`
+	TimeStamp Time `json:"timeStamp,omitempty"`
 	// This one is marked by Milo, denotes whether or not the build is internal.
-	Internal bool `json:"internal"`
+	Internal bool `json:"internal,omitempty"`
 	// This one is computed by Milo for indexing purposes.  It does so by
 	// checking to see if times[1] is null or not.
-	Finished bool `json:"finished"`
+	Finished bool `json:"finished,omitempty"`
 	// OS is a string representation of the OS the build ran on.  This is
 	// derived best-effort from the slave information in the master JSON.
 	// This information is injected into the buildbot builds via puppet, and
 	// comes as Family + Version.  Family is (windows, Darwin, Debian), while
 	// Version is the version of the OS, such as (XP, 7, 10) for windows.
-	OSFamily  string `json:"osFamily"`
-	OSVersion string `json:"osVersion"`
+	OSFamily  string `json:"osFamily,omitempty"`
+	OSVersion string `json:"osVersion,omitempty"`
 }
 
 func (b *Build) Status() model.Status {
@@ -167,49 +167,49 @@ func (b *Build) PropertyValue(name string) interface{} {
 }
 
 type Pending struct {
-	Source      SourceStamp `json:"source"`
-	Reason      string      `json:"reason"`
-	SubmittedAt int         `json:"submittedAt"`
-	BuilderName string      `json:"builderName"`
+	Source      SourceStamp `json:"source,omitempty"`
+	Reason      string      `json:"reason,omitempty"`
+	SubmittedAt int         `json:"submittedAt,omitempty"`
+	BuilderName string      `json:"builderName,omitempty"`
 }
 
 // Builder is a builder struct from the master json, _not_ the builder json.
 type Builder struct {
 	Buildername   string `json:"builderName,omitempty"`
-	Basedir       string `json:"basedir"`
-	CachedBuilds  []int  `json:"cachedBuilds"`
-	PendingBuilds int    `json:"pendingBuilds"`
+	Basedir       string `json:"basedir,omitempty"`
+	CachedBuilds  []int  `json:"cachedBuilds,omitempty"`
+	PendingBuilds int    `json:"pendingBuilds,omitempty"`
 	// This one is specific to the pubsub interface.  This is limited to 75,
 	// so it could differ from PendingBuilds
-	PendingBuildStates []*Pending `json:"pendingBuildStates"`
-	Category           string     `json:"category"`
-	CurrentBuilds      []int      `json:"currentBuilds"`
-	Slaves             []string   `json:"slaves"`
-	State              string     `json:"state"`
+	PendingBuildStates []*Pending `json:"pendingBuildStates,omitempty"`
+	Category           string     `json:"category,omitempty"`
+	CurrentBuilds      []int      `json:"currentBuilds,omitempty"`
+	Slaves             []string   `json:"slaves,omitempty"`
+	State              string     `json:"state,omitempty"`
 }
 
 // ChangeSource is a changesource (ie polling source) usually tied to a master's scheduler.
 type ChangeSource struct {
-	Description string `json:"description"`
+	Description string `json:"description,omitempty"`
 }
 
 // Change describes a commit in a repository as part of a changesource of blamelist.
 type Change struct {
-	At       string  `json:"at"`
-	Branch   *string `json:"branch"`
-	Category string  `json:"category"`
-	Comments string  `json:"comments"`
+	At       string  `json:"at,omitempty"`
+	Branch   *string `json:"branch,omitempty"`
+	Category string  `json:"category,omitempty"`
+	Comments string  `json:"comments,omitempty"`
 	// This could be a list of strings or list of struct { Name string } .
-	Files      []interface{}   `json:"files"`
-	Number     int             `json:"number"`
-	Project    string          `json:"project"`
-	Properties [][]interface{} `json:"properties"`
-	Repository string          `json:"repository"`
-	Rev        string          `json:"rev"`
-	Revision   string          `json:"revision"`
-	Revlink    string          `json:"revlink"`
-	When       int             `json:"when"`
-	Who        string          `json:"who"`
+	Files      []interface{}   `json:"files,omitempty"`
+	Number     int             `json:"number,omitempty"`
+	Project    string          `json:"project,omitempty"`
+	Properties [][]interface{} `json:"properties,omitempty"`
+	Repository string          `json:"repository,omitempty"`
+	Rev        string          `json:"rev,omitempty"`
+	Revision   string          `json:"revision,omitempty"`
+	Revlink    string          `json:"revlink,omitempty"`
+	When       int             `json:"when,omitempty"`
+	Who        string          `json:"who,omitempty"`
 }
 
 func (bc *Change) GetFiles() []string {
@@ -235,73 +235,73 @@ func (bc *Change) GetFiles() []string {
 type Slave struct {
 	// RecentBuilds is a map of builder name to a list of recent finished build
 	// numbers on that builder.
-	RecentBuilds  map[string][]int `json:"builders"`
-	Connected     bool             `json:"connected"`
-	Host          string           `json:"host"`
-	Name          string           `json:"name"`
-	Runningbuilds []*Build         `json:"runningBuilds"`
-	Version       string           `json:"version"`
+	RecentBuilds  map[string][]int `json:"builders,omitempty"`
+	Connected     bool             `json:"connected,omitempty"`
+	Host          string           `json:"host,omitempty"`
+	Name          string           `json:"name,omitempty"`
+	Runningbuilds []*Build         `json:"runningBuilds,omitempty"`
+	Version       string           `json:"version,omitempty"`
 	// This is like runningbuilds, but instead of storing the full build,
 	// just reference the build by builder: build num.
-	RunningbuildsMap map[string][]int `json:"runningBuildsMap"`
+	RunningbuildsMap map[string][]int `json:"runningBuildsMap,omitempty"`
 }
 
 type Project struct {
-	BuildbotURL string `json:"buildbotURL"`
-	Title       string `json:"title"`
-	Titleurl    string `json:"titleURL"`
+	BuildbotURL string `json:"buildbotURL,omitempty"`
+	Title       string `json:"title,omitempty"`
+	Titleurl    string `json:"titleURL,omitempty"`
 }
 
 // Master This is json definition for https://build.chromium.org/p/<master>/json
 // endpoints.
 type Master struct {
 	AcceptingBuilds struct {
-		AcceptingBuilds bool `json:"accepting_builds"`
-	} `json:"accepting_builds"`
+		AcceptingBuilds bool `json:"accepting_builds,omitempty"`
+	} `json:"accepting_builds,omitempty"`
 
-	Builders map[string]*Builder `json:"builders"`
+	Builders map[string]*Builder `json:"builders,omitempty"`
 
 	Buildstate struct {
-		AcceptingBuilds bool      `json:"accepting_builds"`
-		Builders        []Builder `json:"builders"`
-		Project         Project   `json:"project"`
-		Timestamp       Time      `json:"timestamp"`
-	} `json:"buildstate"`
+		AcceptingBuilds bool      `json:"accepting_builds,omitempty"`
+		Builders        []Builder `json:"builders,omitempty"`
+		Project         Project   `json:"project,omitempty"`
+		Timestamp       Time      `json:"timestamp,omitempty"`
+	} `json:"buildstate,omitempty"`
 
-	ChangeSources map[string]ChangeSource `json:"change_sources"`
+	ChangeSources map[string]ChangeSource `json:"change_sources,omitempty"`
 
-	Changes map[string]Change `json:"changes"`
+	Changes map[string]Change `json:"changes,omitempty"`
 
 	Clock struct {
 		Current struct {
-			Local string `json:"local"`
-			Utc   string `json:"utc"`
-			UtcTs Time   `json:"utc_ts"`
-		} `json:"current"`
+			Local string `json:"local,omitempty"`
+			Utc   string `json:"utc,omitempty"`
+			UtcTs Time   `json:"utc_ts,omitempty"`
+		} `json:"current,omitempty"`
 		ServerStarted struct {
-			Local string `json:"local"`
-			Utc   string `json:"utc"`
-			UtcTs Time   `json:"utc_ts"`
-		} `json:"server_started"`
-		ServerUptime Time `json:"server_uptime"`
-	} `json:"clock"`
+			Local string `json:"local,omitempty"`
+			Utc   string `json:"utc,omitempty"`
+			UtcTs Time   `json:"utc_ts,omitempty"`
+		} `json:"server_started,omitempty"`
+		ServerUptime Time `json:"server_uptime,omitempty"`
+	} `json:"clock,omitempty"`
 
-	Project Project `json:"project"`
+	Project Project `json:"project,omitempty"`
 
-	Slaves map[string]*Slave `json:"slaves"`
+	Slaves map[string]*Slave `json:"slaves,omitempty"`
 
 	Varz struct {
-		AcceptingBuilds bool `json:"accepting_builds"`
+		AcceptingBuilds bool `json:"accepting_builds,omitempty"`
 		Builders        map[string]struct {
-			ConnectedSlaves int    `json:"connected_slaves"`
-			CurrentBuilds   int    `json:"current_builds"`
-			PendingBuilds   int    `json:"pending_builds"`
-			State           string `json:"state"`
-			TotalSlaves     int    `json:"total_slaves"`
-		} `json:"builders"`
-		ServerUptime Time `json:"server_uptime"`
-	} `json:"varz"`
+			ConnectedSlaves int    `json:"connected_slaves,omitempty"`
+			CurrentBuilds   int    `json:"current_builds,omitempty"`
+			PendingBuilds   int    `json:"pending_builds,omitempty"`
+			State           string `json:"state,omitempty"`
+			TotalSlaves     int    `json:"total_slaves,omitempty"`
+		} `json:"builders,omitempty"`
+		ServerUptime Time `json:"server_uptime,omitempty"`
+	} `json:"varz,omitempty"`
 
 	// This is injected by the pubsub publisher on the buildbot side.
-	Name string `json:"name"`
+	Name string `json:"name,omitempty"`
 }
