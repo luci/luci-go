@@ -367,6 +367,30 @@
     },
     {
       "key": {
+        "uuid": "c49b2a1a_1e9ca8e9",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2017-10-10T00:10:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5f2e0f1a_7f8e6bcd",
+      "range": {
+        "startLine": 223,
+        "startChar": 1,
+        "endLine": 229,
+        "endChar": 9
+      },
+      "revId": "6b1c6094d65c4ee81f74278586f099a1f99ae028",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ad2ecfdc_cf1b8417",
         "filename": "milo/srcman/blamelist.go",
         "patchSetId": 2
