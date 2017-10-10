@@ -51,6 +51,11 @@ type Query struct {
 	Limit    int
 	Finished Ternary
 	Cursor   string
+	// NumbersOnly, if true, reduces the query to populate
+	// only Build.Number field in the returned builds.
+	// Other Build fields are not guaranteed to be set.
+	// Makes the query faster.
+	NumbersOnly bool
 }
 
 func (q *Query) dsQuery() *datastore.Query {
@@ -64,6 +69,9 @@ func (q *Query) dsQuery() *datastore.Query {
 	dsq = q.Finished.filter(dsq, "finished")
 	if q.Limit > 0 {
 		dsq = dsq.Limit(int32(q.Limit))
+	}
+	if q.NumbersOnly {
+		dsq = dsq.KeysOnly(true)
 	}
 	return dsq
 }
