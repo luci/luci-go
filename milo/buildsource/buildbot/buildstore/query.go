@@ -112,10 +112,7 @@ func GetBuilds(c context.Context, q Query) (*QueryResult, error) {
 	reverse := false
 	hasCursor := false
 	if q.Cursor != "" {
-		if cur, err := datastore.DecodeCursor(c, q.Cursor); err == nil {
-			// old style cursor.
-			dsq = dsq.Start(cur)
-		} else if cursorNumber, err = strconv.Atoi(q.Cursor); err == nil {
+		if cursorNumber, err := strconv.Atoi(q.Cursor); err == nil {
 			hasCursor = true
 			if cursorNumber >= 0 {
 				dsq = dsq.Gte("number", cursorNumber)
