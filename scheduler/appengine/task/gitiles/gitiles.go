@@ -85,6 +85,10 @@ func (m TaskManager) ValidateProtoMessage(msg proto.Message) error {
 		if !strings.HasPrefix(ref, "refs/") {
 			return fmt.Errorf("ref must start with 'refs/' not %q", ref)
 		}
+		cnt := strings.Count(ref, "*")
+		if cnt > 1 || (cnt == 1 && !strings.HasSuffix(ref, "/*")) {
+			return fmt.Errorf("only trailing (e.g. refs/blah/*) globs are supported, not %q", ref)
+		}
 	}
 	return nil
 }
@@ -98,10 +102,9 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 	if err != nil {
 		return err
 	}
-	watchedRefs := stringset.New(len(cfg.GetRefs()))
-	for _, ref := range cfg.GetRefs() {
-		watchedRefs.Add(ref)
-	}
+
+	watchedRefs := watchedRefs{}
+	watchedRefs.init(cfg.GetRefs())
 
 	var wg sync.WaitGroup
 
@@ -118,7 +121,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		refs, refsErr = m.getRefsTips(c, ctl, cfg.Repo, cfg.Refs)
+		refs, refsErr = m.getRefsTips(c, ctl, cfg.Repo, watchedRefs)
 	}()
 
 	wg.Wait()
@@ -134,31 +137,33 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller, triggers
 
 	refsChanged := 0
 
-	// Delete all previously known refs whcih are no longer watched.
+	// Delete all previously known refs which are either no longer watched or no
+	// longer exist in repo.
 	for ref := range heads {
-		if !watchedRefs.Has(ref) {
+		switch {
+		case !watchedRefs.hasRef(ref):
 			ctl.DebugLog("Ref %s is no longer watched", ref)
+			delete(heads, ref)
+			refsChanged++
+		case refs[ref] == "":
+			ctl.DebugLog("Ref %s deleted", ref)
 			delete(heads, ref)
 			refsChanged++
 		}
 	}
-
-	sortedWatchedRefs := watchedRefs.ToSlice()
-	sort.Strings(sortedWatchedRefs)
-	for _, ref := range sortedWatchedRefs {
+	// For determinism, sort keys of current refs.
+	sortedRefs := make([]string, 0, len(refs))
+	for ref := range refs {
+		sortedRefs = append(sortedRefs, ref)
+	}
+	sort.Strings(sortedRefs)
+	// Note, that current `refs` contain only watched refs (see getRefsTips).
+	for _, ref := range sortedRefs {
+		newHead := refs[ref]
 		oldHead, existed := heads[ref]
-		newHead, exists := refs[ref]
 		switch {
-		case !exists && !existed:
-			continue
-		case existed && !exists:
-			ctl.DebugLog("Ref %s deleted", ref)
-			delete(heads, ref)
-			refsChanged++
-			continue
-		case !existed && exists:
+		case !existed:
 			ctl.DebugLog("Ref %s is new: %s", ref, newHead)
-		// Remaining must be (existed && exists).
 		case oldHead != newHead:
 			ctl.DebugLog("Ref %s updated: %s => %s", ref, oldHead, newHead)
 		default:
@@ -277,40 +282,37 @@ func (m TaskManager) save(c context.Context, jobID string, u *url.URL, heads map
 	}))
 }
 
-func (m TaskManager) getRefsTips(c context.Context, ctl task.Controller, repo string, refs []string) (map[string]string, error) {
+// getRefsTips returns tip for each ref being watched.
+func (m TaskManager) getRefsTips(c context.Context, ctl task.Controller, repo string, watched watchedRefs) (map[string]string, error) {
 	g, err := m.getGitilesClient(c, ctl)
 	if err != nil {
 		return nil, err
 	}
-	// Group all refs by their namespace to reduce # of RPCs.
-	byNamespace := map[string][]string{}
-	for _, ref := range refs {
-		ns := refNamespace(ref)
-		byNamespace[ns] = append(byNamespace[ns], ref)
-	}
+
 	// Query gitiles for each namespace in parallel.
 	var wg sync.WaitGroup
 	var lock sync.Mutex
 	errs := []error{}
-	allTips := make(map[string]string, len(refs))
-	for ns, refNames := range byNamespace {
+	allTips := map[string]string{}
+	// Group all refs by their namespace to reduce # of RPCs.
+	for _, wrs := range watched.namespaces {
 		wg.Add(1)
-		go func(ns string, refNames []string) {
+		go func(wrs *watchedRefNamespace) {
 			defer wg.Done()
-			tips, err := g.Refs(c, repo, ns)
+			tips, err := g.Refs(c, repo, wrs.namespace)
 			lock.Lock()
 			defer lock.Unlock()
 			if err != nil {
-				ctl.DebugLog("failed to fetch %q namespace tips for %q: %q", ns, refNames, err)
+				ctl.DebugLog("failed to fetch %q namespace tips for %q: %q", wrs.namespace, err)
 				errs = append(errs, err)
 				return
 			}
-			for _, ref := range refNames {
-				if tip, exists := tips[ref]; exists {
+			for ref, tip := range tips {
+				if watched.hasRef(ref) {
 					allTips[ref] = tip
 				}
 			}
-		}(ns, refNames)
+		}(wrs)
 	}
 	wg.Wait()
 	if len(errs) > 0 {
@@ -338,10 +340,66 @@ func (m TaskManager) getGitilesClient(c context.Context, ctl task.Controller) (g
 	return &gitiles.Client{Client: httpClient}, nil
 }
 
-func refNamespace(s string) string {
+func splitRef(s string) (string, string) {
 	if i := strings.LastIndex(s, "/"); i <= 0 {
-		return s
+		return s, ""
 	} else {
-		return s[:i]
+		return s[:i], s[i+1:]
 	}
+}
+
+type watchedRefNamespace struct {
+	namespace    string // no trailing "/".
+	allChildren  bool   // if true, someChildren is ignored.
+	someChildren stringset.Set
+}
+
+func (w watchedRefNamespace) hasSuffix(suffix string) bool {
+	switch {
+	case suffix == "*":
+		panic(fmt.Errorf("watchedRefNamespace membership should only be checked for refs, not ref glob %s", suffix))
+	case w.allChildren:
+		return true
+	case w.someChildren == nil:
+		return false
+	default:
+		return w.someChildren.Has(suffix)
+	}
+}
+
+func (w *watchedRefNamespace) addSuffix(suffix string) {
+	switch {
+	case w.allChildren:
+		return
+	case suffix == "*":
+		w.allChildren = true
+		w.someChildren = nil
+		return
+	case w.someChildren == nil:
+		w.someChildren = stringset.New(1)
+	}
+	w.someChildren.Add(suffix)
+}
+
+type watchedRefs struct {
+	namespaces map[string]*watchedRefNamespace
+}
+
+func (w *watchedRefs) init(refsConfig []string) {
+	w.namespaces = map[string]*watchedRefNamespace{}
+	for _, ref := range refsConfig {
+		ns, suffix := splitRef(ref)
+		if _, exists := w.namespaces[ns]; !exists {
+			w.namespaces[ns] = &watchedRefNamespace{namespace: ns}
+		}
+		w.namespaces[ns].addSuffix(suffix)
+	}
+}
+
+func (w *watchedRefs) hasRef(ref string) bool {
+	ns, suffix := splitRef(ref)
+	if wrn, exists := w.namespaces[ns]; exists {
+		return wrn.hasSuffix(suffix)
+	}
+	return false
 }
