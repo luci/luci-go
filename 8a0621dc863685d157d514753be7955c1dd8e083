@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "b0f1372d_0d5307a8",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2017-10-10T22:21:43Z",
+      "side": 1,
+      "message": "I\u0027m not sure if I like this whole bitbanging business.\n\nAlso comment says _all_ revisions, so shouldn\u0027t this be (a \u0026 b) \u003d\u003d c?",
+      "revId": "8a0621dc863685d157d514753be7955c1dd8e083",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "96497c26_93ee71f6",
         "filename": "common/proto/milo/manifest_diff.proto",
         "patchSetId": 5
