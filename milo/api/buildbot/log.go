@@ -21,7 +21,8 @@ import (
 )
 
 type Log struct {
-	Name, URL string
+	Name string `json:",omitempty"`
+	URL  string `json:",omitempty"`
 }
 
 func (l *Log) MarshalJSON() ([]byte, error) {
