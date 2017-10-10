@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "64401d2e_5bef82a7",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T22:18:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e5b1df22_8e561d90",
+      "range": {
+        "startLine": 103,
+        "startChar": 43,
+        "endLine": 103,
+        "endChar": 51
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1a49f6ba_d1df96f4",
         "filename": "common/proto/milo/diff.go",
         "patchSetId": 3
@@ -96,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "0ea3fde7_87ccf056",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T22:18:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d4cf14b2_2447c0b8",
+      "range": {
+        "startLine": 108,
+        "startChar": 14,
+        "endLine": 108,
+        "endChar": 16
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "130b42fc_d6457f0e",
         "filename": "common/proto/milo/diff.go",
         "patchSetId": 3
@@ -140,6 +188,30 @@
       "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "620b0e9b_c8bb70c4",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T22:18:40Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "cba4e038_dc25792d",
+      "range": {
+        "startLine": 157,
+        "startChar": 20,
+        "endLine": 157,
+        "endChar": 21
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -237,6 +309,30 @@
     },
     {
       "key": {
+        "uuid": "3d8b0987_840be310",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T22:18:40Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "04e3fd01_9a2072f2",
+      "range": {
+        "startLine": 47,
+        "startChar": 7,
+        "endLine": 47,
+        "endChar": 11
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c75ecdfe_a297a9bc",
         "filename": "common/proto/milo/manifest_diff.proto",
         "patchSetId": 3
@@ -260,6 +356,30 @@
     },
     {
       "key": {
+        "uuid": "b2698541_af4a8759",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T22:18:40Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "c75ecdfe_a297a9bc",
+      "range": {
+        "startLine": 50,
+        "startChar": 7,
+        "endLine": 50,
+        "endChar": 11
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a4aa6268_48fc6d6f",
         "filename": "common/proto/milo/manifest_diff.proto",
         "patchSetId": 3
@@ -280,6 +400,30 @@
       "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0978b290_a2924aa8",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T22:18:40Z",
+      "side": 1,
+      "message": "this comment was wrong",
+      "parentUuid": "a4aa6268_48fc6d6f",
+      "range": {
+        "startLine": 52,
+        "startChar": 10,
+        "endLine": 52,
+        "endChar": 14
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
