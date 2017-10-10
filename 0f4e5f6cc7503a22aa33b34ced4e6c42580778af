@@ -1,0 +1,211 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a5b937a6_8bcf385f",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T15:56:30Z",
+      "side": 1,
+      "message": "can cl\u003d\u003d\"\" indicate what ok\u003dfalse indicates now?",
+      "range": {
+        "startLine": 103,
+        "startChar": 43,
+        "endLine": 103,
+        "endChar": 51
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a49f6ba_d1df96f4",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T15:56:30Z",
+      "side": 1,
+      "message": "NN is last two digits of YYYYYYY.\nI think it is an optimization of git object storage.\nI think we should omit NN from the return value",
+      "range": {
+        "startLine": 108,
+        "startChar": 14,
+        "endLine": 108,
+        "endChar": 16
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "130b42fc_d6457f0e",
+        "filename": "common/proto/milo/diff.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T15:56:30Z",
+      "side": 1,
+      "message": "\u0026\n?",
+      "range": {
+        "startLine": 157,
+        "startChar": 20,
+        "endLine": 157,
+        "endChar": 21
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c340c25_9d13a85e",
+        "filename": "common/proto/milo/manifest.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T15:56:30Z",
+      "side": 1,
+      "message": "this example is somewhat confusing since this master cannot be a patch_fetch_ref. This looks copied from fetch_ref comment verbatim.",
+      "range": {
+        "startLine": 91,
+        "startChar": 71,
+        "endLine": 92,
+        "endChar": 55
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "538f163d_62e5c748",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T15:56:30Z",
+      "side": 1,
+      "message": "nit: Overall",
+      "range": {
+        "startLine": 47,
+        "startChar": 7,
+        "endLine": 47,
+        "endChar": 11
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c75ecdfe_a297a9bc",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T15:56:30Z",
+      "side": 1,
+      "message": "nit: Revision\netc",
+      "range": {
+        "startLine": 50,
+        "startChar": 7,
+        "endLine": 50,
+        "endChar": 11
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4aa6268_48fc6d6f",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T15:56:30Z",
+      "side": 1,
+      "message": "nit: overall",
+      "range": {
+        "startLine": 52,
+        "startChar": 10,
+        "endLine": 52,
+        "endChar": 14
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5251129_3138a5ef",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T15:56:30Z",
+      "side": 1,
+      "message": "please describe which commits are in history",
+      "range": {
+        "startLine": 69,
+        "startChar": 4,
+        "endLine": 69,
+        "endChar": 61
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a06c84d_ee810407",
+        "filename": "common/proto/milo/manifest_diff.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T15:56:30Z",
+      "side": 1,
+      "message": "as a reader of this .proto, i don\u0027t understand what is in patch_history\n\nas a reader of this CL, I still don\u0027t understand because this field is not used. Can we move this hunk to a CL that populates the field?",
+      "range": {
+        "startLine": 72,
+        "startChar": 0,
+        "endLine": 73,
+        "endChar": 42
+      },
+      "revId": "0f4e5f6cc7503a22aa33b34ced4e6c42580778af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
