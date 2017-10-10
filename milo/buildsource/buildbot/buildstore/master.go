@@ -42,6 +42,9 @@ type Master struct {
 // If refreshState is true, refreshes individual builds from the datastore
 // and the list of Cached builds.
 //
+// If any of the master's builders is emulated, the returned Master
+// does not have slave information.
+//
 // Does not check access.
 func GetMaster(c context.Context, name string, refreshState bool) (*Master, error) {
 	entity := masterEntity{Name: name}
@@ -61,22 +64,36 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 		return m, nil
 	}
 
-	var refreshBuilds []*buildEntity
-	for _, slave := range m.Slaves {
-		for _, b := range slave.Runningbuilds {
-			refreshBuilds = append(refreshBuilds, (*buildEntity)(b))
+	emulation := false
+	for builder := range m.Builders {
+		if GetEmulationOptions(c, name, builder) != nil {
+			emulation = true
+			break
 		}
 	}
-	if err = datastore.Get(c, refreshBuilds); err != nil {
-		return nil, errors.Annotate(err, "refresh builds").Err()
+
+	if emulation {
+		// Emulation does not support this Slaves field.
+		m.Slaves = nil
+	} else {
+		var refreshBuilds []*buildEntity
+		for _, slave := range m.Slaves {
+			for _, b := range slave.Runningbuilds {
+				refreshBuilds = append(refreshBuilds, (*buildEntity)(b))
+			}
+		}
+		if err = datastore.Get(c, refreshBuilds); err != nil {
+			return nil, errors.Annotate(err, "refresh builds").Err()
+		}
 	}
 
-	// Also inject cached builds information.
+	// Inject cached builds information.
 	return m, parallel.FanOutIn(func(work chan<- func() error) {
 		for builderName, builder := range m.Builders {
 			builderName := builderName
 			builder := builder
 			work <- func() error {
+
 				// Get the most recent 50 buildNums on the builder to simulate what the
 				// cachedBuilds field looks like from the real buildbot master json.
 				q := Query{

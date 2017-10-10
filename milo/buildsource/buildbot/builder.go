@@ -133,6 +133,7 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 	result := &resp.Builder{
 		Name: builderName,
 	}
+
 	master, err := buildstore.GetMaster(c, masterName, false)
 	if err != nil {
 		return nil, err
