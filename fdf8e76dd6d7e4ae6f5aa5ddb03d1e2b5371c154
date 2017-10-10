@@ -325,6 +325,30 @@
     },
     {
       "key": {
+        "uuid": "f817d090_2e2b8e73",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2017-10-10T19:48:19Z",
+      "side": 1,
+      "message": "I see, OK. I\u0027ve changed it to order on commits then build creation order. I also make sure to use gitiles to determine relative order and not trust times. I\u0027ll do the flake stuff sometime in the future, and I\u0027ll note it in the doc.",
+      "parentUuid": "60693a2f_34636b96",
+      "range": {
+        "startLine": 96,
+        "startChar": 16,
+        "endLine": 97,
+        "endChar": 64
+      },
+      "revId": "fdf8e76dd6d7e4ae6f5aa5ddb03d1e2b5371c154",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3f98e550_47b4135b",
         "filename": "luci_notify/notify/notification.go",
         "patchSetId": 7
