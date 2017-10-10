@@ -1,0 +1,291 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "af8984dc_cfa41522",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T22:54:13Z",
+      "side": 1,
+      "message": "remove?",
+      "range": {
+        "startLine": 62,
+        "startChar": 73,
+        "endLine": 62,
+        "endChar": 78
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04272baa_88c7cad5",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T22:54:13Z",
+      "side": 1,
+      "message": "either remove this line or set prev.StatusRevision to \"\"",
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5254fd21_fd4a0c1f",
+        "filename": "luci_notify/notify/builder.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T22:54:13Z",
+      "side": 1,
+      "message": "please pass context, otherwise users cannot actually \"perform additional datastore operations with a transactional guarantee.\"",
+      "range": {
+        "startLine": 78,
+        "startChar": 9,
+        "endLine": 78,
+        "endChar": 11
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fda3c48b_41eb589e",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T22:54:13Z",
+      "side": 1,
+      "message": "i think a map[string]interface{} would be shorter and as type-safe",
+      "range": {
+        "startLine": 65,
+        "startChar": 20,
+        "endLine": 71,
+        "endChar": 2
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6e80865_a597821a",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T22:54:13Z",
+      "side": 1,
+      "message": "i think the first sentence of the comment already said the same thing",
+      "range": {
+        "startLine": 115,
+        "startChar": 92,
+        "endLine": 116,
+        "endChar": 66
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d27329a1_f5bc3040",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T22:54:13Z",
+      "side": 1,
+      "message": "what this refers to?",
+      "range": {
+        "startLine": 117,
+        "startChar": 20,
+        "endLine": 117,
+        "endChar": 32
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da01545c_7f8c0118",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T22:54:13Z",
+      "side": 1,
+      "message": "errors.Annotate(nil, whatever).Err() is nil, so you can just\nreturn errors.Annotate(sendEmail(....), ...).Err()",
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05a2c815_45ec1973",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T22:54:13Z",
+      "side": 1,
+      "message": "the users of this function do not actually need whole commit information. They use only the hash and the fact that the commit is after oldRevision. Let\u0027s simplify this function so that it has only one responsibility: return false if build\u0027s commit is out of order.\n\nthen we don\u0027t have to make a gitiles call if oldRevision \u003d build\u0027s commit\n\nbuild parameter is used only for its commit. I think it would be simpler if this function accepted the commit, not entire build.",
+      "range": {
+        "startLine": 61,
+        "startChar": 5,
+        "endLine": 61,
+        "endChar": 14
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "105f4b3c_0972b1ad",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T22:54:13Z",
+      "side": 1,
+      "message": "will panic if commit is nil",
+      "range": {
+        "startLine": 70,
+        "startChar": 49,
+        "endLine": 70,
+        "endChar": 64
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "998f2230_14dafa83",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T22:54:13Z",
+      "side": 1,
+      "message": "RPC is made even if oldRevision\u003d\u003dcommit.Revision",
+      "range": {
+        "startLine": 71,
+        "startChar": 17,
+        "endLine": 71,
+        "endChar": 27
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e694427d_f4ea9c94",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T22:54:13Z",
+      "side": 1,
+      "message": "\u003d\u003d 0",
+      "range": {
+        "startLine": 75,
+        "startChar": 17,
+        "endLine": 75,
+        "endChar": 20
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b3debf2_24f1ec57",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T22:54:13Z",
+      "side": 1,
+      "message": "we should not be doing RPCs within the transaction because transaction should have as small lifespan as possible.\n\nlet\u0027s retrieve builder, then call Gitiles, then start transaction",
+      "range": {
+        "startLine": 136,
+        "startChar": 2,
+        "endLine": 136,
+        "endChar": 60
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f999b3c_cc634758",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2017-10-10T22:54:13Z",
+      "side": 1,
+      "message": "this context is not a transaction context",
+      "range": {
+        "startLine": 144,
+        "startChar": 23,
+        "endLine": 144,
+        "endChar": 24
+      },
+      "revId": "0ac02f55418b91f83d7405ca6cb1ef65c6c0a454",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
