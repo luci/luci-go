@@ -359,10 +359,17 @@ func sourcestamp(c context.Context, b *buildbot.Build) *resp.Trigger {
 			}
 
 		case "patch_issue":
-			if v, ok := prop.Value.(float64); ok {
+			switch v := prop.Value.(type) {
+			case float64:
 				issue = int64(v)
-			} else {
-				logging.Warningf(c, "Field patch_issue is not a float: %#v", prop.Value)
+			case string:
+				if vi, err := strconv.ParseInt(v, 10, 64); err != nil {
+					logging.Warningf(c, "Field patch_issue is not a valid number: %#v", prop.Value)
+				} else {
+					issue = int64(vi)
+				}
+			default:
+				logging.Warningf(c, "Field patch_issue is not a float or string: %#v", prop.Value)
 			}
 
 		case "patch_gerrit_url":
