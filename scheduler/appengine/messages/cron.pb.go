@@ -363,10 +363,20 @@ func (m *NoopTask) GetTriggersCount() int64 {
 
 // GitilesTask specifies parameters of what repo and which refs to watch for new
 // commits.
+//
+// GitilesTask will trigger other jobs if either:
+//  * ref's tip has changed (e.g. new commit landed on a ref),
+//  * a ref has just been created.
 type GitilesTask struct {
 	// Repo is the URL of the Gitiles repository.
 	Repo string `protobuf:"bytes,1,opt,name=repo" json:"repo,omitempty"`
-	// List of Git references to track.
+	// Refs is a list of Git references to track.
+	//
+	// Each ref can be either:
+	//  * a fully qualified ref like "refs/heads/master" or "refs/tags/v1.2.3"
+	//  * a refglob like "refs/heads/*" which matches all immediate children of
+	//    "refs/heads". Thus, "refs/heads/*" will match "refs/heads/master",
+	//    but will not match "refs/heads/not/immediate/child".
 	Refs []string `protobuf:"bytes,2,rep,name=refs" json:"refs,omitempty"`
 }
 
